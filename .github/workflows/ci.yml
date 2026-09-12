@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    name: Linux build and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -S . -B build/linux -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON
+      - name: Build
+        run: cmake --build build/linux --parallel
+      - name: Test
+        run: ctest --test-dir build/linux --output-on-failure
+
+  windows:
+    name: Windows build and test
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -S . -B build\windows -DBUILD_TESTING=ON
+      - name: Build
+        run: cmake --build build\windows --config Debug --parallel
+      - name: Test
+        run: ctest --test-dir build\windows --build-config Debug --output-on-failure
+
+  linux-sanitizers:
+    name: Linux sanitizer build and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Configure
+        run: >-
+          cmake -S . -B build/linux-sanitized
+          -DCMAKE_BUILD_TYPE=Debug
+          -DBUILD_TESTING=ON
+          -DDUOFORGE_ENABLE_SANITIZERS=ON
+      - name: Build
+        run: cmake --build build/linux-sanitized --parallel
+      - name: Test
+        run: ctest --test-dir build/linux-sanitized --output-on-failure

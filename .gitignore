@@ -1,0 +1,12 @@
+# CMake and generated build trees
+/build/
+/out/
+CMakeUserPresets.json
+
+# IDE state
+.vs/
+*.suo
+*.user
+
+# CTest output
+/Testing/
