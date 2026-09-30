@@ -1,0 +1,70 @@
+name: RNG reference
+
+# Separate workflow: path filters exist only per workflow.
+on:
+  push:
+    paths:
+      - "src/rng/**"
+      - "tools/kat/**"
+      - "tests/data/pcg32_kat_vectors.h"
+      - "tests/test_rng_*.c"
+      - "tests/CMakeLists.txt"
+      - "CMakeLists.txt"
+      - "cmake/**"
+      - "third_party/pcg-c-basic/**"
+      - ".github/workflows/rng-reference.yml"
+  pull_request:
+    paths:
+      - "src/rng/**"
+      - "tools/kat/**"
+      - "tests/data/pcg32_kat_vectors.h"
+      - "tests/test_rng_*.c"
+      - "tests/CMakeLists.txt"
+      - "CMakeLists.txt"
+      - "cmake/**"
+      - "third_party/pcg-c-basic/**"
+      - ".github/workflows/rng-reference.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reference:
+    name: PCG32 reference KAT and differential
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0 (verified via git ls-remote 2026-09-30)
+      - name: Fetch pinned pcg-c-basic
+        id: fetch
+        continue-on-error: true
+        run: |
+          git clone https://github.com/imneme/pcg-c-basic.git "$RUNNER_TEMP/pcg"
+          git -C "$RUNNER_TEMP/pcg" checkout --detach bc39cd76ac3d541e618606bcc6e1e5ba5e5e6aa3
+          cd "$RUNNER_TEMP/pcg"
+          printf '%s  %s\n' \
+            b6582a071a8a090a293621523c063d125a532d772a2a1eb7d60b3e695fe47746 pcg_basic.c \
+            cd823ddc225da9be520a54f13ef2c491506c353800cae04e8b673b2de58f2cc4 pcg_basic.h \
+            b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1 LICENSE.txt \
+            | sha256sum -c
+      - name: Configure
+        if: steps.fetch.outcome == 'success'
+        run: >-
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE=Release
+          -DBUILD_TESTING=ON
+          -DDUOFORGE_WARNINGS_AS_ERRORS=ON
+          -DDUOFORGE_PCG_REFERENCE_DIR=${{ runner.temp }}/pcg
+      - name: Build
+        if: steps.fetch.outcome == 'success'
+        run: cmake --build build --parallel
+      - name: Test
+        if: steps.fetch.outcome == 'success'
+        run: ctest --test-dir build -L reference --no-tests=error --output-on-failure --timeout 120
+      - name: Report blocked fetch
+        if: steps.fetch.outcome != 'success'
+        run: |
+          echo "BLOCKED: reference fetch failed (network), not a KAT regression" >> "$GITHUB_STEP_SUMMARY"
+          exit 1

@@ -42,6 +42,59 @@ duoforge_configure_target(duoforge_test_support)
 duoforge_add_test(NAME duoforge.unit.arith SOURCES test_arith.c WHITEBOX)
 duoforge_add_test(NAME duoforge.unit.sha256 SOURCES test_sha256.c WHITEBOX)
 
+duoforge_add_test(NAME duoforge.rng.kat SOURCES test_rng_kat.c WHITEBOX)
+duoforge_add_test(NAME duoforge.rng.contract SOURCES test_rng_contract.c WHITEBOX)
+
+# The vendored upstream license must stay byte-exact.
+add_test(NAME duoforge.provenance.pcg_license
+    COMMAND "${CMAKE_COMMAND}"
+        "-DFILE=${PROJECT_SOURCE_DIR}/third_party/pcg-c-basic/LICENSE.txt"
+        -DEXPECTED=b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1
+        -P "${PROJECT_SOURCE_DIR}/cmake/checks/file_sha256.cmake")
+set_tests_properties(duoforge.provenance.pcg_license PROPERTIES TIMEOUT 30)
+
+# Optional reference tests against a pinned pcg-c-basic checkout.
+if(DUOFORGE_PCG_REFERENCE_DIR)
+    set(_ref "${DUOFORGE_PCG_REFERENCE_DIR}")
+    foreach(_pin IN ITEMS
+            "pcg_basic.c=b6582a071a8a090a293621523c063d125a532d772a2a1eb7d60b3e695fe47746"
+            "pcg_basic.h=cd823ddc225da9be520a54f13ef2c491506c353800cae04e8b673b2de58f2cc4")
+        string(REPLACE "=" ";" _parts "${_pin}")
+        list(GET _parts 0 _file)
+        list(GET _parts 1 _expected)
+        if(NOT EXISTS "${_ref}/${_file}")
+            message(FATAL_ERROR "DUOFORGE_PCG_REFERENCE_DIR: ${_ref}/${_file} not found")
+        endif()
+        file(SHA256 "${_ref}/${_file}" _actual)
+        if(NOT _actual STREQUAL _expected)
+            message(FATAL_ERROR "DUOFORGE_PCG_REFERENCE_DIR: ${_file} sha256 ${_actual} != pinned ${_expected}")
+        endif()
+    endforeach()
+    # Isolated third-party build: the pinned upstream code is not
+    # warning-clean under the project flag set, so it never gets it.
+    add_library(duoforge_pcg_reference STATIC "${_ref}/pcg_basic.c")
+    set_target_properties(duoforge_pcg_reference PROPERTIES
+        C_STANDARD 17 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF)
+    target_include_directories(duoforge_pcg_reference SYSTEM PUBLIC "${_ref}")
+    if(DUOFORGE_ENABLE_SANITIZERS)
+        target_compile_options(duoforge_pcg_reference PRIVATE -fsanitize=address,undefined)
+    endif()
+
+    add_executable(duoforge_gen_pcg32_kat "${PROJECT_SOURCE_DIR}/tools/kat/gen_pcg32_kat.c")
+    target_link_libraries(duoforge_gen_pcg32_kat PRIVATE duoforge_pcg_reference)
+    duoforge_configure_target(duoforge_gen_pcg32_kat)
+    add_test(NAME duoforge.rng.kat_regen
+        COMMAND "${CMAKE_COMMAND}" "-DGEN=$<TARGET_FILE:duoforge_gen_pcg32_kat>"
+            "-DOUT=${CMAKE_CURRENT_BINARY_DIR}/pcg32_kat_vectors.h"
+            "-DEXPECTED=${CMAKE_CURRENT_SOURCE_DIR}/data/pcg32_kat_vectors.h"
+            -P "${PROJECT_SOURCE_DIR}/cmake/checks/kat_regen.cmake")
+    set_tests_properties(duoforge.rng.kat_regen PROPERTIES TIMEOUT 120 LABELS reference)
+
+    duoforge_add_test(NAME duoforge.rng.reference_differential
+        SOURCES test_rng_reference_differential.c WHITEBOX
+        TIMEOUT 120 LABELS reference LIBS duoforge_pcg_reference)
+endif()
+
 # Black-box smoke test (M0), kept under its original name.
 add_executable(duoforge_smoke_test smoke_test.c)
 target_link_libraries(duoforge_smoke_test PRIVATE duoforge)
