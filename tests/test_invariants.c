@@ -182,6 +182,28 @@ int main(void)
     expect_inv(&t, c1, w, DFI_INV_RNG_INC_EVEN, "rng before next");
     RESET();
 
+    /* A fingerprint mismatch is reported before any invariant violation. */
+    w->context_fingerprint[0] ^= 1u;
+    w->rng.inc = 2u;
+    w->sides[0].member_count = 0u;
+    expect_inv(&t, c1, w, DFI_INV_CONTEXT_FINGERPRINT, "context before invariants");
+    w->context_fingerprint[0] ^= 1u;
+    RESET();
+    /* Side 0 is checked completely before side 1. */
+    w->sides[1].member_count = 7u;
+    w->sides[0].positions[1].activation_id = 0u;
+    expect_inv(&t, c1, w, DFI_INV_OCCUPIED_WITHOUT_ACTIVATION, "side 0 before side 1");
+    RESET();
+    /* Members before the brought mask, the mask before positions. */
+    w->sides[0].brought_mask = 0x07u;
+    w->sides[0].members[5].moves[0].pp = 30u;
+    expect_inv(&t, c1, w, DFI_INV_PP_ABOVE_MAX, "members before mask");
+    RESET();
+    w->sides[0].brought_mask = 0x07u;
+    w->sides[0].positions[0].activation_id = 9u;
+    expect_inv(&t, c1, w, DFI_INV_BROUGHT_COUNT, "mask before positions");
+    RESET();
+
     /* Checking a C1 battle under C2 is a context mismatch. */
     DF_CHECK(&t, dfi_state_check(c2, f1, NULL) == DUOFORGE_E_CONTEXT_MISMATCH);
 

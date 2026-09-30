@@ -189,7 +189,8 @@ def popcount(v):
 
 
 def validate_setup(ctx, su):
-    """Section 11 order. Returns True for OK, False for INVALID_ARGUMENT."""
+    """Setup validation order (decision 0002 section 3 / src/state/battle.c).
+    Returns True for OK, False for INVALID_ARGUMENT."""
     if su['rng_initseq'] >= (1 << 63):
         return False
     for sd in su['sides']:
@@ -267,7 +268,8 @@ assert len(INVARIANTS) == 23
 
 
 def check_state(ctx, st):
-    """Section 12 order; returns 'OK' or the first violated invariant name."""
+    """Invariant order (decision 0002 section 5); returns 'OK' or the first
+    violated invariant name."""
     if st['fp'] != ctx.fingerprint():
         return 'CONTEXT_FINGERPRINT'
     if st['rng_inc'] & 1 == 0:
@@ -370,7 +372,8 @@ def parse(b):
 
 
 def decode(ctx, b):
-    """Section 13.4 order; returns (status, invariant-or-None)."""
+    """Strict decode order (decision 0002 section 6); returns
+    (status, invariant-or-None)."""
     size = len(b)
     if size < 20:
         return 'MALFORMED', None

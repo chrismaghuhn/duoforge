@@ -127,6 +127,41 @@ int main(void)
         decode_both(&e, b, sizeof b, DUOFORGE_E_SCHEMA_MISMATCH, "schema 2 at 400 bytes");
     }
 
+    /* Decode order, pinned pairwise: each input carries two faults and the
+     * earlier check in the documented order must win. */
+    {
+        uint8_t b[400];
+        memcpy(b, g, DUOFORGE_STATE_V1_ENCODED_SIZE);
+        b[0] ^= 1u;
+        b[8] = 3;
+        decode_both(&e, b, 380, DUOFORGE_E_MALFORMED, "magic before kind");
+        memcpy(b, g, DUOFORGE_STATE_V1_ENCODED_SIZE);
+        b[8] = 3;
+        b[12] = 2;
+        decode_both(&e, b, 380, DUOFORGE_E_SCHEMA_MISMATCH, "kind before semantics");
+        memcpy(b, g, DUOFORGE_STATE_V1_ENCODED_SIZE);
+        b[10] = 2;
+        b[12] = 2;
+        decode_both(&e, b, 380, DUOFORGE_E_SCHEMA_MISMATCH, "schema before semantics");
+        memcpy(b, g, DUOFORGE_STATE_V1_ENCODED_SIZE);
+        b[12] = 2;
+        dfi_store_u32le(b + 16, 379u);
+        decode_both(&e, b, 380, DUOFORGE_E_SEMANTICS_MISMATCH, "semantics before length");
+        memcpy(b, g, DUOFORGE_STATE_V1_ENCODED_SIZE);
+        dfi_store_u32le(b + 16, 379u);
+        b[20] ^= 1u;
+        decode_both(&e, b, 380, DUOFORGE_E_MALFORMED, "length before context");
+        memset(b, 0, sizeof b);
+        memcpy(b, g, DUOFORGE_STATE_V1_ENCODED_SIZE);
+        dfi_store_u32le(b + 16, 400u);
+        b[20] ^= 1u;
+        decode_both(&e, b, 400, DUOFORGE_E_MALFORMED, "size before context");
+        memcpy(b, g, DUOFORGE_STATE_V1_ENCODED_SIZE);
+        b[20] ^= 1u;
+        b[60] = 0x6C;
+        decode_both(&e, b, 380, DUOFORGE_E_CONTEXT_MISMATCH, "context before invariants");
+    }
+
     /* total_length vs size. */
     {
         uint8_t b[DUOFORGE_STATE_V1_ENCODED_SIZE];

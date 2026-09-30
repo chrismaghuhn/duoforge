@@ -21,6 +21,10 @@ The CMake option `-DDUOFORGE_PCG_REFERENCE_DIR=$PCG` automates this. It builds t
 
 The CI workflow `.github/workflows/rng-reference.yml` does the same.
 
+## Platform note
+
+The reference tests are exercised on Linux (locally and in `rng-reference.yml`). The pinned hashes and the byte-exact KAT comparison assume LF line endings: on Windows, clone the reference with `core.autocrlf=false`. KAT regeneration through a Windows text-mode stdout (CRLF) is not supported.
+
 ## Contents
 
 The header covers 6 seeds. For each seed it has:

@@ -18,9 +18,12 @@
  *     wide-operands-reviewed on the same line.
  *  4. Intentional mod 2^n wrap is allowed only in the PCG step and in
  *     SHA-256 word arithmetic, and each site is commented.
- *  5. Only fixed-width types without a sign bit, size_t and bool appear in
- *     src/ and include/ (lint-enforced). Literals use UINT32_C / UINT64_C or
- *     a u suffix. Loop counters are uint32_t or size_t.
+ *  5. Integer data and arithmetic use only fixed-width types without a sign
+ *     bit, size_t and bool. The lint rejects the keyword-based integer types
+ *     and L-suffixed literals; enums (internal identifiers only, never
+ *     encoded) and char (string literals only) are allowed. Literals should
+ *     use UINT32_C / UINT64_C or a u suffix. Loop counters are uint32_t or
+ *     size_t.
  *  6. A shift count must be proven below the operand width; shifts by a
  *     stored value happen only after a range check.
  *  7. No floating point. No unary minus on values without a sign bit. Use

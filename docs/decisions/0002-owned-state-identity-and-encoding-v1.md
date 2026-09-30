@@ -71,7 +71,7 @@ The checker reports the **first** violation in a fixed order: context fingerprin
 - **Envelope** (20 bytes, LE, written byte-wise): magic `89 44 55 4F 0D 0A 1A 0A`, `artifact_kind` u16, `schema_version` u16, `semantics_id` u32, `total_length` u32.
 - **Battle state v1** is exactly **380 bytes**; the field layout is in `src/codec/state_codec.h`. All slots are always emitted and unused ones are zero. There is no padding and no trailer.
 - **Encoder.** It writes all 380 bytes unconditionally with fixed-capacity loops, so it is memory-safe on corrupt state.
-- **Strict decode order:**
+- **Strict decode order.** Argument checks come first. For `duoforge_battle_decode` they include the destination handle's fingerprint (CONTEXT_MISMATCH) before any input byte is read. Then:
   1. `size < 20` → MALFORMED
   2. magic → MALFORMED
   3. kind or schema → SCHEMA_MISMATCH
@@ -101,7 +101,7 @@ The checker reports the **first** violation in a fixed order: context fingerprin
 
 - **Digest:** `SHA-256(380-byte canonical encoding)`. It is privileged and never applied to raw struct bytes. The FIPS 180-4 implementation is written from the specification.
 - **`equal`:** byte identity of two unchecked canonical encodings in zero-initialized buffers. It covers every field, including RNG state and `draws`. There is no struct `memcmp` and no hashing, and it is deterministic even on corrupt state.
-- **`clone` and `copy`:** struct assignment, valid only within the same build and a matching fingerprint. `copy` checks the dst and then the src fingerprint, and only after that treats `dst == src` as a no-op. `copy`, `clone` and `equal` skip the invariant check (documented); `check`, `encode` and `digest` run it. Persistence goes **only** through the codec.
+- **`clone` and `copy`:** struct assignment, valid only within the same build and a matching fingerprint. `copy` checks the dst and then the src fingerprint, and only after that treats `dst == src` as a no-op. `copy`, `clone`, `equal`, `encoded_size` and `reseed` skip the invariant check; `check`, `encode` and `digest` run it, and `decode`/`create_decoded` run it on the input. Consequently `reseed` rewrites the RNG of any fingerprint-matching state, including one that `check` rejects (for example an even `inc` becomes odd). It is a privileged host operation, not a validator. Persistence goes **only** through the codec.
 - **`reseed(initstate, initseq)`:** replaces only the gameplay RNG, with `draws = 0` and `initseq < 2^63`, to decorrelate a forked copy for search. It is privileged, and a fair planner uses it on hypothetical states built from its own observations (ARCHITECTURE §10).
 
 ## 8. Coding rules and helpers
