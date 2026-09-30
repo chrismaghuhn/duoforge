@@ -1,3 +1,5 @@
+#include <limits.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -13,5 +15,8 @@ int main(void)
         return 1;
     }
 
+    /* Recorded so CI can assert the tested bitness (e.g. the Win32 row). */
+    printf("duoforge smoke: version=%s pointer_bits=%u size_t_bits=%u\n", version,
+           (unsigned)(sizeof(void *) * CHAR_BIT), (unsigned)(sizeof(size_t) * CHAR_BIT));
     return 0;
 }

@@ -3,53 +3,97 @@ name: CI
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   linux:
-    name: Linux build and test
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
+    name: Linux / ${{ matrix.cc }} / ${{ matrix.build_type }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        cc: [gcc, clang]
+        build_type: [Debug, Release]
+    env:
+      CC: ${{ matrix.cc }}
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
-      - name: Configure
-        run: cmake -S . -B build/linux -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON
-      - name: Build
-        run: cmake --build build/linux --parallel
-      - name: Test
-        run: ctest --test-dir build/linux --output-on-failure
-
-  windows:
-    name: Windows build and test
-    runs-on: windows-latest
-    timeout-minutes: 5
-    steps:
-      - name: Check out source
-        uses: actions/checkout@v4
-      - name: Configure
-        run: cmake -S . -B build\windows -DBUILD_TESTING=ON
-      - name: Build
-        run: cmake --build build\windows --config Debug --parallel
-      - name: Test
-        run: ctest --test-dir build\windows --build-config Debug --output-on-failure
-
-  linux-sanitizers:
-    name: Linux sanitizer build and test
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0 (verified via git ls-remote 2026-09-30)
+      - name: Toolchain versions
+        run: |
+          cmake --version
+          "$CC" --version
       - name: Configure
         run: >-
-          cmake -S . -B build/linux-sanitized
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DBUILD_TESTING=ON
+          -DDUOFORGE_WARNINGS_AS_ERRORS=ON
+      - name: Build
+        run: cmake --build build --parallel
+      - name: Test
+        run: ctest --test-dir build --output-on-failure --no-tests=error --timeout 120
+
+  linux-sanitizers:
+    name: Linux / gcc / ASan+UBSan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      CC: gcc
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0 (verified via git ls-remote 2026-09-30)
+      - name: Toolchain versions
+        run: |
+          cmake --version
+          "$CC" --version
+      - name: Configure
+        run: >-
+          cmake -S . -B build
           -DCMAKE_BUILD_TYPE=Debug
           -DBUILD_TESTING=ON
           -DDUOFORGE_ENABLE_SANITIZERS=ON
+          -DDUOFORGE_WARNINGS_AS_ERRORS=ON
       - name: Build
-        run: cmake --build build/linux-sanitized --parallel
+        run: cmake --build build --parallel
       - name: Test
-        run: ctest --test-dir build/linux-sanitized --output-on-failure
+        run: ctest --test-dir build --output-on-failure --no-tests=error --timeout 120
+
+  windows:
+    name: Windows / MSVC / ${{ matrix.arch }} / ${{ matrix.config }}
+    runs-on: windows-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { arch: x64, config: Debug, bits: 64 }
+          - { arch: x64, config: Release, bits: 64 }
+          - { arch: Win32, config: Release, bits: 32 }
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0 (verified via git ls-remote 2026-09-30)
+      - name: Toolchain versions
+        run: cmake --version
+      - name: Configure
+        run: >-
+          cmake -S . -B build -A ${{ matrix.arch }}
+          -DBUILD_TESTING=ON
+          -DDUOFORGE_WARNINGS_AS_ERRORS=ON
+      - name: Build
+        run: cmake --build build --config ${{ matrix.config }} --parallel
+      - name: Test
+        run: ctest --test-dir build -C ${{ matrix.config }} --output-on-failure --no-tests=error --timeout 120
+      - name: Check tested bitness
+        shell: bash
+        run: |
+          ctest --test-dir build -C ${{ matrix.config }} -R '^duoforge_smoke_test$' -V > smoke.log
+          grep "pointer_bits=${{ matrix.bits }} " smoke.log
