@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.23)
 
-project(duoforge VERSION 0.1.0 LANGUAGES C)
+project(duoforge VERSION 0.2.0 LANGUAGES C)
 
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -22,6 +22,11 @@ add_library(duoforge STATIC
     src/core/sha256.c
     src/rng/pcg32_derived.c
     src/rng/pcg32.c
+    src/state/context.c
+    src/state/identity.c
+    src/state/invariants.c
+    src/state/battle.c
+    src/codec/state_codec.c
 )
 target_include_directories(duoforge
     PUBLIC

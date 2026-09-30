@@ -34,8 +34,10 @@ function(duoforge_add_test)
 endfunction()
 
 # Shared test support (explicit test context, no globals).
-add_library(duoforge_test_support STATIC support/check.c)
+add_library(duoforge_test_support STATIC support/check.c support/fixtures.c)
 target_include_directories(duoforge_test_support PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+# The F2 fixture builder is white-box.
+target_include_directories(duoforge_test_support PRIVATE "${PROJECT_SOURCE_DIR}/src")
 target_link_libraries(duoforge_test_support PUBLIC duoforge)
 duoforge_configure_target(duoforge_test_support)
 
@@ -44,6 +46,18 @@ duoforge_add_test(NAME duoforge.unit.sha256 SOURCES test_sha256.c WHITEBOX)
 
 duoforge_add_test(NAME duoforge.rng.kat SOURCES test_rng_kat.c WHITEBOX)
 duoforge_add_test(NAME duoforge.rng.contract SOURCES test_rng_contract.c WHITEBOX)
+
+duoforge_add_test(NAME duoforge.state.context SOURCES test_context.c)
+duoforge_add_test(NAME duoforge.state.setup SOURCES test_setup.c WHITEBOX)
+duoforge_add_test(NAME duoforge.state.identity SOURCES test_identity.c WHITEBOX)
+duoforge_add_test(NAME duoforge.state.invariants SOURCES test_invariants.c WHITEBOX)
+duoforge_add_test(NAME duoforge.state.setup_sweep SOURCES test_setup_sweep.c TIMEOUT 60)
+
+duoforge_add_test(NAME duoforge.state.clone_equal SOURCES test_clone_equal.c WHITEBOX)
+duoforge_add_test(NAME duoforge.codec.golden SOURCES test_codec_golden.c WHITEBOX)
+duoforge_add_test(NAME duoforge.codec.negative SOURCES test_codec_negative.c WHITEBOX)
+duoforge_add_test(NAME duoforge.codec.mutation SOURCES test_codec_mutation.c WHITEBOX TIMEOUT 120)
+duoforge_add_test(NAME duoforge.api.atomicity SOURCES test_api_atomicity.c WHITEBOX)
 
 # The vendored upstream license must stay byte-exact.
 add_test(NAME duoforge.provenance.pcg_license
