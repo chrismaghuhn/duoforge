@@ -74,7 +74,7 @@ static uint32_t *field32(duoforge_battle_setup *s, unsigned side, unsigned m, un
 static void run_one(df_test *t, const duoforge_context *ctx, const duoforge_battle_setup *s, unsigned side,
                     enum cls c, counts *n)
 {
-    max_align_t sentinel;
+    df_sentinel sentinel;
     duoforge_battle *const marker = (duoforge_battle *)(void *)&sentinel;
     duoforge_battle *out = marker;
     const duoforge_status st = duoforge_battle_create(ctx, s, &out);

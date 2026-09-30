@@ -23,7 +23,7 @@ static void check_fp(df_test *t, const duoforge_context *ctx, const char *hex)
 
 static void check_create_fails(df_test *t, duoforge_context_config c, const char *what)
 {
-    max_align_t sentinel;
+    df_sentinel sentinel;
     duoforge_context *const marker = (duoforge_context *)(void *)&sentinel;
     duoforge_context *out = marker;
     const duoforge_status st = duoforge_context_create(&c, &out);
@@ -133,7 +133,7 @@ int main(void)
 
     /* NULL handling. */
     {
-        max_align_t sentinel;
+        df_sentinel sentinel;
         duoforge_context *const marker = (duoforge_context *)(void *)&sentinel;
         duoforge_context *out = marker;
         DF_CHECK(&t, duoforge_context_create(NULL, &out) == DUOFORGE_E_NULL_ARGUMENT);

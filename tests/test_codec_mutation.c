@@ -95,7 +95,7 @@ static duoforge_status decode_one(df_test *t, const duoforge_context *c1, duofor
     uint8_t after[DUOFORGE_STATE_V1_ENCODED_SIZE];
     duoforge_status st;
     if (via_create) {
-        max_align_t sentinel;
+        df_sentinel sentinel;
         duoforge_battle *const marker = (duoforge_battle *)(void *)&sentinel;
         duoforge_battle *out = marker;
         st = duoforge_battle_create_decoded(c1, in, DUOFORGE_STATE_V1_ENCODED_SIZE, &out);

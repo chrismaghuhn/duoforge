@@ -290,7 +290,7 @@ int main(void)
         DF_CHECK_BYTES(&t, e2, e1, sizeof e1, "copy src mismatch unchanged");
         equal_fails(&t, c1, f1, x, DUOFORGE_E_CONTEXT_MISMATCH);
         equal_fails(&t, c1, x, f1, DUOFORGE_E_CONTEXT_MISMATCH);
-        max_align_t sentinel;
+        df_sentinel sentinel;
         duoforge_battle *const marker = (duoforge_battle *)(void *)&sentinel;
         duoforge_battle *out = marker;
         DF_CHECK(&t, duoforge_battle_clone(c1, x, &out) == DUOFORGE_E_CONTEXT_MISMATCH);

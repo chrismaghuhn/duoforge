@@ -53,7 +53,7 @@ static void decode_both_sized(env *e, const uint8_t *bytes, size_t alloc_size, s
     df_free(in);
 
     in = df_heap_copy(bytes, alloc_size);
-    max_align_t sentinel;
+    df_sentinel sentinel;
     duoforge_battle *const marker = (duoforge_battle *)(void *)&sentinel;
     duoforge_battle *out = marker;
     st = duoforge_battle_create_decoded(e->c1, in, size, &out);

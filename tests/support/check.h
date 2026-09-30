@@ -6,7 +6,7 @@
  *
  * Rules for DuoForge tests:
  *  S1. Sentinels: byte buffers start at 0xA5, integer outputs at a distinct
- *      pattern, pointer outputs at the address of a local max_align_t object
+ *      pattern, pointer outputs at the address of a local df_sentinel object
  *      (never dereferenced).
  *  S2. Battles are compared only through encodings or duoforge_battle_equal.
  *  S3. bool outputs never hold byte-pattern sentinels (loading a non-0/1
@@ -19,6 +19,15 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+
+/* Pointer sentinel object (rule S1): only its address is used, never the
+ * contents. max_align_t is not available in MSVC's C mode, so a union of
+ * wide types provides a suitably aligned real object instead. */
+typedef union df_sentinel {
+    uint64_t u64;
+    void *ptr;
+    double d;
+} df_sentinel;
 
 typedef struct df_test {
     const char *name;

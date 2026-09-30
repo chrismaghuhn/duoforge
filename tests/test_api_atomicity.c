@@ -95,7 +95,7 @@ int main(void)
     uint8_t golden_before[DUOFORGE_STATE_V1_ENCODED_SIZE];
     enc(c1, b1, golden_before);
     probe p;
-    max_align_t sentinel;
+    df_sentinel sentinel;
     duoforge_battle *const marker = (duoforge_battle *)(void *)&sentinel;
     duoforge_battle *outb = marker;
     const uint8_t *g = df_golden_f1;

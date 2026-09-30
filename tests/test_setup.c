@@ -20,7 +20,7 @@ static void check_fails(df_test *t, const duoforge_context *ctx, const duoforge_
 {
     duoforge_battle_setup s = *base;
     mutate(&s);
-    max_align_t sentinel;
+    df_sentinel sentinel;
     duoforge_battle *const marker = (duoforge_battle *)(void *)&sentinel;
     duoforge_battle *out = marker;
     const duoforge_status st = duoforge_battle_create(ctx, &s, &out);
@@ -206,7 +206,7 @@ int main(void)
 
     /* NULL arguments. */
     {
-        max_align_t sentinel;
+        df_sentinel sentinel;
         duoforge_battle *const marker = (duoforge_battle *)(void *)&sentinel;
         duoforge_battle *out = marker;
         DF_CHECK(&t, duoforge_battle_create(NULL, &f1, &out) == DUOFORGE_E_NULL_ARGUMENT);
@@ -263,7 +263,7 @@ int main(void)
         duoforge_context_config cfg = df_config_c1;
         cfg.max_roster = 5u;
         duoforge_context *c5 = df_make_context(&cfg);
-        max_align_t sentinel;
+        df_sentinel sentinel;
         duoforge_battle *const marker = (duoforge_battle *)(void *)&sentinel;
         duoforge_battle *out = marker;
         DF_CHECK(&t, duoforge_battle_create(c5, &f1, &out) == DUOFORGE_E_INVALID_ARGUMENT);
