@@ -42,7 +42,21 @@ File hashes at the pin (sha256):
 | `data/typechart.ts` | `7b0eae126bdcf98edfd71cbe75af00b763f5f0d5db36024b6f3e7c5e4aea95ac` |
 | `data/learnsets.ts` | `26969c5e9ca7310b701612da8c9cea217b7d43efb8cd22a7e46783a6ca9b386e` |
 
-The `champions` and `championsregmb` mod files must be hashed and added here when M3 first derives data or fixtures from them.
+Added on 2026-10-01, when the closure tables were first derived (`tools/datagen/gen_closure.py`, decision 0006). All hashes in this note are of the file content with LF line endings; a Windows checkout with CRLF must be normalised before hashing, as the generator does.
+
+| File | sha256 |
+|---|---|
+| `data/natures.ts` | `5cfefee4c23dd19f629deb9a67f75361226bd24fe34cefe9a13d30d985428416` |
+| `data/mods/champions/abilities.ts` | `86c3843d402f1ff7be276d8f2da08d6744b8a8822349560b300ddcfa9c1fbc52` |
+| `data/mods/champions/conditions.ts` | `851507309dde0b58807e33b17d8ce7e607dad70893546f67bad294ad70249005` |
+| `data/mods/champions/formats-data.ts` | `a512b537a84574a324c250c6ff99ad60f0cf1e82420fdae60d4635eec8661e13` |
+| `data/mods/champions/items.ts` | `b39dafa66d136ebb1a8576367ced2c9f4519aa1c17d5d65c59b368ac15d7de77` |
+| `data/mods/champions/learnsets.ts` | `826d302703358260a1c4967e2bf8edd15f1fe7e0f664c8ab14aff734906cc9d0` |
+| `data/mods/champions/moves.ts` | `1d317da33d3e36d430a9cbe195c2ef9bb9a6fc2f3e0516ba2200da8a394080bc` |
+| `data/mods/champions/rulesets.ts` | `31671152a6ff1f09d81a5306baadaa1593ef235e5c7cdcc9180c67bac8e84cd9` |
+| `data/mods/champions/scripts.ts` | `a6cc11eeb525ad58dee9010dd0d42274a5b4dacb39ce8653f4888cbd2f4f459d` |
+
+The `championsregmb` mod is not used by the selected format and is not hashed.
 
 ## Teams
 

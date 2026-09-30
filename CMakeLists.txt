@@ -12,6 +12,8 @@ option(DUOFORGE_ENABLE_SANITIZERS
 )
 set(DUOFORGE_PCG_REFERENCE_DIR "" CACHE PATH
     "Optional checkout of pcg-c-basic at the pinned revision for reference tests")
+set(DUOFORGE_PS_REFERENCE_DIR "" CACHE PATH
+    "Optional checkout of Pokemon Showdown at the pinned revision for reference tests")
 
 include(CTest)
 include(cmake/DuoforgeTargetOptions.cmake)
@@ -29,6 +31,8 @@ add_library(duoforge STATIC
     src/state/transition.c
     src/state/request.c
     src/state/observation.c
+    src/data/closure_tables.c
+    src/data/formulas.c
     src/codec/state_codec.c
 )
 target_include_directories(duoforge

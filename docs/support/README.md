@@ -19,7 +19,9 @@ This is a status manifest, **not** a mechanics certificate. "IMPLEMENTED + TESTE
 | Struggle (all pp 0) | **UNSUPPORTED** (`E_UNSUPPORTED` on the request; M3) |
 | Observation prototype (open sheets, own exact, foe percent HP, tagged unknowns) | **IMPLEMENTED + TESTED** (prototype; limited to the fields state v2 holds) |
 | Information-equivalence evidence | **TESTED** on paired synthetic states (`duoforge.request.information`) |
-| Pokémon data, mechanics coverage, reference parity | **UNSUPPORTED** |
+| Closure data tables (16 formes, 36 moves plus Struggle, 16 abilities, 11 items, type chart, natures) | **GENERATED + TESTED** from the pin with provenance per record (`tools/datagen/gen_closure.py`, `src/data/closure_tables.*`). **Data only:** no battle can use it yet |
+| Champions stat and PP formulas | **IMPLEMENTED + TESTED** (all 16 formes of the two teams; decision 0006) |
+| Combat mechanics, real team setup, reference parity | **UNSUPPORTED** (steps 1b to 13 of `tasks/M3_M4_COMBAT_CLOSURE.md`) |
 
 State snapshots and decodability are foundation evidence, **not proof that unimplemented future mechanics restore correctly**.
 

@@ -1,6 +1,6 @@
 # 0006 — Combat closure: data, state v3, execution, RNG draw sites, events, reference fixtures
 
-Status: **proposed** (step 0 of `tasks/M3_M4_COMBAT_CLOSURE.md`). **No code exists for it yet.** It is the single design for the whole closure of the two reference teams; step 1 starts after the owner has read it.
+Status: **proposed**; being implemented step by step (`tasks/M3_M4_COMBAT_CLOSURE.md`). **Implemented so far:** step 1a, the generated closure tables and the Champions stat and PP formulas (section 2, data only). Context v3, state v3, setup v3 and every mechanic are still to come.
 
 Showdown citations are `path:line` at the pin `b2cb775b0616115b775534eaeff50300e1fc81fc`.
 
@@ -100,8 +100,8 @@ Every step of the task file delivers: unit tests with reference-derived expectat
 ## 9. Local verification (owner, 2026-10-01)
 
 - Local builds run **natively on Windows**; WSL is no longer used.
-- Available now: MSVC (Visual Studio Build Tools 2022) with the Visual Studio generator. Baseline on `main` (`f9fa9ef`): `cmake -S . -B build/msvc -A x64 -DBUILD_TESTING=ON -DDUOFORGE_WARNINGS_AS_ERRORS=ON`, build and `ctest -C Debug`: 24 of 24 tests pass, 36 s.
-- GCC (MinGW-w64) and Clang (LLVM) are added to the local loop once installed; they catch warnings that MSVC does not report.
+- Toolchains (all native): MSVC (Visual Studio Build Tools 2022, Visual Studio generator), GCC 16.2 (WinLibs MinGW-w64 UCRT) and Clang 23.1 (LLVM, MSVC target), the latter two through Ninja, each in Debug and Release with `-DDUOFORGE_WARNINGS_AS_ERRORS=ON`.
+- GCC and Clang were installed on 2026-10-01 (`winget install BrechtSanders.WinLibs.POSIX.UCRT`, `winget install LLVM.LLVM`). They are newer than the hosted CI compilers (GCC 13.3, Clang 18.1), so both sets of warnings have to stay clean.
 - **Sanitizers stay in hosted CI.** MinGW GCC ships no AddressSanitizer and leak detection does not exist on Windows, so the GCC ASan/UBSan job on Linux is observed on every push before a step counts as done.
 
 ## 10. Alternatives considered
