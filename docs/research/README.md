@@ -6,7 +6,7 @@ The files here are **agent-generated research drafts**. They are **not contracts
 |---|---|---|
 | `champions-reg-mc-report-draft.md` | Champions VGC 2026 Reg M-C: profile parameters, mechanics delta versus Gen 9, M2 decision-domain impact (Mega, team preview, mid-turn boundaries, open team sheets), open questions | Research workflow plus one critic pass (2026-09-30). The M2 points were verified against the pin in `docs/decisions/0005` |
 | `matchup-inventory-draft.jsonl` | Per-Pokémon reachable-mechanics closure. One JSON line per team member; fields: id, category, behavior, Showdown refs, RNG draws, dependencies, complexity, uncertainty | **12 of 12 team members, 375 mechanics.** Rows 1–8 come from the first research pass; rows 9–12 (Archaludon, Farigiraf, Charizard, Grimmsnarl) were added on 2026-09-30 by source reading |
-| `mechanics-inventory.md` | Synthesis: closure tables extracted from the pin, the three cross-cutting passes (implicit mechanics, cross-team interactions, decisions and information), a proposed M3/M4 split, the verification pass and open points | Draft for owner review |
+| `mechanics-inventory.md` | Synthesis: closure tables extracted from the pin, the three cross-cutting passes (implicit mechanics, cross-team interactions, decisions and information), the build order (owner decision 2026-09-30: continuous, no backlog), the verification pass and open points | Draft; build order decided by the owner |
 
 ## What was and was not verified
 
