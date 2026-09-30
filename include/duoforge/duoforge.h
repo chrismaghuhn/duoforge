@@ -1,8 +1,8 @@
 #ifndef DUOFORGE_DUOFORGE_H
 #define DUOFORGE_DUOFORGE_H
 /*
- * DuoForge public API -- PROVISIONAL (M1). Not a frozen ABI
- * (docs/decisions/0002).
+ * DuoForge public API -- PROVISIONAL (M2). Not a frozen ABI
+ * (docs/decisions/0002, 0005).
  *
  * The library holds no mutable global state. A context is immutable after
  * creation and is designed to be shareable read-only across threads; this is
@@ -15,11 +15,13 @@
  * model-facing (no observations, features or candidate ids).
  *
  * Failure atomicity: on any non-OK return no battle, context or RNG state is
- * mutated, no out-parameter or caller buffer is written, and nothing is
- * allocated or leaked.
+ * mutated, no caller buffer is written and nothing is allocated or leaked.
+ * The only out-parameter written on error is the required count of a
+ * model-facing query on E_CAPACITY (decision 0005 section 7).
  *
- * M1 is structural only: there is no step, request, command or observation
- * function, and no Pokemon rules are implemented.
+ * M2 has no combat: there is no damage, move effect, PP change, switch
+ * execution or Mega effect. A valid TURN, REPLACEMENT or PIVOT bundle is
+ * rejected with E_UNSUPPORTED. No Pokemon rules are implemented.
  */
 #include <stdbool.h>
 #include <stddef.h>
@@ -30,35 +32,35 @@ extern "C" {
 #endif
 
 #define DUOFORGE_VERSION_MAJOR 0
-#define DUOFORGE_VERSION_MINOR 2
+#define DUOFORGE_VERSION_MINOR 3
 #define DUOFORGE_VERSION_PATCH 0
-#define DUOFORGE_VERSION_STRING "0.2.0"
+#define DUOFORGE_VERSION_STRING "0.3.0"
 
-/* Identifiers of the artifacts that exist in M1 (registry: decision 0002). */
-#define DUOFORGE_SEMANTICS_ID           1u   /* "duoforge-m1-foundation" */
-#define DUOFORGE_CONTEXT_SCHEMA_VERSION 1u
-#define DUOFORGE_STATE_SCHEMA_VERSION   1u
-#define DUOFORGE_STATE_V1_ENCODED_SIZE  380u /* schema 1 only; size buffers via duoforge_battle_encoded_size */
+/* Identifiers of the artifacts that exist in M2 (registry: decisions 0002, 0005). */
+#define DUOFORGE_SEMANTICS_ID           2u   /* "duoforge-m2-requests" */
+#define DUOFORGE_CONTEXT_SCHEMA_VERSION 2u
+#define DUOFORGE_STATE_SCHEMA_VERSION   2u
+#define DUOFORGE_STATE_V2_ENCODED_SIZE  438u /* schema 2 only; size buffers via duoforge_battle_encoded_size */
 #define DUOFORGE_DIGEST_SIZE            32u
 
-/* Structural capacities of state schema 1 (initial profile bound). */
+/* Structural capacities of state schema 2 (initial profile bound). */
 #define DUOFORGE_SIDE_COUNT       2u
 #define DUOFORGE_ACTIVE_PER_SIDE  2u
 #define DUOFORGE_MAX_ROSTER       6u
 #define DUOFORGE_MAX_MOVE_SLOTS   4u
-#define DUOFORGE_ROSTER_NONE      0xFFu /* "no member" in setup leads */
+#define DUOFORGE_ROSTER_NONE      0xFFu /* "no member" */
 
 /*
- * Status codes. Values are stable within M1; renumbering before the
- * ABI-stability decision is a deliberate, reviewed change
- * (docs/decisions/0002).
+ * Status codes. Values 0..10 are stable since M1; 11 and 12 were added in M2.
+ * Renumbering before the ABI-stability decision is a deliberate, reviewed
+ * change (docs/decisions/0002).
  */
 typedef uint32_t duoforge_status;
 #define DUOFORGE_OK                   0u
 #define DUOFORGE_E_NULL_ARGUMENT      1u  /* a required pointer argument is NULL */
-#define DUOFORGE_E_INVALID_ARGUMENT   2u  /* config/setup value outside its domain */
+#define DUOFORGE_E_INVALID_ARGUMENT   2u  /* config/setup/bundle value outside its domain */
 #define DUOFORGE_E_CONTEXT_MISMATCH   3u  /* handle/encoding bound to another context fingerprint */
-#define DUOFORGE_E_CAPACITY           4u  /* caller buffer too small; M1 encode writes nothing */
+#define DUOFORGE_E_CAPACITY           4u  /* caller buffer too small; encode writes nothing */
 #define DUOFORGE_E_MALFORMED          5u  /* encoded bytes structurally or semantically invalid */
 #define DUOFORGE_E_SCHEMA_MISMATCH    6u  /* wrong artifact kind or unsupported schema version */
 #define DUOFORGE_E_SEMANTICS_MISMATCH 7u  /* encoded under another semantics id */
@@ -66,48 +68,75 @@ typedef uint32_t duoforge_status;
                                              invariant or internal contract violated */
 #define DUOFORGE_E_EXHAUSTED          9u  /* a monotonic counter would overflow */
 #define DUOFORGE_E_OUT_OF_MEMORY      10u
+#define DUOFORGE_E_UNSUPPORTED        11u /* documented not-implemented path (e.g. combat in M2);
+                                             nothing was mutated */
+#define DUOFORGE_E_STALE_EPOCH        12u /* a response carries another request epoch */
 
 const char *duoforge_version_string(void);
 /* "DUOFORGE_OK", ...; any other value gives "DUOFORGE_STATUS_UNKNOWN". */
 const char *duoforge_status_name(duoforge_status status);
 
+/* ---- synthetic move target classes (decision 0005 section 4) ----
+   1..5 take a target selector; 6..9 take DUOFORGE_TARGET_NONE. */
+#define DUOFORGE_TARGET_CLASS_NORMAL                1u /* ally and both foe positions */
+#define DUOFORGE_TARGET_CLASS_ANY                   2u /* every position except self */
+#define DUOFORGE_TARGET_CLASS_ADJACENT_ALLY         3u /* ally */
+#define DUOFORGE_TARGET_CLASS_ADJACENT_ALLY_OR_SELF 4u /* self, ally */
+#define DUOFORGE_TARGET_CLASS_ADJACENT_FOE          5u /* both foe positions */
+#define DUOFORGE_TARGET_CLASS_SELF                  6u
+#define DUOFORGE_TARGET_CLASS_ALL_ADJACENT_FOES     7u
+#define DUOFORGE_TARGET_CLASS_ALLY_SIDE             8u
+#define DUOFORGE_TARGET_CLASS_ALL                   9u
+#define DUOFORGE_TARGET_CLASS_COUNT                 9u
+#define DUOFORGE_TARGET_NONE 0xFFu /* selector value for classes without a choosable target */
+
+/* ---- decision boundaries (decision 0005 section 1) ---- */
+#define DUOFORGE_BOUNDARY_TEAM_SELECTION 1u
+#define DUOFORGE_BOUNDARY_TURN           2u
+#define DUOFORGE_BOUNDARY_REPLACEMENT    3u /* structural only in M2 */
+#define DUOFORGE_BOUNDARY_PIVOT          4u /* structural only in M2 */
+#define DUOFORGE_BOUNDARY_COUNT          4u
+
 /* ---- immutable synthetic context ---- */
-#define DUOFORGE_DATA_KIND_SYNTHETIC 1u /* only accepted value in M1: no real Pokedex data */
+#define DUOFORGE_DATA_KIND_SYNTHETIC 1u /* only accepted value: no real Pokedex data */
 typedef struct duoforge_context duoforge_context;
 typedef struct duoforge_context_config {
     uint32_t data_kind;     /* == DUOFORGE_DATA_KIND_SYNTHETIC */
     uint32_t max_roster;    /* 1..DUOFORGE_MAX_ROSTER */
-    uint32_t brought_count; /* 1..max_roster */
+    uint32_t brought_count; /* 1..max_roster; picked at TEAM_SELECTION */
     uint32_t species_count; /* 1..65535; synthetic species ids 0..species_count-1 */
     uint32_t move_count;    /* 1..65535; synthetic move ids 0..move_count-1 */
+    /* move_count bytes, each a DUOFORGE_TARGET_CLASS_* value 1..9; copied at
+       create (read once) and hashed into the fingerprint. */
+    const uint8_t *move_target_classes;
 } duoforge_context_config;
-/* Checks: NULL(config, out) -> INVALID_ARGUMENT (fields in order) -> OUT_OF_MEMORY. */
+/* Checks: NULL(config, out) -> INVALID_ARGUMENT (fields in order) -> NULL(table)
+   -> INVALID_ARGUMENT (table entries) -> OUT_OF_MEMORY. */
 duoforge_status duoforge_context_create(const duoforge_context_config *config,
                                         duoforge_context **out_context);
 void duoforge_context_destroy(duoforge_context *context); /* NULL is a no-op */
 /* SHA-256 of the canonical context bytes: semantics id, context schema,
-   structural constants and config. Independent of platform and build. */
+   structural constants, config and the SHA-256 of the target-class table.
+   Independent of platform and build. */
 duoforge_status duoforge_context_fingerprint(const duoforge_context *context,
                                              uint8_t out_fingerprint[DUOFORGE_DIGEST_SIZE]);
 
-/* ---- SYNTHETIC battle setup for M1 structural states. Every entry at or
-   after a count must be all-zero. brought_mask and leads are fixture
-   placement, not a team-selection rule or profile; M2 replaces this path
-   (decision 0002). ---- */
+/* ---- SYNTHETIC battle setup. Every entry at or after a count must be
+   all-zero. A battle starts at TEAM_SELECTION with an empty brought set and
+   empty positions (decision 0005 section 2). ---- */
 typedef struct duoforge_move_setup {
     uint32_t move_id; /* < context move_count */
     uint32_t pp_max;  /* 1..255 */
 } duoforge_move_setup;
 typedef struct duoforge_member_setup {
-    uint32_t species_id; /* < context species_count */
-    uint32_t hp_max;     /* 1..65535 (synthetic input; M3 derives it) */
-    uint32_t move_count; /* 1..DUOFORGE_MAX_MOVE_SLOTS */
+    uint32_t species_id;   /* < context species_count */
+    uint32_t hp_max;       /* 1..65535 (synthetic input; M3 derives it) */
+    uint32_t move_count;   /* 1..DUOFORGE_MAX_MOVE_SLOTS */
+    uint32_t mega_capable; /* 0/1 SYNTHETIC stand-in for "holds a matching Mega Stone" */
     duoforge_move_setup moves[DUOFORGE_MAX_MOVE_SLOTS];
 } duoforge_member_setup;
 typedef struct duoforge_side_setup {
     uint32_t member_count; /* brought_count..max_roster; registered roster, stable order */
-    uint32_t brought_mask; /* SYNTHETIC placement: bit i means roster index i is brought */
-    uint32_t leads[DUOFORGE_ACTIVE_PER_SIDE]; /* SYNTHETIC placement; slot b is NONE iff brought_count == 1 */
     duoforge_member_setup members[DUOFORGE_MAX_ROSTER];
 } duoforge_side_setup;
 typedef struct duoforge_battle_setup {
@@ -151,6 +180,90 @@ duoforge_status duoforge_battle_digest(const duoforge_context *ctx, const duofor
    else changes. rng_initseq must be < 2^63 (decision 0001). */
 duoforge_status duoforge_battle_reseed(const duoforge_context *ctx, duoforge_battle *battle,
                                        uint64_t rng_initstate, uint64_t rng_initseq);
+
+/* ---- M2 requests, joint commands and step (decision 0005) ----
+   Model-facing. Records are padding-free and zero-filled by producers; a
+   consumer-supplied record with any nonzero reserved byte is not in the
+   domain. Requests and candidate enumeration are pure: no state, RNG or
+   epoch change; enumerating twice gives identical bytes. */
+#define DUOFORGE_SLOT_NONE   0u /* an unrequested slot */
+#define DUOFORGE_SLOT_MOVE   1u
+#define DUOFORGE_SLOT_SWITCH 2u
+#define DUOFORGE_SLOT_PASS   3u /* forced no-action only where the profile says so */
+#define DUOFORGE_CHOICE_TEAM_SELECTION 1u
+#define DUOFORGE_CHOICE_SLOTS          2u
+/* Profile bound on a complete side-choice domain: max(720 ordered picks of 6,
+   28 x 28 joint slot choices). A caller may allocate this once. */
+#define DUOFORGE_MAX_CANDIDATES 784u
+
+typedef struct duoforge_slot_command {
+    uint8_t kind;        /* DUOFORGE_SLOT_* */
+    uint8_t move_slot;   /* MOVE: 0..3 */
+    uint8_t target;      /* MOVE: flat position side*2+slot, or DUOFORGE_TARGET_NONE */
+    uint8_t mega;        /* MOVE: 0/1 Mega Evolution declaration */
+    uint8_t reserve;     /* SWITCH: roster index of the reserve */
+    uint8_t reserved[3]; /* zero */
+} duoforge_slot_command; /* 8 bytes */
+
+typedef struct duoforge_side_choice {
+    uint32_t epoch;      /* the request epoch answered */
+    uint8_t side;        /* 0/1 */
+    uint8_t kind;        /* DUOFORGE_CHOICE_* */
+    uint8_t pick_count;  /* TEAM_SELECTION: context brought_count; else 0 */
+    uint8_t picks[DUOFORGE_MAX_ROSTER]; /* TEAM_SELECTION: ordered roster indices, leads first; rest 0 */
+    uint8_t reserved[3]; /* zero */
+    duoforge_slot_command slots[DUOFORGE_ACTIVE_PER_SIDE]; /* SLOTS: unrequested slots are all-zero */
+} duoforge_side_choice; /* 32 bytes */
+
+typedef struct duoforge_decision_bundle {
+    uint32_t epoch;
+    uint8_t response_mask; /* must equal the request mask */
+    uint8_t reserved[3];   /* zero */
+    duoforge_side_choice responses[DUOFORGE_SIDE_COUNT]; /* responses[s] is all-zero unless bit s is set */
+} duoforge_decision_bundle; /* 72 bytes */
+
+typedef struct duoforge_request {
+    uint32_t epoch;
+    uint32_t candidate_count; /* exact size of this player's domain (0 when not requested) */
+    uint8_t boundary_kind;    /* DUOFORGE_BOUNDARY_* */
+    uint8_t player;
+    uint8_t requested;        /* 1 iff this player must respond at this boundary */
+    uint8_t slot_mask;        /* bit k: position k needs a slot command (0 at TEAM_SELECTION) */
+} duoforge_request; /* 12 bytes */
+
+#define DUOFORGE_STEP_BOUNDARY 1u /* a new decision boundary was reached */
+#define DUOFORGE_STEP_REPROMPT 2u /* rule-authorized re-prompt (no M2 mechanic produces it) */
+typedef struct duoforge_step_result {
+    uint32_t epoch;        /* the new request epoch */
+    uint8_t kind;          /* DUOFORGE_STEP_* */
+    uint8_t boundary_kind; /* the new boundary */
+    uint8_t request_mask;  /* who must respond next */
+    uint8_t reserved;      /* zero */
+} duoforge_step_result; /* 8 bytes */
+
+/* The request of one player, built only from that player's authorized view.
+   Checks: NULL -> CONTEXT_MISMATCH -> INVALID_ARGUMENT (player) -> INVARIANT
+   (engine-side failure) -> UNSUPPORTED (an alive occupant with no selectable
+   move would need Struggle, which is M3). */
+duoforge_status duoforge_battle_request(const duoforge_context *ctx, const duoforge_battle *battle,
+                                        uint32_t player, duoforge_request *out_request);
+/* The complete joint side-choice domain of one player in documented order
+   (decision 0005 section 3). With capacity < count the call returns
+   E_CAPACITY and writes ONLY *out_count = required; the buffer is untouched.
+   Otherwise the first *out_count records are written. */
+duoforge_status duoforge_battle_candidates(const duoforge_context *ctx, const duoforge_battle *battle,
+                                           uint32_t player, duoforge_side_choice *buffer, uint32_t capacity,
+                                           uint32_t *out_count);
+/* Submits the responses of exactly the requested sides. Checks: NULL ->
+   CONTEXT_MISMATCH -> INVARIANT -> STALE_EPOCH (bundle or response epoch) ->
+   INVALID_ARGUMENT (mask, reserved bytes, side/kind fields, a response
+   outside the offered domain, a nonzero response of an unrequested side).
+   A valid TEAM_SELECTION bundle performs the transition to TURN. A valid
+   TURN, REPLACEMENT or PIVOT bundle returns E_UNSUPPORTED: M2 has no combat.
+   E_EXHAUSTED if the epoch or activation counter would overflow. Every
+   failure leaves the battle unchanged and *out_result unwritten. */
+duoforge_status duoforge_battle_step(const duoforge_context *ctx, duoforge_battle *battle,
+                                     const duoforge_decision_bundle *bundle, duoforge_step_result *out_result);
 
 #ifdef __cplusplus
 }

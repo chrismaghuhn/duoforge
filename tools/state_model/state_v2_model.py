@@ -665,6 +665,80 @@ def candidates(ctx, st, player):
     return (st['epoch'], st['boundary'], 1, sd['requested_slots'], len(cands)), cands
 
 
+
+# ---------------------------------------------------------------- observation
+HP_EXACT, HP_PERCENT, HP_UNKNOWN = 1, 2, 3
+PP_EXACT, PP_UNKNOWN = 1, 3
+FLAG_NONE, FLAG_RED, FLAG_YELLOW, FLAG_GREEN = 0, 1, 2, 3
+LOC_UNDETERMINED, LOC_BENCH, LOC_ACTIVE, LOC_NOT_BROUGHT = 0, 1, 2, 3
+OBSERVATION_SIZE = 320
+
+
+def hp_percent(hp, hp_max):
+    """Champions HP display: floor percent, minimum 1 while alive, colour
+    flag at exactly 20 and 50 (sim/pokemon.ts:2060-2073 at the pin)."""
+    if hp == 0:
+        return 0, FLAG_NONE
+    pct = (100 * hp) // hp_max
+    if pct == 0:
+        pct = 1
+    flag = FLAG_NONE
+    if pct == 20:
+        flag = FLAG_YELLOW if hp * 5 > hp_max else FLAG_RED
+    elif pct == 50:
+        flag = FLAG_GREEN if hp * 2 > hp_max else FLAG_YELLOW
+    return pct, flag
+
+
+def observe(ctx, st, player):
+    """Perspective-safe observation of `player` (decision 0005 section 6):
+    320 bytes, absolute side order."""
+    requested = (st['request_mask'] >> player) & 1
+    b = bytearray(struct.pack('<IBBBB', st['epoch'], st['boundary'], player, requested,
+                              st['sides'][player]['requested_slots'] if requested else 0))
+    for s in range(2):
+        sd = st['sides'][s]
+        own = s == player
+        seen = st['sides'][player]['seen']
+        occupants = [p['occ'] for p in sd['pos']]
+        for m in range(MAX_ROSTER):
+            mem = sd['members'][m]
+            registered = m < sd['member_count']
+            if not registered:
+                b += bytes(24)
+                continue
+            if own:
+                hp, hp_max, hp_kind, flag = mem['hp'], mem['hp_max'], HP_EXACT, FLAG_NONE
+                pp = [mv['pp'] for mv in mem['moves']]
+                pp_kind = PP_EXACT
+                if st['boundary'] == TEAM_SELECTION:
+                    loc = LOC_UNDETERMINED
+                elif m in occupants:
+                    loc = LOC_ACTIVE
+                elif (sd['brought'] >> m) & 1:
+                    loc = LOC_BENCH
+                else:
+                    loc = LOC_NOT_BROUGHT
+            else:
+                pp = [0, 0, 0, 0]
+                pp_kind = PP_UNKNOWN
+                if (seen >> m) & 1:
+                    pct, flag = hp_percent(mem['hp'], mem['hp_max'])
+                    hp, hp_max, hp_kind = pct, 100, HP_PERCENT
+                    loc = LOC_ACTIVE if m in occupants else LOC_BENCH
+                else:
+                    hp, hp_max, hp_kind, flag = 0, 0, HP_UNKNOWN, FLAG_NONE
+                    loc = LOC_UNDETERMINED
+            b += struct.pack('<HHH', mem['species'], hp, hp_max)
+            b += struct.pack('<HHHH', *[mv['id'] for mv in mem['moves']])
+            b += bytes(pp)
+            b += bytes([mem['move_count'], hp_kind, flag, pp_kind, loc, mem['mega_capable']])
+        b += bytes([sd['member_count'], occupants[0], occupants[1], sd['mega_used']])
+        b += bytes(sd['order'] if own else [NONE] * MAX_ROSTER)
+        b += bytes(2)
+    assert len(b) == OBSERVATION_SIZE
+    return bytes(b)
+
 # ---------------------------------------------------------------- fixtures
 def fixture_g1():
     return init_state(C1, setup_g1())
@@ -899,6 +973,15 @@ def main():
             if 0 < len(cands) <= 40:
                 for i, c in enumerate(cands):
                     print('domain %s p%d %02d %s' % (name, player, i, c.hex()))
+
+    for name, ctx, build in FIXTURES:
+        st = build()
+        for player in range(2):
+            ob = observe(ctx, st, player)
+            print('observation %s p%d sha256=%s' % (name, player, hashlib.sha256(ob).hexdigest()))
+            if name in ('F3', 'F2'):
+                for off in range(0, OBSERVATION_SIZE, 32):
+                    print('observation %s p%d %03d: %s' % (name, player, off, ob[off:off + 32].hex()))
 
     for name in ('F1', 'F2'):
         counts = mutation_counts(C1, encoded[name])
