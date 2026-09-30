@@ -1,6 +1,6 @@
 # 0005 — Requests, joint commands, information boundary, state v2
 
-Status: **proposed** (M2). It becomes binding when the owner accepts the reviewed M2 change. M2 has **no combat**: a valid TURN, REPLACEMENT or PIVOT bundle is rejected atomically with `E_UNSUPPORTED`. Nothing here claims that the engine plays Pokémon.
+Status: **proposed**, implemented and tested in M2 (branch `chris/m2-requests-and-commands`). It becomes binding when the owner accepts the reviewed M2 change. M2 has **no combat**: a valid TURN, REPLACEMENT or PIVOT bundle is rejected atomically with `E_UNSUPPORTED`. Nothing here claims that the engine plays Pokémon.
 
 Showdown citations are `path:line` at the pin `b2cb775b0616115b775534eaeff50300e1fc81fc` (decision 0004). No Showdown code is vendored.
 
@@ -79,6 +79,7 @@ The 36 distinct moves of both teams have classes normal 21, self 4, allAdjacentF
 - **PP:** own exact; opponent UNKNOWN (tag). Values behind an UNKNOWN tag are zero and carry no information.
 - `mega_used` of both sides and the occupants of all four positions are public.
 - Never exposed: the opponent's sealed commitment, bench order, exact HP, PP, RNG, digests.
+- **Known prototype limits (M3 work):** a seen but benched foe shows its *current* percent because no bench HP change exists yet; once one exists (Wish, Healing Wish), the knowledge state must snapshot the last-seen value instead. The observation carries only the viewer's own `requested` flag, not whether the opponent must also act at a pause. Gender, item, ability and nature fields arrive with real data in M3. A re-prompt does not change the re-prompted side's domain yet (the trapping mechanic that would is M3/M4).
 
 ## 7. Output convention (resolves the open decision)
 
@@ -102,7 +103,19 @@ New codes: `E_UNSUPPORTED 11` (documented not-implemented path), `E_STALE_EPOCH 
 - **Invariants v2** extend the v1 order: boundary kind, epoch nonzero, request mask 1..3, per side (v1 checks; `mega_capable`/`mega_used`/`sealed` in {0,1}; `brought_order` consistent with the mask; TEAM_SELECTION implies empty mask, empty positions, no seal; requested slots per kind; sealed rules of section 5; sealed command ranges), then per player `seen_mask` rules.
 - **Registry:** CONTEXT (1) schema 2, BATTLE_STATE (2) schema 2, semantics 2 = "duoforge-m2-requests". The v1 goldens become "rejected: schema 1" tests. The oracle `tools/state_model/state_v2_model.py` reproduces the goldens, the invariant order and every domain (counts, order, bytes) independently of the C code.
 
-## 10. Alternatives considered
+## 10. Evidence (local, 2026-09-30)
+
+| Test | Covers |
+|---|---|
+| `duoforge.request.domain` | Every fixture and player against the oracle (counts, order, bytes), stable enumeration, purity, output convention, Struggle UNSUPPORTED, Mega constraints, bounds 720 and 636 (both below 784). |
+| `duoforge.request.step` | Step reproduces the white-box fixtures, every enumerated pick pair accepted (72 on G7), malformed-input atomicity table, honest UNSUPPORTED for TURN/REPLACEMENT/PIVOT, exhaustion, re-prompt as its own category. |
+| `duoforge.request.contract` | Snapshot at every boundary kind (and a re-prompted TURN), late and stale responses at every boundary, two-side replacement and pivot, one-side pivot continuation. |
+| `duoforge.request.information` | Observation vs oracle, perspective rules, HP tables, nine paired-information cases with identical statuses, counts and bytes, legitimate differences visible. |
+| `duoforge.state.*`, `duoforge.codec.*` | v2 invariants (34 ids), goldens, 41 targeted edits, 335,070 single-byte mutations with exact per-region counts, 8,596 setup creates. |
+
+Negative controls (12, run locally on 2026-09-30, listed in the M2 completion report): each breaks one guarantee (reserve conflict, double Mega, enumeration order, foe PP leak, foe bench-order leak, mutation before validation, stale-epoch checks, query purity, E_CAPACITY buffer write, re-prompt sealing, seen-mask invariant, entry disclosure) and turns the named test red.
+
+## 11. Alternatives considered
 
 - Player-relative target selectors: rejected; absolute positions keep engine identity independent of rendering (decision 0002 section 4).
 - Shrinking target sets by occupancy: rejected (section 4).
