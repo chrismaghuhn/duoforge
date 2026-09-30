@@ -18,6 +18,8 @@ include(cmake/DuoforgeTargetOptions.cmake)
 
 add_library(duoforge STATIC
     src/duoforge.c
+    src/core/alloc.c
+    src/core/sha256.c
 )
 target_include_directories(duoforge
     PUBLIC

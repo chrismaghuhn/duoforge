@@ -33,6 +33,15 @@ function(duoforge_add_test)
     endif()
 endfunction()
 
+# Shared test support (explicit test context, no globals).
+add_library(duoforge_test_support STATIC support/check.c)
+target_include_directories(duoforge_test_support PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(duoforge_test_support PUBLIC duoforge)
+duoforge_configure_target(duoforge_test_support)
+
+duoforge_add_test(NAME duoforge.unit.arith SOURCES test_arith.c WHITEBOX)
+duoforge_add_test(NAME duoforge.unit.sha256 SOURCES test_sha256.c WHITEBOX)
+
 # Black-box smoke test (M0), kept under its original name.
 add_executable(duoforge_smoke_test smoke_test.c)
 target_link_libraries(duoforge_smoke_test PRIVATE duoforge)
