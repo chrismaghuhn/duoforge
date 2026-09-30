@@ -77,6 +77,14 @@ https://csrc.nist.gov/pubs/fips/180-4/upd1/final
 
 Specification of SHA-256, used for the context fingerprint and state digest (`src/core/sha256.c`, written from the specification; no code imported). Test vectors: the FIPS 180-2 examples and coreutils `sha256sum` 9.4.
 
+## S10 — PokéWiki (lookup source named by the owner)
+
+```text
+https://www.pokewiki.de/
+```
+
+Named by the owner on 2026-10-01 as the place to look up intended game behaviour when a question arises. It is a German community wiki: a mutable secondary source, not pinned, and **never a source of test expectations**. The pinned Showdown revision stays the executable reference; a disagreement between the two is recorded in `docs/OPEN_DECISIONS.md` and decided by the owner. No page has been used for any rule yet. An automated request on 2026-10-01 was answered with HTTP 403, so pages have to be read in a browser; record the page URL and retrieval date with each use.
+
 ## Limits of this research
 
 No code benchmark was reproduced. No Gen-9 C doubles implementation was measured. No current official VGC regulation or chosen two-team matchup was certified. No upstream commit hash was frozen. No external source is treated as proof that this proposed implementation is correct.
