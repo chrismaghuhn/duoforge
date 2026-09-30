@@ -1,10 +1,10 @@
 /*
  * T13 duoforge.codec.mutation: exhaustive single-byte substitution over the
- * golden F1 and F2 encodings (380 x 255 = 96,900 inputs each) via decode into
- * dst, and over F1 again via create_decoded. Every outcome is atomic (dst
- * unchanged / *out untouched, no leak); every accepted input re-encodes to
- * itself and passes check; the exact per-region outcome counts equal the
- * independent structural model (tools/state_model/state_v1_model.py).
+ * golden F1 and F2 v2 encodings (438 x 255 = 111,690 inputs each) via decode
+ * into dst, and over F1 again via create_decoded. Every outcome is atomic
+ * (dst unchanged / *out untouched, no leak); every accepted input re-encodes
+ * to itself and passes check; the exact per-region outcome counts equal the
+ * independent structural model (tools/state_model/state_v2_model.py).
  * Plus 10,000 seeded 2..4-byte mutations (property only). Inputs are
  * exact-size heap buffers so over-reads fail under ASan.
  */
@@ -17,50 +17,52 @@
 #include "support/check.h"
 #include "support/fixtures.h"
 
-enum { REGION_COUNT = 14, STATUS_COUNT = 5 };
+enum { REGION_COUNT = 15, STATUS_COUNT = 5 };
 static const struct {
     size_t lo;
     size_t hi;
     const char *name;
 } regions[REGION_COUNT] = {
-    {0, 8, "magic"},          {8, 10, "kind"},           {10, 12, "schema"},          {12, 16, "semantics"},
-    {16, 20, "total_length"}, {20, 52, "fingerprint"},   {52, 60, "rng.state"},       {60, 68, "rng.inc"},
-    {68, 76, "rng.draws"},    {76, 80, "next_activation"}, {80, 92, "side0.header"},   {92, 230, "side0.members"},
-    {230, 242, "side1.header"}, {242, 380, "side1.members"},
+    {0, 8, "magic"},           {8, 10, "kind"},            {10, 12, "schema"},         {12, 16, "semantics"},
+    {16, 20, "total_length"},  {20, 52, "fingerprint"},    {52, 60, "rng.state"},      {60, 68, "rng.inc"},
+    {68, 76, "rng.draws"},     {76, 80, "next_activation"}, {80, 86, "boundary"},      {86, 118, "side0.header"},
+    {118, 262, "side0.members"}, {262, 294, "side1.header"}, {294, 438, "side1.members"},
 };
 
 /* Status column order: OK, MALFORMED, CONTEXT_MISMATCH, SCHEMA_MISMATCH, SEMANTICS_MISMATCH. */
 static const unsigned expected_f1[REGION_COUNT][STATUS_COUNT] = {
-    {0, 2040, 0, 0, 0}, /* magic */
-    {0, 0, 0, 510, 0}, /* kind */
-    {0, 0, 0, 510, 0}, /* schema */
-    {0, 0, 0, 0, 1020}, /* semantics */
-    {0, 1020, 0, 0, 0}, /* total_length */
-    {0, 0, 8160, 0, 0}, /* fingerprint */
-    {2040, 0, 0, 0, 0}, /* rng.state */
-    {1912, 128, 0, 0, 0}, /* rng.inc */
-    {2040, 0, 0, 0, 0}, /* rng.draws */
-    {1015, 5, 0, 0, 0}, /* next_activation */
-    {9, 3051, 0, 0, 0}, /* side0.header */
-    {6868, 28322, 0, 0, 0}, /* side0.members */
-    {4, 3056, 0, 0, 0}, /* side1.header */
-    {6676, 28514, 0, 0, 0}, /* side1.members */
+    {0, 2040, 0, 0, 0},     /* magic */
+    {0, 0, 0, 510, 0},      /* kind */
+    {0, 0, 0, 510, 0},      /* schema */
+    {0, 0, 0, 0, 1020},     /* semantics */
+    {0, 1020, 0, 0, 0},     /* total_length */
+    {0, 0, 8160, 0, 0},     /* fingerprint */
+    {2040, 0, 0, 0, 0},     /* rng.state */
+    {1912, 128, 0, 0, 0},   /* rng.inc */
+    {2040, 0, 0, 0, 0},     /* rng.draws */
+    {1015, 5, 0, 0, 0},     /* next_activation */
+    {1021, 509, 0, 0, 0},   /* boundary, request_mask, epoch */
+    {4, 8156, 0, 0, 0},     /* side0.header */
+    {6926, 29794, 0, 0, 0}, /* side0.members */
+    {4, 8156, 0, 0, 0},     /* side1.header */
+    {6744, 29976, 0, 0, 0}, /* side1.members */
 };
 static const unsigned expected_f2[REGION_COUNT][STATUS_COUNT] = {
-    {0, 2040, 0, 0, 0}, /* magic */
-    {0, 0, 0, 510, 0}, /* kind */
-    {0, 0, 0, 510, 0}, /* schema */
-    {0, 0, 0, 0, 1020}, /* semantics */
-    {0, 1020, 0, 0, 0}, /* total_length */
-    {0, 0, 8160, 0, 0}, /* fingerprint */
-    {2040, 0, 0, 0, 0}, /* rng.state */
-    {1912, 128, 0, 0, 0}, /* rng.inc */
-    {2040, 0, 0, 0, 0}, /* rng.draws */
-    {1014, 6, 0, 0, 0}, /* next_activation */
-    {13, 3047, 0, 0, 0}, /* side0.header */
-    {7024, 28166, 0, 0, 0}, /* side0.members */
-    {5, 3055, 0, 0, 0}, /* side1.header */
-    {6902, 28288, 0, 0, 0}, /* side1.members */
+    {0, 2040, 0, 0, 0},     /* magic */
+    {0, 0, 0, 510, 0},      /* kind */
+    {0, 0, 0, 510, 0},      /* schema */
+    {0, 0, 0, 0, 1020},     /* semantics */
+    {0, 1020, 0, 0, 0},     /* total_length */
+    {0, 0, 8160, 0, 0},     /* fingerprint */
+    {2040, 0, 0, 0, 0},     /* rng.state */
+    {1912, 128, 0, 0, 0},   /* rng.inc */
+    {2040, 0, 0, 0, 0},     /* rng.draws */
+    {1014, 6, 0, 0, 0},     /* next_activation */
+    {1021, 509, 0, 0, 0},   /* boundary, request_mask, epoch */
+    {14, 8146, 0, 0, 0},    /* side0.header */
+    {7082, 29638, 0, 0, 0}, /* side0.members */
+    {7, 8153, 0, 0, 0},     /* side1.header */
+    {6970, 29750, 0, 0, 0}, /* side1.members */
 };
 
 static int status_column(duoforge_status st)
@@ -81,9 +83,9 @@ static int status_column(duoforge_status st)
     }
 }
 
-static void raw(const duoforge_battle *b, uint8_t out[DUOFORGE_STATE_V1_ENCODED_SIZE])
+static void raw(const duoforge_battle *b, uint8_t out[DUOFORGE_STATE_V2_ENCODED_SIZE])
 {
-    memset(out, 0, DUOFORGE_STATE_V1_ENCODED_SIZE);
+    memset(out, 0, DUOFORGE_STATE_V2_ENCODED_SIZE);
     dfi_encode_unchecked(b, out);
 }
 
@@ -91,14 +93,14 @@ static void raw(const duoforge_battle *b, uint8_t out[DUOFORGE_STATE_V1_ENCODED_
 static duoforge_status decode_one(df_test *t, const duoforge_context *c1, duoforge_battle *dst,
                                   const uint8_t *in, bool via_create, unsigned *violations)
 {
-    uint8_t before[DUOFORGE_STATE_V1_ENCODED_SIZE];
-    uint8_t after[DUOFORGE_STATE_V1_ENCODED_SIZE];
+    uint8_t before[DUOFORGE_STATE_V2_ENCODED_SIZE];
+    uint8_t after[DUOFORGE_STATE_V2_ENCODED_SIZE];
     duoforge_status st;
     if (via_create) {
         df_sentinel sentinel;
         duoforge_battle *const marker = (duoforge_battle *)(void *)&sentinel;
         duoforge_battle *out = marker;
-        st = duoforge_battle_create_decoded(c1, in, DUOFORGE_STATE_V1_ENCODED_SIZE, &out);
+        st = duoforge_battle_create_decoded(c1, in, DUOFORGE_STATE_V2_ENCODED_SIZE, &out);
         if (st == DUOFORGE_OK) {
             raw(out, after);
             *violations += memcmp(after, in, sizeof after) != 0 ? 1u : 0u;
@@ -109,7 +111,7 @@ static duoforge_status decode_one(df_test *t, const duoforge_context *c1, duofor
         }
     } else {
         raw(dst, before);
-        st = duoforge_battle_decode(c1, dst, in, DUOFORGE_STATE_V1_ENCODED_SIZE);
+        st = duoforge_battle_decode(c1, dst, in, DUOFORGE_STATE_V2_ENCODED_SIZE);
         raw(dst, after);
         if (st == DUOFORGE_OK) {
             *violations += memcmp(after, in, sizeof after) != 0 ? 1u : 0u;
@@ -129,7 +131,7 @@ static void sweep(df_test *t, const duoforge_context *c1, duoforge_battle *dst, 
     memset(counts, 0, sizeof counts);
     unsigned violations = 0;
     unsigned unknown = 0;
-    uint8_t *in = df_heap_copy(golden, DUOFORGE_STATE_V1_ENCODED_SIZE);
+    uint8_t *in = df_heap_copy(golden, DUOFORGE_STATE_V2_ENCODED_SIZE);
     for (unsigned r = 0; r < REGION_COUNT; ++r) {
         for (size_t off = regions[r].lo; off < regions[r].hi; ++off) {
             for (unsigned v = 0; v < 256; ++v) {
@@ -164,7 +166,6 @@ int main(void)
 {
     df_test t;
     df_test_begin(&t, "duoforge.codec.mutation");
-
     duoforge_context *c1 = df_make_context(&df_config_c1);
     duoforge_battle *dst = df_make_f2(c1);
 
@@ -178,15 +179,15 @@ int main(void)
         dfi_rng_seed(&rng, 20260930u, 1u);
         unsigned violations = 0;
         unsigned unknown = 0;
-        uint8_t *in = df_heap_copy(df_golden_f1, DUOFORGE_STATE_V1_ENCODED_SIZE);
+        uint8_t *in = df_heap_copy(df_golden_f1, DUOFORGE_STATE_V2_ENCODED_SIZE);
         for (unsigned i = 0; i < 10000; ++i) {
-            memcpy(in, df_golden_f1, DUOFORGE_STATE_V1_ENCODED_SIZE);
+            memcpy(in, df_golden_f1, DUOFORGE_STATE_V2_ENCODED_SIZE);
             uint32_t n = 0;
             (void)dfi_rng_bounded_u32(&rng, 3u, &n);
             for (uint32_t j = 0; j < n + 2u; ++j) {
                 uint32_t off = 0;
                 uint32_t val = 0;
-                (void)dfi_rng_bounded_u32(&rng, DUOFORGE_STATE_V1_ENCODED_SIZE, &off);
+                (void)dfi_rng_bounded_u32(&rng, DUOFORGE_STATE_V2_ENCODED_SIZE, &off);
                 (void)dfi_rng_bounded_u32(&rng, 256u, &val);
                 in[off] = (uint8_t)val;
             }

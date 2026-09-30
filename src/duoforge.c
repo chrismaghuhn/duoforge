@@ -30,6 +30,10 @@ const char *duoforge_status_name(duoforge_status status)
         return "DUOFORGE_E_EXHAUSTED";
     case DUOFORGE_E_OUT_OF_MEMORY:
         return "DUOFORGE_E_OUT_OF_MEMORY";
+    case DUOFORGE_E_UNSUPPORTED:
+        return "DUOFORGE_E_UNSUPPORTED";
+    case DUOFORGE_E_STALE_EPOCH:
+        return "DUOFORGE_E_STALE_EPOCH";
     default:
         return "DUOFORGE_STATUS_UNKNOWN";
     }

@@ -1,9 +1,10 @@
 /*
- * T11 duoforge.codec.golden (white-box parts marked): canonical encodings of
- * F1/F2/F3 equal the hand-assembled goldens (independent structural model),
- * digests equal the literal SHA-256 values, decode round-trips byte-exactly,
- * the RNG continues across encode/decode exactly as the pinned KAT, and the
- * canonical C1 context bytes hash to the C1 fingerprint.
+ * T11 duoforge.codec.golden (white-box parts marked): canonical v2 encodings
+ * of F1/F2/F3 equal the hand-assembled goldens (independent structural
+ * model), digests of G1/F1/F2/G3/F3 equal the literal SHA-256 values, decode
+ * round-trips byte-exactly, the RNG continues across encode/decode exactly as
+ * the pinned KAT, and the canonical C1 context bytes hash to the C1
+ * fingerprint.
  */
 #include <stdio.h>
 #include <string.h>
@@ -24,19 +25,21 @@ static void check_digest(df_test *t, const duoforge_context *ctx, const duoforge
     DF_CHECK(t, df_hex_to_bytes(hex, expected, sizeof expected));
     DF_CHECK(t, duoforge_battle_digest(ctx, b, digest) == DUOFORGE_OK);
     DF_CHECK_BYTES(t, digest, expected, sizeof digest, what);
-    /* The literal digest is also the SHA-256 of the golden bytes. */
-    DF_CHECK(t, dfi_sha256(golden, DUOFORGE_STATE_V1_ENCODED_SIZE, golden_sha));
-    DF_CHECK_BYTES(t, golden_sha, expected, sizeof golden_sha, what);
+    if (golden != NULL) {
+        /* The literal digest is also the SHA-256 of the golden bytes. */
+        DF_CHECK(t, dfi_sha256(golden, DUOFORGE_STATE_V2_ENCODED_SIZE, golden_sha));
+        DF_CHECK_BYTES(t, golden_sha, expected, sizeof golden_sha, what);
+    }
 }
 
 static void check_encode(df_test *t, const duoforge_context *ctx, const duoforge_battle *b, const uint8_t *golden,
                          const char *what)
 {
-    uint8_t buf[DUOFORGE_STATE_V1_ENCODED_SIZE];
+    uint8_t buf[DUOFORGE_STATE_V2_ENCODED_SIZE];
     size_t written = 0;
     memset(buf, 0xA5, sizeof buf);
     DF_CHECK(t, duoforge_battle_encode(ctx, b, buf, sizeof buf, &written) == DUOFORGE_OK);
-    DF_CHECK_EQ_U64(t, written, 380u);
+    DF_CHECK_EQ_U64(t, written, 438u);
     DF_CHECK_BYTES(t, buf, golden, sizeof buf, what);
 }
 
@@ -47,24 +50,33 @@ int main(void)
 
     duoforge_context *c1 = df_make_context(&df_config_c1);
     duoforge_context *c3 = df_make_context(&df_config_c3);
-    duoforge_battle_setup setup;
-
-    df_setup_f1(&setup);
-    duoforge_battle *f1 = df_make_battle(c1, &setup);
+    duoforge_battle *g1 = df_make_g1(c1);
+    duoforge_battle *f1 = df_make_f1(c1);
     duoforge_battle *f2 = df_make_f2(c1);
-    df_setup_f3(&setup);
-    duoforge_battle *f3 = df_make_battle(c3, &setup);
+    duoforge_battle *g3 = df_make_g3(c3);
+    duoforge_battle *f3 = df_make_f3(c3);
 
     size_t size = 0;
     DF_CHECK(&t, duoforge_battle_encoded_size(c1, f1, &size) == DUOFORGE_OK);
-    DF_CHECK_EQ_U64(&t, size, 380u); /* literal from the layout table */
+    DF_CHECK_EQ_U64(&t, size, 438u); /* literal from the layout table */
 
     check_encode(&t, c1, f1, df_golden_f1, "encode F1");
     check_encode(&t, c1, f2, df_golden_f2, "encode F2");
     check_encode(&t, c3, f3, df_golden_f3, "encode F3");
+    check_digest(&t, c1, g1, DF_DIGEST_G1_HEX, NULL, "digest G1");
     check_digest(&t, c1, f1, DF_DIGEST_F1_HEX, df_golden_f1, "digest F1");
     check_digest(&t, c1, f2, DF_DIGEST_F2_HEX, df_golden_f2, "digest F2");
+    check_digest(&t, c3, g3, DF_DIGEST_G3_HEX, NULL, "digest G3");
     check_digest(&t, c3, f3, DF_DIGEST_F3_HEX, df_golden_f3, "digest F3");
+
+    /* Layout spot checks on the F1 golden (decision 0005 section 9). */
+    DF_CHECK_EQ_U64(&t, df_golden_f1[80], DUOFORGE_BOUNDARY_TURN); /* boundary_kind */
+    DF_CHECK_EQ_U64(&t, df_golden_f1[81], 3u);                     /* request_mask */
+    DF_CHECK_EQ_U64(&t, df_golden_f1[82], 2u);                     /* epoch low byte */
+    DF_CHECK_EQ_U64(&t, df_golden_f1[87], 0x0Fu);                  /* s0 brought */
+    DF_CHECK_EQ_U64(&t, df_golden_f1[91], 0x0Au);                  /* s0 seen (s1 leads 1,3) */
+    DF_CHECK_EQ_U64(&t, df_golden_f1[92], 2u);                     /* s0 order[0] */
+    DF_CHECK_EQ_U64(&t, df_golden_f1[267], 0x05u);                 /* s1 seen (s0 leads 2,0) */
 
     /* Round trips: create_decoded of F1/F2, decode(dst) of F3. */
     {
@@ -74,9 +86,9 @@ int main(void)
             const duoforge_battle *built;
         } cases[] = {{c1, df_golden_f1, f1}, {c1, df_golden_f2, f2}};
         for (unsigned i = 0; i < 2; ++i) {
-            uint8_t *in = df_heap_copy(cases[i].golden, DUOFORGE_STATE_V1_ENCODED_SIZE);
+            uint8_t *in = df_heap_copy(cases[i].golden, DUOFORGE_STATE_V2_ENCODED_SIZE);
             duoforge_battle *d = NULL;
-            DF_CHECK(&t, duoforge_battle_create_decoded(cases[i].ctx, in, DUOFORGE_STATE_V1_ENCODED_SIZE, &d) ==
+            DF_CHECK(&t, duoforge_battle_create_decoded(cases[i].ctx, in, DUOFORGE_STATE_V2_ENCODED_SIZE, &d) ==
                              DUOFORGE_OK);
             check_encode(&t, cases[i].ctx, d, cases[i].golden, "re-encode decoded");
             bool eq = false;
@@ -87,8 +99,8 @@ int main(void)
         duoforge_battle *dst = NULL;
         DF_CHECK(&t, duoforge_battle_clone(c3, f3, &dst) == DUOFORGE_OK);
         dst->sides[0].members[0].hp = 7u; /* make dst differ before decode */
-        uint8_t *in = df_heap_copy(df_golden_f3, DUOFORGE_STATE_V1_ENCODED_SIZE);
-        DF_CHECK(&t, duoforge_battle_decode(c3, dst, in, DUOFORGE_STATE_V1_ENCODED_SIZE) == DUOFORGE_OK);
+        uint8_t *in = df_heap_copy(df_golden_f3, DUOFORGE_STATE_V2_ENCODED_SIZE);
+        DF_CHECK(&t, duoforge_battle_decode(c3, dst, in, DUOFORGE_STATE_V2_ENCODED_SIZE) == DUOFORGE_OK);
         check_encode(&t, c3, dst, df_golden_f3, "decode into dst");
         df_free(in);
         duoforge_battle_destroy(dst);
@@ -108,7 +120,7 @@ int main(void)
             DF_CHECK(&t, dfi_rng_next_u32(&a->rng, &v) == DUOFORGE_OK);
             DF_CHECK_EQ_U64(&t, v, raw16[i]);
         }
-        uint8_t enc[DUOFORGE_STATE_V1_ENCODED_SIZE];
+        uint8_t enc[DUOFORGE_STATE_V2_ENCODED_SIZE];
         df_encode(c1, a, enc);
         uint8_t *in = df_heap_copy(enc, sizeof enc);
         duoforge_battle *d = NULL;
@@ -131,6 +143,7 @@ int main(void)
         uint8_t sha[DUOFORGE_DIGEST_SIZE];
         uint8_t fp[DUOFORGE_DIGEST_SIZE];
         uint8_t expected[DUOFORGE_DIGEST_SIZE];
+        uint8_t table_sha[DUOFORGE_DIGEST_SIZE];
         dfi_context_canonical_bytes(c1, bytes);
         DF_CHECK_BYTES(&t, bytes, df_context_c1_bytes, sizeof bytes, "C1 canonical bytes");
         DF_CHECK(&t, dfi_sha256(bytes, sizeof bytes, sha));
@@ -138,10 +151,15 @@ int main(void)
         DF_CHECK(&t, df_hex_to_bytes(DF_FP_C1_HEX, expected, sizeof expected));
         DF_CHECK_BYTES(&t, sha, expected, sizeof sha, "sha(C1 bytes)");
         DF_CHECK_BYTES(&t, fp, expected, sizeof fp, "C1 fingerprint");
+        /* Bytes 31..63 are the SHA-256 of the 36-byte table. */
+        DF_CHECK(&t, dfi_sha256(df_table_t1, sizeof df_table_t1, table_sha));
+        DF_CHECK_BYTES(&t, bytes + 31, table_sha, sizeof table_sha, "table hash in preimage");
     }
 
+    duoforge_battle_destroy(g1);
     duoforge_battle_destroy(f1);
     duoforge_battle_destroy(f2);
+    duoforge_battle_destroy(g3);
     duoforge_battle_destroy(f3);
     duoforge_context_destroy(c1);
     duoforge_context_destroy(c3);

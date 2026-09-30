@@ -1,10 +1,19 @@
 # Research drafts (unverified)
 
-The files here are **agent-generated research drafts** from 2026-09-30. They are **not contracts, not evidence, and not a support claim**. Before any implementation relies on a statement, check it against the pinned Pokémon Showdown revision `b2cb775b0616115b775534eaeff50300e1fc81fc` (`docs/decisions/0004`).
+The files here are **agent-generated research drafts**. They are **not contracts, not evidence, and not a support claim**. Before any implementation relies on a statement, check it against the pinned Pokémon Showdown revision `b2cb775b0616115b775534eaeff50300e1fc81fc` (`docs/decisions/0004`).
 
 | File | Content | State |
 |---|---|---|
-| `champions-reg-mc-report-draft.md` | Champions VGC 2026 Reg M-C: profile parameters, mechanics delta versus Gen 9, M2 decision-domain impact (Mega, team preview, mid-turn boundaries, open team sheets), open questions | Research workflow plus one critic pass |
-| `matchup-inventory-partial-draft.jsonl` | Per-Pokémon reachable-mechanics closure. One JSON line per team member; fields: id, category, behavior, Showdown refs, RNG draws, dependencies, complexity, uncertainty | **Partial:** 8 of 12 team members. Missing: Archaludon, Farigiraf, Charizard, Grimmsnarl (Team B). The cross-cutting passes (implicit mechanics, cross-team interactions, decision/info), synthesis and critics were **not run** (stopped for budget) |
+| `champions-reg-mc-report-draft.md` | Champions VGC 2026 Reg M-C: profile parameters, mechanics delta versus Gen 9, M2 decision-domain impact (Mega, team preview, mid-turn boundaries, open team sheets), open questions | Research workflow plus one critic pass (2026-09-30). The M2 points were verified against the pin in `docs/decisions/0005` |
+| `matchup-inventory-draft.jsonl` | Per-Pokémon reachable-mechanics closure. One JSON line per team member; fields: id, category, behavior, Showdown refs, RNG draws, dependencies, complexity, uncertainty | **12 of 12 team members, 375 mechanics.** Rows 1–8 come from the first research pass; rows 9–12 (Archaludon, Farigiraf, Charizard, Grimmsnarl) were added on 2026-09-30 by source reading |
+| `mechanics-inventory.md` | Synthesis: closure tables extracted from the pin, the three cross-cutting passes (implicit mechanics, cross-team interactions, decisions and information), a proposed M3/M4 split, the verification pass and open points | Draft for owner review |
 
-Before M3 the mechanics inventory must be completed: the remaining 4 Pokémon, the cross-cutting passes, and a verification pass against the pinned source.
+## What was and was not verified
+
+- **Source reading only.** No simulator was run. Statements in rows 1–8 that say "executed" were not re-run.
+- `tools/research/verify_inventory.py` recomputes every quoted stat line, checks that every `path:line` reference lies inside the pinned file, extracts the move, ability and item tables from the pinned data, and compares the M2 target-class table with the pin.
+- Executed reference fixtures (the differential oracle of `docs/TESTING_AND_BENCHMARKS.md` section 2) are still **NOT_RUN**; they need Node and the pinned repository.
+
+## Before M3
+
+The owner reviews `mechanics-inventory.md`, in particular the proposed M3/M4 split (section 5) and the open points (section 7). M3 does not start before that review.
