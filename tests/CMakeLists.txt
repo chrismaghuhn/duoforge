@@ -65,6 +65,32 @@ duoforge_add_test(NAME duoforge.request.step SOURCES test_step.c WHITEBOX TIMEOU
 duoforge_add_test(NAME duoforge.request.contract SOURCES test_contract.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.request.information SOURCES test_information.c WHITEBOX TIMEOUT 60)
 
+# M3: generated closure tables and Champions formulas (decision 0006).
+duoforge_add_test(NAME duoforge.data.closure_tables SOURCES test_closure_tables.c WHITEBOX)
+# The generated files must stay exactly what tools/datagen/gen_closure.py
+# wrote; regenerate and update these hashes together.
+foreach(_gen IN ITEMS
+        "closure_tables.h=323e85940432b3bb27064f287c4259ecdf5b34d0cd8005ef03119b7ffa182267"
+        "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a")
+    string(REPLACE "=" ";" _parts "${_gen}")
+    list(GET _parts 0 _file)
+    list(GET _parts 1 _expected)
+    add_test(NAME duoforge.provenance.${_file}
+        COMMAND "${CMAKE_COMMAND}"
+            "-DFILE=${PROJECT_SOURCE_DIR}/src/data/${_file}"
+            -DEXPECTED=${_expected}
+            -P "${PROJECT_SOURCE_DIR}/cmake/checks/file_sha256.cmake")
+    set_tests_properties(duoforge.provenance.${_file} PROPERTIES TIMEOUT 30)
+endforeach()
+# Optional: regenerate from a pinned Pokemon Showdown checkout and compare.
+if(DUOFORGE_PS_REFERENCE_DIR)
+    find_package(Python3 COMPONENTS Interpreter REQUIRED)
+    add_test(NAME duoforge.data.closure_regen
+        COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/gen_closure.py"
+            "${DUOFORGE_PS_REFERENCE_DIR}" --check)
+    set_tests_properties(duoforge.data.closure_regen PROPERTIES TIMEOUT 120 LABELS reference)
+endif()
+
 # The vendored upstream license must stay byte-exact.
 add_test(NAME duoforge.provenance.pcg_license
     COMMAND "${CMAKE_COMMAND}"

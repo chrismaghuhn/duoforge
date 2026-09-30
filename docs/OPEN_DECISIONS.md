@@ -32,7 +32,7 @@ Do not block M0 on all future choices. Conversely, do not silently turn unreview
 | Secondary lookup source | **Owner 2026-10-01:** https://www.pokewiki.de/ (`docs/SOURCES.md` S10) may be consulted for questions about intended game behaviour. The pinned Showdown revision stays the executable reference; disagreements are recorded as known divergences, not resolved silently | done |
 | Reference-fixture execution | **Owner approved 2026-10-01.** The checkout is at `C:\Dev\src\pokemon-showdown` (outside this repository, detached at the pin), installed with `npm ci --ignore-scripts --omit=dev`, built with `node build`; the format `gen9championsvgc2026regmc` loads. Method: decision 0006 section 7 | done |
 | Gender in team specifications | **Owner 2026-10-01:** always specified. DuoForge has no construction-time gender draw (decision 0006) | done |
-| Local verification toolchain | **Owner 2026-10-01:** native Windows, no WSL. MSVC works now (24/24 tests on `main`). GCC (MinGW-w64) and Clang (LLVM) join once installed. GCC ASan/UBSan stays in hosted CI and is observed on every push (decision 0006 section 9) | Installing GCC/Clang |
+| Local verification toolchain | **Owner 2026-10-01:** native Windows, no WSL. MSVC, GCC 16.2 (MinGW-w64) and Clang 23.1 are installed and in the local loop, Debug and Release. GCC ASan/UBSan stays in hosted CI and is observed on every push (decision 0006 section 9) | done |
 | Apache-derived file approval | Owner approves `src/rng/pcg32_derived.{h,c}` and decides whether `LICENSE` gets a factual third-party pointer | Publishing |
 
 ## Reference lock discipline
