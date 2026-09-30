@@ -1,58 +1,53 @@
-# Pokémon Doubles Engine in C — Architekturpaket v0.1
+# DuoForge
 
-Stand: 12. September 2026. Arbeitsname: `pokemon-doubles-core`, Symbolpräfix `pbd_`.
+DuoForge is a deterministic, headless Pokémon Doubles simulation engine designed for machine-learning workloads.
 
-Dies ist ein **Entwurf und Codex-Arbeitspaket**, keine implementierte Engine. Es wurden keine Engine-Tests, Builds oder Benchmarks ausgeführt und keine GitHub-Repositories angelegt oder verändert.
+The project is at a very early stage. M0 contains only a portable C17 static library, a public version query, a real smoke test, and build/CI scaffolding. It is not yet a complete Pokémon battle simulator.
 
-## Ziel
+No Pokémon species, moves, abilities, items, damage calculation, turn resolution, targeting, battle RNG, replay, observations, action generation, batch environments, Python bindings, or ML code are implemented.
 
-Eine headless, deterministische Pokémon-Doubles-Kampfengine in C17, zunächst für einen kleinen Generation-9-Slice mit zwei festen Teams. Später: zertifizierte VGC-Profile, Batch-Environments, Python-ML-Anbindung und Planung auf hypothetischen Zuständen.
+## Requirements
 
-Die Engine entscheidet Regeln; ein Modell wählt aus ihren angebotenen Entscheidungen. Weder Python noch ein neuronales Netz implementieren eine zweite Regelauthorität.
+- CMake 3.23 or newer
+- A C17 compiler such as MSVC, GCC, or Clang
+- Ninja for the supplied cross-platform presets
 
-## So verwendest du das Paket
+There are no third-party runtime dependencies.
 
-1. Öffne für dieses Projekt einen eigenen lokalen Arbeitsordner in Codex. Dieses Paket gehört **nicht** in Manafold, OCGForge oder Argentum Engine.
-2. Kopiere die enthaltenen Dateien in diesen Ordner. Der Name ist ein Vorschlag, kein bereits angelegtes Repository.
-3. Gib Codex den vollständigen Inhalt von `tasks/M0_BOOTSTRAP.md` als ersten Auftrag.
-4. Prüfe dessen Diff und Testbericht. M0 autorisiert nicht automatisch M1 oder spätere Meilensteine.
+## Build and test
 
-Die Architekturdateien sind bewusst englisch, damit sie unmittelbar als technische Arbeitsgrundlage dienen. Dieser Einstieg ist deutsch.
+The presets use Ninja and provide separate Debug and Release trees:
 
-## Dateien
+```text
+cmake --preset debug
+cmake --build --preset debug
+ctest --preset debug
 
-| Datei | Zweck |
-|---|---|
-| `AGENTS.md` | Arbeitsregeln und Projektgrenzen für Codex |
-| `docs/ARCHITECTURE.md` | Module, Zuständigkeiten, State, Ausführung, Daten und ML-Grenzen |
-| `docs/DECISION_CONTRACT.md` | Gleichzeitige Entscheidungen, Kandidaten, Pausen und Fehlersemantik |
-| `docs/DETERMINISM_AND_REPLAY.md` | RNG, Snapshots, Serialisierung und Reproduzierbarkeit |
-| `docs/ROADMAP.md` | Kleine Umsetzungsslices mit überprüfbaren Exit-Kriterien |
-| `docs/TESTING_AND_BENCHMARKS.md` | Referenztests, Datenschutztests, Diagnostik und Messmethodik |
-| `docs/OPEN_DECISIONS.md` | Entscheidungen, die vor den jeweiligen Slices tatsächlich geklärt werden müssen |
-| `docs/SOURCES.md` | Am 12. September 2026 geprüfte Primärquellen und ihre Grenzen |
-| `tasks/M0_BOOTSTRAP.md` | Direkt verwendbarer erster Codex-Auftrag |
+cmake --preset release
+cmake --build --preset release
+ctest --preset release
+```
 
-## Die wichtigsten Festlegungen
+On Windows, run these commands from a Visual Studio Developer Command Prompt so that MSVC is available. On Linux, run them from a shell with GCC or Clang and Ninja on `PATH`.
 
-**C17-Core, Windows und Linux, ein Battle pro kompakter State-Struktur.** Unveränderliche Regeldaten werden geteilt; temporäre Arbeitsdaten liegen in wiederverwendbarem Scratch-Speicher. Der Hot Path soll nach Initialisierung ohne Heap-Allokation auskommen, ohne dafür Regeln oder Diagnostik zu entfernen.
+The equivalent generator-neutral commands are:
 
-**Zwei Spieler, je zwei aktive Slots, gemeinsame Team-Entscheidungen.** Die Engine arbeitet von Entscheidungsgrenze zu Entscheidungsgrenze. Ein `step` ist nicht zwingend ein vollständiger Turn. Slot-Auswahl innerhalb eines Teams ist keine neue Spielrunde und verrät keine gegnerischen Entscheidungen.
+```text
+cmake -S . -B build/debug -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON
+cmake --build build/debug
+ctest --test-dir build/debug --output-on-failure
+```
 
-**Zuerst ein kleiner, korrekt abgegrenzter Rules-Slice.** Unbekannte oder nicht unterstützte Mechaniken werden nicht ignoriert. Ein vereinfachtes Testprofil ist ausdrücklich kein vollständiges VGC-Profil. Die zwei Teams werden vor der inhaltlichen Implementierung anhand ihrer benötigten Mechaniken ausgewählt.
+The sanitizer configuration is intended for GCC/Clang:
 
-**Eigener RNG-Vertrag, keine behauptete Showdown-Seed-Parität.** Referenztests müssen Zufallsausgänge kontrollieren oder eine gesondert validierte Kompatibilitätsschicht benutzen.
+```text
+cmake -S . -B build/sanitized -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DDUOFORGE_ENABLE_SANITIZERS=ON
+cmake --build build/sanitized
+ctest --test-dir build/sanitized --output-on-failure
+```
 
-**State ist nicht Observation.** Vollzustände und Replay-Seeds gehören nicht in den normalen Policy-Eingang. Kandidatenlisten, ihre Reihenfolge und Fehlerantworten gehören ebenfalls zur Informationsgrenze.
+## Project boundaries
 
-## Performance-Einordnung
+The intended future boundaries are listed in [`docs/architecture/README.md`](docs/architecture/README.md). They are not frozen by M0. Source and support status is tracked separately in [`docs/support/README.md`](docs/support/README.md), where unpinned and unsupported items remain explicit.
 
-Frühere Zahlen wie mehrere Tausend vollständige Gen-9-Doubles-Battles pro Sekunde und Core sind **keine belastbaren Messungen dieser Engine**. Dieses Paket legt keine solche Geschwindigkeit als Abnahmekriterium fest. Zuerst werden Workload, Regeln, Policies, Hardware und Log-Modus fixiert; anschließend wird gemessen.
-
-## Status
-
-- Architektur: Vorschlag v0.1.
-- Referenz-Recherche: durchgeführt; siehe Quellen.
-- Unveränderliche Referenz-Commits: noch nicht gepinnt.
-- Konkrete Teams und Regelprofil: noch nicht ausgewählt.
-- Code, Engine-Konformität, Performance und Hosted CI: nicht vorhanden bzw. nicht ausgeführt.
+M0 does not claim full Gen 9 support, VGC compatibility, Pokémon Showdown parity, high performance, or deterministic replay support.
