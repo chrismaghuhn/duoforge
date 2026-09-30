@@ -1,11 +1,11 @@
 /*
- * T22 duoforge.state.setup_sweep (black-box): every scalar of the setup (142
- * fields) is set, one at a time, to each value of a fixed set (29 u32 values;
- * 32 for the two RNG fields). The result must always be OK or
+ * T22 duoforge.state.setup_sweep (black-box): every scalar of the setup v2
+ * (148 fields) is set, one at a time, to each value of a fixed set (29 u32
+ * values; 32 for the two RNG fields). The result must always be OK or
  * INVALID_ARGUMENT (never INVARIANT or anything else), *out must stay at its
  * sentinel on error, a created battle must pass check, and the OK/INVALID
  * counts per (side, class) must equal the independent structural model
- * (tools/state_model/state_v1_model.py). 8,248 creates in total.
+ * (tools/state_model/state_v2_model.py). 8,596 creates in total.
  */
 #include <stddef.h>
 #include <stdio.h>
@@ -25,12 +25,10 @@ enum cls {
     CLS_INITSTATE,
     CLS_INITSEQ,
     CLS_MEMBER_COUNT,
-    CLS_BROUGHT,
-    CLS_LEAD0,
-    CLS_LEAD1,
     CLS_SPECIES,
     CLS_HP_MAX,
     CLS_MOVE_COUNT,
+    CLS_MEGA,
     CLS_MOVE_ID,
     CLS_PP_MAX,
     CLS_COUNT
@@ -50,18 +48,14 @@ static uint32_t *field32(duoforge_battle_setup *s, unsigned side, unsigned m, un
     switch (c) {
     case CLS_MEMBER_COUNT:
         return &sd->member_count;
-    case CLS_BROUGHT:
-        return &sd->brought_mask;
-    case CLS_LEAD0:
-        return &sd->leads[0];
-    case CLS_LEAD1:
-        return &sd->leads[1];
     case CLS_SPECIES:
         return &sd->members[m].species_id;
     case CLS_HP_MAX:
         return &sd->members[m].hp_max;
     case CLS_MOVE_COUNT:
         return &sd->members[m].move_count;
+    case CLS_MEGA:
+        return &sd->members[m].mega_capable;
     case CLS_MOVE_ID:
         return &sd->members[m].moves[k].move_id;
     case CLS_PP_MAX:
@@ -108,17 +102,14 @@ static void sweep(df_test *t, const duoforge_context *ctx, const duoforge_battle
         run_one(t, ctx, &s, 0, CLS_INITSEQ, n);
     }
     for (unsigned side = 0; side < 2; ++side) {
-        const enum cls side_fields[] = {CLS_MEMBER_COUNT, CLS_BROUGHT, CLS_LEAD0, CLS_LEAD1};
-        for (unsigned f = 0; f < 4; ++f) {
-            for (unsigned i = 0; i < V32_COUNT; ++i) {
-                duoforge_battle_setup s = *base;
-                *field32(&s, side, 0, 0, side_fields[f]) = v32[i];
-                run_one(t, ctx, &s, side, side_fields[f], n);
-            }
+        for (unsigned i = 0; i < V32_COUNT; ++i) {
+            duoforge_battle_setup s = *base;
+            *field32(&s, side, 0, 0, CLS_MEMBER_COUNT) = v32[i];
+            run_one(t, ctx, &s, side, CLS_MEMBER_COUNT, n);
         }
         for (unsigned m = 0; m < DUOFORGE_MAX_ROSTER; ++m) {
-            const enum cls member_fields[] = {CLS_SPECIES, CLS_HP_MAX, CLS_MOVE_COUNT};
-            for (unsigned f = 0; f < 3; ++f) {
+            const enum cls member_fields[] = {CLS_SPECIES, CLS_HP_MAX, CLS_MOVE_COUNT, CLS_MEGA};
+            for (unsigned f = 0; f < 4; ++f) {
                 for (unsigned i = 0; i < V32_COUNT; ++i) {
                     duoforge_battle_setup s = *base;
                     *field32(&s, side, m, 0, member_fields[f]) = v32[i];
@@ -147,9 +138,9 @@ typedef struct expect {
 
 static void compare(df_test *t, const counts *n, const expect *e, const char *label)
 {
-    static const char *names[CLS_COUNT] = {"rng_initstate", "rng_initseq", "member_count", "brought_mask",
-                                           "leads[0]", "leads[1]", "species_id", "hp_max",
-                                           "move_count", "move_id", "pp_max"};
+    static const char *names[CLS_COUNT] = {"rng_initstate", "rng_initseq", "member_count", "species_id",
+                                           "hp_max",        "move_count",  "mega_capable", "move_id",
+                                           "pp_max"};
     for (unsigned c = 0; c < CLS_COUNT; ++c) {
         for (unsigned side = 0; side < 2; ++side) {
             if (!DF_CHECK(t, n->ok[side][c] == e->ok[c][side] && n->bad[side][c] == e->bad[c][side])) {
@@ -158,7 +149,7 @@ static void compare(df_test *t, const counts *n, const expect *e, const char *la
             }
         }
     }
-    DF_CHECK_EQ_U64(t, n->creates, 4124u);
+    DF_CHECK_EQ_U64(t, n->creates, 4298u);
     DF_CHECK_EQ_U64(t, n->unexpected, 0u);
 }
 
@@ -166,31 +157,27 @@ int main(void)
 {
     df_test t;
     df_test_begin(&t, "duoforge.state.setup_sweep");
-
     duoforge_context *c1 = df_make_context(&df_config_c1);
     duoforge_context *c3 = df_make_context(&df_config_c3);
-    duoforge_battle_setup f1;
-    duoforge_battle_setup f3;
-    df_setup_f1(&f1);
-    df_setup_f3(&f3);
+    duoforge_battle_setup g1;
+    duoforge_battle_setup g3;
+    df_setup_g1(&g1);
+    df_setup_g3(&g3);
 
-    /* Values from tools/state_model/state_v1_model.py (setup section). */
-    static const expect e_f1 = {
-        .ok = {{32, 0}, {30, 0}, {1, 1}, {1, 1}, {3, 3}, {3, 3}, {60, 42}, {132, 90}, {6, 6}, {167, 200}, {206, 248}},
-        .bad = {{0, 0}, {2, 0}, {28, 28}, {28, 28}, {26, 26}, {26, 26}, {114, 132}, {42, 84}, {168, 168},
-                {529, 496}, {490, 448}},
+    /* Values from tools/state_model/state_v2_model.py (setup section). */
+    static const expect e_g1 = {
+        .ok = {{32, 0}, {30, 0}, {1, 1}, {60, 42}, {132, 90}, {6, 6}, {12, 10}, {193, 232}, {206, 248}},
+        .bad = {{0, 0}, {2, 0}, {28, 28}, {114, 132}, {42, 84}, {168, 168}, {162, 164}, {503, 464}, {490, 448}},
     };
-    static const expect e_f3 = {
-        .ok = {{32, 0}, {30, 0}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {33, 24}, {69, 48}, {6, 6}, {57, 68}, {66, 80}},
-        .bad = {{0, 0}, {2, 0}, {28, 28}, {28, 28}, {28, 28}, {28, 28}, {141, 150}, {105, 126}, {168, 168},
-                {639, 628}, {630, 616}},
+    static const expect e_g3 = {
+        .ok = {{32, 0}, {30, 0}, {1, 1}, {33, 24}, {69, 48}, {6, 6}, {9, 8}, {63, 76}, {66, 80}},
+        .bad = {{0, 0}, {2, 0}, {28, 28}, {141, 150}, {105, 126}, {168, 168}, {165, 166}, {633, 620}, {630, 616}},
     };
-
     counts n;
-    sweep(&t, c1, &f1, &n);
-    compare(&t, &n, &e_f1, "F1/C1");
-    sweep(&t, c3, &f3, &n);
-    compare(&t, &n, &e_f3, "F3/C3");
+    sweep(&t, c1, &g1, &n);
+    compare(&t, &n, &e_g1, "G1/C1");
+    sweep(&t, c3, &g3, &n);
+    compare(&t, &n, &e_g3, "G3/C3");
 
     duoforge_context_destroy(c1);
     duoforge_context_destroy(c3);

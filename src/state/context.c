@@ -19,6 +19,9 @@ void dfi_context_canonical_bytes(const struct duoforge_context *ctx, uint8_t out
     out[26] = ctx->brought_count;
     dfi_store_u16le(out + 27, ctx->species_count);
     dfi_store_u16le(out + 29, ctx->move_count);
+    for (uint32_t i = 0u; i < DUOFORGE_DIGEST_SIZE; ++i) {
+        out[DFI_CONTEXT_TABLE_HASH_OFF + i] = ctx->table_hash[i];
+    }
 }
 
 bool dfi_context_fingerprint_matches(const struct duoforge_context *ctx,
@@ -51,25 +54,42 @@ duoforge_status duoforge_context_create(const duoforge_context_config *config,
     if (c.move_count < 1u || c.move_count > UINT16_MAX) {
         return DUOFORGE_E_INVALID_ARGUMENT;
     }
-
-    struct duoforge_context tmp = {0};
-    if (!dfi_u32_to_u8(c.data_kind, &tmp.data_kind) || !dfi_u32_to_u8(c.max_roster, &tmp.max_roster) ||
-        !dfi_u32_to_u8(c.brought_count, &tmp.brought_count) ||
-        !dfi_u32_to_u16(c.species_count, &tmp.species_count) ||
-        !dfi_u32_to_u16(c.move_count, &tmp.move_count)) {
-        return DUOFORGE_E_INVARIANT; /* unreachable after validation */
+    if (c.move_target_classes == NULL) {
+        return DUOFORGE_E_NULL_ARGUMENT;
     }
-    uint8_t canonical[DFI_CONTEXT_BYTES_SIZE] = {0};
-    dfi_context_canonical_bytes(&tmp, canonical);
-    if (!dfi_sha256(canonical, sizeof canonical, tmp.fingerprint)) {
-        return DUOFORGE_E_INVARIANT; /* unreachable: 31 bytes */
+    /* The table is read exactly once, into the heap candidate below; validate
+     * first so a rejected table never leaves an allocation behind. */
+    for (uint32_t i = 0u; i < c.move_count; ++i) {
+        const uint32_t cls = c.move_target_classes[i];
+        if (cls < 1u || cls > DUOFORGE_TARGET_CLASS_COUNT) {
+            return DUOFORGE_E_INVALID_ARGUMENT;
+        }
     }
 
     struct duoforge_context *p = dfi_alloc_zeroed(sizeof *p);
     if (p == NULL) {
         return DUOFORGE_E_OUT_OF_MEMORY;
     }
-    *p = tmp;
+    if (!dfi_u32_to_u8(c.data_kind, &p->data_kind) || !dfi_u32_to_u8(c.max_roster, &p->max_roster) ||
+        !dfi_u32_to_u8(c.brought_count, &p->brought_count) ||
+        !dfi_u32_to_u16(c.species_count, &p->species_count) ||
+        !dfi_u32_to_u16(c.move_count, &p->move_count)) {
+        dfi_free(p);
+        return DUOFORGE_E_INVARIANT; /* unreachable after validation */
+    }
+    for (uint32_t i = 0u; i < c.move_count; ++i) {
+        p->move_target_classes[i] = c.move_target_classes[i];
+    }
+    if (!dfi_sha256(p->move_target_classes, (size_t)c.move_count, p->table_hash)) {
+        dfi_free(p);
+        return DUOFORGE_E_INVARIANT; /* unreachable: at most 65535 bytes */
+    }
+    uint8_t canonical[DFI_CONTEXT_BYTES_SIZE] = {0};
+    dfi_context_canonical_bytes(p, canonical);
+    if (!dfi_sha256(canonical, sizeof canonical, p->fingerprint)) {
+        dfi_free(p);
+        return DUOFORGE_E_INVARIANT; /* unreachable: 63 bytes */
+    }
     *out_context = p;
     return DUOFORGE_OK;
 }

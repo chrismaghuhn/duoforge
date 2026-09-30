@@ -1,8 +1,9 @@
 /*
- * T6 duoforge.state.context (black-box): context validation, fingerprints and
- * failure atomicity. Fingerprints: SHA-256 of the hand-assembled canonical
- * context bytes (tools/state_model; coreutils sha256sum). Fault values of the
- * form 2^w + valid detect a narrow-before-validate implementation.
+ * T6 duoforge.state.context (black-box): context v2 validation, the
+ * target-class table (read once, copied, hashed into the fingerprint),
+ * fingerprints and failure atomicity. Fingerprints: SHA-256 of the
+ * hand-assembled canonical context bytes (tools/state_model). Fault values
+ * of the form 2^w + valid detect a narrow-before-validate implementation.
  */
 #include <stddef.h>
 #include <stdio.h>
@@ -21,16 +22,21 @@ static void check_fp(df_test *t, const duoforge_context *ctx, const char *hex)
     DF_CHECK_BYTES(t, fp, expected, sizeof fp, hex);
 }
 
-static void check_create_fails(df_test *t, duoforge_context_config c, const char *what)
+static void check_create_status(df_test *t, duoforge_context_config c, duoforge_status expected, const char *what)
 {
     df_sentinel sentinel;
     duoforge_context *const marker = (duoforge_context *)(void *)&sentinel;
     duoforge_context *out = marker;
     const duoforge_status st = duoforge_context_create(&c, &out);
-    const bool ok = DF_CHECK(t, st == DUOFORGE_E_INVALID_ARGUMENT) && DF_CHECK(t, out == marker);
+    const bool ok = DF_CHECK(t, st == expected) && DF_CHECK(t, out == marker);
     if (!ok) {
         fprintf(stderr, "  case: %s (status %s)\n", what, duoforge_status_name(st));
     }
+}
+
+static void check_create_fails(df_test *t, duoforge_context_config c, const char *what)
+{
+    check_create_status(t, c, DUOFORGE_E_INVALID_ARGUMENT, what);
 }
 
 static void check_create_ok(df_test *t, duoforge_context_config c, const char *what)
@@ -43,6 +49,8 @@ static void check_create_ok(df_test *t, duoforge_context_config c, const char *w
     duoforge_context_destroy(out);
 }
 
+static uint8_t big_table[65535];
+
 int main(void)
 {
     df_test t;
@@ -52,32 +60,48 @@ int main(void)
     duoforge_context *c1b = df_make_context(&df_config_c1);
     duoforge_context *c2 = df_make_context(&df_config_c2);
     duoforge_context *c3 = df_make_context(&df_config_c3);
+    duoforge_context *c4 = df_make_context(&df_config_c4);
+
     check_fp(&t, c1, DF_FP_C1_HEX);
     check_fp(&t, c1b, DF_FP_C1_HEX); /* an independent C1 has the same fingerprint */
     check_fp(&t, c2, DF_FP_C2_HEX);
     check_fp(&t, c3, DF_FP_C3_HEX);
+    check_fp(&t, c4, DF_FP_C4_HEX);
 
-    /* Variants are pairwise distinct from each other and from C1..C3. */
+    /* Variants are pairwise distinct from each other and from C1..C4. */
     {
-        duoforge_context_config v[3] = {df_config_c1, df_config_c1, df_config_c1};
+        duoforge_context_config v[4] = {df_config_c1, df_config_c1, df_config_c1, df_config_c1};
         v[0].max_roster = 5u;
         v[1].brought_count = 3u;
         v[2].species_count = 17u;
-        uint8_t fps[6][DUOFORGE_DIGEST_SIZE];
-        const duoforge_context *known[3] = {c1, c2, c3};
-        for (unsigned i = 0; i < 3; ++i) {
+        v[3].move_count = 35u; /* same table prefix, shorter: the table hash differs */
+        uint8_t fps[8][DUOFORGE_DIGEST_SIZE];
+        const duoforge_context *known[4] = {c1, c2, c3, c4};
+        for (unsigned i = 0; i < 4; ++i) {
             DF_CHECK(&t, duoforge_context_fingerprint(known[i], fps[i]) == DUOFORGE_OK);
             duoforge_context *vc = df_make_context(&v[i]);
-            DF_CHECK(&t, duoforge_context_fingerprint(vc, fps[3 + i]) == DUOFORGE_OK);
+            DF_CHECK(&t, duoforge_context_fingerprint(vc, fps[4 + i]) == DUOFORGE_OK);
             duoforge_context_destroy(vc);
         }
         unsigned equal_pairs = 0;
-        for (unsigned i = 0; i < 6; ++i) {
-            for (unsigned j = i + 1; j < 6; ++j) {
+        for (unsigned i = 0; i < 8; ++i) {
+            for (unsigned j = i + 1; j < 8; ++j) {
                 equal_pairs += memcmp(fps[i], fps[j], DUOFORGE_DIGEST_SIZE) == 0 ? 1u : 0u;
             }
         }
         DF_CHECK_EQ_U64(&t, equal_pairs, 0u);
+    }
+
+    /* The table is copied at create: later caller writes change nothing. */
+    {
+        uint8_t table[36];
+        memcpy(table, df_table_t1, sizeof table);
+        duoforge_context_config c = df_config_c1;
+        c.move_target_classes = table;
+        duoforge_context *cc = df_make_context(&c);
+        memset(table, 0xEE, sizeof table);
+        check_fp(&t, cc, DF_FP_C1_HEX);
+        duoforge_context_destroy(cc);
     }
 
     /* Single faults: INVALID_ARGUMENT and *out untouched. */
@@ -112,8 +136,31 @@ int main(void)
             c.move_count = moves[i];
             check_create_fails(&t, c, "move_count");
         }
+        /* Table faults. */
+        duoforge_context_config c = df_config_c1;
+        c.move_target_classes = NULL;
+        check_create_status(&t, c, DUOFORGE_E_NULL_ARGUMENT, "NULL table");
+        uint8_t table[37];
+        memcpy(table, df_table_t1, 36);
+        table[36] = 0u;
+        table[0] = 0u;
+        c = df_config_c1;
+        c.move_target_classes = table;
+        check_create_fails(&t, c, "class 0 at index 0");
+        table[0] = df_table_t1[0];
+        table[35] = 10u;
+        check_create_fails(&t, c, "class 10 at index 35");
+        table[35] = 0u;
+        check_create_fails(&t, c, "class 0 at index 35");
+        table[35] = df_table_t1[35];
+        table[36] = 0xFFu; /* beyond move_count: never read */
+        check_create_ok(&t, c, "entry beyond move_count ignored");
+        /* A NULL table is reported only after the scalar fields (order). */
+        c = df_config_c1;
+        c.move_target_classes = NULL;
+        c.move_count = 0u;
+        check_create_fails(&t, c, "move_count 0 before NULL table");
     }
-
     /* Boundaries accepted. */
     {
         duoforge_context_config c = df_config_c1;
@@ -123,14 +170,20 @@ int main(void)
         c = df_config_c1;
         c.species_count = 65535u;
         check_create_ok(&t, c, "species 65535");
+        memset(big_table, (int)DUOFORGE_TARGET_CLASS_ALL, sizeof big_table);
         c = df_config_c1;
         c.move_count = 65535u;
+        c.move_target_classes = big_table;
         check_create_ok(&t, c, "moves 65535");
+        big_table[65534] = 0u;
+        check_create_fails(&t, c, "last entry of 65535 invalid");
+        c = df_config_c1;
+        c.move_count = 1u;
+        check_create_ok(&t, c, "moves 1");
         c = df_config_c1;
         c.brought_count = 6u;
         check_create_ok(&t, c, "brought = max_roster");
     }
-
     /* NULL handling. */
     {
         df_sentinel sentinel;
@@ -153,5 +206,6 @@ int main(void)
     duoforge_context_destroy(c1b);
     duoforge_context_destroy(c2);
     duoforge_context_destroy(c3);
+    duoforge_context_destroy(c4);
     return df_test_end(&t);
 }

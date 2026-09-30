@@ -2,7 +2,7 @@
  * T10 duoforge.state.clone_equal: clone, copy (snapshot/restore), equality,
  * fork independence, padding independence, context mismatch, corrupt-state
  * safety and reseeding a fork. Expectations: the clone/copy/equal contract
- * (docs/decisions/0002) and golden F2 (independent model).
+ * (docs/decisions/0002) and golden F2 v2 (independent model).
  */
 #include <stddef.h>
 #include <stdio.h>
@@ -20,9 +20,9 @@ static bool api_equal(df_test *t, const duoforge_context *ctx, const duoforge_ba
     return eq;
 }
 
-static void raw(const duoforge_battle *b, uint8_t out[DUOFORGE_STATE_V1_ENCODED_SIZE])
+static void raw(const duoforge_battle *b, uint8_t out[DUOFORGE_STATE_V2_ENCODED_SIZE])
 {
-    memset(out, 0, DUOFORGE_STATE_V1_ENCODED_SIZE);
+    memset(out, 0, DUOFORGE_STATE_V2_ENCODED_SIZE);
     dfi_encode_unchecked(b, out);
 }
 
@@ -38,6 +38,56 @@ static void equal_fails(df_test *t, const duoforge_context *ctx, const duoforge_
     }
 }
 
+/* Copies every named field of src into dst (whose padding bytes hold a
+ * background pattern). */
+static void copy_named_fields(duoforge_battle *x, const duoforge_battle *src)
+{
+    memcpy(x->context_fingerprint, src->context_fingerprint, DUOFORGE_DIGEST_SIZE);
+    x->rng.state = src->rng.state;
+    x->rng.inc = src->rng.inc;
+    x->rng.draws = src->rng.draws;
+    x->next_activation_id = src->next_activation_id;
+    x->request_epoch = src->request_epoch;
+    x->boundary_kind = src->boundary_kind;
+    x->request_mask = src->request_mask;
+    for (unsigned s = 0; s < 2; ++s) {
+        const dfi_side *ss = &src->sides[s];
+        dfi_side *ds = &x->sides[s];
+        ds->member_count = ss->member_count;
+        ds->brought_mask = ss->brought_mask;
+        ds->requested_slots = ss->requested_slots;
+        ds->mega_used = ss->mega_used;
+        ds->sealed = ss->sealed;
+        ds->seen_mask = ss->seen_mask;
+        for (unsigned i = 0; i < DUOFORGE_MAX_ROSTER; ++i) {
+            ds->brought_order[i] = ss->brought_order[i];
+        }
+        for (unsigned p = 0; p < 2; ++p) {
+            ds->positions[p].occupant = ss->positions[p].occupant;
+            ds->positions[p].activation_id = ss->positions[p].activation_id;
+            ds->sealed_cmds[p].kind = ss->sealed_cmds[p].kind;
+            ds->sealed_cmds[p].move_slot = ss->sealed_cmds[p].move_slot;
+            ds->sealed_cmds[p].target = ss->sealed_cmds[p].target;
+            ds->sealed_cmds[p].mega = ss->sealed_cmds[p].mega;
+            ds->sealed_cmds[p].reserve = ss->sealed_cmds[p].reserve;
+        }
+        for (unsigned m = 0; m < DUOFORGE_MAX_ROSTER; ++m) {
+            const dfi_member *sm = &ss->members[m];
+            dfi_member *dm = &ds->members[m];
+            dm->species_id = sm->species_id;
+            dm->hp = sm->hp;
+            dm->hp_max = sm->hp_max;
+            dm->move_count = sm->move_count;
+            dm->mega_capable = sm->mega_capable;
+            for (unsigned q = 0; q < DUOFORGE_MAX_MOVE_SLOTS; ++q) {
+                dm->moves[q].move_id = sm->moves[q].move_id;
+                dm->moves[q].pp = sm->moves[q].pp;
+                dm->moves[q].pp_max = sm->moves[q].pp_max;
+            }
+        }
+    }
+}
+
 int main(void)
 {
     df_test t;
@@ -45,12 +95,11 @@ int main(void)
 
     duoforge_context *c1 = df_make_context(&df_config_c1);
     duoforge_context *c2 = df_make_context(&df_config_c2);
-    duoforge_battle_setup setup;
-    df_setup_f1(&setup);
-    duoforge_battle *f1 = df_make_battle(c1, &setup);
+    duoforge_battle *f1 = df_make_f1(c1);
     duoforge_battle *f2 = df_make_f2(c1);
-    uint8_t e1[DUOFORGE_STATE_V1_ENCODED_SIZE];
-    uint8_t e2[DUOFORGE_STATE_V1_ENCODED_SIZE];
+    duoforge_battle *f5 = df_make_f5(c1);
+    uint8_t e1[DUOFORGE_STATE_V2_ENCODED_SIZE];
+    uint8_t e2[DUOFORGE_STATE_V2_ENCODED_SIZE];
 
     /* Clone of F1: equal, same encoding and digest. */
     duoforge_battle *k = NULL;
@@ -66,13 +115,12 @@ int main(void)
         DF_CHECK(&t, duoforge_battle_digest(c1, k, d2) == DUOFORGE_OK);
         DF_CHECK_BYTES(&t, d2, d1, sizeof d1, "clone digest");
     }
-
     /* Clone of a decoded golden F2. */
     {
-        uint8_t *in = df_heap_copy(df_golden_f2, DUOFORGE_STATE_V1_ENCODED_SIZE);
+        uint8_t *in = df_heap_copy(df_golden_f2, DUOFORGE_STATE_V2_ENCODED_SIZE);
         duoforge_battle *d = NULL;
         duoforge_battle *dc = NULL;
-        DF_CHECK(&t, duoforge_battle_create_decoded(c1, in, DUOFORGE_STATE_V1_ENCODED_SIZE, &d) == DUOFORGE_OK);
+        DF_CHECK(&t, duoforge_battle_create_decoded(c1, in, DUOFORGE_STATE_V2_ENCODED_SIZE, &d) == DUOFORGE_OK);
         DF_CHECK(&t, duoforge_battle_clone(c1, d, &dc) == DUOFORGE_OK);
         df_encode(c1, dc, e2);
         DF_CHECK_BYTES(&t, e2, df_golden_f2, sizeof e2, "clone of decoded F2");
@@ -81,16 +129,18 @@ int main(void)
         duoforge_battle_destroy(d);
         df_free(in);
     }
-
-    /* copy F2 into a battle created from F1 (restore from snapshot). */
+    /* copy F2 into a battle created fresh (restore from snapshot), and a
+     * PIVOT snapshot (F5) into a TURN handle: boundaries restore too. */
     {
-        duoforge_battle *dst = df_make_battle(c1, &setup);
+        duoforge_battle *dst = df_make_g1(c1);
         DF_CHECK(&t, duoforge_battle_copy(c1, dst, f2) == DUOFORGE_OK);
         df_encode(c1, dst, e2);
-        DF_CHECK_BYTES(&t, e2, df_golden_f2, sizeof e2, "copy F2 into F1 handle");
+        DF_CHECK_BYTES(&t, e2, df_golden_f2, sizeof e2, "copy F2 into G1 handle");
+        DF_CHECK(&t, duoforge_battle_copy(c1, dst, f5) == DUOFORGE_OK);
+        DF_CHECK(&t, api_equal(&t, c1, dst, f5));
+        DF_CHECK(&t, duoforge_battle_check(c1, dst) == DUOFORGE_OK);
         duoforge_battle_destroy(dst);
     }
-
     /* Aliased copy: OK and unchanged under the matching context ... */
     DF_CHECK(&t, duoforge_battle_copy(c1, k, k) == DUOFORGE_OK);
     DF_CHECK(&t, api_equal(&t, c1, k, f1));
@@ -132,8 +182,7 @@ int main(void)
         }
         DF_CHECK_EQ_U64(&t, diff, 0u);
         DF_CHECK(&t, api_equal(&t, c1, a, b));
-
-        /* Reseeding a fork decorrelates it; nothing but the RNG changes. */
+        /* Reseeding a fork decorrelates it; nothing but the RNG (52..76) changes. */
         raw(a, e1);
         DF_CHECK(&t, duoforge_battle_reseed(c1, b, 7u, 9u) == DUOFORGE_OK);
         raw(b, e2);
@@ -159,8 +208,8 @@ int main(void)
         duoforge_battle_destroy(b);
     }
 
-    /* Equality relation over F1, F2 and 20 single-field variants of F1:
-     * equal <=> encodings identical <=> digests equal. */
+    /* Equality relation over F1, F2 and 20 single-field variants of F1 (all
+     * valid states): equal <=> encodings identical <=> digests equal. */
     {
         enum { N = 22 };
         duoforge_battle *v[N];
@@ -181,20 +230,21 @@ int main(void)
         v[12]->sides[1].positions[1].activation_id = 9u;
         v[12]->next_activation_id = 10u;
         v[13]->sides[0].positions[0].occupant = 3u;
+        v[13]->sides[1].seen_mask |= 0x08u; /* the replacement was seen */
         v[14]->sides[1].brought_mask = 0x0Fu; /* unchanged value: must stay equal to F1 */
         v[15]->sides[0].members[4].hp = 0u;
         v[16]->sides[1].members[1].moves[0].pp = 0u;
         v[17]->rng.state ^= UINT64_C(0x8000000000000000);
         v[18]->rng.draws = UINT64_MAX;
-        v[19]->sides[0].members[2].moves[2].pp = (uint8_t)(v[19]->sides[0].members[2].moves[2].pp - 1u);
-        v[20]->sides[1].members[0].species_id = 11u;
-        v[21]->sides[0].positions[1].activation_id = 7u;
-        v[21]->next_activation_id = 8u;
+        v[19]->sides[0].brought_order[2] = 3u; /* private bench order swapped */
+        v[19]->sides[0].brought_order[3] = 1u;
+        v[20]->sides[1].mega_used = 1u;
+        v[21]->request_epoch = 7u;
         unsigned mismatches = 0;
         for (unsigned i = 0; i < N; ++i) {
             for (unsigned j = 0; j < N; ++j) {
-                uint8_t a[DUOFORGE_STATE_V1_ENCODED_SIZE];
-                uint8_t b[DUOFORGE_STATE_V1_ENCODED_SIZE];
+                uint8_t a[DUOFORGE_STATE_V2_ENCODED_SIZE];
+                uint8_t b[DUOFORGE_STATE_V2_ENCODED_SIZE];
                 uint8_t da[DUOFORGE_DIGEST_SIZE];
                 uint8_t db[DUOFORGE_DIGEST_SIZE];
                 raw(v[i], a);
@@ -224,55 +274,33 @@ int main(void)
     /* Padding independence: states assembled on 0x00 and 0xAA backgrounds with
      * the same named fields compare equal, encode and digest identically. */
     {
-        duoforge_battle *a = NULL;
-        duoforge_battle *b = NULL;
-        DF_CHECK(&t, duoforge_battle_clone(c1, f2, &a) == DUOFORGE_OK);
-        DF_CHECK(&t, duoforge_battle_clone(c1, f2, &b) == DUOFORGE_OK);
-        memset(a, 0x00, sizeof *a);
-        memset(b, 0xAA, sizeof *b);
-        const duoforge_battle *src = f2;
-        duoforge_battle *dsts[2] = {a, b};
-        for (unsigned d = 0; d < 2; ++d) {
-            duoforge_battle *x = dsts[d];
-            memcpy(x->context_fingerprint, src->context_fingerprint, DUOFORGE_DIGEST_SIZE);
-            x->rng.state = src->rng.state;
-            x->rng.inc = src->rng.inc;
-            x->rng.draws = src->rng.draws;
-            x->next_activation_id = src->next_activation_id;
-            for (unsigned s = 0; s < 2; ++s) {
-                x->sides[s].member_count = src->sides[s].member_count;
-                x->sides[s].brought_mask = src->sides[s].brought_mask;
-                for (unsigned p = 0; p < 2; ++p) {
-                    x->sides[s].positions[p].occupant = src->sides[s].positions[p].occupant;
-                    x->sides[s].positions[p].activation_id = src->sides[s].positions[p].activation_id;
-                }
-                for (unsigned m = 0; m < DUOFORGE_MAX_ROSTER; ++m) {
-                    const dfi_member *sm = &src->sides[s].members[m];
-                    dfi_member *dm = &x->sides[s].members[m];
-                    dm->species_id = sm->species_id;
-                    dm->hp = sm->hp;
-                    dm->hp_max = sm->hp_max;
-                    dm->move_count = sm->move_count;
-                    for (unsigned q = 0; q < DUOFORGE_MAX_MOVE_SLOTS; ++q) {
-                        dm->moves[q].move_id = sm->moves[q].move_id;
-                        dm->moves[q].pp = sm->moves[q].pp;
-                        dm->moves[q].pp_max = sm->moves[q].pp_max;
-                    }
-                }
+        const duoforge_battle *srcs[2] = {f2, f5};
+        const uint8_t *goldens[2] = {df_golden_f2, NULL};
+        for (unsigned s = 0; s < 2; ++s) {
+            duoforge_battle *a = NULL;
+            duoforge_battle *b = NULL;
+            DF_CHECK(&t, duoforge_battle_clone(c1, srcs[s], &a) == DUOFORGE_OK);
+            DF_CHECK(&t, duoforge_battle_clone(c1, srcs[s], &b) == DUOFORGE_OK);
+            memset(a, 0x00, sizeof *a);
+            memset(b, 0xAA, sizeof *b);
+            copy_named_fields(a, srcs[s]);
+            copy_named_fields(b, srcs[s]);
+            DF_CHECK(&t, api_equal(&t, c1, a, b));
+            DF_CHECK(&t, api_equal(&t, c1, a, srcs[s]));
+            df_encode(c1, a, e1);
+            df_encode(c1, b, e2);
+            DF_CHECK_BYTES(&t, e1, e2, sizeof e1, "padding-independent encoding");
+            if (goldens[s] != NULL) {
+                DF_CHECK_BYTES(&t, e1, goldens[s], sizeof e1, "padding-independent encoding = golden F2");
             }
+            uint8_t da[DUOFORGE_DIGEST_SIZE];
+            uint8_t db[DUOFORGE_DIGEST_SIZE];
+            DF_CHECK(&t, duoforge_battle_digest(c1, a, da) == DUOFORGE_OK);
+            DF_CHECK(&t, duoforge_battle_digest(c1, b, db) == DUOFORGE_OK);
+            DF_CHECK_BYTES(&t, da, db, sizeof da, "padding-independent digest");
+            duoforge_battle_destroy(a);
+            duoforge_battle_destroy(b);
         }
-        DF_CHECK(&t, api_equal(&t, c1, a, b));
-        df_encode(c1, a, e1);
-        df_encode(c1, b, e2);
-        DF_CHECK_BYTES(&t, e1, e2, sizeof e1, "padding-independent encoding");
-        DF_CHECK_BYTES(&t, e1, df_golden_f2, sizeof e1, "padding-independent encoding = golden F2");
-        uint8_t da[DUOFORGE_DIGEST_SIZE];
-        uint8_t db[DUOFORGE_DIGEST_SIZE];
-        DF_CHECK(&t, duoforge_battle_digest(c1, a, da) == DUOFORGE_OK);
-        DF_CHECK(&t, duoforge_battle_digest(c1, b, db) == DUOFORGE_OK);
-        DF_CHECK_BYTES(&t, da, db, sizeof da, "padding-independent digest");
-        duoforge_battle_destroy(a);
-        duoforge_battle_destroy(b);
     }
 
     /* Context mismatch: copy/equal/clone fail and change nothing. */
@@ -317,6 +345,7 @@ int main(void)
     duoforge_battle_destroy(k);
     duoforge_battle_destroy(f1);
     duoforge_battle_destroy(f2);
+    duoforge_battle_destroy(f5);
     duoforge_context_destroy(c1);
     duoforge_context_destroy(c2);
     return df_test_end(&t);

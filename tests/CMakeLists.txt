@@ -34,7 +34,7 @@ function(duoforge_add_test)
 endfunction()
 
 # Shared test support (explicit test context, no globals).
-add_library(duoforge_test_support STATIC support/check.c support/fixtures.c)
+add_library(duoforge_test_support STATIC support/check.c support/fixtures.c support/goldens.c)
 target_include_directories(duoforge_test_support PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 # The F2 fixture builder is white-box.
 target_include_directories(duoforge_test_support PRIVATE "${PROJECT_SOURCE_DIR}/src")

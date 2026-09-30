@@ -4,7 +4,6 @@
 #include "core/arith.h"
 #include "state/battle_internal.h"
 #include "state/context_internal.h"
-#include "state/identity.h"
 #include "state/invariants.h"
 
 #define DFI_INITSEQ_LIMIT UINT64_C(0x8000000000000000)
@@ -16,7 +15,7 @@ static bool dfi_move_setup_is_zero(const duoforge_move_setup *mv)
 
 static bool dfi_member_setup_is_zero(const duoforge_member_setup *m)
 {
-    if (m->species_id != 0u || m->hp_max != 0u || m->move_count != 0u) {
+    if (m->species_id != 0u || m->hp_max != 0u || m->move_count != 0u || m->mega_capable != 0u) {
         return false;
     }
     for (uint32_t k = 0u; k < DUOFORGE_MAX_MOVE_SLOTS; ++k) {
@@ -48,19 +47,16 @@ static bool dfi_member_setup_valid(const struct duoforge_context *ctx, const duo
             return false;
         }
     }
+    if (m->mega_capable > 1u) {
+        return false;
+    }
     return true;
-}
-
-/* True iff bit index of mask is set; index must be below 32. */
-static bool dfi_mask_has(uint32_t mask, uint32_t index)
-{
-    return ((mask >> index) & 1u) == 1u;
 }
 
 static bool dfi_side_setup_valid(const struct duoforge_context *ctx, const duoforge_side_setup *side)
 {
     const uint32_t member_count = side->member_count;
-    /* Bounds member_count <= 6 for all later indexing and shifts. */
+    /* Bounds member_count <= 6 for all later indexing. */
     if (member_count < ctx->brought_count || member_count > ctx->max_roster) {
         return false;
     }
@@ -73,26 +69,6 @@ static bool dfi_side_setup_valid(const struct duoforge_context *ctx, const duofo
             return false;
         }
     }
-    const uint32_t mask = side->brought_mask;
-    if ((mask >> member_count) != 0u) {
-        return false;
-    }
-    /* mask < 64 here, so the narrowing is exact. */
-    if (dfi_popcount8((uint8_t)mask) != ctx->brought_count) {
-        return false;
-    }
-    const uint32_t lead0 = side->leads[0];
-    const uint32_t lead1 = side->leads[1];
-    if (lead0 >= member_count || !dfi_mask_has(mask, lead0)) {
-        return false;
-    }
-    if (ctx->brought_count >= 2u) {
-        if (lead1 >= member_count || !dfi_mask_has(mask, lead1) || lead1 == lead0) {
-            return false;
-        }
-    } else if (lead1 != DUOFORGE_ROSTER_NONE) {
-        return false;
-    }
     return true;
 }
 
@@ -100,7 +76,7 @@ static duoforge_status dfi_init_member(const duoforge_member_setup *src, dfi_mem
 {
     uint8_t move_count = 0u;
     if (!dfi_u32_to_u16(src->species_id, &dst->species_id) || !dfi_u32_to_u16(src->hp_max, &dst->hp_max) ||
-        !dfi_u32_to_u8(src->move_count, &move_count)) {
+        !dfi_u32_to_u8(src->move_count, &move_count) || !dfi_u32_to_u8(src->mega_capable, &dst->mega_capable)) {
         return DUOFORGE_E_INVARIANT;
     }
     dst->hp = dst->hp_max;
@@ -132,7 +108,9 @@ duoforge_status duoforge_battle_create(const duoforge_context *ctx, const duofor
         }
     }
 
-    /* Build on a zeroed stack candidate; any failure below is an engine bug. */
+    /* Build on a zeroed stack candidate; any failure below is an engine bug.
+     * The battle starts at TEAM_SELECTION: nothing brought, no positions
+     * filled, epoch 1, both sides requested (decision 0005). */
     struct duoforge_battle tmp;
     memset(&tmp, 0, sizeof tmp);
     for (uint32_t i = 0u; i < DUOFORGE_DIGEST_SIZE; ++i) {
@@ -140,11 +118,13 @@ duoforge_status duoforge_battle_create(const duoforge_context *ctx, const duofor
     }
     dfi_rng_seed(&tmp.rng, s.rng_initstate, s.rng_initseq);
     tmp.next_activation_id = 1u;
+    tmp.request_epoch = 1u;
+    tmp.boundary_kind = (uint8_t)DUOFORGE_BOUNDARY_TEAM_SELECTION;
+    tmp.request_mask = 3u;
     for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
         const duoforge_side_setup *src = &s.sides[side];
         dfi_side *dst = &tmp.sides[side];
-        if (!dfi_u32_to_u8(src->member_count, &dst->member_count) ||
-            !dfi_u32_to_u8(src->brought_mask, &dst->brought_mask)) {
+        if (!dfi_u32_to_u8(src->member_count, &dst->member_count)) {
             return DUOFORGE_E_INVARIANT;
         }
         for (uint32_t m = 0u; m < dst->member_count && m < DUOFORGE_MAX_ROSTER; ++m) {
@@ -152,24 +132,12 @@ duoforge_status duoforge_battle_create(const duoforge_context *ctx, const duofor
                 return DUOFORGE_E_INVARIANT;
             }
         }
+        for (uint32_t i = 0u; i < DUOFORGE_MAX_ROSTER; ++i) {
+            dst->brought_order[i] = (uint8_t)DUOFORGE_ROSTER_NONE;
+        }
         for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
             dst->positions[p].activation_id = 0u;
             dst->positions[p].occupant = DFI_OCCUPANT_NONE;
-        }
-    }
-    /* Leads in canonical order s0a, s0b, s1a, s1b. */
-    for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
-        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
-            const uint32_t lead = s.sides[side].leads[p];
-            if (lead == DUOFORGE_ROSTER_NONE) {
-                continue;
-            }
-            uint8_t roster = 0u;
-            dfi_binding binding = {{0u, 0u}, 0u};
-            const dfi_position_id pos = {(uint8_t)side, (uint8_t)p};
-            if (!dfi_u32_to_u8(lead, &roster) || dfi_place(&tmp, pos, roster, &binding) != DUOFORGE_OK) {
-                return DUOFORGE_E_INVARIANT;
-            }
         }
     }
     if (dfi_state_check(ctx, &tmp, NULL) != DUOFORGE_OK) {
