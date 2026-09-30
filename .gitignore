@@ -10,3 +10,7 @@ CMakeUserPresets.json
 
 # CTest output
 /Testing/
+
+# Python bytecode (offline tools)
+__pycache__/
+*.pyc

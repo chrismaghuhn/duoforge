@@ -10,6 +10,8 @@ https://github.com/pkmn/engine
 
 The README describes a low-level performance-oriented engine with C bindings and separate update/choice concepts. Its status section places modern generations outside the immediate old-generation implementation work. It is an architectural reference, not evidence for a measured Gen-9 doubles throughput target or a ready Gen-9 backend for this project.
 
+**Pins (added 2026-09-30):** S2–S5 are pinned for M3 at Pokémon Showdown `b2cb775b0616115b775534eaeff50300e1fc81fc` (owner decision; hashes in `docs/decisions/0004`). S6/S7 are pinned for M1 at pcg-c-basic `bc39cd76ac3d541e618606bcc6e1e5ba5e5e6aa3` (`third_party/pcg-c-basic/PROVENANCE.md`). The mutable URLs below remain documentation, not lock entries.
+
 ## S2 — Pokémon Showdown simulator protocol
 
 ```text
@@ -66,6 +68,14 @@ https://developers.openai.com/codex/guides/agents-md/
 ```
 
 At inspection this redirected to the official project-instructions documentation. It documents reading `AGENTS.md` and layering project instructions. The pack therefore includes a short root instruction file and separate detailed task documents, rather than relying on a long chat prompt as the only source of project context.
+
+## S9 — FIPS 180-4 Secure Hash Standard
+
+```text
+https://csrc.nist.gov/pubs/fips/180-4/upd1/final
+```
+
+Specification of SHA-256, used for the context fingerprint and state digest (`src/core/sha256.c`, written from the specification; no code imported). Test vectors: the FIPS 180-2 examples and coreutils `sha256sum` 9.4.
 
 ## Limits of this research
 

@@ -1,5 +1,10 @@
 {
     "version": 3,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 23,
+        "patch": 0
+    },
     "configurePresets": [
         {
             "name": "debug",
@@ -20,6 +25,22 @@
                 "BUILD_TESTING": "ON",
                 "CMAKE_BUILD_TYPE": "Release"
             }
+        },
+        {
+            "name": "sanitize",
+            "displayName": "Debug + ASan/UBSan (GCC/Clang)",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/sanitize",
+            "cacheVariables": {
+                "BUILD_TESTING": "ON",
+                "CMAKE_BUILD_TYPE": "Debug",
+                "DUOFORGE_ENABLE_SANITIZERS": "ON"
+            },
+            "condition": {
+                "type": "notEquals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
         }
     ],
     "buildPresets": [
@@ -30,22 +51,38 @@
         {
             "name": "release",
             "configurePreset": "release"
+        },
+        {
+            "name": "sanitize",
+            "configurePreset": "sanitize"
         }
     ],
     "testPresets": [
         {
-            "name": "debug",
-            "configurePreset": "debug",
+            "name": "base-test",
+            "hidden": true,
             "output": {
                 "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "timeout": 120
             }
         },
         {
+            "name": "debug",
+            "inherits": "base-test",
+            "configurePreset": "debug"
+        },
+        {
             "name": "release",
-            "configurePreset": "release",
-            "output": {
-                "outputOnFailure": true
-            }
+            "inherits": "base-test",
+            "configurePreset": "release"
+        },
+        {
+            "name": "sanitize",
+            "inherits": "base-test",
+            "configurePreset": "sanitize"
         }
     ]
 }

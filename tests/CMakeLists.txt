@@ -1,0 +1,187 @@
+# DuoForge tests. Every test is finite and has an explicit timeout.
+
+# duoforge_add_test(NAME <ctest name> SOURCES <files...> [WHITEBOX]
+#                   [TIMEOUT <s>] [LABELS <labels...>] [LIBS <libs...>])
+# The executable name is NAME with '.' replaced by '_'. WHITEBOX adds src/ to
+# the include path so a test can exercise internal functions.
+function(duoforge_add_test)
+    cmake_parse_arguments(T "WHITEBOX" "NAME;TIMEOUT" "SOURCES;LABELS;LIBS" ${ARGN})
+    if(NOT T_TIMEOUT)
+        set(T_TIMEOUT 30)
+    endif()
+    string(REPLACE "." "_" _exe "${T_NAME}")
+    add_executable(${_exe} ${T_SOURCES})
+    target_link_libraries(${_exe} PRIVATE duoforge ${T_LIBS})
+    if(TARGET duoforge_test_support)
+        target_link_libraries(${_exe} PRIVATE duoforge_test_support)
+    endif()
+    target_include_directories(${_exe} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+    if(T_WHITEBOX)
+        target_include_directories(${_exe} PRIVATE "${PROJECT_SOURCE_DIR}/src")
+    endif()
+    duoforge_configure_target(${_exe})
+    add_test(NAME ${T_NAME} COMMAND ${_exe})
+    set_tests_properties(${T_NAME} PROPERTIES TIMEOUT ${T_TIMEOUT})
+    if(T_LABELS)
+        set_tests_properties(${T_NAME} PROPERTIES LABELS "${T_LABELS}")
+    endif()
+    if(DUOFORGE_ENABLE_SANITIZERS)
+        # Never abort_on_error: CTest would report an abort even when the
+        # expected output matched (docs/decisions/0003).
+        set_tests_properties(${T_NAME} PROPERTIES ENVIRONMENT
+            "ASAN_OPTIONS=detect_leaks=1;UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=1")
+    endif()
+endfunction()
+
+# Shared test support (explicit test context, no globals).
+add_library(duoforge_test_support STATIC support/check.c support/fixtures.c)
+target_include_directories(duoforge_test_support PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+# The F2 fixture builder is white-box.
+target_include_directories(duoforge_test_support PRIVATE "${PROJECT_SOURCE_DIR}/src")
+target_link_libraries(duoforge_test_support PUBLIC duoforge)
+duoforge_configure_target(duoforge_test_support)
+
+duoforge_add_test(NAME duoforge.unit.arith SOURCES test_arith.c WHITEBOX)
+duoforge_add_test(NAME duoforge.unit.sha256 SOURCES test_sha256.c WHITEBOX)
+
+duoforge_add_test(NAME duoforge.rng.kat SOURCES test_rng_kat.c WHITEBOX)
+duoforge_add_test(NAME duoforge.rng.contract SOURCES test_rng_contract.c WHITEBOX)
+
+duoforge_add_test(NAME duoforge.state.context SOURCES test_context.c)
+duoforge_add_test(NAME duoforge.state.setup SOURCES test_setup.c WHITEBOX)
+duoforge_add_test(NAME duoforge.state.identity SOURCES test_identity.c WHITEBOX)
+duoforge_add_test(NAME duoforge.state.invariants SOURCES test_invariants.c WHITEBOX)
+duoforge_add_test(NAME duoforge.state.setup_sweep SOURCES test_setup_sweep.c TIMEOUT 60)
+
+duoforge_add_test(NAME duoforge.state.clone_equal SOURCES test_clone_equal.c WHITEBOX)
+duoforge_add_test(NAME duoforge.codec.golden SOURCES test_codec_golden.c WHITEBOX)
+duoforge_add_test(NAME duoforge.codec.negative SOURCES test_codec_negative.c WHITEBOX)
+duoforge_add_test(NAME duoforge.codec.mutation SOURCES test_codec_mutation.c WHITEBOX TIMEOUT 120)
+duoforge_add_test(NAME duoforge.api.atomicity SOURCES test_api_atomicity.c WHITEBOX)
+
+# The vendored upstream license must stay byte-exact.
+add_test(NAME duoforge.provenance.pcg_license
+    COMMAND "${CMAKE_COMMAND}"
+        "-DFILE=${PROJECT_SOURCE_DIR}/third_party/pcg-c-basic/LICENSE.txt"
+        -DEXPECTED=b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1
+        -P "${PROJECT_SOURCE_DIR}/cmake/checks/file_sha256.cmake")
+set_tests_properties(duoforge.provenance.pcg_license PROPERTIES TIMEOUT 30)
+
+# Optional reference tests against a pinned pcg-c-basic checkout.
+if(DUOFORGE_PCG_REFERENCE_DIR)
+    set(_ref "${DUOFORGE_PCG_REFERENCE_DIR}")
+    foreach(_pin IN ITEMS
+            "pcg_basic.c=b6582a071a8a090a293621523c063d125a532d772a2a1eb7d60b3e695fe47746"
+            "pcg_basic.h=cd823ddc225da9be520a54f13ef2c491506c353800cae04e8b673b2de58f2cc4")
+        string(REPLACE "=" ";" _parts "${_pin}")
+        list(GET _parts 0 _file)
+        list(GET _parts 1 _expected)
+        if(NOT EXISTS "${_ref}/${_file}")
+            message(FATAL_ERROR "DUOFORGE_PCG_REFERENCE_DIR: ${_ref}/${_file} not found")
+        endif()
+        file(SHA256 "${_ref}/${_file}" _actual)
+        if(NOT _actual STREQUAL _expected)
+            message(FATAL_ERROR "DUOFORGE_PCG_REFERENCE_DIR: ${_file} sha256 ${_actual} != pinned ${_expected}")
+        endif()
+    endforeach()
+    # Isolated third-party build: the pinned upstream code is not
+    # warning-clean under the project flag set, so it never gets it.
+    add_library(duoforge_pcg_reference STATIC "${_ref}/pcg_basic.c")
+    set_target_properties(duoforge_pcg_reference PROPERTIES
+        C_STANDARD 17 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF)
+    target_include_directories(duoforge_pcg_reference SYSTEM PUBLIC "${_ref}")
+    if(DUOFORGE_ENABLE_SANITIZERS)
+        target_compile_options(duoforge_pcg_reference PRIVATE -fsanitize=address,undefined)
+    endif()
+
+    add_executable(duoforge_gen_pcg32_kat "${PROJECT_SOURCE_DIR}/tools/kat/gen_pcg32_kat.c")
+    target_link_libraries(duoforge_gen_pcg32_kat PRIVATE duoforge_pcg_reference)
+    duoforge_configure_target(duoforge_gen_pcg32_kat)
+    add_test(NAME duoforge.rng.kat_regen
+        COMMAND "${CMAKE_COMMAND}" "-DGEN=$<TARGET_FILE:duoforge_gen_pcg32_kat>"
+            "-DOUT=${CMAKE_CURRENT_BINARY_DIR}/pcg32_kat_vectors.h"
+            "-DEXPECTED=${CMAKE_CURRENT_SOURCE_DIR}/data/pcg32_kat_vectors.h"
+            -P "${PROJECT_SOURCE_DIR}/cmake/checks/kat_regen.cmake")
+    set_tests_properties(duoforge.rng.kat_regen PROPERTIES TIMEOUT 120 LABELS reference)
+
+    duoforge_add_test(NAME duoforge.rng.reference_differential
+        SOURCES test_rng_reference_differential.c WHITEBOX
+        TIMEOUT 120 LABELS reference LIBS duoforge_pcg_reference)
+endif()
+
+# Black-box smoke test (M0), kept under its original name.
+add_executable(duoforge_smoke_test smoke_test.c)
+target_link_libraries(duoforge_smoke_test PRIVATE duoforge)
+duoforge_configure_target(duoforge_smoke_test)
+add_test(NAME duoforge_smoke_test COMMAND duoforge_smoke_test)
+set_tests_properties(duoforge_smoke_test PROPERTIES TIMEOUT 30)
+
+# Header self-containment (build-time check).
+add_library(duoforge_header_check OBJECT header_check/duoforge_h_twice.c)
+target_link_libraries(duoforge_header_check PRIVATE duoforge)
+duoforge_configure_target(duoforge_header_check)
+
+# extern "C" link check from C++ (not with sanitizers: the C++ target does not
+# get the sanitizer link flags).
+if(CMAKE_CXX_COMPILER AND NOT DUOFORGE_ENABLE_SANITIZERS)
+    add_executable(duoforge_cxx_link header_check/cxx_link.cpp)
+    target_link_libraries(duoforge_cxx_link PRIVATE duoforge)
+    set_target_properties(duoforge_cxx_link PROPERTIES
+        CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+    if(MSVC)
+        target_compile_options(duoforge_cxx_link PRIVATE /W4 /permissive- /utf-8)
+        if(DUOFORGE_WARNINGS_AS_ERRORS)
+            target_compile_options(duoforge_cxx_link PRIVATE /WX)
+        endif()
+    else()
+        target_compile_options(duoforge_cxx_link PRIVATE -Wall -Wextra -Wpedantic)
+        if(DUOFORGE_WARNINGS_AS_ERRORS)
+            target_compile_options(duoforge_cxx_link PRIVATE -Werror)
+        endif()
+    endif()
+    add_test(NAME duoforge.api.cxx_link COMMAND duoforge_cxx_link)
+    set_tests_properties(duoforge.api.cxx_link PROPERTIES TIMEOUT 30)
+endif()
+
+# Source lint and its self-test.
+add_test(NAME duoforge.lint.sources
+    COMMAND "${CMAKE_COMMAND}" "-DROOT=${PROJECT_SOURCE_DIR}"
+        -P "${PROJECT_SOURCE_DIR}/cmake/checks/lint_sources.cmake")
+add_test(NAME duoforge.lint.selftest
+    COMMAND "${CMAKE_COMMAND}" "-DROOT=${PROJECT_SOURCE_DIR}"
+        "-DWORK=${CMAKE_CURRENT_BINARY_DIR}/lint_selftest"
+        -P "${PROJECT_SOURCE_DIR}/cmake/checks/lint_selftest.cmake")
+set_tests_properties(duoforge.lint.sources PROPERTIES TIMEOUT 60)
+set_tests_properties(duoforge.lint.selftest PROPERTIES TIMEOUT 60)
+
+# No writable static storage in the library (ELF toolchains only).
+add_test(NAME duoforge.lint.no_mutable_globals
+    COMMAND "${CMAKE_COMMAND}" "-DOBJDUMP=${CMAKE_OBJDUMP}" "-DLIB=$<TARGET_FILE:duoforge>"
+        "-DSANITIZERS=${DUOFORGE_ENABLE_SANITIZERS}"
+        -P "${PROJECT_SOURCE_DIR}/cmake/checks/no_mutable_globals.cmake")
+set_tests_properties(duoforge.lint.no_mutable_globals PROPERTIES
+    TIMEOUT 60 SKIP_REGULAR_EXPRESSION "DUOFORGE_SKIP:")
+
+# Sanitizer liveness canaries.
+if(DUOFORGE_ENABLE_SANITIZERS)
+    foreach(_c IN ITEMS ubsan asan)
+        add_executable(duoforge_canary_${_c} canary/canary_${_c}.c)
+        duoforge_configure_target(duoforge_canary_${_c})
+        add_test(NAME duoforge.sanitizer.canary_${_c} COMMAND duoforge_canary_${_c})
+    endforeach()
+    # In optimized builds UBSan's object-size check would abort before ASan
+    # reports; the ASan canary must prove ASan alone.
+    target_compile_options(duoforge_canary_asan PRIVATE -fno-sanitize=undefined)
+    # halt_on_error=0 is mandatory: only the compile flag
+    # -fno-sanitize-recover=all may stop this canary.
+    set_tests_properties(duoforge.sanitizer.canary_ubsan PROPERTIES
+        TIMEOUT 30 LABELS sanitizer-canary
+        ENVIRONMENT "UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=0"
+        PASS_REGULAR_EXPRESSION "runtime error: signed integer overflow"
+        FAIL_REGULAR_EXPRESSION "CANARY_SURVIVED")
+    set_tests_properties(duoforge.sanitizer.canary_asan PROPERTIES
+        TIMEOUT 30 LABELS sanitizer-canary
+        ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
+        PASS_REGULAR_EXPRESSION "AddressSanitizer: heap-buffer-overflow"
+        FAIL_REGULAR_EXPRESSION "CANARY_SURVIVED")
+endif()
