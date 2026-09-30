@@ -1,6 +1,6 @@
 # 0006 — Combat closure: data, state v3, execution, RNG draw sites, events, reference fixtures
 
-Status: **proposed**; being implemented step by step (`tasks/M3_M4_COMBAT_CLOSURE.md`). **Implemented so far:** step 1a, the generated closure tables and the Champions stat and PP formulas (section 2, data only); step 1b-1, the state v3 layout with its invariants, codec and oracle (section 3.1, synthetic data only); step 1b-2, the CLOSURE contexts, real setup validation and the support gate (section 2.1). Every mechanic is still to come, so every real team is rejected with `E_UNSUPPORTED`.
+Status: **proposed**; being implemented step by step (`tasks/M3_M4_COMBAT_CLOSURE.md`). **Implemented so far:** step 1a, the generated closure tables and the Champions stat and PP formulas (section 2, data only); step 1b-1, the state v3 layout with its invariants, codec and oracle (section 3.1, synthetic data only); step 1b-2, the CLOSURE contexts, real setup validation and the support gate (section 2.1); step 2a, the damage and stat arithmetic (`src/core/modifier.c`, checked against values the pinned reference computes) and the draw sites with the test-only tape (`src/rng/draw.c`, section 5). Every mechanic is still to come, so every real team is rejected with `E_UNSUPPORTED`.
 
 Showdown citations are `path:line` at the pin `b2cb775b0616115b775534eaeff50300e1fc81fc`.
 

@@ -22,8 +22,10 @@ add_library(duoforge STATIC
     src/duoforge.c
     src/core/alloc.c
     src/core/sha256.c
+    src/core/modifier.c
     src/rng/pcg32_derived.c
     src/rng/pcg32.c
+    src/rng/draw.c
     src/state/context.c
     src/state/identity.c
     src/state/knowledge.c
