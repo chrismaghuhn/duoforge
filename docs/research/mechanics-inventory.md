@@ -165,9 +165,9 @@ What the M2 decision surface already covers, and what the closure adds.
 | RNG draw sites | Speed-tie shuffle, accuracy, crit, damage roll, secondary, Protect stall, confusion (start, per turn, self-hit roll), sleep duration, freeze thaw, full paralysis, random retarget | Each site needs a named draw in the M3 RNG accounting |
 | Gender | Drawn from the RNG at construction when a set omits it (Grimmsnarl is fixed male) | Always specify gender in fixtures so battle draws stay aligned |
 
-## 5. Proposed split between M3 and M4 (owner decision)
+## 5. Build order (owner decision 2026-09-30: continuous, no backlog)
 
-The roadmap asks for a first vertical slice and then dependency-ordered closure tasks. This is a proposal, not a decision.
+The roadmap describes a first vertical slice (M3) and dependency-ordered closure tasks (M4). The owner decided to build both as one continuous run in the order below, with nothing parked; the task statement is `tasks/M3_M4_COMBAT_CLOSURE.md`. The two groups below are kept as the dependency order, not as separate milestones.
 
 **M3, first combat slice.** Real species, stat and move data for the two teams, restricted to:
 
@@ -226,7 +226,7 @@ The base files used here (`sim/side.ts`, `sim/battle.ts`, `sim/pokemon.ts`, `sim
 
 ## 7. Open points for the owner
 
-1. Accept, change or reject the M3/M4 split in section 5.
+1. Resolved on 2026-09-30: no split, continuous build in the order of section 5.
 2. Decide whether fixtures always specify gender (recommended) so no construction-time draw exists.
 3. Executed reference fixtures need a Node environment with the pinned repository; decide where they run.
 4. State v3 will need at least a per-activation move-action counter (Fake Out), the two-turn charge volatile with its locked move, stat stages, statuses, field and side conditions. This is M3/M4 schema work, not part of M2.

@@ -26,6 +26,8 @@ Exit: exhaustive small-fixture domain tests, information-equivalence tests, stab
 
 Before M3, select the two concrete teams, operational reference commit, rules/information profile and conservative mechanics inventory. This is a small focused selection/review task, not a global census system.
 
+**Owner decision (2026-09-30):** M3 and M4 are executed as one continuous build with no backlog, in the dependency order of `docs/research/mechanics-inventory.md` section 5. The descriptions of M3 and M4 below remain the content; `tasks/M3_M4_COMBAT_CLOSURE.md` is the task statement. M5 and later stay separate authorization boundaries.
+
 ## M3 — First combat vertical slice
 
 Implement the selected foundational damage/stat/PP primitives, normal move execution, the necessary immediate effects, switching, faint processing and turn progression. Include implicit behaviors reachable in the slice such as PP exhaustion. Implement the scheduler/continuation structure even before every mid-turn effect exists.
