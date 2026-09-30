@@ -63,6 +63,7 @@ duoforge_add_test(NAME duoforge.api.atomicity SOURCES test_api_atomicity.c WHITE
 duoforge_add_test(NAME duoforge.request.domain SOURCES test_request_domain.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.request.step SOURCES test_step.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.request.contract SOURCES test_contract.c WHITEBOX TIMEOUT 60)
+duoforge_add_test(NAME duoforge.request.information SOURCES test_information.c WHITEBOX TIMEOUT 60)
 
 # The vendored upstream license must stay byte-exact.
 add_test(NAME duoforge.provenance.pcg_license

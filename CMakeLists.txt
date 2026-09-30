@@ -28,6 +28,7 @@ add_library(duoforge STATIC
     src/state/battle.c
     src/state/transition.c
     src/state/request.c
+    src/state/observation.c
     src/codec/state_codec.c
 )
 target_include_directories(duoforge

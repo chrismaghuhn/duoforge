@@ -265,6 +265,63 @@ duoforge_status duoforge_battle_candidates(const duoforge_context *ctx, const du
 duoforge_status duoforge_battle_step(const duoforge_context *ctx, duoforge_battle *battle,
                                      const duoforge_decision_bundle *bundle, duoforge_step_result *out_result);
 
+/* ---- perspective-safe observation prototype (decision 0005 section 6) ----
+   Derived only from the viewer's authorized information: open team sheets
+   (species, moves, move_count, synthetic stone flag), the viewer's own exact
+   HP/PP/bench order, public occupancy and Mega use, and for the opponent the
+   members the viewer has seen in battle at the profile's HP precision.
+   Unknown values are TAGGED (kind fields), never encoded as zero facts. */
+#define DUOFORGE_HP_EXACT   1u
+#define DUOFORGE_HP_PERCENT 2u /* hp = floor percent (1..100 while alive, 0 fainted), hp_max = 100 */
+#define DUOFORGE_HP_UNKNOWN 3u
+#define DUOFORGE_PP_EXACT   1u
+#define DUOFORGE_PP_UNKNOWN 3u
+#define DUOFORGE_HP_FLAG_NONE   0u
+#define DUOFORGE_HP_FLAG_RED    1u /* exactly 20 percent and hp*5 <= hp_max */
+#define DUOFORGE_HP_FLAG_YELLOW 2u /* exactly 20 percent above that, or exactly 50 and hp*2 <= hp_max */
+#define DUOFORGE_HP_FLAG_GREEN  3u /* exactly 50 percent and hp*2 > hp_max */
+#define DUOFORGE_LOCATION_UNDETERMINED 0u /* foe not yet seen; anyone before team selection */
+#define DUOFORGE_LOCATION_BENCH        1u
+#define DUOFORGE_LOCATION_ACTIVE       2u
+#define DUOFORGE_LOCATION_NOT_BROUGHT  3u /* own side only */
+
+typedef struct duoforge_member_view {
+    uint16_t species_id; /* open; 0 with all other fields 0 for an unregistered slot */
+    uint16_t hp;         /* per hp_kind */
+    uint16_t hp_max;     /* per hp_kind */
+    uint16_t move_ids[DUOFORGE_MAX_MOVE_SLOTS]; /* open; unused slots 0 */
+    uint8_t pp[DUOFORGE_MAX_MOVE_SLOTS];        /* per pp_kind; 0 when unknown */
+    uint8_t move_count;                         /* open */
+    uint8_t hp_kind;                            /* DUOFORGE_HP_* */
+    uint8_t hp_flag;                            /* DUOFORGE_HP_FLAG_* (PERCENT only) */
+    uint8_t pp_kind;                            /* DUOFORGE_PP_* */
+    uint8_t location;                           /* DUOFORGE_LOCATION_* */
+    uint8_t mega_capable;                       /* open (an item is open) */
+} duoforge_member_view; /* 24 bytes */
+
+typedef struct duoforge_side_view {
+    duoforge_member_view members[DUOFORGE_MAX_ROSTER];
+    uint8_t member_count;                        /* open */
+    uint8_t occupant[DUOFORGE_ACTIVE_PER_SIDE];  /* public: roster index or DUOFORGE_ROSTER_NONE */
+    uint8_t mega_used;                           /* public */
+    uint8_t brought_order[DUOFORGE_MAX_ROSTER];  /* own side; all DUOFORGE_ROSTER_NONE for the foe */
+    uint8_t reserved[2];                         /* zero */
+} duoforge_side_view; /* 156 bytes */
+
+typedef struct duoforge_observation {
+    uint32_t epoch;
+    uint8_t boundary_kind;
+    uint8_t player;    /* the viewer; sides[] stays in absolute side order */
+    uint8_t requested; /* as in duoforge_request */
+    uint8_t slot_mask;
+    duoforge_side_view sides[DUOFORGE_SIDE_COUNT];
+} duoforge_observation; /* 320 bytes */
+
+/* Pure. Checks: NULL -> CONTEXT_MISMATCH -> INVALID_ARGUMENT (player) ->
+   INVARIANT. Writes *out_observation only on success. */
+duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duoforge_battle *battle,
+                                        uint32_t player, duoforge_observation *out_observation);
+
 #ifdef __cplusplus
 }
 #endif
