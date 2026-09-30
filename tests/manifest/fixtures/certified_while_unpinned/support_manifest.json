@@ -1,0 +1,9 @@
+{
+  "schema": "pbd.support-manifest.v0-draft",
+  "note": "Negative-test fixture: certification cannot be claimed while sources are unpinned.",
+  "certification": "CERTIFIED",
+  "rules_profile": "example-profile",
+  "information_profile": "example-info",
+  "teams": "example-teams",
+  "areas": [ { "id": "gameplay-rng", "status": "CERTIFIED" } ]
+}

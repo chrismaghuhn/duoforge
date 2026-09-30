@@ -1,0 +1,13 @@
+{
+  "schema": "pbd.source-lock.v0-draft",
+  "lock_status": "UNPINNED",
+  "note": "Negative-test fixture: an unpinned entry must not carry a revision.",
+  "entries": [
+    {
+      "id": "example",
+      "status": "UNPINNED",
+      "revision": "0123456789abcdef0123456789abcdef01234567",
+      "files": [ { "path": "example.c", "sha256": null } ]
+    }
+  ]
+}

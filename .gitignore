@@ -1,0 +1,6 @@
+# Build trees (presets write to build/<preset>)
+/build/
+/out/
+
+# Per-user CMake presets
+/CMakeUserPresets.json

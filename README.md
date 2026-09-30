@@ -2,7 +2,7 @@
 
 Stand: 12. September 2026. Arbeitsname: `pokemon-doubles-core`, Symbolpräfix `pbd_`.
 
-Dies ist ein **Entwurf und Codex-Arbeitspaket**, keine implementierte Engine. Es wurden keine Engine-Tests, Builds oder Benchmarks ausgeführt und keine GitHub-Repositories angelegt oder verändert.
+Dies ist ein **Architekturentwurf mit dem M0-Build-Grundgerüst**, aber **noch keine Kampfengine**. Vorhanden sind: CMake/C17-Projekt, statische Core-Bibliothek, eine Versions-/Statusabfrage, Smoke- und Manifest-Tests sowie eine CI-Konfiguration. Es gibt noch keinen RNG, keinen Battle-State, keine Entscheidungen, keine Kampfmechanik und keine Benchmarks.
 
 ## Ziel
 
@@ -32,6 +32,48 @@ Die Architekturdateien sind bewusst englisch, damit sie unmittelbar als technisc
 | `docs/OPEN_DECISIONS.md` | Entscheidungen, die vor den jeweiligen Slices tatsächlich geklärt werden müssen |
 | `docs/SOURCES.md` | Am 12. September 2026 geprüfte Primärquellen und ihre Grenzen |
 | `tasks/M0_BOOTSTRAP.md` | Direkt verwendbarer erster Codex-Auftrag |
+| `docs/decisions/0001-m0-build-foundation.md` | Entscheidungsnotiz zum M0-Build-Grundgerüst (vorgeschlagen, Review offen) |
+| `CMakeLists.txt`, `CMakePresets.json`, `cmake/` | Build-Konfiguration, Presets, compiler-spezifische Warnungen/Sanitizer |
+| `include/pbd/version.h`, `src/version.c` | Einzige öffentliche API bisher: Version und Implementierungsstufe |
+| `tests/` | Smoke-Test und Manifest-Prüfung (mit Negativ-Fixtures) |
+| `manifests/` | Source-Lock und Support-Manifest als Gerüst: alles `UNPINNED` bzw. `UNSUPPORTED` |
+| `.github/workflows/ci.yml` | CI-Konfiguration für Linux (GCC/Clang, ASan/UBSan) und Windows (MSVC) |
+
+## Bauen und testen
+
+Voraussetzungen: CMake ≥ 3.21, ein C17-Compiler, unter Linux zusätzlich Ninja. Lokal verifiziert wurden nur die unten unter *Status* genannten Toolchains.
+
+**Linux (GCC oder Clang, Ninja):**
+
+```sh
+cmake --preset ninja-debug            # bzw. ninja-release
+cmake --build --preset ninja-debug
+ctest --preset ninja-debug
+```
+
+Compiler wählen, z. B. mit `CC=clang cmake --preset ninja-debug`. Warnungen als Fehler: beim Konfigurieren `-DPBD_WARNINGS_AS_ERRORS=ON` anhängen (so läuft es in der CI).
+
+**Linux mit AddressSanitizer + UndefinedBehaviorSanitizer:**
+
+```sh
+CC=gcc cmake --preset ninja-asan-ubsan
+cmake --build --preset ninja-asan-ubsan
+ctest --preset ninja-asan-ubsan
+```
+
+Mit Clang setzt dies die installierte compiler-rt-Laufzeit voraus (z. B. Ubuntu-Paket `libclang-rt-18-dev`).
+
+**Windows (Visual Studio 2022, x64; cmd oder PowerShell):**
+
+```sh
+cmake --preset vs2022
+cmake --build --preset vs2022-debug
+ctest --preset vs2022-debug
+```
+
+Für Release `vs2022-release` statt `vs2022-debug` verwenden (Build und Test).
+
+Build-Verzeichnisse liegen unter `build/<preset>/`. Alle Tests sind endlich und haben einen Timeout (Test-Presets: 60 s Standard).
 
 ## Die wichtigsten Festlegungen
 
@@ -53,6 +95,12 @@ Frühere Zahlen wie mehrere Tausend vollständige Gen-9-Doubles-Battles pro Seku
 
 - Architektur: Vorschlag v0.1.
 - Referenz-Recherche: durchgeführt; siehe Quellen.
-- Unveränderliche Referenz-Commits: noch nicht gepinnt.
-- Konkrete Teams und Regelprofil: noch nicht ausgewählt.
-- Code, Engine-Konformität, Performance und Hosted CI: nicht vorhanden bzw. nicht ausgeführt.
+- Unveränderliche Referenz-Commits: noch nicht gepinnt (`manifests/source_lock.json`: `UNPINNED`).
+- Konkrete Teams und Regelprofil: noch nicht ausgewählt (`manifests/support_manifest.json`: `NOT_SELECTED`).
+- **M0 (Build-Grundgerüst): implementiert.** Lokal ausgeführt und bestanden unter Linux (Ubuntu 24.04, x86_64):
+  - Debug und Release mit GCC 13.3.0 und mit Clang 18.1.3 (Warnungen als Fehler), CMake 3.28.3 und Ninja 1.11.1;
+  - Debug und Release mit CMake 3.21.4 (deklariertes Minimum);
+  - ASan+UBSan mit GCC 13.3.0.
+- Nicht lokal ausgeführt: Windows/MSVC; ASan/UBSan mit Clang (in dieser Umgebung fehlt die compiler-rt-Laufzeit).
+- Hosted CI: Workflow-Datei vorhanden. Sie gilt erst als bestanden, wenn ein Lauf auf der betreffenden Revision tatsächlich beobachtet wurde.
+- Engine-Funktionalität (RNG, State, Entscheidungen, Kampf, Replay, Batch, Python): **nicht vorhanden**. Nächster Schritt ist M1 laut `docs/ROADMAP.md`, aber nur nach ausdrücklicher Freigabe.

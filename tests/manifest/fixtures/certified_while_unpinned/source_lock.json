@@ -1,0 +1,13 @@
+{
+  "schema": "pbd.source-lock.v0-draft",
+  "lock_status": "UNPINNED",
+  "note": "Negative-test fixture.",
+  "entries": [
+    {
+      "id": "example",
+      "status": "UNPINNED",
+      "revision": null,
+      "files": [ { "path": "example.c", "sha256": null } ]
+    }
+  ]
+}

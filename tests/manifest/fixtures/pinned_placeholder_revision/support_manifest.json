@@ -1,0 +1,9 @@
+{
+  "schema": "pbd.support-manifest.v0-draft",
+  "note": "Negative-test fixture.",
+  "certification": "NONE",
+  "rules_profile": "NOT_SELECTED",
+  "information_profile": "NOT_SELECTED",
+  "teams": "NOT_SELECTED",
+  "areas": [ { "id": "gameplay-rng", "status": "UNSUPPORTED" } ]
+}
