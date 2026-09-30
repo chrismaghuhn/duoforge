@@ -25,8 +25,8 @@
 ## References
 
 - **Executable reference:** Pokémon Showdown at `b2cb775b0616115b775534eaeff50300e1fc81fc`. Keep a full checkout **outside** this repository; vendor nothing. Add the hashes of the `champions` mod files to decision `0004` when you first derive data from them (they are listed in `docs/research/mechanics-inventory.md` section 6).
-- **Setting up the checkout runs third-party code** (clone, dependency install, build). Ask the owner before you do it. Node v24 is on the Windows host; WSL has no Node.
-- **Lookup source:** the owner named a PokéWiki for questions about intended game behaviour. Record its URL and retrieval date in `docs/SOURCES.md` on first use. It explains; it is **not** a source of test expectations. Where it disagrees with the pin, record a known divergence in `docs/OPEN_DECISIONS.md` and ask the owner; do not pick a side silently.
+- **The checkout exists** at `C:\Dev\src\pokemon-showdown` (owner approved 2026-10-01; `npm ci --ignore-scripts --omit=dev`, `node build`). Do not update it past the pin.
+- **Lookup source:** https://www.pokewiki.de/ (`docs/SOURCES.md` S10) for questions about intended game behaviour. Record the page URL and retrieval date with each use. It explains; it is **not** a source of test expectations. Where it disagrees with the pin, record a known divergence in `docs/OPEN_DECISIONS.md` and ask the owner; do not pick a side silently.
 - Cite `path:line` at the pin for every rule you implement.
 
 ## Rules of the no-backlog build
@@ -41,7 +41,7 @@
 
 ## Step order
 
-0. **Decision note `0006`:** state v3 (stat stages, status, volatiles, field and side conditions, action queue and continuation data, Mega forme, per-activation move-action counter, locked move), the RNG draw-site registry, data tables and provenance, the event and knowledge model, and the reference-fixture method (controlled RNG injection; decision `0001` rejects PRNG parity).
+0. **Decision note `0006`** (written, `docs/decisions/0006-combat-closure-design.md`, awaiting owner review): state v3 (stat stages, status, volatiles, field and side conditions, action queue and continuation data, Mega forme, per-activation move-action counter, locked move), the RNG draw-site registry, data tables and provenance, the event and knowledge model, and the reference-fixture method (controlled RNG injection; decision `0001` rejects PRNG parity).
 1. **Real data and formulas:** context with real tables, Champions stat and PP formulas, real setup validation. Play is still rejected.
 2. **Turn core:** action queue and ordering (priority, speed, tie shuffle, re-sort), plain damaging moves single and spread, accuracy with stages, critical hits, random factor, STAB, type chart, stat stages, self-boost moves, PP deduction, Struggle, Protect with the stall counter.
 3. **Switching and fainting:** voluntary switch, faint queue, real REPLACEMENT boundaries, win rule.
@@ -67,12 +67,12 @@ The order follows `docs/research/mechanics-inventory.md` section 5. Change it on
 - **Information boundary:** paired states for everything the step hides or reveals.
 - **Malformed-input atomicity** stays separate from rule-authorized rejection.
 - **Negative controls** for each important guarantee.
-- **Executed reference fixtures** from the pinned simulator once the owner has approved the checkout. Until then mark them NOT_RUN and do not claim parity.
+- **Executed reference fixtures** from the pinned simulator (method: decision `0006` section 7). Always specify gender in team specifications (owner, 2026-10-01).
 
 ## Verification
 
-- GCC and Clang, Debug and Release, with `-DDUOFORGE_WARNINGS_AS_ERRORS=ON`; the GCC sanitizer build.
-- Hosted CI green, including MSVC (`/W4 /WX`, no `max_align_t`).
+- **Local, native Windows, no WSL** (owner, 2026-10-01): MSVC Debug and Release with `-DDUOFORGE_WARNINGS_AS_ERRORS=ON`, plus GCC (MinGW-w64) and Clang (LLVM) once installed.
+- **Hosted CI** green on every push: Linux GCC and Clang Debug and Release, the GCC ASan/UBSan job, MSVC x64 and Win32. The sanitizer evidence comes only from CI; observe the run before a step counts as done.
 - Report PASS/FAIL/NOT_RUN/BLOCKED/SKIPPED with commands. Hosted CI counts as PASS only once a run has been observed.
 
 ## Git

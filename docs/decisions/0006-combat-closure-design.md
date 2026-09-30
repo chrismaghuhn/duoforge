@@ -1,0 +1,121 @@
+# 0006 — Combat closure: data, state v3, execution, RNG draw sites, events, reference fixtures
+
+Status: **proposed** (step 0 of `tasks/M3_M4_COMBAT_CLOSURE.md`). **No code exists for it yet.** It is the single design for the whole closure of the two reference teams; step 1 starts after the owner has read it.
+
+Showdown citations are `path:line` at the pin `b2cb775b0616115b775534eaeff50300e1fc81fc`.
+
+## 1. Owner inputs this note builds on
+
+| Date | Input |
+|---|---|
+| 2026-09-30 | **No backlog:** one continuous build in the order of `docs/research/mechanics-inventory.md` section 5; nothing parked; state v3 designed once; the real teams stay rejected until the closure gate. |
+| 2026-10-01 | **Gender is always specified** in team specifications and fixtures. No construction-time gender draw exists in DuoForge. |
+| 2026-10-01 | **Reference checkout approved.** It lives outside this repository at `C:\Dev\src\pokemon-showdown` (detached at the pin), installed with `npm ci --ignore-scripts --omit=dev` and built with `node build`. Nothing is vendored. |
+| 2026-10-01 | **Lookup source:** https://www.pokewiki.de/ for questions about intended game behaviour. It explains; it never supplies test expectations. |
+| 2026-10-01 | **Local verification runs natively on Windows, not in WSL** (section 9). |
+
+## 2. Data: context v3
+
+- `data_kind` keeps `SYNTHETIC` (1) for the structural and exhaustive domain tests of M1/M2 and gains `CLOSURE` (2): the generated tables of the two-team closure. A `SYNTHETIC` battle can never execute combat (`E_UNSUPPORTED`), because it has no types, stats or effects.
+- **Generated, committed tables.** `tools/datagen/gen_closure.py` reads the pinned checkout and writes `src/data/closure_tables.{h,c}`. Every record carries its source `path:line`; the file header lists the sha256 of every input file. CTest checks the generated file's hash; an optional reference test (`DUOFORGE_PS_REFERENCE_DIR`) regenerates and compares byte-exactly, as the PCG known-answer test does. The core contains no parser and reads no file.
+- **Contents:** 16 formes (types, base stats, weight, ability, Mega link and stone), 36 moves plus Struggle (type, category, power, accuracy, base PP, priority, target class, crit ratio, flags, effect id), 16 abilities and 11 items (effect ids), the 18-type chart, the 25 natures, and per species the move list of its set in decision `0004`.
+- **Metadata is not mechanics** (ARCHITECTURE §2, §8). An effect id only names a typed handler written and tested in C.
+- **Support manifest in code.** A compiled table marks each mechanic id (move effect, ability, item, status, field effect) as implemented. Setup computes the mechanic set of both teams; if any member of it is not implemented, creation fails with `E_UNSUPPORTED`. This is the no-fake-success gate: development fixtures are closure-legal sets whose mechanics are all implemented, and the two real teams pass only when the last flag is set (step 13).
+- **Setup v3 (CLOSURE):** per member species, gender (required, must be legal for the species), nature, Stat Points (at most 32 each and 66 in total), ability, item and 1 to 4 moves from the species' list. Level is 50. Species Clause and Item Clause are enforced. The engine derives stats and PP; the synthetic `hp_max`/`pp_max` inputs exist only for `SYNTHETIC`.
+- **Fingerprint v3** covers the configuration and the hash of the generated tables.
+
+## 3. Owned state v3 (one design for the whole closure)
+
+Schema 3 / semantics 3 ("duoforge-m3-closure"). Fixed size, no padding, same envelope. The exact layout table and its static asserts are written in step 1; the v2 goldens become "rejected: schema 2" inputs.
+
+| Group | Fields (new in v3 unless marked v2) |
+|---|---|
+| Header | fingerprint, RNG, next activation, boundary kind, request mask, epoch (v2); turn counter; execution phase; terminal result (none, side 0, side 1, tie). Boundary kind gains TERMINAL, the only kind with an empty request mask. |
+| Field | weather and turns left; terrain and turns left; Trick Room turns left. |
+| Side | roster count, brought mask and order, requested slots, Mega used, seen mask, sealed re-prompt record (v2); Reflect, Light Screen and Tailwind turns left. |
+| Member (persistent) | base species, Mega flag, gender, nature, Stat Points, current stats, HP, status and its counter, item and consumed flag, current ability, four moves with PP and max PP. |
+| Active slot (cleared on entry) | occupant and activation id (v2); seven stat stages; volatile flags (flinch, protect, Flash Fire, charging); stall counter; confusion turns; locked move and its target; move actions since entry (Fake Out); switch flag (pivot, Emergency Exit). |
+| Action queue (continuation) | up to 12 records: kind, side, slot, activation binding, move slot, target, order class, priority, speed key, consumed flag; queue length and cursor; the sub-position inside a paused action. |
+| Knowledge (per player) | seen mask (v2); per opposing member last seen HP percent and flag, observed uses per move, item-consumed and Mega-seen flags. |
+
+- **Bounds.** The queue holds at most 2 Mega actions, 4 move or switch actions, 4 forced switch-ins and the residual action; 12 leaves one spare, and overflow is `E_INVARIANT`, never a dropped action.
+- **Continuation** (DECISION_CONTRACT §5). A pause stores the queue, the cursor and the sub-position; nothing needed after the call returns lives on the C stack.
+- **Last-seen HP** replaces the M2 prototype rule for benched opponents (decision `0005` section 6 limit).
+- **Rule-authorized re-prompt** keeps its v2 record. No mechanic in this closure triggers it (no trapping); it stays structural.
+- **Invariants** extend to every new field's range and to queue consistency. Decodability is still not reachability.
+
+## 4. Execution model
+
+- **Step on a working copy** (DETERMINISM §6): validate the bundle, turn it into queued actions, run to the next boundary (TURN, REPLACEMENT, PIVOT or TERMINAL) on a stack copy with staged outputs, commit on success. Any failure leaves the committed battle unchanged.
+- **Explicit scheduler** mirroring the reference: order classes 3 (forced switch-in), 103 (switch), 104 (Mega), 200 (moves), 300 (residual); then priority, then speed, then a tie shuffle; re-sort after every action (`sim/battle-queue.ts:174-192`, `sim/battle.ts:404-411`, `:2649`).
+- **Typed hooks in fixed precedence**, not a generic effect language: priority modification, move blocking, redirection, try-hit (Protect, absorption), type and ability immunity, accuracy, base power, attack and defence modifiers, final damage modifiers, damaging-hit reactions, secondary effects, after-move (Emergency Exit, self-switch), switch-in, residual. Handler order follows the reference's order, priority, speed and sub-order; registration order never decides an outcome.
+- **Arithmetic.** Truncating integer math with the reference's 4096-based modifiers: `modify(v, m) = tr((tr(v * tr(m * 4096)) + 2047) / 4096)` and the chained modifier `((prev * next + 2048) >> 12)` (`sim/battle.ts:2321-2343`); base damage `tr(tr(tr(tr(2L/5 + 2) * BP * A) / D) / 50)` (`sim/battle-actions.ts:1718`). These helpers enter `core/arith` with reference fixtures, as decision `0002` section 8 foresaw.
+- **Struggle, locked move, Fake Out** become domain rules of the request module, replacing M2's `E_UNSUPPORTED` for Struggle.
+- **Terminal.** A finished battle sits at TERMINAL with a result and an empty request mask; any further bundle is malformed input.
+
+## 5. RNG draw sites
+
+Every draw goes through one internal function that takes a **site id** and a bound and uses the bounded PCG32 of decision `0001`. The registry (stable ids, recorded in the fixtures):
+
+| Site | Bound and meaning | Reference |
+|---|---|---|
+| SPEED_TIE | shuffle of a tied group of `n`: `n - 1` draws `random(i, n)` | `sim/prng.ts:150-155`, `sim/battle.ts:429-463` |
+| ACCURACY | `random(100) < accuracy`, once per target with numeric accuracy | `sim/battle-actions.ts:690-760` |
+| CRIT | `random(24)` or `random(8)` equal to 0 | `sim/battle-actions.ts:1623-1646` |
+| DAMAGE_ROLL | `random(16)`, factor `100 - r` | `sim/battle.ts:2391-2394` |
+| SECONDARY | `random(100) < chance`, drawn even at 100 | `sim/battle-actions.ts:1336-1352` |
+| STALL | `random(counter) == 0` from the second consecutive Protect | `data/conditions.ts:439-462` |
+| SLEEP_TURNS | `random(3)` over `[2, 3, 3]` | `data/mods/champions/conditions.ts:11-30` |
+| FREEZE_THAW | `random(4) == 0` while the counter is positive | `data/mods/champions/conditions.ts:31-56` |
+| FULL_PARALYSIS | `random(8) == 0` | `data/mods/champions/conditions.ts:2-10` |
+| CONFUSION_TURNS | `random(2, 6)` at start | `data/conditions.ts:162-197` |
+| CONFUSION_HIT | `random(100) < 33` per attempt, then a DAMAGE_ROLL | same |
+| RANDOM_TARGET | `random(n)` over the valid foes when the chosen target is gone | `sim/battle.ts:2440-2521` |
+
+- **No Showdown PRNG parity** (decision `0001`, DETERMINISM §3). What must agree with the reference is the **sequence of sites, bounds and outcomes**, not raw seeds.
+- **Test-only tape.** Conformance tests run the same step through an internal, white-box entry point that takes the outcomes from a tape instead of the PCG. The tape states site and bound for every draw; a mismatch or an exhausted tape is an explicit error, never a silent fallback. The tape is not in the public header and not in any production path; replay and normal play use the PCG.
+- The gender draw at construction (`sim/pokemon.ts:421-430`) does not exist here because gender is always specified.
+
+## 6. Events, knowledge and observation
+
+- A step produces **semantic events** (move used, damage as seen by each side, status, stage change, item consumed, ability shown, field and side condition start and end, switch, faint, Mega, result). Each event has a visibility: public, one side, or privileged.
+- **One source for knowledge.** The per-player knowledge state is updated only by folding the events that player may see. Observations read own state plus knowledge, never the opponent's state.
+- **Events are outputs, not state** (DETERMINISM §5). They are staged during the step; a too-small caller buffer returns `E_CAPACITY` with the required count and commits nothing, as in decision `0005` section 7.
+- **Observation v2** adds what is public: statuses, stat stages, field and side conditions with turns, Mega formes, consumed items, last seen HP and observed move uses of the opponent. Exact PP and exact HP of the opponent stay hidden.
+- Paired-information tests are extended with every mechanic that hides or reveals something.
+
+## 7. Reference fixtures
+
+- **Harness** `tools/reference/ps_trace.js` (our code, run with Node against the checkout). It passes a recording PRNG through the battle option `prng` (`sim/battle.ts:66`, `:224`), so every `random`, `randomChance`, `sample` and `shuffle` call is logged with its bounds and result, together with requests, choices and the battle log.
+- **Input:** a fixture specification (format id, both teams with gender, the choices per request). **Output:** a normalized trace (requests, draws, HP and status at each boundary, events).
+- **Formats.** `gen9championsvgc2026regmc` for the real teams. Development fixtures record the exact format id they used and whether it runs in debug mode (exact HP), so no fixture silently mixes display rules.
+- **Into the tests.** Traces are committed under `tests/reference/` with pin, harness version and specification. A generator turns them into C fixture tables; CTest consumes only the generated tables and never runs Node. An optional test with label `reference` reruns the harness when the checkout and Node are present.
+- **Draw alignment.** Each reference draw maps to a DuoForge site by position and bound. A count or bound mismatch fails the fixture; it is fixed in the engine or recorded as a known divergence in `docs/OPEN_DECISIONS.md`, never patched in the trace.
+- Showdown is a reference implementation, not proof of cartridge behaviour (TESTING §2). Where https://www.pokewiki.de/ and the pin disagree, the disagreement is recorded and the owner decides.
+
+## 8. Evidence per step
+
+Every step of the task file delivers: unit tests with reference-derived expectations, interaction tests for the cross-team interactions it makes reachable, snapshot and resume tests at every boundary it can produce, draw-count tests against the registry, paired-information tests, malformed-input atomicity, negative controls, and executed reference fixtures. The oracle in `tools/state_model/` is extended to state v3 and the new domain rules.
+
+## 9. Local verification (owner, 2026-10-01)
+
+- Local builds run **natively on Windows**; WSL is no longer used.
+- Available now: MSVC (Visual Studio Build Tools 2022) with the Visual Studio generator. Baseline on `main` (`f9fa9ef`): `cmake -S . -B build/msvc -A x64 -DBUILD_TESTING=ON -DDUOFORGE_WARNINGS_AS_ERRORS=ON`, build and `ctest -C Debug`: 24 of 24 tests pass, 36 s.
+- GCC (MinGW-w64) and Clang (LLVM) are added to the local loop once installed; they catch warnings that MSVC does not report.
+- **Sanitizers stay in hosted CI.** MinGW GCC ships no AddressSanitizer and leak detection does not exist on Windows, so the GCC ASan/UBSan job on Linux is observed on every push before a step counts as done.
+
+## 10. Alternatives considered
+
+- Loading data from JSON at run time: rejected; generated C tables keep parsing and file access out of the core.
+- A generic effect language: rejected (ARCHITECTURE §6); typed hooks with reference-derived order.
+- Storing the event history in the battle: rejected (DETERMINISM §5); compact knowledge in state, events as output.
+- Showdown PRNG parity: rejected (decision `0001`); semantic draw alignment through a test-only tape.
+- Dropping `SYNTHETIC`: rejected; the exhaustive domain tests need all nine target classes, which the closure does not contain.
+- Two schema bumps (one per former milestone): rejected by the owner's no-backlog decision.
+
+## 11. Points the owner should look at
+
+1. The support manifest as the setup gate (section 2).
+2. The state v3 groups (section 3): anything missing here means a later schema bump.
+3. The test-only tape (section 5) as the way to align with the reference.
+4. Events as step output with the `E_CAPACITY` convention (section 6).

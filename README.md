@@ -88,7 +88,7 @@ Every call is failure-atomic: on error nothing is mutated or leaked, and the onl
 
 ## Documentation
 
-- Decisions: `docs/decisions/0001` (RNG), `0002` (state, identity, encoding), `0003` (build and evidence), `0004` (owner selections), `0005` (requests, commands, information boundary, state v2)
+- Decisions: `docs/decisions/0001` (RNG), `0002` (state, identity, encoding), `0003` (build and evidence), `0004` (owner selections), `0005` (requests, commands, information boundary, state v2), `0006` (combat closure design, proposed; no code yet)
 - Architecture proposal and contracts: `docs/ARCHITECTURE.md`, `docs/DECISION_CONTRACT.md`, `docs/DETERMINISM_AND_REPLAY.md`, `docs/ROADMAP.md`
 - Status manifest: `docs/support/README.md`; open decisions: `docs/OPEN_DECISIONS.md`
 - Task statements: `tasks/M0_BOOTSTRAP.md`, `tasks/M1_DETERMINISTIC_PRIMITIVES.md`, `tasks/M2_REQUESTS_AND_COMMANDS.md`, `tasks/M3_M4_COMBAT_CLOSURE.md` (next, not started)
