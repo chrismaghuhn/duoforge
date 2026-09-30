@@ -22,9 +22,10 @@ Do not block M0 on all future choices. Conversely, do not silently turn unreview
 | ABI stability | Opaque handles proposed; no frozen full ABI yet | External consumers |
 | Numerical performance target | None until baseline measurement | Performance claims |
 | First ML algorithm | Deferred; candidate-scoring interface does not require a chosen algorithm | Learner task |
-| State artifacts | BATTLE_STATE v2 / CONTEXT v2 / semantics 2 / SHA-256 digest; reject on mismatch, no migration before certification (decisions 0002, 0005); the v1 goldens are rejected inputs | — |
+| State artifacts | BATTLE_STATE v3 / CONTEXT v3 / semantics 3 / SHA-256 digest; reject on mismatch, no migration before certification (decisions 0002, 0005, 0006); the v1 and v2 goldens are rejected inputs | — |
 | Caller-provided battle storage / placement API | Only if a measured need arises | M6 |
-| Synthetic `hp_max`/`pp_max` inputs | Replaced by real derivation from the pinned Champions data | M3 |
+| Synthetic `hp_max`/`pp_max` inputs | **Done for CLOSURE (step 1b-2):** stats and PP are derived from the generated tables; the inputs stay for SYNTHETIC only | done |
+| Development data kind `CLOSURE_DEV` | **Proposed in step 1b-2** (decision 0006 section 2.1): closure data with No Ability allowed, so development fixtures can run before the abilities exist; separate fingerprint | Owner review (before step 2 fixtures) |
 | Variable-size output convention | **RESOLVED (decision 0005 section 7):** exact count in the request plus required-size out-param on `E_CAPACITY` plus the profile bound `DUOFORGE_MAX_CANDIDATES`. Superseded text: decide with enumeration-cost evidence and the information-safety rules of decision 0002 §9 | M2 |
 | Battle creation at a TEAM_SELECTION boundary | **RESOLVED (decision 0005):** the brought/leads setup path is removed; every battle starts at TEAM_SELECTION; mid-turn fixtures are white-box test builders | done |
 | Request-mask visibility | The observation carries only the viewer's own `requested` flag; whether the opponent must also act at a pause is not exposed yet (decision 0005 section 6). Decide with the first real pivot mechanic | M4 |

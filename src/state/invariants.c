@@ -1,6 +1,7 @@
 #include "state/invariants.h"
 
 #include "core/arith.h"
+#include "state/closure_member.h"
 #include "state/context_internal.h"
 #include "state/identity.h"
 #include "state/knowledge.h"
@@ -111,9 +112,13 @@ static dfi_invariant dfi_check_member(const struct duoforge_context *ctx, const 
     if (m->mega_capable > 1u) {
         return DFI_INV_MEGA_CAPABLE_RANGE;
     }
-    /* Only SYNTHETIC data exists: no stats, natures, statuses, items or
-     * abilities. */
-    if (!dfi_member_extra_is_zero(m)) {
+    /* SYNTHETIC data has no stats, natures, statuses, items or abilities;
+     * CLOSURE members must agree with the generated tables and formulas. */
+    if (dfi_context_is_closure(ctx)) {
+        if (!dfi_closure_member_valid(ctx->data_kind == DUOFORGE_DATA_KIND_CLOSURE_DEV, m)) {
+            return DFI_INV_MEMBER_EXTRA;
+        }
+    } else if (!dfi_member_extra_is_zero(m)) {
         return DFI_INV_MEMBER_EXTRA;
     }
     return DFI_INV_NONE;

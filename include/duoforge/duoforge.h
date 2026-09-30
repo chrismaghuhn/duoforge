@@ -100,43 +100,67 @@ const char *duoforge_status_name(duoforge_status status);
 #define DUOFORGE_BOUNDARY_TERMINAL       5u /* the battle is over: nobody is requested (decision 0006) */
 #define DUOFORGE_BOUNDARY_COUNT          5u
 
-/* ---- immutable synthetic context ---- */
-#define DUOFORGE_DATA_KIND_SYNTHETIC 1u /* only accepted value: no real Pokedex data */
+/* ---- immutable context (decision 0006 section 2) ---- */
+#define DUOFORGE_DATA_KIND_SYNTHETIC   1u /* synthetic ids and target classes; no combat ever */
+#define DUOFORGE_DATA_KIND_CLOSURE     2u /* the generated closure tables; format-legal sets only */
+#define DUOFORGE_DATA_KIND_CLOSURE_DEV 3u /* the closure tables; as CLOSURE, but a member may have
+                                             No Ability (development fixtures) */
 typedef struct duoforge_context duoforge_context;
 typedef struct duoforge_context_config {
-    uint32_t data_kind;     /* == DUOFORGE_DATA_KIND_SYNTHETIC */
+    uint32_t data_kind;     /* DUOFORGE_DATA_KIND_* */
     uint32_t max_roster;    /* 1..DUOFORGE_MAX_ROSTER */
     uint32_t brought_count; /* 1..max_roster; picked at TEAM_SELECTION */
-    uint32_t species_count; /* 1..65535; synthetic species ids 0..species_count-1 */
-    uint32_t move_count;    /* 1..65535; synthetic move ids 0..move_count-1 */
-    /* move_count bytes, each a DUOFORGE_TARGET_CLASS_* value 1..9; copied at
-       create (read once) and hashed into the fingerprint. */
+    uint32_t species_count; /* SYNTHETIC: 1..65535, species ids 0..species_count-1; CLOSURE: 0 */
+    uint32_t move_count;    /* SYNTHETIC: 1..65535, move ids 0..move_count-1; CLOSURE: 0 */
+    /* SYNTHETIC: move_count bytes, each a DUOFORGE_TARGET_CLASS_* value 1..9;
+       copied at create (read once) and hashed into the fingerprint.
+       CLOSURE: NULL (the generated tables are built in). */
     const uint8_t *move_target_classes;
 } duoforge_context_config;
-/* Checks: NULL(config, out) -> INVALID_ARGUMENT (fields in order) -> NULL(table)
-   -> INVALID_ARGUMENT (table entries) -> OUT_OF_MEMORY. */
+/* Checks: NULL(config, out) -> INVALID_ARGUMENT (fields in order, including
+   a table given for a CLOSURE kind) -> NULL(synthetic table) ->
+   INVALID_ARGUMENT (table entries) -> OUT_OF_MEMORY. */
 duoforge_status duoforge_context_create(const duoforge_context_config *config,
                                         duoforge_context **out_context);
 void duoforge_context_destroy(duoforge_context *context); /* NULL is a no-op */
 /* SHA-256 of the canonical context bytes: semantics id, context schema,
-   structural constants, config and the SHA-256 of the target-class table.
+   structural constants, config and the SHA-256 of the target-class table
+   (SYNTHETIC) or of the generated closure tables (CLOSURE kinds).
    Independent of platform and build. */
 duoforge_status duoforge_context_fingerprint(const duoforge_context *context,
                                              uint8_t out_fingerprint[DUOFORGE_DIGEST_SIZE]);
 
-/* ---- SYNTHETIC battle setup. Every entry at or after a count must be
-   all-zero. A battle starts at TEAM_SELECTION with an empty brought set and
-   empty positions (decision 0005 section 2). ---- */
+/* ---- battle setup. Every entry at or after a count must be all-zero. A
+   battle starts at TEAM_SELECTION with an empty brought set and empty
+   positions (decision 0005 section 2).
+   SYNTHETIC: species, hp_max, moves with pp_max and the stone flag are
+   caller inputs; the CLOSURE fields must be 0.
+   CLOSURE kinds (decision 0006 section 2): species is a base forme of the
+   closure tables; gender, nature, Stat Points, ability, item and 1 to 4
+   moves of the forme's set; hp_max, pp_max and mega_capable must be 0
+   because the engine derives stats, PP and the stone flag. Species Clause
+   and Item Clause hold per side. A legal team whose mechanics are not all
+   implemented yet is rejected with E_UNSUPPORTED. ---- */
+#define DUOFORGE_GENDER_MALE   1u
+#define DUOFORGE_GENDER_FEMALE 2u
+#define DUOFORGE_GENDER_NONE   3u /* genderless species */
+#define DUOFORGE_STAT_POINTS_MAX       32u /* per stat */
+#define DUOFORGE_STAT_POINTS_TOTAL_MAX 66u /* per member */
 typedef struct duoforge_move_setup {
-    uint32_t move_id; /* < context move_count */
-    uint32_t pp_max;  /* 1..255 */
+    uint32_t move_id; /* < context move_count; CLOSURE: a move of the forme's set */
+    uint32_t pp_max;  /* SYNTHETIC: 1..255; CLOSURE: 0 */
 } duoforge_move_setup;
 typedef struct duoforge_member_setup {
-    uint32_t species_id;   /* < context species_count */
-    uint32_t hp_max;       /* 1..65535 (synthetic input; M3 derives it) */
+    uint32_t species_id;   /* < context species_count; CLOSURE: a base forme id */
+    uint32_t hp_max;       /* SYNTHETIC: 1..65535; CLOSURE: 0 */
     uint32_t move_count;   /* 1..DUOFORGE_MAX_MOVE_SLOTS */
-    uint32_t mega_capable; /* 0/1 SYNTHETIC stand-in for "holds a matching Mega Stone" */
+    uint32_t mega_capable; /* SYNTHETIC: 0/1 stand-in for "holds a matching Mega Stone"; CLOSURE: 0 */
     duoforge_move_setup moves[DUOFORGE_MAX_MOVE_SLOTS];
+    uint32_t gender;         /* CLOSURE: DUOFORGE_GENDER_*, legal for the species */
+    uint32_t nature;         /* CLOSURE: nature id 0..24 */
+    uint32_t stat_points[6]; /* CLOSURE: HP, Atk, Def, SpA, SpD, Spe */
+    uint32_t ability;        /* CLOSURE: 1 + the forme's ability id; 0 = No Ability (CLOSURE_DEV only) */
+    uint32_t item;           /* CLOSURE: 1 + item id; 0 = no item */
 } duoforge_member_setup;
 typedef struct duoforge_side_setup {
     uint32_t member_count; /* brought_count..max_roster; registered roster, stable order */

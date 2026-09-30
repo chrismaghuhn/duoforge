@@ -6,8 +6,8 @@ This is a status manifest, **not** a mechanics certificate. "IMPLEMENTED + TESTE
 |---|---|
 | pcg-c-basic (RNG reference) | **PINNED** `bc39cd76ac3d541e618606bcc6e1e5ba5e5e6aa3` (`third_party/pcg-c-basic/PROVENANCE.md`) |
 | Pokémon Showdown (operational reference) | **PINNED** `b2cb775b0616115b775534eaeff50300e1fc81fc` (owner decision; `docs/decisions/0004`). Not vendored. M2 cites it for choice rules, team preview, target classes, open team sheets and HP display (`docs/decisions/0005`); no test executes it |
-| Rules profile | **SELECTED** (owner): `[Gen 9 Champions] VGC 2026 Reg M-C`. **Not implemented** |
-| Team specifications | **SELECTED** (owner): two teams in `docs/decisions/0004`. **Not implemented**; the engine cannot load them yet |
+| Rules profile | **SELECTED** (owner): `[Gen 9 Champions] VGC 2026 Reg M-C`. Set legality (base forme, set moves, gender, nature, Stat Points, ability, item, Species and Item Clause) is **IMPLEMENTED + TESTED**; the battle rules are not |
+| Team specifications | **SELECTED** (owner): two teams in `docs/decisions/0004`. The engine validates them and derives every stat line (tested), then **rejects them with `E_UNSUPPORTED`** at the support gate until the closure is complete |
 | PCG32 RNG primitive and wrapper contract (0001) | **IMPLEMENTED + TESTED**; no gameplay draw sites exist yet (M3) |
 | Arithmetic and byte helpers | **IMPLEMENTED + TESTED** (generic; no Pokémon-semantics helpers) |
 | Owned structural state v3, identity, invariants (boundaries incl. TERMINAL, epochs, sealed commitments, knowledge, field and side conditions, volatile blocks, action queue) | **IMPLEMENTED + TESTED** (synthetic data only; the combat fields exist, but no mechanic writes them yet; decision 0006 section 3.1) |
@@ -21,7 +21,8 @@ This is a status manifest, **not** a mechanics certificate. "IMPLEMENTED + TESTE
 | Information-equivalence evidence | **TESTED** on paired synthetic states (`duoforge.request.information`) |
 | Closure data tables (16 formes, 36 moves plus Struggle, 16 abilities, 11 items, type chart, natures) | **GENERATED + TESTED** from the pin with provenance per record (`tools/datagen/gen_closure.py`, `src/data/closure_tables.*`). **Data only:** no battle can use it yet |
 | Champions stat and PP formulas | **IMPLEMENTED + TESTED** (all 16 formes of the two teams; decision 0006) |
-| Combat mechanics, real team setup, reference parity | **UNSUPPORTED** (steps 1b-2 to 13 of `tasks/M3_M4_COMBAT_CLOSURE.md`) |
+| CLOSURE contexts (`CLOSURE`, `CLOSURE_DEV`), setup validation, derived stats and PP, support gate | **IMPLEMENTED + TESTED** (decision 0006 section 2.1); the manifest marks nothing yet |
+| Combat mechanics, reference parity | **UNSUPPORTED** (steps 2 to 13 of `tasks/M3_M4_COMBAT_CLOSURE.md`) |
 
 State snapshots and decodability are foundation evidence, **not proof that unimplemented future mechanics restore correctly**.
 
