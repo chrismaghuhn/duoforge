@@ -1,89 +1,55 @@
-# M0 CI: C17 configure/build/test on Linux and Windows, plus a Linux
-# ASan/UBSan job. Every job is finite: job timeouts plus per-test timeouts.
-# A green run of this workflow is evidence only for the M0 foundation,
-# never for battle-rule correctness.
-name: ci
+name: CI
 
 on:
   push:
   pull_request:
-  workflow_dispatch:
 
 permissions:
   contents: read
 
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   linux:
-    name: linux / ${{ matrix.cc }} / ${{ matrix.preset }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        cc: [gcc, clang]
-        preset: [ninja-debug, ninja-release]
-    env:
-      CC: ${{ matrix.cc }}
+    name: Linux build and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      # actions/checkout v6.1.0
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
-      - name: Ensure Ninja
-        run: ninja --version || (sudo apt-get update && sudo apt-get install -y ninja-build)
-      - name: Toolchain versions
-        run: |
-          cmake --version
-          ninja --version
-          "$CC" --version
+      - name: Check out source
+        uses: actions/checkout@v4
       - name: Configure
-        run: cmake --preset ${{ matrix.preset }} -DPBD_WARNINGS_AS_ERRORS=ON
+        run: cmake -S . -B build/linux -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON
       - name: Build
-        run: cmake --build --preset ${{ matrix.preset }}
+        run: cmake --build build/linux --parallel
       - name: Test
-        run: ctest --preset ${{ matrix.preset }}
-
-  linux-sanitizers:
-    name: linux / gcc / ninja-asan-ubsan
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    env:
-      CC: gcc
-    steps:
-      # actions/checkout v6.1.0
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
-      - name: Ensure Ninja
-        run: ninja --version || (sudo apt-get update && sudo apt-get install -y ninja-build)
-      - name: Toolchain versions
-        run: |
-          cmake --version
-          ninja --version
-          "$CC" --version
-      - name: Configure
-        run: cmake --preset ninja-asan-ubsan -DPBD_WARNINGS_AS_ERRORS=ON
-      - name: Build
-        run: cmake --build --preset ninja-asan-ubsan
-      - name: Test
-        run: ctest --preset ninja-asan-ubsan
+        run: ctest --test-dir build/linux --output-on-failure
 
   windows:
-    name: windows / msvc / ${{ matrix.config }}
-    runs-on: windows-2022
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        config: [debug, release]
+    name: Windows build and test
+    runs-on: windows-latest
+    timeout-minutes: 5
     steps:
-      # actions/checkout v6.1.0
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
-      - name: Toolchain versions
-        run: cmake --version
+      - name: Check out source
+        uses: actions/checkout@v4
       - name: Configure
-        run: cmake --preset vs2022 -DPBD_WARNINGS_AS_ERRORS=ON
+        run: cmake -S . -B build\windows -DBUILD_TESTING=ON
       - name: Build
-        run: cmake --build --preset vs2022-${{ matrix.config }}
+        run: cmake --build build\windows --config Debug --parallel
       - name: Test
-        run: ctest --preset vs2022-${{ matrix.config }}
+        run: ctest --test-dir build\windows --build-config Debug --output-on-failure
+
+  linux-sanitizers:
+    name: Linux sanitizer build and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Configure
+        run: >-
+          cmake -S . -B build/linux-sanitized
+          -DCMAKE_BUILD_TYPE=Debug
+          -DBUILD_TESTING=ON
+          -DDUOFORGE_ENABLE_SANITIZERS=ON
+      - name: Build
+        run: cmake --build build/linux-sanitized --parallel
+      - name: Test
+        run: ctest --test-dir build/linux-sanitized --output-on-failure

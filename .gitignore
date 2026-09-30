@@ -1,6 +1,12 @@
-# Build trees (presets write to build/<preset>)
+# CMake and generated build trees
 /build/
 /out/
+CMakeUserPresets.json
 
-# Per-user CMake presets
-/CMakeUserPresets.json
+# IDE state
+.vs/
+*.suo
+*.user
+
+# CTest output
+/Testing/
