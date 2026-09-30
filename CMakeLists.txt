@@ -26,6 +26,7 @@ add_library(duoforge STATIC
     src/rng/pcg32.c
     src/state/context.c
     src/state/identity.c
+    src/state/knowledge.c
     src/state/invariants.c
     src/state/battle.c
     src/state/transition.c

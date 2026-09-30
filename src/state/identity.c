@@ -1,6 +1,7 @@
 #include "state/identity.h"
 
 #include "core/arith.h"
+#include "state/knowledge.h"
 
 bool dfi_position_valid(dfi_position_id p)
 {
@@ -10,6 +11,36 @@ bool dfi_position_valid(dfi_position_id p)
 uint32_t dfi_position_flat(dfi_position_id p)
 {
     return (uint32_t)p.side * DUOFORGE_ACTIVE_PER_SIDE + (uint32_t)p.slot;
+}
+
+void dfi_slot_clear(dfi_active_slot *slot)
+{
+    slot->activation_id = 0u;
+    slot->occupant = DFI_OCCUPANT_NONE;
+    for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
+        slot->stages[i] = (uint8_t)DFI_STAGE_NEUTRAL;
+    }
+    slot->flags = 0u;
+    slot->stall_level = 0u;
+    slot->stall_turns = 0u;
+    slot->confusion_turns = 0u;
+    slot->charge_turns = 0u;
+    slot->locked_move = 0u;
+    slot->locked_target = 0u;
+    slot->move_actions = 0u;
+    slot->switch_flag = 0u;
+}
+
+bool dfi_slot_volatile_is_clear(const dfi_active_slot *slot)
+{
+    for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
+        if (slot->stages[i] != DFI_STAGE_NEUTRAL) {
+            return false;
+        }
+    }
+    return slot->flags == 0u && slot->stall_level == 0u && slot->stall_turns == 0u &&
+           slot->confusion_turns == 0u && slot->charge_turns == 0u && slot->locked_move == 0u &&
+           slot->locked_target == 0u && slot->move_actions == 0u && slot->switch_flag == 0u;
 }
 
 bool dfi_member_valid(const struct duoforge_battle *b, dfi_member_id m)
@@ -51,12 +82,14 @@ duoforge_status dfi_place(struct duoforge_battle *b, dfi_position_id p, uint8_t 
         return DUOFORGE_E_EXHAUSTED; /* unreachable after the check above */
     }
     const uint32_t id = b->next_activation_id;
+    dfi_slot_clear(&side->positions[p.slot]); /* a fresh activation has no volatile state */
     side->positions[p.slot].activation_id = id;
     side->positions[p.slot].occupant = roster;
     b->next_activation_id = next;
     /* Entering a position is the disclosure that puts a member into the
      * opponent's knowledge (decision 0005 section 6). roster < 6 here. */
     b->sides[1u - (uint32_t)p.side].seen_mask |= (uint8_t)(1u << roster); /* wide-operands-reviewed */
+    dfi_knowledge_see_hp(b, p.side, roster);
     out_binding->position = p;
     out_binding->activation_id = id;
     return DUOFORGE_OK;
@@ -71,8 +104,8 @@ duoforge_status dfi_vacate(struct duoforge_battle *b, dfi_position_id p)
     if (slot->occupant == DFI_OCCUPANT_NONE) {
         return DUOFORGE_E_INVARIANT;
     }
-    slot->activation_id = 0u;
-    slot->occupant = DFI_OCCUPANT_NONE;
+    /* The opponent keeps the HP display it saw last (its knowledge record). */
+    dfi_slot_clear(slot);
     return DUOFORGE_OK;
 }
 

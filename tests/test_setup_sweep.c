@@ -5,7 +5,7 @@
  * INVALID_ARGUMENT (never INVARIANT or anything else), *out must stay at its
  * sentinel on error, a created battle must pass check, and the OK/INVALID
  * counts per (side, class) must equal the independent structural model
- * (tools/state_model/state_v2_model.py). 8,596 creates in total.
+ * (tools/state_model/state_v3_model.py). 8,596 creates in total.
  */
 #include <stddef.h>
 #include <stdio.h>
@@ -164,7 +164,7 @@ int main(void)
     df_setup_g1(&g1);
     df_setup_g3(&g3);
 
-    /* Values from tools/state_model/state_v2_model.py (setup section). */
+    /* Values from tools/state_model/state_v3_model.py (setup section). */
     static const expect e_g1 = {
         .ok = {{32, 0}, {30, 0}, {1, 1}, {60, 42}, {132, 90}, {6, 6}, {12, 10}, {193, 232}, {206, 248}},
         .bad = {{0, 0}, {2, 0}, {28, 28}, {114, 132}, {42, 84}, {168, 168}, {162, 164}, {503, 464}, {490, 448}},

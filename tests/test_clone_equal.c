@@ -2,7 +2,7 @@
  * T10 duoforge.state.clone_equal: clone, copy (snapshot/restore), equality,
  * fork independence, padding independence, context mismatch, corrupt-state
  * safety and reseeding a fork. Expectations: the clone/copy/equal contract
- * (docs/decisions/0002) and golden F2 v2 (independent model).
+ * (docs/decisions/0002) and golden F2 v3 (independent model).
  */
 #include <stddef.h>
 #include <stdio.h>
@@ -10,6 +10,7 @@
 
 #include "codec/state_codec.h"
 #include "rng/pcg32.h"
+#include "state/knowledge.h"
 #include "support/check.h"
 #include "support/fixtures.h"
 
@@ -20,9 +21,9 @@ static bool api_equal(df_test *t, const duoforge_context *ctx, const duoforge_ba
     return eq;
 }
 
-static void raw(const duoforge_battle *b, uint8_t out[DUOFORGE_STATE_V2_ENCODED_SIZE])
+static void raw(const duoforge_battle *b, uint8_t out[DUOFORGE_STATE_V3_ENCODED_SIZE])
 {
-    memset(out, 0, DUOFORGE_STATE_V2_ENCODED_SIZE);
+    memset(out, 0, DUOFORGE_STATE_V3_ENCODED_SIZE);
     dfi_encode_unchecked(b, out);
 }
 
@@ -50,6 +51,23 @@ static void copy_named_fields(duoforge_battle *x, const duoforge_battle *src)
     x->request_epoch = src->request_epoch;
     x->boundary_kind = src->boundary_kind;
     x->request_mask = src->request_mask;
+    x->turn = src->turn;
+    x->result = src->result;
+    x->weather = src->weather;
+    x->weather_turns = src->weather_turns;
+    x->terrain = src->terrain;
+    x->terrain_turns = src->terrain_turns;
+    x->trick_room_turns = src->trick_room_turns;
+    x->queue_len = src->queue_len;
+    for (unsigned i = 0; i < DFI_QUEUE_CAPACITY; ++i) {
+        x->queue[i].activation_id = src->queue[i].activation_id;
+        x->queue[i].kind = src->queue[i].kind;
+        x->queue[i].side = src->queue[i].side;
+        x->queue[i].slot = src->queue[i].slot;
+        x->queue[i].move_slot = src->queue[i].move_slot;
+        x->queue[i].target = src->queue[i].target;
+        x->queue[i].reserve = src->queue[i].reserve;
+    }
     for (unsigned s = 0; s < 2; ++s) {
         const dfi_side *ss = &src->sides[s];
         dfi_side *ds = &x->sides[s];
@@ -59,12 +77,33 @@ static void copy_named_fields(duoforge_battle *x, const duoforge_battle *src)
         ds->mega_used = ss->mega_used;
         ds->sealed = ss->sealed;
         ds->seen_mask = ss->seen_mask;
+        ds->reflect_turns = ss->reflect_turns;
+        ds->light_screen_turns = ss->light_screen_turns;
+        ds->tailwind_turns = ss->tailwind_turns;
         for (unsigned i = 0; i < DUOFORGE_MAX_ROSTER; ++i) {
             ds->brought_order[i] = ss->brought_order[i];
+            ds->knowledge[i].hp_percent = ss->knowledge[i].hp_percent;
+            ds->knowledge[i].hp_flag = ss->knowledge[i].hp_flag;
+            ds->knowledge[i].revealed = ss->knowledge[i].revealed;
+            for (unsigned q = 0; q < DUOFORGE_MAX_MOVE_SLOTS; ++q) {
+                ds->knowledge[i].moves_used[q] = ss->knowledge[i].moves_used[q];
+            }
         }
         for (unsigned p = 0; p < 2; ++p) {
             ds->positions[p].occupant = ss->positions[p].occupant;
             ds->positions[p].activation_id = ss->positions[p].activation_id;
+            for (unsigned i = 0; i < DFI_STAT_STAGE_COUNT; ++i) {
+                ds->positions[p].stages[i] = ss->positions[p].stages[i];
+            }
+            ds->positions[p].flags = ss->positions[p].flags;
+            ds->positions[p].stall_level = ss->positions[p].stall_level;
+            ds->positions[p].stall_turns = ss->positions[p].stall_turns;
+            ds->positions[p].confusion_turns = ss->positions[p].confusion_turns;
+            ds->positions[p].charge_turns = ss->positions[p].charge_turns;
+            ds->positions[p].locked_move = ss->positions[p].locked_move;
+            ds->positions[p].locked_target = ss->positions[p].locked_target;
+            ds->positions[p].move_actions = ss->positions[p].move_actions;
+            ds->positions[p].switch_flag = ss->positions[p].switch_flag;
             ds->sealed_cmds[p].kind = ss->sealed_cmds[p].kind;
             ds->sealed_cmds[p].move_slot = ss->sealed_cmds[p].move_slot;
             ds->sealed_cmds[p].target = ss->sealed_cmds[p].target;
@@ -79,6 +118,20 @@ static void copy_named_fields(duoforge_battle *x, const duoforge_battle *src)
             dm->hp_max = sm->hp_max;
             dm->move_count = sm->move_count;
             dm->mega_capable = sm->mega_capable;
+            for (unsigned q = 0; q < DFI_MEMBER_STAT_COUNT; ++q) {
+                dm->stats[q] = sm->stats[q];
+            }
+            for (unsigned q = 0; q < DFI_STAT_POINT_COUNT; ++q) {
+                dm->stat_points[q] = sm->stat_points[q];
+            }
+            dm->is_mega = sm->is_mega;
+            dm->gender = sm->gender;
+            dm->nature = sm->nature;
+            dm->status = sm->status;
+            dm->status_counter = sm->status_counter;
+            dm->item = sm->item;
+            dm->item_consumed = sm->item_consumed;
+            dm->ability = sm->ability;
             for (unsigned q = 0; q < DUOFORGE_MAX_MOVE_SLOTS; ++q) {
                 dm->moves[q].move_id = sm->moves[q].move_id;
                 dm->moves[q].pp = sm->moves[q].pp;
@@ -98,8 +151,8 @@ int main(void)
     duoforge_battle *f1 = df_make_f1(c1);
     duoforge_battle *f2 = df_make_f2(c1);
     duoforge_battle *f5 = df_make_f5(c1);
-    uint8_t e1[DUOFORGE_STATE_V2_ENCODED_SIZE];
-    uint8_t e2[DUOFORGE_STATE_V2_ENCODED_SIZE];
+    uint8_t e1[DUOFORGE_STATE_V3_ENCODED_SIZE];
+    uint8_t e2[DUOFORGE_STATE_V3_ENCODED_SIZE];
 
     /* Clone of F1: equal, same encoding and digest. */
     duoforge_battle *k = NULL;
@@ -117,10 +170,10 @@ int main(void)
     }
     /* Clone of a decoded golden F2. */
     {
-        uint8_t *in = df_heap_copy(df_golden_f2, DUOFORGE_STATE_V2_ENCODED_SIZE);
+        uint8_t *in = df_heap_copy(df_golden_f2, DUOFORGE_STATE_V3_ENCODED_SIZE);
         duoforge_battle *d = NULL;
         duoforge_battle *dc = NULL;
-        DF_CHECK(&t, duoforge_battle_create_decoded(c1, in, DUOFORGE_STATE_V2_ENCODED_SIZE, &d) == DUOFORGE_OK);
+        DF_CHECK(&t, duoforge_battle_create_decoded(c1, in, DUOFORGE_STATE_V3_ENCODED_SIZE, &d) == DUOFORGE_OK);
         DF_CHECK(&t, duoforge_battle_clone(c1, d, &dc) == DUOFORGE_OK);
         df_encode(c1, dc, e2);
         DF_CHECK_BYTES(&t, e2, df_golden_f2, sizeof e2, "clone of decoded F2");
@@ -208,10 +261,10 @@ int main(void)
         duoforge_battle_destroy(b);
     }
 
-    /* Equality relation over F1, F2 and 20 single-field variants of F1 (all
+    /* Equality relation over F1, F2 and 28 single-field variants of F1 (all
      * valid states): equal <=> encodings identical <=> digests equal. */
     {
-        enum { N = 22 };
+        enum { N = 30 };
         duoforge_battle *v[N];
         for (unsigned i = 0; i < N; ++i) {
             v[i] = NULL;
@@ -240,11 +293,25 @@ int main(void)
         v[19]->sides[0].brought_order[3] = 1u;
         v[20]->sides[1].mega_used = 1u;
         v[21]->request_epoch = 7u;
+        /* One field of every v3 group. */
+        v[22]->turn = 2u;
+        v[23]->weather = (uint8_t)DFI_WEATHER_RAIN;
+        v[23]->weather_turns = 1u;
+        v[24]->trick_room_turns = 1u;
+        v[25]->sides[0].tailwind_turns = 1u;
+        v[26]->sides[1].positions[0].stages[4] = 7u;
+        v[27]->sides[0].positions[1].move_actions = 1u;
+        v[28]->sides[1].positions[1].flags = (uint8_t)DFI_VOL_FLASH_FIRE;
+        v[29]->sides[0].knowledge[3].moves_used[0] = 1u;
+        /* What the opponent sees follows the HP and occupant edits above. */
+        for (unsigned i = 0; i < N; ++i) {
+            dfi_knowledge_refresh_active(v[i]);
+        }
         unsigned mismatches = 0;
         for (unsigned i = 0; i < N; ++i) {
             for (unsigned j = 0; j < N; ++j) {
-                uint8_t a[DUOFORGE_STATE_V2_ENCODED_SIZE];
-                uint8_t b[DUOFORGE_STATE_V2_ENCODED_SIZE];
+                uint8_t a[DUOFORGE_STATE_V3_ENCODED_SIZE];
+                uint8_t b[DUOFORGE_STATE_V3_ENCODED_SIZE];
                 uint8_t da[DUOFORGE_DIGEST_SIZE];
                 uint8_t db[DUOFORGE_DIGEST_SIZE];
                 raw(v[i], a);
@@ -275,7 +342,7 @@ int main(void)
      * the same named fields compare equal, encode and digest identically. */
     {
         const duoforge_battle *srcs[2] = {f2, f5};
-        const uint8_t *goldens[2] = {df_golden_f2, NULL};
+        const uint8_t *goldens[2] = {df_golden_f2, df_golden_f5};
         for (unsigned s = 0; s < 2; ++s) {
             duoforge_battle *a = NULL;
             duoforge_battle *b = NULL;
@@ -291,7 +358,7 @@ int main(void)
             df_encode(c1, b, e2);
             DF_CHECK_BYTES(&t, e1, e2, sizeof e1, "padding-independent encoding");
             if (goldens[s] != NULL) {
-                DF_CHECK_BYTES(&t, e1, goldens[s], sizeof e1, "padding-independent encoding = golden F2");
+                DF_CHECK_BYTES(&t, e1, goldens[s], sizeof e1, "padding-independent encoding = golden");
             }
             uint8_t da[DUOFORGE_DIGEST_SIZE];
             uint8_t db[DUOFORGE_DIGEST_SIZE];

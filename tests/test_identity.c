@@ -12,6 +12,7 @@
 #include "codec/state_codec.h"
 #include "state/identity.h"
 #include "state/invariants.h"
+#include "state/knowledge.h"
 #include "support/check.h"
 #include "support/fixtures.h"
 
@@ -20,9 +21,9 @@ static const dfi_position_id S0B = {0, 1};
 static const dfi_position_id S1A = {1, 0};
 static const dfi_position_id S1B = {1, 1};
 
-static void encode_raw(const duoforge_battle *b, uint8_t out[DUOFORGE_STATE_V2_ENCODED_SIZE])
+static void encode_raw(const duoforge_battle *b, uint8_t out[DUOFORGE_STATE_V3_ENCODED_SIZE])
 {
-    memset(out, 0, DUOFORGE_STATE_V2_ENCODED_SIZE);
+    memset(out, 0, DUOFORGE_STATE_V3_ENCODED_SIZE);
     dfi_encode_unchecked(b, out);
 }
 
@@ -39,8 +40,8 @@ static void sync_requested(duoforge_battle *b)
 static void place_fails(df_test *t, duoforge_battle *b, dfi_position_id p, uint8_t roster,
                         duoforge_status expected, const char *what)
 {
-    uint8_t before[DUOFORGE_STATE_V2_ENCODED_SIZE];
-    uint8_t after[DUOFORGE_STATE_V2_ENCODED_SIZE];
+    uint8_t before[DUOFORGE_STATE_V3_ENCODED_SIZE];
+    uint8_t after[DUOFORGE_STATE_V3_ENCODED_SIZE];
     encode_raw(b, before);
     dfi_binding out = {{0xEEu, 0xEEu}, 0xDEADBEEFu};
     const duoforge_status st = dfi_place(b, p, roster, &out);
@@ -94,10 +95,35 @@ int main(void)
     }
     DF_CHECK_EQ_U64(&t, b->sides[0].seen_mask, 0x0Au); /* saw s1 roster 1 and 3 */
     DF_CHECK_EQ_U64(&t, b->sides[1].seen_mask, 0x05u); /* saw s0 roster 2 and 0 */
+    /* Entering shows the HP display to the opponent; nothing else is known. */
+    DF_CHECK(&t, b->sides[1].knowledge[2].hp_percent == 100u && b->sides[1].knowledge[0].hp_percent == 100u &&
+                     b->sides[0].knowledge[1].hp_percent == 100u && b->sides[0].knowledge[3].hp_percent == 100u);
+    DF_CHECK(&t, b->sides[1].knowledge[1].hp_percent == 0u && b->sides[1].knowledge[3].hp_percent == 0u);
+    for (unsigned i = 0; i < 4; ++i) {
+        DF_CHECK(&t, dfi_slot_volatile_is_clear(&b->sides[all[i].side].positions[all[i].slot]));
+    }
 
-    /* Vacate s0a: the old binding goes stale; the empty slot has activation 0. */
+    /* s0a (roster 2) collects volatile state and drops to 24 of 120 HP. */
+    b->sides[0].positions[0].stages[0] = 8u;
+    b->sides[0].positions[0].flags = (uint8_t)DFI_VOL_FLASH_FIRE;
+    b->sides[0].positions[0].confusion_turns = 3u;
+    b->sides[0].positions[0].move_actions = 2u;
+    b->sides[0].members[2].hp = 24u;
+    dfi_knowledge_refresh_active(b);
+    DF_CHECK(&t, duoforge_battle_check(c1, b) == DUOFORGE_OK);
+    DF_CHECK(&t, b->sides[1].knowledge[2].hp_percent == 20u &&
+                     b->sides[1].knowledge[2].hp_flag == DUOFORGE_HP_FLAG_RED);
+
+    /* Vacate s0a: the old binding goes stale; the empty slot has activation 0
+     * and no volatile state; the opponent keeps what it saw last. */
     const dfi_binding old1 = {S0A, 1u};
     DF_CHECK(&t, dfi_vacate(b, S0A) == DUOFORGE_OK);
+    DF_CHECK(&t, dfi_slot_volatile_is_clear(&b->sides[0].positions[0]));
+    DF_CHECK(&t, b->sides[1].knowledge[2].hp_percent == 20u &&
+                     b->sides[1].knowledge[2].hp_flag == DUOFORGE_HP_FLAG_RED);
+    b->sides[0].members[2].hp = 40u; /* on the bench: unseen */
+    dfi_knowledge_refresh_active(b);
+    DF_CHECK(&t, b->sides[1].knowledge[2].hp_percent == 20u);
     DF_CHECK(&t, !dfi_binding_is_current(b, old1));
     {
         dfi_binding x = {{9, 9}, 9};
@@ -118,6 +144,9 @@ int main(void)
     DF_CHECK(&t, dfi_binding_is_current(b, bind5));
     DF_CHECK_EQ_U64(&t, b->sides[1].seen_mask, 0x0Du);
     DF_CHECK_EQ_U64(&t, b->sides[0].seen_mask, 0x0Au); /* own knowledge unchanged */
+    DF_CHECK(&t, b->sides[1].knowledge[3].hp_percent == 100u && b->sides[1].knowledge[2].hp_percent == 20u);
+    DF_CHECK(&t, dfi_slot_volatile_is_clear(&b->sides[0].positions[0]));
+    b->sides[0].positions[0].stages[3] = 2u; /* roster 3's own volatile state */
     sync_requested(b);
     DF_CHECK(&t, duoforge_battle_check(c1, b) == DUOFORGE_OK);
 
@@ -130,6 +159,11 @@ int main(void)
     DF_CHECK(&t, !dfi_binding_is_current(b, bind5));
     DF_CHECK(&t, dfi_binding_is_current(b, bind6));
     DF_CHECK_EQ_U64(&t, b->sides[1].seen_mask, 0x0Du); /* re-entry adds no bit */
+    /* Re-entry starts a new activation: nothing of either earlier stay is
+     * left, and the opponent now sees the current display (40 of 120). */
+    DF_CHECK(&t, dfi_slot_volatile_is_clear(&b->sides[0].positions[0]));
+    DF_CHECK(&t, b->sides[1].knowledge[2].hp_percent == 33u &&
+                     b->sides[1].knowledge[2].hp_flag == DUOFORGE_HP_FLAG_NONE);
     sync_requested(b);
     DF_CHECK(&t, duoforge_battle_check(c1, b) == DUOFORGE_OK);
 
@@ -147,8 +181,8 @@ int main(void)
     place_fails(&t, b, (dfi_position_id){0, 2}, 1u, DUOFORGE_E_INVARIANT, "slot 2");
     place_fails(&t, b, (dfi_position_id){2, 0}, 1u, DUOFORGE_E_INVARIANT, "side 2");
     {
-        uint8_t before[DUOFORGE_STATE_V2_ENCODED_SIZE];
-        uint8_t after[DUOFORGE_STATE_V2_ENCODED_SIZE];
+        uint8_t before[DUOFORGE_STATE_V3_ENCODED_SIZE];
+        uint8_t after[DUOFORGE_STATE_V3_ENCODED_SIZE];
         encode_raw(b, before);
         DF_CHECK(&t, dfi_vacate(b, S0B) == DUOFORGE_E_INVARIANT); /* already empty */
         DF_CHECK(&t, dfi_vacate(b, (dfi_position_id){0, 2}) == DUOFORGE_E_INVARIANT);

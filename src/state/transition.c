@@ -51,6 +51,7 @@ duoforge_status dfi_apply_team_selection(const duoforge_context *ctx, struct duo
         tmp.sides[s].requested_slots = (uint8_t)occupied; /* <= 3 */
     }
     tmp.boundary_kind = (uint8_t)DUOFORGE_BOUNDARY_TURN;
+    tmp.turn = 1u;
     tmp.request_mask = 3u;
     uint32_t next_epoch = 0u;
     if (!dfi_add_u32(tmp.request_epoch, 1u, &next_epoch)) {

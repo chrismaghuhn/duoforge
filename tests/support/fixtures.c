@@ -8,6 +8,7 @@
 #include "state/battle_internal.h"
 #include "state/identity.h"
 #include "state/invariants.h"
+#include "state/knowledge.h"
 #include "state/transition.h"
 
 /* T1: the 36 distinct team moves of decision 0004 in order (target classes
@@ -210,17 +211,21 @@ duoforge_battle *df_make_f2(const duoforge_context *c1)
     dfi_binding binding;
     const dfi_position_id s0a = {0, 0};
     const dfi_position_id s1b = {1, 1};
+    b->sides[0].members[2].hp = 24u; /* 20 percent of 120, red: what side 1 sees last */
+    dfi_knowledge_refresh_active(b);
     if (dfi_vacate(b, s0a) != DUOFORGE_OK || dfi_place(b, s0a, 3u, &binding) != DUOFORGE_OK ||
         dfi_vacate(b, s1b) != DUOFORGE_OK) {
         df_fail("F2 identity primitives");
     }
     b->sides[1].requested_slots = 1u;
+    b->sides[0].members[2].hp = 40u; /* on the bench: unseen by side 1 */
     b->sides[0].members[0].hp = 0u;
     b->sides[0].members[1].hp = 57u;
     b->sides[0].members[1].moves[0].pp = 0u;
     b->sides[1].members[2].hp = 0u;
     b->sides[1].members[0].moves[3].pp = 7u;
     b->sides[0].mega_used = 1u;
+    dfi_knowledge_refresh_active(b);
     df_checked(c1, b, "F2 check");
     return b;
 }
@@ -246,6 +251,7 @@ duoforge_battle *df_make_f4(const duoforge_context *c1)
     duoforge_battle *b = df_make_f1(c1);
     b->sides[0].members[2].hp = 0u;
     b->sides[1].members[3].hp = 0u;
+    dfi_knowledge_refresh_active(b);
     b->boundary_kind = (uint8_t)DUOFORGE_BOUNDARY_REPLACEMENT;
     b->request_epoch = 3u;
     b->request_mask = 3u;
@@ -261,14 +267,58 @@ duoforge_battle *df_make_f5(const duoforge_context *c1)
     b->boundary_kind = (uint8_t)DUOFORGE_BOUNDARY_PIVOT;
     b->request_epoch = 3u;
     b->request_mask = 1u;
-    b->sides[0].requested_slots = 1u;
-    b->sides[1].requested_slots = 0u;
-    b->sides[0].sealed = 1u;
-    b->sides[0].sealed_cmds[0] = (dfi_slot_cmd){DFI_SLOT_MOVE, 0u, 2u, 0u, 0u};
-    b->sides[0].sealed_cmds[1] = (dfi_slot_cmd){DFI_SLOT_MOVE, 1u, 3u, 0u, 0u};
-    b->sides[1].sealed = 1u;
-    b->sides[1].sealed_cmds[0] = (dfi_slot_cmd){DFI_SLOT_SWITCH, 0u, 0u, 0u, 0u};
-    b->sides[1].sealed_cmds[1] = (dfi_slot_cmd){DFI_SLOT_MOVE, 2u, 0u, 0u, 0u};
+    b->turn = 7u;
+    dfi_side *s0 = &b->sides[0];
+    dfi_side *s1 = &b->sides[1];
+    s0->requested_slots = 1u;
+    s1->requested_slots = 0u;
+    b->weather = (uint8_t)DFI_WEATHER_RAIN;
+    b->weather_turns = 3u;
+    b->terrain = (uint8_t)DFI_TERRAIN_GRASSY;
+    b->terrain_turns = 5u;
+    b->trick_room_turns = 2u;
+    s0->reflect_turns = 8u;
+    s0->tailwind_turns = 1u;
+    s1->light_screen_turns = 4u;
+    s1->tailwind_turns = 3u;
+    static const uint8_t stages_s0a[DFI_STAT_STAGE_COUNT] = {0u, 6u, 12u, 6u, 7u, 6u, 5u};
+    static const uint8_t stages_s1b[DFI_STAT_STAGE_COUNT] = {6u, 6u, 6u, 6u, 6u, 5u, 8u};
+    for (uint32_t i = 0; i < DFI_STAT_STAGE_COUNT; ++i) {
+        s0->positions[0].stages[i] = stages_s0a[i];
+        s1->positions[1].stages[i] = stages_s1b[i];
+    }
+    s0->positions[0].move_actions = 3u;
+    s0->positions[1].flags = (uint8_t)(DFI_VOL_PROTECT | DFI_VOL_FLASH_FIRE);
+    s0->positions[1].stall_level = 2u;
+    s0->positions[1].stall_turns = 1u;
+    s0->positions[1].move_actions = 1u;
+    s1->positions[0].confusion_turns = 4u;
+    s1->positions[0].charge_turns = 1u;
+    s1->positions[0].locked_move = 3u;
+    s1->positions[0].locked_target = 0u;
+    s1->positions[0].move_actions = 255u;
+    s1->positions[1].flags = (uint8_t)DFI_VOL_FLINCH;
+    s1->positions[1].charge_turns = 2u;
+    s1->positions[1].locked_move = 1u;
+    s1->positions[1].locked_target = (uint8_t)DUOFORGE_TARGET_NONE;
+    s0->positions[0].switch_flag = (uint8_t)DFI_SWITCH_MOVE; /* Parting Shot */
+    s1->members[1].hp = 101u; /* 50 percent of 201, green */
+    dfi_knowledge_refresh_active(b);
+    static const uint8_t used_s0[2][DUOFORGE_MAX_MOVE_SLOTS] = {{2u, 0u, 1u, 0u}, {0u, 0u, 0u, 255u}};
+    static const uint8_t used_s1[2][DUOFORGE_MAX_MOVE_SLOTS] = {{1u, 1u, 0u, 0u}, {9u, 0u, 0u, 0u}};
+    for (uint32_t k = 0; k < DUOFORGE_MAX_MOVE_SLOTS; ++k) {
+        s0->knowledge[1].moves_used[k] = used_s0[0][k];
+        s0->knowledge[3].moves_used[k] = used_s0[1][k];
+        s1->knowledge[2].moves_used[k] = used_s1[0][k];
+        s1->knowledge[0].moves_used[k] = used_s1[1][k];
+    }
+    b->queue_len = 3u;
+    b->queue[0] = (dfi_queue_record){.kind = DFI_Q_MOVE, .side = 1u, .slot = 0u, .move_slot = 2u, .target = 0u,
+                                     .activation_id = 3u};
+    b->queue[1] = (dfi_queue_record){.kind = DFI_Q_MOVE, .side = 1u, .slot = 1u,
+                                     .move_slot = DFI_MOVE_SLOT_STRUGGLE, .target = DUOFORGE_TARGET_NONE,
+                                     .activation_id = 4u};
+    b->queue[2] = (dfi_queue_record){.kind = DFI_Q_RESIDUAL};
     df_checked(c1, b, "F5 check");
     return b;
 }
@@ -278,6 +328,15 @@ duoforge_battle *df_make_f6(const duoforge_context *c1)
     duoforge_battle *b = df_make_f5(c1);
     b->request_mask = 3u;
     b->sides[1].requested_slots = 2u;
+    b->sides[1].positions[1].switch_flag = (uint8_t)DFI_SWITCH_EMERGENCY_EXIT;
+    b->queue_len = 6u;
+    b->queue[0] = (dfi_queue_record){.kind = DFI_Q_SWITCH_IN, .side = 0u, .slot = 0u, .reserve = 5u};
+    b->queue[1] = (dfi_queue_record){.kind = DFI_Q_RUN_SWITCH, .side = 0u, .slot = 1u, .activation_id = 2u};
+    b->queue[2] = (dfi_queue_record){.kind = DFI_Q_SWITCH, .side = 1u, .slot = 0u, .reserve = 0u, .activation_id = 3u};
+    b->queue[3] = (dfi_queue_record){.kind = DFI_Q_MEGA, .side = 0u, .slot = 1u, .activation_id = 2u};
+    b->queue[4] = (dfi_queue_record){.kind = DFI_Q_MOVE, .side = 1u, .slot = 1u, .move_slot = 0u, .target = 1u,
+                                     .activation_id = 4u};
+    b->queue[5] = (dfi_queue_record){.kind = DFI_Q_RESIDUAL};
     df_checked(c1, b, "F6 check");
     return b;
 }
@@ -312,6 +371,7 @@ duoforge_battle *df_make_f10(const duoforge_context *c4)
     duoforge_battle *b = df_make_f9(c4);
     b->sides[1].members[2].hp = 0u;
     b->sides[0].mega_used = 1u;
+    dfi_knowledge_refresh_active(b);
     df_checked(c4, b, "F10 check");
     return b;
 }
@@ -326,6 +386,7 @@ duoforge_battle *df_make_f11(const duoforge_context *c4)
     b->sides[0].members[2].hp = 0u;
     b->sides[0].requested_slots = 3u;
     b->sides[1].requested_slots = 0u;
+    dfi_knowledge_refresh_active(b);
     df_checked(c4, b, "F11 check");
     return b;
 }
@@ -339,11 +400,28 @@ duoforge_battle *df_make_f12(const duoforge_context *c4)
     return b;
 }
 
-void df_encode(const duoforge_context *ctx, const duoforge_battle *b, uint8_t out[DUOFORGE_STATE_V2_ENCODED_SIZE])
+duoforge_battle *df_make_f13(const duoforge_context *c4)
+{
+    duoforge_battle *b = df_make_f9(c4);
+    b->sides[1].members[1].hp = 0u;
+    b->sides[1].members[2].hp = 0u;
+    dfi_knowledge_refresh_active(b);
+    b->boundary_kind = (uint8_t)DUOFORGE_BOUNDARY_TERMINAL;
+    b->request_epoch = 3u;
+    b->request_mask = 0u;
+    b->turn = 12u;
+    b->result = (uint8_t)DFI_RESULT_SIDE0;
+    b->sides[0].requested_slots = 0u;
+    b->sides[1].requested_slots = 0u;
+    df_checked(c4, b, "F13 check");
+    return b;
+}
+
+void df_encode(const duoforge_context *ctx, const duoforge_battle *b, uint8_t out[DUOFORGE_STATE_V3_ENCODED_SIZE])
 {
     size_t written = 0;
-    if (duoforge_battle_encode(ctx, b, out, DUOFORGE_STATE_V2_ENCODED_SIZE, &written) != DUOFORGE_OK ||
-        written != DUOFORGE_STATE_V2_ENCODED_SIZE) {
+    if (duoforge_battle_encode(ctx, b, out, DUOFORGE_STATE_V3_ENCODED_SIZE, &written) != DUOFORGE_OK ||
+        written != DUOFORGE_STATE_V3_ENCODED_SIZE) {
         df_fail("duoforge_battle_encode");
     }
 }

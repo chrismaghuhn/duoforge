@@ -19,7 +19,7 @@
 
 static duoforge_side_choice cands[DUOFORGE_MAX_CANDIDATES];
 
-static void raw(const duoforge_context *ctx, const duoforge_battle *b, uint8_t out[DUOFORGE_STATE_V2_ENCODED_SIZE])
+static void raw(const duoforge_context *ctx, const duoforge_battle *b, uint8_t out[DUOFORGE_STATE_V3_ENCODED_SIZE])
 {
     df_encode(ctx, b, out);
 }
@@ -50,8 +50,8 @@ static void team_bundle(duoforge_decision_bundle *bd, uint32_t epoch, const uint
 static void step_fails(df_test *t, const duoforge_context *ctx, duoforge_battle *b,
                        const duoforge_decision_bundle *bd, duoforge_status expected, const char *what)
 {
-    uint8_t before[DUOFORGE_STATE_V2_ENCODED_SIZE];
-    uint8_t after[DUOFORGE_STATE_V2_ENCODED_SIZE];
+    uint8_t before[DUOFORGE_STATE_V3_ENCODED_SIZE];
+    uint8_t after[DUOFORGE_STATE_V3_ENCODED_SIZE];
     duoforge_step_result res;
     memset(&res, 0xA5, sizeof res);
     raw(ctx, b, before);
@@ -110,13 +110,17 @@ int main(void)
                          res.boundary_kind == DUOFORGE_BOUNDARY_TURN && res.request_mask == 3u && res.reserved == 0u);
         bool eq = false;
         DF_CHECK(&t, duoforge_battle_equal(c1, g, f1, &eq) == DUOFORGE_OK && eq);
-        uint8_t enc[DUOFORGE_STATE_V2_ENCODED_SIZE];
+        uint8_t enc[DUOFORGE_STATE_V3_ENCODED_SIZE];
         raw(c1, g, enc);
         DF_CHECK_BYTES(&t, enc, df_golden_f1, sizeof enc, "step(G1) == golden F1");
         /* The bench order is stored privately; the leads occupy the slots. */
         DF_CHECK(&t, g->sides[0].brought_order[2] == 1u && g->sides[0].brought_order[3] == 3u);
         DF_CHECK(&t, g->sides[1].positions[0].occupant == 1u && g->sides[1].positions[1].occupant == 3u);
         DF_CHECK(&t, g->sides[0].seen_mask == 0x0Au && g->sides[1].seen_mask == 0x05u);
+        /* Turn 1 begins; each side sees the opposing leads at full HP. */
+        DF_CHECK(&t, g->turn == 1u && g->queue_len == 0u && g->result == 0u);
+        DF_CHECK(&t, g->sides[0].knowledge[1].hp_percent == 100u && g->sides[0].knowledge[3].hp_percent == 100u &&
+                         g->sides[0].knowledge[0].hp_percent == 0u && g->sides[1].knowledge[2].hp_percent == 100u);
         /* A late duplicate of the same bundle is stale, atomically. */
         step_fails(&t, c1, g, &bd, DUOFORGE_E_STALE_EPOCH, "late team-selection bundle");
         duoforge_battle_destroy(g);
@@ -195,8 +199,8 @@ int main(void)
         DF_CHECK(&t, duoforge_battle_step(c1, g, &good, NULL) == DUOFORGE_E_NULL_ARGUMENT);
         DF_CHECK(&t, res.epoch == 0xA5A5A5A5u);
         {
-            uint8_t before[DUOFORGE_STATE_V2_ENCODED_SIZE];
-            uint8_t after[DUOFORGE_STATE_V2_ENCODED_SIZE];
+            uint8_t before[DUOFORGE_STATE_V3_ENCODED_SIZE];
+            uint8_t after[DUOFORGE_STATE_V3_ENCODED_SIZE];
             raw(c1, g, before);
             memset(&res, 0xA5, sizeof res);
             DF_CHECK(&t, duoforge_battle_step(c3, g, &good, &res) == DUOFORGE_E_CONTEXT_MISMATCH);
@@ -412,8 +416,8 @@ int main(void)
         const duoforge_side_choice s1 = cands[5];
         /* Preconditions are engine contracts, checked atomically. */
         duoforge_battle *g = df_make_g1(c1);
-        uint8_t e1[DUOFORGE_STATE_V2_ENCODED_SIZE];
-        uint8_t e2[DUOFORGE_STATE_V2_ENCODED_SIZE];
+        uint8_t e1[DUOFORGE_STATE_V3_ENCODED_SIZE];
+        uint8_t e2[DUOFORGE_STATE_V3_ENCODED_SIZE];
         raw(c1, g, e1);
         DF_CHECK(&t, dfi_reprompt_side(c1, g, 0, &s1) == DUOFORGE_E_INVARIANT);
         raw(c1, g, e2);

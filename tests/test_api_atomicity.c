@@ -43,7 +43,7 @@ static bool probe_untouched(const probe *p)
     return p->written == 0xDEADBEEFu && p->size == 0xDEADBEEFu;
 }
 
-static void enc(const duoforge_context *ctx, const duoforge_battle *b, uint8_t out[DUOFORGE_STATE_V2_ENCODED_SIZE])
+static void enc(const duoforge_context *ctx, const duoforge_battle *b, uint8_t out[DUOFORGE_STATE_V3_ENCODED_SIZE])
 {
     df_encode(ctx, b, out);
 }
@@ -80,10 +80,10 @@ int main(void)
         }
         DF_CHECK(&t, strcmp(duoforge_status_name(13u), "DUOFORGE_STATUS_UNKNOWN") == 0);
         DF_CHECK(&t, strcmp(duoforge_status_name(0xFFFFFFFFu), "DUOFORGE_STATUS_UNKNOWN") == 0);
-        DF_CHECK_EQ_U64(&t, DUOFORGE_SEMANTICS_ID, 2u);
-        DF_CHECK_EQ_U64(&t, DUOFORGE_CONTEXT_SCHEMA_VERSION, 2u);
-        DF_CHECK_EQ_U64(&t, DUOFORGE_STATE_SCHEMA_VERSION, 2u);
-        DF_CHECK(&t, strcmp(duoforge_version_string(), "0.3.0") == 0);
+        DF_CHECK_EQ_U64(&t, DUOFORGE_SEMANTICS_ID, 3u);
+        DF_CHECK_EQ_U64(&t, DUOFORGE_CONTEXT_SCHEMA_VERSION, 3u);
+        DF_CHECK_EQ_U64(&t, DUOFORGE_STATE_SCHEMA_VERSION, 3u);
+        DF_CHECK(&t, strcmp(duoforge_version_string(), "0.4.0") == 0);
     }
 
     duoforge_context *c1 = df_make_context(&df_config_c1);
@@ -92,9 +92,9 @@ int main(void)
     df_setup_g1(&setup);
     duoforge_battle *b1 = df_make_f1(c1);             /* bound to C1 */
     duoforge_battle *b2 = df_make_battle(c2, &setup); /* bound to C2 */
-    uint8_t e1[DUOFORGE_STATE_V2_ENCODED_SIZE];
-    uint8_t e2[DUOFORGE_STATE_V2_ENCODED_SIZE];
-    uint8_t golden_before[DUOFORGE_STATE_V2_ENCODED_SIZE];
+    uint8_t e1[DUOFORGE_STATE_V3_ENCODED_SIZE];
+    uint8_t e2[DUOFORGE_STATE_V3_ENCODED_SIZE];
+    uint8_t golden_before[DUOFORGE_STATE_V3_ENCODED_SIZE];
     enc(c1, b1, golden_before);
     probe p;
     df_sentinel sentinel;
@@ -108,10 +108,10 @@ int main(void)
         DF_CHECK(&t, duoforge_battle_create(NULL, &setup, &outb) == DUOFORGE_E_NULL_ARGUMENT);
         DF_CHECK(&t, duoforge_battle_create(c1, NULL, &outb) == DUOFORGE_E_NULL_ARGUMENT);
         DF_CHECK(&t, duoforge_battle_create(c1, &setup, NULL) == DUOFORGE_E_NULL_ARGUMENT);
-        DF_CHECK(&t, duoforge_battle_create_decoded(NULL, g, 438, &outb) == DUOFORGE_E_NULL_ARGUMENT);
-        DF_CHECK(&t, duoforge_battle_create_decoded(c1, NULL, 438, &outb) == DUOFORGE_E_NULL_ARGUMENT);
+        DF_CHECK(&t, duoforge_battle_create_decoded(NULL, g, 1009, &outb) == DUOFORGE_E_NULL_ARGUMENT);
+        DF_CHECK(&t, duoforge_battle_create_decoded(c1, NULL, 1009, &outb) == DUOFORGE_E_NULL_ARGUMENT);
         DF_CHECK(&t, duoforge_battle_create_decoded(c1, NULL, 0, &outb) == DUOFORGE_E_NULL_ARGUMENT);
-        DF_CHECK(&t, duoforge_battle_create_decoded(c1, g, 438, NULL) == DUOFORGE_E_NULL_ARGUMENT);
+        DF_CHECK(&t, duoforge_battle_create_decoded(c1, g, 1009, NULL) == DUOFORGE_E_NULL_ARGUMENT);
         DF_CHECK(&t, duoforge_battle_clone(NULL, b1, &outb) == DUOFORGE_E_NULL_ARGUMENT);
         DF_CHECK(&t, duoforge_battle_clone(c1, NULL, &outb) == DUOFORGE_E_NULL_ARGUMENT);
         DF_CHECK(&t, duoforge_battle_clone(c1, b1, NULL) == DUOFORGE_E_NULL_ARGUMENT);
@@ -119,9 +119,9 @@ int main(void)
         DF_CHECK(&t, duoforge_battle_copy(NULL, b1, b1) == DUOFORGE_E_NULL_ARGUMENT);
         DF_CHECK(&t, duoforge_battle_copy(c1, NULL, b1) == DUOFORGE_E_NULL_ARGUMENT);
         DF_CHECK(&t, duoforge_battle_copy(c1, b1, NULL) == DUOFORGE_E_NULL_ARGUMENT);
-        DF_CHECK(&t, duoforge_battle_decode(NULL, b1, g, 438) == DUOFORGE_E_NULL_ARGUMENT);
-        DF_CHECK(&t, duoforge_battle_decode(c1, NULL, g, 438) == DUOFORGE_E_NULL_ARGUMENT);
-        DF_CHECK(&t, duoforge_battle_decode(c1, b1, NULL, 438) == DUOFORGE_E_NULL_ARGUMENT);
+        DF_CHECK(&t, duoforge_battle_decode(NULL, b1, g, 1009) == DUOFORGE_E_NULL_ARGUMENT);
+        DF_CHECK(&t, duoforge_battle_decode(c1, NULL, g, 1009) == DUOFORGE_E_NULL_ARGUMENT);
+        DF_CHECK(&t, duoforge_battle_decode(c1, b1, NULL, 1009) == DUOFORGE_E_NULL_ARGUMENT);
         DF_CHECK(&t, duoforge_battle_decode(c1, b1, NULL, 0) == DUOFORGE_E_NULL_ARGUMENT);
         DF_CHECK(&t, duoforge_battle_check(NULL, b1) == DUOFORGE_E_NULL_ARGUMENT);
         DF_CHECK(&t, duoforge_battle_check(c1, NULL) == DUOFORGE_E_NULL_ARGUMENT);
@@ -162,7 +162,7 @@ int main(void)
         DF_CHECK(&t, outb == marker);
         DF_CHECK(&t, duoforge_battle_copy(c1, b2, b1) == DUOFORGE_E_CONTEXT_MISMATCH); /* dst */
         DF_CHECK(&t, duoforge_battle_copy(c1, b1, b2) == DUOFORGE_E_CONTEXT_MISMATCH); /* src */
-        DF_CHECK(&t, duoforge_battle_decode(c1, b2, g, 438) == DUOFORGE_E_CONTEXT_MISMATCH);
+        DF_CHECK(&t, duoforge_battle_decode(c1, b2, g, 1009) == DUOFORGE_E_CONTEXT_MISMATCH);
         DF_CHECK(&t, duoforge_battle_check(c1, b2) == DUOFORGE_E_CONTEXT_MISMATCH);
         for (unsigned preset = 0; preset < 2; ++preset) {
             bool eq = preset == 1;
@@ -175,7 +175,7 @@ int main(void)
         DF_CHECK(&t, duoforge_battle_digest(c1, b2, p.digest) == DUOFORGE_E_CONTEXT_MISMATCH);
         DF_CHECK(&t, duoforge_battle_reseed(c1, b2, 1u, 2u) == DUOFORGE_E_CONTEXT_MISMATCH);
         DF_CHECK(&t, probe_untouched(&p));
-        uint8_t now[DUOFORGE_STATE_V2_ENCODED_SIZE];
+        uint8_t now[DUOFORGE_STATE_V3_ENCODED_SIZE];
         enc(c2, b2, now);
         DF_CHECK_BYTES(&t, now, e2, sizeof now, "C2 battle unchanged");
         enc(c1, b1, now);

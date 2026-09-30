@@ -2,7 +2,7 @@
  * T30 duoforge.request.domain (black-box unless marked): for every fixture
  * and player the request fields, the exact candidate count and the SHA-256
  * of the concatenated canonical candidates equal the independent oracle
- * (tools/state_model/state_v2_model.py, "domain" lines); hand-derived small
+ * (tools/state_model/state_v3_model.py, "domain" lines); hand-derived small
  * domains are listed literally; enumeration is stable (same bytes twice) and
  * pure (state and rng.draws unchanged); the output convention (decision 0005
  * section 7): E_CAPACITY writes only the required count; Struggle states are
@@ -60,6 +60,8 @@ static const expect expected[] = {
     {"F11", 1, 3, DUOFORGE_BOUNDARY_REPLACEMENT, 0, 0, 0, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
     {"F12", 0, 2, DUOFORGE_BOUNDARY_TURN, 1, 3, UNSUP, ""},
     {"F12", 1, 2, DUOFORGE_BOUNDARY_TURN, 1, 3, 16, "84a9e8f87772fc3e05683e4a95072caf35e6a147649b5d8fc149f1371025fc84"},
+    {"F13", 0, 3, DUOFORGE_BOUNDARY_TERMINAL, 0, 0, 0, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
+    {"F13", 1, 3, DUOFORGE_BOUNDARY_TERMINAL, 0, 0, 0, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
 };
 
 typedef struct fixture {
@@ -71,7 +73,7 @@ typedef struct fixture {
 static duoforge_side_choice buf_a[DUOFORGE_MAX_CANDIDATES];
 static duoforge_side_choice buf_b[DUOFORGE_MAX_CANDIDATES];
 
-static void encode_raw(const duoforge_context *ctx, const duoforge_battle *b, uint8_t out[DUOFORGE_STATE_V2_ENCODED_SIZE])
+static void encode_raw(const duoforge_context *ctx, const duoforge_battle *b, uint8_t out[DUOFORGE_STATE_V3_ENCODED_SIZE])
 {
     df_encode(ctx, b, out);
 }
@@ -79,8 +81,8 @@ static void encode_raw(const duoforge_context *ctx, const duoforge_battle *b, ui
 /* One fixture/player against the oracle row; returns the count. */
 static void check_row(df_test *t, const fixture *f, const expect *e)
 {
-    uint8_t before[DUOFORGE_STATE_V2_ENCODED_SIZE];
-    uint8_t after[DUOFORGE_STATE_V2_ENCODED_SIZE];
+    uint8_t before[DUOFORGE_STATE_V3_ENCODED_SIZE];
+    uint8_t after[DUOFORGE_STATE_V3_ENCODED_SIZE];
     encode_raw(f->ctx, f->b, before);
     duoforge_request r;
     memset(&r, 0xA5, sizeof r);
@@ -208,7 +210,7 @@ int main(void)
         {"G3", c3, df_make_g3(c3)},  {"F3", c3, df_make_f3(c3)},   {"F4", c1, df_make_f4(c1)},
         {"F5", c1, df_make_f5(c1)},  {"F6", c1, df_make_f6(c1)},   {"G7", c4, df_make_g7(c4)},
         {"F8", c4, df_make_f8(c4)},  {"F9", c4, df_make_f9(c4)},   {"F10", c4, df_make_f10(c4)},
-        {"F11", c4, df_make_f11(c4)}, {"F12", c4, df_make_f12(c4)},
+        {"F11", c4, df_make_f11(c4)}, {"F12", c4, df_make_f12(c4)}, {"F13", c4, df_make_f13(c4)},
     };
     const unsigned nfx = sizeof fx / sizeof fx[0];
 

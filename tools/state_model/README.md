@@ -1,37 +1,40 @@
 # Structural state model (offline test oracle)
 
-`state_v2_model.py` is a stdlib-only Python model of the M2 structures and decision domains:
+`state_v3_model.py` is a stdlib-only Python model of the structures and decision domains of state schema 3:
 
-- canonical context bytes v2 (with the target-class table hash) and fingerprint;
-- synthetic setup v2 validation and init (a TEAM_SELECTION state);
-- the invariant checker v2 in its fixed order (34 ids);
-- canonical encoding v2 (438 bytes) and strict decoding;
-- the mechanics-free team-selection transition;
-- the complete side-choice domains in documented order (team picks; TURN, REPLACEMENT and PIVOT joint slot choices with the reserve, Mega and forced-switch constraints);
+- canonical context bytes (with the target-class table hash) and fingerprint;
+- synthetic setup validation and init (a TEAM_SELECTION state);
+- the invariant checker v3 in its fixed order (43 ids);
+- canonical encoding v3 (1009 bytes) and strict decoding;
+- the mechanics-free team-selection transition (it starts turn 1);
+- the knowledge record: what each player saw last of the opposing members;
+- the complete side-choice domains in documented order (team picks; TURN, REPLACEMENT and PIVOT joint slot choices with the reserve, Mega and forced-switch constraints; nothing at TERMINAL);
 - the perspective-safe observation (320 bytes).
 
-It was written from the decision notes (`docs/decisions/0002`, `0005`), **not** from the C sources. It is **not** a model of Pokémon combat rules, and CTest **never** runs it. Python and bindings must not contain hidden rule implementation (AGENTS.md); this file is test evidence only.
+It was written from the decision notes (`docs/decisions/0002`, `0005`, `0006` section 3), **not** from the C sources. It is **not** a model of Pokémon combat rules, and CTest **never** runs it. Python and bindings must not contain hidden rule implementation (AGENTS.md); this file is test evidence only.
 
 It prints every golden value the C tests assert:
 
 - context bytes and fingerprints (C1..C4);
-- fixture encodings and digests (G1, F1, F2, G3, F3, F4..F6, G7, F8..F12);
+- fixture encodings and digests (G1, F1, F2, G3, F3, F4..F6, G7, F8..F13);
 - per fixture and player the request, the candidate count and the SHA-256 of the concatenated canonical candidates (small domains are listed in full);
 - per fixture and player the SHA-256 of the observation;
-- per-region outcome counts of the exhaustive single-byte mutation sweep;
-- the 41 targeted invariant edits;
+- the mutation region table and the per-region outcome counts of the exhaustive single-byte mutation sweeps (F1, F2, F5);
+- the 139 targeted invariant edits and 8 accepted edits;
 - setup-sweep counts.
 
-`state_v1_model.py` is the M1 model. It stays as the derivation record of the schema-1 golden that the v2 tests use as a "rejected: schema 1" input.
+With `--goldens` it prints `tests/support/goldens.c` (the C1 context bytes and the F1, F2, F3 and F5 encodings).
+
+`state_v1_model.py` and `state_v2_model.py` are the M1 and M2 models. They stay as the derivation record of the schema-1 and schema-2 goldens (`tests/support/goldens_legacy.c`) that the v3 tests use as "rejected: old schema" inputs.
 
 ## Run
 
 ```sh
-python3 tools/state_model/state_v2_model.py > model_out.txt
-sha256sum model_out.txt
+python3 tools/state_model/state_v3_model.py > model_out.txt
+python3 tools/state_model/state_v3_model.py --goldens > tests/support/goldens.c
 ```
 
-The output recorded for M2 (Python 3.12.14, 2026-09-30) has sha256 `4c0eb0fbc7abfd7d8342b0f0c7a540b4bd592b940da2a9cb25cfc52c486340ae`. The run takes about 20 s.
+The run takes about three minutes (the mutation sweeps decode about 770,000 inputs). The output is identical on every platform (LF line ends).
 
 ## Rules
 

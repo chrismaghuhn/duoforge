@@ -42,7 +42,7 @@
 ## Step order
 
 0. **Decision note `0006`** (written, `docs/decisions/0006-combat-closure-design.md`, awaiting owner review): state v3 (stat stages, status, volatiles, field and side conditions, action queue and continuation data, Mega forme, per-activation move-action counter, locked move), the RNG draw-site registry, data tables and provenance, the event and knowledge model, and the reference-fixture method (controlled RNG injection; decision `0001` rejects PRNG parity).
-1. **Real data and formulas.** 1a (done): generated closure tables with provenance and the Champions stat and PP formulas. 1b: context v3, the state v3 layout with invariants and codec, real setup validation and the support-manifest gate. Play is still rejected.
+1. **Real data and formulas.** 1a (done): generated closure tables with provenance and the Champions stat and PP formulas. 1b-1 (done): the state v3 layout with invariants, codec and oracle (decision `0006` section 3.1). 1b-2: context v3 (data kind CLOSURE), real setup validation and the support-manifest gate. Play is still rejected.
 2. **Turn core:** action queue and ordering (priority, speed, tie shuffle, re-sort), plain damaging moves single and spread, accuracy with stages, critical hits, random factor, STAB, type chart, stat stages, self-boost moves, PP deduction, Struggle, Protect with the stall counter.
 3. **Switching and fainting:** voluntary switch, faint queue, real REPLACEMENT boundaries, win rule.
 4. **Secondary effects and statuses:** paralysis, sleep, freeze, burn, flinch, confusion (Champions variants).

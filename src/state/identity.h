@@ -41,6 +41,12 @@ typedef struct dfi_binding {
     uint32_t activation_id;
 } dfi_binding;
 
+/* Writes the cleared position: no occupant, no activation, neutral stages,
+ * no volatile state. */
+void dfi_slot_clear(dfi_active_slot *slot);
+/* True iff everything after occupant equals the cleared position. */
+bool dfi_slot_volatile_is_clear(const dfi_active_slot *slot);
+
 bool dfi_position_valid(dfi_position_id p);
 /* Precondition: dfi_position_valid(p). */
 uint32_t dfi_position_flat(dfi_position_id p);
@@ -49,11 +55,13 @@ bool dfi_member_valid(const struct duoforge_battle *b, dfi_member_id m);
 /* Places a brought member into an empty position with a fresh activation id.
  * E_INVARIANT: invalid position, roster out of range, not brought, position
  * occupied, member active in the other slot, or a zero activation counter.
- * E_EXHAUSTED: activation ids exhausted. Does not check HP (a rules decision
- * for M3). */
+ * E_EXHAUSTED: activation ids exhausted. Does not check HP (a rules
+ * decision). The position starts with a cleared volatile block, and the
+ * opponent sees the member: seen bit and HP display. */
 duoforge_status dfi_place(struct duoforge_battle *b, dfi_position_id p, uint8_t roster,
                           dfi_binding *out_binding);
-/* E_INVARIANT for an invalid or empty position. */
+/* E_INVARIANT for an invalid or empty position. Leaves the cleared
+ * position; the opponent's knowledge of the member stays as last seen. */
 duoforge_status dfi_vacate(struct duoforge_battle *b, dfi_position_id p);
 /* E_INVARIANT for an invalid position; an empty position gives activation 0. */
 duoforge_status dfi_current_binding(const struct duoforge_battle *b, dfi_position_id p, dfi_binding *out);

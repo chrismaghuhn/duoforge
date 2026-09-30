@@ -1,8 +1,8 @@
 #ifndef DUOFORGE_DUOFORGE_H
 #define DUOFORGE_DUOFORGE_H
 /*
- * DuoForge public API -- PROVISIONAL (M2). Not a frozen ABI
- * (docs/decisions/0002, 0005).
+ * DuoForge public API -- PROVISIONAL (combat closure, step 1). Not a frozen
+ * ABI (docs/decisions/0002, 0005, 0006).
  *
  * The library holds no mutable global state. A context is immutable after
  * creation and is designed to be shareable read-only across threads; this is
@@ -19,9 +19,11 @@
  * The only out-parameter written on error is the required count of a
  * model-facing query on E_CAPACITY (decision 0005 section 7).
  *
- * M2 has no combat: there is no damage, move effect, PP change, switch
- * execution or Mega effect. A valid TURN, REPLACEMENT or PIVOT bundle is
- * rejected with E_UNSUPPORTED. No Pokemon rules are implemented.
+ * There is no combat yet: no damage, move effect, PP change, switch
+ * execution or Mega effect. State schema 3 already has the fields of the
+ * combat closure (decision 0006 section 3), but nothing writes them. A
+ * valid TURN, REPLACEMENT or PIVOT bundle is rejected with E_UNSUPPORTED.
+ * No Pokemon rules are implemented.
  */
 #include <stdbool.h>
 #include <stddef.h>
@@ -32,18 +34,18 @@ extern "C" {
 #endif
 
 #define DUOFORGE_VERSION_MAJOR 0
-#define DUOFORGE_VERSION_MINOR 3
+#define DUOFORGE_VERSION_MINOR 4
 #define DUOFORGE_VERSION_PATCH 0
-#define DUOFORGE_VERSION_STRING "0.3.0"
+#define DUOFORGE_VERSION_STRING "0.4.0"
 
-/* Identifiers of the artifacts that exist in M2 (registry: decisions 0002, 0005). */
-#define DUOFORGE_SEMANTICS_ID           2u   /* "duoforge-m2-requests" */
-#define DUOFORGE_CONTEXT_SCHEMA_VERSION 2u
-#define DUOFORGE_STATE_SCHEMA_VERSION   2u
-#define DUOFORGE_STATE_V2_ENCODED_SIZE  438u /* schema 2 only; size buffers via duoforge_battle_encoded_size */
+/* Identifiers of the artifacts that exist now (registry: decisions 0002, 0005, 0006). */
+#define DUOFORGE_SEMANTICS_ID           3u   /* "duoforge-m3-closure" */
+#define DUOFORGE_CONTEXT_SCHEMA_VERSION 3u
+#define DUOFORGE_STATE_SCHEMA_VERSION   3u
+#define DUOFORGE_STATE_V3_ENCODED_SIZE  1009u /* schema 3 only; size buffers via duoforge_battle_encoded_size */
 #define DUOFORGE_DIGEST_SIZE            32u
 
-/* Structural capacities of state schema 2 (initial profile bound). */
+/* Structural capacities of state schema 3 (initial profile bound). */
 #define DUOFORGE_SIDE_COUNT       2u
 #define DUOFORGE_ACTIVE_PER_SIDE  2u
 #define DUOFORGE_MAX_ROSTER       6u
@@ -93,9 +95,10 @@ const char *duoforge_status_name(duoforge_status status);
 /* ---- decision boundaries (decision 0005 section 1) ---- */
 #define DUOFORGE_BOUNDARY_TEAM_SELECTION 1u
 #define DUOFORGE_BOUNDARY_TURN           2u
-#define DUOFORGE_BOUNDARY_REPLACEMENT    3u /* structural only in M2 */
-#define DUOFORGE_BOUNDARY_PIVOT          4u /* structural only in M2 */
-#define DUOFORGE_BOUNDARY_COUNT          4u
+#define DUOFORGE_BOUNDARY_REPLACEMENT    3u /* structural only until switching exists */
+#define DUOFORGE_BOUNDARY_PIVOT          4u /* structural only until pivots exist */
+#define DUOFORGE_BOUNDARY_TERMINAL       5u /* the battle is over: nobody is requested (decision 0006) */
+#define DUOFORGE_BOUNDARY_COUNT          5u
 
 /* ---- immutable synthetic context ---- */
 #define DUOFORGE_DATA_KIND_SYNTHETIC 1u /* only accepted value: no real Pokedex data */
@@ -259,7 +262,8 @@ duoforge_status duoforge_battle_candidates(const duoforge_context *ctx, const du
    INVALID_ARGUMENT (mask, reserved bytes, side/kind fields, a response
    outside the offered domain, a nonzero response of an unrequested side).
    A valid TEAM_SELECTION bundle performs the transition to TURN. A valid
-   TURN, REPLACEMENT or PIVOT bundle returns E_UNSUPPORTED: M2 has no combat.
+   TURN, REPLACEMENT or PIVOT bundle returns E_UNSUPPORTED: there is no combat
+   yet. At TERMINAL every bundle is INVALID_ARGUMENT: the battle is over.
    E_EXHAUSTED if the epoch or activation counter would overflow. Every
    failure leaves the battle unchanged and *out_result unwritten. */
 duoforge_status duoforge_battle_step(const duoforge_context *ctx, duoforge_battle *battle,
@@ -269,7 +273,8 @@ duoforge_status duoforge_battle_step(const duoforge_context *ctx, duoforge_battl
    Derived only from the viewer's authorized information: open team sheets
    (species, moves, move_count, synthetic stone flag), the viewer's own exact
    HP/PP/bench order, public occupancy and Mega use, and for the opponent the
-   members the viewer has seen in battle at the profile's HP precision.
+   members the viewer has seen in battle at the profile's HP precision, as
+   the viewer saw them last (a benched member keeps its last display).
    Unknown values are TAGGED (kind fields), never encoded as zero facts. */
 #define DUOFORGE_HP_EXACT   1u
 #define DUOFORGE_HP_PERCENT 2u /* hp = floor percent (1..100 while alive, 0 fainted), hp_max = 100 */

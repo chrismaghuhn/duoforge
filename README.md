@@ -7,12 +7,13 @@ DuoForge is a deterministic, headless Pokémon Doubles simulation engine designe
 - the pinned PCG32 gameplay RNG;
 - checked integer helpers;
 - an immutable (synthetic) context with a content fingerprint and a synthetic move target-class table;
-- an owned, pointer-free battle state v2 with stable identities, decision boundaries, request epochs, sealed commitments, per-player knowledge and an invariant checker;
+- an owned, pointer-free battle state v3 with stable identities, decision boundaries (including TERMINAL), request epochs, sealed commitments, per-player knowledge (HP as last seen) and an invariant checker, plus the fields combat will need (field and side conditions, volatile blocks, action queue), which nothing writes yet;
 - a canonical, versioned binary encoding with a SHA-256 digest;
 - clone/copy (snapshot/restore) and reseeding for forks;
 - team selection (ordered picks) and complete joint side-choice domains per turn, enumerated in a documented deterministic order, with per-player requests, request epochs and simultaneous decision bundles;
 - a perspective-safe observation prototype (open team sheets, own exact HP/PP, opponent HP at the Champions percent precision, tagged unknowns);
-- generated data tables of the two reference teams from the pinned Showdown revision, and the Champions stat and PP formulas (data only, step 1a of the combat closure).
+- generated data tables of the two reference teams from the pinned Showdown revision, and the Champions stat and PP formulas (data only, step 1a of the combat closure);
+- the state v3 layout of the combat closure with its invariants, codec and oracle (step 1b-1; synthetic data only).
 
 **There is no combat.** A valid team-selection bundle performs the mechanics-free transition to the first turn. A valid turn, replacement or pivot bundle is rejected with `DUOFORGE_E_UNSUPPORTED` and changes nothing: no damage, move effect, PP change, switch execution or Mega effect exists. No Pokémon species, moves, abilities, items, batch environments, Python bindings or ML code are implemented. The owner has selected the rules basis (**Pokémon Champions, VGC 2026 Reg M-C**), the reference revision (**Pokémon Showdown `b2cb775`**) and two teams (`docs/decisions/0004`); the M2 target classes of their 36 moves are mirrored in a synthetic test table only.
 
@@ -68,7 +69,7 @@ Every test is finite and has a timeout. Test groups:
 |---|---|
 | `duoforge.unit.*` | Checked arithmetic, byte order, SHA-256 |
 | `duoforge.rng.*` | PCG32 known-answer vectors and contract |
-| `duoforge.state.*` | Context, setup, identity, invariants, clone/equal/reseed, setup sweep |
+| `duoforge.state.*` | Context, setup, identity, knowledge (HP display as last seen), invariants, clone/equal/reseed, setup sweep |
 | `duoforge.codec.*` | Goldens, negative decoding (including "rejected: schema 1"), exhaustive mutation sweep |
 | `duoforge.request.*` | Exhaustive domains against the oracle, stable and pure enumeration, output convention, step validation and atomicity, honest UNSUPPORTED, re-prompt, contract minimum (snapshots per boundary, stale/late, two-side replacement and pivot, one-side continuation), observation and information equivalence |
 | `duoforge.data.*` | Generated closure tables against values read at the pin, the table hash, the Champions stat and PP formulas; optional regeneration against a pinned Showdown checkout (`-DDUOFORGE_PS_REFERENCE_DIR=...`, label `reference`) |
