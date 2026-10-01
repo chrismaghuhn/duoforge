@@ -379,19 +379,29 @@ int main(void)
     {
         dfi_support_manifest m = full_manifest();
         DF_CHECK(&t, dfi_closure_setup_supported(&m, &teams));
-        DF_CHECK(&t, !dfi_closure_setup_supported(&dfi_support, &teams)); /* this build: nothing yet */
-        /* The manifest of this build, pinned: no mechanic is marked. A step
-         * that implements one changes this expectation deliberately. */
+        DF_CHECK(&t, !dfi_closure_setup_supported(&dfi_support, &teams)); /* abilities: not yet */
+        /* The manifest of this build, pinned: the turn core of step 2 and its
+         * moves. A step that implements a mechanic changes this deliberately. */
         {
-            const uint8_t *raw = (const uint8_t *)&dfi_support;
-            unsigned marked = 0;
-            for (size_t i = 0; i < sizeof dfi_support; ++i) {
-                marked += raw[i] != 0u ? 1u : 0u;
+            static const uint32_t step2_moves[] = {
+                DFI_MOVE_HIGHHORSEPOWER, DFI_MOVE_PROTECT,     DFI_MOVE_MUDDYWATER, DFI_MOVE_COIL,
+                DFI_MOVE_SHADOWSNEAK,    DFI_MOVE_SWORDSDANCE, DFI_MOVE_FOCUSBLAST, DFI_MOVE_SHADOWBALL,
+                DFI_MOVE_NASTYPLOT,      DFI_MOVE_DRILLRUN,    DFI_MOVE_DRAGONPULSE, DFI_MOVE_SNARL,
+                DFI_MOVE_PSYCHIC,        DFI_MOVE_SPIRITBREAK,
+            };
+            dfi_support_manifest want;
+            memset(&want, 0, sizeof want);
+            want.turn_core = 1u;
+            for (size_t i = 0; i < sizeof step2_moves / sizeof step2_moves[0]; ++i) {
+                want.moves[step2_moves[i]] = 1u;
             }
-            DF_CHECK_EQ_U64(&t, marked, 0u);
+            DF_CHECK_BYTES(&t, (const uint8_t *)&dfi_support, (const uint8_t *)&want, sizeof want, "manifest");
         }
-        m.core = 0u;
+        m.turn_core = 0u;
         DF_CHECK(&t, !dfi_closure_setup_supported(&m, &teams));
+        m = full_manifest();
+        m.switching = 0u; /* checked when a step needs it, not at setup */
+        DF_CHECK(&t, dfi_closure_setup_supported(&m, &teams));
         m = full_manifest();
         m.moves[DFI_MOVE_PARTINGSHOT] = 0u;
         DF_CHECK(&t, !dfi_closure_setup_supported(&m, &teams));

@@ -16,6 +16,7 @@
 
 #include <duoforge/duoforge.h>
 
+#include "rng/draw.h"
 #include "state/battle_internal.h"
 
 /* Caller-visible records have no implicit padding (decision 0002 section 8). */
@@ -31,6 +32,14 @@ _Static_assert(offsetof(duoforge_decision_bundle, responses) == 8u, "bundle layo
 _Static_assert(sizeof(duoforge_request) == 12u, "request is 12 bytes");
 _Static_assert(offsetof(duoforge_request, boundary_kind) == 8u, "request layout");
 _Static_assert(sizeof(duoforge_step_result) == 8u, "step result is 8 bytes");
+
+/* duoforge_battle_step with an optional TEST-ONLY tape (decision 0006
+ * section 5): with tape != NULL the turn's draws come from the tape, and
+ * *out_tape_used (nullable) receives how many entries were consumed, also on
+ * failure. The public step passes NULL. */
+duoforge_status dfi_battle_step_tape(const duoforge_context *ctx, duoforge_battle *battle,
+                                     const duoforge_decision_bundle *bundle, const dfi_tape_entry *tape,
+                                     uint32_t tape_len, uint32_t *out_tape_used, duoforge_step_result *out_result);
 
 /* Rule-authorized re-prompt of one side at TURN (DECISION_CONTRACT section
  * 6): the other side's accepted choice is sealed, the request mask shrinks

@@ -143,9 +143,9 @@ static bool dfi_member_supported(const dfi_support_manifest *s, const duoforge_m
 
 bool dfi_closure_setup_supported(const dfi_support_manifest *manifest, const duoforge_battle_setup *setup)
 {
-    /* Every battle needs the core: turns, damage, switching, fainting, the
-     * win rule and Struggle (reachable by any team). */
-    if (manifest->core == 0u) {
+    /* Every battle needs the turn core (with Struggle, reachable by any
+     * team). Switching and fainting are checked when a step needs them. */
+    if (manifest->turn_core == 0u) {
         return false;
     }
     for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
@@ -153,6 +153,37 @@ bool dfi_closure_setup_supported(const dfi_support_manifest *manifest, const duo
         for (uint32_t m = 0u; m < side->member_count && m < DUOFORGE_MAX_ROSTER; ++m) {
             if (!dfi_member_supported(manifest, &side->members[m])) {
                 return false;
+            }
+        }
+    }
+    return true;
+}
+
+bool dfi_closure_battle_supported(const dfi_support_manifest *manifest, const struct duoforge_battle *b)
+{
+    if (manifest->turn_core == 0u) {
+        return false;
+    }
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        const dfi_side *side = &b->sides[s];
+        for (uint32_t m = 0u; m < side->member_count && m < DUOFORGE_MAX_ROSTER; ++m) {
+            const dfi_member *mem = &side->members[m];
+            if (mem->ability != 0u && manifest->abilities[mem->ability - 1u] == 0u) {
+                return false;
+            }
+            if (mem->item != 0u && manifest->items[mem->item - 1u] == 0u) {
+                return false;
+            }
+            if (mem->mega_capable != 0u) {
+                const dfi_forme_data *mega = &dfi_closure_formes[dfi_closure_formes[mem->species_id].mega_forme];
+                if (manifest->mega_evolution == 0u || manifest->abilities[mega->ability] == 0u) {
+                    return false;
+                }
+            }
+            for (uint32_t k = 0u; k < mem->move_count && k < DUOFORGE_MAX_MOVE_SLOTS; ++k) {
+                if (manifest->moves[mem->moves[k].move_id] == 0u) {
+                    return false;
+                }
             }
         }
     }

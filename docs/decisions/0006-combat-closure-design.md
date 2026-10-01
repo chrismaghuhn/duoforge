@@ -1,6 +1,6 @@
 # 0006 — Combat closure: data, state v3, execution, RNG draw sites, events, reference fixtures
 
-Status: **proposed**; being implemented step by step (`tasks/M3_M4_COMBAT_CLOSURE.md`). **Implemented so far:** step 1a, the generated closure tables and the Champions stat and PP formulas (section 2, data only); step 1b-1, the state v3 layout with its invariants, codec and oracle (section 3.1, synthetic data only); step 1b-2, the CLOSURE contexts, real setup validation and the support gate (section 2.1); step 2a, the damage and stat arithmetic (`src/core/modifier.c`, checked against values the pinned reference computes) and the draw sites with the test-only tape (`src/rng/draw.c`, section 5); step 2b, the reference harness and the first recorded battles (section 5.1). Every mechanic is still to come, so every real team is rejected with `E_UNSUPPORTED`.
+Status: **proposed**; being implemented step by step (`tasks/M3_M4_COMBAT_CLOSURE.md`). **Implemented so far:** step 1a, the generated closure tables and the Champions stat and PP formulas (section 2, data only); step 1b-1, the state v3 layout with its invariants, codec and oracle (section 3.1, synthetic data only); step 1b-2, the CLOSURE contexts, real setup validation and the support gate (section 2.1); step 2a, the damage and stat arithmetic (`src/core/modifier.c`, checked against values the pinned reference computes) and the draw sites with the test-only tape (`src/rng/draw.c`, section 5); step 2b, the reference harness and the first recorded battles (section 5.1); step 2c, the turn core (section 4.1), which replays seven recorded battles draw for draw. The two real teams are still rejected with `E_UNSUPPORTED`, because their abilities and items are not implemented.
 
 Showdown citations are `path:line` at the pin `b2cb775b0616115b775534eaeff50300e1fc81fc`.
 
@@ -90,6 +90,19 @@ Behaviour that already uses the new fields: team selection starts turn 1; enteri
 - **Arithmetic.** Truncating integer math with the reference's 4096-based modifiers: `modify(v, m) = tr((tr(v * tr(m * 4096)) + 2047) / 4096)` and the chained modifier `((prev * next + 2048) >> 12)` (`sim/battle.ts:2321-2343`); base damage `tr(tr(tr(tr(2L/5 + 2) * BP * A) / D) / 50)` (`sim/battle-actions.ts:1718`). These helpers enter `core/arith` with reference fixtures, as decision `0002` section 8 foresaw.
 - **Struggle, locked move, Fake Out** become domain rules of the request module, replacing M2's `E_UNSUPPORTED` for Struggle.
 - **Terminal.** A finished battle sits at TERMINAL with a result and an empty request mask; any further bundle is malformed input.
+
+### 4.1 The turn core as built (step 2c)
+
+`src/combat/turn.c` runs a TURN boundary of a CLOSURE battle on the working copy of the step:
+
+- **Queue.** One move action per acting slot, in the reference's order of addition (side 0 slot a, b, then side 1), plus the residual action. It is sorted like `Battle.speedSort`: order, priority, speed (the staged Speed, capped at 10000, negated under Trick Room), then a SPEED_TIE shuffle of each tied group. It is sorted twice before the first move, once when the choices are committed and once in the epilogue of the reference's `beforeTurn` action. Afterwards it is sorted again before every move action (`sim/battle.ts:2917-2926`, `:2940-2947`, `:2998-3022`).
+- **A move.** The target (a chosen foe; the partner, which is legal in doubles; a random foe when the chosen one is gone; every adjacent foe for spread moves; a random foe for Struggle), PP, what the opponent sees (move use, HP display), then the hit steps in the reference's order: Protect, type immunity, accuracy with the combined stage per target, then per target the critical hit and the damage roll, the damage, and one secondary roll per target, drawn even at 100.
+- **Protect.** It fails without a draw when nobody acts after the user (`queue.willAct`). With a stall counter it succeeds on `random(3^level) == 0`, and a failure loses the counter. A success sets the protection and raises the counter. The residual phase ends the protection and counts the counter down.
+- **Struggle.** Since 2c the request offers it as `DUOFORGE_MOVE_SLOT_STRUGGLE` with no target when an occupant has no move with PP left. It replaces M2's `E_UNSUPPORTED`; the oracle and decision `0005` section 3 follow. It is typeless and recoils by round(maxHP / 4).
+- **Manifest.** It splits into `turn_core` (step 2, required at setup) and `switching` (step 3). A turn that would make a Pokémon faint, a switch, a pass, a Mega declaration, and a member with an unmarked move, ability or item all return `E_UNSUPPORTED`, and the working copy is discarded.
+- **Ahead of the step order.** The secondary stat changes of Snarl, Muddy Water, Shadow Ball, Psychic, Focus Blast and Spirit Break belong to step 4 by the task file. Every spread move of the closure has a secondary or a self-drop, and these secondaries are plain stat stages, so step 2 takes them to test spread damage. Status and flinch secondaries stay in step 4.
+
+Conformance: `tools/reference/trace_to_c.py` turns the traces into `tests/reference/conformance.h`. `duoforge.reference.conformance` replays the seven battles with their kept draws as a tape that must be consumed exactly, and compares HP, PP, stages, the stall counter and the turn after every step.
 
 ## 5. RNG draw sites
 

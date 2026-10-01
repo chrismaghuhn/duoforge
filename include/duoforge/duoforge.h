@@ -217,6 +217,9 @@ duoforge_status duoforge_battle_reseed(const duoforge_context *ctx, duoforge_bat
 #define DUOFORGE_SLOT_MOVE   1u
 #define DUOFORGE_SLOT_SWITCH 2u
 #define DUOFORGE_SLOT_PASS   3u /* forced no-action only where the profile says so */
+/* move_slot of Struggle: offered, with no target, exactly when an occupant
+   has no move with PP left (sim/side.ts, the reference's request). */
+#define DUOFORGE_MOVE_SLOT_STRUGGLE 4u
 #define DUOFORGE_CHOICE_TEAM_SELECTION 1u
 #define DUOFORGE_CHOICE_SLOTS          2u
 /* Profile bound on a complete side-choice domain: max(720 ordered picks of 6,
@@ -225,7 +228,7 @@ duoforge_status duoforge_battle_reseed(const duoforge_context *ctx, duoforge_bat
 
 typedef struct duoforge_slot_command {
     uint8_t kind;        /* DUOFORGE_SLOT_* */
-    uint8_t move_slot;   /* MOVE: 0..3 */
+    uint8_t move_slot;   /* MOVE: 0..3, or DUOFORGE_MOVE_SLOT_STRUGGLE */
     uint8_t target;      /* MOVE: flat position side*2+slot, or DUOFORGE_TARGET_NONE */
     uint8_t mega;        /* MOVE: 0/1 Mega Evolution declaration */
     uint8_t reserve;     /* SWITCH: roster index of the reserve */

@@ -8,7 +8,7 @@
 - canonical encoding v3 (1009 bytes) and strict decoding;
 - the mechanics-free team-selection transition (it starts turn 1);
 - the knowledge record: what each player saw last of the opposing members;
-- the complete side-choice domains in documented order (team picks; TURN, REPLACEMENT and PIVOT joint slot choices with the reserve, Mega and forced-switch constraints; nothing at TERMINAL);
+- the complete side-choice domains in documented order (team picks; TURN, REPLACEMENT and PIVOT joint slot choices with the reserve, Mega and forced-switch constraints; Struggle when no move has PP left; nothing at TERMINAL);
 - the perspective-safe observation (320 bytes).
 
 It was written from the decision notes (`docs/decisions/0002`, `0005`, `0006` section 3), **not** from the C sources. It is **not** a model of Pokémon combat rules, and CTest **never** runs it. Python and bindings must not contain hidden rule implementation (AGENTS.md); this file is test evidence only.

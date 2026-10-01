@@ -54,9 +54,12 @@ static bool dfi_sealed_cmd_valid(const dfi_slot_cmd *c, uint32_t member_count)
 {
     const uint32_t kind = c->kind;
     if (kind == DFI_SLOT_MOVE) {
-        return c->move_slot < DUOFORGE_MAX_MOVE_SLOTS &&
-               (c->target < DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE || c->target == DUOFORGE_TARGET_NONE) &&
-               c->mega <= 1u && c->reserve == 0u;
+        const bool target_ok = c->move_slot == DUOFORGE_MOVE_SLOT_STRUGGLE
+                                   ? c->target == DUOFORGE_TARGET_NONE
+                                   : (c->move_slot < DUOFORGE_MAX_MOVE_SLOTS &&
+                                      (c->target < DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE ||
+                                       c->target == DUOFORGE_TARGET_NONE));
+        return target_ok && c->mega <= 1u && c->reserve == 0u;
     }
     if (kind == DFI_SLOT_SWITCH) {
         return c->reserve < member_count && c->move_slot == 0u && c->target == 0u && c->mega == 0u;

@@ -30,7 +30,7 @@ const fs = require('fs');
 const path = require('path');
 
 const PIN = 'b2cb775b0616115b775534eaeff50300e1fc81fc';
-const HARNESS_VERSION = 2;
+const HARNESS_VERSION = 3;
 
 // Stack frame name -> site. The first match in stack order wins.
 const SITE_RULES = [
@@ -66,7 +66,7 @@ function classify(stack, battle) {
         // choice, or executing the move.
         if (frames.includes('Battle.getActionSpeed')) return ['RANDOM_TARGET', 'action-speed'];
         if (frames.includes('BattleQueue.resolveAction')) return ['RANDOM_TARGET', 'resolve'];
-        return ['RANDOM_TARGET', 'execute'];
+        return ['RANDOM_TARGET', 'execute:' + randomTargetClass];
     }
     for (const [frame, site] of SITE_RULES) {
         if (frames.includes(frame)) return [site, ev];
@@ -109,7 +109,20 @@ function describe(item, battle) {
     return '?';
 }
 
+// The target class of the move a random target is drawn for (set while
+// Battle.getRandomTarget runs).
+let randomTargetClass = '';
+
 function wrapEvents(battle) {
+    const originalRandomTarget = battle.getRandomTarget;
+    battle.getRandomTarget = function (pokemon, move) {
+        randomTargetClass = this.dex.moves.get(move).target;
+        try {
+            return originalRandomTarget.call(this, pokemon, move);
+        } finally {
+            randomTargetClass = '';
+        }
+    };
     for (const name of ['runEvent', 'fieldEvent', 'eachEvent', 'singleEvent', 'priorityEvent']) {
         const original = battle[name];
         battle[name] = function (eventid, ...rest) {

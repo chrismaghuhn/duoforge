@@ -16,7 +16,7 @@ This is a status manifest, **not** a mechanics certificate. "IMPLEMENTED + TESTE
 | Team-selection transition (mechanics-free) | **IMPLEMENTED + TESTED** |
 | Turn / replacement / pivot execution | **UNSUPPORTED** (`E_UNSUPPORTED`, atomic; M3/M4). REPLACEMENT and PIVOT boundaries exist structurally only |
 | Rule-authorized re-prompt | **STRUCTURAL** (`dfi_reprompt_side`, white-box; no mechanic triggers it) |
-| Struggle (all pp 0) | **UNSUPPORTED** (`E_UNSUPPORTED` on the request; M3) |
+| Struggle (all pp 0) | **IMPLEMENTED + TESTED** (offered in the request since step 2c; typeless, random target, recoil) |
 | Observation prototype (open sheets, own exact, foe percent HP as last seen, tagged unknowns) | **IMPLEMENTED + TESTED** (prototype; statuses, stages and conditions are not shown yet) |
 | Information-equivalence evidence | **TESTED** on paired synthetic states (`duoforge.request.information`) |
 | Closure data tables (16 formes, 36 moves plus Struggle, 16 abilities, 11 items, type chart, natures) | **GENERATED + TESTED** from the pin with provenance per record (`tools/datagen/gen_closure.py`, `src/data/closure_tables.*`). **Data only:** no battle can use it yet |
@@ -24,7 +24,8 @@ This is a status manifest, **not** a mechanics certificate. "IMPLEMENTED + TESTE
 | CLOSURE contexts (`CLOSURE`, `CLOSURE_DEV`), setup validation, derived stats and PP, support gate | **IMPLEMENTED + TESTED** (decision 0006 section 2.1); the manifest marks nothing yet |
 | Damage and stat arithmetic (4096-based modifiers, base damage, random factor, critical hit, type steps, 16-bit final damage, stat and accuracy stages) | **IMPLEMENTED + TESTED** against values computed by the pinned Showdown (`tools/reference/arith_ref.js`); no move uses it yet |
 | RNG draw sites and the test-only tape | **IMPLEMENTED + TESTED** (decision 0006 section 5); no mechanic draws yet |
-| Combat mechanics, reference parity | **UNSUPPORTED** (steps 2b to 13 of `tasks/M3_M4_COMBAT_CLOSURE.md`) |
+| Turn core (queue order with speed ties, single and spread damage, accuracy, critical hits, random factor, STAB, type chart, stat stages, self-boosts, secondary stat changes, PP, Struggle, Protect with its stall counter) | **IMPLEMENTED + TESTED** for development teams (CLOSURE_DEV, No Ability, no items); replays 7 recorded reference battles draw for draw (decision 0006 section 4.1) |
+| Switching, fainting, statuses, abilities, items, weather, terrain, side and field conditions, Mega Evolution, pivots | **UNSUPPORTED** (`E_UNSUPPORTED`, atomic; steps 3 to 12) |
 
 State snapshots and decodability are foundation evidence, **not proof that unimplemented future mechanics restore correctly**.
 

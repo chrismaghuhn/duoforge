@@ -414,8 +414,11 @@ def cmd_is_zero(c):
 
 def sealed_cmd_valid(c, mc):
     if c['kind'] == SLOT_MOVE:
-        return (c['move_slot'] < MOVE_SLOTS and (c['target'] < 4 or c['target'] == TARGET_NONE)
-                and c['mega'] <= 1 and c['reserve'] == 0)
+        if c['move_slot'] == MOVE_SLOT_STRUGGLE:
+            target_ok = c['target'] == TARGET_NONE
+        else:
+            target_ok = c['move_slot'] < MOVE_SLOTS and (c['target'] < 4 or c['target'] == TARGET_NONE)
+        return target_ok and c['mega'] <= 1 and c['reserve'] == 0
     if c['kind'] == SLOT_SWITCH:
         return c['reserve'] < mc and not (c['move_slot'] or c['target'] or c['mega'])
     if c['kind'] in (SLOT_NONE, SLOT_PASS):
@@ -848,7 +851,8 @@ def reserves(sd):
 
 
 def slot_domain(ctx, st, side, slot):
-    """Per-slot candidates in documented order, or 'UNSUPPORTED' (Struggle)."""
+    """Per-slot candidates in documented order; Struggle (move slot 4, no
+    target) when the occupant has no move with PP left."""
     sd = st['sides'][side]
     pos = sd['pos'][slot]
     out = []
@@ -864,11 +868,11 @@ def slot_domain(ctx, st, side, slot):
             for tgt in selectable_targets(ctx.table[mv['id']], side, slot):
                 for mg in megas:
                     out.append(cmd(SLOT_MOVE, k, tgt, mg))
-        moves = len(out)
+        if not out:
+            for mg in megas:
+                out.append(cmd(SLOT_MOVE, MOVE_SLOT_STRUGGLE, TARGET_NONE, mg))
         for r in reserves(sd):
             out.append(cmd(SLOT_SWITCH, reserve=r))
-        if moves == 0:
-            return 'UNSUPPORTED'
         return out
     for r in reserves(sd):
         out.append(cmd(SLOT_SWITCH, reserve=r))
@@ -1170,7 +1174,7 @@ def fixture_f11():
 
 
 def fixture_f12():
-    """F9 with side 0 slot a alive but every move at pp 0 (Struggle: UNSUPPORTED)."""
+    """F9 with side 0 slot a alive but every move at pp 0 (Struggle offered)."""
     st = fixture_f9()
     for mv in st['sides'][0]['members'][0]['moves'][:2]:
         mv['pp'] = 0

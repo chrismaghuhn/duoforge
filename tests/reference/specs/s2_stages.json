@@ -1,0 +1,40 @@
+{
+ "name": "s2_stages",
+ "purpose": "Stat stages inside damage and accuracy: Snarl lowers the special attackers every turn and a critical hit of a lowered attacker ignores the drop; Coil raises Milotic's accuracy, and Muddy Water lowers the accuracy of whoever it hits.",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,0000000000000000000000000000000000000000000000000000000000000d2e",
+ "teams": [
+  "Archaludon (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Snarl\n- Protect\n\nMilotic (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Muddy Water\n- Coil\n\nCeruledge (F)\nAbility: No Ability\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Swords Dance\n\nRillaboom (M)\nAbility: No Ability\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- High Horsepower",
+  "Politoed (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n\nFarigiraf (F)\nAbility: No Ability\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Protect\n\nCeruledge (M)\nAbility: No Ability\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Swords Dance\n\nRillaboom (F)\nAbility: No Ability\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- High Horsepower"
+ ],
+ "choices": [
+  {
+   "p1": "team 1234",
+   "p2": "team 1234"
+  },
+  {
+   "p1": "move 1, move 2",
+   "p2": "move 1, move 1 1"
+  },
+  {
+   "p1": "move 1, move 2",
+   "p2": "move 1, move 1 1"
+  },
+  {
+   "p1": "move 1, move 1",
+   "p2": "move 1, move 1 1"
+  },
+  {
+   "p1": "move 1, move 2",
+   "p2": "move 1, move 1 1"
+  },
+  {
+   "p1": "move 1, move 2",
+   "p2": "move 1, move 1 1"
+  },
+  {
+   "p1": "move 1, move 1",
+   "p2": "move 1, move 1 1"
+  }
+ ]
+}
