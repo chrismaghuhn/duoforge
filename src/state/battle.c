@@ -2,7 +2,9 @@
 
 #include "core/alloc.h"
 #include "core/arith.h"
+#include "data/support_manifest.h"
 #include "state/battle_internal.h"
+#include "state/closure_member.h"
 #include "state/context_internal.h"
 #include "state/identity.h"
 #include "state/invariants.h"
@@ -14,9 +16,23 @@ static bool dfi_move_setup_is_zero(const duoforge_move_setup *mv)
     return mv->move_id == 0u && mv->pp_max == 0u;
 }
 
+/* The CLOSURE fields of a member setup. */
+static bool dfi_closure_fields_zero(const duoforge_member_setup *m)
+{
+    for (uint32_t i = 0u; i < DFI_STAT_POINT_COUNT; ++i) {
+        if (m->stat_points[i] != 0u) {
+            return false;
+        }
+    }
+    return m->gender == 0u && m->nature == 0u && m->ability == 0u && m->item == 0u;
+}
+
 static bool dfi_member_setup_is_zero(const duoforge_member_setup *m)
 {
     if (m->species_id != 0u || m->hp_max != 0u || m->move_count != 0u || m->mega_capable != 0u) {
+        return false;
+    }
+    if (!dfi_closure_fields_zero(m)) {
         return false;
     }
     for (uint32_t k = 0u; k < DUOFORGE_MAX_MOVE_SLOTS; ++k) {
@@ -51,7 +67,7 @@ static bool dfi_member_setup_valid(const struct duoforge_context *ctx, const duo
     if (m->mega_capable > 1u) {
         return false;
     }
-    return true;
+    return dfi_closure_fields_zero(m);
 }
 
 static bool dfi_side_setup_valid(const struct duoforge_context *ctx, const duoforge_side_setup *side)
@@ -61,16 +77,20 @@ static bool dfi_side_setup_valid(const struct duoforge_context *ctx, const duofo
     if (member_count < ctx->brought_count || member_count > ctx->max_roster) {
         return false;
     }
+    const bool closure = dfi_context_is_closure(ctx);
+    const bool dev = ctx->data_kind == DUOFORGE_DATA_KIND_CLOSURE_DEV;
     for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
         if (m < member_count) {
-            if (!dfi_member_setup_valid(ctx, &side->members[m])) {
+            const bool valid = closure ? dfi_closure_member_setup_valid(dev, &side->members[m])
+                                       : dfi_member_setup_valid(ctx, &side->members[m]);
+            if (!valid) {
                 return false;
             }
         } else if (!dfi_member_setup_is_zero(&side->members[m])) {
             return false;
         }
     }
-    return true;
+    return !closure || dfi_closure_side_clauses_hold(side);
 }
 
 static duoforge_status dfi_init_member(const duoforge_member_setup *src, dfi_member *dst)
@@ -92,6 +112,24 @@ static duoforge_status dfi_init_member(const duoforge_member_setup *src, dfi_mem
     return DUOFORGE_OK;
 }
 
+/* Validation shared by the public create and the white-box ungated build:
+ * INVALID_ARGUMENT for anything the setup contract rejects. */
+static duoforge_status dfi_setup_validate(const struct duoforge_context *ctx, const duoforge_battle_setup *s)
+{
+    if (s->rng_initseq >= DFI_INITSEQ_LIMIT) {
+        return DUOFORGE_E_INVALID_ARGUMENT;
+    }
+    for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
+        if (!dfi_side_setup_valid(ctx, &s->sides[side])) {
+            return DUOFORGE_E_INVALID_ARGUMENT;
+        }
+    }
+    return DUOFORGE_OK;
+}
+
+static duoforge_status dfi_battle_build(const duoforge_context *ctx, const duoforge_battle_setup *setup,
+                                        duoforge_battle **out_battle);
+
 duoforge_status duoforge_battle_create(const duoforge_context *ctx, const duoforge_battle_setup *setup,
                                        duoforge_battle **out_battle)
 {
@@ -99,15 +137,37 @@ duoforge_status duoforge_battle_create(const duoforge_context *ctx, const duofor
         return DUOFORGE_E_NULL_ARGUMENT;
     }
     const duoforge_battle_setup s = *setup; /* read the input once */
+    const duoforge_status vs = dfi_setup_validate(ctx, &s);
+    if (vs != DUOFORGE_OK) {
+        return vs;
+    }
+    /* A legal CLOSURE team whose mechanics are not all implemented is
+     * rejected honestly (decision 0006 section 2: the support gate). */
+    if (dfi_context_is_closure(ctx) && !dfi_closure_setup_supported(&dfi_support, &s)) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
+    return dfi_battle_build(ctx, &s, out_battle);
+}
 
-    if (s.rng_initseq >= DFI_INITSEQ_LIMIT) {
-        return DUOFORGE_E_INVALID_ARGUMENT;
+duoforge_status dfi_battle_create_ungated(const duoforge_context *ctx, const duoforge_battle_setup *setup,
+                                          duoforge_battle **out_battle)
+{
+    if (ctx == NULL || setup == NULL || out_battle == NULL) {
+        return DUOFORGE_E_NULL_ARGUMENT;
     }
-    for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
-        if (!dfi_side_setup_valid(ctx, &s.sides[side])) {
-            return DUOFORGE_E_INVALID_ARGUMENT;
-        }
+    const duoforge_battle_setup s = *setup;
+    const duoforge_status vs = dfi_setup_validate(ctx, &s);
+    if (vs != DUOFORGE_OK) {
+        return vs;
     }
+    return dfi_battle_build(ctx, &s, out_battle);
+}
+
+/* Builds from a validated setup (read already); any failure is an engine bug. */
+static duoforge_status dfi_battle_build(const duoforge_context *ctx, const duoforge_battle_setup *setup,
+                                        duoforge_battle **out_battle)
+{
+    const duoforge_battle_setup s = *setup;
 
     /* Build on a zeroed stack candidate; any failure below is an engine bug.
      * The battle starts at TEAM_SELECTION: nothing brought, no positions
@@ -129,7 +189,11 @@ duoforge_status duoforge_battle_create(const duoforge_context *ctx, const duofor
             return DUOFORGE_E_INVARIANT;
         }
         for (uint32_t m = 0u; m < dst->member_count && m < DUOFORGE_MAX_ROSTER; ++m) {
-            if (dfi_init_member(&src->members[m], &dst->members[m]) != DUOFORGE_OK) {
+            if (dfi_context_is_closure(ctx)) {
+                if (!dfi_closure_member_init(&src->members[m], &dst->members[m])) {
+                    return DUOFORGE_E_INVARIANT;
+                }
+            } else if (dfi_init_member(&src->members[m], &dst->members[m]) != DUOFORGE_OK) {
                 return DUOFORGE_E_INVARIANT;
             }
         }

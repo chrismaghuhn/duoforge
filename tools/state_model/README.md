@@ -15,7 +15,7 @@ It was written from the decision notes (`docs/decisions/0002`, `0005`, `0006` se
 
 It prints every golden value the C tests assert:
 
-- context bytes and fingerprints (C1..C4);
+- context bytes and fingerprints (C1..C4, and the CLOSURE contexts K1 and K2, whose data hash is the closure table hash);
 - fixture encodings and digests (G1, F1, F2, G3, F3, F4..F6, G7, F8..F13);
 - per fixture and player the request, the candidate count and the SHA-256 of the concatenated canonical candidates (small domains are listed in full);
 - per fixture and player the SHA-256 of the observation;

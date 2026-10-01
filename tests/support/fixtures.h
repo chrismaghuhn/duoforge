@@ -41,6 +41,10 @@ extern const duoforge_context_config df_config_c1;
 extern const duoforge_context_config df_config_c2;
 extern const duoforge_context_config df_config_c3;
 extern const duoforge_context_config df_config_c4;
+/* CLOSURE contexts (decision 0006 section 2): K1 = CLOSURE, K2 = CLOSURE_DEV,
+ * both with roster 6 and brought 4. */
+extern const duoforge_context_config df_config_k1;
+extern const duoforge_context_config df_config_k2;
 extern const uint8_t df_table_t1[36];
 
 #define DF_FP_C1_HEX "8e5f403e5381c4e78376439dd2797debc2bdfc6aade04543f5633e3fd843afbd"
@@ -78,6 +82,11 @@ extern const uint8_t df_golden_v2_f1[438];
 void df_setup_g1(duoforge_battle_setup *out);
 void df_setup_g3(duoforge_battle_setup *out);
 void df_setup_g7(duoforge_battle_setup *out);
+/* The two reference teams of decision 0004 as a CLOSURE setup: side 0 is
+ * team A (Rillaboom, Staraptor, Milotic, Ceruledge, Raichu, Gholdengo),
+ * side 1 is team B (Politoed, Golisopod, Archaludon, Farigiraf, Charizard,
+ * Grimmsnarl), in paste order. */
+void df_setup_teams(duoforge_battle_setup *out);
 
 /* Creates a context and aborts the test process on failure. */
 duoforge_context *df_make_context(const duoforge_context_config *config);

@@ -27,6 +27,7 @@ add_library(duoforge STATIC
     src/state/context.c
     src/state/identity.c
     src/state/knowledge.c
+    src/state/closure_member.c
     src/state/invariants.c
     src/state/battle.c
     src/state/transition.c
@@ -34,6 +35,7 @@ add_library(duoforge STATIC
     src/state/observation.c
     src/data/closure_tables.c
     src/data/formulas.c
+    src/data/support_manifest.c
     src/codec/state_codec.c
 )
 target_include_directories(duoforge

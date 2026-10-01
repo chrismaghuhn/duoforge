@@ -52,6 +52,7 @@ duoforge_add_test(NAME duoforge.state.context SOURCES test_context.c)
 duoforge_add_test(NAME duoforge.state.setup SOURCES test_setup.c WHITEBOX)
 duoforge_add_test(NAME duoforge.state.identity SOURCES test_identity.c WHITEBOX)
 duoforge_add_test(NAME duoforge.state.knowledge SOURCES test_knowledge.c WHITEBOX)
+duoforge_add_test(NAME duoforge.state.closure_setup SOURCES test_closure_setup.c WHITEBOX)
 duoforge_add_test(NAME duoforge.state.invariants SOURCES test_invariants.c WHITEBOX)
 duoforge_add_test(NAME duoforge.state.setup_sweep SOURCES test_setup_sweep.c TIMEOUT 60)
 

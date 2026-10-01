@@ -137,6 +137,34 @@ C2 = Context(1, 6, 4, 16, 36, T2)
 C3 = Context(1, 6, 1, 16, 36, T1)
 C4 = Context(1, 4, 2, 8, 9, T4)
 
+# CLOSURE contexts (decision 0006 section 2): the generated tables are built
+# in. The canonical bytes carry their counts (16 formes, 37 moves) and, in
+# place of the target-class table hash, the closure table hash, which
+# tests/test_closure_tables.c recomputes from the canonical table bytes.
+CLOSURE_TABLE_HASH = bytes.fromhex('86ca9d9f548042473c0980c496e9bd6bebbde4b3df0ed10a9ba25aa62316ef5c')
+KIND_CLOSURE, KIND_CLOSURE_DEV = 2, 3
+
+
+class ClosureContext(Context):
+    def __init__(self, data_kind, max_roster, brought_count):
+        Context.__init__(self, data_kind, max_roster, brought_count, 16, 37, b'')
+
+    def valid(self):
+        return (self.data_kind in (KIND_CLOSURE, KIND_CLOSURE_DEV) and 1 <= self.max_roster <= MAX_ROSTER
+                and 1 <= self.brought_count <= self.max_roster)
+
+    def canonical_bytes(self):
+        b = MAGIC + struct.pack('<HHII', KIND_CONTEXT, SCHEMA, SEMANTICS, CONTEXT_BYTES_SIZE)
+        b += bytes([2, 2, MAX_ROSTER, MOVE_SLOTS, self.data_kind, self.max_roster, self.brought_count])
+        b += struct.pack('<HH', self.species_count, self.move_count)
+        b += CLOSURE_TABLE_HASH
+        assert len(b) == CONTEXT_BYTES_SIZE
+        return b
+
+
+K1 = ClosureContext(KIND_CLOSURE, 6, 4)
+K2 = ClosureContext(KIND_CLOSURE_DEV, 6, 4)
+
 
 # ---------------------------------------------------------------- state
 def empty_member():
@@ -1346,6 +1374,10 @@ def main():
         assert ctx.valid()
         print('context %s bytes %s' % (name, ctx.canonical_bytes().hex()))
         print('context %s table_sha256 %s' % (name, hashlib.sha256(ctx.table).hexdigest()))
+        print('context %s fingerprint %s' % (name, ctx.fingerprint().hex()))
+    for name, ctx in (('K1', K1), ('K2', K2)):
+        assert ctx.valid()
+        print('context %s bytes %s' % (name, ctx.canonical_bytes().hex()))
         print('context %s fingerprint %s' % (name, ctx.fingerprint().hex()))
 
     for name, ctx, build in FIXTURES:

@@ -15,7 +15,8 @@
  * The v3 ids check value ranges and canonical form only: TURN_COUNTER (0
  * exactly at TEAM_SELECTION), RESULT (nonzero exactly at TERMINAL), FIELD,
  * MEMBER_EXTRA (SYNTHETIC data has no stats, natures, statuses, items or
- * abilities: all zero), SIDE_CONDITION, VOLATILE (an empty position is the
+ * abilities: all zero; CLOSURE members agree with the generated tables and
+ * formulas, see dfi_closure_member_valid), SIDE_CONDITION, VOLATILE (an empty position is the
  * cleared position), SWITCH_FLAG (exactly the requested slots of a PIVOT),
  * KNOWLEDGE (nothing about an unseen member; the display of an active member
  * is current; a revealed fact is a fact) and QUEUE (non-empty exactly at
