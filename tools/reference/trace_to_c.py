@@ -181,8 +181,8 @@ def drop_reason(d, state):
         if all(g.startswith(('H:reflect:', 'H:lightscreen:')) for g in group):
             return 'screen handlers of which at most one applies'
         # The attacker's Life Orb and the target's Chople Berry (Team C) at
-        # one speed: their two modifiers chained from 4096 commute, and a
-        # screen (a side condition, speed 0) always runs after both.
+        # one speed: every order of the ModifyDamage modifiers chains to the
+        # same value (the engine checks it at compile time, turn.c).
         if sorted(g.split(':')[1] for g in group) == ['chopleberry', 'lifeorb']:
             return 'Life Orb and Chople Berry, whose modifiers commute'
         raise SystemExit('trace_to_c: ModifyDamage tie with %s' % group)

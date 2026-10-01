@@ -1,0 +1,21 @@
+{
+  "name": "c05_helmet_endgame",
+  "purpose": "Rocky Helmet on Golisopod (Emergency Exit) in the endgame: the helmet's damage comes before the target's Emergency Exit; when the helmet knocks out a side's last Pokemon, the hit loop's faintMessages checks the win at once, and lines after it still follow the win.",
+  "data": "team_c",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c2710",
+  "teams": [
+    "Staraptor (F) @ Life Orb\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Close Combat\n- Brave Bird\n\nKingambit (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Iron Head\n- Kowtow Cleave\n\nBasculegion (M) @ Mystic Water\nAbility: Adaptability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Aqua Jet\n- Wave Crash\n\nIncineroar (M) @ Light Clay\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Darkest Lariat",
+    "Golisopod (F) @ Rocky Helmet\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Leech Life\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Protect\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Protect\n\nMilotic (F) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Ice Beam\n- Muddy Water"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 2, move 1 1"
+    ],
+    "p2": [
+      "move 1 2, move 1",
+      "move 2, move 1"
+    ],
+    "max_steps": 60
+  }
+}

@@ -329,9 +329,10 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
 ### 10.5 Step 5: Chople Berry and Rocky Helmet
 
 - **Chople Berry.** In the ModifyDamage chain of the damage calculation, after burn and before the 16-bit truncation (`data/items.ts:1030-1053`). The target eats it when the move is Fighting and super effective against it: `[-enditem] [eat]`, then `[-enditem] [weaken]`, then 2048/4096. The berry is gone for later hits (the consumed flag). The `[weaken]` line is ITEM_END with `detail` 1; the public header documents this (no new event kind, unlike the plan in section 5).
-- **ModifyDamage order.** The reference runs the attacker's Life Orb and the target's Chople Berry by their holders' speed, and a screen last, because a side condition has no speed (`comparePriority`). Two modifiers chained from 4096 commute, and the screen always comes after both. So the engine chains Life Orb, Chople Berry and the screen in that order without a speed comparison. When the two holders have the same speed, the reference shuffles the two handlers; the shuffle decides nothing. The converter drops that draw, and the engine does not draw (decision 0006 section 5.1, proposal B).
-- **Rocky Helmet.** At DamagingHit with `onDamagingHitOrder` 2, before the order-less handlers (thaw, Stamina). Those run left to right (`compareLeftToRightOrder`, `sim/battle.ts:416-421`). The helmet also hits when the hit knocked its holder out, because the faint is not processed yet. A contact move costs the attacker floor(maxHP / 6), at least 1 (`data/items.ts:5295-5309`). Afterwards the attacker's own Emergency Exit is checked against its HP before DamagingHit (`sim/battle-actions.ts:1130-1132`). A Flip Turn user that the helmet knocks out loses its switch flag with the faint (`faint()`, `sim/pokemon.ts:1585`). The engine clears it with the position's other state when the faint is processed, so no pivot follows.
-- **Evidence.** Eight recorded battles:
+- **ModifyDamage order.** The reference runs the attacker's Life Orb and the target's Chople Berry by their holders' speed (`comparePriority`). A screen is a side condition, which counts as speed 0, so it runs last, or first under Trick Room, where the speeds are negative. Every order of the three modifiers (5324, 2048 and 2732) chains to the same value, and `turn.c` checks this at compile time. So the engine chains them in one fixed order without a speed comparison. When the two holders have the same speed, the reference shuffles the two handlers; the shuffle decides nothing. The converter drops that draw, and the engine does not draw (decision 0006 section 5.1, proposal B).
+- **Rocky Helmet.** At DamagingHit with `onDamagingHitOrder` 2, before the order-less handlers (thaw, Stamina). Those run left to right (`compareLeftToRightOrder`, `sim/battle.ts:421-426`). The helmet also hits when the hit knocked its holder out, because the faint is not processed yet. A contact move costs the attacker floor(maxHP / 6), at least 1 (`data/items.ts:5295-5309`). Afterwards the attacker's own Emergency Exit is checked against its HP before DamagingHit (`data/mods/champions/scripts.ts:406, 419-420`). A Flip Turn user that the helmet knocks out loses its switch flag with the faint (`faint()`, `sim/pokemon.ts:1585`). The engine clears it with the position's other state when the faint is processed, so no pivot follows.
+- **A win inside the hit loop.** With the attacker at 0 HP, which only Rocky Helmet causes, the hit loop's `faintMessages` also checks the win (`data/mods/champions/scripts.ts:546`). The result line therefore comes before the rest of the action. The reference still runs that rest and shows its lines, such as a target's Emergency Exit (`:578-590`). The engine shows RESULT there and not again at TERMINAL. Before this, an attacker could not be at 0 HP at that point.
+- **Evidence.** Ten recorded battles:
   - `c05_chople_berry`: eaten with Life Orb and Reflect in one chain, without a KO, and gone for the next hit.
   - `c05_chople_neutral`: Close Combat into a holder that Fighting hits neutrally does not eat the berry. The Life Orb and Chople Berry tie is recorded.
   - `c05_rocky_helmet`: Fake Out, and a KO of the holder before the attacker's recoil.
@@ -340,15 +341,22 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
   - `c05_helmet_exit`: a non-contact move costs nothing. Golisopod's Emergency Exit fires after the helmet.
   - `c05_helmet_order`: Close Combat's self-drops and Leech Life's drain come before the helmet.
   - `c05_helmet_sitrus`: Sitrus Berry is eaten in the Update after the helmet's damage, before the faint line.
+  - `c05_helmet_endgame`: Golisopod with the helmet and Emergency Exit. The helmet's damage comes before the target's Emergency Exit. When the helmet knocks out a side's last Pokemon, the order is `faint`, `win`, then Emergency Exit.
+  - `c05_focus_blast_struggle`: Focus Blast eats the berry. Struggle makes contact, and the helmet's damage comes before Struggle's recoil.
 
-  Ten negative controls each make a battle fail:
+  Eleven negative controls each make a battle fail:
   - no halving, eating on a neutral hit, no `[weaken]` line, no `[eat]`;
   - the helmet without the contact check, only for standing holders, at 1/8, or without the attacker's Emergency Exit;
-  - the helmet moved before the self-drops or after the Update.
-- **Not recorded.** The Life Orb and Chople Berry tie in a hit that eats the berry; the result does not depend on the order. A frozen or Stamina holder of the helmet, whose handlers run after it by order.
+  - the helmet moved before the self-drops or after the Update;
+  - no win check in the hit loop.
+- **Not recorded.**
+  - The Life Orb and Chople Berry tie in a hit that eats the berry, and the three modifiers under Trick Room. The compile-time check covers both.
+  - A frozen or Stamina holder of the helmet, whose handlers run after it by order.
 - **Converter.** A ModifyDamage tie between `lifeorb` and `chopleberry` is dropped; any other ModifyDamage tie still fails.
+- **Review findings, fixed.** The win inside the hit loop. The order argument, which assumed the screen always runs last. The citations. Two recorded battles added.
+- **Version.** ITEM_END `detail` 1 is an additive public change, so the library goes to 0.12.0 (section 4.2; 0.11.0 is M7's).
 - **Shared files touched:**
   - `include/duoforge/duoforge.h` (comment of ITEM_END);
-  - `src/combat/turn.c` (the chain, the eaten flag, DamagingHit and the attacker's Emergency Exit);
+  - `src/combat/turn.c` (the chain, the eaten flag, DamagingHit, the attacker's Emergency Exit and the win in the hit loop);
   - `src/data/support_manifest.c`;
   - `tools/reference/trace_to_c.py` (`[weaken]`, the tie rule).
