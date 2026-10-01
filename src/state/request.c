@@ -171,69 +171,70 @@ static duoforge_status dfi_slot_candidates(const duoforge_context *ctx, const st
     return DUOFORGE_OK;
 }
 
-/* Enumeration sink: counts, optionally writes into a caller buffer, and
- * optionally looks for a byte-identical needle. */
+/* Enumeration sink. With `buffer` NULL the enumeration only counts, in
+ * closed form; otherwise it writes the candidates in documented order when
+ * they are known to fit: `fits` (set by the caller) or the domain's upper
+ * bound within `capacity`, and then sets `written`. Nothing is written past
+ * `capacity`, and nothing at all when the bound may not fit. */
 typedef struct dfi_sink {
-    duoforge_side_choice *buffer; /* nullable */
+    duoforge_side_choice *buffer; /* nullable: count only */
     uint32_t capacity;
     uint32_t count;
-    const duoforge_side_choice *needle; /* nullable */
-    uint32_t match; /* UINT32_MAX = none */
+    bool fits;    /* in: the caller knows that the domain fits */
+    bool written; /* out: the candidates were written */
 } dfi_sink;
 
-static void dfi_sink_emit(dfi_sink *k, const duoforge_side_choice *c)
-{
-    if (k->buffer != NULL && k->count < k->capacity) {
-        k->buffer[k->count] = *c;
-    }
-    if (k->needle != NULL && k->match == UINT32_MAX &&
-        dfi_bytes_equal((const uint8_t *)k->needle, (const uint8_t *)c, sizeof *c)) {
-        k->match = k->count;
-    }
-    k->count += 1u;
-}
-
-/* All ordered tuples of `m` distinct indices below `n`, lexicographic:
- * an odometer over n^m tuples that skips repeats. n <= 6, m <= n. */
+/* All ordered tuples of `m` distinct indices below `n`, lexicographic
+ * (decision 0005 section 3): a depth-first walk over the unused indices
+ * visits exactly the n!/(n-m)! tuples, in the order of an odometer over
+ * n^m tuples that skips repeats. n <= 6, 1 <= m <= n. */
 static void dfi_enumerate_team(const struct duoforge_battle *b, uint32_t s, uint32_t n, uint32_t m, dfi_sink *k)
 {
+    uint32_t total = 1u;
+    for (uint32_t i = 0u; i < m; ++i) {
+        total *= n - i; /* at most 720 */
+    }
+    if (k->buffer == NULL || !(k->fits || total <= k->capacity)) {
+        k->count = total;
+        return;
+    }
+    duoforge_side_choice head;
+    memset(&head, 0, sizeof head);
+    head.epoch = b->request_epoch;
+    head.side = (uint8_t)s;
+    head.kind = (uint8_t)DUOFORGE_CHOICE_TEAM_SELECTION;
+    head.pick_count = (uint8_t)m;
     uint32_t idx[DUOFORGE_MAX_ROSTER] = {0, 0, 0, 0, 0, 0};
-    duoforge_side_choice c;
+    uint32_t used = 0u;
+    uint32_t pos = 0u;
     for (;;) {
-        uint32_t used = 0u;
-        bool distinct = true;
-        for (uint32_t i = 0u; i < m; ++i) {
-            if (((used >> idx[i]) & 1u) != 0u) {
-                distinct = false;
+        while (idx[pos] < n && ((used >> idx[pos]) & 1u) != 0u) {
+            idx[pos] += 1u;
+        }
+        if (idx[pos] == n) {
+            if (pos == 0u) {
                 break;
             }
-            used |= 1u << idx[i];
-        }
-        if (distinct) {
-            memset(&c, 0, sizeof c);
-            c.epoch = b->request_epoch;
-            c.side = (uint8_t)s;
-            c.kind = (uint8_t)DUOFORGE_CHOICE_TEAM_SELECTION;
-            c.pick_count = (uint8_t)m;
-            for (uint32_t i = 0u; i < m; ++i) {
-                c.picks[i] = (uint8_t)idx[i];
+            pos -= 1u;
+            used &= ~(1u << idx[pos]);
+            idx[pos] += 1u;
+        } else if (pos + 1u == m) {
+            if (k->count < k->capacity) {
+                duoforge_side_choice *out = &k->buffer[k->count];
+                *out = head;
+                for (uint32_t i = 0u; i < m; ++i) {
+                    out->picks[i] = (uint8_t)idx[i];
+                }
             }
-            dfi_sink_emit(k, &c);
-        }
-        /* Advance the odometer from the last position. */
-        uint32_t j = m;
-        for (;;) {
-            if (j == 0u) {
-                return;
-            }
-            --j;
-            idx[j] += 1u;
-            if (idx[j] < n) {
-                break;
-            }
-            idx[j] = 0u;
+            k->count += 1u;
+            idx[pos] += 1u;
+        } else {
+            used |= 1u << idx[pos];
+            pos += 1u;
+            idx[pos] = 0u;
         }
     }
+    k->written = true;
 }
 
 static bool dfi_pair_allowed(const duoforge_slot_command *a, const duoforge_slot_command *c, bool forced,
@@ -254,6 +255,55 @@ static bool dfi_pair_allowed(const duoforge_slot_command *a, const duoforge_slot
         }
     }
     return true;
+}
+
+/* The number of pairs dfi_pair_allowed accepts, without listing them.
+ * Unforced, every pair counts but those the rule excludes: both actors
+ * switching to one reserve, both declaring Mega (disjoint cases). Forced
+ * lists are small and are counted pair by pair. */
+static uint32_t dfi_pair_count(const dfi_slot_list lists[DUOFORGE_ACTIVE_PER_SIDE], bool forced, uint32_t need)
+{
+    uint32_t to[DUOFORGE_MAX_ROSTER] = {0, 0, 0, 0, 0, 0};
+    uint32_t mega = 0u;
+    bool simple = !forced;
+    for (uint32_t j = 0u; j < lists[1].n && simple; ++j) {
+        const duoforge_slot_command *d = &lists[1].cmds[j];
+        if (d->kind == DUOFORGE_SLOT_SWITCH) {
+            if (d->reserve < DUOFORGE_MAX_ROSTER) {
+                to[d->reserve] += 1u;
+            } else {
+                simple = false;
+            }
+        } else if (d->kind == DUOFORGE_SLOT_MOVE && d->mega != 0u) {
+            mega += 1u;
+        }
+    }
+    uint32_t count = 0u;
+    if (simple) {
+        uint32_t excluded = 0u;
+        for (uint32_t i = 0u; i < lists[0].n && simple; ++i) {
+            const duoforge_slot_command *a = &lists[0].cmds[i];
+            if (a->kind == DUOFORGE_SLOT_SWITCH) {
+                if (a->reserve < DUOFORGE_MAX_ROSTER) {
+                    excluded += to[a->reserve];
+                } else {
+                    simple = false;
+                }
+            } else if (a->kind == DUOFORGE_SLOT_MOVE && a->mega != 0u) {
+                excluded += mega;
+            }
+        }
+        count = lists[0].n * lists[1].n - excluded; /* at most 32 x 32 */
+    }
+    if (!simple) {
+        count = 0u;
+        for (uint32_t i = 0u; i < lists[0].n; ++i) {
+            for (uint32_t j = 0u; j < lists[1].n; ++j) {
+                count += dfi_pair_allowed(&lists[0].cmds[i], &lists[1].cmds[j], forced, need) ? 1u : 0u;
+            }
+        }
+    }
+    return count;
 }
 
 /* The per-slot candidate lists of `s` at a SLOTS boundary and the pair
@@ -308,23 +358,35 @@ static duoforge_status dfi_enumerate_side(const duoforge_context *ctx, const str
     if (ls != DUOFORGE_OK) {
         return ls;
     }
-    duoforge_side_choice c;
+    if (k->buffer == NULL || !(k->fits || lists[0].n * lists[1].n <= k->capacity)) {
+        k->count = dfi_pair_count(lists, forced, need);
+        return DUOFORGE_OK;
+    }
+    /* Every candidate is one header (reserved bytes zero) and two slot
+     * commands: the header is built once and each allowed pair is written
+     * straight into the caller's buffer, in the same order. */
+    duoforge_side_choice head;
+    memset(&head, 0, sizeof head);
+    head.epoch = b->request_epoch;
+    head.side = (uint8_t)s;
+    head.kind = (uint8_t)DUOFORGE_CHOICE_SLOTS;
     for (uint32_t i = 0u; i < lists[0].n; ++i) {
+        const duoforge_slot_command *a = &lists[0].cmds[i];
         for (uint32_t j = 0u; j < lists[1].n; ++j) {
-            const duoforge_slot_command *a = &lists[0].cmds[i];
             const duoforge_slot_command *d = &lists[1].cmds[j];
             if (!dfi_pair_allowed(a, d, forced, need)) {
                 continue;
             }
-            memset(&c, 0, sizeof c);
-            c.epoch = b->request_epoch;
-            c.side = (uint8_t)s;
-            c.kind = (uint8_t)DUOFORGE_CHOICE_SLOTS;
-            c.slots[0] = *a;
-            c.slots[1] = *d;
-            dfi_sink_emit(k, &c);
+            if (k->count < k->capacity) {
+                duoforge_side_choice *out = &k->buffer[k->count];
+                *out = head;
+                out->slots[0] = *a;
+                out->slots[1] = *d;
+            }
+            k->count += 1u;
         }
     }
+    k->written = true;
     return DUOFORGE_OK;
 }
 
@@ -430,7 +492,7 @@ duoforge_status duoforge_battle_request(const duoforge_context *ctx, const duofo
     r.boundary_kind = battle->boundary_kind;
     r.player = (uint8_t)player;
     if (dfi_player_requested(battle, player)) {
-        dfi_sink k = {NULL, 0u, 0u, NULL, UINT32_MAX};
+        dfi_sink k = {NULL, 0u, 0u, false, false};
         const duoforge_status es = dfi_enumerate_side(ctx, battle, player, &k);
         if (es != DUOFORGE_OK) {
             return es;
@@ -458,21 +520,26 @@ duoforge_status duoforge_battle_candidates(const duoforge_context *ctx, const du
         *out_count = 0u;
         return DUOFORGE_OK;
     }
-    dfi_sink count_only = {NULL, 0u, 0u, NULL, UINT32_MAX};
-    duoforge_status es = dfi_enumerate_side(ctx, battle, player, &count_only);
+    /* One pass: the candidates are written only when the domain's bound
+     * fits the capacity (DUOFORGE_MAX_CANDIDATES always does); otherwise the
+     * pass only counts, and a second one writes if the domain fits. */
+    dfi_sink sink = {buffer, capacity, 0u, false, false};
+    duoforge_status es = dfi_enumerate_side(ctx, battle, player, &sink);
     if (es != DUOFORGE_OK) {
         return es;
     }
-    if (capacity < count_only.count) {
-        *out_count = count_only.count; /* the required size; nothing else is written */
+    if (capacity < sink.count) {
+        *out_count = sink.count; /* the required size; nothing else is written */
         return DUOFORGE_E_CAPACITY;
     }
-    dfi_sink writer = {buffer, capacity, 0u, NULL, UINT32_MAX};
-    es = dfi_enumerate_side(ctx, battle, player, &writer);
-    if (es != DUOFORGE_OK || writer.count != count_only.count) {
-        return DUOFORGE_E_INVARIANT; /* unreachable: enumeration is deterministic */
+    if (!sink.written) {
+        dfi_sink writer = {buffer, capacity, 0u, true, false};
+        es = dfi_enumerate_side(ctx, battle, player, &writer);
+        if (es != DUOFORGE_OK || writer.count != sink.count) {
+            return DUOFORGE_E_INVARIANT; /* unreachable: enumeration is deterministic */
+        }
     }
-    *out_count = writer.count;
+    *out_count = sink.count;
     return DUOFORGE_OK;
 }
 
