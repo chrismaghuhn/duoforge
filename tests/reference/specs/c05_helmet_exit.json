@@ -1,0 +1,20 @@
+{
+  "name": "c05_helmet_exit",
+  "purpose": "Rocky Helmet: a non-contact move (Ice Beam) into its holder costs nothing; Golisopod, chipped by Dragon Pulse first, falls from above half to half or less with the helmet's damage of its own Iron Head: Emergency Exit (the attacker's check after DamagingHit).",
+  "data": "team_c",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c0b06",
+  "teams": [
+    "Golisopod (F) @ Miracle Seed\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Iron Head\n- Leech Life\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Ice Beam\n- Coil\n\nKingambit (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Iron Head\n- Kowtow Cleave\n\nBasculegion (M) @ Mystic Water\nAbility: Adaptability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Flip Turn\n- Wave Crash",
+    "Indeedee-F (F) @ Rocky Helmet\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Trick Room\n- Psychic\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Protect\n\nFarigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Grass Knot\n\nMilotic (F) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Ice Beam\n- Muddy Water"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1 1"
+    ],
+    "p2": [
+      "move 2 2, move 1 1"
+    ],
+    "max_steps": 40
+  }
+}
