@@ -1,0 +1,19 @@
+{
+  "name": "s14_seed_tie",
+  "purpose": "Two Grassy Seed holders with the same Speed, one per side, are on the field when Grassy Surge sets the terrain: eachEvent('TerrainChange') sorts them by speed, the shuffle of the tie orders their -enditem and -boost lines, and only such a tie between two holders draws (the same order as Sitrus Berry's Update).",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000e002",
+  "teams": [
+    "Grimmsnarl (M) @ Grassy Seed\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Spirit Break\n- Reflect\n\nRillaboom (F) @ Leftovers\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- High Horsepower\n\nArchaludon (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Snarl\n\nCharizard (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Heat Wave\n- Hurricane",
+    "Grimmsnarl (M) @ Grassy Seed\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Spirit Break\n- Light Screen\n\nMilotic (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Ice Beam\n\nGolisopod (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Drill Run\n- Iron Head\n\nPolitoed (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Ice Beam"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1 2"
+    ],
+    "p2": [
+      "move 1 1, move 1"
+    ],
+    "max_steps": 50
+  }
+}

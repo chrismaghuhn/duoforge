@@ -179,7 +179,9 @@ static duoforge_status dfi_staged_stat(const dfi_member *m, const dfi_active_slo
 /* getActionSpeed of the Champions mod (data/mods/champions/scripts.ts:46-55):
  * the staged Speed, doubled by Tailwind (chainModify(2)), then halved by
  * paralysis (its onModifySpe runs last: finalModify, then floor of 50 of
- * 100), capped, negated under Trick Room. */
+ * 100), capped, negated under Trick Room. A fainted Pokemon is not active,
+ * so no ModifySpe handler runs for it (Battle.findEventHandlers,
+ * sim/battle.ts): its queued action or its replacement has the raw Speed. */
 static duoforge_status dfi_speed_key(const struct duoforge_battle *b, uint32_t side, const dfi_member *m,
                                      const dfi_active_slot *pos, uint32_t *out)
 {
@@ -188,10 +190,11 @@ static duoforge_status dfi_speed_key(const struct duoforge_battle *b, uint32_t s
     if (st != DUOFORGE_OK) {
         return st;
     }
-    if (b->sides[side].tailwind_turns != 0u) {
+    const bool active = m->hp != 0u;
+    if (active && b->sides[side].tailwind_turns != 0u) {
         spe *= 2u; /* modify(spe, 2) is exact; spe <= 4 * 65535 */
     }
-    if (m->status == DFI_STATUS_PAR) {
+    if (active && m->status == DFI_STATUS_PAR) {
         spe = spe * 50u / 100u; /* spe <= 8 * 65535 */
     }
     if (spe > DFI_SPEED_CAP) {

@@ -18,10 +18,11 @@ checks its precondition and fails loudly otherwise:
   SPEED_TIE switch-order
                     only if no tied Pokemon has a SwitchIn handler
   SPEED_TIE field:Residual
-                    only if every tied handler only counts down a duration,
-                    unless both sides' same side condition runs out in this
-                    residual: then the tie orders their end lines and the
-                    engine draws
+                    only if every tied handler only counts down a duration;
+                    both sides' same side condition running out in this
+                    residual is kept instead: the tie orders their two end
+                    lines, and the entry states which side's line comes
+                    first (the engine's draw; see side_end_tie)
   INSERT_TIE        only if the runSwitch actions in the tied group stand
                     together in the queue: runSwitch takes every entry
                     queued right behind it, so their queue order changes
@@ -115,6 +116,31 @@ def parse_team(text, tables):
 COND_INDEX = {'tailwind': 0, 'reflect': 1, 'lightscreen': 2}  # the order of a side's 'conditions'
 
 
+def side_end_tie(d, state):
+    """A residual tie of both sides' same side condition, both at 1 turn in
+    `state` (the state before the step): both end now, and the shuffle of
+    the two orders their end lines. The engine draws which side's line
+    comes first (decision 0007 section 11); the reference's pre-shuffle
+    order of the pair depends on its handler list (the insertion order of
+    each side's conditions), which the state does not hold, so the entry
+    states the outcome: (SPEED_TIE, 0, 2, the side whose line comes first).
+    None for any other draw."""
+    if d['site'] != 'SPEED_TIE' or d.get('context') != 'field:Residual':
+        return None
+    group = d['group']
+    parts = [g.split(':') for g in group]
+    if len(group) != 2 or any(len(x) != 4 or x[0] != 'H' or x[3] != 'end' for x in parts):
+        return None
+    if parts[0][1] != parts[1][1] or parts[0][1] not in COND_INDEX or {parts[0][2], parts[1][2]} != {'p1', 'p2'}:
+        return None
+    if any(state['sides'][int(x[2][1]) - 1]['conditions'][COND_INDEX[x[1]]] != 1 for x in parts):
+        return None
+    if d['hi'] - d['lo'] != 2 or d['lo'] != d['start']:
+        raise SystemExit('trace_to_c: unexpected side-end shuffle %s' % d)
+    first = parts[0] if d['value'] == d['start'] else parts[1]  # random(start, start + 2): start keeps the order
+    return (SITES['SPEED_TIE'], 0, 2, int(first[2][1]) - 1)
+
+
 def drop_reason(d, state):
     """Why draw `d` is not a tape entry, or None; `state` is the state before the step."""
     site, ctx, group = d['site'], d.get('context', ''), d.get('group')
@@ -139,19 +165,8 @@ def drop_reason(d, state):
         return None  # the engine draws
     if site == 'SPEED_TIE' and ctx == 'field:Residual':
         if all(g.startswith('H:') and g.endswith(':end') for g in group):
-            # H:<condition>:<holder>:end. Both sides' same side condition
-            # at 1 turn both end now: the tie orders their two end lines.
-            ending = {}
-            for g in group:
-                cond, holder = g.split(':')[1:3]
-                if cond in COND_INDEX and holder in ('p1', 'p2'):
-                    turns = state['sides'][int(holder[1]) - 1]['conditions'][COND_INDEX[cond]]
-                    if turns == 1:
-                        ending.setdefault(cond, []).append(holder)
-            if any(len(v) >= 2 for v in ending.values()):
-                if len(group) != 2:
-                    raise SystemExit('trace_to_c: residual tie of ending conditions in %s' % group)
-                return None  # the engine draws
+            if side_end_tie(d, state) is not None:
+                raise SystemExit('trace_to_c: ending side conditions reach drop_reason: %s' % group)
             return 'residual tie of duration counters'
         if all(g.startswith('H:') and g.endswith(':cb') for g in group):
             return None  # callbacks (burn, Grassy Terrain): the engine draws
@@ -586,7 +601,10 @@ def convert(root, name, tables, out, all_tape, all_events):
         tape_off = len(all_tape)
         dropped = 0
         for d in step['draws']:
-            if drop_reason(d, state) is None:
+            ends = side_end_tie(d, state)
+            if ends is not None:
+                all_tape.append(ends)
+            elif drop_reason(d, state) is None:
                 all_tape.append(tape_entry(d))
             else:
                 dropped += 1
