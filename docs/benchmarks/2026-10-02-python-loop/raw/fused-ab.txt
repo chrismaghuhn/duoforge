@@ -1,0 +1,45 @@
+$ python -m duoforge.examples.throughput --envs 256 --episodes 16 --workers 16 --repeats 5 --native-factor 2 --modes native,autoreset-single,autoreset,fused --phases
+library 0.15.0 (C:\Dev\src\duoforge\build\py-release\libduoforge_shared.dll), Python 3.12.14, NumPy 2.5.3
+envs 256, workers 16, episodes 16 (native x2), repeats 5
+native      8192 battles/run  games/s median     96073 best     99568  decisions/s median    3107286 best    3220315
+autoreset-single   4109 battles/run  games/s median     21735 best     22169  decisions/s median     712751 best     726977
+autoreset   4109 battles/run  games/s median     22920 best     23303  decisions/s median     751629 best     764172
+fused       4109 battles/run  games/s median     31239 best     31885  decisions/s median    1024439 best    1045603
+autoreset phases: policy 17.0%, step 30.4%, query 30.8%, python 0.1%, reset 13.1%, reseed 8.5%
+autoreset-single phases: policy 17.1%, step 29.0%, query 28.9%, python 0.1%, reset 12.4%, reseed 12.4%
+fused phases: policy 21.1%, step_query 65.7%, python 0.2%, reseed 13.0%
+$ python -m duoforge.examples.throughput --envs 1024 --episodes 4 --workers 16 --repeats 5 --native-factor 2 --modes native,autoreset-single,autoreset,fused --phases
+library 0.15.0 (C:\Dev\src\duoforge\build\py-release\libduoforge_shared.dll), Python 3.12.14, NumPy 2.5.3
+envs 1024, workers 16, episodes 4 (native x2), repeats 5
+native      8192 battles/run  games/s median     94822 best     95201  decisions/s median    3066368 best    3078622
+autoreset-single   4135 battles/run  games/s median     34319 best     34723  decisions/s median    1205157 best    1219359
+autoreset   4135 battles/run  games/s median     38429 best     39994  decisions/s median    1349491 best    1404445
+fused       4135 battles/run  games/s median     43623 best     44939  decisions/s median    1531905 best    1578105
+autoreset phases: policy 12.2%, step 35.9%, query 40.2%, python 0.1%, reset 7.2%, reseed 4.4%
+autoreset-single phases: policy 11.2%, step 31.2%, query 34.4%, python 0.1%, reset 6.5%, reseed 16.7%
+fused phases: policy 12.9%, step_query 80.8%, python 0.1%, reseed 6.2%
+$ python -m duoforge.examples.throughput --envs 2048 --episodes 2 --workers 16 --repeats 5 --native-factor 2 --modes native,autoreset-single,autoreset,fused --phases
+library 0.15.0 (C:\Dev\src\duoforge\build\py-release\libduoforge_shared.dll), Python 3.12.14, NumPy 2.5.3
+envs 2048, workers 16, episodes 2 (native x2), repeats 5
+native      8192 battles/run  games/s median     90596 best     95058  decisions/s median    2916859 best    3060510
+autoreset-single   4110 battles/run  games/s median     34305 best     35285  decisions/s median    1317636 best    1355266
+autoreset   4110 battles/run  games/s median     38754 best     39681  decisions/s median    1488487 best    1524096
+fused       4110 battles/run  games/s median     35651 best     43544  decisions/s median    1369300 best    1672488
+autoreset phases: policy 9.1%, step 38.3%, query 45.7%, python 0.0%, reset 4.4%, reseed 2.5%
+autoreset-single phases: policy 8.2%, step 32.2%, query 38.6%, python 0.0%, reset 4.1%, reseed 16.8%
+fused phases: policy 8.5%, step_query 88.3%, python 0.1%, reseed 3.1%
+# rerun of 1024 and 2048 with WSL idle
+$ python -m duoforge.examples.throughput --envs 1024 --episodes 4 --workers 16 --repeats 5 --native-factor 2 --modes native,autoreset-single,autoreset,fused
+library 0.15.0 (C:\Dev\src\duoforge\build\py-release\libduoforge_shared.dll), Python 3.12.14, NumPy 2.5.3
+envs 1024, workers 16, episodes 4 (native x2), repeats 5
+native      8192 battles/run  games/s median     95105 best     97803  decisions/s median    3075520 best    3162744
+autoreset-single   4135 battles/run  games/s median     33611 best     35936  decisions/s median    1180320 best    1261956
+autoreset   4135 battles/run  games/s median     39647 best     41287  decisions/s median    1392267 best    1449856
+fused       4135 battles/run  games/s median     45268 best     46689  decisions/s median    1589651 best    1639547
+$ python -m duoforge.examples.throughput --envs 2048 --episodes 2 --workers 16 --repeats 5 --native-factor 2 --modes native,autoreset-single,autoreset,fused
+library 0.15.0 (C:\Dev\src\duoforge\build\py-release\libduoforge_shared.dll), Python 3.12.14, NumPy 2.5.3
+envs 2048, workers 16, episodes 2 (native x2), repeats 5
+native      8192 battles/run  games/s median     90411 best     95047  decisions/s median    2910900 best    3060155
+autoreset-single   4110 battles/run  games/s median     34534 best     35609  decisions/s median    1326434 best    1367699
+autoreset   4110 battles/run  games/s median     39508 best     40021  decisions/s median    1517457 best    1537148
+fused       4110 battles/run  games/s median     40696 best     42682  decisions/s median    1563087 best    1639355

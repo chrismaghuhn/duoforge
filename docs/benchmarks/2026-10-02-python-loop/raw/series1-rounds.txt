@@ -1,0 +1,37 @@
+library 0.13.0 (C:\Dev\src\duoforge\build\py-release\libduoforge_shared.dll), Python 3.12.14, NumPy 2.5.3
+envs 64, workers 1, episodes 16 (native x8), repeats 5
+native      8192 battles/run  games/s median     10560 best     10658  decisions/s median     339891 best     343057
+index       1024 battles/run  games/s median      4570 best      4733  decisions/s median     147378 best     152616
+factored    1024 battles/run  games/s median      2351 best      2427  decisions/s median      75814 best      78261
+scripted    1024 battles/run  games/s median      1425 best      1451  decisions/s median      43939 best      44753
+library 0.13.0 (C:\Dev\src\duoforge\build\py-release\libduoforge_shared.dll), Python 3.12.14, NumPy 2.5.3
+envs 64, workers 4, episodes 16 (native x8), repeats 5
+native      8192 battles/run  games/s median     38223 best     39141  decisions/s median    1230301 best    1259859
+index       1024 battles/run  games/s median      6852 best      7418  decisions/s median     220936 best     239193
+factored    1024 battles/run  games/s median      2675 best      2773  decisions/s median      86264 best      89408
+scripted    1024 battles/run  games/s median      1489 best      1535  decisions/s median      45925 best      47343
+library 0.13.0 (C:\Dev\src\duoforge\build\py-release\libduoforge_shared.dll), Python 3.12.14, NumPy 2.5.3
+envs 64, workers 16, episodes 16 (native x8), repeats 5
+native      8192 battles/run  games/s median     80686 best     94098  decisions/s median    2597090 best    3028776
+index       1024 battles/run  games/s median      5509 best      5671  decisions/s median     177641 best     182875
+factored    1024 battles/run  games/s median      2423 best      2572  decisions/s median      78134 best      82931
+scripted    1024 battles/run  games/s median      1397 best      1432  decisions/s median      43079 best      44168
+library 0.13.0 (C:\Dev\src\duoforge\build\py-release\libduoforge_shared.dll), Python 3.12.14, NumPy 2.5.3
+envs 256, workers 1, episodes 4 (native x8), repeats 5
+native      8192 battles/run  games/s median     10296 best     10546  decisions/s median     333015 best     341090
+index       1024 battles/run  games/s median      4710 best      4761  decisions/s median     150700 best     152337
+factored    1024 battles/run  games/s median      2679 best      2758  decisions/s median      85727 best      88260
+scripted    1024 battles/run  games/s median      1449 best      1485  decisions/s median      44745 best      45856
+library 0.13.0 (C:\Dev\src\duoforge\build\py-release\libduoforge_shared.dll), Python 3.12.14, NumPy 2.5.3
+envs 256, workers 4, episodes 4 (native x8), repeats 5
+native      8192 battles/run  games/s median     37622 best     38219  decisions/s median    1216813 best    1236100
+index       1024 battles/run  games/s median     10823 best     11455  decisions/s median     346311 best     366551
+factored    1024 battles/run  games/s median      3598 best      3725  decisions/s median     115116 best     119202
+scripted    1024 battles/run  games/s median      1640 best      1646  decisions/s median      50650 best      50814
+library 0.13.0 (C:\Dev\src\duoforge\build\py-release\libduoforge_shared.dll), Python 3.12.14, NumPy 2.5.3
+envs 256, workers 16, episodes 4 (native x8), repeats 5
+native      8192 battles/run  games/s median     75557 best     83771  decisions/s median    2443745 best    2709408
+index       1024 battles/run  games/s median     10589 best     10736  decisions/s median     338829 best     343537
+factored    1024 battles/run  games/s median      3386 best      3635  decisions/s median     108342 best     116299
+scripted    1024 battles/run  games/s median      1542 best      1611  decisions/s median      47623 best      49756
+done

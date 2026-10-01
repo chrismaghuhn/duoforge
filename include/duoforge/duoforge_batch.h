@@ -26,6 +26,9 @@
 #define DUOFORGE_BATCH_MAX_WORKERS 256u
 /* The candidate index of a player without a request (duoforge_batch_step_indices). */
 #define DUOFORGE_BATCH_NO_CHOICE   0xFFFFu
+/* duoforge_batch_step_query flag: an environment whose episode ends starts
+   its next one in the same pass. */
+#define DUOFORGE_BATCH_AUTORESET   1u
 
 typedef struct duoforge_batch duoforge_batch;
 
@@ -109,6 +112,28 @@ duoforge_status duoforge_batch_step_factored(duoforge_batch *batch, const duofor
                                              const duoforge_factored_domain *domains,
                                              const duoforge_factored_choice *choices, duoforge_status *statuses,
                                              duoforge_step_result *results);
+
+/* The RL loop's batch step in one pass over the environments (decision
+   0013): each environment is stepped as by duoforge_batch_step_indices
+   (requests, candidates and candidate_counts hold the last query), then,
+   with DUOFORGE_BATCH_AUTORESET in flags, reset to its next episode if it is
+   TERMINAL, and then queried as by duoforge_batch_query into the same
+   arrays. episode_results[env] receives the result (DUOFORGE_RESULT_*, never
+   0) of an episode that is TERMINAL after the step, 0 otherwise; with the
+   flag a nonzero entry therefore marks exactly the environments this call
+   reset, including those already TERMINAL on entry (their results entry is
+   all-zero). observations and episode_results may be NULL; another flag bit
+   is E_INVALID_ARGUMENT. A failing step leaves its environment unchanged and
+   its outputs describe that boundary. If the step succeeds and the reset or
+   the query fails, the step stays applied, statuses[env] reports the
+   failure and episode_results[env] is 0: the result is reported by the call
+   that resets the environment. Equivalent to step_indices, the results,
+   reset_terminal (with the flag) and query, in one pass instead of three. */
+duoforge_status duoforge_batch_step_query(duoforge_batch *batch, uint32_t flags, const uint16_t *indices,
+                                          duoforge_request *requests, duoforge_observation *observations,
+                                          duoforge_side_choice *candidates, uint32_t *candidate_counts,
+                                          uint32_t *episode_results, duoforge_status *statuses,
+                                          duoforge_step_result *results);
 
 /* Resets every TERMINAL environment to its next episode, in parallel. */
 duoforge_status duoforge_batch_reset_terminal(duoforge_batch *batch);
