@@ -185,6 +185,7 @@ typedef struct dfi_query_job {
     duoforge_observation *observations;
     duoforge_side_choice *candidates;
     uint32_t *counts;
+    duoforge_factored_domain *domains;
     duoforge_status *statuses;
 } dfi_query_job;
 
@@ -217,9 +218,26 @@ static void dfi_query_slice(void *job, uint32_t worker, uint32_t begin, uint32_t
                 }
                 j->counts[at] = n;
             }
+            if (st == DUOFORGE_OK && j->domains != NULL) {
+                st = duoforge_battle_factored(ctx, battle, p, &j->domains[at]);
+            }
         }
         j->statuses[e] = st;
     }
+}
+
+/* Runs a query job over every environment: the lowest failing status. */
+static duoforge_status dfi_batch_query_run(duoforge_batch *batch, dfi_query_job *job)
+{
+    duoforge_status *statuses = dfi_alloc_zeroed(sizeof *statuses * batch->env_count);
+    if (statuses == NULL) {
+        return DUOFORGE_E_OUT_OF_MEMORY;
+    }
+    job->statuses = statuses;
+    dfi_pool_run(batch->pool, dfi_query_slice, job, batch->env_count);
+    const duoforge_status st = dfi_batch_first(statuses, batch->env_count);
+    dfi_free(statuses);
+    return st;
 }
 
 duoforge_status duoforge_batch_query(duoforge_batch *batch, duoforge_request *requests,
@@ -232,15 +250,19 @@ duoforge_status duoforge_batch_query(duoforge_batch *batch, duoforge_request *re
     if (candidates != NULL && candidate_counts == NULL) {
         return DUOFORGE_E_NULL_ARGUMENT; /* the candidates need their counts */
     }
-    duoforge_status *statuses = dfi_alloc_zeroed(sizeof *statuses * batch->env_count);
-    if (statuses == NULL) {
-        return DUOFORGE_E_OUT_OF_MEMORY;
+    dfi_query_job job = {batch, requests, observations, candidates, candidate_counts, NULL, NULL};
+    return dfi_batch_query_run(batch, &job);
+}
+
+duoforge_status duoforge_batch_query_factored(duoforge_batch *batch, duoforge_request *requests,
+                                              duoforge_observation *observations,
+                                              duoforge_factored_domain *domains)
+{
+    if (batch == NULL) {
+        return DUOFORGE_E_NULL_ARGUMENT;
     }
-    dfi_query_job job = {batch, requests, observations, candidates, candidate_counts, statuses};
-    dfi_pool_run(batch->pool, dfi_query_slice, &job, batch->env_count);
-    const duoforge_status st = dfi_batch_first(statuses, batch->env_count);
-    dfi_free(statuses);
-    return st;
+    dfi_query_job job = {batch, requests, observations, NULL, NULL, domains, NULL};
+    return dfi_batch_query_run(batch, &job);
 }
 
 /* ------------------------------------------------------------------- step */
@@ -289,22 +311,66 @@ duoforge_status duoforge_batch_step(duoforge_batch *batch, const duoforge_decisi
     return dfi_batch_first(statuses, batch->env_count);
 }
 
-/* ---------------------------------------------------------- step by index */
+/* ------------------------------------------- step by index or by factor */
 
-typedef struct dfi_index_job {
+/* The query's arrays and one choice per requested player: a candidate index
+   (indices) or a factored choice (domains != NULL). */
+typedef struct dfi_choice_job {
     struct duoforge_batch *b;
     const duoforge_request *requests;
     const duoforge_side_choice *candidates;
     const uint32_t *counts;
     const uint16_t *indices;
+    const duoforge_factored_domain *domains;
+    const duoforge_factored_choice *choices;
     duoforge_status *statuses;
     duoforge_step_result *results;
-} dfi_index_job;
+} dfi_choice_job;
 
-/* Fills the zeroed bundle of environment `e` from the query arrays;
-   E_INVALID_ARGUMENT for a requested player whose index is past its list
-   (NO_CHOICE is past every list). */
-static duoforge_status dfi_index_bundle(const dfi_index_job *j, uint32_t e, duoforge_decision_bundle *bundle)
+/* The response at `at` (2 * env + p) by candidate index; E_INVALID_ARGUMENT
+   for an index past its list (NO_CHOICE is past every list). */
+static duoforge_status dfi_index_response(const dfi_choice_job *j, size_t at, duoforge_side_choice *out)
+{
+    const uint32_t index = j->indices[at];
+    if (index >= j->counts[at] || index >= DUOFORGE_MAX_CANDIDATES) {
+        return DUOFORGE_E_INVALID_ARGUMENT;
+    }
+    *out = j->candidates[at * DUOFORGE_MAX_CANDIDATES + index];
+    return DUOFORGE_OK;
+}
+
+/* The response at `at` of player `p` by factored choice, built as the
+   enumeration builds a candidate; E_INVALID_ARGUMENT for a SLOTS pair past
+   the lists or not allowed, or a domain without a request. The step checks
+   a TEAM_SELECTION tuple. */
+static duoforge_status dfi_factored_response(const dfi_choice_job *j, size_t at, uint32_t p,
+                                             duoforge_side_choice *out)
+{
+    const duoforge_factored_domain *d = &j->domains[at];
+    const duoforge_factored_choice *c = &j->choices[at];
+    memset(out, 0, sizeof *out);
+    out->epoch = d->epoch;
+    out->side = (uint8_t)p;
+    out->kind = d->kind;
+    if (d->kind == DUOFORGE_CHOICE_TEAM_SELECTION) {
+        out->pick_count = d->pick_count;
+        memcpy(out->picks, c->picks, sizeof out->picks);
+        return DUOFORGE_OK;
+    }
+    const uint32_t i = c->slot[0];
+    const uint32_t k = c->slot[1];
+    if (d->kind != DUOFORGE_CHOICE_SLOTS || i >= d->slot_count[0] || k >= d->slot_count[1] ||
+        i >= DUOFORGE_MAX_SLOT_OPTIONS || k >= DUOFORGE_MAX_SLOT_OPTIONS || ((d->allowed[i] >> k) & 1u) == 0u) {
+        return DUOFORGE_E_INVALID_ARGUMENT;
+    }
+    out->slots[0] = d->slots[0][i];
+    out->slots[1] = d->slots[1][k];
+    return DUOFORGE_OK;
+}
+
+/* Fills the zeroed bundle of environment `e`; E_INVALID_ARGUMENT for a
+   requested player whose choice is not in the query's domain. */
+static duoforge_status dfi_choice_bundle(const dfi_choice_job *j, uint32_t e, duoforge_decision_bundle *bundle)
 {
     bundle->epoch = j->requests[2u * e].epoch;
     for (uint32_t p = 0u; p < DUOFORGE_SIDE_COUNT; ++p) {
@@ -312,24 +378,24 @@ static duoforge_status dfi_index_bundle(const dfi_index_job *j, uint32_t e, duof
         if (j->requests[at].requested == 0u) {
             continue;
         }
-        const uint32_t index = j->indices[at];
-        if (index >= j->counts[at] || index >= DUOFORGE_MAX_CANDIDATES) {
-            return DUOFORGE_E_INVALID_ARGUMENT;
+        const duoforge_status st = j->domains != NULL ? dfi_factored_response(j, at, p, &bundle->responses[p])
+                                                      : dfi_index_response(j, at, &bundle->responses[p]);
+        if (st != DUOFORGE_OK) {
+            return st;
         }
         bundle->response_mask = (uint8_t)(bundle->response_mask | (1u << p)); /* wide-operands-reviewed: < 4 */
-        bundle->responses[p] = j->candidates[at * DUOFORGE_MAX_CANDIDATES + index];
     }
     return DUOFORGE_OK;
 }
 
-static void dfi_index_slice(void *job, uint32_t worker, uint32_t begin, uint32_t end)
+static void dfi_choice_slice(void *job, uint32_t worker, uint32_t begin, uint32_t end)
 {
     (void)worker;
-    const dfi_index_job *j = job;
+    const dfi_choice_job *j = job;
     for (uint32_t e = begin; e < end; ++e) {
         duoforge_decision_bundle bundle;
         memset(&bundle, 0, sizeof bundle);
-        j->statuses[e] = j->b->env[e].terminal ? DUOFORGE_OK : dfi_index_bundle(j, e, &bundle);
+        j->statuses[e] = j->b->env[e].terminal ? DUOFORGE_OK : dfi_choice_bundle(j, e, &bundle);
         if (j->statuses[e] == DUOFORGE_OK) {
             j->statuses[e] = dfi_step_env(j->b, e, &bundle, &j->results[e]);
         } else {
@@ -347,8 +413,22 @@ duoforge_status duoforge_batch_step_indices(duoforge_batch *batch, const duoforg
         statuses == NULL || results == NULL) {
         return DUOFORGE_E_NULL_ARGUMENT;
     }
-    dfi_index_job job = {batch, requests, candidates, counts, indices, statuses, results};
-    dfi_pool_run(batch->pool, dfi_index_slice, &job, batch->env_count);
+    dfi_choice_job job = {batch, requests, candidates, counts, indices, NULL, NULL, statuses, results};
+    dfi_pool_run(batch->pool, dfi_choice_slice, &job, batch->env_count);
+    return dfi_batch_first(statuses, batch->env_count);
+}
+
+duoforge_status duoforge_batch_step_factored(duoforge_batch *batch, const duoforge_request *requests,
+                                             const duoforge_factored_domain *domains,
+                                             const duoforge_factored_choice *choices, duoforge_status *statuses,
+                                             duoforge_step_result *results)
+{
+    if (batch == NULL || requests == NULL || domains == NULL || choices == NULL || statuses == NULL ||
+        results == NULL) {
+        return DUOFORGE_E_NULL_ARGUMENT;
+    }
+    dfi_choice_job job = {batch, requests, NULL, NULL, NULL, domains, choices, statuses, results};
+    dfi_pool_run(batch->pool, dfi_choice_slice, &job, batch->env_count);
     return dfi_batch_first(statuses, batch->env_count);
 }
 

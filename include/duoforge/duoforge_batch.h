@@ -80,6 +80,13 @@ duoforge_status duoforge_batch_query(duoforge_batch *batch, duoforge_request *re
 duoforge_status duoforge_batch_step(duoforge_batch *batch, const duoforge_decision_bundle *bundles,
                                     duoforge_status *statuses, duoforge_step_result *results);
 
+/* Step mode with the factored domain, in parallel: as duoforge_batch_query,
+   with domains[2 * env + p] from duoforge_battle_factored in place of the
+   candidate lists; any output may be NULL (skipped). */
+duoforge_status duoforge_batch_query_factored(duoforge_batch *batch, duoforge_request *requests,
+                                              duoforge_observation *observations,
+                                              duoforge_factored_domain *domains);
+
 /* Step mode by candidate index, in parallel: for every environment that is
    not TERMINAL, the bundle of the last query's arrays is stepped as in
    duoforge_batch_step. Its epoch is requests[2 * env].epoch; for each player
@@ -91,6 +98,17 @@ duoforge_status duoforge_batch_step_indices(duoforge_batch *batch, const duoforg
                                             const duoforge_side_choice *candidates, const uint32_t *counts,
                                             const uint16_t *indices, duoforge_status *statuses,
                                             duoforge_step_result *results);
+
+/* Step mode by factored choice, in parallel: as duoforge_batch_step_indices,
+   with the response of each requested player p built from
+   domains[2 * env + p] and choices[2 * env + p]. A SLOTS choice whose pair
+   bit is not set, or whose index is past its slot list, fails that
+   environment with E_INVALID_ARGUMENT; the step checks a TEAM_SELECTION
+   choice. */
+duoforge_status duoforge_batch_step_factored(duoforge_batch *batch, const duoforge_request *requests,
+                                             const duoforge_factored_domain *domains,
+                                             const duoforge_factored_choice *choices, duoforge_status *statuses,
+                                             duoforge_step_result *results);
 
 /* Resets every TERMINAL environment to its next episode, in parallel. */
 duoforge_status duoforge_batch_reset_terminal(duoforge_batch *batch);

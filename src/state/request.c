@@ -12,6 +12,7 @@
 
 /* 24 MOVE (4 slots x 3 targets x 2 Mega) + 5 SWITCH + PASS/NONE < 32. */
 #define DFI_SLOT_LIST_CAP 32u
+_Static_assert(DFI_SLOT_LIST_CAP == DUOFORGE_MAX_SLOT_OPTIONS, "a slot list fits the factored domain");
 #define DFI_POSITION_COUNT (DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE)
 
 typedef struct dfi_slot_list {
@@ -554,6 +555,52 @@ duoforge_status duoforge_battle_candidates(const duoforge_context *ctx, const du
         }
     }
     *out_count = sink.count;
+    return DUOFORGE_OK;
+}
+
+duoforge_status duoforge_battle_factored(const duoforge_context *ctx, const duoforge_battle *battle,
+                                         uint32_t player, duoforge_factored_domain *out)
+{
+    if (ctx == NULL || battle == NULL || out == NULL) {
+        return DUOFORGE_E_NULL_ARGUMENT;
+    }
+    const duoforge_status st = dfi_query_prologue(ctx, battle, player);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    duoforge_factored_domain d;
+    memset(&d, 0, sizeof d);
+    d.epoch = battle->request_epoch;
+    if (dfi_player_requested(battle, player) && battle->boundary_kind == DUOFORGE_BOUNDARY_TEAM_SELECTION) {
+        d.kind = (uint8_t)DUOFORGE_CHOICE_TEAM_SELECTION;
+        d.member_count = (uint8_t)battle->sides[player].member_count;
+        d.pick_count = (uint8_t)ctx->brought_count;
+    } else if (dfi_player_requested(battle, player)) {
+        /* The slot lists and the pair rule of the enumeration, so both forms
+         * hold the same domain. */
+        dfi_slot_list lists[DUOFORGE_ACTIVE_PER_SIDE];
+        bool forced = false;
+        uint32_t need = 0u;
+        const duoforge_status ls = dfi_side_lists(ctx, battle, player, lists, &forced, &need);
+        if (ls != DUOFORGE_OK) {
+            return ls;
+        }
+        d.kind = (uint8_t)DUOFORGE_CHOICE_SLOTS;
+        for (uint32_t s = 0u; s < DUOFORGE_ACTIVE_PER_SIDE; ++s) {
+            d.slot_count[s] = (uint8_t)lists[s].n;
+            for (uint32_t i = 0u; i < lists[s].n; ++i) {
+                d.slots[s][i] = lists[s].cmds[i];
+            }
+        }
+        for (uint32_t i = 0u; i < lists[0].n; ++i) {
+            uint32_t row = 0u;
+            for (uint32_t j = 0u; j < lists[1].n; ++j) {
+                row |= dfi_pair_allowed(&lists[0].cmds[i], &lists[1].cmds[j], forced, need) ? 1u << j : 0u;
+            }
+            d.allowed[i] = row;
+        }
+    }
+    *out = d;
     return DUOFORGE_OK;
 }
 
