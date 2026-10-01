@@ -39,7 +39,7 @@ const fs = require('fs');
 const path = require('path');
 
 const PIN = 'b2cb775b0616115b775534eaeff50300e1fc81fc';
-const HARNESS_VERSION = 13;
+const HARNESS_VERSION = 14;
 
 // Stack frame name -> site. The first match in stack order wins.
 const SITE_RULES = [
@@ -235,8 +235,12 @@ function main() {
         weather_turns: battle.field.weatherState.duration || 0,
         terrain: battle.field.terrain || '',
         terrain_turns: battle.field.terrainState.duration || 0,
+        trick_room: battle.field.pseudoWeather.trickroom ? battle.field.pseudoWeather.trickroom.duration || 0 : 0,
         sides: battle.sides.map((side) => ({
             request: side.requestState || '',
+            // Remaining duration of Tailwind, Reflect and Light Screen (0 when absent).
+            conditions: ['tailwind', 'reflect', 'lightscreen'].map((id) =>
+                (side.sideConditions[id] ? side.sideConditions[id].duration || 0 : 0)),
             // Per active slot of a move request: 1 a selectable move, 0 a
             // disabled one (no PP, Fake Out), 2 Struggle.
             enabled: side.requestState === 'move' && side.activeRequest && side.activeRequest.active ?
@@ -250,6 +254,7 @@ function main() {
                 switch_flag: p.switchFlag ? 1 : 0, // a pivot (self-switch move, Emergency Exit) when standing
                 hp: p.hp,
                 maxhp: p.maxhp,
+                item: p.item || '',
                 status: p.status || '',
                 status_time: p.statusState.time || 0,
                 confusion: p.volatiles.confusion ? p.volatiles.confusion.time : 0,

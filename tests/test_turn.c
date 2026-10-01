@@ -719,6 +719,59 @@ int main(void)
                 ended, rain, grassy, dropped, tailwind, screens, used_items, pivots);
     }
 
+    /* The residual list at its largest (review of step 13): Trick Room,
+     * weather and terrain, three conditions per side, and per position a
+     * burn, four duration ends (Protect, stall, flinch, charge), Leftovers
+     * and Grassy Terrain, 37 entries in all. No play reaches this state, but
+     * the checker accepts it, so a decoded copy must step without writing
+     * past the list. */
+    {
+        duoforge_battle_setup s;
+        df_setup_teams(&s);
+        duoforge_battle *b = started_from(&t, k2, &s);
+        if (b != NULL) {
+            b->trick_room_turns = 1u;
+            b->weather = (uint8_t)DFI_WEATHER_RAIN;
+            b->weather_turns = 1u;
+            b->terrain = (uint8_t)DFI_TERRAIN_GRASSY;
+            b->terrain_turns = 1u;
+            for (uint32_t side = 0; side < 2u; ++side) {
+                dfi_side *sd = &b->sides[side];
+                sd->reflect_turns = 1u;
+                sd->light_screen_turns = 1u;
+                sd->tailwind_turns = 1u;
+                for (uint32_t p = 0; p < 2u; ++p) {
+                    dfi_active_slot *pos = &sd->positions[p];
+                    dfi_member *m = &sd->members[pos->occupant];
+                    m->status = (uint8_t)DFI_STATUS_BRN;
+                    m->item = (uint8_t)(1u + DFI_ITEM_LEFTOVERS);
+                    m->mega_capable = 0u; /* the stone is gone */
+                    pos->stall_level = 1u;
+                    pos->stall_turns = 1u;
+                    pos->charge_turns = 1u;
+                    pos->locked_move = 1u;
+                    pos->locked_target = (uint8_t)((1u - side) * 2u);
+                    pos->flags = (uint8_t)(DFI_VOL_PROTECT | DFI_VOL_FLINCH);
+                }
+            }
+            dfi_knowledge_refresh_active(b);
+            DF_CHECK(&t, duoforge_battle_check(k2, b) == DUOFORGE_OK);
+            uint8_t bytes[DUOFORGE_STATE_V3_ENCODED_SIZE];
+            encode(k2, b, bytes);
+            duoforge_battle *d = NULL;
+            DF_CHECK(&t, duoforge_battle_create_decoded(k2, bytes, sizeof bytes, &d) == DUOFORGE_OK);
+            if (d != NULL) {
+                duoforge_decision_bundle bd;
+                duoforge_step_result res;
+                DF_CHECK(&t, bundle_from(k2, d, 0u, 0u, &bd) == DUOFORGE_OK);
+                DF_CHECK(&t, duoforge_battle_step(k2, d, &bd, &res) == DUOFORGE_OK);
+                DF_CHECK(&t, duoforge_battle_check(k2, d) == DUOFORGE_OK);
+                duoforge_battle_destroy(d);
+            }
+            duoforge_battle_destroy(b);
+        }
+    }
+
     /* Random play with the pivots of step 12: Emergency Exit in the middle
      * of a turn (PIVOT) and at its end (in the REPLACEMENT), every
      * committed state passes the checker, and decoded copies continue byte
@@ -729,6 +782,7 @@ int main(void)
         unsigned pivots = 0;
         unsigned both = 0;     /* PIVOTs that ask both sides */
         unsigned residual = 0; /* REPLACEMENT slots of a standing Pokemon */
+        unsigned empty_slot = 0; /* PIVOTs probed with a queued move in an empty slot */
         unsigned ended = 0;
         unsigned mismatches = 0;
         for (uint64_t seed = 1u; seed <= 60u; ++seed) {
@@ -747,6 +801,35 @@ int main(void)
                 }
                 uint8_t bytes[DUOFORGE_STATE_V3_ENCODED_SIZE];
                 encode(k2, b, bytes);
+                /* A decoded PIVOT whose queued move names an empty slot (the
+                 * checker accepts it): the step fails loudly and changes
+                 * nothing, instead of running the empty slot. */
+                for (uint32_t qi = 0; qi < b->queue_len && empty_slot < 8u && b->boundary_kind == DUOFORGE_BOUNDARY_PIVOT;
+                     ++qi) {
+                    const dfi_queue_record *qr = &b->queue[qi];
+                    const dfi_active_slot *qp = &b->sides[qr->side].positions[qr->slot];
+                    /* the actor stays in: a leaving one loses its actions (cancelAction) */
+                    if (qr->kind != DFI_Q_MOVE || qp->occupant >= 4u || qp->activation_id != qr->activation_id ||
+                        b->sides[qr->side].members[qp->occupant].hp == 0u || qp->switch_flag != 0u) {
+                        continue;
+                    }
+                    duoforge_battle *odd = NULL;
+                    DF_CHECK(&t, duoforge_battle_create_decoded(k2, bytes, sizeof bytes, &odd) == DUOFORGE_OK);
+                    if (odd != NULL) {
+                        odd->queue[qi].move_slot = b->sides[qr->side].members[qp->occupant].move_count;
+                        DF_CHECK(&t, duoforge_battle_check(k2, odd) == DUOFORGE_OK);
+                        uint8_t odd_before[DUOFORGE_STATE_V3_ENCODED_SIZE];
+                        uint8_t odd_after[DUOFORGE_STATE_V3_ENCODED_SIZE];
+                        encode(k2, odd, odd_before);
+                        duoforge_step_result odd_res;
+                        DF_CHECK(&t, duoforge_battle_step(k2, odd, &bd, &odd_res) == DUOFORGE_E_INVARIANT);
+                        encode(k2, odd, odd_after);
+                        DF_CHECK(&t, memcmp(odd_before, odd_after, sizeof odd_before) == 0);
+                        duoforge_battle_destroy(odd);
+                        empty_slot += 1u;
+                    }
+                    break;
+                }
                 duoforge_battle *copy = NULL;
                 DF_CHECK(&t, duoforge_battle_create_decoded(k2, bytes, sizeof bytes, &copy) == DUOFORGE_OK);
                 duoforge_step_result res;
@@ -784,7 +867,7 @@ int main(void)
         }
         DF_CHECK_EQ_U64(&t, ended, 60u);
         DF_CHECK_EQ_U64(&t, mismatches, 0u);
-        DF_CHECK(&t, pivots > 0u && both > 0u && residual > 0u);
+        DF_CHECK(&t, pivots > 0u && both > 0u && residual > 0u && empty_slot > 0u);
         fprintf(stderr,
                 "  pivot play: %u ended; PIVOTs %u (both sides %u); Emergency Exits at the end of a turn %u\n",
                 ended, pivots, both, residual);

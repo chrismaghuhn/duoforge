@@ -1,5 +1,5 @@
 {
- "harness": 13,
+ "harness": 14,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "spec": "s3_double_replace.json",
  "format": "gen9championsvgc2026regmc",
@@ -38,9 +38,15 @@
    "weather_turns": 0,
    "terrain": "",
    "terrain_turns": 0,
+   "trick_room": 0,
    "sides": [
     {
      "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
      "enabled": [],
      "active": [
       -1,
@@ -54,6 +60,7 @@
        "switch_flag": 0,
        "hp": 179,
        "maxhp": 179,
+       "item": "",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -81,6 +88,7 @@
        "switch_flag": 0,
        "hp": 181,
        "maxhp": 181,
+       "item": "",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -108,6 +116,7 @@
        "switch_flag": 0,
        "hp": 197,
        "maxhp": 197,
+       "item": "",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -135,6 +144,7 @@
        "switch_flag": 0,
        "hp": 224,
        "maxhp": 224,
+       "item": "",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -159,6 +169,11 @@
     },
     {
      "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
      "enabled": [],
      "active": [
       -1,
@@ -172,6 +187,7 @@
        "switch_flag": 0,
        "hp": 179,
        "maxhp": 179,
+       "item": "",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -199,6 +215,7 @@
        "switch_flag": 0,
        "hp": 181,
        "maxhp": 181,
+       "item": "",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -226,6 +243,7 @@
        "switch_flag": 0,
        "hp": 197,
        "maxhp": 197,
+       "item": "",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -253,6 +271,7 @@
        "switch_flag": 0,
        "hp": 224,
        "maxhp": 224,
+       "item": "",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -437,9 +456,15 @@
     "weather_turns": 0,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -462,6 +487,7 @@
         "switch_flag": 0,
         "hp": 179,
         "maxhp": 179,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -489,6 +515,7 @@
         "switch_flag": 0,
         "hp": 181,
         "maxhp": 181,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -516,6 +543,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -543,6 +571,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -567,6 +596,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -589,6 +623,7 @@
         "switch_flag": 0,
         "hp": 179,
         "maxhp": 179,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -616,6 +651,7 @@
         "switch_flag": 0,
         "hp": 181,
         "maxhp": 181,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -643,6 +679,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -670,6 +707,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1154,9 +1192,15 @@
     "weather_turns": 0,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -1179,6 +1223,7 @@
         "switch_flag": 0,
         "hp": 179,
         "maxhp": 179,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1206,6 +1251,7 @@
         "switch_flag": 0,
         "hp": 181,
         "maxhp": 181,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1233,6 +1279,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1260,6 +1307,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1284,6 +1332,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -1306,6 +1359,7 @@
         "switch_flag": 0,
         "hp": 179,
         "maxhp": 179,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1333,6 +1387,7 @@
         "switch_flag": 0,
         "hp": 181,
         "maxhp": 181,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1360,6 +1415,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1387,6 +1443,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1910,9 +1967,15 @@
     "weather_turns": 0,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -1926,6 +1989,7 @@
         "switch_flag": 0,
         "hp": 35,
         "maxhp": 179,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1953,6 +2017,7 @@
         "switch_flag": 1,
         "hp": 0,
         "maxhp": 181,
+        "item": "",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -1980,6 +2045,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2007,6 +2073,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2031,6 +2098,11 @@
      },
      {
       "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -2044,6 +2116,7 @@
         "switch_flag": 0,
         "hp": 47,
         "maxhp": 179,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2071,6 +2144,7 @@
         "switch_flag": 1,
         "hp": 0,
         "maxhp": 181,
+        "item": "",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -2098,6 +2172,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2125,6 +2200,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2268,9 +2344,15 @@
     "weather_turns": 0,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -2293,6 +2375,7 @@
         "switch_flag": 0,
         "hp": 35,
         "maxhp": 179,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2320,6 +2403,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2347,6 +2431,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 181,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2374,6 +2459,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2398,6 +2484,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -2420,6 +2511,7 @@
         "switch_flag": 0,
         "hp": 47,
         "maxhp": 179,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2447,6 +2539,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2474,6 +2567,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 181,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2501,6 +2595,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3093,9 +3188,15 @@
     "weather_turns": 0,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -3118,6 +3219,7 @@
         "switch_flag": 0,
         "hp": 3,
         "maxhp": 179,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3145,6 +3247,7 @@
         "switch_flag": 0,
         "hp": 41,
         "maxhp": 197,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3172,6 +3275,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 181,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3199,6 +3303,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3223,6 +3328,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -3245,6 +3355,7 @@
         "switch_flag": 0,
         "hp": 20,
         "maxhp": 179,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3272,6 +3383,7 @@
         "switch_flag": 0,
         "hp": 14,
         "maxhp": 197,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3299,6 +3411,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 181,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3326,6 +3439,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3652,9 +3766,15 @@
     "weather_turns": 0,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -3668,6 +3788,7 @@
         "switch_flag": 0,
         "hp": 3,
         "maxhp": 179,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3695,6 +3816,7 @@
         "switch_flag": 1,
         "hp": 0,
         "maxhp": 197,
+        "item": "",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -3722,6 +3844,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 181,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3749,6 +3872,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3773,6 +3897,11 @@
      },
      {
       "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -3786,6 +3915,7 @@
         "switch_flag": 0,
         "hp": 20,
         "maxhp": 179,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3813,6 +3943,7 @@
         "switch_flag": 1,
         "hp": 0,
         "maxhp": 197,
+        "item": "",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -3840,6 +3971,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 181,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3867,6 +3999,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4010,9 +4143,15 @@
     "weather_turns": 0,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -4035,6 +4174,7 @@
         "switch_flag": 0,
         "hp": 3,
         "maxhp": 179,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4062,6 +4202,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4089,6 +4230,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 181,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4116,6 +4258,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4140,6 +4283,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -4162,6 +4310,7 @@
         "switch_flag": 0,
         "hp": 20,
         "maxhp": 179,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4189,6 +4338,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4216,6 +4366,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 181,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4243,6 +4394,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4623,9 +4775,15 @@
     "weather_turns": 0,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -4648,6 +4806,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 179,
+        "item": "",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -4675,6 +4834,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4702,6 +4862,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 181,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4729,6 +4890,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4753,6 +4915,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -4775,6 +4942,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 179,
+        "item": "",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -4802,6 +4970,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4829,6 +4998,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 181,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4856,6 +5026,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5147,9 +5318,15 @@
     "weather_turns": 0,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -5172,6 +5349,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 179,
+        "item": "",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -5199,6 +5377,7 @@
         "switch_flag": 0,
         "hp": 189,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5226,6 +5405,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 181,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5253,6 +5433,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5277,6 +5458,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -5299,6 +5485,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 179,
+        "item": "",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -5326,6 +5513,7 @@
         "switch_flag": 0,
         "hp": 187,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5353,6 +5541,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 181,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5380,6 +5569,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5671,9 +5861,15 @@
     "weather_turns": 0,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -5696,6 +5892,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 179,
+        "item": "",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -5723,6 +5920,7 @@
         "switch_flag": 0,
         "hp": 152,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5750,6 +5948,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 181,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5777,6 +5976,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5801,6 +6001,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -5823,6 +6028,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 179,
+        "item": "",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -5850,6 +6056,7 @@
         "switch_flag": 0,
         "hp": 156,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5877,6 +6084,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 181,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5904,6 +6112,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6195,9 +6404,15 @@
     "weather_turns": 0,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -6220,6 +6435,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 179,
+        "item": "",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -6247,6 +6463,7 @@
         "switch_flag": 0,
         "hp": 121,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6274,6 +6491,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 181,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6301,6 +6519,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6325,6 +6544,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -6347,6 +6571,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 179,
+        "item": "",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -6374,6 +6599,7 @@
         "switch_flag": 0,
         "hp": 123,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6401,6 +6627,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 181,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6428,6 +6655,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6720,9 +6948,15 @@
     "weather_turns": 0,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -6745,6 +6979,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 179,
+        "item": "",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -6772,6 +7007,7 @@
         "switch_flag": 0,
         "hp": 88,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6799,6 +7035,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 181,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6826,6 +7063,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6850,6 +7088,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -6872,6 +7115,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 179,
+        "item": "",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -6899,6 +7143,7 @@
         "switch_flag": 0,
         "hp": 89,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6926,6 +7171,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 181,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6953,6 +7199,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -7245,9 +7492,15 @@
     "weather_turns": 0,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -7270,6 +7523,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 179,
+        "item": "",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -7297,6 +7551,7 @@
         "switch_flag": 0,
         "hp": 34,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -7324,6 +7579,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 181,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -7351,6 +7607,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -7375,6 +7632,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -7397,6 +7659,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 179,
+        "item": "",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -7424,6 +7687,7 @@
         "switch_flag": 0,
         "hp": 56,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -7451,6 +7715,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 181,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -7478,6 +7743,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -7733,9 +7999,15 @@
     "weather_turns": 0,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -7749,6 +8021,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 179,
+        "item": "",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -7776,6 +8049,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -7803,6 +8077,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 181,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -7830,6 +8105,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -7854,6 +8130,11 @@
      },
      {
       "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -7867,6 +8148,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 179,
+        "item": "",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -7894,6 +8176,7 @@
         "switch_flag": 0,
         "hp": 3,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -7921,6 +8204,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 181,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -7948,6 +8232,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,

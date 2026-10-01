@@ -74,13 +74,14 @@ duoforge_add_test(NAME duoforge.request.information SOURCES test_information.c W
 # tools/reference/trace_to_c.py from the committed traces).
 duoforge_add_test(NAME duoforge.reference.conformance SOURCES test_conformance.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.combat.turn SOURCES test_turn.c WHITEBOX TIMEOUT 120)
+duoforge_add_test(NAME duoforge.combat.closure_gate SOURCES test_closure_gate.c WHITEBOX TIMEOUT 600)
 
 # M3: generated closure tables and Champions formulas (decision 0006).
 duoforge_add_test(NAME duoforge.data.closure_tables SOURCES test_closure_tables.c WHITEBOX)
 # The generated files must stay exactly what tools/datagen/gen_closure.py
 # wrote; regenerate and update these hashes together.
 foreach(_gen IN ITEMS
-        "closure_tables.h=323e85940432b3bb27064f287c4259ecdf5b34d0cd8005ef03119b7ffa182267"
+        "closure_tables.h=f6ef34b31d74a60f9c28e0bce8d3cc39a68a2ee03c7d17532090c9fca42fb25b"
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)

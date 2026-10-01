@@ -449,6 +449,34 @@ int main(void)
         m = full_manifest();
         m.items[DFI_ITEM_LEFTOVERS] = 0u;
         DF_CHECK(&t, !dfi_closure_setup_supported(&m, &teams));
+        /* The same gate on a battle, as every step runs it (review of step
+         * 13): any unmarked mechanic of a roster member makes the step
+         * unsupported. The shipped manifest marks everything, so only a
+         * reduced manifest can show the failing path. */
+        {
+            duoforge_battle *gb = NULL;
+            DF_CHECK(&t, duoforge_battle_create(k1, &teams, &gb) == DUOFORGE_OK);
+            if (gb != NULL) {
+                dfi_support_manifest g = full_manifest();
+                DF_CHECK(&t, dfi_closure_battle_supported(&g, gb));
+                DF_CHECK(&t, dfi_closure_battle_supported(&dfi_support, gb));
+                g.moves[DFI_MOVE_PARTINGSHOT] = 0u;
+                DF_CHECK(&t, !dfi_closure_battle_supported(&g, gb));
+                g = full_manifest();
+                g.abilities[DFI_ABILITY_EMERGENCYEXIT] = 0u;
+                DF_CHECK(&t, !dfi_closure_battle_supported(&g, gb));
+                g = full_manifest();
+                g.items[DFI_ITEM_LIGHTCLAY] = 0u;
+                DF_CHECK(&t, !dfi_closure_battle_supported(&g, gb));
+                g = full_manifest();
+                g.mega_evolution = 0u;
+                DF_CHECK(&t, !dfi_closure_battle_supported(&g, gb));
+                g = full_manifest();
+                g.turn_core = 0u;
+                DF_CHECK(&t, !dfi_closure_battle_supported(&g, gb));
+                duoforge_battle_destroy(gb);
+            }
+        }
         m = full_manifest();
         m.mega_evolution = 0u;
         DF_CHECK(&t, !dfi_closure_setup_supported(&m, &teams));
@@ -588,6 +616,8 @@ int main(void)
         expect_member_inv(&t, k1, w, true, "paralysis with a counter");
         rilla->status_counter = 0u;
         expect_member_inv(&t, k1, w, false, "paralysed");
+        rilla->hp = 0u; /* checkFainted clears it before every boundary but a PIVOT */
+        expect_member_inv(&t, k1, w, true, "fainted and paralysed outside a PIVOT");
         RESET();
         /* Under CLOSURE_DEV, No Ability is a legal current ability. */
         {

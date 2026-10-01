@@ -63,6 +63,18 @@ static unsigned compare_state(const duoforge_context *ctx, const duoforge_battle
                 st->field[3]);
         ++bad;
     }
+    /* Trick Room and the side conditions: their remaining turns. */
+    const uint32_t conditions[7] = {b->trick_room_turns,          b->sides[0].tailwind_turns,
+                                    b->sides[0].reflect_turns,     b->sides[0].light_screen_turns,
+                                    b->sides[1].tailwind_turns,    b->sides[1].reflect_turns,
+                                    b->sides[1].light_screen_turns};
+    for (uint32_t i = 0; i < 7u; ++i) {
+        if (conditions[i] != st->field[4u + i]) {
+            fprintf(stderr, "  %s step %u: condition %u has %u turns, reference %u\n", name, step, i, conditions[i],
+                    st->field[4u + i]);
+            ++bad;
+        }
+    }
     /* The moves the request offers per slot match the reference's request:
      * disabled moves (no PP, Fake Out) and Struggle. */
     if (b->boundary_kind == DUOFORGE_BOUNDARY_TURN) {
@@ -121,6 +133,22 @@ static unsigned compare_state(const duoforge_context *ctx, const duoforge_battle
                 continue;
             }
             const dfi_member *mem = &b->sides[s].members[m];
+            const uint32_t held = mem->item != 0u && mem->item_consumed == 0u ? 1u : 0u;
+            if (held != e->held) {
+                fprintf(stderr, "  %s step %u: side %u member %u holds %u, reference %u\n", name, step, s, m, held,
+                        e->held);
+                ++bad;
+            }
+            /* What the opponent knows: seen, and the last public HP display. */
+            const dfi_side *foe = &b->sides[1u - s];
+            const uint32_t seen = ((uint32_t)foe->seen_mask >> m) & 1u;
+            if (seen != e->seen || foe->knowledge[m].hp_percent != e->seen_percent ||
+                foe->knowledge[m].hp_flag != e->seen_flag) {
+                fprintf(stderr, "  %s step %u: side %u member %u seen %u at %u/%u, reference %u at %u/%u\n", name,
+                        step, s, m, seen, foe->knowledge[m].hp_percent, foe->knowledge[m].hp_flag, e->seen,
+                        e->seen_percent, e->seen_flag);
+                ++bad;
+            }
             if (mem->is_mega != e->mega) {
                 fprintf(stderr, "  %s step %u: side %u member %u mega %u, reference %u\n", name, step, s, m, mem->is_mega,
                         e->mega);
@@ -189,13 +217,24 @@ int main(void)
 {
     df_test t;
     df_test_begin(&t, "duoforge.reference.conformance");
+    duoforge_context *k1 = df_make_context(&df_config_k1);
     duoforge_context *k2 = df_make_context(&df_config_k2);
+    unsigned real = 0; /* battles under CLOSURE data: every set has a real ability */
     for (size_t bi = 0; bi < sizeof conf_battles / sizeof conf_battles[0]; ++bi) {
         const df_conf_battle *cb = &conf_battles[bi];
         duoforge_battle_setup setup;
         build_setup(cb, &setup);
         duoforge_battle *b = NULL;
-        const duoforge_status created = duoforge_battle_create(k2, &setup, &b);
+        /* CLOSURE data where the sets are real, CLOSURE_DEV (No Ability
+         * allowed) for the development teams. */
+        const duoforge_context *ctx = k1;
+        duoforge_status created = duoforge_battle_create(k1, &setup, &b);
+        if (created != DUOFORGE_OK) {
+            ctx = k2;
+            created = duoforge_battle_create(k2, &setup, &b);
+        } else {
+            real += 1u;
+        }
         if (!DF_CHECK(&t, created == DUOFORGE_OK && b != NULL)) {
             fprintf(stderr, "  %s: the setup is rejected: %s\n", cb->name, duoforge_status_name(created));
             continue;
@@ -231,7 +270,7 @@ int main(void)
             }
             duoforge_step_result res;
             uint32_t used = 0xFFFFFFFFu;
-            const duoforge_status status = dfi_battle_step_tape(k2, b, &bd, &conf_tape[st->tape_off], st->tape_len,
+            const duoforge_status status = dfi_battle_step_tape(ctx, b, &bd, &conf_tape[st->tape_off], st->tape_len,
                                                                 &used, &res);
             const bool consumed = used == st->tape_len;
             if (!DF_CHECK(&t, status == DUOFORGE_OK && consumed)) {
@@ -240,13 +279,17 @@ int main(void)
                 ++bad;
                 break;
             }
-            bad += compare_state(k2, b, st, cb->name, si);
-            DF_CHECK(&t, duoforge_battle_check(k2, b) == DUOFORGE_OK);
+            bad += compare_state(ctx, b, st, cb->name, si);
+            DF_CHECK(&t, duoforge_battle_check(ctx, b) == DUOFORGE_OK);
         }
         DF_CHECK_EQ_U64(&t, bad, 0u);
         duoforge_battle_destroy(b);
     }
-    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 44u);
+    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 58u);
+    /* At least the real-team battles of the closure gate (step 13). */
+    DF_CHECK(&t, real >= 8u);
+    fprintf(stderr, "  %u of the battles run under CLOSURE data\n", real);
+    duoforge_context_destroy(k1);
     duoforge_context_destroy(k2);
     return df_test_end(&t);
 }

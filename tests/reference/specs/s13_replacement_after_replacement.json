@@ -1,0 +1,20 @@
+{
+  "name": "s13_replacement_after_replacement",
+  "purpose": "A REPLACEMENT after a REPLACEMENT: a burn makes Golisopod leave at the end of a turn in which its ally fainted, with one reserve left; the reserve comes in for Golisopod, the fainted position passes, and after the switch the side is asked again and Golisopod returns.",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000000a5",
+  "teams": [
+    "Raichu (F) @ Life Orb\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Focus Blast\n- Protect\n\nGholdengo @ Leftovers\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Shadow Ball\n- Protect\n\nGolisopod (M) @ Mystic Water\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Drill Run\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Ice Beam",
+    "Charizard (M) @ Charizardite Y\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Heat Wave\n- Protect\n\nFarigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Psychic\n- Protect\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Snarl\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Ice Beam"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1 1"
+    ],
+    "p2": [
+      "move 1, move 1 1",
+      "move 1, move 1 2"
+    ],
+    "max_steps": 60
+  }
+}

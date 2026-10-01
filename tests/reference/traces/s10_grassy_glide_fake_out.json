@@ -1,5 +1,5 @@
 {
- "harness": 13,
+ "harness": 14,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "spec": "s10_grassy_glide_fake_out.json",
  "format": "gen9championsvgc2026regmc",
@@ -38,9 +38,15 @@
    "weather_turns": 0,
    "terrain": "",
    "terrain_turns": 0,
+   "trick_room": 0,
    "sides": [
     {
      "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
      "enabled": [],
      "active": [
       -1,
@@ -54,6 +60,7 @@
        "switch_flag": 0,
        "hp": 193,
        "maxhp": 193,
+       "item": "miracleseed",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -81,6 +88,7 @@
        "switch_flag": 0,
        "hp": 137,
        "maxhp": 137,
+       "item": "lifeorb",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -108,6 +116,7 @@
        "switch_flag": 0,
        "hp": 192,
        "maxhp": 192,
+       "item": "sitrusberry",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -135,6 +144,7 @@
        "switch_flag": 0,
        "hp": 182,
        "maxhp": 182,
+       "item": "leftovers",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -159,6 +169,11 @@
     },
     {
      "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
      "enabled": [],
      "active": [
       -1,
@@ -172,6 +187,7 @@
        "switch_flag": 0,
        "hp": 179,
        "maxhp": 179,
+       "item": "lifeorb",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -199,6 +215,7 @@
        "switch_flag": 0,
        "hp": 202,
        "maxhp": 202,
+       "item": "leftovers",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -226,6 +243,7 @@
        "switch_flag": 0,
        "hp": 227,
        "maxhp": 227,
+       "item": "sitrusberry",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -253,6 +271,7 @@
        "switch_flag": 0,
        "hp": 193,
        "maxhp": 193,
+       "item": "grassyseed",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -318,9 +337,15 @@
     "weather_turns": 0,
     "terrain": "grassyterrain",
     "terrain_turns": 5,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -343,6 +368,7 @@
         "switch_flag": 0,
         "hp": 193,
         "maxhp": 193,
+        "item": "miracleseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -370,6 +396,7 @@
         "switch_flag": 0,
         "hp": 137,
         "maxhp": 137,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -397,6 +424,7 @@
         "switch_flag": 0,
         "hp": 192,
         "maxhp": 192,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -424,6 +452,7 @@
         "switch_flag": 0,
         "hp": 182,
         "maxhp": 182,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -448,6 +477,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -470,6 +504,7 @@
         "switch_flag": 0,
         "hp": 179,
         "maxhp": 179,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -497,6 +532,7 @@
         "switch_flag": 0,
         "hp": 202,
         "maxhp": 202,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -524,6 +560,7 @@
         "switch_flag": 0,
         "hp": 227,
         "maxhp": 227,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -551,6 +588,7 @@
         "switch_flag": 0,
         "hp": 193,
         "maxhp": 193,
+        "item": "grassyseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -726,9 +764,15 @@
     "weather_turns": 0,
     "terrain": "grassyterrain",
     "terrain_turns": 4,
+    "trick_room": 0,
     "sides": [
      {
       "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -742,6 +786,7 @@
         "switch_flag": 0,
         "hp": 193,
         "maxhp": 193,
+        "item": "miracleseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -769,6 +814,7 @@
         "switch_flag": 1,
         "hp": 0,
         "maxhp": 137,
+        "item": "lifeorb",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -796,6 +842,7 @@
         "switch_flag": 0,
         "hp": 192,
         "maxhp": 192,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -823,6 +870,7 @@
         "switch_flag": 0,
         "hp": 182,
         "maxhp": 182,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -847,6 +895,11 @@
      },
      {
       "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -860,6 +913,7 @@
         "switch_flag": 0,
         "hp": 173,
         "maxhp": 179,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -887,6 +941,7 @@
         "switch_flag": 0,
         "hp": 202,
         "maxhp": 202,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -914,6 +969,7 @@
         "switch_flag": 0,
         "hp": 227,
         "maxhp": 227,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -941,6 +997,7 @@
         "switch_flag": 0,
         "hp": 193,
         "maxhp": 193,
+        "item": "grassyseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -990,9 +1047,15 @@
     "weather_turns": 0,
     "terrain": "grassyterrain",
     "terrain_turns": 4,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         0,
@@ -1015,6 +1078,7 @@
         "switch_flag": 0,
         "hp": 193,
         "maxhp": 193,
+        "item": "miracleseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1042,6 +1106,7 @@
         "switch_flag": 0,
         "hp": 192,
         "maxhp": 192,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1069,6 +1134,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 137,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1096,6 +1162,7 @@
         "switch_flag": 0,
         "hp": 182,
         "maxhp": 182,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1120,6 +1187,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -1142,6 +1214,7 @@
         "switch_flag": 0,
         "hp": 173,
         "maxhp": 179,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1169,6 +1242,7 @@
         "switch_flag": 0,
         "hp": 202,
         "maxhp": 202,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1196,6 +1270,7 @@
         "switch_flag": 0,
         "hp": 227,
         "maxhp": 227,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1223,6 +1298,7 @@
         "switch_flag": 0,
         "hp": 193,
         "maxhp": 193,
+        "item": "grassyseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1440,9 +1516,15 @@
     "weather_turns": 0,
     "terrain": "grassyterrain",
     "terrain_turns": 3,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         0,
@@ -1465,6 +1547,7 @@
         "switch_flag": 0,
         "hp": 91,
         "maxhp": 193,
+        "item": "miracleseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1492,6 +1575,7 @@
         "switch_flag": 0,
         "hp": 192,
         "maxhp": 192,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1519,6 +1603,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 137,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1546,6 +1631,7 @@
         "switch_flag": 0,
         "hp": 182,
         "maxhp": 182,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1570,6 +1656,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -1592,6 +1683,7 @@
         "switch_flag": 0,
         "hp": 122,
         "maxhp": 179,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1619,6 +1711,7 @@
         "switch_flag": 0,
         "hp": 138,
         "maxhp": 202,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1646,6 +1739,7 @@
         "switch_flag": 0,
         "hp": 227,
         "maxhp": 227,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1673,6 +1767,7 @@
         "switch_flag": 0,
         "hp": 193,
         "maxhp": 193,
+        "item": "grassyseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1841,9 +1936,15 @@
     "weather_turns": 0,
     "terrain": "grassyterrain",
     "terrain_turns": 2,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         0,
@@ -1866,6 +1967,7 @@
         "switch_flag": 0,
         "hp": 37,
         "maxhp": 193,
+        "item": "miracleseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1893,6 +1995,7 @@
         "switch_flag": 0,
         "hp": 144,
         "maxhp": 182,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1920,6 +2023,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 137,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1947,6 +2051,7 @@
         "switch_flag": 0,
         "hp": 192,
         "maxhp": 192,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1971,6 +2076,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -1993,6 +2103,7 @@
         "switch_flag": 0,
         "hp": 227,
         "maxhp": 227,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2020,6 +2131,7 @@
         "switch_flag": 0,
         "hp": 162,
         "maxhp": 202,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2047,6 +2159,7 @@
         "switch_flag": 0,
         "hp": 122,
         "maxhp": 179,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2074,6 +2187,7 @@
         "switch_flag": 0,
         "hp": 193,
         "maxhp": 193,
+        "item": "grassyseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2250,9 +2364,15 @@
     "weather_turns": 0,
     "terrain": "grassyterrain",
     "terrain_turns": 1,
+    "trick_room": 0,
     "sides": [
      {
       "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -2266,6 +2386,7 @@
         "switch_flag": 1,
         "hp": 0,
         "maxhp": 192,
+        "item": "sitrusberry",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -2293,6 +2414,7 @@
         "switch_flag": 0,
         "hp": 182,
         "maxhp": 182,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2320,6 +2442,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 137,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2347,6 +2470,7 @@
         "switch_flag": 0,
         "hp": 37,
         "maxhp": 193,
+        "item": "miracleseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2371,6 +2495,11 @@
      },
      {
       "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -2384,6 +2513,7 @@
         "switch_flag": 0,
         "hp": 97,
         "maxhp": 227,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2411,6 +2541,7 @@
         "switch_flag": 0,
         "hp": 186,
         "maxhp": 202,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2438,6 +2569,7 @@
         "switch_flag": 0,
         "hp": 122,
         "maxhp": 179,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2465,6 +2597,7 @@
         "switch_flag": 0,
         "hp": 193,
         "maxhp": 193,
+        "item": "grassyseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2509,9 +2642,15 @@
     "weather_turns": 0,
     "terrain": "grassyterrain",
     "terrain_turns": 1,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -2534,6 +2673,7 @@
         "switch_flag": 0,
         "hp": 37,
         "maxhp": 193,
+        "item": "miracleseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2561,6 +2701,7 @@
         "switch_flag": 0,
         "hp": 182,
         "maxhp": 182,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2588,6 +2729,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 137,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2615,6 +2757,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 192,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2639,6 +2782,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -2661,6 +2809,7 @@
         "switch_flag": 0,
         "hp": 97,
         "maxhp": 227,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2688,6 +2837,7 @@
         "switch_flag": 0,
         "hp": 186,
         "maxhp": 202,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2715,6 +2865,7 @@
         "switch_flag": 0,
         "hp": 122,
         "maxhp": 179,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2742,6 +2893,7 @@
         "switch_flag": 0,
         "hp": 193,
         "maxhp": 193,
+        "item": "grassyseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2955,9 +3107,15 @@
     "weather_turns": 0,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         0,
@@ -2980,6 +3138,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 193,
+        "item": "miracleseed",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -3007,6 +3166,7 @@
         "switch_flag": 0,
         "hp": 182,
         "maxhp": 182,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3034,6 +3194,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 137,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3061,6 +3222,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 192,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3085,6 +3247,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -3107,6 +3274,7 @@
         "switch_flag": 0,
         "hp": 111,
         "maxhp": 227,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3134,6 +3302,7 @@
         "switch_flag": 0,
         "hp": 117,
         "maxhp": 202,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3161,6 +3330,7 @@
         "switch_flag": 0,
         "hp": 122,
         "maxhp": 179,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3188,6 +3358,7 @@
         "switch_flag": 0,
         "hp": 193,
         "maxhp": 193,
+        "item": "grassyseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3389,9 +3560,15 @@
     "weather_turns": 0,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -3405,6 +3582,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 193,
+        "item": "miracleseed",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -3432,6 +3610,7 @@
         "switch_flag": 0,
         "hp": 68,
         "maxhp": 182,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3459,6 +3638,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 137,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3486,6 +3666,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 192,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3510,6 +3691,11 @@
      },
      {
       "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -3523,6 +3709,7 @@
         "switch_flag": 1,
         "hp": 0,
         "maxhp": 227,
+        "item": "",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -3550,6 +3737,7 @@
         "switch_flag": 0,
         "hp": 129,
         "maxhp": 202,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3577,6 +3765,7 @@
         "switch_flag": 0,
         "hp": 122,
         "maxhp": 179,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3604,6 +3793,7 @@
         "switch_flag": 0,
         "hp": 193,
         "maxhp": 193,
+        "item": "grassyseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3648,9 +3838,15 @@
     "weather_turns": 0,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         0,
@@ -3673,6 +3869,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 193,
+        "item": "miracleseed",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -3700,6 +3897,7 @@
         "switch_flag": 0,
         "hp": 68,
         "maxhp": 182,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3727,6 +3925,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 137,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3754,6 +3953,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 192,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3778,6 +3978,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -3800,6 +4005,7 @@
         "switch_flag": 0,
         "hp": 122,
         "maxhp": 179,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3827,6 +4033,7 @@
         "switch_flag": 0,
         "hp": 129,
         "maxhp": 202,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3854,6 +4061,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 227,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3881,6 +4089,7 @@
         "switch_flag": 0,
         "hp": 193,
         "maxhp": 193,
+        "item": "grassyseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4002,9 +4211,15 @@
     "weather_turns": 0,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -4018,6 +4233,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 193,
+        "item": "miracleseed",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -4045,6 +4261,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 182,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4072,6 +4289,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 137,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4099,6 +4317,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 192,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4123,6 +4342,11 @@
      },
      {
       "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -4136,6 +4360,7 @@
         "switch_flag": 0,
         "hp": 105,
         "maxhp": 179,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4163,6 +4388,7 @@
         "switch_flag": 0,
         "hp": 129,
         "maxhp": 202,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4190,6 +4416,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 227,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4217,6 +4444,7 @@
         "switch_flag": 0,
         "hp": 193,
         "maxhp": 193,
+        "item": "grassyseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,

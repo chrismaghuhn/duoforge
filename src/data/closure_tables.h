@@ -274,7 +274,7 @@ typedef struct dfi_move_data {
     uint8_t category;
     uint8_t base_power;
     uint8_t accuracy; /* 0: never misses */
-    uint8_t pp_base;  /* the reference's pp before the Champions rules */
+    uint8_t pp_base;  /* the pp of the Champions data (mod overrides included), before the cap at 20 and calculatePP */
     uint8_t pp_max;   /* Champions maximum PP */
     uint8_t priority; /* biased by DFI_PRIORITY_BIAS */
     uint8_t target_class;

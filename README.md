@@ -7,14 +7,14 @@ DuoForge is a deterministic, headless Pokémon Doubles simulation engine designe
 - the pinned PCG32 gameplay RNG;
 - checked integer helpers;
 - an immutable (synthetic) context with a content fingerprint and a synthetic move target-class table;
-- an owned, pointer-free battle state v3 with stable identities, decision boundaries (including TERMINAL), request epochs, sealed commitments, per-player knowledge (HP as last seen) and an invariant checker, plus the fields combat will need (field and side conditions, volatile blocks, action queue), which nothing writes yet;
+- an owned, pointer-free battle state v3 with stable identities, decision boundaries (including TERMINAL), request epochs, sealed commitments, per-player knowledge (HP as last seen) and an invariant checker, plus the combat fields (field and side conditions, volatile blocks, action queue);
 - a canonical, versioned binary encoding with a SHA-256 digest;
 - clone/copy (snapshot/restore) and reseeding for forks;
 - team selection (ordered picks) and complete joint side-choice domains per turn, enumerated in a documented deterministic order, with per-player requests, request epochs and simultaneous decision bundles;
 - a perspective-safe observation prototype (open team sheets, own exact HP/PP, opponent HP at the Champions percent precision, tagged unknowns);
-- generated data tables of the two reference teams from the pinned Showdown revision, and the Champions stat and PP formulas (data only, step 1a of the combat closure);
+- generated data tables of the two reference teams from the pinned Showdown revision, and the Champions stat and PP formulas (step 1a of the combat closure);
 - the state v3 layout of the combat closure with its invariants, codec and oracle (step 1b-1);
-- contexts over the real closure data, validation of real sets with derived stats and PP, and the support gate that still rejects every real team with `DUOFORGE_E_UNSUPPORTED` (step 1b-2);
+- contexts over the real closure data, validation of real sets with derived stats and PP, and the support gate (step 1b-2), which both real teams pass since step 12;
 - the turn core for development teams: turn order with speed ties, damage, accuracy, critical hits, stat stages, secondary stat changes, PP, Struggle and Protect, replaying recorded reference battles draw for draw (step 2);
 - switching, fainting, replacement and the win rule: development teams play complete battles to TERMINAL (step 3);
 - burn, paralysis, sleep and freeze in their Champions variants, flinch and confusion (step 4);
@@ -26,9 +26,10 @@ DuoForge is a deterministic, headless Pokémon Doubles simulation engine designe
 - Weather Ball, Grass Knot, Grassy Glide and Fake Out with its Champions disable rule (step 10a);
 - Electro Shot with its charge turn and the locked move in the request (step 10b);
 - Mega Evolution with Drought, Contrary, No Guard and Tough Claws (step 11);
-- Parting Shot and Emergency Exit with real PIVOT boundaries in the middle of a turn, and Emergency Exit at its end (step 12): both teams of decision 0004 pass the support gate.
+- Parting Shot and Emergency Exit with real PIVOT boundaries in the middle of a turn, and Emergency Exit at its end (step 12);
+- the closure gate (step 13): both teams of decision 0004 play from team selection to the end in all four pairings, conform to recorded reference battles, replay byte for byte and keep information equivalence.
 
-**Combat is partial.** Development teams (data kind `CLOSURE_DEV`: the supported abilities or No Ability, the supported items or none, the supported moves) play complete battles: turns, switches, faints, replacements, statuses and the end of the battle. Since step 12 every mechanic of the two reference teams is implemented, and both teams pass the support gate; the closure gate (step 13) checks them in play. The observation does not show stages or statuses yet. Under SYNTHETIC data every combat bundle is unsupported. No batch environments, Python bindings or ML code exist. The owner has selected the rules basis (**Pokémon Champions, VGC 2026 Reg M-C**), the reference revision (**Pokémon Showdown `b2cb775`**) and two teams (`docs/decisions/0004`).
+**The combat closure is complete for the two reference teams.** Under CLOSURE data they play complete battles: turns, switches, faints, replacements, pivots, statuses, Mega Evolution and the end of the battle. Development teams (data kind `CLOSURE_DEV`) may also use No Ability. Any other mechanic is outside the closure and is rejected at setup with `DUOFORGE_E_UNSUPPORTED`. The observation does not show stages or statuses yet. Under SYNTHETIC data every combat bundle is unsupported. No batch environments, Python bindings or ML code exist. The owner has selected the rules basis (**Pokémon Champions, VGC 2026 Reg M-C**), the reference revision (**Pokémon Showdown `b2cb775`**) and two teams (`docs/decisions/0004`).
 
 State snapshots and decodability are foundation evidence, **not proof that unimplemented future mechanics restore correctly**.
 
@@ -81,8 +82,8 @@ Every test is finite and has a timeout. Test groups:
 | Group | What it covers |
 |---|---|
 | `duoforge.unit.*` | Checked arithmetic, byte order, SHA-256, damage and stat arithmetic against the reference, draw sites and tape |
-| `duoforge.combat.*` | The turn core through the public API: one turn, determinism, continuation across encode/decode, honest `E_UNSUPPORTED`, random play |
-| `duoforge.reference.*` | Forty-four recorded reference battles replayed draw for draw, with the request compared after every step (`conformance`), the generated tables against the traces; with a checkout: traces and arithmetic regenerated |
+| `duoforge.combat.*` | The turn core through the public API: one turn, determinism, continuation across encode/decode, honest `E_UNSUPPORTED`, random play; the closure gate with the real teams (`closure_gate`) |
+| `duoforge.reference.*` | Fifty-eight recorded reference battles replayed draw for draw, with the request compared after every step (`conformance`), the generated tables against the traces; with a checkout: traces and arithmetic regenerated |
 | `duoforge.rng.*` | PCG32 known-answer vectors and contract |
 | `duoforge.state.*` | Context, setup, identity, knowledge (HP display as last seen), closure setup (real sets, gate, member invariant), invariants, clone/equal/reseed, setup sweep |
 | `duoforge.codec.*` | Goldens, negative decoding (including "rejected: schema 1"), exhaustive mutation sweep |

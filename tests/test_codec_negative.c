@@ -344,7 +344,7 @@ int main(void)
             {FX_F1, 248, 0x01, DFI_INV_VOLATILE},
             {FX_F5, 645, 0x04, DFI_INV_VOLATILE},
             {FX_F5, 268, 0x02, DFI_INV_VOLATILE},
-            {FX_F1, 250, 0x03, DFI_INV_VOLATILE},
+            {FX_F1, 250, 0x04, DFI_INV_VOLATILE},
             {FX_F2, 653, 0x05, DFI_INV_VOLATILE},
             {FX_F2, 660, 0x01, DFI_INV_VOLATILE},
             {FX_F2, 667, 0x01, DFI_INV_VOLATILE},

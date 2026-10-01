@@ -15,9 +15,8 @@
  * sealed commands, queue records at index >= queue_len are all-zero and the
  * knowledge about an unseen member is all-zero.
  *
- * v3 adds the groups of decision 0006 section 3. Nothing writes them yet
- * except the turn counter, the cleared volatile block and the HP knowledge;
- * combat arrives with the later closure steps.
+ * v3 adds the groups of decision 0006 section 3; the combat of the closure
+ * (src/combat/turn.c) writes them for CLOSURE data.
  */
 #include <stdint.h>
 
@@ -71,6 +70,7 @@ typedef struct dfi_move_slot {
 #define DFI_SWITCH_NONE 0u
 #define DFI_SWITCH_MOVE 1u           /* a self-switch move (Parting Shot) */
 #define DFI_SWITCH_EMERGENCY_EXIT 2u /* the ability */
+#define DFI_SWITCH_FAINTED 3u        /* checkFainted's flag, kept by a pass at a REPLACEMENT */
 #define DFI_REVEALED_ITEM_CONSUMED 1u
 #define DFI_REVEALED_MEGA 2u
 #define DFI_MEMBER_STAT_COUNT 5u  /* atk, def, spa, spd, spe (HP is hp_max) */

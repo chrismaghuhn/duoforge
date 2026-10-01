@@ -1,0 +1,23 @@
+{
+  "name": "s13_lightning_rod_speed",
+  "purpose": "Two Lightning Rod holders: Archaludon's Electro Shot (charged, then fired at Farigiraf) goes to the faster Raichu on the other side, not to the slower one next to Archaludon (compareRedirectOrder: Speed first).",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000000001",
+  "teams": [
+    "Archaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Electro Shot\n- Protect\n\nRaichu (M) @ Grassy Seed\nAbility: Lightning Rod\nLevel: 50\nEVs: 32 HP / 32 SpD / 2 Def\nCalm Nature\n- Focus Blast\n- Protect\n\nGolisopod (M) @ Life Orb\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Iron Head\n- Protect\n\nMilotic (F) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Muddy Water\n- Coil",
+    "Raichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Focus Blast\n- Protect\n\nFarigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Psychic\n- Protect\n\nGolisopod (F) @ Life Orb\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Iron Head\n- Protect\n\nMilotic (F) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Muddy Water\n- Coil"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 2, move 2",
+      "move 1 2, move 2",
+      "move 2, move 2"
+    ],
+    "p2": [
+      "move 2, move 2",
+      "move 1 1, move 2",
+      "move 2, move 2"
+    ],
+    "max_steps": 4
+  }
+}
