@@ -31,7 +31,8 @@ This is a status manifest, **not** a mechanics certificate. "IMPLEMENTED + TESTE
 | Drought and sun | **IMPLEMENTED, NOT REACHABLE** until Mega Evolution (step 11) |
 | Tailwind, Reflect, Light Screen, Trick Room | **IMPLEMENTED + TESTED** for development teams; 3 recorded reference battles (decision 0006 section 4.5) |
 | Stamina, Competitive, Flash Fire (absorb), Lightning Rod, Good as Gold, Armor Tail, Prankster, Blaze | **IMPLEMENTED + TESTED** for development teams; 3 recorded reference battles (decision 0006 section 4.6) |
-| Contrary, No Guard, Tough Claws (Mega formes), Emergency Exit, items, Mega Evolution, pivots | **UNSUPPORTED** (`E_UNSUPPORTED`, atomic; steps 8 to 12) |
+| Leftovers, Sitrus Berry, Grassy Seed, Life Orb, Mystic Water, Light Clay | **IMPLEMENTED + TESTED** for development teams; 5 recorded reference battles (decision 0006 section 4.7) |
+| Miracle Seed, Mega Stones, Contrary, No Guard, Tough Claws (Mega formes), Emergency Exit, Mega Evolution, pivots | **UNSUPPORTED** (`E_UNSUPPORTED`, atomic; steps 9 to 12) |
 
 State snapshots and decodability are foundation evidence, **not proof that unimplemented future mechanics restore correctly**.
 

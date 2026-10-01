@@ -62,10 +62,15 @@ static void dev_setup(duoforge_battle_setup *s, uint64_t seed)
             }
         }
     }
-    /* Step 7: Stamina Archaludon and Armor Tail Farigiraf on both sides. */
+    /* Step 7: Stamina Archaludon and Armor Tail Farigiraf on both sides;
+     * step 8: items. */
     for (uint32_t side = 0; side < 2u; ++side) {
         s->sides[side].members[0].ability = 1u + DFI_ABILITY_STAMINA;
         s->sides[side].members[3].ability = 1u + DFI_ABILITY_ARMORTAIL;
+        s->sides[side].members[0].item = 1u + DFI_ITEM_LEFTOVERS;
+        s->sides[side].members[1].item = 1u + DFI_ITEM_SITRUSBERRY;
+        s->sides[side].members[2].item = 1u + DFI_ITEM_LIFEORB;
+        s->sides[side].members[3].item = 1u + DFI_ITEM_MYSTICWATER;
     }
     /* Electro Shot needs step 10: Archaludon keeps only the turn-core moves. */
     s->sides[0].members[0].moves[1].move_id = DFI_MOVE_PROTECT;
@@ -188,9 +193,14 @@ static void status_setup(duoforge_battle_setup *s, uint64_t seed)
         }
         /* Step 7: Lightning Rod, Competitive and Blaze; Golisopod keeps No
          * Ability (Emergency Exit is step 12). */
-        s->sides[side].members[0].ability = 1u + DFI_ABILITY_LIGHTNINGROD;
+        /* Lightning Rod on one side only, so the other Raichu can paralyze. */
+        s->sides[side].members[0].ability = side == 0u ? 1u + DFI_ABILITY_LIGHTNINGROD : 0u;
         s->sides[side].members[1].ability = 1u + DFI_ABILITY_COMPETITIVE;
         s->sides[side].members[2].ability = 1u + DFI_ABILITY_BLAZE;
+        /* Step 8: items. */
+        s->sides[side].members[0].item = 1u + DFI_ITEM_LIFEORB;
+        s->sides[side].members[1].item = 1u + DFI_ITEM_LEFTOVERS;
+        s->sides[side].members[2].item = 1u + DFI_ITEM_SITRUSBERRY;
     }
 }
 
@@ -204,16 +214,16 @@ static void entry_setup(duoforge_battle_setup *s, uint64_t seed)
     s->rng_initstate = seed;
     s->rng_initseq = 123u;
     static const struct {
-        uint32_t species, gender, nature, ability, sp[6], moves[4], move_count;
+        uint32_t species, gender, nature, ability, item, sp[6], moves[4], move_count;
     } a[4] = {
-        {DFI_FORME_POLITOED, 1u, DFI_NATURE_MODEST, 1u + DFI_ABILITY_DRIZZLE, {32u, 0u, 0u, 30u, 0u, 4u},
-         {DFI_MOVE_MUDDYWATER, DFI_MOVE_ICEBEAM, DFI_MOVE_PROTECT, 0u}, 3u},
-        {DFI_FORME_STARAPTOR, 2u, DFI_NATURE_BOLD, 1u + DFI_ABILITY_INTIMIDATE, {32u, 0u, 32u, 0u, 2u, 0u},
-         {DFI_MOVE_TAILWIND, DFI_MOVE_PROTECT, 0u, 0u}, 2u},
-        {DFI_FORME_RILLABOOM, 1u, DFI_NATURE_ADAMANT, 1u + DFI_ABILITY_GRASSYSURGE, {18u, 32u, 2u, 0u, 6u, 8u},
-         {DFI_MOVE_HIGHHORSEPOWER, 0u, 0u, 0u}, 1u},
-        {DFI_FORME_GRIMMSNARL, 1u, DFI_NATURE_BOLD, 1u + DFI_ABILITY_PRANKSTER, {32u, 0u, 32u, 0u, 2u, 0u},
-         {DFI_MOVE_REFLECT, DFI_MOVE_LIGHTSCREEN, DFI_MOVE_SPIRITBREAK, 0u}, 3u},
+        {DFI_FORME_POLITOED, 1u, DFI_NATURE_MODEST, 1u + DFI_ABILITY_DRIZZLE, 1u + DFI_ITEM_MYSTICWATER,
+         {32u, 0u, 0u, 30u, 0u, 4u}, {DFI_MOVE_MUDDYWATER, DFI_MOVE_ICEBEAM, DFI_MOVE_PROTECT, 0u}, 3u},
+        {DFI_FORME_STARAPTOR, 2u, DFI_NATURE_BOLD, 1u + DFI_ABILITY_INTIMIDATE, 1u + DFI_ITEM_SITRUSBERRY,
+         {32u, 0u, 32u, 0u, 2u, 0u}, {DFI_MOVE_TAILWIND, DFI_MOVE_PROTECT, 0u, 0u}, 2u},
+        {DFI_FORME_RILLABOOM, 1u, DFI_NATURE_ADAMANT, 1u + DFI_ABILITY_GRASSYSURGE, 1u + DFI_ITEM_GRASSYSEED,
+         {18u, 32u, 2u, 0u, 6u, 8u}, {DFI_MOVE_HIGHHORSEPOWER, 0u, 0u, 0u}, 1u},
+        {DFI_FORME_GRIMMSNARL, 1u, DFI_NATURE_BOLD, 1u + DFI_ABILITY_PRANKSTER, 1u + DFI_ITEM_LIGHTCLAY,
+         {32u, 0u, 32u, 0u, 2u, 0u}, {DFI_MOVE_REFLECT, DFI_MOVE_LIGHTSCREEN, DFI_MOVE_SPIRITBREAK, 0u}, 3u},
     };
     for (uint32_t side = 0; side < 2u; ++side) {
         s->sides[side].member_count = 4u;
@@ -225,6 +235,7 @@ static void entry_setup(duoforge_battle_setup *s, uint64_t seed)
             d->gender = (side == 0u || a[k].species == DFI_FORME_GRIMMSNARL) ? a[k].gender : 3u - a[k].gender;
             d->nature = a[k].nature;
             d->ability = a[k].ability;
+            d->item = a[k].item;
             for (uint32_t i = 0; i < 6u; ++i) {
                 d->stat_points[i] = a[k].sp[i];
             }
@@ -552,6 +563,7 @@ int main(void)
         unsigned grassy = 0;
         unsigned tailwind = 0;
         unsigned screens = 0;
+        unsigned used_items = 0;
         unsigned dropped = 0;
         unsigned ended = 0;
         unsigned mismatches = 0;
@@ -593,6 +605,11 @@ int main(void)
                 DF_CHECK(&t, duoforge_battle_check(k2, b) == DUOFORGE_OK);
                 rain += b->weather == DFI_WEATHER_RAIN ? 1u : 0u;
                 for (uint32_t side = 0; side < 2u; ++side) {
+                    for (uint32_t m = 0; m < 4u; ++m) {
+                        used_items += b->sides[side].members[m].item_consumed;
+                    }
+                }
+                for (uint32_t side = 0; side < 2u; ++side) {
                     tailwind += b->sides[side].tailwind_turns != 0u ? 1u : 0u;
                     screens += (b->sides[side].reflect_turns | b->sides[side].light_screen_turns) != 0u ? 1u : 0u;
                 }
@@ -608,11 +625,11 @@ int main(void)
         }
         DF_CHECK_EQ_U64(&t, ended, 40u);
         DF_CHECK_EQ_U64(&t, mismatches, 0u);
-        DF_CHECK(&t, rain > 0u && grassy > 0u && dropped > 0u && tailwind > 0u && screens > 0u);
+        DF_CHECK(&t, rain > 0u && grassy > 0u && dropped > 0u && tailwind > 0u && screens > 0u && used_items > 0u);
         fprintf(stderr,
                 "  entry play: %u ended; steps with rain %u, with Grassy Terrain %u; lowered Attack %u; "
-                "side-steps with Tailwind %u, with a screen %u\n",
-                ended, rain, grassy, dropped, tailwind, screens);
+                "side-steps with Tailwind %u, with a screen %u; used items %u\n",
+                ended, rain, grassy, dropped, tailwind, screens, used_items);
     }
 
     duoforge_context_destroy(k2);

@@ -37,7 +37,7 @@ const fs = require('fs');
 const path = require('path');
 
 const PIN = 'b2cb775b0616115b775534eaeff50300e1fc81fc';
-const HARNESS_VERSION = 6;
+const HARNESS_VERSION = 7;
 
 // Stack frame name -> site. The first match in stack order wins.
 const SITE_RULES = [
@@ -131,9 +131,10 @@ function describe(item, battle) {
             const n = battle.findPokemonEventHandlers(item, 'onSwitchIn').length;
             return `P:${slotOf(item)}:${n}:${!item.isStarted && !item.fainted ? 'S' : '-'}`;
         }
+        // The handlers the Pokemon has for the current event, by effect.
         const ev = eventStack.length ? eventStack[eventStack.length - 1] : '';
-        const n = ev ? battle.findEventHandlers(item, ev).length : 0;
-        return `P:${slotOf(item)}:${n}`;
+        const hs = ev ? battle.findEventHandlers(item, ev) : [];
+        return `P:${slotOf(item)}:${hs.length}:${hs.map((h) => h.effect.id).join('+')}`;
     }
     return '?';
 }

@@ -1,5 +1,5 @@
 {
- "harness": 6,
+ "harness": 7,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "spec": "s2_ally_target.json",
  "format": "gen9championsvgc2026regmc",
@@ -304,8 +304,8 @@
      "hi": 3,
      "value": 1,
      "group": [
-      "P:p1b:0",
-      "P:p2b:0"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 1
     }
@@ -559,8 +559,8 @@
      "hi": 3,
      "value": 2,
      "group": [
-      "P:p1b:0",
-      "P:p2b:0"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 1
     },
@@ -571,8 +571,8 @@
      "hi": 3,
      "value": 1,
      "group": [
-      "P:p1b:0",
-      "P:p2b:0"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 1
     },
@@ -583,8 +583,8 @@
      "hi": 3,
      "value": 2,
      "group": [
-      "P:p1b:0",
-      "P:p2b:0"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 1
     },
@@ -595,8 +595,8 @@
      "hi": 3,
      "value": 1,
      "group": [
-      "P:p1b:0",
-      "P:p2b:0"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 1
     },
@@ -607,8 +607,8 @@
      "hi": 3,
      "value": 2,
      "group": [
-      "P:p1b:0",
-      "P:p2b:0"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 1
     },
@@ -619,8 +619,8 @@
      "hi": 3,
      "value": 2,
      "group": [
-      "P:p1b:0",
-      "P:p2b:0"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 1
     },
@@ -659,8 +659,8 @@
      "hi": 3,
      "value": 2,
      "group": [
-      "P:p1b:0",
-      "P:p2b:0"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 1
     },
@@ -671,8 +671,8 @@
      "hi": 3,
      "value": 2,
      "group": [
-      "P:p1b:0",
-      "P:p2b:0"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 1
     },
@@ -683,8 +683,8 @@
      "hi": 3,
      "value": 2,
      "group": [
-      "P:p1b:0",
-      "P:p2b:0"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 1
     },
@@ -716,8 +716,8 @@
      "hi": 3,
      "value": 2,
      "group": [
-      "P:p1b:0",
-      "P:p2b:0"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 1
     },
@@ -728,8 +728,8 @@
      "hi": 3,
      "value": 1,
      "group": [
-      "P:p1b:0",
-      "P:p2b:0"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 1
     },
@@ -740,8 +740,8 @@
      "hi": 3,
      "value": 1,
      "group": [
-      "P:p1b:0",
-      "P:p2b:0"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 1
     },
@@ -764,8 +764,8 @@
      "hi": 3,
      "value": 1,
      "group": [
-      "P:p1b:0",
-      "P:p2b:0"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 1
     }
@@ -1026,8 +1026,8 @@
      "hi": 3,
      "value": 1,
      "group": [
-      "P:p1b:0",
-      "P:p2b:0"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 1
     },
@@ -1038,8 +1038,8 @@
      "hi": 3,
      "value": 1,
      "group": [
-      "P:p1b:0",
-      "P:p2b:0"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 1
     },
@@ -1062,8 +1062,8 @@
      "hi": 3,
      "value": 2,
      "group": [
-      "P:p1b:0",
-      "P:p2b:0"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 1
     },
@@ -1074,8 +1074,8 @@
      "hi": 3,
      "value": 1,
      "group": [
-      "P:p1b:0",
-      "P:p2b:0"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 1
     },
@@ -1086,8 +1086,8 @@
      "hi": 3,
      "value": 2,
      "group": [
-      "P:p1b:0",
-      "P:p2b:0"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 1
     },
@@ -1110,8 +1110,8 @@
      "hi": 3,
      "value": 2,
      "group": [
-      "P:p1b:0",
-      "P:p2b:0"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 1
     },
@@ -1162,8 +1162,8 @@
      "hi": 3,
      "value": 2,
      "group": [
-      "P:p1b:0",
-      "P:p2b:0"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 1
     },
@@ -1174,8 +1174,8 @@
      "hi": 3,
      "value": 2,
      "group": [
-      "P:p1b:0",
-      "P:p2b:0"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 1
     },
@@ -1186,8 +1186,8 @@
      "hi": 3,
      "value": 1,
      "group": [
-      "P:p1b:0",
-      "P:p2b:0"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 1
     },
@@ -1226,8 +1226,8 @@
      "hi": 3,
      "value": 2,
      "group": [
-      "P:p1b:0",
-      "P:p2b:0"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 1
     },
@@ -1238,8 +1238,8 @@
      "hi": 3,
      "value": 1,
      "group": [
-      "P:p1b:0",
-      "P:p2b:0"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 1
     },
@@ -1250,8 +1250,8 @@
      "hi": 3,
      "value": 2,
      "group": [
-      "P:p1b:0",
-      "P:p2b:0"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 1
     },
@@ -1274,8 +1274,8 @@
      "hi": 3,
      "value": 2,
      "group": [
-      "P:p1b:0",
-      "P:p2b:0"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 1
     }

@@ -15,7 +15,9 @@
  * Step 7: the reactive abilities of the base formes (Stamina, Competitive,
  * Flash Fire, Lightning Rod, Good as Gold, Armor Tail, Prankster, Blaze);
  * Contrary, No Guard and Tough Claws belong to Mega formes (step 11).
- * No item and no Mega Evolution is implemented yet. */
+ * Step 8: Leftovers, Sitrus Berry, Grassy Seed, Life Orb, Mystic Water and
+ * Light Clay (Miracle Seed comes with the first Grass move, step 9).
+ * No Mega Evolution is implemented yet. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -59,5 +61,14 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_ARMORTAIL] = 1u,
             [DFI_ABILITY_PRANKSTER] = 1u,
             [DFI_ABILITY_BLAZE] = 1u,
+        },
+    .items =
+        {
+            [DFI_ITEM_LEFTOVERS] = 1u,
+            [DFI_ITEM_SITRUSBERRY] = 1u,
+            [DFI_ITEM_GRASSYSEED] = 1u,
+            [DFI_ITEM_LIFEORB] = 1u,
+            [DFI_ITEM_MYSTICWATER] = 1u,
+            [DFI_ITEM_LIGHTCLAY] = 1u,
         },
 };

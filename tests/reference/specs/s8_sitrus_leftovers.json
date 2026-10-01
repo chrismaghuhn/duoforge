@@ -1,0 +1,23 @@
+{
+  "name": "s8_sitrus_leftovers",
+  "purpose": "Sitrus Berry eats at half HP or less right after the hit, after Struggle-free recoil-free damage and after the residual burn, and heals a quarter; Leftovers heals 1/16 at the end of the turn (order 5, sub-order 4: after Grassy Terrain's heal of the same Pokemon), ties drawn between two equally fast holders.",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000008003",
+  "teams": [
+    "Archaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Snarl\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Ice Beam\n\nCharizard (M) @ Life Orb\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Heat Wave\n- Hurricane\n\nRillaboom (M) @ Mystic Water\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- High Horsepower",
+    "Archaludon (F) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Snarl\n\nFarigiraf (M) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Protect\n\nCharizard (F) @ Life Orb\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Heat Wave\n- Hurricane\n\nGolisopod (M) @ Mystic Water\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Drill Run\n- Iron Head"
+  ],
+  "plan": {
+    "p1": [
+      "move 2, move 1",
+      "move 1 2, move 2 2",
+      "move 1 1, move 1"
+    ],
+    "p2": [
+      "move 2, move 1 2",
+      "move 1 2, move 1 1",
+      "move 1 1, move 2"
+    ],
+    "max_steps": 50
+  }
+}

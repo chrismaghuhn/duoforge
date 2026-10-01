@@ -1,0 +1,21 @@
+{
+  "name": "s8_sitrus_late",
+  "purpose": "Sitrus Berry after damage outside a hit: a burned or confused holder that falls to half HP from the burn or its own confusion hit eats at the end of that action (the Update of runAction), not earlier.",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000008217",
+  "teams": [
+    "Charizard (M)\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Hurricane\n- Heat Wave\n\nGrimmsnarl (M) @ Light Clay\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Reflect\n- Spirit Break\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Snarl\n\nPolitoed (F) @ Mystic Water\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Ice Beam\n- Muddy Water",
+    "Farigiraf (M) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Psychic\n\nGolisopod (F) @ Leftovers\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Iron Head\n- Drill Run\n\nMilotic (F) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Ice Beam\n\nRillaboom (M) @ Grassy Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- High Horsepower"
+  ],
+  "plan": {
+    "p1": [
+      "move 2, move 1",
+      "move 2, move 2 2"
+    ],
+    "p2": [
+      "move 2 2, move 1 2",
+      "move 2 2, move 1 1"
+    ],
+    "max_steps": 50
+  }
+}
