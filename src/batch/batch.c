@@ -192,40 +192,46 @@ typedef struct dfi_query_job {
     duoforge_status *statuses;
 } dfi_query_job;
 
+/* The query outputs of environment `e`; its status. */
+static duoforge_status dfi_query_env(const dfi_query_job *j, uint32_t e)
+{
+    const duoforge_context *ctx = j->b->ctx;
+    const duoforge_battle *battle = j->b->env[e].battle;
+    duoforge_status st = DUOFORGE_OK;
+    for (uint32_t p = 0u; p < DUOFORGE_SIDE_COUNT && st == DUOFORGE_OK; ++p) {
+        const size_t at = (size_t)e * DUOFORGE_SIDE_COUNT + p;
+        if (j->requests != NULL) {
+            st = duoforge_battle_request(ctx, battle, p, &j->requests[at]);
+        }
+        if (st == DUOFORGE_OK && j->observations != NULL) {
+            st = duoforge_battle_observe(ctx, battle, p, &j->observations[at]);
+        }
+        if (st == DUOFORGE_OK && j->counts != NULL) {
+            duoforge_side_choice *out =
+                j->candidates != NULL ? &j->candidates[at * DUOFORGE_MAX_CANDIDATES] : NULL;
+            uint32_t n = 0u;
+            if (out != NULL) {
+                st = duoforge_battle_candidates(ctx, battle, p, out, DUOFORGE_MAX_CANDIDATES, &n);
+            } else {
+                duoforge_request rq;
+                st = duoforge_battle_request(ctx, battle, p, &rq);
+                n = rq.candidate_count;
+            }
+            j->counts[at] = n;
+        }
+        if (st == DUOFORGE_OK && j->domains != NULL) {
+            st = duoforge_battle_factored(ctx, battle, p, &j->domains[at]);
+        }
+    }
+    return st;
+}
+
 static void dfi_query_slice(void *job, uint32_t worker, uint32_t begin, uint32_t end)
 {
     (void)worker;
     const dfi_query_job *j = job;
-    const duoforge_context *ctx = j->b->ctx;
     for (uint32_t e = begin; e < end; ++e) {
-        const duoforge_battle *battle = j->b->env[e].battle;
-        duoforge_status st = DUOFORGE_OK;
-        for (uint32_t p = 0u; p < DUOFORGE_SIDE_COUNT && st == DUOFORGE_OK; ++p) {
-            const size_t at = (size_t)e * DUOFORGE_SIDE_COUNT + p;
-            if (j->requests != NULL) {
-                st = duoforge_battle_request(ctx, battle, p, &j->requests[at]);
-            }
-            if (st == DUOFORGE_OK && j->observations != NULL) {
-                st = duoforge_battle_observe(ctx, battle, p, &j->observations[at]);
-            }
-            if (st == DUOFORGE_OK && j->counts != NULL) {
-                duoforge_side_choice *out =
-                    j->candidates != NULL ? &j->candidates[at * DUOFORGE_MAX_CANDIDATES] : NULL;
-                uint32_t n = 0u;
-                if (out != NULL) {
-                    st = duoforge_battle_candidates(ctx, battle, p, out, DUOFORGE_MAX_CANDIDATES, &n);
-                } else {
-                    duoforge_request rq;
-                    st = duoforge_battle_request(ctx, battle, p, &rq);
-                    n = rq.candidate_count;
-                }
-                j->counts[at] = n;
-            }
-            if (st == DUOFORGE_OK && j->domains != NULL) {
-                st = duoforge_battle_factored(ctx, battle, p, &j->domains[at]);
-            }
-        }
-        j->statuses[e] = st;
+        j->statuses[e] = dfi_query_env(j, e);
     }
 }
 
@@ -426,6 +432,68 @@ duoforge_status duoforge_batch_step_factored(duoforge_batch *batch, const duofor
     }
     dfi_choice_job job = {batch, requests, NULL, NULL, NULL, domains, choices, statuses, results};
     dfi_pool_run(batch->pool, dfi_choice_slice, &job, batch->env_count);
+    return dfi_batch_first(statuses, batch->env_count);
+}
+
+/* -------------------------------------------- step, autoreset and query */
+
+typedef struct dfi_step_query_job {
+    uint32_t flags;
+    dfi_choice_job step;  /* the index form: the last query's arrays and the indices */
+    dfi_query_job query;  /* the same arrays, rewritten for the new boundary */
+    uint32_t *episode_results;
+} dfi_step_query_job;
+
+static void dfi_step_query_slice(void *job, uint32_t worker, uint32_t begin, uint32_t end)
+{
+    (void)worker;
+    const dfi_step_query_job *j = job;
+    struct duoforge_batch *b = j->step.b;
+    for (uint32_t e = begin; e < end; ++e) {
+        duoforge_decision_bundle bundle;
+        memset(&bundle, 0, sizeof bundle);
+        dfi_batch_env *env = &b->env[e];
+        duoforge_status st = env->terminal ? DUOFORGE_OK : dfi_choice_bundle(&j->step, e, &bundle);
+        if (st == DUOFORGE_OK) {
+            st = dfi_step_env(b, e, &bundle, &j->step.results[e]);
+        } else {
+            memset(&j->step.results[e], 0, sizeof j->step.results[e]);
+        }
+        uint32_t ended = 0u;
+        if (st == DUOFORGE_OK && env->terminal) {
+            st = duoforge_battle_result(b->ctx, env->battle, &ended);
+            if (st == DUOFORGE_OK && (j->flags & DUOFORGE_BATCH_AUTORESET) != 0u) {
+                st = dfi_batch_reset(b, e, env->episode + 1u);
+            }
+        }
+        if (j->episode_results != NULL) {
+            j->episode_results[e] = st == DUOFORGE_OK ? ended : 0u;
+        }
+        const duoforge_status qs = dfi_query_env(&j->query, e);
+        j->step.statuses[e] = st != DUOFORGE_OK ? st : qs;
+    }
+}
+
+duoforge_status duoforge_batch_step_query(duoforge_batch *batch, uint32_t flags, const uint16_t *indices,
+                                          duoforge_request *requests, duoforge_observation *observations,
+                                          duoforge_side_choice *candidates, uint32_t *candidate_counts,
+                                          uint32_t *episode_results, duoforge_status *statuses,
+                                          duoforge_step_result *results)
+{
+    if (batch == NULL || indices == NULL || requests == NULL || candidates == NULL || candidate_counts == NULL ||
+        statuses == NULL || results == NULL) {
+        return DUOFORGE_E_NULL_ARGUMENT;
+    }
+    if ((flags & ~DUOFORGE_BATCH_AUTORESET) != 0u) {
+        return DUOFORGE_E_INVALID_ARGUMENT;
+    }
+    dfi_step_query_job job = {
+        flags,
+        {batch, requests, candidates, candidate_counts, indices, NULL, NULL, statuses, results},
+        {batch, requests, observations, candidates, candidate_counts, NULL, statuses},
+        episode_results,
+    };
+    dfi_pool_run(batch->pool, dfi_step_query_slice, &job, batch->env_count);
     return dfi_batch_first(statuses, batch->env_count);
 }
 

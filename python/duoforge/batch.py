@@ -16,6 +16,7 @@ _SLOTS = _layout.CONSTANTS["DUOFORGE_CHOICE_SLOTS"]
 _TEAM = _layout.CONSTANTS["DUOFORGE_CHOICE_TEAM_SELECTION"]
 _OPTIONS = _layout.MAX_SLOT_OPTIONS
 _INVALID_ARGUMENT = _layout.CONSTANTS["DUOFORGE_E_INVALID_ARGUMENT"]
+_AUTORESET = _layout.CONSTANTS["DUOFORGE_BATCH_AUTORESET"]
 
 
 def _require(array, dtype, shape, name):
@@ -39,7 +40,7 @@ class Batch:
 
     Buffers, allocated once: requests (E,2), observations (E,2), candidates
     (E,2,784), counts (E,2) uint32, domains (E,2) for the factored form,
-    statuses (E,) uint32 and results (E,). Their contents may be read and
+    statuses (E,) uint32, results (E,) and episode_results (E,) uint32. Their contents may be read and
     written; the attributes cannot be replaced, since C writes into them.
     """
 
@@ -50,6 +51,7 @@ class Batch:
     domains = _buffer("domains")
     statuses = _buffer("statuses")
     results = _buffer("results")
+    episode_results = _buffer("episode_results")
 
     def __init__(self, context, setups, workers, seed):
         self._handle = None  # set only after a successful create, so __del__ is safe
@@ -84,6 +86,7 @@ class Batch:
             "domains": np.zeros((envs, 2), dtype=_layout.FACTORED_DOMAIN),
             "statuses": np.zeros(envs, dtype=np.uint32),
             "results": np.zeros(envs, dtype=_layout.STEP_RESULT),
+            "episode_results": np.zeros(envs, dtype=np.uint32),
         }
 
     # ---------------------------------------------------------- step mode
@@ -116,6 +119,21 @@ class Batch:
             failed = np.flatnonzero(self.statuses)
             status = int(self.statuses[failed[0]]) if failed.size else 0
         self._check(status, per_env=True)
+
+    def step_query(self, indices, autoreset=False, observations=True):
+        """step(indices), then - with autoreset - the reset of every TERMINAL
+        environment to its next episode, then query(), in one pass over the
+        environments (duoforge_batch_step_query): the RL loop's step.
+        episode_results holds the result (DUOFORGE_RESULT_*) of every episode
+        that is TERMINAL after the step and 0 for the others; results shows
+        which environments ended. With observations=False the observation
+        buffer keeps its contents. A failure raises DuoforgeError with the
+        per-environment statuses."""
+        _require(indices, np.uint16, (self.envs, 2), "indices")
+        self._check(self._lib.duoforge_batch_step_query(
+            self._live(), _AUTORESET if autoreset else 0, ptr(indices), ptr(self.requests),
+            ptr(self.observations) if observations else None, ptr(self.candidates), ptr(self.counts),
+            ptr(self.episode_results), ptr(self.statuses), ptr(self.results)), per_env=True)
 
     def query_factored(self):
         """Fills requests, observations and the factored domains."""

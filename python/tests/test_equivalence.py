@@ -164,6 +164,50 @@ class EquivalenceTest(unittest.TestCase):
             with self.assertRaises(TypeError):
                 duoforge.factored_choices(batch.domains[0], [0.5, 0.5])
 
+    def test_start_episodes_equals_seeds(self):
+        policy = duoforge.RandomPolicy(SEED, 4096)
+        rng = np.random.default_rng(7)
+        envs = rng.permutation(4096)[:1000]
+        episodes = rng.integers(0, 2**32, size=1000, dtype=np.uint64)
+        policy.start_episodes(envs, episodes)
+        for e, k in zip(envs[:200], episodes[:200]):
+            self.assertEqual(int(policy.state[e]), duoforge.seeds(SEED, int(e), int(k))[2])
+        with self.assertRaises(ValueError):
+            policy.start_episodes([0], [2**32])
+
+    def test_step_query_equals_its_parts(self):
+        # step, the ended episodes' results, reset_terminal and query against
+        # step_query with autoreset, until every environment ended 2 episodes.
+        terminal = _layout.CONSTANTS["DUOFORGE_BOUNDARY_TERMINAL"]
+        policy_a = duoforge.RandomPolicy(SEED, ENVS)
+        policy_b = duoforge.RandomPolicy(SEED, ENVS)
+        with duoforge.Batch(self.ctx, _setups(), 4, SEED) as a, duoforge.Batch(self.ctx, _setups(), 4, SEED) as b:
+            for policy in (policy_a, policy_b):
+                policy.start_episodes(np.arange(ENVS), np.zeros(ENVS, dtype=np.uint64))
+            a.query()
+            b.query()
+            ended = 0
+            while ended < 2 * ENVS:
+                idx = policy_a.choose(a)
+                self.assertTrue(np.array_equal(idx, policy_b.choose(b)))
+                a.step(idx)
+                done = np.flatnonzero(a.results["boundary_kind"] == terminal)
+                results = np.zeros(ENVS, dtype=np.uint32)
+                results[done] = [a.result(e) for e in done]
+                a.reset_terminal()
+                a.query()
+                b.step_query(idx, autoreset=True)
+                ended += done.size
+                for buffer in ("requests", "observations", "counts", "statuses", "results"):
+                    self.assertEqual(getattr(a, buffer).tobytes(), getattr(b, buffer).tobytes(), buffer)
+                self.assertTrue(np.array_equal(results, b.episode_results))
+                for e in done:
+                    self.assertEqual(a.digest(e), b.digest(e))
+                    self.assertEqual(a.episode(e), b.episode(e))
+                episodes = np.array([a.episode(e) for e in done], dtype=np.uint64)
+                policy_a.start_episodes(done, episodes)
+                policy_b.start_episodes(done, episodes)
+
     def test_seeds(self):
         initstate, initseq, policy = duoforge.seeds(SEED, 5, 7)
         self.assertLess(initseq, 1 << 63)

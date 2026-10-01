@@ -59,11 +59,29 @@ The rounds of the other modes (first series, same setup):
 | 256, 4 | 10,823 | 3,598 | 1,640 |
 | 256, 16 | 10,589 | 3,386 | 1,542 |
 
+## One pass per RL step (library 0.15.0)
+
+The phases of the autoreset loop (1024 environments, 16 workers) showed where the time went: `query` 36 %, `step` 31 %, `reset_terminal` 7 % - three passes over every environment per step, each waiting for its slowest worker - and 16 % for re-seeding the random policy one environment at a time. Two changes followed:
+
+- `duoforge_batch_step_query` (`Batch.step_query(indices, autoreset=True)`) steps, resets ended episodes and queries each environment in one pass; `episode_results` keeps the result of an episode that ended. Tests: `duoforge.batch.step_query` (the C call equals step_indices, reset_terminal and query, every array, digest and episode number, step by step) and the Python equivalence.
+- `RandomPolicy.start_episodes` seeds many environments in one NumPy call (decision 0012's derivation, pinned to `duoforge_batch_seeds` by test).
+
+Before and after (16 workers, games/s, median of 3 interleaved runs of about 4,100 battles; the autoreset column already seeds in NumPy):
+
+| Environments | before (split, seeded per environment) | autoreset (split) | fused |
+|---|---|---|---|
+| 256 | 20,978 | 22,650 | 30,941 to 31,561 |
+| 512 | 28,370 | - | 42,152 |
+| 1024 | 31,191 | 38,982 | 39,597 to 44,431 (best 46,901) |
+| 2048 | 31,499 | 41,482 | 42,953 |
+
+The fused loop reaches about 42,000 to 44,000 games/s and 1.4 to 1.6 million decisions/s from 512 environments on, 40 percent above the earlier plateau and close to half of the native mode (96,000 to 100,000 in the same runs). Compilers were compared too: Clang ThinLTO against GCC LTO gave 6 percent more native games per core but no measurable difference on 16 workers or in the Python loop. What remains in Python at 1024 environments is the random policy and the re-seeding, about 17 percent of a step; the rest is the engine.
+
 ## Reading
 
 - **The engine is not the limit.** With one worker the Python loop reaches about two thirds of the native mode. From 4 workers on, Python's share of each step sets the pace: 256 environments on 16 workers give 19,300 games/s and 670,000 decisions/s, against 92,000 native.
 - **Big batches pay, up to about 2048 environments.** A batch step costs Python about the same for 64 as for 256 environments, so the throughput grows with the batch: 256 environments more than double it on 4 and 16 workers, and 1024 to 2048 environments reach the plateau of about 31,000 games/s and 1.1 to 1.2 million decisions/s, a third of the native mode. With 4096 environments it falls again; the candidate buffers alone are then 205 MB.
-- **Beyond the plateau the C side of a step decides.** A step and the next query are two pool passes over every environment and write every observation and candidate list. Fusing them into one call, and returning observations or candidates only on demand, are the levers left (not built).
+- **Beyond the plateau the C side of a step decides.** Separate step, reset and query calls are three pool passes; the fused call (above) makes them one. Returning observations or candidates only on demand is the lever left.
 - **Episodes should restart at once.** Rounds (`index`) lose a third against `autoreset`, because finished environments wait for the longest battle.
 - **The step also returns more than the native mode needs.** The Python loop queries every player's observation (736 bytes) and candidates each step; `play_random` reads neither observations nor copies candidates.
 - **Policies in NumPy are the next cost.** The factored choice (bit unpacking and a running count over 1024 pairs per player) and the scripted scoring (`(E, 2, candidates, 2)` temporaries) take most of their modes' time. In the JAX design of decision 0013 the policy runs on the GPU, so these are reference policies, not the training path.

@@ -22,6 +22,16 @@ _C = _layout.CONSTANTS
 _GAMMA = 0x9E3779B97F4A7C15
 _M1 = 0xBF58476D1CE4E5B9
 _M2 = 0x94D049BB133111EB
+_TAG_POLICY = 0x6466706F6C696331  # "dfpolic1", decision 0012
+
+
+def _splitmix(z):
+    """splitmix64 of a uint64 array (Steele, Lea, Flood 2014), wrapping."""
+    with np.errstate(over="ignore"):
+        z = z + np.uint64(_GAMMA)
+        z = (z ^ (z >> np.uint64(30))) * np.uint64(_M1)
+        z = (z ^ (z >> np.uint64(27))) * np.uint64(_M2)
+        return z ^ (z >> np.uint64(31))
 
 
 def seeds(seed, env, episode):
@@ -43,6 +53,21 @@ class RandomPolicy:
     def start_episode(self, env, episode):
         """Seeds environment env's stream for `episode`."""
         self.state[env] = seeds(self.seed, env, episode)[2]
+
+    def start_episodes(self, envs, episodes):
+        """start_episode for many environments at once. The policy seed is
+        decision 0012's derivation in NumPy (splitmix64 of the batch seed, the
+        environment, the episode and the tag "dfpolic1"); a test pins it to
+        duoforge_batch_seeds."""
+        envs = np.asarray(envs)
+        episodes = np.asarray(episodes)
+        if envs.dtype.kind not in "iu" or episodes.dtype.kind not in "iu" or envs.shape != episodes.shape:
+            raise TypeError("envs and episodes must be integer arrays of one shape")
+        if envs.size and (envs.min() < 0 or envs.max() >= self.state.size or episodes.min() < 0
+                          or episodes.max() >= 1 << 32):
+            raise ValueError("an environment or episode is out of range")
+        key = np.uint64(self.seed) ^ _splitmix((envs.astype(np.uint64) << np.uint64(32)) | episodes.astype(np.uint64))
+        self.state[envs] = _splitmix(key ^ np.uint64(_TAG_POLICY))
 
     def _draw(self, mask, counts):
         """next() % counts for the environments in mask, advancing them."""

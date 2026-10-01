@@ -95,3 +95,7 @@ replay: 640 episodes, 0 mismatches
 ```
 
 A recipe takes 126 to 131 bytes per battle with its manifest; the 32-byte final digest per episode is most of the difference to the specification's estimate of about 100 bytes. Throughput (2026-10-02, quiet machine, Release library with LTO, `docs/benchmarks/2026-10-02-python-loop/`): the Python RL loop with episodes restarting at once (`query`, policy, `step`, `reset_terminal`) runs 256 environments on 16 workers at 19,300 to 21,000 games/s and about 690,000 decisions/s, and 1024 to 2048 environments at the plateau of about 31,000 games/s and 1.1 to 1.2 million decisions/s, against about 90,000 games/s for the native mode; with one worker it reaches about two thirds of the native mode. Python's share of each batch step sets the pace, so bigger batches pay up to about 2048 environments.
+
+## 9. Addendum 2026-10-02: one pass per RL step
+
+`duoforge_batch_step_query` (library 0.15.0) steps every environment by candidate index, resets an ended episode to the next one with `DUOFORGE_BATCH_AUTORESET` (its result goes to `episode_results`) and queries the environment, in one pool pass instead of three; it is equivalent to `step_indices`, `reset_terminal` and `query` (tests `duoforge.batch.step_query` and the Python equivalence). With it and NumPy re-seeding of the random policy, the Python RL loop runs at about 42,000 to 44,000 games/s and 1.4 to 1.6 million decisions/s on 16 workers from 512 environments on, up from about 31,000 (`docs/benchmarks/2026-10-02-python-loop/`).
