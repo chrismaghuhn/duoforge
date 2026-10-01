@@ -1,0 +1,27 @@
+{
+  "name": "c03_mega_salamence",
+  "purpose": "Salamence Mega Evolves with Salamencite (Intimidate does not run again): Aerilate turns Hyper Voice from Normal into Flying before immunity and STAB, so the spread move that Gholdengo and Ceruledge (Ghost) were immune to now hits them, with the 4915/4096 BasePower boost and Flying STAB; Draco Meteor and Tailwind from the Mega forme.",
+  "data": "team_c",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c0301",
+  "teams": [
+    "Salamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Hyper Voice\n- Draco Meteor\n- Protect\n- Tailwind\n\nKingambit (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Iron Head\n- Protect\n\nIncineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Flare Blitz\n- Fake Out\n\nBasculegion (M) @ Mystic Water\nAbility: Adaptability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Wave Crash\n- Aqua Jet",
+    "Gholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Protect\n\nCeruledge (F) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Shadow Sneak\n- Swords Dance\n\nRaichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Focus Blast\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Ice Beam\n- Coil"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 3",
+      "move 1 mega, move 1 2",
+      "move 4, move 1 1",
+      "move 2 1, move 2 2",
+      "move 1, move 1 1"
+    ],
+    "p2": [
+      "move 2, move 2",
+      "move 1, move 1 1",
+      "move 2, move 1 2",
+      "move 1, move 1 1"
+    ],
+    "max_steps": 40
+  }
+}

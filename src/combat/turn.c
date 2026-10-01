@@ -760,6 +760,11 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     }
     uint32_t bp_chain = 4096u;
     bool ok = true;
+    /* Aerilate (Team C, Salamence-Mega): a Normal move it turned into Flying
+     * gets 4915/4096 (data/abilities.ts:57-77, onBasePowerPriority 23: first). */
+    if (md->type == DFI_TYPE_NORMAL && move_type == DFI_TYPE_FLYING && dfi_ability(a, DFI_ABILITY_AERILATE)) {
+        ok = dfi_chain_modify(bp_chain, 4915u, &bp_chain);
+    }
     if (dfi_ability(a, DFI_ABILITY_TOUGHCLAWS) && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u) {
         ok = dfi_chain_modify(bp_chain, 5325u, &bp_chain); /* onBasePowerPriority 21: first */
     }
@@ -1656,6 +1661,14 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     /* Struggle is typeless; Weather Ball turns Water in rain, Fire under sun
      * (its onModifyType, before the hit steps). */
     uint32_t move_type = md->special == DFI_SPECIAL_STRUGGLE ? DFI_CLOSURE_NONE : md->type;
+    /* Aerilate (Team C, Salamence-Mega): onModifyType (priority -1) turns a
+     * Normal move into Flying before immunity and STAB; Weather Ball is in
+     * its noModifyType list and Struggle is typeless by then
+     * (data/abilities.ts:57-77). */
+    if (move_type == DFI_TYPE_NORMAL && md->special != DFI_SPECIAL_WEATHER_BALL &&
+        dfi_ability(m, DFI_ABILITY_AERILATE)) {
+        move_type = DFI_TYPE_FLYING;
+    }
     if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_RAIN) {
         move_type = DFI_TYPE_WATER;
     } else if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_SUN) {
