@@ -7,14 +7,14 @@ This is a status manifest, **not** a mechanics certificate. "IMPLEMENTED + TESTE
 | pcg-c-basic (RNG reference) | **PINNED** `bc39cd76ac3d541e618606bcc6e1e5ba5e5e6aa3` (`third_party/pcg-c-basic/PROVENANCE.md`) |
 | Pokémon Showdown (operational reference) | **PINNED** `b2cb775b0616115b775534eaeff50300e1fc81fc` (owner decision; `docs/decisions/0004`). Not vendored. M2 cites it for choice rules, team preview, target classes, open team sheets and HP display (`docs/decisions/0005`); no test executes it |
 | Rules profile | **SELECTED** (owner): `[Gen 9 Champions] VGC 2026 Reg M-C`. Set legality (base forme, set moves, gender, nature, Stat Points, ability, item, Species and Item Clause) is **IMPLEMENTED + TESTED**; the battle rules are not |
-| Team specifications | **SELECTED** (owner): two teams in `docs/decisions/0004`. The engine validates them and derives every stat line (tested), then **rejects them with `E_UNSUPPORTED`** at the support gate until the closure is complete |
+| Team specifications | **SELECTED** (owner): two teams in `docs/decisions/0004`. The engine validates them and derives every stat line (tested); since step 12 both pass the support gate, and step 13 checks them in play |
 | PCG32 RNG primitive and wrapper contract (0001) | **IMPLEMENTED + TESTED**; no gameplay draw sites exist yet (M3) |
 | Arithmetic and byte helpers | **IMPLEMENTED + TESTED** (generic; no Pokémon-semantics helpers) |
 | Owned structural state v3, identity, invariants (boundaries incl. TERMINAL, epochs, sealed commitments, knowledge, field and side conditions, volatile blocks, action queue) | **IMPLEMENTED + TESTED** (synthetic data only; the combat fields exist, but no mechanic writes them yet; decision 0006 section 3.1) |
 | Canonical encoding v3 (semantics 3, 1009 bytes), SHA-256 digest, clone/copy/equal, reseed | **IMPLEMENTED + TESTED** (synthetic data only; the v1 and v2 goldens are rejected inputs) |
 | Team selection (ordered picks), joint side-choice domains, requests, epochs, decision bundles | **IMPLEMENTED + TESTED** against the oracle (synthetic move target classes; `docs/decisions/0005`) |
 | Team-selection transition (mechanics-free) | **IMPLEMENTED + TESTED** |
-| Turn / replacement / pivot execution | **UNSUPPORTED** (`E_UNSUPPORTED`, atomic; M3/M4). REPLACEMENT and PIVOT boundaries exist structurally only |
+| Turn / replacement / pivot execution | **IMPLEMENTED + TESTED** for CLOSURE data (decision 0006 sections 4.1, 4.2 and 4.12); every bundle under SYNTHETIC data stays `E_UNSUPPORTED` |
 | Rule-authorized re-prompt | **STRUCTURAL** (`dfi_reprompt_side`, white-box; no mechanic triggers it) |
 | Struggle (all pp 0) | **IMPLEMENTED + TESTED** (offered in the request since step 2c; typeless, random target, recoil) |
 | Observation prototype (open sheets, own exact, foe percent HP as last seen, tagged unknowns) | **IMPLEMENTED + TESTED** (prototype; statuses, stages and conditions are not shown yet) |
@@ -36,7 +36,7 @@ This is a status manifest, **not** a mechanics certificate. "IMPLEMENTED + TESTE
 | Weather Ball, Grass Knot, Grassy Glide, Fake Out (disabled after the first move action) | **IMPLEMENTED + TESTED** for development teams; 2 recorded reference battles; the request is compared with the reference's after every step (decision 0006 section 4.9) |
 | Electro Shot (charge, rain, locked move in the request) | **IMPLEMENTED + TESTED** for development teams; 1 recorded reference battle (decision 0006 section 4.10) |
 | Mega Evolution with the four stones, Contrary, No Guard, Tough Claws | **IMPLEMENTED + TESTED**; 3 recorded reference battles (decision 0006 section 4.11) |
-| Emergency Exit, Parting Shot (pivots) | **UNSUPPORTED** (`E_UNSUPPORTED`, atomic; step 12) |
+| Emergency Exit, Parting Shot, PIVOT boundaries | **IMPLEMENTED + TESTED**; 4 recorded reference battles, including Emergency Exit at the end of a turn and two Emergency Exits at once (decision 0006 section 4.12) |
 
 State snapshots and decodability are foundation evidence, **not proof that unimplemented future mechanics restore correctly**.
 

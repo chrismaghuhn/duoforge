@@ -460,7 +460,8 @@ duoforge_status dfi_battle_step_tape(const duoforge_context *ctx, duoforge_battl
             return DUOFORGE_E_INVALID_ARGUMENT;
         }
     }
-    if ((battle->boundary_kind == DUOFORGE_BOUNDARY_TURN || battle->boundary_kind == DUOFORGE_BOUNDARY_REPLACEMENT) &&
+    if ((battle->boundary_kind == DUOFORGE_BOUNDARY_TURN || battle->boundary_kind == DUOFORGE_BOUNDARY_REPLACEMENT ||
+         battle->boundary_kind == DUOFORGE_BOUNDARY_PIVOT) &&
         dfi_context_is_closure(ctx)) {
         /* The turn runs on a working copy; any failure commits nothing. */
         struct duoforge_battle tmp = *battle;

@@ -39,7 +39,7 @@ const fs = require('fs');
 const path = require('path');
 
 const PIN = 'b2cb775b0616115b775534eaeff50300e1fc81fc';
-const HARNESS_VERSION = 12;
+const HARNESS_VERSION = 13;
 
 // Stack frame name -> site. The first match in stack order wins.
 const SITE_RULES = [
@@ -247,6 +247,7 @@ function main() {
                 species: p.species.name,
                 set_species: p.set.species,
                 mega: p.species.isMega ? 1 : 0,
+                switch_flag: p.switchFlag ? 1 : 0, // a pivot (self-switch move, Emergency Exit) when standing
                 hp: p.hp,
                 maxhp: p.maxhp,
                 status: p.status || '',

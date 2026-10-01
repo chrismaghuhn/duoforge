@@ -223,14 +223,24 @@ TERRAIN = {'': 0, 'grassyterrain': 1}
 RESULT = {'p1': 1, 'p2': 2, '': 3}
 
 
-def boundary_of(state):
+def boundary_of(state, log):
     """The DuoForge boundary after a step: TERMINAL, else the request kind."""
     if state['ended']:
         return 5
     kinds = set(s['request'] for s in state['sides']) - {''}
     if len(kinds) != 1:
         raise SystemExit('trace_to_c: mixed requests %s' % sorted(kinds))
-    return BOUNDARY[kinds.pop()]
+    kind = kinds.pop()
+    if kind == 'switch' and '|upkeep' not in log:
+        # A standing Pokemon with a switch flag pivots mid-turn: PIVOT. After
+        # the residual action ('|upkeep') the queue is empty: an Emergency
+        # Exit there is part of the REPLACEMENT.
+        for sd in state['sides']:
+            for i in sd['active']:
+                p = sd['pokemon'][i] if i >= 0 else None
+                if p and not p['fainted'] and p.get('switch_flag'):
+                    return 4
+    return BOUNDARY[kind]
 
 
 def convert(root, name, tables, out, all_tape):
@@ -351,7 +361,7 @@ def convert(root, name, tables, out, all_tape):
         terrain = TERRAIN[new_state['terrain']]
         field = (weather, new_state['weather_turns'] if weather else 0, terrain,
                  new_state['terrain_turns'] if terrain else 0)
-        boundary = boundary_of(new_state)
+        boundary = boundary_of(new_state, step['log'])
         result = RESULT[new_state['winner']] if boundary == 5 else 0
         steps.append('    {%du, %du, %du, %du, %du, %du, %du, %du, {%s}, {%s}, {%s}, {%s}, {%s}, {%s}, {{%s}, {%s}}},'
                      '  /* %d draws dropped */' % (

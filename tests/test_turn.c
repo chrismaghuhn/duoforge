@@ -14,13 +14,16 @@
  *  - honest E_UNSUPPORTED, atomically: a member whose mechanics are not
  *    marked (decoded state), and every combat bundle under SYNTHETIC;
  *  - random play to the end: random legal choices (moves, switches, passes,
- *    replacements) keep every invariant and end at TERMINAL with a result.
+ *    replacements, PIVOT answers) keep every invariant and end at TERMINAL
+ *    with a result; Emergency Exit and Parting Shot reach PIVOTs, and
+ *    Emergency Exit at the end of a turn joins the REPLACEMENT.
  */
 #include <stdio.h>
 #include <string.h>
 
 #include "codec/state_codec.h"
 #include "data/closure_tables.h"
+#include "data/support_manifest.h"
 #include "rng/pcg32.h"
 #include "state/battle_internal.h"
 #include "state/knowledge.h"
@@ -63,9 +66,11 @@ static void dev_setup(duoforge_battle_setup *s, uint64_t seed)
         }
     }
     /* Step 7: Stamina Archaludon and Armor Tail Farigiraf on both sides;
-     * step 8: items. */
+     * step 8: items; step 12: Emergency Exit Golisopod (no residual damage
+     * in these teams, so it never leaves at the end of a turn). */
     for (uint32_t side = 0; side < 2u; ++side) {
         s->sides[side].members[0].ability = 1u + DFI_ABILITY_STAMINA;
+        s->sides[side].members[2].ability = 1u + DFI_ABILITY_EMERGENCYEXIT;
         s->sides[side].members[3].ability = 1u + DFI_ABILITY_ARMORTAIL;
         s->sides[side].members[0].item = 1u + DFI_ITEM_LEFTOVERS;
         s->sides[side].members[1].item = 1u + DFI_ITEM_SITRUSBERRY;
@@ -194,12 +199,13 @@ static void status_setup(duoforge_battle_setup *s, uint64_t seed)
                 d->moves[k].move_id = a[m].moves[k];
             }
         }
-        /* Step 7: Lightning Rod, Competitive and Blaze; Golisopod keeps No
-         * Ability (Emergency Exit is step 12). */
+        /* Step 7: Lightning Rod, Competitive and Blaze; step 12: Emergency
+         * Exit, which burns make leave at the end of a turn too. */
         /* Lightning Rod on one side only, so the other Raichu can paralyze. */
         s->sides[side].members[0].ability = side == 0u ? 1u + DFI_ABILITY_LIGHTNINGROD : 0u;
         s->sides[side].members[1].ability = 1u + DFI_ABILITY_COMPETITIVE;
         s->sides[side].members[2].ability = 1u + DFI_ABILITY_BLAZE;
+        s->sides[side].members[3].ability = 1u + DFI_ABILITY_EMERGENCYEXIT;
         /* Step 8: items. */
         s->sides[side].members[0].item = 1u + DFI_ITEM_RAICHUNITEY; /* step 11: Mega Raichu Y */
         s->sides[side].members[1].item = 1u + DFI_ITEM_LEFTOVERS;
@@ -210,7 +216,8 @@ static void status_setup(duoforge_battle_setup *s, uint64_t seed)
 /* Development teams with the entry abilities of step 5 (Drizzle Politoed,
  * Intimidate Staraptor, Grassy Surge Rillaboom) and the conditions of step
  * 6 (Tailwind, Reflect and Light Screen from Grimmsnarl without an
- * ability, Prankster from step 7); side 1 brings the same species in another order. */
+ * ability, Prankster from step 7, Parting Shot from step 12); side 1 brings
+ * the same species in another order. */
 static void entry_setup(duoforge_battle_setup *s, uint64_t seed)
 {
     memset(s, 0, sizeof *s);
@@ -226,7 +233,7 @@ static void entry_setup(duoforge_battle_setup *s, uint64_t seed)
         {DFI_FORME_RILLABOOM, 1u, DFI_NATURE_ADAMANT, 1u + DFI_ABILITY_GRASSYSURGE, 1u + DFI_ITEM_GRASSYSEED,
          {18u, 32u, 2u, 0u, 6u, 8u}, {DFI_MOVE_HIGHHORSEPOWER, DFI_MOVE_WOODHAMMER, DFI_MOVE_FAKEOUT, DFI_MOVE_GRASSYGLIDE}, 4u},
         {DFI_FORME_GRIMMSNARL, 1u, DFI_NATURE_BOLD, 1u + DFI_ABILITY_PRANKSTER, 1u + DFI_ITEM_LIGHTCLAY,
-         {32u, 0u, 32u, 0u, 2u, 0u}, {DFI_MOVE_REFLECT, DFI_MOVE_LIGHTSCREEN, DFI_MOVE_SPIRITBREAK, 0u}, 3u},
+         {32u, 0u, 32u, 0u, 2u, 0u}, {DFI_MOVE_REFLECT, DFI_MOVE_LIGHTSCREEN, DFI_MOVE_SPIRITBREAK, DFI_MOVE_PARTINGSHOT}, 4u},
     };
     for (uint32_t side = 0; side < 2u; ++side) {
         s->sides[side].member_count = 4u;
@@ -246,6 +253,55 @@ static void entry_setup(duoforge_battle_setup *s, uint64_t seed)
             for (uint32_t j = 0; j < a[k].move_count; ++j) {
                 d->moves[j].move_id = a[k].moves[j];
             }
+        }
+    }
+}
+
+/* Step 12: the teams of the recorded battle s12_emergency_exit_residual,
+ * with Life Orb instead of the Mega Stone on side 0's Golisopod. Emergency
+ * Exit Golisopod on both sides (one with Sitrus Berry) and a Heat Wave
+ * Charizard each, so burns make Golisopod leave at the end of a turn too,
+ * and one Drill Run can make both Golisopod leave at once. */
+static void pivot_setup(duoforge_battle_setup *s, uint64_t seed)
+{
+    memset(s, 0, sizeof *s);
+    s->rng_initstate = seed;
+    s->rng_initseq = 202u;
+    static const struct {
+        uint32_t species, gender, nature, ability, item, sp[6], moves[2];
+    } a[2][4] = {
+        {{DFI_FORME_GOLISOPOD, 1u, DFI_NATURE_CALM, 1u + DFI_ABILITY_EMERGENCYEXIT, 1u + DFI_ITEM_LIFEORB,
+          {32u, 0u, 2u, 0u, 32u, 0u}, {DFI_MOVE_DRILLRUN, DFI_MOVE_PROTECT}},
+         {DFI_FORME_CHARIZARD, 2u, DFI_NATURE_CALM, 1u + DFI_ABILITY_BLAZE, 1u + DFI_ITEM_CHARIZARDITEY,
+          {32u, 0u, 2u, 0u, 32u, 0u}, {DFI_MOVE_HEATWAVE, DFI_MOVE_PROTECT}},
+         {DFI_FORME_MILOTIC, 2u, DFI_NATURE_MODEST, 1u + DFI_ABILITY_COMPETITIVE, 1u + DFI_ITEM_SITRUSBERRY,
+          {32u, 0u, 0u, 30u, 0u, 4u}, {DFI_MOVE_MUDDYWATER, DFI_MOVE_ICEBEAM}},
+         {DFI_FORME_ARCHALUDON, 1u, DFI_NATURE_BOLD, 1u + DFI_ABILITY_STAMINA, 1u + DFI_ITEM_LEFTOVERS,
+          {32u, 0u, 1u, 0u, 24u, 9u}, {DFI_MOVE_DRAGONPULSE, DFI_MOVE_SNARL}}},
+        {{DFI_FORME_GOLISOPOD, 2u, DFI_NATURE_CALM, 1u + DFI_ABILITY_EMERGENCYEXIT, 1u + DFI_ITEM_SITRUSBERRY,
+          {32u, 0u, 2u, 0u, 32u, 0u}, {DFI_MOVE_DRILLRUN, DFI_MOVE_PROTECT}},
+         {DFI_FORME_CHARIZARD, 1u, DFI_NATURE_CALM, 1u + DFI_ABILITY_BLAZE, 1u + DFI_ITEM_CHARIZARDITEY,
+          {32u, 0u, 2u, 0u, 32u, 0u}, {DFI_MOVE_HEATWAVE, DFI_MOVE_PROTECT}},
+         {DFI_FORME_FARIGIRAF, 2u, DFI_NATURE_CALM, 1u + DFI_ABILITY_ARMORTAIL, 1u + DFI_ITEM_MYSTICWATER,
+          {32u, 0u, 0u, 2u, 32u, 0u}, {DFI_MOVE_PSYCHIC, DFI_MOVE_PROTECT}},
+         {DFI_FORME_RAICHU, 2u, DFI_NATURE_TIMID, 1u + DFI_ABILITY_LIGHTNINGROD, 1u + DFI_ITEM_LIFEORB,
+          {2u, 0u, 0u, 32u, 0u, 32u}, {DFI_MOVE_FOCUSBLAST, DFI_MOVE_ZAPCANNON}}},
+    };
+    for (uint32_t side = 0; side < 2u; ++side) {
+        s->sides[side].member_count = 4u;
+        for (uint32_t m = 0; m < 4u; ++m) {
+            duoforge_member_setup *d = &s->sides[side].members[m];
+            d->species_id = a[side][m].species;
+            d->gender = a[side][m].gender;
+            d->nature = a[side][m].nature;
+            d->ability = a[side][m].ability;
+            d->item = a[side][m].item;
+            for (uint32_t i = 0; i < 6u; ++i) {
+                d->stat_points[i] = a[side][m].sp[i];
+            }
+            d->move_count = 2u;
+            d->moves[0].move_id = a[side][m].moves[0];
+            d->moves[1].move_id = a[side][m].moves[1];
         }
     }
 }
@@ -419,13 +475,20 @@ int main(void)
             DF_CHECK(&t, duoforge_battle_check(k2, z) == DUOFORGE_OK);
             duoforge_battle_destroy(z);
         }
-        /* A decoded member with an unmarked ability (Golisopod's Emergency
-         * Exit, step 12) cannot be played: the step checks the manifest too. */
-        x->sides[1].members[0].hp = x->sides[1].members[0].hp_max;
-        x->sides[1].members[2].ability = (uint8_t)(DFI_ABILITY_EMERGENCYEXIT + 1u); /* wide-operands-reviewed */
-        dfi_knowledge_refresh_active(x);
-        DF_CHECK(&t, duoforge_battle_check(k2, x) == DUOFORGE_OK);
-        rejected(&t, k2, x, &hit, DUOFORGE_E_UNSUPPORTED, "an unmarked ability");
+        /* Since step 12 the manifest marks every mechanic of the closure, so
+         * no decoded closure member can be unmarked any more (the step still
+         * checks it). */
+        DF_CHECK(&t, dfi_support.turn_core != 0u && dfi_support.switching != 0u && dfi_support.mega_evolution != 0u);
+        for (uint32_t i = 0; i < DFI_MOVE_COUNT; ++i) {
+            DF_CHECK(&t, dfi_support.moves[i] != 0u || i == DFI_MOVE_STRUGGLE);
+        }
+        for (uint32_t i = 0; i < DFI_ABILITY_COUNT; ++i) {
+            DF_CHECK(&t, dfi_support.abilities[i] != 0u);
+        }
+        for (uint32_t i = 0; i < DFI_ITEM_COUNT; ++i) {
+            DF_CHECK(&t, dfi_support.items[i] != 0u);
+        }
+        (void)hit;
         duoforge_battle_destroy(x);
         duoforge_battle_destroy(b);
         /* Under SYNTHETIC every combat bundle stays unsupported. */
@@ -451,6 +514,7 @@ int main(void)
         unsigned trick_room = 0;
         unsigned locked = 0;
         unsigned megas = 0;
+        unsigned pivots = 0;
         for (uint64_t seed = 1u; seed <= 40u; ++seed) {
             duoforge_battle *b = started(&t, k2, seed);
             if (b == NULL) {
@@ -464,6 +528,7 @@ int main(void)
                     break;
                 }
                 replacements += b->boundary_kind == DUOFORGE_BOUNDARY_REPLACEMENT ? 1u : 0u;
+                pivots += b->boundary_kind == DUOFORGE_BOUNDARY_PIVOT ? 1u : 0u;
                 trick_room += b->trick_room_turns != 0u ? 1u : 0u;
                 megas += (uint32_t)b->sides[0].mega_used + (uint32_t)b->sides[1].mega_used;
                 for (uint32_t p = 0; p < 4u; ++p) {
@@ -488,11 +553,12 @@ int main(void)
             duoforge_battle_destroy(b);
         }
         DF_CHECK_EQ_U64(&t, ended, 40u);
-        DF_CHECK(&t, replacements > 0u && results[1] > 0u && results[2] > 0u && trick_room > 0u && locked > 0u && megas > 0u);
+        DF_CHECK(&t, replacements > 0u && results[1] > 0u && results[2] > 0u && trick_room > 0u && locked > 0u && megas > 0u &&
+                         pivots > 0u);
         fprintf(stderr,
                 "  random play: %u steps, %u battles ended (side 0 %u, side 1 %u, tie %u), %u replacements; "
-                "steps with Trick Room %u, locked position-steps %u, Mega side-steps %u\n",
-                steps, ended, results[1], results[2], results[3], replacements, trick_room, locked, megas);
+                "steps with Trick Room %u, locked position-steps %u, Mega side-steps %u, pivots %u\n",
+                steps, ended, results[1], results[2], results[3], replacements, trick_room, locked, megas, pivots);
     }
 
     /* Random play with the status moves of step 4: every status and
@@ -504,6 +570,7 @@ int main(void)
         dfi_rng_seed(&pick, 777u, 3u);
         unsigned seen[5] = {0, 0, 0, 0, 0}; /* by DFI_STATUS_* */
         unsigned confused = 0;
+        unsigned exits = 0; /* REPLACEMENT slots of a standing Pokemon: Emergency Exit at the end of a turn */
         unsigned ended = 0;
         unsigned mismatches = 0;
         for (uint64_t seed = 1u; seed <= 40u; ++seed) {
@@ -548,6 +615,12 @@ int main(void)
                     }
                     for (uint32_t p = 0; p < 2u; ++p) {
                         confused += b->sides[side].positions[p].confusion_turns != 0u ? 1u : 0u;
+                        const uint32_t occ = b->sides[side].positions[p].occupant;
+                        exits += (b->boundary_kind == DUOFORGE_BOUNDARY_REPLACEMENT &&
+                                  ((uint32_t)b->sides[side].requested_slots >> p & 1u) != 0u && occ < 4u &&
+                                  b->sides[side].members[occ].hp != 0u)
+                                     ? 1u
+                                     : 0u;
                     }
                 }
             }
@@ -559,9 +632,9 @@ int main(void)
         DF_CHECK(&t, seen[DFI_STATUS_BRN] > 0u && seen[DFI_STATUS_FRZ] > 0u && seen[DFI_STATUS_PAR] > 0u &&
                          seen[DFI_STATUS_SLP] > 0u && confused > 0u);
         fprintf(stderr, "  status play: %u ended; member-steps burned %u, frozen %u, paralyzed %u, asleep %u; "
-                        "confused position-steps %u\n",
+                        "confused position-steps %u; Emergency Exits at the end of a turn %u\n",
                 ended, seen[DFI_STATUS_BRN], seen[DFI_STATUS_FRZ], seen[DFI_STATUS_PAR], seen[DFI_STATUS_SLP],
-                confused);
+                confused, exits);
     }
 
     /* Random play with the entry abilities of step 5: rain, Grassy Terrain
@@ -576,6 +649,7 @@ int main(void)
         unsigned screens = 0;
         unsigned used_items = 0;
         unsigned dropped = 0;
+        unsigned pivots = 0;
         unsigned ended = 0;
         unsigned mismatches = 0;
         for (uint64_t seed = 1u; seed <= 40u; ++seed) {
@@ -625,6 +699,7 @@ int main(void)
                     screens += (b->sides[side].reflect_turns | b->sides[side].light_screen_turns) != 0u ? 1u : 0u;
                 }
                 grassy += b->terrain == DFI_TERRAIN_GRASSY ? 1u : 0u;
+                pivots += b->boundary_kind == DUOFORGE_BOUNDARY_PIVOT ? 1u : 0u;
                 for (uint32_t side = 0; side < 2u; ++side) {
                     for (uint32_t p = 0; p < 2u; ++p) {
                         dropped += b->sides[side].positions[p].stages[0] < 6u ? 1u : 0u;
@@ -636,11 +711,83 @@ int main(void)
         }
         DF_CHECK_EQ_U64(&t, ended, 40u);
         DF_CHECK_EQ_U64(&t, mismatches, 0u);
-        DF_CHECK(&t, rain > 0u && grassy > 0u && dropped > 0u && tailwind > 0u && screens > 0u && used_items > 0u);
+        DF_CHECK(&t, rain > 0u && grassy > 0u && dropped > 0u && tailwind > 0u && screens > 0u && used_items > 0u &&
+                         pivots > 0u);
         fprintf(stderr,
                 "  entry play: %u ended; steps with rain %u, with Grassy Terrain %u; lowered Attack %u; "
-                "side-steps with Tailwind %u, with a screen %u; used items %u\n",
-                ended, rain, grassy, dropped, tailwind, screens, used_items);
+                "side-steps with Tailwind %u, with a screen %u; used items %u; Parting Shot pivots %u\n",
+                ended, rain, grassy, dropped, tailwind, screens, used_items, pivots);
+    }
+
+    /* Random play with the pivots of step 12: Emergency Exit in the middle
+     * of a turn (PIVOT) and at its end (in the REPLACEMENT), every
+     * committed state passes the checker, and decoded copies continue byte
+     * for byte. */
+    {
+        dfi_rng pick;
+        dfi_rng_seed(&pick, 1212u, 7u);
+        unsigned pivots = 0;
+        unsigned both = 0;     /* PIVOTs that ask both sides */
+        unsigned residual = 0; /* REPLACEMENT slots of a standing Pokemon */
+        unsigned ended = 0;
+        unsigned mismatches = 0;
+        for (uint64_t seed = 1u; seed <= 60u; ++seed) {
+            duoforge_battle_setup s;
+            pivot_setup(&s, seed);
+            duoforge_battle *b = started_from(&t, k2, &s);
+            if (b == NULL) {
+                continue;
+            }
+            for (uint32_t i = 0; i < 600u && b->boundary_kind != DUOFORGE_BOUNDARY_TERMINAL; ++i) {
+                uint32_t r = 0;
+                (void)dfi_rng_next_u32(&pick, &r);
+                duoforge_decision_bundle bd;
+                if (!DF_CHECK(&t, pick_bundle(k2, b, r, (r & 7u) == 0u, &bd) == DUOFORGE_OK)) {
+                    break;
+                }
+                uint8_t bytes[DUOFORGE_STATE_V3_ENCODED_SIZE];
+                encode(k2, b, bytes);
+                duoforge_battle *copy = NULL;
+                DF_CHECK(&t, duoforge_battle_create_decoded(k2, bytes, sizeof bytes, &copy) == DUOFORGE_OK);
+                duoforge_step_result res;
+                const duoforge_status st = duoforge_battle_step(k2, b, &bd, &res);
+                if (!DF_CHECK(&t, st == DUOFORGE_OK)) {
+                    fprintf(stderr, "  pivot seed %u step %u: %s\n", (unsigned)seed, i, duoforge_status_name(st));
+                    duoforge_battle_destroy(copy);
+                    break;
+                }
+                if (copy != NULL) {
+                    uint8_t after[DUOFORGE_STATE_V3_ENCODED_SIZE];
+                    uint8_t after2[DUOFORGE_STATE_V3_ENCODED_SIZE];
+                    duoforge_step_result res2;
+                    DF_CHECK(&t, duoforge_battle_step(k2, copy, &bd, &res2) == DUOFORGE_OK);
+                    encode(k2, b, after);
+                    encode(k2, copy, after2);
+                    mismatches += memcmp(after, after2, sizeof after) != 0 ? 1u : 0u;
+                    duoforge_battle_destroy(copy);
+                }
+                DF_CHECK(&t, duoforge_battle_check(k2, b) == DUOFORGE_OK);
+                pivots += b->boundary_kind == DUOFORGE_BOUNDARY_PIVOT ? 1u : 0u;
+                both += (b->boundary_kind == DUOFORGE_BOUNDARY_PIVOT && b->request_mask == 3u) ? 1u : 0u;
+                for (uint32_t side = 0; side < 2u && b->boundary_kind == DUOFORGE_BOUNDARY_REPLACEMENT; ++side) {
+                    for (uint32_t p = 0; p < 2u; ++p) {
+                        const uint32_t occ = b->sides[side].positions[p].occupant;
+                        residual += (((uint32_t)b->sides[side].requested_slots >> p & 1u) != 0u && occ < 4u &&
+                                     b->sides[side].members[occ].hp != 0u)
+                                        ? 1u
+                                        : 0u;
+                    }
+                }
+            }
+            ended += b->boundary_kind == DUOFORGE_BOUNDARY_TERMINAL ? 1u : 0u;
+            duoforge_battle_destroy(b);
+        }
+        DF_CHECK_EQ_U64(&t, ended, 60u);
+        DF_CHECK_EQ_U64(&t, mismatches, 0u);
+        DF_CHECK(&t, pivots > 0u && both > 0u && residual > 0u);
+        fprintf(stderr,
+                "  pivot play: %u ended; PIVOTs %u (both sides %u); Emergency Exits at the end of a turn %u\n",
+                ended, pivots, both, residual);
     }
 
     duoforge_context_destroy(k2);

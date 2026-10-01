@@ -1,0 +1,25 @@
+{
+  "name": "s12_parting_shot",
+  "purpose": "Parting Shot (Prankster, +1) lowers Attack and Special Attack and switches its user out in the middle of the turn (a PIVOT boundary with the rest of the turn kept); Competitive answers the drop; it fails on Good as Gold, on a Dark foe (Prankster) and against Armor Tail's side, and then nobody switches.",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000d001",
+  "teams": [
+    "Grimmsnarl (M) @ Light Clay\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Parting Shot\n- Spirit Break\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Snarl\n\nStaraptor (F) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Tailwind\n- Brave Bird\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Grassy Glide\n- Wood Hammer",
+    "Milotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Ice Beam\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Shadow Ball\n- Nasty Plot\n\nGrimmsnarl (M) @ Sitrus Berry\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Spirit Break\n- Parting Shot\n\nFarigiraf (F) @ Mystic Water\nAbility: Armor Tail\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Psychic\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1 1",
+      "move 1 2, move 2",
+      "move 1 1, move 1 1",
+      "move 1 2, move 1 2"
+    ],
+    "p2": [
+      "move 1, move 2",
+      "move 1, switch 3",
+      "move 1, switch 4",
+      "move 1, move 1 1"
+    ],
+    "max_steps": 50
+  }
+}

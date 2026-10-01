@@ -1,0 +1,19 @@
+{
+  "name": "s12_emergency_exit_residual",
+  "purpose": "Emergency Exit at the end of the turn: a burn takes Golisopod to half HP or less in the residual phase, and it leaves with the replacements (a REPLACEMENT, not a PIVOT); a Sitrus Berry eaten in the Update after the residual phase keeps the other Golisopod in.",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000000004",
+  "teams": [
+    "Golisopod (M) @ Golisopite\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Drill Run\n- Protect\n\nCharizard (F) @ Charizardite Y\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Heat Wave\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Ice Beam\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Snarl",
+    "Golisopod (F) @ Sitrus Berry\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Drill Run\n- Protect\n\nCharizard (M) @ Charizardite Y\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Heat Wave\n- Protect\n\nFarigiraf (F) @ Mystic Water\nAbility: Armor Tail\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Psychic\n- Protect\n\nRaichu (F) @ Life Orb\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Focus Blast\n- Zap Cannon"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 2, move 1"
+    ],
+    "p2": [
+      "move 1 2, move 1"
+    ],
+    "max_steps": 40
+  }
+}

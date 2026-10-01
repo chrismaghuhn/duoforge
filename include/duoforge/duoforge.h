@@ -19,11 +19,9 @@
  * The only out-parameter written on error is the required count of a
  * model-facing query on E_CAPACITY (decision 0005 section 7).
  *
- * There is no combat yet: no damage, move effect, PP change, switch
- * execution or Mega effect. State schema 3 already has the fields of the
- * combat closure (decision 0006 section 3), but nothing writes them. A
- * valid TURN, REPLACEMENT or PIVOT bundle is rejected with E_UNSUPPORTED.
- * No Pokemon rules are implemented.
+ * Combat runs for CLOSURE data (decision 0006 section 4): TURN,
+ * REPLACEMENT and PIVOT bundles execute the turn of the combat closure;
+ * under SYNTHETIC data every combat bundle is rejected with E_UNSUPPORTED.
  */
 #include <stdbool.h>
 #include <stddef.h>
@@ -95,8 +93,8 @@ const char *duoforge_status_name(duoforge_status status);
 /* ---- decision boundaries (decision 0005 section 1) ---- */
 #define DUOFORGE_BOUNDARY_TEAM_SELECTION 1u
 #define DUOFORGE_BOUNDARY_TURN           2u
-#define DUOFORGE_BOUNDARY_REPLACEMENT    3u /* fainted positions with a reserve (decision 0006) */
-#define DUOFORGE_BOUNDARY_PIVOT          4u /* structural only until pivots exist */
+#define DUOFORGE_BOUNDARY_REPLACEMENT    3u /* end of turn: fainted positions with a reserve, Emergency Exit */
+#define DUOFORGE_BOUNDARY_PIVOT          4u /* mid-turn switch: Parting Shot, Emergency Exit (decision 0006) */
 #define DUOFORGE_BOUNDARY_TERMINAL       5u /* the battle is over: nobody is requested (decision 0006) */
 #define DUOFORGE_BOUNDARY_COUNT          5u
 
@@ -292,7 +290,8 @@ duoforge_status duoforge_battle_candidates(const duoforge_context *ctx, const du
    CLOSURE data with the leads' entry effects). A valid TURN or REPLACEMENT
    bundle of a CLOSURE battle runs the turn (decision 0006); a mechanic the
    support manifest does not mark returns E_UNSUPPORTED, as does every
-   combat bundle under SYNTHETIC data and a PIVOT bundle. At TERMINAL every
+   combat bundle under SYNTHETIC data. A valid PIVOT bundle (switches for
+   the flagged positions) continues the stored rest of the turn. At TERMINAL every
    bundle is INVALID_ARGUMENT: the battle is over.
    E_EXHAUSTED if the epoch or activation counter would overflow. Every
    failure leaves the battle unchanged and *out_result unwritten. */

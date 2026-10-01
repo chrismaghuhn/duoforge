@@ -74,10 +74,16 @@ static void invalid(df_test *t, const duoforge_context *ctx, const duoforge_batt
     duoforge_battle_destroy(out);
 }
 
-/* White-box: legal but gated. */
+/* Legal: since step 12 the support manifest is complete, so the public
+ * create accepts every legal setup; the ungated build agrees. */
 static void legal(df_test *t, const duoforge_context *ctx, const duoforge_battle_setup *s, const char *what)
 {
-    create_fails(t, ctx, s, DUOFORGE_E_UNSUPPORTED, what);
+    duoforge_battle *made = NULL;
+    const duoforge_status cs = duoforge_battle_create(ctx, s, &made);
+    if (!DF_CHECK(t, cs == DUOFORGE_OK && made != NULL)) {
+        fprintf(stderr, "  create %s: %s\n", what, duoforge_status_name(cs));
+    }
+    duoforge_battle_destroy(made);
     duoforge_battle *out = NULL;
     const duoforge_status st = dfi_battle_create_ungated(ctx, s, &out);
     if (!DF_CHECK(t, st == DUOFORGE_OK && out != NULL)) {
@@ -168,12 +174,12 @@ int main(void)
         }
     }
 
-    /* The two reference teams are legal and gated: E_UNSUPPORTED from the
-     * public create under both kinds, nothing allocated. */
+    /* The two reference teams are legal and, since step 12, supported: the
+     * public create accepts them under both kinds. */
     duoforge_battle_setup teams;
     df_setup_teams(&teams);
-    create_fails(&t, k1, &teams, DUOFORGE_E_UNSUPPORTED, "reference teams (CLOSURE)");
-    create_fails(&t, k2, &teams, DUOFORGE_E_UNSUPPORTED, "reference teams (CLOSURE_DEV)");
+    legal(&t, k1, &teams, "reference teams (CLOSURE)");
+    legal(&t, k2, &teams, "reference teams (CLOSURE_DEV)");
     /* The same setup is invalid under a SYNTHETIC context (closure fields). */
     {
         duoforge_context *c1 = df_make_context(&df_config_c1);
@@ -379,7 +385,7 @@ int main(void)
     {
         dfi_support_manifest m = full_manifest();
         DF_CHECK(&t, dfi_closure_setup_supported(&m, &teams));
-        DF_CHECK(&t, !dfi_closure_setup_supported(&dfi_support, &teams)); /* team B: Emergency Exit, Parting Shot */
+        DF_CHECK(&t, dfi_closure_setup_supported(&dfi_support, &teams)); /* both reference teams since step 12 */
         /* The manifest of this build, pinned: the turn core, switching, the
          * moves of steps 2 to 4, 6, 9 and 10, the entry abilities of step 5, the
          * reactive abilities of step 7 and the items of steps 8 and 9. A step
@@ -394,7 +400,7 @@ int main(void)
                 DFI_MOVE_TAILWIND,       DFI_MOVE_REFLECT,     DFI_MOVE_LIGHTSCREEN, DFI_MOVE_TRICKROOM,
                 DFI_MOVE_WOODHAMMER,     DFI_MOVE_BRAVEBIRD,   DFI_MOVE_BITTERBLADE, DFI_MOVE_LEECHLIFE,
                 DFI_MOVE_CLOSECOMBAT,    DFI_MOVE_MAKEITRAIN,  DFI_MOVE_WEATHERBALL, DFI_MOVE_GRASSKNOT,
-                DFI_MOVE_GRASSYGLIDE,    DFI_MOVE_FAKEOUT,     DFI_MOVE_ELECTROSHOT,
+                DFI_MOVE_GRASSYGLIDE,    DFI_MOVE_FAKEOUT,     DFI_MOVE_ELECTROSHOT, DFI_MOVE_PARTINGSHOT,
             };
             dfi_support_manifest want;
             memset(&want, 0, sizeof want);
@@ -411,6 +417,7 @@ int main(void)
                 DFI_ABILITY_STAMINA,    DFI_ABILITY_COMPETITIVE, DFI_ABILITY_FLASHFIRE, DFI_ABILITY_LIGHTNINGROD,
                 DFI_ABILITY_GOODASGOLD, DFI_ABILITY_ARMORTAIL,   DFI_ABILITY_PRANKSTER, DFI_ABILITY_BLAZE,
                 DFI_ABILITY_DROUGHT,    DFI_ABILITY_CONTRARY,    DFI_ABILITY_NOGUARD,   DFI_ABILITY_TOUGHCLAWS,
+                DFI_ABILITY_EMERGENCYEXIT,
             };
             for (size_t i = 0; i < sizeof step7_abilities / sizeof step7_abilities[0]; ++i) {
                 want.abilities[step7_abilities[i]] = 1u;
