@@ -52,3 +52,76 @@ void dfi_event_project(const duoforge_event *in, uint32_t player, duoforge_event
     out->hp_kind = (uint8_t)DUOFORGE_HP_PERCENT;
     out->hp_flag = flag;
 }
+
+void dfi_event_set_hp(duoforge_event *e, const dfi_member *m)
+{
+    e->hp = m->hp;
+    e->hp_max = m->hp_max;
+    e->hp_kind = (uint8_t)DUOFORGE_HP_EXACT;
+    e->status = m->hp != 0u ? m->status : (uint8_t)DUOFORGE_AILMENT_NONE;
+}
+
+duoforge_event dfi_event_switch(const struct duoforge_battle *b, uint32_t flat)
+{
+    duoforge_event e = dfi_event_make(DUOFORGE_EVENT_SWITCH, flat);
+    const dfi_active_slot *pos = &b->sides[flat / 2u].positions[flat % 2u];
+    e.id = pos->occupant; /* < 6 */
+    dfi_event_set_hp(&e, &b->sides[flat / 2u].members[pos->occupant]);
+    return e;
+}
+
+/* For every event about an opposing position, in order: a switch makes the
+ * member seen and shows its HP, damage and heal show the HP, a move other
+ * than a locked turn is one use of the slot that holds it on the open team
+ * sheet (Struggle is on none), an item that ended and a Mega Evolution are
+ * revealed facts. The occupants follow the switches of the step. */
+bool dfi_events_fold_knowledge(const struct duoforge_battle *before, struct duoforge_battle *after,
+                               const dfi_events *events, uint32_t first)
+{
+    for (uint32_t p = 0u; p < DUOFORGE_SIDE_COUNT; ++p) {
+        const uint32_t foe = 1u - p;
+        const dfi_side *fs = &after->sides[foe];
+        dfi_side *viewer = &after->sides[p];
+        uint32_t occupant[DUOFORGE_ACTIVE_PER_SIDE];
+        for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
+            occupant[slot] = before->sides[foe].positions[slot].occupant;
+        }
+        for (uint32_t i = 0u; i < events->count && i < DUOFORGE_MAX_EVENTS; ++i) {
+            duoforge_event e;
+            dfi_event_project(&events->rec[i], p, &e);
+            if (e.position >= 2u * DUOFORGE_ACTIVE_PER_SIDE || (uint32_t)e.position / 2u != foe) {
+                continue;
+            }
+            const uint32_t slot = (uint32_t)e.position % 2u;
+            if (e.kind == DUOFORGE_EVENT_SWITCH) {
+                occupant[slot] = e.id;
+            }
+            const uint32_t m = occupant[slot];
+            if (i < first || m >= DUOFORGE_MAX_ROSTER || m >= fs->member_count) {
+                continue;
+            }
+            dfi_knowledge *k = &viewer->knowledge[m];
+            if (e.kind == DUOFORGE_EVENT_SWITCH) {
+                viewer->seen_mask = (uint8_t)((uint32_t)viewer->seen_mask | 1u << m); /* wide-operands-reviewed: < 64 */
+            }
+            if (e.kind == DUOFORGE_EVENT_SWITCH || e.kind == DUOFORGE_EVENT_DAMAGE || e.kind == DUOFORGE_EVENT_HEAL) {
+                if (e.hp_kind != DUOFORGE_HP_PERCENT) {
+                    return false; /* never a silent 0 */
+                }
+                k->hp_percent = (uint8_t)e.hp; /* the percent display: <= 100 */
+                k->hp_flag = e.hp_flag;
+            } else if (e.kind == DUOFORGE_EVENT_MOVE && ((uint32_t)e.flags & DUOFORGE_EVENT_FLAG_LOCKED) == 0u) {
+                for (uint32_t j = 0u; j < fs->members[m].move_count && j < DUOFORGE_MAX_MOVE_SLOTS; ++j) {
+                    if (fs->members[m].moves[j].move_id == e.id && k->moves_used[j] < UINT8_MAX) {
+                        k->moves_used[j] = (uint8_t)((uint32_t)k->moves_used[j] + 1u); /* wide-operands-reviewed */
+                    }
+                }
+            } else if (e.kind == DUOFORGE_EVENT_ITEM_END) {
+                k->revealed = (uint8_t)((uint32_t)k->revealed | DFI_REVEALED_ITEM_CONSUMED); /* wide-operands-reviewed */
+            } else if (e.kind == DUOFORGE_EVENT_MEGA) {
+                k->revealed = (uint8_t)((uint32_t)k->revealed | DFI_REVEALED_MEGA); /* wide-operands-reviewed */
+            }
+        }
+    }
+    return true;
+}

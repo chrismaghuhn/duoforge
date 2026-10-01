@@ -120,10 +120,7 @@ static void dfi_emit_hp(dfi_run *r, duoforge_event e)
 {
     const dfi_member *m = dfi_at(r->b, e.position);
     if (m != NULL) {
-        e.hp = m->hp;
-        e.hp_max = m->hp_max;
-        e.hp_kind = (uint8_t)DUOFORGE_HP_EXACT;
-        e.status = m->hp != 0u ? m->status : (uint8_t)DUOFORGE_AILMENT_NONE;
+        dfi_event_set_hp(&e, m);
     }
     dfi_emit(r, &e);
 }
@@ -862,7 +859,6 @@ static duoforge_status dfi_deal(dfi_run *r, uint32_t flat, uint32_t amount, uint
         return DUOFORGE_OK;
     }
     m->hp = (uint16_t)(hp > amount ? hp - amount : 0u); /* wide-operands-reviewed: <= hp */
-    dfi_knowledge_refresh_active(r->b);
     if (amount != 0u) {
         dfi_emit_hp(r, dfi_ev(DUOFORGE_EVENT_DAMAGE, flat, cause, id2, other)); /* [-damage] */
     }
@@ -1036,8 +1032,6 @@ static void dfi_use_item(dfi_run *r, uint32_t flat)
     const uint32_t side = flat / 2u;
     const uint32_t occupant = dfi_pos(b, flat)->occupant;
     b->sides[side].members[occupant].item_consumed = 1u;
-    dfi_knowledge *k = &b->sides[1u - side].knowledge[occupant];
-    k->revealed = (uint8_t)((uint32_t)k->revealed | DFI_REVEALED_ITEM_CONSUMED); /* wide-operands-reviewed */
     const uint32_t item = b->sides[side].members[occupant].item;
     duoforge_event e = dfi_ev(DUOFORGE_EVENT_ITEM_END, flat, DUOFORGE_CAUSE_NONE, item, DUOFORGE_NO_POSITION);
     e.flags = item == 1u + DFI_ITEM_SITRUSBERRY ? (uint8_t)DUOFORGE_EVENT_FLAG_EATEN : 0u;
@@ -1055,7 +1049,6 @@ static void dfi_heal(dfi_run *r, uint32_t flat, uint32_t amount, uint32_t cause,
     }
     const uint32_t hp = (uint32_t)m->hp + (amount == 0u ? 1u : amount);
     m->hp = (uint16_t)(hp > m->hp_max ? m->hp_max : hp); /* wide-operands-reviewed: <= hp_max */
-    dfi_knowledge_refresh_active(b);
     dfi_emit_hp(r, dfi_ev(DUOFORGE_EVENT_HEAL, flat, cause, id2, other));
 }
 
@@ -1420,17 +1413,14 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         }
         return DUOFORGE_OK;
     }
-    /* deductPP and what the opponent sees; a locked move uses none. */
+    /* deductPP; a locked move uses none. The opponent counts the use from
+     * the move line (dfi_events_fold_knowledge). */
     if (q->move_slot < DUOFORGE_MAX_MOVE_SLOTS && !locked) {
         dfi_move_slot *slot = &m->moves[q->move_slot];
         if (slot->pp == 0u) {
             return DUOFORGE_OK; /* "cant nopp"; the domain never offers it */
         }
         slot->pp = (uint8_t)((uint32_t)slot->pp - 1u); /* wide-operands-reviewed: pp > 0 */
-        dfi_knowledge *k = &b->sides[1u - side].knowledge[pos->occupant];
-        if (k->moves_used[q->move_slot] < UINT8_MAX) {
-            k->moves_used[q->move_slot] = (uint8_t)((uint32_t)k->moves_used[q->move_slot] + 1u); /* wide-operands-reviewed */
-        }
     }
     /* Struggle's onModifyMove shows -activate|move: Struggle first. */
     if (move_id == DFI_MOVE_STRUGGLE) {
@@ -2267,8 +2257,6 @@ static duoforge_status dfi_run_mega(dfi_run *r, const dfi_queue_record *q)
     duoforge_event mega = dfi_event_make(DUOFORGE_EVENT_MEGA, flat);
     mega.id2 = m->item; /* [-mega] the stone, item + 1 */
     dfi_emit(r, &mega);
-    dfi_knowledge *k = &b->sides[1u - q->side].knowledge[dfi_pos(b, flat)->occupant];
-    k->revealed = (uint8_t)((uint32_t)k->revealed | DFI_REVEALED_MEGA); /* wide-operands-reviewed */
     if (dfi_has_entry(m)) {
         return dfi_entry_ability(r, flat);
     }
@@ -2507,7 +2495,6 @@ static duoforge_status dfi_residual_events(dfi_run *r)
                 heal = heal == 0u ? 1u : heal;
                 const uint32_t hp = (uint32_t)m->hp + heal;
                 m->hp = (uint16_t)(hp > m->hp_max ? m->hp_max : hp); /* wide-operands-reviewed: <= hp_max */
-                dfi_knowledge_refresh_active(b);
                 dfi_emit_hp(r, dfi_ev(DUOFORGE_EVENT_HEAL, e->flat, DUOFORGE_CAUSE_TERRAIN, 0u, DUOFORGE_NO_POSITION));
             }
             continue;
@@ -2683,7 +2670,6 @@ static duoforge_status dfi_pivot(struct duoforge_battle *b)
         mask |= slots != 0u ? 1u << s : 0u;
     }
     b->request_mask = (uint8_t)mask; /* <= 3 */
-    dfi_knowledge_refresh_active(b);
     return DUOFORGE_OK;
 }
 
@@ -2746,7 +2732,6 @@ static duoforge_status dfi_terminal(dfi_run *r)
     dfi_clear_requests(b);
     b->boundary_kind = (uint8_t)DUOFORGE_BOUNDARY_TERMINAL;
     b->request_mask = 0u;
-    dfi_knowledge_refresh_active(b);
     return DUOFORGE_OK;
 }
 
@@ -2779,7 +2764,6 @@ static duoforge_status dfi_end_turn(dfi_run *r)
         side->sealed_cmds[0] = (dfi_slot_cmd){0u, 0u, 0u, 0u, 0u};
         side->sealed_cmds[1] = (dfi_slot_cmd){0u, 0u, 0u, 0u, 0u};
     }
-    dfi_knowledge_refresh_active(b);
     return DUOFORGE_OK;
 }
 
@@ -2840,7 +2824,6 @@ static duoforge_status dfi_finish_turn(dfi_run *r, uint32_t exits)
             b->sides[s].requested_slots = (uint8_t)fainted[s]; /* <= 3 */
         }
     }
-    dfi_knowledge_refresh_active(b);
     return DUOFORGE_OK;
 }
 
@@ -2863,12 +2846,7 @@ duoforge_status dfi_turn_start(const duoforge_context *ctx, struct duoforge_batt
     }
     uint32_t entering = 0u;
     for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
-        entering |= dfi_at(b, flat) != NULL ? 1u << flat : 0u;
-        if (dfi_at(b, flat) != NULL) {
-            duoforge_event e = dfi_event_make(DUOFORGE_EVENT_SWITCH, flat); /* [switch] of the leads */
-            e.id = dfi_pos(b, flat)->occupant;
-            dfi_emit_hp(&r, e);
-        }
+        entering |= dfi_at(b, flat) != NULL ? 1u << flat : 0u; /* their [switch] lines came first */
     }
     st = dfi_run_entries(&r, entering);
     if (st != DUOFORGE_OK) {
@@ -2878,11 +2856,6 @@ duoforge_status dfi_turn_start(const duoforge_context *ctx, struct duoforge_batt
     st = r.ended ? DUOFORGE_OK : dfi_update(&r);
     if (st != DUOFORGE_OK) {
         return st;
-    }
-    if (!r.ended) {
-        duoforge_event e = dfi_event_make(DUOFORGE_EVENT_TURN, DUOFORGE_NO_POSITION);
-        e.id = b->turn; /* [turn] 1 */
-        dfi_emit(&r, &e);
     }
     return r.ended ? DUOFORGE_E_INVARIANT : DUOFORGE_OK; /* nothing at the start can end the battle */
 }

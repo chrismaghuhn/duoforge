@@ -1,7 +1,6 @@
 #include "state/identity.h"
 
 #include "core/arith.h"
-#include "state/knowledge.h"
 
 bool dfi_position_valid(dfi_position_id p)
 {
@@ -86,10 +85,8 @@ duoforge_status dfi_place(struct duoforge_battle *b, dfi_position_id p, uint8_t 
     side->positions[p.slot].activation_id = id;
     side->positions[p.slot].occupant = roster;
     b->next_activation_id = next;
-    /* Entering a position is the disclosure that puts a member into the
-     * opponent's knowledge (decision 0005 section 6). roster < 6 here. */
-    b->sides[1u - (uint32_t)p.side].seen_mask |= (uint8_t)(1u << roster); /* wide-operands-reviewed */
-    dfi_knowledge_see_hp(b, p.side, roster);
+    /* The opponent sees the member from the [switch] line of the step
+     * (dfi_events_fold_knowledge, decision 0007 section 6). */
     out_binding->position = p;
     out_binding->activation_id = id;
     return DUOFORGE_OK;

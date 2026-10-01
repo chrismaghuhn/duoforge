@@ -12,6 +12,8 @@
 
 #include <duoforge/duoforge.h>
 
+#include "state/battle_internal.h"
+
 typedef struct dfi_events {
     duoforge_event rec[DUOFORGE_MAX_EVENTS];
     uint32_t count;
@@ -28,5 +30,20 @@ void dfi_events_push(dfi_events *events, const duoforge_event *e);
  * Pokemon as the percent display with its colour flag (decision 0005
  * section 6), the player's own HP exact. */
 void dfi_event_project(const duoforge_event *in, uint32_t player, duoforge_event *out);
+
+/* The HP of member `m` on a record, exact (no status once it has fainted). */
+void dfi_event_set_hp(duoforge_event *e, const dfi_member *m);
+
+/* [switch]: the member at `flat` (occupied) entered, with its HP. */
+duoforge_event dfi_event_switch(const struct duoforge_battle *b, uint32_t flat);
+
+/* The knowledge each player folds from the events it sees (decision 0007
+ * section 6): the only writer of seen masks and knowledge in a step.
+ * `before` is the battle at the start of the step (the occupants), `after`
+ * the battle the step made; events before `first` were folded already and
+ * only move the occupants. False when a line that shows HP carries no
+ * percent display for the opponent (the step is then E_INVARIANT). */
+bool dfi_events_fold_knowledge(const struct duoforge_battle *before, struct duoforge_battle *after,
+                               const dfi_events *events, uint32_t first);
 
 #endif

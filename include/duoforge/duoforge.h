@@ -294,7 +294,10 @@ duoforge_status duoforge_battle_candidates(const duoforge_context *ctx, const du
    the flagged positions) continues the stored rest of the turn. At TERMINAL every
    bundle is INVALID_ARGUMENT: the battle is over.
    E_EXHAUSTED if the epoch or activation counter would overflow. Every
-   failure leaves the battle unchanged and *out_result unwritten. */
+   step records its events (decision 0007 sections 11, 12): each player's
+   knowledge of the opponent is folded from the lines it sees, and a step
+   beyond DUOFORGE_MAX_EVENTS lines is E_INVARIANT. Every failure leaves the
+   battle unchanged and *out_result unwritten. */
 duoforge_status duoforge_battle_step(const duoforge_context *ctx, duoforge_battle *battle,
                                      const duoforge_decision_bundle *bundle, duoforge_step_result *out_result);
 

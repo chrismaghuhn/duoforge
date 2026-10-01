@@ -85,7 +85,7 @@ int main(void)
 #define RESET_TO(src) DF_CHECK(&t, duoforge_battle_copy(c1, w, (src)) == DUOFORGE_OK)
 
     w->sides[0].members[2].hp = 0u; /* fainted occupant (s0a) */
-    dfi_knowledge_refresh_active(w);
+    df_knowledge_refresh_active(w);
     expect_ok(&t, c1, w, "fainted occupant");
     RESET();
     w->sides[0].members[5].hp = 0u; /* fainted reserve */

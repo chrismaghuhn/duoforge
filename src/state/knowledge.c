@@ -37,22 +37,3 @@ bool dfi_hp_display_valid(uint32_t percent, uint32_t flag)
     }
     return flag == DUOFORGE_HP_FLAG_NONE;
 }
-
-void dfi_knowledge_see_hp(struct duoforge_battle *b, uint32_t side, uint32_t roster)
-{
-    const dfi_member *mem = &b->sides[side].members[roster];
-    dfi_knowledge *k = &b->sides[1u - side].knowledge[roster];
-    dfi_hp_display(mem->hp, mem->hp_max, &k->hp_percent, &k->hp_flag);
-}
-
-void dfi_knowledge_refresh_active(struct duoforge_battle *b)
-{
-    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
-        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
-            const uint32_t occupant = b->sides[s].positions[p].occupant;
-            if (occupant < DUOFORGE_MAX_ROSTER) {
-                dfi_knowledge_see_hp(b, s, occupant);
-            }
-        }
-    }
-}

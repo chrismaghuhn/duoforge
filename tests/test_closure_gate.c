@@ -139,7 +139,7 @@ static void pairs(df_test *t, const duoforge_context *ctx, const duoforge_battle
         if (fs->members[occ].hp > 1u) {
             DF_CHECK(t, duoforge_battle_copy(ctx, b, a) == DUOFORGE_OK);
             b->sides[foe].members[occ].hp = (uint16_t)(fs->members[occ].hp - 1u);
-            dfi_knowledge_refresh_active(b);
+            df_knowledge_refresh_active(b);
             DF_CHECK(t, duoforge_battle_check(ctx, b) == DUOFORGE_OK);
             if (memcmp(&a->sides[viewer].knowledge[occ], &b->sides[viewer].knowledge[occ],
                        sizeof a->sides[viewer].knowledge[occ]) == 0) {

@@ -434,9 +434,6 @@ static duoforge_status dfi_events_fit(duoforge_event_buffer *buffers, const dfi_
     if (buffers == NULL) {
         return DUOFORGE_OK;
     }
-    if (staged->overflow) {
-        return DUOFORGE_E_INVARIANT; /* past the profile bound */
-    }
     bool fit = true;
     for (uint32_t p = 0u; p < DUOFORGE_SIDE_COUNT; ++p) {
         fit = fit && buffers[p].capacity >= staged->count;
@@ -472,10 +469,12 @@ duoforge_status dfi_battle_step_events_tape(const duoforge_context *ctx, duoforg
     if (ctx == NULL || battle == NULL || bundle == NULL || out_result == NULL) {
         return DUOFORGE_E_NULL_ARGUMENT;
     }
+    /* Every step records its events: the knowledge is folded from them
+     * (decision 0007 section 6), whether or not the caller takes them. */
     dfi_events staged;
     staged.count = 0u;
     staged.overflow = false;
-    dfi_events *events = buffers != NULL ? &staged : NULL;
+    dfi_events *events = &staged;
     if (!dfi_context_fingerprint_matches(ctx, battle->context_fingerprint)) {
         return DUOFORGE_E_CONTEXT_MISMATCH;
     }
@@ -541,7 +540,10 @@ duoforge_status dfi_battle_step_events_tape(const duoforge_context *ctx, duoforg
         if (ts != DUOFORGE_OK) {
             return ts;
         }
-        if (dfi_state_check(ctx, &tmp, NULL) != DUOFORGE_OK) {
+        if (staged.overflow) {
+            return DUOFORGE_E_INVARIANT; /* past the profile bound */
+        }
+        if (!dfi_events_fold_knowledge(battle, &tmp, &staged, 0u) || dfi_state_check(ctx, &tmp, NULL) != DUOFORGE_OK) {
             return DUOFORGE_E_INVARIANT;
         }
         const duoforge_status fs = dfi_events_fit(buffers, &staged);
@@ -576,6 +578,19 @@ duoforge_status dfi_battle_step_events_tape(const duoforge_context *ctx, duoforg
     if (ts != DUOFORGE_OK) {
         return ts; /* E_EXHAUSTED or E_INVARIANT; the battle is unchanged */
     }
+    /* [switch] of every lead, in position order, then (CLOSURE) their
+     * entries, then [turn] 1. */
+    for (uint32_t flat = 0u; flat < 2u * DUOFORGE_ACTIVE_PER_SIDE; ++flat) {
+        if (tmp.sides[flat / 2u].positions[flat % 2u].occupant < DUOFORGE_MAX_ROSTER) {
+            const duoforge_event e = dfi_event_switch(&tmp, flat);
+            dfi_events_push(events, &e);
+        }
+    }
+    /* The selected state, its leads seen, is checked before their entries run. */
+    const uint32_t leads = staged.count;
+    if (!dfi_events_fold_knowledge(battle, &tmp, &staged, 0u) || dfi_state_check(ctx, &tmp, NULL) != DUOFORGE_OK) {
+        return DUOFORGE_E_INVARIANT;
+    }
     dfi_draws draws = dfi_draws_from_rng(&tmp.rng);
     draws.tape = tape;
     draws.tape_len = tape_len;
@@ -586,7 +601,13 @@ duoforge_status dfi_battle_step_events_tape(const duoforge_context *ctx, duoforg
     if (ss != DUOFORGE_OK) {
         return ss;
     }
-    if (dfi_state_check(ctx, &tmp, NULL) != DUOFORGE_OK) {
+    duoforge_event turn = dfi_event_make(DUOFORGE_EVENT_TURN, DUOFORGE_NO_POSITION);
+    turn.id = tmp.turn; /* [turn] 1 */
+    dfi_events_push(events, &turn);
+    if (staged.overflow) {
+        return DUOFORGE_E_INVARIANT; /* past the profile bound */
+    }
+    if (!dfi_events_fold_knowledge(battle, &tmp, &staged, leads) || dfi_state_check(ctx, &tmp, NULL) != DUOFORGE_OK) {
         return DUOFORGE_E_INVARIANT;
     }
     const duoforge_status fs = dfi_events_fit(buffers, &staged);

@@ -58,9 +58,8 @@ duoforge_status dfi_apply_team_selection(const duoforge_context *ctx, struct duo
         return DUOFORGE_E_EXHAUSTED; /* unreachable after the check above */
     }
     tmp.request_epoch = next_epoch;
-    if (dfi_state_check(ctx, &tmp, NULL) != DUOFORGE_OK) {
-        return DUOFORGE_E_INVARIANT;
-    }
+    /* Not checked here: the opponent has not seen the leads until the
+     * step folds their [switch] lines; the caller checks the state then. */
     *b = tmp;
     return DUOFORGE_OK;
 }

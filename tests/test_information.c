@@ -256,7 +256,7 @@ int main(void)
         for (unsigned i = 0; i < sizeof table201 / sizeof table201[0]; ++i) {
             duoforge_observation o;
             w->sides[1].members[1].hp = (uint16_t)table201[i].hp;
-            dfi_knowledge_refresh_active(w);
+            df_knowledge_refresh_active(w);
             const duoforge_member_view *v = foe_view(c1, w, 0, 1, &o);
             if (DF_CHECK(&t, v != NULL) &&
                 !DF_CHECK(&t, v->hp == table201[i].pct && v->hp_flag == table201[i].flag &&
@@ -279,7 +279,7 @@ int main(void)
         for (unsigned i = 0; i < sizeof table130 / sizeof table130[0]; ++i) {
             duoforge_observation o;
             w->sides[0].members[3].hp = (uint16_t)table130[i].hp;
-            dfi_knowledge_refresh_active(w);
+            df_knowledge_refresh_active(w);
             const duoforge_member_view *v = foe_view(c1, w, 1, 3, &o);
             if (DF_CHECK(&t, v != NULL) &&
                 !DF_CHECK(&t, v->hp == table130[i].pct && v->hp_flag == table130[i].flag)) {
@@ -337,11 +337,11 @@ int main(void)
         DF_CHECK(&t, duoforge_battle_clone(c3, fx[4].b, &b) == DUOFORGE_OK);
         a->sides[1].members[0].hp = 32768u;
         b->sides[1].members[0].hp = 33000u;
-        dfi_knowledge_refresh_active(a);
-        dfi_knowledge_refresh_active(b);
+        df_knowledge_refresh_active(a);
+        df_knowledge_refresh_active(b);
         equivalent(&t, c3, a, b, 0, "same hp bucket and flag");
         b->sides[1].members[0].hp = 32767u; /* 49 percent: a legitimate revelation */
-        dfi_knowledge_refresh_active(b);
+        df_knowledge_refresh_active(b);
         differs(&t, c3, a, b, 0, "bucket change");
         duoforge_battle_destroy(a);
         duoforge_battle_destroy(b);
