@@ -46,6 +46,8 @@ Exit: every dependency of the declared slice has implementation and test evidenc
 
 ## M5 — First fixed-matchup certification
 
+**Status 2026-10-01:** done for the closure matchups (decision 0010); report `docs/certification/closure-v1/README.md`.
+
 Freeze exact team specifications, rules and information profiles, source pins and the evidence manifest. Run deterministic reference scenarios, controlled-RNG conformance tests, bounded randomized native play, replay verification and failure minimization.
 
 Certification is scoped engineering evidence, not a mathematical proof of every reachable state. Record residual known limitations. Exclude an unsupported setup or change the named profile; do not weaken real rules invisibly.
