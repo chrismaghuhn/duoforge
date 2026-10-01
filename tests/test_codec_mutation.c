@@ -119,7 +119,7 @@ static const unsigned expected_f5[REGION_COUNT][STATUS_COUNT] = {
     {14, 1261, 0, 0, 0}, /* field */
     {27, 30828, 0, 0, 0}, /* queue */
     {24, 3801, 0, 0, 0}, /* side0.header */
-    {709, 10001, 0, 0, 0}, /* side0.positions */
+    {710, 10000, 0, 0, 0}, /* side0.positions */
     {0, 2550, 0, 0, 0}, /* side0.sealed */
     {2040, 8670, 0, 0, 0}, /* side0.knowledge */
     {5906, 67534, 0, 0, 0}, /* side0.members */

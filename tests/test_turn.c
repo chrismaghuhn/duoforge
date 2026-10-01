@@ -719,6 +719,59 @@ int main(void)
                 ended, rain, grassy, dropped, tailwind, screens, used_items, pivots);
     }
 
+    /* The residual list at its largest (review of step 13): Trick Room,
+     * weather and terrain, three conditions per side, and per position a
+     * burn, four duration ends (Protect, stall, flinch, charge), Leftovers
+     * and Grassy Terrain, 37 entries in all. No play reaches this state, but
+     * the checker accepts it, so a decoded copy must step without writing
+     * past the list. */
+    {
+        duoforge_battle_setup s;
+        df_setup_teams(&s);
+        duoforge_battle *b = started_from(&t, k2, &s);
+        if (b != NULL) {
+            b->trick_room_turns = 1u;
+            b->weather = (uint8_t)DFI_WEATHER_RAIN;
+            b->weather_turns = 1u;
+            b->terrain = (uint8_t)DFI_TERRAIN_GRASSY;
+            b->terrain_turns = 1u;
+            for (uint32_t side = 0; side < 2u; ++side) {
+                dfi_side *sd = &b->sides[side];
+                sd->reflect_turns = 1u;
+                sd->light_screen_turns = 1u;
+                sd->tailwind_turns = 1u;
+                for (uint32_t p = 0; p < 2u; ++p) {
+                    dfi_active_slot *pos = &sd->positions[p];
+                    dfi_member *m = &sd->members[pos->occupant];
+                    m->status = (uint8_t)DFI_STATUS_BRN;
+                    m->item = (uint8_t)(1u + DFI_ITEM_LEFTOVERS);
+                    m->mega_capable = 0u; /* the stone is gone */
+                    pos->stall_level = 1u;
+                    pos->stall_turns = 1u;
+                    pos->charge_turns = 1u;
+                    pos->locked_move = 1u;
+                    pos->locked_target = (uint8_t)((1u - side) * 2u);
+                    pos->flags = (uint8_t)(DFI_VOL_PROTECT | DFI_VOL_FLINCH);
+                }
+            }
+            dfi_knowledge_refresh_active(b);
+            DF_CHECK(&t, duoforge_battle_check(k2, b) == DUOFORGE_OK);
+            uint8_t bytes[DUOFORGE_STATE_V3_ENCODED_SIZE];
+            encode(k2, b, bytes);
+            duoforge_battle *d = NULL;
+            DF_CHECK(&t, duoforge_battle_create_decoded(k2, bytes, sizeof bytes, &d) == DUOFORGE_OK);
+            if (d != NULL) {
+                duoforge_decision_bundle bd;
+                duoforge_step_result res;
+                DF_CHECK(&t, bundle_from(k2, d, 0u, 0u, &bd) == DUOFORGE_OK);
+                DF_CHECK(&t, duoforge_battle_step(k2, d, &bd, &res) == DUOFORGE_OK);
+                DF_CHECK(&t, duoforge_battle_check(k2, d) == DUOFORGE_OK);
+                duoforge_battle_destroy(d);
+            }
+            duoforge_battle_destroy(b);
+        }
+    }
+
     /* Random play with the pivots of step 12: Emergency Exit in the middle
      * of a turn (PIVOT) and at its end (in the REPLACEMENT), every
      * committed state passes the checker, and decoded copies continue byte

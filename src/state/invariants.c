@@ -131,7 +131,7 @@ static dfi_invariant dfi_check_member(const struct duoforge_context *ctx, const 
  * occupant's (already range-checked) move count. */
 static bool dfi_volatile_valid(const dfi_active_slot *slot, uint32_t move_count)
 {
-    if (slot->switch_flag > DFI_SWITCH_EMERGENCY_EXIT) {
+    if (slot->switch_flag > DFI_SWITCH_FAINTED) {
         return false;
     }
     for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {

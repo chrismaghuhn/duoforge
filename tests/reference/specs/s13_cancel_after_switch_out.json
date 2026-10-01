@@ -1,0 +1,19 @@
+{
+  "name": "s13_cancel_after_switch_out",
+  "purpose": "cancelAction: Golisopod leaves by Emergency Exit before it moved, so its queued move is gone; the newcomer has the same Speed as a foe that still has to move, and the stale move must not join that speed tie.",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000000b7",
+  "teams": [
+    "Charizard (F) @ Charizardite Y\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Heat Wave\n- Protect\n\nPolitoed (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Ice Beam\n- Muddy Water\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Ice Beam\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Snarl",
+    "Golisopod (F)\nAbility: Emergency Exit\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Def\nAdamant Nature\n- Drill Run\n- Protect\n\nFarigiraf (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Psychic\n- Protect\n\nPolitoed (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Ice Beam\n- Muddy Water\n\nRaichu (F) @ Life Orb\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Focus Blast\n- Zap Cannon"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 1 2"
+    ],
+    "p2": [
+      "move 1 2, move 1 1"
+    ],
+    "max_steps": 12
+  }
+}

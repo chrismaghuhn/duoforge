@@ -232,14 +232,13 @@ def boundary_of(state, log):
         raise SystemExit('trace_to_c: mixed requests %s' % sorted(kinds))
     kind = kinds.pop()
     if kind == 'switch' and '|upkeep' not in log:
-        # A standing Pokemon with a switch flag pivots mid-turn: PIVOT. After
-        # the residual action ('|upkeep') the queue is empty: an Emergency
-        # Exit there is part of the REPLACEMENT.
-        for sd in state['sides']:
-            for i in sd['active']:
-                p = sd['pokemon'][i] if i >= 0 else None
-                if p and not p['fainted'] and p.get('switch_flag'):
-                    return 4
+        # Without the residual action ('|upkeep') in this step the queue still
+        # holds actions: a PIVOT. That is a mid-turn switch (Parting Shot,
+        # Emergency Exit) or, during a REPLACEMENT, a fainted position that
+        # passed and is asked again right after the switch, before the
+        # newcomer's entry. After the residual action the queue is empty:
+        # the request (fainted positions, an Emergency Exit) is a REPLACEMENT.
+        return 4
     return BOUNDARY[kind]
 
 

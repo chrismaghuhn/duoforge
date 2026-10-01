@@ -1461,6 +1461,24 @@ static duoforge_status dfi_insert_run_switch(dfi_run *r, uint32_t side, uint32_t
     return DUOFORGE_OK;
 }
 
+/* cancelAction (sim/battle-queue.ts:334-343): the queued actions of one
+ * activation are removed; the rest keeps its order. */
+static void dfi_cancel_actions(struct duoforge_battle *b, uint32_t activation_id)
+{
+    const uint32_t len = b->queue_len;
+    uint32_t n = 0u;
+    for (uint32_t i = 0u; i < len && i < DFI_QUEUE_CAPACITY; ++i) {
+        if (activation_id == 0u || b->queue[i].activation_id != activation_id) {
+            b->queue[n] = b->queue[i];
+            n += 1u;
+        }
+    }
+    for (uint32_t i = n; i < len && i < DFI_QUEUE_CAPACITY; ++i) {
+        b->queue[i] = (dfi_queue_record){0u, 0u, 0u, 0u, 0u, 0u, 0u};
+    }
+    b->queue_len = (uint8_t)n; /* <= len */
+}
+
 /* switchIn (sim/battle-actions.ts:57-149): the Pokemon in the slot leaves
  * (its position is cleared; a fainted one simply makes room), the reserve
  * comes in with a fresh activation and is seen by the opponent, and its
@@ -1487,6 +1505,11 @@ static duoforge_status dfi_run_switch(dfi_run *r, const dfi_queue_record *q)
     const dfi_member *leaving = dfi_at(b, side * 2u + slot);
     if (leaving != NULL && leaving->hp != 0u && sd->positions[slot].switch_flag == 0u) {
         dfi_update(b); /* BeforeSwitchOut, then Update (sim/battle-actions.ts:80-84) */
+    }
+    if (leaving != NULL && leaving->hp != 0u) {
+        /* cancelAction (sim/battle-actions.ts:107): a Pokemon that leaves
+         * standing loses its queued actions. */
+        dfi_cancel_actions(b, sd->positions[slot].activation_id);
     }
     if (sd->positions[slot].occupant != DFI_OCCUPANT_NONE) {
         const duoforge_status vs = dfi_vacate(b, where);
@@ -1700,7 +1723,9 @@ static duoforge_status dfi_run_mega(dfi_run *r, const dfi_queue_record *q)
 #define DFI_RES_FIELD_END 6u /* Trick Room, a side condition: duration only */
 #define DFI_RES_LEFTOVERS 7u
 #define DFI_RES_NO_ORDER 0xFFFFFFFFu
-#define DFI_RES_MAX 28u
+/* Trick Room, weather and terrain; three conditions per side; per position
+ * a burn, four duration ends, Leftovers and Grassy Terrain. */
+#define DFI_RES_MAX (3u + 3u * DUOFORGE_SIDE_COUNT + 7u * DFI_POSITIONS)
 
 typedef struct dfi_residual_entry {
     uint32_t kind;
@@ -1973,18 +1998,31 @@ static void dfi_check_fainted(struct duoforge_battle *b)
     }
 }
 
-/* A switch request in the middle of the turn (sim/battle.ts:2876-2915): the
- * sides with a flagged standing Pokemon answer for exactly those positions;
- * the rest of the turn stays in the queue. */
+static bool dfi_has_reserve(const struct duoforge_battle *b, uint32_t side);
+
+/* A switch request while actions are still queued (sim/battle.ts:
+ * 2876-2915): a side with flagged positions but no reserve loses its flags;
+ * the other sides with flagged positions answer for exactly those positions,
+ * and the rest of the queue waits. A flagged position holds a standing
+ * Pokemon (Parting Shot, Emergency Exit) or, after a pass at a REPLACEMENT,
+ * a fainted one (checkFainted): then the side is asked again right after the
+ * switch, before the newcomer's entry. */
 static bool dfi_pivot_pending(struct duoforge_battle *b)
 {
-    for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
-        const dfi_member *m = dfi_at(b, flat);
-        if (m != NULL && m->hp != 0u && dfi_pos(b, flat)->switch_flag != 0u) {
-            return true;
+    bool pending = false;
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        dfi_side *sd = &b->sides[s];
+        if (sd->positions[0].switch_flag == 0u && sd->positions[1].switch_flag == 0u) {
+            continue;
+        }
+        if (dfi_has_reserve(b, s)) {
+            pending = true;
+        } else {
+            sd->positions[0].switch_flag = 0u;
+            sd->positions[1].switch_flag = 0u;
         }
     }
-    return false;
+    return pending;
 }
 
 static duoforge_status dfi_pivot(struct duoforge_battle *b)
@@ -2001,7 +2039,7 @@ static duoforge_status dfi_pivot(struct duoforge_battle *b)
         uint32_t slots = 0u;
         for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
             const dfi_member *m = dfi_at(b, s * 2u + p);
-            if (sd->positions[p].switch_flag != 0u && m != NULL && m->hp != 0u) {
+            if (sd->positions[p].switch_flag != 0u && m != NULL) {
                 slots |= 1u << p;
             } else {
                 sd->positions[p].switch_flag = 0u;
@@ -2128,6 +2166,9 @@ static bool dfi_has_reserve(const struct duoforge_battle *b, uint32_t side)
  * fainted position and the Emergency Exit holder went to the bench. */
 static duoforge_status dfi_finish_turn(struct duoforge_battle *b, uint32_t exits)
 {
+    for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
+        dfi_pos(b, flat)->switch_flag = 0u; /* the REPLACEMENT carries no flags */
+    }
     dfi_check_fainted(b);
     uint32_t mask = 0u;
     uint32_t fainted[DUOFORGE_SIDE_COUNT] = {0u, 0u};
@@ -2208,6 +2249,15 @@ static duoforge_status dfi_queue_choices(dfi_run *r, const duoforge_side_choice 
                 c = (dfi_slot_cmd){sc->kind, sc->move_slot, sc->target, sc->mega, sc->reserve};
             } else if (b->sides[s].sealed != 0u) {
                 c = b->sides[s].sealed_cmds[slot];
+            }
+            if (c.kind == DFI_SLOT_PASS && replacement && requested &&
+                ((uint32_t)b->sides[s].requested_slots >> slot & 1u) != 0u) {
+                /* A pass adds no action (resolveAction), so a fainted
+                 * position keeps checkFainted's switch flag. */
+                const dfi_member *m = dfi_at(b, s * 2u + slot);
+                if (m != NULL && m->hp == 0u) {
+                    b->sides[s].positions[slot].switch_flag = (uint8_t)DFI_SWITCH_FAINTED;
+                }
             }
             if (c.kind == DFI_SLOT_NONE || c.kind == DFI_SLOT_PASS) {
                 continue;
@@ -2337,7 +2387,7 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
                 exits |= dfi_exits(b, flat, r.residual_hp[flat]) ? 1u << flat : 0u;
             }
         }
-        if (dfi_pivot_pending(b)) {
+        if (b->queue_len > 0u && dfi_pivot_pending(b)) {
             return dfi_pivot(b);
         }
         if (b->queue_len > 0u && b->queue[0].kind == DFI_Q_MOVE) {

@@ -141,6 +141,8 @@ int main(void)
     RESET_TO(f5);
     w->sides[0].positions[0].switch_flag = (uint8_t)DFI_SWITCH_EMERGENCY_EXIT;
     expect_ok(&t, c1, w, "the other pivot cause");
+    w->sides[0].positions[0].switch_flag = (uint8_t)DFI_SWITCH_FAINTED;
+    expect_ok(&t, c1, w, "checkFainted's flag kept by a pass");
     RESET();
     w->sides[0].knowledge[2].hp_percent = 20u; /* s1 member 2 is on the bench */
     w->sides[0].knowledge[2].hp_flag = (uint8_t)DUOFORGE_HP_FLAG_YELLOW;
@@ -403,8 +405,9 @@ int main(void)
     RESET();
     w->sides[0].positions[0].locked_target = 1u;
     expect_inv(&t, c1, w, DFI_INV_VOLATILE, "locked target without a locked move");
-    w->sides[0].positions[0].switch_flag = 3u;
-    expect_inv(&t, c1, w, DFI_INV_VOLATILE, "switch flag 3");
+    RESET();
+    w->sides[0].positions[0].switch_flag = 4u;
+    expect_inv(&t, c1, w, DFI_INV_VOLATILE, "switch flag 4");
     RESET_TO(f2);
     w->sides[1].positions[1].switch_flag = (uint8_t)DFI_SWITCH_MOVE; /* s1b is empty in F2 */
     expect_inv(&t, c1, w, DFI_INV_VOLATILE, "empty position with a switch flag");

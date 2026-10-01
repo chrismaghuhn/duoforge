@@ -61,7 +61,7 @@ STALL_TURNS_MAX = 2
 CONFUSION_TURNS_MAX = 5
 CHARGE_TURNS_MAX = 2
 MOVE_SLOT_STRUGGLE = 4
-SWITCH_NONE, SWITCH_MOVE, SWITCH_EMERGENCY_EXIT = 0, 1, 2
+SWITCH_NONE, SWITCH_MOVE, SWITCH_EMERGENCY_EXIT, SWITCH_FAINTED = 0, 1, 2, 3
 REVEALED_ITEM_CONSUMED, REVEALED_MEGA = 1, 2
 # side-relative offsets of the v3 side block
 SIDE_POS_OFF, SIDE_SEALED_OFF, SIDE_KNOW_OFF, SIDE_MEMBERS_OFF = 15, 57, 67, 109
@@ -434,7 +434,7 @@ def member_extra_is_zero(mem):
 
 def volatile_valid(p, move_count):
     """Value ranges of an occupied position's volatile block."""
-    if p['switch_flag'] > SWITCH_EMERGENCY_EXIT:
+    if p['switch_flag'] > SWITCH_FAINTED:
         return False
     if any(s > STAGE_MAX for s in p['stages']) or p['flags'] > VOL_FLAGS_MAX:
         return False
@@ -1315,7 +1315,7 @@ TARGETED = [
     ('F1', S0 + P(0, 13), 7, 'VOLATILE'), ('F1', S0 + P(0, 14), 1, 'VOLATILE'), ('F5', S0 + P(1, 14), 3, 'VOLATILE'),
     ('F1', S0 + P(0, 15), 6, 'VOLATILE'), ('F1', S0 + P(0, 16), 1, 'VOLATILE'), ('F5', S1 + P(0, 16), 3, 'VOLATILE'),
     ('F1', S0 + P(0, 17), 1, 'VOLATILE'), ('F5', S1 + P(0, 17), 5, 'VOLATILE'), ('F1', S0 + P(0, 18), 1, 'VOLATILE'),
-    ('F5', S1 + P(0, 18), 4, 'VOLATILE'), ('F5', S0 + P(1, 17), 2, 'VOLATILE'), ('F1', S0 + P(0, 20), 3, 'VOLATILE'),
+    ('F5', S1 + P(0, 18), 4, 'VOLATILE'), ('F5', S0 + P(1, 17), 2, 'VOLATILE'), ('F1', S0 + P(0, 20), 4, 'VOLATILE'),
     ('F2', S1 + P(1, 5), 5, 'VOLATILE'), ('F2', S1 + P(1, 12), 1, 'VOLATILE'), ('F2', S1 + P(1, 19), 1, 'VOLATILE'),
     ('F2', S1 + P(1, 20), 1, 'VOLATILE'),
     ('F1', S0 + 2, 1, 'REQUESTED_SLOTS'), ('F1', S0 + 2, 4, 'REQUESTED_SLOTS'), ('F13', S0 + 2, 1, 'REQUESTED_SLOTS'),
