@@ -28,7 +28,8 @@ static uint64_t next(uint64_t *s)
 /* Unused list entries, unused bits and reserved bytes are zero. */
 static bool unused_zero(const duoforge_factored_domain *d)
 {
-    static const duoforge_slot_command zero_cmd;
+    duoforge_slot_command zero_cmd;
+    memset(&zero_cmd, 0, sizeof zero_cmd);
     bool ok = d->reserved[0] == 0u && d->reserved[1] == 0u && d->reserved[2] == 0u;
     for (uint32_t s = 0u; s < 2u; ++s) {
         for (uint32_t i = d->slot_count[s]; i < DUOFORGE_MAX_SLOT_OPTIONS; ++i) {
