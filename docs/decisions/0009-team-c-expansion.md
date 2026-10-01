@@ -16,7 +16,7 @@ Status: **accepted** (owner, 2026-10-01: "bau das erstmal so"; setup rule: the c
 |---|---|---|
 | CLOSURE and CLOSURE_DEV fingerprints | byte-identical: data kind, counts 16 and 37, closure table hash; the certified context (6, 4) keeps `09d8d247…` (decision 0010) | the fingerprints pinned in `tests/test_closure_setup.c` (from `tools/state_model/state_v3_model.py`) |
 | `src/data/closure_tables.{h,c}` | byte-identical; `gen_closure.py <pin> --check` passes | the sha256 pins in `tests/CMakeLists.txt`, the regeneration test under `DUOFORGE_PS_REFERENCE_DIR` |
-| The 71 closure specs and traces, `tests/reference/conformance.h` | byte-identical | `duoforge.reference.trace.*` (Showdown reruns), `duoforge.reference.conformance_tables` |
+| The closure specs and traces (87 since M5 step 3), `tests/reference/conformance.h` | byte-identical | `duoforge.reference.trace.*` (Showdown reruns), `duoforge.reference.conformance_tables` |
 | State v3 | layout (1009 bytes), schema 3, semantics id; every value that is new for Team C stays invalid under the CLOSURE kinds | the codec, golden and invariant tests, plus new negative tests |
 | Observation (736 bytes) and events | closure battles give the same bytes; additions are new enum values and bits of `reserved` fields that stay zero under CLOSURE | the conformance event and observation checks |
 | Closure test files | not edited, except the shared conformance driver (section 6.1), whose closure build keeps its fixtures and checks | review |
@@ -32,7 +32,7 @@ Every step's PR states this table as checked.
 | `DUOFORGE_DATA_KIND_TEAM_C` | 4 | the extended tables (3.2) | format-legal, in CLOSURE's profile (3.4) |
 | `DUOFORGE_DATA_KIND_TEAM_C_DEV` | 5 | the extended tables | as CLOSURE_DEV: also No Ability and the rosters CLOSURE_DEV allows |
 
-The DEV kind exists for the reason of decision 0006 section 2.1: every Team C forme has exactly one ability, and Unburden (step 8) and Psychic Surge (step 10) come late, so without No Ability no Sneasler or Indeedee-F fixture could pass the gate before step 8 or 10. TEAM_C_DEV therefore follows the owner's answer on `CLOSURE_DEV` (decision 0010 section 3, kept as the development profile in the proposal); without it, Sneasler and Indeedee-F fixtures could run only after steps 8 and 10. The config contract is CLOSURE's (no counts, no table). A TEAM_C fingerprint differs from every CLOSURE one in the data kind, the counts and the table hash, so states and traces of the two kinds never mix. The names are a proposal.
+The DEV kind exists for the reason of decision 0006 section 2.1: every Team C forme has exactly one ability, and Unburden (step 8) and Psychic Surge (step 10) come late, so without No Ability no Sneasler or Indeedee-F fixture could pass the gate before step 8 or 10. The owner kept `CLOSURE_DEV` as the development profile (decision 0010, accepted 2026-10-01), so TEAM_C_DEV follows it: No Ability and four to six registered members. The config contract is CLOSURE's (no counts, no table). A TEAM_C fingerprint differs from every CLOSURE one in the data kind, the counts and the table hash, so states and traces of the two kinds never mix. The names are a proposal.
 
 ### 3.2 One extended table set; the closure is its prefix
 
@@ -237,4 +237,4 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
    - the choice lock shown in `locked_slot` (4.2).
 5. Last Respects' count is derived from the roster instead of stored (4.1).
 6. Step 9a (harness) is its own PR, and step 12 (the Team C gate) closes the track.
-7. The track follows draw alignment B, which the owner confirmed in decision 0010. TEAM_C_DEV depends on the open answer about `CLOSURE_DEV` (decision 0010 section 3), and TEAM_C takes over 0010's profile freeze (3.4).
+7. The track follows draw alignment B and the DEV profile, both confirmed with decision 0010; TEAM_C takes over 0010's profile freeze (3.4).
