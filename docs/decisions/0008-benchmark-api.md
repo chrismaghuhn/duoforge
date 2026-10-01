@@ -47,4 +47,8 @@ BATCH_NATIVE and ROLLOUT_END_TO_END (later milestones), peak memory and allocati
 
 ## 6. The baseline
 
-Measured only on an idle machine (the owner confirms), with Release builds of MSVC, GCC and Clang, the default workload (25 battles per pairing, 5 repetitions, 1 warmup), and only from runs without disturbed repetitions. The reports go to `docs/benchmarks/` with their manifests. Debug builds and runs on a busy machine are functional checks only, never results.
+Measured only on an idle machine (the owner confirms), with Release builds of MSVC, GCC and Clang, `--battles 1000 --repetitions 5 --warmup 1`, and only from runs without disturbed repetitions. With the default 25 battles per pairing a repetition takes 5 to 18 ms, too short to be judged; with 1000 every family except SNAPSHOT `copy` (about 8 ms) takes 100 ms or more. The reports go to `docs/benchmarks/` with their manifests; the first is `docs/benchmarks/2026-10-01-closure-pairings-v1/`. Debug builds and runs on a busy machine are functional checks only, never results.
+
+## 7. Exact step speedups (2026-10-01)
+
+A sampling profile of the workload put about a third of the step's time into listing the joint domain to find the response, and about as much into checking every member of the result again. Both are now exact shortcuts with the same results (PR #30): membership is decided from the slot lists without listing their product (`dfi_side_accepts`; `duoforge.request.accepts` compares it with the enumeration), and the result's member rules run only for members that differ from the checked input. Every step still checks its input and its result. Measured A/B (the report above): the step 1.37 to 1.55 times as fast, a whole battle with the random policy 1.09 to 1.26 times; about half of such a battle is now the policy's queries.
