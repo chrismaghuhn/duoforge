@@ -269,6 +269,26 @@ typedef struct duoforge_decision_bundle {
     duoforge_side_choice responses[DUOFORGE_SIDE_COUNT]; /* responses[s] is all-zero unless bit s is set */
 } duoforge_decision_bundle; /* 72 bytes */
 
+/* The factored form of a player's joint domain (M7, decision 0013): the two
+   slot lists and the pair rule as a bit matrix, 652 bytes in place of up to
+   DUOFORGE_MAX_CANDIDATES joint choices. Unused entries and bits are zero. */
+#define DUOFORGE_MAX_SLOT_OPTIONS 32u
+typedef struct duoforge_factored_domain {
+    uint32_t epoch;        /* the request epoch */
+    uint8_t kind;          /* DUOFORGE_CHOICE_SLOTS or _TEAM_SELECTION; 0 when not requested */
+    uint8_t slot_count[DUOFORGE_ACTIVE_PER_SIDE]; /* SLOTS: entries of each slot list, 1..32 */
+    uint8_t member_count;  /* TEAM_SELECTION: roster size */
+    uint8_t pick_count;    /* TEAM_SELECTION: brought count */
+    uint8_t reserved[3];   /* zero */
+    duoforge_slot_command slots[DUOFORGE_ACTIVE_PER_SIDE][DUOFORGE_MAX_SLOT_OPTIONS];
+    uint32_t allowed[DUOFORGE_MAX_SLOT_OPTIONS]; /* bit j of allowed[i]: the pair (slots[0][i], slots[1][j]) */
+} duoforge_factored_domain; /* 652 bytes */
+
+typedef struct duoforge_factored_choice {
+    uint8_t slot[DUOFORGE_ACTIVE_PER_SIDE]; /* SLOTS: indices into slots[0] and slots[1] */
+    uint8_t picks[DUOFORGE_MAX_ROSTER];     /* TEAM_SELECTION: ordered roster indices, leads first; rest 0 */
+} duoforge_factored_choice; /* 8 bytes */
+
 typedef struct duoforge_request {
     uint32_t epoch;
     uint32_t candidate_count; /* exact size of this player's domain (0 when not requested) */
@@ -294,18 +314,27 @@ typedef struct duoforge_step_result {
    move is offered Struggle (DUOFORGE_MOVE_SLOT_STRUGGLE). */
 duoforge_status duoforge_battle_request(const duoforge_context *ctx, const duoforge_battle *battle,
                                         uint32_t player, duoforge_request *out_request);
-/* The complete joint side-choice domain of one player in documented order
-   (decision 0005 section 3). With capacity < count the call returns
-   E_CAPACITY and writes ONLY *out_count = required; the buffer is untouched.
-   Otherwise the first *out_count records are written. */
 /* The battle's result: DUOFORGE_RESULT_SIDE_0, _SIDE_1 or _TIE at TERMINAL, 0
    before. Checks as duoforge_battle_request (NULL -> CONTEXT_MISMATCH ->
    INVARIANT); *out_result is written only on success. */
 duoforge_status duoforge_battle_result(const duoforge_context *ctx, const duoforge_battle *battle,
                                        uint32_t *out_result);
+/* The complete joint side-choice domain of one player in documented order
+   (decision 0005 section 3). With capacity < count the call returns
+   E_CAPACITY and writes ONLY *out_count = required; the buffer is untouched.
+   Otherwise the first *out_count records are written. */
 duoforge_status duoforge_battle_candidates(const duoforge_context *ctx, const duoforge_battle *battle,
                                            uint32_t player, duoforge_side_choice *buffer, uint32_t capacity,
                                            uint32_t *out_count);
+/* The same domain in factored form, checked as duoforge_battle_candidates;
+   *out is written only on success. Exact: the allowed pairs in row-major
+   (i, j) order, each made a side choice with the epoch and side, are byte for
+   byte the candidate list, in its order. At TEAM_SELECTION only kind,
+   member_count and pick_count are set besides the epoch (the domain is the
+   ordered tuples of distinct roster indices, lexicographic); a player without
+   a request gets kind 0. */
+duoforge_status duoforge_battle_factored(const duoforge_context *ctx, const duoforge_battle *battle,
+                                         uint32_t player, duoforge_factored_domain *out);
 /* Submits the responses of exactly the requested sides. Checks: NULL ->
    CONTEXT_MISMATCH -> INVARIANT -> STALE_EPOCH (bundle or response epoch) ->
    INVALID_ARGUMENT (mask, reserved bytes, side/kind fields, a response
