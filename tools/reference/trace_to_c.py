@@ -271,7 +271,9 @@ def convert_choice(text, side, state, roster_of, mid_turn=False):
             if all(pp == 0 for pp in mon['pp']) and not struggle:
                 raise SystemExit('trace_to_c: no PP left and no Struggle in the request: %r' % text)
             if struggle:
-                cmds.append((1, 4, 0xFF, mega, 0))  # Struggle
+                # Such a request has no canMegaEvo; the reference pushes
+                # Struggle and drops a typed "mega" (sim/side.ts chooseMove).
+                cmds.append((1, 4, 0xFF, 0, 0))
                 continue
             target = 0xFF
             if len(words) > 2:

@@ -452,7 +452,9 @@ def sealed_cmd_valid(c, mc):
             target_ok = c['target'] == TARGET_NONE
         else:
             target_ok = c['move_slot'] < MOVE_SLOTS and (c['target'] < 4 or c['target'] == TARGET_NONE)
-        return target_ok and c['mega'] <= 1 and c['reserve'] == 0
+        # Struggle never carries a Mega declaration.
+        mega_max = 0 if c['move_slot'] == MOVE_SLOT_STRUGGLE else 1
+        return target_ok and c['mega'] <= mega_max and c['reserve'] == 0
     if c['kind'] == SLOT_SWITCH:
         return c['reserve'] < mc and not (c['move_slot'] or c['target'] or c['mega'])
     if c['kind'] in (SLOT_NONE, SLOT_PASS):
@@ -899,7 +901,7 @@ def reserves(sd):
 
 def slot_domain(ctx, st, side, slot):
     """Per-slot candidates in documented order; Struggle (move slot 4, no
-    target) when the occupant has no move with PP left."""
+    target, no Mega declaration) when the occupant has no selectable move."""
     sd = st['sides'][side]
     pos = sd['pos'][slot]
     out = []
@@ -925,8 +927,8 @@ def slot_domain(ctx, st, side, slot):
                 for mg in megas:
                     out.append(cmd(SLOT_MOVE, k, tgt, mg))
         if not out:
-            for mg in megas:
-                out.append(cmd(SLOT_MOVE, MOVE_SLOT_STRUGGLE, TARGET_NONE, mg))
+            # Struggle locks the request: no Mega declaration with it.
+            out.append(cmd(SLOT_MOVE, MOVE_SLOT_STRUGGLE, TARGET_NONE, 0))
         for r in reserves(sd):
             out.append(cmd(SLOT_SWITCH, reserve=r))
         return out

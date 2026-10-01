@@ -60,7 +60,9 @@ static bool dfi_sealed_cmd_valid(const dfi_slot_cmd *c, uint32_t member_count)
                                    : (c->move_slot < DUOFORGE_MAX_MOVE_SLOTS &&
                                       (c->target < DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE ||
                                        c->target == DUOFORGE_TARGET_NONE));
-        return target_ok && c->mega <= 1u && c->reserve == 0u;
+        /* Struggle never carries a Mega declaration (the request offers none). */
+        const uint32_t mega_max = c->move_slot == DUOFORGE_MOVE_SLOT_STRUGGLE ? 0u : 1u;
+        return target_ok && c->mega <= mega_max && c->reserve == 0u;
     }
     if (kind == DFI_SLOT_SWITCH) {
         return c->reserve < member_count && c->move_slot == 0u && c->target == 0u && c->mega == 0u;
