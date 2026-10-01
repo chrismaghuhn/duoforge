@@ -29,6 +29,15 @@ class ExampleTest(unittest.TestCase):
         finally:
             shutil.rmtree(folder)
 
+    def test_throughput_runs(self):
+        run = subprocess.run(
+            [sys.executable, "-m", "duoforge.examples.throughput", "--envs", "4", "--episodes", "1",
+             "--repeats", "1", "--native-factor", "1"],
+            capture_output=True, text=True, timeout=300)
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        for mode in ("native", "autoreset", "index", "factored", "scripted"):
+            self.assertRegex(run.stdout, mode + r" .*games/s median")
+
     def test_bad_arguments_fail(self):
         run = subprocess.run([sys.executable, "-m", "duoforge.examples.generate", "--envs", "0", "--out", "x"],
                              capture_output=True, text=True, timeout=60)
