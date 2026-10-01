@@ -70,6 +70,8 @@ Add a thin C ABI binding, packed observation and candidate batches, random/scrip
 
 Exit: native-versus-binding equivalence, trajectory-to-replay checks, no hidden-information features and a small bounded generation example. A trained model is not needed to pass this milestone.
 
+Status: done 2026-10-01 (decision 0013 section 8). The Python package `python/duoforge` drives the batch runtime over ctypes and NumPy; the Python loop equals the native mode byte for byte, recipes replay to features, and the encoder reads only the viewer's observation.
+
 An initial candidate-scoring learner may follow in a separate task. Selecting PPO, recurrent architectures, search or leagues is not part of the engine gate.
 
 ## Later

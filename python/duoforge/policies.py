@@ -113,7 +113,8 @@ class ScriptedPolicy:
                 percent = np.where(m["hp_kind"] == _C["DUOFORGE_HP_PERCENT"], hp,
                                    np.where(m["hp_kind"] == _C["DUOFORGE_HP_EXACT"], exact, 100))
                 shown[:, p, k] = np.where(present, percent, -1)
-        cmds = batch.candidates["slots"]  # (E, 2, 784, 2)
+        width = int(counts.max())  # no candidate past every count is read
+        cmds = batch.candidates["slots"][:, :, :width]  # (E, 2, width, 2)
         kind = cmds["kind"]
         target = cmds["target"].astype(np.int64)
         player = np.arange(2)[None, :, None, None]
@@ -123,7 +124,7 @@ class ScriptedPolicy:
                          np.where(kind == _C["DUOFORGE_SLOT_MOVE"], 10,
                                   np.where(kind == _C["DUOFORGE_SLOT_SWITCH"], -50, 0)))
         total = score.sum(axis=3)
-        valid = np.arange(_layout.MAX_CANDIDATES)[None, None, :] < counts[:, :, None]
+        valid = np.arange(width)[None, None, :] < counts[:, :, None]
         total = np.where(valid, total, np.iinfo(np.int64).min)
         best = np.argmax(total, axis=2)  # the first maximum: ties go to the lowest index
         out[requested] = best[requested].astype(np.uint16)
