@@ -505,7 +505,9 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             cause, id2, other = ev_cause(attrs, tables)
             e = ev_tuple(EV['STATUS'], ev_pos(args[0]), other, cause, 0, id2, detail=AILMENT[args[1]])
         elif kind == '-curestatus':
-            e = ev_tuple(EV['CURE_STATUS'], ev_pos(args[0]), detail=AILMENT[args[1]],
+            # [from] move: a defrost move thaws its frozen user (Team C, Flare Blitz).
+            cause, id2, other = ev_cause(attrs, tables)
+            e = ev_tuple(EV['CURE_STATUS'], ev_pos(args[0]), other, cause, 0, id2, detail=AILMENT[args[1]],
                          flags=FLAG['MESSAGE'] if '[msg]' in attrs else 0)
         elif kind in ('-start', '-end'):
             what = args[1]

@@ -1,6 +1,6 @@
 # 0009 — Team C: the expansion track (data kind, gate, steps, evidence)
 
-Status: **accepted** (owner, 2026-10-01: "bau das erstmal so"; setup rule: the closure rule, section 3.4). **Step 1 built** (section 10.1). Builds on decision `0004` (two reference teams), `0006` (data, state v3, draw sites, fixtures, evidence), `0007` (player view) and `0010` (the certified CLOSURE profile, the role of `CLOSURE_DEV`, draw alignment B confirmed), and on the research in `docs/research/third-team/` (PR #32). "M§n" means section n of `docs/research/third-team/mechanics.md`; X1 to X9 are its executed experiments.
+Status: **accepted** (owner, 2026-10-01: "bau das erstmal so"; setup rule: the closure rule, section 3.4). **Steps 1 and 2 built** (section 10). Builds on decision `0004` (two reference teams), `0006` (data, state v3, draw sites, fixtures, evidence), `0007` (player view) and `0010` (the certified CLOSURE profile, the role of `CLOSURE_DEV`, draw alignment B confirmed), and on the research in `docs/research/third-team/` (PR #32). "M§n" means section n of `docs/research/third-team/mechanics.md`; X1 to X9 are its executed experiments.
 
 ## 1. Owner inputs (2026-10-01)
 
@@ -274,3 +274,20 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
   - `src/data/support_manifest.{h,c}`;
   - `tests/test_closure_setup.c`, `tests/test_conformance.c`;
   - `tools/state_model/state_v3_model.py`.
+
+### 10.2 Step 2: Flare Blitz and Darkest Lariat
+
+- **Flare Blitz.** A frozen user of a defrost move skips the freeze check in BeforeMove: no draw and no counter (`data/mods/champions/conditions.ts:47`). The freeze's `onModifyMove`, inherited from `data/conditions.ts:106-111`, thaws the user before the move line. The event is CURE_STATUS with cause MOVE and the move id. Recoil, the 10 % burn and thawing a frozen target with a Fire hit use the existing paths.
+- **Darkest Lariat.** `ignoreDefensive` sets the target's Defense stage to neutral in both directions (`sim/battle-actions.ts:1691-1700`). `ignoreEvasion` drops the target's evasion from the accuracy check (`:719`); no move in the data changes evasion, so this second part is unreachable. The guard against unknown special handlers in `turn.c` now admits `DARKEST_LARIAT`; later Team C specials still fail it explicitly.
+- **Evidence.** Three recorded battles:
+  - `c02_flare_blitz`: Flash Fire absorbs Flare Blitz (no recoil), Politoed resists it in rain, it is super effective into Gholdengo, and Incineroar faints from its own recoil;
+  - `c02_flare_blitz_thaw`: Ice Beam freezes Incineroar (Fire types can be frozen; only Ice types are immune), then it thaws through Flare Blitz;
+  - `c02_darkest_lariat`: hits through Coil and Stamina boosts, under Reflect.
+
+  Negative controls: without the BeforeMove skip, without the ModifyMove thaw, or without `ignoreDefensive`, a battle fails.
+- **Converter.** A `-curestatus` line keeps its `[from] move:` cause. `conformance.h` is unchanged.
+- **Shared files touched:**
+  - `src/combat/turn.c` (BeforeMove, ModifyMove, damage, accuracy, the specials guard);
+  - `src/data/support_manifest.c`;
+  - `include/duoforge/duoforge.h` (comment only);
+  - `tools/reference/trace_to_c.py`.

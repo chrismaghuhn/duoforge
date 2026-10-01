@@ -734,6 +734,11 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
             def_stage = DFI_BIAS6;
         }
     }
+    /* Darkest Lariat (Team C): ignoreDefensive, the target's Defense stage in
+     * both directions (sim/battle-actions.ts:1691-1700). */
+    if (md->special == DFI_SPECIAL_DARKEST_LARIAT) {
+        def_stage = DFI_BIAS6;
+    }
     uint32_t attack = 0u;
     uint32_t defense = 0u;
     uint32_t damage = 0u;
@@ -1240,14 +1245,17 @@ static void dfi_announce_faints(dfi_run *r)
 
 /* runEvent('BeforeMove') in handler priority order: sleep and freeze (10),
  * flinch (8), confusion (3), paralysis (1); the first that stops the move
- * ends the event (data/conditions.ts, data/mods/champions/conditions.ts). */
-static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, bool *can)
+ * ends the event (data/conditions.ts, data/mods/champions/conditions.ts).
+ * A frozen user of a defrost move (Flare Blitz, Team C) skips the freeze
+ * check: no draw, no counter (data/mods/champions/conditions.ts:47). */
+static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, const dfi_move_data *md, bool *can)
 {
     dfi_member *m = dfi_at(r->b, user);
     dfi_active_slot *pos = dfi_pos(r->b, user);
     duoforge_status st = DUOFORGE_OK;
     *can = false;
-    if (m->status == DFI_STATUS_SLP || m->status == DFI_STATUS_FRZ) {
+    const bool defrost = m->status == DFI_STATUS_FRZ && ((uint32_t)md->flags & DFI_MOVE_FLAG_DEFROST) != 0u;
+    if ((m->status == DFI_STATUS_SLP || m->status == DFI_STATUS_FRZ) && !defrost) {
         const uint32_t left = m->status_counter > 0u ? (uint32_t)m->status_counter - 1u : 0u;
         bool cured = left == 0u;
         if (!cured && m->status == DFI_STATUS_FRZ) {
@@ -1413,7 +1421,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
      * onMoveAborted). */
     const bool locked = pos->charge_turns != 0u;
     bool can = false;
-    st = dfi_before_move(r, user, &can);
+    st = dfi_before_move(r, user, md, &can);
     if (st != DUOFORGE_OK) {
         return st;
     }
@@ -1433,6 +1441,18 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             return DUOFORGE_OK; /* "cant nopp"; the domain never offers it */
         }
         slot->pp = (uint8_t)((uint32_t)slot->pp - 1u); /* wide-operands-reviewed: pp > 0 */
+    }
+    /* The freeze's onModifyMove thaws a user of a defrost move before the
+     * move line: -curestatus|frz|[from] move (data/conditions.ts:106-111,
+     * inherited by Champions; Team C, Flare Blitz). */
+    if (m->status == DFI_STATUS_FRZ && ((uint32_t)md->flags & DFI_MOVE_FLAG_DEFROST) != 0u) {
+        duoforge_event cure = dfi_event_make(DUOFORGE_EVENT_CURE_STATUS, user);
+        cure.detail = (uint8_t)DFI_STATUS_FRZ;
+        cure.cause = (uint8_t)DUOFORGE_CAUSE_MOVE;
+        cure.id2 = (uint16_t)move_id;
+        dfi_emit(r, &cure);
+        m->status = (uint8_t)DFI_STATUS_NONE;
+        m->status_counter = 0u;
     }
     /* Struggle's onModifyMove shows -activate|move: Struggle first. */
     if (move_id == DFI_MOVE_STRUGGLE) {
@@ -1613,7 +1633,9 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         }
         return DUOFORGE_OK; /* nothing changed: the hit loop stops */
     }
-    if (md->special > DFI_SPECIAL_STRUGGLE) {
+    /* A handler this build does not have fails explicitly; the Team C
+     * specials of later steps are also kept out by the support manifest. */
+    if (md->special > DFI_SPECIAL_STRUGGLE && md->special != DFI_SPECIAL_DARKEST_LARIAT) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Fake Out's onTry (in trySpreadMoveHit, after TryMove): only on the
@@ -1710,7 +1732,10 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             }
             /* The user's accuracy stage minus the target's evasion, clamped. */
             const uint32_t acc = pos->stages[DFI_STAGE_ACCURACY];
-            const uint32_t eva = dfi_pos(b, targets[i])->stages[DFI_STAGE_EVASION];
+            /* Darkest Lariat (Team C): ignoreEvasion (sim/battle-actions.ts:719). */
+            const uint32_t eva = md->special == DFI_SPECIAL_DARKEST_LARIAT
+                                     ? DFI_BIAS6
+                                     : (uint32_t)dfi_pos(b, targets[i])->stages[DFI_STAGE_EVASION];
             uint32_t combined = acc + 12u - eva; /* 12 means 0 */
             combined = combined < 6u ? 6u : (combined > 18u ? 18u : combined);
             uint32_t accuracy = 0u;
