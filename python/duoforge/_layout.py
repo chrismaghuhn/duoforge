@@ -219,6 +219,15 @@ OBSERVATION = _struct([
     ("sides", (SIDE_VIEW, (2,)), 16),
 ], 736)
 
+# duoforge_batch_config: two uint32, the seed, then the setups pointer.
+_SETUPS_OFFSET = _align(16, _PTR)
+BATCH_CONFIG = _struct([
+    ("env_count", _U4, 0),
+    ("worker_count", _U4, 4),
+    ("seed", _U8, 8),
+    ("setups", np.uintp, _SETUPS_OFFSET),
+], _align(_SETUPS_OFFSET + _PTR, 8))
+
 EPISODE = _struct([
     ("env", _U4, 0),
     ("episode", _U4, 4),
@@ -246,5 +255,6 @@ BY_C_NAME = {
     "duoforge_position_view": POSITION_VIEW,
     "duoforge_side_view": SIDE_VIEW,
     "duoforge_observation": OBSERVATION,
+    "duoforge_batch_config": BATCH_CONFIG,
     "duoforge_batch_episode": EPISODE,
 }

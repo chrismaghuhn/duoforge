@@ -1,0 +1,294 @@
+"""A batch of environments over the C batch runtime (decision 0012, M7).
+
+Python allocates every buffer once and calls the library once per batch
+operation; the C side runs the environments on its worker pool with the GIL
+released. A batch has one caller at a time.
+"""
+import ctypes
+
+import numpy as np
+
+from . import _layout
+from ._lib import load_library, ptr, status_name, uint
+from .errors import DuoforgeError
+
+_SLOTS = _layout.CONSTANTS["DUOFORGE_CHOICE_SLOTS"]
+_TEAM = _layout.CONSTANTS["DUOFORGE_CHOICE_TEAM_SELECTION"]
+_OPTIONS = _layout.MAX_SLOT_OPTIONS
+
+
+def _require(array, dtype, shape, name):
+    """The checks before a caller's array goes to C: dtype, shape, order."""
+    if not isinstance(array, np.ndarray) or array.dtype != dtype:
+        found = array.dtype if isinstance(array, np.ndarray) else type(array).__name__
+        raise TypeError(f"{name} must be an ndarray of {dtype}, not {found}")
+    if array.shape != shape:
+        raise ValueError(f"{name} must have shape {shape}, not {array.shape}")
+    if not array.flags["C_CONTIGUOUS"]:
+        raise ValueError(f"{name} must be C-contiguous")
+
+
+class Batch:
+    """Environments of one context stepped together (duoforge_batch_*).
+
+    Buffers, allocated once: requests (E,2), observations (E,2), candidates
+    (E,2,784), counts (E,2) uint32, domains (E,2) for the factored form,
+    statuses (E,) uint32 and results (E,).
+    """
+
+    def __init__(self, context, setups, workers, seed):
+        self._handle = None  # set only after a successful create, so __del__ is safe
+        if context.handle is None:
+            raise ValueError("the context is closed")
+        if not isinstance(setups, np.ndarray) or setups.ndim != 1 or setups.shape[0] < 1:
+            raise ValueError("setups must be a one-dimensional ndarray with at least one setup")
+        _require(setups, _layout.SETUP, setups.shape, "setups")
+        self._lib = load_library()
+        self.context = context
+        self.envs = int(setups.shape[0])
+        config = np.zeros((), dtype=_layout.BATCH_CONFIG)
+        config["env_count"] = self.envs
+        config["worker_count"] = uint(workers, 32, "workers")
+        config["seed"] = uint(seed, 64, "seed")
+        config["setups"] = setups.ctypes.data  # copied by the create
+        handle = ctypes.c_void_p()
+        st = self._lib.duoforge_batch_create(context.handle, ptr(config), ctypes.byref(handle))
+        if st != 0:
+            raise DuoforgeError(status_name(st))
+        self._handle = handle
+        context._batches.add(self)
+        envs = self.envs
+        self.requests = np.zeros((envs, 2), dtype=_layout.REQUEST)
+        self.observations = np.zeros((envs, 2), dtype=_layout.OBSERVATION)
+        self.candidates = np.zeros((envs, 2, _layout.MAX_CANDIDATES), dtype=_layout.SIDE_CHOICE)
+        self.counts = np.zeros((envs, 2), dtype=np.uint32)
+        self.domains = np.zeros((envs, 2), dtype=_layout.FACTORED_DOMAIN)
+        self.statuses = np.zeros(envs, dtype=np.uint32)
+        self.results = np.zeros(envs, dtype=_layout.STEP_RESULT)
+
+    # ---------------------------------------------------------- step mode
+
+    def query(self):
+        """Fills requests, observations, candidates and counts."""
+        self._check(self._lib.duoforge_batch_query(self._live(), ptr(self.requests), ptr(self.observations),
+                                                   ptr(self.candidates), ptr(self.counts)))
+
+    def step(self, indices):
+        """Steps every non-TERMINAL environment by candidate index: uint16,
+        shape (E,2), NO_CHOICE for players without a request. A failure
+        raises DuoforgeError with the per-environment statuses."""
+        _require(indices, np.uint16, (self.envs, 2), "indices")
+        self._check(self._lib.duoforge_batch_step_indices(
+            self._live(), ptr(self.requests), ptr(self.candidates), ptr(self.counts), ptr(indices),
+            ptr(self.statuses), ptr(self.results)), per_env=True)
+
+    def query_factored(self):
+        """Fills requests, observations and the factored domains."""
+        self._check(self._lib.duoforge_batch_query_factored(self._live(), ptr(self.requests),
+                                                            ptr(self.observations), ptr(self.domains)))
+
+    def step_factored(self, choices):
+        """Steps every non-TERMINAL environment by factored choice
+        (FACTORED_CHOICE, shape (E,2)), as step()."""
+        _require(choices, _layout.FACTORED_CHOICE, (self.envs, 2), "choices")
+        self._check(self._lib.duoforge_batch_step_factored(
+            self._live(), ptr(self.requests), ptr(self.domains), ptr(choices), ptr(self.statuses),
+            ptr(self.results)), per_env=True)
+
+    def reset(self, env, episode):
+        """Resets one environment to `episode` (the seed derivation's battle)."""
+        self._check(self._lib.duoforge_batch_reset(self._live(), self._env(env), uint(episode, 32, "episode")))
+
+    def reset_terminal(self):
+        """Resets every TERMINAL environment to its next episode."""
+        self._check(self._lib.duoforge_batch_reset_terminal(self._live()))
+
+    # -------------------------------------------------------- native mode
+
+    def play_random(self, episodes, max_steps):
+        """Native mode: every environment plays `episodes` further episodes
+        with the uniform random policy; the records, shape (E, episodes)."""
+        episodes = uint(episodes, 32, "episodes")
+        records = np.zeros(self.envs * episodes, dtype=_layout.EPISODE)
+        self._check(self._lib.duoforge_batch_play_random(self._live(), episodes, uint(max_steps, 32, "max_steps"),
+                                                         ptr(records)))
+        return records.reshape(self.envs, episodes)
+
+    # ------------------------------------------------------- environments
+
+    def result(self, env):
+        """DUOFORGE_RESULT_* of the environment's battle, 0 before TERMINAL."""
+        out = ctypes.c_uint32()
+        self._check(self._lib.duoforge_battle_result(self.context.handle, self._battle(env), ctypes.byref(out)))
+        return out.value
+
+    def digest(self, env):
+        """The environment's state digest (32 bytes)."""
+        out = (ctypes.c_uint8 * _layout.DIGEST_SIZE)()
+        self._check(self._lib.duoforge_battle_digest(self.context.handle, self._battle(env), out))
+        return bytes(out)
+
+    def episode(self, env):
+        """The environment's episode number."""
+        return int(self._lib.duoforge_batch_env_episode(self._live(), self._env(env)))
+
+    def close(self):
+        """Destroys the batch; a second close is a no-op."""
+        if self._handle is not None:
+            self._lib.duoforge_batch_destroy(self._handle)
+            self._handle = None
+            self.context._batches.discard(self)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        self.close()
+
+    def __del__(self):
+        self.close()
+
+    # ----------------------------------------------------------- internals
+
+    def _live(self):
+        if self._handle is None:
+            raise ValueError("the batch is closed")
+        return self._handle
+
+    def _env(self, env):
+        env = int(env)
+        if not 0 <= env < self.envs:
+            raise IndexError(f"environment {env} is outside 0..{self.envs - 1}")
+        return env
+
+    def _battle(self, env):
+        return self._lib.duoforge_batch_env(self._live(), self._env(env))
+
+    def _check(self, status, per_env=False):
+        if status != 0:
+            raise DuoforgeError(status_name(status), self.statuses.copy() if per_env else None)
+
+
+# ------------------------------------------------- factored domain helpers
+#
+# The rank of a choice in the joint list (spec section 2): for SLOTS the
+# number of allowed pairs before (i, j) in row-major order, for
+# TEAM_SELECTION the lexicographic rank of the ordered tuple. A bijection
+# between two encodings of the engine's domain; legality stays in C.
+
+
+def _falling(n, m):
+    """n * (n - 1) * ... * (n - m + 1): ordered tuples of m of n indices."""
+    p = 1
+    for i in range(m):
+        p *= n - i
+    return p
+
+
+def _pair_bits(domains):
+    """The allowed pairs of SLOTS domains as uint8 0/1, shape (N, 32 * 32),
+    in row-major (i, j) order: bit j of allowed[i] at i * 32 + j."""
+    raw = np.ascontiguousarray(domains["allowed"], dtype="<u4").view(np.uint8)
+    return np.unpackbits(raw, axis=-1, bitorder="little")
+
+
+def _domains(domains):
+    domains = np.asarray(domains)
+    if domains.dtype != _layout.FACTORED_DOMAIN:
+        raise TypeError(f"domains must be of FACTORED_DOMAIN, not {domains.dtype}")
+    domains = domains.reshape(-1)
+    if (domains["kind"] == 0).any():
+        raise ValueError("a domain without a request has no choices")
+    return domains
+
+
+def joint_counts(domains):
+    """The joint domain sizes of domains (N,): allowed pairs or tuples."""
+    domains = _domains(domains)
+    counts = np.zeros(domains.shape[0], dtype=np.int64)
+    slots = domains["kind"] == _SLOTS
+    counts[slots] = np.bitwise_count(domains["allowed"][slots]).sum(axis=1)
+    for row in np.flatnonzero(domains["kind"] == _TEAM):
+        counts[row] = _falling(int(domains[row]["member_count"]), int(domains[row]["pick_count"]))
+    return counts
+
+
+def _unrank_team(n, m, k):
+    """The ordered tuple of m distinct indices below n of lexicographic rank k."""
+    unused = list(range(n))
+    picks = []
+    for i in range(m):
+        digit, k = divmod(k, _falling(n - 1 - i, m - 1 - i))
+        picks.append(unused.pop(digit))
+    return picks
+
+
+def factored_choices(domains, ks):
+    """The factored choices of joint ranks ks (N,) in domains (N,)."""
+    domains = _domains(domains)
+    ks = np.asarray(ks, dtype=np.int64).reshape(-1)
+    if ks.shape != domains.shape:
+        raise ValueError("one joint index per domain")
+    if ((ks < 0) | (ks >= joint_counts(domains))).any():
+        raise ValueError("a joint index is outside its domain")
+    out = np.zeros(domains.shape[0], dtype=_layout.FACTORED_CHOICE)
+    slots = np.flatnonzero(domains["kind"] == _SLOTS)
+    if slots.size:
+        ranks = np.cumsum(_pair_bits(domains[slots]), axis=1, dtype=np.int64)
+        pos = np.argmax(ranks > ks[slots, None], axis=1)
+        out["slot"][slots, 0] = pos // _OPTIONS
+        out["slot"][slots, 1] = pos % _OPTIONS
+    for row in np.flatnonzero(domains["kind"] == _TEAM):
+        d = domains[row]
+        picks = _unrank_team(int(d["member_count"]), int(d["pick_count"]), int(ks[row]))
+        out["picks"][row, :len(picks)] = picks
+    return out
+
+
+def joint_indices(domains, choices):
+    """The joint ranks of choices (N,) in domains (N,); ValueError for a
+    choice outside its domain."""
+    domains = _domains(domains)
+    choices = np.asarray(choices)
+    if choices.dtype != _layout.FACTORED_CHOICE:
+        raise TypeError(f"choices must be of FACTORED_CHOICE, not {choices.dtype}")
+    choices = choices.reshape(-1)
+    if choices.shape != domains.shape:
+        raise ValueError("one choice per domain")
+    out = np.zeros(domains.shape[0], dtype=np.int64)
+    slots = np.flatnonzero(domains["kind"] == _SLOTS)
+    if slots.size:
+        d = domains[slots]
+        i = choices["slot"][slots, 0].astype(np.int64)
+        j = choices["slot"][slots, 1].astype(np.int64)
+        if ((i >= d["slot_count"][:, 0]) | (j >= d["slot_count"][:, 1])).any():
+            raise ValueError("a slot index is past its list")
+        bits = _pair_bits(d)
+        at = i * _OPTIONS + j
+        rows = np.arange(slots.size)
+        if not bits[rows, at].all():
+            raise ValueError("a pair is not allowed")
+        out[slots] = np.cumsum(bits, axis=1, dtype=np.int64)[rows, at] - 1
+    for row in np.flatnonzero(domains["kind"] == _TEAM):
+        d, c = domains[row], choices[row]
+        n, m = int(d["member_count"]), int(d["pick_count"])
+        picks = [int(x) for x in c["picks"][:m]]
+        if len(set(picks)) != m or any(x >= n for x in picks) or c["picks"][m:].any():
+            raise ValueError("the team choice is not an ordered tuple of distinct roster indices")
+        unused = list(range(n))
+        rank = 0
+        for pos, pick in enumerate(picks):
+            rank += unused.index(pick) * _falling(n - 1 - pos, m - 1 - pos)
+            unused.remove(pick)
+        out[row] = rank
+    return out
+
+
+def factored_choice(domain, k):
+    """The factored choice of joint rank k in one domain."""
+    return factored_choices(np.asarray(domain).reshape(1), [k])[0]
+
+
+def joint_index(domain, choice):
+    """The joint rank of one factored choice in its domain."""
+    return int(joint_indices(np.asarray(domain).reshape(1), np.asarray(choice).reshape(1))[0])
