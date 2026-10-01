@@ -381,7 +381,7 @@ int main(void)
         DF_CHECK(&t, dfi_closure_setup_supported(&m, &teams));
         DF_CHECK(&t, !dfi_closure_setup_supported(&dfi_support, &teams)); /* abilities: not yet */
         /* The manifest of this build, pinned: the turn core, switching, the
-         * moves of steps 2 to 4 and 6 the entry abilities of step 5 and the reactive abilities of step 7. A step that
+         * moves of steps 2 to 4 and 6 the entry abilities of step 5, the reactive abilities of step 7 and the items of step 8. A step that
          * implements a mechanic changes this deliberately. */
         {
             static const uint32_t step2_moves[] = {
@@ -408,6 +408,13 @@ int main(void)
             };
             for (size_t i = 0; i < sizeof step7_abilities / sizeof step7_abilities[0]; ++i) {
                 want.abilities[step7_abilities[i]] = 1u;
+            }
+            static const uint32_t step8_items[] = {
+                DFI_ITEM_LEFTOVERS, DFI_ITEM_SITRUSBERRY, DFI_ITEM_GRASSYSEED,
+                DFI_ITEM_LIFEORB,   DFI_ITEM_MYSTICWATER, DFI_ITEM_LIGHTCLAY,
+            };
+            for (size_t i = 0; i < sizeof step8_items / sizeof step8_items[0]; ++i) {
+                want.items[step8_items[i]] = 1u;
             }
             DF_CHECK_BYTES(&t, (const uint8_t *)&dfi_support, (const uint8_t *)&want, sizeof want, "manifest");
         }

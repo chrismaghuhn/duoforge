@@ -109,8 +109,12 @@ def drop_reason(d):
     if site == 'TEAM_ORDER':
         return 'team-preview order'
     if site == 'SPEED_TIE' and ctx.startswith('each:'):
-        if all(g.startswith('P:') and g.endswith(':0') for g in group):
-            return 'each-event tie without handlers'
+        # P:<slot>:<handlers>:<effect ids>. Sitrus Berry (Update) and Grassy
+        # Seed (TerrainChange) act only on their holder, so the order of the
+        # Pokemon changes nothing.
+        ids = [x for g in group for x in g.split(':', 3)[3].split('+') if x]
+        if all(x in ('sitrusberry', 'grassyseed') for x in ids):
+            return 'each-event tie without order-dependent handlers'
         raise SystemExit('trace_to_c: %s tie between Pokemon with handlers: %s' % (ctx, group))
     if site == 'SPEED_TIE' and ctx == 'switch-order':
         # P:<slot>:<SwitchIn handlers>:<S entering | - not>; the order decides

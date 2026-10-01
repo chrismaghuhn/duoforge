@@ -49,7 +49,7 @@
 5. **Entry abilities, weather, terrain, residual phase** (done, decision `0006` section 4.4; Drought is written and becomes reachable with Mega Evolution in step 11)**:** Drizzle, Drought, Grassy Surge, Intimidate; ordered residuals.
 6. **Side and field conditions** (done, decision `0006` section 4.5)**:** Tailwind, Reflect, Light Screen, Trick Room.
 7. **Reactive abilities** (done for the base formes, decision `0006` section 4.6; Contrary, No Guard and Tough Claws move to step 11 because only Mega formes have them)**:** Stamina, Competitive, Contrary, Flash Fire, Lightning Rod, Good as Gold, Armor Tail, Prankster, Blaze, No Guard, Tough Claws.
-8. **Items:** Leftovers, Sitrus Berry, Grassy Seed, Life Orb, Miracle Seed, Mystic Water, Light Clay.
+8. **Items** (done, decision `0006` section 4.7; Miracle Seed comes with the first Grass move in step 9)**:** Leftovers, Sitrus Berry, Grassy Seed, Life Orb, Miracle Seed, Mystic Water, Light Clay.
 9. **Recoil, drain, self-drops:** Wood Hammer, Brave Bird, Bitter Blade, Leech Life, Close Combat, Make It Rain.
 10. **Special moves:** Weather Ball, Hurricane, Grass Knot, Grassy Glide, Fake Out (with its disable rule), Electro Shot (charge, rain skip, locked move).
 11. **Mega Evolution:** the four formes, timing, the side-wide limit, persistence after fainting.

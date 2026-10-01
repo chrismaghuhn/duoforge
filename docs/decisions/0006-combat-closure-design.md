@@ -1,6 +1,6 @@
 # 0006 — Combat closure: data, state v3, execution, RNG draw sites, events, reference fixtures
 
-Status: **proposed**; being implemented step by step (`tasks/M3_M4_COMBAT_CLOSURE.md`). **Implemented so far:** step 1a, the generated closure tables and the Champions stat and PP formulas (section 2, data only); step 1b-1, the state v3 layout with its invariants, codec and oracle (section 3.1, synthetic data only); step 1b-2, the CLOSURE contexts, real setup validation and the support gate (section 2.1); step 2a, the damage and stat arithmetic (`src/core/modifier.c`, checked against values the pinned reference computes) and the draw sites with the test-only tape (`src/rng/draw.c`, section 5); step 2b, the reference harness and the first recorded battles (section 5.1); step 2c, the turn core (section 4.1); step 3, switching, fainting, replacement and the win rule (section 4.2); step 4, statuses, flinch and confusion (section 4.3); step 5, entry abilities, rain, Grassy Terrain and the ordered residual phase (section 4.4); step 6, Tailwind, Reflect, Light Screen and Trick Room (section 4.5); step 7, the reactive abilities of the base formes (section 4.6). Twenty-seven recorded battles replay draw for draw. The two real teams are still rejected with `E_UNSUPPORTED`, because their abilities and items are not implemented.
+Status: **proposed**; being implemented step by step (`tasks/M3_M4_COMBAT_CLOSURE.md`). **Implemented so far:** step 1a, the generated closure tables and the Champions stat and PP formulas (section 2, data only); step 1b-1, the state v3 layout with its invariants, codec and oracle (section 3.1, synthetic data only); step 1b-2, the CLOSURE contexts, real setup validation and the support gate (section 2.1); step 2a, the damage and stat arithmetic (`src/core/modifier.c`, checked against values the pinned reference computes) and the draw sites with the test-only tape (`src/rng/draw.c`, section 5); step 2b, the reference harness and the first recorded battles (section 5.1); step 2c, the turn core (section 4.1); step 3, switching, fainting, replacement and the win rule (section 4.2); step 4, statuses, flinch and confusion (section 4.3); step 5, entry abilities, rain, Grassy Terrain and the ordered residual phase (section 4.4); step 6, Tailwind, Reflect, Light Screen and Trick Room (section 4.5); step 7, the reactive abilities of the base formes (section 4.6); step 8, the items (section 4.7). Thirty-two recorded battles replay draw for draw. The two real teams are still rejected with `E_UNSUPPORTED`, because their abilities and items are not implemented.
 
 Showdown citations are `path:line` at the pin `b2cb775b0616115b775534eaeff50300e1fc81fc`.
 
@@ -132,7 +132,7 @@ The harness names the condition draws by the effect and event the reference is r
 - **Rain** multiplies Water damage by 1.5 and Fire damage by 0.5 right after the spread modifier (`WeatherModifyDamage`); Hurricane never misses.
 - **Residual.** The list now holds the weather (order 1, its duration counts down and ends it), Grassy Terrain's heal per active Pokémon (order 5, sub-order 2: max(1, floor(maxHP / 16)) for a grounded Pokémon that is not at full HP), burn (order 10), and the duration handlers: Grassy Terrain's own (order 27) and the volatiles. Ties among callbacks draw, ties among duration handlers do not.
 - **Not yet observable.** Grassy Terrain's boost for Grass moves arrives with the first Grass move (step 9). The order between entry abilities of different speed changes nothing with the three abilities of this step (control U8 stays green); Drought against Drizzle in step 11 makes it observable.
-- **Limitation.** A fainted Pokémon that stays on the field into a later step keeps its last speed in the reference; the engine keeps last speeds only within a step and uses 0 for it. This changes a draw only if that stale speed ties with two entering Pokémon with entry abilities.
+- **Fainted Pokémon.** `clearVolatile` ends with `setSpecies`, which sets `pokemon.speed` to the raw Speed stat (`sim/pokemon.ts:1418`), and a fainted Pokémon is not updated again. The engine uses that raw Speed for a fainted Pokémon from its faint on and at the start of every later step (found in step 8, control X14).
 
 ### 4.5 Side and field conditions as built (step 6)
 
@@ -150,6 +150,16 @@ The harness names the condition draws by the effect and event the reference is r
 - **Prankster** gives status moves +1 priority in every sort and for Armor Tail. Its failure against Dark targets concerns only Parting Shot (step 12).
 - **Blaze** multiplies the attacking stat of Fire moves by 1.5 at a third of the HP or less (`ModifySpA`).
 - **Taken to step 11:** Contrary, No Guard and Tough Claws belong to Mega formes, so Mega Evolution makes them reachable and testable.
+
+### 4.7 Items as built (step 8)
+
+- **Update.** `eachEvent('Update')` runs after the hit loop of a move that hit something, after Struggle's recoil, after every action (not when an instaswitch follows), in the residual phase after the weather's upkeep, and before a voluntary switch-out. There **Sitrus Berry** eats at half HP or less and heals a quarter; each holder acts on itself, so the reference's speed sort of the Pokémon (and its tie draws) changes nothing and the converter drops it after checking the handler names.
+- **Leftovers** heals 1/16 in the residual phase (order 5, sub-order 4, so after Grassy Terrain's heal of an equally fast Pokémon); ties between holders draw.
+- **Life Orb** chains 5324/4096 with a screen into one `ModifyDamage` modifier (two modifiers chained from 4096 commute) and costs a tenth of the HP after a damaging move that hit something (`AfterMoveSecondarySelf`, after Struggle's recoil).
+- **Mystic Water** multiplies the base power of Water moves by 4915/4096 (`BasePower`, after the critical-hit roll). **Light Clay** makes the holder's screens last 8 turns.
+- **Grassy Seed** raises Defense by 1 and is used up when Grassy Terrain starts (`eachEvent('TerrainChange')`, every holder on the field) or when its holder enters while the terrain is up (`onSwitchInPriority: -1`, after the entry abilities). A used item is gone and the opponent's knowledge records it.
+- **Not observable yet** (controls stay green): the hit loop's own Update (X3) and the Update before a switch-out (X15) show only once drain or recoil moves change HP between the hit and the end of the action (step 9); Leftovers against Grassy Terrain of the same speed (X6) changes nothing because two heals commute.
+- **Miracle Seed** comes with the first Grass move (step 9).
 
 ## 5. RNG draw sites
 
@@ -237,5 +247,4 @@ Every step of the task file delivers: unit tests with reference-derived expectat
 3. The test-only tape (section 5) as the way to align with the reference.
 4. Events as step output with the `E_CAPACITY` convention (section 6).
 5. Observation v2 (section 6) is described but not scheduled: stages, statuses and conditions are reachable since steps 2 to 4, and the observation still shows none of them. Proposal: a step of its own before step 13.
-6. The stale speed of a fainted Pokémon across steps (section 4.4, limitation).
-7. Faint timing (section 4.2): faints are processed at the end of the action, the reference processes them already after the hit loop. Equivalent for the moves so far; to revisit with drain, recoil moves and items.
+6. Faint timing (section 4.2): faints are processed at the end of the action, the reference processes them already after the hit loop. Equivalent for the moves so far; to revisit with drain, recoil moves and items.
