@@ -1,0 +1,22 @@
+{
+  "name": "s15_four_x",
+  "purpose": "Mega Golisopod is Bug/Steel: Fire is 4x against it, so Bitter Blade and the spread Heat Wave print -supereffective with the multiplier 2 (Mega Evolution happens before the moves, so the hit meets the new typing); in the spread hit Milotic resists, both effectiveness lines come before the two damage lines, and the earlier Heat Wave missed Golisopod alone.",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000e104",
+  "teams": [
+    "Ceruledge (F) @ Mystic Water\nAbility: Flash Fire\nLevel: 50\nEVs: 32 HP\nCalm Nature\n- Bitter Blade\n- Protect\n\nCharizard (F) @ Sitrus Berry\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Heat Wave\n- Protect\n\nRillaboom (F) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Grassy Glide\n- High Horsepower\n\nStaraptor (M) @ Leftovers\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Brave Bird\n- Protect",
+    "Golisopod (M) @ Golisopite\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Leech Life\n- Protect\n\nMilotic (F) @ Light Clay\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 32 SpD / 2 Spe\nCalm Nature\n- Coil\n- Muddy Water\n\nPolitoed (F) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Weather Ball\n- Protect\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 2",
+      "move 2, move 1",
+      "move 1 1, move 1"
+    ],
+    "p2": [
+      "move 1 2 mega, move 1",
+      "move 1 2, move 1"
+    ],
+    "max_steps": 14
+  }
+}
