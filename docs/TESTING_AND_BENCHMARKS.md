@@ -111,5 +111,6 @@ Remote CI is PASS only after observing an actual run on the relevant revision. C
 - Windows: GCC Debug (with the Showdown reference traces when the pinned checkout exists), GCC Release with LTO, Clang Release, MSVC x64 Debug, MSVC x64 Release with LTO, MSVC Win32 Release.
 - Linux in WSL (`tools/ci/linux_ci.sh`, builds under `~/df-build/ci`): GCC Debug with ASan and UBSan, Clang Debug, GCC and Clang Release with LTO, Clang with ThreadSanitizer for the batch tests.
 - `--quick` runs Windows GCC Debug, MSVC Release and Linux GCC ASan+UBSan; `--no-linux` skips WSL.
+- The Python package tests (label `python`, M7) run in Windows GCC Debug when the project venv `.venv` exists, and in Linux GCC Release with LTO when `~/df-venv` exists (`tools/ci/linux_ci.sh --setup-python` creates it after `sudo apt install python3.12-venv`). Without an interpreter (`DUOFORGE_PYTHON` empty) they report skipped.
 
 The pull request states the result. The hosted CI runs nightly on main (Clang Release, GCC ASan+UBSan, Clang TSan, MSVC x64 Release) and on demand; the RNG reference weekly and when its files change on main.

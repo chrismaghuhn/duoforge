@@ -80,8 +80,13 @@ if [ "$REFERENCE" = 1 ] && [ -d "$PS/dist" ]; then
     ref=(-DDUOFORGE_PS_REFERENCE_DIR="$PS")
 fi
 clang=(-DCMAKE_C_COMPILER="$CLANG/clang.exe" -DCMAKE_CXX_COMPILER="$CLANG/clang++.exe" -DCMAKE_RC_COMPILER="$CLANG/llvm-rc.exe")
+# The Python package tests (M7) run in win-gcc-debug when the project venv exists.
+py=()
+if [ -x "$ROOT/.venv/Scripts/python.exe" ]; then
+    py=(-DDUOFORGE_PYTHON="$(cygpath -m "$ROOT/.venv/Scripts/python.exe")")
+fi
 
-win_job win-gcc-debug "" -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=gcc "${ref[@]}"
+win_job win-gcc-debug "" -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=gcc "${ref[@]}" "${py[@]}"
 win_job win-msvc-release-ipo Release -G "Visual Studio 17 2022" -A x64 -DDUOFORGE_ENABLE_IPO=ON
 if [ "$QUICK" = 0 ]; then
     win_job win-gcc-release-ipo "" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DDUOFORGE_ENABLE_IPO=ON

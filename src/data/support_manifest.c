@@ -35,7 +35,11 @@
  * (data only), Defiant and Adaptability.
  * Step 2: Flare Blitz (defrost) and Darkest Lariat (ignoreDefensive,
  * ignoreEvasion).
- * Step 3: Salamencite (Salamence-Mega) and Aerilate. */
+ * Step 3: Salamencite (Salamence-Mega) and Aerilate.
+ * Step 4: Last Respects (fainted members of the side) and Flip Turn (a
+ * damaging pivot on the PIVOT boundary).
+ * Step 5: Chople Berry (eaten inside ModifyDamage) and Rocky Helmet
+ * (DamagingHit with contact). */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -85,6 +89,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_AQUAJET] = 1u,
             [DFI_MOVE_FLAREBLITZ] = 1u,
             [DFI_MOVE_DARKESTLARIAT] = 1u,
+            [DFI_MOVE_LASTRESPECTS] = 1u,
+            [DFI_MOVE_FLIPTURN] = 1u,
         },
     .abilities =
         {
@@ -122,5 +128,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_GOLISOPITE] = 1u,
             [DFI_ITEM_CHARIZARDITEY] = 1u,
             [DFI_ITEM_SALAMENCITE] = 1u,
+            [DFI_ITEM_ROCKYHELMET] = 1u,
+            [DFI_ITEM_CHOPLEBERRY] = 1u,
         },
 };

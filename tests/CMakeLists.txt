@@ -236,6 +236,23 @@ if(CMAKE_CXX_COMPILER AND NOT DUOFORGE_ENABLE_SANITIZERS AND NOT DUOFORGE_ENABLE
     set_tests_properties(duoforge.api.cxx_link PROPERTIES TIMEOUT 30)
 endif()
 
+# The Python package (M7, decision 0013), run with DUOFORGE_PYTHON; without
+# an interpreter each test reports skipped instead of passing silently.
+foreach(_py layout lib)
+    if(DUOFORGE_PYTHON)
+        add_test(NAME duoforge.python.${_py}
+            COMMAND "${DUOFORGE_PYTHON}" -m unittest -v python.tests.test_${_py}
+            WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
+        set_tests_properties(duoforge.python.${_py} PROPERTIES LABELS python TIMEOUT 600 ENVIRONMENT
+            "DUOFORGE_LIBRARY=$<TARGET_FILE:duoforge_shared>;DUOFORGE_LAYOUT_DUMP=$<TARGET_FILE:duoforge_layout_dump>;PYTHONPATH=${PROJECT_SOURCE_DIR}/python;PYTHONDONTWRITEBYTECODE=1")
+    else()
+        add_test(NAME duoforge.python.${_py}
+            COMMAND "${CMAKE_COMMAND}" -E echo "DUOFORGE_SKIP: DUOFORGE_PYTHON is empty")
+        set_tests_properties(duoforge.python.${_py} PROPERTIES LABELS python
+            SKIP_REGULAR_EXPRESSION "DUOFORGE_SKIP:")
+    endif()
+endforeach()
+
 # Source lint and its self-test.
 add_test(NAME duoforge.lint.sources
     COMMAND "${CMAKE_COMMAND}" "-DROOT=${PROJECT_SOURCE_DIR}"

@@ -35,6 +35,9 @@ typedef struct dfi_run {
     uint32_t faint_announced; /* how many of them a faintMessages already showed */
     uint32_t last_fainted; /* flat position of the last processed faint */
     bool ended;
+    /* The result a hit loop's faintMessages already showed (DFI_RESULT_*),
+     * DFI_RESULT_NONE when the end of the action shows it. */
+    uint32_t early_result;
     /* pokemon.speed: the speed key of each position at the reference's last
      * updateSpeed while its Pokemon stood (a fainted Pokemon keeps it). */
     uint32_t speed_seen[DFI_POSITIONS];
@@ -68,6 +71,20 @@ static dfi_member *dfi_at(struct duoforge_battle *b, uint32_t flat)
         return NULL;
     }
     return &b->sides[flat / 2u].members[occupant];
+}
+
+/* The brought members of a side at 0 HP: side.totalFainted, since the
+ * data has no revival and faints are processed before the next action
+ * (decision 0009 section 4.1; Last Respects). */
+static uint32_t dfi_fainted_members(const struct duoforge_battle *b, uint32_t side)
+{
+    const dfi_side *sd = &b->sides[side];
+    uint32_t n = 0u;
+    for (uint32_t m = 0u; m < sd->member_count && m < DUOFORGE_MAX_ROSTER; ++m) {
+        const bool brought = (((uint32_t)sd->brought_mask >> m) & 1u) != 0u;
+        n += brought && sd->members[m].hp == 0u ? 1u : 0u;
+    }
+    return n;
 }
 
 static const dfi_forme_data *dfi_forme_of(const dfi_member *m)
@@ -698,6 +715,18 @@ static uint32_t dfi_type_mod(const dfi_member *target, uint32_t move_type)
     return mod;
 }
 
+static void dfi_use_item(dfi_run *r, uint32_t flat);
+
+/* chainModify (sim/battle.ts:2311-2322), as dfi_chain_modify. Two modifiers
+ * from 4096 commute; for the three ModifyDamage modifiers (Life Orb 5324,
+ * Chople Berry 2048, a screen 2732) every order gives the same value. A new
+ * ModifyDamage modifier needs this check extended, or its handler order. */
+#define DFI_CHAIN(a, b) ((((a) * (b)) + 2048u) >> 12)
+_Static_assert(DFI_CHAIN(DFI_CHAIN(5324u, 2048u), 2732u) == DFI_CHAIN(DFI_CHAIN(5324u, 2732u), 2048u),
+               "ModifyDamage modifiers must chain in any order");
+_Static_assert(DFI_CHAIN(DFI_CHAIN(5324u, 2048u), 2732u) == DFI_CHAIN(DFI_CHAIN(2048u, 2732u), 5324u),
+               "ModifyDamage modifiers must chain in any order");
+
 /* getDamage and the Champions modifyDamage (sim/battle-actions.ts:1585-1720,
  * data/mods/champions/scripts.ts:196-312) for a turn-core move: CRIT and
  * DAMAGE_ROLL draws in that order. */
@@ -757,6 +786,12 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     } else if (md->special == DFI_SPECIAL_GRASS_KNOT) {
         const uint32_t w = dfi_forme_of(d)->weight_hg;
         power = w >= 2000u ? 120u : w >= 1000u ? 100u : w >= 500u ? 80u : w >= 250u ? 60u : w >= 100u ? 40u : 20u;
+    } else if (md->special == DFI_SPECIAL_LAST_RESPECTS) {
+        /* Last Respects (Team C): 50 + 50 per fainted member of the user's
+         * side (basePowerCallback, data/moves.ts:10091-10105). side.totalFainted
+         * is derived: no revival in the data, and every faint is processed
+         * before the next action starts (decision 0009 section 4.1). */
+        power = 50u + 50u * dfi_fainted_members(r->b, user / 2u);
     }
     uint32_t bp_chain = 4096u;
     bool ok = true;
@@ -821,13 +856,14 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     if (!dfi_randomize(damage, roll, &damage)) {
         return DUOFORGE_E_INVARIANT;
     }
+    uint32_t mod = DFI_BIAS6; /* neutral for Struggle's typeless hit */
     if (move_type < DFI_TYPE_COUNT) {
         /* STAB 1.5; Adaptability 2 (Team C, data/abilities.ts:43-56; no Tera) */
         const uint32_t stab = !dfi_has_type(a, move_type) ? 4096u
                               : dfi_ability(a, DFI_ABILITY_ADAPTABILITY) ? 8192u
                                                                          : 6144u;
         damage = dfi_modify(damage, stab);
-        const uint32_t mod = dfi_type_mod(d, move_type);
+        mod = dfi_type_mod(d, move_type);
         if (!dfi_type_damage(damage, mod, &damage)) {
             return DUOFORGE_E_INVARIANT;
         }
@@ -849,21 +885,39 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     if (physical && a->status == DFI_STATUS_BRN) {
         damage = dfi_modify(damage, 2048u);
     }
-    /* ModifyDamage: Reflect (physical) and Light Screen (special) on the
-     * target's side, not against a critical hit and not on the user itself,
-     * 2732/4096 in doubles. */
+    /* ModifyDamage, one chained modifier: the attacker's Life Orb 5324/4096;
+     * the target's Chople Berry (Team C, data/items.ts:1030-1053), which it
+     * eats inside the calculation of a super-effective Fighting hit
+     * ([-enditem] [eat], then [weaken]) for 2048/4096; then Reflect
+     * (physical) or Light Screen (special) on the target's side, not against
+     * a critical hit and not on the user itself, 2732/4096 in doubles.
+     * The reference orders the handlers by speed: the held items by their
+     * holders' speed, a screen as a side condition at 0 (comparePriority), so
+     * last, or first under Trick Room, where speeds are negative. Every order
+     * of these modifiers chains to the same value (checked below), so the
+     * order and a speed tie between the holders decide nothing (its shuffle
+     * draw is dropped, decision 0009 section 10.5). */
     const dfi_side *ds = &r->b->sides[target / 2u];
     uint32_t chain = 4096u;
-    if (dfi_holds(a, DFI_ITEM_LIFEORB) && !dfi_chain_modify(chain, 5324u, &chain)) {
+    if (dfi_holds(a, DFI_ITEM_LIFEORB)) {
+        ok = dfi_chain_modify(chain, 5324u, &chain);
+    }
+    if (move_type == DFI_TYPE_FIGHTING && mod > DFI_BIAS6 && dfi_holds(d, DFI_ITEM_CHOPLEBERRY)) {
+        dfi_use_item(r, target); /* [-enditem] [eat] */
+        duoforge_event weaken =
+            dfi_ev(DUOFORGE_EVENT_ITEM_END, target, DUOFORGE_CAUSE_NONE, 1u + DFI_ITEM_CHOPLEBERRY, DUOFORGE_NO_POSITION);
+        weaken.detail = 1u;
+        dfi_emit(r, &weaken); /* [-enditem] [weaken] */
+        ok = ok && dfi_chain_modify(chain, 2048u, &chain);
+    }
+    if (!crit && target != user &&
+        ((physical && ds->reflect_turns != 0u) ||
+         (md->category == DFI_CATEGORY_SPECIAL && ds->light_screen_turns != 0u))) {
+        ok = ok && dfi_chain_modify(chain, 2732u, &chain);
+    }
+    if (!ok) {
         return DUOFORGE_E_INVARIANT;
     }
-    if (!crit && target != user && ((physical && ds->reflect_turns != 0u) ||
-                                    (md->category == DFI_CATEGORY_SPECIAL && ds->light_screen_turns != 0u)) &&
-        !dfi_chain_modify(chain, 2732u, &chain)) {
-        return DUOFORGE_E_INVARIANT;
-    }
-    /* Life Orb (5324/4096) and a screen chain into one modifier; two
-     * modifiers chained from 4096 give the same result in either order. */
     if (chain != 4096u) {
         damage = dfi_modify(damage, chain);
     }
@@ -1056,7 +1110,8 @@ static void dfi_use_item(dfi_run *r, uint32_t flat)
     b->sides[side].members[occupant].item_consumed = 1u;
     const uint32_t item = b->sides[side].members[occupant].item;
     duoforge_event e = dfi_ev(DUOFORGE_EVENT_ITEM_END, flat, DUOFORGE_CAUSE_NONE, item, DUOFORGE_NO_POSITION);
-    e.flags = item == 1u + DFI_ITEM_SITRUSBERRY ? (uint8_t)DUOFORGE_EVENT_FLAG_EATEN : 0u;
+    const bool berry = item == 1u + DFI_ITEM_SITRUSBERRY || item == 1u + DFI_ITEM_CHOPLEBERRY;
+    e.flags = berry ? (uint8_t)DUOFORGE_EVENT_FLAG_EATEN : 0u;
     dfi_emit(r, &e);
 }
 
@@ -1195,9 +1250,24 @@ static uint32_t dfi_left(const struct duoforge_battle *b, uint32_t side)
     return n;
 }
 
+/* checkWin (sim/battle.ts:404-415): a side with no Pokemon left loses; when
+ * every side is out, the side whose Pokemon fainted last wins (generation 5
+ * and later). */
+static uint32_t dfi_win_result(const struct duoforge_battle *b, uint32_t last_fainted)
+{
+    const uint32_t left0 = dfi_left(b, 0u);
+    const uint32_t left1 = dfi_left(b, 1u);
+    if (left0 == 0u && left1 == 0u) {
+        return last_fainted / 2u == 0u ? DFI_RESULT_SIDE0 : DFI_RESULT_SIDE1;
+    }
+    if (left1 == 0u) {
+        return DFI_RESULT_SIDE0;
+    }
+    return left0 == 0u ? DFI_RESULT_SIDE1 : DFI_RESULT_NONE;
+}
+
 /* faintMessages and checkWin (sim/battle.ts:2535-2590, 404-415): the faints
- * of the action in order, then the win rule. When every side is out, the
- * side whose Pokemon fainted last wins (generation 5 and later). */
+ * of the action in order, then the win rule. */
 static void dfi_process_faints(dfi_run *r)
 {
     struct duoforge_battle *b = r->b;
@@ -1219,31 +1289,35 @@ static void dfi_process_faints(dfi_run *r)
     if (!any) {
         return;
     }
-    const uint32_t left0 = dfi_left(b, 0u);
-    const uint32_t left1 = dfi_left(b, 1u);
-    uint32_t result = DFI_RESULT_NONE;
-    if (left0 == 0u && left1 == 0u) {
-        result = r->last_fainted / 2u == 0u ? DFI_RESULT_SIDE0 : DFI_RESULT_SIDE1;
-    } else if (left1 == 0u) {
-        result = DFI_RESULT_SIDE0;
-    } else if (left0 == 0u) {
-        result = DFI_RESULT_SIDE1;
-    }
+    const uint32_t result = dfi_win_result(b, r->last_fainted);
     if (result != DFI_RESULT_NONE) {
         b->result = (uint8_t)result;
         r->ended = true;
     }
 }
 
-/* The faintMessages after the hit loop (sim/battle-actions.ts:976) shows
- * the faints so far; their processing stays at the end of the action
- * (dfi_process_faints), where the engine runs it for the whole action. */
-static void dfi_announce_faints(dfi_run *r)
+/* The faintMessages after the hit loop (data/mods/champions/scripts.ts:546)
+ * shows the faints so far; their processing stays at the end of the action
+ * (dfi_process_faints), where the engine runs it for the whole action. With
+ * the attacker at 0 HP (a Rocky Helmet) that faintMessages also checks the
+ * win (sim/battle.ts:2593-2598): the result is shown here, before the rest
+ * of the action, which the reference still runs and shows (a target's
+ * Emergency Exit, :578-590). */
+static void dfi_announce_faints(dfi_run *r, bool check_win)
 {
     for (uint32_t i = r->faint_announced; i < r->faint_count; ++i) {
         dfi_emit_plain(r, DUOFORGE_EVENT_FAINT, r->faint_queue[i]); /* [faint] */
     }
     r->faint_announced = r->faint_count;
+    if (check_win && r->faint_count != 0u) {
+        const uint32_t result = dfi_win_result(r->b, r->faint_queue[r->faint_count - 1u]);
+        if (result != DFI_RESULT_NONE) {
+            duoforge_event e = dfi_event_make(DUOFORGE_EVENT_RESULT, DUOFORGE_NO_POSITION);
+            e.detail = (uint8_t)result; /* wide-operands-reviewed: <= 3 */
+            dfi_emit(r, &e); /* [win] */
+            r->early_result = result;
+        }
+    }
 }
 
 /* ---------------------------------------------------------------- moves */
@@ -1336,7 +1410,7 @@ static duoforge_status dfi_status_hit_end(dfi_run *r)
     if (st != DUOFORGE_OK) {
         return st;
     }
-    dfi_announce_faints(r);
+    dfi_announce_faints(r, false); /* no status move in the data costs its user HP */
     return dfi_update(r);
 }
 
@@ -1640,7 +1714,8 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     }
     /* A handler this build does not have fails explicitly; the Team C
      * specials of later steps are also kept out by the support manifest. */
-    if (md->special > DFI_SPECIAL_STRUGGLE && md->special != DFI_SPECIAL_DARKEST_LARIAT) {
+    if (md->special > DFI_SPECIAL_STRUGGLE && md->special != DFI_SPECIAL_DARKEST_LARIAT &&
+        md->special != DFI_SPECIAL_LAST_RESPECTS) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Fake Out's onTry (in trySpreadMoveHit, after TryMove): only on the
@@ -1841,6 +1916,22 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             }
         }
     }
+    /* selfSwitch of a damaging move (Flip Turn, Team C, the only one in the
+     * data): runMoveEffects flags the user when the move hit a target and the
+     * user still stands; with no reserve the request would clear it again
+     * (sim/battle-actions.ts:1290-1312), so the engine sets it only when a
+     * reserve can come in, as for Parting Shot. A user that a Rocky Helmet
+     * then knocks out loses it again (faint(), sim/pokemon.ts:1585): here
+     * with the position's other state when the faint is processed. */
+    if ((md->flags & DFI_MOVE_FLAG_SELF_SWITCH) != 0u) {
+        bool hit_any = false;
+        for (uint32_t i = 0u; i < count; ++i) {
+            hit_any = hit_any || hit[i];
+        }
+        if (hit_any && m->hp != 0u && dfi_can_switch(b, side)) {
+            pos->switch_flag = (uint8_t)DFI_SWITCH_FLIP_TURN;
+        }
+    }
     /* selfDrops: once, after the first target that was hit, a roll of
      * random(100) that always passes (no chance), then the user's own stat
      * changes (Close Combat, Make It Rain). */
@@ -1890,7 +1981,24 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             return DUOFORGE_E_UNSUPPORTED; /* no closure move has both */
         }
     }
-    /* DamagingHit, per damaged target: a damaging Fire move thaws a frozen
+    /* DamagingHit, its handlers by order, then target (compareLeftToRightOrder,
+     * sim/battle.ts:421-426). Rocky Helmet (Team C, onDamagingHitOrder 2,
+     * data/items.ts:5295-5309) comes first, also when the hit knocked its
+     * holder out (the faint is not processed yet): a contact move costs the
+     * attacker floor(maxHP / 6), at least 1. */
+    const uint32_t user_before_hit = m->hp;
+    for (uint32_t i = 0u; i < count; ++i) {
+        if (hit[i] && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u &&
+            dfi_holds(dfi_at(b, targets[i]), DFI_ITEM_ROCKYHELMET)) {
+            const uint32_t helmet = (uint32_t)m->hp_max / 6u;
+            st = dfi_deal(r, user, helmet == 0u ? 1u : helmet, DUOFORGE_CAUSE_ITEM, 1u + DFI_ITEM_ROCKYHELMET,
+                          targets[i]);
+            if (st != DUOFORGE_OK) {
+                return st;
+            }
+        }
+    }
+    /* Then, per standing damaged target: a damaging Fire move thaws a frozen
      * target (frz, status first), Stamina raises Defense by 1. */
     for (uint32_t i = 0u; i < count; ++i) {
         dfi_member *tm = dfi_at(b, targets[i]);
@@ -1911,6 +2019,9 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                       dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_STAMINA, DFI_BOOST_PRIMARY));
         }
     }
+    /* The attacker's own Emergency Exit when DamagingHit (Rocky Helmet) took
+     * it to half (data/mods/champions/scripts.ts:406, 419-420). */
+    dfi_emergency_exit(r, user, user_before_hit);
     bool any = false;
     for (uint32_t i = 0u; i < count; ++i) {
         any = any || hit[i];
@@ -1922,7 +2033,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         if (st != DUOFORGE_OK) {
             return st;
         }
-        dfi_announce_faints(r);
+        dfi_announce_faints(r, m->hp == 0u);
     }
     /* applyRecoilDamage after the hit loop: Struggle round(maxHP / 4), a
      * recoil move round(total * a / b), at least 1; then Update again
@@ -2057,8 +2168,9 @@ static duoforge_status dfi_run_switch(dfi_run *r, const dfi_queue_record *q)
         return DUOFORGE_E_UNSUPPORTED; /* not marked in the support manifest */
     }
     const dfi_member *leaving = dfi_at(b, side * 2u + slot);
-    const bool parting_shot = leaving != NULL && leaving->hp != 0u &&
-                              sd->positions[slot].switch_flag == DFI_SWITCH_MOVE;
+    const uint32_t flag = sd->positions[slot].switch_flag;
+    const bool parting_shot = leaving != NULL && leaving->hp != 0u && flag == DFI_SWITCH_MOVE;
+    const bool flip_turn = leaving != NULL && leaving->hp != 0u && flag == DFI_SWITCH_FLIP_TURN;
     if (leaving != NULL && leaving->hp != 0u && sd->positions[slot].switch_flag == 0u) {
         const duoforge_status us = dfi_update(r); /* BeforeSwitchOut, then Update (sim/battle-actions.ts:80-84) */
         if (us != DUOFORGE_OK) {
@@ -2081,12 +2193,12 @@ static duoforge_status dfi_run_switch(dfi_run *r, const dfi_queue_record *q)
     if (ps != DUOFORGE_OK) {
         return ps;
     }
-    /* [switch], with [from] Parting Shot when the move made it */
+    /* [switch], with [from] Parting Shot or Flip Turn when the move made it */
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_SWITCH, side * 2u + slot);
     e.id = (uint16_t)reserve;
-    if (parting_shot) {
+    if (parting_shot || flip_turn) {
         e.cause = (uint8_t)DUOFORGE_CAUSE_MOVE;
-        e.id2 = (uint16_t)DFI_MOVE_PARTINGSHOT;
+        e.id2 = (uint16_t)(parting_shot ? DFI_MOVE_PARTINGSHOT : DFI_MOVE_FLIPTURN); /* wide-operands-reviewed: < 50 */
     }
     dfi_emit_hp(r, e);
     return dfi_insert_run_switch(r, side, slot, binding.activation_id);
@@ -2744,9 +2856,14 @@ static duoforge_status dfi_resume_pivot(dfi_run *r, const duoforge_side_choice r
                 fresh[k] = (dfi_queue_record){0u, (uint8_t)DFI_Q_SWITCH_IN, (uint8_t)s, (uint8_t)slot, 0u, 0u,
                                               sc->reserve};
                 k += 1u;
-            } else {
+            } else if (((uint32_t)b->sides[s].requested_slots >> slot & 1u) == 0u) {
                 b->sides[s].positions[slot].switch_flag = 0u;
             }
+            /* A requested slot that passes keeps its flag (choosePass,
+             * sim/side.ts:1330-1357): with two flagged slots and one reserve
+             * (Flip Turn and Emergency Exit on one side, Team C), the side is
+             * asked again after the switch, the Pokemon that left now being
+             * a reserve (dfi_pivot_pending). */
         }
     }
     if ((uint32_t)b->queue_len + k > DFI_QUEUE_CAPACITY) {
@@ -2768,9 +2885,13 @@ static duoforge_status dfi_resume_pivot(dfi_run *r, const duoforge_side_choice r
 static duoforge_status dfi_terminal(dfi_run *r)
 {
     struct duoforge_battle *b = r->b;
-    duoforge_event e = dfi_event_make(DUOFORGE_EVENT_RESULT, DUOFORGE_NO_POSITION);
-    e.detail = b->result; /* [win] or [tie]: DFI_RESULT_* are the public values */
-    dfi_emit(r, &e);
+    if (r->early_result == DFI_RESULT_NONE) {
+        duoforge_event e = dfi_event_make(DUOFORGE_EVENT_RESULT, DUOFORGE_NO_POSITION);
+        e.detail = b->result; /* [win] or [tie]: DFI_RESULT_* are the public values */
+        dfi_emit(r, &e);
+    } else if (r->early_result != b->result) {
+        return DUOFORGE_E_INVARIANT; /* nothing revives, so the hit loop's result stands */
+    }
     for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
         dfi_pos(b, flat)->switch_flag = 0u; /* no pivot after the end */
     }
@@ -2886,7 +3007,7 @@ duoforge_status dfi_turn_start(const duoforge_context *ctx, struct duoforge_batt
     if (!dfi_closure_battle_supported(&dfi_support, b)) {
         return DUOFORGE_E_UNSUPPORTED;
     }
-    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX};
+    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX};
     dfi_init_speeds(&r);
     /* The leads entered one by one (insertChoice updated each speed); their
      * entries run together. */
@@ -3001,7 +3122,7 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
     if (!dfi_closure_battle_supported(&dfi_support, b) || ((replacement || pivot) && dfi_support.switching == 0u)) {
         return DUOFORGE_E_UNSUPPORTED;
     }
-    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX};
+    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX};
     dfi_init_speeds(&r);
     duoforge_status st = DUOFORGE_OK;
     uint32_t exits = 0u; /* Emergency Exit after the residual action */

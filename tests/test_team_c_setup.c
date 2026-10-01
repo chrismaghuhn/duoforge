@@ -317,11 +317,46 @@ int main(void)
         duoforge_battle_destroy(w);
     }
 
+    /* White-box: Flip Turn's switch flag (4) is in range only under the
+     * TEAM_C kinds. At a TURN boundary any flag breaks SWITCH_FLAG; under
+     * CLOSURE the value itself is already out of range (VOLATILE). */
+    for (uint32_t team_c = 0u; team_c < 2u; ++team_c) {
+        const duoforge_context *ctx = team_c != 0u ? kc : k1;
+        duoforge_battle *w = df_make_battle(ctx, &teams);
+        duoforge_decision_bundle bd;
+        memset(&bd, 0, sizeof bd);
+        bd.epoch = w->request_epoch;
+        bd.response_mask = 3u;
+        for (uint32_t side = 0u; side < 2u; ++side) {
+            duoforge_side_choice *c = &bd.responses[side];
+            c->epoch = w->request_epoch;
+            c->side = (uint8_t)side;
+            c->kind = (uint8_t)DUOFORGE_CHOICE_TEAM_SELECTION;
+            c->pick_count = 4u;
+            for (uint32_t i = 0u; i < 4u; ++i) {
+                c->picks[i] = (uint8_t)i;
+            }
+        }
+        duoforge_step_result res;
+        DF_CHECK(&t, duoforge_battle_step(ctx, w, &bd, &res) == DUOFORGE_OK &&
+                         w->boundary_kind == DUOFORGE_BOUNDARY_TURN);
+        dfi_invariant inv = DFI_INV_NONE;
+        DF_CHECK(&t, dfi_state_check(ctx, w, &inv) == DUOFORGE_OK);
+        w->sides[0].positions[0].switch_flag = (uint8_t)DFI_SWITCH_FLIP_TURN;
+        const duoforge_status st = dfi_state_check(ctx, w, &inv);
+        DF_CHECK(&t, st == DUOFORGE_E_INVARIANT && inv == (team_c != 0u ? DFI_INV_SWITCH_FLAG : DFI_INV_VOLATILE));
+        /* One past Flip Turn is out of range under every kind. */
+        w->sides[0].positions[0].switch_flag = (uint8_t)(DFI_SWITCH_FLIP_TURN + 1u);
+        DF_CHECK(&t, dfi_state_check(ctx, w, &inv) == DUOFORGE_E_INVARIANT && inv == DFI_INV_VOLATILE);
+        duoforge_battle_destroy(w);
+    }
+
     /* The gate per Team C mechanic: the dev side plus exactly one of them.
      * Steps (decision 0009 section 5) mark them one by one; step 1: Kowtow
      * Cleave, Hyper Voice, Draco Meteor, Wave Crash, Aqua Jet, Defiant and
      * Adaptability; step 2: Flare Blitz and Darkest Lariat; step 3: Salamencite
-     * with Aerilate. */
+     * with Aerilate; step 4: Last Respects and Flip Turn; step 5: Chople Berry
+     * and Rocky Helmet. */
     {
         typedef struct gate_case {
             uint32_t member, ability_plus1, item_plus1, move;
@@ -340,16 +375,16 @@ int main(void)
             {4u, 0u, 0u, DFI_MOVE_KOWTOWCLEAVE, true, "Kowtow Cleave"},
             {4u, 0u, 0u, DFI_MOVE_SUCKERPUNCH, false, "Sucker Punch"},
             {5u, 0u, 0u, DFI_MOVE_WAVECRASH, true, "Wave Crash"},
-            {5u, 0u, 0u, DFI_MOVE_LASTRESPECTS, false, "Last Respects"},
-            {5u, 0u, 0u, DFI_MOVE_FLIPTURN, false, "Flip Turn"},
+            {5u, 0u, 0u, DFI_MOVE_LASTRESPECTS, true, "Last Respects"},
+            {5u, 0u, 0u, DFI_MOVE_FLIPTURN, true, "Flip Turn"},
             {5u, 0u, 0u, DFI_MOVE_AQUAJET, true, "Aqua Jet"},
             {0u, DFI_ABILITY_UNBURDEN + 1u, 0u, keep, false, "Unburden"},
             {3u, DFI_ABILITY_PSYCHICSURGE + 1u, 0u, keep, false, "Psychic Surge"},
             {4u, DFI_ABILITY_DEFIANT + 1u, 0u, keep, true, "Defiant"},
             {0u, 0u, DFI_ITEM_WHITEHERB + 1u, keep, false, "White Herb"},
             {2u, 0u, DFI_ITEM_SALAMENCITE + 1u, keep, true, "Salamencite (Mega, Aerilate)"},
-            {3u, 0u, DFI_ITEM_ROCKYHELMET + 1u, keep, false, "Rocky Helmet"},
-            {4u, 0u, DFI_ITEM_CHOPLEBERRY + 1u, keep, false, "Chople Berry"},
+            {3u, 0u, DFI_ITEM_ROCKYHELMET + 1u, keep, true, "Rocky Helmet"},
+            {4u, 0u, DFI_ITEM_CHOPLEBERRY + 1u, keep, true, "Chople Berry"},
             {4u, 0u, DFI_ITEM_CHOICESCARF + 1u, keep, false, "Choice Scarf"},
             {5u, DFI_ABILITY_ADAPTABILITY + 1u, 0u, DFI_MOVE_WAVECRASH, true, "Adaptability"},
         };
@@ -368,7 +403,7 @@ int main(void)
         uint8_t items[DFI_EXT_ITEM_COUNT - DFI_ITEM_COUNT] = {0};
         static const uint32_t step1_moves[] = {DFI_MOVE_KOWTOWCLEAVE, DFI_MOVE_HYPERVOICE, DFI_MOVE_DRACOMETEOR,
                                                DFI_MOVE_WAVECRASH,    DFI_MOVE_AQUAJET,   DFI_MOVE_FLAREBLITZ,
-                                               DFI_MOVE_DARKESTLARIAT};
+                                               DFI_MOVE_DARKESTLARIAT, DFI_MOVE_LASTRESPECTS, DFI_MOVE_FLIPTURN};
         for (size_t i = 0u; i < sizeof step1_moves / sizeof step1_moves[0]; ++i) {
             moves[step1_moves[i] - DFI_MOVE_COUNT] = 1u;
         }
@@ -376,6 +411,8 @@ int main(void)
         abilities[DFI_ABILITY_ADAPTABILITY - DFI_ABILITY_COUNT] = 1u;
         abilities[DFI_ABILITY_AERILATE - DFI_ABILITY_COUNT] = 1u;
         items[DFI_ITEM_SALAMENCITE - DFI_ITEM_COUNT] = 1u;
+        items[DFI_ITEM_CHOPLEBERRY - DFI_ITEM_COUNT] = 1u;
+        items[DFI_ITEM_ROCKYHELMET - DFI_ITEM_COUNT] = 1u;
         DF_CHECK_BYTES(&t, dfi_support.moves + DFI_MOVE_COUNT, moves, sizeof moves, "Team C moves in the manifest");
         DF_CHECK_BYTES(&t, dfi_support.abilities + DFI_ABILITY_COUNT, abilities, sizeof abilities,
                        "Team C abilities in the manifest");

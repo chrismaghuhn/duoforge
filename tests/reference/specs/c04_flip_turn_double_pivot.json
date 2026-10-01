@@ -1,0 +1,26 @@
+{
+  "name": "c04_flip_turn_double_pivot",
+  "purpose": "Two switch flags on one side at one PIVOT with one reserve: Basculegion's Flip Turn on its own ally drops Golisopod below half, so Flip Turn and Emergency Exit both flag; the side switches one slot and passes the other, which keeps its flag (choosePass), and the side is asked again with the Pokemon that just left as the reserve; the second leaver's queued move is cancelled.",
+  "data": "team_c",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c0404",
+  "teams": [
+    "Sneasler (M)\nAbility: No Ability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Close Combat\n- Protect\n\nGolisopod (F) @ Miracle Seed\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Iron Head\n- Leech Life\n\nBasculegion (M) @ Mystic Water\nAbility: Adaptability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Flip Turn\n- Wave Crash\n\nKingambit (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Protect",
+    "Gholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Shadow Ball\n- Protect\n\nFarigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Grass Knot\n- Psychic\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Ice Beam\n- Coil\n\nArchaludon (M) @ Light Clay\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1 1",
+      "move 2 1, move 1 1",
+      "move 1 -2, move 1 1",
+      "move 2 1, move 1 1"
+    ],
+    "p2": [
+      "move 1 1, move 2 1",
+      "move 2, move 2 2",
+      "move 1 1, move 1 1",
+      "move 1 1, move 1 2"
+    ],
+    "max_steps": 40
+  }
+}
