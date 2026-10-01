@@ -8,6 +8,7 @@
 
 #include "bench.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -19,6 +20,8 @@
 #endif
 
 #include "support/fixtures.h"
+
+#include <duoforge/duoforge_batch.h>
 
 typedef struct dfb_battle_tape {
     uint32_t start;  /* index of its start state (TEAM_SELECTION) in states */
@@ -79,6 +82,12 @@ uint64_t dfb_cpu_ns(void)
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
     return (uint64_t)ts.tv_sec * 1000000000u + (uint64_t)ts.tv_nsec;
 #endif
+}
+
+bool dfb_rep_disturbed_workers(const dfb_rep *rep, uint32_t workers)
+{
+    const uint64_t w = workers == 0u ? 1u : workers;
+    return rep->wall_ns >= 100000000u && rep->cpu_ns * 10u < rep->wall_ns * 9u * w;
 }
 
 bool dfb_rep_disturbed(const dfb_rep *rep)
@@ -550,5 +559,90 @@ duoforge_status dfb_episode_native(const duoforge_context *ctx, const dfb_worklo
         out->rep[r].wall_ns = dfb_wall_ns() - wall0;
         out->rep[r].cpu_ns = dfb_cpu_ns() - cpu0;
     }
+    return out->errors == 0u ? DUOFORGE_OK : DUOFORGE_E_INVARIANT;
+}
+
+/* ---------------------------------------------------------- batch native */
+
+static uint64_t dfb_fnv(uint64_t h, const void *p, size_t n)
+{
+    const uint8_t *b = p;
+    for (size_t i = 0u; i < n; ++i) {
+        h ^= b[i];
+        h *= 0x100000001B3u;
+    }
+    return h;
+}
+
+duoforge_status dfb_batch_native(const duoforge_context *ctx, const dfb_workload *workload, uint32_t workers,
+                                 uint32_t warmup, uint32_t repetitions, uint64_t *io_hash, dfb_result *out)
+{
+    static char variant[32];
+    snprintf(variant, sizeof variant, "workers=%u", (unsigned)workers);
+    dfb_result_init(out, "BATCH_NATIVE", variant);
+    out->workers = workers;
+    uint32_t episodes = (DFB_PAIRINGS * workload->battles + DFB_BATCH_ENVS - 1u) / DFB_BATCH_ENVS;
+    if (episodes == 0u) {
+        episodes = 1u;
+    }
+    duoforge_battle_setup teams;
+    df_setup_teams(&teams);
+    duoforge_battle_setup *setups = malloc(sizeof *setups * DFB_BATCH_ENVS);
+    duoforge_batch_episode *records = malloc(sizeof *records * DFB_BATCH_ENVS * episodes);
+    if (setups == NULL || records == NULL) {
+        free(setups);
+        free(records);
+        out->errors += 1u;
+        return DUOFORGE_E_OUT_OF_MEMORY;
+    }
+    for (uint32_t e = 0u; e < DFB_BATCH_ENVS; ++e) {
+        dfb_setup(&teams, e % DFB_PAIRINGS, 0u, &setups[e]);
+    }
+    const duoforge_batch_config cfg = {DFB_BATCH_ENVS, workers, workload->policy_seed, setups};
+    out->repetitions = dfb_reps(repetitions);
+    for (uint32_t r = 0u; r < warmup + out->repetitions; ++r) {
+        duoforge_batch *batch = NULL;
+        duoforge_status st = duoforge_batch_create(ctx, &cfg, &batch);
+        if (st != DUOFORGE_OK) {
+            out->errors += 1u;
+            break;
+        }
+        dfb_rep rep;
+        memset(&rep, 0, sizeof rep);
+        const uint64_t wall0 = dfb_wall_ns();
+        const uint64_t cpu0 = dfb_cpu_ns();
+        st = duoforge_batch_play_random(batch, episodes, workload->max_steps, records);
+        rep.wall_ns = dfb_wall_ns() - wall0;
+        rep.cpu_ns = dfb_cpu_ns() - cpu0;
+        duoforge_batch_destroy(batch);
+        if (st != DUOFORGE_OK) {
+            out->errors += 1u;
+            break;
+        }
+        uint64_t h = 0xCBF29CE484222325u;
+        uint64_t steps = 0u;
+        uint64_t decisions = 0u;
+        uint64_t turns = 0u;
+        for (size_t i = 0u; i < (size_t)DFB_BATCH_ENVS * episodes; ++i) {
+            h = dfb_fnv(h, &records[i], sizeof records[i]);
+            steps += records[i].steps;
+            decisions += records[i].decisions;
+            turns += records[i].turns;
+        }
+        if (*io_hash == 0u) {
+            *io_hash = h;
+        } else if (*io_hash != h) {
+            out->errors += 1u; /* another worker count played other battles */
+        }
+        out->battles = (uint64_t)DFB_BATCH_ENVS * episodes;
+        out->steps = steps;
+        out->side_decisions = decisions;
+        out->turns = turns;
+        if (r >= warmup) {
+            out->rep[r - warmup] = rep;
+        }
+    }
+    free(setups);
+    free(records);
     return out->errors == 0u ? DUOFORGE_OK : DUOFORGE_E_INVARIANT;
 }

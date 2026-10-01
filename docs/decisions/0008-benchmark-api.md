@@ -21,6 +21,7 @@ Status: **built** (2026-10-01); the Release baseline is still to be measured on 
 | REQUEST | at every recorded boundary, for both players: request, candidates (requested players), observation | calls (player groups) |
 | SNAPSHOT `copy` / `codec` | every boundary state restored with `duoforge_battle_copy`, or encoded and decoded | restores, encoded bytes |
 | EPISODE_NATIVE | the same battles played live; parts `reset` (create, destroy), `policy` (request, candidates, choice), `step` | battles, turns, steps |
+| BATCH_NATIVE (`batch`, opt-in) | the batch runtime's native mode (decision 0012) over 256 environments (the four pairings in turn), ceil(4 x battles / 256) random-policy episodes each, per worker count of `--workers` (default 1,2,4,8,16); a fresh batch per repetition, its creation untimed; every worker count must give the same episode records (hash) | battles, turns, steps, side decisions per worker count |
 
 Before STEP_CORE is timed, one untimed replay checks that every battle ends in its recorded state (digest); a mismatch is an error. Every family runs `--warmup` untimed passes and `--repetitions` timed ones and reports per repetition the wall time (QueryPerformanceCounter, CLOCK_MONOTONIC) and the process CPU time; the report gives the median, the counts per repetition and rates derived from the median. Any non-OK status is an error: the driver then exits 1.
 
@@ -39,11 +40,11 @@ duoforge_bench --battles 25 --repetitions 5 --warmup 1 --out report.json
 duoforge_bench --families step,episode --max-seconds 60
 ```
 
-Families: `step`, `events`, `request`, `copy`, `codec`, `episode`. `--max-seconds` stops launching further families once exceeded (reported as `skipped_by_time_limit`).
+Families: `step`, `events`, `request`, `copy`, `codec`, `episode`, and the opt-in `batch` (with `--workers`). `--max-seconds` stops launching further families once exceeded (reported as `skipped_by_time_limit`).
 
 ## 5. Not in scope
 
-BATCH_NATIVE and ROLLOUT_END_TO_END (later milestones), peak memory and allocation counts, and any performance target or regression gate (`docs/TESTING_AND_BENCHMARKS.md` section 4: the first benchmark establishes a baseline).
+ROLLOUT_END_TO_END (a later milestone), peak memory and allocation counts, and any performance target or regression gate (`docs/TESTING_AND_BENCHMARKS.md` section 4: the first benchmark establishes a baseline).
 
 ## 6. The baseline
 
