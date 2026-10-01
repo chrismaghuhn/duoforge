@@ -74,6 +74,9 @@ def parse_team(text, tables):
         rule = tables['GENDER_RULE'][forme]
         if gender_tag:
             mon['gender'] = GENDER[gender_tag]
+            # The reference fixes an illegal gender silently; DuoForge rejects it.
+            if rule == 3 or (rule in (1, 2) and mon['gender'] != rule):
+                raise SystemExit('trace_to_c: %s cannot be (%s)' % (species_name, gender_tag))
         elif rule == 3:
             mon['gender'] = GENDERLESS
         else:
@@ -122,6 +125,12 @@ def drop_reason(d):
         if all(g.startswith('H:') and g.endswith(':cb') for g in group):
             return None  # callbacks (burn, Grassy Terrain): the engine draws
         raise SystemExit('trace_to_c: residual tie with callbacks: %s' % group)
+    if site == 'SPEED_TIE' and ctx == 'event:ModifyDamage':
+        # Reflect and Light Screen of both sides: each checks the target's
+        # side and the move's category, so at most one applies to a hit.
+        if all(g.startswith(('H:reflect:', 'H:lightscreen:')) for g in group):
+            return 'screen handlers of which at most one applies'
+        raise SystemExit('trace_to_c: ModifyDamage tie with %s' % group)
     if site == 'SPEED_TIE' and ctx != 'queue':
         raise SystemExit('trace_to_c: unhandled tie context %s' % ctx)
     if site == 'INSERT_TIE':

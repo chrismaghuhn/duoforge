@@ -44,7 +44,7 @@ static void dev_setup(duoforge_battle_setup *s, uint64_t seed)
         {DFI_FORME_GOLISOPOD, 2u, DFI_NATURE_ADAMANT, {32u, 32u, 0u, 0u, 1u, 1u},
          {DFI_MOVE_DRILLRUN, DFI_MOVE_PROTECT, 0u, 0u}, 2u},
         {DFI_FORME_FARIGIRAF, 1u, DFI_NATURE_BOLD, {29u, 0u, 20u, 0u, 17u, 0u},
-         {DFI_MOVE_PSYCHIC, DFI_MOVE_PROTECT, 0u, 0u}, 2u},
+         {DFI_MOVE_PSYCHIC, DFI_MOVE_PROTECT, DFI_MOVE_TRICKROOM, 0u}, 3u},
     };
     for (uint32_t side = 0; side < 2u; ++side) {
         s->sides[side].member_count = 4u;
@@ -184,9 +184,10 @@ static void status_setup(duoforge_battle_setup *s, uint64_t seed)
     }
 }
 
-/* Development teams with the entry abilities of step 5: Drizzle Politoed,
- * Intimidate Staraptor, Grassy Surge Rillaboom, and a Pokemon without an
- * ability; side 1 brings the same species in another order. */
+/* Development teams with the entry abilities of step 5 (Drizzle Politoed,
+ * Intimidate Staraptor, Grassy Surge Rillaboom) and the conditions of step
+ * 6 (Tailwind, Reflect and Light Screen from Grimmsnarl without an
+ * ability); side 1 brings the same species in another order. */
 static void entry_setup(duoforge_battle_setup *s, uint64_t seed)
 {
     memset(s, 0, sizeof *s);
@@ -198,11 +199,11 @@ static void entry_setup(duoforge_battle_setup *s, uint64_t seed)
         {DFI_FORME_POLITOED, 1u, DFI_NATURE_MODEST, 1u + DFI_ABILITY_DRIZZLE, {32u, 0u, 0u, 30u, 0u, 4u},
          {DFI_MOVE_MUDDYWATER, DFI_MOVE_ICEBEAM, DFI_MOVE_PROTECT, 0u}, 3u},
         {DFI_FORME_STARAPTOR, 2u, DFI_NATURE_BOLD, 1u + DFI_ABILITY_INTIMIDATE, {32u, 0u, 32u, 0u, 2u, 0u},
-         {DFI_MOVE_PROTECT, 0u, 0u, 0u}, 1u},
+         {DFI_MOVE_TAILWIND, DFI_MOVE_PROTECT, 0u, 0u}, 2u},
         {DFI_FORME_RILLABOOM, 1u, DFI_NATURE_ADAMANT, 1u + DFI_ABILITY_GRASSYSURGE, {18u, 32u, 2u, 0u, 6u, 8u},
          {DFI_MOVE_HIGHHORSEPOWER, 0u, 0u, 0u}, 1u},
-        {DFI_FORME_CHARIZARD, 2u, DFI_NATURE_MODEST, 0u, {32u, 0u, 0u, 32u, 0u, 2u},
-         {DFI_MOVE_HEATWAVE, DFI_MOVE_HURRICANE, DFI_MOVE_PROTECT, 0u}, 3u},
+        {DFI_FORME_GRIMMSNARL, 1u, DFI_NATURE_BOLD, 0u, {32u, 0u, 32u, 0u, 2u, 0u},
+         {DFI_MOVE_REFLECT, DFI_MOVE_LIGHTSCREEN, DFI_MOVE_SPIRITBREAK, 0u}, 3u},
     };
     for (uint32_t side = 0; side < 2u; ++side) {
         s->sides[side].member_count = 4u;
@@ -210,7 +211,8 @@ static void entry_setup(duoforge_battle_setup *s, uint64_t seed)
             const uint32_t k = side == 0u ? m : 3u - m;
             duoforge_member_setup *d = &s->sides[side].members[m];
             d->species_id = a[k].species;
-            d->gender = side == 0u ? a[k].gender : 3u - a[k].gender;
+            /* Grimmsnarl is male only. */
+            d->gender = (side == 0u || a[k].species == DFI_FORME_GRIMMSNARL) ? a[k].gender : 3u - a[k].gender;
             d->nature = a[k].nature;
             d->ability = a[k].ability;
             for (uint32_t i = 0; i < 6u; ++i) {
@@ -422,6 +424,7 @@ int main(void)
         unsigned ended = 0;
         unsigned replacements = 0;
         unsigned results[4] = {0, 0, 0, 0};
+        unsigned trick_room = 0;
         for (uint64_t seed = 1u; seed <= 40u; ++seed) {
             duoforge_battle *b = started(&t, k2, seed);
             if (b == NULL) {
@@ -435,6 +438,7 @@ int main(void)
                     break;
                 }
                 replacements += b->boundary_kind == DUOFORGE_BOUNDARY_REPLACEMENT ? 1u : 0u;
+                trick_room += b->trick_room_turns != 0u ? 1u : 0u;
                 duoforge_step_result res;
                 const duoforge_status st = duoforge_battle_step(k2, b, &bd, &res);
                 if (!DF_CHECK(&t, st == DUOFORGE_OK)) {
@@ -454,7 +458,7 @@ int main(void)
             duoforge_battle_destroy(b);
         }
         DF_CHECK_EQ_U64(&t, ended, 40u);
-        DF_CHECK(&t, replacements > 0u && results[1] > 0u && results[2] > 0u);
+        DF_CHECK(&t, replacements > 0u && results[1] > 0u && results[2] > 0u && trick_room > 0u);
         fprintf(stderr, "  random play: %u steps, %u battles ended (side 0 %u, side 1 %u, tie %u), %u replacements\n",
                 steps, ended, results[1], results[2], results[3], replacements);
     }
@@ -536,6 +540,8 @@ int main(void)
         dfi_rng_seed(&pick, 99u, 5u);
         unsigned rain = 0;
         unsigned grassy = 0;
+        unsigned tailwind = 0;
+        unsigned screens = 0;
         unsigned dropped = 0;
         unsigned ended = 0;
         unsigned mismatches = 0;
@@ -576,6 +582,10 @@ int main(void)
                 }
                 DF_CHECK(&t, duoforge_battle_check(k2, b) == DUOFORGE_OK);
                 rain += b->weather == DFI_WEATHER_RAIN ? 1u : 0u;
+                for (uint32_t side = 0; side < 2u; ++side) {
+                    tailwind += b->sides[side].tailwind_turns != 0u ? 1u : 0u;
+                    screens += (b->sides[side].reflect_turns | b->sides[side].light_screen_turns) != 0u ? 1u : 0u;
+                }
                 grassy += b->terrain == DFI_TERRAIN_GRASSY ? 1u : 0u;
                 for (uint32_t side = 0; side < 2u; ++side) {
                     for (uint32_t p = 0; p < 2u; ++p) {
@@ -588,9 +598,11 @@ int main(void)
         }
         DF_CHECK_EQ_U64(&t, ended, 40u);
         DF_CHECK_EQ_U64(&t, mismatches, 0u);
-        DF_CHECK(&t, rain > 0u && grassy > 0u && dropped > 0u);
-        fprintf(stderr, "  entry play: %u ended; steps with rain %u, with Grassy Terrain %u; lowered Attack %u\n",
-                ended, rain, grassy, dropped);
+        DF_CHECK(&t, rain > 0u && grassy > 0u && dropped > 0u && tailwind > 0u && screens > 0u);
+        fprintf(stderr,
+                "  entry play: %u ended; steps with rain %u, with Grassy Terrain %u; lowered Attack %u; "
+                "side-steps with Tailwind %u, with a screen %u\n",
+                ended, rain, grassy, dropped, tailwind, screens);
     }
 
     duoforge_context_destroy(k2);
