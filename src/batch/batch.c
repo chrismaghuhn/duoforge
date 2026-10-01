@@ -30,6 +30,7 @@ struct duoforge_batch {
     duoforge_battle_setup *setups;
     dfi_pool *pool;
     dfi_batch_scratch *scratch; /* one per worker */
+    duoforge_status *statuses;  /* per environment, for the calls without a caller array */
 };
 
 /* ------------------------------------------------------------------ seeds */
@@ -128,8 +129,9 @@ duoforge_status duoforge_batch_create(const duoforge_context *ctx, const duoforg
     b->env = dfi_alloc_zeroed(sizeof *b->env * c.env_count);
     b->setups = dfi_alloc_zeroed(sizeof *b->setups * c.env_count);
     b->scratch = dfi_alloc_zeroed(sizeof *b->scratch * c.worker_count);
+    b->statuses = dfi_alloc_zeroed(sizeof *b->statuses * c.env_count);
     b->pool = dfi_pool_create(c.worker_count);
-    if (b->env == NULL || b->setups == NULL || b->scratch == NULL || b->pool == NULL) {
+    if (b->env == NULL || b->setups == NULL || b->scratch == NULL || b->statuses == NULL || b->pool == NULL) {
         duoforge_batch_destroy(b);
         return DUOFORGE_E_OUT_OF_MEMORY;
     }
@@ -159,6 +161,7 @@ void duoforge_batch_destroy(duoforge_batch *batch)
     dfi_free(batch->env);
     dfi_free(batch->setups);
     dfi_free(batch->scratch);
+    dfi_free(batch->statuses);
     dfi_free(batch);
 }
 
@@ -229,15 +232,9 @@ static void dfi_query_slice(void *job, uint32_t worker, uint32_t begin, uint32_t
 /* Runs a query job over every environment: the lowest failing status. */
 static duoforge_status dfi_batch_query_run(duoforge_batch *batch, dfi_query_job *job)
 {
-    duoforge_status *statuses = dfi_alloc_zeroed(sizeof *statuses * batch->env_count);
-    if (statuses == NULL) {
-        return DUOFORGE_E_OUT_OF_MEMORY;
-    }
-    job->statuses = statuses;
+    job->statuses = batch->statuses;
     dfi_pool_run(batch->pool, dfi_query_slice, job, batch->env_count);
-    const duoforge_status st = dfi_batch_first(statuses, batch->env_count);
-    dfi_free(statuses);
-    return st;
+    return dfi_batch_first(batch->statuses, batch->env_count);
 }
 
 duoforge_status duoforge_batch_query(duoforge_batch *batch, duoforge_request *requests,
@@ -454,15 +451,9 @@ duoforge_status duoforge_batch_reset_terminal(duoforge_batch *batch)
     if (batch == NULL) {
         return DUOFORGE_E_NULL_ARGUMENT;
     }
-    duoforge_status *statuses = dfi_alloc_zeroed(sizeof *statuses * batch->env_count);
-    if (statuses == NULL) {
-        return DUOFORGE_E_OUT_OF_MEMORY;
-    }
-    dfi_reset_job job = {batch, statuses};
+    dfi_reset_job job = {batch, batch->statuses};
     dfi_pool_run(batch->pool, dfi_reset_slice, &job, batch->env_count);
-    const duoforge_status st = dfi_batch_first(statuses, batch->env_count);
-    dfi_free(statuses);
-    return st;
+    return dfi_batch_first(batch->statuses, batch->env_count);
 }
 
 duoforge_status duoforge_batch_reset(duoforge_batch *batch, uint32_t env, uint32_t episode)
@@ -581,13 +572,7 @@ duoforge_status duoforge_batch_play_random(duoforge_batch *batch, uint32_t episo
     if (batch == NULL) {
         return DUOFORGE_E_NULL_ARGUMENT;
     }
-    duoforge_status *statuses = dfi_alloc_zeroed(sizeof *statuses * batch->env_count);
-    if (statuses == NULL) {
-        return DUOFORGE_E_OUT_OF_MEMORY;
-    }
-    dfi_play_job job = {batch, episodes, max_steps, records, statuses};
+    dfi_play_job job = {batch, episodes, max_steps, records, batch->statuses};
     dfi_pool_run(batch->pool, dfi_play_slice, &job, batch->env_count);
-    const duoforge_status st = dfi_batch_first(statuses, batch->env_count);
-    dfi_free(statuses);
-    return st;
+    return dfi_batch_first(batch->statuses, batch->env_count);
 }
