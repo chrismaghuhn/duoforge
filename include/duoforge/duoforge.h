@@ -32,9 +32,9 @@ extern "C" {
 #endif
 
 #define DUOFORGE_VERSION_MAJOR 0
-#define DUOFORGE_VERSION_MINOR 6
+#define DUOFORGE_VERSION_MINOR 7
 #define DUOFORGE_VERSION_PATCH 0
-#define DUOFORGE_VERSION_STRING "0.6.0"
+#define DUOFORGE_VERSION_STRING "0.7.0"
 
 /* Identifiers of the artifacts that exist now (registry: decisions 0002, 0005, 0006). */
 #define DUOFORGE_SEMANTICS_ID           3u   /* "duoforge-m3-closure" */
@@ -100,9 +100,12 @@ const char *duoforge_status_name(duoforge_status status);
 
 /* ---- immutable context (decision 0006 section 2) ---- */
 #define DUOFORGE_DATA_KIND_SYNTHETIC   1u /* synthetic ids and target classes; no combat ever */
-#define DUOFORGE_DATA_KIND_CLOSURE     2u /* the generated closure tables; format-legal sets only */
+#define DUOFORGE_DATA_KIND_CLOSURE     2u /* the generated closure tables; format-legal sets only;
+                                             the certified profile (decision 0010): max_roster 6,
+                                             brought_count 4, exactly 6 members per side */
 #define DUOFORGE_DATA_KIND_CLOSURE_DEV 3u /* the closure tables; as CLOSURE, but a member may have
-                                             No Ability (development fixtures) */
+                                             No Ability and a side registers brought_count to
+                                             max_roster members (development fixtures) */
 typedef struct duoforge_context duoforge_context;
 typedef struct duoforge_context_config {
     uint32_t data_kind;     /* DUOFORGE_DATA_KIND_* */

@@ -156,7 +156,11 @@ int main(void)
             {{DUOFORGE_DATA_KIND_CLOSURE, 6u, 0u, 0u, 0u, NULL}, DUOFORGE_E_INVALID_ARGUMENT, "brought 0"},
             {{4u, 6u, 4u, 0u, 0u, NULL}, DUOFORGE_E_INVALID_ARGUMENT, "data kind 4"},
             {{0u, 6u, 4u, 16u, 36u, df_table_t1}, DUOFORGE_E_INVALID_ARGUMENT, "data kind 0"},
-            {{DUOFORGE_DATA_KIND_CLOSURE, 4u, 2u, 0u, 0u, NULL}, DUOFORGE_OK, "roster 4, brought 2"},
+            /* The certified profile is register 6, bring 4 (decision 0010). */
+            {{DUOFORGE_DATA_KIND_CLOSURE, 4u, 2u, 0u, 0u, NULL}, DUOFORGE_E_INVALID_ARGUMENT, "roster 4, brought 2"},
+            {{DUOFORGE_DATA_KIND_CLOSURE, 5u, 4u, 0u, 0u, NULL}, DUOFORGE_E_INVALID_ARGUMENT, "roster 5, brought 4"},
+            {{DUOFORGE_DATA_KIND_CLOSURE, 6u, 3u, 0u, 0u, NULL}, DUOFORGE_E_INVALID_ARGUMENT, "roster 6, brought 3"},
+            {{DUOFORGE_DATA_KIND_CLOSURE_DEV, 4u, 2u, 0u, 0u, NULL}, DUOFORGE_OK, "CLOSURE_DEV roster 4, brought 2"},
         };
         for (unsigned i = 0; i < sizeof cases / sizeof cases[0]; ++i) {
             df_sentinel sentinel;
@@ -185,6 +189,28 @@ int main(void)
         duoforge_context *c1 = df_make_context(&df_config_c1);
         create_fails(&t, c1, &teams, DUOFORGE_E_INVALID_ARGUMENT, "closure setup under SYNTHETIC");
         duoforge_context_destroy(c1);
+    }
+
+    /* White-box: a CLOSURE state with five registered members fails the
+     * member count rule (decision 0010); the same state under CLOSURE_DEV
+     * passes it. */
+    for (unsigned dev = 0u; dev < 2u; ++dev) {
+        const duoforge_context *ctx = dev != 0u ? k2 : k1;
+        duoforge_battle *w = NULL;
+        DF_CHECK(&t, dfi_battle_create_ungated(ctx, &teams, &w) == DUOFORGE_OK && w != NULL);
+        if (w == NULL) {
+            continue;
+        }
+        w->sides[0].member_count = 5u;
+        memset(&w->sides[0].members[5], 0, sizeof w->sides[0].members[5]);
+        dfi_invariant inv = DFI_INV_NONE;
+        const duoforge_status st = dfi_state_check(ctx, w, &inv);
+        if (dev != 0u) {
+            DF_CHECK(&t, st == DUOFORGE_OK);
+        } else {
+            DF_CHECK(&t, st == DUOFORGE_E_INVARIANT && inv == DFI_INV_MEMBER_COUNT);
+        }
+        duoforge_battle_destroy(w);
     }
 
     /* White-box: what the teams would be. Derived stats, PP and stone flags,
@@ -331,16 +357,18 @@ int main(void)
         invalid(&t, k1, &s, "duplicate member");
         FRESH();
         s.sides[0].member_count = 5u; /* member 5 must then be all-zero */
-        invalid(&t, k1, &s, "unused member not zero");
+        invalid(&t, k2, &s, "unused member not zero");
         FRESH();
         s.sides[0].member_count = 5u;
         memset(&s.sides[0].members[5], 0, sizeof s.sides[0].members[5]);
         s.sides[0].members[5].nature = 1u;
-        invalid(&t, k1, &s, "unused member with a nature");
+        invalid(&t, k2, &s, "unused member with a nature");
         FRESH();
         s.sides[0].member_count = 5u;
         memset(&s.sides[0].members[5], 0, sizeof s.sides[0].members[5]);
-        legal(&t, k1, &s, "five members");
+        /* CLOSURE registers exactly six (decision 0010), CLOSURE_DEV four to six. */
+        invalid(&t, k1, &s, "five members under CLOSURE");
+        legal(&t, k2, &s, "five members under CLOSURE_DEV");
         FRESH();
         s.sides[0].members[0].move_count = 1u; /* one move is enough */
         s.sides[0].members[0].moves[1].move_id = 0u;

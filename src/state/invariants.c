@@ -173,6 +173,9 @@ static dfi_invariant dfi_check_side(const struct duoforge_context *ctx, const st
     if (member_count < ctx->brought_count || member_count > ctx->max_roster) {
         return DFI_INV_MEMBER_COUNT;
     }
+    if (ctx->data_kind == DUOFORGE_DATA_KIND_CLOSURE && member_count != ctx->max_roster) {
+        return DFI_INV_MEMBER_COUNT; /* the certified profile registers exactly six (decision 0010) */
+    }
     for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
         if (m < member_count) {
             /* dfi_check_member is a function of the member's bytes alone:

@@ -150,6 +150,8 @@ class ClosureContext(Context):
         Context.__init__(self, data_kind, max_roster, brought_count, 16, 37, b'')
 
     def valid(self):
+        if self.data_kind == KIND_CLOSURE and (self.max_roster != MAX_ROSTER or self.brought_count != 4):
+            return False  # the certified profile: register 6, bring 4 (decision 0010)
         return (self.data_kind in (KIND_CLOSURE, KIND_CLOSURE_DEV) and 1 <= self.max_roster <= MAX_ROSTER
                 and 1 <= self.brought_count <= self.max_roster)
 
@@ -458,6 +460,8 @@ def check_side(ctx, st, s):
     mc = sd['member_count']
     if not (ctx.brought_count <= mc <= ctx.max_roster):
         return 'MEMBER_COUNT'
+    if ctx.data_kind == KIND_CLOSURE and mc != ctx.max_roster:
+        return 'MEMBER_COUNT'  # the certified profile registers exactly six (decision 0010)
     for m in range(MAX_ROSTER):
         mem = sd['members'][m]
         if m < mc:
