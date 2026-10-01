@@ -283,21 +283,26 @@ def parse_move(mid, base, champ, ext=False):
             rec[key] = nums
     vectors = 0
     if 'secondary' in f:
-        text = f['secondary'][1]
-        rec['sec_chance'] = int(re.search(r'chance: (\d+)', text).group(1))
-        st = re.search(r"\bstatus: '(\w+)'", text)
-        vo = re.search(r"volatileStatus: '(\w+)'", text)
+        # The whole secondary must be one modelled effect; anything else (a
+        # self block, a callback, several effects) fails instead of being misread.
+        sec = re.fullmatch(r'secondary: \{ chance: (\d+), (.*) \},', ' '.join(f['secondary'][1].split()))
+        if sec is None:
+            fail('move %s: unknown secondary' % mid)
+        rec['sec_chance'], effect = int(sec.group(1)), sec.group(2)
+        st = re.fullmatch(r"status: '(\w+)',", effect)
+        vo = re.fullmatch(r"volatileStatus: '(\w+)',", effect)
         if st:
             rec['sec_kind'], rec['sec_param'] = 2, STATUS[st.group(1)]
         elif vo:
             rec['sec_kind'], rec['sec_param'] = 3, VOLATILE[vo.group(1)]
-        elif 'boosts' in text:
+        elif re.fullmatch(r'boosts: \{ (?:(?:%s): -?\d+, )+\},' % '|'.join(BOOSTS), effect):
             rec['sec_kind'] = 1
-            rec['boost_role'], rec['boosts'] = BOOST_ROLE['SECONDARY_TARGET'], boosts_of(text)
+            rec['boost_role'], rec['boosts'] = BOOST_ROLE['SECONDARY_TARGET'], boosts_of(effect)
             vectors += 1
-        elif ext and ' '.join(text.split()) == 'secondary: { chance: %d, %s },' % (rec['sec_chance'],
-                                                                               STATUS_PICK_ONHIT):
+        elif ext and effect == STATUS_PICK_ONHIT:
             rec['sec_kind'] = SECONDARY_STATUS_PICK
+        elif re.search(r'\bself: \{', effect):
+            fail('move %s: secondary self effects are not supported' % mid)
         else:
             fail('move %s: unknown secondary' % mid)
     if 'self' in f:

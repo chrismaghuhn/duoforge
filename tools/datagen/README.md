@@ -18,6 +18,7 @@ The generator fails instead of guessing when
 
 - an input file's sha256 differs from the pin (after CRLF to LF normalisation),
 - a move has a field it does not know,
+- a move's secondary is not exactly one modelled effect (a status, a volatile, or boosts on the target), for example Flame Charge's self boost,
 - a callback is not mapped to a named handler id,
 - a set is not legal in the Champions learnsets or formats data.
 
@@ -31,3 +32,5 @@ python3 tools/datagen/gen_closure.py <pinned checkout> --check  # compare only
 ```
 
 After regenerating, update the two file hashes in `tests/CMakeLists.txt` and the table hash in `tests/test_closure_tables.c`. With `-DDUOFORGE_PS_REFERENCE_DIR=<pinned checkout>` CTest runs the `--check` form as `duoforge.data.closure_regen`.
+
+`test_gen_closure.py` checks the refusals on small move texts without a checkout; CTest runs it as `duoforge.data.gen_closure_refusals` whenever Python is found.
