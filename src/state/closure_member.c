@@ -266,7 +266,7 @@ bool dfi_closure_member_mega_evolve(dfi_member *m)
     return true;
 }
 
-bool dfi_closure_member_valid(bool dev, const dfi_member *m)
+bool dfi_closure_member_ranges(bool dev, const dfi_member *m)
 {
     const dfi_forme_data *base = &dfi_closure_formes[m->species_id]; /* species < 16 */
     if (base->is_mega != 0u || !dfi_gender_legal(base->gender_rule, m->gender)) {
@@ -300,6 +300,26 @@ bool dfi_closure_member_valid(bool dev, const dfi_member *m)
     } else if (m->ability != (uint32_t)base->ability + 1u && !(dev && m->ability == 0u)) {
         return false;
     }
+    /* Sleep and freeze carry a counter 1..3 (Champions: sleep lasts
+     * sample([2, 3, 3]), freeze at most 3); nothing else has one. Whether a
+     * fainted member may still have a status depends on the boundary
+     * (dfi_check_side). */
+    const uint32_t status = m->status;
+    if (status > DFI_STATUS_SLP) {
+        return false;
+    }
+    if (status == DFI_STATUS_SLP || status == DFI_STATUS_FRZ) {
+        return m->status_counter >= 1u && m->status_counter <= 3u;
+    }
+    return m->status_counter == 0u;
+}
+
+bool dfi_closure_member_valid(bool dev, const dfi_member *m)
+{
+    if (!dfi_closure_member_ranges(dev, m)) {
+        return false;
+    }
+    const dfi_forme_data *base = &dfi_closure_formes[m->species_id]; /* species < 16 */
     uint16_t hp_max = 0u;
     uint16_t stats[DFI_MEMBER_STAT_COUNT] = {0};
     if (!dfi_derive_stats(m->species_id, m->is_mega, m->nature, m->stat_points, &hp_max, stats) ||
@@ -323,16 +343,5 @@ bool dfi_closure_member_valid(bool dev, const dfi_member *m)
             }
         }
     }
-    /* Sleep and freeze carry a counter 1..3 (Champions: sleep lasts
-     * sample([2, 3, 3]), freeze at most 3); nothing else has one. Whether a
-     * fainted member may still have a status depends on the boundary
-     * (dfi_check_side). */
-    const uint32_t status = m->status;
-    if (status > DFI_STATUS_SLP) {
-        return false;
-    }
-    if (status == DFI_STATUS_SLP || status == DFI_STATUS_FRZ) {
-        return m->status_counter >= 1u && m->status_counter <= 3u;
-    }
-    return m->status_counter == 0u;
+    return true;
 }

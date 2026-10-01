@@ -52,6 +52,12 @@ bool dfi_closure_member_init(const duoforge_member_setup *src, dfi_member *dst);
  * Precondition: the generic member checks passed (species < 16, move ids
  * < 37, move count 1..4, pp <= pp_max, hp <= hp_max, stone flag <= 1). */
 bool dfi_closure_member_valid(bool dev, const dfi_member *m);
+/* The part of dfi_closure_member_valid without the derived values and the
+ * move legality (stats and HP maximum from the formulas, moves of the set
+ * without repeats, PP maxima): forme, gender, nature, stat points, item
+ * and Mega flags, ability, status and counter. The model-facing queries
+ * run this part (decision 0011). Same precondition. */
+bool dfi_closure_member_ranges(bool dev, const dfi_member *m);
 
 /* Mega Evolution of a member that holds its own stone (formeChange of the
  * Champions mod, isPermanent): the Mega forme's stats and ability; HP stays.

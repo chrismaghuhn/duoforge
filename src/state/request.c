@@ -403,8 +403,8 @@ static duoforge_status dfi_query_prologue(const duoforge_context *ctx, const str
     if (player >= DUOFORGE_SIDE_COUNT) {
         return DUOFORGE_E_INVALID_ARGUMENT;
     }
-    if (dfi_state_check(ctx, b, NULL) != DUOFORGE_OK) {
-        return DUOFORGE_E_INVARIANT; /* one opaque engine-side failure */
+    if (dfi_state_check_query(ctx, b, NULL) != DUOFORGE_OK) {
+        return DUOFORGE_E_INVARIANT; /* one opaque engine-side failure (decision 0011) */
     }
     return DUOFORGE_OK;
 }
