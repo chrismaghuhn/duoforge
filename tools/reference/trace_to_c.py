@@ -342,7 +342,7 @@ def convert(root, name, tables, out, all_tape):
                 p = by_roster.get(roster)
                 if p is None:
                     row.append('{0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, '
-                               '0u, 0u, 0u, 0u}')
+                               '0u, 0u, 0u, 0u, 0u}')
                     continue
                 pp = p['pp'] + [0] * (4 - len(p['pp']))
                 stall = 1 if 'stall' in p['volatiles'] else 0
@@ -353,11 +353,13 @@ def convert(root, name, tables, out, all_tape):
                 lock = p.get('locked')
                 lslot, ltarget = (lock[0], abs_target(s, lock[1])) if lock else (0xFF, 0)
                 seen = shown[s].get(roster)
-                row.append('{1u, %du, {%s}, {%s}, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du}' % (
+                vols = sum(bit for name, bit in (('protect', 1), ('flashfire', 2), ('twoturnmove', 4))
+                           if name in p['volatiles'])
+                row.append('{1u, %du, {%s}, {%s}, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du}' % (
                     p['hp'], ', '.join('%du' % x for x in pp), ', '.join('%du' % (x + 6) for x in p['boosts']),
                     stall, 1 if p['fainted'] else 0, status, counter, p['confusion'], lslot, ltarget,
                     p.get('mega', 0), 1 if p['item'] else 0, 1 if seen else 0, seen[0] if seen else 0,
-                    seen[1] if seen else 0))
+                    seen[1] if seen else 0, vols))
             mons.append(row)
         cmds = []
         for s in range(2):
@@ -455,6 +457,7 @@ def main():
            'typedef struct df_conf_mon {', '    uint32_t present, hp;', '    uint8_t pp[4];', '    uint8_t stages[7];',
            '    uint8_t stall, fainted, status, status_counter, confusion, locked_slot, locked_target, mega;',
            '    uint8_t held, seen, seen_percent, seen_flag;',
+           '    uint8_t vols; /* volatiles: 1 protect, 2 flashfire, 4 twoturnmove */',
            '} df_conf_mon;',
            '/* team step, side 0 / side 1 answered, tape slice, the turn, boundary and',
            ' * result afterwards, the picks of a team step, slot commands, the occupants',

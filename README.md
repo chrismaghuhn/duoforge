@@ -11,7 +11,7 @@ DuoForge is a deterministic, headless Pokémon Doubles simulation engine designe
 - a canonical, versioned binary encoding with a SHA-256 digest;
 - clone/copy (snapshot/restore) and reseeding for forks;
 - team selection (ordered picks) and complete joint side-choice domains per turn, enumerated in a documented deterministic order, with per-player requests, request epochs and simultaneous decision bundles;
-- a perspective-safe observation prototype (open team sheets, own exact HP/PP, opponent HP at the Champions percent precision, tagged unknowns);
+- a perspective-safe observation, since observation v2 exactly what a human player sees (decision 0007): open team sheets with abilities, items, natures and maximum PP; own exact HP and PP; the opponent's HP at the Champions percent precision as last seen and its PP derived from the uses seen; statuses, stat stages, confusion, charging moves, Mega formes, items used up; weather, terrain, Trick Room and the side conditions with remaining turns; which sides must answer. Sleep, freeze and confusion turns stay hidden on both sides;
 - generated data tables of the two reference teams from the pinned Showdown revision, and the Champions stat and PP formulas (step 1a of the combat closure);
 - the state v3 layout of the combat closure with its invariants, codec and oracle (step 1b-1);
 - contexts over the real closure data, validation of real sets with derived stats and PP, and the support gate (step 1b-2), which both real teams pass since step 12;
@@ -29,7 +29,7 @@ DuoForge is a deterministic, headless Pokémon Doubles simulation engine designe
 - Parting Shot and Emergency Exit with real PIVOT boundaries in the middle of a turn, and Emergency Exit at its end (step 12);
 - the closure gate (step 13): both teams of decision 0004 play from team selection to the end in all four pairings, conform to recorded reference battles, replay byte for byte and keep information equivalence.
 
-**The combat closure is complete for the two reference teams.** Under CLOSURE data they play complete battles: turns, switches, faints, replacements, pivots, statuses, Mega Evolution and the end of the battle. Development teams (data kind `CLOSURE_DEV`) may also use No Ability. Any other mechanic is outside the closure and is rejected at setup with `DUOFORGE_E_UNSUPPORTED`. The observation does not show stages or statuses yet. Under SYNTHETIC data every combat bundle is unsupported. No batch environments, Python bindings or ML code exist. The owner has selected the rules basis (**Pokémon Champions, VGC 2026 Reg M-C**), the reference revision (**Pokémon Showdown `b2cb775`**) and two teams (`docs/decisions/0004`).
+**The combat closure is complete for the two reference teams.** Under CLOSURE data they play complete battles: turns, switches, faints, replacements, pivots, statuses, Mega Evolution and the end of the battle. Development teams (data kind `CLOSURE_DEV`) may also use No Ability. Any other mechanic is outside the closure and is rejected at setup with `DUOFORGE_E_UNSUPPORTED`. The event log of decision 0007 (what happened since the last decision) is not built yet. Under SYNTHETIC data every combat bundle is unsupported. No batch environments, Python bindings or ML code exist. The owner has selected the rules basis (**Pokémon Champions, VGC 2026 Reg M-C**), the reference revision (**Pokémon Showdown `b2cb775`**) and two teams (`docs/decisions/0004`).
 
 State snapshots and decodability are foundation evidence, **not proof that unimplemented future mechanics restore correctly**.
 

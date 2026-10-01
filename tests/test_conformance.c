@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "data/closure_tables.h"
 #include "reference/conformance.h"
 #include "state/battle_internal.h"
 #include "state/request.h"
@@ -41,6 +42,94 @@ static void build_setup(const df_conf_battle *cb, duoforge_battle_setup *s)
             }
         }
     }
+}
+
+/* Observation v2 (decision 0007) of both players against the reference:
+ * the derived foe PP equals the real PP, and statuses, Mega formes, items
+ * used up, stat stages, confusion, charged moves, the field and the side
+ * conditions are what the game shows. */
+static unsigned compare_observation(const duoforge_context *ctx, const duoforge_battle *b, const df_conf_step *st,
+                                    const df_conf_battle *cb, uint32_t step)
+{
+    unsigned bad = 0;
+    for (uint32_t viewer = 0; viewer < 2u; ++viewer) {
+        duoforge_observation o;
+        if (duoforge_battle_observe(ctx, b, viewer, &o) != DUOFORGE_OK) {
+            fprintf(stderr, "  %s step %u: no observation for player %u\n", cb->name, step, viewer);
+            ++bad;
+            continue;
+        }
+        const uint32_t field[7] = {o.trick_room_turns,           o.sides[0].tailwind_turns,
+                                   o.sides[0].reflect_turns,     o.sides[0].light_screen_turns,
+                                   o.sides[1].tailwind_turns,    o.sides[1].reflect_turns,
+                                   o.sides[1].light_screen_turns};
+        bool field_ok = o.weather == st->field[0] && o.weather_turns == st->field[1] && o.terrain == st->field[2] &&
+                        o.terrain_turns == st->field[3];
+        for (uint32_t i = 0; i < 7u; ++i) {
+            field_ok = field_ok && field[i] == st->field[4u + i];
+        }
+        if (!field_ok) {
+            fprintf(stderr, "  %s step %u: player %u sees another field\n", cb->name, step, viewer);
+            ++bad;
+        }
+        for (uint32_t s = 0; s < 2u; ++s) {
+            const duoforge_side_view *sv = &o.sides[s];
+            for (uint32_t m = 0; m < 6u; ++m) {
+                const df_conf_mon *e = &st->mons[s][m];
+                const duoforge_member_view *v = &sv->members[m];
+                if (!e->present) {
+                    continue;
+                }
+                const bool visible = s == viewer || e->seen != 0u;
+                const uint32_t status = (visible && !e->fainted) ? e->status : 0u;
+                const uint32_t used = (cb->members[s][m].item != 0u && e->held == 0u) ? 1u : 0u;
+                /* The ability on the sheet, the Mega forme's once it evolved. */
+                const df_conf_member *set = &cb->members[s][m];
+                uint32_t ability = set->ability;
+                if (e->mega != 0u) {
+                    ability = 1u + dfi_closure_formes[dfi_closure_formes[set->species].mega_forme].ability;
+                }
+                bool ok = v->status == status && v->is_mega == e->mega && v->item_used == used && v->ability == ability;
+                for (uint32_t k = 0; k < v->move_count && k < 4u; ++k) {
+                    ok = ok && v->pp[k] == e->pp[k]; /* own exact, foe derived: the same in the closure */
+                }
+                if (!ok) {
+                    fprintf(stderr,
+                            "  %s step %u: player %u sees side %u member %u as status %u mega %u used %u pp %u, "
+                            "reference %u %u %u %u\n",
+                            cb->name, step, viewer, s, m, v->status, v->is_mega, v->item_used, v->pp[0], status,
+                            e->mega, used, e->pp[0]);
+                    ++bad;
+                }
+            }
+            for (uint32_t k = 0; k < 2u; ++k) {
+                const uint32_t occ = st->occupants[s][k];
+                const duoforge_position_view *pv = &sv->positions[k];
+                if (occ >= 6u) {
+                    continue;
+                }
+                const df_conf_mon *e = &st->mons[s][occ];
+                /* The locked target only for the own side; Protect, Flash Fire,
+                 * a charged move and the stall counter as Showdown's volatiles. */
+                const uint32_t target = (s == viewer && e->locked_slot != 0xFFu) ? e->locked_target : DUOFORGE_TARGET_NONE;
+                bool ok = memcmp(pv->stages, e->stages, 7u) == 0 && pv->confused == (e->confusion != 0u ? 1u : 0u) &&
+                          pv->locked_slot == e->locked_slot && pv->locked_target == target &&
+                          pv->protecting == ((e->vols & 1u) != 0u ? 1u : 0u) &&
+                          pv->flash_fire == ((e->vols & 2u) != 0u ? 1u : 0u) &&
+                          pv->charging == ((e->vols & 4u) != 0u ? 1u : 0u) &&
+                          (pv->protect_chain != 0u) == (e->stall != 0u);
+                if (b->boundary_kind == DUOFORGE_BOUNDARY_TERMINAL) {
+                    ok = memcmp(pv->stages, e->stages, 7u) == 0; /* locks are not compared at the end */
+                }
+                if (!ok) {
+                    fprintf(stderr, "  %s step %u: player %u sees side %u position %u differently\n", cb->name, step,
+                            viewer, s, k);
+                    ++bad;
+                }
+            }
+        }
+    }
+    return bad;
 }
 
 static unsigned compare_state(const duoforge_context *ctx, const duoforge_battle *b, const df_conf_step *st,
@@ -280,6 +369,7 @@ int main(void)
                 break;
             }
             bad += compare_state(ctx, b, st, cb->name, si);
+            bad += compare_observation(ctx, b, st, cb, si);
             DF_CHECK(&t, duoforge_battle_check(ctx, b) == DUOFORGE_OK);
         }
         DF_CHECK_EQ_U64(&t, bad, 0u);

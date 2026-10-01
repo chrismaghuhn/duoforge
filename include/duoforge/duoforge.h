@@ -32,9 +32,9 @@ extern "C" {
 #endif
 
 #define DUOFORGE_VERSION_MAJOR 0
-#define DUOFORGE_VERSION_MINOR 4
+#define DUOFORGE_VERSION_MINOR 5
 #define DUOFORGE_VERSION_PATCH 0
-#define DUOFORGE_VERSION_STRING "0.4.0"
+#define DUOFORGE_VERSION_STRING "0.5.0"
 
 /* Identifiers of the artifacts that exist now (registry: decisions 0002, 0005, 0006). */
 #define DUOFORGE_SEMANTICS_ID           3u   /* "duoforge-m3-closure" */
@@ -298,17 +298,20 @@ duoforge_status duoforge_battle_candidates(const duoforge_context *ctx, const du
 duoforge_status duoforge_battle_step(const duoforge_context *ctx, duoforge_battle *battle,
                                      const duoforge_decision_bundle *bundle, duoforge_step_result *out_result);
 
-/* ---- perspective-safe observation prototype (decision 0005 section 6) ----
-   Derived only from the viewer's authorized information: open team sheets
-   (species, moves, move_count, synthetic stone flag), the viewer's own exact
-   HP/PP/bench order, public occupancy and Mega use, and for the opponent the
-   members the viewer has seen in battle at the profile's HP precision, as
-   the viewer saw them last (a benched member keeps its last display).
-   Unknown values are TAGGED (kind fields), never encoded as zero facts. */
+/* ---- observation v2: what a player sees (decision 0007) ----
+   A player's view is what a human at the table knows, with perfect memory:
+   the own team exactly, the open team sheets of both teams, and the battle
+   as the game shows it to that player. Anything that follows from these is
+   given directly (remaining turns, the foe's PP as maximum minus the uses
+   the viewer saw); anything rolled in secret stays hidden, on the own side
+   as well (sleep, freeze and confusion turns, the foe's locked target).
+   Unknown values are TAGGED (kind fields) or documented as zero, never
+   encoded as facts. */
 #define DUOFORGE_HP_EXACT   1u
 #define DUOFORGE_HP_PERCENT 2u /* hp = floor percent (1..100 while alive, 0 fainted), hp_max = 100 */
 #define DUOFORGE_HP_UNKNOWN 3u
 #define DUOFORGE_PP_EXACT   1u
+#define DUOFORGE_PP_DERIVED 2u /* the foe: pp_max minus the uses the viewer saw */
 #define DUOFORGE_PP_UNKNOWN 3u
 #define DUOFORGE_HP_FLAG_NONE   0u
 #define DUOFORGE_HP_FLAG_RED    1u /* exactly 20 percent and hp*5 <= hp_max */
@@ -318,38 +321,94 @@ duoforge_status duoforge_battle_step(const duoforge_context *ctx, duoforge_battl
 #define DUOFORGE_LOCATION_BENCH        1u
 #define DUOFORGE_LOCATION_ACTIVE       2u
 #define DUOFORGE_LOCATION_NOT_BROUGHT  3u /* own side only */
+#define DUOFORGE_AILMENT_NONE      0u
+#define DUOFORGE_AILMENT_BURN      1u
+#define DUOFORGE_AILMENT_FREEZE    2u
+#define DUOFORGE_AILMENT_PARALYSIS 3u
+#define DUOFORGE_AILMENT_SLEEP     4u
+#define DUOFORGE_WEATHER_NONE 0u
+#define DUOFORGE_WEATHER_RAIN 1u
+#define DUOFORGE_WEATHER_SUN  2u
+#define DUOFORGE_TERRAIN_NONE   0u
+#define DUOFORGE_TERRAIN_GRASSY 1u
+#define DUOFORGE_MOVE_SLOT_NONE 0xFFu /* position view: no locked move */
 
 typedef struct duoforge_member_view {
     uint16_t species_id; /* open; 0 with all other fields 0 for an unregistered slot */
     uint16_t hp;         /* per hp_kind */
     uint16_t hp_max;     /* per hp_kind */
     uint16_t move_ids[DUOFORGE_MAX_MOVE_SLOTS]; /* open; unused slots 0 */
-    uint8_t pp[DUOFORGE_MAX_MOVE_SLOTS];        /* per pp_kind; 0 when unknown */
+    uint16_t stats[5];                          /* own side: the current Attack, Defense, Sp. Atk, Sp.
+                                                   Def, Speed (the Mega forme's after Mega Evolution);
+                                                   0 for the foe (hidden) and under SYNTHETIC data */
+    uint8_t pp[DUOFORGE_MAX_MOVE_SLOTS];        /* per pp_kind */
+    uint8_t pp_max[DUOFORGE_MAX_MOVE_SLOTS];    /* open; unused slots 0 */
+    uint8_t stat_points[6];                     /* own side: the set's stat points, HP .. Speed; 0 for
+                                                   the foe (hidden) */
     uint8_t move_count;                         /* open */
     uint8_t hp_kind;                            /* DUOFORGE_HP_* */
     uint8_t hp_flag;                            /* DUOFORGE_HP_FLAG_* (PERCENT only) */
-    uint8_t pp_kind;                            /* DUOFORGE_PP_* */
+    uint8_t pp_kind;                            /* DUOFORGE_PP_*: own EXACT, foe DERIVED */
     uint8_t location;                           /* DUOFORGE_LOCATION_* */
-    uint8_t mega_capable;                       /* open (an item is open) */
-} duoforge_member_view; /* 24 bytes */
+    uint8_t mega_capable;                       /* open (the stone is on the sheet) */
+    uint8_t is_mega;                            /* public once it happened */
+    uint8_t gender;                             /* open (0 under SYNTHETIC data) */
+    uint8_t nature;                             /* open */
+    uint8_t ability;                            /* open: current ability + 1 (the Mega forme's after
+                                                   Mega Evolution), 0 none */
+    uint8_t item;                               /* open: sheet item + 1, 0 none */
+    uint8_t item_used;                          /* public: used up in view */
+    uint8_t status;                             /* public: DUOFORGE_AILMENT_*; NONE for a foe not yet
+                                                   seen and for a fainted member */
+    uint8_t reserved;                           /* zero */
+} duoforge_member_view; /* 52 bytes */
+
+/* An active position as both players see it. An empty one has neutral
+   stages, no locked slot or target and every flag 0. */
+typedef struct duoforge_position_view {
+    uint8_t stages[7];     /* public: atk def spa spd spe accuracy evasion, biased by 6 (6 = neutral) */
+    uint8_t confused;      /* public: 1 while confused; the turns stay hidden */
+    uint8_t charging;      /* public: 1 while a two-turn move is charged */
+    uint8_t locked_slot;   /* public: the locked move slot, DUOFORGE_MOVE_SLOT_NONE if none */
+    uint8_t locked_target; /* own side only: the stored target (flat position) of the locked move;
+                              DUOFORGE_TARGET_NONE without one and for the foe */
+    uint8_t acted;         /* public: 1 once the occupant took a move action since it entered */
+    uint8_t protect_chain; /* public: consecutive successful Protects (stall counter level) */
+    uint8_t flash_fire;    /* public: 1 while Flash Fire's boost is active */
+    uint8_t protecting;    /* public: 1 while Protect is up this turn ([-singleturn] Protect) */
+    uint8_t reserved;      /* zero */
+} duoforge_position_view; /* 16 bytes */
 
 typedef struct duoforge_side_view {
     duoforge_member_view members[DUOFORGE_MAX_ROSTER];
+    duoforge_position_view positions[DUOFORGE_ACTIVE_PER_SIDE];
     uint8_t member_count;                        /* open */
     uint8_t occupant[DUOFORGE_ACTIVE_PER_SIDE];  /* public: roster index or DUOFORGE_ROSTER_NONE */
     uint8_t mega_used;                           /* public */
     uint8_t brought_order[DUOFORGE_MAX_ROSTER];  /* own side; all DUOFORGE_ROSTER_NONE for the foe */
-    uint8_t reserved[2];                         /* zero */
-} duoforge_side_view; /* 156 bytes */
+    uint8_t requested;                           /* public: this side must answer the current request */
+    uint8_t requested_slots;                     /* public: its requested positions (bit k slot k) */
+    uint8_t reflect_turns;                       /* public: remaining turns, 0 when absent */
+    uint8_t light_screen_turns;                  /* public */
+    uint8_t tailwind_turns;                      /* public */
+    uint8_t reserved;                            /* zero */
+} duoforge_side_view; /* 360 bytes */
 
 typedef struct duoforge_observation {
     uint32_t epoch;
     uint8_t boundary_kind;
-    uint8_t player;    /* the viewer; sides[] stays in absolute side order */
-    uint8_t requested; /* as in duoforge_request */
+    uint8_t player;           /* the viewer; sides[] stays in absolute side order */
+    uint8_t requested;        /* as in duoforge_request */
     uint8_t slot_mask;
+    uint16_t turn;            /* public */
+    uint8_t weather;          /* public: DUOFORGE_WEATHER_* */
+    uint8_t weather_turns;    /* public: remaining turns */
+    uint8_t terrain;          /* public: DUOFORGE_TERRAIN_* */
+    uint8_t terrain_turns;    /* public */
+    uint8_t trick_room_turns; /* public: remaining turns, 0 when absent */
+    uint8_t reserved;         /* zero */
     duoforge_side_view sides[DUOFORGE_SIDE_COUNT];
-} duoforge_observation; /* 320 bytes */
+} duoforge_observation; /* 736 bytes */
 
 /* Pure. Checks: NULL -> CONTEXT_MISMATCH -> INVALID_ARGUMENT (player) ->
    INVARIANT. Writes *out_observation only on success. */

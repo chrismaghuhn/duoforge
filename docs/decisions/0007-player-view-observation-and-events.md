@@ -1,6 +1,6 @@
 # 0007 — What a player sees: observation v2 and the event log
 
-Status: **accepted** (owner, 2026-10-01: points A and B decided, C follows the principle). Builds on decision `0005` section 6 (information profile prototype) and decision `0006` section 6 (events, knowledge, observation). Nothing here is implemented yet.
+Status: **accepted** (owner, 2026-10-01: points A and B decided, C follows the principle). Builds on decision `0005` section 6 (information profile prototype) and decision `0006` section 6 (events, knowledge, observation). **Implemented:** step 2, the observation v2 (section 10). The event log (step 3) is next.
 
 ## 1. Owner inputs (2026-10-01)
 
@@ -94,3 +94,14 @@ State v3 is expected to suffice: the remaining turns, statuses and volatiles exi
 - **A. Foe PP: shown** as the derived value (a human can count the uses).
 - **B. The opponent's request: shown.** A human sees it at once: switches run first in a turn, before Mega Evolution and before the moves in priority order (from the highest priority down, speed within one priority), so a switch, chosen or forced, is visible the moment it happens.
 - **C. Own hidden durations: hidden**, as proposed: the game never shows sleep or confusion turns, so they stay hidden on the owner's side as well (follows from the principle in section 2).
+
+## 10. Observation v2 as built (step 2)
+
+- **Layout:** 736 bytes (was 320): a 16-byte header with the turn, weather, terrain and Trick Room and their remaining turns; per side six 52-byte member views (the open sheet; for the own side also the current stats and the stat points, 0 for the foe), two 16-byte position views (an empty position has neutral stages, `DUOFORGE_MOVE_SLOT_NONE` and `DUOFORGE_TARGET_NONE`; the foe's locked target is `DUOFORGE_TARGET_NONE`; `protecting` while Protect is up this turn), occupancy, Mega used, the own pick order, who must answer, and the side conditions with remaining turns. Public constants `DUOFORGE_AILMENT_*`, `DUOFORGE_WEATHER_*`, `DUOFORGE_TERRAIN_*`, `DUOFORGE_PP_DERIVED`, `DUOFORGE_MOVE_SLOT_NONE`. Library version 0.5.0.
+- **Sources:** own side from the state; both sheets; public facts of the battle; for the opponent the viewer's knowledge (seen mask, last HP display, items seen used up, Mega Evolutions seen, move uses seen). The opponent's exact HP and PP, bench and pick order, sealed commands, its charged move's target and the RNG are not read. Until the event log exists (step 3), the knowledge is still updated by the engine directly, as in decision `0006`. The foe's status and ability are read from its state: both are public whenever they change (statuses are announced when they start and end; the ability changes only by a Mega Evolution, which is always shown, and an invariant ties `is_mega` to the revealed fact).
+- **State:** unchanged (state v3), as expected in section 8.
+- **Evidence:**
+  - The Python oracle builds the same bytes for all 15 fixtures and both players.
+  - The paired tests on real states (closure gate) cover the hidden sleep and freeze turns and confusion turns on both sides and the foe's charged target, and show a changed field turn or foe stat stage. Planted leaks of each are reported by their pair.
+  - The conformance test compares both players' observations with every step of the recorded battles: the derived foe PP equals Showdown's PP, and statuses, abilities (the Mega forme's after Mega Evolution), Mega formes, items used up, stat stages, confusion, the locked slot and the own locked target, a charged move, Protect, Flash Fire and the stall counter (as Showdown's volatiles), field and side conditions match; at TERMINAL only the stat stages. Planted errors (foe PP at its maximum, foe status hidden) turn it red. The closure gate fails if any kind of pair never ran.
+
