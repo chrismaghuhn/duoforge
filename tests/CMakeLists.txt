@@ -149,7 +149,8 @@ if(Python3_Interpreter_FOUND)
     # The table generator refuses move shapes it does not model (no checkout needed).
     add_test(NAME duoforge.data.gen_closure_refusals
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/test_gen_closure.py")
-    set_tests_properties(duoforge.data.gen_closure_refusals PROPERTIES TIMEOUT 60)
+    set_tests_properties(duoforge.data.gen_closure_refusals PROPERTIES TIMEOUT 60
+        ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
 endif()
 
 # The vendored upstream license must stay byte-exact.
