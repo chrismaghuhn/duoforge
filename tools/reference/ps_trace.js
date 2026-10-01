@@ -12,7 +12,8 @@
 // "pass", a move without PP falls back to the first with PP, a target is
 // dropped for a move that takes none (and is 1 for one that needs it), a
 // switch to a Pokemon that cannot come in goes to the first standing
-// reserve (or becomes "move 1 1"), and an exhausted plan repeats its last
+// reserve (or becomes "move 1 1", as does a switch of a trapped Pokemon),
+// and an exhausted plan repeats its last
 // entry. The trace records the choices
 // actually made. The harness runs
 // the battle with a recording PRNG and prints a normalized trace: for every
@@ -340,13 +341,16 @@ function main() {
                     next[id] += 1;
                     // A planned switch to a fainted or active Pokemon (or one
                     // the other slot already takes) goes to the first standing
-                    // reserve, or becomes "move 1 1" when none is left.
+                    // reserve, or becomes "move 1 1" when none is left; so does
+                    // a planned switch of a trapped Pokemon (for example one
+                    // charging a two-turn move).
                     const taken = new Set();
                     megaTaken = false;
                     text = side.active.map((p, k) => {
                         if (!p || p.fainted) return 'pass';
                         const w = raw[k].split(' ');
                         if (w[0] !== 'switch') return planMove(p, raw[k]);
+                        if (p.trapped) return planMove(p, 'move 1 1');
                         let n = Number(w[1]) - 1;
                         const ok = (i) => i >= side.active.length && side.pokemon[i] && !side.pokemon[i].fainted &&
                             !taken.has(i);

@@ -422,9 +422,10 @@ int main(void)
         DF_CHECK_EQ_U64(&t, bad, 0u);
         duoforge_battle_destroy(b);
     }
-    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 71u);
-    /* At least the real-team battles of the closure gate (step 13). */
-    DF_CHECK(&t, real >= 8u);
+    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 87u);
+    /* Exactly the battles of the real teams run under CLOSURE, the certified
+     * profile (decision 0010): the closure gate's 8 and the 16 of M5 step 3. */
+    DF_CHECK_EQ_U64(&t, real, 24u);
     fprintf(stderr, "  %u of the battles run under CLOSURE data\n", real);
     duoforge_context_destroy(k1);
     duoforge_context_destroy(k2);
