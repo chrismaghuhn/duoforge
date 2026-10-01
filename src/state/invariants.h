@@ -83,6 +83,14 @@ duoforge_status dfi_state_check(const duoforge_context *ctx, const struct duofor
  * member alone, so they are not run again (the result is the same). */
 duoforge_status dfi_state_check_since(const duoforge_context *ctx, const struct duoforge_battle *b,
                                       const struct duoforge_battle *validated, dfi_invariant *out_first);
+/* The check of the model-facing queries (decision 0011): every rule of
+ * dfi_state_check except a CLOSURE member's derived values and move legality
+ * (dfi_closure_member_ranges runs instead of dfi_closure_member_valid). Every
+ * index, count and divisor stays checked, so a query never reads out of
+ * bounds. The rules left out run where the state changes (create, step,
+ * decode) and in encode, digest and check. */
+duoforge_status dfi_state_check_query(const duoforge_context *ctx, const struct duoforge_battle *b,
+                                      dfi_invariant *out_first);
 const char *dfi_invariant_name(dfi_invariant id);
 
 /* Bit mask of occupied positions of a side (bounded loop, no stored index). */

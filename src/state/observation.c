@@ -204,7 +204,7 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
     if (player >= DUOFORGE_SIDE_COUNT) {
         return DUOFORGE_E_INVALID_ARGUMENT;
     }
-    if (dfi_state_check(ctx, battle, NULL) != DUOFORGE_OK) {
+    if (dfi_state_check_query(ctx, battle, NULL) != DUOFORGE_OK) { /* decision 0011 */
         return DUOFORGE_E_INVARIANT;
     }
     duoforge_observation o;

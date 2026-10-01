@@ -32,9 +32,9 @@ extern "C" {
 #endif
 
 #define DUOFORGE_VERSION_MAJOR 0
-#define DUOFORGE_VERSION_MINOR 7
+#define DUOFORGE_VERSION_MINOR 8
 #define DUOFORGE_VERSION_PATCH 0
-#define DUOFORGE_VERSION_STRING "0.7.0"
+#define DUOFORGE_VERSION_STRING "0.8.0"
 
 /* Identifiers of the artifacts that exist now (registry: decisions 0002, 0005, 0006). */
 #define DUOFORGE_SEMANTICS_ID           3u   /* "duoforge-m3-closure" */
@@ -192,6 +192,12 @@ duoforge_status duoforge_battle_copy(const duoforge_context *ctx, duoforge_battl
                                      const duoforge_battle *src);
 duoforge_status duoforge_battle_decode(const duoforge_context *ctx, duoforge_battle *dst,
                                        const uint8_t *bytes, size_t size);
+/* The full state check. Create, step, decode, encode, digest and check run it;
+   the model-facing queries (request, candidates, observe) run every rule but
+   a CLOSURE member's derived values and move legality (stats, HP and PP
+   maxima, moves of the set): a battle changes only through the calls that
+   run the full check, and every index, count and divisor stays checked, so
+   a query never reads out of bounds (decision 0011). */
 duoforge_status duoforge_battle_check(const duoforge_context *ctx, const duoforge_battle *battle);
 /* True iff the canonical encodings are byte-identical (covers every field,
    including the RNG state and draw counter). */

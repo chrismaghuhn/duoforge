@@ -82,7 +82,9 @@ uint32_t dfi_side_occupied_mask(const dfi_side *side)
     return mask;
 }
 
-static dfi_invariant dfi_check_member(const struct duoforge_context *ctx, const dfi_member *m)
+/* `full`: also the derived values and the move legality of a CLOSURE member
+ * (dfi_state_check_query passes false). */
+static dfi_invariant dfi_check_member(const struct duoforge_context *ctx, const dfi_member *m, bool full)
 {
     if (m->species_id >= ctx->species_count) {
         return DFI_INV_SPECIES_RANGE;
@@ -119,7 +121,8 @@ static dfi_invariant dfi_check_member(const struct duoforge_context *ctx, const 
     /* SYNTHETIC data has no stats, natures, statuses, items or abilities;
      * CLOSURE members must agree with the generated tables and formulas. */
     if (dfi_context_is_closure(ctx)) {
-        if (!dfi_closure_member_valid(ctx->data_kind == DUOFORGE_DATA_KIND_CLOSURE_DEV, m)) {
+        const bool dev = ctx->data_kind == DUOFORGE_DATA_KIND_CLOSURE_DEV;
+        if (!(full ? dfi_closure_member_valid(dev, m) : dfi_closure_member_ranges(dev, m))) {
             return DFI_INV_MEMBER_EXTRA;
         }
     } else if (!dfi_member_extra_is_zero(m)) {
@@ -163,7 +166,7 @@ static bool dfi_volatile_valid(const dfi_active_slot *slot, uint32_t move_count)
 }
 
 static dfi_invariant dfi_check_side(const struct duoforge_context *ctx, const struct duoforge_battle *b,
-                                    const struct duoforge_battle *validated, uint32_t s)
+                                    const struct duoforge_battle *validated, bool full, uint32_t s)
 {
     const dfi_side *side = &b->sides[s];
     const uint32_t kind = b->boundary_kind;
@@ -183,7 +186,7 @@ static dfi_invariant dfi_check_side(const struct duoforge_context *ctx, const st
             const dfi_member *seen = validated != NULL ? &validated->sides[s].members[m] : NULL;
             const bool same = seen != NULL && m < validated->sides[s].member_count &&
                               dfi_bytes_equal((const uint8_t *)&side->members[m], (const uint8_t *)seen, sizeof *seen);
-            const dfi_invariant inv = same ? DFI_INV_NONE : dfi_check_member(ctx, &side->members[m]);
+            const dfi_invariant inv = same ? DFI_INV_NONE : dfi_check_member(ctx, &side->members[m], full);
             if (inv != DFI_INV_NONE) {
                 return inv;
             }
@@ -459,14 +462,10 @@ static bool dfi_field_valid(const struct duoforge_battle *b)
            b->trick_room_turns <= DFI_FIELD_TURNS_MAX;
 }
 
-duoforge_status dfi_state_check(const duoforge_context *ctx, const struct duoforge_battle *b,
-                                dfi_invariant *out_first)
-{
-    return dfi_state_check_since(ctx, b, NULL, out_first);
-}
 
-duoforge_status dfi_state_check_since(const duoforge_context *ctx, const struct duoforge_battle *b,
-                                      const struct duoforge_battle *validated, dfi_invariant *out_first)
+static duoforge_status dfi_state_check_mode(const duoforge_context *ctx, const struct duoforge_battle *b,
+                                           const struct duoforge_battle *validated, bool full,
+                                           dfi_invariant *out_first)
 {
     dfi_invariant inv = DFI_INV_NONE;
     const bool terminal = b->boundary_kind == DUOFORGE_BOUNDARY_TERMINAL;
@@ -495,7 +494,7 @@ duoforge_status dfi_state_check_since(const duoforge_context *ctx, const struct 
         inv = DFI_INV_FIELD;
     } else {
         for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT && inv == DFI_INV_NONE; ++s) {
-            inv = dfi_check_side(ctx, b, validated, s);
+            inv = dfi_check_side(ctx, b, validated, full, s);
         }
     }
     if (inv == DFI_INV_NONE) {
@@ -632,4 +631,22 @@ const char *dfi_invariant_name(dfi_invariant id)
     default:
         return "UNKNOWN";
     }
+}
+
+duoforge_status dfi_state_check(const duoforge_context *ctx, const struct duoforge_battle *b,
+                                dfi_invariant *out_first)
+{
+    return dfi_state_check_mode(ctx, b, NULL, true, out_first);
+}
+
+duoforge_status dfi_state_check_since(const duoforge_context *ctx, const struct duoforge_battle *b,
+                                      const struct duoforge_battle *validated, dfi_invariant *out_first)
+{
+    return dfi_state_check_mode(ctx, b, validated, true, out_first);
+}
+
+duoforge_status dfi_state_check_query(const duoforge_context *ctx, const struct duoforge_battle *b,
+                                      dfi_invariant *out_first)
+{
+    return dfi_state_check_mode(ctx, b, NULL, false, out_first);
 }
