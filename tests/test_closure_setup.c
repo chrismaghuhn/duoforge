@@ -458,7 +458,13 @@ int main(void)
             for (size_t i = 0; i < sizeof step8_items / sizeof step8_items[0]; ++i) {
                 want.items[step8_items[i]] = 1u;
             }
-            DF_CHECK_BYTES(&t, (const uint8_t *)&dfi_support, (const uint8_t *)&want, sizeof want, "manifest");
+            /* The closure ids; the Team C ids (decision 0009) are checked by
+             * duoforge.state.team_c_setup. */
+            DF_CHECK(&t, dfi_support.turn_core == want.turn_core && dfi_support.switching == want.switching &&
+                             dfi_support.mega_evolution == want.mega_evolution);
+            DF_CHECK_BYTES(&t, dfi_support.moves, want.moves, DFI_MOVE_COUNT, "manifest moves");
+            DF_CHECK_BYTES(&t, dfi_support.abilities, want.abilities, DFI_ABILITY_COUNT, "manifest abilities");
+            DF_CHECK_BYTES(&t, dfi_support.items, want.items, DFI_ITEM_COUNT, "manifest items");
         }
         m.turn_core = 0u;
         DF_CHECK(&t, !dfi_closure_setup_supported(&m, &teams));

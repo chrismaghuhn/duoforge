@@ -1,6 +1,6 @@
 # 0009 — Team C: the expansion track (data kind, gate, steps, evidence)
 
-Status: **accepted** (owner, 2026-10-01: "bau das erstmal so"; setup rule: the closure rule, section 3.4). Implementation starts with step 1. Builds on decision `0004` (two reference teams), `0006` (data, state v3, draw sites, fixtures, evidence), `0007` (player view) and `0010` (the certified CLOSURE profile, the role of `CLOSURE_DEV`, draw alignment B confirmed), and on the research in `docs/research/third-team/` (PR #32). "M§n" means section n of `docs/research/third-team/mechanics.md`; X1 to X9 are its executed experiments.
+Status: **accepted** (owner, 2026-10-01: "bau das erstmal so"; setup rule: the closure rule, section 3.4). **Step 1 built** (section 10.1). Builds on decision `0004` (two reference teams), `0006` (data, state v3, draw sites, fixtures, evidence), `0007` (player view) and `0010` (the certified CLOSURE profile, the role of `CLOSURE_DEV`, draw alignment B confirmed), and on the research in `docs/research/third-team/` (PR #32). "M§n" means section n of `docs/research/third-team/mechanics.md`; X1 to X9 are its executed experiments.
 
 ## 1. Owner inputs (2026-10-01)
 
@@ -19,7 +19,7 @@ Status: **accepted** (owner, 2026-10-01: "bau das erstmal so"; setup rule: the c
 | The closure specs and traces (87 since M5 step 3), `tests/reference/conformance.h` | byte-identical | `duoforge.reference.trace.*` (Showdown reruns), `duoforge.reference.conformance_tables` |
 | State v3 | layout (1009 bytes), schema 3, semantics id; every value that is new for Team C stays invalid under the CLOSURE kinds | the codec, golden and invariant tests, plus new negative tests |
 | Observation (736 bytes) and events | closure battles give the same bytes; additions are new enum values and bits of `reserved` fields that stay zero under CLOSURE | the conformance event and observation checks |
-| Closure test files | not edited, except the shared conformance driver (section 6.1), whose closure build keeps its fixtures and checks | review |
+| Closure test files | not edited, except the shared conformance driver (section 6.1), whose closure build keeps its fixtures and checks, and two checks of `tests/test_closure_setup.c`: the unknown data kind is now 6 (4 and 5 are TEAM_C), and the manifest comparison covers the closure ids (the Team C ids: `duoforge.state.team_c_setup`) | review |
 
 Every step's PR states this table as checked.
 
@@ -238,3 +238,39 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
 5. Last Respects' count is derived from the roster instead of stored (4.1).
 6. Step 9a (harness) is its own PR, and step 12 (the Team C gate) closes the track.
 7. The track follows draw alignment B and the DEV profile, both confirmed with decision 0010; TEAM_C takes over 0010's profile freeze (3.4).
+
+## 10. As built
+
+### 10.1 Step 1: data, kinds, gate and the data-only mechanics
+
+- **Tables.** `gen_closure.py --team-c` writes `src/data/extended_tables.{h,c}`: 23 formes, 50 moves, 16 items and 21 abilities. The canonical bytes are 2438 long and hash to `d16b1cef…`. The closure group is built first, and the generator checks the prefix before it writes. `duoforge.data.extended_tables` checks:
+  - the closure rows, field by field;
+  - the closure canonical bytes recomputed from the prefix, which hash to the closure hash;
+  - the Team C rows against literal values from the pin;
+  - the stat lines against the pin's `spreadModify`. Basculegion (Jolly) is 197/164/85/90/95/143; mechanics.md section 2 had listed the Adamant line and is corrected.
+- **Kinds.** The engine reads the extended tables under every combat kind. `dfi_kind_limits` keeps the CLOSURE kinds at the closure prefix (16 formes, 11 items). TEAM_C takes over the certified profile of decision 0010 (a context of 6 and 4, exactly six members per side, `dfi_kind_full_roster`); TEAM_C_DEV takes four to six, as CLOSURE_DEV. The state model gives the fingerprints KC `520eca89…` and KD `3005a212…`; K1 and K2 are unchanged.
+- **Gate.** Step 1 marks Kowtow Cleave, Hyper Voice, Draco Meteor, Wave Crash, Aqua Jet, Defiant and Adaptability. `duoforge.state.team_c_setup` checks the gate for each of the 22 Team C mechanics, together with validation and invariants per kind.
+- **Mechanics.**
+  - Defiant is Competitive's branch with Attack: per lowered stat and only from a foe, so a Parting Shot triggers it twice.
+  - Adaptability makes STAB 8192/4096.
+  - The five moves use existing paths.
+- **Evidence.** Four recorded battles (`c01_*`, run by `duoforge.reference.conformance_team_c`) cover:
+  - Defiant and Competitive after Intimidate (at the lead and on a pivot-in), Snarl, and a foe's Parting Shot, with none after an ally's;
+  - Hyper Voice against a Ghost type and against Protect;
+  - Draco Meteor's accuracy and self-drop, and Kowtow Cleave;
+  - Wave Crash in rain with recoil, Aqua Jet in Mega Charizard Y's sun, and Adaptability;
+  - Grass Knot at 100, 80 and 60.
+
+  Negative controls: without the Defiant branch, or with STAB 1.5 for Adaptability, these battles fail.
+- **Not reachable:** a self-inflicted drop on a Defiant or Competitive holder. Kingambit's and Milotic's sets have no self-drop move, so the corresponding item of section 5's step-1 row cannot occur.
+- **Tooling.**
+  - Specs with `"data": "team_c"` go to `tests/reference/conformance_team_c.h`. The converter reads them with the extended tables and maps Indeedee-F's protocol name "Indeedee" explicitly (`sim/pokemon.ts:329-330`).
+  - At a PIVOT in the middle of the turn a fainted, unreplaced slot is not requested, because `checkFainted` runs only with an empty queue. `c01_defiant_competitive` reaches it (Salamence faints, then Incineroar uses Parting Shot); the main session's `mid_turn` rule (PR #37) converts it, and `conformance.h` is unchanged.
+- **Version.** The two data kinds are an additive public change: the library goes from 0.8.0 to 0.9.0 (section 4.2).
+- **Shared files touched:**
+  - `include/duoforge/duoforge.h` (two constants, comments);
+  - `src/state/{context,battle,closure_member,invariants}.c` and their headers;
+  - `src/combat/turn.c` (table reads, Defiant, Adaptability);
+  - `src/data/support_manifest.{h,c}`;
+  - `tests/test_closure_setup.c`, `tests/test_conformance.c`;
+  - `tools/state_model/state_v3_model.py`.

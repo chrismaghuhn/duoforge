@@ -1,0 +1,25 @@
+{
+  "name": "c01_adaptability_weather",
+  "purpose": "Adaptability doubles the same-type bonus of Basculegion's Wave Crash and Aqua Jet; rain from Drizzle boosts them until Mega Charizard Y's Drought replaces it with sun, which halves them; Wave Crash recoil (33/100); Aqua Jet's priority +1; Life Orb on the other side.",
+  "data": "team_c",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c0102",
+  "teams": [
+    "Basculegion (M) @ Mystic Water\nAbility: Adaptability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Wave Crash\n- Aqua Jet\n\nPolitoed (M) @ Leftovers\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Weather Ball\n- Muddy Water\n\nKingambit (M) @ Sitrus Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Iron Head\n\nStaraptor (F) @ Light Clay\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Brave Bird\n- Close Combat",
+    "Gholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Shadow Ball\n- Make It Rain\n\nCharizard (M) @ Charizardite Y\nAbility: Blaze\nLevel: 50\nEVs: 16 HP / 18 Def / 3 SpA / 29 Spe\nTimid Nature\n- Heat Wave\n- Weather Ball\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Fake Out\n\nCeruledge (F) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Bitter Blade\n- Shadow Sneak"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1 2",
+      "move 2 1, move 2",
+      "move 1 1, move 1 1"
+    ],
+    "p2": [
+      "move 1 1, move 3",
+      "move 1 1, move 1 mega",
+      "move 1 1, move 2 1",
+      "move 2, move 3"
+    ],
+    "max_steps": 40
+  }
+}

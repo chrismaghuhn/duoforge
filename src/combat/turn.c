@@ -519,6 +519,14 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
                 dfi_boost(r, flat, raise, flat,
                           dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_COMPETITIVE, DFI_BOOST_SELF));
             }
+            /* Defiant (Team C, decision 0009): Competitive's shape with
+             * Attack (data/abilities.ts:901-921). */
+            if (capped[i] < DFI_BIAS6 && dfi_ability(m, DFI_ABILITY_DEFIANT) && source < DFI_POSITIONS &&
+                source / 2u != flat / 2u) {
+                static const uint8_t raise_atk[DFI_STAT_STAGE_COUNT] = {8u, 6u, 6u, 6u, 6u, 6u, 6u}; /* Atk +2 */
+                dfi_boost(r, flat, raise_atk, flat,
+                          dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_DEFIANT, DFI_BOOST_SELF));
+            }
         } else if (effect.cause == DUOFORGE_CAUSE_ABILITY ? effect.mode != DFI_BOOST_PRIMARY
                                                          : effect.mode == DFI_BOOST_PRIMARY) {
             dfi_emit(r, &e); /* a change of 0 */
@@ -804,7 +812,11 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
         return DUOFORGE_E_INVARIANT;
     }
     if (move_type < DFI_TYPE_COUNT) {
-        damage = dfi_modify(damage, dfi_has_type(a, move_type) ? 6144u : 4096u); /* STAB 1.5 */
+        /* STAB 1.5; Adaptability 2 (Team C, data/abilities.ts:43-56; no Tera) */
+        const uint32_t stab = !dfi_has_type(a, move_type) ? 4096u
+                              : dfi_ability(a, DFI_ABILITY_ADAPTABILITY) ? 8192u
+                                                                         : 6144u;
+        damage = dfi_modify(damage, stab);
         const uint32_t mod = dfi_type_mod(d, move_type);
         if (!dfi_type_damage(damage, mod, &damage)) {
             return DUOFORGE_E_INVARIANT;

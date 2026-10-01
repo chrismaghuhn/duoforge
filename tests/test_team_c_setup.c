@@ -16,6 +16,7 @@
 
 #include "core/sha256.h"
 #include "data/extended_tables.h"
+#include "data/support_manifest.h"
 #include "state/battle_internal.h"
 #include "state/closure_member.h"
 #include "state/context_internal.h"
@@ -291,7 +292,9 @@ int main(void)
     }
 
     /* The gate per Team C mechanic: the dev side plus exactly one of them.
-     * Steps (decision 0009 section 5) mark them one by one. */
+     * Steps (decision 0009 section 5) mark them one by one; step 1: Kowtow
+     * Cleave, Hyper Voice, Draco Meteor, Wave Crash, Aqua Jet, Defiant and
+     * Adaptability. */
     {
         typedef struct gate_case {
             uint32_t member, ability_plus1, item_plus1, move;
@@ -303,32 +306,50 @@ int main(void)
             {0u, 0u, 0u, DFI_MOVE_DIRECLAW, false, "Dire Claw"},
             {1u, 0u, 0u, DFI_MOVE_FLAREBLITZ, false, "Flare Blitz"},
             {1u, 0u, 0u, DFI_MOVE_DARKESTLARIAT, false, "Darkest Lariat"},
-            {2u, 0u, 0u, DFI_MOVE_HYPERVOICE, false, "Hyper Voice"},
-            {2u, 0u, 0u, DFI_MOVE_DRACOMETEOR, false, "Draco Meteor"},
+            {2u, 0u, 0u, DFI_MOVE_HYPERVOICE, true, "Hyper Voice"},
+            {2u, 0u, 0u, DFI_MOVE_DRACOMETEOR, true, "Draco Meteor"},
             {3u, 0u, 0u, DFI_MOVE_FOLLOWME, false, "Follow Me"},
             {3u, 0u, 0u, DFI_MOVE_HELPINGHAND, false, "Helping Hand"},
-            {4u, 0u, 0u, DFI_MOVE_KOWTOWCLEAVE, false, "Kowtow Cleave"},
+            {4u, 0u, 0u, DFI_MOVE_KOWTOWCLEAVE, true, "Kowtow Cleave"},
             {4u, 0u, 0u, DFI_MOVE_SUCKERPUNCH, false, "Sucker Punch"},
-            {5u, 0u, 0u, DFI_MOVE_WAVECRASH, false, "Wave Crash"},
+            {5u, 0u, 0u, DFI_MOVE_WAVECRASH, true, "Wave Crash"},
             {5u, 0u, 0u, DFI_MOVE_LASTRESPECTS, false, "Last Respects"},
             {5u, 0u, 0u, DFI_MOVE_FLIPTURN, false, "Flip Turn"},
-            {5u, 0u, 0u, DFI_MOVE_AQUAJET, false, "Aqua Jet"},
+            {5u, 0u, 0u, DFI_MOVE_AQUAJET, true, "Aqua Jet"},
             {0u, DFI_ABILITY_UNBURDEN + 1u, 0u, keep, false, "Unburden"},
             {3u, DFI_ABILITY_PSYCHICSURGE + 1u, 0u, keep, false, "Psychic Surge"},
-            {4u, DFI_ABILITY_DEFIANT + 1u, 0u, keep, false, "Defiant"},
+            {4u, DFI_ABILITY_DEFIANT + 1u, 0u, keep, true, "Defiant"},
             {0u, 0u, DFI_ITEM_WHITEHERB + 1u, keep, false, "White Herb"},
             {2u, 0u, DFI_ITEM_SALAMENCITE + 1u, keep, false, "Salamencite (Mega, Aerilate)"},
             {3u, 0u, DFI_ITEM_ROCKYHELMET + 1u, keep, false, "Rocky Helmet"},
             {4u, 0u, DFI_ITEM_CHOPLEBERRY + 1u, keep, false, "Chople Berry"},
             {4u, 0u, DFI_ITEM_CHOICESCARF + 1u, keep, false, "Choice Scarf"},
+            {5u, DFI_ABILITY_ADAPTABILITY + 1u, 0u, DFI_MOVE_WAVECRASH, true, "Adaptability"},
         };
         for (size_t i = 0u; i < sizeof cases / sizeof cases[0]; ++i) {
             s = teams;
             put_one(&s, cases[i].member, cases[i].ability_plus1, cases[i].item_plus1, cases[i].move);
             legal(&t, kd, &s, cases[i].supported, cases[i].what);
         }
-        /* Adaptability needs a Basculegion with a supported move: none before
-         * step 1c, so it is checked there. */
+    }
+
+    /* The manifest's Team C entries are exactly the mechanics of the steps
+     * built so far (the closure entries: duoforge.state.closure_setup). */
+    {
+        uint8_t moves[DFI_EXT_MOVE_COUNT - DFI_MOVE_COUNT] = {0};
+        uint8_t abilities[DFI_EXT_ABILITY_COUNT - DFI_ABILITY_COUNT] = {0};
+        uint8_t items[DFI_EXT_ITEM_COUNT - DFI_ITEM_COUNT] = {0};
+        static const uint32_t step1_moves[] = {DFI_MOVE_KOWTOWCLEAVE, DFI_MOVE_HYPERVOICE, DFI_MOVE_DRACOMETEOR,
+                                               DFI_MOVE_WAVECRASH, DFI_MOVE_AQUAJET};
+        for (size_t i = 0u; i < sizeof step1_moves / sizeof step1_moves[0]; ++i) {
+            moves[step1_moves[i] - DFI_MOVE_COUNT] = 1u;
+        }
+        abilities[DFI_ABILITY_DEFIANT - DFI_ABILITY_COUNT] = 1u;
+        abilities[DFI_ABILITY_ADAPTABILITY - DFI_ABILITY_COUNT] = 1u;
+        DF_CHECK_BYTES(&t, dfi_support.moves + DFI_MOVE_COUNT, moves, sizeof moves, "Team C moves in the manifest");
+        DF_CHECK_BYTES(&t, dfi_support.abilities + DFI_ABILITY_COUNT, abilities, sizeof abilities,
+                       "Team C abilities in the manifest");
+        DF_CHECK_BYTES(&t, dfi_support.items + DFI_ITEM_COUNT, items, sizeof items, "Team C items in the manifest");
     }
 
     duoforge_context_destroy(k1);
