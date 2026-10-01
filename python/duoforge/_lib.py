@@ -1,15 +1,19 @@
 """The DuoForge shared library over ctypes (M7, decision 0013).
 
 The path comes from DUOFORGE_LIBRARY; without it the package looks next to
-itself, then in build/*/ and build/*/Release of the repository, in sorted
-order. An explicit DUOFORGE_LIBRARY is the only candidate: a wrong path fails
-and never falls back to another build. The library must report
-EXPECTED_VERSION. ctypes.CDLL releases the GIL for every foreign call.
-Struct pointers travel as c_void_p into NumPy buffers (_layout.py).
+itself, then in build/*/ and build/*/Release of the repository. An explicit
+DUOFORGE_LIBRARY is the only candidate: a wrong path fails and never falls
+back to another build. Among the build directories exactly one library may
+report EXPECTED_VERSION; two raise, naming both, so a stale build of the
+same version cannot load unnoticed (set DUOFORGE_LIBRARY to choose).
+library_path() names the loaded file. ctypes.CDLL releases the GIL for every
+foreign call. Struct pointers travel as c_void_p into NumPy buffers
+(_layout.py).
 """
 import ctypes
 import functools
 import glob
+import operator
 import os
 
 from .errors import DuoforgeError, DuoforgeLibraryError
@@ -50,40 +54,56 @@ _SIGNATURES = {
 
 
 def _candidates():
+    """Candidate groups in order: DUOFORGE_LIBRARY alone, or the package
+    directory, then the build directories."""
     explicit = os.environ.get("DUOFORGE_LIBRARY")
     if explicit:
-        return (explicit,)
+        return ((explicit,),)
     here = os.path.dirname(os.path.abspath(__file__))
     root = os.path.dirname(os.path.dirname(here))
-    dirs = [here]
+    builds = []
     for pattern in ("build/*", "build/*/Release"):
-        dirs.extend(sorted(d for d in glob.glob(os.path.join(root, pattern)) if os.path.isdir(d)))
-    return tuple(os.path.join(d, n) for d in dirs for n in _NAMES)
+        builds.extend(sorted(d for d in glob.glob(os.path.join(root, pattern)) if os.path.isdir(d)))
+    return (tuple(os.path.join(here, n) for n in _NAMES), tuple(os.path.join(d, n) for d in builds for n in _NAMES))
+
+
+def _open(path, expected, tried):
+    """The library at path if it loads and reports the expected version."""
+    if not os.path.isfile(path):
+        tried.append(f"{path}: not found")
+        return None
+    try:
+        lib = ctypes.CDLL(os.path.abspath(path))
+    except OSError as err:
+        tried.append(f"{path}: {err}")
+        return None
+    lib.duoforge_version_string.restype = ctypes.c_char_p
+    lib.duoforge_version_string.argtypes = ()
+    found = lib.duoforge_version_string().decode("ascii")
+    if found != expected:
+        tried.append(f"{path}: version {found}")
+        return None
+    return lib
 
 
 @functools.lru_cache(maxsize=None)
-def _load(candidates, expected):
+def _load(groups, expected):
+    """The library of the first group with a match; a group with two
+    matches raises instead of choosing one silently."""
     tried = []
-    for path in candidates:
-        if not os.path.isfile(path):
-            tried.append(f"{path}: not found")
-            continue
-        try:
-            lib = ctypes.CDLL(os.path.abspath(path))
-        except OSError as err:
-            tried.append(f"{path}: {err}")
-            continue
-        lib.duoforge_version_string.restype = ctypes.c_char_p
-        lib.duoforge_version_string.argtypes = ()
-        found = lib.duoforge_version_string().decode("ascii")
-        if found != expected:
-            tried.append(f"{path}: version {found}")
-            continue
-        for name, (restype, argtypes) in _SIGNATURES.items():
-            fn = getattr(lib, name)
-            fn.restype = restype
-            fn.argtypes = argtypes
-        return lib
+    for group in groups:
+        matches = [(path, lib) for path in group for lib in [_open(path, expected, tried)] if lib is not None]
+        if len(matches) > 1:
+            raise DuoforgeLibraryError(f"more than one DuoForge library {expected}: "
+                                       + ", ".join(p for p, _ in matches) + "; set DUOFORGE_LIBRARY to choose one")
+        if matches:
+            path, lib = matches[0]
+            for name, (restype, argtypes) in _SIGNATURES.items():
+                fn = getattr(lib, name)
+                fn.restype = restype
+                fn.argtypes = argtypes
+            lib._duoforge_path = os.path.abspath(path)
+            return lib
     shown = tried if len(tried) <= 8 else tried[:8] + [f"... {len(tried) - 8} more"]
     raise DuoforgeLibraryError(f"no DuoForge library {expected} found; tried: " + "; ".join(shown))
 
@@ -91,6 +111,11 @@ def _load(candidates, expected):
 def load_library():
     """The loaded library (cached per search path and expected version)."""
     return _load(_candidates(), EXPECTED_VERSION)
+
+
+def library_path():
+    """The absolute path of the loaded library."""
+    return load_library()._duoforge_path
 
 
 def version():
@@ -110,9 +135,10 @@ def check(status):
 
 
 def uint(value, bits, name):
-    """value as an unsigned integer of `bits` bits; ValueError outside the
-    range (ctypes would wrap it silently)."""
-    value = int(value)
+    """value as an unsigned integer of `bits` bits: TypeError for a
+    non-integer (a float is not truncated), ValueError outside the range
+    (ctypes would wrap it silently)."""
+    value = operator.index(value)
     if not 0 <= value < 1 << bits:
         raise ValueError(f"{name} {value} is outside uint{bits}")
     return value

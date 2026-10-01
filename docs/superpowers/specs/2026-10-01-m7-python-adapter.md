@@ -119,7 +119,7 @@ The manifest (JSON) holds:
 
 Replay (`replay(recipe, on_decision=None)`):
 - It rebuilds every episode with a batch: setups from the table, seeds from (batch seed, env, episode), choices from the arrays.
-- `on_decision(env, episode, player, observation, candidates, count, choice)`, when given, receives the features' inputs.
+- `on_decision(env, episode, player, observation, candidates, count, choice, domain)`, when given, receives the features' inputs. The factored `domain` was added at the M7 exit review (2026-10-01), because section 5's encoder needs it; replay then also queries the factored form.
 - A different final digest, a different step count or a choice outside the candidates raises `ReplayMismatch`. A recipe written by another library version or fingerprint raises `RecipeVersionError` before anything is replayed.
 
 Size: about 100 bytes per battle (32 decisions × 2 bytes plus the per-episode columns), against about 25 KB per battle for observation dumps.

@@ -29,13 +29,27 @@ def _require(array, dtype, shape, name):
         raise ValueError(f"{name} must be C-contiguous")
 
 
+def _buffer(name):
+    return property(lambda self: self._buffers[name],
+                    doc=f"The batch's {name} buffer: allocated once, its attribute cannot be replaced.")
+
+
 class Batch:
     """Environments of one context stepped together (duoforge_batch_*).
 
     Buffers, allocated once: requests (E,2), observations (E,2), candidates
     (E,2,784), counts (E,2) uint32, domains (E,2) for the factored form,
-    statuses (E,) uint32 and results (E,).
+    statuses (E,) uint32 and results (E,). Their contents may be read and
+    written; the attributes cannot be replaced, since C writes into them.
     """
+
+    requests = _buffer("requests")
+    observations = _buffer("observations")
+    candidates = _buffer("candidates")
+    counts = _buffer("counts")
+    domains = _buffer("domains")
+    statuses = _buffer("statuses")
+    results = _buffer("results")
 
     def __init__(self, context, setups, workers, seed):
         self._handle = None  # set only after a successful create, so __del__ is safe
@@ -62,13 +76,15 @@ class Batch:
         self._handle = handle
         context._batches.add(self)
         envs = self.envs
-        self.requests = np.zeros((envs, 2), dtype=_layout.REQUEST)
-        self.observations = np.zeros((envs, 2), dtype=_layout.OBSERVATION)
-        self.candidates = np.zeros((envs, 2, _layout.MAX_CANDIDATES), dtype=_layout.SIDE_CHOICE)
-        self.counts = np.zeros((envs, 2), dtype=np.uint32)
-        self.domains = np.zeros((envs, 2), dtype=_layout.FACTORED_DOMAIN)
-        self.statuses = np.zeros(envs, dtype=np.uint32)
-        self.results = np.zeros(envs, dtype=_layout.STEP_RESULT)
+        self._buffers = {
+            "requests": np.zeros((envs, 2), dtype=_layout.REQUEST),
+            "observations": np.zeros((envs, 2), dtype=_layout.OBSERVATION),
+            "candidates": np.zeros((envs, 2, _layout.MAX_CANDIDATES), dtype=_layout.SIDE_CHOICE),
+            "counts": np.zeros((envs, 2), dtype=np.uint32),
+            "domains": np.zeros((envs, 2), dtype=_layout.FACTORED_DOMAIN),
+            "statuses": np.zeros(envs, dtype=np.uint32),
+            "results": np.zeros(envs, dtype=_layout.STEP_RESULT),
+        }
 
     # ---------------------------------------------------------- step mode
 
@@ -216,8 +232,8 @@ def _domains(domains):
     if domains.dtype != _layout.FACTORED_DOMAIN:
         raise TypeError(f"domains must be of FACTORED_DOMAIN, not {domains.dtype}")
     domains = domains.reshape(-1)
-    if (domains["kind"] == 0).any():
-        raise ValueError("a domain without a request has no choices")
+    if not np.isin(domains["kind"], (_SLOTS, _TEAM)).all():
+        raise ValueError("only a requested player's domain (SLOTS or TEAM_SELECTION) has choices")
     return domains
 
 
@@ -245,7 +261,10 @@ def _unrank_team(n, m, k):
 def factored_choices(domains, ks):
     """The factored choices of joint ranks ks (N,) in domains (N,)."""
     domains = _domains(domains)
-    ks = np.asarray(ks, dtype=np.int64).reshape(-1)
+    ks = np.asarray(ks)
+    if ks.dtype.kind not in "iu":
+        raise TypeError(f"joint indices must be integers, not {ks.dtype}")
+    ks = ks.astype(np.int64).reshape(-1)
     if ks.shape != domains.shape:
         raise ValueError("one joint index per domain")
     if ((ks < 0) | (ks >= joint_counts(domains))).any():

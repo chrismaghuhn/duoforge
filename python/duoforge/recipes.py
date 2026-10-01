@@ -296,10 +296,13 @@ def _check_versions(recipe):
 def replay(recipe, workers=1, on_decision=None):
     """Replays every episode of the recipe and checks it.
 
-    on_decision(env, episode, player, observation, candidates, count, choice)
-    receives each decision's inputs; observation and candidates are views
-    into the batch, valid until the next decision. Raises RecipeVersionError
-    before anything runs, ReplayMismatch at the first difference.
+    on_decision(env, episode, player, observation, candidates, count, choice,
+    domain) receives each decision's inputs, the factored domain included,
+    so features.encode(observation, domain) and the choice's factored form
+    (factored_choice(domain, choice)) are available; observation, candidates
+    and domain are views into the batch, valid until the next decision.
+    Raises RecipeVersionError before anything runs, ReplayMismatch at the
+    first difference.
     """
     _check_versions(recipe)
     m, a = recipe.manifest, recipe.arrays
@@ -334,6 +337,8 @@ def _replay_round(batch, recipe, rows, on_decision):
     running = active.copy()
     while True:
         batch.query()
+        if on_decision is not None:
+            batch.query_factored()  # the encoder's form of the same boundary
         terminal = batch.requests["requested"].sum(axis=1) == 0
         for e in np.flatnonzero(running):
             row = rows[e]
@@ -357,7 +362,7 @@ def _replay_round(batch, recipe, rows, on_decision):
                     raise ReplayMismatch(f"env {e} episode {a['episode'][row]}: choice {choice} of {count}")
                 if on_decision is not None:
                     on_decision(e, int(a["episode"][row]), p, batch.observations[e, p],
-                                batch.candidates[e, p, :count], count, choice)
+                                batch.candidates[e, p, :count], count, choice, batch.domains[e, p])
                 indices[e, p] = choice
                 used[e] += 1
         batch.step(indices, active=running)

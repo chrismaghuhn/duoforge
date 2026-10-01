@@ -1,5 +1,7 @@
 """duoforge.python.lib: loading the shared library, errors, context, setups."""
 import os
+import shutil
+import tempfile
 import unittest
 
 import numpy as np
@@ -49,6 +51,34 @@ class LibTest(unittest.TestCase):
         message = str(caught.exception)
         self.assertIn(path, message)
         self.assertIn(f"version {found}", message)
+
+    def test_two_matching_builds_raise(self):
+        source = os.environ["DUOFORGE_LIBRARY"]
+        folder = tempfile.mkdtemp(prefix="duoforge-builds-")
+        try:
+            copies = []
+            for name in ("a", "b"):
+                os.mkdir(os.path.join(folder, name))
+                copies.append(shutil.copy(source, os.path.join(folder, name)))
+            with self.assertRaises(duoforge.DuoforgeLibraryError) as caught:
+                _lib._load(((), tuple(copies)), _lib.EXPECTED_VERSION)
+            for path in copies:
+                self.assertIn(path, str(caught.exception))
+            self.assertEqual(_lib._load(((), (copies[0],)), _lib.EXPECTED_VERSION)._duoforge_path, copies[0])
+        finally:
+            shutil.rmtree(folder, ignore_errors=True)
+        self.assertEqual(os.path.normcase(duoforge.library_path()), os.path.normcase(os.path.abspath(source)))
+
+    def test_integers_are_checked_not_coerced(self):
+        with self.assertRaises(ValueError):
+            duoforge.reference_setups([2**32 + 3])
+        with self.assertRaises(TypeError):
+            duoforge.reference_setups([1.0])
+        with self.assertRaises(TypeError):
+            duoforge.Context(brought_count=4.7)
+        with self.assertRaises(TypeError):
+            _lib.uint(1.9, 32, "x")
+        self.assertEqual(_lib.uint(np.uint8(3), 32, "x"), 3)
 
     def test_reference_setups(self):
         setups = duoforge.reference_setups([0, 1, 2, 3])

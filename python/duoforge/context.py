@@ -5,7 +5,7 @@ import weakref
 import numpy as np
 
 from . import _layout
-from ._lib import check, load_library, ptr
+from ._lib import check, load_library, ptr, uint
 
 
 class Context:
@@ -21,14 +21,13 @@ class Context:
         self._batches = weakref.WeakSet()
         self._lib = load_library()
         config = np.zeros((), dtype=_layout.CONTEXT_CONFIG)
-        config["data_kind"] = data_kind
-        config["max_roster"] = max_roster
-        config["brought_count"] = brought_count
+        config["data_kind"] = uint(data_kind, 32, "data_kind")
+        config["max_roster"] = uint(max_roster, 32, "max_roster")
+        config["brought_count"] = uint(brought_count, 32, "brought_count")
         handle = ctypes.c_void_p()
         check(self._lib.duoforge_context_create(ptr(config), ctypes.byref(handle)))
         self.handle = handle
-        self.config = {"data_kind": int(data_kind), "max_roster": int(max_roster),
-                       "brought_count": int(brought_count)}
+        self.config = {name: int(config[name]) for name in ("data_kind", "max_roster", "brought_count")}
 
     def fingerprint(self):
         """The context fingerprint (32 bytes, duoforge_context_fingerprint)."""
@@ -64,5 +63,5 @@ def reference_setups(pairings):
     lib = load_library()
     setups = np.zeros(len(pairings), dtype=_layout.SETUP)
     for i, pairing in enumerate(pairings):
-        check(lib.duoforge_reference_setup(int(pairing), ptr(setups[i:i + 1])))
+        check(lib.duoforge_reference_setup(uint(pairing, 32, "pairing"), ptr(setups[i:i + 1])))
     return setups

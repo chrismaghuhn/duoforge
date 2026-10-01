@@ -78,6 +78,7 @@ Options:
 | `DUOFORGE_WARNINGS_AS_ERRORS` | OFF | `-Werror` / `/WX`. CI and all local verification use ON. |
 | `DUOFORGE_ENABLE_SANITIZERS` | OFF | ASan + UBSan, non-recovering (GCC/Clang only). |
 | `DUOFORGE_ENABLE_IPO` | OFF | Link-time optimization of Release builds (8 to 13 percent faster battles, decision 0008 section 8). The library then links only with the same toolchain; fails the configuration where unsupported. |
+| `DUOFORGE_PYTHON` | empty | Python 3.10+ with NumPy 2 for the `duoforge.python.*` tests (see "Python"); without it they report skipped. |
 | `DUOFORGE_PCG_REFERENCE_DIR` | empty | Path to a checkout of `imneme/pcg-c-basic` at `bc39cd76ac3d541e618606bcc6e1e5ba5e5e6aa3`. Enables the reference tests (`ctest -L reference`): byte-identical KAT regeneration and a 1,024,000-operation lockstep differential. |
 
 Every test is finite and has a timeout. Test groups:
@@ -92,10 +93,30 @@ Every test is finite and has a timeout. Test groups:
 | `duoforge.codec.*` | Goldens, negative decoding (including "rejected: schema 1"), exhaustive mutation sweep |
 | `duoforge.request.*` | Exhaustive domains against the oracle, stable and pure enumeration, output convention, step validation and atomicity, honest UNSUPPORTED, re-prompt, contract minimum (snapshots per boundary, stale/late, two-side replacement and pivot, one-side continuation), observation and information equivalence |
 | `duoforge.data.*` | Generated closure tables against values read at the pin, the table hash, the Champions stat and PP formulas; optional regeneration against a pinned Showdown checkout (`-DDUOFORGE_PS_REFERENCE_DIR=...`, label `reference`) |
+| `duoforge.batch.*` | The batch runtime: native and step mode against single battles, stepping by index and by factored choice |
+| `duoforge.python.*` | The Python package (label `python`): layouts against C, loader, native-versus-binding equivalence, recipes, policies and encoder, the example |
 | `duoforge.api.*` | Status names, NULL and context-mismatch sweeps, C++ link |
 | `duoforge.lint.*` | Source rules and their self-test; no writable globals |
 | `duoforge.provenance.*` | Vendored license hash |
 | `duoforge.sanitizer.*` | Sanitizer liveness canaries (sanitizer builds only) |
+
+## Python
+
+The package `python/duoforge` (decision 0013) drives the engine from Python over ctypes and NumPy: a batch of environments per call with the GIL released, buffers allocated once, the random and scripted baselines, an observation-only feature encoder and trajectory recipes (seeds and choices, replayed to features). It needs CPython 3.10 or later and NumPy 2; every rule stays in C.
+
+```text
+python -m venv .venv
+.venv/Scripts/python -m pip install numpy        (Linux: .venv/bin/python)
+cmake -S . -B build/py -DBUILD_TESTING=ON -DDUOFORGE_PYTHON=<repo>/.venv/Scripts/python.exe
+cmake --build build/py
+ctest --test-dir build/py -L python --output-on-failure
+```
+
+The tests find the shared library `duoforge_shared` through `DUOFORGE_LIBRARY`; without `DUOFORGE_PYTHON` they report skipped. To use the package directly, set `DUOFORGE_LIBRARY` to the built library and put `python/` on `PYTHONPATH`. The example writes a recipe and replays it:
+
+```text
+python -m duoforge.examples.generate --envs 64 --episodes 10 --policy random --workers 4 --out recipes/random640
+```
 
 ## Public API (provisional, `include/duoforge/duoforge.h`)
 

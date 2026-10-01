@@ -1,6 +1,6 @@
 # 0013 — Python adapter and trusted trajectories (M7)
 
-Status: owner decisions 2026-10-01 (section 7); specification `docs/superpowers/specs/2026-10-01-m7-python-adapter.md`, plan `docs/superpowers/plans/2026-10-01-m7-python-adapter.md`.
+Status: done (M7 exit, 2026-10-01): implemented by the plan `docs/superpowers/plans/2026-10-01-m7-python-adapter.md` in PRs #53, #54, #55, #58, #59, #61 and #62 against the specification `docs/superpowers/specs/2026-10-01-m7-python-adapter.md`; evidence in section 8. Owner decisions 2026-10-01 in section 7.
 
 ## 1. Goal
 
@@ -8,13 +8,13 @@ Roadmap M7: a thin C ABI binding, packed observation and candidate batches, rand
 
 ## 2. Binding
 
-- **Shared library.** `duoforge_shared` (DLL / `.so`) contains the engine and the batch runtime, and an export macro `DUOFORGE_API` marks the public functions (Windows needs explicit exports). The static libraries stay as they are.
+- **Shared library.** `duoforge_shared` (DLL / `.so`) contains the engine and the batch runtime, built from the same source lists as the static libraries, which stay as they are. Windows exports every function through `WINDOWS_EXPORT_ALL_SYMBOLS`; an explicit export macro waits for a frozen ABI (specification section 2). MSVC builds this library without `/GL`, whose objects the export generation cannot read.
 - **Python over ctypes** (`python/duoforge/`):
   - One foreign call per batch. ctypes releases the GIL during the call.
   - NumPy arrays are passed by pointer, so nothing is copied.
   - Python only allocates arrays, calls the library and views the results; no rule logic lives in Python (AGENTS.md).
-- **Layouts.** The C structs are NumPy structured dtypes, generated from the public header at build time. A test compares every size and offset with the compiler's, so a header change cannot desynchronize them silently.
-- **Dependencies:** Python 3.10 or later and NumPy, nothing else. NumPy is not installed on the owner's machine yet.
+- **Layouts.** The C structs are NumPy structured dtypes with explicit offsets (`_layout.py`). The tool `duoforge_layout_dump` prints every size, offset and the constants the package uses from the compiler's view, and `duoforge.python.layout` requires equality, so a header change cannot desynchronize them silently.
+- **Dependencies:** Python 3.10 or later and NumPy 2, nothing else (the project venv `.venv`; in WSL `~/df-venv`).
 
 ## 3. Batches (EnvPool's synchronous mode, decision 0012)
 
@@ -53,3 +53,45 @@ A state copy costs about 110 ns (decision 0008), so search trees can copy states
 1. **Binding:** ctypes over a shared library. Owner: yes.
 2. **Trajectory files:** replay recipes as NumPy `.npz` plus a JSON manifest, no feature dumps and no Parquet. Owner: yes.
 3. **NumPy:** installed in the project venv `.venv` (NumPy 2.5.3, Python 3.12.14). Owner: yes.
+
+## 8. Evidence (M7 exit, 2026-10-01)
+
+Exit tests (CTest; the `python` label runs with `DUOFORGE_PYTHON`, otherwise it reports skipped):
+
+| Test | Proves |
+|---|---|
+| C `duoforge.api.reference` | the reference setups in the library (pinned bytes) and the battle result query |
+| C `duoforge.batch.step_indices` | stepping by index equals stepping by bundle up to TERMINAL; a bad index or NO_CHOICE fails only its environment; TERMINAL environments are skipped; reset gives the seed derivation's battle |
+| C `duoforge.request.factored`, `duoforge.batch.step_factored` | 1993 factored domains of the 64 candidates-digest battles expand byte for byte to the candidate lists; factored stepping equals index stepping; a forbidden pair fails only its environment |
+| Python `layout` | every dtype, field and used constant equals the C side |
+| Python `lib` | a missing or other-version library raises `DuoforgeLibraryError` naming paths and versions; context; setups |
+| Python `equivalence` | the Python loop equals `play_random` byte for byte on the index and the factored form, for 1 and 4 workers; `joint_index` inverts `factored_choice`; bad index arrays raise before C; `E_STALE_EPOCH` after `reset_terminal` without a query, for exactly the reset environments |
+| Python `recipes` | round trip; `on_decision` in the recipe's order, with the factored domain, and the encoder runs on every replayed decision; a changed choice, digest, step count or result raises `ReplayMismatch`; another library version or fingerprint raises `RecipeVersionError` before replay; sparse, uneven and truncated recipes replay; a failed recording writes nothing |
+| Python `policies_features` | the scripted policy picks legal indices, repeats exactly and equals a scalar reference of the scoring at every step of environments 0 to 7, constructed scenes pin each score; `encode` is pure, reads only the viewer's observation and domain, refuses unknown values and a domain of another boundary; the pair mask holds the joint count; 0 candidates raise |
+| Python `example` | the generation example writes and replays 16 scripted episodes with 0 mismatches |
+
+Every M7 pull request (#53, #54, #55, #58, #59, #61, #62) merged on a green local CI (11 jobs; the Python tests run in Windows GCC Debug and in WSL GCC Release with LTO). From Task 5 on, code-heavy pull requests got a review agent before the merge, and one review agent covered all of M7 before the last merge; every finding was verified and fixed with a test.
+
+Bounded example, 64 environments × 10 episodes, seed `0x2026100200000017`, 4 workers:
+
+```text
+--policy random
+battles: 640, decisions: 21137
+  A-B: 160 battles, side 0 won 62, side 1 won 98, ties 0, truncated 0
+  B-A: 160 battles, side 0 won 107, side 1 won 53, ties 0, truncated 0
+  A-A: 160 battles, side 0 won 82, side 1 won 78, ties 0, truncated 0
+  B-B: 160 battles, side 0 won 77, side 1 won 83, ties 0, truncated 0
+bytes on disk: 83878 (131 per battle)
+replay: 640 episodes, 0 mismatches
+
+--policy scripted
+battles: 640, decisions: 19684
+  A-B: 160 battles, side 0 won 18, side 1 won 142, ties 0, truncated 0
+  B-A: 160 battles, side 0 won 142, side 1 won 18, ties 0, truncated 0
+  A-A: 160 battles, side 0 won 73, side 1 won 87, ties 0, truncated 0
+  B-B: 160 battles, side 0 won 69, side 1 won 91, ties 0, truncated 0
+bytes on disk: 80940 (126 per battle)
+replay: 640 episodes, 0 mismatches
+```
+
+A recipe takes 126 to 131 bytes per battle with its manifest; the 32-byte final digest per episode is most of the difference to the specification's estimate of about 100 bytes. The rates the example prints are not reported here: the machine was busy during the run, so they are no measurement under decision 0008. A quiet-machine measurement of the Python loop against the native mode is open.
