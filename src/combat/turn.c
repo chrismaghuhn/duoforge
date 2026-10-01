@@ -478,6 +478,16 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     if (spread) {
         damage = dfi_modify(damage, 3072u); /* 0.75 */
     }
+    /* WeatherModifyDamage: rain and sun boost their type by half and halve
+     * the other (data/conditions.ts raindance, sunnyday). */
+    const uint32_t weather = r->b->weather;
+    if ((weather == DFI_WEATHER_RAIN && move_type == DFI_TYPE_WATER) ||
+        (weather == DFI_WEATHER_SUN && move_type == DFI_TYPE_FIRE)) {
+        damage = dfi_modify(damage, 6144u);
+    } else if ((weather == DFI_WEATHER_RAIN && move_type == DFI_TYPE_FIRE) ||
+               (weather == DFI_WEATHER_SUN && move_type == DFI_TYPE_WATER)) {
+        damage = dfi_modify(damage, 2048u);
+    }
     if (crit) {
         damage = dfi_crit_damage(damage);
     }
@@ -1029,8 +1039,10 @@ static duoforge_status dfi_run_switch(dfi_run *r, const dfi_queue_record *q)
         sd->positions[1].occupant == reserve) {
         return DUOFORGE_E_INVARIANT; /* the domain offers only standing reserves */
     }
-    if (sd->members[reserve].ability != 0u || sd->members[reserve].item != 0u) {
-        return DUOFORGE_E_UNSUPPORTED; /* entry effects: steps 5 and 8 */
+    const uint32_t ability = sd->members[reserve].ability;
+    if ((ability != 0u && (ability > DFI_ABILITY_COUNT || dfi_support.abilities[ability - 1u] == 0u)) ||
+        sd->members[reserve].item != 0u) {
+        return DUOFORGE_E_UNSUPPORTED; /* abilities not yet marked, items: step 8 */
     }
     if (sd->positions[slot].occupant != DFI_OCCUPANT_NONE) {
         const duoforge_status vs = dfi_vacate(b, where);
@@ -1046,21 +1058,172 @@ static duoforge_status dfi_run_switch(dfi_run *r, const dfi_queue_record *q)
     return dfi_insert_run_switch(r, side, slot, binding.activation_id);
 }
 
+/* The entry abilities of the closure: an ability's onStart runs as a
+ * SwitchIn handler (Battle.getCallback). */
+static bool dfi_has_entry(const dfi_member *m)
+{
+    const uint32_t a = m->ability; /* 1 + id, 0 none */
+    return a == 1u + DFI_ABILITY_DRIZZLE || a == 1u + DFI_ABILITY_DROUGHT || a == 1u + DFI_ABILITY_GRASSYSURGE ||
+           a == 1u + DFI_ABILITY_INTIMIDATE;
+}
+
+/* Drizzle and Drought (setWeather): the same weather is not restarted;
+ * otherwise the weather is replaced for 5 turns. Grassy Surge
+ * (setTerrain) likewise. Intimidate lowers the Attack of every standing
+ * adjacent foe by 1. */
+static void dfi_entry_ability(struct duoforge_battle *b, uint32_t flat)
+{
+    const dfi_member *m = dfi_at(b, flat);
+    const uint32_t a = m->ability;
+    if (a == 1u + DFI_ABILITY_DRIZZLE || a == 1u + DFI_ABILITY_DROUGHT) {
+        const uint32_t w = a == 1u + DFI_ABILITY_DRIZZLE ? DFI_WEATHER_RAIN : DFI_WEATHER_SUN;
+        if (b->weather != w) {
+            b->weather = (uint8_t)w;
+            b->weather_turns = (uint8_t)DFI_FIELD_TURNS_MAX;
+        }
+    } else if (a == 1u + DFI_ABILITY_GRASSYSURGE) {
+        if (b->terrain != DFI_TERRAIN_GRASSY) {
+            b->terrain = (uint8_t)DFI_TERRAIN_GRASSY;
+            b->terrain_turns = (uint8_t)DFI_FIELD_TURNS_MAX;
+        }
+    } else if (a == 1u + DFI_ABILITY_INTIMIDATE) {
+        static const uint8_t drop[DFI_STAGE_COUNT] = {5u, 6u, 6u, 6u, 6u, 6u, 6u}; /* Attack -1 */
+        const uint32_t foe = 1u - flat / 2u;
+        for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
+            const dfi_member *t = dfi_at(b, foe * 2u + slot);
+            if (t != NULL && t->hp != 0u) {
+                dfi_apply_boosts(dfi_pos(b, foe * 2u + slot), drop);
+            }
+        }
+    }
+}
+
+/* runSwitch (sim/battle-actions.ts:177-192): every active Pokemon, a
+ * fainted one included, is sorted by its last speed (Battle.speedSort, ties
+ * shuffled); the SwitchIn handlers of the Pokemon that entered then run in
+ * that order. A tie decides something only between two entering Pokemon
+ * with an entry ability: only such a group draws (decision 0006 section
+ * 5.1). */
+static duoforge_status dfi_run_entries(dfi_run *r, uint32_t entering)
+{
+    struct duoforge_battle *b = r->b;
+    uint32_t list[DFI_POSITIONS] = {0u, 0u, 0u, 0u};
+    uint32_t n = 0u;
+    for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
+        if (dfi_at(b, flat) != NULL) {
+            list[n] = flat;
+            n += 1u;
+        }
+    }
+    uint32_t sorted = 0u;
+    while (sorted + 1u < n) {
+        uint32_t next[DFI_POSITIONS] = {0u, 0u, 0u, 0u};
+        uint32_t count = 1u;
+        next[0] = sorted;
+        for (uint32_t i = sorted + 1u; i < n; ++i) {
+            const uint32_t best = r->speed_seen[list[next[0]]];
+            const uint32_t speed = r->speed_seen[list[i]];
+            if (speed > best) {
+                next[0] = i;
+                count = 1u;
+            } else if (speed == best) {
+                next[count] = i;
+                count += 1u;
+            }
+        }
+        uint32_t bearers = 0u;
+        for (uint32_t i = 0u; i < count; ++i) {
+            const uint32_t flat = list[next[i]];
+            const dfi_member *m = dfi_at(b, flat);
+            bearers += (((entering >> flat) & 1u) != 0u && m->hp != 0u && dfi_has_entry(m)) ? 1u : 0u;
+        }
+        for (uint32_t i = 0u; i < count; ++i) {
+            if (next[i] != sorted + i) {
+                const uint32_t e = list[sorted + i];
+                list[sorted + i] = list[next[i]];
+                list[next[i]] = e;
+            }
+        }
+        for (uint32_t start = sorted; start + 1u < sorted + count && bearers >= 2u; ++start) {
+            uint32_t v = 0u;
+            const duoforge_status st = dfi_draw(r->draws, DFI_SITE_SPEED_TIE, start - sorted, count, &v);
+            if (st != DUOFORGE_OK) {
+                return st;
+            }
+            if (sorted + v != start) {
+                const uint32_t e = list[start];
+                list[start] = list[sorted + v];
+                list[sorted + v] = e;
+            }
+        }
+        sorted += count;
+    }
+    for (uint32_t i = 0u; i < n; ++i) {
+        const uint32_t flat = list[i];
+        const dfi_member *m = dfi_at(b, flat);
+        if (((entering >> flat) & 1u) == 0u || m->hp == 0u || !dfi_has_entry(m)) {
+            continue;
+        }
+        dfi_entry_ability(b, flat);
+        dfi_process_faints(r);
+        if (r->ended) {
+            return DUOFORGE_OK;
+        }
+    }
+    return DUOFORGE_OK;
+}
+
 /* ---------------------------------------------------------------- turn */
 
 /* fieldEvent('Residual') (sim/battle.ts:484-567). The reference lists the
- * handlers per active Pokemon in slot order, a fainted one included: its
- * status handler if it has a callback (burn, order 10), then one handler
- * per volatile with a duration (Protect, the stall counter, flinch; no
- * order, so after every burn). Battle.speedSort orders the list; ties of
- * burn handlers draw (relative to their group), ties among the duration
- * handlers change nothing and are not drawn (decision 0006 section 5.1).
- * Each burn handler of a standing Pokemon deals max(1, floor(maxHP / 16)),
- * then faints are processed; a finished battle stops the event. */
+ * handlers of the field (weather: order 1 with its duration; Grassy
+ * Terrain's duration: order 27), then per active Pokemon in slot order, a
+ * fainted one included: its status handler with a callback (burn, order
+ * 10), one handler per volatile with a duration (Protect, the stall
+ * counter, flinch: no order), and the per-Pokemon field handler of Grassy
+ * Terrain (heal, order 5, sub-order 2). Battle.speedSort orders the list by
+ * order, speed (the speed each Pokemon had at its last updateSpeed; 0 for
+ * the field) and sub-order; ties among callbacks draw (relative to their
+ * group), ties among duration handlers change nothing and are not drawn
+ * (decision 0006 section 5.1). The callbacks all sort ahead of the duration
+ * handlers. After each callback faints are processed, and a finished battle
+ * stops the residual phase. */
+#define DFI_RES_WEATHER 1u
+#define DFI_RES_TERRAIN_END 2u
+#define DFI_RES_BURN 3u
+#define DFI_RES_DURATION 4u
+#define DFI_RES_GRASSY 5u
+#define DFI_RES_NO_ORDER 0xFFFFFFFFu
+#define DFI_RES_MAX 20u
+
 typedef struct dfi_residual_entry {
+    uint32_t kind;
     uint32_t flat;
-    bool burn;
+    uint32_t order;
+    uint32_t speed;
+    uint32_t sub_order;
+    bool callback;
 } dfi_residual_entry;
+
+/* comparePriority for residual handlers: 0 a first, 1 tie, 2 b first. */
+static uint32_t dfi_residual_compare(const dfi_residual_entry *a, const dfi_residual_entry *b)
+{
+    if (a->order != b->order) {
+        return a->order < b->order ? 0u : 2u;
+    }
+    if (a->speed != b->speed) {
+        return a->speed > b->speed ? 0u : 2u;
+    }
+    if (a->sub_order != b->sub_order) {
+        return a->sub_order < b->sub_order ? 0u : 2u;
+    }
+    return 1u;
+}
+
+static bool dfi_grounded(const dfi_member *m)
+{
+    return !dfi_has_type(m, DFI_TYPE_FLYING);
+}
 
 static duoforge_status dfi_residual(dfi_run *r)
 {
@@ -1069,44 +1232,56 @@ static duoforge_status dfi_residual(dfi_run *r)
     if (st != DUOFORGE_OK) {
         return st;
     }
-    dfi_residual_entry list[DFI_POSITIONS * 4u];
+    dfi_residual_entry list[DFI_RES_MAX];
     uint32_t n = 0u;
-    uint32_t burns = 0u;
+    if (b->weather != DFI_WEATHER_NONE) {
+        list[n] = (dfi_residual_entry){DFI_RES_WEATHER, 0u, 1u, 0u, 5u, true};
+        n += 1u;
+    }
+    if (b->terrain != DFI_TERRAIN_NONE) {
+        list[n] = (dfi_residual_entry){DFI_RES_TERRAIN_END, 0u, 27u, 0u, 7u, false};
+        n += 1u;
+    }
     for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
         const dfi_active_slot *pos = dfi_pos(b, flat);
         const dfi_member *m = dfi_at(b, flat);
         if (m == NULL) {
             continue;
         }
+        const uint32_t speed = r->speed_seen[flat];
         if (m->status == DFI_STATUS_BRN) {
-            list[n] = (dfi_residual_entry){flat, true};
+            list[n] = (dfi_residual_entry){DFI_RES_BURN, flat, 10u, speed, 0u, true};
             n += 1u;
-            burns += 1u;
         }
         const uint32_t ends = ((((uint32_t)pos->flags & DFI_VOL_PROTECT) != 0u) ? 1u : 0u) +
                               (pos->stall_level != 0u ? 1u : 0u) +
                               ((((uint32_t)pos->flags & DFI_VOL_FLINCH) != 0u) ? 1u : 0u);
         for (uint32_t k = 0u; k < ends; ++k) {
-            list[n] = (dfi_residual_entry){flat, false};
+            list[n] = (dfi_residual_entry){DFI_RES_DURATION, flat, DFI_RES_NO_ORDER, speed, 2u, false};
+            n += 1u;
+        }
+        if (b->terrain == DFI_TERRAIN_GRASSY) {
+            list[n] = (dfi_residual_entry){DFI_RES_GRASSY, flat, 5u, speed, 2u, true};
             n += 1u;
         }
     }
-    /* The selection sort with shuffled tie groups, until every burn handler
-     * is placed (the duration handlers always come after them). */
+    uint32_t callbacks = 0u;
+    for (uint32_t i = 0u; i < n; ++i) {
+        callbacks += list[i].callback ? 1u : 0u;
+    }
+    /* The selection sort with shuffled tie groups, until every callback is
+     * placed. */
     uint32_t sorted = 0u;
-    while (sorted < burns) {
-        uint32_t next[DFI_POSITIONS * 4u] = {0};
-        uint32_t count = 0u;
-        for (uint32_t i = sorted; i < n; ++i) {
-            if (!list[i].burn) {
-                continue;
-            }
-            const uint32_t speed = r->speed_seen[list[i].flat];
-            const uint32_t best = count == 0u ? 0u : r->speed_seen[list[next[0]].flat];
-            if (count == 0u || speed > best) {
+    while (sorted < callbacks) {
+        uint32_t next[DFI_RES_MAX] = {0};
+        uint32_t count = 1u;
+        next[0] = sorted;
+        for (uint32_t i = sorted + 1u; i < n; ++i) {
+            const uint32_t c = dfi_residual_compare(&list[next[0]], &list[i]);
+            if (c == 2u) {
                 next[0] = i;
                 count = 1u;
-            } else if (speed == best) {
+            } else if (c == 1u) {
                 next[count] = i;
                 count += 1u;
             }
@@ -1118,7 +1293,7 @@ static duoforge_status dfi_residual(dfi_run *r)
                 list[next[i]] = e;
             }
         }
-        for (uint32_t start = sorted; start + 1u < sorted + count; ++start) {
+        for (uint32_t start = sorted; start + 1u < sorted + count && list[sorted].callback; ++start) {
             uint32_t v = 0u;
             st = dfi_draw(r->draws, DFI_SITE_SPEED_TIE, start - sorted, count, &v);
             if (st != DUOFORGE_OK) {
@@ -1132,13 +1307,34 @@ static duoforge_status dfi_residual(dfi_run *r)
         }
         sorted += count;
     }
-    for (uint32_t i = 0u; i < burns; ++i) {
-        const dfi_member *m = dfi_at(b, list[i].flat);
+    for (uint32_t i = 0u; i < callbacks; ++i) {
+        const dfi_residual_entry *e = &list[i];
+        if (e->kind == DFI_RES_WEATHER) {
+            /* The duration counts down first; at 0 the weather ends. */
+            b->weather_turns = (uint8_t)((uint32_t)b->weather_turns - 1u); /* wide-operands-reviewed: >= 1 */
+            if (b->weather_turns == 0u) {
+                b->weather = (uint8_t)DFI_WEATHER_NONE;
+            }
+            continue;
+        }
+        dfi_member *m = dfi_at(b, e->flat);
         if (m->hp == 0u) {
+            continue; /* the holder fainted */
+        }
+        if (e->kind == DFI_RES_GRASSY) {
+            /* heal(baseMaxhp / 16): at least 1, not above the maximum, not
+             * for a Pokemon that is not grounded or at full HP. */
+            if (dfi_grounded(m) && m->hp < m->hp_max) {
+                uint32_t heal = (uint32_t)m->hp_max / 16u;
+                heal = heal == 0u ? 1u : heal;
+                const uint32_t hp = (uint32_t)m->hp + heal;
+                m->hp = (uint16_t)(hp > m->hp_max ? m->hp_max : hp); /* wide-operands-reviewed: <= hp_max */
+                dfi_knowledge_refresh_active(b);
+            }
             continue;
         }
         const uint32_t damage = m->hp_max / 16u;
-        st = dfi_deal(r, list[i].flat, damage == 0u ? 1u : damage);
+        st = dfi_deal(r, e->flat, damage == 0u ? 1u : damage);
         if (st != DUOFORGE_OK) {
             return st;
         }
@@ -1147,8 +1343,14 @@ static duoforge_status dfi_residual(dfi_run *r)
             return DUOFORGE_OK;
         }
     }
-    /* The duration handlers: Protect and flinch end, the stall counter
-     * counts down. */
+    /* The duration handlers: the terrain counts down, Protect and flinch
+     * end, the stall counter counts down. */
+    if (b->terrain != DFI_TERRAIN_NONE) {
+        b->terrain_turns = (uint8_t)((uint32_t)b->terrain_turns - 1u); /* wide-operands-reviewed: >= 1 */
+        if (b->terrain_turns == 0u) {
+            b->terrain = (uint8_t)DFI_TERRAIN_NONE;
+        }
+    }
     for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
         dfi_active_slot *pos = dfi_pos(b, flat);
         if (pos->occupant == DFI_OCCUPANT_NONE) {
@@ -1302,6 +1504,32 @@ static duoforge_status dfi_finish_turn(struct duoforge_battle *b)
     return DUOFORGE_OK;
 }
 
+duoforge_status dfi_turn_start(const duoforge_context *ctx, struct duoforge_battle *b, dfi_draws *draws)
+{
+    if (!dfi_context_is_closure(ctx)) {
+        return DUOFORGE_OK;
+    }
+    if (!dfi_closure_battle_supported(&dfi_support, b)) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
+    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, false, {0u, 0u, 0u, 0u}};
+    /* The leads entered one by one (insertChoice updated each speed); their
+     * entries run together. */
+    duoforge_status st = dfi_update_speeds(&r);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    uint32_t entering = 0u;
+    for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
+        entering |= dfi_at(b, flat) != NULL ? 1u << flat : 0u;
+    }
+    st = dfi_run_entries(&r, entering);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    return r.ended ? DUOFORGE_E_INVARIANT : DUOFORGE_OK; /* nothing at the start can end the battle */
+}
+
 duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle *b,
                              const duoforge_side_choice responses[DUOFORGE_SIDE_COUNT], dfi_draws *draws)
 {
@@ -1380,10 +1608,15 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
                 return st;
             }
         } else if (q.kind == DFI_Q_RUN_SWITCH) {
-            /* runSwitch takes every entry queued right behind it; no entry
-             * effect exists yet. */
+            /* runSwitch takes every entry queued right behind it. */
+            uint32_t entering = 1u << ((uint32_t)q.side * 2u + (uint32_t)q.slot);
             while (b->queue_len > 0u && b->queue[0].kind == DFI_Q_RUN_SWITCH) {
                 dfi_queue_pop(b, &q);
+                entering |= 1u << ((uint32_t)q.side * 2u + (uint32_t)q.slot);
+            }
+            st = dfi_run_entries(&r, entering);
+            if (st != DUOFORGE_OK) {
+                return st;
             }
         } else if (q.kind == DFI_Q_RESIDUAL) {
             st = dfi_residual(&r);

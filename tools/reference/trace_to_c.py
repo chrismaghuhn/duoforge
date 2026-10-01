@@ -110,20 +110,27 @@ def drop_reason(d):
             return 'each-event tie without handlers'
         raise SystemExit('trace_to_c: %s tie between Pokemon with handlers: %s' % (ctx, group))
     if site == 'SPEED_TIE' and ctx == 'switch-order':
-        if all(g.startswith('P:') and g.endswith(':0') for g in group):
-            return 'switch-in order without SwitchIn handlers'
-        raise SystemExit('trace_to_c: switch-in tie with handlers: %s' % group)
+        # P:<slot>:<SwitchIn handlers>:<S entering | - not>; the order decides
+        # something only between two entering Pokemon with handlers.
+        bearers = sum(1 for g in group if g.split(':')[2] != '0' and g.split(':')[3] == 'S')
+        if bearers <= 1:
+            return 'switch-in order with at most one entry effect'
+        return None  # the engine draws
     if site == 'SPEED_TIE' and ctx == 'field:Residual':
         if all(g.startswith('H:') and g.endswith(':end') for g in group):
             return 'residual tie of duration counters'
-        if all(g.startswith('H:brn:') and g.endswith(':cb') for g in group):
-            return None  # burn handlers: the engine draws
+        if all(g.startswith('H:') and g.endswith(':cb') for g in group):
+            return None  # callbacks (burn, Grassy Terrain): the engine draws
         raise SystemExit('trace_to_c: residual tie with callbacks: %s' % group)
     if site == 'SPEED_TIE' and ctx != 'queue':
         raise SystemExit('trace_to_c: unhandled tie context %s' % ctx)
     if site == 'INSERT_TIE':
-        if all(g.startswith('A:runSwitch:') and g.endswith(':0') for g in group):
-            return 'entry order without SwitchIn handlers'
+        # Ties are among entry actions of one speed; runSwitch takes every
+        # entry queued right behind it, so their queue order changes nothing
+        # as long as the entries stand together.
+        runs = [i for i, g in enumerate(group) if g.startswith('A:runSwitch:')]
+        if runs and runs == list(range(runs[0], runs[0] + len(runs))):
+            return 'queue order of entries that run together'
         raise SystemExit('trace_to_c: insert tie in %s' % group)
     if site == 'RANDOM_TARGET' and ctx in ('action-speed', 'resolve'):
         return 'target computed for priority'
@@ -183,6 +190,8 @@ def convert_choice(text, side, state, roster_of):
 
 BOUNDARY = {'teampreview': 1, 'move': 2, 'switch': 3}
 STATUS = {'': 0, 'brn': 1, 'frz': 2, 'par': 3, 'slp': 4, 'fnt': 0}
+WEATHER = {'': 0, 'raindance': 1, 'sunnyday': 2}
+TERRAIN = {'': 0, 'grassyterrain': 1}
 RESULT = {'p1': 1, 'p2': 2, '': 3}
 
 
@@ -288,14 +297,18 @@ def convert(root, name, tables, out, all_tape):
                 if flat not in entries:
                     entries.append(flat)
         ent = entries + [0xFF] * (4 - len(entries))
+        weather = WEATHER[new_state['weather']]
+        terrain = TERRAIN[new_state['terrain']]
+        field = (weather, new_state['weather_turns'] if weather else 0, terrain,
+                 new_state['terrain_turns'] if terrain else 0)
         boundary = boundary_of(new_state)
         result = RESULT[new_state['winner']] if boundary == 5 else 0
-        steps.append('    {%du, %du, %du, %du, %du, %du, %du, %du, {%s}, {%s}, {%s}, {%s}, {{%s}, {%s}}},'
+        steps.append('    {%du, %du, %du, %du, %du, %du, %du, %du, {%s}, {%s}, {%s}, {%s}, {%s}, {{%s}, {%s}}},'
                      '  /* %d draws dropped */' % (
                          1 if team else 0, 1 if 0 in kinds else 0, 1 if 1 in kinds else 0, tape_off,
                          len(all_tape) - tape_off, new_state['turn'], boundary, result, ', '.join(pk),
-                         ', '.join(cmds), ', '.join(occ), ', '.join('%du' % x for x in ent), ', '.join(mons[0]),
-                         ', '.join(mons[1]), dropped))
+                         ', '.join(cmds), ', '.join(occ), ', '.join('%du' % x for x in ent),
+                         ', '.join('%du' % x for x in field), ', '.join(mons[0]), ', '.join(mons[1]), dropped))
         state = new_state
     w('static const df_conf_step conf_%s_steps[] = {' % name)
     out.extend(steps)
@@ -333,10 +346,11 @@ def main():
            ' * result afterwards, the picks of a team step, slot commands, the occupants',
            ' * of the positions afterwards (roster index, 0xFF empty), the positions',
            ' * (side * 2 + slot) that received a Pokemon in the reference\'s order (0xFF',
-           ' * pads), the expected members by roster index */',
+           ' * pads), weather, its turns, terrain, its turns, the expected members by',
+           ' * roster index */',
            'typedef struct df_conf_step {',
            '    uint32_t team, answered0, answered1, tape_off, tape_len, turn, boundary, result;',
-           '    uint8_t picks[2][6];', '    df_conf_cmd cmds[2][2];', '    uint8_t occupants[2][2];', '    uint8_t entries[4];',
+           '    uint8_t picks[2][6];', '    df_conf_cmd cmds[2][2];', '    uint8_t occupants[2][2];', '    uint8_t entries[4];', '    uint8_t field[4];',
            '    df_conf_mon mons[2][6];', '} df_conf_step;',
            'typedef struct df_conf_battle {', '    const char *name;', '    uint32_t member_count;',
            '    const df_conf_member (*members)[6];', '    const df_conf_step *steps;', '    uint32_t step_count;',

@@ -1,5 +1,5 @@
 {
- "harness": 5,
+ "harness": 6,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "spec": "s4_status_edges.json",
  "format": "gen9championsvgc2026regmc",
@@ -35,7 +35,9 @@
    "ended": false,
    "winner": "",
    "weather": "",
+   "weather_turns": 0,
    "terrain": "",
+   "terrain_turns": 0,
    "sides": [
     {
      "request": "teampreview",
@@ -277,7 +279,9 @@
     "ended": false,
     "winner": "",
     "weather": "",
+    "weather_turns": 0,
     "terrain": "",
+    "terrain_turns": 0,
     "sides": [
      {
       "request": "move",
@@ -570,7 +574,9 @@
     "ended": false,
     "winner": "",
     "weather": "",
+    "weather_turns": 0,
     "terrain": "",
+    "terrain_turns": 0,
     "sides": [
      {
       "request": "switch",
@@ -800,8 +806,8 @@
      "hi": 2,
      "value": 0,
      "group": [
-      "P:p1a:0",
-      "P:p2b:0"
+      "P:p1a:0:S",
+      "P:p2b:0:-"
      ],
      "start": 0
     },
@@ -829,7 +835,9 @@
     "ended": false,
     "winner": "",
     "weather": "",
+    "weather_turns": 0,
     "terrain": "",
+    "terrain_turns": 0,
     "sides": [
      {
       "request": "move",
@@ -1329,7 +1337,9 @@
     "ended": false,
     "winner": "",
     "weather": "",
+    "weather_turns": 0,
     "terrain": "",
+    "terrain_turns": 0,
     "sides": [
      {
       "request": "move",
@@ -1734,7 +1744,9 @@
     "ended": false,
     "winner": "",
     "weather": "",
+    "weather_turns": 0,
     "terrain": "",
+    "terrain_turns": 0,
     "sides": [
      {
       "request": "move",
@@ -2125,7 +2137,9 @@
     "ended": false,
     "winner": "",
     "weather": "",
+    "weather_turns": 0,
     "terrain": "",
+    "terrain_turns": 0,
     "sides": [
      {
       "request": "move",
@@ -2578,7 +2592,9 @@
     "ended": false,
     "winner": "",
     "weather": "",
+    "weather_turns": 0,
     "terrain": "",
+    "terrain_turns": 0,
     "sides": [
      {
       "request": "move",
@@ -2936,7 +2952,9 @@
     "ended": false,
     "winner": "",
     "weather": "",
+    "weather_turns": 0,
     "terrain": "",
+    "terrain_turns": 0,
     "sides": [
      {
       "request": "move",
@@ -3291,7 +3309,9 @@
     "ended": false,
     "winner": "",
     "weather": "",
+    "weather_turns": 0,
     "terrain": "",
+    "terrain_turns": 0,
     "sides": [
      {
       "request": "switch",
@@ -3513,7 +3533,9 @@
     "ended": false,
     "winner": "",
     "weather": "",
+    "weather_turns": 0,
     "terrain": "",
+    "terrain_turns": 0,
     "sides": [
      {
       "request": "move",
@@ -3768,7 +3790,9 @@
     "ended": false,
     "winner": "",
     "weather": "",
+    "weather_turns": 0,
     "terrain": "",
+    "terrain_turns": 0,
     "sides": [
      {
       "request": "move",
@@ -4025,7 +4049,9 @@
     "ended": false,
     "winner": "",
     "weather": "",
+    "weather_turns": 0,
     "terrain": "",
+    "terrain_turns": 0,
     "sides": [
      {
       "request": "move",
@@ -4284,7 +4310,9 @@
     "ended": false,
     "winner": "",
     "weather": "",
+    "weather_turns": 0,
     "terrain": "",
+    "terrain_turns": 0,
     "sides": [
      {
       "request": "move",
@@ -4573,7 +4601,9 @@
     "ended": false,
     "winner": "",
     "weather": "",
+    "weather_turns": 0,
     "terrain": "",
+    "terrain_turns": 0,
     "sides": [
      {
       "request": "move",
@@ -4837,7 +4867,9 @@
     "ended": false,
     "winner": "",
     "weather": "",
+    "weather_turns": 0,
     "terrain": "",
+    "terrain_turns": 0,
     "sides": [
      {
       "request": "move",
@@ -5106,7 +5138,9 @@
     "ended": false,
     "winner": "",
     "weather": "",
+    "weather_turns": 0,
     "terrain": "",
+    "terrain_turns": 0,
     "sides": [
      {
       "request": "move",
@@ -5386,7 +5420,9 @@
     "ended": false,
     "winner": "",
     "weather": "",
+    "weather_turns": 0,
     "terrain": "",
+    "terrain_turns": 0,
     "sides": [
      {
       "request": "move",
@@ -5659,7 +5695,9 @@
     "ended": false,
     "winner": "",
     "weather": "",
+    "weather_turns": 0,
     "terrain": "",
+    "terrain_turns": 0,
     "sides": [
      {
       "request": "move",
@@ -5935,7 +5973,9 @@
     "ended": false,
     "winner": "",
     "weather": "",
+    "weather_turns": 0,
     "terrain": "",
+    "terrain_turns": 0,
     "sides": [
      {
       "request": "",
@@ -6157,7 +6197,9 @@
     "ended": false,
     "winner": "",
     "weather": "",
+    "weather_turns": 0,
     "terrain": "",
+    "terrain_turns": 0,
     "sides": [
      {
       "request": "move",
@@ -6479,7 +6521,9 @@
     "ended": false,
     "winner": "",
     "weather": "",
+    "weather_turns": 0,
     "terrain": "",
+    "terrain_turns": 0,
     "sides": [
      {
       "request": "",
@@ -6701,7 +6745,9 @@
     "ended": false,
     "winner": "",
     "weather": "",
+    "weather_turns": 0,
     "terrain": "",
+    "terrain_turns": 0,
     "sides": [
      {
       "request": "move",
@@ -6999,7 +7045,9 @@
     "ended": false,
     "winner": "",
     "weather": "",
+    "weather_turns": 0,
     "terrain": "",
+    "terrain_turns": 0,
     "sides": [
      {
       "request": "move",
@@ -7297,7 +7345,9 @@
     "ended": false,
     "winner": "",
     "weather": "",
+    "weather_turns": 0,
     "terrain": "",
+    "terrain_turns": 0,
     "sides": [
      {
       "request": "move",
@@ -7631,7 +7681,9 @@
     "ended": false,
     "winner": "",
     "weather": "",
+    "weather_turns": 0,
     "terrain": "",
+    "terrain_turns": 0,
     "sides": [
      {
       "request": "move",
@@ -7958,7 +8010,9 @@
     "ended": false,
     "winner": "",
     "weather": "",
+    "weather_turns": 0,
     "terrain": "",
+    "terrain_turns": 0,
     "sides": [
      {
       "request": "move",
@@ -8319,7 +8373,9 @@
     "ended": true,
     "winner": "p2",
     "weather": "",
+    "weather_turns": 0,
     "terrain": "",
+    "terrain_turns": 0,
     "sides": [
      {
       "request": "",

@@ -380,9 +380,9 @@ int main(void)
         dfi_support_manifest m = full_manifest();
         DF_CHECK(&t, dfi_closure_setup_supported(&m, &teams));
         DF_CHECK(&t, !dfi_closure_setup_supported(&dfi_support, &teams)); /* abilities: not yet */
-        /* The manifest of this build, pinned: the turn core, switching and the
-         * moves of steps 2 to 4. A step that implements a mechanic changes this
-         * deliberately. */
+        /* The manifest of this build, pinned: the turn core, switching, the
+         * moves of steps 2 to 4 and the entry abilities of step 5. A step that
+         * implements a mechanic changes this deliberately. */
         {
             static const uint32_t step2_moves[] = {
                 DFI_MOVE_HIGHHORSEPOWER, DFI_MOVE_PROTECT,     DFI_MOVE_MUDDYWATER, DFI_MOVE_COIL,
@@ -398,6 +398,9 @@ int main(void)
             for (size_t i = 0; i < sizeof step2_moves / sizeof step2_moves[0]; ++i) {
                 want.moves[step2_moves[i]] = 1u;
             }
+            want.abilities[DFI_ABILITY_DRIZZLE] = 1u;
+            want.abilities[DFI_ABILITY_GRASSYSURGE] = 1u;
+            want.abilities[DFI_ABILITY_INTIMIDATE] = 1u;
             DF_CHECK_BYTES(&t, (const uint8_t *)&dfi_support, (const uint8_t *)&want, sizeof want, "manifest");
         }
         m.turn_core = 0u;

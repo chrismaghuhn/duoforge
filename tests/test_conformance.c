@@ -55,6 +55,13 @@ static unsigned compare_state(const duoforge_battle *b, const df_conf_step *st, 
                 b->result, st->boundary, st->result);
         ++bad;
     }
+    if (b->weather != st->field[0] || b->weather_turns != st->field[1] || b->terrain != st->field[2] ||
+        b->terrain_turns != st->field[3]) {
+        fprintf(stderr, "  %s step %u: field %u/%u %u/%u, reference %u/%u %u/%u\n", name, step, b->weather,
+                b->weather_turns, b->terrain, b->terrain_turns, st->field[0], st->field[1], st->field[2],
+                st->field[3]);
+        ++bad;
+    }
     /* Entries in the reference's order have rising activation ids. */
     uint32_t last_activation = 0u;
     for (uint32_t i = 0; i < 4u && st->entries[i] != 0xFFu; ++i) {
@@ -178,7 +185,7 @@ int main(void)
             uint32_t used = 0xFFFFFFFFu;
             const duoforge_status status = dfi_battle_step_tape(k2, b, &bd, &conf_tape[st->tape_off], st->tape_len,
                                                                 &used, &res);
-            const bool consumed = st->team ? true : used == st->tape_len;
+            const bool consumed = used == st->tape_len;
             if (!DF_CHECK(&t, status == DUOFORGE_OK && consumed)) {
                 fprintf(stderr, "  %s step %u: %s, tape %u of %u\n", cb->name, si, duoforge_status_name(status),
                         used, st->tape_len);
@@ -191,7 +198,7 @@ int main(void)
         DF_CHECK_EQ_U64(&t, bad, 0u);
         duoforge_battle_destroy(b);
     }
-    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 18u);
+    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 21u);
     duoforge_context_destroy(k2);
     return df_test_end(&t);
 }

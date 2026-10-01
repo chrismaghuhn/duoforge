@@ -37,7 +37,7 @@ const fs = require('fs');
 const path = require('path');
 
 const PIN = 'b2cb775b0616115b775534eaeff50300e1fc81fc';
-const HARNESS_VERSION = 5;
+const HARNESS_VERSION = 6;
 
 // Stack frame name -> site. The first match in stack order wins.
 const SITE_RULES = [
@@ -124,12 +124,22 @@ function describe(item, battle) {
         return `H:${item.effect.id || item.effect.name}:${holderOf(item)}:${item.callback ? 'cb' : 'end'}`;
     }
     if (item && item.species) {
+        if (inRunSwitch) {
+            // runSwitch sorts every active Pokemon; the order matters only
+            // between Pokemon that are entering (S: not started, standing)
+            // and have SwitchIn handlers (abilities' onStart included).
+            const n = battle.findPokemonEventHandlers(item, 'onSwitchIn').length;
+            return `P:${slotOf(item)}:${n}:${!item.isStarted && !item.fainted ? 'S' : '-'}`;
+        }
         const ev = eventStack.length ? eventStack[eventStack.length - 1] : '';
         const n = ev ? battle.findEventHandlers(item, ev).length : 0;
         return `P:${slotOf(item)}:${n}`;
     }
     return '?';
 }
+
+// True while BattleActions.runSwitch sorts the active Pokemon.
+let inRunSwitch = false;
 
 // The target class of the move a random target is drawn for (set while
 // Battle.getRandomTarget runs).
@@ -176,7 +186,9 @@ function main() {
     let groupStart = 0;
     class RecordingPRNG extends PRNG {
         shuffle(items, start = 0, end = items.length) {
+            inRunSwitch = new Error().stack.includes('BattleActions.runSwitch');
             group = items.slice(start, end).map((x) => describe(x, battle));
+            inRunSwitch = false;
             groupStart = start;
             try {
                 return super.shuffle(items, start, end);
@@ -216,7 +228,9 @@ function main() {
         ended: battle.ended,
         winner: battle.winner || '',
         weather: battle.field.weather || '',
+        weather_turns: battle.field.weatherState.duration || 0,
         terrain: battle.field.terrain || '',
+        terrain_turns: battle.field.terrainState.duration || 0,
         sides: battle.sides.map((side) => ({
             request: side.requestState || '',
             active: side.active.map((p) => (p ? side.pokemon.indexOf(p) : -1)),

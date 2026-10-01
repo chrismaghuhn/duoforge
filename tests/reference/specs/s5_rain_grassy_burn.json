@@ -1,0 +1,20 @@
+{
+  "name": "s5_rain_grassy_burn",
+  "purpose": "Rain and Grassy Terrain together: Heat Wave is halved in rain, so a bulky Milotic loses little when it is burned; at the end of the turn Grassy Terrain heals it (order 5) before the burn hurts it (order 10), which shows when the heal is capped at full HP.",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000005201",
+  "teams": [
+    "Charizard (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Heat Wave\n- Protect\n\nPolitoed (F)\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Ice Beam\n\nStaraptor (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Protect\n\nGolisopod (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Drill Run\n- Protect",
+    "Milotic (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Coil\n- Muddy Water\n\nRillaboom (M)\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- High Horsepower\n\nFarigiraf (F)\nAbility: No Ability\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Protect\n- Psychic\n\nCharizard (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Hurricane\n- Heat Wave"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 2 2"
+    ],
+    "p2": [
+      "move 1, move 1 1",
+      "move 1, move 1 2"
+    ],
+    "max_steps": 60
+  }
+}
