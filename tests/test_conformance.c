@@ -50,6 +50,31 @@ static unsigned compare_state(const duoforge_battle *b, const df_conf_step *st, 
         fprintf(stderr, "  %s step %u: turn %u, reference %u\n", name, step, b->turn, st->turn);
         ++bad;
     }
+    if (b->boundary_kind != st->boundary || b->result != st->result) {
+        fprintf(stderr, "  %s step %u: boundary %u result %u, reference %u %u\n", name, step, b->boundary_kind,
+                b->result, st->boundary, st->result);
+        ++bad;
+    }
+    /* Entries in the reference's order have rising activation ids. */
+    uint32_t last_activation = 0u;
+    for (uint32_t i = 0; i < 4u && st->entries[i] != 0xFFu; ++i) {
+        const uint32_t activation = b->sides[st->entries[i] / 2u].positions[st->entries[i] % 2u].activation_id;
+        if (i > 0u && activation <= last_activation) {
+            fprintf(stderr, "  %s step %u: entry %u (position %u) is out of the reference's order\n", name, step, i,
+                    st->entries[i]);
+            ++bad;
+        }
+        last_activation = activation;
+    }
+    for (uint32_t s = 0; s < 2u; ++s) {
+        for (uint32_t p = 0; p < 2u; ++p) {
+            if (b->sides[s].positions[p].occupant != st->occupants[s][p]) {
+                fprintf(stderr, "  %s step %u: side %u position %u holds %u, reference %u\n", name, step, s, p,
+                        b->sides[s].positions[p].occupant, st->occupants[s][p]);
+                ++bad;
+            }
+        }
+    }
     for (uint32_t s = 0; s < 2u; ++s) {
         for (uint32_t m = 0; m < 6u; ++m) {
             const df_conf_mon *e = &st->mons[s][m];
@@ -155,7 +180,7 @@ int main(void)
         DF_CHECK_EQ_U64(&t, bad, 0u);
         duoforge_battle_destroy(b);
     }
-    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 7u);
+    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 12u);
     duoforge_context_destroy(k2);
     return df_test_end(&t);
 }

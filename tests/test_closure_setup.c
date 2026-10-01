@@ -392,6 +392,7 @@ int main(void)
             dfi_support_manifest want;
             memset(&want, 0, sizeof want);
             want.turn_core = 1u;
+            want.switching = 1u;
             for (size_t i = 0; i < sizeof step2_moves / sizeof step2_moves[0]; ++i) {
                 want.moves[step2_moves[i]] = 1u;
             }

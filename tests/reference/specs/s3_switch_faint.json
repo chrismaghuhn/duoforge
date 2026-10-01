@@ -1,0 +1,23 @@
+{
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000003005",
+  "name": "s3_switch_faint",
+  "purpose": "Switching and fainting to the end: a voluntary switch moves ahead of every move and its newcomer (Farigiraf, Normal) takes the Shadow Ball aimed at the slot without effect; faints cancel the moves of the fainted, replacements come in at the end of the turn, a target that fainted is replaced by a random foe, and the battle ends with a winner.",
+  "teams": [
+    "Gholdengo\nAbility: No Ability\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Shadow Ball\n- Nasty Plot\n\nCeruledge (F)\nAbility: No Ability\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Shadow Sneak\n- Swords Dance\n\nRillaboom (M)\nAbility: No Ability\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- High Horsepower\n\nArchaludon (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Snarl",
+    "Raichu (F)\nAbility: No Ability\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Focus Blast\n- Protect\n\nGolisopod (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Drill Run\n- Protect\n\nGrimmsnarl (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nAdamant Nature\n- Spirit Break\n\nFarigiraf (F)\nAbility: No Ability\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 2, move 2",
+      "move 1 1, move 1 2",
+      "move 1 2, move 1 1"
+    ],
+    "p2": [
+      "switch 4, move 1 1",
+      "move 1 1, move 1 1",
+      "move 1 2, move 1 2"
+    ],
+    "max_steps": 40
+  }
+}

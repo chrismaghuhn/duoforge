@@ -95,7 +95,7 @@ const char *duoforge_status_name(duoforge_status status);
 /* ---- decision boundaries (decision 0005 section 1) ---- */
 #define DUOFORGE_BOUNDARY_TEAM_SELECTION 1u
 #define DUOFORGE_BOUNDARY_TURN           2u
-#define DUOFORGE_BOUNDARY_REPLACEMENT    3u /* structural only until switching exists */
+#define DUOFORGE_BOUNDARY_REPLACEMENT    3u /* fainted positions with a reserve (decision 0006) */
 #define DUOFORGE_BOUNDARY_PIVOT          4u /* structural only until pivots exist */
 #define DUOFORGE_BOUNDARY_TERMINAL       5u /* the battle is over: nobody is requested (decision 0006) */
 #define DUOFORGE_BOUNDARY_COUNT          5u

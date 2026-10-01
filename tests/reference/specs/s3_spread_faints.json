@@ -1,0 +1,19 @@
+{
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000003109",
+  "name": "s3_spread_faints",
+  "purpose": "Spread moves knock out several Pokemon at once: both sides replace in the same request, a side with fewer reserves than empty slots passes the rest, a side with a fainted slot and no reserve plays on with one Pokemon, and the battle ends.",
+  "teams": [
+    "Milotic (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Coil\n\nPolitoed (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Protect\n\nStaraptor (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Protect\n\nCharizard (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 SpD / 2 Spe\nCalm Nature\n- Protect",
+    "Politoed (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Protect\n\nMilotic (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Coil\n\nStaraptor (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Protect\n\nCeruledge (M)\nAbility: No Ability\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Swords Dance"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 1"
+    ],
+    "p2": [
+      "move 1, move 1"
+    ],
+    "max_steps": 60
+  }
+}

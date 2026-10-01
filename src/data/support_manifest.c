@@ -4,9 +4,11 @@
  * damage, accuracy, critical hits, the random factor, STAB, the type chart,
  * stat stages, self-boosting moves, secondary stat changes, PP, Struggle and
  * Protect with its stall counter. Every move marked here uses nothing else.
- * No ability, item, switch, faint or Mega Evolution is implemented yet. */
+ * Step 3: voluntary switches, fainting, replacements and the win rule.
+ * No ability, item, status or Mega Evolution is implemented yet. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
+    .switching = 1u,
     .moves =
         {
             [DFI_MOVE_HIGHHORSEPOWER] = 1u,

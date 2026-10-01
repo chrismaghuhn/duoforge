@@ -15,7 +15,7 @@ CTest runs the `--check` form as `duoforge.reference.arith` (label `reference`).
 
 ## `ps_trace.js`
 
-Records a complete battle. A spec (`tests/reference/specs/*.json`) gives the format, a PRNG seed, both teams as Showdown paste text (gender always given) and the choices in request order. The harness runs the battle with a recording PRNG and writes a trace (`tests/reference/traces/*.json`): for every choice entry the draws it caused (site, context, bounds, value), the protocol lines and the state at the next boundary (exact HP, status, stages, PP, volatiles, active slots, requests).
+Records a complete battle. A spec (`tests/reference/specs/*.json`) gives the format, a PRNG seed, both teams as Showdown paste text (gender always given) and either the choices in request order (`choices`) or a plan (`plan`: per side the choices for its move requests in order, the last one repeated, and `max_steps`). In plan mode the harness answers team preview with the first four, a replacement with the first standing reserves and a fainted slot with `pass`, and records the choices it made. The harness runs the battle with a recording PRNG and writes a trace (`tests/reference/traces/*.json`): for every choice entry the draws it caused (site, context, bounds, value), the protocol lines and the state at the next boundary (exact HP, status, stages, PP, volatiles, active slots, requests).
 
 ```sh
 node tools/reference/ps_trace.js <checkout> tests/reference/specs/s2_turn_core_1.json > tests/reference/traces/s2_turn_core_1.json
@@ -26,7 +26,7 @@ The site of a draw is read from its call stack, the context from the reference's
 
 ## `trace_to_c.py`
 
-Turns every spec and trace into `tests/reference/conformance.h`: the teams in DuoForge ids, the slot commands per step, the expected members (HP, PP, stages, stall counter) and the tape. Draws without effect are dropped by named rules whose preconditions it checks (decision 0006 section 5.1); each step records how many were dropped. Shuffle draws become relative to their group. CTest checks that the committed header is what the script makes of the traces (`duoforge.reference.conformance_tables`).
+Turns every spec and trace into `tests/reference/conformance.h`: the teams in DuoForge ids, the slot commands per step, the expected members (HP, PP, stages, stall counter), the boundary and result after the step, the occupants of the positions, the order of the entries, and the tape. A `pass` the reference wants for a slot that a replacement does not ask becomes no command. Draws without effect are dropped by named rules whose preconditions it checks (decision 0006 section 5.1); each step records how many were dropped. Shuffle draws become relative to their group. CTest checks that the committed header is what the script makes of the traces (`duoforge.reference.conformance_tables`).
 
 ```sh
 python tools/reference/trace_to_c.py .           # write tests/reference/conformance.h

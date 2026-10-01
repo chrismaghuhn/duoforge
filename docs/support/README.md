@@ -25,7 +25,8 @@ This is a status manifest, **not** a mechanics certificate. "IMPLEMENTED + TESTE
 | Damage and stat arithmetic (4096-based modifiers, base damage, random factor, critical hit, type steps, 16-bit final damage, stat and accuracy stages) | **IMPLEMENTED + TESTED** against values computed by the pinned Showdown (`tools/reference/arith_ref.js`); no move uses it yet |
 | RNG draw sites and the test-only tape | **IMPLEMENTED + TESTED** (decision 0006 section 5); no mechanic draws yet |
 | Turn core (queue order with speed ties, single and spread damage, accuracy, critical hits, random factor, STAB, type chart, stat stages, self-boosts, secondary stat changes, PP, Struggle, Protect with its stall counter) | **IMPLEMENTED + TESTED** for development teams (CLOSURE_DEV, No Ability, no items); replays 7 recorded reference battles draw for draw (decision 0006 section 4.1) |
-| Switching, fainting, statuses, abilities, items, weather, terrain, side and field conditions, Mega Evolution, pivots | **UNSUPPORTED** (`E_UNSUPPORTED`, atomic; steps 3 to 12) |
+| Switching, fainting, replacement, win rule and TERMINAL | **IMPLEMENTED + TESTED** for development teams; 5 of the 12 recorded reference battles play to the end (decision 0006 section 4.2) |
+| Statuses, abilities, items, weather, terrain, side and field conditions, Mega Evolution, pivots | **UNSUPPORTED** (`E_UNSUPPORTED`, atomic; steps 4 to 12) |
 
 State snapshots and decodability are foundation evidence, **not proof that unimplemented future mechanics restore correctly**.
 

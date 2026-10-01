@@ -1,0 +1,21 @@
+{
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000003201",
+  "name": "s3_double_replace",
+  "purpose": "Both sides lose a Pokemon in the same turn and replace it in the same request, so the two entries are ordered by speed; boosted Shadow Balls and Shadow Sneaks, then the reserves fight it out.",
+  "teams": [
+    "Gholdengo\nAbility: No Ability\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Shadow Ball\n- Nasty Plot\n\nCeruledge (F)\nAbility: No Ability\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Shadow Sneak\n- Swords Dance\n\nArchaludon (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Snarl\n\nFarigiraf (F)\nAbility: No Ability\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Protect",
+    "Gholdengo\nAbility: No Ability\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Shadow Ball\n- Nasty Plot\n\nCeruledge (M)\nAbility: No Ability\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Shadow Sneak\n- Swords Dance\n\nArchaludon (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Snarl\n\nFarigiraf (M)\nAbility: No Ability\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 2, move 2",
+      "move 1 2, move 1 1"
+    ],
+    "p2": [
+      "move 2, move 2",
+      "move 1 2, move 1 1"
+    ],
+    "max_steps": 40
+  }
+}
