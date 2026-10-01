@@ -30,6 +30,12 @@ foreach(_bench_cfg IN LISTS _bench_cfgs)
     string(APPEND _bench_flags "$<$<CONFIG:${_bench_cfg}>:${_bench_cfg_flags}>")
 endforeach()
 
+# "1" when the configuration being built links with link-time optimization.
+set(_bench_ipo "")
+if(DUOFORGE_IPO)
+    set(_bench_ipo "$<$<CONFIG:Release>:1>")
+endif()
+
 add_executable(duoforge_bench main.c)
 add_dependencies(duoforge_bench duoforge_bench_revision)
 target_include_directories(duoforge_bench PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
@@ -37,7 +43,8 @@ target_link_libraries(duoforge_bench PRIVATE duoforge_bench_lib)
 target_compile_definitions(duoforge_bench PRIVATE
     "DFB_BUILD_TYPE=\"$<CONFIG>\""
     "DFB_C_COMPILER=\"${CMAKE_C_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION}\""
-    "DFB_C_FLAGS=\"${_bench_flags}\"")
+    "DFB_C_FLAGS=\"${_bench_flags}\""
+    "DFB_IPO=\"${_bench_ipo}\"")
 duoforge_configure_target(duoforge_bench)
 if(WIN32)
     # getenv, fopen and gmtime are fine in a driver (the MSVC runtime warns,

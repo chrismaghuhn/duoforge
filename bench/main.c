@@ -36,6 +36,9 @@
 #ifndef DFB_C_FLAGS
 #define DFB_C_FLAGS ""
 #endif
+#ifndef DFB_IPO
+#define DFB_IPO ""
+#endif
 
 typedef struct options {
     dfb_workload workload;
@@ -330,6 +333,7 @@ int main(int argc, char **argv)
     json_string(f, DFB_BUILD_TYPE);
     fprintf(f, ", \"c_flags\": ");
     json_string(f, DFB_C_FLAGS);
+    fprintf(f, ", \"ipo\": %s", DFB_IPO[0] != '\0' ? "true" : "false");
     fprintf(f, ",\n    \"os\": \"%s\", \"cpu\": ", os);
     json_string(f, cpu);
     fprintf(f, ", \"workers\": 1, \"affinity\": \"none\", \"started_utc\": \"%s\",\n", when);
