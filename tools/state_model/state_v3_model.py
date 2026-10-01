@@ -907,16 +907,19 @@ def slot_domain(ctx, st, side, slot):
         if pos['occ'] == NONE or sd['members'][pos['occ']]['hp'] == 0:
             return [cmd(SLOT_PASS)]
         mem = sd['members'][pos['occ']]
-        # A locked move (closure data): that move at the stored target only.
-        if ctx.data_kind in (KIND_CLOSURE, KIND_CLOSURE_DEV) and pos['locked_move'] != 0:
+        combat = ctx.data_kind in (KIND_CLOSURE, KIND_CLOSURE_DEV, KIND_TEAM_C, KIND_TEAM_C_DEV)
+        # A charging two-turn move (combat data): that move at the stored target only.
+        if combat and pos['charge_turns'] != 0:
             return [cmd(SLOT_MOVE, pos['locked_move'] - 1, pos['locked_target'], 0)]
+        # A choice lock (TEAM_C kinds): only the locked move; it does not trap.
+        choice = pos['flags'] & VOL_CHOICE_LOCK
         megas = [0, 1] if mem['mega_capable'] and not sd['mega_used'] else [0]
         for k in range(mem['move_count']):
             mv = mem['moves'][k]
-            if mv['pp'] == 0:
+            if mv['pp'] == 0 or (choice and k + 1 != pos['locked_move']):
                 continue
             # Champions disables Fake Out (closure move 2) after a move action.
-            if ctx.data_kind in (KIND_CLOSURE, KIND_CLOSURE_DEV) and mv['id'] == 2 and pos['move_actions'] != 0:
+            if combat and mv['id'] == 2 and pos['move_actions'] != 0:
                 continue
             for tgt in selectable_targets(ctx.table[mv['id']], side, slot):
                 for mg in megas:
@@ -1090,7 +1093,7 @@ def observe(ctx, st, player):
             b += bytes(pos['stages'])
             b += bytes([1 if pos['confusion_turns'] else 0, 1 if pos['charge_turns'] else 0,
                         pos['locked_move'] - 1 if locked else MOVE_SLOT_NONE,
-                        pos['locked_target'] if locked and own else TARGET_NONE,
+                        pos['locked_target'] if pos['charge_turns'] and own else TARGET_NONE,
                         1 if pos['move_actions'] else 0, pos['stall_level'],
                         1 if pos['flags'] & VOL_FLASH_FIRE else 0,
                         1 if pos['flags'] & VOL_PROTECT else 0, 0])

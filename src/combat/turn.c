@@ -217,7 +217,7 @@ static duoforge_status dfi_speed_key(const struct duoforge_battle *b, uint32_t s
         spe = dfi_modify(spe, chain); /* spe <= 4 * 65535, chain <= 3 * 4096 */
     }
     if (active && m->status == DFI_STATUS_PAR) {
-        spe = spe * 50u / 100u; /* spe <= 8 * 65535 */
+        spe = spe * 50u / 100u; /* spe <= 12 * 65535: stage x4, chain x3 */
     }
     if (spe > DFI_SPEED_CAP) {
         spe = DFI_SPEED_CAP;
@@ -1469,7 +1469,7 @@ static duoforge_status dfi_run_protect(dfi_run *r, uint32_t user)
             return DUOFORGE_OK;
         }
     }
-    pos->flags = (uint8_t)((uint32_t)pos->flags | DFI_VOL_PROTECT); /* wide-operands-reviewed: <= 7 */
+    pos->flags = (uint8_t)((uint32_t)pos->flags | DFI_VOL_PROTECT); /* wide-operands-reviewed: <= 71 */
     pos->stall_level = (uint8_t)(level < DFI_STALL_LEVEL_MAX ? level + 1u : level); /* wide-operands-reviewed */
     pos->stall_turns = (uint8_t)DFI_STALL_DURATION;
     dfi_emit_plain(r, DUOFORGE_EVENT_PROTECT, user); /* [-singleturn] Protect */
@@ -1502,6 +1502,14 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         return DUOFORGE_OK;
     }
     if (!dfi_move_slot_ok(m, q->move_slot)) {
+        return DUOFORGE_E_INVARIANT;
+    }
+    /* A choice-locked actor queues only its locked move or Struggle (the
+     * request offers nothing else), so choicelock's onBeforeMove, which
+     * would fail another move (data/conditions.ts), never runs; a decoded
+     * state that queues another move fails loudly (Team C). */
+    if (((uint32_t)pos->flags & DFI_VOL_CHOICE_LOCK) != 0u && q->move_slot != DUOFORGE_MOVE_SLOT_STRUGGLE &&
+        q->move_slot + 1u != pos->locked_move) {
         return DUOFORGE_E_INVARIANT;
     }
     *ran = true;

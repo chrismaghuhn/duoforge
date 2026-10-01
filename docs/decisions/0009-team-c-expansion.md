@@ -443,7 +443,8 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
   - `ps_trace.js` records a lock's slot as `choice`, only when the volatile exists, so every older trace is byte-identical (the harness version stays 14).
   - The converter compares it as volatile bit 8 and as the locked slot without a target. A lock on a move outside the slots, or on another move than a two-turn lock, fails loudly.
   - **A converter fix.** A slot plays Struggle when the reference's request offers Struggle. Before, the converter decided by "all PP 0", which missed a locked Fake Out (found by the differential-testing study). A request without Struggle while every PP is 0 fails loudly.
-- **Evidence.** Four recorded battles:
+- **Evidence.** Five recorded battles:
+  - `c07_lock_start`: Fake Out flinches Kingambit before its first move, so no lock, and the next request offers every move. Its first move then hits Protect, which locks it, and the next request offers only that move.
   - `c07_choice_lock`:
     - Basculegion's first move, Flip Turn, locks it, and leaving ends the lock; it returns unlocked;
     - Incineroar, locked into Fake Out, Struggles on its next turn, then switches out by choice;
@@ -454,7 +455,8 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
   - `c07_scarf_paralysis`: a paralysed Scarf Basculegion (143) has 107 and ties with Incineroar (107), so the queue draws. With paralysis before the Scarf it would have 106.
   - `c07_scarf_abort`: on the locked turn Archaludon cannot move, so the charge ends and the choice lock stays.
 
-  Nine negative controls each make a test fail:
+  Ten negative controls each make a test fail:
+  - the lock set before BeforeMove;
   - no x1.5;
   - paralysis before the chain;
   - no lock at ModifyMove;
@@ -466,6 +468,12 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
 
   A choice lock valid under CLOSURE cannot be told apart, because the Choice item check rejects it there anyway.
 - **Not recorded.** Tailwind with Choice Scarf: x3 is exact, and paralysis on top is the same chain as in `c07_scarf_paralysis`.
+- **Review findings, fixed.**
+  - When the lock starts was not recorded (`c07_lock_start`).
+  - A choice-locked actor whose queued move is neither its locked move nor Struggle is `E_INVARIANT`. That needs a decoded state, because the request offers nothing else; choicelock's `onBeforeMove` (`-fail`) is unreachable.
+  - The state model mirrors the domain and the observation: two-turn and Fake Out rules for every combat kind, the choice lock's slot filter, the own target only while charging. Its output is unchanged.
+  - Bound comments.
+- **Found on the way, outside this step.** The request offers Struggle with Mega declarations. The reference sends no `canMegaEvo` with a forced Struggle (`sim/pokemon.ts:1100-1106, 1132-1138`; `sim/side.ts:700-712`). This is a closure divergence that changes certified candidate counts, so it is left to a separate task and the owner.
 - **Shared files touched:**
   - `include/duoforge/duoforge.h` (comments of `locked_slot`, `locked_target`; version);
   - `src/state/{battle_internal,closure_member}.h`, `closure_member.c`, `invariants.c`, `observation.c`, `request.c`;
