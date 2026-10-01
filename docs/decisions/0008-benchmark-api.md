@@ -57,7 +57,7 @@ The candidate lists (PR #39) are written in one pass with closed-form counts, an
 
 ## 8. Link-time optimization (2026-10-01)
 
-Release builds link with link-time optimization where the toolchain supports it (`DUOFORGE_ENABLE_IPO`, default on; off with sanitizers; the manifest records it as `ipo`). The full test suite passes with it under GCC, Clang and MSVC. Measured A/B on the same source (744c289), interleaved, CPU load 7 to 15 percent, undisturbed runs only (GCC 3 and 3, Clang 2 and 2, MSVC 2 and 2), median time of the workload in ms:
+Release builds can link with link-time optimization (`DUOFORGE_ENABLE_IPO`, opt-in; the manifest records it as `ipo`). It is not the default: LTO objects are compiler-specific, so a library built with them links only with the same toolchain (CI showed a C++ test linked by g++ against a Clang-built library fail). GCC and Clang on ELF build fat objects (machine code next to the LTO data), so that the binary checks and a link by another toolchain still see machine code; elsewhere the C++ compiler must belong to the same toolchain, and a toolchain without support fails the configuration. Performance builds (benchmarks, training) turn it on. The full test suite passes with it under GCC, Clang and MSVC. Measured A/B on the same source (744c289), interleaved, CPU load 7 to 15 percent, undisturbed runs only (GCC 3 and 3, Clang 2 and 2, MSVC 2 and 2), median time of the workload in ms:
 
 | Family | GCC | GCC LTO | A/B | Clang | Clang LTO | A/B | MSVC | MSVC LTO | A/B |
 |---|---|---|---|---|---|---|---|---|---|

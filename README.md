@@ -77,7 +77,7 @@ Options:
 |---|---|---|
 | `DUOFORGE_WARNINGS_AS_ERRORS` | OFF | `-Werror` / `/WX`. CI and all local verification use ON. |
 | `DUOFORGE_ENABLE_SANITIZERS` | OFF | ASan + UBSan, non-recovering (GCC/Clang only). |
-| `DUOFORGE_ENABLE_IPO` | ON | Link-time optimization of Release builds where supported (off with sanitizers). |
+| `DUOFORGE_ENABLE_IPO` | OFF | Link-time optimization of Release builds (8 to 13 percent faster battles, decision 0008 section 8). The library then links only with the same toolchain; fails the configuration where unsupported. |
 | `DUOFORGE_PCG_REFERENCE_DIR` | empty | Path to a checkout of `imneme/pcg-c-basic` at `bc39cd76ac3d541e618606bcc6e1e5ba5e5e6aa3`. Enables the reference tests (`ctest -L reference`): byte-identical KAT regeneration and a 1,024,000-operation lockstep differential. |
 
 Every test is finite and has a timeout. Test groups:
