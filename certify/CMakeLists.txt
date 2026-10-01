@@ -20,3 +20,7 @@ foreach(_kind IN ITEMS digest choice seed)
             -P "${CMAKE_CURRENT_SOURCE_DIR}/mutate_check.cmake")
     set_tests_properties(duoforge.certify.negative.${_kind} PROPERTIES TIMEOUT 600 LABELS certify)
 endforeach()
+# M5 step 5: a battle of the dataset shrunk to its first Mega Evolution.
+add_test(NAME duoforge.certify.minimize
+    COMMAND duoforge_certify minimize "${PROJECT_SOURCE_DIR}/docs/certification/closure-v1/dataset.txt" 7 event:31)
+set_tests_properties(duoforge.certify.minimize PROPERTIES TIMEOUT 600 LABELS certify)
