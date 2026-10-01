@@ -1,5 +1,5 @@
 {
- "harness": 13,
+ "harness": 14,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "spec": "s13_real_ab_4.json",
  "format": "gen9championsvgc2026regmc",
@@ -42,9 +42,15 @@
    "weather_turns": 0,
    "terrain": "",
    "terrain_turns": 0,
+   "trick_room": 0,
    "sides": [
     {
      "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
      "enabled": [],
      "active": [
       -1,
@@ -58,6 +64,7 @@
        "switch_flag": 0,
        "hp": 192,
        "maxhp": 192,
+       "item": "staraptite",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -87,6 +94,7 @@
        "switch_flag": 0,
        "hp": 202,
        "maxhp": 202,
+       "item": "sitrusberry",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -116,6 +124,7 @@
        "switch_flag": 0,
        "hp": 179,
        "maxhp": 179,
+       "item": "lifeorb",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -145,6 +154,7 @@
        "switch_flag": 0,
        "hp": 193,
        "maxhp": 193,
+       "item": "miracleseed",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -174,6 +184,7 @@
        "switch_flag": 0,
        "hp": 181,
        "maxhp": 181,
+       "item": "grassyseed",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -203,6 +214,7 @@
        "switch_flag": 0,
        "hp": 164,
        "maxhp": 164,
+       "item": "raichunitey",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -229,6 +241,11 @@
     },
     {
      "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
      "enabled": [],
      "active": [
       -1,
@@ -242,6 +259,7 @@
        "switch_flag": 0,
        "hp": 197,
        "maxhp": 197,
+       "item": "mysticwater",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -271,6 +289,7 @@
        "switch_flag": 0,
        "hp": 202,
        "maxhp": 202,
+       "item": "lightclay",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -300,6 +319,7 @@
        "switch_flag": 0,
        "hp": 169,
        "maxhp": 169,
+       "item": "charizarditey",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -329,6 +349,7 @@
        "switch_flag": 0,
        "hp": 224,
        "maxhp": 224,
+       "item": "sitrusberry",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -358,6 +379,7 @@
        "switch_flag": 0,
        "hp": 197,
        "maxhp": 197,
+       "item": "leftovers",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -387,6 +409,7 @@
        "switch_flag": 0,
        "hp": 182,
        "maxhp": 182,
+       "item": "golisopite",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -457,9 +480,15 @@
     "weather_turns": 5,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -486,6 +515,7 @@
         "switch_flag": 0,
         "hp": 192,
         "maxhp": 192,
+        "item": "staraptite",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -515,6 +545,7 @@
         "switch_flag": 0,
         "hp": 202,
         "maxhp": 202,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -544,6 +575,7 @@
         "switch_flag": 0,
         "hp": 179,
         "maxhp": 179,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -573,6 +605,7 @@
         "switch_flag": 0,
         "hp": 193,
         "maxhp": 193,
+        "item": "miracleseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -599,6 +632,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -625,6 +663,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -654,6 +693,7 @@
         "switch_flag": 0,
         "hp": 202,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -683,6 +723,7 @@
         "switch_flag": 0,
         "hp": 169,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -712,6 +753,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -783,9 +825,15 @@
     "weather_turns": 4,
     "terrain": "grassyterrain",
     "terrain_turns": 4,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -812,6 +860,7 @@
         "switch_flag": 0,
         "hp": 192,
         "maxhp": 192,
+        "item": "staraptite",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -841,6 +890,7 @@
         "switch_flag": 0,
         "hp": 193,
         "maxhp": 193,
+        "item": "miracleseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -870,6 +920,7 @@
         "switch_flag": 0,
         "hp": 179,
         "maxhp": 179,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -899,6 +950,7 @@
         "switch_flag": 0,
         "hp": 202,
         "maxhp": 202,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -925,6 +977,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       7,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -951,6 +1008,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -982,6 +1040,7 @@
         "switch_flag": 0,
         "hp": 202,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1011,6 +1070,7 @@
         "switch_flag": 0,
         "hp": 169,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1040,6 +1100,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1126,9 +1187,15 @@
     "weather_turns": 3,
     "terrain": "grassyterrain",
     "terrain_turns": 3,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -1155,6 +1222,7 @@
         "switch_flag": 0,
         "hp": 166,
         "maxhp": 192,
+        "item": "staraptite",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1184,6 +1252,7 @@
         "switch_flag": 0,
         "hp": 202,
         "maxhp": 202,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1213,6 +1282,7 @@
         "switch_flag": 0,
         "hp": 179,
         "maxhp": 179,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1242,6 +1312,7 @@
         "switch_flag": 0,
         "hp": 193,
         "maxhp": 193,
+        "item": "miracleseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1268,6 +1339,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       6,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -1294,6 +1370,7 @@
         "switch_flag": 0,
         "hp": 169,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1323,6 +1400,7 @@
         "switch_flag": 0,
         "hp": 136,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1352,6 +1430,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1381,6 +1460,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1496,9 +1576,15 @@
     "weather_turns": 2,
     "terrain": "grassyterrain",
     "terrain_turns": 2,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       3,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -1525,6 +1611,7 @@
         "switch_flag": 0,
         "hp": 166,
         "maxhp": 192,
+        "item": "staraptite",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1554,6 +1641,7 @@
         "switch_flag": 0,
         "hp": 187,
         "maxhp": 202,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1583,6 +1671,7 @@
         "switch_flag": 0,
         "hp": 179,
         "maxhp": 179,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1612,6 +1701,7 @@
         "switch_flag": 0,
         "hp": 193,
         "maxhp": 193,
+        "item": "miracleseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1638,6 +1728,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       5,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -1664,6 +1759,7 @@
         "switch_flag": 0,
         "hp": 169,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1693,6 +1789,7 @@
         "switch_flag": 0,
         "hp": 113,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1722,6 +1819,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1751,6 +1849,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1936,9 +2035,15 @@
     "weather_turns": 1,
     "terrain": "grassyterrain",
     "terrain_turns": 1,
+    "trick_room": 0,
     "sides": [
      {
       "request": "switch",
+      "conditions": [
+       2,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -1952,6 +2057,7 @@
         "switch_flag": 1,
         "hp": 0,
         "maxhp": 192,
+        "item": "staraptite",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -1981,6 +2087,7 @@
         "switch_flag": 0,
         "hp": 199,
         "maxhp": 202,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2010,6 +2117,7 @@
         "switch_flag": 0,
         "hp": 179,
         "maxhp": 179,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2039,6 +2147,7 @@
         "switch_flag": 0,
         "hp": 193,
         "maxhp": 193,
+        "item": "miracleseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2065,6 +2174,11 @@
      },
      {
       "request": "",
+      "conditions": [
+       0,
+       4,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -2078,6 +2192,7 @@
         "switch_flag": 0,
         "hp": 19,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2107,6 +2222,7 @@
         "switch_flag": 0,
         "hp": 175,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2136,6 +2252,7 @@
         "switch_flag": 0,
         "hp": 113,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2165,6 +2282,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2211,9 +2329,15 @@
     "weather_turns": 1,
     "terrain": "grassyterrain",
     "terrain_turns": 1,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       2,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -2240,6 +2364,7 @@
         "switch_flag": 0,
         "hp": 179,
         "maxhp": 179,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2269,6 +2394,7 @@
         "switch_flag": 0,
         "hp": 199,
         "maxhp": 202,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2298,6 +2424,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 192,
+        "item": "staraptite",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2327,6 +2454,7 @@
         "switch_flag": 0,
         "hp": 193,
         "maxhp": 193,
+        "item": "miracleseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2353,6 +2481,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       4,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -2379,6 +2512,7 @@
         "switch_flag": 0,
         "hp": 19,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2408,6 +2542,7 @@
         "switch_flag": 0,
         "hp": 175,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2437,6 +2572,7 @@
         "switch_flag": 0,
         "hp": 113,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2466,6 +2602,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2671,9 +2808,15 @@
     "weather_turns": 0,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       1,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -2700,6 +2843,7 @@
         "switch_flag": 0,
         "hp": 122,
         "maxhp": 179,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2729,6 +2873,7 @@
         "switch_flag": 0,
         "hp": 187,
         "maxhp": 202,
+        "item": "sitrusberry",
         "status": "brn",
         "status_time": 0,
         "confusion": 0,
@@ -2758,6 +2903,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 192,
+        "item": "staraptite",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2787,6 +2933,7 @@
         "switch_flag": 0,
         "hp": 193,
         "maxhp": 193,
+        "item": "miracleseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2813,6 +2960,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       3,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -2839,6 +2991,7 @@
         "switch_flag": 0,
         "hp": 19,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2868,6 +3021,7 @@
         "switch_flag": 0,
         "hp": 199,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2897,6 +3051,7 @@
         "switch_flag": 0,
         "hp": 113,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2926,6 +3081,7 @@
         "switch_flag": 0,
         "hp": 175,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2988,9 +3144,15 @@
     "weather_turns": 4,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 4,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -3017,6 +3179,7 @@
         "switch_flag": 0,
         "hp": 122,
         "maxhp": 179,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3046,6 +3209,7 @@
         "switch_flag": 0,
         "hp": 175,
         "maxhp": 202,
+        "item": "sitrusberry",
         "status": "brn",
         "status_time": 0,
         "confusion": 0,
@@ -3075,6 +3239,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 192,
+        "item": "staraptite",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3104,6 +3269,7 @@
         "switch_flag": 0,
         "hp": 193,
         "maxhp": 193,
+        "item": "miracleseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3130,6 +3296,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       2,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -3156,6 +3327,7 @@
         "switch_flag": 0,
         "hp": 175,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3185,6 +3357,7 @@
         "switch_flag": 0,
         "hp": 199,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3214,6 +3387,7 @@
         "switch_flag": 0,
         "hp": 113,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3243,6 +3417,7 @@
         "switch_flag": 0,
         "hp": 19,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3388,9 +3563,15 @@
     "weather_turns": 3,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -3404,6 +3585,7 @@
         "switch_flag": 1,
         "hp": 0,
         "maxhp": 179,
+        "item": "lifeorb",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -3433,6 +3615,7 @@
         "switch_flag": 0,
         "hp": 163,
         "maxhp": 202,
+        "item": "sitrusberry",
         "status": "brn",
         "status_time": 0,
         "confusion": 0,
@@ -3462,6 +3645,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 192,
+        "item": "staraptite",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3491,6 +3675,7 @@
         "switch_flag": 0,
         "hp": 193,
         "maxhp": 193,
+        "item": "miracleseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3517,6 +3702,11 @@
      },
      {
       "request": "",
+      "conditions": [
+       0,
+       1,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -3530,6 +3720,7 @@
         "switch_flag": 0,
         "hp": 158,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3559,6 +3750,7 @@
         "switch_flag": 0,
         "hp": 199,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3588,6 +3780,7 @@
         "switch_flag": 0,
         "hp": 113,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3617,6 +3810,7 @@
         "switch_flag": 0,
         "hp": 19,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3664,9 +3858,15 @@
     "weather_turns": 3,
     "terrain": "grassyterrain",
     "terrain_turns": 5,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -3693,6 +3893,7 @@
         "switch_flag": 0,
         "hp": 193,
         "maxhp": 193,
+        "item": "miracleseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3722,6 +3923,7 @@
         "switch_flag": 0,
         "hp": 163,
         "maxhp": 202,
+        "item": "sitrusberry",
         "status": "brn",
         "status_time": 0,
         "confusion": 0,
@@ -3751,6 +3953,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 192,
+        "item": "staraptite",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3780,6 +3983,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 179,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3806,6 +4010,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       1,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -3832,6 +4041,7 @@
         "switch_flag": 0,
         "hp": 158,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3861,6 +4071,7 @@
         "switch_flag": 0,
         "hp": 199,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3890,6 +4101,7 @@
         "switch_flag": 0,
         "hp": 113,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3919,6 +4131,7 @@
         "switch_flag": 0,
         "hp": 19,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4098,9 +4311,15 @@
     "weather_turns": 2,
     "terrain": "grassyterrain",
     "terrain_turns": 4,
+    "trick_room": 4,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -4127,6 +4346,7 @@
         "switch_flag": 0,
         "hp": 141,
         "maxhp": 193,
+        "item": "miracleseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4156,6 +4376,7 @@
         "switch_flag": 0,
         "hp": 127,
         "maxhp": 202,
+        "item": "sitrusberry",
         "status": "brn",
         "status_time": 0,
         "confusion": 0,
@@ -4185,6 +4406,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 192,
+        "item": "staraptite",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4214,6 +4436,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 179,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4240,6 +4463,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -4266,6 +4494,7 @@
         "switch_flag": 0,
         "hp": 170,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4295,6 +4524,7 @@
         "switch_flag": 0,
         "hp": 213,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4324,6 +4554,7 @@
         "switch_flag": 0,
         "hp": 113,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4353,6 +4584,7 @@
         "switch_flag": 0,
         "hp": 19,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4522,9 +4754,15 @@
     "weather_turns": 1,
     "terrain": "grassyterrain",
     "terrain_turns": 3,
+    "trick_room": 3,
     "sides": [
      {
       "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -4538,6 +4776,7 @@
         "switch_flag": 0,
         "hp": 96,
         "maxhp": 193,
+        "item": "miracleseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4567,6 +4806,7 @@
         "switch_flag": 0,
         "hp": 132,
         "maxhp": 202,
+        "item": "",
         "status": "brn",
         "status_time": 0,
         "confusion": 0,
@@ -4596,6 +4836,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 192,
+        "item": "staraptite",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4625,6 +4866,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 179,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4651,6 +4893,11 @@
      },
      {
       "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -4664,6 +4911,7 @@
         "switch_flag": 0,
         "hp": 182,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4695,6 +4943,7 @@
         "switch_flag": 1,
         "hp": 0,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -4724,6 +4973,7 @@
         "switch_flag": 0,
         "hp": 113,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4753,6 +5003,7 @@
         "switch_flag": 0,
         "hp": 19,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4799,9 +5050,15 @@
     "weather_turns": 1,
     "terrain": "grassyterrain",
     "terrain_turns": 3,
+    "trick_room": 3,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -4828,6 +5085,7 @@
         "switch_flag": 0,
         "hp": 96,
         "maxhp": 193,
+        "item": "miracleseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4857,6 +5115,7 @@
         "switch_flag": 0,
         "hp": 132,
         "maxhp": 202,
+        "item": "",
         "status": "brn",
         "status_time": 0,
         "confusion": 0,
@@ -4886,6 +5145,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 192,
+        "item": "staraptite",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4915,6 +5175,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 179,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4941,6 +5202,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -4967,6 +5233,7 @@
         "switch_flag": 0,
         "hp": 182,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4998,6 +5265,7 @@
         "switch_flag": 0,
         "hp": 113,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5027,6 +5295,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5056,6 +5325,7 @@
         "switch_flag": 0,
         "hp": 19,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5123,9 +5393,15 @@
     "weather_turns": 1,
     "terrain": "grassyterrain",
     "terrain_turns": 3,
+    "trick_room": 3,
     "sides": [
      {
       "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -5139,6 +5415,7 @@
         "switch_flag": 0,
         "hp": 96,
         "maxhp": 193,
+        "item": "miracleseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5168,6 +5445,7 @@
         "switch_flag": 0,
         "hp": 132,
         "maxhp": 202,
+        "item": "",
         "status": "brn",
         "status_time": 0,
         "confusion": 0,
@@ -5197,6 +5475,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 192,
+        "item": "staraptite",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5226,6 +5505,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 179,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5252,6 +5532,11 @@
      },
      {
       "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -5265,6 +5550,7 @@
         "switch_flag": 0,
         "hp": 182,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5294,6 +5580,7 @@
         "switch_flag": 1,
         "hp": 113,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5323,6 +5610,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5352,6 +5640,7 @@
         "switch_flag": 0,
         "hp": 19,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5472,9 +5761,15 @@
     "weather_turns": 0,
     "terrain": "grassyterrain",
     "terrain_turns": 2,
+    "trick_room": 2,
     "sides": [
      {
       "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -5488,6 +5783,7 @@
         "switch_flag": 0,
         "hp": 62,
         "maxhp": 193,
+        "item": "miracleseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5517,6 +5813,7 @@
         "switch_flag": 0,
         "hp": 132,
         "maxhp": 202,
+        "item": "",
         "status": "brn",
         "status_time": 0,
         "confusion": 0,
@@ -5546,6 +5843,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 192,
+        "item": "staraptite",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5575,6 +5873,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 179,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5601,6 +5900,11 @@
      },
      {
       "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -5614,6 +5918,7 @@
         "switch_flag": 1,
         "hp": 0,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -5643,6 +5948,7 @@
         "switch_flag": 0,
         "hp": 19,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5672,6 +5978,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5701,6 +6008,7 @@
         "switch_flag": 0,
         "hp": 113,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5747,9 +6055,15 @@
     "weather_turns": 0,
     "terrain": "grassyterrain",
     "terrain_turns": 2,
+    "trick_room": 2,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -5776,6 +6090,7 @@
         "switch_flag": 0,
         "hp": 62,
         "maxhp": 193,
+        "item": "miracleseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5805,6 +6120,7 @@
         "switch_flag": 0,
         "hp": 132,
         "maxhp": 202,
+        "item": "",
         "status": "brn",
         "status_time": 0,
         "confusion": 0,
@@ -5834,6 +6150,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 192,
+        "item": "staraptite",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5863,6 +6180,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 179,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5889,6 +6207,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -5915,6 +6238,7 @@
         "switch_flag": 0,
         "hp": 113,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5944,6 +6268,7 @@
         "switch_flag": 0,
         "hp": 19,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5973,6 +6298,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6002,6 +6328,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6141,9 +6468,15 @@
     "weather_turns": 4,
     "terrain": "grassyterrain",
     "terrain_turns": 1,
+    "trick_room": 1,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -6170,6 +6503,7 @@
         "switch_flag": 0,
         "hp": 74,
         "maxhp": 193,
+        "item": "miracleseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6199,6 +6533,7 @@
         "switch_flag": 0,
         "hp": 132,
         "maxhp": 202,
+        "item": "",
         "status": "brn",
         "status_time": 0,
         "confusion": 0,
@@ -6228,6 +6563,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 192,
+        "item": "staraptite",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6257,6 +6593,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 179,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6283,6 +6620,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       7,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -6309,6 +6651,7 @@
         "switch_flag": 0,
         "hp": 125,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6338,6 +6681,7 @@
         "switch_flag": 0,
         "hp": 19,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "slp",
         "status_time": 2,
         "confusion": 0,
@@ -6367,6 +6711,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6396,6 +6741,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6548,9 +6894,15 @@
     "weather_turns": 3,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -6577,6 +6929,7 @@
         "switch_flag": 0,
         "hp": 29,
         "maxhp": 193,
+        "item": "miracleseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6606,6 +6959,7 @@
         "switch_flag": 0,
         "hp": 132,
         "maxhp": 202,
+        "item": "",
         "status": "brn",
         "status_time": 0,
         "confusion": 0,
@@ -6635,6 +6989,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 192,
+        "item": "staraptite",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6664,6 +7019,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 179,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6690,6 +7046,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       6,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -6716,6 +7077,7 @@
         "switch_flag": 0,
         "hp": 82,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6745,6 +7107,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "fnt",
         "status_time": 2,
         "confusion": 0,
@@ -6774,6 +7137,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6803,6 +7167,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6891,9 +7256,15 @@
     "weather_turns": 3,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -6907,6 +7278,7 @@
         "switch_flag": 0,
         "hp": 2,
         "maxhp": 193,
+        "item": "miracleseed",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6936,6 +7308,7 @@
         "switch_flag": 0,
         "hp": 132,
         "maxhp": 202,
+        "item": "",
         "status": "brn",
         "status_time": 0,
         "confusion": 0,
@@ -6965,6 +7338,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 192,
+        "item": "staraptite",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6994,6 +7368,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 179,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -7020,6 +7395,11 @@
      },
      {
       "request": "",
+      "conditions": [
+       0,
+       6,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -7033,6 +7413,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -7062,6 +7443,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "fnt",
         "status_time": 2,
         "confusion": 0,
@@ -7091,6 +7473,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -7120,6 +7503,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,

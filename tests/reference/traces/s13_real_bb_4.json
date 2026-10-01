@@ -1,5 +1,5 @@
 {
- "harness": 13,
+ "harness": 14,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "spec": "s13_real_bb_4.json",
  "format": "gen9championsvgc2026regmc",
@@ -42,9 +42,15 @@
    "weather_turns": 0,
    "terrain": "",
    "terrain_turns": 0,
+   "trick_room": 0,
    "sides": [
     {
      "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
      "enabled": [],
      "active": [
       -1,
@@ -58,6 +64,7 @@
        "switch_flag": 0,
        "hp": 197,
        "maxhp": 197,
+       "item": "mysticwater",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -87,6 +94,7 @@
        "switch_flag": 0,
        "hp": 202,
        "maxhp": 202,
+       "item": "lightclay",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -116,6 +124,7 @@
        "switch_flag": 0,
        "hp": 197,
        "maxhp": 197,
+       "item": "leftovers",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -145,6 +154,7 @@
        "switch_flag": 0,
        "hp": 169,
        "maxhp": 169,
+       "item": "charizarditey",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -174,6 +184,7 @@
        "switch_flag": 0,
        "hp": 224,
        "maxhp": 224,
+       "item": "sitrusberry",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -203,6 +214,7 @@
        "switch_flag": 0,
        "hp": 182,
        "maxhp": 182,
+       "item": "golisopite",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -229,6 +241,11 @@
     },
     {
      "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
      "enabled": [],
      "active": [
       -1,
@@ -242,6 +259,7 @@
        "switch_flag": 0,
        "hp": 202,
        "maxhp": 202,
+       "item": "lightclay",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -271,6 +289,7 @@
        "switch_flag": 0,
        "hp": 169,
        "maxhp": 169,
+       "item": "charizarditey",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -300,6 +319,7 @@
        "switch_flag": 0,
        "hp": 197,
        "maxhp": 197,
+       "item": "mysticwater",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -329,6 +349,7 @@
        "switch_flag": 0,
        "hp": 224,
        "maxhp": 224,
+       "item": "sitrusberry",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -358,6 +379,7 @@
        "switch_flag": 0,
        "hp": 182,
        "maxhp": 182,
+       "item": "golisopite",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -387,6 +409,7 @@
        "switch_flag": 0,
        "hp": 197,
        "maxhp": 197,
+       "item": "leftovers",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -502,9 +525,15 @@
     "weather_turns": 5,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -531,6 +560,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -560,6 +590,7 @@
         "switch_flag": 0,
         "hp": 202,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -589,6 +620,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -618,6 +650,7 @@
         "switch_flag": 0,
         "hp": 169,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -644,6 +677,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -670,6 +708,7 @@
         "switch_flag": 0,
         "hp": 202,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -699,6 +738,7 @@
         "switch_flag": 0,
         "hp": 169,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -728,6 +768,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -757,6 +798,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1048,9 +1090,15 @@
     "weather_turns": 4,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -1077,6 +1125,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1106,6 +1155,7 @@
         "switch_flag": 0,
         "hp": 202,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1135,6 +1185,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1164,6 +1215,7 @@
         "switch_flag": 0,
         "hp": 169,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1190,6 +1242,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       7
+      ],
       "enabled": [
        [
         1,
@@ -1216,6 +1273,7 @@
         "switch_flag": 0,
         "hp": 171,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "frz",
         "status_time": 3,
         "confusion": 0,
@@ -1245,6 +1303,7 @@
         "switch_flag": 0,
         "hp": 169,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1276,6 +1335,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1305,6 +1365,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1658,9 +1719,15 @@
     "weather_turns": 4,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -1687,6 +1754,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1716,6 +1784,7 @@
         "switch_flag": 0,
         "hp": 79,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1745,6 +1814,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1774,6 +1844,7 @@
         "switch_flag": 0,
         "hp": 169,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1800,6 +1871,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       6
+      ],
       "enabled": [
        [
         1,
@@ -1826,6 +1902,7 @@
         "switch_flag": 0,
         "hp": 139,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "frz",
         "status_time": 2,
         "confusion": 0,
@@ -1855,6 +1932,7 @@
         "switch_flag": 0,
         "hp": 142,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1884,6 +1962,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1913,6 +1992,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2165,9 +2245,15 @@
     "weather_turns": 3,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -2194,6 +2280,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2225,6 +2312,7 @@
         "switch_flag": 0,
         "hp": 79,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2254,6 +2342,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2283,6 +2372,7 @@
         "switch_flag": 0,
         "hp": 169,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2309,6 +2399,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       5
+      ],
       "enabled": [
        [
         1,
@@ -2335,6 +2430,7 @@
         "switch_flag": 0,
         "hp": 139,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2364,6 +2460,7 @@
         "switch_flag": 0,
         "hp": 142,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2393,6 +2490,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2422,6 +2520,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2517,9 +2616,15 @@
     "weather_turns": 3,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -2533,6 +2638,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2564,6 +2670,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2593,6 +2700,7 @@
         "switch_flag": 0,
         "hp": 79,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2622,6 +2730,7 @@
         "switch_flag": 0,
         "hp": 169,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2648,6 +2757,11 @@
      },
      {
       "request": "switch",
+      "conditions": [
+       0,
+       0,
+       5
+      ],
       "enabled": [],
       "active": [
        0,
@@ -2661,6 +2775,7 @@
         "switch_flag": 1,
         "hp": 139,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2690,6 +2805,7 @@
         "switch_flag": 0,
         "hp": 142,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2722,6 +2838,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2751,6 +2868,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2911,9 +3029,15 @@
     "weather_turns": 4,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -2940,6 +3064,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2969,6 +3094,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2998,6 +3124,7 @@
         "switch_flag": 0,
         "hp": 79,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3027,6 +3154,7 @@
         "switch_flag": 0,
         "hp": 169,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3053,6 +3181,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       4
+      ],
       "enabled": [
        [
         1,
@@ -3079,6 +3212,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3108,6 +3242,7 @@
         "switch_flag": 0,
         "hp": 142,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3139,6 +3274,7 @@
         "switch_flag": 0,
         "hp": 139,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3168,6 +3304,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3448,9 +3585,15 @@
     "weather_turns": 3,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -3477,6 +3620,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3508,6 +3652,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3537,6 +3682,7 @@
         "switch_flag": 0,
         "hp": 79,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3566,6 +3712,7 @@
         "switch_flag": 0,
         "hp": 169,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3592,6 +3739,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       3
+      ],
       "enabled": [
        [
         1,
@@ -3618,6 +3770,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3649,6 +3802,7 @@
         "switch_flag": 0,
         "hp": 142,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3678,6 +3832,7 @@
         "switch_flag": 0,
         "hp": 139,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3707,6 +3862,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3960,9 +4116,15 @@
     "weather_turns": 2,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -3989,6 +4151,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4018,6 +4181,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4047,6 +4211,7 @@
         "switch_flag": 0,
         "hp": 79,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4076,6 +4241,7 @@
         "switch_flag": 0,
         "hp": 169,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4102,6 +4268,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       2
+      ],
       "enabled": [
        [
         1,
@@ -4128,6 +4299,7 @@
         "switch_flag": 0,
         "hp": 132,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4157,6 +4329,7 @@
         "switch_flag": 0,
         "hp": 142,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4188,6 +4361,7 @@
         "switch_flag": 0,
         "hp": 139,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4217,6 +4391,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4462,9 +4637,15 @@
     "weather_turns": 1,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -4491,6 +4672,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4520,6 +4702,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4549,6 +4732,7 @@
         "switch_flag": 0,
         "hp": 79,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4578,6 +4762,7 @@
         "switch_flag": 0,
         "hp": 169,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4604,6 +4789,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       1
+      ],
       "enabled": [
        [
         1,
@@ -4630,6 +4820,7 @@
         "switch_flag": 0,
         "hp": 132,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4661,6 +4852,7 @@
         "switch_flag": 0,
         "hp": 142,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4692,6 +4884,7 @@
         "switch_flag": 0,
         "hp": 139,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4721,6 +4914,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5077,9 +5271,15 @@
     "weather_turns": 0,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -5106,6 +5306,7 @@
         "switch_flag": 0,
         "hp": 111,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 4,
@@ -5137,6 +5338,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5168,6 +5370,7 @@
         "switch_flag": 0,
         "hp": 79,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5197,6 +5400,7 @@
         "switch_flag": 0,
         "hp": 169,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5223,6 +5427,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -5249,6 +5458,7 @@
         "switch_flag": 0,
         "hp": 132,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5278,6 +5488,7 @@
         "switch_flag": 0,
         "hp": 142,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5307,6 +5518,7 @@
         "switch_flag": 0,
         "hp": 139,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5336,6 +5548,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5656,9 +5869,15 @@
     "weather_turns": 0,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -5685,6 +5904,7 @@
         "switch_flag": 0,
         "hp": 85,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 3,
@@ -5716,6 +5936,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5747,6 +5968,7 @@
         "switch_flag": 0,
         "hp": 79,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5776,6 +5998,7 @@
         "switch_flag": 0,
         "hp": 169,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5802,6 +6025,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -5828,6 +6056,7 @@
         "switch_flag": 0,
         "hp": 132,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5857,6 +6086,7 @@
         "switch_flag": 0,
         "hp": 142,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5888,6 +6118,7 @@
         "switch_flag": 0,
         "hp": 139,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5917,6 +6148,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6291,9 +6523,15 @@
     "weather_turns": 0,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -6320,6 +6558,7 @@
         "switch_flag": 0,
         "hp": 15,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 2,
@@ -6351,6 +6590,7 @@
         "switch_flag": 0,
         "hp": 53,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6380,6 +6620,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6409,6 +6650,7 @@
         "switch_flag": 0,
         "hp": 169,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6435,6 +6677,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -6461,6 +6708,7 @@
         "switch_flag": 0,
         "hp": 132,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6490,6 +6738,7 @@
         "switch_flag": 0,
         "hp": 114,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6519,6 +6768,7 @@
         "switch_flag": 0,
         "hp": 139,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6548,6 +6798,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6751,9 +7002,15 @@
     "weather_turns": 0,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -6780,6 +7037,7 @@
         "switch_flag": 0,
         "hp": 5,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 1,
@@ -6811,6 +7069,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6840,6 +7099,7 @@
         "switch_flag": 0,
         "hp": 53,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6869,6 +7129,7 @@
         "switch_flag": 0,
         "hp": 169,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6895,6 +7156,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -6921,6 +7187,7 @@
         "switch_flag": 0,
         "hp": 139,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6950,6 +7217,7 @@
         "switch_flag": 0,
         "hp": 114,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -6981,6 +7249,7 @@
         "switch_flag": 0,
         "hp": 132,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -7010,6 +7279,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -7106,9 +7376,15 @@
     "weather_turns": 0,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -7122,6 +7398,7 @@
         "switch_flag": 0,
         "hp": 5,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 1,
@@ -7153,6 +7430,7 @@
         "switch_flag": 0,
         "hp": 197,
         "maxhp": 197,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -7182,6 +7460,7 @@
         "switch_flag": 0,
         "hp": 53,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -7211,6 +7490,7 @@
         "switch_flag": 0,
         "hp": 169,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -7237,6 +7517,11 @@
      },
      {
       "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -7250,6 +7535,7 @@
         "switch_flag": 1,
         "hp": 139,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -7279,6 +7565,7 @@
         "switch_flag": 0,
         "hp": 114,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -7310,6 +7597,7 @@
         "switch_flag": 0,
         "hp": 132,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -7339,6 +7627,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -7733,9 +8022,15 @@
     "weather_turns": 4,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -7762,6 +8057,7 @@
         "switch_flag": 0,
         "hp": 5,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -7791,6 +8087,7 @@
         "switch_flag": 0,
         "hp": 173,
         "maxhp": 197,
+        "item": "leftovers",
         "status": "brn",
         "status_time": 0,
         "confusion": 0,
@@ -7820,6 +8117,7 @@
         "switch_flag": 0,
         "hp": 53,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -7849,6 +8147,7 @@
         "switch_flag": 0,
         "hp": 169,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -7875,6 +8174,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -7901,6 +8205,7 @@
         "switch_flag": 0,
         "hp": 83,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -7930,6 +8235,7 @@
         "switch_flag": 0,
         "hp": 101,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -7959,6 +8265,7 @@
         "switch_flag": 0,
         "hp": 139,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -7988,6 +8295,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -8295,9 +8603,15 @@
     "weather_turns": 3,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -8311,6 +8625,7 @@
         "switch_flag": 1,
         "hp": 0,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -8340,6 +8655,7 @@
         "switch_flag": 0,
         "hp": 173,
         "maxhp": 197,
+        "item": "leftovers",
         "status": "brn",
         "status_time": 0,
         "confusion": 0,
@@ -8371,6 +8687,7 @@
         "switch_flag": 0,
         "hp": 53,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -8400,6 +8717,7 @@
         "switch_flag": 0,
         "hp": 169,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -8426,6 +8744,11 @@
      },
      {
       "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -8439,6 +8762,7 @@
         "switch_flag": 0,
         "hp": 83,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -8470,6 +8794,7 @@
         "switch_flag": 0,
         "hp": 101,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -8499,6 +8824,7 @@
         "switch_flag": 0,
         "hp": 139,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -8528,6 +8854,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -8574,9 +8901,15 @@
     "weather_turns": 3,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -8603,6 +8936,7 @@
         "switch_flag": 0,
         "hp": 53,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -8632,6 +8966,7 @@
         "switch_flag": 0,
         "hp": 173,
         "maxhp": 197,
+        "item": "leftovers",
         "status": "brn",
         "status_time": 0,
         "confusion": 0,
@@ -8663,6 +8998,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -8692,6 +9028,7 @@
         "switch_flag": 0,
         "hp": 169,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -8718,6 +9055,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -8744,6 +9086,7 @@
         "switch_flag": 0,
         "hp": 83,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -8775,6 +9118,7 @@
         "switch_flag": 0,
         "hp": 101,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -8804,6 +9148,7 @@
         "switch_flag": 0,
         "hp": 139,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -8833,6 +9178,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -9162,9 +9508,15 @@
     "weather_turns": 2,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -9178,6 +9530,7 @@
         "switch_flag": 1,
         "hp": 0,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -9207,6 +9560,7 @@
         "switch_flag": 0,
         "hp": 137,
         "maxhp": 197,
+        "item": "leftovers",
         "status": "brn",
         "status_time": 0,
         "confusion": 0,
@@ -9236,6 +9590,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -9265,6 +9620,7 @@
         "switch_flag": 0,
         "hp": 169,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -9291,6 +9647,11 @@
      },
      {
       "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -9304,6 +9665,7 @@
         "switch_flag": 0,
         "hp": 67,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -9333,6 +9695,7 @@
         "switch_flag": 0,
         "hp": 88,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -9362,6 +9725,7 @@
         "switch_flag": 0,
         "hp": 139,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -9391,6 +9755,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -9474,9 +9839,15 @@
     "weather_turns": 2,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -9503,6 +9874,7 @@
         "switch_flag": 0,
         "hp": 169,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -9532,6 +9904,7 @@
         "switch_flag": 0,
         "hp": 137,
         "maxhp": 197,
+        "item": "leftovers",
         "status": "brn",
         "status_time": 0,
         "confusion": 0,
@@ -9561,6 +9934,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -9590,6 +9964,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -9616,6 +9991,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -9642,6 +10022,7 @@
         "switch_flag": 0,
         "hp": 67,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -9671,6 +10052,7 @@
         "switch_flag": 0,
         "hp": 88,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -9700,6 +10082,7 @@
         "switch_flag": 0,
         "hp": 139,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -9729,6 +10112,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -10156,9 +10540,15 @@
     "weather_turns": 4,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -10185,6 +10575,7 @@
         "switch_flag": 0,
         "hp": 133,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -10214,6 +10605,7 @@
         "switch_flag": 0,
         "hp": 137,
         "maxhp": 197,
+        "item": "leftovers",
         "status": "brn",
         "status_time": 0,
         "confusion": 0,
@@ -10245,6 +10637,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -10274,6 +10667,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -10300,6 +10694,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -10326,6 +10725,7 @@
         "switch_flag": 0,
         "hp": 67,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -10357,6 +10757,7 @@
         "switch_flag": 0,
         "hp": 88,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -10386,6 +10787,7 @@
         "switch_flag": 0,
         "hp": 139,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -10415,6 +10817,7 @@
         "switch_flag": 0,
         "hp": 224,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -10796,9 +11199,15 @@
     "weather_turns": 3,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -10825,6 +11234,7 @@
         "switch_flag": 0,
         "hp": 133,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -10856,6 +11266,7 @@
         "switch_flag": 0,
         "hp": 95,
         "maxhp": 197,
+        "item": "leftovers",
         "status": "brn",
         "status_time": 0,
         "confusion": 0,
@@ -10885,6 +11296,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -10914,6 +11326,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -10940,6 +11353,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -10966,6 +11384,7 @@
         "switch_flag": 0,
         "hp": 178,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -10995,6 +11414,7 @@
         "switch_flag": 0,
         "hp": 88,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -11024,6 +11444,7 @@
         "switch_flag": 0,
         "hp": 139,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -11053,6 +11474,7 @@
         "switch_flag": 0,
         "hp": 67,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -11505,9 +11927,15 @@
     "weather_turns": 2,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -11534,6 +11962,7 @@
         "switch_flag": 0,
         "hp": 133,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -11565,6 +11994,7 @@
         "switch_flag": 0,
         "hp": 53,
         "maxhp": 197,
+        "item": "leftovers",
         "status": "brn",
         "status_time": 0,
         "confusion": 0,
@@ -11594,6 +12024,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -11623,6 +12054,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -11649,6 +12081,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -11675,6 +12112,7 @@
         "switch_flag": 0,
         "hp": 178,
         "maxhp": 224,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -11706,6 +12144,7 @@
         "switch_flag": 0,
         "hp": 76,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -11735,6 +12174,7 @@
         "switch_flag": 0,
         "hp": 139,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -11764,6 +12204,7 @@
         "switch_flag": 0,
         "hp": 67,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -12163,9 +12604,15 @@
     "weather_turns": 1,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -12189,6 +12636,7 @@
         "switch_flag": 0,
         "hp": 118,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -12218,6 +12666,7 @@
         "switch_flag": 0,
         "hp": 13,
         "maxhp": 197,
+        "item": "leftovers",
         "status": "brn",
         "status_time": 0,
         "confusion": 0,
@@ -12253,6 +12702,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -12282,6 +12732,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -12308,6 +12759,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -12334,6 +12790,7 @@
         "switch_flag": 0,
         "hp": 110,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 1,
@@ -12365,6 +12822,7 @@
         "switch_flag": 0,
         "hp": 76,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -12394,6 +12852,7 @@
         "switch_flag": 0,
         "hp": 139,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -12423,6 +12882,7 @@
         "switch_flag": 0,
         "hp": 67,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -12679,9 +13139,15 @@
     "weather_turns": 0,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -12695,6 +13161,7 @@
         "switch_flag": 0,
         "hp": 118,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -12724,6 +13191,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "leftovers",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -12753,6 +13221,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -12782,6 +13251,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -12808,6 +13278,11 @@
      },
      {
       "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -12821,6 +13296,7 @@
         "switch_flag": 1,
         "hp": 0,
         "maxhp": 224,
+        "item": "",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -12850,6 +13326,7 @@
         "switch_flag": 0,
         "hp": 76,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -12879,6 +13356,7 @@
         "switch_flag": 0,
         "hp": 139,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -12908,6 +13386,7 @@
         "switch_flag": 0,
         "hp": 67,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -12991,9 +13470,15 @@
     "weather_turns": 0,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -13020,6 +13505,7 @@
         "switch_flag": 0,
         "hp": 118,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -13049,6 +13535,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "leftovers",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -13078,6 +13565,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -13107,6 +13595,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -13133,6 +13622,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -13159,6 +13653,7 @@
         "switch_flag": 0,
         "hp": 139,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -13188,6 +13683,7 @@
         "switch_flag": 0,
         "hp": 76,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -13217,6 +13713,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -13246,6 +13743,7 @@
         "switch_flag": 0,
         "hp": 67,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -13509,9 +14007,15 @@
     "weather_turns": 0,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -13538,6 +14042,7 @@
         "switch_flag": 0,
         "hp": 91,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -13567,6 +14072,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "leftovers",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -13596,6 +14102,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -13625,6 +14132,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -13651,6 +14159,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -13677,6 +14190,7 @@
         "switch_flag": 0,
         "hp": 109,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -13706,6 +14220,7 @@
         "switch_flag": 0,
         "hp": 76,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -13737,6 +14252,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -13766,6 +14282,7 @@
         "switch_flag": 0,
         "hp": 67,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -14102,9 +14619,15 @@
     "weather_turns": 0,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -14131,6 +14654,7 @@
         "switch_flag": 0,
         "hp": 46,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -14160,6 +14684,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "leftovers",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -14189,6 +14714,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -14218,6 +14744,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -14244,6 +14771,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       7
+      ],
       "enabled": [
        [
         1,
@@ -14270,6 +14802,7 @@
         "switch_flag": 0,
         "hp": 80,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -14299,6 +14832,7 @@
         "switch_flag": 0,
         "hp": 62,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -14328,6 +14862,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -14357,6 +14892,7 @@
         "switch_flag": 0,
         "hp": 67,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -14554,9 +15090,15 @@
     "weather_turns": 4,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -14570,6 +15112,7 @@
         "switch_flag": 0,
         "hp": 46,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -14599,6 +15142,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "leftovers",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -14628,6 +15172,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -14657,6 +15202,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -14683,6 +15229,11 @@
      },
      {
       "request": "switch",
+      "conditions": [
+       0,
+       0,
+       6
+      ],
       "enabled": [],
       "active": [
        0,
@@ -14696,6 +15247,7 @@
         "switch_flag": 0,
         "hp": 67,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -14725,6 +15277,7 @@
         "switch_flag": 1,
         "hp": 0,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -14754,6 +15307,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -14783,6 +15337,7 @@
         "switch_flag": 0,
         "hp": 80,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -14829,9 +15384,15 @@
     "weather_turns": 4,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -14858,6 +15419,7 @@
         "switch_flag": 0,
         "hp": 46,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -14887,6 +15449,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "leftovers",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -14916,6 +15479,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -14945,6 +15509,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -14971,6 +15536,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       6
+      ],
       "enabled": [
        [
         1,
@@ -14997,6 +15567,7 @@
         "switch_flag": 0,
         "hp": 67,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -15026,6 +15597,7 @@
         "switch_flag": 0,
         "hp": 80,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -15055,6 +15627,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -15084,6 +15657,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -15180,9 +15754,15 @@
     "weather_turns": 3,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [
        [
         1,
@@ -15209,6 +15789,7 @@
         "switch_flag": 0,
         "hp": 46,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -15238,6 +15819,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "leftovers",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -15267,6 +15849,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -15296,6 +15879,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -15322,6 +15906,11 @@
      },
      {
       "request": "move",
+      "conditions": [
+       0,
+       0,
+       5
+      ],
       "enabled": [
        [
         1,
@@ -15348,6 +15937,7 @@
         "switch_flag": 0,
         "hp": 67,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -15379,6 +15969,7 @@
         "switch_flag": 0,
         "hp": 52,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -15408,6 +15999,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -15437,6 +16029,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -15585,9 +16178,15 @@
     "weather_turns": 3,
     "terrain": "",
     "terrain_turns": 0,
+    "trick_room": 0,
     "sides": [
      {
       "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
       "enabled": [],
       "active": [
        0,
@@ -15601,6 +16200,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -15630,6 +16230,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "leftovers",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -15659,6 +16260,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -15688,6 +16290,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -15714,6 +16317,11 @@
      },
      {
       "request": "",
+      "conditions": [
+       0,
+       0,
+       5
+      ],
       "enabled": [],
       "active": [
        0,
@@ -15727,6 +16335,7 @@
         "switch_flag": 0,
         "hp": 67,
         "maxhp": 197,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -15758,6 +16367,7 @@
         "switch_flag": 0,
         "hp": 22,
         "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -15787,6 +16397,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 224,
+        "item": "",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -15816,6 +16427,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 169,
+        "item": "charizarditey",
         "status": "",
         "status_time": 0,
         "confusion": 0,

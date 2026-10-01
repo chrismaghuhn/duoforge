@@ -1,0 +1,23 @@
+{
+  "name": "s13_lightning_rod_switch_in_order",
+  "purpose": "Two Lightning Rod holders with the same Speed: the Raichu that switched in first (the foe's lead) takes Archaludon's Electro Shot, not the one that came in later next to Archaludon (compareRedirectOrder: abilityState.effectOrder breaks the tie).",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000000001",
+  "teams": [
+    "Archaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Electro Shot\n- Protect\n\nFarigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Psychic\n- Protect\n\nRaichu (M) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Focus Blast\n- Protect\n\nMilotic (F) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Muddy Water\n- Coil",
+    "Raichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Focus Blast\n- Protect\n\nGolisopod (F) @ Life Orb\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Iron Head\n- Protect\n\nFarigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Psychic\n- Protect\n\nMilotic (F) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Muddy Water\n- Coil"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 2, switch 3",
+      "move 1 2, move 2",
+      "move 2, move 2"
+    ],
+    "p2": [
+      "move 2, move 2",
+      "move 1 1, move 2",
+      "move 2, move 2"
+    ],
+    "max_steps": 4
+  }
+}

@@ -17,8 +17,11 @@ checks its precondition and fails loudly otherwise:
                     only if no tied Pokemon has a SwitchIn handler
   SPEED_TIE field:Residual
                     only if every tied handler only counts down a duration
-  INSERT_TIE        only if the queue holds nothing but runSwitch actions of
-                    Pokemon without SwitchIn handlers
+  INSERT_TIE        only if the runSwitch actions in the tied group stand
+                    together in the queue: runSwitch takes every entry
+                    queued right behind it, so their queue order changes
+                    nothing (the entries then run in Speed order, with the
+                    engine's own draws for entry ties)
   RANDOM_TARGET action-speed, resolve
                     always: the target computed for ModifyPriority or a
                     queued choice is read by no closure handler
@@ -223,6 +226,43 @@ TERRAIN = {'': 0, 'grassyterrain': 1}
 RESULT = {'p1': 1, 'p2': 2, '': 3}
 
 
+HP_FLAGS = {'': 0, 'r': 1, 'y': 2, 'g': 3}  # DUOFORGE_HP_FLAG_*
+
+
+def public_lines(log, roster_of, shown):
+    """Updates shown[side][roster] = (percent, flag) from the protocol lines
+    that show HP to everyone. A split line comes as '|split|pN', the copy for
+    pN (exact HP) and then the public copy: only the public copy counts. A
+    public HP that is not a Champions percent display stops the conversion."""
+    skip = False
+    for line in log:
+        if skip:
+            skip = False
+            continue
+        if line.startswith('|split|'):
+            skip = True
+            continue
+        parts = line.split('|')
+        if len(parts) >= 5 and parts[1] in ('switch', 'drag'):
+            who, hp = parts[2], parts[4]
+        elif len(parts) >= 4 and parts[1] in ('-damage', '-heal', '-sethp'):
+            who, hp = parts[2], parts[3]
+        else:
+            continue
+        side = int(who[1]) - 1
+        roster = roster_of[side].get(who.split(': ', 1)[1])
+        if roster is None:
+            raise SystemExit('trace_to_c: unknown Pokemon in %r' % line)
+        token = hp.split(' ')[0]
+        if token == '0':
+            shown[side][roster] = (0, 0)
+            continue
+        m = re.match(r'^(\d+)/100([gry]?)$', token)
+        if not m:
+            raise SystemExit('trace_to_c: not a public HP display in %r' % line)
+        shown[side][roster] = (int(m.group(1)), HP_FLAGS[m.group(2)])
+
+
 def boundary_of(state, log):
     """The DuoForge boundary after a step: TERMINAL, else the request kind."""
     if state['ended']:
@@ -270,7 +310,12 @@ def convert(root, name, tables, out, all_tape):
         roster_of.append({n: i for i, n in enumerate(names)})
     steps = []
     dropped_total = 0
+    # What each player has seen of the other side: the last public HP display
+    # per roster index (the opponent's knowledge in DuoForge), taken from the
+    # public copy of every protocol line that shows HP.
+    shown = [{}, {}]
     for step in trace['steps']:
+        public_lines(step['log'], roster_of, shown)
         kinds = {}
         for side, sid in enumerate(('p1', 'p2')):
             if sid in step['input']:
@@ -296,7 +341,8 @@ def convert(root, name, tables, out, all_tape):
             for roster in range(6):
                 p = by_roster.get(roster)
                 if p is None:
-                    row.append('{0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u}')
+                    row.append('{0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, '
+                               '0u, 0u, 0u, 0u}')
                     continue
                 pp = p['pp'] + [0] * (4 - len(p['pp']))
                 stall = 1 if 'stall' in p['volatiles'] else 0
@@ -306,10 +352,12 @@ def convert(root, name, tables, out, all_tape):
                     counter = 0
                 lock = p.get('locked')
                 lslot, ltarget = (lock[0], abs_target(s, lock[1])) if lock else (0xFF, 0)
-                row.append('{1u, %du, {%s}, {%s}, %du, %du, %du, %du, %du, %du, %du, %du}' % (
+                seen = shown[s].get(roster)
+                row.append('{1u, %du, {%s}, {%s}, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du}' % (
                     p['hp'], ', '.join('%du' % x for x in pp), ', '.join('%du' % (x + 6) for x in p['boosts']),
                     stall, 1 if p['fainted'] else 0, status, counter, p['confusion'], lslot, ltarget,
-                    p.get('mega', 0)))
+                    p.get('mega', 0), 1 if p['item'] else 0, 1 if seen else 0, seen[0] if seen else 0,
+                    seen[1] if seen else 0))
             mons.append(row)
         cmds = []
         for s in range(2):
@@ -359,7 +407,8 @@ def convert(root, name, tables, out, all_tape):
         weather = WEATHER[new_state['weather']]
         terrain = TERRAIN[new_state['terrain']]
         field = (weather, new_state['weather_turns'] if weather else 0, terrain,
-                 new_state['terrain_turns'] if terrain else 0)
+                 new_state['terrain_turns'] if terrain else 0, new_state['trick_room']) + tuple(
+                     c for sd in new_state['sides'] for c in sd['conditions'])
         boundary = boundary_of(new_state, step['log'])
         result = RESULT[new_state['winner']] if boundary == 5 else 0
         steps.append('    {%du, %du, %du, %du, %du, %du, %du, %du, {%s}, {%s}, {%s}, {%s}, {%s}, {%s}, {{%s}, {%s}}},'
@@ -400,20 +449,24 @@ def main():
            'typedef struct df_conf_cmd {', '    uint8_t kind, move_slot, target, mega, reserve;', '} df_conf_cmd;',
            '/* present, hp, pp, stages (biased by 6), stall counter present, fainted,',
            ' * status (DFI_STATUS_*), its counter (sleep, freeze), confusion turns, the',
-           ' * locked move slot (0xFF none) and its target, Mega forme */',
+           ' * locked move slot (0xFF none) and its target, Mega forme, the item still',
+           ' * held, and what the opponent has seen: seen, HP percent and colour flag',
+           ' * of the last public display (DUOFORGE_HP_FLAG_*) */',
            'typedef struct df_conf_mon {', '    uint32_t present, hp;', '    uint8_t pp[4];', '    uint8_t stages[7];',
            '    uint8_t stall, fainted, status, status_counter, confusion, locked_slot, locked_target, mega;',
+           '    uint8_t held, seen, seen_percent, seen_flag;',
            '} df_conf_mon;',
            '/* team step, side 0 / side 1 answered, tape slice, the turn, boundary and',
            ' * result afterwards, the picks of a team step, slot commands, the occupants',
            ' * of the positions afterwards (roster index, 0xFF empty), the positions',
            ' * (side * 2 + slot) that received a Pokemon in the reference\'s order (0xFF',
-           ' * pads), weather, its turns, terrain, its turns, the moves the request',
+           ' * pads), weather, its turns, terrain, its turns, Trick Room turns, per',
+           ' * side Tailwind, Reflect and Light Screen turns, the moves the request',
            ' * offers per slot (bit k move k, 0x10 Struggle, 0xFF none), the expected',
            ' * members by roster index */',
            'typedef struct df_conf_step {',
            '    uint32_t team, answered0, answered1, tape_off, tape_len, turn, boundary, result;',
-           '    uint8_t picks[2][6];', '    df_conf_cmd cmds[2][2];', '    uint8_t occupants[2][2];', '    uint8_t entries[4];', '    uint8_t field[4];',
+           '    uint8_t picks[2][6];', '    df_conf_cmd cmds[2][2];', '    uint8_t occupants[2][2];', '    uint8_t entries[4];', '    uint8_t field[11];',
            '    uint8_t enabled[2][2];',
            '    df_conf_mon mons[2][6];', '} df_conf_step;',
            'typedef struct df_conf_battle {', '    const char *name;', '    uint32_t member_count;',

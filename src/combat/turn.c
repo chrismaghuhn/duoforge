@@ -74,7 +74,6 @@ static bool dfi_has_type(const dfi_member *m, uint32_t type)
     return f->types[0] == type || f->types[1] == type;
 }
 
-/* A stat (0 atk .. 4 spe) after its stage (getStat without modifiers). */
 /* The member holds item `id` and has not used it up (items are stored as
  * 1 + id). */
 static bool dfi_holds(const dfi_member *m, uint32_t id)
@@ -88,6 +87,7 @@ static bool dfi_ability(const dfi_member *m, uint32_t id)
     return m != NULL && m->ability == 1u + id;
 }
 
+/* A stat (0 atk .. 4 spe) after its stage (getStat without modifiers). */
 static duoforge_status dfi_staged_stat(const dfi_member *m, const dfi_active_slot *pos, uint32_t index,
                                        uint32_t *out)
 {
@@ -119,6 +119,15 @@ static duoforge_status dfi_speed_key(const struct duoforge_battle *b, uint32_t s
     return DUOFORGE_OK;
 }
 
+/* A queued move names a slot its actor has, or Struggle. The checker
+ * accepts any slot up to Struggle (structure, not reachability), so a
+ * decoded state can name an empty slot: that fails loudly instead of
+ * running the empty slot. */
+static bool dfi_move_slot_ok(const dfi_member *m, uint32_t move_slot)
+{
+    return move_slot == DUOFORGE_MOVE_SLOT_STRUGGLE || move_slot < m->move_count;
+}
+
 static uint32_t dfi_move_of(const dfi_member *m, uint32_t move_slot)
 {
     return move_slot == DUOFORGE_MOVE_SLOT_STRUGGLE ? DFI_MOVE_STRUGGLE : m->moves[move_slot].move_id;
@@ -126,10 +135,6 @@ static uint32_t dfi_move_of(const dfi_member *m, uint32_t move_slot)
 
 /* ---------------------------------------------------------------- queue */
 
-/* The sort key of an action (getActionSpeed): the order of its kind, the
- * move's priority (switches have none), and the action speed of the
- * Pokemon in the slot: the one leaving for a switch, the fainted one for a
- * replacement, the one that came in for its entry. */
 /* ModifyPriority: Prankster gives status moves +1, Grassy Glide gets +1
  * in Grassy Terrain for a grounded user. Biased like the move table. */
 static uint32_t dfi_move_priority(const struct duoforge_battle *b, const dfi_member *m, const dfi_move_data *md)
@@ -145,6 +150,10 @@ static uint32_t dfi_move_priority(const struct duoforge_battle *b, const dfi_mem
     return priority;
 }
 
+/* The sort key of an action (getActionSpeed): the order of its kind, the
+ * move's priority (switches have none), and the action speed of the
+ * Pokemon in the slot: the one leaving for a switch, the fainted one for a
+ * replacement, the one that came in for its entry. */
 static duoforge_status dfi_key_of(dfi_run *r, const dfi_queue_record *q, dfi_key *out)
 {
     if (q->kind == DFI_Q_RESIDUAL) {
@@ -177,6 +186,9 @@ static duoforge_status dfi_key_of(dfi_run *r, const dfi_queue_record *q, dfi_key
     }
     out->order = order;
     out->priority = DFI_PRIORITY_BIAS;
+    if (q->kind == DFI_Q_MOVE && !dfi_move_slot_ok(m, q->move_slot)) {
+        return DUOFORGE_E_INVARIANT;
+    }
     if (q->kind == DFI_Q_MOVE) {
         out->priority = dfi_move_priority(r->b, m, &dfi_closure_moves[dfi_move_of(m, q->move_slot)]);
     }
@@ -248,12 +260,11 @@ static void dfi_swap(struct duoforge_battle *b, dfi_key *keys, uint32_t i, uint3
     keys[j] = k;
 }
 
-/* Battle.speedSort over the whole queue: a selection sort that gathers the
- * next tied group in list order and shuffles it (PRNG.shuffle,
- * sim/prng.ts:150-157), each draw random(i, n) relative to the group. */
-/* speedSort of the first n queued actions (all of them, or the new
+/* Battle.speedSort of the first n queued actions (all of them, or the new
  * actions of a PIVOT answer, which commitChoices sorts before it appends
- * the stored rest of the turn). */
+ * the stored rest of the turn): a selection sort that gathers the next
+ * tied group in list order and shuffles it (PRNG.shuffle,
+ * sim/prng.ts:150-157), each draw random(i, n) relative to the group. */
 static duoforge_status dfi_sort_front(dfi_run *r, uint32_t n)
 {
     struct duoforge_battle *b = r->b;
@@ -333,8 +344,6 @@ static bool dfi_will_act(const struct duoforge_battle *b)
 
 /* ---------------------------------------------------------------- stages */
 
-/* Battle.boost with getCappedBoost: each stage moves by the (biased) amount
- * and stops at -6 or +6. */
 /* Battle.boost (sim/battle.ts): nothing for a fainted Pokemon or when its
  * foes have no Pokemon left; each stat changes by its capped amount, and a
  * stat that changed runs AfterEachBoost: Competitive raises Special Attack
@@ -377,6 +386,8 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
     return changed;
 }
 
+/* Battle.boost with getCappedBoost: each stage moves by the (biased) amount
+ * and stops at -6 or +6. */
 static void dfi_apply_boosts(dfi_active_slot *pos, const uint8_t *boosts)
 {
     for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
@@ -1027,6 +1038,9 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     if (m == NULL || m->hp == 0u || pos->activation_id != q->activation_id) {
         return DUOFORGE_OK;
     }
+    if (!dfi_move_slot_ok(m, q->move_slot)) {
+        return DUOFORGE_E_INVARIANT;
+    }
     *ran = true;
     if (pos->move_actions < UINT8_MAX) {
         pos->move_actions = (uint8_t)((uint32_t)pos->move_actions + 1u); /* wide-operands-reviewed */
@@ -1078,16 +1092,29 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         return DUOFORGE_OK; /* no target: the move fails */
     }
     /* getMoveTargets: an Electric single-target move goes to a standing
-     * Lightning Rod holder the user may target (onAnyRedirectTarget). */
+     * Lightning Rod holder the user may target (onAnyRedirectTarget). With
+     * two holders, priorityEvent sorts the handlers with compareRedirectOrder
+     * (sim/battle.ts:413-419, 788-792): the higher Speed (pokemon.speed)
+     * first, then the earlier switch-in (abilityState.effectOrder, set in
+     * switchIn, sim/battle-actions.ts:142), which is the lower activation id;
+     * the first handler returns its holder. */
     if (md->type == DFI_TYPE_ELECTRIC && count == 1u &&
         (md->target_class == DUOFORGE_TARGET_CLASS_NORMAL || md->target_class == DUOFORGE_TARGET_CLASS_ANY ||
          md->target_class == DUOFORGE_TARGET_CLASS_ADJACENT_FOE || md->target_class == DFI_TARGET_CLASS_RANDOM_NORMAL)) {
+        uint32_t rod = DFI_POSITIONS;
         for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
             const dfi_member *holder = dfi_at(b, flat);
-            if (flat != user && holder != NULL && holder->hp != 0u && dfi_ability(holder, DFI_ABILITY_LIGHTNINGROD)) {
-                targets[0] = flat;
-                break;
+            if (flat == user || holder == NULL || holder->hp == 0u || !dfi_ability(holder, DFI_ABILITY_LIGHTNINGROD)) {
+                continue;
             }
+            if (rod == DFI_POSITIONS || r->speed_seen[flat] > r->speed_seen[rod] ||
+                (r->speed_seen[flat] == r->speed_seen[rod] &&
+                 dfi_pos(b, flat)->activation_id < dfi_pos(b, rod)->activation_id)) {
+                rod = flat;
+            }
+        }
+        if (rod < DFI_POSITIONS) {
+            targets[0] = rod;
         }
     }
     /* Electro Shot's onTryMove (a singleEvent before the TryMove event):
@@ -1170,7 +1197,6 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             base_accuracy = 50u;
         }
     }
-    /* Struggle is typeless (its onModifyMove). */
     /* Struggle is typeless; Weather Ball turns Water in rain, Fire under sun
      * (its onModifyType, before the hit steps). */
     uint32_t move_type = md->special == DFI_SPECIAL_STRUGGLE ? DFI_CLOSURE_NONE : md->type;
@@ -1420,10 +1446,10 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
 /* ---------------------------------------------------------------- switches */
 
 /* insertChoice (sim/battle-queue.ts:369-401) of the entry action of the
- * Pokemon that came in: before the first action it sorts ahead of. Among
- * tied entries the reference draws a position; that changes nothing while
- * no Pokemon has an entry effect, and entry effects are not implemented
- * (abilities and items stay behind the manifest). */
+ * Pokemon that came in: before the first action it sorts ahead of or ties
+ * with. Among tied entries the reference draws a position; the engine does
+ * not, because entries queued together run as one batch, ordered by Speed
+ * in dfi_run_entries (decision 0006 section 5.1, converter rule INSERT_TIE). */
 static duoforge_status dfi_insert_run_switch(dfi_run *r, uint32_t side, uint32_t slot, uint32_t activation)
 {
     struct duoforge_battle *b = r->b;

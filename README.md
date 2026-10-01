@@ -83,7 +83,7 @@ Every test is finite and has a timeout. Test groups:
 |---|---|
 | `duoforge.unit.*` | Checked arithmetic, byte order, SHA-256, damage and stat arithmetic against the reference, draw sites and tape |
 | `duoforge.combat.*` | The turn core through the public API: one turn, determinism, continuation across encode/decode, honest `E_UNSUPPORTED`, random play; the closure gate with the real teams (`closure_gate`) |
-| `duoforge.reference.*` | Fifty-six recorded reference battles replayed draw for draw, with the request compared after every step (`conformance`), the generated tables against the traces; with a checkout: traces and arithmetic regenerated |
+| `duoforge.reference.*` | Fifty-eight recorded reference battles replayed draw for draw, with the request compared after every step (`conformance`), the generated tables against the traces; with a checkout: traces and arithmetic regenerated |
 | `duoforge.rng.*` | PCG32 known-answer vectors and contract |
 | `duoforge.state.*` | Context, setup, identity, knowledge (HP display as last seen), closure setup (real sets, gate, member invariant), invariants, clone/equal/reseed, setup sweep |
 | `duoforge.codec.*` | Goldens, negative decoding (including "rejected: schema 1"), exhaustive mutation sweep |
