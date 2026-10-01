@@ -76,6 +76,7 @@ add_library(duoforge STATIC
     src/state/battle.c
     src/state/transition.c
     src/state/request.c
+    src/state/reference_teams.c
     src/state/observation.c
     src/data/closure_tables.c
     src/data/extended_tables.c

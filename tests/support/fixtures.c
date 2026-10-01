@@ -146,66 +146,12 @@ void df_setup_g7(duoforge_battle_setup *out)
     set_member(&out->sides[1].members[2], 6u, 42u, 0u, 2u, n2i, n2p);
 }
 
-/* One member of decision 0004: species, gender, nature, Stat Points (HP, Atk,
- * Def, SpA, SpD, Spe), ability and item ids of the generated tables, moves. */
-typedef struct df_set {
-    uint32_t species;
-    uint32_t gender;
-    uint32_t nature;
-    uint32_t sp[6];
-    uint32_t ability;
-    uint32_t item;
-    uint32_t moves[4];
-} df_set;
-
-/* Ids from src/data/closure_tables.h; Stat Points and natures from the
- * pastes in decision 0004. Genders: Grimmsnarl is male in the paste and
- * male-only; Gholdengo is genderless; the others are chosen for the tests
- * (the owner specifies gender in every fixture). */
-static const df_set df_team_a[6] = {
-    {0u, 1u, 0u, {18u, 32u, 2u, 0u, 6u, 8u}, 0u, 0u, {0u, 1u, 2u, 3u}},      /* Rillaboom @ Miracle Seed */
-    {1u, 2u, 11u, {32u, 0u, 0u, 0u, 2u, 32u}, 1u, 1u, {4u, 5u, 6u, 7u}},    /* Staraptor @ Staraptite */
-    {3u, 2u, 4u, {32u, 0u, 29u, 0u, 5u, 0u}, 2u, 2u, {8u, 9u, 10u, 11u}},   /* Milotic @ Sitrus Berry */
-    {4u, 1u, 0u, {31u, 7u, 24u, 0u, 3u, 1u}, 3u, 3u, {12u, 13u, 14u, 7u}},  /* Ceruledge @ Grassy Seed */
-    {5u, 2u, 24u, {29u, 0u, 5u, 0u, 0u, 32u}, 4u, 4u, {15u, 16u, 2u, 7u}},  /* Raichu @ Raichunite Y */
-    {7u, 3u, 15u, {17u, 0u, 2u, 17u, 16u, 14u}, 5u, 5u, {17u, 18u, 19u, 7u}}, /* Gholdengo @ Life Orb */
-};
-static const df_set df_team_b[6] = {
-    {8u, 1u, 15u, {32u, 0u, 0u, 30u, 0u, 4u}, 6u, 6u, {20u, 8u, 10u, 7u}},    /* Politoed @ Mystic Water */
-    {9u, 2u, 0u, {32u, 32u, 0u, 0u, 1u, 1u}, 7u, 7u, {21u, 22u, 23u, 7u}},    /* Golisopod @ Golisopite */
-    {11u, 1u, 2u, {32u, 0u, 1u, 0u, 24u, 9u}, 8u, 8u, {24u, 25u, 26u, 7u}},   /* Archaludon @ Leftovers */
-    {12u, 2u, 2u, {29u, 0u, 20u, 0u, 17u, 0u}, 9u, 2u, {27u, 28u, 29u, 7u}},  /* Farigiraf @ Sitrus Berry */
-    {13u, 1u, 24u, {16u, 0u, 18u, 3u, 0u, 29u}, 10u, 9u, {30u, 20u, 31u, 7u}}, /* Charizard @ Charizardite Y */
-    {15u, 1u, 22u, {32u, 0u, 14u, 0u, 20u, 0u}, 11u, 10u, {32u, 33u, 34u, 35u}}, /* Grimmsnarl @ Light Clay */
-};
-
-static void df_put_team(duoforge_side_setup *side, const df_set *team)
-{
-    side->member_count = 6u;
-    for (uint32_t m = 0; m < 6u; ++m) {
-        duoforge_member_setup *dst = &side->members[m];
-        dst->species_id = team[m].species;
-        dst->gender = team[m].gender;
-        dst->nature = team[m].nature;
-        for (uint32_t i = 0; i < 6u; ++i) {
-            dst->stat_points[i] = team[m].sp[i];
-        }
-        dst->ability = team[m].ability + 1u;
-        dst->item = team[m].item + 1u;
-        dst->move_count = 4u;
-        for (uint32_t k = 0; k < 4u; ++k) {
-            dst->moves[k].move_id = team[m].moves[k];
-        }
-    }
-}
-
 void df_setup_teams(duoforge_battle_setup *out)
 {
-    memset(out, 0, sizeof *out);
-    out->rng_initstate = 2026u;
-    out->rng_initseq = 1001u;
-    df_put_team(&out->sides[0], df_team_a);
-    df_put_team(&out->sides[1], df_team_b);
+    /* The reference teams moved into the library (decision 0013). */
+    if (duoforge_reference_setup(0u, out) != DUOFORGE_OK) {
+        memset(out, 0, sizeof *out);
+    }
 }
 
 duoforge_context *df_make_context(const duoforge_context_config *config)
