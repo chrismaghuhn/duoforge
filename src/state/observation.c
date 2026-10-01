@@ -2,9 +2,10 @@
  * Perspective-safe observation prototype (docs/decisions/0005 section 6).
  * The record for player p is built from p's side (exact), public facts
  * (occupancy, Mega use, registered counts, open team-sheet fields) and p's
- * knowledge of the opponent (seen_mask) at the profile's HP precision.
- * Nothing else of the opponent's side is read: not its bench order, PP,
- * exact HP of unseen members, sealed commitments or the RNG.
+ * knowledge of the opponent: the seen mask and, per seen member, the HP
+ * display the viewer saw last (docs/decisions/0006 section 6). The HP of an
+ * opposing member is never read here. Nothing else of the opponent's side is
+ * read either: not its bench order, PP, sealed commitments or the RNG.
  */
 #include <stddef.h>
 #include <string.h>
@@ -23,30 +24,6 @@ _Static_assert(offsetof(duoforge_side_view, member_count) == 144u, "side view la
 _Static_assert(offsetof(duoforge_side_view, brought_order) == 148u, "side view layout: order");
 _Static_assert(sizeof(duoforge_observation) == 320u, "observation is 320 bytes");
 _Static_assert(offsetof(duoforge_observation, sides) == 8u, "observation layout: sides");
-
-/* Champions HP display (sim/pokemon.ts:2060-2073 at the pin): floor percent,
- * minimum 1 while alive, colour flag at exactly 20 and 50. hp <= hp_max and
- * hp_max > 0 hold after the invariant check. */
-static void dfi_hp_percent(uint32_t hp, uint32_t hp_max, uint16_t *out_pct, uint8_t *out_flag)
-{
-    *out_flag = (uint8_t)DUOFORGE_HP_FLAG_NONE;
-    if (hp == 0u) {
-        *out_pct = 0u;
-        return;
-    }
-    uint32_t pct = (100u * hp) / hp_max; /* hp <= 65535: no overflow */
-    if (pct == 0u) {
-        pct = 1u;
-    }
-    uint32_t flag = DUOFORGE_HP_FLAG_NONE;
-    if (pct == 20u) {
-        flag = hp * 5u > hp_max ? DUOFORGE_HP_FLAG_YELLOW : DUOFORGE_HP_FLAG_RED;
-    } else if (pct == 50u) {
-        flag = hp * 2u > hp_max ? DUOFORGE_HP_FLAG_GREEN : DUOFORGE_HP_FLAG_YELLOW;
-    }
-    *out_flag = (uint8_t)flag;
-    *out_pct = (uint16_t)pct; /* <= 100 */
-}
 
 static bool dfi_is_occupant(const dfi_side *side, uint32_t m)
 {
@@ -90,7 +67,9 @@ static void dfi_view_side(const struct duoforge_battle *b, uint32_t viewer, uint
         } else {
             v->pp_kind = (uint8_t)DUOFORGE_PP_UNKNOWN;
             if (((seen >> m) & 1u) != 0u) {
-                dfi_hp_percent(mem->hp, mem->hp_max, &v->hp, &v->hp_flag);
+                const dfi_knowledge *know = &b->sides[viewer].knowledge[m];
+                v->hp = know->hp_percent;
+                v->hp_flag = know->hp_flag;
                 v->hp_max = 100u;
                 v->hp_kind = (uint8_t)DUOFORGE_HP_PERCENT;
                 const uint32_t loc = dfi_is_occupant(side, m) ? DUOFORGE_LOCATION_ACTIVE : DUOFORGE_LOCATION_BENCH;

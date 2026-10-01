@@ -1,6 +1,6 @@
 # 0006 — Combat closure: data, state v3, execution, RNG draw sites, events, reference fixtures
 
-Status: **proposed**; being implemented step by step (`tasks/M3_M4_COMBAT_CLOSURE.md`). **Implemented so far:** step 1a, the generated closure tables and the Champions stat and PP formulas (section 2, data only). Context v3, state v3, setup v3 and every mechanic are still to come.
+Status: **proposed**; being implemented step by step (`tasks/M3_M4_COMBAT_CLOSURE.md`). **Implemented so far:** step 1a, the generated closure tables and the Champions stat and PP formulas (section 2, data only); step 1b-1, the state v3 layout with its invariants, codec and oracle (section 3.1, synthetic data only). Context v3, setup v3 and every mechanic are still to come.
 
 Showdown citations are `path:line` at the pin `b2cb775b0616115b775534eaeff50300e1fc81fc`.
 
@@ -43,6 +43,35 @@ Schema 3 / semantics 3 ("duoforge-m3-closure"). Fixed size, no padding, same env
 - **Last-seen HP** replaces the M2 prototype rule for benched opponents (decision `0005` section 6 limit).
 - **Rule-authorized re-prompt** keeps its v2 record. No mechanic in this closure triggers it (no trapping); it stays structural.
 - **Invariants** extend to every new field's range and to queue consistency. Decodability is still not reachability.
+
+### 3.1 The layout as built (step 1b-1)
+
+Schema 3, semantics 3, **1009 bytes**. `src/codec/state_codec.h` holds the offset table and its static asserts; `tools/state_model/state_v3_model.py` is the independent oracle.
+
+| Offset | Size | Content |
+|---|---|---|
+| 0 | 86 | envelope, fingerprint, RNG, next activation, boundary kind, request mask, epoch (as v2) |
+| 86 | 3 | turn (u16), result |
+| 89 | 5 | weather and its turns, terrain and its turns, Trick Room turns |
+| 94 | 121 | queue length, then 12 records of 10 bytes: kind, side, slot, move slot, target, reserve, activation id (u32) |
+| 215 | 397 | side 0, then side 1 at 612 |
+
+Per side: the v2 header (member count, brought mask, requested slots, Mega used, sealed, seen mask, bench order), Reflect, Light Screen and Tailwind turns; two positions of 21 bytes (occupant, activation id, 7 stages biased by 6, volatile flags, stall level and turns, confusion turns, charge turns, locked move and target, move actions since entry, switch flag); the sealed record; per opposing member a 7-byte knowledge record (HP percent and flag as last seen, revealed facts, observed uses per move slot); six members of 48 bytes (species, HP, max HP, five stats, move count, Mega stone flag, Mega forme flag, gender, nature, six Stat Points, status and its counter, item and its consumed flag, ability, four moves with PP and max PP).
+
+Three entries of the table above are **not stored**, because the reference makes them derivable. This is a finding of step 1b-1:
+
+- **Execution phase and the sub-position inside a paused action.** The reference pauses a turn only between two actions: after each action it collects the switch flags and makes the switch request (`sim/battle.ts:2876-2915`). Fainted Pokémon are replaced only when the queue is empty (`sim/battle.ts:2840-2843`, `checkFainted` at `:2524-2530`). So a pause mid-turn is always a PIVOT with the rest of the turn in the queue, and a pause after the residual is a REPLACEMENT with an empty queue. The boundary kind is the phase.
+- **Queue cursor and consumed flag.** Executed actions leave the queue, as in the reference (`queue.shift`). The residual action is queued with the turn's choices (`sim/battle.ts:2945`), so a mid-turn pause always has a non-empty queue.
+- **Order class, priority and speed key per record.** The order class follows from the record kind. Priority and speed are recomputed from the current state before every sort (`sim/battle.ts:2919-2926`, `:2998-3018`), and after a pivot only the new switch actions are sorted in front of the stored rest of the turn. The stored order is what a later sort shuffles ties from.
+
+Two fields make explicit what the table implied:
+
+- **Switch flag** per position: the cause of a PIVOT slot (a self-switch move, `sim/battle-actions.ts:1312`, or Emergency Exit, `data/abilities.ts:1250`). It marks exactly the requested slots of a PIVOT and is zero everywhere else.
+- **Revealed facts** per knowledge record: the consumed item and the Mega forme of an opposing member, as the viewer saw them. A revealed fact must be true of the member.
+
+New invariant ids, in check order: TURN_COUNTER (0 exactly at TEAM_SELECTION), RESULT (nonzero exactly at TERMINAL), FIELD, MEMBER_EXTRA (SYNTHETIC members have none of the new member fields), SIDE_CONDITION, VOLATILE (value ranges; an empty position is the cleared position), SWITCH_FLAG, KNOWLEDGE (nothing about an unseen member; the display of an active member is current; revealed facts are facts) and QUEUE (non-empty exactly at PIVOT; per-kind operands; zero tail). REQUEST_MASK allows 0 only at TERMINAL, and SEALED_RULE now allows a sealed choice only at a re-prompted TURN, because a PIVOT keeps the rest of the turn in the queue. There are 43 ids.
+
+Behaviour that already uses the new fields: team selection starts turn 1; entering a position clears its volatile block and shows the member's HP display to the opponent; leaving clears the position and the opponent keeps the display it saw last; the observation takes an opposing member's HP only from this knowledge record; a TERMINAL battle requests nobody and rejects every bundle as invalid input.
 
 ## 4. Execution model
 

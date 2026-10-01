@@ -1,13 +1,14 @@
 /*
- * T32 duoforge.request.contract (white-box fixtures): the M2 part of the
- * DECISION_CONTRACT section 8 minimum: a snapshot (encode/decode and
- * copy) at every exposed boundary kind restores an identical model-visible
- * surface (requests, candidates) and identical private state; late and
- * stale responses are rejected atomically at every boundary; two-side
- * replacement and two-side pivot request both sides with independent
- * domains; a one-side pivot keeps the waiting side's sealed commitment and
- * excludes it from the request; a re-prompted TURN keeps the sealed choice
- * across a snapshot round trip.
+ * T32 duoforge.request.contract (white-box fixtures): the structural part
+ * of the DECISION_CONTRACT section 8 minimum: a snapshot (encode/decode and
+ * copy) at every boundary kind restores an identical model-visible surface
+ * (requests, candidates) and identical private state; late and stale
+ * responses are rejected atomically at every boundary; two-side replacement
+ * and two-side pivot request both sides with independent domains; a
+ * one-side pivot keeps the rest of the turn in the queue and excludes the
+ * waiting side from the request; a re-prompted TURN keeps the sealed choice
+ * across a snapshot round trip; a TERMINAL battle requests nobody and
+ * accepts no bundle.
  */
 #include <stdio.h>
 #include <string.h>
@@ -53,7 +54,7 @@ static void capture(df_test *t, const duoforge_context *ctx, const duoforge_batt
 static void check_snapshot(df_test *t, const duoforge_context *ctx, const duoforge_battle *b, const char *what)
 {
     /* encode -> decode into a fresh handle built from any setup; and copy. */
-    uint8_t enc[DUOFORGE_STATE_V2_ENCODED_SIZE];
+    uint8_t enc[DUOFORGE_STATE_V3_ENCODED_SIZE];
     df_encode(ctx, b, enc);
     duoforge_battle *restored = NULL;
     uint8_t *in = df_heap_copy(enc, sizeof enc);
@@ -76,8 +77,18 @@ static void check_snapshot(df_test *t, const duoforge_context *ctx, const duofor
     if (!DF_CHECK(t, memcmp(&s0, &s1, sizeof s0) == 0)) {
         fprintf(stderr, "  surface differs after restore: %s\n", what);
     }
-    /* Private state too: sealed commitments, bench order and knowledge. */
+    /* Private state too: the continuation data, sealed commitments, bench
+     * order and knowledge. */
+    DF_CHECK(t, restored->turn == b->turn && restored->queue_len == b->queue_len);
+    for (unsigned i = 0; i < DFI_QUEUE_CAPACITY; ++i) {
+        DF_CHECK(t, restored->queue[i].kind == b->queue[i].kind &&
+                        restored->queue[i].activation_id == b->queue[i].activation_id);
+    }
     for (unsigned s = 0; s < 2; ++s) {
+        for (unsigned m = 0; m < DUOFORGE_MAX_ROSTER; ++m) {
+            DF_CHECK(t, restored->sides[s].knowledge[m].hp_percent == b->sides[s].knowledge[m].hp_percent &&
+                            restored->sides[s].knowledge[m].hp_flag == b->sides[s].knowledge[m].hp_flag);
+        }
         DF_CHECK(t, memcmp(restored->sides[s].sealed_cmds, b->sides[s].sealed_cmds, sizeof b->sides[s].sealed_cmds) == 0);
         DF_CHECK(t, memcmp(restored->sides[s].brought_order, b->sides[s].brought_order, DUOFORGE_MAX_ROSTER) == 0);
         DF_CHECK(t, restored->sides[s].sealed == b->sides[s].sealed && restored->sides[s].seen_mask == b->sides[s].seen_mask);
@@ -90,8 +101,8 @@ static void check_snapshot(df_test *t, const duoforge_context *ctx, const duofor
 static void rejected(df_test *t, const duoforge_context *ctx, duoforge_battle *b, const duoforge_decision_bundle *bd,
                      duoforge_status expected, const char *what)
 {
-    uint8_t before[DUOFORGE_STATE_V2_ENCODED_SIZE];
-    uint8_t after[DUOFORGE_STATE_V2_ENCODED_SIZE];
+    uint8_t before[DUOFORGE_STATE_V3_ENCODED_SIZE];
+    uint8_t after[DUOFORGE_STATE_V3_ENCODED_SIZE];
     duoforge_step_result res;
     memset(&res, 0xA5, sizeof res);
     df_encode(ctx, b, before);
@@ -137,6 +148,9 @@ int main(void)
         duoforge_battle *f5 = df_make_f5(c1);
         duoforge_battle *f6 = df_make_f6(c1);
         duoforge_battle *f11 = df_make_f11(c4);
+        duoforge_battle *f13 = df_make_f13(c4);
+        check_snapshot(&t, c4, f13, "TERMINAL");
+        duoforge_battle_destroy(f13);
         check_snapshot(&t, c1, g1, "TEAM_SELECTION");
         check_snapshot(&t, c1, f1, "TURN");
         check_snapshot(&t, c1, f2, "TURN with fainted active");
@@ -220,9 +234,9 @@ int main(void)
         duoforge_battle_destroy(f4);
     }
 
-    /* One-side pivot continuation (F5): side 1 waits with its sealed choice;
-     * side 0's domain is the forced-switch domain; side 1 gets no request
-     * and no candidates; the sealed commitment survives the pause. */
+    /* One-side pivot continuation (F5): the rest of the turn waits in the
+     * queue; side 0's domain is the forced-switch domain; side 1 gets no
+     * request and no candidates; the queue survives the pause. */
     {
         duoforge_battle *f5 = df_make_f5(c1);
         duoforge_request r0;
@@ -235,11 +249,12 @@ int main(void)
                          r1.candidate_count == 0u && r1.epoch == 3u);
         uint32_t n = 0xDEADBEEFu;
         DF_CHECK(&t, duoforge_battle_candidates(c1, f5, 1, ca, DUOFORGE_MAX_CANDIDATES, &n) == DUOFORGE_OK && n == 0u);
-        DF_CHECK(&t, f5->sides[1].sealed == 1u && f5->sides[1].sealed_cmds[0].kind == DUOFORGE_SLOT_SWITCH);
+        DF_CHECK(&t, f5->sides[1].sealed == 0u && f5->queue_len == 3u && f5->queue[0].kind == DFI_Q_MOVE &&
+                         f5->queue[2].kind == DFI_Q_RESIDUAL && f5->sides[0].positions[0].switch_flag == DFI_SWITCH_MOVE);
         duoforge_decision_bundle bd;
         first_bundle(&t, c1, f5, &bd);
         rejected(&t, c1, f5, &bd, DUOFORGE_E_UNSUPPORTED, "pivot continuation (honest UNSUPPORTED)");
-        DF_CHECK(&t, f5->sides[1].sealed == 1u); /* still sealed after the rejected execution */
+        DF_CHECK(&t, f5->queue_len == 3u); /* still queued after the rejected execution */
         /* Two-side pivot (F6): both requested, both domains are the forced
          * switch domains of their own side. */
         duoforge_battle *f6 = df_make_f6(c1);
@@ -251,6 +266,31 @@ int main(void)
         rejected(&t, c1, f6, &bd, DUOFORGE_E_UNSUPPORTED, "two-side pivot (honest UNSUPPORTED)");
         duoforge_battle_destroy(f5);
         duoforge_battle_destroy(f6);
+    }
+
+    /* TERMINAL (F13): nobody is requested, there are no candidates, and
+     * every bundle is invalid input, whatever its epoch. */
+    {
+        duoforge_battle *f13 = df_make_f13(c4);
+        for (uint32_t p = 0; p < 2; ++p) {
+            duoforge_request r;
+            DF_CHECK(&t, duoforge_battle_request(c4, f13, p, &r) == DUOFORGE_OK);
+            DF_CHECK(&t, r.boundary_kind == DUOFORGE_BOUNDARY_TERMINAL && r.requested == 0u && r.slot_mask == 0u &&
+                             r.candidate_count == 0u && r.epoch == 3u);
+            uint32_t n = 0xDEADBEEFu;
+            DF_CHECK(&t, duoforge_battle_candidates(c4, f13, p, ca, DUOFORGE_MAX_CANDIDATES, &n) == DUOFORGE_OK &&
+                             n == 0u);
+        }
+        duoforge_decision_bundle bd;
+        memset(&bd, 0, sizeof bd);
+        bd.epoch = 3u;
+        rejected(&t, c4, f13, &bd, DUOFORGE_E_INVALID_ARGUMENT, "empty bundle at TERMINAL");
+        bd.epoch = 2u;
+        rejected(&t, c4, f13, &bd, DUOFORGE_E_INVALID_ARGUMENT, "late bundle at TERMINAL");
+        bd.epoch = 3u;
+        bd.response_mask = 3u;
+        rejected(&t, c4, f13, &bd, DUOFORGE_E_INVALID_ARGUMENT, "answered bundle at TERMINAL");
+        duoforge_battle_destroy(f13);
     }
 
     duoforge_context_destroy(c1);

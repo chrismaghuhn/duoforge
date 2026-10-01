@@ -2,8 +2,8 @@
  * T33 duoforge.request.information (white-box fixtures): the perspective-safe
  * observation prototype and the information boundary. Observation bytes of
  * every fixture and player equal the independent oracle; hand-derived
- * perspective rules (own exact, foe percent with the Champions colour flags,
- * tagged unknowns, private bench order); INFORMATION EQUIVALENCE: paired
+ * perspective rules (own exact, foe percent with the Champions colour flags
+ * as last seen, tagged unknowns, private bench order); INFORMATION EQUIVALENCE: paired
  * states with the same authorized information and different hidden
  * information give byte-identical requests, candidates and observations and
  * identical statuses and counts for the viewer; legitimate differences do
@@ -14,6 +14,7 @@
 
 #include "core/sha256.h"
 #include "state/battle_internal.h"
+#include "state/knowledge.h"
 #include "state/request.h"
 #include "support/check.h"
 #include "support/fixtures.h"
@@ -30,18 +31,18 @@ static const expect expected[] = {
     {"G1", 1, "146fa0041a1e209a55f5a339f9f90b35b0d0cc01e5955945481a66654bd90fdc"},
     {"F1", 0, "acdb2db809f6ec55d86784c90e7b3acc82f33e1263cd51bd4d3dd049d7ee131c"},
     {"F1", 1, "73df927296ecd3adcaaf5b60eaaa4a9b67311ab4d0fc2a3c5960a4ac15803a92"},
-    {"F2", 0, "431497d7d5a0ecdeb700fa70da00bba58ba8c2791bdbb8dff473215735960163"},
-    {"F2", 1, "16d78d7e61f0c4770c72d973e9affcf24ae35773bbc81cb60d1c77297ffa38ba"},
+    {"F2", 0, "eb19709d172994db1ab2336ef19bf8ff455376b6e66b3ac443e6c9cdb2cfe14a"},
+    {"F2", 1, "fd81568a93625a16ee9e07ca4d6eb4e04c5e06749c46dac614a23f3445d78c87"},
     {"G3", 0, "6c53bcf4700ec67d8ca55d32405f8a23e87b6bf5f51aa081ec6de769f0671b65"},
     {"G3", 1, "d0d1524973ac3ef6d2c9fdc583057da565815d72606943c6ce114a9c0086ea82"},
     {"F3", 0, "987771ba510e494cbc750d8d6a4c18a66a248c32e4bd0199807d39b84b6519d0"},
     {"F3", 1, "ddfab8424835db3b7f75a5a3ebd88396ae075f435855379568e3c1a1f3ab4ed2"},
     {"F4", 0, "0237d3886a16097979a3899c3e32b1b45a54cc0f6a6e154847fedc61bcd1c775"},
     {"F4", 1, "47ab3152ab3a3e7b51c08d53555d24af0624ae93e2bc3f50f18a8193f735cd91"},
-    {"F5", 0, "98596839ed1ef6e143fc52991c0e6dd4f2d73924c1edee8a6a626406e0fa6c50"},
-    {"F5", 1, "ef222b001bde5545699030725003e464b3abdfc995e55fef3d1bf21f9aea1a74"},
-    {"F6", 0, "98596839ed1ef6e143fc52991c0e6dd4f2d73924c1edee8a6a626406e0fa6c50"},
-    {"F6", 1, "e9f3784ea5a0151456e1a15b40279972c32e65148560869abb5c63c0463b20d2"},
+    {"F5", 0, "3743ceb929060da6f9b55ef2f79182a7192662f6c50031819848fadc201e2133"},
+    {"F5", 1, "4ba1c6073c8fece6693ce9b0c51601e446e727a9252e89c2349952b08fe93dc5"},
+    {"F6", 0, "3743ceb929060da6f9b55ef2f79182a7192662f6c50031819848fadc201e2133"},
+    {"F6", 1, "b57c5ef71388813845ce71101aae51deab74edff96dccebe099a92732dcdd6b7"},
     {"G7", 0, "320b5c5afb75e9f9f19dede83a0eaebb406d0cf9de28d965ed1f61c4a8987458"},
     {"G7", 1, "e94992a5b5f3f97976835e2d5bdea2e7e1a50a088233f62bfbcf3ecc68ef5b03"},
     {"F8", 0, "fc121d62fd7e8c18f2d487e6273abaee5f14805ce6fee45bd9e71c15c21d34aa"},
@@ -54,6 +55,8 @@ static const expect expected[] = {
     {"F11", 1, "6c6c77c2748d318402926b3e703960969f2d42669d970dd0db1263b1afcb944b"},
     {"F12", 0, "c91322ba47059e41723577f64331302b984c9268a83aad89e67dfa7811871179"},
     {"F12", 1, "01c01cbc0912e150daf4d839c43625cf3fe74ab1bf866e36a7c5b2f5d1a12640"},
+    {"F13", 0, "27f839bf8d32ada8655b4d7dc99e37a35e472298ad78ca04ca6d0a3684650dc1"},
+    {"F13", 1, "eeaed669881a1e64c19fa4311090263bc4fe2132179fef289ba86bf2166a2b2d"},
 };
 
 typedef struct fixture {
@@ -134,7 +137,7 @@ int main(void)
         {"G3", c3, df_make_g3(c3)},  {"F3", c3, df_make_f3(c3)},   {"F4", c1, df_make_f4(c1)},
         {"F5", c1, df_make_f5(c1)},  {"F6", c1, df_make_f6(c1)},   {"G7", c4, df_make_g7(c4)},
         {"F8", c4, df_make_f8(c4)},  {"F9", c4, df_make_f9(c4)},   {"F10", c4, df_make_f10(c4)},
-        {"F11", c4, df_make_f11(c4)}, {"F12", c4, df_make_f12(c4)},
+        {"F11", c4, df_make_f11(c4)}, {"F12", c4, df_make_f12(c4)}, {"F13", c4, df_make_f13(c4)},
     };
     const unsigned nfx = sizeof fx / sizeof fx[0];
 
@@ -149,8 +152,8 @@ int main(void)
         if (!DF_CHECK(&t, f != NULL)) {
             continue;
         }
-        uint8_t before[DUOFORGE_STATE_V2_ENCODED_SIZE];
-        uint8_t after[DUOFORGE_STATE_V2_ENCODED_SIZE];
+        uint8_t before[DUOFORGE_STATE_V3_ENCODED_SIZE];
+        uint8_t after[DUOFORGE_STATE_V3_ENCODED_SIZE];
         df_encode(f->ctx, f->b, before);
         duoforge_observation o;
         memset(&o, 0xA5, sizeof o);
@@ -206,15 +209,20 @@ int main(void)
         DF_CHECK(&t, duoforge_battle_observe(c1, fx[0].b, 1, &o) == DUOFORGE_OK);
         DF_CHECK(&t, o.requested == 1u && o.slot_mask == 0u && o.sides[1].members[0].location == 0u &&
                          o.sides[0].members[2].hp_kind == DUOFORGE_HP_UNKNOWN && o.sides[1].members[0].hp_kind == DUOFORGE_HP_EXACT);
-        /* A waiting side at a pivot: not requested, sealed choice invisible
-         * to the opponent (the surface has no field for it at all). */
+        /* A waiting side at a pivot: not requested; the queued rest of the
+         * turn is invisible (the surface has no field for it at all). */
         DF_CHECK(&t, duoforge_battle_observe(c1, fx[6].b, 1, &o) == DUOFORGE_OK);
         DF_CHECK(&t, o.requested == 0u && o.slot_mask == 0u && o.boundary_kind == DUOFORGE_BOUNDARY_PIVOT);
+        /* A finished battle: nobody is requested. */
+        DF_CHECK(&t, duoforge_battle_observe(c4, fx[14].b, 0, &o) == DUOFORGE_OK);
+        DF_CHECK(&t, o.requested == 0u && o.slot_mask == 0u && o.boundary_kind == DUOFORGE_BOUNDARY_TERMINAL &&
+                         o.sides[1].members[1].hp == 0u && o.sides[1].members[1].hp_kind == DUOFORGE_HP_PERCENT);
     }
 
     /* Champions HP display at the profile's precision (white-box pokes of the
      * seen foe active s1 roster 1, hp_max 201, viewed by player 0; and of
-     * F2's s0 roster 3, hp_max 130, viewed by player 1). */
+     * F2's s0 roster 3, hp_max 130, viewed by player 1). The viewer's
+     * knowledge follows every HP change of an active member. */
     {
         static const struct {
             uint32_t hp;
@@ -230,6 +238,7 @@ int main(void)
         for (unsigned i = 0; i < sizeof table201 / sizeof table201[0]; ++i) {
             duoforge_observation o;
             w->sides[1].members[1].hp = (uint16_t)table201[i].hp;
+            dfi_knowledge_refresh_active(w);
             const duoforge_member_view *v = foe_view(c1, w, 0, 1, &o);
             if (DF_CHECK(&t, v != NULL) &&
                 !DF_CHECK(&t, v->hp == table201[i].pct && v->hp_flag == table201[i].flag &&
@@ -252,16 +261,20 @@ int main(void)
         for (unsigned i = 0; i < sizeof table130 / sizeof table130[0]; ++i) {
             duoforge_observation o;
             w->sides[0].members[3].hp = (uint16_t)table130[i].hp;
+            dfi_knowledge_refresh_active(w);
             const duoforge_member_view *v = foe_view(c1, w, 1, 3, &o);
             if (DF_CHECK(&t, v != NULL) &&
                 !DF_CHECK(&t, v->hp == table130[i].pct && v->hp_flag == table130[i].flag)) {
                 fprintf(stderr, "  hp %u/130 -> %u flag %u\n", table130[i].hp, v->hp, v->hp_flag);
             }
         }
-        /* F2: side 1 saw roster 2 before it was vacated: benched but known. */
+        /* F2: side 1 saw roster 2 leave at 24 of 120 HP. It is benched but
+         * known as last seen (20 percent, red), although it has 40 HP now. */
         duoforge_observation o;
         const duoforge_member_view *v = foe_view(c1, fx[2].b, 1, 2, &o);
         DF_CHECK(&t, v != NULL && v->location == DUOFORGE_LOCATION_BENCH && v->hp_kind == DUOFORGE_HP_PERCENT);
+        DF_CHECK(&t, fx[2].b->sides[0].members[2].hp == 40u);
+        DF_CHECK(&t, v != NULL && v->hp == 20u && v->hp_max == 100u && v->hp_flag == DUOFORGE_HP_FLAG_RED);
         duoforge_battle_destroy(w);
     }
 
@@ -306,18 +319,44 @@ int main(void)
         DF_CHECK(&t, duoforge_battle_clone(c3, fx[4].b, &b) == DUOFORGE_OK);
         a->sides[1].members[0].hp = 32768u;
         b->sides[1].members[0].hp = 33000u;
+        dfi_knowledge_refresh_active(a);
+        dfi_knowledge_refresh_active(b);
         equivalent(&t, c3, a, b, 0, "same hp bucket and flag");
         b->sides[1].members[0].hp = 32767u; /* 49 percent: a legitimate revelation */
+        dfi_knowledge_refresh_active(b);
         differs(&t, c3, a, b, 0, "bucket change");
         duoforge_battle_destroy(a);
         duoforge_battle_destroy(b);
-        /* (g) the opponent's sealed commitment at a pivot */
+        /* (g) the rest of the turn at a pivot: the queued actions of the
+         * opponent (its move, its target, even whether it still acts) */
         DF_CHECK(&t, duoforge_battle_clone(c1, fx[6].b, &a) == DUOFORGE_OK);
         DF_CHECK(&t, duoforge_battle_clone(c1, fx[6].b, &b) == DUOFORGE_OK);
-        b->sides[1].sealed_cmds[0] = (dfi_slot_cmd){DFI_SLOT_MOVE, 3u, 1u, 0u, 0u};
-        b->sides[1].sealed_cmds[1] = (dfi_slot_cmd){DFI_SLOT_SWITCH, 0u, 0u, 0u, 2u};
+        b->queue[0].move_slot = 3u;
+        b->queue[0].target = 1u;
+        b->queue[1] = (dfi_queue_record){.kind = DFI_Q_RESIDUAL};
+        b->queue[2] = (dfi_queue_record){.kind = DFI_Q_NONE};
+        b->queue_len = 2u;
         DF_CHECK(&t, duoforge_battle_check(c1, b) == DUOFORGE_OK);
-        equivalent(&t, c1, a, b, 0, "foe sealed commitment");
+        equivalent(&t, c1, a, b, 0, "foe actions in the queue");
+        duoforge_battle_destroy(a);
+        duoforge_battle_destroy(b);
+        /* (j) a seen foe member changes on the bench (F2: s0 roster 2 left
+         * at 20 percent): the viewer keeps the last display, the owner sees
+         * the exact value */
+        DF_CHECK(&t, duoforge_battle_clone(c1, fx[2].b, &a) == DUOFORGE_OK);
+        DF_CHECK(&t, duoforge_battle_clone(c1, fx[2].b, &b) == DUOFORGE_OK);
+        b->sides[0].members[2].hp = 90u;
+        b->sides[0].members[2].moves[1].pp = 1u;
+        DF_CHECK(&t, duoforge_battle_check(c1, b) == DUOFORGE_OK);
+        equivalent(&t, c1, a, b, 1, "benched foe member after it was seen");
+        differs(&t, c1, a, b, 0, "own benched member is exact for its owner");
+        /* ... and what the viewer remembers is part of its own surface */
+        DF_CHECK(&t, duoforge_battle_copy(c1, b, a) == DUOFORGE_OK);
+        b->sides[1].knowledge[2].hp_percent = 50u;
+        b->sides[1].knowledge[2].hp_flag = (uint8_t)DUOFORGE_HP_FLAG_YELLOW;
+        DF_CHECK(&t, duoforge_battle_check(c1, b) == DUOFORGE_OK);
+        differs(&t, c1, a, b, 1, "own knowledge is visible to its owner");
+        equivalent(&t, c1, a, b, 0, "what the opponent remembers about me");
         duoforge_battle_destroy(a);
         duoforge_battle_destroy(b);
         /* (h) after a re-prompt of side 0, side 1's sealed choice is hidden:

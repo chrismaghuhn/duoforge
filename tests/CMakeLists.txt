@@ -34,7 +34,8 @@ function(duoforge_add_test)
 endfunction()
 
 # Shared test support (explicit test context, no globals).
-add_library(duoforge_test_support STATIC support/check.c support/fixtures.c support/goldens.c)
+add_library(duoforge_test_support STATIC support/check.c support/fixtures.c support/goldens.c
+            support/goldens_legacy.c)
 target_include_directories(duoforge_test_support PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 # The F2 fixture builder is white-box.
 target_include_directories(duoforge_test_support PRIVATE "${PROJECT_SOURCE_DIR}/src")
@@ -50,6 +51,7 @@ duoforge_add_test(NAME duoforge.rng.contract SOURCES test_rng_contract.c WHITEBO
 duoforge_add_test(NAME duoforge.state.context SOURCES test_context.c)
 duoforge_add_test(NAME duoforge.state.setup SOURCES test_setup.c WHITEBOX)
 duoforge_add_test(NAME duoforge.state.identity SOURCES test_identity.c WHITEBOX)
+duoforge_add_test(NAME duoforge.state.knowledge SOURCES test_knowledge.c WHITEBOX)
 duoforge_add_test(NAME duoforge.state.invariants SOURCES test_invariants.c WHITEBOX)
 duoforge_add_test(NAME duoforge.state.setup_sweep SOURCES test_setup_sweep.c TIMEOUT 60)
 

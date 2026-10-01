@@ -1,13 +1,13 @@
 /*
- * T12 duoforge.codec.negative (white-box parts marked): strict decoding v2.
+ * T12 duoforge.codec.negative (white-box parts marked): strict decoding v3.
  * Every decode case runs through BOTH entry points (decode into dst: dst
  * unchanged; create_decoded: *out untouched, no leak) with exact-size heap
  * inputs, so a read past the size is an ASan heap-buffer-overflow in the
- * sanitizer job. Also: the M1 golden as a "rejected: schema 1" input,
- * targeted invariant edits (ids from the independent model), capacity
- * semantics, corrupt-state encode/digest/check, and encoder coverage on
- * arbitrary state. Expectations: the layout and decode order in
- * docs/decisions/0002 and 0005.
+ * sanitizer job. Also: the M1 and M2 goldens as "rejected: old schema"
+ * inputs, targeted invariant edits (ids from the independent model),
+ * capacity semantics, corrupt-state encode/digest/check, and encoder
+ * coverage on arbitrary state. Expectations: the layout and decode order in
+ * docs/decisions/0002, 0005 and 0006.
  */
 #include <stddef.h>
 #include <stdio.h>
@@ -19,7 +19,8 @@
 #include "support/check.h"
 #include "support/fixtures.h"
 
-#define SZ DUOFORGE_STATE_V2_ENCODED_SIZE
+#define SZ DUOFORGE_STATE_V3_ENCODED_SIZE
+#define BIG (SZ + 22u) /* a buffer longer than the encoding */
 
 typedef struct env {
     df_test *t;
@@ -91,6 +92,7 @@ int main(void)
     duoforge_context *c1 = df_make_context(&df_config_c1);
     duoforge_context *c1b = df_make_context(&df_config_c1);
     duoforge_context *c2 = df_make_context(&df_config_c2);
+    duoforge_context *c4 = df_make_context(&df_config_c4);
     duoforge_battle *f2 = df_make_f2(c1);
     env e = {&t, c1, f2};
     const uint8_t *g = df_golden_f1;
@@ -114,60 +116,72 @@ int main(void)
     with_byte(&e, 8, 3, DUOFORGE_E_SCHEMA_MISMATCH, "kind 3");
     with_byte(&e, 10, 0, DUOFORGE_E_SCHEMA_MISMATCH, "schema 0");
     with_byte(&e, 10, 1, DUOFORGE_E_SCHEMA_MISMATCH, "schema 1");
-    with_byte(&e, 10, 3, DUOFORGE_E_SCHEMA_MISMATCH, "schema 3");
+    with_byte(&e, 10, 2, DUOFORGE_E_SCHEMA_MISMATCH, "schema 2");
+    with_byte(&e, 10, 4, DUOFORGE_E_SCHEMA_MISMATCH, "schema 4");
     with_byte(&e, 12, 0, DUOFORGE_E_SEMANTICS_MISMATCH, "semantics 0");
     with_byte(&e, 12, 1, DUOFORGE_E_SEMANTICS_MISMATCH, "semantics 1");
-    with_byte(&e, 12, 3, DUOFORGE_E_SEMANTICS_MISMATCH, "semantics 3");
+    with_byte(&e, 12, 2, DUOFORGE_E_SEMANTICS_MISMATCH, "semantics 2");
+    with_byte(&e, 12, 4, DUOFORGE_E_SEMANTICS_MISMATCH, "semantics 4");
     {
         /* A longer future schema reports SCHEMA_MISMATCH (checked before length). */
-        uint8_t b[460];
+        uint8_t b[BIG];
         memset(b, 0, sizeof b);
         memcpy(b, g, SZ);
-        dfi_store_u16le(b + 10, 3u);
-        dfi_store_u32le(b + 16, 460u);
-        decode_both(&e, b, sizeof b, DUOFORGE_E_SCHEMA_MISMATCH, "schema 3 at 460 bytes");
+        dfi_store_u16le(b + 10, 4u);
+        dfi_store_u32le(b + 16, BIG);
+        decode_both(&e, b, sizeof b, DUOFORGE_E_SCHEMA_MISMATCH, "schema 4 at a longer size");
     }
-    /* "Rejected: schema 1": the M1 golden (380 bytes) through the v2 decoder.
+    /* "Rejected: schema 1": the M1 golden (380 bytes) through the v3 decoder.
      * Schema first; with the schema patched the semantics id (1) rejects;
-     * with both patched the size (380 != 438) rejects. */
+     * with both patched the size (380 != 1009) rejects. */
     {
         uint8_t b[380];
         memcpy(b, df_golden_v1_f1, sizeof b);
         decode_both(&e, b, sizeof b, DUOFORGE_E_SCHEMA_MISMATCH, "M1 golden: schema 1");
-        dfi_store_u16le(b + 10, 2u);
+        dfi_store_u16le(b + 10, 3u);
         decode_both(&e, b, sizeof b, DUOFORGE_E_SEMANTICS_MISMATCH, "M1 golden: semantics 1");
-        dfi_store_u32le(b + 12, 2u);
+        dfi_store_u32le(b + 12, 3u);
         decode_both(&e, b, sizeof b, DUOFORGE_E_MALFORMED, "M1 golden: 380 bytes");
+    }
+    /* "Rejected: schema 2": the M2 golden (438 bytes), the same three steps. */
+    {
+        uint8_t b[438];
+        memcpy(b, df_golden_v2_f1, sizeof b);
+        decode_both(&e, b, sizeof b, DUOFORGE_E_SCHEMA_MISMATCH, "M2 golden: schema 2");
+        dfi_store_u16le(b + 10, 3u);
+        decode_both(&e, b, sizeof b, DUOFORGE_E_SEMANTICS_MISMATCH, "M2 golden: semantics 2");
+        dfi_store_u32le(b + 12, 3u);
+        decode_both(&e, b, sizeof b, DUOFORGE_E_MALFORMED, "M2 golden: 438 bytes");
     }
     /* Decode order, pinned pairwise: each input carries two faults and the
      * earlier check in the documented order must win. */
     {
-        uint8_t b[460];
+        uint8_t b[BIG];
         memcpy(b, g, SZ);
         b[0] ^= 1u;
         b[8] = 3;
         decode_both(&e, b, SZ, DUOFORGE_E_MALFORMED, "magic before kind");
         memcpy(b, g, SZ);
         b[8] = 3;
-        b[12] = 3;
+        b[12] = 4;
         decode_both(&e, b, SZ, DUOFORGE_E_SCHEMA_MISMATCH, "kind before semantics");
         memcpy(b, g, SZ);
-        b[10] = 3;
-        b[12] = 3;
+        b[10] = 4;
+        b[12] = 4;
         decode_both(&e, b, SZ, DUOFORGE_E_SCHEMA_MISMATCH, "schema before semantics");
         memcpy(b, g, SZ);
-        b[12] = 3;
-        dfi_store_u32le(b + 16, 437u);
+        b[12] = 4;
+        dfi_store_u32le(b + 16, SZ - 1u);
         decode_both(&e, b, SZ, DUOFORGE_E_SEMANTICS_MISMATCH, "semantics before length");
         memcpy(b, g, SZ);
-        dfi_store_u32le(b + 16, 437u);
+        dfi_store_u32le(b + 16, SZ - 1u);
         b[20] ^= 1u;
         decode_both(&e, b, SZ, DUOFORGE_E_MALFORMED, "length before context");
         memset(b, 0, sizeof b);
         memcpy(b, g, SZ);
-        dfi_store_u32le(b + 16, 460u);
+        dfi_store_u32le(b + 16, BIG);
         b[20] ^= 1u;
-        decode_both(&e, b, 460, DUOFORGE_E_MALFORMED, "size before context");
+        decode_both(&e, b, BIG, DUOFORGE_E_MALFORMED, "size before context");
         memcpy(b, g, SZ);
         b[20] ^= 1u;
         b[60] = 0x6C;
@@ -177,20 +191,20 @@ int main(void)
     {
         uint8_t b[SZ];
         memcpy(b, g, sizeof b);
-        dfi_store_u32le(b + 16, 437u);
-        decode_both(&e, b, sizeof b, DUOFORGE_E_MALFORMED, "total_length 437");
-        dfi_store_u32le(b + 16, 439u);
-        decode_both(&e, b, sizeof b, DUOFORGE_E_MALFORMED, "total_length 439");
-        uint8_t c[460];
+        dfi_store_u32le(b + 16, SZ - 1u);
+        decode_both(&e, b, sizeof b, DUOFORGE_E_MALFORMED, "total_length one less");
+        dfi_store_u32le(b + 16, SZ + 1u);
+        decode_both(&e, b, sizeof b, DUOFORGE_E_MALFORMED, "total_length one more");
+        uint8_t c[BIG];
         memset(c, 0, sizeof c);
         memcpy(c, g, SZ);
-        dfi_store_u32le(c + 16, 460u);
-        decode_both(&e, c, sizeof c, DUOFORGE_E_MALFORMED, "total_length 460 at 460 bytes");
+        dfi_store_u32le(c + 16, BIG);
+        decode_both(&e, c, sizeof c, DUOFORGE_E_MALFORMED, "consistent longer input");
     }
     /* Consistent short inputs (total_length patched to the size): the
      * two-sided size check must reject them without over-reading. */
     {
-        static const size_t sizes[] = {20, 21, 51, 52, 85, 86, 261, 262, 437};
+        static const size_t sizes[] = {20, 21, 51, 52, 85, 86, 94, 95, 214, 215, 611, 612, 1008};
         for (size_t i = 0; i < sizeof sizes / sizeof sizes[0]; ++i) {
             uint8_t b[SZ];
             memcpy(b, g, sizeof b);
@@ -200,9 +214,9 @@ int main(void)
     }
 #if SIZE_MAX > UINT32_MAX
     /* Oversized size: only the first 20 bytes may be read, and size must not
-     * be narrowed (438 + 2^32 narrowed to 32 bits would equal 438). */
+     * be narrowed (1009 + 2^32 narrowed to 32 bits would equal 1009). */
     decode_both_sized(&e, g, SZ, (size_t)SZ + (size_t)UINT64_C(0x100000000), DUOFORGE_E_MALFORMED,
-                      "size 438 + 2^32");
+                      "size 1009 + 2^32");
 #endif
     /* Context mismatch: a C2 encoding under C1; a dst bound to C2. */
     {
@@ -231,74 +245,229 @@ int main(void)
         uint8_t b[SZ + 1];
         memcpy(b, g, SZ);
         b[SZ] = 0;
-        decode_both(&e, b, sizeof b, DUOFORGE_E_MALFORMED, "439 bytes");
+        decode_both(&e, b, sizeof b, DUOFORGE_E_MALFORMED, "one extra byte");
     }
-    /* 41 targeted invariant edits: MALFORMED publicly, exact id white-box
-     * (offsets and ids from tools/state_model/state_v2_model.py TARGETED). */
+    /* 139 targeted invariant edits over seven fixtures: MALFORMED publicly, the
+     * exact id white-box. Rows are the TARGETED list of
+     * tools/state_model/state_v3_model.py, in its order. */
     {
+        enum { FX_G1, FX_F1, FX_F2, FX_F4, FX_F5, FX_F6, FX_F13, FX_COUNT };
+        duoforge_battle *fx[FX_COUNT] = {df_make_g1(c1), df_make_f1(c1), df_make_f2(c1), df_make_f4(c1),
+                                         df_make_f5(c1), df_make_f6(c1), df_make_f13(c4)};
+        const duoforge_context *fx_ctx[FX_COUNT] = {c1, c1, c1, c1, c1, c1, c4};
+        uint8_t enc[FX_COUNT][SZ];
+        for (unsigned i = 0; i < FX_COUNT; ++i) {
+            df_encode(fx_ctx[i], fx[i], enc[i]);
+        }
         static const struct {
-            size_t off;
+            uint8_t fixture;
+            uint16_t off;
             uint8_t value;
             dfi_invariant inv;
         } edits[] = {
-            {60, 0x6C, DFI_INV_RNG_INC_EVEN},
-            {76, 0, DFI_INV_NEXT_ACTIVATION_ZERO},
-            {80, 0, DFI_INV_BOUNDARY_KIND},
-            {80, 5, DFI_INV_BOUNDARY_KIND},
-            {82, 0, DFI_INV_EPOCH_ZERO},
-            {81, 0, DFI_INV_REQUEST_MASK},
-            {81, 4, DFI_INV_REQUEST_MASK},
-            {86, 3, DFI_INV_MEMBER_COUNT},
-            {86, 7, DFI_INV_MEMBER_COUNT},
-            {118, 16, DFI_INV_SPECIES_RANGE},
-            {122, 0, DFI_INV_HP_MAX_ZERO},
-            {120, 101, DFI_INV_HP_ABOVE_MAX},
-            {124, 0, DFI_INV_MOVE_COUNT},
-            {124, 5, DFI_INV_MOVE_COUNT},
-            {126, 36, DFI_INV_MOVE_ID_RANGE},
-            {129, 0, DFI_INV_PP_MAX_ZERO},
-            {128, 6, DFI_INV_PP_ABOVE_MAX},
-            {130, 1, DFI_INV_UNUSED_MOVE_NONZERO},
-            {125, 2, DFI_INV_MEGA_CAPABLE_RANGE},
-            {390, 1, DFI_INV_UNUSED_MEMBER_NONZERO},
-            {263, 0x17, DFI_INV_BROUGHT_OUT_OF_RANGE},
-            {87, 0x07, DFI_INV_BROUGHT_COUNT},
-            {92, 5, DFI_INV_BROUGHT_ORDER},
-            {95, 0xFF, DFI_INV_BROUGHT_ORDER},
-            {96, 0, DFI_INV_BROUGHT_ORDER},
-            {89, 2, DFI_INV_MEGA_USED_RANGE},
-            {98, 0xFF, DFI_INV_EMPTY_WITH_ACTIVATION},
-            {280, 0, DFI_INV_OCCUPIED_WITHOUT_ACTIVATION},
-            {274, 4, DFI_INV_OCCUPANT_RANGE},
-            {98, 4, DFI_INV_OCCUPANT_NOT_BROUGHT},
-            {99, 5, DFI_INV_ACTIVATION_NOT_ISSUED},
-            {103, 2, DFI_INV_OCCUPANT_DUPLICATE},
-            {88, 1, DFI_INV_REQUESTED_SLOTS},
-            {88, 4, DFI_INV_REQUESTED_SLOTS},
-            {90, 2, DFI_INV_SEALED_RANGE},
-            {90, 1, DFI_INV_SEALED_RULE},
-            {108, 1, DFI_INV_SEALED_COMMAND},
-            {275, 1, DFI_INV_ACTIVATION_DUPLICATE},
-            {91, 0x1A, DFI_INV_SEEN_MASK},
-            {91, 0x08, DFI_INV_SEEN_MASK},
-            {267, 0x10, DFI_INV_SEEN_MASK},
+            {FX_F1, 60, 0x6C, DFI_INV_RNG_INC_EVEN},
+            {FX_F1, 76, 0x00, DFI_INV_NEXT_ACTIVATION_ZERO},
+            {FX_F1, 80, 0x00, DFI_INV_BOUNDARY_KIND},
+            {FX_F1, 80, 0x06, DFI_INV_BOUNDARY_KIND},
+            {FX_F1, 82, 0x00, DFI_INV_EPOCH_ZERO},
+            {FX_F1, 81, 0x00, DFI_INV_REQUEST_MASK},
+            {FX_F1, 81, 0x04, DFI_INV_REQUEST_MASK},
+            {FX_F1, 80, 0x05, DFI_INV_REQUEST_MASK},
+            {FX_F13, 81, 0x01, DFI_INV_REQUEST_MASK},
+            {FX_F1, 86, 0x00, DFI_INV_TURN_COUNTER},
+            {FX_G1, 86, 0x01, DFI_INV_TURN_COUNTER},
+            {FX_F1, 88, 0x01, DFI_INV_RESULT},
+            {FX_F1, 88, 0x04, DFI_INV_RESULT},
+            {FX_F13, 88, 0x00, DFI_INV_RESULT},
+            {FX_F13, 88, 0x04, DFI_INV_RESULT},
+            {FX_F1, 89, 0x01, DFI_INV_FIELD},
+            {FX_F1, 89, 0x03, DFI_INV_FIELD},
+            {FX_F1, 90, 0x01, DFI_INV_FIELD},
+            {FX_F5, 90, 0x06, DFI_INV_FIELD},
+            {FX_F1, 91, 0x01, DFI_INV_FIELD},
+            {FX_F1, 92, 0x01, DFI_INV_FIELD},
+            {FX_F5, 91, 0x02, DFI_INV_FIELD},
+            {FX_F5, 92, 0x00, DFI_INV_FIELD},
+            {FX_F1, 93, 0x06, DFI_INV_FIELD},
+            {FX_F1, 215, 0x03, DFI_INV_MEMBER_COUNT},
+            {FX_F1, 215, 0x07, DFI_INV_MEMBER_COUNT},
+            {FX_F1, 324, 0x10, DFI_INV_SPECIES_RANGE},
+            {FX_F1, 328, 0x00, DFI_INV_HP_MAX_ZERO},
+            {FX_F1, 326, 0x65, DFI_INV_HP_ABOVE_MAX},
+            {FX_F1, 340, 0x00, DFI_INV_MOVE_COUNT},
+            {FX_F1, 340, 0x05, DFI_INV_MOVE_COUNT},
+            {FX_F1, 356, 0x24, DFI_INV_MOVE_ID_RANGE},
+            {FX_F1, 359, 0x00, DFI_INV_PP_MAX_ZERO},
+            {FX_F1, 358, 0x06, DFI_INV_PP_ABOVE_MAX},
+            {FX_F1, 360, 0x01, DFI_INV_UNUSED_MOVE_NONZERO},
+            {FX_F1, 341, 0x02, DFI_INV_MEGA_CAPABLE_RANGE},
+            {FX_F1, 330, 0x01, DFI_INV_MEMBER_EXTRA},
+            {FX_F1, 339, 0x01, DFI_INV_MEMBER_EXTRA},
+            {FX_F1, 342, 0x01, DFI_INV_MEMBER_EXTRA},
+            {FX_F1, 343, 0x01, DFI_INV_MEMBER_EXTRA},
+            {FX_F1, 344, 0x01, DFI_INV_MEMBER_EXTRA},
+            {FX_F1, 345, 0x01, DFI_INV_MEMBER_EXTRA},
+            {FX_F1, 350, 0x01, DFI_INV_MEMBER_EXTRA},
+            {FX_F1, 351, 0x01, DFI_INV_MEMBER_EXTRA},
+            {FX_F1, 352, 0x01, DFI_INV_MEMBER_EXTRA},
+            {FX_F1, 353, 0x01, DFI_INV_MEMBER_EXTRA},
+            {FX_F1, 354, 0x01, DFI_INV_MEMBER_EXTRA},
+            {FX_F1, 355, 0x01, DFI_INV_MEMBER_EXTRA},
+            {FX_F1, 913, 0x01, DFI_INV_UNUSED_MEMBER_NONZERO},
+            {FX_F1, 990, 0x01, DFI_INV_UNUSED_MEMBER_NONZERO},
+            {FX_F1, 613, 0x17, DFI_INV_BROUGHT_OUT_OF_RANGE},
+            {FX_F1, 216, 0x07, DFI_INV_BROUGHT_COUNT},
+            {FX_F1, 221, 0x05, DFI_INV_BROUGHT_ORDER},
+            {FX_F1, 224, 0xFF, DFI_INV_BROUGHT_ORDER},
+            {FX_F1, 225, 0x00, DFI_INV_BROUGHT_ORDER},
+            {FX_F1, 218, 0x02, DFI_INV_MEGA_USED_RANGE},
+            {FX_F1, 227, 0x09, DFI_INV_SIDE_CONDITION},
+            {FX_F1, 228, 0x09, DFI_INV_SIDE_CONDITION},
+            {FX_F1, 229, 0x05, DFI_INV_SIDE_CONDITION},
+            {FX_F1, 230, 0xFF, DFI_INV_EMPTY_WITH_ACTIVATION},
+            {FX_F1, 649, 0x00, DFI_INV_OCCUPIED_WITHOUT_ACTIVATION},
+            {FX_F1, 627, 0x04, DFI_INV_OCCUPANT_RANGE},
+            {FX_F1, 230, 0x04, DFI_INV_OCCUPANT_NOT_BROUGHT},
+            {FX_F1, 231, 0x05, DFI_INV_ACTIVATION_NOT_ISSUED},
+            {FX_F1, 251, 0x02, DFI_INV_OCCUPANT_DUPLICATE},
+            {FX_F1, 235, 0x0D, DFI_INV_VOLATILE},
+            {FX_F1, 242, 0x08, DFI_INV_VOLATILE},
+            {FX_F1, 243, 0x01, DFI_INV_VOLATILE},
+            {FX_F1, 243, 0x07, DFI_INV_VOLATILE},
+            {FX_F1, 244, 0x01, DFI_INV_VOLATILE},
+            {FX_F5, 265, 0x03, DFI_INV_VOLATILE},
+            {FX_F1, 245, 0x06, DFI_INV_VOLATILE},
+            {FX_F1, 246, 0x01, DFI_INV_VOLATILE},
+            {FX_F5, 643, 0x03, DFI_INV_VOLATILE},
+            {FX_F1, 247, 0x01, DFI_INV_VOLATILE},
+            {FX_F5, 644, 0x05, DFI_INV_VOLATILE},
+            {FX_F1, 248, 0x01, DFI_INV_VOLATILE},
+            {FX_F5, 645, 0x04, DFI_INV_VOLATILE},
+            {FX_F5, 268, 0x02, DFI_INV_VOLATILE},
+            {FX_F1, 250, 0x03, DFI_INV_VOLATILE},
+            {FX_F2, 653, 0x05, DFI_INV_VOLATILE},
+            {FX_F2, 660, 0x01, DFI_INV_VOLATILE},
+            {FX_F2, 667, 0x01, DFI_INV_VOLATILE},
+            {FX_F2, 668, 0x01, DFI_INV_VOLATILE},
+            {FX_F1, 217, 0x01, DFI_INV_REQUESTED_SLOTS},
+            {FX_F1, 217, 0x04, DFI_INV_REQUESTED_SLOTS},
+            {FX_F13, 217, 0x01, DFI_INV_REQUESTED_SLOTS},
+            {FX_F1, 250, 0x01, DFI_INV_SWITCH_FLAG},
+            {FX_F5, 250, 0x00, DFI_INV_SWITCH_FLAG},
+            {FX_F5, 271, 0x01, DFI_INV_SWITCH_FLAG},
+            {FX_F5, 647, 0x02, DFI_INV_SWITCH_FLAG},
+            {FX_F6, 668, 0x00, DFI_INV_SWITCH_FLAG},
+            {FX_F4, 250, 0x01, DFI_INV_SWITCH_FLAG},
+            {FX_F1, 219, 0x02, DFI_INV_SEALED_RANGE},
+            {FX_F1, 219, 0x01, DFI_INV_SEALED_RULE},
+            {FX_F5, 616, 0x01, DFI_INV_SEALED_RULE},
+            {FX_F1, 272, 0x01, DFI_INV_SEALED_COMMAND},
+            {FX_F1, 628, 0x01, DFI_INV_ACTIVATION_DUPLICATE},
+            {FX_F1, 220, 0x1A, DFI_INV_SEEN_MASK},
+            {FX_F1, 220, 0x08, DFI_INV_SEEN_MASK},
+            {FX_F1, 617, 0x10, DFI_INV_SEEN_MASK},
+            {FX_F1, 282, 0x01, DFI_INV_KNOWLEDGE},
+            {FX_F1, 285, 0x01, DFI_INV_KNOWLEDGE},
+            {FX_F1, 289, 0x63, DFI_INV_KNOWLEDGE},
+            {FX_F1, 290, 0x01, DFI_INV_KNOWLEDGE},
+            {FX_F1, 683, 0x01, DFI_INV_KNOWLEDGE},
+            {FX_F2, 693, 0x65, DFI_INV_KNOWLEDGE},
+            {FX_F2, 694, 0x03, DFI_INV_KNOWLEDGE},
+            {FX_F2, 694, 0x00, DFI_INV_KNOWLEDGE},
+            {FX_F1, 291, 0x01, DFI_INV_KNOWLEDGE},
+            {FX_F1, 291, 0x02, DFI_INV_KNOWLEDGE},
+            {FX_F1, 291, 0x04, DFI_INV_KNOWLEDGE},
+            {FX_F1, 284, 0x01, DFI_INV_KNOWLEDGE},
+            {FX_F1, 94, 0x01, DFI_INV_QUEUE},
+            {FX_F1, 95, 0x01, DFI_INV_QUEUE},
+            {FX_F1, 104, 0x01, DFI_INV_QUEUE},
+            {FX_F5, 94, 0x00, DFI_INV_QUEUE},
+            {FX_F5, 94, 0x0D, DFI_INV_QUEUE},
+            {FX_F5, 94, 0x02, DFI_INV_QUEUE},
+            {FX_F5, 94, 0x04, DFI_INV_QUEUE},
+            {FX_F5, 95, 0x00, DFI_INV_QUEUE},
+            {FX_F5, 95, 0x07, DFI_INV_QUEUE},
+            {FX_F5, 96, 0x02, DFI_INV_QUEUE},
+            {FX_F5, 97, 0x02, DFI_INV_QUEUE},
+            {FX_F5, 98, 0x05, DFI_INV_QUEUE},
+            {FX_F5, 99, 0x04, DFI_INV_QUEUE},
+            {FX_F5, 100, 0x01, DFI_INV_QUEUE},
+            {FX_F5, 101, 0x05, DFI_INV_QUEUE},
+            {FX_F5, 101, 0x00, DFI_INV_QUEUE},
+            {FX_F5, 116, 0x01, DFI_INV_QUEUE},
+            {FX_F5, 121, 0x01, DFI_INV_QUEUE},
+            {FX_F6, 100, 0x06, DFI_INV_QUEUE},
+            {FX_F6, 101, 0x01, DFI_INV_QUEUE},
+            {FX_F6, 98, 0x01, DFI_INV_QUEUE},
+            {FX_F6, 110, 0x01, DFI_INV_QUEUE},
+            {FX_F6, 111, 0x00, DFI_INV_QUEUE},
+            {FX_F6, 120, 0x04, DFI_INV_QUEUE},
+            {FX_F6, 121, 0x00, DFI_INV_QUEUE},
+            {FX_F6, 130, 0x01, DFI_INV_QUEUE},
         };
-        DF_CHECK_EQ_U64(&t, sizeof edits / sizeof edits[0], 41u);
+        DF_CHECK_EQ_U64(&t, sizeof edits / sizeof edits[0], 139u);
+        unsigned ids_seen[DFI_INV_COUNT] = {0};
         for (size_t i = 0; i < sizeof edits / sizeof edits[0]; ++i) {
+            const duoforge_context *ctx = fx_ctx[edits[i].fixture];
             uint8_t b[SZ];
-            memcpy(b, g, sizeof b);
+            memcpy(b, enc[edits[i].fixture], sizeof b);
+            DF_CHECK(&t, b[edits[i].off] != edits[i].value); /* the edit changes the byte */
             b[edits[i].off] = edits[i].value;
-            decode_both(&e, b, sizeof b, DUOFORGE_E_MALFORMED, dfi_invariant_name(edits[i].inv));
+            if (ctx == c1) {
+                decode_both(&e, b, sizeof b, DUOFORGE_E_MALFORMED, dfi_invariant_name(edits[i].inv));
+            }
+            uint8_t *in = df_heap_copy(b, sizeof b);
+            df_sentinel sentinel;
+            duoforge_battle *const marker = (duoforge_battle *)(void *)&sentinel;
+            duoforge_battle *out = marker;
+            DF_CHECK(&t, duoforge_battle_create_decoded(ctx, in, sizeof b, &out) == DUOFORGE_E_MALFORMED);
+            DF_CHECK(&t, out == marker);
             duoforge_battle tmp;
             memset(&tmp, 0, sizeof tmp);
             dfi_invariant got = DFI_INV_NONE;
-            uint8_t *in = df_heap_copy(b, sizeof b);
-            DF_CHECK(&t, dfi_decode_state(c1, in, sizeof b, &tmp, &got) == DUOFORGE_E_MALFORMED);
+            DF_CHECK(&t, dfi_decode_state(ctx, in, sizeof b, &tmp, &got) == DUOFORGE_E_MALFORMED);
             if (!DF_CHECK(&t, got == edits[i].inv)) {
-                fprintf(stderr, "  edit %zu=0x%02x: got %s, expected %s\n", edits[i].off, (unsigned)edits[i].value,
-                        dfi_invariant_name(got), dfi_invariant_name(edits[i].inv));
+                fprintf(stderr, "  edit %u=0x%02x: got %s, expected %s\n", (unsigned)edits[i].off,
+                        (unsigned)edits[i].value, dfi_invariant_name(got), dfi_invariant_name(edits[i].inv));
             }
+            ids_seen[edits[i].inv] += 1u;
             df_free(in);
+        }
+        /* Every id a single byte can trigger is covered (the fingerprint is
+         * CONTEXT_MISMATCH and has its own cases above). */
+        for (unsigned id = DFI_INV_RNG_INC_EVEN; id < DFI_INV_COUNT; ++id) {
+            if (!DF_CHECK(&t, ids_seen[id] > 0u)) {
+                fprintf(stderr, "  no targeted edit for %s\n", dfi_invariant_name((dfi_invariant)id));
+            }
+        }
+        /* Single-byte edits that stay valid: the checker is structural. */
+        static const struct {
+            uint8_t fixture;
+            uint16_t off;
+            uint8_t value;
+        } accepted[] = {
+            {FX_F1, 249, 0xC8},
+            {FX_F1, 235, 0x00},
+            {FX_F1, 235, 0x0C},
+            {FX_F1, 227, 0x08},
+            {FX_F1, 229, 0x04},
+            {FX_F1, 93, 0x05},
+            {FX_F5, 99, 0xFF},
+            {FX_F5, 250, 0x02},
+        };
+        for (size_t i = 0; i < sizeof accepted / sizeof accepted[0]; ++i) {
+            uint8_t b[SZ];
+            memcpy(b, enc[accepted[i].fixture], sizeof b);
+            DF_CHECK(&t, b[accepted[i].off] != accepted[i].value);
+            b[accepted[i].off] = accepted[i].value;
+            uint8_t *in = df_heap_copy(b, sizeof b);
+            duoforge_battle *out = NULL;
+            DF_CHECK(&t, duoforge_battle_create_decoded(fx_ctx[accepted[i].fixture], in, sizeof b, &out) == DUOFORGE_OK);
+            duoforge_battle_destroy(out);
+            df_free(in);
+        }
+        for (unsigned i = 0; i < FX_COUNT; ++i) {
+            duoforge_battle_destroy(fx[i]);
         }
     }
     /* F1 decodes under an independently created second C1. */
@@ -309,12 +478,12 @@ int main(void)
         duoforge_battle_destroy(d);
         df_free(in);
     }
-    /* Capacity: E_CAPACITY writes nothing; OK writes exactly 438 bytes. */
+    /* Capacity: E_CAPACITY writes nothing; OK writes exactly 1009 bytes. */
     {
-        uint8_t buf[460];
-        uint8_t pattern[460];
+        uint8_t buf[BIG];
+        uint8_t pattern[BIG];
         memset(pattern, 0xA5, sizeof pattern);
-        const size_t caps[] = {0, 437};
+        const size_t caps[] = {0, 1008};
         for (unsigned i = 0; i < 2; ++i) {
             memset(buf, 0xA5, sizeof buf);
             size_t written = 0xDEADBEEFu;
@@ -322,24 +491,24 @@ int main(void)
             DF_CHECK(&t, written == 0xDEADBEEFu);
             DF_CHECK_BYTES(&t, buf, pattern, sizeof buf, "capacity failure writes nothing");
         }
-        const size_t okcaps[] = {438, 460};
+        const size_t okcaps[] = {1009, BIG};
         for (unsigned i = 0; i < 2; ++i) {
             memset(buf, 0xA5, sizeof buf);
             size_t written = 0;
             DF_CHECK(&t, duoforge_battle_encode(c1, f2, buf, okcaps[i], &written) == DUOFORGE_OK);
-            DF_CHECK_EQ_U64(&t, written, 438u);
+            DF_CHECK_EQ_U64(&t, written, 1009u);
             DF_CHECK_BYTES(&t, buf, df_golden_f2, SZ, "encoded F2");
-            DF_CHECK_BYTES(&t, buf + SZ, pattern + SZ, 22, "bytes after 438 untouched");
+            DF_CHECK_BYTES(&t, buf + SZ, pattern + SZ, 22, "bytes after the encoding untouched");
         }
     }
     /* Corrupt state (white-box): encode/digest/check report INVARIANT with
-     * outputs untouched; encoded_size is still 438 (documented). */
+     * outputs untouched; encoded_size is still 1009 (documented). */
     {
         duoforge_battle *x = NULL;
         DF_CHECK(&t, duoforge_battle_clone(c1, f2, &x) == DUOFORGE_OK);
         x->sides[1].members[0].move_count = 0u;
-        uint8_t buf[460];
-        uint8_t pattern[460];
+        uint8_t buf[BIG];
+        uint8_t pattern[BIG];
         memset(buf, 0xA5, sizeof buf);
         memset(pattern, 0xA5, sizeof pattern);
         size_t written = 0xDEADBEEFu;
@@ -350,12 +519,12 @@ int main(void)
         DF_CHECK_BYTES(&t, buf, pattern, sizeof buf, "digest of corrupt writes nothing");
         DF_CHECK(&t, duoforge_battle_check(c1, x) == DUOFORGE_E_INVARIANT);
         size_t size = 0;
-        DF_CHECK(&t, duoforge_battle_encoded_size(c1, x, &size) == DUOFORGE_OK && size == 438u);
+        DF_CHECK(&t, duoforge_battle_encoded_size(c1, x, &size) == DUOFORGE_OK && size == 1009u);
         duoforge_battle_destroy(x);
     }
     /* Encoder coverage (white-box): on valid and arbitrary states, encoding
      * into buffers pre-filled with 0x00 and 0xFF gives identical bytes, which
-     * proves all 438 bytes are written unconditionally. */
+     * proves all 1009 bytes are written unconditionally. */
     {
         duoforge_battle *f1 = df_make_f1(c1);
         duoforge_battle *states[7];
@@ -387,5 +556,6 @@ int main(void)
     duoforge_context_destroy(c1);
     duoforge_context_destroy(c1b);
     duoforge_context_destroy(c2);
+    duoforge_context_destroy(c4);
     return df_test_end(&t);
 }

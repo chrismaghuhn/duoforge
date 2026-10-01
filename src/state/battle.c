@@ -4,6 +4,7 @@
 #include "core/arith.h"
 #include "state/battle_internal.h"
 #include "state/context_internal.h"
+#include "state/identity.h"
 #include "state/invariants.h"
 
 #define DFI_INITSEQ_LIMIT UINT64_C(0x8000000000000000)
@@ -136,8 +137,7 @@ duoforge_status duoforge_battle_create(const duoforge_context *ctx, const duofor
             dst->brought_order[i] = (uint8_t)DUOFORGE_ROSTER_NONE;
         }
         for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
-            dst->positions[p].activation_id = 0u;
-            dst->positions[p].occupant = DFI_OCCUPANT_NONE;
+            dfi_slot_clear(&dst->positions[p]);
         }
     }
     if (dfi_state_check(ctx, &tmp, NULL) != DUOFORGE_OK) {

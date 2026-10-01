@@ -1,6 +1,6 @@
 /*
  * T7 duoforge.state.setup (public + white-box): battle creation from the
- * synthetic setup v2 (a TEAM_SELECTION state: nothing brought, positions
+ * synthetic setup v3 (a TEAM_SELECTION state: nothing brought, positions
  * empty, epoch 1, both sides requested), deterministic init, and the
  * single-fault table (INVALID_ARGUMENT, *out untouched, nothing leaked).
  * Expectations: the setup contract (docs/decisions/0002, 0005) and the
@@ -12,6 +12,7 @@
 #include <string.h>
 
 #include "state/battle_internal.h"
+#include "state/identity.h"
 #include "support/check.h"
 #include "support/fixtures.h"
 
@@ -108,8 +109,20 @@ static void check_initial_shape(df_test *t, const duoforge_battle *b)
     DF_CHECK_EQ_U64(t, b->request_epoch, 1u);
     DF_CHECK_EQ_U64(t, b->boundary_kind, DUOFORGE_BOUNDARY_TEAM_SELECTION);
     DF_CHECK_EQ_U64(t, b->request_mask, 3u);
+    /* The v3 groups start empty: turn 0, no result, no field condition, no
+     * queue, cleared positions, no knowledge. */
+    DF_CHECK(t, b->turn == 0u && b->result == 0u && b->weather == 0u && b->weather_turns == 0u && b->terrain == 0u &&
+                    b->terrain_turns == 0u && b->trick_room_turns == 0u && b->queue_len == 0u);
     for (unsigned s = 0; s < 2; ++s) {
         const dfi_side *sd = &b->sides[s];
+        DF_CHECK(t, sd->reflect_turns == 0u && sd->light_screen_turns == 0u && sd->tailwind_turns == 0u);
+        for (unsigned p = 0; p < 2; ++p) {
+            DF_CHECK(t, dfi_slot_volatile_is_clear(&sd->positions[p]) && sd->positions[p].stages[0] == 6u);
+        }
+        for (unsigned m = 0; m < DUOFORGE_MAX_ROSTER; ++m) {
+            DF_CHECK(t, sd->knowledge[m].hp_percent == 0u && sd->knowledge[m].hp_flag == 0u &&
+                            sd->members[m].status == 0u && sd->members[m].item == 0u && sd->members[m].ability == 0u);
+        }
         DF_CHECK_EQ_U64(t, sd->brought_mask, 0u);
         DF_CHECK_EQ_U64(t, sd->requested_slots, 0u);
         DF_CHECK_EQ_U64(t, sd->mega_used, 0u);
@@ -173,8 +186,8 @@ int main(void)
     /* Determinism: identical setups give identical encodings; a seed change
      * only touches the RNG bytes (52..60 state, 60..68 inc). */
     {
-        uint8_t e1[DUOFORGE_STATE_V2_ENCODED_SIZE];
-        uint8_t e2[DUOFORGE_STATE_V2_ENCODED_SIZE];
+        uint8_t e1[DUOFORGE_STATE_V3_ENCODED_SIZE];
+        uint8_t e2[DUOFORGE_STATE_V3_ENCODED_SIZE];
         duoforge_battle *a = df_make_battle(c1, &g1);
         duoforge_battle *b = df_make_battle(c1, &g1);
         df_encode(c1, a, e1);

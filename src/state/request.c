@@ -392,6 +392,9 @@ duoforge_status duoforge_battle_step(const duoforge_context *ctx, duoforge_battl
     if (dfi_state_check(ctx, battle, NULL) != DUOFORGE_OK) {
         return DUOFORGE_E_INVARIANT;
     }
+    if (battle->boundary_kind == DUOFORGE_BOUNDARY_TERMINAL) {
+        return DUOFORGE_E_INVALID_ARGUMENT; /* the battle is over: no bundle is valid */
+    }
     if (in.epoch != battle->request_epoch) {
         return DUOFORGE_E_STALE_EPOCH;
     }
@@ -428,7 +431,7 @@ duoforge_status duoforge_battle_step(const duoforge_context *ctx, duoforge_battl
         }
     }
     if (battle->boundary_kind != DUOFORGE_BOUNDARY_TEAM_SELECTION) {
-        return DUOFORGE_E_UNSUPPORTED; /* M2 has no combat: honest, atomic, documented */
+        return DUOFORGE_E_UNSUPPORTED; /* no combat yet: honest, atomic, documented */
     }
     dfi_team_picks picks;
     memset(&picks, 0xFF, sizeof picks);
