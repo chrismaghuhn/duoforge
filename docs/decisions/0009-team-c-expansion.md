@@ -232,6 +232,7 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
 3. Setup rules under TEAM_C: the closure's (mixed teams, any item), or set items only (3.4).
 4. Additive public changes per step, each with a minor version bump:
    - AILMENT_POISON, TERRAIN_PSYCHIC and a field value;
+   - CAUSE_POISON for poison's residual line (added in step 6, not foreseen here);
    - new event kinds;
    - three bits of the position view's `reserved` byte (Follow Me, Helping Hand, Unburden);
    - the choice lock shown in `locked_slot` (4.2).
@@ -385,7 +386,7 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
     - the paralysis and sleep picks, the sleep line without `[from]`;
     - Raichu not paralysed and Sneasler not poisoned, both silently;
     - a pick drawn for a target that already has a status.
-  - `c06_poison_residual` records poisoning, then Leftovers and Grassy Terrain before poison's damage, and two poisoned Pokémon ordered by speed.
+  - `c06_poison_residual` records poisoning, then Leftovers and Grassy Terrain before poison's damage, and two poisoned Pokémon in one residual phase. There the faster one is also in the earlier slot, so slot order is not ruled out by this battle. Giving poison's handlers no speed would still fail, because it adds a tie draw the tape does not have.
   - `c06_poison_burn` records:
     - poison before burn in one residual phase;
     - a Dire Claw that knocks its target out and still draws the pick;
@@ -400,11 +401,20 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
   - 1/16 damage;
   - burn's cause on poison's line;
   - poison valid under CLOSURE.
-- **Not recorded.** Good as Gold never meets Dire Claw's secondary, because a Poison move cannot hit Gholdengo (Steel).
+- **Not recorded.**
+  - Good as Gold never meets Dire Claw's secondary, because a Poison move cannot hit Gholdengo (Steel). For the same reason, Steel's poison immunity cannot be reached through Dire Claw.
+  - The minimum of 1 damage cannot be reached at level 50.
+  - A speed tie between two poisoned Pokémon and a poison KO that ends the battle are reachable but not recorded. Both run through burn's existing code (the tie draw, the faint processing after each residual handler).
 - **Converter.**
   - `psn` in the state and event maps;
   - `[from] psn` as cause 14;
-  - the pick's site; any other draw in context `Hit` fails loudly.
+  - the pick's site; any other draw in context `Hit` fails loudly;
+  - an unknown status in an HP field fails loudly instead of reading as none.
+- **Review findings, fixed.**
+  - Two spec purposes claimed cases their battles do not show.
+  - The converter's `Hit` guard checks every draw, not only SECONDARY.
+  - An unhandled residual callback is `E_INVARIANT` instead of burn's damage.
+  - A stale comment.
 - **Shared files touched:**
   - `include/duoforge/duoforge.h`;
   - `src/rng/draw.h`;

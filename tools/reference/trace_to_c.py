@@ -211,10 +211,10 @@ def drop_reason(d, state):
 
 
 def site_of(d):
-    """The tape site of draw `d`: a SECONDARY draw in context Hit is Dire
-    Claw's status pick, random(3)."""
-    if d['site'] == 'SECONDARY' and d.get('context') == 'Hit':
-        if (d['lo'], d['hi']) != (0, 3):
+    """The tape site of draw `d`: the only draw in context Hit is Dire Claw's
+    status pick, recorded as SECONDARY[0,3); any other fails loudly."""
+    if d.get('context') == 'Hit':
+        if d['site'] != 'SECONDARY' or (d['lo'], d['hi']) != (0, 3):
             raise SystemExit('trace_to_c: unexpected Hit draw %s' % d)
         return 'STATUS_PICK'
     return d['site']
@@ -412,7 +412,11 @@ def ev_cause(attrs, tables):
 def ev_hp(text, side, viewer, maxhp):
     """An HP field as `viewer` sees it -> (hp, hp_max, kind, flag, status)."""
     tokens = text.split(' ')
-    status = AILMENT.get(tokens[1], 0) if len(tokens) > 1 else 0
+    status = 0
+    if len(tokens) > 1 and tokens[1] != 'fnt':
+        if tokens[1] not in AILMENT:
+            raise SystemExit('trace_to_c: unknown status in HP %r' % text)
+        status = AILMENT[tokens[1]]
     if tokens[0] == '0':
         return (0, maxhp if side == viewer else 100, HP_EXACT if side == viewer else HP_PERCENT, 0, 0)
     m = re.match(r'^(\d+)/(\d+)([gry]?)$', tokens[0])

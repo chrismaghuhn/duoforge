@@ -1,6 +1,6 @@
 {
   "name": "c06_dire_claw",
-  "purpose": "Dire Claw (30 percent, Champions): after a successful secondary roll the reference draws the status pick random(3) (psn, par, slp) and tries it; poison, paralysis and sleep (its -status line without [from]); Raichu cannot be paralysed and Sneasler cannot be poisoned, silently; a target with a status still draws the pick.",
+  "purpose": "Dire Claw (30 percent, Champions): after a successful secondary roll the reference draws the status pick random(3) (psn, par, slp) and tries it: paralysis and sleep (its -status line without [from]); Raichu cannot be paralysed and Sneasler cannot be poisoned, silently; a target with a status still draws the pick. A poisoning is in c06_poison_residual.",
   "data": "team_c",
   "format": "gen9championsvgc2026regmc",
   "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c7a01",

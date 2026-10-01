@@ -1,6 +1,6 @@
 {
   "name": "c06_poison_residual",
-  "purpose": "Poison's residual (order 9, baseMaxhp / 8) against Leftovers and Grassy Terrain (order 5, before it) and burn (order 10, after it); two poisoned Pokemon by speed.",
+  "purpose": "Dire Claw poisons; poison's residual (order 9, baseMaxhp / 8) comes after Leftovers and Grassy Terrain (order 5); two poisoned Pokemon in one residual phase (here the faster one is also in the earlier slot). Poison before burn is in c06_poison_burn.",
   "data": "team_c",
   "format": "gen9championsvgc2026regmc",
   "seed": "sodium,00000000000000000000000000000000000000000000000000000000000cb802",

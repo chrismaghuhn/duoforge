@@ -125,7 +125,7 @@ static void dfi_emit(dfi_run *r, const duoforge_event *e)
 static duoforge_event dfi_ev(uint32_t kind, uint32_t position, uint32_t cause, uint32_t id2, uint32_t other)
 {
     duoforge_event e = dfi_event_make(kind, position);
-    e.cause = (uint8_t)cause; /* <= DUOFORGE_CAUSE_NO_PP */
+    e.cause = (uint8_t)cause; /* <= DUOFORGE_CAUSE_POISON */
     e.id2 = (uint16_t)id2;    /* < 2^16 */
     e.other = (uint8_t)other; /* < 4 or DUOFORGE_NO_POSITION */
     return e;
@@ -2699,7 +2699,10 @@ static duoforge_status dfi_residual_events(dfi_run *r)
             continue;
         }
         /* burn: baseMaxhp / 16; poison: baseMaxhp / 8 (data/conditions.ts:
-         * 123-137); at least 1 */
+         * 123-137); at least 1. Any other callback here is a missing case. */
+        if (e->kind != DFI_RES_BURN && e->kind != DFI_RES_POISON) {
+            return DUOFORGE_E_INVARIANT;
+        }
         const bool poison = e->kind == DFI_RES_POISON;
         const uint32_t damage = (uint32_t)m->hp_max / (poison ? 8u : 16u);
         st = dfi_deal(r, e->flat, damage == 0u ? 1u : damage, poison ? DUOFORGE_CAUSE_POISON : DUOFORGE_CAUSE_BURN, 0u,
