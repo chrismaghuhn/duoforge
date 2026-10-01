@@ -27,36 +27,36 @@ typedef struct expect {
 
 /* Oracle output, verbatim ("observation" lines). */
 static const expect expected[] = {
-    {"G1", 0, "cae10aed91453e6aec3e3ec73093f3effda1d534b45adc66389cdecec8a28447"},
-    {"G1", 1, "a60c451fd291ee249b5101f8233208a9c3af816590851563ac9e9a33c1b27a75"},
-    {"F1", 0, "b9cd3c6bcb404cafe4730234dbff45158ffcce93c195cdc0d3025c20a69f471f"},
-    {"F1", 1, "ff513f260dce7368978a36907151eb69a1fc53cc896e54c3568e437a7bf75702"},
-    {"F2", 0, "e999a8d43fe1a201885369b0a4c0745bf9895080fb700616a36a043d024f34e3"},
-    {"F2", 1, "a050e0926edecc38fdef8d403a07b8a07f46b8141664b1655c5d9307cda18c80"},
-    {"G3", 0, "dd167682817648861a4e892265c75da037dc383ff3c607a01c14b734412ded26"},
-    {"G3", 1, "38de3ef3d323738ad563f4556fcb96c18677582d4078ccd4a26bb14391c1ab18"},
-    {"F3", 0, "d1b9d951ad53ff342d8a0eb2f3759f7893b9b1e36c70d449f4d543809c61059e"},
-    {"F3", 1, "668d4a10f49be92f965276fde27ba83d221167548da2f83eee298371faf436f4"},
-    {"F4", 0, "1ca52fcb1544a55ab8e4e8905732af8afefdf810aa7d51d3d92599fc4b856764"},
-    {"F4", 1, "9713f413f16b7259b55f88c0e310d874c780003dfc3ea19fa6e1ad20dc3cf4a9"},
-    {"F5", 0, "06cfb20fa6ef3947b97ae4abd59a6e1a4b98bf78d26acc91a04de0d8a9a6b311"},
-    {"F5", 1, "97b5feabd3c1c4c7970314a5eccf42a4a78c446fd0d3972e74d5d3a4b4e8c0fc"},
-    {"F6", 0, "f7221c3254fb46f2d0d2e44c75c9aa053815e4ddbaa46382d189ccf34562a955"},
-    {"F6", 1, "e5b03e26cb7d126f13f7758ebfb5f8751e2ff97eacb13de9492410fb13cd7084"},
-    {"G7", 0, "e90ba16203d3cfcc0be241e30b65d5af7cd6301d46c29a3006b1a418036a5950"},
-    {"G7", 1, "f1f090df4f6b299a2a26e120ca025c4f5ec674176c365cd6dfda3597b7016728"},
-    {"F8", 0, "33694127165c70fc4f17f8ac2ce48e93fc8fc8bb8b7ffde44440adb28a528eb0"},
-    {"F8", 1, "6f0bb5f3f19c14151480a1283dd983080d7e839bc7a92b75fabe47a6572926e8"},
-    {"F9", 0, "6a14f205f50c6dbcfa4dcfcaa3d9de2fead92be06a4d0e8b8cffd7e7b7c4ee78"},
-    {"F9", 1, "6c06013b9857162c9b1dd8546e91aa6c5ef9a9e4d9c341969f8847adaf51b91a"},
-    {"F10", 0, "cf7dc5f8e3fd147771731818b3536be9cc790dfc6e88053f67a8cc73e8e763fe"},
-    {"F10", 1, "3c765c76e16bc0a5790af2c929c234acd3458c2ebb2aaced16a9c7afe1c275d5"},
-    {"F11", 0, "aa29a54e8926b3a34c3acb13c217835a6d33d8100fb3baa0f6380a97f33573b2"},
-    {"F11", 1, "8b7dd9ce1ff2ac47dbdbc24404b2ae04026545ead2ef0356fd1de13ea9cb74cb"},
-    {"F12", 0, "b6c8c2f867dfa4895bffe9bb5674635906430756115e329d00707d5c2e50123a"},
-    {"F12", 1, "6c06013b9857162c9b1dd8546e91aa6c5ef9a9e4d9c341969f8847adaf51b91a"},
-    {"F13", 0, "992b9e5f16cabf718d3ce17ad63410f16f3c3abe8a80e6e81a0869aa984c3bf9"},
-    {"F13", 1, "9ef8f3c214d2e8c0370ac3f945351484e19896e22d3059c61f1ae5564a115531"},
+    {"G1", 0, "519c85df6ec7aec4691b26c91594f9ede9c2360e642db5072780e17f81302075"},
+    {"G1", 1, "f73889ba0e3e78979179426a4478431b3d6e860216a2b3c413bcf7fb518edca5"},
+    {"F1", 0, "b90b26d1e05f9b7dee349f01f09aa7ad9378b1c387c6ac5776e9d309793897e3"},
+    {"F1", 1, "2096d4bde010abecabffc5c401bee74d8fc3660bebe2fce48dd275f7ae195c8b"},
+    {"F2", 0, "3c15bcf1602601b1debf8ea1d41a27cd2a1967331892663fc03568ad833d7b0c"},
+    {"F2", 1, "022aa42984f1c049eb30dc963a32057b8c53073479ea9f0b54b1d5a3473d0c7e"},
+    {"G3", 0, "1496e26881f87dbec7b926596d5feb2c03bdd00ba64c38bb3b6a7581947be6d3"},
+    {"G3", 1, "4e9d9e306cbf5a975b7260fcdfc96bdfd5aa4d83a9140938e37dc578fc10425b"},
+    {"F3", 0, "23780993864e50206768ae9f24069df4292f0f6a8bdd3e9520b4c1b021e0446b"},
+    {"F3", 1, "c00eb039517fb449c9ed9f77a43d515b2f6a761f1fdcfa2e2a7eb343c7274fba"},
+    {"F4", 0, "02211e642e116e8453f12c64322036141bc59ac8aa217cc1a587e61712b06091"},
+    {"F4", 1, "829f70c9baed2f7a4ede61f10dd684cad3fc553531a5704d0f1ea6b5f586020c"},
+    {"F5", 0, "24b1e27f98727203941929fe47252ec0cc86b89df5cacd91dabec1b6eafec297"},
+    {"F5", 1, "b13bda2077e5d222272d6b54a679d981177e47b58206c784146a08d3f8129e62"},
+    {"F6", 0, "07a4af9c6b351cececc629996130111c8210605c9ff97c53f52325f893b18eb0"},
+    {"F6", 1, "55d597dcf91e3bb580cf545197bbeb5c35dc7fb28de25dcc57786de19460cfcc"},
+    {"G7", 0, "b695b4fdc1d75ebc8297590169ce01aee4b965960d31bb43154937417b63c9ad"},
+    {"G7", 1, "e9dc2369c91f31a7267ee538c009c1f13dd71a98c38e04cc4848986a3d791993"},
+    {"F8", 0, "8105b3d43f1ecb3b8a80fe75383e20c3f3cc80bfa7bcd1f852011bd88bbb510a"},
+    {"F8", 1, "6085308a49bd538bdd8b1fbcd448964eae1f60a3be532fd823d702d03daafe6e"},
+    {"F9", 0, "b8fce812c2ffd4773ab2c6b9bb34c1c96269195f012df34cbe07b37c5d6274e3"},
+    {"F9", 1, "d80a34fc406b71c1b10ead2cc9f3623a4756c958073b1127d9578e78ee1d14e2"},
+    {"F10", 0, "57ed372f30a50b63103a2f0d5fe51f1da24d9111dac79514a69f11c5980c1318"},
+    {"F10", 1, "621da480350fea757e11926d39410176ac96e1d162fd67e26028335d411f5c23"},
+    {"F11", 0, "1320923b7436197c860e7b3939441e4502a081d0693a6e5a47ffb79d40c2faec"},
+    {"F11", 1, "43006eae624736e7233e0896a4bcb037f71768dd3380ff848f0fc5a5c06caae2"},
+    {"F12", 0, "9c2d8fd91da6ef06aecc6baab2d465900d2042b955f9ed230a3010af3078f01a"},
+    {"F12", 1, "d80a34fc406b71c1b10ead2cc9f3623a4756c958073b1127d9578e78ee1d14e2"},
+    {"F13", 0, "524ac28fa34c75ff35f12415d2f475ab8af5986fbc4cb56be83ef4d1e690c6d5"},
+    {"F13", 1, "4493bf275ddef82c980089b8f51719d50eb64ea9cc03eb05d55f6747374993e4"},
 };
 
 typedef struct fixture {
@@ -201,10 +201,20 @@ int main(void)
         for (unsigned k = 0; k < DUOFORGE_MAX_MOVE_SLOTS; ++k) {
             DF_CHECK(&t, foe->members[1].pp[k] == foe->members[1].pp_max[k]);
         }
-        /* Active positions: neutral stages, nothing locked; an empty one is
-         * all zero. */
+        /* Active positions: neutral stages, nothing locked, no target (none
+         * is never encoded as position 0). */
         DF_CHECK(&t, foe->positions[0].stages[0] == 6u && foe->positions[0].locked_slot == DUOFORGE_MOVE_SLOT_NONE &&
-                         own->positions[1].stages[4] == 6u && own->positions[1].locked_target == 0u);
+                         foe->positions[0].locked_target == DUOFORGE_TARGET_NONE && own->positions[1].stages[4] == 6u &&
+                         own->positions[1].locked_target == DUOFORGE_TARGET_NONE && own->positions[1].protecting == 0u);
+        /* Own sheet: stats and stat points; the foe's stay hidden. */
+        DF_CHECK(&t, own->members[0].stat_points[0] == f1->sides[0].members[0].stat_points[0] &&
+                         own->members[0].stats[4] == f1->sides[0].members[0].stats[4]);
+        for (unsigned i = 0; i < 5u; ++i) {
+            DF_CHECK(&t, foe->members[1].stats[i] == 0u);
+        }
+        for (unsigned i = 0; i < 6u; ++i) {
+            DF_CHECK(&t, foe->members[1].stat_points[i] == 0u);
+        }
         DF_CHECK(&t, foe->members[4].species_id == 0u && foe->members[4].hp_kind == 0u); /* unregistered */
         unsigned hidden = 0;
         for (unsigned i = 0; i < DUOFORGE_MAX_ROSTER; ++i) {

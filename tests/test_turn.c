@@ -385,6 +385,15 @@ int main(void)
         duoforge_observation o;
         DF_CHECK(&t, duoforge_battle_observe(k2, b, 0, &o) == DUOFORGE_OK);
         DF_CHECK(&t, o.sides[1].members[0].hp_kind == DUOFORGE_HP_PERCENT && o.sides[1].members[0].hp == hp1 * 100u / hp0);
+        /* Its own sheet with stats and stat points; the foe's stay hidden. */
+        for (uint32_t i = 0; i < 5u; ++i) {
+            DF_CHECK(&t, o.sides[0].members[0].stats[i] == b->sides[0].members[0].stats[i] &&
+                             o.sides[0].members[0].stats[i] != 0u && o.sides[1].members[0].stats[i] == 0u);
+        }
+        for (uint32_t i = 0; i < 6u; ++i) {
+            DF_CHECK(&t, o.sides[0].members[0].stat_points[i] == b->sides[0].members[0].stat_points[i] &&
+                             o.sides[1].members[0].stat_points[i] == 0u);
+        }
         DF_CHECK(&t, b->sides[1].knowledge[0].moves_used[0] == 1u && b->sides[0].knowledge[1].moves_used[1] == 1u);
         DF_CHECK(&t, duoforge_battle_check(k2, b) == DUOFORGE_OK);
         duoforge_battle_destroy(b);
