@@ -42,6 +42,11 @@ checks its precondition and fails loudly otherwise:
 Shuffle draws (SPEED_TIE queue) are made relative to the shuffled group:
 random(i, n) with i and n counted from the group's first index.
 
+Dire Claw's status pick (Team C) is recorded as SECONDARY[0,3) in context
+Hit; it becomes STATUS_PICK, and every one is kept: the engine draws it
+after each successful secondary roll, as the reference does (decision 0009
+section 10.6).
+
 Stdlib only; CTest runs it with --check when Python is available.
 """
 import io
@@ -52,7 +57,7 @@ import sys
 
 SITES = {'SPEED_TIE': 1, 'ACCURACY': 2, 'CRIT': 3, 'DAMAGE_ROLL': 4, 'SECONDARY': 5, 'STALL': 6,
          'SLEEP_TURNS': 7, 'FREEZE_THAW': 8, 'FULL_PARALYSIS': 9, 'CONFUSION_TURNS': 10,
-         'CONFUSION_HIT': 11, 'RANDOM_TARGET': 12}
+         'CONFUSION_HIT': 11, 'RANDOM_TARGET': 12, 'STATUS_PICK': 13}
 STATS = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe']
 GENDER = {'M': 1, 'F': 2}
 GENDERLESS = 3
@@ -205,8 +210,18 @@ def drop_reason(d, state):
     return None
 
 
+def site_of(d):
+    """The tape site of draw `d`: the only draw in context Hit is Dire Claw's
+    status pick, recorded as SECONDARY[0,3); any other fails loudly."""
+    if d.get('context') == 'Hit':
+        if d['site'] != 'SECONDARY' or (d['lo'], d['hi']) != (0, 3):
+            raise SystemExit('trace_to_c: unexpected Hit draw %s' % d)
+        return 'STATUS_PICK'
+    return d['site']
+
+
 def tape_entry(d):
-    site = SITES[d['site']]
+    site = SITES[site_of(d)]
     lo, hi, value = d['lo'], d['hi'], d['value']
     if d['site'] == 'SPEED_TIE':
         start = d['start']
@@ -280,7 +295,7 @@ def convert_choice(text, side, state, roster_of, mid_turn=False):
 
 
 BOUNDARY = {'teampreview': 1, 'move': 2, 'switch': 3}
-STATUS = {'': 0, 'brn': 1, 'frz': 2, 'par': 3, 'slp': 4, 'fnt': 0}
+STATUS = {'': 0, 'brn': 1, 'frz': 2, 'par': 3, 'slp': 4, 'psn': 5, 'fnt': 0}
 WEATHER = {'': 0, 'raindance': 1, 'sunnyday': 2}
 TERRAIN = {'': 0, 'grassyterrain': 1}
 RESULT = {'p1': 1, 'p2': 2, '': 3}
@@ -334,9 +349,9 @@ EV = {name: i + 1 for i, name in enumerate(
      'CONFUSION_END', 'CONFUSED', 'FLASH_FIRE', 'WEATHER', 'FIELD_START', 'FIELD_END', 'SIDE_START', 'SIDE_END',
      'ITEM_END', 'FORME', 'MEGA', 'PREPARE', 'ANIMATION', 'ABILITY', 'ACTIVATE', 'UPKEEP', 'RESULT'])}
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
-         'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13}
+         'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14}
 FLAG = {'STILL': 1, 'LOCKED': 2, 'SPREAD': 4, 'UPKEEP': 8, 'EATEN': 16, 'MESSAGE': 32, 'MISS': 64, 'NOTARGET': 128}
-AILMENT = {'brn': 1, 'frz': 2, 'par': 3, 'slp': 4}
+AILMENT = {'brn': 1, 'frz': 2, 'par': 3, 'slp': 4, 'psn': 5}
 EV_STATS = ['atk', 'def', 'spa', 'spd', 'spe', 'accuracy', 'evasion']
 NOPOS = 0xFF
 HP_EXACT, HP_PERCENT = 1, 2
@@ -377,6 +392,8 @@ def ev_cause(attrs, tables):
                 cause = CAUSE['DRAIN']
             elif what == 'brn':
                 cause = CAUSE['BURN']
+            elif what == 'psn':
+                cause = CAUSE['POISON']
             elif what == 'confusion':
                 cause = CAUSE['CONFUSION']
             elif what == 'Grassy Terrain':
@@ -395,7 +412,11 @@ def ev_cause(attrs, tables):
 def ev_hp(text, side, viewer, maxhp):
     """An HP field as `viewer` sees it -> (hp, hp_max, kind, flag, status)."""
     tokens = text.split(' ')
-    status = AILMENT.get(tokens[1], 0) if len(tokens) > 1 else 0
+    status = 0
+    if len(tokens) > 1 and tokens[1] != 'fnt':
+        if tokens[1] not in AILMENT:
+            raise SystemExit('trace_to_c: unknown status in HP %r' % text)
+        status = AILMENT[tokens[1]]
     if tokens[0] == '0':
         return (0, maxhp if side == viewer else 100, HP_EXACT if side == viewer else HP_PERCENT, 0, 0)
     m = re.match(r'^(\d+)/(\d+)([gry]?)$', tokens[0])

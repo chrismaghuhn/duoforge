@@ -125,7 +125,7 @@ static void dfi_emit(dfi_run *r, const duoforge_event *e)
 static duoforge_event dfi_ev(uint32_t kind, uint32_t position, uint32_t cause, uint32_t id2, uint32_t other)
 {
     duoforge_event e = dfi_event_make(kind, position);
-    e.cause = (uint8_t)cause; /* <= DUOFORGE_CAUSE_NO_PP */
+    e.cause = (uint8_t)cause; /* <= DUOFORGE_CAUSE_POISON */
     e.id2 = (uint16_t)id2;    /* < 2^16 */
     e.other = (uint8_t)other; /* < 4 or DUOFORGE_NO_POSITION */
     return e;
@@ -950,10 +950,27 @@ static duoforge_status dfi_deal(dfi_run *r, uint32_t flat, uint32_t amount, uint
     return DUOFORGE_OK;
 }
 
+/* runStatusImmunity('psn') (Team C): a type whose chart entry carries the
+ * psn key, Poison and Steel (data/typechart.ts). */
+static bool dfi_poison_immune(const dfi_member *m)
+{
+    for (uint32_t type = 0u; type < DFI_TYPE_COUNT; ++type) {
+        if ((dfi_ext_type_immunity[type] & DFI_IMMUNE_PSN) != 0u && dfi_has_type(m, type)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/* The source of a status without a move to name (Dire Claw's pick calls
+ * trySetStatus without one): its sleep line has no [from]. */
+#define DFI_NO_SOURCE_MOVE UINT32_MAX
+
 /* trySetStatus and setStatus (sim/pokemon.ts): only a standing Pokemon
  * without a status takes one; Fire cannot be burned, Electric cannot be
- * paralyzed, Ice and anything under sun cannot be frozen. Sleep lasts
- * sample([2, 3, 3]) attempts, freeze at most 3 (the Champions conditions,
+ * paralyzed, Ice and anything under sun cannot be frozen, Poison and Steel
+ * cannot be poisoned (Team C). Sleep lasts sample([2, 3, 3]) attempts,
+ * freeze at most 3 (the Champions conditions,
  * data/mods/champions/conditions.ts). */
 static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status, uint32_t user, uint32_t move_id,
                                       bool primary)
@@ -978,7 +995,8 @@ static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status
     }
     if ((status == DFI_STATUS_BRN && dfi_has_type(m, DFI_TYPE_FIRE)) ||
         (status == DFI_STATUS_PAR && dfi_has_type(m, DFI_TYPE_ELECTRIC)) ||
-        (status == DFI_STATUS_FRZ && (dfi_has_type(m, DFI_TYPE_ICE) || r->b->weather == DFI_WEATHER_SUN))) {
+        (status == DFI_STATUS_FRZ && (dfi_has_type(m, DFI_TYPE_ICE) || r->b->weather == DFI_WEATHER_SUN)) ||
+        (status == DFI_STATUS_PSN && dfi_poison_immune(m))) {
         if (primary) {
             dfi_immune(r, flat, 0u);
         }
@@ -995,12 +1013,13 @@ static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status
     } else if (status == DFI_STATUS_FRZ) {
         counter = 3u;
     }
-    m->status = (uint8_t)status;          /* <= DFI_STATUS_SLP */
+    m->status = (uint8_t)status;          /* <= DFI_STATUS_PSN */
     m->status_counter = (uint8_t)counter; /* <= 3 */
-    /* [-status]; sleep says [from] move */
+    /* [-status]; sleep says [from] move when a move is its source
+     * (data/mods/champions/conditions.ts:13-20) */
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_STATUS, flat);
     e.detail = m->status;
-    if (status == DFI_STATUS_SLP) {
+    if (status == DFI_STATUS_SLP && move_id != DFI_NO_SOURCE_MOVE) {
         e.cause = (uint8_t)DUOFORGE_CAUSE_MOVE;
         e.id2 = (uint16_t)move_id;
     }
@@ -1970,6 +1989,19 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                 st = dfi_try_status(r, targets[i], md->sec_param, user, move_id, false);
             } else if (md->sec_kind == DFI_SECONDARY_VOLATILE) {
                 st = dfi_add_volatile(r, targets[i], md->sec_param);
+            } else if (md->sec_kind == DFI_SECONDARY_STATUS_PICK) {
+                /* Dire Claw (Team C, data/mods/champions/moves.ts:217-227):
+                 * sample(['psn', 'par', 'slp']), then trySetStatus without a
+                 * source move. The reference draws the pick after every
+                 * successful roll, also for a target that fainted, has a
+                 * status or is immune; so does the engine (decision 0009
+                 * section 10.6). */
+                static const uint8_t pick[3] = {DFI_STATUS_PSN, DFI_STATUS_PAR, DFI_STATUS_SLP};
+                uint32_t v = 0u;
+                st = dfi_draw(r->draws, DFI_SITE_STATUS_PICK, 0u, 3u, &v);
+                if (st == DUOFORGE_OK) {
+                    st = dfi_try_status(r, targets[i], pick[v], user, DFI_NO_SOURCE_MOVE, false);
+                }
             } else {
                 st = DUOFORGE_E_UNSUPPORTED;
             }
@@ -2431,7 +2463,7 @@ static duoforge_status dfi_run_mega(dfi_run *r, const dfi_queue_record *q)
  * handlers of the field (weather: order 1 with its duration; Grassy
  * Terrain's duration: order 27), then per active Pokemon in slot order, a
  * fainted one included: its status handler with a callback (burn, order
- * 10), one handler per volatile with a duration (Protect, the stall
+ * 10; poison, order 9, Team C), one handler per volatile with a duration (Protect, the stall
  * counter, flinch: no order), and the per-Pokemon field handler of Grassy
  * Terrain (heal, order 5, sub-order 2). Battle.speedSort orders the list by
  * order, speed (the speed each Pokemon had at its last updateSpeed; 0 for
@@ -2447,9 +2479,11 @@ static duoforge_status dfi_run_mega(dfi_run *r, const dfi_queue_record *q)
 #define DFI_RES_GRASSY 5u
 #define DFI_RES_FIELD_END 6u /* Trick Room, a side condition: duration only */
 #define DFI_RES_LEFTOVERS 7u
+#define DFI_RES_POISON 8u
 #define DFI_RES_NO_ORDER 0xFFFFFFFFu
 /* Trick Room, weather and terrain; three conditions per side; per position
- * a burn, four duration ends, Leftovers and Grassy Terrain. */
+ * a status (burn or poison), four duration ends, Leftovers and Grassy
+ * Terrain. */
 #define DFI_RES_MAX (3u + 3u * DUOFORGE_SIDE_COUNT + 7u * DFI_POSITIONS)
 
 typedef struct dfi_residual_entry {
@@ -2539,6 +2573,9 @@ static duoforge_status dfi_residual_events(dfi_run *r)
         const uint32_t speed = r->speed_seen[flat];
         if (m->status == DFI_STATUS_BRN) {
             list[n] = (dfi_residual_entry){DFI_RES_BURN, flat, 10u, speed, 0u, true};
+            n += 1u;
+        } else if (m->status == DFI_STATUS_PSN) {
+            list[n] = (dfi_residual_entry){DFI_RES_POISON, flat, 9u, speed, 0u, true};
             n += 1u;
         }
         const uint32_t ends = ((((uint32_t)pos->flags & DFI_VOL_PROTECT) != 0u) ? 1u : 0u) +
@@ -2661,8 +2698,15 @@ static duoforge_status dfi_residual_events(dfi_run *r)
             }
             continue;
         }
-        const uint32_t damage = m->hp_max / 16u;
-        st = dfi_deal(r, e->flat, damage == 0u ? 1u : damage, DUOFORGE_CAUSE_BURN, 0u, DUOFORGE_NO_POSITION);
+        /* burn: baseMaxhp / 16; poison: baseMaxhp / 8 (data/conditions.ts:
+         * 123-137); at least 1. Any other callback here is a missing case. */
+        if (e->kind != DFI_RES_BURN && e->kind != DFI_RES_POISON) {
+            return DUOFORGE_E_INVARIANT;
+        }
+        const bool poison = e->kind == DFI_RES_POISON;
+        const uint32_t damage = (uint32_t)m->hp_max / (poison ? 8u : 16u);
+        st = dfi_deal(r, e->flat, damage == 0u ? 1u : damage, poison ? DUOFORGE_CAUSE_POISON : DUOFORGE_CAUSE_BURN, 0u,
+                      DUOFORGE_NO_POSITION);
         if (st != DUOFORGE_OK) {
             return st;
         }

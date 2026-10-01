@@ -1,6 +1,6 @@
 # 0009 — Team C: the expansion track (data kind, gate, steps, evidence)
 
-Status: **accepted** (owner, 2026-10-01: "bau das erstmal so"; setup rule: the closure rule, section 3.4). **Steps 1 to 5 built** (section 10). Builds on decision `0004` (two reference teams), `0006` (data, state v3, draw sites, fixtures, evidence), `0007` (player view) and `0010` (the certified CLOSURE profile, the role of `CLOSURE_DEV`, draw alignment B confirmed), and on the research in `docs/research/third-team/` (PR #32). "M§n" means section n of `docs/research/third-team/mechanics.md`; X1 to X9 are its executed experiments.
+Status: **accepted** (owner, 2026-10-01: "bau das erstmal so"; setup rule: the closure rule, section 3.4). **Steps 1 to 6 built** (section 10). Builds on decision `0004` (two reference teams), `0006` (data, state v3, draw sites, fixtures, evidence), `0007` (player view) and `0010` (the certified CLOSURE profile, the role of `CLOSURE_DEV`, draw alignment B confirmed), and on the research in `docs/research/third-team/` (PR #32). "M§n" means section n of `docs/research/third-team/mechanics.md`; X1 to X9 are its executed experiments.
 
 ## 1. Owner inputs (2026-10-01)
 
@@ -232,6 +232,7 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
 3. Setup rules under TEAM_C: the closure's (mixed teams, any item), or set items only (3.4).
 4. Additive public changes per step, each with a minor version bump:
    - AILMENT_POISON, TERRAIN_PSYCHIC and a field value;
+   - CAUSE_POISON for poison's residual line (added in step 6, not foreseen here);
    - new event kinds;
    - three bits of the position view's `reserved` byte (Follow Me, Helping Hand, Unburden);
    - the choice lock shown in `locked_slot` (4.2).
@@ -360,3 +361,65 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
   - `src/combat/turn.c` (the chain, the eaten flag, DamagingHit, the attacker's Emergency Exit and the win in the hit loop);
   - `src/data/support_manifest.c`;
   - `tools/reference/trace_to_c.py` (`[weaken]`, the tie rule).
+
+### 10.6 Step 6: Dire Claw and poison
+
+- **Dire Claw.** The Champions override (`data/mods/champions/moves.ts:217-227`) has a 30 percent secondary. Its `onHit` draws `sample(['psn', 'par', 'slp'])` and calls `trySetStatus` without a source effect.
+- **The pick is drawn whenever the reference draws it.** The reference draws it after every successful secondary roll (`sim/battle-actions.ts:1336-1352`). That includes a target the hit knocked out, a target that already has a status and a target that is immune to the pick, because the secondary's hit path checks no HP (X9).
+  - The engine draws the pick at draw site 13, `DFI_SITE_STATUS_PICK`, under the same conditions.
+  - The converter maps the harness's `SECONDARY[0,3)` in context `Hit` to that site and keeps every pick.
+  - This settles the open question of section 4.3 under draw alignment B. Dropping a pick that decides nothing would need the target's status at that moment, which the converter cannot check against a trace. So no pick is dropped, as for the secondary roll at 100 percent.
+- **The status.**
+  - Poison is status 5, `DFI_STATUS_PSN`. It is valid in a member only under the TEAM_C kinds, through `dfi_kind_limits.status_max`, and has no counter.
+  - Poison and Steel types are immune. They are read from the type chart's `psn` key, which is the immunity bit `DFI_IMMUNE_PSN`.
+  - Electric types cannot be paralysed (existing).
+  - A failed pick is silent, because the secondary has no `status` field.
+  - A sleep the pick causes shows `-status|…|slp` without `[from]`: its source effect is not a move (`data/mods/champions/conditions.ts:13-20`). The other sleep sources keep `[from] move`.
+- **Residual.** Poison's handler has order 9 (`data/conditions.ts:123-137`). It runs after Leftovers and Grassy Terrain (order 5) and before burn (order 10); same-order handlers run by speed. It deals baseMaxhp / 8, at least 1, with `[from] psn`.
+- **Public values, appended:**
+  - `DUOFORGE_AILMENT_POISON` (5);
+  - `DUOFORGE_CAUSE_POISON` (14), for the residual line. This cause was not named in section 4.2.
+
+  Both are additive: library 0.13.0, coordinated with the main session, which also moved the Python package's expected version.
+- **Evidence.** Three recorded battles:
+  - `c06_dire_claw` records:
+    - the paralysis and sleep picks, the sleep line without `[from]`;
+    - Raichu not paralysed and Sneasler not poisoned, both silently;
+    - a pick drawn for a target that already has a status.
+  - `c06_poison_residual` records poisoning, then Leftovers and Grassy Terrain before poison's damage, and two poisoned Pokémon in one residual phase. There the faster one is also in the earlier slot, so slot order is not ruled out by this battle. Giving poison's handlers no speed would still fail, because it adds a tie draw the tape does not have.
+  - `c06_poison_burn` records:
+    - poison before burn in one residual phase;
+    - a Dire Claw that knocks its target out and still draws the pick;
+    - Dire Claw into Archaludon (`-immune`).
+
+  Ten negative controls each make a test fail:
+  - no pick for a fainted target, or for a target with a status;
+  - another pick order;
+  - no poison immunity;
+  - `[from] move` on the pick's sleep;
+  - poison's order 11 or 4;
+  - 1/16 damage;
+  - burn's cause on poison's line;
+  - poison valid under CLOSURE.
+- **Not recorded.**
+  - Good as Gold never meets Dire Claw's secondary, because a Poison move cannot hit Gholdengo (Steel). For the same reason, Steel's poison immunity cannot be reached through Dire Claw.
+  - The minimum of 1 damage cannot be reached at level 50.
+  - A speed tie between two poisoned Pokémon and a poison KO that ends the battle are reachable but not recorded. Both run through burn's existing code (the tie draw, the faint processing after each residual handler).
+- **Converter.**
+  - `psn` in the state and event maps;
+  - `[from] psn` as cause 14;
+  - the pick's site; any other draw in context `Hit` fails loudly;
+  - an unknown status in an HP field fails loudly instead of reading as none.
+- **Review findings, fixed.**
+  - Two spec purposes claimed cases their battles do not show.
+  - The converter's `Hit` guard checks every draw, not only SECONDARY.
+  - An unhandled residual callback is `E_INVARIANT` instead of burn's damage.
+  - A stale comment.
+- **Shared files touched:**
+  - `include/duoforge/duoforge.h`;
+  - `src/rng/draw.h`;
+  - `src/state/closure_member.{h,c}`;
+  - `src/state/observation.c` (an assertion);
+  - `src/combat/turn.c`;
+  - `src/data/support_manifest.c`;
+  - `tools/reference/trace_to_c.py`.

@@ -20,6 +20,7 @@
 
 #include "core/arith.h"
 #include "data/closure_tables.h"
+#include "data/extended_tables.h"
 #include "state/battle_internal.h"
 #include "state/context_internal.h"
 #include "state/invariants.h"
@@ -44,7 +45,8 @@ _Static_assert(DFI_MEMBER_STAT_COUNT == 5u && DFI_STAT_POINT_COUNT == 6u, "view 
 _Static_assert(offsetof(duoforge_observation, turn) == 8u, "observation layout: turn");
 _Static_assert(offsetof(duoforge_observation, sides) == 16u, "observation layout: sides");
 _Static_assert(DUOFORGE_AILMENT_BURN == DFI_STATUS_BRN && DUOFORGE_AILMENT_FREEZE == DFI_STATUS_FRZ &&
-                   DUOFORGE_AILMENT_PARALYSIS == DFI_STATUS_PAR && DUOFORGE_AILMENT_SLEEP == DFI_STATUS_SLP,
+                   DUOFORGE_AILMENT_PARALYSIS == DFI_STATUS_PAR && DUOFORGE_AILMENT_SLEEP == DFI_STATUS_SLP &&
+                   DUOFORGE_AILMENT_POISON == DFI_STATUS_PSN,
                "public ailments are the internal statuses");
 _Static_assert(DUOFORGE_WEATHER_RAIN == DFI_WEATHER_RAIN && DUOFORGE_WEATHER_SUN == DFI_WEATHER_SUN &&
                    DUOFORGE_TERRAIN_GRASSY == DFI_TERRAIN_GRASSY,

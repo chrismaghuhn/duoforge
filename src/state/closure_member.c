@@ -12,6 +12,7 @@ dfi_kind_limits dfi_kind_limits_of(uint32_t data_kind)
     lim.forme_count = team_c ? DFI_EXT_FORME_COUNT : DFI_FORME_COUNT;
     lim.item_count = team_c ? DFI_EXT_ITEM_COUNT : DFI_ITEM_COUNT;
     lim.switch_flag_max = team_c ? DFI_SWITCH_FLIP_TURN : DFI_SWITCH_FAINTED;
+    lim.status_max = team_c ? DFI_STATUS_PSN : DFI_STATUS_SLP;
     lim.dev = data_kind == DUOFORGE_DATA_KIND_CLOSURE_DEV || data_kind == DUOFORGE_DATA_KIND_TEAM_C_DEV;
     return lim;
 }
@@ -312,11 +313,11 @@ bool dfi_closure_member_ranges(const dfi_kind_limits *lim, const dfi_member *m)
         return false;
     }
     /* Sleep and freeze carry a counter 1..3 (Champions: sleep lasts
-     * sample([2, 3, 3]), freeze at most 3); nothing else has one. Whether a
-     * fainted member may still have a status depends on the boundary
-     * (dfi_check_side). */
+     * sample([2, 3, 3]), freeze at most 3); nothing else has one. Poison
+     * exists under the TEAM_C kinds only. Whether a fainted member may still
+     * have a status depends on the boundary (dfi_check_side). */
     const uint32_t status = m->status;
-    if (status > DFI_STATUS_SLP) {
+    if (status > lim->status_max) {
         return false;
     }
     if (status == DFI_STATUS_SLP || status == DFI_STATUS_FRZ) {

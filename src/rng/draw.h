@@ -35,7 +35,8 @@
 #define DFI_SITE_CONFUSION_TURNS 10u /* random(2, 6) */
 #define DFI_SITE_CONFUSION_HIT 11u /* random(100) < 33 */
 #define DFI_SITE_RANDOM_TARGET 12u /* random(n) over the valid foes */
-#define DFI_SITE_COUNT 13u
+#define DFI_SITE_STATUS_PICK 13u   /* Dire Claw: sample(['psn', 'par', 'slp']), random(3) (Team C) */
+#define DFI_SITE_COUNT 14u
 
 typedef struct dfi_tape_entry {
     uint32_t site;
