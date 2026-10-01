@@ -22,7 +22,9 @@ This is a status manifest, **not** a mechanics certificate. "IMPLEMENTED + TESTE
 | Closure data tables (16 formes, 36 moves plus Struggle, 16 abilities, 11 items, type chart, natures) | **GENERATED + TESTED** from the pin with provenance per record (`tools/datagen/gen_closure.py`, `src/data/closure_tables.*`). **Data only:** no battle can use it yet |
 | Champions stat and PP formulas | **IMPLEMENTED + TESTED** (all 16 formes of the two teams; decision 0006) |
 | CLOSURE contexts (`CLOSURE`, `CLOSURE_DEV`), setup validation, derived stats and PP, support gate | **IMPLEMENTED + TESTED** (decision 0006 section 2.1); the manifest marks nothing yet |
-| Combat mechanics, reference parity | **UNSUPPORTED** (steps 2 to 13 of `tasks/M3_M4_COMBAT_CLOSURE.md`) |
+| Damage and stat arithmetic (4096-based modifiers, base damage, random factor, critical hit, type steps, 16-bit final damage, stat and accuracy stages) | **IMPLEMENTED + TESTED** against values computed by the pinned Showdown (`tools/reference/arith_ref.js`); no move uses it yet |
+| RNG draw sites and the test-only tape | **IMPLEMENTED + TESTED** (decision 0006 section 5); no mechanic draws yet |
+| Combat mechanics, reference parity | **UNSUPPORTED** (steps 2b to 13 of `tasks/M3_M4_COMBAT_CLOSURE.md`) |
 
 State snapshots and decodability are foundation evidence, **not proof that unimplemented future mechanics restore correctly**.
 

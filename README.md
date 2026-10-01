@@ -16,7 +16,7 @@ DuoForge is a deterministic, headless Pokémon Doubles simulation engine designe
 - the state v3 layout of the combat closure with its invariants, codec and oracle (step 1b-1);
 - contexts over the real closure data, validation of real sets with derived stats and PP, and the support gate that still rejects every real team with `DUOFORGE_E_UNSUPPORTED` (step 1b-2).
 
-**There is no combat.** A valid team-selection bundle performs the mechanics-free transition to the first turn. A valid turn, replacement or pivot bundle is rejected with `DUOFORGE_E_UNSUPPORTED` and changes nothing: no damage, move effect, PP change, switch execution or Mega effect exists. No Pokémon species, moves, abilities, items, batch environments, Python bindings or ML code are implemented. The owner has selected the rules basis (**Pokémon Champions, VGC 2026 Reg M-C**), the reference revision (**Pokémon Showdown `b2cb775`**) and two teams (`docs/decisions/0004`); the M2 target classes of their 36 moves are mirrored in a synthetic test table only.
+**There is no combat.** A valid team-selection bundle performs the mechanics-free transition to the first turn. A valid turn, replacement or pivot bundle is rejected with `DUOFORGE_E_UNSUPPORTED` and changes nothing: no damage, move effect, PP change, switch execution or Mega effect exists. The engine knows the data of the two reference teams and validates their sets, but no move, ability or item effect is implemented, so the support gate rejects every real team with `DUOFORGE_E_UNSUPPORTED`. No batch environments, Python bindings or ML code exist. The owner has selected the rules basis (**Pokémon Champions, VGC 2026 Reg M-C**), the reference revision (**Pokémon Showdown `b2cb775`**) and two teams (`docs/decisions/0004`).
 
 State snapshots and decodability are foundation evidence, **not proof that unimplemented future mechanics restore correctly**.
 
@@ -68,7 +68,7 @@ Every test is finite and has a timeout. Test groups:
 
 | Group | What it covers |
 |---|---|
-| `duoforge.unit.*` | Checked arithmetic, byte order, SHA-256 |
+| `duoforge.unit.*` | Checked arithmetic, byte order, SHA-256, damage and stat arithmetic against the reference, draw sites and tape |
 | `duoforge.rng.*` | PCG32 known-answer vectors and contract |
 | `duoforge.state.*` | Context, setup, identity, knowledge (HP display as last seen), closure setup (real sets, gate, member invariant), invariants, clone/equal/reseed, setup sweep |
 | `duoforge.codec.*` | Goldens, negative decoding (including "rejected: schema 1"), exhaustive mutation sweep |

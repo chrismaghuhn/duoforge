@@ -44,6 +44,7 @@ duoforge_configure_target(duoforge_test_support)
 
 duoforge_add_test(NAME duoforge.unit.arith SOURCES test_arith.c WHITEBOX)
 duoforge_add_test(NAME duoforge.unit.sha256 SOURCES test_sha256.c WHITEBOX)
+duoforge_add_test(NAME duoforge.unit.modifier SOURCES test_modifier.c WHITEBOX)
 
 duoforge_add_test(NAME duoforge.rng.kat SOURCES test_rng_kat.c WHITEBOX)
 duoforge_add_test(NAME duoforge.rng.contract SOURCES test_rng_contract.c WHITEBOX)
@@ -92,6 +93,14 @@ if(DUOFORGE_PS_REFERENCE_DIR)
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/gen_closure.py"
             "${DUOFORGE_PS_REFERENCE_DIR}" --check)
     set_tests_properties(duoforge.data.closure_regen PROPERTIES TIMEOUT 120 LABELS reference)
+    # The arithmetic reference values, recomputed by the pinned Showdown.
+    find_program(DUOFORGE_NODE node)
+    if(DUOFORGE_NODE)
+        add_test(NAME duoforge.reference.arith
+            COMMAND "${DUOFORGE_NODE}" "${PROJECT_SOURCE_DIR}/tools/reference/arith_ref.js"
+                "${DUOFORGE_PS_REFERENCE_DIR}" --check "${CMAKE_CURRENT_SOURCE_DIR}/reference/arith_ref.h")
+        set_tests_properties(duoforge.reference.arith PROPERTIES TIMEOUT 120 LABELS reference)
+    endif()
 endif()
 
 # The vendored upstream license must stay byte-exact.
