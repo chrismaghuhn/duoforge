@@ -106,6 +106,9 @@ int main(void)
            FIELD(duoforge_observation, weather_turns), FIELD(duoforge_observation, terrain),
            FIELD(duoforge_observation, terrain_turns), FIELD(duoforge_observation, trick_room_turns),
            FIELD(duoforge_observation, reserved), FIELD(duoforge_observation, sides));
+    STRUCT(duoforge_batch_config, false, FIELD(duoforge_batch_config, env_count),
+           FIELD(duoforge_batch_config, worker_count), FIELD(duoforge_batch_config, seed),
+           FIELD(duoforge_batch_config, setups));
     STRUCT(duoforge_batch_episode, true, FIELD(duoforge_batch_episode, env), FIELD(duoforge_batch_episode, episode),
            FIELD(duoforge_batch_episode, steps), FIELD(duoforge_batch_episode, decisions),
            FIELD(duoforge_batch_episode, turns), FIELD(duoforge_batch_episode, result),

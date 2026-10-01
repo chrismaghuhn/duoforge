@@ -2,15 +2,26 @@
 
 Python allocates, calls and views; every rule stays in the C engine.
 """
-from ._lib import load_library, version
+from ._lib import load_library, status_name, version
+from .batch import Batch, factored_choice, factored_choices, joint_counts, joint_index, joint_indices
 from .context import Context, reference_setups
 from .errors import DuoforgeError, DuoforgeLibraryError
+from .policies import RandomPolicy, seeds
 
 __all__ = [
+    "Batch",
     "Context",
     "DuoforgeError",
     "DuoforgeLibraryError",
+    "RandomPolicy",
+    "factored_choice",
+    "factored_choices",
+    "joint_counts",
+    "joint_index",
+    "joint_indices",
     "load_library",
     "reference_setups",
+    "seeds",
+    "status_name",
     "version",
 ]

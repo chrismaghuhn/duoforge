@@ -30,6 +30,21 @@ _SIGNATURES = {
     "duoforge_context_create": (_STATUS, (_P, ctypes.POINTER(_P))),
     "duoforge_context_destroy": (None, (_P,)),
     "duoforge_reference_setup": (_STATUS, (_U32, _P)),
+    "duoforge_battle_result": (_STATUS, (_P, _P, ctypes.POINTER(_U32))),
+    "duoforge_battle_digest": (_STATUS, (_P, _P, _P)),
+    "duoforge_batch_seeds": (None, (_U64, _U32, _U32, ctypes.POINTER(_U64), ctypes.POINTER(_U64),
+                                    ctypes.POINTER(_U64))),
+    "duoforge_batch_create": (_STATUS, (_P, _P, ctypes.POINTER(_P))),
+    "duoforge_batch_destroy": (None, (_P,)),
+    "duoforge_batch_env": (_P, (_P, _U32)),
+    "duoforge_batch_env_episode": (_U32, (_P, _U32)),
+    "duoforge_batch_query": (_STATUS, (_P, _P, _P, _P, _P)),
+    "duoforge_batch_query_factored": (_STATUS, (_P, _P, _P, _P)),
+    "duoforge_batch_step_indices": (_STATUS, (_P, _P, _P, _P, _P, _P, _P)),
+    "duoforge_batch_step_factored": (_STATUS, (_P, _P, _P, _P, _P, _P)),
+    "duoforge_batch_reset": (_STATUS, (_P, _U32, _U32)),
+    "duoforge_batch_reset_terminal": (_STATUS, (_P,)),
+    "duoforge_batch_play_random": (_STATUS, (_P, _U32, _U32, _P)),
 }
 
 
@@ -91,6 +106,15 @@ def check(status):
     """Raises DuoforgeError unless status is DUOFORGE_OK."""
     if status != 0:
         raise DuoforgeError(status_name(status))
+
+
+def uint(value, bits, name):
+    """value as an unsigned integer of `bits` bits; ValueError outside the
+    range (ctypes would wrap it silently)."""
+    value = int(value)
+    if not 0 <= value < 1 << bits:
+        raise ValueError(f"{name} {value} is outside uint{bits}")
+    return value
 
 
 def ptr(array):
