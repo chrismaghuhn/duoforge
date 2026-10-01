@@ -1,0 +1,96 @@
+# 0007 — What a player sees: observation v2 and the event log
+
+Status: **proposed** (owner review). Builds on decision `0005` section 6 (information profile prototype) and decision `0006` section 6 (events, knowledge, observation). Nothing here is implemented yet.
+
+## 1. Owner inputs (2026-10-01)
+
+- The observation is **exactly what a human player can see**.
+- **Abilities are very important.**
+- Design everything a player may see **at once** (state and history together), so that no observation v3 is needed later.
+
+## 2. The principle
+
+A player's view is what a human at the table knows, with perfect memory and full knowledge of the rules:
+
+1. their own team, exactly;
+2. the open team sheets of both teams (decision `0005` section 6: species and forme, gender, item, ability, moves, nature; never Stat Points);
+3. the battle as the game shows it to this player: every public message, and the exact values that only this player's own screen shows;
+4. nothing else.
+
+Anything that follows from 1 to 3 may be handed to the model directly, so it does not have to rebuild the state from the history (for example the remaining turns of Tailwind, or how often a foe has used a move). Anything that is rolled in secret and never shown stays hidden, **for the owner's side as well** (for example how long a Pokémon will sleep or stay confused).
+
+## 3. What changes against the prototype
+
+| Information | Prototype (0005) | Player view (this note) |
+|---|---|---|
+| Own HP, PP, Stat Points, stats | exact | exact |
+| Foe HP | percent and colour flag, as last seen | unchanged |
+| Foe PP | unknown | **derived**: maximum PP (open) minus the uses the player saw; equal to the real value in the closure (no Pressure, no PP items). Owner point A |
+| Foe Stat Points and stats | hidden | hidden |
+| Status (burn, paralysis, sleep, freeze) | not shown | shown for every seen member, both sides |
+| Sleep and freeze turns, confusion turns | not shown | **not shown**, also for the own side: the duration is rolled in secret; the event log shows when it started |
+| Stat stages, confusion, charging (Electro Shot) | not shown | shown for the actives of both sides |
+| Weather, terrain, Trick Room, Reflect, Light Screen, Tailwind | not shown | shown with remaining turns (start, duration and Light Clay are public) |
+| Mega Evolution | side-wide flag | per member (the forme is visible) |
+| Item | open on the sheet | sheet item plus "used up" when it was consumed in view |
+| Ability | not shown | sheet ability; after Mega Evolution the Mega forme's ability |
+| Moves the foe used | not shown | count per move slot |
+| Whether the opponent must answer a pause | own flag only | **shown**: a human sees the opponent being asked (Parting Shot, Emergency Exit, a faint). Replaces the proposal of decision `0006` section 11 point 7. Owner point B |
+| Brought set and pick order of the foe | private until seen | unchanged |
+| RNG, the opponent's choice before it runs | hidden | hidden |
+
+## 4. Observation v2 (state at a decision)
+
+- **Per member, both sides:** species and current forme, gender, nature, ability (current), item and whether it is used up, the four moves, Mega capability and whether it has Mega Evolved; location (active, bench, not brought, not yet seen); HP (own exact, foe percent and flag); PP (own exact, foe derived per point A); status; observed move uses (foe).
+- **Per active position:** occupant, stat stages, confused or not, charging and the locked move and target, whether Fake Out is still usable (first move action after entering), the Protect chain length.
+- **Field and sides:** weather, terrain and Trick Room with remaining turns; per side Reflect, Light Screen, Tailwind with remaining turns; Mega used; which sides must answer the current request.
+- Fixed size, no pointers, like the prototype; a new layout version (observation v2), byte-for-byte stable.
+
+## 5. Abilities
+
+- **On the sheet:** every member's ability is open from team preview on; the observation shows it, and after Mega Evolution the Mega forme's ability.
+- **When it acts:** the event log carries an ability event whenever the game shows one. In the closure (Showdown at the pin):
+
+| Ability | What the game shows |
+|---|---|
+| Intimidate | own line, then the Attack drops |
+| Drizzle, Drought, Grassy Surge | the weather or terrain start, tagged with the ability |
+| Emergency Exit | own line, then the switch |
+| Armor Tail | the blocked move, tagged with the ability |
+| Lightning Rod | the redirect, the absorbed move and the Special Attack rise |
+| Flash Fire | the absorbed move and the boost starting |
+| Good as Gold | the blocked status move |
+| Stamina, Competitive, Contrary | the stat changes, tagged with the ability where the game tags them |
+| Prankster | nothing of its own; a Dark target's immunity shows as a failed move |
+| Blaze, No Guard, Tough Claws | nothing (silent modifiers); known from the sheet only |
+
+The exact lines per ability are fixed during implementation against the pinned protocol, one test per ability.
+
+## 6. The event log (history since the last decision)
+
+- **Per player.** Each step returns the events this player may see, in the order the game shows them. The owner's events carry exact HP; the opponent's carry the percent display.
+- **Kinds:** turn start; switch in and out (with the reason: chosen, Parting Shot, Emergency Exit, replacement); move used (user, move, target, and "locked" for the second Electro Shot turn); cannot move (paralysis, sleep, freeze, flinch, confusion, and the self-hit); miss, immune, failed, blocked by Protect or by an ability; critical hit; effectiveness; damage and heal (with the source: move, recoil, drain, Life Orb, burn, Leftovers, Grassy Terrain, Sitrus Berry); status start and cure; stat stage change; confusion start and end; ability shown (section 5); item used or shown; weather, terrain, Trick Room and side condition start and end; Mega Evolution; faint; the result.
+- **Events are outputs, not state** (decision `0006` section 6): staged during the step; a too-small caller buffer returns `E_CAPACITY` with the required count and commits nothing (decision `0005` section 7).
+- **One source for knowledge:** the per-player knowledge in the state is updated only from the events that player sees; the observation reads the own state plus this knowledge, never the opponent's state.
+
+## 7. Evidence
+
+- **Information equivalence:** the paired tests (synthetic fixtures and the closure gate on real states) are extended to every new field and to the events: states that differ only in hidden information give the same observation and the same events for that player.
+- **Against the reference:** Showdown sends each player its own copy of every split line. The converter rebuilds both players' views from the recorded traces (as it already does for the HP display) and compares the events and the new observation fields at every step of all recorded battles.
+- **Oracle:** the Python model of the state gets the new layout and the information rules (structure only, no game rules).
+- **Negative controls** for every rule that hides something, for example the own sleep turns.
+
+## 8. Steps
+
+1. **This note** (owner review).
+2. **Observation v2:** the layout, the fields of section 4, the paired tests, the oracle, the comparison with the traces.
+3. **Event log:** the API, the kinds of section 6 with the abilities of section 5, the knowledge folded from events, the comparison with the traces.
+4. **Benchmark API** follows (separate task), so it measures the final observation and event cost.
+
+State v3 is expected to suffice: the remaining turns, statuses and volatiles exist already, and the hidden rolled durations stay where they are. If a field is missing, it is added once, before step 2.
+
+## 9. Points for the owner
+
+- **A. Foe PP:** show the derived value (a human can count) or keep it unknown.
+- **B. The opponent's request:** show that the opponent must answer a pause (a human sees it) instead of hiding it.
+- **C. Own hidden durations:** sleep and confusion turns stay hidden even for the owner's side, because the game never shows them.
