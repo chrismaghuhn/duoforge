@@ -118,6 +118,8 @@ The tests find the shared library `duoforge_shared` through `DUOFORGE_LIBRARY`; 
 python -m duoforge.examples.generate --envs 64 --episodes 10 --policy random --workers 4 --out recipes/random640
 ```
 
+`python -m duoforge.examples.throughput` measures the Python loop against the native mode (`docs/benchmarks/2026-10-02-python-loop/`).
+
 ## Public API (provisional, `include/duoforge/duoforge.h`)
 
 - **Status:** `duoforge_status` (`uint32_t`) codes and `duoforge_status_name`.
