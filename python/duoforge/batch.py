@@ -47,10 +47,13 @@ class Batch:
         self._lib = load_library()
         self.context = context
         self.envs = int(setups.shape[0])
+        self.seed = uint(seed, 64, "seed")
+        self.setups = setups.copy()  # what the environments run, for records of this batch
+        self.setups.flags.writeable = False
         config = np.zeros((), dtype=_layout.BATCH_CONFIG)
         config["env_count"] = self.envs
         config["worker_count"] = uint(workers, 32, "workers")
-        config["seed"] = uint(seed, 64, "seed")
+        config["seed"] = self.seed
         config["setups"] = setups.ctypes.data  # copied by the create
         handle = ctypes.c_void_p()
         st = self._lib.duoforge_batch_create(context.handle, ptr(config), ctypes.byref(handle))
@@ -78,8 +81,9 @@ class Batch:
         """Steps every non-TERMINAL environment by candidate index: uint16,
         shape (E,2), NO_CHOICE for players without a request. With active
         (bool, shape (E,)), the environments outside it are not stepped and
-        keep their state; their indices must be NO_CHOICE. A failure raises
-        DuoforgeError with the per-environment statuses."""
+        keep their state (their statuses read OK); their indices must be
+        NO_CHOICE. A failure raises DuoforgeError with the per-environment
+        statuses, named after the lowest failing environment."""
         _require(indices, np.uint16, (self.envs, 2), "indices")
         if active is not None:
             _require(active, np.bool_, (self.envs,), "active")
@@ -91,10 +95,10 @@ class Batch:
         if status != 0 and active is not None:
             # Outside active, NO_CHOICE fails a requested player's environment
             # with E_INVALID_ARGUMENT and leaves it unchanged (outcomes are
-            # atomic per environment): that is the skip, and nothing else may fail.
-            skipped = ~active & (self.statuses == _INVALID_ARGUMENT)
-            if not ((self.statuses != 0) & ~skipped).any():
-                status = 0
+            # atomic per environment): that is the skip, not a failure.
+            self.statuses[~active & (self.statuses == _INVALID_ARGUMENT)] = 0
+            failed = np.flatnonzero(self.statuses)
+            status = int(self.statuses[failed[0]]) if failed.size else 0
         self._check(status, per_env=True)
 
     def query_factored(self):

@@ -9,11 +9,12 @@ each decision's inputs to on_decision, and checks steps, result and digest.
 import datetime
 import hashlib
 import json
+import os
 
 import numpy as np
 
 from . import _layout
-from ._lib import version
+from ._lib import uint, version
 from .batch import Batch
 from .context import Context, reference_setups
 
@@ -35,6 +36,9 @@ ARRAYS = {
     "choice_offset": (np.uint64, ()),
     "choice": (np.uint16, ()),
 }
+
+_MAX_ENVS = _layout.CONSTANTS["DUOFORGE_BATCH_MAX_ENVS"]
+_RESULT_TIE = _layout.CONSTANTS["DUOFORGE_RESULT_TIE"]
 
 
 class ReplayMismatch(RuntimeError):
@@ -62,36 +66,43 @@ def observation_layout_sha256():
     return hashlib.sha256(text.encode("ascii")).hexdigest()
 
 
+def _setup_sha256(setup):
+    return hashlib.sha256(np.ascontiguousarray(setup).tobytes()).hexdigest()
+
+
 def _setup_table(names):
     table = []
     for name in names:
         if name not in PAIRINGS:
             raise ValueError(f"unknown setup {name!r}; known: {sorted(PAIRINGS)}")
-        setup = reference_setups([PAIRINGS[name]])
-        table.append({"name": name, "sha256": hashlib.sha256(setup.tobytes()).hexdigest()})
+        table.append({"name": name, "sha256": _setup_sha256(reference_setups([PAIRINGS[name]]))})
     return table
 
 
 class RecipeWriter:
     """Collects episodes and writes <path>.npz and <path>.json on close().
 
-    setups names reference pairings ("A-B", "B-A", "A-A", "B-B"); policies
-    are dicts with at least a "name". context holds the config the episodes
-    ran with (defaults: the certified profile).
+    context is the Context the episodes ran under; setups names reference
+    pairings ("A-B", "B-A", "A-A", "B-B"); policies are JSON dicts with at
+    least a "name". Used as a context manager, it writes only when the block
+    ends without an exception: a failed recording leaves no files. The files
+    appear together, each through a temporary file.
     """
 
-    def __init__(self, path, *, seed, max_steps, setups, policies, command, context=None):
+    def __init__(self, path, *, context, seed, max_steps, setups, policies, command):
         self.path = str(path)
-        self.seed = int(seed)
-        self.max_steps = int(max_steps)
+        self.seed = uint(seed, 64, "seed")
+        self.max_steps = uint(max_steps, 32, "max_steps")
         self.setups = _setup_table(setups)
+        if not 1 <= len(self.setups) <= 256:
+            raise ValueError("a setup table holds 1 to 256 entries (uint8 indices)")
         self.policies = [dict(p) for p in policies]
-        if any("name" not in p for p in self.policies):
-            raise ValueError("every policy needs a name")
+        if not 1 <= len(self.policies) <= 1 << 16 or any("name" not in p for p in self.policies):
+            raise ValueError("a policy table holds 1 to 65536 entries, each with a name")
+        json.dumps(self.policies)  # TypeError now, not after a recording
         self.command = str(command)
-        self.config = dict(context or {"data_kind": _layout.DATA_KIND_CLOSURE, "max_roster": 6, "brought_count": 4})
-        with Context(**self.config) as ctx:
-            self.fingerprint = ctx.fingerprint().hex()
+        self.config = dict(context.config)
+        self.fingerprint = context.fingerprint().hex()
         self._rows = []
         self._choices = []
         self._closed = False
@@ -101,20 +112,25 @@ class RecipeWriter:
         choices = np.asarray(choices)
         if choices.dtype != np.uint16 or choices.ndim != 1:
             raise TypeError("choices must be a one-dimensional uint16 array")
+        if not 0 <= int(env) < _MAX_ENVS:
+            raise ValueError(f"env {env} is outside 0..{_MAX_ENVS - 1}")
         if not 0 <= int(setup) < len(self.setups):
             raise ValueError(f"setup {setup} is not in the setup table")
         if len(policy) != 2 or not all(0 <= int(p) < len(self.policies) for p in policy):
             raise ValueError(f"policy {policy} is not a pair of policy table indices")
+        if not 0 <= int(steps) <= self.max_steps:
+            raise ValueError(f"steps {steps} is outside 0..max_steps")
+        if not 0 <= int(result) <= _RESULT_TIE or bool(truncated) != (int(result) == 0):
+            raise ValueError("an episode has a result 1..3, or 0 exactly when it is truncated")
         digest = bytes(digest)
         if len(digest) != _layout.DIGEST_SIZE:
             raise ValueError("a digest has 32 bytes")
-        if bool(truncated) != (int(result) == 0):
-            raise ValueError("an episode is truncated exactly when it has no result")
-        self._rows.append((int(env), int(episode), int(setup), (int(policy[0]), int(policy[1])), int(steps),
-                           int(result), bool(truncated), digest))
+        self._rows.append((uint(env, 32, "env"), uint(episode, 32, "episode"), int(setup),
+                           (int(policy[0]), int(policy[1])), int(steps), int(result), bool(truncated), digest))
         self._choices.append(choices.copy())
 
     def close(self):
+        """Writes the recipe (once)."""
         if self._closed:
             return
         n = len(self._rows)
@@ -130,7 +146,6 @@ class RecipeWriter:
             "choice_offset": np.concatenate([[0], np.cumsum([len(c) for c in self._choices])]).astype(np.uint64),
             "choice": (np.concatenate(self._choices) if self._choices else np.zeros(0)).astype(np.uint16),
         }
-        np.savez(self.path + ".npz", **arrays)
         manifest = {
             "format": FORMAT,
             "library_version": version(),
@@ -146,16 +161,27 @@ class RecipeWriter:
             "episodes": n,
             "decisions": int(arrays["choice"].shape[0]),
         }
-        with open(self.path + ".json", "w", encoding="utf-8") as f:
-            json.dump(manifest, f, indent=2, sort_keys=True)
-            f.write("\n")
+        text = json.dumps(manifest, indent=2, sort_keys=True) + "\n"
+        with open(self.path + ".npz.tmp", "wb") as f:
+            np.savez(f, **arrays)
+        with open(self.path + ".json.tmp", "w", encoding="utf-8") as f:
+            f.write(text)
+        os.replace(self.path + ".npz.tmp", self.path + ".npz")
+        os.replace(self.path + ".json.tmp", self.path + ".json")
         self._closed = True
+
+    def discard(self):
+        """Drops the recording; nothing is written."""
+        self._rows, self._choices, self._closed = [], [], True
 
     def __enter__(self):
         return self
 
-    def __exit__(self, *exc):
-        self.close()
+    def __exit__(self, exc_type, *exc):
+        if exc_type is None:
+            self.close()
+        else:
+            self.discard()
 
 
 def record(batch, chooser, writer, *, episodes, setup, policy=(0, 0)):
@@ -164,10 +190,19 @@ def record(batch, chooser, writer, *, episodes, setup, policy=(0, 0)):
     reset with chooser (start_episode, if it has one, then choose), until
     TERMINAL or writer.max_steps steps (truncated). setup holds each
     environment's index into the writer's setup table, policy the policy
-    table index of each side."""
+    table index of each side. ValueError when the writer describes another
+    run: another context fingerprint, batch seed or setup bytes."""
     setup = np.asarray(setup)
     if setup.shape != (batch.envs,):
         raise ValueError("one setup index per environment")
+    if batch.context.fingerprint().hex() != writer.fingerprint:
+        raise ValueError("the writer's context fingerprint is not the batch's")
+    if batch.seed != writer.seed:
+        raise ValueError(f"the writer's seed {writer.seed} is not the batch seed {batch.seed}")
+    for e in range(batch.envs):
+        if not 0 <= int(setup[e]) < len(writer.setups) or \
+                _setup_sha256(batch.setups[e:e + 1]) != writer.setups[int(setup[e])]["sha256"]:
+            raise ValueError(f"environment {e} does not run the writer's setup {int(setup[e])}")
     for k in range(1, int(episodes) + 1):
         for e in range(batch.envs):
             if hasattr(chooser, "start_episode"):
@@ -209,8 +244,14 @@ class Recipe:
         return self.arrays["choice"][int(lo):int(hi)]
 
 
+def _malformed(condition, what):
+    if condition:
+        raise ValueError(f"malformed recipe: {what}")
+
+
 def load(path):
-    """Reads <path>.json and <path>.npz; RecipeVersionError for another format."""
+    """Reads <path>.json and <path>.npz. RecipeVersionError for another
+    format or array set, ValueError for contents that do not fit together."""
     path = str(path)
     with open(path + ".json", encoding="utf-8") as f:
         manifest = json.load(f)
@@ -225,6 +266,17 @@ def load(path):
         lead = {"choice_offset": n + 1, "choice": arrays["choice"].shape[0]}.get(name, n)
         if arrays[name].dtype != dtype or arrays[name].shape != (lead,) + tail:
             raise RecipeVersionError(f"array {name}: {arrays[name].dtype}{arrays[name].shape}")
+    offsets = arrays["choice_offset"]
+    _malformed(int(offsets[0]) != 0 or (np.diff(offsets.astype(np.int64)) < 0).any()
+               or int(offsets[-1]) != arrays["choice"].shape[0], "choice offsets")
+    _malformed(manifest.get("episodes") != n or manifest.get("decisions") != arrays["choice"].shape[0],
+               "the manifest's episode or decision count")
+    _malformed((arrays["env"] >= _MAX_ENVS).any(), "an environment index past the batch maximum")
+    _malformed((arrays["setup"] >= len(manifest["setups"])).any(), "a setup index past the table")
+    _malformed((arrays["policy"] >= len(manifest["policies"])).any(), "a policy index past the table")
+    _malformed((arrays["steps"] > manifest["max_steps"]).any(), "steps past max_steps")
+    _malformed((arrays["result"] > _RESULT_TIE).any() or (arrays["truncated"] != (arrays["result"] == 0)).any(),
+               "results")
     return Recipe(manifest, arrays)
 
 
