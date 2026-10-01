@@ -11,6 +11,7 @@
  * Step 5: the entry abilities Drizzle, Grassy Surge and Intimidate, rain,
  * Grassy Terrain's heal and the ordered residual phase (Drought and sun are
  * written and become reachable with Mega Evolution, step 11).
+ * Step 6: Tailwind, Reflect, Light Screen and Trick Room.
  * No other ability, no item and no Mega Evolution is implemented yet. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
@@ -37,6 +38,10 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_IRONHEAD] = 1u,
             [DFI_MOVE_HEATWAVE] = 1u,
             [DFI_MOVE_HURRICANE] = 1u,
+            [DFI_MOVE_TAILWIND] = 1u,
+            [DFI_MOVE_REFLECT] = 1u,
+            [DFI_MOVE_LIGHTSCREEN] = 1u,
+            [DFI_MOVE_TRICKROOM] = 1u,
         },
     .abilities =
         {

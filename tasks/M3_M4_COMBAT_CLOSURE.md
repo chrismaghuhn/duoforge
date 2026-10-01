@@ -47,7 +47,7 @@
 3. **Switching and fainting** (done, decision `0006` section 4.2)**:** voluntary switch, faint queue, real REPLACEMENT boundaries, win rule.
 4. **Secondary effects and statuses** (done, decision `0006` section 4.3; Hurricane taken ahead from step 10 as the only confusing move)**:** paralysis, sleep, freeze, burn, flinch, confusion (Champions variants).
 5. **Entry abilities, weather, terrain, residual phase** (done, decision `0006` section 4.4; Drought is written and becomes reachable with Mega Evolution in step 11)**:** Drizzle, Drought, Grassy Surge, Intimidate; ordered residuals.
-6. **Side and field conditions:** Tailwind, Reflect, Light Screen, Trick Room.
+6. **Side and field conditions** (done, decision `0006` section 4.5)**:** Tailwind, Reflect, Light Screen, Trick Room.
 7. **Reactive abilities:** Stamina, Competitive, Contrary, Flash Fire, Lightning Rod, Good as Gold, Armor Tail, Prankster, Blaze, No Guard, Tough Claws.
 8. **Items:** Leftovers, Sitrus Berry, Grassy Seed, Life Orb, Miracle Seed, Mystic Water, Light Clay.
 9. **Recoil, drain, self-drops:** Wood Hammer, Brave Bird, Bitter Blade, Leech Life, Close Combat, Make It Rain.

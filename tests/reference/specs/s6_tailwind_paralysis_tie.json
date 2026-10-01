@@ -1,0 +1,20 @@
+{
+  "name": "s6_tailwind_paralysis_tie",
+  "purpose": "Speed under Tailwind and paralysis: Tailwind lets Charizard (121) move before Raichu; a paralyzed Charizard under Tailwind has floor(242 * 50 / 100) = 121, so it ties with the healthy mirror Charizard (paralysis halves after the doubling, not before: 2 * 60 = 120).",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000006204",
+  "teams": [
+    "Staraptor (F)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Tailwind\n- Protect\n\nCharizard (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 SpA / 1 Spe\nModest Nature\n- Hurricane\n- Heat Wave\n\nArchaludon (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Snarl\n\nGolisopod (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Drill Run\n- Protect",
+    "Raichu (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Zap Cannon\n- Protect\n\nCharizard (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 SpA / 1 Spe\nModest Nature\n- Hurricane\n- Heat Wave\n\nFarigiraf (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Psychic\n- Protect\n\nMilotic (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Ice Beam"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 1 2",
+      "move 2, move 1 2"
+    ],
+    "p2": [
+      "move 1 2, move 1 1"
+    ],
+    "max_steps": 40
+  }
+}

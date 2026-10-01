@@ -1,0 +1,28 @@
+{
+  "name": "s6_screens",
+  "purpose": "Reflect and Light Screen take 2732/4096 off physical and special damage on their side in doubles, spread moves included, not against a critical hit and not when the side hits its own Pokemon; a screen fails while it lasts and ends after 5 turns.",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000006104",
+  "teams": [
+    "Grimmsnarl (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Reflect\n- Light Screen\n- Spirit Break\n\nCharizard (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Heat Wave\n- Hurricane\n\nArchaludon (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Snarl\n\nRillaboom (F)\nAbility: No Ability\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- High Horsepower",
+    "Golisopod (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Drill Run\n- Iron Head\n\nMilotic (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Ice Beam\n\nGrimmsnarl (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Light Screen\n- Reflect\n- Spirit Break\n\nPolitoed (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Ice Beam"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 2 1",
+      "move 2, move 2 2",
+      "move 3 -2, move 1",
+      "move 3 1, move 2 -1",
+      "move 3 2, move 1",
+      "move 1, move 2 2",
+      "move 2, move 1"
+    ],
+    "p2": [
+      "move 1 1, move 1",
+      "move 2 2, move 1",
+      "move 1 2, move 2 1",
+      "move 1 -2, move 1"
+    ],
+    "max_steps": 50
+  }
+}

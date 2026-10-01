@@ -381,7 +381,7 @@ int main(void)
         DF_CHECK(&t, dfi_closure_setup_supported(&m, &teams));
         DF_CHECK(&t, !dfi_closure_setup_supported(&dfi_support, &teams)); /* abilities: not yet */
         /* The manifest of this build, pinned: the turn core, switching, the
-         * moves of steps 2 to 4 and the entry abilities of step 5. A step that
+         * moves of steps 2 to 4 and 6 and the entry abilities of step 5. A step that
          * implements a mechanic changes this deliberately. */
         {
             static const uint32_t step2_moves[] = {
@@ -390,6 +390,7 @@ int main(void)
                 DFI_MOVE_NASTYPLOT,      DFI_MOVE_DRILLRUN,    DFI_MOVE_DRAGONPULSE, DFI_MOVE_SNARL,
                 DFI_MOVE_PSYCHIC,        DFI_MOVE_SPIRITBREAK, DFI_MOVE_ICEBEAM,    DFI_MOVE_HYPNOSIS,
                 DFI_MOVE_ZAPCANNON,      DFI_MOVE_IRONHEAD,    DFI_MOVE_HEATWAVE,   DFI_MOVE_HURRICANE,
+                DFI_MOVE_TAILWIND,       DFI_MOVE_REFLECT,     DFI_MOVE_LIGHTSCREEN, DFI_MOVE_TRICKROOM,
             };
             dfi_support_manifest want;
             memset(&want, 0, sizeof want);

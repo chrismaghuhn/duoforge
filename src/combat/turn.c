@@ -79,9 +79,10 @@ static duoforge_status dfi_staged_stat(const dfi_member *m, const dfi_active_slo
 }
 
 /* getActionSpeed of the Champions mod (data/mods/champions/scripts.ts:46-55):
- * the staged Speed, halved by paralysis (its onModifySpe, floor of 50 of
+ * the staged Speed, doubled by Tailwind (chainModify(2)), then halved by
+ * paralysis (its onModifySpe runs last: finalModify, then floor of 50 of
  * 100), capped, negated under Trick Room. */
-static duoforge_status dfi_speed_key(const struct duoforge_battle *b, const dfi_member *m,
+static duoforge_status dfi_speed_key(const struct duoforge_battle *b, uint32_t side, const dfi_member *m,
                                      const dfi_active_slot *pos, uint32_t *out)
 {
     uint32_t spe = 0u;
@@ -89,8 +90,11 @@ static duoforge_status dfi_speed_key(const struct duoforge_battle *b, const dfi_
     if (st != DUOFORGE_OK) {
         return st;
     }
+    if (b->sides[side].tailwind_turns != 0u) {
+        spe *= 2u; /* modify(spe, 2) is exact; spe <= 4 * 65535 */
+    }
     if (m->status == DFI_STATUS_PAR) {
-        spe = spe * 50u / 100u; /* spe <= 4 * 65535 */
+        spe = spe * 50u / 100u; /* spe <= 8 * 65535 */
     }
     if (spe > DFI_SPEED_CAP) {
         spe = DFI_SPEED_CAP;
@@ -134,7 +138,7 @@ static duoforge_status dfi_key_of(dfi_run *r, const dfi_queue_record *q, dfi_key
         return DUOFORGE_E_INVARIANT;
     }
     uint32_t speed = 0u;
-    const duoforge_status st = dfi_speed_key(r->b, m, dfi_pos(r->b, flat), &speed);
+    const duoforge_status st = dfi_speed_key(r->b, flat / 2u, m, dfi_pos(r->b, flat), &speed);
     if (st != DUOFORGE_OK) {
         return st;
     }
@@ -168,7 +172,7 @@ static duoforge_status dfi_update_position_speed(dfi_run *r, uint32_t flat)
     if (m == NULL || m->hp == 0u) {
         return DUOFORGE_OK;
     }
-    return dfi_speed_key(r->b, m, dfi_pos(r->b, flat), &r->speed_seen[flat]);
+    return dfi_speed_key(r->b, flat / 2u, m, dfi_pos(r->b, flat), &r->speed_seen[flat]);
 }
 
 static duoforge_status dfi_update_speeds(dfi_run *r)
@@ -330,7 +334,9 @@ static duoforge_status dfi_move_targets(dfi_run *r, uint32_t user, uint32_t cls,
 {
     const uint32_t side = user / 2u;
     *count = 0u;
-    if (cls == DUOFORGE_TARGET_CLASS_SELF) {
+    if (cls == DUOFORGE_TARGET_CLASS_SELF || cls == DUOFORGE_TARGET_CLASS_ALLY_SIDE ||
+        cls == DUOFORGE_TARGET_CLASS_ALL) {
+        /* getRandomTarget returns the user for self, side and field moves. */
         targets[0] = user;
         *count = 1u;
         return DUOFORGE_OK;
@@ -509,6 +515,14 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
      * (modifyDamage, sim/battle-actions.ts:1816-1820). */
     if (physical && a->status == DFI_STATUS_BRN) {
         damage = dfi_modify(damage, 2048u);
+    }
+    /* ModifyDamage: Reflect (physical) and Light Screen (special) on the
+     * target's side, not against a critical hit and not on the user itself,
+     * 2732/4096 in doubles. */
+    const dfi_side *ds = &r->b->sides[target / 2u];
+    if (!crit && target != user && ((physical && ds->reflect_turns != 0u) ||
+                                    (md->category == DFI_CATEGORY_SPECIAL && ds->light_screen_turns != 0u))) {
+        damage = dfi_modify(damage, 2732u);
     }
     *out = dfi_final_damage(damage);
     return DUOFORGE_OK;
@@ -828,6 +842,28 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         return dfi_run_protect(r, user);
     }
     const bool status_move = md->category == DFI_CATEGORY_STATUS;
+    if (status_move && md->side_condition != 0u) {
+        /* addSideCondition: an active condition is not restarted (the move
+         * fails); Tailwind lasts 4 turns, the screens 5 (Light Clay: step 8). */
+        dfi_side *us = &b->sides[side];
+        uint8_t *turns = md->side_condition == DFI_SIDE_CONDITION_TAILWIND  ? &us->tailwind_turns
+                         : md->side_condition == DFI_SIDE_CONDITION_REFLECT ? &us->reflect_turns
+                                                                            : &us->light_screen_turns;
+        if (md->side_condition > DFI_SIDE_CONDITION_LIGHT_SCREEN || m->item != 0u) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
+        if (*turns == 0u) {
+            const uint32_t duration = md->side_condition == DFI_SIDE_CONDITION_TAILWIND ? DFI_TAILWIND_TURNS_MAX : 5u;
+            *turns = (uint8_t)duration; /* <= 5 */
+        }
+        return DUOFORGE_OK;
+    }
+    if (status_move && md->pseudo_weather == DFI_PSEUDO_WEATHER_TRICK_ROOM) {
+        /* addPseudoWeather: Trick Room again ends it (onFieldRestart). */
+        const uint32_t duration = b->trick_room_turns != 0u ? 0u : DFI_FIELD_TURNS_MAX;
+        b->trick_room_turns = (uint8_t)duration; /* <= 5 */
+        return DUOFORGE_OK;
+    }
     if (status_move && md->primary_status == DFI_STATUS_NONE) {
         if (md->boost_role != DFI_BOOST_ROLE_PRIMARY_SELF || md->target_class != DUOFORGE_TARGET_CLASS_SELF) {
             return DUOFORGE_E_UNSUPPORTED;
@@ -1193,8 +1229,9 @@ static duoforge_status dfi_run_entries(dfi_run *r, uint32_t entering)
 #define DFI_RES_BURN 3u
 #define DFI_RES_DURATION 4u
 #define DFI_RES_GRASSY 5u
+#define DFI_RES_FIELD_END 6u /* Trick Room, a side condition: duration only */
 #define DFI_RES_NO_ORDER 0xFFFFFFFFu
-#define DFI_RES_MAX 20u
+#define DFI_RES_MAX 28u
 
 typedef struct dfi_residual_entry {
     uint32_t kind;
@@ -1234,6 +1271,10 @@ static duoforge_status dfi_residual(dfi_run *r)
     }
     dfi_residual_entry list[DFI_RES_MAX];
     uint32_t n = 0u;
+    if (b->trick_room_turns != 0u) {
+        list[n] = (dfi_residual_entry){DFI_RES_FIELD_END, 0u, 27u, 0u, 1u, false};
+        n += 1u;
+    }
     if (b->weather != DFI_WEATHER_NONE) {
         list[n] = (dfi_residual_entry){DFI_RES_WEATHER, 0u, 1u, 0u, 5u, true};
         n += 1u;
@@ -1243,6 +1284,16 @@ static duoforge_status dfi_residual(dfi_run *r)
         n += 1u;
     }
     for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
+        if (flat % 2u == 0u) {
+            /* The side's conditions come before its Pokemon (order 26). */
+            const dfi_side *sd = &b->sides[flat / 2u];
+            const uint32_t conditions = (sd->reflect_turns != 0u ? 1u : 0u) + (sd->light_screen_turns != 0u ? 1u : 0u) +
+                                        (sd->tailwind_turns != 0u ? 1u : 0u);
+            for (uint32_t k = 0u; k < conditions; ++k) {
+                list[n] = (dfi_residual_entry){DFI_RES_FIELD_END, 0u, 26u, 0u, 1u, false};
+                n += 1u;
+            }
+        }
         const dfi_active_slot *pos = dfi_pos(b, flat);
         const dfi_member *m = dfi_at(b, flat);
         if (m == NULL) {
@@ -1343,8 +1394,21 @@ static duoforge_status dfi_residual(dfi_run *r)
             return DUOFORGE_OK;
         }
     }
-    /* The duration handlers: the terrain counts down, Protect and flinch
-     * end, the stall counter counts down. */
+    /* The duration handlers: Trick Room, the side conditions and the
+     * terrain count down, Protect and flinch end, the stall counter counts
+     * down. */
+    if (b->trick_room_turns != 0u) {
+        b->trick_room_turns = (uint8_t)((uint32_t)b->trick_room_turns - 1u); /* wide-operands-reviewed: >= 1 */
+    }
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        dfi_side *sd = &b->sides[s];
+        uint8_t *conditions[3] = {&sd->reflect_turns, &sd->light_screen_turns, &sd->tailwind_turns};
+        for (uint32_t k = 0u; k < 3u; ++k) {
+            if (*conditions[k] != 0u) {
+                *conditions[k] = (uint8_t)((uint32_t)*conditions[k] - 1u); /* wide-operands-reviewed: >= 1 */
+            }
+        }
+    }
     if (b->terrain != DFI_TERRAIN_NONE) {
         b->terrain_turns = (uint8_t)((uint32_t)b->terrain_turns - 1u); /* wide-operands-reviewed: >= 1 */
         if (b->terrain_turns == 0u) {
