@@ -405,16 +405,82 @@ static bool dfi_choice_is_zero(const duoforge_side_choice *c)
 duoforge_status duoforge_battle_step(const duoforge_context *ctx, duoforge_battle *battle,
                                      const duoforge_decision_bundle *bundle, duoforge_step_result *out_result)
 {
-    return dfi_battle_step_tape(ctx, battle, bundle, NULL, 0u, NULL, out_result);
+    return dfi_battle_step_events_tape(ctx, battle, bundle, NULL, 0u, NULL, out_result, NULL);
+}
+
+duoforge_status duoforge_battle_step_events(const duoforge_context *ctx, duoforge_battle *battle,
+                                            const duoforge_decision_bundle *bundle,
+                                            duoforge_step_result *out_result,
+                                            duoforge_event_buffer buffers[DUOFORGE_SIDE_COUNT])
+{
+    if (buffers == NULL) {
+        return DUOFORGE_E_NULL_ARGUMENT;
+    }
+    return dfi_battle_step_events_tape(ctx, battle, bundle, NULL, 0u, NULL, out_result, buffers);
 }
 
 duoforge_status dfi_battle_step_tape(const duoforge_context *ctx, duoforge_battle *battle,
                                      const duoforge_decision_bundle *bundle, const dfi_tape_entry *tape,
                                      uint32_t tape_len, uint32_t *out_tape_used, duoforge_step_result *out_result)
 {
+    return dfi_battle_step_events_tape(ctx, battle, bundle, tape, tape_len, out_tape_used, out_result, NULL);
+}
+
+/* Before the commit: every player's buffer must hold the step's events.
+ * Otherwise E_CAPACITY, and only the counts are written, with the required
+ * number (decision 0005 section 7). */
+static duoforge_status dfi_events_fit(duoforge_event_buffer *buffers, const dfi_events *staged)
+{
+    if (buffers == NULL) {
+        return DUOFORGE_OK;
+    }
+    if (staged->overflow) {
+        return DUOFORGE_E_INVARIANT; /* past the profile bound */
+    }
+    bool fit = true;
+    for (uint32_t p = 0u; p < DUOFORGE_SIDE_COUNT; ++p) {
+        fit = fit && buffers[p].capacity >= staged->count;
+    }
+    if (!fit) {
+        for (uint32_t p = 0u; p < DUOFORGE_SIDE_COUNT; ++p) {
+            buffers[p].count = staged->count;
+        }
+        return DUOFORGE_E_CAPACITY;
+    }
+    return DUOFORGE_OK;
+}
+
+/* After the commit: each player's view of every event. */
+static void dfi_events_write(duoforge_event_buffer *buffers, const dfi_events *staged)
+{
+    if (buffers == NULL) {
+        return;
+    }
+    for (uint32_t p = 0u; p < DUOFORGE_SIDE_COUNT; ++p) {
+        for (uint32_t i = 0u; i < staged->count; ++i) {
+            dfi_event_project(&staged->rec[i], p, &buffers[p].events[i]);
+        }
+        buffers[p].count = staged->count;
+    }
+}
+
+duoforge_status dfi_battle_step_events_tape(const duoforge_context *ctx, duoforge_battle *battle,
+                                            const duoforge_decision_bundle *bundle, const dfi_tape_entry *tape,
+                                            uint32_t tape_len, uint32_t *out_tape_used,
+                                            duoforge_step_result *out_result, duoforge_event_buffer *buffers)
+{
     if (ctx == NULL || battle == NULL || bundle == NULL || out_result == NULL) {
         return DUOFORGE_E_NULL_ARGUMENT;
     }
+    for (uint32_t p = 0u; buffers != NULL && p < DUOFORGE_SIDE_COUNT; ++p) {
+        if (buffers[p].events == NULL && buffers[p].capacity != 0u) {
+            return DUOFORGE_E_INVALID_ARGUMENT;
+        }
+    }
+    dfi_events staged;
+    staged.count = 0u;
+    staged.overflow = false;
+    dfi_events *events = buffers != NULL ? &staged : NULL;
     if (!dfi_context_fingerprint_matches(ctx, battle->context_fingerprint)) {
         return DUOFORGE_E_CONTEXT_MISMATCH;
     }
@@ -468,7 +534,7 @@ duoforge_status dfi_battle_step_tape(const duoforge_context *ctx, duoforge_battl
         dfi_draws draws = dfi_draws_from_rng(&tmp.rng);
         draws.tape = tape;
         draws.tape_len = tape_len;
-        const duoforge_status ts = dfi_turn_run(ctx, &tmp, in.responses, &draws);
+        const duoforge_status ts = dfi_turn_run(ctx, &tmp, in.responses, &draws, events);
         if (out_tape_used != NULL) {
             *out_tape_used = draws.tape_pos;
         }
@@ -478,7 +544,12 @@ duoforge_status dfi_battle_step_tape(const duoforge_context *ctx, duoforge_battl
         if (dfi_state_check(ctx, &tmp, NULL) != DUOFORGE_OK) {
             return DUOFORGE_E_INVARIANT;
         }
+        const duoforge_status fs = dfi_events_fit(buffers, &staged);
+        if (fs != DUOFORGE_OK) {
+            return fs;
+        }
         *battle = tmp;
+        dfi_events_write(buffers, &staged);
         duoforge_step_result turn_res;
         memset(&turn_res, 0, sizeof turn_res);
         turn_res.epoch = battle->request_epoch;
@@ -508,7 +579,7 @@ duoforge_status dfi_battle_step_tape(const duoforge_context *ctx, duoforge_battl
     dfi_draws draws = dfi_draws_from_rng(&tmp.rng);
     draws.tape = tape;
     draws.tape_len = tape_len;
-    const duoforge_status ss = dfi_turn_start(ctx, &tmp, &draws);
+    const duoforge_status ss = dfi_turn_start(ctx, &tmp, &draws, events);
     if (out_tape_used != NULL) {
         *out_tape_used = draws.tape_pos;
     }
@@ -518,7 +589,12 @@ duoforge_status dfi_battle_step_tape(const duoforge_context *ctx, duoforge_battl
     if (dfi_state_check(ctx, &tmp, NULL) != DUOFORGE_OK) {
         return DUOFORGE_E_INVARIANT;
     }
+    const duoforge_status fs = dfi_events_fit(buffers, &staged);
+    if (fs != DUOFORGE_OK) {
+        return fs;
+    }
     *battle = tmp;
+    dfi_events_write(buffers, &staged);
     duoforge_step_result res;
     memset(&res, 0, sizeof res);
     res.epoch = battle->request_epoch;

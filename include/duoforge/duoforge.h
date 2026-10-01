@@ -407,6 +407,124 @@ typedef struct duoforge_observation {
 duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duoforge_battle *battle,
                                         uint32_t player, duoforge_observation *out_observation);
 
+/* ---- event log (decision 0007 section 6) ----
+   What happened during a step, per player, in the order the game shows it:
+   one event per line of the public battle protocol that the game shows to
+   that player (sim/battle.ts at the pin). HP in an event is exact for the
+   player's own Pokemon and the percent display for the opponent's, as on
+   the two players' screens. Events are outputs of a step, not state. */
+#define DUOFORGE_MAX_EVENTS 512u /* profile bound: events per player and step */
+#define DUOFORGE_NO_POSITION 0xFFu
+
+/* Event kinds; the protocol line each one stands for in brackets. */
+#define DUOFORGE_EVENT_TURN            1u  /* [turn] id: the turn that starts */
+#define DUOFORGE_EVENT_SWITCH          2u  /* [switch] position, id: roster index, HP; cause MOVE + id2 when a move made it */
+#define DUOFORGE_EVENT_MOVE            3u  /* [move] position: user, other: target or NO_POSITION, id: move, flags */
+#define DUOFORGE_EVENT_DAMAGE          4u  /* [-damage] position, HP after; cause (+ id2, other) */
+#define DUOFORGE_EVENT_HEAL            5u  /* [-heal] position, HP after; cause (+ id2, other) */
+#define DUOFORGE_EVENT_FAINT           6u  /* [faint] position */
+#define DUOFORGE_EVENT_CANT            7u  /* [cant] position, cause: why; ABILITY + id2 with id: the stopped move, other */
+#define DUOFORGE_EVENT_MISS            8u  /* [-miss] position: user, other: target */
+#define DUOFORGE_EVENT_CRIT            9u  /* [-crit] position: target */
+#define DUOFORGE_EVENT_SUPER_EFFECTIVE 10u /* [-supereffective] position: target */
+#define DUOFORGE_EVENT_RESISTED        11u /* [-resisted] position: target */
+#define DUOFORGE_EVENT_IMMUNE          12u /* [-immune] position; cause ABILITY + id2 when an ability did it */
+#define DUOFORGE_EVENT_FAIL            13u /* [-fail] position; detail: the ailment it already has, when that is why */
+#define DUOFORGE_EVENT_PROTECT         14u /* [-singleturn Protect] position */
+#define DUOFORGE_EVENT_BLOCKED         15u /* [-activate move: Protect] position: the protected Pokemon */
+#define DUOFORGE_EVENT_BOOST           16u /* [-boost] position, detail: stat (0 atk .. 6 evasion), amount; cause */
+#define DUOFORGE_EVENT_UNBOOST         17u /* [-unboost] as BOOST */
+#define DUOFORGE_EVENT_STATUS          18u /* [-status] position, detail: DUOFORGE_AILMENT_* */
+#define DUOFORGE_EVENT_CURE_STATUS     19u /* [-curestatus] position, detail: the ailment that ended */
+#define DUOFORGE_EVENT_CONFUSION_START 20u /* [-start confusion] position */
+#define DUOFORGE_EVENT_CONFUSION_END   21u /* [-end confusion] position */
+#define DUOFORGE_EVENT_CONFUSED        22u /* [-activate confusion] position: it is confused as it tries to act */
+#define DUOFORGE_EVENT_FLASH_FIRE      23u /* [-start ability: Flash Fire] position */
+#define DUOFORGE_EVENT_WEATHER         24u /* [-weather] detail: DUOFORGE_WEATHER_*; flags UPKEEP; cause ABILITY + id2, other */
+#define DUOFORGE_EVENT_FIELD_START     25u /* [-fieldstart] detail: DUOFORGE_FIELD_*; cause ABILITY + id2, other */
+#define DUOFORGE_EVENT_FIELD_END       26u /* [-fieldend] detail: DUOFORGE_FIELD_* */
+#define DUOFORGE_EVENT_SIDE_START      27u /* [-sidestart] detail: the side, amount: DUOFORGE_SIDE_* */
+#define DUOFORGE_EVENT_SIDE_END        28u /* [-sideend] as SIDE_START */
+#define DUOFORGE_EVENT_ITEM_END        29u /* [-enditem] position, id2: item + 1; flags EATEN */
+#define DUOFORGE_EVENT_FORME           30u /* [detailschange] position, id: the new forme */
+#define DUOFORGE_EVENT_MEGA            31u /* [-mega] position, id2: the stone (item + 1) */
+#define DUOFORGE_EVENT_PREPARE         32u /* [-prepare] position, id: the move it charges */
+#define DUOFORGE_EVENT_ANIMATION       33u /* [-anim] position, other, id: the move shown */
+#define DUOFORGE_EVENT_ABILITY         34u /* [-ability] position, id2: ability + 1 */
+#define DUOFORGE_EVENT_ACTIVATE        35u /* [-activate ability] position, id2: ability + 1 */
+#define DUOFORGE_EVENT_UPKEEP          36u /* [upkeep] the end-of-turn effects are done */
+#define DUOFORGE_EVENT_RESULT          37u /* [win] or [tie] detail: DUOFORGE_RESULT_* */
+
+/* Causes ([from] and [of] in the protocol). */
+#define DUOFORGE_CAUSE_NONE      0u /* the move or the plain mechanic */
+#define DUOFORGE_CAUSE_MOVE      1u /* id2: move id (Parting Shot's switch) */
+#define DUOFORGE_CAUSE_ITEM      2u /* id2: item + 1 */
+#define DUOFORGE_CAUSE_ABILITY   3u /* id2: ability + 1; other: its holder when shown */
+#define DUOFORGE_CAUSE_RECOIL    4u
+#define DUOFORGE_CAUSE_DRAIN     5u /* other: the drained Pokemon */
+#define DUOFORGE_CAUSE_BURN      6u
+#define DUOFORGE_CAUSE_CONFUSION 7u
+#define DUOFORGE_CAUSE_TERRAIN   8u /* Grassy Terrain's heal */
+#define DUOFORGE_CAUSE_PARALYSIS 9u /* CANT */
+#define DUOFORGE_CAUSE_SLEEP     10u
+#define DUOFORGE_CAUSE_FREEZE    11u
+#define DUOFORGE_CAUSE_FLINCH    12u
+#define DUOFORGE_CAUSE_NO_PP     13u
+
+#define DUOFORGE_EVENT_FLAG_STILL  1u  /* MOVE: the charge turn of a two-turn move */
+#define DUOFORGE_EVENT_FLAG_LOCKED 2u  /* MOVE: the locked turn ([from] lockedmove) */
+#define DUOFORGE_EVENT_FLAG_SPREAD 4u  /* MOVE: a spread move; other is NO_POSITION */
+#define DUOFORGE_EVENT_FLAG_UPKEEP 8u  /* WEATHER: it continues at the end of the turn */
+#define DUOFORGE_EVENT_FLAG_EATEN  16u /* ITEM_END: a berry eaten */
+#define DUOFORGE_EVENT_FLAG_MESSAGE 32u /* CURE_STATUS: with its own message ([msg]) */
+#define DUOFORGE_EVENT_FLAG_MISS     64u  /* MOVE: a single-target move missed ([miss]) */
+#define DUOFORGE_EVENT_FLAG_NOTARGET 128u /* MOVE: no target left ([notarget]) */
+
+#define DUOFORGE_FIELD_GRASSY_TERRAIN 1u
+#define DUOFORGE_FIELD_TRICK_ROOM     2u
+#define DUOFORGE_SIDE_TAILWIND     1u
+#define DUOFORGE_SIDE_REFLECT      2u
+#define DUOFORGE_SIDE_LIGHT_SCREEN 3u
+#define DUOFORGE_RESULT_SIDE_0 1u
+#define DUOFORGE_RESULT_SIDE_1 2u
+#define DUOFORGE_RESULT_TIE    3u
+
+typedef struct duoforge_event {
+    uint8_t kind;     /* DUOFORGE_EVENT_* */
+    uint8_t position; /* side * 2 + slot of the Pokemon it is about, or DUOFORGE_NO_POSITION */
+    uint8_t other;    /* the other Pokemon (target, source, holder), or DUOFORGE_NO_POSITION */
+    uint8_t cause;    /* DUOFORGE_CAUSE_* */
+    uint16_t id;      /* per kind: move, roster index, forme, turn */
+    uint16_t id2;     /* per cause: move id, item + 1, ability + 1 */
+    uint16_t hp;      /* HP after (SWITCH, DAMAGE, HEAL), per hp_kind */
+    uint16_t hp_max;  /* per hp_kind */
+    uint8_t hp_kind;  /* DUOFORGE_HP_EXACT (own), DUOFORGE_HP_PERCENT (opponent), 0 without HP */
+    uint8_t hp_flag;  /* DUOFORGE_HP_FLAG_* (PERCENT only) */
+    uint8_t status;   /* DUOFORGE_AILMENT_* shown with the HP */
+    uint8_t detail;   /* per kind */
+    uint8_t amount;   /* per kind: stages, side condition */
+    uint8_t flags;    /* DUOFORGE_EVENT_FLAG_* */
+    uint8_t reserved[2]; /* zero */
+} duoforge_event; /* 20 bytes */
+
+/* One player's event buffer: the caller provides `events` with `capacity`
+   records; the step writes `count`. */
+typedef struct duoforge_event_buffer {
+    duoforge_event *events; /* may be NULL when capacity is 0 */
+    uint32_t capacity;
+    uint32_t count;
+} duoforge_event_buffer;
+
+/* duoforge_battle_step, and the events each player sees: buffers[p] gets
+   player p's events of this step in order. Checks as duoforge_battle_step
+   (buffers NULL -> NULL_ARGUMENT). If a buffer is too small, E_CAPACITY:
+   the battle is unchanged, and only the two `count` fields are written,
+   each with the required number (decision 0005 section 7). */
+duoforge_status duoforge_battle_step_events(const duoforge_context *ctx, duoforge_battle *battle,
+                                            const duoforge_decision_bundle *bundle,
+                                            duoforge_step_result *out_result,
+                                            duoforge_event_buffer buffers[DUOFORGE_SIDE_COUNT]);
+
 #ifdef __cplusplus
 }
 #endif

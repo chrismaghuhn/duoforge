@@ -12,11 +12,16 @@ families decision 0006 section 5.1 (proposal B) drops. Each drop rule
 checks its precondition and fails loudly otherwise:
 
   TEAM_ORDER        always: the team-preview actions are independent per side
-  SPEED_TIE each:*  only if no tied Pokemon has a handler for that event
+  SPEED_TIE each:*  only if at most one tied Pokemon has a handler for
+                    that event (Sitrus Berry, Grassy Seed): with two, the
+                    tie orders their lines and the engine draws
   SPEED_TIE switch-order
                     only if no tied Pokemon has a SwitchIn handler
   SPEED_TIE field:Residual
-                    only if every tied handler only counts down a duration
+                    only if every tied handler only counts down a duration,
+                    unless both sides' same side condition runs out in this
+                    residual: then the tie orders their end lines and the
+                    engine draws
   INSERT_TIE        only if the runSwitch actions in the tied group stand
                     together in the queue: runSwitch takes every entry
                     queued right behind it, so their queue order changes
@@ -107,7 +112,11 @@ def parse_team(text, tables):
     return team
 
 
-def drop_reason(d):
+COND_INDEX = {'tailwind': 0, 'reflect': 1, 'lightscreen': 2}  # the order of a side's 'conditions'
+
+
+def drop_reason(d, state):
+    """Why draw `d` is not a tape entry, or None; `state` is the state before the step."""
     site, ctx, group = d['site'], d.get('context', ''), d.get('group')
     if site == 'TEAM_ORDER':
         return 'team-preview order'
@@ -116,9 +125,11 @@ def drop_reason(d):
         # Seed (TerrainChange) act only on their holder, so the order of the
         # Pokemon changes nothing.
         ids = [x for g in group for x in g.split(':', 3)[3].split('+') if x]
-        if all(x in ('sitrusberry', 'grassyseed') for x in ids):
-            return 'each-event tie without order-dependent handlers'
-        raise SystemExit('trace_to_c: %s tie between Pokemon with handlers: %s' % (ctx, group))
+        if not all(x in ('sitrusberry', 'grassyseed') for x in ids):
+            raise SystemExit('trace_to_c: %s tie between Pokemon with handlers: %s' % (ctx, group))
+        if sum(1 for g in group if g.split(':', 3)[3]) <= 1:
+            return 'each-event tie with at most one holder'
+        return None  # the engine draws: the order of the holders' lines
     if site == 'SPEED_TIE' and ctx == 'switch-order':
         # P:<slot>:<SwitchIn handlers>:<S entering | - not>; the order decides
         # something only between two entering Pokemon with handlers.
@@ -128,6 +139,19 @@ def drop_reason(d):
         return None  # the engine draws
     if site == 'SPEED_TIE' and ctx == 'field:Residual':
         if all(g.startswith('H:') and g.endswith(':end') for g in group):
+            # H:<condition>:<holder>:end. Both sides' same side condition
+            # at 1 turn both end now: the tie orders their two end lines.
+            ending = {}
+            for g in group:
+                cond, holder = g.split(':')[1:3]
+                if cond in COND_INDEX and holder in ('p1', 'p2'):
+                    turns = state['sides'][int(holder[1]) - 1]['conditions'][COND_INDEX[cond]]
+                    if turns == 1:
+                        ending.setdefault(cond, []).append(holder)
+            if any(len(v) >= 2 for v in ending.values()):
+                if len(group) != 2:
+                    raise SystemExit('trace_to_c: residual tie of ending conditions in %s' % group)
+                return None  # the engine draws
             return 'residual tie of duration counters'
         if all(g.startswith('H:') and g.endswith(':cb') for g in group):
             return None  # callbacks (burn, Grassy Terrain): the engine draws
@@ -263,6 +287,244 @@ def public_lines(log, roster_of, shown):
         shown[side][roster] = (int(m.group(1)), HP_FLAGS[m.group(2)])
 
 
+
+# ---------------------------------------------------------------- events
+# Decision 0007 section 6: one event per protocol line the game shows a
+# player, with the HP that player's screen shows. Values of
+# include/duoforge/duoforge.h.
+EV = {name: i + 1 for i, name in enumerate(
+    ['TURN', 'SWITCH', 'MOVE', 'DAMAGE', 'HEAL', 'FAINT', 'CANT', 'MISS', 'CRIT', 'SUPER_EFFECTIVE', 'RESISTED',
+     'IMMUNE', 'FAIL', 'PROTECT', 'BLOCKED', 'BOOST', 'UNBOOST', 'STATUS', 'CURE_STATUS', 'CONFUSION_START',
+     'CONFUSION_END', 'CONFUSED', 'FLASH_FIRE', 'WEATHER', 'FIELD_START', 'FIELD_END', 'SIDE_START', 'SIDE_END',
+     'ITEM_END', 'FORME', 'MEGA', 'PREPARE', 'ANIMATION', 'ABILITY', 'ACTIVATE', 'UPKEEP', 'RESULT'])}
+CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
+         'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13}
+FLAG = {'STILL': 1, 'LOCKED': 2, 'SPREAD': 4, 'UPKEEP': 8, 'EATEN': 16, 'MESSAGE': 32, 'MISS': 64, 'NOTARGET': 128}
+AILMENT = {'brn': 1, 'frz': 2, 'par': 3, 'slp': 4}
+EV_STATS = ['atk', 'def', 'spa', 'spd', 'spe', 'accuracy', 'evasion']
+NOPOS = 0xFF
+HP_EXACT, HP_PERCENT = 1, 2
+HP_FLAGS_EV = {'': 0, 'r': 1, 'y': 2, 'g': 3}
+# Lines that are not events: setup, layout, hints, and what the game does
+# not show ([silent]).
+NOT_EVENTS = {'', 'split', 't:', 'gametype', 'player', 'teamsize', 'gen', 'tier', 'rule', 'clearpoke', 'poke',
+              'teampreview', 'start', 'uhtml', 'uhtmlchange', '-hint', 'j', 'l', 'c', 'raw', 'inactive'}
+
+
+def ev_pos(text):
+    """'p2a: Raichu' -> 2; 'p1: Charizard' (a side) -> None."""
+    if len(text) >= 3 and text[0] == 'p' and text[1] in '12' and text[2] in 'ab':
+        return (int(text[1]) - 1) * 2 + (ord(text[2]) - ord('a'))
+    return None
+
+
+def ev_tuple(kind, position=NOPOS, other=NOPOS, cause=0, ident=0, ident2=0, hp=0, hp_max=0, hp_kind=0,
+             hp_flag=0, status=0, detail=0, amount=0, flags=0):
+    return (kind, position, other, cause, ident, ident2, hp, hp_max, hp_kind, hp_flag, status, detail, amount, flags)
+
+
+def ev_cause(attrs, tables):
+    """[from] and [of] attributes -> (cause, id2, other)."""
+    cause, id2, other = 0, 0, NOPOS
+    for a in attrs:
+        if a.startswith('[from] '):
+            what = a[len('[from] '):]
+            if what.startswith('item: '):
+                cause, id2 = CAUSE['ITEM'], tables['ITEM'][key(what[6:])] + 1
+            elif what.startswith('ability: '):
+                cause, id2 = CAUSE['ABILITY'], tables['ABILITY'][key(what[9:])] + 1
+            elif what.startswith('move: '):
+                cause, id2 = CAUSE['MOVE'], tables['MOVE'][key(what[6:])]
+            elif what.lower() == 'recoil':
+                cause = CAUSE['RECOIL']
+            elif what == 'drain':
+                cause = CAUSE['DRAIN']
+            elif what == 'brn':
+                cause = CAUSE['BURN']
+            elif what == 'confusion':
+                cause = CAUSE['CONFUSION']
+            elif what == 'Grassy Terrain':
+                cause = CAUSE['TERRAIN']
+            elif what == 'Parting Shot':
+                cause, id2 = CAUSE['MOVE'], tables['MOVE']['PARTINGSHOT']
+            elif what == 'lockedmove':
+                pass  # a MOVE flag
+            else:
+                raise SystemExit('trace_to_c: unknown [from] %r' % a)
+        elif a.startswith('[of] '):
+            other = ev_pos(a[5:])
+    return cause, id2, other
+
+
+def ev_hp(text, side, viewer, maxhp):
+    """An HP field as `viewer` sees it -> (hp, hp_max, kind, flag, status)."""
+    tokens = text.split(' ')
+    status = AILMENT.get(tokens[1], 0) if len(tokens) > 1 else 0
+    if tokens[0] == '0':
+        return (0, maxhp if side == viewer else 100, HP_EXACT if side == viewer else HP_PERCENT, 0, 0)
+    m = re.match(r'^(\d+)/(\d+)([gry]?)$', tokens[0])
+    if not m:
+        raise SystemExit('trace_to_c: bad HP %r' % text)
+    if side == viewer:
+        return (int(m.group(1)), int(m.group(2)), HP_EXACT, 0, status)
+    if m.group(2) != '100':
+        raise SystemExit('trace_to_c: the opponent sees exact HP in %r' % text)
+    return (int(m.group(1)), 100, HP_PERCENT, HP_FLAGS_EV[m.group(3)], status)
+
+
+def step_events(log, viewer, roster_of, maxhp, tables):
+    """The events `viewer` sees in one step, in protocol order."""
+    out = []
+    skip = set()
+    for i, line in enumerate(log):
+        if i in skip:
+            continue
+        if line.startswith('|split|'):
+            owner = int(line[len('|split|p'):]) - 1
+            skip.add(i + 2 if owner == viewer else i + 1)  # the owner keeps its exact copy, others the public one
+            continue
+        out_line = line
+        parts = out_line.split('|')
+        kind = parts[1] if len(parts) > 1 else ''
+        if kind in NOT_EVENTS or kind.startswith('t:'):
+            continue
+        attrs = [x for x in parts[2:] if x.startswith('[')]
+        if '[silent]' in attrs:
+            continue
+        args = [x for x in parts[2:] if not x.startswith('[')]
+        e = None
+        if kind == 'turn':
+            e = ev_tuple(EV['TURN'], ident=int(args[0]))
+        elif kind == 'upkeep':
+            e = ev_tuple(EV['UPKEEP'])
+        elif kind in ('win', 'tie'):
+            e = ev_tuple(EV['RESULT'], detail=3 if kind == 'tie' else int(args[0][1:]))
+        elif kind == 'switch':
+            pos = ev_pos(args[0])
+            side = pos // 2
+            name = args[0].split(': ', 1)[1]
+            cause, id2, _ = ev_cause(attrs, tables)
+            hp = ev_hp(args[2], side, viewer, maxhp[side][name])
+            e = ev_tuple(EV['SWITCH'], pos, NOPOS, cause, roster_of[side][name], id2, *hp)
+        elif kind == 'move':
+            pos = ev_pos(args[0])
+            target = ev_pos(parts[4]) if len(parts) > 4 else None
+            flags = 0
+            amount = 0
+            for a in parts[5:]:
+                if a == '[still]':
+                    flags |= FLAG['STILL']
+                elif a == '[from] lockedmove':
+                    flags |= FLAG['LOCKED']
+                elif a == '[miss]':
+                    flags |= FLAG['MISS']
+                elif a == '[notarget]':
+                    flags |= FLAG['NOTARGET']
+                elif a.startswith('[spread]'):
+                    flags |= FLAG['SPREAD']
+                    for slot in a[len('[spread]'):].strip().split(','):
+                        if slot:
+                            amount |= 1 << ev_pos(slot)
+                elif a:
+                    raise SystemExit('trace_to_c: unknown move attribute %r' % a)
+            if flags & (FLAG['SPREAD'] | FLAG['NOTARGET'] | FLAG['STILL']) or target is None:
+                target = NOPOS
+            e = ev_tuple(EV['MOVE'], pos, target, 0, tables['MOVE'][key(args[1])], amount=amount, flags=flags)
+        elif kind in ('-damage', '-heal'):
+            pos = ev_pos(args[0])
+            side = pos // 2
+            cause, id2, other = ev_cause(attrs, tables)
+            hp = ev_hp(args[1], side, viewer, maxhp[side][args[0].split(': ', 1)[1]])
+            e = ev_tuple(EV['DAMAGE' if kind == '-damage' else 'HEAL'], pos, other, cause, 0, id2, *hp)
+        elif kind == 'faint':
+            e = ev_tuple(EV['FAINT'], ev_pos(args[0]))
+        elif kind == 'cant':
+            pos = ev_pos(args[0])
+            reason = args[1]
+            if reason.startswith('ability: '):
+                _, _, other = ev_cause(attrs, tables)
+                e = ev_tuple(EV['CANT'], pos, other, CAUSE['ABILITY'], tables['MOVE'][key(args[2])],
+                             tables['ABILITY'][key(reason[9:])] + 1)
+            else:
+                cause = {'par': 'PARALYSIS', 'slp': 'SLEEP', 'frz': 'FREEZE', 'flinch': 'FLINCH', 'nopp': 'NO_PP'}
+                e = ev_tuple(EV['CANT'], pos, NOPOS, CAUSE[cause[reason]])
+        elif kind == '-miss':
+            e = ev_tuple(EV['MISS'], ev_pos(args[0]), ev_pos(args[1]))
+        elif kind in ('-crit', '-supereffective', '-resisted'):
+            # The Champions -supereffective and -resisted carry min(|typeMod|, 2).
+            e = ev_tuple(EV[{'-crit': 'CRIT', '-supereffective': 'SUPER_EFFECTIVE', '-resisted': 'RESISTED'}[kind]],
+                         ev_pos(args[0]), amount=int(args[1]) if len(args) > 1 else 0)
+        elif kind == '-immune':
+            cause, id2, _ = ev_cause(attrs, tables)
+            e = ev_tuple(EV['IMMUNE'], ev_pos(args[0]), NOPOS, cause, 0, id2)
+        elif kind == '-fail':
+            e = ev_tuple(EV['FAIL'], ev_pos(args[0]), detail=AILMENT[args[1]] if len(args) > 1 else 0)
+        elif kind == '-singleturn':
+            e = ev_tuple(EV['PROTECT'], ev_pos(args[0]))
+        elif kind == '-activate':
+            pos = ev_pos(args[0])
+            what = args[1]
+            if what == 'move: Protect':
+                e = ev_tuple(EV['BLOCKED'], pos)
+            elif what == 'confusion':
+                e = ev_tuple(EV['CONFUSED'], pos)
+            elif what.startswith('ability: '):
+                e = ev_tuple(EV['ACTIVATE'], pos, NOPOS, CAUSE['ABILITY'], 0, tables['ABILITY'][key(what[9:])] + 1)
+            elif what.startswith('move: '):
+                e = ev_tuple(EV['ACTIVATE'], pos, NOPOS, CAUSE['MOVE'], 0, tables['MOVE'][key(what[6:])])
+            else:
+                raise SystemExit('trace_to_c: unknown -activate %r' % line)
+        elif kind in ('-boost', '-unboost'):
+            cause, id2, other = ev_cause(attrs, tables)
+            e = ev_tuple(EV['BOOST' if kind == '-boost' else 'UNBOOST'], ev_pos(args[0]), other, cause, 0, id2,
+                         detail=EV_STATS.index(args[1]), amount=int(args[2]))
+        elif kind == '-status':
+            cause, id2, other = ev_cause(attrs, tables)
+            e = ev_tuple(EV['STATUS'], ev_pos(args[0]), other, cause, 0, id2, detail=AILMENT[args[1]])
+        elif kind == '-curestatus':
+            e = ev_tuple(EV['CURE_STATUS'], ev_pos(args[0]), detail=AILMENT[args[1]],
+                         flags=FLAG['MESSAGE'] if '[msg]' in attrs else 0)
+        elif kind in ('-start', '-end'):
+            what = args[1]
+            if what == 'confusion':
+                e = ev_tuple(EV['CONFUSION_START' if kind == '-start' else 'CONFUSION_END'], ev_pos(args[0]))
+            elif what == 'ability: Flash Fire' and kind == '-start':
+                e = ev_tuple(EV['FLASH_FIRE'], ev_pos(args[0]))
+            else:
+                raise SystemExit('trace_to_c: unknown %s %r' % (kind, line))
+        elif kind == '-weather':
+            cause, id2, other = ev_cause(attrs, tables)
+            weather = {'RainDance': 1, 'SunnyDay': 2, 'none': 0}[args[0]]
+            e = ev_tuple(EV['WEATHER'], NOPOS, other, cause, 0, id2, detail=weather,
+                         flags=FLAG['UPKEEP'] if '[upkeep]' in attrs else 0)
+        elif kind in ('-fieldstart', '-fieldend'):
+            cause, id2, other = ev_cause(attrs, tables)
+            field = {'move: Grassy Terrain': 1, 'move: Trick Room': 2}[args[0]]
+            e = ev_tuple(EV['FIELD_START' if kind == '-fieldstart' else 'FIELD_END'], NOPOS, other, cause, 0, id2,
+                         detail=field)
+        elif kind in ('-sidestart', '-sideend'):
+            side = int(args[0][1]) - 1
+            cond = {'move: Tailwind': 1, 'Reflect': 2, 'move: Reflect': 2, 'move: Light Screen': 3}[args[1]]
+            e = ev_tuple(EV['SIDE_START' if kind == '-sidestart' else 'SIDE_END'], detail=side, amount=cond)
+        elif kind == '-enditem':
+            e = ev_tuple(EV['ITEM_END'], ev_pos(args[0]), NOPOS, 0, 0, tables['ITEM'][key(args[1])] + 1,
+                         flags=FLAG['EATEN'] if '[eat]' in attrs else 0)
+        elif kind == 'detailschange':
+            e = ev_tuple(EV['FORME'], ev_pos(args[0]), ident=tables['FORME'][key(args[1].split(',')[0])])
+        elif kind == '-mega':
+            e = ev_tuple(EV['MEGA'], ev_pos(args[0]), NOPOS, 0, 0, tables['ITEM'][key(args[2])] + 1)
+        elif kind == '-prepare':
+            e = ev_tuple(EV['PREPARE'], ev_pos(args[0]), ident=tables['MOVE'][key(args[1])])
+        elif kind == '-anim':
+            e = ev_tuple(EV['ANIMATION'], ev_pos(args[0]), ev_pos(args[2]), 0, tables['MOVE'][key(args[1])])
+        elif kind == '-ability':
+            e = ev_tuple(EV['ABILITY'], ev_pos(args[0]), NOPOS, 0, 0, tables['ABILITY'][key(args[1])] + 1)
+        else:
+            raise SystemExit('trace_to_c: unknown protocol line %r' % line)
+        out.append(e)
+    return out
+
+
 def boundary_of(state, log):
     """The DuoForge boundary after a step: TERMINAL, else the request kind."""
     if state['ended']:
@@ -282,7 +544,7 @@ def boundary_of(state, log):
     return BOUNDARY[kind]
 
 
-def convert(root, name, tables, out, all_tape):
+def convert(root, name, tables, out, all_tape, all_events):
     spec = json.load(io.open(os.path.join(root, 'tests', 'reference', 'specs', name + '.json'), encoding='utf-8'))
     trace = json.load(io.open(os.path.join(root, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8'))
     teams = [parse_team(spec['teams'][s], tables) for s in range(2)]
@@ -308,6 +570,7 @@ def convert(root, name, tables, out, all_tape):
         if len(names) != len(teams[s]) or len(set(names)) != len(names):
             raise SystemExit('trace_to_c: %s side %d roster is not unique' % (name, s))
         roster_of.append({n: i for i, n in enumerate(names)})
+    maxhp = [{name_of(p): p['maxhp'] for p in state['sides'][s]['pokemon']} for s in range(2)]
     steps = []
     dropped_total = 0
     # What each player has seen of the other side: the last public HP display
@@ -323,7 +586,7 @@ def convert(root, name, tables, out, all_tape):
         tape_off = len(all_tape)
         dropped = 0
         for d in step['draws']:
-            if drop_reason(d) is None:
+            if drop_reason(d, state) is None:
                 all_tape.append(tape_entry(d))
             else:
                 dropped += 1
@@ -411,13 +674,19 @@ def convert(root, name, tables, out, all_tape):
                      c for sd in new_state['sides'] for c in sd['conditions'])
         boundary = boundary_of(new_state, step['log'])
         result = RESULT[new_state['winner']] if boundary == 5 else 0
-        steps.append('    {%du, %du, %du, %du, %du, %du, %du, %du, {%s}, {%s}, {%s}, {%s}, {%s}, {%s}, {{%s}, {%s}}},'
-                     '  /* %d draws dropped */' % (
+        ev_off, ev_len = [], []
+        for viewer in range(2):
+            evs = step_events(step['log'], viewer, roster_of, maxhp, tables)
+            ev_off.append(len(all_events))
+            ev_len.append(len(evs))
+            all_events.extend(evs)
+        steps.append('    {%du, %du, %du, %du, %du, %du, %du, %du, {%s}, {%s}, {%s}, {%s}, {%s}, {%s}, {{%s}, {%s}}, '
+                     '{%du, %du}, {%du, %du}},  /* %d draws dropped */' % (
                          1 if team else 0, 1 if 0 in kinds else 0, 1 if 1 in kinds else 0, tape_off,
                          len(all_tape) - tape_off, new_state['turn'], boundary, result, ', '.join(pk),
                          ', '.join(cmds), ', '.join(occ), ', '.join('%du' % x for x in ent),
                          ', '.join('%du' % x for x in field), ', '.join(enabled), ', '.join(mons[0]),
-                         ', '.join(mons[1]), dropped))
+                         ', '.join(mons[1]), ev_off[0], ev_off[1], ev_len[0], ev_len[1], dropped))
         state = new_state
     w('static const df_conf_step conf_%s_steps[] = {' % name)
     out.extend(steps)
@@ -442,7 +711,7 @@ def main():
            ' * tests/reference/traces (pinned Showdown b2cb775b0616115b775534eaeff50300e1fc81fc).',
            ' * Do not edit by hand. Draw drop rules: tools/reference/trace_to_c.py.', ' */',
            '#ifndef DUOFORGE_TESTS_REFERENCE_CONFORMANCE_H', '#define DUOFORGE_TESTS_REFERENCE_CONFORMANCE_H',
-           '#include <stdint.h>', '', '#include "rng/draw.h"', '',
+           '#include <stdint.h>', '', '#include <duoforge/duoforge.h>', '', '#include "rng/draw.h"', '',
            '/* species, gender, nature, Stat Points, ability + 1 (0 none), item + 1 (0 none), moves */',
            'typedef struct df_conf_member {', '    uint32_t species, gender, nature, sp[6], ability, item, move_count, moves[4];',
            '} df_conf_member;', '/* kind, move_slot, target, mega, reserve */',
@@ -468,15 +737,18 @@ def main():
            '    uint32_t team, answered0, answered1, tape_off, tape_len, turn, boundary, result;',
            '    uint8_t picks[2][6];', '    df_conf_cmd cmds[2][2];', '    uint8_t occupants[2][2];', '    uint8_t entries[4];', '    uint8_t field[11];',
            '    uint8_t enabled[2][2];',
-           '    df_conf_mon mons[2][6];', '} df_conf_step;',
+           '    df_conf_mon mons[2][6];',
+           '    uint32_t ev_off[2], ev_len[2]; /* each player\'s events of the step in conf_events */',
+           '} df_conf_step;',
            'typedef struct df_conf_battle {', '    const char *name;', '    uint32_t member_count;',
            '    const df_conf_member (*members)[6];', '    const df_conf_step *steps;', '    uint32_t step_count;',
            '    uint32_t dropped;', '} df_conf_battle;', '']
     all_tape = []
+    all_events = []
     entries = []
     body = []
     for n in names:
-        entries.append(convert(root, n, tables, body, all_tape))
+        entries.append(convert(root, n, tables, body, all_tape, all_events))
     out.extend(body)
     out.append('')
     out.append('/* Every kept draw of every battle: site, lo, hi, value. */')
@@ -485,6 +757,15 @@ def main():
         out.append('    {%du, %du, %du, %du},' % e)
     if not all_tape:
         out.append('    {0u, 0u, 0u, 0u},')
+    out.append('};')
+    out.append('')
+    out.append('/* Every step\'s events per player (decision 0007 section 6), from the')
+    out.append(' * protocol lines the game shows that player. */')
+    out.append('static const duoforge_event conf_events[] = {')
+    for e in all_events:
+        out.append('    {%du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du, {0u, 0u}},' % e)
+    if not all_events:
+        out.append('    {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u}},')
     out.append('};')
     out.append('')
     out.append('static const df_conf_battle conf_battles[] = {')
@@ -502,7 +783,8 @@ def main():
         print('trace_to_c: %s matches the traces' % target)
         return 0
     io.open(target, 'w', encoding='ascii', newline='\n').write(text)
-    print('trace_to_c: wrote %s (%d battles, %d tape entries)' % (target, len(names), len(all_tape)))
+    print('trace_to_c: wrote %s (%d battles, %d tape entries, %d events)' % (target, len(names), len(all_tape),
+                                                                            len(all_events)))
     return 0
 
 
