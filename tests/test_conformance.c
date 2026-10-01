@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "data/closure_tables.h"
 #include "reference/conformance.h"
 #include "state/battle_internal.h"
 #include "state/request.h"
@@ -125,7 +126,13 @@ static unsigned compare_observation(const duoforge_context *ctx, const duoforge_
                 const bool visible = s == viewer || e->seen != 0u;
                 const uint32_t status = (visible && !e->fainted) ? e->status : 0u;
                 const uint32_t used = (cb->members[s][m].item != 0u && e->held == 0u) ? 1u : 0u;
-                bool ok = v->status == status && v->is_mega == e->mega && v->item_used == used;
+                /* The ability on the sheet, the Mega forme's once it evolved. */
+                const df_conf_member *set = &cb->members[s][m];
+                uint32_t ability = set->ability;
+                if (e->mega != 0u) {
+                    ability = 1u + dfi_closure_formes[dfi_closure_formes[set->species].mega_forme].ability;
+                }
+                bool ok = v->status == status && v->is_mega == e->mega && v->item_used == used && v->ability == ability;
                 for (uint32_t k = 0; k < v->move_count && k < 4u; ++k) {
                     ok = ok && v->pp[k] == e->pp[k]; /* own exact, foe derived: the same in the closure */
                 }
@@ -145,8 +152,15 @@ static unsigned compare_observation(const duoforge_context *ctx, const duoforge_
                     continue;
                 }
                 const df_conf_mon *e = &st->mons[s][occ];
+                /* The locked target only for the own side; Protect, Flash Fire,
+                 * a charged move and the stall counter as Showdown's volatiles. */
+                const uint32_t target = (s == viewer && e->locked_slot != 0xFFu) ? e->locked_target : DUOFORGE_TARGET_NONE;
                 bool ok = memcmp(pv->stages, e->stages, 7u) == 0 && pv->confused == (e->confusion != 0u ? 1u : 0u) &&
-                          pv->locked_slot == e->locked_slot;
+                          pv->locked_slot == e->locked_slot && pv->locked_target == target &&
+                          pv->protecting == ((e->vols & 1u) != 0u ? 1u : 0u) &&
+                          pv->flash_fire == ((e->vols & 2u) != 0u ? 1u : 0u) &&
+                          pv->charging == ((e->vols & 4u) != 0u ? 1u : 0u) &&
+                          (pv->protect_chain != 0u) == (e->stall != 0u);
                 if (b->boundary_kind == DUOFORGE_BOUNDARY_TERMINAL) {
                     ok = memcmp(pv->stages, e->stages, 7u) == 0; /* locks are not compared at the end */
                 }

@@ -347,6 +347,9 @@ static bool dfi_knowledge_valid(const struct duoforge_battle *b, uint32_t p)
             if (k->hp_percent != 0u || k->hp_flag != 0u || k->revealed != 0u) {
                 return false;
             }
+            if (m < opp->member_count && opp->members[m].is_mega != 0u) {
+                return false; /* a Mega Evolution happens on the field, in view */
+            }
             for (uint32_t j = 0u; j < DUOFORGE_MAX_MOVE_SLOTS; ++j) {
                 if (k->moves_used[j] != 0u) {
                     return false;
@@ -365,7 +368,7 @@ static bool dfi_knowledge_valid(const struct duoforge_battle *b, uint32_t p)
         if ((k->revealed & DFI_REVEALED_ITEM_CONSUMED) != 0u && mem->item_consumed != 1u) {
             return false;
         }
-        if ((k->revealed & DFI_REVEALED_MEGA) != 0u && mem->is_mega != 1u) {
+        if (((k->revealed & DFI_REVEALED_MEGA) != 0u) != (mem->is_mega == 1u)) {
             return false;
         }
         for (uint32_t j = mem->move_count; j < DUOFORGE_MAX_MOVE_SLOTS; ++j) {

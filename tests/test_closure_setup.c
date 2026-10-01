@@ -595,7 +595,15 @@ int main(void)
         expect_member_inv(&t, k1, w, true, "Mega stats with the base ability");
         raichu->ability = dfi_closure_formes[DFI_FORME_RAICHUMEGAY].ability;
         raichu->ability++;
-        expect_member_inv(&t, k1, w, false, "Raichu-Mega-Y");
+        /* A consistent Mega forme passes the member rules; before the
+         * battle nobody can have seen it evolve, and a Mega Evolution is
+         * always shown, so the knowledge rule rejects this state. */
+        {
+            dfi_invariant got = DFI_INV_NONE;
+            if (!DF_CHECK(&t, dfi_state_check(k1, w, &got) == DUOFORGE_E_INVARIANT && got == DFI_INV_KNOWLEDGE)) {
+                fprintf(stderr, "  member case Raichu-Mega-Y: %s\n", dfi_invariant_name(got));
+            }
+        }
         RESET();
         rilla->status = 5u;
         expect_member_inv(&t, k1, w, true, "status 5");

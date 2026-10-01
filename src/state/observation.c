@@ -24,19 +24,23 @@
 #include "state/context_internal.h"
 #include "state/invariants.h"
 
-_Static_assert(sizeof(duoforge_member_view) == 36u, "member view is 36 bytes");
+_Static_assert(sizeof(duoforge_member_view) == 52u, "member view is 52 bytes");
 _Static_assert(offsetof(duoforge_member_view, move_ids) == 6u, "member view layout: move ids");
-_Static_assert(offsetof(duoforge_member_view, pp) == 14u, "member view layout: pp");
-_Static_assert(offsetof(duoforge_member_view, pp_max) == 18u, "member view layout: pp max");
-_Static_assert(offsetof(duoforge_member_view, mega_capable) == 27u, "member view layout: mega");
-_Static_assert(offsetof(duoforge_member_view, status) == 34u, "member view layout: status");
+_Static_assert(offsetof(duoforge_member_view, stats) == 14u, "member view layout: stats");
+_Static_assert(offsetof(duoforge_member_view, pp) == 24u, "member view layout: pp");
+_Static_assert(offsetof(duoforge_member_view, pp_max) == 28u, "member view layout: pp max");
+_Static_assert(offsetof(duoforge_member_view, stat_points) == 32u, "member view layout: stat points");
+_Static_assert(offsetof(duoforge_member_view, mega_capable) == 43u, "member view layout: mega");
+_Static_assert(offsetof(duoforge_member_view, status) == 50u, "member view layout: status");
 _Static_assert(sizeof(duoforge_position_view) == 16u, "position view is 16 bytes");
-_Static_assert(sizeof(duoforge_side_view) == 264u, "side view is 264 bytes");
-_Static_assert(offsetof(duoforge_side_view, positions) == 216u, "side view layout: positions");
-_Static_assert(offsetof(duoforge_side_view, member_count) == 248u, "side view layout: count");
-_Static_assert(offsetof(duoforge_side_view, brought_order) == 252u, "side view layout: order");
-_Static_assert(offsetof(duoforge_side_view, requested) == 258u, "side view layout: requested");
-_Static_assert(sizeof(duoforge_observation) == 544u, "observation is 544 bytes");
+_Static_assert(offsetof(duoforge_position_view, protecting) == 14u, "position view layout: protecting");
+_Static_assert(sizeof(duoforge_side_view) == 360u, "side view is 360 bytes");
+_Static_assert(offsetof(duoforge_side_view, positions) == 312u, "side view layout: positions");
+_Static_assert(offsetof(duoforge_side_view, member_count) == 344u, "side view layout: count");
+_Static_assert(offsetof(duoforge_side_view, brought_order) == 348u, "side view layout: order");
+_Static_assert(offsetof(duoforge_side_view, requested) == 354u, "side view layout: requested");
+_Static_assert(sizeof(duoforge_observation) == 736u, "observation is 736 bytes");
+_Static_assert(DFI_MEMBER_STAT_COUNT == 5u && DFI_STAT_POINT_COUNT == 6u, "view stat arrays");
 _Static_assert(offsetof(duoforge_observation, turn) == 8u, "observation layout: turn");
 _Static_assert(offsetof(duoforge_observation, sides) == 16u, "observation layout: sides");
 _Static_assert(DUOFORGE_AILMENT_BURN == DFI_STATUS_BRN && DUOFORGE_AILMENT_FREEZE == DFI_STATUS_FRZ &&
@@ -85,6 +89,12 @@ static void dfi_view_member(const struct duoforge_battle *b, uint32_t viewer, ui
         for (uint32_t k = 0u; k < DUOFORGE_MAX_MOVE_SLOTS; ++k) {
             v->pp[k] = mem->moves[k].pp;
         }
+        for (uint32_t i = 0u; i < DFI_MEMBER_STAT_COUNT; ++i) {
+            v->stats[i] = mem->stats[i]; /* the player's own sheet and stats */
+        }
+        for (uint32_t i = 0u; i < DFI_STAT_POINT_COUNT; ++i) {
+            v->stat_points[i] = mem->stat_points[i];
+        }
         v->is_mega = mem->is_mega;
         v->item_used = mem->item_consumed;
         v->status = mem->hp != 0u ? mem->status : (uint8_t)DUOFORGE_AILMENT_NONE;
@@ -112,7 +122,11 @@ static void dfi_view_member(const struct duoforge_battle *b, uint32_t viewer, ui
         v->hp_max = 100u;
         v->hp_kind = (uint8_t)DUOFORGE_HP_PERCENT;
         v->location = dfi_is_occupant(side, m) ? (uint8_t)DUOFORGE_LOCATION_ACTIVE : (uint8_t)DUOFORGE_LOCATION_BENCH;
-        /* A status is announced when it starts; a fainted member shows none. */
+        /* A status is announced when it starts and when it ends, so the
+         * current one is the one shown (read from the state like the
+         * ability, which changes only by a Mega Evolution, always shown:
+         * an invariant ties is_mega to the revealed fact); a fainted member
+         * shows none. */
         v->status = know->hp_percent != 0u ? mem->status : (uint8_t)DUOFORGE_AILMENT_NONE;
     } else {
         v->hp_kind = (uint8_t)DUOFORGE_HP_UNKNOWN;
@@ -127,8 +141,13 @@ static void dfi_view_position(const struct duoforge_battle *b, uint32_t viewer, 
                               duoforge_position_view *out)
 {
     const dfi_active_slot *slot = &b->sides[s].positions[p];
+    out->locked_slot = (uint8_t)DUOFORGE_MOVE_SLOT_NONE;
+    out->locked_target = (uint8_t)DUOFORGE_TARGET_NONE;
     if (slot->occupant == DFI_OCCUPANT_NONE) {
-        return; /* all zero */
+        for (uint32_t i = 0u; i < 7u; ++i) {
+            out->stages[i] = (uint8_t)DFI_STAGE_NEUTRAL; /* empty: nothing raised or lowered */
+        }
+        return;
     }
     for (uint32_t i = 0u; i < 7u; ++i) {
         out->stages[i] = slot->stages[i];
@@ -137,7 +156,10 @@ static void dfi_view_position(const struct duoforge_battle *b, uint32_t viewer, 
     out->charging = slot->charge_turns != 0u ? 1u : 0u;
     const uint32_t locked_index = slot->locked_move != 0u ? (uint32_t)slot->locked_move - 1u : DUOFORGE_MOVE_SLOT_NONE;
     out->locked_slot = (uint8_t)locked_index; /* <= 0xFF */
-    out->locked_target = (slot->locked_move != 0u && s == viewer) ? slot->locked_target : 0u;
+    if (slot->locked_move != 0u && s == viewer) {
+        out->locked_target = slot->locked_target;
+    }
+    out->protecting = (((uint32_t)slot->flags & DFI_VOL_PROTECT) != 0u) ? 1u : 0u;
     out->acted = slot->move_actions != 0u ? 1u : 0u;
     out->protect_chain = slot->stall_level;
     out->flash_fire = ((uint32_t)slot->flags & DFI_VOL_FLASH_FIRE) != 0u ? 1u : 0u;
