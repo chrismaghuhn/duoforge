@@ -77,6 +77,12 @@ typedef enum dfi_invariant {
  * *out_first (nullable) only on failure. */
 duoforge_status dfi_state_check(const duoforge_context *ctx, const struct duoforge_battle *b,
                                 dfi_invariant *out_first);
+/* The same check of `b`, given `validated` (nullable): a battle that passed
+ * dfi_state_check under the same context. A member byte-identical to the
+ * same member of `validated` passed the member rules, which depend on the
+ * member alone, so they are not run again (the result is the same). */
+duoforge_status dfi_state_check_since(const duoforge_context *ctx, const struct duoforge_battle *b,
+                                      const struct duoforge_battle *validated, dfi_invariant *out_first);
 const char *dfi_invariant_name(dfi_invariant id);
 
 /* Bit mask of occupied positions of a side (bounded loop, no stored index). */

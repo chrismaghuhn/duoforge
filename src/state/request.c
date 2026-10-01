@@ -256,17 +256,15 @@ static bool dfi_pair_allowed(const duoforge_slot_command *a, const duoforge_slot
     return true;
 }
 
-/* The complete joint domain of `s` at the current boundary, in documented
- * order (decision 0005 section 3). Precondition: `s` is requested. */
-static duoforge_status dfi_enumerate_side(const duoforge_context *ctx, const struct duoforge_battle *b, uint32_t s,
-                                          dfi_sink *k)
+/* The per-slot candidate lists of `s` at a SLOTS boundary and the pair
+ * rule's inputs: whether exactly `need` actors must switch (`forced`).
+ * Shared by the enumeration and the membership test, so both accept the
+ * same set. */
+static duoforge_status dfi_side_lists(const duoforge_context *ctx, const struct duoforge_battle *b, uint32_t s,
+                                      dfi_slot_list lists[DUOFORGE_ACTIVE_PER_SIDE], bool *out_forced,
+                                      uint32_t *out_need)
 {
     const dfi_side *side = &b->sides[s];
-    if (b->boundary_kind == DUOFORGE_BOUNDARY_TEAM_SELECTION) {
-        dfi_enumerate_team(b, s, side->member_count, ctx->brought_count, k);
-        return DUOFORGE_OK;
-    }
-    dfi_slot_list lists[DUOFORGE_ACTIVE_PER_SIDE];
     const uint32_t rs = side->requested_slots;
     uint32_t requested = 0u;
     for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
@@ -288,6 +286,28 @@ static duoforge_status dfi_enumerate_side(const duoforge_context *ctx, const str
         const uint32_t nr = dfi_reserves(side, reserves);
         need = requested < nr ? requested : nr;
     }
+    *out_forced = forced;
+    *out_need = need;
+    return DUOFORGE_OK;
+}
+
+/* The complete joint domain of `s` at the current boundary, in documented
+ * order (decision 0005 section 3). Precondition: `s` is requested. */
+static duoforge_status dfi_enumerate_side(const duoforge_context *ctx, const struct duoforge_battle *b, uint32_t s,
+                                          dfi_sink *k)
+{
+    const dfi_side *side = &b->sides[s];
+    if (b->boundary_kind == DUOFORGE_BOUNDARY_TEAM_SELECTION) {
+        dfi_enumerate_team(b, s, side->member_count, ctx->brought_count, k);
+        return DUOFORGE_OK;
+    }
+    dfi_slot_list lists[DUOFORGE_ACTIVE_PER_SIDE];
+    bool forced = false;
+    uint32_t need = 0u;
+    const duoforge_status ls = dfi_side_lists(ctx, b, s, lists, &forced, &need);
+    if (ls != DUOFORGE_OK) {
+        return ls;
+    }
     duoforge_side_choice c;
     for (uint32_t i = 0u; i < lists[0].n; ++i) {
         for (uint32_t j = 0u; j < lists[1].n; ++j) {
@@ -305,6 +325,71 @@ static duoforge_status dfi_enumerate_side(const duoforge_context *ctx, const str
             dfi_sink_emit(k, &c);
         }
     }
+    return DUOFORGE_OK;
+}
+
+/* Whether `needle` is in the joint domain of `s` without listing it: the
+ * candidate it could be is built as the enumeration builds candidates (team
+ * selection: distinct picks below member_count; slots: its two commands
+ * found in the shared slot lists, the pair allowed by the same rule) and
+ * compared byte for byte. The accepted set is the enumerated set, in time
+ * linear in the list lengths instead of their product. */
+static duoforge_status dfi_side_accepts(const duoforge_context *ctx, const struct duoforge_battle *b, uint32_t s,
+                                        const duoforge_side_choice *needle, bool *out)
+{
+    *out = false;
+    duoforge_side_choice c;
+    memset(&c, 0, sizeof c);
+    c.epoch = b->request_epoch;
+    c.side = (uint8_t)s;
+    if (b->boundary_kind == DUOFORGE_BOUNDARY_TEAM_SELECTION) {
+        const uint32_t n = b->sides[s].member_count;
+        const uint32_t m = ctx->brought_count;
+        if (m > DUOFORGE_MAX_ROSTER) {
+            return DUOFORGE_E_INVARIANT;
+        }
+        uint32_t used = 0u;
+        for (uint32_t i = 0u; i < m; ++i) {
+            const uint32_t pick = needle->picks[i];
+            if (pick >= n || ((used >> pick) & 1u) != 0u) {
+                return DUOFORGE_OK; /* the odometer emits only distinct picks below n */
+            }
+            used |= 1u << pick;
+            c.picks[i] = (uint8_t)pick;
+        }
+        c.kind = (uint8_t)DUOFORGE_CHOICE_TEAM_SELECTION;
+        c.pick_count = (uint8_t)m;
+        *out = dfi_bytes_equal((const uint8_t *)needle, (const uint8_t *)&c, sizeof c);
+        return DUOFORGE_OK;
+    }
+    dfi_slot_list lists[DUOFORGE_ACTIVE_PER_SIDE];
+    bool forced = false;
+    uint32_t need = 0u;
+    const duoforge_status ls = dfi_side_lists(ctx, b, s, lists, &forced, &need);
+    if (ls != DUOFORGE_OK) {
+        return ls;
+    }
+    uint32_t found[DUOFORGE_ACTIVE_PER_SIDE] = {UINT32_MAX, UINT32_MAX};
+    for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
+        for (uint32_t i = 0u; i < lists[slot].n && found[slot] == UINT32_MAX; ++i) {
+            if (dfi_bytes_equal((const uint8_t *)&lists[slot].cmds[i], (const uint8_t *)&needle->slots[slot],
+                                sizeof needle->slots[slot])) {
+                found[slot] = i;
+            }
+        }
+        if (found[slot] == UINT32_MAX) {
+            return DUOFORGE_OK;
+        }
+    }
+    const duoforge_slot_command *a = &lists[0].cmds[found[0]];
+    const duoforge_slot_command *d = &lists[1].cmds[found[1]];
+    if (!dfi_pair_allowed(a, d, forced, need)) {
+        return DUOFORGE_OK;
+    }
+    c.kind = (uint8_t)DUOFORGE_CHOICE_SLOTS;
+    c.slots[0] = *a;
+    c.slots[1] = *d;
+    *out = dfi_bytes_equal((const uint8_t *)needle, (const uint8_t *)&c, sizeof c);
     return DUOFORGE_OK;
 }
 
@@ -511,12 +596,12 @@ duoforge_status dfi_battle_step_events_tape(const duoforge_context *ctx, duoforg
         }
         /* Domain membership by byte equality: the accepted set is the
          * enumerated set, computed from this side's data only. */
-        dfi_sink finder = {NULL, 0u, 0u, r, UINT32_MAX};
-        const duoforge_status es = dfi_enumerate_side(ctx, battle, s, &finder);
+        bool accepted = false;
+        const duoforge_status es = dfi_side_accepts(ctx, battle, s, r, &accepted);
         if (es != DUOFORGE_OK) {
             return es;
         }
-        if (finder.match == UINT32_MAX) {
+        if (!accepted) {
             return DUOFORGE_E_INVALID_ARGUMENT;
         }
     }
@@ -543,7 +628,8 @@ duoforge_status dfi_battle_step_events_tape(const duoforge_context *ctx, duoforg
         if (staged.overflow) {
             return DUOFORGE_E_INVARIANT; /* past the profile bound */
         }
-        if (!dfi_events_fold_knowledge(battle, &tmp, &staged, 0u) || dfi_state_check(ctx, &tmp, NULL) != DUOFORGE_OK) {
+        if (!dfi_events_fold_knowledge(battle, &tmp, &staged, 0u) ||
+            dfi_state_check_since(ctx, &tmp, battle, NULL) != DUOFORGE_OK) {
             return DUOFORGE_E_INVARIANT;
         }
         const duoforge_status fs = dfi_events_fit(buffers, &staged);
@@ -588,7 +674,8 @@ duoforge_status dfi_battle_step_events_tape(const duoforge_context *ctx, duoforg
     }
     /* The selected state, its leads seen, is checked before their entries run. */
     const uint32_t leads = staged.count;
-    if (!dfi_events_fold_knowledge(battle, &tmp, &staged, 0u) || dfi_state_check(ctx, &tmp, NULL) != DUOFORGE_OK) {
+    if (!dfi_events_fold_knowledge(battle, &tmp, &staged, 0u) ||
+        dfi_state_check_since(ctx, &tmp, battle, NULL) != DUOFORGE_OK) {
         return DUOFORGE_E_INVARIANT;
     }
     dfi_draws draws = dfi_draws_from_rng(&tmp.rng);
@@ -607,7 +694,8 @@ duoforge_status dfi_battle_step_events_tape(const duoforge_context *ctx, duoforg
     if (staged.overflow) {
         return DUOFORGE_E_INVARIANT; /* past the profile bound */
     }
-    if (!dfi_events_fold_knowledge(battle, &tmp, &staged, leads) || dfi_state_check(ctx, &tmp, NULL) != DUOFORGE_OK) {
+    if (!dfi_events_fold_knowledge(battle, &tmp, &staged, leads) ||
+        dfi_state_check_since(ctx, &tmp, battle, NULL) != DUOFORGE_OK) {
         return DUOFORGE_E_INVARIANT;
     }
     const duoforge_status fs = dfi_events_fit(buffers, &staged);

@@ -1,0 +1,39 @@
+{
+  "manifest": {"engine": "duoforge 0.6.0", "revision": "a16aef2102b7af85026c83aaf92ed1b552e5851d", "dirty": false,
+    "compiler": "GNU 16.2.0", "build_type": "Release", "c_flags": "-O3 -DNDEBUG",
+    "os": "windows", "cpu": "AMD64 Family 25 Model 33 Stepping 2, AuthenticAMD; logical processors 16", "workers": 1, "affinity": "none", "started_utc": "2026-10-01T16:26:10Z",
+    "workload": "closure-pairings-v1", "pairings": ["A-B", "B-A", "A-A", "B-B"], "battles_per_pairing": 1000, "max_steps": 1000,
+    "policy": "uniform random over candidates (splitmix64)", "policy_seed": 20261001, "battle_seed": 7001, "context_fingerprint": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+    "warmup": 1, "repetitions": 5, "timer": "wall: QueryPerformanceCounter, cpu: process"},
+  "record": {"battles": 4000, "turns": 52760, "steps": 72065, "side_decisions": 129495, "truncations": 0, "errors": 0},
+  "choices": [
+    {"side": 0, "choices": 64719, "team_selections": 4000, "slot_commands": 114015, "moves": 85638, "struggles": 40, "megas": 3283, "switches": 9122, "replacements": 8226, "passes": 11029,
+     "target_foe": 44057, "target_ally": 22057, "target_none": 19524, "leads": [1327, 1295, 1334, 1338, 1326, 1380],
+     "move_uses": {"0": 1528, "1": 1546, "2": 892, "3": 1539, "4": 2060, "5": 2039, "6": 686, "7": 7991, "8": 1834, "9": 1102, "10": 5459, "11": 3327, "12": 3312, "13": 3254, "14": 1077, "15": 2009, "16": 2036, "17": 1019, "18": 3107, "19": 1030, "20": 4877, "21": 2334, "22": 2309, "23": 2258, "24": 3207, "25": 5281, "26": 1254, "27": 3021, "28": 2893, "29": 914, "30": 844, "31": 2622, "32": 2582, "33": 876, "34": 857, "35": 2622}},
+    {"side": 1, "choices": 64776, "team_selections": 4000, "slot_commands": 114040, "moves": 85915, "struggles": 37, "megas": 3292, "switches": 9260, "replacements": 8292, "passes": 10573,
+     "target_foe": 44110, "target_ally": 21952, "target_none": 19853, "leads": [1292, 1329, 1357, 1292, 1374, 1356],
+     "move_uses": {"0": 1447, "1": 1449, "2": 869, "3": 1433, "4": 2067, "5": 2069, "6": 701, "7": 8019, "8": 1815, "9": 1113, "10": 5500, "11": 3400, "12": 3191, "13": 3206, "14": 1053, "15": 2103, "16": 2017, "17": 1036, "18": 3114, "19": 1041, "20": 4700, "21": 2206, "22": 2276, "23": 2198, "24": 3397, "25": 5538, "26": 1226, "27": 2861, "28": 2883, "29": 965, "30": 863, "31": 2669, "32": 2734, "33": 980, "34": 1004, "35": 2735}}
+  ],
+  "results": [
+    {"family": "STEP_CORE", "variant": "plain", "repetitions": 5, "wall_ns": [222439700, 209539900, 216440600, 208476900, 215824800], "cpu_ns": [218750000, 203125000, 218750000, 218750000, 203125000],
+     "disturbed_repetitions": 0, "median_wall_ns": 215824800, "battles": 4000, "turns": 52760, "steps": 72065, "side_decisions": 129495, "calls": 0, "bytes": 0, "truncations": 0, "errors": 0,
+     "per_second": {"battles": 18533, "turns": 244457, "steps": 333905, "side_decisions": 600000, "calls": 0}},
+    {"family": "STEP_CORE", "variant": "events", "repetitions": 5, "wall_ns": [226003100, 219956700, 224086100, 219335800, 224287200], "cpu_ns": [234375000, 218750000, 218750000, 218750000, 234375000],
+     "disturbed_repetitions": 0, "median_wall_ns": 224086100, "battles": 4000, "turns": 52760, "steps": 72065, "side_decisions": 129495, "calls": 0, "bytes": 0, "truncations": 0, "errors": 0,
+     "per_second": {"battles": 17850, "turns": 235445, "steps": 321595, "side_decisions": 577880, "calls": 0}},
+    {"family": "REQUEST", "variant": "request+candidates+observe", "repetitions": 5, "wall_ns": [468955600, 467478500, 478707000, 476901500, 478116300], "cpu_ns": [468750000, 468750000, 484375000, 468750000, 484375000],
+     "disturbed_repetitions": 0, "median_wall_ns": 476901500, "battles": 0, "turns": 0, "steps": 0, "side_decisions": 0, "calls": 144130, "bytes": 0, "truncations": 0, "errors": 0,
+     "per_second": {"battles": 0, "turns": 0, "steps": 0, "side_decisions": 0, "calls": 302221}},
+    {"family": "SNAPSHOT", "variant": "copy", "repetitions": 5, "wall_ns": [8361400, 7923400, 7978000, 7619300, 7682600], "cpu_ns": [15625000, 0, 15625000, 0, 15625000],
+     "disturbed_repetitions": 0, "median_wall_ns": 7923400, "battles": 0, "turns": 0, "steps": 0, "side_decisions": 0, "calls": 72065, "bytes": 1009, "truncations": 0, "errors": 0,
+     "per_second": {"battles": 0, "turns": 0, "steps": 0, "side_decisions": 0, "calls": 9095211}},
+    {"family": "SNAPSHOT", "variant": "codec", "repetitions": 5, "wall_ns": [113745700, 112871100, 111787100, 110048900, 109492700], "cpu_ns": [125000000, 109375000, 109375000, 109375000, 109375000],
+     "disturbed_repetitions": 0, "median_wall_ns": 111787100, "battles": 0, "turns": 0, "steps": 0, "side_decisions": 0, "calls": 72065, "bytes": 1009, "truncations": 0, "errors": 0,
+     "per_second": {"battles": 0, "turns": 0, "steps": 0, "side_decisions": 0, "calls": 644662}},
+    {"family": "EPISODE_NATIVE", "variant": "uniform-random", "repetitions": 5, "wall_ns": [652001800, 650626300, 642440600, 643248300, 637261200], "cpu_ns": [656250000, 640625000, 656250000, 640625000, 640625000],
+     "disturbed_repetitions": 0, "median_wall_ns": 643248300, "battles": 4000, "turns": 52760, "steps": 72065, "side_decisions": 129495, "calls": 0, "bytes": 0, "truncations": 0, "errors": 0,
+     "per_second": {"battles": 6218, "turns": 82021, "steps": 112032, "side_decisions": 201314, "calls": 0},
+     "median_part_ns": {"reset": 5240500, "policy": 352037400, "step": 208475500}}
+  ],
+  "skipped_by_time_limit": 0, "errors": 0
+}

@@ -1,6 +1,7 @@
 #include "state/invariants.h"
 
 #include "core/arith.h"
+#include "core/bytes.h"
 #include "state/closure_member.h"
 #include "state/context_internal.h"
 #include "state/identity.h"
@@ -162,7 +163,7 @@ static bool dfi_volatile_valid(const dfi_active_slot *slot, uint32_t move_count)
 }
 
 static dfi_invariant dfi_check_side(const struct duoforge_context *ctx, const struct duoforge_battle *b,
-                                    uint32_t s)
+                                    const struct duoforge_battle *validated, uint32_t s)
 {
     const dfi_side *side = &b->sides[s];
     const uint32_t kind = b->boundary_kind;
@@ -174,7 +175,12 @@ static dfi_invariant dfi_check_side(const struct duoforge_context *ctx, const st
     }
     for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
         if (m < member_count) {
-            const dfi_invariant inv = dfi_check_member(ctx, &side->members[m]);
+            /* dfi_check_member is a function of the member's bytes alone:
+             * a member byte-identical to one `validated` checked passes. */
+            const dfi_member *seen = validated != NULL ? &validated->sides[s].members[m] : NULL;
+            const bool same = seen != NULL && m < validated->sides[s].member_count &&
+                              dfi_bytes_equal((const uint8_t *)&side->members[m], (const uint8_t *)seen, sizeof *seen);
+            const dfi_invariant inv = same ? DFI_INV_NONE : dfi_check_member(ctx, &side->members[m]);
             if (inv != DFI_INV_NONE) {
                 return inv;
             }
@@ -453,6 +459,12 @@ static bool dfi_field_valid(const struct duoforge_battle *b)
 duoforge_status dfi_state_check(const duoforge_context *ctx, const struct duoforge_battle *b,
                                 dfi_invariant *out_first)
 {
+    return dfi_state_check_since(ctx, b, NULL, out_first);
+}
+
+duoforge_status dfi_state_check_since(const duoforge_context *ctx, const struct duoforge_battle *b,
+                                      const struct duoforge_battle *validated, dfi_invariant *out_first)
+{
     dfi_invariant inv = DFI_INV_NONE;
     const bool terminal = b->boundary_kind == DUOFORGE_BOUNDARY_TERMINAL;
     if (!dfi_context_fingerprint_matches(ctx, b->context_fingerprint)) {
@@ -480,7 +492,7 @@ duoforge_status dfi_state_check(const duoforge_context *ctx, const struct duofor
         inv = DFI_INV_FIELD;
     } else {
         for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT && inv == DFI_INV_NONE; ++s) {
-            inv = dfi_check_side(ctx, b, s);
+            inv = dfi_check_side(ctx, b, validated, s);
         }
     }
     if (inv == DFI_INV_NONE) {
