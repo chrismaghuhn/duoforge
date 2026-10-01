@@ -40,6 +40,16 @@ python -m duoforge.examples.throughput --envs 64 --episodes 16 --workers 16 --re
 
 Best runs of the main configuration (256 environments, 16 workers): native 94,509, autoreset 20,313, index 11,823 games/s.
 
+Batch size (16 workers, autoreset and native interleaved, 3 runs of about 4,100 battles each, native 8,192; median):
+
+| Environments | autoreset games/s (decisions/s) | native games/s |
+|---|---|---|
+| 256 | 20,978 (688k) | 89,819 |
+| 512 | 28,370 (954k) | 90,350 |
+| 1024 | 31,191 (1.10M) | 87,420 |
+| 2048 | **31,499 (1.21M)** | 73,078 |
+| 4096 | 23,649 (1.05M) | 88,814 |
+
 The rounds of the other modes (first series, same setup):
 
 | Environments, workers | index | factored | scripted |
@@ -52,7 +62,8 @@ The rounds of the other modes (first series, same setup):
 ## Reading
 
 - **The engine is not the limit.** With one worker the Python loop reaches about two thirds of the native mode. From 4 workers on, Python's share of each step sets the pace: 256 environments on 16 workers give 19,300 games/s and 670,000 decisions/s, against 92,000 native.
-- **Big batches pay.** A batch step costs Python about the same for 64 as for 256 environments, so 256 environments more than double the throughput on 4 and 16 workers. 1024 environments were not measured.
+- **Big batches pay, up to about 2048 environments.** A batch step costs Python about the same for 64 as for 256 environments, so the throughput grows with the batch: 256 environments more than double it on 4 and 16 workers, and 1024 to 2048 environments reach the plateau of about 31,000 games/s and 1.1 to 1.2 million decisions/s, a third of the native mode. With 4096 environments it falls again; the candidate buffers alone are then 205 MB.
+- **Beyond the plateau the C side of a step decides.** A step and the next query are two pool passes over every environment and write every observation and candidate list. Fusing them into one call, and returning observations or candidates only on demand, are the levers left (not built).
 - **Episodes should restart at once.** Rounds (`index`) lose a third against `autoreset`, because finished environments wait for the longest battle.
 - **The step also returns more than the native mode needs.** The Python loop queries every player's observation (736 bytes) and candidates each step; `play_random` reads neither observations nor copies candidates.
 - **Policies in NumPy are the next cost.** The factored choice (bit unpacking and a running count over 1024 pairs per player) and the scripted scoring (`(E, 2, candidates, 2)` temporaries) take most of their modes' time. In the JAX design of decision 0013 the policy runs on the GPU, so these are reference policies, not the training path.
