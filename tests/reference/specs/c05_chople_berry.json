@@ -1,0 +1,24 @@
+{
+  "name": "c05_chople_berry",
+  "purpose": "Chople Berry: eaten inside the damage calculation of the first super-effective Fighting hit on its holder (-supereffective, -enditem [eat], -enditem [weaken]), halving it even without a KO, chained with Life Orb on the attacker and Reflect on the holder's side; gone for the next one.",
+  "data": "team_c",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c0901",
+  "teams": [
+    "Staraptor (F) @ Life Orb\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Close Combat\n- Brave Bird\n\nRaichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Focus Blast\n- Protect\n\nSneasler (M) @ Leftovers\nAbility: No Ability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Close Combat\n- Fake Out\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Ice Beam\n- Coil",
+    "Kingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Iron Head\n\nGrimmsnarl (M) @ Light Clay\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Reflect\n- Spirit Break\n\nIncineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Darkest Lariat\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1 1",
+      "move 1 1, move 1 2",
+      "move 2 2, move 1 1"
+    ],
+    "p2": [
+      "move 1 1, move 1",
+      "move 2 2, move 2 1",
+      "move 1 1, move 1"
+    ],
+    "max_steps": 40
+  }
+}

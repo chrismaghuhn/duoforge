@@ -62,6 +62,7 @@ CONFUSION_TURNS_MAX = 5
 CHARGE_TURNS_MAX = 2
 MOVE_SLOT_STRUGGLE = 4
 SWITCH_NONE, SWITCH_MOVE, SWITCH_EMERGENCY_EXIT, SWITCH_FAINTED = 0, 1, 2, 3
+SWITCH_FLIP_TURN = 4  # TEAM_C kinds only (decision 0009)
 REVEALED_ITEM_CONSUMED, REVEALED_MEGA = 1, 2
 # side-relative offsets of the v3 side block
 SIDE_POS_OFF, SIDE_SEALED_OFF, SIDE_KNOW_OFF, SIDE_MEMBERS_OFF = 15, 57, 67, 109
@@ -463,9 +464,9 @@ def member_extra_is_zero(mem):
                 or mem['ability'])
 
 
-def volatile_valid(p, move_count):
+def volatile_valid(p, move_count, switch_flag_max=None):
     """Value ranges of an occupied position's volatile block."""
-    if p['switch_flag'] > SWITCH_FAINTED:
+    if p['switch_flag'] > (SWITCH_FAINTED if switch_flag_max is None else switch_flag_max):
         return False
     if any(s > STAGE_MAX for s in p['stages']) or p['flags'] > VOL_FLAGS_MAX:
         return False
@@ -560,7 +561,8 @@ def check_side(ctx, st, s):
         if p['occ'] == NONE:
             if p != empty_pos():
                 return 'VOLATILE'
-        elif not volatile_valid(p, sd['members'][p['occ']]['move_count']):
+        elif not volatile_valid(p, sd['members'][p['occ']]['move_count'],
+                                SWITCH_FLIP_TURN if ctx.data_kind in (KIND_TEAM_C, KIND_TEAM_C_DEV) else None):
             return 'VOLATILE'
     occ = occupied_mask(sd)
     rs = sd['requested_slots']

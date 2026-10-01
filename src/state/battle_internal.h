@@ -71,6 +71,7 @@ typedef struct dfi_move_slot {
 #define DFI_SWITCH_MOVE 1u           /* a self-switch move (Parting Shot) */
 #define DFI_SWITCH_EMERGENCY_EXIT 2u /* the ability */
 #define DFI_SWITCH_FAINTED 3u        /* checkFainted's flag, kept by a pass at a REPLACEMENT */
+#define DFI_SWITCH_FLIP_TURN 4u      /* Flip Turn, a damaging self-switch move (TEAM_C kinds only) */
 #define DFI_REVEALED_ITEM_CONSUMED 1u
 #define DFI_REVEALED_MEGA 2u
 #define DFI_MEMBER_STAT_COUNT 5u  /* atk, def, spa, spd, spe (HP is hp_max) */

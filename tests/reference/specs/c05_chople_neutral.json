@@ -1,0 +1,20 @@
+{
+  "name": "c05_chople_neutral",
+  "purpose": "Chople Berry on a holder that Fighting hits neutrally (Grimmsnarl): Close Combat does not eat it; Life Orb on an attacker as fast as the berry's holder: the two ModifyDamage handlers tie and the reference shuffles them, which decides nothing (the converter drops that draw).",
+  "data": "team_c",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c0a05",
+  "teams": [
+    "Grimmsnarl (M) @ Life Orb\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Spirit Break\n- Reflect\n\nSneasler (M) @ Leftovers\nAbility: No Ability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Close Combat\n- Fake Out\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Ice Beam\n- Coil\n\nRaichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Focus Blast\n- Protect",
+    "Grimmsnarl (M) @ Chople Berry\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Spirit Break\n- Reflect\n\nKingambit (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Iron Head\n\nIncineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Darkest Lariat\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1 1"
+    ],
+    "p2": [
+      "move 1 1, move 1 1"
+    ],
+    "max_steps": 40
+  }
+}

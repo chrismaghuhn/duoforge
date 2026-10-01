@@ -27,8 +27,9 @@ bool dfi_gender_legal(uint32_t gender_rule, uint32_t gender);
  * kinds the closure prefix of the extended tables, the TEAM_C kinds all of
  * them; the DEV kinds also allow No Ability. */
 typedef struct dfi_kind_limits {
-    uint32_t forme_count; /* species ids below this */
-    uint32_t item_count;  /* an item is 1 + its id, so at most this */
+    uint32_t forme_count;     /* species ids below this */
+    uint32_t item_count;      /* an item is 1 + its id, so at most this */
+    uint32_t switch_flag_max; /* DFI_SWITCH_FAINTED; DFI_SWITCH_FLIP_TURN for TEAM_C */
     bool dev;
 } dfi_kind_limits;
 
