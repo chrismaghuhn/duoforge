@@ -208,7 +208,7 @@ duoforge_configure_target(duoforge_header_check)
 
 # extern "C" link check from C++ (not with sanitizers: the C++ target does not
 # get the sanitizer link flags).
-if(CMAKE_CXX_COMPILER AND NOT DUOFORGE_ENABLE_SANITIZERS)
+if(CMAKE_CXX_COMPILER AND NOT DUOFORGE_ENABLE_SANITIZERS AND NOT DUOFORGE_ENABLE_TSAN)
     add_executable(duoforge_cxx_link header_check/cxx_link.cpp)
     target_link_libraries(duoforge_cxx_link PRIVATE duoforge)
     set_target_properties(duoforge_cxx_link PROPERTIES

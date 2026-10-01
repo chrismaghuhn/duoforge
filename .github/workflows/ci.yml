@@ -1,11 +1,11 @@
 name: CI
 
-# Pull requests and main only: a push to a PR branch already runs as the
-# pull request, so a branch push does not run the jobs a second time.
+# Nightly on main and on demand only: the free plan's minutes do not carry
+# a run per pull request. The merge gate is the local CI (tools/ci/local_ci.sh,
+# docs/TESTING_AND_BENCHMARKS.md section 7), which runs the full matrix.
 on:
-  push:
-    branches: [main]
-  pull_request:
+  schedule:
+    - cron: "17 3 * * *"
   workflow_dispatch:
 
 permissions:
@@ -23,8 +23,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        cc: [gcc, clang]
-        build_type: [Debug, Release]
+        cc: [clang]
+        build_type: [Release]
     env:
       CC: ${{ matrix.cc }}
     steps:
@@ -108,9 +108,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { arch: x64, config: Debug, bits: 64 }
           - { arch: x64, config: Release, bits: 64 }
-          - { arch: Win32, config: Release, bits: 32 }
     steps:
       - name: Check out source
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0 (verified via git ls-remote 2026-09-30)
