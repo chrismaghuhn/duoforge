@@ -39,7 +39,9 @@
  * Step 4: Last Respects (fainted members of the side) and Flip Turn (a
  * damaging pivot on the PIVOT boundary).
  * Step 5: Chople Berry (eaten inside ModifyDamage) and Rocky Helmet
- * (DamagingHit with contact). */
+ * (DamagingHit with contact).
+ * Step 6: Dire Claw with poison (status 5, residual order 9) and the status
+ * pick (draw site 13). */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -91,6 +93,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_DARKESTLARIAT] = 1u,
             [DFI_MOVE_LASTRESPECTS] = 1u,
             [DFI_MOVE_FLIPTURN] = 1u,
+            [DFI_MOVE_DIRECLAW] = 1u,
         },
     .abilities =
         {

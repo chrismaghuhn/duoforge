@@ -382,6 +382,7 @@ duoforge_status duoforge_battle_step(const duoforge_context *ctx, duoforge_battl
 #define DUOFORGE_AILMENT_FREEZE    2u
 #define DUOFORGE_AILMENT_PARALYSIS 3u
 #define DUOFORGE_AILMENT_SLEEP     4u
+#define DUOFORGE_AILMENT_POISON    5u /* Team C: Dire Claw */
 #define DUOFORGE_WEATHER_NONE 0u
 #define DUOFORGE_WEATHER_RAIN 1u
 #define DUOFORGE_WEATHER_SUN  2u
@@ -537,6 +538,7 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_CAUSE_FREEZE    11u
 #define DUOFORGE_CAUSE_FLINCH    12u
 #define DUOFORGE_CAUSE_NO_PP     13u
+#define DUOFORGE_CAUSE_POISON    14u /* poison's residual damage (Team C) */
 
 #define DUOFORGE_EVENT_FLAG_STILL  1u  /* MOVE: the charge turn of a two-turn move */
 #define DUOFORGE_EVENT_FLAG_LOCKED 2u  /* MOVE: the locked turn ([from] lockedmove) */
