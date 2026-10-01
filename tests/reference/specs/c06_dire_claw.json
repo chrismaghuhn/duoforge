@@ -1,0 +1,59 @@
+{
+  "name": "c06_dire_claw",
+  "purpose": "Dire Claw (30 percent, Champions): after a successful secondary roll the reference draws the status pick random(3) (psn, par, slp) and tries it: paralysis and sleep (its -status line without [from]); Raichu cannot be paralysed and Sneasler cannot be poisoned, silently; a target with a status still draws the pick. A poisoning is in c06_poison_residual.",
+  "data": "team_c",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c7a01",
+  "teams": [
+    "Sneasler (M) @ Leftovers\nAbility: No Ability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Dire Claw\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Coil\n\nKingambit (M) @ Miracle Seed\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Iron Head\n- Kowtow Cleave\n\nBasculegion (M) @ Mystic Water\nAbility: Adaptability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Aqua Jet\n- Wave Crash",
+    "Raichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Protect\n\nSneasler (M) @ Leftovers\nAbility: No Ability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Protect\n\nFarigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Protect\n\nMilotic (F) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Coil"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1",
+      "move 1 1, move 1",
+      "move 1 2, move 1",
+      "move 1 2, move 1",
+      "move 1 1, move 1",
+      "move 1 1, move 1",
+      "move 1 2, move 1",
+      "move 1 2, move 1",
+      "move 1 1, move 1",
+      "move 1 1, move 1",
+      "move 1 2, move 1",
+      "move 1 2, move 1",
+      "move 1 1, move 1",
+      "move 1 1, move 1",
+      "move 1 2, move 1",
+      "move 1 2, move 1",
+      "move 1 1, move 1",
+      "move 1 1, move 1",
+      "move 1 2, move 1",
+      "move 1 2, move 1",
+      "move 1 1, move 1",
+      "move 1 1, move 1",
+      "move 1 2, move 1",
+      "move 1 2, move 1",
+      "move 1 1, move 1",
+      "move 1 1, move 1",
+      "move 1 2, move 1",
+      "move 1 2, move 1",
+      "move 1 1, move 1",
+      "move 1 1, move 1",
+      "move 1 2, move 1",
+      "move 1 2, move 1",
+      "move 1 1, move 1",
+      "move 1 1, move 1",
+      "move 1 2, move 1",
+      "move 1 2, move 1",
+      "move 1 1, move 1",
+      "move 1 1, move 1",
+      "move 1 2, move 1",
+      "move 1 2, move 1"
+    ],
+    "p2": [
+      "move 1, move 1"
+    ],
+    "max_steps": 60
+  }
+}

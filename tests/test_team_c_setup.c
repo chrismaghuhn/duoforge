@@ -351,12 +351,35 @@ int main(void)
         duoforge_battle_destroy(w);
     }
 
+    /* White-box: poison (status 5, step 6) is in range only under the
+     * TEAM_C kinds, without a counter; one past it is out of range under
+     * every kind. */
+    for (uint32_t team_c = 0u; team_c < 2u; ++team_c) {
+        const duoforge_context *ctx = team_c != 0u ? kc : k1;
+        duoforge_battle *w = df_make_battle(ctx, &teams);
+        dfi_invariant inv = DFI_INV_NONE;
+        DF_CHECK(&t, dfi_state_check(ctx, w, &inv) == DUOFORGE_OK);
+        w->sides[0].members[0].status = (uint8_t)DFI_STATUS_PSN;
+        const duoforge_status st = dfi_state_check(ctx, w, &inv);
+        if (team_c != 0u) {
+            DF_CHECK(&t, st == DUOFORGE_OK);
+        } else {
+            DF_CHECK(&t, st == DUOFORGE_E_INVARIANT && inv == DFI_INV_MEMBER_EXTRA);
+        }
+        w->sides[0].members[0].status_counter = 1u;
+        DF_CHECK(&t, dfi_state_check(ctx, w, &inv) == DUOFORGE_E_INVARIANT && inv == DFI_INV_MEMBER_EXTRA);
+        w->sides[0].members[0].status_counter = 0u;
+        w->sides[0].members[0].status = (uint8_t)(DFI_STATUS_PSN + 1u);
+        DF_CHECK(&t, dfi_state_check(ctx, w, &inv) == DUOFORGE_E_INVARIANT && inv == DFI_INV_MEMBER_EXTRA);
+        duoforge_battle_destroy(w);
+    }
+
     /* The gate per Team C mechanic: the dev side plus exactly one of them.
      * Steps (decision 0009 section 5) mark them one by one; step 1: Kowtow
      * Cleave, Hyper Voice, Draco Meteor, Wave Crash, Aqua Jet, Defiant and
      * Adaptability; step 2: Flare Blitz and Darkest Lariat; step 3: Salamencite
      * with Aerilate; step 4: Last Respects and Flip Turn; step 5: Chople Berry
-     * and Rocky Helmet. */
+     * and Rocky Helmet; step 6: Dire Claw (poison). */
     {
         typedef struct gate_case {
             uint32_t member, ability_plus1, item_plus1, move;
@@ -365,7 +388,7 @@ int main(void)
         } gate_case;
         const uint32_t keep = UINT32_MAX;
         const gate_case cases[] = {
-            {0u, 0u, 0u, DFI_MOVE_DIRECLAW, false, "Dire Claw"},
+            {0u, 0u, 0u, DFI_MOVE_DIRECLAW, true, "Dire Claw (poison)"},
             {1u, 0u, 0u, DFI_MOVE_FLAREBLITZ, true, "Flare Blitz"},
             {1u, 0u, 0u, DFI_MOVE_DARKESTLARIAT, true, "Darkest Lariat"},
             {2u, 0u, 0u, DFI_MOVE_HYPERVOICE, true, "Hyper Voice"},
@@ -403,7 +426,8 @@ int main(void)
         uint8_t items[DFI_EXT_ITEM_COUNT - DFI_ITEM_COUNT] = {0};
         static const uint32_t step1_moves[] = {DFI_MOVE_KOWTOWCLEAVE, DFI_MOVE_HYPERVOICE, DFI_MOVE_DRACOMETEOR,
                                                DFI_MOVE_WAVECRASH,    DFI_MOVE_AQUAJET,   DFI_MOVE_FLAREBLITZ,
-                                               DFI_MOVE_DARKESTLARIAT, DFI_MOVE_LASTRESPECTS, DFI_MOVE_FLIPTURN};
+                                               DFI_MOVE_DARKESTLARIAT, DFI_MOVE_LASTRESPECTS, DFI_MOVE_FLIPTURN,
+                                               DFI_MOVE_DIRECLAW};
         for (size_t i = 0u; i < sizeof step1_moves / sizeof step1_moves[0]; ++i) {
             moves[step1_moves[i] - DFI_MOVE_COUNT] = 1u;
         }
