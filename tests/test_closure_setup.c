@@ -588,6 +588,8 @@ int main(void)
         expect_member_inv(&t, k1, w, true, "paralysis with a counter");
         rilla->status_counter = 0u;
         expect_member_inv(&t, k1, w, false, "paralysed");
+        rilla->hp = 0u; /* checkFainted clears it before every boundary but a PIVOT */
+        expect_member_inv(&t, k1, w, true, "fainted and paralysed outside a PIVOT");
         RESET();
         /* Under CLOSURE_DEV, No Ability is a legal current ability. */
         {

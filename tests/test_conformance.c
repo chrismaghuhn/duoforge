@@ -189,13 +189,24 @@ int main(void)
 {
     df_test t;
     df_test_begin(&t, "duoforge.reference.conformance");
+    duoforge_context *k1 = df_make_context(&df_config_k1);
     duoforge_context *k2 = df_make_context(&df_config_k2);
+    unsigned real = 0; /* battles under CLOSURE data: every set has a real ability */
     for (size_t bi = 0; bi < sizeof conf_battles / sizeof conf_battles[0]; ++bi) {
         const df_conf_battle *cb = &conf_battles[bi];
         duoforge_battle_setup setup;
         build_setup(cb, &setup);
         duoforge_battle *b = NULL;
-        const duoforge_status created = duoforge_battle_create(k2, &setup, &b);
+        /* CLOSURE data where the sets are real, CLOSURE_DEV (No Ability
+         * allowed) for the development teams. */
+        const duoforge_context *ctx = k1;
+        duoforge_status created = duoforge_battle_create(k1, &setup, &b);
+        if (created != DUOFORGE_OK) {
+            ctx = k2;
+            created = duoforge_battle_create(k2, &setup, &b);
+        } else {
+            real += 1u;
+        }
         if (!DF_CHECK(&t, created == DUOFORGE_OK && b != NULL)) {
             fprintf(stderr, "  %s: the setup is rejected: %s\n", cb->name, duoforge_status_name(created));
             continue;
@@ -231,7 +242,7 @@ int main(void)
             }
             duoforge_step_result res;
             uint32_t used = 0xFFFFFFFFu;
-            const duoforge_status status = dfi_battle_step_tape(k2, b, &bd, &conf_tape[st->tape_off], st->tape_len,
+            const duoforge_status status = dfi_battle_step_tape(ctx, b, &bd, &conf_tape[st->tape_off], st->tape_len,
                                                                 &used, &res);
             const bool consumed = used == st->tape_len;
             if (!DF_CHECK(&t, status == DUOFORGE_OK && consumed)) {
@@ -240,13 +251,17 @@ int main(void)
                 ++bad;
                 break;
             }
-            bad += compare_state(k2, b, st, cb->name, si);
-            DF_CHECK(&t, duoforge_battle_check(k2, b) == DUOFORGE_OK);
+            bad += compare_state(ctx, b, st, cb->name, si);
+            DF_CHECK(&t, duoforge_battle_check(ctx, b) == DUOFORGE_OK);
         }
         DF_CHECK_EQ_U64(&t, bad, 0u);
         duoforge_battle_destroy(b);
     }
-    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 44u);
+    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 52u);
+    /* At least the real-team battles of the closure gate (step 13). */
+    DF_CHECK(&t, real >= 8u);
+    fprintf(stderr, "  %u of the battles run under CLOSURE data\n", real);
+    duoforge_context_destroy(k1);
     duoforge_context_destroy(k2);
     return df_test_end(&t);
 }

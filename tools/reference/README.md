@@ -33,6 +33,6 @@ python tools/reference/trace_to_c.py .           # write tests/reference/conform
 python tools/reference/trace_to_c.py . --check   # compare
 ```
 
-To add a battle: write a spec (gender for every gendered species, No Ability and no items until those mechanics exist), record its trace with `ps_trace.js`, run `trace_to_c.py`, and raise the battle count in `tests/test_conformance.c`.
+To add a battle: write a spec (gender for every gendered species), record its trace with `ps_trace.js`, run `trace_to_c.py`, and raise the battle count in `tests/test_conformance.c`.
 
 The checkout needs `npm ci --ignore-scripts --omit=dev` and `node build` once, so that `dist/sim` exists.

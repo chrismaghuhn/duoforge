@@ -178,6 +178,13 @@ static dfi_invariant dfi_check_side(const struct duoforge_context *ctx, const st
             if (inv != DFI_INV_NONE) {
                 return inv;
             }
+            /* A fainted member keeps its status until the turn's actions are
+             * done (checkFainted runs when the queue is empty): at a PIVOT it
+             * may still have one, at every other boundary it has none. */
+            if (dfi_context_is_closure(ctx) && kind != DUOFORGE_BOUNDARY_PIVOT && side->members[m].hp == 0u &&
+                side->members[m].status != DFI_STATUS_NONE) {
+                return DFI_INV_MEMBER_EXTRA;
+            }
         } else if (!dfi_member_is_zero(&side->members[m])) {
             return DFI_INV_UNUSED_MEMBER_NONZERO;
         }

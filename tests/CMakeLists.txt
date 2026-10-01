@@ -74,6 +74,7 @@ duoforge_add_test(NAME duoforge.request.information SOURCES test_information.c W
 # tools/reference/trace_to_c.py from the committed traces).
 duoforge_add_test(NAME duoforge.reference.conformance SOURCES test_conformance.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.combat.turn SOURCES test_turn.c WHITEBOX TIMEOUT 120)
+duoforge_add_test(NAME duoforge.combat.closure_gate SOURCES test_closure_gate.c WHITEBOX TIMEOUT 600)
 
 # M3: generated closure tables and Champions formulas (decision 0006).
 duoforge_add_test(NAME duoforge.data.closure_tables SOURCES test_closure_tables.c WHITEBOX)

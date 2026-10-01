@@ -7,7 +7,7 @@ This is a status manifest, **not** a mechanics certificate. "IMPLEMENTED + TESTE
 | pcg-c-basic (RNG reference) | **PINNED** `bc39cd76ac3d541e618606bcc6e1e5ba5e5e6aa3` (`third_party/pcg-c-basic/PROVENANCE.md`) |
 | Pokémon Showdown (operational reference) | **PINNED** `b2cb775b0616115b775534eaeff50300e1fc81fc` (owner decision; `docs/decisions/0004`). Not vendored. M2 cites it for choice rules, team preview, target classes, open team sheets and HP display (`docs/decisions/0005`); no test executes it |
 | Rules profile | **SELECTED** (owner): `[Gen 9 Champions] VGC 2026 Reg M-C`. Set legality (base forme, set moves, gender, nature, Stat Points, ability, item, Species and Item Clause) is **IMPLEMENTED + TESTED**; the battle rules are not |
-| Team specifications | **SELECTED** (owner): two teams in `docs/decisions/0004`. The engine validates them and derives every stat line (tested); since step 12 both pass the support gate, and step 13 checks them in play |
+| Team specifications | **SELECTED** (owner): two teams in `docs/decisions/0004`. The engine validates them, derives every stat line and plays them from team selection to the end; closure gate passed in step 13 (decision 0006 section 4.13) |
 | PCG32 RNG primitive and wrapper contract (0001) | **IMPLEMENTED + TESTED**; no gameplay draw sites exist yet (M3) |
 | Arithmetic and byte helpers | **IMPLEMENTED + TESTED** (generic; no Pokémon-semantics helpers) |
 | Owned structural state v3, identity, invariants (boundaries incl. TERMINAL, epochs, sealed commitments, knowledge, field and side conditions, volatile blocks, action queue) | **IMPLEMENTED + TESTED** (synthetic data only; the combat fields exist, but no mechanic writes them yet; decision 0006 section 3.1) |
@@ -37,6 +37,7 @@ This is a status manifest, **not** a mechanics certificate. "IMPLEMENTED + TESTE
 | Electro Shot (charge, rain, locked move in the request) | **IMPLEMENTED + TESTED** for development teams; 1 recorded reference battle (decision 0006 section 4.10) |
 | Mega Evolution with the four stones, Contrary, No Guard, Tough Claws | **IMPLEMENTED + TESTED**; 3 recorded reference battles (decision 0006 section 4.11) |
 | Emergency Exit, Parting Shot, PIVOT boundaries | **IMPLEMENTED + TESTED**; 4 recorded reference battles, including Emergency Exit at the end of a turn and two Emergency Exits at once (decision 0006 section 4.12) |
+| Closure gate: both real teams in all four pairings | **PASSED** (step 13): 4000 random battles end without errors, replay byte for byte and keep information equivalence; 8 recorded reference battles with the real teams (decision 0006 section 4.13) |
 
 State snapshots and decodability are foundation evidence, **not proof that unimplemented future mechanics restore correctly**.
 
