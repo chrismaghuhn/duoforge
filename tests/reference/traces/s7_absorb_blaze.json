@@ -1,5 +1,5 @@
 {
- "harness": 10,
+ "harness": 11,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "spec": "s7_absorb_blaze.json",
  "format": "gen9championsvgc2026regmc",
@@ -68,7 +68,8 @@
         20,
         20
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Raichu",
@@ -91,7 +92,8 @@
         8,
         8
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Archaludon",
@@ -114,7 +116,8 @@
         12,
         16
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Politoed",
@@ -137,7 +140,8 @@
         12,
         12
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       }
      ]
     },
@@ -170,7 +174,8 @@
         12,
         12
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Raichu",
@@ -193,7 +198,8 @@
         8,
         8
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Milotic",
@@ -216,7 +222,8 @@
         12,
         12
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Golisopod",
@@ -239,7 +246,8 @@
         12,
         16
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       }
      ]
     }
@@ -324,7 +332,8 @@
          20,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -347,7 +356,8 @@
          8,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -370,7 +380,8 @@
          12,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -393,7 +404,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -435,7 +447,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -458,7 +471,8 @@
          8,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -481,7 +495,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -504,7 +519,8 @@
          12,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -654,7 +670,8 @@
         ],
         "volatiles": [
          "flashfire"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -677,7 +694,8 @@
          7,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -700,7 +718,8 @@
          12,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -723,7 +742,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -765,7 +785,8 @@
          11,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -788,7 +809,8 @@
          7,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -811,7 +833,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -834,7 +857,8 @@
          12,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -1014,7 +1038,8 @@
         ],
         "volatiles": [
          "flashfire"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -1037,7 +1062,8 @@
          6,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -1060,7 +1086,8 @@
          12,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -1083,7 +1110,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -1125,7 +1153,8 @@
          10,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -1148,7 +1177,8 @@
          6,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -1171,7 +1201,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -1194,7 +1225,8 @@
          12,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -1355,7 +1387,8 @@
         ],
         "volatiles": [
          "flashfire"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -1380,7 +1413,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -1403,7 +1437,8 @@
          12,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -1426,7 +1461,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -1468,7 +1504,8 @@
          9,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -1491,7 +1528,8 @@
          5,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -1514,7 +1552,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -1537,7 +1576,8 @@
          12,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -1697,7 +1737,8 @@
         ],
         "volatiles": [
          "flashfire"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -1720,7 +1761,8 @@
          6,
          6
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -1743,7 +1785,8 @@
          12,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -1766,7 +1809,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -1799,7 +1843,8 @@
          8,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -1822,7 +1867,8 @@
          5,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -1845,7 +1891,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -1868,7 +1915,8 @@
          12,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -1935,7 +1983,8 @@
         ],
         "volatiles": [
          "flashfire"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -1958,7 +2007,8 @@
          6,
          6
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -1981,7 +2031,8 @@
          12,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -2004,7 +2055,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -2046,7 +2098,8 @@
          8,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -2069,7 +2122,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -2092,7 +2146,8 @@
          5,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -2115,7 +2170,8 @@
          12,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -2300,7 +2356,8 @@
         ],
         "volatiles": [
          "flashfire"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -2325,7 +2382,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -2348,7 +2406,8 @@
          12,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -2371,7 +2430,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -2413,7 +2473,8 @@
          7,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -2436,7 +2497,8 @@
          11,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -2459,7 +2521,8 @@
          5,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -2482,7 +2545,8 @@
          12,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -2658,7 +2722,8 @@
         ],
         "volatiles": [
          "flashfire"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -2681,7 +2746,8 @@
          6,
          4
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -2704,7 +2770,8 @@
          12,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -2727,7 +2794,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -2760,7 +2828,8 @@
          6,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -2783,7 +2852,8 @@
          10,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -2806,7 +2876,8 @@
          5,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -2829,7 +2900,8 @@
          12,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -2896,7 +2968,8 @@
         ],
         "volatiles": [
          "flashfire"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -2919,7 +2992,8 @@
          12,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -2942,7 +3016,8 @@
          6,
          4
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -2965,7 +3040,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -3007,7 +3083,8 @@
          6,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -3030,7 +3107,8 @@
          10,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -3053,7 +3131,8 @@
          5,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -3076,7 +3155,8 @@
          12,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -3381,7 +3461,8 @@
         ],
         "volatiles": [
          "flashfire"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -3404,7 +3485,8 @@
          12,
          15
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -3427,7 +3509,8 @@
          6,
          4
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -3450,7 +3533,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -3492,7 +3576,8 @@
          5,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -3515,7 +3600,8 @@
          9,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -3538,7 +3624,8 @@
          5,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -3561,7 +3648,8 @@
          12,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -3782,7 +3870,8 @@
         ],
         "volatiles": [
          "flashfire"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -3805,7 +3894,8 @@
          12,
          14
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -3828,7 +3918,8 @@
          6,
          4
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -3851,7 +3942,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -3884,7 +3976,8 @@
          4,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -3907,7 +4000,8 @@
          9,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -3930,7 +4024,8 @@
          5,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -3953,7 +4048,8 @@
          12,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -4020,7 +4116,8 @@
         ],
         "volatiles": [
          "flashfire"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -4043,7 +4140,8 @@
          12,
          14
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -4066,7 +4164,8 @@
          6,
          4
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -4089,7 +4188,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -4131,7 +4231,8 @@
          4,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -4154,7 +4255,8 @@
          12,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -4177,7 +4279,8 @@
          5,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -4200,7 +4303,8 @@
          9,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -4477,7 +4581,8 @@
          13,
          19
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -4500,7 +4605,8 @@
          12,
          13
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -4523,7 +4629,8 @@
          6,
          4
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -4546,7 +4653,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -4579,7 +4687,8 @@
          3,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -4602,7 +4711,8 @@
          11,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -4625,7 +4735,8 @@
          5,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -4648,7 +4759,8 @@
          9,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -4713,7 +4825,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -4736,7 +4849,8 @@
          12,
          13
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -4759,7 +4873,8 @@
          6,
          4
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -4782,7 +4897,8 @@
          13,
          19
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -4824,7 +4940,8 @@
          3,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -4847,7 +4964,8 @@
          11,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -4870,7 +4988,8 @@
          5,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -4893,7 +5012,8 @@
          9,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -5138,7 +5258,8 @@
          11,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -5161,7 +5282,8 @@
          12,
          13
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -5184,7 +5306,8 @@
          6,
          4
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -5207,7 +5330,8 @@
          13,
          19
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -5249,7 +5373,8 @@
          2,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -5272,7 +5397,8 @@
          10,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -5295,7 +5421,8 @@
          5,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -5318,7 +5445,8 @@
          9,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -5493,7 +5621,8 @@
          10,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -5516,7 +5645,8 @@
          12,
          13
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -5539,7 +5669,8 @@
          6,
          4
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -5562,7 +5693,8 @@
          13,
          19
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -5595,7 +5727,8 @@
          1,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -5618,7 +5751,8 @@
          9,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -5641,7 +5775,8 @@
          5,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -5664,7 +5799,8 @@
          9,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }

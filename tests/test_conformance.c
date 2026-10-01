@@ -153,6 +153,16 @@ static unsigned compare_state(const duoforge_context *ctx, const duoforge_battle
                         mem->status, mem->status_counter, e->status, e->status_counter);
                 ++bad;
             }
+            /* A two-turn move's lock, at TURN and REPLACEMENT boundaries. */
+            if (pos != NULL && b->boundary_kind != DUOFORGE_BOUNDARY_TERMINAL) {
+                const uint32_t lslot = pos->locked_move != 0u ? (uint32_t)pos->locked_move - 1u : 0xFFu;
+                const uint32_t ltarget = pos->locked_move != 0u ? pos->locked_target : 0u;
+                if (lslot != e->locked_slot || ltarget != e->locked_target) {
+                    fprintf(stderr, "  %s step %u: side %u member %u locked %u/%u, reference %u/%u\n", name, step, s,
+                            m, lslot, ltarget, e->locked_slot, e->locked_target);
+                    ++bad;
+                }
+            }
             const uint32_t confusion = pos != NULL ? pos->confusion_turns : 0u;
             if (confusion != e->confusion) {
                 fprintf(stderr, "  %s step %u: side %u member %u confusion %u, reference %u\n", name, step, s, m,
@@ -230,7 +240,7 @@ int main(void)
         DF_CHECK_EQ_U64(&t, bad, 0u);
         duoforge_battle_destroy(b);
     }
-    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 36u);
+    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 37u);
     duoforge_context_destroy(k2);
     return df_test_end(&t);
 }

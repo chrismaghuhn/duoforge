@@ -39,7 +39,7 @@ const fs = require('fs');
 const path = require('path');
 
 const PIN = 'b2cb775b0616115b775534eaeff50300e1fc81fc';
-const HARNESS_VERSION = 10;
+const HARNESS_VERSION = 11;
 
 // Stack frame name -> site. The first match in stack order wins.
 const SITE_RULES = [
@@ -254,6 +254,10 @@ function main() {
                 boosts: ['atk', 'def', 'spa', 'spd', 'spe', 'accuracy', 'evasion'].map((b) => p.boosts[b]),
                 pp: p.moveSlots.map((m) => m.pp),
                 volatiles: Object.keys(p.volatiles).sort(),
+                // A two-turn move's lock: its move slot and the stored target location.
+                locked: p.volatiles.twoturnmove && p.volatiles[p.volatiles.twoturnmove.move] ?
+                    [p.moveSlots.findIndex((s) => s.id === p.volatiles.twoturnmove.move),
+                        p.volatiles[p.volatiles.twoturnmove.move].targetLoc] : null,
             })),
         })),
     });
@@ -273,6 +277,7 @@ function main() {
     const planMove = (p, part) => {
         const w = part.split(' ');
         if (w[0] !== 'move') return part;
+        if (p.getLockedMove()) return 'move 1'; // the only move, no target: the stored one is used
         const usable = p.moveSlots.map((m, i) => (m.pp > 0 && !m.disabled ? i : -1)).filter((i) => i >= 0);
         if (!usable.length) return 'move 1';
         let n = Number(w[1]) - 1;

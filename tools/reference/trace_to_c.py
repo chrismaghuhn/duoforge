@@ -163,6 +163,12 @@ def tape_entry(d):
     return (site, lo, hi, value)
 
 
+def abs_target(side, loc):
+    """A Showdown target location (foes positive, own side negative) as a
+    DuoForge position (side * 2 + slot)."""
+    return (1 - side) * 2 + loc - 1 if loc > 0 else side * 2 + (-loc) - 1
+
+
 def convert_choice(text, side, state, roster_of):
     """A Showdown choice string -> ('team', picks) or ('slots', [cmd, cmd])."""
     if text.startswith('team '):
@@ -173,6 +179,10 @@ def convert_choice(text, side, state, roster_of):
         words = part.split(' ')
         if words[0] == 'move':
             mon = state['sides'][side]['pokemon'][actives[slot]]
+            if mon.get('locked'):
+                # A locked move: its slot and the stored target, whatever was typed.
+                cmds.append((1, mon['locked'][0], abs_target(side, mon['locked'][1]), 0, 0))
+                continue
             n = int(words[1]) - 1
             mega = 1 if words[-1] == 'mega' else 0
             if mega:
@@ -272,7 +282,7 @@ def convert(root, name, tables, out, all_tape):
             for roster in range(6):
                 p = by_roster.get(roster)
                 if p is None:
-                    row.append('{0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}')
+                    row.append('{0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u}')
                     continue
                 pp = p['pp'] + [0] * (4 - len(p['pp']))
                 stall = 1 if 'stall' in p['volatiles'] else 0
@@ -280,9 +290,11 @@ def convert(root, name, tables, out, all_tape):
                 status, counter = (0, 0) if p['fainted'] else (STATUS[p['status']], p['status_time'])
                 if status not in (2, 4):
                     counter = 0
-                row.append('{1u, %du, {%s}, {%s}, %du, %du, %du, %du, %du}' % (
+                lock = p.get('locked')
+                lslot, ltarget = (lock[0], abs_target(s, lock[1])) if lock else (0xFF, 0)
+                row.append('{1u, %du, {%s}, {%s}, %du, %du, %du, %du, %du, %du, %du}' % (
                     p['hp'], ', '.join('%du' % x for x in pp), ', '.join('%du' % (x + 6) for x in p['boosts']),
-                    stall, 1 if p['fainted'] else 0, status, counter, p['confusion']))
+                    stall, 1 if p['fainted'] else 0, status, counter, p['confusion'], lslot, ltarget))
             mons.append(row)
         cmds = []
         for s in range(2):
@@ -317,7 +329,12 @@ def convert(root, name, tables, out, all_tape):
             rows = new_state['sides'][s]['enabled']
             row = []
             for k in range(2):
-                if k >= len(rows) or not rows[k]:
+                sd = new_state['sides'][s]
+                ai = sd['active'][k] if k < len(sd['active']) else -1
+                lock = sd['pokemon'][ai].get('locked') if ai >= 0 else None
+                if lock and k < len(rows) and rows[k]:
+                    row.append(1 << lock[0])
+                elif k >= len(rows) or not rows[k]:
                     row.append(0xFF)
                 elif rows[k] == [2]:
                     row.append(0x10)
@@ -367,9 +384,11 @@ def main():
            '} df_conf_member;', '/* kind, move_slot, target, mega, reserve */',
            'typedef struct df_conf_cmd {', '    uint8_t kind, move_slot, target, mega, reserve;', '} df_conf_cmd;',
            '/* present, hp, pp, stages (biased by 6), stall counter present, fainted,',
-           ' * status (DFI_STATUS_*), its counter (sleep, freeze), confusion turns */',
+           ' * status (DFI_STATUS_*), its counter (sleep, freeze), confusion turns, the',
+           ' * locked move slot (0xFF none) and its target */',
            'typedef struct df_conf_mon {', '    uint32_t present, hp;', '    uint8_t pp[4];', '    uint8_t stages[7];',
-           '    uint8_t stall, fainted, status, status_counter, confusion;', '} df_conf_mon;',
+           '    uint8_t stall, fainted, status, status_counter, confusion, locked_slot, locked_target;',
+           '} df_conf_mon;',
            '/* team step, side 0 / side 1 answered, tape slice, the turn, boundary and',
            ' * result afterwards, the picks of a team step, slot commands, the occupants',
            ' * of the positions afterwards (roster index, 0xFF empty), the positions',

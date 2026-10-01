@@ -78,6 +78,8 @@ static void dev_setup(duoforge_battle_setup *s, uint64_t seed)
     s->sides[0].members[0].move_count = 3u;
     s->sides[1].members[0] = s->sides[0].members[0];
     s->sides[1].members[0].gender = 2u;
+    /* Step 10b: side 1's Archaludon has Electro Shot again. */
+    s->sides[1].members[0].moves[1].move_id = DFI_MOVE_ELECTROSHOT;
 }
 
 /* A bundle from candidate index i of each side (modulo the count). */
@@ -446,6 +448,7 @@ int main(void)
         unsigned replacements = 0;
         unsigned results[4] = {0, 0, 0, 0};
         unsigned trick_room = 0;
+        unsigned locked = 0;
         for (uint64_t seed = 1u; seed <= 40u; ++seed) {
             duoforge_battle *b = started(&t, k2, seed);
             if (b == NULL) {
@@ -460,6 +463,9 @@ int main(void)
                 }
                 replacements += b->boundary_kind == DUOFORGE_BOUNDARY_REPLACEMENT ? 1u : 0u;
                 trick_room += b->trick_room_turns != 0u ? 1u : 0u;
+                for (uint32_t p = 0; p < 4u; ++p) {
+                    locked += b->sides[p / 2u].positions[p % 2u].locked_move != 0u ? 1u : 0u;
+                }
                 duoforge_step_result res;
                 const duoforge_status st = duoforge_battle_step(k2, b, &bd, &res);
                 if (!DF_CHECK(&t, st == DUOFORGE_OK)) {
@@ -479,7 +485,7 @@ int main(void)
             duoforge_battle_destroy(b);
         }
         DF_CHECK_EQ_U64(&t, ended, 40u);
-        DF_CHECK(&t, replacements > 0u && results[1] > 0u && results[2] > 0u && trick_room > 0u);
+        DF_CHECK(&t, replacements > 0u && results[1] > 0u && results[2] > 0u && trick_room > 0u && locked > 0u);
         fprintf(stderr, "  random play: %u steps, %u battles ended (side 0 %u, side 1 %u, tie %u), %u replacements\n",
                 steps, ended, results[1], results[2], results[3], replacements);
     }

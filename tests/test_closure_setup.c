@@ -381,7 +381,7 @@ int main(void)
         DF_CHECK(&t, dfi_closure_setup_supported(&m, &teams));
         DF_CHECK(&t, !dfi_closure_setup_supported(&dfi_support, &teams)); /* Mega Evolution: not yet */
         /* The manifest of this build, pinned: the turn core, switching, the
-         * moves of steps 2 to 4, 6, 9 and 10a, the entry abilities of step 5, the
+         * moves of steps 2 to 4, 6, 9 and 10, the entry abilities of step 5, the
          * reactive abilities of step 7 and the items of steps 8 and 9. A step
          * that implements a mechanic changes this deliberately. */
         {
@@ -394,7 +394,7 @@ int main(void)
                 DFI_MOVE_TAILWIND,       DFI_MOVE_REFLECT,     DFI_MOVE_LIGHTSCREEN, DFI_MOVE_TRICKROOM,
                 DFI_MOVE_WOODHAMMER,     DFI_MOVE_BRAVEBIRD,   DFI_MOVE_BITTERBLADE, DFI_MOVE_LEECHLIFE,
                 DFI_MOVE_CLOSECOMBAT,    DFI_MOVE_MAKEITRAIN,  DFI_MOVE_WEATHERBALL, DFI_MOVE_GRASSKNOT,
-                DFI_MOVE_GRASSYGLIDE,    DFI_MOVE_FAKEOUT,
+                DFI_MOVE_GRASSYGLIDE,    DFI_MOVE_FAKEOUT,     DFI_MOVE_ELECTROSHOT,
             };
             dfi_support_manifest want;
             memset(&want, 0, sizeof want);
