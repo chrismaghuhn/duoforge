@@ -1,6 +1,6 @@
 # 0012 — Batch runtime (M6)
 
-Status: owner decision 2026-10-01 ("bau einmal Industriestandard", the four points below); first part implemented, library 0.10.0.
+Status: owner decision 2026-10-01 ("bau einmal Industriestandard", the four points below); done, library 0.10.0; scaling report `docs/benchmarks/2026-10-01-batch-scaling/README.md`.
 
 ## 1. Model
 
@@ -22,4 +22,4 @@ Outcomes are atomic per environment: a failing environment keeps its state, the 
 
 ## 4. Next
 
-The benchmark family BATCH_NATIVE is built (`duoforge_bench --families batch --workers 1,2,4,8,16`, decision 0008); the scaling report needs an idle machine; then the roadmap's exit report (single/batch equivalence, scheduling independence, no races, bounded memory, reproducible Release benchmark).
+The benchmark family BATCH_NATIVE (`duoforge_bench --families batch --workers 1,2,4,8,16`, decision 0008) measured 10,000 to 12,000 battles per second with one worker and 79,000 to 95,000 with 16 (about 7.8 times; `docs/benchmarks/2026-10-01-batch-scaling/`); then the roadmap's exit report (single/batch equivalence, scheduling independence, no races, bounded memory, reproducible Release benchmark).

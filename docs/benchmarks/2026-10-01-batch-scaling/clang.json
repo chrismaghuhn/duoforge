@@ -1,0 +1,38 @@
+{
+  "manifest": {"engine": "duoforge 0.10.0", "revision": "30667fb1e17d96cbcca4ac3ddd471e66d78f9b18", "dirty": false,
+    "compiler": "Clang 23.1.2", "build_type": "Release", "c_flags": "-O3 -DNDEBUG", "ipo": true,
+    "os": "windows", "cpu": "AMD64 Family 25 Model 33 Stepping 2, AuthenticAMD; logical processors 16", "workers": 1, "affinity": "none", "started_utc": "2026-10-01T19:43:36Z",
+    "workload": "closure-pairings-v1", "pairings": ["A-B", "B-A", "A-A", "B-B"], "battles_per_pairing": 4000, "max_steps": 1000,
+    "policy": "uniform random over candidates (splitmix64)", "policy_seed": 20261001, "battle_seed": 7001, "context_fingerprint": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+    "warmup": 1, "repetitions": 5, "timer": "wall: QueryPerformanceCounter, cpu: process"},
+  "record": {"battles": 16000, "turns": 210862, "steps": 288141, "side_decisions": 517491, "truncations": 0, "errors": 0},
+  "choices": [
+    {"side": 0, "choices": 258753, "team_selections": 16000, "slot_commands": 455611, "moves": 342086, "struggles": 79, "megas": 13246, "switches": 37001, "replacements": 32931, "passes": 43593,
+     "target_foe": 176208, "target_ally": 87634, "target_none": 78244, "leads": [5360, 5228, 5317, 5473, 5269, 5353],
+     "move_uses": {"0": 5918, "1": 5968, "2": 3427, "3": 5927, "4": 8367, "5": 8264, "6": 2767, "7": 31790, "8": 7520, "9": 4525, "10": 22111, "11": 13346, "12": 13215, "13": 13081, "14": 4241, "15": 7933, "16": 8062, "17": 4053, "18": 12467, "19": 4120, "20": 19475, "21": 9172, "22": 9133, "23": 9028, "24": 13060, "25": 21597, "26": 4704, "27": 11451, "28": 11680, "29": 3801, "30": 3460, "31": 10497, "32": 10162, "33": 3571, "34": 3613, "35": 10501}},
+    {"side": 1, "choices": 258738, "team_selections": 16000, "slot_commands": 455635, "moves": 342984, "struggles": 148, "megas": 13185, "switches": 36921, "replacements": 32937, "passes": 42793,
+     "target_foe": 176331, "target_ally": 87847, "target_none": 78806, "leads": [5310, 5365, 5348, 5284, 5419, 5274],
+     "move_uses": {"0": 5683, "1": 5775, "2": 3444, "3": 5811, "4": 8432, "5": 8258, "6": 2867, "7": 31753, "8": 7430, "9": 4486, "10": 22383, "11": 13574, "12": 12992, "13": 13103, "14": 4449, "15": 8271, "16": 8123, "17": 4075, "18": 12406, "19": 4181, "20": 19430, "21": 9136, "22": 9218, "23": 9051, "24": 13266, "25": 21687, "26": 4985, "27": 11333, "28": 11487, "29": 3777, "30": 3644, "31": 10877, "32": 10279, "33": 3538, "34": 3473, "35": 10159}}
+  ],
+  "results": [
+    {"family": "BATCH_NATIVE", "variant": "workers=1", "workers": 1, "repetitions": 5, "wall_ns": [1327046900, 1361996400, 1327209700, 1346052500, 1327600900], "cpu_ns": [1296875000, 1359375000, 1328125000, 1328125000, 1328125000],
+     "disturbed_repetitions": 0, "median_wall_ns": 1327600900, "battles": 16128, "turns": 211760, "steps": 289642, "side_decisions": 520170, "calls": 0, "bytes": 0, "truncations": 0, "errors": 0,
+     "per_second": {"battles": 12148, "turns": 159505, "steps": 218169, "side_decisions": 391812, "calls": 0}},
+    {"family": "BATCH_NATIVE", "variant": "workers=2", "workers": 2, "repetitions": 5, "wall_ns": [722020000, 696398200, 693548800, 702327800, 709476200], "cpu_ns": [1421875000, 1359375000, 1406250000, 1390625000, 1406250000],
+     "disturbed_repetitions": 0, "median_wall_ns": 702327800, "battles": 16128, "turns": 211760, "steps": 289642, "side_decisions": 520170, "calls": 0, "bytes": 0, "truncations": 0, "errors": 0,
+     "per_second": {"battles": 22963, "turns": 301511, "steps": 412402, "side_decisions": 740637, "calls": 0}},
+    {"family": "BATCH_NATIVE", "variant": "workers=4", "workers": 4, "repetitions": 5, "wall_ns": [364687400, 367917900, 389910300, 370593900, 373636800], "cpu_ns": [1421875000, 1484375000, 1562500000, 1437500000, 1453125000],
+     "disturbed_repetitions": 0, "median_wall_ns": 370593900, "battles": 16128, "turns": 211760, "steps": 289642, "side_decisions": 520170, "calls": 0, "bytes": 0, "truncations": 0, "errors": 0,
+     "per_second": {"battles": 43519, "turns": 571407, "steps": 781561, "side_decisions": 1403611, "calls": 0}},
+    {"family": "BATCH_NATIVE", "variant": "workers=8", "workers": 8, "repetitions": 5, "wall_ns": [246130300, 216913000, 222892200, 218559400, 268983200], "cpu_ns": [1734375000, 1609375000, 1609375000, 1687500000, 1906250000],
+     "disturbed_repetitions": 2, "median_wall_ns": 222892200, "battles": 16128, "turns": 211760, "steps": 289642, "side_decisions": 520170, "calls": 0, "bytes": 0, "truncations": 0, "errors": 0,
+     "per_second": {"battles": 72357, "turns": 950055, "steps": 1299471, "side_decisions": 2333729, "calls": 0}},
+    {"family": "BATCH_NATIVE", "variant": "workers=12", "workers": 12, "repetitions": 5, "wall_ns": [188288300, 191964300, 187351400, 188541800, 196556400], "cpu_ns": [2062500000, 2062500000, 2125000000, 2140625000, 2140625000],
+     "disturbed_repetitions": 1, "median_wall_ns": 188541800, "battles": 16128, "turns": 211760, "steps": 289642, "side_decisions": 520170, "calls": 0, "bytes": 0, "truncations": 0, "errors": 0,
+     "per_second": {"battles": 85540, "turns": 1123146, "steps": 1536221, "side_decisions": 2758910, "calls": 0}},
+    {"family": "BATCH_NATIVE", "variant": "workers=16", "workers": 16, "repetitions": 5, "wall_ns": [168922600, 169281000, 170362700, 186402700, 200433000], "cpu_ns": [2343750000, 2484375000, 2437500000, 2390625000, 2437500000],
+     "disturbed_repetitions": 4, "median_wall_ns": 170362700, "battles": 16128, "turns": 211760, "steps": 289642, "side_decisions": 520170, "calls": 0, "bytes": 0, "truncations": 0, "errors": 0,
+     "per_second": {"battles": 94668, "turns": 1242995, "steps": 1700149, "side_decisions": 3053309, "calls": 0}}
+  ],
+  "skipped_by_time_limit": 0, "errors": 0
+}

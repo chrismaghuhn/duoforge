@@ -56,6 +56,8 @@ Exit: a reproducible small certified matchup dataset and test report, with no un
 
 ## M6 — Batch runtime and measurement
 
+**Status 2026-10-01:** done for the synchronous runtime (decision 0012); report `docs/benchmarks/2026-10-01-batch-scaling/README.md`.
+
 Add resident environment arrays and a worker pool outside the rule core. Reuse per-worker scratch; keep RNG per environment; support heterogeneous request kinds and completed environments. Define deterministic reset-seed derivation and atomic per-environment outcomes.
 
 Start with configurable 1, 2, 4, 8 and larger environment counts as hardware allows, not a hard-coded promise of thousands. A thread is not an environment. Compare worker schedules using identical per-environment commands and seeds.
