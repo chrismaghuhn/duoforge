@@ -1,0 +1,23 @@
+{
+  "name": "s4_paralysis_sleep",
+  "purpose": "Paralysis and sleep: Zap Cannon paralyzes (Electric Raichu cannot be), the paralyzed lose half their Speed and the turn order changes, full paralysis is 1 in 8; Hypnosis puts a target to sleep for 2 or 3 attempts and fails on a Pokemon that already has a status.",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000004008",
+  "teams": [
+    "Raichu (F)\nAbility: No Ability\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Zap Cannon\n- Protect\n\nMilotic (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Hypnosis\n- Ice Beam\n\nFarigiraf (F)\nAbility: No Ability\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Protect\n\nGholdengo\nAbility: No Ability\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Shadow Ball\n- Nasty Plot",
+    "Archaludon (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Snarl\n\nRillaboom (M)\nAbility: No Ability\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- High Horsepower\n\nRaichu (M)\nAbility: No Ability\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Focus Blast\n- Zap Cannon\n\nCeruledge (F)\nAbility: No Ability\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Shadow Sneak\n- Swords Dance"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1 2",
+      "move 1 2, move 1 1",
+      "move 1 1, move 2 2"
+    ],
+    "p2": [
+      "move 1 1, move 1 2",
+      "move 2 2, move 1 1",
+      "move 1 2, move 1 1"
+    ],
+    "max_steps": 40
+  }
+}

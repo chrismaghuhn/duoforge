@@ -1,0 +1,19 @@
+{
+  "name": "s4_burn_freeze",
+  "purpose": "Burn and freeze: Heat Wave burns (never a Fire type), a burned Pokemon loses 1/16 at the end of the turn in Speed order, ties drawn, and its physical moves do half; Ice Beam freezes for at most 3 attempts with a 1 in 4 thaw, and a Fire hit thaws.",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000004145",
+  "teams": [
+    "Charizard (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Heat Wave\n- Protect\n\nGolisopod (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Drill Run\n- Protect\n\nPolitoed (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Ice Beam\n- Protect\n\nRillaboom (M)\nAbility: No Ability\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- High Horsepower",
+    "Charizard (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Heat Wave\n- Protect\n\nGolisopod (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Drill Run\n- Protect\n\nMilotic (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Ice Beam\n- Coil\n\nRillaboom (F)\nAbility: No Ability\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- High Horsepower"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 1 2"
+    ],
+    "p2": [
+      "move 1, move 1 2"
+    ],
+    "max_steps": 60
+  }
+}

@@ -9,8 +9,10 @@
 // or a plan ("plan": per side the choices for its move requests in order,
 // with "max_steps"): then a replacement request is answered with the first
 // standing reserves in team order, a move choice for a fainted slot becomes
-// "pass", and an exhausted plan repeats its last entry. The trace records
-// the choices actually made. The harness runs
+// "pass", a move without PP falls back to the first with PP, a target is
+// dropped for a move that takes none (and is 1 for one that needs it), and
+// an exhausted plan repeats its last entry. The trace records the choices
+// actually made. The harness runs
 // the battle with a recording PRNG and prints a normalized trace: for every
 // choice entry the draws it caused (site, bounds, value), the protocol
 // lines, and the state at the next boundary (exact HP, status, stages, PP,
@@ -35,7 +37,7 @@ const fs = require('fs');
 const path = require('path');
 
 const PIN = 'b2cb775b0616115b775534eaeff50300e1fc81fc';
-const HARNESS_VERSION = 4;
+const HARNESS_VERSION = 5;
 
 // Stack frame name -> site. The first match in stack order wins.
 const SITE_RULES = [
@@ -45,6 +47,17 @@ const SITE_RULES = [
     ['BattleActions.getDamage', 'CRIT'],
     ['Battle.onStallMove', 'STALL'],
 ];
+
+// Draws inside a condition's own handler, named by the effect and event the
+// reference is running (battle.effect, battle.event); the confusion self-hit
+// roll stays a DAMAGE_ROLL.
+const CONDITION_SITES = {
+    'slp:Start': 'SLEEP_TURNS',
+    'frz:BeforeMove': 'FREEZE_THAW',
+    'par:BeforeMove': 'FULL_PARALYSIS',
+    'confusion:Start': 'CONFUSION_TURNS',
+    'confusion:BeforeMove': 'CONFUSION_HIT',
+};
 
 // The event a draw happens in (innermost last), tracked by wrapping the
 // reference's event entry points; it tells which sort a SPEED_TIE draw
@@ -72,6 +85,10 @@ function classify(stack, battle) {
         if (frames.includes('Battle.getActionSpeed')) return ['RANDOM_TARGET', 'action-speed'];
         if (frames.includes('BattleQueue.resolveAction')) return ['RANDOM_TARGET', 'resolve'];
         return ['RANDOM_TARGET', 'execute:' + randomTargetClass];
+    }
+    if (!frames.includes('Battle.randomizer')) {
+        const site = CONDITION_SITES[`${battle.effect && battle.effect.id}:${battle.event && battle.event.id}`];
+        if (site) return [site, ev];
     }
     for (const [frame, site] of SITE_RULES) {
         if (frames.includes(frame)) return [site, ev];
@@ -208,6 +225,8 @@ function main() {
                 hp: p.hp,
                 maxhp: p.maxhp,
                 status: p.status || '',
+                status_time: p.statusState.time || 0,
+                confusion: p.volatiles.confusion ? p.volatiles.confusion.time : 0,
                 fainted: p.fainted,
                 boosts: ['atk', 'def', 'spa', 'spd', 'spe', 'accuracy', 'evasion'].map((b) => p.boosts[b]),
                 pp: p.moveSlots.map((m) => m.pp),
@@ -224,6 +243,19 @@ function main() {
         seed: spec.seed,
         start: {log: takeLog(), state: snapshot()},
         steps: [],
+    };
+    // A planned "move N [T]": a move without PP falls back to the first move
+    // that has PP (Struggle when none has), a target is kept only for a move
+    // that takes one, and a move that takes one without a target aims at 1.
+    const planMove = (p, part) => {
+        const w = part.split(' ');
+        if (w[0] !== 'move') return part;
+        const usable = p.moveSlots.map((m, i) => (m.pp > 0 && !m.disabled ? i : -1)).filter((i) => i >= 0);
+        if (!usable.length) return 'move 1';
+        let n = Number(w[1]) - 1;
+        if (!usable.includes(n)) n = usable[0];
+        const takes = battle.actions.targetTypeChoices(battle.dex.moves.get(p.moveSlots[n].id).target);
+        return `move ${n + 1}` + (takes ? ' ' + (w[2] || '1') : '');
     };
     const choose = (id, text) => {
         if (!battle[id].requestState) throw new Error(`${id} has no request for "${text}"`);
@@ -264,7 +296,7 @@ function main() {
                     const plan = spec.plan[id];
                     const raw = plan[Math.min(next[id], plan.length - 1)].split(', ');
                     next[id] += 1;
-                    text = side.active.map((p, k) => (!p || p.fainted ? 'pass' : raw[k])).join(', ');
+                    text = side.active.map((p, k) => (!p || p.fainted ? 'pass' : planMove(p, raw[k]))).join(', ');
                 }
                 choose(id, text);
                 entry[id] = text;

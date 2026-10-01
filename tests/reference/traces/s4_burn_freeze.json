@@ -1,9 +1,9 @@
 {
  "harness": 5,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
- "spec": "s3_double_replace.json",
+ "spec": "s4_burn_freeze.json",
  "format": "gen9championsvgc2026regmc",
- "seed": "sodium,0000000000000000000000000000000000000000000000000000000000003201",
+ "seed": "sodium,0000000000000000000000000000000000000000000000000000000000004145",
  "start": {
   "log": [
    "|gametype|doubles",
@@ -14,14 +14,14 @@
    "|rule|Species Clause: Limit one of each Pokémon",
    "|rule|Item Clause: Limit 1 of each item",
    "|clearpoke",
-   "|poke|p1|Gholdengo, L50|",
-   "|poke|p1|Ceruledge, L50, F|",
-   "|poke|p1|Archaludon, L50, M|",
-   "|poke|p1|Farigiraf, L50, F|",
-   "|poke|p2|Gholdengo, L50|",
-   "|poke|p2|Ceruledge, L50, M|",
-   "|poke|p2|Archaludon, L50, F|",
-   "|poke|p2|Farigiraf, L50, M|",
+   "|poke|p1|Charizard, L50, M|",
+   "|poke|p1|Golisopod, L50, M|",
+   "|poke|p1|Politoed, L50, M|",
+   "|poke|p1|Rillaboom, L50, M|",
+   "|poke|p2|Charizard, L50, F|",
+   "|poke|p2|Golisopod, L50, F|",
+   "|poke|p2|Milotic, L50, M|",
+   "|poke|p2|Rillaboom, L50, F|",
    "|teampreview|4",
    "|split|p1",
    "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
@@ -45,9 +45,9 @@
      ],
      "pokemon": [
       {
-       "species": "Gholdengo",
-       "hp": 179,
-       "maxhp": 179,
+       "species": "Charizard",
+       "hp": 185,
+       "maxhp": 185,
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -62,15 +62,15 @@
         0
        ],
        "pp": [
-        16,
-        20
+        12,
+        8
        ],
        "volatiles": []
       },
       {
-       "species": "Ceruledge",
-       "hp": 181,
-       "maxhp": 181,
+       "species": "Golisopod",
+       "hp": 182,
+       "maxhp": 182,
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -85,13 +85,13 @@
         0
        ],
        "pp": [
-        20,
-        20
+        12,
+        8
        ],
        "volatiles": []
       },
       {
-       "species": "Archaludon",
+       "species": "Politoed",
        "hp": 197,
        "maxhp": 197,
        "status": "",
@@ -109,14 +109,14 @@
        ],
        "pp": [
         12,
-        16
+        8
        ],
        "volatiles": []
       },
       {
-       "species": "Farigiraf",
-       "hp": 224,
-       "maxhp": 224,
+       "species": "Rillaboom",
+       "hp": 193,
+       "maxhp": 193,
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -131,8 +131,7 @@
         0
        ],
        "pp": [
-        12,
-        8
+        12
        ],
        "volatiles": []
       }
@@ -146,78 +145,9 @@
      ],
      "pokemon": [
       {
-       "species": "Gholdengo",
-       "hp": 179,
-       "maxhp": 179,
-       "status": "",
-       "status_time": 0,
-       "confusion": 0,
-       "fainted": false,
-       "boosts": [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-       ],
-       "pp": [
-        16,
-        20
-       ],
-       "volatiles": []
-      },
-      {
-       "species": "Ceruledge",
-       "hp": 181,
-       "maxhp": 181,
-       "status": "",
-       "status_time": 0,
-       "confusion": 0,
-       "fainted": false,
-       "boosts": [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-       ],
-       "pp": [
-        20,
-        20
-       ],
-       "volatiles": []
-      },
-      {
-       "species": "Archaludon",
-       "hp": 197,
-       "maxhp": 197,
-       "status": "",
-       "status_time": 0,
-       "confusion": 0,
-       "fainted": false,
-       "boosts": [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-       ],
-       "pp": [
-        12,
-        16
-       ],
-       "volatiles": []
-      },
-      {
-       "species": "Farigiraf",
-       "hp": 224,
-       "maxhp": 224,
+       "species": "Charizard",
+       "hp": 185,
+       "maxhp": 185,
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -234,6 +164,74 @@
        "pp": [
         12,
         8
+       ],
+       "volatiles": []
+      },
+      {
+       "species": "Golisopod",
+       "hp": 182,
+       "maxhp": 182,
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        8
+       ],
+       "volatiles": []
+      },
+      {
+       "species": "Milotic",
+       "hp": 202,
+       "maxhp": 202,
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        20
+       ],
+       "volatiles": []
+      },
+      {
+       "species": "Rillaboom",
+       "hp": 193,
+       "maxhp": 193,
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12
        ],
        "volatiles": []
       }
@@ -266,24 +264,12 @@
      "context": "queue",
      "lo": 2,
      "hi": 4,
-     "value": 2,
+     "value": 3,
      "group": [
       "A:team:p1b:",
       "A:team:p2b:"
      ],
      "start": 2
-    },
-    {
-     "site": "TEAM_ORDER",
-     "context": "queue",
-     "lo": 4,
-     "hi": 6,
-     "value": 4,
-     "group": [
-      "A:team:p1c:",
-      "A:team:p2c:"
-     ],
-     "start": 4
     },
     {
      "site": "TEAM_ORDER",
@@ -337,7 +323,7 @@
      "context": "switch-order",
      "lo": 2,
      "hi": 4,
-     "value": 3,
+     "value": 2,
      "group": [
       "P:p1b:0",
       "P:p2b:0"
@@ -380,17 +366,17 @@
     "|uhtmlchange|otsrequest|",
     "",
     "|split|p1",
-    "|switch|p1a: Gholdengo|Gholdengo, L50|179/179",
-    "|switch|p1a: Gholdengo|Gholdengo, L50|100/100",
+    "|switch|p1a: Charizard|Charizard, L50, M|185/185",
+    "|switch|p1a: Charizard|Charizard, L50, M|100/100",
     "|split|p1",
-    "|switch|p1b: Ceruledge|Ceruledge, L50, F|181/181",
-    "|switch|p1b: Ceruledge|Ceruledge, L50, F|100/100",
+    "|switch|p1b: Golisopod|Golisopod, L50, M|182/182",
+    "|switch|p1b: Golisopod|Golisopod, L50, M|100/100",
     "|split|p2",
-    "|switch|p2a: Gholdengo|Gholdengo, L50|179/179",
-    "|switch|p2a: Gholdengo|Gholdengo, L50|100/100",
+    "|switch|p2a: Charizard|Charizard, L50, F|185/185",
+    "|switch|p2a: Charizard|Charizard, L50, F|100/100",
     "|split|p2",
-    "|switch|p2b: Ceruledge|Ceruledge, L50, M|181/181",
-    "|switch|p2b: Ceruledge|Ceruledge, L50, M|100/100",
+    "|switch|p2b: Golisopod|Golisopod, L50, F|182/182",
+    "|switch|p2b: Golisopod|Golisopod, L50, F|100/100",
     "|turn|1"
    ],
    "state": {
@@ -408,9 +394,9 @@
       ],
       "pokemon": [
        {
-        "species": "Gholdengo",
-        "hp": 179,
-        "maxhp": 179,
+        "species": "Charizard",
+        "hp": 185,
+        "maxhp": 185,
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -425,15 +411,15 @@
          0
         ],
         "pp": [
-         16,
-         20
+         12,
+         8
         ],
         "volatiles": []
        },
        {
-        "species": "Ceruledge",
-        "hp": 181,
-        "maxhp": 181,
+        "species": "Golisopod",
+        "hp": 182,
+        "maxhp": 182,
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -448,13 +434,13 @@
          0
         ],
         "pp": [
-         20,
-         20
+         12,
+         8
         ],
         "volatiles": []
        },
        {
-        "species": "Archaludon",
+        "species": "Politoed",
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -472,14 +458,14 @@
         ],
         "pp": [
          12,
-         16
+         8
         ],
         "volatiles": []
        },
        {
-        "species": "Farigiraf",
-        "hp": 224,
-        "maxhp": 224,
+        "species": "Rillaboom",
+        "hp": 193,
+        "maxhp": 193,
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -494,8 +480,7 @@
          0
         ],
         "pp": [
-         12,
-         8
+         12
         ],
         "volatiles": []
        }
@@ -509,78 +494,9 @@
       ],
       "pokemon": [
        {
-        "species": "Gholdengo",
-        "hp": 179,
-        "maxhp": 179,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         16,
-         20
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Ceruledge",
-        "hp": 181,
-        "maxhp": 181,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         20,
-         20
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Archaludon",
-        "hp": 197,
-        "maxhp": 197,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         16
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Farigiraf",
-        "hp": 224,
-        "maxhp": 224,
+        "species": "Charizard",
+        "hp": 185,
+        "maxhp": 185,
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -599,6 +515,74 @@
          8
         ],
         "volatiles": []
+       },
+       {
+        "species": "Golisopod",
+        "hp": 182,
+        "maxhp": 182,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Milotic",
+        "hp": 202,
+        "maxhp": 202,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Rillaboom",
+        "hp": 193,
+        "maxhp": 193,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12
+        ],
+        "volatiles": []
        }
       ]
      }
@@ -607,19 +591,47 @@
   },
   {
    "input": {
-    "p1": "move 2, move 2",
-    "p2": "move 2, move 2"
+    "p1": "move 1, move 1 2",
+    "p2": "move 1, move 1 2"
    },
    "draws": [
     {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
      "site": "SPEED_TIE",
      "context": "queue",
      "lo": 0,
      "hi": 2,
      "value": 1,
      "group": [
-      "A:move:p1a:nastyplot",
-      "A:move:p2a:nastyplot"
+      "A:move:p1a:heatwave",
+      "A:move:p2a:heatwave"
      ],
      "start": 0
     },
@@ -628,10 +640,10 @@
      "context": "queue",
      "lo": 2,
      "hi": 4,
-     "value": 2,
+     "value": 3,
      "group": [
-      "A:move:p1b:swordsdance",
-      "A:move:p2b:swordsdance"
+      "A:move:p1b:drillrun",
+      "A:move:p2b:drillrun"
      ],
      "start": 2
     },
@@ -684,14 +696,28 @@
      "start": 2
     },
     {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
      "site": "SPEED_TIE",
      "context": "queue",
      "lo": 0,
      "hi": 2,
      "value": 0,
      "group": [
-      "A:move:p2a:nastyplot",
-      "A:move:p1a:nastyplot"
+      "A:move:p2a:heatwave",
+      "A:move:p1a:heatwave"
      ],
      "start": 0
     },
@@ -700,60 +726,75 @@
      "context": "queue",
      "lo": 2,
      "hi": 4,
-     "value": 3,
+     "value": 2,
      "group": [
-      "A:move:p1b:swordsdance",
-      "A:move:p2b:swordsdance"
+      "A:move:p2b:drillrun",
+      "A:move:p1b:drillrun"
      ],
      "start": 2
     },
     {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacentFoes",
      "lo": 0,
      "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
+     "value": 1
     },
     {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
+     "site": "ACCURACY",
+     "context": "",
      "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
+     "hi": 100,
+     "value": 71
     },
     {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 33
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 2
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 8
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 3
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 4
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 2
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 7
     },
     {
      "site": "SPEED_TIE",
@@ -778,18 +819,136 @@
       "P:p2b:0"
      ],
      "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1b:0",
+      "P:p2b:0"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1b:0",
+      "P:p2b:0"
+     ],
+     "start": 2
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "queue",
      "lo": 1,
      "hi": 3,
-     "value": 2,
+     "value": 1,
      "group": [
-      "A:move:p2b:swordsdance",
-      "A:move:p1b:swordsdance"
+      "A:move:p2b:drillrun",
+      "A:move:p1b:drillrun"
      ],
      "start": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacentFoes",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 49
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 56
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 16
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 14
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 2
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 14
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 74
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 8
     },
     {
      "site": "SPEED_TIE",
@@ -808,7 +967,7 @@
      "context": "each:Update",
      "lo": 2,
      "hi": 4,
-     "value": 2,
+     "value": 3,
      "group": [
       "P:p1b:0",
       "P:p2b:0"
@@ -820,7 +979,7 @@
      "context": "each:Update",
      "lo": 0,
      "hi": 2,
-     "value": 1,
+     "value": 0,
      "group": [
       "P:p1a:0",
       "P:p2a:0"
@@ -870,58 +1029,31 @@
      "hi": 2,
      "value": 1,
      "group": [
-      "A:move:p1b:swordsdance",
-      "A:move:p2b:swordsdance"
+      "A:move:p2b:drillrun",
+      "A:move:p1b:drillrun"
      ],
      "start": 0
     },
     {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
+     "site": "ACCURACY",
+     "context": "",
      "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
+     "hi": 100,
+     "value": 60
     },
     {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
+     "site": "CRIT",
+     "context": "",
      "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
+     "hi": 8,
+     "value": 1
     },
     {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 11
     },
     {
      "site": "SPEED_TIE",
@@ -952,7 +1084,7 @@
      "context": "each:Update",
      "lo": 0,
      "hi": 2,
-     "value": 0,
+     "value": 1,
      "group": [
       "P:p1a:0",
       "P:p2a:0"
@@ -996,11 +1128,56 @@
      "start": 2
     },
     {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 41
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 8,
+     "value": 2
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 4
+    },
+    {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 0,
      "hi": 2,
      "value": 0,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1b:0",
+      "P:p2b:0"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
      "group": [
       "P:p1a:0",
       "P:p2a:0"
@@ -1024,7 +1201,43 @@
      "context": "each:Update",
      "lo": 0,
      "hi": 2,
-     "value": 0,
+     "value": 1,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2b:0"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "H:brn:p1b:cb",
+      "H:brn:p2b:cb"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
      "group": [
       "P:p1a:0",
       "P:p2a:0"
@@ -1045,14 +1258,40 @@
     }
    ],
    "log": [
-    "|move|p2a: Gholdengo|Nasty Plot|p2a: Gholdengo",
-    "|-boost|p2a: Gholdengo|spa|2",
-    "|move|p1a: Gholdengo|Nasty Plot|p1a: Gholdengo",
-    "|-boost|p1a: Gholdengo|spa|2",
-    "|move|p2b: Ceruledge|Swords Dance|p2b: Ceruledge",
-    "|-boost|p2b: Ceruledge|atk|2",
-    "|move|p1b: Ceruledge|Swords Dance|p1b: Ceruledge",
-    "|-boost|p1b: Ceruledge|atk|2",
+    "|move|p2a: Charizard|Heat Wave|p1b: Golisopod|[spread] p1a,p1b",
+    "|-resisted|p1a: Charizard|1",
+    "|split|p1",
+    "|-damage|p1a: Charizard|149/185",
+    "|-damage|p1a: Charizard|80/100",
+    "|split|p1",
+    "|-damage|p1b: Golisopod|110/182",
+    "|-damage|p1b: Golisopod|60/100",
+    "|-status|p1b: Golisopod|brn",
+    "|move|p1a: Charizard|Heat Wave|p2b: Golisopod|[spread] p2a,p2b",
+    "|-resisted|p2a: Charizard|1",
+    "|split|p2",
+    "|-damage|p2a: Charizard|151/185",
+    "|-damage|p2a: Charizard|81/100",
+    "|split|p2",
+    "|-damage|p2b: Golisopod|118/182",
+    "|-damage|p2b: Golisopod|64/100",
+    "|-status|p2b: Golisopod|brn",
+    "|move|p1b: Golisopod|Drill Run|p2b: Golisopod",
+    "|-resisted|p2b: Golisopod|1",
+    "|split|p2",
+    "|-damage|p2b: Golisopod|109/182 brn",
+    "|-damage|p2b: Golisopod|59/100 brn",
+    "|move|p2b: Golisopod|Drill Run|p1b: Golisopod",
+    "|-resisted|p1b: Golisopod|1",
+    "|split|p1",
+    "|-damage|p1b: Golisopod|100/182 brn",
+    "|-damage|p1b: Golisopod|54/100 brn",
+    "|split|p2",
+    "|-damage|p2b: Golisopod|98/182 brn|[from] brn",
+    "|-damage|p2b: Golisopod|53/100 brn|[from] brn",
+    "|split|p1",
+    "|-damage|p1b: Golisopod|89/182 brn|[from] brn",
+    "|-damage|p1b: Golisopod|48/100 brn|[from] brn",
     "|upkeep",
     "|turn|2"
    ],
@@ -1071,38 +1310,15 @@
       ],
       "pokemon": [
        {
-        "species": "Gholdengo",
-        "hp": 179,
-        "maxhp": 179,
+        "species": "Charizard",
+        "hp": 149,
+        "maxhp": 185,
         "status": "",
         "status_time": 0,
         "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
-         0,
-         2,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         16,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Ceruledge",
-        "hp": 181,
-        "maxhp": 181,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         2,
          0,
          0,
          0,
@@ -1111,13 +1327,36 @@
          0
         ],
         "pp": [
-         20,
-         19
+         11,
+         8
         ],
         "volatiles": []
        },
        {
-        "species": "Archaludon",
+        "species": "Golisopod",
+        "hp": 89,
+        "maxhp": 182,
+        "status": "brn",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Politoed",
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -1135,14 +1374,14 @@
         ],
         "pp": [
          12,
-         16
+         8
         ],
         "volatiles": []
        },
        {
-        "species": "Farigiraf",
-        "hp": 224,
-        "maxhp": 224,
+        "species": "Rillaboom",
+        "hp": 193,
+        "maxhp": 193,
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1157,8 +1396,7 @@
          0
         ],
         "pp": [
-         12,
-         8
+         12
         ],
         "volatiles": []
        }
@@ -1172,38 +1410,15 @@
       ],
       "pokemon": [
        {
-        "species": "Gholdengo",
-        "hp": 179,
-        "maxhp": 179,
+        "species": "Charizard",
+        "hp": 151,
+        "maxhp": 185,
         "status": "",
         "status_time": 0,
         "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
-         0,
-         2,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         16,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Ceruledge",
-        "hp": 181,
-        "maxhp": 181,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         2,
          0,
          0,
          0,
@@ -1212,15 +1427,38 @@
          0
         ],
         "pp": [
-         20,
-         19
+         11,
+         8
         ],
         "volatiles": []
        },
        {
-        "species": "Archaludon",
-        "hp": 197,
-        "maxhp": 197,
+        "species": "Golisopod",
+        "hp": 98,
+        "maxhp": 182,
+        "status": "brn",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Milotic",
+        "hp": 202,
+        "maxhp": 202,
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1236,14 +1474,599 @@
         ],
         "pp": [
          12,
-         16
+         20
         ],
         "volatiles": []
        },
        {
-        "species": "Farigiraf",
-        "hp": 224,
-        "maxhp": 224,
+        "species": "Rillaboom",
+        "hp": 193,
+        "maxhp": 193,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12
+        ],
+        "volatiles": []
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1, move 1 2",
+    "p2": "move 1, move 1 2"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "A:move:p1a:heatwave",
+      "A:move:p2a:heatwave"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "A:move:p1b:drillrun",
+      "A:move:p2b:drillrun"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:BeforeTurn",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:BeforeTurn",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2b:0"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1b:0",
+      "P:p2b:0"
+     ],
+     "start": 2
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "A:move:p1a:heatwave",
+      "A:move:p2a:heatwave"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "A:move:p2b:drillrun",
+      "A:move:p1b:drillrun"
+     ],
+     "start": 2
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacentFoes",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 45
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 30
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 19
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 11
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 5
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 11
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 43
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 27
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1b:0",
+      "P:p2b:0"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2b:0"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1b:0",
+      "P:p2b:0"
+     ],
+     "start": 2
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "A:move:p1b:drillrun",
+      "A:move:p2b:drillrun"
+     ],
+     "start": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacentFoes",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 5
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 48
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 11
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 6
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 0
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 2
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 57
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 94
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2b:0"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "A:move:p1b:drillrun",
+      "A:move:p2b:drillrun"
+     ],
+     "start": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:normal",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "H:brn:p1b:cb",
+      "H:brn:p2b:cb"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    }
+   ],
+   "log": [
+    "|move|p2a: Charizard|Heat Wave|p1a: Charizard|[spread] p1a,p1b",
+    "|-resisted|p1a: Charizard|1",
+    "|split|p1",
+    "|-damage|p1a: Charizard|113/185",
+    "|-damage|p1a: Charizard|61/100",
+    "|split|p1",
+    "|-damage|p1b: Golisopod|22/182 brn",
+    "|-damage|p1b: Golisopod|12/100 brn",
+    "|move|p1a: Charizard|Heat Wave|p2a: Charizard|[spread] p2a,p2b",
+    "|-resisted|p2a: Charizard|1",
+    "|-crit|p2b: Golisopod",
+    "|split|p2",
+    "|-damage|p2a: Charizard|114/185",
+    "|-damage|p2a: Charizard|61/100",
+    "|split|p2",
+    "|-damage|p2b: Golisopod|0 fnt",
+    "|-damage|p2b: Golisopod|0 fnt",
+    "|faint|p2b: Golisopod",
+    "|move|p1b: Golisopod|Drill Run|p2a: Charizard",
+    "|-immune|p2a: Charizard",
+    "|split|p1",
+    "|-damage|p1b: Golisopod|11/182 brn|[from] brn",
+    "|-damage|p1b: Golisopod|6/100 brn|[from] brn",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 2,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "terrain": "",
+    "sides": [
+     {
+      "request": "",
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Charizard",
+        "hp": 113,
+        "maxhp": 185,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Golisopod",
+        "hp": 11,
+        "maxhp": 182,
+        "status": "brn",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Politoed",
+        "hp": 197,
+        "maxhp": 197,
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1262,6 +2085,128 @@
          8
         ],
         "volatiles": []
+       },
+       {
+        "species": "Rillaboom",
+        "hp": 193,
+        "maxhp": 193,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12
+        ],
+        "volatiles": []
+       }
+      ]
+     },
+     {
+      "request": "switch",
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Charizard",
+        "hp": 114,
+        "maxhp": 185,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Golisopod",
+        "hp": 0,
+        "maxhp": 182,
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Milotic",
+        "hp": 202,
+        "maxhp": 202,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Rillaboom",
+        "hp": 193,
+        "maxhp": 193,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12
+        ],
+        "volatiles": []
        }
       ]
      }
@@ -1270,60 +2215,11 @@
   },
   {
    "input": {
-    "p1": "move 1 2, move 1 1",
-    "p2": "move 1 2, move 1 1"
+    "p2": "pass, switch 3"
    },
    "draws": [
     {
      "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "A:move:p1b:shadowsneak",
-      "A:move:p2b:shadowsneak"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "A:move:p2a:shadowball",
-      "A:move:p1a:shadowball"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:BeforeTurn",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:BeforeTurn",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 0,
      "hi": 2,
@@ -1336,39 +2232,347 @@
     },
     {
      "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
+     "context": "switch-order",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
      "group": [
-      "P:p1b:0",
-      "P:p2b:0"
+      "P:p1a:0",
+      "P:p2a:0"
      ],
-     "start": 2
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    }
+   ],
+   "log": [
+    "|split|p2",
+    "|switch|p2b: Milotic|Milotic, L50, M|202/202",
+    "|switch|p2b: Milotic|Milotic, L50, M|100/100",
+    "|turn|3"
+   ],
+   "state": {
+    "turn": 3,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "terrain": "",
+    "sides": [
+     {
+      "request": "move",
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Charizard",
+        "hp": 113,
+        "maxhp": 185,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Golisopod",
+        "hp": 11,
+        "maxhp": 182,
+        "status": "brn",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Politoed",
+        "hp": 197,
+        "maxhp": 197,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Rillaboom",
+        "hp": 193,
+        "maxhp": 193,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12
+        ],
+        "volatiles": []
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Charizard",
+        "hp": 114,
+        "maxhp": 185,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Milotic",
+        "hp": 202,
+        "maxhp": 202,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Golisopod",
+        "hp": 0,
+        "maxhp": 182,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Rillaboom",
+        "hp": 193,
+        "maxhp": 193,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12
+        ],
+        "volatiles": []
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1, move 1 2",
+    "p2": "move 1, move 1 2"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
     },
     {
      "site": "SPEED_TIE",
      "context": "queue",
      "lo": 0,
      "hi": 2,
-     "value": 1,
+     "value": 0,
      "group": [
-      "A:move:p2b:shadowsneak",
-      "A:move:p1b:shadowsneak"
+      "A:move:p1a:heatwave",
+      "A:move:p2a:heatwave"
      ],
      "start": 0
     },
     {
      "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
+     "context": "each:BeforeTurn",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
      "group": [
-      "A:move:p1a:shadowball",
-      "A:move:p2a:shadowball"
+      "P:p1a:0",
+      "P:p2a:0"
      ],
-     "start": 2
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "A:move:p1a:heatwave",
+      "A:move:p2a:heatwave"
+     ],
+     "start": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacentFoes",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
     },
     {
      "site": "ACCURACY",
@@ -1376,6 +2580,838 @@
      "lo": 0,
      "hi": 100,
      "value": 11
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 98
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 3
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 6
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 14
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacentFoes",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 48
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 97
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 21
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 4
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 8
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 30
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 22
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 15
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 35
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    }
+   ],
+   "log": [
+    "|move|p1a: Charizard|Heat Wave|p2b: Milotic|[spread] p2a",
+    "|-miss|p1a: Charizard|p2b: Milotic",
+    "|-resisted|p2a: Charizard|1",
+    "|split|p2",
+    "|-damage|p2a: Charizard|77/185",
+    "|-damage|p2a: Charizard|41/100",
+    "|move|p2a: Charizard|Heat Wave|p1a: Charizard|[spread] p1a",
+    "|-miss|p2a: Charizard|p1b: Golisopod",
+    "|-resisted|p1a: Charizard|1",
+    "|split|p1",
+    "|-damage|p1a: Charizard|75/185",
+    "|-damage|p1a: Charizard|40/100",
+    "|move|p2b: Milotic|Ice Beam|p1b: Golisopod",
+    "|-resisted|p1b: Golisopod|1",
+    "|split|p1",
+    "|-damage|p1b: Golisopod|0 fnt",
+    "|-damage|p1b: Golisopod|0 fnt",
+    "|faint|p1b: Golisopod",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 3,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "terrain": "",
+    "sides": [
+     {
+      "request": "switch",
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Charizard",
+        "hp": 75,
+        "maxhp": 185,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         9,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Golisopod",
+        "hp": 0,
+        "maxhp": 182,
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Politoed",
+        "hp": 197,
+        "maxhp": 197,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Rillaboom",
+        "hp": 193,
+        "maxhp": 193,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12
+        ],
+        "volatiles": []
+       }
+      ]
+     },
+     {
+      "request": "",
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Charizard",
+        "hp": 77,
+        "maxhp": 185,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         9,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Milotic",
+        "hp": 202,
+        "maxhp": 202,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         20
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Golisopod",
+        "hp": 0,
+        "maxhp": 182,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Rillaboom",
+        "hp": 193,
+        "maxhp": 193,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12
+        ],
+        "volatiles": []
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "pass, switch 3"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "switch-order",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    }
+   ],
+   "log": [
+    "|split|p1",
+    "|switch|p1b: Politoed|Politoed, L50, M|197/197",
+    "|switch|p1b: Politoed|Politoed, L50, M|100/100",
+    "|turn|4"
+   ],
+   "state": {
+    "turn": 4,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "terrain": "",
+    "sides": [
+     {
+      "request": "move",
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Charizard",
+        "hp": 75,
+        "maxhp": 185,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         9,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Politoed",
+        "hp": 197,
+        "maxhp": 197,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Golisopod",
+        "hp": 0,
+        "maxhp": 182,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Rillaboom",
+        "hp": 193,
+        "maxhp": 193,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12
+        ],
+        "volatiles": []
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Charizard",
+        "hp": 77,
+        "maxhp": 185,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         9,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Milotic",
+        "hp": 202,
+        "maxhp": 202,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         20
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Golisopod",
+        "hp": 0,
+        "maxhp": 182,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Rillaboom",
+        "hp": 193,
+        "maxhp": 193,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12
+        ],
+        "volatiles": []
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1, move 1 2",
+    "p2": "move 1, move 1 2"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "A:move:p1a:heatwave",
+      "A:move:p2a:heatwave"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:BeforeTurn",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "A:move:p1a:heatwave",
+      "A:move:p2a:heatwave"
+     ],
+     "start": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacentFoes",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 3
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 37
     },
     {
      "site": "CRIT",
@@ -1392,52 +3428,32 @@
      "value": 14
     },
     {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
+     "site": "CRIT",
+     "context": "",
      "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
+     "hi": 24,
+     "value": 4
     },
     {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
+     "site": "DAMAGE_ROLL",
+     "context": "",
      "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
+     "hi": 16,
+     "value": 2
     },
     {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 74
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 95
     },
     {
      "site": "SPEED_TIE",
@@ -1454,26 +3470,859 @@
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
      "group": [
-      "P:p1b:0",
-      "P:p2b:0"
+      "P:p1a:0",
+      "P:p2a:0"
      ],
-     "start": 2
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacentFoes",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 40
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 88
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 1
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 12
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 22
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 1
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 77
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 63
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 76
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 19
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 6
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 65
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 69
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 4
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 13
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 89
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    }
+   ],
+   "log": [
+    "|move|p1a: Charizard|Heat Wave|p2a: Charizard|[spread] p2a,p2b",
+    "|-resisted|p2a: Charizard|1",
+    "|-resisted|p2b: Milotic|1",
+    "|split|p2",
+    "|-damage|p2a: Charizard|43/185",
+    "|-damage|p2a: Charizard|23/100",
+    "|split|p2",
+    "|-damage|p2b: Milotic|173/202",
+    "|-damage|p2b: Milotic|85/100",
+    "|move|p2a: Charizard|Heat Wave|p1b: Politoed|[spread] p1a,p1b",
+    "|-resisted|p1a: Charizard|1",
+    "|-resisted|p1b: Politoed|1",
+    "|split|p1",
+    "|-damage|p1a: Charizard|40/185",
+    "|-damage|p1a: Charizard|21/100",
+    "|split|p1",
+    "|-damage|p1b: Politoed|163/197",
+    "|-damage|p1b: Politoed|82/100",
+    "|move|p2b: Milotic|Ice Beam|p1b: Politoed",
+    "|-resisted|p1b: Politoed|1",
+    "|split|p1",
+    "|-damage|p1b: Politoed|137/197",
+    "|-damage|p1b: Politoed|69/100",
+    "|move|p1b: Politoed|Ice Beam|p2b: Milotic",
+    "|-resisted|p2b: Milotic|1",
+    "|split|p2",
+    "|-damage|p2b: Milotic|154/202",
+    "|-damage|p2b: Milotic|76/100",
+    "|upkeep",
+    "|turn|5"
+   ],
+   "state": {
+    "turn": 5,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "terrain": "",
+    "sides": [
+     {
+      "request": "move",
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Charizard",
+        "hp": 40,
+        "maxhp": 185,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Politoed",
+        "hp": 137,
+        "maxhp": 197,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Golisopod",
+        "hp": 0,
+        "maxhp": 182,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Rillaboom",
+        "hp": 193,
+        "maxhp": 193,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12
+        ],
+        "volatiles": []
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Charizard",
+        "hp": 43,
+        "maxhp": 185,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Milotic",
+        "hp": 154,
+        "maxhp": 202,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         20
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Golisopod",
+        "hp": 0,
+        "maxhp": 182,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Rillaboom",
+        "hp": 193,
+        "maxhp": 193,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12
+        ],
+        "volatiles": []
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1, move 1 2",
+    "p2": "move 1, move 1 2"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "queue",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
      "group": [
-      "A:move:p2a:shadowball",
-      "A:move:p1a:shadowball"
+      "A:move:p1a:heatwave",
+      "A:move:p2a:heatwave"
      ],
-     "start": 1
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:BeforeTurn",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "A:move:p1a:heatwave",
+      "A:move:p2a:heatwave"
+     ],
+     "start": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacentFoes",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 90
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 74
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 18
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 10
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 56
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacentFoes",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 46
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 60
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 20
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 12
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 15
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 2
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 60
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 86
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 95
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 10
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 0
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 75
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
     },
     {
      "site": "ACCURACY",
@@ -1494,925 +4343,6 @@
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 7
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "A:move:p1a:shadowball",
-      "A:move:p2a:shadowball"
-     ],
-     "start": 0
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 34
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 23
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 4
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 69
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 28
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 14
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 13
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 31
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    }
-   ],
-   "log": [
-    "|move|p1b: Ceruledge|Shadow Sneak|p2a: Gholdengo",
-    "|-supereffective|p2a: Gholdengo|1",
-    "|split|p2",
-    "|-damage|p2a: Gholdengo|47/179",
-    "|-damage|p2a: Gholdengo|26/100",
-    "|move|p2b: Ceruledge|Shadow Sneak|p1a: Gholdengo",
-    "|-supereffective|p1a: Gholdengo|1",
-    "|split|p1",
-    "|-damage|p1a: Gholdengo|35/179",
-    "|-damage|p1a: Gholdengo|19/100",
-    "|move|p1a: Gholdengo|Shadow Ball|p2b: Ceruledge",
-    "|-supereffective|p2b: Ceruledge|1",
-    "|split|p2",
-    "|-damage|p2b: Ceruledge|0 fnt",
-    "|-damage|p2b: Ceruledge|0 fnt",
-    "|faint|p2b: Ceruledge",
-    "|move|p2a: Gholdengo|Shadow Ball|p1b: Ceruledge",
-    "|-supereffective|p1b: Ceruledge|1",
-    "|split|p1",
-    "|-damage|p1b: Ceruledge|0 fnt",
-    "|-damage|p1b: Ceruledge|0 fnt",
-    "|faint|p1b: Ceruledge",
-    "|upkeep"
-   ],
-   "state": {
-    "turn": 2,
-    "ended": false,
-    "winner": "",
-    "weather": "",
-    "terrain": "",
-    "sides": [
-     {
-      "request": "switch",
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Gholdengo",
-        "hp": 35,
-        "maxhp": 179,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         2,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         15,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Ceruledge",
-        "hp": 0,
-        "maxhp": 181,
-        "status": "fnt",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         19,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Archaludon",
-        "hp": 197,
-        "maxhp": 197,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         16
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Farigiraf",
-        "hp": 224,
-        "maxhp": 224,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         8
-        ],
-        "volatiles": []
-       }
-      ]
-     },
-     {
-      "request": "switch",
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Gholdengo",
-        "hp": 47,
-        "maxhp": 179,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         2,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         15,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Ceruledge",
-        "hp": 0,
-        "maxhp": 181,
-        "status": "fnt",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         19,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Archaludon",
-        "hp": 197,
-        "maxhp": 197,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         16
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Farigiraf",
-        "hp": 224,
-        "maxhp": 224,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         8
-        ],
-        "volatiles": []
-       }
-      ]
-     }
-    ]
-   }
-  },
-  {
-   "input": {
-    "p1": "pass, switch 3",
-    "p2": "pass, switch 3"
-   },
-   "draws": [
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "A:instaswitch:p1b:",
-      "A:instaswitch:p2b:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "INSERT_TIE",
-     "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "A:runSwitch:p1b::0"
-     ]
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "switch-order",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "switch-order",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    }
-   ],
-   "log": [
-    "|split|p1",
-    "|switch|p1b: Archaludon|Archaludon, L50, M|197/197",
-    "|switch|p1b: Archaludon|Archaludon, L50, M|100/100",
-    "|split|p2",
-    "|switch|p2b: Archaludon|Archaludon, L50, F|197/197",
-    "|switch|p2b: Archaludon|Archaludon, L50, F|100/100",
-    "|turn|3"
-   ],
-   "state": {
-    "turn": 3,
-    "ended": false,
-    "winner": "",
-    "weather": "",
-    "terrain": "",
-    "sides": [
-     {
-      "request": "move",
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Gholdengo",
-        "hp": 35,
-        "maxhp": 179,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         2,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         15,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Archaludon",
-        "hp": 197,
-        "maxhp": 197,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         16
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Ceruledge",
-        "hp": 0,
-        "maxhp": 181,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         19,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Farigiraf",
-        "hp": 224,
-        "maxhp": 224,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         8
-        ],
-        "volatiles": []
-       }
-      ]
-     },
-     {
-      "request": "move",
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Gholdengo",
-        "hp": 47,
-        "maxhp": 179,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         2,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         15,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Archaludon",
-        "hp": 197,
-        "maxhp": 197,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         16
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Ceruledge",
-        "hp": 0,
-        "maxhp": 181,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         19,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Farigiraf",
-        "hp": 224,
-        "maxhp": 224,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         8
-        ],
-        "volatiles": []
-       }
-      ]
-     }
-    ]
-   }
-  },
-  {
-   "input": {
-    "p1": "move 1 2, move 1 1",
-    "p2": "move 1 2, move 1 1"
-   },
-   "draws": [
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "A:move:p1a:shadowball",
-      "A:move:p2a:shadowball"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "A:move:p1b:dragonpulse",
-      "A:move:p2b:dragonpulse"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:BeforeTurn",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:BeforeTurn",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "A:move:p2a:shadowball",
-      "A:move:p1a:shadowball"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "A:move:p1b:dragonpulse",
-      "A:move:p2b:dragonpulse"
-     ],
-     "start": 2
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 62
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 19
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
      "value": 0
     },
     {
@@ -2420,145 +4350,9 @@
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 59
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "A:move:p2b:dragonpulse",
-      "A:move:p1b:dragonpulse"
-     ],
-     "start": 1
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 3
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
      "value": 12
     },
     {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 14
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 93
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    },
-    {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 0,
@@ -2569,653 +4363,6 @@
       "P:p2a:0"
      ],
      "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "A:move:p1b:dragonpulse",
-      "A:move:p2b:dragonpulse"
-     ],
-     "start": 0
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 7
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 16
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 14
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 9
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 15
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    }
-   ],
-   "log": [
-    "|move|p1a: Gholdengo|Shadow Ball|p2b: Archaludon",
-    "|split|p2",
-    "|-damage|p2b: Archaludon|14/197",
-    "|-damage|p2b: Archaludon|7/100",
-    "|move|p2a: Gholdengo|Shadow Ball|p1b: Archaludon",
-    "|split|p1",
-    "|-damage|p1b: Archaludon|41/197",
-    "|-damage|p1b: Archaludon|20/100y",
-    "|move|p2b: Archaludon|Dragon Pulse|p1a: Gholdengo",
-    "|-resisted|p1a: Gholdengo|1",
-    "|split|p1",
-    "|-damage|p1a: Gholdengo|3/179",
-    "|-damage|p1a: Gholdengo|1/100",
-    "|move|p1b: Archaludon|Dragon Pulse|p2a: Gholdengo",
-    "|-resisted|p2a: Gholdengo|1",
-    "|split|p2",
-    "|-damage|p2a: Gholdengo|20/179",
-    "|-damage|p2a: Gholdengo|11/100",
-    "|upkeep",
-    "|turn|4"
-   ],
-   "state": {
-    "turn": 4,
-    "ended": false,
-    "winner": "",
-    "weather": "",
-    "terrain": "",
-    "sides": [
-     {
-      "request": "move",
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Gholdengo",
-        "hp": 3,
-        "maxhp": 179,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         2,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         14,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Archaludon",
-        "hp": 41,
-        "maxhp": 197,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         11,
-         16
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Ceruledge",
-        "hp": 0,
-        "maxhp": 181,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         19,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Farigiraf",
-        "hp": 224,
-        "maxhp": 224,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         8
-        ],
-        "volatiles": []
-       }
-      ]
-     },
-     {
-      "request": "move",
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Gholdengo",
-        "hp": 20,
-        "maxhp": 179,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         2,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         14,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Archaludon",
-        "hp": 14,
-        "maxhp": 197,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         11,
-         16
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Ceruledge",
-        "hp": 0,
-        "maxhp": 181,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         19,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Farigiraf",
-        "hp": 224,
-        "maxhp": 224,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         8
-        ],
-        "volatiles": []
-       }
-      ]
-     }
-    ]
-   }
-  },
-  {
-   "input": {
-    "p1": "move 1 2, move 1 1",
-    "p2": "move 1 2, move 1 1"
-   },
-   "draws": [
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "A:move:p1a:shadowball",
-      "A:move:p2a:shadowball"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "A:move:p1b:dragonpulse",
-      "A:move:p2b:dragonpulse"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:BeforeTurn",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:BeforeTurn",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "A:move:p1a:shadowball",
-      "A:move:p2a:shadowball"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "A:move:p1b:dragonpulse",
-      "A:move:p2b:dragonpulse"
-     ],
-     "start": 2
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 60
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 19
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 4
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 36
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
     },
     {
      "site": "SPEED_TIE",
@@ -3243,98 +4390,10 @@
     },
     {
      "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "A:move:p1b:dragonpulse",
-      "A:move:p2b:dragonpulse"
-     ],
-     "start": 1
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 66
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 0
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 15
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 19
-    },
-    {
-     "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 0,
      "hi": 2,
      "value": 1,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "A:move:p2b:dragonpulse",
-      "A:move:p1b:dragonpulse"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
      "group": [
       "P:p1a:0",
       "P:p2a:0"
@@ -3343,897 +4402,31 @@
     }
    ],
    "log": [
-    "|move|p2a: Gholdengo|Shadow Ball|p1b: Archaludon",
+    "|move|p2a: Charizard|Heat Wave|p1a: Charizard|[spread] p1b",
+    "|-miss|p2a: Charizard|p1a: Charizard",
+    "|-resisted|p1b: Politoed|1",
     "|split|p1",
-    "|-damage|p1b: Archaludon|0 fnt",
-    "|-damage|p1b: Archaludon|0 fnt",
-    "|faint|p1b: Archaludon",
-    "|move|p1a: Gholdengo|Shadow Ball|p2b: Archaludon",
-    "|-crit|p2b: Archaludon",
+    "|-damage|p1b: Politoed|106/197",
+    "|-damage|p1b: Politoed|53/100",
+    "|move|p1a: Charizard|Heat Wave|p2b: Milotic|[spread] p2a,p2b",
+    "|-resisted|p2a: Charizard|1",
+    "|-resisted|p2b: Milotic|1",
     "|split|p2",
-    "|-damage|p2b: Archaludon|0 fnt",
-    "|-damage|p2b: Archaludon|0 fnt",
-    "|faint|p2b: Archaludon",
-    "|upkeep"
-   ],
-   "state": {
-    "turn": 4,
-    "ended": false,
-    "winner": "",
-    "weather": "",
-    "terrain": "",
-    "sides": [
-     {
-      "request": "switch",
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Gholdengo",
-        "hp": 3,
-        "maxhp": 179,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         2,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         13,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Archaludon",
-        "hp": 0,
-        "maxhp": 197,
-        "status": "fnt",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         11,
-         16
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Ceruledge",
-        "hp": 0,
-        "maxhp": 181,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         19,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Farigiraf",
-        "hp": 224,
-        "maxhp": 224,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         8
-        ],
-        "volatiles": []
-       }
-      ]
-     },
-     {
-      "request": "switch",
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Gholdengo",
-        "hp": 20,
-        "maxhp": 179,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         2,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         13,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Archaludon",
-        "hp": 0,
-        "maxhp": 197,
-        "status": "fnt",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         11,
-         16
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Ceruledge",
-        "hp": 0,
-        "maxhp": 181,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         19,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Farigiraf",
-        "hp": 224,
-        "maxhp": 224,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         8
-        ],
-        "volatiles": []
-       }
-      ]
-     }
-    ]
-   }
-  },
-  {
-   "input": {
-    "p1": "pass, switch 4",
-    "p2": "pass, switch 4"
-   },
-   "draws": [
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "A:instaswitch:p1b:",
-      "A:instaswitch:p2b:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "INSERT_TIE",
-     "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "A:runSwitch:p1b::0"
-     ]
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "switch-order",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "switch-order",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    }
-   ],
-   "log": [
+    "|-damage|p2a: Charizard|8/185",
+    "|-damage|p2a: Charizard|4/100",
+    "|split|p2",
+    "|-damage|p2b: Milotic|125/202",
+    "|-damage|p2b: Milotic|61/100",
+    "|move|p2b: Milotic|Ice Beam|p1b: Politoed",
+    "|-resisted|p1b: Politoed|1",
     "|split|p1",
-    "|switch|p1b: Farigiraf|Farigiraf, L50, F|224/224",
-    "|switch|p1b: Farigiraf|Farigiraf, L50, F|100/100",
+    "|-damage|p1b: Politoed|78/197",
+    "|-damage|p1b: Politoed|39/100",
+    "|move|p1b: Politoed|Ice Beam|p2b: Milotic",
+    "|-resisted|p2b: Milotic|1",
     "|split|p2",
-    "|switch|p2b: Farigiraf|Farigiraf, L50, M|224/224",
-    "|switch|p2b: Farigiraf|Farigiraf, L50, M|100/100",
-    "|turn|5"
-   ],
-   "state": {
-    "turn": 5,
-    "ended": false,
-    "winner": "",
-    "weather": "",
-    "terrain": "",
-    "sides": [
-     {
-      "request": "move",
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Gholdengo",
-        "hp": 3,
-        "maxhp": 179,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         2,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         13,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Farigiraf",
-        "hp": 224,
-        "maxhp": 224,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         8
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Ceruledge",
-        "hp": 0,
-        "maxhp": 181,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         19,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Archaludon",
-        "hp": 0,
-        "maxhp": 197,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         11,
-         16
-        ],
-        "volatiles": []
-       }
-      ]
-     },
-     {
-      "request": "move",
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Gholdengo",
-        "hp": 20,
-        "maxhp": 179,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         2,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         13,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Farigiraf",
-        "hp": 224,
-        "maxhp": 224,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         8
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Ceruledge",
-        "hp": 0,
-        "maxhp": 181,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         19,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Archaludon",
-        "hp": 0,
-        "maxhp": 197,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         11,
-         16
-        ],
-        "volatiles": []
-       }
-      ]
-     }
-    ]
-   }
-  },
-  {
-   "input": {
-    "p1": "move 1 2, move 1 1",
-    "p2": "move 1 2, move 1 1"
-   },
-   "draws": [
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "A:move:p1a:shadowball",
-      "A:move:p2a:shadowball"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "A:move:p1b:psychic",
-      "A:move:p2b:psychic"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:BeforeTurn",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:BeforeTurn",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "A:move:p1a:shadowball",
-      "A:move:p2a:shadowball"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "A:move:p2b:psychic",
-      "A:move:p1b:psychic"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "A:move:p2b:psychic",
-      "A:move:p1b:psychic"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "A:move:p2b:psychic",
-      "A:move:p1b:psychic"
-     ],
-     "start": 0
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 45
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 17
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 9
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 13
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1a:0",
-      "P:p2a:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 1
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 87
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 21
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 6
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 67
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    }
-   ],
-   "log": [
-    "|move|p2a: Gholdengo|Shadow Ball|p1b: Farigiraf",
-    "|-immune|p1b: Farigiraf",
-    "|move|p1a: Gholdengo|Shadow Ball|p2b: Farigiraf",
-    "|-immune|p2b: Farigiraf",
-    "|move|p2b: Farigiraf|Psychic|p1a: Gholdengo",
-    "|-resisted|p1a: Gholdengo|1",
-    "|split|p1",
-    "|-damage|p1a: Gholdengo|0 fnt",
-    "|-damage|p1a: Gholdengo|0 fnt",
-    "|faint|p1a: Gholdengo",
-    "|move|p1b: Farigiraf|Psychic|p2a: Gholdengo",
-    "|-resisted|p2a: Gholdengo|1",
-    "|split|p2",
-    "|-damage|p2a: Gholdengo|0 fnt",
-    "|-damage|p2a: Gholdengo|0 fnt",
-    "|faint|p2a: Gholdengo",
+    "|-damage|p2b: Milotic|103/202",
+    "|-damage|p2b: Milotic|50/100g",
     "|upkeep",
     "|turn|6"
    ],
@@ -4252,32 +4445,9 @@
       ],
       "pokemon": [
        {
-        "species": "Gholdengo",
-        "hp": 0,
-        "maxhp": 179,
-        "status": "fnt",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Farigiraf",
-        "hp": 224,
-        "maxhp": 224,
+        "species": "Charizard",
+        "hp": 40,
+        "maxhp": 185,
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4292,41 +4462,41 @@
          0
         ],
         "pp": [
-         11,
+         7,
          8
         ],
         "volatiles": []
        },
        {
-        "species": "Ceruledge",
-        "hp": 0,
-        "maxhp": 181,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         19,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Archaludon",
-        "hp": 0,
+        "species": "Politoed",
+        "hp": 78,
         "maxhp": 197,
         "status": "",
         "status_time": 0,
         "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Golisopod",
+        "hp": 0,
+        "maxhp": 182,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": true,
         "boosts": [
          0,
@@ -4338,8 +4508,30 @@
          0
         ],
         "pp": [
-         11,
-         16
+         10,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Rillaboom",
+        "hp": 193,
+        "maxhp": 193,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12
         ],
         "volatiles": []
        }
@@ -4353,13 +4545,13 @@
       ],
       "pokemon": [
        {
-        "species": "Gholdengo",
-        "hp": 0,
-        "maxhp": 179,
-        "status": "fnt",
+        "species": "Charizard",
+        "hp": 8,
+        "maxhp": 185,
+        "status": "",
         "status_time": 0,
         "confusion": 0,
-        "fainted": true,
+        "fainted": false,
         "boosts": [
          0,
          0,
@@ -4370,19 +4562,42 @@
          0
         ],
         "pp": [
-         12,
-         19
+         7,
+         8
         ],
         "volatiles": []
        },
        {
-        "species": "Farigiraf",
-        "hp": 224,
-        "maxhp": 224,
+        "species": "Milotic",
+        "hp": 103,
+        "maxhp": 202,
         "status": "",
         "status_time": 0,
         "confusion": 0,
         "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         9,
+         20
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Golisopod",
+        "hp": 0,
+        "maxhp": 182,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
         "boosts": [
          0,
          0,
@@ -4399,9 +4614,438 @@
         "volatiles": []
        },
        {
-        "species": "Ceruledge",
+        "species": "Rillaboom",
+        "hp": 193,
+        "maxhp": 193,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12
+        ],
+        "volatiles": []
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1, move 1 2",
+    "p2": "move 1, move 1 2"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "A:move:p1a:heatwave",
+      "A:move:p2a:heatwave"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:BeforeTurn",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "A:move:p2a:heatwave",
+      "A:move:p1a:heatwave"
+     ],
+     "start": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacentFoes",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 22
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 25
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 17
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 14
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 16
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 2
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 49
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 21
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacentFoes",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 41
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 68
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 23
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 15
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 20
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 3
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 22
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 62
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0",
+      "P:p2a:0"
+     ],
+     "start": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 88
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 18
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 0
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 2
+    },
+    {
+     "site": "FREEZE_THAW",
+     "context": "BeforeMove",
+     "lo": 0,
+     "hi": 4,
+     "value": 1
+    }
+   ],
+   "log": [
+    "|move|p2a: Charizard|Heat Wave|p1b: Politoed|[spread] p1a,p1b",
+    "|-resisted|p1a: Charizard|1",
+    "|-resisted|p1b: Politoed|1",
+    "|split|p1",
+    "|-damage|p1a: Charizard|6/185",
+    "|-damage|p1a: Charizard|3/100",
+    "|split|p1",
+    "|-damage|p1b: Politoed|44/197",
+    "|-damage|p1b: Politoed|22/100",
+    "|move|p1a: Charizard|Heat Wave|p2a: Charizard|[spread] p2a,p2b",
+    "|-resisted|p2a: Charizard|1",
+    "|-resisted|p2b: Milotic|1",
+    "|split|p2",
+    "|-damage|p2a: Charizard|0 fnt",
+    "|-damage|p2a: Charizard|0 fnt",
+    "|split|p2",
+    "|-damage|p2b: Milotic|75/202",
+    "|-damage|p2b: Milotic|37/100",
+    "|faint|p2a: Charizard",
+    "|move|p2b: Milotic|Ice Beam|p1b: Politoed",
+    "|-resisted|p1b: Politoed|1",
+    "|split|p1",
+    "|-damage|p1b: Politoed|16/197",
+    "|-damage|p1b: Politoed|8/100",
+    "|-status|p1b: Politoed|frz",
+    "|cant|p1b: Politoed|frz",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 6,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "terrain": "",
+    "sides": [
+     {
+      "request": "",
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Charizard",
+        "hp": 6,
+        "maxhp": 185,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Politoed",
+        "hp": 16,
+        "maxhp": 197,
+        "status": "frz",
+        "status_time": 2,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Golisopod",
         "hp": 0,
-        "maxhp": 181,
+        "maxhp": 182,
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4416,15 +5060,92 @@
          0
         ],
         "pp": [
-         19,
-         19
+         10,
+         8
         ],
         "volatiles": []
        },
        {
-        "species": "Archaludon",
+        "species": "Rillaboom",
+        "hp": 193,
+        "maxhp": 193,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12
+        ],
+        "volatiles": []
+       }
+      ]
+     },
+     {
+      "request": "switch",
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Charizard",
         "hp": 0,
-        "maxhp": 197,
+        "maxhp": 185,
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Milotic",
+        "hp": 75,
+        "maxhp": 202,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         20
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Golisopod",
+        "hp": 0,
+        "maxhp": 182,
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4440,7 +5161,29 @@
         ],
         "pp": [
          11,
-         16
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Rillaboom",
+        "hp": 193,
+        "maxhp": 193,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12
         ],
         "volatiles": []
        }
@@ -4451,260 +5194,13 @@
   },
   {
    "input": {
-    "p1": "pass, move 1 1",
-    "p2": "pass, move 1 1"
+    "p2": "switch 4, pass"
    },
-   "draws": [
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "A:move:p1b:psychic",
-      "A:move:p2b:psychic"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:BeforeTurn",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "A:move:p1b:psychic",
-      "A:move:p2b:psychic"
-     ],
-     "start": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "execute:normal",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 29
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 17
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 0
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 53
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "execute:normal",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 90
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 8
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 6
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 47
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    }
-   ],
+   "draws": [],
    "log": [
-    "|move|p1b: Farigiraf|Psychic|p2b: Farigiraf",
-    "|-resisted|p2b: Farigiraf|1",
     "|split|p2",
-    "|-damage|p2b: Farigiraf|187/224",
-    "|-damage|p2b: Farigiraf|83/100",
-    "|move|p2b: Farigiraf|Psychic|p1b: Farigiraf",
-    "|-resisted|p1b: Farigiraf|1",
-    "|split|p1",
-    "|-damage|p1b: Farigiraf|189/224",
-    "|-damage|p1b: Farigiraf|84/100",
-    "|upkeep",
+    "|switch|p2a: Rillaboom|Rillaboom, L50, F|193/193",
+    "|switch|p2a: Rillaboom|Rillaboom, L50, F|100/100",
     "|turn|7"
    ],
    "state": {
@@ -4722,13 +5218,13 @@
       ],
       "pokemon": [
        {
-        "species": "Gholdengo",
-        "hp": 0,
-        "maxhp": 179,
-        "status": "fnt",
+        "species": "Charizard",
+        "hp": 6,
+        "maxhp": 185,
+        "status": "",
         "status_time": 0,
         "confusion": 0,
-        "fainted": true,
+        "fainted": false,
         "boosts": [
          0,
          0,
@@ -4739,17 +5235,17 @@
          0
         ],
         "pp": [
-         12,
-         19
+         6,
+         8
         ],
         "volatiles": []
        },
        {
-        "species": "Farigiraf",
-        "hp": 189,
-        "maxhp": 224,
-        "status": "",
-        "status_time": 0,
+        "species": "Politoed",
+        "hp": 16,
+        "maxhp": 197,
+        "status": "frz",
+        "status_time": 2,
         "confusion": 0,
         "fainted": false,
         "boosts": [
@@ -4768,9 +5264,9 @@
         "volatiles": []
        },
        {
-        "species": "Ceruledge",
+        "species": "Golisopod",
         "hp": 0,
-        "maxhp": 181,
+        "maxhp": 182,
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4785,19 +5281,19 @@
          0
         ],
         "pp": [
-         19,
-         19
+         10,
+         8
         ],
         "volatiles": []
        },
        {
-        "species": "Archaludon",
-        "hp": 0,
-        "maxhp": 197,
+        "species": "Rillaboom",
+        "hp": 193,
+        "maxhp": 193,
         "status": "",
         "status_time": 0,
         "confusion": 0,
-        "fainted": true,
+        "fainted": false,
         "boosts": [
          0,
          0,
@@ -4808,8 +5304,7 @@
          0
         ],
         "pp": [
-         11,
-         16
+         12
         ],
         "volatiles": []
        }
@@ -4823,10 +5318,55 @@
       ],
       "pokemon": [
        {
-        "species": "Gholdengo",
+        "species": "Rillaboom",
+        "hp": 193,
+        "maxhp": 193,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Milotic",
+        "hp": 75,
+        "maxhp": 202,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         20
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Golisopod",
         "hp": 0,
-        "maxhp": 179,
-        "status": "fnt",
+        "maxhp": 182,
+        "status": "",
         "status_time": 0,
         "confusion": 0,
         "fainted": true,
@@ -4840,19 +5380,223 @@
          0
         ],
         "pp": [
-         12,
-         19
+         11,
+         8
         ],
         "volatiles": []
        },
        {
-        "species": "Farigiraf",
-        "hp": 187,
-        "maxhp": 224,
+        "species": "Charizard",
+        "hp": 0,
+        "maxhp": 185,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         8
+        ],
+        "volatiles": []
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1, move 1 2",
+    "p2": "move 1 1, move 1 2"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacentFoes",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 6
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 41
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 18
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 5
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 20
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 10
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 54
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 11
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 55
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 8
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 1
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 73
+    }
+   ],
+   "log": [
+    "|move|p1a: Charizard|Heat Wave|p2a: Rillaboom|[spread] p2a,p2b",
+    "|-supereffective|p2a: Rillaboom|1",
+    "|-resisted|p2b: Milotic|1",
+    "|split|p2",
+    "|-damage|p2a: Rillaboom|25/193",
+    "|-damage|p2a: Rillaboom|12/100",
+    "|split|p2",
+    "|-damage|p2b: Milotic|48/202",
+    "|-damage|p2b: Milotic|23/100",
+    "|move|p2a: Rillaboom|High Horsepower|p1a: Charizard",
+    "|-immune|p1a: Charizard",
+    "|move|p2b: Milotic|Ice Beam|p1b: Politoed",
+    "|-resisted|p1b: Politoed|1",
+    "|split|p1",
+    "|-damage|p1b: Politoed|0 fnt",
+    "|-damage|p1b: Politoed|0 fnt",
+    "|faint|p1b: Politoed",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 7,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "terrain": "",
+    "sides": [
+     {
+      "request": "switch",
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Charizard",
+        "hp": 6,
+        "maxhp": 185,
         "status": "",
         "status_time": 0,
         "confusion": 0,
         "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         5,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Politoed",
+        "hp": 0,
+        "maxhp": 197,
+        "status": "fnt",
+        "status_time": 2,
+        "confusion": 0,
+        "fainted": true,
         "boosts": [
          0,
          0,
@@ -4869,9 +5613,9 @@
         "volatiles": []
        },
        {
-        "species": "Ceruledge",
+        "species": "Golisopod",
         "hp": 0,
-        "maxhp": 181,
+        "maxhp": 182,
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4886,15 +5630,91 @@
          0
         ],
         "pp": [
-         19,
-         19
+         10,
+         8
         ],
         "volatiles": []
        },
        {
-        "species": "Archaludon",
+        "species": "Rillaboom",
+        "hp": 193,
+        "maxhp": 193,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12
+        ],
+        "volatiles": []
+       }
+      ]
+     },
+     {
+      "request": "",
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Rillaboom",
+        "hp": 25,
+        "maxhp": 193,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Milotic",
+        "hp": 48,
+        "maxhp": 202,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         20
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Golisopod",
         "hp": 0,
-        "maxhp": 197,
+        "maxhp": 182,
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4910,7 +5730,30 @@
         ],
         "pp": [
          11,
-         16
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Charizard",
+        "hp": 0,
+        "maxhp": 185,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         8
         ],
         "volatiles": []
        }
@@ -4921,260 +5764,50 @@
   },
   {
    "input": {
-    "p1": "pass, move 1 1",
-    "p2": "pass, move 1 1"
+    "p1": "pass, switch 4"
    },
    "draws": [
     {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
      "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "A:move:p1b:psychic",
-      "A:move:p2b:psychic"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:BeforeTurn",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
      "group": [
       "P:p1b:0",
-      "P:p2b:0"
+      "P:p2a:0"
      ],
-     "start": 0
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "switch-order",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
      "group": [
       "P:p1b:0",
-      "P:p2b:0"
+      "P:p2a:0"
      ],
-     "start": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "A:move:p1b:psychic",
-      "A:move:p2b:psychic"
-     ],
-     "start": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "execute:normal",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 49
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 6
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 15
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 37
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "execute:normal",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 37
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 4
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 0
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 58
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
+     "start": 1
     }
    ],
    "log": [
-    "|move|p1b: Farigiraf|Psychic|p2b: Farigiraf",
-    "|-resisted|p2b: Farigiraf|1",
-    "|split|p2",
-    "|-damage|p2b: Farigiraf|156/224",
-    "|-damage|p2b: Farigiraf|69/100",
-    "|move|p2b: Farigiraf|Psychic|p1b: Farigiraf",
-    "|-resisted|p1b: Farigiraf|1",
     "|split|p1",
-    "|-damage|p1b: Farigiraf|152/224",
-    "|-damage|p1b: Farigiraf|67/100",
-    "|upkeep",
+    "|switch|p1b: Rillaboom|Rillaboom, L50, M|193/193",
+    "|switch|p1b: Rillaboom|Rillaboom, L50, M|100/100",
     "|turn|8"
    ],
    "state": {
@@ -5192,32 +5825,9 @@
       ],
       "pokemon": [
        {
-        "species": "Gholdengo",
-        "hp": 0,
-        "maxhp": 179,
-        "status": "fnt",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Farigiraf",
-        "hp": 152,
-        "maxhp": 224,
+        "species": "Charizard",
+        "hp": 6,
+        "maxhp": 185,
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5232,19 +5842,19 @@
          0
         ],
         "pp": [
-         9,
+         5,
          8
         ],
         "volatiles": []
        },
        {
-        "species": "Ceruledge",
-        "hp": 0,
-        "maxhp": 181,
+        "species": "Rillaboom",
+        "hp": 193,
+        "maxhp": 193,
         "status": "",
         "status_time": 0,
         "confusion": 0,
-        "fainted": true,
+        "fainted": false,
         "boosts": [
          0,
          0,
@@ -5255,15 +5865,14 @@
          0
         ],
         "pp": [
-         19,
-         19
+         12
         ],
         "volatiles": []
        },
        {
-        "species": "Archaludon",
+        "species": "Golisopod",
         "hp": 0,
-        "maxhp": 197,
+        "maxhp": 182,
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5278,8 +5887,31 @@
          0
         ],
         "pp": [
-         11,
-         16
+         10,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Politoed",
+        "hp": 0,
+        "maxhp": 197,
+        "status": "",
+        "status_time": 2,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         8
         ],
         "volatiles": []
        }
@@ -5293,32 +5925,9 @@
       ],
       "pokemon": [
        {
-        "species": "Gholdengo",
-        "hp": 0,
-        "maxhp": 179,
-        "status": "fnt",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Farigiraf",
-        "hp": 156,
-        "maxhp": 224,
+        "species": "Rillaboom",
+        "hp": 25,
+        "maxhp": 193,
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5333,19 +5942,18 @@
          0
         ],
         "pp": [
-         9,
-         8
+         11
         ],
         "volatiles": []
        },
        {
-        "species": "Ceruledge",
-        "hp": 0,
-        "maxhp": 181,
+        "species": "Milotic",
+        "hp": 48,
+        "maxhp": 202,
         "status": "",
         "status_time": 0,
         "confusion": 0,
-        "fainted": true,
+        "fainted": false,
         "boosts": [
          0,
          0,
@@ -5356,15 +5964,15 @@
          0
         ],
         "pp": [
-         19,
-         19
+         7,
+         20
         ],
         "volatiles": []
        },
        {
-        "species": "Archaludon",
+        "species": "Golisopod",
         "hp": 0,
-        "maxhp": 197,
+        "maxhp": 182,
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5380,7 +5988,30 @@
         ],
         "pp": [
          11,
-         16
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Charizard",
+        "hp": 0,
+        "maxhp": 185,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         8
         ],
         "volatiles": []
        }
@@ -5391,1118 +6022,113 @@
   },
   {
    "input": {
-    "p1": "pass, move 1 1",
-    "p2": "pass, move 1 1"
+    "p1": "move 1, move 1 2",
+    "p2": "move 1 1, move 1 2"
    },
    "draws": [
     {
      "site": "RANDOM_TARGET",
-     "context": "action-speed",
+     "context": "resolve",
      "lo": 0,
-     "hi": 1,
+     "hi": 2,
      "value": 0
     },
     {
      "site": "RANDOM_TARGET",
      "context": "action-speed",
      "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 0,
      "hi": 2,
-     "value": 1,
-     "group": [
-      "A:move:p1b:psychic",
-      "A:move:p2b:psychic"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:BeforeTurn",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "A:move:p2b:psychic",
-      "A:move:p1b:psychic"
-     ],
-     "start": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "execute:normal",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 89
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 11
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 11
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 19
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "execute:normal",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 16
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 23
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 15
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 91
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    }
-   ],
-   "log": [
-    "|move|p1b: Farigiraf|Psychic|p2b: Farigiraf",
-    "|-resisted|p2b: Farigiraf|1",
-    "|split|p2",
-    "|-damage|p2b: Farigiraf|123/224",
-    "|-damage|p2b: Farigiraf|54/100",
-    "|move|p2b: Farigiraf|Psychic|p1b: Farigiraf",
-    "|-resisted|p1b: Farigiraf|1",
-    "|split|p1",
-    "|-damage|p1b: Farigiraf|121/224",
-    "|-damage|p1b: Farigiraf|54/100",
-    "|upkeep",
-    "|turn|9"
-   ],
-   "state": {
-    "turn": 9,
-    "ended": false,
-    "winner": "",
-    "weather": "",
-    "terrain": "",
-    "sides": [
-     {
-      "request": "move",
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Gholdengo",
-        "hp": 0,
-        "maxhp": 179,
-        "status": "fnt",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Farigiraf",
-        "hp": 121,
-        "maxhp": 224,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         8,
-         8
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Ceruledge",
-        "hp": 0,
-        "maxhp": 181,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         19,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Archaludon",
-        "hp": 0,
-        "maxhp": 197,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         11,
-         16
-        ],
-        "volatiles": []
-       }
-      ]
-     },
-     {
-      "request": "move",
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Gholdengo",
-        "hp": 0,
-        "maxhp": 179,
-        "status": "fnt",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Farigiraf",
-        "hp": 123,
-        "maxhp": 224,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         8,
-         8
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Ceruledge",
-        "hp": 0,
-        "maxhp": 181,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         19,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Archaludon",
-        "hp": 0,
-        "maxhp": 197,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         11,
-         16
-        ],
-        "volatiles": []
-       }
-      ]
-     }
-    ]
-   }
-  },
-  {
-   "input": {
-    "p1": "pass, move 1 1",
-    "p2": "pass, move 1 1"
-   },
-   "draws": [
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "A:move:p1b:psychic",
-      "A:move:p2b:psychic"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:BeforeTurn",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "A:move:p1b:psychic",
-      "A:move:p2b:psychic"
-     ],
-     "start": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "execute:normal",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
      "value": 1
     },
     {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 21
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 8
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 39
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "A:move:p1b:highhorsepower",
+      "A:move:p2a:highhorsepower"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
+     "context": "each:BeforeTurn",
+     "lo": 1,
+     "hi": 3,
      "value": 1,
      "group": [
       "P:p1b:0",
-      "P:p2b:0"
+      "P:p2a:0"
      ],
-     "start": 0
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
      "group": [
       "P:p1b:0",
-      "P:p2b:0"
+      "P:p2a:0"
      ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
+     "start": 1
     },
     {
      "site": "RANDOM_TARGET",
      "context": "action-speed",
      "lo": 0,
-     "hi": 1,
+     "hi": 2,
      "value": 0
     },
     {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "A:move:p1b:highhorsepower",
+      "A:move:p2a:highhorsepower"
+     ],
+     "start": 1
+    },
+    {
      "site": "RANDOM_TARGET",
-     "context": "execute:normal",
+     "context": "execute:allAdjacentFoes",
      "lo": 0,
-     "hi": 1,
-     "value": 0
+     "hi": 2,
+     "value": 1
     },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 3
+     "value": 54
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 17
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 19
+     "value": 9
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 11
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
      "value": 6
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    }
-   ],
-   "log": [
-    "|move|p1b: Farigiraf|Psychic|p2b: Farigiraf",
-    "|-resisted|p2b: Farigiraf|1",
-    "|split|p2",
-    "|-damage|p2b: Farigiraf|89/224",
-    "|-damage|p2b: Farigiraf|39/100",
-    "|move|p2b: Farigiraf|Psychic|p1b: Farigiraf",
-    "|-resisted|p1b: Farigiraf|1",
-    "|split|p1",
-    "|-damage|p1b: Farigiraf|88/224",
-    "|-damage|p1b: Farigiraf|39/100",
-    "|-unboost|p1b: Farigiraf|spd|1",
-    "|upkeep",
-    "|turn|10"
-   ],
-   "state": {
-    "turn": 10,
-    "ended": false,
-    "winner": "",
-    "weather": "",
-    "terrain": "",
-    "sides": [
-     {
-      "request": "move",
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Gholdengo",
-        "hp": 0,
-        "maxhp": 179,
-        "status": "fnt",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Farigiraf",
-        "hp": 88,
-        "maxhp": 224,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         -1,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         7,
-         8
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Ceruledge",
-        "hp": 0,
-        "maxhp": 181,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         19,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Archaludon",
-        "hp": 0,
-        "maxhp": 197,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         11,
-         16
-        ],
-        "volatiles": []
-       }
-      ]
-     },
-     {
-      "request": "move",
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Gholdengo",
-        "hp": 0,
-        "maxhp": 179,
-        "status": "fnt",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Farigiraf",
-        "hp": 89,
-        "maxhp": 224,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         7,
-         8
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Ceruledge",
-        "hp": 0,
-        "maxhp": 181,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         19,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Archaludon",
-        "hp": 0,
-        "maxhp": 197,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         11,
-         16
-        ],
-        "volatiles": []
-       }
-      ]
-     }
-    ]
-   }
-  },
-  {
-   "input": {
-    "p1": "pass, move 1 1",
-    "p2": "pass, move 1 1"
-   },
-   "draws": [
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "A:move:p1b:psychic",
-      "A:move:p2b:psychic"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:BeforeTurn",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "A:move:p2b:psychic",
-      "A:move:p1b:psychic"
-     ],
-     "start": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "execute:normal",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 46
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 11
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 1
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 83
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "execute:normal",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 95
     },
     {
      "site": "CRIT",
@@ -6523,510 +6149,83 @@
      "context": "",
      "lo": 0,
      "hi": 100,
+     "value": 93
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 12
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "A:move:p1b:highhorsepower",
+      "A:move:p2a:highhorsepower"
+     ],
+     "start": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 25
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 17
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
      "value": 4
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
     }
    ],
    "log": [
-    "|move|p2b: Farigiraf|Psychic|p1b: Farigiraf",
-    "|-resisted|p1b: Farigiraf|1",
-    "|split|p1",
-    "|-damage|p1b: Farigiraf|34/224",
-    "|-damage|p1b: Farigiraf|15/100",
-    "|move|p1b: Farigiraf|Psychic|p2b: Farigiraf",
-    "|-resisted|p2b: Farigiraf|1",
+    "|move|p1a: Charizard|Heat Wave|p2b: Milotic|[spread] p2a,p2b",
+    "|-supereffective|p2a: Rillaboom|1",
+    "|-resisted|p2b: Milotic|1",
     "|split|p2",
-    "|-damage|p2b: Farigiraf|56/224",
-    "|-damage|p2b: Farigiraf|25/100",
-    "|-unboost|p2b: Farigiraf|spd|1",
-    "|upkeep",
-    "|turn|11"
+    "|-damage|p2a: Rillaboom|0 fnt",
+    "|-damage|p2a: Rillaboom|0 fnt",
+    "|split|p2",
+    "|-damage|p2b: Milotic|21/202",
+    "|-damage|p2b: Milotic|10/100",
+    "|faint|p2a: Rillaboom",
+    "|move|p1b: Rillaboom|High Horsepower|p2b: Milotic",
+    "|split|p2",
+    "|-damage|p2b: Milotic|0 fnt",
+    "|-damage|p2b: Milotic|0 fnt",
+    "|faint|p2b: Milotic",
+    "|win|p1"
    ],
    "state": {
-    "turn": 11,
-    "ended": false,
-    "winner": "",
-    "weather": "",
-    "terrain": "",
-    "sides": [
-     {
-      "request": "move",
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Gholdengo",
-        "hp": 0,
-        "maxhp": 179,
-        "status": "fnt",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Farigiraf",
-        "hp": 34,
-        "maxhp": 224,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         -1,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         6,
-         8
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Ceruledge",
-        "hp": 0,
-        "maxhp": 181,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         19,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Archaludon",
-        "hp": 0,
-        "maxhp": 197,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         11,
-         16
-        ],
-        "volatiles": []
-       }
-      ]
-     },
-     {
-      "request": "move",
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Gholdengo",
-        "hp": 0,
-        "maxhp": 179,
-        "status": "fnt",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Farigiraf",
-        "hp": 56,
-        "maxhp": 224,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         -1,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         6,
-         8
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Ceruledge",
-        "hp": 0,
-        "maxhp": 181,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         19,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Archaludon",
-        "hp": 0,
-        "maxhp": 197,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         11,
-         16
-        ],
-        "volatiles": []
-       }
-      ]
-     }
-    ]
-   }
-  },
-  {
-   "input": {
-    "p1": "pass, move 1 1",
-    "p2": "pass, move 1 1"
-   },
-   "draws": [
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "A:move:p1b:psychic",
-      "A:move:p2b:psychic"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:BeforeTurn",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "A:move:p1b:psychic",
-      "A:move:p2b:psychic"
-     ],
-     "start": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "execute:normal",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 20
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 15
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 3
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 21
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "execute:normal",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 94
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 21
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 10
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 24
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0",
-      "P:p2b:0"
-     ],
-     "start": 0
-    }
-   ],
-   "log": [
-    "|move|p1b: Farigiraf|Psychic|p2b: Farigiraf",
-    "|-resisted|p2b: Farigiraf|1",
-    "|split|p2",
-    "|-damage|p2b: Farigiraf|3/224",
-    "|-damage|p2b: Farigiraf|1/100",
-    "|move|p2b: Farigiraf|Psychic|p1b: Farigiraf",
-    "|-resisted|p1b: Farigiraf|1",
-    "|split|p1",
-    "|-damage|p1b: Farigiraf|0 fnt",
-    "|-damage|p1b: Farigiraf|0 fnt",
-    "|faint|p1b: Farigiraf",
-    "|win|p2"
-   ],
-   "state": {
-    "turn": 11,
+    "turn": 8,
     "ended": true,
-    "winner": "p2",
+    "winner": "p1",
     "weather": "",
     "terrain": "",
     "sides": [
@@ -7038,36 +6237,13 @@
       ],
       "pokemon": [
        {
-        "species": "Gholdengo",
-        "hp": 0,
-        "maxhp": 179,
-        "status": "fnt",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Farigiraf",
-        "hp": 0,
-        "maxhp": 224,
+        "species": "Charizard",
+        "hp": 6,
+        "maxhp": 185,
         "status": "",
         "status_time": 0,
         "confusion": 0,
-        "fainted": true,
+        "fainted": false,
         "boosts": [
          0,
          0,
@@ -7078,19 +6254,19 @@
          0
         ],
         "pp": [
-         5,
+         4,
          8
         ],
         "volatiles": []
        },
        {
-        "species": "Ceruledge",
-        "hp": 0,
-        "maxhp": 181,
+        "species": "Rillaboom",
+        "hp": 193,
+        "maxhp": 193,
         "status": "",
         "status_time": 0,
         "confusion": 0,
-        "fainted": true,
+        "fainted": false,
         "boosts": [
          0,
          0,
@@ -7101,15 +6277,14 @@
          0
         ],
         "pp": [
-         19,
-         19
+         11
         ],
         "volatiles": []
        },
        {
-        "species": "Archaludon",
+        "species": "Golisopod",
         "hp": 0,
-        "maxhp": 197,
+        "maxhp": 182,
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -7124,8 +6299,31 @@
          0
         ],
         "pp": [
-         11,
-         16
+         10,
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Politoed",
+        "hp": 0,
+        "maxhp": 197,
+        "status": "",
+        "status_time": 2,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         8
         ],
         "volatiles": []
        }
@@ -7139,55 +6337,9 @@
       ],
       "pokemon": [
        {
-        "species": "Gholdengo",
+        "species": "Rillaboom",
         "hp": 0,
-        "maxhp": 179,
-        "status": "fnt",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         19
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Farigiraf",
-        "hp": 3,
-        "maxhp": 224,
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         -1,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         5,
-         8
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Ceruledge",
-        "hp": 0,
-        "maxhp": 181,
+        "maxhp": 193,
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -7202,15 +6354,37 @@
          0
         ],
         "pp": [
-         19,
-         19
+         11
         ],
         "volatiles": []
        },
        {
-        "species": "Archaludon",
+        "species": "Milotic",
         "hp": 0,
-        "maxhp": 197,
+        "maxhp": 202,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         20
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Golisopod",
+        "hp": 0,
+        "maxhp": 182,
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -7226,7 +6400,30 @@
         ],
         "pp": [
          11,
-         16
+         8
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Charizard",
+        "hp": 0,
+        "maxhp": 185,
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         8
         ],
         "volatiles": []
        }

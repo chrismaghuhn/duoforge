@@ -116,6 +116,8 @@ def drop_reason(d):
     if site == 'SPEED_TIE' and ctx == 'field:Residual':
         if all(g.startswith('H:') and g.endswith(':end') for g in group):
             return 'residual tie of duration counters'
+        if all(g.startswith('H:brn:') and g.endswith(':cb') for g in group):
+            return None  # burn handlers: the engine draws
         raise SystemExit('trace_to_c: residual tie with callbacks: %s' % group)
     if site == 'SPEED_TIE' and ctx != 'queue':
         raise SystemExit('trace_to_c: unhandled tie context %s' % ctx)
@@ -180,6 +182,7 @@ def convert_choice(text, side, state, roster_of):
 
 
 BOUNDARY = {'teampreview': 1, 'move': 2, 'switch': 3}
+STATUS = {'': 0, 'brn': 1, 'frz': 2, 'par': 3, 'slp': 4, 'fnt': 0}
 RESULT = {'p1': 1, 'p2': 2, '': 3}
 
 
@@ -247,13 +250,17 @@ def convert(root, name, tables, out, all_tape):
             for roster in range(6):
                 p = by_roster.get(roster)
                 if p is None:
-                    row.append('{0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u}')
+                    row.append('{0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}')
                     continue
                 pp = p['pp'] + [0] * (4 - len(p['pp']))
                 stall = 1 if 'stall' in p['volatiles'] else 0
-                row.append('{1u, %du, {%s}, {%s}, %du, %du}' % (
+                # A fainted Pokemon's status is not compared (DuoForge drops it).
+                status, counter = (0, 0) if p['fainted'] else (STATUS[p['status']], p['status_time'])
+                if status not in (2, 4):
+                    counter = 0
+                row.append('{1u, %du, {%s}, {%s}, %du, %du, %du, %du, %du}' % (
                     p['hp'], ', '.join('%du' % x for x in pp), ', '.join('%du' % (x + 6) for x in p['boosts']),
-                    stall, 1 if p['fainted'] else 0))
+                    stall, 1 if p['fainted'] else 0, status, counter, p['confusion']))
             mons.append(row)
         cmds = []
         for s in range(2):
@@ -318,9 +325,10 @@ def main():
            'typedef struct df_conf_member {', '    uint32_t species, gender, nature, sp[6], ability, item, move_count, moves[4];',
            '} df_conf_member;', '/* kind, move_slot, target, mega, reserve */',
            'typedef struct df_conf_cmd {', '    uint8_t kind, move_slot, target, mega, reserve;', '} df_conf_cmd;',
-           '/* present, hp, pp, stages (biased by 6), stall counter present, fainted */',
+           '/* present, hp, pp, stages (biased by 6), stall counter present, fainted,',
+           ' * status (DFI_STATUS_*), its counter (sleep, freeze), confusion turns */',
            'typedef struct df_conf_mon {', '    uint32_t present, hp;', '    uint8_t pp[4];', '    uint8_t stages[7];',
-           '    uint8_t stall, fainted;', '} df_conf_mon;',
+           '    uint8_t stall, fainted, status, status_counter, confusion;', '} df_conf_mon;',
            '/* team step, side 0 / side 1 answered, tape slice, the turn, boundary and',
            ' * result afterwards, the picks of a team step, slot commands, the occupants',
            ' * of the positions afterwards (roster index, 0xFF empty), the positions',

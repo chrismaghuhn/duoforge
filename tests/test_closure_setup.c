@@ -380,14 +380,16 @@ int main(void)
         dfi_support_manifest m = full_manifest();
         DF_CHECK(&t, dfi_closure_setup_supported(&m, &teams));
         DF_CHECK(&t, !dfi_closure_setup_supported(&dfi_support, &teams)); /* abilities: not yet */
-        /* The manifest of this build, pinned: the turn core of step 2 and its
-         * moves. A step that implements a mechanic changes this deliberately. */
+        /* The manifest of this build, pinned: the turn core, switching and the
+         * moves of steps 2 to 4. A step that implements a mechanic changes this
+         * deliberately. */
         {
             static const uint32_t step2_moves[] = {
                 DFI_MOVE_HIGHHORSEPOWER, DFI_MOVE_PROTECT,     DFI_MOVE_MUDDYWATER, DFI_MOVE_COIL,
                 DFI_MOVE_SHADOWSNEAK,    DFI_MOVE_SWORDSDANCE, DFI_MOVE_FOCUSBLAST, DFI_MOVE_SHADOWBALL,
                 DFI_MOVE_NASTYPLOT,      DFI_MOVE_DRILLRUN,    DFI_MOVE_DRAGONPULSE, DFI_MOVE_SNARL,
-                DFI_MOVE_PSYCHIC,        DFI_MOVE_SPIRITBREAK,
+                DFI_MOVE_PSYCHIC,        DFI_MOVE_SPIRITBREAK, DFI_MOVE_ICEBEAM,    DFI_MOVE_HYPNOSIS,
+                DFI_MOVE_ZAPCANNON,      DFI_MOVE_IRONHEAD,    DFI_MOVE_HEATWAVE,   DFI_MOVE_HURRICANE,
             };
             dfi_support_manifest want;
             memset(&want, 0, sizeof want);
