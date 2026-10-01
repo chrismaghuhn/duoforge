@@ -457,7 +457,8 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_EVENT_FORME           30u /* [detailschange] position, id: the new forme */
 #define DUOFORGE_EVENT_MEGA            31u /* [-mega] position, id2: the stone (item + 1) */
 #define DUOFORGE_EVENT_PREPARE         32u /* [-prepare] position, id: the move it charges */
-#define DUOFORGE_EVENT_ANIMATION       33u /* [-anim] position, other, id: the move shown */
+#define DUOFORGE_EVENT_ANIMATION       33u /* [-anim] position, other, id: the move shown; flags MISS, NOTARGET
+                                                    (the last move line once shown) */
 #define DUOFORGE_EVENT_ABILITY         34u /* [-ability] position, id2: ability + 1 */
 #define DUOFORGE_EVENT_ACTIVATE        35u /* [-activate] position; cause ABILITY + id2 (Lightning Rod, Emergency Exit) or MOVE + id2 (Struggle) */
 #define DUOFORGE_EVENT_UPKEEP          36u /* [upkeep] the end-of-turn effects are done */

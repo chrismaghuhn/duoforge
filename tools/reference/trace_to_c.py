@@ -531,7 +531,19 @@ def step_events(log, viewer, roster_of, maxhp, tables):
         elif kind == '-prepare':
             e = ev_tuple(EV['PREPARE'], ev_pos(args[0]), ident=tables['MOVE'][key(args[1])])
         elif kind == '-anim':
-            e = ev_tuple(EV['ANIMATION'], ev_pos(args[0]), ev_pos(args[2]), 0, tables['MOVE'][key(args[1])])
+            # addMove('-anim') makes it the last move line: later attributes
+            # ([miss], [notarget]) amend it.
+            flags = 0
+            for a in attrs:
+                if a == '[miss]':
+                    flags |= FLAG['MISS']
+                elif a == '[notarget]':
+                    flags |= FLAG['NOTARGET']
+                else:
+                    raise SystemExit('trace_to_c: unknown -anim attribute %r' % a)
+            shown = ev_pos(args[2])  # a fainted Pokemon has no slot ("p1: Name")
+            e = ev_tuple(EV['ANIMATION'], ev_pos(args[0]), NOPOS if shown is None else shown, 0,
+                         tables['MOVE'][key(args[1])], flags=flags)
         elif kind == '-ability':
             e = ev_tuple(EV['ABILITY'], ev_pos(args[0]), NOPOS, 0, 0, tables['ABILITY'][key(args[1])] + 1)
         else:
