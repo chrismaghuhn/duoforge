@@ -70,15 +70,16 @@ static dfi_member *dfi_at(struct duoforge_battle *b, uint32_t flat)
     return &b->sides[flat / 2u].members[occupant];
 }
 
-/* The members of a side at 0 HP: side.totalFainted, since the data has no
- * revival and faints are processed before the next action (decision 0009
- * section 4.1; Last Respects). */
+/* The brought members of a side at 0 HP: side.totalFainted, since the
+ * data has no revival and faints are processed before the next action
+ * (decision 0009 section 4.1; Last Respects). */
 static uint32_t dfi_fainted_members(const struct duoforge_battle *b, uint32_t side)
 {
     const dfi_side *sd = &b->sides[side];
     uint32_t n = 0u;
     for (uint32_t m = 0u; m < sd->member_count && m < DUOFORGE_MAX_ROSTER; ++m) {
-        n += sd->members[m].hp == 0u ? 1u : 0u;
+        const bool brought = (((uint32_t)sd->brought_mask >> m) & 1u) != 0u;
+        n += brought && sd->members[m].hp == 0u ? 1u : 0u;
     }
     return n;
 }
@@ -2779,9 +2780,14 @@ static duoforge_status dfi_resume_pivot(dfi_run *r, const duoforge_side_choice r
                 fresh[k] = (dfi_queue_record){0u, (uint8_t)DFI_Q_SWITCH_IN, (uint8_t)s, (uint8_t)slot, 0u, 0u,
                                               sc->reserve};
                 k += 1u;
-            } else {
+            } else if (((uint32_t)b->sides[s].requested_slots >> slot & 1u) == 0u) {
                 b->sides[s].positions[slot].switch_flag = 0u;
             }
+            /* A requested slot that passes keeps its flag (choosePass,
+             * sim/side.ts:1330-1357): with two flagged slots and one reserve
+             * (Flip Turn and Emergency Exit on one side, Team C), the side is
+             * asked again after the switch, the Pokemon that left now being
+             * a reserve (dfi_pivot_pending). */
         }
     }
     if ((uint32_t)b->queue_len + k > DFI_QUEUE_CAPACITY) {

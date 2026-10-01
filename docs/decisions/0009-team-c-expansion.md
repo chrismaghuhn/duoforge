@@ -316,6 +316,10 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
 
   Negative controls: without the flag, with a fixed base power of 50, or with `[from] Parting Shot`, a battle fails. A white-box test checks the flag range per kind.
 - **Converter.** `[from] Flip Turn` is a MOVE cause, like Parting Shot.
+- **Review findings, fixed.**
+  - A slot that passes at a PIVOT keeps its flag (`choosePass`, `sim/side.ts:1330-1357`). With two flags on one side and one reserve (Flip Turn on its own ally, whose Emergency Exit fires), the side is asked again after the switch, with the Pokemon that left as the reserve. Before the fix the engine dropped the flag. `c04_flip_turn_double_pivot` records it, including the cancelled move of the second Pokemon to leave. The converter asks a slot exactly when its switch flag is set. That covers this case as well as main's mid-turn rule for fainted Pokemon, and `conformance.h` is unchanged.
+  - The fainted count only counts brought members.
+  - Last Respects is recorded at counts 0 and 1; 2 and 3 use the same formula, and no seed reached them.
 - **Shared files touched:**
   - `src/combat/turn.c` (base power, the flag, the switch event);
   - `src/state/{battle_internal,closure_member}.h`, `closure_member.c`, `invariants.c`;

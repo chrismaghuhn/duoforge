@@ -255,11 +255,15 @@ def convert_choice(text, side, state, roster_of, mid_turn=False):
         elif words[0] == 'pass':
             # In a switch request the reference wants "pass" for a slot that
             # is not asked to switch; DuoForge does not request that slot. A
-            # fainted Pokemon is asked only at the end of the turn: the
-            # reference sets its switch flag in checkFainted, so a pivot
-            # during the turn (Parting Shot, Emergency Exit) does not ask it.
+            # slot is asked exactly when its switch flag is set: a fainted
+            # Pokemon only at the end of the turn (checkFainted sets the flag,
+            # so a pivot during the turn does not ask it), and a standing one
+            # that keeps its flag while it passes (Flip Turn and Emergency
+            # Exit on one side with one reserve, Team C). mid_turn agrees with
+            # the flag for fainted Pokemon and is kept for the callers.
             mon = state['sides'][side]['pokemon'][actives[slot]]
-            asked = state['sides'][side]['request'] != 'switch' or (mon['fainted'] and not mid_turn)
+            del mid_turn
+            asked = state['sides'][side]['request'] != 'switch' or bool(mon.get('switch_flag'))
             cmds.append((3, 0, 0, 0, 0) if asked else (0, 0, 0, 0, 0))
         else:
             raise SystemExit('trace_to_c: choice %r is not supported' % part)

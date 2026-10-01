@@ -345,6 +345,9 @@ int main(void)
         w->sides[0].positions[0].switch_flag = (uint8_t)DFI_SWITCH_FLIP_TURN;
         const duoforge_status st = dfi_state_check(ctx, w, &inv);
         DF_CHECK(&t, st == DUOFORGE_E_INVARIANT && inv == (team_c != 0u ? DFI_INV_SWITCH_FLAG : DFI_INV_VOLATILE));
+        /* One past Flip Turn is out of range under every kind. */
+        w->sides[0].positions[0].switch_flag = (uint8_t)(DFI_SWITCH_FLIP_TURN + 1u);
+        DF_CHECK(&t, dfi_state_check(ctx, w, &inv) == DUOFORGE_E_INVARIANT && inv == DFI_INV_VOLATILE);
         duoforge_battle_destroy(w);
     }
 
