@@ -246,6 +246,7 @@ static void df_select(const duoforge_context *ctx, duoforge_battle *b, const uin
         df_fail(what);
     }
     df_see_active(b); /* the leads' [switch] lines */
+    df_checked(ctx, b, what);
 }
 
 void df_knowledge_see_hp(duoforge_battle *b, uint32_t side, uint32_t roster)

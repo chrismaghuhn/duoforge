@@ -75,8 +75,8 @@ duoforge_event dfi_event_switch(const struct duoforge_battle *b, uint32_t flat)
  * than a locked turn is one use of the slot that holds it on the open team
  * sheet (Struggle is on none), an item that ended and a Mega Evolution are
  * revealed facts. The occupants follow the switches of the step. */
-void dfi_events_fold_knowledge(const struct duoforge_battle *before, struct duoforge_battle *after,
-                               const dfi_events *events)
+bool dfi_events_fold_knowledge(const struct duoforge_battle *before, struct duoforge_battle *after,
+                               const dfi_events *events, uint32_t first)
 {
     for (uint32_t p = 0u; p < DUOFORGE_SIDE_COUNT; ++p) {
         const uint32_t foe = 1u - p;
@@ -97,7 +97,7 @@ void dfi_events_fold_knowledge(const struct duoforge_battle *before, struct duof
                 occupant[slot] = e.id;
             }
             const uint32_t m = occupant[slot];
-            if (m >= DUOFORGE_MAX_ROSTER || m >= fs->member_count) {
+            if (i < first || m >= DUOFORGE_MAX_ROSTER || m >= fs->member_count) {
                 continue;
             }
             dfi_knowledge *k = &viewer->knowledge[m];
@@ -105,6 +105,9 @@ void dfi_events_fold_knowledge(const struct duoforge_battle *before, struct duof
                 viewer->seen_mask = (uint8_t)((uint32_t)viewer->seen_mask | 1u << m); /* wide-operands-reviewed: < 64 */
             }
             if (e.kind == DUOFORGE_EVENT_SWITCH || e.kind == DUOFORGE_EVENT_DAMAGE || e.kind == DUOFORGE_EVENT_HEAL) {
+                if (e.hp_kind != DUOFORGE_HP_PERCENT) {
+                    return false; /* never a silent 0 */
+                }
                 k->hp_percent = (uint8_t)e.hp; /* the percent display: <= 100 */
                 k->hp_flag = e.hp_flag;
             } else if (e.kind == DUOFORGE_EVENT_MOVE && ((uint32_t)e.flags & DUOFORGE_EVENT_FLAG_LOCKED) == 0u) {
@@ -120,4 +123,5 @@ void dfi_events_fold_knowledge(const struct duoforge_battle *before, struct duof
             }
         }
     }
+    return true;
 }

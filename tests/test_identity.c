@@ -58,14 +58,14 @@ static void place_fails(df_test *t, duoforge_battle *b, dfi_position_id p, uint8
 
 /* The step's disclosure of an entry: its [switch] line, folded into the
  * opponent's knowledge (decision 0007 section 6). */
-static void disclose(duoforge_battle *b, uint32_t flat)
+static bool disclose(duoforge_battle *b, uint32_t flat)
 {
     static dfi_events ev;
     ev.count = 0u;
     ev.overflow = false;
     const duoforge_event e = dfi_event_switch(b, flat);
     dfi_events_push(&ev, &e);
-    dfi_events_fold_knowledge(b, b, &ev);
+    return dfi_events_fold_knowledge(b, b, &ev, 0u);
 }
 
 int main(void)
@@ -154,7 +154,7 @@ int main(void)
     dfi_binding bind5 = {{0, 0}, 0};
     DF_CHECK(&t, dfi_place(b, S0A, 3u, &bind5) == DUOFORGE_OK);
     DF_CHECK_EQ_U64(&t, b->sides[1].seen_mask, 0x05u); /* placing alone discloses nothing */
-    disclose(b, 0u);
+    DF_CHECK(&t, disclose(b, 0u));
     DF_CHECK_EQ_U64(&t, bind5.activation_id, 5u);
     DF_CHECK_EQ_U64(&t, b->next_activation_id, 6u);
     DF_CHECK(&t, !dfi_binding_is_current(b, old1));
@@ -176,7 +176,7 @@ int main(void)
     DF_CHECK(&t, !dfi_binding_is_current(b, bind5));
     DF_CHECK(&t, dfi_binding_is_current(b, bind6));
     DF_CHECK(&t, b->sides[1].knowledge[2].hp_percent == 20u); /* not shown before its [switch] line */
-    disclose(b, 0u);
+    DF_CHECK(&t, disclose(b, 0u));
     DF_CHECK_EQ_U64(&t, b->sides[1].seen_mask, 0x0Du); /* re-entry adds no bit */
     /* Re-entry starts a new activation: nothing of either earlier stay is
      * left, and the opponent now sees the current display (40 of 120). */
