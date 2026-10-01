@@ -158,8 +158,8 @@ static void dfi_view_position(const struct duoforge_battle *b, uint32_t viewer, 
     out->charging = slot->charge_turns != 0u ? 1u : 0u;
     const uint32_t locked_index = slot->locked_move != 0u ? (uint32_t)slot->locked_move - 1u : DUOFORGE_MOVE_SLOT_NONE;
     out->locked_slot = (uint8_t)locked_index; /* <= 0xFF */
-    if (slot->locked_move != 0u && s == viewer) {
-        out->locked_target = slot->locked_target;
+    if (slot->charge_turns != 0u && s == viewer) {
+        out->locked_target = slot->locked_target; /* a choice lock has no target (Team C) */
     }
     out->protecting = (((uint32_t)slot->flags & DFI_VOL_PROTECT) != 0u) ? 1u : 0u;
     out->acted = slot->move_actions != 0u ? 1u : 0u;

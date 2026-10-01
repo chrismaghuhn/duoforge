@@ -1,0 +1,24 @@
+{
+  "name": "c07_choice_lock",
+  "purpose": "Choice Scarf: the first move a holder uses locks it (choicelock); Basculegion's first move is Flip Turn, and switching out ends the lock; Incineroar locked into Fake Out has no move left on its next turn (Champions disables Fake Out, the lock the rest) and Struggles, then switches out by choice (the lock does not trap); x1.5 speed.",
+  "data": "team_c",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c0701",
+  "teams": [
+    "Basculegion (M) @ Choice Scarf\nAbility: Adaptability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Flip Turn\n- Wave Crash\n- Aqua Jet\n\nKingambit (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Iron Head\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Ice Beam\n- Coil\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide",
+    "Incineroar (M) @ Choice Scarf\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Darkest Lariat\n\nFarigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Protect\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Protect\n\nRaichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Focus Blast\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1 1",
+      "move 2 1, move 1 1"
+    ],
+    "p2": [
+      "move 1 2, move 1 1",
+      "move 2 1, move 1 1",
+      "switch 3, move 1 1",
+      "move 1 1, move 1 1"
+    ],
+    "max_steps": 40
+  }
+}

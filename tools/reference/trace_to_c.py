@@ -263,7 +263,14 @@ def convert_choice(text, side, state, roster_of, mid_turn=False):
             mega = 1 if words[-1] == 'mega' else 0
             if mega:
                 words = words[:-1]
-            if all(pp == 0 for pp in mon['pp']):
+            # Struggle is what the reference's request offers: [2] for the
+            # slot, with no PP left or with every move with PP disabled
+            # (Champions' Fake Out, a choice lock; Team C).
+            rows = state['sides'][side].get('enabled') or []
+            struggle = slot < len(rows) and rows[slot] == [2]
+            if all(pp == 0 for pp in mon['pp']) and not struggle:
+                raise SystemExit('trace_to_c: no PP left and no Struggle in the request: %r' % text)
+            if struggle:
                 cmds.append((1, 4, 0xFF, mega, 0))  # Struggle
                 continue
             target = 0xFF
@@ -701,9 +708,17 @@ def convert(root, name, tables, out, all_tape, all_events):
                     counter = 0
                 lock = p.get('locked')
                 lslot, ltarget = (lock[0], abs_target(s, lock[1])) if lock else (0xFF, 0)
+                # A Choice item's lock (Team C) names its slot without a
+                # target; with a two-turn lock both are on the same move.
+                choice = p.get('choice')
+                if choice is not None:
+                    if choice < 0 or (lock and lock[0] != choice):
+                        raise SystemExit('trace_to_c: unexpected choice lock %r (two-turn lock %r)' % (choice, lock))
+                    if not lock:
+                        lslot, ltarget = choice, 0
                 seen = shown[s].get(roster)
-                vols = sum(bit for name, bit in (('protect', 1), ('flashfire', 2), ('twoturnmove', 4))
-                           if name in p['volatiles'])
+                vols = sum(bit for name, bit in (('protect', 1), ('flashfire', 2), ('twoturnmove', 4),
+                                                 ('choicelock', 8)) if name in p['volatiles'])
                 row.append('{1u, %du, {%s}, {%s}, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du}' % (
                     p['hp'], ', '.join('%du' % x for x in pp), ', '.join('%du' % (x + 6) for x in p['boosts']),
                     stall, 1 if p['fainted'] else 0, status, counter, p['confusion'], lslot, ltarget,
@@ -847,7 +862,7 @@ def write_header(root, names, tables, team_c, check):
            'typedef struct df_conf_mon {', '    uint32_t present, hp;', '    uint8_t pp[4];', '    uint8_t stages[7];',
            '    uint8_t stall, fainted, status, status_counter, confusion, locked_slot, locked_target, mega;',
            '    uint8_t held, seen, seen_percent, seen_flag;',
-           '    uint8_t vols; /* volatiles: 1 protect, 2 flashfire, 4 twoturnmove */',
+           '    uint8_t vols; /* volatiles: 1 protect, 2 flashfire, 4 twoturnmove, 8 choicelock */',
            '} df_conf_mon;',
            '/* team step, side 0 / side 1 answered, tape slice, the turn, boundary and',
            ' * result afterwards, the picks of a team step, slot commands, the occupants',

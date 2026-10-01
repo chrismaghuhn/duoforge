@@ -31,6 +31,7 @@ typedef struct dfi_kind_limits {
     uint32_t item_count;      /* an item is 1 + its id, so at most this */
     uint32_t switch_flag_max; /* DFI_SWITCH_FAINTED; DFI_SWITCH_FLIP_TURN for TEAM_C */
     uint32_t status_max;      /* DFI_STATUS_SLP; DFI_STATUS_PSN for TEAM_C */
+    uint32_t vol_flags_mask;  /* DFI_VOL_* bits a position may carry: TEAM_C adds the choice lock */
     bool dev;
 } dfi_kind_limits;
 

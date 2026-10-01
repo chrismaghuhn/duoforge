@@ -1,6 +1,6 @@
 # 0009 — Team C: the expansion track (data kind, gate, steps, evidence)
 
-Status: **accepted** (owner, 2026-10-01: "bau das erstmal so"; setup rule: the closure rule, section 3.4). **Steps 1 to 6 built** (section 10). Builds on decision `0004` (two reference teams), `0006` (data, state v3, draw sites, fixtures, evidence), `0007` (player view) and `0010` (the certified CLOSURE profile, the role of `CLOSURE_DEV`, draw alignment B confirmed), and on the research in `docs/research/third-team/` (PR #32). "M§n" means section n of `docs/research/third-team/mechanics.md`; X1 to X9 are its executed experiments.
+Status: **accepted** (owner, 2026-10-01: "bau das erstmal so"; setup rule: the closure rule, section 3.4). **Steps 1 to 7 built** (section 10). Builds on decision `0004` (two reference teams), `0006` (data, state v3, draw sites, fixtures, evidence), `0007` (player view) and `0010` (the certified CLOSURE profile, the role of `CLOSURE_DEV`, draw alignment B confirmed), and on the research in `docs/research/third-team/` (PR #32). "M§n" means section n of `docs/research/third-team/mechanics.md`; X1 to X9 are its executed experiments.
 
 ## 1. Owner inputs (2026-10-01)
 
@@ -423,3 +423,62 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
   - `src/combat/turn.c`;
   - `src/data/support_manifest.c`;
   - `tools/reference/trace_to_c.py`.
+
+### 10.7 Step 7: Choice Scarf
+
+- **Speed.** Choice Scarf's `onModifySpe` is `chainModify(1.5)` (`data/items.ts:983-1005`). It chains with Tailwind's `chainModify(2)` into one modifier, which is applied once. Paralysis then halves the result: its handler runs last, at priority -101, with `finalModify` and then floor 50/100 (`data/conditions.ts:30-37`). `dfi_speed_key` does the same. A fainted holder has no handlers, so it keeps its raw Speed.
+- **The choice lock.** Choice Scarf's `onModifyMove` adds `choicelock`, whose `onStart` stores the move (`data/conditions.ts`).
+  - **When it starts.** `ModifyMove` runs when the move is used: after BeforeMove and PP, before the move line. A move that BeforeMove stops (flinch, sleep, full paralysis) sets no lock. A move that Protect blocks or that fails does set it.
+  - **Struggle sets none.** Struggle is not in the move slots, so `onDisableMove` would remove its lock at the next request, before it could matter.
+- **State.** Volatile bit 64, `DFI_VOL_CHOICE_LOCK`, valid only under the TEAM_C kinds (`dfi_kind_limits.vol_flags_mask`). The move is in the locked-move byte, which the lock shares with a charging two-turn move.
+  - The byte is set exactly when a charge or a choice lock is. Both together are on the same move: a choice lock disables every other move, and a charge starts only on Electro Shot.
+  - A target is stored only while charging.
+  - A choice lock needs its holder to hold a Choice Scarf.
+  - When a charge ends, or a locked turn cannot move, the choice lock and its move stay ("the choice lock outlives the charge").
+  - Leaving the field clears the lock with the rest of the position.
+- **The request.** The lock offers only the locked move, with any of its targets (`onDisableMove`). With no PP, or with Champions' Fake Out rule, the slot gets Struggle. The lock does not trap.
+  - The request's two-turn branch now tests `charge_turns`, no longer `locked_move`. Both meant the same before the choice lock.
+- **Observation.** A choice lock is public: `locked_slot` shows it, `charging` is 0, and `locked_target` is `DUOFORGE_TARGET_NONE`. The own locked target is shown only while charging. That is an additive public change of an existing field (sections 4.2, 9.4): library 0.14.0, coordinated with the main session (the Python encoder reads `locked_slot` only as a flag). Under CLOSURE the views are byte-identical.
+- **Harness and converter.**
+  - `ps_trace.js` records a lock's slot as `choice`, only when the volatile exists, so every older trace is byte-identical (the harness version stays 14).
+  - The converter compares it as volatile bit 8 and as the locked slot without a target. A lock on a move outside the slots, or on another move than a two-turn lock, fails loudly.
+  - **A converter fix.** A slot plays Struggle when the reference's request offers Struggle. Before, the converter decided by "all PP 0", which missed a locked Fake Out (found by the differential-testing study). A request without Struggle while every PP is 0 fails loudly.
+- **Evidence.** Five recorded battles:
+  - `c07_lock_start`: Fake Out flinches Kingambit before its first move, so no lock, and the next request offers every move. Its first move then hits Protect, which locks it, and the next request offers only that move.
+  - `c07_choice_lock`:
+    - Basculegion's first move, Flip Turn, locks it, and leaving ends the lock; it returns unlocked;
+    - Incineroar, locked into Fake Out, Struggles on its next turn, then switches out by choice;
+    - x1.5 speed.
+  - `c07_scarf_electro_shot`:
+    - Archaludon's Electro Shot charges and locks at once, and the lock outlives the charge;
+    - Farigiraf, locked into Protect, may only Protect, with the stall chance.
+  - `c07_scarf_paralysis`: a paralysed Scarf Basculegion (143) has 107 and ties with Incineroar (107), so the queue draws. With paralysis before the Scarf it would have 106.
+  - `c07_scarf_abort`: on the locked turn Archaludon cannot move, so the charge ends and the choice lock stays.
+
+  Ten negative controls each make a test fail:
+  - the lock set before BeforeMove;
+  - no x1.5;
+  - paralysis before the chain;
+  - no lock at ModifyMove;
+  - a request that ignores the lock;
+  - a lock that traps;
+  - a charge end, or an aborted locked turn, that drops the lock;
+  - a choice lock showing a target;
+  - no Choice item check.
+
+  A choice lock valid under CLOSURE cannot be told apart, because the Choice item check rejects it there anyway.
+- **Not recorded.** Tailwind with Choice Scarf: x3 is exact, and paralysis on top is the same chain as in `c07_scarf_paralysis`.
+- **Review findings, fixed.**
+  - When the lock starts was not recorded (`c07_lock_start`).
+  - A choice-locked actor whose queued move is neither its locked move nor Struggle is `E_INVARIANT`. That needs a decoded state, because the request offers nothing else; choicelock's `onBeforeMove` (`-fail`) is unreachable.
+  - The state model mirrors the domain and the observation: two-turn and Fake Out rules for every combat kind, the choice lock's slot filter, the own target only while charging. Its output is unchanged.
+  - Bound comments.
+- **Found on the way, outside this step.** The request offers Struggle with Mega declarations. The reference sends no `canMegaEvo` with a forced Struggle (`sim/pokemon.ts:1100-1106, 1132-1138`; `sim/side.ts:700-712`). This is a closure divergence that changes certified candidate counts, so it is left to a separate task and the owner.
+- **Shared files touched:**
+  - `include/duoforge/duoforge.h` (comments of `locked_slot`, `locked_target`; version);
+  - `src/state/{battle_internal,closure_member}.h`, `closure_member.c`, `invariants.c`, `observation.c`, `request.c`;
+  - `src/combat/turn.c`;
+  - `src/data/support_manifest.c`;
+  - `tools/reference/{ps_trace.js,trace_to_c.py}`;
+  - `tools/state_model/state_v3_model.py`;
+  - `tests/test_conformance.c` (the lock comparison, the target only while charging).

@@ -191,9 +191,10 @@ static duoforge_status dfi_staged_stat(const dfi_member *m, const dfi_active_slo
 }
 
 /* getActionSpeed of the Champions mod (data/mods/champions/scripts.ts:46-55):
- * the staged Speed, doubled by Tailwind (chainModify(2)), then halved by
- * paralysis (its onModifySpe runs last: finalModify, then floor of 50 of
- * 100), capped, negated under Trick Room. A fainted Pokemon is not active,
+ * the staged Speed times the chained ModifySpe modifiers (Tailwind
+ * chainModify(2), Choice Scarf chainModify(1.5), Team C; one rounding), then
+ * halved by paralysis (its onModifySpe runs last: finalModify, then floor of
+ * 50 of 100), capped, negated under Trick Room. A fainted Pokemon is not active,
  * so no ModifySpe handler runs for it (Battle.findEventHandlers,
  * sim/battle.ts): its queued action or its replacement has the raw Speed. */
 static duoforge_status dfi_speed_key(const struct duoforge_battle *b, uint32_t side, const dfi_member *m,
@@ -205,11 +206,18 @@ static duoforge_status dfi_speed_key(const struct duoforge_battle *b, uint32_t s
         return st;
     }
     const bool active = m->hp != 0u;
+    uint32_t chain = 4096u;
     if (active && b->sides[side].tailwind_turns != 0u) {
-        spe *= 2u; /* modify(spe, 2) is exact; spe <= 4 * 65535 */
+        chain = 8192u;
+    }
+    if (active && dfi_holds(m, DFI_ITEM_CHOICESCARF) && !dfi_chain_modify(chain, 6144u, &chain)) {
+        return DUOFORGE_E_INVARIANT;
+    }
+    if (chain != 4096u) {
+        spe = dfi_modify(spe, chain); /* spe <= 4 * 65535, chain <= 3 * 4096 */
     }
     if (active && m->status == DFI_STATUS_PAR) {
-        spe = spe * 50u / 100u; /* spe <= 8 * 65535 */
+        spe = spe * 50u / 100u; /* spe <= 12 * 65535: stage x4, chain x3 */
     }
     if (spe > DFI_SPEED_CAP) {
         spe = DFI_SPEED_CAP;
@@ -1461,7 +1469,7 @@ static duoforge_status dfi_run_protect(dfi_run *r, uint32_t user)
             return DUOFORGE_OK;
         }
     }
-    pos->flags = (uint8_t)((uint32_t)pos->flags | DFI_VOL_PROTECT); /* wide-operands-reviewed: <= 7 */
+    pos->flags = (uint8_t)((uint32_t)pos->flags | DFI_VOL_PROTECT); /* wide-operands-reviewed: <= 71 */
     pos->stall_level = (uint8_t)(level < DFI_STALL_LEVEL_MAX ? level + 1u : level); /* wide-operands-reviewed */
     pos->stall_turns = (uint8_t)DFI_STALL_DURATION;
     dfi_emit_plain(r, DUOFORGE_EVENT_PROTECT, user); /* [-singleturn] Protect */
@@ -1496,6 +1504,14 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     if (!dfi_move_slot_ok(m, q->move_slot)) {
         return DUOFORGE_E_INVARIANT;
     }
+    /* A choice-locked actor queues only its locked move or Struggle (the
+     * request offers nothing else), so choicelock's onBeforeMove, which
+     * would fail another move (data/conditions.ts), never runs; a decoded
+     * state that queues another move fails loudly (Team C). */
+    if (((uint32_t)pos->flags & DFI_VOL_CHOICE_LOCK) != 0u && q->move_slot != DUOFORGE_MOVE_SLOT_STRUGGLE &&
+        q->move_slot + 1u != pos->locked_move) {
+        return DUOFORGE_E_INVARIANT;
+    }
     *ran = true;
     if (pos->move_actions < UINT8_MAX) {
         pos->move_actions = (uint8_t)((uint32_t)pos->move_actions + 1u); /* wide-operands-reviewed */
@@ -1526,8 +1542,10 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     if (!can) {
         if (locked) {
             pos->charge_turns = 0u;
-            pos->locked_move = 0u;
             pos->locked_target = 0u;
+            if (((uint32_t)pos->flags & DFI_VOL_CHOICE_LOCK) == 0u) {
+                pos->locked_move = 0u; /* a choice lock outlives the charge */
+            }
         }
         return DUOFORGE_OK;
     }
@@ -1551,6 +1569,16 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         dfi_emit(r, &cure);
         m->status = (uint8_t)DFI_STATUS_NONE;
         m->status_counter = 0u;
+    }
+    /* Choice Scarf's onModifyMove (Team C, data/items.ts:983-1005) adds
+     * choicelock, whose onStart stores the move used (data/conditions.ts);
+     * the lock stays until the holder leaves the field. Struggle sets none:
+     * Struggle is not in the move slots, so its lock would end at the next
+     * DisableMove before it could matter. */
+    if (dfi_holds(m, DFI_ITEM_CHOICESCARF) && q->move_slot < DUOFORGE_MAX_MOVE_SLOTS &&
+        ((uint32_t)pos->flags & DFI_VOL_CHOICE_LOCK) == 0u) {
+        pos->flags = (uint8_t)((uint32_t)pos->flags | DFI_VOL_CHOICE_LOCK);    /* wide-operands-reviewed: < 256 */
+        pos->locked_move = (uint8_t)((uint32_t)q->move_slot + 1u);           /* wide-operands-reviewed: <= 4 */
     }
     /* Struggle's onModifyMove shows -activate|move: Struggle first. */
     if (move_id == DFI_MOVE_STRUGGLE) {
@@ -2767,8 +2795,10 @@ static duoforge_status dfi_residual_events(dfi_run *r)
         if (pos->charge_turns > 0u) {
             pos->charge_turns = (uint8_t)((uint32_t)pos->charge_turns - 1u); /* wide-operands-reviewed */
             if (pos->charge_turns == 0u) {
-                pos->locked_move = 0u;
                 pos->locked_target = 0u;
+                if (((uint32_t)pos->flags & DFI_VOL_CHOICE_LOCK) == 0u) {
+                    pos->locked_move = 0u; /* a choice lock outlives the charge */
+                }
             }
         }
         if (pos->stall_turns > 0u) {

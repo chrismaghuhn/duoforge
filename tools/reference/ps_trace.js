@@ -267,6 +267,10 @@ function main() {
                 locked: p.volatiles.twoturnmove && p.volatiles[p.volatiles.twoturnmove.move] ?
                     [p.moveSlots.findIndex((s) => s.id === p.volatiles.twoturnmove.move),
                         p.volatiles[p.volatiles.twoturnmove.move].targetLoc] : null,
+                // A Choice item's lock (Team C): the slot of its move; absent without one,
+                // so traces without a choice lock stay as they were.
+                choice: p.volatiles.choicelock ?
+                    p.moveSlots.findIndex((s) => s.id === p.volatiles.choicelock.move) : undefined,
             })),
         })),
     });
