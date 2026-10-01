@@ -1,7 +1,7 @@
 {
  "harness": 14,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
- "spec": "rm.json",
+ "spec": "s14_electro_shot_rain_miss.json",
  "format": "gen9championsvgc2026regmc",
  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000000e010",
  "start": {
