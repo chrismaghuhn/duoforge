@@ -1,0 +1,24 @@
+{
+  "name": "c04_flip_turn_ko",
+  "purpose": "Flip Turn that knocks out its target still switches its user out (the move did something and the user stands); Aqua Jet's priority and Adaptability before it.",
+  "data": "team_c",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c0503",
+  "teams": [
+    "Basculegion (M) @ Mystic Water\nAbility: Adaptability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Flip Turn\n- Aqua Jet\n\nKingambit (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Protect\n\nIncineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Darkest Lariat\n\nSalamence (M) @ Life Orb\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Hyper Voice\n- Protect",
+    "Ceruledge (F) @ Leftovers\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Shadow Sneak\n- Swords Dance\n\nGholdengo @ Light Clay\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n- Shadow Ball\n\nRaichu (F) @ Life Orb\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Focus Blast\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Ice Beam\n- Coil"
+  ],
+  "plan": {
+    "p1": [
+      "move 2 1, move 2",
+      "move 1 1, move 1 2",
+      "move 1 1, move 1 1"
+    ],
+    "p2": [
+      "move 2, move 1",
+      "move 1 1, move 2 1",
+      "move 1 1, move 2 2"
+    ],
+    "max_steps": 50
+  }
+}

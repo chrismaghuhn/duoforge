@@ -35,7 +35,9 @@
  * (data only), Defiant and Adaptability.
  * Step 2: Flare Blitz (defrost) and Darkest Lariat (ignoreDefensive,
  * ignoreEvasion).
- * Step 3: Salamencite (Salamence-Mega) and Aerilate. */
+ * Step 3: Salamencite (Salamence-Mega) and Aerilate.
+ * Step 4: Last Respects (fainted members of the side) and Flip Turn (a
+ * damaging pivot on the PIVOT boundary). */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -85,6 +87,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_AQUAJET] = 1u,
             [DFI_MOVE_FLAREBLITZ] = 1u,
             [DFI_MOVE_DARKESTLARIAT] = 1u,
+            [DFI_MOVE_LASTRESPECTS] = 1u,
+            [DFI_MOVE_FLIPTURN] = 1u,
         },
     .abilities =
         {

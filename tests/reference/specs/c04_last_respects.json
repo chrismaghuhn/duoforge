@@ -1,0 +1,24 @@
+{
+  "name": "c04_last_respects",
+  "purpose": "Last Respects: 50 plus 50 for every fainted member of the user's side, counted when the faint is processed, so an ally that fainted earlier in the same turn already counts; with Adaptability; Mega Charizard Y's sun and Heat Wave take the allies down.",
+  "data": "team_c",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c0402",
+  "teams": [
+    "Basculegion (M) @ Mystic Water\nAbility: Adaptability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Last Respects\n- Flip Turn\n- Aqua Jet\n\nSneasler (M)\nAbility: No Ability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Close Combat\n- Protect\n\nIndeedee-F (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Psychic\n- Trick Room\n\nIncineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Darkest Lariat",
+    "Charizard (M) @ Charizardite Y\nAbility: Blaze\nLevel: 50\nEVs: 16 HP / 18 Def / 3 SpA / 29 Spe\nTimid Nature\n- Heat Wave\n- Hurricane\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n\nFarigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Grass Knot\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 2",
+      "move 1 2, move 1 1",
+      "move 1 1, move 1 2"
+    ],
+    "p2": [
+      "move 1 mega, move 1",
+      "move 1, move 2 1",
+      "move 2 2, move 1"
+    ],
+    "max_steps": 50
+  }
+}
