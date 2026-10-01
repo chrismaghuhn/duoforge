@@ -5,7 +5,12 @@
 // usage: node tools/reference/ps_trace.js <pinned checkout> <spec.json> [--check <trace.json>]
 //
 // A spec names the format, a PRNG seed, both teams (Showdown paste text,
-// gender always given) and the choices in request order. The harness runs
+// gender always given) and either the choices in request order ("choices")
+// or a plan ("plan": per side the choices for its move requests in order,
+// with "max_steps"): then a replacement request is answered with the first
+// standing reserves in team order, a move choice for a fainted slot becomes
+// "pass", and an exhausted plan repeats its last entry. The trace records
+// the choices actually made. The harness runs
 // the battle with a recording PRNG and prints a normalized trace: for every
 // choice entry the draws it caused (site, bounds, value), the protocol
 // lines, and the state at the next boundary (exact HP, status, stages, PP,
@@ -30,7 +35,7 @@ const fs = require('fs');
 const path = require('path');
 
 const PIN = 'b2cb775b0616115b775534eaeff50300e1fc81fc';
-const HARNESS_VERSION = 3;
+const HARNESS_VERSION = 4;
 
 // Stack frame name -> site. The first match in stack order wins.
 const SITE_RULES = [
@@ -220,15 +225,52 @@ function main() {
         start: {log: takeLog(), state: snapshot()},
         steps: [],
     };
-    for (const entry of spec.choices) {
-        draws = [];
-        for (const id of ['p1', 'p2']) {
-            if (entry[id] === undefined) continue;
-            if (!battle[id].requestState) throw new Error(`${id} has no request for "${entry[id]}"`);
-            if (!battle.choose(id, entry[id])) throw new Error(`${id} choice rejected: "${entry[id]}"`);
+    const choose = (id, text) => {
+        if (!battle[id].requestState) throw new Error(`${id} has no request for "${text}"`);
+        if (!battle.choose(id, text)) throw new Error(`${id} choice rejected: "${text}": ${battle[id].choice.error}`);
+    };
+    if (spec.choices) {
+        for (const entry of spec.choices) {
+            draws = [];
+            for (const id of ['p1', 'p2']) {
+                if (entry[id] !== undefined) choose(id, entry[id]);
+            }
+            trace.steps.push({input: entry, draws, log: takeLog(), state: snapshot()});
+            if (battle.ended) break;
         }
-        trace.steps.push({input: entry, draws, log: takeLog(), state: snapshot()});
-        if (battle.ended) break;
+    } else {
+        const next = {p1: 0, p2: 0};
+        for (let step = 0; step < spec.plan.max_steps && !battle.ended; step++) {
+            draws = [];
+            const entry = {};
+            // The sides asked at the start of the step: answering one side can
+            // finish the step and ask both again.
+            const asked = ['p1', 'p2'].filter((id) => battle[id].requestState);
+            for (const id of asked) {
+                const side = battle[id];
+                let text;
+                if (side.requestState === 'teampreview') {
+                    text = 'team ' + side.pokemon.slice(0, 4).map((_, i) => i + 1).join('');
+                } else if (side.requestState === 'switch') {
+                    const used = new Set();
+                    text = side.active.map((p) => {
+                        if (!p || !p.switchFlag) return 'pass';
+                        const i = side.pokemon.findIndex((q, k) => k >= side.active.length && !q.fainted && !used.has(k));
+                        if (i < 0) return 'pass';
+                        used.add(i);
+                        return 'switch ' + (i + 1);
+                    }).join(', ');
+                } else {
+                    const plan = spec.plan[id];
+                    const raw = plan[Math.min(next[id], plan.length - 1)].split(', ');
+                    next[id] += 1;
+                    text = side.active.map((p, k) => (!p || p.fainted ? 'pass' : raw[k])).join(', ');
+                }
+                choose(id, text);
+                entry[id] = text;
+            }
+            trace.steps.push({input: entry, draws, log: takeLog(), state: snapshot()});
+        }
     }
     const text = JSON.stringify(trace, null, 1) + '\n';
     if (text.includes('"UNKNOWN"')) process.stderr.write('ps_trace: warning: unclassified draws\n');

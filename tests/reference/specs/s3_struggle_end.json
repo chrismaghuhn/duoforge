@@ -1,0 +1,19 @@
+{
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000003306",
+  "name": "s3_struggle_end",
+  "purpose": "Pokemon that only know Protect run out of PP and Struggle at random foes until one side is out; when the last Pokemon of both sides faint in the same action (a knockout and the Struggle recoil), the side whose Pokemon fainted last wins.",
+  "teams": [
+    "Staraptor (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nAdamant Nature\n- Protect\n\nCharizard (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nAdamant Nature\n- Protect\n\nFarigiraf (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nAdamant Nature\n- Protect\n\nCeruledge (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nAdamant Nature\n- Protect",
+    "Staraptor (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nAdamant Nature\n- Protect\n\nCharizard (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nAdamant Nature\n- Protect\n\nFarigiraf (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nAdamant Nature\n- Protect\n\nGolisopod (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nAdamant Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 1"
+    ],
+    "p2": [
+      "move 1, move 1"
+    ],
+    "max_steps": 120
+  }
+}

@@ -1,18 +1,20 @@
 /*
- * duoforge.combat.turn: the turn core through the public API with the
- * battle's own PCG (the reference conformance runs on a tape in
- * duoforge.reference.conformance). Development teams (CLOSURE_DEV, No
- * Ability, no items, turn-core moves only):
+ * duoforge.combat.turn: the turn core, switching and fainting through the
+ * public API with the battle's own PCG (the reference conformance runs on a
+ * tape in duoforge.reference.conformance). Development teams (CLOSURE_DEV,
+ * No Ability, no items, implemented moves only):
  *
  *  - a turn advances turn and epoch, spends PP, changes HP, and the
  *    opponent sees the new HP display;
+ *  - a switch: a fresh activation, the newcomer is seen, the leaver keeps
+ *    its last display; a faint at the end of a turn asks the side for a
+ *    replacement;
  *  - determinism: the same inputs give the same bytes; a battle encoded and
- *    decoded at every TURN boundary continues exactly like the original;
- *  - honest E_UNSUPPORTED, atomically: a switch, a Mega declaration, a turn
- *    whose damage would make a Pokemon faint, a member whose mechanics are
- *    not marked (decoded state), and every combat bundle under SYNTHETIC;
- *  - random play: hundreds of turns with random legal choices keep every
- *    invariant until a faint ends the run.
+ *    decoded at every boundary continues exactly like the original;
+ *  - honest E_UNSUPPORTED, atomically: a member whose mechanics are not
+ *    marked (decoded state), and every combat bundle under SYNTHETIC;
+ *  - random play to the end: random legal choices (moves, switches, passes,
+ *    replacements) keep every invariant and end at TERMINAL with a result.
  */
 #include <stdio.h>
 #include <string.h>
@@ -91,15 +93,20 @@ static duoforge_status bundle_from(const duoforge_context *ctx, const duoforge_b
     return DUOFORGE_OK;
 }
 
-/* The first candidate whose slot commands are all moves without Mega. */
-static duoforge_status move_bundle(const duoforge_context *ctx, const duoforge_battle *b, uint32_t seed,
-                                   duoforge_decision_bundle *bd)
+/* A candidate of each requested side, chosen from `seed`: at TURN one whose
+ * slots move (no Mega) or pass, or with allow_switch any candidate. */
+static duoforge_status pick_bundle(const duoforge_context *ctx, const duoforge_battle *b, uint32_t seed,
+                                   bool allow_switch, duoforge_decision_bundle *bd)
 {
     static duoforge_side_choice cands[DUOFORGE_MAX_CANDIDATES];
     memset(bd, 0, sizeof *bd);
     bd->epoch = b->request_epoch;
     bd->response_mask = b->request_mask;
+    const bool turn = b->boundary_kind == DUOFORGE_BOUNDARY_TURN;
     for (uint32_t s = 0; s < 2u; ++s) {
+        if (((uint32_t)b->request_mask >> s & 1u) == 0u) {
+            continue;
+        }
         uint32_t n = 0;
         if (duoforge_battle_candidates(ctx, b, s, cands, DUOFORGE_MAX_CANDIDATES, &n) != DUOFORGE_OK) {
             return DUOFORGE_E_INVARIANT;
@@ -108,8 +115,13 @@ static duoforge_status move_bundle(const duoforge_context *ctx, const duoforge_b
         for (uint32_t j = 0; j < n && !found; ++j) {
             const duoforge_side_choice *c = &cands[(j + seed * (s + 3u)) % n];
             bool ok = true;
+            for (uint32_t k = 0; k < 2u && turn && !allow_switch; ++k) {
+                const uint32_t kind = c->slots[k].kind;
+                ok = ok && ((kind == DUOFORGE_SLOT_MOVE && c->slots[k].mega == 0u) || kind == DUOFORGE_SLOT_PASS ||
+                            kind == DUOFORGE_SLOT_NONE);
+            }
             for (uint32_t k = 0; k < 2u; ++k) {
-                ok = ok && c->slots[k].kind == DUOFORGE_SLOT_MOVE && c->slots[k].mega == 0u;
+                ok = ok && c->slots[k].mega == 0u;
             }
             if (ok) {
                 bd->responses[s] = *c;
@@ -121,6 +133,12 @@ static duoforge_status move_bundle(const duoforge_context *ctx, const duoforge_b
         }
     }
     return DUOFORGE_OK;
+}
+
+static duoforge_status move_bundle(const duoforge_context *ctx, const duoforge_battle *b, uint32_t seed,
+                                   duoforge_decision_bundle *bd)
+{
+    return pick_bundle(ctx, b, seed, false, bd);
 }
 
 static void encode(const duoforge_context *ctx, const duoforge_battle *b, uint8_t *out)
@@ -213,9 +231,12 @@ int main(void)
         duoforge_battle *b = started(&t, k2, 99u);
         unsigned turns = 0;
         bool same = true;
-        for (uint32_t i = 0; i < 40u && a != NULL && b != NULL; ++i) {
+        for (uint32_t i = 0; i < 400u && a != NULL && b != NULL; ++i) {
+            if (a->boundary_kind == DUOFORGE_BOUNDARY_TERMINAL) {
+                break;
+            }
             duoforge_decision_bundle bd;
-            DF_CHECK(&t, move_bundle(k2, a, i, &bd) == DUOFORGE_OK);
+            DF_CHECK(&t, pick_bundle(k2, a, i, (i % 5u) == 4u, &bd) == DUOFORGE_OK);
             /* b goes through a full encode/decode before every step. */
             uint8_t enc[DUOFORGE_STATE_V3_ENCODED_SIZE];
             encode(k2, b, enc);
@@ -224,9 +245,8 @@ int main(void)
             duoforge_step_result rb;
             const duoforge_status sa = duoforge_battle_step(k2, a, &bd, &ra);
             const duoforge_status sb = duoforge_battle_step(k2, b, &bd, &rb);
-            DF_CHECK(&t, sa == sb);
+            DF_CHECK(&t, sa == sb && sa == DUOFORGE_OK);
             if (sa != DUOFORGE_OK) {
-                DF_CHECK(&t, sa == DUOFORGE_E_UNSUPPORTED); /* a faint ends the development run */
                 break;
             }
             bool eq = false;
@@ -236,18 +256,28 @@ int main(void)
         }
         DF_CHECK(&t, same);
         DF_CHECK(&t, turns >= 3u);
+        DF_CHECK(&t, a != NULL && a->boundary_kind == DUOFORGE_BOUNDARY_TERMINAL && a->result != 0u);
         duoforge_battle_destroy(a);
         duoforge_battle_destroy(b);
     }
 
-    /* Honest E_UNSUPPORTED, atomically. */
+    /* A switch, a faint and the replacement. */
     {
         duoforge_battle *b = started(&t, k2, 7u);
         duoforge_decision_bundle bd;
         DF_CHECK(&t, move_bundle(k2, b, 0u, &bd) == DUOFORGE_OK);
         duoforge_decision_bundle sw = bd;
         sw.responses[0].slots[0] = (duoforge_slot_command){DUOFORGE_SLOT_SWITCH, 0u, 0u, 0u, 2u, {0u, 0u, 0u}};
-        rejected(&t, k2, b, &sw, DUOFORGE_E_UNSUPPORTED, "switch (step 3)");
+        duoforge_battle *y = NULL;
+        DF_CHECK(&t, duoforge_battle_clone(k2, b, &y) == DUOFORGE_OK);
+        const uint32_t old_activation = y->sides[0].positions[0].activation_id;
+        duoforge_step_result res;
+        DF_CHECK(&t, duoforge_battle_step(k2, y, &sw, &res) == DUOFORGE_OK);
+        DF_CHECK(&t, y->sides[0].positions[0].occupant == 2u &&
+                         y->sides[0].positions[0].activation_id > old_activation);
+        DF_CHECK(&t, (y->sides[1].seen_mask & 0x05u) == 0x05u); /* roster 0 left, roster 2 came: both seen */
+        DF_CHECK(&t, y->sides[1].knowledge[0].hp_percent != 0u); /* the leaver keeps its display */
+        duoforge_battle_destroy(y);
         /* A faint: side 1's Archaludon at 1 HP takes Dragon Pulse. */
         duoforge_battle *x = NULL;
         DF_CHECK(&t, duoforge_battle_clone(k2, b, &x) == DUOFORGE_OK);
@@ -262,7 +292,24 @@ int main(void)
             hit.responses[s].slots[1] = (duoforge_slot_command){DUOFORGE_SLOT_MOVE, 1u, DUOFORGE_TARGET_NONE, 0u,
                                                                 0u, {0u, 0u, 0u}};
         }
-        rejected(&t, k2, x, &hit, DUOFORGE_E_UNSUPPORTED, "a faint (step 3)");
+        {
+            duoforge_battle *z = NULL;
+            DF_CHECK(&t, duoforge_battle_clone(k2, x, &z) == DUOFORGE_OK);
+            DF_CHECK(&t, duoforge_battle_step(k2, z, &hit, &res) == DUOFORGE_OK);
+            DF_CHECK(&t, z->sides[1].members[0].hp == 0u);
+            /* At the end of the turn side 1 must replace slot a (it has two
+             * reserves); side 0 waits. */
+            DF_CHECK(&t, z->boundary_kind == DUOFORGE_BOUNDARY_REPLACEMENT && z->request_mask == 2u &&
+                             z->sides[1].requested_slots == 1u && z->turn == x->turn);
+            DF_CHECK(&t, res.boundary_kind == DUOFORGE_BOUNDARY_REPLACEMENT && res.request_mask == 2u);
+            duoforge_decision_bundle rep;
+            DF_CHECK(&t, pick_bundle(k2, z, 1u, true, &rep) == DUOFORGE_OK);
+            DF_CHECK(&t, duoforge_battle_step(k2, z, &rep, &res) == DUOFORGE_OK);
+            DF_CHECK(&t, z->boundary_kind == DUOFORGE_BOUNDARY_TURN && z->turn == x->turn + 1u);
+            DF_CHECK(&t, z->sides[1].members[z->sides[1].positions[0].occupant].hp != 0u);
+            DF_CHECK(&t, duoforge_battle_check(k2, z) == DUOFORGE_OK);
+            duoforge_battle_destroy(z);
+        }
         /* A decoded member with an ability (Archaludon's Stamina) cannot be
          * played: the step checks the manifest too. */
         x->sides[1].members[0].hp = x->sides[1].members[0].hp_max;
@@ -282,41 +329,51 @@ int main(void)
         duoforge_context_destroy(c1);
     }
 
-    /* Random play: random legal move choices (no switch, no Mega) for
-     * several seeds; every committed state passes the checker, and a run
-     * ends only with the honest E_UNSUPPORTED of a faint. */
+    /* Random play to the end: random legal choices (one in four may
+     * switch) for many seeds; every committed state passes the checker and
+     * every run ends at TERMINAL with a result. */
     {
         dfi_rng pick;
         dfi_rng_seed(&pick, 4242u, 1u);
-        unsigned turns = 0;
-        unsigned runs = 0;
-        for (uint64_t seed = 1u; seed <= 12u; ++seed) {
+        unsigned steps = 0;
+        unsigned ended = 0;
+        unsigned replacements = 0;
+        unsigned results[4] = {0, 0, 0, 0};
+        for (uint64_t seed = 1u; seed <= 40u; ++seed) {
             duoforge_battle *b = started(&t, k2, seed);
             if (b == NULL) {
                 continue;
             }
-            for (uint32_t i = 0; i < 200u; ++i) {
+            for (uint32_t i = 0; i < 600u && b->boundary_kind != DUOFORGE_BOUNDARY_TERMINAL; ++i) {
                 uint32_t r = 0;
                 (void)dfi_rng_next_u32(&pick, &r);
                 duoforge_decision_bundle bd;
-                if (move_bundle(k2, b, r, &bd) != DUOFORGE_OK) {
+                if (!DF_CHECK(&t, pick_bundle(k2, b, r, (r & 3u) == 0u, &bd) == DUOFORGE_OK)) {
                     break;
                 }
+                replacements += b->boundary_kind == DUOFORGE_BOUNDARY_REPLACEMENT ? 1u : 0u;
                 duoforge_step_result res;
                 const duoforge_status st = duoforge_battle_step(k2, b, &bd, &res);
-                if (st != DUOFORGE_OK) {
-                    DF_CHECK(&t, st == DUOFORGE_E_UNSUPPORTED);
+                if (!DF_CHECK(&t, st == DUOFORGE_OK)) {
+                    fprintf(stderr, "  seed %u step %u: %s\n", (unsigned)seed, i, duoforge_status_name(st));
                     break;
                 }
                 DF_CHECK(&t, duoforge_battle_check(k2, b) == DUOFORGE_OK);
-                turns += 1u;
+                steps += 1u;
             }
-            runs += 1u;
+            if (b->boundary_kind == DUOFORGE_BOUNDARY_TERMINAL) {
+                ended += 1u;
+                results[b->result & 3u] += 1u;
+                /* A finished battle requests nobody and takes no bundle. */
+                duoforge_request rq;
+                DF_CHECK(&t, duoforge_battle_request(k2, b, 0u, &rq) == DUOFORGE_OK && rq.requested == 0u);
+            }
             duoforge_battle_destroy(b);
         }
-        DF_CHECK_EQ_U64(&t, runs, 12u);
-        DF_CHECK(&t, turns >= 60u);
-        fprintf(stderr, "  random play: %u turns in %u runs\n", turns, runs);
+        DF_CHECK_EQ_U64(&t, ended, 40u);
+        DF_CHECK(&t, replacements > 0u && results[1] > 0u && results[2] > 0u);
+        fprintf(stderr, "  random play: %u steps, %u battles ended (side 0 %u, side 1 %u, tie %u), %u replacements\n",
+                steps, ended, results[1], results[2], results[3], replacements);
     }
 
     duoforge_context_destroy(k2);

@@ -141,7 +141,7 @@ def tape_entry(d):
     return (site, lo, hi, value)
 
 
-def convert_choice(text, side, state, picks_known):
+def convert_choice(text, side, state, roster_of):
     """A Showdown choice string -> ('team', picks) or ('slots', [cmd, cmd])."""
     if text.startswith('team '):
         return ('team', [int(c) - 1 for c in text[len('team '):]])
@@ -163,11 +163,34 @@ def convert_choice(text, side, state, picks_known):
                 loc = int(words[2])
                 target = (1 - side) * 2 + loc - 1 if loc > 0 else side * 2 + (-loc) - 1
             cmds.append((1, n, target, mega, 0))
+        elif words[0] == 'switch':
+            # "switch N" names position N of side.pokemon, which the
+            # reference reorders on every switch.
+            mon = state['sides'][side]['pokemon'][int(words[1]) - 1]
+            cmds.append((2, 0, 0, 0, roster_of[side][mon['species']]))
         elif words[0] == 'pass':
-            cmds.append((3, 0, 0, 0, 0))
+            # In a replacement request the reference wants "pass" for a slot
+            # that is not asked to switch; DuoForge does not request that slot.
+            mon = state['sides'][side]['pokemon'][actives[slot]]
+            asked = state['sides'][side]['request'] != 'switch' or mon['fainted']
+            cmds.append((3, 0, 0, 0, 0) if asked else (0, 0, 0, 0, 0))
         else:
-            raise SystemExit('trace_to_c: choice %r is not in the turn core' % part)
+            raise SystemExit('trace_to_c: choice %r is not supported' % part)
     return ('slots', cmds)
+
+
+BOUNDARY = {'teampreview': 1, 'move': 2, 'switch': 3}
+RESULT = {'p1': 1, 'p2': 2, '': 3}
+
+
+def boundary_of(state):
+    """The DuoForge boundary after a step: TERMINAL, else the request kind."""
+    if state['ended']:
+        return 5
+    kinds = set(s['request'] for s in state['sides']) - {''}
+    if len(kinds) != 1:
+        raise SystemExit('trace_to_c: mixed requests %s' % sorted(kinds))
+    return BOUNDARY[kinds.pop()]
 
 
 def convert(root, name, tables, out, all_tape):
@@ -188,13 +211,21 @@ def convert(root, name, tables, out, all_tape):
     w('};')
     picks = [None, None]
     state = trace['start']['state']
+    # Species are unique per team (species clause): the start state lists the
+    # whole roster in order, so a species names its roster index.
+    roster_of = []
+    for s in range(2):
+        names = [p['species'] for p in state['sides'][s]['pokemon']]
+        if len(names) != len(teams[s]) or len(set(names)) != len(names):
+            raise SystemExit('trace_to_c: %s side %d roster is not unique' % (name, s))
+        roster_of.append({n: i for i, n in enumerate(names)})
     steps = []
     dropped_total = 0
     for step in trace['steps']:
         kinds = {}
         for side, sid in enumerate(('p1', 'p2')):
             if sid in step['input']:
-                kinds[side] = convert_choice(step['input'][sid], side, state, picks)
+                kinds[side] = convert_choice(step['input'][sid], side, state, roster_of)
         tape_off = len(all_tape)
         dropped = 0
         for d in step['draws']:
@@ -211,9 +242,8 @@ def convert(root, name, tables, out, all_tape):
         for s in range(2):
             row = []
             by_roster = {}
-            for i, p in enumerate(new_state['sides'][s]['pokemon']):
-                roster = picks[s][i] if picks[s] is not None else i
-                by_roster[roster] = p
+            for p in new_state['sides'][s]['pokemon']:
+                by_roster[roster_of[s][p['species']]] = p
             for roster in range(6):
                 p = by_roster.get(roster)
                 if p is None:
@@ -236,9 +266,29 @@ def convert(root, name, tables, out, all_tape):
         for s in range(2):
             row = (kinds[s][1] if team else []) + [0] * (6 - (len(kinds[s][1]) if team else 0))
             pk.append('{%s}' % ', '.join('%du' % x for x in row))
-        steps.append('    {%du, %du, %du, %du, %du, %du, {%s}, {%s}, {{%s}, {%s}}},  /* %d draws dropped */' % (
-            1 if team else 0, 1 if 0 in kinds else 0, 1 if 1 in kinds else 0, tape_off, len(all_tape) - tape_off,
-            new_state['turn'], ', '.join(pk), ', '.join(cmds), ', '.join(mons[0]), ', '.join(mons[1]), dropped))
+        occ = []
+        for s in range(2):
+            sd = new_state['sides'][s]
+            row = [roster_of[s][sd['pokemon'][i]['species']] if i >= 0 else 0xFF for i in sd['active']]
+            occ.append('{%s}' % ', '.join('%du' % x for x in row))
+        # The positions that received a Pokemon, in the reference's order
+        # (each switch is logged twice, for the two audiences).
+        entries = []
+        for line in step['log']:
+            if line.startswith('|switch|'):
+                who = line.split('|')[2].split(':')[0]
+                flat = (int(who[1]) - 1) * 2 + (ord(who[2]) - ord('a'))
+                if flat not in entries:
+                    entries.append(flat)
+        ent = entries + [0xFF] * (4 - len(entries))
+        boundary = boundary_of(new_state)
+        result = RESULT[new_state['winner']] if boundary == 5 else 0
+        steps.append('    {%du, %du, %du, %du, %du, %du, %du, %du, {%s}, {%s}, {%s}, {%s}, {{%s}, {%s}}},'
+                     '  /* %d draws dropped */' % (
+                         1 if team else 0, 1 if 0 in kinds else 0, 1 if 1 in kinds else 0, tape_off,
+                         len(all_tape) - tape_off, new_state['turn'], boundary, result, ', '.join(pk),
+                         ', '.join(cmds), ', '.join(occ), ', '.join('%du' % x for x in ent), ', '.join(mons[0]),
+                         ', '.join(mons[1]), dropped))
         state = new_state
     w('static const df_conf_step conf_%s_steps[] = {' % name)
     out.extend(steps)
@@ -271,10 +321,15 @@ def main():
            '/* present, hp, pp, stages (biased by 6), stall counter present, fainted */',
            'typedef struct df_conf_mon {', '    uint32_t present, hp;', '    uint8_t pp[4];', '    uint8_t stages[7];',
            '    uint8_t stall, fainted;', '} df_conf_mon;',
-           '/* team step, side 0 / side 1 answered, tape slice, the turn afterwards, the',
-           ' * picks of a team step, slot commands, the expected members by roster index */',
-           'typedef struct df_conf_step {', '    uint32_t team, answered0, answered1, tape_off, tape_len, turn;',
-           '    uint8_t picks[2][6];', '    df_conf_cmd cmds[2][2];', '    df_conf_mon mons[2][6];', '} df_conf_step;',
+           '/* team step, side 0 / side 1 answered, tape slice, the turn, boundary and',
+           ' * result afterwards, the picks of a team step, slot commands, the occupants',
+           ' * of the positions afterwards (roster index, 0xFF empty), the positions',
+           ' * (side * 2 + slot) that received a Pokemon in the reference\'s order (0xFF',
+           ' * pads), the expected members by roster index */',
+           'typedef struct df_conf_step {',
+           '    uint32_t team, answered0, answered1, tape_off, tape_len, turn, boundary, result;',
+           '    uint8_t picks[2][6];', '    df_conf_cmd cmds[2][2];', '    uint8_t occupants[2][2];', '    uint8_t entries[4];',
+           '    df_conf_mon mons[2][6];', '} df_conf_step;',
            'typedef struct df_conf_battle {', '    const char *name;', '    uint32_t member_count;',
            '    const df_conf_member (*members)[6];', '    const df_conf_step *steps;', '    uint32_t step_count;',
            '    uint32_t dropped;', '} df_conf_battle;', '']
