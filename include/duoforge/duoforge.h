@@ -461,7 +461,8 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_EVENT_BOOST           16u /* [-boost] position, detail: stat (0 atk .. 6 evasion), amount; cause */
 #define DUOFORGE_EVENT_UNBOOST         17u /* [-unboost] as BOOST */
 #define DUOFORGE_EVENT_STATUS          18u /* [-status] position, detail: DUOFORGE_AILMENT_* */
-#define DUOFORGE_EVENT_CURE_STATUS     19u /* [-curestatus] position, detail: the ailment that ended */
+#define DUOFORGE_EVENT_CURE_STATUS     19u /* [-curestatus] position, detail: the ailment that ended; cause MOVE
+                                              + id2 when a defrost move thaws its user (Team C) */
 #define DUOFORGE_EVENT_CONFUSION_START 20u /* [-start confusion] position */
 #define DUOFORGE_EVENT_CONFUSION_END   21u /* [-end confusion] position */
 #define DUOFORGE_EVENT_CONFUSED        22u /* [-activate confusion] position: it is confused as it tries to act */

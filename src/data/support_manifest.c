@@ -32,7 +32,9 @@
  *
  * Team C (decision 0009; the extended ids, reachable under the TEAM_C kinds):
  * Step 1: Kowtow Cleave, Hyper Voice, Draco Meteor, Wave Crash and Aqua Jet
- * (data only), Defiant and Adaptability. */
+ * (data only), Defiant and Adaptability.
+ * Step 2: Flare Blitz (defrost) and Darkest Lariat (ignoreDefensive,
+ * ignoreEvasion). */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -80,6 +82,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_DRACOMETEOR] = 1u,
             [DFI_MOVE_WAVECRASH] = 1u,
             [DFI_MOVE_AQUAJET] = 1u,
+            [DFI_MOVE_FLAREBLITZ] = 1u,
+            [DFI_MOVE_DARKESTLARIAT] = 1u,
         },
     .abilities =
         {

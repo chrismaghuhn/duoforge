@@ -1,0 +1,25 @@
+{
+  "name": "c02_darkest_lariat",
+  "purpose": "Darkest Lariat ignores the target's Defense stage: Milotic's Coil boosts and Stamina's boosts on Archaludon; Grimmsnarl's Reflect (Prankster) still weakens it; Kingambit's hits raise Stamina.",
+  "data": "team_c",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c0203",
+  "teams": [
+    "Incineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Darkest Lariat\n- Fake Out\n\nKingambit (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Iron Head\n- Protect\n\nBasculegion (M) @ Mystic Water\nAbility: Adaptability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Wave Crash\n- Aqua Jet\n\nSalamence (M) @ Life Orb\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Hyper Voice\n- Draco Meteor",
+    "Milotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Coil\n- Ice Beam\n\nGrimmsnarl (M) @ Light Clay\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Reflect\n- Spirit Break\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Protect\n\nFarigiraf (F) @ Life Orb\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Grass Knot"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1 2",
+      "move 1 1, move 1 2",
+      "move 1 2, move 2 1",
+      "move 1 1, move 1 2"
+    ],
+    "p2": [
+      "move 1, move 1",
+      "move 2 1, move 2 2",
+      "move 1, move 2 1"
+    ],
+    "max_steps": 40
+  }
+}

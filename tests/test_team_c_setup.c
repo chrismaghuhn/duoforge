@@ -320,7 +320,7 @@ int main(void)
     /* The gate per Team C mechanic: the dev side plus exactly one of them.
      * Steps (decision 0009 section 5) mark them one by one; step 1: Kowtow
      * Cleave, Hyper Voice, Draco Meteor, Wave Crash, Aqua Jet, Defiant and
-     * Adaptability. */
+     * Adaptability; step 2: Flare Blitz and Darkest Lariat. */
     {
         typedef struct gate_case {
             uint32_t member, ability_plus1, item_plus1, move;
@@ -330,8 +330,8 @@ int main(void)
         const uint32_t keep = UINT32_MAX;
         const gate_case cases[] = {
             {0u, 0u, 0u, DFI_MOVE_DIRECLAW, false, "Dire Claw"},
-            {1u, 0u, 0u, DFI_MOVE_FLAREBLITZ, false, "Flare Blitz"},
-            {1u, 0u, 0u, DFI_MOVE_DARKESTLARIAT, false, "Darkest Lariat"},
+            {1u, 0u, 0u, DFI_MOVE_FLAREBLITZ, true, "Flare Blitz"},
+            {1u, 0u, 0u, DFI_MOVE_DARKESTLARIAT, true, "Darkest Lariat"},
             {2u, 0u, 0u, DFI_MOVE_HYPERVOICE, true, "Hyper Voice"},
             {2u, 0u, 0u, DFI_MOVE_DRACOMETEOR, true, "Draco Meteor"},
             {3u, 0u, 0u, DFI_MOVE_FOLLOWME, false, "Follow Me"},
@@ -366,7 +366,8 @@ int main(void)
         uint8_t abilities[DFI_EXT_ABILITY_COUNT - DFI_ABILITY_COUNT] = {0};
         uint8_t items[DFI_EXT_ITEM_COUNT - DFI_ITEM_COUNT] = {0};
         static const uint32_t step1_moves[] = {DFI_MOVE_KOWTOWCLEAVE, DFI_MOVE_HYPERVOICE, DFI_MOVE_DRACOMETEOR,
-                                               DFI_MOVE_WAVECRASH, DFI_MOVE_AQUAJET};
+                                               DFI_MOVE_WAVECRASH,    DFI_MOVE_AQUAJET,   DFI_MOVE_FLAREBLITZ,
+                                               DFI_MOVE_DARKESTLARIAT};
         for (size_t i = 0u; i < sizeof step1_moves / sizeof step1_moves[0]; ++i) {
             moves[step1_moves[i] - DFI_MOVE_COUNT] = 1u;
         }
