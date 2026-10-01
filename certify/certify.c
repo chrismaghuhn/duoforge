@@ -4,6 +4,7 @@
  *
  *   duoforge_certify generate <battles per pairing> <file>
  *   duoforge_certify verify <file>
+ *   duoforge_certify minimize <file> <battle> fail|event:<kind>
  *
  * generate plays, for each pairing of the reference teams (A-B, B-A, A-A,
  * B-B), the given number of battles under the certified profile (CLOSURE,
@@ -17,6 +18,14 @@
  * succeed and pass the full state check; counts, result and digest must
  * match the file, and the file's context fingerprint must be the running
  * engine's: the profile is frozen.
+ *
+ * minimize (M5 step 5) shrinks a battle of a file in that format to a short
+ * reproduction of a condition: "fail" (a step or the state check fails) or
+ * "event:<kind>" (an event of DUOFORGE_EVENT_<kind> is emitted). It replays
+ * the choices (each index modulo the candidate count, missing ones 0), cuts
+ * the battle at the first step where the condition holds, then sets every
+ * choice to 0 (the first candidate) where the condition still holds, until
+ * nothing changes: every remaining nonzero choice is needed.
  *
  * Seeds: one splitmix64 stream from the file's seed gives, battle by battle
  * in pairing order, the battle's rng_initstate and then its policy seed;
@@ -440,6 +449,168 @@ static int cert_verify(const duoforge_context *ctx, const duoforge_battle_setup 
     return bad == 0u ? 0 : 1;
 }
 
+/* The condition a minimization keeps. */
+typedef struct cert_pred {
+    bool fail;      /* a step or the state check fails */
+    uint32_t event; /* otherwise: an event of this kind is emitted */
+} cert_pred;
+
+/* Replays the choices of `cb` (index modulo the candidate count, missing
+ * ones 0) until `pred` holds; then *out_used is the number of choices made
+ * up to that step. False when the battle ends or stops first. */
+static bool cert_probe(const duoforge_context *ctx, const duoforge_battle_setup *teams, const cert_battle *cb,
+                       const cert_pred *pred, uint32_t *out_used)
+{
+    duoforge_battle_setup setup;
+    cert_setup(teams, cb->pairing, cb->battle_seed, &setup);
+    duoforge_battle *b = NULL;
+    if (duoforge_battle_create(ctx, &setup, &b) != DUOFORGE_OK) {
+        return pred->fail;
+    }
+    uint32_t k = 0u;
+    bool holds = false;
+    for (uint32_t step = 0u; step < CERT_MAX_STEPS && !holds; ++step) {
+        duoforge_request rq;
+        if (duoforge_battle_request(ctx, b, 0u, &rq) != DUOFORGE_OK) {
+            holds = pred->fail;
+            break;
+        }
+        if (rq.boundary_kind == DUOFORGE_BOUNDARY_TERMINAL) {
+            break;
+        }
+        duoforge_decision_bundle bd;
+        memset(&bd, 0, sizeof bd);
+        bool broken = false;
+        for (uint32_t p = 0u; p < DUOFORGE_SIDE_COUNT && !broken; ++p) {
+            uint32_t n = 0u;
+            broken = duoforge_battle_request(ctx, b, p, &rq) != DUOFORGE_OK;
+            if (broken || rq.requested == 0u) {
+                bd.epoch = rq.epoch;
+                continue;
+            }
+            bd.epoch = rq.epoch;
+            broken = duoforge_battle_candidates(ctx, b, p, cert_cands, DUOFORGE_MAX_CANDIDATES, &n) != DUOFORGE_OK ||
+                     n == 0u || k >= CERT_MAX_DECISIONS;
+            if (!broken) {
+                const uint32_t idx = (k < cb->decisions ? cb->choice[k] : 0u) % n;
+                k += 1u;
+                bd.response_mask = (uint8_t)(bd.response_mask | (1u << p));
+                bd.responses[p] = cert_cands[idx];
+            }
+        }
+        if (broken) {
+            holds = pred->fail;
+            break;
+        }
+        duoforge_step_result res;
+        duoforge_event_buffer buffers[DUOFORGE_SIDE_COUNT] = {{cert_events[0], DUOFORGE_MAX_EVENTS, 0u},
+                                                               {cert_events[1], DUOFORGE_MAX_EVENTS, 0u}};
+        if (duoforge_battle_step_events(ctx, b, &bd, &res, buffers) != DUOFORGE_OK ||
+            duoforge_battle_check(ctx, b) != DUOFORGE_OK) {
+            holds = pred->fail;
+            break;
+        }
+        for (uint32_t i = 0u; i < buffers[0].count && !pred->fail; ++i) {
+            holds = holds || cert_events[0][i].kind == pred->event;
+        }
+    }
+    duoforge_battle_destroy(b);
+    *out_used = k;
+    return holds;
+}
+
+static void cert_trim(cert_battle *cb, uint32_t used)
+{
+    if (used < cb->decisions) {
+        cb->decisions = used;
+    }
+    while (cb->decisions > 0u && cb->choice[cb->decisions - 1u] == 0u) {
+        cb->decisions -= 1u; /* missing choices are 0 */
+    }
+}
+
+static int cert_minimize(const duoforge_context *ctx, const duoforge_battle_setup *teams, const char *path,
+                         uint32_t number, const char *condition)
+{
+    cert_pred pred = {false, 0u};
+    if (strcmp(condition, "fail") == 0) {
+        pred.fail = true;
+    } else if (strncmp(condition, "event:", 6u) != 0 || sscanf(condition + 6, "%" SCNu32, &pred.event) != 1) {
+        return 2;
+    }
+    FILE *f = fopen(path, "rb");
+    if (f == NULL) {
+        fprintf(stderr, "duoforge_certify: cannot read %s\n", path);
+        return 1;
+    }
+    uint32_t seen = 0u;
+    bool found = false;
+    while (!found && fgets(cert_line, (int)sizeof cert_line, f) != NULL) {
+        if (strncmp(cert_line, "b ", 2u) == 0) {
+            found = seen == number && cert_parse_battle(cert_line, &cert_in);
+            seen += 1u;
+        }
+    }
+    fclose(f);
+    if (!found) {
+        fprintf(stderr, "duoforge_certify: no battle %" PRIu32 " in %s\n", number, path);
+        return 1;
+    }
+    const uint32_t before = cert_in.decisions;
+    uint32_t used = 0u;
+    if (!cert_probe(ctx, teams, &cert_in, &pred, &used)) {
+        fprintf(stderr, "duoforge_certify: the condition does not hold in battle %" PRIu32 "\n", number);
+        return 1;
+    }
+    cert_trim(&cert_in, used);
+    uint32_t last = used;
+    uint32_t probes = 1u;
+    for (bool changed = true; changed;) {
+        changed = false;
+        for (uint32_t i = 0u; i < cert_in.decisions; ++i) {
+            if (cert_in.choice[i] == 0u) {
+                continue;
+            }
+            const uint16_t keep = cert_in.choice[i];
+            cert_in.choice[i] = 0u;
+            probes += 1u;
+            if (cert_probe(ctx, teams, &cert_in, &pred, &used)) {
+                cert_trim(&cert_in, used);
+                last = used;
+                changed = true;
+            } else {
+                cert_in.choice[i] = keep;
+            }
+        }
+    }
+    /* Checked again: the condition holds, and no nonzero choice can be 0. */
+    bool verified = cert_probe(ctx, teams, &cert_in, &pred, &used);
+    uint32_t nonzero = 0u;
+    for (uint32_t i = 0u; i < cert_in.decisions && verified; ++i) {
+        const uint16_t keep = cert_in.choice[i];
+        if (keep != 0u) {
+            nonzero += 1u;
+            cert_in.choice[i] = 0u;
+            verified = !cert_probe(ctx, teams, &cert_in, &pred, &used);
+            cert_in.choice[i] = keep;
+        }
+    }
+    printf("min %s %016" PRIx64 " %016" PRIx64 " ", cert_pairing_names[cert_in.pairing], cert_in.battle_seed,
+           cert_in.policy_seed);
+    for (uint32_t k = 0u; k < cert_in.decisions; ++k) {
+        printf("%03" PRIx32, (uint32_t)cert_in.choice[k]);
+    }
+    printf("\n");
+    fprintf(stderr,
+            "duoforge_certify: %s holds after %" PRIu32 " choices (from %" PRIu32 "), %" PRIu32
+            " of them not the first candidate; %" PRIu32 " replays\n",
+            condition, last, before, nonzero, probes);
+    if (!verified) {
+        fprintf(stderr, "duoforge_certify: the result does not check\n");
+    }
+    return verified ? 0 : 1;
+}
+
 int main(int argc, char **argv)
 {
     duoforge_context *ctx = df_make_context(&df_config_k1);
@@ -451,9 +622,13 @@ int main(int argc, char **argv)
         rc = n > 0 && n <= 100000 ? cert_generate(ctx, &teams, (uint32_t)n, argv[3]) : 2;
     } else if (argc == 3 && strcmp(argv[1], "verify") == 0) {
         rc = cert_verify(ctx, &teams, argv[2]);
+    } else if (argc == 5 && strcmp(argv[1], "minimize") == 0) {
+        const long n = strtol(argv[3], NULL, 10);
+        rc = n >= 0 ? cert_minimize(ctx, &teams, argv[2], (uint32_t)n, argv[4]) : 2;
     }
     if (rc == 2) {
-        fprintf(stderr, "usage: duoforge_certify generate <battles per pairing> <file> | verify <file>\n");
+        fprintf(stderr, "usage: duoforge_certify generate <battles per pairing> <file> | verify <file> |\n"
+                        "       minimize <file> <battle> fail|event:<kind>\n");
     }
     duoforge_context_destroy(ctx);
     return rc;
