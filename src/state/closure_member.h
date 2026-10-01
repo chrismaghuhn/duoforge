@@ -1,10 +1,11 @@
 #ifndef DUOFORGE_STATE_CLOSURE_MEMBER_H
 #define DUOFORGE_STATE_CLOSURE_MEMBER_H
 /*
- * Members of CLOSURE battles (docs/decisions/0006 section 2): setup
- * validation, the derived fields (stats, PP, stone flag), the support gate
- * and the member invariant. Every function reads the generated closure
- * tables only; none allocates or mutates global state.
+ * Members of the combat data kinds (docs/decisions/0006 section 2, 0009):
+ * setup validation, the derived fields (stats, PP, stone flag), the support
+ * gate and the member invariant. Every function reads the generated extended
+ * tables only (the CLOSURE kinds see their closure prefix through
+ * dfi_kind_limits); none allocates or mutates global state.
  */
 #include <stdbool.h>
 #include <stdint.h>
@@ -22,10 +23,21 @@
 /* True iff the gender is legal for a forme's gender rule. */
 bool dfi_gender_legal(uint32_t gender_rule, uint32_t gender);
 
-/* Validation of one registered member of a CLOSURE setup (the side rules,
- * Species Clause and Item Clause, are separate). dev: the data kind allows
- * No Ability. */
-bool dfi_closure_member_setup_valid(bool dev, const duoforge_member_setup *m);
+/* What a combat data kind may use (decision 0009 section 3): the CLOSURE
+ * kinds the closure prefix of the extended tables, the TEAM_C kinds all of
+ * them; the DEV kinds also allow No Ability. */
+typedef struct dfi_kind_limits {
+    uint32_t forme_count; /* species ids below this */
+    uint32_t item_count;  /* an item is 1 + its id, so at most this */
+    bool dev;
+} dfi_kind_limits;
+
+/* Precondition: data_kind is one of the four combat kinds. */
+dfi_kind_limits dfi_kind_limits_of(uint32_t data_kind);
+
+/* Validation of one registered member of a combat setup (the side rules,
+ * Species Clause and Item Clause, are separate). */
+bool dfi_closure_member_setup_valid(const dfi_kind_limits *lim, const duoforge_member_setup *m);
 
 /* Species Clause and Item Clause over the registered members of a side.
  * Precondition: every registered member passed the member validation. */
@@ -44,20 +56,21 @@ bool dfi_closure_battle_supported(const dfi_support_manifest *manifest, const st
  * stored ids. Returns false only on an engine bug. */
 bool dfi_closure_member_init(const duoforge_member_setup *src, dfi_member *dst);
 
-/* The member invariant of CLOSURE data (reported as DFI_INV_MEMBER_EXTRA):
+/* The member invariant of combat data (reported as DFI_INV_MEMBER_EXTRA):
  * a base forme, a legal gender, nature and Stat Points in range, the current
- * ability of the forme (or No Ability for dev), the stone flag and the Mega
- * forme consistent with the item, stats and PP equal to the formulas, moves
- * of the set without repeats, and a status with a matching counter.
- * Precondition: the generic member checks passed (species < 16, move ids
- * < 37, move count 1..4, pp <= pp_max, hp <= hp_max, stone flag <= 1). */
-bool dfi_closure_member_valid(bool dev, const dfi_member *m);
+ * ability of the forme (or No Ability for dev), an item the kind allows, the
+ * stone flag and the Mega forme consistent with the item, stats and PP equal
+ * to the formulas, moves of the set without repeats, and a status with a
+ * matching counter. Precondition: the generic member checks passed (species
+ * and move ids below the context's counts, move count 1..4, pp <= pp_max,
+ * hp <= hp_max, stone flag <= 1). */
+bool dfi_closure_member_valid(const dfi_kind_limits *lim, const dfi_member *m);
 /* The part of dfi_closure_member_valid without the derived values and the
  * move legality (stats and HP maximum from the formulas, moves of the set
  * without repeats, PP maxima): forme, gender, nature, stat points, item
  * and Mega flags, ability, status and counter. The model-facing queries
  * run this part (decision 0011). Same precondition. */
-bool dfi_closure_member_ranges(bool dev, const dfi_member *m);
+bool dfi_closure_member_ranges(const dfi_kind_limits *lim, const dfi_member *m);
 
 /* Mega Evolution of a member that holds its own stone (formeChange of the
  * Champions mod, isPermanent): the Mega forme's stats and ability; HP stays.
@@ -65,7 +78,7 @@ bool dfi_closure_member_ranges(bool dev, const dfi_member *m);
 bool dfi_closure_member_mega_evolve(dfi_member *m);
 
 /* WHITE-BOX: duoforge_battle_create without the support gate. Tests use it
- * to inspect the state a legal CLOSURE team produces while its mechanics are
+ * to inspect the state a legal combat team produces while its mechanics are
  * not implemented; the public create always applies the gate. */
 duoforge_status dfi_battle_create_ungated(const duoforge_context *ctx, const duoforge_battle_setup *setup,
                                           duoforge_battle **out_battle);

@@ -121,8 +121,8 @@ static dfi_invariant dfi_check_member(const struct duoforge_context *ctx, const 
     /* SYNTHETIC data has no stats, natures, statuses, items or abilities;
      * CLOSURE members must agree with the generated tables and formulas. */
     if (dfi_context_is_closure(ctx)) {
-        const bool dev = ctx->data_kind == DUOFORGE_DATA_KIND_CLOSURE_DEV;
-        if (!(full ? dfi_closure_member_valid(dev, m) : dfi_closure_member_ranges(dev, m))) {
+        const dfi_kind_limits lim = dfi_kind_limits_of(ctx->data_kind);
+        if (!(full ? dfi_closure_member_valid(&lim, m) : dfi_closure_member_ranges(&lim, m))) {
             return DFI_INV_MEMBER_EXTRA;
         }
     } else if (!dfi_member_extra_is_zero(m)) {
@@ -176,7 +176,7 @@ static dfi_invariant dfi_check_side(const struct duoforge_context *ctx, const st
     if (member_count < ctx->brought_count || member_count > ctx->max_roster) {
         return DFI_INV_MEMBER_COUNT;
     }
-    if (ctx->data_kind == DUOFORGE_DATA_KIND_CLOSURE && member_count != ctx->max_roster) {
+    if (dfi_kind_full_roster(ctx->data_kind) && member_count != ctx->max_roster) {
         return DFI_INV_MEMBER_COUNT; /* the certified profile registers exactly six (decision 0010) */
     }
     for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {

@@ -106,16 +106,20 @@ const char *duoforge_status_name(duoforge_status status);
 #define DUOFORGE_DATA_KIND_CLOSURE_DEV 3u /* the closure tables; as CLOSURE, but a member may have
                                              No Ability and a side registers brought_count to
                                              max_roster members (development fixtures) */
+#define DUOFORGE_DATA_KIND_TEAM_C      4u /* the extended tables, closure plus Team C (decision 0009);
+                                             the CLOSURE rules and profile over them */
+#define DUOFORGE_DATA_KIND_TEAM_C_DEV  5u /* the extended tables; as CLOSURE_DEV over them
+                                             (development fixtures) */
 typedef struct duoforge_context duoforge_context;
 typedef struct duoforge_context_config {
     uint32_t data_kind;     /* DUOFORGE_DATA_KIND_* */
     uint32_t max_roster;    /* 1..DUOFORGE_MAX_ROSTER */
     uint32_t brought_count; /* 1..max_roster; picked at TEAM_SELECTION */
-    uint32_t species_count; /* SYNTHETIC: 1..65535, species ids 0..species_count-1; CLOSURE: 0 */
-    uint32_t move_count;    /* SYNTHETIC: 1..65535, move ids 0..move_count-1; CLOSURE: 0 */
+    uint32_t species_count; /* SYNTHETIC: 1..65535, species ids 0..species_count-1; CLOSURE, TEAM_C: 0 */
+    uint32_t move_count;    /* SYNTHETIC: 1..65535, move ids 0..move_count-1; CLOSURE, TEAM_C: 0 */
     /* SYNTHETIC: move_count bytes, each a DUOFORGE_TARGET_CLASS_* value 1..9;
        copied at create (read once) and hashed into the fingerprint.
-       CLOSURE: NULL (the generated tables are built in). */
+       CLOSURE and TEAM_C kinds: NULL (the generated tables are built in). */
     const uint8_t *move_target_classes;
 } duoforge_context_config;
 /* Checks: NULL(config, out) -> INVALID_ARGUMENT (fields in order, including
@@ -126,8 +130,8 @@ duoforge_status duoforge_context_create(const duoforge_context_config *config,
 void duoforge_context_destroy(duoforge_context *context); /* NULL is a no-op */
 /* SHA-256 of the canonical context bytes: semantics id, context schema,
    structural constants, config and the SHA-256 of the target-class table
-   (SYNTHETIC) or of the generated closure tables (CLOSURE kinds).
-   Independent of platform and build. */
+   (SYNTHETIC), of the generated closure tables (CLOSURE kinds) or of the
+   extended tables (TEAM_C kinds). Independent of platform and build. */
 duoforge_status duoforge_context_fingerprint(const duoforge_context *context,
                                              uint8_t out_fingerprint[DUOFORGE_DIGEST_SIZE]);
 
@@ -141,7 +145,9 @@ duoforge_status duoforge_context_fingerprint(const duoforge_context *context,
    moves of the forme's set; hp_max, pp_max and mega_capable must be 0
    because the engine derives stats, PP and the stone flag. Species Clause
    and Item Clause hold per side. A legal team whose mechanics are not all
-   implemented yet is rejected with E_UNSUPPORTED. ---- */
+   implemented yet is rejected with E_UNSUPPORTED.
+   TEAM_C kinds (decision 0009): the same rules over the extended tables, so
+   a side may mix closure and Team C members and hold any of their items. ---- */
 #define DUOFORGE_GENDER_MALE   1u
 #define DUOFORGE_GENDER_FEMALE 2u
 #define DUOFORGE_GENDER_NONE   3u /* genderless species */

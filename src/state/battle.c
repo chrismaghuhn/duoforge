@@ -78,15 +78,16 @@ static bool dfi_side_setup_valid(const struct duoforge_context *ctx, const duofo
         return false;
     }
     /* The certified profile registers exactly max_roster (6) members
-     * (decision 0010); CLOSURE_DEV and SYNTHETIC take brought..max. */
-    if (ctx->data_kind == DUOFORGE_DATA_KIND_CLOSURE && member_count != ctx->max_roster) {
+     * (decision 0010; TEAM_C too, decision 0009); the DEV kinds and
+     * SYNTHETIC take brought..max. */
+    if (dfi_kind_full_roster(ctx->data_kind) && member_count != ctx->max_roster) {
         return false;
     }
     const bool closure = dfi_context_is_closure(ctx);
-    const bool dev = ctx->data_kind == DUOFORGE_DATA_KIND_CLOSURE_DEV;
+    const dfi_kind_limits lim = dfi_kind_limits_of(ctx->data_kind);
     for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
         if (m < member_count) {
-            const bool valid = closure ? dfi_closure_member_setup_valid(dev, &side->members[m])
+            const bool valid = closure ? dfi_closure_member_setup_valid(&lim, &side->members[m])
                                        : dfi_member_setup_valid(ctx, &side->members[m]);
             if (!valid) {
                 return false;

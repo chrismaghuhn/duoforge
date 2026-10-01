@@ -1,9 +1,19 @@
 #include "state/closure_member.h"
 
 #include "core/arith.h"
-#include "data/closure_tables.h"
+#include "data/extended_tables.h"
 #include "data/formulas.h"
 
+
+dfi_kind_limits dfi_kind_limits_of(uint32_t data_kind)
+{
+    const bool team_c = data_kind == DUOFORGE_DATA_KIND_TEAM_C || data_kind == DUOFORGE_DATA_KIND_TEAM_C_DEV;
+    dfi_kind_limits lim;
+    lim.forme_count = team_c ? DFI_EXT_FORME_COUNT : DFI_FORME_COUNT;
+    lim.item_count = team_c ? DFI_EXT_ITEM_COUNT : DFI_ITEM_COUNT;
+    lim.dev = data_kind == DUOFORGE_DATA_KIND_CLOSURE_DEV || data_kind == DUOFORGE_DATA_KIND_TEAM_C_DEV;
+    return lim;
+}
 
 bool dfi_gender_legal(uint32_t gender_rule, uint32_t gender)
 {
@@ -44,12 +54,12 @@ static bool dfi_stat_points_valid(const uint32_t *sp)
     return total <= DUOFORGE_STAT_POINTS_TOTAL_MAX;
 }
 
-bool dfi_closure_member_setup_valid(bool dev, const duoforge_member_setup *m)
+bool dfi_closure_member_setup_valid(const dfi_kind_limits *lim, const duoforge_member_setup *m)
 {
-    if (m->species_id >= DFI_FORME_COUNT) {
+    if (m->species_id >= lim->forme_count) {
         return false;
     }
-    const dfi_forme_data *f = &dfi_closure_formes[m->species_id];
+    const dfi_forme_data *f = &dfi_ext_formes[m->species_id];
     if (f->is_mega != 0u) {
         return false; /* a Mega forme is reached in battle, never set up */
     }
@@ -82,11 +92,11 @@ bool dfi_closure_member_setup_valid(bool dev, const duoforge_member_setup *m)
     if (m->nature >= DFI_NATURE_COUNT || !dfi_stat_points_valid(m->stat_points)) {
         return false;
     }
-    const bool no_ability_ok = dev && m->ability == 0u;
+    const bool no_ability_ok = lim->dev && m->ability == 0u;
     if (!no_ability_ok && m->ability != (uint32_t)f->ability + 1u) {
         return false;
     }
-    if (m->item > DFI_ITEM_COUNT) {
+    if (m->item > lim->item_count) {
         return false;
     }
     return true;
@@ -99,7 +109,7 @@ bool dfi_closure_side_clauses_hold(const duoforge_side_setup *side)
         for (uint32_t b = 0u; b < a; ++b) {
             const duoforge_member_setup *y = &side->members[b];
             /* Species Clause: one member per national dex number. */
-            if (dfi_closure_formes[x->species_id].dex_num == dfi_closure_formes[y->species_id].dex_num) {
+            if (dfi_ext_formes[x->species_id].dex_num == dfi_ext_formes[y->species_id].dex_num) {
                 return false;
             }
             /* Item Clause: no item twice. */
@@ -114,7 +124,7 @@ bool dfi_closure_side_clauses_hold(const duoforge_side_setup *side)
 /* True iff the member's item is the stone of its base forme. */
 static bool dfi_holds_own_stone(uint32_t species, uint32_t item)
 {
-    const dfi_forme_data *f = &dfi_closure_formes[species];
+    const dfi_forme_data *f = &dfi_ext_formes[species];
     return item != 0u && f->mega_forme != DFI_CLOSURE_NONE && (uint32_t)f->mega_item + 1u == item;
 }
 
@@ -128,7 +138,7 @@ static bool dfi_member_supported(const dfi_support_manifest *s, const duoforge_m
     }
     if (dfi_holds_own_stone(m->species_id, m->item)) {
         /* Mega Evolution, and the ability the Mega forme brings. */
-        const dfi_forme_data *mega = &dfi_closure_formes[dfi_closure_formes[m->species_id].mega_forme];
+        const dfi_forme_data *mega = &dfi_ext_formes[dfi_ext_formes[m->species_id].mega_forme];
         if (s->mega_evolution == 0u || s->abilities[mega->ability] == 0u) {
             return false;
         }
@@ -175,7 +185,7 @@ bool dfi_closure_battle_supported(const dfi_support_manifest *manifest, const st
                 return false;
             }
             if (mem->mega_capable != 0u) {
-                const dfi_forme_data *mega = &dfi_closure_formes[dfi_closure_formes[mem->species_id].mega_forme];
+                const dfi_forme_data *mega = &dfi_ext_formes[dfi_ext_formes[mem->species_id].mega_forme];
                 if (manifest->mega_evolution == 0u || manifest->abilities[mega->ability] == 0u) {
                     return false;
                 }
@@ -194,13 +204,13 @@ bool dfi_closure_battle_supported(const dfi_support_manifest *manifest, const st
 static bool dfi_derive_stats(uint32_t species, uint32_t is_mega, uint32_t nature, const uint8_t *sp,
                              uint16_t *hp_max, uint16_t *stats)
 {
-    const dfi_forme_data *base = &dfi_closure_formes[species];
+    const dfi_forme_data *base = &dfi_ext_formes[species];
     const dfi_forme_data *cur = base;
     if (is_mega != 0u) {
         if (base->mega_forme == DFI_CLOSURE_NONE) {
             return false;
         }
-        cur = &dfi_closure_formes[base->mega_forme];
+        cur = &dfi_ext_formes[base->mega_forme];
     }
     if (!dfi_champions_stat(DFI_STAT_HP, base->base[DFI_STAT_HP], sp[DFI_STAT_HP], nature, hp_max)) {
         return false;
@@ -216,7 +226,7 @@ static bool dfi_derive_stats(uint32_t species, uint32_t is_mega, uint32_t nature
 
 static bool dfi_derive_pp(uint32_t move, uint8_t *out)
 {
-    const dfi_move_data *mv = &dfi_closure_moves[move];
+    const dfi_move_data *mv = &dfi_ext_moves[move];
     return dfi_champions_pp_max(mv->pp_base, (mv->flags & DFI_MOVE_FLAG_NO_PP_BOOSTS) != 0u, out);
 }
 
@@ -249,7 +259,7 @@ bool dfi_closure_member_init(const duoforge_member_setup *src, dfi_member *dst)
 
 bool dfi_closure_member_mega_evolve(dfi_member *m)
 {
-    const dfi_forme_data *base = &dfi_closure_formes[m->species_id];
+    const dfi_forme_data *base = &dfi_ext_formes[m->species_id];
     if (m->is_mega != 0u || m->mega_capable == 0u || base->mega_forme == DFI_CLOSURE_NONE) {
         return false;
     }
@@ -262,13 +272,13 @@ bool dfi_closure_member_mega_evolve(dfi_member *m)
     for (uint32_t i = 0u; i < DFI_MEMBER_STAT_COUNT; ++i) {
         m->stats[i] = stats[i];
     }
-    m->ability = (uint8_t)((uint32_t)dfi_closure_formes[base->mega_forme].ability + 1u); /* wide-operands-reviewed: < 17 */
+    m->ability = (uint8_t)((uint32_t)dfi_ext_formes[base->mega_forme].ability + 1u); /* wide-operands-reviewed: < 22 */
     return true;
 }
 
-bool dfi_closure_member_ranges(bool dev, const dfi_member *m)
+bool dfi_closure_member_ranges(const dfi_kind_limits *lim, const dfi_member *m)
 {
-    const dfi_forme_data *base = &dfi_closure_formes[m->species_id]; /* species < 16 */
+    const dfi_forme_data *base = &dfi_ext_formes[m->species_id]; /* below the context species count */
     if (base->is_mega != 0u || !dfi_gender_legal(base->gender_rule, m->gender)) {
         return false;
     }
@@ -282,7 +292,7 @@ bool dfi_closure_member_ranges(bool dev, const dfi_member *m)
     if (!dfi_stat_points_valid(sp)) {
         return false;
     }
-    if (m->is_mega > 1u || m->item > DFI_ITEM_COUNT || m->item_consumed > 1u) {
+    if (m->is_mega > 1u || m->item > lim->item_count || m->item_consumed > 1u) {
         return false;
     }
     if (m->item_consumed != 0u && m->item == 0u) {
@@ -294,10 +304,10 @@ bool dfi_closure_member_ranges(bool dev, const dfi_member *m)
     }
     /* The current ability: the Mega forme's after Mega Evolution. */
     if (m->is_mega != 0u) {
-        if (m->ability != (uint32_t)dfi_closure_formes[base->mega_forme].ability + 1u) {
+        if (m->ability != (uint32_t)dfi_ext_formes[base->mega_forme].ability + 1u) {
             return false;
         }
-    } else if (m->ability != (uint32_t)base->ability + 1u && !(dev && m->ability == 0u)) {
+    } else if (m->ability != (uint32_t)base->ability + 1u && !(lim->dev && m->ability == 0u)) {
         return false;
     }
     /* Sleep and freeze carry a counter 1..3 (Champions: sleep lasts
@@ -314,12 +324,12 @@ bool dfi_closure_member_ranges(bool dev, const dfi_member *m)
     return m->status_counter == 0u;
 }
 
-bool dfi_closure_member_valid(bool dev, const dfi_member *m)
+bool dfi_closure_member_valid(const dfi_kind_limits *lim, const dfi_member *m)
 {
-    if (!dfi_closure_member_ranges(dev, m)) {
+    if (!dfi_closure_member_ranges(lim, m)) {
         return false;
     }
-    const dfi_forme_data *base = &dfi_closure_formes[m->species_id]; /* species < 16 */
+    const dfi_forme_data *base = &dfi_ext_formes[m->species_id]; /* below the context species count */
     uint16_t hp_max = 0u;
     uint16_t stats[DFI_MEMBER_STAT_COUNT] = {0};
     if (!dfi_derive_stats(m->species_id, m->is_mega, m->nature, m->stat_points, &hp_max, stats) ||

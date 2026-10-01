@@ -35,7 +35,7 @@ endfunction()
 
 # Shared test support (explicit test context, no globals).
 add_library(duoforge_test_support STATIC support/check.c support/fixtures.c support/goldens.c
-            support/goldens_legacy.c)
+            support/goldens_legacy.c support/team_c.c)
 target_include_directories(duoforge_test_support PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 # The F2 fixture builder is white-box.
 target_include_directories(duoforge_test_support PRIVATE "${PROJECT_SOURCE_DIR}/src")
@@ -83,6 +83,7 @@ duoforge_add_test(NAME duoforge.combat.closure_gate SOURCES test_closure_gate.c 
 duoforge_add_test(NAME duoforge.data.closure_tables SOURCES test_closure_tables.c WHITEBOX)
 # Team C (decision 0009): the extended tables, whose prefix is the closure.
 duoforge_add_test(NAME duoforge.data.extended_tables SOURCES test_extended_tables.c WHITEBOX)
+duoforge_add_test(NAME duoforge.state.team_c_setup SOURCES test_team_c_setup.c WHITEBOX)
 # The generated files must stay exactly what tools/datagen/gen_closure.py
 # wrote; regenerate and update these hashes together.
 foreach(_gen IN ITEMS
