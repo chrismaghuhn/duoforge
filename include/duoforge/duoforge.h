@@ -273,8 +273,8 @@ typedef struct duoforge_step_result {
 
 /* The request of one player, built only from that player's authorized view.
    Checks: NULL -> CONTEXT_MISMATCH -> INVALID_ARGUMENT (player) -> INVARIANT
-   (engine-side failure) -> UNSUPPORTED (an alive occupant with no selectable
-   move would need Struggle, which is M3). */
+   (engine-side failure) -> UNSUPPORTED. An alive occupant with no selectable
+   move is offered Struggle (DUOFORGE_MOVE_SLOT_STRUGGLE). */
 duoforge_status duoforge_battle_request(const duoforge_context *ctx, const duoforge_battle *battle,
                                         uint32_t player, duoforge_request *out_request);
 /* The complete joint side-choice domain of one player in documented order
@@ -288,9 +288,12 @@ duoforge_status duoforge_battle_candidates(const duoforge_context *ctx, const du
    CONTEXT_MISMATCH -> INVARIANT -> STALE_EPOCH (bundle or response epoch) ->
    INVALID_ARGUMENT (mask, reserved bytes, side/kind fields, a response
    outside the offered domain, a nonzero response of an unrequested side).
-   A valid TEAM_SELECTION bundle performs the transition to TURN. A valid
-   TURN, REPLACEMENT or PIVOT bundle returns E_UNSUPPORTED: there is no combat
-   yet. At TERMINAL every bundle is INVALID_ARGUMENT: the battle is over.
+   A valid TEAM_SELECTION bundle performs the transition to TURN (for
+   CLOSURE data with the leads' entry effects). A valid TURN or REPLACEMENT
+   bundle of a CLOSURE battle runs the turn (decision 0006); a mechanic the
+   support manifest does not mark returns E_UNSUPPORTED, as does every
+   combat bundle under SYNTHETIC data and a PIVOT bundle. At TERMINAL every
+   bundle is INVALID_ARGUMENT: the battle is over.
    E_EXHAUSTED if the epoch or activation counter would overflow. Every
    failure leaves the battle unchanged and *out_result unwritten. */
 duoforge_status duoforge_battle_step(const duoforge_context *ctx, duoforge_battle *battle,

@@ -865,6 +865,9 @@ def slot_domain(ctx, st, side, slot):
             mv = mem['moves'][k]
             if mv['pp'] == 0:
                 continue
+            # Champions disables Fake Out (closure move 2) after a move action.
+            if ctx.data_kind in (KIND_CLOSURE, KIND_CLOSURE_DEV) and mv['id'] == 2 and pos['move_actions'] != 0:
+                continue
             for tgt in selectable_targets(ctx.table[mv['id']], side, slot):
                 for mg in megas:
                     out.append(cmd(SLOT_MOVE, k, tgt, mg))

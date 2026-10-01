@@ -1,0 +1,25 @@
+{
+  "name": "s10_weather_ball_grass_knot",
+  "purpose": "Weather Ball is Normal 50 without weather and Water 100 in rain (STAB, rain, Mystic Water); Grass Knot's power follows the target's weight (Milotic 162 kg: 100, Politoed 33.9 kg: 60, Archaludon 60 kg: 80, Farigiraf 160 kg: 100).",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000a002",
+  "teams": [
+    "Farigiraf (M) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Grass Knot\n- Protect\n\nCharizard (F) @ Life Orb\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Weather Ball\n- Heat Wave\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Weather Ball\n- Muddy Water\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Snarl",
+    "Milotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Ice Beam\n\nPolitoed (F) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Weather Ball\n- Ice Beam\n\nFarigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Grass Knot\n- Psychic\n\nArchaludon (F) @ Life Orb\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Snarl"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1 2",
+      "move 1 2, move 1 1",
+      "switch 3, move 1 1",
+      "move 1 1, move 1 2"
+    ],
+    "p2": [
+      "move 2 1, move 1 1",
+      "switch 3, move 1 1",
+      "move 1 1, move 1 2",
+      "move 1 2, move 1 1"
+    ],
+    "max_steps": 50
+  }
+}
