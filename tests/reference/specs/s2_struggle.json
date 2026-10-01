@@ -1,0 +1,56 @@
+{
+ "name": "s2_struggle",
+ "purpose": "PP running out: Golisopod knows only Protect (8 PP) and must Struggle afterwards (random target, recoil); repeated Protect with the stall counter; the opponents only Coil.",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,00000000000000000000000000000000000000000000000000000000000000c3",
+ "teams": [
+  "Golisopod (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 1 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nMilotic (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n\nCeruledge (M)\nAbility: No Ability\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Swords Dance\n\nGholdengo\nAbility: No Ability\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Nasty Plot",
+  "Milotic (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n\nArchaludon (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Protect\n\nCeruledge (F)\nAbility: No Ability\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Swords Dance\n\nGholdengo\nAbility: No Ability\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Nasty Plot"
+ ],
+ "choices": [
+  {
+   "p1": "team 1234",
+   "p2": "team 1234"
+  },
+  {
+   "p1": "move 1, move 1",
+   "p2": "move 1, move 1"
+  },
+  {
+   "p1": "move 1, move 1",
+   "p2": "move 1, move 1"
+  },
+  {
+   "p1": "move 1, move 1",
+   "p2": "move 1, move 1"
+  },
+  {
+   "p1": "move 1, move 1",
+   "p2": "move 1, move 1"
+  },
+  {
+   "p1": "move 1, move 1",
+   "p2": "move 1, move 1"
+  },
+  {
+   "p1": "move 1, move 1",
+   "p2": "move 1, move 1"
+  },
+  {
+   "p1": "move 1, move 1",
+   "p2": "move 1, move 1"
+  },
+  {
+   "p1": "move 1, move 1",
+   "p2": "move 1, move 1"
+  },
+  {
+   "p1": "move 1, move 1",
+   "p2": "move 1, move 1"
+  },
+  {
+   "p1": "move 1, move 1",
+   "p2": "move 1, move 1"
+  }
+ ]
+}

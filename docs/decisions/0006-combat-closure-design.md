@@ -1,6 +1,6 @@
 # 0006 — Combat closure: data, state v3, execution, RNG draw sites, events, reference fixtures
 
-Status: **proposed**; being implemented step by step (`tasks/M3_M4_COMBAT_CLOSURE.md`). **Implemented so far:** step 1a, the generated closure tables and the Champions stat and PP formulas (section 2, data only); step 1b-1, the state v3 layout with its invariants, codec and oracle (section 3.1, synthetic data only); step 1b-2, the CLOSURE contexts, real setup validation and the support gate (section 2.1); step 2a, the damage and stat arithmetic (`src/core/modifier.c`, checked against values the pinned reference computes) and the draw sites with the test-only tape (`src/rng/draw.c`, section 5). Every mechanic is still to come, so every real team is rejected with `E_UNSUPPORTED`.
+Status: **proposed**; being implemented step by step (`tasks/M3_M4_COMBAT_CLOSURE.md`). **Implemented so far:** step 1a, the generated closure tables and the Champions stat and PP formulas (section 2, data only); step 1b-1, the state v3 layout with its invariants, codec and oracle (section 3.1, synthetic data only); step 1b-2, the CLOSURE contexts, real setup validation and the support gate (section 2.1); step 2a, the damage and stat arithmetic (`src/core/modifier.c`, checked against values the pinned reference computes) and the draw sites with the test-only tape (`src/rng/draw.c`, section 5); step 2b, the reference harness and the first recorded battles (section 5.1). Every mechanic is still to come, so every real team is rejected with `E_UNSUPPORTED`.
 
 Showdown citations are `path:line` at the pin `b2cb775b0616115b775534eaeff50300e1fc81fc`.
 
@@ -114,7 +114,26 @@ Every draw goes through one internal function that takes a **site id** and a bou
 - **Test-only tape.** Conformance tests run the same step through an internal, white-box entry point that takes the outcomes from a tape instead of the PCG. The tape states site and bound for every draw; a mismatch or an exhausted tape is an explicit error, never a silent fallback. The tape is not in the public header and not in any production path; replay and normal play use the PCG.
 - The gender draw at construction (`sim/pokemon.ts:421-430`) does not exist here because gender is always specified.
 
-## 6. Events, knowledge and observation
+### 5.1 What the recorded battles show (step 2b)
+
+`tools/reference/ps_trace.js` recorded three development battles (No Ability, no items; `tests/reference/specs/`). Every draw carries a site and a context: the sort or event it belongs to. Counted over the three traces:
+
+| Family | Context | Draws | Effect on the outcome |
+|---|---|---|---|
+| ACCURACY, CRIT, DAMAGE_ROLL, SECONDARY, STALL | move execution | 55 | decides it |
+| SPEED_TIE | `queue`: tied actions in the turn order (`sim/battle.ts:429-463`) | 47 | decides the order |
+| INSERT_TIE | a random position among tied actions when one is inserted (`sim/battle-queue.ts`, `insertChoice`) | 2 | decides the order |
+| SPEED_TIE | `switch-order`: the actives sorted at a switch-in (`sim/battle-actions.ts:181-183`) | 2 | orders entry effects |
+| SPEED_TIE | `field:Residual`: residual handlers, including handlers that only count down a duration (Protect and its stall counter tie on one holder) | 16 | none between counters of one holder; ties between holders can order damage, healing and fainting |
+| SPEED_TIE | `each:Update`, `each:BeforeTurn`: all actives by speed before an event (`sim/battle.ts:466-475`), after every action | 167 | none unless tied actives both handle the event |
+| RANDOM_TARGET | `action-speed`, `resolve`: the target computed for ModifyPriority or when a choice is queued | 24 | none: no closure handler reads that target |
+| RANDOM_TARGET | `execute`: Struggle's real target, or the displayed main target of a spread move | 6 | decides Struggle's target |
+| TEAM_ORDER | the team-preview actions, each side ordering only its own list | 6 | none |
+
+The first battle, without speed ties, has 17 draws. The Struggle battle has two Milotic of equal speed on the field and 218 draws, 115 of them `each:Update`. Aligning DuoForge with the reference therefore means choosing how to treat the families without effect. **Owner decision requested:**
+
+- **B, proposed, and how step 2c starts.** The engine draws only where a value can change the outcome. The trace converter keeps every draw of the first block and drops each family without effect by a named rule with a precondition it checks: `each:` ties only when no tied Pokémon has a handler for that event in the fixture; residual ties only between duration counters of one holder; `action-speed` and `resolve` targets always; TEAM_ORDER always. A dropped draw is listed in the generated fixture, so nothing disappears silently. If the engine and the reference disagree on a draw the converter kept, the tape fails.
+- **A, the alternative.** The engine mirrors every sort and target call of the reference, draws included, so the converter drops nothing. That is B plus engine code that exists only for alignment; it can be added later without undoing B. Events, knowledge and observation
 
 - A step produces **semantic events** (move used, damage as seen by each side, status, stage change, item consumed, ability shown, field and side condition start and end, switch, faint, Mega, result). Each event has a visibility: public, one side, or privileged.
 - **One source for knowledge.** The per-player knowledge state is updated only by folding the events that player may see. Observations read own state plus knowledge, never the opponent's state.

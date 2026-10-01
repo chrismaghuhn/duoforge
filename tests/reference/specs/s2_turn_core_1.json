@@ -1,0 +1,28 @@
+{
+ "name": "s2_turn_core_1",
+ "purpose": "Turn core without abilities or items: single-target damage, accuracy, crit and damage rolls, priority (Shadow Sneak), speed order, self-boosts (Swords Dance, Nasty Plot), Protect twice in a row (stall counter), PP use.",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,00000000000000000000000000000000000000000000000000000000000000a1",
+ "teams": [
+  "Golisopod (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 1 SpD / 1 Spe\nAdamant Nature\n- Drill Run\n- Protect\n\nCeruledge (M)\nAbility: No Ability\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Shadow Sneak\n- Swords Dance\n- Protect\n\nMilotic (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n\nRillaboom (M)\nAbility: No Ability\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- High Horsepower",
+  "Archaludon (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Protect\n\nGholdengo\nAbility: No Ability\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Nasty Plot\n- Protect\n\nMilotic (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n\nRillaboom (F)\nAbility: No Ability\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- High Horsepower"
+ ],
+ "choices": [
+  {
+   "p1": "team 1234",
+   "p2": "team 1234"
+  },
+  {
+   "p1": "move 1 1, move 2",
+   "p2": "move 2, move 1"
+  },
+  {
+   "p1": "move 2, move 1 2",
+   "p2": "move 2, move 2"
+  },
+  {
+   "p1": "move 1 2, move 1 1",
+   "p2": "move 1 1, move 2"
+  }
+ ]
+}

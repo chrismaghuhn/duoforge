@@ -1,0 +1,28 @@
+{
+ "name": "s2_turn_core_2",
+ "purpose": "Speed ties between actives (two Rillaboom of equal speed on each side: action order and the per-action Update sort), a spread move with a stat-drop secondary per target (Snarl), Coil, accuracy against an evasion-free target.",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,00000000000000000000000000000000000000000000000000000000000000b2",
+ "teams": [
+  "Rillaboom (M)\nAbility: No Ability\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- High Horsepower\n\nArchaludon (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Snarl\n- Protect\n\nMilotic (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n\nGolisopod (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 1 SpD / 1 Spe\nAdamant Nature\n- Drill Run",
+  "Rillaboom (F)\nAbility: No Ability\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- High Horsepower\n\nMilotic (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n\nArchaludon (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Snarl\n- Protect\n\nGolisopod (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 1 SpD / 1 Spe\nAdamant Nature\n- Drill Run"
+ ],
+ "choices": [
+  {
+   "p1": "team 1234",
+   "p2": "team 1234"
+  },
+  {
+   "p1": "move 1 1, move 1",
+   "p2": "move 1 1, move 1"
+  },
+  {
+   "p1": "move 1 2, move 1",
+   "p2": "move 1 1, move 1"
+  },
+  {
+   "p1": "move 1 1, move 2",
+   "p2": "move 1 2, move 1"
+  }
+ ]
+}

@@ -100,6 +100,16 @@ if(DUOFORGE_PS_REFERENCE_DIR)
             COMMAND "${DUOFORGE_NODE}" "${PROJECT_SOURCE_DIR}/tools/reference/arith_ref.js"
                 "${DUOFORGE_PS_REFERENCE_DIR}" --check "${CMAKE_CURRENT_SOURCE_DIR}/reference/arith_ref.h")
         set_tests_properties(duoforge.reference.arith PROPERTIES TIMEOUT 120 LABELS reference)
+        # Every committed battle trace is reproduced by the pinned Showdown.
+        file(GLOB _specs "${CMAKE_CURRENT_SOURCE_DIR}/reference/specs/*.json")
+        foreach(_spec IN LISTS _specs)
+            get_filename_component(_name "${_spec}" NAME_WE)
+            add_test(NAME duoforge.reference.trace.${_name}
+                COMMAND "${DUOFORGE_NODE}" "${PROJECT_SOURCE_DIR}/tools/reference/ps_trace.js"
+                    "${DUOFORGE_PS_REFERENCE_DIR}" "${_spec}"
+                    --check "${CMAKE_CURRENT_SOURCE_DIR}/reference/traces/${_name}.json")
+            set_tests_properties(duoforge.reference.trace.${_name} PROPERTIES TIMEOUT 120 LABELS reference)
+        endforeach()
     endif()
 endif()
 
