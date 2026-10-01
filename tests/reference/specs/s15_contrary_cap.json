@@ -1,0 +1,26 @@
+{
+  "name": "s15_contrary_cap",
+  "purpose": "Contrary at +6 Attack: Mega Staraptor is raised by every Parting Shot and every Intimidate of the Staraptor that replaces Grimmsnarl; at +6 the next Parting Shot (a move) and the next Intimidate (an ability, secondary) both print -boost with 0, because Contrary reverses the drop before the cap and the line is named by the capped change, not by the original sign.",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000e107",
+  "teams": [
+    "Grimmsnarl (M) @ Light Clay\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Parting Shot\n- Reflect\n\nGholdengo @ Mystic Water\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Nasty Plot\n- Shadow Ball\n\nStaraptor (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Brave Bird\n- Protect\n\nRillaboom (F) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Grassy Glide\n- High Horsepower",
+    "Staraptor (M) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Close Combat\n- Brave Bird\n\nMilotic (F) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 32 SpD / 2 Spe\nCalm Nature\n- Hypnosis\n- Muddy Water\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Protect\n\nPolitoed (F) @ Light Clay\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Weather Ball\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1",
+      "switch 3, move 1",
+      "move 1 1, move 1",
+      "switch 3, move 1",
+      "move 1 1, move 1",
+      "switch 3, move 1",
+      "move 1 1, move 1"
+    ],
+    "p2": [
+      "move 1 2 mega, move 1 2",
+      "move 1 2, move 1 2"
+    ],
+    "max_steps": 12
+  }
+}

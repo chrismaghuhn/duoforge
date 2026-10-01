@@ -1,0 +1,25 @@
+{
+  "name": "s15_atk_floor",
+  "purpose": "Attack at -6: Parting Shot (Prankster) and the Intimidate of the Staraptor that replaces Grimmsnarl lower the same foe twice a cycle until it sits at -6, and the next Parting Shot and the next Intimidate print -unboost with 0 (a move prints it, an ability only when it is secondary, as Intimidate is); the Competitive foe next to it is Intimidated at +6 Special Attack and answers with -boost 0.",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000e101",
+  "teams": [
+    "Grimmsnarl (M) @ Light Clay\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Parting Shot\n- Reflect\n\nGholdengo @ Mystic Water\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Nasty Plot\n- Shadow Ball\n\nStaraptor (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Brave Bird\n- Protect\n\nRillaboom (F) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Grassy Glide\n- High Horsepower",
+    "Milotic (F) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 32 SpD / 2 Spe\nCalm Nature\n- Hypnosis\n- Muddy Water\n\nFarigiraf (F) @ Sitrus Berry\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Trick Room\n- Psychic\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Protect\n\nPolitoed (F) @ Light Clay\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Weather Ball\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 2, move 1",
+      "switch 3, move 1",
+      "move 1 2, move 1",
+      "switch 3, move 1",
+      "move 1 2, move 1",
+      "switch 3, move 1",
+      "move 1 2, move 1"
+    ],
+    "p2": [
+      "move 1 2, move 1"
+    ],
+    "max_steps": 12
+  }
+}

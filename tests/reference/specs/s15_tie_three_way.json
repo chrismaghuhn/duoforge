@@ -1,0 +1,19 @@
+{
+  "name": "s15_tie_three_way",
+  "purpose": "A three-way Speed tie with two Grassy Seed holders: Rillaboom, Ceruledge and Archaludon have Speed 105 and Gholdengo 104, so the four entering Pokemon tie three-way in the switch-in order (three have an entry handler) and Rillaboom's Grassy Surge ties the same three in eachEvent(TerrainChange), where the shuffle orders the -enditem lines of the two seeds.",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000e106",
+  "teams": [
+    "Rillaboom (F) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 32 HP / 32 Atk\nSerious Nature\n- Fake Out\n- Grassy Glide\n\nCeruledge (F) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 32 HP / 32 Atk\nSerious Nature\n- Bitter Blade\n- Protect\n\nStaraptor (M) @ Leftovers\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Brave Bird\n- Protect\n\nMilotic (F) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 32 SpD / 2 Spe\nCalm Nature\n- Muddy Water\n- Coil",
+    "Archaludon (M) @ Grassy Seed\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 32 SpA\nSerious Nature\n- Dragon Pulse\n- Protect\n\nGholdengo @ Mystic Water\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA\nSerious Nature\n- Nasty Plot\n- Shadow Ball\n\nFarigiraf (F) @ Leftovers\nAbility: Armor Tail\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Trick Room\n- Psychic\n\nPolitoed (F) @ Light Clay\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Weather Ball\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 2, move 2"
+    ],
+    "p2": [
+      "move 2, move 1"
+    ],
+    "max_steps": 2
+  }
+}
