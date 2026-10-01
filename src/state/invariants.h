@@ -9,8 +9,8 @@
  * Deliberately allowed (structural, not reachability): fainted occupants and
  * reserves, pp 0, empty positions, any RNG state and draw count,
  * non-contiguous activation ids, REPLACEMENT/PIVOT/TERMINAL boundaries and
- * field, side, volatile, knowledge and queue values that no mechanic
- * produces yet. Decodability is therefore not reachability.
+ * field, side, volatile, knowledge and queue values that no mechanic of the
+ * closure produces. Decodability is therefore not reachability.
  *
  * The v3 ids check value ranges and canonical form only: TURN_COUNTER (0
  * exactly at TEAM_SELECTION), RESULT (nonzero exactly at TERMINAL), FIELD,

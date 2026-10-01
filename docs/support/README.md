@@ -1,6 +1,6 @@
 # Support and provenance manifest
 
-This is a status manifest, **not** a mechanics certificate. "IMPLEMENTED + TESTED" means engine primitives with synthetic data only, not supported Pokémon behaviour.
+This is a status manifest, **not** a mechanics certificate. For the mechanics of the combat closure, "IMPLEMENTED + TESTED" means checked against recorded battles of the pinned Showdown revision; it says nothing about Pokémon, moves, abilities or items outside the closure of the two reference teams.
 
 | Area | Status |
 |---|---|
@@ -8,10 +8,10 @@ This is a status manifest, **not** a mechanics certificate. "IMPLEMENTED + TESTE
 | Pokémon Showdown (operational reference) | **PINNED** `b2cb775b0616115b775534eaeff50300e1fc81fc` (owner decision; `docs/decisions/0004`). Not vendored. M2 cites it for choice rules, team preview, target classes, open team sheets and HP display (`docs/decisions/0005`); no test executes it |
 | Rules profile | **SELECTED** (owner): `[Gen 9 Champions] VGC 2026 Reg M-C`. Set legality (base forme, set moves, gender, nature, Stat Points, ability, item, Species and Item Clause) is **IMPLEMENTED + TESTED**; the battle rules are not |
 | Team specifications | **SELECTED** (owner): two teams in `docs/decisions/0004`. The engine validates them, derives every stat line and plays them from team selection to the end; closure gate passed in step 13 (decision 0006 section 4.13) |
-| PCG32 RNG primitive and wrapper contract (0001) | **IMPLEMENTED + TESTED**; no gameplay draw sites exist yet (M3) |
+| PCG32 RNG primitive and wrapper contract (0001) | **IMPLEMENTED + TESTED**; the combat draws through the draw sites below |
 | Arithmetic and byte helpers | **IMPLEMENTED + TESTED** (generic; no Pokémon-semantics helpers) |
-| Owned structural state v3, identity, invariants (boundaries incl. TERMINAL, epochs, sealed commitments, knowledge, field and side conditions, volatile blocks, action queue) | **IMPLEMENTED + TESTED** (synthetic data only; the combat fields exist, but no mechanic writes them yet; decision 0006 section 3.1) |
-| Canonical encoding v3 (semantics 3, 1009 bytes), SHA-256 digest, clone/copy/equal, reseed | **IMPLEMENTED + TESTED** (synthetic data only; the v1 and v2 goldens are rejected inputs) |
+| Owned structural state v3, identity, invariants (boundaries incl. TERMINAL, epochs, sealed commitments, knowledge, field and side conditions, volatile blocks, action queue) | **IMPLEMENTED + TESTED** (decision 0006 section 3.1): synthetic fixtures and the oracle, plus every state of the recorded battles and of random play with CLOSURE data |
+| Canonical encoding v3 (semantics 3, 1009 bytes), SHA-256 digest, clone/copy/equal, reseed | **IMPLEMENTED + TESTED** (goldens with synthetic data; the v1 and v2 goldens are rejected inputs); states of real-team battles round-trip at every boundary in the closure gate |
 | Team selection (ordered picks), joint side-choice domains, requests, epochs, decision bundles | **IMPLEMENTED + TESTED** against the oracle (synthetic move target classes; `docs/decisions/0005`) |
 | Team-selection transition (mechanics-free) | **IMPLEMENTED + TESTED** |
 | Turn / replacement / pivot execution | **IMPLEMENTED + TESTED** for CLOSURE data (decision 0006 sections 4.1, 4.2 and 4.12); every bundle under SYNTHETIC data stays `E_UNSUPPORTED` |
@@ -19,11 +19,11 @@ This is a status manifest, **not** a mechanics certificate. "IMPLEMENTED + TESTE
 | Struggle (all pp 0) | **IMPLEMENTED + TESTED** (offered in the request since step 2c; typeless, random target, recoil) |
 | Observation prototype (open sheets, own exact, foe percent HP as last seen, tagged unknowns) | **IMPLEMENTED + TESTED** (prototype; statuses, stages and conditions are not shown yet) |
 | Information-equivalence evidence | **TESTED** on paired synthetic states (`duoforge.request.information`) |
-| Closure data tables (16 formes, 36 moves plus Struggle, 16 abilities, 11 items, type chart, natures) | **GENERATED + TESTED** from the pin with provenance per record (`tools/datagen/gen_closure.py`, `src/data/closure_tables.*`). **Data only:** no battle can use it yet |
+| Closure data tables (16 formes, 36 moves plus Struggle, 16 abilities, 11 items, type chart, natures) | **GENERATED + TESTED** from the pin with provenance per record (`tools/datagen/gen_closure.py`, `src/data/closure_tables.*`). Used by every CLOSURE battle |
 | Champions stat and PP formulas | **IMPLEMENTED + TESTED** (all 16 formes of the two teams; decision 0006) |
-| CLOSURE contexts (`CLOSURE`, `CLOSURE_DEV`), setup validation, derived stats and PP, support gate | **IMPLEMENTED + TESTED** (decision 0006 section 2.1); the manifest marks nothing yet |
-| Damage and stat arithmetic (4096-based modifiers, base damage, random factor, critical hit, type steps, 16-bit final damage, stat and accuracy stages) | **IMPLEMENTED + TESTED** against values computed by the pinned Showdown (`tools/reference/arith_ref.js`); no move uses it yet |
-| RNG draw sites and the test-only tape | **IMPLEMENTED + TESTED** (decision 0006 section 5); no mechanic draws yet |
+| CLOSURE contexts (`CLOSURE`, `CLOSURE_DEV`), setup validation, derived stats and PP, support gate | **IMPLEMENTED + TESTED** (decision 0006 section 2.1); since step 12 the manifest marks every mechanic of the closure |
+| Damage and stat arithmetic (4096-based modifiers, base damage, random factor, critical hit, type steps, 16-bit final damage, stat and accuracy stages) | **IMPLEMENTED + TESTED** against values computed by the pinned Showdown (`tools/reference/arith_ref.js`); every damaging move uses it |
+| RNG draw sites and the test-only tape | **IMPLEMENTED + TESTED** (decision 0006 section 5); every draw of the recorded battles comes from the tape at its site |
 | Turn core (queue order with speed ties, single and spread damage, accuracy, critical hits, random factor, STAB, type chart, stat stages, self-boosts, secondary stat changes, PP, Struggle, Protect with its stall counter) | **IMPLEMENTED + TESTED** for development teams (CLOSURE_DEV, No Ability, no items); replays 7 recorded reference battles draw for draw (decision 0006 section 4.1) |
 | Switching, fainting, replacement, win rule and TERMINAL | **IMPLEMENTED + TESTED** for development teams; 5 of the 12 recorded reference battles play to the end (decision 0006 section 4.2) |
 | Burn, paralysis, sleep and freeze (Champions variants), flinch, confusion | **IMPLEMENTED + TESTED** for development teams; 6 recorded reference battles (decision 0006 section 4.3) |

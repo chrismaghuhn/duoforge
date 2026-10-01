@@ -15,9 +15,8 @@
  * sealed commands, queue records at index >= queue_len are all-zero and the
  * knowledge about an unseen member is all-zero.
  *
- * v3 adds the groups of decision 0006 section 3. Nothing writes them yet
- * except the turn counter, the cleared volatile block and the HP knowledge;
- * combat arrives with the later closure steps.
+ * v3 adds the groups of decision 0006 section 3; the combat of the closure
+ * (src/combat/turn.c) writes them for CLOSURE data.
  */
 #include <stdint.h>
 

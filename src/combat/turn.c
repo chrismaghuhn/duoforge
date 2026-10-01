@@ -1482,7 +1482,7 @@ static duoforge_status dfi_run_switch(dfi_run *r, const dfi_queue_record *q)
     const uint32_t item = sd->members[reserve].item;
     if ((ability != 0u && (ability > DFI_ABILITY_COUNT || dfi_support.abilities[ability - 1u] == 0u)) ||
         (item != 0u && (item > DFI_ITEM_COUNT || dfi_support.items[item - 1u] == 0u))) {
-        return DUOFORGE_E_UNSUPPORTED; /* not yet marked */
+        return DUOFORGE_E_UNSUPPORTED; /* not marked in the support manifest */
     }
     const dfi_member *leaving = dfi_at(b, side * 2u + slot);
     if (leaving != NULL && leaving->hp != 0u && sd->positions[slot].switch_flag == 0u) {

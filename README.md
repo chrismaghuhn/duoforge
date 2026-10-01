@@ -7,12 +7,12 @@ DuoForge is a deterministic, headless Pokémon Doubles simulation engine designe
 - the pinned PCG32 gameplay RNG;
 - checked integer helpers;
 - an immutable (synthetic) context with a content fingerprint and a synthetic move target-class table;
-- an owned, pointer-free battle state v3 with stable identities, decision boundaries (including TERMINAL), request epochs, sealed commitments, per-player knowledge (HP as last seen) and an invariant checker, plus the fields combat will need (field and side conditions, volatile blocks, action queue), which nothing writes yet;
+- an owned, pointer-free battle state v3 with stable identities, decision boundaries (including TERMINAL), request epochs, sealed commitments, per-player knowledge (HP as last seen) and an invariant checker, plus the combat fields (field and side conditions, volatile blocks, action queue);
 - a canonical, versioned binary encoding with a SHA-256 digest;
 - clone/copy (snapshot/restore) and reseeding for forks;
 - team selection (ordered picks) and complete joint side-choice domains per turn, enumerated in a documented deterministic order, with per-player requests, request epochs and simultaneous decision bundles;
 - a perspective-safe observation prototype (open team sheets, own exact HP/PP, opponent HP at the Champions percent precision, tagged unknowns);
-- generated data tables of the two reference teams from the pinned Showdown revision, and the Champions stat and PP formulas (data only, step 1a of the combat closure);
+- generated data tables of the two reference teams from the pinned Showdown revision, and the Champions stat and PP formulas (step 1a of the combat closure);
 - the state v3 layout of the combat closure with its invariants, codec and oracle (step 1b-1);
 - contexts over the real closure data, validation of real sets with derived stats and PP, and the support gate that still rejects every real team with `DUOFORGE_E_UNSUPPORTED` (step 1b-2);
 - the turn core for development teams: turn order with speed ties, damage, accuracy, critical hits, stat stages, secondary stat changes, PP, Struggle and Protect, replaying recorded reference battles draw for draw (step 2);
