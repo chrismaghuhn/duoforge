@@ -481,10 +481,27 @@ duoforge_status dfi_battle_step_tape(const duoforge_context *ctx, duoforge_battl
             picks.picks[s][i] = in.responses[s].picks[i];
         }
     }
-    const duoforge_status ts = dfi_apply_team_selection(ctx, battle, &picks);
+    /* Team selection and, for CLOSURE data, the leads' entry effects run on
+     * a working copy; any failure commits nothing. */
+    struct duoforge_battle tmp = *battle;
+    const duoforge_status ts = dfi_apply_team_selection(ctx, &tmp, &picks);
     if (ts != DUOFORGE_OK) {
         return ts; /* E_EXHAUSTED or E_INVARIANT; the battle is unchanged */
     }
+    dfi_draws draws = dfi_draws_from_rng(&tmp.rng);
+    draws.tape = tape;
+    draws.tape_len = tape_len;
+    const duoforge_status ss = dfi_turn_start(ctx, &tmp, &draws);
+    if (out_tape_used != NULL) {
+        *out_tape_used = draws.tape_pos;
+    }
+    if (ss != DUOFORGE_OK) {
+        return ss;
+    }
+    if (dfi_state_check(ctx, &tmp, NULL) != DUOFORGE_OK) {
+        return DUOFORGE_E_INVARIANT;
+    }
+    *battle = tmp;
     duoforge_step_result res;
     memset(&res, 0, sizeof res);
     res.epoch = battle->request_epoch;

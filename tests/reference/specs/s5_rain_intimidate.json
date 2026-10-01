@@ -1,0 +1,27 @@
+{
+  "name": "s5_rain_intimidate",
+  "purpose": "Entry abilities in a mirror: two Drizzle Politoed and two Intimidate Staraptor lead with equal speeds, so the entry order is drawn; rain boosts Muddy Water and halves Heat Wave, Hurricane never misses in rain, rain ends after 5 turns, a returning Intimidate user lowers Attack again and a Drizzle user does not restart the rain.",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000005004",
+  "teams": [
+    "Politoed (M)\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Ice Beam\n\nStaraptor (F)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Protect\n\nCharizard (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Hurricane\n- Heat Wave\n\nGolisopod (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Drill Run\n- Protect",
+    "Politoed (F)\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Ice Beam\n\nStaraptor (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Protect\n\nCharizard (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Hurricane\n- Heat Wave\n\nGolisopod (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Drill Run\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 1",
+      "move 1, switch 3",
+      "move 2 1, switch 3",
+      "move 1, move 1",
+      "move 2 2, move 1 1"
+    ],
+    "p2": [
+      "move 1, move 1",
+      "move 2 2, move 1",
+      "switch 3, move 1",
+      "move 1, move 1",
+      "move 1, move 1 1"
+    ],
+    "max_steps": 50
+  }
+}

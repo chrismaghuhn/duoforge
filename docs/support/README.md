@@ -27,7 +27,9 @@ This is a status manifest, **not** a mechanics certificate. "IMPLEMENTED + TESTE
 | Turn core (queue order with speed ties, single and spread damage, accuracy, critical hits, random factor, STAB, type chart, stat stages, self-boosts, secondary stat changes, PP, Struggle, Protect with its stall counter) | **IMPLEMENTED + TESTED** for development teams (CLOSURE_DEV, No Ability, no items); replays 7 recorded reference battles draw for draw (decision 0006 section 4.1) |
 | Switching, fainting, replacement, win rule and TERMINAL | **IMPLEMENTED + TESTED** for development teams; 5 of the 12 recorded reference battles play to the end (decision 0006 section 4.2) |
 | Burn, paralysis, sleep and freeze (Champions variants), flinch, confusion | **IMPLEMENTED + TESTED** for development teams; 6 recorded reference battles (decision 0006 section 4.3) |
-| Abilities, items, weather, terrain, side and field conditions, Mega Evolution, pivots | **UNSUPPORTED** (`E_UNSUPPORTED`, atomic; steps 5 to 12) |
+| Entry abilities Drizzle, Grassy Surge and Intimidate; rain; Grassy Terrain's heal; the ordered residual phase | **IMPLEMENTED + TESTED** for development teams; 3 recorded reference battles (decision 0006 section 4.4) |
+| Drought and sun | **IMPLEMENTED, NOT REACHABLE** until Mega Evolution (step 11) |
+| Other abilities, items, side and field conditions, Mega Evolution, pivots | **UNSUPPORTED** (`E_UNSUPPORTED`, atomic; steps 6 to 12) |
 
 State snapshots and decodability are foundation evidence, **not proof that unimplemented future mechanics restore correctly**.
 

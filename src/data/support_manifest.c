@@ -8,7 +8,10 @@
  * Step 4: burn, paralysis, sleep and freeze (Champions variants), flinch
  * and confusion, from primary and secondary effects; Hurricane is taken
  * ahead of step 10 because it is the only move that confuses.
- * No ability, item, weather, terrain or Mega Evolution is implemented yet. */
+ * Step 5: the entry abilities Drizzle, Grassy Surge and Intimidate, rain,
+ * Grassy Terrain's heal and the ordered residual phase (Drought and sun are
+ * written and become reachable with Mega Evolution, step 11).
+ * No other ability, no item and no Mega Evolution is implemented yet. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -34,5 +37,11 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_IRONHEAD] = 1u,
             [DFI_MOVE_HEATWAVE] = 1u,
             [DFI_MOVE_HURRICANE] = 1u,
+        },
+    .abilities =
+        {
+            [DFI_ABILITY_DRIZZLE] = 1u,
+            [DFI_ABILITY_GRASSYSURGE] = 1u,
+            [DFI_ABILITY_INTIMIDATE] = 1u,
         },
 };

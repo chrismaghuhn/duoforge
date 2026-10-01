@@ -46,7 +46,7 @@
 2. **Turn core** (done in three parts: 2a, the arithmetic of decision `0006` section 4 against reference values and the draw sites with the test tape; 2b, the reference harness with recorded battles and the draw-family findings of decision `0006` section 5.1; 2c, the engine of decision `0006` section 4.1, conformant with seven recorded battles; the secondary stat changes moved here from step 4, see 4.1): action queue and ordering (priority, speed, tie shuffle, re-sort), plain damaging moves single and spread, accuracy with stages, critical hits, random factor, STAB, type chart, stat stages, self-boost moves, PP deduction, Struggle, Protect with the stall counter.
 3. **Switching and fainting** (done, decision `0006` section 4.2)**:** voluntary switch, faint queue, real REPLACEMENT boundaries, win rule.
 4. **Secondary effects and statuses** (done, decision `0006` section 4.3; Hurricane taken ahead from step 10 as the only confusing move)**:** paralysis, sleep, freeze, burn, flinch, confusion (Champions variants).
-5. **Entry abilities, weather, terrain, residual phase:** Drizzle, Drought, Grassy Surge, Intimidate; ordered residuals.
+5. **Entry abilities, weather, terrain, residual phase** (done, decision `0006` section 4.4; Drought is written and becomes reachable with Mega Evolution in step 11)**:** Drizzle, Drought, Grassy Surge, Intimidate; ordered residuals.
 6. **Side and field conditions:** Tailwind, Reflect, Light Screen, Trick Room.
 7. **Reactive abilities:** Stamina, Competitive, Contrary, Flash Fire, Lightning Rod, Good as Gold, Armor Tail, Prankster, Blaze, No Guard, Tough Claws.
 8. **Items:** Leftovers, Sitrus Berry, Grassy Seed, Life Orb, Miracle Seed, Mystic Water, Light Clay.

@@ -34,4 +34,9 @@
 duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle *b,
                              const duoforge_side_choice responses[DUOFORGE_SIDE_COUNT], dfi_draws *draws);
 
+/* The start of a CLOSURE battle, right after team selection placed the
+ * leads: their entry effects run (runSwitch of the reference's 'start'
+ * action). A no-op for other data kinds. On failure *b must be discarded. */
+duoforge_status dfi_turn_start(const duoforge_context *ctx, struct duoforge_battle *b, dfi_draws *draws);
+
 #endif

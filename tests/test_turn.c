@@ -184,6 +184,46 @@ static void status_setup(duoforge_battle_setup *s, uint64_t seed)
     }
 }
 
+/* Development teams with the entry abilities of step 5: Drizzle Politoed,
+ * Intimidate Staraptor, Grassy Surge Rillaboom, and a Pokemon without an
+ * ability; side 1 brings the same species in another order. */
+static void entry_setup(duoforge_battle_setup *s, uint64_t seed)
+{
+    memset(s, 0, sizeof *s);
+    s->rng_initstate = seed;
+    s->rng_initseq = 123u;
+    static const struct {
+        uint32_t species, gender, nature, ability, sp[6], moves[4], move_count;
+    } a[4] = {
+        {DFI_FORME_POLITOED, 1u, DFI_NATURE_MODEST, 1u + DFI_ABILITY_DRIZZLE, {32u, 0u, 0u, 30u, 0u, 4u},
+         {DFI_MOVE_MUDDYWATER, DFI_MOVE_ICEBEAM, DFI_MOVE_PROTECT, 0u}, 3u},
+        {DFI_FORME_STARAPTOR, 2u, DFI_NATURE_BOLD, 1u + DFI_ABILITY_INTIMIDATE, {32u, 0u, 32u, 0u, 2u, 0u},
+         {DFI_MOVE_PROTECT, 0u, 0u, 0u}, 1u},
+        {DFI_FORME_RILLABOOM, 1u, DFI_NATURE_ADAMANT, 1u + DFI_ABILITY_GRASSYSURGE, {18u, 32u, 2u, 0u, 6u, 8u},
+         {DFI_MOVE_HIGHHORSEPOWER, 0u, 0u, 0u}, 1u},
+        {DFI_FORME_CHARIZARD, 2u, DFI_NATURE_MODEST, 0u, {32u, 0u, 0u, 32u, 0u, 2u},
+         {DFI_MOVE_HEATWAVE, DFI_MOVE_HURRICANE, DFI_MOVE_PROTECT, 0u}, 3u},
+    };
+    for (uint32_t side = 0; side < 2u; ++side) {
+        s->sides[side].member_count = 4u;
+        for (uint32_t m = 0; m < 4u; ++m) {
+            const uint32_t k = side == 0u ? m : 3u - m;
+            duoforge_member_setup *d = &s->sides[side].members[m];
+            d->species_id = a[k].species;
+            d->gender = side == 0u ? a[k].gender : 3u - a[k].gender;
+            d->nature = a[k].nature;
+            d->ability = a[k].ability;
+            for (uint32_t i = 0; i < 6u; ++i) {
+                d->stat_points[i] = a[k].sp[i];
+            }
+            d->move_count = a[k].move_count;
+            for (uint32_t j = 0; j < a[k].move_count; ++j) {
+                d->moves[j].move_id = a[k].moves[j];
+            }
+        }
+    }
+}
+
 static duoforge_battle *started_from(df_test *t, const duoforge_context *k2, const duoforge_battle_setup *s)
 {
     duoforge_battle *b = NULL;
@@ -486,6 +526,71 @@ int main(void)
                         "confused position-steps %u\n",
                 ended, seen[DFI_STATUS_BRN], seen[DFI_STATUS_FRZ], seen[DFI_STATUS_PAR], seen[DFI_STATUS_SLP],
                 confused);
+    }
+
+    /* Random play with the entry abilities of step 5: rain, Grassy Terrain
+     * and Intimidate drops occur, every committed state passes the checker,
+     * and decoded copies continue byte for byte. */
+    {
+        dfi_rng pick;
+        dfi_rng_seed(&pick, 99u, 5u);
+        unsigned rain = 0;
+        unsigned grassy = 0;
+        unsigned dropped = 0;
+        unsigned ended = 0;
+        unsigned mismatches = 0;
+        for (uint64_t seed = 1u; seed <= 40u; ++seed) {
+            duoforge_battle_setup s;
+            entry_setup(&s, seed);
+            duoforge_battle *b = started_from(&t, k2, &s);
+            if (b == NULL) {
+                continue;
+            }
+            for (uint32_t i = 0; i < 600u && b->boundary_kind != DUOFORGE_BOUNDARY_TERMINAL; ++i) {
+                uint32_t r = 0;
+                (void)dfi_rng_next_u32(&pick, &r);
+                duoforge_decision_bundle bd;
+                if (!DF_CHECK(&t, pick_bundle(k2, b, r, (r & 3u) == 0u, &bd) == DUOFORGE_OK)) {
+                    break;
+                }
+                uint8_t bytes[DUOFORGE_STATE_V3_ENCODED_SIZE];
+                encode(k2, b, bytes);
+                duoforge_battle *copy = NULL;
+                DF_CHECK(&t, duoforge_battle_create_decoded(k2, bytes, sizeof bytes, &copy) == DUOFORGE_OK);
+                duoforge_step_result res;
+                const duoforge_status st = duoforge_battle_step(k2, b, &bd, &res);
+                if (!DF_CHECK(&t, st == DUOFORGE_OK)) {
+                    fprintf(stderr, "  entry seed %u step %u: %s\n", (unsigned)seed, i, duoforge_status_name(st));
+                    duoforge_battle_destroy(copy);
+                    break;
+                }
+                if (copy != NULL) {
+                    uint8_t after[DUOFORGE_STATE_V3_ENCODED_SIZE];
+                    uint8_t after2[DUOFORGE_STATE_V3_ENCODED_SIZE];
+                    duoforge_step_result res2;
+                    DF_CHECK(&t, duoforge_battle_step(k2, copy, &bd, &res2) == DUOFORGE_OK);
+                    encode(k2, b, after);
+                    encode(k2, copy, after2);
+                    mismatches += memcmp(after, after2, sizeof after) != 0 ? 1u : 0u;
+                    duoforge_battle_destroy(copy);
+                }
+                DF_CHECK(&t, duoforge_battle_check(k2, b) == DUOFORGE_OK);
+                rain += b->weather == DFI_WEATHER_RAIN ? 1u : 0u;
+                grassy += b->terrain == DFI_TERRAIN_GRASSY ? 1u : 0u;
+                for (uint32_t side = 0; side < 2u; ++side) {
+                    for (uint32_t p = 0; p < 2u; ++p) {
+                        dropped += b->sides[side].positions[p].stages[0] < 6u ? 1u : 0u;
+                    }
+                }
+            }
+            ended += b->boundary_kind == DUOFORGE_BOUNDARY_TERMINAL ? 1u : 0u;
+            duoforge_battle_destroy(b);
+        }
+        DF_CHECK_EQ_U64(&t, ended, 40u);
+        DF_CHECK_EQ_U64(&t, mismatches, 0u);
+        DF_CHECK(&t, rain > 0u && grassy > 0u && dropped > 0u);
+        fprintf(stderr, "  entry play: %u ended; steps with rain %u, with Grassy Terrain %u; lowered Attack %u\n",
+                ended, rain, grassy, dropped);
     }
 
     duoforge_context_destroy(k2);
