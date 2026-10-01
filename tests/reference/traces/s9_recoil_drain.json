@@ -1,5 +1,5 @@
 {
- "harness": 11,
+ "harness": 12,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "spec": "s9_recoil_drain.json",
  "format": "gen9championsvgc2026regmc",
@@ -49,6 +49,8 @@
      "pokemon": [
       {
        "species": "Charizard",
+       "set_species": "Charizard",
+       "mega": 0,
        "hp": 185,
        "maxhp": 185,
        "status": "",
@@ -73,6 +75,8 @@
       },
       {
        "species": "Rillaboom",
+       "set_species": "Rillaboom",
+       "mega": 0,
        "hp": 193,
        "maxhp": 193,
        "status": "",
@@ -97,6 +101,8 @@
       },
       {
        "species": "Staraptor",
+       "set_species": "Staraptor",
+       "mega": 0,
        "hp": 192,
        "maxhp": 192,
        "status": "",
@@ -121,6 +127,8 @@
       },
       {
        "species": "Milotic",
+       "set_species": "Milotic",
+       "mega": 0,
        "hp": 202,
        "maxhp": 202,
        "status": "",
@@ -155,6 +163,8 @@
      "pokemon": [
       {
        "species": "Ceruledge",
+       "set_species": "Ceruledge",
+       "mega": 0,
        "hp": 181,
        "maxhp": 181,
        "status": "",
@@ -179,6 +189,8 @@
       },
       {
        "species": "Golisopod",
+       "set_species": "Golisopod",
+       "mega": 0,
        "hp": 182,
        "maxhp": 182,
        "status": "",
@@ -203,6 +215,8 @@
       },
       {
        "species": "Gholdengo",
+       "set_species": "Gholdengo",
+       "mega": 0,
        "hp": 179,
        "maxhp": 179,
        "status": "",
@@ -227,6 +241,8 @@
       },
       {
        "species": "Farigiraf",
+       "set_species": "Farigiraf",
+       "mega": 0,
        "hp": 224,
        "maxhp": 224,
        "status": "",
@@ -314,6 +330,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -338,6 +356,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 193,
         "maxhp": 193,
         "status": "",
@@ -362,6 +382,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -386,6 +408,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -429,6 +453,8 @@
       "pokemon": [
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -453,6 +479,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -477,6 +505,8 @@
        },
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 179,
         "maxhp": 179,
         "status": "",
@@ -501,6 +531,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 224,
         "maxhp": 224,
         "status": "",
@@ -649,6 +681,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 167,
         "maxhp": 185,
         "status": "",
@@ -673,6 +707,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 189,
         "maxhp": 193,
         "status": "",
@@ -697,6 +733,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -721,6 +759,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -755,6 +795,8 @@
       "pokemon": [
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -781,6 +823,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "fnt",
@@ -805,6 +849,8 @@
        },
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 179,
         "maxhp": 179,
         "status": "",
@@ -829,6 +875,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 224,
         "maxhp": 224,
         "status": "",
@@ -895,6 +943,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 167,
         "maxhp": 185,
         "status": "",
@@ -919,6 +969,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 189,
         "maxhp": 193,
         "status": "",
@@ -943,6 +995,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -967,6 +1021,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -1010,6 +1066,8 @@
       "pokemon": [
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -1036,6 +1094,8 @@
        },
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 179,
         "maxhp": 179,
         "status": "",
@@ -1060,6 +1120,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "",
@@ -1084,6 +1146,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 224,
         "maxhp": 224,
         "status": "",
@@ -1361,6 +1425,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 91,
         "maxhp": 185,
         "status": "",
@@ -1385,6 +1451,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "fnt",
@@ -1409,6 +1477,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -1433,6 +1503,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -1467,6 +1539,8 @@
       "pokemon": [
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 138,
         "maxhp": 181,
         "status": "",
@@ -1493,6 +1567,8 @@
        },
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 0,
         "maxhp": 179,
         "status": "fnt",
@@ -1517,6 +1593,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "",
@@ -1541,6 +1619,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 224,
         "maxhp": 224,
         "status": "",
@@ -1651,6 +1731,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 91,
         "maxhp": 185,
         "status": "",
@@ -1675,6 +1757,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -1699,6 +1783,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "",
@@ -1723,6 +1809,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -1766,6 +1854,8 @@
       "pokemon": [
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 138,
         "maxhp": 181,
         "status": "",
@@ -1792,6 +1882,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 224,
         "maxhp": 224,
         "status": "",
@@ -1816,6 +1908,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "",
@@ -1840,6 +1934,8 @@
        },
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 0,
         "maxhp": 179,
         "status": "",
@@ -2136,6 +2232,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "fnt",
@@ -2160,6 +2258,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 116,
         "maxhp": 192,
         "status": "",
@@ -2184,6 +2284,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "",
@@ -2208,6 +2310,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -2242,6 +2346,8 @@
       "pokemon": [
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -2268,6 +2374,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 117,
         "maxhp": 224,
         "status": "",
@@ -2292,6 +2400,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "",
@@ -2316,6 +2426,8 @@
        },
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 0,
         "maxhp": 179,
         "status": "",
@@ -2382,6 +2494,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -2406,6 +2520,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 116,
         "maxhp": 192,
         "status": "",
@@ -2430,6 +2546,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "",
@@ -2454,6 +2572,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -2497,6 +2617,8 @@
       "pokemon": [
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -2523,6 +2645,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 117,
         "maxhp": 224,
         "status": "",
@@ -2547,6 +2671,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "",
@@ -2571,6 +2697,8 @@
        },
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 0,
         "maxhp": 179,
         "status": "",
@@ -2769,6 +2897,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 51,
         "maxhp": 202,
         "status": "",
@@ -2793,6 +2923,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 78,
         "maxhp": 192,
         "status": "",
@@ -2817,6 +2949,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "",
@@ -2841,6 +2975,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -2884,6 +3020,8 @@
       "pokemon": [
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 167,
         "maxhp": 181,
         "status": "frz",
@@ -2910,6 +3048,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 17,
         "maxhp": 224,
         "status": "",
@@ -2934,6 +3074,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "",
@@ -2958,6 +3100,8 @@
        },
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 0,
         "maxhp": 179,
         "status": "",
@@ -3099,6 +3243,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "fnt",
@@ -3123,6 +3269,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 72,
         "maxhp": 192,
         "status": "",
@@ -3147,6 +3295,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "",
@@ -3171,6 +3321,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -3214,6 +3366,8 @@
       "pokemon": [
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -3240,6 +3394,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 0,
         "maxhp": 224,
         "status": "fnt",
@@ -3264,6 +3420,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "",
@@ -3288,6 +3446,8 @@
        },
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 0,
         "maxhp": 179,
         "status": "",
@@ -3450,6 +3610,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "fnt",
@@ -3474,6 +3636,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -3498,6 +3662,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "",
@@ -3522,6 +3688,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -3556,6 +3724,8 @@
       "pokemon": [
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 55,
         "maxhp": 181,
         "status": "",
@@ -3582,6 +3752,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 0,
         "maxhp": 224,
         "status": "fnt",
@@ -3606,6 +3778,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "",
@@ -3630,6 +3804,8 @@
        },
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 0,
         "maxhp": 179,
         "status": "",

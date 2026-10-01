@@ -23,10 +23,13 @@
  * Step 10a: Weather Ball, Grass Knot, Grassy Glide, Fake Out (disabled in
  * the request after the first move action, Champions).
  * Step 10b: Electro Shot (charge, rain, the locked move in the request).
- * No Mega Evolution is implemented yet. */
+ * Step 11: Mega Evolution (the megaEvo action, the forme's stats and
+ * ability, once per side) with Drought, Contrary, No Guard, Tough Claws and
+ * the four Mega Stones. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
+    .mega_evolution = 1u,
     .moves =
         {
             [DFI_MOVE_HIGHHORSEPOWER] = 1u,
@@ -78,6 +81,10 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_ARMORTAIL] = 1u,
             [DFI_ABILITY_PRANKSTER] = 1u,
             [DFI_ABILITY_BLAZE] = 1u,
+            [DFI_ABILITY_DROUGHT] = 1u,
+            [DFI_ABILITY_CONTRARY] = 1u,
+            [DFI_ABILITY_NOGUARD] = 1u,
+            [DFI_ABILITY_TOUGHCLAWS] = 1u,
         },
     .items =
         {
@@ -88,5 +95,9 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_MYSTICWATER] = 1u,
             [DFI_ITEM_LIGHTCLAY] = 1u,
             [DFI_ITEM_MIRACLESEED] = 1u,
+            [DFI_ITEM_STARAPTITE] = 1u,
+            [DFI_ITEM_RAICHUNITEY] = 1u,
+            [DFI_ITEM_GOLISOPITE] = 1u,
+            [DFI_ITEM_CHARIZARDITEY] = 1u,
         },
 };

@@ -52,7 +52,7 @@
 8. **Items** (done, decision `0006` section 4.7; Miracle Seed comes with the first Grass move in step 9)**:** Leftovers, Sitrus Berry, Grassy Seed, Life Orb, Miracle Seed, Mystic Water, Light Clay.
 9. **Recoil, drain, self-drops** (done, decision `0006` section 4.8, with Miracle Seed and the Grass and Flash Fire boosts)**:** Wood Hammer, Brave Bird, Bitter Blade, Leech Life, Close Combat, Make It Rain.
 10. **Special moves** (done: 10a, decision `0006` section 4.9, Weather Ball, Grass Knot, Grassy Glide, Fake Out; 10b, section 4.10, Electro Shot; Hurricane came in step 4)**:** Weather Ball, Hurricane, Grass Knot, Grassy Glide, Fake Out (with its disable rule), Electro Shot (charge, rain skip, locked move).
-11. **Mega Evolution:** the four formes, timing, the side-wide limit, persistence after fainting.
+11. **Mega Evolution** (done, decision `0006` section 4.11, with Drought, Contrary, No Guard and Tough Claws taken from steps 5 and 7)**:** the four formes, timing, the side-wide limit, persistence after fainting.
 12. **Pivots:** Parting Shot and Emergency Exit with real PIVOT boundaries and continuation; sealed commitments become real.
 13. **Closure gate:** both real teams are accepted at setup; battles run from team selection to a terminal result; no `E_UNSUPPORTED` is reachable inside the closure; bounded random play keeps every invariant and replays byte-identically; information equivalence holds on real states.
 

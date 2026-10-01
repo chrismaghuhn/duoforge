@@ -1,5 +1,5 @@
 {
- "harness": 11,
+ "harness": 12,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "spec": "s6_tailwind_trick_room.json",
  "format": "gen9championsvgc2026regmc",
@@ -49,6 +49,8 @@
      "pokemon": [
       {
        "species": "Staraptor",
+       "set_species": "Staraptor",
+       "mega": 0,
        "hp": 192,
        "maxhp": 192,
        "status": "",
@@ -73,6 +75,8 @@
       },
       {
        "species": "Raichu",
+       "set_species": "Raichu",
+       "mega": 0,
        "hp": 137,
        "maxhp": 137,
        "status": "",
@@ -97,6 +101,8 @@
       },
       {
        "species": "Gholdengo",
+       "set_species": "Gholdengo",
+       "mega": 0,
        "hp": 179,
        "maxhp": 179,
        "status": "",
@@ -121,6 +127,8 @@
       },
       {
        "species": "Archaludon",
+       "set_species": "Archaludon",
+       "mega": 0,
        "hp": 197,
        "maxhp": 197,
        "status": "",
@@ -155,6 +163,8 @@
      "pokemon": [
       {
        "species": "Farigiraf",
+       "set_species": "Farigiraf",
+       "mega": 0,
        "hp": 227,
        "maxhp": 227,
        "status": "",
@@ -179,6 +189,8 @@
       },
       {
        "species": "Golisopod",
+       "set_species": "Golisopod",
+       "mega": 0,
        "hp": 182,
        "maxhp": 182,
        "status": "",
@@ -203,6 +215,8 @@
       },
       {
        "species": "Charizard",
+       "set_species": "Charizard",
+       "mega": 0,
        "hp": 185,
        "maxhp": 185,
        "status": "",
@@ -227,6 +241,8 @@
       },
       {
        "species": "Milotic",
+       "set_species": "Milotic",
+       "mega": 0,
        "hp": 202,
        "maxhp": 202,
        "status": "",
@@ -316,6 +332,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -340,6 +358,8 @@
        },
        {
         "species": "Raichu",
+        "set_species": "Raichu",
+        "mega": 0,
         "hp": 137,
         "maxhp": 137,
         "status": "",
@@ -364,6 +384,8 @@
        },
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 179,
         "maxhp": 179,
         "status": "",
@@ -388,6 +410,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -431,6 +455,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -455,6 +481,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -479,6 +507,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -503,6 +533,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -615,6 +647,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -639,6 +673,8 @@
        },
        {
         "species": "Raichu",
+        "set_species": "Raichu",
+        "mega": 0,
         "hp": 110,
         "maxhp": 137,
         "status": "",
@@ -663,6 +699,8 @@
        },
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 179,
         "maxhp": 179,
         "status": "",
@@ -687,6 +725,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -730,6 +770,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -754,6 +796,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -778,6 +822,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -802,6 +848,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -937,6 +985,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -961,6 +1011,8 @@
        },
        {
         "species": "Raichu",
+        "set_species": "Raichu",
+        "mega": 0,
         "hp": 9,
         "maxhp": 137,
         "status": "",
@@ -985,6 +1037,8 @@
        },
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 179,
         "maxhp": 179,
         "status": "",
@@ -1009,6 +1063,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -1052,6 +1108,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -1076,6 +1134,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -1100,6 +1160,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -1124,6 +1186,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -1241,6 +1305,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -1267,6 +1333,8 @@
        },
        {
         "species": "Raichu",
+        "set_species": "Raichu",
+        "mega": 0,
         "hp": 9,
         "maxhp": 137,
         "status": "",
@@ -1291,6 +1359,8 @@
        },
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 179,
         "maxhp": 179,
         "status": "",
@@ -1315,6 +1385,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -1358,6 +1430,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -1382,6 +1456,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 151,
         "maxhp": 182,
         "status": "",
@@ -1406,6 +1482,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -1430,6 +1508,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -1554,6 +1634,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 159,
         "maxhp": 192,
         "status": "",
@@ -1578,6 +1660,8 @@
        },
        {
         "species": "Raichu",
+        "set_species": "Raichu",
+        "mega": 0,
         "hp": 0,
         "maxhp": 137,
         "status": "fnt",
@@ -1602,6 +1686,8 @@
        },
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 179,
         "maxhp": 179,
         "status": "",
@@ -1626,6 +1712,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -1660,6 +1748,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -1684,6 +1774,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 151,
         "maxhp": 182,
         "status": "",
@@ -1708,6 +1800,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -1732,6 +1826,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -1798,6 +1894,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 159,
         "maxhp": 192,
         "status": "",
@@ -1822,6 +1920,8 @@
        },
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 179,
         "maxhp": 179,
         "status": "",
@@ -1846,6 +1946,8 @@
        },
        {
         "species": "Raichu",
+        "set_species": "Raichu",
+        "mega": 0,
         "hp": 0,
         "maxhp": 137,
         "status": "",
@@ -1870,6 +1972,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -1913,6 +2017,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -1937,6 +2043,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 151,
         "maxhp": 182,
         "status": "",
@@ -1961,6 +2069,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -1985,6 +2095,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -2104,6 +2216,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 159,
         "maxhp": 192,
         "status": "",
@@ -2130,6 +2244,8 @@
        },
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 135,
         "maxhp": 179,
         "status": "",
@@ -2154,6 +2270,8 @@
        },
        {
         "species": "Raichu",
+        "set_species": "Raichu",
+        "mega": 0,
         "hp": 0,
         "maxhp": 137,
         "status": "",
@@ -2178,6 +2296,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -2221,6 +2341,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -2245,6 +2367,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 151,
         "maxhp": 182,
         "status": "",
@@ -2269,6 +2393,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -2293,6 +2419,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -2417,6 +2545,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 159,
         "maxhp": 192,
         "status": "",
@@ -2443,6 +2573,8 @@
        },
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 108,
         "maxhp": 179,
         "status": "",
@@ -2467,6 +2599,8 @@
        },
        {
         "species": "Raichu",
+        "set_species": "Raichu",
+        "mega": 0,
         "hp": 0,
         "maxhp": 137,
         "status": "",
@@ -2491,6 +2625,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -2534,6 +2670,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -2558,6 +2696,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 151,
         "maxhp": 182,
         "status": "",
@@ -2582,6 +2722,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -2606,6 +2748,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -2718,6 +2862,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 159,
         "maxhp": 192,
         "status": "",
@@ -2742,6 +2888,8 @@
        },
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 88,
         "maxhp": 179,
         "status": "",
@@ -2766,6 +2914,8 @@
        },
        {
         "species": "Raichu",
+        "set_species": "Raichu",
+        "mega": 0,
         "hp": 0,
         "maxhp": 137,
         "status": "",
@@ -2790,6 +2940,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -2833,6 +2985,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -2857,6 +3011,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 151,
         "maxhp": 182,
         "status": "",
@@ -2881,6 +3037,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -2905,6 +3063,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -2991,6 +3151,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 159,
         "maxhp": 192,
         "status": "",
@@ -3017,6 +3179,8 @@
        },
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 88,
         "maxhp": 179,
         "status": "",
@@ -3041,6 +3205,8 @@
        },
        {
         "species": "Raichu",
+        "set_species": "Raichu",
+        "mega": 0,
         "hp": 0,
         "maxhp": 137,
         "status": "",
@@ -3065,6 +3231,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -3108,6 +3276,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -3132,6 +3302,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 151,
         "maxhp": 182,
         "status": "",
@@ -3156,6 +3328,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -3180,6 +3354,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -3322,6 +3498,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 77,
         "maxhp": 192,
         "status": "",
@@ -3346,6 +3524,8 @@
        },
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 71,
         "maxhp": 179,
         "status": "",
@@ -3370,6 +3550,8 @@
        },
        {
         "species": "Raichu",
+        "set_species": "Raichu",
+        "mega": 0,
         "hp": 0,
         "maxhp": 137,
         "status": "",
@@ -3394,6 +3576,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -3437,6 +3621,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -3461,6 +3647,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 151,
         "maxhp": 182,
         "status": "",
@@ -3485,6 +3673,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -3509,6 +3699,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -3626,6 +3818,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 77,
         "maxhp": 192,
         "status": "",
@@ -3652,6 +3846,8 @@
        },
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 54,
         "maxhp": 179,
         "status": "",
@@ -3676,6 +3872,8 @@
        },
        {
         "species": "Raichu",
+        "set_species": "Raichu",
+        "mega": 0,
         "hp": 0,
         "maxhp": 137,
         "status": "",
@@ -3700,6 +3898,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -3743,6 +3943,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -3767,6 +3969,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 151,
         "maxhp": 182,
         "status": "",
@@ -3791,6 +3995,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -3815,6 +4021,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -3948,6 +4156,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "fnt",
@@ -3972,6 +4182,8 @@
        },
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 34,
         "maxhp": 179,
         "status": "",
@@ -3996,6 +4208,8 @@
        },
        {
         "species": "Raichu",
+        "set_species": "Raichu",
+        "mega": 0,
         "hp": 0,
         "maxhp": 137,
         "status": "",
@@ -4020,6 +4234,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -4054,6 +4270,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -4078,6 +4296,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 151,
         "maxhp": 182,
         "status": "",
@@ -4102,6 +4322,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -4126,6 +4348,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -4192,6 +4416,8 @@
       "pokemon": [
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -4216,6 +4442,8 @@
        },
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 34,
         "maxhp": 179,
         "status": "",
@@ -4240,6 +4468,8 @@
        },
        {
         "species": "Raichu",
+        "set_species": "Raichu",
+        "mega": 0,
         "hp": 0,
         "maxhp": 137,
         "status": "",
@@ -4264,6 +4494,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -4307,6 +4539,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -4331,6 +4565,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 151,
         "maxhp": 182,
         "status": "",
@@ -4355,6 +4591,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -4379,6 +4617,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -4615,6 +4855,8 @@
       "pokemon": [
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 173,
         "maxhp": 197,
         "status": "",
@@ -4639,6 +4881,8 @@
        },
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 16,
         "maxhp": 179,
         "status": "",
@@ -4663,6 +4907,8 @@
        },
        {
         "species": "Raichu",
+        "set_species": "Raichu",
+        "mega": 0,
         "hp": 0,
         "maxhp": 137,
         "status": "",
@@ -4687,6 +4933,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -4730,6 +4978,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 171,
         "maxhp": 227,
         "status": "",
@@ -4754,6 +5004,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 117,
         "maxhp": 182,
         "status": "",
@@ -4778,6 +5030,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -4802,6 +5056,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -5038,6 +5294,8 @@
       "pokemon": [
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 155,
         "maxhp": 197,
         "status": "",
@@ -5062,6 +5320,8 @@
        },
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 0,
         "maxhp": 179,
         "status": "fnt",
@@ -5086,6 +5346,8 @@
        },
        {
         "species": "Raichu",
+        "set_species": "Raichu",
+        "mega": 0,
         "hp": 0,
         "maxhp": 137,
         "status": "",
@@ -5110,6 +5372,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -5153,6 +5417,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 119,
         "maxhp": 227,
         "status": "",
@@ -5177,6 +5443,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 94,
         "maxhp": 182,
         "status": "",
@@ -5201,6 +5469,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -5225,6 +5495,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -5486,6 +5758,8 @@
       "pokemon": [
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 127,
         "maxhp": 197,
         "status": "",
@@ -5510,6 +5784,8 @@
        },
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 0,
         "maxhp": 179,
         "status": "fnt",
@@ -5534,6 +5810,8 @@
        },
        {
         "species": "Raichu",
+        "set_species": "Raichu",
+        "mega": 0,
         "hp": 0,
         "maxhp": 137,
         "status": "",
@@ -5558,6 +5836,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -5601,6 +5881,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 65,
         "maxhp": 227,
         "status": "",
@@ -5625,6 +5907,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 73,
         "maxhp": 182,
         "status": "",
@@ -5649,6 +5933,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -5673,6 +5959,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -5934,6 +6222,8 @@
       "pokemon": [
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 103,
         "maxhp": 197,
         "status": "",
@@ -5958,6 +6248,8 @@
        },
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 0,
         "maxhp": 179,
         "status": "fnt",
@@ -5982,6 +6274,8 @@
        },
        {
         "species": "Raichu",
+        "set_species": "Raichu",
+        "mega": 0,
         "hp": 0,
         "maxhp": 137,
         "status": "",
@@ -6006,6 +6300,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -6049,6 +6345,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 11,
         "maxhp": 227,
         "status": "",
@@ -6073,6 +6371,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 51,
         "maxhp": 182,
         "status": "",
@@ -6097,6 +6397,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -6121,6 +6423,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -6332,6 +6636,8 @@
       "pokemon": [
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 90,
         "maxhp": 197,
         "status": "",
@@ -6356,6 +6662,8 @@
        },
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 0,
         "maxhp": 179,
         "status": "fnt",
@@ -6380,6 +6688,8 @@
        },
        {
         "species": "Raichu",
+        "set_species": "Raichu",
+        "mega": 0,
         "hp": 0,
         "maxhp": 137,
         "status": "",
@@ -6404,6 +6714,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -6438,6 +6750,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 0,
         "maxhp": 227,
         "status": "fnt",
@@ -6462,6 +6776,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 30,
         "maxhp": 182,
         "status": "",
@@ -6486,6 +6802,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -6510,6 +6828,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -6576,6 +6896,8 @@
       "pokemon": [
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 90,
         "maxhp": 197,
         "status": "",
@@ -6600,6 +6922,8 @@
        },
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 0,
         "maxhp": 179,
         "status": "fnt",
@@ -6624,6 +6948,8 @@
        },
        {
         "species": "Raichu",
+        "set_species": "Raichu",
+        "mega": 0,
         "hp": 0,
         "maxhp": 137,
         "status": "",
@@ -6648,6 +6974,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -6691,6 +7019,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -6715,6 +7045,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 30,
         "maxhp": 182,
         "status": "",
@@ -6739,6 +7071,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 0,
         "maxhp": 227,
         "status": "",
@@ -6763,6 +7097,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -7030,6 +7366,8 @@
       "pokemon": [
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 24,
         "maxhp": 197,
         "status": "",
@@ -7054,6 +7392,8 @@
        },
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 0,
         "maxhp": 179,
         "status": "fnt",
@@ -7078,6 +7418,8 @@
        },
        {
         "species": "Raichu",
+        "set_species": "Raichu",
+        "mega": 0,
         "hp": 0,
         "maxhp": 137,
         "status": "",
@@ -7102,6 +7444,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -7145,6 +7489,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 161,
         "maxhp": 185,
         "status": "",
@@ -7169,6 +7515,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 7,
         "maxhp": 182,
         "status": "",
@@ -7193,6 +7541,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 0,
         "maxhp": 227,
         "status": "",
@@ -7217,6 +7567,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -7342,6 +7694,8 @@
       "pokemon": [
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "",
@@ -7366,6 +7720,8 @@
        },
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 0,
         "maxhp": 179,
         "status": "fnt",
@@ -7390,6 +7746,8 @@
        },
        {
         "species": "Raichu",
+        "set_species": "Raichu",
+        "mega": 0,
         "hp": 0,
         "maxhp": 137,
         "status": "",
@@ -7414,6 +7772,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -7448,6 +7808,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 161,
         "maxhp": 185,
         "status": "",
@@ -7472,6 +7834,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 7,
         "maxhp": 182,
         "status": "",
@@ -7496,6 +7860,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 0,
         "maxhp": 227,
         "status": "",
@@ -7520,6 +7886,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",

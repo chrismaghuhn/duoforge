@@ -1,0 +1,24 @@
+{
+  "name": "s11_mega_sun_tough_claws",
+  "purpose": "Mega Evolution before the moves (order 104) with the new forme's Speed in the same turn: Mega Charizard Y's Drought replaces Drizzle's rain with sun (Fire 1.5, Water 0.5, Weather Ball Fire 100, Hurricane 50); Mega Golisopod's Tough Claws raises contact moves by 5325/4096; one Mega per side, and a Mega stays Mega.",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000c001",
+  "teams": [
+    "Charizard (M) @ Charizardite Y\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Heat Wave\n- Weather Ball\n- Hurricane\n- Protect\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Snarl\n\nRaichu (F) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Zap Cannon\n- Focus Blast\n\nFarigiraf (M) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Psychic\n- Protect",
+    "Politoed (F) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Weather Ball\n- Muddy Water\n\nGolisopod (M) @ Golisopite\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Leech Life\n- Iron Head\n- Drill Run\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Ice Beam\n\nCeruledge (M) @ Life Orb\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 32 Atk / 3 Spe\nAdamant Nature\n- Bitter Blade\n- Shadow Sneak"
+  ],
+  "plan": {
+    "p1": [
+      "move 2 1 mega, move 1 2",
+      "move 3 2, move 1 1",
+      "move 1, move 2",
+      "move 2 2, move 1 1"
+    ],
+    "p2": [
+      "move 1 1, move 1 1 mega",
+      "move 2 1, move 2 1",
+      "move 1 2, move 3 2"
+    ],
+    "max_steps": 50
+  }
+}

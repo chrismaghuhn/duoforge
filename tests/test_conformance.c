@@ -121,6 +121,11 @@ static unsigned compare_state(const duoforge_context *ctx, const duoforge_battle
                 continue;
             }
             const dfi_member *mem = &b->sides[s].members[m];
+            if (mem->is_mega != e->mega) {
+                fprintf(stderr, "  %s step %u: side %u member %u mega %u, reference %u\n", name, step, s, m, mem->is_mega,
+                        e->mega);
+                ++bad;
+            }
             if (mem->hp != e->hp) {
                 fprintf(stderr, "  %s step %u: side %u member %u hp %u, reference %u\n", name, step, s, m, mem->hp,
                         e->hp);
@@ -240,7 +245,7 @@ int main(void)
         DF_CHECK_EQ_U64(&t, bad, 0u);
         duoforge_battle_destroy(b);
     }
-    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 37u);
+    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 40u);
     duoforge_context_destroy(k2);
     return df_test_end(&t);
 }

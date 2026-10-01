@@ -379,7 +379,7 @@ int main(void)
     {
         dfi_support_manifest m = full_manifest();
         DF_CHECK(&t, dfi_closure_setup_supported(&m, &teams));
-        DF_CHECK(&t, !dfi_closure_setup_supported(&dfi_support, &teams)); /* Mega Evolution: not yet */
+        DF_CHECK(&t, !dfi_closure_setup_supported(&dfi_support, &teams)); /* team B: Emergency Exit, Parting Shot */
         /* The manifest of this build, pinned: the turn core, switching, the
          * moves of steps 2 to 4, 6, 9 and 10, the entry abilities of step 5, the
          * reactive abilities of step 7 and the items of steps 8 and 9. A step
@@ -400,6 +400,7 @@ int main(void)
             memset(&want, 0, sizeof want);
             want.turn_core = 1u;
             want.switching = 1u;
+            want.mega_evolution = 1u;
             for (size_t i = 0; i < sizeof step2_moves / sizeof step2_moves[0]; ++i) {
                 want.moves[step2_moves[i]] = 1u;
             }
@@ -409,6 +410,7 @@ int main(void)
             static const uint32_t step7_abilities[] = {
                 DFI_ABILITY_STAMINA,    DFI_ABILITY_COMPETITIVE, DFI_ABILITY_FLASHFIRE, DFI_ABILITY_LIGHTNINGROD,
                 DFI_ABILITY_GOODASGOLD, DFI_ABILITY_ARMORTAIL,   DFI_ABILITY_PRANKSTER, DFI_ABILITY_BLAZE,
+                DFI_ABILITY_DROUGHT,    DFI_ABILITY_CONTRARY,    DFI_ABILITY_NOGUARD,   DFI_ABILITY_TOUGHCLAWS,
             };
             for (size_t i = 0; i < sizeof step7_abilities / sizeof step7_abilities[0]; ++i) {
                 want.abilities[step7_abilities[i]] = 1u;
@@ -416,6 +418,7 @@ int main(void)
             static const uint32_t step8_items[] = {
                 DFI_ITEM_LEFTOVERS, DFI_ITEM_SITRUSBERRY, DFI_ITEM_GRASSYSEED,
                 DFI_ITEM_LIFEORB,   DFI_ITEM_MYSTICWATER, DFI_ITEM_LIGHTCLAY,  DFI_ITEM_MIRACLESEED,
+                DFI_ITEM_STARAPTITE, DFI_ITEM_RAICHUNITEY, DFI_ITEM_GOLISOPITE, DFI_ITEM_CHARIZARDITEY,
             };
             for (size_t i = 0; i < sizeof step8_items / sizeof step8_items[0]; ++i) {
                 want.items[step8_items[i]] = 1u;

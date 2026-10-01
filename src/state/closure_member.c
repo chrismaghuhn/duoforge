@@ -247,6 +247,25 @@ bool dfi_closure_member_init(const duoforge_member_setup *src, dfi_member *dst)
     return true;
 }
 
+bool dfi_closure_member_mega_evolve(dfi_member *m)
+{
+    const dfi_forme_data *base = &dfi_closure_formes[m->species_id];
+    if (m->is_mega != 0u || m->mega_capable == 0u || base->mega_forme == DFI_CLOSURE_NONE) {
+        return false;
+    }
+    uint16_t hp_max = 0u;
+    uint16_t stats[DFI_MEMBER_STAT_COUNT] = {0};
+    if (!dfi_derive_stats(m->species_id, 1u, m->nature, m->stat_points, &hp_max, stats) || hp_max != m->hp_max) {
+        return false;
+    }
+    m->is_mega = 1u;
+    for (uint32_t i = 0u; i < DFI_MEMBER_STAT_COUNT; ++i) {
+        m->stats[i] = stats[i];
+    }
+    m->ability = (uint8_t)((uint32_t)dfi_closure_formes[base->mega_forme].ability + 1u); /* wide-operands-reviewed: < 17 */
+    return true;
+}
+
 bool dfi_closure_member_valid(bool dev, const dfi_member *m)
 {
     const dfi_forme_data *base = &dfi_closure_formes[m->species_id]; /* species < 16 */

@@ -69,7 +69,7 @@ static void dev_setup(duoforge_battle_setup *s, uint64_t seed)
         s->sides[side].members[3].ability = 1u + DFI_ABILITY_ARMORTAIL;
         s->sides[side].members[0].item = 1u + DFI_ITEM_LEFTOVERS;
         s->sides[side].members[1].item = 1u + DFI_ITEM_SITRUSBERRY;
-        s->sides[side].members[2].item = 1u + DFI_ITEM_LIFEORB;
+        s->sides[side].members[2].item = 1u + DFI_ITEM_GOLISOPITE; /* step 11: Mega Golisopod */
         s->sides[side].members[3].item = 1u + DFI_ITEM_MYSTICWATER;
     }
     /* Electro Shot needs step 10: Archaludon keeps only the turn-core moves. */
@@ -132,8 +132,9 @@ static duoforge_status pick_bundle(const duoforge_context *ctx, const duoforge_b
                 ok = ok && ((kind == DUOFORGE_SLOT_MOVE && c->slots[k].mega == 0u) || kind == DUOFORGE_SLOT_PASS ||
                             kind == DUOFORGE_SLOT_NONE);
             }
+            /* Mega declarations only where switches are allowed too. */
             for (uint32_t k = 0; k < 2u; ++k) {
-                ok = ok && c->slots[k].mega == 0u;
+                ok = ok && (c->slots[k].mega == 0u || allow_switch);
             }
             if (ok) {
                 bd->responses[s] = *c;
@@ -200,9 +201,9 @@ static void status_setup(duoforge_battle_setup *s, uint64_t seed)
         s->sides[side].members[1].ability = 1u + DFI_ABILITY_COMPETITIVE;
         s->sides[side].members[2].ability = 1u + DFI_ABILITY_BLAZE;
         /* Step 8: items. */
-        s->sides[side].members[0].item = 1u + DFI_ITEM_LIFEORB;
+        s->sides[side].members[0].item = 1u + DFI_ITEM_RAICHUNITEY; /* step 11: Mega Raichu Y */
         s->sides[side].members[1].item = 1u + DFI_ITEM_LEFTOVERS;
-        s->sides[side].members[2].item = 1u + DFI_ITEM_SITRUSBERRY;
+        s->sides[side].members[2].item = 1u + DFI_ITEM_CHARIZARDITEY; /* step 11: Mega Charizard Y */
     }
 }
 
@@ -449,6 +450,7 @@ int main(void)
         unsigned results[4] = {0, 0, 0, 0};
         unsigned trick_room = 0;
         unsigned locked = 0;
+        unsigned megas = 0;
         for (uint64_t seed = 1u; seed <= 40u; ++seed) {
             duoforge_battle *b = started(&t, k2, seed);
             if (b == NULL) {
@@ -463,6 +465,7 @@ int main(void)
                 }
                 replacements += b->boundary_kind == DUOFORGE_BOUNDARY_REPLACEMENT ? 1u : 0u;
                 trick_room += b->trick_room_turns != 0u ? 1u : 0u;
+                megas += (uint32_t)b->sides[0].mega_used + (uint32_t)b->sides[1].mega_used;
                 for (uint32_t p = 0; p < 4u; ++p) {
                     locked += b->sides[p / 2u].positions[p % 2u].locked_move != 0u ? 1u : 0u;
                 }
@@ -485,9 +488,11 @@ int main(void)
             duoforge_battle_destroy(b);
         }
         DF_CHECK_EQ_U64(&t, ended, 40u);
-        DF_CHECK(&t, replacements > 0u && results[1] > 0u && results[2] > 0u && trick_room > 0u && locked > 0u);
-        fprintf(stderr, "  random play: %u steps, %u battles ended (side 0 %u, side 1 %u, tie %u), %u replacements\n",
-                steps, ended, results[1], results[2], results[3], replacements);
+        DF_CHECK(&t, replacements > 0u && results[1] > 0u && results[2] > 0u && trick_room > 0u && locked > 0u && megas > 0u);
+        fprintf(stderr,
+                "  random play: %u steps, %u battles ended (side 0 %u, side 1 %u, tie %u), %u replacements; "
+                "steps with Trick Room %u, locked position-steps %u, Mega side-steps %u\n",
+                steps, ended, results[1], results[2], results[3], replacements, trick_room, locked, megas);
     }
 
     /* Random play with the status moves of step 4: every status and

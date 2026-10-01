@@ -53,6 +53,11 @@ bool dfi_closure_member_init(const duoforge_member_setup *src, dfi_member *dst);
  * < 37, move count 1..4, pp <= pp_max, hp <= hp_max, stone flag <= 1). */
 bool dfi_closure_member_valid(bool dev, const dfi_member *m);
 
+/* Mega Evolution of a member that holds its own stone (formeChange of the
+ * Champions mod, isPermanent): the Mega forme's stats and ability; HP stays.
+ * False, with *m unchanged, if it cannot. */
+bool dfi_closure_member_mega_evolve(dfi_member *m);
+
 /* WHITE-BOX: duoforge_battle_create without the support gate. Tests use it
  * to inspect the state a legal CLOSURE team produces while its mechanics are
  * not implemented; the public create always applies the gate. */

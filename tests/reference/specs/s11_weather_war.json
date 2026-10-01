@@ -1,0 +1,22 @@
+{
+  "name": "s11_weather_war",
+  "purpose": "Drizzle and Drought entering together: Charizard Mega Evolves (sun), switches out, and later comes back as a replacement together with Politoed; the faster Charizard enters first, so Politoed's rain is the weather that stays.",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000c201",
+  "teams": [
+    "Charizard (M) @ Charizardite Y\nAbility: Blaze\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Heat Wave\n- Protect\n\nGolisopod (F) @ Leftovers\nAbility: No Ability\nLevel: 50\nEVs: 2 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Leech Life\n- Iron Head\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Ice Beam\n\nFarigiraf (M) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 2 HP / 2 Def / 2 SpD\nBold Nature\n- Psychic\n- Protect",
+    "Gholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Nasty Plot\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Ice Beam\n\nArchaludon (M) @ Sitrus Berry\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Snarl\n\nCeruledge (F) @ Miracle Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 32 Atk / 3 Spe\nAdamant Nature\n- Bitter Blade\n- Shadow Sneak"
+  ],
+  "plan": {
+    "p1": [
+      "move 2 mega, move 1 1",
+      "switch 4, move 1 1",
+      "move 2, move 1 2"
+    ],
+    "p2": [
+      "move 2, move 1",
+      "move 1, move 1"
+    ],
+    "max_steps": 50
+  }
+}
