@@ -1,0 +1,78 @@
+"""duoforge.python.lib: loading the shared library, errors, context, setups."""
+import os
+import unittest
+
+import numpy as np
+
+import duoforge
+from duoforge import _layout, _lib
+
+
+class _Env:
+    """Sets one environment variable for a block, then restores it."""
+
+    def __init__(self, name, value):
+        self.name, self.value, self.old = name, value, None
+
+    def __enter__(self):
+        self.old = os.environ.get(self.name)
+        os.environ[self.name] = self.value
+
+    def __exit__(self, *exc):
+        if self.old is None:
+            del os.environ[self.name]
+        else:
+            os.environ[self.name] = self.old
+
+
+class LibTest(unittest.TestCase):
+    def test_version(self):
+        self.assertEqual(duoforge.version(), "0.11.0")
+
+    def test_missing_library_names_the_path(self):
+        with _Env("DUOFORGE_LIBRARY", "nonexistent.dll"):
+            with self.assertRaises(duoforge.DuoforgeLibraryError) as caught:
+                duoforge.load_library()
+        self.assertIn("nonexistent.dll", str(caught.exception))
+
+    def test_other_version_names_path_and_version(self):
+        path = os.environ["DUOFORGE_LIBRARY"]
+        expected = _lib.EXPECTED_VERSION
+        _lib.EXPECTED_VERSION = "0.0.0"
+        try:
+            with self.assertRaises(duoforge.DuoforgeLibraryError) as caught:
+                duoforge.load_library()
+        finally:
+            _lib.EXPECTED_VERSION = expected
+        message = str(caught.exception)
+        self.assertIn(path, message)
+        self.assertIn("0.11.0", message)
+
+    def test_reference_setups(self):
+        setups = duoforge.reference_setups([0, 1, 2, 3])
+        self.assertEqual(setups.shape, (4,))
+        self.assertEqual(setups.dtype, _layout.SETUP)
+        self.assertEqual(int(setups[0]["sides"][0]["member_count"]), 6)
+        self.assertTrue(np.array_equal(setups[1]["sides"][0], setups[0]["sides"][1]))
+        with self.assertRaises(duoforge.DuoforgeError) as caught:
+            duoforge.reference_setups([4])
+        self.assertEqual(caught.exception.status_name, "DUOFORGE_E_INVALID_ARGUMENT")
+
+    def test_context(self):
+        with duoforge.Context() as ctx:
+            self.assertTrue(ctx.handle)
+        self.assertIsNone(ctx.handle)
+        ctx.close()  # a second close is a no-op
+        with self.assertRaises(duoforge.DuoforgeError) as caught:
+            duoforge.Context(brought_count=7)
+        self.assertEqual(caught.exception.status_name, "DUOFORGE_E_INVALID_ARGUMENT")
+
+    def test_error_carries_statuses(self):
+        statuses = np.array([0, 12], dtype=np.uint32)
+        err = duoforge.DuoforgeError("DUOFORGE_E_STALE_EPOCH", statuses)
+        self.assertIs(err.statuses, statuses)
+        self.assertIn("DUOFORGE_E_STALE_EPOCH", str(err))
+
+
+if __name__ == "__main__":
+    unittest.main()
