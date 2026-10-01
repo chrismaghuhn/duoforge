@@ -216,8 +216,9 @@ def abs_target(side, loc):
     return (1 - side) * 2 + loc - 1 if loc > 0 else side * 2 + (-loc) - 1
 
 
-def convert_choice(text, side, state, roster_of):
-    """A Showdown choice string -> ('team', picks) or ('slots', [cmd, cmd])."""
+def convert_choice(text, side, state, roster_of, mid_turn=False):
+    """A Showdown choice string -> ('team', picks) or ('slots', [cmd, cmd]).
+    mid_turn: the request was made during the turn (a pivot), not at its end."""
     if text.startswith('team '):
         return ('team', [int(c) - 1 for c in text[len('team '):]])
     cmds = []
@@ -248,10 +249,13 @@ def convert_choice(text, side, state, roster_of):
             mon = state['sides'][side]['pokemon'][int(words[1]) - 1]
             cmds.append((2, 0, 0, 0, roster_of[side][name_of(mon)]))
         elif words[0] == 'pass':
-            # In a replacement request the reference wants "pass" for a slot
-            # that is not asked to switch; DuoForge does not request that slot.
+            # In a switch request the reference wants "pass" for a slot that
+            # is not asked to switch; DuoForge does not request that slot. A
+            # fainted Pokemon is asked only at the end of the turn: the
+            # reference sets its switch flag in checkFainted, so a pivot
+            # during the turn (Parting Shot, Emergency Exit) does not ask it.
             mon = state['sides'][side]['pokemon'][actives[slot]]
-            asked = state['sides'][side]['request'] != 'switch' or mon['fainted']
+            asked = state['sides'][side]['request'] != 'switch' or (mon['fainted'] and not mid_turn)
             cmds.append((3, 0, 0, 0, 0) if asked else (0, 0, 0, 0, 0))
         else:
             raise SystemExit('trace_to_c: choice %r is not supported' % part)
@@ -604,12 +608,15 @@ def convert(root, name, tables, out, all_tape, all_events):
     # per roster index (the opponent's knowledge in DuoForge), taken from the
     # public copy of every protocol line that shows HP.
     shown = [{}, {}]
+    # A switch request made during the turn: the step that led to it has not
+    # reached the end of the turn (no upkeep line).
+    mid_turn = False
     for step in trace['steps']:
         public_lines(step['log'], roster_of, shown)
         kinds = {}
         for side, sid in enumerate(('p1', 'p2')):
             if sid in step['input']:
-                kinds[side] = convert_choice(step['input'][sid], side, state, roster_of)
+                kinds[side] = convert_choice(step['input'][sid], side, state, roster_of, mid_turn)
         tape_off = len(all_tape)
         dropped = 0
         for d in step['draws']:
@@ -720,6 +727,7 @@ def convert(root, name, tables, out, all_tape, all_events):
                          ', '.join('%du' % x for x in field), ', '.join(enabled), ', '.join(mons[0]),
                          ', '.join(mons[1]), ev_off[0], ev_off[1], ev_len[0], ev_len[1], dropped))
         state = new_state
+        mid_turn = not any(line.startswith('|upkeep') for line in step['log'])
     w('static const df_conf_step conf_%s_steps[] = {' % name)
     out.extend(steps)
     w('};')
