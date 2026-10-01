@@ -1,0 +1,21 @@
+{
+  "name": "s14_fainted_ally_charge",
+  "purpose": "Electro Shot without rain aimed at the user's own ally that fainted earlier in the turn, no Lightning Rod on the field: the move's onTryMove runs before the [notarget] check, so it charges (-prepare, Special Attack +1) instead of failing; the locked attack then goes to the ally slot's replacement.",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000e061",
+  "teams": [
+    "Archaludon (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 SpD / 2 Def\nCalm Nature\n- Electro Shot\n- Protect\n\nRillaboom (F)\nAbility: No Ability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Wood Hammer\n- High Horsepower\n\nGrimmsnarl (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Spirit Break\n- Reflect\n\nCharizard (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Heat Wave\n- Hurricane",
+    "Staraptor (M)\nAbility: No Ability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Brave Bird\n- Protect\n\nGolisopod (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Drill Run\n- Iron Head\n\nMilotic (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Ice Beam\n\nFarigiraf (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Psychic\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 -2, move 1 1",
+      "move 1 1, move 1 1"
+    ],
+    "p2": [
+      "move 1 2, move 2 1",
+      "move 1 1, move 2 1"
+    ],
+    "max_steps": 40
+  }
+}

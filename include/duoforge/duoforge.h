@@ -341,8 +341,13 @@ typedef struct duoforge_member_view {
     uint16_t hp;         /* per hp_kind */
     uint16_t hp_max;     /* per hp_kind */
     uint16_t move_ids[DUOFORGE_MAX_MOVE_SLOTS]; /* open; unused slots 0 */
+    uint16_t stats[5];                          /* own side: the current Attack, Defense, Sp. Atk, Sp.
+                                                   Def, Speed (the Mega forme's after Mega Evolution);
+                                                   0 for the foe (hidden) and under SYNTHETIC data */
     uint8_t pp[DUOFORGE_MAX_MOVE_SLOTS];        /* per pp_kind */
     uint8_t pp_max[DUOFORGE_MAX_MOVE_SLOTS];    /* open; unused slots 0 */
+    uint8_t stat_points[6];                     /* own side: the set's stat points, HP .. Speed; 0 for
+                                                   the foe (hidden) */
     uint8_t move_count;                         /* open */
     uint8_t hp_kind;                            /* DUOFORGE_HP_* */
     uint8_t hp_flag;                            /* DUOFORGE_HP_FLAG_* (PERCENT only) */
@@ -359,19 +364,22 @@ typedef struct duoforge_member_view {
     uint8_t status;                             /* public: DUOFORGE_AILMENT_*; NONE for a foe not yet
                                                    seen and for a fainted member */
     uint8_t reserved;                           /* zero */
-} duoforge_member_view; /* 36 bytes */
+} duoforge_member_view; /* 52 bytes */
 
-/* An active position as both players see it; all zero for an empty one. */
+/* An active position as both players see it. An empty one has neutral
+   stages, no locked slot or target and every flag 0. */
 typedef struct duoforge_position_view {
     uint8_t stages[7];     /* public: atk def spa spd spe accuracy evasion, biased by 6 (6 = neutral) */
     uint8_t confused;      /* public: 1 while confused; the turns stay hidden */
     uint8_t charging;      /* public: 1 while a two-turn move is charged */
     uint8_t locked_slot;   /* public: the locked move slot, DUOFORGE_MOVE_SLOT_NONE if none */
-    uint8_t locked_target; /* own side only: the stored target (flat position); 0 for the foe */
+    uint8_t locked_target; /* own side only: the stored target (flat position) of the locked move;
+                              DUOFORGE_TARGET_NONE without one and for the foe */
     uint8_t acted;         /* public: 1 once the occupant took a move action since it entered */
     uint8_t protect_chain; /* public: consecutive successful Protects (stall counter level) */
     uint8_t flash_fire;    /* public: 1 while Flash Fire's boost is active */
-    uint8_t reserved[2];   /* zero */
+    uint8_t protecting;    /* public: 1 while Protect is up this turn ([-singleturn] Protect) */
+    uint8_t reserved;      /* zero */
 } duoforge_position_view; /* 16 bytes */
 
 typedef struct duoforge_side_view {
@@ -387,7 +395,7 @@ typedef struct duoforge_side_view {
     uint8_t light_screen_turns;                  /* public */
     uint8_t tailwind_turns;                      /* public */
     uint8_t reserved;                            /* zero */
-} duoforge_side_view; /* 264 bytes */
+} duoforge_side_view; /* 360 bytes */
 
 typedef struct duoforge_observation {
     uint32_t epoch;
@@ -403,7 +411,7 @@ typedef struct duoforge_observation {
     uint8_t trick_room_turns; /* public: remaining turns, 0 when absent */
     uint8_t reserved;         /* zero */
     duoforge_side_view sides[DUOFORGE_SIDE_COUNT];
-} duoforge_observation; /* 544 bytes */
+} duoforge_observation; /* 736 bytes */
 
 /* Pure. Checks: NULL -> CONTEXT_MISMATCH -> INVALID_ARGUMENT (player) ->
    INVARIANT. Writes *out_observation only on success. */
@@ -452,7 +460,8 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_EVENT_FORME           30u /* [detailschange] position, id: the new forme */
 #define DUOFORGE_EVENT_MEGA            31u /* [-mega] position, id2: the stone (item + 1) */
 #define DUOFORGE_EVENT_PREPARE         32u /* [-prepare] position, id: the move it charges */
-#define DUOFORGE_EVENT_ANIMATION       33u /* [-anim] position, other, id: the move shown */
+#define DUOFORGE_EVENT_ANIMATION       33u /* [-anim] position, other, id: the move shown; flags MISS, NOTARGET
+                                                    (the last move line once shown) */
 #define DUOFORGE_EVENT_ABILITY         34u /* [-ability] position, id2: ability + 1 */
 #define DUOFORGE_EVENT_ACTIVATE        35u /* [-activate] position; cause ABILITY + id2 (Lightning Rod, Emergency Exit) or MOVE + id2 (Struggle) */
 #define DUOFORGE_EVENT_UPKEEP          36u /* [upkeep] the end-of-turn effects are done */

@@ -466,9 +466,10 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
     if (m == NULL || m->hp == 0u) {
         return false;
     }
-    /* foePokemonLeft counts a Pokemon until its faint is processed. */
+    /* foePokemonLeft counts a Pokemon until its faint is processed; the
+     * reference processes a faint when it announces it. */
     uint32_t foes_left = dfi_left(b, 1u - flat / 2u);
-    for (uint32_t i = 0u; i < r->faint_count; ++i) {
+    for (uint32_t i = r->faint_announced; i < r->faint_count; ++i) {
         foes_left += r->faint_queue[i] / 2u != flat / 2u ? 1u : 0u;
     }
     if (foes_left == 0u) {
@@ -1349,6 +1350,17 @@ static duoforge_status dfi_run_protect(dfi_run *r, uint32_t user)
     return dfi_status_hit_end(r);
 }
 
+/* Nothing to hit: [notarget] on the last move line, then -fail. */
+static duoforge_status dfi_no_target(dfi_run *r, uint32_t user)
+{
+    duoforge_event *mv = dfi_last_move(r);
+    if (mv != NULL) {
+        mv->flags = (uint8_t)((uint32_t)mv->flags | DUOFORGE_EVENT_FLAG_NOTARGET); /* wide-operands-reviewed: < 256 */
+    }
+    dfi_emit_plain(r, DUOFORGE_EVENT_FAIL, user);
+    return DUOFORGE_OK;
+}
+
 /* runMove and useMove for one move action (sim/battle-actions.ts:210-548,
  * the hit steps at 550-620 and the Champions hit loop). */
 static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool *ran)
@@ -1416,27 +1428,35 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             dfi_ev(DUOFORGE_EVENT_ACTIVATE, user, DUOFORGE_CAUSE_MOVE, DFI_MOVE_STRUGGLE, DUOFORGE_NO_POSITION);
         dfi_emit(r, &e);
     }
-    /* useMoveInner's move line (sim/battle-actions.ts:457) with the chosen
-     * target; a spread move's target is only a label ([spread] replaces it),
-     * a locked turn says [from] lockedmove. Later lines amend it. */
+    /* The move line's target (useMoveInner, sim/battle-actions.ts:457): the
+     * one Pokemon to hit, or, when there is none, the chosen fainted ally or
+     * else the foe in slot 0 (side.randomFoe() || foe.active[0],
+     * sim/battle.ts:2521; sim/pokemon.ts:822-843 does not retarget a fainted
+     * ally). A spread move's target is only a label ([spread] replaces it). */
+    uint32_t aimed = DUOFORGE_NO_POSITION;
+    if (count == 1u) {
+        aimed = targets[0];
+    } else if (count == 0u) {
+        const uint32_t chosen = q->target;
+        aimed = (chosen < DFI_POSITIONS && chosen / 2u == side && dfi_at(b, chosen) != NULL) ? chosen : (1u - side) * 2u;
+        aimed = dfi_at(b, aimed) != NULL ? aimed : DUOFORGE_NO_POSITION;
+    }
+    /* The move line; a locked turn says [from] lockedmove. Later lines
+     * amend it. */
     {
         duoforge_event e = dfi_event_make(DUOFORGE_EVENT_MOVE, user);
         e.id = (uint16_t)move_id;
-        e.other = (count == 1u) ? (uint8_t)targets[0] : (uint8_t)DUOFORGE_NO_POSITION;
+        /* A fainted Pokemon is printed without its slot ("p1: Name"): with
+         * nothing to hit, the line names no position. */
+        e.other = (uint8_t)(count == 1u ? aimed : DUOFORGE_NO_POSITION); /* wide-operands-reviewed: < 256 */
         const uint32_t spread_flag = count > 1u ? DUOFORGE_EVENT_FLAG_SPREAD : 0u;
         const uint32_t locked_flag = locked ? DUOFORGE_EVENT_FLAG_LOCKED : 0u;
         e.flags = (uint8_t)(spread_flag | locked_flag); /* wide-operands-reviewed: flags < 256 */
         r->last_move = r->events != NULL ? r->events->count : UINT32_MAX;
         dfi_emit(r, &e);
     }
-    if (count == 0u) {
-        /* no target: [notarget], then -fail */
-        duoforge_event *mv = dfi_last_move(r);
-        if (mv != NULL) {
-            mv->flags = (uint8_t)((uint32_t)mv->flags | DUOFORGE_EVENT_FLAG_NOTARGET); /* wide-operands-reviewed: flags < 256 */
-        }
-        dfi_emit_plain(r, DUOFORGE_EVENT_FAIL, user);
-        return DUOFORGE_OK;
+    if (aimed == DUOFORGE_NO_POSITION && count == 0u) {
+        return dfi_no_target(r, user); /* no target at all: before getMoveTargets */
     }
     /* getMoveTargets: an Electric single-target move goes to a standing
      * Lightning Rod holder the user may target (onAnyRedirectTarget). With
@@ -1444,8 +1464,9 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
      * (sim/battle.ts:413-419, 788-792): the higher Speed (pokemon.speed)
      * first, then the earlier switch-in (abilityState.effectOrder, set in
      * switchIn, sim/battle-actions.ts:142), which is the lower activation id;
-     * the first handler returns its holder. */
-    if (md->type == DFI_TYPE_ELECTRIC && count == 1u &&
+     * the first handler returns its holder. This runs also when the chosen
+     * target is gone (a fainted ally, no foe left). */
+    if (md->type == DFI_TYPE_ELECTRIC && count <= 1u &&
         (md->target_class == DUOFORGE_TARGET_CLASS_NORMAL || md->target_class == DUOFORGE_TARGET_CLASS_ANY ||
          md->target_class == DUOFORGE_TARGET_CLASS_ADJACENT_FOE || md->target_class == DFI_TARGET_CLASS_RANDOM_NORMAL)) {
         uint32_t rod = DFI_POSITIONS;
@@ -1461,7 +1482,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             }
         }
         if (rod < DFI_POSITIONS) {
-            if (rod != targets[0]) {
+            if (rod != aimed) {
                 /* [-activate] ability: Lightning Rod, then retargetLastMove */
                 const duoforge_event act = dfi_ev(DUOFORGE_EVENT_ACTIVATE, rod, DUOFORGE_CAUSE_ABILITY,
                                                   1u + DFI_ABILITY_LIGHTNINGROD, DUOFORGE_NO_POSITION);
@@ -1472,6 +1493,8 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                 }
             }
             targets[0] = rod;
+            count = 1u;
+            aimed = rod;
         }
     }
     /* Electro Shot's onTryMove (a singleEvent before the TryMove event):
@@ -1490,9 +1513,12 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         dfi_emit(r, &prep);
         dfi_boost(r, user, spa_up, DFI_POSITIONS, dfi_effect(DUOFORGE_CAUSE_MOVE, 0u, DFI_BOOST_PRIMARY));
         if (b->weather == DFI_WEATHER_RAIN) {
+            /* addMove('-anim'): from now on the last move line, which later
+             * attributes ([miss], [notarget]) amend. */
             duoforge_event anim = dfi_event_make(DUOFORGE_EVENT_ANIMATION, user);
             anim.id = (uint16_t)move_id;
-            anim.other = (uint8_t)targets[0]; /* < 4 */
+            anim.other = (uint8_t)(count == 1u ? aimed : DUOFORGE_NO_POSITION); /* wide-operands-reviewed: < 256 */
+            r->last_move = r->events != NULL ? r->events->count : UINT32_MAX;
             dfi_emit(r, &anim);
         }
         if (b->weather != DFI_WEATHER_RAIN) {
@@ -1503,10 +1529,11 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         }
     }
     /* TryMove: Armor Tail on a standing foe stops a move with positive
-     * priority aimed at the holder's side. */
-    {
+     * priority aimed at the holder's side (with nothing to hit, the aimed
+     * Pokemon is fainted: no standing holder is its ally). */
+    if (count != 0u) {
         const uint32_t priority = dfi_move_priority(b, m, md);
-        const uint32_t aimed = targets[count - 1u];
+        aimed = targets[count - 1u];
         if (priority > DFI_PRIORITY_BIAS && aimed / 2u != side && md->target_class != DUOFORGE_TARGET_CLASS_SELF &&
             md->target_class != DUOFORGE_TARGET_CLASS_ALLY_SIDE && md->target_class != DUOFORGE_TARGET_CLASS_ALL) {
             for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
@@ -1522,6 +1549,9 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                 }
             }
         }
+    }
+    if (count == 0u) {
+        return dfi_no_target(r, user); /* after TryMove (sim/battle-actions.ts:509-513) */
     }
     if (md->special == DFI_SPECIAL_PROTECT) {
         return dfi_run_protect(r, user);

@@ -1,0 +1,23 @@
+{
+  "name": "s14_fainted_ally_target",
+  "purpose": "An Electric move aimed at the user's own ally that fainted earlier in the turn: getMoveTargets does not retarget a fainted ally but still runs RedirectTarget, so a foe's Lightning Rod takes Zap Cannon (-activate, then the absorb) and Electro Shot (-activate, then its charge turn) instead of [notarget]; the locked Electro Shot then goes to the replacement's slot.",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000e004",
+  "teams": [
+    "Raichu (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 Atk / 32 SpA / 2 SpD\nSassy Nature\n- Zap Cannon\n- Protect\n\nRillaboom (F)\nAbility: No Ability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Wood Hammer\n- High Horsepower\n\nArchaludon (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Electro Shot\n\nCharizard (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Heat Wave\n- Hurricane",
+    "Staraptor (M)\nAbility: No Ability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Brave Bird\n- Protect\n\nRaichu (F)\nAbility: Lightning Rod\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Focus Blast\n- Protect\n- Fake Out\n\nGolisopod (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Drill Run\n- Iron Head\n\nMilotic (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Ice Beam"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 -2, move 1 1",
+      "move 1 1, move 2 -1",
+      "move 1 1, move 1 1"
+    ],
+    "p2": [
+      "move 1 2, move 3 2",
+      "move 1 1, move 2",
+      "move 1 1, move 1 1"
+    ],
+    "max_steps": 50
+  }
+}

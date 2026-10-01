@@ -581,6 +581,8 @@ def check_knowledge(st, p):
         if not (seen >> m) & 1:
             if k != empty_know():
                 return False
+            if m < opp['member_count'] and opp['members'][m]['is_mega']:
+                return False  # a Mega Evolution happens on the field, in view
             continue
         mem = opp['members'][m]
         if not hp_display_valid(k['hp_pct'], k['hp_flag']):
@@ -590,7 +592,7 @@ def check_knowledge(st, p):
             return False
         if k['revealed'] & REVEALED_ITEM_CONSUMED and mem['item_consumed'] != 1:
             return False
-        if k['revealed'] & REVEALED_MEGA and mem['is_mega'] != 1:
+        if bool(k['revealed'] & REVEALED_MEGA) != (mem['is_mega'] == 1):
             return False
         if any(k['used'][j] for j in range(mem['move_count'], MOVE_SLOTS)):
             return False
@@ -951,9 +953,11 @@ def candidates(ctx, st, player):
 HP_EXACT, HP_PERCENT, HP_UNKNOWN = 1, 2, 3
 PP_EXACT, PP_DERIVED, PP_UNKNOWN = 1, 2, 3
 MOVE_SLOT_NONE = 0xFF  # observation v2: no locked move
+TARGET_NONE = 0xFF  # observation v2: no locked target (none, or the foe's)
 FLAG_NONE, FLAG_RED, FLAG_YELLOW, FLAG_GREEN = 0, 1, 2, 3
 LOC_UNDETERMINED, LOC_BENCH, LOC_ACTIVE, LOC_NOT_BROUGHT = 0, 1, 2, 3
-OBSERVATION_SIZE = 544
+OBSERVATION_SIZE = 736
+MEMBER_VIEW_SIZE = 52
 
 
 def hp_percent(hp, hp_max):
@@ -974,7 +978,8 @@ def hp_percent(hp, hp_max):
 
 def observe(ctx, st, player):
     """Observation v2 of `player` (decision 0007): what a human at the table
-    knows. 544 bytes, absolute side order. Own side exact, except the turns
+    knows. 736 bytes, absolute side order. Own side exact (stats and stat
+    points included), except the turns
     the game never shows (sleep, freeze, confusion). Open sheets of both
     sides. Public facts of the battle. For the opponent only the player's
     knowledge: seen mask, last HP display, items seen used up, Mega Evolutions
@@ -994,7 +999,7 @@ def observe(ctx, st, player):
         for m in range(MAX_ROSTER):
             mem = sd['members'][m]
             if m >= sd['member_count']:
-                b += bytes(36)
+                b += bytes(MEMBER_VIEW_SIZE)
                 continue
             pp_max = [mv['pp_max'] for mv in mem['moves']]
             if own:
@@ -1026,21 +1031,24 @@ def observe(ctx, st, player):
                     status = 0
             b += struct.pack('<HHH', mem['species'], hp, hp_max)
             b += struct.pack('<HHHH', *[mv['id'] for mv in mem['moves']])
+            b += struct.pack('<5H', *(mem['stats'] if own else [0] * 5))
             b += bytes(pp) + bytes(pp_max)
+            b += bytes(mem['sp'] if own else [0] * 6)
             b += bytes([mem['move_count'], hp_kind, flag, pp_kind, loc, mem['mega_capable'], is_mega,
                         mem['gender'], mem['nature'], mem['ability'], mem['item'], item_used, status, 0])
         for k in range(2):
             pos = sd['pos'][k]
             if pos['occ'] == NONE:
-                b += bytes(16)
+                b += bytes([6] * 7 + [0, 0, MOVE_SLOT_NONE, TARGET_NONE, 0, 0, 0, 0, 0])
                 continue
             locked = pos['locked_move'] != 0
             b += bytes(pos['stages'])
             b += bytes([1 if pos['confusion_turns'] else 0, 1 if pos['charge_turns'] else 0,
                         pos['locked_move'] - 1 if locked else MOVE_SLOT_NONE,
-                        pos['locked_target'] if locked and own else 0,
+                        pos['locked_target'] if locked and own else TARGET_NONE,
                         1 if pos['move_actions'] else 0, pos['stall_level'],
-                        1 if pos['flags'] & VOL_FLASH_FIRE else 0, 0, 0])
+                        1 if pos['flags'] & VOL_FLASH_FIRE else 0,
+                        1 if pos['flags'] & VOL_PROTECT else 0, 0])
         side_requested = (st['request_mask'] >> s) & 1
         b += bytes([sd['member_count'], occupants[0], occupants[1], sd['mega_used']])
         b += bytes(sd['order'] if own else [NONE] * MAX_ROSTER)

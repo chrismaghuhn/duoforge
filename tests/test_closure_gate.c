@@ -52,10 +52,20 @@ static duoforge_decision_bundle tape[GATE_MAX_STEPS];
 static bool used_move[DFI_MOVE_COUNT];
 static bool mega_forme[DFI_FORME_COUNT];
 
+/* The kinds of pairs; each must run at least once in the gate. */
+static const char *const pair_kinds[] = {
+    "active foe pp",           "confusion turns",           "foe actions in the queue",
+    "foe hp inside one display bucket", "foe pick order",   "opponent knowledge",
+    "rng",                     "sleep or freeze turns",     "the foe's locked target",
+    "unseen foe reserve hp/pp", "which members the opponent brought",
+};
+#define PAIR_KINDS (sizeof pair_kinds / sizeof pair_kinds[0])
+
 typedef struct counts {
     unsigned equivalent; /* pairs with the same surface, as required */
     unsigned shown;      /* HP changes that move the display, and show */
     unsigned leaks;
+    unsigned runs[PAIR_KINDS]; /* pairs run, by kind */
 } counts;
 
 static uint32_t dfi_popcount_mask(uint32_t x)
@@ -78,6 +88,14 @@ static void capture(const duoforge_context *ctx, const duoforge_battle *b, uint3
 static void expect_same(df_test *t, const duoforge_context *ctx, const duoforge_battle *a, const duoforge_battle *b,
                         uint32_t viewer, const char *what, counts *c)
 {
+    bool known = false;
+    for (size_t i = 0; i < PAIR_KINDS; ++i) {
+        if (strcmp(what, pair_kinds[i]) == 0) {
+            c->runs[i] += 1u;
+            known = true;
+        }
+    }
+    DF_CHECK(t, known);
     capture(ctx, a, viewer, &sa);
     capture(ctx, b, viewer, &sb);
     if (!DF_CHECK(t, memcmp(&sa, &sb, sizeof sa) == 0)) {
@@ -369,7 +387,8 @@ int main(void)
 
     dfi_rng rng;
     dfi_rng_seed(&rng, 1313u, 13u);
-    counts c = {0u, 0u, 0u};
+    counts c;
+    memset(&c, 0, sizeof c);
     unsigned steps = 0;
     unsigned ended = 0;
     unsigned results[4] = {0, 0, 0, 0};
@@ -509,6 +528,11 @@ int main(void)
     DF_CHECK_EQ_U64(&t, replays, 4u * GATE_SEEDS);
     DF_CHECK_EQ_U64(&t, mismatches, 0u);
     DF_CHECK_EQ_U64(&t, c.leaks, 0u);
+    for (size_t i = 0; i < PAIR_KINDS; ++i) {
+        if (!DF_CHECK(&t, c.runs[i] > 0u)) {
+            fprintf(stderr, "  the pair \"%s\" never ran\n", pair_kinds[i]);
+        }
+    }
     DF_CHECK(&t, results[1] > 0u && results[2] > 0u && replacements > 0u && pivots > 0u && megas > 0u &&
                      c.equivalent > 0u && c.shown > 0u);
     fprintf(stderr,
