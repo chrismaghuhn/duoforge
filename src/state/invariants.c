@@ -134,9 +134,9 @@ static dfi_invariant dfi_check_member(const struct duoforge_context *ctx, const 
 /* Value ranges of an occupied position's volatile block. move_count is the
  * occupant's (already range-checked) move count; switch_flag_max is the
  * kind's (dfi_kind_limits). */
-static bool dfi_volatile_valid(const dfi_active_slot *slot, uint32_t move_count, uint32_t switch_flag_max)
+static bool dfi_volatile_valid(const dfi_active_slot *slot, uint32_t move_count, const dfi_kind_limits *lim)
 {
-    if (slot->switch_flag > switch_flag_max) {
+    if (slot->switch_flag > lim->switch_flag_max) {
         return false;
     }
     for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
@@ -144,7 +144,7 @@ static bool dfi_volatile_valid(const dfi_active_slot *slot, uint32_t move_count,
             return false;
         }
     }
-    if (slot->flags > DFI_VOL_FLAGS_MAX) {
+    if (((uint32_t)slot->flags & ~lim->vol_flags_mask) != 0u) {
         return false;
     }
     if (slot->stall_level > DFI_STALL_LEVEL_MAX || slot->stall_turns > DFI_STALL_TURNS_MAX) {
@@ -156,10 +156,14 @@ static bool dfi_volatile_valid(const dfi_active_slot *slot, uint32_t move_count,
     if (slot->confusion_turns > DFI_CONFUSION_TURNS_MAX || slot->charge_turns > DFI_CHARGE_TURNS_MAX) {
         return false;
     }
-    if (slot->locked_move > move_count || (slot->charge_turns == 0u) != (slot->locked_move == 0u)) {
+    /* The locked-move byte belongs to a charging two-turn move, to a choice
+     * lock (Team C) or to both, then on the same move; the target only to
+     * the charge. */
+    const bool choice = ((uint32_t)slot->flags & DFI_VOL_CHOICE_LOCK) != 0u;
+    if (slot->locked_move > move_count || (slot->locked_move != 0u) != (slot->charge_turns != 0u || choice)) {
         return false;
     }
-    if (slot->locked_move == 0u) {
+    if (slot->charge_turns == 0u) {
         return slot->locked_target == 0u;
     }
     return slot->locked_target < DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE ||
@@ -267,9 +271,18 @@ static dfi_invariant dfi_check_side(const struct duoforge_context *ctx, const st
             if (!dfi_slot_volatile_is_clear(slot)) {
                 return DFI_INV_VOLATILE;
             }
-        } else if (!dfi_volatile_valid(slot, side->members[slot->occupant].move_count,
-                                       dfi_kind_limits_of(ctx->data_kind).switch_flag_max)) {
-            return DFI_INV_VOLATILE; /* occupant < member_count <= 6 here */
+        } else {
+            const dfi_kind_limits lim = dfi_kind_limits_of(ctx->data_kind);
+            const dfi_member *occupant = &side->members[slot->occupant]; /* occupant < member_count <= 6 here */
+            if (!dfi_volatile_valid(slot, occupant->move_count, &lim)) {
+                return DFI_INV_VOLATILE;
+            }
+            /* A choice lock needs its Choice item (no item is ever lost while
+             * it holds: nothing in the data takes a Choice Scarf). */
+            if (((uint32_t)slot->flags & DFI_VOL_CHOICE_LOCK) != 0u &&
+                (occupant->item != 1u + DFI_ITEM_CHOICESCARF || occupant->item_consumed != 0u)) {
+                return DFI_INV_VOLATILE;
+            }
         }
     }
     const uint32_t occupied = dfi_side_occupied_mask(side);

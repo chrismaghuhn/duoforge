@@ -1,0 +1,20 @@
+{
+  "name": "c07_scarf_paralysis",
+  "purpose": "Choice Scarf and paralysis in one Speed: the ModifySpe modifiers chain (Scarf x1.5), then paralysis halves the result (finalModify, floor 50/100): a paralysed Scarf Basculegion (143) has 107 and ties with Incineroar (107), so the queue draws.",
+  "data": "team_c",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c0703",
+  "teams": [
+    "Basculegion (M) @ Choice Scarf\nAbility: Adaptability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Last Respects\n- Wave Crash\n\nIncineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 7 Def / 27 Spe\nCareful Nature\n- Darkest Lariat\n- Fake Out\n\nKingambit (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Iron Head\n\nMilotic (F) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Coil",
+    "Sneasler (M) @ Light Clay\nAbility: No Ability\nLevel: 50\nEVs: 2 HP / 2 Def / 32 Spe\nTimid Nature\n- Dire Claw\n- Protect\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpD / 4 Spe\nCalm Nature\n- Coil\n\nFarigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Protect\n\nRaichu (F) @ Life Orb\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 2, move 1 1"
+    ],
+    "p2": [
+      "move 1 1, move 1"
+    ],
+    "max_steps": 40
+  }
+}

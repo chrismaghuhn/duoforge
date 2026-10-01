@@ -63,6 +63,8 @@ CHARGE_TURNS_MAX = 2
 MOVE_SLOT_STRUGGLE = 4
 SWITCH_NONE, SWITCH_MOVE, SWITCH_EMERGENCY_EXIT, SWITCH_FAINTED = 0, 1, 2, 3
 SWITCH_FLIP_TURN = 4  # TEAM_C kinds only (decision 0009)
+VOL_CHOICE_LOCK = 64  # TEAM_C kinds only: Choice Scarf's lock, its move in locked_move
+ITEM_CHOICE_SCARF = 16  # 1 + DFI_ITEM_CHOICESCARF (src/data/extended_tables.h)
 REVEALED_ITEM_CONSUMED, REVEALED_MEGA = 1, 2
 # side-relative offsets of the v3 side block
 SIDE_POS_OFF, SIDE_SEALED_OFF, SIDE_KNOW_OFF, SIDE_MEMBERS_OFF = 15, 57, 67, 109
@@ -464,11 +466,12 @@ def member_extra_is_zero(mem):
                 or mem['ability'])
 
 
-def volatile_valid(p, move_count, switch_flag_max=None):
+def volatile_valid(p, move_count, switch_flag_max=None, vol_flags_mask=None):
     """Value ranges of an occupied position's volatile block."""
     if p['switch_flag'] > (SWITCH_FAINTED if switch_flag_max is None else switch_flag_max):
         return False
-    if any(s > STAGE_MAX for s in p['stages']) or p['flags'] > VOL_FLAGS_MAX:
+    mask = VOL_FLAGS_MAX if vol_flags_mask is None else vol_flags_mask
+    if any(s > STAGE_MAX for s in p['stages']) or p['flags'] & ~mask:
         return False
     if p['stall_level'] > STALL_LEVEL_MAX or p['stall_turns'] > STALL_TURNS_MAX:
         return False
@@ -476,9 +479,11 @@ def volatile_valid(p, move_count, switch_flag_max=None):
         return False
     if p['confusion_turns'] > CONFUSION_TURNS_MAX or p['charge_turns'] > CHARGE_TURNS_MAX:
         return False
-    if p['locked_move'] > move_count or (p['charge_turns'] == 0) != (p['locked_move'] == 0):
+    # The locked-move byte: a charging two-turn move, a choice lock, or both on one move.
+    choice = bool(p['flags'] & VOL_CHOICE_LOCK)
+    if p['locked_move'] > move_count or (p['locked_move'] != 0) != (p['charge_turns'] != 0 or choice):
         return False
-    if p['locked_move'] == 0:
+    if p['charge_turns'] == 0:
         return p['locked_target'] == 0
     return p['locked_target'] < 4 or p['locked_target'] == TARGET_NONE
 
@@ -561,9 +566,14 @@ def check_side(ctx, st, s):
         if p['occ'] == NONE:
             if p != empty_pos():
                 return 'VOLATILE'
-        elif not volatile_valid(p, sd['members'][p['occ']]['move_count'],
-                                SWITCH_FLIP_TURN if ctx.data_kind in (KIND_TEAM_C, KIND_TEAM_C_DEV) else None):
-            return 'VOLATILE'
+        else:
+            team_c = ctx.data_kind in (KIND_TEAM_C, KIND_TEAM_C_DEV)
+            mem = sd['members'][p['occ']]
+            if not volatile_valid(p, mem['move_count'], SWITCH_FLIP_TURN if team_c else None,
+                                  VOL_FLAGS_MAX | VOL_CHOICE_LOCK if team_c else None):
+                return 'VOLATILE'
+            if p['flags'] & VOL_CHOICE_LOCK and (mem['item'] != ITEM_CHOICE_SCARF or mem['item_consumed']):
+                return 'VOLATILE'
     occ = occupied_mask(sd)
     rs = sd['requested_slots']
     if rs > 3:

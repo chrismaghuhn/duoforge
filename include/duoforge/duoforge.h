@@ -426,9 +426,10 @@ typedef struct duoforge_position_view {
     uint8_t stages[7];     /* public: atk def spa spd spe accuracy evasion, biased by 6 (6 = neutral) */
     uint8_t confused;      /* public: 1 while confused; the turns stay hidden */
     uint8_t charging;      /* public: 1 while a two-turn move is charged */
-    uint8_t locked_slot;   /* public: the locked move slot, DUOFORGE_MOVE_SLOT_NONE if none */
-    uint8_t locked_target; /* own side only: the stored target (flat position) of the locked move;
-                              DUOFORGE_TARGET_NONE without one and for the foe */
+    uint8_t locked_slot;   /* public: the locked move slot (a charging two-turn move, or a Choice
+                              item's lock, Team C), DUOFORGE_MOVE_SLOT_NONE if none */
+    uint8_t locked_target; /* own side only: the stored target (flat position) of a charging two-turn
+                              move; DUOFORGE_TARGET_NONE without one, for a choice lock and for the foe */
     uint8_t acted;         /* public: 1 once the occupant took a move action since it entered */
     uint8_t protect_chain; /* public: consecutive successful Protects (stall counter level) */
     uint8_t flash_fire;    /* public: 1 while Flash Fire's boost is active */

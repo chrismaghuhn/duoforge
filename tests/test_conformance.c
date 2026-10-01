@@ -20,7 +20,7 @@
 #include "reference/conformance_team_c.h"
 #include "support/team_c.h"
 #define DF_CONF_FORMES dfi_ext_formes
-#define DF_TEAM_C_BATTLES 26u /* the recorded Team C battles */
+#define DF_TEAM_C_BATTLES 30u /* the recorded Team C battles */
 #define DF_TEAM_C_REAL 1u    /* of them under TEAM_C itself (six registered members) */
 #else
 #include "data/closure_tables.h"
@@ -166,9 +166,12 @@ static unsigned compare_observation(const duoforge_context *ctx, const duoforge_
                     continue;
                 }
                 const df_conf_mon *e = &st->mons[s][occ];
-                /* The locked target only for the own side; Protect, Flash Fire,
-                 * a charged move and the stall counter as Showdown's volatiles. */
-                const uint32_t target = (s == viewer && e->locked_slot != 0xFFu) ? e->locked_target : DUOFORGE_TARGET_NONE;
+                /* The locked target only for the own side and only while a
+                 * two-turn move charges (a choice lock has none); Protect,
+                 * Flash Fire, a charged move and the stall counter as
+                 * Showdown's volatiles. */
+                const uint32_t target =
+                    (s == viewer && (e->vols & 4u) != 0u) ? e->locked_target : DUOFORGE_TARGET_NONE;
                 bool ok = memcmp(pv->stages, e->stages, 7u) == 0 && pv->confused == (e->confusion != 0u ? 1u : 0u) &&
                           pv->locked_slot == e->locked_slot && pv->locked_target == target &&
                           pv->protecting == ((e->vols & 1u) != 0u ? 1u : 0u) &&
@@ -332,13 +335,16 @@ static unsigned compare_state(const duoforge_context *ctx, const duoforge_battle
                         mem->status, mem->status_counter, e->status, e->status_counter);
                 ++bad;
             }
-            /* A two-turn move's lock, at TURN and REPLACEMENT boundaries. */
+            /* A two-turn move's lock and a Choice item's lock (Team C), at
+             * TURN and REPLACEMENT boundaries. */
             if (pos != NULL && b->boundary_kind != DUOFORGE_BOUNDARY_TERMINAL) {
                 const uint32_t lslot = pos->locked_move != 0u ? (uint32_t)pos->locked_move - 1u : 0xFFu;
                 const uint32_t ltarget = pos->locked_move != 0u ? pos->locked_target : 0u;
-                if (lslot != e->locked_slot || ltarget != e->locked_target) {
-                    fprintf(stderr, "  %s step %u: side %u member %u locked %u/%u, reference %u/%u\n", name, step, s,
-                            m, lslot, ltarget, e->locked_slot, e->locked_target);
+                const uint32_t choice = ((uint32_t)pos->flags & DFI_VOL_CHOICE_LOCK) != 0u ? 8u : 0u;
+                if (lslot != e->locked_slot || ltarget != e->locked_target || choice != (e->vols & 8u)) {
+                    fprintf(stderr, "  %s step %u: side %u member %u locked %u/%u choice %u, reference %u/%u %u\n",
+                            name, step, s, m, lslot, ltarget, choice, e->locked_slot, e->locked_target,
+                            e->vols & 8u);
                     ++bad;
                 }
             }
