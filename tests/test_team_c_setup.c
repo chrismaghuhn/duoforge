@@ -264,6 +264,9 @@ int main(void)
         put_dev_side(&s.sides[1]);
         legal(&t, kd, &s, true, "Team C species, closure mechanics (dev)");
         invalid(&t, kc, &s, "the same with No Ability under TEAM_C");
+        /* Under CLOSURE_DEV the same side fails on the species alone: every
+         * other field is closure-legal (closure moves and item, No Ability). */
+        invalid(&t, k2, &s, "Team C species under CLOSURE_DEV");
         duoforge_battle *b = NULL;
         DF_CHECK(&t, duoforge_battle_create(kd, &s, &b) == DUOFORGE_OK && b != NULL);
         if (b != NULL) {
@@ -289,6 +292,29 @@ int main(void)
         c->sides[1].members[0].item = DFI_ITEM_WHITEHERB + 1u;
         DF_CHECK(&t, dfi_state_check(k1, c, &got) == DUOFORGE_E_INVARIANT && got == DFI_INV_MEMBER_EXTRA);
         duoforge_battle_destroy(c);
+    }
+
+    /* White-box: a TEAM_C state with five registered members fails the
+     * member count rule (decision 0010, taken over by TEAM_C); the same state
+     * under TEAM_C_DEV passes it. */
+    for (uint32_t dev = 0u; dev < 2u; ++dev) {
+        const duoforge_context *ctx = dev != 0u ? kd : kc;
+        FRESH();
+        duoforge_battle *w = NULL;
+        DF_CHECK(&t, dfi_battle_create_ungated(ctx, &s, &w) == DUOFORGE_OK && w != NULL);
+        if (w == NULL) {
+            continue;
+        }
+        w->sides[1].member_count = 5u;
+        memset(&w->sides[1].members[5], 0, sizeof w->sides[1].members[5]);
+        dfi_invariant inv = DFI_INV_NONE;
+        const duoforge_status st = dfi_state_check(ctx, w, &inv);
+        if (dev != 0u) {
+            DF_CHECK(&t, st == DUOFORGE_OK);
+        } else {
+            DF_CHECK(&t, st == DUOFORGE_E_INVARIANT && inv == DFI_INV_MEMBER_COUNT);
+        }
+        duoforge_battle_destroy(w);
     }
 
     /* The gate per Team C mechanic: the dev side plus exactly one of them.

@@ -19,8 +19,8 @@
  * The only out-parameter written on error is the required count of a
  * model-facing query on E_CAPACITY (decision 0005 section 7).
  *
- * Combat runs for CLOSURE data (decision 0006 section 4): TURN,
- * REPLACEMENT and PIVOT bundles execute the turn of the combat closure;
+ * Combat runs for CLOSURE and TEAM_C data (decisions 0006 section 4, 0009):
+ * TURN, REPLACEMENT and PIVOT bundles execute the turn of the combat closure;
  * under SYNTHETIC data every combat bundle is rejected with E_UNSUPPORTED.
  */
 #include <stdbool.h>
@@ -166,7 +166,7 @@ typedef struct duoforge_member_setup {
     uint32_t gender;         /* CLOSURE: DUOFORGE_GENDER_*, legal for the species */
     uint32_t nature;         /* CLOSURE: nature id 0..24 */
     uint32_t stat_points[6]; /* CLOSURE: HP, Atk, Def, SpA, SpD, Spe */
-    uint32_t ability;        /* CLOSURE: 1 + the forme's ability id; 0 = No Ability (CLOSURE_DEV only) */
+    uint32_t ability;        /* CLOSURE: 1 + the forme's ability id; 0 = No Ability (the DEV kinds only) */
     uint32_t item;           /* CLOSURE: 1 + item id; 0 = no item */
 } duoforge_member_setup;
 typedef struct duoforge_side_setup {
@@ -302,8 +302,8 @@ duoforge_status duoforge_battle_candidates(const duoforge_context *ctx, const du
    INVALID_ARGUMENT (mask, reserved bytes, side/kind fields, a response
    outside the offered domain, a nonzero response of an unrequested side).
    A valid TEAM_SELECTION bundle performs the transition to TURN (for
-   CLOSURE data with the leads' entry effects). A valid TURN or REPLACEMENT
-   bundle of a CLOSURE battle runs the turn (decision 0006); a mechanic the
+   CLOSURE and TEAM_C data with the leads' entry effects). A valid TURN or
+   REPLACEMENT bundle of such a battle runs the turn (decision 0006); a mechanic the
    support manifest does not mark returns E_UNSUPPORTED, as does every
    combat bundle under SYNTHETIC data. A valid PIVOT bundle (switches for
    the flagged positions) continues the stored rest of the turn. At TERMINAL every

@@ -254,14 +254,14 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
   - Defiant is Competitive's branch with Attack: per lowered stat and only from a foe, so a Parting Shot triggers it twice.
   - Adaptability makes STAB 8192/4096.
   - The five moves use existing paths.
-- **Evidence.** Four recorded battles (`c01_*`, run by `duoforge.reference.conformance_team_c`) cover:
+- **Evidence.** Five recorded battles (`c01_*`, run by `duoforge.reference.conformance_team_c`; one, `c01_team_c_profile`, under TEAM_C itself with six registered members against the real Team A, the others under TEAM_C_DEV) cover:
   - Defiant and Competitive after Intimidate (at the lead and on a pivot-in), Snarl, and a foe's Parting Shot, with none after an ally's;
   - Hyper Voice against a Ghost type and against Protect;
   - Draco Meteor's accuracy and self-drop, and Kowtow Cleave;
   - Wave Crash in rain with recoil, Aqua Jet in Mega Charizard Y's sun, and Adaptability;
   - Grass Knot at 100, 80 and 60.
 
-  Negative controls: without the Defiant branch, or with STAB 1.5 for Adaptability, these battles fail.
+  Negative controls: without the Defiant branch, or with STAB 1.5 for Adaptability, these battles fail. A review agent's mutations (the six-member rule of a decoded TEAM_C state, the CLOSURE forme limit at setup) are caught by `duoforge.state.team_c_setup`.
 - **Not reachable:** a self-inflicted drop on a Defiant or Competitive holder. Kingambit's and Milotic's sets have no self-drop move, so the corresponding item of section 5's step-1 row cannot occur.
 - **Tooling.**
   - Specs with `"data": "team_c"` go to `tests/reference/conformance_team_c.h`. The converter reads them with the extended tables and maps Indeedee-F's protocol name "Indeedee" explicitly (`sim/pokemon.ts:329-330`).

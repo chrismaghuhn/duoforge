@@ -179,6 +179,8 @@ class TeamCContext(ClosureContext):
         Context.__init__(self, data_kind, max_roster, brought_count, 23, 50, b'')
 
     def valid(self):
+        if self.data_kind == KIND_TEAM_C and (self.max_roster != MAX_ROSTER or self.brought_count != 4):
+            return False  # TEAM_C takes over the certified profile (decisions 0009, 0010)
         return (self.data_kind in (KIND_TEAM_C, KIND_TEAM_C_DEV) and 1 <= self.max_roster <= MAX_ROSTER
                 and 1 <= self.brought_count <= self.max_roster)
 
