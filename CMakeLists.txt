@@ -39,6 +39,7 @@ add_library(duoforge STATIC
     src/data/formulas.c
     src/data/support_manifest.c
     src/codec/state_codec.c
+    src/combat/turn.c
 )
 target_include_directories(duoforge
     PUBLIC

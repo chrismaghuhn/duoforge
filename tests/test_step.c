@@ -350,14 +350,12 @@ int main(void)
         step_fails(&t, c1, f1, &bd, DUOFORGE_E_INVALID_ARGUMENT, "picks at TURN");
         duoforge_battle_destroy(f1);
 
-        /* A move at pp 0 is not selectable (F2: s0 roster 1 is a reserve, so
-         * use F12's side 1 with an F9-like pp poke instead). */
+        /* A move at pp 0 is not selectable; an actor without any move with PP
+         * gets Struggle (move slot 4, no target) instead. */
         duoforge_battle *f9 = df_make_f9(c4);
         f9->sides[1].members[1].moves[0].pp = 0u; /* s1a roster 1: its only move */
-        /* That actor now has no selectable move: the request is UNSUPPORTED
-         * (Struggle), and so is any step involving that side. */
         duoforge_request r;
-        DF_CHECK(&t, duoforge_battle_request(c4, f9, 1, &r) == DUOFORGE_E_UNSUPPORTED);
+        DF_CHECK(&t, duoforge_battle_request(c4, f9, 1, &r) == DUOFORGE_OK);
         DF_CHECK(&t, duoforge_battle_request(c4, f9, 0, &r) == DUOFORGE_OK); /* side 0 unaffected */
         memset(&bd, 0, sizeof bd);
         bd.epoch = 2u;
@@ -369,8 +367,15 @@ int main(void)
         bd.responses[1].side = 1u;
         bd.responses[1].kind = (uint8_t)DUOFORGE_CHOICE_SLOTS;
         bd.responses[1].slots[0] = (duoforge_slot_command){DUOFORGE_SLOT_MOVE, 0u, 0u, 0u, 0u, {0u, 0u, 0u}};
-        bd.responses[1].slots[1] = (duoforge_slot_command){DUOFORGE_SLOT_MOVE, 0u, 0u, 0u, 0u, {0u, 0u, 0u}};
-        step_fails(&t, c4, f9, &bd, DUOFORGE_E_UNSUPPORTED, "step with a Struggle side");
+        /* s1b roster 2: move 0 has class ALL (no target). */
+        bd.responses[1].slots[1] =
+            (duoforge_slot_command){DUOFORGE_SLOT_MOVE, 0u, DUOFORGE_TARGET_NONE, 0u, 0u, {0u, 0u, 0u}};
+        step_fails(&t, c4, f9, &bd, DUOFORGE_E_INVALID_ARGUMENT, "the move at pp 0");
+        bd.responses[1].slots[0] = (duoforge_slot_command){DUOFORGE_SLOT_MOVE, DUOFORGE_MOVE_SLOT_STRUGGLE,
+                                                           DUOFORGE_TARGET_NONE, 1u, 0u, {0u, 0u, 0u}};
+        step_fails(&t, c4, f9, &bd, DUOFORGE_E_UNSUPPORTED, "Struggle (valid, no combat under SYNTHETIC)");
+        bd.responses[1].slots[0].target = 0u;
+        step_fails(&t, c4, f9, &bd, DUOFORGE_E_INVALID_ARGUMENT, "Struggle with a target");
         duoforge_battle_destroy(f9);
 
         duoforge_battle *f4 = df_make_f4(c1);

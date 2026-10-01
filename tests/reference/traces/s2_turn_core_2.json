@@ -1,5 +1,5 @@
 {
- "harness": 2,
+ "harness": 3,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "spec": "s2_turn_core_2.json",
  "format": "gen9championsvgc2026regmc",
@@ -578,7 +578,7 @@
     },
     {
      "site": "RANDOM_TARGET",
-     "context": "execute",
+     "context": "execute:allAdjacentFoes",
      "lo": 0,
      "hi": 2,
      "value": 1
@@ -1120,7 +1120,7 @@
     },
     {
      "site": "RANDOM_TARGET",
-     "context": "execute",
+     "context": "execute:allAdjacentFoes",
      "lo": 0,
      "hi": 2,
      "value": 1

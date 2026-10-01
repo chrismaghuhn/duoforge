@@ -1,9 +1,9 @@
 {
  "harness": 3,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
- "spec": "s2_turn_core_1.json",
+ "spec": "s2_protect_last.json",
  "format": "gen9championsvgc2026regmc",
- "seed": "sodium,00000000000000000000000000000000000000000000000000000000000000a1",
+ "seed": "sodium,0000000000000000000000000000000000000000000000000000000000000e01",
  "start": {
   "log": [
    "|gametype|doubles",
@@ -15,13 +15,13 @@
    "|rule|Item Clause: Limit 1 of each item",
    "|clearpoke",
    "|poke|p1|Golisopod, L50, F|",
-   "|poke|p1|Ceruledge, L50, M|",
+   "|poke|p1|Ceruledge, L50, F|",
    "|poke|p1|Milotic, L50, F|",
-   "|poke|p1|Rillaboom, L50, M|",
-   "|poke|p2|Archaludon, L50, M|",
+   "|poke|p1|Archaludon, L50, F|",
    "|poke|p2|Gholdengo, L50|",
+   "|poke|p2|Archaludon, L50, M|",
    "|poke|p2|Milotic, L50, M|",
-   "|poke|p2|Rillaboom, L50, F|",
+   "|poke|p2|Ceruledge, L50, M|",
    "|teampreview|4",
    "|split|p1",
    "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
@@ -60,8 +60,8 @@
         0
        ],
        "pp": [
-        12,
-        8
+        8,
+        12
        ],
        "volatiles": []
       },
@@ -81,9 +81,8 @@
         0
        ],
        "pp": [
-        20,
-        20,
-        8
+        8,
+        20
        ],
        "volatiles": []
       },
@@ -107,35 +106,6 @@
        ],
        "volatiles": []
       },
-      {
-       "species": "Rillaboom",
-       "hp": 193,
-       "maxhp": 193,
-       "status": "",
-       "fainted": false,
-       "boosts": [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-       ],
-       "pp": [
-        12
-       ],
-       "volatiles": []
-      }
-     ]
-    },
-    {
-     "request": "teampreview",
-     "active": [
-      -1,
-      -1
-     ],
-     "pokemon": [
       {
        "species": "Archaludon",
        "hp": 197,
@@ -152,11 +122,20 @@
         0
        ],
        "pp": [
-        12,
-        8
+        8,
+        12
        ],
        "volatiles": []
-      },
+      }
+     ]
+    },
+    {
+     "request": "teampreview",
+     "active": [
+      -1,
+      -1
+     ],
+     "pokemon": [
       {
        "species": "Gholdengo",
        "hp": 179,
@@ -173,8 +152,29 @@
         0
        ],
        "pp": [
-        20,
-        8
+        8,
+        16
+       ],
+       "volatiles": []
+      },
+      {
+       "species": "Archaludon",
+       "hp": 197,
+       "maxhp": 197,
+       "status": "",
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        12
        ],
        "volatiles": []
       },
@@ -199,9 +199,9 @@
        "volatiles": []
       },
       {
-       "species": "Rillaboom",
-       "hp": 193,
-       "maxhp": 193,
+       "species": "Ceruledge",
+       "hp": 181,
+       "maxhp": 181,
        "status": "",
        "fainted": false,
        "boosts": [
@@ -214,7 +214,8 @@
         0
        ],
        "pp": [
-        12
+        8,
+        20
        ],
        "volatiles": []
       }
@@ -241,18 +242,6 @@
       "A:team:p2c:"
      ],
      "start": 4
-    },
-    {
-     "site": "TEAM_ORDER",
-     "context": "queue",
-     "lo": 6,
-     "hi": 8,
-     "value": 6,
-     "group": [
-      "A:team:p1undefined:",
-      "A:team:p2undefined:"
-     ],
-     "start": 6
     }
    ],
    "log": [
@@ -269,14 +258,14 @@
     "|switch|p1a: Golisopod|Golisopod, L50, F|182/182",
     "|switch|p1a: Golisopod|Golisopod, L50, F|100/100",
     "|split|p1",
-    "|switch|p1b: Ceruledge|Ceruledge, L50, M|181/181",
-    "|switch|p1b: Ceruledge|Ceruledge, L50, M|100/100",
+    "|switch|p1b: Ceruledge|Ceruledge, L50, F|181/181",
+    "|switch|p1b: Ceruledge|Ceruledge, L50, F|100/100",
     "|split|p2",
-    "|switch|p2a: Archaludon|Archaludon, L50, M|197/197",
-    "|switch|p2a: Archaludon|Archaludon, L50, M|100/100",
+    "|switch|p2a: Gholdengo|Gholdengo, L50|179/179",
+    "|switch|p2a: Gholdengo|Gholdengo, L50|100/100",
     "|split|p2",
-    "|switch|p2b: Gholdengo|Gholdengo, L50|179/179",
-    "|switch|p2b: Gholdengo|Gholdengo, L50|100/100",
+    "|switch|p2b: Archaludon|Archaludon, L50, M|197/197",
+    "|switch|p2b: Archaludon|Archaludon, L50, M|100/100",
     "|turn|1"
    ],
    "state": {
@@ -309,8 +298,8 @@
          0
         ],
         "pp": [
-         12,
-         8
+         8,
+         12
         ],
         "volatiles": []
        },
@@ -330,9 +319,8 @@
          0
         ],
         "pp": [
-         20,
-         20,
-         8
+         8,
+         20
         ],
         "volatiles": []
        },
@@ -356,35 +344,6 @@
         ],
         "volatiles": []
        },
-       {
-        "species": "Rillaboom",
-        "hp": 193,
-        "maxhp": 193,
-        "status": "",
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12
-        ],
-        "volatiles": []
-       }
-      ]
-     },
-     {
-      "request": "move",
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
        {
         "species": "Archaludon",
         "hp": 197,
@@ -401,11 +360,20 @@
          0
         ],
         "pp": [
-         12,
-         8
+         8,
+         12
         ],
         "volatiles": []
-       },
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
        {
         "species": "Gholdengo",
         "hp": 179,
@@ -422,8 +390,29 @@
          0
         ],
         "pp": [
-         20,
-         8
+         8,
+         16
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Archaludon",
+        "hp": 197,
+        "maxhp": 197,
+        "status": "",
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         12
         ],
         "volatiles": []
        },
@@ -448,9 +437,9 @@
         "volatiles": []
        },
        {
-        "species": "Rillaboom",
-        "hp": 193,
-        "maxhp": 193,
+        "species": "Ceruledge",
+        "hp": 181,
+        "maxhp": 181,
         "status": "",
         "fainted": false,
         "boosts": [
@@ -463,7 +452,8 @@
          0
         ],
         "pp": [
-         12
+         8,
+         20
         ],
         "volatiles": []
        }
@@ -474,8 +464,8 @@
   },
   {
    "input": {
-    "p1": "move 1 1, move 2",
-    "p2": "move 2, move 1"
+    "p1": "move 1, move 1",
+    "p2": "move 1, move 1"
    },
    "draws": [
     {
@@ -489,17 +479,41 @@
       "H:stall:p2a:end"
      ],
      "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "H:protect:p2b:end",
+      "H:stall:p2b:end"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 4,
+     "hi": 6,
+     "value": 5,
+     "group": [
+      "H:protect:p1b:end",
+      "H:stall:p1b:end"
+     ],
+     "start": 4
     }
    ],
    "log": [
-    "|move|p2a: Archaludon|Protect|p2a: Archaludon",
-    "|-singleturn|p2a: Archaludon|Protect",
-    "|move|p2b: Gholdengo|Nasty Plot|p2b: Gholdengo",
-    "|-boost|p2b: Gholdengo|spa|2",
-    "|move|p1b: Ceruledge|Swords Dance|p1b: Ceruledge",
-    "|-boost|p1b: Ceruledge|atk|2",
-    "|move|p1a: Golisopod|Drill Run|p2a: Archaludon",
-    "|-activate|p2a: Archaludon|move: Protect",
+    "|move|p2a: Gholdengo|Protect|p2a: Gholdengo",
+    "|-singleturn|p2a: Gholdengo|Protect",
+    "|move|p2b: Archaludon|Protect|p2b: Archaludon",
+    "|-singleturn|p2b: Archaludon|Protect",
+    "|move|p1b: Ceruledge|Protect|p1b: Ceruledge",
+    "|-singleturn|p1b: Ceruledge|Protect",
+    "|move|p1a: Golisopod|Protect||[still]",
+    "|-fail|p1a: Golisopod",
     "|upkeep",
     "|turn|2"
    ],
@@ -533,8 +547,8 @@
          0
         ],
         "pp": [
-         11,
-         8
+         7,
+         12
         ],
         "volatiles": []
        },
@@ -545,7 +559,7 @@
         "status": "",
         "fainted": false,
         "boosts": [
-         2,
+         0,
          0,
          0,
          0,
@@ -554,11 +568,12 @@
          0
         ],
         "pp": [
-         20,
-         19,
-         8
+         7,
+         20
         ],
-        "volatiles": []
+        "volatiles": [
+         "stall"
+        ]
        },
        {
         "species": "Milotic",
@@ -580,35 +595,6 @@
         ],
         "volatiles": []
        },
-       {
-        "species": "Rillaboom",
-        "hp": 193,
-        "maxhp": 193,
-        "status": "",
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12
-        ],
-        "volatiles": []
-       }
-      ]
-     },
-     {
-      "request": "move",
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
        {
         "species": "Archaludon",
         "hp": 197,
@@ -625,13 +611,20 @@
          0
         ],
         "pp": [
-         12,
-         7
+         8,
+         12
         ],
-        "volatiles": [
-         "stall"
-        ]
-       },
+        "volatiles": []
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
        {
         "species": "Gholdengo",
         "hp": 179,
@@ -641,17 +634,42 @@
         "boosts": [
          0,
          0,
-         2,
+         0,
          0,
          0,
          0,
          0
         ],
         "pp": [
-         19,
-         8
+         7,
+         16
         ],
-        "volatiles": []
+        "volatiles": [
+         "stall"
+        ]
+       },
+       {
+        "species": "Archaludon",
+        "hp": 197,
+        "maxhp": 197,
+        "status": "",
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         12
+        ],
+        "volatiles": [
+         "stall"
+        ]
        },
        {
         "species": "Milotic",
@@ -674,9 +692,9 @@
         "volatiles": []
        },
        {
-        "species": "Rillaboom",
-        "hp": 193,
-        "maxhp": 193,
+        "species": "Ceruledge",
+        "hp": 181,
+        "maxhp": 181,
         "status": "",
         "fainted": false,
         "boosts": [
@@ -689,7 +707,8 @@
          0
         ],
         "pp": [
-         12
+         8,
+         20
         ],
         "volatiles": []
        }
@@ -700,10 +719,24 @@
   },
   {
    "input": {
-    "p1": "move 2, move 1 2",
-    "p2": "move 2, move 2"
+    "p1": "move 1, move 1",
+    "p2": "move 1, move 1"
    },
    "draws": [
+    {
+     "site": "STALL",
+     "context": "StallMove",
+     "lo": 0,
+     "hi": 3,
+     "value": 1
+    },
+    {
+     "site": "STALL",
+     "context": "StallMove",
+     "lo": 0,
+     "hi": 3,
+     "value": 2
+    },
     {
      "site": "STALL",
      "context": "StallMove",
@@ -716,47 +749,23 @@
      "context": "field:Residual",
      "lo": 0,
      "hi": 2,
-     "value": 1,
+     "value": 0,
      "group": [
-      "H:protect:p2b:end",
-      "H:stall:p2b:end"
+      "H:stall:p1b:end",
+      "H:protect:p1b:end"
      ],
      "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "H:stall:p2a:end",
-      "H:protect:p2a:end"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 4,
-     "hi": 6,
-     "value": 4,
-     "group": [
-      "H:protect:p1a:end",
-      "H:stall:p1a:end"
-     ],
-     "start": 4
     }
    ],
    "log": [
-    "|move|p2b: Gholdengo|Protect|p2b: Gholdengo",
-    "|-singleturn|p2b: Gholdengo|Protect",
-    "|move|p2a: Archaludon|Protect|p2a: Archaludon",
-    "|-singleturn|p2a: Archaludon|Protect",
-    "|move|p1a: Golisopod|Protect|p1a: Golisopod",
-    "|-singleturn|p1a: Golisopod|Protect",
-    "|move|p1b: Ceruledge|Shadow Sneak|p2b: Gholdengo",
-    "|-activate|p2b: Gholdengo|move: Protect",
+    "|move|p2a: Gholdengo|Protect||[still]",
+    "|-fail|p2a: Gholdengo",
+    "|move|p2b: Archaludon|Protect||[still]",
+    "|-fail|p2b: Archaludon",
+    "|move|p1b: Ceruledge|Protect|p1b: Ceruledge",
+    "|-singleturn|p1b: Ceruledge|Protect",
+    "|move|p1a: Golisopod|Protect||[still]",
+    "|-fail|p1a: Golisopod",
     "|upkeep",
     "|turn|3"
    ],
@@ -790,12 +799,10 @@
          0
         ],
         "pp": [
-         11,
-         7
+         6,
+         12
         ],
-        "volatiles": [
-         "stall"
-        ]
+        "volatiles": []
        },
        {
         "species": "Ceruledge",
@@ -804,7 +811,7 @@
         "status": "",
         "fainted": false,
         "boosts": [
-         2,
+         0,
          0,
          0,
          0,
@@ -813,11 +820,12 @@
          0
         ],
         "pp": [
-         19,
-         19,
-         8
+         6,
+         20
         ],
-        "volatiles": []
+        "volatiles": [
+         "stall"
+        ]
        },
        {
         "species": "Milotic",
@@ -839,35 +847,6 @@
         ],
         "volatiles": []
        },
-       {
-        "species": "Rillaboom",
-        "hp": 193,
-        "maxhp": 193,
-        "status": "",
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12
-        ],
-        "volatiles": []
-       }
-      ]
-     },
-     {
-      "request": "move",
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
        {
         "species": "Archaludon",
         "hp": 197,
@@ -884,13 +863,20 @@
          0
         ],
         "pp": [
-         12,
-         6
+         8,
+         12
         ],
-        "volatiles": [
-         "stall"
-        ]
-       },
+        "volatiles": []
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
        {
         "species": "Gholdengo",
         "hp": 179,
@@ -900,19 +886,38 @@
         "boosts": [
          0,
          0,
-         2,
+         0,
          0,
          0,
          0,
          0
         ],
         "pp": [
-         19,
-         7
+         6,
+         16
         ],
-        "volatiles": [
-         "stall"
-        ]
+        "volatiles": []
+       },
+       {
+        "species": "Archaludon",
+        "hp": 197,
+        "maxhp": 197,
+        "status": "",
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         12
+        ],
+        "volatiles": []
        },
        {
         "species": "Milotic",
@@ -935,9 +940,9 @@
         "volatiles": []
        },
        {
-        "species": "Rillaboom",
-        "hp": 193,
-        "maxhp": 193,
+        "species": "Ceruledge",
+        "hp": 181,
+        "maxhp": 181,
         "status": "",
         "fainted": false,
         "boosts": [
@@ -950,7 +955,8 @@
          0
         ],
         "pp": [
-         12
+         8,
+         20
         ],
         "volatiles": []
        }
@@ -961,72 +967,23 @@
   },
   {
    "input": {
-    "p1": "move 1 2, move 1 1",
-    "p2": "move 1 1, move 2"
+    "p1": "move 2 1, move 2 1",
+    "p2": "move 1, move 2 2"
    },
    "draws": [
     {
-     "site": "STALL",
-     "context": "StallMove",
-     "lo": 0,
-     "hi": 3,
-     "value": 2
-    },
-    {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 7
+     "value": 61
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 14
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 9
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 5
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 4
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 14
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 72
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 8,
-     "value": 7
+     "value": 16
     },
     {
      "site": "DAMAGE_ROLL",
@@ -1034,24 +991,31 @@
      "lo": 0,
      "hi": 16,
      "value": 15
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "H:protect:p2a:end",
+      "H:stall:p2a:end"
+     ],
+     "start": 0
     }
    ],
    "log": [
-    "|move|p2b: Gholdengo|Protect||[still]",
-    "|-fail|p2b: Gholdengo",
-    "|move|p1b: Ceruledge|Shadow Sneak|p2a: Archaludon",
-    "|split|p2",
-    "|-damage|p2a: Archaludon|148/197",
-    "|-damage|p2a: Archaludon|75/100",
-    "|move|p2a: Archaludon|Dragon Pulse|p1a: Golisopod",
+    "|move|p2a: Gholdengo|Protect|p2a: Gholdengo",
+    "|-singleturn|p2a: Gholdengo|Protect",
+    "|move|p1b: Ceruledge|Shadow Sneak|p2a: Gholdengo",
+    "|-activate|p2a: Gholdengo|move: Protect",
+    "|move|p2b: Archaludon|Dragon Pulse|p1b: Ceruledge",
     "|split|p1",
-    "|-damage|p1a: Golisopod|118/182",
-    "|-damage|p1a: Golisopod|64/100",
-    "|move|p1a: Golisopod|Drill Run|p2b: Gholdengo",
-    "|-supereffective|p2b: Gholdengo|1",
-    "|split|p2",
-    "|-damage|p2b: Gholdengo|77/179",
-    "|-damage|p2b: Gholdengo|43/100",
+    "|-damage|p1b: Ceruledge|123/181",
+    "|-damage|p1b: Ceruledge|67/100",
+    "|move|p1a: Golisopod|Drill Run|p2a: Gholdengo",
+    "|-activate|p2a: Gholdengo|move: Protect",
     "|upkeep",
     "|turn|4"
    ],
@@ -1071,7 +1035,7 @@
       "pokemon": [
        {
         "species": "Golisopod",
-        "hp": 118,
+        "hp": 182,
         "maxhp": 182,
         "status": "",
         "fainted": false,
@@ -1085,19 +1049,19 @@
          0
         ],
         "pp": [
-         10,
-         7
+         6,
+         11
         ],
         "volatiles": []
        },
        {
         "species": "Ceruledge",
-        "hp": 181,
+        "hp": 123,
         "maxhp": 181,
         "status": "",
         "fainted": false,
         "boosts": [
-         2,
+         0,
          0,
          0,
          0,
@@ -1106,9 +1070,8 @@
          0
         ],
         "pp": [
-         18,
-         19,
-         8
+         6,
+         19
         ],
         "volatiles": []
        },
@@ -1133,9 +1096,9 @@
         "volatiles": []
        },
        {
-        "species": "Rillaboom",
-        "hp": 193,
-        "maxhp": 193,
+        "species": "Archaludon",
+        "hp": 197,
+        "maxhp": 197,
         "status": "",
         "fainted": false,
         "boosts": [
@@ -1148,6 +1111,7 @@
          0
         ],
         "pp": [
+         8,
          12
         ],
         "volatiles": []
@@ -1162,8 +1126,31 @@
       ],
       "pokemon": [
        {
+        "species": "Gholdengo",
+        "hp": 179,
+        "maxhp": 179,
+        "status": "",
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         5,
+         16
+        ],
+        "volatiles": [
+         "stall"
+        ]
+       },
+       {
         "species": "Archaludon",
-        "hp": 148,
+        "hp": 197,
         "maxhp": 197,
         "status": "",
         "fainted": false,
@@ -1177,29 +1164,8 @@
          0
         ],
         "pp": [
-         11,
-         6
-        ],
-        "volatiles": []
-       },
-       {
-        "species": "Gholdengo",
-        "hp": 77,
-        "maxhp": 179,
-        "status": "",
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         2,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         19,
-         6
+         6,
+         11
         ],
         "volatiles": []
        },
@@ -1224,9 +1190,9 @@
         "volatiles": []
        },
        {
-        "species": "Rillaboom",
-        "hp": 193,
-        "maxhp": 193,
+        "species": "Ceruledge",
+        "hp": 181,
+        "maxhp": 181,
         "status": "",
         "fainted": false,
         "boosts": [
@@ -1239,7 +1205,256 @@
          0
         ],
         "pp": [
+         8,
+         20
+        ],
+        "volatiles": []
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1, move 1",
+    "p2": "move 1, move 1"
+   },
+   "draws": [
+    {
+     "site": "STALL",
+     "context": "StallMove",
+     "lo": 0,
+     "hi": 3,
+     "value": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "H:protect:p2b:end",
+      "H:stall:p2b:end"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "H:protect:p1b:end",
+      "H:stall:p1b:end"
+     ],
+     "start": 2
+    }
+   ],
+   "log": [
+    "|move|p2a: Gholdengo|Protect||[still]",
+    "|-fail|p2a: Gholdengo",
+    "|move|p2b: Archaludon|Protect|p2b: Archaludon",
+    "|-singleturn|p2b: Archaludon|Protect",
+    "|move|p1b: Ceruledge|Protect|p1b: Ceruledge",
+    "|-singleturn|p1b: Ceruledge|Protect",
+    "|move|p1a: Golisopod|Protect||[still]",
+    "|-fail|p1a: Golisopod",
+    "|upkeep",
+    "|turn|5"
+   ],
+   "state": {
+    "turn": 5,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "terrain": "",
+    "sides": [
+     {
+      "request": "move",
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Golisopod",
+        "hp": 182,
+        "maxhp": 182,
+        "status": "",
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         5,
+         11
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Ceruledge",
+        "hp": 123,
+        "maxhp": 181,
+        "status": "",
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         5,
+         19
+        ],
+        "volatiles": [
+         "stall"
+        ]
+       },
+       {
+        "species": "Milotic",
+        "hp": 202,
+        "maxhp": 202,
+        "status": "",
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Archaludon",
+        "hp": 197,
+        "maxhp": 197,
+        "status": "",
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
          12
+        ],
+        "volatiles": []
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gholdengo",
+        "hp": 179,
+        "maxhp": 179,
+        "status": "",
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         4,
+         16
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Archaludon",
+        "hp": 197,
+        "maxhp": 197,
+        "status": "",
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         5,
+         11
+        ],
+        "volatiles": [
+         "stall"
+        ]
+       },
+       {
+        "species": "Milotic",
+        "hp": 202,
+        "maxhp": 202,
+        "status": "",
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20
+        ],
+        "volatiles": []
+       },
+       {
+        "species": "Ceruledge",
+        "hp": 181,
+        "maxhp": 181,
+        "status": "",
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         20
         ],
         "volatiles": []
        }

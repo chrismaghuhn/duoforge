@@ -1,0 +1,24 @@
+{
+ "name": "s2_ally_target",
+ "purpose": "Single-target moves into the partner (allowed in doubles): Drill Run and Psychic at the ally, Dragon Pulse at an ally that protects itself.",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,0000000000000000000000000000000000000000000000000000000000000f01",
+ "teams": [
+  "Golisopod (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 1 SpD / 1 Spe\nAdamant Nature\n- Drill Run\n- Protect\n\nFarigiraf (F)\nAbility: No Ability\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Protect\n\nMilotic (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n\nArchaludon (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Protect",
+  "Archaludon (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Protect\n\nFarigiraf (M)\nAbility: No Ability\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Protect\n\nMilotic (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n\nGolisopod (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 1 SpD / 1 Spe\nAdamant Nature\n- Drill Run\n- Protect"
+ ],
+ "choices": [
+  {
+   "p1": "team 1234",
+   "p2": "team 1234"
+  },
+  {
+   "p1": "move 1 -2, move 1 -1",
+   "p2": "move 1 -2, move 2"
+  },
+  {
+   "p1": "move 2, move 1 1",
+   "p2": "move 1 1, move 1 -1"
+  }
+ ]
+}

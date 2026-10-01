@@ -35,6 +35,11 @@ bool dfi_closure_side_clauses_hold(const duoforge_side_setup *side);
  * Precondition: the setup passed validation. */
 bool dfi_closure_setup_supported(const dfi_support_manifest *manifest, const duoforge_battle_setup *setup);
 
+/* The same gate for a battle (it may have been decoded): every mechanic its
+ * registered members can reach is marked. Precondition: the battle passed
+ * the invariant check under a CLOSURE context. */
+bool dfi_closure_battle_supported(const dfi_support_manifest *manifest, const struct duoforge_battle *b);
+
 /* Builds the member of a validated setup: derived stats, HP, PP, stone flag,
  * stored ids. Returns false only on an engine bug. */
 bool dfi_closure_member_init(const duoforge_member_setup *src, dfi_member *dst);

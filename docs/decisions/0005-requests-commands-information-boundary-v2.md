@@ -36,7 +36,7 @@ Slot kinds: NONE 0 (unrequested slot), MOVE 1, SWITCH 2, PASS 3. Choice kinds: T
 
 1. MOVE for each move slot `k < move_count` with `pp > 0`, for each selectable target of its class (section 4), with `mega = 0` and, if the occupant is `mega_capable` and the side has not used Mega, also `mega = 1`. Order: move slot, then target, then mega.
 2. SWITCH to each reserve: brought, not active in either position, `hp > 0`; ascending roster index.
-3. A slot whose occupant is alive but has no selectable move would need Struggle (M3). The request fails with `E_UNSUPPORTED`; the state remains representable and checkable.
+3. **Superseded in closure step 2c (decision 0006 section 4.1):** the slot offers Struggle (`DUOFORGE_MOVE_SLOT_STRUGGLE`, no target, with the Mega declarations its moves would have). Originally: a slot whose occupant is alive but has no selectable move would need Struggle (M3). The request fails with `E_UNSUPPORTED`; the state remains representable and checkable.
 
 An empty position or a fainted occupant at TURN is forced to PASS (Showdown: a fainted active passes, `sim/side.ts:1343`).
 

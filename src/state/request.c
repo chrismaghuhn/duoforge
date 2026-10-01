@@ -2,6 +2,7 @@
 
 #include <string.h>
 
+#include "combat/turn.h"
 #include "core/arith.h"
 #include "core/bytes.h"
 #include "state/context_internal.h"
@@ -95,8 +96,9 @@ static uint32_t dfi_reserves(const dfi_side *side, uint8_t out[DUOFORGE_MAX_ROST
     return n;
 }
 
-/* Candidates of one requested slot in documented order. E_UNSUPPORTED: an
- * alive occupant without a selectable move (Struggle is M3). */
+/* Candidates of one requested slot in documented order. An alive occupant
+ * without a move with PP left gets Struggle instead of its moves (target
+ * NONE, with the Mega declarations its moves would have). */
 static duoforge_status dfi_slot_candidates(const duoforge_context *ctx, const struct duoforge_battle *b,
                                            uint32_t s, uint32_t slot, dfi_slot_list *out)
 {
@@ -131,7 +133,12 @@ static duoforge_status dfi_slot_candidates(const duoforge_context *ctx, const st
             ++moves;
         }
         if (moves == 0u) {
-            return DUOFORGE_E_UNSUPPORTED;
+            for (uint32_t mg = 0u; mg < megas; ++mg) {
+                if (!dfi_list_push(out, DUOFORGE_SLOT_MOVE, DUOFORGE_MOVE_SLOT_STRUGGLE, DUOFORGE_TARGET_NONE, mg,
+                                   0u)) {
+                    return DUOFORGE_E_INVARIANT;
+                }
+            }
         }
     }
     const uint32_t nr = dfi_reserves(side, reserves);
@@ -382,6 +389,13 @@ static bool dfi_choice_is_zero(const duoforge_side_choice *c)
 duoforge_status duoforge_battle_step(const duoforge_context *ctx, duoforge_battle *battle,
                                      const duoforge_decision_bundle *bundle, duoforge_step_result *out_result)
 {
+    return dfi_battle_step_tape(ctx, battle, bundle, NULL, 0u, NULL, out_result);
+}
+
+duoforge_status dfi_battle_step_tape(const duoforge_context *ctx, duoforge_battle *battle,
+                                     const duoforge_decision_bundle *bundle, const dfi_tape_entry *tape,
+                                     uint32_t tape_len, uint32_t *out_tape_used, duoforge_step_result *out_result)
+{
     if (ctx == NULL || battle == NULL || bundle == NULL || out_result == NULL) {
         return DUOFORGE_E_NULL_ARGUMENT;
     }
@@ -430,8 +444,34 @@ duoforge_status duoforge_battle_step(const duoforge_context *ctx, duoforge_battl
             return DUOFORGE_E_INVALID_ARGUMENT;
         }
     }
+    if (battle->boundary_kind == DUOFORGE_BOUNDARY_TURN && dfi_context_is_closure(ctx)) {
+        /* The turn runs on a working copy; any failure commits nothing. */
+        struct duoforge_battle tmp = *battle;
+        dfi_draws draws = dfi_draws_from_rng(&tmp.rng);
+        draws.tape = tape;
+        draws.tape_len = tape_len;
+        const duoforge_status ts = dfi_turn_run(ctx, &tmp, in.responses, &draws);
+        if (out_tape_used != NULL) {
+            *out_tape_used = draws.tape_pos;
+        }
+        if (ts != DUOFORGE_OK) {
+            return ts;
+        }
+        if (dfi_state_check(ctx, &tmp, NULL) != DUOFORGE_OK) {
+            return DUOFORGE_E_INVARIANT;
+        }
+        *battle = tmp;
+        duoforge_step_result turn_res;
+        memset(&turn_res, 0, sizeof turn_res);
+        turn_res.epoch = battle->request_epoch;
+        turn_res.kind = (uint8_t)DUOFORGE_STEP_BOUNDARY;
+        turn_res.boundary_kind = battle->boundary_kind;
+        turn_res.request_mask = battle->request_mask;
+        *out_result = turn_res;
+        return DUOFORGE_OK;
+    }
     if (battle->boundary_kind != DUOFORGE_BOUNDARY_TEAM_SELECTION) {
-        return DUOFORGE_E_UNSUPPORTED; /* no combat yet: honest, atomic, documented */
+        return DUOFORGE_E_UNSUPPORTED; /* no combat for this boundary or data kind yet */
     }
     dfi_team_picks picks;
     memset(&picks, 0xFF, sizeof picks);
