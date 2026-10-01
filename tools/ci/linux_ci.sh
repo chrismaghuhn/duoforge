@@ -9,11 +9,15 @@
 #   gcc-release-ipo   GCC Release with link-time optimization
 #   clang-release-ipo Clang Release with link-time optimization
 #   clang-tsan        Clang with ThreadSanitizer, the batch tests
+#   --setup-python    create ~/df-venv with NumPy; gcc-release-ipo then runs
+#                     the Python package tests (needs python3.12-venv:
+#                     sudo apt install python3.12-venv)
 set -u
 
 SRC=$(cd "$(dirname "$0")/../.." && pwd)
 OUT=$HOME/df-build/ci
 JOBS=$(nproc)
+PY=$HOME/df-venv/bin/python
 mkdir -p "$OUT"
 git config --global --add safe.directory "$SRC" 2>/dev/null
 
@@ -51,9 +55,20 @@ for j in "$@"; do
     case "$j" in
     gcc-asan) job "$j" gcc g++ "" -DCMAKE_BUILD_TYPE=Debug -DDUOFORGE_ENABLE_SANITIZERS=ON ;;
     clang-debug) job "$j" clang clang++ "" -DCMAKE_BUILD_TYPE=Debug ;;
-    gcc-release-ipo) job "$j" gcc g++ "" -DCMAKE_BUILD_TYPE=Release -DDUOFORGE_ENABLE_IPO=ON ;;
+    gcc-release-ipo)
+        py=()
+        [ -x "$PY" ] && py=(-DDUOFORGE_PYTHON="$PY")
+        job "$j" gcc g++ "" -DCMAKE_BUILD_TYPE=Release -DDUOFORGE_ENABLE_IPO=ON "${py[@]}"
+        ;;
     clang-release-ipo) job "$j" clang clang++ "" -DCMAKE_BUILD_TYPE=Release -DDUOFORGE_ENABLE_IPO=ON ;;
     clang-tsan) job "$j" clang clang++ 'duoforge\.batch\.' -DCMAKE_BUILD_TYPE=RelWithDebInfo -DDUOFORGE_ENABLE_TSAN=ON ;;
+    --setup-python)
+        if python3 -m venv "$HOME/df-venv" && "$PY" -m pip install --quiet --upgrade numpy; then
+            echo "RESULT setup-python PASS numpy $("$PY" -c 'import numpy; print(numpy.__version__)')"
+        else
+            echo "RESULT setup-python FAIL (is python3.12-venv installed?)"
+        fi
+        ;;
     *) echo "RESULT $j FAIL unknown job" ;;
     esac
 done

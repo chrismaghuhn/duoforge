@@ -60,7 +60,7 @@ if(DUOFORGE_ENABLE_IPO)
     set(DUOFORGE_IPO ON)
 endif()
 
-add_library(duoforge STATIC
+set(DUOFORGE_SOURCES
     src/duoforge.c
     src/core/alloc.c
     src/core/sha256.c
@@ -86,6 +86,7 @@ add_library(duoforge STATIC
     src/combat/events.c
     src/combat/turn.c
 )
+add_library(duoforge STATIC ${DUOFORGE_SOURCES})
 target_include_directories(duoforge
     PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -98,13 +99,42 @@ duoforge_configure_target(duoforge)
 # Batch runtime (decision 0012): a separate library over the public API,
 # with its worker threads.
 find_package(Threads REQUIRED)
-add_library(duoforge_batch STATIC
+set(DUOFORGE_BATCH_SOURCES
     src/batch/pool.c
     src/batch/batch.c
 )
+add_library(duoforge_batch STATIC ${DUOFORGE_BATCH_SOURCES})
 target_include_directories(duoforge_batch PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_link_libraries(duoforge_batch PUBLIC duoforge Threads::Threads)
 duoforge_configure_target(duoforge_batch)
+
+# The shared library of the Python package (M7, decision 0013): the core and
+# the batch runtime in one module, every function exported.
+add_library(duoforge_shared SHARED ${DUOFORGE_SOURCES} ${DUOFORGE_BATCH_SOURCES})
+target_include_directories(duoforge_shared
+    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_link_libraries(duoforge_shared PRIVATE Threads::Threads)
+set_target_properties(duoforge_shared PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+    WINDOWS_EXPORT_ALL_SYMBOLS ON)
+if(MSVC)
+    # WINDOWS_EXPORT_ALL_SYMBOLS reads the objects' symbol tables, which
+    # /GL objects do not have: link-time code generation stays off here (the
+    # per-configuration property overrides the general one).
+    set_target_properties(duoforge_shared PROPERTIES
+        INTERPROCEDURAL_OPTIMIZATION OFF
+        INTERPROCEDURAL_OPTIMIZATION_RELEASE OFF)
+endif()
+duoforge_configure_target(duoforge_shared)
+
+# The struct layouts and constants as JSON, for the Python layout test.
+add_executable(duoforge_layout_dump tools/layout/layout_dump.c)
+target_include_directories(duoforge_layout_dump PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
+duoforge_configure_target(duoforge_layout_dump)
+
+set(DUOFORGE_PYTHON "" CACHE FILEPATH
+    "Python 3.10+ with NumPy 2 for the duoforge.python tests (empty: the tests report skipped)")
 
 if(BUILD_TESTING)
     # C++ is optional and used only for the extern "C" link check.
