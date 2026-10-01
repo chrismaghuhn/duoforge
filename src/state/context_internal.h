@@ -14,6 +14,9 @@
 #define DFI_CONTEXT_BYTES_SIZE 63u
 #define DFI_CONTEXT_TABLE_HASH_OFF 31u
 #define DFI_CONTEXT_TABLE_CAPACITY 65535u
+/* The certified profile (decision 0010): a CLOSURE context registers
+ * DUOFORGE_MAX_ROSTER members per side and brings this many. */
+#define DFI_CLOSURE_BROUGHT_COUNT 4u
 
 struct duoforge_context {
     uint8_t data_kind; /* validated, narrowed copies of the config */

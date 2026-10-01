@@ -21,7 +21,7 @@ Roadmap M5 asks to freeze the team specifications, the rules and information pro
 | Pairings | A-B, B-A, A-A, B-B |
 | Data kind and context | `CLOSURE`, `max_roster` 6, `brought_count` 4; both sides register exactly 6 members (context fingerprint `09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306`) |
 | Information profile | decision 0007: observation v2 (736 bytes) and the per-player event log |
-| State artifacts | BATTLE_STATE v3, CONTEXT v3, semantics 3, SHA-256 digests; library 0.6.0 |
+| State artifacts | BATTLE_STATE v3, CONTEXT v3, semantics 3, SHA-256 digests; library 0.7.0 (with the freeze of step 2) |
 | Randomness | PCG32 XSH-RR (`pcg-c-basic@bc39cd7`), draw alignment B |
 
 The reference accepts 4 to 6 registered members in this format (its minimum is the picked team size, 4). The certified profile is narrower by the owner's decision; under `CLOSURE` the engine is to reject the rest explicitly (section 4, step 2), never accept it silently.
@@ -35,7 +35,7 @@ Proposed role: `CLOSURE_DEV` is the development profile. It has the same rule co
 ## 4. M5 steps
 
 1. This note.
-2. **Profile freeze in code.** `CLOSURE` accepts only the context (6, 4) and exactly 6 members per side; anything else fails explicitly (`E_INVALID_ARGUMENT` at setup, `E_INVARIANT` for a state). Four-member fixtures run under `CLOSURE_DEV`; the conformance test already falls back to it.
+2. **Profile freeze in code.** `CLOSURE` accepts only the context (6, 4) and exactly 6 members per side; anything else fails explicitly (`E_INVALID_ARGUMENT` at setup, `E_INVARIANT` for a state). Four-member fixtures run under `CLOSURE_DEV`; the conformance test already falls back to it. Done in library 0.7.0: 8 of the 71 recorded battles now run under `CLOSURE`.
 3. **More reference battles in the certified profile.** Today 8 recorded battles are full real-team battles. Add recorded battles of the real teams for all four pairings (random plans; seeds searched for coverage).
 4. **Certified dataset.** A runner plays N battles per pairing with a documented seed derivation and the uniform random policy, stores per battle the seeds, the command tape and the final digest, and replays every battle. Output and manifest (versions, pins, fingerprints) go to `docs/certification/closure-v1/`.
 5. **Failure minimization.** A tool that shrinks a failing battle (seeds, tape, failing check) to the shortest prefix and the simplest choices that still fail.

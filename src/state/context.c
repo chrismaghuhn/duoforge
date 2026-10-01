@@ -56,6 +56,10 @@ duoforge_status duoforge_context_create(const duoforge_context_config *config,
     if (c.brought_count < 1u || c.brought_count > c.max_roster) {
         return DUOFORGE_E_INVALID_ARGUMENT;
     }
+    if (c.data_kind == DUOFORGE_DATA_KIND_CLOSURE &&
+        (c.max_roster != DUOFORGE_MAX_ROSTER || c.brought_count != DFI_CLOSURE_BROUGHT_COUNT)) {
+        return DUOFORGE_E_INVALID_ARGUMENT; /* the certified profile: register 6, bring 4 (decision 0010) */
+    }
     if (closure) {
         /* The generated tables are built in: no counts, no table. */
         if (c.species_count != 0u || c.move_count != 0u || c.move_target_classes != NULL) {

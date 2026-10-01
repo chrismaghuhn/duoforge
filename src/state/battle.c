@@ -77,6 +77,11 @@ static bool dfi_side_setup_valid(const struct duoforge_context *ctx, const duofo
     if (member_count < ctx->brought_count || member_count > ctx->max_roster) {
         return false;
     }
+    /* The certified profile registers exactly max_roster (6) members
+     * (decision 0010); CLOSURE_DEV and SYNTHETIC take brought..max. */
+    if (ctx->data_kind == DUOFORGE_DATA_KIND_CLOSURE && member_count != ctx->max_roster) {
+        return false;
+    }
     const bool closure = dfi_context_is_closure(ctx);
     const bool dev = ctx->data_kind == DUOFORGE_DATA_KIND_CLOSURE_DEV;
     for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
