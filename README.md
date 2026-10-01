@@ -13,6 +13,7 @@ DuoForge is a deterministic, headless Pokémon Doubles simulation engine designe
 - team selection (ordered picks) and complete joint side-choice domains per turn, enumerated in a documented deterministic order, with per-player requests, request epochs and simultaneous decision bundles;
 - a perspective-safe observation, since observation v2 exactly what a human player sees (decision 0007): open team sheets with abilities, items, natures and maximum PP; own exact HP and PP; the opponent's HP at the Champions percent precision as last seen and its PP derived from the uses seen; statuses, stat stages, confusion, charging moves, Mega formes, items used up; weather, terrain, Trick Room and the side conditions with remaining turns; which sides must answer. Sleep, freeze and confusion turns stay hidden on both sides;
 - a per-player event log of every step (decision 0007 section 11): one event per line of the battle protocol the game shows that player, in the game's order, with the own HP exact and the opponent's as the percent display; each player's knowledge of the opponent is folded from these events only (section 12);
+- a benchmark driver and API (`bench/`, decision 0008): STEP_CORE, REQUEST, SNAPSHOT and EPISODE_NATIVE on the reference teams with a reproducible manifest, wall and process CPU time per repetition (a busy machine shows as disturbed), and a tally of what each side's policy chose (moves by id, Mega, switches, replacements, passes, targets);
 - generated data tables of the two reference teams from the pinned Showdown revision, and the Champions stat and PP formulas (step 1a of the combat closure);
 - the state v3 layout of the combat closure with its invariants, codec and oracle (step 1b-1);
 - contexts over the real closure data, validation of real sets with derived stats and PP, and the support gate (step 1b-2), which both real teams pass since step 12;
@@ -108,7 +109,7 @@ Every call is failure-atomic: on error nothing is mutated or leaked, and the onl
 
 ## Documentation
 
-- Decisions: `docs/decisions/0001` (RNG), `0002` (state, identity, encoding), `0003` (build and evidence), `0004` (owner selections), `0005` (requests, commands, information boundary, state v2), `0006` (combat closure design, proposed; no code yet)
+- Decisions: `docs/decisions/0001` (RNG), `0002` (state, identity, encoding), `0003` (build and evidence), `0004` (owner selections), `0005` (requests, commands, information boundary, state v2), `0006` (combat closure design, built), `0007` (player view: observation v2, event log, knowledge from events), `0008` (benchmark API and action tally)
 - Architecture proposal and contracts: `docs/ARCHITECTURE.md`, `docs/DECISION_CONTRACT.md`, `docs/DETERMINISM_AND_REPLAY.md`, `docs/ROADMAP.md`
 - Status manifest: `docs/support/README.md`; open decisions: `docs/OPEN_DECISIONS.md`
 - Task statements: `tasks/M0_BOOTSTRAP.md`, `tasks/M1_DETERMINISTIC_PRIMITIVES.md`, `tasks/M2_REQUESTS_AND_COMMANDS.md`, `tasks/M3_M4_COMBAT_CLOSURE.md` (next, not started)

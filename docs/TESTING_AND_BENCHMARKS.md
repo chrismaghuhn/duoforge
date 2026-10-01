@@ -68,6 +68,8 @@ Collect battles/s, logical turns/s, decision boundaries/s, submitted side decisi
 
 The first benchmark establishes a baseline. No speculative target such as 5,000 Gen-9 doubles battles/s/core is a release requirement.
 
+As built (decision `0008`): `bench/` measures STEP_CORE, REQUEST, SNAPSHOT and EPISODE_NATIVE on the workload `closure-pairings-v1` and counts what each side's policy chose (`dfb_tally`); a repetition whose process CPU time stays well below its wall time is reported as disturbed.
+
 ## 5. Reproducible workload manifest
 
 Record engine revision, dirty-worktree flag, binary hash when useful, compiler/flags/build mode, OS, CPU, actual worker count/affinity, teams, profiles, source data hashes, RNG seed set, policy implementation and seed, warmup procedure, measured repetitions and logging mode.
