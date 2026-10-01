@@ -23,6 +23,10 @@ checks its precondition and fails loudly otherwise:
                     residual is kept instead: the tie orders their two end
                     lines, and the entry states which side's line comes
                     first (the engine's draw; see side_end_tie)
+  SPEED_TIE event:ModifyDamage
+                    only between screens, of which at most one applies, or
+                    between the attacker's Life Orb and the target's Chople
+                    Berry, whose modifiers commute
   INSERT_TIE        only if the runSwitch actions in the tied group stand
                     together in the queue: runSwitch takes every entry
                     queued right behind it, so their queue order changes
@@ -176,6 +180,11 @@ def drop_reason(d, state):
         # side and the move's category, so at most one applies to a hit.
         if all(g.startswith(('H:reflect:', 'H:lightscreen:')) for g in group):
             return 'screen handlers of which at most one applies'
+        # The attacker's Life Orb and the target's Chople Berry (Team C) at
+        # one speed: their two modifiers chained from 4096 commute, and a
+        # screen (a side condition, speed 0) always runs after both.
+        if sorted(g.split(':')[1] for g in group) == ['chopleberry', 'lifeorb']:
+            return 'Life Orb and Chople Berry, whose modifiers commute'
         raise SystemExit('trace_to_c: ModifyDamage tie with %s' % group)
     if site == 'SPEED_TIE' and ctx != 'queue':
         raise SystemExit('trace_to_c: unhandled tie context %s' % ctx)
@@ -536,8 +545,9 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             cond = {'move: Tailwind': 1, 'Reflect': 2, 'move: Reflect': 2, 'move: Light Screen': 3}[args[1]]
             e = ev_tuple(EV['SIDE_START' if kind == '-sidestart' else 'SIDE_END'], detail=side, amount=cond)
         elif kind == '-enditem':
+            # [weaken]: the second line of a resist berry (Team C, Chople Berry), detail 1.
             e = ev_tuple(EV['ITEM_END'], ev_pos(args[0]), NOPOS, 0, 0, tables['ITEM'][key(args[1])] + 1,
-                         flags=FLAG['EATEN'] if '[eat]' in attrs else 0)
+                         detail=1 if '[weaken]' in attrs else 0, flags=FLAG['EATEN'] if '[eat]' in attrs else 0)
         elif kind == 'detailschange':
             e = ev_tuple(EV['FORME'], ev_pos(args[0]), ident=tables['FORME'][key(args[1].split(',')[0])])
         elif kind == '-mega':

@@ -1,6 +1,6 @@
 # 0009 — Team C: the expansion track (data kind, gate, steps, evidence)
 
-Status: **accepted** (owner, 2026-10-01: "bau das erstmal so"; setup rule: the closure rule, section 3.4). **Steps 1 to 4 built** (section 10). Builds on decision `0004` (two reference teams), `0006` (data, state v3, draw sites, fixtures, evidence), `0007` (player view) and `0010` (the certified CLOSURE profile, the role of `CLOSURE_DEV`, draw alignment B confirmed), and on the research in `docs/research/third-team/` (PR #32). "M§n" means section n of `docs/research/third-team/mechanics.md`; X1 to X9 are its executed experiments.
+Status: **accepted** (owner, 2026-10-01: "bau das erstmal so"; setup rule: the closure rule, section 3.4). **Steps 1 to 5 built** (section 10). Builds on decision `0004` (two reference teams), `0006` (data, state v3, draw sites, fixtures, evidence), `0007` (player view) and `0010` (the certified CLOSURE profile, the role of `CLOSURE_DEV`, draw alignment B confirmed), and on the research in `docs/research/third-team/` (PR #32). "M§n" means section n of `docs/research/third-team/mechanics.md`; X1 to X9 are its executed experiments.
 
 ## 1. Owner inputs (2026-10-01)
 
@@ -325,3 +325,30 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
   - `src/state/{battle_internal,closure_member}.h`, `closure_member.c`, `invariants.c`;
   - `src/data/support_manifest.c`;
   - `tools/reference/trace_to_c.py`, `tools/state_model/state_v3_model.py`.
+
+### 10.5 Step 5: Chople Berry and Rocky Helmet
+
+- **Chople Berry.** In the ModifyDamage chain of the damage calculation, after burn and before the 16-bit truncation (`data/items.ts:1030-1053`). The target eats it when the move is Fighting and super effective against it: `[-enditem] [eat]`, then `[-enditem] [weaken]`, then 2048/4096. The berry is gone for later hits (the consumed flag). The `[weaken]` line is ITEM_END with `detail` 1; the public header documents this (no new event kind, unlike the plan in section 5).
+- **ModifyDamage order.** The reference runs the attacker's Life Orb and the target's Chople Berry by their holders' speed, and a screen last, because a side condition has no speed (`comparePriority`). Two modifiers chained from 4096 commute, and the screen always comes after both. So the engine chains Life Orb, Chople Berry and the screen in that order without a speed comparison. When the two holders have the same speed, the reference shuffles the two handlers; the shuffle decides nothing. The converter drops that draw, and the engine does not draw (decision 0006 section 5.1, proposal B).
+- **Rocky Helmet.** At DamagingHit with `onDamagingHitOrder` 2, before the order-less handlers (thaw, Stamina). Those run left to right (`compareLeftToRightOrder`, `sim/battle.ts:416-421`). The helmet also hits when the hit knocked its holder out, because the faint is not processed yet. A contact move costs the attacker floor(maxHP / 6), at least 1 (`data/items.ts:5295-5309`). Afterwards the attacker's own Emergency Exit is checked against its HP before DamagingHit (`sim/battle-actions.ts:1130-1132`). A Flip Turn user that the helmet knocks out loses its switch flag with the faint (`faint()`, `sim/pokemon.ts:1585`). The engine clears it with the position's other state when the faint is processed, so no pivot follows.
+- **Evidence.** Eight recorded battles:
+  - `c05_chople_berry`: eaten with Life Orb and Reflect in one chain, without a KO, and gone for the next hit.
+  - `c05_chople_neutral`: Close Combat into a holder that Fighting hits neutrally does not eat the berry. The Life Orb and Chople Berry tie is recorded.
+  - `c05_rocky_helmet`: Fake Out, and a KO of the holder before the attacker's recoil.
+  - `c05_rocky_helmet_faint`: Staraptor faints to the helmet, with neither recoil nor Life Orb after it.
+  - `c05_flip_turn_helmet`: no pivot after a helmet KO.
+  - `c05_helmet_exit`: a non-contact move costs nothing. Golisopod's Emergency Exit fires after the helmet.
+  - `c05_helmet_order`: Close Combat's self-drops and Leech Life's drain come before the helmet.
+  - `c05_helmet_sitrus`: Sitrus Berry is eaten in the Update after the helmet's damage, before the faint line.
+
+  Ten negative controls each make a battle fail:
+  - no halving, eating on a neutral hit, no `[weaken]` line, no `[eat]`;
+  - the helmet without the contact check, only for standing holders, at 1/8, or without the attacker's Emergency Exit;
+  - the helmet moved before the self-drops or after the Update.
+- **Not recorded.** The Life Orb and Chople Berry tie in a hit that eats the berry; the result does not depend on the order. A frozen or Stamina holder of the helmet, whose handlers run after it by order.
+- **Converter.** A ModifyDamage tie between `lifeorb` and `chopleberry` is dropped; any other ModifyDamage tie still fails.
+- **Shared files touched:**
+  - `include/duoforge/duoforge.h` (comment of ITEM_END);
+  - `src/combat/turn.c` (the chain, the eaten flag, DamagingHit and the attacker's Emergency Exit);
+  - `src/data/support_manifest.c`;
+  - `tools/reference/trace_to_c.py` (`[weaken]`, the tie rule).

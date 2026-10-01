@@ -510,7 +510,8 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_EVENT_FIELD_END       26u /* [-fieldend] detail: DUOFORGE_FIELD_* */
 #define DUOFORGE_EVENT_SIDE_START      27u /* [-sidestart] detail: the side, amount: DUOFORGE_SIDE_* */
 #define DUOFORGE_EVENT_SIDE_END        28u /* [-sideend] as SIDE_START */
-#define DUOFORGE_EVENT_ITEM_END        29u /* [-enditem] position, id2: item + 1; flags EATEN */
+#define DUOFORGE_EVENT_ITEM_END        29u /* [-enditem] position, id2: item + 1; flags EATEN; detail 1: the
+                                              [weaken] line of a resist berry (Team C) */
 #define DUOFORGE_EVENT_FORME           30u /* [detailschange] position, id: the new forme */
 #define DUOFORGE_EVENT_MEGA            31u /* [-mega] position, id2: the stone (item + 1) */
 #define DUOFORGE_EVENT_PREPARE         32u /* [-prepare] position, id: the move it charges */

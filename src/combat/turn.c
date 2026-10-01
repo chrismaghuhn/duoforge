@@ -712,6 +712,8 @@ static uint32_t dfi_type_mod(const dfi_member *target, uint32_t move_type)
     return mod;
 }
 
+static void dfi_use_item(dfi_run *r, uint32_t flat);
+
 /* getDamage and the Champions modifyDamage (sim/battle-actions.ts:1585-1720,
  * data/mods/champions/scripts.ts:196-312) for a turn-core move: CRIT and
  * DAMAGE_ROLL draws in that order. */
@@ -841,13 +843,14 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     if (!dfi_randomize(damage, roll, &damage)) {
         return DUOFORGE_E_INVARIANT;
     }
+    uint32_t mod = DFI_BIAS6; /* neutral for Struggle's typeless hit */
     if (move_type < DFI_TYPE_COUNT) {
         /* STAB 1.5; Adaptability 2 (Team C, data/abilities.ts:43-56; no Tera) */
         const uint32_t stab = !dfi_has_type(a, move_type) ? 4096u
                               : dfi_ability(a, DFI_ABILITY_ADAPTABILITY) ? 8192u
                                                                          : 6144u;
         damage = dfi_modify(damage, stab);
-        const uint32_t mod = dfi_type_mod(d, move_type);
+        mod = dfi_type_mod(d, move_type);
         if (!dfi_type_damage(damage, mod, &damage)) {
             return DUOFORGE_E_INVARIANT;
         }
@@ -869,21 +872,38 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     if (physical && a->status == DFI_STATUS_BRN) {
         damage = dfi_modify(damage, 2048u);
     }
-    /* ModifyDamage: Reflect (physical) and Light Screen (special) on the
-     * target's side, not against a critical hit and not on the user itself,
-     * 2732/4096 in doubles. */
+    /* ModifyDamage, one chained modifier: the attacker's Life Orb 5324/4096;
+     * the target's Chople Berry (Team C, data/items.ts:1030-1053), which it
+     * eats inside the calculation of a super-effective Fighting hit
+     * ([-enditem] [eat], then [weaken]) for 2048/4096; then Reflect
+     * (physical) or Light Screen (special) on the target's side, not against
+     * a critical hit and not on the user itself, 2732/4096 in doubles.
+     * The reference runs the held items by their holders' speed and a screen
+     * last (a side condition has no speed, comparePriority). The first two
+     * modifiers chained from 4096 give the same result in either order, so a
+     * speed tie between their holders decides nothing (its shuffle draw is
+     * dropped, decision 0009 section 10.5). */
     const dfi_side *ds = &r->b->sides[target / 2u];
     uint32_t chain = 4096u;
-    if (dfi_holds(a, DFI_ITEM_LIFEORB) && !dfi_chain_modify(chain, 5324u, &chain)) {
+    if (dfi_holds(a, DFI_ITEM_LIFEORB)) {
+        ok = dfi_chain_modify(chain, 5324u, &chain);
+    }
+    if (move_type == DFI_TYPE_FIGHTING && mod > DFI_BIAS6 && dfi_holds(d, DFI_ITEM_CHOPLEBERRY)) {
+        dfi_use_item(r, target); /* [-enditem] [eat] */
+        duoforge_event weaken =
+            dfi_ev(DUOFORGE_EVENT_ITEM_END, target, DUOFORGE_CAUSE_NONE, 1u + DFI_ITEM_CHOPLEBERRY, DUOFORGE_NO_POSITION);
+        weaken.detail = 1u;
+        dfi_emit(r, &weaken); /* [-enditem] [weaken] */
+        ok = ok && dfi_chain_modify(chain, 2048u, &chain);
+    }
+    if (!crit && target != user &&
+        ((physical && ds->reflect_turns != 0u) ||
+         (md->category == DFI_CATEGORY_SPECIAL && ds->light_screen_turns != 0u))) {
+        ok = ok && dfi_chain_modify(chain, 2732u, &chain);
+    }
+    if (!ok) {
         return DUOFORGE_E_INVARIANT;
     }
-    if (!crit && target != user && ((physical && ds->reflect_turns != 0u) ||
-                                    (md->category == DFI_CATEGORY_SPECIAL && ds->light_screen_turns != 0u)) &&
-        !dfi_chain_modify(chain, 2732u, &chain)) {
-        return DUOFORGE_E_INVARIANT;
-    }
-    /* Life Orb (5324/4096) and a screen chain into one modifier; two
-     * modifiers chained from 4096 give the same result in either order. */
     if (chain != 4096u) {
         damage = dfi_modify(damage, chain);
     }
@@ -1076,7 +1096,8 @@ static void dfi_use_item(dfi_run *r, uint32_t flat)
     b->sides[side].members[occupant].item_consumed = 1u;
     const uint32_t item = b->sides[side].members[occupant].item;
     duoforge_event e = dfi_ev(DUOFORGE_EVENT_ITEM_END, flat, DUOFORGE_CAUSE_NONE, item, DUOFORGE_NO_POSITION);
-    e.flags = item == 1u + DFI_ITEM_SITRUSBERRY ? (uint8_t)DUOFORGE_EVENT_FLAG_EATEN : 0u;
+    const bool berry = item == 1u + DFI_ITEM_SITRUSBERRY || item == 1u + DFI_ITEM_CHOPLEBERRY;
+    e.flags = berry ? (uint8_t)DUOFORGE_EVENT_FLAG_EATEN : 0u;
     dfi_emit(r, &e);
 }
 
@@ -1866,7 +1887,9 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
      * data): runMoveEffects flags the user when the move hit a target and the
      * user still stands; with no reserve the request would clear it again
      * (sim/battle-actions.ts:1290-1312), so the engine sets it only when a
-     * reserve can come in, as for Parting Shot. */
+     * reserve can come in, as for Parting Shot. A user that a Rocky Helmet
+     * then knocks out loses it again (faint(), sim/pokemon.ts:1585): here
+     * with the position's other state when the faint is processed. */
     if ((md->flags & DFI_MOVE_FLAG_SELF_SWITCH) != 0u) {
         bool hit_any = false;
         for (uint32_t i = 0u; i < count; ++i) {
@@ -1925,7 +1948,24 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             return DUOFORGE_E_UNSUPPORTED; /* no closure move has both */
         }
     }
-    /* DamagingHit, per damaged target: a damaging Fire move thaws a frozen
+    /* DamagingHit, its handlers by order, then target (compareLeftToRightOrder,
+     * sim/battle.ts:416-421). Rocky Helmet (Team C, onDamagingHitOrder 2,
+     * data/items.ts:5295-5309) comes first, also when the hit knocked its
+     * holder out (the faint is not processed yet): a contact move costs the
+     * attacker floor(maxHP / 6), at least 1. */
+    const uint32_t user_before_hit = m->hp;
+    for (uint32_t i = 0u; i < count; ++i) {
+        if (hit[i] && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u &&
+            dfi_holds(dfi_at(b, targets[i]), DFI_ITEM_ROCKYHELMET)) {
+            const uint32_t helmet = (uint32_t)m->hp_max / 6u;
+            st = dfi_deal(r, user, helmet == 0u ? 1u : helmet, DUOFORGE_CAUSE_ITEM, 1u + DFI_ITEM_ROCKYHELMET,
+                          targets[i]);
+            if (st != DUOFORGE_OK) {
+                return st;
+            }
+        }
+    }
+    /* Then, per standing damaged target: a damaging Fire move thaws a frozen
      * target (frz, status first), Stamina raises Defense by 1. */
     for (uint32_t i = 0u; i < count; ++i) {
         dfi_member *tm = dfi_at(b, targets[i]);
@@ -1946,6 +1986,9 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                       dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_STAMINA, DFI_BOOST_PRIMARY));
         }
     }
+    /* The attacker's own Emergency Exit when DamagingHit (Rocky Helmet) took
+     * it to half (sim/battle-actions.ts:1130-1132). */
+    dfi_emergency_exit(r, user, user_before_hit);
     bool any = false;
     for (uint32_t i = 0u; i < count; ++i) {
         any = any || hit[i];
