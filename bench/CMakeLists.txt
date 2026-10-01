@@ -9,7 +9,7 @@ add_custom_target(duoforge_bench_revision
 
 add_library(duoforge_bench_lib STATIC bench.c tally.c)
 target_include_directories(duoforge_bench_lib PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(duoforge_bench_lib PUBLIC duoforge duoforge_test_support)
+target_link_libraries(duoforge_bench_lib PUBLIC duoforge duoforge_test_support duoforge_batch)
 duoforge_configure_target(duoforge_bench_lib)
 
 # The C flags of the configuration being built. Multi-config generators
@@ -56,6 +56,10 @@ endif()
 add_test(NAME duoforge.bench.smoke
     COMMAND duoforge_bench --battles 2 --repetitions 1 --warmup 0 --out ${CMAKE_CURRENT_BINARY_DIR}/bench_smoke.json)
 set_tests_properties(duoforge.bench.smoke PROPERTIES TIMEOUT 120 LABELS bench)
+add_test(NAME duoforge.bench.batch_smoke
+    COMMAND duoforge_bench --battles 64 --repetitions 1 --warmup 0 --families batch --workers 1,2,3
+            --out ${CMAKE_CURRENT_BINARY_DIR}/bench_batch_smoke.json)
+set_tests_properties(duoforge.bench.batch_smoke PROPERTIES TIMEOUT 120 LABELS bench)
 
 # The action tally on random real-team battles.
 add_executable(duoforge_bench_tally test_tally.c)

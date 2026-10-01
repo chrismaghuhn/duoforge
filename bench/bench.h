@@ -55,6 +55,7 @@ typedef struct dfb_result {
     uint64_t bytes;          /* SNAPSHOT codec: encoded bytes per state */
     uint64_t truncations;    /* battles stopped by max_steps */
     uint64_t errors;         /* non-OK statuses, replay mismatches: must be 0 */
+    uint32_t workers;        /* BATCH_NATIVE: worker threads; 0 for the one-thread families */
 } dfb_result;
 
 /* The recorded command source of a workload. */
@@ -67,6 +68,9 @@ uint64_t dfb_cpu_ns(void);
 /* True when the repetition is long enough to judge (>= 100 ms) and its CPU
  * time is below 90 percent of its wall time. */
 bool dfb_rep_disturbed(const dfb_rep *rep);
+/* The same for a repetition of `workers` threads (0 counts as 1): its
+ * process CPU time is below 90 percent of workers x wall. */
+bool dfb_rep_disturbed_workers(const dfb_rep *rep, uint32_t workers);
 
 /* Plays and records the workload under `ctx` (CLOSURE data). The totals of
  * the recording (battles, turns, steps, side decisions, truncations,
@@ -75,6 +79,16 @@ bool dfb_rep_disturbed(const dfb_rep *rep);
 duoforge_status dfb_tapes_record(const duoforge_context *ctx, const dfb_workload *workload, dfb_tapes **out_tapes,
                                  dfb_result *out_totals, dfb_tally tallies[DUOFORGE_SIDE_COUNT]);
 void dfb_tapes_destroy(dfb_tapes *tapes); /* NULL is a no-op */
+
+/* BATCH_NATIVE (decisions 0008 and 0012): the batch runtime's native mode
+ * with `workers` threads over DFB_BATCH_ENVS environments (the four pairings
+ * in turn), ceil(4 x battles / DFB_BATCH_ENVS) random-policy episodes each,
+ * batch seed = the policy seed; a fresh batch per repetition, its creation
+ * untimed. *io_hash is the hash of every episode record: 0 on entry sets it,
+ * a different hash is an error (every worker count plays the same battles). */
+#define DFB_BATCH_ENVS 256u
+duoforge_status dfb_batch_native(const duoforge_context *ctx, const dfb_workload *workload, uint32_t workers,
+                                 uint32_t warmup, uint32_t repetitions, uint64_t *io_hash, dfb_result *out);
 
 /* STEP_CORE: replays every battle from its start state (one restore per
  * battle inside the timing); with `events` through duoforge_battle_step_events

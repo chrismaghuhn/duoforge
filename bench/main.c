@@ -6,7 +6,8 @@
  *
  * usage: duoforge_bench [--battles N] [--repetitions R] [--warmup W]
  *                       [--max-steps S] [--policy-seed X] [--battle-seed Y]
- *                       [--families step,events,request,copy,codec,episode]
+ *                       [--families step,events,request,copy,codec,episode,batch]
+ *                       [--workers 1,2,4,8,16]
  *                       [--max-seconds T] [--out FILE]
  */
 #if !defined(_WIN32) && !defined(_POSIX_C_SOURCE)
@@ -46,6 +47,7 @@ typedef struct options {
     uint32_t warmup;
     uint64_t max_seconds; /* 0: no limit */
     const char *families;
+    const char *workers;
     const char *out;
 } options;
 
@@ -54,7 +56,8 @@ static int usage(const char *why)
     fprintf(stderr, "duoforge_bench: %s\n", why);
     fprintf(stderr, "usage: duoforge_bench [--battles N] [--repetitions R] [--warmup W] [--max-steps S]\n"
                     "                      [--policy-seed X] [--battle-seed Y] [--max-seconds T]\n"
-                    "                      [--families step,events,request,copy,codec,episode] [--out FILE]\n");
+                    "                      [--families step,events,request,copy,codec,episode,batch]\n"
+                    "                      [--workers 1,2,4,8,16] [--out FILE]\n");
     return 2;
 }
 
@@ -79,6 +82,7 @@ static int parse(int argc, char **argv, options *o)
     o->repetitions = 5u;
     o->warmup = 1u;
     o->families = "step,events,request,copy,codec,episode";
+    o->workers = "1,2,4,8,16";
     for (int i = 1; i < argc; ++i) {
         const char *a = argv[i];
         if (i + 1 >= argc) {
@@ -88,6 +92,10 @@ static int parse(int argc, char **argv, options *o)
         uint64_t n = 0u;
         if (strcmp(a, "--families") == 0) {
             o->families = v;
+            continue;
+        }
+        if (strcmp(a, "--workers") == 0) {
+            o->workers = v;
             continue;
         }
         if (strcmp(a, "--out") == 0) {
@@ -211,12 +219,13 @@ static void write_result(FILE *f, const dfb_result *r, int first)
     uint32_t disturbed = 0u;
     for (uint32_t i = 0u; i < r->repetitions; ++i) {
         wall[i] = r->rep[i].wall_ns;
-        disturbed += dfb_rep_disturbed(&r->rep[i]) ? 1u : 0u;
+        disturbed += dfb_rep_disturbed_workers(&r->rep[i], r->workers) ? 1u : 0u;
     }
     const uint64_t med = median_of(wall, r->repetitions);
     fprintf(f, "%s\n    {\"family\": \"%s\", \"variant\": ", first ? "" : ",", r->family);
     json_string(f, r->variant);
-    fprintf(f, ", \"repetitions\": %" PRIu32 ", ", r->repetitions);
+    fprintf(f, ", \"workers\": %" PRIu32 ", \"repetitions\": %" PRIu32 ", ", r->workers == 0u ? 1u : r->workers,
+            r->repetitions);
     json_u64_array(f, "wall_ns", r, 0);
     fprintf(f, ", ");
     json_u64_array(f, "cpu_ns", r, 1);
@@ -371,7 +380,7 @@ int main(int argc, char **argv)
     write_tally(f, &tally[1], 1);
     fprintf(f, "\n  ],\n  \"results\": [");
 
-    static const char *const names[] = {"step", "events", "request", "copy", "codec", "episode"};
+    static const char *const names[] = {"step", "events", "request", "copy", "codec", "episode", "batch"};
     int first = 1;
     uint32_t skipped = 0u;
     for (uint32_t i = 0u; i < sizeof names / sizeof names[0] && tapes != NULL; ++i) {
@@ -383,6 +392,26 @@ int main(int argc, char **argv)
             continue;
         }
         static dfb_result r;
+        if (i == 6u) {
+            /* BATCH_NATIVE: one result per worker count, all playing the same battles. */
+            uint64_t hash = 0u;
+            const char *w = o.workers;
+            while (*w != '\0') {
+                char *end = NULL;
+                const unsigned long n = strtoul(w, &end, 10);
+                if (end == w || n < 1u || n > 256u) {
+                    errors += 1u;
+                    fprintf(stderr, "duoforge_bench: bad --workers list\n");
+                    break;
+                }
+                st = dfb_batch_native(ctx, &o.workload, (uint32_t)n, o.warmup, o.repetitions, &hash, &r);
+                errors += r.errors + (st != DUOFORGE_OK && r.errors == 0u ? 1u : 0u);
+                write_result(f, &r, first);
+                first = 0;
+                w = *end == ',' ? end + 1 : end;
+            }
+            continue;
+        }
         switch (i) {
         case 0:
             st = dfb_step_core(ctx, tapes, false, o.warmup, o.repetitions, &r);

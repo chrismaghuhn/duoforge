@@ -22,4 +22,4 @@ Outcomes are atomic per environment: a failing environment keeps its state, the 
 
 ## 4. Next
 
-A benchmark family BATCH_NATIVE (games and decisions per second at 1, 2, 4, 8 and 16 workers, decision 0008) and the scaling report on an idle machine; then the roadmap's exit report (single/batch equivalence, scheduling independence, no races, bounded memory, reproducible Release benchmark).
+The benchmark family BATCH_NATIVE is built (`duoforge_bench --families batch --workers 1,2,4,8,16`, decision 0008); the scaling report needs an idle machine; then the roadmap's exit report (single/batch equivalence, scheduling independence, no races, bounded memory, reproducible Release benchmark).
