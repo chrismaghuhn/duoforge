@@ -81,11 +81,15 @@ duoforge_add_test(NAME duoforge.combat.closure_gate SOURCES test_closure_gate.c 
 
 # M3: generated closure tables and Champions formulas (decision 0006).
 duoforge_add_test(NAME duoforge.data.closure_tables SOURCES test_closure_tables.c WHITEBOX)
+# Team C (decision 0009): the extended tables, whose prefix is the closure.
+duoforge_add_test(NAME duoforge.data.extended_tables SOURCES test_extended_tables.c WHITEBOX)
 # The generated files must stay exactly what tools/datagen/gen_closure.py
 # wrote; regenerate and update these hashes together.
 foreach(_gen IN ITEMS
         "closure_tables.h=f6ef34b31d74a60f9c28e0bce8d3cc39a68a2ee03c7d17532090c9fca42fb25b"
-        "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a")
+        "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
+        "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
+        "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -103,6 +107,10 @@ if(DUOFORGE_PS_REFERENCE_DIR)
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/gen_closure.py"
             "${DUOFORGE_PS_REFERENCE_DIR}" --check)
     set_tests_properties(duoforge.data.closure_regen PROPERTIES TIMEOUT 120 LABELS reference)
+    add_test(NAME duoforge.data.extended_regen
+        COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/gen_closure.py"
+            "${DUOFORGE_PS_REFERENCE_DIR}" --team-c --check)
+    set_tests_properties(duoforge.data.extended_regen PROPERTIES TIMEOUT 120 LABELS reference)
     # The arithmetic reference values, recomputed by the pinned Showdown.
     find_program(DUOFORGE_NODE node)
     if(DUOFORGE_NODE)
