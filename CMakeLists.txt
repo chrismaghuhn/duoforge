@@ -10,6 +10,13 @@ option(DUOFORGE_ENABLE_SANITIZERS
     "Enable AddressSanitizer and UndefinedBehaviorSanitizer for supported compilers"
     OFF
 )
+option(DUOFORGE_ENABLE_TSAN
+    "Enable ThreadSanitizer (GCC/Clang) for the batch runtime's tests"
+    OFF
+)
+if(DUOFORGE_ENABLE_TSAN AND DUOFORGE_ENABLE_SANITIZERS)
+    message(FATAL_ERROR "duoforge: DUOFORGE_ENABLE_TSAN and DUOFORGE_ENABLE_SANITIZERS cannot be combined")
+endif()
 option(DUOFORGE_ENABLE_IPO
     "Link-time optimization of Release builds; the library then links only with the same toolchain"
     OFF
@@ -29,8 +36,8 @@ include(cmake/DuoforgeTargetOptions.cmake)
 # cannot do it fails the configuration instead of building without it.
 set(DUOFORGE_IPO OFF)
 if(DUOFORGE_ENABLE_IPO)
-    if(DUOFORGE_ENABLE_SANITIZERS)
-        message(FATAL_ERROR "duoforge: DUOFORGE_ENABLE_IPO and DUOFORGE_ENABLE_SANITIZERS cannot be combined")
+    if(DUOFORGE_ENABLE_SANITIZERS OR DUOFORGE_ENABLE_TSAN)
+        message(FATAL_ERROR "duoforge: DUOFORGE_ENABLE_IPO cannot be combined with a sanitizer")
     endif()
     include(CheckIPOSupported)
     check_ipo_supported(RESULT _duoforge_ipo_ok OUTPUT _duoforge_ipo_output LANGUAGES C)
@@ -86,6 +93,17 @@ target_include_directories(duoforge
         "${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 duoforge_configure_target(duoforge)
+
+# Batch runtime (decision 0012): a separate library over the public API,
+# with its worker threads.
+find_package(Threads REQUIRED)
+add_library(duoforge_batch STATIC
+    src/batch/pool.c
+    src/batch/batch.c
+)
+target_include_directories(duoforge_batch PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_link_libraries(duoforge_batch PUBLIC duoforge Threads::Threads)
+duoforge_configure_target(duoforge_batch)
 
 if(BUILD_TESTING)
     # C++ is optional and used only for the extern "C" link check.

@@ -1,0 +1,92 @@
+#ifndef DUOFORGE_BATCH_H
+#define DUOFORGE_BATCH_H
+
+/*
+ * Batch runtime (decision 0012, roadmap M6): many independent battles
+ * ("environments") of one context, run together by a fixed pool of worker
+ * threads. A thin layer over the single-battle API: every environment is an
+ * ordinary duoforge_battle and every call on it is a single-battle call, so a
+ * batch plays exactly what the same calls one by one would play, for any
+ * worker count. Environments are split into fixed contiguous slices, one per
+ * worker; the caller's thread runs the first slice.
+ *
+ * Seeds: an environment's battle and policy seeds are a pure function of the
+ * batch seed, the environment index and its episode number
+ * (duoforge_batch_seeds), never of a worker.
+ *
+ * Outcomes are atomic per environment: a failing environment keeps its
+ * state, the others go on; a batch call returns the status of the lowest
+ * failing environment, or OK.
+ *
+ * A batch is not thread-safe itself: one caller at a time.
+ */
+#include <duoforge/duoforge.h>
+
+#define DUOFORGE_BATCH_MAX_ENVS    65536u
+#define DUOFORGE_BATCH_MAX_WORKERS 256u
+
+typedef struct duoforge_batch duoforge_batch;
+
+typedef struct duoforge_batch_config {
+    uint32_t env_count;                  /* 1..DUOFORGE_BATCH_MAX_ENVS */
+    uint32_t worker_count;               /* threads including the caller's, 1..DUOFORGE_BATCH_MAX_WORKERS */
+    uint64_t seed;                       /* the batch seed of the derivation */
+    const duoforge_battle_setup *setups; /* env_count setups; rng_initstate and rng_initseq are replaced per episode */
+} duoforge_batch_config;
+
+/* One finished episode of the native mode. */
+typedef struct duoforge_batch_episode {
+    uint32_t env;
+    uint32_t episode;
+    uint32_t steps;     /* steps to TERMINAL */
+    uint32_t decisions; /* side choices made */
+    uint32_t turns;     /* the final turn */
+    uint32_t result;    /* DUOFORGE_RESULT_* */
+    uint8_t digest[DUOFORGE_DIGEST_SIZE]; /* of the final state */
+} duoforge_batch_episode;
+
+/* The seeds of environment `env` in episode `episode`: rng_initstate, an
+ * rng_initseq below 2^63 (decision 0001) and the native policy's seed.
+ * splitmix64 over the batch seed with the tags documented in decision 0012. */
+void duoforge_batch_seeds(uint64_t seed, uint32_t env, uint32_t episode, uint64_t *out_initstate,
+                          uint64_t *out_initseq, uint64_t *out_policy_seed);
+
+/* Creates every environment at episode 0. Checks: NULL -> INVALID_ARGUMENT
+   (counts) -> the setups' own checks (the first failing environment's status).
+   *out_batch is written only on success. */
+duoforge_status duoforge_batch_create(const duoforge_context *ctx, const duoforge_batch_config *config,
+                                      duoforge_batch **out_batch);
+void duoforge_batch_destroy(duoforge_batch *batch); /* NULL is a no-op */
+
+uint32_t duoforge_batch_env_count(const duoforge_batch *batch);
+/* The environment's battle for single-battle queries, owned by the batch and
+   valid until the environment is reset; NULL when env is out of range. */
+const duoforge_battle *duoforge_batch_env(const duoforge_batch *batch, uint32_t env);
+uint32_t duoforge_batch_env_episode(const duoforge_batch *batch, uint32_t env);
+
+/* Step mode, in parallel. For every environment and player p the request,
+   the observation and the candidates into requests[2 * env + p],
+   observations[2 * env + p], candidates[(2 * env + p) * DUOFORGE_MAX_CANDIDATES]
+   and candidate_counts[2 * env + p]; any output may be NULL (skipped). */
+duoforge_status duoforge_batch_query(duoforge_batch *batch, duoforge_request *requests,
+                                     duoforge_observation *observations, duoforge_side_choice *candidates,
+                                     uint32_t *candidate_counts);
+
+/* Step mode, in parallel: duoforge_battle_step(bundles[env]) for every
+   environment that is not TERMINAL; statuses[env] and results[env] receive
+   its outcome (a TERMINAL environment gets OK and an all-zero result). */
+duoforge_status duoforge_batch_step(duoforge_batch *batch, const duoforge_decision_bundle *bundles,
+                                    duoforge_status *statuses, duoforge_step_result *results);
+
+/* Resets every TERMINAL environment to its next episode, in parallel. */
+duoforge_status duoforge_batch_reset_terminal(duoforge_batch *batch);
+
+/* Native mode, in parallel: every environment plays `episodes` further
+   episodes from fresh resets with the uniform random policy (each requested
+   player, in player order, takes candidate next() % count of a splitmix64
+   stream from its policy seed), at most max_steps steps each (more is
+   E_INVARIANT). Writes episodes[env * episodes + k] when the array is given. */
+duoforge_status duoforge_batch_play_random(duoforge_batch *batch, uint32_t episodes, uint32_t max_steps,
+                                           duoforge_batch_episode *records);
+
+#endif
