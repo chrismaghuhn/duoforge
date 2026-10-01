@@ -14,9 +14,15 @@
 #   DUOFORGE_CI_PS       pinned Showdown checkout for the reference traces
 #   DUOFORGE_CI_DISTRO   WSL distribution
 #   DUOFORGE_CI_JOBS     parallel build and test jobs
+# The run takes the machine lock (tools/ci/machine_lock.sh): a second CI or
+# benchmark from another session waits until this one is done.
 set -u
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
+# shellcheck source=machine_lock.sh
+source "$ROOT/tools/ci/machine_lock.sh"
+machine_lock_acquire "local_ci $(basename "$ROOT") $*"
+trap machine_lock_release EXIT
 GCC_BIN=${DUOFORGE_CI_GCC_BIN:-"$LOCALAPPDATA/Microsoft/WinGet/Packages/BrechtSanders.WinLibs.POSIX.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe/mingw64/bin"}
 CLANG=${DUOFORGE_CI_CLANG:-"C:/Program Files/LLVM/bin"}
 PS=${DUOFORGE_CI_PS:-"C:/Dev/src/pokemon-showdown"}
