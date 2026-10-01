@@ -12,7 +12,10 @@
  * Grassy Terrain's heal and the ordered residual phase (Drought and sun are
  * written and become reachable with Mega Evolution, step 11).
  * Step 6: Tailwind, Reflect, Light Screen and Trick Room.
- * No other ability, no item and no Mega Evolution is implemented yet. */
+ * Step 7: the reactive abilities of the base formes (Stamina, Competitive,
+ * Flash Fire, Lightning Rod, Good as Gold, Armor Tail, Prankster, Blaze);
+ * Contrary, No Guard and Tough Claws belong to Mega formes (step 11).
+ * No item and no Mega Evolution is implemented yet. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -48,5 +51,13 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_DRIZZLE] = 1u,
             [DFI_ABILITY_GRASSYSURGE] = 1u,
             [DFI_ABILITY_INTIMIDATE] = 1u,
+            [DFI_ABILITY_STAMINA] = 1u,
+            [DFI_ABILITY_COMPETITIVE] = 1u,
+            [DFI_ABILITY_FLASHFIRE] = 1u,
+            [DFI_ABILITY_LIGHTNINGROD] = 1u,
+            [DFI_ABILITY_GOODASGOLD] = 1u,
+            [DFI_ABILITY_ARMORTAIL] = 1u,
+            [DFI_ABILITY_PRANKSTER] = 1u,
+            [DFI_ABILITY_BLAZE] = 1u,
         },
 };

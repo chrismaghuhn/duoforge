@@ -62,6 +62,11 @@ static void dev_setup(duoforge_battle_setup *s, uint64_t seed)
             }
         }
     }
+    /* Step 7: Stamina Archaludon and Armor Tail Farigiraf on both sides. */
+    for (uint32_t side = 0; side < 2u; ++side) {
+        s->sides[side].members[0].ability = 1u + DFI_ABILITY_STAMINA;
+        s->sides[side].members[3].ability = 1u + DFI_ABILITY_ARMORTAIL;
+    }
     /* Electro Shot needs step 10: Archaludon keeps only the turn-core moves. */
     s->sides[0].members[0].moves[1].move_id = DFI_MOVE_PROTECT;
     s->sides[0].members[0].moves[3].move_id = 0u;
@@ -181,13 +186,18 @@ static void status_setup(duoforge_battle_setup *s, uint64_t seed)
                 d->moves[k].move_id = a[m].moves[k];
             }
         }
+        /* Step 7: Lightning Rod, Competitive and Blaze; Golisopod keeps No
+         * Ability (Emergency Exit is step 12). */
+        s->sides[side].members[0].ability = 1u + DFI_ABILITY_LIGHTNINGROD;
+        s->sides[side].members[1].ability = 1u + DFI_ABILITY_COMPETITIVE;
+        s->sides[side].members[2].ability = 1u + DFI_ABILITY_BLAZE;
     }
 }
 
 /* Development teams with the entry abilities of step 5 (Drizzle Politoed,
  * Intimidate Staraptor, Grassy Surge Rillaboom) and the conditions of step
  * 6 (Tailwind, Reflect and Light Screen from Grimmsnarl without an
- * ability); side 1 brings the same species in another order. */
+ * ability, Prankster from step 7); side 1 brings the same species in another order. */
 static void entry_setup(duoforge_battle_setup *s, uint64_t seed)
 {
     memset(s, 0, sizeof *s);
@@ -202,7 +212,7 @@ static void entry_setup(duoforge_battle_setup *s, uint64_t seed)
          {DFI_MOVE_TAILWIND, DFI_MOVE_PROTECT, 0u, 0u}, 2u},
         {DFI_FORME_RILLABOOM, 1u, DFI_NATURE_ADAMANT, 1u + DFI_ABILITY_GRASSYSURGE, {18u, 32u, 2u, 0u, 6u, 8u},
          {DFI_MOVE_HIGHHORSEPOWER, 0u, 0u, 0u}, 1u},
-        {DFI_FORME_GRIMMSNARL, 1u, DFI_NATURE_BOLD, 0u, {32u, 0u, 32u, 0u, 2u, 0u},
+        {DFI_FORME_GRIMMSNARL, 1u, DFI_NATURE_BOLD, 1u + DFI_ABILITY_PRANKSTER, {32u, 0u, 32u, 0u, 2u, 0u},
          {DFI_MOVE_REFLECT, DFI_MOVE_LIGHTSCREEN, DFI_MOVE_SPIRITBREAK, 0u}, 3u},
     };
     for (uint32_t side = 0; side < 2u; ++side) {
@@ -395,10 +405,10 @@ int main(void)
             DF_CHECK(&t, duoforge_battle_check(k2, z) == DUOFORGE_OK);
             duoforge_battle_destroy(z);
         }
-        /* A decoded member with an ability (Archaludon's Stamina) cannot be
-         * played: the step checks the manifest too. */
+        /* A decoded member with an unmarked ability (Golisopod's Emergency
+         * Exit, step 12) cannot be played: the step checks the manifest too. */
         x->sides[1].members[0].hp = x->sides[1].members[0].hp_max;
-        x->sides[1].members[0].ability = (uint8_t)(DFI_ABILITY_STAMINA + 1u); /* wide-operands-reviewed */
+        x->sides[1].members[2].ability = (uint8_t)(DFI_ABILITY_EMERGENCYEXIT + 1u); /* wide-operands-reviewed */
         dfi_knowledge_refresh_active(x);
         DF_CHECK(&t, duoforge_battle_check(k2, x) == DUOFORGE_OK);
         rejected(&t, k2, x, &hit, DUOFORGE_E_UNSUPPORTED, "an unmarked ability");

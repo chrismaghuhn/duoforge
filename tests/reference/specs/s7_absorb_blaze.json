@@ -1,0 +1,23 @@
+{
+  "name": "s7_absorb_blaze",
+  "purpose": "Flash Fire takes Heat Wave without damage and starts its boost; Lightning Rod draws a foe's Zap Cannon aimed at its partner and raises Special Attack by 1; Blaze makes a Charizard at a third of its HP or less hit harder with Fire.",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000700a",
+  "teams": [
+    "Ceruledge (F)\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Shadow Sneak\n- Swords Dance\n\nRaichu (F)\nAbility: Lightning Rod\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Zap Cannon\n- Protect\n\nArchaludon (M)\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Snarl\n\nPolitoed (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Ice Beam\n- Muddy Water",
+    "Charizard (M)\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Heat Wave\n- Hurricane\n\nRaichu (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Zap Cannon\n- Focus Blast\n\nMilotic (F)\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Ice Beam\n- Muddy Water\n\nGolisopod (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Drill Run\n- Iron Head"
+  ],
+  "plan": {
+    "p1": [
+      "move 2, move 1 1",
+      "move 1 1, move 1 1",
+      "move 1 2, move 2"
+    ],
+    "p2": [
+      "move 1, move 1 1",
+      "move 1, move 1 1",
+      "move 1, move 1 1"
+    ],
+    "max_steps": 50
+  }
+}

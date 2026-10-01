@@ -72,6 +72,12 @@ static bool dfi_has_type(const dfi_member *m, uint32_t type)
 }
 
 /* A stat (0 atk .. 4 spe) after its stage (getStat without modifiers). */
+/* The member's ability is `id` (abilities are stored as 1 + id). */
+static bool dfi_ability(const dfi_member *m, uint32_t id)
+{
+    return m != NULL && m->ability == 1u + id;
+}
+
 static duoforge_status dfi_staged_stat(const dfi_member *m, const dfi_active_slot *pos, uint32_t index,
                                        uint32_t *out)
 {
@@ -143,8 +149,13 @@ static duoforge_status dfi_key_of(dfi_run *r, const dfi_queue_record *q, dfi_key
         return st;
     }
     out->order = order;
-    out->priority = q->kind == DFI_Q_MOVE ? dfi_closure_moves[dfi_move_of(m, q->move_slot)].priority
-                                          : DFI_PRIORITY_BIAS;
+    out->priority = DFI_PRIORITY_BIAS;
+    if (q->kind == DFI_Q_MOVE) {
+        const dfi_move_data *md = &dfi_closure_moves[dfi_move_of(m, q->move_slot)];
+        /* ModifyPriority: Prankster gives status moves +1. */
+        out->priority = (uint32_t)md->priority +
+                        ((dfi_ability(m, DFI_ABILITY_PRANKSTER) && md->category == DFI_CATEGORY_STATUS) ? 1u : 0u);
+    }
     out->speed = speed;
     return DUOFORGE_OK;
 }
@@ -276,6 +287,43 @@ static bool dfi_will_act(const struct duoforge_battle *b)
 
 /* Battle.boost with getCappedBoost: each stage moves by the (biased) amount
  * and stops at -6 or +6. */
+/* Battle.boost (sim/battle.ts): nothing for a fainted Pokemon or when its
+ * foes have no Pokemon left; each stat changes by its capped amount, and a
+ * stat that changed runs AfterEachBoost: Competitive raises Special Attack
+ * by 2 when a foe lowered a stat. `source` is the flat position of the
+ * Pokemon that caused it, or DFI_POSITIONS for the holder itself. */
+static uint32_t dfi_left(const struct duoforge_battle *b, uint32_t side);
+static void dfi_apply_boosts(dfi_active_slot *pos, const uint8_t *boosts);
+
+static void dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t source)
+{
+    struct duoforge_battle *b = r->b;
+    const dfi_member *m = dfi_at(b, flat);
+    if (m == NULL || m->hp == 0u) {
+        return;
+    }
+    /* foePokemonLeft counts a Pokemon until its faint is processed. */
+    uint32_t foes_left = dfi_left(b, 1u - flat / 2u);
+    for (uint32_t i = 0u; i < r->faint_count; ++i) {
+        foes_left += r->faint_queue[i] / 2u != flat / 2u ? 1u : 0u;
+    }
+    if (foes_left == 0u) {
+        return;
+    }
+    dfi_active_slot *pos = dfi_pos(b, flat);
+    for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
+        const uint32_t before = pos->stages[i];
+        uint8_t one[DFI_STAT_STAGE_COUNT] = {6u, 6u, 6u, 6u, 6u, 6u, 6u};
+        one[i] = boosts[i];
+        dfi_apply_boosts(pos, one);
+        const bool lowered = pos->stages[i] < before;
+        if (lowered && dfi_ability(m, DFI_ABILITY_COMPETITIVE) && source < DFI_POSITIONS && source / 2u != flat / 2u) {
+            static const uint8_t raise[DFI_STAT_STAGE_COUNT] = {6u, 6u, 8u, 6u, 6u, 6u, 6u}; /* SpA +2 */
+            dfi_apply_boosts(pos, raise);
+        }
+    }
+}
+
 static void dfi_apply_boosts(dfi_active_slot *pos, const uint8_t *boosts)
 {
     for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
@@ -295,6 +343,7 @@ static void dfi_apply_boosts(dfi_active_slot *pos, const uint8_t *boosts)
 }
 
 /* ---------------------------------------------------------------- targets */
+
 
 static bool dfi_alive(struct duoforge_battle *b, uint32_t flat)
 {
@@ -476,8 +525,15 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     uint32_t defense = 0u;
     uint32_t damage = 0u;
     if (!dfi_stage_stat(a->stats[atk_index], atk_stage, &attack) ||
-        !dfi_stage_stat(d->stats[def_index], def_stage, &defense) ||
-        !dfi_base_damage(DFI_LEVEL, md->base_power, attack, defense, &damage)) {
+        !dfi_stage_stat(d->stats[def_index], def_stage, &defense)) {
+        return DUOFORGE_E_INVARIANT;
+    }
+    /* ModifyAtk / ModifySpA: Blaze boosts Fire moves by half at a third of
+     * the HP or less. */
+    if (move_type == DFI_TYPE_FIRE && dfi_ability(a, DFI_ABILITY_BLAZE) && (uint32_t)a->hp * 3u <= a->hp_max) {
+        attack = dfi_modify(attack, 6144u);
+    }
+    if (!dfi_base_damage(DFI_LEVEL, md->base_power, attack, defense, &damage)) {
         return DUOFORGE_E_INVARIANT;
     }
     damage += 2u;
@@ -838,6 +894,35 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     if (count == 0u) {
         return DUOFORGE_OK; /* no target: the move fails */
     }
+    /* getMoveTargets: an Electric single-target move goes to a standing
+     * Lightning Rod holder the user may target (onAnyRedirectTarget). */
+    if (md->type == DFI_TYPE_ELECTRIC && count == 1u &&
+        (md->target_class == DUOFORGE_TARGET_CLASS_NORMAL || md->target_class == DUOFORGE_TARGET_CLASS_ANY ||
+         md->target_class == DUOFORGE_TARGET_CLASS_ADJACENT_FOE || md->target_class == DFI_TARGET_CLASS_RANDOM_NORMAL)) {
+        for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
+            const dfi_member *holder = dfi_at(b, flat);
+            if (flat != user && holder != NULL && holder->hp != 0u && dfi_ability(holder, DFI_ABILITY_LIGHTNINGROD)) {
+                targets[0] = flat;
+                break;
+            }
+        }
+    }
+    /* TryMove: Armor Tail on a standing foe stops a move with positive
+     * priority aimed at the holder's side. */
+    {
+        const uint32_t priority = (uint32_t)md->priority + ((dfi_ability(m, DFI_ABILITY_PRANKSTER) &&
+                                                               md->category == DFI_CATEGORY_STATUS) ? 1u : 0u);
+        const uint32_t aimed = targets[count - 1u];
+        if (priority > DFI_PRIORITY_BIAS && aimed / 2u != side && md->target_class != DUOFORGE_TARGET_CLASS_SELF &&
+            md->target_class != DUOFORGE_TARGET_CLASS_ALLY_SIDE && md->target_class != DUOFORGE_TARGET_CLASS_ALL) {
+            for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
+                const dfi_member *holder = dfi_at(b, (1u - side) * 2u + slot);
+                if (holder != NULL && holder->hp != 0u && dfi_ability(holder, DFI_ABILITY_ARMORTAIL)) {
+                    return DUOFORGE_OK;
+                }
+            }
+        }
+    }
     if (md->special == DFI_SPECIAL_PROTECT) {
         return dfi_run_protect(r, user);
     }
@@ -868,7 +953,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         if (md->boost_role != DFI_BOOST_ROLE_PRIMARY_SELF || md->target_class != DUOFORGE_TARGET_CLASS_SELF) {
             return DUOFORGE_E_UNSUPPORTED;
         }
-        dfi_apply_boosts(pos, md->boosts);
+        dfi_boost(r, user, md->boosts, DFI_POSITIONS);
         return DUOFORGE_OK;
     }
     if (md->special != DFI_SPECIAL_NONE && md->special != DFI_SPECIAL_STRUGGLE &&
@@ -893,6 +978,31 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         const uint32_t t = targets[i];
         const dfi_active_slot *tp = dfi_pos(b, t);
         hit[i] = !((((uint32_t)tp->flags & DFI_VOL_PROTECT) != 0u) && ((md->flags & DFI_MOVE_FLAG_PROTECT) != 0u));
+    }
+    /* TryHit after Protect: Flash Fire takes Fire moves (and starts its
+     * boost), Lightning Rod takes Electric moves (Special Attack +1, the
+     * attacker as source), Good as Gold takes status moves; only aimed at
+     * the holder by another Pokemon. */
+    for (uint32_t i = 0u; i < count; ++i) {
+        const uint32_t t = targets[i];
+        const dfi_member *tm = dfi_at(b, t);
+        if (!hit[i] || t == user || tm == NULL) {
+            continue;
+        }
+        if (dfi_ability(tm, DFI_ABILITY_FLASHFIRE) && move_type == DFI_TYPE_FIRE) {
+            dfi_active_slot *tp = dfi_pos(b, t);
+            tp->flags = (uint8_t)((uint32_t)tp->flags | DFI_VOL_FLASH_FIRE); /* wide-operands-reviewed */
+            hit[i] = false;
+            /* Its onTryHit sets move.accuracy = true on the shared active
+             * move: the other targets of a spread move need no accuracy draw. */
+            base_accuracy = 0u;
+        } else if (dfi_ability(tm, DFI_ABILITY_LIGHTNINGROD) && move_type == DFI_TYPE_ELECTRIC) {
+            static const uint8_t spa_up[DFI_STAT_STAGE_COUNT] = {6u, 6u, 7u, 6u, 6u, 6u, 6u};
+            dfi_boost(r, t, spa_up, user);
+            hit[i] = false;
+        } else if (dfi_ability(tm, DFI_ABILITY_GOODASGOLD) && status_move) {
+            hit[i] = false;
+        }
     }
     for (uint32_t i = 0u; i < count && !status_move; ++i) {
         if (hit[i] && dfi_type_immune(dfi_at(b, targets[i]), move_type)) {
@@ -965,7 +1075,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                 continue;
             }
             if (md->sec_kind == DFI_SECONDARY_BOOST) {
-                dfi_apply_boosts(dfi_pos(b, targets[i]), md->boosts);
+                dfi_boost(r, targets[i], md->boosts, user);
             } else if (md->sec_kind == DFI_SECONDARY_STATUS) {
                 st = dfi_try_status(r, targets[i], md->sec_param);
             } else if (md->sec_kind == DFI_SECONDARY_VOLATILE) {
@@ -983,14 +1093,20 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     } else if (md->boost_role != DFI_BOOST_ROLE_NONE || md->recoil[1] != 0u || md->drain[1] != 0u) {
         return DUOFORGE_E_UNSUPPORTED; /* self-drops, recoil and drain: step 9 */
     }
-    /* DamagingHit: a damaging Fire move thaws a frozen target (frz). */
-    if (move_type == DFI_TYPE_FIRE) {
-        for (uint32_t i = 0u; i < count; ++i) {
-            dfi_member *tm = dfi_at(b, targets[i]);
-            if (hit[i] && tm->hp != 0u && tm->status == DFI_STATUS_FRZ) {
-                tm->status = (uint8_t)DFI_STATUS_NONE;
-                tm->status_counter = 0u;
-            }
+    /* DamagingHit, per damaged target: a damaging Fire move thaws a frozen
+     * target (frz, status first), Stamina raises Defense by 1. */
+    for (uint32_t i = 0u; i < count; ++i) {
+        dfi_member *tm = dfi_at(b, targets[i]);
+        if (!hit[i] || tm->hp == 0u) {
+            continue;
+        }
+        if (move_type == DFI_TYPE_FIRE && tm->status == DFI_STATUS_FRZ) {
+            tm->status = (uint8_t)DFI_STATUS_NONE;
+            tm->status_counter = 0u;
+        }
+        if (dfi_ability(tm, DFI_ABILITY_STAMINA)) {
+            static const uint8_t def_up[DFI_STAT_STAGE_COUNT] = {6u, 7u, 6u, 6u, 6u, 6u, 6u};
+            dfi_boost(r, targets[i], def_up, user);
         }
     }
     /* Struggle's recoil: round(maxHP / 4), at least 1 (applyRecoilDamage). */
@@ -1107,8 +1223,9 @@ static bool dfi_has_entry(const dfi_member *m)
  * otherwise the weather is replaced for 5 turns. Grassy Surge
  * (setTerrain) likewise. Intimidate lowers the Attack of every standing
  * adjacent foe by 1. */
-static void dfi_entry_ability(struct duoforge_battle *b, uint32_t flat)
+static void dfi_entry_ability(dfi_run *r, uint32_t flat)
 {
+    struct duoforge_battle *b = r->b;
     const dfi_member *m = dfi_at(b, flat);
     const uint32_t a = m->ability;
     if (a == 1u + DFI_ABILITY_DRIZZLE || a == 1u + DFI_ABILITY_DROUGHT) {
@@ -1128,7 +1245,7 @@ static void dfi_entry_ability(struct duoforge_battle *b, uint32_t flat)
         for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
             const dfi_member *t = dfi_at(b, foe * 2u + slot);
             if (t != NULL && t->hp != 0u) {
-                dfi_apply_boosts(dfi_pos(b, foe * 2u + slot), drop);
+                dfi_boost(r, foe * 2u + slot, drop, flat);
             }
         }
     }
@@ -1200,7 +1317,7 @@ static duoforge_status dfi_run_entries(dfi_run *r, uint32_t entering)
         if (((entering >> flat) & 1u) == 0u || m->hp == 0u || !dfi_has_entry(m)) {
             continue;
         }
-        dfi_entry_ability(b, flat);
+        dfi_entry_ability(r, flat);
         dfi_process_faints(r);
         if (r->ended) {
             return DUOFORGE_OK;
