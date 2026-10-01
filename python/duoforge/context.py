@@ -28,6 +28,14 @@ class Context:
         check(self._lib.duoforge_context_create(ptr(config), ctypes.byref(handle)))
         self.handle = handle
 
+    def fingerprint(self):
+        """The context fingerprint (32 bytes, duoforge_context_fingerprint)."""
+        if self.handle is None:
+            raise ValueError("the context is closed")
+        out = (ctypes.c_uint8 * _layout.DIGEST_SIZE)()
+        check(self._lib.duoforge_context_fingerprint(self.handle, out))
+        return bytes(out)
+
     def close(self):
         """Destroys the context; a second close is a no-op. RuntimeError while
         one of its batches is open."""
