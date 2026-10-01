@@ -1,6 +1,6 @@
 # 0012 — Batch runtime (M6)
 
-Status: owner decision 2026-10-01 ("bau einmal Industriestandard", the four points below); first part implemented, library 0.9.0.
+Status: owner decision 2026-10-01 ("bau einmal Industriestandard", the four points below); first part implemented, library 0.10.0.
 
 ## 1. Model
 
