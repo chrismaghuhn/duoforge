@@ -28,6 +28,34 @@ New public functions:
 
 `duoforge_batch_episode` gains no field; recipes take the result from `duoforge_battle_result`.
 
+**Factored domain (owner, 2026-10-01, for JAX on the GPU).** The joint candidate list of a player is up to 784 × 32 bytes. With 256 environments that is 12.8 MB per query to ship to a GPU. The factored form carries the same domain in 652 bytes per player:
+
+```c
+#define DUOFORGE_MAX_SLOT_OPTIONS 32u
+typedef struct duoforge_factored_domain {
+    uint32_t epoch;
+    uint8_t kind;          /* DUOFORGE_CHOICE_SLOTS or _TEAM_SELECTION; 0 when not requested */
+    uint8_t slot_count[2]; /* SLOTS: entries of each slot list, 1..32 */
+    uint8_t member_count;  /* TEAM_SELECTION: roster size */
+    uint8_t pick_count;    /* TEAM_SELECTION: brought count */
+    uint8_t reserved[3];   /* zero */
+    duoforge_slot_command slots[2][DUOFORGE_MAX_SLOT_OPTIONS];
+    uint32_t allowed[DUOFORGE_MAX_SLOT_OPTIONS]; /* bit j of allowed[i]: the pair (slots[0][i], slots[1][j]) */
+} duoforge_factored_domain; /* 652 bytes */
+typedef struct duoforge_factored_choice {
+    uint8_t slot[2];  /* SLOTS: indices into slots[0] and slots[1] */
+    uint8_t picks[6]; /* TEAM_SELECTION: ordered roster indices, leads first; rest 0 */
+} duoforge_factored_choice; /* 8 bytes */
+```
+
+| Function | Contract |
+|---|---|
+| `duoforge_status duoforge_battle_factored(const duoforge_context *ctx, const duoforge_battle *battle, uint32_t player, duoforge_factored_domain *out)` | Checks as `duoforge_battle_candidates`. **Exact:** the allowed pairs in row-major (i, j) order, each made a side choice with the epoch and side, are byte for byte the list of `duoforge_battle_candidates`, in its order. At TEAM_SELECTION only `kind`, `member_count` and `pick_count` are set; the domain is the ordered tuples of distinct roster indices in lexicographic order. |
+| `duoforge_status duoforge_batch_query_factored(duoforge_batch *batch, duoforge_request *requests, duoforge_observation *observations, duoforge_factored_domain *domains)` | `domains[2e+p]`, in parallel; any output may be NULL. |
+| `duoforge_status duoforge_batch_step_factored(duoforge_batch *batch, const duoforge_request *requests, const duoforge_factored_domain *domains, const duoforge_factored_choice *choices, duoforge_status *statuses, duoforge_step_result *results)` | As `duoforge_batch_step_indices`. A SLOTS choice whose bit is not set, or whose index is past `slot_count`, fails that environment with E_INVALID_ARGUMENT. The step itself checks a TEAM_SELECTION choice. |
+
+The rank of a choice in the joint list maps between the two forms: for SLOTS, the number of allowed pairs before (i, j) in row-major order; for TEAM_SELECTION, the lexicographic rank of the tuple. Recipes store this joint index.
+
 ## 3. Python package `python/duoforge`
 
 - **Environment.** CPython 3.10 or later, NumPy 2. In this repository it is the project venv `.venv`, which git ignores. CMake option `DUOFORGE_PYTHON` names the interpreter for the Python tests; the tests are skipped explicitly when it is empty.
@@ -43,6 +71,7 @@ New public functions:
     - `statuses` (E,) of uint32
     - `results` (E,)
   - `Batch` methods: `query()`, `step(indices: ndarray[(E,2), uint16])`, `reset(env, episode)`, `reset_terminal()`, `play_random(episodes, max_steps) -> ndarray[episode_dtype]`, `result(env) -> int`, `digest(env) -> bytes`, `episode(env) -> int`, `close()`.
+  - `Batch.query_factored()` fills `domains` (E,2) (`FACTORED_DOMAIN` dtype), and `Batch.step_factored(choices: ndarray[(E,2), FACTORED_CHOICE])` steps it. The helpers `joint_index(domain, choice)` and `factored_choice(domain, joint_index)` map between the forms.
   - `seeds(seed, env, episode) -> (initstate, initseq, policy_seed)`
   - `reference_setups(pairings) -> ndarray[setup_dtype]`
 - **Errors.** A non-OK batch status raises `DuoforgeError(status_name, statuses)`; there are no silent partial steps.
@@ -50,7 +79,7 @@ New public functions:
 
 ## 4. Policies
 
-- **`RandomPolicy`:** the native policy of decision 0012, vectorized. Each environment holds a splitmix64 state seeded from `seeds(seed, env, episode)[2]`. Each requested player, in player order, takes `next() % count`. With the same seeds it must give exactly the native mode's episodes.
+- **`RandomPolicy`:** the native policy of decision 0012, vectorized. Each environment holds a splitmix64 state seeded from `seeds(seed, env, episode)[2]`. Each requested player, in player order, takes `next() % count`. It works on both forms: in the factored form it takes the allowed pair, or the ordered tuple, of joint rank `next() % count`. With the same seeds both forms must give exactly the native mode's episodes.
 - **`ScriptedPolicy`:** reads only the player's observation and candidates. Each slot command of a candidate is scored as follows:
   - MOVE at a foe position: 100 − that foe's shown HP percent
   - MOVE without a foe target: 10
@@ -61,7 +90,7 @@ New public functions:
 
 ## 5. Feature encoder
 
-`encode(observation, candidates, count) -> ndarray[float32]` is a pure function of the player's own observation and candidates. It produces a fixed-length observation part and a padded candidate part of shape (784, k) with a mask. Its exact layout is the plan's choice and is documented in its docstring. It never reads a battle, so it can carry no hidden information beyond what decision 0007 already proves for the observation (`duoforge.request.information`, the closure gate's information equivalence).
+`encode(observation, domain) -> (obs_part, slot_part, pair_mask)` is a pure function of the player's own observation and factored domain. `obs_part` is a fixed-length float32 vector, `slot_part` has shape (2, 32, k), and `pair_mask` is a (32, 32) bool array. This is the form for a policy network with one action head per slot. Its exact layout is the plan's choice and is documented in its docstring. It never reads a battle, so it can carry no hidden information beyond what decision 0007 already proves for the observation (`duoforge.request.information`, the closure gate's information equivalence).
 
 ## 6. Trajectory recipes (owner, 2026-10-01: replay recipes, no feature dumps)
 
@@ -111,4 +140,10 @@ Size: about 100 bytes per battle (32 decisions × 2 bytes plus the per-episode c
 | Python `policies_features` | the scripted policy picks only legal indices and is deterministic, and `encode` is pure (same input, same output) |
 | Python `example` | the example runs with 8 environments and 2 episodes and replays |
 
-The local CI (`tools/ci/local_ci.sh`) runs the Python tests in the Windows GCC Debug job when `.venv` exists.
+The local CI (`tools/ci/local_ci.sh`) runs the Python tests in the Windows GCC Debug job when `.venv` exists, and on Linux in the WSL GCC Release job when `~/df-venv` exists. That venv holds NumPy and needs `python3.12-venv` (the owner installs it with `sudo apt install python3.12-venv`). JAX's GPU builds are Linux-only, so the package must work there.
+
+| Test | Proves |
+|---|---|
+| C `duoforge.request.factored` | over the 64 battles of `duoforge.request.candidates_digest`, every factored domain expands byte for byte to the candidate list in its order |
+| C `duoforge.batch.step_factored` | factored stepping equals index stepping, and a forbidden pair fails only its environment |
+| Python `equivalence` (factored) | `RandomPolicy` on the factored form equals the native mode too |

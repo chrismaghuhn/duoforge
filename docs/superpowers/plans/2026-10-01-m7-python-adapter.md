@@ -10,6 +10,8 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-01-m7-python-adapter.md`. Decision: `docs/decisions/0013-python-adapter.md`.
 
+**Owner prerequisite (before Task 3's Linux part):** in WSL, `sudo apt install python3.12-venv`.
+
 ## Global Constraints
 
 - Library version becomes `0.11.0` (`include/duoforge/duoforge.h`, `tests/test_api_atomicity.c`).
@@ -87,6 +89,26 @@ The result test plays dataset battle 0 of `docs/certification/closure-v1/dataset
 - [ ] **Step 4: Run** the GCC suite, then `tools/ci/linux_ci.sh clang-tsan` through WSL; both green.
 - [ ] **Step 5: Commit** "Batch: reset one environment, step by candidate index".
 
+### Task 2b: Factored domain
+
+**Files:**
+- Modify: `include/duoforge/duoforge.h` (`DUOFORGE_MAX_SLOT_OPTIONS`, `duoforge_factored_domain`, `duoforge_factored_choice`, `duoforge_battle_factored`), `src/state/request.c` (built from `dfi_side_lists` and `dfi_pair_allowed`, so both forms share the pair rule), `include/duoforge/duoforge_batch.h` and `src/batch/batch.c` (`duoforge_batch_query_factored`, `duoforge_batch_step_factored`)
+- Test: `tests/test_factored.c` (`duoforge.request.factored`, `duoforge.batch.step_factored`)
+
+**Interfaces:**
+- Consumes: Task 2's `duoforge_batch_step_indices` (the factored step reuses its per-environment step).
+- Produces: the types and three functions of spec section 2 ("Factored domain"), exactly as declared there.
+
+- [ ] **Step 1: Write the failing tests.**
+  - Run the play loop of `tests/test_candidates_digest.c` (64 seeds, same policy). At every boundary, expanding the factored domain (row-major pairs; team tuples by lexicographic unranking) gives `memcmp == 0` against `duoforge_battle_candidates`, with the same count.
+  - In a batch with 37 environments, a factored step with the choice of joint rank `next() % count` gives the same digests as `step_indices` with that index.
+  - A choice whose bit is not set fails only its environment.
+  - `sizeof(duoforge_factored_domain) == 652` and `sizeof(duoforge_factored_choice) == 8`.
+- [ ] **Step 2: Run** `ctest -R "factored"` and expect failures.
+- [ ] **Step 3: Implement.** `duoforge_battle_factored` uses the query prologue, then `dfi_side_lists` for the slot lists and `dfi_pair_allowed` for each bit. At TEAM_SELECTION it sets only the counts.
+- [ ] **Step 4: Run** the GCC suite (including `duoforge.request.candidates_digest`) and the TSan job: green.
+- [ ] **Step 5: Commit** "Factored candidate domain: slot lists and pair mask (652 bytes per player)".
+
 ### Task 3: Shared library, layout dump, Python package skeleton
 
 **Files:**
@@ -98,7 +120,7 @@ The result test plays dataset battle 0 of `docs/certification/closure-v1/dataset
 - Create: `python/duoforge/__init__.py`, `python/duoforge/_lib.py`, `python/duoforge/_layout.py`, `python/duoforge/errors.py`, `python/duoforge/context.py`
 - Create: `python/tests/test_layout.py`, `python/tests/test_lib.py`
 - Modify: `tests/CMakeLists.txt` (when `DUOFORGE_PYTHON` is set: `add_test(duoforge.python.<name> COMMAND ${DUOFORGE_PYTHON} -m unittest python.tests.test_<name>)` with environment `DUOFORGE_LIBRARY=$<TARGET_FILE:duoforge_shared>` and `DUOFORGE_LAYOUT_DUMP=$<TARGET_FILE:duoforge_layout_dump>`, label `python`)
-- Modify: `tools/ci/local_ci.sh` (`-DDUOFORGE_PYTHON=$ROOT/.venv/Scripts/python.exe` in the `win-gcc-debug` job when that file exists)
+- Modify: `tools/ci/local_ci.sh` (`-DDUOFORGE_PYTHON=$ROOT/.venv/Scripts/python.exe` in the `win-gcc-debug` job when that file exists) and `tools/ci/linux_ci.sh` (`-DDUOFORGE_PYTHON=$HOME/df-venv/bin/python` in `gcc-release-ipo` when that file exists; `linux_ci.sh --setup-python` creates `~/df-venv` and installs NumPy, after the owner has installed `python3.12-venv`)
 
 **Interfaces:**
 - Produces:
@@ -131,10 +153,13 @@ The result test plays dataset battle 0 of `docs/certification/closure-v1/dataset
   - `Batch(context, setups, workers, seed)` with buffers `requests` (E,2), `observations` (E,2), `candidates` (E,2,784), `counts` (E,2) uint32, `statuses` (E,), `results` (E,)
   - methods `query()`, `step(indices)`, `reset(env, episode)`, `reset_terminal()`, `play_random(episodes, max_steps) -> ndarray[EPISODE]`, `result(env)`, `digest(env) -> bytes`, `episode(env)`, `close()`
   - `seeds(seed, env, episode) -> tuple[int, int, int]`
-  - `RandomPolicy(seed, envs)` with `choose(batch) -> ndarray[(E,2), uint16]` (NO_CHOICE for unrequested players) and `start_episode(env, episode)`
+  - `RandomPolicy(seed, envs)` with `choose(batch) -> ndarray[(E,2), uint16]` (NO_CHOICE for unrequested players), `choose_factored(batch) -> ndarray[(E,2), FACTORED_CHOICE]` and `start_episode(env, episode)`
+  - `Batch.query_factored()`, `Batch.step_factored(choices)`, `joint_index(domain, choice) -> int`, `factored_choice(domain, k) -> FACTORED_CHOICE`
 
 - [ ] **Step 1: Write the failing tests:**
   - 37 environments over the four pairings, seed `0x2026100200000012`, workers 1 and 4. Native `play_random(3, 1000)` must produce byte-identical records to a Python loop: `start_episode` for episodes 1..3, `reset(env, k)`, `query` and `choose`/`step` until TERMINAL, then build the record from `result`, `digest`, steps and decisions.
+  - The same with `query_factored` and `choose_factored`/`step_factored` gives the same records.
+  - `joint_index(d, factored_choice(d, k)) == k` for every k below the count, over all domains of one episode.
   - `step(np.zeros((E,2), np.int64))` raises `TypeError`, and `step(np.asfortranarray(idx))` raises `ValueError` (Review Focus 2).
   - `reset_terminal()` followed by `step()` without `query()` raises `DuoforgeError("DUOFORGE_E_STALE_EPOCH")` (Review Focus 3).
 - [ ] **Step 2: Run** `ctest -R duoforge.python.equivalence` and expect failures.
@@ -175,12 +200,12 @@ The result test plays dataset battle 0 of `docs/certification/closure-v1/dataset
 
 **Interfaces:**
 - Consumes: Task 3's dtypes (observation side and position views, `slot_command` fields).
-- Produces: `ScriptedPolicy()` with `choose(batch) -> ndarray[(E,2), uint16]` and the scores of spec section 4, and `encode(observation, candidates, count) -> tuple[ndarray[float32], ndarray[float32], ndarray[bool]]`, which returns the observation part, the candidate part (784, k) and the mask (784,).
+- Produces: `ScriptedPolicy()` with `choose(batch) -> ndarray[(E,2), uint16]` and the scores of spec section 4, and `encode(observation, domain) -> tuple[ndarray[float32], ndarray[float32], ndarray[bool]]`, which returns the observation part, the slot part (2, 32, k) and the pair mask (32, 32).
 
 - [ ] **Step 1: Write the failing tests:**
   - Over 32 environments played to the end with `ScriptedPolicy`, every chosen index is below `count`, and two runs give the same digests.
   - `encode` gives equal arrays for equal inputs, and different arrays after one changed foe HP percent.
-  - The mask sum equals `count`.
+  - The pair mask's sum equals the joint count.
   - Counts with 0 for a requested player raise `ValueError` in both policies (Review Focus 5).
 - [ ] **Step 2: Run** and expect failures.
 - [ ] **Step 3: Implement**, vectorized over (E,2,784). The candidate features are the slot command fields scaled to [0,1]; the docstring documents the layout.
