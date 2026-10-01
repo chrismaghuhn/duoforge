@@ -34,7 +34,8 @@
  * Step 1: Kowtow Cleave, Hyper Voice, Draco Meteor, Wave Crash and Aqua Jet
  * (data only), Defiant and Adaptability.
  * Step 2: Flare Blitz (defrost) and Darkest Lariat (ignoreDefensive,
- * ignoreEvasion). */
+ * ignoreEvasion).
+ * Step 3: Salamencite (Salamence-Mega) and Aerilate. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -105,6 +106,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_EMERGENCYEXIT] = 1u,
             [DFI_ABILITY_DEFIANT] = 1u,
             [DFI_ABILITY_ADAPTABILITY] = 1u,
+            [DFI_ABILITY_AERILATE] = 1u,
         },
     .items =
         {
@@ -119,5 +121,6 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_RAICHUNITEY] = 1u,
             [DFI_ITEM_GOLISOPITE] = 1u,
             [DFI_ITEM_CHARIZARDITEY] = 1u,
+            [DFI_ITEM_SALAMENCITE] = 1u,
         },
 };

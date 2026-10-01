@@ -1,6 +1,6 @@
 # 0009 — Team C: the expansion track (data kind, gate, steps, evidence)
 
-Status: **accepted** (owner, 2026-10-01: "bau das erstmal so"; setup rule: the closure rule, section 3.4). **Steps 1 and 2 built** (section 10). Builds on decision `0004` (two reference teams), `0006` (data, state v3, draw sites, fixtures, evidence), `0007` (player view) and `0010` (the certified CLOSURE profile, the role of `CLOSURE_DEV`, draw alignment B confirmed), and on the research in `docs/research/third-team/` (PR #32). "M§n" means section n of `docs/research/third-team/mechanics.md`; X1 to X9 are its executed experiments.
+Status: **accepted** (owner, 2026-10-01: "bau das erstmal so"; setup rule: the closure rule, section 3.4). **Steps 1 to 3 built** (section 10). Builds on decision `0004` (two reference teams), `0006` (data, state v3, draw sites, fixtures, evidence), `0007` (player view) and `0010` (the certified CLOSURE profile, the role of `CLOSURE_DEV`, draw alignment B confirmed), and on the research in `docs/research/third-team/` (PR #32). "M§n" means section n of `docs/research/third-team/mechanics.md`; X1 to X9 are its executed experiments.
 
 ## 1. Owner inputs (2026-10-01)
 
@@ -291,3 +291,15 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
   - `src/data/support_manifest.c`;
   - `include/duoforge/duoforge.h` (comment only);
   - `tools/reference/trace_to_c.py`.
+
+### 10.3 Step 3: Salamencite, Salamence-Mega and Aerilate
+
+- **Mega Evolution.** The existing machinery covers Salamencite: the Mega action, the forme's stats and ability from the extended tables, one Mega per side, and no second Intimidate. The manifest marks the stone and Aerilate.
+- **Aerilate.** `onModifyType` (priority -1) turns a Normal move into Flying after Weather Ball's own type change and before immunity, type effectiveness and STAB. Weather Ball is in its `noModifyType` list, and Struggle is typeless by then. A move it changed gets 4915/4096 first in the BasePower chain (priority 23, ahead of Tough Claws' 21) (`data/abilities.ts:57-77`).
+- **Evidence.** `c03_mega_salamence`:
+  - the Normal Hyper Voice does not affect Ceruledge;
+  - after the Mega, the Flying Hyper Voice hits Gholdengo (resisted) and Ceruledge;
+  - Tailwind and Draco Meteor come from the Mega forme.
+
+  Negative controls: without the type change, or without the BasePower boost, the battle fails.
+- **Shared files touched:** `src/combat/turn.c` (move type, BasePower chain) and `src/data/support_manifest.c`.

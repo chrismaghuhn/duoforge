@@ -320,7 +320,8 @@ int main(void)
     /* The gate per Team C mechanic: the dev side plus exactly one of them.
      * Steps (decision 0009 section 5) mark them one by one; step 1: Kowtow
      * Cleave, Hyper Voice, Draco Meteor, Wave Crash, Aqua Jet, Defiant and
-     * Adaptability; step 2: Flare Blitz and Darkest Lariat. */
+     * Adaptability; step 2: Flare Blitz and Darkest Lariat; step 3: Salamencite
+     * with Aerilate. */
     {
         typedef struct gate_case {
             uint32_t member, ability_plus1, item_plus1, move;
@@ -346,7 +347,7 @@ int main(void)
             {3u, DFI_ABILITY_PSYCHICSURGE + 1u, 0u, keep, false, "Psychic Surge"},
             {4u, DFI_ABILITY_DEFIANT + 1u, 0u, keep, true, "Defiant"},
             {0u, 0u, DFI_ITEM_WHITEHERB + 1u, keep, false, "White Herb"},
-            {2u, 0u, DFI_ITEM_SALAMENCITE + 1u, keep, false, "Salamencite (Mega, Aerilate)"},
+            {2u, 0u, DFI_ITEM_SALAMENCITE + 1u, keep, true, "Salamencite (Mega, Aerilate)"},
             {3u, 0u, DFI_ITEM_ROCKYHELMET + 1u, keep, false, "Rocky Helmet"},
             {4u, 0u, DFI_ITEM_CHOPLEBERRY + 1u, keep, false, "Chople Berry"},
             {4u, 0u, DFI_ITEM_CHOICESCARF + 1u, keep, false, "Choice Scarf"},
@@ -373,6 +374,8 @@ int main(void)
         }
         abilities[DFI_ABILITY_DEFIANT - DFI_ABILITY_COUNT] = 1u;
         abilities[DFI_ABILITY_ADAPTABILITY - DFI_ABILITY_COUNT] = 1u;
+        abilities[DFI_ABILITY_AERILATE - DFI_ABILITY_COUNT] = 1u;
+        items[DFI_ITEM_SALAMENCITE - DFI_ITEM_COUNT] = 1u;
         DF_CHECK_BYTES(&t, dfi_support.moves + DFI_MOVE_COUNT, moves, sizeof moves, "Team C moves in the manifest");
         DF_CHECK_BYTES(&t, dfi_support.abilities + DFI_ABILITY_COUNT, abilities, sizeof abilities,
                        "Team C abilities in the manifest");
