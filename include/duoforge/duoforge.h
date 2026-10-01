@@ -32,9 +32,9 @@ extern "C" {
 #endif
 
 #define DUOFORGE_VERSION_MAJOR 0
-#define DUOFORGE_VERSION_MINOR 10
+#define DUOFORGE_VERSION_MINOR 11
 #define DUOFORGE_VERSION_PATCH 0
-#define DUOFORGE_VERSION_STRING "0.10.0"
+#define DUOFORGE_VERSION_STRING "0.11.0"
 
 /* Identifiers of the artifacts that exist now (registry: decisions 0002, 0005, 0006). */
 #define DUOFORGE_SEMANTICS_ID           3u   /* "duoforge-m3-closure" */
@@ -191,6 +191,10 @@ duoforge_status duoforge_battle_create_decoded(const duoforge_context *ctx, cons
 duoforge_status duoforge_battle_clone(const duoforge_context *ctx, const duoforge_battle *src,
                                       duoforge_battle **out_battle);
 void duoforge_battle_destroy(duoforge_battle *battle); /* NULL is a no-op */
+/* The reference teams of decision 0004 as a setup: pairing 0..3 = A-B, B-A,
+   A-A, B-B (side 0 first), rng_initstate 2026 and rng_initseq 1001. Checks:
+   NULL -> INVALID_ARGUMENT (pairing); *out is untouched on failure. */
+duoforge_status duoforge_reference_setup(uint32_t pairing, duoforge_battle_setup *out);
 
 /* Allocation-free. */
 /* In-process snapshot/restore: after NULL and context checks, dst == src is a no-op. */
@@ -294,6 +298,11 @@ duoforge_status duoforge_battle_request(const duoforge_context *ctx, const duofo
    (decision 0005 section 3). With capacity < count the call returns
    E_CAPACITY and writes ONLY *out_count = required; the buffer is untouched.
    Otherwise the first *out_count records are written. */
+/* The battle's result: DUOFORGE_RESULT_SIDE_0, _SIDE_1 or _TIE at TERMINAL, 0
+   before. Checks as duoforge_battle_request (NULL -> CONTEXT_MISMATCH ->
+   INVARIANT); *out_result is written only on success. */
+duoforge_status duoforge_battle_result(const duoforge_context *ctx, const duoforge_battle *battle,
+                                       uint32_t *out_result);
 duoforge_status duoforge_battle_candidates(const duoforge_context *ctx, const duoforge_battle *battle,
                                            uint32_t player, duoforge_side_choice *buffer, uint32_t capacity,
                                            uint32_t *out_count);

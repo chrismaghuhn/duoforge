@@ -505,6 +505,20 @@ duoforge_status duoforge_battle_request(const duoforge_context *ctx, const duofo
     return DUOFORGE_OK;
 }
 
+duoforge_status duoforge_battle_result(const duoforge_context *ctx, const duoforge_battle *battle,
+                                       uint32_t *out_result)
+{
+    if (ctx == NULL || battle == NULL || out_result == NULL) {
+        return DUOFORGE_E_NULL_ARGUMENT;
+    }
+    const duoforge_status st = dfi_query_prologue(ctx, battle, 0u);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    *out_result = battle->result; /* DFI_RESULT_* equals DUOFORGE_RESULT_* */
+    return DUOFORGE_OK;
+}
+
 duoforge_status duoforge_battle_candidates(const duoforge_context *ctx, const duoforge_battle *battle,
                                            uint32_t player, duoforge_side_choice *buffer, uint32_t capacity,
                                            uint32_t *out_count)
