@@ -135,6 +135,8 @@ duoforge_configure_target(duoforge_layout_dump)
 
 set(DUOFORGE_PYTHON "" CACHE FILEPATH
     "Python 3.10+ with NumPy 2 for the duoforge.python tests (empty: the tests report skipped)")
+set(DUOFORGE_LEARN_PYTHON "" CACHE FILEPATH
+    "Python with JAX and optax for duoforge.python.learn (decision 0014; empty: the test reports skipped)")
 
 if(BUILD_TESTING)
     # C++ is optional and used only for the extern "C" link check.

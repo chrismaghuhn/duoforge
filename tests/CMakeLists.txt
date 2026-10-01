@@ -255,6 +255,20 @@ foreach(_py layout lib equivalence recipes policies_features example)
     endif()
 endforeach()
 
+# The learner pipeline (decision 0014) needs JAX: DUOFORGE_LEARN_PYTHON.
+if(DUOFORGE_LEARN_PYTHON)
+    add_test(NAME duoforge.python.learn
+        COMMAND "${DUOFORGE_LEARN_PYTHON}" -m unittest -v python.tests.test_learn
+        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
+    set_tests_properties(duoforge.python.learn PROPERTIES LABELS "python;learn" TIMEOUT 900 ENVIRONMENT
+        "DUOFORGE_LIBRARY=$<TARGET_FILE:duoforge_shared>;PYTHONPATH=${PROJECT_SOURCE_DIR}/python;PYTHONDONTWRITEBYTECODE=1")
+else()
+    add_test(NAME duoforge.python.learn
+        COMMAND "${CMAKE_COMMAND}" -E echo "DUOFORGE_SKIP: DUOFORGE_LEARN_PYTHON is empty")
+    set_tests_properties(duoforge.python.learn PROPERTIES LABELS "python;learn"
+        SKIP_REGULAR_EXPRESSION "DUOFORGE_SKIP:")
+endif()
+
 # Source lint and its self-test.
 add_test(NAME duoforge.lint.sources
     COMMAND "${CMAKE_COMMAND}" "-DROOT=${PROJECT_SOURCE_DIR}"
