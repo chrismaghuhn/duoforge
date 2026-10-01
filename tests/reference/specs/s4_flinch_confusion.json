@@ -1,0 +1,20 @@
+{
+  "name": "s4_flinch_confusion",
+  "purpose": "Flinch and confusion: Zap Cannon paralyzes Farigiraf so that slow Golisopod outspeeds it, and Iron Head flinches (20 in Champions) a target that has not moved yet; Hurricane confuses for 2 to 5 attempts, a confused Pokemon hits itself with a typeless 40 power physical hit 33 in 100 times, and confusion does not restart.",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000420d",
+  "teams": [
+    "Raichu (F)\nAbility: No Ability\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Zap Cannon\n- Protect\n\nGolisopod (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nJolly Nature\n- Iron Head\n- Protect\n\nCharizard (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Hurricane\n- Protect\n\nArchaludon (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Snarl",
+    "Farigiraf (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Psychic\n- Protect\n\nGrimmsnarl (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nBrave Nature\n- Spirit Break\n\nPolitoed (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nQuiet Nature\n- Muddy Water\n- Protect\n\nMilotic (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nQuiet Nature\n- Ice Beam\n- Coil"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1 1"
+    ],
+    "p2": [
+      "move 1 1, move 1 2",
+      "move 1 2, move 1 1"
+    ],
+    "max_steps": 50
+  }
+}

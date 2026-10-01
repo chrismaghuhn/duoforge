@@ -5,7 +5,10 @@
  * stat stages, self-boosting moves, secondary stat changes, PP, Struggle and
  * Protect with its stall counter. Every move marked here uses nothing else.
  * Step 3: voluntary switches, fainting, replacements and the win rule.
- * No ability, item, status or Mega Evolution is implemented yet. */
+ * Step 4: burn, paralysis, sleep and freeze (Champions variants), flinch
+ * and confusion, from primary and secondary effects; Hurricane is taken
+ * ahead of step 10 because it is the only move that confuses.
+ * No ability, item, weather, terrain or Mega Evolution is implemented yet. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -25,5 +28,11 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_SNARL] = 1u,
             [DFI_MOVE_PSYCHIC] = 1u,
             [DFI_MOVE_SPIRITBREAK] = 1u,
+            [DFI_MOVE_ICEBEAM] = 1u,
+            [DFI_MOVE_HYPNOSIS] = 1u,
+            [DFI_MOVE_ZAPCANNON] = 1u,
+            [DFI_MOVE_IRONHEAD] = 1u,
+            [DFI_MOVE_HEATWAVE] = 1u,
+            [DFI_MOVE_HURRICANE] = 1u,
         },
 };

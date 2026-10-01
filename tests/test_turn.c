@@ -146,12 +146,48 @@ static void encode(const duoforge_context *ctx, const duoforge_battle *b, uint8_
     df_encode(ctx, b, out);
 }
 
-static duoforge_battle *started(df_test *t, const duoforge_context *k2, uint64_t seed)
+/* Development teams with every status move of step 4: Zap Cannon
+ * (paralysis), Hypnosis (sleep), Ice Beam (freeze), Heat Wave (burn),
+ * Iron Head (flinch), Hurricane (confusion). */
+static void status_setup(duoforge_battle_setup *s, uint64_t seed)
 {
-    duoforge_battle_setup s;
-    dev_setup(&s, seed);
+    memset(s, 0, sizeof *s);
+    s->rng_initstate = seed;
+    s->rng_initseq = 91u;
+    static const struct {
+        uint32_t species, gender, nature, sp[6], moves[4], move_count;
+    } a[4] = {
+        {DFI_FORME_RAICHU, 1u, DFI_NATURE_TIMID, {2u, 0u, 0u, 32u, 0u, 32u},
+         {DFI_MOVE_ZAPCANNON, DFI_MOVE_FOCUSBLAST, DFI_MOVE_PROTECT, 0u}, 3u},
+        {DFI_FORME_MILOTIC, 2u, DFI_NATURE_CALM, {32u, 0u, 29u, 0u, 5u, 0u},
+         {DFI_MOVE_HYPNOSIS, DFI_MOVE_ICEBEAM, DFI_MOVE_MUDDYWATER, DFI_MOVE_COIL}, 4u},
+        {DFI_FORME_CHARIZARD, 1u, DFI_NATURE_MODEST, {32u, 0u, 0u, 32u, 0u, 2u},
+         {DFI_MOVE_HEATWAVE, DFI_MOVE_HURRICANE, DFI_MOVE_PROTECT, 0u}, 3u},
+        {DFI_FORME_GOLISOPOD, 2u, DFI_NATURE_ADAMANT, {32u, 32u, 0u, 0u, 1u, 1u},
+         {DFI_MOVE_IRONHEAD, DFI_MOVE_DRILLRUN, DFI_MOVE_PROTECT, 0u}, 3u},
+    };
+    for (uint32_t side = 0; side < 2u; ++side) {
+        s->sides[side].member_count = 4u;
+        for (uint32_t m = 0; m < 4u; ++m) {
+            duoforge_member_setup *d = &s->sides[side].members[m];
+            d->species_id = a[m].species;
+            d->gender = side == 0u ? a[m].gender : 3u - a[m].gender;
+            d->nature = a[m].nature;
+            for (uint32_t i = 0; i < 6u; ++i) {
+                d->stat_points[i] = a[m].sp[i];
+            }
+            d->move_count = a[m].move_count;
+            for (uint32_t k = 0; k < a[m].move_count; ++k) {
+                d->moves[k].move_id = a[m].moves[k];
+            }
+        }
+    }
+}
+
+static duoforge_battle *started_from(df_test *t, const duoforge_context *k2, const duoforge_battle_setup *s)
+{
     duoforge_battle *b = NULL;
-    DF_CHECK(t, duoforge_battle_create(k2, &s, &b) == DUOFORGE_OK);
+    DF_CHECK(t, duoforge_battle_create(k2, s, &b) == DUOFORGE_OK);
     if (b == NULL) {
         return NULL;
     }
@@ -160,6 +196,13 @@ static duoforge_battle *started(df_test *t, const duoforge_context *k2, uint64_t
     DF_CHECK(t, bundle_from(k2, b, 0u, 0u, &bd) == DUOFORGE_OK); /* picks 0,1,2,3 */
     DF_CHECK(t, duoforge_battle_step(k2, b, &bd, &res) == DUOFORGE_OK && b->turn == 1u);
     return b;
+}
+
+static duoforge_battle *started(df_test *t, const duoforge_context *k2, uint64_t seed)
+{
+    duoforge_battle_setup s;
+    dev_setup(&s, seed);
+    return started_from(t, k2, &s);
 }
 
 /* The bundle is rejected with `expected` and the battle is unchanged. */
@@ -374,6 +417,75 @@ int main(void)
         DF_CHECK(&t, replacements > 0u && results[1] > 0u && results[2] > 0u);
         fprintf(stderr, "  random play: %u steps, %u battles ended (side 0 %u, side 1 %u, tie %u), %u replacements\n",
                 steps, ended, results[1], results[2], results[3], replacements);
+    }
+
+    /* Random play with the status moves of step 4: every status and
+     * confusion occur, every committed state passes the checker, and a copy
+     * decoded from the bytes of each boundary continues byte for byte like
+     * the original (counters, flags and statuses survive encode/decode). */
+    {
+        dfi_rng pick;
+        dfi_rng_seed(&pick, 777u, 3u);
+        unsigned seen[5] = {0, 0, 0, 0, 0}; /* by DFI_STATUS_* */
+        unsigned confused = 0;
+        unsigned ended = 0;
+        unsigned mismatches = 0;
+        for (uint64_t seed = 1u; seed <= 40u; ++seed) {
+            duoforge_battle_setup s;
+            status_setup(&s, seed);
+            duoforge_battle *b = started_from(&t, k2, &s);
+            if (b == NULL) {
+                continue;
+            }
+            for (uint32_t i = 0; i < 600u && b->boundary_kind != DUOFORGE_BOUNDARY_TERMINAL; ++i) {
+                uint32_t r = 0;
+                (void)dfi_rng_next_u32(&pick, &r);
+                duoforge_decision_bundle bd;
+                if (!DF_CHECK(&t, pick_bundle(k2, b, r, (r & 7u) == 0u, &bd) == DUOFORGE_OK)) {
+                    break;
+                }
+                uint8_t bytes[DUOFORGE_STATE_V3_ENCODED_SIZE];
+                encode(k2, b, bytes);
+                duoforge_battle *copy = NULL;
+                DF_CHECK(&t, duoforge_battle_create_decoded(k2, bytes, sizeof bytes, &copy) == DUOFORGE_OK);
+                duoforge_step_result res;
+                duoforge_step_result res2;
+                const duoforge_status st = duoforge_battle_step(k2, b, &bd, &res);
+                if (!DF_CHECK(&t, st == DUOFORGE_OK)) {
+                    fprintf(stderr, "  status seed %u step %u: %s\n", (unsigned)seed, i, duoforge_status_name(st));
+                    duoforge_battle_destroy(copy);
+                    break;
+                }
+                if (copy != NULL) {
+                    uint8_t after[DUOFORGE_STATE_V3_ENCODED_SIZE];
+                    uint8_t after2[DUOFORGE_STATE_V3_ENCODED_SIZE];
+                    DF_CHECK(&t, duoforge_battle_step(k2, copy, &bd, &res2) == DUOFORGE_OK);
+                    encode(k2, b, after);
+                    encode(k2, copy, after2);
+                    mismatches += memcmp(after, after2, sizeof after) != 0 ? 1u : 0u;
+                    duoforge_battle_destroy(copy);
+                }
+                DF_CHECK(&t, duoforge_battle_check(k2, b) == DUOFORGE_OK);
+                for (uint32_t side = 0; side < 2u; ++side) {
+                    for (uint32_t m = 0; m < 4u; ++m) {
+                        seen[b->sides[side].members[m].status % 5u] += 1u;
+                    }
+                    for (uint32_t p = 0; p < 2u; ++p) {
+                        confused += b->sides[side].positions[p].confusion_turns != 0u ? 1u : 0u;
+                    }
+                }
+            }
+            ended += b->boundary_kind == DUOFORGE_BOUNDARY_TERMINAL ? 1u : 0u;
+            duoforge_battle_destroy(b);
+        }
+        DF_CHECK_EQ_U64(&t, ended, 40u);
+        DF_CHECK_EQ_U64(&t, mismatches, 0u);
+        DF_CHECK(&t, seen[DFI_STATUS_BRN] > 0u && seen[DFI_STATUS_FRZ] > 0u && seen[DFI_STATUS_PAR] > 0u &&
+                         seen[DFI_STATUS_SLP] > 0u && confused > 0u);
+        fprintf(stderr, "  status play: %u ended; member-steps burned %u, frozen %u, paralyzed %u, asleep %u; "
+                        "confused position-steps %u\n",
+                ended, seen[DFI_STATUS_BRN], seen[DFI_STATUS_FRZ], seen[DFI_STATUS_PAR], seen[DFI_STATUS_SLP],
+                confused);
     }
 
     duoforge_context_destroy(k2);

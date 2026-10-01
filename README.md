@@ -16,9 +16,10 @@ DuoForge is a deterministic, headless Pokémon Doubles simulation engine designe
 - the state v3 layout of the combat closure with its invariants, codec and oracle (step 1b-1);
 - contexts over the real closure data, validation of real sets with derived stats and PP, and the support gate that still rejects every real team with `DUOFORGE_E_UNSUPPORTED` (step 1b-2);
 - the turn core for development teams: turn order with speed ties, damage, accuracy, critical hits, stat stages, secondary stat changes, PP, Struggle and Protect, replaying recorded reference battles draw for draw (step 2);
-- switching, fainting, replacement and the win rule: development teams play complete battles to TERMINAL (step 3).
+- switching, fainting, replacement and the win rule: development teams play complete battles to TERMINAL (step 3);
+- burn, paralysis, sleep and freeze in their Champions variants, flinch and confusion (step 4).
 
-**Combat is partial.** Development teams (data kind `CLOSURE_DEV`: No Ability, no items, the turn-core moves) play complete battles: turns, switches, faints, replacements and the end of the battle. Everything else returns `DUOFORGE_E_UNSUPPORTED` and changes nothing: a status, an ability, an item, Mega Evolution or a pivot. Under SYNTHETIC data every combat bundle is unsupported. The engine knows the data of the two reference teams and validates their sets, but no move, ability or item effect is implemented, so the support gate rejects every real team with `DUOFORGE_E_UNSUPPORTED`. No batch environments, Python bindings or ML code exist. The owner has selected the rules basis (**Pokémon Champions, VGC 2026 Reg M-C**), the reference revision (**Pokémon Showdown `b2cb775`**) and two teams (`docs/decisions/0004`).
+**Combat is partial.** Development teams (data kind `CLOSURE_DEV`: No Ability, no items, the turn-core moves) play complete battles: turns, switches, faints, replacements, statuses and the end of the battle. Everything else returns `DUOFORGE_E_UNSUPPORTED` and changes nothing: an ability, an item, weather, terrain, a side or field condition, Mega Evolution or a pivot. The observation does not show stages or statuses yet. Under SYNTHETIC data every combat bundle is unsupported. The engine knows the data of the two reference teams and validates their sets, but no move, ability or item effect is implemented, so the support gate rejects every real team with `DUOFORGE_E_UNSUPPORTED`. No batch environments, Python bindings or ML code exist. The owner has selected the rules basis (**Pokémon Champions, VGC 2026 Reg M-C**), the reference revision (**Pokémon Showdown `b2cb775`**) and two teams (`docs/decisions/0004`).
 
 State snapshots and decodability are foundation evidence, **not proof that unimplemented future mechanics restore correctly**.
 
@@ -72,7 +73,7 @@ Every test is finite and has a timeout. Test groups:
 |---|---|
 | `duoforge.unit.*` | Checked arithmetic, byte order, SHA-256, damage and stat arithmetic against the reference, draw sites and tape |
 | `duoforge.combat.*` | The turn core through the public API: one turn, determinism, continuation across encode/decode, honest `E_UNSUPPORTED`, random play |
-| `duoforge.reference.*` | Twelve recorded reference battles replayed draw for draw (`conformance`), the generated tables against the traces; with a checkout: traces and arithmetic regenerated |
+| `duoforge.reference.*` | Eighteen recorded reference battles replayed draw for draw (`conformance`), the generated tables against the traces; with a checkout: traces and arithmetic regenerated |
 | `duoforge.rng.*` | PCG32 known-answer vectors and contract |
 | `duoforge.state.*` | Context, setup, identity, knowledge (HP display as last seen), closure setup (real sets, gate, member invariant), invariants, clone/equal/reseed, setup sweep |
 | `duoforge.codec.*` | Goldens, negative decoding (including "rejected: schema 1"), exhaustive mutation sweep |

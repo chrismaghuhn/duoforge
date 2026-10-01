@@ -31,6 +31,9 @@ typedef struct dfi_run {
     uint32_t faint_count;
     uint32_t last_fainted; /* flat position of the last processed faint */
     bool ended;
+    /* pokemon.speed: the speed key of each position at the reference's last
+     * updateSpeed while its Pokemon stood (a fainted Pokemon keeps it). */
+    uint32_t speed_seen[DFI_POSITIONS];
 } dfi_run;
 
 typedef struct dfi_key {
@@ -76,7 +79,8 @@ static duoforge_status dfi_staged_stat(const dfi_member *m, const dfi_active_slo
 }
 
 /* getActionSpeed of the Champions mod (data/mods/champions/scripts.ts:46-55):
- * the staged Speed, capped, negated under Trick Room. */
+ * the staged Speed, halved by paralysis (its onModifySpe, floor of 50 of
+ * 100), capped, negated under Trick Room. */
 static duoforge_status dfi_speed_key(const struct duoforge_battle *b, const dfi_member *m,
                                      const dfi_active_slot *pos, uint32_t *out)
 {
@@ -84,6 +88,9 @@ static duoforge_status dfi_speed_key(const struct duoforge_battle *b, const dfi_
     const duoforge_status st = dfi_staged_stat(m, pos, DFI_STAT_SPE - 1u, &spe);
     if (st != DUOFORGE_OK) {
         return st;
+    }
+    if (m->status == DFI_STATUS_PAR) {
+        spe = spe * 50u / 100u; /* spe <= 4 * 65535 */
     }
     if (spe > DFI_SPEED_CAP) {
         spe = DFI_SPEED_CAP;
@@ -153,6 +160,28 @@ static uint32_t dfi_compare(const dfi_key *a, const dfi_key *b)
     return 1u;
 }
 
+/* Battle.updateSpeed: every standing active Pokemon's speed is taken again;
+ * a fainted one keeps the value it had (getAllActive skips it). */
+static duoforge_status dfi_update_position_speed(dfi_run *r, uint32_t flat)
+{
+    const dfi_member *m = dfi_at(r->b, flat);
+    if (m == NULL || m->hp == 0u) {
+        return DUOFORGE_OK;
+    }
+    return dfi_speed_key(r->b, m, dfi_pos(r->b, flat), &r->speed_seen[flat]);
+}
+
+static duoforge_status dfi_update_speeds(dfi_run *r)
+{
+    for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
+        const duoforge_status st = dfi_update_position_speed(r, flat);
+        if (st != DUOFORGE_OK) {
+            return st;
+        }
+    }
+    return DUOFORGE_OK;
+}
+
 static void dfi_swap(struct duoforge_battle *b, dfi_key *keys, uint32_t i, uint32_t j)
 {
     const dfi_queue_record q = b->queue[i];
@@ -169,6 +198,10 @@ static void dfi_swap(struct duoforge_battle *b, dfi_key *keys, uint32_t i, uint3
 static duoforge_status dfi_sort_queue(dfi_run *r)
 {
     struct duoforge_battle *b = r->b;
+    duoforge_status ust = dfi_update_speeds(r);
+    if (ust != DUOFORGE_OK) {
+        return ust;
+    }
     const uint32_t n = b->queue_len;
     dfi_key keys[DFI_QUEUE_CAPACITY];
     for (uint32_t i = 0u; i < n && i < DFI_QUEUE_CAPACITY; ++i) {
@@ -462,6 +495,11 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
             return DUOFORGE_E_INVARIANT;
         }
     }
+    /* A burned attacker's physical moves, Struggle included, do half
+     * (modifyDamage, sim/battle-actions.ts:1816-1820). */
+    if (physical && a->status == DFI_STATUS_BRN) {
+        damage = dfi_modify(damage, 2048u);
+    }
     *out = dfi_final_damage(damage);
     return DUOFORGE_OK;
 }
@@ -485,6 +523,95 @@ static duoforge_status dfi_deal(dfi_run *r, uint32_t flat, uint32_t amount)
             r->faint_count += 1u;
         }
     }
+    return DUOFORGE_OK;
+}
+
+/* trySetStatus and setStatus (sim/pokemon.ts): only a standing Pokemon
+ * without a status takes one; Fire cannot be burned, Electric cannot be
+ * paralyzed, Ice and anything under sun cannot be frozen. Sleep lasts
+ * sample([2, 3, 3]) attempts, freeze at most 3 (the Champions conditions,
+ * data/mods/champions/conditions.ts). */
+static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status)
+{
+    static const uint8_t sleep_turns[3] = {2u, 3u, 3u};
+    dfi_member *m = dfi_at(r->b, flat);
+    if (m == NULL || m->hp == 0u || m->status != DFI_STATUS_NONE) {
+        return DUOFORGE_OK;
+    }
+    if ((status == DFI_STATUS_BRN && dfi_has_type(m, DFI_TYPE_FIRE)) ||
+        (status == DFI_STATUS_PAR && dfi_has_type(m, DFI_TYPE_ELECTRIC)) ||
+        (status == DFI_STATUS_FRZ && (dfi_has_type(m, DFI_TYPE_ICE) || r->b->weather == DFI_WEATHER_SUN))) {
+        return DUOFORGE_OK;
+    }
+    uint32_t counter = 0u;
+    if (status == DFI_STATUS_SLP) {
+        uint32_t v = 0u;
+        const duoforge_status st = dfi_draw(r->draws, DFI_SITE_SLEEP_TURNS, 0u, 3u, &v);
+        if (st != DUOFORGE_OK) {
+            return st;
+        }
+        counter = sleep_turns[v];
+    } else if (status == DFI_STATUS_FRZ) {
+        counter = 3u;
+    }
+    m->status = (uint8_t)status;          /* <= DFI_STATUS_SLP */
+    m->status_counter = (uint8_t)counter; /* <= 3 */
+    return DUOFORGE_OK;
+}
+
+/* A volatile from a secondary effect (addVolatile): nothing on a fainted
+ * Pokemon; confusion does not restart and lasts random(2, 6) attempts. */
+static duoforge_status dfi_add_volatile(dfi_run *r, uint32_t flat, uint32_t which)
+{
+    const dfi_member *m = dfi_at(r->b, flat);
+    dfi_active_slot *pos = dfi_pos(r->b, flat);
+    if (m == NULL || m->hp == 0u) {
+        return DUOFORGE_OK;
+    }
+    if (which == DFI_VOLATILE_FLINCH) {
+        pos->flags = (uint8_t)((uint32_t)pos->flags | DFI_VOL_FLINCH); /* wide-operands-reviewed */
+        return DUOFORGE_OK;
+    }
+    if (which != DFI_VOLATILE_CONFUSION) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
+    if (pos->confusion_turns != 0u) {
+        return DUOFORGE_OK;
+    }
+    uint32_t v = 0u;
+    const duoforge_status st = dfi_draw(r->draws, DFI_SITE_CONFUSION_TURNS, 2u, 6u, &v);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    pos->confusion_turns = (uint8_t)v; /* 2..5 */
+    return DUOFORGE_OK;
+}
+
+/* getConfusionDamage (sim/battle-actions.ts:1850-1862): a typeless 40 power
+ * physical hit on itself with its own staged stats, 16-bit, randomized,
+ * at least 1. */
+static duoforge_status dfi_confusion_damage(dfi_run *r, uint32_t flat, uint32_t *out)
+{
+    const dfi_member *m = dfi_at(r->b, flat);
+    const dfi_active_slot *pos = dfi_pos(r->b, flat);
+    uint32_t attack = 0u;
+    uint32_t defense = 0u;
+    uint32_t damage = 0u;
+    if (dfi_staged_stat(m, pos, DFI_STAGE_ATK, &attack) != DUOFORGE_OK ||
+        dfi_staged_stat(m, pos, DFI_STAGE_DEF, &defense) != DUOFORGE_OK ||
+        !dfi_base_damage(DFI_LEVEL, 40u, attack, defense, &damage)) {
+        return DUOFORGE_E_INVARIANT;
+    }
+    damage = (damage + 2u) & 0xFFFFu;
+    uint32_t roll = 0u;
+    const duoforge_status st = dfi_draw(r->draws, DFI_SITE_DAMAGE_ROLL, 0u, 16u, &roll);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    if (!dfi_randomize(damage, roll, &damage)) {
+        return DUOFORGE_E_INVARIANT;
+    }
+    *out = damage == 0u ? 1u : damage;
     return DUOFORGE_OK;
 }
 
@@ -545,6 +672,63 @@ static void dfi_process_faints(dfi_run *r)
 
 /* ---------------------------------------------------------------- moves */
 
+/* runEvent('BeforeMove') in handler priority order: sleep and freeze (10),
+ * flinch (8), confusion (3), paralysis (1); the first that stops the move
+ * ends the event (data/conditions.ts, data/mods/champions/conditions.ts). */
+static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, bool *can)
+{
+    dfi_member *m = dfi_at(r->b, user);
+    dfi_active_slot *pos = dfi_pos(r->b, user);
+    duoforge_status st = DUOFORGE_OK;
+    *can = false;
+    if (m->status == DFI_STATUS_SLP || m->status == DFI_STATUS_FRZ) {
+        const uint32_t left = m->status_counter > 0u ? (uint32_t)m->status_counter - 1u : 0u;
+        bool cured = left == 0u;
+        if (!cured && m->status == DFI_STATUS_FRZ) {
+            st = dfi_draw_chance(r->draws, DFI_SITE_FREEZE_THAW, 1u, 4u, &cured);
+            if (st != DUOFORGE_OK) {
+                return st;
+            }
+        }
+        if (!cured) {
+            m->status_counter = (uint8_t)left; /* <= 2 */
+            return DUOFORGE_OK;
+        }
+        m->status = (uint8_t)DFI_STATUS_NONE;
+        m->status_counter = 0u;
+    }
+    if (((uint32_t)pos->flags & DFI_VOL_FLINCH) != 0u) {
+        return DUOFORGE_OK;
+    }
+    if (pos->confusion_turns != 0u) {
+        pos->confusion_turns = (uint8_t)((uint32_t)pos->confusion_turns - 1u); /* wide-operands-reviewed */
+        if (pos->confusion_turns != 0u) {
+            bool hit = false;
+            st = dfi_draw_chance(r->draws, DFI_SITE_CONFUSION_HIT, 33u, 100u, &hit);
+            if (st != DUOFORGE_OK) {
+                return st;
+            }
+            if (hit) {
+                uint32_t damage = 0u;
+                st = dfi_confusion_damage(r, user, &damage);
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
+                return dfi_deal(r, user, damage);
+            }
+        }
+    }
+    if (m->status == DFI_STATUS_PAR) {
+        bool full = false;
+        st = dfi_draw_chance(r->draws, DFI_SITE_FULL_PARALYSIS, 1u, 8u, &full);
+        if (st != DUOFORGE_OK || full) {
+            return st;
+        }
+    }
+    *can = true;
+    return DUOFORGE_OK;
+}
+
 /* Protect (data/moves.ts protect, data/conditions.ts stall): fails without a
  * draw when nobody acts after the user; with a stall counter it succeeds on
  * random(counter) == 0 (STALL) and otherwise loses the counter. */
@@ -600,11 +784,19 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     if (move_id != DFI_MOVE_STRUGGLE && dfi_support.moves[move_id] == 0u) {
         return DUOFORGE_E_UNSUPPORTED;
     }
-    /* getTarget and getMoveTargets (the spread classes need no draw). */
+    /* getTarget and getMoveTargets (the spread classes need no draw): the
+     * reference picks a random target in runMove, before BeforeMove, so the
+     * draw happens even when the Pokemon then cannot move. */
     uint32_t targets[DFI_POSITIONS] = {0};
     uint32_t count = 0u;
     duoforge_status st = dfi_move_targets(r, user, md->target_class, q->target, targets, &count);
     if (st != DUOFORGE_OK) {
+        return st;
+    }
+    /* BeforeMove: a Pokemon that cannot move uses no PP and shows nothing. */
+    bool can = false;
+    st = dfi_before_move(r, user, &can);
+    if (st != DUOFORGE_OK || !can) {
         return st;
     }
     /* deductPP and what the opponent sees. */
@@ -625,15 +817,26 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     if (md->special == DFI_SPECIAL_PROTECT) {
         return dfi_run_protect(r, user);
     }
-    if (md->category == DFI_CATEGORY_STATUS) {
+    const bool status_move = md->category == DFI_CATEGORY_STATUS;
+    if (status_move && md->primary_status == DFI_STATUS_NONE) {
         if (md->boost_role != DFI_BOOST_ROLE_PRIMARY_SELF || md->target_class != DUOFORGE_TARGET_CLASS_SELF) {
             return DUOFORGE_E_UNSUPPORTED;
         }
         dfi_apply_boosts(pos, md->boosts);
         return DUOFORGE_OK;
     }
-    if (md->special != DFI_SPECIAL_NONE && md->special != DFI_SPECIAL_STRUGGLE) {
+    if (md->special != DFI_SPECIAL_NONE && md->special != DFI_SPECIAL_STRUGGLE &&
+        md->special != DFI_SPECIAL_HURRICANE) {
         return DUOFORGE_E_UNSUPPORTED;
+    }
+    /* Hurricane never misses in rain and has 50 accuracy under sun. */
+    uint32_t base_accuracy = md->accuracy;
+    if (md->special == DFI_SPECIAL_HURRICANE) {
+        if (b->weather == DFI_WEATHER_RAIN) {
+            base_accuracy = 0u;
+        } else if (b->weather == DFI_WEATHER_SUN) {
+            base_accuracy = 50u;
+        }
     }
     /* Struggle is typeless (its onModifyMove). */
     const uint32_t move_type = md->special == DFI_SPECIAL_STRUGGLE ? DFI_CLOSURE_NONE : md->type;
@@ -645,12 +848,12 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         const dfi_active_slot *tp = dfi_pos(b, t);
         hit[i] = !((((uint32_t)tp->flags & DFI_VOL_PROTECT) != 0u) && ((md->flags & DFI_MOVE_FLAG_PROTECT) != 0u));
     }
-    for (uint32_t i = 0u; i < count; ++i) {
+    for (uint32_t i = 0u; i < count && !status_move; ++i) {
         if (hit[i] && dfi_type_immune(dfi_at(b, targets[i]), move_type)) {
-            hit[i] = false;
+            hit[i] = false; /* a status move ignores type immunity */
         }
     }
-    if (md->accuracy != 0u) {
+    if (base_accuracy != 0u) {
         for (uint32_t i = 0u; i < count; ++i) {
             if (!hit[i]) {
                 continue;
@@ -661,7 +864,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             uint32_t combined = acc + 12u - eva; /* 12 means 0 */
             combined = combined < 6u ? 6u : (combined > 18u ? 18u : combined);
             uint32_t accuracy = 0u;
-            if (!dfi_stage_accuracy(md->accuracy, combined - 6u, &accuracy)) {
+            if (!dfi_stage_accuracy(base_accuracy, combined - 6u, &accuracy)) {
                 return DUOFORGE_E_INVARIANT;
             }
             st = dfi_draw_chance(r->draws, DFI_SITE_ACCURACY, accuracy, 100u, &hit[i]);
@@ -669,6 +872,18 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                 return st;
             }
         }
+    }
+    /* A status move's primary status (runMoveEffects); sleep draws its turns. */
+    if (status_move) {
+        for (uint32_t i = 0u; i < count; ++i) {
+            if (hit[i]) {
+                st = dfi_try_status(r, targets[i], md->primary_status);
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
+            }
+        }
+        return DUOFORGE_OK;
     }
     /* getSpreadDamage: every target's damage (crit, roll), then spreadDamage. */
     uint32_t damage[DFI_POSITIONS] = {0u, 0u, 0u, 0u};
@@ -688,11 +903,9 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             }
         }
     }
-    /* secondaries: one SECONDARY draw per hit target, even at 100. */
+    /* secondaries: one SECONDARY draw per hit target, even at 100; a status
+     * or volatile reaches only a standing target. */
     if (md->sec_chance != 0u) {
-        if (md->sec_kind != DFI_SECONDARY_BOOST) {
-            return DUOFORGE_E_UNSUPPORTED; /* statuses and flinch: step 4 */
-        }
         for (uint32_t i = 0u; i < count; ++i) {
             if (!hit[i]) {
                 continue;
@@ -702,12 +915,37 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             if (st != DUOFORGE_OK) {
                 return st;
             }
-            if (roll < md->sec_chance) {
-                dfi_apply_boosts(dfi_pos(b, targets[i]), md->boosts);
+            if (roll >= md->sec_chance) {
+                continue;
             }
+            if (md->sec_kind == DFI_SECONDARY_BOOST) {
+                dfi_apply_boosts(dfi_pos(b, targets[i]), md->boosts);
+            } else if (md->sec_kind == DFI_SECONDARY_STATUS) {
+                st = dfi_try_status(r, targets[i], md->sec_param);
+            } else if (md->sec_kind == DFI_SECONDARY_VOLATILE) {
+                st = dfi_add_volatile(r, targets[i], md->sec_param);
+            } else {
+                st = DUOFORGE_E_UNSUPPORTED;
+            }
+            if (st != DUOFORGE_OK) {
+                return st;
+            }
+        }
+        if (md->boost_role != DFI_BOOST_ROLE_NONE && md->sec_kind != DFI_SECONDARY_BOOST) {
+            return DUOFORGE_E_UNSUPPORTED; /* self-drops: step 9 */
         }
     } else if (md->boost_role != DFI_BOOST_ROLE_NONE || md->recoil[1] != 0u || md->drain[1] != 0u) {
         return DUOFORGE_E_UNSUPPORTED; /* self-drops, recoil and drain: step 9 */
+    }
+    /* DamagingHit: a damaging Fire move thaws a frozen target (frz). */
+    if (move_type == DFI_TYPE_FIRE) {
+        for (uint32_t i = 0u; i < count; ++i) {
+            dfi_member *tm = dfi_at(b, targets[i]);
+            if (hit[i] && tm->hp != 0u && tm->status == DFI_STATUS_FRZ) {
+                tm->status = (uint8_t)DFI_STATUS_NONE;
+                tm->status_counter = 0u;
+            }
+        }
     }
     /* Struggle's recoil: round(maxHP / 4), at least 1 (applyRecoilDamage). */
     if ((md->flags & DFI_MOVE_FLAG_STRUGGLE_RECOIL) != 0u) {
@@ -745,7 +983,11 @@ static duoforge_status dfi_insert_run_switch(dfi_run *r, uint32_t side, uint32_t
     }
     const dfi_queue_record rec = {activation, (uint8_t)DFI_Q_RUN_SWITCH, (uint8_t)side, (uint8_t)slot, 0u, 0u, 0u};
     dfi_key key;
-    duoforge_status st = dfi_key_of(r, &rec, &key);
+    duoforge_status st = dfi_update_position_speed(r, side * 2u + slot);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    st = dfi_key_of(r, &rec, &key);
     if (st != DUOFORGE_OK) {
         return st;
     }
@@ -806,16 +1048,113 @@ static duoforge_status dfi_run_switch(dfi_run *r, const dfi_queue_record *q)
 
 /* ---------------------------------------------------------------- turn */
 
-/* fieldEvent('Residual') for the turn core: Protect ends, the stall counter
- * counts down its duration. */
-static void dfi_residual(struct duoforge_battle *b)
+/* fieldEvent('Residual') (sim/battle.ts:484-567). The reference lists the
+ * handlers per active Pokemon in slot order, a fainted one included: its
+ * status handler if it has a callback (burn, order 10), then one handler
+ * per volatile with a duration (Protect, the stall counter, flinch; no
+ * order, so after every burn). Battle.speedSort orders the list; ties of
+ * burn handlers draw (relative to their group), ties among the duration
+ * handlers change nothing and are not drawn (decision 0006 section 5.1).
+ * Each burn handler of a standing Pokemon deals max(1, floor(maxHP / 16)),
+ * then faints are processed; a finished battle stops the event. */
+typedef struct dfi_residual_entry {
+    uint32_t flat;
+    bool burn;
+} dfi_residual_entry;
+
+static duoforge_status dfi_residual(dfi_run *r)
 {
+    struct duoforge_battle *b = r->b;
+    duoforge_status st = dfi_update_speeds(r);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    dfi_residual_entry list[DFI_POSITIONS * 4u];
+    uint32_t n = 0u;
+    uint32_t burns = 0u;
+    for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
+        const dfi_active_slot *pos = dfi_pos(b, flat);
+        const dfi_member *m = dfi_at(b, flat);
+        if (m == NULL) {
+            continue;
+        }
+        if (m->status == DFI_STATUS_BRN) {
+            list[n] = (dfi_residual_entry){flat, true};
+            n += 1u;
+            burns += 1u;
+        }
+        const uint32_t ends = ((((uint32_t)pos->flags & DFI_VOL_PROTECT) != 0u) ? 1u : 0u) +
+                              (pos->stall_level != 0u ? 1u : 0u) +
+                              ((((uint32_t)pos->flags & DFI_VOL_FLINCH) != 0u) ? 1u : 0u);
+        for (uint32_t k = 0u; k < ends; ++k) {
+            list[n] = (dfi_residual_entry){flat, false};
+            n += 1u;
+        }
+    }
+    /* The selection sort with shuffled tie groups, until every burn handler
+     * is placed (the duration handlers always come after them). */
+    uint32_t sorted = 0u;
+    while (sorted < burns) {
+        uint32_t next[DFI_POSITIONS * 4u] = {0};
+        uint32_t count = 0u;
+        for (uint32_t i = sorted; i < n; ++i) {
+            if (!list[i].burn) {
+                continue;
+            }
+            const uint32_t speed = r->speed_seen[list[i].flat];
+            const uint32_t best = count == 0u ? 0u : r->speed_seen[list[next[0]].flat];
+            if (count == 0u || speed > best) {
+                next[0] = i;
+                count = 1u;
+            } else if (speed == best) {
+                next[count] = i;
+                count += 1u;
+            }
+        }
+        for (uint32_t i = 0u; i < count; ++i) {
+            if (next[i] != sorted + i) {
+                const dfi_residual_entry e = list[sorted + i];
+                list[sorted + i] = list[next[i]];
+                list[next[i]] = e;
+            }
+        }
+        for (uint32_t start = sorted; start + 1u < sorted + count; ++start) {
+            uint32_t v = 0u;
+            st = dfi_draw(r->draws, DFI_SITE_SPEED_TIE, start - sorted, count, &v);
+            if (st != DUOFORGE_OK) {
+                return st;
+            }
+            if (sorted + v != start) {
+                const dfi_residual_entry e = list[start];
+                list[start] = list[sorted + v];
+                list[sorted + v] = e;
+            }
+        }
+        sorted += count;
+    }
+    for (uint32_t i = 0u; i < burns; ++i) {
+        const dfi_member *m = dfi_at(b, list[i].flat);
+        if (m->hp == 0u) {
+            continue;
+        }
+        const uint32_t damage = m->hp_max / 16u;
+        st = dfi_deal(r, list[i].flat, damage == 0u ? 1u : damage);
+        if (st != DUOFORGE_OK) {
+            return st;
+        }
+        dfi_process_faints(r);
+        if (r->ended) {
+            return DUOFORGE_OK;
+        }
+    }
+    /* The duration handlers: Protect and flinch end, the stall counter
+     * counts down. */
     for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
         dfi_active_slot *pos = dfi_pos(b, flat);
         if (pos->occupant == DFI_OCCUPANT_NONE) {
             continue;
         }
-        pos->flags = (uint8_t)((uint32_t)pos->flags & ~DFI_VOL_PROTECT); /* wide-operands-reviewed */
+        pos->flags = (uint8_t)((uint32_t)pos->flags & ~(DFI_VOL_PROTECT | DFI_VOL_FLINCH)); /* wide-operands-reviewed */
         if (pos->stall_turns > 0u) {
             pos->stall_turns = (uint8_t)((uint32_t)pos->stall_turns - 1u); /* wide-operands-reviewed */
             if (pos->stall_turns == 0u) {
@@ -823,6 +1162,7 @@ static void dfi_residual(struct duoforge_battle *b)
             }
         }
     }
+    return DUOFORGE_OK;
 }
 
 static void dfi_clear_requests(struct duoforge_battle *b)
@@ -850,9 +1190,26 @@ static duoforge_status dfi_next_epoch(struct duoforge_battle *b)
     return DUOFORGE_OK;
 }
 
+/* checkFainted (sim/battle.ts:2524-2530): a fainted Pokemon keeps its
+ * status until the turn's actions are done (its burn handler still takes
+ * part in the residual order); then the status is gone. */
+static void dfi_check_fainted(struct duoforge_battle *b)
+{
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        dfi_side *sd = &b->sides[s];
+        for (uint32_t m = 0u; m < sd->member_count && m < DUOFORGE_MAX_ROSTER; ++m) {
+            if (sd->members[m].hp == 0u) {
+                sd->members[m].status = (uint8_t)DFI_STATUS_NONE;
+                sd->members[m].status_counter = 0u;
+            }
+        }
+    }
+}
+
 /* The battle is over: TERMINAL with its result, nobody requested. */
 static duoforge_status dfi_terminal(struct duoforge_battle *b)
 {
+    dfi_check_fainted(b);
     const duoforge_status st = dfi_next_epoch(b);
     if (st != DUOFORGE_OK) {
         return st;
@@ -912,6 +1269,7 @@ static bool dfi_has_reserve(const struct duoforge_battle *b, uint32_t side)
  * otherwise the next turn starts. */
 static duoforge_status dfi_finish_turn(struct duoforge_battle *b)
 {
+    dfi_check_fainted(b);
     uint32_t mask = 0u;
     uint32_t fainted[DUOFORGE_SIDE_COUNT] = {0u, 0u};
     for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
@@ -954,7 +1312,7 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
     if (!dfi_closure_battle_supported(&dfi_support, b) || (replacement && dfi_support.switching == 0u)) {
         return DUOFORGE_E_UNSUPPORTED;
     }
-    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, false};
+    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, false, {0u, 0u, 0u, 0u}};
     /* The actions in the reference's order of addition: side 0 slot a, b,
      * then side 1 (sim/battle.ts:2998-3022); a pass adds none. */
     b->queue_len = 0u;
@@ -1028,7 +1386,10 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
                 dfi_queue_pop(b, &q);
             }
         } else if (q.kind == DFI_Q_RESIDUAL) {
-            dfi_residual(b);
+            st = dfi_residual(&r);
+            if (st != DUOFORGE_OK) {
+                return st;
+            }
         } else {
             return DUOFORGE_E_UNSUPPORTED;
         }

@@ -1,5 +1,5 @@
 {
- "harness": 4,
+ "harness": 5,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "spec": "s2_struggle.json",
  "format": "gen9championsvgc2026regmc",
@@ -49,6 +49,8 @@
        "hp": 182,
        "maxhp": 182,
        "status": "",
+       "status_time": 0,
+       "confusion": 0,
        "fainted": false,
        "boosts": [
         0,
@@ -69,6 +71,8 @@
        "hp": 202,
        "maxhp": 202,
        "status": "",
+       "status_time": 0,
+       "confusion": 0,
        "fainted": false,
        "boosts": [
         0,
@@ -89,6 +93,8 @@
        "hp": 181,
        "maxhp": 181,
        "status": "",
+       "status_time": 0,
+       "confusion": 0,
        "fainted": false,
        "boosts": [
         0,
@@ -109,6 +115,8 @@
        "hp": 179,
        "maxhp": 179,
        "status": "",
+       "status_time": 0,
+       "confusion": 0,
        "fainted": false,
        "boosts": [
         0,
@@ -138,6 +146,8 @@
        "hp": 202,
        "maxhp": 202,
        "status": "",
+       "status_time": 0,
+       "confusion": 0,
        "fainted": false,
        "boosts": [
         0,
@@ -158,6 +168,8 @@
        "hp": 197,
        "maxhp": 197,
        "status": "",
+       "status_time": 0,
+       "confusion": 0,
        "fainted": false,
        "boosts": [
         0,
@@ -178,6 +190,8 @@
        "hp": 181,
        "maxhp": 181,
        "status": "",
+       "status_time": 0,
+       "confusion": 0,
        "fainted": false,
        "boosts": [
         0,
@@ -198,6 +212,8 @@
        "hp": 179,
        "maxhp": 179,
        "status": "",
+       "status_time": 0,
+       "confusion": 0,
        "fainted": false,
        "boosts": [
         0,
@@ -328,6 +344,8 @@
         "hp": 182,
         "maxhp": 182,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -348,6 +366,8 @@
         "hp": 202,
         "maxhp": 202,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -368,6 +388,8 @@
         "hp": 181,
         "maxhp": 181,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -388,6 +410,8 @@
         "hp": 179,
         "maxhp": 179,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -417,6 +441,8 @@
         "hp": 202,
         "maxhp": 202,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -437,6 +463,8 @@
         "hp": 197,
         "maxhp": 197,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -457,6 +485,8 @@
         "hp": 181,
         "maxhp": 181,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -477,6 +507,8 @@
         "hp": 179,
         "maxhp": 179,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -791,6 +823,8 @@
         "hp": 182,
         "maxhp": 182,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -813,6 +847,8 @@
         "hp": 202,
         "maxhp": 202,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          1,
@@ -833,6 +869,8 @@
         "hp": 181,
         "maxhp": 181,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -853,6 +891,8 @@
         "hp": 179,
         "maxhp": 179,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -882,6 +922,8 @@
         "hp": 202,
         "maxhp": 202,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          1,
@@ -902,6 +944,8 @@
         "hp": 197,
         "maxhp": 197,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -924,6 +968,8 @@
         "hp": 181,
         "maxhp": 181,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -944,6 +990,8 @@
         "hp": 179,
         "maxhp": 179,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -1200,6 +1248,8 @@
         "hp": 182,
         "maxhp": 182,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -1220,6 +1270,8 @@
         "hp": 202,
         "maxhp": 202,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          2,
@@ -1240,6 +1292,8 @@
         "hp": 181,
         "maxhp": 181,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -1260,6 +1314,8 @@
         "hp": 179,
         "maxhp": 179,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -1289,6 +1345,8 @@
         "hp": 202,
         "maxhp": 202,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          2,
@@ -1309,6 +1367,8 @@
         "hp": 197,
         "maxhp": 197,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -1329,6 +1389,8 @@
         "hp": 181,
         "maxhp": 181,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -1349,6 +1411,8 @@
         "hp": 179,
         "maxhp": 179,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -1663,6 +1727,8 @@
         "hp": 182,
         "maxhp": 182,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -1685,6 +1751,8 @@
         "hp": 202,
         "maxhp": 202,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          3,
@@ -1705,6 +1773,8 @@
         "hp": 181,
         "maxhp": 181,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -1725,6 +1795,8 @@
         "hp": 179,
         "maxhp": 179,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -1754,6 +1826,8 @@
         "hp": 202,
         "maxhp": 202,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          3,
@@ -1774,6 +1848,8 @@
         "hp": 197,
         "maxhp": 197,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -1796,6 +1872,8 @@
         "hp": 181,
         "maxhp": 181,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -1816,6 +1894,8 @@
         "hp": 179,
         "maxhp": 179,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -2144,6 +2224,8 @@
         "hp": 182,
         "maxhp": 182,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -2166,6 +2248,8 @@
         "hp": 202,
         "maxhp": 202,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          4,
@@ -2186,6 +2270,8 @@
         "hp": 181,
         "maxhp": 181,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -2206,6 +2292,8 @@
         "hp": 179,
         "maxhp": 179,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -2235,6 +2323,8 @@
         "hp": 202,
         "maxhp": 202,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          4,
@@ -2255,6 +2345,8 @@
         "hp": 197,
         "maxhp": 197,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -2277,6 +2369,8 @@
         "hp": 181,
         "maxhp": 181,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -2297,6 +2391,8 @@
         "hp": 179,
         "maxhp": 179,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -2553,6 +2649,8 @@
         "hp": 182,
         "maxhp": 182,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -2573,6 +2671,8 @@
         "hp": 202,
         "maxhp": 202,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          5,
@@ -2593,6 +2693,8 @@
         "hp": 181,
         "maxhp": 181,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -2613,6 +2715,8 @@
         "hp": 179,
         "maxhp": 179,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -2642,6 +2746,8 @@
         "hp": 202,
         "maxhp": 202,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          5,
@@ -2662,6 +2768,8 @@
         "hp": 197,
         "maxhp": 197,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -2682,6 +2790,8 @@
         "hp": 181,
         "maxhp": 181,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -2702,6 +2812,8 @@
         "hp": 179,
         "maxhp": 179,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -3016,6 +3128,8 @@
         "hp": 182,
         "maxhp": 182,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -3038,6 +3152,8 @@
         "hp": 202,
         "maxhp": 202,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          6,
@@ -3058,6 +3174,8 @@
         "hp": 181,
         "maxhp": 181,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -3078,6 +3196,8 @@
         "hp": 179,
         "maxhp": 179,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -3107,6 +3227,8 @@
         "hp": 202,
         "maxhp": 202,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          6,
@@ -3127,6 +3249,8 @@
         "hp": 197,
         "maxhp": 197,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -3149,6 +3273,8 @@
         "hp": 181,
         "maxhp": 181,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -3169,6 +3295,8 @@
         "hp": 179,
         "maxhp": 179,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -3449,6 +3577,8 @@
         "hp": 182,
         "maxhp": 182,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -3471,6 +3601,8 @@
         "hp": 202,
         "maxhp": 202,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          6,
@@ -3491,6 +3623,8 @@
         "hp": 181,
         "maxhp": 181,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -3511,6 +3645,8 @@
         "hp": 179,
         "maxhp": 179,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -3540,6 +3676,8 @@
         "hp": 202,
         "maxhp": 202,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          6,
@@ -3560,6 +3698,8 @@
         "hp": 197,
         "maxhp": 197,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -3582,6 +3722,8 @@
         "hp": 181,
         "maxhp": 181,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -3602,6 +3744,8 @@
         "hp": 179,
         "maxhp": 179,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -3846,6 +3990,8 @@
         "hp": 182,
         "maxhp": 182,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -3866,6 +4012,8 @@
         "hp": 202,
         "maxhp": 202,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          6,
@@ -3886,6 +4034,8 @@
         "hp": 181,
         "maxhp": 181,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -3906,6 +4056,8 @@
         "hp": 179,
         "maxhp": 179,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -3935,6 +4087,8 @@
         "hp": 202,
         "maxhp": 202,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          6,
@@ -3955,6 +4109,8 @@
         "hp": 197,
         "maxhp": 197,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -3977,6 +4133,8 @@
         "hp": 181,
         "maxhp": 181,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -3997,6 +4155,8 @@
         "hp": 179,
         "maxhp": 179,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -4344,6 +4504,8 @@
         "hp": 136,
         "maxhp": 182,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -4364,6 +4526,8 @@
         "hp": 197,
         "maxhp": 202,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          6,
@@ -4384,6 +4548,8 @@
         "hp": 181,
         "maxhp": 181,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -4404,6 +4570,8 @@
         "hp": 179,
         "maxhp": 179,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -4433,6 +4601,8 @@
         "hp": 194,
         "maxhp": 202,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          6,
@@ -4453,6 +4623,8 @@
         "hp": 148,
         "maxhp": 197,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -4473,6 +4645,8 @@
         "hp": 181,
         "maxhp": 181,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -4493,6 +4667,8 @@
         "hp": 179,
         "maxhp": 179,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -4840,6 +5016,8 @@
         "hp": 74,
         "maxhp": 182,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -4860,6 +5038,8 @@
         "hp": 197,
         "maxhp": 202,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          6,
@@ -4880,6 +5060,8 @@
         "hp": 181,
         "maxhp": 181,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -4900,6 +5082,8 @@
         "hp": 179,
         "maxhp": 179,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -4929,6 +5113,8 @@
         "hp": 186,
         "maxhp": 202,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          6,
@@ -4949,6 +5135,8 @@
         "hp": 99,
         "maxhp": 197,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -4969,6 +5157,8 @@
         "hp": 181,
         "maxhp": 181,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,
@@ -4989,6 +5179,8 @@
         "hp": 179,
         "maxhp": 179,
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
         "fainted": false,
         "boosts": [
          0,

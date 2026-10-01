@@ -305,9 +305,10 @@ bool dfi_closure_member_valid(bool dev, const dfi_member *m)
         }
     }
     /* Sleep and freeze carry a counter 1..3 (Champions: sleep lasts
-     * sample([2, 3, 3]), freeze at most 3); nothing else has one. */
+     * sample([2, 3, 3]), freeze at most 3); nothing else has one. A fainted
+     * member has no status at a boundary (checkFainted). */
     const uint32_t status = m->status;
-    if (status > DFI_STATUS_SLP) {
+    if (status > DFI_STATUS_SLP || (m->hp == 0u && status != DFI_STATUS_NONE)) {
         return false;
     }
     if (status == DFI_STATUS_SLP || status == DFI_STATUS_FRZ) {

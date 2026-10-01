@@ -109,6 +109,17 @@ static unsigned compare_state(const duoforge_battle *b, const df_conf_step *st, 
                     ++bad;
                 }
             }
+            if (!e->fainted && (mem->status != e->status || mem->status_counter != e->status_counter)) {
+                fprintf(stderr, "  %s step %u: side %u member %u status %u/%u, reference %u/%u\n", name, step, s, m,
+                        mem->status, mem->status_counter, e->status, e->status_counter);
+                ++bad;
+            }
+            const uint32_t confusion = pos != NULL ? pos->confusion_turns : 0u;
+            if (confusion != e->confusion) {
+                fprintf(stderr, "  %s step %u: side %u member %u confusion %u, reference %u\n", name, step, s, m,
+                        confusion, e->confusion);
+                ++bad;
+            }
             const uint32_t stall = (pos != NULL && pos->stall_level != 0u) ? 1u : 0u;
             if (stall != e->stall) {
                 fprintf(stderr, "  %s step %u: side %u member %u stall %u, reference %u\n", name, step, s, m, stall,
@@ -180,7 +191,7 @@ int main(void)
         DF_CHECK_EQ_U64(&t, bad, 0u);
         duoforge_battle_destroy(b);
     }
-    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 12u);
+    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 18u);
     duoforge_context_destroy(k2);
     return df_test_end(&t);
 }

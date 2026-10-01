@@ -1,6 +1,6 @@
 # 0006 — Combat closure: data, state v3, execution, RNG draw sites, events, reference fixtures
 
-Status: **proposed**; being implemented step by step (`tasks/M3_M4_COMBAT_CLOSURE.md`). **Implemented so far:** step 1a, the generated closure tables and the Champions stat and PP formulas (section 2, data only); step 1b-1, the state v3 layout with its invariants, codec and oracle (section 3.1, synthetic data only); step 1b-2, the CLOSURE contexts, real setup validation and the support gate (section 2.1); step 2a, the damage and stat arithmetic (`src/core/modifier.c`, checked against values the pinned reference computes) and the draw sites with the test-only tape (`src/rng/draw.c`, section 5); step 2b, the reference harness and the first recorded battles (section 5.1); step 2c, the turn core (section 4.1); step 3, switching, fainting, replacement and the win rule (section 4.2). Twelve recorded battles replay draw for draw. The two real teams are still rejected with `E_UNSUPPORTED`, because their abilities and items are not implemented.
+Status: **proposed**; being implemented step by step (`tasks/M3_M4_COMBAT_CLOSURE.md`). **Implemented so far:** step 1a, the generated closure tables and the Champions stat and PP formulas (section 2, data only); step 1b-1, the state v3 layout with its invariants, codec and oracle (section 3.1, synthetic data only); step 1b-2, the CLOSURE contexts, real setup validation and the support gate (section 2.1); step 2a, the damage and stat arithmetic (`src/core/modifier.c`, checked against values the pinned reference computes) and the draw sites with the test-only tape (`src/rng/draw.c`, section 5); step 2b, the reference harness and the first recorded battles (section 5.1); step 2c, the turn core (section 4.1); step 3, switching, fainting, replacement and the win rule (section 4.2); step 4, statuses, flinch and confusion (section 4.3). Eighteen recorded battles replay draw for draw. The two real teams are still rejected with `E_UNSUPPORTED`, because their abilities and items are not implemented.
 
 Showdown citations are `path:line` at the pin `b2cb775b0616115b775534eaeff50300e1fc81fc`.
 
@@ -114,6 +114,17 @@ Conformance: `tools/reference/trace_to_c.py` turns the traces into `tests/refere
 
 Conformance adds the boundary, the result, the occupants of the four positions and the order of the entries (rising activation ids along the reference's `|switch|` lines). The harness (`tools/reference/ps_trace.js`) gained a plan mode for battles to the end: each side's move choices in order, replacements with the first standing reserves, `pass` for fainted slots.
 
+### 4.3 Statuses as built (step 4)
+
+- **Sources.** Hypnosis (primary sleep), and the secondaries of Zap Cannon (paralysis, 100), Ice Beam (freeze, 10), Heat Wave (burn, 10, spread), Iron Head (flinch, 20 in Champions) and Hurricane (confusion, 30). Hurricane is taken ahead of step 10 because it is the only move that confuses; its weather accuracy (rain: never misses, sun: 50) is written and becomes reachable with weather in step 5.
+- **Setting a status** (`trySetStatus`): only a standing Pokémon without a status; Fire is not burned, Electric not paralyzed, Ice and anything under sun not frozen. A status move ignores type immunity, so Hypnosis reaches Dark Grimmsnarl. Sleep draws `sample([2, 3, 3])` attempts, freeze lasts at most 3 (the Champions conditions). Flinch and confusion are volatiles of the position; confusion draws `random(2, 6)` attempts and does not restart.
+- **Before a move** (`BeforeMove` in handler order): sleep and freeze count an attempt and wake or thaw at 0, freeze draws a 1 in 4 thaw before that; flinch stops the move; confusion counts an attempt and hits itself 33 in 100 times (typeless 40 power physical with its own staged stats, 16-bit, randomized, at least 1); paralysis stops the move 1 in 8 (Champions). A Pokémon that cannot move uses no PP. The reference chooses a random target in `runMove`, before these checks, so that draw happens even when the Pokémon then cannot move.
+- **Effects.** Paralysis halves the Speed (floor of 50 of 100, before the cap and Trick Room). A burned attacker's physical moves, Struggle included, do half after the type effectiveness. A damaging Fire move thaws a frozen target after the secondaries.
+- **Residual.** The reference sorts the residual handlers of every active Pokémon, a fainted one included, with the speed each had at its last `updateSpeed`: a burn handler (order 10) per burned Pokémon, then the duration handlers (Protect, the stall counter, flinch). Burn handlers that tie draw; the engine rebuilds that list, keeps the last speed of each position for the step, and processes faints after each burn (max(1, floor(maxHP / 16))); a finished battle stops the residual phase. A recorded battle needs the fainted burned Pokémon in the list to stay aligned (control T8).
+- **Fainted members** keep their status until the turn's actions are done (`checkFainted`); at a boundary a fainted member has no status (checked by the setup invariant of CLOSURE members).
+
+The harness names the condition draws by the effect and event the reference is running; its snapshot adds the status counter and the confusion turns, which the conformance test compares.
+
 ## 5. RNG draw sites
 
 Every draw goes through one internal function that takes a **site id** and a bound and uses the bounded PCG32 of decision `0001`. The registry (stable ids, recorded in the fixtures):
@@ -199,4 +210,5 @@ Every step of the task file delivers: unit tests with reference-derived expectat
 2. The state v3 groups (section 3): anything missing here means a later schema bump.
 3. The test-only tape (section 5) as the way to align with the reference.
 4. Events as step output with the `E_CAPACITY` convention (section 6).
-5. Faint timing (section 4.2): faints are processed at the end of the action, the reference processes them already after the hit loop. Equivalent for the moves so far; to revisit with drain, recoil moves and items.
+5. Observation v2 (section 6) is described but not scheduled: stages, statuses and conditions are reachable since steps 2 to 4, and the observation still shows none of them. Proposal: a step of its own before step 13.
+6. Faint timing (section 4.2): faints are processed at the end of the action, the reference processes them already after the hit loop. Equivalent for the moves so far; to revisit with drain, recoil moves and items.
