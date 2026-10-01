@@ -37,13 +37,14 @@ const fs = require('fs');
 const path = require('path');
 
 const PIN = 'b2cb775b0616115b775534eaeff50300e1fc81fc';
-const HARNESS_VERSION = 7;
+const HARNESS_VERSION = 8;
 
 // Stack frame name -> site. The first match in stack order wins.
 const SITE_RULES = [
     ['BattleActions.hitStepAccuracy', 'ACCURACY'],
     ['Battle.randomizer', 'DAMAGE_ROLL'],
     ['BattleActions.secondaries', 'SECONDARY'],
+    ['BattleActions.selfDrops', 'SECONDARY'], // its random(100) passes without a chance
     ['BattleActions.getDamage', 'CRIT'],
     ['Battle.onStallMove', 'STALL'],
 ];

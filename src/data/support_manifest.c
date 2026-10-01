@@ -17,6 +17,9 @@
  * Contrary, No Guard and Tough Claws belong to Mega formes (step 11).
  * Step 8: Leftovers, Sitrus Berry, Grassy Seed, Life Orb, Mystic Water and
  * Light Clay (Miracle Seed comes with the first Grass move, step 9).
+ * Step 9: recoil (Wood Hammer, Brave Bird), drain (Bitter Blade, Leech
+ * Life), self-drops (Close Combat, Make It Rain), Miracle Seed, Grassy
+ * Terrain's boost for Grass moves and Flash Fire's boost.
  * No Mega Evolution is implemented yet. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
@@ -47,6 +50,12 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_REFLECT] = 1u,
             [DFI_MOVE_LIGHTSCREEN] = 1u,
             [DFI_MOVE_TRICKROOM] = 1u,
+            [DFI_MOVE_WOODHAMMER] = 1u,
+            [DFI_MOVE_BRAVEBIRD] = 1u,
+            [DFI_MOVE_BITTERBLADE] = 1u,
+            [DFI_MOVE_LEECHLIFE] = 1u,
+            [DFI_MOVE_CLOSECOMBAT] = 1u,
+            [DFI_MOVE_MAKEITRAIN] = 1u,
         },
     .abilities =
         {
@@ -70,5 +79,6 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_LIFEORB] = 1u,
             [DFI_ITEM_MYSTICWATER] = 1u,
             [DFI_ITEM_LIGHTCLAY] = 1u,
+            [DFI_ITEM_MIRACLESEED] = 1u,
         },
 };

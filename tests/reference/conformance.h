@@ -749,6 +749,40 @@ static const df_conf_step conf_s8_sitrus_leftovers_steps[] = {
     {0u, 1u, 1u, 3666u, 5u, 8u, 2u, 0u, {{0u, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u}}, {{{1u, 0u, 255u, 0u, 0u}, {1u, 0u, 255u, 0u, 0u}}, {{1u, 0u, 0u, 0u, 0u}, {3u, 0u, 0u, 0u, 0u}}}, {{2u, 1u}, {3u, 1u}}, {255u, 255u, 255u, 255u}, {0u, 0u, 0u, 0u}, {{{1u, 0u, {8u, 15u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 82u, {6u, 11u, 0u, 0u}, {6u, 6u, 7u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 167u, {11u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 193u, {12u, 0u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}, {{1u, 0u, {8u, 15u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 0u, {10u, 4u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 0u, {11u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 68u, {11u, 16u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}}},  /* 9 draws dropped */
     {0u, 1u, 1u, 3671u, 4u, 8u, 5u, 1u, {{0u, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u}}, {{{1u, 0u, 255u, 0u, 0u}, {1u, 0u, 255u, 0u, 0u}}, {{1u, 0u, 0u, 0u, 0u}, {3u, 0u, 0u, 0u, 0u}}}, {{2u, 1u}, {3u, 1u}}, {255u, 255u, 255u, 255u}, {0u, 0u, 0u, 0u}, {{{1u, 0u, {8u, 15u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 82u, {6u, 11u, 0u, 0u}, {6u, 6u, 7u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 149u, {10u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 193u, {12u, 0u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}, {{1u, 0u, {8u, 15u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 0u, {10u, 4u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 0u, {11u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 0u, {11u, 16u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}}},  /* 7 draws dropped */
 };
+/* s9_recoil_drain: Recoil and drain: Wood Hammer in Grassy Terrain with Miracle Seed (one chained base power modifier) costs a third of the damage dealt; Bitter Blade, boosted by Flash Fire after Ceruledge took a Heat Wave, and Leech Life heal half of it; recoil comes after the target's faint, then Sitrus Berry, then Life Orb. */
+static const df_conf_member conf_s9_recoil_drain_members[2][6] = {
+    {{13u, 1u, 15u, {32u, 0u, 0u, 32u, 0u, 2u}, 11u, 6u, 2u, {30u, 31u, 0u, 0u}}, {0u, 1u, 0u, {18u, 32u, 2u, 0u, 6u, 8u}, 1u, 1u, 2u, {0u, 3u, 0u, 0u}}, {1u, 2u, 0u, {32u, 32u, 0u, 0u, 0u, 2u}, 2u, 3u, 2u, {4u, 5u, 0u, 0u}}, {3u, 2u, 15u, {32u, 0u, 0u, 30u, 0u, 4u}, 3u, 9u, 2u, {8u, 10u, 0u, 0u}}},
+    {{4u, 1u, 0u, {31u, 32u, 0u, 0u, 0u, 3u}, 4u, 3u, 2u, {12u, 14u, 0u, 0u}}, {9u, 2u, 0u, {32u, 32u, 0u, 0u, 2u, 0u}, 0u, 9u, 2u, {21u, 23u, 0u, 0u}}, {7u, 3u, 15u, {17u, 0u, 2u, 17u, 16u, 14u}, 6u, 6u, 2u, {17u, 18u, 0u, 0u}}, {12u, 1u, 2u, {29u, 0u, 20u, 0u, 17u, 0u}, 10u, 7u, 2u, {27u, 7u, 0u, 0u}}},
+};
+static const df_conf_step conf_s9_recoil_drain_steps[] = {
+    {1u, 1u, 1u, 3675u, 0u, 1u, 2u, 0u, {{0u, 1u, 2u, 3u, 0u, 0u}, {0u, 1u, 2u, 3u, 0u, 0u}}, {{{0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u}}, {{0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u}}}, {{0u, 1u}, {0u, 1u}}, {0u, 1u, 2u, 3u}, {0u, 0u, 1u, 5u}, {{{1u, 185u, {12u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 193u, {16u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 192u, {16u, 8u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 202u, {12u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}, {{1u, 181u, {12u, 20u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 182u, {12u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 179u, {8u, 16u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 224u, {12u, 8u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}}},  /* 0 draws dropped */
+    {0u, 1u, 1u, 3675u, 6u, 1u, 3u, 0u, {{0u, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u}}, {{{1u, 0u, 255u, 0u, 0u}, {1u, 0u, 3u, 0u, 0u}}, {{1u, 1u, 255u, 0u, 0u}, {1u, 0u, 1u, 0u, 0u}}}, {{0u, 1u}, {0u, 1u}}, {255u, 255u, 255u, 255u}, {0u, 0u, 1u, 4u}, {{{1u, 167u, {11u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 189u, {15u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 192u, {16u, 8u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 202u, {12u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}, {{1u, 181u, {12u, 19u, 0u, 0u}, {8u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 0u, {12u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 179u, {8u, 16u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 224u, {12u, 8u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}}},  /* 4 draws dropped */
+    {0u, 0u, 1u, 3681u, 0u, 2u, 2u, 0u, {{0u, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u}}, {{{0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u}}, {{0u, 0u, 0u, 0u, 0u}, {2u, 0u, 0u, 0u, 2u}}}, {{0u, 1u}, {0u, 2u}}, {3u, 255u, 255u, 255u}, {0u, 0u, 1u, 4u}, {{{1u, 167u, {11u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 189u, {15u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 192u, {16u, 8u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 202u, {12u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}, {{1u, 181u, {12u, 19u, 0u, 0u}, {8u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 0u, {12u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 179u, {8u, 16u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 224u, {12u, 8u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}}},  /* 0 draws dropped */
+    {0u, 1u, 1u, 3681u, 16u, 2u, 3u, 0u, {{0u, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u}}, {{{1u, 0u, 255u, 0u, 0u}, {1u, 0u, 2u, 0u, 0u}}, {{1u, 0u, 1u, 0u, 0u}, {1u, 0u, 255u, 0u, 0u}}}, {{0u, 1u}, {0u, 2u}}, {255u, 255u, 255u, 255u}, {0u, 0u, 1u, 3u}, {{{1u, 91u, {10u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 0u, {14u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 192u, {16u, 8u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 202u, {12u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}, {{1u, 138u, {11u, 19u, 0u, 0u}, {8u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 0u, {12u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 0u, {7u, 16u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 224u, {12u, 8u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}}},  /* 9 draws dropped */
+    {0u, 1u, 1u, 3697u, 0u, 3u, 2u, 0u, {{0u, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u}}, {{{0u, 0u, 0u, 0u, 0u}, {2u, 0u, 0u, 0u, 2u}}, {{0u, 0u, 0u, 0u, 0u}, {2u, 0u, 0u, 0u, 3u}}}, {{0u, 2u}, {0u, 3u}}, {3u, 1u, 255u, 255u}, {0u, 0u, 1u, 3u}, {{{1u, 91u, {10u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 0u, {14u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 192u, {16u, 8u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 202u, {12u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}, {{1u, 138u, {11u, 19u, 0u, 0u}, {7u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 0u, {12u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 0u, {7u, 16u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 224u, {12u, 8u, 0u, 0u}, {5u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}}},  /* 3 draws dropped */
+    {0u, 1u, 1u, 3697u, 15u, 3u, 3u, 0u, {{0u, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u}}, {{{1u, 1u, 2u, 0u, 0u}, {1u, 0u, 3u, 0u, 0u}}, {{1u, 0u, 0u, 0u, 0u}, {1u, 0u, 0u, 0u, 0u}}}, {{0u, 2u}, {0u, 3u}}, {255u, 255u, 255u, 255u}, {0u, 0u, 1u, 2u}, {{{1u, 0u, {10u, 11u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 0u, {14u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 116u, {15u, 8u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 202u, {12u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}, {{1u, 181u, {10u, 19u, 0u, 0u}, {7u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 0u, {12u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 0u, {7u, 16u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 117u, {11u, 8u, 0u, 0u}, {5u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}}},  /* 8 draws dropped */
+    {0u, 1u, 0u, 3712u, 0u, 4u, 2u, 0u, {{0u, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u}}, {{{2u, 0u, 0u, 0u, 3u}, {0u, 0u, 0u, 0u, 0u}}, {{0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u}}}, {{3u, 2u}, {0u, 3u}}, {0u, 255u, 255u, 255u}, {0u, 0u, 1u, 2u}, {{{1u, 0u, {10u, 11u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 0u, {14u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 116u, {15u, 8u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 202u, {12u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}, {{1u, 181u, {10u, 19u, 0u, 0u}, {7u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 0u, {12u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 0u, {7u, 16u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 117u, {11u, 8u, 0u, 0u}, {5u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}}},  /* 0 draws dropped */
+    {0u, 1u, 1u, 3712u, 14u, 5u, 2u, 0u, {{0u, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u}}, {{{1u, 1u, 2u, 0u, 0u}, {1u, 0u, 3u, 0u, 0u}}, {{1u, 0u, 0u, 0u, 0u}, {1u, 0u, 0u, 0u, 0u}}}, {{3u, 2u}, {0u, 3u}}, {255u, 255u, 255u, 255u}, {0u, 0u, 1u, 1u}, {{{1u, 0u, {10u, 11u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 0u, {14u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 78u, {14u, 8u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 51u, {12u, 11u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}, {{1u, 167u, {9u, 19u, 0u, 0u}, {7u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 2u, 3u, 0u}, {1u, 0u, {12u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 0u, {7u, 16u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 17u, {10u, 8u, 0u, 0u}, {5u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}}},  /* 0 draws dropped */
+    {0u, 1u, 1u, 3726u, 7u, 6u, 2u, 0u, {{0u, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u}}, {{{1u, 1u, 2u, 0u, 0u}, {1u, 0u, 3u, 0u, 0u}}, {{1u, 0u, 0u, 0u, 0u}, {1u, 0u, 0u, 0u, 0u}}}, {{3u, 2u}, {0u, 3u}}, {255u, 255u, 255u, 255u}, {0u, 0u, 0u, 0u}, {{{1u, 0u, {10u, 11u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 0u, {14u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 72u, {13u, 8u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 0u, {12u, 11u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}, {{1u, 181u, {8u, 19u, 0u, 0u}, {7u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 0u, {12u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 0u, {7u, 16u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 0u, {10u, 8u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}}},  /* 1 draws dropped */
+    {0u, 1u, 1u, 3733u, 8u, 6u, 5u, 2u, {{0u, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u}}, {{{3u, 0u, 0u, 0u, 0u}, {1u, 0u, 3u, 0u, 0u}}, {{1u, 0u, 0u, 0u, 0u}, {3u, 0u, 0u, 0u, 0u}}}, {{3u, 2u}, {0u, 3u}}, {255u, 255u, 255u, 255u}, {0u, 0u, 0u, 0u}, {{{1u, 0u, {10u, 11u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 0u, {14u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 0u, {12u, 8u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 0u, {12u, 11u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}, {{1u, 55u, {7u, 19u, 0u, 0u}, {7u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 0u, {12u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 0u, {7u, 16u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 0u, {10u, 8u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}}},  /* 5 draws dropped */
+};
+/* s9_self_drops: Self-drops: Close Combat lowers the user's Defense and Special Defense, Make It Rain (spread, Champions: 95 accuracy, Special Attack -2) its Special Attack, each after a random(100) roll that always passes; a self-drop does not trigger Competitive; Brave Bird recoil can make both last Pokemon faint in one action. */
+static const df_conf_member conf_s9_self_drops_members[2][6] = {
+    {{1u, 1u, 0u, {32u, 32u, 0u, 0u, 0u, 2u}, 2u, 3u, 2u, {5u, 4u, 0u, 0u}}, {7u, 3u, 15u, {17u, 0u, 2u, 17u, 16u, 14u}, 6u, 6u, 2u, {17u, 19u, 0u, 0u}}, {3u, 2u, 15u, {32u, 0u, 0u, 30u, 0u, 4u}, 3u, 9u, 2u, {8u, 10u, 0u, 0u}}, {9u, 1u, 0u, {32u, 32u, 0u, 0u, 2u, 0u}, 0u, 7u, 2u, {21u, 22u, 0u, 0u}}},
+    {{11u, 2u, 2u, {32u, 0u, 1u, 0u, 24u, 9u}, 9u, 9u, 2u, {24u, 26u, 0u, 0u}}, {3u, 1u, 15u, {32u, 0u, 0u, 30u, 0u, 4u}, 3u, 3u, 2u, {8u, 9u, 0u, 0u}}, {1u, 2u, 0u, {32u, 32u, 0u, 0u, 0u, 2u}, 2u, 6u, 2u, {4u, 5u, 0u, 0u}}, {0u, 1u, 0u, {18u, 32u, 2u, 0u, 6u, 8u}, 1u, 1u, 2u, {0u, 3u, 0u, 0u}}},
+};
+static const df_conf_step conf_s9_self_drops_steps[] = {
+    {1u, 1u, 1u, 3741u, 0u, 1u, 2u, 0u, {{0u, 1u, 2u, 3u, 0u, 0u}, {0u, 1u, 2u, 3u, 0u, 0u}}, {{{0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u}}, {{0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u}}}, {{0u, 1u}, {0u, 1u}}, {0u, 1u, 2u, 3u}, {0u, 0u, 0u, 0u}, {{{1u, 192u, {8u, 16u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 179u, {8u, 20u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 202u, {12u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 182u, {12u, 16u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}, {{1u, 197u, {12u, 16u, 0u, 0u}, {5u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 202u, {12u, 20u, 0u, 0u}, {5u, 6u, 8u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 192u, {16u, 8u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 193u, {16u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}}},  /* 0 draws dropped */
+    {0u, 1u, 1u, 3741u, 27u, 1u, 3u, 0u, {{0u, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u}}, {{{1u, 0u, 2u, 0u, 0u}, {1u, 0u, 255u, 0u, 0u}}, {{1u, 1u, 255u, 0u, 0u}, {1u, 0u, 255u, 0u, 0u}}}, {{0u, 1u}, {0u, 1u}}, {255u, 255u, 255u, 255u}, {0u, 0u, 0u, 0u}, {{{1u, 0u, {7u, 16u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 20u, {7u, 20u, 0u, 0u}, {6u, 6u, 3u, 6u, 6u, 5u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 202u, {12u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 182u, {12u, 16u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}, {{1u, 35u, {12u, 15u, 0u, 0u}, {5u, 8u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 154u, {11u, 20u, 0u, 0u}, {5u, 6u, 8u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 192u, {16u, 8u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 193u, {16u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}}},  /* 18 draws dropped */
+    {0u, 1u, 0u, 3768u, 0u, 2u, 2u, 0u, {{0u, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u}}, {{{2u, 0u, 0u, 0u, 2u}, {0u, 0u, 0u, 0u, 0u}}, {{0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u}}}, {{2u, 1u}, {0u, 1u}}, {0u, 255u, 255u, 255u}, {0u, 0u, 0u, 0u}, {{{1u, 0u, {7u, 16u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 20u, {7u, 20u, 0u, 0u}, {6u, 6u, 3u, 6u, 6u, 5u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 202u, {12u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 182u, {12u, 16u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}, {{1u, 35u, {12u, 15u, 0u, 0u}, {5u, 8u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 154u, {11u, 20u, 0u, 0u}, {5u, 6u, 8u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 192u, {16u, 8u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 193u, {16u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}}},  /* 3 draws dropped */
+    {0u, 1u, 1u, 3768u, 26u, 2u, 3u, 0u, {{0u, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u}}, {{{1u, 1u, 3u, 0u, 0u}, {1u, 0u, 255u, 0u, 0u}}, {{1u, 0u, 0u, 0u, 0u}, {1u, 0u, 255u, 0u, 0u}}}, {{2u, 1u}, {0u, 1u}}, {255u, 255u, 255u, 255u}, {0u, 0u, 0u, 0u}, {{{1u, 0u, {7u, 16u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 0u, {6u, 20u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 113u, {12u, 11u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 182u, {12u, 16u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}, {{1u, 24u, {11u, 15u, 0u, 0u}, {5u, 9u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 118u, {10u, 20u, 0u, 0u}, {5u, 6u, 8u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 192u, {16u, 8u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 193u, {16u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}}},  /* 26 draws dropped */
+    {0u, 1u, 0u, 3794u, 0u, 3u, 2u, 0u, {{0u, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u}}, {{{0u, 0u, 0u, 0u, 0u}, {2u, 0u, 0u, 0u, 3u}}, {{0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u}}}, {{2u, 3u}, {0u, 1u}}, {1u, 255u, 255u, 255u}, {0u, 0u, 0u, 0u}, {{{1u, 0u, {7u, 16u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 0u, {6u, 20u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 113u, {12u, 11u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 182u, {12u, 16u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}, {{1u, 24u, {11u, 15u, 0u, 0u}, {5u, 9u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 118u, {10u, 20u, 0u, 0u}, {5u, 6u, 8u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 192u, {16u, 8u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 193u, {16u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}}},  /* 3 draws dropped */
+    {0u, 1u, 1u, 3794u, 24u, 3u, 3u, 0u, {{0u, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u}}, {{{1u, 0u, 255u, 0u, 0u}, {1u, 1u, 2u, 0u, 0u}}, {{1u, 0u, 1u, 0u, 0u}, {1u, 0u, 255u, 0u, 0u}}}, {{2u, 3u}, {0u, 1u}}, {255u, 255u, 255u, 255u}, {0u, 0u, 0u, 0u}, {{{1u, 0u, {7u, 16u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 0u, {6u, 20u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 79u, {11u, 11u, 0u, 0u}, {6u, 6u, 8u, 6u, 6u, 5u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 55u, {12u, 15u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}, {{1u, 0u, {10u, 15u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 139u, {9u, 20u, 0u, 0u}, {5u, 6u, 8u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 192u, {16u, 8u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 193u, {16u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}}},  /* 27 draws dropped */
+    {0u, 0u, 1u, 3818u, 0u, 4u, 2u, 0u, {{0u, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u}}, {{{0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u}}, {{2u, 0u, 0u, 0u, 2u}, {0u, 0u, 0u, 0u, 0u}}}, {{2u, 3u}, {2u, 1u}}, {2u, 255u, 255u, 255u}, {0u, 0u, 0u, 0u}, {{{1u, 0u, {7u, 16u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 0u, {6u, 20u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 79u, {11u, 11u, 0u, 0u}, {5u, 6u, 10u, 6u, 6u, 5u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 55u, {12u, 15u, 0u, 0u}, {5u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}, {{1u, 0u, {10u, 15u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 139u, {9u, 20u, 0u, 0u}, {5u, 6u, 8u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 192u, {16u, 8u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 193u, {16u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}}},  /* 3 draws dropped */
+    {0u, 1u, 1u, 3818u, 18u, 4u, 3u, 0u, {{0u, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u}}, {{{1u, 0u, 255u, 0u, 0u}, {1u, 1u, 2u, 0u, 0u}}, {{1u, 0u, 1u, 0u, 0u}, {1u, 0u, 255u, 0u, 0u}}}, {{2u, 3u}, {2u, 1u}}, {255u, 255u, 255u, 255u}, {0u, 0u, 0u, 0u}, {{{1u, 0u, {7u, 16u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 0u, {6u, 20u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 28u, {10u, 11u, 0u, 0u}, {5u, 6u, 10u, 6u, 6u, 5u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 0u, {12u, 15u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}, {{1u, 0u, {10u, 15u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 40u, {8u, 20u, 0u, 0u}, {5u, 6u, 8u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 0u, {15u, 8u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 193u, {16u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}}},  /* 25 draws dropped */
+    {0u, 0u, 1u, 3836u, 0u, 5u, 2u, 0u, {{0u, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u}}, {{{0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u}}, {{2u, 0u, 0u, 0u, 3u}, {0u, 0u, 0u, 0u, 0u}}}, {{2u, 3u}, {3u, 1u}}, {2u, 255u, 255u, 255u}, {0u, 0u, 1u, 5u}, {{{1u, 0u, {7u, 16u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 0u, {6u, 20u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 28u, {10u, 11u, 0u, 0u}, {5u, 6u, 10u, 6u, 6u, 5u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 0u, {12u, 15u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}, {{1u, 0u, {10u, 15u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 40u, {8u, 20u, 0u, 0u}, {5u, 6u, 8u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 0u, {15u, 8u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 193u, {16u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}}},  /* 4 draws dropped */
+    {0u, 1u, 1u, 3836u, 6u, 5u, 5u, 2u, {{0u, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u}}, {{{1u, 0u, 255u, 0u, 0u}, {3u, 0u, 0u, 0u, 0u}}, {{1u, 0u, 1u, 0u, 0u}, {1u, 0u, 255u, 0u, 0u}}}, {{2u, 3u}, {3u, 1u}}, {255u, 255u, 255u, 255u}, {0u, 0u, 1u, 5u}, {{{1u, 0u, {7u, 16u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 0u, {6u, 20u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 0u, {10u, 11u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 0u, {12u, 15u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}, {{1u, 0u, {10u, 15u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 40u, {8u, 20u, 0u, 0u}, {5u, 6u, 8u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {1u, 0u, {15u, 8u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 1u, 0u, 0u, 0u}, {1u, 184u, {15u, 12u, 0u, 0u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u}}}},  /* 11 draws dropped */
+};
 
 /* Every kept draw of every battle: site, lo, hi, value. */
 static const dfi_tape_entry conf_tape[] = {
@@ -4427,6 +4461,173 @@ static const dfi_tape_entry conf_tape[] = {
     {3u, 0u, 24u, 6u},
     {4u, 0u, 16u, 10u},
     {5u, 0u, 100u, 28u},
+    {3u, 0u, 24u, 0u},
+    {4u, 0u, 16u, 10u},
+    {5u, 0u, 100u, 19u},
+    {2u, 0u, 100u, 96u},
+    {3u, 0u, 24u, 5u},
+    {4u, 0u, 16u, 1u},
+    {3u, 0u, 24u, 12u},
+    {4u, 0u, 16u, 5u},
+    {5u, 0u, 100u, 23u},
+    {2u, 0u, 100u, 25u},
+    {2u, 0u, 100u, 17u},
+    {3u, 0u, 24u, 21u},
+    {4u, 0u, 16u, 15u},
+    {3u, 0u, 24u, 11u},
+    {4u, 0u, 16u, 15u},
+    {5u, 0u, 100u, 35u},
+    {2u, 0u, 100u, 9u},
+    {3u, 0u, 24u, 21u},
+    {4u, 0u, 16u, 8u},
+    {2u, 0u, 100u, 91u},
+    {3u, 0u, 24u, 18u},
+    {4u, 0u, 16u, 2u},
+    {1u, 0u, 2u, 1u},
+    {1u, 0u, 2u, 1u},
+    {2u, 0u, 100u, 70u},
+    {2u, 0u, 100u, 2u},
+    {3u, 0u, 24u, 20u},
+    {4u, 0u, 16u, 3u},
+    {2u, 0u, 100u, 84u},
+    {3u, 0u, 24u, 20u},
+    {4u, 0u, 16u, 1u},
+    {12u, 0u, 1u, 0u},
+    {2u, 0u, 100u, 86u},
+    {3u, 0u, 24u, 19u},
+    {4u, 0u, 16u, 14u},
+    {5u, 0u, 100u, 62u},
+    {1u, 0u, 2u, 0u},
+    {2u, 0u, 100u, 83u},
+    {3u, 0u, 24u, 1u},
+    {4u, 0u, 16u, 9u},
+    {2u, 0u, 100u, 56u},
+    {3u, 0u, 24u, 6u},
+    {4u, 0u, 16u, 6u},
+    {2u, 0u, 100u, 54u},
+    {3u, 0u, 24u, 14u},
+    {4u, 0u, 16u, 10u},
+    {5u, 0u, 100u, 1u},
+    {2u, 0u, 100u, 14u},
+    {3u, 0u, 24u, 7u},
+    {4u, 0u, 16u, 3u},
+    {5u, 0u, 100u, 31u},
+    {2u, 0u, 100u, 5u},
+    {3u, 0u, 24u, 23u},
+    {4u, 0u, 16u, 1u},
+    {8u, 0u, 4u, 0u},
+    {2u, 0u, 100u, 12u},
+    {3u, 0u, 24u, 2u},
+    {4u, 0u, 16u, 7u},
+    {12u, 0u, 1u, 0u},
+    {2u, 0u, 100u, 32u},
+    {3u, 0u, 24u, 5u},
+    {4u, 0u, 16u, 7u},
+    {12u, 0u, 1u, 0u},
+    {2u, 0u, 100u, 60u},
+    {3u, 0u, 24u, 7u},
+    {4u, 0u, 16u, 15u},
+    {2u, 0u, 100u, 7u},
+    {3u, 0u, 24u, 6u},
+    {4u, 0u, 16u, 4u},
+    {5u, 0u, 100u, 29u},
+    {2u, 0u, 100u, 37u},
+    {2u, 0u, 100u, 92u},
+    {3u, 0u, 24u, 19u},
+    {4u, 0u, 16u, 15u},
+    {3u, 0u, 24u, 18u},
+    {4u, 0u, 16u, 3u},
+    {5u, 0u, 100u, 83u},
+    {2u, 0u, 100u, 57u},
+    {2u, 0u, 100u, 54u},
+    {3u, 0u, 24u, 18u},
+    {4u, 0u, 16u, 0u},
+    {3u, 0u, 24u, 2u},
+    {4u, 0u, 16u, 9u},
+    {5u, 0u, 100u, 84u},
+    {5u, 0u, 100u, 39u},
+    {2u, 0u, 100u, 78u},
+    {2u, 0u, 100u, 37u},
+    {3u, 0u, 24u, 7u},
+    {4u, 0u, 16u, 5u},
+    {3u, 0u, 24u, 15u},
+    {4u, 0u, 16u, 12u},
+    {5u, 0u, 100u, 80u},
+    {5u, 0u, 100u, 15u},
+    {1u, 0u, 2u, 1u},
+    {1u, 0u, 2u, 0u},
+    {2u, 0u, 100u, 0u},
+    {2u, 0u, 100u, 15u},
+    {3u, 0u, 24u, 22u},
+    {4u, 0u, 16u, 11u},
+    {3u, 0u, 24u, 15u},
+    {4u, 0u, 16u, 15u},
+    {5u, 0u, 100u, 34u},
+    {1u, 0u, 2u, 1u},
+    {2u, 0u, 100u, 6u},
+    {3u, 0u, 24u, 20u},
+    {4u, 0u, 16u, 5u},
+    {1u, 0u, 2u, 0u},
+    {2u, 0u, 100u, 90u},
+    {3u, 0u, 24u, 23u},
+    {4u, 0u, 16u, 12u},
+    {5u, 0u, 100u, 29u},
+    {2u, 0u, 100u, 43u},
+    {2u, 0u, 100u, 32u},
+    {3u, 0u, 24u, 6u},
+    {4u, 0u, 16u, 10u},
+    {3u, 0u, 24u, 20u},
+    {4u, 0u, 16u, 8u},
+    {5u, 0u, 100u, 30u},
+    {5u, 0u, 100u, 5u},
+    {1u, 0u, 2u, 1u},
+    {1u, 0u, 2u, 1u},
+    {2u, 0u, 100u, 5u},
+    {3u, 0u, 24u, 10u},
+    {4u, 0u, 16u, 3u},
+    {1u, 0u, 2u, 1u},
+    {2u, 0u, 100u, 70u},
+    {2u, 0u, 100u, 20u},
+    {3u, 0u, 24u, 1u},
+    {4u, 0u, 16u, 9u},
+    {3u, 0u, 24u, 3u},
+    {4u, 0u, 16u, 15u},
+    {5u, 0u, 100u, 0u},
+    {5u, 0u, 100u, 60u},
+    {2u, 0u, 100u, 62u},
+    {2u, 0u, 100u, 90u},
+    {3u, 0u, 24u, 11u},
+    {4u, 0u, 16u, 15u},
+    {5u, 0u, 100u, 4u},
+    {12u, 0u, 1u, 0u},
+    {2u, 0u, 100u, 76u},
+    {3u, 0u, 24u, 18u},
+    {4u, 0u, 16u, 15u},
+    {5u, 0u, 100u, 62u},
+    {1u, 0u, 2u, 0u},
+    {1u, 0u, 2u, 1u},
+    {2u, 0u, 100u, 98u},
+    {3u, 0u, 24u, 2u},
+    {4u, 0u, 16u, 10u},
+    {1u, 0u, 2u, 1u},
+    {2u, 0u, 100u, 52u},
+    {2u, 0u, 100u, 15u},
+    {3u, 0u, 24u, 6u},
+    {4u, 0u, 16u, 9u},
+    {3u, 0u, 24u, 0u},
+    {4u, 0u, 16u, 14u},
+    {5u, 0u, 100u, 63u},
+    {5u, 0u, 100u, 74u},
+    {2u, 0u, 100u, 37u},
+    {3u, 0u, 24u, 20u},
+    {4u, 0u, 16u, 7u},
+    {5u, 0u, 100u, 43u},
+    {1u, 0u, 2u, 1u},
+    {1u, 0u, 2u, 0u},
+    {12u, 0u, 1u, 0u},
+    {2u, 0u, 100u, 99u},
+    {3u, 0u, 24u, 20u},
+    {4u, 0u, 16u, 11u},
 };
 
 static const df_conf_battle conf_battles[] = {
@@ -4462,6 +4663,8 @@ static const df_conf_battle conf_battles[] = {
     {"s8_life_orb_light_clay", 4u, conf_s8_life_orb_light_clay_members, conf_s8_life_orb_light_clay_steps, sizeof conf_s8_life_orb_light_clay_steps / sizeof conf_s8_life_orb_light_clay_steps[0], 179u},
     {"s8_sitrus_late", 4u, conf_s8_sitrus_late_members, conf_s8_sitrus_late_steps, sizeof conf_s8_sitrus_late_steps / sizeof conf_s8_sitrus_late_steps[0], 134u},
     {"s8_sitrus_leftovers", 4u, conf_s8_sitrus_leftovers_members, conf_s8_sitrus_leftovers_steps, sizeof conf_s8_sitrus_leftovers_steps / sizeof conf_s8_sitrus_leftovers_steps[0], 135u},
+    {"s9_recoil_drain", 4u, conf_s9_recoil_drain_members, conf_s9_recoil_drain_steps, sizeof conf_s9_recoil_drain_steps / sizeof conf_s9_recoil_drain_steps[0], 30u},
+    {"s9_self_drops", 4u, conf_s9_self_drops_members, conf_s9_self_drops_steps, sizeof conf_s9_self_drops_steps / sizeof conf_s9_self_drops_steps[0], 120u},
 };
 
 #endif

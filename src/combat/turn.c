@@ -552,16 +552,35 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
         !dfi_stage_stat(d->stats[def_index], def_stage, &defense)) {
         return DUOFORGE_E_INVARIANT;
     }
-    /* BasePower (after the critical hit roll): Mystic Water boosts Water
-     * moves by 4915/4096. */
-    uint32_t base_power = md->base_power;
-    if (move_type == DFI_TYPE_WATER && dfi_holds(a, DFI_ITEM_MYSTICWATER)) {
-        base_power = dfi_modify(base_power, 4915u);
+    /* BasePower (after the critical hit roll), one chained modifier: Mystic
+     * Water (Water) and Miracle Seed (Grass) 4915/4096, Grassy Terrain
+     * 5325/4096 for a grounded user's Grass move. */
+    uint32_t bp_chain = 4096u;
+    bool ok = true;
+    if ((move_type == DFI_TYPE_WATER && dfi_holds(a, DFI_ITEM_MYSTICWATER)) ||
+        (move_type == DFI_TYPE_GRASS && dfi_holds(a, DFI_ITEM_MIRACLESEED))) {
+        ok = ok && dfi_chain_modify(bp_chain, 4915u, &bp_chain);
     }
-    /* ModifyAtk / ModifySpA: Blaze boosts Fire moves by half at a third of
-     * the HP or less. */
+    if (move_type == DFI_TYPE_GRASS && r->b->terrain == DFI_TERRAIN_GRASSY && !dfi_has_type(a, DFI_TYPE_FLYING)) {
+        ok = ok && dfi_chain_modify(bp_chain, 5325u, &bp_chain);
+    }
+    const uint32_t base_power = bp_chain == 4096u ? md->base_power : dfi_modify(md->base_power, bp_chain);
+    /* ModifyAtk / ModifySpA, one chained modifier: Blaze for Fire moves at a
+     * third of the HP or less, Flash Fire's boost for Fire moves once it
+     * took one; 1.5 each. */
+    uint32_t atk_chain = 4096u;
     if (move_type == DFI_TYPE_FIRE && dfi_ability(a, DFI_ABILITY_BLAZE) && (uint32_t)a->hp * 3u <= a->hp_max) {
-        attack = dfi_modify(attack, 6144u);
+        ok = ok && dfi_chain_modify(atk_chain, 6144u, &atk_chain);
+    }
+    if (move_type == DFI_TYPE_FIRE && dfi_ability(a, DFI_ABILITY_FLASHFIRE) &&
+        ((uint32_t)ap->flags & DFI_VOL_FLASH_FIRE) != 0u) {
+        ok = ok && dfi_chain_modify(atk_chain, 6144u, &atk_chain);
+    }
+    if (!ok) {
+        return DUOFORGE_E_INVARIANT;
+    }
+    if (atk_chain != 4096u) {
+        attack = dfi_modify(attack, atk_chain);
     }
     if (!dfi_base_damage(DFI_LEVEL, base_power, attack, defense, &damage)) {
         return DUOFORGE_E_INVARIANT;
@@ -1132,12 +1151,40 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             }
         }
     }
+    /* spreadDamage, per target: the damage, then a drain heals the user by
+     * round(dealt * drain) (sim/battle.ts:2170-2173). The HP actually lost
+     * adds up to the move's total damage. */
+    uint32_t total = 0u;
     for (uint32_t i = 0u; i < count; ++i) {
         if (hit[i]) {
+            const uint32_t before = dfi_at(b, targets[i])->hp;
             st = dfi_deal(r, targets[i], damage[i]);
             if (st != DUOFORGE_OK) {
                 return st;
             }
+            const uint32_t dealt = before - (uint32_t)dfi_at(b, targets[i])->hp;
+            total += dealt;
+            if (md->drain[1] != 0u && dealt != 0u) {
+                const uint32_t num = dealt * md->drain[0] * 2u + md->drain[1];
+                dfi_heal(b, user, num / (2u * md->drain[1])); /* Math.round(dealt * a / b) */
+            }
+        }
+    }
+    /* selfDrops: once, after the first target that was hit, a roll of
+     * random(100) that always passes (no chance), then the user's own stat
+     * changes (Close Combat, Make It Rain). */
+    if (md->boost_role == DFI_BOOST_ROLE_SELF_AFTER_HIT) {
+        bool hit_any = false;
+        for (uint32_t i = 0u; i < count; ++i) {
+            hit_any = hit_any || hit[i];
+        }
+        if (hit_any) {
+            uint32_t roll = 0u;
+            st = dfi_draw(r->draws, DFI_SITE_SECONDARY, 0u, 100u, &roll);
+            if (st != DUOFORGE_OK) {
+                return st;
+            }
+            dfi_boost(r, user, md->boosts, DFI_POSITIONS);
         }
     }
     /* secondaries: one SECONDARY draw per hit target, even at 100; a status
@@ -1168,11 +1215,9 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                 return st;
             }
         }
-        if (md->boost_role != DFI_BOOST_ROLE_NONE && md->sec_kind != DFI_SECONDARY_BOOST) {
-            return DUOFORGE_E_UNSUPPORTED; /* self-drops: step 9 */
+        if (md->boost_role == DFI_BOOST_ROLE_SELF_AFTER_HIT) {
+            return DUOFORGE_E_UNSUPPORTED; /* no closure move has both */
         }
-    } else if (md->boost_role != DFI_BOOST_ROLE_NONE || md->recoil[1] != 0u || md->drain[1] != 0u) {
-        return DUOFORGE_E_UNSUPPORTED; /* self-drops, recoil and drain: step 9 */
     }
     /* DamagingHit, per damaged target: a damaging Fire move thaws a frozen
      * target (frz, status first), Stamina raises Defense by 1. */
@@ -1198,21 +1243,25 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     if (any) {
         dfi_update(b);
     }
-    /* Struggle's recoil: round(maxHP / 4), at least 1 (applyRecoilDamage),
-     * then Update again (:1003). */
-    if ((md->flags & DFI_MOVE_FLAG_STRUGGLE_RECOIL) != 0u) {
-        if (any) {
-            const uint32_t hp_max = m->hp_max;
-            uint32_t recoil = (hp_max + 2u) / 4u; /* Math.round(hp_max / 4) */
-            if (recoil < 1u) {
-                recoil = 1u;
-            }
+    /* applyRecoilDamage after the hit loop: Struggle round(maxHP / 4), a
+     * recoil move round(total * a / b), at least 1; then Update again
+     * (:1003). */
+    if (any) {
+        uint32_t recoil = 0u;
+        if ((md->flags & DFI_MOVE_FLAG_STRUGGLE_RECOIL) != 0u) {
+            recoil = ((uint32_t)m->hp_max + 2u) / 4u; /* Math.round(hp_max / 4) */
+            recoil = recoil < 1u ? 1u : recoil;
+        } else if (md->recoil[1] != 0u && total != 0u) {
+            recoil = (total * md->recoil[0] * 2u + md->recoil[1]) / (2u * md->recoil[1]);
+            recoil = recoil < 1u ? 1u : recoil;
+        }
+        if (recoil != 0u) {
             st = dfi_deal(r, user, recoil);
             if (st != DUOFORGE_OK) {
                 return st;
             }
-            dfi_update(b);
         }
+        dfi_update(b);
     }
     /* AfterMoveSecondarySelf: Life Orb takes a tenth of the holder's HP
      * (at least 1) after a damaging move that hit something. */

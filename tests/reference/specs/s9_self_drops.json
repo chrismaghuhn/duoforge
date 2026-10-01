@@ -1,0 +1,23 @@
+{
+  "name": "s9_self_drops",
+  "purpose": "Self-drops: Close Combat lowers the user's Defense and Special Defense, Make It Rain (spread, Champions: 95 accuracy, Special Attack -2) its Special Attack, each after a random(100) roll that always passes; a self-drop does not trigger Competitive; Brave Bird recoil can make both last Pokemon faint in one action.",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000009104",
+  "teams": [
+    "Staraptor (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Close Combat\n- Brave Bird\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Nasty Plot\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Ice Beam\n\nGolisopod (M) @ Mystic Water\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Leech Life\n- Iron Head",
+    "Archaludon (F) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Snarl\n\nMilotic (M) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Coil\n\nStaraptor (F) @ Life Orb\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Brave Bird\n- Close Combat\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- High Horsepower"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1",
+      "move 2 2, move 1",
+      "move 1 2, move 2"
+    ],
+    "p2": [
+      "move 2, move 1",
+      "move 1 1, move 1",
+      "move 1 2, move 1"
+    ],
+    "max_steps": 50
+  }
+}
