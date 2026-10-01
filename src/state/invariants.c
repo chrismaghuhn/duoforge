@@ -132,10 +132,11 @@ static dfi_invariant dfi_check_member(const struct duoforge_context *ctx, const 
 }
 
 /* Value ranges of an occupied position's volatile block. move_count is the
- * occupant's (already range-checked) move count. */
-static bool dfi_volatile_valid(const dfi_active_slot *slot, uint32_t move_count)
+ * occupant's (already range-checked) move count; switch_flag_max is the
+ * kind's (dfi_kind_limits). */
+static bool dfi_volatile_valid(const dfi_active_slot *slot, uint32_t move_count, uint32_t switch_flag_max)
 {
-    if (slot->switch_flag > DFI_SWITCH_FAINTED) {
+    if (slot->switch_flag > switch_flag_max) {
         return false;
     }
     for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
@@ -266,7 +267,8 @@ static dfi_invariant dfi_check_side(const struct duoforge_context *ctx, const st
             if (!dfi_slot_volatile_is_clear(slot)) {
                 return DFI_INV_VOLATILE;
             }
-        } else if (!dfi_volatile_valid(slot, side->members[slot->occupant].move_count)) {
+        } else if (!dfi_volatile_valid(slot, side->members[slot->occupant].move_count,
+                                       dfi_kind_limits_of(ctx->data_kind).switch_flag_max)) {
             return DFI_INV_VOLATILE; /* occupant < member_count <= 6 here */
         }
     }

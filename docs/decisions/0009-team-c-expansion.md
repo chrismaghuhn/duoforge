@@ -1,6 +1,6 @@
 # 0009 — Team C: the expansion track (data kind, gate, steps, evidence)
 
-Status: **accepted** (owner, 2026-10-01: "bau das erstmal so"; setup rule: the closure rule, section 3.4). **Steps 1 to 3 built** (section 10). Builds on decision `0004` (two reference teams), `0006` (data, state v3, draw sites, fixtures, evidence), `0007` (player view) and `0010` (the certified CLOSURE profile, the role of `CLOSURE_DEV`, draw alignment B confirmed), and on the research in `docs/research/third-team/` (PR #32). "M§n" means section n of `docs/research/third-team/mechanics.md`; X1 to X9 are its executed experiments.
+Status: **accepted** (owner, 2026-10-01: "bau das erstmal so"; setup rule: the closure rule, section 3.4). **Steps 1 to 4 built** (section 10). Builds on decision `0004` (two reference teams), `0006` (data, state v3, draw sites, fixtures, evidence), `0007` (player view) and `0010` (the certified CLOSURE profile, the role of `CLOSURE_DEV`, draw alignment B confirmed), and on the research in `docs/research/third-team/` (PR #32). "M§n" means section n of `docs/research/third-team/mechanics.md`; X1 to X9 are its executed experiments.
 
 ## 1. Owner inputs (2026-10-01)
 
@@ -303,3 +303,21 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
 
   Negative controls: without the type change, or without the BasePower boost, the battle fails.
 - **Shared files touched:** `src/combat/turn.c` (move type, BasePower chain) and `src/data/support_manifest.c`.
+
+### 10.4 Step 4: Last Respects and Flip Turn
+
+- **Last Respects.** The base power is 50 + 50 for every member of the user's side at 0 HP (`data/moves.ts:10091-10105`). This equals `side.totalFainted` (`sim/battle.ts:2554`) for the reasons in section 4.1; nothing is stored.
+- **Flip Turn.** At the point of `runMoveEffects`, after the damage and before the self-drops, secondaries, DamagingHit and Emergency Exit, the user is flagged to switch when the move hit a target and the user still stands (`sim/battle-actions.ts:1290-1312`). As for Parting Shot, the flag is set only when a reserve can come in. The existing PIVOT boundary does the rest.
+- **One state change.** The switch flag byte gets the value 4, `DFI_SWITCH_FLIP_TURN`, which is valid only under the TEAM_C kinds (`dfi_kind_limits.switch_flag_max`). It is needed because the switch happens in the next step, and its event says `[from] Flip Turn` (Showdown keeps `switchFlag = move.id`). Under CLOSURE the value is out of range (VOLATILE). The layout does not change, and `state_v3_model.py` mirrors the range.
+- **Evidence.** Three recorded battles:
+  - `c04_flip_turn`: Flip Turn into Protect does not switch. When Flip Turn drops Golisopod below half, Emergency Exit and Flip Turn ask both sides at one PIVOT. With no reserve left, no switch is requested.
+  - `c04_flip_turn_ko`: after a KO of its target, the user still switches.
+  - `c04_last_respects`: an ally fainted earlier in the same turn already counts.
+
+  Negative controls: without the flag, with a fixed base power of 50, or with `[from] Parting Shot`, a battle fails. A white-box test checks the flag range per kind.
+- **Converter.** `[from] Flip Turn` is a MOVE cause, like Parting Shot.
+- **Shared files touched:**
+  - `src/combat/turn.c` (base power, the flag, the switch event);
+  - `src/state/{battle_internal,closure_member}.h`, `closure_member.c`, `invariants.c`;
+  - `src/data/support_manifest.c`;
+  - `tools/reference/trace_to_c.py`, `tools/state_model/state_v3_model.py`.

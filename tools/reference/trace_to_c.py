@@ -368,8 +368,8 @@ def ev_cause(attrs, tables):
                 cause = CAUSE['CONFUSION']
             elif what == 'Grassy Terrain':
                 cause = CAUSE['TERRAIN']
-            elif what == 'Parting Shot':
-                cause, id2 = CAUSE['MOVE'], tables['MOVE']['PARTINGSHOT']
+            elif what in ('Parting Shot', 'Flip Turn'):
+                cause, id2 = CAUSE['MOVE'], tables['MOVE'][key(what)]
             elif what == 'lockedmove':
                 pass  # a MOVE flag
             else:
