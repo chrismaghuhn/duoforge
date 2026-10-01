@@ -135,7 +135,9 @@ int main(void)
     CONSTANT(DUOFORGE_SLOT_NONE, false);
     CONSTANT(DUOFORGE_SLOT_MOVE, false);
     CONSTANT(DUOFORGE_SLOT_SWITCH, false);
-    CONSTANT(DUOFORGE_SLOT_PASS, true);
+    CONSTANT(DUOFORGE_SLOT_PASS, false);
+    CONSTANT(DUOFORGE_E_INVALID_ARGUMENT, false);
+    CONSTANT(DUOFORGE_BATCH_MAX_ENVS, true);
     printf("  }\n}\n");
     return 0;
 }

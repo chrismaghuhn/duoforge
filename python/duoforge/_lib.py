@@ -29,6 +29,7 @@ _SIGNATURES = {
     "duoforge_status_name": (ctypes.c_char_p, (_STATUS,)),
     "duoforge_context_create": (_STATUS, (_P, ctypes.POINTER(_P))),
     "duoforge_context_destroy": (None, (_P,)),
+    "duoforge_context_fingerprint": (_STATUS, (_P, _P)),
     "duoforge_reference_setup": (_STATUS, (_U32, _P)),
     "duoforge_battle_result": (_STATUS, (_P, _P, ctypes.POINTER(_U32))),
     "duoforge_battle_digest": (_STATUS, (_P, _P, _P)),

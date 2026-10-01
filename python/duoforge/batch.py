@@ -15,6 +15,7 @@ from .errors import DuoforgeError
 _SLOTS = _layout.CONSTANTS["DUOFORGE_CHOICE_SLOTS"]
 _TEAM = _layout.CONSTANTS["DUOFORGE_CHOICE_TEAM_SELECTION"]
 _OPTIONS = _layout.MAX_SLOT_OPTIONS
+_INVALID_ARGUMENT = _layout.CONSTANTS["DUOFORGE_E_INVALID_ARGUMENT"]
 
 
 def _require(array, dtype, shape, name):
@@ -46,10 +47,13 @@ class Batch:
         self._lib = load_library()
         self.context = context
         self.envs = int(setups.shape[0])
+        self.seed = uint(seed, 64, "seed")
+        self.setups = setups.copy()  # what the environments run, for records of this batch
+        self.setups.flags.writeable = False
         config = np.zeros((), dtype=_layout.BATCH_CONFIG)
         config["env_count"] = self.envs
         config["worker_count"] = uint(workers, 32, "workers")
-        config["seed"] = uint(seed, 64, "seed")
+        config["seed"] = self.seed
         config["setups"] = setups.ctypes.data  # copied by the create
         handle = ctypes.c_void_p()
         st = self._lib.duoforge_batch_create(context.handle, ptr(config), ctypes.byref(handle))
@@ -73,14 +77,29 @@ class Batch:
         self._check(self._lib.duoforge_batch_query(self._live(), ptr(self.requests), ptr(self.observations),
                                                    ptr(self.candidates), ptr(self.counts)))
 
-    def step(self, indices):
+    def step(self, indices, active=None):
         """Steps every non-TERMINAL environment by candidate index: uint16,
-        shape (E,2), NO_CHOICE for players without a request. A failure
-        raises DuoforgeError with the per-environment statuses."""
+        shape (E,2), NO_CHOICE for players without a request. With active
+        (bool, shape (E,)), the environments outside it are not stepped and
+        keep their state (their statuses read OK); their indices must be
+        NO_CHOICE. A failure raises DuoforgeError with the per-environment
+        statuses, named after the lowest failing environment."""
         _require(indices, np.uint16, (self.envs, 2), "indices")
-        self._check(self._lib.duoforge_batch_step_indices(
+        if active is not None:
+            _require(active, np.bool_, (self.envs,), "active")
+            if (indices[~active] != _layout.NO_CHOICE).any():
+                raise ValueError("an environment outside active has a choice")
+        status = self._lib.duoforge_batch_step_indices(
             self._live(), ptr(self.requests), ptr(self.candidates), ptr(self.counts), ptr(indices),
-            ptr(self.statuses), ptr(self.results)), per_env=True)
+            ptr(self.statuses), ptr(self.results))
+        if status != 0 and active is not None:
+            # Outside active, NO_CHOICE fails a requested player's environment
+            # with E_INVALID_ARGUMENT and leaves it unchanged (outcomes are
+            # atomic per environment): that is the skip, not a failure.
+            self.statuses[~active & (self.statuses == _INVALID_ARGUMENT)] = 0
+            failed = np.flatnonzero(self.statuses)
+            status = int(self.statuses[failed[0]]) if failed.size else 0
+        self._check(status, per_env=True)
 
     def query_factored(self):
         """Fills requests, observations and the factored domains."""
