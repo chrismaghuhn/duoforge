@@ -438,7 +438,7 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
   - Leaving the field clears the lock with the rest of the position.
 - **The request.** The lock offers only the locked move, with any of its targets (`onDisableMove`). With no PP, or with Champions' Fake Out rule, the slot gets Struggle. The lock does not trap.
   - The request's two-turn branch now tests `charge_turns`, no longer `locked_move`. Both meant the same before the choice lock.
-- **Observation.** A choice lock is public: `locked_slot` shows it, `charging` is 0, and `locked_target` is `DUOFORGE_TARGET_NONE`. The own locked target is shown only while charging. That is an additive public change of an existing field (sections 4.2, 9.4): library 0.14.0. Under CLOSURE the views are byte-identical.
+- **Observation.** A choice lock is public: `locked_slot` shows it, `charging` is 0, and `locked_target` is `DUOFORGE_TARGET_NONE`. The own locked target is shown only while charging. That is an additive public change of an existing field (sections 4.2, 9.4): library 0.14.0, coordinated with the main session (the Python encoder reads `locked_slot` only as a flag). Under CLOSURE the views are byte-identical.
 - **Harness and converter.**
   - `ps_trace.js` records a lock's slot as `choice`, only when the volatile exists, so every older trace is byte-identical (the harness version stays 14).
   - The converter compares it as volatile bit 8 and as the locked slot without a target. A lock on a move outside the slots, or on another move than a two-turn lock, fails loudly.
