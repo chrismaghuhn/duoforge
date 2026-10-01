@@ -1,5 +1,5 @@
 {
- "harness": 11,
+ "harness": 12,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "spec": "s3_double_replace.json",
  "format": "gen9championsvgc2026regmc",
@@ -49,6 +49,8 @@
      "pokemon": [
       {
        "species": "Gholdengo",
+       "set_species": "Gholdengo",
+       "mega": 0,
        "hp": 179,
        "maxhp": 179,
        "status": "",
@@ -73,6 +75,8 @@
       },
       {
        "species": "Ceruledge",
+       "set_species": "Ceruledge",
+       "mega": 0,
        "hp": 181,
        "maxhp": 181,
        "status": "",
@@ -97,6 +101,8 @@
       },
       {
        "species": "Archaludon",
+       "set_species": "Archaludon",
+       "mega": 0,
        "hp": 197,
        "maxhp": 197,
        "status": "",
@@ -121,6 +127,8 @@
       },
       {
        "species": "Farigiraf",
+       "set_species": "Farigiraf",
+       "mega": 0,
        "hp": 224,
        "maxhp": 224,
        "status": "",
@@ -155,6 +163,8 @@
      "pokemon": [
       {
        "species": "Gholdengo",
+       "set_species": "Gholdengo",
+       "mega": 0,
        "hp": 179,
        "maxhp": 179,
        "status": "",
@@ -179,6 +189,8 @@
       },
       {
        "species": "Ceruledge",
+       "set_species": "Ceruledge",
+       "mega": 0,
        "hp": 181,
        "maxhp": 181,
        "status": "",
@@ -203,6 +215,8 @@
       },
       {
        "species": "Archaludon",
+       "set_species": "Archaludon",
+       "mega": 0,
        "hp": 197,
        "maxhp": 197,
        "status": "",
@@ -227,6 +241,8 @@
       },
       {
        "species": "Farigiraf",
+       "set_species": "Farigiraf",
+       "mega": 0,
        "hp": 224,
        "maxhp": 224,
        "status": "",
@@ -433,6 +449,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 179,
         "maxhp": 179,
         "status": "",
@@ -457,6 +475,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -481,6 +501,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -505,6 +527,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 224,
         "maxhp": 224,
         "status": "",
@@ -548,6 +572,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 179,
         "maxhp": 179,
         "status": "",
@@ -572,6 +598,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -596,6 +624,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -620,6 +650,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 224,
         "maxhp": 224,
         "status": "",
@@ -1126,6 +1158,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 179,
         "maxhp": 179,
         "status": "",
@@ -1150,6 +1184,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -1174,6 +1210,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -1198,6 +1236,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 224,
         "maxhp": 224,
         "status": "",
@@ -1241,6 +1281,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 179,
         "maxhp": 179,
         "status": "",
@@ -1265,6 +1307,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -1289,6 +1333,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -1313,6 +1359,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 224,
         "maxhp": 224,
         "status": "",
@@ -1849,6 +1897,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 35,
         "maxhp": 179,
         "status": "",
@@ -1873,6 +1923,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 0,
         "maxhp": 181,
         "status": "fnt",
@@ -1897,6 +1949,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -1921,6 +1975,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 224,
         "maxhp": 224,
         "status": "",
@@ -1955,6 +2011,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 47,
         "maxhp": 179,
         "status": "",
@@ -1979,6 +2037,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 0,
         "maxhp": 181,
         "status": "fnt",
@@ -2003,6 +2063,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -2027,6 +2089,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 224,
         "maxhp": 224,
         "status": "",
@@ -2192,6 +2256,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 35,
         "maxhp": 179,
         "status": "",
@@ -2216,6 +2282,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -2240,6 +2308,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 0,
         "maxhp": 181,
         "status": "",
@@ -2264,6 +2334,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 224,
         "maxhp": 224,
         "status": "",
@@ -2307,6 +2379,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 47,
         "maxhp": 179,
         "status": "",
@@ -2331,6 +2405,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -2355,6 +2431,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 0,
         "maxhp": 181,
         "status": "",
@@ -2379,6 +2457,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 224,
         "maxhp": 224,
         "status": "",
@@ -2993,6 +3073,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 3,
         "maxhp": 179,
         "status": "",
@@ -3017,6 +3099,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 41,
         "maxhp": 197,
         "status": "",
@@ -3041,6 +3125,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 0,
         "maxhp": 181,
         "status": "",
@@ -3065,6 +3151,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 224,
         "maxhp": 224,
         "status": "",
@@ -3108,6 +3196,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 20,
         "maxhp": 179,
         "status": "",
@@ -3132,6 +3222,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 14,
         "maxhp": 197,
         "status": "",
@@ -3156,6 +3248,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 0,
         "maxhp": 181,
         "status": "",
@@ -3180,6 +3274,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 224,
         "maxhp": 224,
         "status": "",
@@ -3519,6 +3615,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 3,
         "maxhp": 179,
         "status": "",
@@ -3543,6 +3641,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "fnt",
@@ -3567,6 +3667,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 0,
         "maxhp": 181,
         "status": "",
@@ -3591,6 +3693,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 224,
         "maxhp": 224,
         "status": "",
@@ -3625,6 +3729,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 20,
         "maxhp": 179,
         "status": "",
@@ -3649,6 +3755,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "fnt",
@@ -3673,6 +3781,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 0,
         "maxhp": 181,
         "status": "",
@@ -3697,6 +3807,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 224,
         "maxhp": 224,
         "status": "",
@@ -3862,6 +3974,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 3,
         "maxhp": 179,
         "status": "",
@@ -3886,6 +4000,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 224,
         "maxhp": 224,
         "status": "",
@@ -3910,6 +4026,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 0,
         "maxhp": 181,
         "status": "",
@@ -3934,6 +4052,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "",
@@ -3977,6 +4097,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 20,
         "maxhp": 179,
         "status": "",
@@ -4001,6 +4123,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 224,
         "maxhp": 224,
         "status": "",
@@ -4025,6 +4149,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 0,
         "maxhp": 181,
         "status": "",
@@ -4049,6 +4175,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "",
@@ -4451,6 +4579,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 0,
         "maxhp": 179,
         "status": "fnt",
@@ -4475,6 +4605,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 224,
         "maxhp": 224,
         "status": "",
@@ -4499,6 +4631,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 0,
         "maxhp": 181,
         "status": "",
@@ -4523,6 +4657,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "",
@@ -4566,6 +4702,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 0,
         "maxhp": 179,
         "status": "fnt",
@@ -4590,6 +4728,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 224,
         "maxhp": 224,
         "status": "",
@@ -4614,6 +4754,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 0,
         "maxhp": 181,
         "status": "",
@@ -4638,6 +4780,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "",
@@ -4951,6 +5095,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 0,
         "maxhp": 179,
         "status": "fnt",
@@ -4975,6 +5121,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 189,
         "maxhp": 224,
         "status": "",
@@ -4999,6 +5147,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 0,
         "maxhp": 181,
         "status": "",
@@ -5023,6 +5173,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "",
@@ -5066,6 +5218,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 0,
         "maxhp": 179,
         "status": "fnt",
@@ -5090,6 +5244,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 187,
         "maxhp": 224,
         "status": "",
@@ -5114,6 +5270,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 0,
         "maxhp": 181,
         "status": "",
@@ -5138,6 +5296,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "",
@@ -5451,6 +5611,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 0,
         "maxhp": 179,
         "status": "fnt",
@@ -5475,6 +5637,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 152,
         "maxhp": 224,
         "status": "",
@@ -5499,6 +5663,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 0,
         "maxhp": 181,
         "status": "",
@@ -5523,6 +5689,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "",
@@ -5566,6 +5734,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 0,
         "maxhp": 179,
         "status": "fnt",
@@ -5590,6 +5760,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 156,
         "maxhp": 224,
         "status": "",
@@ -5614,6 +5786,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 0,
         "maxhp": 181,
         "status": "",
@@ -5638,6 +5812,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "",
@@ -5951,6 +6127,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 0,
         "maxhp": 179,
         "status": "fnt",
@@ -5975,6 +6153,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 121,
         "maxhp": 224,
         "status": "",
@@ -5999,6 +6179,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 0,
         "maxhp": 181,
         "status": "",
@@ -6023,6 +6205,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "",
@@ -6066,6 +6250,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 0,
         "maxhp": 179,
         "status": "fnt",
@@ -6090,6 +6276,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 123,
         "maxhp": 224,
         "status": "",
@@ -6114,6 +6302,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 0,
         "maxhp": 181,
         "status": "",
@@ -6138,6 +6328,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "",
@@ -6452,6 +6644,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 0,
         "maxhp": 179,
         "status": "fnt",
@@ -6476,6 +6670,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 88,
         "maxhp": 224,
         "status": "",
@@ -6500,6 +6696,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 0,
         "maxhp": 181,
         "status": "",
@@ -6524,6 +6722,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "",
@@ -6567,6 +6767,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 0,
         "maxhp": 179,
         "status": "fnt",
@@ -6591,6 +6793,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 89,
         "maxhp": 224,
         "status": "",
@@ -6615,6 +6819,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 0,
         "maxhp": 181,
         "status": "",
@@ -6639,6 +6845,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "",
@@ -6953,6 +7161,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 0,
         "maxhp": 179,
         "status": "fnt",
@@ -6977,6 +7187,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 34,
         "maxhp": 224,
         "status": "",
@@ -7001,6 +7213,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 0,
         "maxhp": 181,
         "status": "",
@@ -7025,6 +7239,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "",
@@ -7068,6 +7284,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 0,
         "maxhp": 179,
         "status": "fnt",
@@ -7092,6 +7310,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 56,
         "maxhp": 224,
         "status": "",
@@ -7116,6 +7336,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 0,
         "maxhp": 181,
         "status": "",
@@ -7140,6 +7362,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "",
@@ -7408,6 +7632,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 0,
         "maxhp": 179,
         "status": "fnt",
@@ -7432,6 +7658,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 0,
         "maxhp": 224,
         "status": "",
@@ -7456,6 +7684,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 0,
         "maxhp": 181,
         "status": "",
@@ -7480,6 +7710,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "",
@@ -7514,6 +7746,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 0,
         "maxhp": 179,
         "status": "fnt",
@@ -7538,6 +7772,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 3,
         "maxhp": 224,
         "status": "",
@@ -7562,6 +7798,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 0,
         "maxhp": 181,
         "status": "",
@@ -7586,6 +7824,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "",

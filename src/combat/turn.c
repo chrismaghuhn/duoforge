@@ -13,6 +13,7 @@
 #define DFI_ORDER_SWITCH_IN 3u    /* instaswitch: a replacement */
 #define DFI_ORDER_RUN_SWITCH 101u /* the entry of a Pokemon that came in */
 #define DFI_ORDER_SWITCH 103u     /* a voluntary switch */
+#define DFI_ORDER_MEGA 104u       /* megaEvo */
 #define DFI_ORDER_MOVE 200u
 #define DFI_ORDER_RESIDUAL 300u
 #define DFI_SPEED_BIAS 10000u   /* speed key: 10000 + speed, or 10000 - speed under Trick Room */
@@ -157,8 +158,10 @@ static duoforge_status dfi_key_of(dfi_run *r, const dfi_queue_record *q, dfi_key
         order = DFI_ORDER_SWITCH_IN;
     } else if (q->kind == DFI_Q_RUN_SWITCH) {
         order = DFI_ORDER_RUN_SWITCH;
+    } else if (q->kind == DFI_Q_MEGA) {
+        order = DFI_ORDER_MEGA;
     } else {
-        return DUOFORGE_E_UNSUPPORTED; /* Mega Evolution comes later */
+        return DUOFORGE_E_INVARIANT;
     }
     const uint32_t flat = (uint32_t)q->side * 2u + (uint32_t)q->slot;
     const dfi_member *m = dfi_at(r->b, flat);
@@ -350,7 +353,9 @@ static void dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
     for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
         const uint32_t before = pos->stages[i];
         uint8_t one[DFI_STAT_STAGE_COUNT] = {6u, 6u, 6u, 6u, 6u, 6u, 6u};
-        one[i] = boosts[i];
+        /* Contrary (ChangeBoost) reverses every change. */
+        const uint32_t reversed = 12u - (uint32_t)boosts[i]; /* boosts are biased by 6, 0..12 */
+        one[i] = dfi_ability(m, DFI_ABILITY_CONTRARY) ? (uint8_t)reversed : boosts[i];
         dfi_apply_boosts(pos, one);
         const bool lowered = pos->stages[i] < before;
         if (lowered && dfi_ability(m, DFI_ABILITY_COMPETITIVE) && source < DFI_POSITIONS && source / 2u != flat / 2u) {
@@ -578,6 +583,9 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     }
     uint32_t bp_chain = 4096u;
     bool ok = true;
+    if (dfi_ability(a, DFI_ABILITY_TOUGHCLAWS) && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u) {
+        ok = dfi_chain_modify(bp_chain, 5325u, &bp_chain); /* onBasePowerPriority 21: first */
+    }
     if ((move_type == DFI_TYPE_WATER && dfi_holds(a, DFI_ITEM_MYSTICWATER)) ||
         (move_type == DFI_TYPE_GRASS && dfi_holds(a, DFI_ITEM_MIRACLESEED))) {
         ok = ok && dfi_chain_modify(bp_chain, 4915u, &bp_chain);
@@ -1170,6 +1178,10 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             if (!hit[i]) {
                 continue;
             }
+            /* No Guard on the user or the target: the move cannot miss. */
+            if (dfi_ability(m, DFI_ABILITY_NOGUARD) || dfi_ability(dfi_at(b, targets[i]), DFI_ABILITY_NOGUARD)) {
+                continue;
+            }
             /* The user's accuracy stage minus the target's evasion, clamped. */
             const uint32_t acc = pos->stages[DFI_STAGE_ACCURACY];
             const uint32_t eva = dfi_pos(b, targets[i])->stages[DFI_STAGE_EVASION];
@@ -1563,6 +1575,30 @@ static duoforge_status dfi_run_entries(dfi_run *r, uint32_t entering)
                 return DUOFORGE_OK;
             }
         }
+    }
+    return DUOFORGE_OK;
+}
+
+/* runMegaEvo (sim/battle-actions.ts): the Mega forme with its stats and
+ * ability, once per side; the opponent sees it; the new ability starts
+ * (setAbility's Start event: Drought). */
+static duoforge_status dfi_run_mega(dfi_run *r, const dfi_queue_record *q)
+{
+    struct duoforge_battle *b = r->b;
+    const uint32_t flat = (uint32_t)q->side * 2u + (uint32_t)q->slot;
+    dfi_member *m = dfi_at(b, flat);
+    dfi_side *sd = &b->sides[q->side];
+    if (m == NULL || m->hp == 0u || dfi_pos(b, flat)->activation_id != q->activation_id || sd->mega_used != 0u) {
+        return DUOFORGE_OK;
+    }
+    if (!dfi_closure_member_mega_evolve(m)) {
+        return DUOFORGE_E_INVARIANT; /* the domain offers Mega only to a holder of its stone */
+    }
+    sd->mega_used = 1u;
+    dfi_knowledge *k = &b->sides[1u - q->side].knowledge[dfi_pos(b, flat)->occupant];
+    k->revealed = (uint8_t)((uint32_t)k->revealed | DFI_REVEALED_MEGA); /* wide-operands-reviewed */
+    if (dfi_has_entry(m)) {
+        dfi_entry_ability(r, flat);
     }
     return DUOFORGE_OK;
 }
@@ -2006,14 +2042,24 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
                     return DUOFORGE_E_UNSUPPORTED;
                 }
                 kind = replacement ? DFI_Q_SWITCH_IN : DFI_Q_SWITCH;
-            } else if (c.kind != DFI_SLOT_MOVE || c.mega != 0u || replacement) {
-                return DUOFORGE_E_UNSUPPORTED; /* Mega Evolution comes later */
+            } else if (c.kind != DFI_SLOT_MOVE || replacement) {
+                return DUOFORGE_E_UNSUPPORTED;
             }
             const bool move = kind == DFI_Q_MOVE;
+            if (move && c.mega != 0u) {
+                /* resolveAction unshifts the megaEvo action before the move. */
+                if (dfi_support.mega_evolution == 0u) {
+                    return DUOFORGE_E_UNSUPPORTED;
+                }
+                b->queue[b->queue_len] = (dfi_queue_record){b->sides[s].positions[slot].activation_id,
+                                                            (uint8_t)DFI_Q_MEGA, (uint8_t)s, (uint8_t)slot, 0u, 0u,
+                                                            0u};
+                b->queue_len = (uint8_t)((uint32_t)b->queue_len + 1u); /* wide-operands-reviewed: <= 6 */
+            }
             b->queue[b->queue_len] = (dfi_queue_record){
                 kind == DFI_Q_SWITCH_IN ? 0u : b->sides[s].positions[slot].activation_id, (uint8_t)kind, (uint8_t)s,
                 (uint8_t)slot, move ? c.move_slot : 0u, move ? c.target : 0u, move ? 0u : c.reserve};
-            b->queue_len = (uint8_t)((uint32_t)b->queue_len + 1u); /* wide-operands-reviewed: <= 4 */
+            b->queue_len = (uint8_t)((uint32_t)b->queue_len + 1u); /* wide-operands-reviewed: <= 6 */
         }
     }
     duoforge_status st = DUOFORGE_OK;
@@ -2058,6 +2104,11 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
                 entering |= 1u << ((uint32_t)q.side * 2u + (uint32_t)q.slot);
             }
             st = dfi_run_entries(&r, entering);
+            if (st != DUOFORGE_OK) {
+                return st;
+            }
+        } else if (q.kind == DFI_Q_MEGA) {
+            st = dfi_run_mega(&r, &q);
             if (st != DUOFORGE_OK) {
                 return st;
             }

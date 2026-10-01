@@ -163,6 +163,11 @@ def tape_entry(d):
     return (site, lo, hi, value)
 
 
+def name_of(p):
+    """The roster name of a Pokemon: its set's species (a Mega changes the species)."""
+    return p.get('set_species', p['species'])
+
+
 def abs_target(side, loc):
     """A Showdown target location (foes positive, own side negative) as a
     DuoForge position (side * 2 + slot)."""
@@ -199,7 +204,7 @@ def convert_choice(text, side, state, roster_of):
             # "switch N" names position N of side.pokemon, which the
             # reference reorders on every switch.
             mon = state['sides'][side]['pokemon'][int(words[1]) - 1]
-            cmds.append((2, 0, 0, 0, roster_of[side][mon['species']]))
+            cmds.append((2, 0, 0, 0, roster_of[side][name_of(mon)]))
         elif words[0] == 'pass':
             # In a replacement request the reference wants "pass" for a slot
             # that is not asked to switch; DuoForge does not request that slot.
@@ -250,7 +255,7 @@ def convert(root, name, tables, out, all_tape):
     # whole roster in order, so a species names its roster index.
     roster_of = []
     for s in range(2):
-        names = [p['species'] for p in state['sides'][s]['pokemon']]
+        names = [name_of(p) for p in state['sides'][s]['pokemon']]
         if len(names) != len(teams[s]) or len(set(names)) != len(names):
             raise SystemExit('trace_to_c: %s side %d roster is not unique' % (name, s))
         roster_of.append({n: i for i, n in enumerate(names)})
@@ -278,11 +283,11 @@ def convert(root, name, tables, out, all_tape):
             row = []
             by_roster = {}
             for p in new_state['sides'][s]['pokemon']:
-                by_roster[roster_of[s][p['species']]] = p
+                by_roster[roster_of[s][name_of(p)]] = p
             for roster in range(6):
                 p = by_roster.get(roster)
                 if p is None:
-                    row.append('{0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u}')
+                    row.append('{0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u}')
                     continue
                 pp = p['pp'] + [0] * (4 - len(p['pp']))
                 stall = 1 if 'stall' in p['volatiles'] else 0
@@ -292,9 +297,10 @@ def convert(root, name, tables, out, all_tape):
                     counter = 0
                 lock = p.get('locked')
                 lslot, ltarget = (lock[0], abs_target(s, lock[1])) if lock else (0xFF, 0)
-                row.append('{1u, %du, {%s}, {%s}, %du, %du, %du, %du, %du, %du, %du}' % (
+                row.append('{1u, %du, {%s}, {%s}, %du, %du, %du, %du, %du, %du, %du, %du}' % (
                     p['hp'], ', '.join('%du' % x for x in pp), ', '.join('%du' % (x + 6) for x in p['boosts']),
-                    stall, 1 if p['fainted'] else 0, status, counter, p['confusion'], lslot, ltarget))
+                    stall, 1 if p['fainted'] else 0, status, counter, p['confusion'], lslot, ltarget,
+                    p.get('mega', 0)))
             mons.append(row)
         cmds = []
         for s in range(2):
@@ -310,7 +316,7 @@ def convert(root, name, tables, out, all_tape):
         occ = []
         for s in range(2):
             sd = new_state['sides'][s]
-            row = [roster_of[s][sd['pokemon'][i]['species']] if i >= 0 else 0xFF for i in sd['active']]
+            row = [roster_of[s][name_of(sd['pokemon'][i])] if i >= 0 else 0xFF for i in sd['active']]
             occ.append('{%s}' % ', '.join('%du' % x for x in row))
         # The positions that received a Pokemon, in the reference's order
         # (each switch is logged twice, for the two audiences).
@@ -385,9 +391,9 @@ def main():
            'typedef struct df_conf_cmd {', '    uint8_t kind, move_slot, target, mega, reserve;', '} df_conf_cmd;',
            '/* present, hp, pp, stages (biased by 6), stall counter present, fainted,',
            ' * status (DFI_STATUS_*), its counter (sleep, freeze), confusion turns, the',
-           ' * locked move slot (0xFF none) and its target */',
+           ' * locked move slot (0xFF none) and its target, Mega forme */',
            'typedef struct df_conf_mon {', '    uint32_t present, hp;', '    uint8_t pp[4];', '    uint8_t stages[7];',
-           '    uint8_t stall, fainted, status, status_counter, confusion, locked_slot, locked_target;',
+           '    uint8_t stall, fainted, status, status_counter, confusion, locked_slot, locked_target, mega;',
            '} df_conf_mon;',
            '/* team step, side 0 / side 1 answered, tape slice, the turn, boundary and',
            ' * result afterwards, the picks of a team step, slot commands, the occupants',

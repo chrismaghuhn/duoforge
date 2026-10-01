@@ -1,5 +1,5 @@
 {
- "harness": 11,
+ "harness": 12,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "spec": "s5_rain_grassy_burn.json",
  "format": "gen9championsvgc2026regmc",
@@ -49,6 +49,8 @@
      "pokemon": [
       {
        "species": "Charizard",
+       "set_species": "Charizard",
+       "mega": 0,
        "hp": 185,
        "maxhp": 185,
        "status": "",
@@ -73,6 +75,8 @@
       },
       {
        "species": "Politoed",
+       "set_species": "Politoed",
+       "mega": 0,
        "hp": 197,
        "maxhp": 197,
        "status": "",
@@ -97,6 +101,8 @@
       },
       {
        "species": "Staraptor",
+       "set_species": "Staraptor",
+       "mega": 0,
        "hp": 192,
        "maxhp": 192,
        "status": "",
@@ -120,6 +126,8 @@
       },
       {
        "species": "Golisopod",
+       "set_species": "Golisopod",
+       "mega": 0,
        "hp": 182,
        "maxhp": 182,
        "status": "",
@@ -154,6 +162,8 @@
      "pokemon": [
       {
        "species": "Milotic",
+       "set_species": "Milotic",
+       "mega": 0,
        "hp": 202,
        "maxhp": 202,
        "status": "",
@@ -178,6 +188,8 @@
       },
       {
        "species": "Rillaboom",
+       "set_species": "Rillaboom",
+       "mega": 0,
        "hp": 193,
        "maxhp": 193,
        "status": "",
@@ -201,6 +213,8 @@
       },
       {
        "species": "Farigiraf",
+       "set_species": "Farigiraf",
+       "mega": 0,
        "hp": 224,
        "maxhp": 224,
        "status": "",
@@ -225,6 +239,8 @@
       },
       {
        "species": "Charizard",
+       "set_species": "Charizard",
+       "mega": 0,
        "hp": 185,
        "maxhp": 185,
        "status": "",
@@ -313,6 +329,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -337,6 +355,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -361,6 +381,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -384,6 +406,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -426,6 +450,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -450,6 +476,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 193,
         "maxhp": 193,
         "status": "",
@@ -473,6 +501,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 224,
         "maxhp": 224,
         "status": "",
@@ -497,6 +527,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -694,6 +726,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -718,6 +752,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -742,6 +778,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -765,6 +803,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -799,6 +839,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 190,
         "maxhp": 202,
         "status": "brn",
@@ -823,6 +865,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "fnt",
@@ -846,6 +890,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 224,
         "maxhp": 224,
         "status": "",
@@ -870,6 +916,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -936,6 +984,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -960,6 +1010,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -984,6 +1036,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -1007,6 +1061,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -1050,6 +1106,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 190,
         "maxhp": 202,
         "status": "brn",
@@ -1074,6 +1132,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 224,
         "maxhp": 224,
         "status": "",
@@ -1098,6 +1158,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "",
@@ -1121,6 +1183,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -1283,6 +1347,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -1307,6 +1373,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -1331,6 +1399,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -1354,6 +1424,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -1397,6 +1469,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 180,
         "maxhp": 202,
         "status": "brn",
@@ -1421,6 +1495,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 224,
         "maxhp": 224,
         "status": "",
@@ -1447,6 +1523,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "",
@@ -1470,6 +1548,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -1694,6 +1774,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -1718,6 +1800,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -1742,6 +1826,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -1765,6 +1851,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -1808,6 +1896,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 171,
         "maxhp": 202,
         "status": "brn",
@@ -1832,6 +1922,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 135,
         "maxhp": 224,
         "status": "brn",
@@ -1856,6 +1948,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "",
@@ -1879,6 +1973,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -2047,6 +2143,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -2071,6 +2169,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -2095,6 +2195,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -2118,6 +2220,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -2161,6 +2265,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 162,
         "maxhp": 202,
         "status": "brn",
@@ -2185,6 +2291,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 135,
         "maxhp": 224,
         "status": "brn",
@@ -2211,6 +2319,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "",
@@ -2234,6 +2344,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -2411,6 +2523,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -2435,6 +2549,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -2459,6 +2575,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -2482,6 +2600,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -2525,6 +2645,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 147,
         "maxhp": 202,
         "status": "brn",
@@ -2549,6 +2671,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 135,
         "maxhp": 224,
         "status": "brn",
@@ -2575,6 +2699,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "",
@@ -2598,6 +2724,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -2815,6 +2943,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -2839,6 +2969,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -2863,6 +2995,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -2886,6 +3020,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -2929,6 +3065,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 105,
         "maxhp": 202,
         "status": "brn",
@@ -2953,6 +3091,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 1,
         "maxhp": 224,
         "status": "brn",
@@ -2977,6 +3117,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "",
@@ -3000,6 +3142,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -3152,6 +3296,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -3176,6 +3322,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -3200,6 +3348,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -3223,6 +3373,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -3257,6 +3409,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 72,
         "maxhp": 202,
         "status": "brn",
@@ -3281,6 +3435,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 0,
         "maxhp": 224,
         "status": "fnt",
@@ -3305,6 +3461,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "",
@@ -3328,6 +3486,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -3431,6 +3591,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -3455,6 +3617,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -3479,6 +3643,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -3502,6 +3668,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -3545,6 +3713,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 72,
         "maxhp": 202,
         "status": "brn",
@@ -3569,6 +3739,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -3593,6 +3765,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "",
@@ -3616,6 +3790,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 0,
         "maxhp": 224,
         "status": "",
@@ -4009,6 +4185,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -4033,6 +4211,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 92,
         "maxhp": 197,
         "status": "",
@@ -4057,6 +4237,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -4080,6 +4262,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -4123,6 +4307,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 39,
         "maxhp": 202,
         "status": "brn",
@@ -4147,6 +4333,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 133,
         "maxhp": 185,
         "status": "",
@@ -4171,6 +4359,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "",
@@ -4194,6 +4384,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 0,
         "maxhp": 224,
         "status": "",
@@ -4503,6 +4695,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -4527,6 +4721,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "fnt",
@@ -4551,6 +4747,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -4574,6 +4772,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -4608,6 +4808,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 6,
         "maxhp": 202,
         "status": "brn",
@@ -4632,6 +4834,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 133,
         "maxhp": 185,
         "status": "",
@@ -4656,6 +4860,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "",
@@ -4679,6 +4885,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 0,
         "maxhp": 224,
         "status": "",
@@ -4784,6 +4992,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -4808,6 +5018,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -4831,6 +5043,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "",
@@ -4855,6 +5069,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -4898,6 +5114,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 6,
         "maxhp": 202,
         "status": "brn",
@@ -4922,6 +5140,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 133,
         "maxhp": 185,
         "status": "",
@@ -4946,6 +5166,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "",
@@ -4969,6 +5191,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 0,
         "maxhp": 224,
         "status": "",
@@ -5314,6 +5538,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -5338,6 +5564,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -5363,6 +5591,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "",
@@ -5387,6 +5617,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -5430,6 +5662,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "fnt",
@@ -5454,6 +5688,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 96,
         "maxhp": 185,
         "status": "",
@@ -5478,6 +5714,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "",
@@ -5501,6 +5739,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 0,
         "maxhp": 224,
         "status": "",
@@ -5783,6 +6023,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -5807,6 +6049,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 50,
         "maxhp": 192,
         "status": "",
@@ -5830,6 +6074,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "",
@@ -5854,6 +6100,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -5897,6 +6145,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "fnt",
@@ -5921,6 +6171,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 96,
         "maxhp": 185,
         "status": "",
@@ -5945,6 +6197,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "",
@@ -5968,6 +6222,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 0,
         "maxhp": 224,
         "status": "",
@@ -6280,6 +6536,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -6304,6 +6562,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 50,
         "maxhp": 192,
         "status": "",
@@ -6329,6 +6589,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "",
@@ -6353,6 +6615,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -6396,6 +6660,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "fnt",
@@ -6420,6 +6686,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 48,
         "maxhp": 185,
         "status": "",
@@ -6444,6 +6712,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "",
@@ -6467,6 +6737,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 0,
         "maxhp": 224,
         "status": "",
@@ -6689,6 +6961,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -6715,6 +6989,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 50,
         "maxhp": 192,
         "status": "",
@@ -6740,6 +7016,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "",
@@ -6764,6 +7042,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -6807,6 +7087,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "fnt",
@@ -6831,6 +7113,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 48,
         "maxhp": 185,
         "status": "",
@@ -6855,6 +7139,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "",
@@ -6878,6 +7164,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 0,
         "maxhp": 224,
         "status": "",
@@ -7117,6 +7405,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -7143,6 +7433,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "fnt",
@@ -7166,6 +7458,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "",
@@ -7190,6 +7484,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -7224,6 +7520,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "fnt",
@@ -7248,6 +7546,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 48,
         "maxhp": 185,
         "status": "",
@@ -7272,6 +7572,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "",
@@ -7295,6 +7597,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 0,
         "maxhp": 224,
         "status": "",
@@ -7398,6 +7702,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -7424,6 +7730,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -7448,6 +7756,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "",
@@ -7472,6 +7782,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -7514,6 +7826,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "fnt",
@@ -7538,6 +7852,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 48,
         "maxhp": 185,
         "status": "",
@@ -7562,6 +7878,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "",
@@ -7585,6 +7903,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 0,
         "maxhp": 224,
         "status": "",
@@ -7772,6 +8092,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -7796,6 +8118,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -7822,6 +8146,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "",
@@ -7846,6 +8172,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -7888,6 +8216,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "fnt",
@@ -7912,6 +8242,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 48,
         "maxhp": 185,
         "status": "",
@@ -7936,6 +8268,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "",
@@ -7959,6 +8293,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 0,
         "maxhp": 224,
         "status": "",
@@ -8153,6 +8489,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -8179,6 +8517,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -8203,6 +8543,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "",
@@ -8227,6 +8569,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -8269,6 +8613,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "fnt",
@@ -8293,6 +8639,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 48,
         "maxhp": 185,
         "status": "",
@@ -8317,6 +8665,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "",
@@ -8340,6 +8690,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 0,
         "maxhp": 224,
         "status": "",
@@ -8563,6 +8915,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -8589,6 +8943,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -8615,6 +8971,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "",
@@ -8639,6 +8997,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -8681,6 +9041,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "fnt",
@@ -8705,6 +9067,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 48,
         "maxhp": 185,
         "status": "",
@@ -8729,6 +9093,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "",
@@ -8752,6 +9118,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 0,
         "maxhp": 224,
         "status": "",
@@ -8966,6 +9334,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -8990,6 +9360,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "fnt",
@@ -9014,6 +9386,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "",
@@ -9038,6 +9412,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -9080,6 +9456,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "fnt",
@@ -9104,6 +9482,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 48,
         "maxhp": 185,
         "status": "",
@@ -9128,6 +9508,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "",
@@ -9151,6 +9533,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 0,
         "maxhp": 224,
         "status": "",
@@ -9345,6 +9729,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -9371,6 +9757,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "fnt",
@@ -9395,6 +9783,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "",
@@ -9419,6 +9809,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -9461,6 +9853,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "fnt",
@@ -9485,6 +9879,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 48,
         "maxhp": 185,
         "status": "",
@@ -9509,6 +9905,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "",
@@ -9532,6 +9930,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 0,
         "maxhp": 224,
         "status": "",
@@ -9758,6 +10158,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 132,
         "maxhp": 185,
         "status": "",
@@ -9782,6 +10184,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "fnt",
@@ -9806,6 +10210,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "",
@@ -9830,6 +10236,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -9872,6 +10280,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "fnt",
@@ -9896,6 +10306,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 48,
         "maxhp": 185,
         "status": "",
@@ -9920,6 +10332,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "",
@@ -9943,6 +10357,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 0,
         "maxhp": 224,
         "status": "",
@@ -10258,6 +10674,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 32,
         "maxhp": 185,
         "status": "",
@@ -10282,6 +10700,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "fnt",
@@ -10306,6 +10726,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "",
@@ -10330,6 +10752,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -10372,6 +10796,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "fnt",
@@ -10396,6 +10822,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 28,
         "maxhp": 185,
         "status": "",
@@ -10420,6 +10848,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "",
@@ -10443,6 +10873,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 0,
         "maxhp": 224,
         "status": "",
@@ -10643,6 +11075,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -10667,6 +11101,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "fnt",
@@ -10691,6 +11127,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "",
@@ -10715,6 +11153,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -10748,6 +11188,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "fnt",
@@ -10772,6 +11214,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 7,
         "maxhp": 185,
         "status": "",
@@ -10796,6 +11240,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "",
@@ -10819,6 +11265,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 0,
         "maxhp": 224,
         "status": "",

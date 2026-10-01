@@ -1,5 +1,5 @@
 {
- "harness": 11,
+ "harness": 12,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "spec": "s6_screens.json",
  "format": "gen9championsvgc2026regmc",
@@ -49,6 +49,8 @@
      "pokemon": [
       {
        "species": "Grimmsnarl",
+       "set_species": "Grimmsnarl",
+       "mega": 0,
        "hp": 202,
        "maxhp": 202,
        "status": "",
@@ -74,6 +76,8 @@
       },
       {
        "species": "Charizard",
+       "set_species": "Charizard",
+       "mega": 0,
        "hp": 185,
        "maxhp": 185,
        "status": "",
@@ -98,6 +102,8 @@
       },
       {
        "species": "Archaludon",
+       "set_species": "Archaludon",
+       "mega": 0,
        "hp": 197,
        "maxhp": 197,
        "status": "",
@@ -122,6 +128,8 @@
       },
       {
        "species": "Rillaboom",
+       "set_species": "Rillaboom",
+       "mega": 0,
        "hp": 193,
        "maxhp": 193,
        "status": "",
@@ -155,6 +163,8 @@
      "pokemon": [
       {
        "species": "Golisopod",
+       "set_species": "Golisopod",
+       "mega": 0,
        "hp": 182,
        "maxhp": 182,
        "status": "",
@@ -179,6 +189,8 @@
       },
       {
        "species": "Milotic",
+       "set_species": "Milotic",
+       "mega": 0,
        "hp": 202,
        "maxhp": 202,
        "status": "",
@@ -203,6 +215,8 @@
       },
       {
        "species": "Grimmsnarl",
+       "set_species": "Grimmsnarl",
+       "mega": 0,
        "hp": 202,
        "maxhp": 202,
        "status": "",
@@ -228,6 +242,8 @@
       },
       {
        "species": "Politoed",
+       "set_species": "Politoed",
+       "mega": 0,
        "hp": 197,
        "maxhp": 197,
        "status": "",
@@ -315,6 +331,8 @@
       "pokemon": [
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -340,6 +358,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -364,6 +384,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -388,6 +410,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 193,
         "maxhp": 193,
         "status": "",
@@ -430,6 +454,8 @@
       "pokemon": [
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -454,6 +480,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -478,6 +506,8 @@
        },
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -503,6 +533,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -695,6 +727,8 @@
       "pokemon": [
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 135,
         "maxhp": 202,
         "status": "",
@@ -720,6 +754,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 53,
         "maxhp": 185,
         "status": "",
@@ -744,6 +780,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -768,6 +806,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 193,
         "maxhp": 193,
         "status": "",
@@ -801,6 +841,8 @@
       "pokemon": [
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "fnt",
@@ -825,6 +867,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -849,6 +893,8 @@
        },
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -874,6 +920,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -978,6 +1026,8 @@
       "pokemon": [
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 135,
         "maxhp": 202,
         "status": "",
@@ -1003,6 +1053,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 53,
         "maxhp": 185,
         "status": "",
@@ -1027,6 +1079,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -1051,6 +1105,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 193,
         "maxhp": 193,
         "status": "",
@@ -1094,6 +1150,8 @@
       "pokemon": [
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -1119,6 +1177,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -1143,6 +1203,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "",
@@ -1167,6 +1229,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -1481,6 +1545,8 @@
       "pokemon": [
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 135,
         "maxhp": 202,
         "status": "",
@@ -1506,6 +1572,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "fnt",
@@ -1530,6 +1598,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -1554,6 +1624,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 193,
         "maxhp": 193,
         "status": "",
@@ -1587,6 +1659,8 @@
       "pokemon": [
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -1612,6 +1686,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -1636,6 +1712,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "",
@@ -1660,6 +1738,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -1764,6 +1844,8 @@
       "pokemon": [
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 135,
         "maxhp": 202,
         "status": "",
@@ -1789,6 +1871,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -1813,6 +1897,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -1837,6 +1923,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 193,
         "maxhp": 193,
         "status": "",
@@ -1880,6 +1968,8 @@
       "pokemon": [
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -1905,6 +1995,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -1929,6 +2021,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "",
@@ -1953,6 +2047,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -2345,6 +2441,8 @@
       "pokemon": [
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 91,
         "maxhp": 202,
         "status": "",
@@ -2370,6 +2468,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 174,
         "maxhp": 197,
         "status": "",
@@ -2394,6 +2494,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -2418,6 +2520,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 193,
         "maxhp": 193,
         "status": "",
@@ -2461,6 +2565,8 @@
       "pokemon": [
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -2486,6 +2592,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -2510,6 +2618,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "",
@@ -2534,6 +2644,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -3203,6 +3315,8 @@
       "pokemon": [
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 91,
         "maxhp": 202,
         "status": "",
@@ -3228,6 +3342,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 161,
         "maxhp": 197,
         "status": "",
@@ -3252,6 +3368,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -3276,6 +3394,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 193,
         "maxhp": 193,
         "status": "",
@@ -3319,6 +3439,8 @@
       "pokemon": [
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 138,
         "maxhp": 202,
         "status": "",
@@ -3344,6 +3466,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 195,
         "maxhp": 202,
         "status": "",
@@ -3368,6 +3492,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "",
@@ -3392,6 +3518,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -3927,6 +4055,8 @@
       "pokemon": [
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 63,
         "maxhp": 202,
         "status": "",
@@ -3952,6 +4082,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 148,
         "maxhp": 197,
         "status": "",
@@ -3976,6 +4108,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -4000,6 +4134,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 193,
         "maxhp": 193,
         "status": "",
@@ -4043,6 +4179,8 @@
       "pokemon": [
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 138,
         "maxhp": 202,
         "status": "",
@@ -4068,6 +4206,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 98,
         "maxhp": 202,
         "status": "",
@@ -4092,6 +4232,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "",
@@ -4116,6 +4258,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -4641,6 +4785,8 @@
       "pokemon": [
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 63,
         "maxhp": 202,
         "status": "",
@@ -4666,6 +4812,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 140,
         "maxhp": 197,
         "status": "",
@@ -4690,6 +4838,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -4714,6 +4864,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 193,
         "maxhp": 193,
         "status": "",
@@ -4757,6 +4909,8 @@
       "pokemon": [
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 135,
         "maxhp": 202,
         "status": "",
@@ -4782,6 +4936,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 90,
         "maxhp": 202,
         "status": "",
@@ -4806,6 +4962,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "",
@@ -4830,6 +4988,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -5196,6 +5356,8 @@
       "pokemon": [
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 36,
         "maxhp": 202,
         "status": "",
@@ -5221,6 +5383,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 127,
         "maxhp": 197,
         "status": "",
@@ -5245,6 +5409,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -5269,6 +5435,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 193,
         "maxhp": 193,
         "status": "",
@@ -5312,6 +5480,8 @@
       "pokemon": [
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 135,
         "maxhp": 202,
         "status": "",
@@ -5337,6 +5507,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 90,
         "maxhp": 202,
         "status": "",
@@ -5361,6 +5533,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "",
@@ -5385,6 +5559,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -5750,6 +5926,8 @@
       "pokemon": [
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 17,
         "maxhp": 202,
         "status": "",
@@ -5775,6 +5953,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 119,
         "maxhp": 197,
         "status": "",
@@ -5799,6 +5979,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -5823,6 +6005,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 193,
         "maxhp": 193,
         "status": "",
@@ -5866,6 +6050,8 @@
       "pokemon": [
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 135,
         "maxhp": 202,
         "status": "",
@@ -5891,6 +6077,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 90,
         "maxhp": 202,
         "status": "",
@@ -5915,6 +6103,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "",
@@ -5939,6 +6129,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -6259,6 +6451,8 @@
       "pokemon": [
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "fnt",
@@ -6284,6 +6478,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 110,
         "maxhp": 197,
         "status": "",
@@ -6308,6 +6504,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -6332,6 +6530,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 193,
         "maxhp": 193,
         "status": "",
@@ -6365,6 +6565,8 @@
       "pokemon": [
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 135,
         "maxhp": 202,
         "status": "",
@@ -6390,6 +6592,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 90,
         "maxhp": 202,
         "status": "",
@@ -6414,6 +6618,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "",
@@ -6438,6 +6644,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -6503,6 +6711,8 @@
       "pokemon": [
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 193,
         "maxhp": 193,
         "status": "",
@@ -6526,6 +6736,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 110,
         "maxhp": 197,
         "status": "",
@@ -6550,6 +6762,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -6574,6 +6788,8 @@
        },
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -6619,6 +6835,8 @@
       "pokemon": [
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 135,
         "maxhp": 202,
         "status": "",
@@ -6644,6 +6862,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 90,
         "maxhp": 202,
         "status": "",
@@ -6668,6 +6888,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "",
@@ -6692,6 +6914,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -6934,6 +7158,8 @@
       "pokemon": [
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 183,
         "maxhp": 193,
         "status": "",
@@ -6957,6 +7183,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 110,
         "maxhp": 197,
         "status": "",
@@ -6981,6 +7209,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -7005,6 +7235,8 @@
        },
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -7050,6 +7282,8 @@
       "pokemon": [
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 75,
         "maxhp": 202,
         "status": "",
@@ -7075,6 +7309,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 90,
         "maxhp": 202,
         "status": "",
@@ -7099,6 +7335,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "",
@@ -7123,6 +7361,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -7375,6 +7615,8 @@
       "pokemon": [
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 173,
         "maxhp": 193,
         "status": "",
@@ -7398,6 +7640,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 102,
         "maxhp": 197,
         "status": "",
@@ -7422,6 +7666,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -7446,6 +7692,8 @@
        },
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -7491,6 +7739,8 @@
       "pokemon": [
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 16,
         "maxhp": 202,
         "status": "",
@@ -7516,6 +7766,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 90,
         "maxhp": 202,
         "status": "",
@@ -7540,6 +7792,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "",
@@ -7564,6 +7818,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -7752,6 +8008,8 @@
       "pokemon": [
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 158,
         "maxhp": 193,
         "status": "",
@@ -7775,6 +8033,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 88,
         "maxhp": 197,
         "status": "",
@@ -7799,6 +8059,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -7823,6 +8085,8 @@
        },
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -7868,6 +8132,8 @@
       "pokemon": [
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 16,
         "maxhp": 202,
         "status": "",
@@ -7893,6 +8159,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 90,
         "maxhp": 202,
         "status": "",
@@ -7917,6 +8185,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "",
@@ -7941,6 +8211,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -8109,6 +8381,8 @@
       "pokemon": [
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 143,
         "maxhp": 193,
         "status": "",
@@ -8132,6 +8406,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 88,
         "maxhp": 197,
         "status": "",
@@ -8156,6 +8432,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -8180,6 +8458,8 @@
        },
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -8215,6 +8495,8 @@
       "pokemon": [
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "fnt",
@@ -8240,6 +8522,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 90,
         "maxhp": 202,
         "status": "",
@@ -8264,6 +8548,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "",
@@ -8288,6 +8574,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -8353,6 +8641,8 @@
       "pokemon": [
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 143,
         "maxhp": 193,
         "status": "",
@@ -8376,6 +8666,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 88,
         "maxhp": 197,
         "status": "",
@@ -8400,6 +8692,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -8424,6 +8718,8 @@
        },
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -8468,6 +8764,8 @@
       "pokemon": [
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -8492,6 +8790,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 90,
         "maxhp": 202,
         "status": "",
@@ -8516,6 +8816,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "",
@@ -8540,6 +8842,8 @@
        },
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -8774,6 +9078,8 @@
       "pokemon": [
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "fnt",
@@ -8797,6 +9103,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 49,
         "maxhp": 197,
         "status": "",
@@ -8821,6 +9129,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -8845,6 +9155,8 @@
        },
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -8889,6 +9201,8 @@
       "pokemon": [
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 27,
         "maxhp": 197,
         "status": "",
@@ -8913,6 +9227,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 90,
         "maxhp": 202,
         "status": "",
@@ -8937,6 +9253,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "",
@@ -8961,6 +9279,8 @@
        },
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -9163,6 +9483,8 @@
       "pokemon": [
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 0,
         "maxhp": 193,
         "status": "fnt",
@@ -9186,6 +9508,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "",
@@ -9210,6 +9534,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -9234,6 +9560,8 @@
        },
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -9269,6 +9597,8 @@
       "pokemon": [
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 27,
         "maxhp": 197,
         "status": "",
@@ -9293,6 +9623,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 90,
         "maxhp": 202,
         "status": "",
@@ -9317,6 +9649,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "",
@@ -9341,6 +9675,8 @@
        },
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",

@@ -1,5 +1,5 @@
 {
- "harness": 11,
+ "harness": 12,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "spec": "s3_switch_order.json",
  "format": "gen9championsvgc2026regmc",
@@ -49,6 +49,8 @@
      "pokemon": [
       {
        "species": "Gholdengo",
+       "set_species": "Gholdengo",
+       "mega": 0,
        "hp": 179,
        "maxhp": 179,
        "status": "",
@@ -73,6 +75,8 @@
       },
       {
        "species": "Ceruledge",
+       "set_species": "Ceruledge",
+       "mega": 0,
        "hp": 181,
        "maxhp": 181,
        "status": "",
@@ -97,6 +101,8 @@
       },
       {
        "species": "Rillaboom",
+       "set_species": "Rillaboom",
+       "mega": 0,
        "hp": 193,
        "maxhp": 193,
        "status": "",
@@ -120,6 +126,8 @@
       },
       {
        "species": "Archaludon",
+       "set_species": "Archaludon",
+       "mega": 0,
        "hp": 197,
        "maxhp": 197,
        "status": "",
@@ -154,6 +162,8 @@
      "pokemon": [
       {
        "species": "Golisopod",
+       "set_species": "Golisopod",
+       "mega": 0,
        "hp": 182,
        "maxhp": 182,
        "status": "",
@@ -178,6 +188,8 @@
       },
       {
        "species": "Raichu",
+       "set_species": "Raichu",
+       "mega": 0,
        "hp": 137,
        "maxhp": 137,
        "status": "",
@@ -202,6 +214,8 @@
       },
       {
        "species": "Farigiraf",
+       "set_species": "Farigiraf",
+       "mega": 0,
        "hp": 224,
        "maxhp": 224,
        "status": "",
@@ -226,6 +240,8 @@
       },
       {
        "species": "Grimmsnarl",
+       "set_species": "Grimmsnarl",
+       "mega": 0,
        "hp": 202,
        "maxhp": 202,
        "status": "",
@@ -311,6 +327,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 179,
         "maxhp": 179,
         "status": "",
@@ -335,6 +353,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -359,6 +379,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 193,
         "maxhp": 193,
         "status": "",
@@ -382,6 +404,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -425,6 +449,8 @@
       "pokemon": [
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -449,6 +475,8 @@
        },
        {
         "species": "Raichu",
+        "set_species": "Raichu",
+        "mega": 0,
         "hp": 137,
         "maxhp": 137,
         "status": "",
@@ -473,6 +501,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 224,
         "maxhp": 224,
         "status": "",
@@ -497,6 +527,8 @@
        },
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -570,6 +602,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 179,
         "maxhp": 179,
         "status": "",
@@ -594,6 +628,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -618,6 +654,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 193,
         "maxhp": 193,
         "status": "",
@@ -641,6 +679,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -684,6 +724,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 224,
         "maxhp": 224,
         "status": "",
@@ -708,6 +750,8 @@
        },
        {
         "species": "Raichu",
+        "set_species": "Raichu",
+        "mega": 0,
         "hp": 137,
         "maxhp": 137,
         "status": "",
@@ -732,6 +776,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -756,6 +802,8 @@
        },
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -865,6 +913,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 179,
         "maxhp": 179,
         "status": "",
@@ -889,6 +939,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -913,6 +965,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 193,
         "maxhp": 193,
         "status": "",
@@ -936,6 +990,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -979,6 +1035,8 @@
       "pokemon": [
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 155,
         "maxhp": 182,
         "status": "",
@@ -1003,6 +1061,8 @@
        },
        {
         "species": "Raichu",
+        "set_species": "Raichu",
+        "mega": 0,
         "hp": 137,
         "maxhp": 137,
         "status": "",
@@ -1029,6 +1089,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 224,
         "maxhp": 224,
         "status": "",
@@ -1053,6 +1115,8 @@
        },
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -1194,6 +1258,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 77,
         "maxhp": 179,
         "status": "",
@@ -1218,6 +1284,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -1242,6 +1310,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 193,
         "maxhp": 193,
         "status": "",
@@ -1265,6 +1335,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -1299,6 +1371,8 @@
       "pokemon": [
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 155,
         "maxhp": 182,
         "status": "",
@@ -1323,6 +1397,8 @@
        },
        {
         "species": "Raichu",
+        "set_species": "Raichu",
+        "mega": 0,
         "hp": 0,
         "maxhp": 137,
         "status": "fnt",
@@ -1347,6 +1423,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 224,
         "maxhp": 224,
         "status": "",
@@ -1371,6 +1449,8 @@
        },
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -1436,6 +1516,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 77,
         "maxhp": 179,
         "status": "",
@@ -1460,6 +1542,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -1484,6 +1568,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 193,
         "maxhp": 193,
         "status": "",
@@ -1507,6 +1593,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -1550,6 +1638,8 @@
       "pokemon": [
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 155,
         "maxhp": 182,
         "status": "",
@@ -1574,6 +1664,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 224,
         "maxhp": 224,
         "status": "",
@@ -1598,6 +1690,8 @@
        },
        {
         "species": "Raichu",
+        "set_species": "Raichu",
+        "mega": 0,
         "hp": 0,
         "maxhp": 137,
         "status": "",
@@ -1622,6 +1716,8 @@
        },
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -1742,6 +1838,8 @@
       "pokemon": [
        {
         "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
         "hp": 0,
         "maxhp": 179,
         "status": "fnt",
@@ -1766,6 +1864,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -1790,6 +1890,8 @@
        },
        {
         "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
         "hp": 193,
         "maxhp": 193,
         "status": "",
@@ -1813,6 +1915,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -1847,6 +1951,8 @@
       "pokemon": [
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 155,
         "maxhp": 182,
         "status": "",
@@ -1871,6 +1977,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 224,
         "maxhp": 224,
         "status": "",
@@ -1895,6 +2003,8 @@
        },
        {
         "species": "Raichu",
+        "set_species": "Raichu",
+        "mega": 0,
         "hp": 0,
         "maxhp": 137,
         "status": "",
@@ -1919,6 +2029,8 @@
        },
        {
         "species": "Grimmsnarl",
+        "set_species": "Grimmsnarl",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",

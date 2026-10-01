@@ -1,5 +1,5 @@
 {
- "harness": 11,
+ "harness": 12,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "spec": "s4_confusion_freeze.json",
  "format": "gen9championsvgc2026regmc",
@@ -49,6 +49,8 @@
      "pokemon": [
       {
        "species": "Charizard",
+       "set_species": "Charizard",
+       "mega": 0,
        "hp": 185,
        "maxhp": 185,
        "status": "",
@@ -73,6 +75,8 @@
       },
       {
        "species": "Politoed",
+       "set_species": "Politoed",
+       "mega": 0,
        "hp": 197,
        "maxhp": 197,
        "status": "",
@@ -97,6 +101,8 @@
       },
       {
        "species": "Milotic",
+       "set_species": "Milotic",
+       "mega": 0,
        "hp": 202,
        "maxhp": 202,
        "status": "",
@@ -121,6 +127,8 @@
       },
       {
        "species": "Golisopod",
+       "set_species": "Golisopod",
+       "mega": 0,
        "hp": 182,
        "maxhp": 182,
        "status": "",
@@ -155,6 +163,8 @@
      "pokemon": [
       {
        "species": "Milotic",
+       "set_species": "Milotic",
+       "mega": 0,
        "hp": 202,
        "maxhp": 202,
        "status": "",
@@ -179,6 +189,8 @@
       },
       {
        "species": "Farigiraf",
+       "set_species": "Farigiraf",
+       "mega": 0,
        "hp": 227,
        "maxhp": 227,
        "status": "",
@@ -203,6 +215,8 @@
       },
       {
        "species": "Archaludon",
+       "set_species": "Archaludon",
+       "mega": 0,
        "hp": 197,
        "maxhp": 197,
        "status": "",
@@ -227,6 +241,8 @@
       },
       {
        "species": "Ceruledge",
+       "set_species": "Ceruledge",
+       "mega": 0,
        "hp": 181,
        "maxhp": 181,
        "status": "",
@@ -312,6 +328,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -336,6 +354,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -360,6 +380,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -384,6 +406,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -427,6 +451,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -451,6 +477,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -475,6 +503,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -499,6 +529,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -632,6 +664,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -656,6 +690,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -680,6 +716,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -704,6 +742,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -747,6 +787,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 142,
         "maxhp": 202,
         "status": "",
@@ -773,6 +815,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -799,6 +843,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -823,6 +869,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -961,6 +1009,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -985,6 +1035,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -1009,6 +1061,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -1033,6 +1087,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -1076,6 +1132,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 67,
         "maxhp": 202,
         "status": "",
@@ -1102,6 +1160,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -1128,6 +1188,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -1152,6 +1214,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -1302,6 +1366,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -1326,6 +1392,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -1350,6 +1418,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -1374,6 +1444,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -1417,6 +1489,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 6,
         "maxhp": 202,
         "status": "",
@@ -1443,6 +1517,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 185,
         "maxhp": 227,
         "status": "",
@@ -1467,6 +1543,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -1491,6 +1569,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -1593,6 +1673,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -1617,6 +1699,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -1641,6 +1725,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -1665,6 +1751,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -1708,6 +1796,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 6,
         "maxhp": 202,
         "status": "",
@@ -1734,6 +1824,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 185,
         "maxhp": 227,
         "status": "",
@@ -1760,6 +1852,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -1784,6 +1878,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -1981,6 +2077,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -2005,6 +2103,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -2029,6 +2129,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -2053,6 +2155,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -2087,6 +2191,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "fnt",
@@ -2111,6 +2217,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 85,
         "maxhp": 227,
         "status": "",
@@ -2135,6 +2243,8 @@
        },
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -2159,6 +2269,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -2224,6 +2336,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -2248,6 +2362,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -2272,6 +2388,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -2296,6 +2414,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -2339,6 +2459,8 @@
       "pokemon": [
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 197,
         "maxhp": 197,
         "status": "",
@@ -2363,6 +2485,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 85,
         "maxhp": 227,
         "status": "",
@@ -2387,6 +2511,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -2411,6 +2537,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -2648,6 +2776,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 163,
         "maxhp": 185,
         "status": "",
@@ -2672,6 +2802,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 177,
         "maxhp": 197,
         "status": "",
@@ -2696,6 +2828,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -2720,6 +2854,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -2763,6 +2899,8 @@
       "pokemon": [
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 142,
         "maxhp": 197,
         "status": "",
@@ -2789,6 +2927,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 85,
         "maxhp": 227,
         "status": "",
@@ -2815,6 +2955,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -2839,6 +2981,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -3051,6 +3195,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 138,
         "maxhp": 185,
         "status": "",
@@ -3075,6 +3221,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 158,
         "maxhp": 197,
         "status": "",
@@ -3099,6 +3247,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -3123,6 +3273,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -3166,6 +3318,8 @@
       "pokemon": [
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 142,
         "maxhp": 197,
         "status": "",
@@ -3192,6 +3346,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 85,
         "maxhp": 227,
         "status": "",
@@ -3218,6 +3374,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -3242,6 +3400,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -3496,6 +3656,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 115,
         "maxhp": 185,
         "status": "",
@@ -3520,6 +3682,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 137,
         "maxhp": 197,
         "status": "",
@@ -3544,6 +3708,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -3568,6 +3734,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -3611,6 +3779,8 @@
       "pokemon": [
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 115,
         "maxhp": 197,
         "status": "",
@@ -3637,6 +3807,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 68,
         "maxhp": 227,
         "status": "",
@@ -3661,6 +3833,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -3685,6 +3859,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -3940,6 +4116,8 @@
       "pokemon": [
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "fnt",
@@ -3964,6 +4142,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 117,
         "maxhp": 197,
         "status": "",
@@ -3988,6 +4168,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -4012,6 +4194,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -4046,6 +4230,8 @@
       "pokemon": [
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 94,
         "maxhp": 197,
         "status": "",
@@ -4070,6 +4256,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 54,
         "maxhp": 227,
         "status": "",
@@ -4094,6 +4282,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -4118,6 +4308,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -4183,6 +4375,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 202,
         "maxhp": 202,
         "status": "",
@@ -4207,6 +4401,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 117,
         "maxhp": 197,
         "status": "",
@@ -4231,6 +4427,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -4255,6 +4453,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -4298,6 +4498,8 @@
       "pokemon": [
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 94,
         "maxhp": 197,
         "status": "",
@@ -4322,6 +4524,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 54,
         "maxhp": 227,
         "status": "",
@@ -4346,6 +4550,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -4370,6 +4576,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -4596,6 +4804,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 140,
         "maxhp": 202,
         "status": "",
@@ -4620,6 +4830,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 96,
         "maxhp": 197,
         "status": "",
@@ -4644,6 +4856,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -4668,6 +4882,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -4711,6 +4927,8 @@
       "pokemon": [
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 94,
         "maxhp": 197,
         "status": "",
@@ -4735,6 +4953,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 40,
         "maxhp": 227,
         "status": "",
@@ -4759,6 +4979,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -4783,6 +5005,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -5009,6 +5233,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 72,
         "maxhp": 202,
         "status": "",
@@ -5033,6 +5259,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 75,
         "maxhp": 197,
         "status": "",
@@ -5057,6 +5285,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -5081,6 +5311,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -5124,6 +5356,8 @@
       "pokemon": [
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 94,
         "maxhp": 197,
         "status": "",
@@ -5148,6 +5382,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 28,
         "maxhp": 227,
         "status": "",
@@ -5172,6 +5408,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -5196,6 +5434,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -5421,6 +5661,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 2,
         "maxhp": 202,
         "status": "",
@@ -5445,6 +5687,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 53,
         "maxhp": 197,
         "status": "",
@@ -5469,6 +5713,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -5493,6 +5739,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -5536,6 +5784,8 @@
       "pokemon": [
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 94,
         "maxhp": 197,
         "status": "",
@@ -5560,6 +5810,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 16,
         "maxhp": 227,
         "status": "",
@@ -5584,6 +5836,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -5608,6 +5862,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -5762,6 +6018,8 @@
       "pokemon": [
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "fnt",
@@ -5786,6 +6044,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 53,
         "maxhp": 197,
         "status": "",
@@ -5812,6 +6072,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -5836,6 +6098,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -5870,6 +6134,8 @@
       "pokemon": [
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 94,
         "maxhp": 197,
         "status": "",
@@ -5894,6 +6160,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 16,
         "maxhp": 227,
         "status": "",
@@ -5918,6 +6186,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -5942,6 +6212,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -6007,6 +6279,8 @@
       "pokemon": [
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -6031,6 +6305,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 53,
         "maxhp": 197,
         "status": "",
@@ -6057,6 +6333,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -6081,6 +6359,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -6124,6 +6404,8 @@
       "pokemon": [
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 94,
         "maxhp": 197,
         "status": "",
@@ -6148,6 +6430,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 16,
         "maxhp": 227,
         "status": "",
@@ -6172,6 +6456,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -6196,6 +6482,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -6343,6 +6631,8 @@
       "pokemon": [
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -6369,6 +6659,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 53,
         "maxhp": 197,
         "status": "",
@@ -6395,6 +6687,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -6419,6 +6713,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -6462,6 +6758,8 @@
       "pokemon": [
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 94,
         "maxhp": 197,
         "status": "",
@@ -6486,6 +6784,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 16,
         "maxhp": 227,
         "status": "",
@@ -6510,6 +6810,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -6534,6 +6836,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -6706,6 +7010,8 @@
       "pokemon": [
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -6732,6 +7038,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 33,
         "maxhp": 197,
         "status": "",
@@ -6756,6 +7064,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -6780,6 +7090,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -6823,6 +7135,8 @@
       "pokemon": [
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 94,
         "maxhp": 197,
         "status": "",
@@ -6847,6 +7161,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 16,
         "maxhp": 227,
         "status": "",
@@ -6871,6 +7187,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -6895,6 +7213,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -7091,6 +7411,8 @@
       "pokemon": [
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 98,
         "maxhp": 182,
         "status": "",
@@ -7115,6 +7437,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 33,
         "maxhp": 197,
         "status": "",
@@ -7141,6 +7465,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -7165,6 +7491,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -7208,6 +7536,8 @@
       "pokemon": [
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 94,
         "maxhp": 197,
         "status": "",
@@ -7232,6 +7562,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 16,
         "maxhp": 227,
         "status": "",
@@ -7256,6 +7588,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -7280,6 +7614,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -7445,6 +7781,8 @@
       "pokemon": [
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 98,
         "maxhp": 182,
         "status": "",
@@ -7471,6 +7809,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 11,
         "maxhp": 197,
         "status": "",
@@ -7495,6 +7835,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -7519,6 +7861,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -7562,6 +7906,8 @@
       "pokemon": [
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 94,
         "maxhp": 197,
         "status": "",
@@ -7586,6 +7932,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 16,
         "maxhp": 227,
         "status": "",
@@ -7610,6 +7958,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -7634,6 +7984,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -7781,6 +8133,8 @@
       "pokemon": [
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 98,
         "maxhp": 182,
         "status": "",
@@ -7807,6 +8161,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 11,
         "maxhp": 197,
         "status": "",
@@ -7833,6 +8189,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -7857,6 +8215,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -7900,6 +8260,8 @@
       "pokemon": [
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 94,
         "maxhp": 197,
         "status": "",
@@ -7924,6 +8286,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 16,
         "maxhp": 227,
         "status": "",
@@ -7948,6 +8312,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -7972,6 +8338,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -8176,6 +8544,8 @@
       "pokemon": [
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 7,
         "maxhp": 182,
         "status": "",
@@ -8200,6 +8570,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 11,
         "maxhp": 197,
         "status": "",
@@ -8226,6 +8598,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -8250,6 +8624,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -8293,6 +8669,8 @@
       "pokemon": [
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 94,
         "maxhp": 197,
         "status": "",
@@ -8317,6 +8695,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 16,
         "maxhp": 227,
         "status": "",
@@ -8341,6 +8721,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -8365,6 +8747,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -8530,6 +8914,8 @@
       "pokemon": [
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 7,
         "maxhp": 182,
         "status": "",
@@ -8556,6 +8942,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "fnt",
@@ -8580,6 +8968,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -8604,6 +8994,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -8646,6 +9038,8 @@
       "pokemon": [
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 94,
         "maxhp": 197,
         "status": "",
@@ -8670,6 +9064,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 16,
         "maxhp": 227,
         "status": "",
@@ -8694,6 +9090,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -8718,6 +9116,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",
@@ -8878,6 +9278,8 @@
       "pokemon": [
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "",
@@ -8902,6 +9304,8 @@
        },
        {
         "species": "Politoed",
+        "set_species": "Politoed",
+        "mega": 0,
         "hp": 0,
         "maxhp": 197,
         "status": "fnt",
@@ -8926,6 +9330,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -8950,6 +9356,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -8984,6 +9392,8 @@
       "pokemon": [
        {
         "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
         "hp": 94,
         "maxhp": 197,
         "status": "",
@@ -9008,6 +9418,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 16,
         "maxhp": 227,
         "status": "",
@@ -9032,6 +9444,8 @@
        },
        {
         "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
         "hp": 0,
         "maxhp": 202,
         "status": "",
@@ -9056,6 +9470,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 181,
         "maxhp": 181,
         "status": "",

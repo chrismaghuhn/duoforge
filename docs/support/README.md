@@ -28,14 +28,15 @@ This is a status manifest, **not** a mechanics certificate. "IMPLEMENTED + TESTE
 | Switching, fainting, replacement, win rule and TERMINAL | **IMPLEMENTED + TESTED** for development teams; 5 of the 12 recorded reference battles play to the end (decision 0006 section 4.2) |
 | Burn, paralysis, sleep and freeze (Champions variants), flinch, confusion | **IMPLEMENTED + TESTED** for development teams; 6 recorded reference battles (decision 0006 section 4.3) |
 | Entry abilities Drizzle, Grassy Surge and Intimidate; rain; Grassy Terrain's heal; the ordered residual phase | **IMPLEMENTED + TESTED** for development teams; 3 recorded reference battles (decision 0006 section 4.4) |
-| Drought and sun | **IMPLEMENTED, NOT REACHABLE** until Mega Evolution (step 11) |
+| Drought and sun | **IMPLEMENTED + TESTED** since step 11 (Mega Charizard Y) |
 | Tailwind, Reflect, Light Screen, Trick Room | **IMPLEMENTED + TESTED** for development teams; 3 recorded reference battles (decision 0006 section 4.5) |
 | Stamina, Competitive, Flash Fire (absorb), Lightning Rod, Good as Gold, Armor Tail, Prankster, Blaze | **IMPLEMENTED + TESTED** for development teams; 3 recorded reference battles (decision 0006 section 4.6) |
 | Leftovers, Sitrus Berry, Grassy Seed, Life Orb, Mystic Water, Light Clay | **IMPLEMENTED + TESTED** for development teams; 5 recorded reference battles (decision 0006 section 4.7) |
 | Recoil (Wood Hammer, Brave Bird), drain (Bitter Blade, Leech Life), self-drops (Close Combat, Make It Rain), Miracle Seed, Grassy Terrain's Grass boost, Flash Fire's boost | **IMPLEMENTED + TESTED** for development teams; 2 recorded reference battles (decision 0006 section 4.8) |
 | Weather Ball, Grass Knot, Grassy Glide, Fake Out (disabled after the first move action) | **IMPLEMENTED + TESTED** for development teams; 2 recorded reference battles; the request is compared with the reference's after every step (decision 0006 section 4.9) |
 | Electro Shot (charge, rain, locked move in the request) | **IMPLEMENTED + TESTED** for development teams; 1 recorded reference battle (decision 0006 section 4.10) |
-| Mega Stones, Contrary, No Guard, Tough Claws (Mega formes), Emergency Exit, Parting Shot, Mega Evolution | **UNSUPPORTED** (`E_UNSUPPORTED`, atomic; steps 11 and 12) |
+| Mega Evolution with the four stones, Contrary, No Guard, Tough Claws | **IMPLEMENTED + TESTED**; 3 recorded reference battles (decision 0006 section 4.11) |
+| Emergency Exit, Parting Shot (pivots) | **UNSUPPORTED** (`E_UNSUPPORTED`, atomic; step 12) |
 
 State snapshots and decodability are foundation evidence, **not proof that unimplemented future mechanics restore correctly**.
 

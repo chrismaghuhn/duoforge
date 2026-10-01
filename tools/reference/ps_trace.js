@@ -39,7 +39,7 @@ const fs = require('fs');
 const path = require('path');
 
 const PIN = 'b2cb775b0616115b775534eaeff50300e1fc81fc';
-const HARNESS_VERSION = 11;
+const HARNESS_VERSION = 12;
 
 // Stack frame name -> site. The first match in stack order wins.
 const SITE_RULES = [
@@ -245,6 +245,8 @@ function main() {
             active: side.active.map((p) => (p ? side.pokemon.indexOf(p) : -1)),
             pokemon: side.pokemon.map((p) => ({
                 species: p.species.name,
+                set_species: p.set.species,
+                mega: p.species.isMega ? 1 : 0,
                 hp: p.hp,
                 maxhp: p.maxhp,
                 status: p.status || '',
@@ -274,16 +276,22 @@ function main() {
     // A planned "move N [T]": a move without PP falls back to the first move
     // that has PP (Struggle when none has), a target is kept only for a move
     // that takes one, and a move that takes one without a target aims at 1.
+    let megaTaken = false;
     const planMove = (p, part) => {
         const w = part.split(' ');
         if (w[0] !== 'move') return part;
         if (p.getLockedMove()) return 'move 1'; // the only move, no target: the stored one is used
+        // "mega" is kept while the Pokemon can still Mega Evolve and no other
+        // slot of this choice declared it.
+        const mega = w[w.length - 1] === 'mega' && p.canMegaEvo && !megaTaken ? ' mega' : '';
+        if (w[w.length - 1] === 'mega') w.pop();
+        if (mega) megaTaken = true;
         const usable = p.moveSlots.map((m, i) => (m.pp > 0 && !m.disabled ? i : -1)).filter((i) => i >= 0);
         if (!usable.length) return 'move 1';
         let n = Number(w[1]) - 1;
         if (!usable.includes(n)) n = usable[0];
         const takes = battle.actions.targetTypeChoices(battle.dex.moves.get(p.moveSlots[n].id).target);
-        return `move ${n + 1}` + (takes ? ' ' + (w[2] || '1') : '');
+        return `move ${n + 1}` + (takes ? ' ' + (w[2] || '1') : '') + mega;
     };
     const choose = (id, text) => {
         if (!battle[id].requestState) throw new Error(`${id} has no request for "${text}"`);
@@ -328,6 +336,7 @@ function main() {
                     // the other slot already takes) goes to the first standing
                     // reserve, or becomes "move 1 1" when none is left.
                     const taken = new Set();
+                    megaTaken = false;
                     text = side.active.map((p, k) => {
                         if (!p || p.fainted) return 'pass';
                         const w = raw[k].split(' ');

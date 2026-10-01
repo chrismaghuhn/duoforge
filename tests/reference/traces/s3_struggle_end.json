@@ -1,5 +1,5 @@
 {
- "harness": 11,
+ "harness": 12,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "spec": "s3_struggle_end.json",
  "format": "gen9championsvgc2026regmc",
@@ -49,6 +49,8 @@
      "pokemon": [
       {
        "species": "Staraptor",
+       "set_species": "Staraptor",
+       "mega": 0,
        "hp": 192,
        "maxhp": 192,
        "status": "",
@@ -72,6 +74,8 @@
       },
       {
        "species": "Charizard",
+       "set_species": "Charizard",
+       "mega": 0,
        "hp": 185,
        "maxhp": 185,
        "status": "",
@@ -95,6 +99,8 @@
       },
       {
        "species": "Farigiraf",
+       "set_species": "Farigiraf",
+       "mega": 0,
        "hp": 227,
        "maxhp": 227,
        "status": "",
@@ -118,6 +124,8 @@
       },
       {
        "species": "Ceruledge",
+       "set_species": "Ceruledge",
+       "mega": 0,
        "hp": 182,
        "maxhp": 182,
        "status": "",
@@ -151,6 +159,8 @@
      "pokemon": [
       {
        "species": "Staraptor",
+       "set_species": "Staraptor",
+       "mega": 0,
        "hp": 192,
        "maxhp": 192,
        "status": "",
@@ -174,6 +184,8 @@
       },
       {
        "species": "Charizard",
+       "set_species": "Charizard",
+       "mega": 0,
        "hp": 185,
        "maxhp": 185,
        "status": "",
@@ -197,6 +209,8 @@
       },
       {
        "species": "Farigiraf",
+       "set_species": "Farigiraf",
+       "mega": 0,
        "hp": 227,
        "maxhp": 227,
        "status": "",
@@ -220,6 +234,8 @@
       },
       {
        "species": "Golisopod",
+       "set_species": "Golisopod",
+       "mega": 0,
        "hp": 182,
        "maxhp": 182,
        "status": "",
@@ -457,6 +473,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -480,6 +498,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -503,6 +523,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -526,6 +548,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -566,6 +590,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -589,6 +615,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -612,6 +640,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -635,6 +665,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -1454,6 +1486,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -1477,6 +1511,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -1502,6 +1538,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -1525,6 +1563,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -1565,6 +1605,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -1590,6 +1632,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -1615,6 +1659,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -1638,6 +1684,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -2367,6 +2415,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -2392,6 +2442,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -2417,6 +2469,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -2440,6 +2494,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -2480,6 +2536,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -2503,6 +2561,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -2526,6 +2586,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -2549,6 +2611,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -3146,6 +3210,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -3169,6 +3235,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -3192,6 +3260,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -3215,6 +3285,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -3255,6 +3327,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -3280,6 +3354,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -3303,6 +3379,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -3326,6 +3404,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -4152,6 +4232,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -4177,6 +4259,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -4202,6 +4286,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -4225,6 +4311,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -4265,6 +4353,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -4290,6 +4380,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -4313,6 +4405,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -4336,6 +4430,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -5065,6 +5161,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -5088,6 +5186,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -5113,6 +5213,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -5136,6 +5238,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -5176,6 +5280,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -5199,6 +5305,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -5224,6 +5332,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -5247,6 +5357,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -5958,6 +6070,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -5981,6 +6095,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -6004,6 +6120,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -6027,6 +6145,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -6067,6 +6187,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -6092,6 +6214,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -6117,6 +6241,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -6140,6 +6266,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -6862,6 +6990,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -6887,6 +7017,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -6912,6 +7044,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -6935,6 +7069,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -6975,6 +7111,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -6998,6 +7136,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -7021,6 +7161,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -7044,6 +7186,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -7892,6 +8036,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -7915,6 +8061,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -7940,6 +8088,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -7963,6 +8113,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -8003,6 +8155,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 192,
         "maxhp": 192,
         "status": "",
@@ -8028,6 +8182,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 185,
         "maxhp": 185,
         "status": "",
@@ -8053,6 +8209,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -8076,6 +8234,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -9159,6 +9319,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 67,
         "maxhp": 192,
         "status": "",
@@ -9182,6 +9344,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 139,
         "maxhp": 185,
         "status": "",
@@ -9205,6 +9369,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -9228,6 +9394,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -9268,6 +9436,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 97,
         "maxhp": 192,
         "status": "",
@@ -9291,6 +9461,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 109,
         "maxhp": 185,
         "status": "",
@@ -9314,6 +9486,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -9337,6 +9511,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -10129,6 +10305,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "fnt",
@@ -10152,6 +10330,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 93,
         "maxhp": 185,
         "status": "",
@@ -10175,6 +10355,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -10198,6 +10380,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -10231,6 +10415,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 49,
         "maxhp": 192,
         "status": "",
@@ -10254,6 +10440,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 29,
         "maxhp": 185,
         "status": "",
@@ -10277,6 +10465,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -10300,6 +10490,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -10442,6 +10634,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -10465,6 +10659,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 93,
         "maxhp": 185,
         "status": "",
@@ -10488,6 +10684,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -10511,6 +10709,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -10551,6 +10751,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 49,
         "maxhp": 192,
         "status": "",
@@ -10574,6 +10776,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 29,
         "maxhp": 185,
         "status": "",
@@ -10597,6 +10801,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -10620,6 +10826,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -11249,6 +11457,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -11274,6 +11484,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 8,
         "maxhp": 185,
         "status": "",
@@ -11297,6 +11509,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -11320,6 +11534,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -11353,6 +11569,8 @@
       "pokemon": [
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "fnt",
@@ -11376,6 +11594,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 29,
         "maxhp": 185,
         "status": "",
@@ -11399,6 +11619,8 @@
        },
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -11422,6 +11644,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -11558,6 +11782,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -11583,6 +11809,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 8,
         "maxhp": 185,
         "status": "",
@@ -11606,6 +11834,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -11629,6 +11859,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -11669,6 +11901,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -11692,6 +11926,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 29,
         "maxhp": 185,
         "status": "",
@@ -11715,6 +11951,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -11738,6 +11976,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -12234,6 +12474,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -12257,6 +12499,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "fnt",
@@ -12280,6 +12524,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -12303,6 +12549,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -12336,6 +12584,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -12361,6 +12611,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "fnt",
@@ -12384,6 +12636,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -12407,6 +12661,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -12523,6 +12779,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -12546,6 +12804,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -12569,6 +12829,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -12592,6 +12854,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -12632,6 +12896,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -12657,6 +12923,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -12680,6 +12948,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -12703,6 +12973,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -12973,6 +13245,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -12998,6 +13272,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -13023,6 +13299,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -13046,6 +13324,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -13086,6 +13366,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -13109,6 +13391,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -13132,6 +13416,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -13155,6 +13441,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -13432,6 +13720,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -13455,6 +13745,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -13480,6 +13772,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -13503,6 +13797,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -13543,6 +13839,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -13568,6 +13866,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -13591,6 +13891,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -13614,6 +13916,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -13945,6 +14249,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -13970,6 +14276,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -13995,6 +14303,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -14018,6 +14328,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -14058,6 +14370,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -14083,6 +14397,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -14106,6 +14422,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -14129,6 +14447,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -14341,6 +14661,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -14364,6 +14686,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -14387,6 +14711,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -14410,6 +14736,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -14450,6 +14778,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -14473,6 +14803,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -14496,6 +14828,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -14519,6 +14853,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -14836,6 +15172,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -14861,6 +15199,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -14886,6 +15226,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -14909,6 +15251,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -14949,6 +15293,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -14974,6 +15320,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -14997,6 +15345,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -15020,6 +15370,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -15232,6 +15584,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -15255,6 +15609,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -15278,6 +15634,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -15301,6 +15659,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -15341,6 +15701,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -15364,6 +15726,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -15387,6 +15751,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -15410,6 +15776,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -15723,6 +16091,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -15746,6 +16116,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -15771,6 +16143,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -15794,6 +16168,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -15834,6 +16210,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 227,
         "maxhp": 227,
         "status": "",
@@ -15859,6 +16237,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -15884,6 +16264,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -15907,6 +16289,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -16339,6 +16723,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 136,
         "maxhp": 227,
         "status": "",
@@ -16362,6 +16748,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 182,
         "maxhp": 182,
         "status": "",
@@ -16387,6 +16775,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -16410,6 +16800,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -16450,6 +16842,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 170,
         "maxhp": 227,
         "status": "",
@@ -16473,6 +16867,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 162,
         "maxhp": 182,
         "status": "",
@@ -16496,6 +16892,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -16519,6 +16917,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -17040,6 +17440,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 46,
         "maxhp": 227,
         "status": "",
@@ -17063,6 +17465,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 94,
         "maxhp": 182,
         "status": "",
@@ -17086,6 +17490,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -17109,6 +17515,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -17149,6 +17557,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 29,
         "maxhp": 227,
         "status": "",
@@ -17172,6 +17582,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 116,
         "maxhp": 182,
         "status": "",
@@ -17195,6 +17607,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -17218,6 +17632,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -17645,6 +18061,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 0,
         "maxhp": 227,
         "status": "fnt",
@@ -17668,6 +18086,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 9,
         "maxhp": 182,
         "status": "",
@@ -17691,6 +18111,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -17714,6 +18136,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -17754,6 +18178,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 0,
         "maxhp": 227,
         "status": "fnt",
@@ -17777,6 +18203,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 24,
         "maxhp": 182,
         "status": "",
@@ -17800,6 +18228,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -17823,6 +18253,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -17951,6 +18383,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 0,
         "maxhp": 227,
         "status": "fnt",
@@ -17974,6 +18408,8 @@
        },
        {
         "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "",
@@ -17997,6 +18433,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -18020,6 +18458,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",
@@ -18053,6 +18493,8 @@
       "pokemon": [
        {
         "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
         "hp": 0,
         "maxhp": 227,
         "status": "fnt",
@@ -18076,6 +18518,8 @@
        },
        {
         "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
         "hp": 0,
         "maxhp": 182,
         "status": "",
@@ -18099,6 +18543,8 @@
        },
        {
         "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
         "hp": 0,
         "maxhp": 192,
         "status": "",
@@ -18122,6 +18568,8 @@
        },
        {
         "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
         "hp": 0,
         "maxhp": 185,
         "status": "",

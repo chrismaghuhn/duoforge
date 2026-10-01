@@ -1,0 +1,24 @@
+{
+  "name": "s11_mega_contrary_no_guard",
+  "purpose": "Mega Staraptor's Contrary turns Close Combat's drops and a returning Intimidate into raises; Mega Raichu Y's No Guard makes Zap Cannon and Focus Blast and every move aimed at it skip the accuracy roll; both sides Mega Evolve in the same turn.",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000c101",
+  "teams": [
+    "Staraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Close Combat\n- Brave Bird\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Snarl\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Hypnosis\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Shadow Ball\n- Make It Rain",
+    "Raichu (M) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Focus Blast\n- Zap Cannon\n\nStaraptor (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Protect\n- Brave Bird\n\nFarigiraf (F) @ Leftovers\nAbility: Armor Tail\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Psychic\n- Protect\n\nRillaboom (F) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1 mega, move 1 1",
+      "move 1 2, move 2",
+      "move 2 1, move 1 2"
+    ],
+    "p2": [
+      "move 1 1 mega, move 1",
+      "move 2 2, switch 3",
+      "move 1 1, switch 3",
+      "move 2 1, move 2 1"
+    ],
+    "max_steps": 50
+  }
+}
