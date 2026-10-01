@@ -160,6 +160,7 @@ The harness names the condition draws by the effect and event the reference is r
 - **Grassy Seed** raises Defense by 1 and is used up when Grassy Terrain starts (`eachEvent('TerrainChange')`, every holder on the field) or when its holder enters while the terrain is up (`onSwitchInPriority: -1`, after the entry abilities). A used item is gone and the opponent's knowledge records it.
 - **Not observable in the closure** (controls stay green): the hit loop's own Update (X3) and the Update before a switch-out (X15); nothing between the hit loop's Update and the next one depends on a Sitrus Berry, and every loss of HP is followed by an Update before a switch can happen (rechecked with the recoil and drain moves of step 9). Leftovers against Grassy Terrain of the same speed (X6) changes nothing because two heals commute.
 - **Miracle Seed** came with the first Grass move (step 9).
+- **Later (decision 0007 section 11):** with the event log the order of these Pokémon becomes the order of their lines, so a tie between two Sitrus Berry or Grassy Seed holders draws, and the Updates above are run where the reference runs them.
 
 ### 4.8 Recoil, drain and self-drops as built (step 9)
 

@@ -472,11 +472,6 @@ duoforge_status dfi_battle_step_events_tape(const duoforge_context *ctx, duoforg
     if (ctx == NULL || battle == NULL || bundle == NULL || out_result == NULL) {
         return DUOFORGE_E_NULL_ARGUMENT;
     }
-    for (uint32_t p = 0u; buffers != NULL && p < DUOFORGE_SIDE_COUNT; ++p) {
-        if (buffers[p].events == NULL && buffers[p].capacity != 0u) {
-            return DUOFORGE_E_INVALID_ARGUMENT;
-        }
-    }
     dfi_events staged;
     staged.count = 0u;
     staged.overflow = false;
@@ -493,6 +488,11 @@ duoforge_status dfi_battle_step_events_tape(const duoforge_context *ctx, duoforg
     }
     if (in.epoch != battle->request_epoch) {
         return DUOFORGE_E_STALE_EPOCH;
+    }
+    for (uint32_t p = 0u; buffers != NULL && p < DUOFORGE_SIDE_COUNT; ++p) {
+        if (buffers[p].events == NULL && buffers[p].capacity != 0u) {
+            return DUOFORGE_E_INVALID_ARGUMENT; /* capacity without storage */
+        }
     }
     if (in.response_mask != battle->request_mask || in.reserved[0] != 0u || in.reserved[1] != 0u ||
         in.reserved[2] != 0u) {

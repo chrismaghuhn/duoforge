@@ -32,9 +32,9 @@ extern "C" {
 #endif
 
 #define DUOFORGE_VERSION_MAJOR 0
-#define DUOFORGE_VERSION_MINOR 5
+#define DUOFORGE_VERSION_MINOR 6
 #define DUOFORGE_VERSION_PATCH 0
-#define DUOFORGE_VERSION_STRING "0.5.0"
+#define DUOFORGE_VERSION_STRING "0.6.0"
 
 /* Identifiers of the artifacts that exist now (registry: decisions 0002, 0005, 0006). */
 #define DUOFORGE_SEMANTICS_ID           3u   /* "duoforge-m3-closure" */
@@ -419,15 +419,15 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 /* Event kinds; the protocol line each one stands for in brackets. */
 #define DUOFORGE_EVENT_TURN            1u  /* [turn] id: the turn that starts */
 #define DUOFORGE_EVENT_SWITCH          2u  /* [switch] position, id: roster index, HP; cause MOVE + id2 when a move made it */
-#define DUOFORGE_EVENT_MOVE            3u  /* [move] position: user, other: target or NO_POSITION, id: move, flags */
+#define DUOFORGE_EVENT_MOVE            3u  /* [move] position: user, other: target or NO_POSITION, id: move, flags; SPREAD: amount = the slots hit (bit = position) */
 #define DUOFORGE_EVENT_DAMAGE          4u  /* [-damage] position, HP after; cause (+ id2, other) */
 #define DUOFORGE_EVENT_HEAL            5u  /* [-heal] position, HP after; cause (+ id2, other) */
 #define DUOFORGE_EVENT_FAINT           6u  /* [faint] position */
 #define DUOFORGE_EVENT_CANT            7u  /* [cant] position, cause: why; ABILITY + id2 with id: the stopped move, other */
 #define DUOFORGE_EVENT_MISS            8u  /* [-miss] position: user, other: target */
 #define DUOFORGE_EVENT_CRIT            9u  /* [-crit] position: target */
-#define DUOFORGE_EVENT_SUPER_EFFECTIVE 10u /* [-supereffective] position: target */
-#define DUOFORGE_EVENT_RESISTED        11u /* [-resisted] position: target */
+#define DUOFORGE_EVENT_SUPER_EFFECTIVE 10u /* [-supereffective] position: target, amount: 1 or 2 (x2, x4) */
+#define DUOFORGE_EVENT_RESISTED        11u /* [-resisted] position: target, amount: 1 or 2 (x1/2, x1/4) */
 #define DUOFORGE_EVENT_IMMUNE          12u /* [-immune] position; cause ABILITY + id2 when an ability did it */
 #define DUOFORGE_EVENT_FAIL            13u /* [-fail] position; detail: the ailment it already has, when that is why */
 #define DUOFORGE_EVENT_PROTECT         14u /* [-singleturn Protect] position */
@@ -451,7 +451,7 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_EVENT_PREPARE         32u /* [-prepare] position, id: the move it charges */
 #define DUOFORGE_EVENT_ANIMATION       33u /* [-anim] position, other, id: the move shown */
 #define DUOFORGE_EVENT_ABILITY         34u /* [-ability] position, id2: ability + 1 */
-#define DUOFORGE_EVENT_ACTIVATE        35u /* [-activate ability] position, id2: ability + 1 */
+#define DUOFORGE_EVENT_ACTIVATE        35u /* [-activate] position; cause ABILITY + id2 (Lightning Rod, Emergency Exit) or MOVE + id2 (Struggle) */
 #define DUOFORGE_EVENT_UPKEEP          36u /* [upkeep] the end-of-turn effects are done */
 #define DUOFORGE_EVENT_RESULT          37u /* [win] or [tie] detail: DUOFORGE_RESULT_* */
 
@@ -516,10 +516,13 @@ typedef struct duoforge_event_buffer {
 } duoforge_event_buffer;
 
 /* duoforge_battle_step, and the events each player sees: buffers[p] gets
-   player p's events of this step in order. Checks as duoforge_battle_step
-   (buffers NULL -> NULL_ARGUMENT). If a buffer is too small, E_CAPACITY:
-   the battle is unchanged, and only the two `count` fields are written,
-   each with the required number (decision 0005 section 7). */
+   player p's events of this step in order (decision 0007 section 11).
+   Checks as duoforge_battle_step; buffers NULL is NULL_ARGUMENT, a buffer
+   with capacity but no storage INVALID_ARGUMENT. If a buffer is too small,
+   E_CAPACITY: the battle is unchanged, *out_result unwritten, and only the
+   two `count` fields are written, each with the required number (decision
+   0005 section 7). A step has at most DUOFORGE_MAX_EVENTS events; more
+   would be E_INVARIANT, never a truncated log. */
 duoforge_status duoforge_battle_step_events(const duoforge_context *ctx, duoforge_battle *battle,
                                             const duoforge_decision_bundle *bundle,
                                             duoforge_step_result *out_result,
