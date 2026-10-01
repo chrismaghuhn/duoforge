@@ -24,6 +24,8 @@
 
 #define DUOFORGE_BATCH_MAX_ENVS    65536u
 #define DUOFORGE_BATCH_MAX_WORKERS 256u
+/* The candidate index of a player without a request (duoforge_batch_step_indices). */
+#define DUOFORGE_BATCH_NO_CHOICE   0xFFFFu
 
 typedef struct duoforge_batch duoforge_batch;
 
@@ -78,8 +80,25 @@ duoforge_status duoforge_batch_query(duoforge_batch *batch, duoforge_request *re
 duoforge_status duoforge_batch_step(duoforge_batch *batch, const duoforge_decision_bundle *bundles,
                                     duoforge_status *statuses, duoforge_step_result *results);
 
+/* Step mode by candidate index, in parallel: for every environment that is
+   not TERMINAL, the bundle of the last query's arrays is stepped as in
+   duoforge_batch_step. Its epoch is requests[2 * env].epoch; for each player
+   p with requests[2 * env + p].requested the response is
+   candidates[(2 * env + p) * DUOFORGE_MAX_CANDIDATES + indices[2 * env + p]].
+   An index at or past counts[2 * env + p], DUOFORGE_BATCH_NO_CHOICE included,
+   fails that environment with E_INVALID_ARGUMENT and leaves it unchanged. */
+duoforge_status duoforge_batch_step_indices(duoforge_batch *batch, const duoforge_request *requests,
+                                            const duoforge_side_choice *candidates, const uint32_t *counts,
+                                            const uint16_t *indices, duoforge_status *statuses,
+                                            duoforge_step_result *results);
+
 /* Resets every TERMINAL environment to its next episode, in parallel. */
 duoforge_status duoforge_batch_reset_terminal(duoforge_batch *batch);
+
+/* Resets environment env to `episode`: a fresh battle from the seed
+   derivation. Out of range is E_INVALID_ARGUMENT; a failed reset keeps the
+   environment as it was. */
+duoforge_status duoforge_batch_reset(duoforge_batch *batch, uint32_t env, uint32_t episode);
 
 /* Native mode, in parallel: every environment plays `episodes` further
    episodes from fresh resets with the uniform random policy (each requested
