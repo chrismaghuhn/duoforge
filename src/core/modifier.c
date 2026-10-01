@@ -16,9 +16,12 @@ bool dfi_mod_fraction(uint32_t numerator, uint32_t denominator, uint32_t *out)
 
 uint32_t dfi_modify(uint32_t value, uint32_t modifier)
 {
-    /* value * modifier < 2^64, but the reference is exact only below 2^53;
-     * the closure's values (damage and stats below 2^16, modifiers below
-     * 2^16) stay far below. The product is truncated like `>>> 0`. */
+    /* The reference computes tr((tr(value * modifier) + 2047) / 4096)
+     * (sim/battle.ts:2340-2342): the inner tr truncates the product to 32
+     * bits like `>>> 0`, as here; the outer tr changes nothing, because the
+     * quotient of a 32-bit value by 4096 is below 2^21. The reference is
+     * exact only below 2^53; the closure's values (damage and stats below
+     * 2^16, modifiers below 2^16) stay far below. */
     const uint64_t product = DFI_LOW32((uint64_t)value * modifier);
     const uint64_t q = (product + 2047u) / 4096u;
     return (uint32_t)q; /* < 2^21 */

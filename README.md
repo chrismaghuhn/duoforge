@@ -14,7 +14,7 @@ DuoForge is a deterministic, headless Pokémon Doubles simulation engine designe
 - a perspective-safe observation prototype (open team sheets, own exact HP/PP, opponent HP at the Champions percent precision, tagged unknowns);
 - generated data tables of the two reference teams from the pinned Showdown revision, and the Champions stat and PP formulas (step 1a of the combat closure);
 - the state v3 layout of the combat closure with its invariants, codec and oracle (step 1b-1);
-- contexts over the real closure data, validation of real sets with derived stats and PP, and the support gate that still rejects every real team with `DUOFORGE_E_UNSUPPORTED` (step 1b-2);
+- contexts over the real closure data, validation of real sets with derived stats and PP, and the support gate (step 1b-2), which both real teams pass since step 12;
 - the turn core for development teams: turn order with speed ties, damage, accuracy, critical hits, stat stages, secondary stat changes, PP, Struggle and Protect, replaying recorded reference battles draw for draw (step 2);
 - switching, fainting, replacement and the win rule: development teams play complete battles to TERMINAL (step 3);
 - burn, paralysis, sleep and freeze in their Champions variants, flinch and confusion (step 4);

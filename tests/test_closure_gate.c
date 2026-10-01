@@ -58,6 +58,15 @@ typedef struct counts {
     unsigned leaks;
 } counts;
 
+static uint32_t dfi_popcount_mask(uint32_t x)
+{
+    uint32_t n = 0u;
+    for (; x != 0u; x &= x - 1u) {
+        ++n;
+    }
+    return n;
+}
+
 static void capture(const duoforge_context *ctx, const duoforge_battle *b, uint32_t viewer, surface *s)
 {
     memset(s, 0, sizeof *s);
@@ -151,6 +160,49 @@ static void pairs(df_test *t, const duoforge_context *ctx, const duoforge_battle
             }
             break;
         }
+    }
+    /* the opponent's private pick order */
+    if (dfi_popcount_mask(fs->brought_mask) >= 2u) {
+        DF_CHECK(t, duoforge_battle_copy(ctx, b, a) == DUOFORGE_OK);
+        const uint8_t first = b->sides[foe].brought_order[0];
+        b->sides[foe].brought_order[0] = b->sides[foe].brought_order[1];
+        b->sides[foe].brought_order[1] = first;
+        DF_CHECK(t, duoforge_battle_check(ctx, b) == DUOFORGE_OK);
+        expect_same(t, ctx, a, b, viewer, "foe pick order", c);
+    }
+    /* which members the opponent brought: an unseen brought member that never
+     * entered swaps with one left at home (both untouched) */
+    for (uint32_t u = 0u; u < fs->member_count; ++u) {
+        const bool u_free = ((uint32_t)fs->brought_mask >> u & 1u) != 0u &&
+                            ((uint32_t)a->sides[viewer].seen_mask >> u & 1u) == 0u &&
+                            fs->positions[0].occupant != u && fs->positions[1].occupant != u;
+        bool queued = false;
+        for (uint32_t i = 0u; i < a->queue_len; ++i) {
+            queued = queued || (a->queue[i].side == foe && a->queue[i].reserve == u &&
+                                (a->queue[i].kind == DFI_Q_SWITCH || a->queue[i].kind == DFI_Q_SWITCH_IN));
+        }
+        if (!u_free || queued) {
+            continue;
+        }
+        uint32_t v = fs->member_count;
+        for (uint32_t k = 0u; k < fs->member_count && v == fs->member_count; ++k) {
+            v = ((uint32_t)fs->brought_mask >> k & 1u) == 0u ? k : v;
+        }
+        if (v == fs->member_count) {
+            break;
+        }
+        DF_CHECK(t, duoforge_battle_copy(ctx, b, a) == DUOFORGE_OK);
+        dfi_side *bs = &b->sides[foe];
+        bs->brought_mask = (uint8_t)(((uint32_t)bs->brought_mask & ~(1u << u)) | (1u << v));
+        for (uint32_t i = 0u; i < DUOFORGE_MAX_ROSTER; ++i) {
+            if (bs->brought_order[i] == u) {
+                bs->brought_order[i] = (uint8_t)v;
+            }
+        }
+        if (DF_CHECK(t, duoforge_battle_check(ctx, b) == DUOFORGE_OK)) {
+            expect_same(t, ctx, a, b, viewer, "which members the opponent brought", c);
+        }
+        break;
     }
     /* at a PIVOT: the opponent's actions in the rest of the turn */
     if (a->boundary_kind == DUOFORGE_BOUNDARY_PIVOT) {
