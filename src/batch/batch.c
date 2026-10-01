@@ -252,21 +252,29 @@ typedef struct dfi_step_job {
     duoforge_step_result *results;
 } dfi_step_job;
 
+/* Steps environment `e` with `bundle`; a TERMINAL environment gets OK and an
+   all-zero result. */
+static duoforge_status dfi_step_env(struct duoforge_batch *b, uint32_t e, const duoforge_decision_bundle *bundle,
+                                    duoforge_step_result *result)
+{
+    dfi_batch_env *env = &b->env[e];
+    memset(result, 0, sizeof *result);
+    if (env->terminal) {
+        return DUOFORGE_OK;
+    }
+    const duoforge_status st = duoforge_battle_step(b->ctx, env->battle, bundle, result);
+    if (st == DUOFORGE_OK && result->boundary_kind == DUOFORGE_BOUNDARY_TERMINAL) {
+        env->terminal = true;
+    }
+    return st;
+}
+
 static void dfi_step_slice(void *job, uint32_t worker, uint32_t begin, uint32_t end)
 {
     (void)worker;
     const dfi_step_job *j = job;
     for (uint32_t e = begin; e < end; ++e) {
-        dfi_batch_env *env = &j->b->env[e];
-        memset(&j->results[e], 0, sizeof j->results[e]);
-        if (env->terminal) {
-            j->statuses[e] = DUOFORGE_OK;
-            continue;
-        }
-        j->statuses[e] = duoforge_battle_step(j->b->ctx, env->battle, &j->bundles[e], &j->results[e]);
-        if (j->statuses[e] == DUOFORGE_OK && j->results[e].boundary_kind == DUOFORGE_BOUNDARY_TERMINAL) {
-            env->terminal = true;
-        }
+        j->statuses[e] = dfi_step_env(j->b, e, &j->bundles[e], &j->results[e]);
     }
 }
 
@@ -278,6 +286,69 @@ duoforge_status duoforge_batch_step(duoforge_batch *batch, const duoforge_decisi
     }
     dfi_step_job job = {batch, bundles, statuses, results};
     dfi_pool_run(batch->pool, dfi_step_slice, &job, batch->env_count);
+    return dfi_batch_first(statuses, batch->env_count);
+}
+
+/* ---------------------------------------------------------- step by index */
+
+typedef struct dfi_index_job {
+    struct duoforge_batch *b;
+    const duoforge_request *requests;
+    const duoforge_side_choice *candidates;
+    const uint32_t *counts;
+    const uint16_t *indices;
+    duoforge_status *statuses;
+    duoforge_step_result *results;
+} dfi_index_job;
+
+/* Fills the zeroed bundle of environment `e` from the query arrays;
+   E_INVALID_ARGUMENT for a requested player whose index is past its list
+   (NO_CHOICE is past every list). */
+static duoforge_status dfi_index_bundle(const dfi_index_job *j, uint32_t e, duoforge_decision_bundle *bundle)
+{
+    bundle->epoch = j->requests[2u * e].epoch;
+    for (uint32_t p = 0u; p < DUOFORGE_SIDE_COUNT; ++p) {
+        const size_t at = (size_t)2u * e + p;
+        if (j->requests[at].requested == 0u) {
+            continue;
+        }
+        const uint32_t index = j->indices[at];
+        if (index >= j->counts[at] || index >= DUOFORGE_MAX_CANDIDATES) {
+            return DUOFORGE_E_INVALID_ARGUMENT;
+        }
+        bundle->response_mask = (uint8_t)(bundle->response_mask | (1u << p)); /* wide-operands-reviewed: < 4 */
+        bundle->responses[p] = j->candidates[at * DUOFORGE_MAX_CANDIDATES + index];
+    }
+    return DUOFORGE_OK;
+}
+
+static void dfi_index_slice(void *job, uint32_t worker, uint32_t begin, uint32_t end)
+{
+    (void)worker;
+    const dfi_index_job *j = job;
+    for (uint32_t e = begin; e < end; ++e) {
+        duoforge_decision_bundle bundle;
+        memset(&bundle, 0, sizeof bundle);
+        j->statuses[e] = j->b->env[e].terminal ? DUOFORGE_OK : dfi_index_bundle(j, e, &bundle);
+        if (j->statuses[e] == DUOFORGE_OK) {
+            j->statuses[e] = dfi_step_env(j->b, e, &bundle, &j->results[e]);
+        } else {
+            memset(&j->results[e], 0, sizeof j->results[e]);
+        }
+    }
+}
+
+duoforge_status duoforge_batch_step_indices(duoforge_batch *batch, const duoforge_request *requests,
+                                            const duoforge_side_choice *candidates, const uint32_t *counts,
+                                            const uint16_t *indices, duoforge_status *statuses,
+                                            duoforge_step_result *results)
+{
+    if (batch == NULL || requests == NULL || candidates == NULL || counts == NULL || indices == NULL ||
+        statuses == NULL || results == NULL) {
+        return DUOFORGE_E_NULL_ARGUMENT;
+    }
+    dfi_index_job job = {batch, requests, candidates, counts, indices, statuses, results};
+    dfi_pool_run(batch->pool, dfi_index_slice, &job, batch->env_count);
     return dfi_batch_first(statuses, batch->env_count);
 }
 
@@ -312,6 +383,17 @@ duoforge_status duoforge_batch_reset_terminal(duoforge_batch *batch)
     const duoforge_status st = dfi_batch_first(statuses, batch->env_count);
     dfi_free(statuses);
     return st;
+}
+
+duoforge_status duoforge_batch_reset(duoforge_batch *batch, uint32_t env, uint32_t episode)
+{
+    if (batch == NULL) {
+        return DUOFORGE_E_NULL_ARGUMENT;
+    }
+    if (env >= batch->env_count) {
+        return DUOFORGE_E_INVALID_ARGUMENT;
+    }
+    return dfi_batch_reset(batch, env, episode);
 }
 
 /* ------------------------------------------------------------ native mode */
