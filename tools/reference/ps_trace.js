@@ -30,7 +30,7 @@ const fs = require('fs');
 const path = require('path');
 
 const PIN = 'b2cb775b0616115b775534eaeff50300e1fc81fc';
-const HARNESS_VERSION = 1;
+const HARNESS_VERSION = 2;
 
 // Stack frame name -> site. The first match in stack order wins.
 const SITE_RULES = [
@@ -74,6 +74,41 @@ function classify(stack, battle) {
     return ['UNKNOWN', frames.slice(0, 6).join('<')];
 }
 
+// What a tie draw shuffles or inserts among, so the trace converter can
+// check the precondition of a drop rule. Entries: actions
+// "A:<choice>:<slot>:<move>", handlers "H:<effect>:<holder>:<cb|end>",
+// Pokemon "P:<slot>:<handlers for the current event>".
+function slotOf(p) {
+    return p && p.side ? p.side.id + 'abc'[p.position] : '-';
+}
+
+function holderOf(h) {
+    const x = h.effectHolder;
+    if (!x) return '-';
+    if (x.side && x.species) return slotOf(x);
+    if (x.sideConditions) return x.id;
+    return 'field';
+}
+
+function describe(item, battle) {
+    if (item && item.choice) {
+        // A runSwitch action carries the number of SwitchIn handlers of its
+        // Pokemon: the entry effects whose order a tie decides.
+        const extra = item.choice === 'runSwitch' && item.pokemon ?
+            ':' + battle.findEventHandlers(item.pokemon, 'SwitchIn').length : '';
+        return `A:${item.choice}:${slotOf(item.pokemon)}:${item.move ? item.move.id : ''}${extra}`;
+    }
+    if (item && item.effect) {
+        return `H:${item.effect.id || item.effect.name}:${holderOf(item)}:${item.callback ? 'cb' : 'end'}`;
+    }
+    if (item && item.species) {
+        const ev = eventStack.length ? eventStack[eventStack.length - 1] : '';
+        const n = ev ? battle.findEventHandlers(item, ev).length : 0;
+        return `P:${slotOf(item)}:${n}`;
+    }
+    return '?';
+}
+
 function wrapEvents(battle) {
     for (const name of ['runEvent', 'fieldEvent', 'eachEvent', 'singleEvent', 'priorityEvent']) {
         const original = battle[name];
@@ -102,13 +137,30 @@ function main() {
 
     let battle = null;
     let draws = [];
+    let group = null;
+    let groupStart = 0;
     class RecordingPRNG extends PRNG {
+        shuffle(items, start = 0, end = items.length) {
+            group = items.slice(start, end).map((x) => describe(x, battle));
+            groupStart = start;
+            try {
+                return super.shuffle(items, start, end);
+            } finally {
+                group = null;
+            }
+        }
         random(from, to) {
             const value = super.random(from, to);
             const lo = to === undefined || to === null ? 0 : from;
             const hi = to === undefined || to === null ? from : to;
             const [site, context] = classify(new Error().stack, battle);
-            draws.push({site, context, lo, hi, value});
+            const draw = {site, context, lo, hi, value};
+            if (site === 'SPEED_TIE' || site === 'TEAM_ORDER') {
+                draw.group = group;
+                draw.start = groupStart; // the shuffle's first index; draws are random(i, start + n)
+            }
+            if (site === 'INSERT_TIE') draw.group = battle.queue.list.map((x) => describe(x, battle));
+            draws.push(draw);
             return value;
         }
     }

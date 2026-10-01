@@ -1,5 +1,5 @@
 {
- "harness": 1,
+ "harness": 2,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "spec": "s2_struggle.json",
  "format": "gen9championsvgc2026regmc",
@@ -230,35 +230,59 @@
      "context": "queue",
      "lo": 4,
      "hi": 6,
-     "value": 5
+     "value": 5,
+     "group": [
+      "A:team:p1c:",
+      "A:team:p2c:"
+     ],
+     "start": 4
     },
     {
      "site": "TEAM_ORDER",
      "context": "queue",
      "lo": 6,
      "hi": 8,
-     "value": 7
+     "value": 7,
+     "group": [
+      "A:team:p1undefined:",
+      "A:team:p2undefined:"
+     ],
+     "start": 6
     },
     {
      "site": "INSERT_TIE",
      "context": "queue",
      "lo": 0,
      "hi": 2,
-     "value": 1
+     "value": 1,
+     "group": [
+      "A:runSwitch:p1b::0",
+      "A:runSwitch:p1a::0"
+     ]
     },
     {
      "site": "SPEED_TIE",
      "context": "switch-order",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     }
    ],
    "log": [
@@ -484,147 +508,252 @@
      "context": "queue",
      "lo": 2,
      "hi": 4,
-     "value": 2
+     "value": 2,
+     "group": [
+      "A:move:p2a:coil",
+      "A:move:p1b:coil"
+     ],
+     "start": 2
     },
     {
      "site": "SPEED_TIE",
      "context": "each:BeforeTurn",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "queue",
      "lo": 2,
      "hi": 4,
-     "value": 2
+     "value": 2,
+     "group": [
+      "A:move:p2a:coil",
+      "A:move:p1b:coil"
+     ],
+     "start": 2
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "queue",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "A:move:p2a:coil",
+      "A:move:p1b:coil"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "queue",
      "lo": 0,
      "hi": 2,
-     "value": 0
+     "value": 0,
+     "group": [
+      "A:move:p1b:coil",
+      "A:move:p2a:coil"
+     ],
+     "start": 0
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "field:Residual",
      "lo": 0,
      "hi": 2,
-     "value": 0
+     "value": 0,
+     "group": [
+      "H:protect:p2b:end",
+      "H:stall:p2b:end"
+     ],
+     "start": 0
     },
     {
      "site": "SPEED_TIE",
      "context": "field:Residual",
      "lo": 2,
      "hi": 4,
-     "value": 3
+     "value": 3,
+     "group": [
+      "H:protect:p1a:end",
+      "H:stall:p1a:end"
+     ],
+     "start": 2
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     }
    ],
    "log": [
@@ -846,28 +975,48 @@
      "context": "queue",
      "lo": 2,
      "hi": 4,
-     "value": 2
+     "value": 2,
+     "group": [
+      "A:move:p2a:coil",
+      "A:move:p1b:coil"
+     ],
+     "start": 2
     },
     {
      "site": "SPEED_TIE",
      "context": "each:BeforeTurn",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "queue",
      "lo": 2,
      "hi": 4,
-     "value": 2
+     "value": 2,
+     "group": [
+      "A:move:p2a:coil",
+      "A:move:p1b:coil"
+     ],
+     "start": 2
     },
     {
      "site": "STALL",
@@ -881,14 +1030,24 @@
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "queue",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "A:move:p2a:coil",
+      "A:move:p1b:coil"
+     ],
+     "start": 1
     },
     {
      "site": "STALL",
@@ -902,63 +1061,108 @@
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "queue",
      "lo": 0,
      "hi": 2,
-     "value": 0
+     "value": 0,
+     "group": [
+      "A:move:p2a:coil",
+      "A:move:p1b:coil"
+     ],
+     "start": 0
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     }
    ],
    "log": [
@@ -1176,147 +1380,252 @@
      "context": "queue",
      "lo": 2,
      "hi": 4,
-     "value": 3
+     "value": 3,
+     "group": [
+      "A:move:p2a:coil",
+      "A:move:p1b:coil"
+     ],
+     "start": 2
     },
     {
      "site": "SPEED_TIE",
      "context": "each:BeforeTurn",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "queue",
      "lo": 2,
      "hi": 4,
-     "value": 3
+     "value": 3,
+     "group": [
+      "A:move:p1b:coil",
+      "A:move:p2a:coil"
+     ],
+     "start": 2
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "queue",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "A:move:p2a:coil",
+      "A:move:p1b:coil"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "queue",
      "lo": 0,
      "hi": 2,
-     "value": 0
+     "value": 0,
+     "group": [
+      "A:move:p1b:coil",
+      "A:move:p2a:coil"
+     ],
+     "start": 0
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "field:Residual",
      "lo": 0,
      "hi": 2,
-     "value": 0
+     "value": 0,
+     "group": [
+      "H:protect:p2b:end",
+      "H:stall:p2b:end"
+     ],
+     "start": 0
     },
     {
      "site": "SPEED_TIE",
      "context": "field:Residual",
      "lo": 2,
      "hi": 4,
-     "value": 3
+     "value": 3,
+     "group": [
+      "H:protect:p1a:end",
+      "H:stall:p1a:end"
+     ],
+     "start": 2
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     }
    ],
    "log": [
@@ -1538,28 +1847,48 @@
      "context": "queue",
      "lo": 2,
      "hi": 4,
-     "value": 2
+     "value": 2,
+     "group": [
+      "A:move:p2a:coil",
+      "A:move:p1b:coil"
+     ],
+     "start": 2
     },
     {
      "site": "SPEED_TIE",
      "context": "each:BeforeTurn",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "queue",
      "lo": 2,
      "hi": 4,
-     "value": 2
+     "value": 2,
+     "group": [
+      "A:move:p2a:coil",
+      "A:move:p1b:coil"
+     ],
+     "start": 2
     },
     {
      "site": "STALL",
@@ -1573,28 +1902,48 @@
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "queue",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "A:move:p2a:coil",
+      "A:move:p1b:coil"
+     ],
+     "start": 1
     },
     {
      "site": "STALL",
@@ -1608,91 +1957,156 @@
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "queue",
      "lo": 0,
      "hi": 2,
-     "value": 1
+     "value": 1,
+     "group": [
+      "A:move:p1b:coil",
+      "A:move:p2a:coil"
+     ],
+     "start": 0
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "field:Residual",
      "lo": 0,
      "hi": 2,
-     "value": 0
+     "value": 0,
+     "group": [
+      "H:stall:p2b:end",
+      "H:protect:p2b:end"
+     ],
+     "start": 0
     },
     {
      "site": "SPEED_TIE",
      "context": "field:Residual",
      "lo": 2,
      "hi": 4,
-     "value": 2
+     "value": 2,
+     "group": [
+      "H:stall:p1a:end",
+      "H:protect:p1a:end"
+     ],
+     "start": 2
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     }
    ],
    "log": [
@@ -1914,28 +2328,48 @@
      "context": "queue",
      "lo": 2,
      "hi": 4,
-     "value": 3
+     "value": 3,
+     "group": [
+      "A:move:p2a:coil",
+      "A:move:p1b:coil"
+     ],
+     "start": 2
     },
     {
      "site": "SPEED_TIE",
      "context": "each:BeforeTurn",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "queue",
      "lo": 2,
      "hi": 4,
-     "value": 3
+     "value": 3,
+     "group": [
+      "A:move:p1b:coil",
+      "A:move:p2a:coil"
+     ],
+     "start": 2
     },
     {
      "site": "STALL",
@@ -1949,14 +2383,24 @@
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "queue",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "A:move:p2a:coil",
+      "A:move:p1b:coil"
+     ],
+     "start": 1
     },
     {
      "site": "STALL",
@@ -1970,63 +2414,108 @@
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "queue",
      "lo": 0,
      "hi": 2,
-     "value": 0
+     "value": 0,
+     "group": [
+      "A:move:p2a:coil",
+      "A:move:p1b:coil"
+     ],
+     "start": 0
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     }
    ],
    "log": [
@@ -2244,147 +2733,252 @@
      "context": "queue",
      "lo": 2,
      "hi": 4,
-     "value": 2
+     "value": 2,
+     "group": [
+      "A:move:p2a:coil",
+      "A:move:p1b:coil"
+     ],
+     "start": 2
     },
     {
      "site": "SPEED_TIE",
      "context": "each:BeforeTurn",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "queue",
      "lo": 2,
      "hi": 4,
-     "value": 2
+     "value": 2,
+     "group": [
+      "A:move:p2a:coil",
+      "A:move:p1b:coil"
+     ],
+     "start": 2
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "queue",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "A:move:p2a:coil",
+      "A:move:p1b:coil"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "queue",
      "lo": 0,
      "hi": 2,
-     "value": 1
+     "value": 1,
+     "group": [
+      "A:move:p1b:coil",
+      "A:move:p2a:coil"
+     ],
+     "start": 0
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "field:Residual",
      "lo": 0,
      "hi": 2,
-     "value": 0
+     "value": 0,
+     "group": [
+      "H:protect:p2b:end",
+      "H:stall:p2b:end"
+     ],
+     "start": 0
     },
     {
      "site": "SPEED_TIE",
      "context": "field:Residual",
      "lo": 2,
      "hi": 4,
-     "value": 3
+     "value": 3,
+     "group": [
+      "H:protect:p1a:end",
+      "H:stall:p1a:end"
+     ],
+     "start": 2
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     }
    ],
    "log": [
@@ -2606,28 +3200,48 @@
      "context": "queue",
      "lo": 2,
      "hi": 4,
-     "value": 2
+     "value": 2,
+     "group": [
+      "A:move:p2a:coil",
+      "A:move:p1b:coil"
+     ],
+     "start": 2
     },
     {
      "site": "SPEED_TIE",
      "context": "each:BeforeTurn",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "queue",
      "lo": 2,
      "hi": 4,
-     "value": 3
+     "value": 3,
+     "group": [
+      "A:move:p2a:coil",
+      "A:move:p1b:coil"
+     ],
+     "start": 2
     },
     {
      "site": "STALL",
@@ -2641,28 +3255,48 @@
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "queue",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "A:move:p1b:coil",
+      "A:move:p2a:coil"
+     ],
+     "start": 1
     },
     {
      "site": "STALL",
@@ -2676,63 +3310,108 @@
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "queue",
      "lo": 0,
      "hi": 2,
-     "value": 0
+     "value": 0,
+     "group": [
+      "A:move:p2a:coil",
+      "A:move:p1b:coil"
+     ],
+     "start": 0
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "field:Residual",
      "lo": 0,
      "hi": 2,
-     "value": 0
+     "value": 0,
+     "group": [
+      "H:stall:p2b:end",
+      "H:protect:p2b:end"
+     ],
+     "start": 0
     },
     {
      "site": "SPEED_TIE",
      "context": "field:Residual",
      "lo": 2,
      "hi": 4,
-     "value": 2
+     "value": 2,
+     "group": [
+      "H:stall:p1a:end",
+      "H:protect:p1a:end"
+     ],
+     "start": 2
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     }
    ],
    "log": [
@@ -2954,28 +3633,48 @@
      "context": "queue",
      "lo": 2,
      "hi": 4,
-     "value": 3
+     "value": 3,
+     "group": [
+      "A:move:p2a:coil",
+      "A:move:p1b:coil"
+     ],
+     "start": 2
     },
     {
      "site": "SPEED_TIE",
      "context": "each:BeforeTurn",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "queue",
      "lo": 2,
      "hi": 4,
-     "value": 3
+     "value": 3,
+     "group": [
+      "A:move:p1b:coil",
+      "A:move:p2a:coil"
+     ],
+     "start": 2
     },
     {
      "site": "STALL",
@@ -2989,28 +3688,48 @@
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "queue",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "A:move:p2a:coil",
+      "A:move:p1b:coil"
+     ],
+     "start": 1
     },
     {
      "site": "STALL",
@@ -3024,42 +3743,72 @@
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "queue",
      "lo": 0,
      "hi": 2,
-     "value": 1
+     "value": 1,
+     "group": [
+      "A:move:p2a:coil",
+      "A:move:p1b:coil"
+     ],
+     "start": 0
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "field:Residual",
      "lo": 0,
      "hi": 2,
-     "value": 0
+     "value": 0,
+     "group": [
+      "H:stall:p2b:end",
+      "H:protect:p2b:end"
+     ],
+     "start": 0
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     }
    ],
    "log": [
@@ -3307,21 +4056,36 @@
      "context": "queue",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "A:move:p1b:coil",
+      "A:move:p2a:coil"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:BeforeTurn",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "RANDOM_TARGET",
@@ -3342,7 +4106,12 @@
      "context": "queue",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "A:move:p1b:coil",
+      "A:move:p2a:coil"
+     ],
+     "start": 1
     },
     {
      "site": "RANDOM_TARGET",
@@ -3370,21 +4139,36 @@
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "RANDOM_TARGET",
@@ -3398,14 +4182,24 @@
      "context": "queue",
      "lo": 0,
      "hi": 2,
-     "value": 0
+     "value": 0,
+     "group": [
+      "A:move:p2a:coil",
+      "A:move:p1b:coil"
+     ],
+     "start": 0
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "RANDOM_TARGET",
@@ -3419,7 +4213,12 @@
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "RANDOM_TARGET",
@@ -3454,28 +4253,48 @@
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     }
    ],
    "log": [
@@ -3733,21 +4552,36 @@
      "context": "queue",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "A:move:p1b:coil",
+      "A:move:p2a:coil"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:BeforeTurn",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "RANDOM_TARGET",
@@ -3768,7 +4602,12 @@
      "context": "queue",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "A:move:p1b:coil",
+      "A:move:p2a:coil"
+     ],
+     "start": 1
     },
     {
      "site": "RANDOM_TARGET",
@@ -3796,21 +4635,36 @@
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "RANDOM_TARGET",
@@ -3824,14 +4678,24 @@
      "context": "queue",
      "lo": 0,
      "hi": 2,
-     "value": 0
+     "value": 0,
+     "group": [
+      "A:move:p2a:coil",
+      "A:move:p1b:coil"
+     ],
+     "start": 0
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "RANDOM_TARGET",
@@ -3845,7 +4709,12 @@
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 2
+     "value": 2,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "RANDOM_TARGET",
@@ -3880,28 +4749,48 @@
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 1,
      "hi": 3,
-     "value": 1
+     "value": 1,
+     "group": [
+      "P:p1b:0",
+      "P:p2a:0"
+     ],
+     "start": 1
     }
    ],
    "log": [
