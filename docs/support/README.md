@@ -17,7 +17,8 @@ This is a status manifest, **not** a mechanics certificate. For the mechanics of
 | Turn / replacement / pivot execution | **IMPLEMENTED + TESTED** for CLOSURE data (decision 0006 sections 4.1, 4.2 and 4.12); every bundle under SYNTHETIC data stays `E_UNSUPPORTED` |
 | Rule-authorized re-prompt | **STRUCTURAL** (`dfi_reprompt_side`, white-box; no mechanic triggers it) |
 | Struggle (all pp 0) | **IMPLEMENTED + TESTED** (offered in the request since step 2c; typeless, random target, recoil) |
-| Observation prototype (open sheets, own exact, foe percent HP as last seen, tagged unknowns) | **IMPLEMENTED + TESTED** (prototype; statuses, stages and conditions are not shown yet) |
+| Observation v2: what a player sees (decision 0007) | **IMPLEMENTED + TESTED**: the oracle gives the same bytes for every fixture and player; paired tests on synthetic and real states keep the hidden rolls hidden; the conformance test compares both players' views with the recorded Showdown battles |
+| Event log per player (decision 0007 section 6) | **NOT YET** (next step) |
 | Information-equivalence evidence | **TESTED** on paired synthetic states (`duoforge.request.information`) |
 | Closure data tables (16 formes, 36 moves plus Struggle, 16 abilities, 11 items, type chart, natures) | **GENERATED + TESTED** from the pin with provenance per record (`tools/datagen/gen_closure.py`, `src/data/closure_tables.*`). Used by every CLOSURE battle |
 | Champions stat and PP formulas | **IMPLEMENTED + TESTED** (all 16 formes of the two teams; decision 0006) |

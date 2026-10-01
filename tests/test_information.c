@@ -1,6 +1,6 @@
 /*
- * T33 duoforge.request.information (white-box fixtures): the perspective-safe
- * observation prototype and the information boundary. Observation bytes of
+ * T33 duoforge.request.information (white-box fixtures): observation v2
+ * (decision 0007, what a player sees) and the information boundary. Observation bytes of
  * every fixture and player equal the independent oracle; hand-derived
  * perspective rules (own exact, foe percent with the Champions colour flags
  * as last seen, tagged unknowns, private bench order); INFORMATION EQUIVALENCE: paired
@@ -27,36 +27,36 @@ typedef struct expect {
 
 /* Oracle output, verbatim ("observation" lines). */
 static const expect expected[] = {
-    {"G1", 0, "ff69d7816942571e4b64493bb42652055c2a2fb1009f9b09990a3777ead7fdd8"},
-    {"G1", 1, "146fa0041a1e209a55f5a339f9f90b35b0d0cc01e5955945481a66654bd90fdc"},
-    {"F1", 0, "acdb2db809f6ec55d86784c90e7b3acc82f33e1263cd51bd4d3dd049d7ee131c"},
-    {"F1", 1, "73df927296ecd3adcaaf5b60eaaa4a9b67311ab4d0fc2a3c5960a4ac15803a92"},
-    {"F2", 0, "eb19709d172994db1ab2336ef19bf8ff455376b6e66b3ac443e6c9cdb2cfe14a"},
-    {"F2", 1, "fd81568a93625a16ee9e07ca4d6eb4e04c5e06749c46dac614a23f3445d78c87"},
-    {"G3", 0, "6c53bcf4700ec67d8ca55d32405f8a23e87b6bf5f51aa081ec6de769f0671b65"},
-    {"G3", 1, "d0d1524973ac3ef6d2c9fdc583057da565815d72606943c6ce114a9c0086ea82"},
-    {"F3", 0, "987771ba510e494cbc750d8d6a4c18a66a248c32e4bd0199807d39b84b6519d0"},
-    {"F3", 1, "ddfab8424835db3b7f75a5a3ebd88396ae075f435855379568e3c1a1f3ab4ed2"},
-    {"F4", 0, "0237d3886a16097979a3899c3e32b1b45a54cc0f6a6e154847fedc61bcd1c775"},
-    {"F4", 1, "47ab3152ab3a3e7b51c08d53555d24af0624ae93e2bc3f50f18a8193f735cd91"},
-    {"F5", 0, "3743ceb929060da6f9b55ef2f79182a7192662f6c50031819848fadc201e2133"},
-    {"F5", 1, "4ba1c6073c8fece6693ce9b0c51601e446e727a9252e89c2349952b08fe93dc5"},
-    {"F6", 0, "3743ceb929060da6f9b55ef2f79182a7192662f6c50031819848fadc201e2133"},
-    {"F6", 1, "b57c5ef71388813845ce71101aae51deab74edff96dccebe099a92732dcdd6b7"},
-    {"G7", 0, "320b5c5afb75e9f9f19dede83a0eaebb406d0cf9de28d965ed1f61c4a8987458"},
-    {"G7", 1, "e94992a5b5f3f97976835e2d5bdea2e7e1a50a088233f62bfbcf3ecc68ef5b03"},
-    {"F8", 0, "fc121d62fd7e8c18f2d487e6273abaee5f14805ce6fee45bd9e71c15c21d34aa"},
-    {"F8", 1, "33a6d89b64926cf80cc458bbd5c4d6c49ca323088b2395ff8491a9bd3aac1529"},
-    {"F9", 0, "0d4f43e3e66f58c3664ffcbac1e392cd648426f2b79be218c9babe4ece216ea2"},
-    {"F9", 1, "01c01cbc0912e150daf4d839c43625cf3fe74ab1bf866e36a7c5b2f5d1a12640"},
-    {"F10", 0, "5cc63aa3715ddb6abf8b41dcce78bc68a65edc8d17b65db4505cfe8e2db374c3"},
-    {"F10", 1, "b497c817cfe9a4a003d2bbe48cfb9830a977c3072892f3247f8ca2250e49b09b"},
-    {"F11", 0, "26ca211fda2797e42490dd133f82ea6c57578eca8bc3810342718f310ef6bfdc"},
-    {"F11", 1, "6c6c77c2748d318402926b3e703960969f2d42669d970dd0db1263b1afcb944b"},
-    {"F12", 0, "c91322ba47059e41723577f64331302b984c9268a83aad89e67dfa7811871179"},
-    {"F12", 1, "01c01cbc0912e150daf4d839c43625cf3fe74ab1bf866e36a7c5b2f5d1a12640"},
-    {"F13", 0, "27f839bf8d32ada8655b4d7dc99e37a35e472298ad78ca04ca6d0a3684650dc1"},
-    {"F13", 1, "eeaed669881a1e64c19fa4311090263bc4fe2132179fef289ba86bf2166a2b2d"},
+    {"G1", 0, "cae10aed91453e6aec3e3ec73093f3effda1d534b45adc66389cdecec8a28447"},
+    {"G1", 1, "a60c451fd291ee249b5101f8233208a9c3af816590851563ac9e9a33c1b27a75"},
+    {"F1", 0, "b9cd3c6bcb404cafe4730234dbff45158ffcce93c195cdc0d3025c20a69f471f"},
+    {"F1", 1, "ff513f260dce7368978a36907151eb69a1fc53cc896e54c3568e437a7bf75702"},
+    {"F2", 0, "e999a8d43fe1a201885369b0a4c0745bf9895080fb700616a36a043d024f34e3"},
+    {"F2", 1, "a050e0926edecc38fdef8d403a07b8a07f46b8141664b1655c5d9307cda18c80"},
+    {"G3", 0, "dd167682817648861a4e892265c75da037dc383ff3c607a01c14b734412ded26"},
+    {"G3", 1, "38de3ef3d323738ad563f4556fcb96c18677582d4078ccd4a26bb14391c1ab18"},
+    {"F3", 0, "d1b9d951ad53ff342d8a0eb2f3759f7893b9b1e36c70d449f4d543809c61059e"},
+    {"F3", 1, "668d4a10f49be92f965276fde27ba83d221167548da2f83eee298371faf436f4"},
+    {"F4", 0, "1ca52fcb1544a55ab8e4e8905732af8afefdf810aa7d51d3d92599fc4b856764"},
+    {"F4", 1, "9713f413f16b7259b55f88c0e310d874c780003dfc3ea19fa6e1ad20dc3cf4a9"},
+    {"F5", 0, "06cfb20fa6ef3947b97ae4abd59a6e1a4b98bf78d26acc91a04de0d8a9a6b311"},
+    {"F5", 1, "97b5feabd3c1c4c7970314a5eccf42a4a78c446fd0d3972e74d5d3a4b4e8c0fc"},
+    {"F6", 0, "f7221c3254fb46f2d0d2e44c75c9aa053815e4ddbaa46382d189ccf34562a955"},
+    {"F6", 1, "e5b03e26cb7d126f13f7758ebfb5f8751e2ff97eacb13de9492410fb13cd7084"},
+    {"G7", 0, "e90ba16203d3cfcc0be241e30b65d5af7cd6301d46c29a3006b1a418036a5950"},
+    {"G7", 1, "f1f090df4f6b299a2a26e120ca025c4f5ec674176c365cd6dfda3597b7016728"},
+    {"F8", 0, "33694127165c70fc4f17f8ac2ce48e93fc8fc8bb8b7ffde44440adb28a528eb0"},
+    {"F8", 1, "6f0bb5f3f19c14151480a1283dd983080d7e839bc7a92b75fabe47a6572926e8"},
+    {"F9", 0, "6a14f205f50c6dbcfa4dcfcaa3d9de2fead92be06a4d0e8b8cffd7e7b7c4ee78"},
+    {"F9", 1, "6c06013b9857162c9b1dd8546e91aa6c5ef9a9e4d9c341969f8847adaf51b91a"},
+    {"F10", 0, "cf7dc5f8e3fd147771731818b3536be9cc790dfc6e88053f67a8cc73e8e763fe"},
+    {"F10", 1, "3c765c76e16bc0a5790af2c929c234acd3458c2ebb2aaced16a9c7afe1c275d5"},
+    {"F11", 0, "aa29a54e8926b3a34c3acb13c217835a6d33d8100fb3baa0f6380a97f33573b2"},
+    {"F11", 1, "8b7dd9ce1ff2ac47dbdbc24404b2ae04026545ead2ef0356fd1de13ea9cb74cb"},
+    {"F12", 0, "b6c8c2f867dfa4895bffe9bb5674635906430756115e329d00707d5c2e50123a"},
+    {"F12", 1, "6c06013b9857162c9b1dd8546e91aa6c5ef9a9e4d9c341969f8847adaf51b91a"},
+    {"F13", 0, "992b9e5f16cabf718d3ce17ad63410f16f3c3abe8a80e6e81a0869aa984c3bf9"},
+    {"F13", 1, "9ef8f3c214d2e8c0370ac3f945351484e19896e22d3059c61f1ae5564a115531"},
 };
 
 typedef struct fixture {
@@ -188,7 +188,8 @@ int main(void)
         DF_CHECK(&t, own->brought_order[0] == 2u && own->brought_order[3] == 3u && own->occupant[0] == 2u &&
                          own->occupant[1] == 0u && own->member_count == 6u && own->mega_used == 0u);
         /* Foe: sheet open, HP as percent for the seen leads, unknown otherwise,
-         * PP unknown, bench order hidden, occupancy public. */
+         * PP derived from the uses the viewer saw (none yet: the maximum),
+         * bench order hidden, occupancy public (decision 0007). */
         DF_CHECK(&t, foe->members[1].species_id == 11u && foe->members[1].move_ids[0] == 27u &&
                          foe->members[1].move_count == 4u && foe->members[0].mega_capable == 1u);
         DF_CHECK(&t, foe->members[1].hp_kind == DUOFORGE_HP_PERCENT && foe->members[1].hp == 100u &&
@@ -196,7 +197,14 @@ int main(void)
                          foe->members[1].location == DUOFORGE_LOCATION_ACTIVE);
         DF_CHECK(&t, foe->members[0].hp_kind == DUOFORGE_HP_UNKNOWN && foe->members[0].hp == 0u &&
                          foe->members[0].hp_max == 0u && foe->members[0].location == DUOFORGE_LOCATION_UNDETERMINED);
-        DF_CHECK(&t, foe->members[1].pp_kind == DUOFORGE_PP_UNKNOWN && foe->members[1].pp[0] == 0u);
+        DF_CHECK(&t, foe->members[1].pp_kind == DUOFORGE_PP_DERIVED && foe->members[1].pp_max[0] != 0u);
+        for (unsigned k = 0; k < DUOFORGE_MAX_MOVE_SLOTS; ++k) {
+            DF_CHECK(&t, foe->members[1].pp[k] == foe->members[1].pp_max[k]);
+        }
+        /* Active positions: neutral stages, nothing locked; an empty one is
+         * all zero. */
+        DF_CHECK(&t, foe->positions[0].stages[0] == 6u && foe->positions[0].locked_slot == DUOFORGE_MOVE_SLOT_NONE &&
+                         own->positions[1].stages[4] == 6u && own->positions[1].locked_target == 0u);
         DF_CHECK(&t, foe->members[4].species_id == 0u && foe->members[4].hp_kind == 0u); /* unregistered */
         unsigned hidden = 0;
         for (unsigned i = 0; i < DUOFORGE_MAX_ROSTER; ++i) {
@@ -204,7 +212,7 @@ int main(void)
         }
         DF_CHECK_EQ_U64(&t, hidden, 6u);
         DF_CHECK(&t, foe->occupant[0] == 1u && foe->occupant[1] == 3u && foe->member_count == 4u);
-        DF_CHECK(&t, o.sides[0].reserved[0] == 0u && o.sides[1].reserved[1] == 0u);
+        DF_CHECK(&t, o.sides[0].reserved == 0u && o.sides[1].reserved == 0u && o.reserved == 0u);
         /* Before team selection nothing is located and nothing is seen. */
         DF_CHECK(&t, duoforge_battle_observe(c1, fx[0].b, 1, &o) == DUOFORGE_OK);
         DF_CHECK(&t, o.requested == 1u && o.slot_mask == 0u && o.sides[1].members[0].location == 0u &&

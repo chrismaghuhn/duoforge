@@ -161,6 +161,65 @@ static void pairs(df_test *t, const duoforge_context *ctx, const duoforge_battle
             break;
         }
     }
+    /* Observation v2 (decision 0007): what the game never shows stays
+     * hidden on both sides, what it shows is visible. */
+    for (uint32_t s = 0u; s < 2u; ++s) {
+        const dfi_side *sd = &a->sides[s];
+        for (uint32_t m = 0u; m < sd->member_count; ++m) {
+            const dfi_member *mem = &sd->members[m];
+            /* sleep and freeze turns: rolled in secret, hidden for both */
+            if (mem->hp != 0u && (mem->status == DFI_STATUS_SLP || mem->status == DFI_STATUS_FRZ)) {
+                DF_CHECK(t, duoforge_battle_copy(ctx, b, a) == DUOFORGE_OK);
+                const uint32_t turns = mem->status_counter == 1u ? 2u : 1u;
+                b->sides[s].members[m].status_counter = (uint8_t)turns;
+                if (DF_CHECK(t, duoforge_battle_check(ctx, b) == DUOFORGE_OK)) {
+                    expect_same(t, ctx, a, b, viewer, "sleep or freeze turns", c);
+                }
+                break;
+            }
+        }
+        for (uint32_t p = 0u; p < 2u; ++p) {
+            const dfi_active_slot *slot = &sd->positions[p];
+            /* confusion turns: hidden for both */
+            if (slot->confusion_turns != 0u) {
+                DF_CHECK(t, duoforge_battle_copy(ctx, b, a) == DUOFORGE_OK);
+                const uint32_t turns = slot->confusion_turns == 1u ? 2u : 1u;
+                b->sides[s].positions[p].confusion_turns = (uint8_t)turns;
+                if (DF_CHECK(t, duoforge_battle_check(ctx, b) == DUOFORGE_OK)) {
+                    expect_same(t, ctx, a, b, viewer, "confusion turns", c);
+                }
+            }
+            /* the foe's charged move: its target is hidden, the move is not */
+            if (s == foe && slot->locked_move != 0u) {
+                DF_CHECK(t, duoforge_battle_copy(ctx, b, a) == DUOFORGE_OK);
+                const uint32_t other = slot->locked_target == viewer * 2u ? viewer * 2u + 1u : viewer * 2u;
+                b->sides[s].positions[p].locked_target = (uint8_t)other;
+                if (duoforge_battle_check(ctx, b) == DUOFORGE_OK) {
+                    expect_same(t, ctx, a, b, viewer, "the foe's locked target", c);
+                }
+            }
+        }
+    }
+    /* shown: the field's remaining turns and a foe's stat stage */
+    if (a->weather != DFI_WEATHER_NONE && a->weather_turns > 1u) {
+        DF_CHECK(t, duoforge_battle_copy(ctx, b, a) == DUOFORGE_OK);
+        b->weather_turns = (uint8_t)((uint32_t)a->weather_turns - 1u);
+        DF_CHECK(t, duoforge_battle_check(ctx, b) == DUOFORGE_OK);
+        capture(ctx, a, viewer, &sa);
+        capture(ctx, b, viewer, &sb);
+        c->shown += DF_CHECK(t, memcmp(&sa, &sb, sizeof sa) != 0) ? 1u : 0u;
+    }
+    for (uint32_t p = 0u; p < 2u; ++p) {
+        if (fs->positions[p].occupant < fs->member_count && fs->positions[p].stages[0] > 0u) {
+            DF_CHECK(t, duoforge_battle_copy(ctx, b, a) == DUOFORGE_OK);
+            b->sides[foe].positions[p].stages[0] = (uint8_t)((uint32_t)fs->positions[p].stages[0] - 1u);
+            DF_CHECK(t, duoforge_battle_check(ctx, b) == DUOFORGE_OK);
+            capture(ctx, a, viewer, &sa);
+            capture(ctx, b, viewer, &sb);
+            c->shown += DF_CHECK(t, memcmp(&sa, &sb, sizeof sa) != 0) ? 1u : 0u;
+            break;
+        }
+    }
     /* the opponent's private pick order */
     if (dfi_popcount_mask(fs->brought_mask) >= 2u) {
         DF_CHECK(t, duoforge_battle_copy(ctx, b, a) == DUOFORGE_OK);
