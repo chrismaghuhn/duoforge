@@ -73,12 +73,9 @@ class RandomPolicy:
         """next() % counts for the environments in mask, advancing them."""
         if (counts == 0).any():
             raise ValueError("a requested player has no candidates")
+        z = _splitmix(self.state[mask])
         with np.errstate(over="ignore"):
             self.state[mask] += np.uint64(_GAMMA)
-            z = self.state[mask]
-            z = (z ^ (z >> np.uint64(30))) * np.uint64(_M1)
-            z = (z ^ (z >> np.uint64(27))) * np.uint64(_M2)
-            z = z ^ (z >> np.uint64(31))
         return z % counts.astype(np.uint64)
 
     def choose(self, batch):

@@ -56,8 +56,10 @@ static duoforge_batch *make(df_test *t, const duoforge_context *ctx)
 static void choose(uint64_t *policy, const side_arrays *s)
 {
     for (uint32_t at = 0u; at < SLOTS; ++at) {
-        indices[at] = s->requests[at].requested != 0u ? (uint16_t)(next(policy) % s->counts[at])
-                                                       : DUOFORGE_BATCH_NO_CHOICE;
+        indices[at] = DUOFORGE_BATCH_NO_CHOICE;
+        if (s->requests[at].requested != 0u) {
+            indices[at] = (uint16_t)(next(policy) % s->counts[at]);
+        }
     }
 }
 
@@ -82,6 +84,16 @@ static bool same(const duoforge_context *ctx, const duoforge_batch *a, const duo
              memcmp(da, db, sizeof da) == 0 && duoforge_batch_env_episode(a, e) == duoforge_batch_env_episode(b, e);
     }
     return ok;
+}
+
+/* The reference episode results: the result of every environment that is
+   TERMINAL now (DUOFORGE_RESULT_* is 0 before TERMINAL). */
+static void reference_results(const duoforge_context *ctx, const duoforge_batch *a)
+{
+    for (uint32_t e = 0u; e < ENVS; ++e) {
+        a_side.episode_results[e] = 0u;
+        (void)duoforge_battle_result(ctx, duoforge_batch_env(a, e), &a_side.episode_results[e]);
+    }
 }
 
 static bool query(duoforge_batch *batch, side_arrays *s)
@@ -118,14 +130,39 @@ int main(void)
             DF_CHECK(&t, duoforge_batch_step_indices(a, a_side.requests, a_side.candidates, a_side.counts, indices,
                                                      a_side.statuses, a_side.results) == DUOFORGE_OK &&
                              query(a, &a_side));
+            reference_results(ctx, a);
             DF_CHECK(&t, duoforge_batch_step_query(b, 0u, indices, b_side.requests, b_side.observations,
-                                                   b_side.candidates, b_side.counts, NULL, b_side.statuses,
-                                                   b_side.results) == DUOFORGE_OK);
-            differ += same(ctx, a, b) ? 0u : 1u;
+                                                   b_side.candidates, b_side.counts, b_side.episode_results,
+                                                   b_side.statuses, b_side.results) == DUOFORGE_OK);
+            differ += same(ctx, a, b) &&
+                              memcmp(a_side.episode_results, b_side.episode_results, sizeof a_side.episode_results) == 0
+                          ? 0u
+                          : 1u;
             steps += 1u;
         }
         DF_CHECK(&t, steps > 10u);
         DF_CHECK_EQ_U64(&t, differ, 0u);
+
+        /* Every environment is TERMINAL on entry now: with the flag, one call
+           reports every result and resets every environment, as
+           step_indices, the results, reset_terminal and query do. */
+        choose(&policy, &a_side);
+        DF_CHECK(&t, duoforge_batch_step_indices(a, a_side.requests, a_side.candidates, a_side.counts, indices,
+                                                 a_side.statuses, a_side.results) == DUOFORGE_OK);
+        reference_results(ctx, a);
+        unsigned reported = 0u;
+        for (uint32_t e = 0u; e < ENVS; ++e) {
+            reported += a_side.episode_results[e] != 0u ? 1u : 0u;
+        }
+        DF_CHECK_EQ_U64(&t, reported, ENVS);
+        DF_CHECK(&t, duoforge_batch_reset_terminal(a) == DUOFORGE_OK && query(a, &a_side));
+        DF_CHECK(&t, duoforge_batch_step_query(b, DUOFORGE_BATCH_AUTORESET, indices, b_side.requests,
+                                               b_side.observations, b_side.candidates, b_side.counts,
+                                               b_side.episode_results, b_side.statuses,
+                                               b_side.results) == DUOFORGE_OK);
+        DF_CHECK(&t, same(ctx, a, b) &&
+                         memcmp(a_side.episode_results, b_side.episode_results, sizeof a_side.episode_results) == 0);
+        DF_CHECK_EQ_U64(&t, duoforge_batch_env_episode(b, 0u), 1u);
         duoforge_batch_destroy(a);
         duoforge_batch_destroy(b);
     }

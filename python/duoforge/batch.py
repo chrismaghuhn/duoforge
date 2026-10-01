@@ -124,11 +124,13 @@ class Batch:
         """step(indices), then - with autoreset - the reset of every TERMINAL
         environment to its next episode, then query(), in one pass over the
         environments (duoforge_batch_step_query): the RL loop's step.
-        episode_results holds the result (DUOFORGE_RESULT_*) of every episode
-        that is TERMINAL after the step and 0 for the others; results shows
-        which environments ended. With observations=False the observation
-        buffer keeps its contents. A failure raises DuoforgeError with the
-        per-environment statuses."""
+        episode_results holds the result (DUOFORGE_RESULT_*, never 0) of every
+        episode that is TERMINAL after the step and 0 for the others. With
+        autoreset, np.flatnonzero(batch.episode_results) are exactly the
+        environments this call reset - also those already TERMINAL on entry,
+        whose results entry is all-zero - so a loop should re-seed by it.
+        With observations=False the observation buffer keeps its contents. A
+        failure raises DuoforgeError with the per-environment statuses."""
         _require(indices, np.uint16, (self.envs, 2), "indices")
         self._check(self._lib.duoforge_batch_step_query(
             self._live(), _AUTORESET if autoreset else 0, ptr(indices), ptr(self.requests),

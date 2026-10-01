@@ -5,10 +5,10 @@ How fast the Python package (decision 0013) drives the batch runtime, compared w
 ## Setup
 
 - AMD Ryzen 7 5800X (8 cores, 16 threads), Windows 11.
-- Library 0.13.0 as `duoforge_shared`, GCC 16.2.0 (WinLibs UCRT), Release with link-time optimization: `cmake -S . -B build/py-release -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DDUOFORGE_ENABLE_IPO=ON -DBUILD_TESTING=OFF`.
+- Library 0.13.0 (0.15.0 for the one-pass section) as `duoforge_shared`, GCC 16.2.0 (WinLibs UCRT), Release with link-time optimization: `cmake -S . -B build/py-release -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DDUOFORGE_ENABLE_IPO=ON -DBUILD_TESTING=OFF`.
 - CPython 3.12.14, NumPy 2.5.3 (the project venv).
 - The four reference pairings (environment e plays pairing e % 4), CLOSURE context, the uniform random policy unless stated.
-- Quiet machine (decision 0008): no build, no game and no other test running; WSL idle. The modes of one configuration run interleaved, 5 times; each run plays at least 1024 battles, the native mode 8192. The tables give the median and, in brackets, the best run.
+- Quiet machine (decision 0008): no build, no game and no other test running; WSL idle. The modes of one configuration run interleaved, 5 times; each run plays at least 1024 battles, the native mode 8192. The tables give the median and, in brackets, the best run. Raw output of every series is in `raw/`.
 
 Command (`python -m duoforge.examples.throughput`):
 
@@ -22,7 +22,9 @@ python -m duoforge.examples.throughput --envs 64 --episodes 16 --workers 16 --re
 | Mode | What runs per batch step |
 |---|---|
 | native | nothing in Python: `play_random` plays every episode in C (requests and candidates only) |
-| autoreset | `query` (requests, observations, candidates), `RandomPolicy.choose`, `step`, `reset_terminal`: each environment starts its next episode at once (the usual RL loop) |
+| autoreset | `query` (requests, observations, candidates), `RandomPolicy.choose`, `step`, `reset_terminal`: each environment starts its next episode at once (the usual RL loop). The first two series re-seeded the policy one environment at a time, as `autoreset-single` does now |
+| autoreset-single | the same, re-seeding one environment at a time (the loop before library 0.15.0) |
+| fused | the same with one `step_query(indices, autoreset=True)` per step (library 0.15.0) |
 | index | as autoreset, but in rounds: every environment plays episode k, and the round ends with the longest battle, so finished environments wait |
 | factored | as index, with `query_factored`, `choose_factored`, `step_factored` |
 | scripted | as index, with `ScriptedPolicy` |
@@ -61,21 +63,25 @@ The rounds of the other modes (first series, same setup):
 
 ## One pass per RL step (library 0.15.0)
 
-The phases of the autoreset loop (1024 environments, 16 workers) showed where the time went: `query` 36 %, `step` 31 %, `reset_terminal` 7 % - three passes over every environment per step, each waiting for its slowest worker - and 16 % for re-seeding the random policy one environment at a time. Two changes followed:
+The phases of the autoreset loop (1024 environments, 16 workers; `--phases`) showed where the time went: `query` 34 to 36 %, `step` 31 %, `reset_terminal` 7 % - three passes over every environment per step, each waiting for its slowest worker - and 16 to 17 % for re-seeding the random policy one environment at a time through ctypes. Two changes followed:
 
-- `duoforge_batch_step_query` (`Batch.step_query(indices, autoreset=True)`) steps, resets ended episodes and queries each environment in one pass; `episode_results` keeps the result of an episode that ended. Tests: `duoforge.batch.step_query` (the C call equals step_indices, reset_terminal and query, every array, digest and episode number, step by step) and the Python equivalence.
+- `duoforge_batch_step_query` (`Batch.step_query(indices, autoreset=True)`) steps, resets ended episodes and queries each environment in one pass; `episode_results` keeps the result of every episode that ended, and with autoreset its nonzero entries are exactly the environments the call reset. Tests: `duoforge.batch.step_query` (the C call equals step_indices, the results, reset_terminal and query - every array, digest and episode number, step by step, also for environments already TERMINAL on entry) and the Python equivalence.
 - `RandomPolicy.start_episodes` seeds many environments in one NumPy call (decision 0012's derivation, pinned to `duoforge_batch_seeds` by test).
 
-Before and after (16 workers, games/s, median of 3 interleaved runs of about 4,100 battles; the autoreset column already seeds in NumPy):
+Same session, interleaved, 16 workers, 5 runs of about 4,100 battles (native 8,192), median games/s; `autoreset-single` is the loop before this change, `autoreset` adds the NumPy seeding, `fused` the one-pass call. Raw output and commands: `raw/fused-ab.txt` (1024 and 2048 environments twice: the first series started while WSL still showed load, the rerun ran idle).
 
-| Environments | before (split, seeded per environment) | autoreset (split) | fused |
-|---|---|---|---|
-| 256 | 20,978 | 22,650 | 30,941 to 31,561 |
-| 512 | 28,370 | - | 42,152 |
-| 1024 | 31,191 | 38,982 | 39,597 to 44,431 (best 46,901) |
-| 2048 | 31,499 | 41,482 | 42,953 |
+| Environments | autoreset-single | autoreset | fused | native |
+|---|---|---|---|---|
+| 256 | 21,735 | 22,920 (+5 %) | 31,239 (+36 %) | 96,073 |
+| 1024 | 33,611 to 34,319 | 38,429 to 39,647 (+12 to 18 %) | 43,623 to 45,268 (+14 %) | 94,822 to 95,105 |
+| 2048 | 34,305 to 34,534 | 38,754 to 39,508 (+13 to 14 %) | 35,651 to 40,696 (-8 to +3 %) | 90,411 to 90,596 |
 
-The fused loop reaches about 42,000 to 44,000 games/s and 1.4 to 1.6 million decisions/s from 512 environments on, 40 percent above the earlier plateau and close to half of the native mode (96,000 to 100,000 in the same runs). Compilers were compared too: Clang ThinLTO against GCC LTO gave 6 percent more native games per core but no measurable difference on 16 workers or in the Python loop. What remains in Python at 1024 environments is the random policy and the re-seeding, about 17 percent of a step; the rest is the engine.
+- The one-pass call pays most where Python's share is small against the barriers: +36 % at 256 environments, +14 % at 1024. At 2048 its gain is within the spread (one series has a best run of 43,544 but a median of 35,651).
+- The NumPy seeding gives +5 % at 256 and +12 to 18 % at 1024 and 2048 environments, where many episodes end in each step.
+- Together, against the loop before: +44 % at 256, +27 to 35 % at 1024, +18 % at 2048. The best configuration, 1024 environments, runs at 43,600 to 45,300 games/s and 1.53 to 1.59 million decisions/s, about 46 % of the native mode in the same runs.
+- In the fused loop at 1024 environments the random policy and the re-seeding take about a fifth of a step (`--phases`: 12.9 % and 6.2 %); the rest is the call into the engine.
+
+Compilers (`raw/compilers.txt`, 4 interleaved rounds, library 0.13.0): Clang 23.1 ThinLTO against GCC 16.2 LTO gave about 6 % more native games per core (11,400 to 12,000 against 10,700 to 11,000) and no measurable difference on 16 workers or in the Python loop.
 
 ## Reading
 

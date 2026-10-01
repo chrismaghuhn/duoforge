@@ -8,6 +8,8 @@ episodes (round k: every environment plays episode k from a fresh reset):
   autoreset query, RandomPolicy.choose, step, reset_terminal: every
             environment starts its next episode at once (the RL loop), until
             envs * episodes battles have ended
+  autoreset-single  the same, re-seeding the policy one environment at a
+            time (the loop before step_query and start_episodes)
   fused     the same loop with one step_query(autoreset=True) per step
   index     query, RandomPolicy.choose, step: one C call per batch operation
   factored  query_factored, choose_factored, step_factored
@@ -27,7 +29,7 @@ import numpy as np
 
 import duoforge
 
-MODES = ("native", "fused", "autoreset", "index", "factored", "scripted")
+MODES = ("native", "fused", "autoreset", "autoreset-single", "index", "factored", "scripted")
 _TERMINAL = duoforge._layout.CONSTANTS["DUOFORGE_BOUNDARY_TERMINAL"]
 
 
@@ -51,7 +53,7 @@ def _play(batch, mode, episodes, seed, phases=None):
         return records.size, int(records["decisions"].sum())
     policy = duoforge.ScriptedPolicy() if mode == "scripted" else duoforge.RandomPolicy(seed, batch.envs)
     decisions = 0
-    if mode in ("autoreset", "fused"):
+    if mode in ("autoreset", "autoreset-single", "fused"):
         for e in range(batch.envs):
             batch.reset(e, 1)
         episode = np.ones(batch.envs, dtype=np.uint64)  # autoreset moves an environment on by one episode
@@ -70,16 +72,23 @@ def _play(batch, mode, episodes, seed, phases=None):
             else:
                 batch.step(indices)
                 mark("step")
-            terminal = np.flatnonzero(batch.results["boundary_kind"] == _TERMINAL)
+            if mode == "fused":
+                terminal = np.flatnonzero(batch.episode_results)  # exactly the environments reset
+            else:
+                terminal = np.flatnonzero(batch.results["boundary_kind"] == _TERMINAL)
             if terminal.size:
                 ended += terminal.size
-                if mode == "autoreset":
+                if mode != "fused":
                     batch.reset_terminal()
                     mark("reset")
-                episode[terminal] += np.uint64(1)
-                policy.start_episodes(terminal, episode[terminal])
+                if mode == "autoreset-single":
+                    for e in terminal:
+                        policy.start_episode(e, batch.episode(e))
+                else:
+                    episode[terminal] += np.uint64(1)
+                    policy.start_episodes(terminal, episode[terminal])
                 mark("reseed")
-            if mode == "autoreset":
+            if mode != "fused":
                 batch.query()
                 mark("query")
             mark("python")
@@ -132,7 +141,7 @@ def main(argv=None):
     print(f"envs {args.envs}, workers {args.workers}, episodes {args.episodes} "
           f"(native x{args.native_factor}), repeats {args.repeats}")
     rates = {m: [] for m in args.modes}
-    phases = {m: _Phases() for m in ("autoreset", "fused")} if args.phases else {}
+    phases = {m: _Phases() for m in ("autoreset", "autoreset-single", "fused")} if args.phases else {}
     with duoforge.Context() as ctx:
         setups = duoforge.reference_setups([e % 4 for e in range(args.envs)])
         for _ in range(args.repeats):

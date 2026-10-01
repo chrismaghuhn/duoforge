@@ -208,6 +208,22 @@ class EquivalenceTest(unittest.TestCase):
                 policy_a.start_episodes(done, episodes)
                 policy_b.start_episodes(done, episodes)
 
+    def test_step_query_resets_environments_terminal_on_entry(self):
+        terminal = _layout.CONSTANTS["DUOFORGE_BOUNDARY_TERMINAL"]
+        policy = duoforge.RandomPolicy(SEED, ENVS)
+        with duoforge.Batch(self.ctx, _setups(), 2, SEED) as b:
+            policy.start_episodes(np.arange(ENVS), np.zeros(ENVS, dtype=np.uint64))
+            b.query()
+            ended = np.zeros(ENVS, dtype=bool)
+            while not ended.any() or ended.all():
+                b.step_query(policy.choose(b))  # no autoreset: ended environments stay TERMINAL
+                ended |= b.results["boundary_kind"] == terminal
+            b.step_query(policy.choose(b), autoreset=True)
+            reset = b.episode_results != 0
+            self.assertTrue(np.array_equal(reset, ended | (b.results["boundary_kind"] == terminal)))
+            self.assertTrue(all(b.episode(e) == 1 for e in np.flatnonzero(reset)))
+            self.assertTrue((b.requests["requested"][reset].sum(axis=1) == 2).all())  # team selection again
+
     def test_seeds(self):
         initstate, initseq, policy = duoforge.seeds(SEED, 5, 7)
         self.assertLess(initseq, 1 << 63)

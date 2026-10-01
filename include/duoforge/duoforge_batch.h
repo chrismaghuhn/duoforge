@@ -118,11 +118,16 @@ duoforge_status duoforge_batch_step_factored(duoforge_batch *batch, const duofor
    (requests, candidates and candidate_counts hold the last query), then,
    with DUOFORGE_BATCH_AUTORESET in flags, reset to its next episode if it is
    TERMINAL, and then queried as by duoforge_batch_query into the same
-   arrays. episode_results[env] receives the result (DUOFORGE_RESULT_*) of
-   an episode that is TERMINAL after the step, 0 otherwise. observations and
-   episode_results may be NULL; another flag bit is E_INVALID_ARGUMENT. A
-   failing environment keeps its state, and its outputs describe its
-   unchanged boundary. Equivalent to step_indices, the results,
+   arrays. episode_results[env] receives the result (DUOFORGE_RESULT_*, never
+   0) of an episode that is TERMINAL after the step, 0 otherwise; with the
+   flag a nonzero entry therefore marks exactly the environments this call
+   reset, including those already TERMINAL on entry (their results entry is
+   all-zero). observations and episode_results may be NULL; another flag bit
+   is E_INVALID_ARGUMENT. A failing step leaves its environment unchanged and
+   its outputs describe that boundary. If the step succeeds and the reset or
+   the query fails, the step stays applied, statuses[env] reports the
+   failure and episode_results[env] is 0: the result is reported by the call
+   that resets the environment. Equivalent to step_indices, the results,
    reset_terminal (with the flag) and query, in one pass instead of three. */
 duoforge_status duoforge_batch_step_query(duoforge_batch *batch, uint32_t flags, const uint16_t *indices,
                                           duoforge_request *requests, duoforge_observation *observations,
