@@ -1,0 +1,25 @@
+{
+  "name": "c01_hyper_voice_draco",
+  "purpose": "Hyper Voice (spread, 0.75) does not affect Gholdengo (Ghost) and keeps the spread modifier against a protecting target; Draco Meteor draws for accuracy (90) and lowers the user's Special Attack by 2; Salamence's Intimidate gives Milotic Competitive's +2; Kowtow Cleave and Iron Head from Kingambit.",
+  "data": "team_c",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c0103",
+  "teams": [
+    "Salamence (M) @ Life Orb\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Hyper Voice\n- Draco Meteor\n- Protect\n\nKingambit (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Iron Head\n- Protect\n\nIncineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Parting Shot\n\nBasculegion (M) @ Mystic Water\nAbility: Adaptability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Wave Crash\n- Aqua Jet",
+    "Gholdengo @ Light Clay\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Ice Beam\n- Muddy Water\n\nRaichu (F) @ Life Orb\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Focus Blast\n- Fake Out\n- Protect\n\nFarigiraf (F) @ Leftovers\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Grass Knot"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 1 2",
+      "move 2 2, move 3",
+      "move 1, move 2 1",
+      "move 3, move 1 1"
+    ],
+    "p2": [
+      "move 2, move 1 1",
+      "move 1, move 2",
+      "move 2, move 1 2"
+    ],
+    "max_steps": 40
+  }
+}

@@ -5,11 +5,26 @@
 #include "core/arith.h"
 #include "core/bytes.h"
 #include "core/sha256.h"
-#include "data/closure_tables.h"
+#include "data/extended_tables.h"
+
+static bool dfi_kind_is_team_c(uint32_t kind)
+{
+    return kind == DUOFORGE_DATA_KIND_TEAM_C || kind == DUOFORGE_DATA_KIND_TEAM_C_DEV;
+}
+
+static bool dfi_kind_is_combat(uint32_t kind)
+{
+    return kind == DUOFORGE_DATA_KIND_CLOSURE || kind == DUOFORGE_DATA_KIND_CLOSURE_DEV || dfi_kind_is_team_c(kind);
+}
 
 bool dfi_context_is_closure(const struct duoforge_context *ctx)
 {
-    return ctx->data_kind == DUOFORGE_DATA_KIND_CLOSURE || ctx->data_kind == DUOFORGE_DATA_KIND_CLOSURE_DEV;
+    return dfi_kind_is_combat(ctx->data_kind);
+}
+
+bool dfi_kind_full_roster(uint32_t data_kind)
+{
+    return data_kind == DUOFORGE_DATA_KIND_CLOSURE || data_kind == DUOFORGE_DATA_KIND_TEAM_C;
 }
 
 void dfi_context_canonical_bytes(const struct duoforge_context *ctx, uint8_t out[DFI_CONTEXT_BYTES_SIZE])
@@ -45,8 +60,8 @@ duoforge_status duoforge_context_create(const duoforge_context_config *config,
     const duoforge_context_config c = *config; /* read the input once */
 
     /* Validate on the u32 values before any narrowing. */
-    const bool closure =
-        c.data_kind == DUOFORGE_DATA_KIND_CLOSURE || c.data_kind == DUOFORGE_DATA_KIND_CLOSURE_DEV;
+    const bool closure = dfi_kind_is_combat(c.data_kind);
+    const bool team_c = dfi_kind_is_team_c(c.data_kind);
     if (c.data_kind != DUOFORGE_DATA_KIND_SYNTHETIC && !closure) {
         return DUOFORGE_E_INVALID_ARGUMENT;
     }
@@ -56,7 +71,7 @@ duoforge_status duoforge_context_create(const duoforge_context_config *config,
     if (c.brought_count < 1u || c.brought_count > c.max_roster) {
         return DUOFORGE_E_INVALID_ARGUMENT;
     }
-    if (c.data_kind == DUOFORGE_DATA_KIND_CLOSURE &&
+    if (dfi_kind_full_roster(c.data_kind) &&
         (c.max_roster != DUOFORGE_MAX_ROSTER || c.brought_count != DFI_CLOSURE_BROUGHT_COUNT)) {
         return DUOFORGE_E_INVALID_ARGUMENT; /* the certified profile: register 6, bring 4 (decision 0010) */
     }
@@ -90,8 +105,12 @@ duoforge_status duoforge_context_create(const duoforge_context_config *config,
     if (p == NULL) {
         return DUOFORGE_E_OUT_OF_MEMORY;
     }
-    const uint32_t species_count = closure ? DFI_FORME_COUNT : c.species_count;
-    const uint32_t move_count = closure ? DFI_MOVE_COUNT : c.move_count;
+    /* The CLOSURE kinds see the closure prefix of the extended tables, the
+     * TEAM_C kinds all of them (decision 0009 section 3.2). */
+    const uint32_t closure_species = team_c ? DFI_EXT_FORME_COUNT : DFI_FORME_COUNT;
+    const uint32_t closure_moves = team_c ? DFI_EXT_MOVE_COUNT : DFI_MOVE_COUNT;
+    const uint32_t species_count = closure ? closure_species : c.species_count;
+    const uint32_t move_count = closure ? closure_moves : c.move_count;
     if (!dfi_u32_to_u8(c.data_kind, &p->data_kind) || !dfi_u32_to_u8(c.max_roster, &p->max_roster) ||
         !dfi_u32_to_u8(c.brought_count, &p->brought_count) ||
         !dfi_u32_to_u16(species_count, &p->species_count) || !dfi_u32_to_u16(move_count, &p->move_count)) {
@@ -99,13 +118,16 @@ duoforge_status duoforge_context_create(const duoforge_context_config *config,
         return DUOFORGE_E_INVARIANT; /* unreachable after validation */
     }
     if (closure) {
-        /* Target classes of the closure moves (Struggle's class 10 is never
-         * selectable); the fingerprint covers all closure data by its hash. */
-        for (uint32_t i = 0u; i < DFI_MOVE_COUNT; ++i) {
-            p->move_target_classes[i] = dfi_closure_moves[i].target_class;
+        /* Target classes of the kind's moves (Struggle's class 10 is never
+         * selectable); the fingerprint covers all of the kind's data by its
+         * hash: the closure's for the CLOSURE kinds, whose rows the extended
+         * tables repeat unchanged, the extended one for the TEAM_C kinds. */
+        for (uint32_t i = 0u; i < move_count; ++i) {
+            p->move_target_classes[i] = dfi_ext_moves[i].target_class;
         }
+        const uint8_t *hash = team_c ? dfi_ext_table_hash : dfi_closure_table_hash;
         for (uint32_t i = 0u; i < DUOFORGE_DIGEST_SIZE; ++i) {
-            p->table_hash[i] = dfi_closure_table_hash[i];
+            p->table_hash[i] = hash[i];
         }
     } else {
         for (uint32_t i = 0u; i < c.move_count; ++i) {

@@ -154,7 +154,7 @@ int main(void)
              "table given"},
             {{DUOFORGE_DATA_KIND_CLOSURE, 7u, 4u, 0u, 0u, NULL}, DUOFORGE_E_INVALID_ARGUMENT, "roster 7"},
             {{DUOFORGE_DATA_KIND_CLOSURE, 6u, 0u, 0u, 0u, NULL}, DUOFORGE_E_INVALID_ARGUMENT, "brought 0"},
-            {{4u, 6u, 4u, 0u, 0u, NULL}, DUOFORGE_E_INVALID_ARGUMENT, "data kind 4"},
+            {{6u, 6u, 4u, 0u, 0u, NULL}, DUOFORGE_E_INVALID_ARGUMENT, "data kind 6"}, /* 4, 5: TEAM_C (0009) */
             {{0u, 6u, 4u, 16u, 36u, df_table_t1}, DUOFORGE_E_INVALID_ARGUMENT, "data kind 0"},
             /* The certified profile is register 6, bring 4 (decision 0010). */
             {{DUOFORGE_DATA_KIND_CLOSURE, 4u, 2u, 0u, 0u, NULL}, DUOFORGE_E_INVALID_ARGUMENT, "roster 4, brought 2"},
@@ -458,7 +458,13 @@ int main(void)
             for (size_t i = 0; i < sizeof step8_items / sizeof step8_items[0]; ++i) {
                 want.items[step8_items[i]] = 1u;
             }
-            DF_CHECK_BYTES(&t, (const uint8_t *)&dfi_support, (const uint8_t *)&want, sizeof want, "manifest");
+            /* The closure ids; the Team C ids (decision 0009) are checked by
+             * duoforge.state.team_c_setup. */
+            DF_CHECK(&t, dfi_support.turn_core == want.turn_core && dfi_support.switching == want.switching &&
+                             dfi_support.mega_evolution == want.mega_evolution);
+            DF_CHECK_BYTES(&t, dfi_support.moves, want.moves, DFI_MOVE_COUNT, "manifest moves");
+            DF_CHECK_BYTES(&t, dfi_support.abilities, want.abilities, DFI_ABILITY_COUNT, "manifest abilities");
+            DF_CHECK_BYTES(&t, dfi_support.items, want.items, DFI_ITEM_COUNT, "manifest items");
         }
         m.turn_core = 0u;
         DF_CHECK(&t, !dfi_closure_setup_supported(&m, &teams));

@@ -23,7 +23,7 @@ Team C is `team-c.txt`: Sneasler, Incineroar, Salamence, Indeedee-F, Kingambit, 
 | salamencemega | Dragon, Flying | 95/145/130/120/90/120 | 172/148/150/172/110/189 | 1126 | 100 | 6935-6948 | 0 (either) | Aerilate |
 | indeedeef | Psychic, Normal | 70/55/65/95/105/85 | 177/75/128/115/127/94 | 280 | 60 | 16969-16982 | 2 (F only) | Own Tempo / Synchronize / Psychic Surge |
 | kingambit | Dark, Steel | 100/135/120/60/85/50 | 207/205/140/72/107/70 | 1200 | 100 | 18845-18858 | 0 (either) | Defiant / Supreme Overlord / Pressure |
-| basculegion | Water, Ghost | 120/112/65/80/75/78 | 197/180/85/90/95/130 | 1100 | 100 | 17538-17555 | 1 (M only) | Swift Swim / Adaptability / Mold Breaker |
+| basculegion | Water, Ghost | 120/112/65/80/75/78 | 197/164/85/90/95/143 | 1100 | 100 | 17538-17555 | 1 (M only) | Swift Swim / Adaptability / Mold Breaker |
 
 Set stats come from the pin's own formula (`Battle.spreadModify`, `data/mods/champions/scripts.ts:10-40`: HP = base + points + 75, other stats base + points + 20, nature x1.1 / x0.9 truncated); Salamence-Mega uses the same points and nature. Grass Knot BP is what Farigiraf's attack would have against each forme. Gender rule codes are those of `gen_closure.py`; every set states its gender, so no gender draw happens at construction.
 

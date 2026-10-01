@@ -3,8 +3,11 @@
 reference teams (decision 0004) read from the pinned Pokemon Showdown
 checkout (decision 0006 section 2).
 
-usage: python3 tools/datagen/gen_closure.py <pinned checkout> [--check]
+usage: python3 tools/datagen/gen_closure.py <pinned checkout> [--team-c] [--check]
 
+  --team-c  write src/data/extended_tables.{h,c} instead: the closure tables
+            followed by Team C (docs/decisions/0009). The closure ids stay an
+            exact prefix; the generator checks that before it writes.
   --check   do not write; exit 1 if the committed files differ.
 
 Offline tooling. It extracts static data only; every effect still needs a
@@ -109,6 +112,41 @@ DATA_KEYS = {'num', 'accuracy', 'basePower', 'category', 'name', 'pp', 'priority
 IGNORED_KEYS = {'contestType', 'zMove', 'maxMove', 'isNonstandard', 'hasSheerForceBoost', 'inherit'}
 BOOST_ROLE = {'NONE': 0, 'PRIMARY_SELF': 1, 'SECONDARY_TARGET': 2, 'SELF_AFTER_HIT': 3}
 
+# ---- Team C (decision 0009): appended to the closure in the extended tables ----
+# The closure mode never reads anything below, so its output stays byte-identical.
+SETS_C = [
+    ('sneasler', 'unburden', 'whiteherb', ['closecombat', 'direclaw', 'protect', 'fakeout'], None),
+    ('incineroar', 'intimidate', 'sitrusberry', ['fakeout', 'flareblitz', 'partingshot', 'darkestlariat'], None),
+    ('salamence', 'intimidate', 'salamencite', ['protect', 'hypervoice', 'dracometeor', 'tailwind'], 'salamencemega'),
+    ('indeedeef', 'psychicsurge', 'rockyhelmet', ['followme', 'trickroom', 'helpinghand', 'psychic'], None),
+    ('kingambit', 'defiant', 'chopleberry', ['kowtowcleave', 'suckerpunch', 'ironhead', 'protect'], None),
+    ('basculegion', 'adaptability', 'choicescarf', ['wavecrash', 'lastrespects', 'flipturn', 'aquajet'], None),
+]
+# The 13 new moves in team order; ids follow Struggle (36).
+MOVES_C = ['direclaw', 'flareblitz', 'darkestlariat', 'hypervoice', 'dracometeor', 'followme', 'helpinghand',
+           'kowtowcleave', 'suckerpunch', 'lastrespects', 'wavecrash', 'aquajet', 'flipturn']
+# New encodings (decision 0009 section 3.3). Each names the step that consumes it.
+STATUS_C = dict(STATUS, psn=5)                    # poison: step 6
+STATUS_IMMUNITY_C = dict(STATUS_IMMUNITY, psn=16)  # Poison and Steel: step 6
+IGNORED_TYPE_KEYS_C = IGNORED_TYPE_KEYS - {'psn'}  # tox stays ignored: no toxic source
+FLAG_BITS_C = dict(FLAG_BITS, defrost=128)         # Flare Blitz: step 2
+SPECIAL_C = dict(SPECIAL, **{
+    'darkestlariat': ('DARKEST_LARIAT', set()),                   # step 2
+    'lastrespects': ('LAST_RESPECTS', {'basePowerCallback'}),     # step 4
+    'suckerpunch': ('SUCKER_PUNCH', {'onTry'}),                   # step 9b
+    'helpinghand': ('HELPING_HAND', {'onTryHit'}),                # step 9b
+    'followme': ('FOLLOW_ME', {'onTry'}),                         # step 11
+})
+SPECIAL_IDS_C = SPECIAL_IDS + ['DARKEST_LARIAT', 'LAST_RESPECTS', 'SUCKER_PUNCH', 'HELPING_HAND', 'FOLLOW_ME']
+# Data fields that only a named handler consumes.
+SPECIAL_FIELDS_C = {'DARKEST_LARIAT': {'ignoreDefensive', 'ignoreEvasion'}}
+# Primary volatiles (with their condition blocks) that only a named handler owns.
+SPECIAL_VOLATILE_C = {'FOLLOW_ME': 'followme', 'HELPING_HAND': 'helpinghand'}
+# Dire Claw's secondary (step 6): its onHit, whitespace-normalised, must be exactly this.
+STATUS_PICK_ONHIT = ("onHit(target, source) { const status = this.sample(['psn', 'par', 'slp']); "
+                     "target.trySetStatus(status, source); },")
+SECONDARY_STATUS_PICK = 4
+
 
 def fail(msg):
     sys.exit('gen_closure: ' + msg)
@@ -178,7 +216,9 @@ def boosts_of(text):
     return vec
 
 
-def parse_move(mid, base, champ):
+def parse_move(mid, base, champ, ext=False):
+    """ext: the extended tables' encodings (decision 0009); the closure mode
+    keeps exactly the closure's."""
     e = base.entry(mid)
     if e is None:
         fail('move %s not found' % mid)
@@ -191,12 +231,13 @@ def parse_move(mid, base, champ):
             fail('champions override of %s does not inherit' % mid)
         f.update(cf)
         refs.append(champ.ref(mid))
-    handled = SPECIAL.get(mid, ('NONE', set()))
+    handled = (SPECIAL_C if ext else SPECIAL).get(mid, ('NONE', set()))
+    owned_fields = SPECIAL_FIELDS_C.get(handled[0], set()) if ext else set()
     for name, (is_fn, _text) in f.items():
         if is_fn:
             if name not in handled[1]:
                 fail('move %s: callback %s is not mapped to a handler' % (mid, name))
-        elif name not in DATA_KEYS and name not in IGNORED_KEYS:
+        elif name not in DATA_KEYS and name not in IGNORED_KEYS and name not in owned_fields:
             fail('move %s: unknown field %s' % (mid, name))
     missing = handled[1] - set(n for n, v in f.items() if v[0])
     if missing:
@@ -206,9 +247,10 @@ def parse_move(mid, base, champ):
         return scalar(f[name][1]) if name in f else default
 
     flags = 0
+    flag_bits = FLAG_BITS_C if ext else FLAG_BITS
     for fl in re.findall(r'(\w+): 1', f['flags'][1]):
-        if fl in FLAG_BITS:
-            flags |= FLAG_BITS[fl]
+        if fl in flag_bits:
+            flags |= flag_bits[fl]
         elif fl not in IGNORED_FLAGS:
             fail('move %s: unknown flag %s' % (mid, fl))
     for key, bit in EXTRA_FLAG_BITS.items():
@@ -231,7 +273,7 @@ def parse_move(mid, base, champ):
         'crit_ratio': get('critRatio', 1), 'flags': flags,
         'recoil': [0, 0], 'drain': [0, 0], 'sec_chance': 0, 'sec_kind': 0, 'sec_param': 0,
         'boost_role': 0, 'boosts': [0] * 7, 'primary_status': 0, 'side_condition': 0, 'pseudo_weather': 0,
-        'special': SPECIAL_IDS.index(handled[0]),
+        'special': (SPECIAL_IDS_C if ext else SPECIAL_IDS).index(handled[0]),
     }
     for key in ('recoil', 'drain'):
         if key in f:
@@ -253,6 +295,9 @@ def parse_move(mid, base, champ):
             rec['sec_kind'] = 1
             rec['boost_role'], rec['boosts'] = BOOST_ROLE['SECONDARY_TARGET'], boosts_of(text)
             vectors += 1
+        elif ext and ' '.join(text.split()) == 'secondary: { chance: %d, %s },' % (rec['sec_chance'],
+                                                                               STATUS_PICK_ONHIT):
+            rec['sec_kind'] = SECONDARY_STATUS_PICK
         else:
             fail('move %s: unknown secondary' % mid)
     if 'self' in f:
@@ -266,14 +311,16 @@ def parse_move(mid, base, champ):
     if vectors > 1:
         fail('move %s: more than one boost vector' % mid)
     if 'status' in f:
-        rec['primary_status'] = STATUS[get('status')]
-    if 'volatileStatus' in f and get('volatileStatus') != 'protect':
+        rec['primary_status'] = (STATUS_C if ext else STATUS)[get('status')]
+    owned_volatile = SPECIAL_VOLATILE_C.get(handled[0]) if ext else None
+    if 'volatileStatus' in f and get('volatileStatus') not in ('protect', owned_volatile):
         fail('move %s: unknown primary volatile' % mid)
     if 'sideCondition' in f:
         rec['side_condition'] = SIDE_CONDITION[get('sideCondition')]
     if 'pseudoWeather' in f:
         rec['pseudo_weather'] = PSEUDO_WEATHER[get('pseudoWeather')]
-    if 'condition' in f and not (rec['side_condition'] or rec['pseudo_weather'] or mid == 'protect'):
+    if 'condition' in f and not (rec['side_condition'] or rec['pseudo_weather'] or mid == 'protect' or
+                                 owned_volatile is not None):
         fail('move %s: condition block without a known owner' % mid)
     for k in ('base_power', 'accuracy', 'pp_base', 'pp_max', 'priority', 'crit_ratio'):
         if not 0 <= rec[k] <= 255:
@@ -307,18 +354,72 @@ def parse_forme(key, dex, formats):
     }
 
 
-def build(root):
+def build(root, ext=False):
+    """The closure tables, or with ext the extended tables: the closure group
+    is built completely first (items, abilities, formes with their Mega
+    abilities), then Team C, so every closure id keeps its value."""
     src = {rel: Source(root, rel) for rel in INPUTS}
     dex, moves_ts, champ_moves = src['data/pokedex.ts'], src['data/moves.ts'], src['data/mods/champions/moves.ts']
     items_ts, champ_items = src['data/items.ts'], src['data/mods/champions/items.ts']
     abil_ts, champ_abil = src['data/abilities.ts'], src['data/mods/champions/abilities.ts']
     formats, learn = src['data/mods/champions/formats-data.ts'], src['data/mods/champions/learnsets.ts']
+    groups = (SETS, SETS_C) if ext else (SETS,)
+    sets = [s for g in groups for s in g]
 
-    moves = [parse_move(m, moves_ts, champ_moves) for m in MOVES]
+    moves = [parse_move(m, moves_ts, champ_moves, ext) for m in (MOVES + MOVES_C if ext else MOVES)]
     move_index = {m['id']: i for i, m in enumerate(moves)}
-
     items, item_index = [], {}
-    for _sp, _ab, item, _mv, _mega in SETS:
+    abilities, ability_index = [], {}
+    formes, forme_index = [], {}
+    for group in groups:
+        build_group(group, items, item_index, abilities, ability_index, formes, forme_index, move_index,
+                    dex, items_ts, champ_items, abil_ts, champ_abil, formats, learn)
+    for fo in formes:
+        base = fo['id'] if not fo['is_mega'] else [s for s, _a, _i, _m, mg in sets if mg == fo['id']][0]
+        fo['base_forme'] = forme_index[base]
+        fo['mega_forme'] = forme_index[fo['mega']] if fo['mega'] else 0xFF
+        fo['mega_item'] = fo['set_item'] if (fo['mega'] or fo['is_mega']) else 0xFF
+    for it in items:
+        it['mega_base'] = forme_index[it['stone'][0]] if it['stone'] else 0xFF
+        it['mega_forme'] = forme_index[it['stone'][1]] if it['stone'] else 0xFF
+
+    status_immunity = STATUS_IMMUNITY_C if ext else STATUS_IMMUNITY
+    ignored_type_keys = IGNORED_TYPE_KEYS_C if ext else IGNORED_TYPE_KEYS
+    tc = src['data/typechart.ts']
+    chart, immunity = [], []
+    for t in TYPES:
+        e = tc.entry(t.lower())
+        text = '\n'.join(e[2])
+        row = []
+        for a in TYPES:
+            row.append(int(re.search(r'\b%s: (\d)' % a, text).group(1)))
+        chart.append(row)
+        imm = 0
+        for key, val in re.findall(r'^\t\t\t([a-z]+): (\d),', text, re.M):
+            if val != '3':
+                fail('type %s: status key %s is not an immunity' % (t, key))
+            if key in status_immunity:
+                imm |= status_immunity[key]
+            elif key not in ignored_type_keys:
+                fail('type %s: unknown key %s' % (t, key))
+        immunity.append(imm)
+
+    nat_src = src['data/natures.ts']
+    natures = []
+    for m in re.finditer(r'^\t([a-z]+): \{\n(.*?)\n\t\},', '\n'.join(nat_src.lines), re.S | re.M):
+        plus = re.search(r"plus: '(\w+)'", m.group(2))
+        minus = re.search(r"minus: '(\w+)'", m.group(2))
+        natures.append({'id': m.group(1), 'plus': STATS.index(plus.group(1)) if plus else 0xFF,
+                        'minus': STATS.index(minus.group(1)) if minus else 0xFF})
+    if len(natures) != 25:
+        fail('expected 25 natures, found %d' % len(natures))
+    return {'formes': formes, 'moves': moves, 'items': items, 'abilities': abilities, 'chart': chart,
+            'immunity': immunity, 'natures': natures}
+
+
+def build_group(group, items, item_index, abilities, ability_index, formes, forme_index, move_index,
+                dex, items_ts, champ_items, abil_ts, champ_abil, formats, learn):
+    for _sp, _ab, item, _mv, _mega in group:
         if item not in item_index:
             e = items_ts.entry(item)
             if e is None:
@@ -334,8 +435,6 @@ def build(root):
             items.append({'id': item, 'name': re.search(r'name: "(.*?)"', text).group(1), 'refs': refs,
                           'stone': (toid(stone.group(1)), toid(stone.group(2))) if stone else None})
 
-    abilities, ability_index = [], {}
-
     def add_ability(aid):
         if aid not in ability_index:
             if abil_ts.entry(aid) is None:
@@ -346,11 +445,10 @@ def build(root):
             ability_index[aid] = len(abilities)
             abilities.append({'id': aid, 'refs': refs})
 
-    for _sp, ab, _it, _mv, _mega in SETS:
+    for _sp, ab, _it, _mv, _mega in group:
         add_ability(ab)
 
-    formes, forme_index = [], {}
-    for sp, ab, item, mv, mega in SETS:
+    for sp, ab, item, mv, mega in group:
         fo = parse_forme(sp, dex, formats)
         if ab not in fo['abilities']:
             fail('%s cannot have ability %s' % (sp, ab))
@@ -377,45 +475,6 @@ def build(root):
                        'set_moves': [], 'mega': None, 'is_mega': 1, 'gender_rule': fo['gender_rule']})
             forme_index[mega] = len(formes)
             formes.append(mf)
-    for fo in formes:
-        base = fo['id'] if not fo['is_mega'] else [s for s, _a, _i, _m, mg in SETS if mg == fo['id']][0]
-        fo['base_forme'] = forme_index[base]
-        fo['mega_forme'] = forme_index[fo['mega']] if fo['mega'] else 0xFF
-        fo['mega_item'] = fo['set_item'] if (fo['mega'] or fo['is_mega']) else 0xFF
-    for it in items:
-        it['mega_base'] = forme_index[it['stone'][0]] if it['stone'] else 0xFF
-        it['mega_forme'] = forme_index[it['stone'][1]] if it['stone'] else 0xFF
-
-    tc = src['data/typechart.ts']
-    chart, immunity = [], []
-    for t in TYPES:
-        e = tc.entry(t.lower())
-        text = '\n'.join(e[2])
-        row = []
-        for a in TYPES:
-            row.append(int(re.search(r'\b%s: (\d)' % a, text).group(1)))
-        chart.append(row)
-        imm = 0
-        for key, val in re.findall(r'^\t\t\t([a-z]+): (\d),', text, re.M):
-            if val != '3':
-                fail('type %s: status key %s is not an immunity' % (t, key))
-            if key in STATUS_IMMUNITY:
-                imm |= STATUS_IMMUNITY[key]
-            elif key not in IGNORED_TYPE_KEYS:
-                fail('type %s: unknown key %s' % (t, key))
-        immunity.append(imm)
-
-    nat_src = src['data/natures.ts']
-    natures = []
-    for m in re.finditer(r'^\t([a-z]+): \{\n(.*?)\n\t\},', '\n'.join(nat_src.lines), re.S | re.M):
-        plus = re.search(r"plus: '(\w+)'", m.group(2))
-        minus = re.search(r"minus: '(\w+)'", m.group(2))
-        natures.append({'id': m.group(1), 'plus': STATS.index(plus.group(1)) if plus else 0xFF,
-                        'minus': STATS.index(minus.group(1)) if minus else 0xFF})
-    if len(natures) != 25:
-        fail('expected 25 natures, found %d' % len(natures))
-    return {'formes': formes, 'moves': moves, 'items': items, 'abilities': abilities, 'chart': chart,
-            'immunity': immunity, 'natures': natures}
 
 
 def canonical(d):
@@ -781,16 +840,262 @@ size_t dfi_closure_canonical_bytes(uint8_t *out, size_t capacity)
     return h, '\n'.join(c), digest, len(can)
 
 
+def closure_prefix(dx, dc):
+    """The closure projection of the extended data: its first closure-count
+    rows and the closure's immunity bits only."""
+    mask = sum(STATUS_IMMUNITY.values())
+    return {'formes': dx['formes'][:len(dc['formes'])], 'moves': dx['moves'][:len(dc['moves'])],
+            'items': dx['items'][:len(dc['items'])], 'abilities': dx['abilities'][:len(dc['abilities'])],
+            'chart': dx['chart'], 'immunity': [v & mask for v in dx['immunity']], 'natures': dx['natures']}
+
+
+def check_prefix(dx, dc):
+    """Decision 0009 section 3.2: the closure is an exact prefix of the extended tables."""
+    for key in ('formes', 'moves', 'items', 'abilities'):
+        if [r['id'] for r in dx[key][:len(dc[key])]] != [r['id'] for r in dc[key]]:
+            fail('extended %s do not start with the closure %s' % (key, key))
+    if dx['chart'] != dc['chart'] or dx['natures'] != dc['natures']:
+        fail('extended type chart or natures differ from the closure')
+    if canonical(closure_prefix(dx, dc)) != canonical(dc):
+        fail('the extended tables do not start with the closure tables')
+
+
+def render_ext(dx, dc):
+    can = canonical(dx)
+    digest = hashlib.sha256(can).hexdigest()
+    nf, nm, ni, na = len(dc['formes']), len(dc['moves']), len(dc['items']), len(dc['abilities'])
+
+    def defines(prefix, rows, start):
+        return '\n'.join('#define %s_%s %du' % (prefix, r['id'].upper(), i)
+                         for i, r in enumerate(rows) if i >= start)
+
+    new_special = '\n'.join('#define DFI_SPECIAL_%s %du' % (n, i) for i, n in enumerate(SPECIAL_IDS_C)
+                            if i >= len(SPECIAL_IDS))
+    h = '''#ifndef DUOFORGE_DATA_EXTENDED_TABLES_H
+#define DUOFORGE_DATA_EXTENDED_TABLES_H
+/*
+ * GENERATED by tools/datagen/gen_closure.py --team-c -- do not edit.
+ *
+ * The extended tables of decision 0009: the closure tables followed by
+ * Team C, read from Pokemon Showdown %s (the input files of
+ * closure_tables.h). Every id below a closure count (DFI_FORME_COUNT,
+ * DFI_MOVE_COUNT, DFI_ITEM_COUNT, DFI_ABILITY_COUNT) is the closure's and
+ * its row equals the closure row; the only extension inside that prefix is
+ * DFI_IMMUNE_PSN. Team C ids follow. Natures and the type chart are the
+ * closure's.
+ *
+ * Data only. An id names a record; every effect needs a typed handler in C
+ * and an entry in the support manifest before a battle may use it.
+ */
+#include <stddef.h>
+#include <stdint.h>
+
+#include "data/closure_tables.h"
+
+/* ---- Team C formes (appended; base formes are selectable) ---- */
+%s
+#define DFI_EXT_FORME_COUNT %du
+
+/* ---- Team C moves (appended after Struggle) ---- */
+%s
+#define DFI_EXT_MOVE_COUNT %du
+
+/* ---- Team C abilities ---- */
+%s
+#define DFI_EXT_ABILITY_COUNT %du
+
+/* ---- Team C items ---- */
+%s
+#define DFI_EXT_ITEM_COUNT %du
+
+/* ---- encodings new in the extended tables (decision 0009 section 3.3) ---- */
+#define DFI_STATUS_PSN 5u
+#define DFI_MOVE_FLAG_DEFROST 128u
+#define DFI_SECONDARY_STATUS_PICK 4u /* on a hit: sample(['psn', 'par', 'slp']), then trySetStatus */
+%s
+#define DFI_IMMUNE_PSN 16u
+
+extern const dfi_forme_data dfi_ext_formes[DFI_EXT_FORME_COUNT];
+extern const dfi_move_data dfi_ext_moves[DFI_EXT_MOVE_COUNT];
+extern const dfi_item_data dfi_ext_items[DFI_EXT_ITEM_COUNT];
+extern const uint8_t dfi_ext_type_immunity[DFI_TYPE_COUNT]; /* DFI_IMMUNE_* bits */
+
+/* SHA-256 of the extended canonical bytes (written by the generator). */
+#define DFI_EXT_CANONICAL_SIZE %du
+extern const uint8_t dfi_ext_table_hash[32];
+/* The canonical bytes of the closure layout over the first `formes`, `moves`,
+ * `items` and `abilities` rows of the tables above, with every immunity byte
+ * masked by `immunity_mask`; natures and the type chart are the closure's.
+ * Returns the size, or 0 if a count exceeds its table or capacity is too
+ * small. With the closure counts and the closure's immunity bits these are
+ * exactly the closure's canonical bytes. */
+size_t dfi_ext_canonical_bytes_of(uint8_t *out, size_t capacity, uint32_t formes, uint32_t moves, uint32_t items,
+                                  uint32_t abilities, uint32_t immunity_mask);
+/* The extended canonical bytes: every row, every immunity bit. */
+size_t dfi_ext_canonical_bytes(uint8_t *out, size_t capacity);
+
+#endif
+''' % (PIN, defines('DFI_FORME', dx['formes'], nf), len(dx['formes']),
+       defines('DFI_MOVE', dx['moves'], nm), len(dx['moves']),
+       defines('DFI_ABILITY', dx['abilities'], na), len(dx['abilities']),
+       defines('DFI_ITEM', dx['items'], ni), len(dx['items']), new_special, len(can))
+
+    def arr(vals):
+        return '{' + ', '.join('%du' % v for v in vals) + '}'
+
+    c = ['#include "data/extended_tables.h"', '',
+         '/* GENERATED by tools/datagen/gen_closure.py --team-c -- do not edit. Showdown %s. */' % PIN, '',
+         'const dfi_forme_data dfi_ext_formes[DFI_EXT_FORME_COUNT] = {']
+    for f in dx['formes']:
+        c.append('    /* %s -- %s */' % (f['name'], f['ref']))
+        c.append('    {%du, %du, %s, %s, %du, %du, %du, %du, %du, %du, %du, %du, %s},' % (
+            f['dex_num'], f['weight_hg'], arr(f['types']), arr(f['base']), f['ability'], f['gender_rule'],
+            f['is_mega'], f['base_forme'], f['mega_forme'], f['mega_item'], f['set_item'], len(f['set_moves']),
+            arr(f['set_moves'] + [0] * (4 - len(f['set_moves'])))))
+    c += ['};', '', 'const dfi_move_data dfi_ext_moves[DFI_EXT_MOVE_COUNT] = {']
+    for m in dx['moves']:
+        c.append('    /* %s -- %s */' % (m['name'], ', '.join(m['refs'])))
+        c.append('    {%du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %s, %s, %du, %du, %du, %du, %s, %du, %du, %du, %du},' % (
+            m['type'], m['category'], m['base_power'], m['accuracy'], m['pp_base'], m['pp_max'], m['priority'],
+            m['target_class'], m['crit_ratio'], m['flags'], arr(m['recoil']), arr(m['drain']), m['sec_chance'],
+            m['sec_kind'], m['sec_param'], m['boost_role'], arr([v + 6 for v in m['boosts']]), m['primary_status'],
+            m['side_condition'], m['pseudo_weather'], m['special']))
+    c += ['};', '', 'const dfi_item_data dfi_ext_items[DFI_EXT_ITEM_COUNT] = {']
+    for it in dx['items']:
+        c.append('    /* %s -- %s */' % (it['name'], ', '.join(it['refs'])))
+        c.append('    {%du, %du},' % (it['mega_base'], it['mega_forme']))
+    c += ['};', '', '/* Abilities carry no table data. Provenance of the Team C abilities:']
+    for a in dx['abilities'][na:]:
+        c.append(' *   %s -- %s' % (a['id'], ', '.join(a['refs'])))
+    c += [' */', '', '/* data/typechart.ts: the closure bits plus psn (Poison, Steel). */',
+          'const uint8_t dfi_ext_type_immunity[DFI_TYPE_COUNT] = ' + arr(dx['immunity']) + ';', '',
+          'const uint8_t dfi_ext_table_hash[32] = {']
+    hb = bytes.fromhex(digest)
+    for i in range(0, 32, 8):
+        c.append('    ' + ', '.join('0x%02xu' % x for x in hb[i:i + 8]) + ',')
+    c += ['};', '', '''static size_t dfi_ext_put_u16(uint8_t *out, size_t n, uint32_t v)
+{
+    out[n] = (uint8_t)(v & 0xFFu);             /* wide-operands-reviewed */
+    out[n + 1u] = (uint8_t)((v >> 8u) & 0xFFu); /* wide-operands-reviewed */
+    return n + 2u;
+}
+
+size_t dfi_ext_canonical_bytes_of(uint8_t *out, size_t capacity, uint32_t formes, uint32_t moves, uint32_t items,
+                                  uint32_t abilities, uint32_t immunity_mask)
+{
+    if (formes > DFI_EXT_FORME_COUNT || moves > DFI_EXT_MOVE_COUNT || items > DFI_EXT_ITEM_COUNT ||
+        abilities > DFI_EXT_ABILITY_COUNT) {
+        return 0u;
+    }
+    /* counts, 24 bytes per forme, 29 per move, 2 per item, chart, immunity, natures */
+    const size_t size = 12u + (size_t)formes * 24u + (size_t)moves * 29u + (size_t)items * 2u +
+                        DFI_TYPE_COUNT * DFI_TYPE_COUNT + DFI_TYPE_COUNT + DFI_NATURE_COUNT * 2u;
+    if (capacity < size) {
+        return 0u;
+    }
+    size_t n = 0u;
+    n = dfi_ext_put_u16(out, n, formes);
+    n = dfi_ext_put_u16(out, n, moves);
+    n = dfi_ext_put_u16(out, n, items);
+    n = dfi_ext_put_u16(out, n, abilities);
+    n = dfi_ext_put_u16(out, n, DFI_TYPE_COUNT);
+    n = dfi_ext_put_u16(out, n, DFI_NATURE_COUNT);
+    for (uint32_t i = 0u; i < formes; ++i) {
+        const dfi_forme_data *f = &dfi_ext_formes[i];
+        n = dfi_ext_put_u16(out, n, f->dex_num);
+        out[n++] = f->types[0];
+        out[n++] = f->types[1];
+        for (uint32_t k = 0u; k < DFI_STAT_COUNT; ++k) {
+            out[n++] = f->base[k];
+        }
+        n = dfi_ext_put_u16(out, n, f->weight_hg);
+        out[n++] = f->ability;
+        out[n++] = f->gender_rule;
+        out[n++] = f->is_mega;
+        out[n++] = f->base_forme;
+        out[n++] = f->mega_forme;
+        out[n++] = f->mega_item;
+        out[n++] = f->set_item;
+        out[n++] = f->set_move_count;
+        for (uint32_t k = 0u; k < 4u; ++k) {
+            out[n++] = f->set_moves[k];
+        }
+    }
+    for (uint32_t i = 0u; i < moves; ++i) {
+        const dfi_move_data *m = &dfi_ext_moves[i];
+        out[n++] = m->type;
+        out[n++] = m->category;
+        out[n++] = m->base_power;
+        out[n++] = m->accuracy;
+        out[n++] = m->pp_base;
+        out[n++] = m->pp_max;
+        out[n++] = m->priority;
+        out[n++] = m->target_class;
+        out[n++] = m->crit_ratio;
+        out[n++] = m->flags;
+        out[n++] = m->recoil[0];
+        out[n++] = m->recoil[1];
+        out[n++] = m->drain[0];
+        out[n++] = m->drain[1];
+        out[n++] = m->sec_chance;
+        out[n++] = m->sec_kind;
+        out[n++] = m->sec_param;
+        out[n++] = m->boost_role;
+        for (uint32_t k = 0u; k < DFI_STAGE_COUNT; ++k) {
+            out[n++] = m->boosts[k];
+        }
+        out[n++] = m->primary_status;
+        out[n++] = m->side_condition;
+        out[n++] = m->pseudo_weather;
+        out[n++] = m->special;
+    }
+    for (uint32_t i = 0u; i < items; ++i) {
+        out[n++] = dfi_ext_items[i].mega_base;
+        out[n++] = dfi_ext_items[i].mega_forme;
+    }
+    for (uint32_t d = 0u; d < DFI_TYPE_COUNT; ++d) {
+        for (uint32_t a = 0u; a < DFI_TYPE_COUNT; ++a) {
+            out[n++] = dfi_closure_type_chart[d][a];
+        }
+    }
+    for (uint32_t i = 0u; i < DFI_TYPE_COUNT; ++i) {
+        out[n++] = (uint8_t)(dfi_ext_type_immunity[i] & immunity_mask); /* wide-operands-reviewed: < 256 */
+    }
+    for (uint32_t i = 0u; i < DFI_NATURE_COUNT; ++i) {
+        out[n++] = dfi_closure_natures[i].plus;
+        out[n++] = dfi_closure_natures[i].minus;
+    }
+    return n;
+}
+
+size_t dfi_ext_canonical_bytes(uint8_t *out, size_t capacity)
+{
+    return dfi_ext_canonical_bytes_of(out, capacity, DFI_EXT_FORME_COUNT, DFI_EXT_MOVE_COUNT, DFI_EXT_ITEM_COUNT,
+                                      DFI_EXT_ABILITY_COUNT, 0xFFu);
+}
+''']
+    return h, '\n'.join(c), digest, len(can)
+
+
 def main():
-    args = [a for a in sys.argv[1:] if a != '--check']
+    team_c = '--team-c' in sys.argv[1:]
+    args = [a for a in sys.argv[1:] if a not in ('--check', '--team-c')]
     check = '--check' in sys.argv[1:]
     if len(args) != 1:
         sys.exit(__doc__)
     repo = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     d = build(args[0])
-    h, c, digest, size = render(d)
-    outs = ((os.path.join(repo, 'src', 'data', 'closure_tables.h'), h),
-            (os.path.join(repo, 'src', 'data', 'closure_tables.c'), c))
+    if team_c:
+        dc = d
+        d = build(args[0], ext=True)
+        check_prefix(d, dc)
+        h, c, digest, size = render_ext(d, dc)
+        stem = 'extended_tables'
+    else:
+        h, c, digest, size = render(d)
+        stem = 'closure_tables'
+    outs = ((os.path.join(repo, 'src', 'data', stem + '.h'), h),
+            (os.path.join(repo, 'src', 'data', stem + '.c'), c))
     for path, text in outs:
         if check:
             have = io.open(path, 'rb').read().replace(b'\r\n', b'\n')
@@ -800,8 +1105,8 @@ def main():
             os.makedirs(os.path.dirname(path), exist_ok=True)
             with io.open(path, 'w', encoding='ascii', newline='\n') as fh:
                 fh.write(text)
-    print('closure tables: %d formes, %d moves, %d items, %d abilities; canonical %d bytes, sha256 %s%s' % (
-        len(d['formes']), len(d['moves']), len(d['items']), len(d['abilities']), size, digest,
+    print('%s: %d formes, %d moves, %d items, %d abilities; canonical %d bytes, sha256 %s%s' % (
+        stem, len(d['formes']), len(d['moves']), len(d['items']), len(d['abilities']), size, digest,
         ' (check ok)' if check else ''))
     for path, text in outs:
         print('  %s sha256 %s' % (os.path.basename(path), hashlib.sha256(text.encode('ascii')).hexdigest()))

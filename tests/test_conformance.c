@@ -7,12 +7,26 @@
  * with the reference's kept draws as a test-only tape, which must be
  * consumed exactly; afterwards HP, PP, stat stages and the stall counter of
  * every member equal the reference, and so does the turn number.
+ *
+ * Built with DF_CONFORMANCE_TEAM_C it is duoforge.reference.conformance_team_c:
+ * the same driver over the Team C battles (tests/reference/conformance_team_c.h,
+ * decision 0009 section 6.1) with TEAM_C and TEAM_C_DEV contexts.
  */
 #include <stdio.h>
 #include <string.h>
 
+#ifdef DF_CONFORMANCE_TEAM_C
+#include "data/extended_tables.h"
+#include "reference/conformance_team_c.h"
+#include "support/team_c.h"
+#define DF_CONF_FORMES dfi_ext_formes
+#define DF_TEAM_C_BATTLES 5u /* the recorded Team C battles */
+#define DF_TEAM_C_REAL 1u    /* of them under TEAM_C itself (six registered members) */
+#else
 #include "data/closure_tables.h"
 #include "reference/conformance.h"
+#define DF_CONF_FORMES dfi_closure_formes
+#endif
 #include "state/battle_internal.h"
 #include "state/request.h"
 #include "support/check.h"
@@ -130,7 +144,7 @@ static unsigned compare_observation(const duoforge_context *ctx, const duoforge_
                 const df_conf_member *set = &cb->members[s][m];
                 uint32_t ability = set->ability;
                 if (e->mega != 0u) {
-                    ability = 1u + dfi_closure_formes[dfi_closure_formes[set->species].mega_forme].ability;
+                    ability = 1u + DF_CONF_FORMES[DF_CONF_FORMES[set->species].mega_forme].ability;
                 }
                 bool ok = v->status == status && v->is_mega == e->mega && v->item_used == used && v->ability == ability;
                 for (uint32_t k = 0; k < v->move_count && k < 4u; ++k) {
@@ -348,9 +362,15 @@ static unsigned compare_state(const duoforge_context *ctx, const duoforge_battle
 int main(void)
 {
     df_test t;
+#ifdef DF_CONFORMANCE_TEAM_C
+    df_test_begin(&t, "duoforge.reference.conformance_team_c");
+    duoforge_context *k1 = df_make_context(&df_config_team_c);
+    duoforge_context *k2 = df_make_context(&df_config_team_c_dev);
+#else
     df_test_begin(&t, "duoforge.reference.conformance");
     duoforge_context *k1 = df_make_context(&df_config_k1);
     duoforge_context *k2 = df_make_context(&df_config_k2);
+#endif
     unsigned real = 0; /* battles under CLOSURE data: every set has a real ability */
     for (size_t bi = 0; bi < sizeof conf_battles / sizeof conf_battles[0]; ++bi) {
         const df_conf_battle *cb = &conf_battles[bi];
@@ -422,11 +442,20 @@ int main(void)
         DF_CHECK_EQ_U64(&t, bad, 0u);
         duoforge_battle_destroy(b);
     }
+#ifdef DF_CONFORMANCE_TEAM_C
+    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], DF_TEAM_C_BATTLES);
+    DF_CHECK_EQ_U64(&t, real, DF_TEAM_C_REAL);
+#else
     DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 87u);
     /* Exactly the battles of the real teams run under CLOSURE, the certified
      * profile (decision 0010): the closure gate's 8 and the 16 of M5 step 3. */
     DF_CHECK_EQ_U64(&t, real, 24u);
+#endif
+#ifdef DF_CONFORMANCE_TEAM_C
+    fprintf(stderr, "  %u of the battles run under TEAM_C data\n", real);
+#else
     fprintf(stderr, "  %u of the battles run under CLOSURE data\n", real);
+#endif
     duoforge_context_destroy(k1);
     duoforge_context_destroy(k2);
     return df_test_end(&t);

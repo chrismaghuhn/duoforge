@@ -1,0 +1,26 @@
+{
+  "name": "c01_defiant_competitive",
+  "purpose": "Defiant raises Kingambit's Attack by 2 after a foe's Intimidate at the lead, a foe's Snarl, a foe's Parting Shot and the Intimidate of a foe that pivots in, but not after its ally's Parting Shot; Competitive does the same for Milotic's Special Attack; Kowtow Cleave never misses (no accuracy draw); Hyper Voice and Draco Meteor from Mega-less Salamence.",
+  "data": "team_c",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c0101",
+  "teams": [
+    "Incineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Parting Shot\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Snarl\n- Dragon Pulse\n\nSalamence (M) @ Life Orb\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Hyper Voice\n- Draco Meteor\n- Protect\n\nGholdengo @ Light Clay\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball",
+    "Kingambit (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Iron Head\n- Protect\n\nIncineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Parting Shot\n- Fake Out\n\nMilotic (F) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Ice Beam\n\nFarigiraf (F) @ Life Orb\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Grass Knot"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1",
+      "move 2 1, move 2 1",
+      "move 1, move 1",
+      "move 2 1, move 1"
+    ],
+    "p2": [
+      "move 1 1, move 1 -1",
+      "move 1 2, move 2",
+      "move 2 1, move 1",
+      "move 1 1, move 2 1"
+    ],
+    "max_steps": 40
+  }
+}

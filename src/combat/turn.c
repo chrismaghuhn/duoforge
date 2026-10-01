@@ -4,7 +4,7 @@
 
 #include "core/arith.h"
 #include "core/modifier.h"
-#include "data/closure_tables.h"
+#include "data/extended_tables.h"
 #include "data/support_manifest.h"
 #include "state/closure_member.h"
 #include "state/context_internal.h"
@@ -72,8 +72,8 @@ static dfi_member *dfi_at(struct duoforge_battle *b, uint32_t flat)
 
 static const dfi_forme_data *dfi_forme_of(const dfi_member *m)
 {
-    const dfi_forme_data *base = &dfi_closure_formes[m->species_id];
-    return m->is_mega != 0u ? &dfi_closure_formes[base->mega_forme] : base;
+    const dfi_forme_data *base = &dfi_ext_formes[m->species_id];
+    return m->is_mega != 0u ? &dfi_ext_formes[base->mega_forme] : base;
 }
 
 static bool dfi_has_type(const dfi_member *m, uint32_t type)
@@ -272,7 +272,7 @@ static duoforge_status dfi_key_of(dfi_run *r, const dfi_queue_record *q, dfi_key
         return DUOFORGE_E_INVARIANT;
     }
     if (q->kind == DFI_Q_MOVE) {
-        out->priority = dfi_move_priority(r->b, m, &dfi_closure_moves[dfi_move_of(m, q->move_slot)]);
+        out->priority = dfi_move_priority(r->b, m, &dfi_ext_moves[dfi_move_of(m, q->move_slot)]);
     }
     out->speed = speed;
     return DUOFORGE_OK;
@@ -518,6 +518,14 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
                 static const uint8_t raise[DFI_STAT_STAGE_COUNT] = {6u, 6u, 8u, 6u, 6u, 6u, 6u}; /* SpA +2 */
                 dfi_boost(r, flat, raise, flat,
                           dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_COMPETITIVE, DFI_BOOST_SELF));
+            }
+            /* Defiant (Team C, decision 0009): Competitive's shape with
+             * Attack (data/abilities.ts:901-921). */
+            if (capped[i] < DFI_BIAS6 && dfi_ability(m, DFI_ABILITY_DEFIANT) && source < DFI_POSITIONS &&
+                source / 2u != flat / 2u) {
+                static const uint8_t raise_atk[DFI_STAT_STAGE_COUNT] = {8u, 6u, 6u, 6u, 6u, 6u, 6u}; /* Atk +2 */
+                dfi_boost(r, flat, raise_atk, flat,
+                          dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_DEFIANT, DFI_BOOST_SELF));
             }
         } else if (effect.cause == DUOFORGE_CAUSE_ABILITY ? effect.mode != DFI_BOOST_PRIMARY
                                                          : effect.mode == DFI_BOOST_PRIMARY) {
@@ -804,7 +812,11 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
         return DUOFORGE_E_INVARIANT;
     }
     if (move_type < DFI_TYPE_COUNT) {
-        damage = dfi_modify(damage, dfi_has_type(a, move_type) ? 6144u : 4096u); /* STAB 1.5 */
+        /* STAB 1.5; Adaptability 2 (Team C, data/abilities.ts:43-56; no Tera) */
+        const uint32_t stab = !dfi_has_type(a, move_type) ? 4096u
+                              : dfi_ability(a, DFI_ABILITY_ADAPTABILITY) ? 8192u
+                                                                         : 6144u;
+        damage = dfi_modify(damage, stab);
         const uint32_t mod = dfi_type_mod(d, move_type);
         if (!dfi_type_damage(damage, mod, &damage)) {
             return DUOFORGE_E_INVARIANT;
@@ -1383,7 +1395,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         pos->move_actions = (uint8_t)((uint32_t)pos->move_actions + 1u); /* wide-operands-reviewed */
     }
     const uint32_t move_id = dfi_move_of(m, q->move_slot);
-    const dfi_move_data *md = &dfi_closure_moves[move_id];
+    const dfi_move_data *md = &dfi_ext_moves[move_id];
     if (move_id != DFI_MOVE_STRUGGLE && dfi_support.moves[move_id] == 0u) {
         return DUOFORGE_E_UNSUPPORTED;
     }
@@ -2002,8 +2014,8 @@ static duoforge_status dfi_run_switch(dfi_run *r, const dfi_queue_record *q)
     }
     const uint32_t ability = sd->members[reserve].ability;
     const uint32_t item = sd->members[reserve].item;
-    if ((ability != 0u && (ability > DFI_ABILITY_COUNT || dfi_support.abilities[ability - 1u] == 0u)) ||
-        (item != 0u && (item > DFI_ITEM_COUNT || dfi_support.items[item - 1u] == 0u))) {
+    if ((ability != 0u && (ability > DFI_EXT_ABILITY_COUNT || dfi_support.abilities[ability - 1u] == 0u)) ||
+        (item != 0u && (item > DFI_EXT_ITEM_COUNT || dfi_support.items[item - 1u] == 0u))) {
         return DUOFORGE_E_UNSUPPORTED; /* not marked in the support manifest */
     }
     const dfi_member *leaving = dfi_at(b, side * 2u + slot);
@@ -2252,7 +2264,7 @@ static duoforge_status dfi_run_mega(dfi_run *r, const dfi_queue_record *q)
     }
     sd->mega_used = 1u;
     duoforge_event forme = dfi_event_make(DUOFORGE_EVENT_FORME, flat);
-    forme.id = dfi_closure_formes[m->species_id].mega_forme; /* [detailschange] */
+    forme.id = dfi_ext_formes[m->species_id].mega_forme; /* [detailschange] */
     dfi_emit(r, &forme);
     duoforge_event mega = dfi_event_make(DUOFORGE_EVENT_MEGA, flat);
     mega.id2 = m->item; /* [-mega] the stone, item + 1 */

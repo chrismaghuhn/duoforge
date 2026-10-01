@@ -167,6 +167,35 @@ class ClosureContext(Context):
 K1 = ClosureContext(KIND_CLOSURE, 6, 4)
 K2 = ClosureContext(KIND_CLOSURE_DEV, 6, 4)
 
+# TEAM_C contexts (decision 0009 section 3): the extended tables (closure plus
+# Team C: 23 formes, 50 moves) and their hash, which
+# tests/test_extended_tables.c recomputes from the extended canonical bytes.
+EXTENDED_TABLE_HASH = bytes.fromhex('d16b1cef1b41f0a573ae74c10102c932c1f4de0ec3c1f33449f920e533a943e5')
+KIND_TEAM_C, KIND_TEAM_C_DEV = 4, 5
+
+
+class TeamCContext(ClosureContext):
+    def __init__(self, data_kind, max_roster, brought_count):
+        Context.__init__(self, data_kind, max_roster, brought_count, 23, 50, b'')
+
+    def valid(self):
+        if self.data_kind == KIND_TEAM_C and (self.max_roster != MAX_ROSTER or self.brought_count != 4):
+            return False  # TEAM_C takes over the certified profile (decisions 0009, 0010)
+        return (self.data_kind in (KIND_TEAM_C, KIND_TEAM_C_DEV) and 1 <= self.max_roster <= MAX_ROSTER
+                and 1 <= self.brought_count <= self.max_roster)
+
+    def canonical_bytes(self):
+        b = MAGIC + struct.pack('<HHII', KIND_CONTEXT, SCHEMA, SEMANTICS, CONTEXT_BYTES_SIZE)
+        b += bytes([2, 2, MAX_ROSTER, MOVE_SLOTS, self.data_kind, self.max_roster, self.brought_count])
+        b += struct.pack('<HH', self.species_count, self.move_count)
+        b += EXTENDED_TABLE_HASH
+        assert len(b) == CONTEXT_BYTES_SIZE
+        return b
+
+
+KC = TeamCContext(KIND_TEAM_C, 6, 4)
+KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
+
 
 # ---------------------------------------------------------------- state
 def empty_member():
@@ -1425,7 +1454,7 @@ def main():
         print('context %s bytes %s' % (name, ctx.canonical_bytes().hex()))
         print('context %s table_sha256 %s' % (name, hashlib.sha256(ctx.table).hexdigest()))
         print('context %s fingerprint %s' % (name, ctx.fingerprint().hex()))
-    for name, ctx in (('K1', K1), ('K2', K2)):
+    for name, ctx in (('K1', K1), ('K2', K2), ('KC', KC), ('KD', KD)):
         assert ctx.valid()
         print('context %s bytes %s' % (name, ctx.canonical_bytes().hex()))
         print('context %s fingerprint %s' % (name, ctx.fingerprint().hex()))

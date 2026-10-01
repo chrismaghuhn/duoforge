@@ -14,16 +14,16 @@
  */
 #include <stdint.h>
 
-#include "data/closure_tables.h"
+#include "data/extended_tables.h"
 
 typedef struct dfi_support_manifest {
     uint8_t turn_core;      /* turn order, damage, stages, PP, Struggle (step 2); every battle needs it */
     uint8_t switching;      /* switching, fainting, replacement and the win rule (step 3); a step that
                                needs them fails with E_UNSUPPORTED until this is set */
     uint8_t mega_evolution; /* the Mega action and the forme change */
-    uint8_t moves[DFI_MOVE_COUNT]; /* Struggle's entry is part of the turn core */
-    uint8_t abilities[DFI_ABILITY_COUNT];
-    uint8_t items[DFI_ITEM_COUNT];
+    uint8_t moves[DFI_EXT_MOVE_COUNT]; /* Struggle's entry is part of the turn core */
+    uint8_t abilities[DFI_EXT_ABILITY_COUNT];
+    uint8_t items[DFI_EXT_ITEM_COUNT];
 } dfi_support_manifest;
 
 /* The manifest of this build. */

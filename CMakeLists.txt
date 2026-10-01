@@ -71,6 +71,7 @@ add_library(duoforge STATIC
     src/state/request.c
     src/state/observation.c
     src/data/closure_tables.c
+    src/data/extended_tables.c
     src/data/formulas.c
     src/data/support_manifest.c
     src/codec/state_codec.c

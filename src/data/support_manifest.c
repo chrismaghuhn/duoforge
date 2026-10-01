@@ -28,7 +28,11 @@
  * the four Mega Stones.
  * Step 12: Parting Shot and Emergency Exit with PIVOT boundaries (an
  * Emergency Exit in the residual phase returns E_UNSUPPORTED: decision 0006
- * section 4.12). */
+ * section 4.12).
+ *
+ * Team C (decision 0009; the extended ids, reachable under the TEAM_C kinds):
+ * Step 1: Kowtow Cleave, Hyper Voice, Draco Meteor, Wave Crash and Aqua Jet
+ * (data only), Defiant and Adaptability. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -71,6 +75,11 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_FAKEOUT] = 1u,
             [DFI_MOVE_ELECTROSHOT] = 1u,
             [DFI_MOVE_PARTINGSHOT] = 1u,
+            [DFI_MOVE_KOWTOWCLEAVE] = 1u,
+            [DFI_MOVE_HYPERVOICE] = 1u,
+            [DFI_MOVE_DRACOMETEOR] = 1u,
+            [DFI_MOVE_WAVECRASH] = 1u,
+            [DFI_MOVE_AQUAJET] = 1u,
         },
     .abilities =
         {
@@ -90,6 +99,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_NOGUARD] = 1u,
             [DFI_ABILITY_TOUGHCLAWS] = 1u,
             [DFI_ABILITY_EMERGENCYEXIT] = 1u,
+            [DFI_ABILITY_DEFIANT] = 1u,
+            [DFI_ABILITY_ADAPTABILITY] = 1u,
         },
     .items =
         {

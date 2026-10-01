@@ -1,0 +1,25 @@
+{
+  "name": "c01_grass_knot_weights",
+  "purpose": "Grass Knot's power from the Team C weights: 100 against Kingambit (120.0 kg), 80 against Incineroar (83.0 kg), 60 against Indeedee-F (28.0 kg); Armor Tail blocks Fake Out; an ally's Parting Shot does not trigger Defiant, and Indeedee-F (No Ability) comes in on the pivot; Sneasler (No Ability) is brought but never enters.",
+  "data": "team_c",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c0104",
+  "teams": [
+    "Farigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Grass Knot\n- Psychic\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n\nMilotic (F) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Ice Beam",
+    "Kingambit (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Iron Head\n\nIncineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Parting Shot\n\nIndeedee-F (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Psychic\n- Trick Room\n\nSneasler (M)\nAbility: No Ability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Close Combat\n- Fake Out\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 2, move 1 1",
+      "move 1 1, move 1 2",
+      "move 1 2, move 1 1",
+      "move 1 1, move 1 2"
+    ],
+    "p2": [
+      "move 1 1, move 1 2",
+      "move 2 2, move 2 -1",
+      "move 1 2, move 1 1"
+    ],
+    "max_steps": 40
+  }
+}
