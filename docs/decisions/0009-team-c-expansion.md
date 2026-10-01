@@ -473,7 +473,7 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
   - A choice-locked actor whose queued move is neither its locked move nor Struggle is `E_INVARIANT`. That needs a decoded state, because the request offers nothing else; choicelock's `onBeforeMove` (`-fail`) is unreachable.
   - The state model mirrors the domain and the observation: two-turn and Fake Out rules for every combat kind, the choice lock's slot filter, the own target only while charging. Its output is unchanged.
   - Bound comments.
-- **Found on the way, outside this step.** The request offers Struggle with Mega declarations. The reference sends no `canMegaEvo` with a forced Struggle (`sim/pokemon.ts:1100-1106, 1132-1138`; `sim/side.ts:700-712`). This is a closure divergence that changes certified candidate counts, so it is left to a separate task and the owner.
+- **Found on the way, outside this step.** The request offers Struggle with Mega declarations. The reference sends no `canMegaEvo` with a forced Struggle (`sim/pokemon.ts:1100-1106, 1132-1138`; `sim/side.ts:700-712`). This is a closure divergence that changes certified candidate counts, so it is left to a separate task and the owner. Fixed on 2026-10-02 (decision 0006 section 4.1): no certified battle reaches such a state, so the certified dataset and the candidate digest stay unchanged.
 - **Shared files touched:**
   - `include/duoforge/duoforge.h` (comments of `locked_slot`, `locked_target`; version);
   - `src/state/{battle_internal,closure_member}.h`, `closure_member.c`, `invariants.c`, `observation.c`, `request.c`;

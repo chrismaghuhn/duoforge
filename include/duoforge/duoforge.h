@@ -234,8 +234,9 @@ duoforge_status duoforge_battle_reseed(const duoforge_context *ctx, duoforge_bat
 #define DUOFORGE_SLOT_MOVE   1u
 #define DUOFORGE_SLOT_SWITCH 2u
 #define DUOFORGE_SLOT_PASS   3u /* forced no-action only where the profile says so */
-/* move_slot of Struggle: offered, with no target, exactly when an occupant
-   has no move with PP left (sim/side.ts, the reference's request). */
+/* move_slot of Struggle: offered, with no target and no Mega declaration,
+   exactly when an occupant has no selectable move (no PP left, Fake Out
+   disabled, a choice lock; sim/pokemon.ts, the reference's request). */
 #define DUOFORGE_MOVE_SLOT_STRUGGLE 4u
 #define DUOFORGE_CHOICE_TEAM_SELECTION 1u
 #define DUOFORGE_CHOICE_SLOTS          2u
