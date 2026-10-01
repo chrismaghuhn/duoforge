@@ -2844,6 +2844,11 @@ duoforge_status dfi_turn_start(const duoforge_context *ctx, struct duoforge_batt
     if (st != DUOFORGE_OK) {
         return st;
     }
+    /* The runSwitch action's epilogue runs its Update (sim/battle.ts:2860-2861). */
+    st = r.ended ? DUOFORGE_OK : dfi_update(&r);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
     if (!r.ended) {
         duoforge_event e = dfi_event_make(DUOFORGE_EVENT_TURN, DUOFORGE_NO_POSITION);
         e.id = b->turn; /* [turn] 1 */

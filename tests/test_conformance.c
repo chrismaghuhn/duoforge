@@ -408,7 +408,7 @@ int main(void)
         DF_CHECK_EQ_U64(&t, bad, 0u);
         duoforge_battle_destroy(b);
     }
-    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 60u);
+    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 61u);
     /* At least the real-team battles of the closure gate (step 13). */
     DF_CHECK(&t, real >= 8u);
     fprintf(stderr, "  %u of the battles run under CLOSURE data\n", real);
