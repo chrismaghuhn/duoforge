@@ -305,7 +305,7 @@ int main(void)
         v[29]->sides[0].knowledge[3].moves_used[0] = 1u;
         /* What the opponent sees follows the HP and occupant edits above. */
         for (unsigned i = 0; i < N; ++i) {
-            dfi_knowledge_refresh_active(v[i]);
+            df_knowledge_refresh_active(v[i]);
         }
         unsigned mismatches = 0;
         for (unsigned i = 0; i < N; ++i) {

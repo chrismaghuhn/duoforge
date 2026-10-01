@@ -599,7 +599,7 @@ int main(void)
         duoforge_battle *x = NULL;
         DF_CHECK(&t, duoforge_battle_clone(k2, b, &x) == DUOFORGE_OK);
         x->sides[1].members[0].hp = 1u;
-        dfi_knowledge_refresh_active(x);
+        df_knowledge_refresh_active(x);
         duoforge_decision_bundle hit = bd;
         hit.epoch = x->request_epoch;
         for (uint32_t s = 0; s < 2u; ++s) {
@@ -911,7 +911,7 @@ int main(void)
                     pos->flags = (uint8_t)(DFI_VOL_PROTECT | DFI_VOL_FLINCH);
                 }
             }
-            dfi_knowledge_refresh_active(b);
+            df_knowledge_refresh_active(b);
             DF_CHECK(&t, duoforge_battle_check(k2, b) == DUOFORGE_OK);
             uint8_t bytes[DUOFORGE_STATE_V3_ENCODED_SIZE];
             encode(k2, b, bytes);

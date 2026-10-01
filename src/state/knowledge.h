@@ -4,7 +4,9 @@
  * Per-player knowledge of the opposing members (docs/decisions/0006
  * section 6). A player learns the HP display of a member while it is
  * active; after it leaves, the last display is what the player keeps.
- * Observations read this record, never the opposing member itself.
+ * Observations read this record, never the opposing member itself. In a
+ * step only the event fold writes it (dfi_events_fold_knowledge, decision
+ * 0007 section 6): what a player knows is what its events showed.
  */
 #include <stdbool.h>
 #include <stdint.h>
@@ -17,12 +19,5 @@
 void dfi_hp_display(uint32_t hp, uint32_t hp_max, uint8_t *out_percent, uint8_t *out_flag);
 /* True iff (percent, flag) is a pair dfi_hp_display can produce. */
 bool dfi_hp_display_valid(uint32_t percent, uint32_t flag);
-
-/* The opponent of `side` records the current HP display of member `roster`.
- * Preconditions: side < 2, roster < DUOFORGE_MAX_ROSTER. */
-void dfi_knowledge_see_hp(struct duoforge_battle *b, uint32_t side, uint32_t roster);
-/* Records the HP display of every active member (after an HP change).
- * Occupants out of range are skipped. */
-void dfi_knowledge_refresh_active(struct duoforge_battle *b);
 
 #endif

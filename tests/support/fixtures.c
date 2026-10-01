@@ -245,6 +245,39 @@ static void df_select(const duoforge_context *ctx, duoforge_battle *b, const uin
     if (dfi_apply_team_selection(ctx, b, &picks) != DUOFORGE_OK) {
         df_fail(what);
     }
+    df_see_active(b); /* the leads' [switch] lines */
+}
+
+void df_knowledge_see_hp(duoforge_battle *b, uint32_t side, uint32_t roster)
+{
+    const dfi_member *mem = &b->sides[side].members[roster];
+    dfi_knowledge *k = &b->sides[1u - side].knowledge[roster];
+    dfi_hp_display(mem->hp, mem->hp_max, &k->hp_percent, &k->hp_flag);
+}
+
+void df_knowledge_refresh_active(duoforge_battle *b)
+{
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            const uint32_t occupant = b->sides[s].positions[p].occupant;
+            if (occupant < DUOFORGE_MAX_ROSTER) {
+                df_knowledge_see_hp(b, s, occupant);
+            }
+        }
+    }
+}
+
+void df_see_active(duoforge_battle *b)
+{
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            const uint32_t occupant = b->sides[s].positions[p].occupant;
+            if (occupant < DUOFORGE_MAX_ROSTER) {
+                b->sides[1u - s].seen_mask = (uint8_t)(b->sides[1u - s].seen_mask | (1u << occupant));
+                df_knowledge_see_hp(b, s, occupant);
+            }
+        }
+    }
 }
 
 duoforge_battle *df_make_g1(const duoforge_context *c1)
@@ -276,11 +309,12 @@ duoforge_battle *df_make_f2(const duoforge_context *c1)
     const dfi_position_id s0a = {0, 0};
     const dfi_position_id s1b = {1, 1};
     b->sides[0].members[2].hp = 24u; /* 20 percent of 120, red: what side 1 sees last */
-    dfi_knowledge_refresh_active(b);
+    df_knowledge_refresh_active(b);
     if (dfi_vacate(b, s0a) != DUOFORGE_OK || dfi_place(b, s0a, 3u, &binding) != DUOFORGE_OK ||
         dfi_vacate(b, s1b) != DUOFORGE_OK) {
         df_fail("F2 identity primitives");
     }
+    df_see_active(b); /* roster 3's [switch] line */
     b->sides[1].requested_slots = 1u;
     b->sides[0].members[2].hp = 40u; /* on the bench: unseen by side 1 */
     b->sides[0].members[0].hp = 0u;
@@ -289,7 +323,7 @@ duoforge_battle *df_make_f2(const duoforge_context *c1)
     b->sides[1].members[2].hp = 0u;
     b->sides[1].members[0].moves[3].pp = 7u;
     b->sides[0].mega_used = 1u;
-    dfi_knowledge_refresh_active(b);
+    df_knowledge_refresh_active(b);
     df_checked(c1, b, "F2 check");
     return b;
 }
@@ -315,7 +349,7 @@ duoforge_battle *df_make_f4(const duoforge_context *c1)
     duoforge_battle *b = df_make_f1(c1);
     b->sides[0].members[2].hp = 0u;
     b->sides[1].members[3].hp = 0u;
-    dfi_knowledge_refresh_active(b);
+    df_knowledge_refresh_active(b);
     b->boundary_kind = (uint8_t)DUOFORGE_BOUNDARY_REPLACEMENT;
     b->request_epoch = 3u;
     b->request_mask = 3u;
@@ -367,7 +401,7 @@ duoforge_battle *df_make_f5(const duoforge_context *c1)
     s1->positions[1].locked_target = (uint8_t)DUOFORGE_TARGET_NONE;
     s0->positions[0].switch_flag = (uint8_t)DFI_SWITCH_MOVE; /* Parting Shot */
     s1->members[1].hp = 101u; /* 50 percent of 201, green */
-    dfi_knowledge_refresh_active(b);
+    df_knowledge_refresh_active(b);
     static const uint8_t used_s0[2][DUOFORGE_MAX_MOVE_SLOTS] = {{2u, 0u, 1u, 0u}, {0u, 0u, 0u, 255u}};
     static const uint8_t used_s1[2][DUOFORGE_MAX_MOVE_SLOTS] = {{1u, 1u, 0u, 0u}, {9u, 0u, 0u, 0u}};
     for (uint32_t k = 0; k < DUOFORGE_MAX_MOVE_SLOTS; ++k) {
@@ -435,7 +469,7 @@ duoforge_battle *df_make_f10(const duoforge_context *c4)
     duoforge_battle *b = df_make_f9(c4);
     b->sides[1].members[2].hp = 0u;
     b->sides[0].mega_used = 1u;
-    dfi_knowledge_refresh_active(b);
+    df_knowledge_refresh_active(b);
     df_checked(c4, b, "F10 check");
     return b;
 }
@@ -450,7 +484,7 @@ duoforge_battle *df_make_f11(const duoforge_context *c4)
     b->sides[0].members[2].hp = 0u;
     b->sides[0].requested_slots = 3u;
     b->sides[1].requested_slots = 0u;
-    dfi_knowledge_refresh_active(b);
+    df_knowledge_refresh_active(b);
     df_checked(c4, b, "F11 check");
     return b;
 }
@@ -469,7 +503,7 @@ duoforge_battle *df_make_f13(const duoforge_context *c4)
     duoforge_battle *b = df_make_f9(c4);
     b->sides[1].members[1].hp = 0u;
     b->sides[1].members[2].hp = 0u;
-    dfi_knowledge_refresh_active(b);
+    df_knowledge_refresh_active(b);
     b->boundary_kind = (uint8_t)DUOFORGE_BOUNDARY_TERMINAL;
     b->request_epoch = 3u;
     b->request_mask = 0u;

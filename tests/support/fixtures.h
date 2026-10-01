@@ -112,4 +112,13 @@ duoforge_battle *df_make_f13(const duoforge_context *c4);
 /* Encodes via the public API and aborts on failure. */
 void df_encode(const duoforge_context *ctx, const duoforge_battle *b, uint8_t out[DUOFORGE_STATE_V3_ENCODED_SIZE]);
 
+/* Knowledge for states built without a step (in a step only the event fold
+ * writes it): the opponent of `side` records the current HP display of
+ * member `roster`; every active member's display (after an HP edit;
+ * occupants out of range are skipped); and every active member seen by the
+ * opponent with its display, as the [switch] lines of a step would show. */
+void df_knowledge_see_hp(duoforge_battle *b, uint32_t side, uint32_t roster);
+void df_knowledge_refresh_active(duoforge_battle *b);
+void df_see_active(duoforge_battle *b);
+
 #endif

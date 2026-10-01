@@ -1,15 +1,18 @@
 /*
  * T8 duoforge.state.identity (white-box): positions, members, activation
  * bindings, stale-binding regression (a replacement or re-entry never
- * inherits an old binding), the entry disclosure into the opponent's
- * seen_mask, primitive failure atomicity, corrupt-count safety (runs under
- * ASan/UBSan) and activation-id exhaustion.
+ * inherits an old binding), the entry disclosure (placing discloses
+ * nothing; the [switch] line folded by the step puts the member into the
+ * opponent's seen_mask, decision 0007 section 6), primitive failure
+ * atomicity, corrupt-count safety (runs under ASan/UBSan) and
+ * activation-id exhaustion.
  * Expectations: the identity contract (docs/decisions/0002, 0005).
  */
 #include <stdio.h>
 #include <string.h>
 
 #include "codec/state_codec.h"
+#include "combat/events.h"
 #include "state/identity.h"
 #include "state/invariants.h"
 #include "state/knowledge.h"
@@ -51,6 +54,18 @@ static void place_fails(df_test *t, duoforge_battle *b, dfi_position_id p, uint8
     }
     DF_CHECK_BYTES(t, after, before, sizeof after, what);
     DF_CHECK(t, out.position.side == 0xEEu && out.position.slot == 0xEEu && out.activation_id == 0xDEADBEEFu);
+}
+
+/* The step's disclosure of an entry: its [switch] line, folded into the
+ * opponent's knowledge (decision 0007 section 6). */
+static void disclose(duoforge_battle *b, uint32_t flat)
+{
+    static dfi_events ev;
+    ev.count = 0u;
+    ev.overflow = false;
+    const duoforge_event e = dfi_event_switch(b, flat);
+    dfi_events_push(&ev, &e);
+    dfi_events_fold_knowledge(b, b, &ev);
 }
 
 int main(void)
@@ -109,7 +124,7 @@ int main(void)
     b->sides[0].positions[0].confusion_turns = 3u;
     b->sides[0].positions[0].move_actions = 2u;
     b->sides[0].members[2].hp = 24u;
-    dfi_knowledge_refresh_active(b);
+    df_knowledge_refresh_active(b);
     DF_CHECK(&t, duoforge_battle_check(c1, b) == DUOFORGE_OK);
     DF_CHECK(&t, b->sides[1].knowledge[2].hp_percent == 20u &&
                      b->sides[1].knowledge[2].hp_flag == DUOFORGE_HP_FLAG_RED);
@@ -122,7 +137,7 @@ int main(void)
     DF_CHECK(&t, b->sides[1].knowledge[2].hp_percent == 20u &&
                      b->sides[1].knowledge[2].hp_flag == DUOFORGE_HP_FLAG_RED);
     b->sides[0].members[2].hp = 40u; /* on the bench: unseen */
-    dfi_knowledge_refresh_active(b);
+    df_knowledge_refresh_active(b);
     DF_CHECK(&t, b->sides[1].knowledge[2].hp_percent == 20u);
     DF_CHECK(&t, !dfi_binding_is_current(b, old1));
     {
@@ -138,6 +153,8 @@ int main(void)
     /* Replacement: roster 3 into s0a gets activation 5 and is now seen by side 1. */
     dfi_binding bind5 = {{0, 0}, 0};
     DF_CHECK(&t, dfi_place(b, S0A, 3u, &bind5) == DUOFORGE_OK);
+    DF_CHECK_EQ_U64(&t, b->sides[1].seen_mask, 0x05u); /* placing alone discloses nothing */
+    disclose(b, 0u);
     DF_CHECK_EQ_U64(&t, bind5.activation_id, 5u);
     DF_CHECK_EQ_U64(&t, b->next_activation_id, 6u);
     DF_CHECK(&t, !dfi_binding_is_current(b, old1));
@@ -158,6 +175,8 @@ int main(void)
     DF_CHECK(&t, !dfi_binding_is_current(b, old1));
     DF_CHECK(&t, !dfi_binding_is_current(b, bind5));
     DF_CHECK(&t, dfi_binding_is_current(b, bind6));
+    DF_CHECK(&t, b->sides[1].knowledge[2].hp_percent == 20u); /* not shown before its [switch] line */
+    disclose(b, 0u);
     DF_CHECK_EQ_U64(&t, b->sides[1].seen_mask, 0x0Du); /* re-entry adds no bit */
     /* Re-entry starts a new activation: nothing of either earlier stay is
      * left, and the opponent now sees the current display (40 of 120). */

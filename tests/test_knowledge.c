@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "combat/events.h"
 #include "state/identity.h"
 #include "state/knowledge.h"
 #include "support/check.h"
@@ -95,15 +96,69 @@ int main(void)
         DF_CHECK_EQ_U64(&t, accepted, 103u); /* 99 plain percentages and two flags each at 20 and 50 */
     }
 
-    /* The record: written on entry and on refresh, kept on leaving, only for
-     * active members, only in the opponent's knowledge. */
+    /* The fold (decision 0007 section 6), the only writer of the knowledge
+     * in a step: each player learns from the events about opposing
+     * positions, as its own projection shows them. Damage shows the HP
+     * display; a move is one use of its slot, not on a locked turn; an item
+     * that ended is a fact; a switch makes the member seen with its display;
+     * events about the own side and corrupt positions change nothing. */
+    {
+        duoforge_context *c1 = df_make_context(&df_config_c1);
+        duoforge_battle *b = df_make_f1(c1); /* s0 leads 2 and 0, s1 leads 1 and 3 */
+        duoforge_battle *before = NULL;
+        DF_CHECK(&t, duoforge_battle_clone(c1, b, &before) == DUOFORGE_OK);
+        static dfi_events ev;
+        ev.count = 0u;
+        ev.overflow = false;
+        b->sides[0].members[2].hp = 60u; /* s0a: 50 percent of 120, yellow */
+        duoforge_event e = dfi_event_make(DUOFORGE_EVENT_DAMAGE, 0u);
+        dfi_event_set_hp(&e, &b->sides[0].members[2]);
+        dfi_events_push(&ev, &e);
+        e = dfi_event_make(DUOFORGE_EVENT_MOVE, 3u); /* s1b, roster 3: its first move */
+        e.id = b->sides[1].members[3].moves[0].move_id;
+        dfi_events_push(&ev, &e);
+        e.flags = (uint8_t)DUOFORGE_EVENT_FLAG_LOCKED; /* the same move locked: no use */
+        dfi_events_push(&ev, &e);
+        e = dfi_event_make(DUOFORGE_EVENT_ITEM_END, 2u); /* s1a, roster 1 */
+        dfi_events_push(&ev, &e);
+        e = dfi_event_make(DUOFORGE_EVENT_DAMAGE, 7u); /* corrupt position: skipped */
+        e.hp = 1u;
+        e.hp_max = 1u;
+        e.hp_kind = (uint8_t)DUOFORGE_HP_EXACT;
+        dfi_events_push(&ev, &e);
+        b->sides[0].members[1].hp = 24u; /* roster 1 enters s0b */
+        b->sides[0].positions[1].occupant = 1u;
+        e = dfi_event_switch(b, 1u);
+        dfi_events_push(&ev, &e);
+        dfi_events_fold_knowledge(before, b, &ev);
+        DF_CHECK(&t, b->sides[1].knowledge[2].hp_percent == 50u &&
+                         b->sides[1].knowledge[2].hp_flag == DUOFORGE_HP_FLAG_YELLOW);
+        DF_CHECK(&t, b->sides[0].knowledge[3].moves_used[0] == 1u && b->sides[0].knowledge[3].moves_used[1] == 0u);
+        DF_CHECK(&t, b->sides[0].knowledge[1].revealed == DFI_REVEALED_ITEM_CONSUMED);
+        DF_CHECK_EQ_U64(&t, b->sides[1].seen_mask, 0x07u); /* roster 1 seen now */
+        uint8_t pct = 0u;
+        uint8_t flag = 0u;
+        dfi_hp_display(24u, b->sides[0].members[1].hp_max, &pct, &flag);
+        DF_CHECK(&t, pct < 100u && b->sides[1].knowledge[1].hp_percent == pct && b->sides[1].knowledge[1].hp_flag == flag);
+        DF_CHECK_EQ_U64(&t, b->sides[0].seen_mask, 0x0Au); /* the own side's events teach side 0 nothing */
+        DF_CHECK(&t, b->sides[0].knowledge[2].hp_percent == 0u && b->sides[1].knowledge[3].moves_used[0] == 0u);
+        DF_CHECK(&t, b->sides[0].knowledge[1].hp_percent == before->sides[0].knowledge[1].hp_percent &&
+                         b->sides[1].knowledge[2].revealed == 0u); /* not from own lines in the foe's slot */
+        duoforge_battle_destroy(before);
+        duoforge_battle_destroy(b);
+        duoforge_context_destroy(c1);
+    }
+
+    /* The fixtures' record (states built without a step): written on entry
+     * and on refresh, kept on leaving, only for active members, only in the
+     * opponent's knowledge. */
     {
         duoforge_context *c1 = df_make_context(&df_config_c1);
         duoforge_battle *b = df_make_f1(c1); /* s0 leads 2 and 0, s1 leads 1 and 3 */
         b->sides[0].members[2].hp = 60u;  /* active: 50 percent of 120, yellow */
         b->sides[0].members[1].hp = 11u;  /* bench */
         b->sides[1].members[3].hp = 0u;   /* active, fainted */
-        dfi_knowledge_refresh_active(b);
+        df_knowledge_refresh_active(b);
         DF_CHECK(&t, b->sides[1].knowledge[2].hp_percent == 50u &&
                          b->sides[1].knowledge[2].hp_flag == DUOFORGE_HP_FLAG_YELLOW);
         DF_CHECK(&t, b->sides[1].knowledge[1].hp_percent == 0u && b->sides[1].knowledge[1].hp_flag == 0u);
@@ -112,7 +167,7 @@ int main(void)
         DF_CHECK(&t, duoforge_battle_check(c1, b) == DUOFORGE_OK);
         /* A corrupt occupant is skipped, not used as an index. */
         b->sides[0].positions[1].occupant = 0xFEu;
-        dfi_knowledge_refresh_active(b);
+        df_knowledge_refresh_active(b);
         DF_CHECK(&t, duoforge_battle_check(c1, b) == DUOFORGE_E_INVARIANT);
         duoforge_battle_destroy(b);
         duoforge_context_destroy(c1);
