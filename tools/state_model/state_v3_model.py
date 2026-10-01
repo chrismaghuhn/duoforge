@@ -860,6 +860,9 @@ def slot_domain(ctx, st, side, slot):
         if pos['occ'] == NONE or sd['members'][pos['occ']]['hp'] == 0:
             return [cmd(SLOT_PASS)]
         mem = sd['members'][pos['occ']]
+        # A locked move (closure data): that move at the stored target only.
+        if ctx.data_kind in (KIND_CLOSURE, KIND_CLOSURE_DEV) and pos['locked_move'] != 0:
+            return [cmd(SLOT_MOVE, pos['locked_move'] - 1, pos['locked_target'], 0)]
         megas = [0, 1] if mem['mega_capable'] and not sd['mega_used'] else [0]
         for k in range(mem['move_count']):
             mv = mem['moves'][k]

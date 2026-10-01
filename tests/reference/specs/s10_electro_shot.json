@@ -1,0 +1,29 @@
+{
+  "name": "s10_electro_shot",
+  "purpose": "Electro Shot: the charge turn raises Special Attack and locks the move and the chosen target for the next turn (no PP, no switch, no other move); Fake Out on the locked turn makes it flinch and ends the charge; Lightning Rod draws the attack; in rain it fires at once.",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000b001",
+  "teams": [
+    "Archaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Electro Shot\n- Dragon Pulse\n\nGolisopod (F) @ Sitrus Berry\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Leech Life\n- Iron Head\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Ice Beam\n\nStaraptor (F) @ Life Orb\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Brave Bird\n- Close Combat",
+    "Milotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Ice Beam\n\nRaichu (M) @ Sitrus Berry\nAbility: Lightning Rod\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Zap Cannon\n- Protect\n\nRillaboom (F) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Fake Out\n- Grassy Glide\n\nFarigiraf (M) @ Light Clay\nAbility: Armor Tail\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Psychic\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1 2",
+      "move 1 1, move 1 1",
+      "move 1 1, move 2 2",
+      "move 1 2, move 1 1",
+      "move 1 1, switch 3",
+      "move 1 2, move 1 1",
+      "move 2 1, move 1 2"
+    ],
+    "p2": [
+      "switch 3, move 2",
+      "move 1 1, move 1 2",
+      "move 2 2, move 1 1",
+      "move 2 1, move 2",
+      "move 2 2, move 1 1"
+    ],
+    "max_steps": 50
+  }
+}

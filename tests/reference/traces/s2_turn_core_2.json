@@ -1,5 +1,5 @@
 {
- "harness": 10,
+ "harness": 11,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "spec": "s2_turn_core_2.json",
  "format": "gen9championsvgc2026regmc",
@@ -67,7 +67,8 @@
        "pp": [
         12
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Archaludon",
@@ -90,7 +91,8 @@
         16,
         8
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Milotic",
@@ -112,7 +114,8 @@
        "pp": [
         20
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Golisopod",
@@ -134,7 +137,8 @@
        "pp": [
         12
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       }
      ]
     },
@@ -166,7 +170,8 @@
        "pp": [
         12
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Milotic",
@@ -188,7 +193,8 @@
        "pp": [
         20
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Archaludon",
@@ -211,7 +217,8 @@
         16,
         8
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Golisopod",
@@ -233,7 +240,8 @@
        "pp": [
         12
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       }
      ]
     }
@@ -376,7 +384,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -399,7 +408,8 @@
          16,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -421,7 +431,8 @@
         "pp": [
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -443,7 +454,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -482,7 +494,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -504,7 +517,8 @@
         "pp": [
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -527,7 +541,8 @@
          16,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -549,7 +564,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -953,7 +969,8 @@
         "pp": [
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -976,7 +993,8 @@
          15,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -998,7 +1016,8 @@
         "pp": [
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -1020,7 +1039,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -1059,7 +1079,8 @@
         "pp": [
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -1081,7 +1102,8 @@
         "pp": [
          19
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -1104,7 +1126,8 @@
          16,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -1126,7 +1149,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -1514,7 +1538,8 @@
         "pp": [
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -1537,7 +1562,8 @@
          14,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -1559,7 +1585,8 @@
         "pp": [
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -1581,7 +1608,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -1620,7 +1648,8 @@
         "pp": [
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -1642,7 +1671,8 @@
         "pp": [
          18
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -1665,7 +1695,8 @@
          16,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -1687,7 +1718,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -1988,7 +2020,8 @@
         "pp": [
          9
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -2013,7 +2046,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -2035,7 +2069,8 @@
         "pp": [
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -2057,7 +2092,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -2096,7 +2132,8 @@
         "pp": [
          9
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -2118,7 +2155,8 @@
         "pp": [
          17
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -2141,7 +2179,8 @@
          16,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -2163,7 +2202,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }

@@ -1,5 +1,5 @@
 {
- "harness": 10,
+ "harness": 11,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "spec": "s4_status_edges.json",
  "format": "gen9championsvgc2026regmc",
@@ -68,7 +68,8 @@
         12,
         12
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Milotic",
@@ -91,7 +92,8 @@
         20,
         12
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Raichu",
@@ -114,7 +116,8 @@
         8,
         8
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Golisopod",
@@ -137,7 +140,8 @@
         16,
         8
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       }
      ]
     },
@@ -169,7 +173,8 @@
        "pp": [
         16
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Raichu",
@@ -192,7 +197,8 @@
         8,
         8
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Politoed",
@@ -215,7 +221,8 @@
         12,
         8
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Farigiraf",
@@ -238,7 +245,8 @@
         12,
         8
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       }
      ]
     }
@@ -323,7 +331,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -346,7 +355,8 @@
          20,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -369,7 +379,8 @@
          8,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -392,7 +403,8 @@
          16,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -432,7 +444,8 @@
         "pp": [
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -455,7 +468,8 @@
          8,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -478,7 +492,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Farigiraf",
@@ -501,7 +516,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -628,7 +644,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -651,7 +668,8 @@
          19,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -674,7 +692,8 @@
          8,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -697,7 +716,8 @@
          16,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -729,7 +749,8 @@
         "pp": [
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -752,7 +773,8 @@
          7,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -775,7 +797,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Farigiraf",
@@ -798,7 +821,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -900,7 +924,8 @@
          8,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -923,7 +948,8 @@
          19,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -946,7 +972,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -969,7 +996,8 @@
          16,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -1009,7 +1037,8 @@
         "pp": [
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -1032,7 +1061,8 @@
          7,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -1055,7 +1085,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Farigiraf",
@@ -1078,7 +1109,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -1421,7 +1453,8 @@
          7,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -1444,7 +1477,8 @@
          19,
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -1467,7 +1501,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -1490,7 +1525,8 @@
          16,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -1530,7 +1566,8 @@
         "pp": [
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -1553,7 +1590,8 @@
          6,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -1576,7 +1614,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Farigiraf",
@@ -1599,7 +1638,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -1849,7 +1889,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -1872,7 +1913,8 @@
          19,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -1895,7 +1937,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -1918,7 +1961,8 @@
          16,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -1958,7 +2002,8 @@
         "pp": [
          15
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -1981,7 +2026,8 @@
          5,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -2004,7 +2050,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Farigiraf",
@@ -2027,7 +2074,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -2259,7 +2307,8 @@
          6,
          7
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -2282,7 +2331,8 @@
          18,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -2305,7 +2355,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -2328,7 +2379,8 @@
          16,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -2368,7 +2420,8 @@
         "pp": [
          15
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -2391,7 +2444,8 @@
          4,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -2414,7 +2468,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Farigiraf",
@@ -2437,7 +2492,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -2733,7 +2789,8 @@
          5,
          7
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -2756,7 +2813,8 @@
          18,
          9
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -2779,7 +2837,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -2802,7 +2861,8 @@
          16,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -2842,7 +2902,8 @@
         "pp": [
          15
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -2865,7 +2926,8 @@
          3,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -2888,7 +2950,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Farigiraf",
@@ -2911,7 +2974,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -3114,7 +3178,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -3137,7 +3202,8 @@
          17,
          9
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -3160,7 +3226,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -3183,7 +3250,8 @@
          16,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -3223,7 +3291,8 @@
         "pp": [
          14
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -3246,7 +3315,8 @@
          2,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -3269,7 +3339,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Farigiraf",
@@ -3292,7 +3363,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -3479,7 +3551,8 @@
          5,
          5
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -3502,7 +3575,8 @@
          16,
          9
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -3525,7 +3599,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -3548,7 +3623,8 @@
          16,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -3580,7 +3656,8 @@
         "pp": [
          13
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -3603,7 +3680,8 @@
          1,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -3626,7 +3704,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Farigiraf",
@@ -3649,7 +3728,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -3714,7 +3794,8 @@
          16,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -3737,7 +3818,8 @@
          16,
          9
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -3760,7 +3842,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -3783,7 +3866,8 @@
          5,
          5
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -3823,7 +3907,8 @@
         "pp": [
          13
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -3846,7 +3931,8 @@
          1,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -3869,7 +3955,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Farigiraf",
@@ -3892,7 +3979,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -3992,7 +4080,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -4015,7 +4104,8 @@
          15,
          9
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -4038,7 +4128,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -4061,7 +4152,8 @@
          5,
          5
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -4101,7 +4193,8 @@
         "pp": [
          13
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -4124,7 +4217,8 @@
          0,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -4147,7 +4241,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Farigiraf",
@@ -4170,7 +4265,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -4268,7 +4364,8 @@
          16,
          6
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -4291,7 +4388,8 @@
          14,
          9
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -4314,7 +4412,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -4337,7 +4436,8 @@
          5,
          5
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -4377,7 +4477,8 @@
         "pp": [
          13
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -4402,7 +4503,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -4425,7 +4527,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Farigiraf",
@@ -4448,7 +4551,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -4550,7 +4654,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -4573,7 +4678,8 @@
          13,
          9
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -4596,7 +4702,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -4619,7 +4726,8 @@
          5,
          5
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -4659,7 +4767,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -4682,7 +4791,8 @@
          0,
          6
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -4705,7 +4815,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Farigiraf",
@@ -4728,7 +4839,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -4858,7 +4970,8 @@
          16,
          4
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -4881,7 +4994,8 @@
          12,
          9
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -4904,7 +5018,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -4927,7 +5042,8 @@
          5,
          5
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -4967,7 +5083,8 @@
         "pp": [
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -4992,7 +5109,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -5015,7 +5133,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Farigiraf",
@@ -5038,7 +5157,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -5145,7 +5265,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -5168,7 +5289,8 @@
          11,
          9
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -5191,7 +5313,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -5214,7 +5337,8 @@
          5,
          5
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -5254,7 +5378,8 @@
         "pp": [
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -5277,7 +5402,8 @@
          0,
          4
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -5300,7 +5426,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Farigiraf",
@@ -5323,7 +5450,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -5435,7 +5563,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -5458,7 +5587,8 @@
          10,
          9
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -5481,7 +5611,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -5504,7 +5635,8 @@
          5,
          5
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -5544,7 +5676,8 @@
         "pp": [
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -5569,7 +5702,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -5592,7 +5726,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Farigiraf",
@@ -5615,7 +5750,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -5736,7 +5872,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -5759,7 +5896,8 @@
          9,
          9
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -5782,7 +5920,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -5805,7 +5944,8 @@
          5,
          5
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -5845,7 +5985,8 @@
         "pp": [
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -5870,7 +6011,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -5893,7 +6035,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Farigiraf",
@@ -5916,7 +6059,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -6028,7 +6172,8 @@
          16,
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -6051,7 +6196,8 @@
          8,
          9
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -6074,7 +6220,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -6097,7 +6244,8 @@
          5,
          5
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -6137,7 +6285,8 @@
         "pp": [
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -6162,7 +6311,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -6185,7 +6335,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Farigiraf",
@@ -6208,7 +6359,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -6316,7 +6468,8 @@
          15,
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -6339,7 +6492,8 @@
          7,
          9
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -6362,7 +6516,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -6385,7 +6540,8 @@
          5,
          5
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -6417,7 +6573,8 @@
         "pp": [
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -6440,7 +6597,8 @@
          0,
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -6463,7 +6621,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Farigiraf",
@@ -6486,7 +6645,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -6551,7 +6711,8 @@
          15,
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -6574,7 +6735,8 @@
          7,
          9
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -6597,7 +6759,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -6620,7 +6783,8 @@
          5,
          5
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -6661,7 +6825,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -6684,7 +6849,8 @@
          0,
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Grimmsnarl",
@@ -6706,7 +6872,8 @@
         "pp": [
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Farigiraf",
@@ -6729,7 +6896,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -6885,7 +7053,8 @@
          14,
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -6908,7 +7077,8 @@
          6,
          9
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -6931,7 +7101,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -6954,7 +7125,8 @@
          5,
          5
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -6987,7 +7159,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -7010,7 +7183,8 @@
          0,
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Grimmsnarl",
@@ -7032,7 +7206,8 @@
         "pp": [
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Farigiraf",
@@ -7055,7 +7230,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -7120,7 +7296,8 @@
          14,
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -7143,7 +7320,8 @@
          6,
          9
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -7166,7 +7344,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -7189,7 +7368,8 @@
          5,
          5
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -7231,7 +7411,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Farigiraf",
@@ -7254,7 +7435,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Grimmsnarl",
@@ -7276,7 +7458,8 @@
         "pp": [
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -7299,7 +7482,8 @@
          0,
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -7440,7 +7624,8 @@
          13,
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -7463,7 +7648,8 @@
          5,
          9
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -7486,7 +7672,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -7509,7 +7696,8 @@
          5,
          5
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -7551,7 +7739,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Farigiraf",
@@ -7574,7 +7763,8 @@
          11,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Grimmsnarl",
@@ -7596,7 +7786,8 @@
         "pp": [
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -7619,7 +7810,8 @@
          0,
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -7760,7 +7952,8 @@
          13,
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -7783,7 +7976,8 @@
          4,
          9
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -7806,7 +8000,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -7829,7 +8024,8 @@
          5,
          5
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -7871,7 +8067,8 @@
          11,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Farigiraf",
@@ -7894,7 +8091,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Grimmsnarl",
@@ -7916,7 +8114,8 @@
         "pp": [
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -7939,7 +8138,8 @@
          0,
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -8116,7 +8316,8 @@
          13,
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -8139,7 +8340,8 @@
          3,
          9
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -8162,7 +8364,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -8185,7 +8388,8 @@
          5,
          5
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -8227,7 +8431,8 @@
          11,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Farigiraf",
@@ -8250,7 +8455,8 @@
          9,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Grimmsnarl",
@@ -8272,7 +8478,8 @@
         "pp": [
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -8295,7 +8502,8 @@
          0,
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -8465,7 +8673,8 @@
          13,
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -8488,7 +8697,8 @@
          2,
          9
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -8511,7 +8721,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -8534,7 +8745,8 @@
          5,
          5
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -8576,7 +8788,8 @@
          11,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Farigiraf",
@@ -8599,7 +8812,8 @@
          8,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Grimmsnarl",
@@ -8621,7 +8835,8 @@
         "pp": [
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -8644,7 +8859,8 @@
          0,
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -8839,7 +9055,8 @@
          13,
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -8862,7 +9079,8 @@
          1,
          9
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -8885,7 +9103,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -8908,7 +9127,8 @@
          5,
          5
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -8941,7 +9161,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Farigiraf",
@@ -8964,7 +9185,8 @@
          7,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Grimmsnarl",
@@ -8986,7 +9208,8 @@
         "pp": [
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -9009,7 +9232,8 @@
          0,
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }

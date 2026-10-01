@@ -1,5 +1,5 @@
 {
- "harness": 10,
+ "harness": 11,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "spec": "s3_spread_faints.json",
  "format": "gen9championsvgc2026regmc",
@@ -68,7 +68,8 @@
         12,
         20
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Politoed",
@@ -91,7 +92,8 @@
         12,
         8
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Staraptor",
@@ -113,7 +115,8 @@
        "pp": [
         8
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Charizard",
@@ -135,7 +138,8 @@
        "pp": [
         8
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       }
      ]
     },
@@ -168,7 +172,8 @@
         12,
         8
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Milotic",
@@ -191,7 +196,8 @@
         12,
         20
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Staraptor",
@@ -213,7 +219,8 @@
        "pp": [
         8
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Ceruledge",
@@ -235,7 +242,8 @@
        "pp": [
         20
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       }
      ]
     }
@@ -404,7 +412,8 @@
          12,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -427,7 +436,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -449,7 +459,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -471,7 +482,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -513,7 +525,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -536,7 +549,8 @@
          12,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -558,7 +572,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -580,7 +595,8 @@
         "pp": [
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -1493,7 +1509,8 @@
          11,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -1516,7 +1533,8 @@
          11,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -1538,7 +1556,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -1560,7 +1579,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -1602,7 +1622,8 @@
          11,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -1625,7 +1646,8 @@
          11,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -1647,7 +1669,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -1669,7 +1692,8 @@
         "pp": [
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -2462,7 +2486,8 @@
          10,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -2485,7 +2510,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -2507,7 +2533,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -2529,7 +2556,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -2571,7 +2599,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -2594,7 +2623,8 @@
          10,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -2616,7 +2646,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -2638,7 +2669,8 @@
         "pp": [
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -3405,7 +3437,8 @@
          9,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -3428,7 +3461,8 @@
          9,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -3450,7 +3484,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -3472,7 +3507,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -3514,7 +3550,8 @@
          9,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -3537,7 +3574,8 @@
          9,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -3559,7 +3597,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -3581,7 +3620,8 @@
         "pp": [
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -4351,7 +4391,8 @@
          8,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -4374,7 +4415,8 @@
          8,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -4396,7 +4438,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -4418,7 +4461,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -4460,7 +4504,8 @@
          8,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -4483,7 +4528,8 @@
          8,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -4505,7 +4551,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -4527,7 +4574,8 @@
         "pp": [
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -5393,7 +5441,8 @@
          7,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -5416,7 +5465,8 @@
          7,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -5438,7 +5488,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -5460,7 +5511,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -5502,7 +5554,8 @@
          7,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -5525,7 +5578,8 @@
          7,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -5547,7 +5601,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -5569,7 +5624,8 @@
         "pp": [
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -6171,7 +6227,8 @@
          6,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -6194,7 +6251,8 @@
          6,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -6216,7 +6274,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -6238,7 +6297,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -6271,7 +6331,8 @@
          7,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -6294,7 +6355,8 @@
          6,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -6316,7 +6378,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -6338,7 +6401,8 @@
         "pp": [
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -6440,7 +6504,8 @@
          6,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -6463,7 +6528,8 @@
          6,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -6485,7 +6551,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -6507,7 +6574,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -6547,7 +6615,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -6570,7 +6639,8 @@
          6,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -6593,7 +6663,8 @@
          7,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -6615,7 +6686,8 @@
         "pp": [
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -6941,7 +7013,8 @@
          5,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -6964,7 +7037,8 @@
          5,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -6986,7 +7060,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -7008,7 +7083,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -7042,7 +7118,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -7065,7 +7142,8 @@
          6,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -7088,7 +7166,8 @@
          7,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -7110,7 +7189,8 @@
         "pp": [
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -7175,7 +7255,8 @@
          5,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -7198,7 +7279,8 @@
          5,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -7220,7 +7302,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -7242,7 +7325,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -7283,7 +7367,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -7305,7 +7390,8 @@
         "pp": [
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -7328,7 +7414,8 @@
          7,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -7351,7 +7438,8 @@
          6,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -7599,7 +7687,8 @@
          4,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -7622,7 +7711,8 @@
          4,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -7644,7 +7734,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -7666,7 +7757,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -7705,7 +7797,8 @@
         "pp": [
          6
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -7727,7 +7820,8 @@
         "pp": [
          19
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -7750,7 +7844,8 @@
          7,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -7773,7 +7868,8 @@
          6,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -7982,7 +8078,8 @@
          3,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -8005,7 +8102,8 @@
          3,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -8027,7 +8125,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -8049,7 +8148,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -8090,7 +8190,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -8112,7 +8213,8 @@
         "pp": [
          18
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -8135,7 +8237,8 @@
          7,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -8158,7 +8261,8 @@
          6,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -8350,7 +8454,8 @@
          2,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -8373,7 +8478,8 @@
          2,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -8395,7 +8501,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -8417,7 +8524,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -8456,7 +8564,8 @@
         "pp": [
          4
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -8478,7 +8587,8 @@
         "pp": [
          18
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -8501,7 +8611,8 @@
          7,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -8524,7 +8635,8 @@
          6,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -8684,7 +8796,8 @@
          1,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -8707,7 +8820,8 @@
          1,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -8729,7 +8843,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -8751,7 +8866,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -8792,7 +8908,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -8814,7 +8931,8 @@
         "pp": [
          18
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -8837,7 +8955,8 @@
          7,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -8860,7 +8979,8 @@
          6,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -9043,7 +9163,8 @@
          0,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -9066,7 +9187,8 @@
          0,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -9088,7 +9210,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -9110,7 +9233,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -9142,7 +9266,8 @@
         "pp": [
          2
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -9164,7 +9289,8 @@
         "pp": [
          18
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -9187,7 +9313,8 @@
          7,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -9210,7 +9337,8 @@
          6,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }

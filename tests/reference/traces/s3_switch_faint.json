@@ -1,5 +1,5 @@
 {
- "harness": 10,
+ "harness": 11,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "spec": "s3_switch_faint.json",
  "format": "gen9championsvgc2026regmc",
@@ -68,7 +68,8 @@
         16,
         20
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Ceruledge",
@@ -91,7 +92,8 @@
         20,
         20
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Rillaboom",
@@ -113,7 +115,8 @@
        "pp": [
         12
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Archaludon",
@@ -136,7 +139,8 @@
         12,
         16
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       }
      ]
     },
@@ -169,7 +173,8 @@
         8,
         8
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Golisopod",
@@ -192,7 +197,8 @@
         12,
         8
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Grimmsnarl",
@@ -214,7 +220,8 @@
        "pp": [
         16
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Farigiraf",
@@ -237,7 +244,8 @@
         12,
         8
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       }
      ]
     }
@@ -322,7 +330,8 @@
          16,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -345,7 +354,8 @@
          20,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -367,7 +377,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -390,7 +401,8 @@
          12,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -432,7 +444,8 @@
          8,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -455,7 +468,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Grimmsnarl",
@@ -477,7 +491,8 @@
         "pp": [
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Farigiraf",
@@ -500,7 +515,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -581,7 +597,8 @@
          16,
          19
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -604,7 +621,8 @@
          20,
          19
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -626,7 +644,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -649,7 +668,8 @@
          12,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -691,7 +711,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -714,7 +735,8 @@
          11,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Grimmsnarl",
@@ -736,7 +758,8 @@
         "pp": [
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -759,7 +782,8 @@
          8,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -911,7 +935,8 @@
          15,
          19
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -934,7 +959,8 @@
          19,
          19
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -956,7 +982,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -979,7 +1006,8 @@
          12,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -1021,7 +1049,8 @@
          11,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -1044,7 +1073,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Grimmsnarl",
@@ -1066,7 +1096,8 @@
         "pp": [
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -1089,7 +1120,8 @@
          8,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -1211,7 +1243,8 @@
          14,
          19
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -1234,7 +1267,8 @@
          18,
          19
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -1256,7 +1290,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -1279,7 +1314,8 @@
          12,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -1312,7 +1348,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -1335,7 +1372,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Grimmsnarl",
@@ -1357,7 +1395,8 @@
         "pp": [
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -1380,7 +1419,8 @@
          8,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -1482,7 +1522,8 @@
          14,
          19
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -1505,7 +1546,8 @@
          18,
          19
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -1527,7 +1569,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -1550,7 +1593,8 @@
          12,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -1591,7 +1635,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Grimmsnarl",
@@ -1613,7 +1658,8 @@
         "pp": [
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -1636,7 +1682,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -1659,7 +1706,8 @@
          8,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -2029,7 +2077,8 @@
          13,
          19
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -2052,7 +2101,8 @@
          17,
          19
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -2074,7 +2124,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -2097,7 +2148,8 @@
          12,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -2138,7 +2190,8 @@
          9,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Grimmsnarl",
@@ -2160,7 +2213,8 @@
         "pp": [
          15
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -2183,7 +2237,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -2206,7 +2261,8 @@
          8,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -2582,7 +2638,8 @@
          12,
          19
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -2605,7 +2662,8 @@
          16,
          19
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -2627,7 +2685,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -2650,7 +2709,8 @@
          12,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -2683,7 +2743,8 @@
          8,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Grimmsnarl",
@@ -2705,7 +2766,8 @@
         "pp": [
          14
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -2728,7 +2790,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -2751,7 +2814,8 @@
          8,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -2854,7 +2918,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -2877,7 +2942,8 @@
          12,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Gholdengo",
@@ -2900,7 +2966,8 @@
          12,
          19
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -2923,7 +2990,8 @@
          16,
          19
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -2964,7 +3032,8 @@
          8,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Grimmsnarl",
@@ -2986,7 +3055,8 @@
         "pp": [
          14
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -3009,7 +3079,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -3032,7 +3103,8 @@
          8,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -3290,7 +3362,8 @@
         "pp": [
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -3313,7 +3386,8 @@
          11,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Gholdengo",
@@ -3336,7 +3410,8 @@
          12,
          19
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -3359,7 +3434,8 @@
          16,
          19
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -3392,7 +3468,8 @@
          7,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Grimmsnarl",
@@ -3414,7 +3491,8 @@
         "pp": [
          14
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -3437,7 +3515,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -3460,7 +3539,8 @@
          8,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -3523,7 +3603,8 @@
         "pp": [
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -3546,7 +3627,8 @@
          11,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Gholdengo",
@@ -3569,7 +3651,8 @@
          12,
          19
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -3592,7 +3675,8 @@
          16,
          19
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -3634,7 +3718,8 @@
          7,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -3657,7 +3742,8 @@
          8,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -3680,7 +3766,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Grimmsnarl",
@@ -3702,7 +3789,8 @@
         "pp": [
          14
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -3884,7 +3972,8 @@
         "pp": [
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -3907,7 +3996,8 @@
          10,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Gholdengo",
@@ -3930,7 +4020,8 @@
          12,
          19
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -3953,7 +4044,8 @@
          16,
          19
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -3995,7 +4087,8 @@
          6,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -4018,7 +4111,8 @@
          7,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -4041,7 +4135,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Grimmsnarl",
@@ -4063,7 +4158,8 @@
         "pp": [
          14
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -4232,7 +4328,8 @@
         "pp": [
          9
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -4255,7 +4352,8 @@
          10,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Gholdengo",
@@ -4278,7 +4376,8 @@
          12,
          19
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -4301,7 +4400,8 @@
          16,
          19
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -4343,7 +4443,8 @@
          5,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -4366,7 +4467,8 @@
          7,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -4389,7 +4491,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Grimmsnarl",
@@ -4411,7 +4514,8 @@
         "pp": [
          14
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -4526,7 +4630,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Archaludon",
@@ -4549,7 +4654,8 @@
          10,
          16
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Gholdengo",
@@ -4572,7 +4678,8 @@
          12,
          19
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -4595,7 +4702,8 @@
          16,
          19
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -4628,7 +4736,8 @@
          5,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Raichu",
@@ -4651,7 +4760,8 @@
          7,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -4674,7 +4784,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Grimmsnarl",
@@ -4696,7 +4807,8 @@
         "pp": [
          14
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }

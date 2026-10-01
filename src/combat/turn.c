@@ -993,14 +993,25 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     if (st != DUOFORGE_OK) {
         return st;
     }
-    /* BeforeMove: a Pokemon that cannot move uses no PP and shows nothing. */
+    /* BeforeMove: a Pokemon that cannot move uses no PP and shows nothing;
+     * on the locked turn of a two-turn move its charge ends (twoturnmove's
+     * onMoveAborted). */
+    const bool locked = pos->charge_turns != 0u;
     bool can = false;
     st = dfi_before_move(r, user, &can);
-    if (st != DUOFORGE_OK || !can) {
+    if (st != DUOFORGE_OK) {
         return st;
     }
-    /* deductPP and what the opponent sees. */
-    if (q->move_slot < DUOFORGE_MAX_MOVE_SLOTS) {
+    if (!can) {
+        if (locked) {
+            pos->charge_turns = 0u;
+            pos->locked_move = 0u;
+            pos->locked_target = 0u;
+        }
+        return DUOFORGE_OK;
+    }
+    /* deductPP and what the opponent sees; a locked move uses none. */
+    if (q->move_slot < DUOFORGE_MAX_MOVE_SLOTS && !locked) {
         dfi_move_slot *slot = &m->moves[q->move_slot];
         if (slot->pp == 0u) {
             return DUOFORGE_OK; /* "cant nopp"; the domain never offers it */
@@ -1025,6 +1036,20 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                 targets[0] = flat;
                 break;
             }
+        }
+    }
+    /* Electro Shot's onTryMove (a singleEvent before the TryMove event):
+     * on the charge turn Special Attack +1, then in rain the attack goes on,
+     * otherwise twoturnmove locks the move and the chosen target for the
+     * next turn (duration 2). On the locked turn the attack goes on. */
+    if (md->special == DFI_SPECIAL_ELECTRO_SHOT && !locked) {
+        static const uint8_t spa_up[DFI_STAT_STAGE_COUNT] = {6u, 6u, 7u, 6u, 6u, 6u, 6u};
+        dfi_boost(r, user, spa_up, DFI_POSITIONS);
+        if (b->weather != DFI_WEATHER_RAIN) {
+            pos->charge_turns = (uint8_t)DFI_CHARGE_TURNS_MAX;
+            pos->locked_move = (uint8_t)((uint32_t)q->move_slot + 1u); /* wide-operands-reviewed: <= 4 */
+            pos->locked_target = q->target;
+            return DUOFORGE_OK;
         }
     }
     /* TryMove: Armor Tail on a standing foe stops a move with positive
@@ -1076,9 +1101,8 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         dfi_boost(r, user, md->boosts, DFI_POSITIONS);
         return DUOFORGE_OK;
     }
-    if (md->special == DFI_SPECIAL_ELECTRO_SHOT || md->special == DFI_SPECIAL_PARTING_SHOT ||
-        md->special > DFI_SPECIAL_STRUGGLE) {
-        return DUOFORGE_E_UNSUPPORTED; /* steps 10b and 12 */
+    if (md->special == DFI_SPECIAL_PARTING_SHOT || md->special > DFI_SPECIAL_STRUGGLE) {
+        return DUOFORGE_E_UNSUPPORTED; /* step 12 */
     }
     /* Fake Out's onTry (in trySpreadMoveHit, after TryMove): only on the
      * first move action since it entered. */
@@ -1641,7 +1665,8 @@ static duoforge_status dfi_residual(dfi_run *r)
         }
         const uint32_t ends = ((((uint32_t)pos->flags & DFI_VOL_PROTECT) != 0u) ? 1u : 0u) +
                               (pos->stall_level != 0u ? 1u : 0u) +
-                              ((((uint32_t)pos->flags & DFI_VOL_FLINCH) != 0u) ? 1u : 0u);
+                              ((((uint32_t)pos->flags & DFI_VOL_FLINCH) != 0u) ? 1u : 0u) +
+                              (pos->charge_turns != 0u ? 1u : 0u);
         for (uint32_t k = 0u; k < ends; ++k) {
             list[n] = (dfi_residual_entry){DFI_RES_DURATION, flat, DFI_RES_NO_ORDER, speed, 2u, false};
             n += 1u;
@@ -1766,6 +1791,13 @@ static duoforge_status dfi_residual(dfi_run *r)
             continue;
         }
         pos->flags = (uint8_t)((uint32_t)pos->flags & ~(DFI_VOL_PROTECT | DFI_VOL_FLINCH)); /* wide-operands-reviewed */
+        if (pos->charge_turns > 0u) {
+            pos->charge_turns = (uint8_t)((uint32_t)pos->charge_turns - 1u); /* wide-operands-reviewed */
+            if (pos->charge_turns == 0u) {
+                pos->locked_move = 0u;
+                pos->locked_target = 0u;
+            }
+        }
         if (pos->stall_turns > 0u) {
             pos->stall_turns = (uint8_t)((uint32_t)pos->stall_turns - 1u); /* wide-operands-reviewed */
             if (pos->stall_turns == 0u) {

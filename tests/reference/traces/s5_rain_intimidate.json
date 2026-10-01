@@ -1,5 +1,5 @@
 {
- "harness": 10,
+ "harness": 11,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "spec": "s5_rain_intimidate.json",
  "format": "gen9championsvgc2026regmc",
@@ -68,7 +68,8 @@
         12,
         12
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Staraptor",
@@ -90,7 +91,8 @@
        "pp": [
         8
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Charizard",
@@ -113,7 +115,8 @@
         12,
         12
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Golisopod",
@@ -136,7 +139,8 @@
         12,
         8
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       }
      ]
     },
@@ -169,7 +173,8 @@
         12,
         12
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Staraptor",
@@ -191,7 +196,8 @@
        "pp": [
         8
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Charizard",
@@ -214,7 +220,8 @@
         12,
         12
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Golisopod",
@@ -237,7 +244,8 @@
         12,
         8
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       }
      ]
     }
@@ -472,7 +480,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -494,7 +503,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -517,7 +527,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -540,7 +551,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -581,7 +593,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -603,7 +616,8 @@
         "pp": [
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -626,7 +640,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -649,7 +664,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -1400,7 +1416,8 @@
          11,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -1424,7 +1441,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -1447,7 +1465,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -1470,7 +1489,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -1511,7 +1531,8 @@
          11,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -1535,7 +1556,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -1558,7 +1580,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -1581,7 +1604,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -2039,7 +2063,8 @@
          10,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -2062,7 +2087,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -2084,7 +2110,8 @@
         "pp": [
          7
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -2107,7 +2134,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -2148,7 +2176,8 @@
          11,
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -2170,7 +2199,8 @@
         "pp": [
          6
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -2193,7 +2223,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -2216,7 +2247,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -2612,7 +2644,8 @@
          10,
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -2634,7 +2667,8 @@
         "pp": [
          7
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -2657,7 +2691,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -2680,7 +2715,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -2721,7 +2757,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -2745,7 +2782,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -2768,7 +2806,8 @@
          11,
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -2791,7 +2830,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -3190,7 +3230,8 @@
          9,
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -3214,7 +3255,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -3237,7 +3279,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -3260,7 +3303,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -3293,7 +3337,8 @@
          11,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -3315,7 +3360,8 @@
         "pp": [
          4
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -3338,7 +3384,8 @@
          11,
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -3361,7 +3408,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -3498,7 +3546,8 @@
          9,
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -3522,7 +3571,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -3545,7 +3595,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -3568,7 +3619,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -3609,7 +3661,8 @@
          11,
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -3631,7 +3684,8 @@
         "pp": [
          4
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -3654,7 +3708,8 @@
          11,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -3677,7 +3732,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -4288,7 +4344,8 @@
          9,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -4312,7 +4369,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -4335,7 +4393,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -4358,7 +4417,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -4399,7 +4459,8 @@
          10,
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -4423,7 +4484,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -4446,7 +4508,8 @@
          11,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -4469,7 +4532,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -4938,7 +5002,8 @@
          9,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -4960,7 +5025,8 @@
         "pp": [
          4
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -4983,7 +5049,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -5006,7 +5073,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -5039,7 +5107,8 @@
          9,
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -5063,7 +5132,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -5086,7 +5156,8 @@
          11,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -5109,7 +5180,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -5210,7 +5282,8 @@
          12,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -5232,7 +5305,8 @@
         "pp": [
          4
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -5255,7 +5329,8 @@
          9,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -5278,7 +5353,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -5319,7 +5395,8 @@
          9,
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -5343,7 +5420,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -5366,7 +5444,8 @@
          11,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -5389,7 +5468,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -5797,7 +5877,8 @@
          12,
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -5821,7 +5902,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -5844,7 +5926,8 @@
          9,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -5867,7 +5950,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -5908,7 +5992,8 @@
          8,
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -5930,7 +6015,8 @@
         "pp": [
          1
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -5953,7 +6039,8 @@
          11,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -5976,7 +6063,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -6452,7 +6540,8 @@
          12,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -6476,7 +6565,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -6499,7 +6589,8 @@
          9,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -6522,7 +6613,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -6555,7 +6647,8 @@
          7,
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -6579,7 +6672,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -6602,7 +6696,8 @@
          11,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -6625,7 +6720,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -6726,7 +6822,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -6750,7 +6847,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -6773,7 +6871,8 @@
          9,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -6796,7 +6895,8 @@
          12,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -6837,7 +6937,8 @@
          7,
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -6861,7 +6962,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -6884,7 +6986,8 @@
          11,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -6907,7 +7010,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -7259,7 +7363,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -7281,7 +7386,8 @@
         "pp": [
          1
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -7304,7 +7410,8 @@
          9,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -7327,7 +7434,8 @@
          12,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -7368,7 +7476,8 @@
          6,
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -7390,7 +7499,8 @@
         "pp": [
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -7413,7 +7523,8 @@
          11,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -7436,7 +7547,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -7829,7 +7941,8 @@
          12,
          6
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -7853,7 +7966,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -7876,7 +7990,8 @@
          9,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -7899,7 +8014,8 @@
          12,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -7940,7 +8056,8 @@
          5,
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -7962,7 +8079,8 @@
         "pp": [
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -7985,7 +8103,8 @@
          11,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -8008,7 +8127,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -8400,7 +8520,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -8422,7 +8543,8 @@
         "pp": [
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -8445,7 +8567,8 @@
          9,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -8468,7 +8591,8 @@
          12,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -8501,7 +8625,8 @@
          4,
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -8523,7 +8648,8 @@
         "pp": [
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -8546,7 +8672,8 @@
          11,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -8569,7 +8696,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -8672,7 +8800,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -8694,7 +8823,8 @@
         "pp": [
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -8717,7 +8847,8 @@
          9,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -8740,7 +8871,8 @@
          12,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -8782,7 +8914,8 @@
          4,
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -8805,7 +8938,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -8828,7 +8962,8 @@
          11,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -8850,7 +8985,8 @@
         "pp": [
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -9076,7 +9212,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -9098,7 +9235,8 @@
         "pp": [
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -9121,7 +9259,8 @@
          9,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -9144,7 +9283,8 @@
          12,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -9186,7 +9326,8 @@
          3,
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -9209,7 +9350,8 @@
          11,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -9232,7 +9374,8 @@
          11,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -9254,7 +9397,8 @@
         "pp": [
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -9437,7 +9581,8 @@
          12,
          3
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -9459,7 +9604,8 @@
         "pp": [
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -9482,7 +9628,8 @@
          9,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -9505,7 +9652,8 @@
          12,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -9547,7 +9695,8 @@
          3,
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -9570,7 +9719,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -9593,7 +9743,8 @@
          11,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -9615,7 +9766,8 @@
         "pp": [
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -9781,7 +9933,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -9803,7 +9956,8 @@
         "pp": [
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -9826,7 +9980,8 @@
          9,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -9849,7 +10004,8 @@
          12,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -9891,7 +10047,8 @@
          3,
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -9914,7 +10071,8 @@
          9,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -9937,7 +10095,8 @@
          11,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -9959,7 +10118,8 @@
         "pp": [
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -10142,7 +10302,8 @@
          12,
          1
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -10164,7 +10325,8 @@
         "pp": [
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -10187,7 +10349,8 @@
          9,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -10210,7 +10373,8 @@
          12,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -10252,7 +10416,8 @@
          3,
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -10275,7 +10440,8 @@
          8,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -10298,7 +10464,8 @@
          11,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -10320,7 +10487,8 @@
         "pp": [
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -10486,7 +10654,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -10508,7 +10677,8 @@
         "pp": [
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -10531,7 +10701,8 @@
          9,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -10554,7 +10725,8 @@
          12,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -10596,7 +10768,8 @@
          3,
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -10619,7 +10792,8 @@
          7,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -10642,7 +10816,8 @@
          11,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -10664,7 +10839,8 @@
         "pp": [
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -10912,7 +11088,8 @@
          11,
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -10934,7 +11111,8 @@
         "pp": [
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -10957,7 +11135,8 @@
          9,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -10980,7 +11159,8 @@
          12,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -11022,7 +11202,8 @@
          3,
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -11045,7 +11226,8 @@
          6,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -11068,7 +11250,8 @@
          11,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -11090,7 +11273,8 @@
         "pp": [
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -11338,7 +11522,8 @@
          10,
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -11360,7 +11545,8 @@
         "pp": [
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -11383,7 +11569,8 @@
          9,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -11406,7 +11593,8 @@
          12,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -11448,7 +11636,8 @@
          3,
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -11471,7 +11660,8 @@
          5,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -11494,7 +11684,8 @@
          11,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -11516,7 +11707,8 @@
         "pp": [
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -11764,7 +11956,8 @@
          9,
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -11786,7 +11979,8 @@
         "pp": [
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -11809,7 +12003,8 @@
          9,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -11832,7 +12027,8 @@
          12,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -11874,7 +12070,8 @@
          3,
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -11897,7 +12094,8 @@
          4,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -11920,7 +12118,8 @@
          11,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -11942,7 +12141,8 @@
         "pp": [
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -12192,7 +12392,8 @@
          8,
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -12214,7 +12415,8 @@
         "pp": [
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -12237,7 +12439,8 @@
          9,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -12260,7 +12463,8 @@
          12,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -12302,7 +12506,8 @@
          3,
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -12325,7 +12530,8 @@
          3,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -12348,7 +12554,8 @@
          11,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -12370,7 +12577,8 @@
         "pp": [
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -12574,7 +12782,8 @@
          7,
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -12596,7 +12805,8 @@
         "pp": [
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -12619,7 +12829,8 @@
          9,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -12642,7 +12853,8 @@
          12,
          10
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -12675,7 +12887,8 @@
          3,
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -12698,7 +12911,8 @@
          2,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -12721,7 +12935,8 @@
          11,
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Staraptor",
@@ -12743,7 +12958,8 @@
         "pp": [
          0
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }

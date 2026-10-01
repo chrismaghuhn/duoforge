@@ -112,6 +112,15 @@ static duoforge_status dfi_slot_candidates(const duoforge_context *ctx, const st
             return dfi_list_push(out, DUOFORGE_SLOT_PASS, 0u, 0u, 0u, 0u) ? DUOFORGE_OK : DUOFORGE_E_INVARIANT;
         }
         const dfi_member *mem = &side->members[occupant];
+        /* A locked move (twoturnmove's onLockMove): that move at the stored
+         * target only; no other move, no switch, no Mega (sim/pokemon.ts
+         * getMoveRequestData, sim/side.ts:675-689). */
+        const dfi_active_slot *own = &side->positions[slot];
+        if (dfi_context_is_closure(ctx) && own->locked_move != 0u) {
+            return dfi_list_push(out, DUOFORGE_SLOT_MOVE, (uint32_t)own->locked_move - 1u, own->locked_target, 0u, 0u)
+                       ? DUOFORGE_OK
+                       : DUOFORGE_E_INVARIANT;
+        }
         const uint32_t megas = (mem->mega_capable != 0u && side->mega_used == 0u) ? 2u : 1u;
         uint32_t moves = 0u;
         for (uint32_t k = 0u; k < DUOFORGE_MAX_MOVE_SLOTS && k < mem->move_count; ++k) {

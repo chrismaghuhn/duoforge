@@ -1,5 +1,5 @@
 {
- "harness": 10,
+ "harness": 11,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "spec": "s4_burn_freeze.json",
  "format": "gen9championsvgc2026regmc",
@@ -68,7 +68,8 @@
         12,
         8
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Golisopod",
@@ -91,7 +92,8 @@
         12,
         8
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Politoed",
@@ -114,7 +116,8 @@
         12,
         8
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Rillaboom",
@@ -136,7 +139,8 @@
        "pp": [
         12
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       }
      ]
     },
@@ -169,7 +173,8 @@
         12,
         8
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Golisopod",
@@ -192,7 +197,8 @@
         12,
         8
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Milotic",
@@ -215,7 +221,8 @@
         12,
         20
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Rillaboom",
@@ -237,7 +244,8 @@
        "pp": [
         12
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       }
      ]
     }
@@ -430,7 +438,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -453,7 +462,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -476,7 +486,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -498,7 +509,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -540,7 +552,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -563,7 +576,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -586,7 +600,8 @@
          12,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -608,7 +623,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -1368,7 +1384,8 @@
          11,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -1391,7 +1408,8 @@
          11,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -1414,7 +1432,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -1436,7 +1455,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -1478,7 +1498,8 @@
          11,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -1501,7 +1522,8 @@
          11,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -1524,7 +1546,8 @@
          12,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -1546,7 +1569,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -2089,7 +2113,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -2112,7 +2137,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -2135,7 +2161,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -2157,7 +2184,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -2190,7 +2218,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -2213,7 +2242,8 @@
          11,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -2236,7 +2266,8 @@
          12,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -2258,7 +2289,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -2360,7 +2392,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -2383,7 +2416,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -2406,7 +2440,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -2428,7 +2463,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -2470,7 +2506,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -2493,7 +2530,8 @@
          12,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -2516,7 +2554,8 @@
          11,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -2538,7 +2577,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -2940,7 +2980,8 @@
          9,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -2963,7 +3004,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -2986,7 +3028,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -3008,7 +3051,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -3041,7 +3085,8 @@
          9,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -3064,7 +3109,8 @@
          11,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -3087,7 +3133,8 @@
          11,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -3109,7 +3156,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -3211,7 +3259,8 @@
          9,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -3234,7 +3283,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -3257,7 +3307,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -3279,7 +3330,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -3321,7 +3373,8 @@
          9,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -3344,7 +3397,8 @@
          11,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -3367,7 +3421,8 @@
          11,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -3389,7 +3444,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -3917,7 +3973,8 @@
          8,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -3940,7 +3997,8 @@
          11,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -3963,7 +4021,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -3985,7 +4044,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -4027,7 +4087,8 @@
          8,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -4050,7 +4111,8 @@
          10,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -4073,7 +4135,8 @@
          11,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -4095,7 +4158,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -4599,7 +4663,8 @@
          7,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -4622,7 +4687,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -4645,7 +4711,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -4667,7 +4734,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -4709,7 +4777,8 @@
          7,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -4732,7 +4801,8 @@
          9,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -4755,7 +4825,8 @@
          11,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -4777,7 +4848,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -5164,7 +5236,8 @@
          6,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -5187,7 +5260,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -5210,7 +5284,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -5232,7 +5307,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -5265,7 +5341,8 @@
          6,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -5288,7 +5365,8 @@
          8,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -5311,7 +5389,8 @@
          11,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -5333,7 +5412,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -5398,7 +5478,8 @@
          6,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -5421,7 +5502,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -5444,7 +5526,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -5466,7 +5549,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -5506,7 +5590,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -5529,7 +5614,8 @@
          8,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -5552,7 +5638,8 @@
          11,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -5575,7 +5662,8 @@
          6,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -5759,7 +5847,8 @@
          5,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -5782,7 +5871,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -5805,7 +5895,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -5827,7 +5918,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -5859,7 +5951,8 @@
         "pp": [
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -5882,7 +5975,8 @@
          7,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -5905,7 +5999,8 @@
          11,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -5928,7 +6023,8 @@
          6,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -6029,7 +6125,8 @@
          5,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -6051,7 +6148,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -6074,7 +6172,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -6097,7 +6196,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -6137,7 +6237,8 @@
         "pp": [
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -6160,7 +6261,8 @@
          7,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -6183,7 +6285,8 @@
          11,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -6206,7 +6309,8 @@
          6,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -6453,7 +6557,8 @@
          4,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -6475,7 +6580,8 @@
         "pp": [
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -6498,7 +6604,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Politoed",
@@ -6521,7 +6628,8 @@
          10,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -6553,7 +6661,8 @@
         "pp": [
          11
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -6576,7 +6685,8 @@
          7,
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Golisopod",
@@ -6599,7 +6709,8 @@
          11,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Charizard",
@@ -6622,7 +6733,8 @@
          6,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }

@@ -1,5 +1,5 @@
 {
- "harness": 10,
+ "harness": 11,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "spec": "s2_turn_core_1.json",
  "format": "gen9championsvgc2026regmc",
@@ -68,7 +68,8 @@
         12,
         8
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Ceruledge",
@@ -92,7 +93,8 @@
         20,
         8
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Milotic",
@@ -114,7 +116,8 @@
        "pp": [
         20
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Rillaboom",
@@ -136,7 +139,8 @@
        "pp": [
         12
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       }
      ]
     },
@@ -169,7 +173,8 @@
         12,
         8
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Gholdengo",
@@ -192,7 +197,8 @@
         20,
         8
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Milotic",
@@ -214,7 +220,8 @@
        "pp": [
         20
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       },
       {
        "species": "Rillaboom",
@@ -236,7 +243,8 @@
        "pp": [
         12
        ],
-       "volatiles": []
+       "volatiles": [],
+       "locked": null
       }
      ]
     }
@@ -347,7 +355,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -371,7 +380,8 @@
          20,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -393,7 +403,8 @@
         "pp": [
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -415,7 +426,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -457,7 +469,8 @@
          12,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Gholdengo",
@@ -480,7 +493,8 @@
          20,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -502,7 +516,8 @@
         "pp": [
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -524,7 +539,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -610,7 +626,8 @@
          11,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -634,7 +651,8 @@
          19,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -656,7 +674,8 @@
         "pp": [
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -678,7 +697,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -722,7 +742,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Gholdengo",
@@ -745,7 +766,8 @@
          19,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -767,7 +789,8 @@
         "pp": [
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -789,7 +812,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -908,7 +932,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -932,7 +957,8 @@
          19,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -954,7 +980,8 @@
         "pp": [
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -976,7 +1003,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -1020,7 +1048,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Gholdengo",
@@ -1045,7 +1074,8 @@
         ],
         "volatiles": [
          "stall"
-        ]
+        ],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -1067,7 +1097,8 @@
         "pp": [
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -1089,7 +1120,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }
@@ -1240,7 +1272,8 @@
          10,
          7
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Ceruledge",
@@ -1264,7 +1297,8 @@
          19,
          8
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -1286,7 +1320,8 @@
         "pp": [
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -1308,7 +1343,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      },
@@ -1350,7 +1386,8 @@
          11,
          6
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Gholdengo",
@@ -1373,7 +1410,8 @@
          19,
          6
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Milotic",
@@ -1395,7 +1433,8 @@
         "pp": [
          20
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        },
        {
         "species": "Rillaboom",
@@ -1417,7 +1456,8 @@
         "pp": [
          12
         ],
-        "volatiles": []
+        "volatiles": [],
+        "locked": null
        }
       ]
      }

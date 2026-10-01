@@ -22,6 +22,7 @@
  * Terrain's boost for Grass moves and Flash Fire's boost.
  * Step 10a: Weather Ball, Grass Knot, Grassy Glide, Fake Out (disabled in
  * the request after the first move action, Champions).
+ * Step 10b: Electro Shot (charge, rain, the locked move in the request).
  * No Mega Evolution is implemented yet. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
@@ -62,6 +63,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_GRASSKNOT] = 1u,
             [DFI_MOVE_GRASSYGLIDE] = 1u,
             [DFI_MOVE_FAKEOUT] = 1u,
+            [DFI_MOVE_ELECTROSHOT] = 1u,
         },
     .abilities =
         {
