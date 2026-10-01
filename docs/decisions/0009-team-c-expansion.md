@@ -379,7 +379,7 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
   - `DUOFORGE_AILMENT_POISON` (5);
   - `DUOFORGE_CAUSE_POISON` (14), for the residual line. This cause was not named in section 4.2.
 
-  Both are additive, so the library takes a minor bump.
+  Both are additive: library 0.13.0, coordinated with the main session, which also moved the Python package's expected version.
 - **Evidence.** Three recorded battles:
   - `c06_dire_claw` records:
     - the paralysis and sleep picks, the sleep line without `[from]`;
