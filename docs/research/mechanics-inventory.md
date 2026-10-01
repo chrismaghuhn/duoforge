@@ -152,7 +152,7 @@ What the M2 decision surface already covers, and what the closure adds.
 
 | Topic | Finding | Consequence |
 |---|---|---|
-| Boundaries | TEAM_SELECTION, TURN, REPLACEMENT and a one-side PIVOT are reachable. A two-side PIVOT is not reachable with these teams | Keep the two-side case structural and test it with synthetic fixtures only |
+| Boundaries | TEAM_SELECTION, TURN, REPLACEMENT and a one-side PIVOT are reachable. A two-side PIVOT is not reachable with these teams | Keep the two-side case structural and test it with synthetic fixtures only. Update (step 12): the Champions Emergency Exit keeps other switch flags, so a Life Orb Golisopod in a development set reaches a two-side PIVOT; it is recorded (`s12_emergency_exit_double`). With the reference teams it stays unreachable in every pairing, and an Emergency Exit at the end of a turn joins the REPLACEMENT |
 | Target classes | Only normal, any, self, allAdjacentFoes, allySide and all occur; the M2 table T1 equals the pinned data | No new class needed for M3/M4 |
 | Locked move | After an Electro Shot charge the slot is locked and trapped: only that move, no switch, no Mega (`sim/pokemon.ts:1086-1140`) | State needs the charge volatile; the domain needs a locked-move rule (state v3) |
 | Fake Out | Disabled once the user has taken a move action since entering (`activeMoveActions`) | State needs a per-activation counter; domain rule |
