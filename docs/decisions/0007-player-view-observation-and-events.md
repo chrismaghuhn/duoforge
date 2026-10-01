@@ -1,6 +1,6 @@
 # 0007 — What a player sees: observation v2 and the event log
 
-Status: **proposed** (owner review). Builds on decision `0005` section 6 (information profile prototype) and decision `0006` section 6 (events, knowledge, observation). Nothing here is implemented yet.
+Status: **accepted** (owner, 2026-10-01: points A and B decided, C follows the principle). Builds on decision `0005` section 6 (information profile prototype) and decision `0006` section 6 (events, knowledge, observation). Nothing here is implemented yet.
 
 ## 1. Owner inputs (2026-10-01)
 
@@ -25,7 +25,7 @@ Anything that follows from 1 to 3 may be handed to the model directly, so it doe
 |---|---|---|
 | Own HP, PP, Stat Points, stats | exact | exact |
 | Foe HP | percent and colour flag, as last seen | unchanged |
-| Foe PP | unknown | **derived**: maximum PP (open) minus the uses the player saw; equal to the real value in the closure (no Pressure, no PP items). Owner point A |
+| Foe PP | unknown | **derived**: maximum PP (open) minus the uses the player saw; equal to the real value in the closure (no Pressure, no PP items). Owner decision A |
 | Foe Stat Points and stats | hidden | hidden |
 | Status (burn, paralysis, sleep, freeze) | not shown | shown for every seen member, both sides |
 | Sleep and freeze turns, confusion turns | not shown | **not shown**, also for the own side: the duration is rolled in secret; the event log shows when it started |
@@ -35,7 +35,7 @@ Anything that follows from 1 to 3 may be handed to the model directly, so it doe
 | Item | open on the sheet | sheet item plus "used up" when it was consumed in view |
 | Ability | not shown | sheet ability; after Mega Evolution the Mega forme's ability |
 | Moves the foe used | not shown | count per move slot |
-| Whether the opponent must answer a pause | own flag only | **shown**: a human sees the opponent being asked (Parting Shot, Emergency Exit, a faint). Replaces the proposal of decision `0006` section 11 point 7. Owner point B |
+| Whether the opponent must answer a pause | own flag only | **shown**: a human sees the opponent being asked (Parting Shot, Emergency Exit, a faint). Replaces the proposal of decision `0006` section 11 point 7. Owner decision B |
 | Brought set and pick order of the foe | private until seen | unchanged |
 | RNG, the opponent's choice before it runs | hidden | hidden |
 
@@ -89,8 +89,8 @@ The exact lines per ability are fixed during implementation against the pinned p
 
 State v3 is expected to suffice: the remaining turns, statuses and volatiles exist already, and the hidden rolled durations stay where they are. If a field is missing, it is added once, before step 2.
 
-## 9. Points for the owner
+## 9. Owner decisions (2026-10-01)
 
-- **A. Foe PP:** show the derived value (a human can count) or keep it unknown.
-- **B. The opponent's request:** show that the opponent must answer a pause (a human sees it) instead of hiding it.
-- **C. Own hidden durations:** sleep and confusion turns stay hidden even for the owner's side, because the game never shows them.
+- **A. Foe PP: shown** as the derived value (a human can count the uses).
+- **B. The opponent's request: shown.** A human sees it at once: switches run first in a turn, before Mega Evolution and before the moves in priority order (from the highest priority down, speed within one priority), so a switch, chosen or forced, is visible the moment it happens.
+- **C. Own hidden durations: hidden**, as proposed: the game never shows sleep or confusion turns, so they stay hidden on the owner's side as well (follows from the principle in section 2).
