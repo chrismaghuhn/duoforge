@@ -7,7 +7,9 @@ observation. Every value is scaled to [0, 1] (ids by 65535, so a network
 can recover them exactly as round(x * 65535) for an embedding). A value
 outside the known sets below (an ailment, weather, terrain, location or
 boundary kind this encoder does not know) raises ValueError; it is never
-encoded as zeros.
+encoded as zeros. So does a domain of another boundary than the
+observation's (another epoch, or a request where the observation has none):
+query() refreshes observations but not domains, query_factored() both.
 
 obs_part, float32 (OBS_SIZE,), from the viewer's perspective (own side
 first, then the foe):
@@ -50,7 +52,7 @@ BOUNDARIES = tuple(C[f"DUOFORGE_BOUNDARY_{n}"] for n in ("TEAM_SELECTION", "TURN
 WEATHERS = tuple(C[f"DUOFORGE_WEATHER_{n}"] for n in ("NONE", "RAIN", "SUN"))
 TERRAINS = tuple(C[f"DUOFORGE_TERRAIN_{n}"] for n in ("NONE", "GRASSY"))
 LOCATIONS = tuple(C[f"DUOFORGE_LOCATION_{n}"] for n in ("UNDETERMINED", "BENCH", "ACTIVE", "NOT_BROUGHT"))
-AILMENTS = tuple(C[f"DUOFORGE_AILMENT_{n}"] for n in ("NONE", "BURN", "FREEZE", "PARALYSIS", "SLEEP"))
+AILMENTS = tuple(C[f"DUOFORGE_AILMENT_{n}"] for n in ("NONE", "BURN", "FREEZE", "PARALYSIS", "SLEEP", "POISON"))
 SLOT_KINDS = tuple(C[f"DUOFORGE_SLOT_{n}"] for n in ("NONE", "MOVE", "SWITCH", "PASS"))
 
 SLOT_FEATURES = 12
@@ -142,6 +144,8 @@ def encode(observation, domain):
     d = np.asarray(domain)
     if d.dtype != _layout.FACTORED_DOMAIN or d.shape != ():
         raise TypeError("domain must be one FACTORED_DOMAIN record")
+    if int(ob["epoch"]) != int(d["epoch"]) or (int(ob["requested"]) != 0) != (int(d["kind"]) != 0):
+        raise ValueError("the domain is not of the observation's boundary (query_factored() refreshes both)")
     me = int(ob["player"])
     glob = np.concatenate([
         _one_hot(ob["boundary_kind"], BOUNDARIES, "boundary kind"),

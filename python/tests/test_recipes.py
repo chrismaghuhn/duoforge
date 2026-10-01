@@ -18,7 +18,7 @@ import unittest
 import numpy as np
 
 import duoforge
-from duoforge import recipes
+from duoforge import features, recipes
 
 SEED = 0x2026100200000015
 ENVS = 8
@@ -113,17 +113,38 @@ class RecipeTest(unittest.TestCase):
         recipe = recipes.load(self.path)
         seen = {}
         recipes.replay(recipe, workers=4,
-                       on_decision=lambda e, k, p, ob, cands, count, choice: seen.setdefault((e, k), []).append(choice))
+                       on_decision=lambda e, k, p, ob, cands, count, choice, domain:
+                       seen.setdefault((e, k), []).append(choice))
         self.assertEqual(sum(len(v) for v in seen.values()), recipe.arrays["choice"].shape[0])
         for i in range(len(recipe)):
             key = (int(recipe.arrays["env"][i]), int(recipe.arrays["episode"][i]))
             self.assertEqual(seen[key], [int(c) for c in recipe.choices(i)])
         self.assertTrue((recipe.arrays["result"] != 0).all())
 
+    def test_replay_feeds_the_encoder(self):
+        # on_decision receives the encoder's inputs: the observation and the
+        # factored domain of the same boundary, which holds the choice.
+        slots = duoforge._layout.CONSTANTS["DUOFORGE_CHOICE_SLOTS"]
+        seen = [0, 0]
+
+        def check(e, k, p, ob, cands, count, choice, domain):
+            obs_part, slot_part, pair_mask = features.encode(ob, domain)
+            self.assertEqual(int(duoforge.joint_counts(domain)[0]), count)
+            self.assertEqual(duoforge.joint_index(domain, duoforge.factored_choice(domain, choice)), choice)
+            if int(domain["kind"]) == slots:
+                self.assertEqual(int(pair_mask.sum()), count)
+                seen[1] += 1
+            seen[0] += 1
+
+        recipe = recipes.load(self.path)
+        recipes.replay(recipe, on_decision=check)
+        self.assertEqual(seen[0], recipe.arrays["choice"].shape[0])
+        self.assertGreater(seen[1], 0)
+
     def test_changed_choice_raises(self):
         recipe = recipes.load(self.path)
         counts = []
-        recipes.replay(recipe, on_decision=lambda e, k, p, ob, cands, count, choice:
+        recipes.replay(recipe, on_decision=lambda e, k, p, ob, cands, count, choice, domain:
                        counts.append(count) if (e, k) == (0, 1) else None)
         first = int(np.flatnonzero((recipe.arrays["env"] == 0) & (recipe.arrays["episode"] == 1))[0])
         self.assertEqual(int(recipe.arrays["choice_offset"][first]), 0)

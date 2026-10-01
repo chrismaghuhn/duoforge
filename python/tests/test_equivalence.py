@@ -153,6 +153,17 @@ class EquivalenceTest(unittest.TestCase):
             self.assertEqual({n for n, t in zip(names, terminal) if t}, {"DUOFORGE_E_STALE_EPOCH"})
             self.assertEqual({n for n, t in zip(names, terminal) if not t}, {"DUOFORGE_OK"})
 
+    def test_buffers_cannot_be_replaced(self):
+        with duoforge.Batch(self.ctx, _setups(), 1, SEED) as batch:
+            for name in ("requests", "observations", "candidates", "counts", "domains", "statuses", "results"):
+                with self.assertRaises(AttributeError):
+                    setattr(batch, name, np.zeros(1))
+            with self.assertRaises(TypeError):
+                batch.reset(0, 1.0)
+            batch.query_factored()
+            with self.assertRaises(TypeError):
+                duoforge.factored_choices(batch.domains[0], [0.5, 0.5])
+
     def test_seeds(self):
         initstate, initseq, policy = duoforge.seeds(SEED, 5, 7)
         self.assertLess(initseq, 1 << 63)

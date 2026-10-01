@@ -66,11 +66,11 @@ Exit tests (CTest; the `python` label runs with `DUOFORGE_PYTHON`, otherwise it 
 | Python `layout` | every dtype, field and used constant equals the C side |
 | Python `lib` | a missing or other-version library raises `DuoforgeLibraryError` naming paths and versions; context; setups |
 | Python `equivalence` | the Python loop equals `play_random` byte for byte on the index and the factored form, for 1 and 4 workers; `joint_index` inverts `factored_choice`; bad index arrays raise before C; `E_STALE_EPOCH` after `reset_terminal` without a query, for exactly the reset environments |
-| Python `recipes` | round trip; `on_decision` in the recipe's order; a changed choice, digest, step count or result raises `ReplayMismatch`; another library version or fingerprint raises `RecipeVersionError` before replay; sparse, uneven and truncated recipes replay; a failed recording writes nothing |
-| Python `policies_features` | the scripted policy picks legal indices, repeats exactly and equals a scalar reference of the scoring at every step; `encode` is pure, reads only the viewer's observation and domain, refuses unknown values; the pair mask holds the joint count; 0 candidates raise |
+| Python `recipes` | round trip; `on_decision` in the recipe's order, with the factored domain, and the encoder runs on every replayed decision; a changed choice, digest, step count or result raises `ReplayMismatch`; another library version or fingerprint raises `RecipeVersionError` before replay; sparse, uneven and truncated recipes replay; a failed recording writes nothing |
+| Python `policies_features` | the scripted policy picks legal indices, repeats exactly and equals a scalar reference of the scoring at every step of environments 0 to 7, constructed scenes pin each score; `encode` is pure, reads only the viewer's observation and domain, refuses unknown values and a domain of another boundary; the pair mask holds the joint count; 0 candidates raise |
 | Python `example` | the generation example writes and replays 16 scripted episodes with 0 mismatches |
 
-Every M7 pull request merged on a green local CI (11 jobs; the Python tests run in Windows GCC Debug and in WSL GCC Release with LTO).
+Every M7 pull request (#53, #54, #55, #58, #59, #61, #62) merged on a green local CI (11 jobs; the Python tests run in Windows GCC Debug and in WSL GCC Release with LTO). From Task 5 on, code-heavy pull requests got a review agent before the merge, and one review agent covered all of M7 before the last merge; every finding was verified and fixed with a test.
 
 Bounded example, 64 environments × 10 episodes, seed `0x2026100200000017`, 4 workers:
 

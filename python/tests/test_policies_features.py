@@ -158,6 +158,30 @@ class PoliciesFeaturesTest(unittest.TestCase):
                         mask = features.encode(batch.observations[e, p], batch.domains[e, p])[2]
                         self.assertEqual(int(mask.sum()), int(batch.requests[e, p]["candidate_count"]))
 
+    def test_encode_refuses_a_domain_of_another_boundary(self):
+        with duoforge.Batch(self.ctx, _setups(), 1, SEED) as batch:
+            policy = duoforge.RandomPolicy(SEED, ENVS)
+            for e in range(ENVS):
+                policy.start_episode(e, 0)
+            batch.query_factored()
+            batch.step_factored(policy.choose_factored(batch))
+            batch.query()  # fresh observations, the domains stay at the old boundary
+            with self.assertRaises(ValueError):
+                features.encode(batch.observations[0, 0], batch.domains[0, 0])
+            odd = batch.domains[0, 0].copy()
+            odd["kind"] = 7
+            with self.assertRaises(ValueError):
+                duoforge.joint_counts(odd)
+
+    def test_encode_knows_poison(self):
+        with duoforge.Batch(self.ctx, _setups(), 1, SEED) as batch:
+            batch.query_factored()
+            ob = np.array(batch.observations[0, 0])
+            d = batch.domains[0, 0]
+            before = features.encode(ob, d)[0]
+            ob["sides"][0]["members"][0]["status"] = _layout.CONSTANTS["DUOFORGE_AILMENT_POISON"]
+            self.assertFalse(np.array_equal(features.encode(ob, d)[0], before))
+
     def test_zero_count_raises(self):
         with duoforge.Batch(self.ctx, _setups(), 1, SEED) as batch:
             batch.query()

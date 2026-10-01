@@ -2,7 +2,7 @@
 
 Python allocates, calls and views; every rule stays in the C engine.
 """
-from ._lib import load_library, status_name, version
+from ._lib import library_path, load_library, status_name, version
 from .batch import Batch, factored_choice, factored_choices, joint_counts, joint_index, joint_indices
 from .context import Context, reference_setups
 from .errors import DuoforgeError, DuoforgeLibraryError
@@ -20,6 +20,7 @@ __all__ = [
     "joint_counts",
     "joint_index",
     "joint_indices",
+    "library_path",
     "load_library",
     "reference_setups",
     "seeds",
