@@ -12,9 +12,23 @@ target_include_directories(duoforge_bench_lib PUBLIC "${CMAKE_CURRENT_SOURCE_DIR
 target_link_libraries(duoforge_bench_lib PUBLIC duoforge duoforge_test_support)
 duoforge_configure_target(duoforge_bench_lib)
 
-string(TOUPPER "${CMAKE_BUILD_TYPE}" _bench_bt)
-set(_bench_flags "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${_bench_bt}}")
-string(STRIP "${_bench_flags}" _bench_flags)
+# The C flags of the configuration being built. Multi-config generators
+# (Visual Studio) leave CMAKE_BUILD_TYPE empty, so the per-configuration
+# part is selected with $<CONFIG>.
+set(_bench_cfgs)
+foreach(_bench_cfg IN LISTS CMAKE_CONFIGURATION_TYPES CMAKE_BUILD_TYPE)
+    string(TOUPPER "${_bench_cfg}" _bench_cfg)
+    list(APPEND _bench_cfgs "${_bench_cfg}")
+endforeach()
+list(REMOVE_DUPLICATES _bench_cfgs)
+string(STRIP "${CMAKE_C_FLAGS}" _bench_flags)
+foreach(_bench_cfg IN LISTS _bench_cfgs)
+    string(STRIP "${CMAKE_C_FLAGS_${_bench_cfg}}" _bench_cfg_flags)
+    if(NOT _bench_flags STREQUAL "" AND NOT _bench_cfg_flags STREQUAL "")
+        string(PREPEND _bench_cfg_flags " ")
+    endif()
+    string(APPEND _bench_flags "$<$<CONFIG:${_bench_cfg}>:${_bench_cfg_flags}>")
+endforeach()
 
 add_executable(duoforge_bench main.c)
 add_dependencies(duoforge_bench duoforge_bench_revision)
