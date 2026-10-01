@@ -16,7 +16,7 @@ Do not block M0 on all future choices. Conversely, do not silently turn unreview
 | Information policy | **M2 prototype:** open sheets (species, moves, stone flag), own exact HP/PP, foe HP floor-percent with 20/50 flags for seen members, tagged unknowns, private bench order (decision 0005 section 6). Open: gender default (currently open), and knowledge must snapshot last-seen bench HP once bench HP can change (M3) | M3 real inputs |
 | Tera and special cases | Champions: Mega Evolution is the only special mechanic (no Tera/Z/Dynamax). **M2:** declaration in the domain (once per side per battle, only for a synthetic stone holder, never on a switch); effects are M4 | M4 (effects) |
 | RNG | PCG32 XSH-RR, pcg-c-basic@bc39cd7; decision 0001 (implemented M1; **owner confirmed 2026-10-01**, decision 0010) | done |
-| Batch seed derivation | Tagged deterministic setup mapping; not worker-derived; must emit `initseq < 2^63` (decision 0001) | M6 |
+| Batch seed derivation | **Resolved (decision 0012):** splitmix64 over the batch seed, the environment and the episode with fixed tags; never from a worker; `initseq < 2^63` | done |
 | Project license | Not chosen. An Apache-2.0-derived file is present (`src/rng/pcg32_derived.{h,c}`, `third_party/pcg-c-basic/`); a future project license must be compatible | Publishing licensed project material |
 | Dependencies | Minimal, pinned, notice/provenance review required | Adding dependency |
 | ABI stability | Opaque handles proposed; no frozen full ABI yet | External consumers |

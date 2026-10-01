@@ -71,6 +71,35 @@ jobs:
       - name: Test
         run: ctest --test-dir build --output-on-failure --no-tests=error --timeout 120
 
+  linux-tsan:
+    name: Linux / clang / TSan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      CC: clang
+      CXX: clang++
+      TSAN_OPTIONS: halt_on_error=1 second_deadlock_stack=1
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0 (verified via git ls-remote 2026-09-30)
+      - name: Toolchain versions
+        run: |
+          cmake --version
+          "$CC" --version
+      - name: Configure
+        run: >-
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          -DBUILD_TESTING=ON
+          -DDUOFORGE_ENABLE_TSAN=ON
+          -DDUOFORGE_WARNINGS_AS_ERRORS=ON
+      - name: Build
+        run: cmake --build build --parallel
+      - name: Test
+        # setarch -R: ThreadSanitizer cannot map its shadow memory under the
+        # runner kernel's full address-space randomization.
+        run: setarch "$(uname -m)" -R ctest --test-dir build --output-on-failure --no-tests=error --timeout 300 -R "duoforge\\.batch\\."
+
   windows:
     name: Windows / MSVC / ${{ matrix.arch }} / ${{ matrix.config }}
     runs-on: windows-latest
