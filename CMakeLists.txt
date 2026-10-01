@@ -10,6 +10,10 @@ option(DUOFORGE_ENABLE_SANITIZERS
     "Enable AddressSanitizer and UndefinedBehaviorSanitizer for supported compilers"
     OFF
 )
+option(DUOFORGE_ENABLE_IPO
+    "Link-time optimization for Release builds where the toolchain supports it"
+    ON
+)
 set(DUOFORGE_PCG_REFERENCE_DIR "" CACHE PATH
     "Optional checkout of pcg-c-basic at the pinned revision for reference tests")
 set(DUOFORGE_PS_REFERENCE_DIR "" CACHE PATH
@@ -17,6 +21,19 @@ set(DUOFORGE_PS_REFERENCE_DIR "" CACHE PATH
 
 include(CTest)
 include(cmake/DuoforgeTargetOptions.cmake)
+
+# Link-time optimization of Release builds (decision 0008 section 8). Debug,
+# RelWithDebInfo and sanitizer builds stay without it.
+set(DUOFORGE_IPO OFF)
+if(DUOFORGE_ENABLE_IPO AND NOT DUOFORGE_ENABLE_SANITIZERS)
+    include(CheckIPOSupported)
+    check_ipo_supported(RESULT DUOFORGE_IPO OUTPUT _duoforge_ipo_output LANGUAGES C)
+    if(DUOFORGE_IPO)
+        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
+    else()
+        message(STATUS "duoforge: no link-time optimization with this toolchain: ${_duoforge_ipo_output}")
+    endif()
+endif()
 
 add_library(duoforge STATIC
     src/duoforge.c

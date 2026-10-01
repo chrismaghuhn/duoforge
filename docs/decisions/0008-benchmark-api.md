@@ -26,7 +26,7 @@ Before STEP_CORE is timed, one untimed replay checks that every battle ends in i
 
 **A busy machine is visible:** the workload is single-threaded, so a repetition of at least 100 ms whose process CPU time is below 90 percent of its wall time shared the CPU and is reported as disturbed (`disturbed_repetitions`; the driver warns). Shorter repetitions are not judged (the Windows process clock has coarse ticks).
 
-**Manifest** (the JSON report's first object): engine version, revision and dirty flag (written at build time by `cmake/bench_revision.cmake`), compiler, build type and C flags, OS, CPU and logical processors, worker count 1 without affinity, start time, the workload and its seeds, the policy, the context fingerprint, warmup and repetitions, and the timers. Peak memory and allocation counts are not reported yet.
+**Manifest** (the JSON report's first object): engine version, revision and dirty flag (written at build time by `cmake/bench_revision.cmake`), compiler, build type, C flags and link-time optimization, OS, CPU and logical processors, worker count 1 without affinity, start time, the workload and its seeds, the policy, the context fingerprint, warmup and repetitions, and the timers. Peak memory and allocation counts are not reported yet.
 
 ## 3. Action tally
 
@@ -52,3 +52,20 @@ Measured only on an idle machine (the owner confirms), with Release builds of MS
 ## 7. Exact step speedups (2026-10-01)
 
 A sampling profile of the workload put about a third of the step's time into listing the joint domain to find the response, and about as much into checking every member of the result again. Both are now exact shortcuts with the same results (PR #30): membership is decided from the slot lists without listing their product (`dfi_side_accepts`; `duoforge.request.accepts` compares it with the enumeration), and the result's member rules run only for members that differ from the checked input. Every step still checks its input and its result. Measured A/B (the report above): the step 1.37 to 1.55 times as fast, a whole battle with the random policy 1.09 to 1.26 times; about half of such a battle is now the policy's queries.
+
+The candidate lists (PR #39) are written in one pass with closed-form counts, and team selection walks only the valid tuples; the lists are unchanged byte for byte (`duoforge.request.candidates_digest`). Measured A/B (fb1e272 against 744c289, the quiet third round of an interleaved series; the earlier rounds were slowed by another process without being flagged, see section 8): a battle with the random policy 1.31 times as fast with GCC (531.0 to 405.2 ms for the workload), 1.53 with Clang (551.5 to 359.6) and 1.46 with MSVC (640.2 to 437.3), in line with the clean series of section 8.
+
+## 8. Link-time optimization (2026-10-01)
+
+Release builds link with link-time optimization where the toolchain supports it (`DUOFORGE_ENABLE_IPO`, default on; off with sanitizers; the manifest records it as `ipo`). The full test suite passes with it under GCC, Clang and MSVC. Measured A/B on the same source (744c289), interleaved, CPU load 7 to 15 percent, undisturbed runs only (GCC 3 and 3, Clang 2 and 2, MSVC 2 and 2), median time of the workload in ms:
+
+| Family | GCC | GCC LTO | A/B | Clang | Clang LTO | A/B | MSVC | MSVC LTO | A/B |
+|---|---|---|---|---|---|---|---|---|---|
+| STEP_CORE `plain` | 205.0 | 190.6 | 1.08 | 200.0 | 176.6 | 1.13 | 251.9 | 216.7 | 1.16 |
+| REQUEST `request+candidates+observe` | 227.7 | 221.0 | 1.03 | 191.7 | 194.0 | 0.99 | 232.3 | 212.6 | 1.09 |
+| SNAPSHOT `codec` | 112.4 | 97.4 | 1.15 | 119.5 | 102.3 | 1.17 | 141.1 | 125.5 | 1.12 |
+| EPISODE_NATIVE `uniform-random` | 415.4 | 385.9 | 1.08 | 360.2 | 334.5 | 1.08 | 444.4 | 394.4 | 1.13 |
+
+Games per second (one core, uniform random policy): GCC 9,629 to 10,364, Clang 11,109 to 11,960, MSVC 9,000 to 10,142; decisions per second 311,735 to 335,526, 359,650 to 387,221 and 291,392 to 328,369.
+
+The disturbance check sees time-sharing only. Another process can slow the workload by a third without taking its core (memory bandwidth, a shared core, clock); a run is therefore compared with its own repetitions and with the other rounds before it counts.
