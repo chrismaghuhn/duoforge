@@ -105,3 +105,11 @@ M5: bounded conformance suite with pinned local reference inputs and replay fixt
 M6–M7: single/batch/binding parity and trajectory integrity. Performance jobs report baselines; a hard regression gate should be introduced only after variance and workload stability are characterized.
 
 Remote CI is PASS only after observing an actual run on the relevant revision. Configuration files alone are not evidence.
+
+**Local CI as the merge gate (2026-10-01).** GitHub Actions on the free plan cannot carry a run per pull request, so a pull request is merged on a green local CI: `tools/ci/local_ci.sh` (Git Bash on the owner's Windows machine) runs the matrix of the former hosted CI and more, writes logs to `build/ci/` and exits non-zero on any failure.
+
+- Windows: GCC Debug (with the Showdown reference traces when the pinned checkout exists), GCC Release with LTO, Clang Release, MSVC x64 Debug, MSVC x64 Release with LTO, MSVC Win32 Release.
+- Linux in WSL (`tools/ci/linux_ci.sh`, builds under `~/df-build/ci`): GCC Debug with ASan and UBSan, Clang Debug, GCC and Clang Release with LTO, Clang with ThreadSanitizer for the batch tests.
+- `--quick` runs Windows GCC Debug, MSVC Release and Linux GCC ASan+UBSan; `--no-linux` skips WSL.
+
+The pull request states the result. The hosted CI runs nightly on main (Clang Release, GCC ASan+UBSan, Clang TSan, MSVC x64 Release) and on demand; the RNG reference weekly and when its files change on main.

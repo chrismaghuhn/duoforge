@@ -1,20 +1,12 @@
 name: RNG reference
 
 # Separate workflow: path filters exist only per workflow.
+# Weekly and on demand (free plan minutes); see ci.yml.
 on:
+  schedule:
+    - cron: "41 3 * * 0"
   push:
     branches: [main]
-    paths:
-      - "src/rng/**"
-      - "tools/kat/**"
-      - "tests/data/pcg32_kat_vectors.h"
-      - "tests/test_rng_*.c"
-      - "tests/CMakeLists.txt"
-      - "CMakeLists.txt"
-      - "cmake/**"
-      - "third_party/pcg-c-basic/**"
-      - ".github/workflows/rng-reference.yml"
-  pull_request:
     paths:
       - "src/rng/**"
       - "tools/kat/**"
