@@ -1,0 +1,23 @@
+{
+  "name": "s15_tie_n_way",
+  "purpose": "Three- and four-way Speed ties in eachEvent with two holders: four Pokemon of Speed 105 (Rillaboom, Ceruledge, Archaludon, Gholdengo with one Speed point) are on the field, Rillaboom's Grassy Surge triggers the two Grassy Seeds in a four-way TerrainChange tie, and every Update ties the four with two Sitrus Berry holders; when Gholdengo faints the Update ties are three-way, and a slower replacement keeps them so.",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000e103",
+  "teams": [
+    "Rillaboom (F) @ Sitrus Berry\nAbility: Grassy Surge\nLevel: 50\nEVs: 32 HP / 32 Atk\nSerious Nature\n- High Horsepower\n- Grassy Glide\n\nCeruledge (F) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 32 HP / 32 Atk\nSerious Nature\n- Bitter Blade\n- Protect\n\nStaraptor (M) @ Leftovers\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Brave Bird\n- Protect\n\nMilotic (F) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 32 SpD / 2 Spe\nCalm Nature\n- Muddy Water\n- Coil",
+    "Archaludon (M) @ Sitrus Berry\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 32 SpA\nSerious Nature\n- Dragon Pulse\n- Protect\n\nGholdengo @ Grassy Seed\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 1 Spe\nSerious Nature\n- Nasty Plot\n- Shadow Ball\n\nFarigiraf (F) @ Leftovers\nAbility: Armor Tail\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Trick Room\n- Psychic\n\nPolitoed (F) @ Light Clay\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Weather Ball\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 2, move 1 2",
+      "move 1 1, move 2",
+      "move 1 1, move 1 1"
+    ],
+    "p2": [
+      "move 2, move 1",
+      "move 1 1, move 2 1",
+      "move 2, move 2 1"
+    ],
+    "max_steps": 6
+  }
+}
