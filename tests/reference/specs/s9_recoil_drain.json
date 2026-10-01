@@ -1,0 +1,23 @@
+{
+  "name": "s9_recoil_drain",
+  "purpose": "Recoil and drain: Wood Hammer in Grassy Terrain with Miracle Seed (one chained base power modifier) costs a third of the damage dealt; Bitter Blade, boosted by Flash Fire after Ceruledge took a Heat Wave, and Leech Life heal half of it; recoil comes after the target's faint, then Sitrus Berry, then Life Orb.",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000009002",
+  "teams": [
+    "Charizard (M) @ Life Orb\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Heat Wave\n- Hurricane\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- High Horsepower\n\nStaraptor (F) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Brave Bird\n- Close Combat\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Ice Beam",
+    "Ceruledge (M) @ Sitrus Berry\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 32 Atk / 3 Spe\nAdamant Nature\n- Bitter Blade\n- Swords Dance\n\nGolisopod (F) @ Leftovers\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Leech Life\n- Drill Run\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n\nFarigiraf (M) @ Mystic Water\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 1 2",
+      "move 1, move 1 1",
+      "move 2 1, move 1 2"
+    ],
+    "p2": [
+      "move 2, move 1 2",
+      "move 1 2, move 1 2",
+      "move 1 1, move 1 1"
+    ],
+    "max_steps": 50
+  }
+}
