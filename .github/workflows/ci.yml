@@ -1,7 +1,10 @@
 name: CI
 
+# Pull requests and main only: a push to a PR branch already runs as the
+# pull request, so a branch push does not run the jobs a second time.
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 

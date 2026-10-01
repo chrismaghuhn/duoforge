@@ -3,6 +3,7 @@ name: RNG reference
 # Separate workflow: path filters exist only per workflow.
 on:
   push:
+    branches: [main]
     paths:
       - "src/rng/**"
       - "tools/kat/**"
