@@ -1,6 +1,6 @@
 # 0009 — Team C: the expansion track (data kind, gate, steps, evidence)
 
-Status: **proposed** (2026-10-01), awaiting the owner. Nothing in this note is implemented. Builds on decision `0004` (two reference teams), `0006` (data, state v3, draw sites, fixtures, evidence) and `0007` (player view), and on the research in `docs/research/third-team/` (PR #32). "M§n" means section n of `docs/research/third-team/mechanics.md`; X1 to X9 are its executed experiments.
+Status: **proposed** (2026-10-01), awaiting the owner. Nothing in this note is implemented. Builds on decision `0004` (two reference teams), `0006` (data, state v3, draw sites, fixtures, evidence), `0007` (player view) and `0010` (the certified CLOSURE profile, the role of `CLOSURE_DEV`, draw alignment B confirmed), and on the research in `docs/research/third-team/` (PR #32). "M§n" means section n of `docs/research/third-team/mechanics.md`; X1 to X9 are its executed experiments.
 
 ## 1. Owner inputs (2026-10-01)
 
@@ -14,7 +14,7 @@ Status: **proposed** (2026-10-01), awaiting the owner. Nothing in this note is i
 
 | Closure artefact | Stays | Checked by |
 |---|---|---|
-| CLOSURE and CLOSURE_DEV fingerprints | byte-identical: data kind, counts 16 and 37, closure table hash | the fingerprints pinned in `tests/test_closure_setup.c` (from `tools/state_model/state_v3_model.py`) |
+| CLOSURE and CLOSURE_DEV fingerprints | byte-identical: data kind, counts 16 and 37, closure table hash; the certified context (6, 4) keeps `09d8d247…` (decision 0010) | the fingerprints pinned in `tests/test_closure_setup.c` (from `tools/state_model/state_v3_model.py`) |
 | `src/data/closure_tables.{h,c}` | byte-identical; `gen_closure.py <pin> --check` passes | the sha256 pins in `tests/CMakeLists.txt`, the regeneration test under `DUOFORGE_PS_REFERENCE_DIR` |
 | The 71 closure specs and traces, `tests/reference/conformance.h` | byte-identical | `duoforge.reference.trace.*` (Showdown reruns), `duoforge.reference.conformance_tables` |
 | State v3 | layout (1009 bytes), schema 3, semantics id; every value that is new for Team C stays invalid under the CLOSURE kinds | the codec, golden and invariant tests, plus new negative tests |
@@ -29,10 +29,10 @@ Every step's PR states this table as checked.
 
 | Kind | Value | Tables | Sets |
 |---|---|---|---|
-| `DUOFORGE_DATA_KIND_TEAM_C` | 4 | the extended tables (3.2) | format-legal (3.4) |
-| `DUOFORGE_DATA_KIND_TEAM_C_DEV` | 5 | the extended tables | as 4, but a member may have No Ability |
+| `DUOFORGE_DATA_KIND_TEAM_C` | 4 | the extended tables (3.2) | format-legal, in CLOSURE's profile (3.4) |
+| `DUOFORGE_DATA_KIND_TEAM_C_DEV` | 5 | the extended tables | as CLOSURE_DEV: also No Ability and the rosters CLOSURE_DEV allows |
 
-The DEV kind exists for the reason of decision 0006 section 2.1: every Team C forme has exactly one ability, and Unburden (step 8) and Psychic Surge (step 10) come late, so without No Ability no Sneasler or Indeedee-F fixture could pass the gate before step 8 or 10. The config contract is CLOSURE's (no counts, no table). A TEAM_C fingerprint differs from every CLOSURE one in the data kind, the counts and the table hash, so states and traces of the two kinds never mix. The names are a proposal.
+The DEV kind exists for the reason of decision 0006 section 2.1: every Team C forme has exactly one ability, and Unburden (step 8) and Psychic Surge (step 10) come late, so without No Ability no Sneasler or Indeedee-F fixture could pass the gate before step 8 or 10. TEAM_C_DEV therefore follows the owner's answer on `CLOSURE_DEV` (decision 0010 section 3, kept as the development profile in the proposal); without it, Sneasler and Indeedee-F fixtures could run only after steps 8 and 10. The config contract is CLOSURE's (no counts, no table). A TEAM_C fingerprint differs from every CLOSURE one in the data kind, the counts and the table hash, so states and traces of the two kinds never mix. The names are a proposal.
 
 ### 3.2 One extended table set; the closure is its prefix
 
@@ -62,7 +62,7 @@ The table maps the seven rejections of M§1 deliberately and gives the type key 
 
 ### 3.4 Setup rules under TEAM_C
 
-The CLOSURE rules of decision 0006 section 2.1 apply over the extended tables: a base forme; 1 to 4 distinct moves of its set; a legal gender; nature and Stat Points; the forme's ability (or No Ability under TEAM_C_DEV); any table item or none; Species Clause and Item Clause per side. As in the closure, a side may mix closure and Team C members and anyone may hold any item. So placements outside the three teams become legal once their mechanics are marked: Choice Scarf on Archaludon with Electro Shot, White Herb on Mega Staraptor with Contrary, Rocky Helmet anywhere. Each step tests the placements its mechanic makes reachable (section 5). **Owner choice:** restrict TEAM_C members to their set item instead. That gives a smaller surface but a second rule. The recommendation is the closure rule.
+The CLOSURE rules apply over the extended tables, in the profile CLOSURE has when step 1 is built. Decision 0010's freeze (register exactly 6, bring 4; M5 step 2) applies to TEAM_C as well, and the four-to-six rosters stay with TEAM_C_DEV. The member rules of decision 0006 section 2.1 are: a base forme; 1 to 4 distinct moves of its set; a legal gender; nature and Stat Points; the forme's ability (or No Ability under TEAM_C_DEV); any table item or none; Species Clause and Item Clause per side. As in the closure, a side may mix closure and Team C members and anyone may hold any item. So placements outside the three teams become legal once their mechanics are marked: Choice Scarf on Archaludon with Electro Shot, White Herb on Mega Staraptor with Contrary, Rocky Helmet anywhere. Each step tests the placements its mechanic makes reachable (section 5). **Owner choice:** restrict TEAM_C members to their set item instead. That gives a smaller surface but a second rule. The recommendation is the closure rule.
 
 Under the CLOSURE kinds nothing changes: a Team C species, move, item or ability is out of range (`E_INVALID_ARGUMENT`).
 
@@ -128,7 +128,7 @@ The invariants become kind-aware. The new values are valid only under the TEAM_C
 
 ### 4.3 Draws
 
-There is one new site, `DFI_SITE_STATUS_PICK` (13), for Dire Claw's `sample(['psn', 'par', 'slp'])` = random(3). It is drawn after every successful secondary roll, even when the target cannot take the status (X9); for sleep, the existing SLEEP_TURNS follows. The harness records it as `SECONDARY[0,3)` in context `Hit`, and the converter maps it by that context. Draw alignment B (decision 0006 section 5.1) decides whether the engine draws the pick when no status can apply; step 6 names and checks that rule. No other Team C mechanic adds a draw (M§5). Dynamic speed (Unburden, Choice Scarf) only changes the existing SPEED_TIE groups. `DFI_SITE_COUNT` becomes 14; no closure tape contains the new site.
+There is one new site, `DFI_SITE_STATUS_PICK` (13), for Dire Claw's `sample(['psn', 'par', 'slp'])` = random(3). It is drawn after every successful secondary roll, even when the target cannot take the status (X9); for sleep, the existing SLEEP_TURNS follows. The harness records it as `SECONDARY[0,3)` in context `Hit`, and the converter maps it by that context. Draw alignment B (decision 0006 section 5.1, confirmed by the owner in decision 0010) decides whether the engine draws the pick when no status can apply; step 6 names and checks that rule. No other Team C mechanic adds a draw (M§5). Dynamic speed (Unburden, Choice Scarf) only changes the existing SPEED_TIE groups. `DFI_SITE_COUNT` becomes 14; no closure tape contains the new site.
 
 ## 5. Steps
 
@@ -148,7 +148,7 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
 | 9b | Sucker Punch and Helping Hand: queue reads, `newlySwitched`, ally targets, BasePower priority 10 | volatile bits, view bit, event kind | turn.c, request.c |
 | 10 | Psychic Surge and Psychic Terrain: field TryHit before Protect, terrain replacement, Psychic x5325/4096 | TERRAIN_PSYCHIC, field value, event kind | turn.c |
 | 11 | Follow Me: redirects foe single-target moves, ahead of Lightning Rod | volatile bit, view bit, event kind | turn.c |
-| 12 | **Team C gate (proposal):** the real Team C passes. As closure step 13: random real-team battles C-A, C-B, A-C, B-C and C-C with replay, codec continuation and information equivalence, plus real-team reference battles | - | tests |
+| 12 | **Team C gate (proposal):** the real Team C passes in the profile of decision 0010. As closure step 13: random real-team battles C-A, C-B, A-C, B-C and C-C with replay, codec continuation and information equivalence, plus real-team reference battles | - | tests |
 
 **Interaction tests.** Each item of M§6 is tested in the step that makes it reachable. Recorded battles are used unless a test is marked as a unit test.
 
@@ -173,7 +173,7 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
 - **Specs.** A spec goes in `tests/reference/specs/c<step>_<topic>.json` with a new field `"data": "team_c"`; closure specs stay without it.
 - **Recording.** Record from the committed path, `node tools/reference/ps_trace.js C:/Dev/src/pokemon-showdown tests/reference/specs/<name>.json`. The trace stores the spec file name, so never record from a scratch copy. When a case must occur, find the seed with a predicate.
 - **Conversion.** `python tools/reference/trace_to_c.py <repo>` writes the closure traces to `tests/reference/conformance.h` exactly as today. It writes the Team C traces, read with the extended tables, to `tests/reference/conformance_team_c.h`.
-- **Replay.** A second CTest, `duoforge.reference.conformance_team_c`, compiles the shared conformance driver against that header. It uses TEAM_C contexts, or TEAM_C_DEV exactly when a member has No Ability. It compares draw for draw, request candidates, events and knowledge, as for the closure. The closure build of the driver keeps its fixtures and checks.
+- **Replay.** A second CTest, `duoforge.reference.conformance_team_c`, compiles the shared conformance driver against that header. It uses TEAM_C contexts, or TEAM_C_DEV exactly where the closure driver falls back to CLOSURE_DEV (No Ability, or a roster outside the certified profile). It compares draw for draw, request candidates, events and knowledge, as for the closure. The closure build of the driver keeps its fixtures and checks.
 - **No closure trace changes.** Harness and converter changes are additive and silent for the closure:
   - every `duoforge.reference.trace.*` check passes with the unchanged closure traces;
   - new snapshot fields appear only where a Team C mechanic is present;
@@ -237,4 +237,4 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
    - the choice lock shown in `locked_slot` (4.2).
 5. Last Respects' count is derived from the roster instead of stored (4.1).
 6. Step 9a (harness) is its own PR, and step 12 (the Team C gate) closes the track.
-7. The track follows draw alignment B and the DEV-kind pattern. Both are still open owner points of the closure (`docs/OPEN_DECISIONS.md`).
+7. The track follows draw alignment B, which the owner confirmed in decision 0010. TEAM_C_DEV depends on the open answer about `CLOSURE_DEV` (decision 0010 section 3), and TEAM_C takes over 0010's profile freeze (3.4).
