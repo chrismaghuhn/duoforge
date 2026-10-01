@@ -44,6 +44,49 @@ static void build_setup(const df_conf_battle *cb, duoforge_battle_setup *s)
     }
 }
 
+static unsigned event_reports = 0;
+
+static void print_event(const char *label, const duoforge_event *e)
+{
+    fprintf(stderr,
+            "    %s kind %u pos %u other %u cause %u id %u id2 %u hp %u/%u kind %u flag %u status %u detail %u "
+            "amount %u flags %u\n",
+            label, e->kind, e->position, e->other, e->cause, e->id, e->id2, e->hp, e->hp_max, e->hp_kind, e->hp_flag,
+            e->status, e->detail, e->amount, e->flags);
+}
+
+/* Each player's events of the step against the protocol lines the game
+ * shows that player (decision 0007 section 6). */
+static unsigned compare_events(const df_conf_step *st, const char *name, uint32_t step,
+                               const duoforge_event_buffer *buffers)
+{
+    unsigned bad = 0;
+    for (uint32_t p = 0; p < 2u; ++p) {
+        const duoforge_event *want = &conf_events[st->ev_off[p]];
+        const uint32_t nwant = st->ev_len[p];
+        const duoforge_event *have = buffers[p].events;
+        const uint32_t nhave = buffers[p].count;
+        uint32_t i = 0;
+        while (i < nwant && i < nhave && memcmp(&want[i], &have[i], sizeof want[i]) == 0) {
+            ++i;
+        }
+        if (i < nwant || i < nhave) {
+            ++bad;
+            if (event_reports < 12u) {
+                ++event_reports;
+                fprintf(stderr, "  %s step %u: player %u event %u differs\n", name, step, p, i);
+                if (i < nwant) {
+                    print_event("reference", &want[i]);
+                }
+                if (i < nhave) {
+                    print_event("engine   ", &have[i]);
+                }
+            }
+        }
+    }
+    return bad;
+}
+
 /* Observation v2 (decision 0007) of both players against the reference:
  * the derived foe PP equals the real PP, and statuses, Mega formes, items
  * used up, stat stages, confusion, charged moves, the field and the side
@@ -359,8 +402,11 @@ int main(void)
             }
             duoforge_step_result res;
             uint32_t used = 0xFFFFFFFFu;
-            const duoforge_status status = dfi_battle_step_tape(ctx, b, &bd, &conf_tape[st->tape_off], st->tape_len,
-                                                                &used, &res);
+            static duoforge_event ev_buf[2][DUOFORGE_MAX_EVENTS];
+            duoforge_event_buffer buffers[2] = {{ev_buf[0], DUOFORGE_MAX_EVENTS, 0u},
+                                                {ev_buf[1], DUOFORGE_MAX_EVENTS, 0u}};
+            const duoforge_status status = dfi_battle_step_events_tape(
+                ctx, b, &bd, &conf_tape[st->tape_off], st->tape_len, &used, &res, buffers);
             const bool consumed = used == st->tape_len;
             if (!DF_CHECK(&t, status == DUOFORGE_OK && consumed)) {
                 fprintf(stderr, "  %s step %u: %s, tape %u of %u\n", cb->name, si, duoforge_status_name(status),
@@ -370,12 +416,13 @@ int main(void)
             }
             bad += compare_state(ctx, b, st, cb->name, si);
             bad += compare_observation(ctx, b, st, cb, si);
+            bad += compare_events(st, cb->name, si, buffers);
             DF_CHECK(&t, duoforge_battle_check(ctx, b) == DUOFORGE_OK);
         }
         DF_CHECK_EQ_U64(&t, bad, 0u);
         duoforge_battle_destroy(b);
     }
-    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 58u);
+    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 64u);
     /* At least the real-team battles of the closure gate (step 13). */
     DF_CHECK(&t, real >= 8u);
     fprintf(stderr, "  %u of the battles run under CLOSURE data\n", real);

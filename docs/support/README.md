@@ -18,7 +18,7 @@ This is a status manifest, **not** a mechanics certificate. For the mechanics of
 | Rule-authorized re-prompt | **STRUCTURAL** (`dfi_reprompt_side`, white-box; no mechanic triggers it) |
 | Struggle (all pp 0) | **IMPLEMENTED + TESTED** (offered in the request since step 2c; typeless, random target, recoil) |
 | Observation v2: what a player sees (decision 0007) | **IMPLEMENTED + TESTED**: the oracle gives the same bytes for every fixture and player; paired tests on synthetic and real states keep the hidden rolls hidden; the conformance test compares both players' views with the recorded Showdown battles |
-| Event log per player (decision 0007 section 6) | **NOT YET** (next step) |
+| Event log per player (decision 0007 sections 6 and 11) | **IMPLEMENTED + TESTED**: every event of both players matches the protocol lines of the recorded Showdown battles, field by field (61 battles, 19,154 events, all 37 kinds); API failures are atomic; the knowledge is not yet folded from the events (step 3c) |
 | Information-equivalence evidence | **TESTED** on paired synthetic states (`duoforge.request.information`) |
 | Closure data tables (16 formes, 36 moves plus Struggle, 16 abilities, 11 items, type chart, natures) | **GENERATED + TESTED** from the pin with provenance per record (`tools/datagen/gen_closure.py`, `src/data/closure_tables.*`). Used by every CLOSURE battle |
 | Champions stat and PP formulas | **IMPLEMENTED + TESTED** (all 16 formes of the two teams; decision 0006) |
@@ -38,7 +38,7 @@ This is a status manifest, **not** a mechanics certificate. For the mechanics of
 | Electro Shot (charge, rain, locked move in the request) | **IMPLEMENTED + TESTED** against recorded reference battles (decision 0006 section 4.10) |
 | Mega Evolution with the four stones, Contrary, No Guard, Tough Claws | **IMPLEMENTED + TESTED** against recorded reference battles (decision 0006 section 4.11) |
 | Emergency Exit, Parting Shot, PIVOT boundaries | **IMPLEMENTED + TESTED** against recorded reference battles, including Emergency Exit at the end of a turn and two Emergency Exits at once (decision 0006 section 4.12) |
-| Closure gate: both real teams in all four pairings | **PASSED** (step 13): 4000 random battles end without errors, replay byte for byte and keep information equivalence; 58 recorded reference battles in all, 8 of them with the real teams (decision 0006 section 4.13) |
+| Closure gate: both real teams in all four pairings | **PASSED** (step 13): 4000 random battles end without errors, replay byte for byte and keep information equivalence; 58 recorded reference battles at the gate, 8 of them with the real teams (decision 0006 section 4.13); 61 since the event log |
 
 State snapshots and decodability are foundation evidence, **not proof that unimplemented future mechanics restore correctly**.
 

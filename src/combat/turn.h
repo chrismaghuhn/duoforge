@@ -24,6 +24,7 @@
  */
 #include <duoforge/duoforge.h>
 
+#include "combat/events.h"
 #include "rng/draw.h"
 #include "state/battle_internal.h"
 
@@ -32,11 +33,13 @@
  * commands). On OK *b is at the next boundary. On failure *b is partially
  * advanced and must be discarded. */
 duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle *b,
-                             const duoforge_side_choice responses[DUOFORGE_SIDE_COUNT], dfi_draws *draws);
+                             const duoforge_side_choice responses[DUOFORGE_SIDE_COUNT], dfi_draws *draws,
+                             dfi_events *events);
 
 /* The start of a CLOSURE battle, right after team selection placed the
  * leads: their entry effects run (runSwitch of the reference's 'start'
  * action). A no-op for other data kinds. On failure *b must be discarded. */
-duoforge_status dfi_turn_start(const duoforge_context *ctx, struct duoforge_battle *b, dfi_draws *draws);
+duoforge_status dfi_turn_start(const duoforge_context *ctx, struct duoforge_battle *b, dfi_draws *draws,
+                               dfi_events *events);
 
 #endif

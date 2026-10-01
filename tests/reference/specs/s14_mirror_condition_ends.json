@@ -1,0 +1,31 @@
+{
+  "name": "s14_mirror_condition_ends",
+  "purpose": "Both sides set the same side conditions on the same turns, so Tailwind, Reflect and Light Screen of both sides run out in the same residual: the two end handlers tie (order 26, same sub-order) and the shuffle decides the order of their two end lines; a condition that is still up fails again with -fail and [still].",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000e001",
+  "teams": [
+    "Grimmsnarl (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Reflect\n- Light Screen\n- Spirit Break\n\nStaraptor (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nJolly Nature\n- Tailwind\n- Protect\n- Brave Bird\n\nCharizard (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Heat Wave\n- Hurricane\n\nArchaludon (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Snarl",
+    "Grimmsnarl (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Reflect\n- Light Screen\n- Spirit Break\n\nStaraptor (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nJolly Nature\n- Tailwind\n- Protect\n- Brave Bird\n\nGolisopod (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Drill Run\n- Iron Head\n\nMilotic (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Ice Beam"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 1",
+      "move 2, move 2",
+      "move 1, move 1",
+      "move 2, move 2",
+      "move 1, move 2",
+      "move 1, move 1",
+      "move 3 1, move 3 1"
+    ],
+    "p2": [
+      "move 1, move 1",
+      "move 2, move 2",
+      "move 1, move 1",
+      "move 2, move 2",
+      "move 1, move 2",
+      "move 1, move 1",
+      "move 3 1, move 3 1"
+    ],
+    "max_steps": 50
+  }
+}

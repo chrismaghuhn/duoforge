@@ -1,0 +1,23 @@
+{
+  "name": "s14_status_updates",
+  "purpose": "Two Sitrus Berry holders of the same Speed, one per side, tie in every Update; a successful Hypnosis ends its hit loop with two Updates like a hit, so each draws for the tie, while a Hypnosis that fails or misses runs none.",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000e003",
+  "teams": [
+    "Farigiraf (F) @ Sitrus Berry\nAbility: No Ability\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Protect\n\nMilotic (F) @ Leftovers\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Hypnosis\n- Muddy Water\n\nArchaludon (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Snarl\n\nCharizard (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Heat Wave\n- Hurricane",
+    "Farigiraf (M) @ Sitrus Berry\nAbility: No Ability\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Protect\n\nMilotic (M) @ Leftovers\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Hypnosis\n- Muddy Water\n\nGolisopod (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Drill Run\n- Iron Head\n\nPolitoed (F)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Ice Beam"
+  ],
+  "plan": {
+    "p1": [
+      "move 2, move 1 1",
+      "move 2, move 1 2",
+      "move 1 2, move 2"
+    ],
+    "p2": [
+      "move 2, move 1 1",
+      "move 1 1, move 1 2",
+      "move 1 2, move 2"
+    ],
+    "max_steps": 50
+  }
+}

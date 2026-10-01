@@ -16,7 +16,11 @@
  *  - random play to the end: random legal choices (moves, switches, passes,
  *    replacements, PIVOT answers) keep every invariant and end at TERMINAL
  *    with a result; Emergency Exit and Parting Shot reach PIVOTs, and
- *    Emergency Exit at the end of a turn joins the REPLACEMENT.
+ *    Emergency Exit at the end of a turn joins the REPLACEMENT;
+ *  - the event log (decision 0007 section 6): a step with events commits
+ *    the same state as without; both players get one event per line, the
+ *    same except the opponent's HP display; bad buffers fail atomically,
+ *    a short one with the required count.
  */
 #include <stdio.h>
 #include <string.h>
@@ -345,6 +349,52 @@ static void rejected(df_test *t, const duoforge_context *ctx, duoforge_battle *b
     DF_CHECK(t, res.kind == 0xA5u);
 }
 
+/* The step's events of both players (decision 0007 section 6): as many
+ * for each, identical except the HP of the opponent's Pokemon, which a
+ * player sees as the percent display; at TURN the last one starts that
+ * turn, at TERMINAL it is the result. */
+static bool events_ok(const duoforge_battle *b, const duoforge_event_buffer buffers[2])
+{
+    const uint32_t n = buffers[0].count;
+    if (n != buffers[1].count || n == 0u || n > DUOFORGE_MAX_EVENTS) {
+        return false;
+    }
+    for (uint32_t i = 0; i < n; ++i) {
+        duoforge_event a = buffers[0].events[i];
+        duoforge_event c = buffers[1].events[i];
+        if (a.kind == 0u || a.kind > DUOFORGE_EVENT_RESULT) {
+            return false;
+        }
+        if (a.hp_kind != 0u || c.hp_kind != 0u) {
+            if (a.position >= 4u) {
+                return false;
+            }
+            const uint32_t owner = a.position / 2u;
+            const duoforge_event *own = owner == 0u ? &a : &c;
+            const duoforge_event *foe = owner == 0u ? &c : &a;
+            if (own->hp_kind != DUOFORGE_HP_EXACT || own->hp > own->hp_max || foe->hp_kind != DUOFORGE_HP_PERCENT ||
+                foe->hp_max != 100u || foe->hp > 100u || (own->hp == 0u) != (foe->hp == 0u)) {
+                return false;
+            }
+            a.hp = c.hp = 0u;
+            a.hp_max = c.hp_max = 0u;
+            a.hp_kind = c.hp_kind = 0u;
+            a.hp_flag = c.hp_flag = 0u;
+        }
+        if (memcmp(&a, &c, sizeof a) != 0) {
+            return false;
+        }
+    }
+    const duoforge_event *last = &buffers[0].events[n - 1u];
+    if (b->boundary_kind == DUOFORGE_BOUNDARY_TURN) {
+        return last->kind == DUOFORGE_EVENT_TURN && last->id == b->turn;
+    }
+    if (b->boundary_kind == DUOFORGE_BOUNDARY_TERMINAL) {
+        return last->kind == DUOFORGE_EVENT_RESULT && last->detail == b->result;
+    }
+    return last->kind != DUOFORGE_EVENT_TURN && last->kind != DUOFORGE_EVENT_RESULT;
+}
+
 int main(void)
 {
     df_test t;
@@ -397,6 +447,108 @@ int main(void)
         DF_CHECK(&t, b->sides[1].knowledge[0].moves_used[0] == 1u && b->sides[0].knowledge[1].moves_used[1] == 1u);
         DF_CHECK(&t, duoforge_battle_check(k2, b) == DUOFORGE_OK);
         duoforge_battle_destroy(b);
+    }
+
+    /* The event log through the public API: bad buffers fail atomically
+     * (state, result and counts as before; E_CAPACITY writes the required
+     * count), an exact buffer takes the step, and the state equals the
+     * same step without events. */
+    {
+        static duoforge_event ev[2][DUOFORGE_MAX_EVENTS];
+        duoforge_battle *b = started(&t, k2, 5u);
+        duoforge_battle *plain = started(&t, k2, 5u);
+        duoforge_decision_bundle bd;
+        DF_CHECK(&t, b != NULL && plain != NULL && move_bundle(k2, b, 1u, &bd) == DUOFORGE_OK);
+        uint8_t before[DUOFORGE_STATE_V3_ENCODED_SIZE];
+        uint8_t after[DUOFORGE_STATE_V3_ENCODED_SIZE];
+        encode(k2, b, before);
+        duoforge_step_result res;
+        memset(&res, 0xA5, sizeof res);
+        DF_CHECK(&t, duoforge_battle_step_events(k2, b, &bd, &res, NULL) == DUOFORGE_E_NULL_ARGUMENT);
+        duoforge_event_buffer bad[2] = {{NULL, 3u, 7u}, {ev[1], DUOFORGE_MAX_EVENTS, 7u}};
+        DF_CHECK(&t, duoforge_battle_step_events(k2, b, &bd, &res, bad) == DUOFORGE_E_INVALID_ARGUMENT);
+        DF_CHECK(&t, bad[0].count == 7u && bad[1].count == 7u);
+        duoforge_event_buffer none[2] = {{NULL, 0u, 0u}, {NULL, 0u, 0u}};
+        DF_CHECK(&t, duoforge_battle_step_events(k2, b, &bd, &res, none) == DUOFORGE_E_CAPACITY);
+        const uint32_t need = none[0].count;
+        DF_CHECK(&t, need > 0u && need <= DUOFORGE_MAX_EVENTS && none[1].count == need);
+        duoforge_event_buffer tight[2] = {{ev[0], need, 0u}, {ev[1], need - 1u, 0u}};
+        DF_CHECK(&t, duoforge_battle_step_events(k2, b, &bd, &res, tight) == DUOFORGE_E_CAPACITY);
+        DF_CHECK(&t, tight[0].count == need && tight[1].count == need);
+        encode(k2, b, after);
+        DF_CHECK_BYTES(&t, after, before, sizeof after, "a failed event step");
+        DF_CHECK(&t, res.kind == 0xA5u);
+        duoforge_event_buffer exact[2] = {{ev[0], need, 0u}, {ev[1], need, 0u}};
+        DF_CHECK(&t, duoforge_battle_step_events(k2, b, &bd, &res, exact) == DUOFORGE_OK);
+        DF_CHECK(&t, exact[0].count == need && exact[1].count == need && events_ok(b, exact));
+        duoforge_step_result res2;
+        DF_CHECK(&t, duoforge_battle_step(k2, plain, &bd, &res2) == DUOFORGE_OK);
+        uint8_t plain_bytes[DUOFORGE_STATE_V3_ENCODED_SIZE];
+        encode(k2, b, after);
+        encode(k2, plain, plain_bytes);
+        DF_CHECK_BYTES(&t, after, plain_bytes, sizeof after, "the same step with and without events");
+        DF_CHECK(&t, memcmp(&res, &res2, sizeof res) == 0);
+        duoforge_battle_destroy(b);
+        duoforge_battle_destroy(plain);
+    }
+
+    /* getCappedBoost caps all changes of one boost against the stages
+     * before the first change: Parting Shot on a Competitive Milotic at -6
+     * Special Attack lowers Attack, Competitive raises Special Attack by 2,
+     * and the capped Special Attack change stays 0 (-4 after the step, a
+     * line of 0), not -1. */
+    {
+        static duoforge_event ev[2][DUOFORGE_MAX_EVENTS];
+        duoforge_battle_setup s;
+        dev_setup(&s, 7u);
+        s.sides[0].members[1].ability = 1u + DFI_ABILITY_COMPETITIVE;
+        /* Side 1 leads Grimmsnarl with Parting Shot instead of Archaludon. */
+        duoforge_member_setup *g = &s.sides[1].members[0];
+        memset(g, 0, sizeof *g);
+        g->species_id = DFI_FORME_GRIMMSNARL;
+        g->gender = DUOFORGE_GENDER_MALE;
+        g->nature = DFI_NATURE_BOLD;
+        g->stat_points[0] = 32u;
+        g->stat_points[2] = 32u;
+        g->move_count = 3u;
+        g->moves[0].move_id = DFI_MOVE_SPIRITBREAK;
+        g->moves[1].move_id = DFI_MOVE_REFLECT;
+        g->moves[2].move_id = DFI_MOVE_PARTINGSHOT;
+        duoforge_battle *b = started_from(&t, k2, &s);
+        if (b != NULL) {
+            b->sides[0].positions[1].stages[DFI_STAGE_SPA] = 0u; /* -6 */
+            duoforge_decision_bundle bd;
+            memset(&bd, 0, sizeof bd);
+            bd.epoch = b->request_epoch;
+            bd.response_mask = 3u;
+            for (uint32_t side = 0; side < 2u; ++side) {
+                bd.responses[side].epoch = b->request_epoch;
+                bd.responses[side].side = (uint8_t)side;
+                bd.responses[side].kind = (uint8_t)DUOFORGE_CHOICE_SLOTS;
+                bd.responses[side].slots[1] = (duoforge_slot_command){DUOFORGE_SLOT_MOVE, 1u, DUOFORGE_TARGET_NONE, 0u,
+                                                                      0u, {0u, 0u, 0u}}; /* Milotic: Coil */
+            }
+            bd.responses[0].slots[0] = (duoforge_slot_command){DUOFORGE_SLOT_MOVE, 1u, DUOFORGE_TARGET_NONE, 0u, 0u,
+                                                               {0u, 0u, 0u}}; /* Archaludon: Protect */
+            bd.responses[1].slots[0] = (duoforge_slot_command){DUOFORGE_SLOT_MOVE, 2u, 1u, 0u, 0u,
+                                                               {0u, 0u, 0u}}; /* Parting Shot on Milotic */
+            duoforge_event_buffer buffers[2] = {{ev[0], DUOFORGE_MAX_EVENTS, 0u}, {ev[1], DUOFORGE_MAX_EVENTS, 0u}};
+            duoforge_step_result res;
+            DF_CHECK(&t, duoforge_battle_step_events(k2, b, &bd, &res, buffers) == DUOFORGE_OK);
+            DF_CHECK(&t, b->sides[0].positions[1].stages[DFI_STAGE_SPA] == 2u &&
+                             b->sides[0].positions[1].stages[DFI_STAGE_ATK] == 6u); /* Coil +1, Parting Shot -1 */
+            bool seen = false;
+            for (uint32_t i = 0; i + 3u < buffers[0].count && !seen; ++i) {
+                const duoforge_event *e = &ev[0][i];
+                seen = e[0].kind == DUOFORGE_EVENT_UNBOOST && e[0].position == 1u && e[0].detail == 0u &&
+                       e[0].amount == 1u && e[1].kind == DUOFORGE_EVENT_ABILITY &&
+                       e[1].id2 == 1u + DFI_ABILITY_COMPETITIVE && e[2].kind == DUOFORGE_EVENT_BOOST &&
+                       e[2].detail == 2u && e[2].amount == 2u && e[3].kind == DUOFORGE_EVENT_BOOST &&
+                       e[3].detail == 2u && e[3].amount == 0u;
+            }
+            DF_CHECK(&t, seen);
+            duoforge_battle_destroy(b);
+        }
     }
 
     /* Determinism, and continuation across encode/decode at every boundary. */
@@ -609,12 +761,17 @@ int main(void)
                     break;
                 }
                 if (copy != NULL) {
+                    /* The copy takes the step with its events. */
+                    static duoforge_event ev[2][DUOFORGE_MAX_EVENTS];
+                    duoforge_event_buffer buffers[2] = {{ev[0], DUOFORGE_MAX_EVENTS, 0u},
+                                                        {ev[1], DUOFORGE_MAX_EVENTS, 0u}};
                     uint8_t after[DUOFORGE_STATE_V3_ENCODED_SIZE];
                     uint8_t after2[DUOFORGE_STATE_V3_ENCODED_SIZE];
-                    DF_CHECK(&t, duoforge_battle_step(k2, copy, &bd, &res2) == DUOFORGE_OK);
+                    DF_CHECK(&t, duoforge_battle_step_events(k2, copy, &bd, &res2, buffers) == DUOFORGE_OK);
                     encode(k2, b, after);
                     encode(k2, copy, after2);
                     mismatches += memcmp(after, after2, sizeof after) != 0 ? 1u : 0u;
+                    mismatches += events_ok(copy, buffers) ? 0u : 1u;
                     duoforge_battle_destroy(copy);
                 }
                 DF_CHECK(&t, duoforge_battle_check(k2, b) == DUOFORGE_OK);

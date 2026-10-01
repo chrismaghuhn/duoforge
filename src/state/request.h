@@ -41,6 +41,13 @@ duoforge_status dfi_battle_step_tape(const duoforge_context *ctx, duoforge_battl
                                      const duoforge_decision_bundle *bundle, const dfi_tape_entry *tape,
                                      uint32_t tape_len, uint32_t *out_tape_used, duoforge_step_result *out_result);
 
+/* The same with the events of decision 0007: with buffers != NULL each
+ * player's events of the step, as duoforge_battle_step_events. */
+duoforge_status dfi_battle_step_events_tape(const duoforge_context *ctx, duoforge_battle *battle,
+                                            const duoforge_decision_bundle *bundle, const dfi_tape_entry *tape,
+                                            uint32_t tape_len, uint32_t *out_tape_used,
+                                            duoforge_step_result *out_result, duoforge_event_buffer *buffers);
+
 /* Rule-authorized re-prompt of one side at TURN (DECISION_CONTRACT section
  * 6): the other side's accepted choice is sealed, the request mask shrinks
  * to `side`, the epoch increments. No M2 mechanic triggers it; it exists so
