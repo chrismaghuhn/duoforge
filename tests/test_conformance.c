@@ -195,8 +195,9 @@ int main(void)
         duoforge_battle_setup setup;
         build_setup(cb, &setup);
         duoforge_battle *b = NULL;
-        if (!DF_CHECK(&t, duoforge_battle_create(k2, &setup, &b) == DUOFORGE_OK && b != NULL)) {
-            fprintf(stderr, "  %s: the support gate rejects the development teams\n", cb->name);
+        const duoforge_status created = duoforge_battle_create(k2, &setup, &b);
+        if (!DF_CHECK(&t, created == DUOFORGE_OK && b != NULL)) {
+            fprintf(stderr, "  %s: the setup is rejected: %s\n", cb->name, duoforge_status_name(created));
             continue;
         }
         unsigned bad = 0;
@@ -245,7 +246,7 @@ int main(void)
         DF_CHECK_EQ_U64(&t, bad, 0u);
         duoforge_battle_destroy(b);
     }
-    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 40u);
+    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 44u);
     duoforge_context_destroy(k2);
     return df_test_end(&t);
 }

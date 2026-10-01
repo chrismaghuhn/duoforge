@@ -1,0 +1,23 @@
+{
+  "name": "s12_emergency_exit",
+  "purpose": "Emergency Exit: Golisopod switches out in the middle of the turn when a hit, its own Life Orb or a recoil takes it to half HP or less; a Sitrus Berry eaten first keeps it in; no reserve, no exit.",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000d104",
+  "teams": [
+    "Golisopod (M) @ Life Orb\nAbility: Emergency Exit\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Def\nAdamant Nature\n- Leech Life\n- Drill Run\n\nCharizard (F) @ Charizardite Y\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Heat Wave\n- Hurricane\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Ice Beam\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Snarl",
+    "Golisopod (F) @ Sitrus Berry\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Iron Head\n- Leech Life\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n\nRaichu (F) @ Life Orb\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Focus Blast\n- Zap Cannon\n\nCeruledge (M) @ Leftovers\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 32 Atk / 3 Spe\nAdamant Nature\n- Bitter Blade\n- Shadow Sneak"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1",
+      "move 1 2, move 2 1",
+      "move 1 1, move 1"
+    ],
+    "p2": [
+      "move 1 1, move 1 1",
+      "move 2 1, move 1 2",
+      "move 1 2, move 1 1"
+    ],
+    "max_steps": 60
+  }
+}

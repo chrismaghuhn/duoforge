@@ -25,7 +25,10 @@
  * Step 10b: Electro Shot (charge, rain, the locked move in the request).
  * Step 11: Mega Evolution (the megaEvo action, the forme's stats and
  * ability, once per side) with Drought, Contrary, No Guard, Tough Claws and
- * the four Mega Stones. */
+ * the four Mega Stones.
+ * Step 12: Parting Shot and Emergency Exit with PIVOT boundaries (an
+ * Emergency Exit in the residual phase returns E_UNSUPPORTED: decision 0006
+ * section 4.12). */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -67,6 +70,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_GRASSYGLIDE] = 1u,
             [DFI_MOVE_FAKEOUT] = 1u,
             [DFI_MOVE_ELECTROSHOT] = 1u,
+            [DFI_MOVE_PARTINGSHOT] = 1u,
         },
     .abilities =
         {
@@ -85,6 +89,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_CONTRARY] = 1u,
             [DFI_ABILITY_NOGUARD] = 1u,
             [DFI_ABILITY_TOUGHCLAWS] = 1u,
+            [DFI_ABILITY_EMERGENCYEXIT] = 1u,
         },
     .items =
         {

@@ -1,0 +1,19 @@
+{
+  "name": "s12_emergency_exit_double",
+  "purpose": "Two Emergency Exits in one action: a Life Orb Golisopod hits the other Golisopod, both fall to half HP or less, and both leave (the Champions handler keeps the other switch flag); the two switches run in Speed order.",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000000001",
+  "teams": [
+    "Golisopod (M) @ Life Orb\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nAdamant Nature\n- Drill Run\n- Protect\n\nCharizard (F) @ Charizardite Y\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Heat Wave\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Ice Beam\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Snarl",
+    "Golisopod (F) @ Life Orb\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nAdamant Nature\n- Drill Run\n- Protect\n\nCharizard (M) @ Charizardite Y\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Heat Wave\n- Protect\n\nFarigiraf (F) @ Mystic Water\nAbility: Armor Tail\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Psychic\n- Protect\n\nRaichu (F) @ Leftovers\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Focus Blast\n- Zap Cannon"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 2"
+    ],
+    "p2": [
+      "move 1 1, move 2"
+    ],
+    "max_steps": 30
+  }
+}
