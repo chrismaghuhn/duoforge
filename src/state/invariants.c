@@ -283,6 +283,12 @@ static dfi_invariant dfi_check_side(const struct duoforge_context *ctx, const st
                 (occupant->item != 1u + DFI_ITEM_CHOICESCARF || occupant->item_consumed != 0u)) {
                 return DFI_INV_VOLATILE;
             }
+            /* Unburden's volatile: set when its holder used its item. */
+            if (((uint32_t)slot->flags & DFI_VOL_UNBURDEN) != 0u &&
+                (occupant->ability != 1u + DFI_ABILITY_UNBURDEN || occupant->item == 0u ||
+                 occupant->item_consumed == 0u)) {
+                return DFI_INV_VOLATILE;
+            }
         }
     }
     const uint32_t occupied = dfi_side_occupied_mask(side);

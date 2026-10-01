@@ -434,8 +434,12 @@ typedef struct duoforge_position_view {
     uint8_t protect_chain; /* public: consecutive successful Protects (stall counter level) */
     uint8_t flash_fire;    /* public: 1 while Flash Fire's boost is active */
     uint8_t protecting;    /* public: 1 while Protect is up this turn ([-singleturn] Protect) */
-    uint8_t reserved;      /* zero */
+    uint8_t flags;         /* public: DUOFORGE_POSITION_FLAG_* (Team C); 0 under CLOSURE */
 } duoforge_position_view; /* 16 bytes */
+
+/* duoforge_position_view.flags (Team C). Bits 1 and 2 stay 0 until Follow Me
+   and Helping Hand are built (decision 0009 section 4.2). */
+#define DUOFORGE_POSITION_FLAG_UNBURDEN 4u /* Unburden doubles the occupant's Speed */
 
 typedef struct duoforge_side_view {
     duoforge_member_view members[DUOFORGE_MAX_ROSTER];

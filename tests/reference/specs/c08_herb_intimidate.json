@@ -1,0 +1,20 @@
+{
+  "name": "c08_herb_intimidate",
+  "purpose": "White Herb at the opening: Intimidate lowers Sneasler's Attack and the herb restores it inside the switch-in sequence (AnySwitchIn, priority -2), so Unburden doubles its Speed from turn 1 and it moves before a Choice Scarf Basculegion; Close Combat later lowers its defences with no herb left.",
+  "data": "team_c",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c0801",
+  "teams": [
+    "Sneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Close Combat\n- Dire Claw\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Coil\n\nKingambit (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Iron Head\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide",
+    "Incineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Darkest Lariat\n- Fake Out\n\nBasculegion (M) @ Choice Scarf\nAbility: Adaptability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Aqua Jet\n- Wave Crash\n\nFarigiraf (F) @ Leftovers\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Protect\n\nArchaludon (M) @ Light Clay\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1"
+    ],
+    "p2": [
+      "move 1 1, move 2 1"
+    ],
+    "max_steps": 30
+  }
+}

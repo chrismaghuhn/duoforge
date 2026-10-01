@@ -92,7 +92,7 @@ int main(void)
            FIELD(duoforge_position_view, locked_slot), FIELD(duoforge_position_view, locked_target),
            FIELD(duoforge_position_view, acted), FIELD(duoforge_position_view, protect_chain),
            FIELD(duoforge_position_view, flash_fire), FIELD(duoforge_position_view, protecting),
-           FIELD(duoforge_position_view, reserved));
+           FIELD(duoforge_position_view, flags));
     STRUCT(duoforge_side_view, false, FIELD(duoforge_side_view, members), FIELD(duoforge_side_view, positions),
            FIELD(duoforge_side_view, member_count), FIELD(duoforge_side_view, occupant),
            FIELD(duoforge_side_view, mega_used), FIELD(duoforge_side_view, brought_order),

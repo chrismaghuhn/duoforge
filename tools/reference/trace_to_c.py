@@ -718,7 +718,7 @@ def convert(root, name, tables, out, all_tape, all_events):
                         lslot, ltarget = choice, 0
                 seen = shown[s].get(roster)
                 vols = sum(bit for name, bit in (('protect', 1), ('flashfire', 2), ('twoturnmove', 4),
-                                                 ('choicelock', 8)) if name in p['volatiles'])
+                                                 ('choicelock', 8), ('unburden', 16)) if name in p['volatiles'])
                 row.append('{1u, %du, {%s}, {%s}, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du}' % (
                     p['hp'], ', '.join('%du' % x for x in pp), ', '.join('%du' % (x + 6) for x in p['boosts']),
                     stall, 1 if p['fainted'] else 0, status, counter, p['confusion'], lslot, ltarget,
@@ -862,7 +862,7 @@ def write_header(root, names, tables, team_c, check):
            'typedef struct df_conf_mon {', '    uint32_t present, hp;', '    uint8_t pp[4];', '    uint8_t stages[7];',
            '    uint8_t stall, fainted, status, status_counter, confusion, locked_slot, locked_target, mega;',
            '    uint8_t held, seen, seen_percent, seen_flag;',
-           '    uint8_t vols; /* volatiles: 1 protect, 2 flashfire, 4 twoturnmove, 8 choicelock */',
+           '    uint8_t vols; /* volatiles: 1 protect, 2 flashfire, 4 twoturnmove, 8 choicelock, 16 unburden */',
            '} df_conf_mon;',
            '/* team step, side 0 / side 1 answered, tape slice, the turn, boundary and',
            ' * result afterwards, the picks of a team step, slot commands, the occupants',

@@ -1,0 +1,20 @@
+{
+  "name": "c08_herb_moves",
+  "purpose": "White Herb after the holder's own move (AnyAfterMove): after Sneasler's Close Combat and after Salamence's Draco Meteor the herb restores the lowered stats before the next action; Unburden then doubles Sneasler's Speed in the next re-sort of the queue.",
+  "data": "team_c",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c0802",
+  "teams": [
+    "Sneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Close Combat\n- Dire Claw\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Coil\n\nKingambit (M) @ Miracle Seed\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Iron Head\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Protect",
+    "Salamence (M) @ White Herb\nAbility: No Ability\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Draco Meteor\n- Hyper Voice\n\nFarigiraf (F) @ Leftovers\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Protect\n\nRaichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 2, move 1"
+    ],
+    "p2": [
+      "move 1 1, move 1"
+    ],
+    "max_steps": 30
+  }
+}

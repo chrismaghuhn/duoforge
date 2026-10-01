@@ -1,6 +1,6 @@
 # 0009 — Team C: the expansion track (data kind, gate, steps, evidence)
 
-Status: **accepted** (owner, 2026-10-01: "bau das erstmal so"; setup rule: the closure rule, section 3.4). **Steps 1 to 7 built** (section 10). Builds on decision `0004` (two reference teams), `0006` (data, state v3, draw sites, fixtures, evidence), `0007` (player view) and `0010` (the certified CLOSURE profile, the role of `CLOSURE_DEV`, draw alignment B confirmed), and on the research in `docs/research/third-team/` (PR #32). "M§n" means section n of `docs/research/third-team/mechanics.md`; X1 to X9 are its executed experiments.
+Status: **accepted** (owner, 2026-10-01: "bau das erstmal so"; setup rule: the closure rule, section 3.4). **Steps 1 to 8 built** (section 10). Builds on decision `0004` (two reference teams), `0006` (data, state v3, draw sites, fixtures, evidence), `0007` (player view) and `0010` (the certified CLOSURE profile, the role of `CLOSURE_DEV`, draw alignment B confirmed), and on the research in `docs/research/third-team/` (PR #32). "M§n" means section n of `docs/research/third-team/mechanics.md`; X1 to X9 are its executed experiments.
 
 ## 1. Owner inputs (2026-10-01)
 
@@ -234,7 +234,7 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
    - AILMENT_POISON, TERRAIN_PSYCHIC and a field value;
    - CAUSE_POISON for poison's residual line (added in step 6, not foreseen here);
    - new event kinds;
-   - three bits of the position view's `reserved` byte (Follow Me, Helping Hand, Unburden);
+   - three bits of the position view's `reserved` byte (Follow Me, Helping Hand, Unburden), which step 8 renamed `flags`;
    - the choice lock shown in `locked_slot` (4.2).
 5. Last Respects' count is derived from the roster instead of stored (4.1).
 6. Step 9a (harness) is its own PR, and step 12 (the Team C gate) closes the track.
@@ -482,3 +482,64 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
   - `tools/reference/{ps_trace.js,trace_to_c.py}`;
   - `tools/state_model/state_v3_model.py`;
   - `tests/test_conformance.c` (the lock comparison, the target only while charging).
+
+### 10.8 Step 8: White Herb and Unburden
+
+- **White Herb** (`data/items.ts:7658-7712`). Each of its handlers runs one check: a standing holder with a lowered stat uses the herb (`useItem`, `sim/pokemon.ts:1811-1849`). The use shows `[-enditem]`, then the lowered stages go back to 0 (`-clearnegativeboost` is `[silent]`). Raised stages stay. Then AfterUseItem runs (Unburden).
+  - **Switch-in.** The check runs in `onAnySwitchIn` (priority -2), after the entry abilities (priority 0) and the Grassy Seeds (priority -1), for every holder on the field. The herb's own `onStart` does not run at its holder's entry: an item with `onAnySwitchIn` keeps its `onStart` out of the switch-in event (`sim/battle.ts:1024-1025`).
+  - **AfterMega** (`sim/battle-actions.ts:1914`): after the Mega's entry ability.
+  - **AfterMove** (`sim/battle-actions.ts:311-312`): after every move that got past BeforeMove, also after a move that Protect blocks or that fails. A move that BeforeMove stops has no AfterMove.
+  - **Residual, order 29.** This is an item, so sub-order 8.
+  - **Order of several holders.** An Any event takes its holders in speed order (`speed_seen`). Two holders due at the same speed would be ordered by the reference's shuffle, which is not modelled: `E_UNSUPPORTED`.
+  - **A user that fainted inside its own move.** The reference collects Any handlers only while the move's user or its target is active (`sim/battle.ts:1053`). A user whose faint the hit loop showed is not active (`:2566`), so the reference may skip the AfterMove check.
+    - The engine does not model this: a herb due there is `E_UNSUPPORTED`.
+    - With the data only a Rocky Helmet makes the user faint there, against a single-target contact move. That move lowers no stat of a herb holder, so no herb is due.
+- **Unburden** (`data/abilities.ts:5235-5257`).
+  - When its holder uses an item (a berry, a Grassy Seed or the herb), AfterUseItem adds the volatile.
+  - The volatile is `chainModify(2)` in the speed chain while the holder holds no item. Once the volatile is set the holder never has an item again, since nothing in the data gives one back.
+  - The volatile chains with Tailwind into one modifier, before paralysis (section 10.7). A Choice Scarf cannot be in the same chain, because the item is gone.
+  - The queue is sorted again before each move action, so the new speed counts from the next move on, within the same turn. It also counts in the speed order of later events.
+  - `onTakeItem` is unreachable: no move in the data takes an item.
+  - Leaving the field ends the volatile with the rest of the position.
+- **State.** Volatile bit 32, `DFI_VOL_UNBURDEN`. It is valid only under the TEAM_C kinds (`dfi_kind_limits.vol_flags_mask`), and only on an Unburden holder whose item is used (`item` set and `item_consumed` 1). The state model (`tools/state_model/state_v3_model.py`) mirrors the bit, this rule and the view's flag; its output is unchanged.
+- **Observation.** Unburden is public: the ability is open, and the item's use is shown.
+  - The position view's `reserved` byte becomes `flags`, with `DUOFORGE_POSITION_FLAG_UNBURDEN` (4). Bits 1 and 2 stay 0 until Follow Me and Helping Hand are built.
+  - Under CLOSURE the byte stays 0, so the struct keeps 16 bytes and every closure view keeps its bytes.
+  - This is an additive public change (sections 4.2, 9.4): library 0.16.0, coordinated with the main session (0.15.0 went to `duoforge_batch_step_query`). The Python layout (`python/duoforge/_layout.py`) and `tools/layout/layout_dump.c` name the field.
+- **Harness and converter.** `ps_trace.js` already records every volatile, so it is unchanged (harness version 14). The converter compares `unburden` as volatile bit 16, and the view's flag with it.
+- **Evidence.** Six recorded battles:
+  - `c08_herb_intimidate`: the opening Intimidate lowers Sneasler's Attack, and the herb restores it in the switch-in sequence, after Milotic's Competitive. Unburden doubles Sneasler's Speed from turn 1 (X1), so it moves before a Choice Scarf Basculegion. A later Close Combat lowers its defences with no herb left.
+  - `c08_herb_moves`: the herb after the holder's own Close Combat (X2) and after its own Draco Meteor.
+  - `c08_herb_targets`: the herb after another Pokémon's move, Snarl and Parting Shot.
+  - `c08_herb_competitive`: on Milotic, Intimidate lowers the Attack and Competitive raises the Special Attack by 2 inside that boost. The herb restores only the Attack, and the +2 stays for Ice Beam.
+  - `c08_unburden_resort`: Grimmsnarl's Prankster Parting Shot (+1) lowers a slow Sneasler's attacks first, and the herb restores them. In the queue sorted again before the next move, Sneasler then moves before Raichu, which was faster at the start of the turn. Without the herb, Raichu moves first (checked in the reference, not recorded).
+  - `c08_unburden_berry`: Unburden after a Sitrus Berry; switching out ends it, and the berry stays gone.
+
+  Two tests through the public API:
+  - Two herb holders due at the same speed are `E_UNSUPPORTED`; at different speeds both herbs are used.
+  - A Fake Out user that a Rocky Helmet makes faint (a white-box state at 1 HP) is `E_UNSUPPORTED` when a herb is due. Without a herb due, or with the user standing, the turn runs.
+
+  Eleven negative controls each make a test fail:
+  - no herb at a switch-in;
+  - no herb after a move, by removing the check or by never setting the used-move point;
+  - a herb without a lowered stat;
+  - a herb that also resets raised stages;
+  - no speed-tie check;
+  - no check for a user that fainted inside its move;
+  - no Unburden on an item use;
+  - no Unburden in the speed chain;
+  - Unburden hidden in the view;
+  - no Unburden ability check in the invariant.
+- **Not recorded.**
+  - The residual check (order 29) and AfterMega: with the data every lowered stat meets an earlier check, and no Mega forme lowers a stat on entry.
+  - The plan's Contrary Mega Staraptor (section 5): a Mega holds its stone, so it cannot hold the herb.
+  - Whether AfterMove follows a move that BeforeMove stopped cannot be observed with the data: no herb stays due until then.
+- **Shared files touched:**
+  - `include/duoforge/duoforge.h` (the position view's `flags`, the flag, version);
+  - `src/state/{battle_internal.h,closure_member.c,invariants.c,observation.c}`;
+  - `src/combat/turn.c`;
+  - `src/data/support_manifest.c`;
+  - `python/duoforge/{_layout,_lib}.py`, `python/tests/test_lib.py`;
+  - `tools/layout/layout_dump.c`, `tools/reference/trace_to_c.py`, `tools/state_model/state_v3_model.py`;
+  - `tests/reference/conformance.h` (a comment only);
+  - `tests/test_conformance.c` (the Unburden comparison), `tests/test_api_atomicity.c` (version), `tests/test_team_c_setup.c`.
