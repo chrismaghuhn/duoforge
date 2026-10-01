@@ -41,7 +41,9 @@
  * Step 5: Chople Berry (eaten inside ModifyDamage) and Rocky Helmet
  * (DamagingHit with contact).
  * Step 6: Dire Claw with poison (status 5, residual order 9) and the status
- * pick (draw site 13). */
+ * pick (draw site 13).
+ * Step 7: Choice Scarf (x1.5 in the speed chain, the choice lock in the
+ * request). */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -133,5 +135,6 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_SALAMENCITE] = 1u,
             [DFI_ITEM_ROCKYHELMET] = 1u,
             [DFI_ITEM_CHOPLEBERRY] = 1u,
+            [DFI_ITEM_CHOICESCARF] = 1u,
         },
 };

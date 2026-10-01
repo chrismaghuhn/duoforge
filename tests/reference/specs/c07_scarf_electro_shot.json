@@ -1,0 +1,20 @@
+{
+  "name": "c07_scarf_electro_shot",
+  "purpose": "Choice Scarf with a charge move and with Protect: Archaludon's Electro Shot charges and locks at once (the same move), and the choice lock outlives the charge; Farigiraf locked into Protect may only Protect, with the stall chance.",
+  "data": "team_c",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c0702",
+  "teams": [
+    "Archaludon (M) @ Choice Scarf\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Electro Shot\n- Dragon Pulse\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Coil\n\nKingambit (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Iron Head\n\nBasculegion (M) @ Mystic Water\nAbility: Adaptability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Aqua Jet\n- Wave Crash",
+    "Farigiraf (F) @ Choice Scarf\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Protect\n- Psychic\n\nRaichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Protect\n\nIncineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Darkest Lariat"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1"
+    ],
+    "p2": [
+      "move 1, move 1"
+    ],
+    "max_steps": 40
+  }
+}

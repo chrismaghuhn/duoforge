@@ -117,16 +117,20 @@ static duoforge_status dfi_slot_candidates(const duoforge_context *ctx, const st
          * target only; no other move, no switch, no Mega (sim/pokemon.ts
          * getMoveRequestData, sim/side.ts:675-689). */
         const dfi_active_slot *own = &side->positions[slot];
-        if (dfi_context_is_closure(ctx) && own->locked_move != 0u) {
+        if (dfi_context_is_closure(ctx) && own->charge_turns != 0u) {
             return dfi_list_push(out, DUOFORGE_SLOT_MOVE, (uint32_t)own->locked_move - 1u, own->locked_target, 0u, 0u)
                        ? DUOFORGE_OK
                        : DUOFORGE_E_INVARIANT;
         }
         const uint32_t megas = (mem->mega_capable != 0u && side->mega_used == 0u) ? 2u : 1u;
+        /* A choice lock (Team C): choicelock's onDisableMove disables every
+         * other slot (data/conditions.ts); the lock does not trap, and with
+         * no usable locked move the slot gets Struggle. */
+        const bool choice = ((uint32_t)own->flags & DFI_VOL_CHOICE_LOCK) != 0u;
         uint32_t moves = 0u;
         for (uint32_t k = 0u; k < DUOFORGE_MAX_MOVE_SLOTS && k < mem->move_count; ++k) {
             const dfi_move_slot *mv = &mem->moves[k];
-            if (mv->pp == 0u) {
+            if (mv->pp == 0u || (choice && k + 1u != own->locked_move)) {
                 continue;
             }
             if (mv->move_id >= ctx->move_count) {

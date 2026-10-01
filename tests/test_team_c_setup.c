@@ -246,12 +246,12 @@ int main(void)
     legal(&t, kd, &s, false, "No Ability under TEAM_C_DEV");
 
     /* Any table item on any member, as in the closure: Choice Scarf on
-     * Archaludon is legal (and gated until step 7). */
+     * Archaludon is legal, and supported since step 7. */
     s = teams;
     s.sides[0] = teams.sides[1];
     s.sides[1] = teams.sides[0];
     s.sides[0].members[2].item = DFI_ITEM_CHOICESCARF + 1u; /* Archaludon, Leftovers before */
-    legal(&t, kc, &s, false, "Choice Scarf on Archaludon");
+    legal(&t, kc, &s, true, "Choice Scarf on Archaludon");
     s.sides[0].members[2].item = DFI_EXT_ITEM_COUNT + 1u;
     invalid(&t, kc, &s, "Archaludon with an item beyond the tables");
     /* The closure teams themselves under TEAM_C: every mechanic exists. */
@@ -374,12 +374,56 @@ int main(void)
         duoforge_battle_destroy(w);
     }
 
+    /* White-box: the choice lock (bit 64, step 7) is in range only under the
+     * TEAM_C kinds. It keeps a move slot in the locked-move byte without a
+     * charge and without a target, and its holder holds a Choice Scarf. */
+    for (uint32_t team_c = 0u; team_c < 2u; ++team_c) {
+        const duoforge_context *ctx = team_c != 0u ? kc : k1;
+        duoforge_battle *w = df_make_battle(ctx, &teams);
+        duoforge_decision_bundle bd;
+        memset(&bd, 0, sizeof bd);
+        bd.epoch = w->request_epoch;
+        bd.response_mask = 3u;
+        for (uint32_t side = 0u; side < 2u; ++side) {
+            duoforge_side_choice *c = &bd.responses[side];
+            c->epoch = w->request_epoch;
+            c->side = (uint8_t)side;
+            c->kind = (uint8_t)DUOFORGE_CHOICE_TEAM_SELECTION;
+            c->pick_count = 4u;
+            for (uint32_t i = 0u; i < 4u; ++i) {
+                c->picks[i] = (uint8_t)i;
+            }
+        }
+        duoforge_step_result res;
+        DF_CHECK(&t, duoforge_battle_step(ctx, w, &bd, &res) == DUOFORGE_OK &&
+                         w->boundary_kind == DUOFORGE_BOUNDARY_TURN);
+        dfi_active_slot *pos = &w->sides[0].positions[0];
+        dfi_member *holder = &w->sides[0].members[pos->occupant];
+        dfi_invariant inv = DFI_INV_NONE;
+        pos->flags = (uint8_t)((uint32_t)pos->flags | DFI_VOL_CHOICE_LOCK);
+        pos->locked_move = 1u;
+        DF_CHECK(&t, dfi_state_check(ctx, w, &inv) == DUOFORGE_E_INVARIANT && inv == DFI_INV_VOLATILE);
+        if (team_c != 0u) {
+            holder->item = (uint8_t)(1u + DFI_ITEM_CHOICESCARF); /* the lock needs the Choice item */
+            DF_CHECK(&t, dfi_state_check(ctx, w, &inv) == DUOFORGE_OK);
+            pos->locked_target = 1u; /* a target only while charging */
+            DF_CHECK(&t, dfi_state_check(ctx, w, &inv) == DUOFORGE_E_INVARIANT && inv == DFI_INV_VOLATILE);
+            pos->locked_target = 0u;
+            pos->locked_move = 0u; /* the lock names its move */
+            DF_CHECK(&t, dfi_state_check(ctx, w, &inv) == DUOFORGE_E_INVARIANT && inv == DFI_INV_VOLATILE);
+            pos->locked_move = 1u;
+            pos->flags = (uint8_t)((uint32_t)pos->flags & ~DFI_VOL_CHOICE_LOCK);
+            DF_CHECK(&t, dfi_state_check(ctx, w, &inv) == DUOFORGE_E_INVARIANT && inv == DFI_INV_VOLATILE);
+        }
+        duoforge_battle_destroy(w);
+    }
+
     /* The gate per Team C mechanic: the dev side plus exactly one of them.
      * Steps (decision 0009 section 5) mark them one by one; step 1: Kowtow
      * Cleave, Hyper Voice, Draco Meteor, Wave Crash, Aqua Jet, Defiant and
      * Adaptability; step 2: Flare Blitz and Darkest Lariat; step 3: Salamencite
      * with Aerilate; step 4: Last Respects and Flip Turn; step 5: Chople Berry
-     * and Rocky Helmet; step 6: Dire Claw (poison). */
+     * and Rocky Helmet; step 6: Dire Claw (poison); step 7: Choice Scarf. */
     {
         typedef struct gate_case {
             uint32_t member, ability_plus1, item_plus1, move;
@@ -408,7 +452,7 @@ int main(void)
             {2u, 0u, DFI_ITEM_SALAMENCITE + 1u, keep, true, "Salamencite (Mega, Aerilate)"},
             {3u, 0u, DFI_ITEM_ROCKYHELMET + 1u, keep, true, "Rocky Helmet"},
             {4u, 0u, DFI_ITEM_CHOPLEBERRY + 1u, keep, true, "Chople Berry"},
-            {4u, 0u, DFI_ITEM_CHOICESCARF + 1u, keep, false, "Choice Scarf"},
+            {4u, 0u, DFI_ITEM_CHOICESCARF + 1u, keep, true, "Choice Scarf (the choice lock)"},
             {5u, DFI_ABILITY_ADAPTABILITY + 1u, 0u, DFI_MOVE_WAVECRASH, true, "Adaptability"},
         };
         for (size_t i = 0u; i < sizeof cases / sizeof cases[0]; ++i) {
@@ -437,6 +481,7 @@ int main(void)
         items[DFI_ITEM_SALAMENCITE - DFI_ITEM_COUNT] = 1u;
         items[DFI_ITEM_CHOPLEBERRY - DFI_ITEM_COUNT] = 1u;
         items[DFI_ITEM_ROCKYHELMET - DFI_ITEM_COUNT] = 1u;
+        items[DFI_ITEM_CHOICESCARF - DFI_ITEM_COUNT] = 1u;
         DF_CHECK_BYTES(&t, dfi_support.moves + DFI_MOVE_COUNT, moves, sizeof moves, "Team C moves in the manifest");
         DF_CHECK_BYTES(&t, dfi_support.abilities + DFI_ABILITY_COUNT, abilities, sizeof abilities,
                        "Team C abilities in the manifest");

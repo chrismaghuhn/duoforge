@@ -62,6 +62,7 @@ typedef struct dfi_move_slot {
 #define DFI_VOL_PROTECT 2u
 #define DFI_VOL_FLASH_FIRE 4u
 #define DFI_VOL_FLAGS_MAX 7u
+#define DFI_VOL_CHOICE_LOCK 64u /* Team C: Choice Scarf's choicelock; the move in locked_move */
 #define DFI_STALL_LEVEL_MAX 6u /* success chance 1 / 3^level */
 #define DFI_STALL_TURNS_MAX 2u
 #define DFI_CONFUSION_TURNS_MAX 5u
