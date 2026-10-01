@@ -5,6 +5,7 @@
 #include "combat/turn.h"
 #include "core/arith.h"
 #include "core/bytes.h"
+#include "data/closure_tables.h"
 #include "state/context_internal.h"
 #include "state/invariants.h"
 #include "state/transition.h"
@@ -120,6 +121,12 @@ static duoforge_status dfi_slot_candidates(const duoforge_context *ctx, const st
             }
             if (mv->move_id >= ctx->move_count) {
                 return DUOFORGE_E_INVARIANT;
+            }
+            /* Champions disables Fake Out once its user has taken a move
+             * action since it entered (data/mods/champions/moves.ts:354-361). */
+            if (dfi_context_is_closure(ctx) && mv->move_id == DFI_MOVE_FAKEOUT &&
+                side->positions[slot].move_actions != 0u) {
+                continue;
             }
             uint8_t targets[3] = {0, 0, 0};
             const uint32_t nt = dfi_targets(ctx->move_target_classes[mv->move_id], s, slot, targets);

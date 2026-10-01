@@ -20,6 +20,8 @@
  * Step 9: recoil (Wood Hammer, Brave Bird), drain (Bitter Blade, Leech
  * Life), self-drops (Close Combat, Make It Rain), Miracle Seed, Grassy
  * Terrain's boost for Grass moves and Flash Fire's boost.
+ * Step 10a: Weather Ball, Grass Knot, Grassy Glide, Fake Out (disabled in
+ * the request after the first move action, Champions).
  * No Mega Evolution is implemented yet. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
@@ -56,6 +58,10 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_LEECHLIFE] = 1u,
             [DFI_MOVE_CLOSECOMBAT] = 1u,
             [DFI_MOVE_MAKEITRAIN] = 1u,
+            [DFI_MOVE_WEATHERBALL] = 1u,
+            [DFI_MOVE_GRASSKNOT] = 1u,
+            [DFI_MOVE_GRASSYGLIDE] = 1u,
+            [DFI_MOVE_FAKEOUT] = 1u,
         },
     .abilities =
         {

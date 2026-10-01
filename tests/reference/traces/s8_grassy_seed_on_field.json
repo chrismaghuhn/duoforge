@@ -1,5 +1,5 @@
 {
- "harness": 8,
+ "harness": 10,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "spec": "s8_grassy_seed_on_field.json",
  "format": "gen9championsvgc2026regmc",
@@ -41,6 +41,7 @@
    "sides": [
     {
      "request": "teampreview",
+     "enabled": [],
      "active": [
       -1,
       -1
@@ -141,6 +142,7 @@
     },
     {
      "request": "teampreview",
+     "enabled": [],
      "active": [
       -1,
       -1
@@ -302,6 +304,16 @@
     "sides": [
      {
       "request": "move",
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
       "active": [
        0,
        1
@@ -402,6 +414,16 @@
      },
      {
       "request": "move",
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
       "active": [
        0,
        1
@@ -551,6 +573,16 @@
     "sides": [
      {
       "request": "move",
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
       "active": [
        0,
        1
@@ -653,6 +685,15 @@
      },
      {
       "request": "move",
+      "enabled": [
+       [
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
       "active": [
        0,
        1
@@ -833,6 +874,16 @@
     "sides": [
      {
       "request": "move",
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
       "active": [
        0,
        1
@@ -933,6 +984,15 @@
      },
      {
       "request": "move",
+      "enabled": [
+       [
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
       "active": [
        0,
        1
@@ -1137,6 +1197,16 @@
     "sides": [
      {
       "request": "move",
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
       "active": [
        0,
        1
@@ -1239,6 +1309,15 @@
      },
      {
       "request": "move",
+      "enabled": [
+       [
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
       "active": [
        0,
        1
@@ -1461,6 +1540,7 @@
     "sides": [
      {
       "request": "switch",
+      "enabled": [],
       "active": [
        0,
        1
@@ -1561,6 +1641,7 @@
      },
      {
       "request": "",
+      "enabled": [],
       "active": [
        0,
        1
@@ -1684,6 +1765,15 @@
     "sides": [
      {
       "request": "move",
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1
+       ]
+      ],
       "active": [
        0,
        1
@@ -1784,6 +1874,15 @@
      },
      {
       "request": "move",
+      "enabled": [
+       [
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
       "active": [
        0,
        1
@@ -2028,6 +2127,7 @@
     "sides": [
      {
       "request": "switch",
+      "enabled": [],
       "active": [
        0,
        1
@@ -2128,6 +2228,7 @@
      },
      {
       "request": "",
+      "enabled": [],
       "active": [
        0,
        1
@@ -2288,6 +2389,15 @@
     "sides": [
      {
       "request": "move",
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1
+       ]
+      ],
       "active": [
        0,
        1
@@ -2388,6 +2498,15 @@
      },
      {
       "request": "move",
+      "enabled": [
+       [
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
       "active": [
        0,
        1
@@ -2838,6 +2957,15 @@
     "sides": [
      {
       "request": "move",
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1
+       ]
+      ],
       "active": [
        0,
        1
@@ -2938,6 +3066,15 @@
      },
      {
       "request": "move",
+      "enabled": [
+       [
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
       "active": [
        0,
        1
@@ -3216,6 +3353,15 @@
     "sides": [
      {
       "request": "move",
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1
+       ]
+      ],
       "active": [
        0,
        1
@@ -3316,6 +3462,15 @@
      },
      {
       "request": "move",
+      "enabled": [
+       [
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
       "active": [
        0,
        1
@@ -3546,6 +3701,15 @@
     "sides": [
      {
       "request": "move",
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1
+       ]
+      ],
       "active": [
        0,
        1
@@ -3646,6 +3810,15 @@
      },
      {
       "request": "move",
+      "enabled": [
+       [
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
       "active": [
        0,
        1
@@ -3841,6 +4014,7 @@
     "sides": [
      {
       "request": "",
+      "enabled": [],
       "active": [
        0,
        1
@@ -3941,6 +4115,7 @@
      },
      {
       "request": "",
+      "enabled": [],
       "active": [
        0,
        1

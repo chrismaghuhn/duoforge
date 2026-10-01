@@ -1,0 +1,28 @@
+{
+  "name": "s10_grassy_glide_fake_out",
+  "purpose": "Fake Out (+3) flinches on the first turn and is disabled in the request afterwards (Champions); Grassy Glide gets +1 priority in Grassy Terrain for a grounded user; Armor Tail stops both at its side; a Pokemon that switches back in may use Fake Out again.",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000a104",
+  "teams": [
+    "Rillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Fake Out\n- Grassy Glide\n\nRaichu (F) @ Life Orb\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Fake Out\n- Zap Cannon\n\nStaraptor (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Brave Bird\n- Close Combat\n\nGolisopod (F) @ Leftovers\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Leech Life\n- Iron Head",
+    "Gholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Shadow Ball\n- Nasty Plot\n\nMilotic (M) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Muddy Water\n- Ice Beam\n\nFarigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Psychic\n- Protect\n\nRillaboom (F) @ Grassy Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Grassy Glide\n- Fake Out"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1 2",
+      "move 1 1, move 2 2",
+      "move 2 2, switch 3",
+      "switch 3, move 1 1",
+      "move 1 1, move 1 2",
+      "move 2 2, move 1 1"
+    ],
+    "p2": [
+      "move 1 2, move 1",
+      "move 1 1, move 1",
+      "switch 3, move 1",
+      "move 1 1, move 2 1",
+      "move 1 1, move 1"
+    ],
+    "max_steps": 50
+  }
+}

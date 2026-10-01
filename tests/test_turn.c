@@ -44,7 +44,7 @@ static void dev_setup(duoforge_battle_setup *s, uint64_t seed)
         {DFI_FORME_GOLISOPOD, 2u, DFI_NATURE_ADAMANT, {32u, 32u, 0u, 0u, 1u, 1u},
          {DFI_MOVE_DRILLRUN, DFI_MOVE_PROTECT, 0u, 0u}, 2u},
         {DFI_FORME_FARIGIRAF, 1u, DFI_NATURE_BOLD, {29u, 0u, 20u, 0u, 17u, 0u},
-         {DFI_MOVE_PSYCHIC, DFI_MOVE_PROTECT, DFI_MOVE_TRICKROOM, 0u}, 3u},
+         {DFI_MOVE_PSYCHIC, DFI_MOVE_PROTECT, DFI_MOVE_TRICKROOM, DFI_MOVE_GRASSKNOT}, 4u},
     };
     for (uint32_t side = 0; side < 2u; ++side) {
         s->sides[side].member_count = 4u;
@@ -217,11 +217,11 @@ static void entry_setup(duoforge_battle_setup *s, uint64_t seed)
         uint32_t species, gender, nature, ability, item, sp[6], moves[4], move_count;
     } a[4] = {
         {DFI_FORME_POLITOED, 1u, DFI_NATURE_MODEST, 1u + DFI_ABILITY_DRIZZLE, 1u + DFI_ITEM_MYSTICWATER,
-         {32u, 0u, 0u, 30u, 0u, 4u}, {DFI_MOVE_MUDDYWATER, DFI_MOVE_ICEBEAM, DFI_MOVE_PROTECT, 0u}, 3u},
+         {32u, 0u, 0u, 30u, 0u, 4u}, {DFI_MOVE_MUDDYWATER, DFI_MOVE_ICEBEAM, DFI_MOVE_PROTECT, DFI_MOVE_WEATHERBALL}, 4u},
         {DFI_FORME_STARAPTOR, 2u, DFI_NATURE_BOLD, 1u + DFI_ABILITY_INTIMIDATE, 1u + DFI_ITEM_SITRUSBERRY,
          {32u, 0u, 32u, 0u, 2u, 0u}, {DFI_MOVE_TAILWIND, DFI_MOVE_PROTECT, DFI_MOVE_BRAVEBIRD, DFI_MOVE_CLOSECOMBAT}, 4u},
         {DFI_FORME_RILLABOOM, 1u, DFI_NATURE_ADAMANT, 1u + DFI_ABILITY_GRASSYSURGE, 1u + DFI_ITEM_GRASSYSEED,
-         {18u, 32u, 2u, 0u, 6u, 8u}, {DFI_MOVE_HIGHHORSEPOWER, DFI_MOVE_WOODHAMMER, 0u, 0u}, 2u},
+         {18u, 32u, 2u, 0u, 6u, 8u}, {DFI_MOVE_HIGHHORSEPOWER, DFI_MOVE_WOODHAMMER, DFI_MOVE_FAKEOUT, DFI_MOVE_GRASSYGLIDE}, 4u},
         {DFI_FORME_GRIMMSNARL, 1u, DFI_NATURE_BOLD, 1u + DFI_ABILITY_PRANKSTER, 1u + DFI_ITEM_LIGHTCLAY,
          {32u, 0u, 32u, 0u, 2u, 0u}, {DFI_MOVE_REFLECT, DFI_MOVE_LIGHTSCREEN, DFI_MOVE_SPIRITBREAK, 0u}, 3u},
     };

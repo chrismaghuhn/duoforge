@@ -127,6 +127,21 @@ static uint32_t dfi_move_of(const dfi_member *m, uint32_t move_slot)
  * move's priority (switches have none), and the action speed of the
  * Pokemon in the slot: the one leaving for a switch, the fainted one for a
  * replacement, the one that came in for its entry. */
+/* ModifyPriority: Prankster gives status moves +1, Grassy Glide gets +1
+ * in Grassy Terrain for a grounded user. Biased like the move table. */
+static uint32_t dfi_move_priority(const struct duoforge_battle *b, const dfi_member *m, const dfi_move_data *md)
+{
+    uint32_t priority = md->priority;
+    if (dfi_ability(m, DFI_ABILITY_PRANKSTER) && md->category == DFI_CATEGORY_STATUS) {
+        priority += 1u;
+    }
+    if (md->special == DFI_SPECIAL_GRASSY_GLIDE && b->terrain == DFI_TERRAIN_GRASSY &&
+        !dfi_has_type(m, DFI_TYPE_FLYING)) {
+        priority += 1u;
+    }
+    return priority;
+}
+
 static duoforge_status dfi_key_of(dfi_run *r, const dfi_queue_record *q, dfi_key *out)
 {
     if (q->kind == DFI_Q_RESIDUAL) {
@@ -158,10 +173,7 @@ static duoforge_status dfi_key_of(dfi_run *r, const dfi_queue_record *q, dfi_key
     out->order = order;
     out->priority = DFI_PRIORITY_BIAS;
     if (q->kind == DFI_Q_MOVE) {
-        const dfi_move_data *md = &dfi_closure_moves[dfi_move_of(m, q->move_slot)];
-        /* ModifyPriority: Prankster gives status moves +1. */
-        out->priority = (uint32_t)md->priority +
-                        ((dfi_ability(m, DFI_ABILITY_PRANKSTER) && md->category == DFI_CATEGORY_STATUS) ? 1u : 0u);
+        out->priority = dfi_move_priority(r->b, m, &dfi_closure_moves[dfi_move_of(m, q->move_slot)]);
     }
     out->speed = speed;
     return DUOFORGE_OK;
@@ -555,6 +567,15 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     /* BasePower (after the critical hit roll), one chained modifier: Mystic
      * Water (Water) and Miracle Seed (Grass) 4915/4096, Grassy Terrain
      * 5325/4096 for a grounded user's Grass move. */
+    /* Weather Ball doubles in rain or sun (onModifyMove); Grass Knot's power
+     * follows the target's weight (basePowerCallback). */
+    uint32_t power = md->base_power;
+    if (md->special == DFI_SPECIAL_WEATHER_BALL && r->b->weather != DFI_WEATHER_NONE) {
+        power *= 2u;
+    } else if (md->special == DFI_SPECIAL_GRASS_KNOT) {
+        const uint32_t w = dfi_forme_of(d)->weight_hg;
+        power = w >= 2000u ? 120u : w >= 1000u ? 100u : w >= 500u ? 80u : w >= 250u ? 60u : w >= 100u ? 40u : 20u;
+    }
     uint32_t bp_chain = 4096u;
     bool ok = true;
     if ((move_type == DFI_TYPE_WATER && dfi_holds(a, DFI_ITEM_MYSTICWATER)) ||
@@ -564,7 +585,7 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     if (move_type == DFI_TYPE_GRASS && r->b->terrain == DFI_TERRAIN_GRASSY && !dfi_has_type(a, DFI_TYPE_FLYING)) {
         ok = ok && dfi_chain_modify(bp_chain, 5325u, &bp_chain);
     }
-    const uint32_t base_power = bp_chain == 4096u ? md->base_power : dfi_modify(md->base_power, bp_chain);
+    const uint32_t base_power = bp_chain == 4096u ? power : dfi_modify(power, bp_chain);
     /* ModifyAtk / ModifySpA, one chained modifier: Blaze for Fire moves at a
      * third of the HP or less, Flash Fire's boost for Fire moves once it
      * took one; 1.5 each. */
@@ -1009,8 +1030,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     /* TryMove: Armor Tail on a standing foe stops a move with positive
      * priority aimed at the holder's side. */
     {
-        const uint32_t priority = (uint32_t)md->priority + ((dfi_ability(m, DFI_ABILITY_PRANKSTER) &&
-                                                               md->category == DFI_CATEGORY_STATUS) ? 1u : 0u);
+        const uint32_t priority = dfi_move_priority(b, m, md);
         const uint32_t aimed = targets[count - 1u];
         if (priority > DFI_PRIORITY_BIAS && aimed / 2u != side && md->target_class != DUOFORGE_TARGET_CLASS_SELF &&
             md->target_class != DUOFORGE_TARGET_CLASS_ALLY_SIDE && md->target_class != DUOFORGE_TARGET_CLASS_ALL) {
@@ -1056,9 +1076,14 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         dfi_boost(r, user, md->boosts, DFI_POSITIONS);
         return DUOFORGE_OK;
     }
-    if (md->special != DFI_SPECIAL_NONE && md->special != DFI_SPECIAL_STRUGGLE &&
-        md->special != DFI_SPECIAL_HURRICANE) {
-        return DUOFORGE_E_UNSUPPORTED;
+    if (md->special == DFI_SPECIAL_ELECTRO_SHOT || md->special == DFI_SPECIAL_PARTING_SHOT ||
+        md->special > DFI_SPECIAL_STRUGGLE) {
+        return DUOFORGE_E_UNSUPPORTED; /* steps 10b and 12 */
+    }
+    /* Fake Out's onTry (in trySpreadMoveHit, after TryMove): only on the
+     * first move action since it entered. */
+    if (md->special == DFI_SPECIAL_FAKE_OUT && pos->move_actions > 1u) {
+        return DUOFORGE_OK;
     }
     /* Hurricane never misses in rain and has 50 accuracy under sun. */
     uint32_t base_accuracy = md->accuracy;
@@ -1070,7 +1095,14 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         }
     }
     /* Struggle is typeless (its onModifyMove). */
-    const uint32_t move_type = md->special == DFI_SPECIAL_STRUGGLE ? DFI_CLOSURE_NONE : md->type;
+    /* Struggle is typeless; Weather Ball turns Water in rain, Fire under sun
+     * (its onModifyType, before the hit steps). */
+    uint32_t move_type = md->special == DFI_SPECIAL_STRUGGLE ? DFI_CLOSURE_NONE : md->type;
+    if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_RAIN) {
+        move_type = DFI_TYPE_WATER;
+    } else if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_SUN) {
+        move_type = DFI_TYPE_FIRE;
+    }
     const bool spread = count > 1u;
     /* Hit steps: Protect (TryHit), type immunity, accuracy per target. */
     bool hit[DFI_POSITIONS] = {false, false, false, false};

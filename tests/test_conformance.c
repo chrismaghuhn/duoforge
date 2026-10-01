@@ -43,7 +43,8 @@ static void build_setup(const df_conf_battle *cb, duoforge_battle_setup *s)
     }
 }
 
-static unsigned compare_state(const duoforge_battle *b, const df_conf_step *st, const char *name, uint32_t step)
+static unsigned compare_state(const duoforge_context *ctx, const duoforge_battle *b, const df_conf_step *st,
+                              const char *name, uint32_t step)
 {
     unsigned bad = 0;
     if (b->turn != st->turn) {
@@ -61,6 +62,37 @@ static unsigned compare_state(const duoforge_battle *b, const df_conf_step *st, 
                 b->weather_turns, b->terrain, b->terrain_turns, st->field[0], st->field[1], st->field[2],
                 st->field[3]);
         ++bad;
+    }
+    /* The moves the request offers per slot match the reference's request:
+     * disabled moves (no PP, Fake Out) and Struggle. */
+    if (b->boundary_kind == DUOFORGE_BOUNDARY_TURN) {
+        for (uint32_t s = 0; s < 2u; ++s) {
+            static duoforge_side_choice cands[DUOFORGE_MAX_CANDIDATES];
+            uint32_t n = 0;
+            if (duoforge_battle_candidates(ctx, b, s, cands, DUOFORGE_MAX_CANDIDATES, &n) != DUOFORGE_OK) {
+                fprintf(stderr, "  %s step %u: side %u has no candidates\n", name, step, s);
+                ++bad;
+                continue;
+            }
+            uint32_t mask[2] = {0u, 0u};
+            for (uint32_t i = 0; i < n; ++i) {
+                for (uint32_t k = 0; k < 2u; ++k) {
+                    const duoforge_slot_command *c = &cands[i].slots[k];
+                    if (c->kind == DUOFORGE_SLOT_MOVE) {
+                        mask[k] |= c->move_slot == DUOFORGE_MOVE_SLOT_STRUGGLE ? 0x10u : 1u << c->move_slot;
+                    }
+                }
+            }
+            for (uint32_t k = 0; k < 2u; ++k) {
+                const uint32_t occ = b->sides[s].positions[k].occupant;
+                const bool alive = occ < DUOFORGE_MAX_ROSTER && b->sides[s].members[occ].hp != 0u;
+                if (st->enabled[s][k] != 0xFFu && alive && mask[k] != st->enabled[s][k]) {
+                    fprintf(stderr, "  %s step %u: side %u slot %u offers 0x%x, reference 0x%x\n", name, step, s,
+                            k, mask[k], st->enabled[s][k]);
+                    ++bad;
+                }
+            }
+        }
     }
     /* Entries in the reference's order have rising activation ids. */
     uint32_t last_activation = 0u;
@@ -192,13 +224,13 @@ int main(void)
                 ++bad;
                 break;
             }
-            bad += compare_state(b, st, cb->name, si);
+            bad += compare_state(k2, b, st, cb->name, si);
             DF_CHECK(&t, duoforge_battle_check(k2, b) == DUOFORGE_OK);
         }
         DF_CHECK_EQ_U64(&t, bad, 0u);
         duoforge_battle_destroy(b);
     }
-    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 34u);
+    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 36u);
     duoforge_context_destroy(k2);
     return df_test_end(&t);
 }

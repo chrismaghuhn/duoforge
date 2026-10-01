@@ -33,7 +33,8 @@ This is a status manifest, **not** a mechanics certificate. "IMPLEMENTED + TESTE
 | Stamina, Competitive, Flash Fire (absorb), Lightning Rod, Good as Gold, Armor Tail, Prankster, Blaze | **IMPLEMENTED + TESTED** for development teams; 3 recorded reference battles (decision 0006 section 4.6) |
 | Leftovers, Sitrus Berry, Grassy Seed, Life Orb, Mystic Water, Light Clay | **IMPLEMENTED + TESTED** for development teams; 5 recorded reference battles (decision 0006 section 4.7) |
 | Recoil (Wood Hammer, Brave Bird), drain (Bitter Blade, Leech Life), self-drops (Close Combat, Make It Rain), Miracle Seed, Grassy Terrain's Grass boost, Flash Fire's boost | **IMPLEMENTED + TESTED** for development teams; 2 recorded reference battles (decision 0006 section 4.8) |
-| Weather Ball, Grass Knot, Grassy Glide, Fake Out, Electro Shot, Mega Stones, Contrary, No Guard, Tough Claws (Mega formes), Emergency Exit, Parting Shot, Mega Evolution | **UNSUPPORTED** (`E_UNSUPPORTED`, atomic; steps 10 to 12) |
+| Weather Ball, Grass Knot, Grassy Glide, Fake Out (disabled after the first move action) | **IMPLEMENTED + TESTED** for development teams; 2 recorded reference battles; the request is compared with the reference's after every step (decision 0006 section 4.9) |
+| Electro Shot, Mega Stones, Contrary, No Guard, Tough Claws (Mega formes), Emergency Exit, Parting Shot, Mega Evolution | **UNSUPPORTED** (`E_UNSUPPORTED`, atomic; steps 10b to 12) |
 
 State snapshots and decodability are foundation evidence, **not proof that unimplemented future mechanics restore correctly**.
 

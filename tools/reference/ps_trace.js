@@ -10,8 +10,10 @@
 // with "max_steps"): then a replacement request is answered with the first
 // standing reserves in team order, a move choice for a fainted slot becomes
 // "pass", a move without PP falls back to the first with PP, a target is
-// dropped for a move that takes none (and is 1 for one that needs it), and
-// an exhausted plan repeats its last entry. The trace records the choices
+// dropped for a move that takes none (and is 1 for one that needs it), a
+// switch to a Pokemon that cannot come in goes to the first standing
+// reserve (or becomes "move 1 1"), and an exhausted plan repeats its last
+// entry. The trace records the choices
 // actually made. The harness runs
 // the battle with a recording PRNG and prints a normalized trace: for every
 // choice entry the draws it caused (site, bounds, value), the protocol
@@ -37,7 +39,7 @@ const fs = require('fs');
 const path = require('path');
 
 const PIN = 'b2cb775b0616115b775534eaeff50300e1fc81fc';
-const HARNESS_VERSION = 8;
+const HARNESS_VERSION = 10;
 
 // Stack frame name -> site. The first match in stack order wins.
 const SITE_RULES = [
@@ -235,6 +237,11 @@ function main() {
         terrain_turns: battle.field.terrainState.duration || 0,
         sides: battle.sides.map((side) => ({
             request: side.requestState || '',
+            // Per active slot of a move request: 1 a selectable move, 0 a
+            // disabled one (no PP, Fake Out), 2 Struggle.
+            enabled: side.requestState === 'move' && side.activeRequest && side.activeRequest.active ?
+                side.activeRequest.active.map((a) => (a.moves || []).map((mv) =>
+                    (mv.id === 'struggle' ? 2 : (mv.disabled ? 0 : 1)))) : [],
             active: side.active.map((p) => (p ? side.pokemon.indexOf(p) : -1)),
             pokemon: side.pokemon.map((p) => ({
                 species: p.species.name,
@@ -312,7 +319,22 @@ function main() {
                     const plan = spec.plan[id];
                     const raw = plan[Math.min(next[id], plan.length - 1)].split(', ');
                     next[id] += 1;
-                    text = side.active.map((p, k) => (!p || p.fainted ? 'pass' : planMove(p, raw[k]))).join(', ');
+                    // A planned switch to a fainted or active Pokemon (or one
+                    // the other slot already takes) goes to the first standing
+                    // reserve, or becomes "move 1 1" when none is left.
+                    const taken = new Set();
+                    text = side.active.map((p, k) => {
+                        if (!p || p.fainted) return 'pass';
+                        const w = raw[k].split(' ');
+                        if (w[0] !== 'switch') return planMove(p, raw[k]);
+                        let n = Number(w[1]) - 1;
+                        const ok = (i) => i >= side.active.length && side.pokemon[i] && !side.pokemon[i].fainted &&
+                            !taken.has(i);
+                        if (!ok(n)) n = side.pokemon.findIndex((q, i) => ok(i));
+                        if (n < 0) return planMove(p, 'move 1 1');
+                        taken.add(n);
+                        return 'switch ' + (n + 1);
+                    }).join(', ');
                 }
                 choose(id, text);
                 entry[id] = text;

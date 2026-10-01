@@ -310,18 +310,33 @@ def convert(root, name, tables, out, all_tape):
                 if flat not in entries:
                     entries.append(flat)
         ent = entries + [0xFF] * (4 - len(entries))
+        # The moves the reference's request offers per slot: bit k for move k,
+        # 0x10 for Struggle, 0xFF where there is nothing to compare.
+        enabled = []
+        for s in range(2):
+            rows = new_state['sides'][s]['enabled']
+            row = []
+            for k in range(2):
+                if k >= len(rows) or not rows[k]:
+                    row.append(0xFF)
+                elif rows[k] == [2]:
+                    row.append(0x10)
+                else:
+                    row.append(sum(1 << i for i, e in enumerate(rows[k]) if e == 1))
+            enabled.append('{%s}' % ', '.join('%du' % x for x in row))
         weather = WEATHER[new_state['weather']]
         terrain = TERRAIN[new_state['terrain']]
         field = (weather, new_state['weather_turns'] if weather else 0, terrain,
                  new_state['terrain_turns'] if terrain else 0)
         boundary = boundary_of(new_state)
         result = RESULT[new_state['winner']] if boundary == 5 else 0
-        steps.append('    {%du, %du, %du, %du, %du, %du, %du, %du, {%s}, {%s}, {%s}, {%s}, {%s}, {{%s}, {%s}}},'
+        steps.append('    {%du, %du, %du, %du, %du, %du, %du, %du, {%s}, {%s}, {%s}, {%s}, {%s}, {%s}, {{%s}, {%s}}},'
                      '  /* %d draws dropped */' % (
                          1 if team else 0, 1 if 0 in kinds else 0, 1 if 1 in kinds else 0, tape_off,
                          len(all_tape) - tape_off, new_state['turn'], boundary, result, ', '.join(pk),
                          ', '.join(cmds), ', '.join(occ), ', '.join('%du' % x for x in ent),
-                         ', '.join('%du' % x for x in field), ', '.join(mons[0]), ', '.join(mons[1]), dropped))
+                         ', '.join('%du' % x for x in field), ', '.join(enabled), ', '.join(mons[0]),
+                         ', '.join(mons[1]), dropped))
         state = new_state
     w('static const df_conf_step conf_%s_steps[] = {' % name)
     out.extend(steps)
@@ -359,11 +374,13 @@ def main():
            ' * result afterwards, the picks of a team step, slot commands, the occupants',
            ' * of the positions afterwards (roster index, 0xFF empty), the positions',
            ' * (side * 2 + slot) that received a Pokemon in the reference\'s order (0xFF',
-           ' * pads), weather, its turns, terrain, its turns, the expected members by',
-           ' * roster index */',
+           ' * pads), weather, its turns, terrain, its turns, the moves the request',
+           ' * offers per slot (bit k move k, 0x10 Struggle, 0xFF none), the expected',
+           ' * members by roster index */',
            'typedef struct df_conf_step {',
            '    uint32_t team, answered0, answered1, tape_off, tape_len, turn, boundary, result;',
            '    uint8_t picks[2][6];', '    df_conf_cmd cmds[2][2];', '    uint8_t occupants[2][2];', '    uint8_t entries[4];', '    uint8_t field[4];',
+           '    uint8_t enabled[2][2];',
            '    df_conf_mon mons[2][6];', '} df_conf_step;',
            'typedef struct df_conf_battle {', '    const char *name;', '    uint32_t member_count;',
            '    const df_conf_member (*members)[6];', '    const df_conf_step *steps;', '    uint32_t step_count;',
