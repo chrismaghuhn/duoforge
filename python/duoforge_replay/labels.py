@@ -108,6 +108,7 @@ def _slot_label(segment, side, k, options_list, moves, member_of, tables, vacant
     position = side * 2 + k
     mega = _mega_shown(segment, position)
     acted = False  # a move-phase line of anyone came before
+    encored = False  # an Encore started on this position since the choice
     for index, line in enumerate(segment):
         kind = line_kind(line)
         parts = line.split("|")
@@ -129,7 +130,13 @@ def _slot_label(segment, side, k, options_list, moves, member_of, tables, vacant
                 if move is not None and moves is not None and move in moves:
                     return _move_options(options_list, mega, moves.index(move)), TARGET_UNKNOWN
             return None, None
+        if kind == "-start" and len(parts) > 3 and parts[3] == "Encore" and flat_position(parts[2]) == position:
+            encored = True
         if kind == "move" and flat_position(parts[2]) == position:
+            if encored:
+                # Encore started on this position before it moved: a queued move of another slot is replaced by the
+                # Encored one (Champions), so the move line is not what was chosen
+                return _all(options_list), UNKNOWN
             return _move_label(segment, index, parts, side, options_list, moves, mega, tables, vacant)
     return None, None
 
