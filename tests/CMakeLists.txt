@@ -148,6 +148,8 @@ duoforge_add_test(NAME duoforge.data.api SOURCES test_data_api.c WHITEBOX TIMEOU
 duoforge_add_test(NAME duoforge.state.pool_tail SOURCES test_pool_tail.c WHITEBOX TIMEOUT 120)
 # Step G8: Throat Chop and Psychic Noise's Heal Block in the tail, the request and the POOL view extension.
 duoforge_add_test(NAME duoforge.state.pool_g8 SOURCES test_pool_g8.c WHITEBOX TIMEOUT 60)
+# Step G7: Wide Guard in the tail, the stall counter and the POOL view extension.
+duoforge_add_test(NAME duoforge.state.pool_g7 SOURCES test_pool_g7.c WHITEBOX TIMEOUT 60)
 # Sandstorm and Snowscape (the weather step): the view of the weather battles against the protocol lines, the sources of
 # immunity that stay unmarked, the weather values as state.
 duoforge_add_test(NAME duoforge.state.pool_weather SOURCES test_pool_weather.c WHITEBOX TIMEOUT 60)
@@ -280,6 +282,14 @@ if(DUOFORGE_PS_REFERENCE_DIR)
                 "${DUOFORGE_NODE}" "${DUOFORGE_PS_REFERENCE_DIR}" "$<TARGET_FILE:duoforge_diff_runner>"
                 "${CMAKE_CURRENT_BINARY_DIR}/diff_pool_smoke")
         set_tests_properties(duoforge.reference.diff_pool_smoke PROPERTIES TIMEOUT 600 LABELS reference
+            ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+        # Step G7: a team with Wide Guard plays twenty battles that all PASS under POOL, every request sampled for the
+        # domain check, some with a guard that stops a spread move.
+        add_test(NAME duoforge.reference.diff_wide_guard_smoke
+            COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_diff_wide_guard_smoke.py"
+                "${DUOFORGE_NODE}" "${DUOFORGE_PS_REFERENCE_DIR}" "$<TARGET_FILE:duoforge_diff_runner>"
+                "${CMAKE_CURRENT_BINARY_DIR}/diff_wide_guard_smoke")
+        set_tests_properties(duoforge.reference.diff_wide_guard_smoke PROPERTIES TIMEOUT 900 LABELS reference
             ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
         # The paste importer (data/teams) with the pinned pokedex: the facts it reads, the owner's raw pastes of
         # decision 0004, the registry as a fixed point of the importer, and the command line end to end.

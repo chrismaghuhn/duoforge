@@ -291,6 +291,9 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
          * by the -end lines or when the occupant leaves (the tail is cleared then), as section 6.1 says; an empty
          * position has no tail. */
         for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+            /* Step G7: Wide Guard of the side (public: [-singleturn] Wide Guard). It lasts the turn and ends in the
+             * residual, so it is set only at a boundary inside a turn (a PIVOT), as decision 0018 section 3.3 says. */
+            o.sides[s].guard_flags = battle->tail.sides[s].wide_guard != 0u ? (uint8_t)DUOFORGE_SIDE_GUARD_WIDE_GUARD : 0u;
             for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
                 const dfi_tail_pos *tail = &battle->tail.sides[s].positions[p];
                 uint32_t vol = 0u;

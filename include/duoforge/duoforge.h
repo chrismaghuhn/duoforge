@@ -33,9 +33,9 @@ extern "C" {
 #endif
 
 #define DUOFORGE_VERSION_MAJOR 0
-#define DUOFORGE_VERSION_MINOR 27
+#define DUOFORGE_VERSION_MINOR 28
 #define DUOFORGE_VERSION_PATCH 0
-#define DUOFORGE_VERSION_STRING "0.27.0"
+#define DUOFORGE_VERSION_STRING "0.28.0"
 
 /* Identifiers of the artifacts that exist now (registry: decisions 0002, 0005, 0006). */
 #define DUOFORGE_SEMANTICS_ID           3u   /* "duoforge-m3-closure" */
@@ -836,7 +836,9 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_EVENT_BLOCKED         15u /* [-activate move: Protect] position: the protected Pokemon
                                               (detail 0); detail DUOFORGE_FIELD_PSYCHIC_TERRAIN: [-activate move:
                                               Psychic Terrain], a priority move stopped at a grounded target
-                                              (Team C) */
+                                              (Team C); detail DUOFORGE_BLOCK_WIDE_GUARD: [-activate move: Wide
+                                              Guard], a spread move stopped at a target of the guarded side
+                                              (POOL kinds) */
 #define DUOFORGE_EVENT_BOOST           16u /* [-boost] position, detail: stat (0 atk .. 6 evasion), amount; cause */
 #define DUOFORGE_EVENT_UNBOOST         17u /* [-unboost] as BOOST */
 #define DUOFORGE_EVENT_STATUS          18u /* [-status] position, detail: DUOFORGE_AILMENT_* */
@@ -903,6 +905,7 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_EVENT_FLAG_MISS     64u  /* MOVE: a single-target move missed ([miss]) */
 #define DUOFORGE_EVENT_FLAG_NOTARGET 128u /* MOVE: no target left ([notarget]) */
 
+#define DUOFORGE_BLOCK_WIDE_GUARD 4u /* BLOCKED detail: Wide Guard (POOL kinds); 0 Protect, 3 Psychic Terrain */
 #define DUOFORGE_VOLATILE_HEAL_BLOCK 1u /* VOLATILE_START / VOLATILE_END: Heal Block (Psychic Noise, 2 turns) */
 #define DUOFORGE_FIELD_GRASSY_TERRAIN 1u
 #define DUOFORGE_FIELD_TRICK_ROOM     2u

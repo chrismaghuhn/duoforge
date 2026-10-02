@@ -88,6 +88,9 @@
  * kinds of the generic column plus the flags2 column, no longer handler ids
  * (seven remain); recorded as g8_throat_chop, g8_heal_block,
  * g8_heal_block_pair, g8_heal_block_tie_a and _b under the POOL kind.
+ * Step G7 marks Wide Guard (a side condition for the turn that stops the spread moves of the foes at every target of
+ * its side, with the stall counter raised and no roll; its handler id stays in the tables, the turn code runs it),
+ * recorded as g7_wide_guard_a, _b, _ally and _pivot under the POOL kind.
  * Step G11 marks Soak (the target is pure Water until it leaves the field, faints or Mega Evolves: the soak type of the
  * POOL tail, read through dfi_types_of by every rule that reads a type; its handler id is code in the turn core now;
  * six handler ids remain), recorded as g11_soak, g11_soak_mega, g11_soak_stab and g11_soak_electro under the POOL kind.
@@ -173,6 +176,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_SNOWSCAPE] = 1u,
             [DFI_MOVE_THROATCHOP] = 1u,
             [DFI_MOVE_PSYCHICNOISE] = 1u,
+            [DFI_MOVE_WIDEGUARD] = 1u,
             [DFI_MOVE_SOAK] = 1u,
             [DFI_MOVE_MOONBLAST] = 1u,
             [DFI_MOVE_CALMMIND] = 1u,
@@ -268,12 +272,14 @@ const dfi_support_manifest dfi_support = {
      * records its battles. Step G8: Throat Chop and Heal Block (the position bits of duoforge_observation_ext, public,
      * verified against g8_throat_chop, g8_heal_block, g8_heal_block_pair and _tie_a/_b step by step in
      * duoforge.state.pool_g8). Step G11: the type change of Soak (bit 9: TYPE_CHANGED and type_now of the position, public,
-     * verified against the four g11 battles in duoforge.state.pool_g11). */
+     * verified against the four g11 battles in duoforge.state.pool_g11). Step G7: Wide Guard (bit 17: guard_flags, public,
+     * verified in duoforge.state.pool_g7). */
     /* Step Sandstorm and Snowscape: bits 0 and 1, the weather values of the old observation's weather field (the
      * -weather lines of Sand Stream, Snow Warning and the two moves, verified step by step in duoforge.state.pool_weather). */
     .view_ext_features = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TYPE_CHANGE) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WIDE_GUARD) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WEATHER_SAND) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WEATHER_SNOW),
 };

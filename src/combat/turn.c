@@ -1944,6 +1944,33 @@ static duoforge_status dfi_run_protect(dfi_run *r, uint32_t user)
     return dfi_status_hit_end(r);
 }
 
+/* Wide Guard (data/moves.ts:20808-20851; POOL kinds, the side's flag is in the state tail). Its onTry (:20818) fails
+ * unless another action is pending (queue.willAct), as Protect's does. Its side condition lasts the turn:
+ * addSideCondition prints [-singleturn] user|Wide Guard once (onSideStart, :20825-20827); a second Wide Guard of the
+ * same side adds nothing and prints nothing but is no failure (the side condition's false result is combined with
+ * onHitSide's success, sim/battle-actions.ts:1240-1243, 1273-1275, 1561-1575). onHitSide gives the user the stall
+ * volatile (:20821-20823) without Protect's roll: the counter goes up as after a successful Protect, so a later Protect
+ * rolls against it (data/conditions.ts:439-461). A side move does not reach the Champions hit loop (no Update). */
+static duoforge_status dfi_run_wide_guard(dfi_run *r, uint32_t user)
+{
+    struct duoforge_battle *b = r->b;
+    if (!dfi_will_act(b)) {
+        dfi_fail_still(r, user);
+        return DUOFORGE_OK;
+    }
+    dfi_tail_side *ts = &b->tail.sides[user / 2u];
+    if (ts->wide_guard == 0u) {
+        ts->wide_guard = (uint8_t)DFI_TAIL_WIDE_GUARD_MAX;
+        duoforge_event e = dfi_ev(DUOFORGE_EVENT_SINGLE_TURN, user, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
+        e.id = (uint16_t)DFI_MOVE_WIDEGUARD;
+        dfi_emit(r, &e); /* [-singleturn] user|Wide Guard */
+    }
+    dfi_active_slot *pos = dfi_pos(b, user);
+    pos->stall_level = (uint8_t)(pos->stall_level < DFI_STALL_LEVEL_MAX ? pos->stall_level + 1u : pos->stall_level); /* wide-operands-reviewed */
+    pos->stall_turns = (uint8_t)DFI_STALL_DURATION;
+    return DUOFORGE_OK;
+}
+
 /* Nothing to hit: [notarget] on the last move line, then -fail. */
 static duoforge_status dfi_no_target(dfi_run *r, uint32_t user)
 {
@@ -2319,6 +2346,9 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     if (md->special == DFI_SPECIAL_PROTECT) {
         return dfi_run_protect(r, user);
     }
+    if (md->special == DFI_SPECIAL_WIDE_GUARD) {
+        return dfi_run_wide_guard(r, user);
+    }
     if (md->special == DFI_SPECIAL_FOLLOW_ME) {
         return dfi_run_follow_me(r, user);
     }
@@ -2460,9 +2490,29 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         return DUOFORGE_E_UNSUPPORTED;
     }
     bool hit[DFI_POSITIONS] = {false, false, false, false};
+    /* Wide Guard's onTryHit (priority 4, data/moves.ts:20828-20844) runs for every target before Protect's (3): it
+     * stops a move whose target class is allAdjacentFoes (or allAdjacent, which the tables do not have yet) and that
+     * has the protect flag (checkMoveBypassesProtect, sim/battle.ts:1300-1309), whatever its category and however many
+     * targets are left, one -activate line per guarded target. A guarded target that also protects gets this line
+     * only (its Protect handler is skipped). */
+    bool guarded[DFI_POSITIONS] = {false, false, false, false};
+    if (md->target_class == DUOFORGE_TARGET_CLASS_ALL_ADJACENT_FOES && (md->flags & DFI_MOVE_FLAG_PROTECT) != 0u) {
+        for (uint32_t i = 0u; i < count; ++i) {
+            const uint32_t t = targets[i];
+            if (b->tail.sides[t / 2u].wide_guard != 0u) {
+                guarded[i] = true;
+                duoforge_event e = dfi_event_make(DUOFORGE_EVENT_BLOCKED, t);
+                e.detail = (uint8_t)DUOFORGE_BLOCK_WIDE_GUARD; /* [-activate] move: Wide Guard */
+                dfi_emit(r, &e);
+            }
+        }
+    }
     for (uint32_t i = 0u; i < count; ++i) {
         const uint32_t t = targets[i];
         const dfi_active_slot *tp = dfi_pos(b, t);
+        if (guarded[i]) {
+            continue;
+        }
         if (psychic_block && t / 2u != side && dfi_grounded(b, dfi_at(b, t))) {
             duoforge_event e = dfi_event_make(DUOFORGE_EVENT_BLOCKED, t);
             e.detail = (uint8_t)DUOFORGE_FIELD_PSYCHIC_TERRAIN; /* [-activate] move: Psychic Terrain */
@@ -3606,6 +3656,10 @@ static duoforge_status dfi_residual_events(dfi_run *r)
             if (tail->throat_chop_turns != 0u) {
                 tail->throat_chop_turns = (uint8_t)((uint32_t)tail->throat_chop_turns - 1u); /* wide-operands-reviewed */
             }
+        }
+        /* Wide Guard's side condition has duration 1 and no end line: it is gone after this residual. */
+        for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+            b->tail.sides[s].wide_guard = 0u;
         }
     }
     /* The duration handlers in their order: the side conditions (26), Trick
