@@ -385,6 +385,54 @@ class Library(unittest.TestCase):
                 self.assertEqual(len(st['tape']) + st['dropped'], len(raw['draws']), '%s step %d' % (name, i))
             self.assertEqual(data['dropped_total'], sum(st['dropped'] for st in data['steps']), name)
 
+    def test_the_tie_of_two_fairy_aura_handlers_is_a_dropped_draw(self):
+        """g12_fairy_aura_both: both Floettes are Mega with the same Speed, so their Fairy Aura handlers tie in the
+        BasePower event of every damaging move. Exactly one of them applies (move.auraBooster) whichever runs first, so
+        each draw is dropped, with its reason, and the battle converts; any other handler in the group is refused."""
+        name = 'g12_fairy_aura_both'
+        spec, trace = battle(name)
+        data = convert(name, spec, trace)
+        found = [(k, d) for k, step in enumerate(trace['steps']) for d in step['draws'] if d.get('context') == 'event:BasePower']
+        self.assertGreater(len(found), 4)
+        for k, d in found:
+            self.assertEqual(d['site'], 'SPEED_TIE')
+            self.assertEqual(sorted(d['group']), ['H:fairyaura:p1a:cb', 'H:fairyaura:p2a:cb'])
+            before = trace['steps'][k - 1]['state'] if k else trace['start']['state']
+            self.assertEqual(trace_to_c.drop_reason(d, before, trace['steps'][k]['state']),
+                             'Fairy Aura handlers whose order changes nothing')
+        k, d = found[0]
+        before = trace['steps'][k - 1]['state'] if k else trace['start']['state']
+        after = trace['steps'][k]['state']
+        for group, context in ((['H:fairyaura:p1a:cb', 'H:lifeorb:p2a:cb'], 'event:BasePower'),
+                               (['H:fairyaura:p1a:cb', 'H:fairyaura:p2a:end'], 'event:BasePower'),
+                               (['H:fairyaura:p1a:cb', 'H:fairyaura:p2a:cb'], 'event:ModifyDamage')):
+            with self.subTest(group=group, context=context), self.assertRaises(trace_to_c.ConversionError) as cm:
+                trace_to_c.drop_reason(dict(d, group=group, context=context), before, after)
+            self.assertEqual(cm.exception.rule, 'modifydamage-tie' if context == 'event:ModifyDamage' else 'tie-context')
+        self.assertTrue(all(len(step['tape']) + step['dropped'] == len(trace['steps'][k]['draws'])
+                            for k, step in enumerate(data['steps'])))
+
+    def test_a_flower_veil_block_is_the_activate_event_of_the_ability_with_the_holder_in_other(self):
+        """-block|protected|ability: Flower Veil|[of] holder (step G12): ACTIVATE at the protected Pokemon, cause ABILITY,
+        the ability's id + 1, the holder in `other` (the ability's own activation has none); another -block is refused."""
+        pool = tables(True)
+        line = '|-block|p1b: Rillaboom|ability: Flower Veil|[of] p1a: Floette'
+        events = trace_to_c.step_events([line], 0, {}, {}, pool)
+        self.assertEqual(events, [trace_to_c.ev_tuple(trace_to_c.EV['ACTIVATE'], 1, 0, trace_to_c.CAUSE['ABILITY'], 0,
+                                                      pool['ABILITY']['FLOWERVEIL'] + 1)])
+        for bad in ('|-block|p1b: Rillaboom|ability: Flower Veil',  # no [of]
+                    '|-block|p1b: Rillaboom|move: Protect|[of] p1a: Floette',
+                    '|-block|p1b: Rillaboom|ability: Flower Veil|extra|[of] p1a: Floette'):
+            with self.subTest(bad), self.assertRaises(trace_to_c.ConversionError) as cm:
+                trace_to_c.step_events([bad], 0, {}, {}, pool)
+            self.assertEqual(cm.exception.rule, 'block-line')
+        # The converted battles have the event: the opening Intimidate and the Hypnosis of g12_flower_veil_a/_b.
+        for name in ('g12_flower_veil_a', 'g12_flower_veil_b'):
+            spec, trace = battle(name)
+            logs = [l for step in trace['steps'] for l in step['log'] if l.startswith('|-block|')]
+            self.assertTrue(logs, name)
+            convert(name, spec, trace)
+
     def test_the_tie_of_two_no_guard_handlers_is_a_dropped_draw(self):
         """d01_noguard_accuracy_tie (a cut of fz_1_118 of the differential loop's seed 1): both Raichu are Mega Raichu Y,
         whose No Guard handlers tie in the Accuracy event of the first attack. The draw is dropped, with its reason,
@@ -624,7 +672,7 @@ class Library(unittest.TestCase):
         self.assertTrue(any(l.startswith('|switch|p1a: Arcanine|Arcanine-Hisui, L50, M|') for l in lines))
 
     def test_every_move_marked_beyond_the_extended_ids_is_used_in_a_pool_battle(self):
-        """A move that the pool manifest marks beyond the extended ids (twelve of step G2, U-turn of step G5) was used in
+        """A move that the pool manifest marks beyond the extended ids (twelve of step G2, U-turn of step G5, Moonblast and Calm Mind of step G12) was used in
         a committed pool battle: a move line of it that did something (damage, or a boost for a status move) before
         the next move line."""
         def read(*p):
@@ -637,7 +685,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 15)
+        self.assertEqual(len(marked), 17)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []

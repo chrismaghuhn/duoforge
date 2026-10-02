@@ -33,6 +33,17 @@
       },
       "notes": "Team C of decision 0009, the third reference team: the six Pokemon of the doubles ranking of season M-6 on pokechamdb.com that the owner chose, with their most used sets (read on 2026-10-01; docs/research/third-team/README.md says how). It has no event and no placing. Genders as stated in the file; Indeedee-F is female. This file is a copy of docs/research/third-team/team-c.txt, which other tests use and which stays; a test holds the two equal.",
       "sha256": "4c625aff89a656e1e52ffe75e98d429d5f9f915aa17ba05dde6941a38004fd3b"
+    },
+    {
+      "id": "PP_8025F0AEF5F2D1B6",
+      "name": "Floette-Eternal Mega team (pokepast 8025f0aef5f2d1b6)",
+      "source": {
+        "url": "https://pokepast.es/8025f0aef5f2d1b6",
+        "event": null,
+        "placing": null
+      },
+      "notes": "A Floette-Eternal with Floettite team from the pastes survey of 2026-10-02 (docs/research/expansion/team-gaps.md): Flower Veil, Moonblast, Dazzling Gleam, Calm Mind and Protect next to Rillaboom, Incineroar and Raichunite Y, added by step G12 for the Floette differential campaign. The paste states one gender (Floette-Eternal, F); the importer adds the others.",
+      "sha256": "cd85ddd5398c9841eab6bdb4fd69fa9ce8705802279caae8e7683a1d09814de1"
     }
   ]
 }

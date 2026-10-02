@@ -147,6 +147,54 @@ static duoforge_event dfi_ev(uint32_t kind, uint32_t position, uint32_t cause, u
     return e;
 }
 
+#define DFI_FAIRY_AURA_MODIFIER 5448u /* chainModify([5448, 4096]) */
+
+/* Fairy Aura (data/abilities.ts:1266-1282, onAnyBasePower, priority 20): a Pokemon on the field with the ability (the
+ * Mega Floette's only one; a fainted Pokemon is no longer on the field). It boosts the Fairy moves of every Pokemon on
+ * the field once each (move.auraBooster: a second holder changes nothing), the foes' included. Aura Break (3072/4096
+ * instead) is in no pool forme's legal abilities (checked by tests/test_pool_tables.c). */
+static bool dfi_fairy_aura_on_field(struct duoforge_battle *b)
+{
+    for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
+        const dfi_member *m = dfi_at(b, flat);
+        if (m != NULL && m->hp != 0u && dfi_ability(m, DFI_ABILITY_FAIRYAURA)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/* Flower Veil (data/abilities.ts:1419-1457): the holder protects every Grass-type Pokemon of its side, itself
+ * included (it is Fairy, so what it covers is its allies), against stat drops and statuses that another Pokemon
+ * causes. `flat` is the protected one: its Grass type and a standing holder on its side (the pool has one forme with
+ * the ability, and the Species Clause allows one holder). Flower Veil is breakable (Mold Breaker would ignore it): no
+ * forme of the pool that has Mold Breaker is marked. */
+static bool dfi_flower_veil_holder(struct duoforge_battle *b, uint32_t flat, uint32_t *holder)
+{
+    const dfi_member *target = dfi_at(b, flat);
+    if (target == NULL || !dfi_has_type(target, DFI_TYPE_GRASS)) {
+        return false;
+    }
+    for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
+        const uint32_t other = (flat / 2u) * 2u + slot;
+        const dfi_member *m = dfi_at(b, other);
+        if (m != NULL && m->hp != 0u && dfi_ability(m, DFI_ABILITY_FLOWERVEIL)) {
+            *holder = other;
+            return true;
+        }
+    }
+    return false;
+}
+
+/* -block|target|ability: Flower Veil|[of] holder: the public ACTIVATE event with the protected Pokemon as its
+ * position and the holder in `other` (the ability's own activation has no `other`). */
+static void dfi_flower_veil_block(dfi_run *r, uint32_t flat, uint32_t holder)
+{
+    const duoforge_event e =
+        dfi_ev(DUOFORGE_EVENT_ACTIVATE, flat, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_FLOWERVEIL, holder);
+    dfi_emit(r, &e);
+}
+
 /* An event that shows the HP of the Pokemon at e.position, exact; each
  * player's projection shows the opponent's as the percent display. */
 static void dfi_emit_hp(dfi_run *r, duoforge_event e)
@@ -529,10 +577,25 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
         const uint32_t delta = to + 6u - (uint32_t)pos->stages[i];
         capped[i] = (uint8_t)delta; /* 0..12 */
     }
+    /* TryBoost (after Contrary and the cap): Flower Veil deletes every drop that another Pokemon causes on a Grass
+     * type of its side (sim/battle.ts:2030-2033, data/abilities.ts:1419-1437); the line shows unless the effect is a
+     * move's secondary (effect.secondaries): Intimidate's does, Snarl's does not. */
+    bool veil[DFI_STAT_STAGE_COUNT] = {false, false, false, false, false, false, false};
+    uint32_t holder = 0u;
+    if (source != flat && source != DFI_POSITIONS && dfi_flower_veil_holder(b, flat, &holder)) {
+        bool any = false;
+        for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
+            veil[i] = boosts[i] != DFI_BIAS6 && capped[i] < DFI_BIAS6;
+            any = any || veil[i];
+        }
+        if (any && !(effect.cause == DUOFORGE_CAUSE_MOVE && effect.mode == DFI_BOOST_SECONDARY)) {
+            dfi_flower_veil_block(r, flat, holder);
+        }
+    }
     bool announced = effect.mode == DFI_BOOST_SECONDARY;
     for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
-        if (boosts[i] == DFI_BIAS6) {
-            continue; /* not part of this boost */
+        if (boosts[i] == DFI_BIAS6 || veil[i]) {
+            continue; /* not part of this boost, or blocked */
         }
         const uint32_t before = pos->stages[i];
         uint8_t one[DFI_STAT_STAGE_COUNT] = {6u, 6u, 6u, 6u, 6u, 6u, 6u};
@@ -847,6 +910,11 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     if (dfi_ability(a, DFI_ABILITY_TOUGHCLAWS) && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u) {
         ok = dfi_chain_modify(bp_chain, 5325u, &bp_chain); /* onBasePowerPriority 21: first */
     }
+    /* Fairy Aura (the Mega Floette's ability, onAnyBasePower priority 20: after Tough Claws, before the items): a
+     * Fairy move of anyone on the field, unless it targets its own user, 5448/4096 once. */
+    if (move_type == DFI_TYPE_FAIRY && user != target && dfi_fairy_aura_on_field(r->b)) {
+        ok = ok && dfi_chain_modify(bp_chain, DFI_FAIRY_AURA_MODIFIER, &bp_chain);
+    }
     /* A type booster (the TYPE_BOOSTER family: Mystic Water, Miracle Seed
      * and the sixteen others, decision 0015): 4915/4096 for a move of its
      * type (onBasePowerPriority 15). */
@@ -1062,6 +1130,16 @@ static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status
         (status == DFI_STATUS_PSN && dfi_poison_immune(m))) {
         if (primary) {
             dfi_immune(r, flat, 0u);
+        }
+        return DUOFORGE_OK;
+    }
+    /* SetStatus (sim/pokemon.ts:1724, after the immunities): Flower Veil blocks a status that another Pokemon's move
+     * causes on a Grass type of its side (data/abilities.ts:1438-1448); the line shows for a move's own status
+     * (effect.secondaries is unset) and not for a secondary (Dire Claw's pick, Flare Blitz's burn). */
+    uint32_t holder = 0u;
+    if (user != flat && dfi_flower_veil_holder(r->b, flat, &holder)) {
+        if (primary) {
+            dfi_flower_veil_block(r, flat, holder);
         }
         return DUOFORGE_OK;
     }
@@ -2773,11 +2851,12 @@ static bool dfi_has_switch_in(const dfi_member *m)
 }
 
 /* An entry ability: a weather or a terrain setter (the families of
- * decision 0015: Drizzle, Drought, Grassy Surge, Psychic Surge) or Intimidate. */
+ * decision 0015: Drizzle, Drought, Grassy Surge, Psychic Surge), Intimidate or
+ * Fairy Aura (whose onStart only shows the ability). */
 static bool dfi_has_entry(const dfi_member *m)
 {
     return dfi_weather_set_by(m) != DFI_WEATHER_NONE || dfi_terrain_set_by(m) != DFI_TERRAIN_NONE ||
-           m->ability == 1u + DFI_ABILITY_INTIMIDATE;
+           m->ability == 1u + DFI_ABILITY_INTIMIDATE || m->ability == 1u + DFI_ABILITY_FAIRYAURA;
 }
 
 /* Drizzle and Drought (setWeather): the same weather is not restarted;
@@ -2813,6 +2892,10 @@ static duoforge_status dfi_entry_ability(dfi_run *r, uint32_t flat)
             dfi_emit(r, &e);
             return dfi_terrain_change(r);
         }
+    } else if (a == 1u + DFI_ABILITY_FAIRYAURA) {
+        /* onStart: -ability|holder|Fairy Aura (the aura itself is onAnyBasePower) */
+        const duoforge_event e = dfi_ev(DUOFORGE_EVENT_ABILITY, flat, DUOFORGE_CAUSE_NONE, a, DUOFORGE_NO_POSITION);
+        dfi_emit(r, &e);
     } else if (a == 1u + DFI_ABILITY_INTIMIDATE) {
         static const uint8_t drop[DFI_STAGE_COUNT] = {5u, 6u, 6u, 6u, 6u, 6u, 6u}; /* Attack -1 */
         const uint32_t foe = 1u - flat / 2u;
