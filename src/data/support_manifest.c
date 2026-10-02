@@ -49,7 +49,9 @@
  * Step 9b: Sucker Punch (onTry reads the target's queued move) and Helping
  * Hand (the ally target, newlySwitched, BasePower x1.5).
  * Step 10: Psychic Surge and Psychic Terrain (priority moves stopped at
- * grounded foes, Psychic moves x5325/4096, the terrain replaced). */
+ * grounded foes, Psychic moves x5325/4096, the terrain replaced).
+ * Step 11: Follow Me (a one-turn volatile; the RedirectTarget event takes the
+ * foes' single-target moves before Lightning Rod). */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -104,6 +106,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_DIRECLAW] = 1u,
             [DFI_MOVE_SUCKERPUNCH] = 1u,
             [DFI_MOVE_HELPINGHAND] = 1u,
+            [DFI_MOVE_FOLLOWME] = 1u,
         },
     .abilities =
         {

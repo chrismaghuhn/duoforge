@@ -63,6 +63,7 @@ typedef struct dfi_move_slot {
 #define DFI_VOL_PROTECT 2u
 #define DFI_VOL_FLASH_FIRE 4u
 #define DFI_VOL_FLAGS_MAX 7u
+#define DFI_VOL_FOLLOW_ME 8u     /* Team C: Follow Me's volatile (duration 1, ends in the residual) */
 #define DFI_VOL_HELPING_HAND 16u /* Team C: Helping Hand's volatile (duration 1, ends in the residual) */
 #define DFI_VOL_UNBURDEN 32u    /* Team C: Unburden's volatile, set when its holder's item is used */
 #define DFI_VOL_CHOICE_LOCK 64u /* Team C: Choice Scarf's choicelock; the move in locked_move */

@@ -1,0 +1,26 @@
+{
+  "name": "c11_follow_me_rod",
+  "purpose": "Follow Me (priority 1) comes before Lightning Rod (0): the foe Raichu's Zap Cannon aimed at the Lightning Rod Raichu goes to Indeedee-F. Archaludon's Electro Shot charges at the same Raichu under Follow Me and keeps that chosen target: on the next turn, without Follow Me, it is released at Raichu, whose Lightning Rod takes it without an -activate line.",
+  "data": "team_c",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c1102",
+  "teams": [
+    "Indeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Follow Me\n- Helping Hand\n- Psychic\n- Trick Room\n\nRaichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Protect\n- Focus Blast\n- Zap Cannon\n- Fake Out\n\nKingambit (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Sucker Punch\n- Iron Head\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Ice Beam\n- Muddy Water\n- Coil\n- Hypnosis",
+    "Raichu (M) @ Sitrus Berry\nAbility: Lightning Rod\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Def\nQuiet Nature\n- Zap Cannon\n- Focus Blast\n- Fake Out\n- Protect\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Electro Shot\n- Dragon Pulse\n- Snarl\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Protect\n- Shadow Ball\n- Nasty Plot\n\nCeruledge (M) @ Mystic Water\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 28 Spe\nJolly Nature\n- Bitter Blade\n- Shadow Sneak\n- Swords Dance\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 1",
+      "move 3 1, move 2 2",
+      "move 1, move 2 2",
+      "move 3 2, move 2 2"
+    ],
+    "p2": [
+      "move 1 2, move 1 2",
+      "move 4, move 1 2",
+      "move 2 1, move 2 1",
+      "move 1 1, move 2 1"
+    ],
+    "max_steps": 40
+  }
+}

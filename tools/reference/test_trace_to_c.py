@@ -168,13 +168,24 @@ class Refusals(unittest.TestCase):
                              "trace_to_c: %s tie with ['H:whiteherb:p1a:cb', 'H:lifeorb:p2a:cb']" % context,
                              context + ':lifeorb+whiteherb')
 
-    def test_singleturn_line_that_is_not_protect_or_helping_hand(self):
+    def test_singleturn_line_that_is_not_protect_helping_hand_or_follow_me(self):
         def mutate(spec, trace):
             log = trace['steps'][1]['log']
             self.assertEqual(log[1], '|-singleturn|p1b: Kingambit|Helping Hand|[of] p1a: Indeedee')
-            log[1] = '|-singleturn|p1b: Kingambit|move: Follow Me'
+            log[1] = '|-singleturn|p1b: Kingambit|move: Rage Powder'
         self.control('c09_helping_hand', mutate, 'singleturn-line',
-                     "trace_to_c: unknown -singleturn '|-singleturn|p1b: Kingambit|move: Follow Me'", 'move: Follow Me')
+                     "trace_to_c: unknown -singleturn '|-singleturn|p1b: Kingambit|move: Rage Powder'",
+                     'move: Rage Powder')
+
+    def test_follow_me_line_with_an_attribute(self):
+        def mutate(spec, trace):
+            log = trace['steps'][1]['log']
+            self.assertIn('|-singleturn|p1a: Indeedee|move: Follow Me', log)
+            i = log.index('|-singleturn|p1a: Indeedee|move: Follow Me')
+            log[i] = '|-singleturn|p1a: Indeedee|move: Follow Me|[zeffect]'
+        self.control('c11_follow_me', mutate, 'singleturn-line',
+                     "trace_to_c: unknown -singleturn '|-singleturn|p1a: Indeedee|move: Follow Me|[zeffect]'",
+                     'move: Follow Me')
 
     def test_hit_draw_that_is_not_the_status_pick(self):
         for draw, text, detail in (

@@ -26,7 +26,8 @@ typedef struct df_conf_mon {
     uint8_t stages[7];
     uint8_t stall, fainted, status, status_counter, confusion, locked_slot, locked_target, mega;
     uint8_t held, seen, seen_percent, seen_flag;
-    uint8_t vols; /* volatiles: 1 protect, 2 flashfire, 4 twoturnmove, 8 choicelock, 16 unburden, 32 helpinghand */
+    uint8_t vols; /* volatiles: 1 protect, 2 flashfire, 4 twoturnmove, 8 choicelock, 16 unburden, 32 helpinghand,
+                     64 followme */
 } df_conf_mon;
 /* team step, side 0 / side 1 answered, tape slice, the turn, boundary and
  * result afterwards, the picks of a team step, slot commands, the occupants
