@@ -1162,9 +1162,14 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
         dfi_emit(r, &weaken); /* [-enditem] [weaken] */
         ok = ok && dfi_chain_modify(chain, DFI_RESIST_BERRY_MODIFIER, &chain);
     }
+    /* Aurora Veil (step G20, data/moves.ts:846-860) weakens both categories by the same 2732/4096 and returns without an
+     * effect when the target's side has the screen of the move's category (so the two never multiply): the test is one
+     * 2732 for a screen of the category or Aurora Veil. A critical hit and `infiltrates` (no Infiltrator or move that
+     * has it is marked) skip all three. */
     if (!crit && target != user &&
         ((physical && ds->reflect_turns != 0u) ||
-         (md->category == DFI_CATEGORY_SPECIAL && ds->light_screen_turns != 0u))) {
+         (md->category == DFI_CATEGORY_SPECIAL && ds->light_screen_turns != 0u) ||
+         r->b->tail.sides[target / 2u].aurora_veil_turns != 0u)) {
         ok = ok && dfi_chain_modify(chain, 2732u, &chain);
     }
     if (!ok) {
@@ -2166,6 +2171,30 @@ static duoforge_status dfi_run_wide_guard(dfi_run *r, uint32_t user)
     return DUOFORGE_OK;
 }
 
+/* Aurora Veil (POOL data, data/moves.ts:830-877; the side's turns are in the state tail). Its onTry (:840) fails the
+ * move unless the weather is snow (Field.isWeather, sim/field.ts:118; nothing here suppresses a weather: Cloud Nine and
+ * Air Lock are not marked): -fail with [still], as every failed side move. addSideCondition does not restart an active
+ * condition, so a second one fails the same way. The duration is 5, or 8 when the user holds Light Clay
+ * (durationCallback, :842-847); the line is -sidestart|side|move: Aurora Veil (:861-863). A side move does not reach the
+ * Champions hit loop (no Update), as Wide Guard's does not. */
+static duoforge_status dfi_run_aurora_veil(dfi_run *r, uint32_t user)
+{
+    struct duoforge_battle *b = r->b;
+    const uint32_t side = user / 2u;
+    uint8_t *turns = &b->tail.sides[side].aurora_veil_turns;
+    if (b->weather != DFI_WEATHER_SNOW || *turns != 0u) {
+        dfi_fail_still(r, user);
+        return DUOFORGE_OK;
+    }
+    const uint32_t duration = dfi_holds(b, dfi_at(b, user), DFI_ITEM_LIGHTCLAY) ? DFI_SCREEN_TURNS_MAX : 5u;
+    *turns = (uint8_t)duration; /* <= 8 */
+    duoforge_event e = dfi_event_make(DUOFORGE_EVENT_SIDE_START, DUOFORGE_NO_POSITION);
+    e.detail = (uint8_t)side;
+    e.amount = (uint8_t)DUOFORGE_SIDE_AURORA_VEIL;
+    dfi_emit(r, &e);
+    return DUOFORGE_OK;
+}
+
 /* Nothing to hit: [notarget] on the last move line, then -fail. */
 static duoforge_status dfi_no_target(dfi_run *r, uint32_t user)
 {
@@ -2740,6 +2769,9 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     }
     if (md->special == DFI_SPECIAL_WIDE_GUARD) {
         return dfi_run_wide_guard(r, user);
+    }
+    if (md->special == DFI_SPECIAL_AURORA_VEIL) {
+        return dfi_run_aurora_veil(r, user);
     }
     if (md->special == DFI_SPECIAL_FOLLOW_ME) {
         return dfi_run_follow_me(r, user);
@@ -3783,6 +3815,16 @@ static duoforge_status dfi_run_mega(dfi_run *r, const dfi_queue_record *q)
 #define DFI_RES_WEATHER 1u
 #define DFI_RES_TERRAIN_END 2u
 #define DFI_RES_BURN 3u
+/* The side conditions that count down in the residual, by sub-order: Reflect, Light Screen, Tailwind, Aurora Veil. */
+#define DFI_SIDE_KINDS 4u
+static uint8_t *dfi_side_turns(struct duoforge_battle *b, uint32_t s, uint32_t k)
+{
+    dfi_side *sd = &b->sides[s];
+    return k == 0u ? &sd->reflect_turns
+           : k == 1u ? &sd->light_screen_turns
+           : k == 2u ? &sd->tailwind_turns
+                     : &b->tail.sides[s].aurora_veil_turns; /* the tail is zero under every kind but POOL */
+}
 #define DFI_RES_DURATION 4u
 #define DFI_RES_GRASSY 5u
 #define DFI_RES_FIELD_END 6u /* Trick Room, a side condition: duration only */
@@ -3791,12 +3833,12 @@ static duoforge_status dfi_run_mega(dfi_run *r, const dfi_queue_record *q)
 #define DFI_RES_WHITE_HERB 9u
 #define DFI_RES_ENCORE 10u /* Encore: order 16, a callback with a duration (step G9) */
 #define DFI_RES_NO_ORDER 0xFFFFFFFFu
-/* Trick Room, weather and terrain; three conditions per side; per position
+/* Trick Room, weather and terrain; four conditions per side (step G20 added Aurora Veil); per position
  * (DFI_RES_PER_POSITION) a status (burn or poison), seven duration ends
  * (Protect, the stall counter, flinch, a charge, Helping Hand, Follow Me and mustrecharge),
  * an item (Leftovers or White Herb), Grassy Terrain and Encore. */
 #define DFI_RES_PER_POSITION 11u
-#define DFI_RES_MAX (3u + 3u * DUOFORGE_SIDE_COUNT + DFI_RES_PER_POSITION * DFI_POSITIONS)
+#define DFI_RES_MAX (3u + 4u * DUOFORGE_SIDE_COUNT + DFI_RES_PER_POSITION * DFI_POSITIONS)
 
 typedef struct dfi_residual_entry {
     uint32_t kind;
@@ -3915,7 +3957,8 @@ static duoforge_status dfi_residual_events(dfi_run *r)
             /* The side's conditions come before its Pokemon (order 26). */
             const dfi_side *sd = &b->sides[flat / 2u];
             const uint32_t conditions = (sd->reflect_turns != 0u ? 1u : 0u) + (sd->light_screen_turns != 0u ? 1u : 0u) +
-                                        (sd->tailwind_turns != 0u ? 1u : 0u);
+                                        (sd->tailwind_turns != 0u ? 1u : 0u) +
+                                        (b->tail.sides[flat / 2u].aurora_veil_turns != 0u ? 1u : 0u);
             for (uint32_t k = 0u; k < conditions; ++k) {
                 list[n] = (dfi_residual_entry){DFI_RES_FIELD_END, 0u, 26u, 0u, 1u, false};
                 n += 1u;
@@ -3988,18 +4031,14 @@ static duoforge_status dfi_residual_events(dfi_run *r)
         return st;
     }
     /* The side conditions end in the group of order 26, sub-order by kind
-     * (Reflect 1, Light Screen 2, Tailwind 5). The same kind on both sides
+     * (Reflect 1, Light Screen 2, Tailwind 5, Aurora Veil 10: data/moves.ts:864-865). The same kind on both sides
      * ties; the shuffle decides the order of the two end lines when both
      * run out now: only then a draw (decision 0007 section 6). `first`: the
      * side whose line comes first, per kind. */
-    uint32_t first[3] = {0u, 0u, 0u};
-    for (uint32_t k = 0u; k < 3u; ++k) {
-        const uint8_t *t0 = k == 0u ? &b->sides[0].reflect_turns
-                            : k == 1u ? &b->sides[0].light_screen_turns
-                                      : &b->sides[0].tailwind_turns;
-        const uint8_t *t1 = k == 0u ? &b->sides[1].reflect_turns
-                            : k == 1u ? &b->sides[1].light_screen_turns
-                                      : &b->sides[1].tailwind_turns;
+    uint32_t first[DFI_SIDE_KINDS] = {0u, 0u, 0u, 0u};
+    for (uint32_t k = 0u; k < DFI_SIDE_KINDS; ++k) {
+        const uint8_t *t0 = dfi_side_turns(b, 0u, k);
+        const uint8_t *t1 = dfi_side_turns(b, 1u, k);
         if (*t0 == 1u && *t1 == 1u) {
             st = dfi_draw(r->draws, DFI_SITE_SPEED_TIE, 0u, 2u, &first[k]);
             if (st != DUOFORGE_OK) {
@@ -4169,12 +4208,12 @@ static duoforge_status dfi_residual_events(dfi_run *r)
      * Room (27, sub-order 1), the terrain (27, 7); each that runs out shows
      * its end line (and the terrain's end runs TerrainChange). Protect,
      * flinch and the stall counter end without a line. */
-    static const uint8_t side_kind[3] = {DUOFORGE_SIDE_REFLECT, DUOFORGE_SIDE_LIGHT_SCREEN, DUOFORGE_SIDE_TAILWIND};
-    for (uint32_t k = 0u; k < 3u; ++k) {
+    static const uint8_t side_kind[DFI_SIDE_KINDS] = {DUOFORGE_SIDE_REFLECT, DUOFORGE_SIDE_LIGHT_SCREEN,
+                                                      DUOFORGE_SIDE_TAILWIND, DUOFORGE_SIDE_AURORA_VEIL};
+    for (uint32_t k = 0u; k < DFI_SIDE_KINDS; ++k) {
         for (uint32_t j = 0u; j < DUOFORGE_SIDE_COUNT; ++j) {
             const uint32_t s = j ^ first[k];
-            dfi_side *sd = &b->sides[s];
-            uint8_t *turns = k == 0u ? &sd->reflect_turns : k == 1u ? &sd->light_screen_turns : &sd->tailwind_turns;
+            uint8_t *turns = dfi_side_turns(b, s, k);
             if (*turns == 0u) {
                 continue;
             }

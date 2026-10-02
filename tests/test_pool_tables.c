@@ -660,22 +660,26 @@ int main(void)
         uint32_t handlers = 0u;
         for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
             handlers += dfi_pool_moves[i].special >= DFI_SPECIAL_ENCORE &&
-                                dfi_pool_moves[i].special <= DFI_SPECIAL_KNOCK_OFF
+                                dfi_pool_moves[i].special <= DFI_SPECIAL_AURORA_VEIL
                             ? 1u
                             : 0u;
         }
         /* Seven ids of G2 remain after step G8 (Scald and Recover are not any move's after step G10), the two
          * weather moves (Sandstorm and Snowscape: the field `weather`, which no column models) have one each, and
-         * Knock Off (step G16: its onAfterHit and onBasePower) the id after them. */
-        DF_CHECK_EQ_U64(&t, handlers, DFI_SPECIAL_KNOCK_OFF - DFI_SPECIAL_ENCORE + 1u - 2u);
+         * Knock Off (step G16: its onAfterHit and onBasePower) the id after them, and Aurora Veil (step G20: its onTry
+         * and its side condition, which the tail holds) the one after Knock Off. */
+        DF_CHECK_EQ_U64(&t, handlers, DFI_SPECIAL_AURORA_VEIL - DFI_SPECIAL_ENCORE + 1u - 2u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_ENCORE, DFI_SPECIAL_FOLLOW_ME + 1u);
         /* UNMODELED follows them. Step G10 made Scald and Recover data (the thaw bit and the heal column): their ids
          * are still defined, and no pool move has them. */
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_LOW_KICK + 1u, DFI_SPECIAL_SANDSTORM);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_SANDSTORM + 1u, DFI_SPECIAL_SNOWSCAPE);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_KNOCK_OFF, DFI_SPECIAL_SNOWSCAPE + 1u);
-        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_KNOCK_OFF + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_AURORA_VEIL, DFI_SPECIAL_KNOCK_OFF + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_AURORA_VEIL + 1u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_KNOCK_OFF, 24u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_AURORA_VEIL, 25u);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_AURORAVEIL].special, DFI_SPECIAL_AURORA_VEIL);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_KNOCKOFF].special, DFI_SPECIAL_KNOCK_OFF);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_SANDSTORM].special, DFI_SPECIAL_SANDSTORM);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_SNOWSCAPE].special, DFI_SPECIAL_SNOWSCAPE);

@@ -482,6 +482,10 @@ KNOCK_OFF = move_entry(
     "\t\tthis.add('-enditem', target, item.name, '[from] move: Knock Off', `[of] ${source}`);", '\t}', '},',
     category='Physical', base_power=65, pp=20, type_='Dark', flags='contact: 1, protect: 1, mirror: 1, metronome: 1')
 
+AURORA_VEIL = move_entry(
+    'auroraveil', 'Aurora Veil', "sideCondition: 'auroraveil',", 'onTry() {', "\treturn this.field.isWeather(['hail', 'snowscape']);",
+    '},', 'condition: {', '\tduration: 5,', '},', pp=20, flags='snatch: 1, metronome: 1', target='allySide', type_='Ice')
+
 PLAIN = move_entry('plain', 'Plain', category='Physical', base_power=50, flags='contact: 1')
 
 
@@ -579,16 +583,53 @@ class PoolMoves(unittest.TestCase):
         seven = len(gen_closure.SPECIAL_IDS_C) + len(gen_closure.G2_HANDLERS)
         self.assertEqual(gen_closure.SPECIAL_IDS_P[len(gen_closure.SPECIAL_IDS_C):seven], gen_closure.G2_HANDLERS)
         # UNMODELED (decision 0015 section 4.2) follows them, as the last id.
-        self.assertEqual(gen_closure.SPECIAL_IDS_P[seven:], ['SANDSTORM', 'SNOWSCAPE', 'KNOCK_OFF', 'UNMODELED'])
+        self.assertEqual(gen_closure.SPECIAL_IDS_P[seven:],
+                         ['SANDSTORM', 'SNOWSCAPE', 'KNOCK_OFF', 'AURORA_VEIL', 'UNMODELED'])
         self.assertEqual(len(gen_closure.G2_HANDLERS), 7)
-        # Step G16: Knock Off's handler is the id before UNMODELED (24 in the tables, UNMODELED 25).
+        # Step G16: Knock Off's handler is 24 in the tables; step G20 put Aurora Veil's after it (25, UNMODELED 26).
         self.assertEqual(gen_closure.G16_HANDLERS, ['KNOCK_OFF'])
+        self.assertEqual(gen_closure.G20_HANDLERS, ['AURORA_VEIL'])
         self.assertEqual(gen_closure.SPECIAL_IDS_P.index('KNOCK_OFF'), 24)
-        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 25)
+        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('AURORA_VEIL'), 25)
+        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 26)
         # Scald and Recover became data in step G10: their ids stay defined and no move maps to them.
         self.assertEqual({v[0] for k, v in gen_closure.SPECIAL_P.items() if k not in gen_closure.SPECIAL_C},
                          (set(gen_closure.G2_HANDLERS) - {'SCALD', 'RECOVER'}) | set(gen_closure.WEATHER_HANDLERS) |
-                         set(gen_closure.G16_HANDLERS))
+                         set(gen_closure.G16_HANDLERS) | set(gen_closure.G20_HANDLERS))
+
+    def test_aurora_veil_is_a_handler_whose_onTry_and_condition_are_the_pinned_text(self):
+        rec = parse_pool('auroraveil', AURORA_VEIL)
+        self.assertEqual(rec['special'], gen_closure.SPECIAL_IDS_P.index('AURORA_VEIL'))
+        # The side condition is the handler's: no column has it.
+        self.assertEqual((rec['side_condition'], rec['sec_kind'], rec['primary_status'], rec['pseudo_weather']),
+                         (0, 0, 0, 0))
+        self.refused('auroraveil', AURORA_VEIL.replace("'hail', ", ''), 'onTry is not the pinned text')
+        self.refused('auroraveil', AURORA_VEIL.replace("'snowscape'", "'sunnyday'"), 'onTry is not the pinned text')
+        self.refused('auroraveil', AURORA_VEIL.replace("sideCondition: 'auroraveil',", "sideCondition: 'reflect',"),
+                     "sideCondition is not \"sideCondition: 'auroraveil',\"")
+        self.refused('auroraveil', AURORA_VEIL.replace('\t\tcondition: {\n\t\t\tduration: 5,\n\t\t},\n', ''),
+                     'expected a condition block')
+        # Outside the pool mode the move is refused for its callback.
+        for ext in (False, True):
+            self.refused('auroraveil', AURORA_VEIL, 'callback onTry is not mapped to a handler', pool=False, ext=ext)
+
+    def test_the_aurora_veil_condition_that_the_engine_hard_codes_is_checked(self):
+        (mid, needed), = gen_closure.G20_CONDITION_FACTS
+
+        def entry(skip=None):
+            lines = ['\t%s: {' % mid]
+            for i, n in enumerate(needed):
+                if i != skip:
+                    lines.append('\t\t' + n)
+            lines.append('\t},')
+            return TextSource('data/moves.ts', '\n'.join(lines))
+
+        gen_closure.check_g8_conditions(entry(), gen_closure.G20_CONDITION_FACTS)
+        for i in range(len(needed)):
+            with self.subTest(fact=needed[i]):
+                with self.assertRaises(SystemExit) as cm:
+                    gen_closure.check_g8_conditions(entry(i), gen_closure.G20_CONDITION_FACTS)
+                self.assertIn('move auroraveil: the condition no longer has', str(cm.exception.code))
 
     def test_knock_off_is_a_handler_whose_callbacks_are_the_pinned_text(self):
         rec = parse_pool('knockoff', KNOCK_OFF)

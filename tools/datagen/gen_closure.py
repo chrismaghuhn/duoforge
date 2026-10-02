@@ -340,6 +340,8 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
         for name, text in KNOCK_OFF_CALLBACKS.items():
             if name not in f or norm(f[name][1]) != text:
                 fail('move %s: %s is not the pinned text' % (mid, name))
+    if pool and handled[0] == 'AURORA_VEIL' and ('onTry' not in f or norm(f['onTry'][1]) != AURORA_VEIL_ONTRY):
+        fail('move %s: onTry is not the pinned text' % mid)
     if pool and mid in PROTECT_COPIES:
         pe = fields(base.entry(PROTECT_COPIES[mid])[2])
         for name in PROTECT_COPY_FIELDS:
@@ -1311,6 +1313,12 @@ WEATHER_HANDLERS = ['SANDSTORM', 'SNOWSCAPE']
 # singleEvent('TakeItem') that the turn code knows (a Mega Stone refuses its own species), the boost is 1.5, and the item is
 # taken after the hit with the -enditem line that the converter reads.
 G16_HANDLERS = ['KNOCK_OFF']
+# Step G20: Aurora Veil is a handler of its own that the turn code implements (a row of the whole pool, like Knock Off:
+# not one of G2's). Its onTry is the snow test (data/moves.ts:830-877; the Champions mod does not change the move); the
+# condition is read from the pinned text (G20_CONDITION_FACTS) and the side condition itself (a tail field, not a column)
+# is owned by the handler.
+G20_HANDLERS = ['AURORA_VEIL']
+AURORA_VEIL_ONTRY = "onTry() { return this.field.isWeather(['hail', 'snowscape']); },"
 KNOCK_OFF_CALLBACKS = {
     'onBasePower': "onBasePower(basePower, source, target, move) { const item = target.getItem(); "
                    "if (!this.singleEvent('TakeItem', item, target.itemState, target, target, move, item)) return; "
@@ -1321,7 +1329,8 @@ KNOCK_OFF_CALLBACKS = {
 SPECIAL_P = dict(SPECIAL_C, **{
     'knockoff': ('KNOCK_OFF', {'onAfterHit', 'onBasePower'}),             # G16: takes the target's item, x1.5 while it has one
     'encore': ('ENCORE', set()),                                          # G9 (implemented): last move, a volatile, a queue change
-    'wideguard': ('WIDE_GUARD', {'onTry', 'onHitSide'}),                  # G7: a side condition against spread moves
+    'auroraveil': ('AURORA_VEIL', {'onTry'}),                             # G20: a screen against both categories, in snow only
+    'wideguard': ('WIDE_GUARD', {'onTry', 'onHitSide'}),                 # G7: a side condition against spread moves
     'firstimpression': ('FIRST_IMPRESSION', {'onTry', 'onDisableMove'}),  # G10a: first turn out only (Fake Out's rule)
     'soak': ('SOAK', {'onHit'}),                                          # G11: sets the target's type to Water
     'lowkick': ('LOW_KICK', {'basePowerCallback', 'onTryHit'}),           # G10d: base power by the target's weight
@@ -1339,7 +1348,7 @@ PROTECT_COPIES = {'detect': 'protect'}
 # champions/moves.ts:581-584) sets isNonstandard to null, which makes it legal, and the tag has no reader in the tables.
 TAGS_PAST_UNOBTAINABLE = 'tags: ["Past Unobtainable"],'
 PROTECT_COPY_FIELDS = ('onPrepareHit', 'onHit', 'stallingMove', 'volatileStatus', 'priority', 'accuracy', 'target')
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + ['UNMODELED']
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G20_HANDLERS + ['UNMODELED']
 # Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags
 # byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
@@ -1347,11 +1356,12 @@ POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {
     'ENCORE': {'volatileStatus': "volatileStatus: 'encore',"},
     'WIDE_GUARD': {'sideCondition': "sideCondition: 'wideguard',"},
+    'AURORA_VEIL': {'sideCondition': "sideCondition: 'auroraveil',"},
     'SANDSTORM': {'weather': "weather: 'Sandstorm',"},
     'SNOWSCAPE': {'weather': "weather: 'snowscape',"},
 }
 G2_OWNED_SECONDARY = {}
-G2_OWNED_CONDITION = {'ENCORE', 'WIDE_GUARD'}
+G2_OWNED_CONDITION = {'ENCORE', 'WIDE_GUARD', 'AURORA_VEIL'}
 # Step G8 (Throat Chop and Psychic Noise): the two secondaries become modelled kinds, and the column that their
 # consumers read is the move's second flags byte (the first is full): the `sound` flag (Throat Chop bars the sound
 # moves) and the `heal` flag (Heal Block bars the moves that heal). Both are derived for every pool move, the prefix
@@ -1375,6 +1385,21 @@ G8_CONDITION_FACTS = (
                    'return 2;', "if (this.dex.moves.get(moveSlot.id).flags['heal']) {",
                    "if (move.flags['heal'] && !move.isZ && !move.isMax) {",
                    'onTryHeal(damage, target, source, effect) {']),
+)
+# Step G20: what the engine hard-codes about Aurora Veil, whole callbacks and values of the pinned entry (the
+# durations, the damage modifier and its two exceptions, the order among the side conditions, both lines).
+G20_CONDITION_FACTS = (
+    ('auroraveil', ['duration: 5,',
+                    "durationCallback(target, source, effect) { if (source?.hasItem('lightclay')) { return 8; } return 5; },",
+                    "onAnyModifyDamage(damage, source, target, move) { if (target !== source && "
+                    "this.effectState.target.hasAlly(target)) { "
+                    "if ((target.side.getSideCondition('reflect') && this.getCategory(move) === 'Physical') || "
+                    "(target.side.getSideCondition('lightscreen') && this.getCategory(move) === 'Special')) { return; } "
+                    "if (!target.getMoveHitData(move).crit && !move.infiltrates) { this.debug('Aurora Veil weaken'); "
+                    "if (this.activePerHalf > 1) return this.chainModify([2732, 4096]); return this.chainModify(0.5); } } },",
+                    "onSideStart(side) { this.add('-sidestart', side, 'move: Aurora Veil'); },",
+                    'onSideResidualOrder: 26,', 'onSideResidualSubOrder: 10,',
+                    "onSideEnd(side) { this.add('-sideend', side, 'move: Aurora Veil'); },"]),
 )
 # Move flags that the new moves carry and no row reads. `punch` is read by Iron Fist and `slicing` (already ignored)
 # by Sharpness, `allyanim` by nothing in the tables: build_pool fails if one of those readers is a pool ability,
@@ -1987,10 +2012,11 @@ def check_weather_facts(conditions_ts, moves_ts):
             fail('move weatherball: the entry no longer has "%s"' % fact)
 
 
-def check_g8_conditions(moves_ts):
-    """The engine hard-codes the durations, orders and tests of the Throat Chop and Heal Block conditions: every one of
-    them must be in the pinned entry, as one normalised text."""
-    for mid, facts in G8_CONDITION_FACTS:
+def check_g8_conditions(moves_ts, only=None):
+    """The engine hard-codes the durations, orders and tests of the Throat Chop and Heal Block conditions (step G8) and
+    those of Aurora Veil (step G20): every one of them must be in the pinned entry, as one normalised text. `only`: a
+    tuple of (move id, facts) to check instead of all of them (the generator's tests)."""
+    for mid, facts in (G8_CONDITION_FACTS + G20_CONDITION_FACTS if only is None else only):
         e = moves_ts.entry(mid)
         if e is None:
             fail('move %s not found' % mid)

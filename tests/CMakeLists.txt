@@ -163,6 +163,9 @@ duoforge_add_test(NAME duoforge.state.pool_g17 SOURCES test_pool_g17.c WHITEBOX 
 # Step G16: Knock Off in the tail's item_now, in the ITEM_END event with the cause ITEM_TAKEN, in what reads the held item and in the
 # POOL view extension (the member's item_now, bit 11).
 duoforge_add_test(NAME duoforge.state.pool_g16 SOURCES test_pool_g16.c WHITEBOX TIMEOUT 60)
+# Step G20: Aurora Veil in the tail's side turns, in the damage modifier, in the residual and in the POOL view extension
+# (the side's aurora_veil_turns, bit 3).
+duoforge_add_test(NAME duoforge.state.pool_g20 SOURCES test_pool_g20.c WHITEBOX TIMEOUT 60)
 # The queued action of a fainted Pokemon: no ability and no item of it counts for its priority and Speed (d04 to d06).
 duoforge_add_test(NAME duoforge.state.pool_fainted_holder SOURCES test_pool_fainted_holder.c WHITEBOX TIMEOUT 60)
 # The generated files must stay exactly what tools/datagen/gen_closure.py
