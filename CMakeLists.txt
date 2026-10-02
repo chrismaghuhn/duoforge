@@ -72,6 +72,7 @@ set(DUOFORGE_SOURCES
     src/state/identity.c
     src/state/knowledge.c
     src/state/closure_member.c
+    src/state/data_query.c
     src/state/invariants.c
     src/state/battle.c
     src/state/transition.c

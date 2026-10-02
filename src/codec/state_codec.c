@@ -7,10 +7,89 @@
 #include "core/sha256.h"
 #include "state/context_internal.h"
 
-void dfi_encode_unchecked(const struct duoforge_battle *b, uint8_t out[DUOFORGE_STATE_V3_ENCODED_SIZE])
+bool dfi_context_has_pool_tail(const struct duoforge_context *ctx)
 {
-    dfi_write_envelope(out, DFI_ARTIFACT_BATTLE_STATE, (uint16_t)DUOFORGE_STATE_SCHEMA_VERSION,
-                       DUOFORGE_SEMANTICS_ID, DUOFORGE_STATE_V3_ENCODED_SIZE);
+    return ctx->data_kind == DUOFORGE_DATA_KIND_POOL || ctx->data_kind == DUOFORGE_DATA_KIND_POOL_DEV;
+}
+
+uint16_t dfi_state_schema_of(const struct duoforge_context *ctx)
+{
+    return dfi_context_has_pool_tail(ctx) ? (uint16_t)DFI_STATE_SCHEMA_POOL_TAIL_REV1 : (uint16_t)DFI_STATE_SCHEMA_V3;
+}
+
+size_t dfi_state_encoded_size_of(const struct duoforge_context *ctx)
+{
+    return dfi_context_has_pool_tail(ctx) ? (size_t)DFI_STATE_POOL_ENCODED_SIZE : (size_t)DUOFORGE_STATE_V3_ENCODED_SIZE;
+}
+
+/* The tail of the POOL kinds, byte by byte, with the reserved bytes zero. */
+static void dfi_encode_tail(const dfi_pool_tail *tail, uint8_t *out)
+{
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        const dfi_tail_side *ts = &tail->sides[s];
+        uint8_t *so = out + s * DFI_ENC_TAIL_SIDE_SIZE;
+        so[DFI_ENC_TAIL_WIDE_GUARD_OFF] = ts->wide_guard;
+        for (uint32_t i = 0u; i < DFI_ENC_TAIL_SIDE_RESERVED_SIZE; ++i) {
+            so[DFI_ENC_TAIL_SIDE_RESERVED_OFF + i] = 0u;
+        }
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            const dfi_tail_pos *tp = &ts->positions[p];
+            uint8_t *po = so + DFI_ENC_TAIL_POS_OFF + p * DFI_ENC_TAIL_POS_SIZE;
+            po[DFI_ENC_TAIL_POS_LAST_MOVE_OFF] = tp->last_move;
+            po[DFI_ENC_TAIL_POS_ENCORE_SLOT_OFF] = tp->encore_slot;
+            po[DFI_ENC_TAIL_POS_ENCORE_TURNS_OFF] = tp->encore_turns;
+            po[DFI_ENC_TAIL_POS_THROAT_CHOP_OFF] = tp->throat_chop_turns;
+            po[DFI_ENC_TAIL_POS_HEAL_BLOCK_OFF] = tp->heal_block_turns;
+            po[DFI_ENC_TAIL_POS_RESERVED_OFF] = 0u;
+        }
+        for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
+            so[DFI_ENC_TAIL_SOAK_OFF + m] = ts->soak_type[m];
+        }
+    }
+}
+
+/* True iff the reserved bytes of an encoded tail are all zero (bounded loops, no stored index). */
+static bool dfi_tail_reserved_zero(const uint8_t *in)
+{
+    uint32_t any = 0u;
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        const uint8_t *so = in + s * DFI_ENC_TAIL_SIDE_SIZE;
+        for (uint32_t i = 0u; i < DFI_ENC_TAIL_SIDE_RESERVED_SIZE; ++i) {
+            any |= so[DFI_ENC_TAIL_SIDE_RESERVED_OFF + i];
+        }
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            any |= so[DFI_ENC_TAIL_POS_OFF + p * DFI_ENC_TAIL_POS_SIZE + DFI_ENC_TAIL_POS_RESERVED_OFF];
+        }
+    }
+    return any == 0u;
+}
+
+static void dfi_parse_tail(const uint8_t *in, dfi_pool_tail *tail)
+{
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        dfi_tail_side *ts = &tail->sides[s];
+        const uint8_t *so = in + s * DFI_ENC_TAIL_SIDE_SIZE;
+        ts->wide_guard = so[DFI_ENC_TAIL_WIDE_GUARD_OFF];
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            dfi_tail_pos *tp = &ts->positions[p];
+            const uint8_t *po = so + DFI_ENC_TAIL_POS_OFF + p * DFI_ENC_TAIL_POS_SIZE;
+            tp->last_move = po[DFI_ENC_TAIL_POS_LAST_MOVE_OFF];
+            tp->encore_slot = po[DFI_ENC_TAIL_POS_ENCORE_SLOT_OFF];
+            tp->encore_turns = po[DFI_ENC_TAIL_POS_ENCORE_TURNS_OFF];
+            tp->throat_chop_turns = po[DFI_ENC_TAIL_POS_THROAT_CHOP_OFF];
+            tp->heal_block_turns = po[DFI_ENC_TAIL_POS_HEAL_BLOCK_OFF];
+        }
+        for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
+            ts->soak_type[m] = so[DFI_ENC_TAIL_SOAK_OFF + m];
+        }
+    }
+}
+
+size_t dfi_encode_unchecked(const struct duoforge_context *ctx, const struct duoforge_battle *b, uint8_t *out)
+{
+    const size_t size = dfi_state_encoded_size_of(ctx);
+    dfi_write_envelope(out, DFI_ARTIFACT_BATTLE_STATE, dfi_state_schema_of(ctx), DUOFORGE_SEMANTICS_ID,
+                       (uint32_t)size);
     for (uint32_t i = 0u; i < DUOFORGE_DIGEST_SIZE; ++i) {
         out[DFI_ENC_FINGERPRINT_OFF + i] = b->context_fingerprint[i];
     }
@@ -119,6 +198,10 @@ void dfi_encode_unchecked(const struct duoforge_battle *b, uint8_t out[DUOFORGE_
             }
         }
     }
+    if (dfi_context_has_pool_tail(ctx)) {
+        dfi_encode_tail(&b->tail, out + DFI_ENC_TAIL_OFF);
+    }
+    return size;
 }
 
 static void dfi_parse_state(const uint8_t *in, struct duoforge_battle *b)
@@ -243,8 +326,10 @@ duoforge_status dfi_decode_state(const duoforge_context *ctx, const uint8_t *byt
     if (!dfi_bytes_equal(bytes, dfi_envelope_magic, DFI_ENVELOPE_MAGIC_SIZE)) {
         return DUOFORGE_E_MALFORMED;
     }
+    /* The two schemas of this build: v3 and v3 + pool tail rev 1. Which one a context takes is decided below. */
+    const uint32_t schema = dfi_load_u16le(bytes + DFI_ENVELOPE_SCHEMA_OFF);
     if (dfi_load_u16le(bytes + DFI_ENVELOPE_KIND_OFF) != DFI_ARTIFACT_BATTLE_STATE ||
-        dfi_load_u16le(bytes + DFI_ENVELOPE_SCHEMA_OFF) != DUOFORGE_STATE_SCHEMA_VERSION) {
+        (schema != DFI_STATE_SCHEMA_V3 && schema != DFI_STATE_SCHEMA_POOL_TAIL_REV1)) {
         return DUOFORGE_E_SCHEMA_MISMATCH;
     }
     if (dfi_load_u32le(bytes + DFI_ENVELOPE_SEMANTICS_OFF) != DUOFORGE_SEMANTICS_ID) {
@@ -254,16 +339,33 @@ duoforge_status dfi_decode_state(const duoforge_context *ctx, const uint8_t *byt
     if ((uint64_t)dfi_load_u32le(bytes + DFI_ENVELOPE_LENGTH_OFF) != (uint64_t)size) {
         return DUOFORGE_E_MALFORMED;
     }
-    if (size != DUOFORGE_STATE_V3_ENCODED_SIZE) {
+    const bool tailed = schema == DFI_STATE_SCHEMA_POOL_TAIL_REV1;
+    if (size != (tailed ? (size_t)DFI_STATE_POOL_ENCODED_SIZE : (size_t)DUOFORGE_STATE_V3_ENCODED_SIZE)) {
         return DUOFORGE_E_MALFORMED;
     }
     if (!dfi_context_fingerprint_matches(ctx, bytes + DFI_ENC_FINGERPRINT_OFF)) {
         return DUOFORGE_E_CONTEXT_MISMATCH;
     }
+    /* The schema of the artifact is the one of the context's kind: the POOL kinds carry the tail and no other
+     * kind does. A disagreement, or a reserved byte of the tail that is not zero, is an invariant. */
+    dfi_invariant inv = DFI_INV_NONE;
+    if (tailed != dfi_context_has_pool_tail(ctx)) {
+        inv = DFI_INV_TAIL_SCHEMA;
+    } else if (tailed && !dfi_tail_reserved_zero(bytes + DFI_ENC_TAIL_OFF)) {
+        inv = DFI_INV_TAIL_RESERVED;
+    }
+    if (inv != DFI_INV_NONE) {
+        if (out_invariant != NULL) {
+            *out_invariant = inv;
+        }
+        return DUOFORGE_E_MALFORMED;
+    }
     struct duoforge_battle tmp;
     memset(&tmp, 0, sizeof tmp);
     dfi_parse_state(bytes, &tmp);
-    dfi_invariant inv = DFI_INV_NONE;
+    if (tailed) {
+        dfi_parse_tail(bytes + DFI_ENC_TAIL_OFF, &tmp.tail);
+    }
     if (dfi_state_check(ctx, &tmp, &inv) != DUOFORGE_OK) {
         if (out_invariant != NULL) {
             *out_invariant = inv;
@@ -324,11 +426,11 @@ duoforge_status duoforge_battle_equal(const duoforge_context *ctx, const duoforg
         !dfi_context_fingerprint_matches(ctx, b->context_fingerprint)) {
         return DUOFORGE_E_CONTEXT_MISMATCH;
     }
-    uint8_t ea[DUOFORGE_STATE_V3_ENCODED_SIZE] = {0};
-    uint8_t eb[DUOFORGE_STATE_V3_ENCODED_SIZE] = {0};
-    dfi_encode_unchecked(a, ea);
-    dfi_encode_unchecked(b, eb);
-    *out_equal = dfi_bytes_equal(ea, eb, DUOFORGE_STATE_V3_ENCODED_SIZE);
+    uint8_t ea[DFI_STATE_ENCODED_MAX] = {0};
+    uint8_t eb[DFI_STATE_ENCODED_MAX] = {0};
+    const size_t size = dfi_encode_unchecked(ctx, a, ea);
+    (void)dfi_encode_unchecked(ctx, b, eb);
+    *out_equal = dfi_bytes_equal(ea, eb, size);
     return DUOFORGE_OK;
 }
 
@@ -341,7 +443,7 @@ duoforge_status duoforge_battle_encoded_size(const duoforge_context *ctx, const 
     if (!dfi_context_fingerprint_matches(ctx, battle->context_fingerprint)) {
         return DUOFORGE_E_CONTEXT_MISMATCH;
     }
-    *out_size = DUOFORGE_STATE_V3_ENCODED_SIZE;
+    *out_size = dfi_state_encoded_size_of(ctx);
     return DUOFORGE_OK;
 }
 
@@ -355,11 +457,10 @@ duoforge_status duoforge_battle_encode(const duoforge_context *ctx, const duofor
     if (status != DUOFORGE_OK) {
         return status; /* CONTEXT_MISMATCH or INVARIANT */
     }
-    if (capacity < DUOFORGE_STATE_V3_ENCODED_SIZE) {
+    if (capacity < dfi_state_encoded_size_of(ctx)) {
         return DUOFORGE_E_CAPACITY;
     }
-    dfi_encode_unchecked(battle, buffer);
-    *out_written = DUOFORGE_STATE_V3_ENCODED_SIZE;
+    *out_written = dfi_encode_unchecked(ctx, battle, buffer);
     return DUOFORGE_OK;
 }
 
@@ -373,11 +474,11 @@ duoforge_status duoforge_battle_digest(const duoforge_context *ctx, const duofor
     if (status != DUOFORGE_OK) {
         return status;
     }
-    uint8_t encoded[DUOFORGE_STATE_V3_ENCODED_SIZE] = {0};
+    uint8_t encoded[DFI_STATE_ENCODED_MAX] = {0};
     uint8_t digest[DUOFORGE_DIGEST_SIZE] = {0};
-    dfi_encode_unchecked(battle, encoded);
-    if (!dfi_sha256(encoded, sizeof encoded, digest)) {
-        return DUOFORGE_E_INVARIANT; /* unreachable: 1009 bytes */
+    const size_t size = dfi_encode_unchecked(ctx, battle, encoded);
+    if (!dfi_sha256(encoded, size, digest)) {
+        return DUOFORGE_E_INVARIANT; /* unreachable: at most 1051 bytes */
     }
     for (uint32_t i = 0u; i < DUOFORGE_DIGEST_SIZE; ++i) {
         out_digest[i] = digest[i];

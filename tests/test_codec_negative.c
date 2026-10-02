@@ -28,10 +28,13 @@ typedef struct env {
     duoforge_battle *dst; /* bound to C1, holds F2 */
 } env;
 
+/* The kinds of this test are all schema 3 (no POOL tail): any such context encodes them. */
+static const duoforge_context *enc_ctx;
+
 static void raw(const duoforge_battle *b, uint8_t out[SZ])
 {
     memset(out, 0, SZ);
-    dfi_encode_unchecked(b, out);
+    (void)dfi_encode_unchecked(enc_ctx, b, out);
 }
 
 /* Decodes bytes[0..size) through both entry points; size may exceed the
@@ -90,6 +93,7 @@ int main(void)
     df_test_begin(&t, "duoforge.codec.negative");
 
     duoforge_context *c1 = df_make_context(&df_config_c1);
+    enc_ctx = c1;
     duoforge_context *c1b = df_make_context(&df_config_c1);
     duoforge_context *c2 = df_make_context(&df_config_c2);
     duoforge_context *c4 = df_make_context(&df_config_c4);
@@ -434,8 +438,9 @@ int main(void)
             df_free(in);
         }
         /* Every id a single byte can trigger is covered (the fingerprint is
-         * CONTEXT_MISMATCH and has its own cases above). */
-        for (unsigned id = DFI_INV_RNG_INC_EVEN; id < DFI_INV_COUNT; ++id) {
+         * CONTEXT_MISMATCH and has its own cases above). The TAIL ids of the POOL state tail cannot be reached by
+         * a byte of a schema 3 fixture; duoforge.state.pool_tail covers them. */
+        for (unsigned id = DFI_INV_RNG_INC_EVEN; id <= DFI_INV_QUEUE; ++id) {
             if (!DF_CHECK(&t, ids_seen[id] > 0u)) {
                 fprintf(stderr, "  no targeted edit for %s\n", dfi_invariant_name((dfi_invariant)id));
             }
@@ -543,8 +548,8 @@ int main(void)
             uint8_t b[SZ];
             memset(a, 0x00, sizeof a);
             memset(b, 0xFF, sizeof b);
-            dfi_encode_unchecked(states[i], a);
-            dfi_encode_unchecked(states[i], b);
+            (void)dfi_encode_unchecked(enc_ctx, states[i], a);
+            (void)dfi_encode_unchecked(enc_ctx, states[i], b);
             differing += memcmp(a, b, sizeof a) != 0 ? 1u : 0u;
             duoforge_battle_destroy(states[i]);
         }

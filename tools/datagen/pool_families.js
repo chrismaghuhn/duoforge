@@ -32,6 +32,10 @@
 // one move is accepted exactly when the bit is set; for every pool ability, a
 // set of the forme with that ability is accepted exactly when it is in the
 // forme's list. A Mega forme has no learnable move and its one ability.
+//
+// The names of the data query API (the dfi_pool_*_names arrays: forme, move,
+// item, ability and nature) are checked against the pinned dex: each is the id
+// that the format's dex gives the entry it names, and the macro of its row.
 'use strict';
 
 const fs = require('fs');
@@ -134,6 +138,49 @@ function formeRows(source, count, learnBytes) {
     return rows;
 }
 
+// The names of the data query API (duoforge_data_find, duoforge_data_name): one array per table of
+// [DFI_<KIND>_<ID>] = "name", as gen_closure.py --pool writes them, against the pinned dex.
+function nameRows(source, kind, arrayName) {
+    const start = source.indexOf('const char *const ' + arrayName + '[');
+    if (start < 0) {
+        throw new Error(arrayName + ' not found');
+    }
+    const end = source.indexOf('\n};', start);
+    const rows = [];
+    const re = new RegExp('^\\s*\\[DFI_' + kind + '_(\\w+)\\] = "([^"]*)",$', 'gm');
+    for (const m of source.slice(start, end).matchAll(re)) {
+        rows.push({macro: m[1], name: m[2]});
+    }
+    return rows;
+}
+
+// Every name is the id that the pinned dex gives the entry it names (a Showdown id), the same name
+// as the macro of its row, and the macros are exactly the headers' ids.
+function checkNames(dex, source, headers) {
+    const tables = [
+        ['FORME', 'dfi_pool_forme_names', (n) => dex.species.get(n)],
+        ['MOVE', 'dfi_pool_move_names', (n) => dex.moves.get(n)],
+        ['ITEM', 'dfi_pool_item_names', (n) => dex.items.get(n)],
+        ['ABILITY', 'dfi_pool_ability_names', (n) => dex.abilities.get(n)],
+        ['NATURE', 'dfi_pool_nature_names', (n) => dex.natures.get(n)],
+    ];
+    let checked = 0;
+    for (const [kind, array, lookup] of tables) {
+        const rows = nameRows(source, kind, array);
+        const ids = definedIds(headers, kind);
+        expect(kind + ' names: the macros', rows.map((r) => r.macro.toLowerCase()).sort(),
+            Array.from(ids.values()).sort());
+        for (const row of rows) {
+            const entry = lookup(row.name);
+            if (!entry.exists || entry.id !== row.name || row.macro.toLowerCase() !== row.name) {
+                bad(kind + ' name ' + row.name + ' (' + row.macro + ') is not a pinned dex id');
+            }
+            checked += 1;
+        }
+    }
+    return checked;
+}
+
 function typeOf(param) {
     const m = param.match(/^DFI_TYPE_(\w+)$/);
     const name = m === null ? undefined : TYPES.find((t) => t.toUpperCase() === m[1]);
@@ -219,6 +266,16 @@ function ateChanges(ability) {
     return {changed, boosts};
 }
 
+// The moves an "-ate" ability leaves alone by id (the noModifyType list of its onModifyType handler). The
+// engine skips one of them: Weather Ball, the only one that the pool has (checked below against the pool ids).
+const NO_MODIFY_TYPE = ['judgment', 'multiattack', 'naturalgift', 'revelationdance', 'technoblast', 'terrainpulse',
+    'weatherball'];
+function ateLeavesAlone(ability, id) {
+    const move = moveOf('Normal', {id, name: id});
+    call(ability.onModifyType, battle(ability), [move, {terastallized: false}]);
+    return move.type === 'Normal';
+}
+
 // The types for which a pinch ability gives x1.5 at the HP, from both callbacks.
 function pinchTypes(ability, hp, maxhp) {
     const out = {};
@@ -295,7 +352,7 @@ function checkItems(dex, rows) {
     return counts;
 }
 
-function checkAbilities(dex, rows) {
+function checkAbilities(dex, rows, moveIds) {
     const counts = {};
     for (const row of rows) {
         const ability = dex.abilities.get(row.id);
@@ -331,6 +388,13 @@ function checkAbilities(dex, rows) {
             expect(row.id + ' "-ate" BasePower', probe.boosts, {Normal: [4915, 4096]});
             expect(row.id + ' onModifyTypePriority', ability.onModifyTypePriority, -1);
             expect(row.id + ' onBasePowerPriority', ability.onBasePowerPriority, 23);
+            // The moves it does not change: the listed ones, and of the pool's moves only Weather Ball is among them.
+            for (const id of NO_MODIFY_TYPE) {
+                expect(row.id + ' leaves ' + id + ' alone', ateLeavesAlone(ability, id), true);
+            }
+            expect(row.id + ' changes a Normal move of another id', ateLeavesAlone(ability, 'probe'), false);
+            expect('the pool moves that ' + row.id + ' leaves alone',
+                [...moveIds.values()].filter((id) => NO_MODIFY_TYPE.includes(id)), ['weatherball']);
         } else if (row.family === 'PINCH') {
             const type = typeOf(row.param);
             expect(row.id + ' pinch at a third', pinchTypes(ability, 10, 30), {onModifyAtk: [type], onModifySpA: [type]});
@@ -502,7 +566,7 @@ function main() {
         }
     }
     const items = checkItems(dex, itemRows);
-    const abilities = checkAbilities(dex, abilityRows);
+    const abilities = checkAbilities(dex, abilityRows, moveIds);
     // "All 18": a booster and a resist berry for each type, and nothing else in the families.
     expect('type boosters', items.TYPE_BOOSTER, 18);
     expect('resist berries', items.RESIST_BERRY, 18);
@@ -512,6 +576,7 @@ function main() {
     expect('terrain setters', abilities.TERRAIN_SETTER, 2);
     checkLegal(dex, TeamValidator.get(FORMAT_ID), itemRows, abilityRows, extendedAbilities);
     const legal = checkFormes(dex, TeamValidator.get(FORMAT_ID), formeRowsList, moveIds, abilityIds);
+    const names = checkNames(dex, source, headers);
 
     if (failures > 0) {
         process.stderr.write('pool_families: ' + failures + ' mismatch(es)\n');
@@ -520,7 +585,7 @@ function main() {
     process.stdout.write('pool_families: ' + itemRows.length + ' items and ' + abilityRows.length +
         ' abilities agree with the pinned handlers (' + JSON.stringify(items) + ', ' + JSON.stringify(abilities) +
         '); every pool item and the new abilities pass the validator; ' + legal.bases + ' base formes: ' + legal.probes +
-        ' validator probes of their moves and abilities agree\n');
+        ' validator probes of their moves and abilities agree; ' + names + ' names are pinned dex ids\n');
 }
 
 main();
