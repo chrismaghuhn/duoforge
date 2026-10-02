@@ -5,7 +5,7 @@
  * side converted from reference traces (tools/reference/conformance_records.py)
  * and compares the engine with what the pinned Showdown did.
  *
- * usage: duoforge_diff_runner [records file]
+ * usage: duoforge_diff_runner [--dump-views FILE] [records file]
  *
  * The records come from the file, or from stdin: any number of battles (the
  * format is in records.h). Each battle is set up and stepped exactly as
@@ -50,6 +50,20 @@
  * Exit status: 0 at the end of the input, 2 for input that is not the format
  * (a bug of the tool that wrote it: the message on stderr names the line),
  * 1 for any other failure (a file that cannot be read, memory, a context).
+ * --dump-views FILE (the Showdown live adapter's oracle, docs/superpowers/specs/
+ * 2026-10-02-showdown-live-design.md section 8) also writes what DuoForge
+ * shows each player at every state the engine reached: after the create
+ * (k = 0) and after every step whose comparisons passed (k = step + 1), one
+ * line per viewer, viewer 0 first,
+ *
+ *   V <name> <k> <viewer> <observation hex> <factored domain hex>
+ *
+ * (duoforge_battle_observe and duoforge_battle_factored, lowercase hex). A
+ * failing observe or factored call ends the battle as a DIVERGENCE "views:
+ * <status> (view K)", whose step column is the step before view K (- for
+ * K = 0); a FILE that cannot be opened, written, flushed or closed exits 1.
+ * Without the flag the output is the same as before.
+ *
  * Heap allocation is fine here: this is a tool, not the engine.
  */
 #include <stdio.h>
@@ -82,6 +96,7 @@ typedef struct outcome {
     uint32_t data_kind; /* the context the battle ran under */
     bool has_step;
     uint32_t step;
+    bool write_failed; /* --dump-views: FILE could not be written */
     char detail[200];
 } outcome;
 
@@ -223,11 +238,50 @@ static bool domain_agrees(const dfr_battle *b, const dfr_domain *d, const duofor
     return false;
 }
 
+/* The views of both players at decision index k into `views` (--dump-views). False when the battle must end: a
+ * failing query (the outcome says so) or a write error (write_failed). */
+static bool write_views(FILE *views, const dfr_battle *b, uint32_t k, const duoforge_context *ctx,
+                        const duoforge_battle *battle, outcome *o)
+{
+    for (uint32_t viewer = 0u; viewer < 2u; ++viewer) {
+        duoforge_observation obs;
+        duoforge_factored_domain dom;
+        duoforge_status st = duoforge_battle_observe(ctx, battle, viewer, &obs);
+        if (st == DUOFORGE_OK) {
+            st = duoforge_battle_factored(ctx, battle, viewer, &dom);
+        }
+        if (st != DUOFORGE_OK) {
+            char text[160];
+            (void)snprintf(text, sizeof text, "views: %s (view %u)", duoforge_status_name(st), (unsigned)k);
+            o->has_step = k > 0u; /* the views after step k - 1; at k = 0 no step ran */
+            o->step = k > 0u ? k - 1u : 0u;
+            set_detail(o, VERDICT_DIVERGENCE, text);
+            return false;
+        }
+        fprintf(views, "V %s %u %u ", b->name, (unsigned)k, (unsigned)viewer);
+        const unsigned char *bytes = (const unsigned char *)&obs;
+        for (size_t i = 0u; i < sizeof obs; ++i) {
+            fprintf(views, "%02x", bytes[i]);
+        }
+        fputc(' ', views);
+        bytes = (const unsigned char *)&dom;
+        for (size_t i = 0u; i < sizeof dom; ++i) {
+            fprintf(views, "%02x", bytes[i]);
+        }
+        fputc('\n', views);
+        if (ferror(views)) {
+            o->write_failed = true;
+            return false;
+        }
+    }
+    return true;
+}
+
 /* One battle. contexts[0] is CLOSURE or TEAM_C, contexts[1] the DEV context of the same data. A battle with a
  * strict kind is created under that context alone; any other first under contexts[0], and under contexts[1] when
  * that cannot create it, as tests/test_conformance.c does. */
 static outcome run_battle(const dfr_battle *b, duoforge_context *const contexts[2],
-                          const duoforge_context_config *const configs[2], FILE *out)
+                          const duoforge_context_config *const configs[2], FILE *out, FILE *views)
 {
     outcome o;
     memset(&o, 0, sizeof o);
@@ -274,6 +328,10 @@ static outcome run_battle(const dfr_battle *b, duoforge_context *const contexts[
     /* Event differences written so far; the comparator stops at its cap per run. */
     unsigned event_reports = 0u;
     uint32_t next_domain = 0u; /* the samples come in the order of the steps */
+    if (views != NULL && !write_views(views, b, 0u, ctx, battle, &o)) {
+        duoforge_battle_destroy(battle);
+        return o;
+    }
     for (uint32_t si = 0u; si < b->step_count; ++si) {
         const df_conf_step *st = &b->steps[si];
         /* What the reference accepted before this step, against what the engine offers now. */
@@ -327,6 +385,9 @@ static outcome run_battle(const dfr_battle *b, duoforge_context *const contexts[
             set_detail(&o, VERDICT_DIVERGENCE, text);
             break;
         }
+        if (views != NULL && !write_views(views, b, si + 1u, ctx, battle, &o)) {
+            break;
+        }
     }
     duoforge_battle_destroy(battle);
     return o;
@@ -345,8 +406,14 @@ static void print_result(const dfr_battle *b, const outcome *o)
 
 int main(int argc, char **argv)
 {
-    if (argc > 2) {
-        fputs("usage: duoforge_diff_runner [records file]\n", stderr);
+    const char *views_path = NULL;
+    int arg = 1;
+    if (argc > 1 && strcmp(argv[1], "--dump-views") == 0) {
+        views_path = argc > 2 ? argv[2] : NULL;
+        arg = 3;
+    }
+    if (argc > arg + 1 || (arg == 3 && views_path == NULL)) {
+        fputs("usage: duoforge_diff_runner [--dump-views FILE] [records file]\n", stderr);
         return 2;
     }
 #ifdef _WIN32
@@ -354,11 +421,22 @@ int main(int argc, char **argv)
     (void)_setmode(_fileno(stdin), _O_BINARY);
     (void)_setmode(_fileno(stdout), _O_BINARY);
 #endif
+    FILE *views = NULL;
+    if (views_path != NULL) {
+        views = fopen(views_path, "wb");
+        if (views == NULL) {
+            fprintf(stderr, "duoforge_diff_runner: cannot open %s\n", views_path);
+            return 1;
+        }
+    }
     FILE *in = stdin;
-    if (argc == 2) {
-        in = fopen(argv[1], "rb");
+    if (argc == arg + 1) {
+        in = fopen(argv[arg], "rb");
         if (in == NULL) {
-            fprintf(stderr, "duoforge_diff_runner: cannot open %s\n", argv[1]);
+            fprintf(stderr, "duoforge_diff_runner: cannot open %s\n", argv[arg]);
+            if (views != NULL) {
+                (void)fclose(views);
+            }
             return 1;
         }
     }
@@ -399,7 +477,13 @@ int main(int argc, char **argv)
             break;
         }
         const size_t kind = battle.team_c != 0u ? 1u : 0u;
-        const outcome o = run_battle(&battle, contexts[kind], configs[kind], stdout);
+        const outcome o = run_battle(&battle, contexts[kind], configs[kind], stdout, views);
+        if (o.write_failed) {
+            fprintf(stderr, "duoforge_diff_runner: cannot write %s\n", views_path);
+            dfr_battle_free(&battle);
+            rc = 1;
+            break;
+        }
         print_result(&battle, &o);
         dfr_battle_free(&battle);
         if (fflush(stdout) != 0) {
@@ -409,6 +493,15 @@ int main(int argc, char **argv)
     }
 
     dfr_reader_destroy(&reader);
+    if (views != NULL) {
+        const bool flushed = fflush(views) == 0 && !ferror(views);
+        if (fclose(views) != 0 || !flushed) {
+            if (rc == 0) {
+                fprintf(stderr, "duoforge_diff_runner: cannot write %s\n", views_path);
+            }
+            rc = 1;
+        }
+    }
     if (in != stdin) {
         (void)fclose(in);
     }
