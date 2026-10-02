@@ -14,7 +14,8 @@ import numpy as np
 
 import duoforge
 from duoforge import _layout, features
-from duoforge_learn import evaluate
+from duoforge_learn import evaluate, ladder
+from duoforge_learn.checkpoint import load
 from duoforge_learn.returns import gae
 from duoforge_learn.selfplay import OPTIONS, TEAM_ACTIONS, TEAM_TABLE, SelfPlay
 
@@ -106,6 +107,43 @@ class SeatTest(unittest.TestCase):
         self.assertEqual(result["wins"] + result["losses"] + result["ties"], 8)
         self.assertGreater(result["unfinished"], 0)  # two switchers never end a battle
         self.assertGreaterEqual(result["ties"], result["unfinished"])
+
+
+class LadderTest(unittest.TestCase):
+    def test_ratings_follow_the_scores(self):
+        # A beats B 9 of 10, B beats C 9 of 10, A beats C 10 of 10.
+        score = np.array([[0, 9, 10], [1, 0, 9], [0, 1, 0]], dtype=float)
+        games = np.where(np.eye(3) == 1, 0.0, 10.0)
+        elo = ladder.ratings(score, games)
+        self.assertEqual(elo[0], 0.0)
+        self.assertTrue(elo[0] > elo[1] > elo[2])
+        even = ladder.ratings(np.full((2, 2), 5.0) * (1 - np.eye(2)), np.full((2, 2), 10.0) * (1 - np.eye(2)))
+        self.assertAlmostEqual(float(even[1]), 0.0, places=6)
+
+    def test_round_robin_ranks_stand_ins(self):
+        players = [("switch", {"prefer": "switch"}), ("attack", {"prefer": "attack"})]
+        score, games = ladder.round_robin(players, _stand_in, envs=16, workers=2)
+        self.assertEqual(games[0, 1], 16)
+        self.assertEqual(score[0, 1] + score[1, 0], 16)
+        self.assertGreater(ladder.ratings(score, games)[1], 100.0)
+
+    def test_checkpoint_round_trip(self):
+        import json
+        import os
+        import tempfile
+        params = {"t1": {"w": np.arange(6, dtype=np.float32).reshape(2, 3), "b": np.zeros(3, np.float32)},
+                  "value": {"w": np.ones((3, 1), np.float32), "b": np.zeros(1, np.float32)}}
+        arrays = {f"['{a}']['{b}']": v for a, d in params.items() for b, v in d.items()}
+        with tempfile.TemporaryDirectory() as folder:
+            path = os.path.join(folder, "params-7.npz")
+            np.savez(path, config=json.dumps({"seed": 5}), **arrays)
+            back, config = load(path)
+            self.assertEqual(config, {"seed": 5})
+            self.assertTrue(np.array_equal(back["t1"]["w"], params["t1"]["w"]))
+            self.assertEqual(sorted(back), ["t1", "value"])
+            np.savez(path, config="{}", **{"odd name": np.zeros(1)})
+            with self.assertRaises(ValueError):
+                load(path)
 
 
 class InputTest(unittest.TestCase):
