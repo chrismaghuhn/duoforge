@@ -1461,6 +1461,9 @@ static bool dfi_heal_blocked(const struct duoforge_battle *b, uint32_t flat)
  * duration 2 (data/moves.ts:19391-19393, DFI_TAIL_THROAT_CHOP_MAX). */
 #define DFI_HEAL_BLOCK_PSYCHIC_NOISE_TURNS 2u
 
+/* Encore's condition has duration 3 (data/moves.ts:4724-4783); onStart adds one when the target has no move queued. */
+#define DFI_ENCORE_TURNS 3u
+
 /* addVolatile('throatchop') on a standing target without it: no onRestart, so a second hit changes nothing; its
  * -start line is [silent]. */
 static void dfi_add_lockout(dfi_run *r, uint32_t flat)
@@ -2002,6 +2005,162 @@ static const dfi_queue_record *dfi_will_move(struct duoforge_battle *b, uint32_t
     return NULL;
 }
 
+/* The failencore flag (data/moves.ts flags.failencore): Struggle and Encore itself are the only moves with it that a
+ * marked member can have (duoforge.state.pool_g9 checks the predicate over every pool move against the pinned flag). */
+static bool dfi_fails_encore(uint32_t move_id)
+{
+    return move_id == DFI_MOVE_STRUGGLE || move_id == DFI_MOVE_ENCORE;
+}
+
+static void dfi_cancel_actions(struct duoforge_battle *b, uint32_t activation_id);
+
+/* The target that resolveAction gives an action without one (Battle.getRandomTarget, sim/battle.ts:2490-2522): the
+ * user for self, side and field moves; the standing ally for an ally move (sample over one: one draw); otherwise a
+ * random foe (RANDOM_TARGET: side.randomFoe(), or the foe in slot 0 when none stands). */
+static duoforge_status dfi_resolve_target(dfi_run *r, uint32_t flat, uint32_t cls, uint32_t *out)
+{
+    const uint32_t side = flat / 2u;
+    if (cls == DUOFORGE_TARGET_CLASS_SELF || cls == DUOFORGE_TARGET_CLASS_ALLY_SIDE ||
+        cls == DUOFORGE_TARGET_CLASS_ALL || cls == DUOFORGE_TARGET_CLASS_ADJACENT_ALLY_OR_SELF) {
+        *out = flat;
+        return DUOFORGE_OK;
+    }
+    if (cls == DUOFORGE_TARGET_CLASS_ADJACENT_ALLY) {
+        const uint32_t ally = side * 2u + (1u - flat % 2u);
+        *out = ally;
+        if (!dfi_alive(r->b, ally)) {
+            return DUOFORGE_OK; /* null: the move finds nothing to hit */
+        }
+        uint32_t v = 0u;
+        return dfi_draw(r->draws, DFI_SITE_RANDOM_TARGET, 0u, 1u, &v);
+    }
+    uint32_t t = DFI_POSITIONS;
+    const duoforge_status st = dfi_random_foe(r, side, &t);
+    *out = t < DFI_POSITIONS ? t : (1u - side) * 2u;
+    return st;
+}
+
+/* Champions' Encore, the branch of onStart for a target that still has another move queued
+ * (data/mods/champions/moves.ts:326-342): queue.changeAction(target, {choice: 'move', moveid, order}) cancels the
+ * target's actions and inserts a new move action that has no target (BattleQueue.changeAction and insertChoice,
+ * sim/battle-queue.ts:301-305 and 369-403). resolveAction picks its target (RANDOM_TARGET), then the action goes where
+ * comparePriority puts it among the queued actions: the order of its kind, the priority of the new move with its
+ * user's ModifyPriority handlers, the user's action speed. It goes before the first action that it beats; among
+ * actions that it ties it is placed at random(first, last + 1) (INSERT_TIE, drawn only when that range has more than
+ * one index). Every later sort takes every priority from the move again (sim/battle.ts:2921-2925), so the priority
+ * that the reference then writes into the action (the old action's priority adjusted by the two moves' base
+ * priorities) never decides anything. */
+static duoforge_status dfi_encore_replace(dfi_run *r, uint32_t flat, uint32_t slot)
+{
+    struct duoforge_battle *b = r->b;
+    const dfi_queue_record *old = dfi_will_move(b, flat);
+    const dfi_member *tm = dfi_at(b, flat);
+    if (old == NULL || tm == NULL || slot >= tm->move_count) {
+        return DUOFORGE_E_INVARIANT;
+    }
+    dfi_queue_record rec = *old;
+    rec.move_slot = (uint8_t)slot;
+    rec.reserve = 0u;
+    const uint32_t cls = dfi_pool_moves[tm->moves[slot].move_id].target_class;
+    dfi_cancel_actions(b, old->activation_id); /* `old` is not valid from here */
+    uint32_t target = 0u;
+    duoforge_status st = dfi_resolve_target(r, flat, cls, &target);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    rec.target = (uint8_t)target; /* < 4 */
+    st = dfi_update_position_speed(r, flat); /* insertChoice: pokemon.updateSpeed() */
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    dfi_key key;
+    st = dfi_key_of(r, &rec, &key);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    uint32_t first = UINT32_MAX;
+    uint32_t last = UINT32_MAX;
+    const uint32_t len = b->queue_len;
+    for (uint32_t i = 0u; i < len && i < DFI_QUEUE_CAPACITY; ++i) {
+        dfi_key other;
+        st = dfi_key_of(r, &b->queue[i], &other);
+        if (st != DUOFORGE_OK) {
+            return st;
+        }
+        const uint32_t c = dfi_compare(&key, &other); /* 0: the new action first, 1: a tie */
+        if (c != 2u && first == UINT32_MAX) {
+            first = i;
+        }
+        if (c == 0u) {
+            last = i;
+            break;
+        }
+    }
+    uint32_t index = len;
+    if (first != UINT32_MAX) {
+        if (last == UINT32_MAX) {
+            last = len;
+        }
+        index = first;
+        if (first != last) {
+            st = dfi_draw(r->draws, DFI_SITE_INSERT_TIE, first, last + 1u, &index);
+            if (st != DUOFORGE_OK) {
+                return st;
+            }
+        }
+    }
+    if (len >= DFI_QUEUE_CAPACITY || index > len) {
+        return DUOFORGE_E_INVARIANT;
+    }
+    for (uint32_t i = len; i > index; --i) {
+        b->queue[i] = b->queue[i - 1u];
+    }
+    b->queue[index] = rec;
+    b->queue_len = (uint8_t)(len + 1u); /* wide-operands-reviewed: <= DFI_QUEUE_CAPACITY */
+    return DUOFORGE_OK;
+}
+
+/* Encore (data/moves.ts:4724-4783, Champions onStart at data/mods/champions/moves.ts:309-345) on the target at `flat`.
+ * addVolatile fails for a target that has it already (the condition has no onRestart); onStart fails without a last
+ * move, for a failencore move, for a move that is not among the target's slots or has no PP left; a failure is
+ * -fail|user with [still] (the move did nothing). Otherwise the lock starts: -start|target|Encore, duration 3, or 4
+ * when the target has no move queued (it has moved this turn, or switches); a target that has another move queued has
+ * it replaced by the Encored one (dfi_encore_replace), unless it holds a Mental Herb (the item is not in any set the
+ * gate accepts: E_UNSUPPORTED). *did tells whether the lock started. */
+static duoforge_status dfi_encore(dfi_run *r, uint32_t user, uint32_t flat, bool *did)
+{
+    struct duoforge_battle *b = r->b;
+    *did = false;
+    dfi_member *tm = dfi_at(b, flat);
+    dfi_tail_pos *tail = &b->tail.sides[flat / 2u].positions[flat % 2u];
+    if (tm == NULL || tm->hp == 0u) {
+        return DUOFORGE_OK;
+    }
+    const uint32_t last = tail->last_move; /* 0 none, 1..4 slot + 1, 5 Struggle */
+    if (tail->encore_slot != 0u || last == 0u || last > DUOFORGE_MAX_MOVE_SLOTS || last > tm->move_count ||
+        dfi_fails_encore(tm->moves[last - 1u].move_id) || tm->moves[last - 1u].pp == 0u) {
+        dfi_fail_still(r, user);
+        return DUOFORGE_OK;
+    }
+    const uint32_t slot = last - 1u;
+    const uint32_t move_id = tm->moves[slot].move_id;
+    const dfi_queue_record *queued = dfi_will_move(b, flat);
+    const bool replace = queued != NULL && dfi_move_of(tm, queued->move_slot) != move_id;
+    if (replace && dfi_holds(tm, DFI_ITEM_MENTALHERB)) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
+    tail->encore_slot = (uint8_t)last;
+    tail->encore_turns = queued == NULL ? DFI_ENCORE_TURNS + 1u : DFI_ENCORE_TURNS; /* 4 or 3: fits the byte */
+    duoforge_event e = dfi_event_make(DUOFORGE_EVENT_VOLATILE_START, flat);
+    e.detail = (uint8_t)DUOFORGE_VOLATILE_ENCORE;
+    dfi_emit(r, &e);
+    *did = true;
+    if (replace) {
+        return dfi_encore_replace(r, flat, slot);
+    }
+    return DUOFORGE_OK;
+}
+
 /* Helping Hand (Team C, data/moves.ts:8573-8606). The TryHit step comes
  * first (sim/battle-actions.ts:643-653): Good as Gold stops a status move of
  * any other Pokemon, its ally's included (data/abilities.ts:1630-1636), with
@@ -2152,6 +2311,12 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         slot->pp = (uint8_t)((uint32_t)slot->pp - 1u); /* wide-operands-reviewed: pp > 0 */
     }
     r->move_used = true; /* useMove runs; AfterMove follows it */
+    /* pokemon.moveUsed (sim/pokemon.ts:903-914, called by runMove after the PP are deducted, also for a locked turn):
+     * the move that Encore takes; Struggle is 5. The tail is zero under every kind but POOL (invariant TAIL_KIND). */
+    if (dfi_kind_limits_of(r->ctx->data_kind).pool_rules) {
+        b->tail.sides[side].positions[q->slot].last_move =
+            (uint8_t)(q->move_slot == DUOFORGE_MOVE_SLOT_STRUGGLE ? 5u : (uint32_t)q->move_slot + 1u); /* wide-operands-reviewed: <= 5 */
+    }
     /* The freeze's onModifyMove thaws a user of a defrost move before the
      * move line: -curestatus|frz|[from] move (data/conditions.ts:106-111,
      * inherited by Champions; Team C, Flare Blitz). */
@@ -2405,7 +2570,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         return DUOFORGE_OK;
     }
     if (status_move && md->primary_status == DFI_STATUS_NONE && md->special != DFI_SPECIAL_PARTING_SHOT &&
-        md->special != DFI_SPECIAL_SOAK) {
+        md->special != DFI_SPECIAL_SOAK && md->special != DFI_SPECIAL_ENCORE) {
         if (dfi_pool_move_heal[move_id][1] != 0u) {
             return dfi_run_heal_move(r, user, move_id);
         }
@@ -2422,7 +2587,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     if (md->special > DFI_SPECIAL_STRUGGLE && md->special != DFI_SPECIAL_DARKEST_LARIAT &&
         md->special != DFI_SPECIAL_LAST_RESPECTS && md->special != DFI_SPECIAL_SUCKER_PUNCH &&
         md->special != DFI_SPECIAL_FIRST_IMPRESSION && md->special != DFI_SPECIAL_LOW_KICK &&
-        md->special != DFI_SPECIAL_SOAK) {
+        md->special != DFI_SPECIAL_SOAK && md->special != DFI_SPECIAL_ENCORE) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Fake Out's and First Impression's onTry (in trySpreadMoveHit, after
@@ -2642,6 +2807,15 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             }
             if (md->special == DFI_SPECIAL_SOAK) {
                 did = dfi_soak(r, targets[i], move_id) || did;
+                continue;
+            }
+            if (md->special == DFI_SPECIAL_ENCORE) {
+                bool started = false;
+                st = dfi_encore(r, user, targets[i], &started);
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
+                did = did || started;
                 continue;
             }
             const uint32_t before = dfi_at(b, targets[i])->status;
@@ -3313,12 +3487,13 @@ static duoforge_status dfi_run_mega(dfi_run *r, const dfi_queue_record *q)
 #define DFI_RES_LEFTOVERS 7u
 #define DFI_RES_POISON 8u
 #define DFI_RES_WHITE_HERB 9u
+#define DFI_RES_ENCORE 10u /* Encore: order 16, a callback with a duration (step G9) */
 #define DFI_RES_NO_ORDER 0xFFFFFFFFu
 /* Trick Room, weather and terrain; three conditions per side; per position
  * (DFI_RES_PER_POSITION) a status (burn or poison), six duration ends
  * (Protect, the stall counter, flinch, a charge, Helping Hand, Follow Me),
- * an item (Leftovers or White Herb) and Grassy Terrain. */
-#define DFI_RES_PER_POSITION 9u
+ * an item (Leftovers or White Herb), Grassy Terrain and Encore. */
+#define DFI_RES_PER_POSITION 10u
 #define DFI_RES_MAX (3u + 3u * DUOFORGE_SIDE_COUNT + DFI_RES_PER_POSITION * DFI_POSITIONS)
 
 typedef struct dfi_residual_entry {
@@ -3483,6 +3658,12 @@ static duoforge_status dfi_residual_events(dfi_run *r)
             list[n] = (dfi_residual_entry){DFI_RES_GRASSY, flat, 5u, speed, 2u, true};
             n += 1u;
         }
+        /* Encore (onResidualOrder 16): one handler with a callback and a duration; Pokemon with it at equal Speed tie
+         * as callbacks (SPEED_TIE). */
+        if (b->tail.sides[flat / 2u].positions[flat % 2u].encore_slot != 0u) {
+            list[n] = (dfi_residual_entry){DFI_RES_ENCORE, flat, 16u, speed, 0u, true};
+            n += 1u;
+        }
     }
     uint32_t early = 0u; /* the callbacks of orders 1 to 10 */
     uint32_t herbs = 0u; /* White Herb's, order 29 */
@@ -3559,6 +3740,23 @@ static duoforge_status dfi_residual_events(dfi_run *r)
         dfi_member *m = dfi_at(b, e->flat);
         if (m->hp == 0u) {
             continue; /* the holder fainted */
+        }
+        if (e->kind == DFI_RES_ENCORE) {
+            /* fieldEvent: the duration goes down and at 0 the volatile ends (-end|X|Encore, onEnd); otherwise the
+             * callback ends it early when the Encored move has no PP left (data/moves.ts:4724-4783). */
+            dfi_tail_pos *tail = &b->tail.sides[e->flat / 2u].positions[e->flat % 2u];
+            if (tail->encore_slot == 0u) {
+                continue; /* removed by an earlier handler */
+            }
+            tail->encore_turns = (uint8_t)((uint32_t)tail->encore_turns - 1u); /* wide-operands-reviewed: >= 1 */
+            if (tail->encore_turns == 0u || m->moves[(uint32_t)tail->encore_slot - 1u].pp == 0u) {
+                tail->encore_slot = 0u;
+                tail->encore_turns = 0u;
+                duoforge_event end = dfi_event_make(DUOFORGE_EVENT_VOLATILE_END, e->flat);
+                end.detail = (uint8_t)DUOFORGE_VOLATILE_ENCORE;
+                dfi_emit(r, &end);
+            }
+            continue;
         }
         if (e->kind == DFI_RES_LEFTOVERS) {
             dfi_heal(r, e->flat, (uint32_t)m->hp_max / 16u, DUOFORGE_CAUSE_ITEM, 1u + DFI_ITEM_LEFTOVERS,

@@ -772,6 +772,93 @@ class Library(unittest.TestCase):
             with self.assertRaises(trace_to_c.ConversionError):
                 trace_to_c.step_events([bad], 0, roster, [{'Pelipper': 100}] * 2, tables)
 
+    def test_encore_rows_are_what_the_protocol_lines_say(self):
+        """Decision 0018 section 6.1 for Encore: a position is Encored from the `|-start|X|Encore` line, to the slot of the
+        occupant's last `|move|` line on its open sheet (its set's move order), until the matching `|-end|X|Encore` or
+        until the occupant leaves (`|switch|`, `|drag|`, `|replace|`, `|faint|`). The rows of the C test (rows in
+        tests/test_pool_g9.c: the slot + 1 of each position after each step of the g09 battles) must be exactly what
+        these lines give for the committed traces and specs, so the engine's tail and extension are checked against the
+        protocol and not against itself. Also: the converter reads both lines as VOLATILE_START and VOLATILE_END with
+        the Encore detail."""
+        names = ('g09_encore_lock', 'g09_encore_fail', 'g09_encore_late', 'g09_encore_switch', 'g09_encore_struggle',
+                 'g09_encore_tie_a', 'g09_encore_tie_b', 'g09_encore_encore')
+        source = open(os.path.join(ROOT, 'tests', 'test_pool_g9.c'), encoding='utf-8').read()
+        rows = {}
+        for m in re.finditer(r'\{"(g09_\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}', source):
+            rows[(m.group(1), int(m.group(2)))] = [int(m.group(i)) for i in (3, 4, 5, 6)]
+        derived = {}
+        starts = 0
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'specs', name + '.json'), encoding='utf-8') as f:
+                spec = json.load(f)
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            sheets = []
+            for text in spec['teams']:
+                sheet = {}
+                for block in text.strip().split('\n\n'):
+                    lines = block.split('\n')
+                    sheet[re.split(r' \(| @', lines[0])[0]] = [l[2:] for l in lines if l.startswith('- ')]
+                sheets.append(sheet)
+            last, encore = {}, {}
+            for k, step in enumerate(trace['steps']):
+                for line in step['log']:
+                    part = line.split('|')
+                    if len(part) < 3:
+                        continue
+                    pos = part[2][:3]
+                    if part[1] in ('switch', 'drag', 'faint', 'replace'):
+                        last.pop(pos, None)
+                        encore.pop(pos, None)
+                    elif part[1] == 'move':
+                        moves = sheets[int(pos[1]) - 1][part[2].split(': ', 1)[1]]
+                        last[pos] = moves.index(part[3]) + 1 if part[3] in moves else 5
+                    elif part[1] == '-start' and len(part) > 3 and part[3] == 'Encore':
+                        encore[pos] = last[pos]
+                        starts += 1
+                    elif part[1] == '-end' and len(part) > 3 and part[3] == 'Encore':
+                        encore.pop(pos, None)
+                slots = [0, 0, 0, 0]
+                for p, v in encore.items():
+                    slots[(int(p[1]) - 1) * 2 + 'ab'.index(p[2])] = v
+                derived[(name, k)] = slots
+        self.assertEqual(rows, derived)
+        self.assertTrue(starts >= 5 and any(any(v) for v in derived.values()))
+        tables = trace_to_c.load_tables(ROOT, True)
+        roster = [{'Milotic': 0}, {'Milotic': 0}]
+        maxhp = [{'Milotic': 100}] * 2
+        for line, kind in (('|-start|p2a: Milotic|Encore', 'VOLATILE_START'), ('|-end|p2a: Milotic|Encore', 'VOLATILE_END')):
+            events = trace_to_c.step_events([line], 0, roster, maxhp, tables)
+            self.assertEqual(len(events), 1)
+            e = events[0]
+            self.assertEqual((e[0], e[1], e[11]), (trace_to_c.EV[kind], 2, trace_to_c.VOLATILE_ENCORE))
+        self.assertEqual((trace_to_c.EV['VOLATILE_START'], trace_to_c.EV['VOLATILE_END']), (39, 40))
+        self.assertEqual(trace_to_c.VOLATILE_ENCORE, 2)
+
+    def test_the_draws_of_an_encore_replacement_are_tape_entries(self):
+        """Encore's replaced action (Champions' onStart, queue.changeAction -> insertChoice -> resolveAction) draws the
+        target that decides who it hits (the harness labels it RANDOM_TARGET resolve:insert, not INSERT_TIE) and, when it
+        ties queued actions, its place among them (INSERT_TIE with moves in the tied range). The converter keeps both as
+        tape entries; the old rules stay: a RANDOM_TARGET resolve of an ordinary queue and an insert tie among runSwitch
+        entries are dropped, an insert tie among anything else is an error."""
+        before = {'sides': []}
+        target = {'site': 'RANDOM_TARGET', 'context': 'resolve:insert', 'lo': 0, 'hi': 2, 'value': 1}
+        self.assertIsNone(trace_to_c.drop_reason(target, before))
+        self.assertEqual(trace_to_c.tape_entry(target), (trace_to_c.SITES['RANDOM_TARGET'], 0, 2, 1))
+        plain = dict(target, context='resolve')
+        self.assertEqual(trace_to_c.drop_reason(plain, before), 'target computed for priority')
+        group = ['A:move:p1a:thunderbolt', 'A:move:p2b:shadowball', 'A:residual:-:']
+        tie = {'site': 'INSERT_TIE', 'context': 'queue', 'lo': 0, 'hi': 3, 'value': 1, 'group': group}
+        self.assertIsNone(trace_to_c.drop_reason(tie, before))
+        self.assertEqual(trace_to_c.tape_entry(tie), (trace_to_c.SITES['INSERT_TIE'], 0, 3, 1))
+        self.assertEqual(trace_to_c.SITES['INSERT_TIE'], 14)
+        runs = dict(tie, group=['A:runSwitch:p1a::1', 'A:runSwitch:p2a::1'], hi=2)
+        self.assertEqual(trace_to_c.drop_reason(runs, before), 'queue order of entries that run together')
+        other = dict(tie, group=['A:switch:p1a::', 'A:switch:p2a::', 'A:residual:-:'])
+        with self.assertRaises(trace_to_c.ConversionError) as ctx:
+            trace_to_c.drop_reason(other, before)
+        self.assertEqual(ctx.exception.rule, 'insert-tie')
+
     def test_a_two_turn_lock_lasts_while_twoturnmove_stands(self):
         """Electro Shot's onTryMove removes the move's volatile on the locked turn and the recorder's `locked` is made of
         it, but twoturnmove stays until the residual. In the last step of d02 (Emergency Exit) and d03 (Parting Shot,
@@ -908,7 +995,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 25)  # G2, G5, G8, G12, G10 (First Impression, Scald, Recover, Low Kick), G11 (Soak), G7 (Wide Guard), weather
+        self.assertEqual(len(marked), 26)  # G2, G5, G8, G12, G10 (First Impression, Scald, Recover, Low Kick), G11 (Soak), G7 (Wide Guard), weather, G9 (Encore)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []

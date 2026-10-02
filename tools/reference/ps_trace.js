@@ -87,7 +87,16 @@ function classify(stack, battle) {
         if (frames.includes('BattleActions.runSwitch')) return ['SPEED_TIE', 'switch-order'];
         return ['SPEED_TIE', 'event:' + ev];
     }
-    if (frames.includes('BattleQueue.insertChoice')) return ['INSERT_TIE', 'queue'];
+    if (frames.includes('BattleQueue.insertChoice')) {
+        // insertChoice resolves the choice first: the target that resolveAction picks for an action without one
+        // (Encore's replaced action, data/mods/champions/moves.ts:309-345) is a RANDOM_TARGET draw that DECIDES the
+        // target; only a draw that is not one is the insertion's own tie (random(firstIndex, lastIndex + 1)).
+        if (frames.includes('Battle.getRandomTarget')) {
+            if (frames.includes('Battle.getActionSpeed')) return ['RANDOM_TARGET', 'action-speed'];
+            return ['RANDOM_TARGET', 'resolve:insert'];
+        }
+        return ['INSERT_TIE', 'queue'];
+    }
     if (frames.includes('Battle.getRandomTarget')) {
         // Where the target is needed: computing an action's priority and
         // speed (the result only feeds ModifyPriority), resolving a queued
