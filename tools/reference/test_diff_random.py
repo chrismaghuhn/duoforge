@@ -337,6 +337,19 @@ class Buckets(unittest.TestCase):
                          ('ORACLE_GAP', 'protocol-line', 'foo', None, True, None))
         self.assertEqual(runner.requests, [])  # not asked: the runner's DIVERGENCE does not come into it
 
+    def test_every_rule_of_the_converter_is_an_oracle_gap_with_its_rule_and_detail(self):
+        """A rule that the converter gets later ('unknown-volatile' is coming) needs no change in the buckets."""
+        for rule, detail in (('unknown-volatile', 'twoturnmove'), ('a-rule-that-does-not-exist-yet', None)):
+            def refuse(name, spec, trace, tables, rule=rule, detail=detail):
+                raise trace_to_c.ConversionError(rule, 'trace_to_c: refused', detail)
+            with mock.patch.object(trace_to_c, 'convert_battle', refuse):
+                outcome, _, runner = process(World())
+            r = outcome.record
+            self.assertEqual((r['bucket'], r['rule'], r['detail'], r['messages']),
+                             ('ORACLE_GAP', rule, detail, ['trace_to_c: refused']), rule)
+            self.assertEqual(runner.requests, [])
+            self.assertEqual(rnd.signature(r), (rule, detail or ''))
+
     def test_untyped_errors_of_the_converter_are_oracle_gaps_here_too(self):
         def break_it(trace, prefix):
             trace['steps'][0]['log'] = None
@@ -825,16 +838,28 @@ for line in sys.stdin:
 '''
 
 
+PATIENT = 60  # seconds a stand-in is given to answer: it has to start, perhaps on a machine that is busy with a CI
+HANG = 1  # seconds it is given on the battle that it hangs on: no reason to wait long for what must not answer
+
+
 class StandInRunner(driver.DiffRunner):
-    def __init__(self, timeout):
-        driver.Child.__init__(self, [sys.executable, '-c', 'import sys\n' + RUNNER_CODE], 'the runner', timeout)
+    def __init__(self):
+        driver.Child.__init__(self, [sys.executable, '-c', 'import sys\n' + RUNNER_CODE], 'the runner', PATIENT)
+
+    def run(self, name, records):
+        self.timeout = HANG if name == 'fz_1_5' else PATIENT  # RUNNER_CODE hangs on battle 5
+        return super().run(name, records)
 
 
 class StandInWorker(driver.NodeWorker):
-    def __init__(self, timeout):
+    def __init__(self):
         driver.Child.__init__(self, [sys.executable, '-c', 'import sys\n' + WORKER_CODE, TRACE_PATH], 'the reference worker',
-                              timeout)
+                              PATIENT)
         self.next_id = 1
+
+    def play(self, battle, policy):
+        self.timeout = HANG if policy['seed'] == 1009 else PATIENT  # WORKER_CODE hangs on the play of battle 9
+        return super().play(battle, policy)
 
 
 class Crashes(unittest.TestCase):
@@ -861,12 +886,12 @@ class Crashes(unittest.TestCase):
         def make_runner():
             with lock:
                 made['runner'] += 1
-            return StandInRunner(timeout=5)
+            return StandInRunner()
 
         def make_worker():
             with lock:
                 made['worker'] += 1
-            return StandInWorker(timeout=5)
+            return StandInWorker()
 
         with tempfile.TemporaryDirectory() as tmp:
             outdir = os.path.join(tmp, 'x')
