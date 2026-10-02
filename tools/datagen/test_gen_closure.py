@@ -474,21 +474,72 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual(cm.exception.code, 'gen_closure: move %s: %s' % (mid, message))
 
     def test_a_handler_move_parses_in_the_pool_mode_with_its_special(self):
-        for mid, text, special in (('soak', SOAK, 'SOAK'), ('scald', SCALD, 'SCALD'), ('recover', RECOVER, 'RECOVER'),
-                                   ('psychicnoise', PSYCHIC_NOISE, 'PSYCHIC_NOISE'),
-                                   ('throatchop', THROAT_CHOP, 'THROAT_CHOP')):
+        for mid, text, special in (('soak', SOAK, 'SOAK'), ('scald', SCALD, 'SCALD'), ('recover', RECOVER, 'RECOVER')):
             with self.subTest(mid):
                 rec = parse_pool(mid, text)
                 self.assertEqual(rec['special'], gen_closure.SPECIAL_IDS_P.index(special))
                 # What the handler owns is not encoded in the generic columns.
                 self.assertEqual((rec['sec_kind'], rec['sec_param'], rec['primary_status'], rec['side_condition']),
                                  (2, 1, 0, 0) if mid == 'scald' else (0, 0, 0, 0))
-        self.assertEqual(parse_pool('throatchop', THROAT_CHOP)['sec_chance'], 0)
-        self.assertEqual(parse_pool('psychicnoise', PSYCHIC_NOISE)['sec_chance'], 0)
 
-    def test_the_handlers_are_the_nine_new_specials_in_order(self):
+    def test_throat_chop_and_psychic_noise_are_modelled_not_handlers(self):
+        # Step G8: their secondaries are secondary kinds of their own (chance 100), and no handler id.
+        for mid, text, kind, flags2 in (('throatchop', THROAT_CHOP, gen_closure.SECONDARY_LOCKOUT, 0),
+                                        ('psychicnoise', PSYCHIC_NOISE, gen_closure.SECONDARY_HEAL_BLOCK, 1)):
+            with self.subTest(mid):
+                rec = parse_pool(mid, text)
+                self.assertEqual((rec['special'], rec['sec_chance'], rec['sec_kind'], rec['sec_param'], rec['flags2']),
+                                 (0, 100, kind, 0, flags2))
+        # The two kinds are numbers that the engine reads: DFI_SECONDARY_LOCKOUT and DFI_SECONDARY_HEAL_BLOCK.
+        self.assertEqual((gen_closure.SECONDARY_LOCKOUT, gen_closure.SECONDARY_HEAL_BLOCK), (5, 6))
+        # Deviations: another volatile, another chance, no condition block for Throat Chop.
+        self.refused('throatchop', THROAT_CHOP.replace("addVolatile('throatchop')", "addVolatile('taunt')"),
+                     'unknown secondary')
+        self.refused('throatchop', THROAT_CHOP.replace('chance: 100', 'chance: 50'), 'unknown secondary')
+        self.refused('throatchop', THROAT_CHOP.replace('\t\tcondition: {\n\t\t\tduration: 2,\n\t\t},\n', ''),
+                     'expected a condition block')
+        self.refused('psychicnoise', PSYCHIC_NOISE.replace('chance: 100', 'chance: 50'),
+                     'secondary volatile healblock is not modelled')
+        self.refused('psychicnoise', PSYCHIC_NOISE.replace("'healblock'", "'taunt'"),
+                     'secondary volatile taunt is not modelled')
+
+    def test_the_second_flags_byte_has_the_sound_and_heal_flags(self):
+        plain = move_entry('plain', 'Plain', category='Physical', base_power=50, flags='contact: 1, sound: 1')
+        self.assertEqual(parse_pool('plain', plain)['flags2'], 1)
+        self.assertEqual(parse_pool('recover', RECOVER)['flags2'], 2)
+        both = move_entry('plain', 'Plain', category='Physical', base_power=50, flags='sound: 1, heal: 1')
+        self.assertEqual(parse_pool('plain', both)['flags2'], 3)
+        self.assertEqual(parse_pool('icepunch', ICE_PUNCH)['flags2'], 0)
+        # The CLOSURE and extended parses carry the value too (their bytes do not).
+        self.assertEqual(parse_pool('plain', plain, pool=False, ext=False)['flags2'], 1)
+
+    def test_the_conditions_that_the_engine_hard_codes_are_checked(self):
+        facts = dict(gen_closure.G8_CONDITION_FACTS)
+
+        def entries(skip=(None, None)):
+            # Every fact on its own line; the braces of a line that opens a block are closed on the next line.
+            out = []
+            for mid, needed in facts.items():
+                lines = ['\t%s: {' % mid]
+                for i, n in enumerate(needed):
+                    if (mid, i) != skip:
+                        lines.append('\t\t' + n)
+                        lines.append('\t\t' + '}' * max(0, n.count('{') - n.count('}')))
+                lines.append('\t},')
+                out.append('\n'.join(lines))
+            return TextSource('data/moves.ts', '\n'.join(out))
+
+        gen_closure.check_g8_conditions(entries())
+        for mid, needed in facts.items():
+            for i in range(len(needed)):
+                with self.subTest(mid=mid, fact=needed[i]):
+                    with self.assertRaises(SystemExit) as cm:
+                        gen_closure.check_g8_conditions(entries((mid, i)))
+                    self.assertIn('move %s: the condition no longer has' % mid, str(cm.exception.code))
+
+    def test_the_handlers_are_the_seven_new_specials_in_order(self):
         self.assertEqual(gen_closure.SPECIAL_IDS_P[len(gen_closure.SPECIAL_IDS_C):], gen_closure.G2_HANDLERS)
-        self.assertEqual(len(gen_closure.G2_HANDLERS), 9)
+        self.assertEqual(len(gen_closure.G2_HANDLERS), 7)
         self.assertEqual({v[0] for k, v in gen_closure.SPECIAL_P.items() if k not in gen_closure.SPECIAL_C},
                          set(gen_closure.G2_HANDLERS))
 
@@ -498,7 +549,7 @@ class PoolMoves(unittest.TestCase):
                                    ('scald', SCALD, 'unknown field thawsTarget'),
                                    ('recover', RECOVER, 'unknown field heal'),
                                    ('psychicnoise', PSYCHIC_NOISE, 'secondary volatile healblock is not modelled'),
-                                   ('throatchop', THROAT_CHOP, 'unknown secondary')):
+                                   ('throatchop', THROAT_CHOP, 'unknown secondary')):  # G8: only the pool mode models them
             for ext in (False, True):
                 with self.subTest(mid=mid, ext=ext):
                     self.refused(mid, text, message, pool=False, ext=ext)
@@ -508,13 +559,6 @@ class PoolMoves(unittest.TestCase):
                      'thawsTarget is not "thawsTarget: true,"')
         self.refused('recover', RECOVER.replace('[1, 2]', '[1, 4]'), 'heal is not "heal: [1, 2],"')
         self.refused('recover', RECOVER.replace('\t\theal: [1, 2],\n', ''), 'heal is not "heal: [1, 2],"')
-        self.refused('psychicnoise', PSYCHIC_NOISE.replace('chance: 100', 'chance: 50'),
-                     'the secondary is not "secondary: { chance: 100, volatileStatus: \'healblock\', },"')
-        self.refused('throatchop', THROAT_CHOP.replace("addVolatile('throatchop')", "addVolatile('taunt')"),
-                     'the secondary is not "secondary: { chance: 100, onHit(target) { target.addVolatile('
-                     '\'throatchop\'); }, },"')
-        self.refused('throatchop', THROAT_CHOP.replace('\t\tcondition: {\n\t\t\tduration: 2,\n\t\t},\n', ''),
-                     'expected a condition block')
         # A callback the handler does not name, and one it names that is absent.
         self.refused('soak', SOAK.replace('target: "normal",', 'onTryHit() { },\n\t\ttarget: "normal",'),
                      'callback onTryHit is not mapped to a handler')

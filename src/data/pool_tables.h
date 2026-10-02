@@ -64,15 +64,19 @@
 /* ---- handlers new in the pool tables (step G2): the value of the special column of the moves that have a
  * callback or a field that the columns do not model. The engine refuses every one of them, and so does the
  * support manifest, which leaves the move unmarked. ---- */
-#define DFI_SPECIAL_THROAT_CHOP 15u
-#define DFI_SPECIAL_ENCORE 16u
-#define DFI_SPECIAL_SCALD 17u
-#define DFI_SPECIAL_WIDE_GUARD 18u
-#define DFI_SPECIAL_FIRST_IMPRESSION 19u
-#define DFI_SPECIAL_RECOVER 20u
-#define DFI_SPECIAL_SOAK 21u
-#define DFI_SPECIAL_PSYCHIC_NOISE 22u
-#define DFI_SPECIAL_LOW_KICK 23u
+#define DFI_SPECIAL_ENCORE 15u
+#define DFI_SPECIAL_SCALD 16u
+#define DFI_SPECIAL_WIDE_GUARD 17u
+#define DFI_SPECIAL_FIRST_IMPRESSION 18u
+#define DFI_SPECIAL_RECOVER 19u
+#define DFI_SPECIAL_SOAK 20u
+#define DFI_SPECIAL_LOW_KICK 21u
+
+/* ---- the second flags byte of every move (step G8) and the secondary kinds that it comes with ---- */
+#define DFI_MOVE_FLAG2_SOUND 1u /* data/moves.ts flags.sound: Throat Chop bars these moves */
+#define DFI_MOVE_FLAG2_HEAL 2u  /* flags.heal: Heal Block bars these moves */
+#define DFI_SECONDARY_LOCKOUT 5u    /* chance 100: the target may not use sound moves (Throat Chop) */
+#define DFI_SECONDARY_HEAL_BLOCK 6u /* chance 100: the target may not heal (Psychic Noise) */
 
 /* ---- pool abilities (appended after the extended ones): step P1, then step G2 ---- */
 #define DFI_ABILITY_PIXILATE 21u
@@ -185,9 +189,11 @@ extern const uint8_t dfi_pool_type_immunity[DFI_TYPE_COUNT]; /* DFI_IMMUNE_* bit
 extern const dfi_item_family dfi_pool_item_family[DFI_POOL_ITEM_COUNT];
 extern const dfi_ability_family dfi_pool_ability_family[DFI_POOL_ABILITY_COUNT];
 extern const dfi_forme_legal dfi_pool_forme_legal[DFI_POOL_FORME_COUNT];
+/* The second flags byte of every move (DFI_MOVE_FLAG2_*), by move id; part of the canonical pool bytes. */
+extern const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT];
 
 /* SHA-256 of the canonical pool bytes (written by the generator). */
-#define DFI_POOL_CANONICAL_SIZE 3794u
+#define DFI_POOL_CANONICAL_SIZE 3866u
 extern const uint8_t dfi_pool_table_hash[32];
 /* The canonical bytes of the closure layout over the first `formes`, `moves`,
  * `items` and `abilities` rows of the tables above, with every immunity byte
@@ -200,7 +206,8 @@ size_t dfi_pool_canonical_bytes_of(uint8_t *out, size_t capacity, uint32_t forme
                                    uint32_t abilities, uint32_t immunity_mask);
 /* The canonical pool bytes: every row, every immunity bit, then the family
  * column of every item and of every ability (family, parameter), then for
- * every forme its learnable bytes, ability count and ability ids. */
+ * every forme its learnable bytes, ability count and ability ids, then the
+ * second flags byte of every move. */
 size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity);
 
 #endif

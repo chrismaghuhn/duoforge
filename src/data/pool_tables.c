@@ -167,17 +167,17 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     /* Rock Slide -- data/moves.ts:15239-15255 */
     {15u, 0u, 75u, 90u, 10u, 12u, 8u, 7u, 1u, 2u, {0u, 0u}, {0u, 0u}, 30u, 3u, 1u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Throat Chop -- data/moves.ts:19389-19437 */
-    {1u, 0u, 80u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 15u},
+    {1u, 0u, 80u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 100u, 5u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Encore -- data/moves.ts:4724-4783, data/mods/champions/moves.ts:309-345 */
-    {12u, 2u, 0u, 100u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 16u},
+    {12u, 2u, 0u, 100u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 15u},
     /* Double-Edge -- data/moves.ts:3879-3892 */
     {12u, 0u, 120u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {33u, 100u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Thunderbolt -- data/moves.ts:19467-19483 */
     {3u, 1u, 90u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 10u, 2u, 3u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Scald -- data/moves.ts:15761-15778 */
-    {17u, 1u, 80u, 100u, 15u, 16u, 8u, 1u, 1u, 130u, {0u, 0u}, {0u, 0u}, 30u, 2u, 1u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 17u},
+    {17u, 1u, 80u, 100u, 15u, 16u, 8u, 1u, 1u, 130u, {0u, 0u}, {0u, 0u}, 30u, 2u, 1u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 16u},
     /* Wide Guard -- data/moves.ts:20808-20851 */
-    {15u, 2u, 0u, 0u, 10u, 12u, 11u, 8u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 18u},
+    {15u, 2u, 0u, 0u, 10u, 12u, 11u, 8u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 17u},
     /* Flash Cannon -- data/moves.ts:5678-5696 */
     {16u, 1u, 80u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 10u, 1u, 0u, 2u, {6u, 6u, 6u, 5u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Extreme Speed -- data/moves.ts:5019-5031 */
@@ -185,7 +185,7 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     /* Head Smash -- data/moves.ts:8226-8239 */
     {15u, 0u, 150u, 80u, 5u, 8u, 8u, 1u, 1u, 3u, {1u, 2u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* First Impression -- data/moves.ts:5473-5491, data/mods/champions/moves.ts:386-394 */
-    {0u, 0u, 100u, 100u, 10u, 12u, 10u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 19u},
+    {0u, 0u, 100u, 100u, 10u, 12u, 10u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 18u},
     /* Bulk Up -- data/moves.ts:1954-1971 */
     {5u, 2u, 0u, 0u, 20u, 20u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 1u, {7u, 7u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Liquidation -- data/moves.ts:10375-10393 */
@@ -195,15 +195,15 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     /* Shadow Claw -- data/moves.ts:16059-16072, data/mods/champions/moves.ts:871-874 */
     {8u, 0u, 70u, 100u, 15u, 16u, 8u, 1u, 2u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Recover -- data/moves.ts:14806-14820 */
-    {12u, 2u, 0u, 0u, 5u, 8u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 20u},
+    {12u, 2u, 0u, 0u, 5u, 8u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 19u},
     /* Soak -- data/moves.ts:17186-17208 */
-    {17u, 2u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 21u},
+    {17u, 2u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 20u},
     /* Psychic Noise -- data/moves.ts:14079-14094 */
-    {14u, 1u, 75u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 22u},
+    {14u, 1u, 75u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 100u, 6u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Drum Beating -- data/moves.ts:4294-4311 */
     {9u, 0u, 80u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 100u, 1u, 0u, 2u, {6u, 6u, 6u, 6u, 5u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Low Kick -- data/moves.ts:10442-10481 */
-    {5u, 0u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 23u},
+    {5u, 0u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 21u},
     /* Dazzling Gleam -- data/moves.ts:3378-3390 */
     {4u, 1u, 80u, 100u, 10u, 12u, 8u, 7u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
 };
@@ -530,11 +530,87 @@ const dfi_forme_legal dfi_pool_forme_legal[DFI_POOL_FORME_COUNT] = {
     [DFI_FORME_FLOETTEMEGA] = {{0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u}, 1u, {DFI_ABILITY_FAIRYAURA, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
 };
 
+/* The second flags byte of every move (data/moves.ts flags.sound and flags.heal), by move id. */
+const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
+    [DFI_MOVE_WOODHAMMER] = 0u, /* Wood Hammer */
+    [DFI_MOVE_GRASSYGLIDE] = 0u, /* Grassy Glide */
+    [DFI_MOVE_FAKEOUT] = 0u, /* Fake Out */
+    [DFI_MOVE_HIGHHORSEPOWER] = 0u, /* High Horsepower */
+    [DFI_MOVE_BRAVEBIRD] = 0u, /* Brave Bird */
+    [DFI_MOVE_CLOSECOMBAT] = 0u, /* Close Combat */
+    [DFI_MOVE_TAILWIND] = 0u, /* Tailwind */
+    [DFI_MOVE_PROTECT] = 0u, /* Protect */
+    [DFI_MOVE_MUDDYWATER] = 0u, /* Muddy Water */
+    [DFI_MOVE_COIL] = 0u, /* Coil */
+    [DFI_MOVE_ICEBEAM] = 0u, /* Ice Beam */
+    [DFI_MOVE_HYPNOSIS] = 0u, /* Hypnosis */
+    [DFI_MOVE_BITTERBLADE] = DFI_MOVE_FLAG2_HEAL, /* Bitter Blade */
+    [DFI_MOVE_SHADOWSNEAK] = 0u, /* Shadow Sneak */
+    [DFI_MOVE_SWORDSDANCE] = 0u, /* Swords Dance */
+    [DFI_MOVE_ZAPCANNON] = 0u, /* Zap Cannon */
+    [DFI_MOVE_FOCUSBLAST] = 0u, /* Focus Blast */
+    [DFI_MOVE_MAKEITRAIN] = 0u, /* Make It Rain */
+    [DFI_MOVE_SHADOWBALL] = 0u, /* Shadow Ball */
+    [DFI_MOVE_NASTYPLOT] = 0u, /* Nasty Plot */
+    [DFI_MOVE_WEATHERBALL] = 0u, /* Weather Ball */
+    [DFI_MOVE_LEECHLIFE] = DFI_MOVE_FLAG2_HEAL, /* Leech Life */
+    [DFI_MOVE_IRONHEAD] = 0u, /* Iron Head */
+    [DFI_MOVE_DRILLRUN] = 0u, /* Drill Run */
+    [DFI_MOVE_DRAGONPULSE] = 0u, /* Dragon Pulse */
+    [DFI_MOVE_ELECTROSHOT] = 0u, /* Electro Shot */
+    [DFI_MOVE_SNARL] = DFI_MOVE_FLAG2_SOUND, /* Snarl */
+    [DFI_MOVE_PSYCHIC] = 0u, /* Psychic */
+    [DFI_MOVE_GRASSKNOT] = 0u, /* Grass Knot */
+    [DFI_MOVE_TRICKROOM] = 0u, /* Trick Room */
+    [DFI_MOVE_HEATWAVE] = 0u, /* Heat Wave */
+    [DFI_MOVE_HURRICANE] = 0u, /* Hurricane */
+    [DFI_MOVE_SPIRITBREAK] = 0u, /* Spirit Break */
+    [DFI_MOVE_REFLECT] = 0u, /* Reflect */
+    [DFI_MOVE_LIGHTSCREEN] = 0u, /* Light Screen */
+    [DFI_MOVE_PARTINGSHOT] = DFI_MOVE_FLAG2_SOUND, /* Parting Shot */
+    [DFI_MOVE_STRUGGLE] = 0u, /* Struggle */
+    [DFI_MOVE_DIRECLAW] = 0u, /* Dire Claw */
+    [DFI_MOVE_FLAREBLITZ] = 0u, /* Flare Blitz */
+    [DFI_MOVE_DARKESTLARIAT] = 0u, /* Darkest Lariat */
+    [DFI_MOVE_HYPERVOICE] = DFI_MOVE_FLAG2_SOUND, /* Hyper Voice */
+    [DFI_MOVE_DRACOMETEOR] = 0u, /* Draco Meteor */
+    [DFI_MOVE_FOLLOWME] = 0u, /* Follow Me */
+    [DFI_MOVE_HELPINGHAND] = 0u, /* Helping Hand */
+    [DFI_MOVE_KOWTOWCLEAVE] = 0u, /* Kowtow Cleave */
+    [DFI_MOVE_SUCKERPUNCH] = 0u, /* Sucker Punch */
+    [DFI_MOVE_LASTRESPECTS] = 0u, /* Last Respects */
+    [DFI_MOVE_WAVECRASH] = 0u, /* Wave Crash */
+    [DFI_MOVE_AQUAJET] = 0u, /* Aqua Jet */
+    [DFI_MOVE_FLIPTURN] = 0u, /* Flip Turn */
+    [DFI_MOVE_UTURN] = 0u, /* U-turn */
+    [DFI_MOVE_ROCKSLIDE] = 0u, /* Rock Slide */
+    [DFI_MOVE_THROATCHOP] = 0u, /* Throat Chop */
+    [DFI_MOVE_ENCORE] = 0u, /* Encore */
+    [DFI_MOVE_DOUBLEEDGE] = 0u, /* Double-Edge */
+    [DFI_MOVE_THUNDERBOLT] = 0u, /* Thunderbolt */
+    [DFI_MOVE_SCALD] = 0u, /* Scald */
+    [DFI_MOVE_WIDEGUARD] = 0u, /* Wide Guard */
+    [DFI_MOVE_FLASHCANNON] = 0u, /* Flash Cannon */
+    [DFI_MOVE_EXTREMESPEED] = 0u, /* Extreme Speed */
+    [DFI_MOVE_HEADSMASH] = 0u, /* Head Smash */
+    [DFI_MOVE_FIRSTIMPRESSION] = 0u, /* First Impression */
+    [DFI_MOVE_BULKUP] = 0u, /* Bulk Up */
+    [DFI_MOVE_LIQUIDATION] = 0u, /* Liquidation */
+    [DFI_MOVE_ICEPUNCH] = 0u, /* Ice Punch */
+    [DFI_MOVE_SHADOWCLAW] = 0u, /* Shadow Claw */
+    [DFI_MOVE_RECOVER] = DFI_MOVE_FLAG2_HEAL, /* Recover */
+    [DFI_MOVE_SOAK] = 0u, /* Soak */
+    [DFI_MOVE_PSYCHICNOISE] = DFI_MOVE_FLAG2_SOUND, /* Psychic Noise */
+    [DFI_MOVE_DRUMBEATING] = 0u, /* Drum Beating */
+    [DFI_MOVE_LOWKICK] = 0u, /* Low Kick */
+    [DFI_MOVE_DAZZLINGGLEAM] = 0u, /* Dazzling Gleam */
+};
+
 const uint8_t dfi_pool_table_hash[32] = {
-    0x1du, 0x40u, 0x27u, 0x45u, 0xebu, 0xa5u, 0xe5u, 0xe0u,
-    0xb4u, 0x87u, 0x8fu, 0xeeu, 0x1eu, 0x8du, 0x0au, 0xa1u,
-    0x0du, 0xb8u, 0x87u, 0x5au, 0x0eu, 0xf1u, 0x07u, 0x7au,
-    0x62u, 0x53u, 0x58u, 0xdbu, 0x79u, 0x1cu, 0xeau, 0x68u,
+    0xd6u, 0x0du, 0x6bu, 0xa5u, 0x74u, 0x4du, 0xa2u, 0x13u,
+    0x01u, 0xadu, 0xdcu, 0x22u, 0xdfu, 0x62u, 0xe0u, 0x44u,
+    0x64u, 0xa6u, 0xc9u, 0x6au, 0x0fu, 0xe4u, 0x54u, 0x00u,
+    0x87u, 0x71u, 0x87u, 0x9du, 0x56u, 0x3bu, 0x58u, 0x18u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)
@@ -656,6 +732,9 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity)
         for (uint32_t k = 0u; k < DFI_POOL_FORME_ABILITIES_MAX; ++k) {
             out[n++] = l->abilities[k];
         }
+    }
+    for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
+        out[n++] = dfi_pool_move_flags2[i];
     }
     return n;
 }
