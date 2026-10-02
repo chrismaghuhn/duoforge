@@ -73,6 +73,24 @@ Hit; it becomes STATUS_PICK, and every one is kept: the engine draws it
 after each successful secondary roll, as the reference does (decision 0009
 section 10.6).
 
+A two-turn move's lock (Electro Shot, Team B's Archaludon) is the state's
+`locked`, which ps_trace.js records only while twoturnmove and the move's own
+volatile both stand (tools/reference/ps_trace.js:280-282). Electro Shot's
+onTryMove removes that volatile on the locked turn (data/moves.ts:4639-4642),
+but twoturnmove stays: duration 2 (data/conditions.ts:290), onLockMove returns
+the stored move (data/conditions.ts:317-319), and the duration counts down to
+the end in the residual (sim/battle.ts:515-523). The Pokemon is locked until
+then, as DuoForge models it (charge_turns and the lock end in the residual).
+Between the locked move and the residual, at a mid-turn boundary (a pivot:
+Parting Shot, Emergency Exit) or at the end of the battle, a state has
+twoturnmove without the move's volatile and the recorder shows no lock. For
+such a Pokemon the converter takes the lock last recorded for it
+(two_turn_lock); if none was recorded earlier in the battle the state is
+refused (twoturnmove-lock), never read as "no lock". The remembered lock goes
+with twoturnmove: the first state without it for the Pokemon (the residual, or
+a switch-out or a faint, which clear every volatile: sim/battle-actions.ts:117,
+sim/battle.ts:2563) forgets it.
+
 Stdlib only; CTest runs it with --check when Python is available.
 """
 import io
@@ -344,6 +362,24 @@ def abs_target(side, loc):
     return (1 - side) * 2 + loc - 1 if loc > 0 else side * 2 + (-loc) - 1
 
 
+def two_turn_lock(p, key, remembered):
+    """The two-turn lock of Pokemon `p` in a state, [slot, target location] or None. `remembered` maps
+    (side, name) to the lock last recorded for a Pokemon while twoturnmove stands; see the module docstring."""
+    lock = p.get('locked')
+    if lock:
+        remembered[key] = lock
+        return lock
+    if 'twoturnmove' not in p['volatiles']:
+        remembered.pop(key, None)  # the residual ended it, or a switch-out or a faint cleared it: nothing stays locked
+        return None
+    # twoturnmove without the move's volatile: Electro Shot's onTryMove removed it on the locked turn, twoturnmove
+    # (onLockMove) locks until the residual
+    if key not in remembered:
+        raise ConversionError('twoturnmove-lock', 'trace_to_c: twoturnmove without a lock recorded earlier on %s' %
+                              key[1], detail='twoturnmove')
+    return remembered[key]
+
+
 def convert_choice(text, side, state, roster_of, mid_turn=False):
     """A Showdown choice string -> ('team', picks) or ('slots', [cmd, cmd]).
     mid_turn: the request was made during the turn (a pivot), not at its end."""
@@ -482,7 +518,9 @@ IGNORED_VOLATILES = {
     # twoturnmove's onStart adds the move's own volatile with the target
     # (data/conditions.ts twoturnmove); compared as locked_slot and
     # locked_target. twoturnmove's onEnd and Electro Shot's onTryMove remove
-    # it, so it never stands without twoturnmove (checked below).
+    # it, so it never stands without twoturnmove (checked below); twoturnmove
+    # can stand without it, from the locked turn to the residual, and the lock
+    # is then the one remembered (two_turn_lock).
     'electroshot': 'the locked slot and target',
 }
 HP_EXACT, HP_PERCENT = 1, 2
@@ -819,6 +857,8 @@ def convert_battle(name, spec, trace, tables):
     # per roster index (the opponent's knowledge in DuoForge), taken from the
     # public copy of every protocol line that shows HP.
     shown = [{}, {}]
+    # The two-turn lock last recorded per (side, name) while twoturnmove stands (two_turn_lock).
+    remembered_locks = {}
     # A switch request made during the turn: the step that led to it has not
     # reached the end of the turn (no upkeep line).
     mid_turn = False
@@ -860,7 +900,7 @@ def convert_battle(name, spec, trace, tables):
                 status, counter = (0, 0) if p['fainted'] else (STATUS[p['status']], p['status_time'])
                 if status not in (2, 4):
                     counter = 0
-                lock = p.get('locked')
+                lock = two_turn_lock(p, (s, name_of(p)), remembered_locks)
                 lslot, ltarget = (lock[0], abs_target(s, lock[1])) if lock else (0xFF, 0)
                 # A Choice item's lock (Team C) names its slot without a
                 # target; with a two-turn lock both are on the same move.

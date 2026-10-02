@@ -21,8 +21,8 @@
 #include "reference/conformance_team_c.h"
 #include "support/team_c.h"
 #define DF_CONF_FORMES dfi_ext_formes
-#define DF_TEAM_C_BATTLES 72u /* the recorded Team C battles */
-#define DF_TEAM_C_REAL 22u   /* of them under TEAM_C itself (six registered members) */
+#define DF_TEAM_C_BATTLES 73u /* the recorded Team C battles */
+#define DF_TEAM_C_REAL 23u   /* of them under TEAM_C itself (six registered members) */
 #else
 #include "data/closure_tables.h"
 #include "reference/conformance.h"
@@ -190,12 +190,12 @@ int main(void)
         DF_CHECK_EQ_U64(&t, matched, 24u * 6u); /* Team C on 4 x 4 + 4 x 2 sides */
     }
 #else
-    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 89u);
+    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 90u);
     /* Exactly the battles of the real teams run under CLOSURE, the certified
      * profile (decision 0010): the closure gate's 8, the 16 of M5 step 3 and
-     * d01_noguard_accuracy_tie, a cut of a battle found by the differential
-     * loop. */
-    DF_CHECK_EQ_U64(&t, real, 25u);
+     * d01_noguard_accuracy_tie and d02_electro_shot_lock_emergency_exit, cuts
+     * of battles found by the differential loop. */
+    DF_CHECK_EQ_U64(&t, real, 26u);
 #endif
 #ifdef DF_CONFORMANCE_TEAM_C
     fprintf(stderr, "  %u of the battles run under TEAM_C data\n", real);

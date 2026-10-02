@@ -1,0 +1,28 @@
+{
+  "name": "d02_electro_shot_lock_emergency_exit",
+  "purpose": "Team B against team B, team preview and three turns of case fz_7_19 of the differential loop (seed 7, battle 19 of the run), cut after the step with the mid-turn switch. Turn 2: Archaludon charges Electro Shot (no rain), which locks it. Turn 3: its locked Electro Shot goes to its own ally Golisopod, whose Emergency Exit switches it out in the middle of the turn (a PIVOT boundary). Electro Shot's onTryMove has removed the move volatile by then and the recorder's `locked` is made of that volatile alone, but twoturnmove (onLockMove) stands until the residual: the engine is locked still, and the converter says the same. Found by the differential loop (\"locked 1/0 ... reference 255/0\").",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,fb413e05047f3990b73fc9cf237adae4b1129df74a5eed513fffcc28bcdb2df7",
+  "teams": [
+    "Golisopod (F) @ Golisopite\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 1 SpD / 1 Spe\nAdamant Nature\n- Leech Life\n- Iron Head\n- Drill Run\n- Protect\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Electro Shot\n- Snarl\n- Protect\n\nCharizard (M) @ Charizardite Y\nAbility: Blaze\nLevel: 50\nEVs: 16 HP / 18 Def / 3 SpA / 29 Spe\nTimid Nature\n- Heat Wave\n- Weather Ball\n- Hurricane\n- Protect\n\nGrimmsnarl (M) @ Light Clay\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Spirit Break\n- Reflect\n- Light Screen\n- Parting Shot\n\nFarigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Grass Knot\n- Trick Room\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Weather Ball\n- Muddy Water\n- Ice Beam\n- Protect",
+    "Farigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Grass Knot\n- Trick Room\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Weather Ball\n- Muddy Water\n- Ice Beam\n- Protect\n\nGrimmsnarl (M) @ Light Clay\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Spirit Break\n- Reflect\n- Light Screen\n- Parting Shot\n\nCharizard (M) @ Charizardite Y\nAbility: Blaze\nLevel: 50\nEVs: 16 HP / 18 Def / 3 SpA / 29 Spe\nTimid Nature\n- Heat Wave\n- Weather Ball\n- Hurricane\n- Protect\n\nGolisopod (F) @ Golisopite\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 1 SpD / 1 Spe\nAdamant Nature\n- Leech Life\n- Iron Head\n- Drill Run\n- Protect\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Electro Shot\n- Snarl\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 1562",
+      "p2": "team 5634"
+    },
+    {
+      "p1": "move 4, switch 4",
+      "p2": "move 4 mega, move 3"
+    },
+    {
+      "p1": "move 4, move 2 -1",
+      "p2": "move 1 -2, move 4"
+    },
+    {
+      "p1": "move 3 2, move 1",
+      "p2": "move 1 1, move 1 2"
+    }
+  ]
+}
