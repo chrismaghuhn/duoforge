@@ -4461,7 +4461,13 @@ static duoforge_status dfi_residual_events(dfi_run *r)
         }
         const uint32_t ended = DFI_VOL_PROTECT | DFI_VOL_FLINCH | DFI_VOL_HELPING_HAND | DFI_VOL_FOLLOW_ME;
         pos->flags = (uint8_t)((uint32_t)pos->flags & ~ended); /* wide-operands-reviewed */
-        b->tail.sides[flat / 2u].positions[flat % 2u].protect_kind = (uint8_t)DFI_PROTECT_PLAIN; /* with the volatile */
+        /* The variant ends with the volatile. protect and spikyshield have `duration: 1` and no onResidual, onEnd or order
+         * (data/moves.ts:13961-14005, :17532-17584), so each is one of the position's duration handlers of the sorted
+         * Residual list above (sim/battle.ts:1097-1112 adds a volatile with a duration, :516-517 counts it down and
+         * removes it, silently without an onEnd): the count `ends` has it through DFI_VOL_PROTECT whichever variant it is.
+         * Nothing between its place in the sort and this sweep can read it (no hit is made in a residual), so clearing
+         * it with the flag is the same outcome. */
+        b->tail.sides[flat / 2u].positions[flat % 2u].protect_kind = (uint8_t)DFI_PROTECT_PLAIN;
         if (pos->charge_turns > 0u) {
             pos->charge_turns = (uint8_t)((uint32_t)pos->charge_turns - 1u); /* wide-operands-reviewed */
             if (pos->charge_turns == 0u) {
