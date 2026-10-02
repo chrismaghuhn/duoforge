@@ -508,7 +508,7 @@ The 35 entries are the 29 of the survey, Low Kick, Dazzling Gleam, Floette-Etern
 | State, public, request | One byte per position (POOL tail, G3): type override (type + 1, 0 none), cleared on leaving and by Mega Evolution (dfi_run_mega).<br>Public: the new type is shown (`-start`). The position view is full: bit 32 of `reserved` can mean "Water by Soak" (enough for Soak; Magic Powder would need a field), otherwise one new byte; one event kind or detail. |
 | Interactions | A Flying or Levitating target becomes grounded (Psychic Terrain priority block, Grassy Terrain heal and boost); Steel loses its Poison immunity; Ghost loses Normal/Fighting immunity; Fire can be burned.<br>Adaptability and STAB read the attacker's types: Soak on an ally changes the ally's STAB (Adaptability x2 when the new type matches); the target is hit for Electric/Grass x2 (Thunderbolt, Grassy Glide) as a Water type.<br>Mega Evolution resets the type (setSpecies); a Soak on a Mega-capable foe is undone when it evolves.<br>`-fail` shows the target's position, not the user's. |
 | Evidence | Spec g11_soak: Soak then Electric and Grass hits, repeated Soak (`-fail`), Soak on a Flying target under Psychic Terrain<br>Spec g11_soak_mega: Soak on a Mega-capable Pokemon, then the Mega Evolution<br>Test: Negative controls: type kept through a switch-out and through a Mega Evolution. |
-| Step | G11 (item G11), effort M (4 points) |
+| Step | G11 (item G11), effort M (4 points). **Done** (decision 0015 section 4, item 5b): the pin's `-start` line has no `[from]`; a Soak after a Mega Evolution takes and the soak-type invariant no longer excludes a Mega Evolved member; the type is one new public event, `DUOFORGE_EVENT_TYPE_CHANGE`, and view bit 9 |
 
 #### Throat Chop
 

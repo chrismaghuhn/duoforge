@@ -1268,6 +1268,7 @@ G2_MOVES = ['uturn', 'rockslide', 'throatchop', 'encore', 'doubleedge', 'thunder
 # secondary, exactly this text of the pinned data; everything else about the move is read by parse_move as for any
 # other move, and anything it does not know still fails. Each step that implements one of them (G7 to G11) consumes
 # the handler id and, if it needs a column, changes the tables and the POOL fingerprint and says so.
+# (SOAK is implemented by the turn code since step G11 and marked; it keeps its handler id, so no table byte changed.)
 G2_HANDLERS = ['ENCORE', 'SCALD', 'WIDE_GUARD', 'FIRST_IMPRESSION', 'RECOVER', 'SOAK', 'LOW_KICK']
 SPECIAL_P = dict(SPECIAL_C, **{
     'encore': ('ENCORE', set()),                                          # G9: the last move, a volatile, a queue change

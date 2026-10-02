@@ -25,8 +25,9 @@
  * The TAIL ids (docs/decisions/0015 section 7) check the POOL state tail: it
  * is all zero under every other kind (TAIL_KIND); under the POOL kinds each
  * value is in its range, a position without a standing occupant has none, a
- * soak type is on a member standing on the field and not Mega Evolved
- * (TAIL_SIDE, TAIL_POSITION, TAIL_MEMBER). TAIL_SCHEMA and TAIL_RESERVED
+ * soak type is on a member standing on the field (step G11: a Mega Evolved
+ * one can be Soaked; the type ends with its Mega Evolution when that comes
+ * later) (TAIL_SIDE, TAIL_POSITION, TAIL_MEMBER). TAIL_SCHEMA and TAIL_RESERVED
  * are reported by the decoder only.
  */
 #include <duoforge/duoforge.h>
