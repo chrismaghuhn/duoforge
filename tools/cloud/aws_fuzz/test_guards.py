@@ -213,6 +213,58 @@ class Guards(unittest.TestCase):
         self.assertIn('commit ' + SHA, r.stderr)
         self.assertEqual(self.real_launches(), [])
 
+    def test_df_init_does_not_export_the_path_conversion_switches(self):
+        # Exported, MSYS_NO_PATHCONV made git -C "$DF_DIR" fail under Git Bash: only the aws call may have them.
+        env = {k: v for k, v in self.env.items() if not k.startswith('MSYS')}
+        script = '. "%s/lib.sh"; df_init; env | grep -c "^MSYS" || true; git -C "$DF_DIR" rev-parse --show-toplevel' % posix(HERE)
+        r = subprocess.run([BASH, '-c', script], env=env, capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(r.stdout.splitlines()[0], '0', r.stdout)
+        self.assertNotIn('fatal', r.stderr)
+
+    def test_the_conversion_switches_are_set_for_the_aws_call_alone(self):
+        # a probe aws that prints what it sees
+        probe_dir = os.path.join(self.tmp, 'probe')
+        os.mkdir(probe_dir)
+        probe = os.path.join(probe_dir, 'aws')
+        with open(probe, 'w', newline=chr(10)) as f:
+            f.write('#!/usr/bin/env bash' + chr(10) +
+                    'echo "PATHCONV=${MSYS_NO_PATHCONV:-unset} EXCL=${MSYS2_ARG_CONV_EXCL:-unset}"' + chr(10))
+        os.chmod(probe, 0o755)
+        env = dict(self.env, PATH=probe_dir + os.pathsep + self.env['PATH'])
+        env = {k: v for k, v in env.items() if not k.startswith('MSYS')}
+        script = '. "%s/lib.sh"; df_init; df_aws x; echo "after: ${MSYS_NO_PATHCONV:-unset}"' % posix(HERE)
+        r = subprocess.run([BASH, '-c', script], env=env, capture_output=True, text=True)
+        self.assertEqual(r.stdout.splitlines()[:2], ['PATHCONV=1 EXCL=*', 'after: unset'], r.stdout + r.stderr)
+
+    def test_print_mode_reaches_the_request_with_a_commit_of_a_real_main(self):
+        # a repository of its own with the tool in it and an origin/main: the real check (git -C on the script's
+        # directory, merge-base, cat-file of the campaign) runs, as it does on the owner's machine
+        repo = os.path.join(self.tmp, 'repo')
+        shutil.copytree(HERE, os.path.join(repo, 'tools', 'cloud', 'aws_fuzz'),
+                        ignore=shutil.ignore_patterns('__pycache__'))
+        git = ['git', '-C', repo, '-c', 'user.name=t', '-c', 'user.email=t@example.invalid']
+        subprocess.run(git + ['init', '-q'], check=True, capture_output=True)
+        subprocess.run(git + ['add', '-A'], check=True, capture_output=True)
+        subprocess.run(git + ['commit', '-q', '-m', 'x'], check=True, capture_output=True)
+        sha = subprocess.run(git + ['rev-parse', 'HEAD'], check=True, capture_output=True, text=True).stdout.strip()
+        subprocess.run(git + ['update-ref', 'refs/remotes/origin/main', sha], check=True)
+        env = dict(self.env, DUOFORGE_FUZZ_NO_GIT_CHECK='')
+        r = subprocess.run([BASH, posix(os.path.join(repo, 'tools', 'cloud', 'aws_fuzz', 'launch.sh')), '--campaign',
+                            'weather-sand-snow', '--commit', sha, '--bucket', 'my-fuzz-bucket'],
+                           env=env, capture_output=True, text=True, timeout=120)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn('nothing was launched', r.stdout)
+        self.assertIn(sha, r.stdout)
+        self.assertNotIn('fatal', r.stderr)
+        self.assertEqual(self.real_launches(), [])
+        # and a campaign that this commit does not have is refused by the same check
+        r = subprocess.run([BASH, posix(os.path.join(repo, 'tools', 'cloud', 'aws_fuzz', 'launch.sh')), '--campaign',
+                            'no-such-campaign', '--commit', sha, '--bucket', 'my-fuzz-bucket'],
+                           env=env, capture_output=True, text=True, timeout=120)
+        self.assertEqual(r.returncode, 2)
+        self.assertIn('has no tools/cloud/aws_fuzz/campaigns/no-such-campaign/campaign.conf', r.stderr)
+
     def test_an_unknown_argument_and_a_missing_value_are_refused(self):
         self.assertEqual(self.run_script('launch.sh', '--nope').returncode, 2)
         self.assertEqual(self.run_script('launch.sh', '--campaign').returncode, 2)
