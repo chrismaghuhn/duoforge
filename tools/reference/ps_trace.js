@@ -10,8 +10,9 @@
 // with "max_steps"): then a replacement request is answered with the first
 // standing reserves in team order, a move choice for a fainted slot becomes
 // "pass", a move without PP falls back to the first with PP, a target is
-// dropped for a move that takes none (and is 1 for one that needs it), a
-// switch to a Pokemon that cannot come in goes to the first standing
+// dropped for a move that takes none (and is 1 for one that needs it, or the
+// ally's slot for an ally-only move such as Helping Hand), a switch to a
+// Pokemon that cannot come in goes to the first standing
 // reserve (or becomes "move 1 1", as does a switch of a trapped Pokemon),
 // and an exhausted plan repeats its last
 // entry. The trace records the choices
@@ -292,6 +293,9 @@ function main() {
     // A planned "move N [T]": a move without PP falls back to the first move
     // that has PP (Struggle when none has), a target is kept only for a move
     // that takes one, and a move that takes one without a target aims at 1.
+    // An ally-only move (adjacentAlly, Helping Hand) aims at the ally's slot,
+    // -2 from the left position and -1 from the right one, unless the plan
+    // names an own-side target.
     let megaTaken = false;
     const planMove = (p, part) => {
         const w = part.split(' ');
@@ -306,8 +310,11 @@ function main() {
         if (!usable.length) return 'move 1';
         let n = Number(w[1]) - 1;
         if (!usable.includes(n)) n = usable[0];
-        const takes = battle.actions.targetTypeChoices(battle.dex.moves.get(p.moveSlots[n].id).target);
-        return `move ${n + 1}` + (takes ? ' ' + (w[2] || '1') : '') + mega;
+        const target = battle.dex.moves.get(p.moveSlots[n].id).target;
+        const takes = battle.actions.targetTypeChoices(target);
+        let loc = w[2] || '1';
+        if (target === 'adjacentAlly' && !(Number(loc) < 0)) loc = String(p.position - 2);
+        return `move ${n + 1}` + (takes ? ' ' + loc : '') + mega;
     };
     const choose = (id, text) => {
         if (!battle[id].requestState) throw new Error(`${id} has no request for "${text}"`);
