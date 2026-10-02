@@ -385,6 +385,54 @@ class Library(unittest.TestCase):
                 self.assertEqual(len(st['tape']) + st['dropped'], len(raw['draws']), '%s step %d' % (name, i))
             self.assertEqual(data['dropped_total'], sum(st['dropped'] for st in data['steps']), name)
 
+    def test_the_tie_of_two_fairy_aura_handlers_is_a_dropped_draw(self):
+        """g12_fairy_aura_both: both Floettes are Mega with the same Speed, so their Fairy Aura handlers tie in the
+        BasePower event of every damaging move. Exactly one of them applies (move.auraBooster) whichever runs first, so
+        each draw is dropped, with its reason, and the battle converts; any other handler in the group is refused."""
+        name = 'g12_fairy_aura_both'
+        spec, trace = battle(name)
+        data = convert(name, spec, trace)
+        found = [(k, d) for k, step in enumerate(trace['steps']) for d in step['draws'] if d.get('context') == 'event:BasePower']
+        self.assertGreater(len(found), 4)
+        for k, d in found:
+            self.assertEqual(d['site'], 'SPEED_TIE')
+            self.assertEqual(sorted(d['group']), ['H:fairyaura:p1a:cb', 'H:fairyaura:p2a:cb'])
+            before = trace['steps'][k - 1]['state'] if k else trace['start']['state']
+            self.assertEqual(trace_to_c.drop_reason(d, before, trace['steps'][k]['state']),
+                             'Fairy Aura handlers whose order changes nothing')
+        k, d = found[0]
+        before = trace['steps'][k - 1]['state'] if k else trace['start']['state']
+        after = trace['steps'][k]['state']
+        for group, context in ((['H:fairyaura:p1a:cb', 'H:lifeorb:p2a:cb'], 'event:BasePower'),
+                               (['H:fairyaura:p1a:cb', 'H:fairyaura:p2a:end'], 'event:BasePower'),
+                               (['H:fairyaura:p1a:cb', 'H:fairyaura:p2a:cb'], 'event:ModifyDamage')):
+            with self.subTest(group=group, context=context), self.assertRaises(trace_to_c.ConversionError) as cm:
+                trace_to_c.drop_reason(dict(d, group=group, context=context), before, after)
+            self.assertEqual(cm.exception.rule, 'modifydamage-tie' if context == 'event:ModifyDamage' else 'tie-context')
+        self.assertTrue(all(len(step['tape']) + step['dropped'] == len(trace['steps'][k]['draws'])
+                            for k, step in enumerate(data['steps'])))
+
+    def test_a_flower_veil_block_is_the_activate_event_of_the_ability_with_the_holder_in_other(self):
+        """-block|protected|ability: Flower Veil|[of] holder (step G12): ACTIVATE at the protected Pokemon, cause ABILITY,
+        the ability's id + 1, the holder in `other` (the ability's own activation has none); another -block is refused."""
+        pool = tables(True)
+        line = '|-block|p1b: Rillaboom|ability: Flower Veil|[of] p1a: Floette'
+        events = trace_to_c.step_events([line], 0, {}, {}, pool)
+        self.assertEqual(events, [trace_to_c.ev_tuple(trace_to_c.EV['ACTIVATE'], 1, 0, trace_to_c.CAUSE['ABILITY'], 0,
+                                                      pool['ABILITY']['FLOWERVEIL'] + 1)])
+        for bad in ('|-block|p1b: Rillaboom|ability: Flower Veil',  # no [of]
+                    '|-block|p1b: Rillaboom|move: Protect|[of] p1a: Floette',
+                    '|-block|p1b: Rillaboom|ability: Flower Veil|extra|[of] p1a: Floette'):
+            with self.subTest(bad), self.assertRaises(trace_to_c.ConversionError) as cm:
+                trace_to_c.step_events([bad], 0, {}, {}, pool)
+            self.assertEqual(cm.exception.rule, 'block-line')
+        # The converted battles have the event: the opening Intimidate and the Hypnosis of g12_flower_veil_a/_b.
+        for name in ('g12_flower_veil_a', 'g12_flower_veil_b'):
+            spec, trace = battle(name)
+            logs = [l for step in trace['steps'] for l in step['log'] if l.startswith('|-block|')]
+            self.assertTrue(logs, name)
+            convert(name, spec, trace)
+
     def test_the_tie_of_two_no_guard_handlers_is_a_dropped_draw(self):
         """d01_noguard_accuracy_tie (a cut of fz_1_118 of the differential loop's seed 1): both Raichu are Mega Raichu Y,
         whose No Guard handlers tie in the Accuracy event of the first attack. The draw is dropped, with its reason,
@@ -502,6 +550,54 @@ class Library(unittest.TestCase):
         self.assertEqual(rows, derived)
         # The battles do set and clear both: something is shown in each, and every row of the last step is empty.
         self.assertTrue(any(v[0] for v in derived.values()) and any(v[1] for v in derived.values()))
+
+    def test_soak_rows_are_what_the_protocol_lines_say(self):
+        """Decision 0018 section 6.1 for Soak: a position is Soaked from the `|-start|X|typechange|Water` line until the
+        occupant leaves (`|switch|`, `|drag|`, `|replace|`, `|faint|`) or Mega Evolves (`|-mega|`: setSpecies resets the
+        types, sim/pokemon.ts:1392; the research table had OUT only). The rows of the C test (rows in
+        tests/test_pool_g11.c: the Soaked positions after each step of the G11 battles, as masks over side * 2 + slot)
+        must be exactly what these lines give for the committed traces, so the engine's tail and extension are checked
+        against the protocol and not against itself. Also: the converter reads the line as TYPE_CHANGE (the type in the
+        detail, cause MOVE with Soak), and refuses one that is not a single type of the table."""
+        names = ('g11_soak', 'g11_soak_mega', 'g11_soak_stab', 'g11_soak_electro')
+        source = open(os.path.join(ROOT, 'tests', 'test_pool_g11.c'), encoding='utf-8').read()
+        rows = {}
+        for m in re.finditer(r'\{"(g11_\w+)", (\d+)u, 0x([0-9a-f])u\}', source):
+            rows[(m.group(1), int(m.group(2)))] = int(m.group(3), 16)
+        derived = {}
+        lines_seen = 0
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            soaked = set()
+            for k, step in enumerate(trace['steps']):
+                for line in step['log']:
+                    part = line.split('|')
+                    if len(part) < 3:
+                        continue
+                    if part[1] in ('switch', 'drag', 'faint', 'replace', '-mega'):
+                        soaked.discard(part[2][:3])
+                    elif part[1] == '-start' and len(part) > 4 and part[3] == 'typechange':
+                        self.assertEqual(part[4], 'Water')
+                        self.assertEqual(len(part), 5)  # no [from]: the move is Soak, the converter's rule
+                        soaked.add(part[2][:3])
+                        lines_seen += 1
+                derived[(name, k)] = sum(1 << ((int(x[1]) - 1) * 2 + 'ab'.index(x[2])) for x in soaked)
+        self.assertEqual(rows, derived)
+        self.assertTrue(any(derived.values()) and lines_seen >= 6)
+        tables = trace_to_c.load_tables(ROOT, True)
+        names_of = {'p1a': 0, 'p1b': 1, 'p2a': 2, 'p2b': 3}
+        roster = [{'Pelipper': 0}, {'Pelipper': 0}]
+        events = trace_to_c.step_events(['|-start|p2a: Pelipper|typechange|Water'], 0, roster, [{'Pelipper': 100}] * 2, tables)
+        self.assertEqual(len(events), 1)
+        e = events[0]
+        self.assertEqual((e[0], e[1], e[3], e[5], e[11]),
+                         (trace_to_c.EV['TYPE_CHANGE'], names_of['p2a'], trace_to_c.CAUSE['MOVE'],
+                          tables['MOVE'][trace_to_c.key('Soak')], trace_to_c.TYPE_IDS['Water']))
+        self.assertEqual(trace_to_c.EV['TYPE_CHANGE'], 41)
+        for bad in ('|-start|p2a: Pelipper|typechange|Water/Flying', '|-start|p2a: Pelipper|typechange|Stellar'):
+            with self.assertRaises(trace_to_c.ConversionError):
+                trace_to_c.step_events([bad], 0, roster, [{'Pelipper': 100}] * 2, tables)
 
     def test_a_two_turn_lock_lasts_while_twoturnmove_stands(self):
         """Electro Shot's onTryMove removes the move's volatile on the locked turn and the recorder's `locked` is made of
@@ -624,8 +720,9 @@ class Library(unittest.TestCase):
         self.assertTrue(any(l.startswith('|switch|p1a: Arcanine|Arcanine-Hisui, L50, M|') for l in lines))
 
     def test_every_move_marked_beyond_the_extended_ids_is_used_in_a_pool_battle(self):
-        """A move that the pool manifest marks beyond the extended ids (twelve of step G2, U-turn of step G5) was used in
-        a committed pool battle: a move line of it that did something (damage, or a boost for a status move) before
+        """A move that the pool manifest marks beyond the extended ids (twelve of step G2, U-turn of step G5, Throat Chop
+        and Psychic Noise of step G8, Soak of step G11, Moonblast and Calm Mind of step G12) was used in a committed
+        pool battle: a move line of it that did something (damage, a boost, or a -start line for a status move) before
         the next move line."""
         def read(*p):
             return open(os.path.join(ROOT, *p), encoding='utf-8').read()
@@ -637,7 +734,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 15)
+        self.assertEqual(len(marked), 22)  # G2, G5, G8, G12, G10 (First Impression, Scald, Recover, Low Kick), G11 (Soak)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -653,7 +750,7 @@ class Library(unittest.TestCase):
                         for after in lines[i + 1:]:
                             if after.startswith('|move|') or after.startswith('|turn|'):
                                 break
-                            done = done or after.startswith(('|-damage|', '|-boost|'))
+                            done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|', '|-start|'))
             with self.subTest(move=name):
                 self.assertTrue(done, '%s is marked but no committed pool battle uses it' % name)
 

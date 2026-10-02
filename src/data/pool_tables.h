@@ -849,6 +849,7 @@
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */
 #define DFI_MOVE_FLAG2_SOUND 1u /* data/moves.ts flags.sound: Throat Chop bars these moves */
 #define DFI_MOVE_FLAG2_HEAL 2u  /* flags.heal: Heal Block bars these moves */
+#define DFI_MOVE_FLAG2_THAWS_TARGET 4u /* thawsTarget (step G10): the move cures a frozen target after the secondaries */
 #define DFI_SECONDARY_LOCKOUT 5u    /* chance 100: the target may not use sound moves (Throat Chop) */
 #define DFI_SECONDARY_HEAL_BLOCK 6u /* chance 100: the target may not heal (Psychic Noise) */
 
@@ -1315,6 +1316,9 @@ extern const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT]; /* DFI_HA
 extern const dfi_forme_legal dfi_pool_forme_legal[DFI_POOL_FORME_COUNT];
 /* The second flags byte of every move (DFI_MOVE_FLAG2_*), by move id; the last part of the canonical pool bytes. */
 extern const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT];
+/* The heal fraction of every move (step G10, heal: [numerator, denominator] in the pin; 0 and 0 for none), by move id;
+ * the very last part of the canonical pool bytes. */
+extern const uint8_t dfi_pool_move_heal[DFI_POOL_MOVE_COUNT][2];
 extern const dfi_pool_alias dfi_pool_forme_aliases[DFI_POOL_ALIAS_COUNT];
 
 /* ---- names ----
@@ -1339,7 +1343,7 @@ extern const char *const dfi_pool_item_unmodeled[DFI_POOL_ITEM_COUNT];
 extern const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT];
 
 /* SHA-256 of the canonical pool bytes (written by the generator). */
-#define DFI_POOL_CANONICAL_SIZE 50065u
+#define DFI_POOL_CANONICAL_SIZE 51087u
 extern const uint8_t dfi_pool_table_hash[32];
 /* The canonical bytes of the closure layout over the first `formes`, `moves`,
  * `items` and `abilities` rows of the tables above, with every immunity byte

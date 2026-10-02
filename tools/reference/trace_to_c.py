@@ -374,6 +374,13 @@ def drop_reason(d, state, after=None, log=None):
         # the source or the target of the move and the accuracy it was given otherwise. Whichever of the tied
         # handlers runs first, a true passes on as true and the accuracy stays what it was: one order, one value.
         return 'No Guard handlers whose order changes nothing'
+    if site == 'SPEED_TIE' and ctx == 'event:BasePower' and all(
+            g.startswith('H:fairyaura:') and g.endswith(':cb') for g in group):
+        # data/abilities.ts fairyaura (step G12): onAnyBasePower gives the move to the first holder that runs
+        # (move.auraBooster) and the others return at once, so exactly one holder applies 5448/4096 whichever order
+        # the equal-speed holders (one on each side, say) run in: one order, one value. Aura Break (3072) is in no
+        # pool forme's abilities.
+        return 'Fairy Aura handlers whose order changes nothing'
     if site == 'SPEED_TIE' and ctx != 'queue':
         raise ConversionError('tie-context', 'trace_to_c: unhandled tie context %s' % ctx, detail=ctx)
     if site == 'INSERT_TIE':
@@ -562,11 +569,15 @@ EV = {name: i + 1 for i, name in enumerate(
      'IMMUNE', 'FAIL', 'PROTECT', 'BLOCKED', 'BOOST', 'UNBOOST', 'STATUS', 'CURE_STATUS', 'CONFUSION_START',
      'CONFUSION_END', 'CONFUSED', 'FLASH_FIRE', 'WEATHER', 'FIELD_START', 'FIELD_END', 'SIDE_START', 'SIDE_END',
      'ITEM_END', 'FORME', 'MEGA', 'PREPARE', 'ANIMATION', 'ABILITY', 'ACTIVATE', 'UPKEEP', 'RESULT',
-     'SINGLE_TURN', 'VOLATILE_START', 'VOLATILE_END'])}
+     'SINGLE_TURN', 'VOLATILE_START', 'VOLATILE_END', 'TYPE_CHANGE'])}
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
          'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14,
          'HEAL_BLOCK': 15}
 VOLATILE_HEAL_BLOCK = 1  # DUOFORGE_VOLATILE_HEAL_BLOCK: the detail of VOLATILE_START and VOLATILE_END
+# DUOFORGE_TYPE_*: the alphabetical type ids, the detail of TYPE_CHANGE
+TYPE_IDS = {name: i for i, name in enumerate(
+    ['Bug', 'Dark', 'Dragon', 'Electric', 'Fairy', 'Fighting', 'Fire', 'Flying', 'Ghost', 'Grass', 'Ground', 'Ice',
+     'Normal', 'Poison', 'Psychic', 'Rock', 'Steel', 'Water'])}
 FLAG = {'STILL': 1, 'LOCKED': 2, 'SPREAD': 4, 'UPKEEP': 8, 'EATEN': 16, 'MESSAGE': 32, 'MISS': 64, 'NOTARGET': 128}
 AILMENT = {'brn': 1, 'frz': 2, 'par': 3, 'slp': 4, 'psn': 5}
 EV_STATS = ['atk', 'def', 'spa', 'spd', 'spe', 'accuracy', 'evasion']
@@ -763,7 +774,9 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             cause, id2, _ = ev_cause(attrs, tables)
             e = ev_tuple(EV['IMMUNE'], ev_pos(args[0]), NOPOS, cause, 0, id2)
         elif kind == '-fail':
-            e = ev_tuple(EV['FAIL'], ev_pos(args[0]), detail=AILMENT[args[1]] if len(args) > 1 else 0)
+            # `-fail|X|heal` (a heal move at full HP) is a plain FAIL: the event has no field for the reason, which
+            # for a status is the ailment the target already has.
+            e = ev_tuple(EV['FAIL'], ev_pos(args[0]), detail=AILMENT[args[1]] if len(args) > 1 and args[1] != 'heal' else 0)
         elif kind == '-singleturn':
             if args[1] == 'Protect':
                 e = ev_tuple(EV['PROTECT'], ev_pos(args[0]))
@@ -774,6 +787,13 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                 e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), NOPOS, 0, tables['MOVE'][key(args[1][6:])])
             else:
                 raise ConversionError('singleturn-line', 'trace_to_c: unknown -singleturn %r' % line, detail=args[1])
+        elif kind == '-block':
+            # Flower Veil (step G12): -block|protected|ability: Flower Veil|[of] holder is the ability's ACTIVATE event
+            # with the protected Pokemon as its position and the holder in `other`
+            _, _, of = ev_cause(attrs, tables)
+            if len(args) != 2 or not args[1].startswith('ability: ') or of == NOPOS:
+                raise ConversionError('block-line', 'trace_to_c: unknown -block %r' % line, detail=args[1] if len(args) > 1 else '')
+            e = ev_tuple(EV['ACTIVATE'], ev_pos(args[0]), of, CAUSE['ABILITY'], 0, tables['ABILITY'][key(args[1][9:])] + 1)
         elif kind == '-activate':
             pos = ev_pos(args[0])
             what = args[1]
@@ -810,6 +830,13 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             elif what == 'move: Heal Block':
                 e = ev_tuple(EV['VOLATILE_START' if kind == '-start' else 'VOLATILE_END'], ev_pos(args[0]),
                              detail=VOLATILE_HEAL_BLOCK)
+            elif what == 'typechange' and kind == '-start' and len(args) == 3 and args[2] in TYPE_IDS:
+                # Soak (data/moves.ts:17186-17208): `-start|target|typechange|Water`, one type, no [from]; the move
+                # is Soak, the only mechanic of the pool that sets one single type (a [from] move would name it).
+                cause, id2, _ = ev_cause(attrs, tables)
+                if cause == 0:
+                    cause, id2 = CAUSE['MOVE'], tables['MOVE'][key('Soak')]
+                e = ev_tuple(EV['TYPE_CHANGE'], ev_pos(args[0]), NOPOS, cause, 0, id2, detail=TYPE_IDS[args[2]])
             else:
                 raise ConversionError('start-end-line', 'trace_to_c: unknown %s %r' % (kind, line),
                                       detail='%s %s' % (kind, what))

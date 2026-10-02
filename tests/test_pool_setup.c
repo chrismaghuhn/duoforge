@@ -41,8 +41,8 @@
 #include "support/pool.h"
 #include "support/team_c.h"
 
-#define FP_KP_HEX "f82c6cfc8105aa3fa8746adb9df5a181dec1f9ba7ad64cfc18f6c80b125f263f"
-#define FP_KPD_HEX "65d23ec1972a57b130502da8b7131c9a77d53fce2f731fbc2090847c0b5e62fd"
+#define FP_KP_HEX "dbf332fbd2333e795c01e206f6b65066c2904b5ba3481ecb0142ebbf5ad1baea"
+#define FP_KPD_HEX "42ae74c5c60dd3014dd4deb37b898c467da0ae718bcf6f514f8ac4db9871d1be"
 
 /* The public create under `ctx` gives `gated`, and the build without the
  * support gate `ungated`. */
@@ -242,6 +242,7 @@ int main(void)
                        "POOL_DEV table hash");
         DF_CHECK(&t, dfi_sha256(bytes, sizeof bytes, sha));
         DF_CHECK_BYTES(&t, sha, fp[5], sizeof sha, "POOL_DEV fingerprint = sha256(canonical bytes)");
+        for (int zz = 4; zz < 6; ++zz) { for (int yy = 0; yy < 32; ++yy) printf("%02x", fp[zz][yy]); printf("\n"); }
         DF_CHECK(&t, df_hex_to_bytes(FP_KP_HEX, want, sizeof want));
         DF_CHECK_BYTES(&t, fp[4], want, sizeof want, "POOL fingerprint (model)");
         DF_CHECK(&t, df_hex_to_bytes(FP_KPD_HEX, want, sizeof want));
@@ -552,8 +553,8 @@ int main(void)
     /* Step G2 (docs/research/expansion/data/team_gaps.json): the formes Pelipper, Arcanine-Hisui, Annihilape and
      * Floette-Eternal under the set rule, and the 22 new moves behind the gate. Twelve of them are marked (their
      * data runs on the existing paths, each in a reference battle under the POOL kind: g2_data_moves_a to _d), and
-     * step G5 marks U-turn (g5_uturn_a to _e), so a setup that has one is supported; the other nine (those with a
-     * handler id) are unmarked, so a
+     * step G5 marks U-turn (g5_uturn_a to _e), so a setup that has one is supported; step G11 marks Soak (g11_soak, _mega, _stab and _electro); the others (those with a
+     * handler id the turn code refuses) are unmarked, so a
      * setup that has one is E_UNSUPPORTED after all validation. A species is complete with its base data, so a
      * Pelipper whose ability, item and moves are marked is a supported setup. Team B's lead is replaced. */
     {
@@ -561,7 +562,9 @@ int main(void)
                                                 DFI_MOVE_FLASHCANNON, DFI_MOVE_EXTREMESPEED, DFI_MOVE_HEADSMASH,
                                                 DFI_MOVE_BULKUP, DFI_MOVE_LIQUIDATION, DFI_MOVE_ICEPUNCH,
                                                 DFI_MOVE_SHADOWCLAW, DFI_MOVE_DRUMBEATING, DFI_MOVE_DAZZLINGGLEAM,
-                                                DFI_MOVE_UTURN, DFI_MOVE_THROATCHOP, DFI_MOVE_PSYCHICNOISE};
+                                                DFI_MOVE_UTURN, DFI_MOVE_THROATCHOP, DFI_MOVE_PSYCHICNOISE,
+                                                DFI_MOVE_FIRSTIMPRESSION, DFI_MOVE_SCALD, DFI_MOVE_RECOVER,
+                                                DFI_MOVE_LOWKICK, DFI_MOVE_SOAK};
         const duoforge_member_setup *tpl = &teams.sides[1].members[0];
         /* Every new move: a learner with a legal ability that is marked, with no item, on a side where it does not
          * clash with the Species Clause. The gate function with a fully marked manifest accepts the setup (the
@@ -683,13 +686,14 @@ int main(void)
         invalid(&t, kp, &s, "Annihilape with Flare Blitz");
 
         /* Floette-Eternal is female only; its Mega forme is reached in battle, never set up. Flower Veil, Floettite
-         * and the Mega's Fairy Aura are all unmarked, so the setup is E_UNSUPPORTED until each is. */
+         * and the Mega's Fairy Aura are marked by step G12 (g12_*), and each is needed: the gate function with a copy
+         * of the manifest that lacks one refuses the setup. */
         static const uint32_t floette_moves[2] = {DFI_MOVE_PROTECT, DFI_MOVE_DAZZLINGGLEAM};
         s = teams;
         s.sides[1].members[0] = member_of(tpl, DFI_FORME_FLOETTEETERNAL, DFI_ABILITY_FLOWERVEIL,
                                           DFI_ITEM_FLOETTITE + 1u, 2u, floette_moves);
         DF_CHECK_EQ_U64(&t, s.sides[1].members[0].gender, DUOFORGE_GENDER_FEMALE);
-        legal(&t, kp, &s, false, "Floette-Eternal with Floettite (legal, unmarked)");
+        legal(&t, kp, &s, true, "Floette-Eternal with Floettite (marked in G12)");
         {
             dfi_support_manifest m = full_manifest();
             DF_CHECK(&t, dfi_closure_setup_supported(&m, &s));
@@ -727,7 +731,7 @@ int main(void)
             DF_CHECK_EQ_U64(&t, w->sides[1].members[0].mega_capable, 1u);
             DF_CHECK_EQ_U64(&t, w->sides[1].members[0].moves[1].pp_max, dfi_pool_moves[DFI_MOVE_DAZZLINGGLEAM].pp_max);
             team_bundle(&bd, w);
-            step_expect(&t, kp, w, &bd, DUOFORGE_E_UNSUPPORTED, "team selection with Floettite");
+            step_expect(&t, kp, w, &bd, DUOFORGE_OK, "team selection with Floettite");
             duoforge_battle_destroy(w);
         }
     }

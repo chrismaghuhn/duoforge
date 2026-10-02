@@ -266,6 +266,7 @@ static void check_view_ext(df_test *t, const duoforge_context *ctx)
                 want.player = (uint8_t)viewer;
                 want.epoch = ob.epoch;
                 want.supported = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) |
+                                 ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TYPE_CHANGE) | /* step G11 */
                                  ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK);
                 for (uint32_t flat = 0u; flat < 4u; ++flat) {
                     want.sides[flat / 2u].positions[flat % 2u].volatiles =

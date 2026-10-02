@@ -26,9 +26,10 @@
  * is all zero under every other kind (TAIL_KIND); under the POOL kinds each
  * value is in its range, a pair that is zero together is, a position without a
  * standing occupant has no tail, a soak type, a current ability and a toxic
- * stage are on a member standing on the field (the soak type also not Mega
- * Evolved) (TAIL_FIELD, TAIL_SIDE, TAIL_POSITION, TAIL_MEMBER). TAIL_SCHEMA
- * and TAIL_RESERVED are reported by the decoder only.
+ * stage are on a member standing on the field (step G11: a Mega Evolved one
+ * can be Soaked; the type ends with its Mega Evolution when that comes later)
+ * (TAIL_FIELD, TAIL_SIDE, TAIL_POSITION, TAIL_MEMBER). TAIL_SCHEMA and
+ * TAIL_RESERVED are reported by the decoder only.
  */
 #include <duoforge/duoforge.h>
 

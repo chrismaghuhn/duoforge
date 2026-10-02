@@ -827,7 +827,7 @@ static const tail_case cases[] = {
     {"a soak type above 18", DFI_INV_TAIL_MEMBER, false, m_soak19},
     {"a soak type on a reserve", DFI_INV_TAIL_MEMBER, false, m_soak_reserve},
     {"a soak type on a fainted member", DFI_INV_TAIL_MEMBER, false, m_soak_fainted},
-    {"a soak type on a Mega Evolved member", DFI_INV_TAIL_MEMBER, false, m_soak_mega},
+    {"a soak type on a Mega Evolved member is valid (Soak after the Mega Evolution, step G11)", DFI_INV_NONE, false, m_soak_mega},
     {"a soak type on a member that has left the field", DFI_INV_TAIL_MEMBER, false, m_soak_left},
     {"a current ability beyond the table", DFI_INV_TAIL_MEMBER, false, m_ability_above},
     {"a current ability on a reserve", DFI_INV_TAIL_MEMBER, false, m_ability_reserve},
@@ -1333,16 +1333,25 @@ int main(void)
         duoforge_battle_destroy(x);
     }
 
-    /* A valid tail passes through a step unchanged: nothing reads or writes it in a turn that has no move that
-     * sets it (G8's counters count down in the residual of the turn after the move that started them). */
+    /* A valid tail passes through a step: the residual counts the Throat Chop and Heal Block timers of every position
+     * down by one (step G8), and nothing else of it changes (the field, the side conditions, the other volatiles and
+     * the member overrides stay: nothing in this turn ends them). The soak types of the example (Fighting and Water on
+     * the leads, which the types now read: step G11) keep the turn from ending in a knock-out before its residual. */
     {
         duoforge_battle *x = turn_battle(&t, kp, false);
         set_example_tail(x);
-        const dfi_pool_tail saved = x->tail;
+        dfi_pool_tail want = x->tail;
+        for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+            for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+                dfi_tail_pos *tp = &want.sides[s].positions[p];
+                tp->throat_chop_turns = (uint8_t)(tp->throat_chop_turns != 0u ? tp->throat_chop_turns - 1u : 0u);
+                tp->heal_block_turns = (uint8_t)(tp->heal_block_turns != 0u ? tp->heal_block_turns - 1u : 0u);
+            }
+        }
         duoforge_decision_bundle bd;
         turn_bundle(&bd, x);
         step_ok(&t, kp, x, &bd, "a turn with a tail");
-        DF_CHECK(&t, memcmp(&x->tail, &saved, sizeof saved) == 0);
+        DF_CHECK(&t, memcmp(&x->tail, &want, sizeof want) == 0);
         DF_CHECK(&t, duoforge_battle_check(kp, x) == DUOFORGE_OK);
         duoforge_battle_destroy(x);
     }

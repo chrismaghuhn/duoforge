@@ -259,7 +259,7 @@ KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 # which tests/test_pool_tables.c recomputes from the pool canonical bytes: the
 # pool layout over the pool data, then the family columns, the handler columns
 # and the moves and abilities that each forme may have.
-POOL_TABLE_HASH = bytes.fromhex('f653e6d869fa08697ba043365a33cdfca733ba24a977f942eeea055b6a0382b0')
+POOL_TABLE_HASH = bytes.fromhex('59e76a9b6d9f263f4bdfb26b2d146bc8fe9dbbe70cb30abdc4afdbb2bc2a1707')
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 
@@ -903,7 +903,8 @@ def tail_pos_valid(ctx, tp, flat, mem):
 def check_tail(ctx, st):
     """The POOL tail: absent (all zero) under every other kind; under POOL each value in range, none at a position
     without a standing occupant, the member overrides only where they can be (a soak type, a current ability and a
-    toxic stage on a standing member of the field)."""
+    toxic stage on a standing member of the field; step G11: a Mega Evolved member can be Soaked, so the Mega forme is
+    no part of the rule)."""
     tail = st['tail']
     if not has_pool_tail(ctx):
         return 'OK' if tail_is_zero(tail) else 'TAIL_KIND'
@@ -933,7 +934,7 @@ def check_tail(ctx, st):
                 return 'TAIL_MEMBER'
             mem = sd['members'][m]
             on_field = mem['hp'] != 0 and (sd['pos'][0]['occ'] == m or sd['pos'][1]['occ'] == m)
-            if ty != 0 and (ty > TYPE_COUNT or not on_field or mem['is_mega'] != 0):
+            if ty != 0 and (ty > TYPE_COUNT or not on_field):
                 return 'TAIL_MEMBER'
             if ab != 0 and (ab > POOL_ABILITY_COUNT or not on_field):
                 return 'TAIL_MEMBER'
