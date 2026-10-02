@@ -60,6 +60,7 @@ for j in "$@"; do
     gcc-release-ipo)
         py=()
         [ -x "$PY" ] && py=(-DDUOFORGE_PYTHON="$PY")
+        [ -x "$HOME/df-learn/bin/python" ] && py+=(-DDUOFORGE_LEARN_PYTHON="$HOME/df-learn/bin/python")
         job "$j" gcc g++ "" -DCMAKE_BUILD_TYPE=Release -DDUOFORGE_ENABLE_IPO=ON "${py[@]}"
         ;;
     clang-release-ipo) job "$j" clang clang++ "" -DCMAKE_BUILD_TYPE=Release -DDUOFORGE_ENABLE_IPO=ON ;;
