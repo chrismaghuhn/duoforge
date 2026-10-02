@@ -1,0 +1,22 @@
+{
+  "name": "g15_seed_terrain_starts",
+  "purpose": "Step G15, Psychic Seed timing: Gholdengo's seed waits on the field until Indeedee switches in and Psychic Surge starts the terrain (the entry ability, then TerrainChange); in the next turn the foe's Farigiraf switches in with a seed while the terrain is up and uses it at once (onStart, onSwitchInPriority -1).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000001508",
+  "teams": [
+    "Gholdengo @ Psychic Seed\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Protect\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nIndeedee (M)\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Expanding Force\n- Protect\n- Helping Hand\n- Psychic\n\nIncineroar (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Protect\n\nGrimmsnarl (M)\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Protect\n\nRaichu (F)\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Thunderbolt\n- Helping Hand\n- Protect",
+    "Rillaboom (M)\nAbility: Overgrow\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- Protect\n\nRaichu (F)\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Thunderbolt\n- Helping Hand\n- Protect\n\nFarigiraf (F) @ Psychic Seed\nAbility: Armor Tail\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 Spe\nModest Nature\n- Psychic\n- Helping Hand\n- Protect\n- Expanding Force\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nIncineroar (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Protect\n\nGrimmsnarl (M)\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 3, switch 3",
+      "move 3, move 2"
+    ],
+    "p2": [
+      "move 4, move 3",
+      "move 4, switch 3"
+    ],
+    "max_steps": 3
+  }
+}

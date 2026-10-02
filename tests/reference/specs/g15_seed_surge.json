@@ -1,0 +1,20 @@
+{
+  "name": "g15_seed_surge",
+  "purpose": "Step G15, Psychic Seed: the setter and a foe both hold one. At the first switch-in Indeedee's Psychic Surge starts the terrain, and every Psychic Seed on the field is used in eachEvent order (onTerrainChange): -enditem and -boost spd 1 from the item, the setter's own first (data/items.ts:4903-4922).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000001507",
+  "teams": [
+    "Indeedee (M) @ Psychic Seed\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Expanding Force\n- Protect\n- Helping Hand\n- Psychic\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nGholdengo\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Protect\n\nIncineroar (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Protect\n\nGrimmsnarl (M)\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Protect\n\nRaichu (F)\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Thunderbolt\n- Helping Hand\n- Protect",
+    "Farigiraf (F) @ Psychic Seed\nAbility: Armor Tail\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 Spe\nModest Nature\n- Psychic\n- Helping Hand\n- Protect\n- Expanding Force\n\nGholdengo\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Protect\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nIncineroar (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Protect\n\nGrimmsnarl (M)\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Protect\n\nRaichu (F)\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Thunderbolt\n- Helping Hand\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 2, move 1"
+    ],
+    "p2": [
+      "move 3, move 3"
+    ],
+    "max_steps": 2
+  }
+}
