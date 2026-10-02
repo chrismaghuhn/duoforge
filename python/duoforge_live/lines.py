@@ -110,11 +110,16 @@ def parse_supported(expression):
 def supported(root=ROOT):
     """The library's supported mask of the view extension: view_ext_features of src/data/support_manifest.c, the
     value duoforge_observation_ext.supported carries."""
-    source = (root / "src" / "data" / "support_manifest.c").read_text(encoding="ascii")
-    m = re.search(r"\.view_ext_features = ([^;]+?),?\n", source)
+    return extract_supported((root / "src" / "data" / "support_manifest.c").read_text(encoding="ascii"))
+
+
+def extract_supported(source):
+    """The mask of the view_ext_features initializer in a support manifest's source, which may span lines (the
+    expression ends at the comma before the next field or the closing brace)."""
+    m = re.search(r"\.view_ext_features\s*=\s*(.*?)\s*,?\s*\n\s*(?:\}|\.)", source, re.S)
     if m is None:
         raise ValueError("support_manifest.c: no view_ext_features")
-    return parse_supported(m.group(1))
+    return parse_supported(" ".join(m.group(1).split()))
 
 
 LIBRARY_SUPPORTED = supported()

@@ -89,6 +89,7 @@ class _Position:
         self.protecting = 0
         self.choice_slot = MOVE_SLOT_NONE  # the move slot a Choice item locks (TEAM_C and POOL)
         self.flags = 0  # DUOFORGE_POSITION_FLAG_* (TEAM_C and POOL): Follow Me, Helping Hand, Unburden
+        self.guard_undo = None  # (chain, stall) before a Wide or Quick Guard, until it is known to have run
 
 
 class _Member:
@@ -151,6 +152,7 @@ class Tracker:
         self._follow_me = tables["MOVE"].get("FOLLOWME")
         # Protect and Detect both show "-singleturn|POKEMON|Protect"; a failed one resets the stall counter
         self._stall_moves = {tables["MOVE"][k] for k in ("PROTECT", "DETECT") if k in tables["MOVE"]}
+        self._guard_moves = {tables["MOVE"][k] for k in ("WIDEGUARD", "QUICKGUARD") if k in tables["MOVE"]}
         self._helping_hand = tables["MOVE"].get("HELPINGHAND")
 
     # ------------------------------------------------------------------ input
@@ -183,12 +185,6 @@ class Tracker:
             name = cls[len("turn:"):]
             self._turn_scoped.add(name)
             self.turn_scoped_seen[name] += 1
-            if name in ("WIDE_GUARD", "QUICK_GUARD") and line.startswith("|-singleturn|"):
-                # Wide Guard and Quick Guard add the stall volatile (data/moves.ts onHitSide addVolatile('stall')),
-                # the counter a Protect reads: the view's protect_chain counts them.
-                p = self._at(trace_to_c.ev_pos(line.split("|")[2]))
-                p.chain = min(p.chain + 1, STALL_LEVEL_MAX)
-                p.stall = STALL_DURATION
             return
         self._extended_field(line)
         if line.startswith("|-clearnegativeboost|"):
@@ -396,6 +392,13 @@ class Tracker:
             m = self._occupant(pos)
             if not flags & FLAG["LOCKED"] and ident in m.sheet["moves"]:
                 m.uses[m.sheet["moves"].index(ident)] += 1
+            if ident in self._guard_moves and not flags & FLAG["LOCKED"]:
+                # Wide Guard and Quick Guard add the stall volatile when they run (data/moves.ts onHitSide
+                # addVolatile('stall')), also when the side has the guard already (no -singleturn line then), the
+                # counter a Protect reads: protect_chain counts them (g7_wide_guard_ally). A -fail undoes it.
+                p.guard_undo = (p.chain, p.stall)
+                p.chain = min(p.chain + 1, STALL_LEVEL_MAX)
+                p.stall = STALL_DURATION
             if (p.choice_slot == MOVE_SLOT_NONE and m.sheet["item"] in self._choice_items and not m.item_used
                     and ident in m.sheet["moves"]):
                 # A Choice item locks its holder into the move of its |move| line (data/items.ts onModifyMove,
@@ -445,6 +448,11 @@ class Tracker:
             if self._last_move is not None and self._last_move[0] == pos and self._last_move[1] in self._stall_moves:
                 p = self._at(pos)
                 p.chain = p.stall = 0
+            elif (self._last_move is not None and self._last_move[0] == pos and self._last_move[1] in self._guard_moves
+                  and self._at(pos).guard_undo is not None):
+                p = self._at(pos)
+                p.chain, p.stall = p.guard_undo  # the guard failed (nobody acts after it): no stall added
+                p.guard_undo = None
         elif kind == EV["WEATHER"]:
             if not flags & FLAG["UPKEEP"]:
                 self._weather = detail

@@ -146,6 +146,11 @@ class LinesTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "not understood"):
             lines.parse_supported("SOMETHING_ELSE")
         self.assertEqual(lines.LIBRARY_SUPPORTED, lines.supported())
+        # the manifest writes a long mask over several lines
+        source = ("static const dfi_support dfi_support = {\n    .turn_core = 1u,\n"
+                  "    .view_ext_features = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) |\n"
+                  "                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WIDE_GUARD),\n};\n")
+        self.assertEqual(lines.extract_supported(source), 1 << f["THROAT_CHOP"] | 1 << f["WIDE_GUARD"])
 
     def test_a_feature_the_tracker_does_not_fold_stops(self):
         # the library may support a feature (G8: Throat Chop), but rows carry no view extension until the tracker
