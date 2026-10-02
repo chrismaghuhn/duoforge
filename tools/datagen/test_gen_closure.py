@@ -639,6 +639,72 @@ class PoolMoves(unittest.TestCase):
             self.assertTrue(set(moves) <= set(gen_closure.MOVES + gen_closure.MOVES_C + gen_closure.G2_MOVES))
 
 
+# ---- step G13: Detect is Protect, the tags of Light of Ruin, and a poison secondary ----
+PROTECT_ENTRY = move_entry('protect', 'Protect', 'stallingMove: true,', "volatileStatus: 'protect',",
+                           'onPrepareHit(pokemon) {', "\treturn !!this.queue.willAct() && this.runEvent('StallMove', pokemon);",
+                           '},', 'onHit(pokemon) {', "\tpokemon.addVolatile('stall');", '},', 'condition: {', '\tduration: 1,', '},',
+                           flags='noassist: 1, failcopycat: 1', target='self', type_='Normal').replace('priority: 0', 'priority: 4')
+DETECT_ENTRY = (PROTECT_ENTRY.replace('protect: {', 'detect: {', 1).replace('"Protect"', '"Detect"')
+                .replace('type: "Normal"', 'type: "Fighting"').replace('\t\tcondition: {\n\t\t\tduration: 1,\n\t\t},\n', ''))
+POISON_JAB = move_entry('poisonjab', 'Poison Jab', 'secondary: {', '\tchance: 30,', "\tstatus: 'psn',", '},',
+                        category='Physical', base_power=80, pp=20, type_='Poison', flags='contact: 1, protect: 1')
+LIGHT_OF_RUIN = move_entry('lightofruin', 'Light of Ruin', 'recoil: [1, 2],', 'tags: ["Past Unobtainable"],',
+                           category='Special', base_power=140, pp=5, type_='Fairy', flags='protect: 1, mirror: 1')
+
+
+class G13Rows(unittest.TestCase):
+    def detect(self, text):
+        base = TextSource('data/moves.ts', text)
+        return gen_closure.parse_move('detect', base, TextSource('data/mods/champions/moves.ts', ''), True, True)
+
+    def refused(self, text, message):
+        with self.assertRaises(SystemExit) as cm:
+            self.detect(text)
+        self.assertEqual(cm.exception.code, 'gen_closure: move detect: %s' % message)
+
+    def test_detect_is_protect_with_the_same_handler_and_nothing_of_its_own(self):
+        rec = self.detect(PROTECT_ENTRY + '\n' + DETECT_ENTRY)
+        self.assertEqual(rec['special'], gen_closure.SPECIAL_IDS_P.index('PROTECT'))
+        self.assertEqual((rec['priority'], rec['sec_kind'], rec['primary_status'], rec['side_condition']), (12, 0, 0, 0))
+        # Only the pool mode maps it: the closure and extended modes never saw Detect.
+        self.assertNotIn('detect', gen_closure.SPECIAL_P)
+        self.assertNotIn('detect', gen_closure.SPECIAL_C)
+
+    def test_detect_must_equal_protect(self):
+        self.refused(PROTECT_ENTRY + '\n' + DETECT_ENTRY.replace("pokemon.addVolatile('stall');", "pokemon.addVolatile('other');"),
+                     'onHit is not that of protect')
+        self.refused(PROTECT_ENTRY + '\n' + DETECT_ENTRY.replace('priority: 4', 'priority: 3'),
+                     'priority is not that of protect')
+        self.refused(PROTECT_ENTRY + '\n' + DETECT_ENTRY.replace("volatileStatus: 'protect',", "volatileStatus: 'spikyshield',"),
+                     'volatileStatus is not that of protect')
+
+    def test_the_tags_of_light_of_ruin_are_ignored_in_the_pool_mode_only(self):
+        rec = parse_pool('lightofruin', LIGHT_OF_RUIN)
+        self.assertEqual((rec['recoil'], rec['special']), ([1, 2], 0))
+        with self.assertRaises(SystemExit) as cm:
+            parse_pool('lightofruin', LIGHT_OF_RUIN.replace('Past Unobtainable', 'Something Else'))
+        self.assertEqual(cm.exception.code, 'gen_closure: move lightofruin: unknown field tags')
+        for ext in (False, True):
+            with self.subTest(ext=ext):
+                with self.assertRaises(SystemExit) as cm:
+                    parse_pool('lightofruin', LIGHT_OF_RUIN, pool=False, ext=ext)
+                self.assertEqual(cm.exception.code, 'gen_closure: move lightofruin: unknown field tags')
+
+    def test_a_poison_secondary_is_modelled_in_the_pool_mode_only(self):
+        rec = parse_pool('poisonjab', POISON_JAB)
+        self.assertEqual((rec['sec_chance'], rec['sec_kind'], rec['sec_param']), (30, 2, gen_closure.STATUS_C['psn']))
+        for ext in (False, True):
+            with self.subTest(ext=ext):
+                with self.assertRaises(SystemExit) as cm:
+                    parse_pool('poisonjab', POISON_JAB, pool=False, ext=ext)
+                self.assertEqual(cm.exception.code, 'gen_closure: move poisonjab: secondary status psn is not modelled')
+        # Anything else that the tables lack stays unmodelled (there is no toxic source).
+        features = []
+        base = TextSource('data/moves.ts', POISON_JAB.replace("'psn'", "'tox'"))
+        gen_closure.parse_move('poisonjab', base, TextSource('data/mods/champions/moves.ts', ''), True, True, features)
+        self.assertEqual(features, ['secondary status tox'])
+
+
 # ---- the whole legal pool (decision 0015 section 4.2): the lenient mode and what the tables model ----
 def lenient(mid, text):
     """parse_move of the pool in the lenient mode: the record and its features."""

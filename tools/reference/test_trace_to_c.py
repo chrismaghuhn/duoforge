@@ -896,8 +896,9 @@ class Library(unittest.TestCase):
     def test_every_move_marked_beyond_the_extended_ids_is_used_in_a_pool_battle(self):
         """A move that the pool manifest marks beyond the extended ids (twelve of step G2, U-turn of step G5, Throat Chop
         and Psychic Noise of step G8, Soak of step G11, Moonblast and Calm Mind of step G12, Sandstorm and Snowscape
-        of the weather step) was used in a committed pool battle: a move line of it that did something (damage, a boost,
-        a heal, a -start line for a status move, or a -weather line for a weather move) before the next move line."""
+        of the weather step, the fourteen of step G13) was used in a committed pool battle: a move line of it that did
+        something (damage, a boost, a heal, a -start line for a status move, a -weather line for a weather move; for
+        Detect, the protection of its user: -singleturn) before the next move line."""
         def read(*p):
             return open(os.path.join(ROOT, *p), encoding='utf-8').read()
         header, source = read('src', 'data', 'pool_tables.h'), read('src', 'data', 'pool_tables.c')
@@ -908,7 +909,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 25)  # G2, G5, G8, G12, G10 (First Impression, Scald, Recover, Low Kick), G11 (Soak), G7 (Wide Guard), weather
+        self.assertEqual(len(marked), 39)  # G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), then the fourteen of G13
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -925,8 +926,10 @@ class Library(unittest.TestCase):
                             if after.startswith('|move|') or after.startswith('|turn|'):
                                 break
                             done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|', '|-start|', '|-weather|'))
-                            # A side move (Wide Guard, step G7) shows its effect as its own -singleturn line.
+                            # A side move (Wide Guard, step G7) shows its effect as its own -singleturn line; Detect's is
+                            # Protect's (step G13: its handler, and the line of the Protect condition).
                             done = done or (after.startswith('|-singleturn|') and after.endswith('|' + name))
+                            done = done or (name == 'Detect' and after.startswith('|-singleturn|'))
             with self.subTest(move=name):
                 self.assertTrue(done, '%s is marked but no committed pool battle uses it' % name)
 
