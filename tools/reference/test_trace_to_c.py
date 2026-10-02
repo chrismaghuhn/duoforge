@@ -724,6 +724,63 @@ class Library(unittest.TestCase):
         # The guard is live at a boundary inside a turn in the pivot battle, and only there.
         self.assertEqual({k: v for k, v in derived.items() if v}, {('g7_wide_guard_pivot', 1): 1})
 
+    def test_item_taken_rows_are_what_the_protocol_lines_say(self):
+        """Decision 0018 section 6.1 for Knock Off: a member holds nothing from the `|-enditem|X|Item|[from] move: Knock Off|
+        [of] Y` line on, and nothing clears it (the item stays gone across a switch-out and a faint: sim/pokemon.ts:1851-1866
+        takeItem sets pokemon.item to the empty item for good). The rows of the C test (rows in tests/test_pool_g16.c: per
+        step the members that hold nothing as a mask over side * 6 + roster index, the number of such lines, the number of
+        `|-activate|X|ability: Sticky Hold` lines) must be exactly what these lines give for the committed traces, so the
+        engine's tail, events and extension are checked against the protocol and not against itself. Also: the converter
+        reads the line as ITEM_END with the cause ITEM_TAKEN (the move in id, the user in other, the item in id2), and
+        refuses any other shape of a `[from] move:` item line."""
+        names = ('g16_removal', 'g16_unburden', 'g16_stones', 'g16_sticky_hold', 'g16_scarf_helmet', 'g16_helmet_faint')
+        source = open(os.path.join(ROOT, 'tests', 'test_pool_g16.c'), encoding='utf-8').read()
+        rows = {}
+        for m in re.finditer(r'\{"(g16_\w+)", (\d+)u, 0x([0-9a-f]+)u, (\d+)u, (\d+)u\}', source):
+            rows[(m.group(1), int(m.group(2)))] = (int(m.group(3), 16), int(m.group(4)), int(m.group(5)))
+        derived = {}
+        taken_total = 0
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'specs', name + '.json'), encoding='utf-8') as f:
+                spec = json.load(f)
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            rosters = [re.findall(r'^([A-Za-z-]+)(?: \([MF]\))? @', text, re.M) for text in spec['teams']]
+            gone = 0
+            for k, step in enumerate(trace['steps']):
+                taken = blocked = 0
+                for line in step['log']:
+                    part = line.split('|')
+                    if len(part) > 4 and part[1] == '-enditem' and '[from] move: Knock Off' in part[4:]:
+                        side = int(part[2][1]) - 1
+                        gone |= 1 << (side * 6 + rosters[side].index(part[2][5:]))
+                        taken += 1
+                    elif len(part) > 3 and part[1] == '-activate' and part[3] == 'ability: Sticky Hold':
+                        blocked += 1
+                derived[(name, k)] = (gone, taken, blocked)
+                taken_total += taken
+        self.assertEqual(rows, derived)
+        self.assertTrue(taken_total >= 8 and any(b for (_, _, b) in derived.values()))
+        # The converter.
+        tables = trace_to_c.load_tables(ROOT, True)
+        roster = [{'Meowscarada': 0}, {'Pelipper': 0}]
+        line = '|-enditem|p2a: Pelipper|Sitrus Berry|[from] move: Knock Off|[of] p1a: Meowscarada'
+        (e,) = trace_to_c.step_events([line], 0, roster, [{'Meowscarada': 100}, {'Pelipper': 100}], tables)
+        self.assertEqual((e[0], e[1], e[2], e[3], e[4], e[5], e[11], e[13]),
+                         (trace_to_c.EV['ITEM_END'], 2, 0, trace_to_c.CAUSE['ITEM_TAKEN'],
+                          tables['MOVE'][trace_to_c.key('Knock Off')], tables['ITEM'][trace_to_c.key('Sitrus Berry')] + 1,
+                          0, 0))
+        self.assertEqual(trace_to_c.CAUSE['ITEM_TAKEN'], 17)
+        for bad in ('|-enditem|p2a: Pelipper|Sitrus Berry|[from] move: Knock Off',
+                    '|-enditem|p2a: Pelipper|Sitrus Berry|[from] move: Knock Off|[of] p1a: Meowscarada|[eat]'):
+            with self.assertRaises(trace_to_c.ConversionError):
+                trace_to_c.step_events([bad], 0, roster, [{'Meowscarada': 100}, {'Pelipper': 100}], tables)
+        # An item used up is the old line, unchanged: no cause, no move.
+        (e,) = trace_to_c.step_events(['|-enditem|p2a: Pelipper|Sitrus Berry|[eat]'], 0, roster,
+                                      [{'Meowscarada': 100}, {'Pelipper': 100}], tables)
+        self.assertEqual((e[0], e[1], e[3], e[4], e[13]),
+                         (trace_to_c.EV['ITEM_END'], 2, 0, 0, trace_to_c.FLAG['EATEN']))
+
     def test_soak_rows_are_what_the_protocol_lines_say(self):
         """Decision 0018 section 6.1 for Soak: a position is Soaked from the `|-start|X|typechange|Water` line until the
         occupant leaves (`|switch|`, `|drag|`, `|replace|`, `|faint|`) or Mega Evolves (`|-mega|`: setSpecies resets the
@@ -858,6 +915,40 @@ class Library(unittest.TestCase):
         with self.assertRaises(trace_to_c.ConversionError) as ctx:
             trace_to_c.drop_reason(other, before)
         self.assertEqual(ctx.exception.rule, 'insert-tie')
+
+    def test_poison_touch_rolls_are_kept_as_their_own_site(self):
+        """Poison Touch's randomChance(3, 10) (step G14) is a draw of the site POISON_TOUCH, random(10), that the harness
+        names by the effect and the event it runs in (ps_trace.js CONDITION_SITES) and the converter keeps as a tape entry
+        of site 16: after every contact hit of a holder, also at a target that is down or immune. The recorded battle has
+        draws below and above 3 and none outside [0, 10)."""
+        with open(os.path.join(ROOT, 'tests', 'reference', 'traces', 'g14_poison_touch.json'), encoding='utf-8') as f:
+            trace = json.load(f)
+        draws = [d for step in trace['steps'] for d in step['draws'] if d['site'] == 'POISON_TOUCH']
+        self.assertTrue(draws)
+        self.assertTrue(all((d['lo'], d['hi']) == (0, 10) and 0 <= d['value'] < 10 for d in draws))
+        self.assertTrue(any(d['value'] < 3 for d in draws) and any(d['value'] >= 3 for d in draws))
+        self.assertEqual(trace_to_c.SITES['POISON_TOUCH'], 16)
+        for d in draws:
+            self.assertEqual(trace_to_c.tape_entry(d), (16, 0, 10, d['value']))
+        # No draw of the battle is unclassified.
+        self.assertFalse([d for step in trace['steps'] for d in step['draws'] if d['site'] == 'UNKNOWN'])
+
+    def test_thermal_exchange_is_no_holder_of_an_update_tie(self):
+        """Thermal Exchange's onUpdate (step G14) cures a burn that its holder cannot have, so an each:Update tie with it
+        is dropped as one without a holder; a Sitrus Berry beside it is a holder like any other, and a burned holder
+        (the precondition) is an error."""
+        def state(status):
+            side = {'active': [0, None], 'pokemon': [{'status': status}]}
+            return {'sides': [side, {'active': [None, None], 'pokemon': []}]}
+
+        d = {'site': 'SPEED_TIE', 'context': 'each:Update', 'lo': 0, 'hi': 2, 'value': 0, 'start': 0,
+             'group': ['P:p1a:1:thermalexchange', 'P:p2a:1:sitrusberry']}
+        self.assertEqual(trace_to_c.drop_reason(d, state('')), 'each-event tie with at most one holder')
+        both = dict(d, group=['P:p1a:1:sitrusberry', 'P:p2a:1:sitrusberry', 'P:p1b:1:thermalexchange'])
+        self.assertIsNone(trace_to_c.drop_reason(both, state('')))  # two Sitrus holders: the engine draws
+        with self.assertRaises(trace_to_c.ConversionError) as ctx:
+            trace_to_c.drop_reason(d, state('brn'))
+        self.assertEqual(ctx.exception.rule, 'thermal-exchange-burn')
 
     def test_recharge_rows_are_what_the_protocol_lines_say(self):
         """Decision 0018 section 6.1 for the recharge (step G17): a position must recharge from the `|-mustrecharge|X`
@@ -1085,7 +1176,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 47)  # G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (6), then Expanding Force (G15)
+        self.assertEqual(len(marked), 48)  # G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), then Expanding Force (G15)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []

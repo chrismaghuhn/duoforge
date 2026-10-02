@@ -155,10 +155,11 @@ _ITEM_CHANGE_FROM = {"move: Trick", "move: Switcheroo", "move: Thief", "move: Co
 
 # The fold's own effects, beside the generic kinds (the converter's step_events and the tracker's _event).
 # The -activate effects of the committed reference battles (python/tests/test_replay.py checks that their spectator
-# logs never stop): a Protect block, a Psychic Terrain block, confusion, Emergency Exit (folded), and two
-# announcements that change no field: Lightning Rod drawing a move, Struggle when no move is left.
+# logs never stop): a Protect block, a Psychic Terrain block, confusion, Emergency Exit (folded), and three
+# announcements that change no field: Lightning Rod drawing a move, Struggle when no move is left, and Sticky Hold
+# keeping the item of a holder that a move went for (step G16; the item stays, so no ITEM_CHANGE).
 _FOLD_ACTIVATE = {"move: Protect", "move: Psychic Terrain", "confusion", "ability: Emergency Exit",
-                  "ability: Lightning Rod", "ability: Storm Drain", "move: Struggle"}
+                  "ability: Lightning Rod", "ability: Storm Drain", "move: Struggle", "ability: Sticky Hold"}
 # A guard blocking a move this turn: the same single-turn feature as its -singleturn line.
 _GUARD_ACTIVATE = {"move: Wide Guard": "WIDE_GUARD", "move: Quick Guard": "QUICK_GUARD"}
 _FOLD_SINGLE_TURN = {"Protect", "Helping Hand", "move: Follow Me"}

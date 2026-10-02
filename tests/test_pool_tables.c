@@ -44,7 +44,7 @@
 #include "state/battle_internal.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "4d93e4bb7ed48c2a881c8c67c5312efed9d9a7090a6ac26d789420d43ef53743"
+#define POOL_HASH_HEX "bbee87c5301d3e3423a2f5f5b2cbd81c94b99713bc067fc568eeef396a5b5ffb"
 /* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
  * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
  * produced the same bytes. Step G10 moved two of them on purpose: Scald and Recover are data now (the thaw bit and
@@ -68,9 +68,9 @@
 #define POOL_ABILITIES 215u
 
 /* The rows that the tables do not model, pinned (the generator reports the same counts). */
-#define UNMODELED_MOVES 305u /* 306 before step G15 modelled Expanding Force; 313 before step G17 modelled the seven recharge moves; 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
+#define UNMODELED_MOVES 304u /* 305 before step G15 modelled Expanding Force; 306 before step G16 modelled Knock Off; 313 before step G17 modelled the seven recharge moves; 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
 #define UNMODELED_ITEMS 44u /* 45 before step G15 modelled Psychic Seed */
-#define UNMODELED_ABILITIES 184u
+#define UNMODELED_ABILITIES 180u /* 181 before step G16 made Sticky Hold an engine row; 184 before step G14 made Rough Skin, Poison Touch and Thermal Exchange engine rows */
 
 /* How many rows of the manifest are marked and half modelled: marked, and with the UNMODELED handler or a list of
  * unmodelled features (decision 0015 section 4.2). A step marks only what it fully models. */
@@ -664,16 +664,17 @@ int main(void)
                             ? 1u
                             : 0u;
         }
-        /* Seven ids of G2 remain after step G8 (Scald and Recover are not any move's after step G10), and the two
-         * weather moves (Sandstorm and Snowscape: the field `weather`, which no column models) have one each, and step
-         * G15 adds Expanding Force's (its callbacks change the base power and the target class). */
-        DF_CHECK_EQ_U64(&t, handlers, DFI_SPECIAL_EXPANDING_FORCE - DFI_SPECIAL_ENCORE + 1u - 2u);
+        /* Seven ids of G2 remain after step G8 (Scald and Recover are not any move's after step G10), the two
+         * weather moves (Sandstorm and Snowscape: the field `weather`, which no column models) have one each, and
+         * Knock Off (step G16: its onAfterHit and onBasePower) the id after them. */
+        DF_CHECK_EQ_U64(&t, handlers, DFI_SPECIAL_EXPANDING_FORCE - DFI_SPECIAL_ENCORE + 1u - 2u); /* step G15 adds Expanding Force's */
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_ENCORE, DFI_SPECIAL_FOLLOW_ME + 1u);
         /* UNMODELED follows them. Step G10 made Scald and Recover data (the thaw bit and the heal column): their ids
          * are still defined, and no pool move has them. */
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_LOW_KICK + 1u, DFI_SPECIAL_SANDSTORM);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_SANDSTORM + 1u, DFI_SPECIAL_SNOWSCAPE);
-        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_EXPANDING_FORCE, DFI_SPECIAL_SNOWSCAPE + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_KNOCK_OFF, DFI_SPECIAL_SNOWSCAPE + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_EXPANDING_FORCE, DFI_SPECIAL_KNOCK_OFF + 1u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_EXPANDING_FORCE + 1u);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_EXPANDINGFORCE].special, DFI_SPECIAL_EXPANDING_FORCE);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_EXPANDINGFORCE].base_power, 80u);
@@ -681,6 +682,8 @@ int main(void)
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_EXPANDINGFORCE].category, DFI_CATEGORY_SPECIAL);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_EXPANDINGFORCE].type, DFI_TYPE_PSYCHIC);
         DF_CHECK(&t, dfi_pool_move_unmodeled[DFI_MOVE_EXPANDINGFORCE] == NULL);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_KNOCK_OFF, 24u);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_KNOCKOFF].special, DFI_SPECIAL_KNOCK_OFF);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_SANDSTORM].special, DFI_SPECIAL_SANDSTORM);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_SNOWSCAPE].special, DFI_SPECIAL_SNOWSCAPE);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_SCALD].special, DFI_SPECIAL_NONE);
@@ -1097,8 +1100,7 @@ int main(void)
             DF_CHECK(&t, dfi_pool_item_family[id].family != DFI_ITEM_FAMILY_NONE);
         }
         /* Step G4 marks Focus Sash (onDamage at the move-damage call), step G12 Floettite (the Mega Stone of
-         * Floette-Eternal, with Fairy Aura), step G15 Psychic Seed (Grassy Seed's rule); Expert Belt stays unmarked, and
-         * so do the Electric and Misty Seeds. */
+         * Floette-Eternal, with Fairy Aura); Expert Belt stays unmarked. */
         DF_CHECK(&t, dfi_support.items[DFI_ITEM_FOCUSSASH] != 0u);
         for (uint32_t id = DFI_ITEM_FOCUSSASH + 1u; id < DFI_POOL_ITEM_COUNT; ++id) {
             DF_CHECK_EQ_U64(&t, dfi_support.items[id] != 0u ? 1u : 0u,
@@ -1122,9 +1124,13 @@ int main(void)
         }
         for (uint32_t id = DFI_ABILITY_FAIRYAURA + 1u; id < DFI_POOL_ABILITY_COUNT; ++id) {
             /* Of the whole-pool abilities after Fairy Aura only Sand Stream and Snow Warning have a family (the weather
-             * setters of the Sandstorm and Snowscape step) and are marked. */
+             * setters of the Sandstorm and Snowscape step) and are marked; Rough Skin, Poison Touch and Thermal
+             * Exchange (step G14) are marked without a family: the turn code runs them by id. */
             const bool setter = id == DFI_ABILITY_SANDSTREAM || id == DFI_ABILITY_SNOWWARNING;
-            DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, setter ? 1u : 0u);
+            /* ... and Rough Skin, Poison Touch, Thermal Exchange (step G14) and Sticky Hold (step G16): engine rows that the turn code runs by id. */
+            const bool engine = id == DFI_ABILITY_ROUGHSKIN || id == DFI_ABILITY_POISONTOUCH ||
+                                id == DFI_ABILITY_THERMALEXCHANGE || id == DFI_ABILITY_STICKYHOLD;
+            DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, (setter || engine) ? 1u : 0u);
             DF_CHECK_EQ_U64(&t, dfi_pool_ability_family[id].family,
                             setter ? DFI_ABILITY_FAMILY_WEATHER_SETTER : DFI_ABILITY_FAMILY_NONE);
         }
@@ -1158,7 +1164,7 @@ int main(void)
                                                 DFI_MOVE_ICYWIND, DFI_MOVE_ICESHARD, DFI_MOVE_QUICKATTACK,
                                                 DFI_MOVE_DETECT, DFI_MOVE_POISONJAB,
                                                 DFI_MOVE_BLASTBURN, DFI_MOVE_FRENZYPLANT, DFI_MOVE_GIGAIMPACT,
-                                                DFI_MOVE_HYDROCANNON, DFI_MOVE_HYPERBEAM, DFI_MOVE_ROCKWRECKER,
+                                                DFI_MOVE_HYDROCANNON, DFI_MOVE_HYPERBEAM, DFI_MOVE_ROCKWRECKER, DFI_MOVE_KNOCKOFF,
                                                 DFI_MOVE_EXPANDINGFORCE};
         uint32_t marked_count = 0u;
         for (uint32_t id = DFI_EXT_MOVE_COUNT; id < DFI_POOL_MOVE_COUNT; ++id) {
@@ -1169,17 +1175,17 @@ int main(void)
             DF_CHECK_EQ_U64(&t, dfi_support.moves[id] != 0u ? 1u : 0u, want ? 1u : 0u);
             /* A marked move has a handler id only if the engine has the code for it: First Impression (Fake Out's
              * family), Low Kick (Grass Knot's), Soak (step G11), Wide Guard (step G7), the two weather moves and Detect
-             * (Protect's, step G13); the others are data. Never the UNMODELED one. */
+             * (Protect's, step G13), Knock Off (step G16); the others are data. Never the UNMODELED one. */
             DF_CHECK(&t, !want || dfi_pool_moves[id].special == DFI_SPECIAL_NONE ||
                              id == DFI_MOVE_FIRSTIMPRESSION || id == DFI_MOVE_LOWKICK || id == DFI_MOVE_SOAK ||
                              id == DFI_MOVE_ENCORE || id == DFI_MOVE_SANDSTORM || id == DFI_MOVE_SNOWSCAPE ||
+                             id == DFI_MOVE_KNOCKOFF || id == DFI_MOVE_EXPANDINGFORCE ||
                              (id == DFI_MOVE_WIDEGUARD && dfi_pool_moves[id].special == DFI_SPECIAL_WIDE_GUARD) ||
-                             (id == DFI_MOVE_DETECT && dfi_pool_moves[id].special == DFI_SPECIAL_PROTECT) ||
-                             (id == DFI_MOVE_EXPANDINGFORCE && dfi_pool_moves[id].special == DFI_SPECIAL_EXPANDING_FORCE));
+                             (id == DFI_MOVE_DETECT && dfi_pool_moves[id].special == DFI_SPECIAL_PROTECT));
             DF_CHECK(&t, !want || dfi_pool_moves[id].special != DFI_SPECIAL_UNMODELED);
             marked_count += dfi_support.moves[id] != 0u ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, marked_count, 47u);
+        DF_CHECK_EQ_U64(&t, marked_count, 48u);
     }
 
     /* Step G12: Fairy Aura and Flower Veil. The engine reads them by id (no family column: one legal holder each);
@@ -1227,6 +1233,22 @@ int main(void)
             }
         }
         DF_CHECK(&t, fairy_moves >= 1u); /* Dazzling Gleam; the marked Fairy moves of later steps join it */
+    }
+
+    /* Step G16: Knock Off and Sticky Hold. Sticky Hold is read by id (no family column: it blocks the item taken by
+     * Knock Off while its holder is alive) and is an engine row; the Mega Stones keep their onTakeItem as data of their
+     * Mega link, which is the one thing the turn code asks of an item (dfi_item_takeable: not from its own species). */
+    {
+        DF_CHECK(&t, dfi_support.abilities[DFI_ABILITY_STICKYHOLD] != 0u && dfi_support.moves[DFI_MOVE_KNOCKOFF] != 0u);
+        DF_CHECK(&t, dfi_pool_ability_handler[DFI_ABILITY_STICKYHOLD] == DFI_HANDLER_NONE &&
+                         dfi_pool_ability_family[DFI_ABILITY_STICKYHOLD].family == DFI_ABILITY_FAMILY_NONE);
+        DF_CHECK(&t, dfi_pool_moves[DFI_MOVE_KNOCKOFF].type == DFI_TYPE_DARK &&
+                         dfi_pool_moves[DFI_MOVE_KNOCKOFF].category == DFI_CATEGORY_PHYSICAL &&
+                         dfi_pool_moves[DFI_MOVE_KNOCKOFF].base_power == 65u &&
+                         dfi_pool_moves[DFI_MOVE_KNOCKOFF].accuracy == 100u &&
+                         (dfi_pool_moves[DFI_MOVE_KNOCKOFF].flags & DFI_MOVE_FLAG_CONTACT) != 0u &&
+                         dfi_pool_moves[DFI_MOVE_KNOCKOFF].sec_chance == 0u);
+        DF_CHECK(&t, dfi_pool_move_unmodeled[DFI_MOVE_KNOCKOFF] == NULL);
     }
 
     /* The whole-pool rows: what the tables model and what they do not (decision 0015 section 4.2). A move, item or
@@ -1281,6 +1303,9 @@ int main(void)
         DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_EXPERTBELT] == DFI_HANDLER_UNMODELED);
         DF_CHECK(&t, dfi_pool_ability_handler[DFI_ABILITY_FLOWERVEIL] == DFI_HANDLER_NONE &&
                          dfi_pool_ability_handler[DFI_ABILITY_FAIRYAURA] == DFI_HANDLER_NONE); /* engine rows, G12 */
+        DF_CHECK(&t, dfi_pool_ability_handler[DFI_ABILITY_ROUGHSKIN] == DFI_HANDLER_NONE &&
+                         dfi_pool_ability_handler[DFI_ABILITY_POISONTOUCH] == DFI_HANDLER_NONE &&
+                         dfi_pool_ability_handler[DFI_ABILITY_THERMALEXCHANGE] == DFI_HANDLER_NONE); /* engine rows, G14 */
         DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_FLOETTITE] == DFI_HANDLER_NONE); /* a Mega Stone: data of its link */
         DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_PSYCHICSEED] == DFI_HANDLER_NONE &&
                          dfi_pool_item_handler[DFI_ITEM_ELECTRICSEED] == DFI_HANDLER_UNMODELED &&
