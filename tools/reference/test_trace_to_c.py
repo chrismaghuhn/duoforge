@@ -963,6 +963,13 @@ class Library(unittest.TestCase):
         with self.assertRaises(trace_to_c.ConversionError) as ctx:
             trace_to_c.drop_reason(d, state('brn'))
         self.assertEqual(ctx.exception.rule, 'thermal-exchange-burn')
+        # The holder that stands in the slot when the tie is drawn counts: one that switched in this step over a burned
+        # Pokemon (the state before the step still shows the burned one) is no burned holder (step G21, fz_2101_3); a
+        # burned occupant in the state after the step is.
+        self.assertEqual(trace_to_c.drop_reason(d, state('brn'), state('')), 'each-event tie with at most one holder')
+        with self.assertRaises(trace_to_c.ConversionError) as ctx:
+            trace_to_c.drop_reason(d, state(''), state('brn'))
+        self.assertEqual(ctx.exception.rule, 'thermal-exchange-burn')
 
     def test_recharge_rows_are_what_the_protocol_lines_say(self):
         """Decision 0018 section 6.1 for the recharge (step G17): a position must recharge from the `|-mustrecharge|X`
