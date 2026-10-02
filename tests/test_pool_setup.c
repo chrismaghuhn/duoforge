@@ -561,7 +561,8 @@ int main(void)
                                                 DFI_MOVE_FLASHCANNON, DFI_MOVE_EXTREMESPEED, DFI_MOVE_HEADSMASH,
                                                 DFI_MOVE_BULKUP, DFI_MOVE_LIQUIDATION, DFI_MOVE_ICEPUNCH,
                                                 DFI_MOVE_SHADOWCLAW, DFI_MOVE_DRUMBEATING, DFI_MOVE_DAZZLINGGLEAM,
-                                                DFI_MOVE_UTURN, DFI_MOVE_THROATCHOP, DFI_MOVE_PSYCHICNOISE};
+                                                DFI_MOVE_UTURN, DFI_MOVE_THROATCHOP, DFI_MOVE_PSYCHICNOISE,
+                                                DFI_MOVE_WIDEGUARD};
         const duoforge_member_setup *tpl = &teams.sides[1].members[0];
         /* Every new move: a learner with a legal ability that is marked, with no item, on a side where it does not
          * clash with the Species Clause. The gate function with a fully marked manifest accepts the setup (the
@@ -614,7 +615,7 @@ int main(void)
         }
 
         /* Pelipper: Drizzle only (Keen Eye and Rain Dish are not pool abilities), every move marked and Mystic Water
-         * (Politoed's, who is replaced): a supported setup. Wide Guard is the one unmarked move of its usual set. */
+         * (Politoed's, who is replaced): a supported setup. Wide Guard, the last unmarked move of its usual set, is marked since step G7; Soak is a legal unmarked one. */
         static const uint32_t pelipper_moves[4] = {DFI_MOVE_WEATHERBALL, DFI_MOVE_HURRICANE, DFI_MOVE_TAILWIND,
                                                    DFI_MOVE_PROTECT};
         s = teams;
@@ -625,7 +626,9 @@ int main(void)
         invalid(&t, k1, &s, "Pelipper under CLOSURE");
         invalid(&t, kc, &s, "Pelipper under TEAM_C");
         s.sides[1].members[0].moves[3].move_id = DFI_MOVE_WIDEGUARD;
-        legal(&t, kp, &s, false, "Pelipper with Wide Guard (legal, unmarked)");
+        legal(&t, kp, &s, true, "Pelipper with Wide Guard (marked by step G7)");
+        s.sides[1].members[0].moves[3].move_id = DFI_MOVE_SOAK;
+        legal(&t, kp, &s, false, "Pelipper with Soak (legal, unmarked)");
         s.sides[1].members[0].moves[3].move_id = DFI_MOVE_PROTECT;
         s.sides[1].members[0].ability = DFI_ABILITY_OVERGROW + 1u;
         invalid(&t, kp, &s, "Pelipper with Overgrow");

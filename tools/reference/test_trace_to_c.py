@@ -503,6 +503,46 @@ class Library(unittest.TestCase):
         # The battles do set and clear both: something is shown in each, and every row of the last step is empty.
         self.assertTrue(any(v[0] for v in derived.values()) and any(v[1] for v in derived.values()))
 
+    def test_wide_guard_rows_are_what_the_protocol_lines_say(self):
+        """Decision 0018 section 6.1 for Wide Guard: the side of the user has the guard from the
+        `|-singleturn|X|Wide Guard` line until the next `|upkeep|` (a second Wide Guard of the same side prints no
+        line and changes nothing). The rows of the C test (guard_rows in tests/test_pool_g7.c: the guard flag of each
+        side after each step of the G7 battles, as a mask over the sides) must be exactly what these lines give for the
+        committed traces, so a guard is live at a mid-turn (pivot) boundary and never at a turn boundary, and the
+        engine's flag and view extension are checked against the protocol and not against themselves. Every
+        `-activate|X|move: Wide Guard` is at a side whose guard is up, and every `-singleturn` Wide Guard comes
+        from a move line of Wide Guard."""
+        names = ('g7_wide_guard_a', 'g7_wide_guard_b', 'g7_wide_guard_ally', 'g7_wide_guard_pivot')
+        with open(os.path.join(ROOT, 'tests', 'test_pool_g7.c'), encoding='utf-8') as f:
+            source = f.read()
+        rows = {}
+        for m in re.finditer(r'\{"(g7_\w+)", (\d+)u, 0x([0-9a-f])u\}', source):
+            rows[(m.group(1), int(m.group(2)))] = int(m.group(3), 16)
+        derived = {}
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            up = set()
+            last_move = None
+            for k, step in enumerate(trace['steps']):
+                for line in step['log']:
+                    part = line.split('|')
+                    if len(part) < 2:
+                        continue
+                    if part[1] == 'move':
+                        last_move = part[3]
+                    elif part[1] == '-singleturn' and len(part) > 3 and part[3] == 'Wide Guard':
+                        self.assertEqual(last_move, 'Wide Guard')
+                        up.add(int(part[2][1]) - 1)
+                    elif part[1] == '-activate' and len(part) > 3 and part[3] == 'move: Wide Guard':
+                        self.assertIn(int(part[2][1]) - 1, up, '%s step %d: %s' % (name, k, line))
+                    elif part[1] == 'upkeep':
+                        up.clear()
+                derived[(name, k)] = sum(1 << s for s in up)
+        self.assertEqual(rows, derived)
+        # The guard is live at a boundary inside a turn in the pivot battle, and only there.
+        self.assertEqual({k: v for k, v in derived.items() if v}, {('g7_wide_guard_pivot', 1): 1})
+
     def test_a_two_turn_lock_lasts_while_twoturnmove_stands(self):
         """Electro Shot's onTryMove removes the move's volatile on the locked turn and the recorder's `locked` is made of
         it, but twoturnmove stays until the residual. In the last step of d02 (Emergency Exit) and d03 (Parting Shot,
@@ -637,7 +677,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 15)
+        self.assertEqual(len(marked), 16)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -654,6 +694,8 @@ class Library(unittest.TestCase):
                             if after.startswith('|move|') or after.startswith('|turn|'):
                                 break
                             done = done or after.startswith(('|-damage|', '|-boost|'))
+                            # A side move (Wide Guard, step G7) shows its effect as its own -singleturn line.
+                            done = done or (after.startswith('|-singleturn|') and after.endswith('|' + name))
             with self.subTest(move=name):
                 self.assertTrue(done, '%s is marked but no committed pool battle uses it' % name)
 

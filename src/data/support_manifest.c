@@ -84,7 +84,10 @@
  * of the holder refused, the heal-flag moves barred), which are secondary
  * kinds of the generic column plus the flags2 column, no longer handler ids
  * (seven remain); recorded as g8_throat_chop, g8_heal_block,
- * g8_heal_block_pair, g8_heal_block_tie_a and _b under the POOL kind. */
+ * g8_heal_block_pair, g8_heal_block_tie_a and _b under the POOL kind.
+ * Step G7 marks Wide Guard (a side condition for the turn that stops the spread moves of the foes at every target of
+ * its side, with the stall counter raised and no roll; its handler id stays in the tables, the turn code runs it),
+ * recorded as g7_wide_guard_a, _b, _ally and _pivot under the POOL kind. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -155,6 +158,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_UTURN] = 1u,
             [DFI_MOVE_THROATCHOP] = 1u,
             [DFI_MOVE_PSYCHICNOISE] = 1u,
+            [DFI_MOVE_WIDEGUARD] = 1u,
         },
     .abilities =
         {
@@ -242,5 +246,6 @@ const dfi_support_manifest dfi_support = {
      * records its battles. Step G8: Throat Chop and Heal Block (the position bits of duoforge_observation_ext, public,
      * verified against g8_throat_chop, g8_heal_block, g8_heal_block_pair and _tie_a/_b step by step in
      * duoforge.state.pool_g8). */
-    .view_ext_features = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) | ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK),
+    .view_ext_features = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) | ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK) |
+        ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WIDE_GUARD), /* step G7: guard_flags, verified in pool_g7 */
 };
