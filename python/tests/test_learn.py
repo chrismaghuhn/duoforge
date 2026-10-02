@@ -47,14 +47,15 @@ class PipelineTest(unittest.TestCase):
         out = tempfile.mkdtemp(prefix="duoforge-learn-")
         try:
             code = train.main(["--envs", "8", "--workers", "2", "--rollout", "8", "--updates", "2", "--minutes", "0",
-                               "--eval-every", "1", "--eval-envs", "8", "--minibatch", "256", "--out", out])
+                               "--eval-every", "1", "--minibatch", "256", "--out", out])
             self.assertEqual(code, 0)
             with open(os.path.join(out, "log.jsonl"), encoding="utf-8") as f:
                 records = [json.loads(line) for line in f]
             self.assertEqual([r["update"] for r in records], [1, 2])
             for r in records:
                 self.assertTrue(all(math.isfinite(r[k]) for k in ("loss", "policy_loss", "value_loss", "entropy")))
-                self.assertTrue(all(0.0 <= r[k] <= 1.0 for k in ("vs_random", "vs_scripted", "vs_previous")))
+                self.assertTrue(all(0.0 <= r[k] <= 1.0 for k in ("vs_random", "vs_previous")))
+                self.assertEqual(len(r["vs_random_by_team"]), 2)
             self.assertTrue(os.path.isfile(os.path.join(out, "params-2.npz")))
             config = load(os.path.join(out, "params-2.npz"), obs_size=features.OBS_SIZE)[1]
             self.assertEqual(config["encoder"], features.ENCODER)  # its encoder version, for encoder_of

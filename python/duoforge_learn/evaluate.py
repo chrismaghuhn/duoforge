@@ -18,6 +18,74 @@ from duoforge import _layout, features
 
 from .selfplay import Observation, choices_of
 
+# One finished game of a suite: its pairing, the learner's seat and the result
+# from the learner's view (+1 win, -1 loss, 0 tie or unfinished).
+RECORD = np.dtype([("side0", np.uint32), ("side1", np.uint32), ("learner_seat", np.uint32), ("result", np.int8),
+                   ("unfinished", np.bool_)])
+
+
+class Player:
+    """A model with its parameters and the encoder version they were
+    trained with (checkpoint.encoder_of): its observations are encoded so."""
+
+    def __init__(self, model, params, encoder, name):
+        self.model, self.params, self.encoder, self.name = model, params, encoder, name
+
+    def indices(self, batch, choices):
+        return _greedy_indices(self.params, self.model.act, batch, choices, self.encoder)
+
+
+def play_suite(context, pool, rows, learner, opponent, workers, seed, max_steps=1000):
+    """The records (RECORD, one per suite row) of the greedy learner against
+    opponent (a Player, greedy too, or "random") over the suite rows, one
+    environment per row at episode 1 of a batch seeded with seed. A game
+    still running after max_steps steps is a tie and marked unfinished."""
+    n = rows.shape[0]
+    seat = rows["learner_seat"].astype(np.int64)
+    every = np.arange(n)
+    out = np.zeros(n, dtype=RECORD)
+    for f in ("side0", "side1", "learner_seat"):
+        out[f] = rows[f]
+    with duoforge.Batch(context, pool.setups(rows["side0"], rows["side1"]), workers, seed) as batch:
+        for e in range(n):
+            batch.reset(e, 1)
+        if opponent == "random":
+            other = duoforge.RandomPolicy(seed, n)
+            other.start_episodes(every, np.ones(n, dtype=np.uint64))
+        elif isinstance(opponent, Player):
+            other = opponent
+        else:
+            raise ValueError(f"unknown opponent {opponent!r}")
+        choices = np.zeros((n, 2), dtype=_layout.FACTORED_CHOICE)
+        for _ in range(max_steps):
+            batch.query()
+            batch.query_factored()
+            requested = batch.requests["requested"] != 0
+            if not requested.any():
+                break
+            indices = other.choose(batch) if opponent == "random" else other.indices(batch, choices)
+            mine = requested[every, seat]
+            if mine.any():
+                e = every[mine]
+                indices[e, seat[mine]] = learner.indices(batch, choices)[e, seat[mine]]
+            batch.step(indices)
+        for e in range(n):
+            result = batch.result(e)
+            if result == 0:
+                out["unfinished"][e] = True
+            elif result != _TIE:
+                out["result"][e] = 1 if result == _SIDE_WINS[seat[e]] else -1
+    return out
+
+
+def scores(records, n_teams):
+    """{"score": the learner's mean score (a tie counts half), "by_team": the
+    same per learner team (None for a team without games)}."""
+    mine = np.where(records["learner_seat"] == 0, records["side0"], records["side1"]).astype(np.int64)
+    value = (records["result"].astype(np.float64) + 1.0) / 2.0
+    by_team = [float(value[mine == t].mean()) if (mine == t).any() else None for t in range(n_teams)]
+    return {"score": float(value.mean()), "by_team": by_team}
+
 C = _layout.CONSTANTS
 _SIDE_WINS = (C["DUOFORGE_RESULT_SIDE_0"], C["DUOFORGE_RESULT_SIDE_1"])
 _TIE = C["DUOFORGE_RESULT_TIE"]

@@ -189,7 +189,7 @@ class TrainingV2Test(unittest.TestCase):
         out = tempfile.mkdtemp(prefix="duoforge-learn-v2-")
         try:
             code = train.main(["--envs", "8", "--workers", "2", "--rollout", "8", "--updates", "2", "--minutes", "0",
-                               "--eval-every", "1", "--eval-envs", "8", "--minibatch", "256", "--model", "v2",
+                               "--eval-every", "1", "--minibatch", "256", "--model", "v2",
                                "--preset", "S", "--hidden", "64", "--out", out])
             self.assertEqual(code, 0)
             with open(os.path.join(out, "log.jsonl"), encoding="utf-8") as f:
@@ -239,7 +239,7 @@ class LeagueJaxTest(unittest.TestCase):
         out = tempfile.mkdtemp(prefix="duoforge-league-")
         try:
             code = train.main(["--envs", "8", "--workers", "2", "--rollout", "8", "--updates", "3", "--minutes", "0",
-                               "--eval-every", "3", "--eval-envs", "8", "--minibatch", "256", "--self-play-share",
+                               "--eval-every", "3", "--minibatch", "256", "--self-play-share",
                                "0.5", "--league-slots", "2", "--snapshot-every", "1", "--slot-refresh", "1",
                                "--out", out])
             self.assertEqual(code, 0)
@@ -264,7 +264,7 @@ class ScheduleTrainingTest(unittest.TestCase):
         out = tempfile.mkdtemp(prefix="duoforge-schedule-")
         try:
             code = train.main(["--envs", "8", "--workers", "2", "--rollout", "8", "--updates", "3", "--minutes", "0",
-                               "--eval-every", "3", "--eval-envs", "8", "--minibatch", "256",
+                               "--eval-every", "3", "--minibatch", "256",
                                "--entropy", "0:0.05,1K:0", "--out", out])
             self.assertEqual(code, 0)
             with open(os.path.join(out, "log.jsonl"), encoding="utf-8") as f:
@@ -302,8 +302,7 @@ class RunStateJaxTest(unittest.TestCase):
             runstate.restore_opt(tx, back["params"], back["opt_leaves"][:-1])
 
 
-_SMALL = ["--workers", "2", "--rollout", "8", "--minutes", "0", "--eval-every", "100", "--eval-envs", "8",
-          "--minibatch", "256", "--snapshot-every", "1", "--slot-refresh", "1", "--league-slots", "2"]
+_SMALL = ["--workers", "2", "--rollout", "8", "--minutes", "0", "--eval-every", "100", "--minibatch", "256", "--snapshot-every", "1", "--slot-refresh", "1", "--league-slots", "2"]
 
 
 def _run(argv, pool=None, on_start=None):

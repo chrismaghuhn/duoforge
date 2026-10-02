@@ -12,7 +12,7 @@ import numpy as np
 
 import duoforge
 from duoforge import features, teams
-from duoforge_learn import checkpoint, columns, league, pairing, runstate, schedule, suite
+from duoforge_learn import checkpoint, columns, evaluate, league, pairing, runstate, schedule, suite
 from duoforge_learn.selfplay import SelfPlay
 
 
@@ -404,6 +404,75 @@ class SuiteTest(unittest.TestCase):
         self.assertEqual(suite.make_suite(12, 7).tobytes(), suite.make_suite(12, 7).tobytes())
         self.assertNotEqual(suite.make_suite(12, 7).tobytes(), suite.make_suite(12, 8).tobytes())
         self.assertEqual(suite.make_suite(3, 7).tobytes(), suite.make_suite(3, 7).tobytes())
+
+
+class _StandIn:
+    """A NumPy model with policy.Model's act: prefer "attack" (moves at a
+    foe) or "switch"; records the observations it was given."""
+
+    def __init__(self, prefer):
+        self.prefer, self.seen = prefer, []
+
+    def check(self, obs):
+        pass
+
+    def act(self, params, key, obs, slots, mask, is_team, greedy=False):
+        self.seen.append(np.array(obs))
+        n = obs.shape[0]
+        kind = slots[..., 1:5].argmax(axis=-1)
+        valid = slots[..., 0] > 0
+        at_foe = slots[..., 8:10].sum(axis=-1) > 0
+        if self.prefer == "attack":
+            score = np.where(kind == 1, np.where(at_foe, 2.0, 1.0), 0.0)
+        else:
+            score = np.where(kind == 2, 2.0, np.where(kind == 1, 1.0, 0.0))
+        score = np.where(valid, score, -1.0)
+        pairs = np.where(mask, score[:, 0, :, None] + score[:, 1, None, :], -1e9).reshape(n, -1)
+        return np.where(is_team, 0, pairs.argmax(axis=1)), np.zeros(n), np.zeros(n)
+
+
+def _ab_pool():
+    return teams.TeamPool.from_setups(("A", "B"), duoforge.reference_setups([0])["sides"][0])
+
+
+class SuitePlayTest(unittest.TestCase):
+    def test_records_credit_the_learner_seat(self):
+        pool = _ab_pool()
+        rows = suite.make_suite(2, 3, games=2)
+        attack = evaluate.Player(_StandIn("attack"), None, features.ENCODER, "attack")
+        switch = evaluate.Player(_StandIn("switch"), None, features.ENCODER, "switch")
+        with duoforge.Context() as ctx:
+            strong = evaluate.play_suite(ctx, pool, rows, attack, switch, workers=2, seed=5)
+            weak = evaluate.play_suite(ctx, pool, rows, switch, attack, workers=2, seed=5)
+        self.assertEqual(strong.shape, rows.shape)
+        self.assertEqual(strong["learner_seat"].tolist(), rows["learner_seat"].tolist())
+        a, b = evaluate.scores(strong, 2), evaluate.scores(weak, 2)
+        self.assertGreater(a["score"], 0.5)
+        self.assertLess(b["score"], 0.5)
+        for seat in (0, 1):
+            self.assertGreater(float((strong["result"][strong["learner_seat"] == seat] > 0).mean()), 0.5)
+        self.assertEqual(len(a["by_team"]), 2)
+        self.assertAlmostEqual(a["score"] + b["score"], 1.0, places=6)
+
+    def test_each_seat_uses_its_players_encoder_setting(self):
+        pool = teams.TeamPool.from_setups(("A",), duoforge.reference_setups([0])["sides"][0][:1])
+        rows = suite.make_suite(1, 3, games=1)
+        old, new = _StandIn("attack"), _StandIn("attack")
+        with duoforge.Context() as ctx:
+            evaluate.play_suite(ctx, pool, rows, evaluate.Player(old, None, 1, "old"),
+                                evaluate.Player(new, None, 2, "new"), workers=1, seed=5, max_steps=3)
+        column = features.FEATURE_NAMES.index("own.member0.present")  # Rillaboom, forme 0
+        self.assertTrue(old.seen and new.seen)
+        self.assertTrue(all((x[:, column] == 0.0).all() for x in old.seen))
+        self.assertTrue(all((x[:, column] == 1.0).all() for x in new.seen))
+
+    def test_scores_count_ties_half(self):
+        rec = np.zeros(4, dtype=evaluate.RECORD)
+        rec["side0"], rec["side1"], rec["learner_seat"] = [0, 0, 1, 1], [1, 1, 0, 0], [0, 1, 0, 1]
+        rec["result"] = [1, 0, -1, 1]
+        got = evaluate.scores(rec, 2)
+        self.assertAlmostEqual(got["score"], 2.5 / 4)
+        self.assertEqual(got["by_team"], [1.0, 0.25])
 
 
 if __name__ == "__main__":

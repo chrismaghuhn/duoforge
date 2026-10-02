@@ -10,9 +10,9 @@ snapshots of itself in --league-slots slots (league.py), which reload a
 snapshot drawn from the run's pool every --slot-refresh updates, at an
 episode boundary. Snapshots go to <out>/params-<update>.npz (checkpoint
 format 2) every --snapshot-every updates and at each evaluation; every
---eval-every updates the greedy policy plays the random and the scripted
-baselines and the previous evaluation's parameters (vs_previous above 0.5:
-still improving).
+--eval-every updates the greedy policy plays the evaluation suite (suite.py)
+against the random baseline and the previous evaluation's parameters
+(vs_previous above 0.5: still improving), with a score per team.
 
 The run state (runstate.py) is saved every --save-minutes, at the end and
 after SIGTERM or SIGINT (then the run ends at the next update boundary).
@@ -33,14 +33,15 @@ import numpy as np
 import duoforge
 from duoforge import features, teams
 
-from . import checkpoint, evaluate, league, pairing, policy, ppo, runstate, schedule
+from . import checkpoint, evaluate, league, pairing, policy, ppo, runstate, schedule, suite
 from .returns import gae, samples_of
 from .selfplay import SelfPlay
 
 _DIMS = ("embed", "member", "position", "hidden", "layers", "option")
 # Options a resume may change; any other option that differs from the saved run is refused.
 _RESUMABLE = ("envs", "workers", "minutes", "updates", "self_play_share", "league_slots", "snapshot_every",
-              "slot_refresh", "entropy", "eval_every", "eval_envs", "save_minutes")
+              "slot_refresh", "entropy", "eval_every", "eval_games", "eval_budget", "save_minutes")
+EVAL_SEED = 0x2026100200000020
 
 
 def model_config(args):
@@ -136,7 +137,8 @@ def _parser(suppress=False):
     add("--entropy", type=str, default="0.01",
         help="entropy bonus: a number, or a schedule over decisions such as 0:0.02,500M:0.01,2G:0.003")
     add("--eval-every", type=int, default=25)
-    add("--eval-envs", type=int, default=64)
+    add("--eval-games", type=int, default=2, help="games per pairing and seat of the evaluation suite (<= 8 teams)")
+    add("--eval-budget", type=int, default=512, help="games of the evaluation suite with more than 8 teams")
     add("--seed", type=lambda s: int(s, 0), default=0x2026100200000021)
     add("--max-steps", type=int, default=500, help="steps before a self-play episode is cut off as a tie")
     add("--out", default=None, help="a fresh run directory (not with --resume)")
@@ -165,8 +167,6 @@ def parse(argv):
     if args.resume is None:
         if args.minutes <= 0 and args.updates <= 0:
             p.error("give --minutes or --updates")
-        if args.eval_envs % 8 != 0:
-            p.error("--eval-envs must be a multiple of 8 (both seats of all four pairings)")
     return args
 
 
@@ -187,8 +187,6 @@ def _merged(args, saved):
         changes[name] = [old, new]
     merged.resume, merged.out = args.resume, args.resume
     merged._given = args._given
-    if merged.eval_envs % 8 != 0:
-        raise SystemExit("--eval-envs must be a multiple of 8 (both seats of all four pairings)")
     return merged, changes
 
 
@@ -415,12 +413,16 @@ def _run(args, pool, on_start, stop):
                     state.load(slot, str(chosen))
                     record["league_load"] = {"slot": slot, "snapshot": chosen}
             if evaluating:
-                for name, opponent in (("random", "random"), ("scripted", "scripted"), ("previous", previous)):
-                    result = evaluate.win_rate(params, act, opponent, envs=args.eval_envs, workers=args.workers,
-                                               encoder=encoder, opponent_encoder=encoder)
-                    record[f"vs_{name}"] = round(result["win_rate"], 4)
-                    if result["unfinished"]:
-                        record[f"unfinished_vs_{name}"] = result["unfinished"]
+                rows = suite.make_suite(len(pool.ids), args.seed, games=args.eval_games, budget=args.eval_budget)
+                me = evaluate.Player(net, params, encoder, "learner")
+                for name, opponent in (("random", "random"),
+                                       ("previous", evaluate.Player(net, previous, encoder, "previous"))):
+                    games = evaluate.play_suite(context, pool, rows, me, opponent, args.workers, EVAL_SEED)
+                    result = evaluate.scores(games, len(pool.ids))
+                    record[f"vs_{name}"] = round(result["score"], 4)
+                    record[f"vs_{name}_by_team"] = [None if x is None else round(x, 4) for x in result["by_team"]]
+                    if games["unfinished"].any():
+                        record[f"unfinished_vs_{name}"] = int(games["unfinished"].sum())
                 if state.has_league:
                     record["league"] = {k: list(v) for k, v in state.stats.items()}
                 previous, last_eval = params, update
