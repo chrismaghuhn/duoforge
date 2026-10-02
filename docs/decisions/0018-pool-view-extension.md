@@ -173,7 +173,7 @@ The live tracker (decision 0016) and the M11 spectator pipeline fill every field
 | `DISABLE` (`disable_slot`) | `\|-start\|POKEMON\|Disable\|MOVE`: the slot of MOVE on the open sheet | `\|-end\|POKEMON\|Disable`, OUT | yes |
 | `MUST_RECHARGE` | `\|-mustrecharge\|POKEMON` | `\|cant\|POKEMON\|recharge`, OUT | yes. Set by step G17 (supported bit 15): `-mustrecharge` is the `VOLATILE_START` event with the detail `MUST_RECHARGE` (3), `cant\|X\|recharge` the `CANT` event with the cause `RECHARGE` (18); the volatile has no end line |
 | `PARTIAL_TRAP` | `\|-activate\|POKEMON\|move: Infestation\|[of] SRC` (Wrap class alike) | `\|-end\|POKEMON\|Infestation\|[partiallytrapped]`, OUT, the source leaving | yes |
-| `GLAIVE_RUSH`, `DESTINY_BOND` | `\|-singlemove\|POKEMON\|Glaive Rush` (resp. Destiny Bond) | the occupant's next `\|move\|` line (the game ends it silently), OUT | yes |
+| `GLAIVE_RUSH`, `DESTINY_BOND` | `\|-singlemove\|POKEMON\|Glaive Rush` (resp. Destiny Bond) | the occupant's next `\|move\|` or `\|cant\|` line (the game ends it silently, at the start of its next action), OUT | yes. `GLAIVE_RUSH` is set by step G19 (supported bit 20); the line is `[silent]`, so the engine has no event for it and the view bit is the only trace (set by the Glaive Rush that hit) |
 | `stockpile` | `\|-start\|POKEMON\|stockpileN` | `\|-end\|POKEMON\|Stockpile` (Spit Up, Swallow), OUT | yes |
 | `SUBSTITUTE` | `\|-start\|POKEMON\|Substitute` | `\|-end\|POKEMON\|Substitute`, OUT | presence yes; its HP no |
 | `DRAGON_CHEER`, `FOCUS_ENERGY` | `\|-start\|POKEMON\|move: Dragon Cheer` (resp. Focus Energy) | OUT | yes |

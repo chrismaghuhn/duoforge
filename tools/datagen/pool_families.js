@@ -615,6 +615,28 @@ function checkG22(dex, formes, itemIds, abilityIds) {
     return 1;
 }
 
+// Step G19, Coaching and Glaive Rush: the pinned facts that the engine hard-codes (decision 0015, item 5i): Coaching's boosts,
+// target and flags, and Glaive Rush's self effect and condition (never-miss, double damage, the removal before the next move).
+function checkG19(dex) {
+    const move = (id) => dex.moves.get(id);
+    const c = move('coaching');
+    expect('coaching', [c.boosts, c.target, c.accuracy, c.category, c.flags.protect, c.flags.bypasssub],
+        [{atk: 1, def: 1}, 'adjacentAlly', true, 'Status', undefined, 1]);
+    const g = move('glaiverush');
+    expect('glaive rush', [g.basePower, g.accuracy, g.category, g.self, g.flags.protect], [120, 100, 'Physical',
+        {volatileStatus: 'glaiverush'}, 1]);
+    const cond = g.condition;
+    expect('glaiverush condition', [cond.noCopy, cond.onBeforeMovePriority], [true, 100]);
+    expect('glaiverush onAccuracy', cond.onAccuracy.call({}), true);
+    expect('glaiverush onSourceModifyDamage', cond.onSourceModifyDamage.call({chainModify: (x) => ['chain', x]}), ['chain', 2]);
+    const removed = [];
+    cond.onBeforeMove.call({debug: () => {}}, {removeVolatile: (v) => removed.push(v)});
+    expect('glaiverush onBeforeMove', removed, ['glaiverush']);
+    const logs = [];
+    cond.onStart.call({add: (...a) => logs.push(a.map((x) => (typeof x === 'string' ? x : 'POKEMON')).join(':'))}, {});
+    expect('glaiverush onStart is silent', logs, ['-singlemove:POKEMON:Glaive Rush:[silent]']);
+}
+
 function checkG10Moves(dex) {
     const move = (id) => dex.moves.get(id);
     const power = (m, weight) => call(m.basePowerCallback, battle(m), [{}, {getWeight() { return weight; }}]);
@@ -948,7 +970,9 @@ function moveIsModelled(raw, id) {
         vectors += 1;
     }
     if (raw.boosts !== undefined) {
-        if (raw.target !== 'self' || !isBoostBlock(raw.boosts)) {
+        // Step G19: Coaching, a status move whose primary boosts go to the adjacent ally, is modelled too.
+        const toAlly = raw.target === 'adjacentAlly' && raw.category === 'Status';
+        if ((raw.target !== 'self' && !toAlly) || !isBoostBlock(raw.boosts)) {
             return false;
         }
         vectors += 1;
@@ -1199,6 +1223,7 @@ function main() {
     checkG10Moves(dex);
     checkEncore(dex, repo);
     checkRecharge(dex);
+    checkG19(dex);
     checkG22(dex, formeRowsList, new Set(definedIds(headers, 'ITEM').values()), new Set(abilityIds.values()));
     const abilities = checkAbilities(dex, abilityRows, moveIds, unmodeledAbilities, unmodeledMoves);
     // "All 18": a booster and a resist berry for each type, and nothing else in the families.
