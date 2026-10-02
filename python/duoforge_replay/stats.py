@@ -39,6 +39,7 @@ class StatSource:
         if self._process.poll() is None:
             self._process.stdin.close()
             self._process.wait(timeout=30)
+        self._process.stdout.close()
 
     def __enter__(self):
         return self

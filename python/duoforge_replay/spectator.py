@@ -93,7 +93,10 @@ class SpectatorTracker(Tracker):
 
     def feed(self, lines):
         for line in lines:
-            super().feed([line])
+            if line.startswith("|win|") or line == "|tie":
+                self.ended = True  # a replay names the winner by user name, not by side: nothing to fold
+            else:
+                super().feed([line])
             self._fed += 1
 
     def _own_target(self, slot):
