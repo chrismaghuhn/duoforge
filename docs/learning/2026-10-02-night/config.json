@@ -1,0 +1,1 @@
+{"envs": 256, "workers": 8, "rollout": 32, "minutes": 330.0, "updates": 0, "epochs": 4, "minibatch": 4096, "learning_rate": 0.0003, "entropy": 0.01, "eval_every": 200, "eval_envs": 128, "seed": 2316556659104677921, "max_steps": 500, "out": "/home/chris/df-runs/night-2026-10-02", "devices": ["cuda:0"]}

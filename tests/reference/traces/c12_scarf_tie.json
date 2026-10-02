@@ -1,0 +1,6719 @@
+{
+ "harness": 14,
+ "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
+ "spec": "c12_scarf_tie.json",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,076a058abccfedf242830838dc5b8b8daf204f773b090f38b517e4b76ec08646",
+ "start": {
+  "log": [
+   "|gametype|doubles",
+   "|player|p1|p1||",
+   "|player|p2|p2||",
+   "|gen|9",
+   "|tier|[Gen 9 Champions] VGC 2026 Reg M-C",
+   "|rule|Species Clause: Limit one of each Pokémon",
+   "|rule|Item Clause: Limit 1 of each item",
+   "|clearpoke",
+   "|poke|p1|Basculegion, L50, M|",
+   "|poke|p1|Salamence, L50, M|",
+   "|poke|p1|Incineroar, L50, M|",
+   "|poke|p1|Indeedee-F, L50, F|",
+   "|poke|p1|Sneasler, L50, M|",
+   "|poke|p1|Kingambit, L50, M|",
+   "|poke|p2|Salamence, L50, M|",
+   "|poke|p2|Incineroar, L50, M|",
+   "|poke|p2|Basculegion, L50, M|",
+   "|poke|p2|Indeedee-F, L50, F|",
+   "|poke|p2|Sneasler, L50, M|",
+   "|poke|p2|Kingambit, L50, M|",
+   "|teampreview|4",
+   "|split|p1",
+   "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
+   "",
+   "|split|p2",
+   "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
+   ""
+  ],
+  "state": {
+   "turn": 0,
+   "ended": false,
+   "winner": "",
+   "weather": "",
+   "weather_turns": 0,
+   "terrain": "",
+   "terrain_turns": 0,
+   "trick_room": 0,
+   "sides": [
+    {
+     "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
+     "enabled": [],
+     "active": [
+      -1,
+      -1
+     ],
+     "pokemon": [
+      {
+       "species": "Basculegion",
+       "set_species": "Basculegion",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 197,
+       "maxhp": 197,
+       "item": "choicescarf",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        12,
+        20,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Salamence",
+       "set_species": "Salamence",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 172,
+       "maxhp": 172,
+       "item": "salamencite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        12,
+        8,
+        16
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Incineroar",
+       "set_species": "Incineroar",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 202,
+       "maxhp": 202,
+       "item": "sitrusberry",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        16,
+        20,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Indeedee-F",
+       "set_species": "Indeedee-F",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 177,
+       "maxhp": 177,
+       "item": "rockyhelmet",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        8,
+        20,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Sneasler",
+       "set_species": "Sneasler",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 157,
+       "maxhp": 157,
+       "item": "whiteherb",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        16,
+        8,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Kingambit",
+       "set_species": "Kingambit",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 207,
+       "maxhp": 207,
+       "item": "chopleberry",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        8,
+        16,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      }
+     ]
+    },
+    {
+     "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
+     "enabled": [],
+     "active": [
+      -1,
+      -1
+     ],
+     "pokemon": [
+      {
+       "species": "Salamence",
+       "set_species": "Salamence",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 172,
+       "maxhp": 172,
+       "item": "salamencite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        12,
+        8,
+        16
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Incineroar",
+       "set_species": "Incineroar",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 202,
+       "maxhp": 202,
+       "item": "sitrusberry",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        16,
+        20,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Basculegion",
+       "set_species": "Basculegion",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 197,
+       "maxhp": 197,
+       "item": "choicescarf",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        12,
+        20,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Indeedee-F",
+       "set_species": "Indeedee-F",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 177,
+       "maxhp": 177,
+       "item": "rockyhelmet",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        8,
+        20,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Sneasler",
+       "set_species": "Sneasler",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 157,
+       "maxhp": 157,
+       "item": "whiteherb",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        16,
+        8,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Kingambit",
+       "set_species": "Kingambit",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 207,
+       "maxhp": 207,
+       "item": "chopleberry",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        8,
+        16,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "steps": [
+  {
+   "input": {
+    "p1": "team 1435",
+    "p2": "team 6341"
+   },
+   "draws": [
+    {
+     "site": "INSERT_TIE",
+     "context": "queue",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "A:runSwitch:p1a::1",
+      "A:runSwitch:p1b::1",
+      "A:runSwitch:p2a::0"
+     ]
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "switch-order",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:1:S",
+      "P:p2b:1:S"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:TerrainChange",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 0
+    }
+   ],
+   "log": [
+    "|teamsize|p1|4",
+    "|teamsize|p2|4",
+    "|start",
+    "|split|p1",
+    "|uhtmlchange|otsrequest|",
+    "",
+    "|split|p2",
+    "|uhtmlchange|otsrequest|",
+    "",
+    "|split|p1",
+    "|switch|p1a: Basculegion|Basculegion, L50, M|197/197",
+    "|switch|p1a: Basculegion|Basculegion, L50, M|100/100",
+    "|split|p1",
+    "|switch|p1b: Indeedee|Indeedee-F, L50, F|177/177",
+    "|switch|p1b: Indeedee|Indeedee-F, L50, F|100/100",
+    "|split|p2",
+    "|switch|p2a: Kingambit|Kingambit, L50, M|207/207",
+    "|switch|p2a: Kingambit|Kingambit, L50, M|100/100",
+    "|split|p2",
+    "|switch|p2b: Basculegion|Basculegion, L50, M|197/197",
+    "|switch|p2b: Basculegion|Basculegion, L50, M|100/100",
+    "|-fieldstart|move: Psychic Terrain|[from] ability: Psychic Surge|[of] p1b: Indeedee",
+    "|turn|1"
+   ],
+   "state": {
+    "turn": 1,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 5,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Incineroar",
+        "set_species": "Incineroar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         16,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sneasler",
+        "set_species": "Sneasler",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 157,
+        "maxhp": 157,
+        "item": "whiteherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Salamence",
+        "set_species": "Salamence",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 172,
+        "maxhp": 172,
+        "item": "salamencite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         12,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 1, move 1",
+    "p2": "move 1 2, move 3 2"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "A:move:p1a:wavecrash",
+      "A:move:p2b:flipturn"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:BeforeTurn",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "A:move:p1a:wavecrash",
+      "A:move:p2b:flipturn"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "A:move:p2b:flipturn",
+      "A:move:p1a:wavecrash"
+     ],
+     "start": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 6
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 2
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 14
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 81
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 9
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 5
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 0
+    }
+   ],
+   "log": [
+    "|move|p1b: Indeedee|Follow Me|p1b: Indeedee",
+    "|-singleturn|p1b: Indeedee|move: Follow Me",
+    "|move|p1a: Basculegion|Wave Crash|p2a: Kingambit",
+    "|split|p2",
+    "|-damage|p2a: Kingambit|99/207",
+    "|-damage|p2a: Kingambit|47/100",
+    "|split|p1",
+    "|-damage|p1a: Basculegion|161/197|[from] Recoil",
+    "|-damage|p1a: Basculegion|81/100|[from] Recoil",
+    "|move|p2b: Basculegion|Flip Turn|p1b: Indeedee",
+    "|split|p1",
+    "|-damage|p1b: Indeedee|111/177",
+    "|-damage|p1b: Indeedee|62/100",
+    "|split|p2",
+    "|-damage|p2b: Basculegion|165/197|[from] item: Rocky Helmet|[of] p1b: Indeedee",
+    "|-damage|p2b: Basculegion|83/100|[from] item: Rocky Helmet|[of] p1b: Indeedee"
+   ],
+   "state": {
+    "turn": 1,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 5,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 161,
+        "maxhp": 197,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         12,
+         20,
+         20
+        ],
+        "volatiles": [
+         "choicelock"
+        ],
+        "locked": null,
+        "choice": 0
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 111,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [
+         "followme"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Incineroar",
+        "set_species": "Incineroar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         16,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sneasler",
+        "set_species": "Sneasler",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 157,
+        "maxhp": 157,
+        "item": "whiteherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 99,
+        "maxhp": 207,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 165,
+        "maxhp": 197,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         19,
+         20
+        ],
+        "volatiles": [
+         "choicelock"
+        ],
+        "locked": null,
+        "choice": 2
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Salamence",
+        "set_species": "Salamence",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 172,
+        "maxhp": 172,
+        "item": "salamencite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         12,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p2": "pass, switch 3"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "switch-order",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:1:-",
+      "P:p2b:1:S"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 16
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 13
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 1
+    }
+   ],
+   "log": [
+    "|split|p2",
+    "|switch|p2b: Indeedee|Indeedee-F, L50, F|177/177|[from] Flip Turn",
+    "|switch|p2b: Indeedee|Indeedee-F, L50, F|100/100|[from] Flip Turn",
+    "|move|p2a: Kingambit|Kowtow Cleave|p1b: Indeedee",
+    "|-supereffective|p1b: Indeedee|1",
+    "|split|p1",
+    "|-damage|p1b: Indeedee|0 fnt",
+    "|-damage|p1b: Indeedee|0 fnt",
+    "|split|p2",
+    "|-damage|p2a: Kingambit|65/207|[from] item: Rocky Helmet|[of] p1b: Indeedee",
+    "|-damage|p2a: Kingambit|31/100|[from] item: Rocky Helmet|[of] p1b: Indeedee",
+    "|faint|p1b: Indeedee",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 1,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 4,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 161,
+        "maxhp": 197,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         12,
+         20,
+         20
+        ],
+        "volatiles": [
+         "choicelock"
+        ],
+        "locked": null,
+        "choice": 0
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Incineroar",
+        "set_species": "Incineroar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         16,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sneasler",
+        "set_species": "Sneasler",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 157,
+        "maxhp": 157,
+        "item": "whiteherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 65,
+        "maxhp": 207,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         8,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 165,
+        "maxhp": 197,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         19,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Salamence",
+        "set_species": "Salamence",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 172,
+        "maxhp": 172,
+        "item": "salamencite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         12,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "pass, switch 3"
+   },
+   "draws": [],
+   "log": [
+    "|split|p1",
+    "|switch|p1b: Incineroar|Incineroar, L50, M|202/202",
+    "|switch|p1b: Incineroar|Incineroar, L50, M|100/100",
+    "|-ability|p1b: Incineroar|Intimidate|boost",
+    "|-unboost|p2a: Kingambit|atk|1",
+    "|-ability|p2a: Kingambit|Defiant|boost",
+    "|-boost|p2a: Kingambit|atk|2",
+    "|-unboost|p2b: Indeedee|atk|1",
+    "|turn|2"
+   ],
+   "state": {
+    "turn": 2,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 4,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        0,
+        0,
+        0
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 161,
+        "maxhp": 197,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         12,
+         20,
+         20
+        ],
+        "volatiles": [
+         "choicelock"
+        ],
+        "locked": null,
+        "choice": 0
+       },
+       {
+        "species": "Incineroar",
+        "set_species": "Incineroar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         16,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sneasler",
+        "set_species": "Sneasler",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 157,
+        "maxhp": 157,
+        "item": "whiteherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 65,
+        "maxhp": 207,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         1,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         8,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 165,
+        "maxhp": 197,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         19,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Salamence",
+        "set_species": "Salamence",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 172,
+        "maxhp": 172,
+        "item": "salamencite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         12,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 2, move 2 -1",
+    "p2": "move 4, move 2"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 10
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 20
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 11
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 87
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 17
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 15
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 20
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "H:protect:p2a:end",
+      "H:stall:p2a:end"
+     ],
+     "start": 2
+    }
+   ],
+   "log": [
+    "|move|p2a: Kingambit|Protect|p2a: Kingambit",
+    "|-singleturn|p2a: Kingambit|Protect",
+    "|move|p1a: Basculegion|Wave Crash|p2b: Indeedee",
+    "|split|p2",
+    "|-damage|p2b: Indeedee|55/177",
+    "|-damage|p2b: Indeedee|31/100",
+    "|split|p1",
+    "|-damage|p1a: Basculegion|129/197|[from] item: Rocky Helmet|[of] p2b: Indeedee",
+    "|-damage|p1a: Basculegion|65/100|[from] item: Rocky Helmet|[of] p2b: Indeedee",
+    "|split|p1",
+    "|-damage|p1a: Basculegion|89/197|[from] Recoil",
+    "|-damage|p1a: Basculegion|45/100|[from] Recoil",
+    "|move|p1b: Incineroar|Flare Blitz|p1a: Basculegion",
+    "|-resisted|p1a: Basculegion|1",
+    "|split|p1",
+    "|-damage|p1a: Basculegion|35/197",
+    "|-damage|p1a: Basculegion|17/100",
+    "|split|p1",
+    "|-damage|p1b: Incineroar|184/202|[from] Recoil",
+    "|-damage|p1b: Incineroar|91/100|[from] Recoil",
+    "|move|p2b: Indeedee|Trick Room|p2b: Indeedee",
+    "|-fieldstart|move: Trick Room|[of] p2b: Indeedee",
+    "|upkeep",
+    "|turn|3"
+   ],
+   "state": {
+    "turn": 3,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 3,
+    "trick_room": 4,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 35,
+        "maxhp": 197,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         12,
+         20,
+         20
+        ],
+        "volatiles": [
+         "choicelock"
+        ],
+        "locked": null,
+        "choice": 0
+       },
+       {
+        "species": "Incineroar",
+        "set_species": "Incineroar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 184,
+        "maxhp": 202,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         15,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sneasler",
+        "set_species": "Sneasler",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 157,
+        "maxhp": 157,
+        "item": "whiteherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 65,
+        "maxhp": 207,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         1,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         8,
+         16,
+         7
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 55,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         7,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 165,
+        "maxhp": 197,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         19,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Salamence",
+        "set_species": "Salamence",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 172,
+        "maxhp": 172,
+        "item": "salamencite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         12,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 1, move 3 2",
+    "p2": "move 4, switch 3"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "switch-order",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:1:-",
+      "P:p2b:1:S"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "STALL",
+     "context": "StallMove",
+     "lo": 0,
+     "hi": 3,
+     "value": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 85
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    }
+   ],
+   "log": [
+    "|split|p2",
+    "|switch|p2b: Basculegion|Basculegion, L50, M|165/197",
+    "|switch|p2b: Basculegion|Basculegion, L50, M|83/100",
+    "|move|p2a: Kingambit|Protect|p2a: Kingambit",
+    "|-singleturn|p2a: Kingambit|Protect",
+    "|move|p1b: Incineroar|Parting Shot|p2b: Basculegion",
+    "|-unboost|p2b: Basculegion|atk|1",
+    "|-unboost|p2b: Basculegion|spa|1"
+   ],
+   "state": {
+    "turn": 3,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 3,
+    "trick_room": 4,
+    "sides": [
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 35,
+        "maxhp": 197,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         12,
+         20,
+         20
+        ],
+        "volatiles": [
+         "choicelock"
+        ],
+        "locked": null,
+        "choice": 0
+       },
+       {
+        "species": "Incineroar",
+        "set_species": "Incineroar",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 184,
+        "maxhp": 202,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         15,
+         19,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sneasler",
+        "set_species": "Sneasler",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 157,
+        "maxhp": 157,
+        "item": "whiteherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 65,
+        "maxhp": 207,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         1,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         8,
+         16,
+         6
+        ],
+        "volatiles": [
+         "protect",
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 165,
+        "maxhp": 197,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         -1,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         19,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 55,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         7,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Salamence",
+        "set_species": "Salamence",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 172,
+        "maxhp": 172,
+        "item": "salamencite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         12,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "pass, switch 4"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "switch-order",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:1:-",
+      "P:p2b:1:-"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 3,
+     "hi": 5,
+     "value": 4,
+     "group": [
+      "H:stall:p2a:end",
+      "H:protect:p2a:end"
+     ],
+     "start": 3
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    }
+   ],
+   "log": [
+    "|split|p1",
+    "|switch|p1b: Sneasler|Sneasler, L50, M|157/157|[from] Parting Shot",
+    "|switch|p1b: Sneasler|Sneasler, L50, M|100/100|[from] Parting Shot",
+    "|move|p1a: Basculegion|Wave Crash|p2a: Kingambit",
+    "|-activate|p2a: Kingambit|move: Protect",
+    "|upkeep",
+    "|turn|4"
+   ],
+   "state": {
+    "turn": 4,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 2,
+    "trick_room": 3,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        0,
+        0,
+        0
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 35,
+        "maxhp": 197,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         9,
+         12,
+         20,
+         20
+        ],
+        "volatiles": [
+         "choicelock"
+        ],
+        "locked": null,
+        "choice": 0
+       },
+       {
+        "species": "Sneasler",
+        "set_species": "Sneasler",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 157,
+        "maxhp": 157,
+        "item": "whiteherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Incineroar",
+        "set_species": "Incineroar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 184,
+        "maxhp": 202,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         15,
+         19,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 65,
+        "maxhp": 207,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         1,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         8,
+         16,
+         6
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 165,
+        "maxhp": 197,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         -1,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         19,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 55,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         7,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Salamence",
+        "set_species": "Salamence",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 172,
+        "maxhp": 172,
+        "item": "salamencite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         12,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 -2, move 4 -1",
+    "p2": "move 1 2, move 2 2"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "A:move:p1a:wavecrash",
+      "A:move:p2b:lastrespects"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:BeforeTurn",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "A:move:p1a:wavecrash",
+      "A:move:p2b:lastrespects"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "A:move:p1a:wavecrash",
+      "A:move:p2b:lastrespects"
+     ],
+     "start": 1
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 1
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 3
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "A:move:p1a:wavecrash",
+      "A:move:p2b:lastrespects"
+     ],
+     "start": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 34
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 3
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 14
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:normal",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 4
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 6
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 15
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 1
+    }
+   ],
+   "log": [
+    "|move|p1b: Sneasler|Fake Out|p1a: Basculegion",
+    "|-immune|p1a: Basculegion",
+    "|move|p2a: Kingambit|Kowtow Cleave|p1b: Sneasler",
+    "|-resisted|p1b: Sneasler|1",
+    "|split|p1",
+    "|-damage|p1b: Sneasler|52/157",
+    "|-damage|p1b: Sneasler|33/100",
+    "|move|p1a: Basculegion|Wave Crash|p1b: Sneasler",
+    "|split|p1",
+    "|-damage|p1b: Sneasler|0 fnt",
+    "|-damage|p1b: Sneasler|0 fnt",
+    "|faint|p1b: Sneasler",
+    "|split|p1",
+    "|-damage|p1a: Basculegion|18/197|[from] Recoil",
+    "|-damage|p1a: Basculegion|9/100|[from] Recoil",
+    "|move|p2b: Basculegion|Last Respects|p1a: Basculegion",
+    "|-supereffective|p1a: Basculegion|1",
+    "|split|p1",
+    "|-damage|p1a: Basculegion|0 fnt",
+    "|-damage|p1a: Basculegion|0 fnt",
+    "|faint|p1a: Basculegion",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 4,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 1,
+    "trick_room": 2,
+    "sides": [
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 197,
+        "item": "choicescarf",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         12,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sneasler",
+        "set_species": "Sneasler",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 157,
+        "item": "whiteherb",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Incineroar",
+        "set_species": "Incineroar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 184,
+        "maxhp": 202,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         15,
+         19,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 65,
+        "maxhp": 207,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         1,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         8,
+         16,
+         6
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 165,
+        "maxhp": 197,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         -1,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         11,
+         19,
+         20
+        ],
+        "volatiles": [
+         "choicelock"
+        ],
+        "locked": null,
+        "choice": 1
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 55,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         7,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Salamence",
+        "set_species": "Salamence",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 172,
+        "maxhp": 172,
+        "item": "salamencite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         12,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "switch 4, pass"
+   },
+   "draws": [],
+   "log": [
+    "|split|p1",
+    "|switch|p1a: Incineroar|Incineroar, L50, M|184/202",
+    "|switch|p1a: Incineroar|Incineroar, L50, M|91/100",
+    "|-ability|p1a: Incineroar|Intimidate|boost",
+    "|-unboost|p2a: Kingambit|atk|1",
+    "|-ability|p2a: Kingambit|Defiant|boost",
+    "|-boost|p2a: Kingambit|atk|2",
+    "|-unboost|p2b: Basculegion|atk|1",
+    "|turn|5"
+   ],
+   "state": {
+    "turn": 5,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 1,
+    "trick_room": 2,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        0
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Incineroar",
+        "set_species": "Incineroar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 184,
+        "maxhp": 202,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         15,
+         19,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sneasler",
+        "set_species": "Sneasler",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 157,
+        "item": "whiteherb",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 197,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         12,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        0,
+        1,
+        0,
+        0
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 65,
+        "maxhp": 207,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         2,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         8,
+         16,
+         6
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 165,
+        "maxhp": 197,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -2,
+         0,
+         -1,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         11,
+         19,
+         20
+        ],
+        "volatiles": [
+         "choicelock"
+        ],
+        "locked": null,
+        "choice": 1
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 55,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         7,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Salamence",
+        "set_species": "Salamence",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 172,
+        "maxhp": 172,
+        "item": "salamencite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         12,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2 -2, pass",
+    "p2": "move 2 2, move 2 2"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:normal",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:normal",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 18
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 15
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 10
+    }
+   ],
+   "log": [
+    "|move|p2a: Kingambit|Sucker Punch|p1a: Incineroar",
+    "|-activate|p1a: Incineroar|move: Psychic Terrain",
+    "|move|p1a: Incineroar|Flare Blitz|p1: Sneasler|[notarget]",
+    "|-fail|p1a: Incineroar",
+    "|move|p2b: Basculegion|Last Respects|p1a: Incineroar",
+    "|-resisted|p1a: Incineroar|1",
+    "|split|p1",
+    "|-damage|p1a: Incineroar|170/202",
+    "|-damage|p1a: Incineroar|84/100",
+    "|-fieldend|move: Psychic Terrain",
+    "|upkeep",
+    "|turn|6"
+   ],
+   "state": {
+    "turn": 6,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 1,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        0,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        0
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Incineroar",
+        "set_species": "Incineroar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 170,
+        "maxhp": 202,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         14,
+         19,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sneasler",
+        "set_species": "Sneasler",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 157,
+        "item": "whiteherb",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 197,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         12,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        0,
+        1,
+        0,
+        0
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 65,
+        "maxhp": 207,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         2,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         7,
+         16,
+         6
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 165,
+        "maxhp": 197,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -2,
+         0,
+         -1,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         10,
+         19,
+         20
+        ],
+        "volatiles": [
+         "choicelock"
+        ],
+        "locked": null,
+        "choice": 1
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 55,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         7,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Salamence",
+        "set_species": "Salamence",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 172,
+        "maxhp": 172,
+        "item": "salamencite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         12,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 3 1, pass",
+    "p2": "move 2 1, move 2 -1"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 77
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 5
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 16
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 1
+    }
+   ],
+   "log": [
+    "|move|p2a: Kingambit|Sucker Punch||[still]",
+    "|-fail|p2a: Kingambit",
+    "|move|p1a: Incineroar|Parting Shot|p2a: Kingambit",
+    "|-unboost|p2a: Kingambit|atk|1",
+    "|-ability|p2a: Kingambit|Defiant|boost",
+    "|-boost|p2a: Kingambit|atk|2",
+    "|-unboost|p2a: Kingambit|spa|1",
+    "|-ability|p2a: Kingambit|Defiant|boost",
+    "|-boost|p2a: Kingambit|atk|2",
+    "|move|p2b: Basculegion|Last Respects|p2a: Kingambit",
+    "|-resisted|p2a: Kingambit|1",
+    "|split|p2",
+    "|-damage|p2a: Kingambit|52/207",
+    "|-damage|p2a: Kingambit|25/100",
+    "|-fieldend|move: Trick Room",
+    "|upkeep",
+    "|turn|7"
+   ],
+   "state": {
+    "turn": 7,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        0,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        0
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Incineroar",
+        "set_species": "Incineroar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 170,
+        "maxhp": 202,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         14,
+         18,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sneasler",
+        "set_species": "Sneasler",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 157,
+        "item": "whiteherb",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 197,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         12,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        0,
+        1,
+        0,
+        0
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 52,
+        "maxhp": 207,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         5,
+         0,
+         -1,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         6,
+         16,
+         6
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 165,
+        "maxhp": 197,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -2,
+         0,
+         -1,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         9,
+         19,
+         20
+        ],
+        "volatiles": [
+         "choicelock"
+        ],
+        "locked": null,
+        "choice": 1
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 55,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         7,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Salamence",
+        "set_species": "Salamence",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 172,
+        "maxhp": 172,
+        "item": "salamencite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         12,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 4 -2, pass",
+    "p2": "move 1 -2, move 2 -1"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 38
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 17
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 11
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 13
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 13
+    }
+   ],
+   "log": [
+    "|move|p2b: Basculegion|Last Respects|p2a: Kingambit",
+    "|-resisted|p2a: Kingambit|1",
+    "|split|p2",
+    "|-damage|p2a: Kingambit|40/207",
+    "|-damage|p2a: Kingambit|19/100",
+    "|move|p1a: Incineroar|Darkest Lariat|p1: Sneasler|[notarget]",
+    "|-fail|p1a: Incineroar",
+    "|move|p2a: Kingambit|Kowtow Cleave|p2b: Basculegion",
+    "|-supereffective|p2b: Basculegion|1",
+    "|split|p2",
+    "|-damage|p2b: Basculegion|0 fnt",
+    "|-damage|p2b: Basculegion|0 fnt",
+    "|faint|p2b: Basculegion",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 7,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Incineroar",
+        "set_species": "Incineroar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 170,
+        "maxhp": 202,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         14,
+         18,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sneasler",
+        "set_species": "Sneasler",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 157,
+        "item": "whiteherb",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 197,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         12,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 40,
+        "maxhp": 207,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         5,
+         0,
+         -1,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         9,
+         6,
+         16,
+         6
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 197,
+        "item": "choicescarf",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         19,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 55,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         7,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Salamence",
+        "set_species": "Salamence",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 172,
+        "maxhp": 172,
+        "item": "salamencite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         12,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p2": "pass, switch 4"
+   },
+   "draws": [],
+   "log": [
+    "|split|p2",
+    "|switch|p2b: Salamence|Salamence, L50, M|172/172",
+    "|switch|p2b: Salamence|Salamence, L50, M|100/100",
+    "|-ability|p2b: Salamence|Intimidate|boost",
+    "|-unboost|p1a: Incineroar|atk|1",
+    "|turn|8"
+   ],
+   "state": {
+    "turn": 8,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        0,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        0
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Incineroar",
+        "set_species": "Incineroar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 170,
+        "maxhp": 202,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         14,
+         18,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sneasler",
+        "set_species": "Sneasler",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 157,
+        "item": "whiteherb",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 197,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         12,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 40,
+        "maxhp": 207,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         5,
+         0,
+         -1,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         9,
+         6,
+         16,
+         6
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Salamence",
+        "set_species": "Salamence",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 172,
+        "maxhp": 172,
+        "item": "salamencite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         12,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 55,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         7,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 197,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         19,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 3 -2, pass",
+    "p2": "move 1 2, move 3 2 mega"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:normal",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 90
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:normal",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 23
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 0
+    }
+   ],
+   "log": [
+    "|detailschange|p2b: Salamence|Salamence-Mega, L50, M",
+    "|-mega|p2b: Salamence|Salamence|Salamencite",
+    "|move|p2b: Salamence|Draco Meteor|p1a: Incineroar|[miss]",
+    "|-miss|p2b: Salamence|p1a: Incineroar",
+    "|move|p1a: Incineroar|Parting Shot|p1: Sneasler|[notarget]",
+    "|-fail|p1a: Incineroar",
+    "|move|p2a: Kingambit|Kowtow Cleave|p1a: Incineroar",
+    "|-resisted|p1a: Incineroar|1",
+    "|split|p1",
+    "|-damage|p1a: Incineroar|7/202",
+    "|-damage|p1a: Incineroar|3/100",
+    "|-enditem|p1a: Incineroar|Sitrus Berry|[eat]",
+    "|split|p1",
+    "|-heal|p1a: Incineroar|57/202|[from] item: Sitrus Berry",
+    "|-heal|p1a: Incineroar|28/100|[from] item: Sitrus Berry",
+    "|upkeep",
+    "|turn|9"
+   ],
+   "state": {
+    "turn": 9,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        0,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        0
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Incineroar",
+        "set_species": "Incineroar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 57,
+        "maxhp": 202,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         14,
+         17,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sneasler",
+        "set_species": "Sneasler",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 157,
+        "item": "whiteherb",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 197,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         12,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 40,
+        "maxhp": 207,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         5,
+         0,
+         -1,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         6,
+         16,
+         6
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Salamence-Mega",
+        "set_species": "Salamence",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 172,
+        "maxhp": 172,
+        "item": "salamencite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         12,
+         7,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 55,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         7,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 197,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         19,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2 2, pass",
+    "p2": "move 3 -2, move 1"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "H:protect:p2b:end",
+      "H:stall:p2b:end"
+     ],
+     "start": 1
+    }
+   ],
+   "log": [
+    "|move|p2b: Salamence|Protect|p2b: Salamence",
+    "|-singleturn|p2b: Salamence|Protect",
+    "|move|p1a: Incineroar|Flare Blitz|p2b: Salamence",
+    "|-activate|p2b: Salamence|move: Protect",
+    "|move|p2a: Kingambit|Iron Head|p2b: Salamence",
+    "|-activate|p2b: Salamence|move: Protect",
+    "|upkeep",
+    "|turn|10"
+   ],
+   "state": {
+    "turn": 10,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        0,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        0
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Incineroar",
+        "set_species": "Incineroar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 57,
+        "maxhp": 202,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         13,
+         17,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sneasler",
+        "set_species": "Sneasler",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 157,
+        "item": "whiteherb",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 197,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         12,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 40,
+        "maxhp": 207,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         5,
+         0,
+         -1,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         6,
+         15,
+         6
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Salamence-Mega",
+        "set_species": "Salamence",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 172,
+        "maxhp": 172,
+        "item": "salamencite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         12,
+         7,
+         16
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 55,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         7,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 197,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         19,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2 -2, pass",
+    "p2": "switch 3, move 3 2"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:normal",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 52
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 20
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 6
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 31
+    }
+   ],
+   "log": [
+    "|split|p2",
+    "|switch|p2a: Indeedee|Indeedee-F, L50, F|55/177",
+    "|switch|p2a: Indeedee|Indeedee-F, L50, F|31/100",
+    "|-fieldstart|move: Psychic Terrain|[from] ability: Psychic Surge|[of] p2a: Indeedee",
+    "|move|p2b: Salamence|Draco Meteor|p1a: Incineroar",
+    "|split|p1",
+    "|-damage|p1a: Incineroar|0 fnt",
+    "|-damage|p1a: Incineroar|0 fnt",
+    "|-unboost|p2b: Salamence|spa|2",
+    "|faint|p1a: Incineroar",
+    "|win|p2"
+   ],
+   "state": {
+    "turn": 10,
+    "ended": true,
+    "winner": "p2",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 5,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Incineroar",
+        "set_species": "Incineroar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 202,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         13,
+         17,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sneasler",
+        "set_species": "Sneasler",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 157,
+        "item": "whiteherb",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 197,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         12,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 55,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         7,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Salamence-Mega",
+        "set_species": "Salamence",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 172,
+        "maxhp": 172,
+        "item": "salamencite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         -2,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         12,
+         6,
+         16
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 40,
+        "maxhp": 207,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         6,
+         15,
+         6
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 197,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         19,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

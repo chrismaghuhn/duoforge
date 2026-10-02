@@ -130,7 +130,9 @@ unsigned df_conf_compare_observation(FILE *out, const duoforge_context *ctx, con
                           pv->protecting == ((e->vols & 1u) != 0u ? 1u : 0u) &&
                           pv->flash_fire == ((e->vols & 2u) != 0u ? 1u : 0u) &&
                           pv->charging == ((e->vols & 4u) != 0u ? 1u : 0u) &&
-                          pv->reserved == ((e->vols & 16u) != 0u ? DUOFORGE_POSITION_FLAG_UNBURDEN : 0u) &&
+                          pv->reserved == (((e->vols & 16u) != 0u ? DUOFORGE_POSITION_FLAG_UNBURDEN : 0u) |
+                                           ((e->vols & 32u) != 0u ? DUOFORGE_POSITION_FLAG_HELPING_HAND : 0u) |
+                                           ((e->vols & 64u) != 0u ? DUOFORGE_POSITION_FLAG_FOLLOW_ME : 0u)) &&
                           (pv->protect_chain != 0u) == (e->stall != 0u);
                 if (b->boundary_kind == DUOFORGE_BOUNDARY_TERMINAL) {
                     ok = memcmp(pv->stages, e->stages, 7u) == 0; /* locks are not compared at the end */
@@ -289,18 +291,26 @@ unsigned df_conf_compare_state(FILE *out, const duoforge_context *ctx, const duo
                         mem->status, mem->status_counter, e->status, e->status_counter);
                 ++bad;
             }
-            /* A two-turn move's lock, a Choice item's lock and Unburden (Team
-             * C), at TURN and REPLACEMENT boundaries. */
+            /* A two-turn move's lock, a Choice item's lock, Unburden, Helping
+             * Hand and Follow Me (Team C) and flinch, at TURN, REPLACEMENT and
+             * PIVOT boundaries. */
             if (pos != NULL && b->boundary_kind != DUOFORGE_BOUNDARY_TERMINAL) {
                 const uint32_t lslot = pos->locked_move != 0u ? (uint32_t)pos->locked_move - 1u : 0xFFu;
                 const uint32_t ltarget = pos->locked_move != 0u ? pos->locked_target : 0u;
                 const uint32_t choice = ((uint32_t)pos->flags & DFI_VOL_CHOICE_LOCK) != 0u ? 8u : 0u;
                 const uint32_t unburden = ((uint32_t)pos->flags & DFI_VOL_UNBURDEN) != 0u ? 16u : 0u;
+                const uint32_t helping = ((uint32_t)pos->flags & DFI_VOL_HELPING_HAND) != 0u ? 32u : 0u;
+                const uint32_t follow = ((uint32_t)pos->flags & DFI_VOL_FOLLOW_ME) != 0u ? 64u : 0u;
+                const uint32_t flinch = ((uint32_t)pos->flags & DFI_VOL_FLINCH) != 0u ? 128u : 0u;
                 if (lslot != e->locked_slot || ltarget != e->locked_target || choice != (e->vols & 8u) ||
-                    unburden != (e->vols & 16u)) {
-                    fprintf(out, "  %s step %u: side %u member %u locked %u/%u choice %u unburden %u, reference %u/%u %u %u\n",
-                            name, step, s, m, lslot, ltarget, choice, unburden, e->locked_slot, e->locked_target,
-                            e->vols & 8u, e->vols & 16u);
+                    unburden != (e->vols & 16u) || helping != (e->vols & 32u) || follow != (e->vols & 64u) ||
+                    flinch != (e->vols & 128u)) {
+                    fprintf(out,
+                            "  %s step %u: side %u member %u locked %u/%u choice %u unburden %u helping %u "
+                            "follow %u flinch %u, reference %u/%u %u %u %u %u %u\n",
+                            name, step, s, m, lslot, ltarget, choice, unburden, helping, follow, flinch,
+                            e->locked_slot, e->locked_target, e->vols & 8u, e->vols & 16u, e->vols & 32u,
+                            e->vols & 64u, e->vols & 128u);
                     ++bad;
                 }
             }

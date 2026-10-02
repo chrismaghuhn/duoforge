@@ -88,6 +88,7 @@ duoforge_add_test(NAME duoforge.reference.conformance_team_c SOURCES test_confor
 target_compile_definitions(duoforge_reference_conformance_team_c PRIVATE DF_CONFORMANCE_TEAM_C)
 duoforge_add_test(NAME duoforge.combat.turn SOURCES test_turn.c WHITEBOX TIMEOUT 120)
 duoforge_add_test(NAME duoforge.combat.closure_gate SOURCES test_closure_gate.c WHITEBOX TIMEOUT 600)
+duoforge_add_test(NAME duoforge.combat.team_c_gate SOURCES test_team_c_gate.c WHITEBOX TIMEOUT 600)
 
 # M3: generated closure tables and Champions formulas (decision 0006).
 duoforge_add_test(NAME duoforge.data.closure_tables SOURCES test_closure_tables.c WHITEBOX)
