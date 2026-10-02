@@ -156,6 +156,8 @@ duoforge_add_test(NAME duoforge.state.pool_g7 SOURCES test_pool_g7.c WHITEBOX TI
 duoforge_add_test(NAME duoforge.state.pool_weather SOURCES test_pool_weather.c WHITEBOX TIMEOUT 60)
 # Step G11: Soak in the tail's soak type, in what reads the types, in the TYPE_CHANGE event and in the POOL view extension.
 duoforge_add_test(NAME duoforge.state.pool_g11 SOURCES test_pool_g11.c WHITEBOX TIMEOUT 60)
+# The queued action of a fainted Pokemon: no ability and no item of it counts for its priority and Speed (d04 to d06).
+duoforge_add_test(NAME duoforge.state.pool_fainted_holder SOURCES test_pool_fainted_holder.c WHITEBOX TIMEOUT 60)
 # The generated files must stay exactly what tools/datagen/gen_closure.py
 # wrote; regenerate and update these hashes together.
 foreach(_gen IN ITEMS
@@ -164,7 +166,7 @@ foreach(_gen IN ITEMS
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
         "pool_tables.h=59965e00e25b614a60ca721dc7a17ed51b1aee426d39880d4d6e4c02b8b436c0"
-        "pool_tables.c=7e78d7eb6253929b8f6903240295d247bb1b0ef81ff23f8cf7790f02294cfa05")
+        "pool_tables.c=4f18c5a5cf86ec8dc6f335b42bb613e9cee322109e11e3352c2755e44430cf04")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -305,6 +307,13 @@ if(DUOFORGE_PS_REFERENCE_DIR)
             COMMAND "${DUOFORGE_NODE}" "${PROJECT_SOURCE_DIR}/tools/reference/ps_client.js"
                 "${DUOFORGE_PS_REFERENCE_DIR}" "${PROJECT_SOURCE_DIR}" --all --check)
         set_tests_properties(duoforge.reference.client_streams PROPERTIES TIMEOUT 300 LABELS reference)
+        # The spectator channel of every committed battle (closure, Team C, pool): the fixtures of the M11
+        # replay pipeline, each battle replayed from its trace's inputs.
+        add_test(NAME duoforge.reference.spectator_streams
+            COMMAND "${DUOFORGE_NODE}" "${PROJECT_SOURCE_DIR}/tools/reference/ps_client.js"
+                "${DUOFORGE_PS_REFERENCE_DIR}" "${PROJECT_SOURCE_DIR}" --every --spectator --check)
+        set_tests_properties(duoforge.reference.spectator_streams PROPERTIES TIMEOUT 300 LABELS reference
+            PASS_REGULAR_EXPRESSION "ps_client: [0-9]+ battles match their traces")
         # The Showdown live adapter against the pinned Showdown and the runner's views (spec section 8).
         if(DUOFORGE_PYTHON)
             add_test(NAME duoforge.python.live
@@ -313,6 +322,12 @@ if(DUOFORGE_PS_REFERENCE_DIR)
             set_tests_properties(duoforge.python.live PROPERTIES LABELS "python;reference" TIMEOUT 900 ENVIRONMENT
                 "DUOFORGE_NODE=${DUOFORGE_NODE};DUOFORGE_PS_REFERENCE_DIR=${DUOFORGE_PS_REFERENCE_DIR};DUOFORGE_DIFF_RUNNER=$<TARGET_FILE:duoforge_diff_runner>;DUOFORGE_LIBRARY=$<TARGET_FILE:duoforge_shared>;PYTHONPATH=${PROJECT_SOURCE_DIR}/python;PYTHONDONTWRITEBYTECODE=1")
             set(_duoforge_live_registered ON)
+            # The M11 replay pipeline against every committed battle's spectator log and DuoForge's views.
+            add_test(NAME duoforge.python.replay
+                COMMAND "${DUOFORGE_PYTHON}" -m unittest -v python.tests.test_replay
+                WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
+            set_tests_properties(duoforge.python.replay PROPERTIES LABELS "python;reference" TIMEOUT 900 ENVIRONMENT
+                "DUOFORGE_NODE=${DUOFORGE_NODE};DUOFORGE_PS_REFERENCE_DIR=${DUOFORGE_PS_REFERENCE_DIR};DUOFORGE_DIFF_RUNNER=$<TARGET_FILE:duoforge_diff_runner>;DUOFORGE_LIBRARY=$<TARGET_FILE:duoforge_shared>;PYTHONPATH=${PROJECT_SOURCE_DIR}/python;PYTHONDONTWRITEBYTECODE=1")
         endif()
     endif()
 endif()
@@ -320,6 +335,9 @@ if(NOT _duoforge_live_registered)
     add_test(NAME duoforge.python.live
         COMMAND "${CMAKE_COMMAND}" -E echo "DUOFORGE_SKIP: needs DUOFORGE_PYTHON, Node and DUOFORGE_PS_REFERENCE_DIR")
     set_tests_properties(duoforge.python.live PROPERTIES LABELS python SKIP_REGULAR_EXPRESSION "DUOFORGE_SKIP:")
+    add_test(NAME duoforge.python.replay
+        COMMAND "${CMAKE_COMMAND}" -E echo "DUOFORGE_SKIP: needs DUOFORGE_PYTHON, Node and DUOFORGE_PS_REFERENCE_DIR")
+    set_tests_properties(duoforge.python.replay PROPERTIES LABELS python SKIP_REGULAR_EXPRESSION "DUOFORGE_SKIP:")
 endif()
 # The conformance tables must be what the converter makes of the traces.
 find_package(Python3 COMPONENTS Interpreter)
@@ -525,7 +543,7 @@ endif()
 
 # The Python package (M7, decision 0013), run with DUOFORGE_PYTHON; without
 # an interpreter each test reports skipped instead of passing silently.
-foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client)
+foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client replay_unit)
     if(DUOFORGE_PYTHON)
         add_test(NAME duoforge.python.${_py}
             COMMAND "${DUOFORGE_PYTHON}" -m unittest -v python.tests.test_${_py}

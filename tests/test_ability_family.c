@@ -33,6 +33,14 @@ typedef struct ability_type {
 } ability_type;
 
 /* ATE: a Normal move becomes the type (and gets BasePower x4915/4096). */
+/* The family row of a member's sheet ability: the rules of combat/ability_family.h work on a family row, and the turn
+ * code gets the row of the ability now (dfi_ability_family_now in combat/turn.c); this test sets up members by their
+ * sheet ability, which is the ability now when nothing changed it. */
+static dfi_ability_family fam_of(const dfi_member *m)
+{
+    return dfi_ability_family_for(m == NULL ? 0u : m->ability);
+}
+
 static const ability_type ATES[] = {
     {DFI_ABILITY_AERILATE, DFI_TYPE_FLYING},
     {DFI_ABILITY_PIXILATE, DFI_TYPE_FAIRY},
@@ -113,7 +121,7 @@ int main(void)
         for (uint32_t type = 0u; type <= DFI_TYPE_COUNT + 1u; ++type) {
             /* onModifyType: only a Normal move changes, to the ability's type. */
             const uint32_t want_type = ate_type != DFI_CLOSURE_NONE && type == DFI_TYPE_NORMAL ? ate_type : type;
-            if (!DF_CHECK(&t, dfi_ate_type_of(&m, &dfi_pool_moves[DFI_MOVE_HYPERVOICE], type) == want_type)) {
+            if (!DF_CHECK(&t, dfi_ate_type_fam(fam_of(&m), &dfi_pool_moves[DFI_MOVE_HYPERVOICE], type) == want_type)) {
                 fprintf(stderr, "  ate type: ability %u, type %u: expected %u\n", (unsigned)id, (unsigned)type,
                         (unsigned)want_type);
             }
@@ -121,7 +129,7 @@ int main(void)
             /* onBasePower: the move was Normal and is now of the ability's type. */
             for (uint32_t base = 0u; base <= DFI_TYPE_COUNT; ++base) {
                 const bool want = ate_type != DFI_CLOSURE_NONE && base == DFI_TYPE_NORMAL && type == ate_type;
-                if (!DF_CHECK(&t, dfi_ate_boosts(&m, base, type) == want)) {
+                if (!DF_CHECK(&t, dfi_ate_boosts_fam(fam_of(&m), base, type) == want)) {
                     fprintf(stderr, "  ate boost: ability %u, base %u, type %u: expected %d\n", (unsigned)id,
                             (unsigned)base, (unsigned)type, (int)want);
                 }
@@ -139,7 +147,7 @@ int main(void)
             for (size_t c = 0u; c < sizeof cases / sizeof cases[0]; ++c) {
                 const dfi_member h = holder(id, cases[c].hp, cases[c].hp_max);
                 const bool want = pinch_type == type && cases[c].low;
-                if (!DF_CHECK(&t, dfi_pinch_applies(&h, type) == want)) {
+                if (!DF_CHECK(&t, dfi_pinch_applies_fam(fam_of(&h), &h, type) == want)) {
                     fprintf(stderr, "  pinch: ability %u, type %u, hp %u of %u: expected %d\n", (unsigned)id,
                             (unsigned)type, (unsigned)cases[c].hp, (unsigned)cases[c].hp_max, (int)want);
                 }
@@ -165,7 +173,7 @@ int main(void)
             }
             normal_moves += 1u;
             const uint32_t want = id == DFI_MOVE_WEATHERBALL ? DFI_TYPE_NORMAL : ATES[i].type;
-            if (!DF_CHECK(&t, dfi_ate_type_of(&m, md, DFI_TYPE_NORMAL) == want)) {
+            if (!DF_CHECK(&t, dfi_ate_type_fam(fam_of(&m), md, DFI_TYPE_NORMAL) == want)) {
                 fprintf(stderr, "  ate: ability %u, move %u: expected type %u\n", (unsigned)ATES[i].ability,
                         (unsigned)id, (unsigned)want);
             }
@@ -179,8 +187,8 @@ int main(void)
         const dfi_member m = holder(id, 100u, 300u);
         const uint32_t weather = type_in(WEATHER_SETTERS, N_WEATHER_SETTERS, id);
         const uint32_t terrain = type_in(TERRAIN_SETTERS, N_TERRAIN_SETTERS, id);
-        DF_CHECK_EQ_U64(&t, dfi_weather_set_by(&m), weather == DFI_CLOSURE_NONE ? DFI_WEATHER_NONE : weather);
-        DF_CHECK_EQ_U64(&t, dfi_terrain_set_by(&m), terrain == DFI_CLOSURE_NONE ? DFI_TERRAIN_NONE : terrain);
+        DF_CHECK_EQ_U64(&t, dfi_weather_set_by_fam(fam_of(&m)), weather == DFI_CLOSURE_NONE ? DFI_WEATHER_NONE : weather);
+        DF_CHECK_EQ_U64(&t, dfi_terrain_set_by_fam(fam_of(&m)), terrain == DFI_CLOSURE_NONE ? DFI_TERRAIN_NONE : terrain);
         const uint32_t family = dfi_pool_ability_family[id].family;
         DF_CHECK_EQ_U64(&t, family == DFI_ABILITY_FAMILY_WEATHER_SETTER, weather != DFI_CLOSURE_NONE);
         DF_CHECK_EQ_U64(&t, family == DFI_ABILITY_FAMILY_TERRAIN_SETTER, terrain != DFI_CLOSURE_NONE);
@@ -193,22 +201,22 @@ int main(void)
         dfi_member none = holder(0u, 1u, 300u);
         none.ability = 0u;
         for (uint32_t type = 0u; type < DFI_TYPE_COUNT; ++type) {
-            DF_CHECK(&t, dfi_ate_type_of(&none, &dfi_pool_moves[DFI_MOVE_HYPERVOICE], type) == type);
-            DF_CHECK(&t, !dfi_ate_boosts(&none, DFI_TYPE_NORMAL, type));
-            DF_CHECK(&t, !dfi_pinch_applies(&none, type));
-            DF_CHECK_EQ_U64(&t, dfi_weather_set_by(&none), DFI_WEATHER_NONE);
-            DF_CHECK_EQ_U64(&t, dfi_terrain_set_by(&none), DFI_TERRAIN_NONE);
-            DF_CHECK_EQ_U64(&t, dfi_weather_set_by(NULL), DFI_WEATHER_NONE);
-            DF_CHECK_EQ_U64(&t, dfi_terrain_set_by(NULL), DFI_TERRAIN_NONE);
-            DF_CHECK(&t, dfi_ate_type_of(NULL, &dfi_pool_moves[DFI_MOVE_HYPERVOICE], type) == type);
-            DF_CHECK(&t, !dfi_ate_boosts(NULL, DFI_TYPE_NORMAL, type));
-            DF_CHECK(&t, !dfi_pinch_applies(NULL, type));
+            DF_CHECK(&t, dfi_ate_type_fam(fam_of(&none), &dfi_pool_moves[DFI_MOVE_HYPERVOICE], type) == type);
+            DF_CHECK(&t, !dfi_ate_boosts_fam(fam_of(&none), DFI_TYPE_NORMAL, type));
+            DF_CHECK(&t, !dfi_pinch_applies_fam(fam_of(&none), &none, type));
+            DF_CHECK_EQ_U64(&t, dfi_weather_set_by_fam(fam_of(&none)), DFI_WEATHER_NONE);
+            DF_CHECK_EQ_U64(&t, dfi_terrain_set_by_fam(fam_of(&none)), DFI_TERRAIN_NONE);
+            DF_CHECK_EQ_U64(&t, dfi_weather_set_by_fam(fam_of(NULL)), DFI_WEATHER_NONE);
+            DF_CHECK_EQ_U64(&t, dfi_terrain_set_by_fam(fam_of(NULL)), DFI_TERRAIN_NONE);
+            DF_CHECK(&t, dfi_ate_type_fam(fam_of(NULL), &dfi_pool_moves[DFI_MOVE_HYPERVOICE], type) == type);
+            DF_CHECK(&t, !dfi_ate_boosts_fam(fam_of(NULL), DFI_TYPE_NORMAL, type));
+            DF_CHECK(&t, !dfi_pinch_applies_fam(fam_of(NULL), NULL, type));
         }
         /* An id beyond the pool is no family (the invariant keeps it out of a state). */
         const dfi_member beyond = holder(DFI_POOL_ABILITY_COUNT, 1u, 300u);
         for (uint32_t type = 0u; type < DFI_TYPE_COUNT; ++type) {
-            DF_CHECK(&t, dfi_ate_type_of(&beyond, &dfi_pool_moves[DFI_MOVE_HYPERVOICE], type) == type);
-            DF_CHECK(&t, !dfi_pinch_applies(&beyond, type));
+            DF_CHECK(&t, dfi_ate_type_fam(fam_of(&beyond), &dfi_pool_moves[DFI_MOVE_HYPERVOICE], type) == type);
+            DF_CHECK(&t, !dfi_pinch_applies_fam(fam_of(&beyond), &beyond, type));
         }
     }
 

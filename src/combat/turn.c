@@ -304,9 +304,12 @@ static duoforge_status dfi_staged_stat(const dfi_member *m, const dfi_active_slo
  * the staged Speed times the chained ModifySpe modifiers (Tailwind
  * chainModify(2), Choice Scarf chainModify(1.5), Team C; one rounding), then
  * halved by paralysis (its onModifySpe runs last: finalModify, then floor of
- * 50 of 100), capped, negated under Trick Room. A fainted Pokemon is not active,
- * so no ModifySpe handler runs for it (Battle.findEventHandlers,
- * sim/battle.ts): its queued action or its replacement has the raw Speed. */
+ * 50 of 100), capped, negated under Trick Room. A fainted Pokemon is not active
+ * (faintMessages, sim/battle.ts:2566), and getStat runs ModifySpe with no source: Battle.findEventHandlers
+ * (sim/battle.ts:1053) then gathers no handler of the Pokemon's or of its side, so neither its Choice Scarf, Unburden
+ * or paralysis nor its side's Tailwind counts (a probe at the pin: a fainted Scarf holder under Tailwind has its raw
+ * Speed), and Trick Room, which Pokemon.getActionSpeed reads itself, still applies: its queued action or its
+ * replacement has the raw Speed. The same isActive decides the abilities and items in dfi_move_priority. */
 static duoforge_status dfi_speed_key(const struct duoforge_battle *b, uint32_t side, const dfi_member *m,
                                      const dfi_active_slot *pos, uint32_t *out)
 {
@@ -358,11 +361,25 @@ static uint32_t dfi_move_of(const dfi_member *m, uint32_t move_slot)
 /* ---------------------------------------------------------------- queue */
 
 /* ModifyPriority: Prankster gives status moves +1, Grassy Glide gets +1
- * in Grassy Terrain for a grounded user. Biased like the move table. */
+ * in Grassy Terrain for a grounded user. Biased like the move table.
+ *
+ * A fainted holder's queued action is priced again after every action (sim/battle.ts:2919-2926 re-sorts the queue,
+ * and Battle.getActionSpeed, :2619-2662, runs ModifyPriority at :2645-2646). The action stays queued and is skipped
+ * when it comes up (:2705-2707), so only its sort key matters, and that decides which actions tie and so how many
+ * values the shuffle draws. faintMessages (:2566) sets isActive false after clearVolatile, and then no ability or
+ * item of the holder speaks: runEvent drops an ability handler whose holder ignoringAbility() (:879-883;
+ * sim/pokemon.ts:858-859, true for !isActive) and an item handler whose holder ignoringItem() (:874-878;
+ * sim/pokemon.ts:879-881, the same), so a fainted Prankster's status action has the move's own priority. The move's
+ * own onModifyPriority (Grassy Glide) is a singleEvent on the move and still runs; its grounded test reads the types
+ * alone (no Levitate or Air Balloon in the pool). No other ability or item of the pool changes a priority:
+ * tools/datagen/pool_families.js pins that every modelled ability or item with a priority or Speed callback is
+ * Prankster, Unburden or Choice Scarf, so a new one cannot enter without this function and dfi_speed_key being
+ * looked at. */
 static uint32_t dfi_move_priority(const struct duoforge_battle *b, const dfi_member *m, const dfi_move_data *md)
 {
     uint32_t priority = md->priority;
-    if (dfi_ability(b, m, DFI_ABILITY_PRANKSTER) && md->category == DFI_CATEGORY_STATUS) {
+    const bool standing = m->hp != 0u; /* isActive: the holder's ability and item count */
+    if (standing && dfi_ability(b, m, DFI_ABILITY_PRANKSTER) && md->category == DFI_CATEGORY_STATUS) {
         priority += 1u;
     }
     if (md->special == DFI_SPECIAL_GRASSY_GLIDE && b->terrain == DFI_TERRAIN_GRASSY && dfi_grounded(b, m)) {
