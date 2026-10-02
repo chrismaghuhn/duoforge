@@ -67,6 +67,9 @@ const CONDITION_SITES = {
     'par:BeforeMove': 'FULL_PARALYSIS',
     'confusion:Start': 'CONFUSION_TURNS',
     'confusion:BeforeMove': 'CONFUSION_HIT',
+    // Poison Touch (step G14): its randomChance(3, 10) in onSourceDamagingHit. No committed trace had one before, so
+    // the harness version stays 14 (it was an UNKNOWN draw, which the converter refuses).
+    'poisontouch:DamagingHit': 'POISON_TOUCH',
 };
 
 // The event a draw happens in (innermost last), tracked by wrapping the

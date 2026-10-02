@@ -75,6 +75,11 @@ checks its precondition and fails loudly otherwise:
 Shuffle draws (SPEED_TIE queue) are made relative to the shuffled group:
 random(i, n) with i and n counted from the group's first index.
 
+Poison Touch's roll (POOL data, step G14: randomChance(3, 10) in data/abilities.ts poisontouch,
+onSourceDamagingHit) is named POISON_TOUCH by ps_trace.js (the effect and the event that the
+reference is running) and kept: the engine draws it after every contact hit of a Poison Touch
+holder, also at a target that is down.
+
 Dire Claw's status pick (Team C) is recorded as SECONDARY[0,3) in context
 Hit; it becomes STATUS_PICK, and every one is kept: the engine draws it
 after each successful secondary roll, as the reference does (decision 0009
@@ -108,7 +113,7 @@ import sys
 
 SITES = {'SPEED_TIE': 1, 'ACCURACY': 2, 'CRIT': 3, 'DAMAGE_ROLL': 4, 'SECONDARY': 5, 'STALL': 6,
          'SLEEP_TURNS': 7, 'FREEZE_THAW': 8, 'FULL_PARALYSIS': 9, 'CONFUSION_TURNS': 10,
-         'CONFUSION_HIT': 11, 'RANDOM_TARGET': 12, 'STATUS_PICK': 13}
+         'CONFUSION_HIT': 11, 'RANDOM_TARGET': 12, 'STATUS_PICK': 13, 'POISON_TOUCH': 14}
 STATS = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe']
 GENDER = {'M': 1, 'F': 2}
 GENDERLESS = 3

@@ -772,6 +772,23 @@ class Library(unittest.TestCase):
             with self.assertRaises(trace_to_c.ConversionError):
                 trace_to_c.step_events([bad], 0, roster, [{'Pelipper': 100}] * 2, tables)
 
+    def test_poison_touch_rolls_are_kept_as_their_own_site(self):
+        """Poison Touch's randomChance(3, 10) (step G14) is a draw of the site POISON_TOUCH, random(10), that the harness
+        names by the effect and the event it runs in (ps_trace.js CONDITION_SITES) and the converter keeps as a tape entry
+        of site 14: after every contact hit of a holder, also at a target that is down or immune. The recorded battle has
+        draws below and above 3 and none outside [0, 10)."""
+        with open(os.path.join(ROOT, 'tests', 'reference', 'traces', 'g14_poison_touch.json'), encoding='utf-8') as f:
+            trace = json.load(f)
+        draws = [d for step in trace['steps'] for d in step['draws'] if d['site'] == 'POISON_TOUCH']
+        self.assertTrue(draws)
+        self.assertTrue(all((d['lo'], d['hi']) == (0, 10) and 0 <= d['value'] < 10 for d in draws))
+        self.assertTrue(any(d['value'] < 3 for d in draws) and any(d['value'] >= 3 for d in draws))
+        self.assertEqual(trace_to_c.SITES['POISON_TOUCH'], 14)
+        for d in draws:
+            self.assertEqual(trace_to_c.tape_entry(d), (14, 0, 10, d['value']))
+        # No draw of the battle is unclassified.
+        self.assertFalse([d for step in trace['steps'] for d in step['draws'] if d['site'] == 'UNKNOWN'])
+
     def test_a_two_turn_lock_lasts_while_twoturnmove_stands(self):
         """Electro Shot's onTryMove removes the move's volatile on the locked turn and the recorder's `locked` is made of
         it, but twoturnmove stays until the residual. In the last step of d02 (Emergency Exit) and d03 (Parting Shot,
