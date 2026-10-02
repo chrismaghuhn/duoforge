@@ -224,9 +224,20 @@ def boosts_of(text):
     return vec
 
 
-def parse_move(mid, base, champ, ext=False):
+def modelled(table, key, mid, what):
+    """The code of a name that the tables model. Anything else fails with a message, never as a KeyError."""
+    if key not in table:
+        fail('move %s: %s %s is not modelled' % (mid, what, key))
+    return table[key]
+
+
+def parse_move(mid, base, champ, ext=False, pool=False):
     """ext: the extended tables' encodings (decision 0009); the closure mode
-    keeps exactly the closure's."""
+    keeps exactly the closure's. pool: the pool tables' encodings (decision
+    0015), which are the extended ones plus the named handlers of G2_HANDLERS:
+    a move whose callbacks or fields the tables do not model is mapped
+    deliberately to one of them, and anything else still fails."""
+    ext = ext or pool
     e = base.entry(mid)
     if e is None:
         fail('move %s not found' % mid)
@@ -239,13 +250,25 @@ def parse_move(mid, base, champ, ext=False):
             fail('champions override of %s does not inherit' % mid)
         f.update(cf)
         refs.append(champ.ref(mid))
-    handled = (SPECIAL_C if ext else SPECIAL).get(mid, ('NONE', set()))
+    handled = (SPECIAL_P if pool else SPECIAL_C if ext else SPECIAL).get(mid, ('NONE', set()))
     owned_fields = SPECIAL_FIELDS_C.get(handled[0], set()) if ext else set()
+    # What a pool handler owns: data fields and a secondary that only it consumes, each of which must be present and
+    # exactly the pinned text, and a condition block (the callbacks inside it are code, not data).
+    owned = G2_OWNED_FIELDS.get(handled[0], {}) if pool else {}
+    owned_secondary = G2_OWNED_SECONDARY.get(handled[0]) if pool else None
+    owns_condition = pool and handled[0] in G2_OWNED_CONDITION
+    for name, text in owned.items():
+        if name not in f or norm(f[name][1]) != text:
+            fail('move %s: %s is not "%s"' % (mid, name, text))
+    if owned_secondary is not None and ('secondary' not in f or norm(f['secondary'][1]) != owned_secondary):
+        fail('move %s: the secondary is not "%s"' % (mid, owned_secondary))
+    if owns_condition and 'condition' not in f:
+        fail('move %s: expected a condition block' % mid)
     for name, (is_fn, _text) in f.items():
         if is_fn:
             if name not in handled[1]:
                 fail('move %s: callback %s is not mapped to a handler' % (mid, name))
-        elif name not in DATA_KEYS and name not in IGNORED_KEYS and name not in owned_fields:
+        elif name not in DATA_KEYS and name not in IGNORED_KEYS and name not in owned_fields and name not in owned:
             fail('move %s: unknown field %s' % (mid, name))
     missing = handled[1] - set(n for n, v in f.items() if v[0])
     if missing:
@@ -259,7 +282,7 @@ def parse_move(mid, base, champ, ext=False):
     for fl in re.findall(r'(\w+): 1', f['flags'][1]):
         if fl in flag_bits:
             flags |= flag_bits[fl]
-        elif fl not in IGNORED_FLAGS:
+        elif fl not in IGNORED_FLAGS and not (pool and fl in G2_IGNORED_FLAGS):
             fail('move %s: unknown flag %s' % (mid, fl))
     for key, bit in EXTRA_FLAG_BITS.items():
         if get(key, False):
@@ -281,7 +304,7 @@ def parse_move(mid, base, champ, ext=False):
         'crit_ratio': get('critRatio', 1), 'flags': flags,
         'recoil': [0, 0], 'drain': [0, 0], 'sec_chance': 0, 'sec_kind': 0, 'sec_param': 0,
         'boost_role': 0, 'boosts': [0] * 7, 'primary_status': 0, 'side_condition': 0, 'pseudo_weather': 0,
-        'special': (SPECIAL_IDS_C if ext else SPECIAL_IDS).index(handled[0]),
+        'special': (SPECIAL_IDS_P if pool else SPECIAL_IDS_C if ext else SPECIAL_IDS).index(handled[0]),
     }
     for key in ('recoil', 'drain'):
         if key in f:
@@ -290,7 +313,7 @@ def parse_move(mid, base, champ, ext=False):
                 fail('move %s: %s is not a fraction' % (mid, key))
             rec[key] = nums
     vectors = 0
-    if 'secondary' in f:
+    if 'secondary' in f and owned_secondary is None:
         # The whole secondary must be one modelled effect; anything else (a
         # self block, a callback, several effects) fails instead of being misread.
         sec = re.fullmatch(r'secondary: \{ chance: (\d+), (.*) \},', ' '.join(f['secondary'][1].split()))
@@ -300,9 +323,9 @@ def parse_move(mid, base, champ, ext=False):
         st = re.fullmatch(r"status: '(\w+)',", effect)
         vo = re.fullmatch(r"volatileStatus: '(\w+)',", effect)
         if st:
-            rec['sec_kind'], rec['sec_param'] = 2, STATUS[st.group(1)]
+            rec['sec_kind'], rec['sec_param'] = 2, modelled(STATUS, st.group(1), mid, 'secondary status')
         elif vo:
-            rec['sec_kind'], rec['sec_param'] = 3, VOLATILE[vo.group(1)]
+            rec['sec_kind'], rec['sec_param'] = 3, modelled(VOLATILE, vo.group(1), mid, 'secondary volatile')
         elif re.fullmatch(r'boosts: \{ (?:(?:%s): -?\d+, )+\},' % '|'.join(BOOSTS), effect):
             rec['sec_kind'] = 1
             rec['boost_role'], rec['boosts'] = BOOST_ROLE['SECONDARY_TARGET'], boosts_of(effect)
@@ -324,16 +347,16 @@ def parse_move(mid, base, champ, ext=False):
     if vectors > 1:
         fail('move %s: more than one boost vector' % mid)
     if 'status' in f:
-        rec['primary_status'] = (STATUS_C if ext else STATUS)[get('status')]
+        rec['primary_status'] = modelled(STATUS_C if ext else STATUS, get('status'), mid, 'primary status')
     owned_volatile = SPECIAL_VOLATILE_C.get(handled[0]) if ext else None
-    if 'volatileStatus' in f and get('volatileStatus') not in ('protect', owned_volatile):
+    if 'volatileStatus' in f and 'volatileStatus' not in owned and get('volatileStatus') not in ('protect', owned_volatile):
         fail('move %s: unknown primary volatile' % mid)
-    if 'sideCondition' in f:
-        rec['side_condition'] = SIDE_CONDITION[get('sideCondition')]
+    if 'sideCondition' in f and 'sideCondition' not in owned:
+        rec['side_condition'] = modelled(SIDE_CONDITION, get('sideCondition'), mid, 'side condition')
     if 'pseudoWeather' in f:
-        rec['pseudo_weather'] = PSEUDO_WEATHER[get('pseudoWeather')]
+        rec['pseudo_weather'] = modelled(PSEUDO_WEATHER, get('pseudoWeather'), mid, 'pseudo weather')
     if 'condition' in f and not (rec['side_condition'] or rec['pseudo_weather'] or mid == 'protect' or
-                                 owned_volatile is not None):
+                                 owned_volatile is not None or owns_condition):
         fail('move %s: condition block without a known owner' % mid)
     for k in ('base_power', 'accuracy', 'pp_base', 'pp_max', 'priority', 'crit_ratio'):
         if not 0 <= rec[k] <= 255:
@@ -1109,6 +1132,62 @@ POOL_ITEMS = POOL_TYPE_BOOSTERS + POOL_RESIST_BERRIES
 # Blaze (the pinch member) and the weather and terrain setters are in the prefix.
 POOL_ABILITIES = ['pixilate', 'refrigerate', 'overgrow', 'torrent', 'swarm']
 
+# ---- Step G2 (docs/research/expansion/team-gaps.md, data/team_gaps.json "pool_rows"): every row that the 17 target
+# teams need, added at once and unmarked, after the rows of step P1. Their order is that of pool_rows. ----
+# The new formes: Pelipper, Arcanine-Hisui and Annihilape, and Floette-Eternal with its Mega forme. The set of each is
+# a real one of the survey (MC371, MC385, MC196; Floette-Eternal's two pool moves of the survey's most used). Under
+# the four frozen kinds these ids are out of range, so the set is table content that only the canonical bytes see;
+# under the POOL kinds a member's moves and ability come from dfi_pool_forme_legal.
+SETS_G2 = [
+    ('pelipper', 'drizzle', 'sitrusberry', ['weatherball', 'hurricane', 'tailwind', 'wideguard'], None),
+    ('arcaninehisui', 'rockhead', 'focussash', ['flareblitz', 'headsmash', 'extremespeed', 'protect'], None),
+    ('annihilape', 'defiant', 'choicescarf', ['closecombat', 'icepunch', 'shadowclaw', 'uturn'], None),
+    ('floetteeternal', 'flowerveil', 'floettite', ['dazzlinggleam', 'protect'], 'floettemega'),
+]
+G2_ITEMS = ['focussash', 'expertbelt', 'floettite']
+G2_ABILITIES = ['rockhead', 'flowerveil', 'fairyaura']
+G2_MOVES = ['uturn', 'rockslide', 'throatchop', 'encore', 'doubleedge', 'thunderbolt', 'scald', 'wideguard',
+            'flashcannon', 'extremespeed', 'headsmash', 'firstimpression', 'bulkup', 'liquidation', 'icepunch',
+            'shadowclaw', 'recover', 'soak', 'psychicnoise', 'drumbeating', 'lowkick', 'dazzlinggleam']
+# Nine of the 22 moves have a callback or a field that the tables do not model. As decision 0009 section 3.3 did for
+# Sucker Punch or Follow Me, each is mapped deliberately to a named handler id (the value of the move's special
+# column) that owns what the columns cannot hold, and the engine refuses it: the move stays unmarked in the support
+# manifest, and the turn code returns an error for a special it does not have. The handler may own only the
+# callbacks, fields, condition block and secondary named below, each of which must be present and, for a field or a
+# secondary, exactly this text of the pinned data; everything else about the move is read by parse_move as for any
+# other move, and anything it does not know still fails. Each step that implements one of them (G7 to G11) consumes
+# the handler id and, if it needs a column, changes the tables and the POOL fingerprint and says so.
+G2_HANDLERS = ['THROAT_CHOP', 'ENCORE', 'SCALD', 'WIDE_GUARD', 'FIRST_IMPRESSION', 'RECOVER', 'SOAK', 'PSYCHIC_NOISE',
+               'LOW_KICK']
+SPECIAL_P = dict(SPECIAL_C, **{
+    'throatchop': ('THROAT_CHOP', set()),                                 # G8a: a lockout volatile of the sound moves
+    'encore': ('ENCORE', set()),                                          # G9: the last move, a volatile, a queue change
+    'scald': ('SCALD', set()),                                            # G10b: thaws its frozen target
+    'wideguard': ('WIDE_GUARD', {'onTry', 'onHitSide'}),                  # G7: a side condition against spread moves
+    'firstimpression': ('FIRST_IMPRESSION', {'onTry', 'onDisableMove'}),  # G10a: first turn out only (Fake Out's rule)
+    'recover': ('RECOVER', set()),                                        # G10c: heals half of the maximum HP
+    'soak': ('SOAK', {'onHit'}),                                          # G11: sets the target's type to Water
+    'psychicnoise': ('PSYCHIC_NOISE', set()),                             # G8b: Heal Block on every hit target
+    'lowkick': ('LOW_KICK', {'basePowerCallback', 'onTryHit'}),           # G10d: base power by the target's weight
+})
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS
+G2_OWNED_FIELDS = {
+    'SCALD': {'thawsTarget': 'thawsTarget: true,'},
+    'RECOVER': {'heal': 'heal: [1, 2],'},
+    'ENCORE': {'volatileStatus': "volatileStatus: 'encore',"},
+    'WIDE_GUARD': {'sideCondition': "sideCondition: 'wideguard',"},
+}
+G2_OWNED_SECONDARY = {
+    'THROAT_CHOP': "secondary: { chance: 100, onHit(target) { target.addVolatile('throatchop'); }, },",
+    'PSYCHIC_NOISE': "secondary: { chance: 100, volatileStatus: 'healblock', },",
+}
+G2_OWNED_CONDITION = {'THROAT_CHOP', 'ENCORE', 'WIDE_GUARD'}
+# Move flags that the new moves carry and no row reads. `punch` is read by Iron Fist and `slicing` (already ignored)
+# by Sharpness, `allyanim` by nothing in the tables: build_pool fails if one of those readers is a pool ability,
+# because ignoring the flag would then hide a mechanic.
+G2_IGNORED_FLAGS = {'punch', 'allyanim'}
+FLAG_READERS = {'punch': 'ironfist', 'slicing': 'sharpness'}
+
 ITEM_FAMILIES = ['NONE', 'TYPE_BOOSTER', 'RESIST_BERRY']
 ABILITY_FAMILIES = ['NONE', 'ATE', 'PINCH', 'WEATHER_SETTER', 'TERRAIN_SETTER']
 FAMILY_PARAM_NONE = 0xFF
@@ -1333,10 +1412,14 @@ def learnset_moves(learn, fid):
     if e is None:
         fail('%s has no champions learnset' % fid)
     body = e[2]
-    if len(body) < 4 or body[1] != '\t\tlearnset: {' or body[-2] != '\t\t},' or body[-1] != '\t},':
+    # The entry may start with `inherit: true,`: the Champions mod then keeps the other fields of the base entry
+    # (Floette-Eternal's event data) and replaces the learnset. The validator cross-check of forme_legal decides
+    # whether the learnset is the legal one.
+    head = 2 if len(body) > 1 and body[1] == '\t\tinherit: true,' else 1
+    if len(body) < head + 3 or body[head] != '\t\tlearnset: {' or body[-2] != '\t\t},' or body[-1] != '\t},':
         fail('%s: the champions learnset entry is not a single learnset block' % fid)
     moves = []
-    for line in body[2:-2]:
+    for line in body[head + 1:-2]:
         m = LEARNSET_ENTRY.fullmatch(line)
         if m is None:
             fail('%s: a learnset line that is not "9M": %s' % (fid, line.strip()))
@@ -1435,30 +1518,69 @@ def ability_param(family, fact):
     return FAMILY_PARAM_NONE, 'DFI_FAMILY_PARAM_NONE'
 
 
+def check_flag_readers(abilities):
+    """A move flag that the tables ignore must have no reader among the pool abilities."""
+    for flag, reader in FLAG_READERS.items():
+        if any(a['id'] == reader for a in abilities):
+            fail('ability %s reads the move flag %s, which the tables ignore' % (reader, flag))
+
+
 def build_pool(root, repo, dx):
-    """The pool tables: the extended data as the prefix, then the new rows (POOL_ITEMS, POOL_ABILITIES), then the
-    family columns of every item and ability, the prefix included."""
+    """The pool tables: the extended data as the prefix, then the new rows of step P1 (POOL_ITEMS, POOL_ABILITIES),
+    then those of step G2 (G2_MOVES, G2_ITEMS, G2_ABILITIES and the formes of SETS_G2), then the family columns of
+    every item and ability and the legal moves and abilities of every forme, the prefix included."""
+    dex, moves_ts = Source(root, 'data/pokedex.ts'), Source(root, 'data/moves.ts')
+    champ_moves = Source(root, 'data/mods/champions/moves.ts')
     items_ts, champ_items = Source(root, 'data/items.ts'), Source(root, 'data/mods/champions/items.ts')
     abil_ts, champ_abil = Source(root, 'data/abilities.ts'), Source(root, 'data/mods/champions/abilities.ts')
-    learn = Source(root, 'data/mods/champions/learnsets.ts')
+    formats, learn = Source(root, 'data/mods/champions/formats-data.ts'), Source(root, 'data/mods/champions/learnsets.ts')
     legal = load_legal_pool(repo)
     items, abilities = list(dx['items']), list(dx['abilities'])
-    for iid in POOL_ITEMS:
+    for iid in POOL_ITEMS + G2_ITEMS:
         if any(i['id'] == iid for i in items):
             fail('pool item %s is already in the extended tables' % iid)
         e = items_ts.entry(iid)
         if e is None:
             fail('item %s not found' % iid)
+        text = '\n'.join(e[2])
+        if 'isNonstandard' in text and champ_items.entry(iid) is None:
+            fail('item %s is nonstandard and has no champions override' % iid)
+        stone = re.search(r'megaStone: \{ "(.*?)": "(.*?)" \}', text)
         refs = [items_ts.ref(iid)] + ([champ_items.ref(iid)] if champ_items.entry(iid) is not None else [])
-        items.append({'id': iid, 'name': re.search(r'name: "(.*?)"', '\n'.join(e[2])).group(1), 'refs': refs,
-                      'stone': None, 'mega_base': 0xFF, 'mega_forme': 0xFF})
-    for aid in POOL_ABILITIES:
+        items.append({'id': iid, 'name': re.search(r'name: "(.*?)"', text).group(1), 'refs': refs,
+                      'stone': (toid(stone.group(1)), toid(stone.group(2))) if stone else None,
+                      'mega_base': 0xFF, 'mega_forme': 0xFF})
+    for aid in POOL_ABILITIES + G2_ABILITIES:
         if any(a['id'] == aid for a in abilities):
             fail('pool ability %s is already in the extended tables' % aid)
         if abil_ts.entry(aid) is None:
             fail('ability %s not found' % aid)
         abilities.append({'id': aid, 'refs': [abil_ts.ref(aid)] + ([champ_abil.ref(aid)]
                                                                    if champ_abil.entry(aid) is not None else [])})
+    check_flag_readers(abilities)
+    moves = list(dx['moves'])
+    for mid in G2_MOVES:
+        if any(m['id'] == mid for m in moves):
+            fail('pool move %s is already in the extended tables' % mid)
+        moves.append(parse_move(mid, moves_ts, champ_moves, pool=True))
+    move_index = {m['id']: i for i, m in enumerate(moves)}
+    item_index = {it['id']: i for i, it in enumerate(items)}
+    ability_index = {ab['id']: i for i, ab in enumerate(abilities)}
+    formes = list(dx['formes'])
+    forme_index = {fo['id']: i for i, fo in enumerate(formes)}
+    first_new, n_items, n_abilities = len(formes), len(items), len(abilities)
+    build_group(SETS_G2, items, item_index, abilities, ability_index, formes, forme_index, move_index, dex, items_ts,
+                champ_items, abil_ts, champ_abil, formats, learn)
+    if (len(items), len(abilities)) != (n_items, n_abilities):
+        fail('a set of SETS_G2 holds an item or an ability that is not a pool row')
+    for fo in formes[first_new:]:
+        base = fo['id'] if not fo['is_mega'] else [s for s, _a, _i, _m, mg in SETS_G2 if mg == fo['id']][0]
+        fo['base_forme'] = forme_index[base]
+        fo['mega_forme'] = forme_index[fo['mega']] if fo['mega'] else 0xFF
+        fo['mega_item'] = fo['set_item'] if (fo['mega'] or fo['is_mega']) else 0xFF
+    for it in items[len(dx['items']):]:
+        it['mega_base'] = forme_index[it['stone'][0]] if it['stone'] else 0xFF
+        it['mega_forme'] = forme_index[it['stone'][1]] if it['stone'] else 0xFF
     for it in items:
         if it['id'] not in legal['items']:
             fail('item %s is not legal in %s (%s)' % (it['id'], FORMAT_ID, LEGAL_POOL))
@@ -1487,10 +1609,10 @@ def build_pool(root, repo, dx):
         types = sorted(c['param'] for c in item_family if c['family'] == fam)
         if types != list(range(len(TYPES))):
             fail('the %s items do not cover each of the %d types exactly once' % (fam, len(TYPES)))
-    legal_formes = forme_legal(dx['formes'], [m['id'] for m in dx['moves']], [a['id'] for a in abilities], learn,
+    legal_formes = forme_legal(formes, [m['id'] for m in moves], [a['id'] for a in abilities], learn,
                                legal['species'], abil_ts, champ_abil)
-    return dict(dx, items=items, abilities=abilities, item_family=item_family, ability_family=ability_family,
-                forme_legal=legal_formes)
+    return dict(dx, formes=formes, moves=moves, items=items, abilities=abilities, item_family=item_family,
+                ability_family=ability_family, forme_legal=legal_formes)
 
 
 def family_bytes(d):
@@ -1552,6 +1674,8 @@ def render_pool(dp, dx):
     def defines(prefix, rows, start):
         return '\n'.join('#define %s_%s %du' % (prefix, r['id'].upper(), i) for i, r in enumerate(rows) if i >= start)
 
+    new_special = '\n'.join('#define DFI_SPECIAL_%s %du' % (n, i) for i, n in enumerate(SPECIAL_IDS_P)
+                            if i >= len(SPECIAL_IDS_C))
     h = '''#ifndef DUOFORGE_DATA_POOL_TABLES_H
 #define DUOFORGE_DATA_POOL_TABLES_H
 /*
@@ -1582,15 +1706,24 @@ def render_pool(dp, dx):
 
 #include "data/extended_tables.h"
 
-/* ---- the pool has the extended formes and moves so far ---- */
+/* ---- pool formes (appended after the extended ones): step G2 ---- */
+%s
 #define DFI_POOL_FORME_COUNT %du
+
+/* ---- pool moves (appended after the extended ones): step G2 ---- */
+%s
 #define DFI_POOL_MOVE_COUNT %du
 
-/* ---- pool abilities (appended after the extended ones) ---- */
+/* ---- handlers new in the pool tables (step G2): the value of the special column of the moves that have a
+ * callback or a field that the columns do not model. The engine refuses every one of them, and so does the
+ * support manifest, which leaves the move unmarked. ---- */
+%s
+
+/* ---- pool abilities (appended after the extended ones): step P1, then step G2 ---- */
 %s
 #define DFI_POOL_ABILITY_COUNT %du
 
-/* ---- pool items (appended after the extended ones): type boosters, then resist berries ---- */
+/* ---- pool items (appended after the extended ones): step P1 (type boosters, then resist berries), then step G2 ---- */
 %s
 #define DFI_POOL_ITEM_COUNT %du
 
@@ -1674,8 +1807,10 @@ size_t dfi_pool_canonical_bytes_of(uint8_t *out, size_t capacity, uint32_t forme
 size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity);
 
 #endif
-''' % (PIN, len(dp['formes']), len(dp['moves']), defines('DFI_ABILITY', dp['abilities'], nx['abilities']),
-       len(dp['abilities']), defines('DFI_ITEM', dp['items'], nx['items']), len(dp['items']),
+''' % (PIN, defines('DFI_FORME', dp['formes'], nx['formes']), len(dp['formes']),
+       defines('DFI_MOVE', dp['moves'], nx['moves']), len(dp['moves']), new_special,
+       defines('DFI_ABILITY', dp['abilities'], nx['abilities']), len(dp['abilities']),
+       defines('DFI_ITEM', dp['items'], nx['items']), len(dp['items']),
        (len(dp['moves']) + 7) // 8, FORME_ABILITIES_MAX, len(can))
 
     def arr(vals):

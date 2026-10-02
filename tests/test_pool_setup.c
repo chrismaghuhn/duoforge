@@ -40,8 +40,8 @@
 #include "support/pool.h"
 #include "support/team_c.h"
 
-#define FP_KP_HEX "79709ac005dd63bde287a2c5dd9e29bee9ee39739002d221e7b6f76e7d919f35"
-#define FP_KPD_HEX "21e0157a99292ce41716405915fa05c635b341285031d80c1a53f69f3f95de42"
+#define FP_KP_HEX "66e30759b6b926a739e99712ec974a0774d06b640f3e3dda9014febf9e508a60"
+#define FP_KPD_HEX "3560f266a9afbb938df9cf06cd56ea26031400ffb52795e339fc7ccb0b5ae905"
 
 /* The public create under `ctx` gives `gated`, and the build without the
  * support gate `ungated`. */
@@ -113,6 +113,34 @@ static dfi_support_manifest full_manifest(void)
 {
     dfi_support_manifest m;
     memset(&m, 1, sizeof m);
+    return m;
+}
+
+/* True iff the forme learns the pool move (the bit of dfi_pool_forme_legal). */
+static bool forme_learns(uint32_t forme, uint32_t move)
+{
+    return (((uint32_t)dfi_pool_forme_legal[forme].learnable[move / 8u] >> (move % 8u)) & 1u) != 0u;
+}
+
+/* A member of base forme `forme` after the template `tpl` (nature, Stat Points): the ability id, the item (1 + its
+ * id, 0 none), `count` moves, and the gender that the forme's rule allows (male for a 50/50 forme, as the owner
+ * states them). */
+static duoforge_member_setup member_of(const duoforge_member_setup *tpl, uint32_t forme, uint32_t ability,
+                                       uint32_t item, uint32_t count, const uint32_t *moves)
+{
+    duoforge_member_setup m = *tpl;
+    const uint32_t rule = dfi_pool_formes[forme].gender_rule;
+    m.species_id = forme;
+    m.gender = rule == DFI_GENDER_RULE_FEMALE ? DUOFORGE_GENDER_FEMALE
+               : rule == DFI_GENDER_RULE_NONE ? DUOFORGE_GENDER_NONE
+                                              : DUOFORGE_GENDER_MALE;
+    m.ability = ability + 1u;
+    m.item = item;
+    m.move_count = count;
+    memset(m.moves, 0, sizeof m.moves);
+    for (uint32_t k = 0u; k < count; ++k) {
+        m.moves[k].move_id = moves[k];
+    }
     return m;
 }
 
@@ -223,7 +251,7 @@ int main(void)
             }
         }
         DF_CHECK_EQ_U64(&t, same, 0u);
-        /* The data of the kinds: the pool's counts are the extended ones so
+        /* The data of the kinds: the pool counts are those of step G2 so
          * far, and the target classes are those of the pool's moves. */
         DF_CHECK_EQ_U64(&t, kp->species_count, DFI_POOL_FORME_COUNT);
         DF_CHECK_EQ_U64(&t, kp->move_count, DFI_POOL_MOVE_COUNT);
@@ -357,9 +385,9 @@ int main(void)
      * next one is not. Every id the pool adds is out of range under the
      * CLOSURE and TEAM_C kinds, whose bounds are 11 and 16 items. */
     s = teams;
-    s.sides[0].members[3].item = DFI_POOL_ITEM_COUNT; /* Yache Berry */
-    legal(&t, kp, &s, true, "the last pool item");
-    legal(&t, kq, &s, true, "the last pool item (dev)");
+    s.sides[0].members[3].item = DFI_POOL_ITEM_COUNT; /* Floettite */
+    legal(&t, kp, &s, false, "the last pool item (Floettite, unmarked)");
+    legal(&t, kq, &s, false, "the last pool item (dev)");
     invalid(&t, kc, &s, "the last pool item under TEAM_C");
     s.sides[0].members[3].item = DFI_POOL_ITEM_COUNT + 1u;
     invalid(&t, kp, &s, "an item beyond the pool");
@@ -511,6 +539,187 @@ int main(void)
         }
     }
 
+    /* Step G2 (docs/research/expansion/data/team_gaps.json): the formes Pelipper, Arcanine-Hisui, Annihilape and
+     * Floette-Eternal under the set rule, and the 22 new moves behind the gate. Twelve of them are marked (their
+     * data runs on the existing paths, each in a reference battle under the POOL kind: g2_data_moves_a to _d), so a
+     * setup that has one is supported; the other ten (U-turn and the nine with a handler id) are unmarked, so a
+     * setup that has one is E_UNSUPPORTED after all validation. A species is complete with its base data, so a
+     * Pelipper whose ability, item and moves are marked is a supported setup. Team B's lead is replaced. */
+    {
+        static const uint32_t marked_moves[] = {DFI_MOVE_ROCKSLIDE, DFI_MOVE_DOUBLEEDGE, DFI_MOVE_THUNDERBOLT,
+                                                DFI_MOVE_FLASHCANNON, DFI_MOVE_EXTREMESPEED, DFI_MOVE_HEADSMASH,
+                                                DFI_MOVE_BULKUP, DFI_MOVE_LIQUIDATION, DFI_MOVE_ICEPUNCH,
+                                                DFI_MOVE_SHADOWCLAW, DFI_MOVE_DRUMBEATING, DFI_MOVE_DAZZLINGGLEAM};
+        const duoforge_member_setup *tpl = &teams.sides[1].members[0];
+        /* Every new move: a learner with a legal ability that is marked, with no item, on a side where it does not
+         * clash with the Species Clause. The gate function with a fully marked manifest accepts the setup (the
+         * control), and refuses it when only that move is unmarked; the real manifest decides as marked_moves says. */
+        for (uint32_t mv = DFI_EXT_MOVE_COUNT; mv < DFI_POOL_MOVE_COUNT; ++mv) {
+            bool found = false;
+            for (uint32_t pass = 0u; pass < 2u && !found; ++pass) {
+                const uint32_t side = 1u - pass;
+                for (uint32_t forme = 0u; forme < DFI_POOL_FORME_COUNT && !found; ++forme) {
+                    const dfi_forme_legal *l = &dfi_pool_forme_legal[forme];
+                    uint32_t ability = DFI_CLOSURE_NONE; /* a legal ability that is marked */
+                    for (uint32_t k = 0u; k < l->ability_count; ++k) {
+                        ability = ability == DFI_CLOSURE_NONE && dfi_support.abilities[l->abilities[k]] != 0u
+                                      ? l->abilities[k]
+                                      : ability;
+                    }
+                    if (dfi_pool_formes[forme].is_mega != 0u || !forme_learns(forme, mv) || ability == DFI_CLOSURE_NONE) {
+                        continue;
+                    }
+                    bool clash = false;
+                    for (uint32_t k = 1u; k < teams.sides[side].member_count; ++k) {
+                        clash = clash || dfi_pool_formes[teams.sides[side].members[k].species_id].dex_num ==
+                                             dfi_pool_formes[forme].dex_num;
+                    }
+                    if (clash) {
+                        continue;
+                    }
+                    found = true;
+                    bool marked = false;
+                    for (size_t k = 0u; k < sizeof marked_moves / sizeof marked_moves[0]; ++k) {
+                        marked = marked || marked_moves[k] == mv;
+                    }
+                    s = teams;
+                    s.sides[side].members[0] = member_of(&s.sides[side].members[0], forme, ability, 0u, 1u, &mv);
+                    legal(&t, kp, &s, marked, marked ? "a new move (marked)" : "a new move (unmarked)");
+                    legal(&t, kq, &s, marked, marked ? "a new move (marked, dev)" : "a new move (unmarked, dev)");
+                    invalid(&t, kc, &s, "a pool forme under TEAM_C");
+                    const dfi_support_manifest full = full_manifest();
+                    DF_CHECK(&t, dfi_closure_setup_supported(&full, &s));
+                    dfi_support_manifest without = full;
+                    without.moves[mv] = 0u;
+                    DF_CHECK(&t, !dfi_closure_setup_supported(&without, &s));
+                    DF_CHECK_EQ_U64(&t, dfi_closure_setup_supported(&dfi_support, &s) ? 1u : 0u, marked ? 1u : 0u);
+                    DF_CHECK_EQ_U64(&t, dfi_support.moves[mv] != 0u ? 1u : 0u, marked ? 1u : 0u);
+                }
+            }
+            if (!DF_CHECK(&t, found)) {
+                fprintf(stderr, "  no learner of the new move %u\n", mv);
+            }
+        }
+
+        /* Pelipper: Drizzle only (Keen Eye and Rain Dish are not pool abilities), every move marked and Mystic Water
+         * (Politoed's, who is replaced): a supported setup. Wide Guard is the one unmarked move of its usual set. */
+        static const uint32_t pelipper_moves[4] = {DFI_MOVE_WEATHERBALL, DFI_MOVE_HURRICANE, DFI_MOVE_TAILWIND,
+                                                   DFI_MOVE_PROTECT};
+        s = teams;
+        s.sides[1].members[0] = member_of(tpl, DFI_FORME_PELIPPER, DFI_ABILITY_DRIZZLE, DFI_ITEM_MYSTICWATER + 1u, 4u,
+                                          pelipper_moves);
+        legal(&t, kp, &s, true, "Pelipper with Drizzle and marked moves");
+        legal(&t, kq, &s, true, "Pelipper (dev)");
+        invalid(&t, k1, &s, "Pelipper under CLOSURE");
+        invalid(&t, kc, &s, "Pelipper under TEAM_C");
+        s.sides[1].members[0].moves[3].move_id = DFI_MOVE_WIDEGUARD;
+        legal(&t, kp, &s, false, "Pelipper with Wide Guard (legal, unmarked)");
+        s.sides[1].members[0].moves[3].move_id = DFI_MOVE_PROTECT;
+        s.sides[1].members[0].ability = DFI_ABILITY_OVERGROW + 1u;
+        invalid(&t, kp, &s, "Pelipper with Overgrow");
+        s.sides[1].members[0].ability = DFI_ABILITY_DRIZZLE + 1u;
+        s.sides[1].members[0].moves[3].move_id = DFI_MOVE_ELECTROSHOT; /* Archaludon's: Pelipper does not learn it */
+        invalid(&t, kp, &s, "Pelipper with Electro Shot");
+
+        /* Arcanine-Hisui: Intimidate, Flash Fire and Rock Head (the last unmarked); not Defiant. */
+        static const uint32_t arcanine_moves[4] = {DFI_MOVE_FLAREBLITZ, DFI_MOVE_PROTECT, DFI_MOVE_HEATWAVE,
+                                                   DFI_MOVE_HYPERVOICE};
+        static const struct {
+            uint32_t ability;
+            int supported; /* 1 supported, 0 legal but unmarked, -1 not legal */
+            const char *what;
+        } arcanine[] = {
+            {DFI_ABILITY_INTIMIDATE, 1, "Arcanine-Hisui with Intimidate"},
+            {DFI_ABILITY_FLASHFIRE, 1, "Arcanine-Hisui with Flash Fire"},
+            {DFI_ABILITY_ROCKHEAD, 0, "Arcanine-Hisui with Rock Head (unmarked)"},
+            {DFI_ABILITY_DEFIANT, -1, "Arcanine-Hisui with Defiant"},
+        };
+        for (size_t i = 0u; i < sizeof arcanine / sizeof arcanine[0]; ++i) {
+            s = teams;
+            s.sides[1].members[0] = member_of(tpl, DFI_FORME_ARCANINEHISUI, arcanine[i].ability,
+                                              DFI_ITEM_MYSTICWATER + 1u, 4u, arcanine_moves);
+            if (arcanine[i].supported < 0) {
+                invalid(&t, kp, &s, arcanine[i].what);
+            } else {
+                legal(&t, kp, &s, arcanine[i].supported == 1, arcanine[i].what);
+            }
+        }
+        /* Focus Sash is unmarked, and a genderless Arcanine-Hisui is not legal. */
+        s = teams;
+        s.sides[1].members[0] = member_of(tpl, DFI_FORME_ARCANINEHISUI, DFI_ABILITY_INTIMIDATE, DFI_ITEM_FOCUSSASH + 1u,
+                                          4u, arcanine_moves);
+        legal(&t, kp, &s, false, "Arcanine-Hisui with a Focus Sash");
+        s.sides[1].members[0].item = DFI_ITEM_EXPERTBELT + 1u;
+        legal(&t, kp, &s, false, "Arcanine-Hisui with an Expert Belt");
+        s.sides[1].members[0].item = 0u;
+        legal(&t, kp, &s, true, "Arcanine-Hisui without an item");
+        s.sides[1].members[0].gender = DUOFORGE_GENDER_NONE;
+        invalid(&t, kp, &s, "genderless Arcanine-Hisui");
+
+        /* Annihilape: Defiant (marked), Choice Scarf (marked); Ice Punch, Shadow Claw and U-turn are unmarked. */
+        static const uint32_t annihilape_moves[4] = {DFI_MOVE_CLOSECOMBAT, DFI_MOVE_PROTECT, DFI_MOVE_SHADOWBALL,
+                                                     DFI_MOVE_HELPINGHAND};
+        s = teams;
+        s.sides[1].members[0] = member_of(tpl, DFI_FORME_ANNIHILAPE, DFI_ABILITY_DEFIANT, DFI_ITEM_CHOICESCARF + 1u, 4u,
+                                          annihilape_moves);
+        legal(&t, kp, &s, true, "Annihilape with marked moves");
+        s.sides[1].members[0].moves[3].move_id = DFI_MOVE_ICEPUNCH;
+        legal(&t, kp, &s, true, "Annihilape with Ice Punch (marked in G2)");
+        s.sides[1].members[0].moves[3].move_id = DFI_MOVE_UTURN;
+        legal(&t, kp, &s, false, "Annihilape with U-turn (unmarked: its switch cause is G5)");
+        s.sides[1].members[0].moves[3].move_id = DFI_MOVE_FLAREBLITZ; /* Annihilape does not learn it */
+        invalid(&t, kp, &s, "Annihilape with Flare Blitz");
+
+        /* Floette-Eternal is female only; its Mega forme is reached in battle, never set up. Flower Veil, Floettite
+         * and the Mega's Fairy Aura are all unmarked, so the setup is E_UNSUPPORTED until each is. */
+        static const uint32_t floette_moves[2] = {DFI_MOVE_PROTECT, DFI_MOVE_DAZZLINGGLEAM};
+        s = teams;
+        s.sides[1].members[0] = member_of(tpl, DFI_FORME_FLOETTEETERNAL, DFI_ABILITY_FLOWERVEIL,
+                                          DFI_ITEM_FLOETTITE + 1u, 2u, floette_moves);
+        DF_CHECK_EQ_U64(&t, s.sides[1].members[0].gender, DUOFORGE_GENDER_FEMALE);
+        legal(&t, kp, &s, false, "Floette-Eternal with Floettite (legal, unmarked)");
+        {
+            dfi_support_manifest m = full_manifest();
+            DF_CHECK(&t, dfi_closure_setup_supported(&m, &s));
+            m.abilities[DFI_ABILITY_FAIRYAURA] = 0u; /* the ability the Mega forme brings */
+            DF_CHECK(&t, !dfi_closure_setup_supported(&m, &s));
+            m = full_manifest();
+            m.items[DFI_ITEM_FLOETTITE] = 0u;
+            DF_CHECK(&t, !dfi_closure_setup_supported(&m, &s));
+            m = full_manifest();
+            m.abilities[DFI_ABILITY_FLOWERVEIL] = 0u;
+            DF_CHECK(&t, !dfi_closure_setup_supported(&m, &s));
+        }
+        s.sides[1].members[0].gender = DUOFORGE_GENDER_MALE;
+        invalid(&t, kp, &s, "male Floette-Eternal");
+        s.sides[1].members[0].gender = DUOFORGE_GENDER_FEMALE;
+        s.sides[1].members[0].species_id = DFI_FORME_FLOETTEMEGA;
+        invalid(&t, kp, &s, "Floette-Mega set up");
+        s.sides[1].members[0].species_id = DFI_FORME_FLOETTEETERNAL;
+        s.sides[1].members[0].ability = DFI_ABILITY_FAIRYAURA + 1u; /* the Mega's ability, not the base forme's */
+        invalid(&t, kp, &s, "Floette-Eternal with Fairy Aura");
+        s.sides[1].members[0].ability = DFI_ABILITY_FLOWERVEIL + 1u;
+
+        /* The states of the new formes are valid in a POOL state, and decode back. */
+        s = teams;
+        s.sides[1].members[0] = member_of(tpl, DFI_FORME_FLOETTEETERNAL, DFI_ABILITY_FLOWERVEIL,
+                                          DFI_ITEM_FLOETTITE + 1u, 2u, floette_moves);
+        s.sides[1].members[1] = member_of(tpl, DFI_FORME_ANNIHILAPE, DFI_ABILITY_DEFIANT, DFI_ITEM_CHOICESCARF + 1u, 4u,
+                                          annihilape_moves);
+        duoforge_battle *w = NULL;
+        duoforge_decision_bundle bd;
+        DF_CHECK(&t, dfi_battle_create_ungated(kp, &s, &w) == DUOFORGE_OK && w != NULL);
+        if (w != NULL) {
+            expect_inv(&t, kp, w, DFI_INV_NONE, "Floette-Eternal and Annihilape in a POOL state");
+            expect_decode(&t, kp, w, DUOFORGE_OK, DFI_INV_NONE, "Floette-Eternal and Annihilape");
+            DF_CHECK_EQ_U64(&t, w->sides[1].members[0].mega_capable, 1u);
+            DF_CHECK_EQ_U64(&t, w->sides[1].members[0].moves[1].pp_max, dfi_pool_moves[DFI_MOVE_DAZZLINGGLEAM].pp_max);
+            team_bundle(&bd, w);
+            step_expect(&t, kp, w, &bd, DUOFORGE_E_UNSUPPORTED, "team selection with Floettite");
+            duoforge_battle_destroy(w);
+        }
+    }
+
     /* The gate. A new item is marked since step P2: one member per family
      * is legal and supported under POOL and POOL_DEV, and E_INVALID_ARGUMENT
      * under every other kind (above). */
@@ -560,8 +769,8 @@ int main(void)
             DF_CHECK_EQ_U64(&t, dfi_support.abilities[added[i]], 0u);
         }
         /* An item: marked, so supported; an unmarked one (the manifest
-         * copied and edited, for every new id) is gone. */
-        for (uint32_t id = DFI_EXT_ITEM_COUNT; id < DFI_POOL_ITEM_COUNT; ++id) {
+         * copied and edited, for every P2 item) is gone. Focus Sash, Expert Belt and Floettite (G2) are unmarked. */
+        for (uint32_t id = DFI_EXT_ITEM_COUNT; id < DFI_ITEM_FOCUSSASH; ++id) {
             s = teams;
             s.sides[0].members[0].item = id + 1u;
             DF_CHECK(&t, dfi_closure_setup_supported(&dfi_support, &s));
@@ -659,7 +868,7 @@ int main(void)
         w->sides[0].members[3].item_consumed = 1u;
         expect_inv(&t, kp, w, DFI_INV_NONE, "a consumed pool item");
         duoforge_battle_destroy(w);
-        /* A Species of the pool beyond its 23 formes is out of range. */
+        /* A Species of the pool beyond its 28 formes is out of range. */
         w = df_make_battle(kp, &teams);
         w->sides[0].members[0].species_id = (uint16_t)DFI_POOL_FORME_COUNT;
         expect_inv(&t, kp, w, DFI_INV_SPECIES_RANGE, "a species beyond the pool");

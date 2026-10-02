@@ -21,6 +21,15 @@
  * legal_pool.json (every species with every single move, and its legal
  * abilities), not from the Champions learnsets that the generator parses:
  * the two sources agree. The set of every forme is among them.
+ *
+ * Step G2 adds every row that the 17 target teams need (docs/research/expansion/
+ * data/team_gaps.json "pool_rows"): the formes Pelipper, Arcanine-Hisui,
+ * Annihilape, Floette-Eternal and Floette-Mega, 22 moves, the items Focus Sash,
+ * Expert Belt and Floettite and the abilities Rock Head, Flower Veil and Fairy
+ * Aura. Their values are literal, as the pin has them; nine of the moves have a
+ * callback or a field that the columns do not model and carry a named handler id
+ * in the special column. The items and abilities are unmarked in the support
+ * manifest; twelve moves are marked, and U-turn and the nine handler moves are not.
  */
 #include <stdio.h>
 #include <string.h>
@@ -34,7 +43,7 @@
 #include "state/battle_internal.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "339834fa89c91b20ac6a5fb60d7ce6cba68645d606724c18da980d0c5e7c3288"
+#define POOL_HASH_HEX "1d402745eba5e5e0b4878fee1e8d0aa10db8875a0ef1077a625358db791cea68"
 
 typedef struct family_case {
     uint32_t id;
@@ -118,7 +127,7 @@ static const family_case new_abilities[] = {
 typedef struct legal_case {
     uint32_t forme;
     uint32_t move_count;
-    uint32_t moves[16];
+    uint32_t moves[32];
     uint32_t ability_count;
     uint32_t abilities[3];
 } legal_case;
@@ -128,102 +137,263 @@ typedef struct legal_case {
  * pokedex's slot order. The abilities of the pokedex that the pool does not
  * have (Reckless, Solar Power, Moxie, ...) are not listed. */
 static const legal_case legal_formes[] = {
-    {DFI_FORME_RILLABOOM, 10, {
+    {DFI_FORME_RILLABOOM, 15, {
         DFI_MOVE_WOODHAMMER, DFI_MOVE_GRASSYGLIDE, DFI_MOVE_FAKEOUT, DFI_MOVE_HIGHHORSEPOWER, DFI_MOVE_PROTECT,
-        DFI_MOVE_SWORDSDANCE, DFI_MOVE_FOCUSBLAST, DFI_MOVE_SNARL, DFI_MOVE_GRASSKNOT, DFI_MOVE_HYPERVOICE
+        DFI_MOVE_SWORDSDANCE, DFI_MOVE_FOCUSBLAST, DFI_MOVE_SNARL, DFI_MOVE_GRASSKNOT, DFI_MOVE_HYPERVOICE,
+        DFI_MOVE_UTURN, DFI_MOVE_DOUBLEEDGE, DFI_MOVE_BULKUP, DFI_MOVE_DRUMBEATING, DFI_MOVE_LOWKICK
      },
      2, {DFI_ABILITY_OVERGROW, DFI_ABILITY_GRASSYSURGE}},
-    {DFI_FORME_STARAPTOR, 8, {
+    {DFI_FORME_STARAPTOR, 11, {
         DFI_MOVE_BRAVEBIRD, DFI_MOVE_CLOSECOMBAT, DFI_MOVE_TAILWIND, DFI_MOVE_PROTECT, DFI_MOVE_FOCUSBLAST,
-        DFI_MOVE_HEATWAVE, DFI_MOVE_HURRICANE, DFI_MOVE_HELPINGHAND
+        DFI_MOVE_HEATWAVE, DFI_MOVE_HURRICANE, DFI_MOVE_HELPINGHAND, DFI_MOVE_UTURN, DFI_MOVE_DOUBLEEDGE,
+        DFI_MOVE_BULKUP
      },
      1, {DFI_ABILITY_INTIMIDATE}},
-    {DFI_FORME_MILOTIC, 11, {
+    {DFI_FORME_MILOTIC, 14, {
         DFI_MOVE_PROTECT, DFI_MOVE_MUDDYWATER, DFI_MOVE_COIL, DFI_MOVE_ICEBEAM, DFI_MOVE_HYPNOSIS,
         DFI_MOVE_WEATHERBALL, DFI_MOVE_IRONHEAD, DFI_MOVE_DRAGONPULSE, DFI_MOVE_LIGHTSCREEN, DFI_MOVE_HELPINGHAND,
-        DFI_MOVE_FLIPTURN
+        DFI_MOVE_FLIPTURN, DFI_MOVE_DOUBLEEDGE, DFI_MOVE_SCALD, DFI_MOVE_RECOVER
      },
      1, {DFI_ABILITY_COMPETITIVE}},
-    {DFI_FORME_CERULEDGE, 12, {
+    {DFI_FORME_CERULEDGE, 15, {
         DFI_MOVE_CLOSECOMBAT, DFI_MOVE_PROTECT, DFI_MOVE_BITTERBLADE, DFI_MOVE_SHADOWSNEAK, DFI_MOVE_SWORDSDANCE,
         DFI_MOVE_SHADOWBALL, DFI_MOVE_IRONHEAD, DFI_MOVE_HEATWAVE, DFI_MOVE_REFLECT, DFI_MOVE_LIGHTSCREEN,
-        DFI_MOVE_FLAREBLITZ, DFI_MOVE_HELPINGHAND
+        DFI_MOVE_FLAREBLITZ, DFI_MOVE_HELPINGHAND, DFI_MOVE_THROATCHOP, DFI_MOVE_BULKUP, DFI_MOVE_SHADOWCLAW
      },
      1, {DFI_ABILITY_FLASHFIRE}},
-    {DFI_FORME_RAICHU, 9, {
+    {DFI_FORME_RAICHU, 12, {
         DFI_MOVE_FAKEOUT, DFI_MOVE_PROTECT, DFI_MOVE_ZAPCANNON, DFI_MOVE_FOCUSBLAST, DFI_MOVE_NASTYPLOT,
-        DFI_MOVE_GRASSKNOT, DFI_MOVE_REFLECT, DFI_MOVE_LIGHTSCREEN, DFI_MOVE_HELPINGHAND
+        DFI_MOVE_GRASSKNOT, DFI_MOVE_REFLECT, DFI_MOVE_LIGHTSCREEN, DFI_MOVE_HELPINGHAND, DFI_MOVE_ENCORE,
+        DFI_MOVE_THUNDERBOLT, DFI_MOVE_DAZZLINGGLEAM
      },
      1, {DFI_ABILITY_LIGHTNINGROD}},
-    {DFI_FORME_GHOLDENGO, 9, {
+    {DFI_FORME_GHOLDENGO, 14, {
         DFI_MOVE_PROTECT, DFI_MOVE_FOCUSBLAST, DFI_MOVE_MAKEITRAIN, DFI_MOVE_SHADOWBALL, DFI_MOVE_NASTYPLOT,
-        DFI_MOVE_IRONHEAD, DFI_MOVE_PSYCHIC, DFI_MOVE_REFLECT, DFI_MOVE_LIGHTSCREEN
+        DFI_MOVE_IRONHEAD, DFI_MOVE_PSYCHIC, DFI_MOVE_REFLECT, DFI_MOVE_LIGHTSCREEN, DFI_MOVE_THUNDERBOLT,
+        DFI_MOVE_FLASHCANNON, DFI_MOVE_RECOVER, DFI_MOVE_LOWKICK, DFI_MOVE_DAZZLINGGLEAM
      },
      1, {DFI_ABILITY_GOODASGOLD}},
-    {DFI_FORME_POLITOED, 9, {
+    {DFI_FORME_POLITOED, 14, {
         DFI_MOVE_PROTECT, DFI_MOVE_MUDDYWATER, DFI_MOVE_ICEBEAM, DFI_MOVE_HYPNOSIS, DFI_MOVE_FOCUSBLAST,
-        DFI_MOVE_WEATHERBALL, DFI_MOVE_PSYCHIC, DFI_MOVE_HYPERVOICE, DFI_MOVE_HELPINGHAND
+        DFI_MOVE_WEATHERBALL, DFI_MOVE_PSYCHIC, DFI_MOVE_HYPERVOICE, DFI_MOVE_HELPINGHAND, DFI_MOVE_ENCORE,
+        DFI_MOVE_DOUBLEEDGE, DFI_MOVE_LIQUIDATION, DFI_MOVE_ICEPUNCH, DFI_MOVE_LOWKICK
      },
      1, {DFI_ABILITY_DRIZZLE}},
-    {DFI_FORME_GOLISOPOD, 12, {
+    {DFI_FORME_GOLISOPOD, 21, {
         DFI_MOVE_CLOSECOMBAT, DFI_MOVE_PROTECT, DFI_MOVE_MUDDYWATER, DFI_MOVE_ICEBEAM, DFI_MOVE_SWORDSDANCE,
         DFI_MOVE_FOCUSBLAST, DFI_MOVE_LEECHLIFE, DFI_MOVE_IRONHEAD, DFI_MOVE_DRILLRUN, DFI_MOVE_SNARL,
-        DFI_MOVE_SUCKERPUNCH, DFI_MOVE_AQUAJET
+        DFI_MOVE_SUCKERPUNCH, DFI_MOVE_AQUAJET, DFI_MOVE_UTURN, DFI_MOVE_ROCKSLIDE, DFI_MOVE_THROATCHOP,
+        DFI_MOVE_SCALD, DFI_MOVE_WIDEGUARD, DFI_MOVE_FIRSTIMPRESSION, DFI_MOVE_BULKUP, DFI_MOVE_LIQUIDATION,
+        DFI_MOVE_SHADOWCLAW
      },
      1, {DFI_ABILITY_EMERGENCYEXIT}},
-    {DFI_FORME_ARCHALUDON, 9, {
+    {DFI_FORME_ARCHALUDON, 13, {
         DFI_MOVE_PROTECT, DFI_MOVE_SWORDSDANCE, DFI_MOVE_IRONHEAD, DFI_MOVE_DRAGONPULSE, DFI_MOVE_ELECTROSHOT,
-        DFI_MOVE_SNARL, DFI_MOVE_REFLECT, DFI_MOVE_LIGHTSCREEN, DFI_MOVE_DRACOMETEOR
+        DFI_MOVE_SNARL, DFI_MOVE_REFLECT, DFI_MOVE_LIGHTSCREEN, DFI_MOVE_DRACOMETEOR, DFI_MOVE_ROCKSLIDE,
+        DFI_MOVE_DOUBLEEDGE, DFI_MOVE_THUNDERBOLT, DFI_MOVE_FLASHCANNON
      },
      1, {DFI_ABILITY_STAMINA}},
-    {DFI_FORME_FARIGIRAF, 12, {
+    {DFI_FORME_FARIGIRAF, 17, {
         DFI_MOVE_HIGHHORSEPOWER, DFI_MOVE_PROTECT, DFI_MOVE_SHADOWBALL, DFI_MOVE_NASTYPLOT, DFI_MOVE_IRONHEAD,
         DFI_MOVE_PSYCHIC, DFI_MOVE_GRASSKNOT, DFI_MOVE_TRICKROOM, DFI_MOVE_REFLECT, DFI_MOVE_LIGHTSCREEN,
-        DFI_MOVE_HYPERVOICE, DFI_MOVE_HELPINGHAND
+        DFI_MOVE_HYPERVOICE, DFI_MOVE_HELPINGHAND, DFI_MOVE_DOUBLEEDGE, DFI_MOVE_THUNDERBOLT,
+        DFI_MOVE_PSYCHICNOISE, DFI_MOVE_LOWKICK, DFI_MOVE_DAZZLINGGLEAM
      },
      1, {DFI_ABILITY_ARMORTAIL}},
-    {DFI_FORME_CHARIZARD, 9, {
+    {DFI_FORME_CHARIZARD, 12, {
         DFI_MOVE_PROTECT, DFI_MOVE_SWORDSDANCE, DFI_MOVE_FOCUSBLAST, DFI_MOVE_WEATHERBALL, DFI_MOVE_DRAGONPULSE,
-        DFI_MOVE_HEATWAVE, DFI_MOVE_HURRICANE, DFI_MOVE_FLAREBLITZ, DFI_MOVE_HELPINGHAND
+        DFI_MOVE_HEATWAVE, DFI_MOVE_HURRICANE, DFI_MOVE_FLAREBLITZ, DFI_MOVE_HELPINGHAND, DFI_MOVE_ROCKSLIDE,
+        DFI_MOVE_DOUBLEEDGE, DFI_MOVE_SHADOWCLAW
      },
      1, {DFI_ABILITY_BLAZE}},
-    {DFI_FORME_GRIMMSNARL, 10, {
+    {DFI_FORME_GRIMMSNARL, 16, {
         DFI_MOVE_FAKEOUT, DFI_MOVE_PROTECT, DFI_MOVE_FOCUSBLAST, DFI_MOVE_NASTYPLOT, DFI_MOVE_LEECHLIFE,
-        DFI_MOVE_SPIRITBREAK, DFI_MOVE_REFLECT, DFI_MOVE_LIGHTSCREEN, DFI_MOVE_PARTINGSHOT, DFI_MOVE_SUCKERPUNCH
+        DFI_MOVE_SPIRITBREAK, DFI_MOVE_REFLECT, DFI_MOVE_LIGHTSCREEN, DFI_MOVE_PARTINGSHOT, DFI_MOVE_SUCKERPUNCH,
+        DFI_MOVE_THROATCHOP, DFI_MOVE_BULKUP, DFI_MOVE_ICEPUNCH, DFI_MOVE_SHADOWCLAW, DFI_MOVE_LOWKICK,
+        DFI_MOVE_DAZZLINGGLEAM
      },
      1, {DFI_ABILITY_PRANKSTER}},
-    {DFI_FORME_SNEASLER, 9, {
+    {DFI_FORME_SNEASLER, 15, {
         DFI_MOVE_FAKEOUT, DFI_MOVE_CLOSECOMBAT, DFI_MOVE_PROTECT, DFI_MOVE_SWORDSDANCE, DFI_MOVE_FOCUSBLAST,
-        DFI_MOVE_SHADOWBALL, DFI_MOVE_NASTYPLOT, DFI_MOVE_GRASSKNOT, DFI_MOVE_DIRECLAW
+        DFI_MOVE_SHADOWBALL, DFI_MOVE_NASTYPLOT, DFI_MOVE_GRASSKNOT, DFI_MOVE_DIRECLAW, DFI_MOVE_UTURN,
+        DFI_MOVE_ROCKSLIDE, DFI_MOVE_THROATCHOP, DFI_MOVE_BULKUP, DFI_MOVE_SHADOWCLAW, DFI_MOVE_LOWKICK
      },
      1, {DFI_ABILITY_UNBURDEN}},
-    {DFI_FORME_INCINEROAR, 14, {
+    {DFI_FORME_INCINEROAR, 19, {
         DFI_MOVE_FAKEOUT, DFI_MOVE_CLOSECOMBAT, DFI_MOVE_PROTECT, DFI_MOVE_SWORDSDANCE, DFI_MOVE_FOCUSBLAST,
         DFI_MOVE_NASTYPLOT, DFI_MOVE_LEECHLIFE, DFI_MOVE_IRONHEAD, DFI_MOVE_SNARL, DFI_MOVE_HEATWAVE,
-        DFI_MOVE_PARTINGSHOT, DFI_MOVE_FLAREBLITZ, DFI_MOVE_DARKESTLARIAT, DFI_MOVE_HELPINGHAND
+        DFI_MOVE_PARTINGSHOT, DFI_MOVE_FLAREBLITZ, DFI_MOVE_DARKESTLARIAT, DFI_MOVE_HELPINGHAND,
+        DFI_MOVE_THROATCHOP, DFI_MOVE_DOUBLEEDGE, DFI_MOVE_BULKUP, DFI_MOVE_SHADOWCLAW, DFI_MOVE_LOWKICK
      },
      2, {DFI_ABILITY_BLAZE, DFI_ABILITY_INTIMIDATE}},
-    {DFI_FORME_SALAMENCE, 9, {
+    {DFI_FORME_SALAMENCE, 12, {
         DFI_MOVE_TAILWIND, DFI_MOVE_PROTECT, DFI_MOVE_IRONHEAD, DFI_MOVE_DRAGONPULSE, DFI_MOVE_HEATWAVE,
-        DFI_MOVE_HURRICANE, DFI_MOVE_HYPERVOICE, DFI_MOVE_DRACOMETEOR, DFI_MOVE_HELPINGHAND
+        DFI_MOVE_HURRICANE, DFI_MOVE_HYPERVOICE, DFI_MOVE_DRACOMETEOR, DFI_MOVE_HELPINGHAND, DFI_MOVE_ROCKSLIDE,
+        DFI_MOVE_DOUBLEEDGE, DFI_MOVE_SHADOWCLAW
      },
      1, {DFI_ABILITY_INTIMIDATE}},
-    {DFI_FORME_INDEEDEEF, 10, {
+    {DFI_FORME_INDEEDEEF, 11, {
         DFI_MOVE_FAKEOUT, DFI_MOVE_PROTECT, DFI_MOVE_SHADOWBALL, DFI_MOVE_PSYCHIC, DFI_MOVE_TRICKROOM,
-        DFI_MOVE_REFLECT, DFI_MOVE_LIGHTSCREEN, DFI_MOVE_HYPERVOICE, DFI_MOVE_FOLLOWME, DFI_MOVE_HELPINGHAND
+        DFI_MOVE_REFLECT, DFI_MOVE_LIGHTSCREEN, DFI_MOVE_HYPERVOICE, DFI_MOVE_FOLLOWME, DFI_MOVE_HELPINGHAND,
+        DFI_MOVE_DAZZLINGGLEAM
      },
      1, {DFI_ABILITY_PSYCHICSURGE}},
-    {DFI_FORME_KINGAMBIT, 8, {
+    {DFI_FORME_KINGAMBIT, 12, {
         DFI_MOVE_PROTECT, DFI_MOVE_SWORDSDANCE, DFI_MOVE_FOCUSBLAST, DFI_MOVE_IRONHEAD, DFI_MOVE_SNARL,
-        DFI_MOVE_GRASSKNOT, DFI_MOVE_KOWTOWCLEAVE, DFI_MOVE_SUCKERPUNCH
+        DFI_MOVE_GRASSKNOT, DFI_MOVE_KOWTOWCLEAVE, DFI_MOVE_SUCKERPUNCH, DFI_MOVE_THROATCHOP,
+        DFI_MOVE_FLASHCANNON, DFI_MOVE_SHADOWCLAW, DFI_MOVE_LOWKICK
      },
      1, {DFI_ABILITY_DEFIANT}},
-    {DFI_FORME_BASCULEGION, 8, {
+    {DFI_FORME_BASCULEGION, 12, {
         DFI_MOVE_PROTECT, DFI_MOVE_MUDDYWATER, DFI_MOVE_ICEBEAM, DFI_MOVE_SHADOWBALL, DFI_MOVE_LASTRESPECTS,
-        DFI_MOVE_WAVECRASH, DFI_MOVE_AQUAJET, DFI_MOVE_FLIPTURN
+        DFI_MOVE_WAVECRASH, DFI_MOVE_AQUAJET, DFI_MOVE_FLIPTURN, DFI_MOVE_DOUBLEEDGE, DFI_MOVE_HEADSMASH,
+        DFI_MOVE_LIQUIDATION, DFI_MOVE_SOAK
      },
      1, {DFI_ABILITY_ADAPTABILITY}},
+    {DFI_FORME_PELIPPER, 12, {
+        DFI_MOVE_BRAVEBIRD, DFI_MOVE_TAILWIND, DFI_MOVE_PROTECT, DFI_MOVE_MUDDYWATER, DFI_MOVE_ICEBEAM,
+        DFI_MOVE_WEATHERBALL, DFI_MOVE_HURRICANE, DFI_MOVE_HELPINGHAND, DFI_MOVE_UTURN, DFI_MOVE_WIDEGUARD,
+        DFI_MOVE_LIQUIDATION, DFI_MOVE_SOAK
+     },
+     1, {DFI_ABILITY_DRIZZLE}},
+    {DFI_FORME_ARCANINEHISUI, 13, {
+        DFI_MOVE_CLOSECOMBAT, DFI_MOVE_PROTECT, DFI_MOVE_IRONHEAD, DFI_MOVE_DRAGONPULSE, DFI_MOVE_SNARL,
+        DFI_MOVE_HEATWAVE, DFI_MOVE_FLAREBLITZ, DFI_MOVE_HYPERVOICE, DFI_MOVE_HELPINGHAND, DFI_MOVE_ROCKSLIDE,
+        DFI_MOVE_DOUBLEEDGE, DFI_MOVE_EXTREMESPEED, DFI_MOVE_HEADSMASH
+     },
+     3, {DFI_ABILITY_INTIMIDATE, DFI_ABILITY_FLASHFIRE, DFI_ABILITY_ROCKHEAD}},
+    {DFI_FORME_ANNIHILAPE, 15, {
+        DFI_MOVE_CLOSECOMBAT, DFI_MOVE_PROTECT, DFI_MOVE_FOCUSBLAST, DFI_MOVE_SHADOWBALL, DFI_MOVE_HELPINGHAND,
+        DFI_MOVE_UTURN, DFI_MOVE_ROCKSLIDE, DFI_MOVE_THROATCHOP, DFI_MOVE_ENCORE, DFI_MOVE_DOUBLEEDGE,
+        DFI_MOVE_THUNDERBOLT, DFI_MOVE_BULKUP, DFI_MOVE_ICEPUNCH, DFI_MOVE_SHADOWCLAW, DFI_MOVE_LOWKICK
+     },
+     1, {DFI_ABILITY_DEFIANT}},
+    {DFI_FORME_FLOETTEETERNAL, 6, {
+        DFI_MOVE_PROTECT, DFI_MOVE_PSYCHIC, DFI_MOVE_GRASSKNOT, DFI_MOVE_LIGHTSCREEN, DFI_MOVE_HELPINGHAND,
+        DFI_MOVE_DAZZLINGGLEAM
+     },
+     1, {DFI_ABILITY_FLOWERVEIL}},
 };
+
+/* ---- Step G2: the rows that the 17 target teams need (docs/research/expansion/data/team_gaps.json) ---- */
+
+/* The new formes, as the validator's record of docs/research/expansion/data/legal_pool.json and the pinned
+ * data/pokedex.ts have them: dex number, weight in hectograms, types, base stats, gender rule. */
+typedef struct forme_case {
+    uint32_t id;
+    const char *what;
+    uint32_t dex_num, weight_hg, type0, type1, base[6], gender_rule, is_mega;
+} forme_case;
+
+static const forme_case new_formes[] = {
+    {DFI_FORME_PELIPPER, "Pelipper", 279u, 280u, DFI_TYPE_WATER, DFI_TYPE_FLYING, {60u, 50u, 100u, 95u, 70u, 65u},
+     DFI_GENDER_RULE_ANY, 0u},
+    {DFI_FORME_ARCANINEHISUI, "Arcanine-Hisui", 59u, 1680u, DFI_TYPE_FIRE, DFI_TYPE_ROCK,
+     {95u, 115u, 80u, 95u, 80u, 90u}, DFI_GENDER_RULE_ANY, 0u},
+    {DFI_FORME_ANNIHILAPE, "Annihilape", 979u, 560u, DFI_TYPE_FIGHTING, DFI_TYPE_GHOST,
+     {110u, 115u, 80u, 50u, 90u, 90u}, DFI_GENDER_RULE_ANY, 0u},
+    {DFI_FORME_FLOETTEETERNAL, "Floette-Eternal", 670u, 9u, DFI_TYPE_FAIRY, DFI_CLOSURE_NONE,
+     {74u, 65u, 67u, 125u, 128u, 92u}, DFI_GENDER_RULE_FEMALE, 0u},
+    {DFI_FORME_FLOETTEMEGA, "Floette-Mega", 670u, 1008u, DFI_TYPE_FAIRY, DFI_CLOSURE_NONE,
+     {74u, 85u, 87u, 155u, 148u, 102u}, DFI_GENDER_RULE_FEMALE, 1u},
+};
+
+/* The new moves as the pinned data/moves.ts (and the Champions mod: First Impression's base power is 100) has them.
+ * pp_max is Champions' (calculatePP over pp capped at 20); the priority is the stored one (priority + 8); boosts are
+ * the unbiased stage changes (atk, def, spa, spd, spe, accuracy, evasion). A handler id is the special column. */
+typedef struct move_case {
+    uint32_t id;
+    const char *what;
+    uint32_t type, category, base_power, accuracy, pp_max, priority, target_class, crit_ratio, flags;
+    uint32_t recoil[2], sec_chance, sec_kind, sec_param, boost_role;
+    int32_t boosts[7];
+    uint32_t special;
+} move_case;
+
+#define NB {0, 0, 0, 0, 0, 0, 0}
+static const move_case new_moves[] = {
+    {DFI_MOVE_UTURN, "U-turn", DFI_TYPE_BUG, DFI_CATEGORY_PHYSICAL, 70u, 100u, 20u, 8u, 1u, 1u,
+     DFI_MOVE_FLAG_CONTACT | DFI_MOVE_FLAG_PROTECT | DFI_MOVE_FLAG_SELF_SWITCH, {0u, 0u}, 0u, 0u, 0u, 0u, NB, 0u},
+    {DFI_MOVE_ROCKSLIDE, "Rock Slide", DFI_TYPE_ROCK, DFI_CATEGORY_PHYSICAL, 75u, 90u, 12u, 8u,
+     DUOFORGE_TARGET_CLASS_ALL_ADJACENT_FOES, 1u, DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 30u, DFI_SECONDARY_VOLATILE,
+     DFI_VOLATILE_FLINCH, 0u, NB, 0u},
+    {DFI_MOVE_THROATCHOP, "Throat Chop", DFI_TYPE_DARK, DFI_CATEGORY_PHYSICAL, 80u, 100u, 16u, 8u, 1u, 1u,
+     DFI_MOVE_FLAG_CONTACT | DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 0u, 0u, 0u, 0u, NB, DFI_SPECIAL_THROAT_CHOP},
+    {DFI_MOVE_ENCORE, "Encore", DFI_TYPE_NORMAL, DFI_CATEGORY_STATUS, 0u, 100u, 8u, 8u, 1u, 1u, DFI_MOVE_FLAG_PROTECT,
+     {0u, 0u}, 0u, 0u, 0u, 0u, NB, DFI_SPECIAL_ENCORE},
+    {DFI_MOVE_DOUBLEEDGE, "Double-Edge", DFI_TYPE_NORMAL, DFI_CATEGORY_PHYSICAL, 120u, 100u, 16u, 8u, 1u, 1u,
+     DFI_MOVE_FLAG_CONTACT | DFI_MOVE_FLAG_PROTECT, {33u, 100u}, 0u, 0u, 0u, 0u, NB, 0u},
+    {DFI_MOVE_THUNDERBOLT, "Thunderbolt", DFI_TYPE_ELECTRIC, DFI_CATEGORY_SPECIAL, 90u, 100u, 16u, 8u, 1u, 1u,
+     DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 10u, DFI_SECONDARY_STATUS, DFI_STATUS_PAR, 0u, NB, 0u},
+    {DFI_MOVE_SCALD, "Scald", DFI_TYPE_WATER, DFI_CATEGORY_SPECIAL, 80u, 100u, 16u, 8u, 1u, 1u,
+     DFI_MOVE_FLAG_PROTECT | DFI_MOVE_FLAG_DEFROST, {0u, 0u}, 30u, DFI_SECONDARY_STATUS, DFI_STATUS_BRN, 0u, NB,
+     DFI_SPECIAL_SCALD},
+    {DFI_MOVE_WIDEGUARD, "Wide Guard", DFI_TYPE_ROCK, DFI_CATEGORY_STATUS, 0u, 0u, 12u, 11u,
+     DUOFORGE_TARGET_CLASS_ALLY_SIDE, 1u, 0u, {0u, 0u}, 0u, 0u, 0u, 0u, NB, DFI_SPECIAL_WIDE_GUARD},
+    {DFI_MOVE_FLASHCANNON, "Flash Cannon", DFI_TYPE_STEEL, DFI_CATEGORY_SPECIAL, 80u, 100u, 12u, 8u, 1u, 1u,
+     DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 10u, DFI_SECONDARY_BOOST, 0u, DFI_BOOST_ROLE_SECONDARY_TARGET,
+     {0, 0, 0, -1, 0, 0, 0}, 0u},
+    {DFI_MOVE_EXTREMESPEED, "Extreme Speed", DFI_TYPE_NORMAL, DFI_CATEGORY_PHYSICAL, 80u, 100u, 8u, 10u, 1u, 1u,
+     DFI_MOVE_FLAG_CONTACT | DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 0u, 0u, 0u, 0u, NB, 0u},
+    {DFI_MOVE_HEADSMASH, "Head Smash", DFI_TYPE_ROCK, DFI_CATEGORY_PHYSICAL, 150u, 80u, 8u, 8u, 1u, 1u,
+     DFI_MOVE_FLAG_CONTACT | DFI_MOVE_FLAG_PROTECT, {1u, 2u}, 0u, 0u, 0u, 0u, NB, 0u},
+    {DFI_MOVE_FIRSTIMPRESSION, "First Impression", DFI_TYPE_BUG, DFI_CATEGORY_PHYSICAL, 100u, 100u, 12u, 10u, 1u, 1u,
+     DFI_MOVE_FLAG_CONTACT | DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 0u, 0u, 0u, 0u, NB, DFI_SPECIAL_FIRST_IMPRESSION},
+    {DFI_MOVE_BULKUP, "Bulk Up", DFI_TYPE_FIGHTING, DFI_CATEGORY_STATUS, 0u, 0u, 20u, 8u,
+     DUOFORGE_TARGET_CLASS_SELF, 1u, 0u, {0u, 0u}, 0u, 0u, 0u, DFI_BOOST_ROLE_PRIMARY_SELF, {1, 1, 0, 0, 0, 0, 0}, 0u},
+    {DFI_MOVE_LIQUIDATION, "Liquidation", DFI_TYPE_WATER, DFI_CATEGORY_PHYSICAL, 85u, 100u, 12u, 8u, 1u, 1u,
+     DFI_MOVE_FLAG_CONTACT | DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 20u, DFI_SECONDARY_BOOST, 0u,
+     DFI_BOOST_ROLE_SECONDARY_TARGET, {0, -1, 0, 0, 0, 0, 0}, 0u},
+    {DFI_MOVE_ICEPUNCH, "Ice Punch", DFI_TYPE_ICE, DFI_CATEGORY_PHYSICAL, 75u, 100u, 16u, 8u, 1u, 1u,
+     DFI_MOVE_FLAG_CONTACT | DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 10u, DFI_SECONDARY_STATUS, DFI_STATUS_FRZ, 0u, NB, 0u},
+    {DFI_MOVE_SHADOWCLAW, "Shadow Claw", DFI_TYPE_GHOST, DFI_CATEGORY_PHYSICAL, 70u, 100u, 16u, 8u, 1u, 2u,
+     DFI_MOVE_FLAG_CONTACT | DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 0u, 0u, 0u, 0u, NB, 0u},
+    {DFI_MOVE_RECOVER, "Recover", DFI_TYPE_NORMAL, DFI_CATEGORY_STATUS, 0u, 0u, 8u, 8u, DUOFORGE_TARGET_CLASS_SELF, 1u,
+     0u, {0u, 0u}, 0u, 0u, 0u, 0u, NB, DFI_SPECIAL_RECOVER},
+    {DFI_MOVE_SOAK, "Soak", DFI_TYPE_WATER, DFI_CATEGORY_STATUS, 0u, 100u, 20u, 8u, 1u, 1u, DFI_MOVE_FLAG_PROTECT,
+     {0u, 0u}, 0u, 0u, 0u, 0u, NB, DFI_SPECIAL_SOAK},
+    {DFI_MOVE_PSYCHICNOISE, "Psychic Noise", DFI_TYPE_PSYCHIC, DFI_CATEGORY_SPECIAL, 75u, 100u, 12u, 8u, 1u, 1u,
+     DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 0u, 0u, 0u, 0u, NB, DFI_SPECIAL_PSYCHIC_NOISE},
+    {DFI_MOVE_DRUMBEATING, "Drum Beating", DFI_TYPE_GRASS, DFI_CATEGORY_PHYSICAL, 80u, 100u, 12u, 8u, 1u, 1u,
+     DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 100u, DFI_SECONDARY_BOOST, 0u, DFI_BOOST_ROLE_SECONDARY_TARGET,
+     {0, 0, 0, 0, -1, 0, 0}, 0u},
+    {DFI_MOVE_LOWKICK, "Low Kick", DFI_TYPE_FIGHTING, DFI_CATEGORY_PHYSICAL, 0u, 100u, 20u, 8u, 1u, 1u,
+     DFI_MOVE_FLAG_CONTACT | DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 0u, 0u, 0u, 0u, NB, DFI_SPECIAL_LOW_KICK},
+    {DFI_MOVE_DAZZLINGGLEAM, "Dazzling Gleam", DFI_TYPE_FAIRY, DFI_CATEGORY_SPECIAL, 80u, 100u, 12u, 8u,
+     DUOFORGE_TARGET_CLASS_ALL_ADJACENT_FOES, 1u, DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 0u, 0u, 0u, 0u, NB, 0u},
+};
+#undef NB
+
+static void check_forme_row(df_test *t, const forme_case *c)
+{
+    const dfi_forme_data *f = &dfi_pool_formes[c->id];
+    bool ok = f->dex_num == c->dex_num && f->weight_hg == c->weight_hg && f->types[0] == c->type0 &&
+              f->types[1] == c->type1 && f->gender_rule == c->gender_rule && f->is_mega == c->is_mega;
+    for (uint32_t k = 0u; k < DFI_STAT_COUNT; ++k) {
+        ok = ok && f->base[k] == c->base[k];
+    }
+    if (!DF_CHECK(t, ok)) {
+        fprintf(stderr, "  forme %s: a field differs from the pin\n", c->what);
+    }
+}
+
+static void check_move_row(df_test *t, const move_case *c)
+{
+    const dfi_move_data *m = &dfi_pool_moves[c->id];
+    bool ok = m->type == c->type && m->category == c->category && m->base_power == c->base_power &&
+              m->accuracy == c->accuracy && m->pp_max == c->pp_max && m->priority == c->priority &&
+              m->target_class == c->target_class && m->crit_ratio == c->crit_ratio && m->flags == c->flags &&
+              m->recoil[0] == c->recoil[0] && m->recoil[1] == c->recoil[1] && m->drain[0] == 0u && m->drain[1] == 0u &&
+              m->sec_chance == c->sec_chance && m->sec_kind == c->sec_kind && m->sec_param == c->sec_param &&
+              m->boost_role == c->boost_role && m->primary_status == DFI_STATUS_NONE && m->side_condition == 0u &&
+              m->pseudo_weather == 0u && m->special == c->special;
+    for (uint32_t k = 0u; k < DFI_STAGE_COUNT; ++k) {
+        ok = ok && (int32_t)m->boosts[k] - (int32_t)DFI_STAGE_BIAS == c->boosts[k];
+    }
+    if (!DF_CHECK(t, ok)) {
+        fprintf(stderr, "  move %s: a field differs from the pin\n", c->what);
+    }
+}
 
 static void check_item(df_test *t, const family_case *c)
 {
@@ -268,21 +438,29 @@ int main(void)
     const size_t n_prefix_abilities = sizeof prefix_abilities / sizeof prefix_abilities[0];
     const size_t n_new_abilities = sizeof new_abilities / sizeof new_abilities[0];
 
-    /* Counts: the extended formes and moves, 16 + 33 items (16 type boosters
-     * and 17 resist berries are new) and 21 + 5 abilities. The new ids start
-     * where the extended ones end. */
-    DF_CHECK_EQ_U64(&t, DFI_POOL_FORME_COUNT, DFI_EXT_FORME_COUNT);
-    DF_CHECK_EQ_U64(&t, DFI_POOL_MOVE_COUNT, DFI_EXT_MOVE_COUNT);
-    DF_CHECK_EQ_U64(&t, DFI_POOL_ITEM_COUNT, 49u);
-    DF_CHECK_EQ_U64(&t, DFI_POOL_ABILITY_COUNT, 26u);
+    /* Counts. Step P1 added 16 type boosters, 17 resist berries and 5 abilities (items 16 to 48, abilities 21 to 25);
+     * step G2 adds 5 formes (23 to 27), 22 moves (50 to 71), 3 items (49 to 51) and 3 abilities (26 to 28), in the
+     * order of the research's pool_rows. The new ids start where the previous ones end. */
+    DF_CHECK_EQ_U64(&t, DFI_POOL_FORME_COUNT, 28u);
+    DF_CHECK_EQ_U64(&t, DFI_POOL_MOVE_COUNT, 72u);
+    DF_CHECK_EQ_U64(&t, DFI_POOL_ITEM_COUNT, 52u);
+    DF_CHECK_EQ_U64(&t, DFI_POOL_ABILITY_COUNT, 29u);
+    DF_CHECK_EQ_U64(&t, DFI_FORME_PELIPPER, DFI_EXT_FORME_COUNT);
+    DF_CHECK_EQ_U64(&t, DFI_FORME_FLOETTEMEGA, DFI_POOL_FORME_COUNT - 1u);
+    DF_CHECK_EQ_U64(&t, DFI_MOVE_UTURN, DFI_EXT_MOVE_COUNT);
+    DF_CHECK_EQ_U64(&t, DFI_MOVE_DAZZLINGGLEAM, DFI_POOL_MOVE_COUNT - 1u);
     DF_CHECK_EQ_U64(&t, DFI_ITEM_BLACKBELT, DFI_EXT_ITEM_COUNT);
-    DF_CHECK_EQ_U64(&t, DFI_ITEM_YACHEBERRY, DFI_POOL_ITEM_COUNT - 1u);
+    DF_CHECK_EQ_U64(&t, DFI_ITEM_YACHEBERRY, DFI_ITEM_FOCUSSASH - 1u);
+    DF_CHECK_EQ_U64(&t, DFI_ITEM_FLOETTITE, DFI_POOL_ITEM_COUNT - 1u);
     DF_CHECK_EQ_U64(&t, DFI_ITEM_TWISTEDSPOON, DFI_EXT_ITEM_COUNT + 15u);
     DF_CHECK_EQ_U64(&t, DFI_ITEM_BABIRIBERRY, DFI_EXT_ITEM_COUNT + 16u);
     DF_CHECK_EQ_U64(&t, DFI_ABILITY_PIXILATE, DFI_EXT_ABILITY_COUNT);
-    DF_CHECK_EQ_U64(&t, DFI_ABILITY_SWARM, DFI_POOL_ABILITY_COUNT - 1u);
-    DF_CHECK_EQ_U64(&t, n_new_items, DFI_POOL_ITEM_COUNT - DFI_EXT_ITEM_COUNT);
-    DF_CHECK_EQ_U64(&t, n_new_abilities, DFI_POOL_ABILITY_COUNT - DFI_EXT_ABILITY_COUNT);
+    DF_CHECK_EQ_U64(&t, DFI_ABILITY_SWARM, DFI_ABILITY_ROCKHEAD - 1u);
+    DF_CHECK_EQ_U64(&t, DFI_ABILITY_FAIRYAURA, DFI_POOL_ABILITY_COUNT - 1u);
+    DF_CHECK_EQ_U64(&t, n_new_items, DFI_ITEM_FOCUSSASH - DFI_EXT_ITEM_COUNT);
+    DF_CHECK_EQ_U64(&t, n_new_abilities, DFI_ABILITY_ROCKHEAD - DFI_EXT_ABILITY_COUNT);
+    DF_CHECK_EQ_U64(&t, sizeof new_formes / sizeof new_formes[0], DFI_POOL_FORME_COUNT - DFI_EXT_FORME_COUNT);
+    DF_CHECK_EQ_U64(&t, sizeof new_moves / sizeof new_moves[0], DFI_POOL_MOVE_COUNT - DFI_EXT_MOVE_COUNT);
 
     /* The prefix is the extended tables, and so the closure, row by row. */
     {
@@ -317,7 +495,7 @@ int main(void)
         DF_CHECK_EQ_U64(&t, diff, 0u);
     }
 
-    /* The new items are no Mega Stone: no forme holds one as its stone. */
+    /* The only new Mega Stone is Floettite: Floette-Eternal holds it for Floette-Mega. */
     {
         uint32_t stones = 0u;
         for (uint32_t i = DFI_EXT_ITEM_COUNT; i < DFI_POOL_ITEM_COUNT; ++i) {
@@ -325,7 +503,38 @@ int main(void)
                           ? 1u
                           : 0u;
         }
-        DF_CHECK_EQ_U64(&t, stones, 0u);
+        DF_CHECK_EQ_U64(&t, stones, 1u);
+        DF_CHECK(&t, dfi_pool_items[DFI_ITEM_FLOETTITE].mega_base == DFI_FORME_FLOETTEETERNAL &&
+                         dfi_pool_items[DFI_ITEM_FLOETTITE].mega_forme == DFI_FORME_FLOETTEMEGA);
+        const dfi_forme_data *base = &dfi_pool_formes[DFI_FORME_FLOETTEETERNAL];
+        const dfi_forme_data *mega = &dfi_pool_formes[DFI_FORME_FLOETTEMEGA];
+        DF_CHECK(&t, base->set_item == DFI_ITEM_FLOETTITE && base->mega_item == DFI_ITEM_FLOETTITE &&
+                         base->mega_forme == DFI_FORME_FLOETTEMEGA && base->base_forme == DFI_FORME_FLOETTEETERNAL &&
+                         mega->base_forme == DFI_FORME_FLOETTEETERNAL && mega->mega_forme == DFI_CLOSURE_NONE &&
+                         mega->mega_item == DFI_ITEM_FLOETTITE && mega->ability == DFI_ABILITY_FAIRYAURA &&
+                         base->ability == DFI_ABILITY_FLOWERVEIL);
+        /* No other new forme has a Mega forme. */
+        for (uint32_t i = DFI_FORME_PELIPPER; i <= DFI_FORME_ANNIHILAPE; ++i) {
+            DF_CHECK(&t, dfi_pool_formes[i].mega_forme == DFI_CLOSURE_NONE && dfi_pool_formes[i].mega_item == DFI_CLOSURE_NONE &&
+                             dfi_pool_formes[i].base_forme == i);
+        }
+    }
+
+    /* The new formes and moves against the pin, literal values (see the cases above); every handler id of a move
+     * that the columns cannot model is a special of its own, and no other move has a special that is new. */
+    {
+        for (size_t i = 0u; i < sizeof new_formes / sizeof new_formes[0]; ++i) {
+            check_forme_row(&t, &new_formes[i]);
+        }
+        for (size_t i = 0u; i < sizeof new_moves / sizeof new_moves[0]; ++i) {
+            check_move_row(&t, &new_moves[i]);
+        }
+        uint32_t handlers = 0u;
+        for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
+            handlers += dfi_pool_moves[i].special >= DFI_SPECIAL_THROAT_CHOP ? 1u : 0u;
+        }
+        DF_CHECK_EQ_U64(&t, handlers, DFI_SPECIAL_LOW_KICK - DFI_SPECIAL_THROAT_CHOP + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_THROAT_CHOP, DFI_SPECIAL_FOLLOW_ME + 1u);
     }
 
     /* The closure and extended canonical bytes recomputed from the prefix,
@@ -368,14 +577,14 @@ int main(void)
         memset(bytes, 0xA5, sizeof bytes);
         const size_t n = dfi_pool_canonical_bytes(bytes, sizeof bytes);
         DF_CHECK_EQ_U64(&t, n, DFI_POOL_CANONICAL_SIZE);
-        /* 12 + 23 * 24 + 50 * 29 + 49 * 2 + 324 + 18 + 50, then 49 * 2 + 26 * 2,
-         * then 23 * (7 + 1 + 3) */
-        DF_CHECK_EQ_U64(&t, DFI_POOL_CANONICAL_SIZE, 2907u);
+        /* 12 + 28 * 24 + 72 * 29 + 52 * 2 + 324 + 18 + 50, then 52 * 2 + 29 * 2,
+         * then 28 * (9 + 1 + 3) */
+        DF_CHECK_EQ_U64(&t, DFI_POOL_CANONICAL_SIZE, 3794u);
         DF_CHECK(&t, bytes[DFI_POOL_CANONICAL_SIZE] == 0xA5u);
         const size_t row_bytes = dfi_pool_canonical_bytes_of(rows, sizeof rows, DFI_POOL_FORME_COUNT,
                                                              DFI_POOL_MOVE_COUNT, DFI_POOL_ITEM_COUNT,
                                                              DFI_POOL_ABILITY_COUNT, 0xFFu);
-        DF_CHECK_EQ_U64(&t, row_bytes, 2504u);
+        DF_CHECK_EQ_U64(&t, row_bytes, 3268u);
         DF_CHECK_BYTES(&t, bytes, rows, row_bytes, "pool rows");
         uint32_t at = (uint32_t)row_bytes;
         uint32_t bad = 0u;
@@ -495,7 +704,7 @@ int main(void)
      * above, a Mega forme has no learnable move and its one ability. */
     {
         DF_CHECK_EQ_U64(&t, DFI_POOL_LEARN_BYTES, (DFI_POOL_MOVE_COUNT + 7u) / 8u);
-        DF_CHECK_EQ_U64(&t, DFI_POOL_LEARN_BYTES, 7u);
+        DF_CHECK_EQ_U64(&t, DFI_POOL_LEARN_BYTES, 9u);
         DF_CHECK_EQ_U64(&t, DFI_POOL_FORME_ABILITIES_MAX, 3u);
         uint32_t base_formes = 0u;
         for (uint32_t f = 0u; f < DFI_POOL_FORME_COUNT; ++f) {
@@ -579,14 +788,19 @@ int main(void)
      * families rules: every new item (a booster or a berry) is marked, and
      * so is every item with a family column, the prefix included; the
      * abilities the expansion adds stay unmarked until the step that makes
-     * their family a rule. */
+     * their family a rule. Step G2 adds the items Focus Sash, Expert Belt and
+     * Floettite (no family, unmarked) and 22 moves, of which twelve are marked
+     * with the recorded battles that test them. */
     {
         DF_CHECK_EQ_U64(&t, sizeof dfi_support.moves, DFI_POOL_MOVE_COUNT);
         DF_CHECK_EQ_U64(&t, sizeof dfi_support.abilities, DFI_POOL_ABILITY_COUNT);
         DF_CHECK_EQ_U64(&t, sizeof dfi_support.items, DFI_POOL_ITEM_COUNT);
-        for (uint32_t id = DFI_EXT_ITEM_COUNT; id < DFI_POOL_ITEM_COUNT; ++id) {
+        for (uint32_t id = DFI_EXT_ITEM_COUNT; id < DFI_ITEM_FOCUSSASH; ++id) {
             DF_CHECK(&t, dfi_support.items[id] != 0u);
             DF_CHECK(&t, dfi_pool_item_family[id].family != DFI_ITEM_FAMILY_NONE);
+        }
+        for (uint32_t id = DFI_ITEM_FOCUSSASH; id < DFI_POOL_ITEM_COUNT; ++id) {
+            DF_CHECK_EQ_U64(&t, dfi_support.items[id], 0u);
         }
         for (uint32_t id = 0u; id < DFI_POOL_ITEM_COUNT; ++id) {
             if (dfi_pool_item_family[id].family != DFI_ITEM_FAMILY_NONE) {
@@ -596,6 +810,24 @@ int main(void)
         for (uint32_t id = DFI_EXT_ABILITY_COUNT; id < DFI_POOL_ABILITY_COUNT; ++id) {
             DF_CHECK_EQ_U64(&t, dfi_support.abilities[id], 0u);
         }
+        /* Step G2 marks twelve of its 22 moves, each used in a reference battle under the POOL kind (g2_data_moves_a
+         * to _d); U-turn (its switch cause is G5) and the nine moves with a handler id stay unmarked. */
+        static const uint32_t marked_moves[] = {DFI_MOVE_ROCKSLIDE, DFI_MOVE_DOUBLEEDGE, DFI_MOVE_THUNDERBOLT,
+                                                DFI_MOVE_FLASHCANNON, DFI_MOVE_EXTREMESPEED, DFI_MOVE_HEADSMASH,
+                                                DFI_MOVE_BULKUP, DFI_MOVE_LIQUIDATION, DFI_MOVE_ICEPUNCH,
+                                                DFI_MOVE_SHADOWCLAW, DFI_MOVE_DRUMBEATING, DFI_MOVE_DAZZLINGGLEAM};
+        uint32_t marked_count = 0u;
+        for (uint32_t id = DFI_EXT_MOVE_COUNT; id < DFI_POOL_MOVE_COUNT; ++id) {
+            bool want = false;
+            for (size_t k = 0u; k < sizeof marked_moves / sizeof marked_moves[0]; ++k) {
+                want = want || marked_moves[k] == id;
+            }
+            DF_CHECK_EQ_U64(&t, dfi_support.moves[id] != 0u ? 1u : 0u, want ? 1u : 0u);
+            /* A marked move has no handler id: the engine has no code for one. */
+            DF_CHECK(&t, !want || dfi_pool_moves[id].special == DFI_SPECIAL_NONE);
+            marked_count += dfi_support.moves[id] != 0u ? 1u : 0u;
+        }
+        DF_CHECK_EQ_U64(&t, marked_count, 12u);
     }
 
     return df_test_end(&t);
