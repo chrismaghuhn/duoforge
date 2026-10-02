@@ -926,6 +926,7 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_SIDE_TAILWIND     1u
 #define DUOFORGE_SIDE_REFLECT      2u
 #define DUOFORGE_SIDE_LIGHT_SCREEN 3u
+#define DUOFORGE_SIDE_AURORA_VEIL  4u /* SIDE_START / SIDE_END amount (POOL kinds): -sidestart|side|move: Aurora Veil */
 #define DUOFORGE_RESULT_SIDE_0 1u
 #define DUOFORGE_RESULT_SIDE_1 2u
 #define DUOFORGE_RESULT_TIE    3u
