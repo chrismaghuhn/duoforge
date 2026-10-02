@@ -135,7 +135,7 @@ The PR also carries the spec, this plan and decision 0016.
 - `duoforge_diff_runner [--dump-views FILE] [records file]`
   - With the flag, it writes `V <battle> <k> <viewer> <observation hex> <domain hex>`: lowercase hex, 1472 and 1304 characters. These come from `duoforge_battle_observe` and `duoforge_battle_factored`.
   - It writes after the create (k = 0) and after every applied step that passed its comparisons (k = si + 1), viewer 0 then 1.
-  - A failing observe or factored call is a DIVERGENCE: `views: <status> (step K)`.
+  - A failing observe or factored call is a DIVERGENCE: `views: <status> (view K)`.
   - A write, flush or close error of FILE exits 1, with a message on stderr.
   - Without the flag, everything is byte-identical (the lead's conditions).
 

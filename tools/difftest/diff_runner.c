@@ -60,8 +60,9 @@
  *
  * (duoforge_battle_observe and duoforge_battle_factored, lowercase hex). A
  * failing observe or factored call ends the battle as a DIVERGENCE "views:
- * <status> (step K)"; a FILE that cannot be opened, written, flushed or closed
- * exits 1. Without the flag the output is the same as before.
+ * <status> (view K)", whose step column is the step before view K (- for
+ * K = 0); a FILE that cannot be opened, written, flushed or closed exits 1.
+ * Without the flag the output is the same as before.
  *
  * Heap allocation is fine here: this is a tool, not the engine.
  */
@@ -251,9 +252,9 @@ static bool write_views(FILE *views, const dfr_battle *b, uint32_t k, const duof
         }
         if (st != DUOFORGE_OK) {
             char text[160];
-            (void)snprintf(text, sizeof text, "views: %s (step %u)", duoforge_status_name(st), (unsigned)k);
-            o->has_step = true;
-            o->step = k;
+            (void)snprintf(text, sizeof text, "views: %s (view %u)", duoforge_status_name(st), (unsigned)k);
+            o->has_step = k > 0u; /* the views after step k - 1; at k = 0 no step ran */
+            o->step = k > 0u ? k - 1u : 0u;
             set_detail(o, VERDICT_DIVERGENCE, text);
             return false;
         }

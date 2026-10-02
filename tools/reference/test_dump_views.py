@@ -91,11 +91,26 @@ class DumpViewsTest(unittest.TestCase):
             self.assertEqual(verdict, "PASS", name)
             expected += [(name, k, v) for k in range(steps + 1) for v in (0, 1)]
         self.assertEqual(order, expected)
+        steps = {name: s for name, _, s in rows}
+        slots = _layout.CONSTANTS["DUOFORGE_CHOICE_SLOTS"]
+        terminal = _layout.CONSTANTS["DUOFORGE_BOUNDARY_TERMINAL"]
         for (name, k, viewer), (obs, dom) in views.items():
             self.assertEqual((len(obs), len(dom)), (736, 652), name)
             o = np.frombuffer(obs, dtype=_layout.OBSERVATION)[0]
             d = np.frombuffer(dom, dtype=_layout.FACTORED_DOMAIN)[0]
-            self.assertEqual((int(o["epoch"]), int(o["player"]), int(d["epoch"])), (k + 1, viewer, k + 1), (name, k))
+            where = (name, k, viewer)
+            self.assertEqual((int(o["epoch"]), int(o["player"]), int(d["epoch"])), (k + 1, viewer, k + 1), where)
+            # The domain is the viewer's own: a domain exactly when the viewer is asked, and at a SLOTS
+            # boundary one non-empty slot list per requested slot (a single NONE entry otherwise).
+            self.assertEqual(int(d["kind"]) != 0, int(o["requested"]) != 0, where)
+            if int(d["kind"]) == slots:
+                for s in (0, 1):
+                    asked = (int(o["slot_mask"]) >> s) & 1
+                    self.assertTrue(asked or (int(d["slot_count"][s]) == 1 and int(d["slots"][s][0]["kind"]) == 0),
+                                    where)
+            # Only the last view of a battle may be TERMINAL.
+            if int(o["boundary_kind"]) == terminal:
+                self.assertEqual(k, steps[name], where)
 
     def test_first_view_is_the_public_api(self):
         import duoforge
@@ -125,6 +140,12 @@ class DumpViewsTest(unittest.TestCase):
     def test_flag_changes_nothing_else(self):
         self.assertEqual(self.with_flag.returncode, self.without_flag.returncode)
         self.assertEqual(self.with_flag.stdout, self.without_flag.stdout)
+
+    @unittest.skipUnless(os.path.exists("/dev/full"), "needs /dev/full (Linux)")
+    def test_full_disk_fails(self):
+        out = run(["--dump-views", "/dev/full", RECORDS])
+        self.assertEqual(out.returncode, 1)
+        self.assertIn(b"cannot write /dev/full", out.stderr)
 
     def test_unwritable_file_fails(self):
         out = run(["--dump-views", self.tmp.name, RECORDS])  # a directory

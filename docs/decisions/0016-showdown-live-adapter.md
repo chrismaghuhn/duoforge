@@ -16,7 +16,7 @@ DuoForge's observation shows the foe's open sheet (species, moves, item, ability
 ## 3. The checkpoint
 
 - The night checkpoint takes 594 features; the encoder makes 607 since #84. `duoforge_learn.checkpoint widen` inserts zero rows for the 13 new inputs (Psychic Terrain, three position flags per position), which are 0 under CLOSURE, so the network's outputs do not change.
-- It was trained while the encoder read a member's `present` from `species_id != 0`, and Rillaboom (Team A) has forme id 0. The bot plays it with that encoding, through the encoder fix's `features.as_encoder(obs_part, observations, version)` (#88), which rebuilds the old `present` column for version 1. A checkpoint's config says its encoding with the integer key `"encoder"`: 1 before the fix (also when the key is missing), 2 after; the widened file records 1. Agreed with the main session and Learner v2 (decision 0017).
+- It was trained while the encoder read a member's `present` from `species_id != 0`, and Rillaboom (Team A) has forme id 0. The bot plays it with that encoding, through the encoder fix's `features.as_encoder(obs_part, observations, version)` (#88), which rebuilds the old `present` column for version 1. A checkpoint's config says its encoding with the integer key `"encoder"`: 1 before the fix (also when the key is missing), 2 after; the widened file records 1. Agreed with the main session and the Learner v2 session.
 
 ## 4. Evidence
 

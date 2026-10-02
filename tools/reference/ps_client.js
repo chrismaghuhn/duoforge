@@ -20,6 +20,11 @@
 // A sideupdate (a request, an error) goes to its side; an update goes to each
 // player with the split lines resolved for that player
 // (extractChannelMessages). Timestamps (|t:|) and empty messages are dropped.
+// As the server does (server/room-battle.ts), every request gets "rqid": one
+// counter per battle for both sides, from 1; a request must name its own side.
+// At this pin a step's update comes before its requests (Battle.sendUpdates);
+// a forfeit (Battle.lose) or a changed request after a choice error emits a
+// request directly, but the replayed battles have neither.
 //
 // Each step's omniscient lines (filtered as ps_trace.js takeLog) must equal the
 // trace's, and the start lines without the two |showteam| lines the trace's
@@ -61,12 +66,20 @@ function replay(sd, root, name) {
     const spec = readJson(root, 'specs', name);
     const trace = readJson(root, 'traces', name);
     const messages = [];
+    let rqid = 0; // the server numbers every request of a battle, both sides together (server/room-battle.ts)
     const send = (type, data) => {
         if (Array.isArray(data)) data = data.join('\n');
         if (type === 'sideupdate') {
             const cut = data.indexOf('\n');
-            const lines = data.slice(cut + 1).split('\n').filter((l) => l !== '');
-            if (lines.length) messages.push({battle: name, to: data.slice(0, cut), lines});
+            const to = data.slice(0, cut);
+            const lines = data.slice(cut + 1).split('\n').filter((l) => l !== '').map((l) => {
+                if (!l.startsWith('|request|')) return l;
+                const request = JSON.parse(l.slice('|request|'.length));
+                request.rqid = ++rqid;
+                if (!request.side || request.side.id !== to) throw new Error(`ps_client: ${name}: a request for ${to} names another side`);
+                return '|request|' + JSON.stringify(request);
+            });
+            if (lines.length) messages.push({battle: name, to, lines});
         } else if (type === 'update') {
             const channels = sd.extractChannelMessages(data, [1, 2]);
             for (const [channel, to] of [[1, 'p1'], [2, 'p2']]) {
