@@ -680,6 +680,7 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
   - **`onTryHit`** (priority 4, before Protect's 3) stops a move with positive priority at a grounded foe. It shows `-activate|target|move: Psychic Terrain` and returns null, so there is no `-fail`.
     - The priority is the one `getActionSpeed` wrote into the active move (`sim/battle.ts`, `action.move.priority = priority`), so Prankster's +1 counts. The engine uses `dfi_move_priority`, as Armor Tail does.
     - Allies, self moves and Flying targets are not stopped (the data has no other way to be ungrounded).
+    - A spread move would run every target's terrain handler before any Protect handler, in one TryHit event. No spread move in the data has positive priority (Prankster raises status moves, and none of them is spread). The engine returns `E_UNSUPPORTED` for one rather than check target by target.
     - Stopped: Fake Out, Shadow Sneak, Aqua Jet, Sucker Punch (after its own `onTry`) and Grimmsnarl's Prankster Parting Shot.
     - Not stopped: Helping Hand on the ally and Protect.
     - Grassy Glide has priority 0 here: its +1 needs Grassy Terrain, which Psychic Terrain replaces.
@@ -688,7 +689,9 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
 - **Public changes, library 0.18.0** (sections 4.2 and 9.4):
   - `DUOFORGE_TERRAIN_PSYCHIC` (2) in the observation's terrain;
   - `DUOFORGE_FIELD_PSYCHIC_TERRAIN` (3) in FIELD_START and FIELD_END;
-  - the block as `DUOFORGE_EVENT_BLOCKED` with detail `DUOFORGE_FIELD_PSYCHIC_TERRAIN`. Section 4.2 lets a new distinction be a kind or a detail value; a detail on the existing BLOCKED (Protect's block, detail 0) keeps "the move was blocked at this target" in one kind.
+  - the block as `DUOFORGE_EVENT_BLOCKED` with detail `DUOFORGE_FIELD_PSYCHIC_TERRAIN`; Protect's block keeps detail 0.
+
+  **This differs from the plan.** Sections 4.2 and 5 planned a new event kind for this line. Section 4.2 also lets a new distinction be a `detail` value. A detail on the existing BLOCKED keeps "the move was blocked at this target" in one kind, so a reader of BLOCKED sees both blocks. The choice needs the owner's approval together with the other values.
 - **Python.** `_layout.CONSTANTS` and `tools/layout/layout_dump.c` name the new terrain. The feature encoder keeps its terrains (none, Grassy): encoding Psychic Terrain would add a column to `OBS_SIZE`, which is the main session's decision. Until then the encoder refuses terrain 2 with `ValueError` (tested), as it refuses every value it does not know.
 - **Converter.** It maps:
   - `-fieldstart|move: Psychic Terrain|[from] ability: Psychic Surge|[of] ...`;
@@ -697,7 +700,7 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
   - the state's `psychicterrain`.
 
   The harness is unchanged.
-- **Evidence.** Three recorded battles:
+- **Evidence.** Four recorded battles:
   - `c10_psychic_terrain`:
     - Raichu's Fake Out at Indeedee-F, Grimmsnarl's Prankster Parting Shot and Kingambit's Sucker Punch are stopped;
     - Sneasler's Fake Out at Flying Staraptor hits;
@@ -706,22 +709,31 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
     - Fake Out, Basculegion's Aqua Jet and Ceruledge's Shadow Sneak are stopped;
     - Indeedee-F's Psychic gets the boost;
     - the terrain ends after five turns.
-  - `c10_terrain_war`: Rillaboom's Grassy Surge, then Ceruledge's Grassy Seed, then the slower Indeedee-F's Psychic Surge, which replaces Grassy Terrain without an end line. Under Psychic Terrain Rillaboom's Grassy Glide moves at priority 0, meets Protect and later hits.
+  - `c10_terrain_war`: Rillaboom's Grassy Surge, then Ceruledge's Grassy Seed, then the slower Indeedee-F's Psychic Surge, which replaces Grassy Terrain without an end line. Under Psychic Terrain Rillaboom's Grassy Glide has priority 0, so the terrain does not stop it: it hits the grounded Indeedee-F twice.
+  - `c10_terrain_orders`:
+    - Basculegion's Aqua Jet at a protecting Ceruledge gets Psychic Terrain's line, not Protect's;
+    - Raichu's Fake Out at its own protecting ally gets Protect's line, because the terrain does not stop a move at an ally;
+    - Raichu's Grassy Seed waits under Psychic Terrain. Rillaboom's Grassy Surge replaces the terrain without an end line, the seed acts, and Aqua Jet hits again.
 
   A white-box test: terrain 2 is valid under TEAM_C and `FIELD` under CLOSURE, and terrain 3 is `FIELD` under every kind.
 
-  Seven negative controls each make a test fail:
+  Ten negative controls each make a test fail:
   - no block;
-  - a block at Flying targets too;
+  - a block at Flying targets too, or at allies too;
   - a block without priority;
+  - Protect checked before the terrain;
   - no Psychic boost;
   - no terrain replacement;
   - the end always naming Grassy Terrain;
+  - a Grassy Seed that acts on any terrain;
   - Psychic Terrain out of range under TEAM_C.
-- **Not recorded.**
-  - Trick Room reversing the entry order of two setters: the order is runSwitch's speed order, which the closure's battles already pin.
-  - A Fake Out into an ally: the ally rule is the one Helping Hand shows.
-  - A priority move at a protecting grounded target, where Psychic Terrain's line comes instead of Protect's.
+- **Not recorded.** Trick Room reversing the entry order of two setters: the order is runSwitch's speed order, which the closure's battles already pin.
+- **Review findings, fixed.**
+  - The terrain's place before Protect and its ally exception had no battle. `c10_terrain_orders` records both, and each has a negative control.
+  - A spread move with positive priority would have been checked target by target. It now fails with `E_UNSUPPORTED`; the data cannot reach it.
+  - The block's detail value differs from the plan's event kind. This section now says so.
+  - The `c10_terrain_war` text above was wrong.
+  - Grassy Glide's priority and both terrain boosts now use `dfi_grounded`.
 - **Shared files touched:**
   - `include/duoforge/duoforge.h` (the terrain, the field value, BLOCKED's detail, version);
   - `src/state/{battle_internal.h,closure_member.h,closure_member.c,invariants.c,observation.c}`;

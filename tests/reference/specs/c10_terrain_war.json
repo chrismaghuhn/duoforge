@@ -1,6 +1,6 @@
 {
   "name": "c10_terrain_war",
-  "purpose": "Grassy Surge against Psychic Surge: the later entry ability replaces the terrain without an end line, so the slower setter wins; Ceruledge's Grassy Seed acts only on Grassy Terrain; under Psychic Terrain Grassy Glide has priority 0 and is never stopped; Psychic Terrain ends after five turns.",
+  "purpose": "Grassy Surge against Psychic Surge: the later entry ability replaces the terrain without an end line, so the slower setter wins; Ceruledge's Grassy Seed acts while Grassy Terrain is up; under Psychic Terrain Grassy Glide has priority 0 and is never stopped; Psychic Terrain ends after five turns.",
   "data": "team_c",
   "format": "gen9championsvgc2026regmc",
   "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c1002",

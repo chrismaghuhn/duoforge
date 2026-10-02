@@ -223,7 +223,7 @@ class PoliciesFeaturesTest(unittest.TestCase):
             features.encode(ob, d)
             ob["terrain"] = _layout.CONSTANTS["DUOFORGE_TERRAIN_PSYCHIC"]  # TEAM_C, not encoded yet
             ob["terrain_turns"] = 5
-            with self.assertRaises(ValueError):
+            with self.assertRaisesRegex(ValueError, "terrain"):
                 features.encode(ob, d)
 
     def test_zero_count_raises(self):

@@ -503,9 +503,10 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_EVENT_IMMUNE          12u /* [-immune] position; cause ABILITY + id2 when an ability did it */
 #define DUOFORGE_EVENT_FAIL            13u /* [-fail] position; detail: the ailment it already has, when that is why */
 #define DUOFORGE_EVENT_PROTECT         14u /* [-singleturn Protect] position */
-#define DUOFORGE_EVENT_BLOCKED         15u /* [-activate move: Protect] position: the protected Pokemon;
-                                              detail DUOFORGE_FIELD_PSYCHIC_TERRAIN: [-activate move: Psychic
-                                              Terrain], a priority move stopped at a grounded target (Team C) */
+#define DUOFORGE_EVENT_BLOCKED         15u /* [-activate move: Protect] position: the protected Pokemon
+                                              (detail 0); detail DUOFORGE_FIELD_PSYCHIC_TERRAIN: [-activate move:
+                                              Psychic Terrain], a priority move stopped at a grounded target
+                                              (Team C) */
 #define DUOFORGE_EVENT_BOOST           16u /* [-boost] position, detail: stat (0 atk .. 6 evasion), amount; cause */
 #define DUOFORGE_EVENT_UNBOOST         17u /* [-unboost] as BOOST */
 #define DUOFORGE_EVENT_STATUS          18u /* [-status] position, detail: DUOFORGE_AILMENT_* */

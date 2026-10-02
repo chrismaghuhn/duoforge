@@ -269,8 +269,7 @@ static uint32_t dfi_move_priority(const struct duoforge_battle *b, const dfi_mem
     if (dfi_ability(m, DFI_ABILITY_PRANKSTER) && md->category == DFI_CATEGORY_STATUS) {
         priority += 1u;
     }
-    if (md->special == DFI_SPECIAL_GRASSY_GLIDE && b->terrain == DFI_TERRAIN_GRASSY &&
-        !dfi_has_type(m, DFI_TYPE_FLYING)) {
+    if (md->special == DFI_SPECIAL_GRASSY_GLIDE && b->terrain == DFI_TERRAIN_GRASSY && dfi_grounded(m)) {
         priority += 1u;
     }
     return priority;
@@ -855,13 +854,13 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     if (((uint32_t)dfi_pos(r->b, user)->flags & DFI_VOL_HELPING_HAND) != 0u) {
         ok = ok && dfi_chain_modify(bp_chain, 6144u, &bp_chain);
     }
-    if (move_type == DFI_TYPE_GRASS && r->b->terrain == DFI_TERRAIN_GRASSY && !dfi_has_type(a, DFI_TYPE_FLYING)) {
+    if (move_type == DFI_TYPE_GRASS && r->b->terrain == DFI_TERRAIN_GRASSY && dfi_grounded(a)) {
         ok = ok && dfi_chain_modify(bp_chain, 5325u, &bp_chain);
     }
     /* Psychic Terrain (Team C): 5325/4096 for a grounded user's Psychic move
      * (onBasePowerPriority 6, like Grassy Terrain's, which cannot be up at
      * the same time). */
-    if (move_type == DFI_TYPE_PSYCHIC && r->b->terrain == DFI_TERRAIN_PSYCHIC && !dfi_has_type(a, DFI_TYPE_FLYING)) {
+    if (move_type == DFI_TYPE_PSYCHIC && r->b->terrain == DFI_TERRAIN_PSYCHIC && dfi_grounded(a)) {
         ok = ok && dfi_chain_modify(bp_chain, 5325u, &bp_chain);
     }
     const uint32_t base_power = bp_chain == 4096u ? power : dfi_modify(power, bp_chain);
@@ -2077,6 +2076,14 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
      * -fail (it returns null; data/moves.ts psychicterrain). */
     const bool psychic_block =
         b->terrain == DFI_TERRAIN_PSYCHIC && dfi_move_priority(b, m, md) > DFI_PRIORITY_BIAS;
+    /* For a spread move the reference runs every target's Psychic Terrain
+     * handler before any Protect handler (one TryHit event, sorted by
+     * priority); this loop takes the targets one by one. No spread move in
+     * the data has positive priority (Prankster raises status moves, none of
+     * them spread): E_UNSUPPORTED rather than a different order. */
+    if (psychic_block && count > 1u) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
     bool hit[DFI_POSITIONS] = {false, false, false, false};
     for (uint32_t i = 0u; i < count; ++i) {
         const uint32_t t = targets[i];
