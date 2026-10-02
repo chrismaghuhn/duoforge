@@ -848,7 +848,8 @@
 #define DFI_SPECIAL_KNOCK_OFF 24u
 #define DFI_SPECIAL_EXPANDING_FORCE 25u
 #define DFI_SPECIAL_GLAIVE_RUSH 26u
-#define DFI_SPECIAL_UNMODELED 27u
+#define DFI_SPECIAL_AURORA_VEIL 27u
+#define DFI_SPECIAL_UNMODELED 28u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */
