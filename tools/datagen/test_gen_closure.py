@@ -476,13 +476,28 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual(cm.exception.code, 'gen_closure: move %s: %s' % (mid, message))
 
     def test_a_handler_move_parses_in_the_pool_mode_with_its_special(self):
-        for mid, text, special in (('soak', SOAK, 'SOAK'), ('scald', SCALD, 'SCALD'), ('recover', RECOVER, 'RECOVER')):
+        for mid, text, special in (('soak', SOAK, 'SOAK'),):
             with self.subTest(mid):
                 rec = parse_pool(mid, text)
                 self.assertEqual(rec['special'], gen_closure.SPECIAL_IDS_P.index(special))
                 # What the handler owns is not encoded in the generic columns.
                 self.assertEqual((rec['sec_kind'], rec['sec_param'], rec['primary_status'], rec['side_condition']),
-                                 (2, 1, 0, 0) if mid == 'scald' else (0, 0, 0, 0))
+                                 (0, 0, 0, 0))
+
+    def test_scald_and_recover_are_data_in_the_pool_mode(self):
+        # Step G10: thawsTarget is bit 4 of the second flags byte and heal is the heal column; no handler id.
+        scald = parse_pool('scald', SCALD)
+        self.assertEqual((scald['special'], scald['flags2'], scald['heal']), (0, gen_closure.FLAG2_THAWS_TARGET, [0, 0]))
+        self.assertEqual((scald['sec_chance'], scald['sec_kind'], scald['sec_param']), (30, 2, 1))
+        self.assertTrue(scald['flags'] & gen_closure.FLAG_BITS_C['defrost'])
+        recover = parse_pool('recover', RECOVER)
+        self.assertEqual((recover['special'], recover['flags2'], recover['heal']), (0, 2, [1, 2]))
+        self.assertEqual(parse_pool('recover', RECOVER.replace('[1, 2]', '[1, 4]'))['heal'], [1, 4])
+        self.assertEqual(parse_pool('plain', PLAIN)['heal'], [0, 0])
+        # The heal column bytes: numerator and denominator per move, and the flags2 bytes before them.
+        d = {'moves': [{'heal': [1, 2], 'flags2': 2}, {'flags2': 4}, {'heal': [0, 0], 'flags2': 0}]}
+        self.assertEqual(gen_closure.heal_bytes(d), bytes([1, 2, 0, 0, 0, 0]))
+        self.assertEqual(gen_closure.flags2_bytes(d), bytes([2, 4, 0]))
 
     def test_throat_chop_and_psychic_noise_are_modelled_not_handlers(self):
         # Step G8: their secondaries are secondary kinds of their own (chance 100), and no handler id.
@@ -545,8 +560,9 @@ class PoolMoves(unittest.TestCase):
         # UNMODELED (decision 0015 section 4.2) follows them, as the last id.
         self.assertEqual(gen_closure.SPECIAL_IDS_P[seven:], ['UNMODELED'])
         self.assertEqual(len(gen_closure.G2_HANDLERS), 7)
+        # Scald and Recover became data in step G10: their ids stay defined and no move maps to them.
         self.assertEqual({v[0] for k, v in gen_closure.SPECIAL_P.items() if k not in gen_closure.SPECIAL_C},
-                         set(gen_closure.G2_HANDLERS))
+                         set(gen_closure.G2_HANDLERS) - {'SCALD', 'RECOVER'})
 
     def test_the_same_move_is_refused_outside_the_pool_mode(self):
         # The closure and extended tables keep failing for what they do not model: no handler leaks into them.
@@ -562,15 +578,14 @@ class PoolMoves(unittest.TestCase):
     def test_a_handler_owns_only_what_it_names(self):
         self.refused('scald', SCALD.replace('thawsTarget: true', 'thawsTarget: false'),
                      'thawsTarget is not "thawsTarget: true,"')
-        self.refused('recover', RECOVER.replace('[1, 2]', '[1, 4]'), 'heal is not "heal: [1, 2],"')
-        self.refused('recover', RECOVER.replace('\t\theal: [1, 2],\n', ''), 'heal is not "heal: [1, 2],"')
+        self.refused('recover', RECOVER.replace('[1, 2]', '[3, 2]'), 'heal is not a fraction "heal: [a, b],"')
+        self.refused('recover', RECOVER.replace('[1, 2]', '[0, 2]'), 'heal is not a fraction "heal: [a, b],"')
+        self.refused('recover', RECOVER.replace('[1, 2]', '[1, 2, 3]'), 'heal is not a fraction "heal: [a, b],"')
         # A callback the handler does not name, and one it names that is absent.
         self.refused('soak', SOAK.replace('target: "normal",', 'onTryHit() { },\n\t\ttarget: "normal",'),
                      'callback onTryHit is not mapped to a handler')
         self.refused('soak', SOAK.replace('onHit(target) {', 'onHitX(target) {'), 'callback onHitX is not mapped to a handler')
-        # Another move does not get the handler of a move: scald's field on soak, a condition block on recover.
-        self.refused('recover', RECOVER.replace('heal: [1, 2],', 'heal: [1, 2],\n\t\tthawsTarget: true,'),
-                     'unknown field thawsTarget')
+        # A condition block needs an owner: recover has none.
         self.refused('recover', RECOVER.replace('heal: [1, 2],', 'heal: [1, 2],\n\t\tcondition: { },'),
                      'condition block without a known owner')
 
