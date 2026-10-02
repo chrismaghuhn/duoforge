@@ -112,8 +112,6 @@ class LinesTest(unittest.TestCase):
         self.assertEqual(self.stop("|move|p1a: Staraptor|Baton Pass|p1a: Staraptor"), "line:move Baton Pass")
         self.assertEqual(self.stop("|-activate|p1a: Staraptor|move: Court Change"), "line:-activate move: Court Change")
         self.assertEqual(self.stop("|-ability|p1a: Staraptor|Pressure"), "line:-ability Pressure")
-        self.assertEqual(self.stop("|-fail|p1a: Staraptor|unboost|[from] ability: Clear Body|[of] p1a: Staraptor"),
-                         "line:-fail unboost")
 
     def test_fold_and_room_lines(self):
         self.assertEqual(lines.check("|-enditem|p1a: Staraptor|Sitrus Berry|[eat]", self.view), "fold")
@@ -137,7 +135,23 @@ class LinesTest(unittest.TestCase):
         self.assertEqual(lines.FEATURES["WEATHER_SAND"], 0)
         self.assertEqual(lines.FEATURES["RAGE_POWDER"], 39)
         self.assertEqual(len(lines.FEATURES), 40)
-        self.assertEqual(lines.supported(), 0)  # no mechanic of decision 0018 is built yet
+
+    def test_supported_mask_forms(self):
+        f = lines.FEATURES
+        self.assertEqual(lines.parse_supported("0u"), 0)
+        self.assertEqual(lines.parse_supported("(1ull << DUOFORGE_VIEWEXT_FEATURE_WEATHER_SNOW)"), 1 << f["WEATHER_SNOW"])
+        self.assertEqual(lines.parse_supported("((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) | "
+                                               "((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK)"),
+                         1 << f["THROAT_CHOP"] | 1 << f["HEAL_BLOCK"])
+        with self.assertRaisesRegex(ValueError, "not understood"):
+            lines.parse_supported("SOMETHING_ELSE")
+        self.assertEqual(lines.LIBRARY_SUPPORTED, lines.supported())
+
+    def test_a_feature_the_tracker_does_not_fold_stops(self):
+        # the library may support a feature (G8: Throat Chop), but rows carry no view extension until the tracker
+        # folds it: the line still stops the perspective
+        self.assertEqual(lines.SUPPORTED & ~lines.TRACKER_FOLDS, 0)
+        self.assertEqual(self.stop("|-start|p1a: Staraptor|Throat Chop|[silent]"), "feature:THROAT_CHOP")
 
     def test_choice_items(self):
         self.assertEqual(lines.CHOICE_ITEMS, ("choiceband", "choicescarf", "choicespecs"))
@@ -480,6 +494,14 @@ class GameTest(unittest.TestCase):
         # a Bo3 log with a second game's lines: one game per row, so the log is skipped and counted
         start = self.log.index("|start")
         self.assertEqual(self.skip_reason(self.log + self.log[start:]), "skip:two-games")
+
+    def test_a_failure_the_converter_does_not_parse_stops(self):
+        # -fail|X|unboost (Clear Body stopped a drop): the converter decides which -fail forms it reads (main reads
+        # "heal" since G8); the one it cannot read is a named stop, never an internal error
+        lines = self.insert_after("|turn|3", "|-fail|p2a: Politoed|unboost|[from] ability: Clear Body|[of] p2a: Politoed")
+        result = self.run_game(lines)
+        stops = [k for k in result.counters if k.startswith("perspectives.stopped.converter:untyped -fail")]
+        self.assertEqual(sum(result.counters[k] for k in stops), 2, result.counters)
 
     def test_bo3_game_number(self):
         lines = ['|uhtml|bestof|<h2><strong>Game 2</strong> of <a href="/game-bestof3-x">a best-of-3</a></h2>'] + self.log

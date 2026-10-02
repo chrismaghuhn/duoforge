@@ -82,22 +82,34 @@ def spectate(battle, side, source):
                                          true_stats_of(battle, side, source), log)
     leads, back = spectator.hindsight(log, side, Reference.get().data, battle_sheets(battle))
     out = []
+    reached = 0  # points walked: the first point a stop loses is this index
     try:
         for point in spectator.walk(tracker, log, pts):
+            reached += 1
             if spectator.own_requested(tracker):
                 domain, lists = superset_of(tracker)
                 out.append((point, tracker.observation().copy(), (domain, lists), label_of(tracker, log, point, lists,
                                                                                            leads, back)))
     except lines.Stop as stop:
-        if stop.reason not in HIDDEN:
+        if not allowed_stop(stop.reason):
             raise
-        STOPS[(battle.name, side)] = (stop.reason, int(tracker.epoch) - 1)  # raised in at_point: point k = epoch - 1
+        STOPS[(battle.name, side)] = (stop.reason, reached)
     return out
 
 
 # Stops for information only the player had (spec section 6), allowed in reference logs; every other stop fails.
 HIDDEN = {"charge-target-hidden"}
 STOPS = {}
+
+
+def allowed_stop(reason):
+    """A stop a committed battle may show: information only its player had, or a feature of decision 0018 that the
+    library supports and this tracker does not fold yet (its rows would lack the view extension)."""
+    if reason in HIDDEN:
+        return True
+    name = reason[len("feature:"):] if reason.startswith("feature:") else None
+    pending = lines.LIBRARY_SUPPORTED & ~lines.TRACKER_FOLDS
+    return name in lines.FEATURES and bool(pending >> lines.FEATURES[name] & 1)
 
 
 def label_of(tracker, log, point, lists, leads, back):
@@ -158,7 +170,7 @@ class SpectatorTest(unittest.TestCase):
     def test_reference_logs_never_stop(self):
         # spectate() raised in setUpClass for any stop but a documented hidden-information one
         print(f"\nhidden-information stops: {sorted(STOPS.items())}")
-        self.assertTrue(all(reason in HIDDEN for reason, _ in STOPS.values()), STOPS)
+        self.assertTrue(all(allowed_stop(reason) for reason, _ in STOPS.values()), STOPS)
 
     def test_points_equal_duoforge(self):
         for battle in self.ref.battles:

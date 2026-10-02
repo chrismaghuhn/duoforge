@@ -14,7 +14,11 @@ first:
   ("feature:<NAME>"). The single-turn features of a PIVOT boundary (Rage
   Powder, Wide Guard, Quick Guard) return "turn:<NAME>": they change no
   TURN or REPLACEMENT observation, and the caller decides;
-- unknown: everything else, Stop("line:<kind> <effect>").
+- unknown: a kind whose effect the view cannot hold (UNREPRESENTABLE_KINDS), or a
+  known kind with an effect no entry names: Stop("line:<kind> <effect>").
+  Any other kind goes to the converter, which parses the forms of the
+  mechanics DuoForge implements and raises on the rest (a Stop "converter:");
+  the replay test proves the fold equal to DuoForge on every committed battle.
 
 The live adapter forfeits on a Stop (a ValueError) as on any line it cannot
 follow; the replay pipeline ends the perspective there and counts the
@@ -71,6 +75,11 @@ CHOICE_ITEMS = ("choiceband", "choicescarf", "choicespecs")
 
 TURN_SCOPED = {"RAGE_POWDER", "WIDE_GUARD", "QUICK_GUARD"}
 
+# Kinds whose effect on the view no field holds and the fold does not apply: stops with a readable reason.
+UNREPRESENTABLE_KINDS = {"-sethp", "-clearallboost", "-clearboost", "-clearpositiveboost", "-copyboost", "-setboost",
+                         "-swapboost", "-invertboost", "-transform", "swap", "drag", "-endability", "-swapsideconditions",
+                         "-cureteam"}
+
 
 def _features():
     """DUOFORGE_VIEWEXT_FEATURE_* of include/duoforge/duoforge.h: name -> bit (decision 0018 section 7.1)."""
@@ -82,26 +91,37 @@ def _features():
 FEATURES = _features()
 
 
-def supported(root=ROOT):
-    """The library's supported mask of the view extension: view_ext_features of src/data/support_manifest.c, the
-    value duoforge_observation_ext.supported carries (0u, or an OR of 1ull << DUOFORGE_VIEWEXT_FEATURE_* terms)."""
-    source = (root / "src" / "data" / "support_manifest.c").read_text(encoding="ascii")
-    m = re.search(r"\.view_ext_features = ([^;,]+?)[,;]?\n", source)
-    if m is None:
-        raise ValueError("support_manifest.c: no view_ext_features")
-    expression = m.group(1).strip()
+def parse_supported(expression):
+    """The mask of a view_ext_features expression: 0u, or an OR of 1 shifted by DUOFORGE_VIEWEXT_FEATURE_* bits
+    ("1ull << X", "((uint64_t)1u << X)"). ValueError for anything else."""
+    expression = expression.strip()
     if expression == "0u":
         return 0
     mask = 0
     for term in expression.split("|"):
-        bit = re.fullmatch(r"\(?\s*1u?ll?u?\s*<<\s*DUOFORGE_VIEWEXT_FEATURE_([A-Z_]+)\s*\)?", term.strip())
+        bit = re.fullmatch(r"\(*\s*(?:\(\s*uint64_t\s*\)\s*)?1(?:u|ull|ul|llu)?\s*<<\s*"
+                           r"DUOFORGE_VIEWEXT_FEATURE_([A-Z_]+)\s*\)*", term.strip())
         if bit is None or bit.group(1) not in FEATURES:
             raise ValueError(f"support_manifest.c: view_ext_features term {term.strip()!r} is not understood")
         mask |= 1 << FEATURES[bit.group(1)]
     return mask
 
 
-SUPPORTED = supported()
+def supported(root=ROOT):
+    """The library's supported mask of the view extension: view_ext_features of src/data/support_manifest.c, the
+    value duoforge_observation_ext.supported carries."""
+    source = (root / "src" / "data" / "support_manifest.c").read_text(encoding="ascii")
+    m = re.search(r"\.view_ext_features = ([^;]+?),?\n", source)
+    if m is None:
+        raise ValueError("support_manifest.c: no view_ext_features")
+    return parse_supported(m.group(1))
+
+
+LIBRARY_SUPPORTED = supported()
+# The features whose view-extension fields this tracker folds (decision 0018 section 6.1): none yet. The rows of the
+# replay pipeline carry no extension, so a feature the library supports still stops until its fold is here.
+TRACKER_FOLDS = 0
+SUPPORTED = LIBRARY_SUPPORTED & TRACKER_FOLDS
 
 # Effects of decision 0018 section 6.1, by line kind: the effect (without "move: " / "ability: ") -> feature.
 _START = {"move: Taunt": "TAUNT", "Taunt": "TAUNT", "Encore": "ENCORE", "Substitute": "SUBSTITUTE",
@@ -200,8 +220,6 @@ def check(line, view):
         if len(args) > 1 and args[1] in SILENT_MOVES:
             _unknown(kind, args[1])
         return "fold"
-    if kind == "-fail" and len(args) > 1 and args[1] not in trace_to_c.AILMENT:
-        _unknown(kind, args[1])  # a failure the converter does not parse (a stat drop Clear Body stopped: unboost)
     if kind in GENERIC:
         return "fold"
     if kind == "-clearnegativeboost" and attrs == ["[silent]"]:
@@ -294,4 +312,6 @@ def check(line, view):
         return _feature("FORME_CHANGE")
     if kind == "-formechange":
         return _feature("FORME_CHANGE")
-    _unknown(kind)
+    if kind in UNREPRESENTABLE_KINDS:
+        _unknown(kind)
+    return "fold"  # the converter decides: it parses what DuoForge implements and refuses the rest
