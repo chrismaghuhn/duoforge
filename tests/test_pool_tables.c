@@ -1093,10 +1093,14 @@ int main(void)
             DF_CHECK(&t, dfi_pool_item_family[id].family != DFI_ITEM_FAMILY_NONE);
         }
         /* Step G4 marks Focus Sash (onDamage at the move-damage call), step G12 Floettite (the Mega Stone of
-         * Floette-Eternal, with Fairy Aura); Expert Belt stays unmarked. */
+         * Floette-Eternal, with Fairy Aura), step G18 four more Mega Stones (Tyranitarite, Baxcalibrite,
+         * Aerodactylite, Manectite: the Mega ability is marked and the base forme has exactly one Mega); Expert Belt
+         * stays unmarked. */
         DF_CHECK(&t, dfi_support.items[DFI_ITEM_FOCUSSASH] != 0u);
         for (uint32_t id = DFI_ITEM_FOCUSSASH + 1u; id < DFI_POOL_ITEM_COUNT; ++id) {
-            DF_CHECK_EQ_U64(&t, dfi_support.items[id] != 0u ? 1u : 0u, id == DFI_ITEM_FLOETTITE ? 1u : 0u);
+            const bool stone = id == DFI_ITEM_FLOETTITE || id == DFI_ITEM_TYRANITARITE || id == DFI_ITEM_BAXCALIBRITE ||
+                               id == DFI_ITEM_AERODACTYLITE || id == DFI_ITEM_MANECTITE;
+            DF_CHECK_EQ_U64(&t, dfi_support.items[id] != 0u ? 1u : 0u, stone ? 1u : 0u);
         }
         for (uint32_t id = 0u; id < DFI_POOL_ITEM_COUNT; ++id) {
             if (dfi_pool_item_family[id].family != DFI_ITEM_FAMILY_NONE) {
