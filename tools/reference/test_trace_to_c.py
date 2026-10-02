@@ -184,6 +184,20 @@ class Refusals(unittest.TestCase):
                      "trace_to_c: each:Update tie between Pokemon with handlers: ['P:p1b:1:whiteherb', 'P:p2a:0:']",
                      'each:Update:whiteherb')
 
+    def test_an_update_tie_of_a_trace_holder_is_not_a_holder(self):
+        """Step AC1: a Trace holder at an Update (its onUpdate returns unless it is still seeking, which the engine
+        refuses) is not a holder of the tie: a tie with at most one other holder is dropped, one with two others is
+        the engine's own (its Sitrus holders' draw), and a handler that is not known is refused."""
+        def tie(group):
+            return trace_to_c.drop_reason({'site': 'SPEED_TIE', 'context': 'each:Update', 'group': group}, {})
+        self.assertIsNotNone(tie(['P:p1b:1:trace', 'P:p2a:0:']))
+        self.assertIsNotNone(tie(['P:p1b:1:trace', 'P:p2a:1:sitrusberry']))
+        self.assertIsNotNone(tie(['P:p1b:1:trace', 'P:p2a:1:trace']))
+        self.assertIsNone(tie(['P:p1b:1:trace', 'P:p2a:1:sitrusberry', 'P:p2b:1:sitrusberry']))
+        with self.assertRaises(trace_to_c.ConversionError) as cm:
+            tie(['P:p1b:1:trace', 'P:p2a:1:whiteherb'])
+        self.assertEqual(cm.exception.rule, 'each-tie-handlers')
+
     def test_switch_order_tie_with_an_entry_effect_that_is_not_white_herb(self):
         def mutate(spec, trace):
             d = trace['steps'][0]['draws'][2]
@@ -1032,6 +1046,58 @@ class Library(unittest.TestCase):
             for side_cmds in st['cmds']:
                 recharge_cmds += sum(1 for c in side_cmds if tuple(c)[:3] == (1, 5, 0xFF))
         self.assertEqual((starts, cants, recharge_cmds), (2, 2, 1))  # both viewers see both lines; one choice
+
+    def test_trace_rows_are_what_the_protocol_lines_say(self):
+        """Decision 0018 section 6.1 for an ability changed by Trace: a position has the copied ability from the
+        `|-ability|X|NEW|OLD|[from] ability: Trace|[of] foe` line until its occupant leaves (`|switch|`, `|drag|`,
+        `|replace|`, `|faint|`) or Mega Evolves (`|-mega|`: formeChange sets the Mega forme's ability). The rows of the
+        C test (tests/test_pool_ac1.c: the copied ability of the four positions after each step of the ac1 battles)
+        must be exactly what these lines give for the committed traces. Also: the converter reads the line as an
+        ABILITY event (the new ability in id2, cause ABILITY, the foe in `other`), and refuses a [from] ability line
+        that is not Trace's, an [of] that is missing and a plain line with a [from]."""
+        names = ('ac1_trace_intimidate', 'ac1_trace_defiant', 'ac1_trace_drizzle', 'ac1_trace_single',
+                 'ac1_trace_switch')
+        source = open(os.path.join(ROOT, 'tests', 'test_pool_ac1.c'), encoding='utf-8').read()
+        rows = {}
+        for m in re.finditer(r'\{"(ac1_\w+)", (\d+)u, \{([^}]*)\}\}', source):
+            cells = [c.strip() for c in m.group(3).split(',')]
+            rows[(m.group(1), int(m.group(2)))] = [0 if c == '0u' else re.fullmatch(r'AB\((\w+)\)', c).group(1) for c in cells]
+        derived = {}
+        lines_seen = 0
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            copied = {}
+            for k, step in enumerate(trace['steps']):
+                for line in step['log']:
+                    part = line.split('|')
+                    if len(part) < 3:
+                        continue
+                    if part[1] in ('switch', 'drag', 'faint', 'replace', '-mega'):
+                        copied.pop(part[2][:3], None)
+                    elif part[1] == '-ability' and len(part) > 5 and part[5] == '[from] ability: Trace':
+                        self.assertEqual(len(part), 7)  # -ability|X|NEW|OLD|[from] ability: Trace|[of] foe
+                        copied[part[2][:3]] = trace_to_c.key(part[3])
+                        lines_seen += 1
+                derived[(name, k)] = [copied.get(x, 0) for x in ('p1a', 'p1b', 'p2a', 'p2b')]
+        self.assertEqual(rows, derived)
+        self.assertTrue(any(any(v) for v in derived.values()) and lines_seen >= 6)
+        tables = trace_to_c.load_tables(ROOT, True)
+        roster = [{'Gardevoir': 0}, {'Incineroar': 0}]
+        line = '|-ability|p1a: Gardevoir|Intimidate|Trace|[from] ability: Trace|[of] p2a: Incineroar'
+        events = trace_to_c.step_events([line], 0, roster, [{'Gardevoir': 100}] * 2, tables)
+        self.assertEqual(len(events), 1)
+        e = events[0]
+        self.assertEqual((e[0], e[1], e[2], e[3], e[5]),
+                         (trace_to_c.EV['ABILITY'], 0, 2, trace_to_c.CAUSE['ABILITY'],
+                          tables['ABILITY'][trace_to_c.key('Intimidate')] + 1))
+        self.assertEqual(trace_to_c.SITES['TRACE'], 15)
+        for bad in ('|-ability|p1a: Gardevoir|Intimidate|Trace|[from] ability: Pressure|[of] p2a: Incineroar',
+                    '|-ability|p1a: Gardevoir|Intimidate|Trace|[from] ability: Trace',
+                    '|-ability|p1a: Gardevoir|Intimidate|boost|[from] ability: Trace|[of] p2a: Incineroar',
+                    '|-ability|p1a: Gardevoir|Intimidate|boost|[from] move: Skill Swap'):
+            with self.assertRaises(trace_to_c.ConversionError):
+                trace_to_c.step_events([bad], 0, roster, [{'Gardevoir': 100}] * 2, tables)
 
     def test_a_two_turn_lock_lasts_while_twoturnmove_stands(self):
         """Electro Shot's onTryMove removes the move's volatile on the locked turn and the recorder's `locked` is made of

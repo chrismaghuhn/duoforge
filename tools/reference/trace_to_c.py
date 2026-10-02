@@ -88,6 +88,9 @@ onSourceDamagingHit) is named POISON_TOUCH by ps_trace.js (the effect and the ev
 reference is running) and kept: the engine draws it after every contact hit of a Poison Touch
 holder, also at a target that is down.
 
+Trace's pick (step AC1, POOL) is the one draw of the ability's own onUpdate: the harness classifies it by the
+effect and the event the reference is running (trace:Update), the site TRACE (15), random(n) over the candidate foes.
+
 Dire Claw's status pick (Team C) is recorded as SECONDARY[0,3) in context
 Hit; it becomes STATUS_PICK, and every one is kept: the engine draws it
 after each successful secondary roll, as the reference does (decision 0009
@@ -121,7 +124,7 @@ import sys
 
 SITES = {'SPEED_TIE': 1, 'ACCURACY': 2, 'CRIT': 3, 'DAMAGE_ROLL': 4, 'SECONDARY': 5, 'STALL': 6,
          'SLEEP_TURNS': 7, 'FREEZE_THAW': 8, 'FULL_PARALYSIS': 9, 'CONFUSION_TURNS': 10,
-         'CONFUSION_HIT': 11, 'RANDOM_TARGET': 12, 'STATUS_PICK': 13, 'INSERT_TIE': 14, 'POISON_TOUCH': 16}
+         'CONFUSION_HIT': 11, 'RANDOM_TARGET': 12, 'STATUS_PICK': 13, 'INSERT_TIE': 14, 'TRACE': 15, 'POISON_TOUCH': 16}
 STATS = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe']
 GENDER = {'M': 1, 'F': 2}
 GENDERLESS = 3
@@ -331,7 +334,9 @@ def drop_reason(d, state, after=None, log=None):
                 if index is not None and side['pokemon'][index]['status'] == 'brn':
                     raise ConversionError('thermal-exchange-burn',
                                           'trace_to_c: a Thermal Exchange holder is burned: %s' % slot, detail=slot)
-        inert = {'thermalexchange'}
+        # Trace's onUpdate (step AC1) returns unless its holder is still seeking after an onStart that found no foe to
+        # copy, which the engine refuses (E_UNSUPPORTED): until then it does nothing either, so it is not a holder.
+        inert = {'thermalexchange', 'trace'}
         ids = [x for g in group for x in g.split(':', 3)[3].split('+') if x and x not in inert]
         if not all(x in ('sitrusberry', 'grassyseed') for x in ids):
             raise ConversionError('each-tie-handlers',
@@ -983,7 +988,17 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             e = ev_tuple(EV['ANIMATION'], ev_pos(args[0]), NOPOS if shown is None else shown, 0,
                          tables['MOVE'][key(args[1])], flags=flags)
         elif kind == '-ability':
-            e = ev_tuple(EV['ABILITY'], ev_pos(args[0]), NOPOS, 0, 0, tables['ABILITY'][key(args[1])] + 1)
+            cause, cause_id, of = ev_cause(attrs, tables)
+            if cause == 0 and of == NOPOS and len(args) <= 3:
+                # an announcement of the holder's own ability (Intimidate, Fairy Aura): -ability|P|NAME[|boost]
+                e = ev_tuple(EV['ABILITY'], ev_pos(args[0]), NOPOS, 0, 0, tables['ABILITY'][key(args[1])] + 1)
+            elif (cause == CAUSE['ABILITY'] and cause_id == tables['ABILITY']['TRACE'] + 1 and of != NOPOS and
+                  len(args) == 3 and key(args[2]) in tables['ABILITY']):
+                # Trace (step AC1): -ability|P|NEW|OLD|[from] ability: Trace|[of] foe; the old ability is the holder's
+                # own and public, so the event carries the new one (id2) and the foe (other)
+                e = ev_tuple(EV['ABILITY'], ev_pos(args[0]), of, CAUSE['ABILITY'], 0, tables['ABILITY'][key(args[1])] + 1)
+            else:
+                raise ConversionError('ability-line', 'trace_to_c: unknown -ability line %r' % line, detail=line.split('|')[1:][-1] if attrs else 'plain')
         else:
             raise ConversionError('protocol-line', 'trace_to_c: unknown protocol line %r' % line, detail=kind)
         out.append(e)

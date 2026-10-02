@@ -26,6 +26,34 @@ typedef struct df_tb_battle {
     uint32_t stop_count;
 } df_tb_battle;
 
+static const df_tb_stop tb_ac1_trace_defiant[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1071u, 1128u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {721u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {721u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+};
+static const df_tb_stop tb_ac1_trace_drizzle[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1071u, 1123u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {721u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {633u, 773u}, {0x404c469ee58469efull, 0x4050aaaaaaaaaaabull}},
+};
+static const df_tb_stop tb_ac1_trace_intimidate[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1071u, 1128u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {721u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {721u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+};
+static const df_tb_stop tb_ac1_trace_single[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1071u, 1101u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {721u, 751u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {721u, 751u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+};
+static const df_tb_stop tb_ac1_trace_switch[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1071u, 1128u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {721u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {721u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 3u, {4u, 4u}, {721u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {5u, 0u, 2u, 3u, {4u, 4u}, {721u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {6u, 0u, 2u, 3u, {4u, 4u}, {721u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+};
 static const df_tb_stop tb_c01_adaptability_weather[] = {
     {0u, 0u, 1u, 3u, {4u, 4u}, {793u, 722u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
     {1u, 0u, 1u, 3u, {4u, 4u}, {793u, 722u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -2749,6 +2777,11 @@ static const df_tb_stop tb_w8_sand_soak[] = {
 };
 
 static const df_tb_battle tb_battles[] = {
+    {"ac1_trace_defiant", 2u, tb_ac1_trace_defiant, sizeof tb_ac1_trace_defiant / sizeof tb_ac1_trace_defiant[0]},
+    {"ac1_trace_drizzle", 2u, tb_ac1_trace_drizzle, sizeof tb_ac1_trace_drizzle / sizeof tb_ac1_trace_drizzle[0]},
+    {"ac1_trace_intimidate", 2u, tb_ac1_trace_intimidate, sizeof tb_ac1_trace_intimidate / sizeof tb_ac1_trace_intimidate[0]},
+    {"ac1_trace_single", 2u, tb_ac1_trace_single, sizeof tb_ac1_trace_single / sizeof tb_ac1_trace_single[0]},
+    {"ac1_trace_switch", 6u, tb_ac1_trace_switch, sizeof tb_ac1_trace_switch / sizeof tb_ac1_trace_switch[0]},
     {"c01_adaptability_weather", 13u, tb_c01_adaptability_weather, sizeof tb_c01_adaptability_weather / sizeof tb_c01_adaptability_weather[0]},
     {"c01_defiant_competitive", 11u, tb_c01_defiant_competitive, sizeof tb_c01_defiant_competitive / sizeof tb_c01_defiant_competitive[0]},
     {"c01_grass_knot_weights", 18u, tb_c01_grass_knot_weights, sizeof tb_c01_grass_knot_weights / sizeof tb_c01_grass_knot_weights[0]},
@@ -3023,7 +3056,7 @@ static const df_tb_battle tb_battles[] = {
     {"w8_sand_soak", 7u, tb_w8_sand_soak, sizeof tb_w8_sand_soak / sizeof tb_w8_sand_soak[0]},
 };
 
-/* 2177 stops: 139 of an ended battle; decided by the count 694,
- * the HP percentage 665, the total HP 629, a tie 50;
- * winners: side 0 1095, side 1 1032, tie 50 */
+/* 2195 stops: 139 of an ended battle; decided by the count 694,
+ * the HP percentage 666, the total HP 646, a tie 50;
+ * winners: side 0 1095, side 1 1050, tie 50 */
 #endif
