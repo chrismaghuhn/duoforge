@@ -32,9 +32,9 @@ extern "C" {
 #endif
 
 #define DUOFORGE_VERSION_MAJOR 0
-#define DUOFORGE_VERSION_MINOR 16
+#define DUOFORGE_VERSION_MINOR 17
 #define DUOFORGE_VERSION_PATCH 0
-#define DUOFORGE_VERSION_STRING "0.16.0"
+#define DUOFORGE_VERSION_STRING "0.17.0"
 
 /* Identifiers of the artifacts that exist now (registry: decisions 0002, 0005, 0006). */
 #define DUOFORGE_SEMANTICS_ID           3u   /* "duoforge-m3-closure" */
@@ -437,10 +437,10 @@ typedef struct duoforge_position_view {
     uint8_t reserved;      /* zero under CLOSURE; under the TEAM_C kinds DUOFORGE_POSITION_FLAG_* */
 } duoforge_position_view; /* 16 bytes */
 
-/* Bits of duoforge_position_view.reserved under the TEAM_C kinds. Bits 1 and
-   2 stay 0 until Follow Me and Helping Hand are built (decision 0009 section
-   4.2). */
-#define DUOFORGE_POSITION_FLAG_UNBURDEN 4u /* Unburden doubles the occupant's Speed */
+/* Bits of duoforge_position_view.reserved under the TEAM_C kinds. Bit 1 stays
+   0 until Follow Me is built (decision 0009 section 4.2). */
+#define DUOFORGE_POSITION_FLAG_HELPING_HAND 2u /* Helping Hand's boost for this turn ([-singleturn]) */
+#define DUOFORGE_POSITION_FLAG_UNBURDEN     4u /* Unburden doubles the occupant's Speed */
 
 typedef struct duoforge_side_view {
     duoforge_member_view members[DUOFORGE_MAX_ROSTER];
@@ -528,6 +528,7 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_EVENT_ACTIVATE        35u /* [-activate] position; cause ABILITY + id2 (Lightning Rod, Emergency Exit) or MOVE + id2 (Struggle) */
 #define DUOFORGE_EVENT_UPKEEP          36u /* [upkeep] the end-of-turn effects are done */
 #define DUOFORGE_EVENT_RESULT          37u /* [win] or [tie] detail: DUOFORGE_RESULT_* */
+#define DUOFORGE_EVENT_SINGLE_TURN     38u /* [-singleturn] position (Team C): id: the move (Helping Hand), other: the user ([of]) */
 
 /* Causes ([from] and [of] in the protocol). */
 #define DUOFORGE_CAUSE_NONE      0u /* the move or the plain mechanic */

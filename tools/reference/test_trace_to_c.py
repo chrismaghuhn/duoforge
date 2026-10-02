@@ -168,6 +168,14 @@ class Refusals(unittest.TestCase):
                              "trace_to_c: %s tie with ['H:whiteherb:p1a:cb', 'H:lifeorb:p2a:cb']" % context,
                              context + ':lifeorb+whiteherb')
 
+    def test_singleturn_line_that_is_not_protect_or_helping_hand(self):
+        def mutate(spec, trace):
+            log = trace['steps'][1]['log']
+            self.assertEqual(log[1], '|-singleturn|p1b: Kingambit|Helping Hand|[of] p1a: Indeedee')
+            log[1] = '|-singleturn|p1b: Kingambit|move: Follow Me'
+        self.control('c09_helping_hand', mutate, 'singleturn-line',
+                     "trace_to_c: unknown -singleturn '|-singleturn|p1b: Kingambit|move: Follow Me'", 'move: Follow Me')
+
     def test_hit_draw_that_is_not_the_status_pick(self):
         for draw, text, detail in (
                 ({'site': 'ACCURACY', 'context': 'Hit', 'lo': 0, 'hi': 100, 'value': 7},

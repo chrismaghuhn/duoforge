@@ -1,6 +1,6 @@
 # 0009 — Team C: the expansion track (data kind, gate, steps, evidence)
 
-Status: **accepted** (owner, 2026-10-01: "bau das erstmal so"; setup rule: the closure rule, section 3.4). **Steps 1 to 9a built** (section 10). Builds on decision `0004` (two reference teams), `0006` (data, state v3, draw sites, fixtures, evidence), `0007` (player view) and `0010` (the certified CLOSURE profile, the role of `CLOSURE_DEV`, draw alignment B confirmed), and on the research in `docs/research/third-team/` (PR #32). "M§n" means section n of `docs/research/third-team/mechanics.md`; X1 to X9 are its executed experiments.
+Status: **accepted** (owner, 2026-10-01: "bau das erstmal so"; setup rule: the closure rule, section 3.4). **Steps 1 to 9b built** (section 10). Builds on decision `0004` (two reference teams), `0006` (data, state v3, draw sites, fixtures, evidence), `0007` (player view) and `0010` (the certified CLOSURE profile, the role of `CLOSURE_DEV`, draw alignment B confirmed), and on the research in `docs/research/third-team/` (PR #32). "M§n" means section n of `docs/research/third-team/mechanics.md`; X1 to X9 are its executed experiments.
 
 ## 1. Owner inputs (2026-10-01)
 
@@ -592,3 +592,80 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
   - Before the fix: 19 ran to the end; 17 aborted with "Invalid target for Helping Hand".
   - After the fix: all 36 ran to the end, with 0 UNKNOWN draw sites and Helping Hand used 23 times.
 - **Shared files touched:** `tools/reference/ps_trace.js` (`planMove` and its comments).
+
+### 10.10 Step 9b: Sucker Punch and Helping Hand
+
+- **Sucker Punch** (`data/moves.ts:18396-18415`): priority +1, contact, Dark, 70 power.
+  - Its `onTry` runs in trySpreadMoveHit after TryMove (Armor Tail) and before the hit steps (Protect), the same point as Fake Out's. It fails (`-fail`, `[still]`) unless `queue.willMove(target)` finds the target's queued move action and that move is not a status move.
+  - `willMove` (`sim/battle-queue.ts:324-332`) reads the actions still queued. The engine reads its own queue, bound by the target's activation. So the move fails when the target already moved, when it switches (a newcomer has no move queued), and when it fainted. No Me First and no recharge are in the data.
+  - Struggle counts as an attack; a two-turn or choice-locked move counts as its move.
+- **Helping Hand** (`data/moves.ts:8573-8606`): priority +5, target `adjacentAlly`, no `protect` flag, so Protect does not stop it.
+  - **Target.** It aims at the ally while the ally stands. With a fainted ally, or an empty slot (`getRandomTarget` finds no standing adjacent ally in doubles), the move has no target: `[notarget]` and `-fail`.
+  - **Good as Gold.** The TryHit step comes first (`sim/battle-actions.ts:643-653`). There, Good as Gold stops a status move of any other Pokémon, its ally's included (`data/abilities.ts:1630-1636`), with `-immune` and no `-fail`, so a Gholdengo partner gets no boost.
+  - **onTryHit.** It fails unless the ally switched in this turn (`newlySwitched`) or still has a move queued.
+    - With the data the failure is unreachable. Only Indeedee-F knows the move, its priority comes before every other move, and an ally that switched in is newly switched. So the plan's "on one that already moved (fails)" cannot be recorded.
+    - What is reachable is the reverse: Helping Hand on a partner that switched in this turn succeeds although the partner does not move (X4).
+  - **The volatile.** The ally gets the volatile for the turn, shown as `[-singleturn] ally|Helping Hand|[of] user`.
+    - The volatile is `chainModify(1.5)` in BasePower at priority 10: after Aerilate (23), Tough Claws (21) and the type items (15), before Grassy Terrain (6).
+    - Its duration of 1 ends in the residual, where it counts among the duration handlers.
+    - A second Helping Hand on the same Pokémon in a turn (`onRestart`) would need a second user, which doubles never has: `E_INVARIANT`.
+- **State.** Two volatile bits, valid only under the TEAM_C kinds:
+  - 16, Helping Hand: set until the residual, so never at a TURN or REPLACEMENT boundary;
+  - 128, `newlySwitched`: set when a Pokémon switches in (`dfi_run_switch`) and cleared at the end of the turn (`sim/battle.ts:1673`), so never at a TURN boundary.
+
+  A REPLACEMENT always follows the residual. A switch request in the middle of the turn is a PIVOT boundary, where both bits may be set. The state model mirrors both bits and these rules; its output is unchanged.
+- **Observation.** Helping Hand is public: `DUOFORGE_POSITION_FLAG_HELPING_HAND` (2) in the position view's `reserved` byte, set only while the volatile lasts, so at a PIVOT boundary or at a TERMINAL one in the middle of a turn. `newlySwitched` is not shown; the switch-in line is.
+- **Events.** `DUOFORGE_EVENT_SINGLE_TURN` (38): position = the ally, other = the user (`[of]`), id = the move. Protect's `-singleturn` stays `DUOFORGE_EVENT_PROTECT`.
+- **Public changes, library 0.17.0** (sections 4.2 and 9.4), coordinated with the main session:
+  - the event kind;
+  - the view bit.
+  - Python reads no event kinds, and its feature encoder already refuses a nonzero `reserved` byte.
+- **Request.** The `adjacentAlly` class already offered the ally's position (`request.c`). The turn core now resolves it (`dfi_move_targets`).
+- **Harness and converter.**
+  - The harness is unchanged since step 9a.
+  - The converter maps `-singleturn ... Helping Hand` to the new event, and any other `-singleturn` than Protect fails loudly. It compares `helpinghand` as volatile bit 32 and as the view bit.
+  - `newlySwitched` is not recorded by the harness. Its effect is: Helping Hand on a partner that switched in this turn.
+- **Evidence.** Four recorded battles:
+  - `c09_sucker_punch`:
+    - Sucker Punch fails against Gholdengo's Nasty Plot and Milotic's Coil;
+    - it hits Gholdengo's Make It Rain;
+    - Indeedee-F's Helping Hand comes first each turn (X4). The boosted Sucker Punch is a critical KO, so the x1.5 shows in Kingambit's later Iron Head hits.
+  - `c09_sucker_punch_order`:
+    - it fails against Ceruledge's faster Shadow Sneak (the target moved first), against Ceruledge's Protect, against Indeedee-F's Trick Room (a status move) and against a target that switches out;
+    - under Trick Room the slower Kingambit moves before the Shadow Sneak and hits.
+  - `c09_helping_hand`:
+    - Helping Hand on a partner that switched in this turn (X4);
+    - on Salamence's Hyper Voice, a spread move;
+    - Farigiraf's Armor Tail stops Sucker Punch;
+    - on Basculegion's Flip Turn, the boost is still shown at the PIVOT boundary.
+  - `c09_gold_and_armor_tail`:
+    - Good as Gold stops Helping Hand on its ally Gholdengo (`-immune`), so Make It Rain is not boosted;
+    - Farigiraf's Armor Tail (TryMove) stops Sucker Punch at Milotic before Sucker Punch's own `onTry` would fail against Milotic's Coil.
+
+  Tests through the public API:
+  - at a PIVOT boundary, after Helping Hand, a Flip Turn and a foe's switch in the same turn, both bits are valid; at the next TURN boundary both are gone, and either one there is `VOLATILE`;
+  - at a REPLACEMENT boundary, which follows the residual, Helping Hand's bit is `VOLATILE` and `newlySwitched`'s is valid;
+  - the gate and the manifest now include both moves;
+  - the CLOSURE masks hold neither bit.
+
+  Twelve negative controls each make a test fail:
+  - Sucker Punch that never fails, or that ignores the queued move's category;
+  - no Helping Hand boost;
+  - no `newlySwitched`, or `newlySwitched` never cleared;
+  - Helping Hand that ignores `newlySwitched` or Good as Gold, that outlives the residual, without its line, or hidden in the view;
+  - no TURN rule for the two bits, or no REPLACEMENT rule for Helping Hand.
+- **Not recorded.** Swords Dance and Reflect against Sucker Punch: they take the status-move path of Nasty Plot and Coil.
+- **Review findings, fixed.**
+  - Good as Gold did not stop Helping Hand, because Helping Hand skipped the TryHit step. This was a silent divergence with a mixed team.
+  - The residual list was sized for four duration ends per position; Helping Hand makes five. A decoded state could overflow it. It is now eight entries per position, with an explicit guard.
+  - The REPLACEMENT rule and the Armor Tail order had no test.
+- **Shared files touched:**
+  - `include/duoforge/duoforge.h` (the event kind, the view bit, version);
+  - `src/state/{battle_internal.h,closure_member.c,invariants.c,observation.c}`;
+  - `src/combat/{turn.c,events.c}`;
+  - `src/data/support_manifest.c`;
+  - `python/duoforge/_lib.py`, `python/tests/test_lib.py` (version);
+  - `tools/reference/{trace_to_c.py,test_trace_to_c.py}`, `tools/state_model/state_v3_model.py`;
+  - `tests/reference/conformance_types.h` (a comment only), `tests/support/conformance_compare.c`;
+  - `tests/test_conformance.c`, `tests/test_api_atomicity.c` (version), `tests/test_team_c_setup.c`;
+  - `docs/support/README.md`.
