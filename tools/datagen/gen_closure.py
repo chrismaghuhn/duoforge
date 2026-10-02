@@ -32,6 +32,19 @@ import sys
 
 PIN = 'b2cb775b0616115b775534eaeff50300e1fc81fc'
 
+# More files of the pin, read only by the whole-pool rows of --pool (decision 0015 section 4.2) to find where an item or
+# an ability is read by its id; they are not part of the provenance of any table header.
+READER_INPUTS = {
+    'data/conditions.ts': '03ec1b90913f864a0baab0574a70abb856d5e84f722acf96ab11a7601a72fc35',
+    'sim/battle-actions.ts': 'a30408e2f9a53a43333bf4a865366d6adbe26d3d91a836ba51042accce4d9437',
+    'sim/battle-queue.ts': '3d9dd71dfb7abc788f961d6123b1b9f7308ccab947af6527f1752dd1d94b95ed',
+    'sim/battle.ts': '852dc6eed2876100787090cf049e27d2b061fdb6e808a1edd261468390afaa1f',
+    'sim/field.ts': '3c46a9923736a9a0aaa35791e99d491308c255934553c9d104a0cc2ea453aa79',
+    'sim/pokemon.ts': 'f40260351baf649b15ad3beacfa4269c3418b2da27947af8f5c1097c888ab122',
+    'sim/side.ts': 'a18946aefe31018162956b1c708a9cce27bb33fe0f098cb58c44d8521d53b1f1',
+    'data/mods/champions/conditions.ts': '851507309dde0b58807e33b17d8ce7e607dad70893546f67bad294ad70249005',
+}
+
 # sha256 of the input files at the pin, after CRLF -> LF normalisation.
 INPUTS = {
     'data/pokedex.ts': '73048386b864be5aff093e9393acf32e8016299e9d7b76078bf5120b769e2fe0',
@@ -161,26 +174,41 @@ def fail(msg):
 
 
 class Source:
-    def __init__(self, root, rel):
+    def __init__(self, root, rel, pins=None):
+        pins = INPUTS if pins is None else pins
         raw = io.open(os.path.join(root, rel), 'rb').read().replace(b'\r\n', b'\n')
         got = hashlib.sha256(raw).hexdigest()
-        if got != INPUTS[rel]:
-            fail('%s: sha256 %s differs from the pin %s' % (rel, got, INPUTS[rel]))
+        if got != pins[rel]:
+            fail('%s: sha256 %s differs from the pin %s' % (rel, got, pins[rel]))
         self.rel = rel
         self.lines = raw.decode('utf-8').split('\n')
 
+    def first_lines(self):
+        """key -> index of the first line of its top-level entry (the first one of a repeated key), built once."""
+        if getattr(self, '_first', None) is None or self._first_of is not self.lines:
+            self._first, self._first_of = {}, self.lines
+            for i, line in enumerate(self.lines):
+                m = re.match(r'^\t(\w+): \{', line)
+                if m is not None and m.group(1) not in self._first:
+                    self._first[m.group(1)] = i
+        return self._first
+
     def entry(self, key):
         """Returns (first line, last line, body lines) of the top-level entry or None."""
-        for i, line in enumerate(self.lines):
-            if re.match(r'^\t%s: \{' % re.escape(key), line):
-                if line.rstrip().endswith('},'):  # one-line entry
-                    return i + 1, i + 1, [line]
-                depth = 0
-                for j in range(i, len(self.lines)):
-                    depth += self.lines[j].count('{') - self.lines[j].count('}')
-                    if depth <= 0:
-                        return i + 1, j + 1, self.lines[i:j + 1]
-        return None
+        i = self.first_lines().get(key)
+        if i is None:
+            return None
+        line = self.lines[i]
+        if line.rstrip().endswith('},'):  # one-line entry
+            return i + 1, i + 1, [line]
+        depth = 0
+        for j in range(i, len(self.lines)):
+            depth += self.lines[j].count('{') - self.lines[j].count('}')
+            if depth <= 0:
+                if self.lines[j] != '\t},':
+                    fail('%s: the entry %s does not end at a line "\\t},"' % (self.rel, key))
+                return i + 1, j + 1, self.lines[i:j + 1]
+        fail('%s: the entry %s is not closed' % (self.rel, key))
 
     def ref(self, key):
         e = self.entry(key)
@@ -224,20 +252,41 @@ def boosts_of(text):
     return vec
 
 
-def modelled(table, key, mid, what):
-    """The code of a name that the tables model. Anything else fails with a message, never as a KeyError."""
+def modelled(table, key, mid, what, unmodeled=None):
+    """The code of a name that the tables model. Anything else fails with a message, never as a KeyError; in the
+    lenient mode (a list `unmodeled`) it is recorded as a feature that the tables do not model and gives 0."""
     if key not in table:
-        fail('move %s: %s %s is not modelled' % (mid, what, key))
+        if unmodeled is None:
+            fail('move %s: %s %s is not modelled' % (mid, what, key))
+        unmodeled.append('%s %s' % (what, key))
+        return 0
     return table[key]
 
 
-def parse_move(mid, base, champ, ext=False, pool=False):
+def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
     """ext: the extended tables' encodings (decision 0009); the closure mode
     keeps exactly the closure's. pool: the pool tables' encodings (decision
     0015), which are the extended ones plus the named handlers of G2_HANDLERS:
     a move whose callbacks or fields the tables do not model is mapped
-    deliberately to one of them, and anything else still fails."""
+    deliberately to one of them, and anything else still fails.
+
+    unmodeled (a list, pool mode only): the lenient mode of the whole-pool rows (decision 0015 section 4.2). What
+    the tables model is encoded exactly as in the strict mode. A callback, field, secondary, status, volatile, side
+    condition, pseudo weather, boost shape, target class or flag that they do not model is appended to the list, as
+    one feature string each, instead of failing, and the caller maps the move to the UNMODELED handler. What the
+    generator cannot read at all (a type, category, PP or accuracy it does not know, a value that does not fit its
+    byte) still fails."""
     ext = ext or pool
+    lenient = unmodeled is not None
+    if lenient and not pool:
+        fail('move %s: the lenient mode is for the pool tables only' % mid)
+
+    def bad(message, feature):
+        """An unmodelled feature: a failure in the strict mode, a recorded feature in the lenient one."""
+        if not lenient:
+            fail(message)
+        unmodeled.append(feature)
+
     e = base.entry(mid)
     if e is None:
         fail('move %s not found' % mid)
@@ -267,9 +316,9 @@ def parse_move(mid, base, champ, ext=False, pool=False):
     for name, (is_fn, _text) in f.items():
         if is_fn:
             if name not in handled[1]:
-                fail('move %s: callback %s is not mapped to a handler' % (mid, name))
+                bad('move %s: callback %s is not mapped to a handler' % (mid, name), 'callback %s' % name)
         elif name not in DATA_KEYS and name not in IGNORED_KEYS and name not in owned_fields and name not in owned:
-            fail('move %s: unknown field %s' % (mid, name))
+            bad('move %s: unknown field %s' % (mid, name), 'field %s' % name)
     missing = handled[1] - set(n for n, v in f.items() if v[0])
     if missing:
         fail('move %s: expected callbacks %s are absent' % (mid, sorted(missing)))
@@ -282,11 +331,23 @@ def parse_move(mid, base, champ, ext=False, pool=False):
     for fl in re.findall(r'(\w+): 1', f['flags'][1]):
         if fl in flag_bits:
             flags |= flag_bits[fl]
+        elif lenient:
+            # Every flag of the pool is known (POOL_FLAGS) or the generator cannot read the move; a flag that no
+            # encoded bit holds is recorded when a modelled row reads it (flags_that_matter), and otherwise ignored.
+            if fl not in POOL_FLAGS:
+                fail('move %s: unknown flag %s' % (mid, fl))
+            if fl in FLAGS_THAT_MATTER:
+                unmodeled.append('flag %s' % fl)
         elif fl not in IGNORED_FLAGS and not (pool and fl in G2_IGNORED_FLAGS):
             fail('move %s: unknown flag %s' % (mid, fl))
     for key, bit in EXTRA_FLAG_BITS.items():
-        if get(key, False):
+        value = get(key, False)
+        if value is True:
             flags |= bit
+        elif value is not False:
+            # selfSwitch: "copyvolatile" (Baton Pass) and "shedtail" (Shed Tail) switch the user out and carry
+            # something over: no flag of the tables says that.
+            bad('move %s: %s is %r, not a flag' % (mid, key, value), 'field %s %s' % (key, value))
     acc = get('accuracy')
     pp_base = get('pp')
     pp_capped = min(pp_base, 20)  # champions init(): data/mods/champions/scripts.ts:3-9
@@ -296,11 +357,19 @@ def parse_move(mid, base, champ, ext=False, pool=False):
         if pp_capped % 5 != 0:
             fail('move %s: pp %d is not a multiple of 5' % (mid, pp_capped))
         pp_max = (pp_capped // 5 + 1) * 4  # calculatePP: scripts.ts:41-43
+    if get('target') not in (TARGET_CLASS_POOL if lenient else TARGET_CLASS):
+        fail('move %s: unknown target class %s' % (mid, get('target')))
+    target_class = (TARGET_CLASS_POOL if lenient else TARGET_CLASS)[get('target')]
+    if lenient and get('target') not in ENGINE_TARGETS:
+        unmodeled.append('target %s' % get('target'))
+    for what, table, key in (('type', TYPES, 'type'), ('category', CATEGORIES, 'category')):
+        if get(key) not in table:
+            fail('move %s: unknown %s %s' % (mid, what, get(key)))
     rec = {
         'id': mid, 'name': get('name'), 'refs': refs,
         'type': TYPES.index(get('type')), 'category': CATEGORIES[get('category')],
         'base_power': get('basePower'), 'accuracy': 0 if acc is True else acc, 'pp_base': pp_base, 'pp_max': pp_max,
-        'priority': get('priority') + 8, 'target_class': TARGET_CLASS[get('target')],
+        'priority': get('priority') + 8, 'target_class': target_class,
         'crit_ratio': get('critRatio', 1), 'flags': flags,
         'recoil': [0, 0], 'drain': [0, 0], 'sec_chance': 0, 'sec_kind': 0, 'sec_param': 0,
         'boost_role': 0, 'boosts': [0] * 7, 'primary_status': 0, 'side_condition': 0, 'pseudo_weather': 0,
@@ -318,14 +387,19 @@ def parse_move(mid, base, champ, ext=False, pool=False):
         # self block, a callback, several effects) fails instead of being misread.
         sec = re.fullmatch(r'secondary: \{ chance: (\d+), (.*) \},', ' '.join(f['secondary'][1].split()))
         if sec is None:
-            fail('move %s: unknown secondary' % mid)
-        rec['sec_chance'], effect = int(sec.group(1)), sec.group(2)
-        st = re.fullmatch(r"status: '(\w+)',", effect)
-        vo = re.fullmatch(r"volatileStatus: '(\w+)',", effect)
-        if st:
-            rec['sec_kind'], rec['sec_param'] = 2, modelled(STATUS, st.group(1), mid, 'secondary status')
+            bad('move %s: unknown secondary' % mid, 'secondary')
+            effect = None
+        else:
+            rec['sec_chance'], effect = int(sec.group(1)), sec.group(2)
+        st = re.fullmatch(r"status: '(\w+)',", effect or '')
+        vo = re.fullmatch(r"volatileStatus: '(\w+)',", effect or '')
+        if effect is None:
+            rec['sec_chance'] = 0
+        elif st:
+            rec['sec_kind'], rec['sec_param'] = 2, modelled(STATUS, st.group(1), mid, 'secondary status', unmodeled)
         elif vo:
-            rec['sec_kind'], rec['sec_param'] = 3, modelled(VOLATILE, vo.group(1), mid, 'secondary volatile')
+            rec['sec_kind'], rec['sec_param'] = 3, modelled(VOLATILE, vo.group(1), mid, 'secondary volatile',
+                                                            unmodeled)
         elif re.fullmatch(r'boosts: \{ (?:(?:%s): -?\d+, )+\},' % '|'.join(BOOSTS), effect):
             rec['sec_kind'] = 1
             rec['boost_role'], rec['boosts'] = BOOST_ROLE['SECONDARY_TARGET'], boosts_of(effect)
@@ -333,31 +407,38 @@ def parse_move(mid, base, champ, ext=False, pool=False):
         elif ext and effect == STATUS_PICK_ONHIT:
             rec['sec_kind'] = SECONDARY_STATUS_PICK
         elif re.search(r'\bself: \{', effect):
-            fail('move %s: secondary self effects are not supported' % mid)
+            bad('move %s: secondary self effects are not supported' % mid, 'secondary self effect')
+            rec['sec_chance'] = 0
         else:
-            fail('move %s: unknown secondary' % mid)
+            bad('move %s: unknown secondary' % mid, 'secondary')
+            rec['sec_chance'] = 0
     if 'self' in f:
-        rec['boost_role'], rec['boosts'] = BOOST_ROLE['SELF_AFTER_HIT'], boosts_of(f['self'][1])
-        vectors += 1
+        if lenient and not re.search(r'\bboosts: ', f['self'][1]):
+            unmodeled.append('self effect')
+        else:
+            rec['boost_role'], rec['boosts'] = BOOST_ROLE['SELF_AFTER_HIT'], boosts_of(f['self'][1])
+            vectors += 1
     if 'boosts' in f:
         if rec['target_class'] != TARGET_CLASS['self']:
-            fail('move %s: primary boosts on a non-self target' % mid)
-        rec['boost_role'], rec['boosts'] = BOOST_ROLE['PRIMARY_SELF'], boosts_of(f['boosts'][1])
-        vectors += 1
+            bad('move %s: primary boosts on a non-self target' % mid, 'primary boosts on a non-self target')
+        else:
+            rec['boost_role'], rec['boosts'] = BOOST_ROLE['PRIMARY_SELF'], boosts_of(f['boosts'][1])
+            vectors += 1
     if vectors > 1:
-        fail('move %s: more than one boost vector' % mid)
+        bad('move %s: more than one boost vector' % mid, 'more than one boost vector')
+        rec['boost_role'], rec['boosts'] = 0, [0] * 7
     if 'status' in f:
-        rec['primary_status'] = modelled(STATUS_C if ext else STATUS, get('status'), mid, 'primary status')
+        rec['primary_status'] = modelled(STATUS_C if ext else STATUS, get('status'), mid, 'primary status', unmodeled)
     owned_volatile = SPECIAL_VOLATILE_C.get(handled[0]) if ext else None
     if 'volatileStatus' in f and 'volatileStatus' not in owned and get('volatileStatus') not in ('protect', owned_volatile):
-        fail('move %s: unknown primary volatile' % mid)
+        bad('move %s: unknown primary volatile' % mid, 'primary volatile %s' % get('volatileStatus'))
     if 'sideCondition' in f and 'sideCondition' not in owned:
-        rec['side_condition'] = modelled(SIDE_CONDITION, get('sideCondition'), mid, 'side condition')
+        rec['side_condition'] = modelled(SIDE_CONDITION, get('sideCondition'), mid, 'side condition', unmodeled)
     if 'pseudoWeather' in f:
-        rec['pseudo_weather'] = modelled(PSEUDO_WEATHER, get('pseudoWeather'), mid, 'pseudo weather')
+        rec['pseudo_weather'] = modelled(PSEUDO_WEATHER, get('pseudoWeather'), mid, 'pseudo weather', unmodeled)
     if 'condition' in f and not (rec['side_condition'] or rec['pseudo_weather'] or mid == 'protect' or
                                  owned_volatile is not None or owns_condition):
-        fail('move %s: condition block without a known owner' % mid)
+        bad('move %s: condition block without a known owner' % mid, 'condition block')
     for k in ('base_power', 'accuracy', 'pp_base', 'pp_max', 'priority', 'crit_ratio'):
         if not 0 <= rec[k] <= 255:
             fail('move %s: %s out of range' % (mid, k))
@@ -374,7 +455,11 @@ def parse_forme(key, dex, formats):
         fail('species %s not found' % key)
     text = '\n'.join(e[2])
     if formats.entry(key) is None:
-        fail('species %s has no champions formats-data entry' % key)
+        # A forme without an entry of its own (Meowstic-F) is in the format through its base species, as the
+        # pinned dex gives it its base species' tier; anything else is not in the format.
+        base = re.search(r'\tbaseSpecies: "(.*?)"', text)
+        if base is None or formats.entry(toid(base.group(1))) is None:
+            fail('species %s has no champions formats-data entry' % key)
     bs = re.search(r'baseStats: \{ hp: (\d+), atk: (\d+), def: (\d+), spa: (\d+), spd: (\d+), spe: (\d+) \}', text)
     types = [t.strip().strip('"') for t in re.search(r'types: \[(.*?)\]', text).group(1).split(',')]
     gender = re.search(r'\bgender: "(\w)"', text)
@@ -1170,7 +1255,7 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'psychicnoise': ('PSYCHIC_NOISE', set()),                             # G8b: Heal Block on every hit target
     'lowkick': ('LOW_KICK', {'basePowerCallback', 'onTryHit'}),           # G10d: base power by the target's weight
 })
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + ['UNMODELED']
 G2_OWNED_FIELDS = {
     'SCALD': {'thawsTarget': 'thawsTarget: true,'},
     'RECOVER': {'heal': 'heal: [1, 2],'},
@@ -1209,6 +1294,58 @@ PRIMAL_GUARD = {'raindance': ('kyogre', 'blueorb'), 'sunnyday': ('groudon', 'red
 # Chilan Berry halves any Normal hit; every other resist berry needs a super effective hit (decision 0015 section 3).
 # A Normal move is never super effective, so the variant is the Normal berry.
 RESIST_BERRY_NORMAL = ('chilanberry',)
+
+# ---- The whole legal pool (decision 0015 section 4.2): a row for every move, item, ability and forme of the format,
+# appended after the rows of the steps above. A row that the tables model fully is encoded exactly as before; one that
+# has anything unmodelled gets the UNMODELED handler (the move's special column; the handler column of an item or an
+# ability) and a recorded list of the features that are not modelled. Such rows are never marked in the manifest. ----
+# Target classes of the pool that the closure encodings lack, as codes of the generated header only (the public
+# DUOFORGE_TARGET_CLASS_* values stay 1 to 9; Struggle's randomNormal is 10). They are encoded; the turn code does not
+# implement them, so a move with one is UNMODELED.
+TARGET_CLASS_POOL = dict(TARGET_CLASS, allAdjacent=11, scripted=12, allyTeam=13, allies=14, foeSide=15)
+TARGET_CLASS_POOL_NAMES = {11: 'ALL_ADJACENT', 12: 'SCRIPTED', 13: 'ALLY_TEAM', 14: 'ALLIES', 15: 'FOE_SIDE'}
+# The target classes that the turn code resolves (src/combat/turn.c, dfi_resolve_targets and request.c).
+ENGINE_TARGETS = {'normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
+                  'randomNormal'}
+# Every move flag of the 510 pool moves: a flag outside this set is something the generator cannot read.
+POOL_FLAGS = (set(FLAG_BITS_C) | IGNORED_FLAGS | G2_IGNORED_FLAGS |
+              {'bite', 'recharge', 'minimize', 'gravity', 'powder', 'noparentalbond', 'futuremove', 'cantusetwice',
+               'mustpressure', 'nosketch'})
+# The move flags that no bit holds and that a modelled row reads. It is filled by build_pool from the rows that are
+# modelled by definition (the prefix); a move with such a flag is UNMODELED. The set is empty while no modelled row
+# reads an unencoded flag; the day one does, the move rows that carry the flag change by rule, never silently.
+FLAGS_THAT_MATTER = set()
+# Flags that a row of the prefix reads and that still do not matter, each with the reason and the row whose
+# modelling would make it matter (build_pool fails if that row is modelled):
+#   bypasssub -- Chople Berry reads it next to the substitute volatile, which no modelled row has (Substitute is
+#                UNMODELED); pledgecombo -- Lightning Rod reads it; only the pledge moves have it, none is in the pool.
+INERT_FLAG_READS = {'bypasssub': 'substitute', 'pledgecombo': None}
+HANDLER_IDS = ['NONE', 'UNMODELED']
+# Items and abilities that a step of the expansion implements in the turn code by id (they have no family): modelled
+# by definition, like the closure and Team C rows. The step that marks such a row in the support manifest adds its id
+# here, which changes the handler column and so the POOL table hash, as any pool change does; a row that is marked and
+# still has the UNMODELED handler fails duoforge.data.pool_tables. G4: Focus Sash, Rock Head.
+ENGINE_ROWS = {'items': ['focussash'], 'abilities': ['rockhead']}
+# The one ability that the pin tags as not released and that the pool still has: Aura Guard is the ability of
+# Lucario-Mega-Z, whose set the pinned validator accepts (docs/research/expansion/data/legal_pool.json, 'abilities_mega_only').
+# The row exists because the format has the forme; it is UNMODELED like every ability with a callback. Any other tag fails.
+LEGAL_DESPITE_TAG = {'auraguard': 'Future'}
+# What an ability or item entry may have and still be pure data. Anything else is a callback or a field that the
+# tables do not model.
+INERT_ABILITY_KEYS = {'name', 'num', 'rating', 'gen', 'isNonstandard', 'flags'}
+INERT_ITEM_KEYS = {'name', 'spritenum', 'fling', 'num', 'gen', 'isNonstandard', 'naturalGift', 'isBerry', 'isChoice',
+                   'isGem', 'isPokeball', 'megaStone', 'itemUser', 'megaEvolves'}
+# The onTakeItem of every Mega Stone at the pin (it only stops Knock Off and Trick on the holder): data for the
+# Mega link, not a mechanic of the tables.
+STONE_TAKE_ITEM = ("onTakeItem(item, source) { return !item.megaStone?.[source.baseSpecies.baseSpecies]; },",
+                   "onTakeItem(item, source) { return !item.megaStone || (!item.megaStone[source.baseSpecies.name] && "
+                   "!Object.values(item.megaStone).includes(source.baseSpecies.name)); },")
+# Field widths that the whole pool has to fit, read from the sources that own them (check_bounds).
+BOUND_SOURCES = {
+    'state': os.path.join('src', 'state', 'battle_internal.h'),
+    'api': os.path.join('include', 'duoforge', 'duoforge.h'),
+    'context': os.path.join('src', 'state', 'context_internal.h'),
+}
 
 
 class NoMatch(Exception):
@@ -1395,7 +1532,13 @@ def load_legal_pool(repo):
     if legal['meta']['showdown_commit'] != PIN or legal['meta']['format_id'] != FORMAT_ID:
         fail('%s was not made at the pin for %s' % (LEGAL_POOL, FORMAT_ID))
     return {'items': {i['id'] for i in legal['items']}, 'abilities': {a['id'] for a in legal['abilities']},
-            'species': {sp['id']: sp for sp in legal['species']}}
+            'species': {sp['id']: sp for sp in legal['species']},
+            # The pool in the file's own order (alphabetical by id for moves, items and abilities, the dex for
+            # species): the order in which the whole-pool rows are appended after the rows of the steps.
+            'move_order': [m['id'] for m in legal['moves']], 'item_order': [i['id'] for i in legal['items']],
+            'ability_order': [a['id'] for a in legal['abilities']], 'species_order': [sp['id'] for sp in legal['species']],
+            'stones': {i['id']: list(i['mega_stone'].items()) for i in legal['items'] if i['is_mega_stone']},
+            'counts': legal['counts']}
 
 
 # The legal moves and abilities of a forme (decision 0015 section 2). A forme declares up to three abilities (0, 1 and
@@ -1404,11 +1547,17 @@ FORME_ABILITIES_MAX = 3
 LEARNSET_ENTRY = re.compile(r'\t\t\t(\w+): \["9M"\],')
 
 
-def learnset_moves(learn, fid):
+def learnset_moves(learn, fid, base=None):
     """The moves of a forme's entry of data/mods/champions/learnsets.ts: one learnset block in which every entry is
     "9M" (no event, egg or level-up source, as the research note found), so learnable means listed. Any other shape
     fails; it never guesses."""
     e = learn.entry(fid)
+    if e is not None and e[2] == ['\t%s: {},' % fid]:
+        e = None  # an empty entry (Gourgeist-Super) is no learnset of its own
+    if e is None and base is not None and base != fid:
+        # A forme without a learnset of its own (Gourgeist-Small) learns what its base species learns; the
+        # validator cross-check of forme_legal decides whether that is right for the forme.
+        e = learn.entry(base)
     if e is None:
         fail('%s has no champions learnset' % fid)
     body = e[2]
@@ -1439,6 +1588,8 @@ def ability_released(abil_ts, champ_abil, aid):
         ce = champ_abil.entry(aid)
         cf = fields(ce[2]) if ce is not None else {}
         if 'isNonstandard' not in cf or scalar(cf['isNonstandard'][1]) != 'null':
+            if LEGAL_DESPITE_TAG.get(aid) == scalar(f['isNonstandard'][1]):
+                return
             fail('ability %s is tagged %s' % (aid, scalar(f['isNonstandard'][1])))
 
 
@@ -1485,7 +1636,7 @@ def forme_legal(formes, pool_moves, pool_abilities, learn, legal_species, abil_t
                 fail('%s: its set ability is not one of its legal abilities' % fo['id'])
             if len(abilities) > FORME_ABILITIES_MAX:
                 fail('%s: more than %d legal abilities' % (fo['id'], FORME_ABILITIES_MAX))
-            learnable = learnset_moves(learn, fo['id']) & set(pool_moves)
+            learnable = learnset_moves(learn, fo['id'], rec.get('base_species')) & set(pool_moves)
             legal_moves = set(rec['moves']) & set(pool_moves)
             if learnable != legal_moves:
                 fail('%s: the learnset and the validator disagree on %s' % (
@@ -1518,27 +1669,182 @@ def ability_param(family, fact):
     return FAMILY_PARAM_NONE, 'DFI_FAMILY_PARAM_NONE'
 
 
-def check_flag_readers(abilities):
-    """A move flag that the tables ignore must have no reader among the pool abilities."""
-    for flag, reader in FLAG_READERS.items():
-        if any(a['id'] == reader for a in abilities):
-            fail('ability %s reads the move flag %s, which the tables ignore' % (reader, flag))
+def prefix_flag_reads(srcs, dx):
+    """The move flags that the rows of the extended prefix (the closure and Team C, whose handlers are code in the turn
+    core) read in their pinned handlers: `flags['x']` or `.flags.x`. A flag that a modelled row reads and that no bit
+    holds would matter to the move rows that carry it."""
+    items_ts, champ_items, abil_ts, champ_abil, moves_ts, champ_moves = srcs
+    reads = set()
+    for src, champ, rows in ((abil_ts, champ_abil, dx['abilities']), (items_ts, champ_items, dx['items']),
+                             (moves_ts, champ_moves, dx['moves'])):
+        for r in rows:
+            for s in (src, champ):
+                e = s.entry(r['id'])
+                if e is not None:
+                    text = '\n'.join(e[2])
+                    reads.update(re.findall(r"flags\['(\w+)'\]", text))
+                    reads.update(re.findall(r'\.flags\.(\w+)', text))
+    return reads
+
+
+def parse_pool_move(mid, moves_ts, champ_moves):
+    """A move of the whole pool that no step has handled: parsed in the lenient mode. Everything that the tables
+    model is encoded as parse_move encodes it; a move with any unmodelled feature gets the UNMODELED handler, its effect
+    columns neutral (a refused row claims nothing beyond its plain data: type, category, power, accuracy, PP,
+    priority, target class, crit ratio, flags, recoil and drain), and the list of its features."""
+    features = []
+    rec = parse_move(mid, moves_ts, champ_moves, pool=True, unmodeled=features)
+    rec['unmodeled'] = sorted(set(features))
+    if rec['unmodeled']:
+        rec.update(sec_chance=0, sec_kind=0, sec_param=0, boost_role=0, boosts=[0] * 7, primary_status=0,
+                   side_condition=0, pseudo_weather=0, special=SPECIAL_IDS_P.index('UNMODELED'))
+    return rec
+
+
+class ReaderIndex:
+    """Where the quoted id of an item or ability appears in the pinned code: the data files that hold handlers (moves,
+    abilities, items, conditions and the Champions mod) and the sim files that run them. An item or ability with no
+    callback of its own can still be read by its id elsewhere (Damp Rock by Rain Dance, Levitate by isGrounded, Binding
+    Band by the trapping condition): its effect is then code in the reader, not data in its row."""
+
+    QUOTED = re.compile(r"""['"]([a-z][a-z0-9]*)['"]""")
+
+    def __init__(self, root, loaded):
+        self.lines = {rel: Source(root, rel, READER_INPUTS).lines for rel in READER_INPUTS}
+        for rel in ('data/abilities.ts', 'data/items.ts', 'data/moves.ts', 'data/mods/champions/abilities.ts',
+                    'data/mods/champions/items.ts', 'data/mods/champions/moves.ts', 'data/mods/champions/scripts.ts'):
+            self.lines[rel] = loaded[rel].lines
+        self.index = {}
+        for rel, lines in self.lines.items():
+            for n, line in enumerate(lines, 1):
+                for tok in self.QUOTED.findall(line):
+                    self.index.setdefault(tok, []).append((rel, n))
+
+    def files(self, rid, own):
+        """The files that read the id outside the id's own entries (own: (file, first line, last line) triples)."""
+        return sorted({rel for rel, n in self.index.get(rid, []) if not any(r == rel and a <= n <= b for r, a, b in own)})
+
+
+def entry_features(src, champ, rid, inert_keys, stone=False, readers=None):
+    """The features of an item or ability entry that the tables do not model: every callback (a function field, or
+    any field named onX), a condition block and every field outside the inert keys. The Champions mod adds or
+    replaces fields of the same entry. A Mega Stone's onTakeItem is data of its Mega link (STONE_TAKE_ITEM)."""
+    e = src.entry(rid)
+    if e is None:
+        fail('%s not found in %s' % (rid, src.rel))
+    f = fields(e[2])
+    ce = champ.entry(rid)
+    if ce is not None:
+        f.update({k: v for k, v in fields(ce[2]).items() if k != 'inherit'})
+    feats = []
+    for name, (is_fn, text) in sorted(f.items()):
+        if name == 'condition':
+            feats.append('condition block')
+        elif is_fn or re.match(r'on[A-Z]', name):
+            if stone and name == 'onTakeItem' and norm(re.sub(r'//[^\n]*', '', text)) in STONE_TAKE_ITEM:
+                continue
+            feats.append('callback %s' % name)
+        elif name not in inert_keys:
+            feats.append('field %s' % name)
+    if readers is not None:
+        own = [(src.rel, e[0], e[1])] + ([(champ.rel, ce[0], ce[1])] if ce is not None else [])
+        feats += ['read by id in %s' % rel for rel in readers.files(rid, own)]
+    return feats
+
+
+def check_bounds(d, repo):
+    """The whole pool has to fit the widths that the state, the observation, the context and the tables give its ids
+    (decision 0015 section 4.2). The widths are read from the sources that own them, so a field that becomes
+    narrower fails the generator here, never as a silent truncation at setup."""
+    def read(key):
+        with io.open(os.path.join(repo, BOUND_SOURCES[key]), encoding='utf-8') as fh:
+            return fh.read().replace('\r\n', '\n')
+
+    def width(text, owner, field):
+        """The bit width of `field` in the struct that starts at `owner` (the first declaration after it)."""
+        a = text.find(owner)
+        if a < 0:
+            fail('bounds: %s not found' % owner)
+        m = re.search(r'\buint(8|16|32)_t\s+%s\b' % re.escape(field), text[a:text.index('}', a)])
+        if m is None:
+            fail('bounds: no integer field %s in %s' % (field, owner))
+        return int(m.group(1))
+
+    state, api, ctx = read('state'), read('api'), read('context')
+    n = {k: len(d[k]) for k in ('formes', 'moves', 'items', 'abilities')}
+    # A member's species and each move slot are u16 in the state (a forme id below 0xFFFF, which is the "no forme"
+    # value of the tables); its item and ability are u8 holding 1 + the id (0 is none) and the tables use 0xFF as
+    # their own "none", so an id is at most 254 and 1 + an id at most 255.
+    limits = [
+        ('species_id of dfi_member', width(state, 'typedef struct dfi_member {', 'species_id'), n['formes'] - 1),
+        ('move_id of dfi_move_slot', width(state, 'typedef struct dfi_move_slot {', 'move_id'), n['moves'] - 1),
+        ('item of dfi_member', width(state, 'typedef struct dfi_member {', 'item'), n['items']),
+        ('ability of dfi_member', width(state, 'typedef struct dfi_member {', 'ability'), n['abilities']),
+        ('species_id of duoforge_member_view', width(api, 'typedef struct duoforge_member_view {', 'species_id'),
+         n['formes'] - 1),
+        ('ability of duoforge_member_view', width(api, 'typedef struct duoforge_member_view {', 'ability'),
+         n['abilities']),
+        ('item of duoforge_member_view', width(api, 'typedef struct duoforge_member_view {', 'item'), n['items']),
+        ('move_ids of duoforge_member_view', width(api, 'typedef struct duoforge_member_view {', 'move_ids'),
+         n['moves'] - 1),
+        ('id of duoforge_event', width(api, 'typedef struct duoforge_event {', 'id'), max(n['formes'] - 1, n['moves'] - 1)),
+        ('id2 of duoforge_event', width(api, 'typedef struct duoforge_event {', 'id2'),
+         max(n['moves'] - 1, n['items'], n['abilities'])),
+        ('species_count of the context', width(ctx, 'struct duoforge_context {', 'species_count'), n['formes']),
+        ('move_count of the context', width(ctx, 'struct duoforge_context {', 'move_count'), n['moves']),
+    ]
+    for what, bits, biggest in limits:
+        if biggest > (1 << bits) - 1:
+            fail('bounds: %s is %d bits, the pool needs %d' % (what, bits, biggest))
+    if width(api, 'typedef struct duoforge_member_view {', 'species_id') != 16:
+        fail('bounds: species_id of the member view is no longer 16 bits')
+    m = re.search(r'#define DUOFORGE_DATA_MAX_FORME_MOVES\s+(\d+)u', api)
+    if m is None or n['moves'] > int(m.group(1)):
+        fail('bounds: %d moves exceed DUOFORGE_DATA_MAX_FORME_MOVES' % n['moves'])
+    m = re.search(r'#define DUOFORGE_DATA_MAX_FORME_ABILITIES\s+(\d+)u', api)
+    if m is None or FORME_ABILITIES_MAX > int(m.group(1)):
+        fail('bounds: a forme may have more legal abilities than DUOFORGE_DATA_MAX_FORME_ABILITIES')
+    # The u8 row fields of the tables: ability, item and move ids (the none value 0xFF is not an id), and ids in the
+    # forme legal lists. Forme ids are u16 in the pool rows (0xFFFF is none).
+    if n['abilities'] > 254 or n['items'] > 254:
+        fail('bounds: the pool has %d abilities and %d items; a u8 id field holds at most 254 (0xFF is none)' % (
+            n['abilities'], n['items']))
+    if n['formes'] > 0xFFFE or n['moves'] > 0xFFFF:
+        fail('bounds: %d formes and %d moves exceed the u16 ids' % (n['formes'], n['moves']))
+    for fo in d['formes']:
+        if any(v > 254 for v in fo['set_moves']) or fo['set_item'] > 254 and fo['set_item'] != 0xFF:
+            fail('bounds: the set of %s does not fit the u8 fields of its row' % fo['id'])
+        if fo['dex_num'] > 0xFFFF or fo['weight_hg'] > 0xFFFF or any(not 0 <= b <= 255 for b in fo['base']):
+            fail('bounds: %s has a dex number, weight or base stat outside its field' % fo['id'])
+    if len(d['forme_legal'][0]['learnable']) * 8 < n['moves']:
+        fail('bounds: the learnable bitset is too short for %d moves' % n['moves'])
 
 
 def build_pool(root, repo, dx):
     """The pool tables: the extended data as the prefix, then the new rows of step P1 (POOL_ITEMS, POOL_ABILITIES),
-    then those of step G2 (G2_MOVES, G2_ITEMS, G2_ABILITIES and the formes of SETS_G2), then the family columns of
-    every item and ability and the legal moves and abilities of every forme, the prefix included."""
+    then those of step G2 (G2_MOVES, G2_ITEMS, G2_ABILITIES and the formes of SETS_G2), then every other move, item,
+    ability and forme of the legal pool (docs/research/expansion/data/legal_pool.json) in the file's order, then the
+    family columns of every item and ability, the handler columns, and the legal moves and abilities of every forme,
+    the prefix included. Cosmetic formes that the validator treats as their base forme are one row of the base forme
+    plus a name alias."""
     dex, moves_ts = Source(root, 'data/pokedex.ts'), Source(root, 'data/moves.ts')
     champ_moves = Source(root, 'data/mods/champions/moves.ts')
     items_ts, champ_items = Source(root, 'data/items.ts'), Source(root, 'data/mods/champions/items.ts')
     abil_ts, champ_abil = Source(root, 'data/abilities.ts'), Source(root, 'data/mods/champions/abilities.ts')
     formats, learn = Source(root, 'data/mods/champions/formats-data.ts'), Source(root, 'data/mods/champions/learnsets.ts')
     legal = load_legal_pool(repo)
-    items, abilities = list(dx['items']), list(dx['abilities'])
-    for iid in POOL_ITEMS + G2_ITEMS:
+    FLAGS_THAT_MATTER.clear()
+    FLAGS_THAT_MATTER.update(prefix_flag_reads((items_ts, champ_items, abil_ts, champ_abil, moves_ts, champ_moves), dx)
+                             - set(FLAG_BITS_C) - set(INERT_FLAG_READS))
+    # The prefix rows keep the closure's "none" (0xFF) for the forme ids of a Mega link in the extended data; the pool
+    # rows use None for it, because a forme id above 254 is real here.
+    items, abilities = [dict(it, mega_base=None if it['mega_base'] == 0xFF else it['mega_base'],
+                             mega_forme=None if it['mega_forme'] == 0xFF else it['mega_forme']) for it in dx['items']], \
+        [dict(a) for a in dx['abilities']]
+
+    def item_row(iid):
         if any(i['id'] == iid for i in items):
-            fail('pool item %s is already in the extended tables' % iid)
+            fail('pool item %s is already in the tables' % iid)
         e = items_ts.entry(iid)
         if e is None:
             fail('item %s not found' % iid)
@@ -1547,9 +1853,14 @@ def build_pool(root, repo, dx):
             fail('item %s is nonstandard and has no champions override' % iid)
         stone = re.search(r'megaStone: \{ "(.*?)": "(.*?)" \}', text)
         refs = [items_ts.ref(iid)] + ([champ_items.ref(iid)] if champ_items.entry(iid) is not None else [])
-        items.append({'id': iid, 'name': re.search(r'name: "(.*?)"', text).group(1), 'refs': refs,
-                      'stone': (toid(stone.group(1)), toid(stone.group(2))) if stone else None,
-                      'mega_base': 0xFF, 'mega_forme': 0xFF})
+        stones = legal['stones'].get(iid, [])
+        if stone and stones != [(toid(stone.group(1)), toid(stone.group(2)))]:
+            fail('item %s: the Mega Stone of the pin and of the legal pool differ' % iid)
+        return {'id': iid, 'name': re.search(r'name: "(.*?)"', text).group(1), 'refs': refs,
+                'stone': stones[0] if stones else None, 'stones': stones, 'mega_base': None, 'mega_forme': None}
+
+    for iid in POOL_ITEMS + G2_ITEMS:
+        items.append(item_row(iid))
     for aid in POOL_ABILITIES + G2_ABILITIES:
         if any(a['id'] == aid for a in abilities):
             fail('pool ability %s is already in the extended tables' % aid)
@@ -1557,16 +1868,17 @@ def build_pool(root, repo, dx):
             fail('ability %s not found' % aid)
         abilities.append({'id': aid, 'refs': [abil_ts.ref(aid)] + ([champ_abil.ref(aid)]
                                                                    if champ_abil.entry(aid) is not None else [])})
-    check_flag_readers(abilities)
-    moves = list(dx['moves'])
+    n_steps = (len(items), len(abilities))
+    moves = [dict(m) for m in dx['moves']]
     for mid in G2_MOVES:
         if any(m['id'] == mid for m in moves):
             fail('pool move %s is already in the extended tables' % mid)
         moves.append(parse_move(mid, moves_ts, champ_moves, pool=True))
+    n_steps_moves = len(moves)
     move_index = {m['id']: i for i, m in enumerate(moves)}
     item_index = {it['id']: i for i, it in enumerate(items)}
     ability_index = {ab['id']: i for i, ab in enumerate(abilities)}
-    formes = list(dx['formes'])
+    formes = [dict(fo, mega_forme=None if fo['mega_forme'] == 0xFF else fo['mega_forme']) for fo in dx['formes']]
     forme_index = {fo['id']: i for i, fo in enumerate(formes)}
     first_new, n_items, n_abilities = len(formes), len(items), len(abilities)
     build_group(SETS_G2, items, item_index, abilities, ability_index, formes, forme_index, move_index, dex, items_ts,
@@ -1576,11 +1888,108 @@ def build_pool(root, repo, dx):
     for fo in formes[first_new:]:
         base = fo['id'] if not fo['is_mega'] else [s for s, _a, _i, _m, mg in SETS_G2 if mg == fo['id']][0]
         fo['base_forme'] = forme_index[base]
-        fo['mega_forme'] = forme_index[fo['mega']] if fo['mega'] else 0xFF
+        fo['mega_forme'] = forme_index[fo['mega']] if fo['mega'] else None
         fo['mega_item'] = fo['set_item'] if (fo['mega'] or fo['is_mega']) else 0xFF
+
+    # ---- the whole legal pool: every other move, item and ability, in the legal pool's order ----
+    for mid in legal['move_order']:
+        if mid not in move_index:
+            moves.append(parse_pool_move(mid, moves_ts, champ_moves))
+            move_index[mid] = len(moves) - 1
+    for iid in legal['item_order']:
+        if iid not in item_index:
+            items.append(item_row(iid))
+            item_index[iid] = len(items) - 1
+    for aid in legal['ability_order']:
+        if aid not in ability_index:
+            if abil_ts.entry(aid) is None:
+                fail('ability %s not found' % aid)
+            abilities.append({'id': aid, 'refs': [abil_ts.ref(aid)] + ([champ_abil.ref(aid)]
+                                                                       if champ_abil.entry(aid) is not None else [])})
+            ability_index[aid] = len(abilities) - 1
+    # Struggle is the one move of the tables that no forme learns, so it is not in the legal pool.
+    if sorted(m['id'] for m in moves) != sorted(set(legal['move_order']) | {'struggle'}):
+        fail('the move rows are not the legal pool plus Struggle')
+    if {i['id'] for i in items} != legal['items'] or {a['id'] for a in abilities} != legal['abilities']:
+        fail('the item or ability rows are not the legal pool')
+
+    # ---- the formes: every selectable forme that is not a cosmetic copy, each followed by its Mega formes ----
+    species = legal['species']
+    megas_of = {}
+    for sid in legal['species_order']:
+        rec = species[sid]
+        if rec['kind'] == 'mega':
+            megas_of.setdefault(rec['holders'][0]['species'], []).append(rec)
+    aliases = []
+
+    def new_row(rec, is_mega, base_id=None):
+        fid = rec['id']
+        fo = parse_forme(fid, dex, formats)
+        if fo['types'] != [TYPES.index(t) for t in rec['types']] + [0xFF] * (2 - len(rec['types'])) or \
+                fo['base'] != [rec['base_stats'][k] for k in STATS]:
+            fail('%s: the pokedex and the legal pool disagree on its types or base stats' % fid)
+        if sorted(fo['abilities']) != sorted(rec['abilities_declared'].values()):
+            fail('%s: the pokedex and the legal pool disagree on its declared abilities' % fid)
+        legal_abilities = [a for a in fo['abilities'] if a in rec['abilities_legal']]
+        if not legal_abilities:
+            fail('%s has no legal ability' % fid)
+        for aid in legal_abilities:
+            if aid not in ability_index:
+                fail('%s: the legal ability %s is not a pool row' % (fid, aid))
+        fo['ability'] = ability_index[legal_abilities[0]]
+        fo['set_moves'], fo['is_mega'] = [], 1 if is_mega else 0
+        fo['mega_forme'] = None
+        if is_mega:
+            if fo['required_item'] != rec['required_item'] or fo['required_item'] not in item_index:
+                fail('%s: its stone is not the stone of the legal pool' % fid)
+            fo['gender_rule'] = formes[forme_index[base_id]]['gender_rule']
+            fo['set_item'] = fo['mega_item'] = item_index[fo['required_item']]
+            fo['base_forme'] = forme_index[base_id]
+        else:
+            fo['set_item'] = fo['mega_item'] = 0xFF
+        fo['mega'] = None
+        if rec.get('gender') is not None and fo['gender_rule'] != {'M': 1, 'F': 2, 'N': 3}[rec['gender']]:
+            fail('%s: the pokedex and the legal pool disagree on its gender' % fid)
+        return fo
+
+    for sid in legal['species_order']:
+        rec = species[sid]
+        if rec['kind'] != 'selectable':
+            continue
+        if rec['mechanically_identical_to'] is not None:
+            aliases.append((sid, rec['mechanically_identical_to']))
+            continue
+        if sid not in forme_index:
+            fo = new_row(rec, False)
+            forme_index[sid] = len(formes)
+            fo['base_forme'] = len(formes)
+            formes.append(fo)
+        base_index = forme_index[sid]
+        for mega in megas_of.get(sid, []):
+            if mega['id'] in forme_index:
+                continue
+            mf = new_row(mega, True, sid)
+            forme_index[mega['id']] = len(formes)
+            formes.append(mf)
+            if formes[base_index]['mega_forme'] is None:
+                # The first Mega of the legal pool's order is the one the base forme's row links; a base forme
+                # that already links one (Charizard-Mega-Y, Raichu-Mega-Y: the closure) keeps it.
+                formes[base_index]['mega_forme'] = forme_index[mega['id']]
+                formes[base_index]['mega_item'] = mf['mega_item']
+    for alias, base in aliases:
+        if base not in forme_index:
+            fail('the alias %s names %s, which is no row' % (alias, base))
+    for sid in legal['species_order']:
+        rec = species[sid]
+        if rec['kind'] == 'selectable' and rec['mechanically_identical_to'] is None and sid not in forme_index:
+            fail('forme %s has no row' % sid)
+        if rec['kind'] == 'mega' and sid not in forme_index:
+            fail('Mega forme %s has no row' % sid)
+    # A Mega Stone's item row links the first (base, Mega) pair of the stone.
     for it in items[len(dx['items']):]:
-        it['mega_base'] = forme_index[it['stone'][0]] if it['stone'] else 0xFF
-        it['mega_forme'] = forme_index[it['stone'][1]] if it['stone'] else 0xFF
+        if it['stone'] is not None:
+            it['mega_base'] = forme_index[it['stone'][0]]
+            it['mega_forme'] = forme_index[it['stone'][1]]
     for it in items:
         if it['id'] not in legal['items']:
             fail('item %s is not legal in %s (%s)' % (it['id'], FORMAT_ID, LEGAL_POOL))
@@ -1609,19 +2018,66 @@ def build_pool(root, repo, dx):
         types = sorted(c['param'] for c in item_family if c['family'] == fam)
         if types != list(range(len(TYPES))):
             fail('the %s items do not cover each of the %d types exactly once' % (fam, len(TYPES)))
+
+    # ---- what the tables model: the handler columns ----
+    loaded = {'data/abilities.ts': abil_ts, 'data/items.ts': items_ts, 'data/moves.ts': moves_ts,
+              'data/mods/champions/abilities.ts': champ_abil, 'data/mods/champions/items.ts': champ_items,
+              'data/mods/champions/moves.ts': champ_moves, 'data/mods/champions/scripts.ts': Source(
+                  root, 'data/mods/champions/scripts.ts')}
+    readers = ReaderIndex(root, loaded)
+    n_ext_items, n_ext_abilities = len(dx['items']), len(dx['abilities'])
+    for i, (it, col) in enumerate(zip(items, item_family)):
+        if i < n_ext_items or col['family'] != 'NONE' or it['id'] in ENGINE_ROWS['items']:
+            feats = []  # the closure and Team C are code in the turn core; a family is a table rule
+        else:
+            feats = entry_features(items_ts, champ_items, it['id'], INERT_ITEM_KEYS, stone=it['stone'] is not None,
+                                   readers=readers)
+            if it['stone'] is not None:
+                for base, mega in it['stones']:
+                    primary = formes[forme_index[base]]['mega_forme']
+                    if primary != forme_index[mega]:
+                        feats.append('second Mega forme %s of %s' % (mega, base))
+        it['unmodeled'] = sorted(set(feats))
+    for i, (ab, col) in enumerate(zip(abilities, ability_family)):
+        if i < n_ext_abilities or col['family'] != 'NONE' or ab['id'] in ENGINE_ROWS['abilities']:
+            feats = []
+        else:
+            feats = entry_features(abil_ts, champ_abil, ab['id'], INERT_ABILITY_KEYS, readers=readers)
+        ab['unmodeled'] = sorted(set(feats))
+    for m in moves:
+        m.setdefault('unmodeled', [])
+    for fo in formes:
+        fo.setdefault('unmodeled', [])
     legal_formes = forme_legal(formes, [m['id'] for m in moves], [a['id'] for a in abilities], learn,
                                legal['species'], abil_ts, champ_abil)
-    return dict(dx, formes=formes, moves=moves, items=items, abilities=abilities, item_family=item_family,
-                ability_family=ability_family, forme_legal=legal_formes)
+    d = dict(dx, formes=formes, moves=moves, items=items, abilities=abilities, item_family=item_family,
+             ability_family=ability_family, forme_legal=legal_formes, aliases=aliases, legal_counts=legal['counts'],
+             flags_that_matter=sorted(FLAGS_THAT_MATTER), steps=dict(items=n_steps[0], abilities=n_steps[1],
+                                                                    moves=n_steps_moves))
+    for flag, owner in INERT_FLAG_READS.items():
+        if owner is not None and not moves[move_index[owner]]['unmodeled']:
+            fail('the move %s is modelled, so the flag %s that a modelled row reads now matters' % (owner, flag))
+    check_bounds(d, repo)
+    return d
 
 
 def family_bytes(d):
-    """The family columns as they follow the closure layout in the canonical pool bytes: per item, then per ability,
-    the family id and the parameter."""
+    """The family columns as they follow the rows in the canonical pool bytes: per item, then per ability, the family
+    id and the parameter."""
     b = bytearray()
     for col in d['item_family'] + d['ability_family']:
         b.extend([col['family_id'], col['param']])
     return bytes(b)
+
+
+def handler_of(row):
+    """The handler column value of an item or ability: 1 (UNMODELED) iff it has an unmodelled feature."""
+    return HANDLER_IDS.index('UNMODELED') if row['unmodeled'] else HANDLER_IDS.index('NONE')
+
+
+def handler_bytes(d):
+    """The handler columns: per item, then per ability, 0 (modelled) or 1 (UNMODELED)."""
+    return bytes([handler_of(r) for r in d['items']] + [handler_of(r) for r in d['abilities']])
 
 
 def forme_legal_bytes(d):
@@ -1635,46 +2091,123 @@ def forme_legal_bytes(d):
     return bytes(b)
 
 
+def forme_id16(v):
+    """A forme id field of a pool row: 0xFFFF for none."""
+    return 0xFFFF if v is None else v
+
+
 def canonical_pool(d):
-    """The canonical pool bytes hashed into the context fingerprint of the POOL kinds: the closure layout over the
-    pool data, then the family columns, then the legal moves and abilities of the formes."""
-    return canonical(d) + family_bytes(d) + forme_legal_bytes(d)
+    """The canonical pool bytes hashed into the context fingerprint of the POOL kinds (the pool layout): the six
+    counts, a row per forme (the forme links are u16: the pool has more than 255 formes), per move (the closure's
+    29 bytes), per item (two u16 forme links), the type chart, immunity and natures of the closure, then the family
+    columns, the handler columns and the legal moves and abilities of the formes."""
+    b = bytearray()
+
+    def u16(v):
+        b.extend([v & 0xFF, (v >> 8) & 0xFF])
+
+    for n in (len(d['formes']), len(d['moves']), len(d['items']), len(d['abilities']), len(TYPES), len(d['natures'])):
+        u16(n)
+    for f in d['formes']:
+        u16(f['dex_num'])
+        b.extend(f['types'])
+        b.extend(f['base'])
+        u16(f['weight_hg'])
+        b.extend([f['ability'], f['gender_rule'], f['is_mega']])
+        u16(f['base_forme'])
+        u16(forme_id16(f['mega_forme']))
+        b.extend([f['mega_item'], f['set_item'], len(f['set_moves'])])
+        b.extend(f['set_moves'] + [0] * (4 - len(f['set_moves'])))
+    for m in d['moves']:
+        b.extend([m['type'], m['category'], m['base_power'], m['accuracy'], m['pp_base'], m['pp_max'], m['priority'],
+                  m['target_class'], m['crit_ratio'], m['flags'], m['recoil'][0], m['recoil'][1], m['drain'][0],
+                  m['drain'][1], m['sec_chance'], m['sec_kind'], m['sec_param'], m['boost_role']])
+        b.extend(v + 6 for v in m['boosts'])
+        b.extend([m['primary_status'], m['side_condition'], m['pseudo_weather'], m['special']])
+    for it in d['items']:
+        u16(forme_id16(it['mega_base']))
+        u16(forme_id16(it['mega_forme']))
+    for row in d['chart']:
+        b.extend(row)
+    b.extend(d['immunity'])
+    for n in d['natures']:
+        b.extend([n['plus'], n['minus']])
+    return bytes(b) + family_bytes(d) + handler_bytes(d) + forme_legal_bytes(d)
+
+
+def closure_projection(rows, key):
+    """The closure layout's view of pool rows: a forme link of None is the closure's 0xFF."""
+    if key == 'formes':
+        return [dict(r, mega_forme=0xFF if r['mega_forme'] is None else r['mega_forme']) for r in rows]
+    if key == 'items':
+        return [dict(r, mega_base=0xFF if r['mega_base'] is None else r['mega_base'],
+                     mega_forme=0xFF if r['mega_forme'] is None else r['mega_forme']) for r in rows]
+    return rows
 
 
 def ext_prefix(dp, dx):
     """The extended projection of the pool data: its first extended-count rows, every immunity bit."""
-    return {'formes': dp['formes'][:len(dx['formes'])], 'moves': dp['moves'][:len(dx['moves'])],
-            'items': dp['items'][:len(dx['items'])], 'abilities': dp['abilities'][:len(dx['abilities'])],
+    return {'formes': closure_projection(dp['formes'][:len(dx['formes'])], 'formes'), 'moves': dp['moves'][:len(dx['moves'])],
+            'items': closure_projection(dp['items'][:len(dx['items'])], 'items'),
+            'abilities': dp['abilities'][:len(dx['abilities'])],
             'chart': dp['chart'], 'immunity': dp['immunity'], 'natures': dp['natures']}
 
 
 def check_pool_prefix(dp, dx, dc):
     """Decision 0015 section 2: every extended row, and so every closure row, is the pool row of its id."""
+    prefix = ext_prefix(dp, dx)
     for key in ('formes', 'moves', 'items', 'abilities'):
-        if dp[key][:len(dx[key])] != dx[key]:
+        want = dx[key]
+        got = prefix[key]
+        # The pool rows carry the unmodelled lists; the extended rows have none.
+        if [{k: v for k, v in r.items() if k != 'unmodeled'} for r in got] != want:
             fail('pool %s do not start with the extended %s' % (key, key))
     for key in ('chart', 'immunity', 'natures'):
         if dp[key] != dx[key]:
             fail('the pool %s differ from the extended ones' % key)
-    if canonical(ext_prefix(dp, dx)) != canonical(dx):
+    if canonical(prefix) != canonical(dx):
         fail('the pool tables do not start with the extended tables')
-    if canonical(closure_prefix(dp, dc)) != canonical(dc):
+    if canonical(closure_prefix(prefix, dc)) != canonical(dc):
         fail('the pool tables do not start with the closure tables')
     if len(dp['item_family']) != len(dp['items']) or len(dp['ability_family']) != len(dp['abilities']):
         fail('a family column does not have one row per id')
     if len(dp['forme_legal']) != len(dp['formes']):
         fail('the legal moves and abilities do not have one row per forme')
+    # The rows of the steps (P1 and G2) are the rows of the committed tables of those steps: their first values are
+    # checked by tests/test_pool_tables.c (literal values read from the pin), so here only that they are in place.
+    if len(dp['moves']) < dp['steps']['moves'] or len(dp['items']) < dp['steps']['items'] or \
+            len(dp['abilities']) < dp['steps']['abilities']:
+        fail('the whole-pool rows are fewer than the rows of the steps')
 
 
 def check_names(dp):
     """The names of the data query API are the ids of the rows: Showdown ids (toID), never empty and unique per
-    table, so that a name finds exactly one id."""
+    table, so that a name finds exactly one id. The aliases of the cosmetic formes are Showdown ids too, and are
+    neither a row's name nor each other's."""
     for key in ('formes', 'moves', 'items', 'abilities', 'natures'):
         names = [r['id'] for r in dp[key]]
         if any(re.fullmatch(r'[a-z0-9]+', n) is None for n in names):
             fail('a %s id is not a Showdown id (lower-case letters and digits)' % key)
         if len(set(names)) != len(names):
             fail('two %s have the same id' % key)
+    alias_names = [a for a, _b in dp['aliases']]
+    if len(set(alias_names)) != len(alias_names) or set(alias_names) & {r['id'] for r in dp['formes']}:
+        fail('an alias is a name twice or the name of a row')
+    if any(re.fullmatch(r'[a-z0-9]+', n) is None for n in alias_names):
+        fail('an alias is not a Showdown id')
+
+
+def feature_summary(d):
+    """Counts for the report: rows and unmodelled rows per table, and the number of rows that each kind of feature
+    ("callback", "field", "target", ...) appears in."""
+    out = {}
+    for key, rows in (('moves', d['moves']), ('items', d['items']), ('abilities', d['abilities'])):
+        kinds = {}
+        for r in rows:
+            for kind in sorted({f.split(' ')[0] for f in r['unmodeled']}):
+                kinds[kind] = kinds.get(kind, 0) + 1
+        out[key] = {'rows': len(rows), 'unmodeled': sum(1 for r in rows if r['unmodeled']), 'by_kind': kinds}
+    return out
 
 
 def render_pool(dp, dx):
@@ -1688,6 +2221,7 @@ def render_pool(dp, dx):
 
     new_special = '\n'.join('#define DFI_SPECIAL_%s %du' % (n, i) for i, n in enumerate(SPECIAL_IDS_P)
                             if i >= len(SPECIAL_IDS_C))
+    new_targets = '\n'.join('#define DFI_TARGET_CLASS_%s %du' % (n, v) for v, n in sorted(TARGET_CLASS_POOL_NAMES.items()))
     h = '''#ifndef DUOFORGE_DATA_POOL_TABLES_H
 #define DUOFORGE_DATA_POOL_TABLES_H
 /*
@@ -1695,20 +2229,33 @@ def render_pool(dp, dx):
  *
  * The pool tables of decision 0015: the extended tables (the closure tables
  * followed by Team C, decision 0009) unchanged as the prefix, then the rows
- * that the steps of the content expansion add, read from Pokemon Showdown
- * %s (the input files of
+ * that the steps of the content expansion add (P1, G2) and then a row for
+ * every other move, item, ability and forme of the legal pool of the format
+ * (docs/research/expansion/data/legal_pool.json, the output of the pinned
+ * TeamValidator), read from Pokemon Showdown %s (the input files of
  * closure_tables.h). Every id below an extended count (DFI_EXT_FORME_COUNT,
  * DFI_EXT_MOVE_COUNT, DFI_EXT_ITEM_COUNT, DFI_EXT_ABILITY_COUNT) is the
  * extended table's and its row equals the extended row. Natures and the type
  * chart are the closure's.
  *
- * The family columns are arrays of their own, so that the row types stay
- * those of the closure tables. They hold, for every item and ability
- * (the prefix included), its family and the parameter the family rule reads;
- * each is the result of one strict pattern over the pinned handler. They are
- * part of the canonical pool bytes and so of the pool table hash, and not of
- * the closure or extended bytes. A family column says what an id is, not
- * that the engine implements it: the support manifest decides that.
+ * The forme and item rows of the pool are their own types (dfi_pool_forme_data,
+ * dfi_pool_item_data): the pool has more than 255 formes, so a forme link is a
+ * u16 here (DFI_FORME_NONE for none). The extended and closure rows keep their
+ * u8 types and their bytes.
+ *
+ * The family columns are arrays of their own. They hold, for every item and
+ * ability (the prefix included), its family and the parameter the family rule
+ * reads; each is the result of one strict pattern over the pinned handler. They
+ * are part of the canonical pool bytes and so of the pool table hash, and not of
+ * the closure or extended bytes. A family column says what an id is, not that
+ * the engine implements it: the support manifest decides that.
+ *
+ * What the tables model, and what they do not (decision 0015 section 4.2): a
+ * move, ability or item row that has a callback, a field, a target class or a
+ * flag that the tables do not model carries the UNMODELED handler (the move's
+ * special column; the handler column of an item or an ability) and a list of
+ * those features (dfi_pool_*_unmodeled; NULL for a modelled row). Such a row is
+ * never marked in the support manifest, so setup refuses it with E_UNSUPPORTED.
  *
  * Data only. An id names a record; every effect needs a typed handler in C
  * and an entry in the support manifest before a battle may use it.
@@ -1718,24 +2265,31 @@ def render_pool(dp, dx):
 
 #include "data/extended_tables.h"
 
-/* ---- pool formes (appended after the extended ones): step G2 ---- */
+/* ---- pool formes (appended after the extended ones): step G2, then the legal pool ---- */
 %s
 #define DFI_POOL_FORME_COUNT %du
+#define DFI_FORME_NONE 0xFFFFu /* a forme link that points nowhere */
 
-/* ---- pool moves (appended after the extended ones): step G2 ---- */
+/* ---- pool moves (appended after the extended ones): step G2, then the legal pool ---- */
 %s
 #define DFI_POOL_MOVE_COUNT %du
 
-/* ---- handlers new in the pool tables (step G2): the value of the special column of the moves that have a
- * callback or a field that the columns do not model. The engine refuses every one of them, and so does the
- * support manifest, which leaves the move unmarked. ---- */
+/* ---- handlers new in the pool tables: the value of the special column of the moves that have a callback or a
+ * field that the columns do not model. The engine refuses every one of them, and so does the support manifest,
+ * which leaves the move unmarked. UNMODELED is the handler of every move of the pool that has any unmodelled
+ * feature (dfi_pool_move_unmodeled lists them). ---- */
 %s
 
-/* ---- pool abilities (appended after the extended ones): step P1, then step G2 ---- */
+/* ---- target classes of the pool beyond the public DUOFORGE_TARGET_CLASS_* values (1 to 9) and Struggle's 10:
+ * encoded, not implemented by the turn code, so a move with one is UNMODELED. ---- */
+%s
+
+/* ---- pool abilities (appended after the extended ones): step P1, step G2, then the legal pool ---- */
 %s
 #define DFI_POOL_ABILITY_COUNT %du
 
-/* ---- pool items (appended after the extended ones): step P1 (type boosters, then resist berries), then step G2 ---- */
+/* ---- pool items (appended after the extended ones): step P1 (type boosters, then resist berries), step G2, then
+ * the legal pool ---- */
 %s
 #define DFI_POOL_ITEM_COUNT %du
 
@@ -1766,6 +2320,12 @@ def render_pool(dp, dx):
 #define DFI_FAMILY_TERRAIN_PSYCHIC 2u
 #define DFI_FAMILY_PARAM_NONE 0xFFu
 
+/* ---- handler columns of the items and abilities: NONE for a row that the tables model (the closure and Team C
+ * rows are code in the turn core, a family member is a table rule, an inert entry has nothing to model) and
+ * UNMODELED for a row with any callback, condition or field that they do not model. ---- */
+#define DFI_HANDLER_NONE 0u
+#define DFI_HANDLER_UNMODELED 1u
+
 typedef struct dfi_item_family {
     uint8_t family; /* DFI_ITEM_FAMILY_* */
     uint8_t type;   /* the type of the family rule (DFI_TYPE_*), DFI_FAMILY_PARAM_NONE without a family */
@@ -1775,6 +2335,31 @@ typedef struct dfi_ability_family {
     uint8_t family; /* DFI_ABILITY_FAMILY_* */
     uint8_t param;  /* ATE, PINCH: DFI_TYPE_*; WEATHER_SETTER: DFI_FAMILY_WEATHER_*; TERRAIN_SETTER: DFI_FAMILY_TERRAIN_* */
 } dfi_ability_family;
+
+/* The row of a forme. Its layout up to gender_rule is that of dfi_forme_data; the forme links are u16. A base forme
+ * of the pool outside the closure and Team C has no set of its own: set_item is DFI_CLOSURE_NONE and set_move_count
+ * 0, its ability is its first legal ability, and under the POOL kinds its moves and abilities come from
+ * dfi_pool_forme_legal. */
+typedef struct dfi_pool_forme_data {
+    uint16_t dex_num;
+    uint16_t weight_hg;
+    uint8_t types[2]; /* second is DFI_CLOSURE_NONE for a single type */
+    uint8_t base[DFI_STAT_COUNT];
+    uint8_t ability;     /* the set's ability (the first legal one outside the closure and Team C); for a Mega forme its own */
+    uint8_t gender_rule; /* DFI_GENDER_RULE_* */
+    uint8_t is_mega;
+    uint16_t base_forme; /* the forme itself for a base forme */
+    uint16_t mega_forme; /* the Mega forme this base forme links, DFI_FORME_NONE if none */
+    uint8_t mega_item;   /* the stone of the linked Mega (a Mega forme: its own stone), or DFI_CLOSURE_NONE */
+    uint8_t set_item;    /* the item of the set in decision 0004 and 0009; DFI_CLOSURE_NONE for the rest */
+    uint8_t set_move_count;
+    uint8_t set_moves[4]; /* the moves of the set (move ids below 255) */
+} dfi_pool_forme_data;
+
+typedef struct dfi_pool_item_data {
+    uint16_t mega_base;  /* the forme that can hold it as a Mega Stone (the first of its pairs), or DFI_FORME_NONE */
+    uint16_t mega_forme; /* the Mega forme of that pair */
+} dfi_pool_item_data;
 
 /* ---- the moves and abilities of each forme (decision 0015 section 2) ----
  * For a base forme: the pool moves it learns (the Champions learnsets, every
@@ -1793,13 +2378,24 @@ typedef struct dfi_forme_legal {
     uint8_t abilities[DFI_POOL_FORME_ABILITIES_MAX]; /* ability ids, then DFI_CLOSURE_NONE */
 } dfi_forme_legal;
 
-extern const dfi_forme_data dfi_pool_formes[DFI_POOL_FORME_COUNT];
+/* The cosmetic formes that the validator treats as their base forme (Vivillon patterns, Alcremie creams, ...): no
+ * row of their own, the name of the base forme's row instead. They are in no canonical bytes. */
+#define DFI_POOL_ALIAS_COUNT %du
+typedef struct dfi_pool_alias {
+    const char *name;  /* the Showdown id of the cosmetic forme */
+    uint16_t forme;    /* the row it stands for */
+} dfi_pool_alias;
+
+extern const dfi_pool_forme_data dfi_pool_formes[DFI_POOL_FORME_COUNT];
 extern const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT];
-extern const dfi_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT];
+extern const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT];
 extern const uint8_t dfi_pool_type_immunity[DFI_TYPE_COUNT]; /* DFI_IMMUNE_* bits */
 extern const dfi_item_family dfi_pool_item_family[DFI_POOL_ITEM_COUNT];
 extern const dfi_ability_family dfi_pool_ability_family[DFI_POOL_ABILITY_COUNT];
+extern const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT];       /* DFI_HANDLER_* */
+extern const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT]; /* DFI_HANDLER_* */
 extern const dfi_forme_legal dfi_pool_forme_legal[DFI_POOL_FORME_COUNT];
+extern const dfi_pool_alias dfi_pool_forme_aliases[DFI_POOL_ALIAS_COUNT];
 
 /* ---- names ----
  * The Showdown id (toID: lower-case letters and digits) of every row, as a
@@ -1814,57 +2410,77 @@ extern const char *const dfi_pool_item_names[DFI_POOL_ITEM_COUNT];
 extern const char *const dfi_pool_ability_names[DFI_POOL_ABILITY_COUNT];
 extern const char *const dfi_pool_nature_names[DFI_NATURE_COUNT];
 
+/* ---- the unmodelled features of a row (not in any hash) ----
+ * NULL for a row that the tables model; otherwise one string of the features, separated by "; ": "callback onHit",
+ * "field multihit", "secondary", "target allAdjacent", "flag sound", ... They are what a step that models the row has
+ * to account for, and the data of the generated comments of the rows. */
+extern const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT];
+extern const char *const dfi_pool_item_unmodeled[DFI_POOL_ITEM_COUNT];
+extern const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT];
+
 /* SHA-256 of the canonical pool bytes (written by the generator). */
 #define DFI_POOL_CANONICAL_SIZE %du
 extern const uint8_t dfi_pool_table_hash[32];
 /* The canonical bytes of the closure layout over the first `formes`, `moves`,
  * `items` and `abilities` rows of the tables above, with every immunity byte
  * masked by `immunity_mask`; natures and the type chart are the closure's.
- * The family columns are not part of them. Returns the size, or 0 if a count
- * exceeds its table or capacity is too small. With the closure counts and the
- * closure's immunity bits these are exactly the closure's canonical bytes;
- * with the extended counts and every immunity bit, the extended ones. */
+ * The family and handler columns are not part of them. Returns the size, or 0
+ * if a count exceeds its table or capacity is too small, or if a row has a
+ * forme link that the closure layout's byte cannot hold (a link above 254).
+ * With the closure counts and the closure's immunity bits these are exactly
+ * the closure's canonical bytes; with the extended counts and every immunity
+ * bit, the extended ones. */
 size_t dfi_pool_canonical_bytes_of(uint8_t *out, size_t capacity, uint32_t formes, uint32_t moves, uint32_t items,
                                    uint32_t abilities, uint32_t immunity_mask);
-/* The canonical pool bytes: every row, every immunity bit, then the family
- * column of every item and of every ability (family, parameter), then for
- * every forme its learnable bytes, ability count and ability ids. */
+/* The canonical pool bytes (the pool layout): the six counts; per forme the
+ * closure's 24 bytes with the two forme links as u16; per move the closure's
+ * 29 bytes; per item the two forme links as u16; the type chart, the
+ * immunity bits and the natures; then the family column of every item and of
+ * every ability (family, parameter), the handler column of every item and of
+ * every ability, and for every forme its learnable bytes, ability count and
+ * ability ids. */
 size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity);
 
 #endif
 ''' % (PIN, defines('DFI_FORME', dp['formes'], nx['formes']), len(dp['formes']),
-       defines('DFI_MOVE', dp['moves'], nx['moves']), len(dp['moves']), new_special,
+       defines('DFI_MOVE', dp['moves'], nx['moves']), len(dp['moves']), new_special, new_targets,
        defines('DFI_ABILITY', dp['abilities'], nx['abilities']), len(dp['abilities']),
        defines('DFI_ITEM', dp['items'], nx['items']), len(dp['items']),
-       (len(dp['moves']) + 7) // 8, FORME_ABILITIES_MAX, len(can))
+       (len(dp['moves']) + 7) // 8, FORME_ABILITIES_MAX, len(dp['aliases']), len(can))
 
     def arr(vals):
         return '{' + ', '.join('%du' % v for v in vals) + '}'
 
-    c = ['#include "data/pool_tables.h"', '',
+    def link(v):
+        return 'DFI_FORME_NONE' if v is None else '%du' % v
+
+    def note(row):
+        return ('  [unmodelled: %s]' % '; '.join(row['unmodeled'])) if row['unmodeled'] else ''
+
+    c = ['#include <stdbool.h>', '', '#include "data/pool_tables.h"', '',
          '/* GENERATED by tools/datagen/gen_closure.py --pool -- do not edit. Showdown %s. */' % PIN, '',
-         'const dfi_forme_data dfi_pool_formes[DFI_POOL_FORME_COUNT] = {']
+         'const dfi_pool_forme_data dfi_pool_formes[DFI_POOL_FORME_COUNT] = {']
     for f in dp['formes']:
         c.append('    /* %s -- %s */' % (f['name'], f['ref']))
-        c.append('    {%du, %du, %s, %s, %du, %du, %du, %du, %du, %du, %du, %du, %s},' % (
+        c.append('    {%du, %du, %s, %s, %du, %du, %du, %du, %s, %du, %du, %du, %s},' % (
             f['dex_num'], f['weight_hg'], arr(f['types']), arr(f['base']), f['ability'], f['gender_rule'],
-            f['is_mega'], f['base_forme'], f['mega_forme'], f['mega_item'], f['set_item'], len(f['set_moves']),
+            f['is_mega'], f['base_forme'], link(f['mega_forme']), f['mega_item'], f['set_item'], len(f['set_moves']),
             arr(f['set_moves'] + [0] * (4 - len(f['set_moves'])))))
     c += ['};', '', 'const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {']
     for m in dp['moves']:
-        c.append('    /* %s -- %s */' % (m['name'], ', '.join(m['refs'])))
+        c.append('    /* %s -- %s%s */' % (m['name'], ', '.join(m['refs']), note(m)))
         c.append('    {%du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %s, %s, %du, %du, %du, %du, %s, %du, %du, %du, %du},' % (
             m['type'], m['category'], m['base_power'], m['accuracy'], m['pp_base'], m['pp_max'], m['priority'],
             m['target_class'], m['crit_ratio'], m['flags'], arr(m['recoil']), arr(m['drain']), m['sec_chance'],
             m['sec_kind'], m['sec_param'], m['boost_role'], arr([v + 6 for v in m['boosts']]), m['primary_status'],
             m['side_condition'], m['pseudo_weather'], m['special']))
-    c += ['};', '', 'const dfi_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {']
+    c += ['};', '', 'const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {']
     for it in dp['items']:
-        c.append('    /* %s -- %s */' % (it['name'], ', '.join(it['refs'])))
-        c.append('    {%du, %du},' % (it['mega_base'], it['mega_forme']))
-    c += ['};', '', '/* Abilities carry no table data but their family column. Provenance of the pool abilities:']
+        c.append('    /* %s -- %s%s */' % (it['name'], ', '.join(it['refs']), note(it)))
+        c.append('    {%s, %s},' % (link(it['mega_base']), link(it['mega_forme'])))
+    c += ['};', '', '/* Abilities carry no table data but their columns. Provenance of the pool abilities:']
     for a in dp['abilities'][nx['abilities']:]:
-        c.append(' *   %s -- %s' % (a['id'], ', '.join(a['refs'])))
+        c.append(' *   %s -- %s%s' % (a['id'], ', '.join(a['refs']), note(a)))
     c += [' */', '', '/* data/typechart.ts: the closure bits plus psn (Poison, Steel). */',
           'const uint8_t dfi_pool_type_immunity[DFI_TYPE_COUNT] = ' + arr(dp['immunity']) + ';', '',
           '/* Family columns, one row per id (decision 0015 section 2). */',
@@ -1875,17 +2491,27 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity);
     for ab, col in zip(dp['abilities'], dp['ability_family']):
         c.append('    [DFI_ABILITY_%s] = {DFI_ABILITY_FAMILY_%s, %s},' % (ab['id'].upper(), col['family'],
                                                                          col['param_name']))
+    c += ['};', '', '/* Handler columns: what the tables model (decision 0015 section 4.2). */',
+          'const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {']
+    for it in dp['items']:
+        c.append('    [DFI_ITEM_%s] = DFI_HANDLER_%s,' % (it['id'].upper(), HANDLER_IDS[handler_of(it)]))
+    c += ['};', '', 'const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {']
+    for ab in dp['abilities']:
+        c.append('    [DFI_ABILITY_%s] = DFI_HANDLER_%s,' % (ab['id'].upper(), HANDLER_IDS[handler_of(ab)]))
     c += ['};', '', '/* The moves and abilities each forme may have (decision 0015 section 2). */',
           'const dfi_forme_legal dfi_pool_forme_legal[DFI_POOL_FORME_COUNT] = {']
     for fo, fl in zip(dp['formes'], dp['forme_legal']):
-        moves = [m['name'] for m in dp['moves'] if m['id'] in fl['moves']]
-        for line in (wrap_names('%s -- abilities:' % fo['name'], [dp['abilities'][a]['id'] for a in fl['abilities']]) +
-                     wrap_names('   learns:', moves or ['nothing'])):
+        for line in wrap_names('%s -- abilities:' % fo['name'], [dp['abilities'][a]['id'] for a in fl['abilities']]):
             c.append('    /* ' + line + ' */')
+        c.append('    /* %d learnable moves */' % len(fl['moves']))
         slots = ['DFI_ABILITY_' + dp['abilities'][a]['id'].upper() for a in fl['abilities']]
         slots += ['DFI_CLOSURE_NONE'] * (FORME_ABILITIES_MAX - len(slots))
         c.append('    [DFI_FORME_%s] = {{%s}, %du, {%s}},' % (
             fo['id'].upper(), ', '.join('0x%02xu' % b for b in fl['learnable']), len(fl['abilities']), ', '.join(slots)))
+    c += ['};', '', '/* Cosmetic formes: a name for the row of the base forme (decision 0015 section 4.2). */',
+          'const dfi_pool_alias dfi_pool_forme_aliases[DFI_POOL_ALIAS_COUNT] = {']
+    for alias, base in dp['aliases']:
+        c.append('    {"%s", DFI_FORME_%s},' % (alias, base.upper()))
     c += ['};', '', '/* Names: the Showdown id of every row (toID), not part of any hash. */']
     for what, rows, table in (('forme', dp['formes'], 'FORME'), ('move', dp['moves'], 'MOVE'),
                               ('item', dp['items'], 'ITEM'), ('ability', dp['abilities'], 'ABILITY')):
@@ -1896,15 +2522,87 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity);
     c.append('const char *const dfi_pool_nature_names[DFI_NATURE_COUNT] = {')
     for n in dp['natures']:
         c.append('    [DFI_NATURE_%s] = "%s",' % (n['id'].upper(), n['id']))
-    c += ['};', '', 'const uint8_t dfi_pool_table_hash[32] = {']
+    c += ['};', '', '/* The unmodelled features of the rows that have any (NULL: modelled). */']
+    for what, rows, table in (('move', dp['moves'], 'MOVE'), ('item', dp['items'], 'ITEM'),
+                              ('ability', dp['abilities'], 'ABILITY')):
+        c.append('const char *const dfi_pool_%s_unmodeled[DFI_POOL_%s_COUNT] = {' % (what, table))
+        for r in rows:
+            if r['unmodeled']:
+                c.append('    [DFI_%s_%s] = "%s",' % (table, r['id'].upper(), '; '.join(r['unmodeled'])))
+        c += ['};', '']
+    c += ['const uint8_t dfi_pool_table_hash[32] = {']
     hb = bytes.fromhex(digest)
     for i in range(0, 32, 8):
         c.append('    ' + ', '.join('0x%02xu' % x for x in hb[i:i + 8]) + ',')
-    c += ['};', '', '''static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)
+    c += ['};', '', r'''static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)
 {
     out[n] = (uint8_t)(v & 0xFFu);             /* wide-operands-reviewed */
     out[n + 1u] = (uint8_t)((v >> 8u) & 0xFFu); /* wide-operands-reviewed */
     return n + 2u;
+}
+
+/* One byte of a forme link in the closure layout: DFI_FORME_NONE is 0xFF, a link below 255 is itself, anything
+ * else has no byte there. */
+static bool dfi_pool_link_byte(uint32_t link, uint8_t *out)
+{
+    if (link == DFI_FORME_NONE) {
+        *out = 0xFFu;
+        return true;
+    }
+    if (link >= 0xFFu) {
+        return false;
+    }
+    *out = (uint8_t)link; /* wide-operands-reviewed: < 255 */
+    return true;
+}
+
+/* The bytes of a move row, the same in both layouts. */
+static size_t dfi_pool_put_move(uint8_t *out, size_t n, const dfi_move_data *m)
+{
+    out[n++] = m->type;
+    out[n++] = m->category;
+    out[n++] = m->base_power;
+    out[n++] = m->accuracy;
+    out[n++] = m->pp_base;
+    out[n++] = m->pp_max;
+    out[n++] = m->priority;
+    out[n++] = m->target_class;
+    out[n++] = m->crit_ratio;
+    out[n++] = m->flags;
+    out[n++] = m->recoil[0];
+    out[n++] = m->recoil[1];
+    out[n++] = m->drain[0];
+    out[n++] = m->drain[1];
+    out[n++] = m->sec_chance;
+    out[n++] = m->sec_kind;
+    out[n++] = m->sec_param;
+    out[n++] = m->boost_role;
+    for (uint32_t k = 0u; k < DFI_STAGE_COUNT; ++k) {
+        out[n++] = m->boosts[k];
+    }
+    out[n++] = m->primary_status;
+    out[n++] = m->side_condition;
+    out[n++] = m->pseudo_weather;
+    out[n++] = m->special;
+    return n;
+}
+
+/* The type chart, the immunity bits and the natures, the same in both layouts. */
+static size_t dfi_pool_put_tail(uint8_t *out, size_t n, uint32_t immunity_mask)
+{
+    for (uint32_t d = 0u; d < DFI_TYPE_COUNT; ++d) {
+        for (uint32_t a = 0u; a < DFI_TYPE_COUNT; ++a) {
+            out[n++] = dfi_closure_type_chart[d][a];
+        }
+    }
+    for (uint32_t i = 0u; i < DFI_TYPE_COUNT; ++i) {
+        out[n++] = (uint8_t)(dfi_pool_type_immunity[i] & immunity_mask); /* wide-operands-reviewed: < 256 */
+    }
+    for (uint32_t i = 0u; i < DFI_NATURE_COUNT; ++i) {
+        out[n++] = dfi_closure_natures[i].plus;
+        out[n++] = dfi_closure_natures[i].minus;
+    }
+    return n;
 }
 
 size_t dfi_pool_canonical_bytes_of(uint8_t *out, size_t capacity, uint32_t formes, uint32_t moves, uint32_t items,
@@ -1928,7 +2626,12 @@ size_t dfi_pool_canonical_bytes_of(uint8_t *out, size_t capacity, uint32_t forme
     n = dfi_pool_put_u16(out, n, DFI_TYPE_COUNT);
     n = dfi_pool_put_u16(out, n, DFI_NATURE_COUNT);
     for (uint32_t i = 0u; i < formes; ++i) {
-        const dfi_forme_data *f = &dfi_pool_formes[i];
+        const dfi_pool_forme_data *f = &dfi_pool_formes[i];
+        uint8_t base_forme = 0u;
+        uint8_t mega_forme = 0u;
+        if (!dfi_pool_link_byte(f->base_forme, &base_forme) || !dfi_pool_link_byte(f->mega_forme, &mega_forme)) {
+            return 0u;
+        }
         n = dfi_pool_put_u16(out, n, f->dex_num);
         out[n++] = f->types[0];
         out[n++] = f->types[1];
@@ -1939,8 +2642,8 @@ size_t dfi_pool_canonical_bytes_of(uint8_t *out, size_t capacity, uint32_t forme
         out[n++] = f->ability;
         out[n++] = f->gender_rule;
         out[n++] = f->is_mega;
-        out[n++] = f->base_forme;
-        out[n++] = f->mega_forme;
+        out[n++] = base_forme;
+        out[n++] = mega_forme;
         out[n++] = f->mega_item;
         out[n++] = f->set_item;
         out[n++] = f->set_move_count;
@@ -1949,50 +2652,19 @@ size_t dfi_pool_canonical_bytes_of(uint8_t *out, size_t capacity, uint32_t forme
         }
     }
     for (uint32_t i = 0u; i < moves; ++i) {
-        const dfi_move_data *m = &dfi_pool_moves[i];
-        out[n++] = m->type;
-        out[n++] = m->category;
-        out[n++] = m->base_power;
-        out[n++] = m->accuracy;
-        out[n++] = m->pp_base;
-        out[n++] = m->pp_max;
-        out[n++] = m->priority;
-        out[n++] = m->target_class;
-        out[n++] = m->crit_ratio;
-        out[n++] = m->flags;
-        out[n++] = m->recoil[0];
-        out[n++] = m->recoil[1];
-        out[n++] = m->drain[0];
-        out[n++] = m->drain[1];
-        out[n++] = m->sec_chance;
-        out[n++] = m->sec_kind;
-        out[n++] = m->sec_param;
-        out[n++] = m->boost_role;
-        for (uint32_t k = 0u; k < DFI_STAGE_COUNT; ++k) {
-            out[n++] = m->boosts[k];
-        }
-        out[n++] = m->primary_status;
-        out[n++] = m->side_condition;
-        out[n++] = m->pseudo_weather;
-        out[n++] = m->special;
+        n = dfi_pool_put_move(out, n, &dfi_pool_moves[i]);
     }
     for (uint32_t i = 0u; i < items; ++i) {
-        out[n++] = dfi_pool_items[i].mega_base;
-        out[n++] = dfi_pool_items[i].mega_forme;
-    }
-    for (uint32_t d = 0u; d < DFI_TYPE_COUNT; ++d) {
-        for (uint32_t a = 0u; a < DFI_TYPE_COUNT; ++a) {
-            out[n++] = dfi_closure_type_chart[d][a];
+        uint8_t mega_base = 0u;
+        uint8_t mega_forme = 0u;
+        if (!dfi_pool_link_byte(dfi_pool_items[i].mega_base, &mega_base) ||
+            !dfi_pool_link_byte(dfi_pool_items[i].mega_forme, &mega_forme)) {
+            return 0u;
         }
+        out[n++] = mega_base;
+        out[n++] = mega_forme;
     }
-    for (uint32_t i = 0u; i < DFI_TYPE_COUNT; ++i) {
-        out[n++] = (uint8_t)(dfi_pool_type_immunity[i] & immunity_mask); /* wide-operands-reviewed: < 256 */
-    }
-    for (uint32_t i = 0u; i < DFI_NATURE_COUNT; ++i) {
-        out[n++] = dfi_closure_natures[i].plus;
-        out[n++] = dfi_closure_natures[i].minus;
-    }
-    return n;
+    return dfi_pool_put_tail(out, n, immunity_mask);
 }
 
 size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity)
@@ -2000,8 +2672,42 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity)
     if (capacity < DFI_POOL_CANONICAL_SIZE) {
         return 0u;
     }
-    size_t n = dfi_pool_canonical_bytes_of(out, capacity, DFI_POOL_FORME_COUNT, DFI_POOL_MOVE_COUNT,
-                                           DFI_POOL_ITEM_COUNT, DFI_POOL_ABILITY_COUNT, 0xFFu);
+    size_t n = 0u;
+    n = dfi_pool_put_u16(out, n, DFI_POOL_FORME_COUNT);
+    n = dfi_pool_put_u16(out, n, DFI_POOL_MOVE_COUNT);
+    n = dfi_pool_put_u16(out, n, DFI_POOL_ITEM_COUNT);
+    n = dfi_pool_put_u16(out, n, DFI_POOL_ABILITY_COUNT);
+    n = dfi_pool_put_u16(out, n, DFI_TYPE_COUNT);
+    n = dfi_pool_put_u16(out, n, DFI_NATURE_COUNT);
+    for (uint32_t i = 0u; i < DFI_POOL_FORME_COUNT; ++i) {
+        const dfi_pool_forme_data *f = &dfi_pool_formes[i];
+        n = dfi_pool_put_u16(out, n, f->dex_num);
+        out[n++] = f->types[0];
+        out[n++] = f->types[1];
+        for (uint32_t k = 0u; k < DFI_STAT_COUNT; ++k) {
+            out[n++] = f->base[k];
+        }
+        n = dfi_pool_put_u16(out, n, f->weight_hg);
+        out[n++] = f->ability;
+        out[n++] = f->gender_rule;
+        out[n++] = f->is_mega;
+        n = dfi_pool_put_u16(out, n, f->base_forme);
+        n = dfi_pool_put_u16(out, n, f->mega_forme);
+        out[n++] = f->mega_item;
+        out[n++] = f->set_item;
+        out[n++] = f->set_move_count;
+        for (uint32_t k = 0u; k < 4u; ++k) {
+            out[n++] = f->set_moves[k];
+        }
+    }
+    for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
+        n = dfi_pool_put_move(out, n, &dfi_pool_moves[i]);
+    }
+    for (uint32_t i = 0u; i < DFI_POOL_ITEM_COUNT; ++i) {
+        n = dfi_pool_put_u16(out, n, dfi_pool_items[i].mega_base);
+        n = dfi_pool_put_u16(out, n, dfi_pool_items[i].mega_forme);
+    }
+    n = dfi_pool_put_tail(out, n, 0xFFu);
     for (uint32_t i = 0u; i < DFI_POOL_ITEM_COUNT; ++i) {
         out[n++] = dfi_pool_item_family[i].family;
         out[n++] = dfi_pool_item_family[i].type;
@@ -2009,6 +2715,12 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity)
     for (uint32_t i = 0u; i < DFI_POOL_ABILITY_COUNT; ++i) {
         out[n++] = dfi_pool_ability_family[i].family;
         out[n++] = dfi_pool_ability_family[i].param;
+    }
+    for (uint32_t i = 0u; i < DFI_POOL_ITEM_COUNT; ++i) {
+        out[n++] = dfi_pool_item_handler[i];
+    }
+    for (uint32_t i = 0u; i < DFI_POOL_ABILITY_COUNT; ++i) {
+        out[n++] = dfi_pool_ability_handler[i];
     }
     for (uint32_t i = 0u; i < DFI_POOL_FORME_COUNT; ++i) {
         const dfi_forme_legal *l = &dfi_pool_forme_legal[i];
@@ -2043,6 +2755,7 @@ def main():
         check_pool_prefix(d, dx, dc)
         h, c, digest, size = render_pool(d, dx)
         stem = 'pool_tables'
+        summary = feature_summary(d)
     elif team_c:
         dc = d
         d = build(args[0], ext=True)
@@ -2063,6 +2776,9 @@ def main():
             os.makedirs(os.path.dirname(path), exist_ok=True)
             with io.open(path, 'w', encoding='ascii', newline='\n') as fh:
                 fh.write(text)
+    if pool:
+        print(json.dumps(dict(summary, aliases=len(d['aliases']), flags_that_matter=d['flags_that_matter']), indent=1,
+                         sort_keys=True))
     print('%s: %d formes, %d moves, %d items, %d abilities; canonical %d bytes, sha256 %s%s' % (
         stem, len(d['formes']), len(d['moves']), len(d['items']), len(d['abilities']), size, digest,
         ' (check ok)' if check else ''))

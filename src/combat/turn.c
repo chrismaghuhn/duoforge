@@ -97,15 +97,15 @@ static uint32_t dfi_fainted_members(const struct duoforge_battle *b, uint32_t si
     return n;
 }
 
-static const dfi_forme_data *dfi_forme_of(const dfi_member *m)
+static const dfi_pool_forme_data *dfi_forme_of(const dfi_member *m)
 {
-    const dfi_forme_data *base = &dfi_pool_formes[m->species_id];
+    const dfi_pool_forme_data *base = &dfi_pool_formes[m->species_id];
     return m->is_mega != 0u ? &dfi_pool_formes[base->mega_forme] : base;
 }
 
 static bool dfi_has_type(const dfi_member *m, uint32_t type)
 {
-    const dfi_forme_data *f = dfi_forme_of(m);
+    const dfi_pool_forme_data *f = dfi_forme_of(m);
     return f->types[0] == type || f->types[1] == type;
 }
 
@@ -724,7 +724,7 @@ static bool dfi_type_immune(const dfi_member *target, uint32_t move_type)
     if (move_type >= DFI_TYPE_COUNT) {
         return false;
     }
-    const dfi_forme_data *f = dfi_forme_of(target);
+    const dfi_pool_forme_data *f = dfi_forme_of(target);
     for (uint32_t i = 0u; i < 2u; ++i) {
         const uint32_t t = f->types[i];
         if (t < DFI_TYPE_COUNT && dfi_closure_type_chart[t][move_type] == DFI_EFFECT_IMMUNE) {
@@ -742,7 +742,7 @@ static uint32_t dfi_type_mod(const dfi_member *target, uint32_t move_type)
     if (move_type >= DFI_TYPE_COUNT) {
         return mod;
     }
-    const dfi_forme_data *f = dfi_forme_of(target);
+    const dfi_pool_forme_data *f = dfi_forme_of(target);
     for (uint32_t i = 0u; i < 2u; ++i) {
         const uint32_t t = f->types[i];
         if (t >= DFI_TYPE_COUNT) {
