@@ -79,11 +79,18 @@ class StopFlag:
 
     def __init__(self):
         self.requested = False
+        self._previous = {}
 
     def install(self):
         for sig in (signal.SIGTERM, signal.SIGINT):
-            signal.signal(sig, self._set)
+            self._previous[sig] = signal.signal(sig, self._set)
         return self
+
+    def restore(self):
+        """Puts back the handlers install replaced."""
+        for sig, handler in self._previous.items():
+            signal.signal(sig, handler)
+        self._previous = {}
 
     def _set(self, signum, frame):
         self.requested = True

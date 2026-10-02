@@ -302,6 +302,126 @@ class RunStateJaxTest(unittest.TestCase):
             runstate.restore_opt(tx, back["params"], back["opt_leaves"][:-1])
 
 
+_SMALL = ["--workers", "2", "--rollout", "8", "--minutes", "0", "--eval-every", "100", "--eval-envs", "8",
+          "--minibatch", "256", "--snapshot-every", "1", "--slot-refresh", "1", "--league-slots", "2"]
+
+
+def _run(argv, pool=None, on_start=None):
+    from duoforge_learn import train
+    return train.run(train.parse(argv), pool=pool, on_start=on_start)
+
+
+def _log(out):
+    import json
+    import os
+    with open(os.path.join(out, "log.jsonl"), encoding="utf-8") as f:
+        return [json.loads(line) for line in f]
+
+
+class ResumeTest(unittest.TestCase):
+    def setUp(self):
+        import tempfile
+        self.out = tempfile.mkdtemp(prefix="duoforge-resume-")
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self.out, ignore_errors=True)
+
+    def test_resume_continues_counters(self):
+        from duoforge_learn import runstate
+        self.assertEqual(_run(["--envs", "8", "--updates", "2", "--out", self.out] + _SMALL), 0)
+        first = runstate.load_state(self.out)["counters"]
+        self.assertEqual(first["update"], 2)
+        self.assertEqual(_run(["--resume", self.out, "--updates", "3"]), 0)
+        records = _log(self.out)
+        self.assertEqual([r.get("update") for r in records if "update" in r], [1, 2, 3])
+        resume = [r for r in records if "resume" in r]
+        self.assertEqual(len(resume), 1)
+        self.assertEqual(resume[0]["resume"]["updates"], [2, 3])
+        last = [r for r in records if "update" in r][-1]
+        self.assertGreater(last["decisions"], first["decisions"])
+
+    def test_shrinking_then_growing_envs_never_repeats_an_episode(self):
+        seen = []
+
+        def hook(envs, episodes):
+            seen.extend(zip(np.asarray(envs).tolist(), np.asarray(episodes).tolist()))
+
+        self.assertEqual(_run(["--envs", "8", "--updates", "2", "--out", self.out] + _SMALL, on_start=hook), 0)
+        self.assertEqual(_run(["--resume", self.out, "--envs", "4", "--updates", "3"], on_start=hook), 0)
+        self.assertEqual(_run(["--resume", self.out, "--envs", "8", "--updates", "4"], on_start=hook), 0)
+        self.assertEqual(len(seen), len(set(seen)))
+        self.assertTrue(any(e >= 4 for e, k in seen[-40:]))
+
+    def test_changed_team_is_refused(self):
+        from duoforge_learn import runstate
+        self.assertEqual(_run(["--envs", "8", "--updates", "1", "--out", self.out] + _SMALL), 0)
+        state = runstate.load_state(self.out)
+        state["teams"]["sha256"][0] = "0" * 64
+        runstate.save_state(self.out, state)
+        with self.assertRaisesRegex(SystemExit, "team A"):
+            _run(["--resume", self.out, "--updates", "2"])
+
+    def test_refused_option_names_itself(self):
+        self.assertEqual(_run(["--envs", "8", "--updates", "1", "--out", self.out] + _SMALL), 0)
+        with self.assertRaisesRegex(SystemExit, "learning_rate"):
+            _run(["--resume", self.out, "--updates", "2", "--learning-rate", "0.001"])
+
+    def test_added_team_is_sampled(self):
+        sides = duoforge.reference_setups([0])["sides"][0]
+        two = duoforge.teams.TeamPool.from_setups(("A", "B"), sides)
+        three = duoforge.teams.TeamPool.from_setups(("A", "B", "A2"), np.concatenate([sides, sides[:1]]))
+        self.assertEqual(_run(["--envs", "8", "--updates", "1", "--out", self.out] + _SMALL, pool=two), 0)
+        self.assertEqual(_run(["--resume", self.out, "--updates", "4"], pool=three), 0)
+        records = [r for r in _log(self.out) if "update" in r]
+        self.assertEqual(len(records[-1]["team_episodes"]), 3)
+        self.assertGreater(sum(r["team_episodes"][2] for r in records[1:]), 0)
+        resume = [r for r in _log(self.out) if "resume" in r][0]["resume"]
+        self.assertEqual(resume["teams"], [["A", "B"], ["A", "B", "A2"]])
+
+    def test_resume_with_a_wider_layout(self):
+        import jax
+        from duoforge_learn import ppo, train
+        flags = [n for n in features.FEATURE_NAMES if n.endswith(".flag.follow_me")]
+        old_names = [n for n in features.FEATURE_NAMES if n not in flags]
+        cfg = dict(policy.V1_DEFAULT)
+        net = policy.make(cfg, old_names, features.SLOT_FEATURE_NAMES)
+        params = net.init(jax.random.PRNGKey(30))
+        tx = ppo.optimizer(3e-4)
+        opt = tx.init(params)
+        grads = jax.tree_util.tree_map(lambda x: x * 0 + 1.0, params)
+        _, opt = tx.update(grads, opt, params)
+        wide, wide_opt = train._widen_state(params, jax.tree_util.tree_leaves(opt), cfg, old_names,
+                                            features.SLOT_FEATURE_NAMES, tx)
+        rows = [features.FEATURE_NAMES.index(n) for n in flags]
+        self.assertFalse(np.asarray(wide["t1"]["w"])[rows].any())
+        mu = wide_opt[1][0].mu["t1"]["w"]
+        self.assertFalse(np.asarray(mu)[rows].any())
+        self.assertTrue(np.asarray(mu).any())
+        self.assertEqual(int(wide_opt[1][0].count), int(opt[1][0].count))
+
+    def test_sigterm_leaves_a_loadable_state(self):
+        import os
+        import signal
+        import subprocess
+        import sys
+        from duoforge_learn import runstate
+        env = dict(os.environ)
+        proc = subprocess.Popen([sys.executable, "-m", "duoforge_learn.train", "--envs", "8", "--minutes", "5",
+                                 "--out", self.out] + [a for a in _SMALL if a not in ("--minutes", "0")],
+                                stdout=subprocess.PIPE, text=True, env=env)
+        try:
+            for line in proc.stdout:
+                if line.startswith('{"update"'):
+                    break
+            proc.send_signal(signal.SIGTERM)
+            self.assertEqual(proc.wait(timeout=60), 0)
+        finally:
+            if proc.poll() is None:
+                proc.kill()
+        self.assertGreaterEqual(runstate.load_state(self.out)["counters"]["update"], 1)
+
+
 PRESET_COUNTS = {"S": 384751, "M": 2072463, "L": 7871631}
 
 
