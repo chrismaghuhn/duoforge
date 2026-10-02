@@ -1118,6 +1118,57 @@ class Library(unittest.TestCase):
             with self.assertRaises(trace_to_c.ConversionError):
                 trace_to_c.step_events([bad], 0, roster, [{'Gardevoir': 100}] * 2, tables)
 
+    def test_glaive_rush_rows_are_what_the_protocol_lines_say(self):
+        """Decision 0018 section 6.1 for Glaive Rush (step G19): its user is hit as vulnerable from a `|move|X|Glaive Rush|`
+        line that is followed by damage to a foe (a miss, a block or an immunity gives nothing; the `-singlemove|X|Glaive
+        Rush|[silent]` line is not shown) until the user's next `|move|` or `|cant|` line (BeforeMove, priority 100) or
+        until it leaves (`|switch|`, `|drag|`, `|replace|`, `|faint|`). The rows of the C test (rows in
+        tests/test_pool_g19.c: the flag of each position after each step) must be exactly what these lines give for the
+        committed traces, so the engine's tail and extension are checked against the protocol and not against
+        themselves. Every silent line follows such a hit, and no battle shows it for a miss, a block or an immunity."""
+        names = sorted(f[:-5] for f in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs')) if f.startswith('g19_glaive'))
+        self.assertEqual(len(names), 5)
+        with open(os.path.join(ROOT, 'tests', 'test_pool_g19.c'), encoding='utf-8') as f:
+            source = f.read()
+        rows = {}
+        for m in re.finditer(r'\{"(g19_glaive\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}', source):
+            rows[(m.group(1), int(m.group(2)))] = [int(m.group(i)) for i in (3, 4, 5, 6)]
+        derived = {}
+        silent = hits = 0
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            glaive = set()
+            for k, step in enumerate(trace['steps']):
+                log = [l.split('|') for l in step['log']]
+                for i, part in enumerate(log):
+                    if len(part) < 3:
+                        continue
+                    kind, pos = part[1], part[2][:3]
+                    if kind in ('switch', 'drag', 'faint', 'replace'):
+                        glaive.discard(pos)
+                    elif kind in ('move', 'cant'):
+                        glaive.discard(pos)
+                        if kind == 'move' and len(part) > 3 and part[3] == 'Glaive Rush':
+                            hit = False
+                            for later in log[i + 1:]:
+                                if len(later) > 2 and later[1] in ('move', 'turn', 'upkeep', 'cant'):
+                                    break
+                                if len(later) > 2 and later[1] == '-damage' and later[2][:2] != pos[:2]:
+                                    hit = True
+                            hits += 1 if hit else 0
+                            if hit:
+                                glaive.add(pos)
+                    elif kind == '-singlemove' and len(part) > 4 and part[3] == 'Glaive Rush' and part[4] == '[silent]':
+                        silent += 1
+                        self.assertIn(pos, glaive)
+                row = [0, 0, 0, 0]
+                for x in glaive:
+                    row[(int(x[1]) - 1) * 2 + 'ab'.index(x[2])] = 1
+                derived[(name, k)] = row
+        self.assertEqual(rows, derived)
+        self.assertTrue(hits >= 2 and silent == hits)
+
     def test_a_two_turn_lock_lasts_while_twoturnmove_stands(self):
         """Electro Shot's onTryMove removes the move's volatile on the locked turn and the recorder's `locked` is made of
         it, but twoturnmove stays until the residual. In the last step of d02 (Emergency Exit) and d03 (Parting Shot,
@@ -1261,7 +1312,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 48)  # G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), then Expanding Force (G15)
+        self.assertEqual(len(marked), 50)  # G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), then Expanding Force (G15)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []

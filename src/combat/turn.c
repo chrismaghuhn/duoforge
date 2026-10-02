@@ -1170,8 +1170,10 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
      * draw is dropped, decision 0009 section 10.5). */
     const dfi_side *ds = &r->b->sides[target / 2u];
     uint32_t chain = 4096u;
+    uint32_t mods = 0u; /* the ModifyDamage modifiers in the chain */
     if (dfi_holds(r->b, a, DFI_ITEM_LIFEORB)) {
         ok = dfi_chain_modify(chain, 5324u, &chain);
+        mods += 1u;
     }
     /* A resist berry (the RESIST_BERRY family: Chople Berry and the sixteen
      * others, decision 0015; combat/item_family.h) is eaten by a super
@@ -1184,11 +1186,22 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
         weaken.detail = 1u;
         dfi_emit(r, &weaken); /* [-enditem] [weaken] */
         ok = ok && dfi_chain_modify(chain, DFI_RESIST_BERRY_MODIFIER, &chain);
+        mods += 1u;
     }
     if (!crit && target != user &&
         ((physical && ds->reflect_turns != 0u) ||
          (md->category == DFI_CATEGORY_SPECIAL && ds->light_screen_turns != 0u))) {
         ok = ok && dfi_chain_modify(chain, 2732u, &chain);
+        mods += 1u;
+    }
+    /* Glaive Rush's onSourceModifyDamage on the target (data/moves.ts:6647-6678): chainModify(2). With a Life Orb attacker,
+     * a resist berry and a screen all in the chain the four modifiers do not commute (3552 or 3551 by their order, the
+     * handlers' speeds and a tie draw), a case that this build does not model. */
+    if (r->b->tail.sides[target / 2u].positions[target % 2u].glaive_rush != 0u) {
+        if (mods >= 3u) {
+            return DUOFORGE_E_UNSUPPORTED; /* three modifiers already: the order of the fourth is not modelled */
+        }
+        ok = ok && dfi_chain_modify(chain, 8192u, &chain);
     }
     if (!ok) {
         return DUOFORGE_E_INVARIANT;
@@ -1963,6 +1976,9 @@ static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, uint32_t move_
     dfi_active_slot *pos = dfi_pos(r->b, user);
     duoforge_status st = DUOFORGE_OK;
     *can = false;
+    /* glaiverush's onBeforeMove (data/moves.ts:6647-6678), priority 100, before every other BeforeMove handler: the
+     * user's next action, whatever it is and whether or not it then moves, ends the drawback (silently). */
+    r->b->tail.sides[user / 2u].positions[user % 2u].glaive_rush = 0u;
     /* mustrecharge's onBeforeMove (data/conditions.ts:367-373), priority 11, before sleep and freeze (10): whatever
      * move the action holds (the recharge turn itself, or an Encored move that replaced it), it shows cant|recharge,
      * ends the volatile and stops the move: no PP, no move line. Zero under every kind but POOL (TAIL_KIND). */
@@ -2405,6 +2421,24 @@ static duoforge_status dfi_run_helping_hand(dfi_run *r, uint32_t user, uint32_t 
     return dfi_status_hit_end(r);
 }
 
+/* Coaching (step G19, data/moves.ts:2590-2605): a status move of the adjacent ally (target adjacentAlly, accuracy true,
+ * no protect flag: Protect does not stop it) whose primary boosts, Attack and Defense by 1, go to that ally. With no
+ * standing ally it fails before this point (dfi_no_target, as Helping Hand). The TryHit step comes first: Good as Gold
+ * stops a status move of any other Pokemon, its ally's included, with -immune and no -fail. The boosts are the ally's own
+ * (a Contrary or Simple ally changes them; Defiant and Competitive only answer a drop caused by a foe), so they take
+ * the ordinary path, with the user as the source; `-boost|ally|atk|1`, `-boost|ally|def|1`. */
+static duoforge_status dfi_run_coaching(dfi_run *r, uint32_t user, uint32_t ally, const dfi_move_data *md)
+{
+    if (dfi_ability(r->b, dfi_at(r->b, ally), DFI_ABILITY_GOODASGOLD)) {
+        dfi_immune(r, ally, 1u + DFI_ABILITY_GOODASGOLD); /* the move steps stop: no Update */
+        return DUOFORGE_OK;
+    }
+    if (dfi_boost(r, ally, md->boosts, user, dfi_effect(DUOFORGE_CAUSE_MOVE, 0u, DFI_BOOST_PRIMARY))) {
+        return dfi_status_hit_end(r);
+    }
+    return DUOFORGE_OK; /* nothing changed: the hit loop stops */
+}
+
 /* Follow Me (Team C, data/moves.ts:6039-6074). Its onTry needs two active
  * Pokemon per side (activePerHalf > 1), which doubles always has; its target
  * is the user, so Psychic Terrain and Protect never stop it. The volatile
@@ -2778,6 +2812,9 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         return dfi_run_follow_me(r, user);
     }
     const bool status_move = md->category == DFI_CATEGORY_STATUS;
+    if (status_move && md->boost_role == DFI_BOOST_ROLE_PRIMARY_ALLY) {
+        return dfi_run_coaching(r, user, targets[0], md);
+    }
     if (status_move && md->side_condition != 0u) {
         /* addSideCondition: an active condition is not restarted (the move
          * fails); Tailwind lasts 4 turns, the screens 5, or 8 with Light Clay. */
@@ -2848,7 +2885,8 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         md->special != DFI_SPECIAL_LAST_RESPECTS && md->special != DFI_SPECIAL_SUCKER_PUNCH &&
         md->special != DFI_SPECIAL_FIRST_IMPRESSION && md->special != DFI_SPECIAL_LOW_KICK &&
         md->special != DFI_SPECIAL_SOAK && md->special != DFI_SPECIAL_ENCORE &&
-        md->special != DFI_SPECIAL_KNOCK_OFF && md->special != DFI_SPECIAL_EXPANDING_FORCE) {
+        md->special != DFI_SPECIAL_KNOCK_OFF && md->special != DFI_SPECIAL_EXPANDING_FORCE &&
+        md->special != DFI_SPECIAL_GLAIVE_RUSH) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Fake Out's and First Impression's onTry (in trySpreadMoveHit, after
@@ -3010,6 +3048,11 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             }
             /* No Guard on the user or the target: the move cannot miss. */
             if (dfi_ability(r->b, m, DFI_ABILITY_NOGUARD) || dfi_ability(r->b, dfi_at(b, targets[i]), DFI_ABILITY_NOGUARD)) {
+                continue;
+            }
+            /* Glaive Rush's onAccuracy on the target (data/moves.ts:6647-6678): the move cannot miss, no draw
+             * (sim/battle-actions.ts:736-738). */
+            if (b->tail.sides[targets[i] / 2u].positions[targets[i] % 2u].glaive_rush != 0u) {
                 continue;
             }
             /* The user's accuracy stage minus the target's evasion, clamped. */
@@ -3191,6 +3234,18 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             duoforge_event e = dfi_event_make(DUOFORGE_EVENT_VOLATILE_START, user);
             e.detail = (uint8_t)DUOFORGE_VOLATILE_MUST_RECHARGE;
             dfi_emit(r, &e); /* [-mustrecharge] */
+        }
+    }
+    /* Glaive Rush (step G19): its self effect, applied like the recharge's by selfDrops to the user once a target was not
+     * ruled out (a miss or a Protect gives none), shows nothing: -singlemove|user|Glaive Rush|[silent]
+     * (data/moves.ts:6647-6678; the public view infers it from the move line, decision 0018 section 6.1). */
+    if (md->special == DFI_SPECIAL_GLAIVE_RUSH) {
+        bool hit_any = false;
+        for (uint32_t i = 0u; i < count; ++i) {
+            hit_any = hit_any || hit[i];
+        }
+        if (hit_any) {
+            b->tail.sides[side].positions[q->slot].glaive_rush = 1u;
         }
     }
     /* secondaries: one SECONDARY draw per hit target, even at 100; a status
