@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# shellcheck shell=bash
+# shellcheck shell=bash disable=SC2034
 # The chunk scheduler of the fuzz box (tools/cloud/aws_fuzz/README.md), sourced by user_data.sh once the repository is
 # checked out, and by the offline tests with stand-ins for the driver and for aws.
 #
@@ -15,6 +15,87 @@
 # RUN_ID, RESUME (yes or no), DF_CAMPAIGN, DF_COMMIT and PARALLEL_CONF (the parallel of the campaign.conf: auto or a
 # number).
 
+DF_DEFAULT_CHUNK_BATTLES=2000 # campaign.conf: chunk_battles
+# parallel=auto is vCPUs / this (at least 1): one driver gets about 58 battles/s however many workers it has (its Python
+# side is bound by the interpreter lock) and keeps about 9 vCPUs busy (the third pilot: 3 x 21 workers on 64 vCPUs
+# gave 55.6 to 58.8 battles/s each at 13 to 14% of the vCPUs), so 7 drivers fill 64 vCPUs.
+DF_VCPUS_PER_DRIVER=9
+
+# --- the campaign.conf: key=value lines (pairings, teams, base_seed and chunks are required)
+campaign_conf_load() { # file; sets PAIRINGS TEAMS BASE_SEED CHUNKS CHUNK_BATTLES PARALLEL_CONF SWEEP BENCH
+    local key value parallel_set=no
+    PAIRINGS=''
+    TEAMS=''
+    BASE_SEED=''
+    CHUNKS=''
+    SWEEP=''
+    BENCH=0
+    CHUNK_BATTLES=$DF_DEFAULT_CHUNK_BATTLES
+    PARALLEL_CONF=auto
+    while IFS='=' read -r key value; do
+        case $key in
+            '' | '#'*) ;;
+            pairings) PAIRINGS=$value ;;
+            teams) TEAMS=$value ;;
+            base_seed) BASE_SEED=$value ;;
+            chunks) CHUNKS=$value ;;
+            chunk_battles) CHUNK_BATTLES=$value ;;
+            parallel) PARALLEL_CONF=$value; parallel_set=yes ;;
+            sweep) SWEEP=$value ;;
+            bench) BENCH=$value ;;
+            *) fail "campaign.conf: unknown key '$key'" ;;
+        esac
+    done < "$1"
+    [[ $PAIRINGS =~ ^[A-Za-z0-9,-]+$ ]] || fail 'campaign.conf: bad pairings'
+    [[ $BASE_SEED =~ ^[0-9]{1,12}$ ]] || fail 'campaign.conf: bad base_seed'
+    [[ $CHUNKS =~ ^[1-9][0-9]{0,2}$ ]] || fail 'campaign.conf: bad chunks'
+    [[ $CHUNK_BATTLES =~ ^[1-9][0-9]{2,4}$ ]] && [ "$CHUNK_BATTLES" -ge 100 ] && [ "$CHUNK_BATTLES" -le 20000 ] ||
+        fail 'campaign.conf: chunk_battles must be between 100 and 20000'
+    [[ $BENCH =~ ^[01]$ ]] || fail 'campaign.conf: bench must be 0 or 1'
+    if [ -n "$SWEEP" ] && [ "$parallel_set" = yes ]; then
+        fail 'campaign.conf: sweep and parallel exclude each other'
+    fi
+}
+
+# parallel=auto or a number -> RESOLVED_PARALLEL
+resolve_parallel() { # conf vcpus
+    RESOLVED_PARALLEL=$1
+    if [ "$RESOLVED_PARALLEL" = auto ]; then
+        RESOLVED_PARALLEL=$(($2 / DF_VCPUS_PER_DRIVER))
+        [ "$RESOLVED_PARALLEL" -ge 1 ] || RESOLVED_PARALLEL=1
+    fi
+    [[ $RESOLVED_PARALLEL =~ ^[1-9][0-9]?$ ]] && [ "$RESOLVED_PARALLEL" -le 16 ] ||
+        fail 'campaign.conf: parallel must be auto or 1 to 16'
+}
+
+# The phases of the campaign: PHASES (the parallel of each, in order), CHUNKS_PER_PHASE, CHUNKS (all of them) and the
+# PARALLEL_CONF that the manifest records. Without a sweep there is one phase of `chunks` chunks. With
+# `sweep=5,7,9` there is a phase for each value, each of `chunks` chunks (so the campaign has 3 x chunks), playing one
+# after the other: the chunks of phase k come after those of phase k-1 in the seed order, so no battle is played twice.
+campaign_plan() { # vcpus
+    local p seen=' '
+    CHUNKS_PER_PHASE=$CHUNKS
+    PHASES=()
+    if [ -n "$SWEEP" ]; then
+        [[ $SWEEP =~ ^[1-9][0-9]?(,[1-9][0-9]?){0,5}$ ]] || fail 'campaign.conf: sweep must be 1 to 6 numbers (1 to 16) separated by commas'
+        IFS=, read -r -a PHASES <<< "$SWEEP"
+        for p in "${PHASES[@]}"; do
+            [ "$p" -le 16 ] || fail "campaign.conf: sweep value $p is above 16"
+            case $seen in *" $p "*) fail "campaign.conf: sweep value $p is listed twice" ;; esac
+            seen="$seen$p "
+            # the steady state of a phase is read between the completion of the first `parallel` chunks and the
+            # completion of the chunk that is `parallel` before the last: at least 3 chunks in that window
+            [ "$CHUNKS_PER_PHASE" -ge $((2 * p + 3)) ] ||
+                fail "campaign.conf: the sweep phase with parallel $p needs at least $((2 * p + 3)) chunks per phase (more is better)"
+        done
+        PARALLEL_CONF="sweep=$SWEEP"
+    else
+        resolve_parallel "$PARALLEL_CONF" "$1"
+        PHASES=("$RESOLVED_PARALLEL")
+    fi
+    CHUNKS=$((CHUNKS_PER_PHASE * ${#PHASES[@]}))
+}
+
 # 0 present, 1 absent, anything else is an error
 s3_has() { # s3 url
     local rc=0
@@ -25,6 +106,10 @@ s3_has() { # s3 url
 
 # busy and total CPU ticks of the machine (user, nice, system, irq, softirq of all: user..steal)
 cpu_ticks() {
+    if [ ! -r /proc/stat ]; then
+        echo '0 0'
+        return 0
+    fi
     awk '/^cpu /{busy = $2 + $3 + $4 + $7 + $8; total = 0; for (i = 2; i <= NF; i++) total += $i; print busy, total}' /proc/stat
 }
 
@@ -150,13 +235,15 @@ chunk_job() { # idx
     fi
 }
 
-# All the chunks: PARALLEL computing at a time, uploads in the background, the manifest after each upload.
-run_chunks() {
-    local next=0 running=0 uploading=0 idx kind done_pid rc dir
+# The chunks FIRST to LAST-1 (default: all): PARALLEL computing at a time, uploads in the background, the manifest after
+# each upload. The time at which each chunk finished computing goes to completions.txt ("<phase> <idx> <epoch>").
+run_chunks() { # [first [last]]
+    local first=${1:-0} last=${2:-$CHUNKS} next running=0 uploading=0 idx kind done_pid rc dir
+    next=$first
     local -A KIND=() IDX=()
     : > "$WORK/inflight"
     while :; do
-        while [ "$running" -lt "$PARALLEL" ] && [ "$next" -lt "$CHUNKS" ]; do
+        while [ "$running" -lt "$PARALLEL" ] && [ "$next" -lt "$last" ]; do
             idx=$(printf '%04d' "$next")
             next=$((next + 1))
             if grep -qx "$idx" "$WORK/done.txt"; then
@@ -179,6 +266,7 @@ run_chunks() {
         [ "$rc" -eq 0 ] || fail "chunk $idx: the $kind step failed (status $rc)"
         if [ "$kind" = compute ]; then
             running=$((running - 1))
+            printf '%s %s %s\n' "${PHASE:-0}" "$idx" "${EPOCHREALTIME/,/.}" >> "$WORK/completions.txt"
             upload_chunk "$idx" "$WORK/out/chunk-$idx" &
             KIND[$!]=upload
             IDX[$!]=$idx
@@ -192,4 +280,50 @@ run_chunks() {
             log "chunk $idx uploaded and in the done-manifest"
         fi
     done
+}
+
+# What one phase achieved. The steady state is the rate between the completion of the first PARALLEL chunks (the
+# first wave, which started together and so finishes together) and the completion of the chunk PARALLEL before the
+# last (after which no new chunk starts and the drivers run dry): N-2*PARALLEL chunks over that time, with every driver
+# slot busy throughout, so neither the start-up nor a single tail chunk is in it. It needs at least 3 such chunks. The
+# overall rate (all chunks over the whole phase) is given too.
+phase_summary() { # phase parallel t0 busy_percent
+    local fields steady overall n window_s w json_steady
+    touch "$WORK/completions.txt"
+    fields=$(awk -v ph="$1" -v p="$2" -v t0="$3" -v b="$CHUNK_BATTLES" '
+        $1 == ph { t[++n] = $3 }
+        END {
+            if (n == 0) { print "- 0 0 - 0"; exit }
+            all = (t[n] > t0 ? b * n / (t[n] - t0) : 0)
+            w = n - 2 * p
+            if (w >= 3 && t[n - p] > t[p]) printf "%.1f %.1f %d %.1f %d\n", b * w / (t[n - p] - t[p]), all, n, t[n - p] - t[p], w
+            else printf "- %.1f %d - %d\n", all, n, w
+        }' "$WORK/completions.txt")
+    read -r steady overall n window_s w <<< "$fields"
+    if [ "$steady" = - ]; then
+        log "phase $1 (parallel $2): no steady state ($n chunks, a window of $w: too few); $overall battles/s over the phase; the machine was $4% busy"
+        json_steady=null
+    else
+        log "phase $1 (parallel $2): $steady battles/s steady state ($w of $n chunks over $window_s s), $overall battles/s over the phase; the machine was $4% busy"
+        json_steady=$steady
+    fi
+    printf '{"phase":%s,"parallel":%s,"workers_per_driver":%s,"chunks":%s,"chunk_battles":%s,"steady_battles_per_second":%s,"overall_battles_per_second":%s,"window_chunks":%s,"machine_busy_percent":%s}\n' \
+        "$1" "$2" "$WORKERS_PER" "$n" "$CHUNK_BATTLES" "$json_steady" "$overall" "$w" "$4" >> "$WORK/sweep.jsonl"
+}
+
+# One phase: chunks FIRST to LAST-1 with PARALLEL drivers of VCPUS / PARALLEL workers each.
+run_phase() { # phase first last parallel
+    local t0 busy0 total0 busy1 total1 util
+    PHASE=$1
+    PARALLEL=$4
+    WORKERS_PER=$((VCPUS / PARALLEL))
+    [ "$WORKERS_PER" -ge 1 ] || WORKERS_PER=1
+    printf '%s\n' "$PHASE" > "$WORK/phase"
+    t0=${EPOCHREALTIME/,/.}
+    read -r busy0 total0 <<< "$(cpu_ticks)"
+    log "phase $PHASE: chunks $2 to $(($3 - 1)), parallel $PARALLEL, $WORKERS_PER workers per driver, $VCPUS vCPUs"
+    run_chunks "$2" "$3"
+    read -r busy1 total1 <<< "$(cpu_ticks)"
+    util=$(awk -v b="$((busy1 - busy0))" -v t="$((total1 - total0))" 'BEGIN { printf "%.0f", (t > 0 ? 100 * b / t : 0) }')
+    phase_summary "$PHASE" "$PARALLEL" "$t0" "$util"
 }

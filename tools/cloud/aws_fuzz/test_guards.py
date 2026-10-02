@@ -318,11 +318,14 @@ class Guards(unittest.TestCase):
         for secret in ('AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_SESSION_TOKEN', 'aws configure', 'AKIA', 'ASIA'):
             self.assertNotIn(secret, text)
         with open(os.path.join(HERE, 'chunks.sh'), encoding='utf-8') as f:
-            self.assertIn('manifest/done.txt', f.read())
+            chunks = f.read()
+        for needle in ('manifest/done.txt', 'DF_DEFAULT_CHUNK_BATTLES=2000', 'DF_VCPUS_PER_DRIVER=9', 'run_chunks()'):
+            self.assertIn(needle, chunks)
         for needle in ('b2cb775b0616115b775534eaeff50300e1fc81fc', 'npm ci --ignore-scripts --omit=dev', 'node build',
                        'DDUOFORGE_ENABLE_IPO=ON', '--no-lock', 'spot/instance-action', 'X-aws-ec2-metadata-token',
                        'trap finish EXIT', 'shutdown -h now', 'DF_LOCAL_RATE=24', 'DF_MIN_FACTOR=2',
-                       'DF_DEFAULT_CHUNK_BATTLES=2000', 'latest-v22.x', 'chunks.sh', 'run_chunks', 'bench_run.py', '/usr/bin/time',
+                       'latest-v22.x', 'chunks.sh', 'run_phase', 'campaign_plan', 'campaign_conf_load', 'sweep.jsonl', 'bench_run.py',
+                       '/usr/bin/time',
                        'done_manifest_open', 'DF_RUN_ID', '"${DF_COMMIT:0:12}-$CHUNK_BATTLES-$BASE_SEED-"*'):
             self.assertIn(needle, text)
 
@@ -480,6 +483,172 @@ esac
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr + log)
         self.assertTrue(any(c.startswith('s3 sync ') and c.endswith('s3://my-fuzz-bucket/fuzz/c/partial/chunk-0003/ --only-show-errors')
                             for c in self.calls()), self.calls())
+
+    # ------------------------------------------------------------------ parallel=auto, the sweep, the phases
+    def chunks_eval(self, body, **env):
+        """bash with chunks.sh sourced (log silent, fail printing to stderr and exiting), running `body`."""
+        script = ('set -euo pipefail' + chr(10) + 'log() { :; }' + chr(10) +
+                  'fail() { echo "FAILED: $*" >&2; exit 1; }' + chr(10) + '. "%s/chunks.sh"' + chr(10) + '%s' + chr(10)) % (
+                      posix(HERE), body)
+        return subprocess.run([BASH, '-c', script], env=dict(self.env, **env), capture_output=True, text=True, timeout=60)
+
+    def plan(self, conf_text, vcpus=64):
+        path = os.path.join(self.tmp, 'campaign.conf')
+        with open(path, 'w', newline=chr(10)) as f:
+            f.write(conf_text)
+        r = self.chunks_eval('campaign_conf_load "%s"; campaign_plan %d; echo "$CHUNKS_PER_PHASE $CHUNKS|${PHASES[*]}|$PARALLEL_CONF"'
+                             % (posix(path), vcpus))
+        return r
+
+    BASE_CONF = 'pairings=AA\nteams=\nbase_seed=1\n'
+
+    def test_parallel_auto_is_the_vcpus_over_nine_at_least_one(self):
+        for vcpus, expected in ((64, 7), (63, 7), (72, 8), (16, 1), (9, 1), (8, 1), (18, 2), (1, 1), (144, 16)):
+            with self.subTest(vcpus=vcpus):
+                r = self.chunks_eval('resolve_parallel auto %d; echo $RESOLVED_PARALLEL' % vcpus)
+                self.assertEqual((r.returncode, r.stdout.strip()), (0, str(expected)), r.stderr)
+        r = self.chunks_eval('resolve_parallel auto 200')  # 22: more than the 16 drivers that are allowed
+        self.assertEqual(r.returncode, 1)
+        self.assertIn('parallel must be auto or 1 to 16', r.stderr)
+
+    def test_an_explicit_parallel_and_the_default_of_a_conf_without_one(self):
+        r = self.plan(self.BASE_CONF + 'chunks=4\n')
+        self.assertEqual((r.returncode, r.stdout.strip()), (0, '4 4|7|auto'), r.stderr)  # 64 vCPUs: 7 drivers
+        r = self.plan(self.BASE_CONF + 'chunks=4\nparallel=3\n')
+        self.assertEqual((r.returncode, r.stdout.strip()), (0, '4 4|3|3'), r.stderr)
+        r = self.plan(self.BASE_CONF + 'chunks=4\n', vcpus=16)
+        self.assertEqual(r.stdout.strip(), '4 4|1|auto')
+        for bad in ('0', '17', 'x', '08', '-1'):
+            with self.subTest(parallel=bad):
+                r = self.plan(self.BASE_CONF + 'chunks=4\nparallel=%s\n' % bad)
+                self.assertEqual(r.returncode, 1)
+                self.assertIn('parallel must be auto or 1 to 16', r.stderr)
+
+    def test_a_sweep_is_one_phase_per_value_each_with_the_chunks_of_the_campaign(self):
+        r = self.plan(self.BASE_CONF + 'chunks=24\nchunk_battles=1000\nsweep=5,7,9\n')
+        self.assertEqual((r.returncode, r.stdout.strip()), (0, '24 72|5 7 9|sweep=5,7,9'), r.stderr)
+        r = self.plan(self.BASE_CONF + 'chunks=21\nsweep=5,7,9\n')  # 2 x 9 + 3: the smallest phase that has a steady state
+        self.assertEqual(r.stdout.strip(), '21 63|5 7 9|sweep=5,7,9', r.stderr)
+        r = self.plan(self.BASE_CONF + 'chunks=5\nsweep=1\n')
+        self.assertEqual(r.stdout.strip(), '5 5|1|sweep=1', r.stderr)
+
+    def test_a_bad_sweep_is_refused(self):
+        for conf, text in (('chunks=20\nsweep=5,7,9\n', 'parallel 9 needs at least 21 chunks'),
+                           ('chunks=24\nsweep=5,5\n', 'listed twice'),
+                           ('chunks=24\nsweep=0,5\n', 'sweep must be'),
+                           ('chunks=24\nsweep=5,17\n', 'above 16'),
+                           ('chunks=24\nsweep=5;7\n', 'sweep must be'),
+                           ('chunks=24\nsweep=1,2,3,4,5,6,7\n', 'sweep must be'),
+                           ('chunks=24\nsweep=5,7\nparallel=3\n', 'exclude each other'),
+                           ('chunks=24\nparallel=3\nsweep=5,7\n', 'exclude each other')):
+            with self.subTest(conf=conf):
+                r = self.plan(self.BASE_CONF + conf)
+                self.assertEqual(r.returncode, 1, r.stdout)
+                self.assertIn(text, r.stderr)
+
+    def test_the_campaigns_of_the_repository_load_and_plan(self):
+        for name in sorted(os.listdir(os.path.join(HERE, 'campaigns'))):
+            with self.subTest(campaign=name):
+                r = self.chunks_eval('campaign_conf_load "%s/campaigns/%s/campaign.conf"; campaign_plan 64; echo ${PHASES[*]}'
+                                     % (posix(HERE), name))
+                self.assertEqual(r.returncode, 0, r.stderr)
+                self.assertRegex(r.stdout.strip(), r'^[0-9]+( [0-9]+)*$')
+
+    PHASE_HARNESS = r"""
+set -euo pipefail
+WORK=$1; EVENTS=$2; LOGF=$3; HERE=$4
+mkdir -p "$WORK/out"; : > "$WORK/done.txt"
+S3_BASE=s3://my-fuzz-bucket/fuzz/c
+CHUNKS=12; PARALLEL=1; CHUNK_BATTLES=10; BASE_SEED=100; VCPUS=6; WORKERS_PER=1
+log() { printf '%s\n' "$*" >> "$LOGF"; }
+fail() { log "FAILED: $*"; exit 1; }
+node() { echo v1; }
+run_driver() { # idx seed dir
+    mkdir -p "$3/cases/x"; echo '{}' > "$3/summary.json"; echo '{"node":"v1"}' > "$3/run.json"
+    echo "S$1 w$WORKERS_PER" >> "$EVENTS"; sleep 0.3; echo "E$1" >> "$EVENTS"
+}
+. "$HERE/chunks.sh"
+case ${MODE:-phases} in
+    phases) run_phase 0 0 6 2; run_phase 1 6 12 3 ;;
+    summary)
+        printf '%s\n' $COMPLETIONS | sed 's/^/0 x /' | awk '{print $1, $2, $3}' > /dev/null
+        : > "$WORK/completions.txt"
+        for t in $COMPLETIONS; do echo "0 chunk $t" >> "$WORK/completions.txt"; done
+        phase_summary 0 "$P" 100 50 ;;
+esac
+"""
+
+    def run_phase_harness(self, mode='phases', **env):
+        work = os.path.join(self.tmp, 'work')
+        events = os.path.join(self.tmp, 'events.txt')
+        logf = os.path.join(self.tmp, 'harness.log')
+        for path in (events, logf):
+            open(path, 'w').close()
+        script = os.path.join(self.tmp, 'phase_harness.sh')
+        with open(script, 'w', newline=chr(10)) as f:
+            f.write(self.PHASE_HARNESS)
+        r = subprocess.run([BASH, posix(script), posix(work), posix(events), posix(logf), posix(HERE)],
+                           env=dict(self.env, MODE=mode, **env), capture_output=True, text=True, timeout=120)
+        with open(events, encoding='utf-8') as f:
+            ev = f.read().split()
+        with open(logf, encoding='utf-8') as f:
+            log = f.read()
+        return r, ev, log, work
+
+    def test_phases_run_one_after_the_other_each_with_its_own_parallel_and_workers(self):
+        r, ev, log, work = self.run_phase_harness()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr + log)
+        # events: S<idx> w<workers per driver>, E<idx>
+        starts = [(e[1:], None) for e in ev if e.startswith('S')]
+        workers = {ev[i][1:]: ev[i + 1] for i in range(len(ev) - 1) if ev[i].startswith('S')}
+        self.assertEqual(sorted(workers), ['%04d' % i for i in range(12)])
+        self.assertEqual({workers['%04d' % i] for i in range(6)}, {'w3'})   # 6 vCPUs / parallel 2
+        self.assertEqual({workers['%04d' % i] for i in range(6, 12)}, {'w2'})  # 6 vCPUs / parallel 3
+        del starts
+        peak = {0: 0, 1: 0}
+        running = 0
+        for e in ev:
+            if e.startswith('S'):
+                running += 1
+                peak[0 if int(e[1:]) < 6 else 1] = max(peak[0 if int(e[1:]) < 6 else 1], running)
+            elif e.startswith('E'):
+                running -= 1
+        self.assertEqual(peak, {0: 2, 1: 3})
+        # every chunk of phase 1 starts after every chunk of phase 0 has ended: the phases do not overlap
+        order = [e for e in ev if e[0] in 'SE']
+        last_end_0 = max(i for i, e in enumerate(order) if e[0] == 'E' and int(e[1:]) < 6)
+        first_start_1 = min(i for i, e in enumerate(order) if e[0] == 'S' and int(e[1:]) >= 6)
+        self.assertLess(last_end_0, first_start_1)
+        # seeds go on across the phases, the completions are tagged with their phase, the summary has a line per phase
+        self.assertIn('chunk 0006: seed 106', log)
+        with open(os.path.join(work, 'completions.txt'), encoding='utf-8') as f:
+            tags = [line.split()[0] for line in f if line.strip()]
+        self.assertEqual(tags, ['0'] * 6 + ['1'] * 6)
+        with open(os.path.join(work, 'sweep.jsonl'), encoding='utf-8') as f:
+            lines = [json.loads(line) for line in f if line.strip()]
+        self.assertEqual([(d['phase'], d['parallel'], d['workers_per_driver'], d['chunks']) for d in lines],
+                         [(0, 2, 3, 6), (1, 3, 2, 6)])
+        self.assertIn('phase 0: chunks 0 to 5, parallel 2, 3 workers per driver', log)
+        self.assertIn('phase 1: chunks 6 to 11, parallel 3, 2 workers per driver', log)
+
+    def test_the_steady_state_of_a_phase_leaves_out_the_first_wave_and_the_tail(self):
+        # parallel 2, 10 chunks of 10 battles finishing at these times (the phase started at 100): the steady state is
+        # the 6 chunks between the 2nd completion (111) and the 8th (141): 60 battles over 30 s; overall 100 over 51 s
+        times = '110 111 120 121 130 131 140 141 150 151'
+        r, _ev, log, work = self.run_phase_harness(mode='summary', COMPLETIONS=times, P='2')
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr + log)
+        self.assertIn('phase 0 (parallel 2): 2.0 battles/s steady state (6 of 10 chunks over 30.0 s), 2.0 battles/s over the phase', log)
+        with open(os.path.join(work, 'sweep.jsonl'), encoding='utf-8') as f:
+            d = json.loads(f.read())
+        self.assertEqual((d['steady_battles_per_second'], d['overall_battles_per_second'], d['window_chunks'], d['chunks']),
+                         (2.0, 2.0, 6, 10))
+
+    def test_a_phase_with_too_few_chunks_reports_no_steady_state(self):
+        r, _ev, log, work = self.run_phase_harness(mode='summary', COMPLETIONS='110 111 120 121 130 131', P='2')
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr + log)
+        self.assertIn('phase 0 (parallel 2): no steady state (6 chunks, a window of 2: too few)', log)
+        with open(os.path.join(work, 'sweep.jsonl'), encoding='utf-8') as f:
+            self.assertIsNone(json.loads(f.read())['steady_battles_per_second'])
 
     # ------------------------------------------------------------------ the manifest of a run
     THIS_RUN = ('{"run_id":"run-x","campaign":"c","commit":"%s","chunk_battles":10,"base_seed":100,"chunks":%d,'
@@ -715,11 +884,13 @@ esac
                             k, _, v = line.rstrip('\n').partition('=')
                             keys[k] = v
                 self.assertTrue({'base_seed', 'chunks', 'pairings', 'teams'} <= set(keys), keys)
-                self.assertLessEqual(set(keys), {'base_seed', 'chunks', 'pairings', 'teams', 'chunk_battles', 'parallel', 'bench'})
+                self.assertLessEqual(set(keys), {'base_seed', 'chunks', 'pairings', 'teams', 'chunk_battles', 'parallel', 'bench',
+                                                 'sweep'})
                 if 'chunk_battles' in keys:
                     self.assertTrue(100 <= int(keys['chunk_battles']) <= 20000)
                 if 'parallel' in keys:
                     self.assertRegex(keys['parallel'], r'^(auto|[0-9]{1,2})$')
+                    self.assertNotIn('sweep', keys)
                 if 'bench' in keys:
                     self.assertIn(keys['bench'], ('0', '1'))
                 self.assertRegex(keys['base_seed'], r'^[0-9]{1,12}$')
