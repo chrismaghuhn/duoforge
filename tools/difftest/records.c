@@ -134,6 +134,18 @@ static dfr_status read_line(dfr_reader *r)
     return DFR_OK;
 }
 
+/* 0, or a data kind of the tables the battle was converted with (duoforge.h). */
+static bool kind_goes_with(uint32_t team_c, uint32_t kind)
+{
+    if (kind == 0u) {
+        return true;
+    }
+    if (team_c == 0u) {
+        return kind == DUOFORGE_DATA_KIND_CLOSURE || kind == DUOFORGE_DATA_KIND_CLOSURE_DEV;
+    }
+    return kind == DUOFORGE_DATA_KIND_TEAM_C || kind == DUOFORGE_DATA_KIND_TEAM_C_DEV;
+}
+
 /* The next line, where the input must not end: `what` names what is expected. */
 static dfr_status next_line(dfr_reader *r, const char *what)
 {
@@ -436,10 +448,16 @@ dfr_status dfr_read_battle(dfr_reader *r, dfr_battle *b)
     uint32_t events_cap = 0u;
 
     DFR_NEED(open_record(r, &c, 'B'));
-    DFR_NEED(get_name(&c, b->name) && get_uint(&c, 1u, &b->team_c) && get_uint(&c, 6u, &b->member_count) &&
-             rd_u32(&c, &b->step_count) && rd_u32(&c, &b->dropped_total) && close_record(&c));
+    DFR_NEED(get_name(&c, b->name) && get_uint(&c, 1u, &b->team_c) && rd_u32(&c, &b->strict_kind) &&
+             get_uint(&c, 6u, &b->member_count) && rd_u32(&c, &b->step_count) && rd_u32(&c, &b->dropped_total) &&
+             close_record(&c));
     if (b->member_count == 0u || b->step_count == 0u) {
         fail(r, "record B: a battle has at least one member and one step");
+        status = DFR_MALFORMED;
+        goto done;
+    }
+    if (!kind_goes_with(b->team_c, b->strict_kind)) {
+        fail(r, "record B: data kind %u does not go with team_c %u", (unsigned)b->strict_kind, (unsigned)b->team_c);
         status = DFR_MALFORMED;
         goto done;
     }

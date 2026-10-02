@@ -667,6 +667,46 @@ class RealRunner(unittest.TestCase):
         three, _ = self.replay(names, 3)
         self.assertEqual(one, three)
 
+    def result_of(self, name, kind=0, mutate=None):
+        """The runner's result for the committed battle `name` written with data kind `kind`, its data changed by `mutate`."""
+        spec, text = committed(name)
+        team_c = trace_to_c.spec_is_team_c(name, spec)
+        data = trace_to_c.convert_battle(name, spec, json.loads(text), tables(team_c))
+        if mutate:
+            mutate(data)
+        records = io.StringIO()
+        conformance_records.write_battle(data, team_c, records, kind=kind)
+        runner = driver.DiffRunner(RUNNER)
+        self.addCleanup(runner.kill)
+        return runner.run(name, records.getvalue())
+
+    def test_a_strict_kind_is_the_context_and_there_is_no_fallback(self):
+        kinds = conformance_records.data_kinds(ROOT)
+        # Sets without an ability need CLOSURE_DEV: the conformance fallback finds it, a strict CLOSURE does not.
+        fallback = self.result_of(CLOSURE)
+        self.assertEqual((fallback.verdict, fallback.context, fallback.step), ('PASS', 'CLOSURE_DEV', None))
+        strict = self.result_of(CLOSURE, kinds['CLOSURE'])
+        self.assertEqual((strict.verdict, strict.context, strict.step, strict.messages), ('DIVERGENCE', 'CLOSURE', None, []))
+        self.assertRegex(strict.detail, r'^create: DUOFORGE_E_\w+ \(CLOSURE\)$')  # one attempt, one status
+        dev = self.result_of(CLOSURE, kinds['CLOSURE_DEV'])
+        self.assertEqual((dev.verdict, dev.context), ('PASS', 'CLOSURE_DEV'))
+        # Real teams run under CLOSURE, and Team C under TEAM_C (the profile battle has six real members).
+        real = self.result_of('m5_real_aa_1', kinds['CLOSURE'])
+        self.assertEqual((real.verdict, real.context), ('PASS', 'CLOSURE'))
+        team_c = self.result_of('c01_team_c_profile', kinds['TEAM_C'])
+        self.assertEqual((team_c.verdict, team_c.context), ('PASS', 'TEAM_C'))
+
+    def test_a_create_that_fails_in_both_contexts_names_both_statuses(self):
+        def unknown_species(data):
+            row = list(data['members'][0][0])
+            row[0] = 99  # the species id: no forme of the tables
+            data['members'][0][0] = tuple(row)
+        result = self.result_of(CLOSURE, mutate=unknown_species)
+        self.assertEqual((result.verdict, result.context, result.step), ('DIVERGENCE', 'CLOSURE_DEV', None))
+        self.assertRegex(result.detail, r'^create: DUOFORGE_E_\w+ \(CLOSURE\), DUOFORGE_E_\w+ \(CLOSURE_DEV\)$')
+        strict = self.result_of(CLOSURE, conformance_records.data_kinds(ROOT)['CLOSURE_DEV'], unknown_species)
+        self.assertRegex(strict.detail, r'^create: DUOFORGE_E_\w+ \(CLOSURE_DEV\)$')
+
 
 class Records(unittest.TestCase):
     """conformance_records.write_battle: what it writes, what it refuses, where the order of the fields comes from."""
@@ -697,7 +737,7 @@ class Records(unittest.TestCase):
                 self.assertNotIn('\r', text)
                 text.encode('ascii')
                 # What the format says, rebuilt from the data.
-                want = ['B %s %d %d %d %d' % (name, team_c, data['member_count'], len(data['steps']), data['dropped_total'])]
+                want = ['B %s %d 0 %d %d %d' % (name, team_c, data['member_count'], len(data['steps']), data['dropped_total'])]
                 for side, rows in enumerate(data['members']):
                     for index, row in enumerate(rows):
                         want.append(' '.join(['M', str(side), str(index)] + self.flat(row)))
@@ -776,7 +816,27 @@ class Records(unittest.TestCase):
                 self.assertEqual([h[1] for h in heads], want)
                 self.assertEqual(count, len(want))
                 self.assertEqual({h[2] for h in heads}, {'1' if want is team_c else '0'})
+                self.assertEqual({h[3] for h in heads}, {'0'})  # the conformance fallback: no strict kind
                 self.assertEqual(text.count('\nEND\n'), len(want))
+
+    def test_the_data_kind_of_a_battle(self):
+        """A strict kind is written after team_c; 0 is the conformance fallback; the kinds are those of duoforge.h."""
+        kinds = conformance_records.data_kinds(ROOT)
+        self.assertEqual({k: kinds[k] for k in ('CLOSURE', 'CLOSURE_DEV', 'TEAM_C', 'TEAM_C_DEV')},
+                         {'CLOSURE': 2, 'CLOSURE_DEV': 3, 'TEAM_C': 4, 'TEAM_C_DEV': 5})
+        for name, kind in ((CLOSURE, kinds['CLOSURE_DEV']), (TEAM_C, kinds['TEAM_C'])):
+            data, team_c = self.data(name)
+            out = io.StringIO()
+            conformance_records.write_battle(data, team_c, out, kind=kind)
+            self.assertEqual(out.getvalue().split('\n')[0].split(' ')[1:4], [name, '1' if team_c else '0', str(kind)])
+            self.assertEqual(out.getvalue().split('\n', 1)[1], self.write(data, team_c).split('\n', 1)[1])  # nothing else changes
+        data, team_c = self.data(CLOSURE)
+        for bad in (-1, True, 2.0, 2 ** 32, '2', None):
+            with self.subTest(kind=bad):
+                out = io.StringIO()
+                with self.assertRaises(ValueError):
+                    conformance_records.write_battle(data, team_c, out, kind=bad)
+                self.assertEqual(out.getvalue(), '')
 
 
 if __name__ == '__main__':

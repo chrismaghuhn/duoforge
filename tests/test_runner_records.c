@@ -69,6 +69,9 @@ static unsigned compare_battle(const dfr_battle *p, const df_conf_battle *w, uin
     if (p->team_c != DF_RECORDS_TEAM_C) {
         DF_DIFF("  battle %s: team_c %u in a file of the other kind\n", p->name, (unsigned)p->team_c);
     }
+    if (p->strict_kind != 0u) { /* the conformance records keep the replay's fallback */
+        DF_DIFF("  battle %s: strict kind %u, the conformance records have none\n", p->name, (unsigned)p->strict_kind);
+    }
     if (p->member_count != w->member_count || p->step_count != w->step_count || p->dropped_total != w->dropped) {
         DF_DIFF("  battle %s: members %u steps %u dropped %u, tables %u %u %u\n", p->name, (unsigned)p->member_count,
                 (unsigned)p->step_count, (unsigned)p->dropped_total, (unsigned)w->member_count,
@@ -139,6 +142,10 @@ static void flip_team_c(dfr_battle *b)
 {
     b->team_c ^= 1u;
 }
+static void flip_strict_kind(dfr_battle *b)
+{
+    b->strict_kind ^= 2u;
+}
 static void flip_dropped(dfr_battle *b)
 {
     b->dropped_total += 1u;
@@ -180,6 +187,7 @@ typedef struct control {
 static const control CONTROLS[] = {
     {"the name", flip_name},
     {"team_c", flip_team_c},
+    {"the strict kind", flip_strict_kind},
     {"the dropped count", flip_dropped},
     {"the step count", flip_step_count},
     {"a member", flip_member},
@@ -239,15 +247,18 @@ static char *slurp(const char *path)
 }
 
 /* The status of reading one battle from `text`, whose message goes to `error`; *then_eof says whether
- * the input is then at its end. */
-static dfr_status read_text(const char *text, size_t len, char *error, size_t error_cap, bool *then_eof)
+ * the input is then at its end, *strict_kind what the battle names (0 when it is not read). */
+static dfr_status read_text(const char *text, size_t len, char *error, size_t error_cap, bool *then_eof,
+                            uint32_t *strict_kind)
 {
     dfr_reader r;
     dfr_battle b;
     dfr_reader_init_memory(&r, text, len);
     const dfr_status st = dfr_read_battle(&r, &b);
     *then_eof = false;
+    *strict_kind = 0u;
     if (st == DFR_OK) {
+        *strict_kind = b.strict_kind;
         dfr_battle_free(&b);
         *then_eof = dfr_read_battle(&r, &b) == DFR_EOF;
     }
@@ -297,7 +308,7 @@ static char *replace_value(const sample *s, size_t line, size_t n, const char *t
     return splice(s, at, value_len(s, at), text, out_len);
 }
 
-#define DF_MAX_DAMAGE 16u
+#define DF_MAX_DAMAGE 20u
 
 typedef struct damage {
     const char *what;
@@ -309,6 +320,8 @@ static void refuse_damaged_copies(df_test *t, const sample *s)
 {
     char error[256];
     bool then_eof = false;
+    uint32_t kind = 0u;
+    size_t len_named = 0u;
     const size_t b_line = 0u;
     const size_t b_end = (size_t)(strchr(s->text, '\n') - s->text); /* the line end of the B line */
     const size_t s_line = (size_t)(strstr(s->text, "\nS ") - s->text) + 1u;
@@ -318,16 +331,26 @@ static void refuse_damaged_copies(df_test *t, const sample *s)
     }
     const size_t last_value = value_at(s, s_line, values - 1u);
 
-    DF_CHECK_EQ_U64(t, read_text(s->text, s->len, error, sizeof error, &then_eof), DFR_OK);
+    DF_CHECK_EQ_U64(t, read_text(s->text, s->len, error, sizeof error, &then_eof, &kind), DFR_OK);
     DF_CHECK(t, then_eof); /* the sample is one battle and nothing else */
-    DF_CHECK_EQ_U64(t, read_text("", 0u, error, sizeof error, &then_eof), DFR_EOF);
+    DF_CHECK_EQ_U64(t, kind, 0u); /* a conformance record names no kind */
+    DF_CHECK_EQ_U64(t, read_text("", 0u, error, sizeof error, &then_eof, &kind), DFR_EOF);
+    /* A closure battle names CLOSURE or CLOSURE_DEV, and the reader hands it on. */
+    char *named = replace_value(s, b_line, 2u, "2", &len_named);
+    DF_CHECK_EQ_U64(t, read_text(named, len_named, error, sizeof error, &then_eof, &kind), DFR_OK);
+    DF_CHECK_EQ_U64(t, kind, DUOFORGE_DATA_KIND_CLOSURE);
+    free(named);
+    named = replace_value(s, b_line, 2u, "3", &len_named);
+    DF_CHECK_EQ_U64(t, read_text(named, len_named, error, sizeof error, &then_eof, &kind), DFR_OK);
+    DF_CHECK_EQ_U64(t, kind, DUOFORGE_DATA_KIND_CLOSURE_DEV);
+    free(named);
 
     damage bad[DF_MAX_DAMAGE];
     size_t n = 0u;
     size_t len = 0u;
     char steps_plus_one[16];
     (void)snprintf(steps_plus_one, sizeof steps_plus_one, "%u",
-                   (unsigned)strtoul(s->text + value_at(s, b_line, 3u), NULL, 10) + 1u);
+                   (unsigned)strtoul(s->text + value_at(s, b_line, 4u), NULL, 10) + 1u);
 #define DF_DAMAGE(why, text_expr)                      \
     do {                                               \
         if (n == DF_MAX_DAMAGE) {                      \
@@ -349,14 +372,17 @@ static void refuse_damaged_copies(df_test *t, const sample *s)
     DF_DAMAGE("a carriage return", splice(s, b_end, 0u, "\r", &len));
     DF_DAMAGE("a byte that is not ASCII", splice(s, b_end, 0u, "\xc3\xa9", &len));
     DF_DAMAGE("a dash in a name", splice(s, value_at(s, b_line, 0u), 0u, "-", &len));
-    DF_DAMAGE("a step count that is too large", replace_value(s, b_line, 3u, steps_plus_one, &len));
+    DF_DAMAGE("a step count that is too large", replace_value(s, b_line, 4u, steps_plus_one, &len));
+    DF_DAMAGE("a data kind that does not exist", replace_value(s, b_line, 2u, "9", &len));
+    DF_DAMAGE("a Team C kind for a closure battle", replace_value(s, b_line, 2u, "4", &len));
+    DF_DAMAGE("the synthetic kind for a closure battle", replace_value(s, b_line, 2u, "1", &len));
     DF_DAMAGE("a value above 2**32 - 1 (the tape offset of the first step)", replace_value(s, s_line, 3u, "4294967296", &len));
     DF_DAMAGE("a tape offset that is not the draws before the step", replace_value(s, s_line, 3u, "1", &len));
     DF_DAMAGE("a value above 255 in a byte (the first pick)", replace_value(s, s_line, 8u, "256", &len));
     DF_DAMAGE("a missing value (the last of the step)", splice(s, last_value - 1u, value_len(s, last_value) + 1u, "", &len));
 #undef DF_DAMAGE
     for (size_t i = 0u; i < n; ++i) {
-        const dfr_status st = read_text(bad[i].text, bad[i].len, error, sizeof error, &then_eof);
+        const dfr_status st = read_text(bad[i].text, bad[i].len, error, sizeof error, &then_eof, &kind);
         if (!DF_CHECK(t, st == DFR_MALFORMED && strncmp(error, "line ", 5u) == 0)) {
             fprintf(stderr, "  the reader accepts %s (status %u)\n", bad[i].what, (unsigned)st);
         }

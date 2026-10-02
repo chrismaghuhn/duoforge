@@ -11,7 +11,9 @@
  * format is in records.h). Each battle is set up and stepped exactly as
  * tests/test_conformance.c does it: closure battles under CLOSURE, then
  * CLOSURE_DEV when that cannot create them; Team C battles under TEAM_C, then
- * TEAM_C_DEV. Every step takes the reference's kept draws as its tape, which
+ * TEAM_C_DEV. A battle whose record names a data kind (random play) is created
+ * under that kind alone: a team the kind rejects is a finding, not a
+ * fallback. Every step takes the reference's kept draws as its tape, which
  * must be consumed exactly, and then the engine's state, observations and
  * events are compared with the reference's (tests/support/conformance_compare.c)
  * and duoforge_battle_check must hold. The first step with a difference ends
@@ -26,7 +28,9 @@
  * CLOSURE_DEV, TEAM_C or TEAM_C_DEV). The step is the first failing one, or -
  * when no step failed (a PASS, or a battle that could not be created); steps
  * is the number of steps the records hold; the detail is the rest of the line
- * (- for a PASS).
+ * (- for a PASS). A create that fails says "create: <status> (<kind>)" and,
+ * after the DEV fallback, "create: <status> (<kind>), <status> (<kind>)": both
+ * attempts, the first context's and then the DEV context's.
  *   UNSUPPORTED: the create (after the DEV fallback) or a step returned
  *                DUOFORGE_E_UNSUPPORTED.
  *   DIVERGENCE:  any other create or step failure, a tape that was not
@@ -160,7 +164,9 @@ static void tape_text(char *out, size_t cap, uint32_t used, uint32_t len)
     }
 }
 
-/* One battle: contexts[0] (CLOSURE or TEAM_C) first, contexts[1] (the DEV one) when that cannot create it. */
+/* One battle. contexts[0] is CLOSURE or TEAM_C, contexts[1] the DEV context of the same data. A battle with a
+ * strict kind is created under that context alone; any other first under contexts[0], and under contexts[1] when
+ * that cannot create it, as tests/test_conformance.c does. */
 static outcome run_battle(const dfr_battle *b, duoforge_context *const contexts[2],
                           const duoforge_context_config *const configs[2], FILE *out)
 {
@@ -171,19 +177,34 @@ static outcome run_battle(const dfr_battle *b, duoforge_context *const contexts[
     duoforge_battle_setup setup;
     build_setup(b, &setup);
     duoforge_battle *battle = NULL;
-    const duoforge_context *ctx = contexts[0];
-    o.data_kind = configs[0]->data_kind;
+    const bool strict = b->strict_kind != 0u;
+    size_t first = 0u;
+    if (strict && b->strict_kind == configs[1]->data_kind) {
+        first = 1u;
+    }
+    const duoforge_context *ctx = contexts[first];
+    o.data_kind = configs[first]->data_kind;
     duoforge_status created = duoforge_battle_create(ctx, &setup, &battle);
-    if (created != DUOFORGE_OK) {
+    duoforge_status first_created = created;
+    if (created != DUOFORGE_OK && !strict) {
         ctx = contexts[1];
         o.data_kind = configs[1]->data_kind;
         battle = NULL;
         created = duoforge_battle_create(ctx, &setup, &battle);
     }
     if (created != DUOFORGE_OK || battle == NULL) {
-        char text[120];
-        (void)snprintf(text, sizeof text, "create: %s", created != DUOFORGE_OK ? duoforge_status_name(created)
-                                                                                : "no battle handle");
+        char text[160];
+        if (strict) {
+            (void)snprintf(text, sizeof text, "create: %s (%s)", duoforge_status_name(created),
+                           kind_name(o.data_kind));
+        } else {
+            /* Both attempts: the first context's status, then the DEV context's. */
+            (void)snprintf(text, sizeof text, "create: %s (%s), %s (%s)", duoforge_status_name(first_created),
+                           kind_name(configs[0]->data_kind), duoforge_status_name(created), kind_name(o.data_kind));
+        }
+        if (created == DUOFORGE_OK) {
+            (void)snprintf(text, sizeof text, "create: no battle handle (%s)", kind_name(o.data_kind));
+        }
         set_detail(&o, created == DUOFORGE_E_UNSUPPORTED ? VERDICT_UNSUPPORTED : VERDICT_DIVERGENCE, text);
         return o;
     }
