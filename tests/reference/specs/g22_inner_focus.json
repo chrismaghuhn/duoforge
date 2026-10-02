@@ -1,0 +1,24 @@
+{
+  "name": "g22_inner_focus",
+  "purpose": "Inner Focus: Incineroar and then Staraptor (Intimidate) against Dragonite, whose Attack drop is refused with -fail while that of Raichu is not; Fake Out and Rock Slide (30 percent) do not flinch Dragonite and flinch Raichu.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000022007",
+  "teams": [
+    "Incineroar (M) @ Black Glasses\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Flare Blitz\n- Protect\n- Snarl\n\nKangaskhan (F) @ Silk Scarf\nAbility: Inner Focus\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Fake Out\n- Rock Slide\n- Protect\n- Double-Edge\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Protect\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n\nKingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect",
+    "Dragonite (M) @ Dragon Fang\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nAdamant Nature\n- Extreme Speed\n- Rock Slide\n- Protect\n- Hurricane\n\nRaichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Def\nModest Nature\n- Thunderbolt\n- Protect\n- Helping Hand\n- Encore\n\nKangaskhan (F) @ Hard Stone\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nAdamant Nature\n- Fake Out\n- Rock Slide\n- Protect\n- Double-Edge\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1 2",
+      "move 3, move 2",
+      "switch 3, move 2"
+    ],
+    "p2": [
+      "move 2, move 1 1",
+      "move 2, move 1 1",
+      "move 2, move 1 1"
+    ],
+    "max_steps": 4
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "g22_chlorophyll",
+  "purpose": "Chlorophyll: Whimsicott (136 raw Speed) and Venusaur (100 raw) in the sun that Ninetales brings with Drought: twice their Speed from the next action on, Whimsicott with Tailwind on top (x4).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000002204",
+  "teams": [
+    "Whimsicott (M) @ Fairy Feather\nAbility: Chlorophyll\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Tailwind\n- Moonblast\n- Protect\n- Encore\n\nVenusaur (M) @ Miracle Seed\nAbility: Chlorophyll\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Weather Ball\n- Grass Knot\n- Protect\n- Poison Jab\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Protect\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n\nKingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect",
+    "Raichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Thunderbolt\n- Protect\n- Helping Hand\n- Encore\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Ice Beam\n- Coil\n- Protect\n- Muddy Water\n\nNinetales (M) @ Charcoal\nAbility: Drought\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Flamethrower\n- Protect\n- Heat Wave\n- Encore\n\nKingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 2 1",
+      "move 2 1, move 1 1",
+      "move 2 1, move 1 1",
+      "move 2 1, move 1 1"
+    ],
+    "p2": [
+      "move 1 1, move 2",
+      "move 1 1, switch 3",
+      "move 1 1, move 1 1",
+      "move 1 1, move 1 1"
+    ],
+    "max_steps": 6
+  }
+}
