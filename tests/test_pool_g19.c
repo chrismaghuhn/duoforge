@@ -19,6 +19,7 @@
  *   g19_glaive_rush_protect      Protect stops it: no drawback
  *   g19_glaive_rush_immune       a Fairy is immune: no drawback
  *   g19_glaive_rush_flinch       Fake Out on the next turn: doubled, then the flinch, and the drawback is gone
+ *   g19_glaive_rush_mega         Mega Baxcalibur (step G18) uses it on the turn it Mega Evolves
  */
 #include <stdio.h>
 #include <string.h>
@@ -163,12 +164,15 @@ static const struct {
     {"g19_glaive_rush_immune", 0u, {0u, 0u, 0u, 0u}},
     {"g19_glaive_rush_immune", 1u, {0u, 0u, 0u, 0u}},
     {"g19_glaive_rush_immune", 2u, {0u, 0u, 0u, 0u}},
+    {"g19_glaive_rush_mega", 0u, {0u, 0u, 0u, 0u}},
+    {"g19_glaive_rush_mega", 1u, {1u, 0u, 0u, 0u}},
+    {"g19_glaive_rush_mega", 2u, {0u, 0u, 0u, 0u}},
     {"g19_glaive_rush_protect", 0u, {0u, 0u, 0u, 0u}},
     {"g19_glaive_rush_protect", 1u, {0u, 0u, 0u, 0u}},
     {"g19_glaive_rush_protect", 2u, {0u, 0u, 0u, 0u}},
 };
 
-static const char *const names[] = {"g19_coaching", "g19_coaching_contrary", "g19_coaching_good_as_gold", "g19_coaching_no_ally", "g19_coaching_protect", "g19_glaive_rush", "g19_glaive_rush_flinch", "g19_glaive_rush_immune", "g19_glaive_rush_protect"};
+static const char *const names[] = {"g19_coaching", "g19_coaching_contrary", "g19_coaching_good_as_gold", "g19_coaching_no_ally", "g19_coaching_protect", "g19_glaive_rush", "g19_glaive_rush_flinch", "g19_glaive_rush_immune", "g19_glaive_rush_mega", "g19_glaive_rush_protect"};
 
 static const uint8_t *row_of(const char *battle, uint32_t step)
 {

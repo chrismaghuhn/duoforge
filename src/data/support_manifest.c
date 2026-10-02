@@ -111,7 +111,14 @@
  * Step G16 marks Knock Off (base power x1.5 while the target holds an item that can be taken, and the item taken after
  * the hit unless the target is alive with Sticky Hold; a Mega Stone is never taken from its own species) and Sticky
  * Hold, with the view bit 11 for the item that a move took (item_now of the member, public): Trick, Switcheroo and
- * Thief stay unmarked, so no accepted battle has an item that was swapped. Recorded as g16_* under the POOL kind. */
+ * Thief stay unmarked, so no accepted battle has an item that was swapped. Recorded as g16_* under the POOL kind.
+ * Step G15 (Psychic Terrain) marks Expanding Force (80 base power; in Psychic Terrain, for a grounded user, x1.5 and the
+ * target class allAdjacentFoes) and Psychic Seed (Grassy Seed's rule for Psychic Terrain and the Special Defense), in the
+ * reference battles g15_*.
+ * Step G18 marks four Mega Stones whose Mega ability the manifest already marks and whose base forme has a marked
+ * ability and exactly one Mega: Tyranitarite (Sand Stream), Baxcalibrite (Thermal Exchange), Aerodactylite (Tough
+ * Claws) and Manectite (Intimidate), recorded as g18_* under the POOL kind. The Mega Evolution itself is the generic
+ * path. Charizardite X stays unmarked: the tables link one Mega per base forme (Charizard: Mega-Y). */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -206,6 +213,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_ICESHARD] = 1u,
             [DFI_MOVE_QUICKATTACK] = 1u,
             [DFI_MOVE_DETECT] = 1u,
+            [DFI_MOVE_EXPANDINGFORCE] = 1u,
             [DFI_MOVE_POISONJAB] = 1u,
             /* Step G17: the recharge moves (flags2 RECHARGE, mustrecharge): the user recharges after a hit. Meteor Assault is
              * not marked: its only learner, Sirfetch'd, has no supported ability (Steadfast, Scrappy), so no setup can use it. */
@@ -279,6 +287,11 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_WHITEHERB] = 1u,
             [DFI_ITEM_FOCUSSASH] = 1u,
             [DFI_ITEM_FLOETTITE] = 1u,
+            [DFI_ITEM_PSYCHICSEED] = 1u,
+            [DFI_ITEM_TYRANITARITE] = 1u,
+            [DFI_ITEM_BAXCALIBRITE] = 1u,
+            [DFI_ITEM_AERODACTYLITE] = 1u,
+            [DFI_ITEM_MANECTITE] = 1u,
             [DFI_ITEM_BLACKBELT] = 1u,
             [DFI_ITEM_BLACKGLASSES] = 1u,
             [DFI_ITEM_CHARCOAL] = 1u,
