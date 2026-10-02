@@ -38,7 +38,9 @@ dfi_kind_limits dfi_kind_limits_of(uint32_t data_kind)
     const bool extended = team_c || pool;
     dfi_kind_limits lim;
     lim.forme_count = pool ? DFI_POOL_FORME_COUNT : team_c ? DFI_EXT_FORME_COUNT : DFI_FORME_COUNT;
+    lim.move_count = pool ? DFI_POOL_MOVE_COUNT : team_c ? DFI_EXT_MOVE_COUNT : DFI_MOVE_COUNT;
     lim.item_count = pool ? DFI_POOL_ITEM_COUNT : team_c ? DFI_EXT_ITEM_COUNT : DFI_ITEM_COUNT;
+    lim.ability_count = pool ? DFI_POOL_ABILITY_COUNT : team_c ? DFI_EXT_ABILITY_COUNT : DFI_ABILITY_COUNT;
     /* Flip Turn's flag is in the extended tables (Team C), U-turn's only in the pool's. */
     lim.switch_flag_max = pool ? DFI_SWITCH_UTURN : team_c ? DFI_SWITCH_FLIP_TURN : DFI_SWITCH_FAINTED;
     lim.status_max = extended ? DFI_STATUS_PSN : DFI_STATUS_SLP;
@@ -100,27 +102,38 @@ static bool dfi_pool_ability_legal(uint32_t forme, uint32_t ability)
     return false;
 }
 
-/* The member of base forme `species` may have the move: it is one of the
- * forme's set under the first four kinds, one it learns under the POOL
- * kinds. The ids are not yet checked against the tables' counts. */
-static bool dfi_move_legal(const dfi_kind_limits *lim, uint32_t species, uint32_t move)
+bool dfi_forme_setup_legal(const dfi_kind_limits *lim, uint32_t species)
 {
+    return species < lim->forme_count && dfi_pool_formes[species].is_mega == 0u;
+}
+
+bool dfi_forme_move_legal(const dfi_kind_limits *lim, uint32_t species, uint32_t move)
+{
+    if (move >= lim->move_count) {
+        return false;
+    }
     return lim->pool_rules ? dfi_pool_learns(species, move) : dfi_in_set(&dfi_pool_formes[species], move);
 }
 
-/* The member of base forme `species` may have the ability (1 + its id; 0 is
- * No Ability): the forme's own under the first four kinds, one of its legal
- * abilities under the POOL kinds; No Ability under the DEV kinds only. */
-static bool dfi_ability_legal(const dfi_kind_limits *lim, uint32_t species, uint32_t ability)
+bool dfi_forme_ability_legal(const dfi_kind_limits *lim, uint32_t species, uint32_t ability)
 {
     if (ability == 0u) {
         return lim->dev;
+    }
+    if (ability > lim->ability_count) {
+        return false;
     }
     return lim->pool_rules ? dfi_pool_ability_legal(species, ability - 1u)
                            : ability == (uint32_t)dfi_pool_formes[species].ability + 1u;
 }
 
-static bool dfi_stat_points_valid(const uint32_t *sp)
+uint32_t dfi_forme_stone(uint32_t species)
+{
+    const dfi_forme_data *f = &dfi_pool_formes[species];
+    return f->mega_forme != DFI_CLOSURE_NONE ? (uint32_t)f->mega_item : (uint32_t)DFI_CLOSURE_NONE;
+}
+
+bool dfi_stat_points_valid(const uint32_t *sp)
 {
     uint32_t total = 0u;
     for (uint32_t i = 0u; i < DFI_STAT_POINT_COUNT; ++i) {
@@ -155,7 +168,7 @@ bool dfi_closure_member_setup_valid(const dfi_kind_limits *lim, const duoforge_m
             }
             continue;
         }
-        if (mv->pp_max != 0u || !dfi_move_legal(lim, m->species_id, mv->move_id)) {
+        if (mv->pp_max != 0u || !dfi_forme_move_legal(lim, m->species_id, mv->move_id)) {
             return false;
         }
         for (uint32_t j = 0u; j < k; ++j) {
@@ -170,7 +183,7 @@ bool dfi_closure_member_setup_valid(const dfi_kind_limits *lim, const duoforge_m
     if (m->nature >= DFI_NATURE_COUNT || !dfi_stat_points_valid(m->stat_points)) {
         return false;
     }
-    if (!dfi_ability_legal(lim, m->species_id, m->ability)) {
+    if (!dfi_forme_ability_legal(lim, m->species_id, m->ability)) {
         return false;
     }
     if (m->item > lim->item_count) {
@@ -201,27 +214,48 @@ bool dfi_closure_side_clauses_hold(const duoforge_side_setup *side)
 /* True iff the member's item is the stone of its base forme. */
 static bool dfi_holds_own_stone(uint32_t species, uint32_t item)
 {
-    const dfi_forme_data *f = &dfi_pool_formes[species];
-    return item != 0u && f->mega_forme != DFI_CLOSURE_NONE && (uint32_t)f->mega_item + 1u == item;
+    const uint32_t stone = dfi_forme_stone(species);
+    return item != 0u && stone != DFI_CLOSURE_NONE && stone + 1u == item;
+}
+
+bool dfi_manifest_move(const dfi_support_manifest *s, uint32_t move)
+{
+    return move < DFI_POOL_MOVE_COUNT && s->moves[move] != 0u;
+}
+
+bool dfi_manifest_ability(const dfi_support_manifest *s, uint32_t ability)
+{
+    return ability < DFI_POOL_ABILITY_COUNT && s->abilities[ability] != 0u;
+}
+
+bool dfi_manifest_item(const dfi_support_manifest *s, uint32_t item)
+{
+    return item < DFI_POOL_ITEM_COUNT && s->items[item] != 0u;
+}
+
+bool dfi_manifest_mega(const dfi_support_manifest *s, uint32_t species)
+{
+    if (species >= DFI_POOL_FORME_COUNT || dfi_pool_formes[species].mega_forme == DFI_CLOSURE_NONE) {
+        return false;
+    }
+    /* Mega Evolution, and the ability the Mega forme brings. */
+    const dfi_forme_data *mega = &dfi_pool_formes[dfi_pool_formes[species].mega_forme];
+    return s->mega_evolution != 0u && dfi_manifest_ability(s, mega->ability);
 }
 
 static bool dfi_member_supported(const dfi_support_manifest *s, const duoforge_member_setup *m)
 {
-    if (m->ability != 0u && s->abilities[m->ability - 1u] == 0u) {
+    if (m->ability != 0u && !dfi_manifest_ability(s, m->ability - 1u)) {
         return false;
     }
-    if (m->item != 0u && s->items[m->item - 1u] == 0u) {
+    if (m->item != 0u && !dfi_manifest_item(s, m->item - 1u)) {
         return false;
     }
-    if (dfi_holds_own_stone(m->species_id, m->item)) {
-        /* Mega Evolution, and the ability the Mega forme brings. */
-        const dfi_forme_data *mega = &dfi_pool_formes[dfi_pool_formes[m->species_id].mega_forme];
-        if (s->mega_evolution == 0u || s->abilities[mega->ability] == 0u) {
-            return false;
-        }
+    if (dfi_holds_own_stone(m->species_id, m->item) && !dfi_manifest_mega(s, m->species_id)) {
+        return false;
     }
     for (uint32_t k = 0u; k < m->move_count && k < DUOFORGE_MAX_MOVE_SLOTS; ++k) {
-        if (s->moves[m->moves[k].move_id] == 0u) {
+        if (!dfi_manifest_move(s, m->moves[k].move_id)) {
             return false;
         }
     }
@@ -255,20 +289,17 @@ bool dfi_closure_battle_supported(const dfi_support_manifest *manifest, const st
         const dfi_side *side = &b->sides[s];
         for (uint32_t m = 0u; m < side->member_count && m < DUOFORGE_MAX_ROSTER; ++m) {
             const dfi_member *mem = &side->members[m];
-            if (mem->ability != 0u && manifest->abilities[mem->ability - 1u] == 0u) {
+            if (mem->ability != 0u && !dfi_manifest_ability(manifest, mem->ability - 1u)) {
                 return false;
             }
-            if (mem->item != 0u && manifest->items[mem->item - 1u] == 0u) {
+            if (mem->item != 0u && !dfi_manifest_item(manifest, mem->item - 1u)) {
                 return false;
             }
-            if (mem->mega_capable != 0u) {
-                const dfi_forme_data *mega = &dfi_pool_formes[dfi_pool_formes[mem->species_id].mega_forme];
-                if (manifest->mega_evolution == 0u || manifest->abilities[mega->ability] == 0u) {
-                    return false;
-                }
+            if (mem->mega_capable != 0u && !dfi_manifest_mega(manifest, mem->species_id)) {
+                return false;
             }
             for (uint32_t k = 0u; k < mem->move_count && k < DUOFORGE_MAX_MOVE_SLOTS; ++k) {
-                if (manifest->moves[mem->moves[k].move_id] == 0u) {
+                if (!dfi_manifest_move(manifest, mem->moves[k].move_id)) {
                     return false;
                 }
             }
@@ -384,7 +415,7 @@ bool dfi_closure_member_ranges(const dfi_kind_limits *lim, const dfi_member *m)
         if (m->ability != (uint32_t)dfi_pool_formes[base->mega_forme].ability + 1u) {
             return false;
         }
-    } else if (!dfi_ability_legal(lim, m->species_id, m->ability)) {
+    } else if (!dfi_forme_ability_legal(lim, m->species_id, m->ability)) {
         return false;
     }
     /* Sleep and freeze carry a counter 1..3 (Champions: sleep lasts
@@ -420,7 +451,7 @@ bool dfi_closure_member_valid(const dfi_kind_limits *lim, const dfi_member *m)
     for (uint32_t k = 0u; k < m->move_count && k < DUOFORGE_MAX_MOVE_SLOTS; ++k) {
         const uint32_t move = m->moves[k].move_id;
         uint8_t pp_max = 0u;
-        if (!dfi_move_legal(lim, m->species_id, move) || !dfi_derive_pp(move, &pp_max) ||
+        if (!dfi_forme_move_legal(lim, m->species_id, move) || !dfi_derive_pp(move, &pp_max) ||
             pp_max != m->moves[k].pp_max) {
             return false;
         }

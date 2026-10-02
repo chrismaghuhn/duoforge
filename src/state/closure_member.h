@@ -32,7 +32,9 @@ bool dfi_gender_legal(uint32_t gender_rule, uint32_t gender);
  * kinds from the moves it learns and the abilities it may have. */
 typedef struct dfi_kind_limits {
     uint32_t forme_count;     /* species ids below this */
+    uint32_t move_count;      /* move ids below this */
     uint32_t item_count;      /* an item is 1 + its id, so at most this */
+    uint32_t ability_count;   /* ability ids below this (an ability is 1 + its id) */
     uint32_t switch_flag_max; /* DFI_SWITCH_FAINTED; DFI_SWITCH_FLIP_TURN for TEAM_C; DFI_SWITCH_UTURN for POOL */
     uint32_t status_max;      /* DFI_STATUS_SLP; DFI_STATUS_PSN for TEAM_C and POOL */
     uint32_t vol_flags_mask;  /* DFI_VOL_* bits a position may carry: TEAM_C and POOL add the choice lock */
@@ -60,6 +62,46 @@ extern const dfi_pivot_move dfi_pivot_moves[DFI_PIVOT_MOVE_COUNT];
 const dfi_pivot_move *dfi_pivot_of_move(uint32_t move);
 /* The entry for a switch flag value, or NULL when the value is none, Parting Shot's, Emergency Exit's or fainted. */
 const dfi_pivot_move *dfi_pivot_of_flag(uint32_t flag);
+
+/* The rules of what a member may have, one implementation for the setup, the
+ * member invariant and the data query API (duoforge_data_*): none of them
+ * restates a rule. */
+
+/* A member may be of the forme: an id of the kind, and a base forme (a Mega
+ * forme is reached in battle, never set up). */
+bool dfi_forme_setup_legal(const dfi_kind_limits *lim, uint32_t species);
+
+/* A member of base forme `species` may have the move (an id): the forme's set
+ * under the first four kinds, the moves it learns under the POOL kinds. False
+ * for an id at or beyond the kind's count. Precondition: species is below
+ * the kind's forme count. */
+bool dfi_forme_move_legal(const dfi_kind_limits *lim, uint32_t species, uint32_t move);
+
+/* A member of base forme `species` may have the ability (1 + its id; 0 is No
+ * Ability): the forme's own under the first four kinds, one of its legal
+ * abilities under the POOL kinds; No Ability under the DEV kinds only. False
+ * for an id beyond the kind's count. Same precondition. */
+bool dfi_forme_ability_legal(const dfi_kind_limits *lim, uint32_t species, uint32_t ability);
+
+/* The stone of the base forme as an item id, DFI_CLOSURE_NONE if it has none
+ * (a member holds it as item 1 + this id). */
+uint32_t dfi_forme_stone(uint32_t species);
+
+/* Stat Points: each stat at most DUOFORGE_STAT_POINTS_MAX and their sum at
+ * most DUOFORGE_STAT_POINTS_TOTAL_MAX. */
+bool dfi_stat_points_valid(const uint32_t *sp);
+
+/* The support gate by id (decision 0006 section 2): true iff the manifest
+ * marks the id (an id at or beyond the tables' counts is not marked). The
+ * gate of a setup is the conjunction of these over what a member has, and of
+ * dfi_manifest_mega for a member that holds the stone of its forme, with the
+ * turn core. */
+bool dfi_manifest_move(const dfi_support_manifest *s, uint32_t move);
+bool dfi_manifest_ability(const dfi_support_manifest *s, uint32_t ability);
+bool dfi_manifest_item(const dfi_support_manifest *s, uint32_t item);
+/* Mega Evolution of the base forme `species`: it has a Mega forme, the
+ * manifest marks Mega Evolution and the ability the Mega forme brings. */
+bool dfi_manifest_mega(const dfi_support_manifest *s, uint32_t species);
 
 /* Validation of one registered member of a combat setup (the side rules,
  * Species Clause and Item Clause, are separate). */
