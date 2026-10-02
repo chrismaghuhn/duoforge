@@ -447,6 +447,46 @@ function checkFocusSash(dex, root) {
     }
 }
 
+// The four moves of step G10 against the pinned data: Low Kick's weight table is Grass Knot's (the engine shares
+// one), First Impression has Fake Out's first-turn rule, Scald thaws its target and Recover heals half.
+function checkG10Moves(dex) {
+    const move = (id) => dex.moves.get(id);
+    const power = (m, weight) => call(m.basePowerCallback, battle(m), [{}, {getWeight() { return weight; }}]);
+    const weights = [0, 99, 100, 101, 249, 250, 499, 500, 999, 1000, 1999, 2000, 5000];
+    const table = [20, 20, 40, 40, 40, 60, 60, 80, 80, 100, 100, 120, 120];
+    expect('lowkick power by weight', weights.map((w) => power(move('lowkick'), w)), table);
+    expect('grassknot power by weight', weights.map((w) => power(move('grassknot'), w)), table);
+    expect('lowkick type and category', [move('lowkick').type, move('lowkick').category], ['Fighting', 'Physical']);
+    for (const id of ['firstimpression', 'fakeout']) {
+        const m = move(id);
+        const tried = (n) => call(m.onTry, battle(m, {hint() {}}), [{activeMoveActions: n}]);
+        expect(id + ' onTry on the first and the second move action', [tried(1), tried(2)], [undefined, false]);
+        const disabled = [];
+        for (const n of [0, 1]) {
+            call(m.onDisableMove, battle(m), [{activeMoveActions: n, disableMove(x) { disabled.push([n, x]); }}]);
+        }
+        expect(id + ' onDisableMove', disabled, [[1, id]]);
+    }
+    expect('firstimpression base power and priority (Champions)', [move('firstimpression').basePower,
+        move('firstimpression').priority], [100, 2]);
+    const scald = move('scald');
+    expect('scald thawsTarget and defrost', [scald.thawsTarget, scald.flags.defrost], [true, 1]);
+    expect('scald secondary', [scald.secondary.chance, scald.secondary.status], [30, 'brn']);
+    expect('recover heal', move('recover').heal, [1, 2]);
+    // The columns of the whole pool read every move: the moves with a heal field and with thawsTarget in the pin.
+    const heals = [];
+    const thaws = [];
+    for (const m of dex.moves.all()) {
+        if (m.isNonstandard === 'Future' || m.isNonstandard === 'Unobtainable' || m.isNonstandard === 'CAP') continue;
+        if (m.heal) heals.push([m.id, m.heal]);
+        if (m.thawsTarget) thaws.push(m.id);
+    }
+    expect('moves with thawsTarget in the pin', thaws.filter((id) => ['scald', 'matchagotcha', 'scorchingsands'].includes(id)),
+        ['matchagotcha', 'scald', 'scorchingsands']);
+    expect('recover and slackoff heal a half', heals.filter(([id]) => ['recover', 'slackoff'].includes(id)),
+        [['recover', [1, 2]], ['slackoff', [1, 2]]]);
+}
+
 function checkAbilities(dex, rows, moveIds, unmodeled, unmodeledMoves) {
     const counts = {};
     for (const row of rows) {
@@ -636,14 +676,15 @@ function checkFormes(dex, validator, rows, moves, abilities) {
 // ------------------------------------------- what the tables model (decision 0015 section 4.2)
 // The UNMODELED markers of gen_closure.py --pool, re-derived from the pinned data in this file's own words: the
 // special column of a move, the handler column of an item and of an ability, and the lists of unmodelled features.
-const ENGINE_ROWS = {items: ['focussash'], abilities: ['rockhead']}; // implemented in the turn code by id (G4)
+// implemented in the turn code by id (G4: Focus Sash, Rock Head; G12: Floettite, Flower Veil, Fairy Aura)
+const ENGINE_ROWS = {items: ['focussash', 'floettite'], abilities: ['rockhead', 'flowerveil', 'fairyaura']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
     'randomNormal']);
 // The fields of a move that the tables model (gen_closure.py DATA_KEYS and IGNORED_KEYS), nothing else.
 const MOVE_KEYS = new Set(['num', 'accuracy', 'basePower', 'category', 'name', 'pp', 'priority', 'flags', 'target', 'type',
     'critRatio', 'secondary', 'self', 'boosts', 'recoil', 'drain', 'status', 'volatileStatus', 'sideCondition',
     'pseudoWeather', 'selfSwitch', 'stallingMove', 'noPPBoosts', 'struggleRecoil', 'condition', 'contestType', 'zMove',
-    'maxMove', 'isNonstandard', 'hasSheerForceBoost', 'inherit']);
+    'maxMove', 'isNonstandard', 'hasSheerForceBoost', 'inherit', 'thawsTarget', 'heal']);
 const MODELLED_STATUS = new Set(['brn', 'frz', 'par', 'slp', 'psn']);
 const MODELLED_SIDE = new Set(['tailwind', 'reflect', 'lightscreen']);
 const STAT_NAMES = ['atk', 'def', 'spa', 'spd', 'spe', 'accuracy', 'evasion'];
@@ -670,10 +711,15 @@ function moveIsModelled(raw, id) {
     if (!ENGINE_TARGETS.has(raw.target)) {
         return false;
     }
-    for (const key of ['stallingMove', 'selfSwitch', 'noPPBoosts', 'struggleRecoil']) {
+    for (const key of ['stallingMove', 'selfSwitch', 'noPPBoosts', 'struggleRecoil', 'thawsTarget']) {
         if (key in raw && raw[key] !== true) {
             return false;
         }
+    }
+    // Step G10: heal is a fraction [a, b] with 0 < a <= b <= 255 (the heal column).
+    if ('heal' in raw && !(Array.isArray(raw.heal) && raw.heal.length === 2 && raw.heal[0] > 0 &&
+                           raw.heal[0] <= raw.heal[1] && raw.heal[1] <= 255)) {
+        return false;
     }
     let vectors = 0;
     if (raw.secondary !== undefined) {
@@ -926,6 +972,7 @@ function main() {
     const items = checkItems(dex, itemRows, unmodeledItems);
     checkFocusSash(dex, root);
     checkWeather(dex, source);
+    checkG10Moves(dex);
     const abilities = checkAbilities(dex, abilityRows, moveIds, unmodeledAbilities, unmodeledMoves);
     // "All 18": a booster and a resist berry for each type, and nothing else in the families.
     expect('type boosters', items.TYPE_BOOSTER, 18);

@@ -41,8 +41,8 @@
 #include "support/pool.h"
 #include "support/team_c.h"
 
-#define FP_KP_HEX "18fcc0cca5a06c24bdb77cd9a2c70571b71c534e5b59d5063429b1f919a213fe"
-#define FP_KPD_HEX "f6a178b0d026e1689be819b153055868f6dccc2c48ffe14af392850cc52a26f7"
+#define FP_KP_HEX "5616f5a3b4acf0a14899bd64ff9b3df09913c41d406b17e2563a378ff6c1ef88"
+#define FP_KPD_HEX "67d7f3d1a94aab1fb7b505592be9857174516dbe808364cb31ffcdedf0ce716b"
 
 /* The public create under `ctx` gives `gated`, and the build without the
  * support gate `ungated`. */
@@ -242,6 +242,7 @@ int main(void)
                        "POOL_DEV table hash");
         DF_CHECK(&t, dfi_sha256(bytes, sizeof bytes, sha));
         DF_CHECK_BYTES(&t, sha, fp[5], sizeof sha, "POOL_DEV fingerprint = sha256(canonical bytes)");
+        for (int zz = 4; zz < 6; ++zz) { for (int yy = 0; yy < 32; ++yy) printf("%02x", fp[zz][yy]); printf("\n"); }
         DF_CHECK(&t, df_hex_to_bytes(FP_KP_HEX, want, sizeof want));
         DF_CHECK_BYTES(&t, fp[4], want, sizeof want, "POOL fingerprint (model)");
         DF_CHECK(&t, df_hex_to_bytes(FP_KPD_HEX, want, sizeof want));
@@ -561,7 +562,9 @@ int main(void)
                                                 DFI_MOVE_FLASHCANNON, DFI_MOVE_EXTREMESPEED, DFI_MOVE_HEADSMASH,
                                                 DFI_MOVE_BULKUP, DFI_MOVE_LIQUIDATION, DFI_MOVE_ICEPUNCH,
                                                 DFI_MOVE_SHADOWCLAW, DFI_MOVE_DRUMBEATING, DFI_MOVE_DAZZLINGGLEAM,
-                                                DFI_MOVE_UTURN, DFI_MOVE_THROATCHOP, DFI_MOVE_PSYCHICNOISE};
+                                                DFI_MOVE_UTURN, DFI_MOVE_THROATCHOP, DFI_MOVE_PSYCHICNOISE,
+                                                DFI_MOVE_FIRSTIMPRESSION, DFI_MOVE_SCALD, DFI_MOVE_RECOVER,
+                                                DFI_MOVE_LOWKICK};
         const duoforge_member_setup *tpl = &teams.sides[1].members[0];
         /* Every new move: a learner with a legal ability that is marked, with no item, on a side where it does not
          * clash with the Species Clause. The gate function with a fully marked manifest accepts the setup (the
@@ -683,13 +686,14 @@ int main(void)
         invalid(&t, kp, &s, "Annihilape with Flare Blitz");
 
         /* Floette-Eternal is female only; its Mega forme is reached in battle, never set up. Flower Veil, Floettite
-         * and the Mega's Fairy Aura are all unmarked, so the setup is E_UNSUPPORTED until each is. */
+         * and the Mega's Fairy Aura are marked by step G12 (g12_*), and each is needed: the gate function with a copy
+         * of the manifest that lacks one refuses the setup. */
         static const uint32_t floette_moves[2] = {DFI_MOVE_PROTECT, DFI_MOVE_DAZZLINGGLEAM};
         s = teams;
         s.sides[1].members[0] = member_of(tpl, DFI_FORME_FLOETTEETERNAL, DFI_ABILITY_FLOWERVEIL,
                                           DFI_ITEM_FLOETTITE + 1u, 2u, floette_moves);
         DF_CHECK_EQ_U64(&t, s.sides[1].members[0].gender, DUOFORGE_GENDER_FEMALE);
-        legal(&t, kp, &s, false, "Floette-Eternal with Floettite (legal, unmarked)");
+        legal(&t, kp, &s, true, "Floette-Eternal with Floettite (marked in G12)");
         {
             dfi_support_manifest m = full_manifest();
             DF_CHECK(&t, dfi_closure_setup_supported(&m, &s));
@@ -727,7 +731,7 @@ int main(void)
             DF_CHECK_EQ_U64(&t, w->sides[1].members[0].mega_capable, 1u);
             DF_CHECK_EQ_U64(&t, w->sides[1].members[0].moves[1].pp_max, dfi_pool_moves[DFI_MOVE_DAZZLINGGLEAM].pp_max);
             team_bundle(&bd, w);
-            step_expect(&t, kp, w, &bd, DUOFORGE_E_UNSUPPORTED, "team selection with Floettite");
+            step_expect(&t, kp, w, &bd, DUOFORGE_OK, "team selection with Floettite");
             duoforge_battle_destroy(w);
         }
     }

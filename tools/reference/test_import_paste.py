@@ -28,6 +28,7 @@ import trace_to_c  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
+BASE = [e['id'] for e in reg.entries(ROOT)]  # the teams of the committed registry (a test that adds one expects them first)
 SpeciesInfo = imp.SpeciesInfo  # the real class: main() is run with one that asks the stand-in
 
 _tables = {}
@@ -325,7 +326,7 @@ class Writing(unittest.TestCase):
         sets = reg.read_team(self.root, 'MC405')[0]
         self.assertEqual(sets[1].split('\n')[0], 'Charizard (M) @ Charizardite Y')
         self.assertEqual(data, reg.file_text(sets))  # the form the registry has
-        self.assertEqual([e['id'] for e in reg.entries(self.root)], ['A', 'B', 'C', 'MC405'])
+        self.assertEqual([e['id'] for e in reg.entries(self.root)], BASE + ['MC405'])
 
     def test_a_paste_from_stdin_and_the_defaults_of_the_entry(self):
         status, out, err = self.run_main('--id', 'S1', '--name', 'From stdin', stdin=read_bytes(self.paste).decode('utf-8'))

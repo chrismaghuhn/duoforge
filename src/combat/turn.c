@@ -3,6 +3,7 @@
 #include "combat/ability_family.h"
 #include "combat/events.h"
 #include "combat/item_family.h"
+#include "combat/move_rules.h"
 
 #include "core/arith.h"
 #include "core/modifier.h"
@@ -145,6 +146,54 @@ static duoforge_event dfi_ev(uint32_t kind, uint32_t position, uint32_t cause, u
     e.id2 = (uint16_t)id2;    /* < 2^16 */
     e.other = (uint8_t)other; /* < 4 or DUOFORGE_NO_POSITION */
     return e;
+}
+
+#define DFI_FAIRY_AURA_MODIFIER 5448u /* chainModify([5448, 4096]) */
+
+/* Fairy Aura (data/abilities.ts:1266-1282, onAnyBasePower, priority 20): a Pokemon on the field with the ability (the
+ * Mega Floette's only one; a fainted Pokemon is no longer on the field). It boosts the Fairy moves of every Pokemon on
+ * the field once each (move.auraBooster: a second holder changes nothing), the foes' included. Aura Break (3072/4096
+ * instead) is in no pool forme's legal abilities (checked by tests/test_pool_tables.c). */
+static bool dfi_fairy_aura_on_field(struct duoforge_battle *b)
+{
+    for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
+        const dfi_member *m = dfi_at(b, flat);
+        if (m != NULL && m->hp != 0u && dfi_ability(m, DFI_ABILITY_FAIRYAURA)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/* Flower Veil (data/abilities.ts:1419-1457): the holder protects every Grass-type Pokemon of its side, itself
+ * included (it is Fairy, so what it covers is its allies), against stat drops and statuses that another Pokemon
+ * causes. `flat` is the protected one: its Grass type and a standing holder on its side (the pool has one forme with
+ * the ability, and the Species Clause allows one holder). Flower Veil is breakable (Mold Breaker would ignore it): no
+ * forme of the pool that has Mold Breaker is marked. */
+static bool dfi_flower_veil_holder(struct duoforge_battle *b, uint32_t flat, uint32_t *holder)
+{
+    const dfi_member *target = dfi_at(b, flat);
+    if (target == NULL || !dfi_has_type(target, DFI_TYPE_GRASS)) {
+        return false;
+    }
+    for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
+        const uint32_t other = (flat / 2u) * 2u + slot;
+        const dfi_member *m = dfi_at(b, other);
+        if (m != NULL && m->hp != 0u && dfi_ability(m, DFI_ABILITY_FLOWERVEIL)) {
+            *holder = other;
+            return true;
+        }
+    }
+    return false;
+}
+
+/* -block|target|ability: Flower Veil|[of] holder: the public ACTIVATE event with the protected Pokemon as its
+ * position and the holder in `other` (the ability's own activation has no `other`). */
+static void dfi_flower_veil_block(dfi_run *r, uint32_t flat, uint32_t holder)
+{
+    const duoforge_event e =
+        dfi_ev(DUOFORGE_EVENT_ACTIVATE, flat, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_FLOWERVEIL, holder);
+    dfi_emit(r, &e);
 }
 
 /* An event that shows the HP of the Pokemon at e.position, exact; each
@@ -529,10 +578,25 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
         const uint32_t delta = to + 6u - (uint32_t)pos->stages[i];
         capped[i] = (uint8_t)delta; /* 0..12 */
     }
+    /* TryBoost (after Contrary and the cap): Flower Veil deletes every drop that another Pokemon causes on a Grass
+     * type of its side (sim/battle.ts:2030-2033, data/abilities.ts:1419-1437); the line shows unless the effect is a
+     * move's secondary (effect.secondaries): Intimidate's does, Snarl's does not. */
+    bool veil[DFI_STAT_STAGE_COUNT] = {false, false, false, false, false, false, false};
+    uint32_t holder = 0u;
+    if (source != flat && source != DFI_POSITIONS && dfi_flower_veil_holder(b, flat, &holder)) {
+        bool any = false;
+        for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
+            veil[i] = boosts[i] != DFI_BIAS6 && capped[i] < DFI_BIAS6;
+            any = any || veil[i];
+        }
+        if (any && !(effect.cause == DUOFORGE_CAUSE_MOVE && effect.mode == DFI_BOOST_SECONDARY)) {
+            dfi_flower_veil_block(r, flat, holder);
+        }
+    }
     bool announced = effect.mode == DFI_BOOST_SECONDARY;
     for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
-        if (boosts[i] == DFI_BIAS6) {
-            continue; /* not part of this boost */
+        if (boosts[i] == DFI_BIAS6 || veil[i]) {
+            continue; /* not part of this boost, or blocked */
         }
         const uint32_t before = pos->stages[i];
         uint8_t one[DFI_STAT_STAGE_COUNT] = {6u, 6u, 6u, 6u, 6u, 6u, 6u};
@@ -829,14 +893,13 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     /* BasePower (after the critical hit roll), one chained modifier: Mystic
      * Water (Water) and Miracle Seed (Grass) 4915/4096, Grassy Terrain
      * 5325/4096 for a grounded user's Grass move. */
-    /* Weather Ball doubles in rain or sun (onModifyMove); Grass Knot's power
-     * follows the target's weight (basePowerCallback). */
+    /* Weather Ball doubles in rain or sun (onModifyMove); Grass Knot's and
+     * Low Kick's power follow the target's weight (basePowerCallback). */
     uint32_t power = md->base_power;
     if (md->special == DFI_SPECIAL_WEATHER_BALL && r->b->weather != DFI_WEATHER_NONE) {
         power *= 2u;
-    } else if (md->special == DFI_SPECIAL_GRASS_KNOT) {
-        const uint32_t w = dfi_forme_of(d)->weight_hg;
-        power = w >= 2000u ? 120u : w >= 1000u ? 100u : w >= 500u ? 80u : w >= 250u ? 60u : w >= 100u ? 40u : 20u;
+    } else if (dfi_move_power_by_weight(md)) {
+        power = dfi_weight_power(dfi_forme_of(d)->weight_hg);
     } else if (md->special == DFI_SPECIAL_LAST_RESPECTS) {
         /* Last Respects (Team C): 50 + 50 per fainted member of the user's
          * side (basePowerCallback, data/moves.ts:10091-10105). side.totalFainted
@@ -854,6 +917,11 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     }
     if (dfi_ability(a, DFI_ABILITY_TOUGHCLAWS) && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u) {
         ok = dfi_chain_modify(bp_chain, 5325u, &bp_chain); /* onBasePowerPriority 21: first */
+    }
+    /* Fairy Aura (the Mega Floette's ability, onAnyBasePower priority 20: after Tough Claws, before the items): a
+     * Fairy move of anyone on the field, unless it targets its own user, 5448/4096 once. */
+    if (move_type == DFI_TYPE_FAIRY && user != target && dfi_fairy_aura_on_field(r->b)) {
+        ok = ok && dfi_chain_modify(bp_chain, DFI_FAIRY_AURA_MODIFIER, &bp_chain);
     }
     /* A type booster (the TYPE_BOOSTER family: Mystic Water, Miracle Seed
      * and the sixteen others, decision 0015): 4915/4096 for a move of its
@@ -1070,6 +1138,16 @@ static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status
         (status == DFI_STATUS_PSN && dfi_poison_immune(m))) {
         if (primary) {
             dfi_immune(r, flat, 0u);
+        }
+        return DUOFORGE_OK;
+    }
+    /* SetStatus (sim/pokemon.ts:1724, after the immunities): Flower Veil blocks a status that another Pokemon's move
+     * causes on a Grass type of its side (data/abilities.ts:1438-1448); the line shows for a move's own status
+     * (effect.secondaries is unset) and not for a secondary (Dire Claw's pick, Flare Blitz's burn). */
+    uint32_t holder = 0u;
+    if (user != flat && dfi_flower_veil_holder(r->b, flat, &holder)) {
+        if (primary) {
+            dfi_flower_veil_block(r, flat, holder);
         }
         return DUOFORGE_OK;
     }
@@ -1892,6 +1970,30 @@ static duoforge_status dfi_run_follow_me(dfi_run *r, uint32_t user)
     return dfi_status_hit_end(r);
 }
 
+/* A move that heals its user by a fraction of the maximum HP (Recover: heal:
+ * [1, 2], data/moves.ts:14806-14820; the fraction is the heal column dfi_pool_move_heal).
+ * runMoveEffects (sim/battle-actions.ts:1201-1222): at full HP [-fail|user|heal]
+ * with [still] (the event is a plain FAIL), otherwise Battle.heal of
+ * Math.round(baseMaxhp * a / b), at least 1, shown as a plain [-heal]. The
+ * heal goes through dfi_heal, the one place that every kind of healing (items,
+ * drain, this move) passes, where Heal Block refuses it (dfi_heal_blocked). A
+ * blocked user never gets here: its heal moves are disabled in the request and
+ * stopped before the move (the heal flag, flags2 bit 2: [cant] Heal Block). */
+static duoforge_status dfi_run_heal_move(dfi_run *r, uint32_t user, uint32_t move_id)
+{
+    dfi_member *m = dfi_at(r->b, user);
+    if (m->hp >= m->hp_max) {
+        dfi_fail_still(r, user);
+        return DUOFORGE_OK;
+    }
+    const uint32_t num = dfi_pool_move_heal[move_id][0];
+    const uint32_t den = dfi_pool_move_heal[move_id][1];
+    uint32_t amount = ((uint32_t)m->hp_max * num * 2u + den) / (2u * den); /* Math.round(hp_max * num / den) */
+    amount = amount < 1u ? 1u : amount;
+    dfi_heal(r, user, amount, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
+    return dfi_status_hit_end(r);
+}
+
 /* runMove and useMove for one move action (sim/battle-actions.ts:210-548,
  * the hit steps at 550-620 and the Champions hit loop). */
 static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool *ran)
@@ -2221,6 +2323,9 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         return DUOFORGE_OK;
     }
     if (status_move && md->primary_status == DFI_STATUS_NONE && md->special != DFI_SPECIAL_PARTING_SHOT) {
+        if (dfi_pool_move_heal[move_id][1] != 0u) {
+            return dfi_run_heal_move(r, user, move_id);
+        }
         if (md->boost_role != DFI_BOOST_ROLE_PRIMARY_SELF || md->target_class != DUOFORGE_TARGET_CLASS_SELF) {
             return DUOFORGE_E_UNSUPPORTED;
         }
@@ -2232,12 +2337,13 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     /* A handler this build does not have fails explicitly; the Team C
      * specials of later steps are also kept out by the support manifest. */
     if (md->special > DFI_SPECIAL_STRUGGLE && md->special != DFI_SPECIAL_DARKEST_LARIAT &&
-        md->special != DFI_SPECIAL_LAST_RESPECTS && md->special != DFI_SPECIAL_SUCKER_PUNCH) {
+        md->special != DFI_SPECIAL_LAST_RESPECTS && md->special != DFI_SPECIAL_SUCKER_PUNCH &&
+        md->special != DFI_SPECIAL_FIRST_IMPRESSION && md->special != DFI_SPECIAL_LOW_KICK) {
         return DUOFORGE_E_INVARIANT;
     }
-    /* Fake Out's onTry (in trySpreadMoveHit, after TryMove): only on the
-     * first move action since it entered. */
-    if (md->special == DFI_SPECIAL_FAKE_OUT && pos->move_actions > 1u) {
+    /* Fake Out's and First Impression's onTry (in trySpreadMoveHit, after
+     * TryMove): only on the first move action since it entered. */
+    if (dfi_move_first_turn_only(md) && pos->move_actions > 1u) {
         dfi_fail_still(r, user);
         return DUOFORGE_OK;
     }
@@ -2658,6 +2764,24 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         if (st != DUOFORGE_OK) {
             return st;
         }
+        /* AfterMoveSecondary: a move that thaws its target (Scald,
+         * thawsTarget) cures a frozen one after the secondaries and the second
+         * Update (frz.onAfterMoveSecondary, data/conditions.ts:112-116, run by
+         * afterMoveSecondaryEvent, data/mods/champions/scripts.ts:574-576),
+         * before the targets' Emergency Exit. */
+        if ((dfi_pool_move_flags2[move_id] & DFI_MOVE_FLAG2_THAWS_TARGET) != 0u) {
+            for (uint32_t i = 0u; i < count; ++i) {
+                dfi_member *tm = dfi_at(b, targets[i]);
+                if (hit[i] && tm->hp != 0u && tm->status == DFI_STATUS_FRZ) {
+                    duoforge_event cure = dfi_event_make(DUOFORGE_EVENT_CURE_STATUS, targets[i]);
+                    cure.detail = tm->status;
+                    cure.flags = (uint8_t)DUOFORGE_EVENT_FLAG_MESSAGE;
+                    dfi_emit(r, &cure); /* [-curestatus] frz [msg] */
+                    tm->status = (uint8_t)DFI_STATUS_NONE;
+                    tm->status_counter = 0u;
+                }
+            }
+        }
         /* After the secondaries of the hit loop: a target that fell to half
          * HP (sim/battle-actions.ts:1005-1017). */
         for (uint32_t i = 0u; i < count; ++i) {
@@ -2856,11 +2980,12 @@ static bool dfi_has_switch_in(const dfi_member *m)
 }
 
 /* An entry ability: a weather or a terrain setter (the families of
- * decision 0015: Drizzle, Drought, Grassy Surge, Psychic Surge) or Intimidate. */
+ * decision 0015: Drizzle, Drought, Grassy Surge, Psychic Surge), Intimidate or
+ * Fairy Aura (whose onStart only shows the ability). */
 static bool dfi_has_entry(const dfi_member *m)
 {
     return dfi_weather_set_by(m) != DFI_WEATHER_NONE || dfi_terrain_set_by(m) != DFI_TERRAIN_NONE ||
-           m->ability == 1u + DFI_ABILITY_INTIMIDATE;
+           m->ability == 1u + DFI_ABILITY_INTIMIDATE || m->ability == 1u + DFI_ABILITY_FAIRYAURA;
 }
 
 /* Drizzle and Drought (setWeather): the same weather is not restarted;
@@ -2896,6 +3021,10 @@ static duoforge_status dfi_entry_ability(dfi_run *r, uint32_t flat)
             dfi_emit(r, &e);
             return dfi_terrain_change(r);
         }
+    } else if (a == 1u + DFI_ABILITY_FAIRYAURA) {
+        /* onStart: -ability|holder|Fairy Aura (the aura itself is onAnyBasePower) */
+        const duoforge_event e = dfi_ev(DUOFORGE_EVENT_ABILITY, flat, DUOFORGE_CAUSE_NONE, a, DUOFORGE_NO_POSITION);
+        dfi_emit(r, &e);
     } else if (a == 1u + DFI_ABILITY_INTIMIDATE) {
         static const uint8_t drop[DFI_STAGE_COUNT] = {5u, 6u, 6u, 6u, 6u, 6u, 6u}; /* Attack -1 */
         const uint32_t foe = 1u - flat / 2u;

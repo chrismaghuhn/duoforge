@@ -87,7 +87,13 @@
  * of the holder refused, the heal-flag moves barred), which are secondary
  * kinds of the generic column plus the flags2 column, no longer handler ids
  * (seven remain); recorded as g8_throat_chop, g8_heal_block,
- * g8_heal_block_pair, g8_heal_block_tie_a and _b under the POOL kind. */
+ * g8_heal_block_pair, g8_heal_block_tie_a and _b under the POOL kind.
+ * Step G12 marks Flower Veil (it blocks the
+ * stat drops and statuses that another Pokemon causes on a Grass-type ally), Fairy Aura
+ * (5448/4096 for every Fairy move on the field, at the Mega Evolution of Floette-Eternal)
+ * and Floettite, and the two moves of the real Floette set that nothing marked yet,
+ * Moonblast (10 percent Special Attack drop, the Champions override) and Calm Mind,
+ * in the reference battles g12_*. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -153,6 +159,10 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_LIQUIDATION] = 1u,
             [DFI_MOVE_ICEPUNCH] = 1u,
             [DFI_MOVE_SHADOWCLAW] = 1u,
+            [DFI_MOVE_FIRSTIMPRESSION] = 1u,
+            [DFI_MOVE_SCALD] = 1u,
+            [DFI_MOVE_RECOVER] = 1u,
+            [DFI_MOVE_LOWKICK] = 1u,
             [DFI_MOVE_DRUMBEATING] = 1u,
             [DFI_MOVE_DAZZLINGGLEAM] = 1u,
             [DFI_MOVE_UTURN] = 1u,
@@ -160,6 +170,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_SNOWSCAPE] = 1u,
             [DFI_MOVE_THROATCHOP] = 1u,
             [DFI_MOVE_PSYCHICNOISE] = 1u,
+            [DFI_MOVE_MOONBLAST] = 1u,
+            [DFI_MOVE_CALMMIND] = 1u,
         },
     .abilities =
         {
@@ -192,6 +204,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_OVERGROW] = 1u,
             [DFI_ABILITY_TORRENT] = 1u,
             [DFI_ABILITY_SWARM] = 1u,
+            [DFI_ABILITY_FLOWERVEIL] = 1u,
+            [DFI_ABILITY_FAIRYAURA] = 1u,
         },
     .items =
         {
@@ -212,6 +226,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_CHOICESCARF] = 1u,
             [DFI_ITEM_WHITEHERB] = 1u,
             [DFI_ITEM_FOCUSSASH] = 1u,
+            [DFI_ITEM_FLOETTITE] = 1u,
             [DFI_ITEM_BLACKBELT] = 1u,
             [DFI_ITEM_BLACKGLASSES] = 1u,
             [DFI_ITEM_CHARCOAL] = 1u,

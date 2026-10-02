@@ -28,6 +28,7 @@ import trace_to_c  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
+BASE = [e['id'] for e in reg.entries(ROOT)]  # the teams of the committed registry (a test that adds one expects them first)
 OLD_FILES = {'A': os.path.join('tests', 'reference', 'teams', 'team_a.txt'),
              'B': os.path.join('tests', 'reference', 'teams', 'team_b.txt'),
              'C': os.path.join('docs', 'research', 'third-team', 'team-c.txt')}
@@ -253,8 +254,8 @@ class Adding(unittest.TestCase):
         path = reg.add_team(self.root, self.entry('MC405', url='https://pokepast.es/x', event='E', placing='1st', notes='n'),
                             self.sets)
         self.assertEqual(path, reg.team_path(self.root, 'MC405'))
-        self.assertEqual([e['id'] for e in reg.entries(self.root)], ['A', 'B', 'C', 'MC405'])
-        new = reg.entries(self.root)[3]
+        self.assertEqual([e['id'] for e in reg.entries(self.root)], BASE + ['MC405'])
+        new = reg.entries(self.root)[-1]
         self.assertEqual(list(new), ['id', 'name', 'source', 'notes', 'sha256'])
         self.assertEqual(new['sha256'], reg.sha256_of(read(path)))
         self.assertEqual(read(path), read(reg.team_path(ROOT, 'A')))  # the same sets: the same bytes
@@ -296,7 +297,7 @@ class Adding(unittest.TestCase):
         self.assertIn('superseded by B2 already', str(cm.exception))
         with self.assertRaises(reg.RegistryError):
             reg.add_team(self.root, self.entry('B4'), self.sets, supersedes='NOPE')
-        self.assertEqual([e['id'] for e in reg.entries(self.root)], ['A', 'B', 'C', 'B2'])  # nothing changed by the failures
+        self.assertEqual([e['id'] for e in reg.entries(self.root)], BASE + ['B2'])  # nothing changed by the failures
 
     def test_a_team_has_six_sets(self):
         with self.assertRaises(reg.RegistryError):
@@ -316,7 +317,7 @@ class Adding(unittest.TestCase):
     def test_the_index_is_replaced_whole(self):
         reg.add_team(self.root, self.entry('MC405'), self.sets)
         self.assertEqual(sorted(os.listdir(reg.registry_dir(self.root))),
-                         ['A.txt', 'B.txt', 'C.txt', 'MC405.txt', 'README.md', 'index.json'])  # no .tmp, no .lock left
+                         sorted([i + '.txt' for i in BASE] + ['MC405.txt', 'README.md', 'index.json']))  # no .tmp, no .lock left
 
     def test_one_writer_at_a_time(self):
         lock = os.path.join(reg.registry_dir(self.root), '.lock')
@@ -343,7 +344,7 @@ class Adding(unittest.TestCase):
         with unittest.mock.patch.object(reg, 'check_new', check_then_appear), self.assertRaises(reg.RegistryError):
             reg.add_team(self.root, self.entry('MC405'), self.sets)
         self.assertEqual(read(reg.team_path(self.root, 'MC405')), b'someone else')
-        self.assertEqual([e['id'] for e in reg.entries(self.root)], ['A', 'B', 'C'])
+        self.assertEqual([e['id'] for e in reg.entries(self.root)], BASE)
 
     def test_a_registry_is_made_where_there_is_none(self):
         with tempfile.TemporaryDirectory() as empty:

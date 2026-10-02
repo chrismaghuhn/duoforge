@@ -128,6 +128,8 @@ duoforge_add_test(NAME duoforge.combat.item_family SOURCES test_item_family.c WH
 duoforge_add_test(NAME duoforge.combat.focus_sash_confusion SOURCES test_focus_sash_confusion.c WHITEBOX TIMEOUT 60)
 # The ability families of decision 0015 (the "-ate" and pinch rules) against a table of the pinned handlers.
 duoforge_add_test(NAME duoforge.combat.ability_family SOURCES test_ability_family.c WHITEBOX TIMEOUT 60)
+# The rules that several moves share (step G10): the first-turn moves, power by weight, the thaw and heal columns.
+duoforge_add_test(NAME duoforge.combat.move_rules SOURCES test_move_rules.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.combat.closure_gate SOURCES test_closure_gate.c WHITEBOX TIMEOUT 600)
 duoforge_add_test(NAME duoforge.combat.team_c_gate SOURCES test_team_c_gate.c WHITEBOX TIMEOUT 600)
 
@@ -156,8 +158,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=26fea843e2643a3ae33aa475cb67cb488775e1deed23a033a2edf9b0dc2007a5"
-        "pool_tables.c=a2d4924caede8761c2e5a8fb51c17da3c2898a877c4c2d0041d23780a8f0ec1b")
+        "pool_tables.h=59965e00e25b614a60ca721dc7a17ed51b1aee426d39880d4d6e4c02b8b436c0"
+        "pool_tables.c=7e78d7eb6253929b8f6903240295d247bb1b0ef81ff23f8cf7790f02294cfa05")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)

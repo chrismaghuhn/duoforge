@@ -859,7 +859,8 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_EVENT_ANIMATION       33u /* [-anim] position, other, id: the move shown; flags MISS, NOTARGET
                                                     (the last move line once shown) */
 #define DUOFORGE_EVENT_ABILITY         34u /* [-ability] position, id2: ability + 1 */
-#define DUOFORGE_EVENT_ACTIVATE        35u /* [-activate] position; cause ABILITY + id2 (Lightning Rod, Emergency Exit) or MOVE + id2 (Struggle) */
+#define DUOFORGE_EVENT_ACTIVATE        35u /* [-activate] position; cause ABILITY + id2 (Lightning Rod, Emergency Exit) or MOVE + id2 (Struggle);
+                                                    Flower Veil's [-block] too: position the protected Pokemon, other the holder ([of]) */
 #define DUOFORGE_EVENT_UPKEEP          36u /* [upkeep] the end-of-turn effects are done */
 #define DUOFORGE_EVENT_RESULT          37u /* [win] or [tie] detail: DUOFORGE_RESULT_* */
 #define DUOFORGE_EVENT_SINGLE_TURN     38u /* [-singleturn] position (Team C): id: the move; other: the user ([of]) for
