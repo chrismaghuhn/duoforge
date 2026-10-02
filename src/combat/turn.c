@@ -2131,8 +2131,11 @@ static duoforge_status dfi_status_hit_end(dfi_run *r)
 
 /* Protect (data/moves.ts protect, data/conditions.ts stall): fails without a
  * draw when nobody acts after the user; with a stall counter it succeeds on
- * random(counter) == 0 (STALL) and otherwise loses the counter. */
-static duoforge_status dfi_run_protect(dfi_run *r, uint32_t user)
+ * random(counter) == 0 (STALL) and otherwise loses the counter. Step G20: Spiky Shield (data/moves.ts:17532-17584) and
+ * Baneful Bunker (:985-1037) have the same onPrepareHit, onHit, stall and -singleturn line (their text is checked by the
+ * generator against Protect's); `kind` is the variant that the volatile is (DFI_PROTECT_*), kept in the user's tail
+ * until the residual. */
+static duoforge_status dfi_run_protect(dfi_run *r, uint32_t user, uint32_t kind)
 {
     dfi_active_slot *pos = dfi_pos(r->b, user);
     if (!dfi_will_act(r->b)) {
@@ -2158,9 +2161,10 @@ static duoforge_status dfi_run_protect(dfi_run *r, uint32_t user)
         }
     }
     pos->flags = (uint8_t)((uint32_t)pos->flags | DFI_VOL_PROTECT); /* wide-operands-reviewed: < 256 */
+    r->b->tail.sides[user / 2u].positions[user % 2u].protect_kind = (uint8_t)kind; /* <= DFI_TAIL_PROTECT_KIND_MAX */
     pos->stall_level = (uint8_t)(level < DFI_STALL_LEVEL_MAX ? level + 1u : level); /* wide-operands-reviewed */
     pos->stall_turns = (uint8_t)DFI_STALL_DURATION;
-    dfi_emit_plain(r, DUOFORGE_EVENT_PROTECT, user); /* [-singleturn] Protect */
+    dfi_emit_plain(r, DUOFORGE_EVENT_PROTECT, user); /* [-singleturn] Protect (all three print `move: Protect`) */
     return dfi_status_hit_end(r);
 }
 
@@ -2831,7 +2835,13 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         return dfi_run_helping_hand(r, user, targets[0]);
     }
     if (md->special == DFI_SPECIAL_PROTECT) {
-        return dfi_run_protect(r, user);
+        return dfi_run_protect(r, user, DFI_PROTECT_PLAIN);
+    }
+    if (md->special == DFI_SPECIAL_SPIKY_SHIELD) {
+        return dfi_run_protect(r, user, DFI_PROTECT_SPIKY_SHIELD);
+    }
+    if (md->special == DFI_SPECIAL_BANEFUL_BUNKER) {
+        return dfi_run_protect(r, user, DFI_PROTECT_BANEFUL_BUNKER);
     }
     if (md->special == DFI_SPECIAL_WIDE_GUARD) {
         return dfi_run_wide_guard(r, user);
@@ -3021,6 +3031,26 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         hit[i] = !((((uint32_t)tp->flags & DFI_VOL_PROTECT) != 0u) && ((md->flags & DFI_MOVE_FLAG_PROTECT) != 0u));
         if (!hit[i]) {
             dfi_emit_plain(r, DUOFORGE_EVENT_BLOCKED, t); /* [-activate] move: Protect */
+            /* Step G20: the contact punishment of Spiky Shield and Baneful Bunker, in the same onTryHit after the
+             * -activate line (data/moves.ts:17550-17559, :1003-1012; checkMoveMakesContact is the contact flag: Protective
+             * Pads are not in the pool). Spiky Shield costs the attacker floor(maxHP / 8), at least 1, with
+             * [-damage] ... [from] Spiky Shield [of] the holder (CAUSE_MOVE, the move in id2, the holder in other); Baneful
+             * Bunker poisons it (trySetStatus without a move: a plain -status, silent when it cannot). */
+            const uint32_t kind = r->b->tail.sides[t / 2u].positions[t % 2u].protect_kind;
+            if (kind != DFI_PROTECT_PLAIN && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u) {
+                if (count > 1u) {
+                    return DUOFORGE_E_UNSUPPORTED; /* one TryHit event orders the holders by speed (a tie draws): not modelled */
+                }
+                if (kind == DFI_PROTECT_SPIKY_SHIELD) {
+                    const uint32_t spikes = (uint32_t)m->hp_max / 8u;
+                    st = dfi_deal(r, user, spikes == 0u ? 1u : spikes, DUOFORGE_CAUSE_MOVE, DFI_MOVE_SPIKYSHIELD, t);
+                } else {
+                    st = dfi_try_status(r, user, DFI_STATUS_PSN, t, DFI_NO_SOURCE_MOVE, false, 0u);
+                }
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
+            }
         }
     }
     /* TryHit after Protect: Flash Fire takes Fire moves (and starts its
@@ -4442,6 +4472,7 @@ static duoforge_status dfi_residual_events(dfi_run *r)
         }
         const uint32_t ended = DFI_VOL_PROTECT | DFI_VOL_FLINCH | DFI_VOL_HELPING_HAND | DFI_VOL_FOLLOW_ME;
         pos->flags = (uint8_t)((uint32_t)pos->flags & ~ended); /* wide-operands-reviewed */
+        b->tail.sides[flat / 2u].positions[flat % 2u].protect_kind = (uint8_t)DFI_PROTECT_PLAIN; /* with the volatile */
         if (pos->charge_turns > 0u) {
             pos->charge_turns = (uint8_t)((uint32_t)pos->charge_turns - 1u); /* wide-operands-reviewed */
             if (pos->charge_turns == 0u) {
