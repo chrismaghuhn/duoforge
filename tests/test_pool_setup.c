@@ -12,10 +12,12 @@
  * kinds: also No Ability and four to six registered members. The one change
  * is the set rule: under the POOL kinds a member's moves are ones its forme
  * learns and its ability one of the forme's legal abilities, in a setup and
- * in the member invariant; the four other kinds keep the forme's set. Every
- * new item and ability is unmarked in the support manifest, so a setup that
- * uses one fails with E_UNSUPPORTED after all validation, and so does every
- * step of a battle that holds one.
+ * in the member invariant; the four other kinds keep the forme's set. The
+ * support manifest decides what a battle may use: the new items (the type
+ * boosters and resist berries) are marked since step P2, the new abilities
+ * are not, so a setup that uses one fails with E_UNSUPPORTED after all
+ * validation, and so does every step of a battle that holds one; an unmarked
+ * item (the manifest edited in a copy) is gone the same way.
  *
  * The fingerprints are those of tools/state_model/state_v3_model.py (the
  * contexts KP and KPD).
@@ -356,15 +358,15 @@ int main(void)
      * CLOSURE and TEAM_C kinds, whose bounds are 11 and 16 items. */
     s = teams;
     s.sides[0].members[3].item = DFI_POOL_ITEM_COUNT; /* Yache Berry */
-    legal(&t, kp, &s, false, "the last pool item");
-    legal(&t, kq, &s, false, "the last pool item (dev)");
+    legal(&t, kp, &s, true, "the last pool item");
+    legal(&t, kq, &s, true, "the last pool item (dev)");
     invalid(&t, kc, &s, "the last pool item under TEAM_C");
     s.sides[0].members[3].item = DFI_POOL_ITEM_COUNT + 1u;
     invalid(&t, kp, &s, "an item beyond the pool");
     invalid(&t, kq, &s, "an item beyond the pool (dev)");
     s = teams;
     s.sides[0].members[0].item = DFI_ITEM_BLACKBELT + 1u; /* the first pool item */
-    legal(&t, kp, &s, false, "the first pool item");
+    legal(&t, kp, &s, true, "the first pool item");
     invalid(&t, k1, &s, "a pool item under CLOSURE");
     invalid(&t, k2, &s, "a pool item under CLOSURE_DEV");
     invalid(&t, kc, &s, "a pool item under TEAM_C");
@@ -509,9 +511,9 @@ int main(void)
         }
     }
 
-    /* The gate. A new item or ability is unmarked: the setup is E_UNSUPPORTED
-     * after all validation, one member per family. The build without the
-     * gate accepts every one of them. */
+    /* The gate. A new item is marked since step P2: one member per family
+     * is legal and supported under POOL and POOL_DEV, and E_INVALID_ARGUMENT
+     * under every other kind (above). */
     {
         static const struct {
             uint32_t side, member, item;
@@ -526,14 +528,16 @@ int main(void)
         for (size_t i = 0u; i < sizeof items / sizeof items[0]; ++i) {
             s = teams;
             s.sides[items[i].side].members[items[i].member].item = items[i].item + 1u;
-            legal(&t, kp, &s, false, items[i].what);
-            legal(&t, kq, &s, false, items[i].what);
+            legal(&t, kp, &s, true, items[i].what);
+            legal(&t, kq, &s, true, items[i].what);
+            invalid(&t, kc, &s, items[i].what);
         }
-        /* After all validation: another fault is INVALID_ARGUMENT, not UNSUPPORTED. */
+        /* After all validation: another fault is INVALID_ARGUMENT, not UNSUPPORTED
+         * (here with an unmarked ability, Rillaboom with Overgrow). */
         s = teams;
-        s.sides[0].members[0].item = DFI_ITEM_BLACKBELT + 1u;
+        s.sides[0].members[0].ability = DFI_ABILITY_OVERGROW + 1u;
         s.sides[0].members[5].gender = DUOFORGE_GENDER_MALE; /* Gholdengo is genderless */
-        invalid(&t, kp, &s, "a pool item and a gender fault");
+        invalid(&t, kp, &s, "an unmarked ability and a gender fault");
         s = teams;
         s.sides[0].members[0].item = DFI_ITEM_BLACKBELT + 1u;
         s.sides[0].members[1].item = DFI_ITEM_BLACKBELT + 1u; /* Item Clause */
@@ -555,21 +559,28 @@ int main(void)
             DF_CHECK(&t, !dfi_closure_setup_supported(&dfi_support, &s));
             DF_CHECK_EQ_U64(&t, dfi_support.abilities[added[i]], 0u);
         }
-        /* The same for an item, with the gate function alone. */
-        s = teams;
-        s.sides[0].members[0].item = DFI_ITEM_CHARCOAL + 1u;
-        DF_CHECK(&t, !dfi_closure_setup_supported(&dfi_support, &s));
-        {
-            dfi_support_manifest marked = full_manifest();
-            DF_CHECK(&t, dfi_closure_setup_supported(&marked, &s));
-            marked.items[DFI_ITEM_CHARCOAL] = 0u;
-            DF_CHECK(&t, !dfi_closure_setup_supported(&marked, &s));
+        /* An item: marked, so supported; an unmarked one (the manifest
+         * copied and edited, for every new id) is gone. */
+        for (uint32_t id = DFI_EXT_ITEM_COUNT; id < DFI_POOL_ITEM_COUNT; ++id) {
+            s = teams;
+            s.sides[0].members[0].item = id + 1u;
+            DF_CHECK(&t, dfi_closure_setup_supported(&dfi_support, &s));
+            dfi_support_manifest unmarked = dfi_support;
+            unmarked.items[id] = 0u;
+            DF_CHECK(&t, !dfi_closure_setup_supported(&unmarked, &s));
+        }
+        /* The prefix items keep their marks. */
+        for (uint32_t id = 0u; id < DFI_EXT_ITEM_COUNT; ++id) {
+            s = teams;
+            s.sides[0].members[0].item = id + 1u;
+            DF_CHECK(&t, dfi_closure_setup_supported(&dfi_support, &s));
         }
     }
 
-    /* The step runs the same gate on the battle: a state that holds an
-     * unmarked item is E_UNSUPPORTED at every step, atomically, and the same
-     * step of the state without it runs. */
+    /* The step runs the same gate on the battle: a state that holds a pool
+     * item runs (it is marked), and one that holds an unmarked ability is
+     * E_UNSUPPORTED at every step, atomically; the same step of the state
+     * without it runs. */
     {
         s = teams;
         s.sides[0].members[0].item = DFI_ITEM_OCCABERRY + 1u;
@@ -579,7 +590,7 @@ int main(void)
             expect_inv(&t, kp, b, DFI_INV_NONE, "pool item in a POOL state");
             duoforge_decision_bundle bd;
             team_bundle(&bd, b);
-            step_expect(&t, kp, b, &bd, DUOFORGE_E_UNSUPPORTED, "team selection with a resist berry");
+            step_expect(&t, kp, b, &bd, DUOFORGE_OK, "team selection with a resist berry");
             duoforge_battle_destroy(b);
         }
         /* At a TURN boundary: the gate runs again at the start of the turn. */
@@ -591,10 +602,18 @@ int main(void)
         duoforge_battle *x = NULL;
         DF_CHECK(&t, duoforge_battle_clone(kp, w, &x) == DUOFORGE_OK && x != NULL);
         if (x != NULL) {
-            x->sides[0].members[3].item = DFI_ITEM_SOFTSAND + 1u; /* an unmarked booster in the bench */
+            x->sides[0].members[3].item = DFI_ITEM_SOFTSAND + 1u; /* a booster on the bench */
             expect_inv(&t, kp, x, DFI_INV_NONE, "pool item at a TURN boundary");
             turn_bundle(&bd, x);
-            step_expect(&t, kp, x, &bd, DUOFORGE_E_UNSUPPORTED, "turn with a type booster on the bench");
+            step_expect(&t, kp, x, &bd, DUOFORGE_OK, "turn with a type booster on the bench");
+            duoforge_battle_destroy(x);
+        }
+        DF_CHECK(&t, duoforge_battle_clone(kp, w, &x) == DUOFORGE_OK && x != NULL);
+        if (x != NULL) {
+            x->sides[0].members[0].ability = DFI_ABILITY_OVERGROW + 1u; /* Rillaboom, a lead */
+            expect_inv(&t, kp, x, DFI_INV_NONE, "Overgrow at a TURN boundary");
+            turn_bundle(&bd, x);
+            step_expect(&t, kp, x, &bd, DUOFORGE_E_UNSUPPORTED, "turn with an unmarked ability");
             duoforge_battle_destroy(x);
         }
         turn_bundle(&bd, w);

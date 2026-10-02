@@ -86,6 +86,7 @@ One PR per step.
    - type boosters and resist berries become table rules, and the new members are marked;
    - recorded reference battles for every variant: a booster of each kind of type the closure lacked, a resist berry with and without a KO, and Chilan Berry's Normal variant;
    - the interactions with Life Orb, Chople's ModifyDamage order, and a booster under Helping Hand.
+   - A spec with `"data": "pool"` is converted with the pool tables into `tests/reference/conformance_pool.h` and runs under POOL alone (no DEV fallback, so the records name the data kind). The records writer, the diff runner and the replay driver carry that third kind; random play over POOL teams (`diff_random.py`) is a separate step, as it needs team files that carry the new members.
 3. **P3, abilities:** "-ate" and pinch become table rules, Pixilate, Refrigerate, Overgrow, Torrent and Swarm are marked, with recorded battles.
 4. **P4:** weather setters and surges become table rules over the prefix members. There is no behaviour change, which the conformance tests show.
 

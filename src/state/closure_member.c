@@ -323,7 +323,7 @@ bool dfi_closure_member_mega_evolve(dfi_member *m)
     for (uint32_t i = 0u; i < DFI_MEMBER_STAT_COUNT; ++i) {
         m->stats[i] = stats[i];
     }
-    m->ability = (uint8_t)((uint32_t)dfi_pool_formes[base->mega_forme].ability + 1u); /* wide-operands-reviewed: < 22 */
+    m->ability = (uint8_t)((uint32_t)dfi_pool_formes[base->mega_forme].ability + 1u); /* wide-operands-reviewed: < 26 */
     return true;
 }
 

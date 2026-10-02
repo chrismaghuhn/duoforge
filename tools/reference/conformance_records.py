@@ -6,8 +6,11 @@ against the compiled tables (duoforge.reference.runner_records).
 usage: python tools/reference/conformance_records.py --all <repo root> --out <dir>
 
 Converts every committed battle (tests/reference/specs and traces) with
-trace_to_c and writes <dir>/closure.records and <dir>/team_c.records: the
-battles of conformance.h and of conformance_team_c.h, in the same order.
+trace_to_c and writes <dir>/closure.records, <dir>/team_c.records and
+<dir>/pool.records: the battles of conformance.h, of conformance_team_c.h and
+of conformance_pool.h, in the same order. The pool battles (decision 0015)
+carry team_c 1 (the pool tables keep the extended ids) and the data kind POOL:
+they run under it alone, as they use ids the Team C tables do not have.
 
 As a library, write_battle(data, team_c, out, kind=0, domain=()) writes one
 battle of convert_battle's data to the text stream `out`, all or nothing.
@@ -29,7 +32,7 @@ value is written, there are no defaults. A battle is
 <name> is [A-Za-z0-9_]{1,63}, <team_c> is 0 (closure) or 1 (Team C). <kind>
 is the data kind the runner must create the battle under, with no fallback (a
 DUOFORGE_DATA_KIND_* value of duoforge.h: CLOSURE or CLOSURE_DEV for a closure
-battle, TEAM_C or TEAM_C_DEV for Team C), or 0 for the conformance fallback of
+battle, TEAM_C, TEAM_C_DEV, POOL or POOL_DEV for the extended ids), or 0 for the conformance fallback of
 the replay: CLOSURE, then CLOSURE_DEV when that cannot create it, and the Team
 C pair likewise.
 
@@ -204,30 +207,34 @@ def committed_battles(root):
 
 
 def write_all(root, outdir):
-    """closure.records and team_c.records of every committed battle into
-    `outdir`; returns the two paths with their battle counts."""
+    """closure.records, team_c.records and pool.records of every committed
+    battle into `outdir`; returns the three paths with their battle counts."""
     tables = {team_c: trace_to_c.load_tables(root, team_c) for team_c in (False, True)}
-    streams = {False: io.StringIO(), True: io.StringIO()}
-    counts = {False: 0, True: 0}
+    pool_kind = data_kinds(root)['POOL']
+    files = ('closure', 'team_c', 'pool')
+    streams = {data: io.StringIO() for data in files}
+    counts = {data: 0 for data in files}
     for name in committed_battles(root):
         spec, trace = trace_to_c.load_battle(root, name)
-        team_c = trace_to_c.spec_is_team_c(name, spec)
-        write_battle(trace_to_c.convert_battle(name, spec, trace, tables[team_c]), team_c, streams[team_c])
-        counts[team_c] += 1
+        data = trace_to_c.spec_data(name, spec)
+        team_c = data != 'closure'
+        write_battle(trace_to_c.convert_battle(name, spec, trace, tables[team_c]), team_c, streams[data],
+                     kind=pool_kind if data == 'pool' else 0)
+        counts[data] += 1
     os.makedirs(outdir, exist_ok=True)
     written = []
-    for team_c, fname in ((False, 'closure.records'), (True, 'team_c.records')):
-        path = os.path.join(outdir, fname)
+    for data in files:
+        path = os.path.join(outdir, data + '.records')
         with io.open(path, 'w', encoding='ascii', newline='\n') as f:
-            f.write(streams[team_c].getvalue())
-        written.append((path, counts[team_c]))
+            f.write(streams[data].getvalue())
+        written.append((path, counts[data]))
     return written
 
 
 def main(argv):
     parser = argparse.ArgumentParser(prog='conformance_records.py', description=__doc__.split('\n')[0])
     parser.add_argument('--all', metavar='ROOT', required=True, help='the repository root: every committed battle')
-    parser.add_argument('--out', metavar='DIR', required=True, help='where closure.records and team_c.records go')
+    parser.add_argument('--out', metavar='DIR', required=True, help='where closure.records, team_c.records and pool.records go')
     args = parser.parse_args(argv)
     for path, n in write_all(args.all, args.out):
         print('conformance_records: wrote %s (%d battles)' % (path, n))

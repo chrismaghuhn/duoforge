@@ -95,12 +95,17 @@ target_compile_definitions(duoforge_reference_conformance_pool PRIVATE DF_CONFOR
 duoforge_add_test(NAME duoforge.reference.conformance_team_c_pool SOURCES test_conformance.c WHITEBOX TIMEOUT 60)
 target_compile_definitions(duoforge_reference_conformance_team_c_pool PRIVATE DF_CONFORMANCE_TEAM_C
     DF_CONFORMANCE_POOL)
+# The battles recorded for the pool items (conformance_pool.h, "data": "pool"): under POOL only.
+duoforge_add_test(NAME duoforge.reference.conformance_pool_data SOURCES test_conformance.c WHITEBOX TIMEOUT 60)
+target_compile_definitions(duoforge_reference_conformance_pool_data PRIVATE DF_CONFORMANCE_POOL_DATA)
 # The domain check of the differential runner (tools/difftest/domain.c): the engine's
 # candidates against the choices that the reference accepted, and the controls that
 # make that comparison worth anything (no Python or checkout needed).
 duoforge_add_test(NAME duoforge.reference.runner_domain SOURCES test_runner_domain.c WHITEBOX
     LIBS duoforge_difftest_records TIMEOUT 60)
 duoforge_add_test(NAME duoforge.combat.turn SOURCES test_turn.c WHITEBOX TIMEOUT 120)
+# The item families of decision 0015 (the type booster and the resist berry) against a table of the pinned handlers.
+duoforge_add_test(NAME duoforge.combat.item_family SOURCES test_item_family.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.combat.closure_gate SOURCES test_closure_gate.c WHITEBOX TIMEOUT 600)
 duoforge_add_test(NAME duoforge.combat.team_c_gate SOURCES test_team_c_gate.c WHITEBOX TIMEOUT 600)
 
@@ -283,12 +288,16 @@ if(Python3_Interpreter_FOUND)
     duoforge_add_test(NAME duoforge.reference.runner_records_team_c SOURCES test_runner_records.c WHITEBOX
         LIBS duoforge_difftest_records TIMEOUT 60 ARGS "${_records_dir}/team_c.records")
     target_compile_definitions(duoforge_reference_runner_records_team_c PRIVATE DF_CONFORMANCE_TEAM_C)
+    duoforge_add_test(NAME duoforge.reference.runner_records_pool SOURCES test_runner_records.c WHITEBOX
+        LIBS duoforge_difftest_records TIMEOUT 60 ARGS "${_records_dir}/pool.records")
+    target_compile_definitions(duoforge_reference_runner_records_pool PRIVATE DF_CONFORMANCE_POOL_DATA)
     set_tests_properties(duoforge.reference.runner_records duoforge.reference.runner_records_team_c
-        PROPERTIES FIXTURES_REQUIRED duoforge_conformance_records)
+        duoforge.reference.runner_records_pool PROPERTIES FIXTURES_REQUIRED duoforge_conformance_records)
     if(WIN32)
         # fopen is fine in a test (the MSVC runtime warns, also under Clang).
         target_compile_definitions(duoforge_reference_runner_records PRIVATE _CRT_SECURE_NO_WARNINGS)
         target_compile_definitions(duoforge_reference_runner_records_team_c PRIVATE _CRT_SECURE_NO_WARNINGS)
+        target_compile_definitions(duoforge_reference_runner_records_pool PRIVATE _CRT_SECURE_NO_WARNINGS)
     endif()
     # The runner's --dump-views (the Showdown live adapter's oracle): every closure battle's views
     # at every step, the first ones against the public API (needs DUOFORGE_PYTHON).

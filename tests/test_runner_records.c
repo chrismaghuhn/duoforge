@@ -11,6 +11,9 @@
  *
  * Built with DF_CONFORMANCE_TEAM_C it is duoforge.reference.runner_records_team_c:
  * the same check of team_c.records against tests/reference/conformance_team_c.h.
+ * Built with DF_CONFORMANCE_POOL_DATA it is duoforge.reference.runner_records_pool:
+ * pool.records against tests/reference/conformance_pool.h; the records of a
+ * pool battle name the data kind POOL (it runs under that kind alone).
  *
  * Negative controls: a copy of a parsed battle with one field flipped at a
  * time must be reported by the comparison, or it would pass anything; and
@@ -21,14 +24,26 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef DF_CONFORMANCE_TEAM_C
+#if defined(DF_CONFORMANCE_POOL_DATA)
+#include "reference/conformance_pool.h"
+#define DF_TEST_NAME "duoforge.reference.runner_records_pool"
+#define DF_RECORDS_TEAM_C 1u
+#define DF_RECORDS_KIND DUOFORGE_DATA_KIND_POOL
+#elif defined(DF_CONFORMANCE_TEAM_C)
 #include "reference/conformance_team_c.h"
 #define DF_TEST_NAME "duoforge.reference.runner_records_team_c"
 #define DF_RECORDS_TEAM_C 1u
+#define DF_RECORDS_KIND 0u
 #else
 #include "reference/conformance.h"
 #define DF_TEST_NAME "duoforge.reference.runner_records"
 #define DF_RECORDS_TEAM_C 0u
+#define DF_RECORDS_KIND 0u
+#endif
+#if defined(DF_CONFORMANCE_TEAM_C) || defined(DF_CONFORMANCE_POOL_DATA)
+#define DF_RECORDS_CLOSURE 0
+#else
+#define DF_RECORDS_CLOSURE 1
 #endif
 #include "records.h"
 #include "support/check.h"
@@ -69,8 +84,9 @@ static unsigned compare_battle(const dfr_battle *p, const df_conf_battle *w, uin
     if (p->team_c != DF_RECORDS_TEAM_C) {
         DF_DIFF("  battle %s: team_c %u in a file of the other kind\n", p->name, (unsigned)p->team_c);
     }
-    if (p->strict_kind != 0u) { /* the conformance records keep the replay's fallback */
-        DF_DIFF("  battle %s: strict kind %u, the conformance records have none\n", p->name, (unsigned)p->strict_kind);
+    if (p->strict_kind != DF_RECORDS_KIND) { /* the conformance records keep the replay's fallback; the pool ones name POOL */
+        DF_DIFF("  battle %s: strict kind %u, the records of this file have %u\n", p->name, (unsigned)p->strict_kind,
+                (unsigned)DF_RECORDS_KIND);
     }
     if (p->domain_count != 0u || p->choice_count != 0u) { /* and no domain samples: those are random play's */
         DF_DIFF("  battle %s: %u domain samples, the conformance records have none\n", p->name,
@@ -232,7 +248,7 @@ static void negative_controls(df_test *t, const dfr_battle *b, const df_conf_bat
     }
 }
 
-#ifndef DF_CONFORMANCE_TEAM_C
+#if DF_RECORDS_CLOSURE
 /* ---- the reader refuses what is not the format ---- */
 
 /* The whole file, NUL-terminated. */
@@ -571,7 +587,7 @@ int main(int argc, char **argv)
     DF_CHECK_EQ_U64(&t, tape_base, DF_N_TAPE);
     DF_CHECK_EQ_U64(&t, ev_base, DF_N_EVENTS);
     DF_CHECK(&t, controlled);
-#ifndef DF_CONFORMANCE_TEAM_C
+#if DF_RECORDS_CLOSURE
     char *text = slurp(argv[1]);
     if (DF_CHECK(&t, text != NULL)) {
         const char *end = strstr(text, "\nEND\n");
