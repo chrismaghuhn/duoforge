@@ -407,6 +407,102 @@ class Library(unittest.TestCase):
         self.assertIn(d, dropped)
         self.assertEqual((step['dropped'], len(step['tape']) + step['dropped']), (len(dropped), len(trace['steps'][k]['draws'])))
 
+    def test_heal_block_end_ties_are_kept_when_two_end_lines_show_their_order(self):
+        """Two Heal Blocks of holders of equal Speed that end in the same residual (g8_heal_block_tie_a and _b, the two
+        orders): the tie is a tape entry that states which line comes first (the lower position's: 0), the same
+        for the draw and for the lines. A tie of which fewer than two end (turn 1 of the same battles) is dropped, with the
+        step's log as the precondition; reaching the drop with two end lines, or without a log, is an error; a group of
+        three is refused, and a draw that contradicts the lines is an error and never an entry."""
+        for name in ('g8_heal_block_tie_a', 'g8_heal_block_tie_b'):
+            trace = json.load(open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json')))
+            kept, dropped = [], []
+            for k, step in enumerate(trace['steps']):
+                before = trace['start']['state'] if k == 0 else trace['steps'][k - 1]['state']
+                for d in step['draws']:
+                    if d['site'] != 'SPEED_TIE' or not all(g.startswith('H:healblock:') for g in d.get('group', ['x'])):
+                        continue
+                    entry = trace_to_c.heal_block_end_tie(d, step['log'])
+                    if entry is not None:
+                        kept.append((k, entry, d))
+                        with self.assertRaises(trace_to_c.ConversionError) as ctx:
+                            trace_to_c.drop_reason(d, before, step['state'], step['log'])
+                        self.assertEqual(ctx.exception.rule, 'heal-block-end-tie')
+                    else:
+                        dropped.append(k)
+                        self.assertEqual(trace_to_c.drop_reason(d, before, step['state'], step['log']),
+                                         'residual tie of Heal Block ends of which fewer than two end now')
+                        with self.assertRaises(trace_to_c.ConversionError) as ctx:
+                            trace_to_c.drop_reason(d, before, step['state'])
+                        self.assertEqual(ctx.exception.rule, 'heal-block-tie-log')
+            self.assertEqual(len(kept), 1, name)
+            self.assertEqual(len(dropped), 1, name)
+            k, entry, d = kept[0]
+            lines = [l for l in trace['steps'][k]['log'] if l.startswith('|-end|') and l.endswith('|move: Heal Block')]
+            self.assertEqual(len(lines), 2)
+            lower_first = lines[0].startswith('|-end|p1a')
+            self.assertEqual(entry, (trace_to_c.SITES['SPEED_TIE'], 0, 2, 0 if lower_first else 1), name)
+            # name a: the line of p1a is first, name b: the line of p2a
+            self.assertEqual(lower_first, name.endswith('_a'))
+            # The same draw with the lines in the other order contradicts the draw: an error, no entry.
+            flipped = [lines[1], lines[0]]
+            with self.assertRaises(trace_to_c.ConversionError) as ctx:
+                trace_to_c.heal_block_end_tie(d, flipped)
+            self.assertEqual(ctx.exception.rule, 'heal-block-end-order')
+            # Fewer than two end lines: no order shows, no entry.
+            self.assertIsNone(trace_to_c.heal_block_end_tie(d, lines[:1]))
+            self.assertIsNone(trace_to_c.heal_block_end_tie(d, []))
+            # Three holders in the group with two ending: refused.
+            three = dict(d, group=d['group'] + ['H:healblock:p1b:end'])
+            with self.assertRaises(trace_to_c.ConversionError) as ctx:
+                trace_to_c.heal_block_end_tie(three, trace['steps'][k]['log'])
+            self.assertEqual(ctx.exception.rule, 'heal-block-tie-size')
+            # A tie that is not of Heal Block ends is not this rule's.
+            self.assertIsNone(trace_to_c.heal_block_end_tie(dict(d, group=['H:protect:p1a:end', 'H:stall:p1a:end']),
+                                                            trace['steps'][k]['log']))
+
+    def test_view_extension_rows_are_what_the_protocol_lines_say(self):
+        """Decision 0018 section 6.1 for Throat Chop and Heal Block: a position has the bit from the -start line
+        (`|-start|X|Throat Chop|[silent]`, `|-start|X|move: Heal Block`) until the matching -end line, or until the
+        occupant leaves (`|switch|`, `|drag|`, `|replace|`, `|faint|`). The rows of the C test (view_ext_rows in
+        tests/test_pool_g8.c: the expected view extension after each step of the G8 battles, for both viewers, as
+        masks over side * 2 + slot) must be exactly what these lines give for the committed traces, so the engine's
+        extension is checked against the protocol and not against itself."""
+        names = ('g8_throat_chop', 'g8_heal_block', 'g8_heal_block_pair', 'g8_heal_block_tie_a', 'g8_heal_block_tie_b')
+        source = open(os.path.join(ROOT, 'tests', 'test_pool_g8.c'), encoding='utf-8').read()
+        rows = {}
+        for m in re.finditer(r'\{"(g8_\w+)", (\d+)u, 0x([0-9a-f])u, 0x([0-9a-f])u\}', source):
+            rows[(m.group(1), int(m.group(2)))] = (int(m.group(3), 16), int(m.group(4), 16))
+        derived = {}
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            throat, block = set(), set()
+            for k, step in enumerate(trace['steps']):
+                for line in step['log']:
+                    part = line.split('|')
+                    if len(part) < 3:
+                        continue
+                    if part[1] in ('switch', 'drag', 'faint', 'replace'):
+                        throat.discard(part[2][:3])
+                        block.discard(part[2][:3])
+                    elif part[1] == '-start' and len(part) > 3 and part[3] == 'Throat Chop':
+                        self.assertEqual(part[-1], '[silent]')
+                        throat.add(part[2][:3])
+                    elif part[1] == '-end' and len(part) > 3 and part[3] == 'Throat Chop':
+                        throat.discard(part[2][:3])
+                    elif part[1] == '-start' and len(part) > 3 and part[3] == 'move: Heal Block':
+                        block.add(part[2][:3])
+                    elif part[1] == '-end' and len(part) > 3 and part[3] == 'move: Heal Block':
+                        block.discard(part[2][:3])
+
+                def mask(s):
+                    return sum(1 << ((int(x[1]) - 1) * 2 + 'ab'.index(x[2])) for x in s)
+
+                derived[(name, k)] = (mask(throat), mask(block))
+        self.assertEqual(rows, derived)
+        # The battles do set and clear both: something is shown in each, and every row of the last step is empty.
+        self.assertTrue(any(v[0] for v in derived.values()) and any(v[1] for v in derived.values()))
+
     def test_a_two_turn_lock_lasts_while_twoturnmove_stands(self):
         """Electro Shot's onTryMove removes the move's volatile on the locked turn and the recorder's `locked` is made of
         it, but twoturnmove stays until the residual. In the last step of d02 (Emergency Exit) and d03 (Parting Shot,
@@ -516,7 +612,7 @@ class Library(unittest.TestCase):
         self.assertEqual(extended['ITEM']['CHOPLEBERRY'], 14)
         self.assertEqual(extended['ITEM']['MYSTICWATER'], 6)
         self.assertNotIn('CHILANBERRY', tables(False)['ITEM'])
-        self.assertEqual(len(extended['GENDER_RULE']), 28)  # the pool's formes after step G2
+        self.assertEqual(len(extended['GENDER_RULE']), 346)  # the pool's formes: the whole legal pool (decision 0015 4.2)
 
     def test_the_protocol_names_of_the_formes_with_a_base_species(self):
         """An unnamed Pokemon is called by its base species in the protocol (sim/pokemon.ts:339-341): Indeedee-F,
@@ -527,20 +623,21 @@ class Library(unittest.TestCase):
         lines = [l for step in spec['steps'] for l in step['log']]
         self.assertTrue(any(l.startswith('|switch|p1a: Arcanine|Arcanine-Hisui, L50, M|') for l in lines))
 
-    def test_every_move_marked_by_step_g2_is_used_in_a_pool_battle(self):
-        """A move that the pool manifest marks beyond the extended ids was used in a committed pool battle: a move
-        line of it that did something (damage, a heal or a boost for a status move) before the next move line."""
+    def test_every_move_marked_beyond_the_extended_ids_is_used_in_a_pool_battle(self):
+        """A move that the pool manifest marks beyond the extended ids (twelve of step G2, U-turn of step G5) was used in
+        a committed pool battle: a move line of it that did something (damage, or a boost for a status move) before
+        the next move line."""
         def read(*p):
             return open(os.path.join(ROOT, *p), encoding='utf-8').read()
         header, source = read('src', 'data', 'pool_tables.h'), read('src', 'data', 'pool_tables.c')
         ext_moves = int(re.search(r'#define DFI_EXT_MOVE_COUNT (\d+)u', read('src', 'data', 'extended_tables.h')).group(1))
         array = source[source.index('dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {'):source.index('dfi_pool_items[')]
         names = re.findall(r'^    /\* (.+?) -- data/', array, re.M)
-        ids = {m.group(1): int(m.group(2)) for m in re.finditer(r'#define DFI_MOVE_(\w+) (\d+)u', header)}
+        ids = {m.group(1): int(m.group(2)) for m in re.finditer(r'#define DFI_MOVE_(?!FLAG)(\w+) (\d+)u', header)}
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 16)  # the twelve of step G2, then First Impression, Scald, Recover, Low Kick (G10)
+        self.assertEqual(len(marked), 19)  # G2, G5, G8, then First Impression, Scald, Recover, Low Kick (G10)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -559,6 +656,30 @@ class Library(unittest.TestCase):
                             done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|'))
             with self.subTest(move=name):
                 self.assertTrue(done, '%s is marked but no committed pool battle uses it' % name)
+
+    def test_the_switch_of_a_damaging_pivot_names_its_move(self):
+        """[from] U-turn (step G5) is [from] of the move, as Flip Turn and Parting Shot: the cause MOVE and the move's
+        id (the pool tables have U-turn, the extended tables do not: a bare KeyError there, the converter's way to say
+        that a name is not in the tables); and every pool battle with a [from] U-turn switch line converts."""
+        pool, ext = trace_to_c.load_tables(ROOT, True), trace_to_c.load_tables(ROOT, False)
+        move = pool['MOVE']
+        self.assertEqual(trace_to_c.ev_cause(['[from] U-turn'], pool)[:2], (trace_to_c.CAUSE['MOVE'], move['UTURN']))
+        self.assertEqual(trace_to_c.ev_cause(['[from] Flip Turn'], pool)[:2], (trace_to_c.CAUSE['MOVE'], move['FLIPTURN']))
+        self.assertEqual(trace_to_c.ev_cause(['[from] Parting Shot'], pool)[:2], (trace_to_c.CAUSE['MOVE'], move['PARTINGSHOT']))
+        self.assertNotEqual(move['UTURN'], move['FLIPTURN'])
+        with self.assertRaises(KeyError):
+            trace_to_c.ev_cause(['[from] U-turn'], ext)
+        with self.assertRaises(trace_to_c.ConversionError) as cm:
+            trace_to_c.ev_cause(['[from] Baton Pass'], pool)  # not a move that the converter knows as a cause
+        self.assertEqual(cm.exception.rule, 'from-attribute')
+        names = ('g5_uturn_a', 'g5_uturn_b', 'g5_uturn_c', 'g5_uturn_d', 'g5_uturn_e')
+        seen = {}
+        for n in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', n + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            seen[n] = sum(1 for step in trace['steps'] for l in step['log'] if '[from] U-turn' in l)
+        self.assertEqual(seen['g5_uturn_b'], 0)  # Protect: no pivot
+        self.assertTrue(all(seen[n] > 0 for n in names if n not in ('g5_uturn_b',)), seen)
 
     def test_pass_for_both_slots_converts_per_slot(self):
         """A choice that passes both slots of a switch request: each slot is

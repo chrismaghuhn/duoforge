@@ -72,6 +72,8 @@ duoforge_add_test(NAME duoforge.request.contract SOURCES test_contract.c WHITEBO
 duoforge_add_test(NAME duoforge.request.information SOURCES test_information.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.request.accepts SOURCES test_step_accepts.c TIMEOUT 120)
 duoforge_add_test(NAME duoforge.request.query_checks SOURCES test_query_checks.c WHITEBOX)
+# The POOL player-view extension at tier 0 (decision 0018): layout, constants, the query, all zero.
+duoforge_add_test(NAME duoforge.request.observation_ext SOURCES test_observation_ext.c WHITEBOX)
 duoforge_add_test(NAME duoforge.request.candidates_digest SOURCES test_candidates_digest.c TIMEOUT 120)
 duoforge_add_test(NAME duoforge.batch.equivalence SOURCES test_batch.c LIBS duoforge_batch TIMEOUT 300)
 duoforge_add_test(NAME duoforge.api.reference SOURCES test_reference_api.c)
@@ -122,10 +124,12 @@ duoforge_add_test(NAME duoforge.reference.runner_domain SOURCES test_runner_doma
 duoforge_add_test(NAME duoforge.combat.turn SOURCES test_turn.c WHITEBOX TIMEOUT 120)
 # The item families of decision 0015 (the type booster and the resist berry) against a table of the pinned handlers.
 duoforge_add_test(NAME duoforge.combat.item_family SOURCES test_item_family.c WHITEBOX TIMEOUT 60)
-# The rules that several moves share (step G10): the first-turn moves, power by weight, the move extra column.
-duoforge_add_test(NAME duoforge.combat.move_rules SOURCES test_move_rules.c WHITEBOX TIMEOUT 60)
+# The confusion self-hit and Focus Sash (data/conditions.ts:193-194): a poked state, no pool setup reaches it.
+duoforge_add_test(NAME duoforge.combat.focus_sash_confusion SOURCES test_focus_sash_confusion.c WHITEBOX TIMEOUT 60)
 # The ability families of decision 0015 (the "-ate" and pinch rules) against a table of the pinned handlers.
 duoforge_add_test(NAME duoforge.combat.ability_family SOURCES test_ability_family.c WHITEBOX TIMEOUT 60)
+# The rules that several moves share (step G10): the first-turn moves, power by weight, the thaw and heal columns.
+duoforge_add_test(NAME duoforge.combat.move_rules SOURCES test_move_rules.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.combat.closure_gate SOURCES test_closure_gate.c WHITEBOX TIMEOUT 600)
 duoforge_add_test(NAME duoforge.combat.team_c_gate SOURCES test_team_c_gate.c WHITEBOX TIMEOUT 600)
 
@@ -142,6 +146,8 @@ duoforge_add_test(NAME duoforge.state.pool_setup SOURCES test_pool_setup.c WHITE
 duoforge_add_test(NAME duoforge.data.api SOURCES test_data_api.c WHITEBOX TIMEOUT 120)
 # The POOL state tail (decision 0015 section 7): schema "v3 + pool tail rev 1", present under the POOL kinds only.
 duoforge_add_test(NAME duoforge.state.pool_tail SOURCES test_pool_tail.c WHITEBOX TIMEOUT 120)
+# Step G8: Throat Chop and Psychic Noise's Heal Block in the tail, the request and the POOL view extension.
+duoforge_add_test(NAME duoforge.state.pool_g8 SOURCES test_pool_g8.c WHITEBOX TIMEOUT 60)
 # The generated files must stay exactly what tools/datagen/gen_closure.py
 # wrote; regenerate and update these hashes together.
 foreach(_gen IN ITEMS
@@ -149,8 +155,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=b9c5d65fcd68e63774d8f85a6639c8a675009c52cafb346339c1833c318daa4f"
-        "pool_tables.c=1a6827282f6f135454ffd5d6fd27f76c3e427d590f82507bb8e125fd1522a2da")
+        "pool_tables.h=26de9a28d770bec6c49e9e68a3c36972979fae78e474d6dbeb08e2957305887d"
+        "pool_tables.c=dbcae99910a430e4a0f3fce3bbca0c2614baedf57ceff754ff6628cf5cd6a3b7")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -197,7 +203,7 @@ if(DUOFORGE_PS_REFERENCE_DIR)
         add_test(NAME duoforge.data.pool_families
             COMMAND "${DUOFORGE_NODE}" "${PROJECT_SOURCE_DIR}/tools/datagen/pool_families.js"
                 "${DUOFORGE_PS_REFERENCE_DIR}" "${PROJECT_SOURCE_DIR}")
-        set_tests_properties(duoforge.data.pool_families PROPERTIES TIMEOUT 120 LABELS reference)
+        set_tests_properties(duoforge.data.pool_families PROPERTIES TIMEOUT 600 LABELS reference)
         # Every committed battle trace is reproduced by the pinned Showdown.
         file(GLOB _specs "${CMAKE_CURRENT_SOURCE_DIR}/reference/specs/*.json")
         foreach(_spec IN LISTS _specs)
@@ -261,6 +267,14 @@ if(DUOFORGE_PS_REFERENCE_DIR)
                 "${DUOFORGE_NODE}" "${DUOFORGE_PS_REFERENCE_DIR}" "$<TARGET_FILE:duoforge_diff_runner>"
                 "${CMAKE_CURRENT_BINARY_DIR}/diff_team_smoke")
         set_tests_properties(duoforge.reference.diff_team_smoke PROPERTIES TIMEOUT 600 LABELS reference
+            ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+        # Random play under the POOL data kind (step G5): a team that carries U-turn (an id of the pool tables, which
+        # Team C does not have) plays ten battles that all PASS under POOL, some with [from] U-turn.
+        add_test(NAME duoforge.reference.diff_pool_smoke
+            COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_diff_pool_smoke.py"
+                "${DUOFORGE_NODE}" "${DUOFORGE_PS_REFERENCE_DIR}" "$<TARGET_FILE:duoforge_diff_runner>"
+                "${CMAKE_CURRENT_BINARY_DIR}/diff_pool_smoke")
+        set_tests_properties(duoforge.reference.diff_pool_smoke PROPERTIES TIMEOUT 600 LABELS reference
             ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
         # The paste importer (data/teams) with the pinned pokedex: the facts it reads, the owner's raw pastes of
         # decision 0004, the registry as a fixed point of the importer, and the command line end to end.
@@ -399,6 +413,13 @@ if(Python3_Interpreter_FOUND)
     add_test(NAME duoforge.data.pool_names
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/test_pool_names.py")
     set_tests_properties(duoforge.data.pool_names PROPERTIES TIMEOUT 60
+        ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+    # The whole-pool rows (decision 0015 section 4.2) against the committed output of the pinned validator, with code
+    # of its own: the ids, the formes and their Mega links, the learnable moves and legal abilities, the move rows and
+    # the UNMODELED markers (no checkout needed).
+    add_test(NAME duoforge.data.pool_rows
+        COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/test_pool_rows.py")
+    set_tests_properties(duoforge.data.pool_rows PROPERTIES TIMEOUT 60
         ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
 endif()
 

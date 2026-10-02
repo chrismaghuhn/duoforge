@@ -3,7 +3,7 @@
 /*
  * Rules that several moves share, read by the turn code and by the request
  * (step G10 of the content expansion). They decide from the handler id of the
- * move (the special column) or from the move extra column of the pool
+ * move (the special column) or from the flags2 and heal columns of the pool
  * tables; no move is named here.
  */
 #include <stdbool.h>

@@ -75,7 +75,8 @@ CONFUSION_TURNS_MAX = 5
 CHARGE_TURNS_MAX = 2
 MOVE_SLOT_STRUGGLE = 4
 SWITCH_NONE, SWITCH_MOVE, SWITCH_EMERGENCY_EXIT, SWITCH_FAINTED = 0, 1, 2, 3
-SWITCH_FLIP_TURN = 4  # TEAM_C kinds only (decision 0009)
+SWITCH_FLIP_TURN = 4  # TEAM_C and POOL kinds (decision 0009)
+SWITCH_UTURN = 5  # POOL kinds only: U-turn's flag, a damaging pivot that names its move (step G5)
 VOL_CHOICE_LOCK = 64  # TEAM_C kinds only: Choice Scarf's lock, its move in locked_move
 VOL_FOLLOW_ME = 8  # TEAM_C kinds only: Follow Me's volatile, until the residual
 VOL_HELPING_HAND = 16  # TEAM_C kinds only: Helping Hand's volatile, until the residual
@@ -200,7 +201,7 @@ KIND_TEAM_C, KIND_TEAM_C_DEV = 4, 5
 
 class TeamCContext(ClosureContext):
     def __init__(self, data_kind, max_roster, brought_count):
-        Context.__init__(self, data_kind, max_roster, brought_count, 28, 72, b'')
+        Context.__init__(self, data_kind, max_roster, brought_count, 346, 511, b'')
 
     def valid(self):
         if self.data_kind == KIND_TEAM_C and (self.max_roster != MAX_ROSTER or self.brought_count != 4):
@@ -221,17 +222,18 @@ KC = TeamCContext(KIND_TEAM_C, 6, 4)
 KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 
 # POOL contexts (decision 0015 section 2): the pool tables (the extended tables
-# followed by the rows of the expansion steps: 28 formes and 72 moves after step
-# G2) and their hash, which tests/test_pool_tables.c recomputes from the pool
-# canonical bytes: the closure layout over the pool data, then the family
-# columns, then the moves and abilities that each forme may have.
-POOL_TABLE_HASH = bytes.fromhex('1431ebe9d54f4340cb1ac4339324e4df8b2ba9324112c9752986c8d650263e07')
+# followed by the rows of the expansion steps and then every other forme, move,
+# item and ability of the legal pool: 346 formes and 511 moves) and their hash,
+# which tests/test_pool_tables.c recomputes from the pool canonical bytes: the
+# pool layout over the pool data, then the family columns, the handler columns
+# and the moves and abilities that each forme may have.
+POOL_TABLE_HASH = bytes.fromhex('f603a6b137895a2af23cd39a83d62900398877c464aab965346dcc80287cc840')
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 
 class PoolContext(ClosureContext):
     def __init__(self, data_kind, max_roster, brought_count):
-        Context.__init__(self, data_kind, max_roster, brought_count, 28, 72, b'')
+        Context.__init__(self, data_kind, max_roster, brought_count, 346, 511, b'')
 
     def valid(self):
         if self.data_kind == KIND_POOL and (self.max_roster != MAX_ROSTER or self.brought_count != 4):
@@ -648,7 +650,8 @@ def check_side(ctx, st, s):
             mem = sd['members'][p['occ']]
             team_c_mask = (VOL_FLAGS_MAX | VOL_FOLLOW_ME | VOL_HELPING_HAND | VOL_UNBURDEN | VOL_CHOICE_LOCK |
                            VOL_NEWLY_SWITCHED)
-            if not volatile_valid(p, mem['move_count'], SWITCH_FLIP_TURN if team_c else None,
+            switch_max = SWITCH_UTURN if ctx.data_kind in (KIND_POOL, KIND_POOL_DEV) else SWITCH_FLIP_TURN if team_c else None
+            if not volatile_valid(p, mem['move_count'], switch_max,
                                   team_c_mask if team_c else None):
                 return 'VOLATILE'
             if p['flags'] & VOL_CHOICE_LOCK and (mem['item'] != ITEM_CHOICE_SCARF or mem['item_consumed']):

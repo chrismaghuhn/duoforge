@@ -98,15 +98,15 @@ static uint32_t dfi_fainted_members(const struct duoforge_battle *b, uint32_t si
     return n;
 }
 
-static const dfi_forme_data *dfi_forme_of(const dfi_member *m)
+static const dfi_pool_forme_data *dfi_forme_of(const dfi_member *m)
 {
-    const dfi_forme_data *base = &dfi_pool_formes[m->species_id];
+    const dfi_pool_forme_data *base = &dfi_pool_formes[m->species_id];
     return m->is_mega != 0u ? &dfi_pool_formes[base->mega_forme] : base;
 }
 
 static bool dfi_has_type(const dfi_member *m, uint32_t type)
 {
-    const dfi_forme_data *f = dfi_forme_of(m);
+    const dfi_pool_forme_data *f = dfi_forme_of(m);
     return f->types[0] == type || f->types[1] == type;
 }
 
@@ -725,7 +725,7 @@ static bool dfi_type_immune(const dfi_member *target, uint32_t move_type)
     if (move_type >= DFI_TYPE_COUNT) {
         return false;
     }
-    const dfi_forme_data *f = dfi_forme_of(target);
+    const dfi_pool_forme_data *f = dfi_forme_of(target);
     for (uint32_t i = 0u; i < 2u; ++i) {
         const uint32_t t = f->types[i];
         if (t < DFI_TYPE_COUNT && dfi_closure_type_chart[t][move_type] == DFI_EFFECT_IMMUNE) {
@@ -743,7 +743,7 @@ static uint32_t dfi_type_mod(const dfi_member *target, uint32_t move_type)
     if (move_type >= DFI_TYPE_COUNT) {
         return mod;
     }
-    const dfi_forme_data *f = dfi_forme_of(target);
+    const dfi_pool_forme_data *f = dfi_forme_of(target);
     for (uint32_t i = 0u; i < 2u; ++i) {
         const uint32_t t = f->types[i];
         if (t >= DFI_TYPE_COUNT) {
@@ -1339,11 +1339,50 @@ static bool dfi_herbs_matter(dfi_run *r)
 
 /* heal(): at least 1, nothing at full HP, not above the maximum
  * ([-heal] with its cause). */
+/* Heal Block (POOL kinds; the tail is zero elsewhere): onTryHeal returns false for every heal of the holder, and
+ * Sitrus Berry's onTryEatItem asks the same event, so the berry is not eaten (data/moves.ts:8273-8347 healblock
+ * onTryHeal, data/items.ts:5757-5759, sim/pokemon.ts:1779-1782). */
+static bool dfi_heal_blocked(const struct duoforge_battle *b, uint32_t flat)
+{
+    return b->tail.sides[flat / 2u].positions[flat % 2u].heal_block_turns != 0u;
+}
+
+/* Psychic Noise's Heal Block lasts 2 turns (durationCallback, data/moves.ts:8286-8289); Throat Chop's condition has
+ * duration 2 (data/moves.ts:19391-19393, DFI_TAIL_THROAT_CHOP_MAX). */
+#define DFI_HEAL_BLOCK_PSYCHIC_NOISE_TURNS 2u
+
+/* addVolatile('throatchop') on a standing target without it: no onRestart, so a second hit changes nothing; its
+ * -start line is [silent]. */
+static void dfi_add_lockout(dfi_run *r, uint32_t flat)
+{
+    const dfi_member *m = dfi_at(r->b, flat);
+    dfi_tail_pos *tail = &r->b->tail.sides[flat / 2u].positions[flat % 2u];
+    if (m == NULL || m->hp == 0u || tail->throat_chop_turns != 0u) {
+        return;
+    }
+    tail->throat_chop_turns = (uint8_t)DFI_TAIL_THROAT_CHOP_MAX;
+}
+
+/* addVolatile('healblock') from Psychic Noise on a standing target: -start|X|move: Heal Block. A target that has
+ * it keeps it (onRestart returns at once for Psychic Noise: no refresh, no line). */
+static void dfi_add_heal_block(dfi_run *r, uint32_t flat)
+{
+    const dfi_member *m = dfi_at(r->b, flat);
+    dfi_tail_pos *tail = &r->b->tail.sides[flat / 2u].positions[flat % 2u];
+    if (m == NULL || m->hp == 0u || tail->heal_block_turns != 0u) {
+        return;
+    }
+    tail->heal_block_turns = (uint8_t)DFI_HEAL_BLOCK_PSYCHIC_NOISE_TURNS;
+    duoforge_event e = dfi_event_make(DUOFORGE_EVENT_VOLATILE_START, flat);
+    e.detail = (uint8_t)DUOFORGE_VOLATILE_HEAL_BLOCK;
+    dfi_emit(r, &e);
+}
+
 static void dfi_heal(dfi_run *r, uint32_t flat, uint32_t amount, uint32_t cause, uint32_t id2, uint32_t other)
 {
     struct duoforge_battle *b = r->b;
     dfi_member *m = dfi_at(b, flat);
-    if (m == NULL || m->hp == 0u || m->hp >= m->hp_max) {
+    if (m == NULL || m->hp == 0u || m->hp >= m->hp_max || dfi_heal_blocked(b, flat)) {
         return;
     }
     const uint32_t hp = (uint32_t)m->hp + (amount == 0u ? 1u : amount);
@@ -1440,7 +1479,8 @@ static duoforge_status dfi_update(dfi_run *r)
     for (uint32_t i = 0u; i < n; ++i) {
         const uint32_t flat = list[i];
         const dfi_member *m = dfi_at(r->b, flat);
-        if (m->hp != 0u && dfi_holds(m, DFI_ITEM_SITRUSBERRY) && (uint32_t)m->hp * 2u <= m->hp_max) {
+        if (m->hp != 0u && dfi_holds(m, DFI_ITEM_SITRUSBERRY) && (uint32_t)m->hp * 2u <= m->hp_max &&
+            !dfi_heal_blocked(r->b, flat)) {
             dfi_use_item(r, flat);
             dfi_heal(r, flat, (uint32_t)m->hp_max / 4u, DUOFORGE_CAUSE_ITEM, 1u + DFI_ITEM_SITRUSBERRY,
                      DUOFORGE_NO_POSITION);
@@ -1498,6 +1538,7 @@ static void dfi_process_faints(dfi_run *r)
         if (i >= r->faint_announced) {
             dfi_emit_plain(r, DUOFORGE_EVENT_FAINT, flat); /* [faint] */
         }
+        dfi_tail_clear_occupant(b, flat); /* the POOL tail ends with the volatiles (decision 0015 section 7) */
         dfi_clear_volatile(dfi_pos(b, flat));
         /* clearVolatile ends with setSpecies, which sets pokemon.speed to the
          * raw Speed stat (sim/pokemon.ts:1418); a fainted Pokemon is not
@@ -1562,7 +1603,7 @@ static bool dfi_faint_shown(const dfi_run *r, uint32_t flat)
  * ends the event (data/conditions.ts, data/mods/champions/conditions.ts).
  * A frozen user of a defrost move (Flare Blitz, Team C) skips the freeze
  * check: no draw, no counter (data/mods/champions/conditions.ts:47). */
-static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, const dfi_move_data *md, bool *can)
+static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, uint32_t move_id, const dfi_move_data *md, bool *can)
 {
     dfi_member *m = dfi_at(r->b, user);
     dfi_active_slot *pos = dfi_pos(r->b, user);
@@ -1597,6 +1638,25 @@ static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, const dfi_move
         dfi_emit(r, &e); /* [cant] flinch */
         return DUOFORGE_OK;
     }
+    /* Throat Chop and Heal Block, both onBeforeMovePriority 6: between the flinch and the confusion (data/moves.ts:
+     * 19410-19422, 8307-8313). A sound move (Throat Chop) or a move that heals (Heal Block) shows cant and uses no PP;
+     * Struggle has neither flag. No move of the pool is both. */
+    {
+        const dfi_tail_pos *tail = &r->b->tail.sides[user / 2u].positions[user % 2u];
+        const uint32_t flags2 = move_id == DFI_MOVE_STRUGGLE ? 0u : dfi_pool_move_flags2[move_id];
+        if (tail->throat_chop_turns != 0u && (flags2 & DFI_MOVE_FLAG2_SOUND) != 0u) {
+            const duoforge_event e = dfi_ev(DUOFORGE_EVENT_CANT, user, DUOFORGE_CAUSE_MOVE, DFI_MOVE_THROATCHOP,
+                                            DUOFORGE_NO_POSITION);
+            dfi_emit(r, &e); /* [cant] move: Throat Chop */
+            return DUOFORGE_OK;
+        }
+        if (tail->heal_block_turns != 0u && (flags2 & DFI_MOVE_FLAG2_HEAL) != 0u) {
+            duoforge_event e = dfi_ev(DUOFORGE_EVENT_CANT, user, DUOFORGE_CAUSE_HEAL_BLOCK, 0u, DUOFORGE_NO_POSITION);
+            e.id = (uint16_t)move_id;
+            dfi_emit(r, &e); /* [cant] move: Heal Block|move */
+            return DUOFORGE_OK;
+        }
+    }
     if (pos->confusion_turns != 0u) {
         pos->confusion_turns = (uint8_t)((uint32_t)pos->confusion_turns - 1u); /* wide-operands-reviewed */
         if (pos->confusion_turns == 0u) {
@@ -1613,6 +1673,13 @@ static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, const dfi_move
                 st = dfi_confusion_damage(r, user, &damage);
                 if (st != DUOFORGE_OK) {
                     return st;
+                }
+                /* The confusion hit is damage with a Move effect
+                 * (data/conditions.ts:193-194): a Focus Sash holder at full
+                 * HP that it would faint uses the item and keeps 1 HP. */
+                if (dfi_focus_sash_saves(m, damage)) {
+                    dfi_use_item(r, user);
+                    damage = (uint32_t)m->hp - 1u;
                 }
                 return dfi_deal(r, user, damage, DUOFORGE_CAUSE_CONFUSION, 0u, DUOFORGE_NO_POSITION);
             }
@@ -1763,23 +1830,23 @@ static duoforge_status dfi_run_follow_me(dfi_run *r, uint32_t user)
 }
 
 /* A move that heals its user by a fraction of the maximum HP (Recover: heal:
- * [1, 2], data/moves.ts:14806-14820; the fraction is the move extra column).
+ * [1, 2], data/moves.ts:14806-14820; the fraction is the heal column dfi_pool_move_heal).
  * runMoveEffects (sim/battle-actions.ts:1201-1222): at full HP [-fail|user|heal]
  * with [still] (the event is a plain FAIL), otherwise Battle.heal of
  * Math.round(baseMaxhp * a / b), at least 1, shown as a plain [-heal]. The
  * heal goes through dfi_heal, the one place that every kind of healing (items,
- * drain, this move) passes, so that a rule which blocks healing (Heal Block, a
- * later step) hooks in there; this function then follows its answer. */
+ * drain, this move) passes, where Heal Block refuses it (dfi_heal_blocked). A
+ * blocked user never gets here: its heal moves are disabled in the request and
+ * stopped before the move (the heal flag, flags2 bit 2: [cant] Heal Block). */
 static duoforge_status dfi_run_heal_move(dfi_run *r, uint32_t user, uint32_t move_id)
 {
     dfi_member *m = dfi_at(r->b, user);
-    const dfi_move_extra *extra = &dfi_pool_move_extra[move_id];
     if (m->hp >= m->hp_max) {
         dfi_fail_still(r, user);
         return DUOFORGE_OK;
     }
-    const uint32_t num = extra->heal[0];
-    const uint32_t den = extra->heal[1];
+    const uint32_t num = dfi_pool_move_heal[move_id][0];
+    const uint32_t den = dfi_pool_move_heal[move_id][1];
     uint32_t amount = ((uint32_t)m->hp_max * num * 2u + den) / (2u * den); /* Math.round(hp_max * num / den) */
     amount = amount < 1u ? 1u : amount;
     dfi_heal(r, user, amount, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
@@ -1841,7 +1908,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
      * onMoveAborted). */
     const bool locked = pos->charge_turns != 0u;
     bool can = false;
-    st = dfi_before_move(r, user, md, &can);
+    st = dfi_before_move(r, user, move_id, md, &can);
     if (st != DUOFORGE_OK) {
         return st;
     }
@@ -2099,7 +2166,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         return DUOFORGE_OK;
     }
     if (status_move && md->primary_status == DFI_STATUS_NONE && md->special != DFI_SPECIAL_PARTING_SHOT) {
-        if (dfi_pool_move_extra[move_id].heal[1] != 0u) {
+        if (dfi_pool_move_heal[move_id][1] != 0u) {
             return dfi_run_heal_move(r, user, move_id);
         }
         if (md->boost_role != DFI_BOOST_ROLE_PRIMARY_SELF || md->target_class != DUOFORGE_TARGET_CLASS_SELF) {
@@ -2336,6 +2403,18 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         if (hit[i]) {
             const uint32_t before = dfi_at(b, targets[i])->hp;
             hp_before[i] = before;
+            /* Focus Sash (combat/item_family.h): a move hit that would take
+             * all of a full-HP holder's HP uses the item up ([-enditem],
+             * before the [-damage] line) and leaves 1 HP. Each target decides
+             * for itself. Only the damage of a Move comes here (and the
+             * confusion hit, below): recoil, Life Orb, Rocky Helmet, weather
+             * and status damage are not Move effects and go through dfi_deal
+             * on their own. */
+            const dfi_member *tm = dfi_at(b, targets[i]);
+            if (dfi_focus_sash_saves(tm, damage[i])) {
+                dfi_use_item(r, targets[i]);
+                damage[i] = (uint32_t)tm->hp - 1u;
+            }
             st = dfi_deal(r, targets[i], damage[i], DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
             if (st != DUOFORGE_OK) {
                 return st;
@@ -2348,20 +2427,28 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             }
         }
     }
-    /* selfSwitch of a damaging move (Flip Turn, Team C, the only one in the
-     * data): runMoveEffects flags the user when the move hit a target and the
+    /* selfSwitch of a damaging move (Flip Turn, U-turn): runMoveEffects
+     * flags the user with the move's id when the move hit a target and the
      * user still stands; with no reserve the request would clear it again
      * (sim/battle-actions.ts:1290-1312), so the engine sets it only when a
-     * reserve can come in, as for Parting Shot. A user that a Rocky Helmet
-     * then knocks out loses it again (faint(), sim/pokemon.ts:1585): here
-     * with the position's other state when the faint is processed. */
+     * reserve can come in, as for Parting Shot. The flag is the move's own
+     * (dfi_pivot_moves), so that the switch is named for the move that made
+     * it ([from] U-turn, not [from] Flip Turn). A self-switch move that has
+     * no flag is refused here, never made to pivot as another one. A user
+     * that a Rocky Helmet then knocks out loses it again (faint(),
+     * sim/pokemon.ts:1585): here with the position's other state when the
+     * faint is processed. */
     if ((md->flags & DFI_MOVE_FLAG_SELF_SWITCH) != 0u) {
+        const dfi_pivot_move *pivot = dfi_pivot_of_move(move_id);
+        if (pivot == NULL) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
         bool hit_any = false;
         for (uint32_t i = 0u; i < count; ++i) {
             hit_any = hit_any || hit[i];
         }
         if (hit_any && m->hp != 0u && dfi_can_switch(b, side)) {
-            pos->switch_flag = (uint8_t)DFI_SWITCH_FLIP_TURN;
+            pos->switch_flag = pivot->flag;
         }
     }
     /* selfDrops: once, after the first target that was hit, a roll of
@@ -2402,6 +2489,10 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                 st = dfi_try_status(r, targets[i], md->sec_param, user, move_id, false);
             } else if (md->sec_kind == DFI_SECONDARY_VOLATILE) {
                 st = dfi_add_volatile(r, targets[i], md->sec_param);
+            } else if (md->sec_kind == DFI_SECONDARY_LOCKOUT) {
+                dfi_add_lockout(r, targets[i]); /* Throat Chop (POOL data) */
+            } else if (md->sec_kind == DFI_SECONDARY_HEAL_BLOCK) {
+                dfi_add_heal_block(r, targets[i]); /* Psychic Noise (POOL data) */
             } else if (md->sec_kind == DFI_SECONDARY_STATUS_PICK) {
                 /* Dire Claw (Team C, data/mods/champions/moves.ts:217-227):
                  * sample(['psn', 'par', 'slp']), then trySetStatus without a
@@ -2491,6 +2582,14 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         } else if (md->recoil[1] != 0u && total != 0u) {
             recoil = (total * md->recoil[0] * 2u + md->recoil[1]) / (2u * md->recoil[1]);
             recoil = recoil < 1u ? 1u : recoil;
+            /* Rock Head (data/abilities.ts rockhead, onDamage): the damage of
+             * a recoil move's recoil is cancelled, with no line. Struggle's
+             * recoil (the branch above) is directDamage and never reaches
+             * the handler. The Emergency Exit check that follows sees no
+             * change of HP. */
+            if (dfi_ability(m, DFI_ABILITY_ROCKHEAD)) {
+                recoil = 0u;
+            }
         }
         if (recoil != 0u) {
             const uint32_t user_before = m->hp;
@@ -2509,7 +2608,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
          * Update (frz.onAfterMoveSecondary, data/conditions.ts:112-116, run by
          * afterMoveSecondaryEvent, data/mods/champions/scripts.ts:574-576),
          * before the targets' Emergency Exit. */
-        if ((dfi_pool_move_extra[move_id].flags & DFI_EXTRA_THAWS_TARGET) != 0u) {
+        if ((dfi_pool_move_flags2[move_id] & DFI_MOVE_FLAG2_THAWS_TARGET) != 0u) {
             for (uint32_t i = 0u; i < count; ++i) {
                 dfi_member *tm = dfi_at(b, targets[i]);
                 if (hit[i] && tm->hp != 0u && tm->status == DFI_STATUS_FRZ) {
@@ -2633,7 +2732,8 @@ static duoforge_status dfi_run_switch(dfi_run *r, const dfi_queue_record *q)
     const dfi_member *leaving = dfi_at(b, side * 2u + slot);
     const uint32_t flag = sd->positions[slot].switch_flag;
     const bool parting_shot = leaving != NULL && leaving->hp != 0u && flag == DFI_SWITCH_MOVE;
-    const bool flip_turn = leaving != NULL && leaving->hp != 0u && flag == DFI_SWITCH_FLIP_TURN;
+    /* A damaging pivot move's flag names the move that pivots. */
+    const dfi_pivot_move *pivot = leaving != NULL && leaving->hp != 0u ? dfi_pivot_of_flag(flag) : NULL;
     if (leaving != NULL && leaving->hp != 0u && sd->positions[slot].switch_flag == 0u) {
         const duoforge_status us = dfi_update(r); /* BeforeSwitchOut, then Update (sim/battle-actions.ts:80-84) */
         if (us != DUOFORGE_OK) {
@@ -2661,12 +2761,12 @@ static duoforge_status dfi_run_switch(dfi_run *r, const dfi_queue_record *q)
     dfi_active_slot *entered = dfi_pos(b, side * 2u + slot);
     const uint32_t newly = dfi_kind_limits_of(r->ctx->data_kind).vol_flags_mask & DFI_VOL_NEWLY_SWITCHED;
     entered->flags = (uint8_t)((uint32_t)entered->flags | newly); /* wide-operands-reviewed: < 256 */
-    /* [switch], with [from] Parting Shot or Flip Turn when the move made it */
+    /* [switch], with [from] and the move (Parting Shot, Flip Turn, U-turn) when the move made it */
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_SWITCH, side * 2u + slot);
     e.id = (uint16_t)reserve;
-    if (parting_shot || flip_turn) {
+    if (parting_shot || pivot != NULL) {
         e.cause = (uint8_t)DUOFORGE_CAUSE_MOVE;
-        e.id2 = (uint16_t)(parting_shot ? DFI_MOVE_PARTINGSHOT : DFI_MOVE_FLIPTURN); /* wide-operands-reviewed: < 50 */
+        e.id2 = (uint16_t)(parting_shot ? DFI_MOVE_PARTINGSHOT : pivot->move); /* wide-operands-reviewed: a move id of the pool tables, a u16 */
     }
     dfi_emit_hp(r, e);
     return dfi_insert_run_switch(r, side, slot, binding.activation_id);
@@ -3181,7 +3281,7 @@ static duoforge_status dfi_residual_events(dfi_run *r)
         if (e->kind == DFI_RES_GRASSY) {
             /* heal(baseMaxhp / 16): at least 1, not above the maximum, not
              * for a Pokemon that is not grounded or at full HP. */
-            if (dfi_grounded(m) && m->hp < m->hp_max) {
+            if (dfi_grounded(m) && m->hp < m->hp_max && !dfi_heal_blocked(b, e->flat)) {
                 uint32_t heal = (uint32_t)m->hp_max / 16u;
                 heal = heal == 0u ? 1u : heal;
                 const uint32_t hp = (uint32_t)m->hp + heal;
@@ -3205,6 +3305,70 @@ static duoforge_status dfi_residual_events(dfi_run *r)
         dfi_process_faints(r);
         if (r->ended) {
             return DUOFORGE_OK;
+        }
+    }
+    /* Heal Block (order 20) and Throat Chop (order 22), duration handlers of a position's volatile (POOL tail): the
+     * count goes down; at 0 Heal Block shows its end line (-end|X|move: Heal Block) and Throat Chop's is [silent].
+     * Two Heal Blocks that end now come in the speed order of their holders; at equal speed the reference shuffles
+     * and draws, and the order shows in the two -end lines, so the converter keeps that tie (heal_block_end_tie)
+     * and the engine draws it (below). */
+    {
+        uint32_t ending[DFI_POSITIONS] = {0u, 0u, 0u, 0u};
+        uint32_t ne = 0u;
+        for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
+            dfi_tail_pos *tail = &b->tail.sides[flat / 2u].positions[flat % 2u];
+            if (tail->heal_block_turns != 0u) {
+                tail->heal_block_turns = (uint8_t)((uint32_t)tail->heal_block_turns - 1u); /* wide-operands-reviewed */
+                if (tail->heal_block_turns == 0u) {
+                    ending[ne] = flat;
+                    ne += 1u;
+                }
+            }
+        }
+        for (uint32_t i = 1u; i < ne; ++i) {
+            for (uint32_t j = i; j > 0u && r->speed_seen[ending[j]] > r->speed_seen[ending[j - 1u]]; --j) {
+                const uint32_t swap = ending[j];
+                ending[j] = ending[j - 1u];
+                ending[j - 1u] = swap;
+            }
+        }
+        /* Holders of equal Speed: the reference's speedSort shuffles each such run (PRNG.shuffle, one draw
+         * random(start, start + 2) for a pair), and the two -end lines show the outcome, so the engine draws the
+         * SPEED_TIE in the same place (after the callbacks of the sort, before the side conditions) and orders the
+         * pair by it: 0 keeps the lower position first, 1 swaps. A run of three or four needs the longer shuffle,
+         * which no battle has needed: E_UNSUPPORTED, as before. */
+        for (uint32_t i = 0u; i < ne;) {
+            uint32_t j = i + 1u;
+            while (j < ne && r->speed_seen[ending[j]] == r->speed_seen[ending[i]]) {
+                ++j;
+            }
+            if (j - i > 2u) {
+                return DUOFORGE_E_UNSUPPORTED;
+            }
+            if (j - i == 2u) {
+                uint32_t v = 0u;
+                st = dfi_draw(r->draws, DFI_SITE_SPEED_TIE, 0u, 2u, &v);
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
+                if (v == 1u) {
+                    const uint32_t swap = ending[i];
+                    ending[i] = ending[i + 1u];
+                    ending[i + 1u] = swap;
+                }
+            }
+            i = j;
+        }
+        for (uint32_t i = 0u; i < ne; ++i) {
+            duoforge_event e = dfi_event_make(DUOFORGE_EVENT_VOLATILE_END, ending[i]);
+            e.detail = (uint8_t)DUOFORGE_VOLATILE_HEAL_BLOCK;
+            dfi_emit(r, &e);
+        }
+        for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
+            dfi_tail_pos *tail = &b->tail.sides[flat / 2u].positions[flat % 2u];
+            if (tail->throat_chop_turns != 0u) {
+                tail->throat_chop_turns = (uint8_t)((uint32_t)tail->throat_chop_turns - 1u); /* wide-operands-reviewed */
+            }
         }
     }
     /* The duration handlers in their order: the side conditions (26), Trick

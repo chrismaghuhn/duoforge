@@ -306,7 +306,7 @@ function setterEffect(ability, speciesId, itemId) {
 }
 
 // ----------------------------------------------------------------- the check
-function checkItems(dex, rows) {
+function checkItems(dex, rows, unmodeled) {
     const counts = {};
     for (const row of rows) {
         const item = dex.items.get(row.id);
@@ -321,11 +321,21 @@ function checkItems(dex, rows) {
         counts[row.family] = (counts[row.family] || 0) + 1;
         if (row.family === 'NONE') {
             expect(row.id + ' parameter', row.param, 'DFI_FAMILY_PARAM_NONE');
-            if (typeof item.onBasePower === 'function') {
-                expect(row.id + ' (no family) type booster probe', boostedTypes(item).fired, []);
-            }
-            if (typeof item.onSourceModifyDamage === 'function') {
-                expect(row.id + ' (no family) resist berry probe', resistedTypes(item, 1), []);
+            // A modelled row without a family must not behave like a member: a type booster has exactly one boosted
+            // type, a resist berry exactly one resisted type. An UNMODELED row is refused whatever it does (Muscle Band
+            // boosts every Physical move, Occa-like berries of other families are not in the pool).
+            if (!unmodeled.has(row.id)) {
+                if (typeof item.onBasePower === 'function') {
+                    expect(row.id + ' (no family) type booster probe', boostedTypes(item).fired, []);
+                }
+                if (typeof item.onSourceModifyDamage === 'function') {
+                    expect(row.id + ' (no family) resist berry probe', resistedTypes(item, 1), []);
+                }
+            } else if (typeof item.onBasePower === 'function') {
+                const probe = boostedTypes(item);
+                if (probe.fired.length === 1 && probe.modifiers.length === 1 && probe.modifiers[0] === JSON.stringify([4915, 4096])) {
+                    bad(row.id + ' behaves like a type booster of ' + probe.fired[0] + ' but is no family member');
+                }
             }
             continue;
         }
@@ -350,6 +360,47 @@ function checkItems(dex, rows) {
         }
     }
     return counts;
+}
+
+// Focus Sash (no family column; the engine names it): its onDamage is called with the effect of each kind of
+// damage the engine deals. Only an effect whose effectType is 'Move' (a move's hit and the confusion self-hit,
+// which the source passes as { id: 'confused', effectType: 'Move' }) uses the sash, at full HP and a lethal hit.
+function checkFocusSash(dex, root) {
+    const sash = dex.items.get('focussash');
+    if (!sash.exists) {
+        bad('item focussash does not exist');
+        return;
+    }
+    const fire = (effect, hp, maxhp, damage) => {
+        let used = false;
+        const target = {hp, maxhp, useItem() { used = true; return true; }};
+        const result = call(sash.onDamage, battle(sash), [damage, target, {}, effect]);
+        return {result, used};
+    };
+    const move = {effectType: 'Move'};
+    expect('focussash lethal move hit at full HP', fire(move, 100, 100, 100), {result: 99, used: true});
+    expect('focussash larger hit', fire(move, 100, 100, 900), {result: 99, used: true});
+    expect('focussash smaller hit', fire(move, 100, 100, 99), {result: undefined, used: false});
+    expect('focussash below full HP', fire(move, 99, 100, 900), {result: undefined, used: false});
+    expect('focussash onDamagePriority', sash.onDamagePriority, -40);
+    // The effect types of the other damage the engine deals, as the dex builds them.
+    const types = {
+        recoil: dex.conditions.getByID('recoil').effectType, drain: dex.conditions.getByID('drain').effectType,
+        lifeorb: dex.items.get('lifeorb').effectType, rockyhelmet: dex.items.get('rockyhelmet').effectType,
+        brn: dex.conditions.get('brn').effectType, psn: dex.conditions.get('psn').effectType,
+        sandstorm: dex.conditions.get('sandstorm').effectType,
+    };
+    expect('effect types of the damage that is no Move', types,
+        {recoil: 'Condition', drain: 'Condition', lifeorb: 'Item', rockyhelmet: 'Item', brn: 'Status', psn: 'Status',
+            sandstorm: 'Weather'});
+    for (const name of Object.keys(types)) {
+        expect('focussash ignores ' + name, fire({effectType: types[name]}, 100, 100, 900), {result: undefined, used: false});
+    }
+    // The confusion self-hit is a Move effect: the source says so (data/conditions.ts, confusion onBeforeMove).
+    const source = readText(path.join(root, 'data', 'conditions.ts'));
+    if (!/const activeMove = \{ id: this\.toID\('confused'\), effectType: 'Move', type: '\?\?\?' \};\s+this\.damage\(damage, pokemon, pokemon, activeMove as ActiveMove\);/.test(source)) {
+        bad('the confusion self-hit is no longer damage with a Move effect in data/conditions.ts');
+    }
 }
 
 // The four moves of step G10 against the pinned data: Low Kick's weight table is Grass Knot's (the engine shares
@@ -378,9 +429,21 @@ function checkG10Moves(dex) {
     expect('scald thawsTarget and defrost', [scald.thawsTarget, scald.flags.defrost], [true, 1]);
     expect('scald secondary', [scald.secondary.chance, scald.secondary.status], [30, 'brn']);
     expect('recover heal', move('recover').heal, [1, 2]);
+    // The columns of the whole pool read every move: the moves with a heal field and with thawsTarget in the pin.
+    const heals = [];
+    const thaws = [];
+    for (const m of dex.moves.all()) {
+        if (m.isNonstandard === 'Future' || m.isNonstandard === 'Unobtainable' || m.isNonstandard === 'CAP') continue;
+        if (m.heal) heals.push([m.id, m.heal]);
+        if (m.thawsTarget) thaws.push(m.id);
+    }
+    expect('moves with thawsTarget in the pin', thaws.filter((id) => ['scald', 'matchagotcha', 'scorchingsands'].includes(id)),
+        ['matchagotcha', 'scald', 'scorchingsands']);
+    expect('recover and slackoff heal a half', heals.filter(([id]) => ['recover', 'slackoff'].includes(id)),
+        [['recover', [1, 2]], ['slackoff', [1, 2]]]);
 }
 
-function checkAbilities(dex, rows, moveIds) {
+function checkAbilities(dex, rows, moveIds, unmodeled, unmodeledMoves) {
     const counts = {};
     for (const row of rows) {
         const ability = dex.abilities.get(row.id);
@@ -395,16 +458,21 @@ function checkAbilities(dex, rows, moveIds) {
         counts[row.family] = (counts[row.family] || 0) + 1;
         if (row.family === 'NONE') {
             expect(row.id + ' parameter', row.param, 'DFI_FAMILY_PARAM_NONE');
-            if (typeof ability.onModifyType === 'function') {
-                expect(row.id + ' (no family) "-ate" probe', ateChanges(ability).changed, {});
-            }
-            for (const callback of ['onModifyAtk', 'onModifySpA']) {
-                if (typeof ability[callback] === 'function') {
-                    expect(row.id + ' (no family) pinch probe ' + callback, pinchTypes(ability, 10, 30)[callback], []);
+            // A modelled row without a family does none of the family things. An UNMODELED row is refused whatever it
+            // does: Dragonize (Mega Dragonite) is an "-ate" ability, Electric Surge a terrain setter, Huge Power doubles
+            // Attack; a new family follows when the engine has the mechanic.
+            if (!unmodeled.has(row.id)) {
+                if (typeof ability.onModifyType === 'function') {
+                    expect(row.id + ' (no family) "-ate" probe', ateChanges(ability).changed, {});
                 }
-            }
-            if (typeof ability.onStart === 'function' && /\.field\.set(Weather|Terrain)\(/.test(ability.onStart.toString())) {
-                bad(row.id + ' (no family) sets weather or terrain on entry');
+                for (const callback of ['onModifyAtk', 'onModifySpA']) {
+                    if (typeof ability[callback] === 'function') {
+                        expect(row.id + ' (no family) pinch probe ' + callback, pinchTypes(ability, 10, 30)[callback], []);
+                    }
+                }
+                if (typeof ability.onStart === 'function' && /\.field\.set(Weather|Terrain)\(/.test(ability.onStart.toString())) {
+                    bad(row.id + ' (no family) sets weather or terrain on entry');
+                }
             }
             continue;
         }
@@ -421,8 +489,10 @@ function checkAbilities(dex, rows, moveIds) {
                 expect(row.id + ' leaves ' + id + ' alone', ateLeavesAlone(ability, id), true);
             }
             expect(row.id + ' changes a Normal move of another id', ateLeavesAlone(ability, 'probe'), false);
-            expect('the pool moves that ' + row.id + ' leaves alone',
-                [...moveIds.values()].filter((id) => NO_MODIFY_TYPE.includes(id)), ['weatherball']);
+            // The engine skips one move of the list, Weather Ball; the others that the pool has (Terrain Pulse) are
+            // UNMODELED moves, which no battle may use.
+            expect('the modelled pool moves that ' + row.id + ' leaves alone',
+                [...moveIds.values()].filter((id) => NO_MODIFY_TYPE.includes(id) && !unmodeledMoves.has(id)), ['weatherball']);
         } else if (row.family === 'PINCH') {
             const type = typeOf(row.param);
             expect(row.id + ' pinch at a third', pinchTypes(ability, 10, 30), {onModifyAtk: [type], onModifySpA: [type]});
@@ -556,6 +626,257 @@ function checkFormes(dex, validator, rows, moves, abilities) {
     return {bases, probes};
 }
 
+// ------------------------------------------- what the tables model (decision 0015 section 4.2)
+// The UNMODELED markers of gen_closure.py --pool, re-derived from the pinned data in this file's own words: the
+// special column of a move, the handler column of an item and of an ability, and the lists of unmodelled features.
+const ENGINE_ROWS = {items: ['focussash'], abilities: ['rockhead']}; // implemented in the turn code by id (G4)
+const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
+    'randomNormal']);
+// The fields of a move that the tables model (gen_closure.py DATA_KEYS and IGNORED_KEYS), nothing else.
+const MOVE_KEYS = new Set(['num', 'accuracy', 'basePower', 'category', 'name', 'pp', 'priority', 'flags', 'target', 'type',
+    'critRatio', 'secondary', 'self', 'boosts', 'recoil', 'drain', 'status', 'volatileStatus', 'sideCondition',
+    'pseudoWeather', 'selfSwitch', 'stallingMove', 'noPPBoosts', 'struggleRecoil', 'condition', 'contestType', 'zMove',
+    'maxMove', 'isNonstandard', 'hasSheerForceBoost', 'inherit', 'thawsTarget', 'heal']);
+const MODELLED_STATUS = new Set(['brn', 'frz', 'par', 'slp', 'psn']);
+const MODELLED_SIDE = new Set(['tailwind', 'reflect', 'lightscreen']);
+const STAT_NAMES = ['atk', 'def', 'spa', 'spd', 'spe', 'accuracy', 'evasion'];
+
+function isBoostBlock(b) {
+    return b !== null && typeof b === 'object' && Object.keys(b).length > 0 && Object.keys(b).every((k) => STAT_NAMES.includes(k));
+}
+
+// Whether the tables model a move of the whole pool: no callback, no field outside the modelled ones, a modelled
+// target class, and its secondary, self block, boosts, status, volatile, side condition and pseudo weather one
+// effect each. The move's handler id (G2) or its place in the prefix is decided by the caller.
+// The pool rows that carry selfSwitch and that the turn code pivots with a flag of their own (dfi_pivot_moves): U-turn
+// (a G2 row); Flip Turn is a row of the prefix.
+const ENGINE_PIVOTS = ['uturn'];
+function moveIsModelled(raw, id) {
+    if (raw.selfSwitch !== undefined && !ENGINE_PIVOTS.includes(id)) {
+        return false;
+    }
+    for (const [key, value] of Object.entries(raw)) {
+        if (typeof value === 'function' || !MOVE_KEYS.has(key)) {
+            return false;
+        }
+    }
+    if (!ENGINE_TARGETS.has(raw.target)) {
+        return false;
+    }
+    for (const key of ['stallingMove', 'selfSwitch', 'noPPBoosts', 'struggleRecoil', 'thawsTarget']) {
+        if (key in raw && raw[key] !== true) {
+            return false;
+        }
+    }
+    // Step G10: heal is a fraction [a, b] with 0 < a <= b <= 255 (the heal column).
+    if ('heal' in raw && !(Array.isArray(raw.heal) && raw.heal.length === 2 && raw.heal[0] > 0 &&
+                           raw.heal[0] <= raw.heal[1] && raw.heal[1] <= 255)) {
+        return false;
+    }
+    let vectors = 0;
+    if (raw.secondary !== undefined) {
+        const sec = raw.secondary;
+        const keys = sec === null || typeof sec !== 'object' ? [] : Object.keys(sec);
+        const effects = keys.filter((k) => k !== 'chance');
+        if (!keys.includes('chance') || effects.length !== 1) {
+            return false;
+        }
+        if (effects[0] === 'status') {
+            if (!['brn', 'frz', 'par', 'slp'].includes(sec.status)) { // a secondary poison is unmodelled (Dire Claw's pick is its own)
+                return false;
+            }
+        } else if (effects[0] === 'volatileStatus') {
+            if (!['flinch', 'confusion'].includes(sec.volatileStatus)) {
+                return false;
+            }
+        } else if (effects[0] === 'boosts') {
+            if (!isBoostBlock(sec.boosts)) {
+                return false;
+            }
+            vectors += 1;
+        } else {
+            return false;
+        }
+    }
+    if (raw.self !== undefined) {
+        if (raw.self === null || typeof raw.self !== 'object' || !isBoostBlock(raw.self.boosts) || Object.keys(raw.self).length !== 1) {
+            return false;
+        }
+        vectors += 1;
+    }
+    if (raw.boosts !== undefined) {
+        if (raw.target !== 'self' || !isBoostBlock(raw.boosts)) {
+            return false;
+        }
+        vectors += 1;
+    }
+    if (vectors > 1) {
+        return false;
+    }
+    if (raw.status !== undefined && !MODELLED_STATUS.has(raw.status)) {
+        return false;
+    }
+    if (raw.volatileStatus !== undefined && raw.volatileStatus !== 'protect') {
+        return false;
+    }
+    if (raw.sideCondition !== undefined && !MODELLED_SIDE.has(raw.sideCondition)) {
+        return false;
+    }
+    if (raw.pseudoWeather !== undefined && raw.pseudoWeather !== 'trickroom') {
+        return false;
+    }
+    if (raw.condition !== undefined && !(MODELLED_SIDE.has(raw.sideCondition) || raw.pseudoWeather === 'trickroom')) {
+        return false;
+    }
+    return true;
+}
+
+// The callbacks and condition blocks of an item or ability entry (its own, or any field named onX).
+function entryCallbacks(raw) {
+    return Object.entries(raw).filter(([key, value]) => typeof value === 'function' || /^on[A-Z]/.test(key) ||
+        key === 'condition').map(([key]) => key);
+}
+
+// The rows of the move table of the generated source: the numbers of every row, in id order.
+function moveColumns(source, count) {
+    const start = source.indexOf('const dfi_move_data dfi_pool_moves[');
+    const end = source.indexOf('\n};', start);
+    const rows = [];
+    for (const m of source.slice(start, end).matchAll(/^    \{(.*)\},$/gm)) {
+        rows.push(m[1].replace(/[{}]/g, '').split(',').map((x) => parseInt(x, 10)));
+    }
+    if (rows.length !== count || rows.some((r) => r.length !== 29)) {
+        throw new Error('dfi_pool_moves: ' + rows.length + ' rows, expected ' + count + ' of 29 numbers');
+    }
+    return rows;
+}
+
+function handlerColumn(source, kind, array, count) {
+    const start = source.indexOf('const uint8_t ' + array + '[');
+    const end = source.indexOf('\n};', start);
+    const re = new RegExp('^\\s*\\[DFI_' + kind + '_(\\w+)\\] = DFI_HANDLER_(\\w+),$', 'gm');
+    const rows = [...source.slice(start, end).matchAll(re)].map((m) => ({id: m[1].toLowerCase(), handler: m[2]}));
+    if (rows.length !== count) {
+        throw new Error(array + ': ' + rows.length + ' rows, expected ' + count);
+    }
+    return rows;
+}
+
+function unmodeledList(source, kind, array) {
+    const start = source.indexOf('const char *const ' + array + '[');
+    const end = source.indexOf('\n};', start);
+    const re = new RegExp('^\\s*\\[DFI_' + kind + '_(\\w+)\\] = "([^"]*)",$', 'gm');
+    return new Map([...source.slice(start, end).matchAll(re)].map((m) => [m[1].toLowerCase(), m[2]]));
+}
+
+function checkHandlers(dex, source, header, extended) {
+    const counts = {
+        move: defineOf(header, 'DFI_POOL_MOVE_COUNT'), item: defineOf(header, 'DFI_POOL_ITEM_COUNT'),
+        ability: defineOf(header, 'DFI_POOL_ABILITY_COUNT'),
+    };
+    const unmodeledSpecial = defineOf(header, 'DFI_SPECIAL_UNMODELED');
+    const firstHandler = defineOf(header, 'DFI_SPECIAL_ENCORE');
+    // Step G8: Throat Chop and Psychic Noise are rows of the G2 step that the generator reads strictly (their secondaries
+    // are modelled kinds with a recorded engine and no handler id), so they have no UNMODELED marker to cross-check.
+    const strictRows = new Set(['throatchop', 'psychicnoise']);
+    const itemFamily = familyRows(source, 'ITEM', 'dfi_pool_item_family', counts.item);
+    const abilityFamily = familyRows(source, 'ABILITY', 'dfi_pool_ability_family', counts.ability);
+    const result = {moves: 0, items: 0, abilities: 0};
+    // Moves: the special column is UNMODELED exactly where the pinned entry has something the tables do not model.
+    const moveIds = [...definedIds([extended.closure, extended.ext, header], 'MOVE').entries()].sort((a, b) => a[0] - b[0]);
+    const columns = moveColumns(source, counts.move);
+    const unmodeledMoves = unmodeledList(source, 'MOVE', 'dfi_pool_move_unmodeled');
+    for (const [number, id] of moveIds) {
+        if (number >= columns.length) {
+            continue;
+        }
+        const special = columns[number][28];
+        if (special === unmodeledSpecial) {
+            result.moves += 1;
+        }
+        if ((special === unmodeledSpecial) !== unmodeledMoves.has(id)) {
+            bad('move ' + id + ': the UNMODELED special and its feature list disagree');
+        }
+        if (number < extended.moveCount || strictRows.has(id) || (special >= firstHandler && special < unmodeledSpecial)) {
+            continue; // the closure, Team C and the G2 handler moves: code in the turn core, or a handler id of their own
+        }
+        const raw = dex.data.Moves[id];
+        if (raw === undefined) {
+            bad('move ' + id + ' has no pinned entry');
+            continue;
+        }
+        if (moveIsModelled(raw, id) !== (special !== unmodeledSpecial)) {
+            bad('move ' + id + ': the pinned entry is ' + (moveIsModelled(raw, id) ? 'modelled' : 'unmodelled') +
+                ' but the special column says ' + (special === unmodeledSpecial ? 'UNMODELED' : 'modelled'));
+        }
+        if (special !== unmodeledSpecial) {
+            expect('move ' + id + ' target class is one the turn code has', ENGINE_TARGETS.has(raw.target), true);
+        }
+    }
+    // Items and abilities: a row without the UNMODELED handler is the closure's or Team C's, a family member, an
+    // implemented row, or an entry with no callback of its own (a Mega Stone keeps its onTakeItem); a row with it
+    // has a callback, a condition, another field, a second Mega forme or a reader elsewhere.
+    for (const [what, kind, array, data, familyList, ext, engine] of [
+        ['item', 'ITEM', 'dfi_pool_item_handler', dex.data.Items, itemFamily, extended.itemCount, ENGINE_ROWS.items],
+        ['ability', 'ABILITY', 'dfi_pool_ability_handler', dex.data.Abilities, abilityFamily, extended.abilityCount, ENGINE_ROWS.abilities],
+    ]) {
+        const rows = handlerColumn(source, kind, array, counts[what]);
+        const features = unmodeledList(source, kind, 'dfi_pool_' + what + '_unmodeled');
+        rows.forEach((row, number) => {
+            const unmodeled = row.handler === 'UNMODELED';
+            if (unmodeled !== features.has(row.id)) {
+                bad(what + ' ' + row.id + ': the UNMODELED handler and its feature list disagree');
+            }
+            result[what === 'ability' ? 'abilities' : 'items'] += unmodeled ? 1 : 0;
+            const raw = data[row.id];
+            if (raw === undefined) {
+                bad(what + ' ' + row.id + ' has no pinned entry');
+                return;
+            }
+            const callbacks = entryCallbacks(raw).filter((k) => !(raw.megaStone !== undefined && k === 'onTakeItem'));
+            const exempt = number < ext || familyList[number].family !== 'NONE' || engine.includes(row.id);
+            if (!unmodeled && !exempt && callbacks.length > 0) {
+                bad(what + ' ' + row.id + ' is modelled but its pinned entry has ' + callbacks.join(', '));
+            }
+            if (unmodeled && exempt) {
+                bad(what + ' ' + row.id + ' is UNMODELED but is a prefix row, a family member or implemented by id');
+            }
+            if (unmodeled && callbacks.length === 0 && !/read by id|second Mega|field /.test(features.get(row.id))) {
+                bad(what + ' ' + row.id + ' is UNMODELED and no feature explains it: ' + features.get(row.id));
+            }
+        });
+    }
+    return result;
+}
+
+// The cosmetic formes that the validator treats as their base forme: a name for the base forme's row.
+function checkAliases(dex, validator, source, header) {
+    const start = source.indexOf('const dfi_pool_alias dfi_pool_forme_aliases[');
+    const end = source.indexOf('\n};', start);
+    const rows = [...source.slice(start, end).matchAll(/^\s*\{"([^"]+)", DFI_FORME_(\w+)\},$/gm)].map((m) => ({
+        alias: m[1], base: m[2].toLowerCase()}));
+    expect('alias count', rows.length, defineOf(header, 'DFI_POOL_ALIAS_COUNT'));
+    const set = (name, moves, ability) => ({name: '', species: name, item: '', ability, moves, nature: 'Adamant', gender: '',
+        evs: {hp: 2, atk: 0, def: 0, spa: 0, spd: 0, spe: 0}, ivs: {hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31}, level: 50});
+    for (const {alias, base} of rows) {
+        const a = dex.species.get(alias);
+        const b = dex.species.get(base);
+        if (!a.exists || a.id !== alias || !b.exists) {
+            bad('alias ' + alias + ' (of ' + base + ') is not a pinned dex species');
+            continue;
+        }
+        // Mechanically identical: the same dex number, types, base stats, weight and abilities, and the same base species.
+        expect('alias ' + alias + ' is ' + base, [a.num, a.types, a.baseStats, a.weightkg, a.abilities, a.baseSpecies],
+            [b.num, b.types, b.baseStats, b.weightkg, b.abilities, b.baseSpecies]);
+        const first = Object.keys(dex.species.getLearnsetData(b.id).learnset || {})[0] || 'protect';
+        const problems = validator.validateSet(set(a.name, [dex.moves.get(first).name], Object.values(a.abilities)[0]), {});
+        if (problems && problems.length > 0) {
+            bad('alias ' + alias + ' is not accepted by the validator: ' + problems[0]);
+        }
+    }
+    return rows.length;
+}
+
 function main() {
     const args = process.argv.slice(2);
     if (args.length !== 2) {
@@ -593,9 +914,17 @@ function main() {
             bad('type ' + type + ' does not exist in the format');
         }
     }
-    const items = checkItems(dex, itemRows);
+    const unmodeledOf = (kind, array, count) => new Set(handlerColumn(source, kind, array, count)
+        .filter((r) => r.handler === 'UNMODELED').map((r) => r.id));
+    const unmodeledItems = unmodeledOf('ITEM', 'dfi_pool_item_handler', itemCount);
+    const unmodeledAbilities = unmodeledOf('ABILITY', 'dfi_pool_ability_handler', abilityCount);
+    const specialUnmodeled = defineOf(header, 'DFI_SPECIAL_UNMODELED');
+    const unmodeledMoves = new Set(moveColumns(source, defineOf(header, 'DFI_POOL_MOVE_COUNT'))
+        .map((row, number) => (row[28] === specialUnmodeled ? moveIds.get(number) : undefined)).filter((id) => id !== undefined));
+    const items = checkItems(dex, itemRows, unmodeledItems);
+    checkFocusSash(dex, root);
     checkG10Moves(dex);
-    const abilities = checkAbilities(dex, abilityRows, moveIds);
+    const abilities = checkAbilities(dex, abilityRows, moveIds, unmodeledAbilities, unmodeledMoves);
     // "All 18": a booster and a resist berry for each type, and nothing else in the families.
     expect('type boosters', items.TYPE_BOOSTER, 18);
     expect('resist berries', items.RESIST_BERRY, 18);
@@ -606,6 +935,12 @@ function main() {
     checkLegal(dex, TeamValidator.get(FORMAT_ID), itemRows, abilityRows, extendedAbilities);
     const legal = checkFormes(dex, TeamValidator.get(FORMAT_ID), formeRowsList, moveIds, abilityIds);
     const names = checkNames(dex, source, headers);
+    const extendedHeader = readText(path.join(repo, 'src', 'data', 'extended_tables.h'));
+    const unmodeled = checkHandlers(dex, source, header, {
+        closure: headers[0], ext: headers[1], moveCount: defineOf(extendedHeader, 'DFI_EXT_MOVE_COUNT'),
+        itemCount: defineOf(extendedHeader, 'DFI_EXT_ITEM_COUNT'), abilityCount: extendedAbilities,
+    });
+    const aliases = checkAliases(dex, TeamValidator.get(FORMAT_ID), source, header);
 
     if (failures > 0) {
         process.stderr.write('pool_families: ' + failures + ' mismatch(es)\n');
@@ -614,7 +949,7 @@ function main() {
     process.stdout.write('pool_families: ' + itemRows.length + ' items and ' + abilityRows.length +
         ' abilities agree with the pinned handlers (' + JSON.stringify(items) + ', ' + JSON.stringify(abilities) +
         '); every pool item and the new abilities pass the validator; ' + legal.bases + ' base formes: ' + legal.probes +
-        ' validator probes of their moves and abilities agree; ' + names + ' names are pinned dex ids\n');
+        ' validator probes of their moves and abilities agree; ' + names + ' names are pinned dex ids; the UNMODELED markers agree with the pinned entries (' + JSON.stringify(unmodeled) + '); ' + aliases + ' cosmetic aliases are their base forme\n');
 }
 
 main();

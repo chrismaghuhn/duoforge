@@ -1,3 +1,5 @@
+#include <duoforge/duoforge.h>
+
 #include "data/support_manifest.h"
 
 /* Step 2 (turn core): turn order with speed ties, single-target and spread
@@ -70,9 +72,19 @@
  * (Rock Slide, Double-Edge, Thunderbolt, Flash Cannon, Extreme Speed, Head
  * Smash, Bulk Up, Liquidation, Ice Punch, Shadow Claw, Drum Beating and
  * Dazzling Gleam), each used in one of the four reference battles under the
- * POOL kind g2_data_moves_a to _d. U-turn stays unmarked: its switch cause
- * is the pivot of step G5. A move is marked only by the step that records a
- * reference battle with it. */
+ * POOL kind g2_data_moves_a to _d. A move is marked only by the step that
+ * records a reference battle with it.
+ * Step G4 marks Focus Sash (a move hit or the confusion hit that would take all
+ * of a full-HP holder's HP leaves it 1 HP) and Rock Head (no recoil from a
+ * recoil move, Struggle's stays), each with recorded POOL battles. Step G5
+ * marks U-turn: a damaging pivot whose switch flag names it (dfi_pivot_moves),
+ * in the reference battles g5_uturn_a to _e.
+ * Step G8 marks Throat Chop (the sound moves barred for two turns, the cant
+ * of a queued one) and Psychic Noise (Heal Block for two turns: every heal
+ * of the holder refused, the heal-flag moves barred), which are secondary
+ * kinds of the generic column plus the flags2 column, no longer handler ids
+ * (seven remain); recorded as g8_throat_chop, g8_heal_block,
+ * g8_heal_block_pair, g8_heal_block_tie_a and _b under the POOL kind. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -144,6 +156,9 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_LOWKICK] = 1u,
             [DFI_MOVE_DRUMBEATING] = 1u,
             [DFI_MOVE_DAZZLINGGLEAM] = 1u,
+            [DFI_MOVE_UTURN] = 1u,
+            [DFI_MOVE_THROATCHOP] = 1u,
+            [DFI_MOVE_PSYCHICNOISE] = 1u,
         },
     .abilities =
         {
@@ -168,6 +183,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_AERILATE] = 1u,
             [DFI_ABILITY_UNBURDEN] = 1u,
             [DFI_ABILITY_PSYCHICSURGE] = 1u,
+            [DFI_ABILITY_ROCKHEAD] = 1u,
             [DFI_ABILITY_PIXILATE] = 1u,
             [DFI_ABILITY_REFRIGERATE] = 1u,
             [DFI_ABILITY_OVERGROW] = 1u,
@@ -192,6 +208,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_CHOPLEBERRY] = 1u,
             [DFI_ITEM_CHOICESCARF] = 1u,
             [DFI_ITEM_WHITEHERB] = 1u,
+            [DFI_ITEM_FOCUSSASH] = 1u,
             [DFI_ITEM_BLACKBELT] = 1u,
             [DFI_ITEM_BLACKGLASSES] = 1u,
             [DFI_ITEM_CHARCOAL] = 1u,
@@ -225,5 +242,9 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_TANGABERRY] = 1u,
             [DFI_ITEM_WACANBERRY] = 1u,
             [DFI_ITEM_YACHEBERRY] = 1u,
-        },
+        },    /* The POOL player-view extension (decision 0018): a bit is set by the step that implements the feature and
+     * records its battles. Step G8: Throat Chop and Heal Block (the position bits of duoforge_observation_ext, public,
+     * verified against g8_throat_chop, g8_heal_block, g8_heal_block_pair and _tie_a/_b step by step in
+     * duoforge.state.pool_g8). */
+    .view_ext_features = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) | ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK),
 };

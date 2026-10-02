@@ -6,9 +6,9 @@
  * Fake Out and First Impression are the moves of the first-turn rule, no
  * other move of the pool is; Grass Knot and Low Kick take their power from
  * the target's weight with the table of data/moves.ts:10446-10464, here at
- * every threshold and one hectogram on each side of it; the move extra column
- * says which moves thaw their target and which heal (data/moves.ts:15770 and
- * :14806-14820).
+ * every threshold and one hectogram on each side of it; the flags2 and heal
+ * columns say which moves thaw their target (data/moves.ts:15770) and which
+ * heal (:14806-14820).
  */
 #include <stdio.h>
 
@@ -64,12 +64,32 @@ int main(void)
     DF_CHECK_EQ_U64(&t, dfi_weight_power(dfi_pool_formes[DFI_FORME_SNEASLER].weight_hg), 60u);
     DF_CHECK_EQ_U64(&t, dfi_weight_power(dfi_pool_formes[DFI_FORME_GHOLDENGO].weight_hg), 60u);
 
-    /* The move extra column: Scald thaws its target, Recover heals 1/2, nobody else. */
+    /* The columns of step G10: Scald thaws its target (flags2 bit 4), Recover heals 1/2 and has the heal flag (bit 2,
+     * which Heal Block reads); a move with a heal fraction has the heal flag, and the first-turn moves, the weight
+     * moves and the four moves of the step have no handler id that the turn code lacks. */
+    DF_CHECK(&t, (dfi_pool_move_flags2[DFI_MOVE_SCALD] & DFI_MOVE_FLAG2_THAWS_TARGET) != 0u);
+    DF_CHECK(&t, (dfi_pool_move_flags2[DFI_MOVE_RECOVER] & DFI_MOVE_FLAG2_THAWS_TARGET) == 0u);
+    DF_CHECK(&t, (dfi_pool_move_flags2[DFI_MOVE_RECOVER] & DFI_MOVE_FLAG2_HEAL) != 0u);
+    DF_CHECK_EQ_U64(&t, dfi_pool_move_heal[DFI_MOVE_RECOVER][0], 1u);
+    DF_CHECK_EQ_U64(&t, dfi_pool_move_heal[DFI_MOVE_RECOVER][1], 2u);
+    DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_SCALD].special, DFI_SPECIAL_NONE); /* data, no handler */
+    DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_RECOVER].special, DFI_SPECIAL_NONE);
+    DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_FIRSTIMPRESSION].special, DFI_SPECIAL_FIRST_IMPRESSION);
+    DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_LOWKICK].special, DFI_SPECIAL_LOW_KICK);
     for (uint32_t id = 0u; id < DFI_POOL_MOVE_COUNT; ++id) {
-        const dfi_move_extra *x = &dfi_pool_move_extra[id];
-        DF_CHECK_EQ_U64(&t, x->flags, id == DFI_MOVE_SCALD ? DFI_EXTRA_THAWS_TARGET : 0u);
-        DF_CHECK_EQ_U64(&t, x->heal[0], id == DFI_MOVE_RECOVER ? 1u : 0u);
-        DF_CHECK_EQ_U64(&t, x->heal[1], id == DFI_MOVE_RECOVER ? 2u : 0u);
+        const bool heals = dfi_pool_move_heal[id][1] != 0u;
+        if (heals) {
+            DF_CHECK(&t, dfi_pool_move_heal[id][0] != 0u && dfi_pool_move_heal[id][0] <= dfi_pool_move_heal[id][1]);
+            DF_CHECK(&t, (dfi_pool_move_flags2[id] & DFI_MOVE_FLAG2_HEAL) != 0u);
+        } else {
+            DF_CHECK_EQ_U64(&t, dfi_pool_move_heal[id][0], 0u);
+        }
+        /* The four moves are modelled: not the UNMODELED handler. */
+        if (id == DFI_MOVE_SCALD || id == DFI_MOVE_RECOVER || id == DFI_MOVE_FIRSTIMPRESSION ||
+            id == DFI_MOVE_LOWKICK) {
+            DF_CHECK(&t, dfi_pool_moves[id].special != DFI_SPECIAL_UNMODELED);
+            DF_CHECK(&t, dfi_pool_move_unmodeled[id] == NULL);
+        }
     }
 
     /* The gate: the four moves of step G10 are marked. */

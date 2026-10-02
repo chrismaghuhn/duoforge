@@ -81,12 +81,14 @@ The rank of a choice in the joint list maps between the two forms: for SLOTS, th
 
 - **`RandomPolicy`:** the native policy of decision 0012, vectorized. Each environment holds a splitmix64 state seeded from `seeds(seed, env, episode)[2]`. Each requested player, in player order, takes `next() % count`. It works on both forms: in the factored form it takes the allowed pair, or the ordered tuple, of joint rank `next() % count`. With the same seeds both forms must give exactly the native mode's episodes.
 - **`ScriptedPolicy`:** reads only the player's observation and candidates. Each slot command of a candidate is scored as follows:
-  - MOVE at a foe position: 100 − that foe's shown HP percent
+  - MOVE at an occupied foe position: 200 − that foe's shown HP percent (100 to 200: a move at a foe beats every other move, and the weaker foe wins)
   - MOVE without a foe target: 10
   - SWITCH: −50
   - PASS and NONE: 0
 
   A candidate's score is the sum over its two slots. The highest score wins, and ties go to the lowest index. Vectorized over (E,2,count).
+
+  Changed on 2026-10-02 (owner): a move at a foe scored 100 − shown HP percent before, so a move at a full foe scored 0 and lost to every move without a target.
 
 ## 5. Feature encoder
 

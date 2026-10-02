@@ -55,4 +55,24 @@ static inline bool dfi_resist_berry_applies(const dfi_member *target, uint32_t m
            (type_mod > DFI_BIAS6 || held.type == DFI_TYPE_NORMAL);
 }
 
+/* Focus Sash (data/items.ts:2275-2282, onDamage priority -40): the holder is
+ * at full HP, the damage is at least its HP, and the effect of the damage is a
+ * Move (effect.effectType === 'Move'). Its damage events are, at the pin:
+ *   - a move's hit (spreadMoveHit, a Move),
+ *   - the confusion self-hit, which passes { id: 'confused', effectType:
+ *     'Move', type: '???' } (data/conditions.ts:193-194), so a Move too;
+ *   - not Recoil and not Drain (conditions built by getByID, whose
+ *     effectType is 'Condition': sim/dex-conditions.ts:650 and :698-702),
+ *     nor Struggle's recoil (strugglerecoil skips the event,
+ *     sim/battle.ts:2115), nor items (Life Orb, Rocky Helmet: effectType
+ *     'Item', sim/dex-items.ts:110), nor status and weather damage
+ *     (effectType 'Status' and 'Weather', sim/dex-conditions.ts:650).
+ * The callers are the two places that deal a Move's damage in turn.c; the
+ * item is used and the damage becomes hp - 1 there. */
+static inline bool dfi_focus_sash_saves(const dfi_member *holder, uint32_t damage)
+{
+    return holder != NULL && holder->item == 1u + DFI_ITEM_FOCUSSASH && holder->item_consumed == 0u &&
+           holder->hp == holder->hp_max && damage >= holder->hp;
+}
+
 #endif

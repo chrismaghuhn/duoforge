@@ -202,7 +202,7 @@ def entry_problems(name, spec, trace, pin, harness):
             problems.append(('spec', '%s: no %s' % (name, key)))
     if 'plan' in spec:
         problems.append(('spec', '%s: a corpus spec has its choices, not a plan' % name))
-    if spec.get('data') not in (None, 'team_c'):  # as trace_to_c.spec_is_team_c: no key (closure) or "team_c"
+    if spec.get('data') not in (None, 'team_c', 'pool'):  # as trace_to_c.spec_data: no key (closure), "team_c" or "pool"
         problems.append(('spec', '%s: data %r' % (name, spec.get('data'))))
     purpose = spec.get('purpose')
     if not isinstance(purpose, str) or not purpose.startswith(PURPOSES) or len(purpose) < MIN_PURPOSE:

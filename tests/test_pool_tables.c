@@ -28,11 +28,8 @@
  * Expert Belt and Floettite and the abilities Rock Head, Flower Veil and Fairy
  * Aura. Their values are literal, as the pin has them; nine of the moves have a
  * callback or a field that the columns do not model and carry a named handler id
- * in the special column (step G10 made two of them data: Scald and Recover read
- * the move extra column and have no handler). The items and abilities are
- * unmarked in the support manifest; sixteen moves are marked (twelve of step G2,
- * then First Impression, Scald, Recover and Low Kick of step G10), and U-turn
- * and the handler moves of the later steps are not.
+ * in the special column. The items and abilities are unmarked in the support
+ * manifest; thirteen moves are marked (twelve in G2, U-turn in G5), and the nine handler moves are not.
  */
 #include <stdio.h>
 #include <string.h>
@@ -46,7 +43,85 @@
 #include "state/battle_internal.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "1431ebe9d54f4340cb1ac4339324e4df8b2ba9324112c9752986c8d650263e07"
+#define POOL_HASH_HEX "f603a6b137895a2af23cd39a83d62900398877c464aab965346dcc80287cc840"
+/* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
+ * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
+ * produced the same bytes. Step G10 moved two of them on purpose: Scald and Recover are data now (the thaw bit and
+ * the heal column) and have the special NONE instead of the handler ids that G2 gave them, so the value is the
+ * one the generator computes for the rows with that change and nothing else. */
+#define STEPS_ROWS_HASH_HEX "b4d25af552d4c2d734289633b197c420901ecf924099dab578508d1e874c5635"
+
+/* The counts of the rows of the steps, and of the whole pool (legal_pool.json: 264 distinct selectable formes and
+ * 82 Mega formes, 510 moves and Struggle, 166 items, 215 abilities). */
+#define G2_FORMES 28u
+#define G2_MOVES 72u
+#define G2_ITEMS 52u
+#define G2_ABILITIES 29u
+#define POOL_FORMES 346u
+#define POOL_MOVES 511u
+#define SOUND_MOVES 25u /* the pool moves with the pinned sound flag (duoforge.data.pool_regen reproduces the table from the pin) */
+#define HEAL_MOVES 23u  /* and with the heal flag */
+#define THAW_MOVES 3u   /* and with thawsTarget (step G10: flags2 bit 4): Scald, Matcha Gotcha, Scorching Sands */
+#define POOL_ITEMS 166u
+#define POOL_ABILITIES 215u
+
+/* The rows that the tables do not model, pinned (the generator reports the same counts). */
+#define UNMODELED_MOVES 321u /* 324 before step G10 modelled Slack Off, Matcha Gotcha and Scorching Sands */
+#define UNMODELED_ITEMS 45u
+#define UNMODELED_ABILITIES 188u
+
+/* How many rows of the manifest are marked and half modelled: marked, and with the UNMODELED handler or a list of
+ * unmodelled features (decision 0015 section 4.2). A step marks only what it fully models. */
+static uint32_t half_modelled_marks(const dfi_support_manifest *s)
+{
+    uint32_t half = 0u;
+    for (uint32_t id = 0u; id < DFI_POOL_MOVE_COUNT; ++id) {
+        half += s->moves[id] != 0u &&
+                        (dfi_pool_moves[id].special == DFI_SPECIAL_UNMODELED || dfi_pool_move_unmodeled[id] != NULL)
+                    ? 1u
+                    : 0u;
+    }
+    for (uint32_t id = 0u; id < DFI_POOL_ITEM_COUNT; ++id) {
+        half += s->items[id] != 0u &&
+                        (dfi_pool_item_handler[id] == DFI_HANDLER_UNMODELED || dfi_pool_item_unmodeled[id] != NULL)
+                    ? 1u
+                    : 0u;
+    }
+    for (uint32_t id = 0u; id < DFI_POOL_ABILITY_COUNT; ++id) {
+        half += s->abilities[id] != 0u &&
+                        (dfi_pool_ability_handler[id] == DFI_HANDLER_UNMODELED || dfi_pool_ability_unmodeled[id] != NULL)
+                    ? 1u
+                    : 0u;
+    }
+    return half;
+}
+
+/* An extended (or closure) link against the pool's: the u8 "none" of the old rows is DFI_FORME_NONE. */
+static bool link_equals(uint32_t pool, uint32_t old)
+{
+    return old == DFI_CLOSURE_NONE ? pool == DFI_FORME_NONE : pool == old;
+}
+
+static bool forme_equals_ext(const dfi_pool_forme_data *p, const dfi_forme_data *e)
+{
+    bool ok = p->dex_num == e->dex_num && p->weight_hg == e->weight_hg && p->types[0] == e->types[0] &&
+              p->types[1] == e->types[1] && p->ability == e->ability && p->gender_rule == e->gender_rule &&
+              p->is_mega == e->is_mega && link_equals(p->base_forme, e->base_forme) &&
+              link_equals(p->mega_forme, e->mega_forme) && p->mega_item == e->mega_item &&
+              p->set_item == e->set_item && p->set_move_count == e->set_move_count;
+    for (uint32_t k = 0u; k < DFI_STAT_COUNT; ++k) {
+        ok = ok && p->base[k] == e->base[k];
+    }
+    for (uint32_t k = 0u; k < 4u; ++k) {
+        ok = ok && p->set_moves[k] == e->set_moves[k];
+    }
+    return ok;
+}
+
+static bool item_equals_ext(const dfi_pool_item_data *p, const dfi_item_data *e)
+{
+    return link_equals(p->mega_base, e->mega_base) && link_equals(p->mega_forme, e->mega_forme);
+}
 
 typedef struct family_case {
     uint32_t id;
@@ -321,7 +396,7 @@ static const move_case new_moves[] = {
      DUOFORGE_TARGET_CLASS_ALL_ADJACENT_FOES, 1u, DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 30u, DFI_SECONDARY_VOLATILE,
      DFI_VOLATILE_FLINCH, 0u, NB, 0u},
     {DFI_MOVE_THROATCHOP, "Throat Chop", DFI_TYPE_DARK, DFI_CATEGORY_PHYSICAL, 80u, 100u, 16u, 8u, 1u, 1u,
-     DFI_MOVE_FLAG_CONTACT | DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 0u, 0u, 0u, 0u, NB, DFI_SPECIAL_THROAT_CHOP},
+     DFI_MOVE_FLAG_CONTACT | DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 100u, DFI_SECONDARY_LOCKOUT, 0u, 0u, NB, 0u},
     {DFI_MOVE_ENCORE, "Encore", DFI_TYPE_NORMAL, DFI_CATEGORY_STATUS, 0u, 100u, 8u, 8u, 1u, 1u, DFI_MOVE_FLAG_PROTECT,
      {0u, 0u}, 0u, 0u, 0u, 0u, NB, DFI_SPECIAL_ENCORE},
     {DFI_MOVE_DOUBLEEDGE, "Double-Edge", DFI_TYPE_NORMAL, DFI_CATEGORY_PHYSICAL, 120u, 100u, 16u, 8u, 1u, 1u,
@@ -330,7 +405,7 @@ static const move_case new_moves[] = {
      DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 10u, DFI_SECONDARY_STATUS, DFI_STATUS_PAR, 0u, NB, 0u},
     {DFI_MOVE_SCALD, "Scald", DFI_TYPE_WATER, DFI_CATEGORY_SPECIAL, 80u, 100u, 16u, 8u, 1u, 1u,
      DFI_MOVE_FLAG_PROTECT | DFI_MOVE_FLAG_DEFROST, {0u, 0u}, 30u, DFI_SECONDARY_STATUS, DFI_STATUS_BRN, 0u, NB,
-     DFI_SPECIAL_NONE}, /* step G10: thawsTarget is the move extra column */
+     DFI_SPECIAL_NONE}, /* step G10: thawsTarget is bit 4 of the second flags byte */
     {DFI_MOVE_WIDEGUARD, "Wide Guard", DFI_TYPE_ROCK, DFI_CATEGORY_STATUS, 0u, 0u, 12u, 11u,
      DUOFORGE_TARGET_CLASS_ALLY_SIDE, 1u, 0u, {0u, 0u}, 0u, 0u, 0u, 0u, NB, DFI_SPECIAL_WIDE_GUARD},
     {DFI_MOVE_FLASHCANNON, "Flash Cannon", DFI_TYPE_STEEL, DFI_CATEGORY_SPECIAL, 80u, 100u, 12u, 8u, 1u, 1u,
@@ -352,11 +427,11 @@ static const move_case new_moves[] = {
     {DFI_MOVE_SHADOWCLAW, "Shadow Claw", DFI_TYPE_GHOST, DFI_CATEGORY_PHYSICAL, 70u, 100u, 16u, 8u, 1u, 2u,
      DFI_MOVE_FLAG_CONTACT | DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 0u, 0u, 0u, 0u, NB, 0u},
     {DFI_MOVE_RECOVER, "Recover", DFI_TYPE_NORMAL, DFI_CATEGORY_STATUS, 0u, 0u, 8u, 8u, DUOFORGE_TARGET_CLASS_SELF, 1u,
-     0u, {0u, 0u}, 0u, 0u, 0u, 0u, NB, DFI_SPECIAL_NONE}, /* step G10: heal is the move extra column */
+     0u, {0u, 0u}, 0u, 0u, 0u, 0u, NB, DFI_SPECIAL_NONE}, /* step G10: heal is the heal column */
     {DFI_MOVE_SOAK, "Soak", DFI_TYPE_WATER, DFI_CATEGORY_STATUS, 0u, 100u, 20u, 8u, 1u, 1u, DFI_MOVE_FLAG_PROTECT,
      {0u, 0u}, 0u, 0u, 0u, 0u, NB, DFI_SPECIAL_SOAK},
     {DFI_MOVE_PSYCHICNOISE, "Psychic Noise", DFI_TYPE_PSYCHIC, DFI_CATEGORY_SPECIAL, 75u, 100u, 12u, 8u, 1u, 1u,
-     DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 0u, 0u, 0u, 0u, NB, DFI_SPECIAL_PSYCHIC_NOISE},
+     DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 100u, DFI_SECONDARY_HEAL_BLOCK, 0u, 0u, NB, 0u},
     {DFI_MOVE_DRUMBEATING, "Drum Beating", DFI_TYPE_GRASS, DFI_CATEGORY_PHYSICAL, 80u, 100u, 12u, 8u, 1u, 1u,
      DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 100u, DFI_SECONDARY_BOOST, 0u, DFI_BOOST_ROLE_SECONDARY_TARGET,
      {0, 0, 0, 0, -1, 0, 0}, 0u},
@@ -369,7 +444,7 @@ static const move_case new_moves[] = {
 
 static void check_forme_row(df_test *t, const forme_case *c)
 {
-    const dfi_forme_data *f = &dfi_pool_formes[c->id];
+    const dfi_pool_forme_data *f = &dfi_pool_formes[c->id];
     bool ok = f->dex_num == c->dex_num && f->weight_hg == c->weight_hg && f->types[0] == c->type0 &&
               f->types[1] == c->type1 && f->gender_rule == c->gender_rule && f->is_mega == c->is_mega;
     for (uint32_t k = 0u; k < DFI_STAT_COUNT; ++k) {
@@ -442,55 +517,62 @@ int main(void)
     const size_t n_new_abilities = sizeof new_abilities / sizeof new_abilities[0];
 
     /* Counts. Step P1 added 16 type boosters, 17 resist berries and 5 abilities (items 16 to 48, abilities 21 to 25);
-     * step G2 adds 5 formes (23 to 27), 22 moves (50 to 71), 3 items (49 to 51) and 3 abilities (26 to 28), in the
-     * order of the research's pool_rows. The new ids start where the previous ones end. */
-    DF_CHECK_EQ_U64(&t, DFI_POOL_FORME_COUNT, 28u);
-    DF_CHECK_EQ_U64(&t, DFI_POOL_MOVE_COUNT, 72u);
-    DF_CHECK_EQ_U64(&t, DFI_POOL_ITEM_COUNT, 52u);
-    DF_CHECK_EQ_U64(&t, DFI_POOL_ABILITY_COUNT, 29u);
+     * step G2 added 5 formes (23 to 27), 22 moves (50 to 71), 3 items (49 to 51) and 3 abilities (26 to 28), in the
+     * order of the research's pool_rows; the whole-pool step (decision 0015 section 4.2) appends a row for every
+     * other forme, move, item and ability of the legal pool. The ids of every step start where the previous ones end,
+     * and the counts are those of docs/research/expansion/data/legal_pool.json: 293 selectable formes of which 29 are
+     * cosmetic copies (264 rows), 82 Mega formes, the 510 moves and Struggle, 166 items and 215 abilities. */
+    DF_CHECK_EQ_U64(&t, DFI_POOL_FORME_COUNT, POOL_FORMES);
+    DF_CHECK_EQ_U64(&t, DFI_POOL_MOVE_COUNT, POOL_MOVES);
+    DF_CHECK_EQ_U64(&t, DFI_POOL_ITEM_COUNT, POOL_ITEMS);
+    DF_CHECK_EQ_U64(&t, DFI_POOL_ABILITY_COUNT, POOL_ABILITIES);
+    DF_CHECK_EQ_U64(&t, DFI_POOL_ALIAS_COUNT, 29u);
     DF_CHECK_EQ_U64(&t, DFI_FORME_PELIPPER, DFI_EXT_FORME_COUNT);
-    DF_CHECK_EQ_U64(&t, DFI_FORME_FLOETTEMEGA, DFI_POOL_FORME_COUNT - 1u);
+    DF_CHECK_EQ_U64(&t, DFI_FORME_FLOETTEMEGA, G2_FORMES - 1u);
     DF_CHECK_EQ_U64(&t, DFI_MOVE_UTURN, DFI_EXT_MOVE_COUNT);
-    DF_CHECK_EQ_U64(&t, DFI_MOVE_DAZZLINGGLEAM, DFI_POOL_MOVE_COUNT - 1u);
+    DF_CHECK_EQ_U64(&t, DFI_MOVE_DAZZLINGGLEAM, G2_MOVES - 1u);
     DF_CHECK_EQ_U64(&t, DFI_ITEM_BLACKBELT, DFI_EXT_ITEM_COUNT);
     DF_CHECK_EQ_U64(&t, DFI_ITEM_YACHEBERRY, DFI_ITEM_FOCUSSASH - 1u);
-    DF_CHECK_EQ_U64(&t, DFI_ITEM_FLOETTITE, DFI_POOL_ITEM_COUNT - 1u);
+    DF_CHECK_EQ_U64(&t, DFI_ITEM_FLOETTITE, G2_ITEMS - 1u);
     DF_CHECK_EQ_U64(&t, DFI_ITEM_TWISTEDSPOON, DFI_EXT_ITEM_COUNT + 15u);
     DF_CHECK_EQ_U64(&t, DFI_ITEM_BABIRIBERRY, DFI_EXT_ITEM_COUNT + 16u);
     DF_CHECK_EQ_U64(&t, DFI_ABILITY_PIXILATE, DFI_EXT_ABILITY_COUNT);
     DF_CHECK_EQ_U64(&t, DFI_ABILITY_SWARM, DFI_ABILITY_ROCKHEAD - 1u);
-    DF_CHECK_EQ_U64(&t, DFI_ABILITY_FAIRYAURA, DFI_POOL_ABILITY_COUNT - 1u);
+    DF_CHECK_EQ_U64(&t, DFI_ABILITY_FAIRYAURA, G2_ABILITIES - 1u);
     DF_CHECK_EQ_U64(&t, n_new_items, DFI_ITEM_FOCUSSASH - DFI_EXT_ITEM_COUNT);
     DF_CHECK_EQ_U64(&t, n_new_abilities, DFI_ABILITY_ROCKHEAD - DFI_EXT_ABILITY_COUNT);
-    DF_CHECK_EQ_U64(&t, sizeof new_formes / sizeof new_formes[0], DFI_POOL_FORME_COUNT - DFI_EXT_FORME_COUNT);
-    DF_CHECK_EQ_U64(&t, sizeof new_moves / sizeof new_moves[0], DFI_POOL_MOVE_COUNT - DFI_EXT_MOVE_COUNT);
+    DF_CHECK_EQ_U64(&t, sizeof new_formes / sizeof new_formes[0], G2_FORMES - DFI_EXT_FORME_COUNT);
+    DF_CHECK_EQ_U64(&t, sizeof new_moves / sizeof new_moves[0], G2_MOVES - DFI_EXT_MOVE_COUNT);
+    /* The whole-pool rows begin right after the rows of the steps, with the first id of the legal pool's order. */
+    DF_CHECK_EQ_U64(&t, DFI_MOVE_ACCELEROCK, G2_MOVES);
+    DF_CHECK_EQ_U64(&t, DFI_ITEM_ABOMASITE, G2_ITEMS);
+    DF_CHECK_EQ_U64(&t, DFI_ABILITY_AFTERMATH, G2_ABILITIES);
+    DF_CHECK_EQ_U64(&t, DFI_FORME_VENUSAUR, G2_FORMES);
 
-    /* The prefix is the extended tables, and so the closure, row by row. */
+    /* The prefix is the extended tables, and so the closure, row by row. The pool's forme and item rows have u16
+     * forme links, so a row is compared field by field (DFI_FORME_NONE for the closure's 0xFF); a move row is the same
+     * type and compared byte by byte. */
     {
         uint32_t diff = 0u;
         for (uint32_t i = 0u; i < DFI_EXT_FORME_COUNT; ++i) {
-            diff += dfi_bytes_equal((const uint8_t *)&dfi_pool_formes[i], (const uint8_t *)&dfi_ext_formes[i],
-                                    sizeof dfi_pool_formes[i]) ? 0u : 1u;
+            diff += forme_equals_ext(&dfi_pool_formes[i], &dfi_ext_formes[i]) ? 0u : 1u;
         }
         for (uint32_t i = 0u; i < DFI_EXT_MOVE_COUNT; ++i) {
             diff += dfi_bytes_equal((const uint8_t *)&dfi_pool_moves[i], (const uint8_t *)&dfi_ext_moves[i],
                                     sizeof dfi_pool_moves[i]) ? 0u : 1u;
         }
         for (uint32_t i = 0u; i < DFI_EXT_ITEM_COUNT; ++i) {
-            diff += dfi_bytes_equal((const uint8_t *)&dfi_pool_items[i], (const uint8_t *)&dfi_ext_items[i],
-                                    sizeof dfi_pool_items[i]) ? 0u : 1u;
+            diff += item_equals_ext(&dfi_pool_items[i], &dfi_ext_items[i]) ? 0u : 1u;
         }
         for (uint32_t i = 0u; i < DFI_FORME_COUNT; ++i) {
-            diff += dfi_bytes_equal((const uint8_t *)&dfi_pool_formes[i], (const uint8_t *)&dfi_closure_formes[i],
-                                    sizeof dfi_pool_formes[i]) ? 0u : 1u;
+            diff += forme_equals_ext(&dfi_pool_formes[i], &dfi_closure_formes[i]) ? 0u : 1u;
         }
         for (uint32_t i = 0u; i < DFI_MOVE_COUNT; ++i) {
             diff += dfi_bytes_equal((const uint8_t *)&dfi_pool_moves[i], (const uint8_t *)&dfi_closure_moves[i],
                                     sizeof dfi_pool_moves[i]) ? 0u : 1u;
         }
         for (uint32_t i = 0u; i < DFI_ITEM_COUNT; ++i) {
-            diff += dfi_bytes_equal((const uint8_t *)&dfi_pool_items[i], (const uint8_t *)&dfi_closure_items[i],
-                                    sizeof dfi_pool_items[i]) ? 0u : 1u;
+            diff += item_equals_ext(&dfi_pool_items[i], &dfi_closure_items[i]) ? 0u : 1u;
         }
         /* The type immunity bits are the extended ones (the closure's plus
          * psn); the pool adds no type. */
@@ -498,27 +580,57 @@ int main(void)
         DF_CHECK_EQ_U64(&t, diff, 0u);
     }
 
-    /* The only new Mega Stone is Floettite: Floette-Eternal holds it for Floette-Mega. */
+    /* The Mega formes and stones of the whole pool. 82 Mega formes, 81 Mega Stones (Meowsticite serves both
+     * Meowstics), and 77 base formes that link a Mega forme through their row (Absol, Charizard, Garchomp, Lucario
+     * and Raichu have two Mega formes; the base forme links the first, the Mega forme of the other stone is a row of
+     * its own with the same base forme). The item row of a stone names its first (base, Mega) pair; the engine
+     * reads the forme rows. */
     {
         uint32_t stones = 0u;
-        for (uint32_t i = DFI_EXT_ITEM_COUNT; i < DFI_POOL_ITEM_COUNT; ++i) {
-            stones += dfi_pool_items[i].mega_base != DFI_CLOSURE_NONE || dfi_pool_items[i].mega_forme != DFI_CLOSURE_NONE
-                          ? 1u
-                          : 0u;
+        uint32_t megas = 0u;
+        uint32_t linked = 0u;
+        uint32_t odd = 0u;
+        for (uint32_t i = 0u; i < DFI_POOL_ITEM_COUNT; ++i) {
+            stones += dfi_pool_items[i].mega_base != DFI_FORME_NONE ? 1u : 0u;
+            /* A stone's pair is two rows that name each other: the Mega forme has the stone and the base forme. */
+            if (dfi_pool_items[i].mega_base != DFI_FORME_NONE) {
+                const dfi_pool_forme_data *m = &dfi_pool_formes[dfi_pool_items[i].mega_forme];
+                odd += (m->is_mega == 1u && m->mega_item == i && m->base_forme == dfi_pool_items[i].mega_base &&
+                        dfi_pool_formes[dfi_pool_items[i].mega_base].is_mega == 0u)
+                           ? 0u
+                           : 1u;
+            }
         }
-        DF_CHECK_EQ_U64(&t, stones, 1u);
+        for (uint32_t f = 0u; f < DFI_POOL_FORME_COUNT; ++f) {
+            const dfi_pool_forme_data *x = &dfi_pool_formes[f];
+            megas += x->is_mega;
+            linked += x->mega_forme != DFI_FORME_NONE ? 1u : 0u;
+            if (x->is_mega != 0u) {
+                odd += (x->mega_forme == DFI_FORME_NONE && x->base_forme < f && dfi_pool_formes[x->base_forme].is_mega == 0u &&
+                        x->set_item == x->mega_item && x->mega_item != DFI_CLOSURE_NONE)
+                           ? 0u
+                           : 1u;
+            } else if (x->mega_forme != DFI_FORME_NONE) {
+                const dfi_pool_forme_data *m = &dfi_pool_formes[x->mega_forme];
+                odd += (m->is_mega == 1u && m->base_forme == f && m->mega_item == x->mega_item) ? 0u : 1u;
+            }
+        }
+        DF_CHECK_EQ_U64(&t, stones, 81u);
+        DF_CHECK_EQ_U64(&t, megas, 82u);
+        DF_CHECK_EQ_U64(&t, linked, 77u);
+        DF_CHECK_EQ_U64(&t, odd, 0u);
         DF_CHECK(&t, dfi_pool_items[DFI_ITEM_FLOETTITE].mega_base == DFI_FORME_FLOETTEETERNAL &&
                          dfi_pool_items[DFI_ITEM_FLOETTITE].mega_forme == DFI_FORME_FLOETTEMEGA);
-        const dfi_forme_data *base = &dfi_pool_formes[DFI_FORME_FLOETTEETERNAL];
-        const dfi_forme_data *mega = &dfi_pool_formes[DFI_FORME_FLOETTEMEGA];
+        const dfi_pool_forme_data *base = &dfi_pool_formes[DFI_FORME_FLOETTEETERNAL];
+        const dfi_pool_forme_data *mega = &dfi_pool_formes[DFI_FORME_FLOETTEMEGA];
         DF_CHECK(&t, base->set_item == DFI_ITEM_FLOETTITE && base->mega_item == DFI_ITEM_FLOETTITE &&
                          base->mega_forme == DFI_FORME_FLOETTEMEGA && base->base_forme == DFI_FORME_FLOETTEETERNAL &&
-                         mega->base_forme == DFI_FORME_FLOETTEETERNAL && mega->mega_forme == DFI_CLOSURE_NONE &&
+                         mega->base_forme == DFI_FORME_FLOETTEETERNAL && mega->mega_forme == DFI_FORME_NONE &&
                          mega->mega_item == DFI_ITEM_FLOETTITE && mega->ability == DFI_ABILITY_FAIRYAURA &&
                          base->ability == DFI_ABILITY_FLOWERVEIL);
         /* No other new forme has a Mega forme. */
         for (uint32_t i = DFI_FORME_PELIPPER; i <= DFI_FORME_ANNIHILAPE; ++i) {
-            DF_CHECK(&t, dfi_pool_formes[i].mega_forme == DFI_CLOSURE_NONE && dfi_pool_formes[i].mega_item == DFI_CLOSURE_NONE &&
+            DF_CHECK(&t, dfi_pool_formes[i].mega_forme == DFI_FORME_NONE && dfi_pool_formes[i].mega_item == DFI_CLOSURE_NONE &&
                              dfi_pool_formes[i].base_forme == i);
         }
     }
@@ -534,11 +646,62 @@ int main(void)
         }
         uint32_t handlers = 0u;
         for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
-            handlers += dfi_pool_moves[i].special >= DFI_SPECIAL_THROAT_CHOP ? 1u : 0u;
+            handlers += dfi_pool_moves[i].special >= DFI_SPECIAL_ENCORE &&
+                                dfi_pool_moves[i].special <= DFI_SPECIAL_LOW_KICK
+                            ? 1u
+                            : 0u;
         }
-        /* The nine ids of step G2, minus Scald and Recover (data since step G10). */
-        DF_CHECK_EQ_U64(&t, handlers, DFI_SPECIAL_LOW_KICK - DFI_SPECIAL_THROAT_CHOP + 1u - 2u);
-        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_THROAT_CHOP, DFI_SPECIAL_FOLLOW_ME + 1u);
+        /* Seven ids, of which Scald and Recover are not any move's after step G10. */
+        DF_CHECK_EQ_U64(&t, handlers, DFI_SPECIAL_LOW_KICK - DFI_SPECIAL_ENCORE + 1u - 2u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_ENCORE, DFI_SPECIAL_FOLLOW_ME + 1u);
+        /* UNMODELED follows the seven handler ids of G2 that remain after step G8. Step G10 made Scald and Recover
+         * data (the thaw bit and the heal column): their ids are still defined, and no pool move has them. */
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_LOW_KICK + 1u);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_SCALD].special, DFI_SPECIAL_NONE);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_RECOVER].special, DFI_SPECIAL_NONE);
+        /* Step G8: Throat Chop and Psychic Noise are modelled (a secondary kind of their own, chance 100), not
+         * handlers; the second flags byte holds the pinned sound and heal flags and nothing else. Every named move
+         * has its bits; the counts over the whole pool are those of the pinned data (the generator's test reads
+         * them from the pinned text). */
+        static const struct {
+            uint32_t move;
+            uint32_t flags2;
+        } flagged[] = {{DFI_MOVE_SNARL, DFI_MOVE_FLAG2_SOUND}, {DFI_MOVE_PARTINGSHOT, DFI_MOVE_FLAG2_SOUND},
+                       {DFI_MOVE_HYPERVOICE, DFI_MOVE_FLAG2_SOUND}, {DFI_MOVE_PSYCHICNOISE, DFI_MOVE_FLAG2_SOUND},
+                       {DFI_MOVE_BITTERBLADE, DFI_MOVE_FLAG2_HEAL}, {DFI_MOVE_LEECHLIFE, DFI_MOVE_FLAG2_HEAL},
+                       {DFI_MOVE_RECOVER, DFI_MOVE_FLAG2_HEAL}, {DFI_MOVE_THROATCHOP, 0u}, {DFI_MOVE_PROTECT, 0u},
+                       {DFI_MOVE_SCALD, DFI_MOVE_FLAG2_THAWS_TARGET},
+                       {DFI_MOVE_MATCHAGOTCHA, DFI_MOVE_FLAG2_HEAL | DFI_MOVE_FLAG2_THAWS_TARGET},
+                       {DFI_MOVE_SCORCHINGSANDS, DFI_MOVE_FLAG2_THAWS_TARGET}};
+        for (size_t k = 0u; k < sizeof flagged / sizeof flagged[0]; ++k) {
+            DF_CHECK_EQ_U64(&t, dfi_pool_move_flags2[flagged[k].move], flagged[k].flags2);
+        }
+        uint32_t sound = 0u;
+        uint32_t heal = 0u;
+        uint32_t other = 0u;
+        uint32_t thaw = 0u;
+        for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
+            thaw += (dfi_pool_move_flags2[i] & DFI_MOVE_FLAG2_THAWS_TARGET) != 0u ? 1u : 0u;
+            sound += (dfi_pool_move_flags2[i] & DFI_MOVE_FLAG2_SOUND) != 0u ? 1u : 0u;
+            heal += (dfi_pool_move_flags2[i] & DFI_MOVE_FLAG2_HEAL) != 0u ? 1u : 0u;
+            other += (dfi_pool_move_flags2[i] &
+                      ~(uint32_t)(DFI_MOVE_FLAG2_SOUND | DFI_MOVE_FLAG2_HEAL | DFI_MOVE_FLAG2_THAWS_TARGET)) != 0u
+                         ? 1u
+                         : 0u;
+        }
+        DF_CHECK_EQ_U64(&t, other, 0u);
+        DF_CHECK_EQ_U64(&t, sound, SOUND_MOVES);
+        DF_CHECK_EQ_U64(&t, heal, HEAL_MOVES);
+        DF_CHECK_EQ_U64(&t, thaw, THAW_MOVES);
+        /* The heal column (step G10): Recover and Slack Off heal 1/2, no other move heals by a fraction. */
+        for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
+            const bool halves = i == DFI_MOVE_RECOVER || i == DFI_MOVE_SLACKOFF;
+            DF_CHECK_EQ_U64(&t, dfi_pool_move_heal[i][0], halves ? 1u : 0u);
+            DF_CHECK_EQ_U64(&t, dfi_pool_move_heal[i][1], halves ? 2u : 0u);
+            DF_CHECK(&t, dfi_pool_move_heal[i][1] == 0u || (dfi_pool_move_flags2[i] & DFI_MOVE_FLAG2_HEAL) != 0u);
+        }
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_THROATCHOP].special, DFI_SPECIAL_NONE);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_PSYCHICNOISE].special, DFI_SPECIAL_NONE);
     }
 
     /* The closure and extended canonical bytes recomputed from the prefix,
@@ -567,32 +730,96 @@ int main(void)
         DF_CHECK_BYTES(&t, sha, dfi_ext_table_hash, sizeof sha, "sha256(extended prefix) = extended table hash");
     }
 
-    /* The pool hash: SHA-256 of the pool canonical bytes, which are the
-     * closure layout over every pool row followed by the family columns (an
-     * item's family and type, then an ability's family and parameter, in id
-     * order), the legal moves and abilities of the formes (per forme the
-     * learnable bytes, the ability count and the three ability ids) and the
-     * move extra column (per move the flags and the heal fraction, step G10);
-     * equal to the generator's literal and different from the other two. */
+    /* The rows of the steps (P1 and G2) are unchanged by the whole-pool rows: the closure-layout bytes of those 28
+     * formes, 72 moves, 52 items and 29 abilities hash to the value that the pool generator before the whole-pool step
+     * produced for them. The closure layout holds forme links as one byte, so it cannot hold the whole pool: with the
+     * pool counts the function refuses (a link above 254). */
     {
-        uint8_t bytes[DFI_POOL_CANONICAL_SIZE + 8u];
-        uint8_t rows[DFI_POOL_CANONICAL_SIZE];
+        static uint8_t rows[DFI_POOL_CANONICAL_SIZE];
+        uint8_t sha[DUOFORGE_DIGEST_SIZE];
+        uint8_t want[DUOFORGE_DIGEST_SIZE];
+        const size_t n = dfi_pool_canonical_bytes_of(rows, sizeof rows, G2_FORMES, G2_MOVES, G2_ITEMS, G2_ABILITIES,
+                                                     0xFFu);
+        DF_CHECK_EQ_U64(&t, n, 12u + G2_FORMES * 24u + G2_MOVES * 29u + G2_ITEMS * 2u + 324u + 18u + 50u);
+        DF_CHECK(&t, dfi_sha256(rows, n, sha));
+        DF_CHECK(&t, df_hex_to_bytes(STEPS_ROWS_HASH_HEX, want, sizeof want));
+        DF_CHECK_BYTES(&t, sha, want, sizeof sha, "sha256(the rows of the steps P1 and G2, closure layout)");
+        DF_CHECK_EQ_U64(&t, dfi_pool_canonical_bytes_of(rows, sizeof rows, DFI_POOL_FORME_COUNT, DFI_POOL_MOVE_COUNT,
+                                                        DFI_POOL_ITEM_COUNT, DFI_POOL_ABILITY_COUNT, 0xFFu),
+                        0u);
+    }
+
+    /* The pool hash: SHA-256 of the canonical pool bytes, the pool layout: the six counts; per forme 26 bytes (the
+     * closure's 24 with the base and Mega links as u16); per move the closure's 29; per item the two links as u16; the
+     * type chart, the immunity bits and the natures; then the family column of every item and of every ability, the
+     * handler column of every item and of every ability, and the legal moves and abilities of every forme (the
+     * learnable bytes, the ability count and the three ability ids). The test walks the layout independently of the
+     * generated writer; the size is the generator's literal and the hash is different from the other two. */
+    {
+        static uint8_t bytes[DFI_POOL_CANONICAL_SIZE + 8u];
         uint8_t sha[DUOFORGE_DIGEST_SIZE];
         uint8_t want[DUOFORGE_DIGEST_SIZE];
         memset(bytes, 0xA5, sizeof bytes);
         const size_t n = dfi_pool_canonical_bytes(bytes, sizeof bytes);
         DF_CHECK_EQ_U64(&t, n, DFI_POOL_CANONICAL_SIZE);
-        /* 12 + 28 * 24 + 72 * 29 + 52 * 2 + 324 + 18 + 50, then 52 * 2 + 29 * 2,
-         * then 28 * (9 + 1 + 3), then 72 * 3 */
-        DF_CHECK_EQ_U64(&t, DFI_POOL_CANONICAL_SIZE, 4010u);
+        /* 12 + 346 * 26 + 511 * 29 + 166 * 4 + 324 + 18 + 50, then 166 * 2 + 215 * 2, then 166 + 215, then
+         * 346 * (64 + 1 + 3), then the second flags byte of 511 moves (step G8) */
+        DF_CHECK_EQ_U64(&t, DFI_POOL_CANONICAL_SIZE, 12u + POOL_FORMES * 26u + POOL_MOVES * 29u + POOL_ITEMS * 4u + 324u +
+                                                         18u + 50u + POOL_ITEMS * 2u + POOL_ABILITIES * 2u +
+                                                         POOL_ITEMS + POOL_ABILITIES +
+                                                         POOL_FORMES * (DFI_POOL_LEARN_BYTES + 1u + 3u) + POOL_MOVES +
+                                                         POOL_MOVES * 2u);
         DF_CHECK(&t, bytes[DFI_POOL_CANONICAL_SIZE] == 0xA5u);
-        const size_t row_bytes = dfi_pool_canonical_bytes_of(rows, sizeof rows, DFI_POOL_FORME_COUNT,
-                                                             DFI_POOL_MOVE_COUNT, DFI_POOL_ITEM_COUNT,
-                                                             DFI_POOL_ABILITY_COUNT, 0xFFu);
-        DF_CHECK_EQ_U64(&t, row_bytes, 3268u);
-        DF_CHECK_BYTES(&t, bytes, rows, row_bytes, "pool rows");
-        uint32_t at = (uint32_t)row_bytes;
+        uint32_t at = 0u;
         uint32_t bad = 0u;
+        const uint32_t counts[6] = {DFI_POOL_FORME_COUNT, DFI_POOL_MOVE_COUNT, DFI_POOL_ITEM_COUNT,
+                                    DFI_POOL_ABILITY_COUNT, DFI_TYPE_COUNT, DFI_NATURE_COUNT};
+        for (uint32_t k = 0u; k < 6u; ++k) {
+            bad += (uint32_t)bytes[at] + 256u * (uint32_t)bytes[at + 1u] != counts[k] ? 1u : 0u;
+            at += 2u;
+        }
+#define U16(v) ((uint8_t)((v) & 0xFFu)), ((uint8_t)(((v) >> 8) & 0xFFu))
+        for (uint32_t i = 0u; i < DFI_POOL_FORME_COUNT; ++i) {
+            const dfi_pool_forme_data *f = &dfi_pool_formes[i];
+            const uint8_t want_row[26] = {
+                U16(f->dex_num), f->types[0], f->types[1], f->base[0], f->base[1], f->base[2], f->base[3], f->base[4],
+                f->base[5], U16(f->weight_hg), f->ability, f->gender_rule, f->is_mega, U16(f->base_forme),
+                U16(f->mega_forme), f->mega_item, f->set_item, f->set_move_count, f->set_moves[0], f->set_moves[1],
+                f->set_moves[2], f->set_moves[3]};
+            bad += dfi_bytes_equal(bytes + at, want_row, sizeof want_row) ? 0u : 1u;
+            at += (uint32_t)sizeof want_row;
+        }
+        for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
+            const dfi_move_data *m = &dfi_pool_moves[i];
+            const uint8_t want_row[29] = {m->type, m->category, m->base_power, m->accuracy, m->pp_base, m->pp_max,
+                                          m->priority, m->target_class, m->crit_ratio, m->flags, m->recoil[0],
+                                          m->recoil[1], m->drain[0], m->drain[1], m->sec_chance, m->sec_kind,
+                                          m->sec_param, m->boost_role, m->boosts[0], m->boosts[1], m->boosts[2],
+                                          m->boosts[3], m->boosts[4], m->boosts[5], m->boosts[6], m->primary_status,
+                                          m->side_condition, m->pseudo_weather, m->special};
+            bad += dfi_bytes_equal(bytes + at, want_row, sizeof want_row) ? 0u : 1u;
+            at += (uint32_t)sizeof want_row;
+        }
+        for (uint32_t i = 0u; i < DFI_POOL_ITEM_COUNT; ++i) {
+            const uint8_t want_row[4] = {U16(dfi_pool_items[i].mega_base), U16(dfi_pool_items[i].mega_forme)};
+            bad += dfi_bytes_equal(bytes + at, want_row, sizeof want_row) ? 0u : 1u;
+            at += (uint32_t)sizeof want_row;
+        }
+#undef U16
+        for (uint32_t d = 0u; d < DFI_TYPE_COUNT; ++d) {
+            for (uint32_t a = 0u; a < DFI_TYPE_COUNT; ++a) {
+                bad += bytes[at] != dfi_closure_type_chart[d][a] ? 1u : 0u;
+                at += 1u;
+            }
+        }
+        for (uint32_t i = 0u; i < DFI_TYPE_COUNT; ++i) {
+            bad += bytes[at] != dfi_pool_type_immunity[i] ? 1u : 0u;
+            at += 1u;
+        }
+        for (uint32_t i = 0u; i < DFI_NATURE_COUNT; ++i) {
+            bad += bytes[at] != dfi_closure_natures[i].plus || bytes[at + 1u] != dfi_closure_natures[i].minus ? 1u : 0u;
+            at += 2u;
+        }
         for (uint32_t i = 0u; i < DFI_POOL_ITEM_COUNT; ++i) {
             bad += bytes[at] != dfi_pool_item_family[i].family || bytes[at + 1u] != dfi_pool_item_family[i].type ? 1u : 0u;
             at += 2u;
@@ -603,7 +830,14 @@ int main(void)
                        : 0u;
             at += 2u;
         }
-        DF_CHECK_EQ_U64(&t, bad, 0u);
+        for (uint32_t i = 0u; i < DFI_POOL_ITEM_COUNT; ++i) {
+            bad += bytes[at] != dfi_pool_item_handler[i] ? 1u : 0u;
+            at += 1u;
+        }
+        for (uint32_t i = 0u; i < DFI_POOL_ABILITY_COUNT; ++i) {
+            bad += bytes[at] != dfi_pool_ability_handler[i] ? 1u : 0u;
+            at += 1u;
+        }
         for (uint32_t i = 0u; i < DFI_POOL_FORME_COUNT; ++i) {
             const dfi_forme_legal *l = &dfi_pool_forme_legal[i];
             for (uint32_t k = 0u; k < DFI_POOL_LEARN_BYTES; ++k) {
@@ -617,14 +851,16 @@ int main(void)
             }
             at += DFI_POOL_FORME_ABILITIES_MAX;
         }
-        DF_CHECK_EQ_U64(&t, bad, 0u);
         for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
-            bad += bytes[at] != dfi_pool_move_extra[i].flags || bytes[at + 1u] != dfi_pool_move_extra[i].heal[0] ||
-                           bytes[at + 2u] != dfi_pool_move_extra[i].heal[1]
+            bad += bytes[at + i] != dfi_pool_move_flags2[i] ? 1u : 0u;
+        }
+        at += DFI_POOL_MOVE_COUNT;
+        for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) { /* the heal fractions (step G10), the last part */
+            bad += bytes[at + 2u * i] != dfi_pool_move_heal[i][0] || bytes[at + 2u * i + 1u] != dfi_pool_move_heal[i][1]
                        ? 1u
                        : 0u;
-            at += 3u;
         }
+        at += 2u * DFI_POOL_MOVE_COUNT;
         DF_CHECK_EQ_U64(&t, bad, 0u);
         DF_CHECK_EQ_U64(&t, at, DFI_POOL_CANONICAL_SIZE);
         DF_CHECK(&t, dfi_sha256(bytes, n, sha));
@@ -633,23 +869,22 @@ int main(void)
         DF_CHECK_BYTES(&t, dfi_pool_table_hash, want, sizeof want, "dfi_pool_table_hash");
         DF_CHECK(&t, !dfi_bytes_equal(dfi_pool_table_hash, dfi_closure_table_hash, sizeof want));
         DF_CHECK(&t, !dfi_bytes_equal(dfi_pool_table_hash, dfi_ext_table_hash, sizeof want));
-        /* A buffer that is too small gets nothing; counts beyond the tables
-         * are refused. */
+        /* A buffer that is too small gets nothing; counts beyond the tables are refused. */
         uint8_t small[16];
         memset(small, 0xA5, sizeof small);
         DF_CHECK_EQ_U64(&t, dfi_pool_canonical_bytes(small, sizeof small), 0u);
         DF_CHECK(&t, small[0] == 0xA5u && small[15] == 0xA5u);
         DF_CHECK_EQ_U64(&t, dfi_pool_canonical_bytes(bytes, DFI_POOL_CANONICAL_SIZE - 1u), 0u);
-        DF_CHECK_EQ_U64(&t, dfi_pool_canonical_bytes_of(bytes, sizeof bytes, DFI_POOL_FORME_COUNT + 1u,
-                                                        DFI_POOL_MOVE_COUNT, DFI_POOL_ITEM_COUNT,
-                                                        DFI_POOL_ABILITY_COUNT, 0xFFu),
+        DF_CHECK_EQ_U64(&t, dfi_pool_canonical_bytes_of(bytes, sizeof bytes, DFI_POOL_FORME_COUNT + 1u, G2_MOVES,
+                                                        G2_ITEMS, G2_ABILITIES, 0xFFu),
                         0u);
-        DF_CHECK_EQ_U64(&t, dfi_pool_canonical_bytes_of(bytes, sizeof bytes, DFI_POOL_FORME_COUNT,
-                                                        DFI_POOL_MOVE_COUNT, DFI_POOL_ITEM_COUNT + 1u,
-                                                        DFI_POOL_ABILITY_COUNT, 0xFFu),
+        DF_CHECK_EQ_U64(&t, dfi_pool_canonical_bytes_of(bytes, sizeof bytes, G2_FORMES, DFI_POOL_MOVE_COUNT + 1u,
+                                                        G2_ITEMS, G2_ABILITIES, 0xFFu),
                         0u);
-        DF_CHECK_EQ_U64(&t, dfi_pool_canonical_bytes_of(bytes, sizeof bytes, DFI_POOL_FORME_COUNT,
-                                                        DFI_POOL_MOVE_COUNT, DFI_POOL_ITEM_COUNT,
+        DF_CHECK_EQ_U64(&t, dfi_pool_canonical_bytes_of(bytes, sizeof bytes, G2_FORMES, G2_MOVES,
+                                                        DFI_POOL_ITEM_COUNT + 1u, G2_ABILITIES, 0xFFu),
+                        0u);
+        DF_CHECK_EQ_U64(&t, dfi_pool_canonical_bytes_of(bytes, sizeof bytes, G2_FORMES, G2_MOVES, G2_ITEMS,
                                                         DFI_POOL_ABILITY_COUNT + 1u, 0xFFu),
                         0u);
     }
@@ -713,17 +948,20 @@ int main(void)
     }
 
     /* The legal moves and abilities of the formes. A bit per pool move, in as
-     * many bytes as the moves need; the base formes are the literal cases
-     * above, a Mega forme has no learnable move and its one ability. */
+     * many bytes as the moves need. The literal cases above are the answers of the validator for the formes of the
+     * closure, Team C and G2 and for the 72 moves of those steps; the whole pool has more moves and abilities for
+     * the same formes, so a case holds for the moves below G2_MOVES and its abilities are listed in the forme's
+     * list in that order. Every other base forme is checked against the validator by pool_families.js and against
+     * legal_pool.json by pool_rows.py. A Mega forme has no learnable move and its one ability. */
     {
         DF_CHECK_EQ_U64(&t, DFI_POOL_LEARN_BYTES, (DFI_POOL_MOVE_COUNT + 7u) / 8u);
-        DF_CHECK_EQ_U64(&t, DFI_POOL_LEARN_BYTES, 9u);
+        DF_CHECK_EQ_U64(&t, DFI_POOL_LEARN_BYTES, 64u);
         DF_CHECK_EQ_U64(&t, DFI_POOL_FORME_ABILITIES_MAX, 3u);
         uint32_t base_formes = 0u;
         for (uint32_t f = 0u; f < DFI_POOL_FORME_COUNT; ++f) {
             base_formes += dfi_pool_formes[f].is_mega == 0u ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, base_formes, sizeof legal_formes / sizeof legal_formes[0]);
+        DF_CHECK_EQ_U64(&t, base_formes, 264u);
         uint32_t seen = 0u;
         for (size_t c = 0u; c < sizeof legal_formes / sizeof legal_formes[0]; ++c) {
             const legal_case *lc = &legal_formes[c];
@@ -731,7 +969,7 @@ int main(void)
             DF_CHECK(&t, dfi_pool_formes[lc->forme].is_mega == 0u);
             seen += 1u;
             uint32_t wrong = 0u;
-            for (uint32_t move = 0u; move < DFI_POOL_MOVE_COUNT; ++move) {
+            for (uint32_t move = 0u; move < G2_MOVES; ++move) {
                 bool listed_move = false;
                 for (uint32_t k = 0u; k < lc->move_count; ++k) {
                     listed_move = listed_move || lc->moves[k] == move;
@@ -742,15 +980,24 @@ int main(void)
             for (uint32_t move = DFI_POOL_MOVE_COUNT; move < DFI_POOL_LEARN_BYTES * 8u; ++move) {
                 wrong += bit_of(l->learnable, move) ? 1u : 0u;
             }
-            wrong += l->ability_count != lc->ability_count ? 1u : 0u;
-            for (uint32_t k = 0u; k < DFI_POOL_FORME_ABILITIES_MAX; ++k) {
-                wrong += l->abilities[k] != (k < lc->ability_count ? lc->abilities[k] : DFI_CLOSURE_NONE) ? 1u : 0u;
+            /* The abilities of the case, in the case's order, within the forme's list (at most three). */
+            wrong += l->ability_count < lc->ability_count || l->ability_count > DFI_POOL_FORME_ABILITIES_MAX ? 1u : 0u;
+            uint32_t from = 0u;
+            for (uint32_t k = 0u; k < lc->ability_count; ++k) {
+                while (from < l->ability_count && l->abilities[from] != lc->abilities[k]) {
+                    from += 1u;
+                }
+                wrong += from >= l->ability_count ? 1u : 0u;
+                from += 1u;
+            }
+            for (uint32_t k = l->ability_count; k < DFI_POOL_FORME_ABILITIES_MAX; ++k) {
+                wrong += l->abilities[k] != DFI_CLOSURE_NONE ? 1u : 0u;
             }
             if (!DF_CHECK(&t, wrong == 0u)) {
                 fprintf(stderr, "  forme %u: %u wrong bits or abilities\n", lc->forme, wrong);
             }
             /* The forme's own set is legal for it. */
-            const dfi_forme_data *f = &dfi_pool_formes[lc->forme];
+            const dfi_pool_forme_data *f = &dfi_pool_formes[lc->forme];
             uint32_t outside = 0u;
             for (uint32_t k = 0u; k < f->set_move_count; ++k) {
                 outside += bit_of(l->learnable, f->set_moves[k]) ? 0u : 1u;
@@ -761,7 +1008,7 @@ int main(void)
             }
             DF_CHECK(&t, outside == 0u && own);
         }
-        DF_CHECK_EQ_U64(&t, seen, base_formes);
+        DF_CHECK_EQ_U64(&t, seen, 22u); /* the base formes of the closure, Team C and G2: 28 rows less 6 Mega formes */
         uint32_t odd = 0u;
         for (uint32_t f = 0u; f < DFI_POOL_FORME_COUNT; ++f) {
             const dfi_forme_legal *l = &dfi_pool_forme_legal[f];
@@ -797,22 +1044,6 @@ int main(void)
     DF_CHECK(&t, DFI_ABILITY_FAMILY_ATE != DFI_ABILITY_FAMILY_PINCH &&
                      DFI_ABILITY_FAMILY_WEATHER_SETTER != DFI_ABILITY_FAMILY_TERRAIN_SETTER);
 
-    /* The move extra column (step G10): Scald thaws its target, Recover heals half of the maximum HP, no other
-     * move has a row, and no extended move does (so the prefix is unchanged). */
-    {
-        for (uint32_t id = 0u; id < DFI_POOL_MOVE_COUNT; ++id) {
-            const bool scald = id == DFI_MOVE_SCALD;
-            const bool recover = id == DFI_MOVE_RECOVER;
-            DF_CHECK_EQ_U64(&t, dfi_pool_move_extra[id].flags, scald ? DFI_EXTRA_THAWS_TARGET : 0u);
-            DF_CHECK_EQ_U64(&t, dfi_pool_move_extra[id].heal[0], recover ? 1u : 0u);
-            DF_CHECK_EQ_U64(&t, dfi_pool_move_extra[id].heal[1], recover ? 2u : 0u);
-            if (scald || recover) {
-                DF_CHECK_EQ_U64(&t, dfi_pool_moves[id].special, DFI_SPECIAL_NONE); /* data, no handler */
-            }
-        }
-        DF_CHECK(&t, DFI_MOVE_SCALD >= DFI_EXT_MOVE_COUNT && DFI_MOVE_RECOVER >= DFI_EXT_MOVE_COUNT);
-    }
-
     /* The support manifest covers the pool ids. Step P2 made the two item
      * families rules and step P3 the two ability families (the "-ate" and
      * pinch ones): every new item and ability of those steps is marked, and
@@ -830,7 +1061,9 @@ int main(void)
             DF_CHECK(&t, dfi_support.items[id] != 0u);
             DF_CHECK(&t, dfi_pool_item_family[id].family != DFI_ITEM_FAMILY_NONE);
         }
-        for (uint32_t id = DFI_ITEM_FOCUSSASH; id < DFI_POOL_ITEM_COUNT; ++id) {
+        /* Step G4 marks Focus Sash (onDamage at the move-damage call); Expert Belt and Floettite stay unmarked. */
+        DF_CHECK(&t, dfi_support.items[DFI_ITEM_FOCUSSASH] != 0u);
+        for (uint32_t id = DFI_ITEM_FOCUSSASH + 1u; id < DFI_POOL_ITEM_COUNT; ++id) {
             DF_CHECK_EQ_U64(&t, dfi_support.items[id], 0u);
         }
         for (uint32_t id = 0u; id < DFI_POOL_ITEM_COUNT; ++id) {
@@ -838,14 +1071,15 @@ int main(void)
                 DF_CHECK(&t, dfi_support.items[id] != 0u);
             }
         }
-        /* The P1 abilities (Pixilate to Swarm, ids below Rock Head) are marked by step P3 and have a family;
-         * the G2 abilities after them stay unmarked and have none. */
+        /* The P1 abilities (Pixilate to Swarm, ids below Rock Head) are marked by step P3 and have a family; the
+         * G2 abilities after them have none, and of those only Rock Head is marked (step G4: no recoil from a
+         * recoil move), Flower Veil and Fairy Aura stay unmarked until their steps. */
         for (uint32_t id = DFI_EXT_ABILITY_COUNT; id < DFI_ABILITY_ROCKHEAD; ++id) {
             DF_CHECK(&t, dfi_support.abilities[id] != 0u);
             DF_CHECK(&t, dfi_pool_ability_family[id].family != DFI_ABILITY_FAMILY_NONE);
         }
         for (uint32_t id = DFI_ABILITY_ROCKHEAD; id < DFI_POOL_ABILITY_COUNT; ++id) {
-            DF_CHECK_EQ_U64(&t, dfi_support.abilities[id], 0u);
+            DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, id == DFI_ABILITY_ROCKHEAD ? 1u : 0u);
             DF_CHECK_EQ_U64(&t, dfi_pool_ability_family[id].family, DFI_ABILITY_FAMILY_NONE);
         }
         for (uint32_t id = 0u; id < DFI_POOL_ABILITY_COUNT; ++id) {
@@ -853,13 +1087,15 @@ int main(void)
                 DF_CHECK(&t, dfi_support.abilities[id] != 0u);
             }
         }
-        /* Step G2 marks twelve of its 22 moves, each used in a reference battle under the POOL kind (g2_data_moves_a
-         * to _d), and step G10 four more (First Impression, Scald, Recover, Low Kick: g10_*); U-turn (its switch
-         * cause is G5) and the moves with a handler id of a later step stay unmarked. */
+        /* Steps G2, G5, G8 and G10 mark nineteen of the 22 moves (G10: First Impression, Scald, Recover, Low Kick: g10_*), each used in a reference battle under the POOL kind
+         * (g2_data_moves_a to _d; U-turn: g5_uturn_a to _e; Throat Chop and Psychic Noise, whose lockout and Heal
+         * Block are secondary kinds, not handlers: g8_throat_chop, g8_heal_block, g8_heal_block_pair and _tie_a/_b); the
+         * seven moves with a handler id stay unmarked. */
         static const uint32_t marked_moves[] = {DFI_MOVE_ROCKSLIDE, DFI_MOVE_DOUBLEEDGE, DFI_MOVE_THUNDERBOLT,
                                                 DFI_MOVE_FLASHCANNON, DFI_MOVE_EXTREMESPEED, DFI_MOVE_HEADSMASH,
                                                 DFI_MOVE_BULKUP, DFI_MOVE_LIQUIDATION, DFI_MOVE_ICEPUNCH,
                                                 DFI_MOVE_SHADOWCLAW, DFI_MOVE_DRUMBEATING, DFI_MOVE_DAZZLINGGLEAM,
+                                                DFI_MOVE_UTURN, DFI_MOVE_THROATCHOP, DFI_MOVE_PSYCHICNOISE,
                                                 DFI_MOVE_FIRSTIMPRESSION, DFI_MOVE_SCALD, DFI_MOVE_RECOVER,
                                                 DFI_MOVE_LOWKICK};
         uint32_t marked_count = 0u;
@@ -870,12 +1106,145 @@ int main(void)
             }
             DF_CHECK_EQ_U64(&t, dfi_support.moves[id] != 0u ? 1u : 0u, want ? 1u : 0u);
             /* A marked move has a handler id only if the engine has the code for it: First Impression (Fake Out's
-             * family) and Low Kick (Grass Knot's); the others are data. */
+             * family) and Low Kick (Grass Knot's); the others are data. Never the UNMODELED one. */
             DF_CHECK(&t, !want || dfi_pool_moves[id].special == DFI_SPECIAL_NONE ||
                              id == DFI_MOVE_FIRSTIMPRESSION || id == DFI_MOVE_LOWKICK);
+            DF_CHECK(&t, !want || dfi_pool_moves[id].special != DFI_SPECIAL_UNMODELED);
             marked_count += dfi_support.moves[id] != 0u ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, marked_count, 16u);
+        DF_CHECK_EQ_U64(&t, marked_count, 19u);
+    }
+
+    /* The whole-pool rows: what the tables model and what they do not (decision 0015 section 4.2). A move, item or
+     * ability row that has any callback, field, target class or flag that the tables do not model carries the UNMODELED
+     * handler (the move's special column, the handler column of an item or an ability) and a list of those features;
+     * the three always agree. The closure, Team C and G2 rows are never UNMODELED: the closure and Team C rows are
+     * code in the turn core, the G2 moves with a callback have a handler id of their own, and of the G2 items and
+     * abilities the engine implements Focus Sash and Rock Head by id (ENGINE_ROWS of the generator). */
+    {
+        uint32_t odd = 0u;
+        uint32_t unmodeled_moves = 0u;
+        uint32_t unmodeled_items = 0u;
+        uint32_t unmodeled_abilities = 0u;
+        for (uint32_t id = 0u; id < DFI_POOL_MOVE_COUNT; ++id) {
+            const bool handler = dfi_pool_moves[id].special == DFI_SPECIAL_UNMODELED;
+            const bool listed = dfi_pool_move_unmodeled[id] != NULL;
+            odd += handler != listed ? 1u : 0u;
+            odd += listed && dfi_pool_move_unmodeled[id][0] == '\0' ? 1u : 0u;
+            odd += id < G2_MOVES && handler ? 1u : 0u;
+            odd += dfi_pool_moves[id].special > DFI_SPECIAL_UNMODELED ? 1u : 0u;
+            unmodeled_moves += handler ? 1u : 0u;
+        }
+        for (uint32_t id = 0u; id < DFI_POOL_ITEM_COUNT; ++id) {
+            const bool handler = dfi_pool_item_handler[id] == DFI_HANDLER_UNMODELED;
+            const bool listed = dfi_pool_item_unmodeled[id] != NULL;
+            odd += dfi_pool_item_handler[id] > DFI_HANDLER_UNMODELED ? 1u : 0u;
+            odd += handler != listed ? 1u : 0u;
+            odd += listed && dfi_pool_item_unmodeled[id][0] == '\0' ? 1u : 0u;
+            odd += id < DFI_EXT_ITEM_COUNT && handler ? 1u : 0u;
+            odd += dfi_pool_item_family[id].family != DFI_ITEM_FAMILY_NONE && handler ? 1u : 0u; /* a family is a rule */
+            unmodeled_items += handler ? 1u : 0u;
+        }
+        for (uint32_t id = 0u; id < DFI_POOL_ABILITY_COUNT; ++id) {
+            const bool handler = dfi_pool_ability_handler[id] == DFI_HANDLER_UNMODELED;
+            const bool listed = dfi_pool_ability_unmodeled[id] != NULL;
+            odd += dfi_pool_ability_handler[id] > DFI_HANDLER_UNMODELED ? 1u : 0u;
+            odd += handler != listed ? 1u : 0u;
+            odd += listed && dfi_pool_ability_unmodeled[id][0] == '\0' ? 1u : 0u;
+            odd += id < DFI_EXT_ABILITY_COUNT && handler ? 1u : 0u;
+            odd += dfi_pool_ability_family[id].family != DFI_ABILITY_FAMILY_NONE && handler ? 1u : 0u;
+            unmodeled_abilities += handler ? 1u : 0u;
+        }
+        DF_CHECK_EQ_U64(&t, odd, 0u);
+        /* The counts are pinned: a change of the generator's rules or of the pin moves them, and is reviewed. */
+        DF_CHECK_EQ_U64(&t, unmodeled_moves, UNMODELED_MOVES);
+        DF_CHECK_EQ_U64(&t, unmodeled_items, UNMODELED_ITEMS);
+        DF_CHECK_EQ_U64(&t, unmodeled_abilities, UNMODELED_ABILITIES);
+        /* The rows of the steps. */
+        DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_FOCUSSASH] == DFI_HANDLER_NONE &&
+                         dfi_pool_ability_handler[DFI_ABILITY_ROCKHEAD] == DFI_HANDLER_NONE);
+        DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_EXPERTBELT] == DFI_HANDLER_UNMODELED &&
+                         dfi_pool_ability_handler[DFI_ABILITY_FLOWERVEIL] == DFI_HANDLER_UNMODELED &&
+                         dfi_pool_ability_handler[DFI_ABILITY_FAIRYAURA] == DFI_HANDLER_UNMODELED);
+        DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_FLOETTITE] == DFI_HANDLER_NONE); /* a Mega Stone: data of its link */
+        DF_CHECK(&t, dfi_pool_moves[DFI_MOVE_UTURN].special == DFI_SPECIAL_NONE);
+        /* A few whole-pool rows, by what the pin says. Earthquake: allAdjacent, a class that the turn code lacks;
+         * Hydro Pump: pure data; Substitute: a volatile with callbacks; Stealth Rock: a side condition and a class
+         * that the closure lacks; Absolite Z: the second Mega Stone of Absol; Damp Rock: no callback, read by id in
+         * data/conditions.ts; Levitate: no callback, read by id elsewhere; Intimidate: code in the turn core. */
+        DF_CHECK(&t, dfi_pool_moves[DFI_MOVE_EARTHQUAKE].special == DFI_SPECIAL_UNMODELED &&
+                         dfi_pool_moves[DFI_MOVE_EARTHQUAKE].target_class == DFI_TARGET_CLASS_ALL_ADJACENT &&
+                         strcmp(dfi_pool_move_unmodeled[DFI_MOVE_EARTHQUAKE], "target allAdjacent") == 0);
+        DF_CHECK(&t, dfi_pool_moves[DFI_MOVE_HYDROPUMP].special == DFI_SPECIAL_NONE &&
+                         dfi_pool_move_unmodeled[DFI_MOVE_HYDROPUMP] == NULL && dfi_pool_moves[DFI_MOVE_HYDROPUMP].base_power == 110u &&
+                         dfi_pool_moves[DFI_MOVE_HYDROPUMP].accuracy == 80u);
+        DF_CHECK(&t, dfi_pool_moves[DFI_MOVE_SUBSTITUTE].special == DFI_SPECIAL_UNMODELED &&
+                         strstr(dfi_pool_move_unmodeled[DFI_MOVE_SUBSTITUTE], "primary volatile substitute") != NULL);
+        DF_CHECK(&t, strstr(dfi_pool_move_unmodeled[DFI_MOVE_STEALTHROCK], "side condition stealthrock") != NULL &&
+                         strstr(dfi_pool_move_unmodeled[DFI_MOVE_STEALTHROCK], "target foeSide") != NULL &&
+                         dfi_pool_moves[DFI_MOVE_STEALTHROCK].side_condition == 0u);
+        DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_ABSOLITEZ] == DFI_HANDLER_UNMODELED &&
+                         strstr(dfi_pool_item_unmodeled[DFI_ITEM_ABSOLITEZ], "second Mega forme absolmegaz") != NULL &&
+                         dfi_pool_item_handler[DFI_ITEM_ABSOLITE] == DFI_HANDLER_NONE);
+        DF_CHECK(&t, strcmp(dfi_pool_item_unmodeled[DFI_ITEM_DAMPROCK], "read by id in data/conditions.ts") == 0);
+        DF_CHECK(&t, dfi_pool_ability_handler[DFI_ABILITY_LEVITATE] == DFI_HANDLER_UNMODELED &&
+                         strstr(dfi_pool_ability_unmodeled[DFI_ABILITY_LEVITATE], "read by id in sim/pokemon.ts") != NULL);
+        DF_CHECK(&t, dfi_pool_ability_handler[DFI_ABILITY_INTIMIDATE] == DFI_HANDLER_NONE);
+        /* The target classes of the pool beyond the public ones: encoded, never a public value. */
+        DF_CHECK_EQ_U64(&t, DFI_TARGET_CLASS_ALL_ADJACENT, 11u);
+        DF_CHECK(&t, DFI_TARGET_CLASS_FOE_SIDE == 15u && DFI_TARGET_CLASS_FOE_SIDE > DFI_TARGET_CLASS_RANDOM_NORMAL);
+        for (uint32_t id = 0u; id < DFI_POOL_MOVE_COUNT; ++id) {
+            /* A target class beyond the closure's is never in a modelled row. */
+            DF_CHECK(&t, dfi_pool_moves[id].target_class <= DFI_TARGET_CLASS_RANDOM_NORMAL ||
+                             dfi_pool_moves[id].special == DFI_SPECIAL_UNMODELED);
+            /* The effect columns of an UNMODELED row are neutral: it claims nothing beyond its plain data. */
+            if (dfi_pool_moves[id].special == DFI_SPECIAL_UNMODELED) {
+                const dfi_move_data *m = &dfi_pool_moves[id];
+                DF_CHECK(&t, m->sec_chance == 0u && m->sec_kind == 0u && m->sec_param == 0u && m->boost_role == 0u &&
+                                 m->primary_status == 0u && m->side_condition == 0u && m->pseudo_weather == 0u);
+            }
+        }
+    }
+
+    /* Nothing half-modelled reaches a marked row: no mark in the support manifest on a row with the UNMODELED
+     * handler or a list of unmodelled features. The check is made on the manifest of this build and, to show that it
+     * can fail, on copies that mark one UNMODELED row of each table. */
+    {
+        DF_CHECK_EQ_U64(&t, half_modelled_marks(&dfi_support), 0u);
+        uint32_t seen = 0u;
+        for (uint32_t table = 0u; table < 3u; ++table) {
+            const uint32_t count = table == 0u ? DFI_POOL_MOVE_COUNT : table == 1u ? DFI_POOL_ITEM_COUNT : DFI_POOL_ABILITY_COUNT;
+            for (uint32_t id = 0u; id < count; ++id) {
+                const bool unmodeled = table == 0u   ? dfi_pool_moves[id].special == DFI_SPECIAL_UNMODELED
+                                       : table == 1u ? dfi_pool_item_handler[id] == DFI_HANDLER_UNMODELED
+                                                     : dfi_pool_ability_handler[id] == DFI_HANDLER_UNMODELED;
+                if (!unmodeled) {
+                    continue;
+                }
+                dfi_support_manifest copy = dfi_support;
+                (table == 0u ? copy.moves : table == 1u ? copy.items : copy.abilities)[id] = 1u;
+                DF_CHECK_EQ_U64(&t, half_modelled_marks(&copy), 1u);
+                seen += 1u;
+                break;
+            }
+        }
+        DF_CHECK_EQ_U64(&t, seen, 3u);
+        /* A modelled row that is not marked is no half-modelled mark (the whole pool is unmarked beyond the steps). */
+        dfi_support_manifest copy = dfi_support;
+        copy.moves[DFI_MOVE_HYDROPUMP] = 1u;
+        DF_CHECK_EQ_U64(&t, half_modelled_marks(&copy), 0u);
+    }
+
+    /* A Mega forme that its base forme does not link is not reachable: the second Mega formes of Absol, Charizard,
+     * Garchomp, Lucario and Raichu are rows, and every manifest says that Mega Evolution into them is unsupported. */
+    {
+        uint32_t second = 0u;
+        for (uint32_t f = 0u; f < DFI_POOL_FORME_COUNT; ++f) {
+            if (dfi_pool_formes[f].is_mega != 0u && dfi_pool_formes[dfi_pool_formes[f].base_forme].mega_forme != f) {
+                second += 1u;
+            }
+        }
+        DF_CHECK_EQ_U64(&t, second, 5u);
     }
 
     return df_test_end(&t);
