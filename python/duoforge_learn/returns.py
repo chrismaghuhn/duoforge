@@ -43,3 +43,27 @@ def gae(values, rewards, done, acting, bootstrap, gamma=0.99, lam=0.95):
         target = np.where(acting[t], own, target)
     returns = np.where(acting, advantages + values, 0.0)
     return advantages.astype(np.float32), returns.astype(np.float32), targets.astype(np.float32)
+
+
+def samples_of(rollout, advantages, value_targets, learner_rows=None):
+    """One row per seat and step: the policy learns from the acting rows,
+    the value from all of them. learner_rows (E, 2) bool keeps only the
+    learner's rows (a league opponent's rows are not training data)."""
+    keep = (np.ones(rollout["acting"].shape, dtype=bool) if learner_rows is None
+            else np.broadcast_to(learner_rows, rollout["acting"].shape)).reshape(-1)
+
+    def rows(a, tail=False):
+        flat = a.reshape((-1,) + a.shape[3:]) if tail else a.reshape(-1)
+        return flat[keep]
+
+    return {
+        "obs": rows(rollout["obs"], True),
+        "slots": rows(rollout["slots"], True),
+        "mask": rows(rollout["mask"], True),
+        "is_team": rows(rollout["is_team"]),
+        "acting": rows(rollout["acting"]).astype(np.float32),
+        "actions": rows(rollout["actions"]).astype(np.int32),
+        "logp": rows(rollout["logp"]).astype(np.float32),
+        "advantages": rows(advantages),
+        "value_targets": rows(value_targets),
+    }

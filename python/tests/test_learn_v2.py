@@ -207,6 +207,53 @@ class TrainingV2Test(unittest.TestCase):
             shutil.rmtree(out, ignore_errors=True)
 
 
+class LeagueJaxTest(unittest.TestCase):
+    def test_opponents_use_each_rows_slot(self):
+        import jax
+        from duoforge_learn import league
+        _, turn = _scenes()
+        obs, slots, mask = turn
+        is_team = np.zeros(obs.shape[0], dtype=bool)
+        m = policy.make(policy.v2_config("S", hidden=32))
+        a, b = m.init(jax.random.PRNGKey(10)), m.init(jax.random.PRNGKey(11))
+        # Peaked, opposite option scores, so the two slots choose differently.
+        a["option_out"]["w"] = a["option_out"]["w"] * 1e4
+        b["option_out"]["w"] = a["option_out"]["w"] * -1.0
+        opp = league.Opponents(m, 2)
+        opp.set(0, a)
+        opp.set(1, b)
+        slot = np.arange(obs.shape[0]) % 2
+        key = jax.random.PRNGKey(12)
+        got = opp.act(key, obs, slots, mask, is_team, slot)
+        want_a = np.asarray(m.act(a, key, obs, slots, mask, is_team)[0])
+        want_b = np.asarray(m.act(b, key, obs, slots, mask, is_team)[0])
+        self.assertGreater(int((want_a != want_b).sum()), obs.shape[0] // 4)
+        np.testing.assert_array_equal(got, np.where(slot == 0, want_a, want_b))
+
+    def test_training_with_league_excludes_opponent_rows(self):
+        import json
+        import os
+        import shutil
+        import tempfile
+        from duoforge_learn import train
+        out = tempfile.mkdtemp(prefix="duoforge-league-")
+        try:
+            code = train.main(["--envs", "8", "--workers", "2", "--rollout", "8", "--updates", "3", "--minutes", "0",
+                               "--eval-every", "3", "--eval-envs", "8", "--minibatch", "256", "--self-play-share",
+                               "0.5", "--league-slots", "2", "--snapshot-every", "1", "--slot-refresh", "1",
+                               "--out", out])
+            self.assertEqual(code, 0)
+            with open(os.path.join(out, "log.jsonl"), encoding="utf-8") as f:
+                records = [json.loads(line) for line in f if line.startswith('{"update"')]
+            for r in records:
+                self.assertGreater(r["policy_rows"], 0)
+                self.assertLess(r["policy_rows"], r["acted_rows"])
+            self.assertTrue(os.path.isfile(os.path.join(out, "params-0.npz")))
+            self.assertIn("league", records[-1])
+        finally:
+            shutil.rmtree(out, ignore_errors=True)
+
+
 PRESET_COUNTS = {"S": 384751, "M": 2072463, "L": 7871631}
 
 

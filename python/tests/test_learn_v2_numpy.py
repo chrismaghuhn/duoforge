@@ -12,7 +12,7 @@ import numpy as np
 
 import duoforge
 from duoforge import features, teams
-from duoforge_learn import checkpoint, columns, pairing
+from duoforge_learn import checkpoint, columns, league, pairing
 from duoforge_learn.selfplay import SelfPlay
 
 
@@ -185,6 +185,109 @@ class SelfPlayPoolTest(unittest.TestCase):
             self.assertEqual(starts, [([0, 1], [5, 9])])
         finally:
             env.close()
+
+
+def _started(state, envs, episodes):
+    state.start(np.asarray(envs), np.asarray(episodes))
+
+
+class LeagueTest(unittest.TestCase):
+    def test_groups_and_seats(self):
+        st = league.LeagueState(8, 0.5, 4, 50, 1)
+        self.assertEqual(st.self_play.tolist(), [True] * 4 + [False] * 4)
+        self.assertEqual(st.learner_seat.tolist(), [-1, -1, -1, -1, 0, 1, 0, 1])
+        rows = st.learner_rows()
+        self.assertEqual(rows[:4].tolist(), [[True, True]] * 4)
+        self.assertEqual(rows[4:].tolist(), [[True, False], [False, True], [True, False], [False, True]])
+        with self.assertRaisesRegex(ValueError, "at least 2 slots"):
+            league.LeagueState(8, 0.5, 1, 50, 1)
+        self.assertFalse(league.LeagueState(8, 1.0, 0, 50, 1).learner_rows().sum() != 16)
+
+    def test_slots_change_only_at_episode_starts(self):
+        st = league.LeagueState(8, 0.5, 4, 1, 1)
+        _started(st, range(8), [0] * 8)
+        self.assertEqual((st.slot_of[:4] == -1).all(), True)
+        self.assertTrue((st.slot_of[4:] >= 0).all())
+        before = st.slot_of.copy()
+        st.tick(1)
+        st.load(1, "update 9") if st.ready() == 1 else None
+        self.assertEqual(st.slot_of.tolist(), before.tolist())
+        self.assertEqual(int(st.active.sum()), 4)
+
+    def test_draining_slot_takes_no_new_episodes_and_reloads_when_empty(self):
+        st = league.LeagueState(20, 0.0, 2, 1, 3)
+        _started(st, range(20), [0] * 20)
+        st.tick(1)
+        self.assertEqual(st.draining, 0)
+        on_zero = np.flatnonzero(st.slot_of == 0)
+        for k, e in enumerate(range(20)):
+            st.end(np.array([e]), np.array([0]))
+            _started(st, [e], [1])
+            self.assertEqual(int(st.slot_of[e]), 1)
+            expect = 0 if k == 19 or set(on_zero) <= set(range(k + 1)) else -1
+            self.assertEqual(st.ready(), expect)
+        st.load(0, "update 1")
+        self.assertEqual((st.draining, st.snapshots[0]), (-1, "update 1"))
+
+    def test_one_slot_drains_at_a_time(self):
+        st = league.LeagueState(6, 0.0, 3, 2, 1)
+        _started(st, range(6), [0] * 6)
+        st.tick(2)
+        st.tick(4)
+        self.assertEqual(st.draining, 0)
+        st.tick(5)
+        self.assertEqual(st.draining, 0)
+
+    def test_stats_count_wins_and_ties(self):
+        st = league.LeagueState(4, 0.0, 2, 50, 1)
+        _started(st, range(4), [0] * 4)
+        snaps = [st.snapshots[s] for s in st.slot_of]
+        st.end(np.arange(4), np.array([1, -1, 0, 1]))
+        self.assertEqual(sum(v[0] for v in st.stats.values()), 4)
+        self.assertEqual(sum(v[1] for v in st.stats.values()), 2)
+        self.assertEqual(sum(v[2] for v in st.stats.values()), 1)
+        self.assertEqual(set(st.stats), set(snaps))
+        self.assertEqual(int(st.active.sum()), 0)
+
+    def test_state_round_trip(self):
+        st = league.LeagueState(10, 0.4, 3, 7, 5)
+        _started(st, range(10), [2] * 10)
+        st.tick(7)
+        st.end(np.array([9]), np.array([1]))
+        back = league.LeagueState.from_dict(st.to_dict())
+        for k in ("self_play", "learner_seat", "slot_of", "active"):
+            self.assertEqual(getattr(back, k).tolist(), getattr(st, k).tolist())
+        self.assertEqual((back.snapshots, back.draining, back.stats), (st.snapshots, st.draining, st.stats))
+
+    def test_cut_off_episodes_release_their_slot(self):
+        st = league.LeagueState(6, 0.0, 2, 1, 4)
+        env = SelfPlay(6, 1, 0x2026100200000176, max_steps=5, on_start=st.start,
+                       on_end=lambda envs, rewards: st.end(envs, league.learner_results(st, envs, rewards)))
+        try:
+            st.tick(1)
+            loaded = False
+            for _ in range(30):
+                env.step(_first_legal(env.observe()))
+                if st.ready() == 0:
+                    st.load(0, "update 1")
+                    loaded = True
+                    break
+            self.assertTrue(loaded)
+            self.assertEqual(int(st.active.sum()), 6)
+        finally:
+            env.close()
+
+    def test_samples_keep_only_learner_rows(self):
+        from duoforge_learn.returns import samples_of
+        t, e = 3, 4
+        rollout = {"obs": np.zeros((t, e, 2, 5)), "slots": np.zeros((t, e, 2, 2, 32, 12)),
+                   "mask": np.zeros((t, e, 2, 32, 32), bool), "is_team": np.zeros((t, e, 2), bool),
+                   "acting": np.ones((t, e, 2), bool), "actions": np.arange(t * e * 2).reshape(t, e, 2),
+                   "logp": np.zeros((t, e, 2)), "values": np.zeros((t, e, 2))}
+        rows = np.array([[True, True], [True, True], [True, False], [False, True]])
+        samples = samples_of(rollout, np.zeros((t, e, 2)), np.zeros((t, e, 2)), rows)
+        keep = np.broadcast_to(rows, (t, e, 2)).reshape(-1)
+        self.assertEqual(samples["actions"].tolist(), np.arange(t * e * 2)[keep].tolist())
 
 
 if __name__ == "__main__":

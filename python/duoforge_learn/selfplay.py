@@ -80,11 +80,12 @@ class SelfPlay:
     reference setups, CLOSURE data); context: the context the pool's teams
     run in (default: a CLOSURE context this object owns); start_episodes:
     each environment's first episode (default 0); on_start(envs, episodes)
-    is called whenever episodes start; encoder: the encoder version of the
+    is called whenever episodes start and on_end(envs, rewards (K, 2))
+    before the ended ones restart; encoder: the encoder version of the
     observations (features.as_encoder)."""
 
     def __init__(self, envs, workers, seed, pool=None, max_steps=500, start_episodes=None,
-                 encoder=features.ENCODER, context=None, on_start=None):
+                 encoder=features.ENCODER, context=None, on_start=None, on_end=None):
         self._owns_context = context is None
         self.context = duoforge.Context() if context is None else context
         if pool is None:
@@ -93,6 +94,7 @@ class SelfPlay:
         self.seed = int(seed)
         self.encoder = encoder
         self.on_start = on_start
+        self.on_end = on_end
         self.max_steps = int(max_steps)
         self.episodes = (np.zeros(envs, dtype=np.uint32) if start_episodes is None
                          else np.array(start_episodes, dtype=np.uint32).reshape(envs))
@@ -127,6 +129,8 @@ class SelfPlay:
         done = terminal | cut
         if done.any():
             envs = np.flatnonzero(done).astype(np.uint32)
+            if self.on_end is not None:
+                self.on_end(envs, rewards[envs])
             self.episodes[envs] += 1
             p0, p1 = pairing.pairings(self.seed, envs, self.episodes[envs], self.pool.weights)
             self.pairing[envs, 0], self.pairing[envs, 1] = p0, p1
