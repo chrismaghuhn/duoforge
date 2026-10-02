@@ -192,6 +192,19 @@ extern const dfi_forme_legal dfi_pool_forme_legal[DFI_POOL_FORME_COUNT];
 /* The second flags byte of every move (DFI_MOVE_FLAG2_*), by move id; part of the canonical pool bytes. */
 extern const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT];
 
+/* ---- names ----
+ * The Showdown id (toID: lower-case letters and digits) of every row, as a
+ * constant string, for the data query API (duoforge_data_find, _name). They
+ * come from the same run as the tables, so an id and its name always belong
+ * together; they are not part of the canonical bytes, the table hash or any
+ * fingerprint. The CLOSURE and TEAM_C kinds read their prefix of them. A
+ * Mega forme's name is the forme's own id (for example staraptormega). */
+extern const char *const dfi_pool_forme_names[DFI_POOL_FORME_COUNT];
+extern const char *const dfi_pool_move_names[DFI_POOL_MOVE_COUNT];
+extern const char *const dfi_pool_item_names[DFI_POOL_ITEM_COUNT];
+extern const char *const dfi_pool_ability_names[DFI_POOL_ABILITY_COUNT];
+extern const char *const dfi_pool_nature_names[DFI_NATURE_COUNT];
+
 /* SHA-256 of the canonical pool bytes (written by the generator). */
 #define DFI_POOL_CANONICAL_SIZE 3866u
 extern const uint8_t dfi_pool_table_hash[32];
