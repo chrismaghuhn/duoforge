@@ -783,24 +783,35 @@ int main(void)
     DF_CHECK(&t, DFI_ABILITY_FAMILY_ATE != DFI_ABILITY_FAMILY_PINCH &&
                      DFI_ABILITY_FAMILY_WEATHER_SETTER != DFI_ABILITY_FAMILY_TERRAIN_SETTER);
 
-    /* The support manifest covers the pool ids, and every new id is
-     * unmarked: only the step that makes a family a rule, or implements and
-     * tests a move, marks it. Step G2 marks none of its 22 moves. */
+    /* The support manifest covers the pool ids. Step P2 made the two item
+     * families rules: every new item (a booster or a berry) is marked, and
+     * so is every item with a family column, the prefix included; the
+     * abilities the expansion adds stay unmarked until the step that makes
+     * their family a rule. Step G2 adds the items Focus Sash, Expert Belt and
+     * Floettite (no family, unmarked) and 22 moves, which a step marks with the
+     * recorded battle that tests it. */
     {
         DF_CHECK_EQ_U64(&t, sizeof dfi_support.moves, DFI_POOL_MOVE_COUNT);
         DF_CHECK_EQ_U64(&t, sizeof dfi_support.abilities, DFI_POOL_ABILITY_COUNT);
         DF_CHECK_EQ_U64(&t, sizeof dfi_support.items, DFI_POOL_ITEM_COUNT);
-        uint32_t marked = 0u;
-        for (uint32_t id = DFI_EXT_ITEM_COUNT; id < DFI_POOL_ITEM_COUNT; ++id) {
-            marked += dfi_support.items[id] != 0u ? 1u : 0u;
+        for (uint32_t id = DFI_EXT_ITEM_COUNT; id < DFI_ITEM_FOCUSSASH; ++id) {
+            DF_CHECK(&t, dfi_support.items[id] != 0u);
+            DF_CHECK(&t, dfi_pool_item_family[id].family != DFI_ITEM_FAMILY_NONE);
+        }
+        for (uint32_t id = DFI_ITEM_FOCUSSASH; id < DFI_POOL_ITEM_COUNT; ++id) {
+            DF_CHECK_EQ_U64(&t, dfi_support.items[id], 0u);
+        }
+        for (uint32_t id = 0u; id < DFI_POOL_ITEM_COUNT; ++id) {
+            if (dfi_pool_item_family[id].family != DFI_ITEM_FAMILY_NONE) {
+                DF_CHECK(&t, dfi_support.items[id] != 0u);
+            }
         }
         for (uint32_t id = DFI_EXT_ABILITY_COUNT; id < DFI_POOL_ABILITY_COUNT; ++id) {
-            marked += dfi_support.abilities[id] != 0u ? 1u : 0u;
+            DF_CHECK_EQ_U64(&t, dfi_support.abilities[id], 0u);
         }
         for (uint32_t id = DFI_EXT_MOVE_COUNT; id < DFI_POOL_MOVE_COUNT; ++id) {
-            marked += dfi_support.moves[id] != 0u ? 1u : 0u;
+            DF_CHECK_EQ_U64(&t, dfi_support.moves[id], 0u);
         }
-        DF_CHECK_EQ_U64(&t, marked, 0u);
     }
 
     return df_test_end(&t);

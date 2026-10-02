@@ -19,11 +19,22 @@
  * tables have the closure and the extended tables as their prefix and the
  * POOL profile is the certified one, so every battle must pass as before and
  * the same battles run under POOL itself, not under POOL_DEV.
+ *
+ * Built with DF_CONFORMANCE_POOL_DATA it is duoforge.reference.conformance_pool_data:
+ * the battles recorded for the pool items (tests/reference/conformance_pool.h,
+ * "data": "pool" in their specs), which use ids that only the pool tables
+ * have. Every one must run under POOL itself, with no fallback to POOL_DEV.
  */
 #include <stdio.h>
 #include <string.h>
 
-#ifdef DF_CONFORMANCE_TEAM_C
+#if defined(DF_CONFORMANCE_POOL_DATA)
+#include "data/pool_tables.h"
+#include "reference/conformance_pool.h"
+#include "support/pool.h"
+#define DF_CONF_FORMES dfi_pool_formes
+#define DF_POOL_DATA_BATTLES 6u /* the recorded pool battles */
+#elif defined(DF_CONFORMANCE_TEAM_C)
 #include "data/extended_tables.h"
 #include "reference/conformance_team_c.h"
 #include "support/team_c.h"
@@ -76,7 +87,9 @@ static void build_setup(const df_conf_battle *cb, duoforge_battle_setup *s)
 int main(void)
 {
     df_test t;
-#if defined(DF_CONFORMANCE_POOL) && defined(DF_CONFORMANCE_TEAM_C)
+#if defined(DF_CONFORMANCE_POOL_DATA)
+    df_test_begin(&t, "duoforge.reference.conformance_pool_data");
+#elif defined(DF_CONFORMANCE_POOL) && defined(DF_CONFORMANCE_TEAM_C)
     df_test_begin(&t, "duoforge.reference.conformance_team_c_pool");
 #elif defined(DF_CONFORMANCE_POOL)
     df_test_begin(&t, "duoforge.reference.conformance_pool");
@@ -85,7 +98,7 @@ int main(void)
 #else
     df_test_begin(&t, "duoforge.reference.conformance");
 #endif
-#ifdef DF_CONFORMANCE_POOL
+#if defined(DF_CONFORMANCE_POOL) || defined(DF_CONFORMANCE_POOL_DATA)
     duoforge_context *k1 = df_make_context(&df_config_pool);
     duoforge_context *k2 = df_make_context(&df_config_pool_dev);
 #elif defined(DF_CONFORMANCE_TEAM_C)
@@ -168,7 +181,12 @@ int main(void)
         DF_CHECK_EQ_U64(&t, bad, 0u);
         duoforge_battle_destroy(b);
     }
-#ifdef DF_CONFORMANCE_TEAM_C
+#if defined(DF_CONFORMANCE_POOL_DATA)
+    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], DF_POOL_DATA_BATTLES);
+    /* All of them under POOL itself: the sets are the real members', with
+     * a real ability each, the new items are marked (decision 0015 step P2). */
+    DF_CHECK_EQ_U64(&t, real, DF_POOL_DATA_BATTLES);
+#elif defined(DF_CONFORMANCE_TEAM_C)
     DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], DF_TEAM_C_BATTLES);
     DF_CHECK_EQ_U64(&t, real, DF_TEAM_C_REAL);
     /* The real Team C of the recorded gate battles (team-c.txt through the
@@ -220,7 +238,7 @@ int main(void)
      * of battles found by the differential loop. */
     DF_CHECK_EQ_U64(&t, real, 26u);
 #endif
-#if defined(DF_CONFORMANCE_POOL)
+#if defined(DF_CONFORMANCE_POOL) || defined(DF_CONFORMANCE_POOL_DATA)
     fprintf(stderr, "  %u of the battles run under POOL data\n", real);
 #elif defined(DF_CONFORMANCE_TEAM_C)
     fprintf(stderr, "  %u of the battles run under TEAM_C data\n", real);

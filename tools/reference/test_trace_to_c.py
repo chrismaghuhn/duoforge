@@ -31,7 +31,7 @@ import trace_to_c  # noqa: E402
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 SCRIPT = os.path.join(HERE, 'trace_to_c.py')
-HEADERS = ('conformance.h', 'conformance_team_c.h', 'conformance_types.h')
+HEADERS = ('conformance.h', 'conformance_team_c.h', 'conformance_pool.h', 'conformance_types.h')
 
 _tables = {}
 
@@ -356,13 +356,17 @@ class Refusals(unittest.TestCase):
 
 class Library(unittest.TestCase):
     def test_the_committed_headers_are_what_the_library_makes(self):
-        """convert_battle and format_battle reproduce the three committed headers: the code --check runs."""
+        """convert_battle and format_battle reproduce the four committed headers: the code --check runs."""
         names = sorted(f[:-5] for f in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'traces'))
                        if f.endswith('.json'))
-        for team_c, fname in ((False, 'conformance.h'), (True, 'conformance_team_c.h')):
+        pool_names = [n for n in names if trace_to_c.is_pool(ROOT, n)]
+        self.assertGreater(len(pool_names), 0)
+        for team_c, pool, fname in ((False, False, 'conformance.h'), (True, False, 'conformance_team_c.h'),
+                                    (True, True, 'conformance_pool.h')):
             with self.subTest(fname):
-                chosen = [n for n in names if trace_to_c.is_team_c(ROOT, n) == team_c]
-                text, _, _ = trace_to_c.build_header(ROOT, chosen, tables(team_c), team_c)
+                chosen = [n for n in names if trace_to_c.is_pool(ROOT, n) == pool and
+                          (pool or trace_to_c.is_team_c(ROOT, n) == team_c)]
+                text, _, _ = trace_to_c.build_header(ROOT, chosen, tables(team_c), team_c, pool)
                 self.assertEqual(text, committed(fname))
                 self.assertIn('#include "reference/conformance_types.h"\n', text)
                 self.assertNotIn('typedef struct df_conf_', text)  # the types live in their own header
@@ -495,6 +499,25 @@ class Library(unittest.TestCase):
         self.assertTrue(trace_to_c.is_team_c(ROOT, 'c01_team_c_profile'))
         self.assertFalse(trace_to_c.is_team_c(ROOT, 's2_turn_core_1'))
 
+    def test_pool_is_the_decision_of_the_spec(self):
+        """"data": "pool" (decision 0015) is read with the extended ids, so spec_is_team_c holds for it too, and
+        spec_is_pool tells the pool battles apart; the pool tables name the new items and every old id is kept."""
+        self.assertEqual(trace_to_c.spec_data('x', {'data': 'pool'}), 'pool')
+        self.assertEqual(trace_to_c.spec_data('x', {'data': 'team_c'}), 'team_c')
+        self.assertEqual(trace_to_c.spec_data('x', {}), 'closure')
+        self.assertTrue(trace_to_c.spec_is_pool('x', {'data': 'pool'}))
+        self.assertFalse(trace_to_c.spec_is_pool('x', {'data': 'team_c'}))
+        self.assertFalse(trace_to_c.spec_is_pool('x', {}))
+        self.assertTrue(trace_to_c.spec_is_team_c('x', {'data': 'pool'}))
+        self.assertTrue(trace_to_c.is_pool(ROOT, 'p2_chilan_berry'))
+        self.assertFalse(trace_to_c.is_pool(ROOT, 'c05_chople_berry'))
+        extended = tables(True)
+        self.assertEqual(extended['ITEM']['CHILANBERRY'], 34)
+        self.assertEqual(extended['ITEM']['CHOPLEBERRY'], 14)
+        self.assertEqual(extended['ITEM']['MYSTICWATER'], 6)
+        self.assertNotIn('CHILANBERRY', tables(False)['ITEM'])
+        self.assertEqual(len(extended['GENDER_RULE']), 23)
+
     def test_pass_for_both_slots_converts_per_slot(self):
         """A choice that passes both slots of a switch request: each slot is
         asked when its Pokemon holds the switch flag (a fainted one, or a
@@ -542,7 +565,8 @@ class Cli(unittest.TestCase):
         """A small tree in `tmp`: the tables of src/data and some committed battles, one of them changed by
         `mutate(name, spec, trace)`."""
         os.makedirs(os.path.join(tmp, 'src', 'data'))
-        for fname in ('closure_tables.h', 'closure_tables.c', 'extended_tables.h', 'extended_tables.c'):
+        for fname in ('closure_tables.h', 'closure_tables.c', 'extended_tables.h', 'extended_tables.c',
+                      'pool_tables.h', 'pool_tables.c'):
             shutil.copy(os.path.join(ROOT, 'src', 'data', fname), os.path.join(tmp, 'src', 'data', fname))
         for kind in ('specs', 'traces'):
             os.makedirs(os.path.join(tmp, 'tests', 'reference', kind))
@@ -555,13 +579,14 @@ class Cli(unittest.TestCase):
                              encoding='utf-8') as f:
                     json.dump(obj, f)
 
-    BATTLES = ('c01_team_c_profile', 'c04_flip_turn_ko', 's2_ally_target', 's2_turn_core_1')
+    BATTLES = ('c01_team_c_profile', 'c04_flip_turn_ko', 'p2_chilan_berry', 's2_ally_target', 's2_turn_core_1')
 
     def test_check_of_the_committed_tables_passes(self):
         p = self.run_cli(ROOT, '--check')
         self.assertEqual((p.returncode, p.stderr), (0, ''), p.stdout)
         want = ['trace_to_c: %s matches %s' % (os.path.join(ROOT, 'tests', 'reference', fname), what)
                 for fname, what in (('conformance.h', 'the traces'), ('conformance_team_c.h', 'the traces'),
+                                    ('conformance_pool.h', 'the traces'),
                                     ('conformance_types.h', 'the template in trace_to_c.py'))]
         self.assertEqual(p.stdout.splitlines(), want)
 
@@ -579,7 +604,7 @@ class Cli(unittest.TestCase):
         self.assertEqual((p.returncode, p.stdout, p.stderr),
                          (1, '', "trace_to_c: unknown protocol line '|foo|bar'\n"))
 
-    def test_write_and_check_cover_all_three_files(self):
+    def test_write_and_check_cover_all_four_files(self):
         with tempfile.TemporaryDirectory() as tmp:
             self.tree(tmp, self.BATTLES)
             reference = os.path.join(tmp, 'tests', 'reference')
@@ -588,6 +613,7 @@ class Cli(unittest.TestCase):
             self.assertEqual(sorted(f for f in os.listdir(reference) if f.endswith('.h')), sorted(HEADERS))
             self.assertEqual(self.run_cli(tmp, '--check').returncode, 0)
             for fname, what in (('conformance_types.h', 'the template in trace_to_c.py'),
+                                ('conformance_pool.h', 'the traces'),
                                 ('conformance_team_c.h', 'the traces'), ('conformance.h', 'the traces')):
                 path = os.path.join(reference, fname)
                 with io.open(path, encoding='ascii') as f:

@@ -6,8 +6,8 @@ Collects --rollout batch steps of self-play, updates the policy with PPO,
 logs one JSON line per update to <out>/log.jsonl and evaluates the greedy
 policy against the random and the scripted baselines and against the
 previous evaluation's parameters (vs_previous above 0.5: still improving)
-every --eval-every updates, saving the parameters to
-<out>/params-<update>.npz.
+every --eval-every updates, saving the parameters with the configuration
+(which names the encoder version, "encoder") to <out>/params-<update>.npz.
 """
 import argparse
 import json
@@ -106,7 +106,7 @@ def main(argv=None):
     if os.path.isdir(args.out) and os.listdir(args.out):
         raise SystemExit(f"{args.out} is not empty: a run writes into a fresh directory")
     os.makedirs(args.out, exist_ok=True)
-    config = vars(args) | {"devices": [str(d) for d in jax.devices()]}
+    config = vars(args) | {"devices": [str(d) for d in jax.devices()], "encoder": features.ENCODER}
     print(json.dumps(config), flush=True)
     env = SelfPlay(args.envs, args.workers, args.seed, max_steps=args.max_steps)
     # All 64 bits of the seed: the low half makes the key, the high half is folded in.
@@ -145,7 +145,8 @@ def main(argv=None):
             if update % args.eval_every == 0 or last:
                 save(os.path.join(args.out, f"params-{update}.npz"), params, config)
                 for name, opponent in (("random", "random"), ("scripted", "scripted"), ("previous", previous)):
-                    result = evaluate.win_rate(params, act, opponent, envs=args.eval_envs, workers=args.workers)
+                    result = evaluate.win_rate(params, act, opponent, envs=args.eval_envs, workers=args.workers,
+                                               encoder=features.ENCODER, opponent_encoder=features.ENCODER)
                     record[f"vs_{name}"] = round(result["win_rate"], 4)
                     if result["unfinished"]:
                         record[f"unfinished_vs_{name}"] = result["unfinished"]

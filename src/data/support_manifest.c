@@ -54,10 +54,12 @@
  * foes' single-target moves before Lightning Rod).
  *
  * Pool (decision 0015; the ids the expansion adds after the extended ones):
- * the type boosters, the resist berries and the abilities Pixilate,
- * Refrigerate, Overgrow, Torrent and Swarm are unmarked. Step P1 only adds
- * the ids and their family columns; the steps that make the families rules
- * mark their members.
+ * step P1 added the ids and their family columns, step P2 makes the item
+ * families rules (the type booster, BasePower x4915/4096, and the resist
+ * berry, ModifyDamage x0.5, both read the family column) and marks the
+ * sixteen new boosters and seventeen new berries. The abilities Pixilate,
+ * Refrigerate, Overgrow, Torrent and Swarm stay unmarked until the steps
+ * that make their families rules.
  * Step G2 adds every row of the 17 target teams, all unmarked: the formes
  * Pelipper, Arcanine-Hisui, Annihilape and Floette-Eternal with its Mega, 22
  * moves (nine of them with a named handler id that the turn code refuses),
@@ -162,5 +164,38 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_CHOPLEBERRY] = 1u,
             [DFI_ITEM_CHOICESCARF] = 1u,
             [DFI_ITEM_WHITEHERB] = 1u,
+            [DFI_ITEM_BLACKBELT] = 1u,
+            [DFI_ITEM_BLACKGLASSES] = 1u,
+            [DFI_ITEM_CHARCOAL] = 1u,
+            [DFI_ITEM_DRAGONFANG] = 1u,
+            [DFI_ITEM_FAIRYFEATHER] = 1u,
+            [DFI_ITEM_HARDSTONE] = 1u,
+            [DFI_ITEM_MAGNET] = 1u,
+            [DFI_ITEM_METALCOAT] = 1u,
+            [DFI_ITEM_NEVERMELTICE] = 1u,
+            [DFI_ITEM_POISONBARB] = 1u,
+            [DFI_ITEM_SHARPBEAK] = 1u,
+            [DFI_ITEM_SILKSCARF] = 1u,
+            [DFI_ITEM_SILVERPOWDER] = 1u,
+            [DFI_ITEM_SOFTSAND] = 1u,
+            [DFI_ITEM_SPELLTAG] = 1u,
+            [DFI_ITEM_TWISTEDSPOON] = 1u,
+            [DFI_ITEM_BABIRIBERRY] = 1u,
+            [DFI_ITEM_CHARTIBERRY] = 1u,
+            [DFI_ITEM_CHILANBERRY] = 1u,
+            [DFI_ITEM_COBABERRY] = 1u,
+            [DFI_ITEM_COLBURBERRY] = 1u,
+            [DFI_ITEM_HABANBERRY] = 1u,
+            [DFI_ITEM_KASIBBERRY] = 1u,
+            [DFI_ITEM_KEBIABERRY] = 1u,
+            [DFI_ITEM_OCCABERRY] = 1u,
+            [DFI_ITEM_PASSHOBERRY] = 1u,
+            [DFI_ITEM_PAYAPABERRY] = 1u,
+            [DFI_ITEM_RINDOBERRY] = 1u,
+            [DFI_ITEM_ROSELIBERRY] = 1u,
+            [DFI_ITEM_SHUCABERRY] = 1u,
+            [DFI_ITEM_TANGABERRY] = 1u,
+            [DFI_ITEM_WACANBERRY] = 1u,
+            [DFI_ITEM_YACHEBERRY] = 1u,
         },
 };

@@ -1,6 +1,7 @@
 #include "combat/turn.h"
 
 #include "combat/events.h"
+#include "combat/item_family.h"
 
 #include "core/arith.h"
 #include "core/modifier.h"
@@ -844,9 +845,11 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     if (dfi_ability(a, DFI_ABILITY_TOUGHCLAWS) && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u) {
         ok = dfi_chain_modify(bp_chain, 5325u, &bp_chain); /* onBasePowerPriority 21: first */
     }
-    if ((move_type == DFI_TYPE_WATER && dfi_holds(a, DFI_ITEM_MYSTICWATER)) ||
-        (move_type == DFI_TYPE_GRASS && dfi_holds(a, DFI_ITEM_MIRACLESEED))) {
-        ok = ok && dfi_chain_modify(bp_chain, 4915u, &bp_chain);
+    /* A type booster (the TYPE_BOOSTER family: Mystic Water, Miracle Seed
+     * and the sixteen others, decision 0015): 4915/4096 for a move of its
+     * type (onBasePowerPriority 15). */
+    if (dfi_type_booster_applies(a, move_type)) {
+        ok = ok && dfi_chain_modify(bp_chain, DFI_TYPE_BOOSTER_MODIFIER, &bp_chain);
     }
     /* Helping Hand's volatile (Team C): chainModify(1.5) at
      * onBasePowerPriority 10, after the items (15) and before Grassy Terrain
@@ -955,13 +958,17 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     if (dfi_holds(a, DFI_ITEM_LIFEORB)) {
         ok = dfi_chain_modify(chain, 5324u, &chain);
     }
-    if (move_type == DFI_TYPE_FIGHTING && mod > DFI_BIAS6 && dfi_holds(d, DFI_ITEM_CHOPLEBERRY)) {
+    /* A resist berry (the RESIST_BERRY family: Chople Berry and the sixteen
+     * others, decision 0015; combat/item_family.h) is eaten by a super
+     * effective hit of its type, the Normal berry by any Normal hit. */
+    if (dfi_resist_berry_applies(d, move_type, mod)) {
+        const uint32_t berry_item = d->item;
         dfi_use_item(r, target); /* [-enditem] [eat] */
         duoforge_event weaken =
-            dfi_ev(DUOFORGE_EVENT_ITEM_END, target, DUOFORGE_CAUSE_NONE, 1u + DFI_ITEM_CHOPLEBERRY, DUOFORGE_NO_POSITION);
+            dfi_ev(DUOFORGE_EVENT_ITEM_END, target, DUOFORGE_CAUSE_NONE, berry_item, DUOFORGE_NO_POSITION);
         weaken.detail = 1u;
         dfi_emit(r, &weaken); /* [-enditem] [weaken] */
-        ok = ok && dfi_chain_modify(chain, 2048u, &chain);
+        ok = ok && dfi_chain_modify(chain, DFI_RESIST_BERRY_MODIFIER, &chain);
     }
     if (!crit && target != user &&
         ((physical && ds->reflect_turns != 0u) ||
@@ -1182,7 +1189,9 @@ static void dfi_use_item(dfi_run *r, uint32_t flat)
     b->sides[side].members[occupant].item_consumed = 1u;
     const uint32_t item = b->sides[side].members[occupant].item;
     duoforge_event e = dfi_ev(DUOFORGE_EVENT_ITEM_END, flat, DUOFORGE_CAUSE_NONE, item, DUOFORGE_NO_POSITION);
-    const bool berry = item == 1u + DFI_ITEM_SITRUSBERRY || item == 1u + DFI_ITEM_CHOPLEBERRY;
+    const bool berry = item == 1u + DFI_ITEM_SITRUSBERRY ||
+                       (item != 0u && item <= DFI_POOL_ITEM_COUNT &&
+                        dfi_pool_item_family[item - 1u].family == DFI_ITEM_FAMILY_RESIST_BERRY);
     e.flags = berry ? (uint8_t)DUOFORGE_EVENT_FLAG_EATEN : 0u;
     dfi_emit(r, &e);
     /* AfterUseItem: Unburden adds its volatile (Team C, data/abilities.ts). */

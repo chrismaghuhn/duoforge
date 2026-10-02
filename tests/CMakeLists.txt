@@ -95,12 +95,17 @@ target_compile_definitions(duoforge_reference_conformance_pool PRIVATE DF_CONFOR
 duoforge_add_test(NAME duoforge.reference.conformance_team_c_pool SOURCES test_conformance.c WHITEBOX TIMEOUT 60)
 target_compile_definitions(duoforge_reference_conformance_team_c_pool PRIVATE DF_CONFORMANCE_TEAM_C
     DF_CONFORMANCE_POOL)
+# The battles recorded for the pool items (conformance_pool.h, "data": "pool"): under POOL only.
+duoforge_add_test(NAME duoforge.reference.conformance_pool_data SOURCES test_conformance.c WHITEBOX TIMEOUT 60)
+target_compile_definitions(duoforge_reference_conformance_pool_data PRIVATE DF_CONFORMANCE_POOL_DATA)
 # The domain check of the differential runner (tools/difftest/domain.c): the engine's
 # candidates against the choices that the reference accepted, and the controls that
 # make that comparison worth anything (no Python or checkout needed).
 duoforge_add_test(NAME duoforge.reference.runner_domain SOURCES test_runner_domain.c WHITEBOX
     LIBS duoforge_difftest_records TIMEOUT 60)
 duoforge_add_test(NAME duoforge.combat.turn SOURCES test_turn.c WHITEBOX TIMEOUT 120)
+# The item families of decision 0015 (the type booster and the resist berry) against a table of the pinned handlers.
+duoforge_add_test(NAME duoforge.combat.item_family SOURCES test_item_family.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.combat.closure_gate SOURCES test_closure_gate.c WHITEBOX TIMEOUT 600)
 duoforge_add_test(NAME duoforge.combat.team_c_gate SOURCES test_team_c_gate.c WHITEBOX TIMEOUT 600)
 
@@ -218,6 +223,12 @@ if(DUOFORGE_PS_REFERENCE_DIR)
                 "${CMAKE_CURRENT_BINARY_DIR}/diff_domain_smoke")
         set_tests_properties(duoforge.reference.diff_domain_smoke PROPERTIES TIMEOUT 600 LABELS reference
             ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+        # The client streams of the live adapter's tests: every closure battle replayed from its
+        # trace's inputs, with each step's lines equal to the trace.
+        add_test(NAME duoforge.reference.client_streams
+            COMMAND "${DUOFORGE_NODE}" "${PROJECT_SOURCE_DIR}/tools/reference/ps_client.js"
+                "${DUOFORGE_PS_REFERENCE_DIR}" "${PROJECT_SOURCE_DIR}" --all --check)
+        set_tests_properties(duoforge.reference.client_streams PROPERTIES TIMEOUT 300 LABELS reference)
     endif()
 endif()
 # The conformance tables must be what the converter makes of the traces.
@@ -248,12 +259,30 @@ if(Python3_Interpreter_FOUND)
     duoforge_add_test(NAME duoforge.reference.runner_records_team_c SOURCES test_runner_records.c WHITEBOX
         LIBS duoforge_difftest_records TIMEOUT 60 ARGS "${_records_dir}/team_c.records")
     target_compile_definitions(duoforge_reference_runner_records_team_c PRIVATE DF_CONFORMANCE_TEAM_C)
+    duoforge_add_test(NAME duoforge.reference.runner_records_pool SOURCES test_runner_records.c WHITEBOX
+        LIBS duoforge_difftest_records TIMEOUT 60 ARGS "${_records_dir}/pool.records")
+    target_compile_definitions(duoforge_reference_runner_records_pool PRIVATE DF_CONFORMANCE_POOL_DATA)
     set_tests_properties(duoforge.reference.runner_records duoforge.reference.runner_records_team_c
-        PROPERTIES FIXTURES_REQUIRED duoforge_conformance_records)
+        duoforge.reference.runner_records_pool PROPERTIES FIXTURES_REQUIRED duoforge_conformance_records)
     if(WIN32)
         # fopen is fine in a test (the MSVC runtime warns, also under Clang).
         target_compile_definitions(duoforge_reference_runner_records PRIVATE _CRT_SECURE_NO_WARNINGS)
         target_compile_definitions(duoforge_reference_runner_records_team_c PRIVATE _CRT_SECURE_NO_WARNINGS)
+        target_compile_definitions(duoforge_reference_runner_records_pool PRIVATE _CRT_SECURE_NO_WARNINGS)
+    endif()
+    # The runner's --dump-views (the Showdown live adapter's oracle): every closure battle's views
+    # at every step, the first ones against the public API (needs DUOFORGE_PYTHON).
+    if(DUOFORGE_PYTHON)
+        add_test(NAME duoforge.reference.dump_views
+            COMMAND "${DUOFORGE_PYTHON}" "${PROJECT_SOURCE_DIR}/tools/reference/test_dump_views.py"
+                "$<TARGET_FILE:duoforge_diff_runner>" "${_records_dir}/closure.records")
+        set_tests_properties(duoforge.reference.dump_views PROPERTIES TIMEOUT 300
+            FIXTURES_REQUIRED duoforge_conformance_records ENVIRONMENT
+            "DUOFORGE_LIBRARY=$<TARGET_FILE:duoforge_shared>;PYTHONPATH=${PROJECT_SOURCE_DIR}/python;PYTHONDONTWRITEBYTECODE=1")
+    else()
+        add_test(NAME duoforge.reference.dump_views
+            COMMAND "${CMAKE_COMMAND}" -E echo "DUOFORGE_SKIP: DUOFORGE_PYTHON is empty")
+        set_tests_properties(duoforge.reference.dump_views PROPERTIES SKIP_REGULAR_EXPRESSION "DUOFORGE_SKIP:")
     endif()
     # The replay driver without Node: the buckets and the order of its output with
     # fake children and the real converter, the records writer, and every committed
