@@ -23,7 +23,12 @@ changes it reports, one line, on stdout ("import_paste: ..."):
  - The cosmetic lines "Shiny: Yes", "Happiness: N" and "Tera Type: X" are dropped. Every other line that is not an
    ability, level, EVs (the Stat Points), nature or move is an unknown line and an error, and so is a second ability,
    level, EVs or nature line: nothing is dropped silently.
- - The lines are put in the registry's order: the species line, Ability, Level, EVs, the nature, the moves.
+ - The lines are put in the registry's order: the species line, Ability, Level, EVs, the nature, the moves. That, blank space
+   and line ends are form, not content, and are not reported.
+
+Only the species are checked against the pokedex. The names of items, abilities, moves and natures are written as they
+are: a misspelled one is refused later, by trace_to_c.parse_team and by diff_random.py (which then names it, as one that
+no data kind has), and the learner's loader may refuse it as well.
 
 An unknown species, a set without an ability or a nature, a set without a move or with more than four, and a paste that is
 not six sets are errors too: nothing is written, and the problems are all listed. An id that is in the registry is an

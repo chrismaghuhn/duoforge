@@ -1280,6 +1280,17 @@ class Lock(unittest.TestCase):
         self.assertEqual(command, ['bash', 'C:/r/tools/ci/machine_lock.sh', 'fuzz', 'C:/Py/python.exe', 'C:/r/diff_driver.py',
                                    'random', '--seed', '1', '--start', '40', '--chunk-minutes', '10', '--no-lock'])
 
+    def test_the_status_of_a_chunk_that_found_the_pause_file_passes_the_wrapper_and_the_lock_is_released(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            lock = os.path.join(tmp, 'lock')
+            script = os.path.join(ROOT, 'tools', 'ci', 'machine_lock.sh').replace('\\', '/')
+            command = [rnd.find_bash(), script, 'fuzz', sys.executable.replace('\\', '/'), '-c',
+                       'import os, sys; sys.exit(%d if os.path.isdir(sys.argv[1]) else 1)' % rnd.PAUSED_STATUS,
+                       lock.replace('\\', '/')]  # the child exits with 75 only while the lock is held
+            with mock.patch.dict(os.environ, {'DUOFORGE_MACHINE_LOCK': lock}):
+                self.assertEqual(rnd.run_process(command), rnd.PAUSED_STATUS)
+            self.assertFalse(os.path.exists(lock))
+
 
 # ------------------------------------------------------------ the command line
 
@@ -1732,10 +1743,16 @@ class TeamRegistryIds(unittest.TestCase):
         self.assertEqual(sorted(sets), ['A', 'B', 'C'])
         for letter, old in (('A', TEAM_A), ('B', TEAM_B), ('C', TEAM_C)):
             self.assertEqual(sets[letter], rnd.read_team_file(old))  # the files they were read from before the registry
-        # The registry is where they come from: another file under the id A is another team A.
+        # The registry is where they come from, and a file is held to the SHA-256 of its entry: a team never changes under
+        # its id, so another file under the id A is refused, by the run and by the command line.
         with io.open(team_registry.team_path(self.root, 'A'), 'w', encoding='utf-8', newline='\n') as f:
             f.write(read_text(TEAM_C))
-        self.assertEqual(rnd.read_teams(self.root)['A'], rnd.read_team_file(TEAM_C))
+        with self.assertRaises(driver.ToolError) as cm:
+            rnd.read_teams(self.root)
+        self.assertIn('a team never changes under its id', str(cm.exception))
+        with self.assertRaises(ValueError) as cm:
+            rnd.check_teams([('A', None)], root=self.root)
+        self.assertIn('--team A: team A', str(cm.exception))
         os.remove(team_registry.index_path(self.root))
         with self.assertRaises(driver.ToolError) as cm:
             rnd.read_teams(self.root)
@@ -1817,7 +1834,9 @@ class TeamRegistryIds(unittest.TestCase):
             f.write(read_text(TEAM_A).replace('Adamant Nature', 'Jolly Nature', 1))
         with self.assertRaises(driver.ToolError) as cm:
             rnd.read_teams(self.root, teams)
-        self.assertIn('changed since the run was set up', str(cm.exception))
+        self.assertIn('a team never changes under its id', str(cm.exception))  # the index says what the file must be
+        with self.assertRaises(ValueError):
+            rnd.check_teams([('MC405', None)], root=self.root)  # and the command line refuses it as well
 
     def test_the_command_line_with_ids(self):
         parser = driver_parser()

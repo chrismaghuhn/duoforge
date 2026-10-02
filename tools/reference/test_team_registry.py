@@ -18,6 +18,7 @@ import shutil
 import sys
 import tempfile
 import unittest
+import unittest.mock
 
 sys.dont_write_bytecode = True  # a direct run must not leave __pycache__ in the source tree
 
@@ -286,6 +287,48 @@ class Adding(unittest.TestCase):
         with self.assertRaises(reg.RegistryError):
             reg.add_team(self.root, self.entry('FIVE'), self.sets[:5])
         self.assertFalse(os.path.exists(reg.team_path(self.root, 'FIVE')))
+
+    def test_a_failure_while_the_index_is_written_leaves_the_registry_as_it_was(self):
+        before = {f: read(os.path.join(reg.registry_dir(self.root), f)) for f in os.listdir(reg.registry_dir(self.root))}
+        with unittest.mock.patch.object(reg, 'replace_file', side_effect=OSError('disk full')), \
+                self.assertRaises(OSError):
+            reg.add_team(self.root, self.entry('MC405'), self.sets, supersedes='B')
+        after = {f: read(os.path.join(reg.registry_dir(self.root), f)) for f in os.listdir(reg.registry_dir(self.root))}
+        self.assertEqual(after, before)  # no file without its entry, no lock left, no index changed
+        self.assertEqual(reg.problems(self.root, tables), [])
+        reg.add_team(self.root, self.entry('MC405'), self.sets)  # and the id is free
+
+    def test_the_index_is_replaced_whole(self):
+        reg.add_team(self.root, self.entry('MC405'), self.sets)
+        self.assertEqual(sorted(os.listdir(reg.registry_dir(self.root))),
+                         ['A.txt', 'B.txt', 'C.txt', 'MC405.txt', 'README.md', 'index.json'])  # no .tmp, no .lock left
+
+    def test_one_writer_at_a_time(self):
+        lock = os.path.join(reg.registry_dir(self.root), '.lock')
+        os.mkdir(lock)  # another import is writing
+        before = read(reg.index_path(self.root))
+        slept = []
+        with unittest.mock.patch.object(reg.time, 'sleep', slept.append), self.assertRaises(reg.RegistryError) as cm:
+            reg.add_team(self.root, self.entry('MC405'), self.sets)
+        self.assertIn('is held', str(cm.exception))
+        self.assertGreater(len(slept), 10)  # it waited, then gave up
+        self.assertEqual(read(reg.index_path(self.root)), before)
+        self.assertTrue(os.path.isdir(lock))  # the lock of the other writer is not ours to remove
+        os.rmdir(lock)
+        reg.add_team(self.root, self.entry('MC405'), self.sets)
+
+    def test_a_file_that_appeared_meanwhile_is_not_written_over(self):
+        original = reg.check_new
+
+        def check_then_appear(root, team_id, supersedes=None):
+            index = original(root, team_id, supersedes)
+            with io.open(reg.team_path(root, team_id), 'wb') as f:  # the race: the file is made after the check
+                f.write(b'someone else')
+            return index
+        with unittest.mock.patch.object(reg, 'check_new', check_then_appear), self.assertRaises(reg.RegistryError):
+            reg.add_team(self.root, self.entry('MC405'), self.sets)
+        self.assertEqual(read(reg.team_path(self.root, 'MC405')), b'someone else')
+        self.assertEqual([e['id'] for e in reg.entries(self.root)], ['A', 'B', 'C'])
 
     def test_a_registry_is_made_where_there_is_none(self):
         with tempfile.TemporaryDirectory() as empty:

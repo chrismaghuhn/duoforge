@@ -107,7 +107,9 @@ kept/<name>/ (the other battles have them in cases/): what `diff_driver.py
 promote` chooses coverage battles from (diff_corpus.py). It changes no result.
 
 Exit status: 0 when the run is complete (the buckets are in the files), 2 for a
-bad command line, 3 for a failure of the tool. This file only orchestrates.
+bad command line, 3 for a failure of the tool, 75 for a chunk of the loop that
+found the pause file once it held the lock (the loop waits, it is no failure).
+This file only orchestrates.
 """
 import collections
 import copy
@@ -188,17 +190,36 @@ def read_team_file(path):
         raise base.ToolError(str(e)) from None
 
 
+def _registry_path(root, team_id):
+    return os.path.abspath(team_registry.team_path(root, team_id))
+
+
+def read_registry_team(root, team_id):
+    """The sets of team `team_id` of the registry of `root`, the file held to the SHA-256 of its entry in the index: a team
+    never changes under its id (a correction is a new id), so a file that is not what the index says is refused, not
+    played. ToolError for that, for an id the registry does not have and for a file that cannot be read."""
+    try:
+        entry = team_registry.get_entry(root, team_id)
+        sets, path = team_registry.read_team(root, team_id)
+        with io.open(path, 'rb') as f:
+            have = team_registry.sha256_of(f.read())
+    except (team_registry.RegistryError, OSError) as e:
+        raise base.ToolError(str(e)) from None
+    if have != entry.get('sha256'):
+        raise base.ToolError('team %s: %s is not what the registry index says (sha256 %s, the index has %s): a team never '
+                             'changes under its id, a correction is a new id' % (team_id, path, have[:12], str(entry.get('sha256'))[:12]))
+    return sets
+
+
 def read_teams(root, custom=None):
     """{'A': [six sets], 'B': [...], 'C': [...]}, those of the registry (data/teams), and an id or a letter for each other
     team of the run (`custom`, the Team tuples of Params.teams): the paste text of each set."""
     teams = {}
     for team_id in COMMITTED_TEAMS:
-        try:
-            teams[team_id] = team_registry.read_team(root, team_id)[0]
-        except team_registry.RegistryError as e:
-            raise base.ToolError(str(e)) from None
+        teams[team_id] = read_registry_team(root, team_id)
     for team in custom or ():
-        sets = read_team_file(team.path)
+        in_registry = _registry_path(root, team.id) == os.path.abspath(team.path)
+        sets = read_registry_team(root, team.id) if in_registry else read_team_file(team.path)
         if team_sha256(sets) != team.sha256:
             raise base.ToolError('the team file %s changed since the run was set up (team %s)' % (team.path, team.id))
         teams[team.id] = sets
@@ -1080,10 +1101,17 @@ def check_teams(options, tables_for=name_tables, root=None):
     for name, path in options:
         if path is None:
             if name in COMMITTED_TEAMS:
-                continue  # always there, and from the registry
+                try:
+                    read_registry_team(root, name)  # always there, from the registry: and it must be what the index says
+                except base.ToolError as e:
+                    raise ValueError('--team %s: %s' % (name, e)) from None
+                continue
             try:
                 team_registry.get_entry(root, name)
+                read_registry_team(root, name)  # the file is what the index says it is
             except team_registry.RegistryError as e:
+                raise ValueError('--team %s: %s' % (name, e)) from None
+            except base.ToolError as e:
                 raise ValueError('--team %s: %s' % (name, e)) from None
             path = team_registry.team_path(root, name)
         else:

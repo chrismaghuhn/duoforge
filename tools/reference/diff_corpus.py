@@ -18,7 +18,8 @@ corpus replays every battle without Node: it reads the spec and the trace,
 converts them with trace_to_c, writes the records and has the runner say PASS,
 DIVERGENCE or UNSUPPORTED, as replay mode does for the committed battles. Every
 battle must PASS; a cut of a battle that does not end is no CAP here. CTest runs
-it as duoforge.reference.corpus in every local CI job, sanitizers included, and
+it as duoforge.reference.corpus in every CI job that runs the whole suite (the ASan and UBSan job
+included; the ThreadSanitizer job runs only the batch tests), and
 duoforge.reference.corpus_size (test_corpus_layout.py) holds the layout: every
 spec has its trace and the other way round, nothing else is there, the purposes
 say why each battle is in, the traces are of this pin and harness, and the whole
@@ -201,7 +202,7 @@ def entry_problems(name, spec, trace, pin, harness):
             problems.append(('spec', '%s: no %s' % (name, key)))
     if 'plan' in spec:
         problems.append(('spec', '%s: a corpus spec has its choices, not a plan' % name))
-    if spec.get('data', 'closure') not in ('closure', 'team_c'):
+    if spec.get('data') not in (None, 'team_c'):  # as trace_to_c.spec_is_team_c: no key (closure) or "team_c"
         problems.append(('spec', '%s: data %r' % (name, spec.get('data'))))
     purpose = spec.get('purpose')
     if not isinstance(purpose, str) or not purpose.startswith(PURPOSES) or len(purpose) < MIN_PURPOSE:
@@ -399,7 +400,17 @@ def replay(root, runner_path, workers, names=None, corpus=None, out=sys.stdout):
 
     results, version = base.run_lanes(names, workers, lambda: NoWorker({'node': None, 'pin': pin, 'harness': harness}),
                                       lambda: base.DiffRunner(os.path.abspath(runner_path)), handle)
-    return results, base.summarize(results, version, 'corpus', base.git_head(root), base.library_version(root))
+    return results, base.summarize(results, version, 'corpus', head_for_summary(root), base.library_version(root))
+
+
+def head_for_summary(root):
+    """The git HEAD for summary.json, which only informs: the verdict of the corpus does not depend on it, and a checkout
+    that git cannot read (a worktree made by Windows git, seen from WSL) must not fail the corpus test. Where it cannot
+    be read the summary says so: 'unknown (<why>)'."""
+    try:
+        return base.git_head(root)
+    except base.ToolError as e:
+        return 'unknown (%s)' % base.clip(str(e), 200)
 
 
 # ------------------------------------------------------------ promote
@@ -447,23 +458,23 @@ def examples(signatures):
 
 def coverage_purpose(record, seed, steps, total, new):
     """Why a coverage battle is in the corpus: the battle it is, whether it is cut, and what it adds."""
-    letters = record['pairing']
+    first, second = rnd.pairing_ids(record['pairing'])
     shown = ', '.join(examples(new))
     more = '' if len(new) <= EXAMPLES else ' and %d more' % (len(new) - EXAMPLES)
     cut = 'the whole battle' if steps == total else 'cut after step %d of %d, where it stops adding anything' % (steps, total)
     return ('Corpus (coverage): random differential battle %d of run %d (tools/reference/diff_driver.py random), %s against '
             '%s, %s. It adds %d signatures that no committed battle and no earlier corpus battle has: %s%s.'
-            % (record['index'], seed, rnd.who(letters[0]), rnd.who(letters[1]), cut, len(new), shown, more))
+            % (record['index'], seed, rnd.who(first), rnd.who(second), cut, len(new), shown, more))
 
 
 def defect_purpose(record, seed, steps, total, note):
     """Why a defect battle is in the corpus: what it found, and in how many choices it shows it."""
     bucket, rule, detail = (record['bucket'],) + rnd.signature(record)
     what = '%s%s' % (bucket, ' %s %s' % (rule, base.clip(detail, 120)) if rule or detail else '')
-    letters = record['pairing']
+    first, second = rnd.pairing_ids(record['pairing'])
     return ('Corpus (defect): case %s of run %d (tools/reference/diff_driver.py random), %s against %s, found as %s. The '
             'shortest prefix that showed it, %d of %d choices; it passes now%s.'
-            % (record['name'], seed, rnd.who(letters[0]), rnd.who(letters[1]), what, steps, total,
+            % (record['name'], seed, rnd.who(first), rnd.who(second), what, steps, total,
                ', fixed by %s' % note if note else ''))
 
 
@@ -538,7 +549,9 @@ def promote(root, run_dir, worker, runner, tables_for, kinds, corpus=None, defec
 
     def put(name, spec, trace_text, kind, steps, total, new):
         nonlocal size
-        files = {spec_path(corpus, name): dumps_spec(spec), trace_path(corpus, name): rnd.gzipped(trace_text)}
+        # The trace first: an interrupt then leaves a trace without a spec, which the layout test names, never a spec that
+        # a corpus run would take for a battle.
+        files = {trace_path(corpus, name): rnd.gzipped(trace_text), spec_path(corpus, name): dumps_spec(spec)}
         grown = sum(len(data) for data in files.values())
         if size + grown > budget:
             refused.append(Refused(name, 'the budget of %.1f MB would be passed (%.2f MB now, %.0f KB more)' % (
@@ -556,6 +569,11 @@ def promote(root, run_dir, worker, runner, tables_for, kinds, corpus=None, defec
         return True
 
     if defects:
+        if cases is not None:
+            usable = {r['name'] for r in records if r['bucket'] in ('DIVERGENCE', 'ORACLE_GAP')}
+            for name in cases:
+                if name not in usable:
+                    refused.append(Refused(name, 'is no DIVERGENCE or ORACLE_GAP battle of this run'))
         for record, case in defect_cases(run_dir, records, cases):
             prefix_file = os.path.join(case, 'prefix_spec.json')
             if not os.path.exists(prefix_file):

@@ -261,7 +261,7 @@ if(Python3_Interpreter_FOUND)
         ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1;DUOFORGE_DIFF_RUNNER=$<TARGET_FILE:duoforge_diff_runner>")
     # The corpus of kept fuzz battles (decision 0015 section 6, tests/reference/corpus): every battle through the
     # converter and the runner of this build, from the stored traces and without Node; all of them must PASS. It runs
-    # in every CI job, the sanitizer jobs included.
+    # in every CI job that runs the whole suite, the ASan and UBSan job included (the TSan job runs only the batch tests).
     add_test(NAME duoforge.reference.corpus
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/diff_driver.py" corpus
             --runner "$<TARGET_FILE:duoforge_diff_runner>" --workers 4

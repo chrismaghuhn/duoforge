@@ -29,12 +29,14 @@ by the importer, with a report, and never written). The species is the base form
 forme. The registry states every rule of its own and no rule of the game: whether a team is legal is the converter's,
 the engine's and Showdown's to say.
 """
+import contextlib
 import hashlib
 import io
 import json
 import os
 import re
 import sys
+import time
 
 sys.dont_write_bytecode = True  # a direct run must not leave __pycache__ in the source tree
 
@@ -177,17 +179,55 @@ def add_team(root, entry, sets, supersedes=None):
     team_id = entry['id']
     if len(sets) != 6:
         raise RegistryError('a team has six sets, not %d' % len(sets))
-    index = check_new(root, team_id, supersedes)
-    if supersedes is not None:
-        next(e for e in index['teams'] if e.get('id') == supersedes)['superseded_by'] = team_id
-    index['teams'].append(entry)
     os.makedirs(registry_dir(root), exist_ok=True)
-    path = team_path(root, team_id)
-    with io.open(path, 'wb') as f:
-        f.write(file_text(sets))
-    with io.open(index_path(root), 'wb') as f:
-        f.write(dumps_index(index))
+    with registry_lock(root):  # the index is read, changed and written back: one writer at a time
+        index = check_new(root, team_id, supersedes)
+        if supersedes is not None:
+            next(e for e in index['teams'] if e.get('id') == supersedes)['superseded_by'] = team_id
+        index['teams'].append(entry)
+        path = team_path(root, team_id)
+        try:
+            with io.open(path, 'xb') as f:  # exclusive: a file that is there is never written over
+                f.write(file_text(sets))
+        except FileExistsError:
+            raise RegistryError('%s exists: ids are never reused' % path) from None
+        try:
+            replace_file(index_path(root), dumps_index(index))  # whole or not at all
+        except BaseException:
+            os.remove(path)  # no file without its entry
+            raise
     return path
+
+
+def replace_file(path, data):
+    """Writes `data` to `path` so that a reader sees the old file or the new one, never half of it."""
+    temporary = path + '.tmp'
+    with io.open(temporary, 'wb') as f:
+        f.write(data)
+    os.replace(temporary, path)
+
+
+@contextlib.contextmanager
+def registry_lock(root, wait=10.0, poll=0.1, sleep=None):
+    """A lock directory in the registry (.lock) that the writer of the index holds, so that two imports at once (the registry
+    is shared by sessions) cannot lose each other's entry. RegistryError if it is not free within `wait` seconds: a
+    directory that a killed import left is removed by hand."""
+    lock = os.path.join(registry_dir(root), '.lock')
+    waited = 0.0
+    while True:
+        try:
+            os.mkdir(lock)
+            break
+        except FileExistsError:
+            if waited >= wait:
+                raise RegistryError('%s is held (another import is writing the registry, or one was killed: remove the '
+                                    'directory)' % lock) from None
+            (time.sleep if sleep is None else sleep)(poll)
+            waited += poll
+    try:
+        yield
+    finally:
+        os.rmdir(lock)
 
 
 # ------------------------------------------------------------ what the registry must be

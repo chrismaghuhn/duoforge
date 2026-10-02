@@ -22,6 +22,7 @@ import shutil
 import sys
 import tempfile
 import unittest
+import unittest.mock
 
 sys.dont_write_bytecode = True  # a direct run must not leave __pycache__ in the source tree
 
@@ -310,6 +311,11 @@ class Layout(unittest.TestCase):
         write_entry(self.corpus, 'x' * 64, dict(spec, name='x' * 64), text)
         self.assertEqual([c for c, m in self.problems() if 'letters, digits' in m], ['files', 'files'])
 
+    def test_data_is_no_key_or_team_c_as_the_converter_reads_it(self):
+        spec, text = entry_of('m5_real_aa_1')
+        write_entry(self.corpus, 'm5_real_aa_1', dict(spec, data='closure'), text)  # trace_to_c refuses "closure"
+        self.assertEqual([(c, m.split(': ', 1)[1]) for c, m in self.problems()], [('spec', "data 'closure'")])
+
     def test_the_purpose_says_why(self):
         for purpose in (None, '', 'a battle', 'Corpus (coverage): short', 'Coverage corpus battle with a long purpose that '
                         'does not start the way the purposes do, so it says nothing the tests can read', 7):
@@ -401,6 +407,14 @@ class Replay(unittest.TestCase):
                          ('corpus', 3, 3, None))
         self.assertEqual(summary['pin'], corpus_tools.harness_constants(ROOT)[0])
         self.assertEqual(self.replay(names=['m5_real_aa_1'])[1]['battles'], 1)
+
+    def test_a_checkout_that_git_cannot_read_does_not_fail_the_replay_and_the_summary_says_so(self):
+        """A worktree made by Windows git and seen from WSL has no readable HEAD: the corpus CTest runs there too."""
+        made(self.corpus, 'm5_real_aa_1')
+        with unittest.mock.patch.object(driver, 'git_head', side_effect=driver.ToolError('cannot read the git HEAD of x: boom')):
+            results, summary = self.replay()
+        self.assertEqual(results['m5_real_aa_1']['bucket'], 'PASS')
+        self.assertEqual(summary['git_head'], 'unknown (cannot read the git HEAD of x: boom)')
 
     def test_a_battle_that_the_engine_does_not_agree_with_is_a_divergence(self):
         spec, text = entry_of('m5_real_aa_1')
@@ -683,6 +697,14 @@ class Promote(unittest.TestCase):
         promoted, _, _, _ = self.promote(self.DEFECTS, defects, coverage=False, cases=['fz_9_2'])
         self.assertEqual([e.name for e in promoted], ['fz_9_2_prefix'])
 
+    def test_a_case_that_is_named_and_is_no_defect_of_the_run_is_refused_not_skipped(self):
+        defects = {1: ('DIVERGENCE', 2)}
+        promoted, refused, _, _ = self.promote(self.DEFECTS, defects, coverage=False, cases=['fz_9_1', 'fz_9_0', 'fz_9_77'])
+        self.assertEqual([e.name for e in promoted], ['fz_9_1_prefix'])  # 0 is a PASS battle, 77 is not in the run
+        self.assertEqual(sorted((r.name, r.why) for r in refused),
+                         [('fz_9_0', 'is no DIVERGENCE or ORACLE_GAP battle of this run'),
+                          ('fz_9_77', 'is no DIVERGENCE or ORACLE_GAP battle of this run')])
+
     def test_a_case_without_a_prefix_or_whose_prefix_did_not_reproduce_is_refused(self):
         battles = ['m5_real_aa_1', 'd02_electro_shot_lock_emergency_exit']
         make_run(self.run_dir, battles, defects={1: ('DIVERGENCE', 2)})
@@ -741,6 +763,15 @@ class Purposes(unittest.TestCase):
         self.assertLess(text.index('draw:CRIT:'), text.index('-boost:spa'))
         self.assertIn('the whole battle', corpus_tools.coverage_purpose(record, 5, 20, 20, new))
         self.assertGreaterEqual(len(text), corpus_tools.MIN_PURPOSE)
+
+    def test_a_pairing_of_ids_joined_by_a_dash_names_its_teams(self):
+        for pairing, names in (('MC405-A', 'team MC405 against team A'), ('A-MC405', 'team A against team MC405'),
+                               ('MC405-MC408', 'team MC405 against team MC408'), ('CA', 'Team C against team A')):
+            with self.subTest(pairing):
+                record = {'index': 3, 'name': 'fz_5_3', 'pairing': pairing, 'bucket': 'DIVERGENCE', 'rule': None,
+                          'detail': 'step: DIVERGENCE', 'step': 2, 'steps': 9, 'context': None, 'messages': []}
+                self.assertIn(names, corpus_tools.coverage_purpose(record, 5, 7, 20, ['move:Foo']))
+                self.assertIn(names, corpus_tools.defect_purpose(record, 5, 3, 9, 'a fix'))
 
 
 if __name__ == '__main__':
