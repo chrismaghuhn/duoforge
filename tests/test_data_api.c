@@ -477,8 +477,8 @@ static void test_aliases(df_test *t, const kase *c)
     /* Unknown names are still refused, and a cosmetic forme that is no alias is too. */
     uint32_t out = 0xA5A5A5A5u;
     DF_CHECK(t, duoforge_data_find(ctx, S, "vivillonxx", 10u, &out) == DUOFORGE_E_INVALID_ARGUMENT);
+    DF_CHECK(t, out == 0xA5A5A5A5u); /* the refusals wrote nothing */
     DF_CHECK(t, duoforge_data_find(ctx, S, "vivillon", 8u, &out) == (c->pool_rules ? DUOFORGE_OK : DUOFORGE_E_INVALID_ARGUMENT));
-    DF_CHECK(t, out == 0xA5A5A5A5u);
 }
 
 static uint32_t expected_moves(const kase *c, uint32_t sp, uint32_t *out)
