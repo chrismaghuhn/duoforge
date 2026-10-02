@@ -16,7 +16,7 @@ def encoder_of(config):
     without it (written before; present was species_id != 0). ValueError
     for a version features.as_encoder does not serve."""
     encoder = config.get("encoder", 1)
-    if encoder not in features.ENCODERS:
+    if not features.is_version(encoder):
         raise ValueError(f"encoder {encoder!r} is not one this encoder knows: {features.ENCODERS}")
     return encoder
 
@@ -25,7 +25,9 @@ def load(path, obs_size=None):
     """(params, config) of a checkpoint; params are nested dicts of NumPy
     arrays, as model.init builds them. With obs_size, a network whose torso
     takes another number of observation features (a checkpoint of another
-    encoder, such as the 594 of 2026-10-02) raises ValueError."""
+    encoder layout, such as the 594 features of 2026-10-02) raises
+    ValueError. The width is all load checks; the encoder version the
+    network was trained with is encoder_of(config)."""
     params = {}
     with np.load(path) as npz:
         config = json.loads(str(npz["config"]))
@@ -41,5 +43,5 @@ def load(path, obs_size=None):
             node[keys[-1]] = npz[name]
     if obs_size is not None and params["t1"]["w"].shape[0] != obs_size:
         raise ValueError(f"{path}: the network takes {params['t1']['w'].shape[0]} observation features, "
-                         f"the encoder makes {obs_size} (a checkpoint of another encoder)")
+                         f"the encoder makes {obs_size} (a checkpoint of another encoder layout)")
     return params, config
