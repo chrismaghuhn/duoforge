@@ -200,6 +200,116 @@ typedef struct duoforge_battle_setup {
     duoforge_side_setup sides[DUOFORGE_SIDE_COUNT];
 } duoforge_battle_setup;
 
+/* ---- data query: names and legality per context (the data kinds of decisions
+   0006, 0009 and 0015) ----
+   What a caller needs to build a setup that the context accepts, answered from
+   the SAME tables and the same functions that duoforge_battle_create uses; the
+   library holds no second copy of a rule. Everything is bound to the context's
+   data kind: its counts bound the ids (the CLOSURE kinds see the closure
+   prefix of the tables, the TEAM_C kinds the extended prefix, the POOL kinds
+   all of them), and the rules are those of the kind (a member's moves and
+   ability: the forme's one set under the CLOSURE and TEAM_C kinds, the moves
+   the forme learns and its legal abilities under the POOL kinds).
+   Pure and allocation-free: no state changes, every output is written only on
+   success (the one exception is the required count on E_CAPACITY, as in
+   duoforge_battle_candidates). A SYNTHETIC context has no tables: every call
+   is E_UNSUPPORTED. A NULL argument, a table or id outside its domain and a
+   name that is not in the kind's table are E_INVALID_ARGUMENT. Checks, in
+   order: NULL, table, SYNTHETIC, id or name.
+   An id is the row of the table (0-based). The setup fields differ in two
+   places: a member's ability is 1 + the ability id and its item 1 + the item
+   id (0 = none). Species are the formes of the tables: base formes and Mega
+   formes; a Mega forme is reached in battle and never set up. */
+#define DUOFORGE_DATA_TABLE_SPECIES 1u /* forme ids: the species_id of a member (base formes) */
+#define DUOFORGE_DATA_TABLE_MOVE    2u
+#define DUOFORGE_DATA_TABLE_ITEM    3u
+#define DUOFORGE_DATA_TABLE_ABILITY 4u
+#define DUOFORGE_DATA_TABLE_NATURE  5u /* 25 natures, the same under every kind */
+#define DUOFORGE_DATA_TABLE_COUNT   5u
+#define DUOFORGE_DATA_NONE          0xFFFFFFFFu /* "no such id" in a forme's info */
+/* Profile bounds: a buffer of this size always suffices. The tables must stay
+   within them (checked when the library is built); raising one is a reviewed,
+   additive change. */
+#define DUOFORGE_DATA_MAX_FORME_ABILITIES 3u   /* legal abilities of one forme */
+#define DUOFORGE_DATA_MAX_FORME_MOVES     512u /* legal moves of one forme */
+/* Bits of duoforge_forme_info.gender_mask. */
+#define DUOFORGE_GENDER_BIT_MALE   1u
+#define DUOFORGE_GENDER_BIT_FEMALE 2u
+#define DUOFORGE_GENDER_BIT_NONE   4u
+
+/* The number of ids of a table under the context's kind: the ids 0..count-1
+   exist. An item or an ability is used at setup as 1 + its id. */
+duoforge_status duoforge_data_count(const duoforge_context *ctx, uint32_t table, uint32_t *out_count);
+
+/* The name of an id: its Showdown id (toID: lower-case letters and digits, for
+   example "staraptormega", "closecombat", "leftovers"), a NUL-terminated
+   string in constant data, valid while the library is loaded. The
+   names come from the same generator run as the tables and are in no
+   fingerprint. An id at or beyond the kind's count is E_INVALID_ARGUMENT. */
+duoforge_status duoforge_data_name(const duoforge_context *ctx, uint32_t table, uint32_t id,
+                                   const char **out_name);
+
+/* The id of a name: the exact name as written by duoforge_data_name, `length`
+   bytes (the string need not be NUL-terminated; a NUL inside matches nothing).
+   Nothing is normalized. A name whose id is at or beyond the kind's count is
+   refused like an unknown name, so a pool move under a TEAM_C context is
+   E_INVALID_ARGUMENT. Struggle is a row of the move table (it is
+   engine-internal): find returns it, and duoforge_data_name gives its name;
+   no forme lists it, so it is legal for no member, and the support manifest
+   leaves it unmarked (the turn core runs it), so duoforge_data_supported says
+   false. Species include the Mega formes. */
+duoforge_status duoforge_data_find(const duoforge_context *ctx, uint32_t table, const char *name, size_t length,
+                                   uint32_t *out_id);
+
+/* Whether a battle that uses the id passes the support gate of
+   duoforge_battle_create (the support manifest: the mechanics that are
+   implemented and tested). Setup validates first and then refuses an
+   unsupported id with E_UNSUPPORTED. A move, item or ability is supported when
+   the manifest marks it, and nothing is supported while the turn core is not;
+   a species and a nature carry no mark of their own (supported with the turn
+   core), except a Mega forme, which is supported when Mega Evolution into it
+   is (see mega_supported). A member is supported exactly when its ability
+   (if any), its item (if any) and each of its moves are, and, if it holds the
+   stone of its forme (item 1 + mega_stone), mega_supported of its forme holds. */
+duoforge_status duoforge_data_supported(const duoforge_context *ctx, uint32_t table, uint32_t id,
+                                        bool *out_supported);
+
+/* What setup accepts for a species (a forme id of the kind). All fields are
+   written for every species; Mega formes are not setup-legal and have no
+   moves, abilities or genders. Unused entries are zero. */
+typedef struct duoforge_forme_info {
+    uint32_t dex_num;        /* national dex number: the Species Clause allows one member per number on a side */
+    uint32_t is_mega;        /* 1 for a Mega forme */
+    uint32_t setup_legal;    /* 1 iff a member may be this species: a base forme, not a Mega forme */
+    uint32_t base_species;   /* the base forme (itself for a base forme) */
+    uint32_t mega_species;   /* the Mega forme it reaches, DUOFORGE_DATA_NONE if none */
+    uint32_t mega_stone;     /* the item id of its Mega Stone (a member holds it as item 1 + this id), or NONE */
+    uint32_t mega_ability;   /* the ability id the Mega forme brings, or NONE */
+    uint32_t mega_supported; /* 1 iff the forme has a Mega forme and Mega Evolution into it is supported */
+    uint32_t gender_mask;    /* DUOFORGE_GENDER_BIT_*: the genders legal for the forme */
+    uint32_t no_ability;     /* 1 iff a member may have ability 0 (No Ability): the DEV kinds only */
+    uint32_t ability_count;  /* the legal abilities: ids in ascending order, at most DUOFORGE_DATA_MAX_FORME_ABILITIES */
+    uint32_t abilities[DUOFORGE_DATA_MAX_FORME_ABILITIES]; /* a member's ability field is 1 + one of these */
+    uint32_t move_count;     /* the legal moves of the forme, listed by duoforge_data_forme_moves */
+} duoforge_forme_info; /* 60 bytes */
+duoforge_status duoforge_data_forme_info(const duoforge_context *ctx, uint32_t species_id, duoforge_forme_info *out);
+
+/* The moves a member of the species may have, in ascending id order: the
+   moves of the forme's set under the CLOSURE and TEAM_C kinds, the moves it
+   learns under the POOL kinds; empty for a Mega forme. A member has 1 to
+   DUOFORGE_MAX_MOVE_SLOTS distinct ones. With capacity < count the call
+   returns E_CAPACITY and writes ONLY *out_count = required; the buffer is
+   untouched. Otherwise the first *out_count entries are written (the buffer
+   may be NULL when capacity is 0). A buffer of DUOFORGE_DATA_MAX_FORME_MOVES
+   entries always suffices. */
+duoforge_status duoforge_data_forme_moves(const duoforge_context *ctx, uint32_t species_id, uint32_t *buffer,
+                                          uint32_t capacity, uint32_t *out_count);
+/* Not listed because they are constants or the same for every species: any
+   item below duoforge_data_count(ITEM) is legal (0 = none; the Item Clause
+   allows each item once per side); every nature below duoforge_data_count(
+   NATURE) is legal; Stat Points are at most DUOFORGE_STAT_POINTS_MAX per stat
+   and DUOFORGE_STAT_POINTS_TOTAL_MAX in all. */
+
 /* ---- owned battle state: opaque, pointer-free, bound to a context by
    fingerprint (not by pointer); every call checks the fingerprint ---- */
 typedef struct duoforge_battle duoforge_battle;
