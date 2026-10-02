@@ -120,6 +120,21 @@ python -m duoforge.examples.generate --envs 64 --episodes 10 --policy random --w
 
 For an RL loop, `Batch.step_query(indices, autoreset=True)` steps, starts every ended episode anew and queries the next boundary in one call. `python -m duoforge.examples.throughput` measures the Python loop against the native mode (`docs/benchmarks/2026-10-02-python-loop/`).
 
+## Learning (decision 0014)
+
+`python/duoforge_learn` trains a policy by self-play PPO on the batch runtime: JAX on the GPU, which needs Linux, so in WSL with its own venv and a Release library built there.
+
+```text
+python3 -m venv ~/df-learn
+~/df-learn/bin/pip install "jax[cuda12]" optax numpy
+cmake -S /mnt/c/Dev/src/duoforge -B ~/df-build/learn -G Ninja -DCMAKE_BUILD_TYPE=Release -DDUOFORGE_ENABLE_IPO=ON -DBUILD_TESTING=OFF
+cmake --build ~/df-build/learn --target duoforge_shared
+cd /mnt/c/Dev/src/duoforge
+DUOFORGE_LIBRARY=~/df-build/learn/libduoforge_shared.so PYTHONPATH=python ~/df-learn/bin/python -m duoforge_learn.train --envs 256 --workers 16 --minutes 30 --out ~/df-runs/trial
+```
+
+The log (`log.jsonl`) has one line per update; every `--eval-every` updates it adds the greedy policy's win rates against the random and the scripted baselines and against its previous evaluation (`vs_previous`), and saves the parameters. `DUOFORGE_LEARN_PYTHON` (a Python with JAX) enables the test `duoforge.python.learn`; the local CI's Linux GCC Release job sets it when `~/df-learn` exists.
+
 ## Public API (provisional, `include/duoforge/duoforge.h`)
 
 - **Status:** `duoforge_status` (`uint32_t`) codes and `duoforge_status_name`.

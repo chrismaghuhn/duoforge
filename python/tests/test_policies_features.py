@@ -182,6 +182,39 @@ class PoliciesFeaturesTest(unittest.TestCase):
             ob["sides"][0]["members"][0]["status"] = _layout.CONSTANTS["DUOFORGE_AILMENT_POISON"]
             self.assertFalse(np.array_equal(features.encode(ob, d)[0], before))
 
+    def test_encode_batch_equals_the_reference(self):
+        # Every player of 32 environments at every step of a battle, both
+        # forms of domain (team selection, slots, no request).
+        from python.tests import _reference_features as reference
+        policy = duoforge.RandomPolicy(SEED, ENVS)
+        compared = 0
+        with duoforge.Batch(self.ctx, _setups(), 4, SEED) as batch:
+            policy.start_episodes(np.arange(ENVS), np.zeros(ENVS, dtype=np.uint64))
+            for _ in range(200):
+                batch.query_factored()
+                obs, slots, masks = features.encode_batch(batch.observations.reshape(-1), batch.domains.reshape(-1))
+                self.assertEqual(obs.shape, (2 * ENVS, features.OBS_SIZE))
+                for n, (ob, d) in enumerate(zip(batch.observations.reshape(-1), batch.domains.reshape(-1))):
+                    want = reference.encode(ob, d)
+                    self.assertTrue(np.array_equal(obs[n], want[0]))
+                    self.assertTrue(np.array_equal(slots[n], want[1]))
+                    self.assertTrue(np.array_equal(masks[n], want[2]))
+                    compared += 1
+                if not (batch.requests["requested"] != 0).any():
+                    break
+                batch.step_factored(policy.choose_factored(batch))
+        self.assertGreater(compared, 1000)
+
+    def test_encode_refuses_position_flags(self):
+        with duoforge.Batch(self.ctx, _setups(), 1, SEED) as batch:
+            batch.query_factored()
+            ob = np.array(batch.observations[0, 0])
+            d = batch.domains[0, 0]
+            features.encode(ob, d)
+            ob["sides"][0]["positions"][0]["reserved"] = 4  # DUOFORGE_POSITION_FLAG_UNBURDEN (TEAM_C)
+            with self.assertRaises(ValueError):
+                features.encode(ob, d)
+
     def test_zero_count_raises(self):
         with duoforge.Batch(self.ctx, _setups(), 1, SEED) as batch:
             batch.query()

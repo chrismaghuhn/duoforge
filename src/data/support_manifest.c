@@ -43,7 +43,9 @@
  * Step 6: Dire Claw with poison (status 5, residual order 9) and the status
  * pick (draw site 13).
  * Step 7: Choice Scarf (x1.5 in the speed chain, the choice lock in the
- * request). */
+ * request).
+ * Step 8: White Herb (switch-in, after Mega, after a move, residual 29) and
+ * Unburden (x2 Speed once its holder's item is used). */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -118,6 +120,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_DEFIANT] = 1u,
             [DFI_ABILITY_ADAPTABILITY] = 1u,
             [DFI_ABILITY_AERILATE] = 1u,
+            [DFI_ABILITY_UNBURDEN] = 1u,
         },
     .items =
         {
@@ -136,5 +139,6 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_ROCKYHELMET] = 1u,
             [DFI_ITEM_CHOPLEBERRY] = 1u,
             [DFI_ITEM_CHOICESCARF] = 1u,
+            [DFI_ITEM_WHITEHERB] = 1u,
         },
 };

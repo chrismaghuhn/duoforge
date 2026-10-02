@@ -48,7 +48,15 @@ typedef struct dfi_run {
      * lines amend (attrLastMove, retargetLastMove), or UINT32_MAX. */
     dfi_events *events;
     uint32_t last_move;
+    /* The current move action got past BeforeMove and used its move
+     * (useMove ran): the AfterMove event follows. */
+    bool move_used;
+    /* runMove's target, which AfterMove gets (DFI_MOVE_TARGET_*). */
+    uint32_t move_target;
 } dfi_run;
+
+#define DFI_MOVE_TARGET_NONE DFI_POSITIONS          /* no target Pokemon */
+#define DFI_MOVE_TARGET_SPREAD (DFI_POSITIONS + 1u) /* a spread move's random foe, not drawn */
 
 typedef struct dfi_key {
     uint32_t order;
@@ -213,11 +221,16 @@ static duoforge_status dfi_speed_key(const struct duoforge_battle *b, uint32_t s
     if (active && dfi_holds(m, DFI_ITEM_CHOICESCARF) && !dfi_chain_modify(chain, 6144u, &chain)) {
         return DUOFORGE_E_INVARIANT;
     }
+    /* Unburden's volatile (Team C): chainModify(2) while its holder holds no
+     * item, which is always once the volatile is set (data/abilities.ts). */
+    if (active && ((uint32_t)pos->flags & DFI_VOL_UNBURDEN) != 0u && !dfi_chain_modify(chain, 8192u, &chain)) {
+        return DUOFORGE_E_INVARIANT;
+    }
     if (chain != 4096u) {
-        spe = dfi_modify(spe, chain); /* spe <= 4 * 65535, chain <= 3 * 4096 */
+        spe = dfi_modify(spe, chain); /* spe <= 4 * 65535, chain <= 6 * 4096 */
     }
     if (active && m->status == DFI_STATUS_PAR) {
-        spe = spe * 50u / 100u; /* spe <= 12 * 65535: stage x4, chain x3 */
+        spe = spe * 50u / 100u; /* spe <= 24 * 65535: stage x4, chain x6 */
     }
     if (spe > DFI_SPEED_CAP) {
         spe = DFI_SPEED_CAP;
@@ -1140,6 +1153,144 @@ static void dfi_use_item(dfi_run *r, uint32_t flat)
     const bool berry = item == 1u + DFI_ITEM_SITRUSBERRY || item == 1u + DFI_ITEM_CHOPLEBERRY;
     e.flags = berry ? (uint8_t)DUOFORGE_EVENT_FLAG_EATEN : 0u;
     dfi_emit(r, &e);
+    /* AfterUseItem: Unburden adds its volatile (Team C, data/abilities.ts). */
+    if (b->sides[side].members[occupant].ability == 1u + DFI_ABILITY_UNBURDEN) {
+        dfi_active_slot *pos = dfi_pos(b, flat);
+        pos->flags = (uint8_t)((uint32_t)pos->flags | DFI_VOL_UNBURDEN); /* wide-operands-reviewed: < 256 */
+    }
+}
+
+/* White Herb's check (onStart, data/items.ts): its standing holder has a
+ * lowered stat. */
+static bool dfi_herb_due(struct duoforge_battle *b, uint32_t flat)
+{
+    const dfi_member *m = dfi_at(b, flat);
+    if (m == NULL || m->hp == 0u || !dfi_holds(m, DFI_ITEM_WHITEHERB)) {
+        return false;
+    }
+    const dfi_active_slot *pos = dfi_pos(b, flat);
+    bool lowered = false;
+    for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
+        lowered = lowered || pos->stages[i] < DFI_STAGE_NEUTRAL;
+    }
+    return lowered;
+}
+
+/* White Herb (Team C, data/items.ts): when it is due, its holder uses it:
+ * [-enditem], then the lowered stages go back to 0 ([-clearnegativeboost]
+ * is [silent]), then AfterUseItem (Unburden). */
+static void dfi_white_herb(dfi_run *r, uint32_t flat)
+{
+    if (!dfi_herb_due(r->b, flat)) {
+        return;
+    }
+    dfi_use_item(r, flat);
+    dfi_active_slot *pos = dfi_pos(r->b, flat);
+    for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
+        if (pos->stages[i] < DFI_STAGE_NEUTRAL) {
+            pos->stages[i] = (uint8_t)DFI_STAGE_NEUTRAL;
+        }
+    }
+}
+
+/* Battle.speedSort (sim/battle.ts) over handlers that differ only by their
+ * holder's speed: a selection sort, faster first, that shuffles each group
+ * of equal speeds in place, one draw per step (PRNG.shuffle). `list` holds
+ * flat positions in the order the reference collected the handlers. */
+static duoforge_status dfi_speed_shuffle(dfi_run *r, uint32_t list[DFI_POSITIONS], uint32_t n)
+{
+    uint32_t sorted = 0u;
+    while (sorted + 1u < n) {
+        uint32_t next[DFI_POSITIONS] = {0u, 0u, 0u, 0u};
+        uint32_t count = 1u;
+        next[0] = sorted;
+        for (uint32_t i = sorted + 1u; i < n; ++i) {
+            const uint32_t best = r->speed_seen[list[next[0]]];
+            const uint32_t speed = r->speed_seen[list[i]];
+            if (speed > best) {
+                next[0] = i;
+                count = 1u;
+            } else if (speed == best) {
+                next[count] = i;
+                count += 1u;
+            }
+        }
+        for (uint32_t i = 0u; i < count; ++i) {
+            if (next[i] != sorted + i) {
+                const uint32_t e = list[sorted + i];
+                list[sorted + i] = list[next[i]];
+                list[next[i]] = e;
+            }
+        }
+        for (uint32_t start = sorted; start + 1u < sorted + count; ++start) {
+            uint32_t v = 0u;
+            const duoforge_status st = dfi_draw(r->draws, DFI_SITE_SPEED_TIE, start - sorted, count, &v);
+            if (st != DUOFORGE_OK) {
+                return st;
+            }
+            if (sorted + v != start) {
+                const uint32_t e = list[start];
+                list[start] = list[sorted + v];
+                list[sorted + v] = e;
+            }
+        }
+        sorted += count;
+    }
+    return DUOFORGE_OK;
+}
+
+/* A standing Pokemon whose White Herb is unused: it has the herb's
+ * handlers (side.allies() keeps only Pokemon with HP). */
+static bool dfi_herb_holder(struct duoforge_battle *b, uint32_t flat)
+{
+    const dfi_member *m = dfi_at(b, flat);
+    return m != NULL && m->hp != 0u && dfi_holds(m, DFI_ITEM_WHITEHERB);
+}
+
+/* White Herb's onAnyAfterMove and onAnyAfterMega (Team C), the only
+ * handlers of these events in the data. runEvent collects them from the
+ * holders of the user's side, then of the foe side, each in slot order
+ * (sim/battle.ts:1053-1063); speedSort orders them, shuffling equal speeds;
+ * then each holder's check runs. `user`: the Pokemon whose event it is. */
+static duoforge_status dfi_herb_event(dfi_run *r, uint32_t user)
+{
+    uint32_t list[DFI_POSITIONS] = {0u, 0u, 0u, 0u};
+    uint32_t n = 0u;
+    for (uint32_t k = 0u; k < DFI_POSITIONS; ++k) {
+        const uint32_t flat = (user / 2u * 2u + k) % DFI_POSITIONS;
+        if (dfi_herb_holder(r->b, flat)) {
+            list[n] = flat;
+            n += 1u;
+        }
+    }
+    const duoforge_status st = dfi_speed_shuffle(r, list, n);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    for (uint32_t i = 0u; i < n; ++i) {
+        dfi_white_herb(r, list[i]);
+    }
+    return DUOFORGE_OK;
+}
+
+/* Whether White Herb's Any handlers would do anything: a herb due, or two
+ * holders at one speed (a shuffle draw). */
+static bool dfi_herbs_matter(dfi_run *r)
+{
+    for (uint32_t a = 0u; a < DFI_POSITIONS; ++a) {
+        if (!dfi_herb_holder(r->b, a)) {
+            continue;
+        }
+        if (dfi_herb_due(r->b, a)) {
+            return true;
+        }
+        for (uint32_t c = a + 1u; c < DFI_POSITIONS; ++c) {
+            if (dfi_herb_holder(r->b, c) && r->speed_seen[a] == r->speed_seen[c]) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 /* heal(): at least 1, nothing at full HP, not above the maximum
@@ -1347,6 +1498,19 @@ static void dfi_announce_faints(dfi_run *r, bool check_win)
     }
 }
 
+/* Whether a faintMessages inside the current action already showed the
+ * faint at `flat`; the reference processed it there, so from then on that
+ * Pokemon is not active (sim/battle.ts:2566). */
+static bool dfi_faint_shown(const dfi_run *r, uint32_t flat)
+{
+    for (uint32_t i = 0u; i < r->faint_announced; ++i) {
+        if (r->faint_queue[i] == flat) {
+            return true;
+        }
+    }
+    return false;
+}
+
 /* ---------------------------------------------------------------- moves */
 
 /* runEvent('BeforeMove') in handler priority order: sleep and freeze (10),
@@ -1513,6 +1677,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         return DUOFORGE_E_INVARIANT;
     }
     *ran = true;
+    r->move_used = false;
     if (pos->move_actions < UINT8_MAX) {
         pos->move_actions = (uint8_t)((uint32_t)pos->move_actions + 1u); /* wide-operands-reviewed */
     }
@@ -1530,6 +1695,12 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     if (st != DUOFORGE_OK) {
         return st;
     }
+    /* runMove's target, which AfterMove gets: getTarget's result, before
+     * any redirection; a spread move's is a random foe that only labels
+     * its line, which the engine does not draw. */
+    r->move_target = md->target_class == DUOFORGE_TARGET_CLASS_ALL_ADJACENT_FOES ? DFI_MOVE_TARGET_SPREAD
+                     : count != 0u                                              ? targets[0]
+                                                                                : DFI_MOVE_TARGET_NONE;
     /* BeforeMove: a Pokemon that cannot move uses no PP and shows nothing;
      * on the locked turn of a two-turn move its charge ends (twoturnmove's
      * onMoveAborted). */
@@ -1558,6 +1729,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         }
         slot->pp = (uint8_t)((uint32_t)slot->pp - 1u); /* wide-operands-reviewed: pp > 0 */
     }
+    r->move_used = true; /* useMove runs; AfterMove follows it */
     /* The freeze's onModifyMove thaws a user of a defrost move before the
      * move line: -curestatus|frz|[from] move (data/conditions.ts:106-111,
      * inherited by Champions; Team C, Flare Blitz). */
@@ -2371,10 +2543,11 @@ static duoforge_status dfi_entry_ability(dfi_run *r, uint32_t flat)
 
 /* runSwitch (sim/battle-actions.ts:177-192): every active Pokemon, a
  * fainted one included, is sorted by its last speed (Battle.speedSort, ties
- * shuffled); the SwitchIn handlers of the Pokemon that entered then run in
- * that order. A tie decides something only between two entering Pokemon
- * with an entry ability: only such a group draws (decision 0006 section
- * 5.1). */
+ * shuffled); the SwitchIn handlers then run in that order. A tie decides
+ * something only between two entering Pokemon with an entry ability, or
+ * between two standing White Herb holders, whose onAnySwitchIn runs for
+ * every holder on the field (Team C): only such a group draws (decision
+ * 0006 section 5.1). */
 static duoforge_status dfi_run_entries(dfi_run *r, uint32_t entering)
 {
     struct duoforge_battle *b = r->b;
@@ -2403,10 +2576,12 @@ static duoforge_status dfi_run_entries(dfi_run *r, uint32_t entering)
             }
         }
         uint32_t bearers = 0u;
+        uint32_t herbs = 0u;
         for (uint32_t i = 0u; i < count; ++i) {
             const uint32_t flat = list[next[i]];
             const dfi_member *m = dfi_at(b, flat);
             bearers += (((entering >> flat) & 1u) != 0u && m->hp != 0u && dfi_has_switch_in(m)) ? 1u : 0u;
+            herbs += dfi_herb_holder(b, flat) ? 1u : 0u;
         }
         for (uint32_t i = 0u; i < count; ++i) {
             if (next[i] != sorted + i) {
@@ -2415,7 +2590,7 @@ static duoforge_status dfi_run_entries(dfi_run *r, uint32_t entering)
                 list[next[i]] = e;
             }
         }
-        for (uint32_t start = sorted; start + 1u < sorted + count && bearers >= 2u; ++start) {
+        for (uint32_t start = sorted; start + 1u < sorted + count && (bearers >= 2u || herbs >= 2u); ++start) {
             uint32_t v = 0u;
             const duoforge_status st = dfi_draw(r->draws, DFI_SITE_SPEED_TIE, start - sorted, count, &v);
             if (st != DUOFORGE_OK) {
@@ -2430,7 +2605,9 @@ static duoforge_status dfi_run_entries(dfi_run *r, uint32_t entering)
         sorted += count;
     }
     /* The abilities (priority 0) in that order, then the Grassy Seeds
-     * (priority -1). */
+     * (priority -1), then White Herb's onAnySwitchIn of every holder on the
+     * field (priority -2, Team C), in the same order: the handlers'
+     * fractional speeds follow it (sim/battle.ts:1008-1013). */
     for (uint32_t pass = 0u; pass < 2u; ++pass) {
         for (uint32_t i = 0u; i < n; ++i) {
             const uint32_t flat = list[i];
@@ -2453,6 +2630,9 @@ static duoforge_status dfi_run_entries(dfi_run *r, uint32_t entering)
                 return DUOFORGE_OK;
             }
         }
+    }
+    for (uint32_t i = 0u; i < n; ++i) {
+        dfi_white_herb(r, list[i]);
     }
     return DUOFORGE_OK;
 }
@@ -2480,9 +2660,14 @@ static duoforge_status dfi_run_mega(dfi_run *r, const dfi_queue_record *q)
     mega.id2 = m->item; /* [-mega] the stone, item + 1 */
     dfi_emit(r, &mega);
     if (dfi_has_entry(m)) {
-        return dfi_entry_ability(r, flat);
+        const duoforge_status st = dfi_entry_ability(r, flat);
+        if (st != DUOFORGE_OK) {
+            return st;
+        }
     }
-    return DUOFORGE_OK;
+    /* AfterMega: White Herb's onAnyAfterMega (Team C;
+     * sim/battle-actions.ts:1914). */
+    return dfi_herb_event(r, flat);
 }
 
 /* ---------------------------------------------------------------- turn */
@@ -2497,9 +2682,11 @@ static duoforge_status dfi_run_mega(dfi_run *r, const dfi_queue_record *q)
  * order, speed (the speed each Pokemon had at its last updateSpeed; 0 for
  * the field) and sub-order; ties among callbacks draw (relative to their
  * group), ties among duration handlers change nothing and are not drawn
- * (decision 0006 section 5.1). The callbacks all sort ahead of the duration
- * handlers. After each callback faints are processed, and a finished battle
- * stops the residual phase. */
+ * (decision 0006 section 5.1). The list is sorted once, with all its draws,
+ * before any handler runs. The callbacks of orders 1 to 10 sort ahead of
+ * the duration handlers of orders 26 and 27; White Herb's (order 29, Team
+ * C) sorts after them. After each callback faints are processed, and a
+ * finished battle stops the residual phase. */
 #define DFI_RES_WEATHER 1u
 #define DFI_RES_TERRAIN_END 2u
 #define DFI_RES_BURN 3u
@@ -2508,10 +2695,11 @@ static duoforge_status dfi_run_mega(dfi_run *r, const dfi_queue_record *q)
 #define DFI_RES_FIELD_END 6u /* Trick Room, a side condition: duration only */
 #define DFI_RES_LEFTOVERS 7u
 #define DFI_RES_POISON 8u
+#define DFI_RES_WHITE_HERB 9u
 #define DFI_RES_NO_ORDER 0xFFFFFFFFu
 /* Trick Room, weather and terrain; three conditions per side; per position
- * a status (burn or poison), four duration ends, Leftovers and Grassy
- * Terrain. */
+ * a status (burn or poison), four duration ends, an item (Leftovers or White
+ * Herb) and Grassy Terrain. */
 #define DFI_RES_MAX (3u + 3u * DUOFORGE_SIDE_COUNT + 7u * DFI_POSITIONS)
 
 typedef struct dfi_residual_entry {
@@ -2536,6 +2724,55 @@ static uint32_t dfi_residual_compare(const dfi_residual_entry *a, const dfi_resi
         return a->sub_order < b->sub_order ? 0u : 2u;
     }
     return 1u;
+}
+
+/* Battle.speedSort over the residual handlers, continued from *sorted
+ * until `want` callbacks are placed (*placed counts them). A group of tied
+ * callbacks is shuffled, one draw per step; a tie among duration handlers
+ * changes nothing and is not drawn. Callbacks and duration handlers never
+ * share an order, so no group mixes them. */
+static duoforge_status dfi_residual_sort(dfi_run *r, dfi_residual_entry *list, uint32_t n, uint32_t *sorted,
+                                         uint32_t *placed, uint32_t want)
+{
+    while (*placed < want && *sorted < n) {
+        const uint32_t at = *sorted;
+        uint32_t next[DFI_RES_MAX] = {0};
+        uint32_t count = 1u;
+        next[0] = at;
+        for (uint32_t i = at + 1u; i < n; ++i) {
+            const uint32_t c = dfi_residual_compare(&list[next[0]], &list[i]);
+            if (c == 2u) {
+                next[0] = i;
+                count = 1u;
+            } else if (c == 1u) {
+                next[count] = i;
+                count += 1u;
+            }
+        }
+        for (uint32_t i = 0u; i < count; ++i) {
+            if (next[i] != at + i) {
+                const dfi_residual_entry e = list[at + i];
+                list[at + i] = list[next[i]];
+                list[next[i]] = e;
+            }
+        }
+        const bool callbacks = list[at].callback;
+        for (uint32_t start = at; start + 1u < at + count && callbacks; ++start) {
+            uint32_t v = 0u;
+            const duoforge_status st = dfi_draw(r->draws, DFI_SITE_SPEED_TIE, start - at, count, &v);
+            if (st != DUOFORGE_OK) {
+                return st;
+            }
+            if (at + v != start) {
+                const dfi_residual_entry e = list[start];
+                list[start] = list[at + v];
+                list[at + v] = e;
+            }
+        }
+        *placed += callbacks ? count : 0u;
+        *sorted = at + count;
+    }
+    return DUOFORGE_OK;
 }
 
 static bool dfi_grounded(const dfi_member *m)
@@ -2618,52 +2855,32 @@ static duoforge_status dfi_residual_events(dfi_run *r)
             list[n] = (dfi_residual_entry){DFI_RES_LEFTOVERS, flat, 5u, speed, 4u, true};
             n += 1u;
         }
+        /* White Herb's onResidual (order 29, an item: sub-order 8; Team C). */
+        if (dfi_holds(m, DFI_ITEM_WHITEHERB)) {
+            list[n] = (dfi_residual_entry){DFI_RES_WHITE_HERB, flat, 29u, speed, 8u, true};
+            n += 1u;
+        }
         if (b->terrain == DFI_TERRAIN_GRASSY) {
             list[n] = (dfi_residual_entry){DFI_RES_GRASSY, flat, 5u, speed, 2u, true};
             n += 1u;
         }
     }
-    uint32_t callbacks = 0u;
+    uint32_t early = 0u; /* the callbacks of orders 1 to 10 */
+    uint32_t herbs = 0u; /* White Herb's, order 29 */
     for (uint32_t i = 0u; i < n; ++i) {
-        callbacks += list[i].callback ? 1u : 0u;
+        if (list[i].kind == DFI_RES_WHITE_HERB) {
+            herbs += 1u;
+        } else if (list[i].callback) {
+            early += 1u;
+        }
     }
-    /* The selection sort with shuffled tie groups, until every callback is
-     * placed. */
+    /* The sort's draws in the reference's order: the early callbacks, the
+     * side conditions (26), then White Herb (29). */
     uint32_t sorted = 0u;
-    while (sorted < callbacks) {
-        uint32_t next[DFI_RES_MAX] = {0};
-        uint32_t count = 1u;
-        next[0] = sorted;
-        for (uint32_t i = sorted + 1u; i < n; ++i) {
-            const uint32_t c = dfi_residual_compare(&list[next[0]], &list[i]);
-            if (c == 2u) {
-                next[0] = i;
-                count = 1u;
-            } else if (c == 1u) {
-                next[count] = i;
-                count += 1u;
-            }
-        }
-        for (uint32_t i = 0u; i < count; ++i) {
-            if (next[i] != sorted + i) {
-                const dfi_residual_entry e = list[sorted + i];
-                list[sorted + i] = list[next[i]];
-                list[next[i]] = e;
-            }
-        }
-        for (uint32_t start = sorted; start + 1u < sorted + count && list[sorted].callback; ++start) {
-            uint32_t v = 0u;
-            st = dfi_draw(r->draws, DFI_SITE_SPEED_TIE, start - sorted, count, &v);
-            if (st != DUOFORGE_OK) {
-                return st;
-            }
-            if (sorted + v != start) {
-                const dfi_residual_entry e = list[start];
-                list[start] = list[sorted + v];
-                list[sorted + v] = e;
-            }
-        }
-        sorted += count;
+    uint32_t placed = 0u;
+    st = dfi_residual_sort(r, list, n, &sorted, &placed, early);
+    if (st != DUOFORGE_OK) {
+        return st;
     }
     /* The side conditions end in the group of order 26, sub-order by kind
      * (Reflect 1, Light Screen 2, Tailwind 5). The same kind on both sides
@@ -2685,7 +2902,12 @@ static duoforge_status dfi_residual_events(dfi_run *r)
             }
         }
     }
-    for (uint32_t i = 0u; i < callbacks; ++i) {
+    const uint32_t herbs_from = sorted; /* the herbs follow the duration handlers of 26 and 27 */
+    st = dfi_residual_sort(r, list, n, &sorted, &placed, early + herbs);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    for (uint32_t i = 0u; i < early; ++i) {
         const dfi_residual_entry *e = &list[i];
         if (e->kind == DFI_RES_WEATHER) {
             /* The duration counts down first; at 0 the weather ends. */
@@ -2784,6 +3006,26 @@ static duoforge_status dfi_residual_events(dfi_run *r)
             if (st != DUOFORGE_OK) {
                 return st;
             }
+        }
+    }
+    /* White Herb's onResidual (order 29), each holder's check. The engine
+     * keeps the side conditions without their kinds, so the start order of
+     * the shuffle above can differ from the reference's: two holders due in
+     * one group of equal speed are E_UNSUPPORTED. With the data no herb is
+     * due here (every lowered stat meets an earlier check). */
+    for (uint32_t i = herbs_from; i < sorted; ++i) {
+        if (list[i].kind != DFI_RES_WHITE_HERB || !dfi_herb_due(b, list[i].flat)) {
+            continue;
+        }
+        for (uint32_t j = i + 1u; j < sorted; ++j) {
+            if (list[j].kind == DFI_RES_WHITE_HERB && list[j].speed == list[i].speed && dfi_herb_due(b, list[j].flat)) {
+                return DUOFORGE_E_UNSUPPORTED;
+            }
+        }
+    }
+    for (uint32_t i = herbs_from; i < sorted; ++i) {
+        if (list[i].kind == DFI_RES_WHITE_HERB) {
+            dfi_white_herb(r, list[i].flat);
         }
     }
     for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
@@ -3081,7 +3323,7 @@ duoforge_status dfi_turn_start(const duoforge_context *ctx, struct duoforge_batt
     if (!dfi_closure_battle_supported(&dfi_support, b)) {
         return DUOFORGE_E_UNSUPPORTED;
     }
-    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX};
+    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE};
     dfi_init_speeds(&r);
     /* The leads entered one by one (insertChoice updated each speed); their
      * entries run together. */
@@ -3196,7 +3438,7 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
     if (!dfi_closure_battle_supported(&dfi_support, b) || ((replacement || pivot) && dfi_support.switching == 0u)) {
         return DUOFORGE_E_UNSUPPORTED;
     }
-    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX};
+    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE};
     dfi_init_speeds(&r);
     duoforge_status st = DUOFORGE_OK;
     uint32_t exits = 0u; /* Emergency Exit after the residual action */
@@ -3219,6 +3461,30 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
             }
             if (!ran) {
                 continue; /* runAction returned before its epilogue */
+            }
+            /* AfterMove after a used move: White Herb's onAnyAfterMove (Team
+             * C; sim/battle-actions.ts:311-312). runEvent collects the Any
+             * handlers only while the user or runMove's target is active
+             * (sim/battle.ts:1053), and a Pokemon whose faint the hit loop
+             * showed is not (:2566). With a spread move's undrawn target that
+             * is unknown: E_UNSUPPORTED when the handlers would do anything
+             * (with the data only a Rocky Helmet makes the user faint there,
+             * against a single-target contact move). */
+            if (r.move_used) {
+                const uint32_t user = (uint32_t)q.side * 2u + (uint32_t)q.slot;
+                bool collected = true;
+                if (dfi_faint_shown(&r, user)) {
+                    if (r.move_target == DFI_MOVE_TARGET_SPREAD && dfi_herbs_matter(&r)) {
+                        return DUOFORGE_E_UNSUPPORTED;
+                    }
+                    collected = r.move_target < DFI_POSITIONS && !dfi_faint_shown(&r, r.move_target);
+                }
+                if (collected) {
+                    st = dfi_herb_event(&r, user);
+                    if (st != DUOFORGE_OK) {
+                        return st;
+                    }
+                }
             }
         } else if (q.kind == DFI_Q_SWITCH || q.kind == DFI_Q_SWITCH_IN) {
             st = dfi_run_switch(&r, &q);

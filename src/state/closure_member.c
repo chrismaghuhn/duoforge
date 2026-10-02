@@ -13,7 +13,7 @@ dfi_kind_limits dfi_kind_limits_of(uint32_t data_kind)
     lim.item_count = team_c ? DFI_EXT_ITEM_COUNT : DFI_ITEM_COUNT;
     lim.switch_flag_max = team_c ? DFI_SWITCH_FLIP_TURN : DFI_SWITCH_FAINTED;
     lim.status_max = team_c ? DFI_STATUS_PSN : DFI_STATUS_SLP;
-    lim.vol_flags_mask = team_c ? (DFI_VOL_FLAGS_MAX | DFI_VOL_CHOICE_LOCK) : DFI_VOL_FLAGS_MAX;
+    lim.vol_flags_mask = team_c ? (DFI_VOL_FLAGS_MAX | DFI_VOL_UNBURDEN | DFI_VOL_CHOICE_LOCK) : DFI_VOL_FLAGS_MAX;
     lim.dev = data_kind == DUOFORGE_DATA_KIND_CLOSURE_DEV || data_kind == DUOFORGE_DATA_KIND_TEAM_C_DEV;
     return lim;
 }

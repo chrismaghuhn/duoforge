@@ -32,9 +32,9 @@ extern "C" {
 #endif
 
 #define DUOFORGE_VERSION_MAJOR 0
-#define DUOFORGE_VERSION_MINOR 15
+#define DUOFORGE_VERSION_MINOR 16
 #define DUOFORGE_VERSION_PATCH 0
-#define DUOFORGE_VERSION_STRING "0.15.0"
+#define DUOFORGE_VERSION_STRING "0.16.0"
 
 /* Identifiers of the artifacts that exist now (registry: decisions 0002, 0005, 0006). */
 #define DUOFORGE_SEMANTICS_ID           3u   /* "duoforge-m3-closure" */
@@ -435,8 +435,13 @@ typedef struct duoforge_position_view {
     uint8_t protect_chain; /* public: consecutive successful Protects (stall counter level) */
     uint8_t flash_fire;    /* public: 1 while Flash Fire's boost is active */
     uint8_t protecting;    /* public: 1 while Protect is up this turn ([-singleturn] Protect) */
-    uint8_t reserved;      /* zero */
+    uint8_t reserved;      /* zero under CLOSURE; under the TEAM_C kinds DUOFORGE_POSITION_FLAG_* */
 } duoforge_position_view; /* 16 bytes */
+
+/* Bits of duoforge_position_view.reserved under the TEAM_C kinds. Bits 1 and
+   2 stay 0 until Follow Me and Helping Hand are built (decision 0009 section
+   4.2). */
+#define DUOFORGE_POSITION_FLAG_UNBURDEN 4u /* Unburden doubles the occupant's Speed */
 
 typedef struct duoforge_side_view {
     duoforge_member_view members[DUOFORGE_MAX_ROSTER];

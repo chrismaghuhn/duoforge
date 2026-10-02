@@ -1,6 +1,6 @@
 # 0009 — Team C: the expansion track (data kind, gate, steps, evidence)
 
-Status: **accepted** (owner, 2026-10-01: "bau das erstmal so"; setup rule: the closure rule, section 3.4). **Steps 1 to 7 built** (section 10). Builds on decision `0004` (two reference teams), `0006` (data, state v3, draw sites, fixtures, evidence), `0007` (player view) and `0010` (the certified CLOSURE profile, the role of `CLOSURE_DEV`, draw alignment B confirmed), and on the research in `docs/research/third-team/` (PR #32). "M§n" means section n of `docs/research/third-team/mechanics.md`; X1 to X9 are its executed experiments.
+Status: **accepted** (owner, 2026-10-01: "bau das erstmal so"; setup rule: the closure rule, section 3.4). **Steps 1 to 9a built** (section 10). Builds on decision `0004` (two reference teams), `0006` (data, state v3, draw sites, fixtures, evidence), `0007` (player view) and `0010` (the certified CLOSURE profile, the role of `CLOSURE_DEV`, draw alignment B confirmed), and on the research in `docs/research/third-team/` (PR #32). "M§n" means section n of `docs/research/third-team/mechanics.md`; X1 to X9 are its executed experiments.
 
 ## 1. Owner inputs (2026-10-01)
 
@@ -182,7 +182,7 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
 ### 6.2 Known tooling gaps (M§8)
 
 - **`gen_closure.py` (step 1):** the seven explicit rejections become the mappings of 3.3. Anything else still fails, and the closure mode stays byte-identical (`--check`).
-- **`ps_trace.js` (step 9a):** today 17 of 36 ad-hoc Team C battles abort with `Invalid target for Helping Hand`, because the plan fix-up (`planMove`) aims every targeted move at foe 1. The fix aims an `adjacentAlly` move at the ally's slot (`-1` or `-2`); a spec may also name the ally target. Only plans with such a move change, and the closure has none.
+- **`ps_trace.js` (step 9a):** today 17 of 36 ad-hoc Team C battles abort with `Invalid target for Helping Hand`, because the plan fix-up (`planMove`) aims every targeted move at foe 1. The fix aims an `adjacentAlly` move at the ally's slot (`-1` or `-2`); a spec may also name the ally target. Only plans with such a move change, and the closure has none. Built in step 9a (section 10.9).
 - **`src/rng/draw.h` (step 6):** the STATUS_PICK site (4.3).
 - **`trace_to_c.py`:** the second output, the extended tables, the STATUS_PICK mapping and each step's new protocol lines. It keeps failing loudly on anything unmapped.
 
@@ -482,3 +482,113 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
   - `tools/reference/{ps_trace.js,trace_to_c.py}`;
   - `tools/state_model/state_v3_model.py`;
   - `tests/test_conformance.c` (the lock comparison, the target only while charging).
+
+### 10.8 Step 8: White Herb and Unburden
+
+- **White Herb** (`data/items.ts:7658-7712`). Each of its handlers runs one check: a standing holder with a lowered stat uses the herb (`useItem`, `sim/pokemon.ts:1811-1849`). The use shows `[-enditem]`, then the lowered stages go back to 0 (`-clearnegativeboost` is `[silent]`). Raised stages stay. Then AfterUseItem runs (Unburden).
+  - **Switch-in.** The check runs in `onAnySwitchIn` (priority -2), after the entry abilities (priority 0) and the Grassy Seeds (priority -1), for every holder on the field.
+    - The herb's own `onStart` does not run at its holder's entry: an item with `onAnySwitchIn` keeps its `onStart` out of the switch-in event (`sim/battle.ts:1024-1025`).
+    - The holders run in runSwitch's speed order. Their handlers' fractional speeds follow it (`sim/battle.ts:1008-1013`), so the event itself draws nothing.
+    - runSwitch's speed sort shuffles every tie. The engine draws a tie group when it holds two entering Pokémon with an entry ability, as before, or two standing herb holders.
+  - **AfterMega** (`sim/battle-actions.ts:1914`): after the Mega's entry ability.
+  - **AfterMove** (`sim/battle-actions.ts:311-312`): after every move that got past BeforeMove, also after a move that Protect blocks or that fails. A move that BeforeMove stops has no AfterMove.
+  - **The handlers of AfterMega and AfterMove.** In the data, White Herb's `onAnyAfterMega` and `onAnyAfterMove` are the only handlers of these events.
+    - `runEvent` collects them from the standing holders: `side.allies()` keeps the Pokémon with HP. It takes the user's side first, then the foe side, each in slot order (`sim/battle.ts:1053-1063`).
+    - `speedSort` shuffles equal speeds, so two holders at one speed draw at every AfterMega and AfterMove, even when no herb is due. The engine sorts and draws the same way.
+  - **A user that fainted inside its own move.** `runEvent` collects Any handlers only while the user or runMove's target is active (`sim/battle.ts:1053`). A Pokémon whose faint the hit loop showed is not active (`:2566`).
+    - So when a Fake Out into a Rocky Helmet makes both the user and its target faint, AfterMove runs no herb check and draws nothing. The herb waits for the next check.
+    - The engine keeps runMove's target: getTarget's result, before any redirection.
+    - A spread move's runMove target is a random foe that the engine does not draw. In that case the step is `E_UNSUPPORTED` when the handlers would do anything. With the data, only a Rocky Helmet makes the user faint there, against a single-target contact move.
+  - **Residual, order 29.** This is an item, so sub-order 8.
+    - The reference sorts the residual handlers once, with all their draws, before any runs. So the draws come in this order: the callbacks of orders 1 to 10, the side conditions (26), then the herbs (29).
+    - The herbs run after the side conditions (26), Trick Room and the terrain (27), and before the volatiles' durations.
+    - The engine keeps the side conditions without their kinds, so the start order of the herbs' shuffle can differ from the reference's. Two holders due in one group of equal speed are therefore `E_UNSUPPORTED`.
+- **Unburden** (`data/abilities.ts:5235-5257`).
+  - When its holder uses an item (a berry, a Grassy Seed or the herb), AfterUseItem adds the volatile.
+  - The volatile is `chainModify(2)` in the speed chain while the holder holds no item. Once the volatile is set the holder never has an item again, since nothing in the data gives one back.
+  - The volatile chains with Tailwind into one modifier, before paralysis (section 10.7). A Choice Scarf cannot be in the same chain, because the item is gone.
+  - The queue is sorted again before each move action, so the new speed counts from the next move on, within the same turn. It also counts in the speed order of later events.
+  - `onTakeItem` is unreachable: no move in the data takes an item.
+  - Leaving the field ends the volatile with the rest of the position.
+- **State.** Volatile bit 32, `DFI_VOL_UNBURDEN`. It is valid only under the TEAM_C kinds (`dfi_kind_limits.vol_flags_mask`), and only on an Unburden holder whose item is used (`item` set and `item_consumed` 1). The state model (`tools/state_model/state_v3_model.py`) mirrors the bit, this rule and the view's bit; its output is unchanged.
+- **Observation.** Unburden is public: the ability is open, and the item's use is shown.
+  - Under the TEAM_C kinds the position view's `reserved` byte carries `DUOFORGE_POSITION_FLAG_UNBURDEN` (4). Bits 1 and 2 stay 0 until Follow Me and Helping Hand are built. The byte keeps its name, so the change is additive; a rename to `flags` would not be, and is left to the owner.
+  - Under CLOSURE the byte stays 0, so every closure view keeps its bytes.
+  - Library 0.16.0, coordinated with the main session (0.15.0 went to `duoforge_batch_step_query`).
+  - The Python feature encoder refuses a nonzero byte (`ValueError`), as it refuses every value it does not know, until it encodes the bit. Whether and how it should is the main session's decision.
+- **Harness and converter.**
+  - `ps_trace.js` already records every volatile; the converter compares `unburden` as volatile bit 16.
+  - A runSwitch tie group now lists a standing Pokémon's `onAnySwitchIn` effects (White Herb), only when it has any. All 124 earlier traces are byte-identical, so the harness version stays 14.
+  - The converter keeps a switch-order tie with two standing herb holders, and every AfterMove or AfterMega tie among herb handlers. A tie with any other handler fails loudly.
+- **Evidence.** Eight recorded battles:
+  - `c08_herb_intimidate`: the opening Intimidate lowers Sneasler's Attack, and the herb restores it in the switch-in sequence, after Milotic's Competitive. Unburden doubles Sneasler's Speed from turn 1 (X1), so it moves before a Choice Scarf Basculegion. A later Close Combat lowers its defences with no herb left.
+  - `c08_herb_moves`: the herb after the holder's own Close Combat (X2) and after its own Draco Meteor.
+  - `c08_herb_targets`: the herb after another Pokémon's move, Snarl and Parting Shot.
+  - `c08_herb_competitive`: on Milotic, Intimidate lowers the Attack and Competitive raises the Special Attack by 2 inside that boost. The herb restores only the Attack, and the +2 stays for Ice Beam.
+  - `c08_unburden_resort`: Grimmsnarl's Prankster Parting Shot (+1) lowers a slow Sneasler's attacks first, and the herb restores them. In the queue sorted again before the next move, Sneasler then moves before Raichu, which was faster at the start of the turn. Without the herb, Raichu moves first (checked in the reference, not recorded).
+  - `c08_unburden_berry`: Unburden after a Sitrus Berry; switching out ends it, and the berry stays gone.
+  - `c08_herb_mirror`: both sides lead Sneasler and Incineroar. Both Intimidates lower both Sneaslers' Attack, and the two herbs, at one Speed, run in runSwitch's drawn order.
+  - `c08_herb_ties`: an unused herb on each side's Sneasler, at one Speed.
+    - The AfterMega of Raichu's Mega Evolution, and every AfterMove, shuffle the two checks.
+    - The residual sorts the herbs after Reflect and Grassy Terrain; this is the case the review found failing.
+    - Close Combat then lowers one Sneasler's defences, and its herb restores them after the drawn order.
+
+  Three tests through the public API:
+  - Two herbs due at one switch-in: the faster holder's comes first. At one speed the tie is drawn, and over 16 seeds both orders show.
+  - Fake Out into a Rocky Helmet (white-box states at 1 HP): with the user and the target fainting, the herb waits for the next move's AfterMove. With either one standing, it follows the Fake Out.
+  - Unburden's bit is invalid on an Unburden holder whose item is still held.
+
+  Fifteen negative controls each make a test fail:
+  - no herb at a switch-in;
+  - no herb after a move, by removing the check or by never setting the used-move point;
+  - a herb without a lowered stat;
+  - a herb that also resets raised stages;
+  - no switch-in draw for two herb holders;
+  - no AfterMove or AfterMega draw;
+  - AfterMove's handlers collected with the user and the target fainted;
+  - the herbs sorted with the early residual callbacks (the review's case);
+  - no herb in the residual;
+  - no Unburden on an item use;
+  - no Unburden in the speed chain;
+  - Unburden hidden in the view;
+  - no ability check, or no item-used check, in the invariant.
+- **Not recorded.**
+  - A herb used in the residual or at AfterMega: with the data every lowered stat meets an earlier check, and no Mega forme lowers a stat on entry.
+  - Two herbs due at one AfterMove: no move in the data lowers the stats of two herb holders, and the Item Clause keeps them on different sides. So the order within an AfterMove or AfterMega tie never shows; only its draws do.
+  - The plan's Contrary Mega Staraptor (section 5): a Mega holds its stone, so it cannot hold the herb.
+  - Whether AfterMove follows a move that BeforeMove stopped cannot be observed with the data: no herb stays due until then.
+- **Review findings, fixed.**
+  - **Blocking.** The herb's residual entry (order 29) broke the residual's split into callbacks and duration handlers. With a held herb and a side condition, Trick Room or a terrain, the end of the turn failed with `E_INVARIANT`. The residual now sorts as the reference does, as described above, and `c08_herb_ties` records it.
+  - **Herb ties.** A tie between two herb holders now follows the reference's draws at the switch-in, at AfterMega and at AfterMove, where step 8's first version rejected it. A step-12 Team C mirror needs this.
+  - **A user that fainted inside its move.** The case is now modelled exactly; before, a herb due there was `E_UNSUPPORTED`.
+  - **Public field.** The `reserved` byte keeps its name; the rename to `flags` would not have been additive.
+  - **Python encoder.** It refuses the new bit instead of dropping it silently.
+  - **Smaller items.**
+    - A test for the item-used rule.
+    - The conformance diagnostic now prints Unburden.
+    - Two spec purposes claimed a Speed effect that their battles do not show; now they claim only the volatile.
+- **Shared files touched:**
+  - `include/duoforge/duoforge.h` (the bit of the position view's `reserved` byte, version);
+  - `src/state/{battle_internal.h,closure_member.c,invariants.c,observation.c}`;
+  - `src/combat/turn.c`;
+  - `src/data/support_manifest.c`;
+  - `python/duoforge/{features,_lib}.py`, `python/tests/{test_lib,test_policies_features}.py`;
+  - `tools/reference/{ps_trace.js,trace_to_c.py}`, `tools/state_model/state_v3_model.py`;
+  - `tests/reference/conformance.h` (a comment only);
+  - `tests/test_conformance.c` (the Unburden comparison), `tests/test_api_atomicity.c` (version), `tests/test_team_c_setup.c`.
+
+### 10.9 Step 9a: ally targets in the harness
+
+- **The gap (section 6.2).** `ps_trace.js`'s plan fix-up gave target 1, a foe, to every planned move that takes a target and names none.
+  - Helping Hand (`adjacentAlly`) takes only the ally's slot, so the reference rejected the choice ("Invalid target for Helping Hand") and the run aborted.
+  - Plans that never name Helping Hand hit this too, through the fix-ups that pick another move: no PP left, or Fake Out disabled after the first turn.
+- **The fix.** `planMove` aims an `adjacentAlly` move at the ally's slot: -2 from the left position, -1 from the right one.
+  - A plan that names an own-side target (-1 or -2) keeps it, so a spec can name the ally target itself.
+  - Nothing else changes.
+- **Byte identity.**
+  - No committed trace plans an `adjacentAlly` move: the closure has none, and Helping Hand is still gated.
+  - `ps_trace.js --check` passes on all 126 committed traces, so the harness version stays 14.
+- **Evidence (an ad-hoc run, not committed).** 36 random-plan battles of the real Team C (`docs/research/third-team/team-c.txt`) against Team A and Team B, with three rotations of Team C's order, three seeds and both sides.
+  - Before the fix: 19 ran to the end; 17 aborted with "Invalid target for Helping Hand".
+  - After the fix: all 36 ran to the end, with 0 UNKNOWN draw sites and Helping Hand used 23 times.
+- **Shared files touched:** `tools/reference/ps_trace.js` (`planMove` and its comments).

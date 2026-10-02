@@ -21,6 +21,7 @@
 #include "state/closure_member.h"
 #include "state/context_internal.h"
 #include "state/invariants.h"
+#include "state/knowledge.h"
 #include "support/check.h"
 #include "support/fixtures.h"
 #include "support/team_c.h"
@@ -120,6 +121,145 @@ static void put_one(duoforge_battle_setup *s, uint32_t member, uint32_t ability_
     if (move != UINT32_MAX) {
         m->moves[0].move_id = move;
     }
+}
+
+/* The number of player 0's move lines before White Herb's [-enditem] in
+ * `events` (n of them), 0 when there is none; *side gets the herb holder's
+ * side of the first one (2 when there is none), *herbs the number of them. */
+static uint32_t herb_lines(const duoforge_event *events, uint32_t n, uint32_t *side, uint32_t *herbs)
+{
+    uint32_t moves = 0u;
+    uint32_t before = 0u;
+    *side = 2u;
+    *herbs = 0u;
+    for (uint32_t i = 0u; i < n; ++i) {
+        if (events[i].kind == DUOFORGE_EVENT_MOVE) {
+            moves += 1u;
+        } else if (events[i].kind == DUOFORGE_EVENT_ITEM_END && events[i].id2 == 1u + DFI_ITEM_WHITEHERB) {
+            if (*herbs == 0u) {
+                *side = (uint32_t)events[i].position / 2u;
+                before = moves;
+            }
+            *herbs += 1u;
+        }
+    }
+    return before;
+}
+
+/* Step 8: the dev side against itself, each Sneasler with a White Herb and
+ * side 1's at `spe` Speed points (side 0's: 2), the RNG seeded with `seed`.
+ * Both Incineroar leads' Intimidates lower both Sneaslers' Attack, so both
+ * herbs are due on AnySwitchIn. Returns the team step's status; *herbs
+ * counts the herbs' [-enditem] lines and *first is the side of the first
+ * (2 when there is none). */
+static duoforge_status herb_pair(const duoforge_context *ctx, const duoforge_battle_setup *teams, uint8_t spe,
+                                 uint64_t seed, uint32_t *herbs, uint32_t *first)
+{
+    duoforge_battle_setup s = *teams;
+    s.rng_initstate = seed;
+    put_dev_side(&s.sides[0]);
+    put_dev_side(&s.sides[1]);
+    s.sides[0].members[0].item = DFI_ITEM_WHITEHERB + 1u;
+    s.sides[1].members[0].item = DFI_ITEM_WHITEHERB + 1u;
+    s.sides[1].members[0].stat_points[1] = (uint8_t)(34u - spe); /* 66 points in all */
+    s.sides[1].members[0].stat_points[5] = spe;
+    duoforge_battle *w = df_make_battle(ctx, &s);
+    duoforge_decision_bundle bd;
+    memset(&bd, 0, sizeof bd);
+    bd.epoch = w->request_epoch;
+    bd.response_mask = 3u;
+    for (uint32_t side = 0u; side < 2u; ++side) {
+        duoforge_side_choice *c = &bd.responses[side];
+        c->epoch = w->request_epoch;
+        c->side = (uint8_t)side;
+        c->kind = (uint8_t)DUOFORGE_CHOICE_TEAM_SELECTION;
+        c->pick_count = 4u;
+        for (uint32_t i = 0u; i < 4u; ++i) {
+            c->picks[i] = (uint8_t)i; /* Sneasler and Incineroar lead */
+        }
+    }
+    duoforge_event events[2][DUOFORGE_MAX_EVENTS];
+    duoforge_event_buffer buffers[2] = {{events[0], DUOFORGE_MAX_EVENTS, 0u}, {events[1], DUOFORGE_MAX_EVENTS, 0u}};
+    duoforge_step_result res;
+    const duoforge_status st = duoforge_battle_step_events(ctx, w, &bd, &res, buffers);
+    (void)herb_lines(events[0], st == DUOFORGE_OK ? buffers[0].count : 0u, first, herbs);
+    duoforge_battle_destroy(w);
+    return st;
+}
+
+/* White-box (step 8): the dev side against itself, Sneasler and Kingambit
+ * against Sneasler, here with a Rocky Helmet, and Indeedee-F, here with a
+ * White Herb and, when `lowered`, Defense -1. Turn 1: Sneasler's Fake Out
+ * (+3) into the Helmet first. At 1 HP (`faints`) the Helmet makes the user
+ * faint inside its move; at 1 HP (`ko`) the Helmet holder faints too. Then
+ * Psychic, Iron Head and the flinched Close Combat. Returns the turn's
+ * status; *moves is the number of move lines before the herb's [-enditem],
+ * 0 when there is none. */
+static duoforge_status helmet_turn(const duoforge_context *ctx, const duoforge_battle_setup *teams, bool faints,
+                                   bool ko, bool lowered, uint32_t *moves)
+{
+    duoforge_battle_setup s = *teams;
+    put_dev_side(&s.sides[0]);
+    put_dev_side(&s.sides[1]);
+    duoforge_battle *w = df_make_battle(ctx, &s);
+    const uint8_t picks[2][4] = {{0u, 4u, 1u, 2u}, {0u, 3u, 1u, 2u}}; /* leads first */
+    const uint8_t plan[2][2][2] = {{{2u, 2u}, {0u, 3u}}, {{0u, 0u}, {1u, 0u}}}; /* move slot, target */
+    duoforge_event events[2][DUOFORGE_MAX_EVENTS];
+    duoforge_event_buffer buffers[2] = {{events[0], DUOFORGE_MAX_EVENTS, 0u}, {events[1], DUOFORGE_MAX_EVENTS, 0u}};
+    duoforge_decision_bundle bd;
+    duoforge_step_result res;
+    duoforge_status st = DUOFORGE_OK;
+    *moves = 0u;
+    for (uint32_t step = 0u; step < 2u && st == DUOFORGE_OK; ++step) {
+        if (step == 1u) {
+            if (w->boundary_kind != DUOFORGE_BOUNDARY_TURN) {
+                st = DUOFORGE_E_INVARIANT;
+                break;
+            }
+            for (uint32_t side = 0u; side < 2u; ++side) {
+                if (side == 0u ? !faints : !ko) {
+                    continue;
+                }
+                dfi_member *m = &w->sides[side].members[0];
+                dfi_knowledge *shown = &w->sides[1u - side].knowledge[0]; /* the foe sees the HP bar */
+                m->hp = 1u;
+                dfi_hp_display(m->hp, m->hp_max, &shown->hp_percent, &shown->hp_flag);
+            }
+            w->sides[1].members[0].item = (uint8_t)(1u + DFI_ITEM_ROCKYHELMET);
+            w->sides[1].members[3].item = (uint8_t)(1u + DFI_ITEM_WHITEHERB);
+            if (lowered) {
+                w->sides[1].positions[1].stages[DFI_STAGE_DEF] = (uint8_t)(DFI_STAGE_NEUTRAL - 1u);
+            }
+        }
+        memset(&bd, 0, sizeof bd);
+        bd.epoch = w->request_epoch;
+        bd.response_mask = 3u;
+        for (uint32_t side = 0u; side < 2u; ++side) {
+            duoforge_side_choice *c = &bd.responses[side];
+            c->epoch = w->request_epoch;
+            c->side = (uint8_t)side;
+            if (step == 0u) {
+                c->kind = (uint8_t)DUOFORGE_CHOICE_TEAM_SELECTION;
+                c->pick_count = 4u;
+                memcpy(c->picks, picks[side], sizeof picks[side]);
+                continue;
+            }
+            c->kind = (uint8_t)DUOFORGE_CHOICE_SLOTS;
+            for (uint32_t slot = 0u; slot < 2u; ++slot) {
+                c->slots[slot].kind = (uint8_t)DUOFORGE_SLOT_MOVE;
+                c->slots[slot].move_slot = plan[side][slot][0];
+                c->slots[slot].target = plan[side][slot][1];
+            }
+        }
+        st = duoforge_battle_step_events(ctx, w, &bd, &res, buffers);
+    }
+    if (st == DUOFORGE_OK) {
+        uint32_t side = 2u;
+        uint32_t herbs = 0u;
+        *moves = herb_lines(events[0], buffers[0].count, &side, &herbs);
+    }
+    duoforge_battle_destroy(w);
+    return st;
 }
 
 int main(void)
@@ -399,6 +539,7 @@ int main(void)
                          w->boundary_kind == DUOFORGE_BOUNDARY_TURN);
         dfi_active_slot *pos = &w->sides[0].positions[0];
         dfi_member *holder = &w->sides[0].members[pos->occupant];
+        const uint8_t original_item = holder->item;
         dfi_invariant inv = DFI_INV_NONE;
         pos->flags = (uint8_t)((uint32_t)pos->flags | DFI_VOL_CHOICE_LOCK);
         pos->locked_move = 1u;
@@ -415,7 +556,87 @@ int main(void)
             pos->flags = (uint8_t)((uint32_t)pos->flags & ~DFI_VOL_CHOICE_LOCK);
             DF_CHECK(&t, dfi_state_check(ctx, w, &inv) == DUOFORGE_E_INVARIANT && inv == DFI_INV_VOLATILE);
         }
+        /* Unburden's volatile (bit 32, step 8): TEAM_C kinds only, and only
+         * on an Unburden holder whose item is gone. */
+        pos->flags = 0u;
+        pos->locked_move = 0u;
+        holder->item = original_item;
+        DF_CHECK(&t, dfi_state_check(ctx, w, &inv) == DUOFORGE_OK);
+        pos->flags = (uint8_t)DFI_VOL_UNBURDEN;
+        DF_CHECK(&t, dfi_state_check(ctx, w, &inv) == DUOFORGE_E_INVARIANT && inv == DFI_INV_VOLATILE);
+        if (team_c != 0u) {
+            holder->item_consumed = 1u; /* the item is gone, but the holder has no Unburden */
+            DF_CHECK(&t, dfi_state_check(ctx, w, &inv) == DUOFORGE_E_INVARIANT && inv == DFI_INV_VOLATILE);
+            holder->item_consumed = 0u;
+        }
         duoforge_battle_destroy(w);
+    }
+
+    /* White-box (step 8): Unburden's bit needs an Unburden holder whose item
+     * is used; with the item still held it is VOLATILE. */
+    {
+        duoforge_battle_setup u = teams;
+        put_dev_side(&u.sides[0]);
+        u.sides[0].members[0].ability = DFI_ABILITY_UNBURDEN + 1u; /* Sneasler leads */
+        u.sides[0].members[0].item = DFI_ITEM_WHITEHERB + 1u;
+        duoforge_battle *w = df_make_battle(kd, &u);
+        duoforge_decision_bundle bd;
+        memset(&bd, 0, sizeof bd);
+        bd.epoch = w->request_epoch;
+        bd.response_mask = 3u;
+        for (uint32_t side = 0u; side < 2u; ++side) {
+            duoforge_side_choice *c = &bd.responses[side];
+            c->epoch = w->request_epoch;
+            c->side = (uint8_t)side;
+            c->kind = (uint8_t)DUOFORGE_CHOICE_TEAM_SELECTION;
+            c->pick_count = 4u;
+            for (uint32_t i = 0u; i < 4u; ++i) {
+                c->picks[i] = (uint8_t)i;
+            }
+        }
+        duoforge_step_result res;
+        DF_CHECK(&t, duoforge_battle_step(kd, w, &bd, &res) == DUOFORGE_OK &&
+                         w->boundary_kind == DUOFORGE_BOUNDARY_TURN);
+        dfi_active_slot *pos = &w->sides[0].positions[0];
+        dfi_member *holder = &w->sides[0].members[pos->occupant];
+        dfi_invariant inv = DFI_INV_NONE;
+        DF_CHECK(&t, dfi_state_check(kd, w, &inv) == DUOFORGE_OK && holder->item_consumed == 0u);
+        pos->flags = (uint8_t)((uint32_t)pos->flags | DFI_VOL_UNBURDEN);
+        DF_CHECK(&t, dfi_state_check(kd, w, &inv) == DUOFORGE_E_INVARIANT && inv == DFI_INV_VOLATILE);
+        holder->item_consumed = 1u; /* the herb used: the bit is valid */
+        DF_CHECK(&t, dfi_state_check(kd, w, &inv) == DUOFORGE_OK);
+        duoforge_battle_destroy(w);
+    }
+
+    /* White-box (step 8): runEvent collects AfterMove's Any handlers only
+     * while the user or runMove's target is active (sim/battle.ts:1053). A
+     * user and a target that a Fake Out into a Rocky Helmet makes faint
+     * inside the move are not: the herb then waits for the next move's
+     * AfterMove (Indeedee-F's own Psychic). Either one standing is enough. */
+    {
+        uint32_t moves = 9u;
+        DF_CHECK(&t, helmet_turn(kd, &teams, false, false, true, &moves) == DUOFORGE_OK && moves == 1u);
+        DF_CHECK(&t, helmet_turn(kd, &teams, true, false, true, &moves) == DUOFORGE_OK && moves == 1u);
+        DF_CHECK(&t, helmet_turn(kd, &teams, false, true, true, &moves) == DUOFORGE_OK && moves == 1u);
+        DF_CHECK(&t, helmet_turn(kd, &teams, true, true, true, &moves) == DUOFORGE_OK && moves == 2u);
+        DF_CHECK(&t, helmet_turn(kd, &teams, true, true, false, &moves) == DUOFORGE_OK && moves == 0u);
+    }
+
+    /* Step 8: two White Herbs due at one switch-in run in runSwitch's speed
+     * order: the faster holder's first; at one speed the tie is drawn, so
+     * over a few seeds both orders show. */
+    {
+        uint32_t herbs = 0u;
+        uint32_t first = 2u;
+        DF_CHECK(&t, herb_pair(kd, &teams, 32u, teams.rng_initstate, &herbs, &first) == DUOFORGE_OK && herbs == 2u &&
+                         first == 1u);
+        uint32_t firsts = 0u;
+        for (uint64_t k = 0u; k < 16u; ++k) {
+            const duoforge_status st = herb_pair(kd, &teams, 2u, teams.rng_initstate ^ k, &herbs, &first);
+            DF_CHECK(&t, st == DUOFORGE_OK && herbs == 2u && first < 2u);
+            firsts |= 1u << (first & 7u);
+        }
+        DF_CHECK(&t, firsts == 3u);
     }
 
     /* The gate per Team C mechanic: the dev side plus exactly one of them.
@@ -423,7 +644,8 @@ int main(void)
      * Cleave, Hyper Voice, Draco Meteor, Wave Crash, Aqua Jet, Defiant and
      * Adaptability; step 2: Flare Blitz and Darkest Lariat; step 3: Salamencite
      * with Aerilate; step 4: Last Respects and Flip Turn; step 5: Chople Berry
-     * and Rocky Helmet; step 6: Dire Claw (poison); step 7: Choice Scarf. */
+     * and Rocky Helmet; step 6: Dire Claw (poison); step 7: Choice Scarf;
+     * step 8: White Herb and Unburden. */
     {
         typedef struct gate_case {
             uint32_t member, ability_plus1, item_plus1, move;
@@ -445,10 +667,10 @@ int main(void)
             {5u, 0u, 0u, DFI_MOVE_LASTRESPECTS, true, "Last Respects"},
             {5u, 0u, 0u, DFI_MOVE_FLIPTURN, true, "Flip Turn"},
             {5u, 0u, 0u, DFI_MOVE_AQUAJET, true, "Aqua Jet"},
-            {0u, DFI_ABILITY_UNBURDEN + 1u, 0u, keep, false, "Unburden"},
+            {0u, DFI_ABILITY_UNBURDEN + 1u, 0u, keep, true, "Unburden"},
             {3u, DFI_ABILITY_PSYCHICSURGE + 1u, 0u, keep, false, "Psychic Surge"},
             {4u, DFI_ABILITY_DEFIANT + 1u, 0u, keep, true, "Defiant"},
-            {0u, 0u, DFI_ITEM_WHITEHERB + 1u, keep, false, "White Herb"},
+            {0u, 0u, DFI_ITEM_WHITEHERB + 1u, keep, true, "White Herb"},
             {2u, 0u, DFI_ITEM_SALAMENCITE + 1u, keep, true, "Salamencite (Mega, Aerilate)"},
             {3u, 0u, DFI_ITEM_ROCKYHELMET + 1u, keep, true, "Rocky Helmet"},
             {4u, 0u, DFI_ITEM_CHOPLEBERRY + 1u, keep, true, "Chople Berry"},
@@ -478,10 +700,12 @@ int main(void)
         abilities[DFI_ABILITY_DEFIANT - DFI_ABILITY_COUNT] = 1u;
         abilities[DFI_ABILITY_ADAPTABILITY - DFI_ABILITY_COUNT] = 1u;
         abilities[DFI_ABILITY_AERILATE - DFI_ABILITY_COUNT] = 1u;
+        abilities[DFI_ABILITY_UNBURDEN - DFI_ABILITY_COUNT] = 1u;
         items[DFI_ITEM_SALAMENCITE - DFI_ITEM_COUNT] = 1u;
         items[DFI_ITEM_CHOPLEBERRY - DFI_ITEM_COUNT] = 1u;
         items[DFI_ITEM_ROCKYHELMET - DFI_ITEM_COUNT] = 1u;
         items[DFI_ITEM_CHOICESCARF - DFI_ITEM_COUNT] = 1u;
+        items[DFI_ITEM_WHITEHERB - DFI_ITEM_COUNT] = 1u;
         DF_CHECK_BYTES(&t, dfi_support.moves + DFI_MOVE_COUNT, moves, sizeof moves, "Team C moves in the manifest");
         DF_CHECK_BYTES(&t, dfi_support.abilities + DFI_ABILITY_COUNT, abilities, sizeof abilities,
                        "Team C abilities in the manifest");

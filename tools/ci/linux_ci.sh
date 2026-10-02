@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # The Linux jobs of the local CI (tools/ci/local_ci.sh), run inside WSL with
-# the sources in place (/mnt/c/...) and the builds under ~/df-build/ci for
-# speed. Prints one "RESULT <job> PASS|FAIL <detail>" line per job.
+# the sources in place (/mnt/c/...) and the builds under
+# ~/df-build/ci/<checkout>-<hash> for speed: one directory per checkout, so
+# sessions in other worktrees never remove each other's builds. Prints one
+# "RESULT <job> PASS|FAIL <detail>" line per job.
 #
 # usage: linux_ci.sh <job...>
 #   gcc-asan          GCC Debug with ASan and UBSan
@@ -15,7 +17,7 @@
 set -u
 
 SRC=$(cd "$(dirname "$0")/../.." && pwd)
-OUT=$HOME/df-build/ci
+OUT=$HOME/df-build/ci/$(basename "$SRC")-$(printf '%s' "$SRC" | md5sum | cut -c1-8)
 JOBS=$(nproc)
 PY=$HOME/df-venv/bin/python
 mkdir -p "$OUT"
@@ -58,6 +60,7 @@ for j in "$@"; do
     gcc-release-ipo)
         py=()
         [ -x "$PY" ] && py=(-DDUOFORGE_PYTHON="$PY")
+        [ -x "$HOME/df-learn/bin/python" ] && py+=(-DDUOFORGE_LEARN_PYTHON="$HOME/df-learn/bin/python")
         job "$j" gcc g++ "" -DCMAKE_BUILD_TYPE=Release -DDUOFORGE_ENABLE_IPO=ON "${py[@]}"
         ;;
     clang-release-ipo) job "$j" clang clang++ "" -DCMAKE_BUILD_TYPE=Release -DDUOFORGE_ENABLE_IPO=ON ;;
