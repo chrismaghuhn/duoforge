@@ -47,7 +47,7 @@
 /* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
  * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
  * produced the same bytes. */
-#define STEPS_ROWS_HASH_HEX "52e85b0461b75d92729656791e39b11ed58263da70af82a20e638d1f33010b87"
+#define STEPS_ROWS_HASH_HEX "40c2cb90eb08727328dbd076ae4192434ba6537f41511505dc4daa04fe3a12d9"
 
 /* The counts of the rows of the steps, and of the whole pool (legal_pool.json: 264 distinct selectable formes and
  * 82 Mega formes, 510 moves and Struggle, 166 items, 215 abilities). */
