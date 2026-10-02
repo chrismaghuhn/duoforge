@@ -168,6 +168,79 @@ class Refusals(unittest.TestCase):
                              "trace_to_c: %s tie with ['H:whiteherb:p1a:cb', 'H:lifeorb:p2a:cb']" % context,
                              context + ':lifeorb+whiteherb')
 
+    def test_singleturn_line_that_is_not_protect_helping_hand_or_follow_me(self):
+        def mutate(spec, trace):
+            log = trace['steps'][1]['log']
+            self.assertEqual(log[1], '|-singleturn|p1b: Kingambit|Helping Hand|[of] p1a: Indeedee')
+            log[1] = '|-singleturn|p1b: Kingambit|move: Rage Powder'
+        self.control('c09_helping_hand', mutate, 'singleturn-line',
+                     "trace_to_c: unknown -singleturn '|-singleturn|p1b: Kingambit|move: Rage Powder'",
+                     'move: Rage Powder')
+
+    def test_choice_scarf_holder_without_its_switch_in_handler(self):
+        def mutate(spec, trace):
+            d = trace['steps'][0]['draws'][1]
+            self.assertEqual((d['site'], d['context'], d['group']),
+                             ('SPEED_TIE', 'switch-order', ['P:p1a:1:S', 'P:p2b:1:S']))
+            d['group'][0] = 'P:p1a:0:S'
+        self.control('c12_scarf_tie', mutate, 'switch-order-handlers',
+                     "trace_to_c: a Choice Scarf holder without its SwitchIn handler in ['P:p1a:0:S', 'P:p2b:1:S']",
+                     'choicescarf')
+
+    @staticmethod
+    def accuracy_tie(trace):
+        """The one draw in context event:Accuracy of d01_noguard_accuracy_tie."""
+        found = [d for step in trace['steps'] for d in step['draws'] if d.get('context') == 'event:Accuracy']
+        assert len(found) == 1, found
+        return found[0]
+
+    def test_accuracy_tie_with_a_handler_that_is_not_no_guard(self):
+        def mutate(spec, trace):
+            d = self.accuracy_tie(trace)
+            self.assertEqual((d['site'], d['group']), ('SPEED_TIE', ['H:noguard:p1b:cb', 'H:noguard:p2b:cb']))  # dropped
+            d['group'][1] = 'H:victorystar:p2b:cb'  # onAnyModifyAccuracy: not the handler whose order is known to decide nothing
+        self.control('d01_noguard_accuracy_tie', mutate, 'tie-context', 'trace_to_c: unhandled tie context event:Accuracy',
+                     'event:Accuracy')
+
+    def test_accuracy_tie_of_no_guard_with_an_entry_that_is_not_a_callback(self):
+        def mutate(spec, trace):
+            self.accuracy_tie(trace)['group'][0] = 'H:noguard:p1b:end'
+        self.control('d01_noguard_accuracy_tie', mutate, 'tie-context', 'trace_to_c: unhandled tie context event:Accuracy',
+                     'event:Accuracy')
+
+    def test_the_no_guard_rule_is_for_the_accuracy_event_only(self):
+        def mutate(spec, trace):
+            self.accuracy_tie(trace)['context'] = 'event:AfterMove'  # the same two handlers in an event they are not in
+        self.control('d01_noguard_accuracy_tie', mutate, 'after-event-tie',
+                     "trace_to_c: event:AfterMove tie with ['H:noguard:p1b:cb', 'H:noguard:p2b:cb']",
+                     'event:AfterMove:noguard')
+
+    def test_unknown_volatile(self):
+        def mutate(spec, trace):
+            mon = trace['steps'][1]['state']['sides'][0]['pokemon'][0]
+            self.assertNotIn('substitute', mon['volatiles'])
+            mon['volatiles'] = sorted(mon['volatiles'] + ['substitute'])
+        self.control('c11_follow_me', mutate, 'unknown-volatile',
+                     "trace_to_c: unknown volatile 'substitute' of Indeedee-F", 'substitute')
+
+    def test_two_turn_move_volatile_without_twoturnmove(self):
+        def mutate(spec, trace):
+            mon = trace['steps'][0]['state']['sides'][1]['pokemon'][1]
+            self.assertNotIn('twoturnmove', mon['volatiles'])
+            mon['volatiles'] = sorted(mon['volatiles'] + ['electroshot'])
+        self.control('c11_follow_me_rod', mutate, 'unknown-volatile',
+                     'trace_to_c: electroshot without twoturnmove on Archaludon', 'electroshot')
+
+    def test_follow_me_line_with_an_attribute(self):
+        def mutate(spec, trace):
+            log = trace['steps'][1]['log']
+            self.assertIn('|-singleturn|p1a: Indeedee|move: Follow Me', log)
+            i = log.index('|-singleturn|p1a: Indeedee|move: Follow Me')
+            log[i] = '|-singleturn|p1a: Indeedee|move: Follow Me|[zeffect]'
+        self.control('c11_follow_me', mutate, 'singleturn-line',
+                     "trace_to_c: unknown -singleturn '|-singleturn|p1a: Indeedee|move: Follow Me|[zeffect]'",
+                     'move: Follow Me')
+
     def test_hit_draw_that_is_not_the_status_pick(self):
         for draw, text, detail in (
                 ({'site': 'ACCURACY', 'context': 'Hit', 'lo': 0, 'hi': 100, 'value': 7},
@@ -253,6 +326,28 @@ class Library(unittest.TestCase):
             for i, (st, raw) in enumerate(zip(data['steps'], trace['steps'])):
                 self.assertEqual(len(st['tape']) + st['dropped'], len(raw['draws']), '%s step %d' % (name, i))
             self.assertEqual(data['dropped_total'], sum(st['dropped'] for st in data['steps']), name)
+
+    def test_the_tie_of_two_no_guard_handlers_is_a_dropped_draw(self):
+        """d01_noguard_accuracy_tie (a cut of fz_1_118 of the differential loop's seed 1): both Raichu are Mega Raichu Y,
+        whose No Guard handlers tie in the Accuracy event of the first attack. The draw is dropped, with its reason,
+        and is no tape entry; the battle converts."""
+        name = 'd01_noguard_accuracy_tie'
+        spec, trace = battle(name)
+        data = convert(name, spec, trace)
+        found = [(k, d) for k, step in enumerate(trace['steps']) for d in step['draws'] if d.get('context') == 'event:Accuracy']
+        self.assertEqual(len(found), 1)
+        k, d = found[0]
+        self.assertEqual((d['site'], d['group']), ('SPEED_TIE', ['H:noguard:p1b:cb', 'H:noguard:p2b:cb']))
+        before, after = trace['steps'][k - 1]['state'], trace['steps'][k]['state']
+        self.assertEqual(trace_to_c.drop_reason(d, before, after), 'No Guard handlers whose order changes nothing')
+        # The order of the two does not matter to the rule: a tie of the same two the other way round is dropped as well.
+        flipped = dict(d, group=list(reversed(d['group'])))
+        self.assertEqual(trace_to_c.drop_reason(flipped, before, after), 'No Guard handlers whose order changes nothing')
+        step = data['steps'][k]
+        dropped = [x for x in trace['steps'][k]['draws'] if trace_to_c.side_end_tie(x, before) is None
+                   and trace_to_c.drop_reason(x, before, after) is not None]
+        self.assertIn(d, dropped)
+        self.assertEqual((step['dropped'], len(step['tape']) + step['dropped']), (len(dropped), len(trace['steps'][k]['draws'])))
 
     def assert_shape(self, value, ctype, dims, where):
         """`value` is a `ctype` with array dimensions `dims` as the data holds it: nested tuples that follow the

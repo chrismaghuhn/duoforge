@@ -1,0 +1,28 @@
+{
+  "name": "c09_sucker_punch_order",
+  "purpose": "Sucker Punch against what its target does: Ceruledge's faster Shadow Sneak (+1) moves first and Ceruledge's Protect (+4) too, Indeedee-F's Trick Room is a status move, and a target that switches out leaves no queued move, so all fail; under Trick Room the slower Kingambit moves before the Shadow Sneak and hits.",
+  "data": "team_c",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c0902",
+  "teams": [
+    "Kingambit (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Helping Hand\n- Psychic\n\nSneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Dire Claw\n\nBasculegion (M) @ Choice Scarf\nAbility: Adaptability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Wave Crash",
+    "Ceruledge (M) @ Leftovers\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 28 Spe\nJolly Nature\n- Protect\n- Shadow Sneak\n\nIndeedee-F (F) @ Sitrus Berry\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Trick Room\n- Psychic\n\nArchaludon (M) @ Light Clay\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1",
+      "move 1 1, move 1",
+      "move 1 2, move 1",
+      "move 1 1, move 1",
+      "move 1 1, move 1"
+    ],
+    "p2": [
+      "move 2 1, move 2 1",
+      "move 1, move 2 1",
+      "move 2 1, move 1",
+      "move 2 1, move 2 1",
+      "switch 3, move 2 1"
+    ],
+    "max_steps": 30
+  }
+}
