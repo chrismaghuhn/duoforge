@@ -89,7 +89,7 @@ def domain(tracker):
     lists = options.slot_options(request, side, roster_of, locked)
     for k, needs in enumerate(struggle_too):
         has = any(o.kind == options.MOVE and o.move_slot == options.STRUGGLE for o in lists[k])
-        if needs and not has:
+        if needs and not has and any(o.kind == options.MOVE for o in lists[k]):
             # One usable move only (a choice lock, or PP left in one move): an effect outside the view can disable it
             # (Fake Out after the first turn, c07_choice_lock), and then the request offers Struggle.
             lists[k] = lists[k] + [options.Option(options.MOVE, options.STRUGGLE, options.TARGET_NONE, 0, 0, "move 1")]

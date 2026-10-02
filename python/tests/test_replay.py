@@ -260,6 +260,8 @@ class SpectatorTest(unittest.TestCase):
                 for point, obs, (domain, lists), label in self.runs[(battle.name, side)]:
                     k = int(obs["epoch"]) - 1
                     where = (battle.name, k, side)
+                    if k >= len(trace["steps"]):
+                        continue  # the trace ends at this point: no choice was made
                     text = trace["steps"][k]["input"][f"p{side + 1}"]
                     state = state0 if k == 0 else trace["steps"][k - 1]["state"]
                     kind, choice = trace_to_c.convert_choice(text, side, state, roster_names)
