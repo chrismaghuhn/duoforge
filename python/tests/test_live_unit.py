@@ -107,5 +107,32 @@ class DataTest(unittest.TestCase):
         self.assertEqual(d.forme("Charizard-Mega-Y"), d.mega_forme(d.forme("Charizard")))
 
 
+class OptionsTest(unittest.TestCase):
+    REQUEST = {"active": [{"moves": [{"move": "Electro Shot", "id": "electroshot"}], "trapped": True},
+                          {"moves": [{"move": "Protect", "id": "protect", "pp": 8, "maxpp": 8, "target": "self",
+                                      "disabled": False}]}],
+               "side": {"id": "p1", "pokemon": [
+                   {"ident": "p1: Archaludon", "condition": "100/197", "active": True,
+                    "moves": ["dragonpulse", "electroshot", "snarl", "protect"]},
+                   {"ident": "p1: Farigiraf", "condition": "100/224", "active": True,
+                    "moves": ["psychic", "grassknot", "trickroom", "protect"]}]}}
+
+    def test_locked_slot_without_target_raises(self):
+        from duoforge_live import options
+        roster = {"p1: Archaludon": 2, "p1: Farigiraf": 3}
+        lists = options.slot_options(self.REQUEST, 0, roster, {0: 3})
+        self.assertEqual([(o.kind, o.move_slot, o.target, o.text) for o in lists[0]], [(1, 1, 3, "move 1")])
+        with self.assertRaises(ValueError):
+            options.slot_options(self.REQUEST, 0, roster, {})
+
+    def test_unknown_target_type_raises(self):
+        import copy
+        from duoforge_live import options
+        request = copy.deepcopy(self.REQUEST)
+        request["active"][1]["moves"][0]["target"] = "somewhereNew"
+        with self.assertRaises(ValueError):
+            options.slot_options(request, 0, {"p1: Archaludon": 2, "p1: Farigiraf": 3}, {0: 3})
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -354,8 +354,9 @@ def name_of(p):
     return p.get('set_species', p['species'])
 
 
-# Set species whose protocol name is another (the base species), decision 0009.
-BASE_SPECIES_NAME = {'Indeedee-F': 'Indeedee'}
+# Set species whose protocol name is another (the base species), decision 0009. Arcanine-Hisui and Floette-Eternal
+# are called Arcanine and Floette in the switch line (pool step G2); the species clause keeps the alias unique.
+BASE_SPECIES_NAME = {'Indeedee-F': 'Indeedee', 'Arcanine-Hisui': 'Arcanine', 'Floette-Eternal': 'Floette'}
 
 
 def abs_target(side, loc):

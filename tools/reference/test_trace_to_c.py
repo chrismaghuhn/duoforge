@@ -516,7 +516,49 @@ class Library(unittest.TestCase):
         self.assertEqual(extended['ITEM']['CHOPLEBERRY'], 14)
         self.assertEqual(extended['ITEM']['MYSTICWATER'], 6)
         self.assertNotIn('CHILANBERRY', tables(False)['ITEM'])
-        self.assertEqual(len(extended['GENDER_RULE']), 23)
+        self.assertEqual(len(extended['GENDER_RULE']), 28)  # the pool's formes after step G2
+
+    def test_the_protocol_names_of_the_formes_with_a_base_species(self):
+        """An unnamed Pokemon is called by its base species in the protocol (sim/pokemon.ts:339-341): Indeedee-F,
+        Arcanine-Hisui and Floette-Eternal. The pool battles g2_data_moves_b names Arcanine-Hisui in the switch line."""
+        self.assertEqual(trace_to_c.BASE_SPECIES_NAME,
+                         {'Indeedee-F': 'Indeedee', 'Arcanine-Hisui': 'Arcanine', 'Floette-Eternal': 'Floette'})
+        spec = json.load(open(os.path.join(ROOT, 'tests', 'reference', 'traces', 'g2_data_moves_b.json')))
+        lines = [l for step in spec['steps'] for l in step['log']]
+        self.assertTrue(any(l.startswith('|switch|p1a: Arcanine|Arcanine-Hisui, L50, M|') for l in lines))
+
+    def test_every_move_marked_by_step_g2_is_used_in_a_pool_battle(self):
+        """A move that the pool manifest marks beyond the extended ids was used in a committed pool battle: a move
+        line of it that did something (damage, or a boost for a status move) before the next move line."""
+        def read(*p):
+            return open(os.path.join(ROOT, *p), encoding='utf-8').read()
+        header, source = read('src', 'data', 'pool_tables.h'), read('src', 'data', 'pool_tables.c')
+        ext_moves = int(re.search(r'#define DFI_EXT_MOVE_COUNT (\d+)u', read('src', 'data', 'extended_tables.h')).group(1))
+        array = source[source.index('dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {'):source.index('dfi_pool_items[')]
+        names = re.findall(r'^    /\* (.+?) -- data/', array, re.M)
+        ids = {m.group(1): int(m.group(2)) for m in re.finditer(r'#define DFI_MOVE_(\w+) (\d+)u', header)}
+        marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
+                  if n in ids and ids[n] >= ext_moves]
+        self.assertEqual(len(names), ext_moves + len(ids))
+        self.assertEqual(len(marked), 12)
+        pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
+                if trace_to_c.is_pool(ROOT, n[:-5])]
+        logs = []
+        for n in pool:
+            trace = json.load(open(os.path.join(ROOT, 'tests', 'reference', 'traces', n)))
+            logs.append([l for step in trace['steps'] for l in step['log'] if not l.startswith('|split')])
+        for move in marked:
+            name = names[ids[move]]
+            done = False
+            for lines in logs:
+                for i, line in enumerate(lines):
+                    if line.startswith('|move|') and ('|%s|' % name) in line:
+                        for after in lines[i + 1:]:
+                            if after.startswith('|move|') or after.startswith('|turn|'):
+                                break
+                            done = done or after.startswith(('|-damage|', '|-boost|'))
+            with self.subTest(move=name):
+                self.assertTrue(done, '%s is marked but no committed pool battle uses it' % name)
 
     def test_pass_for_both_slots_converts_per_slot(self):
         """A choice that passes both slots of a switch request: each slot is

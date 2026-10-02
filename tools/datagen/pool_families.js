@@ -399,10 +399,14 @@ function checkLegal(dex, validator, itemRows, abilityRows, extendedAbilities) {
         return 'protect';
     };
     for (const row of abilityRows.slice(extendedAbilities)) {
-        const holders = dex.species.all().filter((s) => s.exists && !s.battleOnly &&
+        // A holder is a species of its own, or a Mega forme (Fairy Aura is Floette-Mega's only: no species has it in
+        // Champions). The Mega forme is legal through its base forme with its stone, which the validator accepts by
+        // the Mega's name and rewrites; its moves are the base forme's.
+        const holders = dex.species.all().filter((s) => s.exists && (!s.battleOnly || s.isMega) &&
             Object.values(s.abilities).some((a) => toId(a) === row.id));
         const name = dex.abilities.get(row.id).name;
-        const legal = holders.some((s) => !validator.validateSet(set(s.name, name, '', [probeMove(s)]), {}));
+        const legal = holders.some((s) => !validator.validateSet(set(s.name, name,
+            s.isMega ? dex.items.get(s.requiredItem).name : '', [probeMove(s.isMega ? dex.species.get(s.battleOnly) : s)]), {}));
         if (!legal) {
             bad('ability ' + row.id + ' is not legal on any species of ' + FORMAT_ID + ' (' + holders.length + ' declare it)');
         }
