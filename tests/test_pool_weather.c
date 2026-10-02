@@ -2,7 +2,7 @@
  * duoforge.state.pool_weather (white-box): the step of Sandstorm and Snowscape (Sand Stream, Snow Warning, the two
  * weather moves) and the weather values of the POOL kinds in the player view (decision 0018, supported bits 0 and 1).
  *
- * The nine recorded battles of the step (w1_sand_stream to w7_sand_ko_sitrus under "data": "pool") are replayed
+ * The ten recorded battles of the step (w1_sand_stream to w8_sand_soak under "data": "pool") are replayed
  * through the step with the reference's draws, as duoforge.reference.conformance_pool_data does, which compares
  * everything the reference shows. Here the view is checked against the protocol: after every step both players'
  * observation has the weather and the turns left that the `-weather` lines alone give (weather_rows, which
@@ -112,6 +112,13 @@ static const struct {
     {"w7_sand_ko_sitrus", 5u, 3u, 1u},
     {"w7_sand_ko_sitrus", 6u, 3u, 1u},
     {"w7_sand_ko_sitrus", 7u, 0u, 0u},
+    {"w8_sand_soak", 0u, 3u, 5u},
+    {"w8_sand_soak", 1u, 3u, 4u},
+    {"w8_sand_soak", 2u, 3u, 3u},
+    {"w8_sand_soak", 3u, 3u, 2u},
+    {"w8_sand_soak", 4u, 3u, 1u},
+    {"w8_sand_soak", 5u, 0u, 0u},
+    {"w8_sand_soak", 6u, 0u, 0u},
 };
 
 static void build_setup(const df_conf_battle *cb, duoforge_battle_setup *s)
@@ -182,7 +189,7 @@ static void check_view(df_test *t, const duoforge_context *ctx)
 {
     static const char *const names[] = {"w1_sand_stream",    "w2_sandstorm_move",   "w3_snow_warning",
                                         "w4_snowscape_move", "w5_sand_tie_four",    "w5_sand_tie_pairs",
-                                        "w5_sand_tie_mixed", "w6_sand_residual_order", "w7_sand_ko_sitrus"};
+                                        "w5_sand_tie_mixed", "w6_sand_residual_order", "w7_sand_ko_sitrus", "w8_sand_soak"};
     uint32_t compared = 0u;
     uint32_t sand_steps = 0u;
     uint32_t snow_steps = 0u;
@@ -244,7 +251,13 @@ static void check_view(df_test *t, const duoforge_context *ctx)
                 want.player = (uint8_t)viewer;
                 want.epoch = ob.epoch;
                 want.supported = dfi_support.view_ext_features;
-                DF_CHECK(t, memcmp(&ext, &want, sizeof want) == 0);
+                /* w8_sand_soak has Soaked positions (TYPE_CHANGED, type_now: step G11's fields, checked against the
+                 * protocol by duoforge.state.pool_g11 for its own battles); the weather needs no other field. */
+                if (strcmp(names[n], "w8_sand_soak") != 0) {
+                    DF_CHECK(t, memcmp(&ext, &want, sizeof want) == 0);
+                } else {
+                    DF_CHECK(t, ext.supported == want.supported && ext.epoch == want.epoch);
+                }
                 compared += 1u;
             }
         }
@@ -252,7 +265,7 @@ static void check_view(df_test *t, const duoforge_context *ctx)
     }
     DF_CHECK_EQ_U64(t, compared, 2u * (uint32_t)(sizeof weather_rows / sizeof weather_rows[0]));
     /* The battles show both new weathers for several steps each (the check above is not vacuous). */
-    DF_CHECK_EQ_U64(t, sand_steps, 49u);
+    DF_CHECK_EQ_U64(t, sand_steps, 54u);
     DF_CHECK_EQ_U64(t, snow_steps, 9u);
 }
 

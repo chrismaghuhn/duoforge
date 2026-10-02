@@ -33,9 +33,9 @@ extern "C" {
 #endif
 
 #define DUOFORGE_VERSION_MAJOR 0
-#define DUOFORGE_VERSION_MINOR 25
+#define DUOFORGE_VERSION_MINOR 27
 #define DUOFORGE_VERSION_PATCH 0
-#define DUOFORGE_VERSION_STRING "0.25.0"
+#define DUOFORGE_VERSION_STRING "0.27.0"
 
 /* Identifiers of the artifacts that exist now (registry: decisions 0002, 0005, 0006). */
 #define DUOFORGE_SEMANTICS_ID           3u   /* "duoforge-m3-closure" */
@@ -868,6 +868,8 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_EVENT_VOLATILE_START  39u /* [-start] position (POOL kinds), detail: DUOFORGE_VOLATILE_* (a volatile that the
                                               game shows: -start|X|move: Heal Block) */
 #define DUOFORGE_EVENT_VOLATILE_END    40u /* [-end] position (POOL kinds), detail: DUOFORGE_VOLATILE_* */
+#define DUOFORGE_EVENT_TYPE_CHANGE     41u /* [-start|X|typechange|TYPE] position (POOL kinds): the occupant's type is now the single
+                                              type in detail (DUOFORGE_TYPE_*; Soak: Water); cause MOVE, id2: the move */
 
 /* Causes ([from] and [of] in the protocol). */
 #define DUOFORGE_CAUSE_NONE      0u /* the move or the plain mechanic */

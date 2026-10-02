@@ -1119,17 +1119,19 @@ int main(void)
                 DF_CHECK(&t, dfi_support.abilities[id] != 0u);
             }
         }
-        /* Steps G2, G5, G8, G10 and G12 mark twenty-one of the 22 moves (G10: First Impression, Scald, Recover, Low Kick:
+        /* Steps G2, G5, G8, G10, G11 and G12 mark twenty-two moves (G10: First Impression, Scald, Recover, Low Kick:
          * g10_*), each used in a reference battle under the POOL kind
          * (g2_data_moves_a to _d; U-turn: g5_uturn_a to _e; Throat Chop and Psychic Noise, whose lockout and Heal
          * Block are secondary kinds, not handlers: g8_throat_chop, g8_heal_block, g8_heal_block_pair and _tie_a/_b;
-         * Moonblast and Calm Mind: g12_floette_moves); the seven moves with a handler id stay unmarked. */
+         * Soak, whose handler id the turn code implements since step G11: g11_soak, _mega, _stab and _electro;
+         * Moonblast and Calm Mind: g12_floette_moves); the six moves with a handler id that the turn code refuses stay
+         * unmarked. */
         static const uint32_t marked_moves[] = {DFI_MOVE_ROCKSLIDE, DFI_MOVE_DOUBLEEDGE, DFI_MOVE_THUNDERBOLT,
                                                 DFI_MOVE_FLASHCANNON, DFI_MOVE_EXTREMESPEED, DFI_MOVE_HEADSMASH,
                                                 DFI_MOVE_BULKUP, DFI_MOVE_LIQUIDATION, DFI_MOVE_ICEPUNCH,
                                                 DFI_MOVE_SHADOWCLAW, DFI_MOVE_DRUMBEATING, DFI_MOVE_DAZZLINGGLEAM,
                                                 DFI_MOVE_UTURN, DFI_MOVE_THROATCHOP, DFI_MOVE_PSYCHICNOISE,
-                                                DFI_MOVE_MOONBLAST, DFI_MOVE_CALMMIND, DFI_MOVE_FIRSTIMPRESSION,
+                                                DFI_MOVE_SOAK, DFI_MOVE_MOONBLAST, DFI_MOVE_CALMMIND, DFI_MOVE_FIRSTIMPRESSION,
                                                 DFI_MOVE_SCALD, DFI_MOVE_RECOVER, DFI_MOVE_LOWKICK,
                                                 DFI_MOVE_SANDSTORM, DFI_MOVE_SNOWSCAPE};
         uint32_t marked_count = 0u;
@@ -1140,15 +1142,15 @@ int main(void)
             }
             DF_CHECK_EQ_U64(&t, dfi_support.moves[id] != 0u ? 1u : 0u, want ? 1u : 0u);
             /* A marked move has a handler id only if the engine has the code for it: First Impression (Fake Out's
-             * family), Low Kick (Grass Knot's) and the two weather moves; the others are data. Never the UNMODELED
-             * one. */
+             * family), Low Kick (Grass Knot's), Soak (step G11) and the two weather moves; the others are data. Never
+             * the UNMODELED one. */
             DF_CHECK(&t, !want || dfi_pool_moves[id].special == DFI_SPECIAL_NONE ||
-                             id == DFI_MOVE_FIRSTIMPRESSION || id == DFI_MOVE_LOWKICK || id == DFI_MOVE_SANDSTORM ||
-                             id == DFI_MOVE_SNOWSCAPE);
+                             id == DFI_MOVE_FIRSTIMPRESSION || id == DFI_MOVE_LOWKICK || id == DFI_MOVE_SOAK ||
+                             id == DFI_MOVE_SANDSTORM || id == DFI_MOVE_SNOWSCAPE);
             DF_CHECK(&t, !want || dfi_pool_moves[id].special != DFI_SPECIAL_UNMODELED);
             marked_count += dfi_support.moves[id] != 0u ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, marked_count, 23u);
+        DF_CHECK_EQ_U64(&t, marked_count, 24u);
     }
 
     /* Step G12: Fairy Aura and Flower Veil. The engine reads them by id (no family column: one legal holder each);

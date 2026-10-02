@@ -151,6 +151,8 @@ duoforge_add_test(NAME duoforge.state.pool_g8 SOURCES test_pool_g8.c WHITEBOX TI
 # Sandstorm and Snowscape (the weather step): the view of the weather battles against the protocol lines, the sources of
 # immunity that stay unmarked, the weather values as state.
 duoforge_add_test(NAME duoforge.state.pool_weather SOURCES test_pool_weather.c WHITEBOX TIMEOUT 60)
+# Step G11: Soak in the tail's soak type, in what reads the types, in the TYPE_CHANGE event and in the POOL view extension.
+duoforge_add_test(NAME duoforge.state.pool_g11 SOURCES test_pool_g11.c WHITEBOX TIMEOUT 60)
 # The generated files must stay exactly what tools/datagen/gen_closure.py
 # wrote; regenerate and update these hashes together.
 foreach(_gen IN ITEMS

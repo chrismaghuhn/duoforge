@@ -553,8 +553,11 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
             }
             const bool on_field = m < side->member_count && (side->positions[0].occupant == m ||
                                                              side->positions[1].occupant == m);
-            if (type > DFI_TYPE_COUNT || !on_field || side->members[m].hp == 0u || side->members[m].is_mega != 0u) {
-                return DFI_INV_TAIL_MEMBER; /* the type ends when the member leaves, faints or Mega Evolves */
+            /* The type ends when the member leaves or faints, and a Mega Evolution that comes after it ends it too
+             * (setSpecies); a Pokemon that is already Mega Evolved can be Soaked, so is_mega is no part of the rule
+             * (step G11: the research note had assumed it was; the rule is only weaker, no encoded state changes). */
+            if (type > DFI_TYPE_COUNT || !on_field || side->members[m].hp == 0u) {
+                return DFI_INV_TAIL_MEMBER;
             }
         }
     }
