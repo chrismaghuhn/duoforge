@@ -40,6 +40,12 @@ checks its precondition and fails loudly otherwise:
                     residual is kept instead: the tie orders their two end
                     lines, and the entry states which side's line comes
                     first (the engine's draw; see side_end_tie)
+  SPEED_TIE event:Accuracy
+                    only between No Guard handlers (data/abilities.ts noguard):
+                    onAnyAccuracy returns true when its holder is the source
+                    or the target of the move and passes the accuracy on
+                    otherwise, so every order of them gives the same value; a
+                    tie with any other handler is refused (tie-context)
   SPEED_TIE event:AfterMove, event:AfterMega
                     never: White Herb's are the only handlers of these events
                     in the data, and the engine draws every tie among them
@@ -278,6 +284,12 @@ def drop_reason(d, state, after=None):
             return 'Life Orb and Chople Berry, whose modifiers commute'
         raise ConversionError('modifydamage-tie', 'trace_to_c: ModifyDamage tie with %s' % group,
                               detail=tie_effects(group))
+    if site == 'SPEED_TIE' and ctx == 'event:Accuracy' and all(
+            g.startswith('H:noguard:') and g.endswith(':cb') for g in group):
+        # data/abilities.ts noguard: onAnyAccuracy(accuracy, target, source, move) returns true when its holder is
+        # the source or the target of the move and the accuracy it was given otherwise. Whichever of the tied
+        # handlers runs first, a true passes on as true and the accuracy stays what it was: one order, one value.
+        return 'No Guard handlers whose order changes nothing'
     if site == 'SPEED_TIE' and ctx != 'queue':
         raise ConversionError('tie-context', 'trace_to_c: unhandled tie context %s' % ctx, detail=ctx)
     if site == 'INSERT_TIE':
