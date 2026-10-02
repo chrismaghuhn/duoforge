@@ -19,6 +19,34 @@ from . import columns
 _KEY = re.compile(r"\['([^']+)'\]|\[(\d+)\]")
 
 
+def flatten(tree, prefix=""):
+    """{"['a'][0]['w']": array, ...} of a tree of dicts, lists and arrays."""
+    out = {}
+    if isinstance(tree, dict):
+        for k, v in tree.items():
+            out |= flatten(v, prefix + f"['{k}']")
+    elif isinstance(tree, (list, tuple)):
+        for i, v in enumerate(tree):
+            out |= flatten(v, prefix + f"[{i}]")
+    else:
+        out[prefix] = np.asarray(tree)
+    return out
+
+
+def unflatten(entries, where="checkpoint"):
+    """The tree of flatten's entries; ValueError for a malformed name."""
+    params = {}
+    for name, value in entries.items():
+        keys = [k if k else int(i) for k, i in _KEY.findall(name)]
+        if not keys or "".join(f"['{k}']" if isinstance(k, str) else f"[{k}]" for k in keys) != name:
+            raise ValueError(f"{where}: unknown checkpoint entry {name!r}")
+        node = params
+        for k in keys[:-1]:
+            node = node.setdefault(k, {})
+        node[keys[-1]] = value
+    return _lists(params)
+
+
 def _lists(node):
     """Nested dicts whose keys are all ints become lists (model v2's torso)."""
     if not isinstance(node, dict):
@@ -47,20 +75,9 @@ def load(path, obs_size=None):
     arrays, as model.init builds them. With obs_size, a network whose torso
     takes another number of observation features (a checkpoint of another
     encoder, such as the 594 of 2026-10-02) raises ValueError."""
-    params = {}
     with np.load(path) as npz:
         config = json.loads(str(npz["config"]))
-        for name in npz.files:
-            if name == "config":
-                continue
-            keys = [k if k else int(i) for k, i in _KEY.findall(name)]
-            if not keys or "".join(f"['{k}']" if isinstance(k, str) else f"[{k}]" for k in keys) != name:
-                raise ValueError(f"{path}: unknown checkpoint entry {name!r}")
-            node = params
-            for k, nxt in zip(keys[:-1], keys[1:]):
-                node = node.setdefault(k, {} if isinstance(nxt, str) else {})
-            node[keys[-1]] = npz[name]
-    params = _lists(params)
+        params = unflatten({name: npz[name] for name in npz.files if name != "config"}, path)
     if obs_size is not None and params["t1"]["w"].shape[0] != obs_size:
         raise ValueError(f"{path}: the network takes {params['t1']['w'].shape[0]} observation features, "
                          f"the encoder makes {obs_size} (a checkpoint of another encoder)")
@@ -77,19 +94,7 @@ def save(path, params, config):
     missing = [k for k in FORMAT2_KEYS if k not in config]
     if missing:
         raise ValueError(f"a format-2 checkpoint config needs {missing}")
-    arrays = {}
-
-    def walk(node, prefix):
-        if isinstance(node, dict):
-            for k, v in node.items():
-                walk(v, prefix + f"['{k}']")
-        elif isinstance(node, (list, tuple)):
-            for i, v in enumerate(node):
-                walk(v, prefix + f"[{i}]")
-        else:
-            arrays[prefix] = np.asarray(node)
-
-    walk(params, "")
+    arrays = flatten(params)
     np.savez(path, config=json.dumps({**config, "format": 2}), **arrays)
 
 

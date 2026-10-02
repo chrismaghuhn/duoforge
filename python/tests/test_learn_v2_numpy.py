@@ -12,7 +12,7 @@ import numpy as np
 
 import duoforge
 from duoforge import features, teams
-from duoforge_learn import checkpoint, columns, league, pairing, schedule
+from duoforge_learn import checkpoint, columns, league, pairing, runstate, schedule
 from duoforge_learn.selfplay import SelfPlay
 
 
@@ -308,6 +308,66 @@ class ScheduleTest(unittest.TestCase):
         for bad in ("", "5:0.1", "0:0.1,0:0.2", "0:-1", "0:0.1,1X:0.2", "0:nan", "abc", "0:0.1,,1M:0.2"):
             with self.assertRaises(ValueError, msg=bad):
                 schedule.Schedule.parse(bad)
+
+
+def _state(rng):
+    return {"params": _v1_params(rng), "opt_leaves": [np.arange(3.0), rng.standard_normal((2, 2))],
+            "counters": {"update": 7, "decisions": 1234, "episodes": 56},
+            "episodes_seen": np.array([3, -1, 9], dtype=np.int64), "jax_key": np.array([1, 2], dtype=np.uint32),
+            "league": league.LeagueState(4, 0.5, 2, 3, 1).to_dict(),
+            "numpy_rng": np.random.default_rng(5).bit_generator.state,
+            "teams": {"ids": ["A", "B"], "sha256": ["", ""], "weights": [1.0, 1.0]},
+            "data": {"kind": "closure", "fingerprint": "ab"}, "model": {"version": 1, "hidden": 8, "option_hidden": 4},
+            "features": list(features.FEATURE_NAMES), "slot_features": list(features.SLOT_FEATURE_NAMES),
+            "encoder": 2, "train": {"envs": 4}}
+
+
+class RunStateTest(unittest.TestCase):
+    def _same(self, a, b):
+        self.assertEqual(sorted(a), sorted(b))
+        for k in a:
+            if k == "params":
+                for layer in a[k]:
+                    for f in ("w", "b"):
+                        self.assertTrue(np.array_equal(a[k][layer][f], b[k][layer][f]))
+            elif k == "opt_leaves":
+                self.assertEqual(len(a[k]), len(b[k]))
+                for x, y in zip(a[k], b[k]):
+                    self.assertTrue(np.array_equal(x, y))
+            elif isinstance(a[k], np.ndarray):
+                self.assertTrue(np.array_equal(a[k], b[k]) and a[k].dtype == b[k].dtype, k)
+            else:
+                self.assertEqual(a[k], b[k], k)
+
+    def test_state_round_trip(self):
+        state = _state(np.random.default_rng(1))
+        with tempfile.TemporaryDirectory() as d:
+            runstate.save_state(d, state)
+            self._same(state, runstate.load_state(d))
+
+    def test_missing_state_names_the_run(self):
+        with tempfile.TemporaryDirectory() as d, self.assertRaisesRegex(FileNotFoundError, "no run state"):
+            runstate.load_state(d)
+
+    def test_previous_state_rotates(self):
+        with tempfile.TemporaryDirectory() as d:
+            first, second = _state(np.random.default_rng(1)), _state(np.random.default_rng(2))
+            second["counters"] = dict(second["counters"], update=8)
+            runstate.save_state(d, first)
+            runstate.save_state(d, second)
+            self.assertEqual(runstate.load_state(d)["counters"]["update"], 8)
+            self.assertEqual(runstate.load_state(d, previous=True)["counters"]["update"], 7)
+
+    def test_interrupted_write_keeps_the_previous_state(self):
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as d:
+            runstate.save_state(d, _state(np.random.default_rng(1)))
+            broken = _state(np.random.default_rng(2))
+            broken["counters"] = dict(broken["counters"], update=99)
+            with mock.patch.object(runstate, "_write", side_effect=OSError("disk full")), \
+                    self.assertRaises(OSError):
+                runstate.save_state(d, broken)
+            self.assertEqual(runstate.load_state(d)["counters"]["update"], 7)
 
 
 if __name__ == "__main__":

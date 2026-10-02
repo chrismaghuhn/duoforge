@@ -279,6 +279,29 @@ class ScheduleTrainingTest(unittest.TestCase):
             shutil.rmtree(out, ignore_errors=True)
 
 
+class RunStateJaxTest(unittest.TestCase):
+    def test_adam_state_round_trip(self):
+        import tempfile
+        import jax
+        from duoforge_learn import ppo, runstate
+        m = policy.make(policy.v2_config("S", hidden=32))
+        params = m.init(jax.random.PRNGKey(20))
+        tx = ppo.optimizer(3e-4)
+        opt = tx.init(params)
+        grads = jax.tree_util.tree_map(lambda x: x * 0 + 0.5, params)
+        _, opt = tx.update(grads, opt, params)
+        state = {"params": params, "opt_leaves": jax.tree_util.tree_leaves(opt),
+                 "episodes_seen": np.zeros(2, dtype=np.int64), "jax_key": np.asarray(jax.random.PRNGKey(1))}
+        with tempfile.TemporaryDirectory() as d:
+            runstate.save_state(d, state)
+            back = runstate.load_state(d)
+        restored = runstate.restore_opt(tx, back["params"], back["opt_leaves"])
+        for a, b in zip(jax.tree_util.tree_leaves(opt), jax.tree_util.tree_leaves(restored)):
+            np.testing.assert_array_equal(np.asarray(a), np.asarray(b))
+        with self.assertRaisesRegex(ValueError, "does not fit"):
+            runstate.restore_opt(tx, back["params"], back["opt_leaves"][:-1])
+
+
 PRESET_COUNTS = {"S": 384751, "M": 2072463, "L": 7871631}
 
 
