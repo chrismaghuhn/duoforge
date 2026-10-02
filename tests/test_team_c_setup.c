@@ -6,8 +6,9 @@
  * CLOSURE kinds keep seeing only the closure. Setups follow the closure rules
  * over the extended tables (mixed teams, any table item); TEAM_C_DEV also
  * allows No Ability. A legal setup whose mechanics are not all implemented is
- * rejected with E_UNSUPPORTED; until a step marks a Team C mechanic, every
- * setup that needs it fails that way.
+ * rejected with E_UNSUPPORTED. Since step 11 every Team C mechanic is marked,
+ * so the real Team C passes; the reject path itself is tested with a manifest
+ * of its own (duoforge.state.closure_setup).
  */
 #include <stdio.h>
 #include <string.h>
@@ -262,6 +263,39 @@ static duoforge_status helmet_turn(const duoforge_context *ctx, const duoforge_b
     return st;
 }
 
+/* One step of slot commands: per side and slot {kind, move slot or reserve,
+ * target}; a side outside `mask` answers nothing, and a slot of kind 0 is
+ * left all-zero (not requested). */
+static duoforge_status slots_step(const duoforge_context *ctx, duoforge_battle *w, uint32_t mask,
+                                  const uint8_t cmd[2][2][3])
+{
+    duoforge_decision_bundle bd;
+    memset(&bd, 0, sizeof bd);
+    bd.epoch = w->request_epoch;
+    bd.response_mask = (uint8_t)mask;
+    for (uint32_t side = 0u; side < 2u; ++side) {
+        if (((mask >> side) & 1u) == 0u) {
+            continue;
+        }
+        duoforge_side_choice *c = &bd.responses[side];
+        c->epoch = w->request_epoch;
+        c->side = (uint8_t)side;
+        c->kind = (uint8_t)DUOFORGE_CHOICE_SLOTS;
+        for (uint32_t slot = 0u; slot < 2u; ++slot) {
+            const uint8_t *x = cmd[side][slot];
+            c->slots[slot].kind = x[0];
+            if (x[0] == DUOFORGE_SLOT_MOVE) {
+                c->slots[slot].move_slot = x[1];
+                c->slots[slot].target = x[2];
+            } else if (x[0] == DUOFORGE_SLOT_SWITCH) {
+                c->slots[slot].reserve = x[1];
+            }
+        }
+    }
+    duoforge_step_result res;
+    return duoforge_battle_step(ctx, w, &bd, &res);
+}
+
 int main(void)
 {
     df_test t;
@@ -336,15 +370,16 @@ int main(void)
         duoforge_context_destroy(out);
     }
 
-    /* The real Team C against the real Team A: legal under TEAM_C, gated
-     * until its last mechanic exists; out of range under CLOSURE. */
+    /* The real Team C against the real Team A: legal under TEAM_C and
+     * supported since step 11 built its last mechanic (Follow Me); out of
+     * range under CLOSURE. */
     duoforge_battle_setup teams;
     df_setup_teams(&teams);
     duoforge_battle_setup s;
 #define FRESH() (s = teams, df_put_team_c(&s.sides[1]))
     FRESH();
-    legal(&t, kc, &s, false, "real Team C vs Team A");
-    legal(&t, kd, &s, false, "real Team C vs Team A (dev)");
+    legal(&t, kc, &s, true, "real Team C vs Team A");
+    legal(&t, kd, &s, true, "real Team C vs Team A (dev)");
     invalid(&t, k1, &s, "Team C under CLOSURE");
     invalid(&t, k2, &s, "Team C under CLOSURE_DEV");
     /* The certified profile: TEAM_C registers exactly six, TEAM_C_DEV four
@@ -353,7 +388,7 @@ int main(void)
     s.sides[1].member_count = 5u;
     memset(&s.sides[1].members[5], 0, sizeof s.sides[1].members[5]);
     invalid(&t, kc, &s, "five members under TEAM_C");
-    legal(&t, kd, &s, false, "five members under TEAM_C_DEV");
+    legal(&t, kd, &s, true, "five members under TEAM_C_DEV");
 
     /* The closure rules over the extended tables. */
     FRESH();
@@ -383,7 +418,7 @@ int main(void)
     FRESH();
     s.sides[1].members[0].ability = 0u;
     invalid(&t, kc, &s, "No Ability under TEAM_C");
-    legal(&t, kd, &s, false, "No Ability under TEAM_C_DEV");
+    legal(&t, kd, &s, true, "No Ability under TEAM_C_DEV");
 
     /* Any table item on any member, as in the closure: Choice Scarf on
      * Archaludon is legal, and supported since step 7. */
@@ -514,6 +549,25 @@ int main(void)
         duoforge_battle_destroy(w);
     }
 
+    /* White-box (step 10): Psychic Terrain (terrain 2) is in range only under
+     * the TEAM_C kinds; one past it is out of range under every kind. */
+    for (uint32_t team_c = 0u; team_c < 2u; ++team_c) {
+        const duoforge_context *ctx = team_c != 0u ? kc : k1;
+        duoforge_battle *w = df_make_battle(ctx, &teams);
+        dfi_invariant inv = DFI_INV_NONE;
+        w->terrain = (uint8_t)DFI_TERRAIN_PSYCHIC;
+        w->terrain_turns = 5u;
+        const duoforge_status st = dfi_state_check(ctx, w, &inv);
+        if (team_c != 0u) {
+            DF_CHECK(&t, st == DUOFORGE_OK);
+        } else {
+            DF_CHECK(&t, st == DUOFORGE_E_INVARIANT && inv == DFI_INV_FIELD);
+        }
+        w->terrain = (uint8_t)(DFI_TERRAIN_PSYCHIC + 1u);
+        DF_CHECK(&t, dfi_state_check(ctx, w, &inv) == DUOFORGE_E_INVARIANT && inv == DFI_INV_FIELD);
+        duoforge_battle_destroy(w);
+    }
+
     /* White-box: the choice lock (bit 64, step 7) is in range only under the
      * TEAM_C kinds. It keeps a move slot in the locked-move byte without a
      * charge and without a target, and its holder holds a Choice Scarf. */
@@ -639,13 +693,185 @@ int main(void)
         DF_CHECK(&t, firsts == 3u);
     }
 
+    /* White-box (step 9b): Helping Hand's volatile (bit 16) and newlySwitched
+     * (bit 128) are TEAM_C bits that live within a turn. Indeedee-F's Helping
+     * Hand on Basculegion, whose Flip Turn then asks for a pivot, while the
+     * foe's Sneasler switched out for Incineroar: at that PIVOT boundary both
+     * bits are valid; at the next TURN boundary both are gone, and either
+     * one there is VOLATILE. Under CLOSURE both are out of range. */
+    {
+        duoforge_battle_setup u = teams;
+        put_dev_side(&u.sides[0]);
+        put_dev_side(&u.sides[1]);
+        const uint32_t indeedee[2] = {DFI_MOVE_HELPINGHAND, DFI_MOVE_PSYCHIC};
+        const uint32_t basculegion[1] = {DFI_MOVE_FLIPTURN};
+        set_member(&u.sides[0].members[3], DFI_FORME_INDEEDEEF, DUOFORGE_GENDER_FEMALE, 0u, 0u, 2u, indeedee);
+        set_member(&u.sides[0].members[5], DFI_FORME_BASCULEGION, DUOFORGE_GENDER_MALE, 0u, 0u, 1u, basculegion);
+        u.sides[0].member_count = 6u;
+        duoforge_battle *w = df_make_battle(kd, &u);
+        duoforge_decision_bundle bd;
+        memset(&bd, 0, sizeof bd);
+        bd.epoch = w->request_epoch;
+        bd.response_mask = 3u;
+        const uint8_t picks[2][4] = {{3u, 5u, 0u, 4u}, {0u, 4u, 1u, 2u}}; /* leads first */
+        for (uint32_t side = 0u; side < 2u; ++side) {
+            duoforge_side_choice *c = &bd.responses[side];
+            c->epoch = w->request_epoch;
+            c->side = (uint8_t)side;
+            c->kind = (uint8_t)DUOFORGE_CHOICE_TEAM_SELECTION;
+            c->pick_count = 4u;
+            memcpy(c->picks, picks[side], sizeof picks[side]);
+        }
+        duoforge_step_result res;
+        DF_CHECK(&t, duoforge_battle_step(kd, w, &bd, &res) == DUOFORGE_OK &&
+                         w->boundary_kind == DUOFORGE_BOUNDARY_TURN);
+        const uint8_t turn1[2][2][3] = {{{DUOFORGE_SLOT_MOVE, 0u, 1u}, {DUOFORGE_SLOT_MOVE, 0u, 3u}},
+                                        {{DUOFORGE_SLOT_SWITCH, 1u, 0u}, {DUOFORGE_SLOT_MOVE, 0u, 1u}}};
+        DF_CHECK(&t, slots_step(kd, w, 3u, turn1) == DUOFORGE_OK && w->boundary_kind == DUOFORGE_BOUNDARY_PIVOT);
+        dfi_invariant inv = DFI_INV_NONE;
+        DF_CHECK(&t, ((uint32_t)w->sides[0].positions[1].flags & DFI_VOL_HELPING_HAND) != 0u &&
+                         ((uint32_t)w->sides[1].positions[0].flags & DFI_VOL_NEWLY_SWITCHED) != 0u &&
+                         dfi_state_check(kd, w, &inv) == DUOFORGE_OK);
+        const uint8_t pivot[2][2][3] = {{{0u, 0u, 0u}, {DUOFORGE_SLOT_SWITCH, 0u, 0u}}, {{0u, 0u, 0u}, {0u, 0u, 0u}}};
+        DF_CHECK(&t, slots_step(kd, w, 1u, pivot) == DUOFORGE_OK && w->boundary_kind == DUOFORGE_BOUNDARY_TURN);
+        uint32_t left = 0u;
+        for (uint32_t side = 0u; side < 2u; ++side) {
+            for (uint32_t p = 0u; p < 2u; ++p) {
+                left |= (uint32_t)w->sides[side].positions[p].flags & (DFI_VOL_HELPING_HAND | DFI_VOL_NEWLY_SWITCHED);
+            }
+        }
+        DF_CHECK(&t, left == 0u && dfi_state_check(kd, w, &inv) == DUOFORGE_OK);
+        dfi_active_slot *pos = &w->sides[0].positions[0];
+        pos->flags = (uint8_t)((uint32_t)pos->flags | DFI_VOL_HELPING_HAND);
+        DF_CHECK(&t, dfi_state_check(kd, w, &inv) == DUOFORGE_E_INVARIANT && inv == DFI_INV_VOLATILE);
+        pos->flags = (uint8_t)(((uint32_t)pos->flags & ~DFI_VOL_HELPING_HAND) | DFI_VOL_NEWLY_SWITCHED);
+        DF_CHECK(&t, dfi_state_check(kd, w, &inv) == DUOFORGE_E_INVARIANT && inv == DFI_INV_VOLATILE);
+        duoforge_battle_destroy(w);
+        /* Under CLOSURE both bits are out of range. */
+        const uint32_t bits = DFI_VOL_HELPING_HAND | DFI_VOL_NEWLY_SWITCHED;
+        DF_CHECK(&t, (dfi_kind_limits_of(DUOFORGE_DATA_KIND_CLOSURE).vol_flags_mask & bits) == 0u &&
+                         (dfi_kind_limits_of(DUOFORGE_DATA_KIND_CLOSURE_DEV).vol_flags_mask & bits) == 0u &&
+                         (dfi_kind_limits_of(DUOFORGE_DATA_KIND_TEAM_C).vol_flags_mask & bits) == bits &&
+                         (dfi_kind_limits_of(DUOFORGE_DATA_KIND_TEAM_C_DEV).vol_flags_mask & bits) == bits);
+    }
+
+    /* White-box (step 9b): a REPLACEMENT comes after the residual, so it holds
+     * no Helping Hand, while newlySwitched still lasts until the end of the
+     * turn. A Fake Out into a Rocky Helmet makes its 1-HP user faint, and side
+     * 0 is asked for a replacement after the turn. */
+    {
+        duoforge_battle_setup u = teams;
+        put_dev_side(&u.sides[0]);
+        put_dev_side(&u.sides[1]);
+        duoforge_battle *w = df_make_battle(kd, &u);
+        duoforge_decision_bundle bd;
+        memset(&bd, 0, sizeof bd);
+        bd.epoch = w->request_epoch;
+        bd.response_mask = 3u;
+        const uint8_t picks[2][4] = {{0u, 4u, 1u, 2u}, {0u, 3u, 1u, 2u}}; /* leads first */
+        for (uint32_t side = 0u; side < 2u; ++side) {
+            duoforge_side_choice *c = &bd.responses[side];
+            c->epoch = w->request_epoch;
+            c->side = (uint8_t)side;
+            c->kind = (uint8_t)DUOFORGE_CHOICE_TEAM_SELECTION;
+            c->pick_count = 4u;
+            memcpy(c->picks, picks[side], sizeof picks[side]);
+        }
+        duoforge_step_result res;
+        DF_CHECK(&t, duoforge_battle_step(kd, w, &bd, &res) == DUOFORGE_OK &&
+                         w->boundary_kind == DUOFORGE_BOUNDARY_TURN);
+        dfi_member *user = &w->sides[0].members[0];
+        dfi_knowledge *shown = &w->sides[1].knowledge[0];
+        user->hp = 1u;
+        dfi_hp_display(user->hp, user->hp_max, &shown->hp_percent, &shown->hp_flag);
+        w->sides[1].members[0].item = (uint8_t)(1u + DFI_ITEM_ROCKYHELMET);
+        const uint8_t turn1[2][2][3] = {{{DUOFORGE_SLOT_MOVE, 2u, 2u}, {DUOFORGE_SLOT_MOVE, 0u, 3u}},
+                                        {{DUOFORGE_SLOT_MOVE, 0u, 0u}, {DUOFORGE_SLOT_MOVE, 1u, 0u}}};
+        DF_CHECK(&t, slots_step(kd, w, 3u, turn1) == DUOFORGE_OK &&
+                         w->boundary_kind == DUOFORGE_BOUNDARY_REPLACEMENT);
+        dfi_invariant inv = DFI_INV_NONE;
+        dfi_active_slot *pos = &w->sides[1].positions[1]; /* the standing Indeedee-F */
+        DF_CHECK(&t, dfi_state_check(kd, w, &inv) == DUOFORGE_OK);
+        pos->flags = (uint8_t)((uint32_t)pos->flags | DFI_VOL_HELPING_HAND);
+        DF_CHECK(&t, dfi_state_check(kd, w, &inv) == DUOFORGE_E_INVARIANT && inv == DFI_INV_VOLATILE);
+        pos->flags = (uint8_t)(((uint32_t)pos->flags & ~DFI_VOL_HELPING_HAND) | DFI_VOL_FOLLOW_ME);
+        DF_CHECK(&t, dfi_state_check(kd, w, &inv) == DUOFORGE_E_INVARIANT && inv == DFI_INV_VOLATILE);
+        pos->flags = (uint8_t)(((uint32_t)pos->flags & ~DFI_VOL_FOLLOW_ME) | DFI_VOL_NEWLY_SWITCHED);
+        DF_CHECK(&t, dfi_state_check(kd, w, &inv) == DUOFORGE_OK);
+        duoforge_battle_destroy(w);
+    }
+
+    /* White-box (step 11): Follow Me's volatile (bit 8) is a TEAM_C bit that
+     * lives within a turn. Indeedee-F's Follow Me, then its partner
+     * Basculegion's Flip Turn asks for a pivot: at that PIVOT boundary the
+     * bit is valid and both players see DUOFORGE_POSITION_FLAG_FOLLOW_ME; at
+     * the next TURN boundary it is gone, and the bit there is VOLATILE.
+     * Under CLOSURE it is out of range. */
+    {
+        duoforge_battle_setup u = teams;
+        put_dev_side(&u.sides[0]);
+        put_dev_side(&u.sides[1]);
+        const uint32_t indeedee[2] = {DFI_MOVE_FOLLOWME, DFI_MOVE_PSYCHIC};
+        const uint32_t basculegion[1] = {DFI_MOVE_FLIPTURN};
+        set_member(&u.sides[0].members[3], DFI_FORME_INDEEDEEF, DUOFORGE_GENDER_FEMALE, 0u, 0u, 2u, indeedee);
+        set_member(&u.sides[0].members[5], DFI_FORME_BASCULEGION, DUOFORGE_GENDER_MALE, 0u, 0u, 1u, basculegion);
+        u.sides[0].member_count = 6u;
+        duoforge_battle *w = df_make_battle(kd, &u);
+        duoforge_decision_bundle bd;
+        memset(&bd, 0, sizeof bd);
+        bd.epoch = w->request_epoch;
+        bd.response_mask = 3u;
+        const uint8_t picks[2][4] = {{3u, 5u, 0u, 4u}, {0u, 4u, 1u, 2u}}; /* leads first */
+        for (uint32_t side = 0u; side < 2u; ++side) {
+            duoforge_side_choice *c = &bd.responses[side];
+            c->epoch = w->request_epoch;
+            c->side = (uint8_t)side;
+            c->kind = (uint8_t)DUOFORGE_CHOICE_TEAM_SELECTION;
+            c->pick_count = 4u;
+            memcpy(c->picks, picks[side], sizeof picks[side]);
+        }
+        duoforge_step_result res;
+        DF_CHECK(&t, duoforge_battle_step(kd, w, &bd, &res) == DUOFORGE_OK &&
+                         w->boundary_kind == DUOFORGE_BOUNDARY_TURN);
+        const uint8_t turn1[2][2][3] = {
+            {{DUOFORGE_SLOT_MOVE, 0u, DUOFORGE_TARGET_NONE}, {DUOFORGE_SLOT_MOVE, 0u, 3u}},
+            {{DUOFORGE_SLOT_SWITCH, 1u, 0u}, {DUOFORGE_SLOT_MOVE, 0u, 1u}}};
+        DF_CHECK(&t, slots_step(kd, w, 3u, turn1) == DUOFORGE_OK && w->boundary_kind == DUOFORGE_BOUNDARY_PIVOT);
+        dfi_invariant inv = DFI_INV_NONE;
+        DF_CHECK(&t, ((uint32_t)w->sides[0].positions[0].flags & DFI_VOL_FOLLOW_ME) != 0u &&
+                         dfi_state_check(kd, w, &inv) == DUOFORGE_OK);
+        for (uint32_t player = 0u; player < 2u; ++player) {
+            duoforge_observation ob;
+            DF_CHECK(&t, duoforge_battle_observe(kd, w, player, &ob) == DUOFORGE_OK &&
+                             ob.sides[0].positions[0].reserved == DUOFORGE_POSITION_FLAG_FOLLOW_ME);
+        }
+        const uint8_t pivot[2][2][3] = {{{0u, 0u, 0u}, {DUOFORGE_SLOT_SWITCH, 0u, 0u}}, {{0u, 0u, 0u}, {0u, 0u, 0u}}};
+        DF_CHECK(&t, slots_step(kd, w, 1u, pivot) == DUOFORGE_OK && w->boundary_kind == DUOFORGE_BOUNDARY_TURN);
+        uint32_t left = 0u;
+        for (uint32_t side = 0u; side < 2u; ++side) {
+            for (uint32_t p = 0u; p < 2u; ++p) {
+                left |= (uint32_t)w->sides[side].positions[p].flags & DFI_VOL_FOLLOW_ME;
+            }
+        }
+        DF_CHECK(&t, left == 0u && dfi_state_check(kd, w, &inv) == DUOFORGE_OK);
+        dfi_active_slot *pos = &w->sides[0].positions[0];
+        pos->flags = (uint8_t)((uint32_t)pos->flags | DFI_VOL_FOLLOW_ME);
+        DF_CHECK(&t, dfi_state_check(kd, w, &inv) == DUOFORGE_E_INVARIANT && inv == DFI_INV_VOLATILE);
+        duoforge_battle_destroy(w);
+        DF_CHECK(&t, (dfi_kind_limits_of(DUOFORGE_DATA_KIND_CLOSURE).vol_flags_mask & DFI_VOL_FOLLOW_ME) == 0u &&
+                         (dfi_kind_limits_of(DUOFORGE_DATA_KIND_CLOSURE_DEV).vol_flags_mask & DFI_VOL_FOLLOW_ME) == 0u &&
+                         (dfi_kind_limits_of(DUOFORGE_DATA_KIND_TEAM_C).vol_flags_mask & DFI_VOL_FOLLOW_ME) != 0u &&
+                         (dfi_kind_limits_of(DUOFORGE_DATA_KIND_TEAM_C_DEV).vol_flags_mask & DFI_VOL_FOLLOW_ME) != 0u);
+    }
+
     /* The gate per Team C mechanic: the dev side plus exactly one of them.
      * Steps (decision 0009 section 5) mark them one by one; step 1: Kowtow
      * Cleave, Hyper Voice, Draco Meteor, Wave Crash, Aqua Jet, Defiant and
      * Adaptability; step 2: Flare Blitz and Darkest Lariat; step 3: Salamencite
      * with Aerilate; step 4: Last Respects and Flip Turn; step 5: Chople Berry
      * and Rocky Helmet; step 6: Dire Claw (poison); step 7: Choice Scarf;
-     * step 8: White Herb and Unburden. */
+     * step 8: White Herb and Unburden; step 9b: Sucker Punch and Helping
+     * Hand; step 10: Psychic Surge (Psychic Terrain); step 11: Follow Me. */
     {
         typedef struct gate_case {
             uint32_t member, ability_plus1, item_plus1, move;
@@ -659,16 +885,16 @@ int main(void)
             {1u, 0u, 0u, DFI_MOVE_DARKESTLARIAT, true, "Darkest Lariat"},
             {2u, 0u, 0u, DFI_MOVE_HYPERVOICE, true, "Hyper Voice"},
             {2u, 0u, 0u, DFI_MOVE_DRACOMETEOR, true, "Draco Meteor"},
-            {3u, 0u, 0u, DFI_MOVE_FOLLOWME, false, "Follow Me"},
-            {3u, 0u, 0u, DFI_MOVE_HELPINGHAND, false, "Helping Hand"},
+            {3u, 0u, 0u, DFI_MOVE_FOLLOWME, true, "Follow Me"},
+            {3u, 0u, 0u, DFI_MOVE_HELPINGHAND, true, "Helping Hand"},
             {4u, 0u, 0u, DFI_MOVE_KOWTOWCLEAVE, true, "Kowtow Cleave"},
-            {4u, 0u, 0u, DFI_MOVE_SUCKERPUNCH, false, "Sucker Punch"},
+            {4u, 0u, 0u, DFI_MOVE_SUCKERPUNCH, true, "Sucker Punch"},
             {5u, 0u, 0u, DFI_MOVE_WAVECRASH, true, "Wave Crash"},
             {5u, 0u, 0u, DFI_MOVE_LASTRESPECTS, true, "Last Respects"},
             {5u, 0u, 0u, DFI_MOVE_FLIPTURN, true, "Flip Turn"},
             {5u, 0u, 0u, DFI_MOVE_AQUAJET, true, "Aqua Jet"},
             {0u, DFI_ABILITY_UNBURDEN + 1u, 0u, keep, true, "Unburden"},
-            {3u, DFI_ABILITY_PSYCHICSURGE + 1u, 0u, keep, false, "Psychic Surge"},
+            {3u, DFI_ABILITY_PSYCHICSURGE + 1u, 0u, keep, true, "Psychic Surge"},
             {4u, DFI_ABILITY_DEFIANT + 1u, 0u, keep, true, "Defiant"},
             {0u, 0u, DFI_ITEM_WHITEHERB + 1u, keep, true, "White Herb"},
             {2u, 0u, DFI_ITEM_SALAMENCITE + 1u, keep, true, "Salamencite (Mega, Aerilate)"},
@@ -693,7 +919,8 @@ int main(void)
         static const uint32_t step1_moves[] = {DFI_MOVE_KOWTOWCLEAVE, DFI_MOVE_HYPERVOICE, DFI_MOVE_DRACOMETEOR,
                                                DFI_MOVE_WAVECRASH,    DFI_MOVE_AQUAJET,   DFI_MOVE_FLAREBLITZ,
                                                DFI_MOVE_DARKESTLARIAT, DFI_MOVE_LASTRESPECTS, DFI_MOVE_FLIPTURN,
-                                               DFI_MOVE_DIRECLAW};
+                                               DFI_MOVE_DIRECLAW,     DFI_MOVE_SUCKERPUNCH, DFI_MOVE_HELPINGHAND,
+                                               DFI_MOVE_FOLLOWME};
         for (size_t i = 0u; i < sizeof step1_moves / sizeof step1_moves[0]; ++i) {
             moves[step1_moves[i] - DFI_MOVE_COUNT] = 1u;
         }
@@ -701,6 +928,7 @@ int main(void)
         abilities[DFI_ABILITY_ADAPTABILITY - DFI_ABILITY_COUNT] = 1u;
         abilities[DFI_ABILITY_AERILATE - DFI_ABILITY_COUNT] = 1u;
         abilities[DFI_ABILITY_UNBURDEN - DFI_ABILITY_COUNT] = 1u;
+        abilities[DFI_ABILITY_PSYCHICSURGE - DFI_ABILITY_COUNT] = 1u;
         items[DFI_ITEM_SALAMENCITE - DFI_ITEM_COUNT] = 1u;
         items[DFI_ITEM_CHOPLEBERRY - DFI_ITEM_COUNT] = 1u;
         items[DFI_ITEM_ROCKYHELMET - DFI_ITEM_COUNT] = 1u;

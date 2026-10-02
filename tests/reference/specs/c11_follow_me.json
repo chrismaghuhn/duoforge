@@ -1,0 +1,24 @@
+{
+  "name": "c11_follow_me",
+  "purpose": "Follow Me takes the foes' single-target moves: Kingambit's Sucker Punch aimed at Milotic goes to Indeedee-F, which already moved, so it fails; Basculegion's Flip Turn goes into Indeedee-F's Rocky Helmet and pivots while the volatile is live; Milotic's own move is not redirected; Charizard's Heat Wave hits both; Kingambit's Iron Head aimed at its own ally Charizard goes to Indeedee-F.",
+  "data": "team_c",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c1101",
+  "teams": [
+    "Indeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Follow Me\n- Helping Hand\n- Psychic\n- Trick Room\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Ice Beam\n- Muddy Water\n- Coil\n- Hypnosis\n\nFarigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Protect\n- Trick Room\n- Grass Knot\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Protect\n- Shadow Ball\n- Nasty Plot",
+    "Kingambit (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Sucker Punch\n- Iron Head\n- Protect\n\nBasculegion (M) @ Mystic Water\nAbility: Adaptability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Wave Crash\n- Flip Turn\n- Aqua Jet\n- Last Respects\n\nCharizard (M) @ Light Clay\nAbility: Blaze\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Heat Wave\n- Hurricane\n- Weather Ball\n- Protect\n\nIncineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 Atk / 32 SpD\nCareful Nature\n- Fake Out\n- Flare Blitz\n- Parting Shot\n- Darkest Lariat"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 1 2",
+      "move 1, move 1 1",
+      "move 1, move 1 1"
+    ],
+    "p2": [
+      "move 2 2, move 2 2",
+      "move 3 -2, move 1",
+      "move 1 2, move 2 2"
+    ],
+    "max_steps": 40
+  }
+}

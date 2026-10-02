@@ -32,9 +32,9 @@ extern "C" {
 #endif
 
 #define DUOFORGE_VERSION_MAJOR 0
-#define DUOFORGE_VERSION_MINOR 16
+#define DUOFORGE_VERSION_MINOR 19
 #define DUOFORGE_VERSION_PATCH 0
-#define DUOFORGE_VERSION_STRING "0.16.0"
+#define DUOFORGE_VERSION_STRING "0.19.0"
 
 /* Identifiers of the artifacts that exist now (registry: decisions 0002, 0005, 0006). */
 #define DUOFORGE_SEMANTICS_ID           3u   /* "duoforge-m3-closure" */
@@ -234,8 +234,9 @@ duoforge_status duoforge_battle_reseed(const duoforge_context *ctx, duoforge_bat
 #define DUOFORGE_SLOT_MOVE   1u
 #define DUOFORGE_SLOT_SWITCH 2u
 #define DUOFORGE_SLOT_PASS   3u /* forced no-action only where the profile says so */
-/* move_slot of Struggle: offered, with no target, exactly when an occupant
-   has no move with PP left (sim/side.ts, the reference's request). */
+/* move_slot of Struggle: offered, with no target and no Mega declaration,
+   exactly when an occupant has no selectable move (no PP left, Fake Out
+   disabled, a choice lock; sim/pokemon.ts, the reference's request). */
 #define DUOFORGE_MOVE_SLOT_STRUGGLE 4u
 #define DUOFORGE_CHOICE_TEAM_SELECTION 1u
 #define DUOFORGE_CHOICE_SLOTS          2u
@@ -388,6 +389,7 @@ duoforge_status duoforge_battle_step(const duoforge_context *ctx, duoforge_battl
 #define DUOFORGE_WEATHER_SUN  2u
 #define DUOFORGE_TERRAIN_NONE   0u
 #define DUOFORGE_TERRAIN_GRASSY 1u
+#define DUOFORGE_TERRAIN_PSYCHIC 2u /* Team C (Psychic Surge) */
 #define DUOFORGE_MOVE_SLOT_NONE 0xFFu /* position view: no locked move */
 
 typedef struct duoforge_member_view {
@@ -437,10 +439,11 @@ typedef struct duoforge_position_view {
     uint8_t reserved;      /* zero under CLOSURE; under the TEAM_C kinds DUOFORGE_POSITION_FLAG_* */
 } duoforge_position_view; /* 16 bytes */
 
-/* Bits of duoforge_position_view.reserved under the TEAM_C kinds. Bits 1 and
-   2 stay 0 until Follow Me and Helping Hand are built (decision 0009 section
-   4.2). */
-#define DUOFORGE_POSITION_FLAG_UNBURDEN 4u /* Unburden doubles the occupant's Speed */
+/* Bits of duoforge_position_view.reserved under the TEAM_C kinds (decision
+   0009 section 4.2). */
+#define DUOFORGE_POSITION_FLAG_FOLLOW_ME    1u /* Follow Me draws the foes' moves this turn ([-singleturn]) */
+#define DUOFORGE_POSITION_FLAG_HELPING_HAND 2u /* Helping Hand's boost for this turn ([-singleturn]) */
+#define DUOFORGE_POSITION_FLAG_UNBURDEN     4u /* Unburden doubles the occupant's Speed */
 
 typedef struct duoforge_side_view {
     duoforge_member_view members[DUOFORGE_MAX_ROSTER];
@@ -502,7 +505,10 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_EVENT_IMMUNE          12u /* [-immune] position; cause ABILITY + id2 when an ability did it */
 #define DUOFORGE_EVENT_FAIL            13u /* [-fail] position; detail: the ailment it already has, when that is why */
 #define DUOFORGE_EVENT_PROTECT         14u /* [-singleturn Protect] position */
-#define DUOFORGE_EVENT_BLOCKED         15u /* [-activate move: Protect] position: the protected Pokemon */
+#define DUOFORGE_EVENT_BLOCKED         15u /* [-activate move: Protect] position: the protected Pokemon
+                                              (detail 0); detail DUOFORGE_FIELD_PSYCHIC_TERRAIN: [-activate move:
+                                              Psychic Terrain], a priority move stopped at a grounded target
+                                              (Team C) */
 #define DUOFORGE_EVENT_BOOST           16u /* [-boost] position, detail: stat (0 atk .. 6 evasion), amount; cause */
 #define DUOFORGE_EVENT_UNBOOST         17u /* [-unboost] as BOOST */
 #define DUOFORGE_EVENT_STATUS          18u /* [-status] position, detail: DUOFORGE_AILMENT_* */
@@ -528,6 +534,8 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_EVENT_ACTIVATE        35u /* [-activate] position; cause ABILITY + id2 (Lightning Rod, Emergency Exit) or MOVE + id2 (Struggle) */
 #define DUOFORGE_EVENT_UPKEEP          36u /* [upkeep] the end-of-turn effects are done */
 #define DUOFORGE_EVENT_RESULT          37u /* [win] or [tie] detail: DUOFORGE_RESULT_* */
+#define DUOFORGE_EVENT_SINGLE_TURN     38u /* [-singleturn] position (Team C): id: the move; other: the user ([of]) for
+                                              Helping Hand, DUOFORGE_NO_POSITION for Follow Me */
 
 /* Causes ([from] and [of] in the protocol). */
 #define DUOFORGE_CAUSE_NONE      0u /* the move or the plain mechanic */
@@ -557,6 +565,7 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 
 #define DUOFORGE_FIELD_GRASSY_TERRAIN 1u
 #define DUOFORGE_FIELD_TRICK_ROOM     2u
+#define DUOFORGE_FIELD_PSYCHIC_TERRAIN 3u /* Team C */
 #define DUOFORGE_SIDE_TAILWIND     1u
 #define DUOFORGE_SIDE_REFLECT      2u
 #define DUOFORGE_SIDE_LIGHT_SCREEN 3u

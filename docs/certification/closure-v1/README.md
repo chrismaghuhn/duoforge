@@ -49,6 +49,8 @@ Anything outside the profile is rejected explicitly: another context, a roster o
 
 No engine mismatch was found. The new reference battles (step 3) found two tool gaps, both fixed: the harness rejected a planned switch of a trapped Pokémon, and the trace converter turned the "pass" of a fainted partner at a pivot during the turn into a requested pass. Failure minimization (`duoforge_certify minimize`, step 5) is ready for the next mismatch; today no dataset battle fails.
 
+Correction after the certification (2026-10-02): the request offered Struggle together with a Mega declaration, which the reference never does (decision 0006 section 4.1). No dataset battle reaches such a state, so the dataset, the candidate digest and the closure gate are unchanged. The conformance test now checks it (`s16_struggle_mega`).
+
 ## 5. Known limitations
 
 - Draw alignment B: the engine's random stream is not the reference's; equality holds per outcome, through the converter's named and checked rules, not per seed.

@@ -60,7 +60,9 @@ static bool dfi_sealed_cmd_valid(const dfi_slot_cmd *c, uint32_t member_count)
                                    : (c->move_slot < DUOFORGE_MAX_MOVE_SLOTS &&
                                       (c->target < DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE ||
                                        c->target == DUOFORGE_TARGET_NONE));
-        return target_ok && c->mega <= 1u && c->reserve == 0u;
+        /* Struggle never carries a Mega declaration (the request offers none). */
+        const uint32_t mega_max = c->move_slot == DUOFORGE_MOVE_SLOT_STRUGGLE ? 0u : 1u;
+        return target_ok && c->mega <= mega_max && c->reserve == 0u;
     }
     if (kind == DFI_SLOT_SWITCH) {
         return c->reserve < member_count && c->move_slot == 0u && c->target == 0u && c->mega == 0u;
@@ -289,6 +291,16 @@ static dfi_invariant dfi_check_side(const struct duoforge_context *ctx, const st
                  occupant->item_consumed == 0u)) {
                 return DFI_INV_VOLATILE;
             }
+            /* Follow Me's and Helping Hand's volatiles end in the residual and
+             * newlySwitched at the end of the turn (sim/battle.ts:1673): a TURN
+             * boundary holds none of them, a REPLACEMENT boundary (after the
+             * residual) neither of the two volatiles. */
+            const uint32_t residual_bits = DFI_VOL_FOLLOW_ME | DFI_VOL_HELPING_HAND;
+            const uint32_t turn_bits = residual_bits | DFI_VOL_NEWLY_SWITCHED;
+            if ((b->boundary_kind == DUOFORGE_BOUNDARY_TURN && ((uint32_t)slot->flags & turn_bits) != 0u) ||
+                (b->boundary_kind == DUOFORGE_BOUNDARY_REPLACEMENT && ((uint32_t)slot->flags & residual_bits) != 0u)) {
+                return DFI_INV_VOLATILE;
+            }
         }
     }
     const uint32_t occupied = dfi_side_occupied_mask(side);
@@ -474,10 +486,11 @@ static bool dfi_queue_valid(const struct duoforge_battle *b)
     return true;
 }
 
-static bool dfi_field_valid(const struct duoforge_battle *b)
+static bool dfi_field_valid(const duoforge_context *ctx, const struct duoforge_battle *b)
 {
+    const dfi_kind_limits lim = dfi_kind_limits_of(ctx->data_kind);
     return b->weather <= DFI_WEATHER_SUN && b->weather_turns <= DFI_FIELD_TURNS_MAX &&
-           (b->weather == DFI_WEATHER_NONE) == (b->weather_turns == 0u) && b->terrain <= DFI_TERRAIN_GRASSY &&
+           (b->weather == DFI_WEATHER_NONE) == (b->weather_turns == 0u) && b->terrain <= lim.terrain_max &&
            b->terrain_turns <= DFI_FIELD_TURNS_MAX &&
            (b->terrain == DFI_TERRAIN_NONE) == (b->terrain_turns == 0u) &&
            b->trick_room_turns <= DFI_FIELD_TURNS_MAX;
@@ -511,7 +524,7 @@ static duoforge_status dfi_state_check_mode(const duoforge_context *ctx, const s
         inv = DFI_INV_TURN_COUNTER;
     } else if (b->result > DFI_RESULT_TIE || terminal != (b->result != DFI_RESULT_NONE)) {
         inv = DFI_INV_RESULT;
-    } else if (!dfi_field_valid(b)) {
+    } else if (!dfi_field_valid(ctx, b)) {
         inv = DFI_INV_FIELD;
     } else {
         for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT && inv == DFI_INV_NONE; ++s) {

@@ -488,6 +488,12 @@ int main(void)
     RESET_TO(rp);
     w->sides[1].sealed_cmds[1] = (dfi_slot_cmd){DFI_SLOT_PASS, 0u, 0u, 1u, 0u};
     expect_inv(&t, c1, w, DFI_INV_SEALED_COMMAND, "sealed pass with mega");
+    RESET_TO(rp);
+    w->sides[1].sealed_cmds[1] =
+        (dfi_slot_cmd){DFI_SLOT_MOVE, DUOFORGE_MOVE_SLOT_STRUGGLE, DUOFORGE_TARGET_NONE, 0u, 0u};
+    expect_ok(&t, c1, w, "sealed Struggle");
+    w->sides[1].sealed_cmds[1].mega = 1u;
+    expect_inv(&t, c1, w, DFI_INV_SEALED_COMMAND, "sealed Struggle with mega");
     RESET();
     w->sides[1].positions[0].activation_id = 1u;
     expect_inv(&t, c1, w, DFI_INV_ACTIVATION_DUPLICATE, "activation duplicate");
