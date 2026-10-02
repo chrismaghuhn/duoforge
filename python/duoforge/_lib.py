@@ -50,6 +50,7 @@ _SIGNATURES = {
     "duoforge_batch_step_query": (_STATUS, (_P, _U32, _P, _P, _P, _P, _P, _P, _P, _P)),
     "duoforge_batch_reset": (_STATUS, (_P, _U32, _U32)),
     "duoforge_batch_reset_terminal": (_STATUS, (_P,)),
+    "duoforge_batch_reset_setups": (_STATUS, (_P, _U32, _P, _P, _P, _P)),
     "duoforge_batch_play_random": (_STATUS, (_P, _U32, _U32, _P)),
 }
 
