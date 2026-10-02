@@ -38,6 +38,12 @@ DuoForge's observation shows the foe's open sheet (species, moves, item, ability
 
 - **Local server.** Two bots on a copy of the pinned server, Team A against Team B with the widened night checkpoint and real guest logins, played a Bo1 and a Bo3 (three games) to the end. No forfeit, no internal error.
 - **Official server.** The owner (christest1111, Team A) challenged DuoForgeBot (registered name, password from the environment) in a Bo1 with open team sheets. The bot accepted, matched the sheet as Team A, chose its team, and played all 9 turns: 12 decisions, no internal error. The owner won.
+- **How the bot played (from the log).** Behind, it stalled with high confidence:
+  - From turn 4 on, Gholdengo (31, 42, then 12 of 179 HP) chose Protect every turn: "Swords Dance / Protect" at 0.93, 0.88, 0.91 and 0.47.
+  - Ceruledge chose Swords Dance in every one of those turns.
+  - On turn 8, alone with 35 of 181 HP, Ceruledge chose Protect at 0.73.
+
+  The likely cause is in the training, not in the adapter. Self-play cut off a battle after 500 steps and scored the cut as a tie. Delaying was therefore worth more than a likely loss (-1). Learner v2 plans to score cut-offs by Showdown's tiebreak (`Battle.tiebreak`, sim/battle.ts:1467).
 - **Rejected pairs.** Showdown refused "pass, pass" twice at a replacement ("You need to switch in a Pokémon"). The bot then sent the next best pair. This is the provisional pair mask working as designed (spec section 5). Every rejected choice costs one round trip.
 - **Found while playing, fixed in #103.**
   - At the pin, a challenge reaches the bot as a PM "/challenge FORMAT|...", not as |updatechallenges|.
