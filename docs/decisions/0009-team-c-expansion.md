@@ -1,6 +1,6 @@
 # 0009 — Team C: the expansion track (data kind, gate, steps, evidence)
 
-Status: **accepted** (owner, 2026-10-01: "bau das erstmal so"; setup rule: the closure rule, section 3.4). **Steps 1 to 8 built** (section 10). Builds on decision `0004` (two reference teams), `0006` (data, state v3, draw sites, fixtures, evidence), `0007` (player view) and `0010` (the certified CLOSURE profile, the role of `CLOSURE_DEV`, draw alignment B confirmed), and on the research in `docs/research/third-team/` (PR #32). "M§n" means section n of `docs/research/third-team/mechanics.md`; X1 to X9 are its executed experiments.
+Status: **accepted** (owner, 2026-10-01: "bau das erstmal so"; setup rule: the closure rule, section 3.4). **Steps 1 to 9a built** (section 10). Builds on decision `0004` (two reference teams), `0006` (data, state v3, draw sites, fixtures, evidence), `0007` (player view) and `0010` (the certified CLOSURE profile, the role of `CLOSURE_DEV`, draw alignment B confirmed), and on the research in `docs/research/third-team/` (PR #32). "M§n" means section n of `docs/research/third-team/mechanics.md`; X1 to X9 are its executed experiments.
 
 ## 1. Owner inputs (2026-10-01)
 
@@ -182,7 +182,7 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
 ### 6.2 Known tooling gaps (M§8)
 
 - **`gen_closure.py` (step 1):** the seven explicit rejections become the mappings of 3.3. Anything else still fails, and the closure mode stays byte-identical (`--check`).
-- **`ps_trace.js` (step 9a):** today 17 of 36 ad-hoc Team C battles abort with `Invalid target for Helping Hand`, because the plan fix-up (`planMove`) aims every targeted move at foe 1. The fix aims an `adjacentAlly` move at the ally's slot (`-1` or `-2`); a spec may also name the ally target. Only plans with such a move change, and the closure has none.
+- **`ps_trace.js` (step 9a):** today 17 of 36 ad-hoc Team C battles abort with `Invalid target for Helping Hand`, because the plan fix-up (`planMove`) aims every targeted move at foe 1. The fix aims an `adjacentAlly` move at the ally's slot (`-1` or `-2`); a spec may also name the ally target. Only plans with such a move change, and the closure has none. Built in step 9a (section 10.9).
 - **`src/rng/draw.h` (step 6):** the STATUS_PICK site (4.3).
 - **`trace_to_c.py`:** the second output, the extended tables, the STATUS_PICK mapping and each step's new protocol lines. It keeps failing loudly on anything unmapped.
 
@@ -576,3 +576,19 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
   - `tools/reference/{ps_trace.js,trace_to_c.py}`, `tools/state_model/state_v3_model.py`;
   - `tests/reference/conformance.h` (a comment only);
   - `tests/test_conformance.c` (the Unburden comparison), `tests/test_api_atomicity.c` (version), `tests/test_team_c_setup.c`.
+
+### 10.9 Step 9a: ally targets in the harness
+
+- **The gap (section 6.2).** `ps_trace.js`'s plan fix-up gave target 1, a foe, to every planned move that takes a target and names none.
+  - Helping Hand (`adjacentAlly`) takes only the ally's slot, so the reference rejected the choice ("Invalid target for Helping Hand") and the run aborted.
+  - Plans that never name Helping Hand hit this too, through the fix-ups that pick another move: no PP left, or Fake Out disabled after the first turn.
+- **The fix.** `planMove` aims an `adjacentAlly` move at the ally's slot: -2 from the left position, -1 from the right one.
+  - A plan that names an own-side target (-1 or -2) keeps it, so a spec can name the ally target itself.
+  - Nothing else changes.
+- **Byte identity.**
+  - No committed trace plans an `adjacentAlly` move: the closure has none, and Helping Hand is still gated.
+  - `ps_trace.js --check` passes on all 126 committed traces, so the harness version stays 14.
+- **Evidence (an ad-hoc run, not committed).** 36 random-plan battles of the real Team C (`docs/research/third-team/team-c.txt`) against Team A and Team B, with three rotations of Team C's order, three seeds and both sides.
+  - Before the fix: 19 ran to the end; 17 aborted with "Invalid target for Helping Hand".
+  - After the fix: all 36 ran to the end, with 0 UNKNOWN draw sites and Helping Hand used 23 times.
+- **Shared files touched:** `tools/reference/ps_trace.js` (`planMove` and its comments).
