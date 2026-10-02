@@ -1,0 +1,23 @@
+{
+  "manifest": {"engine": "duoforge 0.29.0", "revision": "db199784dae5857d8790cdff05d666497338fc19", "dirty": false,
+    "compiler": "GNU 16.2.0", "build_type": "Debug", "c_flags": "-g", "ipo": false,
+    "os": "windows", "cpu": "AMD64 Family 25 Model 33 Stepping 2, AuthenticAMD; logical processors 16", "workers": 1, "affinity": "none", "started_utc": "2026-10-02T20:48:02Z",
+    "workload": "closure-pairings-v1", "pairings": ["A-B", "B-A", "A-A", "B-B"], "battles_per_pairing": 10, "max_steps": 1000,
+    "policy": "uniform random over candidates (splitmix64)", "policy_seed": 20261001, "battle_seed": 7001, "context_fingerprint": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+    "warmup": 1, "repetitions": 3, "timer": "wall: QueryPerformanceCounter, cpu: process"},
+  "record": {"battles": 40, "turns": 526, "steps": 723, "side_decisions": 1294, "truncations": 0, "errors": 0},
+  "choices": [
+    {"side": 0, "choices": 651, "team_selections": 40, "slot_commands": 1144, "moves": 812, "struggles": 0, "megas": 32, "switches": 81, "replacements": 87, "passes": 164,
+     "target_foe": 450, "target_ally": 210, "target_none": 152, "leads": [15, 13, 16, 8, 14, 14],
+     "move_uses": {"0": 18, "1": 19, "2": 11, "3": 22, "4": 26, "5": 31, "6": 10, "7": 70, "8": 13, "9": 4, "10": 43, "11": 26, "12": 32, "13": 20, "14": 3, "15": 15, "16": 19, "17": 8, "18": 28, "19": 5, "20": 43, "21": 20, "22": 15, "23": 23, "24": 51, "25": 90, "26": 16, "27": 23, "28": 27, "29": 5, "30": 5, "31": 15, "32": 21, "33": 9, "34": 4, "35": 22}},
+    {"side": 1, "choices": 643, "team_selections": 40, "slot_commands": 1132, "moves": 851, "struggles": 0, "megas": 34, "switches": 104, "replacements": 78, "passes": 99,
+     "target_foe": 446, "target_ally": 210, "target_none": 195, "leads": [10, 11, 19, 12, 18, 10],
+     "move_uses": {"0": 13, "1": 18, "2": 5, "3": 17, "4": 11, "5": 13, "6": 6, "7": 70, "8": 17, "9": 8, "10": 43, "11": 31, "12": 26, "13": 21, "14": 10, "15": 25, "16": 28, "17": 8, "18": 38, "19": 17, "20": 51, "21": 23, "22": 25, "23": 24, "24": 28, "25": 56, "26": 14, "27": 39, "28": 35, "29": 8, "30": 13, "31": 31, "32": 30, "33": 13, "34": 11, "35": 25}}
+  ],
+  "results": [
+    {"family": "BATCH_NATIVE", "variant": "workers=2", "workers": 2, "repetitions": 3, "wall_ns": [89567100, 85326700, 81720100], "cpu_ns": [187500000, 156250000, 156250000],
+     "disturbed_repetitions": 0, "median_wall_ns": 85326700, "battles": 256, "turns": 3472, "steps": 4739, "side_decisions": 8509, "calls": 0, "bytes": 0, "truncations": 0, "errors": 0,
+     "per_second": {"battles": 3000, "turns": 40690, "steps": 55539, "side_decisions": 99722, "calls": 0}}
+  ],
+  "skipped_by_time_limit": 0, "errors": 0
+}

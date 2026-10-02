@@ -200,6 +200,14 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_QUICKATTACK] = 1u,
             [DFI_MOVE_DETECT] = 1u,
             [DFI_MOVE_POISONJAB] = 1u,
+            /* Step G17: the recharge moves (flags2 RECHARGE, mustrecharge): the user recharges after a hit. Meteor Assault is
+             * not marked: its only learner, Sirfetch'd, has no supported ability (Steadfast, Scrappy), so no setup can use it. */
+            [DFI_MOVE_BLASTBURN] = 1u,
+            [DFI_MOVE_FRENZYPLANT] = 1u,
+            [DFI_MOVE_GIGAIMPACT] = 1u,
+            [DFI_MOVE_HYDROCANNON] = 1u,
+            [DFI_MOVE_HYPERBEAM] = 1u,
+            [DFI_MOVE_ROCKWRECKER] = 1u,
         },
     .abilities =
         {
@@ -295,7 +303,8 @@ const dfi_support_manifest dfi_support = {
      * duoforge.state.pool_g8). Step G11: the type change of Soak (bit 9: TYPE_CHANGED and type_now of the position, public,
      * verified against the four g11 battles in duoforge.state.pool_g11). Step G7: Wide Guard (bit 17: guard_flags, public,
      * verified in duoforge.state.pool_g7). Step G9: Encore (bit 7: encore_slot of the position, public, verified against
-     * the g09_encore battles step by step in duoforge.state.pool_g9). */
+     * the g09_encore battles step by step in duoforge.state.pool_g9). Step G17: the recharge (bit 15: MUST_RECHARGE of the
+     * position's volatiles, public, verified against the g17 battles step by step in duoforge.state.pool_g17). */
     /* Step Sandstorm and Snowscape: bits 0 and 1, the weather values of the old observation's weather field (the
      * -weather lines of Sand Stream, Snow Warning and the two moves, verified step by step in duoforge.state.pool_weather).
      * Step AC1: the ability change of Trace (bit 2: position_ext.ability_now, public, verified against the ac1 battles in
@@ -305,6 +314,7 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TYPE_CHANGE) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ENCORE) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_MUST_RECHARGE) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WIDE_GUARD) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WEATHER_SAND) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WEATHER_SNOW) |

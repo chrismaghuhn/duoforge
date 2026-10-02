@@ -22,7 +22,7 @@
  *   ac1_trace_switch      the switch-out reset: the copy ends when Gardevoir switches out, and it traces again, with a
  *                         new draw, when it comes back.
  * Also: a Mega Evolution ends a copied ability (formeChange -> setAbility), checked on a recorded Mega battle with a
- * harmless ability_now written into the tail.
+ * ability_now (equal to the sheet's) written into the tail.
  */
 #include <stdio.h>
 #include <string.h>
@@ -256,8 +256,8 @@ static void check_event(df_test *t, const duoforge_context *ctx)
 }
 
 /* A Mega Evolution ends a copied ability: formeChange sets the ability to the Mega forme's (sim/pokemon.ts:1487). On
- * a recorded Mega battle every standing Pokemon is given a harmless ability_now (Pressure: no rule of the engine reads
- * it, so the recorded draws still fit) before each step; the Pokemon that Mega Evolves in the step has none after it,
+ * a recorded Mega battle every standing Pokemon is given an ability_now equal to its sheet's ability (nothing changes in
+ * how the battle plays, so the recorded draws still fit) before each step; the Pokemon that Mega Evolves in the step has none after it,
  * and the others that stay on the field keep it. */
 static void check_mega(df_test *t, const duoforge_context *ctx)
 {
@@ -283,7 +283,7 @@ static void check_mega(df_test *t, const duoforge_context *ctx)
                 for (uint32_t p = 0u; p < 2u; ++p) {
                     const uint32_t occupant = b->sides[s].positions[p].occupant;
                     if (occupant < DUOFORGE_MAX_ROSTER && b->sides[s].members[occupant].hp != 0u) {
-                        b->tail.sides[s].ability_now[occupant] = (uint16_t)(1u + DFI_ABILITY_PRESSURE);
+                        b->tail.sides[s].ability_now[occupant] = b->sides[s].members[occupant].ability; /* the sheet's own: no behaviour changes */
                     }
                 }
             }
@@ -310,6 +310,57 @@ static void check_mega(df_test *t, const duoforge_context *ctx)
     DF_CHECK(t, megas >= 2u);
 }
 
+/* Trace with no candidate: the pin goes on seeking at every later Update (effectState.seek), which is not modelled, so
+ * the entry is E_UNSUPPORTED and the battle is unchanged (the step works on a copy). In ac1_trace_switch Gardevoir
+ * switches out in step 2 and back in in step 3; before step 3 both foes are given Trace as their ability now (the
+ * notrace ability, so neither can be copied), as if the only foe left were a Trace holder. */
+static void check_no_candidate(df_test *t, const duoforge_context *ctx)
+{
+    const df_conf_battle *cb = find("ac1_trace_switch");
+    if (!DF_CHECK(t, cb != NULL && cb->step_count > 3u)) {
+        return;
+    }
+    duoforge_battle_setup setup;
+    build_setup(cb, &setup);
+    duoforge_battle *b = NULL;
+    if (!DF_CHECK(t, duoforge_battle_create(ctx, &setup, &b) == DUOFORGE_OK && b != NULL)) {
+        return;
+    }
+    for (uint32_t si = 0u; si < 3u; ++si) {
+        const df_conf_step *st = &cb->steps[si];
+        duoforge_decision_bundle bd;
+        bundle_of(st, b, &bd);
+        duoforge_step_result res;
+        uint32_t used = 0u;
+        if (!DF_CHECK(t, dfi_battle_step_tape(ctx, b, &bd, &conf_tape[st->tape_off], st->tape_len, &used, &res) ==
+                             DUOFORGE_OK)) {
+            duoforge_battle_destroy(b);
+            return;
+        }
+    }
+    for (uint32_t p = 0u; p < 2u; ++p) {
+        const uint32_t occupant = b->sides[1].positions[p].occupant;
+        if (DF_CHECK(t, occupant < DUOFORGE_MAX_ROSTER && b->sides[1].members[occupant].hp != 0u)) {
+            b->tail.sides[1].ability_now[occupant] = (uint16_t)AB(TRACE);
+        }
+    }
+    DF_CHECK(t, duoforge_battle_check(ctx, b) == DUOFORGE_OK);
+    duoforge_battle *before = NULL;
+    if (DF_CHECK(t, duoforge_battle_clone(ctx, b, &before) == DUOFORGE_OK && before != NULL)) {
+        const df_conf_step *st = &cb->steps[3];
+        duoforge_decision_bundle bd;
+        bundle_of(st, b, &bd);
+        duoforge_step_result res;
+        uint32_t used = 0u;
+        DF_CHECK(t, dfi_battle_step_tape(ctx, b, &bd, &conf_tape[st->tape_off], st->tape_len, &used, &res) ==
+                        DUOFORGE_E_UNSUPPORTED);
+        bool equal = false;
+        DF_CHECK(t, duoforge_battle_equal(ctx, b, before, &equal) == DUOFORGE_OK && equal);
+    }
+    duoforge_battle_destroy(before);
+    duoforge_battle_destroy(b);
+}
+
 int main(void)
 {
     df_test t;
@@ -322,7 +373,7 @@ int main(void)
      * event kind and the cause; the new combination is documented in duoforge.h). */
     DF_CHECK_EQ_U64(&t, DUOFORGE_VIEWEXT_FEATURE_ABILITY_CHANGE, 2u);
     DF_CHECK_EQ_U64(&t, DUOFORGE_EVENT_ABILITY, 34u);
-    DF_CHECK_EQ_U64(&t, DFI_SITE_TRACE, 14u);
+    DF_CHECK_EQ_U64(&t, DFI_SITE_TRACE, 15u);
     DF_CHECK(&t, dfi_support.abilities[DFI_ABILITY_TRACE] != 0u);
     DF_CHECK(&t, dfi_pool_ability_family[DFI_ABILITY_TRACE].family == DFI_ABILITY_FAMILY_NONE);
     DF_CHECK(&t, (dfi_support.view_ext_features & ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ABILITY_CHANGE)) != 0u);
@@ -333,6 +384,7 @@ int main(void)
     DF_CHECK_EQ_U64(&t, compared, 2u * (uint32_t)(sizeof rows / sizeof rows[0]));
     check_event(&t, kp);
     check_mega(&t, kp);
+    check_no_candidate(&t, kp);
 
     /* The same battles under POOL_DEV (its own fingerprint, the same tables): the same tail and view. */
     uint32_t compared_dev = 0u;

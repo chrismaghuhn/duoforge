@@ -26,6 +26,34 @@ typedef struct df_tb_battle {
     uint32_t stop_count;
 } df_tb_battle;
 
+static const df_tb_stop tb_ac1_trace_defiant[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1071u, 1128u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {721u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {721u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+};
+static const df_tb_stop tb_ac1_trace_drizzle[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1071u, 1123u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {721u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {633u, 773u}, {0x404c469ee58469efull, 0x4050aaaaaaaaaaabull}},
+};
+static const df_tb_stop tb_ac1_trace_intimidate[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1071u, 1128u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {721u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {721u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+};
+static const df_tb_stop tb_ac1_trace_single[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1071u, 1101u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {721u, 751u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {721u, 751u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+};
+static const df_tb_stop tb_ac1_trace_switch[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1071u, 1128u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {721u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {721u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 3u, {4u, 4u}, {721u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {5u, 0u, 2u, 3u, {4u, 4u}, {721u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {6u, 0u, 2u, 3u, {4u, 4u}, {721u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+};
 static const df_tb_stop tb_c01_adaptability_weather[] = {
     {0u, 0u, 1u, 3u, {4u, 4u}, {793u, 722u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
     {1u, 0u, 1u, 3u, {4u, 4u}, {793u, 722u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -1220,6 +1248,81 @@ static const df_tb_stop tb_g13_superpower[] = {
     {3u, 0u, 1u, 2u, {4u, 4u}, {778u, 705u}, {0x4050aaaaaaaaaaabull, 0x404f4547d0afbc68ull}},
     {4u, 0u, 1u, 2u, {4u, 4u}, {778u, 696u}, {0x4050aaaaaaaaaaabull, 0x404ee63b24547d0cull}},
     {5u, 0u, 1u, 2u, {4u, 4u}, {778u, 667u}, {0x4050aaaaaaaaaaabull, 0x404db3f5dc83cd4full}},
+};
+static const df_tb_stop tb_g17_giga_impact[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1062u, 1111u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {698u, 782u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {698u, 712u}, {0x4050aaaaaaaaaaabull, 0x404e720f353a4c0bull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {698u, 702u}, {0x4050aaaaaaaaaaabull, 0x404e0872e77f93dbull}},
+    {4u, 0u, 1u, 2u, {4u, 4u}, {698u, 624u}, {0x4050aaaaaaaaaaabull, 0x404ad0afbc68c404ull}},
+};
+static const df_tb_stop tb_g17_hyper_beam[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1062u, 1083u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {698u, 754u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {698u, 711u}, {0x4050aaaaaaaaaaabull, 0x404f8f353a4c0a24ull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {698u, 723u}, {0x4050aaaaaaaaaaabull, 0x405006f86562d9fbull}},
+    {4u, 0u, 1u, 2u, {4u, 4u}, {698u, 627u}, {0x4050aaaaaaaaaaabull, 0x404c181446f86563ull}},
+};
+static const df_tb_stop tb_g17_hyper_beam_encore[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1104u, 1041u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {740u, 712u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {740u, 680u}, {0x4050aaaaaaaaaaabull, 0x405001b094b31d92ull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {723u, 583u}, {0x4050455cf5fd23c1ull, 0x4049e0c9e25c77f7ull}},
+    {5u, 0u, 1u, 1u, {4u, 3u}, {637u, 535u}, {0x404c89c5d7007a0bull, 0x4047598ec9151f43ull}},
+    {6u, 0u, 1u, 1u, {4u, 3u}, {637u, 535u}, {0x404c89c5d7007a0bull, 0x4047598ec9151f43ull}},
+};
+static const df_tb_stop tb_g17_hyper_beam_flinch[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1062u, 1128u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {698u, 775u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {698u, 715u}, {0x4050aaaaaaaaaaabull, 0x404edbab82f50439ull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {669u, 715u}, {0x404f91c077975b90ull, 0x404edbab82f50439ull}},
+    {4u, 0u, 1u, 2u, {4u, 4u}, {605u, 633u}, {0x404bad287c92ff60ull, 0x404b79a9d260511cull}},
+};
+static const df_tb_stop tb_g17_hyper_beam_immune[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1062u, 1083u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {698u, 754u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {581u, 737u}, {0x404a376f7e715cd0ull, 0x4050455cf5fd23c1ull}},
+    {3u, 0u, 2u, 1u, {3u, 4u}, {561u, 624u}, {0x4049000000000000ull, 0x404bca41fed1eb1cull}},
+};
+static const df_tb_stop tb_g17_hyper_beam_ko[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1062u, 1018u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {698u, 689u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 1u, {4u, 3u}, {698u, 552u}, {0x4050aaaaaaaaaaabull, 0x4049000000000000ull}},
+    {3u, 0u, 1u, 1u, {4u, 3u}, {698u, 552u}, {0x4050aaaaaaaaaaabull, 0x4049000000000000ull}},
+    {4u, 0u, 1u, 1u, {4u, 3u}, {698u, 552u}, {0x4050aaaaaaaaaaabull, 0x4049000000000000ull}},
+};
+static const df_tb_stop tb_g17_hyper_beam_miss[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1062u, 1083u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {698u, 754u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {698u, 754u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {698u, 664u}, {0x4050aaaaaaaaaaabull, 0x404d9ed699c4dbacull}},
+};
+static const df_tb_stop tb_g17_hyper_beam_protect[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1062u, 1083u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {698u, 754u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {698u, 754u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {698u, 670u}, {0x4050aaaaaaaaaaabull, 0x404dde346201b095ull}},
+};
+static const df_tb_stop tb_g17_hyper_beam_scarf[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1062u, 1083u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {698u, 754u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {698u, 714u}, {0x4050aaaaaaaaaaabull, 0x404faee41e6a7498ull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {698u, 726u}, {0x4050aaaaaaaaaaabull, 0x405016cfd7720f35ull}},
+    {4u, 0u, 1u, 2u, {4u, 4u}, {698u, 684u}, {0x4050aaaaaaaaaaabull, 0x404e720f353a4c0bull}},
+};
+static const df_tb_stop tb_g17_hyper_beam_sucker[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1062u, 1088u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {698u, 759u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {698u, 721u}, {0x4050aaaaaaaaaaabull, 0x404fcdb4f8fdf055ull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {698u, 721u}, {0x4050aaaaaaaaaaabull, 0x404fcdb4f8fdf055ull}},
+    {4u, 0u, 2u, 1u, {3u, 4u}, {561u, 721u}, {0x4049000000000000ull, 0x404fcdb4f8fdf055ull}},
+};
+static const df_tb_stop tb_g17_recharge_moves[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1137u, 1131u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {773u, 802u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {700u, 685u}, {0x404e5ee0440c42d3ull, 0x404cbcc86a282d30ull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {724u, 710u}, {0x404f5947bbc9f198ull, 0x404db561194d71f1ull}},
+    {4u, 0u, 1u, 2u, {4u, 4u}, {748u, 735u}, {0x405029d799c3d02eull, 0x404eadf9c872b6b3ull}},
 };
 static const df_tb_stop tb_g2_data_moves_a[] = {
     {0u, 0u, 1u, 3u, {6u, 6u}, {1129u, 1099u}, {0x4059000000000000ull, 0x4059000000000000ull}},
@@ -2563,6 +2666,11 @@ static const df_tb_stop tb_w8_sand_soak[] = {
 };
 
 static const df_tb_battle tb_battles[] = {
+    {"ac1_trace_defiant", 2u, tb_ac1_trace_defiant, sizeof tb_ac1_trace_defiant / sizeof tb_ac1_trace_defiant[0]},
+    {"ac1_trace_drizzle", 2u, tb_ac1_trace_drizzle, sizeof tb_ac1_trace_drizzle / sizeof tb_ac1_trace_drizzle[0]},
+    {"ac1_trace_intimidate", 2u, tb_ac1_trace_intimidate, sizeof tb_ac1_trace_intimidate / sizeof tb_ac1_trace_intimidate[0]},
+    {"ac1_trace_single", 2u, tb_ac1_trace_single, sizeof tb_ac1_trace_single / sizeof tb_ac1_trace_single[0]},
+    {"ac1_trace_switch", 6u, tb_ac1_trace_switch, sizeof tb_ac1_trace_switch / sizeof tb_ac1_trace_switch[0]},
     {"c01_adaptability_weather", 13u, tb_c01_adaptability_weather, sizeof tb_c01_adaptability_weather / sizeof tb_c01_adaptability_weather[0]},
     {"c01_defiant_competitive", 11u, tb_c01_defiant_competitive, sizeof tb_c01_defiant_competitive / sizeof tb_c01_defiant_competitive[0]},
     {"c01_grass_knot_weights", 18u, tb_c01_grass_knot_weights, sizeof tb_c01_grass_knot_weights / sizeof tb_c01_grass_knot_weights[0]},
@@ -2678,6 +2786,17 @@ static const df_tb_battle tb_battles[] = {
     {"g13_quick_attack_detect", 5u, tb_g13_quick_attack_detect, sizeof tb_g13_quick_attack_detect / sizeof tb_g13_quick_attack_detect[0]},
     {"g13_rock_tomb", 5u, tb_g13_rock_tomb, sizeof tb_g13_rock_tomb / sizeof tb_g13_rock_tomb[0]},
     {"g13_superpower", 5u, tb_g13_superpower, sizeof tb_g13_superpower / sizeof tb_g13_superpower[0]},
+    {"g17_giga_impact", 4u, tb_g17_giga_impact, sizeof tb_g17_giga_impact / sizeof tb_g17_giga_impact[0]},
+    {"g17_hyper_beam", 4u, tb_g17_hyper_beam, sizeof tb_g17_hyper_beam / sizeof tb_g17_hyper_beam[0]},
+    {"g17_hyper_beam_encore", 6u, tb_g17_hyper_beam_encore, sizeof tb_g17_hyper_beam_encore / sizeof tb_g17_hyper_beam_encore[0]},
+    {"g17_hyper_beam_flinch", 4u, tb_g17_hyper_beam_flinch, sizeof tb_g17_hyper_beam_flinch / sizeof tb_g17_hyper_beam_flinch[0]},
+    {"g17_hyper_beam_immune", 3u, tb_g17_hyper_beam_immune, sizeof tb_g17_hyper_beam_immune / sizeof tb_g17_hyper_beam_immune[0]},
+    {"g17_hyper_beam_ko", 4u, tb_g17_hyper_beam_ko, sizeof tb_g17_hyper_beam_ko / sizeof tb_g17_hyper_beam_ko[0]},
+    {"g17_hyper_beam_miss", 3u, tb_g17_hyper_beam_miss, sizeof tb_g17_hyper_beam_miss / sizeof tb_g17_hyper_beam_miss[0]},
+    {"g17_hyper_beam_protect", 3u, tb_g17_hyper_beam_protect, sizeof tb_g17_hyper_beam_protect / sizeof tb_g17_hyper_beam_protect[0]},
+    {"g17_hyper_beam_scarf", 4u, tb_g17_hyper_beam_scarf, sizeof tb_g17_hyper_beam_scarf / sizeof tb_g17_hyper_beam_scarf[0]},
+    {"g17_hyper_beam_sucker", 4u, tb_g17_hyper_beam_sucker, sizeof tb_g17_hyper_beam_sucker / sizeof tb_g17_hyper_beam_sucker[0]},
+    {"g17_recharge_moves", 4u, tb_g17_recharge_moves, sizeof tb_g17_recharge_moves / sizeof tb_g17_recharge_moves[0]},
     {"g2_data_moves_a", 6u, tb_g2_data_moves_a, sizeof tb_g2_data_moves_a / sizeof tb_g2_data_moves_a[0]},
     {"g2_data_moves_b", 7u, tb_g2_data_moves_b, sizeof tb_g2_data_moves_b / sizeof tb_g2_data_moves_b[0]},
     {"g2_data_moves_c", 10u, tb_g2_data_moves_c, sizeof tb_g2_data_moves_c / sizeof tb_g2_data_moves_c[0]},
@@ -2811,7 +2930,7 @@ static const df_tb_battle tb_battles[] = {
     {"w8_sand_soak", 7u, tb_w8_sand_soak, sizeof tb_w8_sand_soak / sizeof tb_w8_sand_soak[0]},
 };
 
-/* 2043 stops: 139 of an ended battle; decided by the count 671,
- * the HP percentage 610, the total HP 573, a tie 50;
- * winners: side 0 1020, side 1 973, tie 50 */
+/* 2114 stops: 139 of an ended battle; decided by the count 678,
+ * the HP percentage 633, the total HP 614, a tie 50;
+ * winners: side 0 1051, side 1 1013, tie 50 */
 #endif

@@ -117,6 +117,14 @@ static duoforge_status dfi_slot_candidates(const duoforge_context *ctx, const st
             return dfi_list_push(out, DUOFORGE_SLOT_PASS, 0u, 0u, 0u, 0u) ? DUOFORGE_OK : DUOFORGE_E_INVARIANT;
         }
         const dfi_member *mem = &side->members[occupant];
+        /* The recharge turn (step G17, POOL kinds): mustrecharge's onLockMove 'recharge' makes the request one move,
+         * "Recharge", with the Pokemon trapped and no Mega (sim/pokemon.ts:964-972, 1084-1090, 1137; the choice is
+         * accepted as a move action, sim/side.ts:675-689). The one candidate; no other move, no switch. */
+        if (b->tail.sides[s].positions[slot].must_recharge != 0u) {
+            return dfi_list_push(out, DUOFORGE_SLOT_MOVE, DUOFORGE_MOVE_SLOT_RECHARGE, DUOFORGE_TARGET_NONE, 0u, 0u)
+                       ? DUOFORGE_OK
+                       : DUOFORGE_E_INVARIANT;
+        }
         /* A locked move (twoturnmove's onLockMove): that move at the stored
          * target only; no other move, no switch, no Mega (sim/pokemon.ts
          * getMoveRequestData, sim/side.ts:675-689). */
