@@ -779,7 +779,7 @@ function checkFormes(dex, validator, rows, moves, abilities) {
 // special column of a move, the handler column of an item and of an ability, and the lists of unmodelled features.
 // implemented in the turn code by id (G4: Focus Sash, Rock Head; G12: Floettite, Flower Veil, Fairy Aura)
 const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed'],
-    abilities: ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold']};
+    abilities: ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
     'randomNormal']);
 // The fields of a move that the tables model (gen_closure.py DATA_KEYS and IGNORED_KEYS), nothing else.
@@ -985,6 +985,18 @@ function checkHandlers(dex, source, header, extended) {
         if (special !== unmodeledSpecial) {
             expect('move ' + id + ' target class is one the turn code has', ENGINE_TARGETS.has(raw.target), true);
         }
+    }
+    // Step AC1: Trace may not copy an ability with the pin's notrace flag (data/abilities.ts:5118-5148). The turn code
+    // excludes Trace alone, right while no other such ability is marked: tests/test_pool_tables.c names the nine
+    // abilities of the pool that have the flag and requires every one but Trace to be unmarked, so the list is
+    // pinned to the data here.
+    {
+        const poolAbilities = new Set([...definedIds([extended.closure, extended.ext, header], 'ABILITY').values()]);
+        const flagged = [...poolAbilities].filter((id) => dex.data.Abilities[id] && dex.data.Abilities[id].flags &&
+                                                          dex.data.Abilities[id].flags.notrace).sort();
+        expect('the pool abilities with the notrace flag', flagged,
+               ['disguise', 'forecast', 'hungerswitch', 'illusion', 'imposter', 'receiver', 'stancechange', 'trace',
+                'zerotohero']);
     }
     // Items and abilities: a row without the UNMODELED handler is the closure's or Team C's, a family member, an
     // implemented row, or an entry with no callback of its own (a Mega Stone keeps its onTakeItem); a row with it

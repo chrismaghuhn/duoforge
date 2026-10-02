@@ -976,11 +976,87 @@ esac
                     self.assertIn(keys['bench'], ('0', '1'))
                 self.assertRegex(keys['base_seed'], r'^[0-9]{1,12}$')
                 self.assertRegex(keys['chunks'], r'^[0-9]{1,3}$')
-                self.assertRegex(keys['pairings'], r'^[A-Za-z0-9,-]+$')
+                self.assertRegex(keys['pairings'], r'^[A-Za-z0-9_,-]+$')
                 for team in keys['teams'].split():
                     m = re.match(r'^[A-Z]=([A-Za-z0-9._-]+)$', team)
                     if m:
                         self.assertTrue(os.path.isfile(os.path.join(base, name, m.group(1))), team)
+
+    EVIDENCE_CAMPAIGNS = ('g7-wide-guard', 'g8-throat-chop-heal-block', 'g9-encore', 'g10-moves', 'g11-soak', 'g12-floette',
+                          'g13-moves', 'g14-abilities', 'g17-hyper-beam', 'registry-mix')
+
+    def read_conf(self, name):
+        """(the key=value lines as a dict, the comment lines) of a campaign.conf."""
+        keys, comments = {}, []
+        with open(os.path.join(HERE, 'campaigns', name, 'campaign.conf'), encoding='utf-8') as f:
+            for line in f:
+                line = line.rstrip('\n')
+                if line.startswith('#'):
+                    comments.append(line[1:].strip())
+                elif line.strip():
+                    k, _, v = line.partition('=')
+                    keys[k] = v
+        return keys, comments
+
+    def test_the_evidence_campaigns_exist_and_use_the_automatic_parallel_without_a_bench(self):
+        for name in self.EVIDENCE_CAMPAIGNS:
+            with self.subTest(campaign=name):
+                keys, comments = self.read_conf(name)
+                self.assertNotIn('parallel', keys)  # auto: vCPUs / 7, 9 on 64
+                self.assertNotIn('sweep', keys)
+                self.assertEqual(keys['bench'], '0')
+                self.assertGreaterEqual(len(comments), 3)
+                # the comment names the step (or the registry) and where the teams come from
+                text = ' '.join(comments)
+                self.assertRegex(text, r'Source team|Source teams|source of|registry')
+                self.assertIn('POOL', text)
+
+    def test_every_team_of_a_campaign_exists_and_every_pairing_uses_known_teams(self):
+        with open(os.path.join(HERE, '..', '..', '..', 'data', 'teams', 'index.json'), encoding='utf-8') as f:
+            registry = {team['id'] for team in json.load(f)['teams']}
+        for name in sorted(os.listdir(os.path.join(HERE, 'campaigns'))):
+            with self.subTest(campaign=name):
+                keys, _comments = self.read_conf(name)
+                known = {'A', 'B', 'C'}
+                for team in keys['teams'].split():
+                    m = re.match(r'^([A-Z])=(.+)$', team)
+                    if m:
+                        path = os.path.join(HERE, 'campaigns', name, m.group(2))
+                        self.assertTrue(os.path.isfile(path), path)
+                        with open(path, encoding='utf-8') as f:
+                            paste = f.read().strip().split('\n\n')
+                        self.assertEqual(len(paste), 6, '%s is not six sets' % path)
+                        known.add(m.group(1))
+                    else:
+                        self.assertIn(team, registry, team)
+                        known.add(team)
+                for pairing in keys['pairings'].split(','):
+                    ids = pairing.split('-') if '-' in pairing else list(pairing)
+                    self.assertEqual(len(ids), 2, pairing)
+                    for i in ids:
+                        self.assertIn(i, known, '%s in %s' % (i, pairing))
+
+    def test_the_registry_mix_has_every_survey_team_once_and_gives_each_team_pairings_in_both_seats(self):
+        keys, _comments = self.read_conf('registry-mix')
+        teams = keys['teams'].split()
+        self.assertEqual(len(teams), 44)
+        self.assertEqual(len(set(teams)), 44)
+        self.assertTrue(all(re.match(r'^PP_[0-9A-F]{16}$', x) for x in teams))
+        pairs = [p.split('-') for p in keys['pairings'].split(',')]
+        self.assertEqual(len(pairs), 88)
+        self.assertEqual({a for a, _ in pairs}, set(teams))  # every team as player 1
+        self.assertEqual({b for _, b in pairs}, set(teams))  # and as player 2
+        self.assertEqual(len({tuple(x) for x in pairs}), 88)
+
+    def test_the_battle_counts_are_ten_times_the_steps_own_campaign(self):
+        expected = {'g7-wide-guard': 4000, 'g8-throat-chop-heal-block': 450, 'g9-encore': 2200, 'g12-floette': 30000,
+                    'g13-moves': 2400, 'g14-abilities': 13000, 'g17-hyper-beam': 4000,
+                    'g10-moves': 2000, 'g11-soak': 2000, 'registry-mix': 10000}  # the last three: no step campaign
+        for name, battles in expected.items():
+            with self.subTest(campaign=name):
+                keys, _comments = self.read_conf(name)
+                self.assertEqual(int(keys['chunk_battles']) * int(keys['chunks']), battles)
+                self.assertTrue(100 <= int(keys['chunk_battles']) <= 20000)
 
     def test_the_readme_policy_is_what_the_task_asks_for(self):
         with open(os.path.join(HERE, 'README.md'), encoding='utf-8') as f:

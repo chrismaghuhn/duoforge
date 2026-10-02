@@ -254,6 +254,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_SWARM] = 1u,
             [DFI_ABILITY_FLOWERVEIL] = 1u,
             [DFI_ABILITY_FAIRYAURA] = 1u,
+            [DFI_ABILITY_TRACE] = 1u,
             [DFI_ABILITY_ROUGHSKIN] = 1u,
             [DFI_ABILITY_POISONTOUCH] = 1u,
             [DFI_ABILITY_THERMALEXCHANGE] = 1u,
@@ -322,7 +323,10 @@ const dfi_support_manifest dfi_support = {
      * the g09_encore battles step by step in duoforge.state.pool_g9). Step G17: the recharge (bit 15: MUST_RECHARGE of the
      * position's volatiles, public, verified against the g17 battles step by step in duoforge.state.pool_g17). */
     /* Step Sandstorm and Snowscape: bits 0 and 1, the weather values of the old observation's weather field (the
-     * -weather lines of Sand Stream, Snow Warning and the two moves, verified step by step in duoforge.state.pool_weather). */
+     * -weather lines of Sand Stream, Snow Warning and the two moves, verified step by step in duoforge.state.pool_weather).
+     * Step AC1: the ability change of Trace (bit 2: position_ext.ability_now, public, verified against the ac1 battles in
+     * duoforge.state.pool_ac1). Every other source of a changed ability stays E_UNSUPPORTED (an unmarked move or
+     * ability), so the bit is exact: a zero is "no change". */
     .view_ext_features = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TYPE_CHANGE) |
@@ -331,5 +335,6 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WIDE_GUARD) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WEATHER_SAND) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WEATHER_SNOW) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ITEM_CHANGE),
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ITEM_CHANGE) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ABILITY_CHANGE),
 };

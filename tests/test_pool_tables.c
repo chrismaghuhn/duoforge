@@ -44,7 +44,7 @@
 #include "state/battle_internal.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "bbee87c5301d3e3423a2f5f5b2cbd81c94b99713bc067fc568eeef396a5b5ffb"
+#define POOL_HASH_HEX "3ca2b8f75edeef6ab2f4bbc1f67b620bccdb62a7efac0dcbdb6bdb1984e048c7"
 /* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
  * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
  * produced the same bytes. Step G10 moved two of them on purpose: Scald and Recover are data now (the thaw bit and
@@ -68,9 +68,9 @@
 #define POOL_ABILITIES 215u
 
 /* The rows that the tables do not model, pinned (the generator reports the same counts). */
-#define UNMODELED_MOVES 304u /* 305 before step G15 modelled Expanding Force; 306 before step G16 modelled Knock Off; 313 before step G17 modelled the seven recharge moves; 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
-#define UNMODELED_ITEMS 44u /* 45 before step G15 modelled Psychic Seed */
-#define UNMODELED_ABILITIES 180u /* 181 before step G16 made Sticky Hold an engine row; 184 before step G14 made Rough Skin, Poison Touch and Thermal Exchange engine rows */
+#define UNMODELED_MOVES 304u /* 305u before step G15 modelled Expanding Force; 306 before step G16 modelled Knock Off; 313 before step G17 modelled the seven recharge moves; 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
+#define UNMODELED_ITEMS 44u /* one fewer since step G15 modelled Psychic Seed */
+#define UNMODELED_ABILITIES 179u /* 180 before step AC1 made Trace an engine row; 181 before step G16 made Sticky Hold an engine row; 184 before step G14 made Rough Skin, Poison Touch and Thermal Exchange engine rows */
 
 /* How many rows of the manifest are marked and half modelled: marked, and with the UNMODELED handler or a list of
  * unmodelled features (decision 0015 section 4.2). A step marks only what it fully models. */
@@ -1129,7 +1129,8 @@ int main(void)
             const bool setter = id == DFI_ABILITY_SANDSTREAM || id == DFI_ABILITY_SNOWWARNING;
             /* ... and Rough Skin, Poison Touch, Thermal Exchange (step G14) and Sticky Hold (step G16): engine rows that the turn code runs by id. */
             const bool engine = id == DFI_ABILITY_ROUGHSKIN || id == DFI_ABILITY_POISONTOUCH ||
-                                id == DFI_ABILITY_THERMALEXCHANGE || id == DFI_ABILITY_STICKYHOLD;
+                                id == DFI_ABILITY_THERMALEXCHANGE || id == DFI_ABILITY_STICKYHOLD ||
+                                id == DFI_ABILITY_TRACE /* step AC1: Trace, by id too */;
             DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, (setter || engine) ? 1u : 0u);
             DF_CHECK_EQ_U64(&t, dfi_pool_ability_family[id].family,
                             setter ? DFI_ABILITY_FAMILY_WEATHER_SETTER : DFI_ABILITY_FAMILY_NONE);
@@ -1186,6 +1187,25 @@ int main(void)
             marked_count += dfi_support.moves[id] != 0u ? 1u : 0u;
         }
         DF_CHECK_EQ_U64(&t, marked_count, 48u);
+    }
+
+    /* Step AC1: Trace copies the ability of a foe unless that has the pin's notrace flag. The turn code excludes only
+     * Trace itself (dfi_trace in src/combat/turn.c), which is right while no other ability with the flag is marked: the
+     * nine abilities of the pinned data with the flag (tools/datagen/pool_families.js checks the list against the pin)
+     * are all unmarked but Trace. Marking one of them needs its place in that rule. */
+    {
+        static const char *const notrace[] = {"disguise", "forecast", "hungerswitch", "illusion", "imposter", "receiver",
+                                              "stancechange", "trace", "zerotohero"};
+        uint32_t found = 0u;
+        for (uint32_t id = 0u; id < DFI_POOL_ABILITY_COUNT; ++id) {
+            for (size_t k = 0u; k < sizeof notrace / sizeof notrace[0]; ++k) {
+                if (strcmp(dfi_pool_ability_names[id], notrace[k]) == 0) {
+                    found += 1u;
+                    DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, id == DFI_ABILITY_TRACE ? 1u : 0u);
+                }
+            }
+        }
+        DF_CHECK_EQ_U64(&t, found, 9u);
     }
 
     /* Step G12: Fairy Aura and Flower Veil. The engine reads them by id (no family column: one legal holder each);
