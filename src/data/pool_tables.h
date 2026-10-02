@@ -113,15 +113,33 @@ typedef struct dfi_ability_family {
     uint8_t param;  /* ATE, PINCH: DFI_TYPE_*; WEATHER_SETTER: DFI_FAMILY_WEATHER_*; TERRAIN_SETTER: DFI_FAMILY_TERRAIN_* */
 } dfi_ability_family;
 
+/* ---- the moves and abilities of each forme (decision 0015 section 2) ----
+ * For a base forme: the pool moves it learns (the Champions learnsets, every
+ * entry "9M", so learnable means listed; one bit per pool move: bit
+ * (move modulo 8) of byte (move divided by 8)) and its legal abilities (the pokedex's, the ones
+ * the validator allows in Champions, cut to the pool abilities, in slot
+ * order). A Mega forme is never set up: no learnable move, its one ability.
+ * Under the POOL kinds a member's moves and ability are chosen from these;
+ * under the other kinds the forme's set (the row of dfi_pool_formes). */
+#define DFI_POOL_LEARN_BYTES 7u
+#define DFI_POOL_FORME_ABILITIES_MAX 3u
+
+typedef struct dfi_forme_legal {
+    uint8_t learnable[DFI_POOL_LEARN_BYTES];
+    uint8_t ability_count; /* the first ability_count entries of abilities[] */
+    uint8_t abilities[DFI_POOL_FORME_ABILITIES_MAX]; /* ability ids, then DFI_CLOSURE_NONE */
+} dfi_forme_legal;
+
 extern const dfi_forme_data dfi_pool_formes[DFI_POOL_FORME_COUNT];
 extern const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT];
 extern const dfi_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT];
 extern const uint8_t dfi_pool_type_immunity[DFI_TYPE_COUNT]; /* DFI_IMMUNE_* bits */
 extern const dfi_item_family dfi_pool_item_family[DFI_POOL_ITEM_COUNT];
 extern const dfi_ability_family dfi_pool_ability_family[DFI_POOL_ABILITY_COUNT];
+extern const dfi_forme_legal dfi_pool_forme_legal[DFI_POOL_FORME_COUNT];
 
 /* SHA-256 of the canonical pool bytes (written by the generator). */
-#define DFI_POOL_CANONICAL_SIZE 2654u
+#define DFI_POOL_CANONICAL_SIZE 2907u
 extern const uint8_t dfi_pool_table_hash[32];
 /* The canonical bytes of the closure layout over the first `formes`, `moves`,
  * `items` and `abilities` rows of the tables above, with every immunity byte
@@ -133,7 +151,8 @@ extern const uint8_t dfi_pool_table_hash[32];
 size_t dfi_pool_canonical_bytes_of(uint8_t *out, size_t capacity, uint32_t formes, uint32_t moves, uint32_t items,
                                    uint32_t abilities, uint32_t immunity_mask);
 /* The canonical pool bytes: every row, every immunity bit, then the family
- * column of every item and of every ability (family, parameter). */
+ * column of every item and of every ability (family, parameter), then for
+ * every forme its learnable bytes, ability count and ability ids. */
 size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity);
 
 #endif

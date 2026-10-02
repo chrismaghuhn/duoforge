@@ -9,10 +9,13 @@
  * invariant) in a state, which a decode reports as E_MALFORMED. The setup
  * rules are the closure rules over the pool tables with the certified
  * profile (register 6, bring 4) under POOL; POOL_DEV is as the other DEV
- * kinds: also No Ability and four to six registered members. Every new item
- * and ability is unmarked in the support manifest, so a setup that uses
- * one fails with E_UNSUPPORTED after all validation, and so does every step
- * of a battle that holds one.
+ * kinds: also No Ability and four to six registered members. The one change
+ * is the set rule: under the POOL kinds a member's moves are ones its forme
+ * learns and its ability one of the forme's legal abilities, in a setup and
+ * in the member invariant; the four other kinds keep the forme's set. Every
+ * new item and ability is unmarked in the support manifest, so a setup that
+ * uses one fails with E_UNSUPPORTED after all validation, and so does every
+ * step of a battle that holds one.
  *
  * The fingerprints are those of tools/state_model/state_v3_model.py (the
  * contexts KP and KPD).
@@ -35,8 +38,8 @@
 #include "support/pool.h"
 #include "support/team_c.h"
 
-#define FP_KP_HEX "4471a32042a7e02500b60ffe8ebf35bd1fcb8c5a8b69268a6a94db6978c74b38"
-#define FP_KPD_HEX "447e53626ff7eb1d8cdfc5b6140e5f568df2df43c8d430940d774aee2cc41b3c"
+#define FP_KP_HEX "79709ac005dd63bde287a2c5dd9e29bee9ee39739002d221e7b6f76e7d919f35"
+#define FP_KPD_HEX "21e0157a99292ce41716405915fa05c635b341285031d80c1a53f69f3f95de42"
 
 /* The public create under `ctx` gives `gated`, and the build without the
  * support gate `ungated`. */
@@ -326,7 +329,7 @@ int main(void)
     s.sides[1].members[2].ability = DFI_ABILITY_AERILATE + 1u; /* the Mega forme's ability */
     invalid(&t, kp, &s, "Salamence with Aerilate");
     FRESH();
-    s.sides[1].members[4].moves[0].move_id = DFI_MOVE_CLOSECOMBAT; /* not in Kingambit's set */
+    s.sides[1].members[4].moves[0].move_id = DFI_MOVE_CLOSECOMBAT; /* Kingambit does not learn it */
     invalid(&t, kp, &s, "Kingambit with Close Combat");
     FRESH();
     s.sides[1].members[2].species_id = DFI_FORME_SALAMENCEMEGA;
@@ -370,17 +373,139 @@ int main(void)
     invalid(&t, k1, &s, "an extended item under CLOSURE");
     legal(&t, kc, &s, true, "an extended item under TEAM_C");
     legal(&t, kp, &s, true, "an extended item under POOL");
-    /* A pool ability is out of range everywhere for now: an ability must be
-     * the forme's own, and no forme of the pool has one of the new ones. */
+    /* A new ability is legal only for a forme that may have it: Rillaboom
+     * may have Overgrow (so that setup is legal and, as Overgrow is not
+     * marked, E_UNSUPPORTED), and none of the other four. Under the CLOSURE
+     * and TEAM_C kinds Rillaboom has Grassy Surge only. */
     {
-        static const uint32_t added[] = {DFI_ABILITY_PIXILATE, DFI_ABILITY_REFRIGERATE, DFI_ABILITY_OVERGROW,
-                                         DFI_ABILITY_TORRENT, DFI_ABILITY_SWARM};
+        static const struct {
+            uint32_t ability;
+            bool legal_for_rillaboom;
+            const char *what;
+        } added[] = {
+            {DFI_ABILITY_PIXILATE, false, "Pixilate"}, {DFI_ABILITY_REFRIGERATE, false, "Refrigerate"},
+            {DFI_ABILITY_OVERGROW, true, "Overgrow"},  {DFI_ABILITY_TORRENT, false, "Torrent"},
+            {DFI_ABILITY_SWARM, false, "Swarm"},
+        };
         for (size_t i = 0u; i < sizeof added / sizeof added[0]; ++i) {
             s = teams;
-            s.sides[0].members[0].ability = added[i] + 1u;
-            invalid(&t, kp, &s, "a pool ability on a forme without it");
+            s.sides[0].members[0].ability = added[i].ability + 1u;
+            if (added[i].legal_for_rillaboom) {
+                legal(&t, kp, &s, false, "Rillaboom with Overgrow (legal, unmarked)");
+                legal(&t, kq, &s, false, "Rillaboom with Overgrow (legal, unmarked, dev)");
+            } else {
+                invalid(&t, kp, &s, added[i].what);
+                invalid(&t, kq, &s, added[i].what);
+            }
             invalid(&t, kc, &s, "a pool ability under TEAM_C");
+            invalid(&t, kd, &s, "a pool ability under TEAM_C_DEV");
             invalid(&t, k1, &s, "a pool ability under CLOSURE");
+            invalid(&t, k2, &s, "a pool ability under CLOSURE_DEV");
+        }
+    }
+
+    /* The set rule (decision 0015 section 2): under the POOL kinds a member's
+     * moves are ones its forme learns and its ability one of its legal
+     * abilities, as the real teams use them; the frozen kinds keep the set. */
+    {
+        /* Milotic of Team A with Protect for Hypnosis, and Golisopod of Team B
+         * with Sucker Punch for Drill Run: moves of the tables that are not
+         * in the set of their forme. Both are 50/50 species, so male as the
+         * owner states them; both mechanics are marked. */
+        s = teams;
+        s.sides[0].members[2].gender = DUOFORGE_GENDER_MALE;
+        s.sides[0].members[2].moves[3].move_id = DFI_MOVE_PROTECT;
+        legal(&t, kp, &s, true, "Milotic with Protect (learned, not in the set)");
+        legal(&t, kq, &s, true, "Milotic with Protect (dev)");
+        invalid(&t, k1, &s, "Milotic with Protect under CLOSURE");
+        invalid(&t, k2, &s, "Milotic with Protect under CLOSURE_DEV");
+        invalid(&t, kc, &s, "Milotic with Protect under TEAM_C");
+        invalid(&t, kd, &s, "Milotic with Protect under TEAM_C_DEV");
+        s = teams;
+        s.sides[1].members[1].gender = DUOFORGE_GENDER_MALE;
+        s.sides[1].members[1].moves[2].move_id = DFI_MOVE_SUCKERPUNCH;
+        legal(&t, kp, &s, true, "Golisopod with Sucker Punch");
+        legal(&t, kq, &s, true, "Golisopod with Sucker Punch (dev)");
+        invalid(&t, k1, &s, "Golisopod with Sucker Punch under CLOSURE");
+        invalid(&t, kc, &s, "Golisopod with Sucker Punch under TEAM_C");
+        invalid(&t, kd, &s, "Golisopod with Sucker Punch under TEAM_C_DEV");
+        /* One move is enough, and a move the forme does not learn is not. */
+        s = teams;
+        s.sides[0].members[2].move_count = 1u;
+        s.sides[0].members[2].moves[0].move_id = DFI_MOVE_PROTECT;
+        for (uint32_t k = 1u; k < 4u; ++k) {
+            s.sides[0].members[2].moves[k].move_id = 0u;
+        }
+        legal(&t, kp, &s, true, "one learned move");
+        s.sides[0].members[2].moves[0].move_id = DFI_MOVE_ELECTROSHOT; /* Archaludon's */
+        invalid(&t, kp, &s, "Milotic with Electro Shot");
+        invalid(&t, kq, &s, "Milotic with Electro Shot (dev)");
+        s = teams;
+        s.sides[0].members[2].moves[3].move_id = DFI_MOVE_STRUGGLE; /* nobody learns it */
+        invalid(&t, kp, &s, "Struggle as a move");
+        s.sides[0].members[2].moves[3].move_id = DFI_POOL_MOVE_COUNT; /* a move beyond the tables */
+        invalid(&t, kp, &s, "a move beyond the tables");
+        s.sides[0].members[2].moves[3].move_id = 0xFFFFFFFFu;
+        invalid(&t, kp, &s, "move id 2^32 - 1");
+        s = teams;
+        s.sides[0].members[2].moves[3].move_id = DFI_MOVE_COIL; /* a repeated move */
+        invalid(&t, kp, &s, "a repeated move");
+        s = teams;
+        s.sides[0].members[2].moves[3].move_id = DFI_MOVE_PROTECT;
+        s.sides[0].members[2].moves[3].pp_max = 8u; /* derived by the engine */
+        s.sides[0].members[2].gender = DUOFORGE_GENDER_MALE;
+        invalid(&t, kp, &s, "pp_max given");
+        /* Kingambit (Team C) learns Swords Dance, not Fake Out. */
+        FRESH();
+        s.sides[1].members[4].moves[1].move_id = DFI_MOVE_SWORDSDANCE; /* Kingambit learns it */
+        legal(&t, kp, &s, true, "Kingambit with Swords Dance");
+        s.sides[1].members[4].moves[1].move_id = DFI_MOVE_FAKEOUT;
+        invalid(&t, kp, &s, "Kingambit with Fake Out");
+        /* Incineroar may have Blaze as well as Intimidate: Blaze is marked, so
+         * that is legal and supported under POOL, and the set's ability only
+         * under TEAM_C. */
+        FRESH();
+        s.sides[1].members[1].ability = DFI_ABILITY_BLAZE + 1u;
+        legal(&t, kp, &s, true, "Incineroar with Blaze (legal, marked)");
+        legal(&t, kq, &s, true, "Incineroar with Blaze (dev)");
+        invalid(&t, kc, &s, "Incineroar with Blaze under TEAM_C");
+        invalid(&t, kd, &s, "Incineroar with Blaze under TEAM_C_DEV");
+        s.sides[1].members[1].ability = DFI_ABILITY_DROUGHT + 1u; /* Charizard-Mega-Y's: not Incineroar's */
+        invalid(&t, kp, &s, "Incineroar with Drought");
+        s.sides[1].members[1].ability = DFI_ABILITY_INTIMIDATE + 1u; /* its set's */
+        legal(&t, kp, &s, true, "Incineroar with Intimidate");
+        /* No Ability: under the DEV kind only, with any learned move. */
+        s.sides[1].members[1].ability = 0u;
+        invalid(&t, kp, &s, "No Ability under POOL");
+        s.sides[1].members[1].moves[2].move_id = DFI_MOVE_SNARL; /* learned, not in the set */
+        legal(&t, kq, &s, true, "No Ability under POOL_DEV with a learned move");
+        /* A Mega-capable base forme takes the base forme's moves: Staraptor
+         * with Helping Hand for Tailwind. Mega Evolution keeps them. */
+        s = teams;
+        s.sides[0].members[1].moves[2].move_id = DFI_MOVE_HELPINGHAND;
+        legal(&t, kp, &s, true, "Staraptor with Helping Hand");
+        invalid(&t, k1, &s, "Staraptor with Helping Hand under CLOSURE");
+        duoforge_battle *w = df_make_battle(kp, &s);
+        duoforge_decision_bundle bd;
+        team_bundle(&bd, w);
+        step_expect(&t, kp, w, &bd, DUOFORGE_OK, "team selection with Helping Hand");
+        turn_bundle(&bd, w);
+        bd.responses[0].slots[1].mega = 1u; /* Staraptor mega evolves into Brave Bird */
+        step_expect(&t, kp, w, &bd, DUOFORGE_OK, "Mega Evolution with a learned move");
+        DF_CHECK(&t, w->sides[0].members[1].is_mega == 1u && duoforge_battle_check(kp, w) == DUOFORGE_OK);
+        duoforge_battle_destroy(w);
+        /* A legal ability that is not marked stops at the gate, in the
+         * state as well: Rillaboom with Overgrow. */
+        s = teams;
+        s.sides[0].members[0].ability = DFI_ABILITY_OVERGROW + 1u;
+        w = NULL;
+        DF_CHECK(&t, dfi_battle_create_ungated(kp, &s, &w) == DUOFORGE_OK && w != NULL);
+        if (w != NULL) {
+            expect_inv(&t, kp, w, DFI_INV_NONE, "Overgrow on Rillaboom");
+            expect_decode(&t, kp, w, DUOFORGE_OK, DFI_INV_NONE, "Overgrow on Rillaboom");
+            team_bundle(&bd, w);
+            step_expect(&t, kp, w, &bd, DUOFORGE_E_UNSUPPORTED, "team selection with Overgrow");
+            duoforge_battle_destroy(w);
         }
     }
 
@@ -417,10 +542,9 @@ int main(void)
         s = teams;
         legal(&t, kp, &s, true, "the same teams without the pool item");
 
-        /* An ability is bounded by its forme, and no forme carries a new
-         * one yet, so the API cannot reach the abilities' gate; the gate
-         * itself does reject each: no mark, no support, with the full
-         * manifest as the control. */
+        /* The abilities: only Rillaboom may have a new one through the API
+         * (Overgrow, above); the gate function itself rejects each of the
+         * five: no mark, no support, with the full manifest as the control. */
         static const uint32_t added[] = {DFI_ABILITY_PIXILATE, DFI_ABILITY_REFRIGERATE, DFI_ABILITY_OVERGROW,
                                          DFI_ABILITY_TORRENT, DFI_ABILITY_SWARM};
         for (size_t i = 0u; i < sizeof added / sizeof added[0]; ++i) {
@@ -521,6 +645,68 @@ int main(void)
         w->sides[0].members[0].species_id = (uint16_t)DFI_POOL_FORME_COUNT;
         expect_inv(&t, kp, w, DFI_INV_SPECIES_RANGE, "a species beyond the pool");
         duoforge_battle_destroy(w);
+    }
+
+    /* The member invariant follows the set rule: a move the forme learns is
+     * valid in a POOL state and not in the CLOSURE and TEAM_C ones; a move it
+     * does not learn is out of range everywhere; a legal ability outside the
+     * set is valid under POOL only (member 3 of Team A, Ceruledge, and the
+     * Incineroar of Team C). */
+    {
+        const dfi_move_data *protect = &dfi_pool_moves[DFI_MOVE_PROTECT];
+        const dfi_move_data *electro = &dfi_pool_moves[DFI_MOVE_ELECTROSHOT];
+        duoforge_battle_setup mixed;
+        const duoforge_context *kinds[] = {k1, k2, kc, kd, kp, kq};
+        for (size_t i = 0u; i < sizeof kinds / sizeof kinds[0]; ++i) {
+            const bool pool_kind = kinds[i] == kp || kinds[i] == kq;
+            duoforge_battle *w = df_make_battle(kinds[i], &teams);
+            dfi_member *milotic = &w->sides[0].members[2];
+            const uint8_t was_move = (uint8_t)milotic->moves[3].move_id;
+            const uint8_t was_pp = milotic->moves[3].pp_max;
+            milotic->moves[3].move_id = DFI_MOVE_PROTECT;
+            milotic->moves[3].pp_max = protect->pp_max;
+            milotic->moves[3].pp = protect->pp_max;
+            expect_inv(&t, kinds[i], w, pool_kind ? DFI_INV_NONE : DFI_INV_MEMBER_EXTRA, "Protect on Milotic");
+            expect_decode(&t, kinds[i], w, pool_kind ? DUOFORGE_OK : DUOFORGE_E_MALFORMED,
+                          pool_kind ? DFI_INV_NONE : DFI_INV_MEMBER_EXTRA, "Protect on Milotic");
+            milotic->moves[3].move_id = DFI_MOVE_ELECTROSHOT;
+            milotic->moves[3].pp_max = electro->pp_max;
+            milotic->moves[3].pp = electro->pp_max;
+            expect_inv(&t, kinds[i], w, DFI_INV_MEMBER_EXTRA, "Electro Shot on Milotic");
+            milotic->moves[3].move_id = DFI_MOVE_STRUGGLE;
+            expect_inv(&t, kinds[i], w, DFI_INV_MEMBER_EXTRA, "Struggle as a move");
+            milotic->moves[3].move_id = DFI_MOVE_COIL; /* a repeated move */
+            milotic->moves[3].pp_max = milotic->moves[1].pp_max;
+            milotic->moves[3].pp = milotic->moves[1].pp_max;
+            expect_inv(&t, kinds[i], w, DFI_INV_MEMBER_EXTRA, "a repeated move");
+            milotic->moves[3].move_id = was_move;
+            milotic->moves[3].pp_max = was_pp;
+            milotic->moves[3].pp = was_pp;
+            expect_inv(&t, kinds[i], w, DFI_INV_NONE, "restored");
+            /* PP is a function of the move: Protect with another maximum. */
+            milotic->moves[3].move_id = DFI_MOVE_PROTECT;
+            milotic->moves[3].pp_max = (uint8_t)(protect->pp_max + 1u);
+            milotic->moves[3].pp = milotic->moves[3].pp_max;
+            expect_inv(&t, kinds[i], w, DFI_INV_MEMBER_EXTRA, "Protect with the wrong PP maximum");
+            duoforge_battle_destroy(w);
+        }
+        mixed = teams;
+        df_put_team_c(&mixed.sides[1]);
+        for (size_t i = 0u; i < sizeof kinds / sizeof kinds[0]; ++i) {
+            const bool pool_kind = kinds[i] == kp || kinds[i] == kq;
+            if (kinds[i] == k1 || kinds[i] == k2) {
+                continue; /* Team C is out of range */
+            }
+            duoforge_battle *w = df_make_battle(kinds[i], &mixed);
+            dfi_member *incineroar = &w->sides[1].members[1];
+            incineroar->ability = (uint8_t)(DFI_ABILITY_BLAZE + 1u);
+            expect_inv(&t, kinds[i], w, pool_kind ? DFI_INV_NONE : DFI_INV_MEMBER_EXTRA, "Blaze on Incineroar");
+            incineroar->ability = (uint8_t)(DFI_ABILITY_DROUGHT + 1u);
+            expect_inv(&t, kinds[i], w, DFI_INV_MEMBER_EXTRA, "Drought on Incineroar");
+            incineroar->ability = (uint8_t)(DFI_ABILITY_INTIMIDATE + 1u);
+            expect_inv(&t, kinds[i], w, DFI_INV_NONE, "Intimidate on Incineroar");
+            duoforge_battle_destroy(w);
+        }
     }
 
     /* The values of Team C's mechanics under POOL, as under TEAM_C: poison

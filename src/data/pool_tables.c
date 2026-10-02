@@ -348,11 +348,102 @@ const dfi_ability_family dfi_pool_ability_family[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_SWARM] = {DFI_ABILITY_FAMILY_PINCH, DFI_TYPE_BUG},
 };
 
+/* The moves and abilities each forme may have (decision 0015 section 2). */
+const dfi_forme_legal dfi_pool_forme_legal[DFI_POOL_FORME_COUNT] = {
+    /* Rillaboom -- abilities: overgrow, grassysurge */
+    /*    learns: Wood Hammer, Grassy Glide, Fake Out, High Horsepower, Protect, Swords Dance, Focus Blast, */
+    /*    Snarl, Grass Knot, Hyper Voice */
+    [DFI_FORME_RILLABOOM] = {{0x8fu, 0x40u, 0x01u, 0x14u, 0x00u, 0x01u, 0x00u}, 2u, {DFI_ABILITY_OVERGROW, DFI_ABILITY_GRASSYSURGE, DFI_CLOSURE_NONE}},
+    /* Staraptor -- abilities: intimidate */
+    /*    learns: Brave Bird, Close Combat, Tailwind, Protect, Focus Blast, Heat Wave, Hurricane, */
+    /*    Helping Hand */
+    [DFI_FORME_STARAPTOR] = {{0xf0u, 0x00u, 0x01u, 0xc0u, 0x00u, 0x08u, 0x00u}, 1u, {DFI_ABILITY_INTIMIDATE, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /* Staraptor-Mega -- abilities: contrary */
+    /*    learns: nothing */
+    [DFI_FORME_STARAPTORMEGA] = {{0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u}, 1u, {DFI_ABILITY_CONTRARY, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /* Milotic -- abilities: competitive */
+    /*    learns: Protect, Muddy Water, Coil, Ice Beam, Hypnosis, Weather Ball, Iron Head, Dragon Pulse, */
+    /*    Light Screen, Helping Hand, Flip Turn */
+    [DFI_FORME_MILOTIC] = {{0x80u, 0x0fu, 0x50u, 0x01u, 0x04u, 0x08u, 0x02u}, 1u, {DFI_ABILITY_COMPETITIVE, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /* Ceruledge -- abilities: flashfire */
+    /*    learns: Close Combat, Protect, Bitter Blade, Shadow Sneak, Swords Dance, Shadow Ball, Iron Head, */
+    /*    Heat Wave, Reflect, Light Screen, Flare Blitz, Helping Hand */
+    [DFI_FORME_CERULEDGE] = {{0xa0u, 0x70u, 0x44u, 0x40u, 0x46u, 0x08u, 0x00u}, 1u, {DFI_ABILITY_FLASHFIRE, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /* Raichu -- abilities: lightningrod */
+    /*    learns: Fake Out, Protect, Zap Cannon, Focus Blast, Nasty Plot, Grass Knot, Reflect, */
+    /*    Light Screen, Helping Hand */
+    [DFI_FORME_RAICHU] = {{0x84u, 0x80u, 0x09u, 0x10u, 0x06u, 0x08u, 0x00u}, 1u, {DFI_ABILITY_LIGHTNINGROD, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /* Raichu-Mega-Y -- abilities: noguard */
+    /*    learns: nothing */
+    [DFI_FORME_RAICHUMEGAY] = {{0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u}, 1u, {DFI_ABILITY_NOGUARD, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /* Gholdengo -- abilities: goodasgold */
+    /*    learns: Protect, Focus Blast, Make It Rain, Shadow Ball, Nasty Plot, Iron Head, Psychic, Reflect, */
+    /*    Light Screen */
+    [DFI_FORME_GHOLDENGO] = {{0x80u, 0x00u, 0x4fu, 0x08u, 0x06u, 0x00u, 0x00u}, 1u, {DFI_ABILITY_GOODASGOLD, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /* Politoed -- abilities: drizzle */
+    /*    learns: Protect, Muddy Water, Ice Beam, Hypnosis, Focus Blast, Weather Ball, Psychic, */
+    /*    Hyper Voice, Helping Hand */
+    [DFI_FORME_POLITOED] = {{0x80u, 0x0du, 0x11u, 0x08u, 0x00u, 0x09u, 0x00u}, 1u, {DFI_ABILITY_DRIZZLE, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /* Golisopod -- abilities: emergencyexit */
+    /*    learns: Close Combat, Protect, Muddy Water, Ice Beam, Swords Dance, Focus Blast, Leech Life, */
+    /*    Iron Head, Drill Run, Snarl, Sucker Punch, Aqua Jet */
+    [DFI_FORME_GOLISOPOD] = {{0xa0u, 0x45u, 0xe1u, 0x04u, 0x00u, 0x20u, 0x01u}, 1u, {DFI_ABILITY_EMERGENCYEXIT, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /* Golisopod-Mega -- abilities: toughclaws */
+    /*    learns: nothing */
+    [DFI_FORME_GOLISOPODMEGA] = {{0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u}, 1u, {DFI_ABILITY_TOUGHCLAWS, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /* Archaludon -- abilities: stamina */
+    /*    learns: Protect, Swords Dance, Iron Head, Dragon Pulse, Electro Shot, Snarl, Reflect, */
+    /*    Light Screen, Draco Meteor */
+    [DFI_FORME_ARCHALUDON] = {{0x80u, 0x40u, 0x40u, 0x07u, 0x06u, 0x02u, 0x00u}, 1u, {DFI_ABILITY_STAMINA, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /* Farigiraf -- abilities: armortail */
+    /*    learns: High Horsepower, Protect, Shadow Ball, Nasty Plot, Iron Head, Psychic, Grass Knot, */
+    /*    Trick Room, Reflect, Light Screen, Hyper Voice, Helping Hand */
+    [DFI_FORME_FARIGIRAF] = {{0x88u, 0x00u, 0x4cu, 0x38u, 0x06u, 0x09u, 0x00u}, 1u, {DFI_ABILITY_ARMORTAIL, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /* Charizard -- abilities: blaze */
+    /*    learns: Protect, Swords Dance, Focus Blast, Weather Ball, Dragon Pulse, Heat Wave, Hurricane, */
+    /*    Flare Blitz, Helping Hand */
+    [DFI_FORME_CHARIZARD] = {{0x80u, 0x40u, 0x11u, 0xc1u, 0x40u, 0x08u, 0x00u}, 1u, {DFI_ABILITY_BLAZE, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /* Charizard-Mega-Y -- abilities: drought */
+    /*    learns: nothing */
+    [DFI_FORME_CHARIZARDMEGAY] = {{0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u}, 1u, {DFI_ABILITY_DROUGHT, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /* Grimmsnarl -- abilities: prankster */
+    /*    learns: Fake Out, Protect, Focus Blast, Nasty Plot, Leech Life, Spirit Break, Reflect, */
+    /*    Light Screen, Parting Shot, Sucker Punch */
+    [DFI_FORME_GRIMMSNARL] = {{0x84u, 0x00u, 0x29u, 0x00u, 0x0fu, 0x20u, 0x00u}, 1u, {DFI_ABILITY_PRANKSTER, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /* Sneasler -- abilities: unburden */
+    /*    learns: Fake Out, Close Combat, Protect, Swords Dance, Focus Blast, Shadow Ball, Nasty Plot, */
+    /*    Grass Knot, Dire Claw */
+    [DFI_FORME_SNEASLER] = {{0xa4u, 0x40u, 0x0du, 0x10u, 0x20u, 0x00u, 0x00u}, 1u, {DFI_ABILITY_UNBURDEN, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /* Incineroar -- abilities: blaze, intimidate */
+    /*    learns: Fake Out, Close Combat, Protect, Swords Dance, Focus Blast, Nasty Plot, Leech Life, */
+    /*    Iron Head, Snarl, Heat Wave, Parting Shot, Flare Blitz, Darkest Lariat, Helping Hand */
+    [DFI_FORME_INCINEROAR] = {{0xa4u, 0x40u, 0x69u, 0x44u, 0xc8u, 0x08u, 0x00u}, 2u, {DFI_ABILITY_BLAZE, DFI_ABILITY_INTIMIDATE, DFI_CLOSURE_NONE}},
+    /* Salamence -- abilities: intimidate */
+    /*    learns: Tailwind, Protect, Iron Head, Dragon Pulse, Heat Wave, Hurricane, Hyper Voice, */
+    /*    Draco Meteor, Helping Hand */
+    [DFI_FORME_SALAMENCE] = {{0xc0u, 0x00u, 0x40u, 0xc1u, 0x00u, 0x0bu, 0x00u}, 1u, {DFI_ABILITY_INTIMIDATE, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /* Salamence-Mega -- abilities: aerilate */
+    /*    learns: nothing */
+    [DFI_FORME_SALAMENCEMEGA] = {{0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u}, 1u, {DFI_ABILITY_AERILATE, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /* Indeedee-F -- abilities: psychicsurge */
+    /*    learns: Fake Out, Protect, Shadow Ball, Psychic, Trick Room, Reflect, Light Screen, Hyper Voice, */
+    /*    Follow Me, Helping Hand */
+    [DFI_FORME_INDEEDEEF] = {{0x84u, 0x00u, 0x04u, 0x28u, 0x06u, 0x0du, 0x00u}, 1u, {DFI_ABILITY_PSYCHICSURGE, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /* Kingambit -- abilities: defiant */
+    /*    learns: Protect, Swords Dance, Focus Blast, Iron Head, Snarl, Grass Knot, Kowtow Cleave, */
+    /*    Sucker Punch */
+    [DFI_FORME_KINGAMBIT] = {{0x80u, 0x40u, 0x41u, 0x14u, 0x00u, 0x30u, 0x00u}, 1u, {DFI_ABILITY_DEFIANT, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /* Basculegion -- abilities: adaptability */
+    /*    learns: Protect, Muddy Water, Ice Beam, Shadow Ball, Last Respects, Wave Crash, Aqua Jet, */
+    /*    Flip Turn */
+    [DFI_FORME_BASCULEGION] = {{0x80u, 0x05u, 0x04u, 0x00u, 0x00u, 0xc0u, 0x03u}, 1u, {DFI_ABILITY_ADAPTABILITY, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+};
+
 const uint8_t dfi_pool_table_hash[32] = {
-    0x43u, 0xc8u, 0x5eu, 0xd5u, 0x49u, 0x6fu, 0x48u, 0x1eu,
-    0xe5u, 0x98u, 0x30u, 0x92u, 0xa8u, 0x2cu, 0x76u, 0x5fu,
-    0xc4u, 0xadu, 0x20u, 0xceu, 0xffu, 0x3eu, 0xe6u, 0x58u,
-    0x79u, 0x30u, 0xfbu, 0xafu, 0xa3u, 0x79u, 0xd8u, 0xc0u,
+    0x33u, 0x98u, 0x34u, 0xfau, 0x89u, 0xc9u, 0x1bu, 0x20u,
+    0xacu, 0x6au, 0x5fu, 0xb6u, 0x0du, 0x7cu, 0xe6u, 0xcbu,
+    0xa6u, 0x86u, 0x45u, 0xd6u, 0x06u, 0x72u, 0x4cu, 0x18u,
+    0xdau, 0x98u, 0x0du, 0x0cu, 0x5eu, 0x7cu, 0x32u, 0x88u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)
@@ -464,6 +555,16 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity)
     for (uint32_t i = 0u; i < DFI_POOL_ABILITY_COUNT; ++i) {
         out[n++] = dfi_pool_ability_family[i].family;
         out[n++] = dfi_pool_ability_family[i].param;
+    }
+    for (uint32_t i = 0u; i < DFI_POOL_FORME_COUNT; ++i) {
+        const dfi_forme_legal *l = &dfi_pool_forme_legal[i];
+        for (uint32_t k = 0u; k < DFI_POOL_LEARN_BYTES; ++k) {
+            out[n++] = l->learnable[k];
+        }
+        out[n++] = l->ability_count;
+        for (uint32_t k = 0u; k < DFI_POOL_FORME_ABILITIES_MAX; ++k) {
+            out[n++] = l->abilities[k];
+        }
     }
     return n;
 }

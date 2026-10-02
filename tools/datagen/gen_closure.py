@@ -10,8 +10,9 @@ usage: python3 tools/datagen/gen_closure.py <pinned checkout> [--team-c | --pool
             exact prefix; the generator checks that before it writes.
   --pool    write src/data/pool_tables.{h,c} instead: the extended tables as
             the prefix, then the rows of the content expansion, with the
-            family columns of every item and ability (docs/decisions/0015).
-            Both prefixes are checked row by row before it writes.
+            family columns of every item and ability and the moves and
+            abilities that each forme may have (docs/decisions/0015). Both
+            prefixes are checked row by row before it writes.
   --check   do not write; exit 1 if the committed files differ.
 
 Offline tooling. It extracts static data only; every effect still needs a
@@ -1308,13 +1309,112 @@ def derive_family(src, champ, rid, expected, matchers, what):
 
 def load_legal_pool(repo):
     """The ids that TeamValidator accepted at the pin: docs/research/expansion/data/legal_pool.json, the output of
-    build_legal_pool.js (its Showdown commit and format are checked). duoforge.data.pool_families runs the pinned
-    validator on the pool again."""
+    build_legal_pool.js (its Showdown commit and format are checked), with the legal moves and abilities of every
+    species. duoforge.data.pool_families runs the pinned validator on the pool again."""
     with io.open(os.path.join(repo, LEGAL_POOL), encoding='utf-8') as fh:
         legal = json.load(fh)
     if legal['meta']['showdown_commit'] != PIN or legal['meta']['format_id'] != FORMAT_ID:
         fail('%s was not made at the pin for %s' % (LEGAL_POOL, FORMAT_ID))
-    return {'items': {i['id'] for i in legal['items']}, 'abilities': {a['id'] for a in legal['abilities']}}
+    return {'items': {i['id'] for i in legal['items']}, 'abilities': {a['id'] for a in legal['abilities']},
+            'species': {sp['id']: sp for sp in legal['species']}}
+
+
+# The legal moves and abilities of a forme (decision 0015 section 2). A forme declares up to three abilities (0, 1 and
+# the hidden one); the event-only ones are not legal.
+FORME_ABILITIES_MAX = 3
+LEARNSET_ENTRY = re.compile(r'\t\t\t(\w+): \["9M"\],')
+
+
+def learnset_moves(learn, fid):
+    """The moves of a forme's entry of data/mods/champions/learnsets.ts: one learnset block in which every entry is
+    "9M" (no event, egg or level-up source, as the research note found), so learnable means listed. Any other shape
+    fails; it never guesses."""
+    e = learn.entry(fid)
+    if e is None:
+        fail('%s has no champions learnset' % fid)
+    body = e[2]
+    if len(body) < 4 or body[1] != '\t\tlearnset: {' or body[-2] != '\t\t},' or body[-1] != '\t},':
+        fail('%s: the champions learnset entry is not a single learnset block' % fid)
+    moves = []
+    for line in body[2:-2]:
+        m = LEARNSET_ENTRY.fullmatch(line)
+        if m is None:
+            fail('%s: a learnset line that is not "9M": %s' % (fid, line.strip()))
+        moves.append(m.group(1))
+    if len(set(moves)) != len(moves):
+        fail('%s: a move twice in the champions learnset' % fid)
+    return set(moves)
+
+
+def ability_released(abil_ts, champ_abil, aid):
+    """Fails for an ability that the pin tags as not released (isNonstandard) unless the Champions mod releases it."""
+    e = abil_ts.entry(aid)
+    if e is None:
+        fail('ability %s not found in %s' % (aid, abil_ts.rel))
+    f = fields(e[2])
+    if 'isNonstandard' in f:
+        ce = champ_abil.entry(aid)
+        cf = fields(ce[2]) if ce is not None else {}
+        if 'isNonstandard' not in cf or scalar(cf['isNonstandard'][1]) != 'null':
+            fail('ability %s is tagged %s' % (aid, scalar(f['isNonstandard'][1])))
+
+
+def wrap_names(head, names, width=100):
+    """Comment lines that hold `head` and then the names, wrapped between names, never inside one."""
+    lines, line = [], head
+    for i, name in enumerate(names):
+        piece = name + (',' if i + 1 < len(names) else '')
+        if len(line) + 1 + len(piece) > width and line != head:
+            lines.append(line)
+            line = '   ' + piece
+        else:
+            line += ' ' + piece
+    lines.append(line)
+    return lines
+
+
+def forme_legal(formes, pool_moves, pool_abilities, learn, legal_species, abil_ts, champ_abil):
+    """Per forme: the pool moves it learns (a bitset over pool_moves, bit i of byte i / 8) and its legal abilities (ids
+    over pool_abilities, in the pokedex's slot order). The abilities are the declared ones that the validator allows
+    in Champions, cut to the pool; a base forme must keep its set's ability, a Mega forme exactly its own, and an ability
+    that the pin does not release fails (Lucario-Mega-Z's Aura Guard). The moves are the learnset's, and they must be
+    exactly the pool moves that the validator accepts for the species. A Mega forme is never set up: no moves."""
+    nbytes = (len(pool_moves) + 7) // 8
+    ability_index = {a: i for i, a in enumerate(pool_abilities)}
+    out = []
+    for fo in formes:
+        rec = legal_species.get(fo['id'])
+        if rec is None:
+            fail('%s is not a species of %s' % (fo['id'], LEGAL_POOL))
+        abilities = []
+        for aid in fo['abilities']:
+            if aid in rec['abilities_legal']:
+                if fo['is_mega'] or aid in ability_index:
+                    ability_released(abil_ts, champ_abil, aid)
+                if aid in ability_index:
+                    abilities.append(ability_index[aid])
+        if fo['is_mega']:
+            if abilities != [fo['ability']] or len(fo['abilities']) != 1:
+                fail('%s: a Mega forme must have exactly its one legal ability in the pool' % fo['id'])
+            learnable = set()
+        else:
+            if fo['ability'] not in abilities:
+                fail('%s: its set ability is not one of its legal abilities' % fo['id'])
+            if len(abilities) > FORME_ABILITIES_MAX:
+                fail('%s: more than %d legal abilities' % (fo['id'], FORME_ABILITIES_MAX))
+            learnable = learnset_moves(learn, fo['id']) & set(pool_moves)
+            legal_moves = set(rec['moves']) & set(pool_moves)
+            if learnable != legal_moves:
+                fail('%s: the learnset and the validator disagree on %s' % (
+                    fo['id'], sorted(learnable ^ legal_moves)))
+            if not {pool_moves[k] for k in fo['set_moves']} <= learnable:
+                fail('%s: a move of its set is not learnable' % fo['id'])
+        bits = [0] * nbytes
+        for i, m in enumerate(pool_moves):
+            if m in learnable:
+                bits[i // 8] |= 1 << (i % 8)
+        out.append({'learnable': bits, 'abilities': abilities, 'moves': [m for m in pool_moves if m in learnable]})
+    return out
 
 
 def item_param(family, fact):
@@ -1340,6 +1440,7 @@ def build_pool(root, repo, dx):
     family columns of every item and ability, the prefix included."""
     items_ts, champ_items = Source(root, 'data/items.ts'), Source(root, 'data/mods/champions/items.ts')
     abil_ts, champ_abil = Source(root, 'data/abilities.ts'), Source(root, 'data/mods/champions/abilities.ts')
+    learn = Source(root, 'data/mods/champions/learnsets.ts')
     legal = load_legal_pool(repo)
     items, abilities = list(dx['items']), list(dx['abilities'])
     for iid in POOL_ITEMS:
@@ -1386,7 +1487,10 @@ def build_pool(root, repo, dx):
         types = sorted(c['param'] for c in item_family if c['family'] == fam)
         if types != list(range(len(TYPES))):
             fail('the %s items do not cover each of the %d types exactly once' % (fam, len(TYPES)))
-    return dict(dx, items=items, abilities=abilities, item_family=item_family, ability_family=ability_family)
+    legal_formes = forme_legal(dx['formes'], [m['id'] for m in dx['moves']], [a['id'] for a in abilities], learn,
+                               legal['species'], abil_ts, champ_abil)
+    return dict(dx, items=items, abilities=abilities, item_family=item_family, ability_family=ability_family,
+                forme_legal=legal_formes)
 
 
 def family_bytes(d):
@@ -1398,10 +1502,21 @@ def family_bytes(d):
     return bytes(b)
 
 
+def forme_legal_bytes(d):
+    """The legal moves and abilities of the formes in the canonical pool bytes: per forme, in id order, the learnable
+    bitset, the number of legal abilities and the ability ids (unused slots 0xFF)."""
+    b = bytearray()
+    for fl in d['forme_legal']:
+        b.extend(fl['learnable'])
+        b.append(len(fl['abilities']))
+        b.extend(fl['abilities'] + [0xFF] * (FORME_ABILITIES_MAX - len(fl['abilities'])))
+    return bytes(b)
+
+
 def canonical_pool(d):
     """The canonical pool bytes hashed into the context fingerprint of the POOL kinds: the closure layout over the
-    pool data, then the family columns."""
-    return canonical(d) + family_bytes(d)
+    pool data, then the family columns, then the legal moves and abilities of the formes."""
+    return canonical(d) + family_bytes(d) + forme_legal_bytes(d)
 
 
 def ext_prefix(dp, dx):
@@ -1425,6 +1540,8 @@ def check_pool_prefix(dp, dx, dc):
         fail('the pool tables do not start with the closure tables')
     if len(dp['item_family']) != len(dp['items']) or len(dp['ability_family']) != len(dp['abilities']):
         fail('a family column does not have one row per id')
+    if len(dp['forme_legal']) != len(dp['formes']):
+        fail('the legal moves and abilities do not have one row per forme')
 
 
 def render_pool(dp, dx):
@@ -1514,12 +1631,30 @@ typedef struct dfi_ability_family {
     uint8_t param;  /* ATE, PINCH: DFI_TYPE_*; WEATHER_SETTER: DFI_FAMILY_WEATHER_*; TERRAIN_SETTER: DFI_FAMILY_TERRAIN_* */
 } dfi_ability_family;
 
+/* ---- the moves and abilities of each forme (decision 0015 section 2) ----
+ * For a base forme: the pool moves it learns (the Champions learnsets, every
+ * entry "9M", so learnable means listed; one bit per pool move: bit
+ * (move modulo 8) of byte (move divided by 8)) and its legal abilities (the pokedex's, the ones
+ * the validator allows in Champions, cut to the pool abilities, in slot
+ * order). A Mega forme is never set up: no learnable move, its one ability.
+ * Under the POOL kinds a member's moves and ability are chosen from these;
+ * under the other kinds the forme's set (the row of dfi_pool_formes). */
+#define DFI_POOL_LEARN_BYTES %du
+#define DFI_POOL_FORME_ABILITIES_MAX %du
+
+typedef struct dfi_forme_legal {
+    uint8_t learnable[DFI_POOL_LEARN_BYTES];
+    uint8_t ability_count; /* the first ability_count entries of abilities[] */
+    uint8_t abilities[DFI_POOL_FORME_ABILITIES_MAX]; /* ability ids, then DFI_CLOSURE_NONE */
+} dfi_forme_legal;
+
 extern const dfi_forme_data dfi_pool_formes[DFI_POOL_FORME_COUNT];
 extern const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT];
 extern const dfi_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT];
 extern const uint8_t dfi_pool_type_immunity[DFI_TYPE_COUNT]; /* DFI_IMMUNE_* bits */
 extern const dfi_item_family dfi_pool_item_family[DFI_POOL_ITEM_COUNT];
 extern const dfi_ability_family dfi_pool_ability_family[DFI_POOL_ABILITY_COUNT];
+extern const dfi_forme_legal dfi_pool_forme_legal[DFI_POOL_FORME_COUNT];
 
 /* SHA-256 of the canonical pool bytes (written by the generator). */
 #define DFI_POOL_CANONICAL_SIZE %du
@@ -1534,12 +1669,14 @@ extern const uint8_t dfi_pool_table_hash[32];
 size_t dfi_pool_canonical_bytes_of(uint8_t *out, size_t capacity, uint32_t formes, uint32_t moves, uint32_t items,
                                    uint32_t abilities, uint32_t immunity_mask);
 /* The canonical pool bytes: every row, every immunity bit, then the family
- * column of every item and of every ability (family, parameter). */
+ * column of every item and of every ability (family, parameter), then for
+ * every forme its learnable bytes, ability count and ability ids. */
 size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity);
 
 #endif
 ''' % (PIN, len(dp['formes']), len(dp['moves']), defines('DFI_ABILITY', dp['abilities'], nx['abilities']),
-       len(dp['abilities']), defines('DFI_ITEM', dp['items'], nx['items']), len(dp['items']), len(can))
+       len(dp['abilities']), defines('DFI_ITEM', dp['items'], nx['items']), len(dp['items']),
+       (len(dp['moves']) + 7) // 8, FORME_ABILITIES_MAX, len(can))
 
     def arr(vals):
         return '{' + ', '.join('%du' % v for v in vals) + '}'
@@ -1578,6 +1715,17 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity);
     for ab, col in zip(dp['abilities'], dp['ability_family']):
         c.append('    [DFI_ABILITY_%s] = {DFI_ABILITY_FAMILY_%s, %s},' % (ab['id'].upper(), col['family'],
                                                                          col['param_name']))
+    c += ['};', '', '/* The moves and abilities each forme may have (decision 0015 section 2). */',
+          'const dfi_forme_legal dfi_pool_forme_legal[DFI_POOL_FORME_COUNT] = {']
+    for fo, fl in zip(dp['formes'], dp['forme_legal']):
+        moves = [m['name'] for m in dp['moves'] if m['id'] in fl['moves']]
+        for line in (wrap_names('%s -- abilities:' % fo['name'], [dp['abilities'][a]['id'] for a in fl['abilities']]) +
+                     wrap_names('   learns:', moves or ['nothing'])):
+            c.append('    /* ' + line + ' */')
+        slots = ['DFI_ABILITY_' + dp['abilities'][a]['id'].upper() for a in fl['abilities']]
+        slots += ['DFI_CLOSURE_NONE'] * (FORME_ABILITIES_MAX - len(slots))
+        c.append('    [DFI_FORME_%s] = {{%s}, %du, {%s}},' % (
+            fo['id'].upper(), ', '.join('0x%02xu' % b for b in fl['learnable']), len(fl['abilities']), ', '.join(slots)))
     c += ['};', '', 'const uint8_t dfi_pool_table_hash[32] = {']
     hb = bytes.fromhex(digest)
     for i in range(0, 32, 8):
@@ -1691,6 +1839,16 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity)
     for (uint32_t i = 0u; i < DFI_POOL_ABILITY_COUNT; ++i) {
         out[n++] = dfi_pool_ability_family[i].family;
         out[n++] = dfi_pool_ability_family[i].param;
+    }
+    for (uint32_t i = 0u; i < DFI_POOL_FORME_COUNT; ++i) {
+        const dfi_forme_legal *l = &dfi_pool_forme_legal[i];
+        for (uint32_t k = 0u; k < DFI_POOL_LEARN_BYTES; ++k) {
+            out[n++] = l->learnable[k];
+        }
+        out[n++] = l->ability_count;
+        for (uint32_t k = 0u; k < DFI_POOL_FORME_ABILITIES_MAX; ++k) {
+            out[n++] = l->abilities[k];
+        }
     }
     return n;
 }

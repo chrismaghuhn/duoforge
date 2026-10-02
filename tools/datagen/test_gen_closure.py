@@ -3,9 +3,11 @@
 tables do not model must fail instead of being encoded as something else.
 The same for the family patterns of the pool tables (decision 0015): an item or
 ability that deviates from the one pattern of its family must fail, and so must
-one that follows a pattern without being listed as a member. The texts copy the
-pinned data/moves.ts, data/items.ts and data/abilities.ts layout, so no
-checkout is needed.
+one that follows a pattern without being listed as a member. And for the moves
+and abilities of the formes: a learnset that is not one block of "9M" entries,
+a learnset that the validator contradicts, an ability the pin does not release.
+The texts copy the pinned data/moves.ts, data/items.ts, data/abilities.ts and
+data/mods/champions/learnsets.ts layout, so no checkout is needed.
 
 usage: python3 tools/datagen/test_gen_closure.py
 """
@@ -286,6 +288,135 @@ class PoolFamilies(unittest.TestCase):
         every = gen_closure.POOL_ITEMS + gen_closure.POOL_ABILITIES
         self.assertEqual(len(every), len(set(every)))
         self.assertEqual((len(gen_closure.POOL_ITEMS), len(gen_closure.POOL_ABILITIES)), (33, 5))
+
+
+# ---- the learnable moves and the legal abilities of the formes ----
+def learnset(fid, *moves, after=()):
+    return entry(fid, 'learnset: {', *['\t%s: ["9M"],' % m for m in moves], '},', *after)
+
+
+class FormeLegal(unittest.TestCase):
+    POOL_MOVES = ['woodhammer', 'fakeout', 'protect']
+    POOL_ABILITIES = ['grassysurge', 'overgrow', 'megaability']
+    ABILITIES = (entry('grassysurge', 'name: "Grassy Surge",') + '\n' + entry('overgrow', 'name: "Overgrow",') + '\n' +
+                 entry('megaability', 'name: "Mega Ability",'))
+
+    def base(self, **extra):
+        # Set: Wood Hammer and Fake Out with Grassy Surge (pool ability 0); the pokedex declares Overgrow and Grassy Surge.
+        fo = {'id': 'rillaboom', 'is_mega': 0, 'ability': 0, 'abilities': ['overgrow', 'grassysurge'], 'set_moves': [0, 1]}
+        fo.update(extra)
+        return fo
+
+    def species(self, **extra):
+        rec = {'abilities_legal': ['overgrow', 'grassysurge'], 'moves': ['woodhammer', 'fakeout', 'protect', 'tackle']}
+        rec.update(extra)
+        return {'rillaboom': rec}
+
+    def run_one(self, formes, species, learn_text=None, abilities=None, champ='', pool_abilities=None):
+        learn = TextSource('data/mods/champions/learnsets.ts',
+                           learn_text if learn_text is not None else
+                           learnset('rillaboom', 'woodhammer', 'fakeout', 'protect', 'tackle'))
+        abil = TextSource('data/abilities.ts', abilities if abilities is not None else self.ABILITIES)
+        return gen_closure.forme_legal(formes, self.POOL_MOVES, pool_abilities or self.POOL_ABILITIES, learn, species, abil,
+                                       TextSource('data/mods/champions/abilities.ts', champ))
+
+    def refused(self, message, *args, **kwargs):
+        with self.assertRaises(SystemExit) as cm:
+            self.run_one(*args, **kwargs)
+        self.assertIn(message, str(cm.exception.code))
+
+    # The learnset.
+    def test_a_learnset_gives_its_moves(self):
+        learn = TextSource('data/mods/champions/learnsets.ts', learnset('rillaboom', 'woodhammer', 'tackle'))
+        self.assertEqual(gen_closure.learnset_moves(learn, 'rillaboom'), {'woodhammer', 'tackle'})
+
+    def test_a_learnset_that_is_not_one_block_of_9m_is_refused(self):
+        for what, text in (('level-up', learnset('rillaboom', 'woodhammer').replace('["9M"]', '["9L1"]')),
+                           ('two sources', learnset('rillaboom', 'woodhammer').replace('["9M"]', '["9M", "9S0"]')),
+                           ('a move twice', learnset('rillaboom', 'woodhammer', 'woodhammer')),
+                           ('another block', learnset('rillaboom', 'woodhammer', after=('eventData: [],',))),
+                           ('no block', entry('rillaboom', 'eventData: [],'))):
+            with self.subTest(what):
+                learn = TextSource('data/mods/champions/learnsets.ts', text)
+                with self.assertRaises(SystemExit):
+                    gen_closure.learnset_moves(learn, 'rillaboom')
+
+    def test_a_forme_without_a_learnset_is_refused(self):
+        learn = TextSource('data/mods/champions/learnsets.ts', learnset('other', 'woodhammer'))
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.learnset_moves(learn, 'rillaboom')
+        self.assertIn('rillaboom has no champions learnset', str(cm.exception.code))
+
+    # The moves and abilities of a base forme.
+    def test_the_moves_and_abilities_of_a_base_forme(self):
+        (fl,) = self.run_one([self.base()], self.species())
+        self.assertEqual(fl['learnable'], [0b111])  # one bit per pool move, in pool order
+        self.assertEqual(fl['moves'], ['woodhammer', 'fakeout', 'protect'])
+        self.assertEqual(fl['abilities'], [1, 0])  # Overgrow, Grassy Surge: the pokedex's slot order
+
+    def test_the_validator_filters_the_declared_abilities(self):
+        # A declared ability that the validator does not allow (Greninja's Battle Bond) is dropped; one outside the
+        # pool is dropped from the list.
+        fo = self.base(abilities=['overgrow', 'grassysurge', 'battlebond', 'reckless'])
+        (fl,) = self.run_one([fo], self.species(abilities_legal=['overgrow', 'grassysurge', 'reckless']),
+                             abilities=self.ABILITIES + '\n' + entry('reckless', 'name: "Reckless",'))
+        self.assertEqual(fl['abilities'], [1, 0])
+
+    def test_a_learnset_that_the_validator_contradicts_is_refused(self):
+        self.refused('rillaboom: the learnset and the validator disagree on [\'protect\']', [self.base()],
+                     self.species(moves=['woodhammer', 'fakeout', 'tackle']))
+        # The other way: the validator allows a move that the learnset does not list.
+        self.refused('the learnset and the validator disagree', [self.base()], self.species(),
+                     learn_text=learnset('rillaboom', 'woodhammer', 'fakeout', 'tackle'))
+
+    def test_a_set_that_is_not_legal_is_refused(self):
+        self.refused('a move of its set is not learnable', [self.base()],
+                     self.species(moves=['woodhammer', 'protect']),
+                     learn_text=learnset('rillaboom', 'woodhammer', 'protect'))
+        self.refused('its set ability is not one of its legal abilities', [self.base()],
+                     self.species(abilities_legal=['overgrow']))
+
+    def test_more_than_three_abilities_are_refused(self):
+        fo = self.base(abilities=['grassysurge', 'overgrow', 'megaability', 'x'])
+        species = self.species(abilities_legal=['grassysurge', 'overgrow', 'megaability', 'x'])
+        abilities = self.ABILITIES + '\n' + entry('x', 'name: "X",')
+        self.refused('more than 3 legal abilities', [fo], species, abilities=abilities,
+                     pool_abilities=self.POOL_ABILITIES + ['x'])
+        # The list is cut to the pool: a fourth ability outside it is no reason to refuse.
+        (fl,) = self.run_one([fo], species, abilities=abilities)
+        self.assertEqual(fl['abilities'], [0, 1, 2])
+
+    def test_a_forme_that_the_research_does_not_know_is_refused(self):
+        self.refused('rillaboom is not a species of', [self.base()], {})
+
+    # Mega formes.
+    def mega(self, **extra):
+        fo = {'id': 'rillaboommega', 'is_mega': 1, 'ability': 2, 'abilities': ['megaability'], 'set_moves': []}
+        fo.update(extra)
+        return fo
+
+    def mega_species(self, **extra):
+        rec = {'abilities_legal': ['megaability'], 'moves': []}
+        rec.update(extra)
+        return {'rillaboommega': rec}
+
+    def test_a_mega_forme_has_no_moves_and_its_one_ability(self):
+        (fl,) = self.run_one([self.mega()], self.mega_species())
+        self.assertEqual((fl['learnable'], fl['abilities'], fl['moves']), ([0], [2], []))
+
+    def test_a_mega_forme_with_two_abilities_or_none_in_the_pool_is_refused(self):
+        self.refused('a Mega forme must have exactly its one legal ability', [self.mega(abilities=['megaability', 'overgrow'])],
+                     self.mega_species(abilities_legal=['megaability', 'overgrow']))
+        self.refused('a Mega forme must have exactly its one legal ability', [self.mega()],
+                     self.mega_species(abilities_legal=[]))
+
+    def test_an_ability_that_the_pin_does_not_release_is_refused(self):
+        # Lucario-Mega-Z's Aura Guard: legal for the validator, tagged Future in the data. The Champions mod may release it.
+        future = self.ABILITIES.replace('name: "Mega Ability",', 'isNonstandard: "Future",\n\t\tname: "Mega Ability",')
+        self.refused('ability megaability is tagged Future', [self.mega()], self.mega_species(), abilities=future)
+        champ = entry('megaability', 'inherit: true,', 'isNonstandard: null,')
+        (fl,) = self.run_one([self.mega()], self.mega_species(), abilities=future, champ=champ)
+        self.assertEqual(fl['abilities'], [2])
 
 
 if __name__ == '__main__':

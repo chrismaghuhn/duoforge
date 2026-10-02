@@ -211,8 +211,9 @@ KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 # POOL contexts (decision 0015 section 2): the pool tables (the extended tables
 # followed by the rows of the expansion steps; still 23 formes and 50 moves) and
 # their hash, which tests/test_pool_tables.c recomputes from the pool canonical
-# bytes: the closure layout over the pool data, then the family columns.
-POOL_TABLE_HASH = bytes.fromhex('43c85ed5496f481ee5983092a82c765fc4ad20ceff3ee6587930fbafa379d8c0')
+# bytes: the closure layout over the pool data, then the family columns, then
+# the moves and abilities that each forme may have.
+POOL_TABLE_HASH = bytes.fromhex('339834fa89c91b20ac6a5fb60d7ce6cba68645d606724c18da980d0c5e7c3288')
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 
