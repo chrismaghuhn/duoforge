@@ -355,7 +355,6 @@ def convert_choice(text, side, state, roster_of, mid_turn=False):
             # Exit on one side with one reserve, Team C). mid_turn agrees with
             # the flag for fainted Pokemon and is kept for the callers.
             mon = state['sides'][side]['pokemon'][actives[slot]]
-            del mid_turn
             asked = state['sides'][side]['request'] != 'switch' or bool(mon.get('switch_flag'))
             cmds.append((3, 0, 0, 0, 0) if asked else (0, 0, 0, 0, 0))
         else:

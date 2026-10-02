@@ -247,6 +247,25 @@ class Library(unittest.TestCase):
         self.assertTrue(trace_to_c.is_team_c(ROOT, 'c01_team_c_profile'))
         self.assertFalse(trace_to_c.is_team_c(ROOT, 's2_turn_core_1'))
 
+    def test_pass_for_both_slots_converts_per_slot(self):
+        """A choice that passes both slots of a switch request: each slot is
+        asked when its Pokemon holds the switch flag (a fainted one, or a
+        standing one that keeps it), as for a single pass. The second pass once
+        raised UnboundLocalError. The state is made up: no committed battle
+        answers both slots with pass."""
+        asked, unasked = (3, 0, 0, 0, 0), (0, 0, 0, 0, 0)
+
+        def state(request, flags):
+            return {'sides': [{'request': request, 'active': [0, 1], 'pokemon': [{'switch_flag': f} for f in flags]}]}
+
+        for mid_turn in (False, True):  # the rule reads the flag; mid_turn is only kept for the callers
+            for request, flags, want in (('switch', (1, 0), [asked, unasked]), ('switch', (0, 1), [unasked, asked]),
+                                         ('switch', (1, 1), [asked, asked]), ('switch', (0, 0), [unasked, unasked]),
+                                         ('move', (0, 0), [asked, asked])):
+                with self.subTest(request=request, flags=flags, mid_turn=mid_turn):
+                    got = trace_to_c.convert_choice('pass, pass', 0, state(request, flags), [{}], mid_turn)
+                    self.assertEqual(got, ('slots', want))
+
     def test_conversion_error_is_a_system_exit_that_pickles(self):
         e = trace_to_c.ConversionError('some-rule', 'trace_to_c: some message', detail='some detail')
         self.assertIsInstance(e, SystemExit)
