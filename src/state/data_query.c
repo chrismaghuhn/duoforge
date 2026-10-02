@@ -12,6 +12,8 @@ _Static_assert(DFI_POOL_FORME_ABILITIES_MAX <= DUOFORGE_DATA_MAX_FORME_ABILITIES
 _Static_assert(DFI_POOL_MOVE_COUNT <= DUOFORGE_DATA_MAX_FORME_MOVES,
                "the pool has more moves than DUOFORGE_DATA_MAX_FORME_MOVES");
 
+_Static_assert(sizeof(duoforge_forme_info) == 60u, "duoforge_forme_info is 15 words, as the header says");
+
 /* The ids of a table under the kind. */
 static uint32_t dfi_table_count(const dfi_kind_limits *lim, uint32_t table)
 {
