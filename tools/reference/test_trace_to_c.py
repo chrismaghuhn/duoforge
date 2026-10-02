@@ -407,6 +407,59 @@ class Library(unittest.TestCase):
         self.assertIn(d, dropped)
         self.assertEqual((step['dropped'], len(step['tape']) + step['dropped']), (len(dropped), len(trace['steps'][k]['draws'])))
 
+    def test_heal_block_end_ties_are_kept_when_two_end_lines_show_their_order(self):
+        """Two Heal Blocks of holders of equal Speed that end in the same residual (g8_heal_block_tie_a and _b, the two
+        orders): the tie is a tape entry that states which line comes first (the lower position's: 0), the same
+        for the draw and for the lines. A tie of which fewer than two end (turn 1 of the same battles) is dropped, with the
+        step's log as the precondition; reaching the drop with two end lines, or without a log, is an error; a group of
+        three is refused, and a draw that contradicts the lines is an error and never an entry."""
+        for name in ('g8_heal_block_tie_a', 'g8_heal_block_tie_b'):
+            trace = json.load(open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json')))
+            kept, dropped = [], []
+            for k, step in enumerate(trace['steps']):
+                before = trace['start']['state'] if k == 0 else trace['steps'][k - 1]['state']
+                for d in step['draws']:
+                    if d['site'] != 'SPEED_TIE' or not all(g.startswith('H:healblock:') for g in d.get('group', ['x'])):
+                        continue
+                    entry = trace_to_c.heal_block_end_tie(d, step['log'])
+                    if entry is not None:
+                        kept.append((k, entry, d))
+                        with self.assertRaises(trace_to_c.ConversionError) as ctx:
+                            trace_to_c.drop_reason(d, before, step['state'], step['log'])
+                        self.assertEqual(ctx.exception.rule, 'heal-block-end-tie')
+                    else:
+                        dropped.append(k)
+                        self.assertEqual(trace_to_c.drop_reason(d, before, step['state'], step['log']),
+                                         'residual tie of Heal Block ends of which fewer than two end now')
+                        with self.assertRaises(trace_to_c.ConversionError) as ctx:
+                            trace_to_c.drop_reason(d, before, step['state'])
+                        self.assertEqual(ctx.exception.rule, 'heal-block-tie-log')
+            self.assertEqual(len(kept), 1, name)
+            self.assertEqual(len(dropped), 1, name)
+            k, entry, d = kept[0]
+            lines = [l for l in trace['steps'][k]['log'] if l.startswith('|-end|') and l.endswith('|move: Heal Block')]
+            self.assertEqual(len(lines), 2)
+            lower_first = lines[0].startswith('|-end|p1a')
+            self.assertEqual(entry, (trace_to_c.SITES['SPEED_TIE'], 0, 2, 0 if lower_first else 1), name)
+            # name a: the line of p1a is first, name b: the line of p2a
+            self.assertEqual(lower_first, name.endswith('_a'))
+            # The same draw with the lines in the other order contradicts the draw: an error, no entry.
+            flipped = [lines[1], lines[0]]
+            with self.assertRaises(trace_to_c.ConversionError) as ctx:
+                trace_to_c.heal_block_end_tie(d, flipped)
+            self.assertEqual(ctx.exception.rule, 'heal-block-end-order')
+            # Fewer than two end lines: no order shows, no entry.
+            self.assertIsNone(trace_to_c.heal_block_end_tie(d, lines[:1]))
+            self.assertIsNone(trace_to_c.heal_block_end_tie(d, []))
+            # Three holders in the group with two ending: refused.
+            three = dict(d, group=d['group'] + ['H:healblock:p1b:end'])
+            with self.assertRaises(trace_to_c.ConversionError) as ctx:
+                trace_to_c.heal_block_end_tie(three, trace['steps'][k]['log'])
+            self.assertEqual(ctx.exception.rule, 'heal-block-tie-size')
+            # A tie that is not of Heal Block ends is not this rule's.
+            self.assertIsNone(trace_to_c.heal_block_end_tie(dict(d, group=['H:protect:p1a:end', 'H:stall:p1a:end']),
+                                                            trace['steps'][k]['log']))
+
     def test_a_two_turn_lock_lasts_while_twoturnmove_stands(self):
         """Electro Shot's onTryMove removes the move's volatile on the locked turn and the recorder's `locked` is made of
         it, but twoturnmove stays until the residual. In the last step of d02 (Emergency Exit) and d03 (Parting Shot,

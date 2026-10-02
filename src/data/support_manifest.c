@@ -80,8 +80,8 @@
  * of a queued one) and Psychic Noise (Heal Block for two turns: every heal
  * of the holder refused, the heal-flag moves barred), which are secondary
  * kinds of the generic column plus the flags2 column, no longer handler ids
- * (seven remain); recorded as g8_throat_chop, g8_heal_block and
- * g8_heal_block_pair under the POOL kind. */
+ * (seven remain); recorded as g8_throat_chop, g8_heal_block,
+ * g8_heal_block_pair, g8_heal_block_tie_a and _b under the POOL kind. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,

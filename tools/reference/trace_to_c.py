@@ -41,7 +41,12 @@ checks its precondition and fails loudly otherwise:
                     both sides' same side condition running out in this
                     residual is kept instead: the tie orders their two end
                     lines, and the entry states which side's line comes
-                    first (the engine's draw; see side_end_tie)
+                    first (the engine's draw; see side_end_tie). Likewise two
+                    Heal Blocks (Psychic Noise) of holders of equal Speed
+                    that both end in the step are kept (their two -end lines
+                    show the order; see heal_block_end_tie); the tie of Heal
+                    Blocks of which fewer than two end shows no order and is
+                    dropped, which needs the step's log (drop_reason)
   SPEED_TIE event:Accuracy
                     only between No Guard handlers (data/abilities.ts noguard):
                     onAnyAccuracy returns true when its holder is the source
@@ -216,6 +221,46 @@ def side_end_tie(d, state):
     return (SITES['SPEED_TIE'], 0, 2, int(first[2][1]) - 1)
 
 
+def heal_block_end_tie(d, log):
+    """A residual tie of two Heal Blocks (Psychic Noise, order 20) of holders of equal Speed that both end in this step:
+    the shuffle of the two orders their `-end|X|move: Heal Block` lines, so the tie is kept like a side-end tie
+    (side_end_tie). The engine draws it after the callbacks of the residual and orders the pair by it; the entry
+    states the outcome: (SPEED_TIE, 0, 2, 0 when the line of the holder at the lower position comes first, else 1).
+    The precondition for keeping it is that both end lines are in the step's `log` (`log` is the step's protocol
+    lines): a tie of which fewer than two holders end shows no order (the drop rule for duration ties stays: None
+    here). The order that the draw states is checked against the order of the two lines, so a handler list that is
+    not what this assumes (the group is the pre-shuffle order: the shuffle keeps it when the draw is its start) is an
+    error and never a silent entry. More than two holders in the group, with two or more of them ending, is
+    refused (heal-block-tie-size): the longer shuffle is not modelled, and the engine refuses it as well.
+    None for any other draw."""
+    if d['site'] != 'SPEED_TIE' or d.get('context') != 'field:Residual':
+        return None
+    group = d['group']
+    parts = [g.split(':') for g in group]
+    if not parts or any(len(x) != 4 or x[0] != 'H' or x[1] != 'healblock' or x[3] != 'end' for x in parts):
+        return None
+    holders = [x[2] for x in parts]
+    shown = [line.split('|')[2].split(':')[0] for line in log
+             if line.startswith('|-end|') and line.endswith('|move: Heal Block')]
+    shown = [h for h in shown if h in holders]
+    if len(shown) < 2:
+        return None
+    if len(group) != 2:
+        raise ConversionError('heal-block-tie-size', 'trace_to_c: %d Heal Blocks of equal Speed with %d ending: %s'
+                              % (len(group), len(shown), group), detail=str(len(group)))
+    if d['hi'] - d['lo'] != 2 or d['lo'] != d['start']:
+        raise ConversionError('heal-block-end-shuffle', 'trace_to_c: unexpected Heal Block end shuffle %s' % d)
+    first, other = (parts[0], parts[1]) if d['value'] == d['start'] else (parts[1], parts[0])
+    if shown[0] != first[2]:
+        raise ConversionError('heal-block-end-order', 'trace_to_c: the draw of %s puts %s first but the lines say %s'
+                              % (group, first[2], shown[0]))
+
+    def flat(x):
+        return (int(x[2][1]) - 1) * 2 + 'ab'.index(x[2][2])
+
+    return (SITES['SPEED_TIE'], 0, 2, 0 if flat(first) < flat(other) else 1)
+
+
 def tie_effects(group):
     """The effect ids of the handler entries ('H:<effect>:<holder>:<cb|end>')
     of a tie group, sorted: the detail of the errors about such a tie."""
@@ -232,9 +277,10 @@ def choice_scarf_slots(state):
     return slots
 
 
-def drop_reason(d, state, after=None):
+def drop_reason(d, state, after=None, log=None):
     """Why draw `d` is not a tape entry, or None; `state` is the state before the step, `after` the one after
-    it (an entering Pokemon stands in its slot there)."""
+    it (an entering Pokemon stands in its slot there), `log` the step's protocol lines (needed for the residual tie of
+    Heal Block ends: it is dropped only when fewer than two end lines show its order)."""
     site, ctx, group = d['site'], d.get('context', ''), d.get('group')
     if site == 'TEAM_ORDER':
         return 'team-preview order'
@@ -278,6 +324,15 @@ def drop_reason(d, state, after=None):
             return 'switch-in order with at most one entry effect'
         return None  # the engine draws
     if site == 'SPEED_TIE' and ctx == 'field:Residual':
+        if all(g.startswith('H:healblock:') and g.endswith(':end') for g in group):
+            # Precondition of the drop: the order of the ends shows in no pair of lines. heal_block_end_tie keeps the
+            # tie when two of the holders end now, so reaching this with two end lines is a bug of the caller.
+            if log is None:
+                raise ConversionError('heal-block-tie-log', 'trace_to_c: a Heal Block end tie needs the step log: %s' % group)
+            if heal_block_end_tie(d, log) is not None:
+                raise ConversionError('heal-block-end-tie',
+                                      'trace_to_c: ending Heal Blocks reach drop_reason: %s' % group)
+            return 'residual tie of Heal Block ends of which fewer than two end now'
         if all(g.startswith('H:') and g.endswith(':end') for g in group):
             if side_end_tie(d, state) is not None:
                 raise ConversionError('side-end-tie',
@@ -899,9 +954,11 @@ def convert_battle(name, spec, trace, tables):
         dropped = 0
         for d in step['draws']:
             ends = side_end_tie(d, state)
+            if ends is None:
+                ends = heal_block_end_tie(d, step['log'])
             if ends is not None:
                 tape.append(ends)
-            elif drop_reason(d, state, step['state']) is None:
+            elif drop_reason(d, state, step['state'], step['log']) is None:
                 tape.append(tape_entry(d))
             else:
                 dropped += 1

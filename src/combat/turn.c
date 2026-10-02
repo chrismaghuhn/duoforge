@@ -3255,8 +3255,8 @@ static duoforge_status dfi_residual_events(dfi_run *r)
     /* Heal Block (order 20) and Throat Chop (order 22), duration handlers of a position's volatile (POOL tail): the
      * count goes down; at 0 Heal Block shows its end line (-end|X|move: Heal Block) and Throat Chop's is [silent].
      * Two Heal Blocks that end now come in the speed order of their holders; at equal speed the reference shuffles
-     * and draws, which the converter drops for duration handlers, so the engine cannot say which line is first:
-     * E_UNSUPPORTED, as for two White Herbs. */
+     * and draws, and the order shows in the two -end lines, so the converter keeps that tie (heal_block_end_tie)
+     * and the engine draws it (below). */
     {
         uint32_t ending[DFI_POSITIONS] = {0u, 0u, 0u, 0u};
         uint32_t ne = 0u;
@@ -3277,10 +3277,32 @@ static duoforge_status dfi_residual_events(dfi_run *r)
                 ending[j - 1u] = swap;
             }
         }
-        for (uint32_t i = 1u; i < ne; ++i) {
-            if (r->speed_seen[ending[i]] == r->speed_seen[ending[i - 1u]]) {
+        /* Holders of equal Speed: the reference's speedSort shuffles each such run (PRNG.shuffle, one draw
+         * random(start, start + 2) for a pair), and the two -end lines show the outcome, so the engine draws the
+         * SPEED_TIE in the same place (after the callbacks of the sort, before the side conditions) and orders the
+         * pair by it: 0 keeps the lower position first, 1 swaps. A run of three or four needs the longer shuffle,
+         * which no battle has needed: E_UNSUPPORTED, as before. */
+        for (uint32_t i = 0u; i < ne;) {
+            uint32_t j = i + 1u;
+            while (j < ne && r->speed_seen[ending[j]] == r->speed_seen[ending[i]]) {
+                ++j;
+            }
+            if (j - i > 2u) {
                 return DUOFORGE_E_UNSUPPORTED;
             }
+            if (j - i == 2u) {
+                uint32_t v = 0u;
+                st = dfi_draw(r->draws, DFI_SITE_SPEED_TIE, 0u, 2u, &v);
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
+                if (v == 1u) {
+                    const uint32_t swap = ending[i];
+                    ending[i] = ending[i + 1u];
+                    ending[i + 1u] = swap;
+                }
+            }
+            i = j;
         }
         for (uint32_t i = 0u; i < ne; ++i) {
             duoforge_event e = dfi_event_make(DUOFORGE_EVENT_VOLATILE_END, ending[i]);

@@ -11,8 +11,8 @@
  *
  * Also: dfi_place and dfi_vacate clear the position's tail and the occupant's Soak type (a switch ends every
  * volatile), a lockout or a block on a position of the other side is not touched, and two Heal Blocks that end in
- * one residual at equal Speed are refused (E_UNSUPPORTED, the state not touched): the reference draws their order,
- * which the converter drops for duration handlers, so the engine cannot say it.
+ * one residual at equal Speed are ordered by a SPEED_TIE draw (the reference shuffles them and the two -end lines
+ * show the outcome); both orders are tested, against the reference in the recorded tie_a and tie_b battles.
  */
 #include <stdio.h>
 #include <string.h>
@@ -295,46 +295,48 @@ int main(void)
         }
     }
 
-    /* Equal Speed: two Heal Blocks ending in one residual cannot be put in order, so the turn is refused before
-     * anything is written. The teams of g8_heal_block_pair with the slow Farigiraf's Speed made equal to the fast
-     * one's; each side brings its Farigiraf and a Protect user. The order of the two Farigiraf's moves on turn 1
-     * is then a tie too, which the engine's own generator breaks. */
+    /* Equal Speed (g8_heal_block_tie_a: the twin Farigiraf of both sides): two Heal Blocks end in one residual, the
+     * reference shuffles their order and the two -end lines show it, so the engine draws the SPEED_TIE and orders the
+     * pair by it (the recorded tie_a and tie_b battles are the two orders against the reference's draws). Here: the
+     * turn is accepted under every seed of the engine's own generator, always with both lines, and both orders
+     * occur (0 keeps the lower position first, 1 swaps). Each side brings its Farigiraf and a Protect user. */
     {
-        const df_conf_battle *cb = find("g8_heal_block_pair");
-        duoforge_battle_setup setup;
+        const df_conf_battle *cb = find("g8_heal_block_tie_a");
         DF_CHECK(&t, cb != NULL);
-        if (cb != NULL) {
+        uint32_t first_p1 = 0u;
+        uint32_t first_p2 = 0u;
+        for (uint32_t seed = 1u; cb != NULL && seed <= 24u; ++seed) {
+            duoforge_battle_setup setup;
             build_setup(cb, &setup);
-            duoforge_member_setup *fast = &setup.sides[0].members[0];
-            duoforge_member_setup *slow = &setup.sides[1].members[0];
-            DF_CHECK(&t, fast->species_id == slow->species_id);
-            slow->nature = fast->nature;
-            for (uint32_t i = 0u; i < 6u; ++i) {
-                slow->stat_points[i] = fast->stat_points[i];
-            }
+            setup.rng_initstate = seed;
+            DF_CHECK(&t, setup.sides[0].members[0].species_id == setup.sides[1].members[0].species_id &&
+                             setup.sides[0].members[0].nature == setup.sides[1].members[0].nature &&
+                             memcmp(setup.sides[0].members[0].stat_points, setup.sides[1].members[0].stat_points, 6u) == 0);
             duoforge_battle *b = NULL;
             DF_CHECK(&t, duoforge_battle_create(kp, &setup, &b) == DUOFORGE_OK && b != NULL);
-            if (b != NULL) {
-                /* Team selection: roster 0 (Farigiraf) and 2 (Staraptor / Politoed, who have Protect) first. */
-                duoforge_decision_bundle bd;
-                memset(&bd, 0, sizeof bd);
-                bd.epoch = b->request_epoch;
-                bd.response_mask = 3u;
-                for (uint32_t s = 0u; s < 2u; ++s) {
-                    duoforge_side_choice *c = &bd.responses[s];
-                    c->epoch = b->request_epoch;
-                    c->side = (uint8_t)s;
-                    c->kind = (uint8_t)DUOFORGE_CHOICE_TEAM_SELECTION;
-                    c->pick_count = 4u;
-                    c->picks[0] = 0u;
-                    c->picks[1] = 2u;
-                    c->picks[2] = 1u;
-                    c->picks[3] = 3u;
-                }
-                duoforge_step_result res;
-                DF_CHECK(&t, duoforge_battle_step(kp, b, &bd, &res) == DUOFORGE_OK);
-                /* Turn 1: both Farigiraf use Psychic Noise (slot 0) at the foe's first position, the others
-                 * Protect (slot 0 of Staraptor and Politoed). Turn 2: Protect for everyone but the Farigiraf's. */
+            if (b == NULL) {
+                continue;
+            }
+            duoforge_decision_bundle bd;
+            duoforge_step_result res;
+            memset(&bd, 0, sizeof bd);
+            bd.epoch = b->request_epoch;
+            bd.response_mask = 3u;
+            for (uint32_t s = 0u; s < 2u; ++s) {
+                duoforge_side_choice *c = &bd.responses[s];
+                c->epoch = b->request_epoch;
+                c->side = (uint8_t)s;
+                c->kind = (uint8_t)DUOFORGE_CHOICE_TEAM_SELECTION;
+                c->pick_count = 4u;
+                c->picks[0] = 0u;
+                c->picks[1] = 2u;
+                c->picks[2] = 1u;
+                c->picks[3] = 3u;
+            }
+            DF_CHECK(&t, duoforge_battle_step(kp, b, &bd, &res) == DUOFORGE_OK);
+            for (uint32_t turn = 0u; turn < 2u; ++turn) {
+                /* Turn 1: both Farigiraf use Psychic Noise at the foe's first position, the others Protect. Turn 2:
+                 * every one Protect (move slot 1 of the Farigiraf, 0 of the others). */
                 memset(&bd, 0, sizeof bd);
                 bd.epoch = b->request_epoch;
                 bd.response_mask = 3u;
@@ -343,41 +345,45 @@ int main(void)
                     c->epoch = b->request_epoch;
                     c->side = (uint8_t)s;
                     c->kind = (uint8_t)DUOFORGE_CHOICE_SLOTS;
-                    c->slots[0] = (duoforge_slot_command){(uint8_t)DUOFORGE_SLOT_MOVE, 0u, (uint8_t)(s == 0u ? 2u : 0u), 0u,
-                                                          0u, {0u, 0u, 0u}};
-                    c->slots[1] = (duoforge_slot_command){(uint8_t)DUOFORGE_SLOT_MOVE, 0u,
-                                                          (uint8_t)DUOFORGE_TARGET_NONE, 0u, 0u, {0u, 0u, 0u}};
+                    c->slots[0] = (duoforge_slot_command){
+                        (uint8_t)DUOFORGE_SLOT_MOVE, (uint8_t)(turn == 0u ? 0u : 1u),
+                        (uint8_t)(turn == 0u ? (s == 0u ? 2u : 0u) : DUOFORGE_TARGET_NONE), 0u, 0u, {0u, 0u, 0u}};
+                    c->slots[1] = (duoforge_slot_command){(uint8_t)DUOFORGE_SLOT_MOVE, 0u, (uint8_t)DUOFORGE_TARGET_NONE,
+                                                          0u, 0u, {0u, 0u, 0u}};
                 }
-                const duoforge_status turn1 = duoforge_battle_step(kp, b, &bd, &res);
-                DF_CHECK_EQ_U64(&t, turn1, DUOFORGE_OK);
-                if (turn1 == DUOFORGE_OK) {
+                static duoforge_event ev_buf[2][DUOFORGE_MAX_EVENTS];
+                duoforge_event_buffer buffers[2] = {{ev_buf[0], DUOFORGE_MAX_EVENTS, 0u},
+                                                    {ev_buf[1], DUOFORGE_MAX_EVENTS, 0u}};
+                const duoforge_status st = duoforge_battle_step_events(kp, b, &bd, &res, buffers);
+                if (!DF_CHECK(&t, st == DUOFORGE_OK)) {
+                    fprintf(stderr, "  equal Speed, seed %u turn %u: %s\n", seed, turn + 1u, duoforge_status_name(st));
+                    break;
+                }
+                if (turn == 0u) {
                     expect_tail(&t, b, 0u, 0u, 0u, 1u, "equal Speed, after turn 1: p1 Farigiraf");
                     expect_tail(&t, b, 1u, 0u, 0u, 1u, "equal Speed, after turn 1: p2 Farigiraf");
-                    /* Turn 2: Protect (slot 1 of the Farigiraf, move slot 0 of the others). */
-                    memset(&bd, 0, sizeof bd);
-                    bd.epoch = b->request_epoch;
-                    bd.response_mask = 3u;
-                    for (uint32_t s = 0u; s < 2u; ++s) {
-                        duoforge_side_choice *c = &bd.responses[s];
-                        c->epoch = b->request_epoch;
-                        c->side = (uint8_t)s;
-                        c->kind = (uint8_t)DUOFORGE_CHOICE_SLOTS;
-                        c->slots[0] = (duoforge_slot_command){(uint8_t)DUOFORGE_SLOT_MOVE, 1u,
-                                                              (uint8_t)DUOFORGE_TARGET_NONE, 0u, 0u, {0u, 0u, 0u}};
-                        c->slots[1] = (duoforge_slot_command){(uint8_t)DUOFORGE_SLOT_MOVE, 0u,
-                                                              (uint8_t)DUOFORGE_TARGET_NONE, 0u, 0u, {0u, 0u, 0u}};
-                    }
-                    uint8_t before[DF_STATE_ENCODED_MAX];
-                    uint8_t after[DF_STATE_ENCODED_MAX];
-                    const size_t size = df_encode_n(kp, b, before);
-                    const duoforge_status turn2 = duoforge_battle_step(kp, b, &bd, &res);
-                    DF_CHECK_EQ_U64(&t, turn2, DUOFORGE_E_UNSUPPORTED);
-                    DF_CHECK_EQ_U64(&t, df_encode_n(kp, b, after), size);
-                    DF_CHECK_BYTES(&t, after, before, size, "a refused turn leaves the battle as it was");
+                    continue;
                 }
-                duoforge_battle_destroy(b);
+                uint32_t ends = 0u;
+                uint32_t first = 0xFFu;
+                for (uint32_t i = 0u; i < buffers[0].count; ++i) {
+                    const duoforge_event *e = &buffers[0].events[i];
+                    if (e->kind == (uint8_t)DUOFORGE_EVENT_VOLATILE_END &&
+                        e->detail == (uint8_t)DUOFORGE_VOLATILE_HEAL_BLOCK) {
+                        first = ends == 0u ? e->position : first;
+                        ends += 1u;
+                    }
+                }
+                DF_CHECK_EQ_U64(&t, ends, 2u);
+                first_p1 += first == 0u ? 1u : 0u;
+                first_p2 += first == 2u ? 1u : 0u;
+                expect_tail(&t, b, 0u, 0u, 0u, 0u, "equal Speed, after turn 2: p1 Farigiraf");
+                expect_tail(&t, b, 1u, 0u, 0u, 0u, "equal Speed, after turn 2: p2 Farigiraf");
             }
+            duoforge_battle_destroy(b);
         }
+        DF_CHECK(&t, first_p1 != 0u && first_p2 != 0u);
+        DF_CHECK_EQ_U64(&t, first_p1 + first_p2, 24u);
     }
 
     duoforge_context_destroy(kp);

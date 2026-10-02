@@ -1737,7 +1737,8 @@ def render_pool(dp, dx):
                             if i >= len(SPECIAL_IDS_C))
     new_special += '''
 
-/* ---- the second flags byte of every move (step G8) and the secondary kinds that it comes with ---- */
+/* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
+ * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */
 #define DFI_MOVE_FLAG2_SOUND 1u /* data/moves.ts flags.sound: Throat Chop bars these moves */
 #define DFI_MOVE_FLAG2_HEAL 2u  /* flags.heal: Heal Block bars these moves */
 #define DFI_SECONDARY_LOCKOUT 5u    /* chance 100: the target may not use sound moves (Throat Chop) */
