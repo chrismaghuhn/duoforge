@@ -164,7 +164,9 @@ static void dfi_view_position(const struct duoforge_battle *b, uint32_t viewer, 
     out->protecting = (((uint32_t)slot->flags & DFI_VOL_PROTECT) != 0u) ? 1u : 0u;
     /* Unburden is public by inference: the ability and the item's use are
      * shown (Team C). */
-    out->reserved = (((uint32_t)slot->flags & DFI_VOL_UNBURDEN) != 0u) ? (uint8_t)DUOFORGE_POSITION_FLAG_UNBURDEN : 0u;
+    const uint32_t helping = ((uint32_t)slot->flags & DFI_VOL_HELPING_HAND) != 0u ? DUOFORGE_POSITION_FLAG_HELPING_HAND : 0u;
+    const uint32_t unburden = ((uint32_t)slot->flags & DFI_VOL_UNBURDEN) != 0u ? DUOFORGE_POSITION_FLAG_UNBURDEN : 0u;
+    out->reserved = (uint8_t)(helping | unburden); /* wide-operands-reviewed: < 8 */
     out->acted = slot->move_actions != 0u ? 1u : 0u;
     out->protect_chain = slot->stall_level;
     out->flash_fire = ((uint32_t)slot->flags & DFI_VOL_FLASH_FIRE) != 0u ? 1u : 0u;

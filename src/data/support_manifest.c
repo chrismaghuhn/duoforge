@@ -45,7 +45,9 @@
  * Step 7: Choice Scarf (x1.5 in the speed chain, the choice lock in the
  * request).
  * Step 8: White Herb (switch-in, after Mega, after a move, residual 29) and
- * Unburden (x2 Speed once its holder's item is used). */
+ * Unburden (x2 Speed once its holder's item is used).
+ * Step 9b: Sucker Punch (onTry reads the target's queued move) and Helping
+ * Hand (the ally target, newlySwitched, BasePower x1.5). */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -98,6 +100,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_LASTRESPECTS] = 1u,
             [DFI_MOVE_FLIPTURN] = 1u,
             [DFI_MOVE_DIRECLAW] = 1u,
+            [DFI_MOVE_SUCKERPUNCH] = 1u,
+            [DFI_MOVE_HELPINGHAND] = 1u,
         },
     .abilities =
         {

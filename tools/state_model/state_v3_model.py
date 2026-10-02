@@ -64,8 +64,11 @@ MOVE_SLOT_STRUGGLE = 4
 SWITCH_NONE, SWITCH_MOVE, SWITCH_EMERGENCY_EXIT, SWITCH_FAINTED = 0, 1, 2, 3
 SWITCH_FLIP_TURN = 4  # TEAM_C kinds only (decision 0009)
 VOL_CHOICE_LOCK = 64  # TEAM_C kinds only: Choice Scarf's lock, its move in locked_move
+VOL_HELPING_HAND = 16  # TEAM_C kinds only: Helping Hand's volatile, until the residual
 VOL_UNBURDEN = 32  # TEAM_C kinds only: Unburden's volatile, set when its holder's item is used
+VOL_NEWLY_SWITCHED = 128  # TEAM_C kinds only: newlySwitched, until the end of the turn
 ABILITY_UNBURDEN = 17  # 1 + DFI_ABILITY_UNBURDEN (src/data/extended_tables.h)
+POSITION_FLAG_HELPING_HAND = 2  # in duoforge_position_view.reserved (TEAM_C kinds)
 POSITION_FLAG_UNBURDEN = 4  # in duoforge_position_view.reserved (TEAM_C kinds)
 ITEM_CHOICE_SCARF = 16  # 1 + DFI_ITEM_CHOICESCARF (src/data/extended_tables.h)
 REVEALED_ITEM_CONSUMED, REVEALED_MEGA = 1, 2
@@ -572,13 +575,19 @@ def check_side(ctx, st, s):
         else:
             team_c = ctx.data_kind in (KIND_TEAM_C, KIND_TEAM_C_DEV)
             mem = sd['members'][p['occ']]
+            team_c_mask = VOL_FLAGS_MAX | VOL_HELPING_HAND | VOL_UNBURDEN | VOL_CHOICE_LOCK | VOL_NEWLY_SWITCHED
             if not volatile_valid(p, mem['move_count'], SWITCH_FLIP_TURN if team_c else None,
-                                  VOL_FLAGS_MAX | VOL_UNBURDEN | VOL_CHOICE_LOCK if team_c else None):
+                                  team_c_mask if team_c else None):
                 return 'VOLATILE'
             if p['flags'] & VOL_CHOICE_LOCK and (mem['item'] != ITEM_CHOICE_SCARF or mem['item_consumed']):
                 return 'VOLATILE'
             if p['flags'] & VOL_UNBURDEN and (mem['ability'] != ABILITY_UNBURDEN or not mem['item']
                                               or not mem['item_consumed']):
+                return 'VOLATILE'
+            # Helping Hand ends in the residual, newlySwitched at the end of the turn.
+            if kind == TURN and p['flags'] & (VOL_HELPING_HAND | VOL_NEWLY_SWITCHED):
+                return 'VOLATILE'
+            if kind == REPLACEMENT and p['flags'] & VOL_HELPING_HAND:
                 return 'VOLATILE'
     occ = occupied_mask(sd)
     rs = sd['requested_slots']
@@ -1103,7 +1112,8 @@ def observe(ctx, st, player):
                         1 if pos['move_actions'] else 0, pos['stall_level'],
                         1 if pos['flags'] & VOL_FLASH_FIRE else 0,
                         1 if pos['flags'] & VOL_PROTECT else 0,
-                        POSITION_FLAG_UNBURDEN if pos['flags'] & VOL_UNBURDEN else 0])
+                        (POSITION_FLAG_HELPING_HAND if pos['flags'] & VOL_HELPING_HAND else 0) |
+                        (POSITION_FLAG_UNBURDEN if pos['flags'] & VOL_UNBURDEN else 0)])
         side_requested = (st['request_mask'] >> s) & 1
         b += bytes([sd['member_count'], occupants[0], occupants[1], sd['mega_used']])
         b += bytes(sd['order'] if own else [NONE] * MAX_ROSTER)

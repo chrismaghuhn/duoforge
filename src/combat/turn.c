@@ -691,7 +691,22 @@ static duoforge_status dfi_move_targets(dfi_run *r, uint32_t user, uint32_t cls,
         }
         return st;
     }
-    return DUOFORGE_E_UNSUPPORTED; /* ally, side and field classes come later */
+    if (cls == DUOFORGE_TARGET_CLASS_ADJACENT_ALLY) {
+        /* The ally while it stands; a fainted ally is not retargeted (the
+         * move fails), and an empty slot falls through to getRandomTarget,
+         * which finds no standing adjacent ally in doubles (sim/battle.ts:
+         * 2461-2508). */
+        const uint32_t ally = side * 2u + (1u - user % 2u);
+        if (chosen != ally) {
+            return DUOFORGE_E_INVARIANT; /* the domain offers only the ally */
+        }
+        if (dfi_alive(r->b, ally)) {
+            targets[0] = ally;
+            *count = 1u;
+        }
+        return DUOFORGE_OK;
+    }
+    return DUOFORGE_E_UNSUPPORTED; /* the other ally, side and field classes come later */
 }
 
 /* ---------------------------------------------------------------- damage */
@@ -827,6 +842,12 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     if ((move_type == DFI_TYPE_WATER && dfi_holds(a, DFI_ITEM_MYSTICWATER)) ||
         (move_type == DFI_TYPE_GRASS && dfi_holds(a, DFI_ITEM_MIRACLESEED))) {
         ok = ok && dfi_chain_modify(bp_chain, 4915u, &bp_chain);
+    }
+    /* Helping Hand's volatile (Team C): chainModify(1.5) at
+     * onBasePowerPriority 10, after the items (15) and before Grassy Terrain
+     * (6) (data/moves.ts:8590-8597). */
+    if (((uint32_t)dfi_pos(r->b, user)->flags & DFI_VOL_HELPING_HAND) != 0u) {
+        ok = ok && dfi_chain_modify(bp_chain, 6144u, &bp_chain);
     }
     if (move_type == DFI_TYPE_GRASS && r->b->terrain == DFI_TERRAIN_GRASSY && !dfi_has_type(a, DFI_TYPE_FLYING)) {
         ok = ok && dfi_chain_modify(bp_chain, 5325u, &bp_chain);
@@ -1651,6 +1672,48 @@ static duoforge_status dfi_no_target(dfi_run *r, uint32_t user)
     return DUOFORGE_OK;
 }
 
+/* queue.willMove (sim/battle-queue.ts:324-332): the queued move action of the
+ * Pokemon at `flat`, bound by its activation; NULL when it has fainted or
+ * has none (it already moved, or it switches). */
+static const dfi_queue_record *dfi_will_move(struct duoforge_battle *b, uint32_t flat)
+{
+    const dfi_member *m = dfi_at(b, flat);
+    if (m == NULL || m->hp == 0u) {
+        return NULL;
+    }
+    const dfi_active_slot *pos = dfi_pos(b, flat);
+    for (uint32_t i = 0u; i < b->queue_len; ++i) {
+        const dfi_queue_record *q = &b->queue[i];
+        if (q->kind == DFI_Q_MOVE && (uint32_t)q->side * 2u + (uint32_t)q->slot == flat &&
+            q->activation_id == pos->activation_id) {
+            return q;
+        }
+    }
+    return NULL;
+}
+
+/* Helping Hand (Team C, data/moves.ts:8573-8606). Its onTryHit fails unless
+ * the ally switched in this turn (newlySwitched) or still has a move queued;
+ * then the ally gets the volatile for this turn: [-singleturn] ally|Helping
+ * Hand|[of] user. A second one on the same Pokemon in a turn (onRestart)
+ * would need a second user, which doubles never has. */
+static duoforge_status dfi_run_helping_hand(dfi_run *r, uint32_t user, uint32_t ally)
+{
+    dfi_active_slot *pos = dfi_pos(r->b, ally);
+    if (((uint32_t)pos->flags & DFI_VOL_NEWLY_SWITCHED) == 0u && dfi_will_move(r->b, ally) == NULL) {
+        dfi_fail_still(r, user); /* the hit loop stops at its first hit */
+        return DUOFORGE_OK;
+    }
+    if (((uint32_t)pos->flags & DFI_VOL_HELPING_HAND) != 0u) {
+        return DUOFORGE_E_INVARIANT;
+    }
+    pos->flags = (uint8_t)((uint32_t)pos->flags | DFI_VOL_HELPING_HAND); /* wide-operands-reviewed: < 256 */
+    duoforge_event e = dfi_ev(DUOFORGE_EVENT_SINGLE_TURN, ally, DUOFORGE_CAUSE_NONE, 0u, user);
+    e.id = (uint16_t)DFI_MOVE_HELPINGHAND;
+    dfi_emit(r, &e);
+    return dfi_status_hit_end(r);
+}
+
 /* runMove and useMove for one move action (sim/battle-actions.ts:210-548,
  * the hit steps at 550-620 and the Champions hit loop). */
 static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool *ran)
@@ -1883,6 +1946,9 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     if (count == 0u) {
         return dfi_no_target(r, user); /* after TryMove (sim/battle-actions.ts:509-513) */
     }
+    if (md->special == DFI_SPECIAL_HELPING_HAND) {
+        return dfi_run_helping_hand(r, user, targets[0]);
+    }
     if (md->special == DFI_SPECIAL_PROTECT) {
         return dfi_run_protect(r, user);
     }
@@ -1934,7 +2000,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     /* A handler this build does not have fails explicitly; the Team C
      * specials of later steps are also kept out by the support manifest. */
     if (md->special > DFI_SPECIAL_STRUGGLE && md->special != DFI_SPECIAL_DARKEST_LARIAT &&
-        md->special != DFI_SPECIAL_LAST_RESPECTS) {
+        md->special != DFI_SPECIAL_LAST_RESPECTS && md->special != DFI_SPECIAL_SUCKER_PUNCH) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Fake Out's onTry (in trySpreadMoveHit, after TryMove): only on the
@@ -1942,6 +2008,22 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     if (md->special == DFI_SPECIAL_FAKE_OUT && pos->move_actions > 1u) {
         dfi_fail_still(r, user);
         return DUOFORGE_OK;
+    }
+    /* Sucker Punch's onTry (Team C, data/moves.ts:18405-18411, at the same
+     * point): it fails unless its target still has a move queued that is
+     * not a status move (no Me First, no recharge in the data). */
+    if (md->special == DFI_SPECIAL_SUCKER_PUNCH) {
+        const dfi_queue_record *next = dfi_will_move(b, targets[0]);
+        bool attacks = false;
+        if (next != NULL) {
+            const dfi_member *t = dfi_at(b, targets[0]);
+            attacks = next->move_slot == DUOFORGE_MOVE_SLOT_STRUGGLE ||
+                      dfi_ext_moves[dfi_move_of(t, next->move_slot)].category != DFI_CATEGORY_STATUS;
+        }
+        if (!attacks) {
+            dfi_fail_still(r, user);
+            return DUOFORGE_OK;
+        }
     }
     /* Hurricane never misses in rain and has 50 accuracy under sun. */
     uint32_t base_accuracy = md->accuracy;
@@ -2425,6 +2507,11 @@ static duoforge_status dfi_run_switch(dfi_run *r, const dfi_queue_record *q)
     if (ps != DUOFORGE_OK) {
         return ps;
     }
+    /* newlySwitched until the end of the turn (Team C: only Helping Hand
+     * reads it). */
+    dfi_active_slot *entered = dfi_pos(b, side * 2u + slot);
+    const uint32_t newly = dfi_kind_limits_of(r->ctx->data_kind).vol_flags_mask & DFI_VOL_NEWLY_SWITCHED;
+    entered->flags = (uint8_t)((uint32_t)entered->flags | newly); /* wide-operands-reviewed: < 256 */
     /* [switch], with [from] Parting Shot or Flip Turn when the move made it */
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_SWITCH, side * 2u + slot);
     e.id = (uint16_t)reserve;
@@ -2846,7 +2933,8 @@ static duoforge_status dfi_residual_events(dfi_run *r)
         const uint32_t ends = ((((uint32_t)pos->flags & DFI_VOL_PROTECT) != 0u) ? 1u : 0u) +
                               (pos->stall_level != 0u ? 1u : 0u) +
                               ((((uint32_t)pos->flags & DFI_VOL_FLINCH) != 0u) ? 1u : 0u) +
-                              (pos->charge_turns != 0u ? 1u : 0u);
+                              (pos->charge_turns != 0u ? 1u : 0u) +
+                              ((((uint32_t)pos->flags & DFI_VOL_HELPING_HAND) != 0u) ? 1u : 0u);
         for (uint32_t k = 0u; k < ends; ++k) {
             list[n] = (dfi_residual_entry){DFI_RES_DURATION, flat, DFI_RES_NO_ORDER, speed, 2u, false};
             n += 1u;
@@ -3033,7 +3121,7 @@ static duoforge_status dfi_residual_events(dfi_run *r)
         if (pos->occupant == DFI_OCCUPANT_NONE) {
             continue;
         }
-        pos->flags = (uint8_t)((uint32_t)pos->flags & ~(DFI_VOL_PROTECT | DFI_VOL_FLINCH)); /* wide-operands-reviewed */
+        pos->flags = (uint8_t)((uint32_t)pos->flags & ~(DFI_VOL_PROTECT | DFI_VOL_FLINCH | DFI_VOL_HELPING_HAND)); /* wide-operands-reviewed */
         if (pos->charge_turns > 0u) {
             pos->charge_turns = (uint8_t)((uint32_t)pos->charge_turns - 1u); /* wide-operands-reviewed */
             if (pos->charge_turns == 0u) {
@@ -3234,6 +3322,11 @@ static duoforge_status dfi_end_turn(dfi_run *r)
     b->turn = (uint16_t)turn;
     b->request_epoch = epoch;
     b->boundary_kind = (uint8_t)DUOFORGE_BOUNDARY_TURN;
+    /* endTurn: newlySwitched ends (sim/battle.ts:1673; Team C). */
+    for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
+        dfi_active_slot *pos = dfi_pos(b, flat);
+        pos->flags = (uint8_t)((uint32_t)pos->flags & ~DFI_VOL_NEWLY_SWITCHED); /* wide-operands-reviewed */
+    }
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_TURN, DUOFORGE_NO_POSITION);
     e.id = b->turn; /* [turn] */
     dfi_emit(r, &e);

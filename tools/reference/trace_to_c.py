@@ -418,7 +418,8 @@ EV = {name: i + 1 for i, name in enumerate(
     ['TURN', 'SWITCH', 'MOVE', 'DAMAGE', 'HEAL', 'FAINT', 'CANT', 'MISS', 'CRIT', 'SUPER_EFFECTIVE', 'RESISTED',
      'IMMUNE', 'FAIL', 'PROTECT', 'BLOCKED', 'BOOST', 'UNBOOST', 'STATUS', 'CURE_STATUS', 'CONFUSION_START',
      'CONFUSION_END', 'CONFUSED', 'FLASH_FIRE', 'WEATHER', 'FIELD_START', 'FIELD_END', 'SIDE_START', 'SIDE_END',
-     'ITEM_END', 'FORME', 'MEGA', 'PREPARE', 'ANIMATION', 'ABILITY', 'ACTIVATE', 'UPKEEP', 'RESULT'])}
+     'ITEM_END', 'FORME', 'MEGA', 'PREPARE', 'ANIMATION', 'ABILITY', 'ACTIVATE', 'UPKEEP', 'RESULT',
+     'SINGLE_TURN'])}
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
          'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14}
 FLAG = {'STILL': 1, 'LOCKED': 2, 'SPREAD': 4, 'UPKEEP': 8, 'EATEN': 16, 'MESSAGE': 32, 'MISS': 64, 'NOTARGET': 128}
@@ -588,7 +589,13 @@ def step_events(log, viewer, roster_of, maxhp, tables):
         elif kind == '-fail':
             e = ev_tuple(EV['FAIL'], ev_pos(args[0]), detail=AILMENT[args[1]] if len(args) > 1 else 0)
         elif kind == '-singleturn':
-            e = ev_tuple(EV['PROTECT'], ev_pos(args[0]))
+            if args[1] == 'Protect':
+                e = ev_tuple(EV['PROTECT'], ev_pos(args[0]))
+            elif args[1] == 'Helping Hand':  # Team C: [of] the user
+                _, _, of = ev_cause(attrs, tables)
+                e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), of, 0, tables['MOVE'][key(args[1])])
+            else:
+                raise ConversionError('singleturn-line', 'trace_to_c: unknown -singleturn %r' % line, detail=args[1])
         elif kind == '-activate':
             pos = ev_pos(args[0])
             what = args[1]
@@ -803,7 +810,8 @@ def convert_battle(name, spec, trace, tables):
                         lslot, ltarget = choice, 0
                 seen = shown[s].get(roster)
                 vols = sum(bit for name, bit in (('protect', 1), ('flashfire', 2), ('twoturnmove', 4),
-                                                 ('choicelock', 8), ('unburden', 16)) if name in p['volatiles'])
+                                                 ('choicelock', 8), ('unburden', 16), ('helpinghand', 32))
+                           if name in p['volatiles'])
                 row.append((1, p['hp'], tuple(pp), tuple(x + 6 for x in p['boosts']),
                             stall, 1 if p['fainted'] else 0, status, counter, p['confusion'], lslot, ltarget,
                             p.get('mega', 0), 1 if p['item'] else 0, 1 if seen else 0, seen[0] if seen else 0,
@@ -985,7 +993,7 @@ TYPES = [
     'typedef struct df_conf_mon {', '    uint32_t present, hp;', '    uint8_t pp[4];', '    uint8_t stages[7];',
     '    uint8_t stall, fainted, status, status_counter, confusion, locked_slot, locked_target, mega;',
     '    uint8_t held, seen, seen_percent, seen_flag;',
-    '    uint8_t vols; /* volatiles: 1 protect, 2 flashfire, 4 twoturnmove, 8 choicelock, 16 unburden */',
+    '    uint8_t vols; /* volatiles: 1 protect, 2 flashfire, 4 twoturnmove, 8 choicelock, 16 unburden, 32 helpinghand */',
     '} df_conf_mon;',
     '/* team step, side 0 / side 1 answered, tape slice, the turn, boundary and',
     ' * result afterwards, the picks of a team step, slot commands, the occupants',

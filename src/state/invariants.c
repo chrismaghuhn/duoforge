@@ -289,6 +289,16 @@ static dfi_invariant dfi_check_side(const struct duoforge_context *ctx, const st
                  occupant->item_consumed == 0u)) {
                 return DFI_INV_VOLATILE;
             }
+            /* Helping Hand's volatile ends in the residual and newlySwitched at
+             * the end of the turn (sim/battle.ts:1673): a TURN boundary holds
+             * neither, a REPLACEMENT boundary (after the residual) no Helping
+             * Hand. */
+            const uint32_t turn_bits = DFI_VOL_HELPING_HAND | DFI_VOL_NEWLY_SWITCHED;
+            if ((b->boundary_kind == DUOFORGE_BOUNDARY_TURN && ((uint32_t)slot->flags & turn_bits) != 0u) ||
+                (b->boundary_kind == DUOFORGE_BOUNDARY_REPLACEMENT &&
+                 ((uint32_t)slot->flags & DFI_VOL_HELPING_HAND) != 0u)) {
+                return DFI_INV_VOLATILE;
+            }
         }
     }
     const uint32_t occupied = dfi_side_occupied_mask(side);
