@@ -1,0 +1,29 @@
+{
+  "name": "d03_electro_shot_lock_parting_shot",
+  "purpose": "Team C against team B (data team_c), team preview and three turns of case fz_11_78 of the differential loop (seed 11, battle 78 of the run), cut after the step with the mid-turn switch. Turn 2: Archaludon charges Electro Shot (no rain), which locks it. Turn 3: its locked Electro Shot hits Kingambit, then Incineroar's Parting Shot pivots in the middle of the turn (a PIVOT boundary). The same lock as in d02: the move volatile is gone, twoturnmove stands until the residual, the recorder shows no lock and the converter keeps the last one. Found by the differential loop (\"locked 1/1 ... reference 255/0\").",
+  "data": "team_c",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,a43e5028e586f900088fb6af4b5cc17e5eda3a7e73625f8e947af89dd769dd19",
+  "teams": [
+    "Sneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Close Combat\n- Dire Claw\n- Protect\n- Fake Out\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Protect\n- Hyper Voice\n- Draco Meteor\n- Tailwind\n\nIncineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Flare Blitz\n- Parting Shot\n- Darkest Lariat\n\nKingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Sucker Punch\n- Iron Head\n- Protect\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Follow Me\n- Trick Room\n- Helping Hand\n- Psychic\n\nBasculegion (M) @ Choice Scarf\nAbility: Adaptability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Wave Crash\n- Last Respects\n- Flip Turn\n- Aqua Jet",
+    "Farigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Grass Knot\n- Trick Room\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Weather Ball\n- Muddy Water\n- Ice Beam\n- Protect\n\nCharizard (M) @ Charizardite Y\nAbility: Blaze\nLevel: 50\nEVs: 16 HP / 18 Def / 3 SpA / 29 Spe\nTimid Nature\n- Heat Wave\n- Weather Ball\n- Hurricane\n- Protect\n\nGrimmsnarl (M) @ Light Clay\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Spirit Break\n- Reflect\n- Light Screen\n- Parting Shot\n\nGolisopod (F) @ Golisopite\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 1 SpD / 1 Spe\nAdamant Nature\n- Leech Life\n- Iron Head\n- Drill Run\n- Protect\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Electro Shot\n- Snarl\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 3462",
+      "p2": "team 6142"
+    },
+    {
+      "p1": "move 3 1, move 2 2",
+      "p2": "move 4, move 4"
+    },
+    {
+      "p1": "move 2 2, move 2 2",
+      "p2": "move 2 2, move 4"
+    },
+    {
+      "p1": "move 3 1, move 2 1",
+      "p2": "move 1, move 1 -1"
+    }
+  ]
+}

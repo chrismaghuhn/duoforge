@@ -65,7 +65,21 @@ def leaves(x):
         yield x
 
 
+def mon_of(state, side, species):
+    """The Pokemon `species` of `side` in a recorded state."""
+    found = [p for p in state['sides'][side]['pokemon'] if trace_to_c.name_of(p) == species]
+    assert len(found) == 1, (side, species, found)
+    return found[0]
+
+
 RECORDS = ('df_conf_member', 'df_conf_cmd', 'df_conf_mon', 'df_conf_step')
+
+
+def mon_row(trace, data, step, side, species):
+    """The df_conf_mon of `species` on `side` after step `step` of converted data, by field name."""
+    roster = [trace_to_c.name_of(p) for p in trace['start']['state']['sides'][side]['pokemon']].index(species)
+    names = [name for _, name, _ in declared_records()['df_conf_mon']]
+    return dict(zip(names, data['steps'][step]['mons'][side][roster]))
 
 
 @functools.lru_cache(maxsize=None)
@@ -231,6 +245,46 @@ class Refusals(unittest.TestCase):
         self.control('c11_follow_me_rod', mutate, 'unknown-volatile',
                      'trace_to_c: electroshot without twoturnmove on Archaludon', 'electroshot')
 
+    def test_twoturnmove_without_a_lock_recorded_earlier(self):
+        def mutate(spec, trace):
+            charging = mon_of(trace['steps'][2]['state'], 0, 'Archaludon')  # the charge turn of d02
+            self.assertEqual((charging['volatiles'], charging['locked']), (['electroshot', 'twoturnmove'], [1, -1]))
+            charging['volatiles'] = ['twoturnmove']  # no lock is recorded for it, and none was before
+            charging['locked'] = None
+        self.control('d02_electro_shot_lock_emergency_exit', mutate, 'twoturnmove-lock',
+                     'trace_to_c: twoturnmove without a lock recorded earlier on Archaludon', 'twoturnmove')
+
+    def test_the_remembered_lock_is_of_one_pokemon_on_one_side(self):
+        """d02 is team B against team B: the other side's Archaludon has no lock recorded, so the lock of ours is not
+        taken for it."""
+        def mutate(spec, trace):
+            other = mon_of(trace['steps'][3]['state'], 1, 'Archaludon')
+            self.assertEqual((other['volatiles'], other['locked']), (['stall'], None))
+            other['volatiles'] = ['stall', 'twoturnmove']
+        self.control('d02_electro_shot_lock_emergency_exit', mutate, 'twoturnmove-lock',
+                     'trace_to_c: twoturnmove without a lock recorded earlier on Archaludon', 'twoturnmove')
+
+    def test_a_lock_does_not_outlive_twoturnmove(self):
+        """The residual ends twoturnmove, and a switch-out or a faint clears every volatile of the Pokemon
+        (sim/battle-actions.ts:117, sim/battle.ts:2563): the first state without twoturnmove forgets the lock, which a
+        later twoturnmove without its move's volatile must not take again. Not a committed battle: d02's last state
+        is made the state after the residual, and a copy of it the window of another charge."""
+        name = 'd02_electro_shot_lock_emergency_exit'
+        spec, trace = battle(name)
+        last = trace['steps'][3]
+        window = mon_of(last['state'], 0, 'Archaludon')
+        self.assertEqual((window['volatiles'], window['locked']), (['twoturnmove'], None))
+        window['volatiles'] = []  # twoturnmove is gone
+        data = convert(name, spec, trace)
+        row = mon_row(trace, data, 3, 0, 'Archaludon')
+        self.assertEqual((row['locked_slot'], row['locked_target'], row['vols']), (0xFF, 0, 0))
+        again = copy.deepcopy(last)
+        again['input'] = {}
+        mon_of(again['state'], 0, 'Archaludon')['volatiles'] = ['twoturnmove']
+        trace['steps'].append(again)
+        self.assert_refused(lambda: convert(name, spec, trace), 'twoturnmove-lock',
+                            'trace_to_c: twoturnmove without a lock recorded earlier on Archaludon', 'twoturnmove')
+
     def test_follow_me_line_with_an_attribute(self):
         def mutate(spec, trace):
             log = trace['steps'][1]['log']
@@ -348,6 +402,30 @@ class Library(unittest.TestCase):
                    and trace_to_c.drop_reason(x, before, after) is not None]
         self.assertIn(d, dropped)
         self.assertEqual((step['dropped'], len(step['tape']) + step['dropped']), (len(dropped), len(trace['steps'][k]['draws'])))
+
+    def test_a_two_turn_lock_lasts_while_twoturnmove_stands(self):
+        """Electro Shot's onTryMove removes the move's volatile on the locked turn and the recorder's `locked` is made of
+        it, but twoturnmove stays until the residual. In the last step of d02 (Emergency Exit) and d03 (Parting Shot,
+        Team C), cuts of battles found by the differential loop, a mid-turn boundary comes between the two, and in the
+        last step of s14_electro_shot_rain_miss the battle ends there: the converted lock is the one recorded before."""
+        for name, side, boundary in (('d02_electro_shot_lock_emergency_exit', 0, 4),
+                                     ('d03_electro_shot_lock_parting_shot', 1, 4),
+                                     ('s14_electro_shot_rain_miss', 0, 5)):
+            with self.subTest(name):
+                spec, trace = battle(name)
+                data = convert(name, spec, trace)
+                states = [step['state'] for step in trace['steps']]
+                bare = [k for k, st in enumerate(states) if mon_of(st, side, 'Archaludon')['volatiles'] == ['twoturnmove']]
+                self.assertEqual(bare, [len(states) - 1])
+                self.assertIsNone(mon_of(states[-1], side, 'Archaludon')['locked'])  # what the recorder says
+                self.assertEqual(data['steps'][-1]['boundary'], boundary)  # 4 PIVOT, 5 TERMINAL
+                recorded = [k for k, st in enumerate(states) if mon_of(st, side, 'Archaludon')['locked']]
+                self.assertTrue(recorded)
+                lock = mon_row(trace, data, recorded[-1], side, 'Archaludon')
+                row = mon_row(trace, data, len(states) - 1, side, 'Archaludon')
+                self.assertNotEqual(lock['locked_slot'], 0xFF)
+                self.assertEqual((row['locked_slot'], row['locked_target']), (lock['locked_slot'], lock['locked_target']))
+                self.assertEqual((lock['vols'] & 4, row['vols'] & 4), (4, 4))  # still charging, as the engine's observation says
 
     def assert_shape(self, value, ctype, dims, where):
         """`value` is a `ctype` with array dimensions `dims` as the data holds it: nested tuples that follow the
