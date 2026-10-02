@@ -2,7 +2,7 @@
 
 Needs Node and the pinned checkout (DUOFORGE_NODE, DUOFORGE_PS_REFERENCE_DIR)
 and the runner (DUOFORGE_DIFF_RUNNER); CTest registers it only with all of
-them and reports it skipped otherwise. Spec section 8, tests 1 (the options), 2 and 5.
+them and reports it skipped otherwise. Spec section 8, tests 1, 2 and 5.
 
 The reference (built once): every committed closure battle replayed in the
 pinned Showdown by tools/reference/ps_client.js (each player's client stream)
@@ -219,6 +219,117 @@ class OptionsTest(unittest.TestCase):
                             self.assertEqual((got[0], [tuple(c) for c in got[1]]), ("slots", want), (where, text))
                             pairs += 1
         self.assertGreater(pairs, 10000)
+
+
+def differences(a, b, path=""):
+    """The field paths where two records of one structured dtype differ, with both values."""
+    out = []
+    if a.dtype.names:
+        for name in a.dtype.names:
+            out += differences(a[name], b[name], f"{path}.{name}" if path else name)
+    elif a.shape:
+        for i in range(a.shape[0]):
+            out += differences(a[i], b[i], f"{path}[{i}]")
+    elif a != b:
+        out.append(f"{path}: {a} != {b}")
+    return out
+
+
+def run_tracker(battle, player, stream=None, sheet_text=None):
+    """[(k, tracker observation, tracker domain, lists)] at every decision point of `player`, feeding the
+    stream message by message and the recorded own choices as accepted."""
+    from duoforge_live.tracker import Tracker
+    tracker = Tracker(Reference.get().data, sheet_text or battle.spec["teams"][player])
+    pid = f"p{player + 1}"
+    out, done = [], 0
+    for lines in stream if stream is not None else battle.streams[player]:
+        tracker.feed(lines)
+        if tracker.ready and tracker.epoch > done:
+            done = tracker.epoch
+            k = done - 1
+            dom, lists = tracker.domain()
+            out.append((k, tracker.observation(), dom, lists))
+            step = battle.trace["steps"][k] if k < len(battle.trace["steps"]) else None
+            if step is not None and pid in step["input"]:
+                tracker.accepted(step["input"][pid])
+    return out
+
+
+class TrackerTest(unittest.TestCase):
+    """Test 1 of the spec: the tracker's observation is DuoForge's, byte for byte."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.ref = Reference.get()
+
+    def assertSameView(self, battle, player, points):
+        expected = sum(1 for _ in battle.points(player))
+        self.assertEqual([p[0] for p in points], list(range(expected)), (battle.name, player))
+        for k, obs, dom, _ in points:
+            theirs, their_dom = battle.views[(k, player)]
+            where = f"{battle.name} k={k} viewer={player}"
+            diff = differences(obs, theirs)
+            self.assertFalse(diff, f"{where}: " + "; ".join(diff[:12]))
+            self.assertEqual((int(dom["epoch"]), int(dom["kind"])), (int(their_dom["epoch"]), int(their_dom["kind"])),
+                             where)
+            if int(dom["kind"]) == TEAM:
+                self.assertEqual(dom.tobytes(), their_dom.tobytes(), where)
+            for s in (0, 1) if int(dom["kind"]) == SLOTS else ():
+                ours = {command(dom["slots"][s][i]) for i in range(int(dom["slot_count"][s]))}
+                theirs = {command(their_dom["slots"][s][i]) for i in range(int(their_dom["slot_count"][s]))}
+                self.assertEqual(ours, theirs, (where, s))
+
+    def test_tracker_equals_duoforge(self):
+        for battle in self.ref.battles:
+            for player in (0, 1):
+                self.assertSameView(battle, player, run_tracker(battle, player))
+
+    def test_foe_nicknames_change_nothing(self):
+        for battle in self.ref.battles:
+            for player in (0, 1):
+                foe = 2 - player  # the foe's protocol side number
+                names = sorted(battle.roster_names[1 - player], key=len, reverse=True)
+                nick = {name: f"Nick{i}" for i, name in enumerate(names)}
+
+                def rename(line):
+                    for name in names:
+                        for who in (f"p{foe}a: ", f"p{foe}b: ", f"p{foe}: "):
+                            line = line.replace(who + name + "|", who + nick[name] + "|")
+                            if line.endswith(who + name):
+                                line = line[:-len(name)] + nick[name]
+                    return line
+                stream = [[rename(line) for line in lines] for lines in battle.streams[player]]
+                self.assertNotEqual(stream, battle.streams[player], battle.name)
+                self.assertSameView(battle, player, run_tracker(battle, player, stream))
+
+    def test_room_lines_do_not_complete_a_decision(self):
+        room = ["|c|☆someone|hello", "|j|☆watcher", "||watcher is ready for game 2.", "|inactive|Time left"]
+        for battle in self.ref.battles:
+            for player in (0, 1):
+                stream = []
+                for lines in battle.streams[player]:
+                    stream.append(lines)
+                    if any(line.startswith("|request|") for line in lines):
+                        stream.append(room)
+                self.assertSameView(battle, player, run_tracker(battle, player, [room] + stream))
+
+    def test_repeated_request_is_one_decision(self):
+        for battle in self.ref.battles:
+            for player in (0, 1):
+                stream = []
+                for lines in battle.streams[player]:
+                    stream.append(lines)
+                    if any(line.startswith("|request|") for line in lines):
+                        stream.append(lines)  # a reconnect sends the request again, same rqid
+                self.assertSameView(battle, player, run_tracker(battle, player, stream))
+
+    def test_unknown_line_raises(self):
+        battle = self.ref.battles[0]
+        stream = [list(lines) for lines in battle.streams[0]]
+        last = max(i for i, lines in enumerate(stream) if any(line.startswith("|turn|") for line in lines))
+        stream[last].insert(0, "|-futureline|p1a: Someone")
+        with self.assertRaises(trace_to_c.ConversionError):
+            run_tracker(battle, 0, stream)
 
 
 if __name__ == "__main__":
