@@ -3,7 +3,7 @@
 // websocket client of each player receives (the Showdown live adapter's oracle,
 // docs/superpowers/specs/2026-10-02-showdown-live-design.md section 8).
 //
-// usage: node tools/reference/ps_client.js <pinned checkout> <repo root> (--all | NAME...) [--check]
+// usage: node tools/reference/ps_client.js <pinned checkout> <repo root> (--all | --every | NAME...) [--spectator] [--check]
 //        node tools/reference/ps_client.js <pinned checkout> --pack <team file>
 //
 // Each battle is replayed from its committed spec (format, seed, teams) with
@@ -13,7 +13,14 @@
 // players are set (team preview) the battle shows the open team sheets, as the
 // server does when both players accept them (sim/battle.ts
 // showOpenTeamSheets; it draws no random numbers). --all takes every committed
-// closure battle (a spec without "data": "team_c").
+// closure battle (a spec without "data": "team_c"); --every takes every committed
+// battle (closure, Team C and pool).
+//
+// --spectator writes, instead of the players' streams, what a spectator of the
+// room receives (extractChannelMessages channel 0: the split lines resolved to
+// their public copy), one message per update: {"battle": NAME, "to":
+// "spectator", "lines": [...]}. That is what a Showdown replay log holds: the
+// fixtures of the M11 replay pipeline (python/duoforge_replay).
 //
 // Output: one JSON object per message, in the order a client gets them:
 //   {"battle": NAME, "to": "p1"|"p2", "lines": [...]}
@@ -47,6 +54,11 @@ function loadShowdown(checkout) {
     };
 }
 
+function allBattles(root) {
+    const dir = path.join(root, 'tests', 'reference', 'specs');
+    return fs.readdirSync(dir).filter((f) => f.endsWith('.json')).sort().map((f) => f.slice(0, -5));
+}
+
 function closureBattles(root) {
     const dir = path.join(root, 'tests', 'reference', 'specs');
     return fs.readdirSync(dir).filter((f) => f.endsWith('.json')).sort().map((f) => f.slice(0, -5))
@@ -62,7 +74,7 @@ function readJson(root, kind, name) {
 
 // The client streams of one battle as an array of messages; throws when the
 // replay differs from the trace.
-function replay(sd, root, name) {
+function replay(sd, root, name, spectator) {
     const spec = readJson(root, 'specs', name);
     const trace = readJson(root, 'traces', name);
     const messages = [];
@@ -79,7 +91,10 @@ function replay(sd, root, name) {
                 if (!request.side || request.side.id !== to) throw new Error(`ps_client: ${name}: a request for ${to} names another side`);
                 return '|request|' + JSON.stringify(request);
             });
-            if (lines.length) messages.push({battle: name, to, lines});
+            if (lines.length && !spectator) messages.push({battle: name, to, lines});
+        } else if (type === 'update' && spectator) {
+            const lines = sd.extractChannelMessages(data, [0])[0].filter((l) => l !== '' && !l.startsWith('|t:|'));
+            if (lines.length) messages.push({battle: name, to: 'spectator', lines});
         } else if (type === 'update') {
             const channels = sd.extractChannelMessages(data, [1, 2]);
             for (const [channel, to] of [[1, 'p1'], [2, 'p2']]) {
@@ -128,7 +143,8 @@ function main() {
         return;
     }
     const check = args.includes('--check');
-    const rest = args.filter((a) => a !== '--check');
+    const spectator = args.includes('--spectator');
+    const rest = args.filter((a) => a !== '--check' && a !== '--spectator');
     if (rest.length < 3) {
         process.stderr.write('usage: ps_client.js <pinned checkout> <repo root> (--all | NAME...) [--check]\n' +
             '       ps_client.js <pinned checkout> --pack <team file>\n');
@@ -137,10 +153,12 @@ function main() {
     }
     const sd = loadShowdown(path.resolve(rest[0]));
     const root = path.resolve(rest[1]);
-    const names = rest[2] === '--all' && rest.length === 3 ? closureBattles(root) : rest.slice(2);
+    let names = rest.slice(2);
+    if (rest.length === 3 && rest[2] === '--all') names = closureBattles(root);
+    if (rest.length === 3 && rest[2] === '--every') names = allBattles(root);
     try {
         for (const name of names) {
-            const messages = replay(sd, root, name);
+            const messages = replay(sd, root, name, spectator);
             if (!check) process.stdout.write(messages.map((m) => JSON.stringify(m)).join('\n') + '\n');
         }
     } catch (e) {
