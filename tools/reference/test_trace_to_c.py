@@ -893,6 +893,89 @@ class Library(unittest.TestCase):
             trace_to_c.drop_reason(d, state('brn'))
         self.assertEqual(ctx.exception.rule, 'thermal-exchange-burn')
 
+    def test_recharge_rows_are_what_the_protocol_lines_say(self):
+        """Decision 0018 section 6.1 for the recharge (step G17): a position must recharge from the `|-mustrecharge|X`
+        line until the `|cant|X|recharge` line or until the occupant leaves (`|switch|`, `|drag|`, `|replace|`,
+        `|faint|`); Encore as for step G9. The rows of the C test (rows in tests/test_pool_g17.c: per position after each
+        step, the recharge flag and the Encored slot + 1) must be exactly what these lines give for the committed traces
+        and specs, so the engine's tail, requests and extension are checked against the protocol and not against
+        themselves. Every `cant|X|recharge` has the `-mustrecharge` before it, and the line comes only after a move
+        line of a recharge move that is not a miss or a block."""
+        names = sorted(f[:-5] for f in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs')) if f.startswith('g17_'))
+        self.assertGreaterEqual(len(names), 9)
+        source = open(os.path.join(ROOT, 'tests', 'test_pool_g17.c'), encoding='utf-8').read()
+        rows = {}
+        for m in re.finditer(r'\{"(g17_\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}',
+                             source):
+            rows[(m.group(1), int(m.group(2)))] = ([int(m.group(i)) for i in (3, 4, 5, 6)],
+                                                   [int(m.group(i)) for i in (7, 8, 9, 10)])
+        derived = {}
+        recharges = cants = 0
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'specs', name + '.json'), encoding='utf-8') as f:
+                spec = json.load(f)
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            sheets = []
+            for text in spec['teams']:
+                sheet = {}
+                for block in text.strip().split('\n\n'):
+                    lines = block.split('\n')
+                    sheet[re.sub(r'[^a-z0-9]', '', re.split(r' \(| @', lines[0])[0].lower())] = [l[2:] for l in lines if l.startswith('- ')]
+                sheets.append(sheet)
+            last, encore, recharge = {}, {}, set()
+            for k, step in enumerate(trace['steps']):
+                for line in step['log']:
+                    part = line.split('|')
+                    if len(part) < 3:
+                        continue
+                    kind, pos = part[1], part[2][:3]
+                    if kind in ('switch', 'drag', 'faint', 'replace'):
+                        last.pop(pos, None)
+                        encore.pop(pos, None)
+                        recharge.discard(pos)
+                    elif kind == 'move':
+                        moves = sheets[int(pos[1]) - 1][re.sub(r'[^a-z0-9]', '', part[2].split(': ', 1)[1].lower())]
+                        last[pos] = moves.index(part[3]) + 1 if part[3] in moves else 5
+                    elif kind == '-start' and len(part) > 3 and part[3] == 'Encore':
+                        encore[pos] = last[pos]
+                    elif kind == '-end' and len(part) > 3 and part[3] == 'Encore':
+                        encore.pop(pos, None)
+                    elif kind == '-mustrecharge':
+                        recharge.add(pos)
+                        recharges += 1
+                    elif kind == 'cant' and len(part) > 3 and part[3] == 'recharge':
+                        self.assertIn(pos, recharge)
+                        recharge.discard(pos)
+                        cants += 1
+                enc, rec = [0, 0, 0, 0], [0, 0, 0, 0]
+                for x, v in encore.items():
+                    enc[(int(x[1]) - 1) * 2 + 'ab'.index(x[2])] = v
+                for x in recharge:
+                    rec[(int(x[1]) - 1) * 2 + 'ab'.index(x[2])] = 1
+                derived[(name, k)] = (rec, enc)
+        self.assertEqual(rows, derived)
+        self.assertTrue(recharges >= 8 and cants >= 6)
+
+    def test_the_recharge_lines_and_choice_are_converted(self):
+        """`|-mustrecharge|X` is VOLATILE_START with the detail 3 (DUOFORGE_VOLATILE_MUST_RECHARGE), `|cant|X|recharge` is
+        CANT with the cause 18 (DUOFORGE_CAUSE_RECHARGE), and the choice on a recharge turn (Showdown's "move 1": the
+        request offers the move Recharge) is MOVE with the move slot 5 (DUOFORGE_MOVE_SLOT_RECHARGE), no target, no
+        Mega, whatever was typed."""
+        self.assertEqual((trace_to_c.CAUSE['RECHARGE'], trace_to_c.VOLATILE_MUST_RECHARGE, trace_to_c.MOVE_SLOT_RECHARGE),
+                         (18, 3, 5))
+        spec, trace = battle('g17_hyper_beam')
+        data = convert('g17_hyper_beam', spec, trace)
+        starts = cants = recharge_cmds = 0
+        for st in data['steps']:
+            for evs in st['events']:
+                for e in evs:
+                    starts += 1 if e[0] == trace_to_c.EV['VOLATILE_START'] and e[11] == 3 else 0
+                    cants += 1 if e[0] == trace_to_c.EV['CANT'] and e[3] == 18 else 0
+            for side_cmds in st['cmds']:
+                recharge_cmds += sum(1 for c in side_cmds if tuple(c)[:3] == (1, 5, 0xFF))
+        self.assertEqual((starts, cants, recharge_cmds), (2, 2, 1))  # both viewers see both lines; one choice
+
     def test_a_two_turn_lock_lasts_while_twoturnmove_stands(self):
         """Electro Shot's onTryMove removes the move's volatile on the locked turn and the recorder's `locked` is made of
         it, but twoturnmove stays until the residual. In the last step of d02 (Emergency Exit) and d03 (Parting Shot,
@@ -1030,7 +1113,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 40)  # G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore)
+        self.assertEqual(len(marked), 46)  # G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []

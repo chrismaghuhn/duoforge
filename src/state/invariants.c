@@ -55,13 +55,14 @@ static bool dfi_sealed_cmd_valid(const dfi_slot_cmd *c, uint32_t member_count)
 {
     const uint32_t kind = c->kind;
     if (kind == DFI_SLOT_MOVE) {
-        const bool target_ok = c->move_slot == DUOFORGE_MOVE_SLOT_STRUGGLE
+        const bool target_ok = c->move_slot == DUOFORGE_MOVE_SLOT_STRUGGLE || c->move_slot == DUOFORGE_MOVE_SLOT_RECHARGE
                                    ? c->target == DUOFORGE_TARGET_NONE
                                    : (c->move_slot < DUOFORGE_MAX_MOVE_SLOTS &&
                                       (c->target < DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE ||
                                        c->target == DUOFORGE_TARGET_NONE));
         /* Struggle never carries a Mega declaration (the request offers none). */
-        const uint32_t mega_max = c->move_slot == DUOFORGE_MOVE_SLOT_STRUGGLE ? 0u : 1u;
+        const uint32_t mega_max =
+            c->move_slot == DUOFORGE_MOVE_SLOT_STRUGGLE || c->move_slot == DUOFORGE_MOVE_SLOT_RECHARGE ? 0u : 1u;
         return target_ok && c->mega <= mega_max && c->reserve == 0u;
     }
     if (kind == DFI_SLOT_SWITCH) {
@@ -461,7 +462,7 @@ static bool dfi_queue_record_valid(const struct duoforge_battle *b, const dfi_qu
         return plain && bound && r->reserve == 0u;
     }
     if (kind == DFI_Q_MOVE) {
-        return bound && r->reserve == 0u && r->move_slot <= DFI_MOVE_SLOT_STRUGGLE &&
+        return bound && r->reserve == 0u && r->move_slot <= DUOFORGE_MOVE_SLOT_RECHARGE &&
                (r->target < DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE || r->target == DUOFORGE_TARGET_NONE);
     }
     /* RESIDUAL has no actor and no operand. */

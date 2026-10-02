@@ -344,18 +344,24 @@ static duoforge_status dfi_speed_key(const struct duoforge_battle *b, uint32_t s
     return DUOFORGE_OK;
 }
 
-/* A queued move names a slot its actor has, or Struggle. The checker
- * accepts any slot up to Struggle (structure, not reachability), so a
+/* A queued move names a slot its actor has, Struggle or the recharge turn. The checker
+ * accepts any slot up to the recharge turn (structure, not reachability), so a
  * decoded state can name an empty slot: that fails loudly instead of
  * running the empty slot. */
 static bool dfi_move_slot_ok(const dfi_member *m, uint32_t move_slot)
 {
-    return move_slot == DUOFORGE_MOVE_SLOT_STRUGGLE || move_slot < m->move_count;
+    return move_slot == DUOFORGE_MOVE_SLOT_STRUGGLE || move_slot == DUOFORGE_MOVE_SLOT_RECHARGE ||
+           move_slot < m->move_count;
 }
 
+/* The move of a queued action. The recharge turn is the action 'recharge' of the reference, a name that is no move
+ * (priority 0, no category, no flags, never the Encored move): Struggle's data stands in for it wherever only the
+ * priority and "is it another move" are read; dfi_run_move runs it by its slot. */
 static uint32_t dfi_move_of(const dfi_member *m, uint32_t move_slot)
 {
-    return move_slot == DUOFORGE_MOVE_SLOT_STRUGGLE ? DFI_MOVE_STRUGGLE : m->moves[move_slot].move_id;
+    return move_slot == DUOFORGE_MOVE_SLOT_STRUGGLE || move_slot == DUOFORGE_MOVE_SLOT_RECHARGE
+               ? DFI_MOVE_STRUGGLE
+               : m->moves[move_slot].move_id;
 }
 
 /* ---------------------------------------------------------------- queue */
@@ -1838,6 +1844,18 @@ static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, uint32_t move_
     dfi_active_slot *pos = dfi_pos(r->b, user);
     duoforge_status st = DUOFORGE_OK;
     *can = false;
+    /* mustrecharge's onBeforeMove (data/conditions.ts:367-373), priority 11, before sleep and freeze (10): whatever
+     * move the action holds (the recharge turn itself, or an Encored move that replaced it), it shows cant|recharge,
+     * ends the volatile and stops the move: no PP, no move line. Zero under every kind but POOL (TAIL_KIND). */
+    {
+        dfi_tail_pos *tail = &r->b->tail.sides[user / 2u].positions[user % 2u];
+        if (tail->must_recharge != 0u) {
+            tail->must_recharge = 0u;
+            const duoforge_event e = dfi_ev(DUOFORGE_EVENT_CANT, user, DUOFORGE_CAUSE_RECHARGE, 0u, DUOFORGE_NO_POSITION);
+            dfi_emit(r, &e); /* [cant] recharge */
+            return DUOFORGE_OK;
+        }
+    }
     const bool defrost = m->status == DFI_STATUS_FRZ && ((uint32_t)md->flags & DFI_MOVE_FLAG_DEFROST) != 0u;
     if ((m->status == DFI_STATUS_SLP || m->status == DFI_STATUS_FRZ) && !defrost) {
         const uint32_t left = m->status_counter > 0u ? (uint32_t)m->status_counter - 1u : 0u;
@@ -2310,6 +2328,38 @@ static duoforge_status dfi_run_heal_move(dfi_run *r, uint32_t user, uint32_t mov
     return dfi_status_hit_end(r);
 }
 
+/* The recharge turn (step G17): the action {choice: 'move', moveid: 'recharge'} of a Pokemon with mustrecharge
+ * (sim/side.ts:675-689). runMove (sim/battle-actions.ts:210-264) gets no target for it (the name is no move), asks
+ * OverrideAction (Encore, :227-235: an Encored Pokemon has the action turned into the Encored move and a random target
+ * for it, getRandomTarget, drawn before BeforeMove although the move is never used), and BeforeMove ends it
+ * (dfi_before_move: cant|recharge, no PP, lastMove untouched). The caller counted the action (activeMoveActions). */
+static duoforge_status dfi_run_recharge(dfi_run *r, uint32_t user)
+{
+    struct duoforge_battle *b = r->b;
+    const dfi_tail_pos *tail = &b->tail.sides[user / 2u].positions[user % 2u];
+    dfi_member *m = dfi_at(b, user);
+    if (!dfi_kind_limits_of(r->ctx->data_kind).pool_rules || tail->must_recharge == 0u || m == NULL) {
+        return DUOFORGE_E_INVARIANT; /* nothing but a recharging POOL occupant is offered this action */
+    }
+    /* getTarget('recharge', no location) has no target class and takes getRandomTarget: a random foe (one draw with two
+     * foes standing), before OverrideAction and BeforeMove; it decides nothing. */
+    uint32_t ignored = 0u;
+    duoforge_status st = dfi_resolve_target(r, user, DUOFORGE_TARGET_CLASS_NORMAL, &ignored);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    if (tail->encore_slot != 0u) {
+        const uint32_t encored = dfi_move_of(m, (uint32_t)tail->encore_slot - 1u);
+        st = dfi_resolve_target(r, user, dfi_pool_moves[encored].target_class, &ignored); /* the draw decides nothing */
+        if (st != DUOFORGE_OK) {
+            return st;
+        }
+    }
+    bool can = false;
+    st = dfi_before_move(r, user, DFI_MOVE_STRUGGLE, &dfi_pool_moves[DFI_MOVE_STRUGGLE], &can);
+    return st != DUOFORGE_OK ? st : (can ? DUOFORGE_E_INVARIANT : DUOFORGE_OK);
+}
+
 /* runMove and useMove for one move action (sim/battle-actions.ts:210-548,
  * the hit steps at 550-620 and the Champions hit loop). */
 static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool *ran)
@@ -2332,13 +2382,16 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
      * would fail another move (data/conditions.ts), never runs; a decoded
      * state that queues another move fails loudly (Team C). */
     if (((uint32_t)pos->flags & DFI_VOL_CHOICE_LOCK) != 0u && q->move_slot != DUOFORGE_MOVE_SLOT_STRUGGLE &&
-        q->move_slot + 1u != pos->locked_move) {
+        q->move_slot != DUOFORGE_MOVE_SLOT_RECHARGE && q->move_slot + 1u != pos->locked_move) {
         return DUOFORGE_E_INVARIANT;
     }
     *ran = true;
     r->move_used = false;
     if (pos->move_actions < UINT8_MAX) {
         pos->move_actions = (uint8_t)((uint32_t)pos->move_actions + 1u); /* wide-operands-reviewed */
+    }
+    if (q->move_slot == DUOFORGE_MOVE_SLOT_RECHARGE) {
+        return dfi_run_recharge(r, user);
     }
     const uint32_t move_id = dfi_move_of(m, q->move_slot);
     const dfi_move_data *md = &dfi_pool_moves[move_id];
@@ -2682,8 +2735,12 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         bool attacks = false;
         if (next != NULL) {
             const dfi_member *t = dfi_at(b, targets[0]);
-            attacks = next->move_slot == DUOFORGE_MOVE_SLOT_STRUGGLE ||
-                      dfi_pool_moves[dfi_move_of(t, next->move_slot)].category != DFI_CATEGORY_STATUS;
+            /* A recharging target fails it too (`|| target.volatiles['mustrecharge']`, :18408): the queued action of
+             * the recharge turn has no category, and an Encored move that replaced it still recharges. */
+            attacks = (next->move_slot == DUOFORGE_MOVE_SLOT_STRUGGLE ||
+                       dfi_pool_moves[dfi_move_of(t, next->move_slot)].category != DFI_CATEGORY_STATUS) &&
+                      next->move_slot != DUOFORGE_MOVE_SLOT_RECHARGE &&
+                      b->tail.sides[targets[0] / 2u].positions[targets[0] % 2u].must_recharge == 0u;
         }
         if (!attacks) {
             dfi_fail_still(r, user);
@@ -2987,6 +3044,23 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                 return st;
             }
             dfi_boost(r, user, md->boosts, DFI_POSITIONS, dfi_effect(DUOFORGE_CAUSE_MOVE, 0u, DFI_BOOST_SELF));
+        }
+    }
+    /* A recharge move (flags.recharge, self: {volatileStatus: 'mustrecharge'}; step G17): selfDrops (sim/battle-actions.ts:
+     * 1096, 1317-1335) puts the volatile on the user for every target that was not ruled out (a miss, a Protect or an
+     * immunity make it `false`; a knocked-out target is still a hit), once: a second addVolatile changes nothing.
+     * -mustrecharge|user (data/conditions.ts:374-376, onStart). */
+    if ((dfi_pool_move_flags2[move_id] & DFI_MOVE_FLAG2_RECHARGE) != 0u && move_id != DFI_MOVE_STRUGGLE) {
+        bool hit_any = false;
+        for (uint32_t i = 0u; i < count; ++i) {
+            hit_any = hit_any || hit[i];
+        }
+        dfi_tail_pos *tail = &b->tail.sides[side].positions[q->slot];
+        if (hit_any && tail->must_recharge == 0u) {
+            tail->must_recharge = 1u;
+            duoforge_event e = dfi_event_make(DUOFORGE_EVENT_VOLATILE_START, user);
+            e.detail = (uint8_t)DUOFORGE_VOLATILE_MUST_RECHARGE;
+            dfi_emit(r, &e); /* [-mustrecharge] */
         }
     }
     /* secondaries: one SECONDARY draw per hit target, even at 100; a status
@@ -3610,10 +3684,10 @@ static duoforge_status dfi_run_mega(dfi_run *r, const dfi_queue_record *q)
 #define DFI_RES_ENCORE 10u /* Encore: order 16, a callback with a duration (step G9) */
 #define DFI_RES_NO_ORDER 0xFFFFFFFFu
 /* Trick Room, weather and terrain; three conditions per side; per position
- * (DFI_RES_PER_POSITION) a status (burn or poison), six duration ends
- * (Protect, the stall counter, flinch, a charge, Helping Hand, Follow Me),
+ * (DFI_RES_PER_POSITION) a status (burn or poison), seven duration ends
+ * (Protect, the stall counter, flinch, a charge, Helping Hand, Follow Me and mustrecharge),
  * an item (Leftovers or White Herb), Grassy Terrain and Encore. */
-#define DFI_RES_PER_POSITION 10u
+#define DFI_RES_PER_POSITION 11u
 #define DFI_RES_MAX (3u + 3u * DUOFORGE_SIDE_COUNT + DFI_RES_PER_POSITION * DFI_POSITIONS)
 
 typedef struct dfi_residual_entry {
@@ -3760,7 +3834,10 @@ static duoforge_status dfi_residual_events(dfi_run *r)
                               ((((uint32_t)pos->flags & DFI_VOL_FLINCH) != 0u) ? 1u : 0u) +
                               (pos->charge_turns != 0u ? 1u : 0u) +
                               ((((uint32_t)pos->flags & DFI_VOL_HELPING_HAND) != 0u) ? 1u : 0u) +
-                              ((((uint32_t)pos->flags & DFI_VOL_FOLLOW_ME) != 0u) ? 1u : 0u);
+                              ((((uint32_t)pos->flags & DFI_VOL_FOLLOW_ME) != 0u) ? 1u : 0u) +
+                              /* mustrecharge has a duration (2) and no callback: an end handler of the residual's sort,
+                               * like the stall counter (data/conditions.ts:364-378; step G17). */
+                              (b->tail.sides[flat / 2u].positions[flat % 2u].must_recharge != 0u ? 1u : 0u);
         for (uint32_t k = 0u; k < ends; ++k) {
             list[n] = (dfi_residual_entry){DFI_RES_DURATION, flat, DFI_RES_NO_ORDER, speed, 2u, false};
             n += 1u;

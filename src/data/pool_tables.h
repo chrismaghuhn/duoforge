@@ -852,6 +852,7 @@
 #define DFI_MOVE_FLAG2_SOUND 1u /* data/moves.ts flags.sound: Throat Chop bars these moves */
 #define DFI_MOVE_FLAG2_HEAL 2u  /* flags.heal: Heal Block bars these moves */
 #define DFI_MOVE_FLAG2_THAWS_TARGET 4u /* thawsTarget (step G10): the move cures a frozen target after the secondaries */
+#define DFI_MOVE_FLAG2_RECHARGE 8u /* flags.recharge with self.volatileStatus mustrecharge (step G17): the user must recharge after a hit */
 #define DFI_SECONDARY_LOCKOUT 5u    /* chance 100: the target may not use sound moves (Throat Chop) */
 #define DFI_SECONDARY_HEAL_BLOCK 6u /* chance 100: the target may not heal (Psychic Noise) */
 
