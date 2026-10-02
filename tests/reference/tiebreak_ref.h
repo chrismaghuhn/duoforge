@@ -918,6 +918,25 @@ static const df_tb_stop tb_d03_electro_shot_lock_parting_shot[] = {
     {3u, 0u, 2u, 3u, {4u, 4u}, {778u, 820u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
     {4u, 0u, 2u, 2u, {4u, 4u}, {666u, 820u}, {0x404cd310e6da7c80ull, 0x4050aaaaaaaaaaabull}},
 };
+static const df_tb_stop tb_d04_fainted_prankster_reflect_tie[] = {
+    {0u, 0u, 3u, 4u, {6u, 6u}, {1096u, 1096u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {736u, 740u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {647u, 739u}, {0x404d7d9176efa409ull, 0x4050a523d03fab1cull}},
+    {3u, 0u, 2u, 1u, {3u, 4u}, {417u, 740u}, {0x4043f2bc5a326776ull, 0x4050aaaaaaaaaaabull}},
+};
+static const df_tb_stop tb_d05_fainted_prankster_screen_no_tie[] = {
+    {0u, 0u, 3u, 4u, {6u, 6u}, {1096u, 1096u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {736u, 740u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {736u, 740u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {734u, 670u}, {0x40509da895da895dull, 0x404de609a40e5d3cull}},
+    {6u, 0u, 1u, 1u, {4u, 3u}, {582u, 477u}, {0x404afaee41e6a74bull, 0x4044ca71a6fc2da7ull}},
+    {7u, 0u, 1u, 2u, {3u, 3u}, {534u, 501u}, {0x4049000000000000ull, 0x4045cdd1b17dccdcull}},
+};
+static const df_tb_stop tb_d06_fainted_scarf_speed_tie[] = {
+    {0u, 0u, 3u, 4u, {6u, 6u}, {1067u, 1067u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 3u, 4u, {4u, 4u}, {688u, 688u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 1u, {3u, 4u}, {532u, 688u}, {0x404817e02a721293ull, 0x4050aaaaaaaaaaabull}},
+};
 static const df_tb_stop tb_g10_first_impression[] = {
     {0u, 0u, 2u, 3u, {6u, 6u}, {1097u, 1111u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 1u, 3u, {4u, 4u}, {768u, 737u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -2369,6 +2388,9 @@ static const df_tb_battle tb_battles[] = {
     {"d01_noguard_accuracy_tie", 2u, tb_d01_noguard_accuracy_tie, sizeof tb_d01_noguard_accuracy_tie / sizeof tb_d01_noguard_accuracy_tie[0]},
     {"d02_electro_shot_lock_emergency_exit", 4u, tb_d02_electro_shot_lock_emergency_exit, sizeof tb_d02_electro_shot_lock_emergency_exit / sizeof tb_d02_electro_shot_lock_emergency_exit[0]},
     {"d03_electro_shot_lock_parting_shot", 4u, tb_d03_electro_shot_lock_parting_shot, sizeof tb_d03_electro_shot_lock_parting_shot / sizeof tb_d03_electro_shot_lock_parting_shot[0]},
+    {"d04_fainted_prankster_reflect_tie", 3u, tb_d04_fainted_prankster_reflect_tie, sizeof tb_d04_fainted_prankster_reflect_tie / sizeof tb_d04_fainted_prankster_reflect_tie[0]},
+    {"d05_fainted_prankster_screen_no_tie", 7u, tb_d05_fainted_prankster_screen_no_tie, sizeof tb_d05_fainted_prankster_screen_no_tie / sizeof tb_d05_fainted_prankster_screen_no_tie[0]},
+    {"d06_fainted_scarf_speed_tie", 2u, tb_d06_fainted_scarf_speed_tie, sizeof tb_d06_fainted_scarf_speed_tie / sizeof tb_d06_fainted_scarf_speed_tie[0]},
     {"g10_first_impression", 8u, tb_g10_first_impression, sizeof tb_g10_first_impression / sizeof tb_g10_first_impression[0]},
     {"g10_low_kick_mega", 4u, tb_g10_low_kick_mega, sizeof tb_g10_low_kick_mega / sizeof tb_g10_low_kick_mega[0]},
     {"g10_low_kick_weights", 3u, tb_g10_low_kick_weights, sizeof tb_g10_low_kick_weights / sizeof tb_g10_low_kick_weights[0]},
@@ -2508,7 +2530,7 @@ static const df_tb_battle tb_battles[] = {
     {"s9_self_drops", 10u, tb_s9_self_drops, sizeof tb_s9_self_drops / sizeof tb_s9_self_drops[0]},
 };
 
-/* 1842 stops: 139 of an ended battle; decided by the count 620,
- * the HP percentage 541, the total HP 496, a tie 46;
- * winners: side 0 910, side 1 886, tie 46 */
+/* 1855 stops: 139 of an ended battle; decided by the count 623,
+ * the HP percentage 544, the total HP 499, a tie 50;
+ * winners: side 0 913, side 1 892, tie 50 */
 #endif
