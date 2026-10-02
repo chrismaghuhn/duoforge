@@ -15,6 +15,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
+from .columns import NATURE_DIM as _NATURE_DIM
 from .selfplay import TEAM_TABLE
 
 MASKED = -1e9
@@ -24,7 +25,6 @@ PRESETS = {
     "M": {"embed": 64, "member": 128, "position": 128, "hidden": 640, "layers": 3, "option": 128},
     "L": {"embed": 64, "member": 256, "position": 256, "hidden": 1024, "layers": 5, "option": 256},
 }
-_NATURE_DIM = 8
 _TEAM = jnp.asarray(TEAM_TABLE, dtype=jnp.int32)
 
 

@@ -16,6 +16,7 @@ from duoforge import features
 _SIDES = ("own", "foe")
 _MEMBER_IDS = ("present", "item", "ability", "nature", "species", "move0", "move1", "move2", "move3", "pp0", "pp1",
                "pp2", "pp3", "move_count")
+NATURE_DIM = 8  # model v2's nature embedding
 _SCALES = {"species": 65535, "move": 65535, "item": 255, "ability": 255, "nature": 24}
 
 
@@ -110,3 +111,23 @@ def check_ids(obs, cols, capacities):
         top = int(decode(obs, index, table).max(initial=0))
         if top >= capacities[table]:
             raise ValueError(f"{table} id {top} is outside the model's capacity {capacities[table]}")
+
+
+def input_rows(cfg, cols, feature_names, slot_names):
+    """The row labels of every layer that reads encoder columns: a column's
+    field name where a row comes from the encoder, '#<block>:<i>' for the
+    rows of embeddings and earlier layers. widening maps rows by label."""
+    e, dm, dp, h, do = cfg["embed"], cfg["member"], cfg["position"], cfg["hidden"], cfg["option"]
+
+    def fixed(block, n):
+        return [f"#{block}:{i}" for i in range(n)]
+
+    member = [feature_names[i].split(".", 2)[2] for i in cols.member[0, 0]]
+    position = [feature_names[i].split(".", 2)[2] for i in cols.position[0, 0]]
+    return {
+        ("member1",): fixed("embeddings", 5 * e + NATURE_DIM) + member + ["#side_flag", "#registered"],
+        ("position",): position + ["#occupied"] + fixed("occupant", dm),
+        ("torso", 0): ([feature_names[i] for i in cols.glob] + [feature_names[i] for i in cols.side.reshape(-1)]
+                       + fixed("positions", 4 * dp) + fixed("pools", 4 * dm)),
+        ("option1",): [slot_names[i] for i in cols.slot_scalar] + fixed("gathered", e + 2 * dm + do),
+    }

@@ -4,12 +4,31 @@ Column groups and the host id check of model v2, the team pool's weighted
 pairings, the league state machine, schedules, the evaluation suite and
 the per-team ladder fits. The JAX parts are in test_learn_v2.py.
 """
+import os
+import tempfile
 import unittest
 
 import numpy as np
 
 from duoforge import features
-from duoforge_learn import columns
+from duoforge_learn import checkpoint, columns
+
+
+def _config(**extra):
+    """A complete format-2 config of a small v1 network."""
+    return {"model": {"version": 1, "hidden": 8, "option_hidden": 4}, "encoder": features.ENCODER,
+            "features": list(features.FEATURE_NAMES), "slot_features": list(features.SLOT_FEATURE_NAMES),
+            "data": {"kind": "closure", "fingerprint": "00"}, "teams": {"ids": ["A", "B"], "sha256": ["", ""],
+                                                                        "weights": [1.0, 1.0]},
+            "update": 3, "decisions": 99, **extra}
+
+
+def _v1_params(rng, obs=features.OBS_SIZE, slot=features.SLOT_FEATURES, hidden=8, option=4):
+    shapes = {"t1": (obs, hidden), "t2": (hidden, hidden), "option_torso": (hidden, option),
+              "option_features": (slot, option), "option_out": (option, 2), "team": (hidden, 360),
+              "value": (hidden, 1)}
+    return {k: {"w": rng.standard_normal(s).astype(np.float32), "b": rng.standard_normal(s[1]).astype(np.float32)}
+            for k, s in shapes.items()}
 
 
 class ColumnsTest(unittest.TestCase):
@@ -43,6 +62,46 @@ class ColumnsTest(unittest.TestCase):
         obs[1, cols.species[0, 0]] = np.float32(1024 / 65535)
         with self.assertRaisesRegex(ValueError, "species id 1024 is outside the model's capacity 1024"):
             columns.check_ids(obs, cols, caps)
+
+
+class CheckpointTest(unittest.TestCase):
+    def test_format2_round_trip(self):
+        params = _v1_params(np.random.default_rng(1))
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "params-3.npz")
+            checkpoint.save(path, params, _config())
+            back, config = checkpoint.load(path)
+        self.assertEqual(config["format"], 2)
+        self.assertEqual(config["features"], list(features.FEATURE_NAMES))
+        self.assertEqual(config["update"], 3)
+        for layer in params:
+            for k in ("w", "b"):
+                self.assertTrue(np.array_equal(back[layer][k], params[layer][k]))
+
+    def test_save_requires_the_format2_keys(self):
+        with tempfile.TemporaryDirectory() as d, self.assertRaisesRegex(ValueError, "teams"):
+            cfg = _config()
+            del cfg["teams"]
+            checkpoint.save(os.path.join(d, "p.npz"), _v1_params(np.random.default_rng(1)), cfg)
+
+    def test_dropped_column_is_refused(self):
+        cfg = _config(features=list(features.FEATURE_NAMES) + ["own.member0.weight"])
+        params = _v1_params(np.random.default_rng(1), obs=features.OBS_SIZE + 1)
+        with self.assertRaisesRegex(ValueError, "own.member0.weight"):
+            checkpoint.widen(params, cfg, features.FEATURE_NAMES, features.SLOT_FEATURE_NAMES)
+
+    def test_widening_inserts_zero_rows_by_name(self):
+        flags = [n for n in features.FEATURE_NAMES if n.endswith(".flag.follow_me")]
+        old = [n for n in features.FEATURE_NAMES if n not in flags]
+        params = _v1_params(np.random.default_rng(2), obs=len(old))
+        wide, cfg = checkpoint.widen(params, _config(features=old), features.FEATURE_NAMES,
+                                     features.SLOT_FEATURE_NAMES)
+        self.assertEqual(cfg["features"], list(features.FEATURE_NAMES))
+        w = wide["t1"]["w"]
+        for n in flags:
+            self.assertFalse(w[features.FEATURE_NAMES.index(n)].any())
+        for i, n in enumerate(old):
+            self.assertTrue(np.array_equal(w[features.FEATURE_NAMES.index(n)], params["t1"]["w"][i]))
 
 
 if __name__ == "__main__":

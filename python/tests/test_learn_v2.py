@@ -128,6 +128,57 @@ class ModelV2Test(unittest.TestCase):
                            np.zeros(obs.shape[0], dtype=bool))
 
 
+class WideningTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        import jax
+        cls.jax = jax
+        cls.team, cls.turn = _scenes()
+
+    def _widened_outputs(self, cfg):
+        from duoforge_learn import checkpoint
+        flags = [n for n in features.FEATURE_NAMES if n.endswith(".flag.follow_me")]
+        keep = np.array([i for i, n in enumerate(features.FEATURE_NAMES) if n not in flags])
+        old_names = [features.FEATURE_NAMES[i] for i in keep]
+        old = policy.make(cfg, old_names, features.SLOT_FEATURE_NAMES)
+        params = old.init(self.jax.random.PRNGKey(4))
+        config = {"model": cfg, "features": old_names, "slot_features": list(features.SLOT_FEATURE_NAMES)}
+        wide, _ = checkpoint.widen(params, config, features.FEATURE_NAMES, features.SLOT_FEATURE_NAMES)
+        new = policy.make(cfg)
+        obs, slots, mask = self.turn
+        self.assertFalse(obs[:, [features.FEATURE_NAMES.index(n) for n in flags]].any())
+        before = old.apply(params, obs[:, keep], slots, mask)
+        after = new.apply(wide, obs, slots, mask)
+        return before, after
+
+    def test_widened_network_gives_identical_outputs(self):
+        for cfg in (dict(policy.V1_DEFAULT), policy.v2_config("S")):
+            before, after = self._widened_outputs(cfg)
+            for x, y in zip(before, after):
+                # Equal up to float32 rounding: a longer dot product may sum in another order.
+                np.testing.assert_allclose(np.asarray(x), np.asarray(y), rtol=1e-6, atol=1e-6)
+
+    def test_raised_capacity_appends_rows_and_keeps_outputs(self):
+        from duoforge_learn import checkpoint
+        cfg = policy.v2_config("S")
+        m = policy.make(cfg)
+        params = m.init(self.jax.random.PRNGKey(5))
+        config = {"model": cfg, "features": list(features.FEATURE_NAMES),
+                  "slot_features": list(features.SLOT_FEATURE_NAMES)}
+        caps = dict(cfg["capacities"], species=1100)
+        wide, wcfg = checkpoint.widen(params, config, features.FEATURE_NAMES, features.SLOT_FEATURE_NAMES,
+                                      capacities=caps, seed=6)
+        self.assertEqual(wide["species"].shape[0], 1100)
+        np.testing.assert_array_equal(np.asarray(wide["species"][:1024]), np.asarray(params["species"]))
+        obs, slots, mask = self.turn
+        for x, y in zip(m.apply(params, obs, slots, mask), policy.make(wcfg["model"]).apply(wide, obs, slots, mask)):
+            np.testing.assert_array_equal(np.asarray(x), np.asarray(y))
+        zeros = self.jax.tree_util.tree_map(np.zeros_like, params)
+        moments, _ = checkpoint.widen(zeros, config, features.FEATURE_NAMES, features.SLOT_FEATURE_NAMES,
+                                      capacities=caps, fill="zeros")
+        self.assertFalse(np.asarray(moments["species"][1024:]).any())
+
+
 PRESET_COUNTS = {"S": 384751, "M": 2072463, "L": 7871631}
 
 
