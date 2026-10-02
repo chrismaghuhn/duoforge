@@ -285,6 +285,13 @@ if(DUOFORGE_PS_REFERENCE_DIR)
             COMMAND "${DUOFORGE_NODE}" "${PROJECT_SOURCE_DIR}/tools/reference/ps_client.js"
                 "${DUOFORGE_PS_REFERENCE_DIR}" "${PROJECT_SOURCE_DIR}" --all --check)
         set_tests_properties(duoforge.reference.client_streams PROPERTIES TIMEOUT 300 LABELS reference)
+        # The spectator channel of every committed battle (closure, Team C, pool): the fixtures of the M11
+        # replay pipeline, each battle replayed from its trace's inputs.
+        add_test(NAME duoforge.reference.spectator_streams
+            COMMAND "${DUOFORGE_NODE}" "${PROJECT_SOURCE_DIR}/tools/reference/ps_client.js"
+                "${DUOFORGE_PS_REFERENCE_DIR}" "${PROJECT_SOURCE_DIR}" --every --spectator --check)
+        set_tests_properties(duoforge.reference.spectator_streams PROPERTIES TIMEOUT 300 LABELS reference
+            PASS_REGULAR_EXPRESSION "ps_client: [0-9]+ battles match their traces")
         # The Showdown live adapter against the pinned Showdown and the runner's views (spec section 8).
         if(DUOFORGE_PYTHON)
             add_test(NAME duoforge.python.live
