@@ -31,7 +31,7 @@ import jax
 import numpy as np
 
 import duoforge
-from duoforge import features, teams
+from duoforge import _layout, features, teams
 
 from . import checkpoint, evaluate, league, pairing, policy, ppo, runstate, schedule, suite
 from .returns import gae, samples_of
@@ -40,7 +40,11 @@ from .selfplay import SelfPlay
 _DIMS = ("embed", "member", "position", "hidden", "layers", "option")
 # Options a resume may change; any other option that differs from the saved run is refused.
 _RESUMABLE = ("envs", "workers", "minutes", "updates", "self_play_share", "league_slots", "snapshot_every",
-              "slot_refresh", "entropy", "eval_every", "eval_games", "eval_budget", "save_minutes")
+              "slot_refresh", "entropy", "eval_every", "eval_games", "eval_budget", "save_minutes", "teams",
+              "team_weights", "teams_root")
+DATA_KINDS = {"closure": _layout.CONSTANTS["DUOFORGE_DATA_KIND_CLOSURE"],
+              "team_c": _layout.CONSTANTS["DUOFORGE_DATA_KIND_TEAM_C"],
+              "pool": _layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"]}
 EVAL_SEED = 0x2026100200000020
 
 
@@ -123,11 +127,15 @@ def _teams_json(pool):
     return {"ids": list(pool.ids), "sha256": list(pool.sha256), "weights": [float(w) for w in pool.weights]}
 
 
+def _data_json(kind, context):
+    return {"kind": kind, "fingerprint": context.fingerprint().hex()}
+
+
 def snapshot_config(train_config, model_cfg, context, pool, update, decisions, encoder):
     """The format-2 config of a snapshot of this run."""
     return {"model": model_cfg, "encoder": encoder, "features": list(features.FEATURE_NAMES),
             "slot_features": list(features.SLOT_FEATURE_NAMES),
-            "data": {"kind": "closure", "fingerprint": context.fingerprint().hex()},
+            "data": _data_json(train_config["data_kind"], context),
             "teams": _teams_json(pool), "update": update, "decisions": decisions, "train": train_config}
 
 
@@ -166,6 +174,11 @@ def _parser(suppress=False):
     add("--snapshot-every", type=int, default=200, help="updates between snapshots of the learner")
     add("--slot-refresh", type=int, default=50, help="updates between league slot reloads")
     add("--save-minutes", type=float, default=10.0, help="minutes between saves of the run state")
+    add("--teams", default=None, help="registry team ids, comma-separated (default: Teams A and B of the "
+                                      "reference setups)")
+    add("--team-weights", default=None, help="sampling weights of the teams, comma-separated (default: equal)")
+    add("--teams-root", default="data/teams", help="the team registry")
+    add("--data-kind", choices=tuple(DATA_KINDS), default="closure", help="the data kind of the battles")
     return p
 
 
@@ -187,7 +200,9 @@ def parse(argv):
 def _merged(args, saved):
     """The options of a resumed run: the saved ones, replaced by the ones
     the command line gives where a resume allows it; and the changes."""
-    merged = argparse.Namespace(**{k: v for k, v in saved.items() if k in vars(args)})
+    defaults = vars(_parser().parse_args(["--out", "-"]))  # options a run of an older version did not save
+    merged = argparse.Namespace(**{**{k: v for k, v in defaults.items() if k in vars(args)},
+                                   **{k: v for k, v in saved.items() if k in vars(args)}})
     changes = {}
     for name in args._given:
         if name in ("resume", "out"):
@@ -255,6 +270,14 @@ def _default_pool():
     return teams.TeamPool.from_setups(("A", "B"), duoforge.reference_setups([0])["sides"][0])
 
 
+def _pool_of_args(args, context):
+    """The pool the options name: registry teams (--teams) or Teams A and B."""
+    weights = None if args.team_weights is None else [float(w) for w in args.team_weights.split(",")]
+    if args.teams is None:
+        return _default_pool() if weights is None else _default_pool().with_weights(weights)
+    return teams.load(context, [t.strip() for t in args.teams.split(",")], root=args.teams_root, weights=weights)
+
+
 def _check_teams(saved, pool):
     old = dict(zip(saved["ids"], saved["sha256"]))
     for tid, sha in zip(pool.ids, pool.sha256):
@@ -278,11 +301,13 @@ def run(args, pool=None, on_start=None):
 
 
 def _run(args, pool, on_start, stop):
-    pool = _default_pool() if pool is None else pool
     saved_state, changes = None, {}
     if args.resume is not None:
         saved_state = runstate.load_state(args.resume)
         args, changes = _merged(args, saved_state["train"])
+    context = duoforge.Context(data_kind=DATA_KINDS[args.data_kind])
+    pool = _pool_of_args(args, context) if pool is None else pool
+    if saved_state is not None:
         if list(pool.ids) != saved_state["teams"]["ids"] or \
                 [float(w) for w in pool.weights] != saved_state["teams"]["weights"]:
             changes["teams"] = [saved_state["teams"]["ids"], list(pool.ids)]
@@ -295,7 +320,6 @@ def _run(args, pool, on_start, stop):
     entropy = schedule.Schedule.parse(args.entropy)
     train_config = {k: v for k, v in vars(args).items() if not k.startswith("_") and k not in ("resume",)}
     train_config["entropy"] = str(entropy)
-    context = duoforge.Context()
     if saved_state is not None and saved_state["data"]["fingerprint"] != context.fingerprint().hex():
         raise SystemExit("the context differs from the run's (another data kind or tables): "
                          f"{saved_state['data']['fingerprint']} -> {context.fingerprint().hex()}")
@@ -378,7 +402,7 @@ def _run(args, pool, on_start, stop):
             "jax_key": np.asarray(key), "counters": {"update": update, "decisions": decisions, "episodes": episodes,
                                                      "last_eval": last_eval},
             "league": state.to_dict(), "numpy_rng": rng.bit_generator.state, "teams": _teams_json(pool),
-            "data": {"kind": "closure", "fingerprint": context.fingerprint().hex()}, "model": model_cfg,
+            "data": _data_json(args.data_kind, context), "model": model_cfg,
             "features": list(features.FEATURE_NAMES), "slot_features": list(features.SLOT_FEATURE_NAMES),
             "encoder": encoder, "train": train_config})
 

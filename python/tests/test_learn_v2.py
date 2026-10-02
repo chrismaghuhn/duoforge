@@ -498,6 +498,44 @@ class CutOffTest(unittest.TestCase):
             __import__("shutil").rmtree(out, ignore_errors=True)
 
 
+class RegistryTrainingTest(unittest.TestCase):
+    def test_training_on_registry_teams_a_b_c(self):
+        import os
+        import shutil
+        import tempfile
+        from duoforge_learn import ladder, runstate
+        out = tempfile.mkdtemp(prefix="duoforge-abc-")
+        try:
+            self.assertEqual(_run(["--envs", "12", "--updates", "2", "--teams", "A,B,C", "--data-kind", "team_c",
+                                   "--team-weights", "1,1,2", "--eval-every", "2", "--out", out]
+                                  + [a for a in _SMALL if a not in ("--eval-every", "100")]), 0)
+            records = [r for r in _log(out) if "update" in r]
+            self.assertEqual(len(records[-1]["vs_random_by_team"]), 3)
+            self.assertEqual(len(records[-1]["team_episodes"]), 3)
+            state = runstate.load_state(out)
+            self.assertEqual(state["teams"]["ids"], ["A", "B", "C"])
+            self.assertTrue(all(len(h) == 64 for h in state["teams"]["sha256"]))
+            self.assertEqual(state["teams"]["weights"], [1.0, 1.0, 2.0])
+            self.assertEqual(state["data"]["kind"], "team_c")
+            self.assertEqual(_run(["--resume", out, "--updates", "3"]), 0)
+            self.assertEqual(ladder._pool_of(out).ids, ("A", "B", "C"))
+            with self.assertRaisesRegex(SystemExit, "data_kind"):
+                _run(["--resume", out, "--updates", "4", "--data-kind", "closure"])
+        finally:
+            shutil.rmtree(out, ignore_errors=True)
+
+    def test_a_team_the_kind_refuses_stops_the_run(self):
+        import shutil
+        import tempfile
+        from duoforge import teams
+        out = tempfile.mkdtemp(prefix="duoforge-refused-")
+        try:
+            with self.assertRaisesRegex(teams.TeamError, "team C"):
+                _run(["--envs", "8", "--updates", "1", "--teams", "A,C", "--out", out] + _SMALL)
+        finally:
+            shutil.rmtree(out, ignore_errors=True)
+
+
 PRESET_COUNTS = {"S": 384751, "M": 2072463, "L": 7871631}
 
 

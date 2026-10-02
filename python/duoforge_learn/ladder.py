@@ -154,7 +154,15 @@ def _pool_of(run_dir):
         by_id = {"A": sides[0], "B": sides[1]}
         return teams.TeamPool.from_setups(saved["ids"], np.array([by_id[t] for t in saved["ids"]]),
                                           saved["weights"])
-    raise SystemExit(f"{run_dir}: teams {saved['ids']} need the registry loader (teams.load)")
+    train = config.get("train", {})
+    kinds = {"closure": "DUOFORGE_DATA_KIND_CLOSURE", "team_c": "DUOFORGE_DATA_KIND_TEAM_C",
+             "pool": "DUOFORGE_DATA_KIND_POOL"}
+    from duoforge import _layout
+    with duoforge.Context(data_kind=_layout.CONSTANTS[kinds[config["data"]["kind"]]]) as ctx:
+        pool = teams.load(ctx, saved["ids"], root=train.get("teams_root", "data/teams"), weights=saved["weights"])
+    if list(pool.sha256) != list(saved["sha256"]):
+        raise SystemExit(f"{run_dir}: a team file changed since the run (sha256 {saved['sha256']} -> {pool.sha256})")
+    return pool
 
 
 def _markdown(table, team_ids):
