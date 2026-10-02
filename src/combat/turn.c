@@ -1611,6 +1611,13 @@ static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, const dfi_move
                 if (st != DUOFORGE_OK) {
                     return st;
                 }
+                /* The confusion hit is damage with a Move effect
+                 * (data/conditions.ts:193-194): a Focus Sash holder at full
+                 * HP that it would faint uses the item and keeps 1 HP. */
+                if (dfi_focus_sash_saves(m, damage)) {
+                    dfi_use_item(r, user);
+                    damage = (uint32_t)m->hp - 1u;
+                }
                 return dfi_deal(r, user, damage, DUOFORGE_CAUSE_CONFUSION, 0u, DUOFORGE_NO_POSITION);
             }
         }
@@ -2308,14 +2315,15 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         if (hit[i]) {
             const uint32_t before = dfi_at(b, targets[i])->hp;
             hp_before[i] = before;
-            /* Focus Sash (data/items.ts focussash, onDamage priority -40): a
-             * move hit that would take all of a full-HP holder's HP uses the
-             * item up ([-enditem], before the [-damage] line) and leaves 1
-             * HP. Each target decides for itself. Only a move's damage comes
-             * here: recoil, Life Orb, Rocky Helmet, weather and status damage
-             * are not Move effects and go through dfi_deal on their own. */
+            /* Focus Sash (combat/item_family.h): a move hit that would take
+             * all of a full-HP holder's HP uses the item up ([-enditem],
+             * before the [-damage] line) and leaves 1 HP. Each target decides
+             * for itself. Only the damage of a Move comes here (and the
+             * confusion hit, below): recoil, Life Orb, Rocky Helmet, weather
+             * and status damage are not Move effects and go through dfi_deal
+             * on their own. */
             const dfi_member *tm = dfi_at(b, targets[i]);
-            if (dfi_holds(tm, DFI_ITEM_FOCUSSASH) && tm->hp == tm->hp_max && damage[i] >= tm->hp) {
+            if (dfi_focus_sash_saves(tm, damage[i])) {
                 dfi_use_item(r, targets[i]);
                 damage[i] = (uint32_t)tm->hp - 1u;
             }

@@ -148,6 +148,34 @@ int main(void)
         }
     }
 
+    /* Focus Sash (data/items.ts:2275-2282): at full HP, a hit of at least its HP; not below full HP, not for
+     * a smaller hit, not once used up, not for another item, not for a missing holder. */
+    {
+        dfi_member m = holder(DFI_ITEM_FOCUSSASH);
+        m.hp = 150u;
+        m.hp_max = 150u;
+        DF_CHECK(&t, dfi_focus_sash_saves(&m, 150u));
+        DF_CHECK(&t, dfi_focus_sash_saves(&m, 151u));
+        DF_CHECK(&t, dfi_focus_sash_saves(&m, 4000u));
+        DF_CHECK(&t, !dfi_focus_sash_saves(&m, 149u));
+        DF_CHECK(&t, !dfi_focus_sash_saves(&m, 1u));
+        m.hp = 149u;
+        DF_CHECK(&t, !dfi_focus_sash_saves(&m, 4000u));
+        m.hp = 150u;
+        m.item_consumed = 1u;
+        DF_CHECK(&t, !dfi_focus_sash_saves(&m, 4000u));
+        m.item_consumed = 0u;
+        for (uint32_t id = 0u; id < DFI_POOL_ITEM_COUNT; ++id) {
+            if (id != DFI_ITEM_FOCUSSASH) {
+                m.item = (uint8_t)(id + 1u);
+                DF_CHECK(&t, !dfi_focus_sash_saves(&m, 4000u));
+            }
+        }
+        m.item = 0u;
+        DF_CHECK(&t, !dfi_focus_sash_saves(&m, 4000u));
+        DF_CHECK(&t, !dfi_focus_sash_saves(NULL, 4000u));
+    }
+
     /* The gate: every booster and berry is marked supported since step P2, no other new id is an item. */
     for (size_t i = 0u; i < N_BOOSTERS; ++i) {
         DF_CHECK(&t, dfi_support.items[BOOSTERS[i].item] != 0u);

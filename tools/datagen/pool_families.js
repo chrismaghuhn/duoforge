@@ -295,6 +295,47 @@ function checkItems(dex, rows) {
     return counts;
 }
 
+// Focus Sash (no family column; the engine names it): its onDamage is called with the effect of each kind of
+// damage the engine deals. Only an effect whose effectType is 'Move' (a move's hit and the confusion self-hit,
+// which the source passes as { id: 'confused', effectType: 'Move' }) uses the sash, at full HP and a lethal hit.
+function checkFocusSash(dex, root) {
+    const sash = dex.items.get('focussash');
+    if (!sash.exists) {
+        bad('item focussash does not exist');
+        return;
+    }
+    const fire = (effect, hp, maxhp, damage) => {
+        let used = false;
+        const target = {hp, maxhp, useItem() { used = true; return true; }};
+        const result = call(sash.onDamage, battle(sash), [damage, target, {}, effect]);
+        return {result, used};
+    };
+    const move = {effectType: 'Move'};
+    expect('focussash lethal move hit at full HP', fire(move, 100, 100, 100), {result: 99, used: true});
+    expect('focussash larger hit', fire(move, 100, 100, 900), {result: 99, used: true});
+    expect('focussash smaller hit', fire(move, 100, 100, 99), {result: undefined, used: false});
+    expect('focussash below full HP', fire(move, 99, 100, 900), {result: undefined, used: false});
+    expect('focussash onDamagePriority', sash.onDamagePriority, -40);
+    // The effect types of the other damage the engine deals, as the dex builds them.
+    const types = {
+        recoil: dex.conditions.getByID('recoil').effectType, drain: dex.conditions.getByID('drain').effectType,
+        lifeorb: dex.items.get('lifeorb').effectType, rockyhelmet: dex.items.get('rockyhelmet').effectType,
+        brn: dex.conditions.get('brn').effectType, psn: dex.conditions.get('psn').effectType,
+        sandstorm: dex.conditions.get('sandstorm').effectType,
+    };
+    expect('effect types of the damage that is no Move', types,
+        {recoil: 'Condition', drain: 'Condition', lifeorb: 'Item', rockyhelmet: 'Item', brn: 'Status', psn: 'Status',
+            sandstorm: 'Weather'});
+    for (const name of Object.keys(types)) {
+        expect('focussash ignores ' + name, fire({effectType: types[name]}, 100, 100, 900), {result: undefined, used: false});
+    }
+    // The confusion self-hit is a Move effect: the source says so (data/conditions.ts, confusion onBeforeMove).
+    const source = readText(path.join(root, 'data', 'conditions.ts'));
+    if (!/const activeMove = \{ id: this\.toID\('confused'\), effectType: 'Move', type: '\?\?\?' \};\s+this\.damage\(damage, pokemon, pokemon, activeMove as ActiveMove\);/.test(source)) {
+        bad('the confusion self-hit is no longer damage with a Move effect in data/conditions.ts');
+    }
+}
+
 function checkAbilities(dex, rows) {
     const counts = {};
     for (const row of rows) {
@@ -502,6 +543,7 @@ function main() {
         }
     }
     const items = checkItems(dex, itemRows);
+    checkFocusSash(dex, root);
     const abilities = checkAbilities(dex, abilityRows);
     // "All 18": a booster and a resist berry for each type, and nothing else in the families.
     expect('type boosters', items.TYPE_BOOSTER, 18);
