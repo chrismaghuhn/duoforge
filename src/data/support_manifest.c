@@ -186,6 +186,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_PSYCHICNOISE] = 1u,
             [DFI_MOVE_WIDEGUARD] = 1u,
             [DFI_MOVE_SOAK] = 1u,
+            [DFI_MOVE_ENCORE] = 1u,
             [DFI_MOVE_MOONBLAST] = 1u,
             [DFI_MOVE_CALMMIND] = 1u,
             [DFI_MOVE_FLAMETHROWER] = 1u,
@@ -298,12 +299,14 @@ const dfi_support_manifest dfi_support = {
      * verified against g8_throat_chop, g8_heal_block, g8_heal_block_pair and _tie_a/_b step by step in
      * duoforge.state.pool_g8). Step G11: the type change of Soak (bit 9: TYPE_CHANGED and type_now of the position, public,
      * verified against the four g11 battles in duoforge.state.pool_g11). Step G7: Wide Guard (bit 17: guard_flags, public,
-     * verified in duoforge.state.pool_g7). */
+     * verified in duoforge.state.pool_g7). Step G9: Encore (bit 7: encore_slot of the position, public, verified against
+     * the g09_encore battles step by step in duoforge.state.pool_g9). */
     /* Step Sandstorm and Snowscape: bits 0 and 1, the weather values of the old observation's weather field (the
      * -weather lines of Sand Stream, Snow Warning and the two moves, verified step by step in duoforge.state.pool_weather). */
     .view_ext_features = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TYPE_CHANGE) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ENCORE) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WIDE_GUARD) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WEATHER_SAND) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WEATHER_SNOW),

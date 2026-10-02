@@ -36,8 +36,10 @@
 #define DFI_SITE_CONFUSION_HIT 11u /* random(100) < 33 */
 #define DFI_SITE_RANDOM_TARGET 12u /* random(n) over the valid foes */
 #define DFI_SITE_STATUS_PICK 13u   /* Dire Claw: sample(['psn', 'par', 'slp']), random(3) (Team C) */
-#define DFI_SITE_POISON_TOUCH 14u  /* Poison Touch (POOL data): randomChance(3, 10), random(10) < 3 */
-#define DFI_SITE_COUNT 15u
+#define DFI_SITE_INSERT_TIE 14u    /* BattleQueue.insertChoice: random(firstIndex, lastIndex + 1) among the tied actions (Encore, POOL data) */
+/* 15 is assigned to Trace (AC1); internal draw sites are assigned by the coordinator. */
+#define DFI_SITE_POISON_TOUCH 16u  /* Poison Touch (POOL data): randomChance(3, 10), random(10) < 3 */
+#define DFI_SITE_COUNT 17u
 
 typedef struct dfi_tape_entry {
     uint32_t site;
