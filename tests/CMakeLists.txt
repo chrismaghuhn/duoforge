@@ -151,6 +151,12 @@ if(DUOFORGE_PS_REFERENCE_DIR)
                 "${DUOFORGE_NODE}" "${DUOFORGE_PS_REFERENCE_DIR}")
         set_tests_properties(duoforge.reference.worker_protocol PROPERTIES TIMEOUT 120 LABELS reference
             ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+        # Random play (the worker's "play"): the policy generator, how a choice is drawn,
+        # judged by Showdown and enumerated, and real battles of the committed teams.
+        add_test(NAME duoforge.reference.play_policy
+            COMMAND "${DUOFORGE_NODE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_ps_play.js"
+                "${DUOFORGE_PS_REFERENCE_DIR}")
+        set_tests_properties(duoforge.reference.play_policy PROPERTIES TIMEOUT 300 LABELS reference)
         # The differential loop in replay mode: every committed battle through the
         # worker, the converter and the runner must come out PASS.
         add_test(NAME duoforge.reference.diff_replay
