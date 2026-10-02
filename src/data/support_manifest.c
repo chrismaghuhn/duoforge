@@ -57,7 +57,13 @@
  * the type boosters, the resist berries and the abilities Pixilate,
  * Refrigerate, Overgrow, Torrent and Swarm are unmarked. Step P1 only adds
  * the ids and their family columns; the steps that make the families rules
- * mark their members. */
+ * mark their members.
+ * Step G2 adds every row of the 17 target teams, all unmarked: the formes
+ * Pelipper, Arcanine-Hisui, Annihilape and Floette-Eternal with its Mega, 22
+ * moves (nine of them with a named handler id that the turn code refuses),
+ * Focus Sash, Expert Belt, Floettite, Rock Head, Flower Veil and Fairy Aura.
+ * A move is marked by the step that records a reference battle with it under
+ * the POOL kind. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,

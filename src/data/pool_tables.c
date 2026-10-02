@@ -49,6 +49,16 @@ const dfi_forme_data dfi_pool_formes[DFI_POOL_FORME_COUNT] = {
     {983u, 1200u, {1u, 16u}, {100u, 135u, 120u, 60u, 85u, 50u}, 18u, 0u, 0u, 21u, 255u, 255u, 14u, 4u, {44u, 45u, 22u, 7u}},
     /* Basculegion -- data/pokedex.ts:17538-17555 */
     {902u, 1100u, {17u, 8u}, {120u, 112u, 65u, 80u, 75u, 78u}, 19u, 1u, 0u, 22u, 255u, 255u, 15u, 4u, {47u, 46u, 49u, 48u}},
+    /* Pelipper -- data/pokedex.ts:5458-5470 */
+    {279u, 280u, {17u, 7u}, {60u, 50u, 100u, 95u, 70u, 65u}, 6u, 0u, 0u, 23u, 255u, 255u, 2u, 4u, {20u, 31u, 6u, 57u}},
+    /* Arcanine-Hisui -- data/pokedex.ts:1515-1531 */
+    {59u, 1680u, {6u, 15u}, {95u, 115u, 80u, 95u, 80u, 90u}, 26u, 0u, 0u, 24u, 255u, 255u, 49u, 4u, {38u, 60u, 59u, 7u}},
+    /* Annihilape -- data/pokedex.ts:18771-18784 */
+    {979u, 560u, {5u, 8u}, {110u, 115u, 80u, 50u, 90u, 90u}, 18u, 0u, 0u, 25u, 255u, 255u, 15u, 4u, {5u, 64u, 65u, 50u}},
+    /* Floette-Eternal -- data/pokedex.ts:12573-12586 */
+    {670u, 9u, {4u, 255u}, {74u, 65u, 67u, 125u, 128u, 92u}, 27u, 2u, 0u, 26u, 27u, 51u, 51u, 2u, {71u, 7u, 0u, 0u}},
+    /* Floette-Mega -- data/pokedex.ts:12587-12603 */
+    {670u, 1008u, {4u, 255u}, {74u, 85u, 87u, 155u, 148u, 102u}, 28u, 2u, 1u, 26u, 255u, 51u, 51u, 0u, {0u, 0u, 0u, 0u}},
 };
 
 const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
@@ -152,6 +162,50 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {17u, 0u, 40u, 100u, 20u, 20u, 9u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Flip Turn -- data/moves.ts:5787-5799 */
     {17u, 0u, 60u, 100u, 20u, 20u, 8u, 1u, 1u, 19u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
+    /* U-turn -- data/moves.ts:20268-20281 */
+    {0u, 0u, 70u, 100u, 20u, 20u, 8u, 1u, 1u, 19u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
+    /* Rock Slide -- data/moves.ts:15239-15255 */
+    {15u, 0u, 75u, 90u, 10u, 12u, 8u, 7u, 1u, 2u, {0u, 0u}, {0u, 0u}, 30u, 3u, 1u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
+    /* Throat Chop -- data/moves.ts:19389-19437 */
+    {1u, 0u, 80u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 15u},
+    /* Encore -- data/moves.ts:4724-4783, data/mods/champions/moves.ts:309-345 */
+    {12u, 2u, 0u, 100u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 16u},
+    /* Double-Edge -- data/moves.ts:3879-3892 */
+    {12u, 0u, 120u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {33u, 100u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
+    /* Thunderbolt -- data/moves.ts:19467-19483 */
+    {3u, 1u, 90u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 10u, 2u, 3u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
+    /* Scald -- data/moves.ts:15761-15778 */
+    {17u, 1u, 80u, 100u, 15u, 16u, 8u, 1u, 1u, 130u, {0u, 0u}, {0u, 0u}, 30u, 2u, 1u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 17u},
+    /* Wide Guard -- data/moves.ts:20808-20851 */
+    {15u, 2u, 0u, 0u, 10u, 12u, 11u, 8u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 18u},
+    /* Flash Cannon -- data/moves.ts:5678-5696 */
+    {16u, 1u, 80u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 10u, 1u, 0u, 2u, {6u, 6u, 6u, 5u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
+    /* Extreme Speed -- data/moves.ts:5019-5031 */
+    {12u, 0u, 80u, 100u, 5u, 8u, 10u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
+    /* Head Smash -- data/moves.ts:8226-8239 */
+    {15u, 0u, 150u, 80u, 5u, 8u, 8u, 1u, 1u, 3u, {1u, 2u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
+    /* First Impression -- data/moves.ts:5473-5491, data/mods/champions/moves.ts:386-394 */
+    {0u, 0u, 100u, 100u, 10u, 12u, 10u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 19u},
+    /* Bulk Up -- data/moves.ts:1954-1971 */
+    {5u, 2u, 0u, 0u, 20u, 20u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 1u, {7u, 7u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
+    /* Liquidation -- data/moves.ts:10375-10393 */
+    {17u, 0u, 85u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 20u, 1u, 0u, 2u, {6u, 5u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
+    /* Ice Punch -- data/moves.ts:9387-9403 */
+    {11u, 0u, 75u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 10u, 2u, 2u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
+    /* Shadow Claw -- data/moves.ts:16059-16072, data/mods/champions/moves.ts:871-874 */
+    {8u, 0u, 70u, 100u, 15u, 16u, 8u, 1u, 2u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
+    /* Recover -- data/moves.ts:14806-14820 */
+    {12u, 2u, 0u, 0u, 5u, 8u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 20u},
+    /* Soak -- data/moves.ts:17186-17208 */
+    {17u, 2u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 21u},
+    /* Psychic Noise -- data/moves.ts:14079-14094 */
+    {14u, 1u, 75u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 22u},
+    /* Drum Beating -- data/moves.ts:4294-4311 */
+    {9u, 0u, 80u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 100u, 1u, 0u, 2u, {6u, 6u, 6u, 6u, 5u, 6u, 6u}, 0u, 0u, 0u, 0u},
+    /* Low Kick -- data/moves.ts:10442-10481 */
+    {5u, 0u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 23u},
+    /* Dazzling Gleam -- data/moves.ts:3378-3390 */
+    {4u, 1u, 80u, 100u, 10u, 12u, 8u, 7u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
 };
 
 const dfi_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
@@ -253,6 +307,12 @@ const dfi_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {255u, 255u},
     /* Yache Berry -- data/items.ts:7769-7792 */
     {255u, 255u},
+    /* Focus Sash -- data/items.ts:2269-2285 */
+    {255u, 255u},
+    /* Expert Belt -- data/items.ts:1901-1914 */
+    {255u, 255u},
+    /* Floettite -- data/items.ts:2189-2201, data/mods/champions/items.ts:342-345 */
+    {26u, 27u},
 };
 
 /* Abilities carry no table data but their family column. Provenance of the pool abilities:
@@ -261,6 +321,9 @@ const dfi_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   overgrow -- data/abilities.ts:3124-3143
  *   torrent -- data/abilities.ts:5046-5065
  *   swarm -- data/abilities.ts:4766-4785
+ *   rockhead -- data/abilities.ts:3906-3917
+ *   flowerveil -- data/abilities.ts:1419-1457
+ *   fairyaura -- data/abilities.ts:1266-1282
  */
 
 /* data/typechart.ts: the closure bits plus psn (Poison, Steel). */
@@ -317,6 +380,9 @@ const dfi_item_family dfi_pool_item_family[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_TANGABERRY] = {DFI_ITEM_FAMILY_RESIST_BERRY, DFI_TYPE_BUG},
     [DFI_ITEM_WACANBERRY] = {DFI_ITEM_FAMILY_RESIST_BERRY, DFI_TYPE_ELECTRIC},
     [DFI_ITEM_YACHEBERRY] = {DFI_ITEM_FAMILY_RESIST_BERRY, DFI_TYPE_ICE},
+    [DFI_ITEM_FOCUSSASH] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
+    [DFI_ITEM_EXPERTBELT] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
+    [DFI_ITEM_FLOETTITE] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
 };
 
 const dfi_ability_family dfi_pool_ability_family[DFI_POOL_ABILITY_COUNT] = {
@@ -346,104 +412,129 @@ const dfi_ability_family dfi_pool_ability_family[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_OVERGROW] = {DFI_ABILITY_FAMILY_PINCH, DFI_TYPE_GRASS},
     [DFI_ABILITY_TORRENT] = {DFI_ABILITY_FAMILY_PINCH, DFI_TYPE_WATER},
     [DFI_ABILITY_SWARM] = {DFI_ABILITY_FAMILY_PINCH, DFI_TYPE_BUG},
+    [DFI_ABILITY_ROCKHEAD] = {DFI_ABILITY_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
+    [DFI_ABILITY_FLOWERVEIL] = {DFI_ABILITY_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
+    [DFI_ABILITY_FAIRYAURA] = {DFI_ABILITY_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
 };
 
 /* The moves and abilities each forme may have (decision 0015 section 2). */
 const dfi_forme_legal dfi_pool_forme_legal[DFI_POOL_FORME_COUNT] = {
     /* Rillaboom -- abilities: overgrow, grassysurge */
     /*    learns: Wood Hammer, Grassy Glide, Fake Out, High Horsepower, Protect, Swords Dance, Focus Blast, */
-    /*    Snarl, Grass Knot, Hyper Voice */
-    [DFI_FORME_RILLABOOM] = {{0x8fu, 0x40u, 0x01u, 0x14u, 0x00u, 0x01u, 0x00u}, 2u, {DFI_ABILITY_OVERGROW, DFI_ABILITY_GRASSYSURGE, DFI_CLOSURE_NONE}},
+    /*    Snarl, Grass Knot, Hyper Voice, U-turn, Double-Edge, Bulk Up, Drum Beating, Low Kick */
+    [DFI_FORME_RILLABOOM] = {{0x8fu, 0x40u, 0x01u, 0x14u, 0x00u, 0x01u, 0x44u, 0x40u, 0x60u}, 2u, {DFI_ABILITY_OVERGROW, DFI_ABILITY_GRASSYSURGE, DFI_CLOSURE_NONE}},
     /* Staraptor -- abilities: intimidate */
     /*    learns: Brave Bird, Close Combat, Tailwind, Protect, Focus Blast, Heat Wave, Hurricane, */
-    /*    Helping Hand */
-    [DFI_FORME_STARAPTOR] = {{0xf0u, 0x00u, 0x01u, 0xc0u, 0x00u, 0x08u, 0x00u}, 1u, {DFI_ABILITY_INTIMIDATE, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /*    Helping Hand, U-turn, Double-Edge, Bulk Up */
+    [DFI_FORME_STARAPTOR] = {{0xf0u, 0x00u, 0x01u, 0xc0u, 0x00u, 0x08u, 0x44u, 0x40u, 0x00u}, 1u, {DFI_ABILITY_INTIMIDATE, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
     /* Staraptor-Mega -- abilities: contrary */
     /*    learns: nothing */
-    [DFI_FORME_STARAPTORMEGA] = {{0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u}, 1u, {DFI_ABILITY_CONTRARY, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    [DFI_FORME_STARAPTORMEGA] = {{0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u}, 1u, {DFI_ABILITY_CONTRARY, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
     /* Milotic -- abilities: competitive */
     /*    learns: Protect, Muddy Water, Coil, Ice Beam, Hypnosis, Weather Ball, Iron Head, Dragon Pulse, */
-    /*    Light Screen, Helping Hand, Flip Turn */
-    [DFI_FORME_MILOTIC] = {{0x80u, 0x0fu, 0x50u, 0x01u, 0x04u, 0x08u, 0x02u}, 1u, {DFI_ABILITY_COMPETITIVE, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /*    Light Screen, Helping Hand, Flip Turn, Double-Edge, Scald, Recover */
+    [DFI_FORME_MILOTIC] = {{0x80u, 0x0fu, 0x50u, 0x01u, 0x04u, 0x08u, 0x42u, 0x01u, 0x04u}, 1u, {DFI_ABILITY_COMPETITIVE, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
     /* Ceruledge -- abilities: flashfire */
     /*    learns: Close Combat, Protect, Bitter Blade, Shadow Sneak, Swords Dance, Shadow Ball, Iron Head, */
-    /*    Heat Wave, Reflect, Light Screen, Flare Blitz, Helping Hand */
-    [DFI_FORME_CERULEDGE] = {{0xa0u, 0x70u, 0x44u, 0x40u, 0x46u, 0x08u, 0x00u}, 1u, {DFI_ABILITY_FLASHFIRE, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /*    Heat Wave, Reflect, Light Screen, Flare Blitz, Helping Hand, Throat Chop, Bulk Up, Shadow Claw */
+    [DFI_FORME_CERULEDGE] = {{0xa0u, 0x70u, 0x44u, 0x40u, 0x46u, 0x08u, 0x10u, 0x40u, 0x02u}, 1u, {DFI_ABILITY_FLASHFIRE, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
     /* Raichu -- abilities: lightningrod */
     /*    learns: Fake Out, Protect, Zap Cannon, Focus Blast, Nasty Plot, Grass Knot, Reflect, */
-    /*    Light Screen, Helping Hand */
-    [DFI_FORME_RAICHU] = {{0x84u, 0x80u, 0x09u, 0x10u, 0x06u, 0x08u, 0x00u}, 1u, {DFI_ABILITY_LIGHTNINGROD, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /*    Light Screen, Helping Hand, Encore, Thunderbolt, Dazzling Gleam */
+    [DFI_FORME_RAICHU] = {{0x84u, 0x80u, 0x09u, 0x10u, 0x06u, 0x08u, 0xa0u, 0x00u, 0x80u}, 1u, {DFI_ABILITY_LIGHTNINGROD, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
     /* Raichu-Mega-Y -- abilities: noguard */
     /*    learns: nothing */
-    [DFI_FORME_RAICHUMEGAY] = {{0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u}, 1u, {DFI_ABILITY_NOGUARD, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    [DFI_FORME_RAICHUMEGAY] = {{0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u}, 1u, {DFI_ABILITY_NOGUARD, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
     /* Gholdengo -- abilities: goodasgold */
     /*    learns: Protect, Focus Blast, Make It Rain, Shadow Ball, Nasty Plot, Iron Head, Psychic, Reflect, */
-    /*    Light Screen */
-    [DFI_FORME_GHOLDENGO] = {{0x80u, 0x00u, 0x4fu, 0x08u, 0x06u, 0x00u, 0x00u}, 1u, {DFI_ABILITY_GOODASGOLD, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /*    Light Screen, Thunderbolt, Flash Cannon, Recover, Low Kick, Dazzling Gleam */
+    [DFI_FORME_GHOLDENGO] = {{0x80u, 0x00u, 0x4fu, 0x08u, 0x06u, 0x00u, 0x80u, 0x04u, 0xc4u}, 1u, {DFI_ABILITY_GOODASGOLD, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
     /* Politoed -- abilities: drizzle */
     /*    learns: Protect, Muddy Water, Ice Beam, Hypnosis, Focus Blast, Weather Ball, Psychic, */
-    /*    Hyper Voice, Helping Hand */
-    [DFI_FORME_POLITOED] = {{0x80u, 0x0du, 0x11u, 0x08u, 0x00u, 0x09u, 0x00u}, 1u, {DFI_ABILITY_DRIZZLE, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /*    Hyper Voice, Helping Hand, Encore, Double-Edge, Liquidation, Ice Punch, Low Kick */
+    [DFI_FORME_POLITOED] = {{0x80u, 0x0du, 0x11u, 0x08u, 0x00u, 0x09u, 0x60u, 0x80u, 0x41u}, 1u, {DFI_ABILITY_DRIZZLE, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
     /* Golisopod -- abilities: emergencyexit */
     /*    learns: Close Combat, Protect, Muddy Water, Ice Beam, Swords Dance, Focus Blast, Leech Life, */
-    /*    Iron Head, Drill Run, Snarl, Sucker Punch, Aqua Jet */
-    [DFI_FORME_GOLISOPOD] = {{0xa0u, 0x45u, 0xe1u, 0x04u, 0x00u, 0x20u, 0x01u}, 1u, {DFI_ABILITY_EMERGENCYEXIT, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /*    Iron Head, Drill Run, Snarl, Sucker Punch, Aqua Jet, U-turn, Rock Slide, Throat Chop, Scald, */
+    /*    Wide Guard, First Impression, Bulk Up, Liquidation, Shadow Claw */
+    [DFI_FORME_GOLISOPOD] = {{0xa0u, 0x45u, 0xe1u, 0x04u, 0x00u, 0x20u, 0x1du, 0xe3u, 0x02u}, 1u, {DFI_ABILITY_EMERGENCYEXIT, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
     /* Golisopod-Mega -- abilities: toughclaws */
     /*    learns: nothing */
-    [DFI_FORME_GOLISOPODMEGA] = {{0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u}, 1u, {DFI_ABILITY_TOUGHCLAWS, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    [DFI_FORME_GOLISOPODMEGA] = {{0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u}, 1u, {DFI_ABILITY_TOUGHCLAWS, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
     /* Archaludon -- abilities: stamina */
     /*    learns: Protect, Swords Dance, Iron Head, Dragon Pulse, Electro Shot, Snarl, Reflect, */
-    /*    Light Screen, Draco Meteor */
-    [DFI_FORME_ARCHALUDON] = {{0x80u, 0x40u, 0x40u, 0x07u, 0x06u, 0x02u, 0x00u}, 1u, {DFI_ABILITY_STAMINA, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /*    Light Screen, Draco Meteor, Rock Slide, Double-Edge, Thunderbolt, Flash Cannon */
+    [DFI_FORME_ARCHALUDON] = {{0x80u, 0x40u, 0x40u, 0x07u, 0x06u, 0x02u, 0xc8u, 0x04u, 0x00u}, 1u, {DFI_ABILITY_STAMINA, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
     /* Farigiraf -- abilities: armortail */
     /*    learns: High Horsepower, Protect, Shadow Ball, Nasty Plot, Iron Head, Psychic, Grass Knot, */
-    /*    Trick Room, Reflect, Light Screen, Hyper Voice, Helping Hand */
-    [DFI_FORME_FARIGIRAF] = {{0x88u, 0x00u, 0x4cu, 0x38u, 0x06u, 0x09u, 0x00u}, 1u, {DFI_ABILITY_ARMORTAIL, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /*    Trick Room, Reflect, Light Screen, Hyper Voice, Helping Hand, Double-Edge, Thunderbolt, */
+    /*    Psychic Noise, Low Kick, Dazzling Gleam */
+    [DFI_FORME_FARIGIRAF] = {{0x88u, 0x00u, 0x4cu, 0x38u, 0x06u, 0x09u, 0xc0u, 0x00u, 0xd0u}, 1u, {DFI_ABILITY_ARMORTAIL, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
     /* Charizard -- abilities: blaze */
     /*    learns: Protect, Swords Dance, Focus Blast, Weather Ball, Dragon Pulse, Heat Wave, Hurricane, */
-    /*    Flare Blitz, Helping Hand */
-    [DFI_FORME_CHARIZARD] = {{0x80u, 0x40u, 0x11u, 0xc1u, 0x40u, 0x08u, 0x00u}, 1u, {DFI_ABILITY_BLAZE, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /*    Flare Blitz, Helping Hand, Rock Slide, Double-Edge, Shadow Claw */
+    [DFI_FORME_CHARIZARD] = {{0x80u, 0x40u, 0x11u, 0xc1u, 0x40u, 0x08u, 0x48u, 0x00u, 0x02u}, 1u, {DFI_ABILITY_BLAZE, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
     /* Charizard-Mega-Y -- abilities: drought */
     /*    learns: nothing */
-    [DFI_FORME_CHARIZARDMEGAY] = {{0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u}, 1u, {DFI_ABILITY_DROUGHT, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    [DFI_FORME_CHARIZARDMEGAY] = {{0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u}, 1u, {DFI_ABILITY_DROUGHT, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
     /* Grimmsnarl -- abilities: prankster */
     /*    learns: Fake Out, Protect, Focus Blast, Nasty Plot, Leech Life, Spirit Break, Reflect, */
-    /*    Light Screen, Parting Shot, Sucker Punch */
-    [DFI_FORME_GRIMMSNARL] = {{0x84u, 0x00u, 0x29u, 0x00u, 0x0fu, 0x20u, 0x00u}, 1u, {DFI_ABILITY_PRANKSTER, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /*    Light Screen, Parting Shot, Sucker Punch, Throat Chop, Bulk Up, Ice Punch, Shadow Claw, Low Kick, */
+    /*    Dazzling Gleam */
+    [DFI_FORME_GRIMMSNARL] = {{0x84u, 0x00u, 0x29u, 0x00u, 0x0fu, 0x20u, 0x10u, 0x40u, 0xc3u}, 1u, {DFI_ABILITY_PRANKSTER, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
     /* Sneasler -- abilities: unburden */
     /*    learns: Fake Out, Close Combat, Protect, Swords Dance, Focus Blast, Shadow Ball, Nasty Plot, */
-    /*    Grass Knot, Dire Claw */
-    [DFI_FORME_SNEASLER] = {{0xa4u, 0x40u, 0x0du, 0x10u, 0x20u, 0x00u, 0x00u}, 1u, {DFI_ABILITY_UNBURDEN, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /*    Grass Knot, Dire Claw, U-turn, Rock Slide, Throat Chop, Bulk Up, Shadow Claw, Low Kick */
+    [DFI_FORME_SNEASLER] = {{0xa4u, 0x40u, 0x0du, 0x10u, 0x20u, 0x00u, 0x1cu, 0x40u, 0x42u}, 1u, {DFI_ABILITY_UNBURDEN, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
     /* Incineroar -- abilities: blaze, intimidate */
     /*    learns: Fake Out, Close Combat, Protect, Swords Dance, Focus Blast, Nasty Plot, Leech Life, */
-    /*    Iron Head, Snarl, Heat Wave, Parting Shot, Flare Blitz, Darkest Lariat, Helping Hand */
-    [DFI_FORME_INCINEROAR] = {{0xa4u, 0x40u, 0x69u, 0x44u, 0xc8u, 0x08u, 0x00u}, 2u, {DFI_ABILITY_BLAZE, DFI_ABILITY_INTIMIDATE, DFI_CLOSURE_NONE}},
+    /*    Iron Head, Snarl, Heat Wave, Parting Shot, Flare Blitz, Darkest Lariat, Helping Hand, */
+    /*    Throat Chop, Double-Edge, Bulk Up, Shadow Claw, Low Kick */
+    [DFI_FORME_INCINEROAR] = {{0xa4u, 0x40u, 0x69u, 0x44u, 0xc8u, 0x08u, 0x50u, 0x40u, 0x42u}, 2u, {DFI_ABILITY_BLAZE, DFI_ABILITY_INTIMIDATE, DFI_CLOSURE_NONE}},
     /* Salamence -- abilities: intimidate */
     /*    learns: Tailwind, Protect, Iron Head, Dragon Pulse, Heat Wave, Hurricane, Hyper Voice, */
-    /*    Draco Meteor, Helping Hand */
-    [DFI_FORME_SALAMENCE] = {{0xc0u, 0x00u, 0x40u, 0xc1u, 0x00u, 0x0bu, 0x00u}, 1u, {DFI_ABILITY_INTIMIDATE, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /*    Draco Meteor, Helping Hand, Rock Slide, Double-Edge, Shadow Claw */
+    [DFI_FORME_SALAMENCE] = {{0xc0u, 0x00u, 0x40u, 0xc1u, 0x00u, 0x0bu, 0x48u, 0x00u, 0x02u}, 1u, {DFI_ABILITY_INTIMIDATE, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
     /* Salamence-Mega -- abilities: aerilate */
     /*    learns: nothing */
-    [DFI_FORME_SALAMENCEMEGA] = {{0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u}, 1u, {DFI_ABILITY_AERILATE, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    [DFI_FORME_SALAMENCEMEGA] = {{0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u}, 1u, {DFI_ABILITY_AERILATE, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
     /* Indeedee-F -- abilities: psychicsurge */
     /*    learns: Fake Out, Protect, Shadow Ball, Psychic, Trick Room, Reflect, Light Screen, Hyper Voice, */
-    /*    Follow Me, Helping Hand */
-    [DFI_FORME_INDEEDEEF] = {{0x84u, 0x00u, 0x04u, 0x28u, 0x06u, 0x0du, 0x00u}, 1u, {DFI_ABILITY_PSYCHICSURGE, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /*    Follow Me, Helping Hand, Dazzling Gleam */
+    [DFI_FORME_INDEEDEEF] = {{0x84u, 0x00u, 0x04u, 0x28u, 0x06u, 0x0du, 0x00u, 0x00u, 0x80u}, 1u, {DFI_ABILITY_PSYCHICSURGE, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
     /* Kingambit -- abilities: defiant */
     /*    learns: Protect, Swords Dance, Focus Blast, Iron Head, Snarl, Grass Knot, Kowtow Cleave, */
-    /*    Sucker Punch */
-    [DFI_FORME_KINGAMBIT] = {{0x80u, 0x40u, 0x41u, 0x14u, 0x00u, 0x30u, 0x00u}, 1u, {DFI_ABILITY_DEFIANT, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /*    Sucker Punch, Throat Chop, Flash Cannon, Shadow Claw, Low Kick */
+    [DFI_FORME_KINGAMBIT] = {{0x80u, 0x40u, 0x41u, 0x14u, 0x00u, 0x30u, 0x10u, 0x04u, 0x42u}, 1u, {DFI_ABILITY_DEFIANT, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
     /* Basculegion -- abilities: adaptability */
     /*    learns: Protect, Muddy Water, Ice Beam, Shadow Ball, Last Respects, Wave Crash, Aqua Jet, */
-    /*    Flip Turn */
-    [DFI_FORME_BASCULEGION] = {{0x80u, 0x05u, 0x04u, 0x00u, 0x00u, 0xc0u, 0x03u}, 1u, {DFI_ABILITY_ADAPTABILITY, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /*    Flip Turn, Double-Edge, Head Smash, Liquidation, Soak */
+    [DFI_FORME_BASCULEGION] = {{0x80u, 0x05u, 0x04u, 0x00u, 0x00u, 0xc0u, 0x43u, 0x90u, 0x08u}, 1u, {DFI_ABILITY_ADAPTABILITY, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /* Pelipper -- abilities: drizzle */
+    /*    learns: Brave Bird, Tailwind, Protect, Muddy Water, Ice Beam, Weather Ball, Hurricane, */
+    /*    Helping Hand, U-turn, Wide Guard, Liquidation, Soak */
+    [DFI_FORME_PELIPPER] = {{0xd0u, 0x05u, 0x10u, 0x80u, 0x00u, 0x08u, 0x04u, 0x82u, 0x08u}, 1u, {DFI_ABILITY_DRIZZLE, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /* Arcanine-Hisui -- abilities: intimidate, flashfire, rockhead */
+    /*    learns: Close Combat, Protect, Iron Head, Dragon Pulse, Snarl, Heat Wave, Flare Blitz, */
+    /*    Hyper Voice, Helping Hand, Rock Slide, Double-Edge, Extreme Speed, Head Smash */
+    [DFI_FORME_ARCANINEHISUI] = {{0xa0u, 0x00u, 0x40u, 0x45u, 0x40u, 0x09u, 0x48u, 0x18u, 0x00u}, 3u, {DFI_ABILITY_INTIMIDATE, DFI_ABILITY_FLASHFIRE, DFI_ABILITY_ROCKHEAD}},
+    /* Annihilape -- abilities: defiant */
+    /*    learns: Close Combat, Protect, Focus Blast, Shadow Ball, Helping Hand, U-turn, Rock Slide, */
+    /*    Throat Chop, Encore, Double-Edge, Thunderbolt, Bulk Up, Ice Punch, Shadow Claw, Low Kick */
+    [DFI_FORME_ANNIHILAPE] = {{0xa0u, 0x00u, 0x05u, 0x00u, 0x00u, 0x08u, 0xfcu, 0x40u, 0x43u}, 1u, {DFI_ABILITY_DEFIANT, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /* Floette-Eternal -- abilities: flowerveil */
+    /*    learns: Protect, Psychic, Grass Knot, Light Screen, Helping Hand, Dazzling Gleam */
+    [DFI_FORME_FLOETTEETERNAL] = {{0x80u, 0x00u, 0x00u, 0x18u, 0x04u, 0x08u, 0x00u, 0x00u, 0x80u}, 1u, {DFI_ABILITY_FLOWERVEIL, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
+    /* Floette-Mega -- abilities: fairyaura */
+    /*    learns: nothing */
+    [DFI_FORME_FLOETTEMEGA] = {{0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u}, 1u, {DFI_ABILITY_FAIRYAURA, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x33u, 0x98u, 0x34u, 0xfau, 0x89u, 0xc9u, 0x1bu, 0x20u,
-    0xacu, 0x6au, 0x5fu, 0xb6u, 0x0du, 0x7cu, 0xe6u, 0xcbu,
-    0xa6u, 0x86u, 0x45u, 0xd6u, 0x06u, 0x72u, 0x4cu, 0x18u,
-    0xdau, 0x98u, 0x0du, 0x0cu, 0x5eu, 0x7cu, 0x32u, 0x88u,
+    0x1du, 0x40u, 0x27u, 0x45u, 0xebu, 0xa5u, 0xe5u, 0xe0u,
+    0xb4u, 0x87u, 0x8fu, 0xeeu, 0x1eu, 0x8du, 0x0au, 0xa1u,
+    0x0du, 0xb8u, 0x87u, 0x5au, 0x0eu, 0xf1u, 0x07u, 0x7au,
+    0x62u, 0x53u, 0x58u, 0xdbu, 0x79u, 0x1cu, 0xeau, 0x68u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)

@@ -88,6 +88,7 @@ One PR per step.
    - the interactions with Life Orb, Chople's ModifyDamage order, and a booster under Helping Hand.
 3. **P3, abilities:** "-ate" and pinch become table rules, Pixilate, Refrigerate, Overgrow, Torrent and Swarm are marked, with recorded battles.
 4. **P4:** weather setters and surges become table rules over the prefix members. There is no behaviour change, which the conformance tests show.
+5. **G2, the rows of the 17 target teams** (`docs/research/expansion/team-gaps.md`, `data/team_gaps.json` `pool_rows`): every row they need, added at once and unmarked, so that the pool table content is fixed for the rest of the track: the formes Pelipper, Arcanine-Hisui, Annihilape, Floette-Eternal and Floette-Mega, 22 moves, the items Focus Sash, Expert Belt and Floettite and the abilities Rock Head, Flower Veil and Fairy Aura, with their learnable moves and legal abilities. No new column: a move whose callback or field no column models is mapped to a named handler id in its special column (decision 0009 section 3.3), which the turn code refuses; a step that needs a column changes the tables and the POOL fingerprint and says so. A move is marked by the step that records a reference battle with it under the POOL kind.
 
 ## 5. Evidence for every step
 

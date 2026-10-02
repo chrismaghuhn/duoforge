@@ -28,19 +28,64 @@
 
 #include "data/extended_tables.h"
 
-/* ---- the pool has the extended formes and moves so far ---- */
-#define DFI_POOL_FORME_COUNT 23u
-#define DFI_POOL_MOVE_COUNT 50u
+/* ---- pool formes (appended after the extended ones): step G2 ---- */
+#define DFI_FORME_PELIPPER 23u
+#define DFI_FORME_ARCANINEHISUI 24u
+#define DFI_FORME_ANNIHILAPE 25u
+#define DFI_FORME_FLOETTEETERNAL 26u
+#define DFI_FORME_FLOETTEMEGA 27u
+#define DFI_POOL_FORME_COUNT 28u
 
-/* ---- pool abilities (appended after the extended ones) ---- */
+/* ---- pool moves (appended after the extended ones): step G2 ---- */
+#define DFI_MOVE_UTURN 50u
+#define DFI_MOVE_ROCKSLIDE 51u
+#define DFI_MOVE_THROATCHOP 52u
+#define DFI_MOVE_ENCORE 53u
+#define DFI_MOVE_DOUBLEEDGE 54u
+#define DFI_MOVE_THUNDERBOLT 55u
+#define DFI_MOVE_SCALD 56u
+#define DFI_MOVE_WIDEGUARD 57u
+#define DFI_MOVE_FLASHCANNON 58u
+#define DFI_MOVE_EXTREMESPEED 59u
+#define DFI_MOVE_HEADSMASH 60u
+#define DFI_MOVE_FIRSTIMPRESSION 61u
+#define DFI_MOVE_BULKUP 62u
+#define DFI_MOVE_LIQUIDATION 63u
+#define DFI_MOVE_ICEPUNCH 64u
+#define DFI_MOVE_SHADOWCLAW 65u
+#define DFI_MOVE_RECOVER 66u
+#define DFI_MOVE_SOAK 67u
+#define DFI_MOVE_PSYCHICNOISE 68u
+#define DFI_MOVE_DRUMBEATING 69u
+#define DFI_MOVE_LOWKICK 70u
+#define DFI_MOVE_DAZZLINGGLEAM 71u
+#define DFI_POOL_MOVE_COUNT 72u
+
+/* ---- handlers new in the pool tables (step G2): the value of the special column of the moves that have a
+ * callback or a field that the columns do not model. The engine refuses every one of them, and so does the
+ * support manifest, which leaves the move unmarked. ---- */
+#define DFI_SPECIAL_THROAT_CHOP 15u
+#define DFI_SPECIAL_ENCORE 16u
+#define DFI_SPECIAL_SCALD 17u
+#define DFI_SPECIAL_WIDE_GUARD 18u
+#define DFI_SPECIAL_FIRST_IMPRESSION 19u
+#define DFI_SPECIAL_RECOVER 20u
+#define DFI_SPECIAL_SOAK 21u
+#define DFI_SPECIAL_PSYCHIC_NOISE 22u
+#define DFI_SPECIAL_LOW_KICK 23u
+
+/* ---- pool abilities (appended after the extended ones): step P1, then step G2 ---- */
 #define DFI_ABILITY_PIXILATE 21u
 #define DFI_ABILITY_REFRIGERATE 22u
 #define DFI_ABILITY_OVERGROW 23u
 #define DFI_ABILITY_TORRENT 24u
 #define DFI_ABILITY_SWARM 25u
-#define DFI_POOL_ABILITY_COUNT 26u
+#define DFI_ABILITY_ROCKHEAD 26u
+#define DFI_ABILITY_FLOWERVEIL 27u
+#define DFI_ABILITY_FAIRYAURA 28u
+#define DFI_POOL_ABILITY_COUNT 29u
 
-/* ---- pool items (appended after the extended ones): type boosters, then resist berries ---- */
+/* ---- pool items (appended after the extended ones): step P1 (type boosters, then resist berries), then step G2 ---- */
 #define DFI_ITEM_BLACKBELT 16u
 #define DFI_ITEM_BLACKGLASSES 17u
 #define DFI_ITEM_CHARCOAL 18u
@@ -74,7 +119,10 @@
 #define DFI_ITEM_TANGABERRY 46u
 #define DFI_ITEM_WACANBERRY 47u
 #define DFI_ITEM_YACHEBERRY 48u
-#define DFI_POOL_ITEM_COUNT 49u
+#define DFI_ITEM_FOCUSSASH 49u
+#define DFI_ITEM_EXPERTBELT 50u
+#define DFI_ITEM_FLOETTITE 51u
+#define DFI_POOL_ITEM_COUNT 52u
 
 /* ---- family columns ----
  * Items: TYPE_BOOSTER holds BasePower x4915/4096 for a move of the type
@@ -121,7 +169,7 @@ typedef struct dfi_ability_family {
  * order). A Mega forme is never set up: no learnable move, its one ability.
  * Under the POOL kinds a member's moves and ability are chosen from these;
  * under the other kinds the forme's set (the row of dfi_pool_formes). */
-#define DFI_POOL_LEARN_BYTES 7u
+#define DFI_POOL_LEARN_BYTES 9u
 #define DFI_POOL_FORME_ABILITIES_MAX 3u
 
 typedef struct dfi_forme_legal {
@@ -139,7 +187,7 @@ extern const dfi_ability_family dfi_pool_ability_family[DFI_POOL_ABILITY_COUNT];
 extern const dfi_forme_legal dfi_pool_forme_legal[DFI_POOL_FORME_COUNT];
 
 /* SHA-256 of the canonical pool bytes (written by the generator). */
-#define DFI_POOL_CANONICAL_SIZE 2907u
+#define DFI_POOL_CANONICAL_SIZE 3794u
 extern const uint8_t dfi_pool_table_hash[32];
 /* The canonical bytes of the closure layout over the first `formes`, `moves`,
  * `items` and `abilities` rows of the tables above, with every immunity byte
