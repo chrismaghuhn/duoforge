@@ -139,14 +139,26 @@ class Writer:
         return collections.Counter(self.counters)
 
 
+def parts(out_dir):
+    """The part directories of a dataset built in parts (build.py), in name order; [out_dir] for a single one."""
+    out = Path(out_dir)
+    found = sorted(p for p in out.glob("part-*") if p.is_dir() and not p.name.endswith(".tmp"))
+    return found if found else [out]
+
+
 def read(out_dir):
-    """The shards of a dataset, in order: one dict of arrays per shard."""
-    manifest = json.loads((Path(out_dir) / "manifest.json").read_text(encoding="utf-8"))
-    for shard in manifest["shards"]:
-        with np.load(Path(out_dir) / shard["file"]) as z:
-            yield {name: z[name] for name in z.files}
+    """The shards of a dataset, in order: one dict of arrays per shard, with "part" naming its part directory (a row's
+    game indexes that part's games table)."""
+    for part in parts(out_dir):
+        manifest = json.loads((part / "manifest.json").read_text(encoding="utf-8"))
+        for shard in manifest["shards"]:
+            with np.load(part / shard["file"]) as z:
+                arrays = {name: z[name] for name in z.files}
+            arrays["part"] = part.name
+            yield arrays
 
 
-def read_games(out_dir):
-    with np.load(Path(out_dir) / "games.npz") as z:
+def read_games(part_dir):
+    """The games table of one part (or of a single-part dataset)."""
+    with np.load(Path(part_dir) / "games.npz") as z:
         return {name: z[name] for name in z.files}

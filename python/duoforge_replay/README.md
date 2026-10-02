@@ -20,7 +20,7 @@ The writer refuses an output directory inside the repository. Tests use only our
 ```sh
 python -m duoforge_replay prior --pastes <dir of pastes> --out <prior.json>
 python -m duoforge_replay build --source <parquet or jsonl files or dirs> --prior <prior.json> --out <dir> \
-    [--workers N] [--limit-games N] [--ps-dir <pinned Showdown>] [--node node]
+    [--workers N] [--limit-parts N] [--unit-lines N] [--ps-dir <pinned Showdown>] [--node node]
 ```
 
 `build` needs:
@@ -29,7 +29,16 @@ python -m duoforge_replay build --source <parquet or jsonl files or dirs> --prio
 - the DuoForge library (`DUOFORGE_LIBRARY` or a build);
 - Node and the pinned Showdown checkout (`ps_stats.js` computes the own side's stats).
 
-It waits between chunks while the fuzz pause file exists. A full run is announced to the HauptSession first.
+**Parts and resume (for a long run on a VM).**
+- The output is split into parts, one per source unit: a parquet row group, or `--unit-lines` lines of a JSON lines file. Which games a part holds depends on the source files only, never on the worker count.
+- Each part is written to `part-<unit>.tmp/` and renamed to `part-<unit>/` when complete.
+- Start the same command again after an interruption. It skips the finished parts, removes the half-written ones and writes the rest. It refuses an output that was started with other inputs (`replay-dataset.json`: sources, prior, filters, unit size, code commit).
+- Each part holds its own shards, `games.npz`, `counters.json` and `manifest.json`.
+- stdout gets one line per finished part (games, rows, seconds, games per second so far), for a first throughput reading.
+- At the end, the output's `counters.json` sums all parts, and `manifest.json` records the provenance, the parts and the run.
+- `dataset.read(out)` iterates all parts in name order. Each shard names its part, whose `games.npz` its rows index.
+
+Between parts the build waits while the fuzz pause file exists. A full run is announced to the HauptSession first. Nothing assumes Windows: paths and the command line only (Linux VM: Python 3.12, NumPy, pyarrow, Node and the pinned Showdown checkout).
 
 ## What a row holds
 

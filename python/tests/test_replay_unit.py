@@ -648,29 +648,64 @@ class DatasetTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "not empty"):
             dataset.Writer(self.tmp / "used", {})
 
-    def test_counters_add_up(self):
+    def build(self, name, workers=1, **kw):
         from duoforge_replay import build
-        out = self.tmp / "counted"
-        c = build.build([self.source], self.prior_path, out, workers=1, chunk=2, stats_factory=stats_factory)
+        return build.build([self.source], self.prior_path, self.tmp / name, workers=workers, unit_lines=2,
+                           stats_factory=stats_factory, **kw)
+
+    def test_counters_add_up(self):
+        c = self.build("counted")
         skipped = sum(v for k, v in c.items() if k.startswith("games.skipped."))
         internal = sum(v for k, v in c.items() if k.startswith("internal:"))
         self.assertEqual(c["games.read"], c["games.processed"] + skipped + internal)
         stopped = sum(v for k, v in c.items() if k.startswith("perspectives.stopped."))
         self.assertEqual(c["perspectives.kept"] + stopped, 2 * c["games.processed"])
+        self.assertEqual(c["games.processed"], 3)
+        self.assertEqual(c["games.skipped.skip:format"], 1)
+
+    def test_parts_are_source_units(self):
+        # two source lines per unit: four games give two parts, each its own directory
+        from duoforge_replay import dataset
+        self.build("units")
+        parts = sorted(p.name for p in (self.tmp / "units").iterdir() if p.is_dir())
+        self.assertEqual(parts, ["part-source-00000", "part-source-00001"])
+        rows = sum(len(shard["side"]) for shard in dataset.read(self.tmp / "units"))
+        self.assertEqual(rows, sum(len(r.rows) for r in self.results) * 3 // 2)
 
     def test_workers_same_bytes(self):
-        from duoforge_replay import build
-        outs = []
         for workers in (1, 2):
-            out = self.tmp / f"w{workers}"
-            counters = build.build([self.source], self.prior_path, out, workers=workers, chunk=1,
-                                   stats_factory=stats_factory)
-            self.assertEqual(counters["games.skipped.skip:format"], 1)
-            self.assertEqual(counters["games.processed"], 3)
-            outs.append(out)
-        for path in sorted(outs[0].iterdir()):
-            if path.name != "manifest.json":
-                self.assertEqual(_sha(path), _sha(outs[1] / path.name), path.name)
+            self.build(f"w{workers}", workers=workers)
+        files = sorted(p.relative_to(self.tmp / "w1") for p in (self.tmp / "w1").rglob("*") if p.is_file())
+        self.assertTrue(any(f.parts[0].startswith("part-") for f in files))
+        for f in files:
+            if f.name != "manifest.json" or len(f.parts) > 1:  # a part's manifest names no worker count
+                self.assertEqual(_sha(self.tmp / "w1" / f), _sha(self.tmp / "w2" / f), f)
+
+    def test_resume_writes_only_missing_parts(self):
+        whole = self.tmp / "whole"
+        self.build("whole")
+        resumed = self.tmp / "resumed"
+        self.build("resumed")
+        shutil.rmtree(resumed / "part-source-00001")  # a run stopped before this part
+        (resumed / "part-source-00000.tmp").mkdir()  # a half-written part of a killed run
+        (resumed / "part-source-00000.tmp" / "junk").write_text("x")
+        c = self.build("resumed")
+        self.assertEqual(c["parts.written"], 1)
+        self.assertEqual(c["parts.skipped.done"], 1)
+        self.assertFalse((resumed / "part-source-00000.tmp").exists())
+        files = sorted(p.relative_to(whole) for p in whole.rglob("*") if p.is_file())
+        self.assertIn(Path("counters.json"), files)
+        for f in files:
+            if f != Path("manifest.json"):  # the output's manifest records the last run (parts written, seconds)
+                self.assertEqual(_sha(whole / f), _sha(resumed / f), f)
+
+    def test_the_output_must_be_a_dataset_or_empty(self):
+        from duoforge_replay import build
+        stranger = self.tmp / "stranger"
+        stranger.mkdir()
+        (stranger / "notes.txt").write_text("x")
+        with self.assertRaisesRegex(ValueError, "not a replay dataset"):
+            build.build([self.source], self.prior_path, stranger, unit_lines=2, stats_factory=stats_factory)
 
 
 class _FakeParquet:
