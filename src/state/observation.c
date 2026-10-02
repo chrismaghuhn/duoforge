@@ -284,8 +284,20 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
         o.player = (uint8_t)viewer;
         o.epoch = battle->request_epoch;
         o.supported = dfi_support.view_ext_features;
-        /* Tier 0 (decision 0018 section 13): no mechanic writes a field yet, so every field stays zero and
-         * every supported bit is clear. A feature's step fills its fields here and sets its bit in the manifest. */
+        /* A feature's step fills its fields here and sets its bit in the manifest (decision 0018 section 13).
+         * Step G8: Heal Block and Throat Chop, both public (section 5, the owner's change for Throat Chop): the
+         * presence of the occupant's tail counters, never the counters. They are set by the -start lines and cleared
+         * by the -end lines or when the occupant leaves (the tail is cleared then), as section 6.1 says; an empty
+         * position has no tail. */
+        for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+            for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+                const dfi_tail_pos *tail = &battle->tail.sides[s].positions[p];
+                uint32_t vol = 0u;
+                vol |= tail->heal_block_turns != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_HEAL_BLOCK : 0u;
+                vol |= tail->throat_chop_turns != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_THROAT_CHOP : 0u;
+                o.sides[s].positions[p].volatiles = vol;
+            }
+        }
     }
     *out = o;
     return DUOFORGE_OK;

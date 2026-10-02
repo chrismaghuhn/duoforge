@@ -385,6 +385,54 @@ class Library(unittest.TestCase):
                 self.assertEqual(len(st['tape']) + st['dropped'], len(raw['draws']), '%s step %d' % (name, i))
             self.assertEqual(data['dropped_total'], sum(st['dropped'] for st in data['steps']), name)
 
+    def test_the_tie_of_two_fairy_aura_handlers_is_a_dropped_draw(self):
+        """g12_fairy_aura_both: both Floettes are Mega with the same Speed, so their Fairy Aura handlers tie in the
+        BasePower event of every damaging move. Exactly one of them applies (move.auraBooster) whichever runs first, so
+        each draw is dropped, with its reason, and the battle converts; any other handler in the group is refused."""
+        name = 'g12_fairy_aura_both'
+        spec, trace = battle(name)
+        data = convert(name, spec, trace)
+        found = [(k, d) for k, step in enumerate(trace['steps']) for d in step['draws'] if d.get('context') == 'event:BasePower']
+        self.assertGreater(len(found), 4)
+        for k, d in found:
+            self.assertEqual(d['site'], 'SPEED_TIE')
+            self.assertEqual(sorted(d['group']), ['H:fairyaura:p1a:cb', 'H:fairyaura:p2a:cb'])
+            before = trace['steps'][k - 1]['state'] if k else trace['start']['state']
+            self.assertEqual(trace_to_c.drop_reason(d, before, trace['steps'][k]['state']),
+                             'Fairy Aura handlers whose order changes nothing')
+        k, d = found[0]
+        before = trace['steps'][k - 1]['state'] if k else trace['start']['state']
+        after = trace['steps'][k]['state']
+        for group, context in ((['H:fairyaura:p1a:cb', 'H:lifeorb:p2a:cb'], 'event:BasePower'),
+                               (['H:fairyaura:p1a:cb', 'H:fairyaura:p2a:end'], 'event:BasePower'),
+                               (['H:fairyaura:p1a:cb', 'H:fairyaura:p2a:cb'], 'event:ModifyDamage')):
+            with self.subTest(group=group, context=context), self.assertRaises(trace_to_c.ConversionError) as cm:
+                trace_to_c.drop_reason(dict(d, group=group, context=context), before, after)
+            self.assertEqual(cm.exception.rule, 'modifydamage-tie' if context == 'event:ModifyDamage' else 'tie-context')
+        self.assertTrue(all(len(step['tape']) + step['dropped'] == len(trace['steps'][k]['draws'])
+                            for k, step in enumerate(data['steps'])))
+
+    def test_a_flower_veil_block_is_the_activate_event_of_the_ability_with_the_holder_in_other(self):
+        """-block|protected|ability: Flower Veil|[of] holder (step G12): ACTIVATE at the protected Pokemon, cause ABILITY,
+        the ability's id + 1, the holder in `other` (the ability's own activation has none); another -block is refused."""
+        pool = tables(True)
+        line = '|-block|p1b: Rillaboom|ability: Flower Veil|[of] p1a: Floette'
+        events = trace_to_c.step_events([line], 0, {}, {}, pool)
+        self.assertEqual(events, [trace_to_c.ev_tuple(trace_to_c.EV['ACTIVATE'], 1, 0, trace_to_c.CAUSE['ABILITY'], 0,
+                                                      pool['ABILITY']['FLOWERVEIL'] + 1)])
+        for bad in ('|-block|p1b: Rillaboom|ability: Flower Veil',  # no [of]
+                    '|-block|p1b: Rillaboom|move: Protect|[of] p1a: Floette',
+                    '|-block|p1b: Rillaboom|ability: Flower Veil|extra|[of] p1a: Floette'):
+            with self.subTest(bad), self.assertRaises(trace_to_c.ConversionError) as cm:
+                trace_to_c.step_events([bad], 0, {}, {}, pool)
+            self.assertEqual(cm.exception.rule, 'block-line')
+        # The converted battles have the event: the opening Intimidate and the Hypnosis of g12_flower_veil_a/_b.
+        for name in ('g12_flower_veil_a', 'g12_flower_veil_b'):
+            spec, trace = battle(name)
+            logs = [l for step in trace['steps'] for l in step['log'] if l.startswith('|-block|')]
+            self.assertTrue(logs, name)
+            convert(name, spec, trace)
+
     def test_the_tie_of_two_no_guard_handlers_is_a_dropped_draw(self):
         """d01_noguard_accuracy_tie (a cut of fz_1_118 of the differential loop's seed 1): both Raichu are Mega Raichu Y,
         whose No Guard handlers tie in the Accuracy event of the first attack. The draw is dropped, with its reason,
@@ -406,6 +454,102 @@ class Library(unittest.TestCase):
                    and trace_to_c.drop_reason(x, before, after) is not None]
         self.assertIn(d, dropped)
         self.assertEqual((step['dropped'], len(step['tape']) + step['dropped']), (len(dropped), len(trace['steps'][k]['draws'])))
+
+    def test_heal_block_end_ties_are_kept_when_two_end_lines_show_their_order(self):
+        """Two Heal Blocks of holders of equal Speed that end in the same residual (g8_heal_block_tie_a and _b, the two
+        orders): the tie is a tape entry that states which line comes first (the lower position's: 0), the same
+        for the draw and for the lines. A tie of which fewer than two end (turn 1 of the same battles) is dropped, with the
+        step's log as the precondition; reaching the drop with two end lines, or without a log, is an error; a group of
+        three is refused, and a draw that contradicts the lines is an error and never an entry."""
+        for name in ('g8_heal_block_tie_a', 'g8_heal_block_tie_b'):
+            trace = json.load(open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json')))
+            kept, dropped = [], []
+            for k, step in enumerate(trace['steps']):
+                before = trace['start']['state'] if k == 0 else trace['steps'][k - 1]['state']
+                for d in step['draws']:
+                    if d['site'] != 'SPEED_TIE' or not all(g.startswith('H:healblock:') for g in d.get('group', ['x'])):
+                        continue
+                    entry = trace_to_c.heal_block_end_tie(d, step['log'])
+                    if entry is not None:
+                        kept.append((k, entry, d))
+                        with self.assertRaises(trace_to_c.ConversionError) as ctx:
+                            trace_to_c.drop_reason(d, before, step['state'], step['log'])
+                        self.assertEqual(ctx.exception.rule, 'heal-block-end-tie')
+                    else:
+                        dropped.append(k)
+                        self.assertEqual(trace_to_c.drop_reason(d, before, step['state'], step['log']),
+                                         'residual tie of Heal Block ends of which fewer than two end now')
+                        with self.assertRaises(trace_to_c.ConversionError) as ctx:
+                            trace_to_c.drop_reason(d, before, step['state'])
+                        self.assertEqual(ctx.exception.rule, 'heal-block-tie-log')
+            self.assertEqual(len(kept), 1, name)
+            self.assertEqual(len(dropped), 1, name)
+            k, entry, d = kept[0]
+            lines = [l for l in trace['steps'][k]['log'] if l.startswith('|-end|') and l.endswith('|move: Heal Block')]
+            self.assertEqual(len(lines), 2)
+            lower_first = lines[0].startswith('|-end|p1a')
+            self.assertEqual(entry, (trace_to_c.SITES['SPEED_TIE'], 0, 2, 0 if lower_first else 1), name)
+            # name a: the line of p1a is first, name b: the line of p2a
+            self.assertEqual(lower_first, name.endswith('_a'))
+            # The same draw with the lines in the other order contradicts the draw: an error, no entry.
+            flipped = [lines[1], lines[0]]
+            with self.assertRaises(trace_to_c.ConversionError) as ctx:
+                trace_to_c.heal_block_end_tie(d, flipped)
+            self.assertEqual(ctx.exception.rule, 'heal-block-end-order')
+            # Fewer than two end lines: no order shows, no entry.
+            self.assertIsNone(trace_to_c.heal_block_end_tie(d, lines[:1]))
+            self.assertIsNone(trace_to_c.heal_block_end_tie(d, []))
+            # Three holders in the group with two ending: refused.
+            three = dict(d, group=d['group'] + ['H:healblock:p1b:end'])
+            with self.assertRaises(trace_to_c.ConversionError) as ctx:
+                trace_to_c.heal_block_end_tie(three, trace['steps'][k]['log'])
+            self.assertEqual(ctx.exception.rule, 'heal-block-tie-size')
+            # A tie that is not of Heal Block ends is not this rule's.
+            self.assertIsNone(trace_to_c.heal_block_end_tie(dict(d, group=['H:protect:p1a:end', 'H:stall:p1a:end']),
+                                                            trace['steps'][k]['log']))
+
+    def test_view_extension_rows_are_what_the_protocol_lines_say(self):
+        """Decision 0018 section 6.1 for Throat Chop and Heal Block: a position has the bit from the -start line
+        (`|-start|X|Throat Chop|[silent]`, `|-start|X|move: Heal Block`) until the matching -end line, or until the
+        occupant leaves (`|switch|`, `|drag|`, `|replace|`, `|faint|`). The rows of the C test (view_ext_rows in
+        tests/test_pool_g8.c: the expected view extension after each step of the G8 battles, for both viewers, as
+        masks over side * 2 + slot) must be exactly what these lines give for the committed traces, so the engine's
+        extension is checked against the protocol and not against itself."""
+        names = ('g8_throat_chop', 'g8_heal_block', 'g8_heal_block_pair', 'g8_heal_block_tie_a', 'g8_heal_block_tie_b')
+        source = open(os.path.join(ROOT, 'tests', 'test_pool_g8.c'), encoding='utf-8').read()
+        rows = {}
+        for m in re.finditer(r'\{"(g8_\w+)", (\d+)u, 0x([0-9a-f])u, 0x([0-9a-f])u\}', source):
+            rows[(m.group(1), int(m.group(2)))] = (int(m.group(3), 16), int(m.group(4), 16))
+        derived = {}
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            throat, block = set(), set()
+            for k, step in enumerate(trace['steps']):
+                for line in step['log']:
+                    part = line.split('|')
+                    if len(part) < 3:
+                        continue
+                    if part[1] in ('switch', 'drag', 'faint', 'replace'):
+                        throat.discard(part[2][:3])
+                        block.discard(part[2][:3])
+                    elif part[1] == '-start' and len(part) > 3 and part[3] == 'Throat Chop':
+                        self.assertEqual(part[-1], '[silent]')
+                        throat.add(part[2][:3])
+                    elif part[1] == '-end' and len(part) > 3 and part[3] == 'Throat Chop':
+                        throat.discard(part[2][:3])
+                    elif part[1] == '-start' and len(part) > 3 and part[3] == 'move: Heal Block':
+                        block.add(part[2][:3])
+                    elif part[1] == '-end' and len(part) > 3 and part[3] == 'move: Heal Block':
+                        block.discard(part[2][:3])
+
+                def mask(s):
+                    return sum(1 << ((int(x[1]) - 1) * 2 + 'ab'.index(x[2])) for x in s)
+
+                derived[(name, k)] = (mask(throat), mask(block))
+        self.assertEqual(rows, derived)
+        # The battles do set and clear both: something is shown in each, and every row of the last step is empty.
+        self.assertTrue(any(v[0] for v in derived.values()) and any(v[1] for v in derived.values()))
 
     def test_a_two_turn_lock_lasts_while_twoturnmove_stands(self):
         """Electro Shot's onTryMove removes the move's volatile on the locked turn and the recorder's `locked` is made of
@@ -528,7 +672,7 @@ class Library(unittest.TestCase):
         self.assertTrue(any(l.startswith('|switch|p1a: Arcanine|Arcanine-Hisui, L50, M|') for l in lines))
 
     def test_every_move_marked_beyond_the_extended_ids_is_used_in_a_pool_battle(self):
-        """A move that the pool manifest marks beyond the extended ids (twelve of step G2, U-turn of step G5) was used in
+        """A move that the pool manifest marks beyond the extended ids (twelve of step G2, U-turn of step G5, Moonblast and Calm Mind of step G12) was used in
         a committed pool battle: a move line of it that did something (damage, or a boost for a status move) before
         the next move line."""
         def read(*p):
@@ -537,11 +681,11 @@ class Library(unittest.TestCase):
         ext_moves = int(re.search(r'#define DFI_EXT_MOVE_COUNT (\d+)u', read('src', 'data', 'extended_tables.h')).group(1))
         array = source[source.index('dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {'):source.index('dfi_pool_items[')]
         names = re.findall(r'^    /\* (.+?) -- data/', array, re.M)
-        ids = {m.group(1): int(m.group(2)) for m in re.finditer(r'#define DFI_MOVE_(\w+) (\d+)u', header)}
+        ids = {m.group(1): int(m.group(2)) for m in re.finditer(r'#define DFI_MOVE_(?!FLAG)(\w+) (\d+)u', header)}
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 13)
+        self.assertEqual(len(marked), 21)  # G2, G5, G8, G12, then First Impression, Scald, Recover, Low Kick (G10)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -557,7 +701,7 @@ class Library(unittest.TestCase):
                         for after in lines[i + 1:]:
                             if after.startswith('|move|') or after.startswith('|turn|'):
                                 break
-                            done = done or after.startswith(('|-damage|', '|-boost|'))
+                            done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|'))
             with self.subTest(move=name):
                 self.assertTrue(done, '%s is marked but no committed pool battle uses it' % name)
 

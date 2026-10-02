@@ -128,6 +128,8 @@ duoforge_add_test(NAME duoforge.combat.item_family SOURCES test_item_family.c WH
 duoforge_add_test(NAME duoforge.combat.focus_sash_confusion SOURCES test_focus_sash_confusion.c WHITEBOX TIMEOUT 60)
 # The ability families of decision 0015 (the "-ate" and pinch rules) against a table of the pinned handlers.
 duoforge_add_test(NAME duoforge.combat.ability_family SOURCES test_ability_family.c WHITEBOX TIMEOUT 60)
+# The rules that several moves share (step G10): the first-turn moves, power by weight, the thaw and heal columns.
+duoforge_add_test(NAME duoforge.combat.move_rules SOURCES test_move_rules.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.combat.closure_gate SOURCES test_closure_gate.c WHITEBOX TIMEOUT 600)
 duoforge_add_test(NAME duoforge.combat.team_c_gate SOURCES test_team_c_gate.c WHITEBOX TIMEOUT 600)
 
@@ -144,6 +146,8 @@ duoforge_add_test(NAME duoforge.state.pool_setup SOURCES test_pool_setup.c WHITE
 duoforge_add_test(NAME duoforge.data.api SOURCES test_data_api.c WHITEBOX TIMEOUT 120)
 # The POOL state tail (decision 0015 section 7): schema "v3 + pool tail rev 1", present under the POOL kinds only.
 duoforge_add_test(NAME duoforge.state.pool_tail SOURCES test_pool_tail.c WHITEBOX TIMEOUT 120)
+# Step G8: Throat Chop and Psychic Noise's Heal Block in the tail, the request and the POOL view extension.
+duoforge_add_test(NAME duoforge.state.pool_g8 SOURCES test_pool_g8.c WHITEBOX TIMEOUT 60)
 # The generated files must stay exactly what tools/datagen/gen_closure.py
 # wrote; regenerate and update these hashes together.
 foreach(_gen IN ITEMS
@@ -151,8 +155,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=63a7707353fb43d8eaad264878c9a2a9ea64732e7ebf5ee5baf9c7073be34c57"
-        "pool_tables.c=87bf673d93545035612572e43a6c8f20ad71bb400659a0a462fc1371ac2aeacb")
+        "pool_tables.h=26de9a28d770bec6c49e9e68a3c36972979fae78e474d6dbeb08e2957305887d"
+        "pool_tables.c=5a3bdb38322db0f616e00ab6de12a6132fb20658b7b292183702ffdc4a2ccb2d")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)

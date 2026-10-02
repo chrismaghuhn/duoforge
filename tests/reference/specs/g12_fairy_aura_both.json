@@ -1,0 +1,22 @@
+{
+  "name": "g12_fairy_aura_both",
+  "purpose": "Fairy Aura on both sides: both Floettes Mega Evolve in the same turn (the two Mega actions in Speed order, two -ability lines), and the Fairy moves of both sides are boosted once, not twice; Raichu Dazzling Gleam holds a Fairy Feather and has Helping Hand from its Floette ally: Fairy Aura (priority 20), the type item (15) and Helping Hand (10) chain in that order.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000000001",
+  "teams": [
+    "Floette-Eternal (F) @ Floettite\nAbility: Flower Veil\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Dazzling Gleam\n- Protect\n- Psychic\n- Light Screen\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Dazzling Gleam\n- Protect\n\nStaraptor (F) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Close Combat\n- U-turn\n- Protect\n\nAnnihilape (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Close Combat\n- Ice Punch\n- Shadow Claw\n- U-turn\n\nPelipper (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Hurricane\n- Weather Ball\n- U-turn\n- Protect\n\nSneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Close Combat\n- Dire Claw\n- U-turn\n- Fake Out",
+    "Floette-Eternal (F) @ Floettite\nAbility: Flower Veil\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Helping Hand\n- Dazzling Gleam\n- Protect\n- Psychic\n\nRaichu (F) @ Fairy Feather\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Dazzling Gleam\n- Thunderbolt\n- Helping Hand\n- Protect\n\nGrimmsnarl (M) @ Light Clay\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Dazzling Gleam\n- Spirit Break\n- Reflect\n- Light Screen\n\nIncineroar (M) @ Charcoal\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Flare Blitz\n- Parting Shot\n- Darkest Lariat\n\nMilotic (F) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Muddy Water\n- Hypnosis\n- Ice Beam\n- Protect\n\nKingambit (M) @ Rocky Helmet\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Sucker Punch\n- Iron Head\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 mega, move 3 1",
+      "move 1, move 3 1"
+    ],
+    "p2": [
+      "move 1 mega, move 1",
+      "move 2, move 1"
+    ],
+    "max_steps": 4
+  }
+}

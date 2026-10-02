@@ -305,7 +305,12 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
     # exactly the pinned text, and a condition block (the callbacks inside it are code, not data).
     owned = G2_OWNED_FIELDS.get(handled[0], {}) if pool else {}
     owned_secondary = G2_OWNED_SECONDARY.get(handled[0]) if pool else None
-    owns_condition = pool and handled[0] in G2_OWNED_CONDITION
+    # Step G8: a secondary whose whole text is one of G8_SECONDARIES is a modelled kind (the lockout of Throat Chop, the
+    # Heal Block of Psychic Noise), not a handler's: chance 100 and the kind, in every pool row of that text.
+    g8_secondary = None
+    if pool and 'secondary' in f and norm(f['secondary'][1]) in G8_SECONDARIES:
+        g8_secondary = G8_SECONDARIES[norm(f['secondary'][1])]
+    owns_condition = (pool and handled[0] in G2_OWNED_CONDITION) or (g8_secondary is not None and g8_secondary[1])
     for name, text in owned.items():
         if name not in f or norm(f[name][1]) != text:
             fail('move %s: %s is not "%s"' % (mid, name, text))
@@ -317,7 +322,8 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
         if is_fn:
             if name not in handled[1]:
                 bad('move %s: callback %s is not mapped to a handler' % (mid, name), 'callback %s' % name)
-        elif name not in DATA_KEYS and name not in IGNORED_KEYS and name not in owned_fields and name not in owned:
+        elif (name not in DATA_KEYS and name not in IGNORED_KEYS and name not in owned_fields and name not in owned
+              and not (pool and name in POOL_COLUMN_KEYS)):
             bad('move %s: unknown field %s' % (mid, name), 'field %s' % name)
     missing = handled[1] - set(n for n, v in f.items() if v[0])
     if missing:
@@ -327,8 +333,10 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
         return scalar(f[name][1]) if name in f else default
 
     flags = 0
+    flags2 = 0
     flag_bits = FLAG_BITS_C if ext else FLAG_BITS
     for fl in re.findall(r'(\w+): 1', f['flags'][1]):
+        flags2 |= FLAGS2_BITS.get(fl, 0)
         if fl in flag_bits:
             flags |= flag_bits[fl]
         elif lenient:
@@ -375,7 +383,7 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
         'type': TYPES.index(get('type')), 'category': CATEGORIES[get('category')],
         'base_power': get('basePower'), 'accuracy': 0 if acc is True else acc, 'pp_base': pp_base, 'pp_max': pp_max,
         'priority': get('priority') + 8, 'target_class': target_class,
-        'crit_ratio': get('critRatio', 1), 'flags': flags,
+        'crit_ratio': get('critRatio', 1), 'flags': flags, 'flags2': flags2, 'heal': [0, 0],
         'recoil': [0, 0], 'drain': [0, 0], 'sec_chance': 0, 'sec_kind': 0, 'sec_param': 0,
         'boost_role': 0, 'boosts': [0] * 7, 'primary_status': 0, 'side_condition': 0, 'pseudo_weather': 0,
         'special': (SPECIAL_IDS_P if pool else SPECIAL_IDS_C if ext else SPECIAL_IDS).index(handled[0]),
@@ -386,8 +394,21 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
             if len(nums) != 2:
                 fail('move %s: %s is not a fraction' % (mid, key))
             rec[key] = nums
+    if pool and 'thawsTarget' in f:
+        if norm(f['thawsTarget'][1]) != 'thawsTarget: true,':
+            bad('move %s: thawsTarget is not "thawsTarget: true,"' % mid, 'field thawsTarget')
+        else:
+            rec['flags2'] |= FLAG2_THAWS_TARGET
+    if pool and 'heal' in f:
+        heal = re.fullmatch(r'heal: \[(\d+), (\d+)\],', norm(f['heal'][1]))
+        if heal is None or not 0 < int(heal.group(1)) <= int(heal.group(2)) <= 255:
+            bad('move %s: heal is not a fraction "heal: [a, b],"' % mid, 'field heal')
+        else:
+            rec['heal'] = [int(heal.group(1)), int(heal.group(2))]
     vectors = 0
-    if 'secondary' in f and owned_secondary is None:
+    if g8_secondary is not None:
+        rec['sec_chance'], rec['sec_kind'] = 100, g8_secondary[0]
+    if 'secondary' in f and owned_secondary is None and g8_secondary is None:
         # The whole secondary must be one modelled effect; anything else (a
         # self block, a callback, several effects) fails instead of being misread.
         sec = re.fullmatch(r'secondary: \{ chance: (\d+), (.*) \},', ' '.join(f['secondary'][1].split()))
@@ -1247,31 +1268,47 @@ G2_MOVES = ['uturn', 'rockslide', 'throatchop', 'encore', 'doubleedge', 'thunder
 # secondary, exactly this text of the pinned data; everything else about the move is read by parse_move as for any
 # other move, and anything it does not know still fails. Each step that implements one of them (G7 to G11) consumes
 # the handler id and, if it needs a column, changes the tables and the POOL fingerprint and says so.
-G2_HANDLERS = ['THROAT_CHOP', 'ENCORE', 'SCALD', 'WIDE_GUARD', 'FIRST_IMPRESSION', 'RECOVER', 'SOAK', 'PSYCHIC_NOISE',
-               'LOW_KICK']
+G2_HANDLERS = ['ENCORE', 'SCALD', 'WIDE_GUARD', 'FIRST_IMPRESSION', 'RECOVER', 'SOAK', 'LOW_KICK']
 SPECIAL_P = dict(SPECIAL_C, **{
-    'throatchop': ('THROAT_CHOP', set()),                                 # G8a: a lockout volatile of the sound moves
     'encore': ('ENCORE', set()),                                          # G9: the last move, a volatile, a queue change
-    'scald': ('SCALD', set()),                                            # G10b: thaws its frozen target
     'wideguard': ('WIDE_GUARD', {'onTry', 'onHitSide'}),                  # G7: a side condition against spread moves
     'firstimpression': ('FIRST_IMPRESSION', {'onTry', 'onDisableMove'}),  # G10a: first turn out only (Fake Out's rule)
-    'recover': ('RECOVER', set()),                                        # G10c: heals half of the maximum HP
     'soak': ('SOAK', {'onHit'}),                                          # G11: sets the target's type to Water
-    'psychicnoise': ('PSYCHIC_NOISE', set()),                             # G8b: Heal Block on every hit target
     'lowkick': ('LOW_KICK', {'basePowerCallback', 'onTryHit'}),           # G10d: base power by the target's weight
 })
 SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + ['UNMODELED']
+# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags
+# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
+# them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
+POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {
-    'SCALD': {'thawsTarget': 'thawsTarget: true,'},
-    'RECOVER': {'heal': 'heal: [1, 2],'},
     'ENCORE': {'volatileStatus': "volatileStatus: 'encore',"},
     'WIDE_GUARD': {'sideCondition': "sideCondition: 'wideguard',"},
 }
-G2_OWNED_SECONDARY = {
-    'THROAT_CHOP': "secondary: { chance: 100, onHit(target) { target.addVolatile('throatchop'); }, },",
-    'PSYCHIC_NOISE': "secondary: { chance: 100, volatileStatus: 'healblock', },",
+G2_OWNED_SECONDARY = {}
+G2_OWNED_CONDITION = {'ENCORE', 'WIDE_GUARD'}
+# Step G8 (Throat Chop and Psychic Noise): the two secondaries become modelled kinds, and the column that their
+# consumers read is the move's second flags byte (the first is full): the `sound` flag (Throat Chop bars the sound
+# moves) and the `heal` flag (Heal Block bars the moves that heal). Both are derived for every pool move, the prefix
+# included; the CLOSURE and extended bytes do not have them. Decision 0015 section 2.
+SECONDARY_LOCKOUT = 5     # Throat Chop: chance 100, addVolatile('throatchop'): the target may not use sound moves
+SECONDARY_HEAL_BLOCK = 6  # Psychic Noise: chance 100, volatileStatus 'healblock' (2 turns from Psychic Noise)
+G8_SECONDARIES = {
+    "secondary: { chance: 100, onHit(target) { target.addVolatile('throatchop'); }, },": (SECONDARY_LOCKOUT, True),
+    "secondary: { chance: 100, volatileStatus: 'healblock', },": (SECONDARY_HEAL_BLOCK, False),
 }
-G2_OWNED_CONDITION = {'THROAT_CHOP', 'ENCORE', 'WIDE_GUARD'}
+FLAGS2_BITS = {'sound': 1, 'heal': 2}
+FLAG2_THAWS_TARGET = 4  # step G10: thawsTarget (data/moves.ts:15770), the move cures a frozen target after the secondaries
+# What the engine hard-codes about the two conditions, read from the pin (build_pool checks it): the duration and the
+# residual order of Throat Chop's condition, and Heal Block's (the move healblock) order and Psychic Noise duration.
+G8_CONDITION_FACTS = (
+    ('throatchop', ['duration: 2,', 'onResidualOrder: 22,', "if (this.dex.moves.get(moveSlot.id).flags['sound']) {",
+                    "if (!move.isZOrMaxPowered && move.flags['sound']) {", 'onBeforeMovePriority: 6,']),
+    ('healblock', ['onResidualOrder: 20,', 'onBeforeMovePriority: 6,', 'if (effect?.name === "Psychic Noise") {',
+                   'return 2;', "if (this.dex.moves.get(moveSlot.id).flags['heal']) {",
+                   "if (move.flags['heal'] && !move.isZ && !move.isMax) {",
+                   'onTryHeal(damage, target, source, effect) {']),
+)
 # Move flags that the new moves carry and no row reads. `punch` is read by Iron Fist and `slicing` (already ignored)
 # by Sharpness, `allyanim` by nothing in the tables: build_pool fails if one of those readers is a pool ability,
 # because ignoring the flag would then hide a mechanic.
@@ -1329,8 +1366,9 @@ HANDLER_IDS = ['NONE', 'UNMODELED']
 # Items and abilities that a step of the expansion implements in the turn code by id (they have no family): modelled
 # by definition, like the closure and Team C rows. The step that marks such a row in the support manifest adds its id
 # here, which changes the handler column and so the POOL table hash, as any pool change does; a row that is marked and
-# still has the UNMODELED handler fails duoforge.data.pool_tables. G4: Focus Sash, Rock Head.
-ENGINE_ROWS = {'items': ['focussash'], 'abilities': ['rockhead']}
+# still has the UNMODELED handler fails duoforge.data.pool_tables. G4: Focus Sash, Rock Head. G12: Floettite (the Mega
+# Stone of Floette-Eternal), Flower Veil and Fairy Aura.
+ENGINE_ROWS = {'items': ['focussash', 'floettite'], 'abilities': ['rockhead', 'flowerveil', 'fairyaura']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -1706,7 +1744,8 @@ def parse_pool_move(mid, moves_ts, champ_moves):
     rec['unmodeled'] = sorted(set(features))
     if rec['unmodeled']:
         rec.update(sec_chance=0, sec_kind=0, sec_param=0, boost_role=0, boosts=[0] * 7, primary_status=0,
-                   side_condition=0, pseudo_weather=0, special=SPECIAL_IDS_P.index('UNMODELED'))
+                   side_condition=0, pseudo_weather=0, special=SPECIAL_IDS_P.index('UNMODELED'), heal=[0, 0],
+                   flags2=rec['flags2'] & ~FLAG2_THAWS_TARGET)
     return rec
 
 
@@ -1829,6 +1868,19 @@ def check_bounds(d, repo):
         fail('bounds: the learnable bitset is too short for %d moves' % n['moves'])
 
 
+def check_g8_conditions(moves_ts):
+    """The engine hard-codes the durations, orders and tests of the Throat Chop and Heal Block conditions: every one of
+    them must be in the pinned entry, as one normalised text."""
+    for mid, facts in G8_CONDITION_FACTS:
+        e = moves_ts.entry(mid)
+        if e is None:
+            fail('move %s not found' % mid)
+        text = norm(chr(10).join(e[2]))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('move %s: the condition no longer has "%s"' % (mid, fact))
+
+
 def build_pool(root, repo, dx):
     """The pool tables: the extended data as the prefix, then the new rows of step P1 (POOL_ITEMS, POOL_ABILITIES),
     then those of step G2 (G2_MOVES, G2_ITEMS, G2_ABILITIES and the formes of SETS_G2), then every other move, item,
@@ -1842,6 +1894,7 @@ def build_pool(root, repo, dx):
     abil_ts, champ_abil = Source(root, 'data/abilities.ts'), Source(root, 'data/mods/champions/abilities.ts')
     formats, learn = Source(root, 'data/mods/champions/formats-data.ts'), Source(root, 'data/mods/champions/learnsets.ts')
     legal = load_legal_pool(repo)
+    check_g8_conditions(moves_ts)
     FLAGS_THAT_MATTER.clear()
     FLAGS_THAT_MATTER.update(prefix_flag_reads((items_ts, champ_items, abil_ts, champ_abil, moves_ts, champ_moves), dx)
                              - set(FLAG_BITS_C) - set(INERT_FLAG_READS))
@@ -1878,7 +1931,10 @@ def build_pool(root, repo, dx):
         abilities.append({'id': aid, 'refs': [abil_ts.ref(aid)] + ([champ_abil.ref(aid)]
                                                                    if champ_abil.entry(aid) is not None else [])})
     n_steps = (len(items), len(abilities))
-    moves = [dict(m) for m in dx['moves']]
+    # The second flags byte (step G8) of the prefix moves, read from the pin as the new rows are: the prefix rows
+    # themselves (the CLOSURE and extended bytes) do not have it.
+    moves = [dict(m, flags2=parse_move(m['id'], moves_ts, champ_moves, ext=True, pool=True)['flags2'])
+             for m in dx['moves']]
     for mid in G2_MOVES:
         if any(m['id'] == mid for m in moves):
             fail('pool move %s is already in the extended tables' % mid)
@@ -2105,6 +2161,20 @@ def forme_id16(v):
     return 0xFFFF if v is None else v
 
 
+def flags2_bytes(d):
+    """The second flags byte of every move, in id order, in the canonical pool bytes (step G8; bit 4 is step G10)."""
+    return bytes(m['flags2'] for m in d['moves'])
+
+
+def heal_bytes(d):
+    """The heal fraction of every move, in id order, in the canonical pool bytes (step G10): numerator and
+    denominator, 0 and 0 for a move that does not heal by a fraction."""
+    b = bytearray()
+    for m in d['moves']:
+        b.extend(m.get('heal', [0, 0]))
+    return bytes(b)
+
+
 def canonical_pool(d):
     """The canonical pool bytes hashed into the context fingerprint of the POOL kinds (the pool layout): the six
     counts, a row per forme (the forme links are u16: the pool has more than 255 formes), per move (the closure's
@@ -2141,7 +2211,7 @@ def canonical_pool(d):
     b.extend(d['immunity'])
     for n in d['natures']:
         b.extend([n['plus'], n['minus']])
-    return bytes(b) + family_bytes(d) + handler_bytes(d) + forme_legal_bytes(d)
+    return bytes(b) + family_bytes(d) + handler_bytes(d) + forme_legal_bytes(d) + flags2_bytes(d) + heal_bytes(d)
 
 
 def closure_projection(rows, key):
@@ -2230,6 +2300,15 @@ def render_pool(dp, dx):
 
     new_special = '\n'.join('#define DFI_SPECIAL_%s %du' % (n, i) for i, n in enumerate(SPECIAL_IDS_P)
                             if i >= len(SPECIAL_IDS_C))
+    new_special += '''
+
+/* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
+ * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */
+#define DFI_MOVE_FLAG2_SOUND 1u /* data/moves.ts flags.sound: Throat Chop bars these moves */
+#define DFI_MOVE_FLAG2_HEAL 2u  /* flags.heal: Heal Block bars these moves */
+#define DFI_MOVE_FLAG2_THAWS_TARGET 4u /* thawsTarget (step G10): the move cures a frozen target after the secondaries */
+#define DFI_SECONDARY_LOCKOUT 5u    /* chance 100: the target may not use sound moves (Throat Chop) */
+#define DFI_SECONDARY_HEAL_BLOCK 6u /* chance 100: the target may not heal (Psychic Noise) */'''
     new_targets = '\n'.join('#define DFI_TARGET_CLASS_%s %du' % (n, v) for v, n in sorted(TARGET_CLASS_POOL_NAMES.items()))
     h = '''#ifndef DUOFORGE_DATA_POOL_TABLES_H
 #define DUOFORGE_DATA_POOL_TABLES_H
@@ -2404,6 +2483,11 @@ extern const dfi_ability_family dfi_pool_ability_family[DFI_POOL_ABILITY_COUNT];
 extern const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT];       /* DFI_HANDLER_* */
 extern const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT]; /* DFI_HANDLER_* */
 extern const dfi_forme_legal dfi_pool_forme_legal[DFI_POOL_FORME_COUNT];
+/* The second flags byte of every move (DFI_MOVE_FLAG2_*), by move id; the last part of the canonical pool bytes. */
+extern const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT];
+/* The heal fraction of every move (step G10, heal: [numerator, denominator] in the pin; 0 and 0 for none), by move id;
+ * the very last part of the canonical pool bytes. */
+extern const uint8_t dfi_pool_move_heal[DFI_POOL_MOVE_COUNT][2];
 extern const dfi_pool_alias dfi_pool_forme_aliases[DFI_POOL_ALIAS_COUNT];
 
 /* ---- names ----
@@ -2517,6 +2601,17 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity);
         slots += ['DFI_CLOSURE_NONE'] * (FORME_ABILITIES_MAX - len(slots))
         c.append('    [DFI_FORME_%s] = {{%s}, %du, {%s}},' % (
             fo['id'].upper(), ', '.join('0x%02xu' % b for b in fl['learnable']), len(fl['abilities']), ', '.join(slots)))
+    c += ['};', '', '/* The second flags byte of every move (data/moves.ts flags.sound and flags.heal), by move id. */',
+          'const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {']
+    for m in dp['moves']:
+        names = [n for n, bit in (('DFI_MOVE_FLAG2_SOUND', 1), ('DFI_MOVE_FLAG2_HEAL', 2),
+                                  ('DFI_MOVE_FLAG2_THAWS_TARGET', 4)) if m['flags2'] & bit]
+        c.append('    [DFI_MOVE_%s] = %s, /* %s */' % (m['id'].upper(), ' | '.join(names) if names else '0u', m['name']))
+    c += ['};', '', '/* The heal fraction of the moves that heal by one (step G10): numerator, denominator. */',
+          'const uint8_t dfi_pool_move_heal[DFI_POOL_MOVE_COUNT][2] = {']
+    for m in dp['moves']:
+        if m.get('heal', [0, 0]) != [0, 0]:
+            c.append('    [DFI_MOVE_%s] = {%du, %du}, /* %s */' % (m['id'].upper(), m['heal'][0], m['heal'][1], m['name']))
     c += ['};', '', '/* Cosmetic formes: a name for the row of the base forme (decision 0015 section 4.2). */',
           'const dfi_pool_alias dfi_pool_forme_aliases[DFI_POOL_ALIAS_COUNT] = {']
     for alias, base in dp['aliases']:
@@ -2740,6 +2835,13 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity)
         for (uint32_t k = 0u; k < DFI_POOL_FORME_ABILITIES_MAX; ++k) {
             out[n++] = l->abilities[k];
         }
+    }
+    for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
+        out[n++] = dfi_pool_move_flags2[i];
+    }
+    for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
+        out[n++] = dfi_pool_move_heal[i][0];
+        out[n++] = dfi_pool_move_heal[i][1];
     }
     return n;
 }
