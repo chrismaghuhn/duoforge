@@ -137,6 +137,12 @@ static duoforge_status dfi_slot_candidates(const duoforge_context *ctx, const st
             if (mv->pp == 0u || (choice && k + 1u != own->locked_move)) {
                 continue;
             }
+            /* Encore's onDisableMove disables every slot but the Encored one (data/moves.ts:4724-4783; POOL kinds, the
+             * tail is zero elsewhere); with that one disabled too, the slot gets Struggle. */
+            if (b->tail.sides[s].positions[slot].encore_slot != 0u &&
+                (uint32_t)b->tail.sides[s].positions[slot].encore_slot != k + 1u) {
+                continue;
+            }
             if (mv->move_id >= ctx->move_count) {
                 return DUOFORGE_E_INVARIANT;
             }

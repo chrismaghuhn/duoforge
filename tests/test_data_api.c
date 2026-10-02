@@ -690,11 +690,12 @@ static void test_support(df_test *t, const kase *c)
     /* Struggle: literally what the manifest says (unmarked: the turn core runs it, and no member has it). */
     DF_CHECK(t, !api_supported(t, c, DUOFORGE_DATA_TABLE_MOVE, DFI_MOVE_STRUGGLE));
     if (c->pool_rules) {
-        /* Step G2: Rock Slide is marked; step G5: U-turn is marked; step G8: Throat Chop; Encore (a handler id) is not. */
+        /* Step G2: Rock Slide is marked; step G5: U-turn is marked; step G8: Throat Chop; step G7: Wide Guard; step G9: Encore (both have handler ids). */
         DF_CHECK(t, api_supported(t, c, DUOFORGE_DATA_TABLE_MOVE, DFI_MOVE_ROCKSLIDE));
         DF_CHECK(t, api_supported(t, c, DUOFORGE_DATA_TABLE_MOVE, DFI_MOVE_UTURN));
         DF_CHECK(t, api_supported(t, c, DUOFORGE_DATA_TABLE_MOVE, DFI_MOVE_THROATCHOP));
-        DF_CHECK(t, !api_supported(t, c, DUOFORGE_DATA_TABLE_MOVE, DFI_MOVE_ENCORE));
+        DF_CHECK(t, api_supported(t, c, DUOFORGE_DATA_TABLE_MOVE, DFI_MOVE_ENCORE));
+        DF_CHECK(t, api_supported(t, c, DUOFORGE_DATA_TABLE_MOVE, DFI_MOVE_WIDEGUARD)); /* step G7 */
         DF_CHECK(t, api_supported(t, c, DUOFORGE_DATA_TABLE_ITEM, DFI_ITEM_FLOETTITE)); /* step G12 */
         DF_CHECK(t, !api_supported(t, c, DUOFORGE_DATA_TABLE_ITEM, DFI_ITEM_EXPERTBELT));
     }
