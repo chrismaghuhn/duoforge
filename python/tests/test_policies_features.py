@@ -209,6 +209,33 @@ class PoliciesFeaturesTest(unittest.TestCase):
                         mask = features.encode(batch.observations[e, p], batch.domains[e, p])[2]
                         self.assertEqual(int(mask.sum()), int(batch.requests[e, p]["candidate_count"]))
 
+    def test_encode_refuses_an_unknown_move_slot(self):
+        """A move command's slot is 0 to 3 or Struggle; any other value (for
+        example a later pseudo-move such as recharge) is refused, never scaled
+        past 1."""
+        c = _layout.CONSTANTS
+        with duoforge.Batch(self.ctx, _setups(), 1, SEED) as batch:
+            policy = duoforge.RandomPolicy(SEED, ENVS)
+            for e in range(ENVS):
+                policy.start_episode(e, 0)
+            batch.query_factored()
+            batch.step_factored(policy.choose_factored(batch))  # past team selection, to the first turn
+            batch.query_factored()
+            ob = batch.observations[0, 0].copy()
+            d = batch.domains[0, 0].copy()
+            moves = [(s, i) for s in range(2) for i in range(int(d["slot_count"][s]))
+                     if int(d["slots"][s, i]["kind"]) == c["DUOFORGE_SLOT_MOVE"]]
+            self.assertTrue(moves)
+            s, i = moves[0]
+            struggle = d.copy()
+            struggle["slots"][s, i]["move_slot"] = c["DUOFORGE_MOVE_SLOT_STRUGGLE"]
+            self.assertEqual(features.encode(ob, struggle)[1][s, i, 5], 1.0)
+            for bad in (c["DUOFORGE_MOVE_SLOT_STRUGGLE"] + 1, 0xFF):
+                unknown = d.copy()
+                unknown["slots"][s, i]["move_slot"] = bad
+                with self.assertRaisesRegex(ValueError, "move slot"):
+                    features.encode(ob, unknown)
+
     def test_encode_refuses_a_domain_of_another_boundary(self):
         with duoforge.Batch(self.ctx, _setups(), 1, SEED) as batch:
             policy = duoforge.RandomPolicy(SEED, ENVS)
