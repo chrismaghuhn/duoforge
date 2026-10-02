@@ -871,7 +871,7 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
 - **Recorded battles of the real Team C.**
   - `tools/reference/gen_real_specs.py --checkout <pin> --team-c` records 40 candidates per pairing. With `--team-c` the defaults are seed 2026100212 and prefix `c12_real`. It keeps 4 per pairing by the coverage they add: 20 battles `c12_real_*`, 237 features.
   - `duoforge.reference.conformance_team_c` ties the gate's fixture (`df_put_team_c`) to `team-c.txt`: each Team C member of the 20 battles equals the fixture's member of its species.
-  - DuoForge matches all of them. 21 of the 70 Team C battles now run under TEAM_C itself, with six registered members.
+  - DuoForge matches all of them. With `c12_scarf_tie` (below), 22 of the 72 Team C battles run under TEAM_C itself, with six registered members.
   - Without `--team-c` the generator's output is unchanged: it reproduces all 16 `m5_real_*` specs byte for byte.
 - **Negative controls**, each red in the gate alone:
   - Follow Me failing at run time (a step error);
@@ -885,6 +885,12 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
   - It lists the ones it compares through another field: `stall` (the stall field), `confusion` (its turns), and `electroshot` (the locked slot and target).
   - Any other volatile fails with `ConversionError('unknown-volatile')`, and so does `electroshot` without `twoturnmove`. Both have control tests.
   - Flinch was ignored before. The reference keeps it until the residual (duration 1), and so does the engine after `cant`. Two recorded PIVOT boundaries hold it (Fake Out, then a pivot); a control that compares the wrong bit is red.
+- **Converter: Choice Scarf's onStart decides no switch-in order** (found by the differential loop, A3, case `fz_11_44`, before this step merged).
+  - Battle.getCallback runs an item's `onStart` as a SwitchIn handler unless the item has `onAnySwitchIn` (`sim/battle.ts:1018-1032`). Choice Scarf's `onStart` (`data/items.ts:989-994`) only removes a choicelock, which an entering Pokémon never has.
+  - Two Scarf Basculegion entering together at one Speed therefore tie in runSwitch, and the reference draws an order that decides nothing. The engine draws none, and the converter kept the draw.
+  - Now an entering Choice Scarf holder's handler does not count as an entry effect. The converter fails loudly if a holder's recorded handler count is too small.
+  - A probe of the pin confirmed the handler ids: `Item:choicescarf` for both Basculegion, and among the data's items only Grassy Seed and Choice Scarf map `onStart` that way (White Herb has `onAnySwitchIn`).
+  - The case is recorded whole as `c12_scarf_tie`. Before the fix its step 0 left the tape unconsumed; now all 16 steps match. A converter control covers the new refusal.
 - **What the gate cannot show by design.**
   - It checks determinism, the codec and information equivalence, but not the rules: a rule that is deterministic but wrong passes it. Fidelity rests on the 71 recorded battles.
   - The battles only play what the request offers, so a missing legal option goes unnoticed.

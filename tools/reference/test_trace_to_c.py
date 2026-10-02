@@ -177,6 +177,16 @@ class Refusals(unittest.TestCase):
                      "trace_to_c: unknown -singleturn '|-singleturn|p1b: Kingambit|move: Rage Powder'",
                      'move: Rage Powder')
 
+    def test_choice_scarf_holder_without_its_switch_in_handler(self):
+        def mutate(spec, trace):
+            d = trace['steps'][0]['draws'][1]
+            self.assertEqual((d['site'], d['context'], d['group']),
+                             ('SPEED_TIE', 'switch-order', ['P:p1a:1:S', 'P:p2b:1:S']))
+            d['group'][0] = 'P:p1a:0:S'
+        self.control('c12_scarf_tie', mutate, 'switch-order-handlers',
+                     "trace_to_c: a Choice Scarf holder without its SwitchIn handler in ['P:p1a:0:S', 'P:p2b:1:S']",
+                     'choicescarf')
+
     def test_unknown_volatile(self):
         def mutate(spec, trace):
             mon = trace['steps'][1]['state']['sides'][0]['pokemon'][0]
