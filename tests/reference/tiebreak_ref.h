@@ -1223,6 +1223,14 @@ static const df_tb_stop tb_p2_type_boosters[] = {
     {3u, 0u, 1u, 2u, {4u, 4u}, {728u, 538u}, {0x40500c4036129663ull, 0x40481e09934aa1a8ull}},
     {4u, 0u, 1u, 1u, {4u, 3u}, {724u, 475u}, {0x404fee41e6a74981ull, 0x40456930288df0cbull}},
 };
+static const df_tb_stop tb_p3_overgrow_pinch[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1111u, 1097u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {740u, 743u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {615u, 714u}, {0x404befa408d7c3dfull, 0x4050098e38e38e39ull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {498u, 662u}, {0x4046fef0cbe49891ull, 0x404dd15555555555ull}},
+    {4u, 0u, 2u, 2u, {4u, 4u}, {462u, 590u}, {0x404582be1a779b1bull, 0x404ab15555555555ull}},
+    {5u, 0u, 2u, 2u, {4u, 4u}, {386u, 542u}, {0x4042601a321fbce7ull, 0x4048b667136eae0bull}},
+};
 static const df_tb_stop tb_s10_electro_shot[] = {
     {0u, 0u, 2u, 3u, {4u, 4u}, {768u, 789u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {768u, 789u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -2097,6 +2105,7 @@ static const df_tb_battle tb_battles[] = {
     {"p2_resist_berry_ko", 4u, tb_p2_resist_berry_ko, sizeof tb_p2_resist_berry_ko / sizeof tb_p2_resist_berry_ko[0]},
     {"p2_resist_berry_survived", 4u, tb_p2_resist_berry_survived, sizeof tb_p2_resist_berry_survived / sizeof tb_p2_resist_berry_survived[0]},
     {"p2_type_boosters", 4u, tb_p2_type_boosters, sizeof tb_p2_type_boosters / sizeof tb_p2_type_boosters[0]},
+    {"p3_overgrow_pinch", 5u, tb_p3_overgrow_pinch, sizeof tb_p3_overgrow_pinch / sizeof tb_p3_overgrow_pinch[0]},
     {"s10_electro_shot", 13u, tb_s10_electro_shot, sizeof tb_s10_electro_shot / sizeof tb_s10_electro_shot[0]},
     {"s10_grassy_glide_fake_out", 11u, tb_s10_grassy_glide_fake_out, sizeof tb_s10_grassy_glide_fake_out / sizeof tb_s10_grassy_glide_fake_out[0]},
     {"s10_weather_ball_grass_knot", 13u, tb_s10_weather_ball_grass_knot, sizeof tb_s10_weather_ball_grass_knot / sizeof tb_s10_weather_ball_grass_knot[0]},
@@ -2171,7 +2180,7 @@ static const df_tb_battle tb_battles[] = {
     {"s9_self_drops", 10u, tb_s9_self_drops, sizeof tb_s9_self_drops / sizeof tb_s9_self_drops[0]},
 };
 
-/* 1622 stops: 138 of an ended battle; decided by the count 564,
- * the HP percentage 470, the total HP 406, a tie 44;
- * winners: side 0 766, side 1 812, tie 44 */
+/* 1628 stops: 138 of an ended battle; decided by the count 564,
+ * the HP percentage 474, the total HP 408, a tie 44;
+ * winners: side 0 767, side 1 817, tie 44 */
 #endif
