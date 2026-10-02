@@ -531,12 +531,17 @@ duoforge_status duoforge_battle_step(const duoforge_context *ctx, duoforge_battl
 #define DUOFORGE_AILMENT_PARALYSIS 3u
 #define DUOFORGE_AILMENT_SLEEP     4u
 #define DUOFORGE_AILMENT_POISON    5u /* Team C: Dire Claw */
+#define DUOFORGE_AILMENT_TOX       6u /* POOL (decision 0018): badly poisoned; not produced yet */
 #define DUOFORGE_WEATHER_NONE 0u
 #define DUOFORGE_WEATHER_RAIN 1u
 #define DUOFORGE_WEATHER_SUN  2u
+#define DUOFORGE_WEATHER_SAND 3u /* POOL (decision 0018): not produced yet */
+#define DUOFORGE_WEATHER_SNOW 4u /* POOL: not produced yet */
 #define DUOFORGE_TERRAIN_NONE   0u
 #define DUOFORGE_TERRAIN_GRASSY 1u
 #define DUOFORGE_TERRAIN_PSYCHIC 2u /* Team C (Psychic Surge) */
+#define DUOFORGE_TERRAIN_ELECTRIC 3u /* POOL (decision 0018): not produced yet */
+#define DUOFORGE_TERRAIN_MISTY    4u /* POOL: not produced yet */
 #define DUOFORGE_MOVE_SLOT_NONE 0xFFu /* position view: no locked move */
 
 typedef struct duoforge_member_view {
@@ -627,6 +632,175 @@ typedef struct duoforge_observation {
    INVARIANT. Writes *out_observation only on success. */
 duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duoforge_battle *battle,
                                         uint32_t player, duoforge_observation *out_observation);
+
+/* ---- the POOL player-view extension (decision 0018) ----
+   What the 736-byte observation has no room for: the effects of the content
+   expansion that a player sees (weather and terrain beyond the old values are
+   in the old fields; everything else is here). Fixed size, no pointers, no
+   padding, reserved bytes zero. Under every kind except POOL and POOL_DEV the
+   whole struct is zero (revision 0); under the POOL kinds revision is
+   DUOFORGE_OBSERVATION_EXT_REVISION. Every field is declared now and stays
+   zero until the step that implements its mechanic sets its bit in `supported`
+   (DUOFORGE_VIEWEXT_FEATURE_*, a bit number): a zero field of a clear bit is
+   "not yet supported", of a set bit "absent". Nothing here is private to one
+   side: a field is public, and a field that only the owner could see would be
+   zero in the opponent's section (none is, in revision 1). Hidden durations
+   are never exposed. sides[] is in absolute side order, as in
+   duoforge_observation. Growth: a field is only ever appended into a reserve,
+   which is an additive change; a larger struct is a new revision with its own
+   struct and function. Ids: forme, ability and item ids are those of the data
+   tables (duoforge_data_*), "+ 1" meaning 0 is none; type ids are the
+   alphabetical DUOFORGE_TYPE_* below. */
+#define DUOFORGE_OBSERVATION_EXT_SIZE     192u
+#define DUOFORGE_OBSERVATION_EXT_REVISION 1u
+
+/* Type ids (alphabetical), for type_now (id + 1). */
+#define DUOFORGE_TYPE_BUG      0u
+#define DUOFORGE_TYPE_DARK     1u
+#define DUOFORGE_TYPE_DRAGON   2u
+#define DUOFORGE_TYPE_ELECTRIC 3u
+#define DUOFORGE_TYPE_FAIRY    4u
+#define DUOFORGE_TYPE_FIGHTING 5u
+#define DUOFORGE_TYPE_FIRE     6u
+#define DUOFORGE_TYPE_FLYING   7u
+#define DUOFORGE_TYPE_GHOST    8u
+#define DUOFORGE_TYPE_GRASS    9u
+#define DUOFORGE_TYPE_GROUND   10u
+#define DUOFORGE_TYPE_ICE      11u
+#define DUOFORGE_TYPE_NORMAL   12u
+#define DUOFORGE_TYPE_POISON   13u
+#define DUOFORGE_TYPE_PSYCHIC  14u
+#define DUOFORGE_TYPE_ROCK     15u
+#define DUOFORGE_TYPE_STEEL    16u
+#define DUOFORGE_TYPE_WATER    17u
+
+/* Bits of duoforge_position_ext.volatiles (bits 20 to 31 are reserved, 0). */
+#define DUOFORGE_POSITION_EXT_SUBSTITUTE   0x00000001u
+#define DUOFORGE_POSITION_EXT_TAUNT        0x00000002u
+#define DUOFORGE_POSITION_EXT_IMPRISON     0x00000004u
+#define DUOFORGE_POSITION_EXT_LEECH_SEED   0x00000008u
+#define DUOFORGE_POSITION_EXT_YAWN         0x00000010u
+#define DUOFORGE_POSITION_EXT_FOCUS_ENERGY 0x00000020u
+#define DUOFORGE_POSITION_EXT_DRAGON_CHEER 0x00000040u
+#define DUOFORGE_POSITION_EXT_MUST_RECHARGE 0x00000080u
+#define DUOFORGE_POSITION_EXT_PARTIAL_TRAP 0x00000100u
+#define DUOFORGE_POSITION_EXT_GLAIVE_RUSH  0x00000200u
+#define DUOFORGE_POSITION_EXT_DESTINY_BOND 0x00000400u
+#define DUOFORGE_POSITION_EXT_CURSE        0x00000800u
+#define DUOFORGE_POSITION_EXT_NO_RETREAT   0x00001000u
+#define DUOFORGE_POSITION_EXT_SALT_CURE    0x00002000u
+#define DUOFORGE_POSITION_EXT_CHARGE       0x00004000u
+#define DUOFORGE_POSITION_EXT_HEAL_BLOCK   0x00008000u
+#define DUOFORGE_POSITION_EXT_THROAT_CHOP  0x00010000u
+#define DUOFORGE_POSITION_EXT_RAGE_POWDER  0x00020000u
+#define DUOFORGE_POSITION_EXT_TYPE_CHANGED 0x00040000u
+#define DUOFORGE_POSITION_EXT_ILLUSION_UP  0x00080000u
+/* Bits of duoforge_side_ext.guard_flags (this turn only). */
+#define DUOFORGE_SIDE_GUARD_WIDE_GUARD  1u
+#define DUOFORGE_SIDE_GUARD_QUICK_GUARD 2u
+/* duoforge_member_ext.item_now: the member holds nothing (Knock Off, Thief). */
+#define DUOFORGE_ITEM_NOW_NONE 255u
+
+/* Bit numbers of duoforge_observation_ext.supported, by tier (decision 0018 section 7.1). Bits 40 to 63 are free. */
+#define DUOFORGE_VIEWEXT_FEATURE_WEATHER_SAND     0u
+#define DUOFORGE_VIEWEXT_FEATURE_WEATHER_SNOW     1u
+#define DUOFORGE_VIEWEXT_FEATURE_ABILITY_CHANGE   2u
+#define DUOFORGE_VIEWEXT_FEATURE_AURORA_VEIL      3u
+#define DUOFORGE_VIEWEXT_FEATURE_PERISH           4u
+#define DUOFORGE_VIEWEXT_FEATURE_TERRAIN_ELECTRIC 5u
+#define DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP      6u
+#define DUOFORGE_VIEWEXT_FEATURE_ENCORE           7u
+#define DUOFORGE_VIEWEXT_FEATURE_TOXIC_SPIKES     8u
+#define DUOFORGE_VIEWEXT_FEATURE_TYPE_CHANGE      9u
+#define DUOFORGE_VIEWEXT_FEATURE_AILMENT_TOX      10u
+#define DUOFORGE_VIEWEXT_FEATURE_ITEM_CHANGE      11u
+#define DUOFORGE_VIEWEXT_FEATURE_IMPRISON         12u
+#define DUOFORGE_VIEWEXT_FEATURE_STEALTH_ROCK     13u
+#define DUOFORGE_VIEWEXT_FEATURE_TAUNT            14u
+#define DUOFORGE_VIEWEXT_FEATURE_MUST_RECHARGE    15u
+#define DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK       16u
+#define DUOFORGE_VIEWEXT_FEATURE_WIDE_GUARD       17u
+#define DUOFORGE_VIEWEXT_FEATURE_PARTIAL_TRAP     18u
+#define DUOFORGE_VIEWEXT_FEATURE_FORME_CHANGE     19u
+#define DUOFORGE_VIEWEXT_FEATURE_GLAIVE_RUSH      20u
+#define DUOFORGE_VIEWEXT_FEATURE_DISABLE          21u
+#define DUOFORGE_VIEWEXT_FEATURE_STOCKPILE        22u
+#define DUOFORGE_VIEWEXT_FEATURE_SUBSTITUTE       23u
+#define DUOFORGE_VIEWEXT_FEATURE_DRAGON_CHEER     24u
+#define DUOFORGE_VIEWEXT_FEATURE_YAWN             25u
+#define DUOFORGE_VIEWEXT_FEATURE_ILLUSION         26u
+#define DUOFORGE_VIEWEXT_FEATURE_GRAVITY          27u
+#define DUOFORGE_VIEWEXT_FEATURE_LEECH_SEED       28u
+#define DUOFORGE_VIEWEXT_FEATURE_FOCUS_ENERGY     29u
+#define DUOFORGE_VIEWEXT_FEATURE_SPIKES           30u
+#define DUOFORGE_VIEWEXT_FEATURE_CHARGE           31u
+#define DUOFORGE_VIEWEXT_FEATURE_TERRAIN_MISTY    32u
+#define DUOFORGE_VIEWEXT_FEATURE_STICKY_WEB       33u
+#define DUOFORGE_VIEWEXT_FEATURE_SALT_CURE        34u
+#define DUOFORGE_VIEWEXT_FEATURE_DESTINY_BOND     35u
+#define DUOFORGE_VIEWEXT_FEATURE_CURSE            36u
+#define DUOFORGE_VIEWEXT_FEATURE_NO_RETREAT       37u
+#define DUOFORGE_VIEWEXT_FEATURE_QUICK_GUARD      38u
+#define DUOFORGE_VIEWEXT_FEATURE_RAGE_POWDER      39u
+#define DUOFORGE_VIEWEXT_FEATURE_COUNT            40u
+
+/* Field-wide, public. */
+typedef struct duoforge_field_ext {
+    uint8_t gravity_turns; /* 0 to 5: remaining turns */
+    uint8_t reserved[15];  /* zero */
+} duoforge_field_ext; /* 16 bytes */
+
+/* One active position; all zero when empty. */
+typedef struct duoforge_position_ext {
+    uint32_t volatiles;    /* DUOFORGE_POSITION_EXT_* presence bits */
+    uint16_t ability_now;  /* ability id + 1 when it differs from duoforge_member_view.ability, else 0 */
+    uint8_t type_now[2];   /* type id + 1 (0: none) while DUOFORGE_POSITION_EXT_TYPE_CHANGED is set, else 0 */
+    uint8_t encore_slot;   /* the forced move slot + 1; 0: not encored */
+    uint8_t disable_slot;  /* the barred move slot + 1; 0: none */
+    uint8_t stockpile;     /* 0 to 3 levels */
+    uint8_t perish;        /* the Perish count shown, 3 to 1; 0: none */
+    uint8_t reserved[4];   /* zero */
+} duoforge_position_ext; /* 16 bytes */
+
+/* One roster member, bench included. */
+typedef struct duoforge_member_ext {
+    uint16_t forme;   /* forme id + 1 when the current forme differs from the sheet's (and the Mega forme); else 0 */
+    uint8_t item_now; /* 0: as the member view; 1 to 254: it now holds item (value - 1); DUOFORGE_ITEM_NOW_NONE */
+    uint8_t reserved; /* zero */
+} duoforge_member_ext; /* 4 bytes */
+
+typedef struct duoforge_side_ext {
+    duoforge_position_ext positions[DUOFORGE_ACTIVE_PER_SIDE];
+    duoforge_member_ext members[DUOFORGE_MAX_ROSTER];
+    uint8_t aurora_veil_turns; /* 0 to 8 */
+    uint8_t stealth_rock;      /* 0/1 */
+    uint8_t spikes;            /* 0 to 3 layers */
+    uint8_t toxic_spikes;      /* 0 to 2 layers */
+    uint8_t sticky_web;        /* 0/1 */
+    uint8_t guard_flags;       /* DUOFORGE_SIDE_GUARD_*: this turn only, so only at a PIVOT boundary */
+    uint8_t reserved[2];       /* zero */
+} duoforge_side_ext; /* 64 bytes */
+
+typedef struct duoforge_observation_ext {
+    uint8_t revision;     /* 0: absent (not a POOL kind), the struct is all zero; else the layout revision */
+    uint8_t player;       /* the viewer, as duoforge_observation.player; 0 when revision is 0 */
+    uint8_t reserved0[2]; /* zero */
+    uint32_t epoch;       /* the request epoch of the paired duoforge_observation; 0 when revision is 0 */
+    uint64_t supported;   /* bit DUOFORGE_VIEWEXT_FEATURE_* set: the feature's mechanic is implemented and tested */
+    duoforge_field_ext field;
+    duoforge_side_ext sides[DUOFORGE_SIDE_COUNT];
+    uint8_t reserved1[32]; /* zero: room for a whole new record */
+} duoforge_observation_ext; /* DUOFORGE_OBSERVATION_EXT_SIZE bytes */
+/* A size mismatch is a compile error here (negative array size), in C and in C++. */
+typedef char duoforge_observation_ext_size_check[(sizeof(duoforge_observation_ext) == DUOFORGE_OBSERVATION_EXT_SIZE) ? 1 : -1];
+
+/* The extension of one player's view. Pure, allocation-free, with the checks
+   of duoforge_battle_observe: NULL -> E_NULL_ARGUMENT -> E_CONTEXT_MISMATCH ->
+   E_INVALID_ARGUMENT (player) -> E_INVARIANT. *out is written only on
+   success. Under a kind other than POOL and POOL_DEV (SYNTHETIC included) the
+   checks run and *out is all zero. */
+duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const duoforge_battle *battle,
+                                            uint32_t viewer, duoforge_observation_ext *out);
 
 /* ---- event log (decision 0007 section 6) ----
    What happened during a step, per player, in the order the game shows it:
