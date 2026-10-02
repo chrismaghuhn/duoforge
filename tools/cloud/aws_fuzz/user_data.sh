@@ -26,8 +26,6 @@ DF_REGION=eu-central-1
 DF_REPO_URL=https://github.com/chrismaghuhn/duoforge.git
 DF_SHOWDOWN_URL=https://github.com/smogon/pokemon-showdown.git
 DF_SHOWDOWN_PIN=b2cb775b0616115b775534eaeff50300e1fc81fc
-DF_DEFAULT_CHUNK_BATTLES=2000 # campaign.conf: chunk_battles
-DF_VCPUS_PER_DRIVER=20       # campaign.conf: parallel=auto is vCPUs / this (at least 1)
 DF_LOCAL_RATE=24 # battles per second on the development machine
 DF_MIN_FACTOR=2  # the rate of the first ten minutes must be this many times the local one
 DF_RATE_WINDOW=600
@@ -107,48 +105,22 @@ cmake --build "$REPO/build" --parallel --target duoforge_diff_runner > /dev/null
 RUNNER=$(find "$REPO/build" -name duoforge_diff_runner -type f | head -n 1)
 [ -x "$RUNNER" ] || fail 'the differential runner was not built'
 
+# --- the scheduler of the chunks, the campaign.conf and the done-manifest (chunks.sh; run_driver is what it calls)
+# shellcheck source=chunks.sh
+. "$REPO/tools/cloud/aws_fuzz/chunks.sh"
+
 # --- the campaign: tools/cloud/aws_fuzz/campaigns/<id>/campaign.conf, key=value lines
 CAMP_DIR="$REPO/tools/cloud/aws_fuzz/campaigns/$DF_CAMPAIGN"
 [ -f "$CAMP_DIR/campaign.conf" ] || fail "no campaign.conf for $DF_CAMPAIGN at $DF_COMMIT"
-PAIRINGS=''
-TEAMS=''
-BASE_SEED=''
-CHUNKS=''
-CHUNK_BATTLES=$DF_DEFAULT_CHUNK_BATTLES
-PARALLEL=auto
-BENCH=0
-while IFS='=' read -r key value; do
-    case $key in
-        '' | '#'*) ;;
-        pairings) PAIRINGS=$value ;;
-        teams) TEAMS=$value ;;
-        base_seed) BASE_SEED=$value ;;
-        chunks) CHUNKS=$value ;;
-        chunk_battles) CHUNK_BATTLES=$value ;;
-        parallel) PARALLEL=$value ;;
-        bench) BENCH=$value ;;
-        *) fail "campaign.conf: unknown key '$key'" ;;
-    esac
-done < "$CAMP_DIR/campaign.conf"
-[[ $PAIRINGS =~ ^[A-Za-z0-9,-]+$ ]] || fail 'campaign.conf: bad pairings'
-[[ $BASE_SEED =~ ^[0-9]{1,12}$ ]] || fail 'campaign.conf: bad base_seed'
-[[ $CHUNKS =~ ^[0-9]{1,3}$ ]] || fail 'campaign.conf: bad chunks'
-[[ $CHUNK_BATTLES =~ ^[0-9]{3,5}$ ]] && [ "$CHUNK_BATTLES" -ge 100 ] && [ "$CHUNK_BATTLES" -le 20000 ] ||
-    fail 'campaign.conf: chunk_battles must be between 100 and 20000'
-[[ $BENCH =~ ^[01]$ ]] || fail 'campaign.conf: bench must be 0 or 1'
+campaign_conf_load "$CAMP_DIR/campaign.conf"
 VCPUS=$(nproc)
-PARALLEL_CONF=$PARALLEL
 case $DF_RUN_ID in
     "${DF_COMMIT:0:12}-$CHUNK_BATTLES-$BASE_SEED-"*) ;;
     *) fail "the run id $DF_RUN_ID is not of this commit, chunk_battles $CHUNK_BATTLES and base_seed $BASE_SEED" ;;
 esac
 RUN_ID=$DF_RUN_ID
 RESUME=$DF_RESUME
-if [ "$PARALLEL" = auto ]; then
-    PARALLEL=$((VCPUS / DF_VCPUS_PER_DRIVER))
-    [ "$PARALLEL" -ge 1 ] || PARALLEL=1
-fi
-[[ $PARALLEL =~ ^[0-9]{1,2}$ ]] && [ "$PARALLEL" -ge 1 ] && [ "$PARALLEL" -le 16 ] || fail 'campaign.conf: parallel must be auto or 1 to 16'
+campaign_plan "$VCPUS"
 TEAM_ARGS=()
 read -r -a TEAM_LIST <<< "$TEAMS"
 for team in "${TEAM_LIST[@]}"; do # an id of the registry, or LETTER=file in the campaign's directory
@@ -161,27 +133,23 @@ for team in "${TEAM_LIST[@]}"; do # an id of the registry, or LETTER=file in the
         fail "campaign.conf: bad team '$team'"
     fi
 done
-WORKERS_PER=$((VCPUS / PARALLEL))
-[ "$WORKERS_PER" -ge 1 ] || WORKERS_PER=1
 
-# --- the scheduler of the chunks, the done-manifest (one finished chunk index per line)
+# the driver of one chunk, as chunks.sh calls it
 run_driver() { # idx seed dir: the random mode over one chunk, timed (user and system seconds of all it ran in "$dir.time")
     mkdir -p "$WORK/out"
     (cd "$REPO" && /usr/bin/time -f '%U %S' -o "$3.time" python3 tools/reference/diff_driver.py random \
         --checkout "$PS" --runner "$RUNNER" --battles "$CHUNK_BATTLES" --seed "$2" --pairings "$PAIRINGS" \
         "${TEAM_ARGS[@]}" --workers "$WORKERS_PER" --no-lock --out "$3") >> "$LOG" 2>&1
 }
-# shellcheck source=chunks.sh
-. "$REPO/tools/cloud/aws_fuzz/chunks.sh"
 done_manifest_open
-log "$CHUNKS chunks of $CHUNK_BATTLES battles, $PARALLEL at a time, $WORKERS_PER workers each, $VCPUS vCPUs"
+log "$CHUNKS chunks of $CHUNK_BATTLES battles in ${#PHASES[@]} phase(s) of $CHUNKS_PER_PHASE, parallel ${PHASES[*]}, $VCPUS vCPUs"
 
 # --- the monitors: battles per minute (and the abort), the spot interruption notice
 count_done() { find "$WORK/out" -path '*/partial/*.json' -newer "$WORK/fuzz-started" 2> /dev/null | wc -l || true; }
 
 MAIN_PID=$$
 monitor() {
-    local start=$SECONDS last=0 total elapsed rate judged=no busy_now total_now busy_before total_before util
+    local start=$SECONDS last=0 total elapsed rate judged=no busy_now total_now busy_before total_before util phase
     read -r busy_before total_before <<< "$(cpu_ticks)"
     while sleep 60; do
         total=$(count_done)
@@ -191,7 +159,8 @@ monitor() {
         util=$(awk -v b="$((busy_now - busy_before))" -v t="$((total_now - total_before))" 'BEGIN { printf "%.0f", (t > 0 ? 100 * b / t : 0) }')
         busy_before=$busy_now
         total_before=$total_now
-        log "rate: $total battles in $elapsed s, $((total - last)) in the last minute, $rate battles/s overall; the machine was $util% busy"
+        phase=$(cat "$WORK/phase" 2> /dev/null || echo 0)
+        log "rate (phase $phase): $total battles in $elapsed s, $((total - last)) in the last minute, $rate battles/s overall; the machine was $util% busy"
         last=$total
         if [ "$judged" = no ] && [ "$elapsed" -ge "$DF_RATE_WINDOW" ]; then
             judged=yes
@@ -253,8 +222,8 @@ d = json.load(open(sys.argv[1]))
 print("ERROR: " + d["error"] if "error" in d else "%s games/s on %s threads" % (d["games_per_second"], d["threads"]))' "$WORK/bench.json" || echo unreadable)"
 fi
 
-printf '{"campaign":"%s","commit":"%s","boot":"%s","cpus":%s,"parallel":%s,"workers_per_driver":%s,"chunk_battles":%s,"node":"%s","pin":"%s"}\n' \
-    "$DF_CAMPAIGN" "$DF_COMMIT" "$BOOT" "$VCPUS" "$PARALLEL" "$WORKERS_PER" "$CHUNK_BATTLES" "$(node --version)" "$DF_SHOWDOWN_PIN" > "$WORK/meta.json"
+printf '{"campaign":"%s","commit":"%s","boot":"%s","cpus":%s,"parallel":"%s","phases":"%s","chunk_battles":%s,"node":"%s","pin":"%s"}\n' \
+    "$DF_CAMPAIGN" "$DF_COMMIT" "$BOOT" "$VCPUS" "$PARALLEL_CONF" "${PHASES[*]}" "$CHUNK_BATTLES" "$(node --version)" "$DF_SHOWDOWN_PIN" > "$WORK/meta.json"
 aws s3 cp "$WORK/meta.json" "$S3_BASE/meta-$BOOT.json" --only-show-errors
 
 mkdir -p "$WORK/out"
@@ -264,7 +233,16 @@ MON_PID=$!
 poll_interruption &
 POLL_PID=$!
 
-run_chunks
+: > "$WORK/completions.txt"
+: > "$WORK/sweep.jsonl"
+first=0
+for ((k = 0; k < ${#PHASES[@]}; k++)); do
+    run_phase "$k" "$first" "$((first + CHUNKS_PER_PHASE))" "${PHASES[$k]}"
+    first=$((first + CHUNKS_PER_PHASE))
+done
+if [ -n "$SWEEP" ]; then
+    aws s3 cp "$WORK/sweep.jsonl" "$S3_BASE/sweep.jsonl" --only-show-errors || log 'the upload of sweep.jsonl failed'
+fi
 
 kill "$MON_PID" "$POLL_PID" 2> /dev/null || true
 TOTAL=$(count_done)
