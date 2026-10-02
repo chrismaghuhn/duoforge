@@ -88,7 +88,7 @@ def main(argv=None):
         key = jax.random.fold_in(jax.random.PRNGKey(seed & 0xFFFFFFFF), seed >> 32)
         key, sub = jax.random.split(key)
         players.append(("init", model.init(sub, features.OBS_SIZE, features.SLOT_FEATURES, TEAM_ACTIONS)))
-    players += [(f"update {u}", load(path)[0]) for u, path in chosen]
+    players += [(f"update {u}", load(path, obs_size=features.OBS_SIZE)[0]) for u, path in chosen]
     act = jax.jit(model.act, static_argnames=("greedy",))
     score, games = round_robin(players, act, envs=args.envs, workers=args.workers)
     elo = ratings(score, games)

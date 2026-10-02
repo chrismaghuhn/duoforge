@@ -215,6 +215,7 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
   - `src/data/support_manifest.{h,c}`, `src/rng/draw.h`;
   - `tools/reference/{ps_trace.js,trace_to_c.py}`, `tests/test_conformance.c`, `tools/state_model/state_v3_model.py`.
 - **Process:** rebase on `main` before each PR. The public API contract and the closure fingerprint change only with the owner.
+- **Python encoder (main session, 2026-10-02):** after step 12 merged, `python/duoforge/features.py` encodes the Team C values: Psychic Terrain as the third terrain of the one-hot, and the three `DUOFORGE_POSITION_FLAG_*` bits as three features per position (`OBS_SIZE` 594 to 607). This ends the refusals noted in sections 10.8, 10.10, 10.11 and 10.12; a value the encoder does not know still raises.
 
 ## 8. Alternatives considered
 

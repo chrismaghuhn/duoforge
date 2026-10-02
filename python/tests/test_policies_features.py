@@ -4,7 +4,9 @@
 below their counts, and two runs end in the same states. encode is pure
 (equal inputs, equal arrays; one changed foe HP percent changes obs_part),
 its pair mask holds the joint count, and both policies refuse a requested
-player with 0 candidates (Review Focus 5).
+player with 0 candidates (Review Focus 5). Psychic Terrain and the position
+flags of the TEAM_C kinds encode at their documented places and alike in
+both encoders; values outside them raise.
 """
 import unittest
 
@@ -205,26 +207,70 @@ class PoliciesFeaturesTest(unittest.TestCase):
                 batch.step_factored(policy.choose_factored(batch))
         self.assertGreater(compared, 1000)
 
-    def test_encode_refuses_position_flags(self):
+    def test_encode_position_flags(self):
+        # Each DUOFORGE_POSITION_FLAG_* bit (the TEAM_C kinds, decision 0009
+        # section 4.2) sets one feature after a position's seven older
+        # flags: own slot 0 at 37..39 (15 global, 8 side, 7 stages, 7
+        # flags), foe slot 1 at 357..359 (a side is 8 + 2 * 24 + 6 * 40).
+        # A bit outside the three raises.
+        c = _layout.CONSTANTS
+        self.assertEqual(features.OBS_SIZE, 607)
         with duoforge.Batch(self.ctx, _setups(), 1, SEED) as batch:
             batch.query_factored()
             ob = np.array(batch.observations[0, 0])
             d = batch.domains[0, 0]
-            features.encode(ob, d)
-            ob["sides"][0]["positions"][0]["reserved"] = 4  # DUOFORGE_POSITION_FLAG_UNBURDEN (TEAM_C)
-            with self.assertRaises(ValueError):
+            me = int(ob["player"])
+            before = features.encode(ob, d)[0]
+            for k, name in enumerate(("FOLLOW_ME", "HELPING_HAND", "UNBURDEN")):
+                for side, slot, first in ((me, 0, 37), (1 - me, 1, 357)):
+                    changed = ob.copy()
+                    changed["sides"][side]["positions"][slot]["reserved"] = c[f"DUOFORGE_POSITION_FLAG_{name}"]
+                    diff = features.encode(changed, d)[0] - before
+                    self.assertEqual(np.flatnonzero(diff).tolist(), [first + k])
+                    self.assertEqual(float(diff[first + k]), 1.0)
+            ob["sides"][me]["positions"][0]["reserved"] = 8
+            with self.assertRaisesRegex(ValueError, "position flags"):
                 features.encode(ob, d)
 
-    def test_encode_refuses_psychic_terrain(self):
+    def test_encode_psychic_terrain(self):
+        # Psychic Terrain (TEAM_C) is the third entry of the terrain one-hot
+        # (obs_part[10:13], before the terrain turns); another terrain raises.
         with duoforge.Batch(self.ctx, _setups(), 1, SEED) as batch:
             batch.query_factored()
             ob = np.array(batch.observations[0, 0])
             d = batch.domains[0, 0]
-            features.encode(ob, d)
-            ob["terrain"] = _layout.CONSTANTS["DUOFORGE_TERRAIN_PSYCHIC"]  # TEAM_C, not encoded yet
+            ob["terrain"] = _layout.CONSTANTS["DUOFORGE_TERRAIN_PSYCHIC"]
             ob["terrain_turns"] = 5
+            self.assertEqual(features.encode(ob, d)[0][10:14].tolist(), [0.0, 0.0, 1.0, 0.625])
+            ob["terrain"] = 3
             with self.assertRaisesRegex(ValueError, "terrain"):
                 features.encode(ob, d)
+
+    def test_team_c_values_equal_the_reference(self):
+        # Psychic Terrain and every position flag, set at random on the
+        # observations of real battles, encode alike in both encoders.
+        from python.tests import _reference_features as reference
+        rng = np.random.default_rng(0x2026100216)
+        policy = duoforge.RandomPolicy(SEED, ENVS)
+        compared = 0
+        with duoforge.Batch(self.ctx, _setups(), 4, SEED) as batch:
+            policy.start_episodes(np.arange(ENVS), np.zeros(ENVS, dtype=np.uint64))
+            for step in range(12):
+                batch.query_factored()
+                if step % 4 == 3:
+                    obs = np.array(batch.observations.reshape(-1))
+                    domains = batch.domains.reshape(-1)
+                    obs["terrain"] = rng.integers(0, 3, obs.shape)
+                    positions = obs["sides"]["positions"]
+                    positions["reserved"] = rng.integers(0, 8, positions.shape)
+                    got = features.encode_batch(obs, domains)
+                    for n in range(obs.shape[0]):
+                        want = reference.encode(obs[n], domains[n])
+                        for g, w in zip(got, want):
+                            self.assertTrue(np.array_equal(g[n], w))
+                        compared += 1
+                batch.step_factored(policy.choose_factored(batch))
+        self.assertEqual(compared, 3 * 2 * ENVS)
 
     def test_zero_count_raises(self):
         with duoforge.Batch(self.ctx, _setups(), 1, SEED) as batch:

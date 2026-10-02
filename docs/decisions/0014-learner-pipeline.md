@@ -17,7 +17,7 @@ Each batch step: `query_factored` (requests, observations, factored domains), `f
 
 ## 4. Network
 
-- Torso: an MLP over the observation part (594 floats) to 256 units, twice.
+- Torso: an MLP over the observation part (607 floats since the encoder knows the Team C values; 594 before, so the checkpoints of 2026-10-02 need that encoder) to 256 units, twice.
 - Slot heads: each of the up to 32 options of slot list s is scored from the torso and the option's 12 features (a shared hidden layer, one output per slot list). The joint logit of a pair (i, j) is the sum of the two slot logits; pairs outside the engine's pair mask get no probability. One categorical over the 1024 pairs.
 - Team head: 360 logits, the ordered tuples of 4 of 6 roster indices in lexicographic order - the joint ranks of the TEAM_SELECTION domain under the certified profile (register 6, bring 4).
 - Value head: one scalar from the torso, from the viewer's perspective.
