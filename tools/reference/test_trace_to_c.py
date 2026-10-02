@@ -876,6 +876,23 @@ class Library(unittest.TestCase):
         # No draw of the battle is unclassified.
         self.assertFalse([d for step in trace['steps'] for d in step['draws'] if d['site'] == 'UNKNOWN'])
 
+    def test_thermal_exchange_is_no_holder_of_an_update_tie(self):
+        """Thermal Exchange's onUpdate (step G14) cures a burn that its holder cannot have, so an each:Update tie with it
+        is dropped as one without a holder; a Sitrus Berry beside it is a holder like any other, and a burned holder
+        (the precondition) is an error."""
+        def state(status):
+            side = {'active': [0, None], 'pokemon': [{'status': status}]}
+            return {'sides': [side, {'active': [None, None], 'pokemon': []}]}
+
+        d = {'site': 'SPEED_TIE', 'context': 'each:Update', 'lo': 0, 'hi': 2, 'value': 0, 'start': 0,
+             'group': ['P:p1a:1:thermalexchange', 'P:p2a:1:sitrusberry']}
+        self.assertEqual(trace_to_c.drop_reason(d, state('')), 'each-event tie with at most one holder')
+        both = dict(d, group=['P:p1a:1:sitrusberry', 'P:p2a:1:sitrusberry', 'P:p1b:1:thermalexchange'])
+        self.assertIsNone(trace_to_c.drop_reason(both, state('')))  # two Sitrus holders: the engine draws
+        with self.assertRaises(trace_to_c.ConversionError) as ctx:
+            trace_to_c.drop_reason(d, state('brn'))
+        self.assertEqual(ctx.exception.rule, 'thermal-exchange-burn')
+
     def test_a_two_turn_lock_lasts_while_twoturnmove_stands(self):
         """Electro Shot's onTryMove removes the move's volatile on the locked turn and the recorder's `locked` is made of
         it, but twoturnmove stays until the residual. In the last step of d02 (Emergency Exit) and d03 (Parting Shot,

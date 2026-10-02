@@ -319,12 +319,25 @@ def drop_reason(d, state, after=None, log=None):
         # P:<slot>:<handlers>:<effect ids>. Sitrus Berry (Update) and Grassy
         # Seed (TerrainChange) act only on their holder, so the order of the
         # Pokemon changes nothing.
-        ids = [x for g in group for x in g.split(':', 3)[3].split('+') if x]
+        # Thermal Exchange's onUpdate (data/abilities.ts:4990-5018, step G14) cures a burn that its holder has, and the
+        # holder cannot have one (every burn is refused by its onSetStatus, a member starts without a status): it does
+        # nothing, so it is not a holder here. The precondition is checked on the state before the step: a holder
+        # that is burned is an error.
+        for g in group:
+            if 'thermalexchange' in g.split(':', 3)[3].split('+'):
+                slot = g.split(':')[1]
+                side = state['sides'][int(slot[1]) - 1]
+                index = side['active'][' ab'.index(slot[2]) - 1]
+                if index is not None and side['pokemon'][index]['status'] == 'brn':
+                    raise ConversionError('thermal-exchange-burn',
+                                          'trace_to_c: a Thermal Exchange holder is burned: %s' % slot, detail=slot)
+        inert = {'thermalexchange'}
+        ids = [x for g in group for x in g.split(':', 3)[3].split('+') if x and x not in inert]
         if not all(x in ('sitrusberry', 'grassyseed') for x in ids):
             raise ConversionError('each-tie-handlers',
                                   'trace_to_c: %s tie between Pokemon with handlers: %s' % (ctx, group),
                                   detail=ctx + ':' + '+'.join(sorted(set(ids) - {'sitrusberry', 'grassyseed'})))
-        if sum(1 for g in group if g.split(':', 3)[3]) <= 1:
+        if sum(1 for g in group if [x for x in g.split(':', 3)[3].split('+') if x and x not in inert]) <= 1:
             return 'each-event tie with at most one holder'
         return None  # the engine draws: the order of the holders' lines
     if site == 'SPEED_TIE' and ctx == 'switch-order':
