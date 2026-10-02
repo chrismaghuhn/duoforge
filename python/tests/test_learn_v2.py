@@ -403,6 +403,61 @@ class ResumeTest(unittest.TestCase):
         self.assertTrue(np.asarray(mu).any())
         self.assertEqual(int(wide_opt[1][0].count), int(opt[1][0].count))
 
+    def test_resume_from_a_run_without_league_into_a_league(self):
+        self.assertEqual(_run(["--envs", "8", "--updates", "1", "--self-play-share", "1.0", "--out", self.out]
+                              + _SMALL), 0)
+        self.assertEqual(_run(["--resume", self.out, "--updates", "3", "--self-play-share", "0.5"]), 0)
+        records = [r for r in _log(self.out) if "update" in r]
+        self.assertEqual(records[-1]["update"], 3)
+        self.assertLess(records[-1]["policy_rows"], records[-1]["acted_rows"])
+
+    def test_unclean_stop_moves_newer_snapshots_aside(self):
+        import os
+        import shutil
+        self.assertEqual(_run(["--envs", "8", "--updates", "2", "--out", self.out] + _SMALL), 0)
+        # As if the run had gone on to update 7 and died without saving its state.
+        shutil.copy(os.path.join(self.out, "params-2.npz"), os.path.join(self.out, "params-7.npz"))
+        self.assertEqual(_run(["--resume", self.out, "--updates", "3"]), 0)
+        self.assertFalse(os.path.exists(os.path.join(self.out, "params-7.npz")))
+        resume = [r for r in _log(self.out) if "resume" in r][0]
+        self.assertEqual(resume["abandoned_snapshots"], [7])
+        self.assertTrue(os.path.isfile(os.path.join(self.out, resume["abandoned_dir"], "params-7.npz")))
+
+    def test_resume_after_a_narrower_layout_plays_league_and_evaluation(self):
+        import os
+        import jax
+        from duoforge_learn import checkpoint, ppo, runstate
+        self.assertEqual(_run(["--envs", "8", "--updates", "2", "--eval-every", "1", "--out", self.out]
+                              + [a for a in _SMALL if a not in ("--eval-every", "100")]), 0)
+        flags = [n for n in features.FEATURE_NAMES if n.endswith(".flag.follow_me")]
+        keep = np.array([i for i, n in enumerate(features.FEATURE_NAMES) if n not in flags])
+        old_names = [features.FEATURE_NAMES[i] for i in keep]
+
+        def narrow(tree):
+            out = jax.tree_util.tree_map(np.asarray, tree)
+            out["t1"]["w"] = out["t1"]["w"][keep]
+            return out
+
+        # Turn the run into one of an encoder that lacked the four follow_me columns.
+        state = runstate.load_state(self.out)
+        tx = ppo.optimizer(state["train"]["learning_rate"])
+        opt = runstate.restore_opt(tx, state["params"], state["opt_leaves"])
+        like = jax.tree_util.tree_structure(state["params"])
+        opt = jax.tree_util.tree_map(lambda n: narrow(n) if jax.tree_util.tree_structure(n) == like else n, opt,
+                                     is_leaf=lambda n: jax.tree_util.tree_structure(n) == like)
+        state["params"] = narrow(state["params"])
+        state["opt_leaves"] = jax.tree_util.tree_leaves(opt)
+        state["features"] = old_names
+        runstate.save_state(self.out, state)
+        for f in os.listdir(self.out):
+            if f.startswith("params-") and f.endswith(".npz"):
+                params, config = checkpoint.load(os.path.join(self.out, f))
+                checkpoint.save(os.path.join(self.out, f), narrow(params), dict(config, features=old_names))
+        self.assertEqual(_run(["--resume", self.out, "--updates", "4", "--slot-refresh", "1"]), 0)
+        records = [r for r in _log(self.out) if "update" in r]
+        self.assertEqual(records[-1]["update"], 4)
+        self.assertIn("vs_previous", records[-1])
+
     def test_sigterm_leaves_a_loadable_state(self):
         import os
         import signal

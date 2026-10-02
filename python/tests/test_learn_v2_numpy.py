@@ -130,6 +130,14 @@ class PairingTest(unittest.TestCase):
         ratio = (both == 2).sum() / (both == 0).sum()
         self.assertTrue(2.6 <= ratio <= 3.4, ratio)
 
+    def test_trailing_zero_weight_is_never_drawn_even_at_the_top_draw(self):
+        rng = np.random.default_rng(3)
+        top = np.array([np.iinfo(np.uint64).max], dtype=np.uint64)
+        for n in range(9, 41):
+            w = np.concatenate([rng.random(n - 1), [0.0]])
+            self.assertLess(int(pairing.pick(top, w)[0]), n - 1)
+        self.assertEqual(int(pairing.pick(top, np.array([1.0, 0.0, 2.0, 0.0, 0.0]))[0]), 2)
+
     def test_draw_is_the_documented_formula(self):
         mask = (1 << 64) - 1
 

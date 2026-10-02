@@ -34,7 +34,7 @@ class TeamPoolTest(unittest.TestCase):
         self.assertEqual(got.tobytes(), want.tobytes())
 
     def test_weights_are_validated(self):
-        for bad in ((-1.0, 1.0), (float("nan"), 1.0), (0.0, 0.0), (1.0,), (float("inf"), 1.0)):
+        for bad in ((-1.0, 1.0), (float("nan"), 1.0), (0.0, 0.0), (1.0,), (float("inf"), 1.0), (1e308, 1e308)):
             with self.assertRaises(ValueError):
                 _pool(bad)
         self.assertEqual(_pool((0.0, 2.0)).weights.tolist(), [0.0, 2.0])

@@ -37,8 +37,11 @@ def pick(u, weights):
     """The indices that draws u select under weights (inverse cumulative)."""
     w = np.asarray(weights, dtype=np.float64)
     cum = np.cumsum(w) / w.sum()
+    # From the last positive weight on, the cumulative share is exactly 1: rounding
+    # in the sum must never leave room for a trailing zero-weight team.
+    cum[np.flatnonzero(w)[-1]:] = 1.0
     x = (np.asarray(u, dtype=_U64) >> _U64(11)).astype(np.float64) / float(1 << 53)
-    return np.minimum(np.searchsorted(cum, x, side="right"), len(w) - 1).astype(np.int64)
+    return np.searchsorted(cum, x, side="right").astype(np.int64)
 
 
 def pairings(seed, envs, episodes, weights):

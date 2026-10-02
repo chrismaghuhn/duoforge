@@ -162,7 +162,8 @@ def _parser(suppress=False):
     add("--eval-games", type=int, default=2, help="games per pairing and seat of the evaluation suite (<= 8 teams)")
     add("--eval-budget", type=int, default=512, help="games of the evaluation suite with more than 8 teams")
     add("--seed", type=lambda s: int(s, 0), default=0x2026100200000021)
-    add("--max-steps", type=int, default=500, help="steps before a self-play episode is cut off as a tie")
+    add("--max-steps", type=int, default=500,
+        help="steps before a self-play episode is cut off and scored by the reference's tiebreak")
     add("--out", default=None, help="a fresh run directory (not with --resume)")
     add("--resume", default=None, help="continue the run in this directory")
     add("--model", choices=("v1", "v2"), default="v1")
@@ -258,7 +259,22 @@ class _Pool:
             self.updates.append(update)
 
     def load(self, update):
-        return checkpoint.load(self.path(update))[0]
+        """A snapshot's parameters, widened to the current encoder layout."""
+        return checkpoint.load_current(self.path(update))[0]
+
+    def set_aside(self, after):
+        """Moves the snapshots newer than update `after` (written after the
+        saved state by a run that then died) to <out>/abandoned-<after>/, so
+        the pool and the ladder see only the resumed run's history."""
+        newer = [u for u in self.updates if u > after]
+        if not newer:
+            return [], None
+        folder = f"abandoned-{after}"
+        os.makedirs(os.path.join(self.out, folder), exist_ok=True)
+        for u in newer:
+            os.replace(self.path(u), os.path.join(self.out, folder, f"params-{u}.npz"))
+            self.updates.remove(u)
+        return newer, folder
 
     def draw(self, seed, update):
         u = pairing.draw(seed, pairing.LEAGUE_SNAPSHOT, np.array([update]), np.array([0]))
@@ -377,10 +393,12 @@ def _run(args, pool, on_start, stop):
         rng.bit_generator.state = saved_state["numpy_rng"]
         c = saved_state["counters"]
         update, decisions, episodes, last_eval = c["update"], c["decisions"], c["episodes"], c["last_eval"]
+        abandoned, abandoned_dir = snapshots.set_aside(update)
         previous = snapshots.load(last_eval) if last_eval in snapshots.updates else params
         old = saved_state["league"]
-        state.snapshots = [old["snapshots"][k] if k < len(old["snapshots"]) else str(snapshots.updates[-1])
-                           for k in range(state.slots)]
+        # A slot of a run without league holds "init": the initial parameters, params-0.
+        state.snapshots = [old["snapshots"][k] if k < len(old["snapshots"]) and old["snapshots"][k].isdigit()
+                           and int(old["snapshots"][k]) in snapshots.updates else "0" for k in range(state.slots)]
         state.stats = {k: list(v) for k, v in old["stats"].items()}
         state.next_drain = old["next_drain"] % max(state.slots, 1)
     opponents = None
@@ -411,7 +429,10 @@ def _run(args, pool, on_start, stop):
     saved_at = start
     with open(os.path.join(out, "log.jsonl"), "a", encoding="utf-8") as log:
         if saved_state is not None:
-            log.write(json.dumps({"resume": changes, "at_update": update}) + "\n")
+            line = {"resume": changes, "at_update": update}
+            if abandoned:
+                line |= {"abandoned_snapshots": abandoned, "abandoned_dir": abandoned_dir}
+            log.write(json.dumps(line) + "\n")
         while True:
             update += 1
             counts[:] = 0

@@ -102,6 +102,23 @@ def save(path, params, config):
     np.savez(path, config=json.dumps({**config, "format": 2}), **arrays)
 
 
+def load_current(path):
+    """(params, config) of a checkpoint widened to the current encoder layout
+    (features.FEATURE_NAMES): format 2 by column name; a format-1 file must
+    already have the current width (widen_594 converts the 594-feature ones)."""
+    params, config = load(path)
+    if config.get("format") != 2:
+        width = params["t1"]["w"].shape[0]
+        if width != features.OBS_SIZE:
+            raise ValueError(f"{path}: the network takes {width} observation features, the encoder makes "
+                             f"{features.OBS_SIZE} (a checkpoint of another encoder layout)")
+        return params, config
+    if config["features"] != list(features.FEATURE_NAMES) or \
+            config["slot_features"] != list(features.SLOT_FEATURE_NAMES):
+        params, config = widen(params, config, features.FEATURE_NAMES, features.SLOT_FEATURE_NAMES)
+    return params, config
+
+
 def model_config(config, params):
     """The model configuration of a checkpoint: format 2 stores it; a format-1
     file is model v1 with the sizes of its parameters."""

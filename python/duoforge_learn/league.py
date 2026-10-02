@@ -58,7 +58,8 @@ class LeagueState:
 
     def end(self, envs, learner_results):
         """Ends the episodes of envs: +1, -1 or 0 from the learner's view (a
-        cut-off episode is 0) goes to the stats of its snapshot."""
+        cut-off episode as the tiebreak scored it) goes to the stats of its
+        snapshot."""
         for e, r in zip(np.asarray(envs, dtype=np.int64).tolist(), np.asarray(learner_results).tolist()):
             slot = int(self.slot_of[e])
             if slot < 0:

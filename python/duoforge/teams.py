@@ -121,6 +121,8 @@ def _weights(weights, n):
             raise ValueError(f"team weight {i} is {x}: weights must be finite and at least 0")
     if w.sum() <= 0:
         raise ValueError("the team weights sum to 0: no team could be drawn")
+    if not math.isfinite(w.sum()):
+        raise ValueError("the team weights sum to infinity: scale them down")
     return w
 
 

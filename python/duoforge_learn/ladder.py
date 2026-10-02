@@ -195,7 +195,7 @@ def main(argv=None):
     from duoforge import features
 
     from . import evaluate, policy, suite
-    from .checkpoint import encoder_of, load, model_config
+    from .checkpoint import encoder_of, load, load_current, model_config
 
     pool, kind = _pool_of(args.teams_from or args.run_dirs[0])
     rows = suite.make_suite(len(pool.ids), LADDER_SEED, games=args.games, budget=args.budget)
@@ -223,11 +223,8 @@ def main(argv=None):
             key, sub = jax.random.split(key)
             players.append(evaluate.Player(model_of(cfg), model_of(cfg).init(sub), features.ENCODER, "init"))
         for u, path in chosen:
-            params, config = load(path)
+            params, config = load_current(path)
             cfg = model_config(config, params)
-            if cfg["version"] == 1 and params["t1"]["w"].shape[0] != features.OBS_SIZE:
-                raise ValueError(f"{path}: the network takes {params['t1']['w'].shape[0]} observation features, "
-                                 f"the encoder makes {features.OBS_SIZE} (a checkpoint of another encoder)")
             players.append(evaluate.Player(model_of(cfg), params, encoder_of(config), f"{label} update {u}"))
     n = len(players)
     with duoforge.Context(data_kind=kind) as ctx:
