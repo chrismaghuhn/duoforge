@@ -54,6 +54,11 @@ In Champions formats, Showdown's Open Team Sheets show exactly that. `sim/battle
 
 Under CLOSURE these inputs are always 0, so the widened network gives the same outputs. The bot uses update 25000 of the night run, the best in its ladder (833 Elo). The live tool loads checkpoints only with `obs_size=features.OBS_SIZE`, so a 594-feature file is refused.
 
+**Encoding of the night checkpoint.**
+- The night checkpoint was trained while the encoder set a member's `present` input from `species_id != 0`. Rillaboom of Team A has forme id 0, so its `present` was always 0.
+- The bot plays this checkpoint with the encoding it was trained on, through a named switch of the encoder (`legacy_present`). The widened file records `"encoding": "v1"`.
+- New checkpoints use the fixed encoding.
+
 ## 6. Data flow of one battle
 
 1. Accept a challenge in one of the two formats after `/utm` with the chosen team. A challenge in any other format is rejected.
