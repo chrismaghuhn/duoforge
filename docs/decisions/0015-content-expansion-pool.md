@@ -31,13 +31,24 @@ Status: **accepted**. The owner decided the three open points of `docs/research/
 - **Deriving the parameters.**
   - The generator reads them from the pinned sources with one strict pattern per family. A handler that deviates from its family's pattern fails the generator; it never guesses.
   - A Node cross-check under `DUOFORGE_PS_REFERENCE_DIR` calls the pinned handlers with every type and must agree with the generated columns.
-- **POOL fingerprint.** It is composed as today: data kind, roster sizes, species and move counts, target classes, and the hash of the canonical pool bytes, which include the family columns.
+- **Legal moves and abilities per forme.** A forme has one set in the closure and Team C tables, but the real teams use table moves that are not in their forme's set (for example Milotic's Protect, Golisopod's Sucker Punch, Kingambit's Swords Dance) and abilities beyond the set's. So the pool tables get two more columns for every forme, in an array of their own:
+  - **Learnable moves:** a bitset over the pool moves. A move is learnable when the forme lists it in the Champions learnsets at the pin (`data/mods/champions/learnsets.ts`). Every entry there is `"9M"` (no event, egg or level-up source), so learnable means listed. The generator parses the block strictly and requires the pool moves it finds to be exactly the pool moves that the pinned validator accepts for the species (`legal_pool.json`).
+  - **Legal abilities:** a list over the pool abilities, in slot order. They are the forme's abilities in the pinned pokedex, filtered by what the validator allows in Champions (`abilities_legal` of `legal_pool.json`) and by the pool abilities. A Mega forme has its one ability. An ability that the pin tags as not released fails the generator explicitly (Lucario-Mega-Z's Aura Guard is the known case).
+  - A Mega forme is reached in battle and never set up, so its learnable set is empty.
+  - Both columns are part of the canonical pool bytes, as the family columns are, and not of the CLOSURE or TEAM_C bytes.
+- **POOL fingerprint.** It is composed as today: data kind, roster sizes, species and move counts, target classes, and the hash of the canonical pool bytes, which include the family columns and the legal moves and abilities per forme.
   - It changes with every PR that changes the pool data.
   - A state or recipe of another pool version is rejected explicitly.
   - For training or a certification, a pool version is later frozen as its own named profile, as CLOSURE was.
 - **Setup rules.**
-  - POOL: the CLOSURE rules (decision 0006 section 2.1, and the register 6 / bring 4 freeze of 0010) over the pool tables, with mixed teams and any table item.
-  - POOL_DEV: as the other DEV kinds, so also No Ability and 4 to 6 registered members.
+  - POOL: the CLOSURE rules (decision 0006 section 2.1, and the register 6 / bring 4 freeze of 0010) over the pool tables, with mixed teams and any table item, and **one change, the set rule:**
+    - a member's moves are 1 to 4 distinct pool moves that its forme learns;
+    - its ability is one of its forme's legal abilities in the pool tables;
+    - for a Mega-capable base forme these are the base forme's (the Mega forme is reached in battle);
+    - the support gate still applies to every move, item and ability, so a legal choice that is not marked is `E_UNSUPPORTED` after all validation.
+  - POOL_DEV: as the other DEV kinds, so also No Ability and 4 to 6 registered members; the same moves and abilities as POOL.
+  - CLOSURE, CLOSURE_DEV, TEAM_C and TEAM_C_DEV keep the set rule (the moves and the ability of the forme's one set). Their behaviour and fingerprints are frozen.
+  - The member invariant of a decoded state follows the same split: moves and ability by the set under the four frozen kinds, by the learnable moves and the legal abilities under the POOL kinds.
 - **Support gate.** Every new id starts unmarked. A setup that needs an unmarked mechanic fails with `E_UNSUPPORTED` after all validation, as today. A step marks only what it tested.
 - **Legality.** Only format-legal ids enter the pool: they must pass `TeamValidator` at the pin, which `docs/research/expansion/data/legal_pool.json` records.
 
@@ -60,12 +71,17 @@ The families of the research note, section 7, with their legal members:
 
 One PR per step.
 
-1. **P1, data:**
-   - the POOL and POOL_DEV kinds and the pool tables: prefix, family columns, and the new rows of section 3, all unmarked;
-   - the engine reads the pool tables;
-   - prefix, fingerprint and setup tests.
-   - No behaviour change: the closure and Team C conformance, the certified dataset and every digest stay byte-identical.
-   - New public constants (the two kinds), so a minor version bump, agreed with the other sessions before the number is taken.
+1. **P1, data**, in two PRs:
+   - **P1a:**
+     - the POOL and POOL_DEV kinds and the pool tables: prefix, family columns, and the new rows of section 3, all unmarked;
+     - the engine reads the pool tables;
+     - prefix, fingerprint and setup tests.
+     - No behaviour change: the closure and Team C conformance, the certified dataset and every digest stay byte-identical.
+     - New public constants (the two kinds), so a minor version bump, agreed with the other sessions before the number is taken.
+   - **P1b:**
+     - the legal moves and abilities per forme (section 2) in the pool tables and their canonical bytes;
+     - the set rule of the POOL kinds, in the setup and in the member invariant;
+     - the CLOSURE and TEAM_C kinds stay as they are, which the conformance and fingerprint tests show.
 2. **P2, items:**
    - type boosters and resist berries become table rules, and the new members are marked;
    - recorded reference battles for every variant: a booster of each kind of type the closure lacked, a resist berry with and without a KO, and Chilan Berry's Normal variant;
