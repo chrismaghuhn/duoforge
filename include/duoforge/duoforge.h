@@ -341,6 +341,21 @@ duoforge_status duoforge_battle_request(const duoforge_context *ctx, const duofo
    INVARIANT); *out_result is written only on success. */
 duoforge_status duoforge_battle_result(const duoforge_context *ctx, const duoforge_battle *battle,
                                        uint32_t *out_result);
+/* The result Battle.tiebreak() of the pinned reference would give the battle
+   as it stands (sim/battle.ts:1467-1508), without changing it: the side with
+   the most Pokemon not fainted wins; among equals the larger HP percentage
+   (the sum of hp / maxhp over the brought Pokemon, in the reference's IEEE-754
+   binary64 arithmetic, times 100, divided by 6); among equals the larger total
+   HP; else a tie. *out_result is DUOFORGE_RESULT_SIDE_0, _SIDE_1 or _TIE. At
+   TERMINAL it is the battle's own result. Before the picks are made the
+   Pokemon counted are the whole roster. Under every data kind. Checks: NULL ->
+   E_NULL_ARGUMENT, then CONTEXT_MISMATCH -> INVARIANT as the other queries;
+   *out_result is written only on success.
+   E_UNSUPPORTED: the HP percentages of the two sides are one rounding apart
+   for some order of the benches, and the order of the reference's
+   side.pokemon, which the engine does not keep, would decide the winner. */
+duoforge_status duoforge_battle_tiebreak(const duoforge_context *ctx, const duoforge_battle *battle,
+                                         uint32_t *out_result);
 /* The complete joint side-choice domain of one player in documented order
    (decision 0005 section 3). With capacity < count the call returns
    E_CAPACITY and writes ONLY *out_count = required; the buffer is untouched.

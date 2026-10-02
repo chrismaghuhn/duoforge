@@ -78,6 +78,7 @@ set(DUOFORGE_SOURCES
     src/state/request.c
     src/state/reference_teams.c
     src/state/observation.c
+    src/state/tiebreak.c
     src/data/closure_tables.c
     src/data/extended_tables.c
     src/data/pool_tables.c
@@ -87,6 +88,13 @@ set(DUOFORGE_SOURCES
     src/combat/events.c
     src/combat/turn.c
 )
+# The tiebreak (src/state/tiebreak.c) reproduces the reference's binary64 arithmetic
+# bit for bit: nothing may contract into a fused multiply-add. GCC's ISO modes
+# default to that, Clang and MSVC are told in the file; this states it for GCC
+# and Clang whatever the language mode (no -ffast-math is used anywhere).
+if(NOT MSVC)
+    set_source_files_properties(src/state/tiebreak.c PROPERTIES COMPILE_OPTIONS "-ffp-contract=off")
+endif()
 add_library(duoforge STATIC ${DUOFORGE_SOURCES})
 target_include_directories(duoforge
     PUBLIC

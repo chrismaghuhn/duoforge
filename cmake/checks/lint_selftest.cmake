@@ -20,8 +20,12 @@ set(_fix "${ROOT}/tests/lint_fixtures")
 # expect: CLEAN, or the exact rule id that must be reported. count: expected
 # number of findings (lines ending in ": <rule>").
 function(_lint_case file expect count)
+    set(_case_root "${ROOT}")
+    if(ARGC GREATER 3)
+        set(_case_root "${ARGV3}") # a root whose relative paths the case sets up
+    endif()
     execute_process(
-        COMMAND "${CMAKE_COMMAND}" "-DROOT=${ROOT}" "-DFILES=${file}" -P "${_lint}"
+        COMMAND "${CMAKE_COMMAND}" "-DROOT=${_case_root}" "-DFILES=${file}" -P "${_lint}"
         RESULT_VARIABLE _rc
         OUTPUT_VARIABLE _out
         ERROR_VARIABLE _err)
@@ -80,7 +84,23 @@ _lint_case("${_fix}/banned_token.c" banned-token 1)
 _lint_case("${_fix}/banned_suffix.c" long-suffix 1)
 _lint_case("${_fix}/cast_paren.c" result-cast 1)
 
+# 3. Floating point is banned everywhere except src/state/tiebreak.c, and even
+# there every other banned token still applies.
+file(MAKE_DIRECTORY "${WORK}/fp/src/state")
+file(WRITE "${WORK}/fp/src/state/tiebreak.c" "static double fixture_fp;
+static float fixture_fp2;
+")
+_lint_case("${WORK}/fp/src/state/tiebreak.c" CLEAN 0 "${WORK}/fp")
+file(WRITE "${WORK}/fp/src/state/tiebreak.c" "static double fixture_fp;
+static long fixture_long;
+")
+_lint_case("${WORK}/fp/src/state/tiebreak.c" banned-token 1 "${WORK}/fp")
+file(WRITE "${WORK}/fp/src/state/other.c" "static double fixture_fp;
+static float fixture_fp2;
+")
+_lint_case("${WORK}/fp/src/state/other.c" banned-token 2 "${WORK}/fp")
+
 if(_bad)
     message(FATAL_ERROR "LINT_SELFTEST FAILED")
 endif()
-message("LINT_SELFTEST OK (${_big_size}-byte clean file, 6 fixtures)")
+message("LINT_SELFTEST OK (${_big_size}-byte clean file, 6 fixtures, 3 floating-point cases)")
