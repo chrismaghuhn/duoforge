@@ -13,7 +13,7 @@ A training pipeline that can be reused when more teams exist: self-play on the b
 
 ## 3. Environment loop
 
-Each batch step: `query_factored` (requests, observations, factored domains), `features.encode_batch` (NumPy, vectorized; equal to the per-player encoder), the policy on the GPU, `step_factored` with the chosen pair or team tuple, and for ended episodes the results (`Batch.result`) and `reset_terminal`. Both seats of every environment are played by the current policy (self-play with shared parameters); the reward of a seat is +1 for a win, -1 for a loss and 0 for a tie, at the episode's end. A fused factored step can follow if the loop, not the learner, turns out to be the limit.
+Each batch step: `query_factored` (requests, observations, factored domains), `features.encode_batch` (NumPy, vectorized; equal to the per-player encoder), the policy on the GPU, `step_factored` with the chosen pair or team tuple, and for ended episodes the results (`Batch.result`) and `reset_terminal`. Both seats of every environment are played by the current policy (self-play with shared parameters); the reward of a seat is +1 for a win, -1 for a loss and 0 for a tie, at the episode's end. The engine has no turn limit, and two policies that only switch never end a battle, so an episode that reaches `--max-steps` steps (500) is cut off and scored as a tie - a training choice, not a battle rule. A fused factored step can follow if the loop, not the learner, turns out to be the limit.
 
 ## 4. Network
 
@@ -24,11 +24,11 @@ Each batch step: `query_factored` (requests, observations, factored domains), `f
 
 ## 5. Training
 
-PPO with clipping 0.2, GAE (gamma 0.99, lambda 0.95) over each seat's own decisions (a seat that is not requested at a step does not act; the episode's reward goes to its last decision; the value of the state after the rollout bootstraps), Adam 3e-4, 4 epochs of minibatches, entropy bonus 0.01, value coefficient 0.5, gradient clip 0.5. Seeds: the batch seed for the battles, a JAX key for the policy.
+PPO with clipping 0.2, GAE (gamma 0.99, lambda 0.95) over each seat's own decisions (`duoforge_learn/returns.py`: a seat that is not requested at a step does not act; the episode's reward goes to its last decision; discounting counts the seat's own decisions; the value of the state after the rollout bootstraps), Adam 3e-4, 4 epochs of minibatches, entropy bonus 0.01, value coefficient 0.5, gradient clip 0.5. The policy loss covers the rows where a seat acted; the value loss covers every row - where a seat waits, its target is what its next decision returns, its reward if the episode ends first, or the bootstrap - so the value of a waiting state, which can bootstrap a rollout's end, is trained too. Seeds: `--seed` gives the battles (all 64 bits), the JAX key (its low 32 bits, the high 32 folded in) and a NumPy generator that shuffles the minibatches. GPU runs need not repeat bit for bit.
 
 ## 6. Evaluation and output
 
-Every N updates the policy (most likely action) plays fixed-seed episodes against the scripted and the random baselines, on both seats and over the four pairings; the log records win rates, losses, entropy, episodes and decisions per second (JSON lines). Parameters are saved as `.npz` with the configuration.
+Every N updates the parameters are saved as `.npz` with the configuration, and the policy (most likely action) plays fixed-seed episodes against the scripted and the random baselines and against the parameters of the previous evaluation (`vs_previous`: above 0.5 while it still improves), on both seats and over the four pairings (the evaluation environments are a multiple of 8). An evaluation episode still running after 1000 steps counts as a tie and is logged as unfinished. The log records win rates, losses, entropy, episodes and decisions per second (JSON lines); a run writes only into an empty directory.
 
 ## 7. Trial run
 

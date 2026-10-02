@@ -21,6 +21,7 @@ import numpy as np
 from duoforge import features
 
 from . import evaluate, model, ppo
+from .returns import gae
 from .selfplay import TEAM_ACTIONS, SelfPlay
 
 
@@ -54,18 +55,19 @@ def collect(env, params, act, key, steps):
     return rollout, np.asarray(bootstrap).reshape(e, 2), episodes, key
 
 
-def samples_of(rollout, advantages, returns):
-    """One row per decision (the acting seats)."""
-    acting = rollout["acting"]
+def samples_of(rollout, advantages, value_targets):
+    """One row per seat and step: the policy learns from the acting rows,
+    the value from all of them."""
     return {
-        "obs": rollout["obs"][acting],
-        "slots": rollout["slots"][acting],
-        "mask": rollout["mask"][acting],
-        "is_team": rollout["is_team"][acting],
-        "actions": rollout["actions"][acting].astype(np.int32),
-        "logp": rollout["logp"][acting].astype(np.float32),
-        "advantages": advantages[acting],
-        "returns": returns[acting],
+        "obs": rollout["obs"].reshape((-1,) + rollout["obs"].shape[3:]),
+        "slots": rollout["slots"].reshape((-1,) + rollout["slots"].shape[3:]),
+        "mask": rollout["mask"].reshape((-1,) + rollout["mask"].shape[3:]),
+        "is_team": rollout["is_team"].reshape(-1),
+        "acting": rollout["acting"].reshape(-1).astype(np.float32),
+        "actions": rollout["actions"].reshape(-1).astype(np.int32),
+        "logp": rollout["logp"].reshape(-1).astype(np.float32),
+        "advantages": advantages.reshape(-1),
+        "value_targets": value_targets.reshape(-1),
     }
 
 
@@ -89,20 +91,26 @@ def _arguments(argv):
     p.add_argument("--eval-every", type=int, default=25)
     p.add_argument("--eval-envs", type=int, default=64)
     p.add_argument("--seed", type=lambda s: int(s, 0), default=0x2026100200000021)
+    p.add_argument("--max-steps", type=int, default=500, help="steps before a self-play episode is cut off as a tie")
     p.add_argument("--out", required=True)
     args = p.parse_args(argv)
     if args.minutes <= 0 and args.updates <= 0:
         p.error("give --minutes or --updates")
+    if args.eval_envs % 8 != 0:
+        p.error("--eval-envs must be a multiple of 8 (both seats of all four pairings)")
     return args
 
 
 def main(argv=None):
     args = _arguments(sys.argv[1:] if argv is None else list(argv))
+    if os.path.isdir(args.out) and os.listdir(args.out):
+        raise SystemExit(f"{args.out} is not empty: a run writes into a fresh directory")
     os.makedirs(args.out, exist_ok=True)
     config = vars(args) | {"devices": [str(d) for d in jax.devices()]}
     print(json.dumps(config), flush=True)
-    env = SelfPlay(args.envs, args.workers, args.seed)
-    key = jax.random.PRNGKey(args.seed & 0x7FFFFFFF)
+    env = SelfPlay(args.envs, args.workers, args.seed, max_steps=args.max_steps)
+    # All 64 bits of the seed: the low half makes the key, the high half is folded in.
+    key = jax.random.fold_in(jax.random.PRNGKey(args.seed & 0xFFFFFFFF), args.seed >> 32)
     key, sub = jax.random.split(key)
     params = model.init(sub, features.OBS_SIZE, features.SLOT_FEATURES, TEAM_ACTIONS)
     tx = ppo.optimizer(args.learning_rate)
@@ -118,27 +126,30 @@ def main(argv=None):
             update += 1
             t0 = time.perf_counter()
             rollout, bootstrap, ended, key = collect(env, params, act, key, args.rollout)
-            advantages, returns = ppo.gae(rollout["values"], rollout["rewards"], rollout["done"], rollout["acting"],
-                                          bootstrap)
-            samples = samples_of(rollout, advantages, returns)
+            advantages, _, value_targets = gae(rollout["values"], rollout["rewards"], rollout["done"],
+                                               rollout["acting"], bootstrap)
+            samples = samples_of(rollout, advantages, value_targets)
+            acted = int(rollout["acting"].sum())
             t1 = time.perf_counter()
             params, opt_state, stats = ppo.update(params, opt_state, tx, samples, rng, epochs=args.epochs,
                                                   minibatch=args.minibatch, entropy_coef=args.entropy)
             t2 = time.perf_counter()
-            decisions += samples["actions"].shape[0]
+            decisions += acted
             episodes += ended
             record = {"update": update, "seconds": round(t2 - start, 1), "decisions": decisions,
                       "episodes": episodes, "collect_s": round(t1 - t0, 3), "update_s": round(t2 - t1, 3),
-                      "decisions_per_s": round(samples["actions"].shape[0] / (t2 - t0))}
+                      "decisions_per_s": round(acted / (t2 - t0))}
             record |= {k: round(float(v), 5) for k, v in stats.items()}
             elapsed_min = (t2 - start) / 60
             last = (args.updates and update >= args.updates) or (args.minutes and elapsed_min >= args.minutes)
             if update % args.eval_every == 0 or last:
+                save(os.path.join(args.out, f"params-{update}.npz"), params, config)
                 for name, opponent in (("random", "random"), ("scripted", "scripted"), ("previous", previous)):
                     result = evaluate.win_rate(params, act, opponent, envs=args.eval_envs, workers=args.workers)
                     record[f"vs_{name}"] = round(result["win_rate"], 4)
+                    if result["unfinished"]:
+                        record[f"unfinished_vs_{name}"] = result["unfinished"]
                 previous = params
-                save(os.path.join(args.out, f"params-{update}.npz"), params, config)
             log.write(json.dumps(record) + "\n")
             log.flush()
             print(json.dumps(record), flush=True)

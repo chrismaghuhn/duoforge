@@ -62,12 +62,17 @@ def choices_of(batch, actions, out):
 
 
 class SelfPlay:
-    """A batch whose environments restart when their episode ends."""
+    """A batch whose environments restart when their episode ends. The
+    engine has no turn limit, and two policies that only switch never end a
+    battle, so an episode that reaches max_steps steps is cut off and scored
+    as a tie: a training choice, not a battle rule."""
 
-    def __init__(self, envs, workers, seed, pairings=None):
+    def __init__(self, envs, workers, seed, pairings=None, max_steps=500):
         self.context = duoforge.Context()
         setups = duoforge.reference_setups(pairings if pairings is not None else [e % 4 for e in range(envs)])
         self.batch = duoforge.Batch(self.context, setups, workers, seed)
+        self.max_steps = int(max_steps)
+        self._steps = np.zeros(envs, dtype=np.int64)
         self._choices = np.zeros((envs, 2), dtype=_layout.FACTORED_CHOICE)
         self.batch.query_factored()
 
@@ -81,12 +86,18 @@ class SelfPlay:
         b = self.batch
         choices_of(b, actions, self._choices)
         b.step_factored(self._choices)
-        done = b.results["boundary_kind"] == TERMINAL
+        self._steps += 1
+        terminal = b.results["boundary_kind"] == TERMINAL
         rewards = np.zeros((b.envs, 2), dtype=np.float32)
-        for e in np.flatnonzero(done):
+        for e in np.flatnonzero(terminal):
             rewards[e] = _REWARDS[b.result(e)]
-        if done.any():
+        if terminal.any():
             b.reset_terminal()
+        cut = ~terminal & (self._steps >= self.max_steps)
+        for e in np.flatnonzero(cut):
+            b.reset(e, b.episode(e) + 1)  # a tie: both rewards stay 0
+        done = terminal | cut
+        self._steps[done] = 0
         b.query_factored()
         return rewards, done
 

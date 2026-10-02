@@ -1,9 +1,9 @@
 """PPO for self-play over each seat's own decisions (decision 0014 section 5).
 
-A rollout holds T batch steps of E environments and two seats. A seat that
-is not requested at a step does not act there; the reward of an episode
-(+1, -1, 0 at its end) goes to the seat's last decision of that episode;
-the values of the states after the rollout bootstrap the unfinished ones.
+The advantages, returns and value targets come from returns.gae. The
+policy loss covers the rows where a seat acted; the value loss covers every
+row, so the value of a state where a seat waits is trained too (it
+bootstraps the rollout's end).
 """
 import functools
 
@@ -13,33 +13,7 @@ import numpy as np
 import optax
 
 from . import model
-
-
-def gae(values, rewards, done, acting, bootstrap, gamma=0.99, lam=0.95):
-    """(advantages, returns), both (T, E, 2), over every seat's own decisions.
-
-    values (T, E, 2): the value of each seat's state at step t; rewards
-    (T, E, 2) and done (T, E): the episode that ended after step t;
-    acting (T, E, 2): the seat decided at step t; bootstrap (E, 2): the
-    values after the last step. Entries where a seat did not act are 0."""
-    t_steps = values.shape[0]
-    advantages = np.zeros_like(values)
-    next_value = bootstrap.astype(np.float64)
-    carry = np.zeros_like(next_value)
-    pending = np.zeros_like(next_value)
-    for t in range(t_steps - 1, -1, -1):
-        ended = done[t][:, None]
-        next_value = np.where(ended, 0.0, next_value)
-        carry = np.where(ended, 0.0, carry)
-        pending = np.where(ended, rewards[t], pending)
-        delta = pending + gamma * next_value - values[t]
-        step = delta + gamma * lam * carry
-        advantages[t] = np.where(acting[t], step, 0.0)
-        carry = np.where(acting[t], step, carry)
-        next_value = np.where(acting[t], values[t], next_value)
-        pending = np.where(acting[t], 0.0, pending)
-    returns = np.where(acting, advantages + values, 0.0)
-    return advantages.astype(np.float32), returns.astype(np.float32)
+from .returns import gae  # noqa: F401  (the advantages of a rollout)
 
 
 def optimizer(learning_rate=3e-4, max_norm=0.5):
@@ -49,7 +23,7 @@ def optimizer(learning_rate=3e-4, max_norm=0.5):
 def _loss(params, batch, clip, entropy_coef, value_coef):
     logp, entropy, value = model.evaluate(params, batch["obs"], batch["slots"], batch["mask"], batch["is_team"],
                                           batch["actions"])
-    w = batch["weight"]
+    w = batch["weight"] * batch["acting"]  # the policy's rows
     total = jnp.maximum(w.sum(), 1.0)
     adv = batch["advantages"]
     mean = (adv * w).sum() / total
@@ -58,7 +32,8 @@ def _loss(params, batch, clip, entropy_coef, value_coef):
     ratio = jnp.exp(logp - batch["logp"])
     surrogate = jnp.minimum(ratio * adv, jnp.clip(ratio, 1.0 - clip, 1.0 + clip) * adv)
     policy_loss = -(surrogate * w).sum() / total
-    value_loss = (((value - batch["returns"]) ** 2) * w).sum() / total
+    wv = batch["weight"]  # the value's rows: all
+    value_loss = (((value - batch["value_targets"]) ** 2) * wv).sum() / jnp.maximum(wv.sum(), 1.0)
     entropy_mean = (entropy * w).sum() / total
     loss = policy_loss + value_coef * value_loss - entropy_coef * entropy_mean
     return loss, (policy_loss, value_loss, entropy_mean)

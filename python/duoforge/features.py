@@ -152,6 +152,8 @@ def encode_batch(observations, domains):
 
     slots = d["slots"]
     is_slots = d["kind"] == C["DUOFORGE_CHOICE_SLOTS"]
+    if (d["slot_count"][is_slots] > OPTIONS).any():
+        raise ValueError(f"a slot list has more than {OPTIONS} options")
     valid = (np.arange(OPTIONS)[None, None, :] < d["slot_count"][:, :, None]) & is_slots[:, None, None]
     slot_part = np.zeros((n, 2, OPTIONS, SLOT_FEATURES), dtype=_F32)
     where = np.nonzero(valid)
