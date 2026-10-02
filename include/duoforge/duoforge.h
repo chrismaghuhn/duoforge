@@ -19,9 +19,10 @@
  * The only out-parameter written on error is the required count of a
  * model-facing query on E_CAPACITY (decision 0005 section 7).
  *
- * Combat runs for CLOSURE and TEAM_C data (decisions 0006 section 4, 0009):
- * TURN, REPLACEMENT and PIVOT bundles execute the turn of the combat closure;
- * under SYNTHETIC data every combat bundle is rejected with E_UNSUPPORTED.
+ * Combat runs for CLOSURE, TEAM_C and POOL data (decisions 0006 section 4,
+ * 0009, 0015): TURN, REPLACEMENT and PIVOT bundles execute the turn of the
+ * combat closure; under SYNTHETIC data every combat bundle is rejected with
+ * E_UNSUPPORTED.
  */
 #include <stdbool.h>
 #include <stddef.h>
@@ -32,9 +33,9 @@ extern "C" {
 #endif
 
 #define DUOFORGE_VERSION_MAJOR 0
-#define DUOFORGE_VERSION_MINOR 19
+#define DUOFORGE_VERSION_MINOR 20
 #define DUOFORGE_VERSION_PATCH 0
-#define DUOFORGE_VERSION_STRING "0.19.0"
+#define DUOFORGE_VERSION_STRING "0.20.0"
 
 /* Identifiers of the artifacts that exist now (registry: decisions 0002, 0005, 0006). */
 #define DUOFORGE_SEMANTICS_ID           3u   /* "duoforge-m3-closure" */
@@ -110,16 +111,24 @@ const char *duoforge_status_name(duoforge_status status);
                                              the CLOSURE rules and profile over them */
 #define DUOFORGE_DATA_KIND_TEAM_C_DEV  5u /* the extended tables; as CLOSURE_DEV over them
                                              (development fixtures) */
+#define DUOFORGE_DATA_KIND_POOL        6u /* the pool tables, the growing tables of the content
+                                             expansion (decision 0015): the extended tables as
+                                             their prefix, then the rows the steps add; the
+                                             CLOSURE rules and profile over them. Its
+                                             fingerprint changes with every change of the pool
+                                             data (the CLOSURE and TEAM_C ones never do) */
+#define DUOFORGE_DATA_KIND_POOL_DEV    7u /* the pool tables; as CLOSURE_DEV over them
+                                             (development fixtures) */
 typedef struct duoforge_context duoforge_context;
 typedef struct duoforge_context_config {
     uint32_t data_kind;     /* DUOFORGE_DATA_KIND_* */
     uint32_t max_roster;    /* 1..DUOFORGE_MAX_ROSTER */
     uint32_t brought_count; /* 1..max_roster; picked at TEAM_SELECTION */
-    uint32_t species_count; /* SYNTHETIC: 1..65535, species ids 0..species_count-1; CLOSURE, TEAM_C: 0 */
-    uint32_t move_count;    /* SYNTHETIC: 1..65535, move ids 0..move_count-1; CLOSURE, TEAM_C: 0 */
+    uint32_t species_count; /* SYNTHETIC: 1..65535, species ids 0..species_count-1; CLOSURE, TEAM_C, POOL: 0 */
+    uint32_t move_count;    /* SYNTHETIC: 1..65535, move ids 0..move_count-1; CLOSURE, TEAM_C, POOL: 0 */
     /* SYNTHETIC: move_count bytes, each a DUOFORGE_TARGET_CLASS_* value 1..9;
        copied at create (read once) and hashed into the fingerprint.
-       CLOSURE and TEAM_C kinds: NULL (the generated tables are built in). */
+       CLOSURE, TEAM_C and POOL kinds: NULL (the generated tables are built in). */
     const uint8_t *move_target_classes;
 } duoforge_context_config;
 /* Checks: NULL(config, out) -> INVALID_ARGUMENT (fields in order, including
@@ -130,8 +139,9 @@ duoforge_status duoforge_context_create(const duoforge_context_config *config,
 void duoforge_context_destroy(duoforge_context *context); /* NULL is a no-op */
 /* SHA-256 of the canonical context bytes: semantics id, context schema,
    structural constants, config and the SHA-256 of the target-class table
-   (SYNTHETIC), of the generated closure tables (CLOSURE kinds) or of the
-   extended tables (TEAM_C kinds). Independent of platform and build. */
+   (SYNTHETIC), of the generated closure tables (CLOSURE kinds), of the
+   extended tables (TEAM_C kinds) or of the pool tables with their family
+   columns (POOL kinds). Independent of platform and build. */
 duoforge_status duoforge_context_fingerprint(const duoforge_context *context,
                                              uint8_t out_fingerprint[DUOFORGE_DIGEST_SIZE]);
 
@@ -147,7 +157,12 @@ duoforge_status duoforge_context_fingerprint(const duoforge_context *context,
    and Item Clause hold per side. A legal team whose mechanics are not all
    implemented yet is rejected with E_UNSUPPORTED.
    TEAM_C kinds (decision 0009): the same rules over the extended tables, so
-   a side may mix closure and Team C members and hold any of their items. ---- */
+   a side may mix closure and Team C members and hold any of their items.
+   POOL kinds (decision 0015): the same rules over the pool tables. An id
+   beyond the tables of the kind is E_INVALID_ARGUMENT, so a pool item is
+   out of range under the CLOSURE and TEAM_C kinds. An item or ability whose
+   mechanic is not marked in the support manifest is E_UNSUPPORTED after all
+   validation. ---- */
 #define DUOFORGE_GENDER_MALE   1u
 #define DUOFORGE_GENDER_FEMALE 2u
 #define DUOFORGE_GENDER_NONE   3u /* genderless species */
@@ -341,7 +356,7 @@ duoforge_status duoforge_battle_factored(const duoforge_context *ctx, const duof
    INVALID_ARGUMENT (mask, reserved bytes, side/kind fields, a response
    outside the offered domain, a nonzero response of an unrequested side).
    A valid TEAM_SELECTION bundle performs the transition to TURN (for
-   CLOSURE and TEAM_C data with the leads' entry effects). A valid TURN or
+   CLOSURE, TEAM_C and POOL data with the leads' entry effects). A valid TURN or
    REPLACEMENT bundle of such a battle runs the turn (decision 0006); a mechanic the
    support manifest does not mark returns E_UNSUPPORTED, as does every
    combat bundle under SYNTHETIC data. A valid PIVOT bundle (switches for
@@ -436,11 +451,11 @@ typedef struct duoforge_position_view {
     uint8_t protect_chain; /* public: consecutive successful Protects (stall counter level) */
     uint8_t flash_fire;    /* public: 1 while Flash Fire's boost is active */
     uint8_t protecting;    /* public: 1 while Protect is up this turn ([-singleturn] Protect) */
-    uint8_t reserved;      /* zero under CLOSURE; under the TEAM_C kinds DUOFORGE_POSITION_FLAG_* */
+    uint8_t reserved;      /* zero under CLOSURE; under the TEAM_C and POOL kinds DUOFORGE_POSITION_FLAG_* */
 } duoforge_position_view; /* 16 bytes */
 
-/* Bits of duoforge_position_view.reserved under the TEAM_C kinds (decision
-   0009 section 4.2). */
+/* Bits of duoforge_position_view.reserved under the TEAM_C and POOL kinds
+   (decision 0009 section 4.2). */
 #define DUOFORGE_POSITION_FLAG_FOLLOW_ME    1u /* Follow Me draws the foes' moves this turn ([-singleturn]) */
 #define DUOFORGE_POSITION_FLAG_HELPING_HAND 2u /* Helping Hand's boost for this turn ([-singleturn]) */
 #define DUOFORGE_POSITION_FLAG_UNBURDEN     4u /* Unburden doubles the occupant's Speed */

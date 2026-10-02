@@ -29,8 +29,8 @@ class _Env:
 
 class LibTest(unittest.TestCase):
     def test_version(self):
-        self.assertEqual(duoforge.version(), "0.19.0")
-        self.assertEqual(_lib.EXPECTED_VERSION, "0.19.0")
+        self.assertEqual(duoforge.version(), "0.20.0")
+        self.assertEqual(_lib.EXPECTED_VERSION, "0.20.0")
 
     def test_missing_library_names_the_path(self):
         with _Env("DUOFORGE_LIBRARY", "nonexistent.dll"):

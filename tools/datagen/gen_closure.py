@@ -3,21 +3,28 @@
 reference teams (decision 0004) read from the pinned Pokemon Showdown
 checkout (decision 0006 section 2).
 
-usage: python3 tools/datagen/gen_closure.py <pinned checkout> [--team-c] [--check]
+usage: python3 tools/datagen/gen_closure.py <pinned checkout> [--team-c | --pool] [--check]
 
   --team-c  write src/data/extended_tables.{h,c} instead: the closure tables
             followed by Team C (docs/decisions/0009). The closure ids stay an
             exact prefix; the generator checks that before it writes.
+  --pool    write src/data/pool_tables.{h,c} instead: the extended tables as
+            the prefix, then the rows of the content expansion, with the
+            family columns of every item and ability (docs/decisions/0015).
+            Both prefixes are checked row by row before it writes.
   --check   do not write; exit 1 if the committed files differ.
 
 Offline tooling. It extracts static data only; every effect still needs a
 typed handler in C (decision 0006). It fails, instead of guessing, when an
 input hash differs from the pin, when a move has a field it does not know,
-or when a callback is not mapped to a named handler id. CTest never needs
-Python: the generated files are committed.
+or when a callback is not mapped to a named handler id. The family columns
+come from one strict pattern per family; a handler that deviates from the
+pattern of its family fails the generator. CTest never needs Python: the
+generated files are committed.
 """
 import hashlib
 import io
+import json
 import os
 import re
 import sys
@@ -1082,15 +1089,633 @@ size_t dfi_ext_canonical_bytes(uint8_t *out, size_t capacity)
     return h, '\n'.join(c), digest, len(can)
 
 
+# ---- the POOL data kind (decision 0015): the extended tables plus the rows of the expansion ----
+# The closure and --team-c modes never read anything below, so their output stays byte-identical.
+FORMAT_ID = 'gen9championsvgc2026regmc'
+LEGAL_POOL = os.path.join('docs', 'research', 'expansion', 'data', 'legal_pool.json')
+
+# The new items in their fixed order: the families in the order of decision 0015 section 3 (type boosters, then
+# resist berries), each by Showdown id (which is also by name). Mystic Water and Miracle Seed (type boosters) and
+# Chople Berry (a resist berry) are in the prefix.
+POOL_TYPE_BOOSTERS = ['blackbelt', 'blackglasses', 'charcoal', 'dragonfang', 'fairyfeather', 'hardstone', 'magnet',
+                      'metalcoat', 'nevermeltice', 'poisonbarb', 'sharpbeak', 'silkscarf', 'silverpowder', 'softsand',
+                      'spelltag', 'twistedspoon']
+POOL_RESIST_BERRIES = ['babiriberry', 'chartiberry', 'chilanberry', 'cobaberry', 'colburberry', 'habanberry',
+                       'kasibberry', 'kebiaberry', 'occaberry', 'passhoberry', 'payapaberry', 'rindoberry',
+                       'roseliberry', 'shucaberry', 'tangaberry', 'wacanberry', 'yacheberry']
+POOL_ITEMS = POOL_TYPE_BOOSTERS + POOL_RESIST_BERRIES
+# The new abilities in the order of decision 0015 section 3: "-ate", then pinch. Aerilate (the "-ate" member),
+# Blaze (the pinch member) and the weather and terrain setters are in the prefix.
+POOL_ABILITIES = ['pixilate', 'refrigerate', 'overgrow', 'torrent', 'swarm']
+
+ITEM_FAMILIES = ['NONE', 'TYPE_BOOSTER', 'RESIST_BERRY']
+ABILITY_FAMILIES = ['NONE', 'ATE', 'PINCH', 'WEATHER_SETTER', 'TERRAIN_SETTER']
+FAMILY_PARAM_NONE = 0xFF
+# The members of each family, as decision 0015 section 3 names them (prefix and new rows). The parameter of a member
+# is never listed here: it comes from the pinned handler. Every id of the pool that is not listed has no family.
+ITEM_MEMBERS = {'TYPE_BOOSTER': ['miracleseed', 'mysticwater'] + POOL_TYPE_BOOSTERS,
+                'RESIST_BERRY': ['chopleberry'] + POOL_RESIST_BERRIES}
+ABILITY_MEMBERS = {'ATE': ['aerilate', 'pixilate', 'refrigerate'],
+                   'PINCH': ['blaze', 'overgrow', 'torrent', 'swarm'],
+                   'WEATHER_SETTER': ['drizzle', 'drought'],
+                   'TERRAIN_SETTER': ['grassysurge', 'psychicsurge']}
+# The weather and terrain codes of the family column are the engine's state values (DFI_WEATHER_* and
+# DFI_TERRAIN_* of src/state/battle_internal.h, which duoforge.data.pool_tables checks), by Showdown's id.
+WEATHER_CODES = {'raindance': ('RAIN', 1), 'sunnyday': ('SUN', 2)}
+TERRAIN_CODES = {'grassyterrain': ('GRASSY', 1), 'psychicterrain': ('PSYCHIC', 2)}
+# A rain or sun setter skips the Primal Pokemon with their orb (data/abilities.ts, Drizzle and Drought). No Primal
+# Pokemon is legal in the format; the guard is part of the weather pattern and must be exactly this one.
+PRIMAL_GUARD = {'raindance': ('kyogre', 'blueorb'), 'sunnyday': ('groudon', 'redorb')}
+# Chilan Berry halves any Normal hit; every other resist berry needs a super effective hit (decision 0015 section 3).
+# A Normal move is never super effective, so the variant is the Normal berry.
+RESIST_BERRY_NORMAL = ('chilanberry',)
+
+
+class NoMatch(Exception):
+    """An entry does not follow the pattern of a family."""
+
+
+def norm(text):
+    return ' '.join(text.split())
+
+
+def shape(f, keys):
+    """The entry has exactly these top-level fields: nothing that the pattern does not account for."""
+    if set(f) != keys:
+        raise NoMatch('fields %s, not %s' % (sorted(f), sorted(keys)))
+
+
+def field_is(f, key, want):
+    if norm(f[key][1]) != want:
+        raise NoMatch('%s is "%s", not "%s"' % (key, norm(f[key][1]), want))
+
+
+def field_match(f, key, pattern):
+    m = re.fullmatch(pattern, norm(f[key][1]))
+    if m is None:
+        raise NoMatch('%s deviates from the pattern: %s' % (key, norm(f[key][1])))
+    return m
+
+
+# Items. Type booster: BasePower x4915/4096 for a move of the type, priority 15. The `move &&` guard of seven of the
+# eighteen is the only textual variation and has no effect.
+ITEM_BOOSTER_KEYS = {'name', 'spritenum', 'fling', 'onBasePowerPriority', 'onBasePower', 'num', 'gen'}
+ITEM_BOOSTER_BASE_POWER = (r"onBasePower\(basePower, user, target, move\) \{ if \((?:move && )?move\.type === '(\w+)'\) "
+                           r"\{ return this\.chainModify\(\[4915, 4096\]\); \} \},")
+
+
+def type_booster_type(f, _iid):
+    shape(f, ITEM_BOOSTER_KEYS)
+    field_is(f, 'onBasePowerPriority', 'onBasePowerPriority: 15,')
+    return field_match(f, 'onBasePower', ITEM_BOOSTER_BASE_POWER).group(1)
+
+
+# Resist berry: the target eats it on a super effective hit of the type (Chilan: on any Normal hit), ModifyDamage
+# x0.5. The natural gift type is a second statement of the type and must agree.
+ITEM_BERRY_KEYS = {'name', 'spritenum', 'isBerry', 'naturalGift', 'onSourceModifyDamage', 'onEat', 'num', 'gen'}
+BERRY_NATURAL_GIFT = r'naturalGift: \{ basePower: 80, type: "(\w+)", \},'
+BERRY_HEAD = r"onSourceModifyDamage\(damage, source, target, move\) \{ "
+BERRY_EAT = (r"if \(target\.eatItem\(\)\) \{ this\.debug\('-50% reduction'\); "
+             r"this\.add\('-enditem', target, this\.effect, '\[weaken\]'\); return this\.chainModify\(0\.5\); "
+             r"\} \} \},")
+BERRY_SUPER_EFFECTIVE = (BERRY_HEAD + r"if \(move\.type === '(\w+)' && target\.getMoveHitData\(move\)\.typeMod > 0\) \{ "
+                         r"const hitSub = target\.volatiles\['substitute'\] && !move\.flags\['bypasssub'\] && "
+                         r"!\(move\.infiltrates && this\.gen >= 6\); if \(hitSub\) return; " + BERRY_EAT)
+BERRY_NORMAL_HIT = (BERRY_HEAD + r"if \( move\.type === '(Normal)' && \(!target\.volatiles\['substitute'\] \|\| "
+                    r"move\.flags\['bypasssub'\] \|\| \(move\.infiltrates && this\.gen >= 6\)\) \) \{ " + BERRY_EAT)
+
+
+def resist_berry_type(f, iid):
+    shape(f, ITEM_BERRY_KEYS)
+    field_is(f, 'isBerry', 'isBerry: true,')
+    field_is(f, 'onEat', 'onEat() { },')
+    gift = field_match(f, 'naturalGift', BERRY_NATURAL_GIFT).group(1)
+    pattern = BERRY_NORMAL_HIT if iid in RESIST_BERRY_NORMAL else BERRY_SUPER_EFFECTIVE
+    t = field_match(f, 'onSourceModifyDamage', pattern).group(1)
+    if t != gift:
+        raise NoMatch('the natural gift type %s differs from the handler type %s' % (gift, t))
+    return t
+
+
+ITEM_MATCHERS = [('TYPE_BOOSTER', type_booster_type), ('RESIST_BERRY', resist_berry_type)]
+
+# Abilities. "-ate": Normal moves become the type (ModifyType, priority -1) and get BasePower x4915/4096 (priority 23).
+ABILITY_ATE_KEYS = {'onModifyTypePriority', 'onModifyType', 'onBasePowerPriority', 'onBasePower', 'flags', 'name',
+                    'rating', 'num'}
+ATE_MODIFY_TYPE = (r"onModifyType\(move, pokemon\) \{ const noModifyType = \[ 'judgment', 'multiattack', 'naturalgift', "
+                   r"'revelationdance', 'technoblast', 'terrainpulse', 'weatherball', \]; "
+                   r"if \(move\.type === 'Normal' && \(!noModifyType\.includes\(move\.id\) \|\| "
+                   r"this\.activeMove\?\.isMax\) && !\(move\.isZ && move\.category !== 'Status'\) && "
+                   r"!\(move\.name === 'Tera Blast' && pokemon\.terastallized\)\) \{ "
+                   r"move\.type = '(\w+)'; move\.typeChangerBoosted = this\.effect; \} \},")
+ATE_BASE_POWER = (r"onBasePower\(basePower, pokemon, target, move\) \{ "
+                  r"if \(move\.typeChangerBoosted === this\.effect\) return this\.chainModify\(\[4915, 4096\]\); \},")
+
+
+def ate_type(f):
+    shape(f, ABILITY_ATE_KEYS)
+    field_is(f, 'onModifyTypePriority', 'onModifyTypePriority: -1,')
+    field_is(f, 'onBasePowerPriority', 'onBasePowerPriority: 23,')
+    field_is(f, 'flags', 'flags: {},')
+    t = field_match(f, 'onModifyType', ATE_MODIFY_TYPE).group(1)
+    field_match(f, 'onBasePower', ATE_BASE_POWER)
+    return t
+
+
+# Pinch: Atk and SpA x1.5 for a move of the type at a third of the HP or less (priority 5 for both).
+ABILITY_PINCH_KEYS = {'onModifyAtkPriority', 'onModifyAtk', 'onModifySpAPriority', 'onModifySpA', 'flags', 'name',
+                      'rating', 'num'}
+
+
+def pinch_handler(callback, name):
+    return (r"%s\(atk, attacker, defender, move\) \{ if \(move\.type === '(\w+)' && attacker\.hp <= attacker\.maxhp / 3\) "
+            r"\{ this\.debug\('%s boost'\); return this\.chainModify\(1\.5\); \} \}," % (callback, re.escape(name)))
+
+
+def pinch_type(f):
+    shape(f, ABILITY_PINCH_KEYS)
+    field_is(f, 'onModifyAtkPriority', 'onModifyAtkPriority: 5,')
+    field_is(f, 'onModifySpAPriority', 'onModifySpAPriority: 5,')
+    field_is(f, 'flags', 'flags: {},')
+    name = scalar(f['name'][1])
+    atk = field_match(f, 'onModifyAtk', pinch_handler('onModifyAtk', name)).group(1)
+    spa = field_match(f, 'onModifySpA', pinch_handler('onModifySpA', name)).group(1)
+    if atk != spa:
+        raise NoMatch('Atk type %s, SpA type %s' % (atk, spa))
+    return atk
+
+
+# Weather and terrain setters: onStart sets the field condition (the weather setters with the Primal guard).
+ABILITY_FIELD_KEYS = {'onStart', 'flags', 'name', 'rating', 'num'}
+
+
+def weather_setter_weather(f):
+    shape(f, ABILITY_FIELD_KEYS)
+    field_is(f, 'flags', 'flags: {},')
+    m = field_match(f, 'onStart', r"onStart\(source\) \{ (?:if \(source\.species\.id === '(\w+)' && "
+                                  r"source\.item === '(\w+)'\) return; )?this\.field\.setWeather\('(\w+)'\); \},")
+    species, orb, weather = m.groups()
+    if weather not in WEATHER_CODES:
+        raise NoMatch('weather %s has no state code' % weather)
+    if (species, orb) != PRIMAL_GUARD.get(weather, (None, None)):
+        raise NoMatch('the Primal guard (%s, %s) is not the one of %s' % (species, orb, weather))
+    return weather
+
+
+def terrain_setter_terrain(f):
+    shape(f, ABILITY_FIELD_KEYS)
+    field_is(f, 'flags', 'flags: {},')
+    terrain = field_match(f, 'onStart', r"onStart\(source\) \{ this\.field\.setTerrain\('(\w+)'\); \},").group(1)
+    if terrain not in TERRAIN_CODES:
+        raise NoMatch('terrain %s has no state code' % terrain)
+    return terrain
+
+
+ABILITY_MATCHERS = [('ATE', lambda f, _aid: ate_type(f)), ('PINCH', lambda f, _aid: pinch_type(f)),
+                    ('WEATHER_SETTER', lambda f, _aid: weather_setter_weather(f)),
+                    ('TERRAIN_SETTER', lambda f, _aid: terrain_setter_terrain(f))]
+
+
+def derive_family(src, champ, rid, expected, matchers, what):
+    """The family fact of one item or ability: the pattern result of the family that decision 0015 lists it in.
+    A listed member that deviates from the pattern of its family fails; so does an unlisted one that follows a
+    pattern (it should be listed). The Champions mod may only change isNonstandard of a member. Returns
+    (family, fact) with fact the Showdown name of the type, weather or terrain, None for no family."""
+    e = src.entry(rid)
+    if e is None:
+        fail('%s %s: entry not found in %s' % (what, rid, src.rel))
+    f = fields(e[2])
+    found, why = {}, {}
+    for family, matcher in matchers:
+        try:
+            found[family] = matcher(f, rid)
+        except NoMatch as err:
+            why[family] = str(err)
+    if expected == 'NONE':
+        if found:
+            fail('%s %s follows the %s pattern but decision 0015 does not list it as a member' % (
+                what, rid, '/'.join(sorted(found))))
+        return 'NONE', None
+    if expected not in found:
+        fail('%s %s is listed as %s but deviates: %s' % (what, rid, expected, why[expected]))
+    ce = champ.entry(rid)
+    if ce is not None:
+        cf = fields(ce[2])
+        if set(cf) - {'inherit', 'isNonstandard'}:
+            fail('%s %s: the champions mod changes %s' % (what, rid, sorted(set(cf) - {'inherit', 'isNonstandard'})))
+    return expected, found[expected]
+
+
+def load_legal_pool(repo):
+    """The ids that TeamValidator accepted at the pin: docs/research/expansion/data/legal_pool.json, the output of
+    build_legal_pool.js (its Showdown commit and format are checked). duoforge.data.pool_families runs the pinned
+    validator on the pool again."""
+    with io.open(os.path.join(repo, LEGAL_POOL), encoding='utf-8') as fh:
+        legal = json.load(fh)
+    if legal['meta']['showdown_commit'] != PIN or legal['meta']['format_id'] != FORMAT_ID:
+        fail('%s was not made at the pin for %s' % (LEGAL_POOL, FORMAT_ID))
+    return {'items': {i['id'] for i in legal['items']}, 'abilities': {a['id'] for a in legal['abilities']}}
+
+
+def item_param(family, fact):
+    """(parameter byte, its name in C) of an item's family column: the type."""
+    if family == 'NONE':
+        return FAMILY_PARAM_NONE, 'DFI_FAMILY_PARAM_NONE'
+    return TYPES.index(fact), 'DFI_TYPE_' + fact.upper()
+
+
+def ability_param(family, fact):
+    """(parameter byte, its name in C) of an ability's family column: a type, a weather or a terrain."""
+    if family in ('ATE', 'PINCH'):
+        return TYPES.index(fact), 'DFI_TYPE_' + fact.upper()
+    if family == 'WEATHER_SETTER':
+        return WEATHER_CODES[fact][1], 'DFI_FAMILY_WEATHER_' + WEATHER_CODES[fact][0]
+    if family == 'TERRAIN_SETTER':
+        return TERRAIN_CODES[fact][1], 'DFI_FAMILY_TERRAIN_' + TERRAIN_CODES[fact][0]
+    return FAMILY_PARAM_NONE, 'DFI_FAMILY_PARAM_NONE'
+
+
+def build_pool(root, repo, dx):
+    """The pool tables: the extended data as the prefix, then the new rows (POOL_ITEMS, POOL_ABILITIES), then the
+    family columns of every item and ability, the prefix included."""
+    items_ts, champ_items = Source(root, 'data/items.ts'), Source(root, 'data/mods/champions/items.ts')
+    abil_ts, champ_abil = Source(root, 'data/abilities.ts'), Source(root, 'data/mods/champions/abilities.ts')
+    legal = load_legal_pool(repo)
+    items, abilities = list(dx['items']), list(dx['abilities'])
+    for iid in POOL_ITEMS:
+        if any(i['id'] == iid for i in items):
+            fail('pool item %s is already in the extended tables' % iid)
+        e = items_ts.entry(iid)
+        if e is None:
+            fail('item %s not found' % iid)
+        refs = [items_ts.ref(iid)] + ([champ_items.ref(iid)] if champ_items.entry(iid) is not None else [])
+        items.append({'id': iid, 'name': re.search(r'name: "(.*?)"', '\n'.join(e[2])).group(1), 'refs': refs,
+                      'stone': None, 'mega_base': 0xFF, 'mega_forme': 0xFF})
+    for aid in POOL_ABILITIES:
+        if any(a['id'] == aid for a in abilities):
+            fail('pool ability %s is already in the extended tables' % aid)
+        if abil_ts.entry(aid) is None:
+            fail('ability %s not found' % aid)
+        abilities.append({'id': aid, 'refs': [abil_ts.ref(aid)] + ([champ_abil.ref(aid)]
+                                                                   if champ_abil.entry(aid) is not None else [])})
+    for it in items:
+        if it['id'] not in legal['items']:
+            fail('item %s is not legal in %s (%s)' % (it['id'], FORMAT_ID, LEGAL_POOL))
+    for ab in abilities:
+        if ab['id'] not in legal['abilities']:
+            fail('ability %s is not legal in %s (%s)' % (ab['id'], FORMAT_ID, LEGAL_POOL))
+    for members, rows, what in ((ITEM_MEMBERS, items, 'item'), (ABILITY_MEMBERS, abilities, 'ability')):
+        for family, ids in members.items():
+            if len(set(ids)) != len(ids) or any(i not in [r['id'] for r in rows] for i in ids):
+                fail('%s family %s lists an id twice or one that is not in the pool' % (what, family))
+    item_of = {i: f for f, ids in ITEM_MEMBERS.items() for i in ids}
+    ability_of = {a: f for f, ids in ABILITY_MEMBERS.items() for a in ids}
+    item_family, ability_family = [], []
+    for it in items:
+        fam, fact = derive_family(items_ts, champ_items, it['id'], item_of.get(it['id'], 'NONE'), ITEM_MATCHERS, 'item')
+        param, pname = item_param(fam, fact)
+        item_family.append({'family': fam, 'family_id': ITEM_FAMILIES.index(fam), 'param': param, 'param_name': pname})
+    for ab in abilities:
+        fam, fact = derive_family(abil_ts, champ_abil, ab['id'], ability_of.get(ab['id'], 'NONE'), ABILITY_MATCHERS,
+                                  'ability')
+        param, pname = ability_param(fam, fact)
+        ability_family.append({'family': fam, 'family_id': ABILITY_FAMILIES.index(fam), 'param': param,
+                               'param_name': pname})
+    # "All 18": one type booster and one resist berry for every type, and no other member of either family.
+    for fam in ('TYPE_BOOSTER', 'RESIST_BERRY'):
+        types = sorted(c['param'] for c in item_family if c['family'] == fam)
+        if types != list(range(len(TYPES))):
+            fail('the %s items do not cover each of the %d types exactly once' % (fam, len(TYPES)))
+    return dict(dx, items=items, abilities=abilities, item_family=item_family, ability_family=ability_family)
+
+
+def family_bytes(d):
+    """The family columns as they follow the closure layout in the canonical pool bytes: per item, then per ability,
+    the family id and the parameter."""
+    b = bytearray()
+    for col in d['item_family'] + d['ability_family']:
+        b.extend([col['family_id'], col['param']])
+    return bytes(b)
+
+
+def canonical_pool(d):
+    """The canonical pool bytes hashed into the context fingerprint of the POOL kinds: the closure layout over the
+    pool data, then the family columns."""
+    return canonical(d) + family_bytes(d)
+
+
+def ext_prefix(dp, dx):
+    """The extended projection of the pool data: its first extended-count rows, every immunity bit."""
+    return {'formes': dp['formes'][:len(dx['formes'])], 'moves': dp['moves'][:len(dx['moves'])],
+            'items': dp['items'][:len(dx['items'])], 'abilities': dp['abilities'][:len(dx['abilities'])],
+            'chart': dp['chart'], 'immunity': dp['immunity'], 'natures': dp['natures']}
+
+
+def check_pool_prefix(dp, dx, dc):
+    """Decision 0015 section 2: every extended row, and so every closure row, is the pool row of its id."""
+    for key in ('formes', 'moves', 'items', 'abilities'):
+        if dp[key][:len(dx[key])] != dx[key]:
+            fail('pool %s do not start with the extended %s' % (key, key))
+    for key in ('chart', 'immunity', 'natures'):
+        if dp[key] != dx[key]:
+            fail('the pool %s differ from the extended ones' % key)
+    if canonical(ext_prefix(dp, dx)) != canonical(dx):
+        fail('the pool tables do not start with the extended tables')
+    if canonical(closure_prefix(dp, dc)) != canonical(dc):
+        fail('the pool tables do not start with the closure tables')
+    if len(dp['item_family']) != len(dp['items']) or len(dp['ability_family']) != len(dp['abilities']):
+        fail('a family column does not have one row per id')
+
+
+def render_pool(dp, dx):
+    can = canonical_pool(dp)
+    digest = hashlib.sha256(can).hexdigest()
+    nx = {key: len(dx[key]) for key in ('formes', 'moves', 'items', 'abilities')}
+
+    def defines(prefix, rows, start):
+        return '\n'.join('#define %s_%s %du' % (prefix, r['id'].upper(), i) for i, r in enumerate(rows) if i >= start)
+
+    h = '''#ifndef DUOFORGE_DATA_POOL_TABLES_H
+#define DUOFORGE_DATA_POOL_TABLES_H
+/*
+ * GENERATED by tools/datagen/gen_closure.py --pool -- do not edit.
+ *
+ * The pool tables of decision 0015: the extended tables (the closure tables
+ * followed by Team C, decision 0009) unchanged as the prefix, then the rows
+ * that the steps of the content expansion add, read from Pokemon Showdown
+ * %s (the input files of
+ * closure_tables.h). Every id below an extended count (DFI_EXT_FORME_COUNT,
+ * DFI_EXT_MOVE_COUNT, DFI_EXT_ITEM_COUNT, DFI_EXT_ABILITY_COUNT) is the
+ * extended table's and its row equals the extended row. Natures and the type
+ * chart are the closure's.
+ *
+ * The family columns are arrays of their own, so that the row types stay
+ * those of the closure tables. They hold, for every item and ability
+ * (the prefix included), its family and the parameter the family rule reads;
+ * each is the result of one strict pattern over the pinned handler. They are
+ * part of the canonical pool bytes and so of the pool table hash, and not of
+ * the closure or extended bytes. A family column says what an id is, not
+ * that the engine implements it: the support manifest decides that.
+ *
+ * Data only. An id names a record; every effect needs a typed handler in C
+ * and an entry in the support manifest before a battle may use it.
+ */
+#include <stddef.h>
+#include <stdint.h>
+
+#include "data/extended_tables.h"
+
+/* ---- the pool has the extended formes and moves so far ---- */
+#define DFI_POOL_FORME_COUNT %du
+#define DFI_POOL_MOVE_COUNT %du
+
+/* ---- pool abilities (appended after the extended ones) ---- */
+%s
+#define DFI_POOL_ABILITY_COUNT %du
+
+/* ---- pool items (appended after the extended ones): type boosters, then resist berries ---- */
+%s
+#define DFI_POOL_ITEM_COUNT %du
+
+/* ---- family columns ----
+ * Items: TYPE_BOOSTER holds BasePower x4915/4096 for a move of the type
+ * (priority 15); RESIST_BERRY is eaten on a super effective hit of the type
+ * (ModifyDamage x0.5); the Normal berry (Chilan) halves any Normal hit,
+ * since a Normal move is never super effective.
+ * Abilities: ATE turns Normal moves into the type and gives them BasePower
+ * x4915/4096 (priority 23); PINCH gives Atk and SpA x1.5 for a move of the
+ * type at a third of the HP or less; WEATHER_SETTER and TERRAIN_SETTER set
+ * the field condition on entry.
+ * The parameter is a DFI_TYPE_* (items; ATE and PINCH), a
+ * DFI_FAMILY_WEATHER_* or a DFI_FAMILY_TERRAIN_*, and DFI_FAMILY_PARAM_NONE
+ * where there is no family. The weather and terrain codes are the state
+ * values of the engine (DFI_WEATHER_*, DFI_TERRAIN_*). */
+#define DFI_ITEM_FAMILY_NONE 0u
+#define DFI_ITEM_FAMILY_TYPE_BOOSTER 1u
+#define DFI_ITEM_FAMILY_RESIST_BERRY 2u
+#define DFI_ABILITY_FAMILY_NONE 0u
+#define DFI_ABILITY_FAMILY_ATE 1u
+#define DFI_ABILITY_FAMILY_PINCH 2u
+#define DFI_ABILITY_FAMILY_WEATHER_SETTER 3u
+#define DFI_ABILITY_FAMILY_TERRAIN_SETTER 4u
+#define DFI_FAMILY_WEATHER_RAIN 1u
+#define DFI_FAMILY_WEATHER_SUN 2u
+#define DFI_FAMILY_TERRAIN_GRASSY 1u
+#define DFI_FAMILY_TERRAIN_PSYCHIC 2u
+#define DFI_FAMILY_PARAM_NONE 0xFFu
+
+typedef struct dfi_item_family {
+    uint8_t family; /* DFI_ITEM_FAMILY_* */
+    uint8_t type;   /* the type of the family rule (DFI_TYPE_*), DFI_FAMILY_PARAM_NONE without a family */
+} dfi_item_family;
+
+typedef struct dfi_ability_family {
+    uint8_t family; /* DFI_ABILITY_FAMILY_* */
+    uint8_t param;  /* ATE, PINCH: DFI_TYPE_*; WEATHER_SETTER: DFI_FAMILY_WEATHER_*; TERRAIN_SETTER: DFI_FAMILY_TERRAIN_* */
+} dfi_ability_family;
+
+extern const dfi_forme_data dfi_pool_formes[DFI_POOL_FORME_COUNT];
+extern const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT];
+extern const dfi_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT];
+extern const uint8_t dfi_pool_type_immunity[DFI_TYPE_COUNT]; /* DFI_IMMUNE_* bits */
+extern const dfi_item_family dfi_pool_item_family[DFI_POOL_ITEM_COUNT];
+extern const dfi_ability_family dfi_pool_ability_family[DFI_POOL_ABILITY_COUNT];
+
+/* SHA-256 of the canonical pool bytes (written by the generator). */
+#define DFI_POOL_CANONICAL_SIZE %du
+extern const uint8_t dfi_pool_table_hash[32];
+/* The canonical bytes of the closure layout over the first `formes`, `moves`,
+ * `items` and `abilities` rows of the tables above, with every immunity byte
+ * masked by `immunity_mask`; natures and the type chart are the closure's.
+ * The family columns are not part of them. Returns the size, or 0 if a count
+ * exceeds its table or capacity is too small. With the closure counts and the
+ * closure's immunity bits these are exactly the closure's canonical bytes;
+ * with the extended counts and every immunity bit, the extended ones. */
+size_t dfi_pool_canonical_bytes_of(uint8_t *out, size_t capacity, uint32_t formes, uint32_t moves, uint32_t items,
+                                   uint32_t abilities, uint32_t immunity_mask);
+/* The canonical pool bytes: every row, every immunity bit, then the family
+ * column of every item and of every ability (family, parameter). */
+size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity);
+
+#endif
+''' % (PIN, len(dp['formes']), len(dp['moves']), defines('DFI_ABILITY', dp['abilities'], nx['abilities']),
+       len(dp['abilities']), defines('DFI_ITEM', dp['items'], nx['items']), len(dp['items']), len(can))
+
+    def arr(vals):
+        return '{' + ', '.join('%du' % v for v in vals) + '}'
+
+    c = ['#include "data/pool_tables.h"', '',
+         '/* GENERATED by tools/datagen/gen_closure.py --pool -- do not edit. Showdown %s. */' % PIN, '',
+         'const dfi_forme_data dfi_pool_formes[DFI_POOL_FORME_COUNT] = {']
+    for f in dp['formes']:
+        c.append('    /* %s -- %s */' % (f['name'], f['ref']))
+        c.append('    {%du, %du, %s, %s, %du, %du, %du, %du, %du, %du, %du, %du, %s},' % (
+            f['dex_num'], f['weight_hg'], arr(f['types']), arr(f['base']), f['ability'], f['gender_rule'],
+            f['is_mega'], f['base_forme'], f['mega_forme'], f['mega_item'], f['set_item'], len(f['set_moves']),
+            arr(f['set_moves'] + [0] * (4 - len(f['set_moves'])))))
+    c += ['};', '', 'const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {']
+    for m in dp['moves']:
+        c.append('    /* %s -- %s */' % (m['name'], ', '.join(m['refs'])))
+        c.append('    {%du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %s, %s, %du, %du, %du, %du, %s, %du, %du, %du, %du},' % (
+            m['type'], m['category'], m['base_power'], m['accuracy'], m['pp_base'], m['pp_max'], m['priority'],
+            m['target_class'], m['crit_ratio'], m['flags'], arr(m['recoil']), arr(m['drain']), m['sec_chance'],
+            m['sec_kind'], m['sec_param'], m['boost_role'], arr([v + 6 for v in m['boosts']]), m['primary_status'],
+            m['side_condition'], m['pseudo_weather'], m['special']))
+    c += ['};', '', 'const dfi_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {']
+    for it in dp['items']:
+        c.append('    /* %s -- %s */' % (it['name'], ', '.join(it['refs'])))
+        c.append('    {%du, %du},' % (it['mega_base'], it['mega_forme']))
+    c += ['};', '', '/* Abilities carry no table data but their family column. Provenance of the pool abilities:']
+    for a in dp['abilities'][nx['abilities']:]:
+        c.append(' *   %s -- %s' % (a['id'], ', '.join(a['refs'])))
+    c += [' */', '', '/* data/typechart.ts: the closure bits plus psn (Poison, Steel). */',
+          'const uint8_t dfi_pool_type_immunity[DFI_TYPE_COUNT] = ' + arr(dp['immunity']) + ';', '',
+          '/* Family columns, one row per id (decision 0015 section 2). */',
+          'const dfi_item_family dfi_pool_item_family[DFI_POOL_ITEM_COUNT] = {']
+    for it, col in zip(dp['items'], dp['item_family']):
+        c.append('    [DFI_ITEM_%s] = {DFI_ITEM_FAMILY_%s, %s},' % (it['id'].upper(), col['family'], col['param_name']))
+    c += ['};', '', 'const dfi_ability_family dfi_pool_ability_family[DFI_POOL_ABILITY_COUNT] = {']
+    for ab, col in zip(dp['abilities'], dp['ability_family']):
+        c.append('    [DFI_ABILITY_%s] = {DFI_ABILITY_FAMILY_%s, %s},' % (ab['id'].upper(), col['family'],
+                                                                         col['param_name']))
+    c += ['};', '', 'const uint8_t dfi_pool_table_hash[32] = {']
+    hb = bytes.fromhex(digest)
+    for i in range(0, 32, 8):
+        c.append('    ' + ', '.join('0x%02xu' % x for x in hb[i:i + 8]) + ',')
+    c += ['};', '', '''static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)
+{
+    out[n] = (uint8_t)(v & 0xFFu);             /* wide-operands-reviewed */
+    out[n + 1u] = (uint8_t)((v >> 8u) & 0xFFu); /* wide-operands-reviewed */
+    return n + 2u;
+}
+
+size_t dfi_pool_canonical_bytes_of(uint8_t *out, size_t capacity, uint32_t formes, uint32_t moves, uint32_t items,
+                                   uint32_t abilities, uint32_t immunity_mask)
+{
+    if (formes > DFI_POOL_FORME_COUNT || moves > DFI_POOL_MOVE_COUNT || items > DFI_POOL_ITEM_COUNT ||
+        abilities > DFI_POOL_ABILITY_COUNT) {
+        return 0u;
+    }
+    /* counts, 24 bytes per forme, 29 per move, 2 per item, chart, immunity, natures */
+    const size_t size = 12u + (size_t)formes * 24u + (size_t)moves * 29u + (size_t)items * 2u +
+                        DFI_TYPE_COUNT * DFI_TYPE_COUNT + DFI_TYPE_COUNT + DFI_NATURE_COUNT * 2u;
+    if (capacity < size) {
+        return 0u;
+    }
+    size_t n = 0u;
+    n = dfi_pool_put_u16(out, n, formes);
+    n = dfi_pool_put_u16(out, n, moves);
+    n = dfi_pool_put_u16(out, n, items);
+    n = dfi_pool_put_u16(out, n, abilities);
+    n = dfi_pool_put_u16(out, n, DFI_TYPE_COUNT);
+    n = dfi_pool_put_u16(out, n, DFI_NATURE_COUNT);
+    for (uint32_t i = 0u; i < formes; ++i) {
+        const dfi_forme_data *f = &dfi_pool_formes[i];
+        n = dfi_pool_put_u16(out, n, f->dex_num);
+        out[n++] = f->types[0];
+        out[n++] = f->types[1];
+        for (uint32_t k = 0u; k < DFI_STAT_COUNT; ++k) {
+            out[n++] = f->base[k];
+        }
+        n = dfi_pool_put_u16(out, n, f->weight_hg);
+        out[n++] = f->ability;
+        out[n++] = f->gender_rule;
+        out[n++] = f->is_mega;
+        out[n++] = f->base_forme;
+        out[n++] = f->mega_forme;
+        out[n++] = f->mega_item;
+        out[n++] = f->set_item;
+        out[n++] = f->set_move_count;
+        for (uint32_t k = 0u; k < 4u; ++k) {
+            out[n++] = f->set_moves[k];
+        }
+    }
+    for (uint32_t i = 0u; i < moves; ++i) {
+        const dfi_move_data *m = &dfi_pool_moves[i];
+        out[n++] = m->type;
+        out[n++] = m->category;
+        out[n++] = m->base_power;
+        out[n++] = m->accuracy;
+        out[n++] = m->pp_base;
+        out[n++] = m->pp_max;
+        out[n++] = m->priority;
+        out[n++] = m->target_class;
+        out[n++] = m->crit_ratio;
+        out[n++] = m->flags;
+        out[n++] = m->recoil[0];
+        out[n++] = m->recoil[1];
+        out[n++] = m->drain[0];
+        out[n++] = m->drain[1];
+        out[n++] = m->sec_chance;
+        out[n++] = m->sec_kind;
+        out[n++] = m->sec_param;
+        out[n++] = m->boost_role;
+        for (uint32_t k = 0u; k < DFI_STAGE_COUNT; ++k) {
+            out[n++] = m->boosts[k];
+        }
+        out[n++] = m->primary_status;
+        out[n++] = m->side_condition;
+        out[n++] = m->pseudo_weather;
+        out[n++] = m->special;
+    }
+    for (uint32_t i = 0u; i < items; ++i) {
+        out[n++] = dfi_pool_items[i].mega_base;
+        out[n++] = dfi_pool_items[i].mega_forme;
+    }
+    for (uint32_t d = 0u; d < DFI_TYPE_COUNT; ++d) {
+        for (uint32_t a = 0u; a < DFI_TYPE_COUNT; ++a) {
+            out[n++] = dfi_closure_type_chart[d][a];
+        }
+    }
+    for (uint32_t i = 0u; i < DFI_TYPE_COUNT; ++i) {
+        out[n++] = (uint8_t)(dfi_pool_type_immunity[i] & immunity_mask); /* wide-operands-reviewed: < 256 */
+    }
+    for (uint32_t i = 0u; i < DFI_NATURE_COUNT; ++i) {
+        out[n++] = dfi_closure_natures[i].plus;
+        out[n++] = dfi_closure_natures[i].minus;
+    }
+    return n;
+}
+
+size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity)
+{
+    if (capacity < DFI_POOL_CANONICAL_SIZE) {
+        return 0u;
+    }
+    size_t n = dfi_pool_canonical_bytes_of(out, capacity, DFI_POOL_FORME_COUNT, DFI_POOL_MOVE_COUNT,
+                                           DFI_POOL_ITEM_COUNT, DFI_POOL_ABILITY_COUNT, 0xFFu);
+    for (uint32_t i = 0u; i < DFI_POOL_ITEM_COUNT; ++i) {
+        out[n++] = dfi_pool_item_family[i].family;
+        out[n++] = dfi_pool_item_family[i].type;
+    }
+    for (uint32_t i = 0u; i < DFI_POOL_ABILITY_COUNT; ++i) {
+        out[n++] = dfi_pool_ability_family[i].family;
+        out[n++] = dfi_pool_ability_family[i].param;
+    }
+    return n;
+}
+''']
+    return h, '\n'.join(c), digest, len(can)
+
+
 def main():
     team_c = '--team-c' in sys.argv[1:]
-    args = [a for a in sys.argv[1:] if a not in ('--check', '--team-c')]
+    pool = '--pool' in sys.argv[1:]
+    args = [a for a in sys.argv[1:] if a not in ('--check', '--team-c', '--pool')]
     check = '--check' in sys.argv[1:]
-    if len(args) != 1:
+    if len(args) != 1 or (team_c and pool):
         sys.exit(__doc__)
     repo = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     d = build(args[0])
-    if team_c:
+    if pool:
+        dc = d
+        dx = build(args[0], ext=True)
+        check_prefix(dx, dc)
+        d = build_pool(args[0], repo, dx)
+        check_pool_prefix(d, dx, dc)
+        h, c, digest, size = render_pool(d, dx)
+        stem = 'pool_tables'
+    elif team_c:
         dc = d
         d = build(args[0], ext=True)
         check_prefix(d, dc)

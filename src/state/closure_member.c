@@ -1,23 +1,27 @@
 #include "state/closure_member.h"
 
 #include "core/arith.h"
-#include "data/extended_tables.h"
 #include "data/formulas.h"
+#include "data/pool_tables.h"
 
 
 dfi_kind_limits dfi_kind_limits_of(uint32_t data_kind)
 {
+    const bool pool = data_kind == DUOFORGE_DATA_KIND_POOL || data_kind == DUOFORGE_DATA_KIND_POOL_DEV;
     const bool team_c = data_kind == DUOFORGE_DATA_KIND_TEAM_C || data_kind == DUOFORGE_DATA_KIND_TEAM_C_DEV;
+    /* The values of Team C's mechanics are valid under the TEAM_C and POOL kinds (the pool has them all). */
+    const bool extended = team_c || pool;
     dfi_kind_limits lim;
-    lim.forme_count = team_c ? DFI_EXT_FORME_COUNT : DFI_FORME_COUNT;
-    lim.item_count = team_c ? DFI_EXT_ITEM_COUNT : DFI_ITEM_COUNT;
-    lim.switch_flag_max = team_c ? DFI_SWITCH_FLIP_TURN : DFI_SWITCH_FAINTED;
-    lim.status_max = team_c ? DFI_STATUS_PSN : DFI_STATUS_SLP;
-    lim.terrain_max = team_c ? DFI_TERRAIN_PSYCHIC : DFI_TERRAIN_GRASSY;
-    lim.vol_flags_mask = team_c ? (DFI_VOL_FLAGS_MAX | DFI_VOL_FOLLOW_ME | DFI_VOL_HELPING_HAND | DFI_VOL_UNBURDEN |
-                                   DFI_VOL_CHOICE_LOCK | DFI_VOL_NEWLY_SWITCHED)
-                                : DFI_VOL_FLAGS_MAX;
-    lim.dev = data_kind == DUOFORGE_DATA_KIND_CLOSURE_DEV || data_kind == DUOFORGE_DATA_KIND_TEAM_C_DEV;
+    lim.forme_count = pool ? DFI_POOL_FORME_COUNT : team_c ? DFI_EXT_FORME_COUNT : DFI_FORME_COUNT;
+    lim.item_count = pool ? DFI_POOL_ITEM_COUNT : team_c ? DFI_EXT_ITEM_COUNT : DFI_ITEM_COUNT;
+    lim.switch_flag_max = extended ? DFI_SWITCH_FLIP_TURN : DFI_SWITCH_FAINTED;
+    lim.status_max = extended ? DFI_STATUS_PSN : DFI_STATUS_SLP;
+    lim.terrain_max = extended ? DFI_TERRAIN_PSYCHIC : DFI_TERRAIN_GRASSY;
+    lim.vol_flags_mask = extended ? (DFI_VOL_FLAGS_MAX | DFI_VOL_FOLLOW_ME | DFI_VOL_HELPING_HAND | DFI_VOL_UNBURDEN |
+                                     DFI_VOL_CHOICE_LOCK | DFI_VOL_NEWLY_SWITCHED)
+                                  : DFI_VOL_FLAGS_MAX;
+    lim.dev = data_kind == DUOFORGE_DATA_KIND_CLOSURE_DEV || data_kind == DUOFORGE_DATA_KIND_TEAM_C_DEV ||
+              data_kind == DUOFORGE_DATA_KIND_POOL_DEV;
     return lim;
 }
 
@@ -65,7 +69,7 @@ bool dfi_closure_member_setup_valid(const dfi_kind_limits *lim, const duoforge_m
     if (m->species_id >= lim->forme_count) {
         return false;
     }
-    const dfi_forme_data *f = &dfi_ext_formes[m->species_id];
+    const dfi_forme_data *f = &dfi_pool_formes[m->species_id];
     if (f->is_mega != 0u) {
         return false; /* a Mega forme is reached in battle, never set up */
     }
@@ -115,7 +119,7 @@ bool dfi_closure_side_clauses_hold(const duoforge_side_setup *side)
         for (uint32_t b = 0u; b < a; ++b) {
             const duoforge_member_setup *y = &side->members[b];
             /* Species Clause: one member per national dex number. */
-            if (dfi_ext_formes[x->species_id].dex_num == dfi_ext_formes[y->species_id].dex_num) {
+            if (dfi_pool_formes[x->species_id].dex_num == dfi_pool_formes[y->species_id].dex_num) {
                 return false;
             }
             /* Item Clause: no item twice. */
@@ -130,7 +134,7 @@ bool dfi_closure_side_clauses_hold(const duoforge_side_setup *side)
 /* True iff the member's item is the stone of its base forme. */
 static bool dfi_holds_own_stone(uint32_t species, uint32_t item)
 {
-    const dfi_forme_data *f = &dfi_ext_formes[species];
+    const dfi_forme_data *f = &dfi_pool_formes[species];
     return item != 0u && f->mega_forme != DFI_CLOSURE_NONE && (uint32_t)f->mega_item + 1u == item;
 }
 
@@ -144,7 +148,7 @@ static bool dfi_member_supported(const dfi_support_manifest *s, const duoforge_m
     }
     if (dfi_holds_own_stone(m->species_id, m->item)) {
         /* Mega Evolution, and the ability the Mega forme brings. */
-        const dfi_forme_data *mega = &dfi_ext_formes[dfi_ext_formes[m->species_id].mega_forme];
+        const dfi_forme_data *mega = &dfi_pool_formes[dfi_pool_formes[m->species_id].mega_forme];
         if (s->mega_evolution == 0u || s->abilities[mega->ability] == 0u) {
             return false;
         }
@@ -191,7 +195,7 @@ bool dfi_closure_battle_supported(const dfi_support_manifest *manifest, const st
                 return false;
             }
             if (mem->mega_capable != 0u) {
-                const dfi_forme_data *mega = &dfi_ext_formes[dfi_ext_formes[mem->species_id].mega_forme];
+                const dfi_forme_data *mega = &dfi_pool_formes[dfi_pool_formes[mem->species_id].mega_forme];
                 if (manifest->mega_evolution == 0u || manifest->abilities[mega->ability] == 0u) {
                     return false;
                 }
@@ -210,13 +214,13 @@ bool dfi_closure_battle_supported(const dfi_support_manifest *manifest, const st
 static bool dfi_derive_stats(uint32_t species, uint32_t is_mega, uint32_t nature, const uint8_t *sp,
                              uint16_t *hp_max, uint16_t *stats)
 {
-    const dfi_forme_data *base = &dfi_ext_formes[species];
+    const dfi_forme_data *base = &dfi_pool_formes[species];
     const dfi_forme_data *cur = base;
     if (is_mega != 0u) {
         if (base->mega_forme == DFI_CLOSURE_NONE) {
             return false;
         }
-        cur = &dfi_ext_formes[base->mega_forme];
+        cur = &dfi_pool_formes[base->mega_forme];
     }
     if (!dfi_champions_stat(DFI_STAT_HP, base->base[DFI_STAT_HP], sp[DFI_STAT_HP], nature, hp_max)) {
         return false;
@@ -232,7 +236,7 @@ static bool dfi_derive_stats(uint32_t species, uint32_t is_mega, uint32_t nature
 
 static bool dfi_derive_pp(uint32_t move, uint8_t *out)
 {
-    const dfi_move_data *mv = &dfi_ext_moves[move];
+    const dfi_move_data *mv = &dfi_pool_moves[move];
     return dfi_champions_pp_max(mv->pp_base, (mv->flags & DFI_MOVE_FLAG_NO_PP_BOOSTS) != 0u, out);
 }
 
@@ -265,7 +269,7 @@ bool dfi_closure_member_init(const duoforge_member_setup *src, dfi_member *dst)
 
 bool dfi_closure_member_mega_evolve(dfi_member *m)
 {
-    const dfi_forme_data *base = &dfi_ext_formes[m->species_id];
+    const dfi_forme_data *base = &dfi_pool_formes[m->species_id];
     if (m->is_mega != 0u || m->mega_capable == 0u || base->mega_forme == DFI_CLOSURE_NONE) {
         return false;
     }
@@ -278,13 +282,13 @@ bool dfi_closure_member_mega_evolve(dfi_member *m)
     for (uint32_t i = 0u; i < DFI_MEMBER_STAT_COUNT; ++i) {
         m->stats[i] = stats[i];
     }
-    m->ability = (uint8_t)((uint32_t)dfi_ext_formes[base->mega_forme].ability + 1u); /* wide-operands-reviewed: < 22 */
+    m->ability = (uint8_t)((uint32_t)dfi_pool_formes[base->mega_forme].ability + 1u); /* wide-operands-reviewed: < 22 */
     return true;
 }
 
 bool dfi_closure_member_ranges(const dfi_kind_limits *lim, const dfi_member *m)
 {
-    const dfi_forme_data *base = &dfi_ext_formes[m->species_id]; /* below the context species count */
+    const dfi_forme_data *base = &dfi_pool_formes[m->species_id]; /* below the context species count */
     if (base->is_mega != 0u || !dfi_gender_legal(base->gender_rule, m->gender)) {
         return false;
     }
@@ -310,7 +314,7 @@ bool dfi_closure_member_ranges(const dfi_kind_limits *lim, const dfi_member *m)
     }
     /* The current ability: the Mega forme's after Mega Evolution. */
     if (m->is_mega != 0u) {
-        if (m->ability != (uint32_t)dfi_ext_formes[base->mega_forme].ability + 1u) {
+        if (m->ability != (uint32_t)dfi_pool_formes[base->mega_forme].ability + 1u) {
             return false;
         }
     } else if (m->ability != (uint32_t)base->ability + 1u && !(lim->dev && m->ability == 0u)) {
@@ -335,7 +339,7 @@ bool dfi_closure_member_valid(const dfi_kind_limits *lim, const dfi_member *m)
     if (!dfi_closure_member_ranges(lim, m)) {
         return false;
     }
-    const dfi_forme_data *base = &dfi_ext_formes[m->species_id]; /* below the context species count */
+    const dfi_forme_data *base = &dfi_pool_formes[m->species_id]; /* below the context species count */
     uint16_t hp_max = 0u;
     uint16_t stats[DFI_MEMBER_STAT_COUNT] = {0};
     if (!dfi_derive_stats(m->species_id, m->is_mega, m->nature, m->stat_points, &hp_max, stats) ||

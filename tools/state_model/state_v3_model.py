@@ -208,6 +208,44 @@ class TeamCContext(ClosureContext):
 KC = TeamCContext(KIND_TEAM_C, 6, 4)
 KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 
+# POOL contexts (decision 0015 section 2): the pool tables (the extended tables
+# followed by the rows of the expansion steps; still 23 formes and 50 moves) and
+# their hash, which tests/test_pool_tables.c recomputes from the pool canonical
+# bytes: the closure layout over the pool data, then the family columns.
+POOL_TABLE_HASH = bytes.fromhex('43c85ed5496f481ee5983092a82c765fc4ad20ceff3ee6587930fbafa379d8c0')
+KIND_POOL, KIND_POOL_DEV = 6, 7
+
+
+class PoolContext(ClosureContext):
+    def __init__(self, data_kind, max_roster, brought_count):
+        Context.__init__(self, data_kind, max_roster, brought_count, 23, 50, b'')
+
+    def valid(self):
+        if self.data_kind == KIND_POOL and (self.max_roster != MAX_ROSTER or self.brought_count != 4):
+            return False  # POOL takes over the certified profile (decisions 0010, 0015)
+        return (self.data_kind in (KIND_POOL, KIND_POOL_DEV) and 1 <= self.max_roster <= MAX_ROSTER
+                and 1 <= self.brought_count <= self.max_roster)
+
+    def canonical_bytes(self):
+        b = MAGIC + struct.pack('<HHII', KIND_CONTEXT, SCHEMA, SEMANTICS, CONTEXT_BYTES_SIZE)
+        b += bytes([2, 2, MAX_ROSTER, MOVE_SLOTS, self.data_kind, self.max_roster, self.brought_count])
+        b += struct.pack('<HH', self.species_count, self.move_count)
+        b += POOL_TABLE_HASH
+        assert len(b) == CONTEXT_BYTES_SIZE
+        return b
+
+
+KP = PoolContext(KIND_POOL, 6, 4)
+KPD = PoolContext(KIND_POOL_DEV, 6, 4)
+
+# What each combat kind may carry. The values of Team C's mechanics (poison,
+# Psychic Terrain, Flip Turn's switch flag, the new volatile bits) are valid
+# under the TEAM_C and POOL kinds, which have all of them; the certified
+# profile (exactly six registered members) is CLOSURE's, TEAM_C's and POOL's.
+COMBAT_KINDS = (KIND_CLOSURE, KIND_CLOSURE_DEV, KIND_TEAM_C, KIND_TEAM_C_DEV, KIND_POOL, KIND_POOL_DEV)
+EXTENDED_KINDS = (KIND_TEAM_C, KIND_TEAM_C_DEV, KIND_POOL, KIND_POOL_DEV)
+FULL_ROSTER_KINDS = (KIND_CLOSURE, KIND_TEAM_C, KIND_POOL)
+
 
 # ---------------------------------------------------------------- state
 def empty_member():
@@ -506,8 +544,8 @@ def check_side(ctx, st, s):
     mc = sd['member_count']
     if not (ctx.brought_count <= mc <= ctx.max_roster):
         return 'MEMBER_COUNT'
-    if ctx.data_kind == KIND_CLOSURE and mc != ctx.max_roster:
-        return 'MEMBER_COUNT'  # the certified profile registers exactly six (decision 0010)
+    if ctx.data_kind in FULL_ROSTER_KINDS and mc != ctx.max_roster:
+        return 'MEMBER_COUNT'  # the certified profile registers exactly six (decisions 0010, 0009, 0015)
     for m in range(MAX_ROSTER):
         mem = sd['members'][m]
         if m < mc:
@@ -578,7 +616,7 @@ def check_side(ctx, st, s):
             if p != empty_pos():
                 return 'VOLATILE'
         else:
-            team_c = ctx.data_kind in (KIND_TEAM_C, KIND_TEAM_C_DEV)
+            team_c = ctx.data_kind in EXTENDED_KINDS
             mem = sd['members'][p['occ']]
             team_c_mask = (VOL_FLAGS_MAX | VOL_FOLLOW_ME | VOL_HELPING_HAND | VOL_UNBURDEN | VOL_CHOICE_LOCK |
                            VOL_NEWLY_SWITCHED)
@@ -723,7 +761,7 @@ def check_state(ctx, st):
         return 'RESULT'
     if (st['weather'] > WEATHER_SUN or st['weather_turns'] > FIELD_TURNS_MAX
             or (st['weather'] == 0) != (st['weather_turns'] == 0)
-            or st['terrain'] > (TERRAIN_PSYCHIC if ctx.data_kind in (KIND_TEAM_C, KIND_TEAM_C_DEV) else TERRAIN_GRASSY)
+            or st['terrain'] > (TERRAIN_PSYCHIC if ctx.data_kind in EXTENDED_KINDS else TERRAIN_GRASSY)
             or st['terrain_turns'] > FIELD_TURNS_MAX
             or (st['terrain'] == 0) != (st['terrain_turns'] == 0)
             or st['trick_room_turns'] > FIELD_TURNS_MAX):
@@ -929,7 +967,7 @@ def slot_domain(ctx, st, side, slot):
         if pos['occ'] == NONE or sd['members'][pos['occ']]['hp'] == 0:
             return [cmd(SLOT_PASS)]
         mem = sd['members'][pos['occ']]
-        combat = ctx.data_kind in (KIND_CLOSURE, KIND_CLOSURE_DEV, KIND_TEAM_C, KIND_TEAM_C_DEV)
+        combat = ctx.data_kind in COMBAT_KINDS
         # A charging two-turn move (combat data): that move at the stored target only.
         if combat and pos['charge_turns'] != 0:
             return [cmd(SLOT_MOVE, pos['locked_move'] - 1, pos['locked_target'], 0)]
@@ -1494,7 +1532,7 @@ def main():
         print('context %s bytes %s' % (name, ctx.canonical_bytes().hex()))
         print('context %s table_sha256 %s' % (name, hashlib.sha256(ctx.table).hexdigest()))
         print('context %s fingerprint %s' % (name, ctx.fingerprint().hex()))
-    for name, ctx in (('K1', K1), ('K2', K2), ('KC', KC), ('KD', KD)):
+    for name, ctx in (('K1', K1), ('K2', K2), ('KC', KC), ('KD', KD), ('KP', KP), ('KPD', KPD)):
         assert ctx.valid()
         print('context %s bytes %s' % (name, ctx.canonical_bytes().hex()))
         print('context %s fingerprint %s' % (name, ctx.fingerprint().hex()))
