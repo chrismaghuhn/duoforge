@@ -860,7 +860,8 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_EVENT_PREPARE         32u /* [-prepare] position, id: the move it charges */
 #define DUOFORGE_EVENT_ANIMATION       33u /* [-anim] position, other, id: the move shown; flags MISS, NOTARGET
                                                     (the last move line once shown) */
-#define DUOFORGE_EVENT_ABILITY         34u /* [-ability] position, id2: ability + 1 */
+#define DUOFORGE_EVENT_ABILITY         34u /* [-ability] position, id2: ability + 1. POOL kinds, cause ABILITY (Trace copying
+                                               a foe's): other is the foe, id2 the copied ability + 1 */
 #define DUOFORGE_EVENT_ACTIVATE        35u /* [-activate] position; cause ABILITY + id2 (Lightning Rod, Emergency Exit) or MOVE + id2 (Struggle);
                                                     Flower Veil's [-block] too: position the protected Pokemon, other the holder ([of]) */
 #define DUOFORGE_EVENT_UPKEEP          36u /* [upkeep] the end-of-turn effects are done */
