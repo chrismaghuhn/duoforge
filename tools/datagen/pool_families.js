@@ -25,6 +25,13 @@
 // pool are also validated by the pinned TeamValidator (the check of
 // docs/research/expansion/tools/build_legal_pool.js): every item holds on
 // two probe species and every new ability on a species that has it.
+//
+// The legal moves and abilities of the formes (the learnable bitset and the
+// ability list of dfi_pool_forme_legal) are checked against the validator
+// too: for every base forme and every pool move, a set of the forme with that
+// one move is accepted exactly when the bit is set; for every pool ability, a
+// set of the forme with that ability is accepted exactly when it is in the
+// forme's list. A Mega forme has no learnable move and its one ability.
 'use strict';
 
 const fs = require('fs');
@@ -89,6 +96,44 @@ function familyRows(source, kind, arrayName, count) {
 }
 
 // The type, weather or terrain a parameter names, as Showdown's type name or id; null for none.
+// The ids of the DFI_<KIND>_<ID> defines of the tables' headers, by number.
+function definedIds(headers, kind) {
+    const byNumber = new Map();
+    const re = new RegExp('^#define DFI_' + kind + '_(\\w+) (\\d+)u$', 'gm');
+    for (const text of headers) {
+        for (const m of text.matchAll(re)) {
+            if (m[1] !== 'COUNT' && !m[1].startsWith('FLAG_') && !m[1].startsWith('FAMILY_')) {
+                byNumber.set(Number(m[2]), m[1].toLowerCase());
+            }
+        }
+    }
+    return byNumber;
+}
+
+// The rows of dfi_pool_forme_legal: [DFI_FORME_<ID>] = {{learnable bytes}, count, {abilities}},
+function formeRows(source, count, learnBytes) {
+    const start = source.indexOf('dfi_pool_forme_legal[');
+    if (start < 0) {
+        throw new Error('dfi_pool_forme_legal not found');
+    }
+    const end = source.indexOf('\n};', start);
+    const rows = [];
+    const re = /^\s*\[DFI_FORME_(\w+)\] = \{\{([^}]*)\}, (\d+)u, \{([^}]*)\}\},$/gm;
+    for (const m of source.slice(start, end).matchAll(re)) {
+        const bytes = m[2].split(',').map((x) => parseInt(x.trim(), 16));
+        const abilities = m[4].split(',').map((x) => x.trim()).filter((x) => x !== 'DFI_CLOSURE_NONE')
+            .map((x) => x.replace(/^DFI_ABILITY_/, '').toLowerCase());
+        if (bytes.length !== learnBytes || abilities.length !== Number(m[3])) {
+            throw new Error('dfi_pool_forme_legal row ' + m[1] + ': ' + bytes.length + ' bytes, ' + abilities.length + ' abilities');
+        }
+        rows.push({id: m[1].toLowerCase(), bytes, abilities});
+    }
+    if (rows.length !== count || new Set(rows.map((r) => r.id)).size !== count) {
+        throw new Error('dfi_pool_forme_legal: ' + rows.length + ' rows, expected ' + count + ' different formes');
+    }
+    return rows;
+}
+
 function typeOf(param) {
     const m = param.match(/^DFI_TYPE_(\w+)$/);
     const name = m === null ? undefined : TYPES.find((t) => t.toUpperCase() === m[1]);
@@ -347,6 +392,74 @@ function checkLegal(dex, validator, itemRows, abilityRows, extendedAbilities) {
     }
 }
 
+// The legal moves and abilities of the formes against the pinned validator.
+function checkFormes(dex, validator, rows, moves, abilities) {
+    const set = (species, ability, moveNames) => ({
+        name: '', species, item: '', ability, moves: moveNames, nature: 'Adamant', gender: '',
+        evs: {hp: 2, atk: 0, def: 0, spa: 0, spd: 0, spe: 0}, ivs: {hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31},
+        level: 50,
+    });
+    const poolMoves = [...moves.entries()].sort((a, b) => a[0] - b[0]);
+    const poolAbilities = [...abilities.entries()].sort((a, b) => a[0] - b[0]);
+    let bases = 0;
+    let probes = 0;
+    for (const row of rows) {
+        const species = dex.species.get(row.id);
+        if (!species.exists) {
+            bad('forme ' + row.id + ' does not exist');
+            continue;
+        }
+        const learnBit = (number) => ((row.bytes[number >> 3] >> (number & 7)) & 1) === 1;
+        if (species.isMega) {
+            expect(row.id + ' (Mega) learnable bytes', row.bytes, row.bytes.map(() => 0));
+            expect(row.id + ' (Mega) abilities', row.abilities, [Object.values(species.abilities).map((a) => dex.abilities.get(a).id)[0]]);
+            expect(row.id + ' (Mega) declares one ability', Object.values(species.abilities).length, 1);
+            continue;
+        }
+        bases += 1;
+        if (row.abilities.length === 0) {
+            bad(row.id + ' has no legal ability');
+            continue;
+        }
+        const own = dex.abilities.get(row.abilities[0]).name;
+        // The moves: a set of the forme with one move is accepted exactly when the bit is set.
+        for (const [number, id] of poolMoves) {
+            const move = dex.moves.get(id);
+            const problems = validator.validateSet(set(species.name, own, [move.name]), {});
+            probes += 1;
+            if ((problems === null || problems === undefined || problems.length === 0) !== learnBit(number)) {
+                bad(row.id + ' ' + id + ': the validator says ' + (problems ? 'illegal' : 'legal') + ', the bit says ' +
+                    (learnBit(number) ? 'learnable' : 'not learnable'));
+            }
+        }
+        for (let number = poolMoves.length; number < row.bytes.length * 8; ++number) {
+            if (learnBit(number)) {
+                bad(row.id + ': bit ' + number + ' is set beyond the last move');
+            }
+        }
+        // The abilities: a set of the forme with a learnable move and the ability is accepted exactly when the ability is listed.
+        const probe = poolMoves.find(([number]) => learnBit(number));
+        if (probe === undefined) {
+            bad(row.id + ' learns no pool move');
+            continue;
+        }
+        for (const [, id] of poolAbilities) {
+            const ability = dex.abilities.get(id);
+            const problems = validator.validateSet(set(species.name, ability.name, [dex.moves.get(probe[1]).name]), {});
+            probes += 1;
+            const accepted = problems === null || problems === undefined || problems.length === 0;
+            if (accepted !== row.abilities.includes(id)) {
+                bad(row.id + ' ' + id + ': the validator says ' + (accepted ? 'legal' : 'illegal') + ', the list says ' +
+                    (row.abilities.includes(id) ? 'legal' : 'not legal'));
+            }
+        }
+        // The slot order of the list is the pokedex's.
+        const declared = Object.values(species.abilities).map((a) => dex.abilities.get(a).id).filter((a) => row.abilities.includes(a));
+        expect(row.id + ' ability order', row.abilities, declared);
+    }
+    return {bases, probes};
+}
+
 function main() {
     const args = process.argv.slice(2);
     if (args.length !== 2) {
@@ -363,6 +476,15 @@ function main() {
         'DFI_EXT_ABILITY_COUNT');
     const itemRows = familyRows(source, 'ITEM', 'dfi_pool_item_family', itemCount);
     const abilityRows = familyRows(source, 'ABILITY', 'dfi_pool_ability_family', abilityCount);
+    const headers = ['closure_tables.h', 'extended_tables.h', 'pool_tables.h'].map((f) => readText(path.join(repo, 'src', 'data', f)));
+    const moveIds = definedIds(headers, 'MOVE');
+    const abilityIds = definedIds(headers, 'ABILITY');
+    const formeRowsList = formeRows(source, defineOf(header, 'DFI_POOL_FORME_COUNT'), defineOf(header, 'DFI_POOL_LEARN_BYTES'));
+    for (const row of abilityRows) {
+        if (abilityIds.get(abilityRows.indexOf(row)) !== row.id) {
+            bad('ability ' + row.id + ' is not the id ' + abilityRows.indexOf(row) + ' of the headers');
+        }
+    }
 
     const {Dex, TeamValidator} = require(path.join(root, 'dist', 'sim'));
     const format = Dex.formats.get(FORMAT_ID);
@@ -385,6 +507,7 @@ function main() {
     expect('weather setters', abilities.WEATHER_SETTER, 2);
     expect('terrain setters', abilities.TERRAIN_SETTER, 2);
     checkLegal(dex, TeamValidator.get(FORMAT_ID), itemRows, abilityRows, extendedAbilities);
+    const legal = checkFormes(dex, TeamValidator.get(FORMAT_ID), formeRowsList, moveIds, abilityIds);
 
     if (failures > 0) {
         process.stderr.write('pool_families: ' + failures + ' mismatch(es)\n');
@@ -392,7 +515,8 @@ function main() {
     }
     process.stdout.write('pool_families: ' + itemRows.length + ' items and ' + abilityRows.length +
         ' abilities agree with the pinned handlers (' + JSON.stringify(items) + ', ' + JSON.stringify(abilities) +
-        '); every pool item and the new abilities pass the validator\n');
+        '); every pool item and the new abilities pass the validator; ' + legal.bases + ' base formes: ' + legal.probes +
+        ' validator probes of their moves and abilities agree\n');
 }
 
 main();

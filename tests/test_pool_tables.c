@@ -14,6 +14,13 @@
  * of every new row are literal values read from the pinned handlers in
  * data/items.ts and data/abilities.ts (duoforge.data.pool_families runs
  * those handlers against the columns).
+ *
+ * Every forme also has the pool moves it learns and its legal abilities
+ * (decision 0015 section 2). Both are checked against literal lists that were
+ * written from the validator's answer in docs/research/expansion/data/
+ * legal_pool.json (every species with every single move, and its legal
+ * abilities), not from the Champions learnsets that the generator parses:
+ * the two sources agree. The set of every forme is among them.
  */
 #include <stdio.h>
 #include <string.h>
@@ -27,7 +34,7 @@
 #include "state/battle_internal.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "43c85ed5496f481ee5983092a82c765fc4ad20ceff3ee6587930fbafa379d8c0"
+#define POOL_HASH_HEX "339834fa89c91b20ac6a5fb60d7ce6cba68645d606724c18da980d0c5e7c3288"
 
 typedef struct family_case {
     uint32_t id;
@@ -108,6 +115,116 @@ static const family_case new_abilities[] = {
     {DFI_ABILITY_SWARM, DFI_ABILITY_FAMILY_PINCH, DFI_TYPE_BUG, "Swarm"},
 };
 
+typedef struct legal_case {
+    uint32_t forme;
+    uint32_t move_count;
+    uint32_t moves[16];
+    uint32_t ability_count;
+    uint32_t abilities[3];
+} legal_case;
+
+/* The pool moves that each base forme learns (the validator accepts a set
+ * with that one move) and its legal abilities that are in the pool, in the
+ * pokedex's slot order. The abilities of the pokedex that the pool does not
+ * have (Reckless, Solar Power, Moxie, ...) are not listed. */
+static const legal_case legal_formes[] = {
+    {DFI_FORME_RILLABOOM, 10, {
+        DFI_MOVE_WOODHAMMER, DFI_MOVE_GRASSYGLIDE, DFI_MOVE_FAKEOUT, DFI_MOVE_HIGHHORSEPOWER, DFI_MOVE_PROTECT,
+        DFI_MOVE_SWORDSDANCE, DFI_MOVE_FOCUSBLAST, DFI_MOVE_SNARL, DFI_MOVE_GRASSKNOT, DFI_MOVE_HYPERVOICE
+     },
+     2, {DFI_ABILITY_OVERGROW, DFI_ABILITY_GRASSYSURGE}},
+    {DFI_FORME_STARAPTOR, 8, {
+        DFI_MOVE_BRAVEBIRD, DFI_MOVE_CLOSECOMBAT, DFI_MOVE_TAILWIND, DFI_MOVE_PROTECT, DFI_MOVE_FOCUSBLAST,
+        DFI_MOVE_HEATWAVE, DFI_MOVE_HURRICANE, DFI_MOVE_HELPINGHAND
+     },
+     1, {DFI_ABILITY_INTIMIDATE}},
+    {DFI_FORME_MILOTIC, 11, {
+        DFI_MOVE_PROTECT, DFI_MOVE_MUDDYWATER, DFI_MOVE_COIL, DFI_MOVE_ICEBEAM, DFI_MOVE_HYPNOSIS,
+        DFI_MOVE_WEATHERBALL, DFI_MOVE_IRONHEAD, DFI_MOVE_DRAGONPULSE, DFI_MOVE_LIGHTSCREEN, DFI_MOVE_HELPINGHAND,
+        DFI_MOVE_FLIPTURN
+     },
+     1, {DFI_ABILITY_COMPETITIVE}},
+    {DFI_FORME_CERULEDGE, 12, {
+        DFI_MOVE_CLOSECOMBAT, DFI_MOVE_PROTECT, DFI_MOVE_BITTERBLADE, DFI_MOVE_SHADOWSNEAK, DFI_MOVE_SWORDSDANCE,
+        DFI_MOVE_SHADOWBALL, DFI_MOVE_IRONHEAD, DFI_MOVE_HEATWAVE, DFI_MOVE_REFLECT, DFI_MOVE_LIGHTSCREEN,
+        DFI_MOVE_FLAREBLITZ, DFI_MOVE_HELPINGHAND
+     },
+     1, {DFI_ABILITY_FLASHFIRE}},
+    {DFI_FORME_RAICHU, 9, {
+        DFI_MOVE_FAKEOUT, DFI_MOVE_PROTECT, DFI_MOVE_ZAPCANNON, DFI_MOVE_FOCUSBLAST, DFI_MOVE_NASTYPLOT,
+        DFI_MOVE_GRASSKNOT, DFI_MOVE_REFLECT, DFI_MOVE_LIGHTSCREEN, DFI_MOVE_HELPINGHAND
+     },
+     1, {DFI_ABILITY_LIGHTNINGROD}},
+    {DFI_FORME_GHOLDENGO, 9, {
+        DFI_MOVE_PROTECT, DFI_MOVE_FOCUSBLAST, DFI_MOVE_MAKEITRAIN, DFI_MOVE_SHADOWBALL, DFI_MOVE_NASTYPLOT,
+        DFI_MOVE_IRONHEAD, DFI_MOVE_PSYCHIC, DFI_MOVE_REFLECT, DFI_MOVE_LIGHTSCREEN
+     },
+     1, {DFI_ABILITY_GOODASGOLD}},
+    {DFI_FORME_POLITOED, 9, {
+        DFI_MOVE_PROTECT, DFI_MOVE_MUDDYWATER, DFI_MOVE_ICEBEAM, DFI_MOVE_HYPNOSIS, DFI_MOVE_FOCUSBLAST,
+        DFI_MOVE_WEATHERBALL, DFI_MOVE_PSYCHIC, DFI_MOVE_HYPERVOICE, DFI_MOVE_HELPINGHAND
+     },
+     1, {DFI_ABILITY_DRIZZLE}},
+    {DFI_FORME_GOLISOPOD, 12, {
+        DFI_MOVE_CLOSECOMBAT, DFI_MOVE_PROTECT, DFI_MOVE_MUDDYWATER, DFI_MOVE_ICEBEAM, DFI_MOVE_SWORDSDANCE,
+        DFI_MOVE_FOCUSBLAST, DFI_MOVE_LEECHLIFE, DFI_MOVE_IRONHEAD, DFI_MOVE_DRILLRUN, DFI_MOVE_SNARL,
+        DFI_MOVE_SUCKERPUNCH, DFI_MOVE_AQUAJET
+     },
+     1, {DFI_ABILITY_EMERGENCYEXIT}},
+    {DFI_FORME_ARCHALUDON, 9, {
+        DFI_MOVE_PROTECT, DFI_MOVE_SWORDSDANCE, DFI_MOVE_IRONHEAD, DFI_MOVE_DRAGONPULSE, DFI_MOVE_ELECTROSHOT,
+        DFI_MOVE_SNARL, DFI_MOVE_REFLECT, DFI_MOVE_LIGHTSCREEN, DFI_MOVE_DRACOMETEOR
+     },
+     1, {DFI_ABILITY_STAMINA}},
+    {DFI_FORME_FARIGIRAF, 12, {
+        DFI_MOVE_HIGHHORSEPOWER, DFI_MOVE_PROTECT, DFI_MOVE_SHADOWBALL, DFI_MOVE_NASTYPLOT, DFI_MOVE_IRONHEAD,
+        DFI_MOVE_PSYCHIC, DFI_MOVE_GRASSKNOT, DFI_MOVE_TRICKROOM, DFI_MOVE_REFLECT, DFI_MOVE_LIGHTSCREEN,
+        DFI_MOVE_HYPERVOICE, DFI_MOVE_HELPINGHAND
+     },
+     1, {DFI_ABILITY_ARMORTAIL}},
+    {DFI_FORME_CHARIZARD, 9, {
+        DFI_MOVE_PROTECT, DFI_MOVE_SWORDSDANCE, DFI_MOVE_FOCUSBLAST, DFI_MOVE_WEATHERBALL, DFI_MOVE_DRAGONPULSE,
+        DFI_MOVE_HEATWAVE, DFI_MOVE_HURRICANE, DFI_MOVE_FLAREBLITZ, DFI_MOVE_HELPINGHAND
+     },
+     1, {DFI_ABILITY_BLAZE}},
+    {DFI_FORME_GRIMMSNARL, 10, {
+        DFI_MOVE_FAKEOUT, DFI_MOVE_PROTECT, DFI_MOVE_FOCUSBLAST, DFI_MOVE_NASTYPLOT, DFI_MOVE_LEECHLIFE,
+        DFI_MOVE_SPIRITBREAK, DFI_MOVE_REFLECT, DFI_MOVE_LIGHTSCREEN, DFI_MOVE_PARTINGSHOT, DFI_MOVE_SUCKERPUNCH
+     },
+     1, {DFI_ABILITY_PRANKSTER}},
+    {DFI_FORME_SNEASLER, 9, {
+        DFI_MOVE_FAKEOUT, DFI_MOVE_CLOSECOMBAT, DFI_MOVE_PROTECT, DFI_MOVE_SWORDSDANCE, DFI_MOVE_FOCUSBLAST,
+        DFI_MOVE_SHADOWBALL, DFI_MOVE_NASTYPLOT, DFI_MOVE_GRASSKNOT, DFI_MOVE_DIRECLAW
+     },
+     1, {DFI_ABILITY_UNBURDEN}},
+    {DFI_FORME_INCINEROAR, 14, {
+        DFI_MOVE_FAKEOUT, DFI_MOVE_CLOSECOMBAT, DFI_MOVE_PROTECT, DFI_MOVE_SWORDSDANCE, DFI_MOVE_FOCUSBLAST,
+        DFI_MOVE_NASTYPLOT, DFI_MOVE_LEECHLIFE, DFI_MOVE_IRONHEAD, DFI_MOVE_SNARL, DFI_MOVE_HEATWAVE,
+        DFI_MOVE_PARTINGSHOT, DFI_MOVE_FLAREBLITZ, DFI_MOVE_DARKESTLARIAT, DFI_MOVE_HELPINGHAND
+     },
+     2, {DFI_ABILITY_BLAZE, DFI_ABILITY_INTIMIDATE}},
+    {DFI_FORME_SALAMENCE, 9, {
+        DFI_MOVE_TAILWIND, DFI_MOVE_PROTECT, DFI_MOVE_IRONHEAD, DFI_MOVE_DRAGONPULSE, DFI_MOVE_HEATWAVE,
+        DFI_MOVE_HURRICANE, DFI_MOVE_HYPERVOICE, DFI_MOVE_DRACOMETEOR, DFI_MOVE_HELPINGHAND
+     },
+     1, {DFI_ABILITY_INTIMIDATE}},
+    {DFI_FORME_INDEEDEEF, 10, {
+        DFI_MOVE_FAKEOUT, DFI_MOVE_PROTECT, DFI_MOVE_SHADOWBALL, DFI_MOVE_PSYCHIC, DFI_MOVE_TRICKROOM,
+        DFI_MOVE_REFLECT, DFI_MOVE_LIGHTSCREEN, DFI_MOVE_HYPERVOICE, DFI_MOVE_FOLLOWME, DFI_MOVE_HELPINGHAND
+     },
+     1, {DFI_ABILITY_PSYCHICSURGE}},
+    {DFI_FORME_KINGAMBIT, 8, {
+        DFI_MOVE_PROTECT, DFI_MOVE_SWORDSDANCE, DFI_MOVE_FOCUSBLAST, DFI_MOVE_IRONHEAD, DFI_MOVE_SNARL,
+        DFI_MOVE_GRASSKNOT, DFI_MOVE_KOWTOWCLEAVE, DFI_MOVE_SUCKERPUNCH
+     },
+     1, {DFI_ABILITY_DEFIANT}},
+    {DFI_FORME_BASCULEGION, 8, {
+        DFI_MOVE_PROTECT, DFI_MOVE_MUDDYWATER, DFI_MOVE_ICEBEAM, DFI_MOVE_SHADOWBALL, DFI_MOVE_LASTRESPECTS,
+        DFI_MOVE_WAVECRASH, DFI_MOVE_AQUAJET, DFI_MOVE_FLIPTURN
+     },
+     1, {DFI_ABILITY_ADAPTABILITY}},
+};
+
 static void check_item(df_test *t, const family_case *c)
 {
     const dfi_item_family *f = &dfi_pool_item_family[c->id];
@@ -124,6 +241,12 @@ static void check_ability(df_test *t, const family_case *c)
         fprintf(stderr, "  ability %s: family %u param %u, expected %u and %u\n", c->what, f->family, f->param,
                 c->family, c->param);
     }
+}
+
+/* Bit `index` of a bitset (bit index % 8 of byte index / 8). */
+static bool bit_of(const uint8_t *bytes, uint32_t index)
+{
+    return (((uint32_t)bytes[index / 8u] >> (index % 8u)) & 1u) != 0u;
 }
 
 static bool listed(const family_case *list, size_t n, uint32_t id)
@@ -234,8 +357,9 @@ int main(void)
     /* The pool hash: SHA-256 of the pool canonical bytes, which are the
      * closure layout over every pool row followed by the family columns (an
      * item's family and type, then an ability's family and parameter, in id
-     * order); equal to the generator's literal and different from the other
-     * two. */
+     * order) and the legal moves and abilities of the formes (per forme the
+     * learnable bytes, the ability count and the three ability ids); equal to
+     * the generator's literal and different from the other two. */
     {
         uint8_t bytes[DFI_POOL_CANONICAL_SIZE + 8u];
         uint8_t rows[DFI_POOL_CANONICAL_SIZE];
@@ -244,8 +368,9 @@ int main(void)
         memset(bytes, 0xA5, sizeof bytes);
         const size_t n = dfi_pool_canonical_bytes(bytes, sizeof bytes);
         DF_CHECK_EQ_U64(&t, n, DFI_POOL_CANONICAL_SIZE);
-        /* 12 + 23 * 24 + 50 * 29 + 49 * 2 + 324 + 18 + 50, then 49 * 2 + 26 * 2 */
-        DF_CHECK_EQ_U64(&t, DFI_POOL_CANONICAL_SIZE, 2654u);
+        /* 12 + 23 * 24 + 50 * 29 + 49 * 2 + 324 + 18 + 50, then 49 * 2 + 26 * 2,
+         * then 23 * (7 + 1 + 3) */
+        DF_CHECK_EQ_U64(&t, DFI_POOL_CANONICAL_SIZE, 2907u);
         DF_CHECK(&t, bytes[DFI_POOL_CANONICAL_SIZE] == 0xA5u);
         const size_t row_bytes = dfi_pool_canonical_bytes_of(rows, sizeof rows, DFI_POOL_FORME_COUNT,
                                                              DFI_POOL_MOVE_COUNT, DFI_POOL_ITEM_COUNT,
@@ -263,6 +388,20 @@ int main(void)
                        ? 1u
                        : 0u;
             at += 2u;
+        }
+        DF_CHECK_EQ_U64(&t, bad, 0u);
+        for (uint32_t i = 0u; i < DFI_POOL_FORME_COUNT; ++i) {
+            const dfi_forme_legal *l = &dfi_pool_forme_legal[i];
+            for (uint32_t k = 0u; k < DFI_POOL_LEARN_BYTES; ++k) {
+                bad += bytes[at + k] != l->learnable[k] ? 1u : 0u;
+            }
+            at += DFI_POOL_LEARN_BYTES;
+            bad += bytes[at] != l->ability_count ? 1u : 0u;
+            at += 1u;
+            for (uint32_t k = 0u; k < DFI_POOL_FORME_ABILITIES_MAX; ++k) {
+                bad += bytes[at + k] != l->abilities[k] ? 1u : 0u;
+            }
+            at += DFI_POOL_FORME_ABILITIES_MAX;
         }
         DF_CHECK_EQ_U64(&t, bad, 0u);
         DF_CHECK_EQ_U64(&t, at, DFI_POOL_CANONICAL_SIZE);
@@ -349,6 +488,77 @@ int main(void)
                 fprintf(stderr, "  type %u: %u boosters and %u resist berries\n", type, boosters, berries);
             }
         }
+    }
+
+    /* The legal moves and abilities of the formes. A bit per pool move, in as
+     * many bytes as the moves need; the base formes are the literal cases
+     * above, a Mega forme has no learnable move and its one ability. */
+    {
+        DF_CHECK_EQ_U64(&t, DFI_POOL_LEARN_BYTES, (DFI_POOL_MOVE_COUNT + 7u) / 8u);
+        DF_CHECK_EQ_U64(&t, DFI_POOL_LEARN_BYTES, 7u);
+        DF_CHECK_EQ_U64(&t, DFI_POOL_FORME_ABILITIES_MAX, 3u);
+        uint32_t base_formes = 0u;
+        for (uint32_t f = 0u; f < DFI_POOL_FORME_COUNT; ++f) {
+            base_formes += dfi_pool_formes[f].is_mega == 0u ? 1u : 0u;
+        }
+        DF_CHECK_EQ_U64(&t, base_formes, sizeof legal_formes / sizeof legal_formes[0]);
+        uint32_t seen = 0u;
+        for (size_t c = 0u; c < sizeof legal_formes / sizeof legal_formes[0]; ++c) {
+            const legal_case *lc = &legal_formes[c];
+            const dfi_forme_legal *l = &dfi_pool_forme_legal[lc->forme];
+            DF_CHECK(&t, dfi_pool_formes[lc->forme].is_mega == 0u);
+            seen += 1u;
+            uint32_t wrong = 0u;
+            for (uint32_t move = 0u; move < DFI_POOL_MOVE_COUNT; ++move) {
+                bool listed_move = false;
+                for (uint32_t k = 0u; k < lc->move_count; ++k) {
+                    listed_move = listed_move || lc->moves[k] == move;
+                }
+                wrong += bit_of(l->learnable, move) != listed_move ? 1u : 0u;
+            }
+            /* No bit beyond the last pool move. */
+            for (uint32_t move = DFI_POOL_MOVE_COUNT; move < DFI_POOL_LEARN_BYTES * 8u; ++move) {
+                wrong += bit_of(l->learnable, move) ? 1u : 0u;
+            }
+            wrong += l->ability_count != lc->ability_count ? 1u : 0u;
+            for (uint32_t k = 0u; k < DFI_POOL_FORME_ABILITIES_MAX; ++k) {
+                wrong += l->abilities[k] != (k < lc->ability_count ? lc->abilities[k] : DFI_CLOSURE_NONE) ? 1u : 0u;
+            }
+            if (!DF_CHECK(&t, wrong == 0u)) {
+                fprintf(stderr, "  forme %u: %u wrong bits or abilities\n", lc->forme, wrong);
+            }
+            /* The forme's own set is legal for it. */
+            const dfi_forme_data *f = &dfi_pool_formes[lc->forme];
+            uint32_t outside = 0u;
+            for (uint32_t k = 0u; k < f->set_move_count; ++k) {
+                outside += bit_of(l->learnable, f->set_moves[k]) ? 0u : 1u;
+            }
+            bool own = false;
+            for (uint32_t k = 0u; k < l->ability_count; ++k) {
+                own = own || l->abilities[k] == f->ability;
+            }
+            DF_CHECK(&t, outside == 0u && own);
+        }
+        DF_CHECK_EQ_U64(&t, seen, base_formes);
+        uint32_t odd = 0u;
+        for (uint32_t f = 0u; f < DFI_POOL_FORME_COUNT; ++f) {
+            const dfi_forme_legal *l = &dfi_pool_forme_legal[f];
+            if (dfi_pool_formes[f].is_mega != 0u) {
+                for (uint32_t k = 0u; k < DFI_POOL_LEARN_BYTES; ++k) {
+                    odd += l->learnable[k] != 0u ? 1u : 0u;
+                }
+                odd += l->ability_count != 1u || l->abilities[0] != dfi_pool_formes[f].ability ||
+                               l->abilities[1] != DFI_CLOSURE_NONE || l->abilities[2] != DFI_CLOSURE_NONE
+                           ? 1u
+                           : 0u;
+            }
+            /* Nobody learns Struggle, and every legal ability is in the pool. */
+            odd += bit_of(l->learnable, DFI_MOVE_STRUGGLE) ? 1u : 0u;
+            for (uint32_t k = 0u; k < l->ability_count; ++k) {
+                odd += l->abilities[k] >= DFI_POOL_ABILITY_COUNT ? 1u : 0u;
+            }
+        }
+        DF_CHECK_EQ_U64(&t, odd, 0u);
     }
 
     /* The encodings of the columns: the family values are the table's own,
