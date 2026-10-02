@@ -12,10 +12,12 @@ battles) and conformance_types.h (the record types both include), or, with
 As a library: load_battle(root, name) reads a spec and a trace (the only file
 IO of a conversion), convert_battle(name, spec, trace, tables) turns them into
 plain data and format_battle(data, out, all_tape, all_events) writes that
-data as C tables. A spec or trace the converter does not model raises
-ConversionError, a SystemExit with a stable `rule` and an optional `detail`:
-a script that does not catch it still prints the message and exits with 1.
-The rule is the first argument of each raise below.
+data as C tables; step_record(st, tape_off, ev_off, ev_len) is one step as the
+nested tuple of its df_conf_step, in declaration order. A spec or trace the
+converter does not model raises ConversionError, a SystemExit with a stable
+`rule` and an optional `detail`: a script that does not catch it still prints
+the message and exits with 1. The rule is the first argument of each raise
+below.
 
 Draws: every draw of the reference becomes a tape entry, except the
 families decision 0006 section 5.1 (proposal B) drops. Each drop rule
@@ -878,6 +880,18 @@ def c_init(value):
     return '%du' % value
 
 
+def step_record(st, tape_off, ev_off, ev_len):
+    """A step of convert_battle's data as the nested int tuple of a
+    df_conf_step, in the order of its declaration (conformance_types.h): the
+    one place in Python that order is written down. `tape_off` is where the
+    step's tape entries start in the tape that holds them, `ev_off` and
+    `ev_len` per player where its events start in the event array and how many
+    there are."""
+    return (st['team'], st['answered0'], st['answered1'], tape_off, len(st['tape']), st['turn'], st['boundary'],
+            st['result'], st['picks'], st['cmds'], st['occupants'], st['entries'], st['field'], st['enabled'],
+            st['mons'], tuple(ev_off), tuple(ev_len))
+
+
 def format_battle(data, out, all_tape, all_events):
     """The C tables of a battle from convert_battle's data. The lines go to
     `out`; the tape entries and events of each step are appended to the shared
@@ -899,10 +913,8 @@ def format_battle(data, out, all_tape, all_events):
             ev_off.append(len(all_events))
             ev_len.append(len(evs))
             all_events.extend(evs)
-        steps.append('    %s,  /* %d draws dropped */' % (c_init((
-            st['team'], st['answered0'], st['answered1'], tape_off, len(st['tape']), st['turn'], st['boundary'],
-            st['result'], st['picks'], st['cmds'], st['occupants'], st['entries'], st['field'], st['enabled'],
-            st['mons'], ev_off, ev_len)), st['dropped']))
+        steps.append('    %s,  /* %d draws dropped */' % (c_init(step_record(st, tape_off, ev_off, ev_len)),
+                                                           st['dropped']))
     w('static const df_conf_step conf_%s_steps[] = {' % name)
     out.extend(steps)
     w('};')

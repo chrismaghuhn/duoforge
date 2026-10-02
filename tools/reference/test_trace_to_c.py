@@ -11,10 +11,12 @@ ConversionError.
 """
 import ast
 import copy
+import functools
 import io
 import json
 import os
 import pickle
+import re
 import shutil
 import subprocess
 import sys
@@ -61,6 +63,35 @@ def leaves(x):
             yield from leaves(v)
     else:
         yield x
+
+
+RECORDS = ('df_conf_member', 'df_conf_cmd', 'df_conf_mon', 'df_conf_step')
+
+
+@functools.lru_cache(maxsize=None)
+def declared_records():
+    """The record types of conformance_types.h read from trace_to_c.TYPES, the
+    text they are generated from: {struct: ((type, field, dims), ...)} in
+    declaration order. df_conf_battle holds pointers and is no record of ints."""
+    text = re.sub(r'/\*.*?\*/', '', '\n'.join(trace_to_c.TYPES), flags=re.S)
+    out = {}
+    for m in re.finditer(r'typedef struct (\w+) \{([^}]*)\} \w+;', text):
+        if m.group(1) not in RECORDS:
+            continue
+        fields = []
+        for decl in m.group(2).split(';'):
+            if not decl.strip():
+                continue
+            ctype, names = decl.split(None, 1)
+            for name in names.split(','):
+                f = re.fullmatch(r'\s*(\w+)((?:\[\d+\])*)\s*', name)
+                if f is None:
+                    raise AssertionError('cannot read the declaration %r' % decl)
+                fields.append((ctype, f.group(1), tuple(int(d) for d in re.findall(r'\[(\d+)\]', f.group(2)))))
+        out[m.group(1)] = tuple(fields)
+    if sorted(out) != sorted(RECORDS):
+        raise AssertionError('records read: %s' % sorted(out))
+    return out
 
 
 class Refusals(unittest.TestCase):
@@ -201,6 +232,23 @@ class Library(unittest.TestCase):
                 self.assertEqual(len(st['tape']) + st['dropped'], len(raw['draws']), '%s step %d' % (name, i))
             self.assertEqual(data['dropped_total'], sum(st['dropped'] for st in data['steps']), name)
 
+    def assert_shape(self, value, ctype, dims, where):
+        """`value` is a `ctype` with array dimensions `dims` as the data holds it: nested tuples that follow the
+        declaration in conformance_types.h, plain ints at the leaves."""
+        records = declared_records()
+        if dims:
+            self.assertIsInstance(value, (tuple, list), where)
+            self.assertEqual(len(value), dims[0], where)
+            for i, item in enumerate(value):
+                self.assert_shape(item, ctype, dims[1:], '%s[%d]' % (where, i))
+        elif ctype in records:
+            self.assertIsInstance(value, (tuple, list), where)
+            self.assertEqual(len(value), len(records[ctype]), where)
+            for item, (t, name, d) in zip(value, records[ctype]):
+                self.assert_shape(item, t, d, '%s.%s' % (where, name))
+        else:
+            self.assertIs(type(value), int, where)
+
     def test_the_data_has_the_df_conf_shape(self):
         spec, trace = battle('s2_turn_core_1')
         data = convert('s2_turn_core_1', spec, trace)
@@ -208,26 +256,31 @@ class Library(unittest.TestCase):
         self.assertEqual((data['name'], data['purpose']), ('s2_turn_core_1', spec['purpose']))
         self.assertEqual(data['member_count'], 4)
         self.assertEqual([len(rows) for rows in data['members']], [4, 4])
-        for member in (m for rows in data['members'] for m in rows):
-            # species, gender, nature, sp[6], ability, item, move_count, moves[4]
-            self.assertEqual((len(member), len(member[3]), len(member[7])), (8, 6, 4))
-            self.assertTrue(all(type(v) is int for v in leaves(member)))
+        for s, rows in enumerate(data['members']):
+            for m, member in enumerate(rows):
+                self.assert_shape(member, 'df_conf_member', (), 'member %d of side %d' % (m, s))
         step_fields = ['answered0', 'answered1', 'boundary', 'cmds', 'dropped', 'enabled', 'entries', 'events',
                        'field', 'mons', 'occupants', 'picks', 'result', 'tape', 'team', 'turn']
-        for st in data['steps']:
+        for i, st in enumerate(data['steps']):
             self.assertEqual(sorted(st), step_fields)
-            self.assertEqual([len(r) for r in st['picks']], [6, 6])
-            self.assertEqual([[len(c) for c in side] for side in st['cmds']], [[5, 5], [5, 5]])
-            self.assertEqual([len(r) for r in st['occupants']], [2, 2])
-            self.assertEqual((len(st['entries']), len(st['field'])), (4, 11))
-            self.assertEqual([len(r) for r in st['enabled']], [2, 2])
-            self.assertEqual([[len(m) for m in side] for side in st['mons']], [[17] * 6] * 2)
-            for mon in (m for side in st['mons'] for m in side):
-                self.assertEqual((len(mon[2]), len(mon[3])), (4, 7))  # pp[4], stages[7]
+            self.assert_shape(trace_to_c.step_record(st, 0, (0, 0), (0, 0)), 'df_conf_step', (), 'step %d' % i)
             self.assertTrue(all(len(entry) == 4 for entry in st['tape']))  # site, lo, hi, value
             self.assertEqual(len(st['events']), 2)  # one list per player
             self.assertTrue(all(len(e) == 14 for evs in st['events'] for e in evs))  # the duoforge_event fields
-            self.assertTrue(all(type(v) is int for vs in st.values() for v in leaves(vs)))  # plain ints throughout
+            self.assertTrue(all(type(v) is int for key in ('tape', 'events') for v in leaves(st[key])))
+
+    def test_step_record_is_the_declaration_order(self):
+        """step_record lists the fields of df_conf_step in the order it is
+        declared in: by name, what the data holds, and the offsets where the
+        declaration has them. A runner that flattens the record relies on it."""
+        spec, trace = battle('s2_turn_core_1')
+        names = [name for _, name, _ in declared_records()['df_conf_step']]
+        for st in convert('s2_turn_core_1', spec, trace)['steps']:
+            derived = {'tape_off': 7, 'tape_len': len(st['tape']), 'ev_off': (11, 13), 'ev_len': (2, 3)}
+            record = trace_to_c.step_record(st, 7, (11, 13), (2, 3))
+            self.assertEqual(len(record), len(names))
+            for value, name in zip(record, names):
+                self.assertEqual(value, derived[name] if name in derived else st[name], name)
 
     def test_convert_battle_is_pure(self):
         """No file IO, and the spec and the trace are as they were."""
