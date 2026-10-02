@@ -154,7 +154,7 @@ int main(void)
              "table given"},
             {{DUOFORGE_DATA_KIND_CLOSURE, 7u, 4u, 0u, 0u, NULL}, DUOFORGE_E_INVALID_ARGUMENT, "roster 7"},
             {{DUOFORGE_DATA_KIND_CLOSURE, 6u, 0u, 0u, 0u, NULL}, DUOFORGE_E_INVALID_ARGUMENT, "brought 0"},
-            {{6u, 6u, 4u, 0u, 0u, NULL}, DUOFORGE_E_INVALID_ARGUMENT, "data kind 6"}, /* 4, 5: TEAM_C (0009) */
+            {{8u, 6u, 4u, 0u, 0u, NULL}, DUOFORGE_E_INVALID_ARGUMENT, "data kind 8"}, /* 4, 5: TEAM_C (0009), 6, 7: POOL (0015) */
             {{0u, 6u, 4u, 16u, 36u, df_table_t1}, DUOFORGE_E_INVALID_ARGUMENT, "data kind 0"},
             /* The certified profile is register 6, bring 4 (decision 0010). */
             {{DUOFORGE_DATA_KIND_CLOSURE, 4u, 2u, 0u, 0u, NULL}, DUOFORGE_E_INVALID_ARGUMENT, "roster 4, brought 2"},

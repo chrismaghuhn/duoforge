@@ -4,7 +4,7 @@
 
 #include "core/arith.h"
 #include "core/modifier.h"
-#include "data/extended_tables.h"
+#include "data/pool_tables.h"
 #include "data/support_manifest.h"
 #include "state/closure_member.h"
 #include "state/context_internal.h"
@@ -97,8 +97,8 @@ static uint32_t dfi_fainted_members(const struct duoforge_battle *b, uint32_t si
 
 static const dfi_forme_data *dfi_forme_of(const dfi_member *m)
 {
-    const dfi_forme_data *base = &dfi_ext_formes[m->species_id];
-    return m->is_mega != 0u ? &dfi_ext_formes[base->mega_forme] : base;
+    const dfi_forme_data *base = &dfi_pool_formes[m->species_id];
+    return m->is_mega != 0u ? &dfi_pool_formes[base->mega_forme] : base;
 }
 
 static bool dfi_has_type(const dfi_member *m, uint32_t type)
@@ -315,7 +315,7 @@ static duoforge_status dfi_key_of(dfi_run *r, const dfi_queue_record *q, dfi_key
         return DUOFORGE_E_INVARIANT;
     }
     if (q->kind == DFI_Q_MOVE) {
-        out->priority = dfi_move_priority(r->b, m, &dfi_ext_moves[dfi_move_of(m, q->move_slot)]);
+        out->priority = dfi_move_priority(r->b, m, &dfi_pool_moves[dfi_move_of(m, q->move_slot)]);
     }
     out->speed = speed;
     return DUOFORGE_OK;
@@ -1008,7 +1008,7 @@ static duoforge_status dfi_deal(dfi_run *r, uint32_t flat, uint32_t amount, uint
 static bool dfi_poison_immune(const dfi_member *m)
 {
     for (uint32_t type = 0u; type < DFI_TYPE_COUNT; ++type) {
-        if ((dfi_ext_type_immunity[type] & DFI_IMMUNE_PSN) != 0u && dfi_has_type(m, type)) {
+        if ((dfi_pool_type_immunity[type] & DFI_IMMUNE_PSN) != 0u && dfi_has_type(m, type)) {
             return true;
         }
     }
@@ -1781,7 +1781,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         pos->move_actions = (uint8_t)((uint32_t)pos->move_actions + 1u); /* wide-operands-reviewed */
     }
     const uint32_t move_id = dfi_move_of(m, q->move_slot);
-    const dfi_move_data *md = &dfi_ext_moves[move_id];
+    const dfi_move_data *md = &dfi_pool_moves[move_id];
     if (move_id != DFI_MOVE_STRUGGLE && dfi_support.moves[move_id] == 0u) {
         return DUOFORGE_E_UNSUPPORTED;
     }
@@ -2092,7 +2092,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         if (next != NULL) {
             const dfi_member *t = dfi_at(b, targets[0]);
             attacks = next->move_slot == DUOFORGE_MOVE_SLOT_STRUGGLE ||
-                      dfi_ext_moves[dfi_move_of(t, next->move_slot)].category != DFI_CATEGORY_STATUS;
+                      dfi_pool_moves[dfi_move_of(t, next->move_slot)].category != DFI_CATEGORY_STATUS;
         }
         if (!attacks) {
             dfi_fail_still(r, user);
@@ -2571,8 +2571,8 @@ static duoforge_status dfi_run_switch(dfi_run *r, const dfi_queue_record *q)
     }
     const uint32_t ability = sd->members[reserve].ability;
     const uint32_t item = sd->members[reserve].item;
-    if ((ability != 0u && (ability > DFI_EXT_ABILITY_COUNT || dfi_support.abilities[ability - 1u] == 0u)) ||
-        (item != 0u && (item > DFI_EXT_ITEM_COUNT || dfi_support.items[item - 1u] == 0u))) {
+    if ((ability != 0u && (ability > DFI_POOL_ABILITY_COUNT || dfi_support.abilities[ability - 1u] == 0u)) ||
+        (item != 0u && (item > DFI_POOL_ITEM_COUNT || dfi_support.items[item - 1u] == 0u))) {
         return DUOFORGE_E_UNSUPPORTED; /* not marked in the support manifest */
     }
     const dfi_member *leaving = dfi_at(b, side * 2u + slot);
@@ -2838,7 +2838,7 @@ static duoforge_status dfi_run_mega(dfi_run *r, const dfi_queue_record *q)
     }
     sd->mega_used = 1u;
     duoforge_event forme = dfi_event_make(DUOFORGE_EVENT_FORME, flat);
-    forme.id = dfi_ext_formes[m->species_id].mega_forme; /* [detailschange] */
+    forme.id = dfi_pool_formes[m->species_id].mega_forme; /* [detailschange] */
     dfi_emit(r, &forme);
     duoforge_event mega = dfi_event_make(DUOFORGE_EVENT_MEGA, flat);
     mega.id2 = m->item; /* [-mega] the stone, item + 1 */

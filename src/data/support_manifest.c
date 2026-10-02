@@ -51,7 +51,13 @@
  * Step 10: Psychic Surge and Psychic Terrain (priority moves stopped at
  * grounded foes, Psychic moves x5325/4096, the terrain replaced).
  * Step 11: Follow Me (a one-turn volatile; the RedirectTarget event takes the
- * foes' single-target moves before Lightning Rod). */
+ * foes' single-target moves before Lightning Rod).
+ *
+ * Pool (decision 0015; the ids the expansion adds after the extended ones):
+ * the type boosters, the resist berries and the abilities Pixilate,
+ * Refrigerate, Overgrow, Torrent and Swarm are unmarked. Step P1 only adds
+ * the ids and their family columns; the steps that make the families rules
+ * mark their members. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,

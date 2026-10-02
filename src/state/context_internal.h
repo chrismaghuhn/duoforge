@@ -9,9 +9,10 @@
 /* Canonical context bytes: the v1 preimage (31 bytes: envelope, structural
  * constants, data kind, roster, brought count, species and move counts)
  * followed by a 32-byte data hash: the SHA-256 of the target-class table
- * (SYNTHETIC) or the hash of the generated closure tables (CLOSURE kinds)
- * or of the extended tables (TEAM_C kinds), whose counts are then those of
- * the tables. Encode-only. */
+ * (SYNTHETIC) or the hash of the generated closure tables (CLOSURE kinds),
+ * of the extended tables (TEAM_C kinds) or of the pool tables with their
+ * family columns (POOL kinds), whose counts are then those of the kind's
+ * tables. Encode-only. */
 #define DFI_CONTEXT_BYTES_SIZE 63u
 #define DFI_CONTEXT_TABLE_HASH_OFF 31u
 #define DFI_CONTEXT_TABLE_CAPACITY 65535u
@@ -30,16 +31,18 @@ struct duoforge_context {
     uint8_t move_target_classes[DFI_CONTEXT_TABLE_CAPACITY]; /* entries >= move_count are zero */
 };
 
-/* True for the combat data kinds, which read the generated tables:
- * DUOFORGE_DATA_KIND_CLOSURE and _CLOSURE_DEV (the closure prefix of the
- * extended tables) and _TEAM_C and _TEAM_C_DEV (all of them, decision 0009).
- * Species ids are forme ids and move ids move ids of those tables. */
+/* True for the combat data kinds, which read the generated tables (the pool
+ * tables, under every kind): DUOFORGE_DATA_KIND_CLOSURE and _CLOSURE_DEV (the
+ * closure prefix), _TEAM_C and _TEAM_C_DEV (the extended prefix, decision
+ * 0009) and _POOL and _POOL_DEV (all of them, decision 0015). Species ids are
+ * forme ids and move ids move ids of those tables. */
 bool dfi_context_is_closure(const struct duoforge_context *ctx);
 
 /* True for the kinds with the certified profile of decision 0010 (a context
  * of DUOFORGE_MAX_ROSTER and DFI_CLOSURE_BROUGHT_COUNT, exactly
- * DUOFORGE_MAX_ROSTER members per side): CLOSURE, and TEAM_C, which takes it
- * over (decision 0009 section 3.4). The DEV kinds take brought..max. */
+ * DUOFORGE_MAX_ROSTER members per side): CLOSURE, and TEAM_C and POOL, which
+ * take it over (decisions 0009 section 3.4 and 0015 section 2). The DEV kinds
+ * take brought..max. */
 bool dfi_kind_full_roster(uint32_t data_kind);
 
 void dfi_context_canonical_bytes(const struct duoforge_context *ctx, uint8_t out[DFI_CONTEXT_BYTES_SIZE]);
