@@ -33,9 +33,9 @@ extern "C" {
 #endif
 
 #define DUOFORGE_VERSION_MAJOR 0
-#define DUOFORGE_VERSION_MINOR 23
+#define DUOFORGE_VERSION_MINOR 24
 #define DUOFORGE_VERSION_PATCH 0
-#define DUOFORGE_VERSION_STRING "0.23.0"
+#define DUOFORGE_VERSION_STRING "0.24.0"
 
 /* Identifiers of the artifacts that exist now (registry: decisions 0002, 0005, 0006). */
 #define DUOFORGE_SEMANTICS_ID           3u   /* "duoforge-m3-closure" */
@@ -252,7 +252,14 @@ duoforge_status duoforge_data_name(const duoforge_context *ctx, uint32_t table, 
 
 /* The id of a name: the exact name as written by duoforge_data_name, `length`
    bytes (the string need not be NUL-terminated; a NUL inside matches nothing).
-   Nothing is normalized. A name whose id is at or beyond the kind's count is
+   Nothing is normalized. For the SPECIES table it also accepts the 29 cosmetic
+   aliases of the POOL tables (Showdown ids of formes that the validator treats
+   as their base forme, for example "vivillonpolar", "alcremierubycream"): an
+   alias finds the row of its base forme, and duoforge_data_name of that row
+   gives the canonical name, never the alias. An alias is bound by the kind's
+   count like the row it stands for, so under the CLOSURE and TEAM_C kinds
+   (whose tables hold none of those rows) it is refused like any unknown name.
+   A name whose id is at or beyond the kind's count is
    refused like an unknown name, so a pool move under a TEAM_C context is
    E_INVALID_ARGUMENT. Struggle is a row of the move table (it is
    engine-internal): find returns it, and duoforge_data_name gives its name;

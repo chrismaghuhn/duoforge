@@ -423,6 +423,64 @@ static void test_synthetic(df_test *t)
 /* ---------------------------------------------------------------- legality */
 
 /* The legal moves of a base forme, from the tables read directly (not through the shared rule). */
+/* The cosmetic aliases (decision 0015 section 4.2): find maps each to the row of its base forme, name gives the
+ * canonical name, and the kind's count bounds an alias like the row it stands for. */
+static void test_aliases(df_test *t, const kase *c)
+{
+    const duoforge_context *ctx = c->ctx;
+    const uint32_t S = DUOFORGE_DATA_TABLE_SPECIES;
+    DF_CHECK_EQ_U64(t, DFI_POOL_ALIAS_COUNT, 29u);
+    uint32_t accepted = 0u;
+    for (uint32_t a = 0u; a < DFI_POOL_ALIAS_COUNT; ++a) {
+        const char *alias = dfi_pool_forme_aliases[a].name;
+        const uint32_t row = dfi_pool_forme_aliases[a].forme;
+        const size_t length = strlen(alias);
+        uint32_t id = 0xA5A5A5A5u;
+        const duoforge_status st = duoforge_data_find(ctx, S, alias, length, &id);
+        /* An alias is no row's name: it is never a canonical name of the table. */
+        for (uint32_t r = 0u; r < DFI_POOL_FORME_COUNT; ++r) {
+            DF_CHECK(t, strcmp(alias, dfi_pool_forme_names[r]) != 0);
+        }
+        if (row < c->n[S]) {
+            accepted += 1u;
+            DF_CHECK(t, st == DUOFORGE_OK && id == row);
+            const char *canonical = NULL;
+            DF_CHECK(t, duoforge_data_name(ctx, S, id, &canonical) == DUOFORGE_OK && canonical != NULL &&
+                            strcmp(canonical, dfi_pool_forme_names[row]) == 0 && strcmp(canonical, alias) != 0);
+            /* The canonical name still finds the same row, and the alias is no name of another table. */
+            uint32_t again = 0xA5A5A5A5u;
+            DF_CHECK(t, duoforge_data_find(ctx, S, canonical, strlen(canonical), &again) == DUOFORGE_OK && again == row);
+            uint32_t other = 0xA5A5A5A5u;
+            for (uint32_t table = DUOFORGE_DATA_TABLE_MOVE; table <= DUOFORGE_DATA_TABLE_NATURE; ++table) {
+                DF_CHECK(t, duoforge_data_find(ctx, table, alias, length, &other) == DUOFORGE_E_INVALID_ARGUMENT &&
+                                other == 0xA5A5A5A5u);
+            }
+        } else {
+            DF_CHECK(t, st == DUOFORGE_E_INVALID_ARGUMENT && id == 0xA5A5A5A5u); /* beyond the kind's count */
+        }
+        /* An alias is as exact as a name: a prefix, an extension, another case, a NUL inside. */
+        uint32_t miss = 0xA5A5A5A5u;
+        DF_CHECK(t, duoforge_data_find(ctx, S, alias, length - 1u, &miss) == DUOFORGE_E_INVALID_ARGUMENT);
+        char longer[64];
+        memcpy(longer, alias, length);
+        longer[length] = 's';
+        DF_CHECK(t, duoforge_data_find(ctx, S, longer, length + 1u, &miss) == DUOFORGE_E_INVALID_ARGUMENT);
+        longer[0] = (char)(longer[0] - 'a' + 'A');
+        DF_CHECK(t, duoforge_data_find(ctx, S, longer, length, &miss) == DUOFORGE_E_INVALID_ARGUMENT);
+        memcpy(longer, alias, length + 1u);
+        longer[length / 2u] = '\0';
+        DF_CHECK(t, duoforge_data_find(ctx, S, longer, length, &miss) == DUOFORGE_E_INVALID_ARGUMENT);
+        DF_CHECK(t, miss == 0xA5A5A5A5u);
+    }
+    /* The pool kinds see all 29; the CLOSURE and TEAM_C kinds, whose tables hold none of the rows, none. */
+    DF_CHECK_EQ_U64(t, accepted, c->pool_rules ? DFI_POOL_ALIAS_COUNT : 0u);
+    /* Unknown names are still refused, and a cosmetic forme that is no alias is too. */
+    uint32_t out = 0xA5A5A5A5u;
+    DF_CHECK(t, duoforge_data_find(ctx, S, "vivillonxx", 10u, &out) == DUOFORGE_E_INVALID_ARGUMENT);
+    DF_CHECK(t, out == 0xA5A5A5A5u); /* the refusals wrote nothing */
+    DF_CHECK(t, duoforge_data_find(ctx, S, "vivillon", 8u, &out) == (c->pool_rules ? DUOFORGE_OK : DUOFORGE_E_INVALID_ARGUMENT));
+}
+
 static uint32_t expected_moves(const kase *c, uint32_t sp, uint32_t *out)
 {
     uint32_t n = 0u;
@@ -1328,6 +1386,7 @@ int main(void)
         }
         test_counts_and_round_trip(&t, c);
         test_refusals(&t, c);
+        test_aliases(&t, c);
         test_forme_info(&t, c);
         test_known_facts(&t, c);
         test_support(&t, c);
