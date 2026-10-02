@@ -102,10 +102,56 @@ static const struct {
     uint32_t step;
     uint32_t turns[2];
 } veil_rows[] = {
-/*ROWS*/
+    {"g20_aurora_veil_a", 0u, {0u, 0u}},
+    {"g20_aurora_veil_a", 1u, {0u, 0u}},
+    {"g20_aurora_veil_a", 2u, {4u, 0u}},
+    {"g20_aurora_veil_a", 3u, {3u, 0u}},
+    {"g20_aurora_veil_a", 4u, {2u, 0u}},
+    {"g20_aurora_veil_a", 5u, {1u, 0u}},
+    {"g20_aurora_veil_a", 6u, {1u, 0u}},
+    {"g20_aurora_veil_a", 7u, {0u, 0u}},
+    {"g20_aurora_veil_clay", 0u, {0u, 0u}},
+    {"g20_aurora_veil_clay", 1u, {7u, 0u}},
+    {"g20_aurora_veil_clay", 2u, {6u, 0u}},
+    {"g20_aurora_veil_clay", 3u, {5u, 0u}},
+    {"g20_aurora_veil_clay", 4u, {4u, 0u}},
+    {"g20_aurora_veil_clay", 5u, {3u, 0u}},
+    {"g20_aurora_veil_clay", 6u, {2u, 0u}},
+    {"g20_aurora_veil_clay", 7u, {2u, 0u}},
+    {"g20_aurora_veil_clay", 8u, {1u, 0u}},
+    {"g20_aurora_veil_clay", 9u, {0u, 0u}},
+    {"g20_aurora_veil_fail", 0u, {0u, 0u}},
+    {"g20_aurora_veil_fail", 1u, {0u, 0u}},
+    {"g20_aurora_veil_fail", 2u, {0u, 0u}},
+    {"g20_aurora_veil_fail", 3u, {4u, 0u}},
+    {"g20_aurora_veil_fail", 4u, {3u, 0u}},
+    {"g20_aurora_veil_fail", 5u, {2u, 0u}},
+    {"g20_aurora_veil_screens", 0u, {0u, 0u}},
+    {"g20_aurora_veil_screens", 1u, {0u, 0u}},
+    {"g20_aurora_veil_screens", 2u, {4u, 0u}},
+    {"g20_aurora_veil_screens", 3u, {3u, 0u}},
+    {"g20_aurora_veil_screens", 4u, {2u, 0u}},
+    {"g20_aurora_veil_screens", 5u, {1u, 0u}},
+    {"g20_aurora_veil_screens", 6u, {0u, 0u}},
+    {"g20_aurora_veil_pair_a", 0u, {0u, 0u}},
+    {"g20_aurora_veil_pair_a", 1u, {4u, 4u}},
+    {"g20_aurora_veil_pair_a", 2u, {3u, 3u}},
+    {"g20_aurora_veil_pair_a", 3u, {2u, 2u}},
+    {"g20_aurora_veil_pair_a", 4u, {1u, 1u}},
+    {"g20_aurora_veil_pair_a", 5u, {0u, 0u}},
+    {"g20_aurora_veil_pair_a", 6u, {0u, 0u}},
+    {"g20_aurora_veil_pair_a", 7u, {0u, 0u}},
+    {"g20_aurora_veil_pair_b", 0u, {0u, 0u}},
+    {"g20_aurora_veil_pair_b", 1u, {4u, 4u}},
+    {"g20_aurora_veil_pair_b", 2u, {3u, 3u}},
+    {"g20_aurora_veil_pair_b", 3u, {2u, 2u}},
+    {"g20_aurora_veil_pair_b", 4u, {1u, 1u}},
+    {"g20_aurora_veil_pair_b", 5u, {0u, 0u}},
+    {"g20_aurora_veil_pair_b", 6u, {0u, 0u}},
+    {"g20_aurora_veil_pair_b", 7u, {0u, 0u}},
 };
 
-static const char *const names[] = {/*NAMES*/};
+static const char *const names[] = {"g20_aurora_veil_a", "g20_aurora_veil_clay", "g20_aurora_veil_fail", "g20_aurora_veil_screens", "g20_aurora_veil_pair_a", "g20_aurora_veil_pair_b"};
 
 int main(void)
 {
@@ -130,7 +176,9 @@ int main(void)
         duoforge_battle_setup setup;
         build_setup(cb, &setup);
         duoforge_battle *b = NULL;
-        if (!DF_CHECK(&t, duoforge_battle_create(ctx, &setup, &b) == DUOFORGE_OK && b != NULL)) {
+        const duoforge_status created = duoforge_battle_create(ctx, &setup, &b);
+        if (!DF_CHECK(&t, created == DUOFORGE_OK && b != NULL)) {
+            fprintf(stderr, "  %s: the setup is rejected: %s\n", names[n], duoforge_status_name(created));
             continue;
         }
         for (uint32_t si = 0u; si < cb->step_count; ++si) {

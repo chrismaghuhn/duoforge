@@ -571,12 +571,12 @@ class PoolMoves(unittest.TestCase):
                 out.append('\n'.join(lines))
             return TextSource('data/moves.ts', '\n'.join(out))
 
-        gen_closure.check_g8_conditions(entries())
+        gen_closure.check_g8_conditions(entries(), gen_closure.G8_CONDITION_FACTS)
         for mid, needed in facts.items():
             for i in range(len(needed)):
                 with self.subTest(mid=mid, fact=needed[i]):
                     with self.assertRaises(SystemExit) as cm:
-                        gen_closure.check_g8_conditions(entries((mid, i)))
+                        gen_closure.check_g8_conditions(entries((mid, i)), gen_closure.G8_CONDITION_FACTS)
                     self.assertIn('move %s: the condition no longer has' % mid, str(cm.exception.code))
 
     def test_the_handlers_are_the_seven_new_specials_in_order(self):
@@ -702,7 +702,7 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual([s[0] for s in gen_closure.SETS_G2], ['pelipper', 'arcaninehisui', 'annihilape', 'floetteeternal'])
         # Every handler move is one of the rows, and every set move is a pool move or one of the rows.
         self.assertTrue({k for k in gen_closure.SPECIAL_P if k not in gen_closure.SPECIAL_C} <=
-                        set(gen_closure.G2_MOVES) | {'sandstorm', 'snowscape', 'knockoff'})
+                        set(gen_closure.G2_MOVES) | {'sandstorm', 'snowscape', 'knockoff', 'auroraveil'})
         self.assertEqual(gen_closure.WEATHER_HANDLERS, ['SANDSTORM', 'SNOWSCAPE'])
         for _sp, _ab, item, moves, _mega in gen_closure.SETS_G2:
             self.assertTrue(item in gen_closure.G2_ITEMS or item not in gen_closure.POOL_ITEMS)
