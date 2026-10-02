@@ -114,11 +114,13 @@ const char *duoforge_status_name(duoforge_status status);
 #define DUOFORGE_DATA_KIND_POOL        6u /* the pool tables, the growing tables of the content
                                              expansion (decision 0015): the extended tables as
                                              their prefix, then the rows the steps add; the
-                                             CLOSURE rules and profile over them. Its
-                                             fingerprint changes with every change of the pool
-                                             data (the CLOSURE and TEAM_C ones never do) */
-#define DUOFORGE_DATA_KIND_POOL_DEV    7u /* the pool tables; as CLOSURE_DEV over them
-                                             (development fixtures) */
+                                             CLOSURE rules and profile over them, except that a
+                                             member's moves are ones its forme learns and its
+                                             ability one it may have, not the forme's one set.
+                                             Its fingerprint changes with every change of the
+                                             pool data (the CLOSURE and TEAM_C ones never do) */
+#define DUOFORGE_DATA_KIND_POOL_DEV    7u /* the pool tables; as CLOSURE_DEV over them, with
+                                             POOL's moves and abilities (development fixtures) */
 typedef struct duoforge_context duoforge_context;
 typedef struct duoforge_context_config {
     uint32_t data_kind;     /* DUOFORGE_DATA_KIND_* */
@@ -158,18 +160,21 @@ duoforge_status duoforge_context_fingerprint(const duoforge_context *context,
    implemented yet is rejected with E_UNSUPPORTED.
    TEAM_C kinds (decision 0009): the same rules over the extended tables, so
    a side may mix closure and Team C members and hold any of their items.
-   POOL kinds (decision 0015): the same rules over the pool tables. An id
+   POOL kinds (decision 0015): the same rules over the pool tables, except
+   the set rule: a member's 1 to 4 moves are moves of the tables that its
+   forme learns (the Champions learnsets), and its ability is one of the
+   forme's legal abilities. The other kinds keep the forme's one set. An id
    beyond the tables of the kind is E_INVALID_ARGUMENT, so a pool item is
-   out of range under the CLOSURE and TEAM_C kinds. An item or ability whose
-   mechanic is not marked in the support manifest is E_UNSUPPORTED after all
-   validation. ---- */
+   out of range under the CLOSURE and TEAM_C kinds. A move, item or ability
+   whose mechanic is not marked in the support manifest is E_UNSUPPORTED
+   after all validation. ---- */
 #define DUOFORGE_GENDER_MALE   1u
 #define DUOFORGE_GENDER_FEMALE 2u
 #define DUOFORGE_GENDER_NONE   3u /* genderless species */
 #define DUOFORGE_STAT_POINTS_MAX       32u /* per stat */
 #define DUOFORGE_STAT_POINTS_TOTAL_MAX 66u /* per member */
 typedef struct duoforge_move_setup {
-    uint32_t move_id; /* < context move_count; CLOSURE: a move of the forme's set */
+    uint32_t move_id; /* < context move_count; CLOSURE: a move of the forme's set; POOL: a move it learns */
     uint32_t pp_max;  /* SYNTHETIC: 1..255; CLOSURE: 0 */
 } duoforge_move_setup;
 typedef struct duoforge_member_setup {
@@ -181,7 +186,8 @@ typedef struct duoforge_member_setup {
     uint32_t gender;         /* CLOSURE: DUOFORGE_GENDER_*, legal for the species */
     uint32_t nature;         /* CLOSURE: nature id 0..24 */
     uint32_t stat_points[6]; /* CLOSURE: HP, Atk, Def, SpA, SpD, Spe */
-    uint32_t ability;        /* CLOSURE: 1 + the forme's ability id; 0 = No Ability (the DEV kinds only) */
+    uint32_t ability;        /* CLOSURE: 1 + the forme's ability id; POOL: 1 + one of its legal abilities;
+                                0 = No Ability (the DEV kinds only) */
     uint32_t item;           /* CLOSURE: 1 + item id; 0 = no item */
 } duoforge_member_setup;
 typedef struct duoforge_side_setup {

@@ -455,7 +455,7 @@ int main(void)
         s.sides[0].members[2].moves[3].pp_max = 8u; /* derived by the engine */
         s.sides[0].members[2].gender = DUOFORGE_GENDER_MALE;
         invalid(&t, kp, &s, "pp_max given");
-        /* Another forme's moves: Kingambit's Sucker Punch is Grimmsnarl's too, but Fake Out is not Kingambit's. */
+        /* Kingambit (Team C) learns Swords Dance, not Fake Out. */
         FRESH();
         s.sides[1].members[4].moves[1].move_id = DFI_MOVE_SWORDSDANCE; /* Kingambit learns it */
         legal(&t, kp, &s, true, "Kingambit with Swords Dance");
