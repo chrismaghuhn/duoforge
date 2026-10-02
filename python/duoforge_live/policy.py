@@ -47,14 +47,17 @@ def forward(params, obs, slots, mask):
 def _ranked(logp, allowed):
     """Indices of `allowed` by descending log-probability, ties to the lower index; with probabilities."""
     index = np.flatnonzero(allowed)
+    if index.size == 0:
+        raise ValueError("nothing to rank: no choice is allowed")
     order = index[np.argsort(-logp[index], kind="stable")]
     return [(int(i), float(np.exp(logp[i]))) for i in order]
 
 
 class Policy:
-    """A checkpoint's network, played greedily."""
+    """A checkpoint's network, played greedily on the inputs of its encoder version (features.ENCODERS;
+    checkpoint.encoder_of reads it from a config)."""
 
-    def __init__(self, params, encoder=features.ENCODER):
+    def __init__(self, params, encoder):
         self.params = params
         self.encoder = encoder
 

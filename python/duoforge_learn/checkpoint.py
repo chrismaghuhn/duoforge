@@ -55,7 +55,8 @@ WIDEN_594_COLUMNS = (12, 37, 38, 39, 61, 62, 63, 333, 334, 335, 357, 358, 359)
 
 
 def widen_594(params):
-    """A copy of a 594-feature network whose torso takes the 607 features of this encoder: zero rows at
+    """A 594-feature network whose torso takes the 607 features of this encoder (a new t1.w and new dicts; the
+    other arrays are shared with `params`): zero rows at
     WIDEN_594_COLUMNS, which are 0 under CLOSURE, so the outputs do not change there. ValueError for another
     width."""
     w = params["t1"]["w"]

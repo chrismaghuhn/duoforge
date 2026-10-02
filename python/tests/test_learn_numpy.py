@@ -370,6 +370,32 @@ class WidenTest(unittest.TestCase):
         order = [i for i, _ in teams2]
         self.assertEqual(order, sorted(order, key=lambda i: (-probs[i], i)))  # best first, ties to the lower index
 
+    def test_rank_pairs(self):
+        # Every allowed pair once, best first by the forward pass's log-probability, ties to the lower flat
+        # index, (i, j) as row and column of the 32 x 32 mask; a mask without a pair raises.
+        from duoforge_live.policy import Policy, forward
+        observations, obs, slots, mask = _closure_inputs(30)
+        params = _random_params(features.OBS_SIZE, 7)
+        policy = Policy(params, features.ENCODER)
+        rows = [r for r in range(len(mask)) if mask[r].sum() > 1][:20]
+        self.assertTrue(rows)
+        for r in rows:
+            ranked = policy.rank_pairs(observations[r], obs[r], slots[r], mask[r])
+            self.assertEqual(sorted((i, j) for i, j, _ in ranked), sorted(zip(*np.nonzero(mask[r]))))
+            logp = forward(params, obs[r][None], slots[r][None], mask[r][None])[0][0]
+            best = int(np.where(mask[r].reshape(-1), logp, -np.inf).argmax())
+            self.assertEqual(ranked[0][:2], (best // 32, best % 32))
+            keys = [(-logp[i * 32 + j], i * 32 + j) for i, j, _ in ranked]
+            self.assertEqual(keys, sorted(keys))
+            self.assertAlmostEqual(ranked[0][2], float(np.exp(logp[best])), places=6)
+        tied = Policy({k: {"w": np.zeros_like(v["w"]), "b": np.zeros_like(v["b"])} for k, v in params.items()},
+                      features.ENCODER)
+        r = rows[0]
+        flat = [i * 32 + j for i, j, _ in tied.rank_pairs(observations[r], obs[r], slots[r], mask[r])]
+        self.assertEqual(flat, sorted(flat))  # all equal: the lower flat index first
+        with self.assertRaises(ValueError):
+            policy.rank_pairs(observations[r], obs[r], slots[r], np.zeros_like(mask[r]))
+
 
 if __name__ == "__main__":
     unittest.main()
