@@ -3,13 +3,14 @@
 # (tools/cloud/aws_fuzz/README.md): a finding of the cloud counts only once the local engine and the local converter
 # say the same about the same spec and trace.
 #
-# usage: collect.sh --campaign ID --bucket B --runner <duoforge_diff_runner> [--out DIR] [--allow-other-commit]
+# usage: collect.sh --campaign ID --run RUN_ID --bucket B --runner <duoforge_diff_runner> [--out DIR] [--allow-other-commit]
 #   --campaign  the campaign id
+#   --run       the run (printed by launch.sh; without it the runs of the campaign are listed)
 #   --bucket    the results bucket (default $DUOFORGE_FUZZ_BUCKET)
 #   --runner    the local build of the differential runner (default $DUOFORGE_DIFF_RUNNER)
 #   --out       where the results go (default build/fuzz/<campaign> under the repository)
 #   --allow-other-commit  replay even if this checkout is not the commit that the campaign ran
-# Reads s3://<bucket>/fuzz/<campaign>/ (s3:ListBucket and s3:GetObject; nothing is written there) and runs
+# Reads s3://<bucket>/fuzz/<campaign>/<run>/ (s3:ListBucket and s3:GetObject; nothing is written there) and runs
 # `diff_driver.py corpus` over the kept cases (every cases/<name>/spec.json with its trace.json.gz). Exit status: 0 when
 # no case was kept or every kept case reproduced, 1 when a kept case did not reproduce (it does not count), 2 for a
 # refusal or a failure. Needs the pinned Showdown nowhere: the corpus mode works without Node.
@@ -23,6 +24,7 @@ native() { if command -v cygpath > /dev/null 2>&1; then cygpath -m "$1"; else pr
 ROOT=$(native "$(cd "$HERE/../../.." && pwd)")
 
 campaign=''
+run=''
 bucket=${DUOFORGE_FUZZ_BUCKET:-}
 runner=${DUOFORGE_DIFF_RUNNER:-}
 out=''
@@ -30,11 +32,12 @@ other_commit=no
 while [ $# -gt 0 ]; do
     case $1 in
         --campaign) [ $# -ge 2 ] || df_die '--campaign needs a value'; campaign=$2; shift 2 ;;
+        --run) [ $# -ge 2 ] || df_die '--run needs a value'; run=$2; shift 2 ;;
         --bucket) [ $# -ge 2 ] || df_die '--bucket needs a value'; bucket=$2; shift 2 ;;
         --runner) [ $# -ge 2 ] || df_die '--runner needs a value'; runner=$2; shift 2 ;;
         --out) [ $# -ge 2 ] || df_die '--out needs a value'; out=$2; shift 2 ;;
         --allow-other-commit) other_commit=yes; shift ;;
-        -h | --help) sed -n '2,16p' "${BASH_SOURCE[0]}"; exit 0 ;;
+        -h | --help) sed -n '2,17p' "${BASH_SOURCE[0]}"; exit 0 ;;
         *) df_die "unknown argument '$1' (see --help)" ;;
     esac
 done
@@ -44,6 +47,12 @@ df_identity_guard # the first AWS action
 
 df_valid_campaign "$campaign" || df_die "bad or missing --campaign '$campaign'"
 df_valid_bucket "$bucket" || df_die "bad or missing --bucket '$bucket'"
+if [ -z "$run" ]; then
+    df_log "no --run given; the runs of campaign $campaign:"
+    df_aws s3 ls "s3://$bucket/fuzz/$campaign/" >&2 || true
+    df_die 'give one with --run'
+fi
+df_valid_run_id "$run" || df_die "--run '$run' is not a run id (<commit12>-<chunk_battles>-<base_seed>-<time>)"
 [ -n "$runner" ] && [ -x "$runner" ] || df_die "--runner (or DUOFORGE_DIFF_RUNNER) must be an executable duoforge_diff_runner"
 out=${out:-$ROOT/build/fuzz/$campaign}
 mkdir -p "$out/results"
@@ -55,14 +64,14 @@ if [ -z "$PY" ]; then
     if command -v python3 > /dev/null 2>&1; then PY=python3; else PY=python; fi
 fi
 
-df_log "downloading s3://$bucket/fuzz/$campaign/ to $out/results (not the partial/ and log/ folders of interrupted boxes)"
-df_aws s3 sync "s3://$bucket/fuzz/$campaign/" "$out/results" --exclude 'partial/*' --only-show-errors ||
+df_log "downloading s3://$bucket/fuzz/$campaign/$run/ to $out/results (not the partial/ folders of interrupted boxes)"
+df_aws s3 sync "s3://$bucket/fuzz/$campaign/$run/" "$out/results" --exclude 'partial/*' --only-show-errors ||
     df_die 'the download failed'
 
 # --- the totals of the finished chunks
 shopt -s nullglob
 summaries=("$out"/results/chunk-*/summary.json)
-[ ${#summaries[@]} -gt 0 ] || df_die "no finished chunk under s3://$bucket/fuzz/$campaign/"
+[ ${#summaries[@]} -gt 0 ] || df_die "no finished chunk under s3://$bucket/fuzz/$campaign/$run/"
 "$PY" - "${summaries[@]}" << 'EOF' || df_die 'a summary.json could not be read'
 import collections, json, sys
 total = collections.Counter()

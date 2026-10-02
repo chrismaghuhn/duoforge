@@ -16,9 +16,11 @@ then the scripts are used with `check.sh`, which makes read-only and `--dry-run`
 | `lib.sh` | the identity guard, the fixed names, the validation, the one place that builds the `run-instances` request |
 | `check.sh` | the permission check: read-only and `--dry-run` calls, then a list of what is missing |
 | `launch.sh` | prints the request (default) or, with `--i-have-owner-approval`, makes it |
-| `user_data.sh` | what the box runs: build as the hosted `linux-full` job does, play the chunks, upload, power off |
+| `user_data.sh` | what the box runs: build as the hosted `linux-full` job does, optional bench, play the chunks, upload, power off |
+| `chunks.sh` | the chunk scheduler the box sources: parallel chunks, background uploads, done-manifest, partial uploads |
+| `bench_run.py` | the raw engine benchmark of `bench=1`: `duoforge_bench` on all vCPUs, `bench.json` |
 | `collect.sh` | downloads a campaign and replays every kept case locally (`diff_driver.py corpus`) |
-| `campaigns/<id>/` | `campaign.conf` (pairings, teams, base seed, chunks) and the team pastes of a campaign |
+| `campaigns/<id>/` | `campaign.conf` (pairings, teams, base seed, chunks, and optionally chunk_battles, parallel, bench) and the team pastes of a campaign |
 | `test_guards.py` | offline tests with a stub `aws` (CTest: `duoforge.cloud.aws_fuzz_guards`) |
 
 ## The rules every script follows
@@ -50,11 +52,14 @@ AWS_PROFILE=pokeengine tools/cloud/aws_fuzz/check.sh --bucket <BUCKET>
 # print the request of a campaign (nothing is launched)
 tools/cloud/aws_fuzz/launch.sh --campaign weather-sand-snow --commit <sha of main> --bucket <BUCKET>
 
-# after the owner's approval only:
+# after the owner's approval only (it prints the run id; the results are under fuzz/<campaign>/<run id>/):
 tools/cloud/aws_fuzz/launch.sh --campaign weather-sand-snow --commit <sha of main> --bucket <BUCKET> --i-have-owner-approval
 
+# continue an interrupted run, explicitly (the same commit, chunk_battles and base_seed, or the box refuses):
+tools/cloud/aws_fuzz/launch.sh --campaign weather-sand-snow --commit <sha of main> --bucket <BUCKET> --resume <run id> --i-have-owner-approval
+
 # the results; every kept case is replayed on this machine (build the runner of the same commit first)
-tools/cloud/aws_fuzz/collect.sh --campaign weather-sand-snow --bucket <BUCKET> --runner build/<dir>/tools/difftest/duoforge_diff_runner
+tools/cloud/aws_fuzz/collect.sh --campaign weather-sand-snow --run <run id> --bucket <BUCKET> --runner build/<dir>/tools/difftest/duoforge_diff_runner
 ```
 
 `check.sh` checks: the security group (exists, 0 inbound rules, tag), the bucket (`s3:ListBucket` with the prefix
@@ -72,23 +77,53 @@ As the hosted `linux-full` job: Ubuntu 24.04, `build-essential cmake git python3
 (`b2cb775b0616115b775534eaeff50300e1fc81fc`: `npm ci --ignore-scripts --omit=dev`, `node build`), the engine in Release
 with warnings as errors and IPO, then the target `duoforge_diff_runner`.
 
-- **Chunks** are seed ranges of 500 battles: chunk *c* of a campaign is `diff_driver.py random --no-lock --battles 500
-  --seed <base_seed + c>` with the campaign's pairings and teams and one worker per CPU. After each chunk its
-  `summary.json`, `run.json`, `battles.jsonl`, `timing.json` and `cases/` (the spec and `trace.json.gz` of every battle
-  that is not a PASS) go to `s3://<BUCKET>/fuzz/<campaign>/chunk-<NNNN>/`.
-- **Done-manifest.** `fuzz/<campaign>/manifest/done.txt` lists the finished chunks, rewritten after each upload. A
-  relaunch of the same campaign skips them.
-- **Spot interruption.** IMDSv2 is polled every 5 seconds for `spot/instance-action`; on a notice the running chunk is
-  synced to `fuzz/<campaign>/partial/chunk-<NNNN>/`. A relaunch resumes from it (the driver skips battles that have a
-  result) when the same Node made it, else it starts that chunk again.
+- **Chunks** are seed ranges: chunk *c* of a campaign is `diff_driver.py random --no-lock --battles <chunk_battles>
+  --seed <base_seed + c>` with the campaign's pairings and teams. `chunk_battles` is set per campaign (default 2000,
+  100 to 20000). When a chunk is done its `summary.json`, `run.json`, `battles.jsonl`, `timing.json` and `cases/` (the
+  spec and `trace.json.gz` of every battle that is not a PASS) go to `s3://<BUCKET>/fuzz/<campaign>/<run id>/chunk-<NNNN>/`.
+- **Parallel chunks and overlapped uploads** (`chunks.sh`). One driver process cannot keep a big machine busy: its
+  Python side (the converter, the JSON of the traces) runs under the interpreter lock, which is the likely reason that the first pilot
+  (one driver, 64 workers, 500-battle chunks) ran 55 battles/s inside its chunks with only about 24 of 64 vCPUs busy.
+  `parallel` in the `campaign.conf` is the number of chunks computed at the same time, each its own driver process with
+  `vCPUs / parallel` workers; `auto` (the default) is `vCPUs / 20` (3 on 64 vCPUs). The upload of a finished chunk runs
+  in the background while the next chunks compute. The figure to compare is the one the log gives (below); the target is
+  about 140 battles/s on 64 vCPUs, **to be measured**, not yet a result.
+- **Runs and the manifest.** Every launch is a **run** with a prefix of its own,
+  `fuzz/<campaign>/<run id>/`, where the run id is `<first 12 digits of the commit>-<chunk_battles>-<base_seed>-<launch
+  time>` (launch.sh prints it). Everything the box writes is under that prefix, so a run of another commit or geometry,
+  or an earlier launch, can never be read by this one (the second pilot's box found the first pilot's manifest of 8
+  chunks of 500 under the old shared prefix, took every chunk of its 4 x 1000 campaign for done, and played nothing).
+  `manifest/run.json` says which run it is (`run_id`, `campaign`, `commit`, `chunk_battles`, `base_seed`, `chunks` and
+  `parallel` as the campaign.conf has it: `auto` or a number) and `manifest/done.txt` lists the finished chunks, a chunk
+  being added only after every file of it is uploaded. A new run needs a prefix without a manifest. A run is continued
+  only with an explicit `launch.sh --resume <run id>`, and the box then requires the manifest of exactly this
+  commit, `chunk_battles`, `base_seed`, `chunks` and `parallel`, else it stops. A done-list with more finished chunks
+  than the campaign has, a duplicate, a malformed line or a chunk out of range is a hard error, never a skip.
+- **Spot interruption.** IMDSv2 is polled every 5 seconds for `spot/instance-action`; on a notice every chunk in
+  flight (computing, or computed and not yet in the manifest) is synced to `fuzz/<campaign>/<run id>/partial/chunk-<NNNN>/`. A
+  relaunch resumes from it (the driver skips battles that have a result) when the same Node made it, else it starts
+  that chunk again.
+- **Utilisation in the log.** Per chunk: `N battles in W s (B battles/s), C CPU-s, U% of the V vCPUs while it ran`
+  (C is the user and system time of the whole driver and its children, from `/usr/bin/time`; U = C / (W x V) is the
+  share of the machine that this chunk used, and the chunks that overlap add up). Every minute: the battles played, the
+  rate, and how busy the whole machine was (from `/proc/stat`).
+- **Bench (`bench=1`).** Before the campaign, `bench_run.py` runs the native batch benchmark of the repository
+  (`duoforge_bench --families batch`: the loop over the games in C on a pool of worker threads, no Python, no
+  Showdown; the closure pairings, 5000 battles per pairing, 32 repetitions per invocation) on every vCPU for about 30
+  seconds, and on 16 threads for about a third of that (the owner's PC plays 16 threads, so the two compare). It uploads
+  `fuzz/<campaign>/<run id>/bench.json`: `games_per_second`, `decisions_per_second`, `steps_per_second`, `threads`, `vcpus`,
+  `instance_type` (from IMDSv2), the same figures for 16 threads under `threads_16`, and every run. The parser reads
+  what `duoforge_bench` really writes: the `--out` JSON, its `results` entry with `"family": "BATCH_NATIVE"` and the
+  `per_second` figures (a real capture is in `testdata/`, and a test reads it). A benchmark that fails, for any reason,
+  is recorded as an `error` in `bench.json` (or in `threads_16`) and the campaign goes on.
 - **Rate.** Every minute the log says how many battles were played and the battles per second. The local rate is about
   24 battles per second; if the first ten minutes are below 2 times that, the box aborts, uploads the log and the
   partial chunk and powers off.
-- **End.** The log goes to `fuzz/<campaign>/log/`, then `shutdown -h now` (also on any error).
+- **End.** The log goes to `fuzz/<campaign>/<run id>/log/`, then `shutdown -h now` (also on any error).
 
 ## `collect.sh`
 
-Downloads `fuzz/<campaign>/` (not `partial/`), prints the totals and signatures of the finished chunks, checks that this
+Downloads `fuzz/<campaign>/<run id>/` (`--run`; without it the runs of the campaign are listed; not `partial/`), prints the totals and signatures of the finished chunks, checks that this
 checkout is the commit the campaign ran (`--allow-other-commit` to override), builds a corpus directory from the kept
 cases and runs `diff_driver.py corpus` on it. A case is **REPRODUCED** when the local replay is a non-PASS in the same
 bucket; only those count as findings. A `domain` finding (the engine's candidate set against Showdown's) cannot be
@@ -236,13 +271,13 @@ and no IAM action but `iam:PassRole`.
 ## The pilot campaigns
 
 Every POOL step team (G7 to G13, the weather step, Encore) at ten times the battles of the step's own campaign, plus the
-CLOSURE mirrors and the Team C mirror. A chunk is 500 battles; the table gives the chunks of the campaign.
+CLOSURE mirrors and the Team C mirror. The table gives the chunks of the campaign (`chunk_battles` of each is in its `campaign.conf`).
 
 | Campaign id | Teams and pairings | Chunks | In this directory |
 | --- | --- | --- | --- |
-| `weather-sand-snow` | sand team D, snow team E: `DE,ED,DD,EE,DA,AD,EA,AE` (POOL) | 8 (4000 battles, ten times the step's 400) | yes |
-| `closure-mirror` | team A and team B mirrors: `AA,BB` (CLOSURE) | 10 | yes |
-| `team-c-mirror` | Team C mirror: `CC` (TEAM_C) | 10 | yes |
+| `weather-sand-snow` | sand team D, snow team E: `DE,ED,DD,EE,DA,AD,EA,AE` (POOL) | 4 x 1000 = 4000 battles, ten times the step's 400; `bench=1` | yes |
+| `closure-mirror` | team A and team B mirrors: `AA,BB` (CLOSURE) | 5 x 1000 | yes |
+| `team-c-mirror` | Team C mirror: `CC` (TEAM_C) | 5 x 1000 | yes |
 | `g7-wide-guard` | the step's teams (Wide Guard) | ten times the step's | to be added by the step's owner |
 | `g8-throat-chop-heal-block` | the step's teams | ten times the step's | to be added |
 | `g9-encore` | the step's teams (Encore) | ten times the step's | to be added |
@@ -252,7 +287,8 @@ CLOSURE mirrors and the Team C mirror. A chunk is 500 battles; the table gives t
 | `g13` | the step's teams | ten times the step's | to be added |
 
 A campaign is a directory `campaigns/<id>/` with `campaign.conf` (`pairings`, `teams`, `base_seed`, `chunks`: four
-`key=value` lines; see the three that exist) and the team pastes it names (`teams=D=sand.txt E=snow.txt`: a letter, a
+required `key=value` lines, and the optional `chunk_battles` (100 to 20000, default 2000), `parallel` (`auto` or 1 to 16)
+and `bench` (0 or 1); see the three that exist) and the team pastes it names (`teams=D=sand.txt E=snow.txt`: a letter, a
 file of six sets with every gender stated, as `diff_driver.py random --team` takes them; or the id of a team of the
 registry). It is read from the commit that is built, so a campaign is reviewed with the PR that adds it. Pick a base seed
 range that no other campaign uses: the names of the battles are `fz_<seed>_<index>`.
@@ -262,4 +298,6 @@ range that no other campaign uses: the names of the battles are `fz_<seed>_<inde
 `duoforge.cloud.aws_fuzz_guards` (`test_guards.py`, needs bash; no AWS access, a stub `aws` is first on the PATH): the
 guards refuse a wrong ARN, a wrong or unsafe security group, a missing approval flag and `--max-hours` above 2; the
 request has the required shape; the user data starts with the watchdog and holds no secret; the policy of this file
-says what the task asks; no account id or key is in the directory; `shellcheck` is clean when it is installed.
+says what the task asks; no account id or key is in the directory; `shellcheck` is clean when it is installed. The scheduler (`chunks.sh`) is tested with a stand-in driver: parallelism
+of exactly `parallel`, the seed of each chunk, skipped chunks, the manifest written only after the upload of the chunk
+it adds, a failing chunk, the partial upload of every chunk in flight; `bench_run.py` with a fake `duoforge_bench`.
