@@ -14,8 +14,11 @@
 //   {"id": n, "cmd": "record", "spec": <spec object>, "spec_file": "<basename.json>"}
 //     -> {"id": n, "ok": true, "trace": "<the trace text of ps_trace.run>"}
 //   {"id": n, "cmd": "play", "battle": {"format", "seed", "teams": [p1, p2]},
-//    "policy": {"seed": <uint32>, "max_steps": n, "switch_weight": 0.1, "mega_weight": 0.5}}
-//     -> {"id": n, "ok": true, "choices": [{"p1": "...", "p2": "..."}, ...], "ended": bool, "steps": n}
+//    "policy": {"seed": <uint32>, "max_steps": n, "switch_weight": 0.1, "mega_weight": 0.5,
+//               "domain_rate": 0.1 (optional)}}
+//     -> {"id": n, "ok": true, "choices": [{"p1": "...", "p2": "..."}, ...], "ended": bool, "steps": n,
+//         "domain": {"samples": [{"step": k, "side": 0|1, "accepted": ["<text>", ...]}, ...],
+//                    "request_changed": n}}
 //   anything that throws, an unknown command or a malformed line
 //     -> {"id": n, "ok": false, "error": "<message>", "stack": "<first lines>"}
 //

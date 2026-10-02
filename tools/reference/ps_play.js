@@ -4,13 +4,16 @@
 // the choice is allowed, and the answers are returned as the "choices" of a
 // spec. The worker serves it as the command "play" (ps_worker.js).
 //
-// play(root, battle, policy) -> {choices, ended, steps}
+// play(root, battle, policy) -> {choices, ended, steps, domain}
 //   battle  {format, seed, teams: [p1 paste, p2 paste]}, as in a spec
-//   policy  {seed: uint32, max_steps: n >= 1, switch_weight: 0..1, mega_weight: 0..1}
+//   policy  {seed: uint32, max_steps: n >= 1, switch_weight: 0..1, mega_weight: 0..1,
+//            domain_rate: 0..1 (optional, default 0)}
 //   choices [{p1: "...", p2: "..."}, ...]: one entry per step, with the sides
 //           that had a request at the start of the step (p1 first), as plan
 //           mode of ps_trace.js answers them; ended: the battle is over;
 //           steps: choices.length. The battle stops after max_steps steps.
+//   domain  {samples: [{step, side, accepted}, ...], request_changed: n}: see
+//           "The domain of a request" below.
 //
 // Nothing here is evidence. The battle that is played is a plain Battle, and
 // Showdown's own choice validation runs on it with side.choose(text) and
@@ -62,6 +65,30 @@
 //   below(n):       the first output below floor(2^32 / n) * n, mod n (no bias)
 //   chance(p):      an output < floor(p * 2^32)
 //   shuffle:        Fisher-Yates from the end, j = below(i + 1)
+//
+// The domain of a request (differential loop A4, the domain check of the
+// runner): for a sampled request the whole set of choices that Showdown
+// accepts is asked for. Every joint option of the side, the options that
+// enumerate() lists, is judged with side.choose(text) and side.clearChoice(),
+// as the trials of chooseFor are, and the accepted texts are returned in the
+// order of enumerate() as {step, side, accepted}: step is the index of the step
+// the request is answered in (the index of its entry in choices), side 0 for p1
+// and 1 for p2. Team preview is a request like any other.
+//
+// Which requests are sampled is not decided by the policy's generator but by
+// a hash of (policy seed, step, side), so that sampling never changes the
+// choices of the battle; a request is sampled when
+//   hash < floor(domain_rate * 2^32),
+//   hash = h(h(h(0x243f6a88, seed), step), side)   with h(a, w) = the first
+//          output of splitmix32 of a ^ w
+// (domain_rate 0 samples nothing, 1 everything).
+//
+// Judging a request can change it: Showdown marks a move disabled or a Pokemon
+// trapped when a choice is rejected as an "Unavailable choice", in the request
+// and in the maybe-flags of the Pokemon. The request and the flags are put back
+// as they were, so the battle goes on as if there had been no sample, and a
+// sample whose request changed while it was taken is dropped: it is no set of
+// choices of one request. Such samples are counted, in request_changed.
 'use strict';
 
 const path = require('path');
@@ -289,19 +316,64 @@ function commit(battle, id, text) {
     if (!battle.choose(id, text)) throw new Error(`${id} choice rejected: "${text}": ${battle[id].choice.error}`);
 }
 
+// ---------------------------------------------------------------- the domain of a request
+
+// h(a, w): the first output of splitmix32 of a ^ w.
+function mixWord(a, w) {
+    return splitmix32((a ^ w) >>> 0)();
+}
+
+// The hash that decides whether the request of `side` (0 or 1) at `step` is sampled.
+function domainHash(seed, step, side) {
+    return mixWord(mixWord(mixWord(0x243f6a88, seed), step), side);
+}
+
+function domainSampled(seed, step, side, rate) {
+    return domainHash(seed, step, side) < Math.floor(rate * 4294967296);
+}
+
+// What judging can change in a request: the request itself and the maybe-flags of the Pokemon.
+function snapshotRequest(side) {
+    return {
+        json: JSON.stringify(side.activeRequest),
+        flags: side.pokemon.map((p) => [p.maybeTrapped, p.maybeDisabled, p.maybeLocked]),
+    };
+}
+
+// The request as it was, in place (nothing else holds on to it) and the flags.
+function restoreRequest(side, snapshot) {
+    const request = side.activeRequest;
+    for (const key of Object.keys(request)) delete request[key];
+    Object.assign(request, JSON.parse(snapshot.json));
+    side.pokemon.forEach((p, i) => {
+        [p.maybeTrapped, p.maybeDisabled, p.maybeLocked] = snapshot.flags[i];
+    });
+}
+
+// The texts that Showdown accepts for the request of `side`, in the order of enumerate(side); null when the request
+// changed while they were judged (it is put back either way).
+function domainSample(side) {
+    const snapshot = snapshotRequest(side);
+    const accepted = enumerate(side).filter((text) => trial(side, text));
+    const after = snapshotRequest(side);
+    if (after.json === snapshot.json && JSON.stringify(after.flags) === JSON.stringify(snapshot.flags)) return accepted;
+    restoreRequest(side, snapshot);
+    return null;
+}
+
 // ---------------------------------------------------------------- the request
 
 function isObject(x) {
     return x !== null && typeof x === 'object' && !Array.isArray(x);
 }
 
-function checkKeys(what, x, keys) {
+function checkKeys(what, x, keys, optional = []) {
     if (!isObject(x)) throw new Error(`play: ${what} must be an object`);
-    const extra = Object.keys(x).filter((k) => !keys.includes(k));
+    const extra = Object.keys(x).filter((k) => !keys.includes(k) && !optional.includes(k));
     const missing = keys.filter((k) => !(k in x));
     if (extra.length || missing.length) {
         throw new Error(`play: ${what} has the keys ${JSON.stringify(Object.keys(x))}, ` +
-            `it needs ${JSON.stringify(keys)}`);
+            `it needs ${JSON.stringify(keys)}` + (optional.length ? ` and may have ${JSON.stringify(optional)}` : ''));
     }
 }
 
@@ -312,14 +384,14 @@ function validate(battle, policy) {
     if (!Array.isArray(battle.teams) || battle.teams.length !== 2 || battle.teams.some((t) => typeof t !== 'string')) {
         throw new Error('play: battle.teams must be two strings');
     }
-    checkKeys('policy', policy, ['seed', 'max_steps', 'switch_weight', 'mega_weight']);
+    checkKeys('policy', policy, ['seed', 'max_steps', 'switch_weight', 'mega_weight'], ['domain_rate']);
     if (!Number.isInteger(policy.seed) || policy.seed < 0 || policy.seed > 0xFFFFFFFF) {
         throw new Error('play: policy.seed must be an integer from 0 to 4294967295');
     }
     if (!Number.isInteger(policy.max_steps) || policy.max_steps < 1) {
         throw new Error('play: policy.max_steps must be a positive integer');
     }
-    for (const key of ['switch_weight', 'mega_weight']) {
+    for (const key of ['switch_weight', 'mega_weight', ...('domain_rate' in policy ? ['domain_rate'] : [])]) {
         if (typeof policy[key] !== 'number' || !(policy[key] >= 0 && policy[key] <= 1)) {
             throw new Error(`play: policy.${key} must be a number from 0 to 1`);
         }
@@ -338,20 +410,32 @@ function play(root, battleSpec, policy) {
         battle.setPlayer(id, {name: id, team: Teams.pack(Teams.import(battleSpec.teams[i]))});
     }
     const rng = new PolicyRng(policy.seed);
+    const rate = policy.domain_rate ?? 0;
     const choices = [];
+    const domain = {samples: [], request_changed: 0};
     while (choices.length < policy.max_steps && !battle.ended) {
         // The sides asked at the start of the step: answering one can finish the step and ask both again.
         const asked = ['p1', 'p2'].filter((id) => battle[id].requestState);
         if (!asked.length) throw new Error('no side has a request and the battle has not ended');
         const entry = {};
+        const step = choices.length;
         for (const id of asked) {
+            const side = id === 'p1' ? 0 : 1;
+            // The sample is taken before the policy draws: it leaves the request as it was, and the hash, not the
+            // generator, says whether to take it.
+            if (domainSampled(policy.seed, step, side, rate)) {
+                const accepted = domainSample(battle[id]);
+                if (accepted === null) domain.request_changed++;
+                else domain.samples.push({step, side, accepted});
+            }
             const text = chooseFor(battle[id], rng, policy);
             commit(battle, id, text);
             entry[id] = text;
         }
         choices.push(entry);
     }
-    return {choices, ended: !!battle.ended, steps: choices.length};
+    return {choices, ended: !!battle.ended, steps: choices.length, domain};
 }
 
-module.exports = {play, PolicyRng, splitmix32, chooseFor, enumerate, draw, MAX_REJECTIONS};
+module.exports = {play, PolicyRng, splitmix32, chooseFor, enumerate, draw, domainHash, domainSampled, domainSample,
+    MAX_REJECTIONS};
