@@ -1463,6 +1463,44 @@ static const df_tb_stop tb_g17_recharge_moves[] = {
     {3u, 0u, 1u, 2u, {4u, 4u}, {724u, 710u}, {0x404f5947bbc9f198ull, 0x404db561194d71f1ull}},
     {4u, 0u, 1u, 2u, {4u, 4u}, {748u, 735u}, {0x405029d799c3d02eull, 0x404eadf9c872b6b3ull}},
 };
+static const df_tb_stop tb_g18_aerodactyl[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1154u, 1114u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {768u, 755u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {768u, 746u}, {0x4050aaaaaaaaaaabull, 0x40507b24547d0afcull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {768u, 735u}, {0x4050aaaaaaaaaaabull, 0x4050410e5ceff27bull}},
+    {4u, 0u, 1u, 2u, {4u, 4u}, {768u, 720u}, {0x4050aaaaaaaaaaabull, 0x404fe3b24547d0b0ull}},
+};
+static const df_tb_stop tb_g18_baxcalibur_thermal[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1189u, 1090u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {780u, 726u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {714u, 695u}, {0x404edb195e8efdb1ull, 0x404fc1155713de50ull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {665u, 615u}, {0x404cbaa797728bebull, 0x404c7432e93e1cd7ull}},
+    {4u, 0u, 2u, 2u, {4u, 4u}, {549u, 573u}, {0x40485ff09fe76640ull, 0x404ab8a26f944a75ull}},
+    {5u, 0u, 2u, 1u, {3u, 4u}, {509u, 537u}, {0x4046df8e38e38e38ull, 0x40493c6fbe274cffull}},
+};
+static const df_tb_stop tb_g18_manectric[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1114u, 1099u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {728u, 740u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {701u, 740u}, {0x40501c17a821cb9eull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {651u, 740u}, {0x404d628fad24d307ull, 0x4050aaaaaaaaaaabull}},
+    {4u, 0u, 2u, 2u, {4u, 4u}, {562u, 740u}, {0x4048b9bc94e815a8ull, 0x4050aaaaaaaaaaabull}},
+};
+static const df_tb_stop tb_g18_tyranitar_replaces[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1174u, 1114u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {765u, 755u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {753u, 755u}, {0x4050680000000000ull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {741u, 613u}, {0x4050255555555555ull, 0x404a3f5c7cadbb88ull}},
+    {4u, 0u, 1u, 1u, {4u, 3u}, {669u, 520u}, {0x404d4fb425ed097cull, 0x40464331e17e8ea3ull}},
+    {5u, 0u, 1u, 1u, {4u, 3u}, {669u, 520u}, {0x404d4fb425ed097cull, 0x40464331e17e8ea3ull}},
+};
+static const df_tb_stop tb_g18_tyranitar_same[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1174u, 1114u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {765u, 755u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {753u, 755u}, {0x4050680000000000ull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {741u, 755u}, {0x4050255555555555ull, 0x4050aaaaaaaaaaabull}},
+    {6u, 0u, 2u, 2u, {4u, 4u}, {717u, 755u}, {0x404f400000000000ull, 0x4050aaaaaaaaaaabull}},
+    {7u, 0u, 2u, 2u, {4u, 4u}, {717u, 706u}, {0x404f400000000000ull, 0x404f4fd7720f353bull}},
+};
 static const df_tb_stop tb_g2_data_moves_a[] = {
     {0u, 0u, 1u, 3u, {6u, 6u}, {1129u, 1099u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {769u, 770u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -2957,6 +2995,11 @@ static const df_tb_battle tb_battles[] = {
     {"g17_hyper_beam_scarf", 4u, tb_g17_hyper_beam_scarf, sizeof tb_g17_hyper_beam_scarf / sizeof tb_g17_hyper_beam_scarf[0]},
     {"g17_hyper_beam_sucker", 4u, tb_g17_hyper_beam_sucker, sizeof tb_g17_hyper_beam_sucker / sizeof tb_g17_hyper_beam_sucker[0]},
     {"g17_recharge_moves", 4u, tb_g17_recharge_moves, sizeof tb_g17_recharge_moves / sizeof tb_g17_recharge_moves[0]},
+    {"g18_aerodactyl", 4u, tb_g18_aerodactyl, sizeof tb_g18_aerodactyl / sizeof tb_g18_aerodactyl[0]},
+    {"g18_baxcalibur_thermal", 5u, tb_g18_baxcalibur_thermal, sizeof tb_g18_baxcalibur_thermal / sizeof tb_g18_baxcalibur_thermal[0]},
+    {"g18_manectric", 4u, tb_g18_manectric, sizeof tb_g18_manectric / sizeof tb_g18_manectric[0]},
+    {"g18_tyranitar_replaces", 5u, tb_g18_tyranitar_replaces, sizeof tb_g18_tyranitar_replaces / sizeof tb_g18_tyranitar_replaces[0]},
+    {"g18_tyranitar_same", 7u, tb_g18_tyranitar_same, sizeof tb_g18_tyranitar_same / sizeof tb_g18_tyranitar_same[0]},
     {"g2_data_moves_a", 6u, tb_g2_data_moves_a, sizeof tb_g2_data_moves_a / sizeof tb_g2_data_moves_a[0]},
     {"g2_data_moves_b", 7u, tb_g2_data_moves_b, sizeof tb_g2_data_moves_b / sizeof tb_g2_data_moves_b[0]},
     {"g2_data_moves_c", 10u, tb_g2_data_moves_c, sizeof tb_g2_data_moves_c / sizeof tb_g2_data_moves_c[0]},
@@ -3090,7 +3133,7 @@ static const df_tb_battle tb_battles[] = {
     {"w8_sand_soak", 7u, tb_w8_sand_soak, sizeof tb_w8_sand_soak / sizeof tb_w8_sand_soak[0]},
 };
 
-/* 2211 stops: 139 of an ended battle; decided by the count 696,
- * the HP percentage 661, the total HP 665, a tie 50;
- * winners: side 0 1103, side 1 1058, tie 50 */
+/* 2239 stops: 139 of an ended battle; decided by the count 699,
+ * the HP percentage 676, the total HP 675, a tie 50;
+ * winners: side 0 1119, side 1 1070, tie 50 */
 #endif
