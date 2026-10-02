@@ -153,6 +153,12 @@ if(Python3_Interpreter_FOUND)
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/trace_to_c.py"
             "${PROJECT_SOURCE_DIR}" --check)
     set_tests_properties(duoforge.reference.conformance_tables PROPERTIES TIMEOUT 60)
+    # The converter as a library: its refusals carry their rules and messages,
+    # and the three generated headers are what the library makes (no checkout needed).
+    add_test(NAME duoforge.reference.converter_api
+        COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_trace_to_c.py")
+    set_tests_properties(duoforge.reference.converter_api PROPERTIES TIMEOUT 120
+        ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
     # The table generator refuses move shapes it does not model (no checkout needed).
     add_test(NAME duoforge.data.gen_closure_refusals
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/test_gen_closure.py")

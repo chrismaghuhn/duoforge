@@ -687,6 +687,11 @@ def boundary_of(state, log):
     return BOUNDARY[kind]
 
 
+def read_ascii(path):
+    with io.open(path, encoding='ascii') as f:
+        return f.read()
+
+
 def load_json(root, kind, name):
     """tests/reference/<kind>/<name>.json, parsed."""
     with io.open(os.path.join(root, 'tests', 'reference', kind, name + '.json'), encoding='utf-8') as f:
@@ -922,12 +927,12 @@ def is_team_c(root, name):
 def load_tables(root, team_c):
     """Name -> id tables: the closure's, or for Team C the extended tables
     (the closure ids plus Team C's, decision 0009 section 3.2)."""
-    header = io.open(os.path.join(root, 'src', 'data', 'closure_tables.h'), encoding='ascii').read()
-    source = io.open(os.path.join(root, 'src', 'data', 'closure_tables.c'), encoding='ascii').read()
+    header = read_ascii(os.path.join(root, 'src', 'data', 'closure_tables.h'))
+    source = read_ascii(os.path.join(root, 'src', 'data', 'closure_tables.c'))
     start = 'dfi_closure_formes[DFI_FORME_COUNT] = {'
     if team_c:
-        header += io.open(os.path.join(root, 'src', 'data', 'extended_tables.h'), encoding='ascii').read()
-        source = io.open(os.path.join(root, 'src', 'data', 'extended_tables.c'), encoding='ascii').read()
+        header += read_ascii(os.path.join(root, 'src', 'data', 'extended_tables.h'))
+        source = read_ascii(os.path.join(root, 'src', 'data', 'extended_tables.c'))
         start = 'dfi_ext_formes[DFI_EXT_FORME_COUNT] = {'
     tables = {k: ids(header, k) for k in ('FORME', 'MOVE', 'ITEM', 'ABILITY', 'NATURE')}
     a = source.index(start)
@@ -1006,13 +1011,14 @@ def emit(target, text, check, subject, summary=''):
     """Writes `text` to `target`, or with `check` compares it with the file
     (read with LF line ends); `subject` is what it must equal. Returns the exit status."""
     if check:
-        have = io.open(target, encoding='ascii').read().replace('\r\n', '\n') if os.path.exists(target) else ''
+        have = read_ascii(target).replace('\r\n', '\n') if os.path.exists(target) else ''
         if have != text:
             sys.stderr.write('trace_to_c: %s differs from %s\n' % (target, subject))
             return 1
         print('trace_to_c: %s matches %s' % (target, subject))
         return 0
-    io.open(target, 'w', encoding='ascii', newline='\n').write(text)
+    with io.open(target, 'w', encoding='ascii', newline='\n') as f:
+        f.write(text)
     print('trace_to_c: wrote %s%s' % (target, summary))
     return 0
 
