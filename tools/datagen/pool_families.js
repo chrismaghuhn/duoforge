@@ -487,6 +487,19 @@ function checkG10Moves(dex) {
         [['recover', [1, 2]], ['slackoff', [1, 2]]]);
 }
 
+// The callbacks that change the priority of a move or the Speed of a Pokemon, on the entry or on its own condition
+// (Unburden's volatile). The engine implements Prankster (+1 for a status move), Unburden (x2 Speed without an item)
+// and Choice Scarf (x1.5 Speed); every other modelled row has none.
+const ORDER_CALLBACKS = ['onModifyPriority', 'onFractionalPriority', 'onModifySpe'];
+const ENGINE_ORDER = {
+    ability: {prankster: ['onModifyPriority'], unburden: ['condition.onModifySpe']},
+    item: {choicescarf: ['onModifySpe']},
+};
+function orderCallbacks(raw) {
+    return [...ORDER_CALLBACKS.filter((k) => raw[k] !== undefined),
+        ...ORDER_CALLBACKS.filter((k) => raw.condition && raw.condition[k] !== undefined).map((k) => 'condition.' + k)];
+}
+
 function checkAbilities(dex, rows, moveIds, unmodeled, unmodeledMoves) {
     const counts = {};
     for (const row of rows) {
@@ -901,6 +914,13 @@ function checkHandlers(dex, source, header, extended) {
             const exempt = number < ext || familyList[number].family !== 'NONE' || engine.includes(row.id);
             if (!unmodeled && !exempt && callbacks.length > 0) {
                 bad(what + ' ' + row.id + ' is modelled but its pinned entry has ' + callbacks.join(', '));
+            }
+            // The queue sorts every action by a priority and a Speed that an ability or an item can change, and for a
+            // fainted holder none of them counts (src/combat/turn.c, dfi_move_priority and dfi_speed_key). The engine
+            // reads exactly two such effects, so a modelled row that has another is a mechanic nobody looked at.
+            if (!unmodeled) {
+                expect(what + ' ' + row.id + ' priority and Speed callbacks of a modelled row', orderCallbacks(raw),
+                    (ENGINE_ORDER[what] || {})[row.id] || []);
             }
             if (unmodeled && exempt) {
                 bad(what + ' ' + row.id + ' is UNMODELED but is a prefix row, a family member or implemented by id');
