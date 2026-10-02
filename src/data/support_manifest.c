@@ -119,15 +119,16 @@
  * ability and exactly one Mega: Tyranitarite (Sand Stream), Baxcalibrite (Thermal Exchange), Aerodactylite (Tough
  * Claws) and Manectite (Intimidate), recorded as g18_* under the POOL kind. The Mega Evolution itself is the generic
  * path. Charizardite X stays unmarked: the tables link one Mega per base forme (Charizard: Mega-Y).
- * Step G21 marks twenty-eight moves that the existing paths run (the rows were modelled before, with no unmodelled
+ * Step G21 marks twenty-seven moves that the existing paths run (the rows were modelled before, with no unmodelled
  * feature; the pin was read again for each): Sludge Bomb and Gunk Shot (a poison secondary), Dragon Claw, Night Slash
  * and Slash (the last two with critical hit ratio 2), Air Slash, Icicle Crash, Waterfall and Dark Pulse (a flinch
  * secondary; Dark Pulse and Air Slash target any), Crunch and Bug Buzz and Mystical Fire (a stat drop secondary),
  * Struggle Bug (spread, a Special Attack drop on both foes), Nuzzle (paralysis at 100 percent), Fire Blast, Power Whip,
- * Overheat, Leaf Storm and Armor Cannon (self drops after the hit), Dragon Dance, Quiver Dance, Shell Smash and Agility
+ * Overheat, Leaf Storm and Armor Cannon (self drops after the hit), Dragon Dance, Quiver Dance and Agility
  * (boosts of the user), Will-O-Wisp (a burn that Thermal Exchange and a Fire type refuse), Accelerock, Bullet Punch and
- * Mach Punch (priority +1) and Drain Punch (drain 1/2), recorded as g21_* under the POOL kind. Earthquake, Ancient
- * Power, Blizzard, Dual Wingbeat, Feint, Life Dew, Acrobatics, Terrain Pulse and Expert Belt stay unmarked: each needs
+ * Mach Punch (priority +1) and Drain Punch (drain 1/2), recorded as g21_* under the POOL kind. Shell Smash (the pin
+ * orders its boosts Defense, Special Defense, Attack, Special Attack, Speed, the engine in stat order), Earthquake,
+ * Ancient Power, Blizzard, Dual Wingbeat, Feint, Life Dew, Acrobatics, Terrain Pulse and Expert Belt stay unmarked: each needs
  * logic that no column or handler has (docs/decisions/0015-content-expansion-pool.md, step G21). */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
@@ -239,7 +240,6 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_DRAGONCLAW] = 1u,
             [DFI_MOVE_DRAGONDANCE] = 1u,
             [DFI_MOVE_QUIVERDANCE] = 1u,
-            [DFI_MOVE_SHELLSMASH] = 1u,
             [DFI_MOVE_AGILITY] = 1u,
             [DFI_MOVE_MYSTICALFIRE] = 1u,
             [DFI_MOVE_STRUGGLEBUG] = 1u,
