@@ -153,6 +153,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_DRUMBEATING] = 1u,
             [DFI_MOVE_DAZZLINGGLEAM] = 1u,
             [DFI_MOVE_UTURN] = 1u,
+            [DFI_MOVE_SANDSTORM] = 1u,
+            [DFI_MOVE_SNOWSCAPE] = 1u,
             [DFI_MOVE_THROATCHOP] = 1u,
             [DFI_MOVE_PSYCHICNOISE] = 1u,
         },
@@ -180,6 +182,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_UNBURDEN] = 1u,
             [DFI_ABILITY_PSYCHICSURGE] = 1u,
             [DFI_ABILITY_ROCKHEAD] = 1u,
+            [DFI_ABILITY_SANDSTREAM] = 1u,
+            [DFI_ABILITY_SNOWWARNING] = 1u,
             [DFI_ABILITY_PIXILATE] = 1u,
             [DFI_ABILITY_REFRIGERATE] = 1u,
             [DFI_ABILITY_OVERGROW] = 1u,
@@ -242,5 +246,10 @@ const dfi_support_manifest dfi_support = {
      * records its battles. Step G8: Throat Chop and Heal Block (the position bits of duoforge_observation_ext, public,
      * verified against g8_throat_chop, g8_heal_block, g8_heal_block_pair and _tie_a/_b step by step in
      * duoforge.state.pool_g8). */
-    .view_ext_features = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) | ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK),
+    /* Step Sandstorm and Snowscape: bits 0 and 1, the weather values of the old observation's weather field (the
+     * -weather lines of Sand Stream, Snow Warning and the two moves, verified step by step in duoforge.state.pool_weather). */
+    .view_ext_features = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WEATHER_SAND) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WEATHER_SNOW),
 };

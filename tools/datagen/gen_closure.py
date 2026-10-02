@@ -150,6 +150,13 @@ MOVES_C = ['direclaw', 'flareblitz', 'darkestlariat', 'hypervoice', 'dracometeor
 STATUS_C = dict(STATUS, psn=5)                    # poison: step 6
 STATUS_IMMUNITY_C = dict(STATUS_IMMUNITY, psn=16)  # Poison and Steel: step 6
 IGNORED_TYPE_KEYS_C = IGNORED_TYPE_KEYS - {'psn'}  # tox stays ignored: no toxic source
+# The POOL tables add the immunity to Sandstorm damage (decision 0018 step: Sandstorm and Snowscape): the type chart's
+# `sandstorm: 3` of Rock, Ground and Steel. The bit is in the pool's immunity bytes only; the extended and closure
+# canonical bytes mask it out. `hail` stays ignored (Snowscape does no damage).
+SAND_IMMUNITY = 32
+STATUS_IMMUNITY_P = dict(STATUS_IMMUNITY_C, sandstorm=SAND_IMMUNITY)
+IGNORED_TYPE_KEYS_P = IGNORED_TYPE_KEYS_C - {'sandstorm'}
+SAND_IMMUNE_TYPES = ['Ground', 'Rock', 'Steel']  # in the order of TYPES
 FLAG_BITS_C = dict(FLAG_BITS, defrost=128)         # Flare Blitz: step 2
 SPECIAL_C = dict(SPECIAL, **{
     'darkestlariat': ('DARKEST_LARIAT', set()),                   # step 2
@@ -489,6 +496,30 @@ def parse_forme(key, dex, formats):
     }
 
 
+def type_chart(tc, status_immunity, ignored_type_keys):
+    """The type chart and the immunity bits of the 18 types read from data/typechart.ts: a key of a type's damageTaken
+    that is an immunity (value 3) sets the bit that status_immunity names; a key that no table models must be in
+    ignored_type_keys, and anything else fails."""
+    chart, immunity = [], []
+    for t in TYPES:
+        e = tc.entry(t.lower())
+        text = '\n'.join(e[2])
+        row = []
+        for a in TYPES:
+            row.append(int(re.search(r'\b%s: (\d)' % a, text).group(1)))
+        chart.append(row)
+        imm = 0
+        for key, val in re.findall(r'^\t\t\t([a-z]+): (\d),', text, re.M):
+            if val != '3':
+                fail('type %s: status key %s is not an immunity' % (t, key))
+            if key in status_immunity:
+                imm |= status_immunity[key]
+            elif key not in ignored_type_keys:
+                fail('type %s: unknown key %s' % (t, key))
+        immunity.append(imm)
+    return chart, immunity
+
+
 def build(root, ext=False):
     """The closure tables, or with ext the extended tables: the closure group
     is built completely first (items, abilities, formes with their Mega
@@ -520,24 +551,7 @@ def build(root, ext=False):
 
     status_immunity = STATUS_IMMUNITY_C if ext else STATUS_IMMUNITY
     ignored_type_keys = IGNORED_TYPE_KEYS_C if ext else IGNORED_TYPE_KEYS
-    tc = src['data/typechart.ts']
-    chart, immunity = [], []
-    for t in TYPES:
-        e = tc.entry(t.lower())
-        text = '\n'.join(e[2])
-        row = []
-        for a in TYPES:
-            row.append(int(re.search(r'\b%s: (\d)' % a, text).group(1)))
-        chart.append(row)
-        imm = 0
-        for key, val in re.findall(r'^\t\t\t([a-z]+): (\d),', text, re.M):
-            if val != '3':
-                fail('type %s: status key %s is not an immunity' % (t, key))
-            if key in status_immunity:
-                imm |= status_immunity[key]
-            elif key not in ignored_type_keys:
-                fail('type %s: unknown key %s' % (t, key))
-        immunity.append(imm)
+    chart, immunity = type_chart(src['data/typechart.ts'], status_immunity, ignored_type_keys)
 
     nat_src = src['data/natures.ts']
     natures = []
@@ -1257,6 +1271,9 @@ G2_MOVES = ['uturn', 'rockslide', 'throatchop', 'encore', 'doubleedge', 'thunder
 # other move, and anything it does not know still fails. Each step that implements one of them (G7 to G11) consumes
 # the handler id and, if it needs a column, changes the tables and the POOL fingerprint and says so.
 G2_HANDLERS = ['ENCORE', 'SCALD', 'WIDE_GUARD', 'FIRST_IMPRESSION', 'RECOVER', 'SOAK', 'LOW_KICK']
+# The two weather moves of the Sandstorm and Snowscape step: rows of the whole pool (not of G2) with a named handler,
+# because the field `weather` that sets the weather has no column; the turn code implements both.
+WEATHER_HANDLERS = ['SANDSTORM', 'SNOWSCAPE']
 SPECIAL_P = dict(SPECIAL_C, **{
     'encore': ('ENCORE', set()),                                          # G9: the last move, a volatile, a queue change
     'scald': ('SCALD', set()),                                            # G10b: thaws its frozen target
@@ -1265,13 +1282,17 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'recover': ('RECOVER', set()),                                        # G10c: heals half of the maximum HP
     'soak': ('SOAK', {'onHit'}),                                          # G11: sets the target's type to Water
     'lowkick': ('LOW_KICK', {'basePowerCallback', 'onTryHit'}),           # G10d: base power by the target's weight
+    'sandstorm': ('SANDSTORM', set()),                                    # weather: sets the weather (for 5 turns)
+    'snowscape': ('SNOWSCAPE', set()),
 })
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + ['UNMODELED']
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + ['UNMODELED']
 G2_OWNED_FIELDS = {
     'SCALD': {'thawsTarget': 'thawsTarget: true,'},
     'RECOVER': {'heal': 'heal: [1, 2],'},
     'ENCORE': {'volatileStatus': "volatileStatus: 'encore',"},
     'WIDE_GUARD': {'sideCondition': "sideCondition: 'wideguard',"},
+    'SANDSTORM': {'weather': "weather: 'Sandstorm',"},
+    'SNOWSCAPE': {'weather': "weather: 'snowscape',"},
 }
 G2_OWNED_SECONDARY = {}
 G2_OWNED_CONDITION = {'ENCORE', 'WIDE_GUARD'}
@@ -1311,11 +1332,11 @@ ITEM_MEMBERS = {'TYPE_BOOSTER': ['miracleseed', 'mysticwater'] + POOL_TYPE_BOOST
                 'RESIST_BERRY': ['chopleberry'] + POOL_RESIST_BERRIES}
 ABILITY_MEMBERS = {'ATE': ['aerilate', 'pixilate', 'refrigerate'],
                    'PINCH': ['blaze', 'overgrow', 'torrent', 'swarm'],
-                   'WEATHER_SETTER': ['drizzle', 'drought'],
+                   'WEATHER_SETTER': ['drizzle', 'drought', 'sandstream', 'snowwarning'],
                    'TERRAIN_SETTER': ['grassysurge', 'psychicsurge']}
 # The weather and terrain codes of the family column are the engine's state values (DFI_WEATHER_* and
 # DFI_TERRAIN_* of src/state/battle_internal.h, which duoforge.data.pool_tables checks), by Showdown's id.
-WEATHER_CODES = {'raindance': ('RAIN', 1), 'sunnyday': ('SUN', 2)}
+WEATHER_CODES = {'raindance': ('RAIN', 1), 'sunnyday': ('SUN', 2), 'sandstorm': ('SAND', 3), 'snowscape': ('SNOW', 4)}
 TERRAIN_CODES = {'grassyterrain': ('GRASSY', 1), 'psychicterrain': ('PSYCHIC', 2)}
 # A rain or sun setter skips the Primal Pokemon with their orb (data/abilities.ts, Drizzle and Drought). No Primal
 # Pokemon is legal in the format; the guard is part of the weather pattern and must be exactly this one.
@@ -1853,6 +1874,56 @@ def check_bounds(d, repo):
         fail('bounds: the learnable bitset is too short for %d moves' % n['moves'])
 
 
+# Sandstorm and Snowscape (data/conditions.ts, read through READER_INPUTS) and Weather Ball (data/moves.ts): what the
+# engine hard-codes about them, as normalised texts that must be in the pinned entries: the duration (5; 8 with the rock
+# item, which is UNMODELED and so never held in a battle), the stat modifiers and their handler priority, the residual
+# order, the damage, the upkeep line and the type and power of Weather Ball.
+WEATHER_FACTS = (
+    ('sandstorm', ['duration: 5,', "if (source?.hasItem('smoothrock')) { return 8; } return 5;",
+                   'onModifySpDPriority: 10,',
+                   "if (pokemon.hasType('Rock') && pokemon.effectiveWeather() === 'sandstorm') { return this.modify(spd, 1.5); }",
+                   'onFieldResidualOrder: 1,',
+                   "this.add('-weather', 'Sandstorm', '[upkeep]'); if (this.field.isWeather('sandstorm')) this.eachEvent('Weather');",
+                   'onWeather(target) { this.damage(target.baseMaxhp / 16); },',
+                   "this.add('-weather', 'Sandstorm', '[from] ability: ' + effect.name, `[of] ${source}`);",
+                   "this.add('-weather', 'none');"]),
+    ('snowscape', ['duration: 5,', "if (source?.hasItem('icyrock')) { return 8; } return 5;",
+                   'onModifyDefPriority: 10,',
+                   "if (pokemon.hasType('Ice') && pokemon.effectiveWeather() === 'snowscape') { return this.modify(def, 1.5); }",
+                   'onFieldResidualOrder: 1,',
+                   "this.add('-weather', 'Snowscape', '[upkeep]'); if (this.field.isWeather('snowscape')) this.eachEvent('Weather');",
+                   "this.add('-weather', 'Snowscape', '[from] ability: ' + effect.name, `[of] ${source}`);",
+                   "this.add('-weather', 'none');"]),
+)
+# Snowscape has no onWeather: it does no damage (the hail condition does, and the format does not have Hail).
+WEATHER_ABSENT = (('snowscape', 'onWeather'),)
+WEATHER_BALL_FACTS = ("case 'sandstorm': move.type = 'Rock'; break; case 'hail': case 'snowscape': move.type = 'Ice'; break;",
+                      "case 'sandstorm': move.basePower *= 2; break; case 'hail': case 'snowscape': move.basePower *= 2; break;")
+
+
+def check_weather_facts(conditions_ts, moves_ts):
+    """Every fact of WEATHER_FACTS is in the pinned condition entry, the absent ones are not, and Weather Ball has the
+    types and the doubling that the engine reads for every weather."""
+    for cid, facts in WEATHER_FACTS:
+        e = conditions_ts.entry(cid)
+        if e is None:
+            fail('condition %s not found' % cid)
+        text = norm('\n'.join(e[2]))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('condition %s: the entry no longer has "%s"' % (cid, fact))
+    for cid, name in WEATHER_ABSENT:
+        if name in '\n'.join(conditions_ts.entry(cid)[2]):
+            fail('condition %s now has %s' % (cid, name))
+    e = moves_ts.entry('weatherball')
+    if e is None:
+        fail('move weatherball not found')
+    text = norm('\n'.join(e[2]))
+    for fact in WEATHER_BALL_FACTS:
+        if norm(fact) not in text:
+            fail('move weatherball: the entry no longer has "%s"' % fact)
+
+
 def check_g8_conditions(moves_ts):
     """The engine hard-codes the durations, orders and tests of the Throat Chop and Heal Block conditions: every one of
     them must be in the pinned entry, as one normalised text."""
@@ -1880,6 +1951,7 @@ def build_pool(root, repo, dx):
     formats, learn = Source(root, 'data/mods/champions/formats-data.ts'), Source(root, 'data/mods/champions/learnsets.ts')
     legal = load_legal_pool(repo)
     check_g8_conditions(moves_ts)
+    check_weather_facts(Source(root, 'data/conditions.ts', READER_INPUTS), moves_ts)
     FLAGS_THAT_MATTER.clear()
     FLAGS_THAT_MATTER.update(prefix_flag_reads((items_ts, champ_items, abil_ts, champ_abil, moves_ts, champ_moves), dx)
                              - set(FLAG_BITS_C) - set(INERT_FLAG_READS))
@@ -2100,7 +2172,13 @@ def build_pool(root, repo, dx):
         fo.setdefault('unmodeled', [])
     legal_formes = forme_legal(formes, [m['id'] for m in moves], [a['id'] for a in abilities], learn,
                                legal['species'], abil_ts, champ_abil)
-    d = dict(dx, formes=formes, moves=moves, items=items, abilities=abilities, item_family=item_family,
+    chart, immunity = type_chart(Source(root, 'data/typechart.ts'), STATUS_IMMUNITY_P, IGNORED_TYPE_KEYS_P)
+    if chart != dx['chart'] or [v & ~SAND_IMMUNITY for v in immunity] != dx['immunity']:
+        fail('the pool type chart and immunity bits are not the extended ones plus Sandstorm')
+    if [t for t, v in zip(TYPES, immunity) if v & SAND_IMMUNITY] != SAND_IMMUNE_TYPES:
+        fail('the types immune to Sandstorm are not %s' % SAND_IMMUNE_TYPES)
+    d = dict(dx, immunity=immunity, formes=formes, moves=moves, items=items, abilities=abilities,
+             item_family=item_family,
              ability_family=ability_family, forme_legal=legal_formes, aliases=aliases, legal_counts=legal['counts'],
              flags_that_matter=sorted(FLAGS_THAT_MATTER), steps=dict(items=n_steps[0], abilities=n_steps[1],
                                                                     moves=n_steps_moves))
@@ -2205,7 +2283,7 @@ def ext_prefix(dp, dx):
     return {'formes': closure_projection(dp['formes'][:len(dx['formes'])], 'formes'), 'moves': dp['moves'][:len(dx['moves'])],
             'items': closure_projection(dp['items'][:len(dx['items'])], 'items'),
             'abilities': dp['abilities'][:len(dx['abilities'])],
-            'chart': dp['chart'], 'immunity': dp['immunity'], 'natures': dp['natures']}
+            'chart': dp['chart'], 'immunity': [v & ~SAND_IMMUNITY for v in dp['immunity']], 'natures': dp['natures']}
 
 
 def check_pool_prefix(dp, dx, dc):
@@ -2218,7 +2296,8 @@ def check_pool_prefix(dp, dx, dc):
         if [{k: v for k, v in r.items() if k != 'unmodeled'} for r in got] != want:
             fail('pool %s do not start with the extended %s' % (key, key))
     for key in ('chart', 'immunity', 'natures'):
-        if dp[key] != dx[key]:
+        got = [v & ~SAND_IMMUNITY for v in dp[key]] if key == 'immunity' else dp[key]
+        if got != dx[key]:
             fail('the pool %s differ from the extended ones' % key)
     if canonical(prefix) != canonical(dx):
         fail('the pool tables do not start with the extended tables')
@@ -2283,7 +2362,11 @@ def render_pool(dp, dx):
 #define DFI_MOVE_FLAG2_SOUND 1u /* data/moves.ts flags.sound: Throat Chop bars these moves */
 #define DFI_MOVE_FLAG2_HEAL 2u  /* flags.heal: Heal Block bars these moves */
 #define DFI_SECONDARY_LOCKOUT 5u    /* chance 100: the target may not use sound moves (Throat Chop) */
-#define DFI_SECONDARY_HEAL_BLOCK 6u /* chance 100: the target may not heal (Psychic Noise) */'''
+#define DFI_SECONDARY_HEAL_BLOCK 6u /* chance 100: the target may not heal (Psychic Noise) */
+
+/* ---- the immunity bit of the pool (the extended bits are 1 to 16): the type chart's `sandstorm: 3` of Rock, Ground
+ * and Steel. It is in the pool's immunity bytes only; the closure and extended canonical bytes mask it out. ---- */
+#define DFI_IMMUNE_SAND 32u'''
     new_targets = '\n'.join('#define DFI_TARGET_CLASS_%s %du' % (n, v) for v, n in sorted(TARGET_CLASS_POOL_NAMES.items()))
     h = '''#ifndef DUOFORGE_DATA_POOL_TABLES_H
 #define DUOFORGE_DATA_POOL_TABLES_H
@@ -2379,6 +2462,8 @@ def render_pool(dp, dx):
 #define DFI_ABILITY_FAMILY_TERRAIN_SETTER 4u
 #define DFI_FAMILY_WEATHER_RAIN 1u
 #define DFI_FAMILY_WEATHER_SUN 2u
+#define DFI_FAMILY_WEATHER_SAND 3u
+#define DFI_FAMILY_WEATHER_SNOW 4u
 #define DFI_FAMILY_TERRAIN_GRASSY 1u
 #define DFI_FAMILY_TERRAIN_PSYCHIC 2u
 #define DFI_FAMILY_PARAM_NONE 0xFFu
@@ -2493,8 +2578,8 @@ extern const uint8_t dfi_pool_table_hash[32];
  * if a count exceeds its table or capacity is too small, or if a row has a
  * forme link that the closure layout's byte cannot hold (a link above 254).
  * With the closure counts and the closure's immunity bits these are exactly
- * the closure's canonical bytes; with the extended counts and every immunity
- * bit, the extended ones. */
+ * the closure's canonical bytes; with the extended counts and the extended
+ * immunity bits (every bit but DFI_IMMUNE_SAND), the extended ones. */
 size_t dfi_pool_canonical_bytes_of(uint8_t *out, size_t capacity, uint32_t formes, uint32_t moves, uint32_t items,
                                    uint32_t abilities, uint32_t immunity_mask);
 /* The canonical pool bytes (the pool layout): the six counts; per forme the

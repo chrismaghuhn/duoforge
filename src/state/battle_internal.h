@@ -49,6 +49,8 @@ typedef struct dfi_move_slot {
 #define DFI_WEATHER_NONE 0u
 #define DFI_WEATHER_RAIN 1u
 #define DFI_WEATHER_SUN 2u
+#define DFI_WEATHER_SAND 3u /* POOL (decision 0018): Sandstorm */
+#define DFI_WEATHER_SNOW 4u /* POOL: Snowscape */
 #define DFI_TERRAIN_NONE 0u
 #define DFI_TERRAIN_GRASSY 1u
 #define DFI_TERRAIN_PSYCHIC 2u /* Team C: Psychic Surge */

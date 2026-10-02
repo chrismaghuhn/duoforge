@@ -884,6 +884,8 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_CAUSE_FLINCH    12u
 #define DUOFORGE_CAUSE_NO_PP     13u
 #define DUOFORGE_CAUSE_POISON    14u /* poison's residual damage (Team C) */
+#define DUOFORGE_CAUSE_WEATHER   16u /* DAMAGE (POOL kinds): [from] Sandstorm, the residual damage of a weather; id2: the
+                                         DUOFORGE_WEATHER_* value */
 #define DUOFORGE_CAUSE_HEAL_BLOCK 15u /* CANT (POOL kinds): a move that heals, stopped by Heal Block; id: the stopped move.
                                          A sound move stopped by Throat Chop is CANT with cause MOVE, id2: Throat Chop
                                          (the line names no move, so id is 0) */

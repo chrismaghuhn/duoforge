@@ -171,8 +171,10 @@ static void test_constants(df_test *t)
     DF_CHECK(t, DUOFORGE_TERRAIN_PSYCHIC == 2u && DUOFORGE_TERRAIN_ELECTRIC == 3u && DUOFORGE_TERRAIN_MISTY == 4u);
     DF_CHECK(t, DUOFORGE_AILMENT_POISON == 5u && DUOFORGE_AILMENT_TOX == 6u);
     /* The bits that the build's steps have set (decision 0018 section 7): step G8, Throat Chop (bit 6) and Heal Block
-     * (bit 16). A step that sets a bit changes this expectation together with its recorded battles. */
-    DF_CHECK(t, dfi_support.view_ext_features == (((uint64_t)1u << 6u) | ((uint64_t)1u << 16u)));
+     * (bit 16); the step of Sandstorm and Snowscape, the weather values Sand (bit 0) and Snow (bit 1). A step that sets
+     * a bit changes this expectation together with its recorded battles. */
+    DF_CHECK(t, dfi_support.view_ext_features ==
+                    (((uint64_t)1u << 6u) | ((uint64_t)1u << 16u) | ((uint64_t)1u << 0u) | ((uint64_t)1u << 1u)));
 }
 
 /* The expected extension: all zero, and under POOL the header of the paired observation. */

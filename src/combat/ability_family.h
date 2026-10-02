@@ -80,9 +80,11 @@ static inline uint32_t dfi_weather_set_by(const dfi_member *m)
     if (fam.family != DFI_ABILITY_FAMILY_WEATHER_SETTER) {
         return DFI_WEATHER_NONE;
     }
-    return fam.param == DFI_FAMILY_WEATHER_RAIN  ? DFI_WEATHER_RAIN
-           : fam.param == DFI_FAMILY_WEATHER_SUN ? DFI_WEATHER_SUN
-                                                 : DFI_WEATHER_NONE;
+    return fam.param == DFI_FAMILY_WEATHER_RAIN   ? DFI_WEATHER_RAIN
+           : fam.param == DFI_FAMILY_WEATHER_SUN  ? DFI_WEATHER_SUN
+           : fam.param == DFI_FAMILY_WEATHER_SAND ? DFI_WEATHER_SAND
+           : fam.param == DFI_FAMILY_WEATHER_SNOW ? DFI_WEATHER_SNOW
+                                                  : DFI_WEATHER_NONE;
 }
 
 /* The terrain that an ability sets on entry (onStart, setTerrain) as a state

@@ -51,6 +51,8 @@ static const ability_type PINCHES[] = {
 static const ability_type WEATHER_SETTERS[] = {
     {DFI_ABILITY_DRIZZLE, DFI_WEATHER_RAIN},
     {DFI_ABILITY_DROUGHT, DFI_WEATHER_SUN},
+    {DFI_ABILITY_SANDSTREAM, DFI_WEATHER_SAND},
+    {DFI_ABILITY_SNOWWARNING, DFI_WEATHER_SNOW},
 };
 static const ability_type TERRAIN_SETTERS[] = {
     {DFI_ABILITY_GRASSYSURGE, DFI_TERRAIN_GRASSY},
@@ -183,7 +185,7 @@ int main(void)
         DF_CHECK_EQ_U64(&t, family == DFI_ABILITY_FAMILY_WEATHER_SETTER, weather != DFI_CLOSURE_NONE);
         DF_CHECK_EQ_U64(&t, family == DFI_ABILITY_FAMILY_TERRAIN_SETTER, terrain != DFI_CLOSURE_NONE);
     }
-    DF_CHECK_EQ_U64(&t, N_WEATHER_SETTERS, 2u);
+    DF_CHECK_EQ_U64(&t, N_WEATHER_SETTERS, 4u);
     DF_CHECK_EQ_U64(&t, N_TERRAIN_SETTERS, 2u);
 
     /* No ability at all, and a holder that is not there. */

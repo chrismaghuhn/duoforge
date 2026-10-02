@@ -273,8 +273,20 @@ class PoolFamilies(unittest.TestCase):
                      'drizzle is listed as WEATHER_SETTER but deviates', what='ability')
         self.refused(DRIZZLE.replace(GUARD, "if (source.species.id === 'groudon' && source.item === 'redorb') return;"),
                      'WEATHER_SETTER', 'drizzle is listed as WEATHER_SETTER but deviates', what='ability')
-        self.refused(setter('sandstream', 'Sand Stream', "this.field.setWeather('sandstorm');"), 'WEATHER_SETTER',
-                     'sandstream is listed as WEATHER_SETTER but deviates', what='ability')
+        self.refused(setter('deltastream', 'Delta Stream', "this.field.setWeather('deltastream');"), 'WEATHER_SETTER',
+                     'deltastream is listed as WEATHER_SETTER but deviates', what='ability')
+
+    def test_the_sand_and_snow_setters_give_their_weather(self):
+        # Sand Stream and Snow Warning have no Primal guard: one that is there, or one of the other weather, is a
+        # deviation (the guard of a weather that has none is not (None, None)).
+        sand = setter('sandstream', 'Sand Stream', "this.field.setWeather('sandstorm');")
+        snow = setter('snowwarning', 'Snow Warning', "this.field.setWeather('snowscape');")
+        self.assertEqual(self.derive(sand, 'WEATHER_SETTER', what='ability'), ('WEATHER_SETTER', 'sandstorm'))
+        self.assertEqual(self.derive(snow, 'WEATHER_SETTER', what='ability'), ('WEATHER_SETTER', 'snowscape'))
+        self.assertEqual((gen_closure.WEATHER_CODES['sandstorm'], gen_closure.WEATHER_CODES['snowscape']),
+                         (('SAND', 3), ('SNOW', 4)))
+        self.refused(setter('sandstream', 'Sand Stream', "this.field.setWeather('sandstorm');", GUARD),
+                     'WEATHER_SETTER', 'sandstream is listed as WEATHER_SETTER but deviates', what='ability')
 
     def test_a_terrain_setter_gives_its_terrain(self):
         self.assertEqual(self.derive(GRASSY_SURGE, 'TERRAIN_SETTER', what='ability'), ('TERRAIN_SETTER', 'grassyterrain'))
@@ -286,7 +298,7 @@ class PoolFamilies(unittest.TestCase):
         self.assertEqual((len(gen_closure.ITEM_MEMBERS['TYPE_BOOSTER']), len(gen_closure.ITEM_MEMBERS['RESIST_BERRY'])),
                          (18, 18))
         self.assertEqual({k: len(v) for k, v in gen_closure.ABILITY_MEMBERS.items()},
-                         {'ATE': 3, 'PINCH': 4, 'WEATHER_SETTER': 2, 'TERRAIN_SETTER': 2})
+                         {'ATE': 3, 'PINCH': 4, 'WEATHER_SETTER': 4, 'TERRAIN_SETTER': 2})
         every = gen_closure.POOL_ITEMS + gen_closure.POOL_ABILITIES
         self.assertEqual(len(every), len(set(every)))
         self.assertEqual((len(gen_closure.POOL_ITEMS), len(gen_closure.POOL_ABILITIES)), (33, 5))
@@ -543,10 +555,10 @@ class PoolMoves(unittest.TestCase):
         seven = len(gen_closure.SPECIAL_IDS_C) + len(gen_closure.G2_HANDLERS)
         self.assertEqual(gen_closure.SPECIAL_IDS_P[len(gen_closure.SPECIAL_IDS_C):seven], gen_closure.G2_HANDLERS)
         # UNMODELED (decision 0015 section 4.2) follows them, as the last id.
-        self.assertEqual(gen_closure.SPECIAL_IDS_P[seven:], ['UNMODELED'])
+        self.assertEqual(gen_closure.SPECIAL_IDS_P[seven:], ['SANDSTORM', 'SNOWSCAPE', 'UNMODELED'])
         self.assertEqual(len(gen_closure.G2_HANDLERS), 7)
         self.assertEqual({v[0] for k, v in gen_closure.SPECIAL_P.items() if k not in gen_closure.SPECIAL_C},
-                         set(gen_closure.G2_HANDLERS))
+                         set(gen_closure.G2_HANDLERS) | set(gen_closure.WEATHER_HANDLERS))
 
     def test_the_same_move_is_refused_outside_the_pool_mode(self):
         # The closure and extended tables keep failing for what they do not model: no handler leaks into them.
@@ -604,7 +616,9 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual(len(set(every)), len(every))
         self.assertEqual([s[0] for s in gen_closure.SETS_G2], ['pelipper', 'arcaninehisui', 'annihilape', 'floetteeternal'])
         # Every handler move is one of the rows, and every set move is a pool move or one of the rows.
-        self.assertTrue({k for k in gen_closure.SPECIAL_P if k not in gen_closure.SPECIAL_C} <= set(gen_closure.G2_MOVES))
+        self.assertTrue({k for k in gen_closure.SPECIAL_P if k not in gen_closure.SPECIAL_C} <=
+                        set(gen_closure.G2_MOVES) | {'sandstorm', 'snowscape'})
+        self.assertEqual(gen_closure.WEATHER_HANDLERS, ['SANDSTORM', 'SNOWSCAPE'])
         for _sp, _ab, item, moves, _mega in gen_closure.SETS_G2:
             self.assertTrue(item in gen_closure.G2_ITEMS or item not in gen_closure.POOL_ITEMS)
             self.assertTrue(set(moves) <= set(gen_closure.MOVES + gen_closure.MOVES_C + gen_closure.G2_MOVES))
@@ -950,6 +964,40 @@ class WholePoolNames(unittest.TestCase):
 
     def test_the_inert_reads_name_the_move_whose_modelling_would_matter(self):
         self.assertEqual(gen_closure.INERT_FLAG_READS, {'bypasssub': 'substitute', 'pledgecombo': None})
+
+
+class WeatherFacts(unittest.TestCase):
+    """The facts about Sandstorm, Snowscape and Weather Ball that the engine hard-codes are read from the pinned
+    entries (check_weather_facts); every one of them is demanded, and a condition that grows or loses a handler is
+    refused."""
+
+    def sources(self, drop=None, extra=None):
+        cond = chr(10).join(entry(cid, *[f for f in facts if f != drop] + ([extra[1]] if extra and extra[0] == cid else []))
+                         for cid, facts in gen_closure.WEATHER_FACTS)
+        ball = entry('weatherball', *[f for f in gen_closure.WEATHER_BALL_FACTS if f != drop])
+        return TextSource('data/conditions.ts', cond), TextSource('data/moves.ts', ball)
+
+    def test_the_facts_of_the_pin_are_accepted(self):
+        gen_closure.check_weather_facts(*self.sources())
+
+    def test_every_fact_is_demanded(self):
+        every = [f for _cid, facts in gen_closure.WEATHER_FACTS for f in facts] + list(gen_closure.WEATHER_BALL_FACTS)
+        self.assertGreaterEqual(len(every), 17)
+        for fact in every:
+            with self.subTest(fact=fact), self.assertRaises(SystemExit) as cm:
+                gen_closure.check_weather_facts(*self.sources(drop=fact))
+            self.assertIn('no longer has', str(cm.exception.code))
+
+    def test_snowscape_does_no_damage(self):
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_weather_facts(*self.sources(extra=('snowscape', 'onWeather(target) {}')))
+        self.assertIn('now has onWeather', str(cm.exception.code))
+
+    def test_the_immunity_to_sandstorm_is_a_pool_bit(self):
+        self.assertEqual(gen_closure.STATUS_IMMUNITY_P['sandstorm'], 32)
+        self.assertNotIn('sandstorm', gen_closure.IGNORED_TYPE_KEYS_P)
+        self.assertIn('sandstorm', gen_closure.IGNORED_TYPE_KEYS_C)  # the extended tables do not have it
+        self.assertEqual(gen_closure.SAND_IMMUNE_TYPES, ['Ground', 'Rock', 'Steel'])
 
 
 if __name__ == '__main__':

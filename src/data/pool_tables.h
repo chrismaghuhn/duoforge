@@ -843,7 +843,9 @@
 #define DFI_SPECIAL_RECOVER 19u
 #define DFI_SPECIAL_SOAK 20u
 #define DFI_SPECIAL_LOW_KICK 21u
-#define DFI_SPECIAL_UNMODELED 22u
+#define DFI_SPECIAL_SANDSTORM 22u
+#define DFI_SPECIAL_SNOWSCAPE 23u
+#define DFI_SPECIAL_UNMODELED 24u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */
@@ -851,6 +853,10 @@
 #define DFI_MOVE_FLAG2_HEAL 2u  /* flags.heal: Heal Block bars these moves */
 #define DFI_SECONDARY_LOCKOUT 5u    /* chance 100: the target may not use sound moves (Throat Chop) */
 #define DFI_SECONDARY_HEAL_BLOCK 6u /* chance 100: the target may not heal (Psychic Noise) */
+
+/* ---- the immunity bit of the pool (the extended bits are 1 to 16): the type chart's `sandstorm: 3` of Rock, Ground
+ * and Steel. It is in the pool's immunity bytes only; the closure and extended canonical bytes mask it out. ---- */
+#define DFI_IMMUNE_SAND 32u
 
 /* ---- target classes of the pool beyond the public DUOFORGE_TARGET_CLASS_* values (1 to 9) and Struggle's 10:
  * encoded, not implemented by the turn code, so a move with one is UNMODELED. ---- */
@@ -1234,6 +1240,8 @@
 #define DFI_ABILITY_FAMILY_TERRAIN_SETTER 4u
 #define DFI_FAMILY_WEATHER_RAIN 1u
 #define DFI_FAMILY_WEATHER_SUN 2u
+#define DFI_FAMILY_WEATHER_SAND 3u
+#define DFI_FAMILY_WEATHER_SNOW 4u
 #define DFI_FAMILY_TERRAIN_GRASSY 1u
 #define DFI_FAMILY_TERRAIN_PSYCHIC 2u
 #define DFI_FAMILY_PARAM_NONE 0xFFu
@@ -1348,8 +1356,8 @@ extern const uint8_t dfi_pool_table_hash[32];
  * if a count exceeds its table or capacity is too small, or if a row has a
  * forme link that the closure layout's byte cannot hold (a link above 254).
  * With the closure counts and the closure's immunity bits these are exactly
- * the closure's canonical bytes; with the extended counts and every immunity
- * bit, the extended ones. */
+ * the closure's canonical bytes; with the extended counts and the extended
+ * immunity bits (every bit but DFI_IMMUNE_SAND), the extended ones. */
 size_t dfi_pool_canonical_bytes_of(uint8_t *out, size_t capacity, uint32_t formes, uint32_t moves, uint32_t items,
                                    uint32_t abilities, uint32_t immunity_mask);
 /* The canonical pool bytes (the pool layout): the six counts; per forme the
