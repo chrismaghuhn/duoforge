@@ -8,9 +8,10 @@ battle, so it carries nothing beyond what decision 0007 proves for the
 observation. Every value is scaled to [0, 1] (ids by 65535, so a network
 can recover them exactly as round(x * 65535) for an embedding). A value
 outside the known sets below (an ailment, weather, terrain, location or
-boundary kind this encoder does not know) raises ValueError; it is never
-encoded as zeros. So does a domain of another boundary than the
-observation's (another epoch, or a request where the observation has none):
+boundary kind this encoder does not know, or a position flag of the TEAM_C
+kinds, such as Unburden's) raises ValueError; it is never encoded as zeros.
+So does a domain of another boundary than the observation's (another
+epoch, or a request where the observation has none):
 query() refreshes observations but not domains, query_factored() both.
 
 obs_part, float32 (OBS_SIZE,), from the viewer's perspective (own side
@@ -97,6 +98,10 @@ def _sides(s):
                      s["light_screen_turns"].astype(_F64) / 8, s["tailwind_turns"].astype(_F64) / 4],
                     axis=1).astype(_F32)
     pos = s["positions"]
+    if (pos["reserved"] != 0).any():
+        # DUOFORGE_POSITION_FLAG_* of the TEAM_C kinds (decision 0009 section 4.2): not encoded yet.
+        bad = int(pos["reserved"][pos["reserved"] != 0].flat[0])
+        raise ValueError(f"position flags {bad} are not ones this encoder knows")
     flags = np.stack([pos["confused"].astype(_F64), pos["charging"].astype(_F64),
                       (pos["locked_slot"] != C["DUOFORGE_MOVE_SLOT_NONE"]).astype(_F64), pos["acted"].astype(_F64),
                       np.clip(pos["protect_chain"].astype(_F64) / 3, 0.0, 1.0), pos["flash_fire"].astype(_F64),

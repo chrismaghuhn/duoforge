@@ -123,15 +123,40 @@ static void put_one(duoforge_battle_setup *s, uint32_t member, uint32_t ability_
     }
 }
 
+/* The number of player 0's move lines before White Herb's [-enditem] in
+ * `events` (n of them), 0 when there is none; *side gets the herb holder's
+ * side of the first one (2 when there is none), *herbs the number of them. */
+static uint32_t herb_lines(const duoforge_event *events, uint32_t n, uint32_t *side, uint32_t *herbs)
+{
+    uint32_t moves = 0u;
+    uint32_t before = 0u;
+    *side = 2u;
+    *herbs = 0u;
+    for (uint32_t i = 0u; i < n; ++i) {
+        if (events[i].kind == DUOFORGE_EVENT_MOVE) {
+            moves += 1u;
+        } else if (events[i].kind == DUOFORGE_EVENT_ITEM_END && events[i].id2 == 1u + DFI_ITEM_WHITEHERB) {
+            if (*herbs == 0u) {
+                *side = (uint32_t)events[i].position / 2u;
+                before = moves;
+            }
+            *herbs += 1u;
+        }
+    }
+    return before;
+}
+
 /* Step 8: the dev side against itself, each Sneasler with a White Herb and
- * side 1's at `spe` Speed points (side 0's: 2). Both Incineroar leads'
- * Intimidates lower both Sneaslers' Attack, so both herbs are due on
- * AnySwitchIn. Returns the team step's status; `*used` counts the herbs
- * used. */
+ * side 1's at `spe` Speed points (side 0's: 2), the RNG seeded with `seed`.
+ * Both Incineroar leads' Intimidates lower both Sneaslers' Attack, so both
+ * herbs are due on AnySwitchIn. Returns the team step's status; *herbs
+ * counts the herbs' [-enditem] lines and *first is the side of the first
+ * (2 when there is none). */
 static duoforge_status herb_pair(const duoforge_context *ctx, const duoforge_battle_setup *teams, uint8_t spe,
-                                 uint32_t *used)
+                                 uint64_t seed, uint32_t *herbs, uint32_t *first)
 {
     duoforge_battle_setup s = *teams;
+    s.rng_initstate = seed;
     put_dev_side(&s.sides[0]);
     put_dev_side(&s.sides[1]);
     s.sides[0].members[0].item = DFI_ITEM_WHITEHERB + 1u;
@@ -153,9 +178,11 @@ static duoforge_status herb_pair(const duoforge_context *ctx, const duoforge_bat
             c->picks[i] = (uint8_t)i; /* Sneasler and Incineroar lead */
         }
     }
+    duoforge_event events[2][DUOFORGE_MAX_EVENTS];
+    duoforge_event_buffer buffers[2] = {{events[0], DUOFORGE_MAX_EVENTS, 0u}, {events[1], DUOFORGE_MAX_EVENTS, 0u}};
     duoforge_step_result res;
-    const duoforge_status st = duoforge_battle_step(ctx, w, &bd, &res);
-    *used = (uint32_t)w->sides[0].members[0].item_consumed + (uint32_t)w->sides[1].members[0].item_consumed;
+    const duoforge_status st = duoforge_battle_step_events(ctx, w, &bd, &res, buffers);
+    (void)herb_lines(events[0], st == DUOFORGE_OK ? buffers[0].count : 0u, first, herbs);
     duoforge_battle_destroy(w);
     return st;
 }
@@ -163,33 +190,40 @@ static duoforge_status herb_pair(const duoforge_context *ctx, const duoforge_bat
 /* White-box (step 8): the dev side against itself, Sneasler and Kingambit
  * against Sneasler, here with a Rocky Helmet, and Indeedee-F, here with a
  * White Herb and, when `lowered`, Defense -1. Turn 1: Sneasler's Fake Out
- * (+3) into the Helmet first, which makes it faint inside its move when
- * `faints` puts it at 1 HP; then Iron Head, Psychic and the flinched Close
- * Combat. Returns the turn's status; `*consumed` is the herb's consumed
- * flag after it. */
+ * (+3) into the Helmet first. At 1 HP (`faints`) the Helmet makes the user
+ * faint inside its move; at 1 HP (`ko`) the Helmet holder faints too. Then
+ * Psychic, Iron Head and the flinched Close Combat. Returns the turn's
+ * status; *moves is the number of move lines before the herb's [-enditem],
+ * 0 when there is none. */
 static duoforge_status helmet_turn(const duoforge_context *ctx, const duoforge_battle_setup *teams, bool faints,
-                                   bool lowered, uint8_t *consumed)
+                                   bool ko, bool lowered, uint32_t *moves)
 {
     duoforge_battle_setup s = *teams;
     put_dev_side(&s.sides[0]);
     put_dev_side(&s.sides[1]);
     duoforge_battle *w = df_make_battle(ctx, &s);
     const uint8_t picks[2][4] = {{0u, 4u, 1u, 2u}, {0u, 3u, 1u, 2u}}; /* leads first */
-    const uint8_t moves[2][2][2] = {{{2u, 2u}, {0u, 3u}}, {{0u, 0u}, {1u, 0u}}}; /* move slot, target */
+    const uint8_t plan[2][2][2] = {{{2u, 2u}, {0u, 3u}}, {{0u, 0u}, {1u, 0u}}}; /* move slot, target */
+    duoforge_event events[2][DUOFORGE_MAX_EVENTS];
+    duoforge_event_buffer buffers[2] = {{events[0], DUOFORGE_MAX_EVENTS, 0u}, {events[1], DUOFORGE_MAX_EVENTS, 0u}};
     duoforge_decision_bundle bd;
     duoforge_step_result res;
     duoforge_status st = DUOFORGE_OK;
+    *moves = 0u;
     for (uint32_t step = 0u; step < 2u && st == DUOFORGE_OK; ++step) {
         if (step == 1u) {
             if (w->boundary_kind != DUOFORGE_BOUNDARY_TURN) {
                 st = DUOFORGE_E_INVARIANT;
                 break;
             }
-            if (faints) {
-                dfi_member *user = &w->sides[0].members[0];
-                dfi_knowledge *shown = &w->sides[1].knowledge[0]; /* the foe sees the HP bar */
-                user->hp = 1u;
-                dfi_hp_display(user->hp, user->hp_max, &shown->hp_percent, &shown->hp_flag);
+            for (uint32_t side = 0u; side < 2u; ++side) {
+                if (side == 0u ? !faints : !ko) {
+                    continue;
+                }
+                dfi_member *m = &w->sides[side].members[0];
+                dfi_knowledge *shown = &w->sides[1u - side].knowledge[0]; /* the foe sees the HP bar */
+                m->hp = 1u;
+                dfi_hp_display(m->hp, m->hp_max, &shown->hp_percent, &shown->hp_flag);
             }
             w->sides[1].members[0].item = (uint8_t)(1u + DFI_ITEM_ROCKYHELMET);
             w->sides[1].members[3].item = (uint8_t)(1u + DFI_ITEM_WHITEHERB);
@@ -213,13 +247,17 @@ static duoforge_status helmet_turn(const duoforge_context *ctx, const duoforge_b
             c->kind = (uint8_t)DUOFORGE_CHOICE_SLOTS;
             for (uint32_t slot = 0u; slot < 2u; ++slot) {
                 c->slots[slot].kind = (uint8_t)DUOFORGE_SLOT_MOVE;
-                c->slots[slot].move_slot = moves[side][slot][0];
-                c->slots[slot].target = moves[side][slot][1];
+                c->slots[slot].move_slot = plan[side][slot][0];
+                c->slots[slot].target = plan[side][slot][1];
             }
         }
-        st = duoforge_battle_step(ctx, w, &bd, &res);
+        st = duoforge_battle_step_events(ctx, w, &bd, &res, buffers);
     }
-    *consumed = w->sides[1].members[3].item_consumed;
+    if (st == DUOFORGE_OK) {
+        uint32_t side = 2u;
+        uint32_t herbs = 0u;
+        *moves = herb_lines(events[0], buffers[0].count, &side, &herbs);
+    }
     duoforge_battle_destroy(w);
     return st;
 }
@@ -534,26 +572,71 @@ int main(void)
         duoforge_battle_destroy(w);
     }
 
-    /* White-box (step 8): a user that a Rocky Helmet makes faint inside its
-     * move is no longer active at AfterMove, and the reference then runs
-     * White Herb's onAnyAfterMove only while the target stands
-     * (sim/battle.ts:1053). That is not modelled: a herb due there is
-     * E_UNSUPPORTED (no move in the data makes it reachable). A standing
-     * user's AfterMove uses the herb. */
+    /* White-box (step 8): Unburden's bit needs an Unburden holder whose item
+     * is used; with the item still held it is VOLATILE. */
     {
-        uint8_t consumed = 0u;
-        DF_CHECK(&t, helmet_turn(kd, &teams, true, true, &consumed) == DUOFORGE_E_UNSUPPORTED);
-        DF_CHECK(&t, helmet_turn(kd, &teams, true, false, &consumed) == DUOFORGE_OK && consumed == 0u);
-        DF_CHECK(&t, helmet_turn(kd, &teams, false, true, &consumed) == DUOFORGE_OK && consumed == 1u);
+        duoforge_battle_setup u = teams;
+        put_dev_side(&u.sides[0]);
+        u.sides[0].members[0].ability = DFI_ABILITY_UNBURDEN + 1u; /* Sneasler leads */
+        u.sides[0].members[0].item = DFI_ITEM_WHITEHERB + 1u;
+        duoforge_battle *w = df_make_battle(kd, &u);
+        duoforge_decision_bundle bd;
+        memset(&bd, 0, sizeof bd);
+        bd.epoch = w->request_epoch;
+        bd.response_mask = 3u;
+        for (uint32_t side = 0u; side < 2u; ++side) {
+            duoforge_side_choice *c = &bd.responses[side];
+            c->epoch = w->request_epoch;
+            c->side = (uint8_t)side;
+            c->kind = (uint8_t)DUOFORGE_CHOICE_TEAM_SELECTION;
+            c->pick_count = 4u;
+            for (uint32_t i = 0u; i < 4u; ++i) {
+                c->picks[i] = (uint8_t)i;
+            }
+        }
+        duoforge_step_result res;
+        DF_CHECK(&t, duoforge_battle_step(kd, w, &bd, &res) == DUOFORGE_OK &&
+                         w->boundary_kind == DUOFORGE_BOUNDARY_TURN);
+        dfi_active_slot *pos = &w->sides[0].positions[0];
+        dfi_member *holder = &w->sides[0].members[pos->occupant];
+        dfi_invariant inv = DFI_INV_NONE;
+        DF_CHECK(&t, dfi_state_check(kd, w, &inv) == DUOFORGE_OK && holder->item_consumed == 0u);
+        pos->flags = (uint8_t)((uint32_t)pos->flags | DFI_VOL_UNBURDEN);
+        DF_CHECK(&t, dfi_state_check(kd, w, &inv) == DUOFORGE_E_INVARIANT && inv == DFI_INV_VOLATILE);
+        holder->item_consumed = 1u; /* the herb used: the bit is valid */
+        DF_CHECK(&t, dfi_state_check(kd, w, &inv) == DUOFORGE_OK);
+        duoforge_battle_destroy(w);
     }
 
-    /* Step 8: two White Herbs due in one event at the same speed would be
-     * ordered by the reference's shuffle, which is not modelled:
-     * E_UNSUPPORTED. At different speeds both herbs are used. */
+    /* White-box (step 8): runEvent collects AfterMove's Any handlers only
+     * while the user or runMove's target is active (sim/battle.ts:1053). A
+     * user and a target that a Fake Out into a Rocky Helmet makes faint
+     * inside the move are not: the herb then waits for the next move's
+     * AfterMove (Indeedee-F's own Psychic). Either one standing is enough. */
     {
-        uint32_t used = 0u;
-        DF_CHECK(&t, herb_pair(kd, &teams, 2u, &used) == DUOFORGE_E_UNSUPPORTED);
-        DF_CHECK(&t, herb_pair(kd, &teams, 32u, &used) == DUOFORGE_OK && used == 2u);
+        uint32_t moves = 9u;
+        DF_CHECK(&t, helmet_turn(kd, &teams, false, false, true, &moves) == DUOFORGE_OK && moves == 1u);
+        DF_CHECK(&t, helmet_turn(kd, &teams, true, false, true, &moves) == DUOFORGE_OK && moves == 1u);
+        DF_CHECK(&t, helmet_turn(kd, &teams, false, true, true, &moves) == DUOFORGE_OK && moves == 1u);
+        DF_CHECK(&t, helmet_turn(kd, &teams, true, true, true, &moves) == DUOFORGE_OK && moves == 2u);
+        DF_CHECK(&t, helmet_turn(kd, &teams, true, true, false, &moves) == DUOFORGE_OK && moves == 0u);
+    }
+
+    /* Step 8: two White Herbs due at one switch-in run in runSwitch's speed
+     * order: the faster holder's first; at one speed the tie is drawn, so
+     * over a few seeds both orders show. */
+    {
+        uint32_t herbs = 0u;
+        uint32_t first = 2u;
+        DF_CHECK(&t, herb_pair(kd, &teams, 32u, teams.rng_initstate, &herbs, &first) == DUOFORGE_OK && herbs == 2u &&
+                         first == 1u);
+        uint32_t firsts = 0u;
+        for (uint64_t k = 0u; k < 16u; ++k) {
+            const duoforge_status st = herb_pair(kd, &teams, 2u, teams.rng_initstate ^ k, &herbs, &first);
+            DF_CHECK(&t, st == DUOFORGE_OK && herbs == 2u && first < 2u);
+            firsts |= 1u << (first & 7u);
+        }
+        DF_CHECK(&t, firsts == 3u);
     }
 
     /* The gate per Team C mechanic: the dev side plus exactly one of them.

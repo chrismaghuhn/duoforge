@@ -1,6 +1,6 @@
 {
   "name": "c08_herb_moves",
-  "purpose": "White Herb after the holder's own move (AnyAfterMove): after Sneasler's Close Combat and after Salamence's Draco Meteor the herb restores the lowered stats before the next action; Unburden then doubles Sneasler's Speed in the next re-sort of the queue.",
+  "purpose": "White Herb after the holder's own move (AnyAfterMove): after Sneasler's Close Combat and after Salamence's Draco Meteor the herb restores the lowered stats before the next action, and Sneasler gains Unburden's volatile.",
   "data": "team_c",
   "format": "gen9championsvgc2026regmc",
   "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c0802",

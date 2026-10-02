@@ -209,7 +209,7 @@ POSITION_VIEW = _struct([
     ("protect_chain", _U1, 12),
     ("flash_fire", _U1, 13),
     ("protecting", _U1, 14),
-    ("flags", _U1, 15),
+    ("reserved", _U1, 15),
 ], 16)
 
 SIDE_VIEW = _struct([

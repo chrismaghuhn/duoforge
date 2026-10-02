@@ -1,6 +1,6 @@
 {
   "name": "c08_unburden_berry",
-  "purpose": "Unburden after a berry: Sneasler eats its Sitrus Berry at half HP and Unburden doubles its Speed for the rest of its stay; switching out ends it (the berry stays gone).",
+  "purpose": "Unburden after a berry: Sneasler eats its Sitrus Berry at half HP and gains Unburden's volatile for the rest of its stay; switching out ends it (the berry stays gone).",
   "data": "team_c",
   "format": "gen9championsvgc2026regmc",
   "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c0803",

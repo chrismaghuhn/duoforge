@@ -66,7 +66,7 @@ SWITCH_FLIP_TURN = 4  # TEAM_C kinds only (decision 0009)
 VOL_CHOICE_LOCK = 64  # TEAM_C kinds only: Choice Scarf's lock, its move in locked_move
 VOL_UNBURDEN = 32  # TEAM_C kinds only: Unburden's volatile, set when its holder's item is used
 ABILITY_UNBURDEN = 17  # 1 + DFI_ABILITY_UNBURDEN (src/data/extended_tables.h)
-POSITION_FLAG_UNBURDEN = 4  # duoforge_position_view.flags
+POSITION_FLAG_UNBURDEN = 4  # in duoforge_position_view.reserved (TEAM_C kinds)
 ITEM_CHOICE_SCARF = 16  # 1 + DFI_ITEM_CHOICESCARF (src/data/extended_tables.h)
 REVEALED_ITEM_CONSUMED, REVEALED_MEGA = 1, 2
 # side-relative offsets of the v3 side block

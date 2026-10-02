@@ -131,9 +131,14 @@ function describe(item, battle) {
         if (inRunSwitch) {
             // runSwitch sorts every active Pokemon; the order matters only
             // between Pokemon that are entering (S: not started, standing)
-            // and have SwitchIn handlers (abilities' onStart included).
+            // and have SwitchIn handlers (abilities' onStart included), and
+            // between standing Pokemon with onAnySwitchIn handlers (White
+            // Herb), which run for every Pokemon on the field: their effects
+            // follow, only when there are any.
             const n = battle.findPokemonEventHandlers(item, 'onSwitchIn').length;
-            return `P:${slotOf(item)}:${n}:${!item.isStarted && !item.fainted ? 'S' : '-'}`;
+            const any = item.hp ? battle.findPokemonEventHandlers(item, 'onAnySwitchIn').map((h) => h.effect.id) : [];
+            return `P:${slotOf(item)}:${n}:${!item.isStarted && !item.fainted ? 'S' : '-'}` +
+                (any.length ? ':' + any.join('+') : '');
         }
         // The handlers the Pokemon has for the current event, by effect.
         const ev = eventStack.length ? eventStack[eventStack.length - 1] : '';
