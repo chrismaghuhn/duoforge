@@ -3,10 +3,13 @@ name: CI
 # The repository is public since 2026-10-02, so hosted minutes are free. The
 # workflow runs on pull requests to main (not on drafts), on pushes to main,
 # nightly and on demand; a newer push cancels the run of the older one, and a
-# change that only touches docs runs nothing. It covers the Linux matrix, the
-# Python, JAX and reference tests against the pinned Pokemon Showdown, the
-# sanitizers and MSVC. The merge gate stays the local CI (tools/ci/local_ci.sh,
-# docs/TESTING_AND_BENCHMARKS.md section 7) until the owner decides otherwise.
+# change that only touches docs runs nothing. It covers the matrix of the
+# local CI: Linux GCC and Clang, the Python, JAX and reference tests against the
+# pinned Pokemon Showdown, ASan+UBSan, TSan, MSVC, and on Windows GCC (with the
+# Python and reference tests) and Clang. Since 2026-10-02 it is the merge gate
+# (owner): a pull request is merged when every check on its head is green
+# (docs/TESTING_AND_BENCHMARKS.md section 7). The local CI (tools/ci/local_ci.sh)
+# stays for quick runs before a push, offline work and measurements.
 on:
   pull_request:
     branches: [main]
@@ -224,3 +227,144 @@ jobs:
         run: |
           ctest --test-dir build -C ${{ matrix.config }} -R '^duoforge_smoke_test$' -V > smoke.log
           grep "pointer_bits=${{ matrix.bits }} " smoke.log
+
+  # MinGW GCC Debug with the Python package tests and every reference test on
+  # Windows, as the local win-gcc-debug job: line endings, paths and the
+  # Windows Node and Python meet the same traces as on Linux. The learner's
+  # JAX test runs only on Linux (linux-full), as locally.
+  windows-gcc-full:
+    name: Windows / gcc / Debug / Python, reference
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    runs-on: windows-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0 (verified via git ls-remote 2026-09-30)
+      - name: Check out the pinned Pokemon Showdown
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0 (verified via git ls-remote 2026-09-30)
+        with:
+          repository: smogon/pokemon-showdown
+          ref: b2cb775b0616115b775534eaeff50300e1fc81fc
+          path: pokemon-showdown
+          persist-credentials: false
+      - name: MinGW-w64 GCC and Ninja (MSYS2 UCRT64)
+        uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e # v2.33.0 (verified via git ls-remote 2026-10-02)
+        with:
+          msystem: UCRT64
+          release: false
+          update: false
+          install: mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-ninja
+      - name: Node 22 (the pin's engines field asks for >= 22.18)
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0 (verified via git ls-remote 2026-10-02)
+        with:
+          node-version: "22"
+      - name: Python 3.12
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0 (verified via git ls-remote 2026-10-02)
+        with:
+          python-version: "3.12"
+      - name: Put the UCRT64 toolchain first on PATH, install NumPy
+        run: |
+          echo "C:/msys64/ucrt64/bin" >> "$GITHUB_PATH"
+          python -m pip install --quiet numpy==2.5.3
+      - name: Build the pinned Showdown
+        working-directory: pokemon-showdown
+        run: |
+          node --version
+          npm ci --ignore-scripts --omit=dev
+          node build
+      - name: Toolchain versions
+        run: |
+          cmake --version
+          gcc --version
+          ninja --version
+      - name: Configure
+        run: |
+          py="$(cygpath -m "$pythonLocation")/python.exe"
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ \
+            -DBUILD_TESTING=ON -DDUOFORGE_WARNINGS_AS_ERRORS=ON \
+            -DPython3_EXECUTABLE="$py" -DDUOFORGE_PYTHON="$py" \
+            -DDUOFORGE_PS_REFERENCE_DIR="$(cygpath -m "$GITHUB_WORKSPACE")/pokemon-showdown"
+      - name: Build
+        run: cmake --build build --parallel
+      - name: Test
+        run: ctest --test-dir build --output-on-failure --no-tests=error --timeout 120 --parallel 4 2>&1 | tee ctest.log
+      - name: No Python or reference test skipped (the JAX test is Linux-only)
+        run: |
+          if grep -E '\*\*\*Skipped' ctest.log | grep -E 'duoforge\.(python|reference)\.' | grep -v 'duoforge\.python\.learn '; then
+            echo "Python or reference tests were skipped"
+            exit 1
+          fi
+          grep -c -E 'Test +#[0-9]+: duoforge\.reference\.trace\.' ctest.log
+
+  windows-gcc-release-ipo:
+    name: Windows / gcc / Release / IPO
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    runs-on: windows-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0 (verified via git ls-remote 2026-09-30)
+      - name: MinGW-w64 GCC and Ninja (MSYS2 UCRT64)
+        uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e # v2.33.0 (verified via git ls-remote 2026-10-02)
+        with:
+          msystem: UCRT64
+          release: false
+          update: false
+          install: mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-ninja
+      - name: Put the UCRT64 toolchain first on PATH
+        run: echo "C:/msys64/ucrt64/bin" >> "$GITHUB_PATH"
+      - name: Toolchain versions
+        run: |
+          cmake --version
+          gcc --version
+      - name: Configure
+        run: >-
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++
+          -DBUILD_TESTING=ON -DDUOFORGE_WARNINGS_AS_ERRORS=ON -DDUOFORGE_ENABLE_IPO=ON
+      - name: Build
+        run: cmake --build build --parallel
+      - name: Test
+        run: ctest --test-dir build --output-on-failure --no-tests=error --timeout 120
+
+  windows-clang:
+    name: Windows / clang / Release
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    runs-on: windows-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0 (verified via git ls-remote 2026-09-30)
+      - name: Python 3.12 (for Ninja)
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0 (verified via git ls-remote 2026-10-02)
+        with:
+          python-version: "3.12"
+      - name: Ninja
+        run: python -m pip install --quiet ninja
+      - name: Toolchain versions
+        run: |
+          cmake --version
+          "C:/Program Files/LLVM/bin/clang.exe" --version
+          ninja --version
+      - name: Configure
+        # The runner's LLVM, MSVC target, as the local win-clang-release job.
+        run: >-
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_C_COMPILER="C:/Program Files/LLVM/bin/clang.exe"
+          -DCMAKE_CXX_COMPILER="C:/Program Files/LLVM/bin/clang++.exe"
+          -DCMAKE_RC_COMPILER="C:/Program Files/LLVM/bin/llvm-rc.exe"
+          -DBUILD_TESTING=ON -DDUOFORGE_WARNINGS_AS_ERRORS=ON
+      - name: Build
+        run: cmake --build build --parallel
+      - name: Test
+        run: ctest --test-dir build --output-on-failure --no-tests=error --timeout 120

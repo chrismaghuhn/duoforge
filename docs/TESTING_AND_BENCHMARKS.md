@@ -121,6 +121,10 @@ The pull request states the result.
 - the Linux matrix: GCC Debug, Clang Debug and Clang Release;
 - one GCC Release job with link-time optimization that also runs the Python tests, the learner's JAX test (CPU) and every reference test against the pinned Showdown (Node 22);
 - GCC ASan+UBSan and Clang TSan;
-- MSVC x64 Release, x64 Debug and Win32 Release.
+- MSVC x64 Release, x64 Debug and Win32 Release;
+- Windows GCC Debug (MSYS2 UCRT64) with the Python tests and every reference test (Node 22, Python on Windows);
+- Windows GCC Release with link-time optimization, and Windows Clang Release (MSVC target).
 
-The RNG reference runs weekly and when its files change in a pull request or on main. The local CI stays the merge gate until the owner decides otherwise. It still adds the Windows GCC and Clang jobs and the WSL builds.
+The RNG reference runs weekly and when its files change in a pull request or on main.
+
+**The hosted CI is the merge gate since 2026-10-02 (owner).** A pull request is merged when every check on its head is green. The main session reads them with `gh pr checks`. The local CI (`tools/ci/local_ci.sh`) stays for quick runs before a push (`--quick`), for offline work and for measurements. A session no longer needs the machine lock to get a pull request merged.
