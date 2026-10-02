@@ -1,3 +1,4 @@
 * text=auto eol=lf
 third_party/** -text
 tests/lint_fixtures/** -text
+data/teams/** text eol=lf

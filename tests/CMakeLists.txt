@@ -127,8 +127,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=07f30f60ae47614f5dead069bca484ff692584a70fd55ccefa3cc597c2039c2f"
-        "pool_tables.c=29219f440c5eb5efbe76984d886a03bd47a77444a413e890a7cb30646af70b97")
+        "pool_tables.h=bba0fa9ac44a6d52053bec88702d96604a4720524c3f94a0cd6a188cc4012310"
+        "pool_tables.c=da55d5b321c2886c41c41acdde3a91676e9c1234822bd628fed1fee2d3516401")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -225,7 +225,42 @@ if(DUOFORGE_PS_REFERENCE_DIR)
                 "${CMAKE_CURRENT_BINARY_DIR}/diff_domain_smoke")
         set_tests_properties(duoforge.reference.diff_domain_smoke PROPERTIES TIMEOUT 600 LABELS reference
             ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+        # A team file of the random mode (--team): six battles of one that equals team A are those of team A,
+        # their kept battles byte for byte.
+        add_test(NAME duoforge.reference.diff_team_smoke
+            COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_diff_team_smoke.py"
+                "${DUOFORGE_NODE}" "${DUOFORGE_PS_REFERENCE_DIR}" "$<TARGET_FILE:duoforge_diff_runner>"
+                "${CMAKE_CURRENT_BINARY_DIR}/diff_team_smoke")
+        set_tests_properties(duoforge.reference.diff_team_smoke PROPERTIES TIMEOUT 600 LABELS reference
+            ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+        # The paste importer (data/teams) with the pinned pokedex: the facts it reads, the owner's raw pastes of
+        # decision 0004, the registry as a fixed point of the importer, and the command line end to end.
+        add_test(NAME duoforge.reference.import_paste_pin
+            COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_import_paste_pin.py"
+                "${DUOFORGE_NODE}" "${DUOFORGE_PS_REFERENCE_DIR}")
+        set_tests_properties(duoforge.reference.import_paste_pin PROPERTIES TIMEOUT 300 LABELS reference
+            ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+        # The client streams of the live adapter's tests: every closure battle replayed from its
+        # trace's inputs, with each step's lines equal to the trace.
+        add_test(NAME duoforge.reference.client_streams
+            COMMAND "${DUOFORGE_NODE}" "${PROJECT_SOURCE_DIR}/tools/reference/ps_client.js"
+                "${DUOFORGE_PS_REFERENCE_DIR}" "${PROJECT_SOURCE_DIR}" --all --check)
+        set_tests_properties(duoforge.reference.client_streams PROPERTIES TIMEOUT 300 LABELS reference)
+        # The Showdown live adapter against the pinned Showdown and the runner's views (spec section 8).
+        if(DUOFORGE_PYTHON)
+            add_test(NAME duoforge.python.live
+                COMMAND "${DUOFORGE_PYTHON}" -m unittest -v python.tests.test_live
+                WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
+            set_tests_properties(duoforge.python.live PROPERTIES LABELS "python;reference" TIMEOUT 900 ENVIRONMENT
+                "DUOFORGE_NODE=${DUOFORGE_NODE};DUOFORGE_PS_REFERENCE_DIR=${DUOFORGE_PS_REFERENCE_DIR};DUOFORGE_DIFF_RUNNER=$<TARGET_FILE:duoforge_diff_runner>;DUOFORGE_LIBRARY=$<TARGET_FILE:duoforge_shared>;PYTHONPATH=${PROJECT_SOURCE_DIR}/python;PYTHONDONTWRITEBYTECODE=1")
+            set(_duoforge_live_registered ON)
+        endif()
     endif()
+endif()
+if(NOT _duoforge_live_registered)
+    add_test(NAME duoforge.python.live
+        COMMAND "${CMAKE_COMMAND}" -E echo "DUOFORGE_SKIP: needs DUOFORGE_PYTHON, Node and DUOFORGE_PS_REFERENCE_DIR")
+    set_tests_properties(duoforge.python.live PROPERTIES LABELS python SKIP_REGULAR_EXPRESSION "DUOFORGE_SKIP:")
 endif()
 # The conformance tables must be what the converter makes of the traces.
 find_package(Python3 COMPONENTS Interpreter)
@@ -266,6 +301,20 @@ if(Python3_Interpreter_FOUND)
         target_compile_definitions(duoforge_reference_runner_records_team_c PRIVATE _CRT_SECURE_NO_WARNINGS)
         target_compile_definitions(duoforge_reference_runner_records_pool PRIVATE _CRT_SECURE_NO_WARNINGS)
     endif()
+    # The runner's --dump-views (the Showdown live adapter's oracle): every closure battle's views
+    # at every step, the first ones against the public API (needs DUOFORGE_PYTHON).
+    if(DUOFORGE_PYTHON)
+        add_test(NAME duoforge.reference.dump_views
+            COMMAND "${DUOFORGE_PYTHON}" "${PROJECT_SOURCE_DIR}/tools/reference/test_dump_views.py"
+                "$<TARGET_FILE:duoforge_diff_runner>" "${_records_dir}/closure.records")
+        set_tests_properties(duoforge.reference.dump_views PROPERTIES TIMEOUT 300
+            FIXTURES_REQUIRED duoforge_conformance_records ENVIRONMENT
+            "DUOFORGE_LIBRARY=$<TARGET_FILE:duoforge_shared>;PYTHONPATH=${PROJECT_SOURCE_DIR}/python;PYTHONDONTWRITEBYTECODE=1")
+    else()
+        add_test(NAME duoforge.reference.dump_views
+            COMMAND "${CMAKE_COMMAND}" -E echo "DUOFORGE_SKIP: DUOFORGE_PYTHON is empty")
+        set_tests_properties(duoforge.reference.dump_views PROPERTIES SKIP_REGULAR_EXPRESSION "DUOFORGE_SKIP:")
+    endif()
     # The replay driver without Node: the buckets and the order of its output with
     # fake children and the real converter, the records writer, and every committed
     # battle through the runner of this build (a stand-in answers the reference).
@@ -282,6 +331,35 @@ if(Python3_Interpreter_FOUND)
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_diff_random.py")
     set_tests_properties(duoforge.reference.diff_random PROPERTIES TIMEOUT 300
         ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1;DUOFORGE_DIFF_RUNNER=$<TARGET_FILE:duoforge_diff_runner>")
+    # The corpus of kept fuzz battles (decision 0015 section 6, tests/reference/corpus): every battle through the
+    # converter and the runner of this build, from the stored traces and without Node; all of them must PASS. It runs
+    # in every CI job that runs the whole suite, the ASan and UBSan job included (the TSan job runs only the batch tests).
+    add_test(NAME duoforge.reference.corpus
+        COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/diff_driver.py" corpus
+            --runner "$<TARGET_FILE:duoforge_diff_runner>" --workers 4
+            --out "${CMAKE_CURRENT_BINARY_DIR}/diff_corpus")
+    set_tests_properties(duoforge.reference.corpus PROPERTIES TIMEOUT 900 ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+    # What the corpus is on disk: every spec has its trace and the other way round, the purposes say why each
+    # battle is there, the traces are of this pin and harness, and the whole stays under the cap of 20 MB.
+    add_test(NAME duoforge.reference.corpus_size
+        COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_corpus_layout.py")
+    set_tests_properties(duoforge.reference.corpus_size PROPERTIES TIMEOUT 120 ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+    # The corpus tooling without Node: the signatures, the greedy choice and the cut, the layout checks, the replay and
+    # promote (coverage and defects), with committed battles for the fuzz and the reference.
+    add_test(NAME duoforge.reference.diff_corpus
+        COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_diff_corpus.py")
+    set_tests_properties(duoforge.reference.diff_corpus PROPERTIES TIMEOUT 300
+        ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1;DUOFORGE_DIFF_RUNNER=$<TARGET_FILE:duoforge_diff_runner>")
+    # The team registry (data/teams, one file for each team and an index shared with the learner): the committed registry
+    # is as it must be (every gender stated, a file never changed under its id, the files of the old locations equal),
+    # and the checks catch what they are for. The importer of pastes (tools/reference/import_paste.py) without Node:
+    # what it normalises and reports, what it refuses, and what it writes, with a stand-in for the pokedex.
+    add_test(NAME duoforge.reference.team_registry
+        COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_team_registry.py")
+    set_tests_properties(duoforge.reference.team_registry PROPERTIES TIMEOUT 120 ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+    add_test(NAME duoforge.reference.import_paste
+        COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_import_paste.py")
+    set_tests_properties(duoforge.reference.import_paste PROPERTIES TIMEOUT 120 ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
     # The table generator refuses move shapes it does not model (no checkout needed).
     add_test(NAME duoforge.data.gen_closure_refusals
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/test_gen_closure.py")
@@ -375,7 +453,7 @@ endif()
 
 # The Python package (M7, decision 0013), run with DUOFORGE_PYTHON; without
 # an interpreter each test reports skipped instead of passing silently.
-foreach(_py layout lib equivalence recipes policies_features example learn_numpy)
+foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit)
     if(DUOFORGE_PYTHON)
         add_test(NAME duoforge.python.${_py}
             COMMAND "${DUOFORGE_PYTHON}" -m unittest -v python.tests.test_${_py}
