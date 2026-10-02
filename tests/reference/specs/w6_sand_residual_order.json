@@ -1,6 +1,6 @@
 {
   "name": "w6_sand_residual_order",
-  "purpose": "scratch",
+  "purpose": "The residual order: Sandstorm (order 1) in speed order, then Grassy Terrain's heals and Leftovers (order 5), then poison (order 9), the same step; Sneasler's Dire Claw poisons Milotic.",
   "data": "pool",
   "format": "gen9championsvgc2026regmc",
   "seed": "sodium,0000000000000000000000000000000000000000000000000000000000000007",

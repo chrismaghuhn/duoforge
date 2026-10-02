@@ -1,6 +1,6 @@
 {
   "name": "w1_sand_stream",
-  "purpose": "scratch",
+  "purpose": "Sand Stream: Tyranitar's Sand Stream replaces Politoed's Drizzle and Hippowdon's repeats it (no line); Sandstorm hurts the Pokemon that are not Rock, Ground or Steel in speed order after the upkeep line, a Rock type takes Ice Beam with its Special Defense x1.5, Weather Ball is a Rock move, and the weather ends after five turns (-weather|none).",
   "data": "pool",
   "format": "gen9championsvgc2026regmc",
   "seed": "sodium,0000000000000000000000000000000000000000000000000000000000006101",

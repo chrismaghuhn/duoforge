@@ -79,6 +79,9 @@
  * recoil move, Struggle's stays), each with recorded POOL battles. Step G5
  * marks U-turn: a damaging pivot whose switch flag names it (dfi_pivot_moves),
  * in the reference battles g5_uturn_a to _e.
+ * The weather step marks Sand Stream and Snow Warning (table rules of the weather-setter family), Sandstorm and
+ * Snowscape (named handlers) and the weather values Sand and Snow of the player view: Sandstorm's damage in
+ * eachEvent order, the Rock and Ice defense boosts, Weather Ball's types, nine recorded POOL battles w1 to w7.
  * Step G8 marks Throat Chop (the sound moves barred for two turns, the cant
  * of a queued one) and Psychic Noise (Heal Block for two turns: every heal
  * of the holder refused, the heal-flag moves barred), which are secondary

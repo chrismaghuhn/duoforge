@@ -1,6 +1,6 @@
 {
   "name": "w5_sand_tie_pairs",
-  "purpose": "scratch",
+  "purpose": "Two tie groups under Sandstorm: the Milotic pair (101, both take damage, the draws are kept) and the faster Tyranitar pair (113, both immune, the draws are dropped).",
   "data": "pool",
   "format": "gen9championsvgc2026regmc",
   "seed": "sodium,0000000000000000000000000000000000000000000000000000000000006101",

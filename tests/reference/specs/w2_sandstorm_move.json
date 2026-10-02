@@ -1,6 +1,6 @@
 {
   "name": "w2_sandstorm_move",
-  "purpose": "scratch",
+  "purpose": "The Sandstorm move: Gholdengo's Sandstorm replaces Politoed's rain, the same move fails while sand is up (-fail, [still]) for the second user and the next turn, the weather ends after five turns and Gholdengo sets it again from none; Weather Ball in sand.",
   "data": "pool",
   "format": "gen9championsvgc2026regmc",
   "seed": "sodium,0000000000000000000000000000000000000000000000000000000000006101",

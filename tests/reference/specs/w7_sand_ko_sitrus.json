@@ -1,6 +1,6 @@
 {
   "name": "w7_sand_ko_sitrus",
-  "purpose": "scratch",
+  "purpose": "Sandstorm knocks out a Raichu (the faint line waits for the end of the weather handler) and takes Politoed below half, so its Sitrus Berry is eaten in the Update after the damage and before the faint line.",
   "data": "pool",
   "format": "gen9championsvgc2026regmc",
   "seed": "sodium,0000000000000000000000000000000000000000000000000000000000000002",

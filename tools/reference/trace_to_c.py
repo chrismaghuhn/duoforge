@@ -438,7 +438,8 @@ def name_of(p):
 
 # Set species whose protocol name is another (the base species), decision 0009. Arcanine-Hisui and Floette-Eternal
 # are called Arcanine and Floette in the switch line (pool step G2); the species clause keeps the alias unique.
-BASE_SPECIES_NAME = {'Indeedee-F': 'Indeedee', 'Arcanine-Hisui': 'Arcanine', 'Floette-Eternal': 'Floette'}
+BASE_SPECIES_NAME = {'Indeedee-F': 'Indeedee', 'Arcanine-Hisui': 'Arcanine', 'Floette-Eternal': 'Floette',
+                     'Ninetales-Alola': 'Ninetales'}
 
 
 def abs_target(side, loc):
@@ -659,6 +660,8 @@ def ev_cause(attrs, tables):
                 cause = CAUSE['POISON']
             elif what == 'confusion':
                 cause = CAUSE['CONFUSION']
+            elif what == 'Hail':
+                raise ConversionError('from-attribute', 'trace_to_c: [from] Hail: no Hail in the format', detail=what)
             elif what in WEATHER_CAUSE:
                 cause, id2 = CAUSE['WEATHER'], WEATHER_CAUSE[what]
             elif what == 'Grassy Terrain':
@@ -837,6 +840,10 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                                       detail='%s %s' % (kind, what))
         elif kind == '-weather':
             cause, id2, other = ev_cause(attrs, tables)
+            if args[0] not in WEATHER_LINE:
+                # Hail (isNonstandard "Past" at the pin) and every other weather are not in the format: refused, never mapped.
+                raise ConversionError('weather-line', 'trace_to_c: unknown weather %r in %r' % (args[0], line),
+                                      detail=args[0])
             weather = WEATHER_LINE[args[0]]
             e = ev_tuple(EV['WEATHER'], NOPOS, other, cause, 0, id2, detail=weather,
                          flags=FLAG['UPKEEP'] if '[upkeep]' in attrs else 0)

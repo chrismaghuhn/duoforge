@@ -1,6 +1,6 @@
 {
   "name": "w5_sand_tie_four",
-  "purpose": "scratch",
+  "purpose": "Four tied Speeds (101) under Sandstorm: the two Milotic take damage and the two Tyranitar do not, so the shuffle of the tie group of four is drawn and the converter keeps its draws (two damaged Pokemon show an order).",
   "data": "pool",
   "format": "gen9championsvgc2026regmc",
   "seed": "sodium,0000000000000000000000000000000000000000000000000000000000006101",

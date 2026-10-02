@@ -146,6 +146,9 @@ duoforge_add_test(NAME duoforge.data.api SOURCES test_data_api.c WHITEBOX TIMEOU
 duoforge_add_test(NAME duoforge.state.pool_tail SOURCES test_pool_tail.c WHITEBOX TIMEOUT 120)
 # Step G8: Throat Chop and Psychic Noise's Heal Block in the tail, the request and the POOL view extension.
 duoforge_add_test(NAME duoforge.state.pool_g8 SOURCES test_pool_g8.c WHITEBOX TIMEOUT 60)
+# Sandstorm and Snowscape (the weather step): the view of the weather battles against the protocol lines, the sources of
+# immunity that stay unmarked, the weather values as state.
+duoforge_add_test(NAME duoforge.state.pool_weather SOURCES test_pool_weather.c WHITEBOX TIMEOUT 60)
 # The generated files must stay exactly what tools/datagen/gen_closure.py
 # wrote; regenerate and update these hashes together.
 foreach(_gen IN ITEMS

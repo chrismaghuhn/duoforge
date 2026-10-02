@@ -1,6 +1,6 @@
 {
   "name": "w3_snow_warning",
-  "purpose": "scratch",
+  "purpose": "Snow Warning: Abomasnow enters after the two Sand Stream holders and replaces their sand (Snowscape, no damage); the Rock Slide of Hippowdon and Tyranitar hits the Ice type with its Defense x1.5; Weather Ball is an Ice move; Snowscape fails while snow is up; the weather ends after five turns.",
   "data": "pool",
   "format": "gen9championsvgc2026regmc",
   "seed": "sodium,0000000000000000000000000000000000000000000000000000000000006101",
