@@ -29,14 +29,23 @@ checks its precondition and fails loudly otherwise:
                     tie orders their lines and the engine draws
   SPEED_TIE switch-order
                     only if at most one tied entering Pokemon has a SwitchIn
-                    handler and at most one tied standing Pokemon holds a
-                    White Herb (its onAnySwitchIn runs in this order)
+                    handler with an effect and at most one tied standing
+                    Pokemon holds a White Herb (its onAnySwitchIn runs in this
+                    order); Choice Scarf's onStart, a SwitchIn handler through
+                    Battle.getCallback, only removes a choicelock, which an
+                    entering Pokemon never has, so it does not count
   SPEED_TIE field:Residual
                     only if every tied handler only counts down a duration;
                     both sides' same side condition running out in this
                     residual is kept instead: the tie orders their two end
                     lines, and the entry states which side's line comes
                     first (the engine's draw; see side_end_tie)
+  SPEED_TIE event:Accuracy
+                    only between No Guard handlers (data/abilities.ts noguard):
+                    onAnyAccuracy returns true when its holder is the source
+                    or the target of the move and passes the accuracy on
+                    otherwise, so every order of them gives the same value; a
+                    tie with any other handler is refused (tie-context)
   SPEED_TIE event:AfterMove, event:AfterMega
                     never: White Herb's are the only handlers of these events
                     in the data, and the engine draws every tie among them
@@ -193,8 +202,19 @@ def tie_effects(group):
     return '+'.join(sorted(set(g.split(':')[1] for g in group if isinstance(g, str) and g.startswith('H:'))))
 
 
-def drop_reason(d, state):
-    """Why draw `d` is not a tape entry, or None; `state` is the state before the step."""
+def choice_scarf_slots(state):
+    """The active slots ('p1a', ...) whose Pokemon holds a Choice Scarf in `state`."""
+    slots = set()
+    for s, side in enumerate(state['sides']):
+        for pos, i in enumerate(side['active']):
+            if i is not None and 0 <= i < len(side['pokemon']) and side['pokemon'][i]['item'] == 'choicescarf':
+                slots.add('p%d%s' % (s + 1, 'ab'[pos]))
+    return slots
+
+
+def drop_reason(d, state, after=None):
+    """Why draw `d` is not a tape entry, or None; `state` is the state before the step, `after` the one after
+    it (an entering Pokemon stands in its slot there)."""
     site, ctx, group = d['site'], d.get('context', ''), d.get('group')
     if site == 'TEAM_ORDER':
         return 'team-preview order'
@@ -221,7 +241,18 @@ def drop_reason(d, state):
             raise ConversionError('switch-order-handlers',
                                   'trace_to_c: switch-order tie with onAnySwitchIn handlers %s' % group,
                                   detail='+'.join(sorted(set(anys) - {'whiteherb'})))
-        bearers = sum(1 for p in parts if p[2] != '0' and p[3] == 'S')
+        # An entering Choice Scarf holder counts one SwitchIn handler without
+        # an effect (data/items.ts choicescarf onStart).
+        scarves = choice_scarf_slots(after) if after is not None else set()
+        effective = []
+        for p in parts:
+            n = int(p[2]) - (1 if p[3] == 'S' and p[1] in scarves else 0)
+            if n < 0:
+                raise ConversionError('switch-order-handlers',
+                                      'trace_to_c: a Choice Scarf holder without its SwitchIn handler in %s' % group,
+                                      detail='choicescarf')
+            effective.append(n)
+        bearers = sum(1 for p, n in zip(parts, effective) if n != 0 and p[3] == 'S')
         herbs = sum(1 for p in parts if len(p) > 4)
         if bearers <= 1 and herbs <= 1:
             return 'switch-in order with at most one entry effect'
@@ -253,6 +284,12 @@ def drop_reason(d, state):
             return 'Life Orb and Chople Berry, whose modifiers commute'
         raise ConversionError('modifydamage-tie', 'trace_to_c: ModifyDamage tie with %s' % group,
                               detail=tie_effects(group))
+    if site == 'SPEED_TIE' and ctx == 'event:Accuracy' and all(
+            g.startswith('H:noguard:') and g.endswith(':cb') for g in group):
+        # data/abilities.ts noguard: onAnyAccuracy(accuracy, target, source, move) returns true when its holder is
+        # the source or the target of the move and the accuracy it was given otherwise. Whichever of the tied
+        # handlers runs first, a true passes on as true and the accuracy stays what it was: one order, one value.
+        return 'No Guard handlers whose order changes nothing'
     if site == 'SPEED_TIE' and ctx != 'queue':
         raise ConversionError('tie-context', 'trace_to_c: unhandled tie context %s' % ctx, detail=ctx)
     if site == 'INSERT_TIE':
@@ -367,7 +404,8 @@ def convert_choice(text, side, state, roster_of, mid_turn=False):
 BOUNDARY = {'teampreview': 1, 'move': 2, 'switch': 3}
 STATUS = {'': 0, 'brn': 1, 'frz': 2, 'par': 3, 'slp': 4, 'psn': 5, 'fnt': 0}
 WEATHER = {'': 0, 'raindance': 1, 'sunnyday': 2}
-TERRAIN = {'': 0, 'grassyterrain': 1}
+TERRAIN = {'': 0, 'grassyterrain': 1, 'psychicterrain': 2}
+FIELD_PSYCHIC_TERRAIN = 3  # DUOFORGE_FIELD_PSYCHIC_TERRAIN (Team C)
 RESULT = {'p1': 1, 'p2': 2, '': 3}
 
 
@@ -418,13 +456,33 @@ EV = {name: i + 1 for i, name in enumerate(
     ['TURN', 'SWITCH', 'MOVE', 'DAMAGE', 'HEAL', 'FAINT', 'CANT', 'MISS', 'CRIT', 'SUPER_EFFECTIVE', 'RESISTED',
      'IMMUNE', 'FAIL', 'PROTECT', 'BLOCKED', 'BOOST', 'UNBOOST', 'STATUS', 'CURE_STATUS', 'CONFUSION_START',
      'CONFUSION_END', 'CONFUSED', 'FLASH_FIRE', 'WEATHER', 'FIELD_START', 'FIELD_END', 'SIDE_START', 'SIDE_END',
-     'ITEM_END', 'FORME', 'MEGA', 'PREPARE', 'ANIMATION', 'ABILITY', 'ACTIVATE', 'UPKEEP', 'RESULT'])}
+     'ITEM_END', 'FORME', 'MEGA', 'PREPARE', 'ANIMATION', 'ABILITY', 'ACTIVATE', 'UPKEEP', 'RESULT',
+     'SINGLE_TURN'])}
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
          'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14}
 FLAG = {'STILL': 1, 'LOCKED': 2, 'SPREAD': 4, 'UPKEEP': 8, 'EATEN': 16, 'MESSAGE': 32, 'MISS': 64, 'NOTARGET': 128}
 AILMENT = {'brn': 1, 'frz': 2, 'par': 3, 'slp': 4, 'psn': 5}
 EV_STATS = ['atk', 'def', 'spa', 'spd', 'spe', 'accuracy', 'evasion']
 NOPOS = 0xFF
+
+# The reference's volatiles (Pokemon.volatiles, as ps_trace.js records them)
+# and how the state comparison covers them. COMPARED_VOLATILES are bits of
+# df_conf_mon.vols; IGNORED_VOLATILES are compared through another field.
+# Any other volatile is refused: a new mechanic's volatile must be placed in
+# one of the two tables before its traces convert.
+COMPARED_VOLATILES = (('protect', 1), ('flashfire', 2), ('twoturnmove', 4), ('choicelock', 8), ('unburden', 16),
+                      ('helpinghand', 32), ('followme', 64), ('flinch', 128))
+IGNORED_VOLATILES = {
+    # data/conditions.ts stall: compared as df_conf_mon.stall (its presence).
+    'stall': 'the stall field',
+    # data/conditions.ts confusion: compared as df_conf_mon.confusion (its turns).
+    'confusion': 'the confusion field',
+    # twoturnmove's onStart adds the move's own volatile with the target
+    # (data/conditions.ts twoturnmove); compared as locked_slot and
+    # locked_target. twoturnmove's onEnd and Electro Shot's onTryMove remove
+    # it, so it never stands without twoturnmove (checked below).
+    'electroshot': 'the locked slot and target',
+}
 HP_EXACT, HP_PERCENT = 1, 2
 HP_FLAGS_EV = {'': 0, 'r': 1, 'y': 2, 'g': 3}
 # Lines that are not events: setup, layout, hints, and what the game does
@@ -588,12 +646,22 @@ def step_events(log, viewer, roster_of, maxhp, tables):
         elif kind == '-fail':
             e = ev_tuple(EV['FAIL'], ev_pos(args[0]), detail=AILMENT[args[1]] if len(args) > 1 else 0)
         elif kind == '-singleturn':
-            e = ev_tuple(EV['PROTECT'], ev_pos(args[0]))
+            if args[1] == 'Protect':
+                e = ev_tuple(EV['PROTECT'], ev_pos(args[0]))
+            elif args[1] == 'Helping Hand':  # Team C: [of] the user
+                _, _, of = ev_cause(attrs, tables)
+                e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), of, 0, tables['MOVE'][key(args[1])])
+            elif args[1] == 'move: Follow Me' and not attrs:  # Team C: no [of]; [zeffect] is not in the format
+                e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), NOPOS, 0, tables['MOVE'][key(args[1][6:])])
+            else:
+                raise ConversionError('singleturn-line', 'trace_to_c: unknown -singleturn %r' % line, detail=args[1])
         elif kind == '-activate':
             pos = ev_pos(args[0])
             what = args[1]
             if what == 'move: Protect':
                 e = ev_tuple(EV['BLOCKED'], pos)
+            elif what == 'move: Psychic Terrain':  # Team C: a priority move stopped at a grounded target
+                e = ev_tuple(EV['BLOCKED'], pos, detail=FIELD_PSYCHIC_TERRAIN)
             elif what == 'confusion':
                 e = ev_tuple(EV['CONFUSED'], pos)
             elif what.startswith('ability: '):
@@ -630,7 +698,7 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                          flags=FLAG['UPKEEP'] if '[upkeep]' in attrs else 0)
         elif kind in ('-fieldstart', '-fieldend'):
             cause, id2, other = ev_cause(attrs, tables)
-            field = {'move: Grassy Terrain': 1, 'move: Trick Room': 2}[args[0]]
+            field = {'move: Grassy Terrain': 1, 'move: Trick Room': 2, 'move: Psychic Terrain': FIELD_PSYCHIC_TERRAIN}[args[0]]
             e = ev_tuple(EV['FIELD_START' if kind == '-fieldstart' else 'FIELD_END'], NOPOS, other, cause, 0, id2,
                          detail=field)
         elif kind in ('-sidestart', '-sideend'):
@@ -764,7 +832,7 @@ def convert_battle(name, spec, trace, tables):
             ends = side_end_tie(d, state)
             if ends is not None:
                 tape.append(ends)
-            elif drop_reason(d, state) is None:
+            elif drop_reason(d, state, step['state']) is None:
                 tape.append(tape_entry(d))
             else:
                 dropped += 1
@@ -802,8 +870,15 @@ def convert_battle(name, spec, trace, tables):
                     if not lock:
                         lslot, ltarget = choice, 0
                 seen = shown[s].get(roster)
-                vols = sum(bit for name, bit in (('protect', 1), ('flashfire', 2), ('twoturnmove', 4),
-                                                 ('choicelock', 8), ('unburden', 16)) if name in p['volatiles'])
+                compared = dict(COMPARED_VOLATILES)
+                for v in p['volatiles']:
+                    if v not in compared and v not in IGNORED_VOLATILES:
+                        raise ConversionError('unknown-volatile', 'trace_to_c: unknown volatile %r of %s' %
+                                              (v, name_of(p)), detail=v)
+                if 'electroshot' in p['volatiles'] and 'twoturnmove' not in p['volatiles']:
+                    raise ConversionError('unknown-volatile', 'trace_to_c: electroshot without twoturnmove on %s' %
+                                          name_of(p), detail='electroshot')
+                vols = sum(bit for name, bit in COMPARED_VOLATILES if name in p['volatiles'])
                 row.append((1, p['hp'], tuple(pp), tuple(x + 6 for x in p['boosts']),
                             stall, 1 if p['fainted'] else 0, status, counter, p['confusion'], lslot, ltarget,
                             p.get('mega', 0), 1 if p['item'] else 0, 1 if seen else 0, seen[0] if seen else 0,
@@ -985,7 +1060,8 @@ TYPES = [
     'typedef struct df_conf_mon {', '    uint32_t present, hp;', '    uint8_t pp[4];', '    uint8_t stages[7];',
     '    uint8_t stall, fainted, status, status_counter, confusion, locked_slot, locked_target, mega;',
     '    uint8_t held, seen, seen_percent, seen_flag;',
-    '    uint8_t vols; /* volatiles: 1 protect, 2 flashfire, 4 twoturnmove, 8 choicelock, 16 unburden */',
+    '    uint8_t vols; /* volatiles: 1 protect, 2 flashfire, 4 twoturnmove, 8 choicelock, 16 unburden, 32 helpinghand,',
+    '                     64 followme, 128 flinch */',
     '} df_conf_mon;',
     '/* team step, side 0 / side 1 answered, tape slice, the turn, boundary and',
     ' * result afterwards, the picks of a team step, slot commands, the occupants',

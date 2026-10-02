@@ -1,0 +1,28 @@
+{
+  "name": "c11_follow_me_mirror",
+  "purpose": "Two Indeedee-F: with Follow Me on both sides each side's single-target moves go to the other side's Indeedee-F, and both volatiles end in one residual (a Speed tie); a Wave Crash boosted by Helping Hand and aimed at Kingambit goes to the foe's Follow Me user; Follow Me never takes its own side's moves; Milotic's Ice Beam aimed at a foe that fainted this turn is retargeted, then redirected; Kingambit's Iron Head aimed at its own ally goes to the foe's Follow Me user; after that user faints, Kingambit's Iron Head reaches its target.",
+  "data": "team_c",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c1103",
+  "teams": [
+    "Indeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Follow Me\n- Helping Hand\n- Psychic\n- Trick Room\n\nKingambit (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Sucker Punch\n- Iron Head\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Ice Beam\n- Muddy Water\n- Coil\n- Hypnosis\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Protect\n- Shadow Ball\n- Nasty Plot",
+    "Indeedee-F (F) @ Sitrus Berry\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Follow Me\n- Helping Hand\n- Psychic\n- Trick Room\n\nBasculegion (M) @ Mystic Water\nAbility: Adaptability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Wave Crash\n- Flip Turn\n- Aqua Jet\n- Last Respects\n\nIncineroar (M) @ Leftovers\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 Atk / 32 SpD\nCareful Nature\n- Fake Out\n- Flare Blitz\n- Parting Shot\n- Darkest Lariat\n\nFarigiraf (F) @ Light Clay\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Protect\n- Trick Room\n- Grass Knot"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 3 2",
+      "move 1, move 3 2",
+      "move 1 2, move 3 -1",
+      "move 1 2, move 3 2",
+      "move 1 2, move 3 2"
+    ],
+    "p2": [
+      "move 1, move 1 2",
+      "move 2, move 1 2",
+      "move 1, move 1 2",
+      "move 1, move 3 1",
+      "move 1, move 3 1"
+    ],
+    "max_steps": 40
+  }
+}

@@ -21,8 +21,8 @@
 #include "reference/conformance_team_c.h"
 #include "support/team_c.h"
 #define DF_CONF_FORMES dfi_ext_formes
-#define DF_TEAM_C_BATTLES 39u /* the recorded Team C battles */
-#define DF_TEAM_C_REAL 1u    /* of them under TEAM_C itself (six registered members) */
+#define DF_TEAM_C_BATTLES 72u /* the recorded Team C battles */
+#define DF_TEAM_C_REAL 22u   /* of them under TEAM_C itself (six registered members) */
 #else
 #include "data/closure_tables.h"
 #include "reference/conformance.h"
@@ -148,11 +148,54 @@ int main(void)
 #ifdef DF_CONFORMANCE_TEAM_C
     DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], DF_TEAM_C_BATTLES);
     DF_CHECK_EQ_U64(&t, real, DF_TEAM_C_REAL);
+    /* The real Team C of the recorded gate battles (team-c.txt through the
+     * specs) is the gate's fixture (df_put_team_c, duoforge.combat.
+     * team_c_gate): each Team C member of a c12_real battle equals the
+     * fixture's member of its species, which no team A or B member shares. */
+    {
+        duoforge_side_setup fixture;
+        df_put_team_c(&fixture);
+        uint32_t matched = 0u;
+        for (size_t i = 0; i < sizeof conf_battles / sizeof conf_battles[0]; ++i) {
+            const df_conf_battle *cb = &conf_battles[i];
+            if (strncmp(cb->name, "c12_real_", 9u) != 0) {
+                continue;
+            }
+            for (uint32_t side = 0; side < 2u; ++side) {
+                for (uint32_t m = 0; m < cb->member_count; ++m) {
+                    const df_conf_member *src = &cb->members[side][m];
+                    for (uint32_t f = 0; f < fixture.member_count; ++f) {
+                        const duoforge_member_setup *d = &fixture.members[f];
+                        if (d->species_id != src->species) {
+                            continue;
+                        }
+                        bool same = d->gender == src->gender && d->nature == src->nature &&
+                                    d->ability == src->ability && d->item == src->item &&
+                                    d->move_count == src->move_count;
+                        for (uint32_t k = 0; k < 6u; ++k) {
+                            same = same && d->stat_points[k] == src->sp[k];
+                        }
+                        for (uint32_t k = 0; k < d->move_count && k < 4u; ++k) {
+                            same = same && d->moves[k].move_id == src->moves[k];
+                        }
+                        if (!DF_CHECK(&t, same)) {
+                            fprintf(stderr, "  %s: member %u of side %u differs from df_put_team_c\n", cb->name, m,
+                                    side);
+                        }
+                        matched += 1u;
+                    }
+                }
+            }
+        }
+        DF_CHECK_EQ_U64(&t, matched, 24u * 6u); /* Team C on 4 x 4 + 4 x 2 sides */
+    }
 #else
-    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 87u);
+    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 88u);
     /* Exactly the battles of the real teams run under CLOSURE, the certified
-     * profile (decision 0010): the closure gate's 8 and the 16 of M5 step 3. */
-    DF_CHECK_EQ_U64(&t, real, 24u);
+     * profile (decision 0010): the closure gate's 8, the 16 of M5 step 3 and
+     * d01_noguard_accuracy_tie, a cut of a battle found by the differential
+     * loop. */
+    DF_CHECK_EQ_U64(&t, real, 25u);
 #endif
 #ifdef DF_CONFORMANCE_TEAM_C
     fprintf(stderr, "  %u of the battles run under TEAM_C data\n", real);

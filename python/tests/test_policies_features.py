@@ -215,6 +215,17 @@ class PoliciesFeaturesTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 features.encode(ob, d)
 
+    def test_encode_refuses_psychic_terrain(self):
+        with duoforge.Batch(self.ctx, _setups(), 1, SEED) as batch:
+            batch.query_factored()
+            ob = np.array(batch.observations[0, 0])
+            d = batch.domains[0, 0]
+            features.encode(ob, d)
+            ob["terrain"] = _layout.CONSTANTS["DUOFORGE_TERRAIN_PSYCHIC"]  # TEAM_C, not encoded yet
+            ob["terrain_turns"] = 5
+            with self.assertRaisesRegex(ValueError, "terrain"):
+                features.encode(ob, d)
+
     def test_zero_count_raises(self):
         with duoforge.Batch(self.ctx, _setups(), 1, SEED) as batch:
             batch.query()
