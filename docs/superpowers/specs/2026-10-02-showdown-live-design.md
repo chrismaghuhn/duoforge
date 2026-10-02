@@ -1,6 +1,6 @@
 # Showdown live adapter: design
 
-Date: 2026-10-02. Status: design approved by the owner in chat; this spec is for his review.
+Date: 2026-10-02. Status: design approved by the owner in chat. Self-review the same day: the formats, the open team sheets and the Bo3 flow were checked against the pin. This spec is for his review.
 
 ## 1. Goal
 
@@ -8,7 +8,9 @@ The bot of the night run (decision 0014, `docs/learning/2026-10-02-night`) plays
 
 First version:
 
-- **Challenges only**, in `[Gen 9 Champions] VGC 2026 Reg M-C` (`gen9championsvgc2026regmc`), as Bo1 and as Bo3.
+- **Challenges only**, in the two formats of `[Gen 9 Champions] VGC 2026 Reg M-C` at the pin (`config/formats.ts`):
+  - Bo1, `gen9championsvgc2026regmc`. Open team sheets come only when both players accept (rule `Open Team Sheets`).
+  - Bo3, `gen9championsvgc2026regmcbo3` ("(Bo3)"). Open team sheets always come (rule `Force Open Team Sheets`).
 - **Both players use Team A or Team B** (`tests/reference/teams/`), the teams the bot was trained on, with open team sheets.
 
 ## 2. Owner decisions (2026-10-02)
@@ -36,12 +38,12 @@ In Champions formats, Showdown's Open Team Sheets show exactly that. `sim/battle
 
 | File | Responsibility |
 |---|---|
-| `client.py` | Websocket connection. Login: as a guest name through `getassertion`, or as a registered name whose password the program reads from `DUOFORGE_PS_PASSWORD` at run time. Challenges: `/utm`, `/accept`, `/reject`. Room routing; `/choose` with `rqid`. |
-| `teams.py` | Packs Team A or B for `/utm`. Unpacks `\|showteam\|`. Matches a revealed sheet exactly against A and B: species, item, ability, moves, nature, gender and level. |
-| `tracker.py` | One per battle and viewer. Reads the room's protocol lines and requests and builds the `OBSERVATION` record (`_layout.OBSERVATION`) that DuoForge would show this player. A battle line it does not know raises. |
+| `client.py` | Websocket connection. Login: as a guest name through `getassertion`, or as a registered name whose password the program reads from `DUOFORGE_PS_PASSWORD` at run time. Challenges: `/utm`, `/accept`, `/reject`. Room routing, including the Bo3 series room (`game-bestof3-…`) and `/confirmready` there; `/choose` with `rqid`. |
+| `teams.py` | Packs Team A or B for `/utm`. Unpacks `\|showteam\|`. Matches a revealed sheet against A and B: the same six sets in any order, each with the same species, item, ability, moves (in any order), nature, gender and level. |
+| `tracker.py` | One per battle and viewer. Reads the room's protocol lines and requests and builds the `OBSERVATION` record (`_layout.OBSERVATION`) that DuoForge would show this player. The foe's members and moves keep the order of its `\|showteam\|` line; the own team is the one the bot registered. A battle line it does not know raises. The tracker implements no battle rule: it only records what Showdown reports, and test 1 checks it against DuoForge's own observation. |
 | `options.py` | From a request: the slot options in the rows of `FACTORED_DOMAIN`, the team tuples at team preview, and the text of an option or pair for `/choose`. The provisional pair mask allows every pair of valid options; Showdown judges the pair (section 6). |
 | `policy.py` | The network's forward pass in NumPy, the same function as `duoforge_learn.model.apply`. It plays greedily: the best pair or team tuple, then the next best after a rejection. |
-| `__main__.py` | `python -m duoforge_live --checkpoint PATH --name NAME [--team A\|B\|random] [--server URL] [--log-dir DIR] [--team-link URL]` |
+| `__main__.py` | `python -m duoforge_live --checkpoint PATH --name NAME [--team A\|B\|random] [--server URL] [--log-dir DIR] [--team-link URL] [--challenge USER]`. `--challenge` is for the local server only (section 8). |
 
 **IDs.** The adapter maps species, move, item, ability, nature and gender to DuoForge ids with the converter's own loader: `parse_team` and `load_tables` of `tools/reference/trace_to_c.py`. There is no second id table.
 
@@ -54,16 +56,21 @@ Under CLOSURE these inputs are always 0, so the widened network gives the same o
 
 ## 6. Data flow of one battle
 
-1. Accept the challenge after `/utm` with the chosen team. A challenge in another format is rejected.
-2. When asked, send `/acceptopenteamsheets`. Wait for `|showteam|` of both sides.
-3. Match the foe's sheet against A and B exactly. If they do not match, forfeit (section 7).
+1. Accept a challenge in one of the two formats after `/utm` with the chosen team. A challenge in any other format is rejected.
+2. **Open team sheets.**
+   - Bo1: the server asks both players (`|uhtml|otsrequest|`), and the bot sends `/acceptopenteamsheets`. Bo3: the sheets come without asking.
+   - The bot chooses its team only after the `|showteam|` lines of both sides are in, because the team head sees the foe's sheet.
+   - The sheets count as denied when the foe's line "… rejected open team sheets." arrives, or when they have not come 60 seconds after the team preview request. The VGC timer gives 90 seconds for team preview.
+3. Match the foe's sheet against A and B (section 5, `teams.py`). If it does not match, forfeit (section 7).
 4. **Team preview:** the team head's best tuple becomes `/choose team abcd|rqid`.
 5. **Each request:**
    1. The tracker gives the observation and `options.py` the options.
    2. `features.encode` turns them into network input, and `policy.py` picks the best pair.
    3. Send `/choose` with that pair.
-   4. On `|error|[Invalid choice]`, exclude that pair and send the next best. After 64 rejections the bot forfeits.
-6. **End** (`|win|`, `|tie|`): send "gg" and write the log. In Bo3, every game is its own battle room and runs through steps 2–6 again. The bot carries nothing from one game to the next.
+   4. On `|error|[Invalid choice]`, exclude that pair and send the next best. After 64 rejections the bot forfeits as an internal error (section 7).
+   5. `|error|[Unavailable choice]` comes with a changed request, because of information the player did not have. The tracker cannot know that information, so this is an internal error too.
+6. **End** of a game (`|win|`, `|tie|` in the battle room): send "gg" and write the log. The bot carries nothing from one game to the next.
+7. **Bo3** (checked against the pin's `server/room-battle-bestof.ts`): the series has its own room, `game-bestof3-gen9championsvgc2026regmcbo3-N`, and every game is a battle room of its own that runs through steps 2–6. Between games the series room asks "Are you ready for game N", and the bot answers with `/confirmready` there. The series room's own `|win|` or `|tie|` ends the series. The team from the challenge stays the same in every game.
 
 ## 7. Errors and etiquette
 
@@ -71,9 +78,9 @@ Every refusal is explicit. The bot never lets the timer run out on a player.
 
 | Case | Action and message |
 |---|---|
-| Challenge in another format | `/reject`; PM: "Sorry, I only play [Gen 9 Champions] VGC 2026 Reg M-C." |
+| Challenge in another format | `/reject`; PM: "Sorry, I only play [Gen 9 Champions] VGC 2026 Reg M-C, Bo1 or Bo3." |
 | Already in a battle | `/reject`; PM: "Sorry, I'm in a battle right now. Please challenge me again in a few minutes." |
-| Open team sheets denied, or the foe's team is not Team A or B | Chat: "I'm a research bot and only play DuoForge Team A or B with open team sheets, so I'm forfeiting this game." Then `/forfeit`. With `--team-link URL`, the link is added. |
+| Open team sheets denied or not given within 60 seconds, or the foe's team is not Team A or B | Chat: "I'm a research bot and only play DuoForge Team A or B with open team sheets, so I'm forfeiting this game." Then `/forfeit`. With `--team-link URL`, the link is added. |
 | An unknown battle line, or an error in tracker, options or policy | Chat: "Internal error on my side, sorry. Forfeiting." Then `/forfeit`; the cause goes to the log. |
 | Start / end | "Hi! DuoForge bot here, good luck!" / "gg" |
 
@@ -83,10 +90,10 @@ Every refusal is explicit. The bot never lets the timer run out on a player.
 
 ## 8. Tests
 
-1. **The tracker is exact.** This is the CMake test `duoforge.python.live`. It needs Node and `DUOFORGE_PS_REFERENCE_DIR` and is skipped without them. For every committed reference battle with Teams A and B:
-   - **Client stream.** A new Node helper, `tools/reference/ps_client.js`, plays the spec's battle in the pinned Showdown. It writes each player's client stream: the protocol lines with `|split|` resolved for that player, and `|request|` with its JSON. This is what a websocket client receives.
+1. **The tracker is exact.** This is the CMake test `duoforge.python.live`. It needs Node and `DUOFORGE_PS_REFERENCE_DIR` and is skipped without them. For every committed closure battle (all of them, not only the real-team ones, because live games can reach every closure mechanic; the Team C battles are out of scope):
+   - **Client stream.** A new Node helper, `tools/reference/ps_client.js`, plays the spec's battle in the pinned Showdown. It writes each player's client stream: the protocol lines with `|split|` resolved for that player, and `|request|` with its JSON. This is what a websocket client receives. At team preview it writes `>show-openteamsheets` to the battle, as the server does when both players accept, so the stream holds both `|showteam|` lines; this draws no random numbers.
    - **What DuoForge shows.** `duoforge_diff_runner --dump-views FILE` replays the same committed battle as it does today. Per step and viewer it writes DuoForge's observation (736 bytes) and factored domain (652 bytes).
-   - **Comparison.** At every request, the tracker's observation must equal DuoForge's byte for byte. Its input is the client stream plus the foe's sheet, taken from the spec, because the recorded battles have no `|showteam|` lines. The options must equal DuoForge's slot options as a set, and every pair DuoForge allows must be in the provisional mask.
+   - **Comparison.** At every request, the tracker's observation must equal DuoForge's byte for byte. Its input is the client stream, with the foe's sheet from the `|showteam|` line, and the player's own team from the spec, as a live bot knows the team it registered. The options must equal DuoForge's slot options as a set, and every pair DuoForge allows must be in the provisional mask.
 2. **Choice text.** Every option, turned into Showdown text and back through `trace_to_c.convert_choice`, gives the same DuoForge command. The same holds for team tuples.
 3. **Checkpoint widening.**
    - On real CLOSURE observations, the 13 inserted columns are 0.
@@ -96,8 +103,8 @@ Every refusal is explicit. The bot never lets the timer run out on a player.
 5. **Teams.**
    - Packing A and B equals the pinned Showdown's `Teams.pack`, through the Node helper.
    - Unpacking a `|showteam|` line and packing it again gives the same line.
-   - The exact match accepts A and B and refuses a changed move, item or nature.
-6. **Client protocol without network.** A fake websocket replays server lines: the login, a challenge in the right format, one in the wrong format, one while busy, the open-team-sheet prompt, and an invalid choice followed by the next best.
+   - The match accepts A and B, also with members or moves reordered, and refuses a changed species, move, item, ability, nature or gender.
+6. **Client protocol without network.** A fake websocket replays server lines: the login, a challenge in each right format, one in a wrong format, one while busy, the open-team-sheet prompt, sheets denied and sheets that never come, an invalid choice followed by the next best, and a Bo3 series with the ready prompt between games.
 7. **By hand, not in CI.**
    - The pinned server runs locally, and two bot instances play Bo1 and Bo3 against each other. The test-only flag `--challenge USER` is refused for the official server.
    - Then a first game on the official server: the owner challenges the bot.
@@ -115,5 +122,4 @@ Every refusal is explicit. The bot never lets the timer run out on a player.
 - **The live server may differ from the pin** in protocol lines or mechanics.
   - An unknown battle line ends the game with a forfeit (section 7).
   - Different mechanics only change how well the bot plays, never what it reports.
-- **Bo3 room protocol:** verified against the pin's `server/room-battle-bestof.ts` when it is built.
 - **Showdown's rules for bots:** the owner's statement applies. The bot only accepts challenges, plays one battle at a time and never ladders.
