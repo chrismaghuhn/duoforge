@@ -540,14 +540,20 @@ int main(void)
     }
 
     /* Step G2 (docs/research/expansion/data/team_gaps.json): the formes Pelipper, Arcanine-Hisui, Annihilape and
-     * Floette-Eternal under the set rule, and the 22 new moves behind the gate. The moves are all unmarked, so a
-     * setup that has one is E_UNSUPPORTED after all validation; a species is complete with its base data, so a
+     * Floette-Eternal under the set rule, and the 22 new moves behind the gate. Twelve of them are marked (their
+     * data runs on the existing paths, each in a reference battle under the POOL kind: g2_data_moves_a to _d), so a
+     * setup that has one is supported; the other ten (U-turn and the nine with a handler id) are unmarked, so a
+     * setup that has one is E_UNSUPPORTED after all validation. A species is complete with its base data, so a
      * Pelipper whose ability, item and moves are marked is a supported setup. Team B's lead is replaced. */
     {
+        static const uint32_t marked_moves[] = {DFI_MOVE_ROCKSLIDE, DFI_MOVE_DOUBLEEDGE, DFI_MOVE_THUNDERBOLT,
+                                                DFI_MOVE_FLASHCANNON, DFI_MOVE_EXTREMESPEED, DFI_MOVE_HEADSMASH,
+                                                DFI_MOVE_BULKUP, DFI_MOVE_LIQUIDATION, DFI_MOVE_ICEPUNCH,
+                                                DFI_MOVE_SHADOWCLAW, DFI_MOVE_DRUMBEATING, DFI_MOVE_DAZZLINGGLEAM};
         const duoforge_member_setup *tpl = &teams.sides[1].members[0];
         /* Every new move: a learner with a legal ability that is marked, with no item, on a side where it does not
          * clash with the Species Clause. The gate function with a fully marked manifest accepts the setup (the
-         * control), and refuses it when only that move is unmarked, as the real manifest does. */
+         * control), and refuses it when only that move is unmarked; the real manifest decides as marked_moves says. */
         for (uint32_t mv = DFI_EXT_MOVE_COUNT; mv < DFI_POOL_MOVE_COUNT; ++mv) {
             bool found = false;
             for (uint32_t pass = 0u; pass < 2u && !found; ++pass) {
@@ -572,17 +578,22 @@ int main(void)
                         continue;
                     }
                     found = true;
+                    bool marked = false;
+                    for (size_t k = 0u; k < sizeof marked_moves / sizeof marked_moves[0]; ++k) {
+                        marked = marked || marked_moves[k] == mv;
+                    }
                     s = teams;
                     s.sides[side].members[0] = member_of(&s.sides[side].members[0], forme, ability, 0u, 1u, &mv);
-                    legal(&t, kp, &s, false, "a new move (unmarked)");
-                    legal(&t, kq, &s, false, "a new move (unmarked, dev)");
+                    legal(&t, kp, &s, marked, marked ? "a new move (marked)" : "a new move (unmarked)");
+                    legal(&t, kq, &s, marked, marked ? "a new move (marked, dev)" : "a new move (unmarked, dev)");
                     invalid(&t, kc, &s, "a pool forme under TEAM_C");
                     const dfi_support_manifest full = full_manifest();
                     DF_CHECK(&t, dfi_closure_setup_supported(&full, &s));
                     dfi_support_manifest without = full;
                     without.moves[mv] = 0u;
                     DF_CHECK(&t, !dfi_closure_setup_supported(&without, &s));
-                    DF_CHECK(&t, !dfi_closure_setup_supported(&dfi_support, &s));
+                    DF_CHECK_EQ_U64(&t, dfi_closure_setup_supported(&dfi_support, &s) ? 1u : 0u, marked ? 1u : 0u);
+                    DF_CHECK_EQ_U64(&t, dfi_support.moves[mv] != 0u ? 1u : 0u, marked ? 1u : 0u);
                 }
             }
             if (!DF_CHECK(&t, found)) {
@@ -653,7 +664,9 @@ int main(void)
                                           annihilape_moves);
         legal(&t, kp, &s, true, "Annihilape with marked moves");
         s.sides[1].members[0].moves[3].move_id = DFI_MOVE_ICEPUNCH;
-        legal(&t, kp, &s, false, "Annihilape with Ice Punch (unmarked)");
+        legal(&t, kp, &s, true, "Annihilape with Ice Punch (marked in G2)");
+        s.sides[1].members[0].moves[3].move_id = DFI_MOVE_UTURN;
+        legal(&t, kp, &s, false, "Annihilape with U-turn (unmarked: its switch cause is G5)");
         s.sides[1].members[0].moves[3].move_id = DFI_MOVE_FLAREBLITZ; /* Annihilape does not learn it */
         invalid(&t, kp, &s, "Annihilape with Flare Blitz");
 
@@ -756,8 +769,8 @@ int main(void)
             DF_CHECK_EQ_U64(&t, dfi_support.abilities[added[i]], 0u);
         }
         /* An item: marked, so supported; an unmarked one (the manifest
-         * copied and edited, for every new id) is gone. */
-        for (uint32_t id = DFI_EXT_ITEM_COUNT; id < DFI_POOL_ITEM_COUNT; ++id) {
+         * copied and edited, for every P2 item) is gone. Focus Sash, Expert Belt and Floettite (G2) are unmarked. */
+        for (uint32_t id = DFI_EXT_ITEM_COUNT; id < DFI_ITEM_FOCUSSASH; ++id) {
             s = teams;
             s.sides[0].members[0].item = id + 1u;
             DF_CHECK(&t, dfi_closure_setup_supported(&dfi_support, &s));

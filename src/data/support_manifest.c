@@ -64,8 +64,13 @@
  * Pelipper, Arcanine-Hisui, Annihilape and Floette-Eternal with its Mega, 22
  * moves (nine of them with a named handler id that the turn code refuses),
  * Focus Sash, Expert Belt, Floettite, Rock Head, Flower Veil and Fairy Aura.
- * A move is marked by the step that records a reference battle with it under
- * the POOL kind. */
+ * It then marks the twelve moves whose data the existing paths already run
+ * (Rock Slide, Double-Edge, Thunderbolt, Flash Cannon, Extreme Speed, Head
+ * Smash, Bulk Up, Liquidation, Ice Punch, Shadow Claw, Drum Beating and
+ * Dazzling Gleam), each used in one of the four reference battles under the
+ * POOL kind g2_data_moves_a to _d. U-turn stays unmarked: its switch cause
+ * is the pivot of step G5. A move is marked only by the step that records a
+ * reference battle with it. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -121,6 +126,18 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_SUCKERPUNCH] = 1u,
             [DFI_MOVE_HELPINGHAND] = 1u,
             [DFI_MOVE_FOLLOWME] = 1u,
+            [DFI_MOVE_ROCKSLIDE] = 1u,
+            [DFI_MOVE_DOUBLEEDGE] = 1u,
+            [DFI_MOVE_THUNDERBOLT] = 1u,
+            [DFI_MOVE_FLASHCANNON] = 1u,
+            [DFI_MOVE_EXTREMESPEED] = 1u,
+            [DFI_MOVE_HEADSMASH] = 1u,
+            [DFI_MOVE_BULKUP] = 1u,
+            [DFI_MOVE_LIQUIDATION] = 1u,
+            [DFI_MOVE_ICEPUNCH] = 1u,
+            [DFI_MOVE_SHADOWCLAW] = 1u,
+            [DFI_MOVE_DRUMBEATING] = 1u,
+            [DFI_MOVE_DAZZLINGGLEAM] = 1u,
         },
     .abilities =
         {
