@@ -1,0 +1,20 @@
+{
+  "name": "g15_seed_tie",
+  "purpose": "Step G15, two Psychic Seeds at one Speed (Farigiraf on both sides, the same spread) when Indeedee's Psychic Surge starts the terrain: eachEvent orders the holders by Speed and shuffles the tie, so the order of the two -enditem and -boost lines is drawn (the converter keeps the tie draw because two holders have a handler).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000001509",
+  "teams": [
+    "Indeedee (M)\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Expanding Force\n- Protect\n- Helping Hand\n- Psychic\n\nFarigiraf (F) @ Psychic Seed\nAbility: Armor Tail\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 Spe\nModest Nature\n- Psychic\n- Helping Hand\n- Protect\n- Expanding Force\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nGholdengo\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Protect\n\nIncineroar (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Protect\n\nGrimmsnarl (M)\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Protect",
+    "Farigiraf (F) @ Psychic Seed\nAbility: Armor Tail\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 Spe\nModest Nature\n- Psychic\n- Helping Hand\n- Protect\n- Expanding Force\n\nGholdengo\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Protect\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nIncineroar (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Protect\n\nGrimmsnarl (M)\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Protect\n\nRaichu (F)\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Thunderbolt\n- Helping Hand\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 2, move 3"
+    ],
+    "p2": [
+      "move 3, move 3"
+    ],
+    "max_steps": 2
+  }
+}

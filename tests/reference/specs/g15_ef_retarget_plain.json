@@ -1,0 +1,22 @@
+{
+  "name": "g15_ef_retarget_plain",
+  "purpose": "Step G15, the same without the terrain: Kingambit's Sucker Punch knocks Meowstic-F out first, and Expanding Force aimed at it is retargeted at random to the foe that stands (Gholdengo, resisted): a single-target move, as every normal-target move.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000001506",
+  "teams": [
+    "Delphox (F)\nAbility: Blaze\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Expanding Force\n- Flamethrower\n- Protect\n- Helping Hand\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect\n\nArcanine-Hisui (M) @ Life Orb\nAbility: Rock Head\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Extreme Speed\n- Flare Blitz\n- Protect\n- Head Smash\n\nGholdengo\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Protect\n\nIncineroar (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Protect\n\nGrimmsnarl (M)\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Protect",
+    "Gholdengo\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Protect\n\nMeowstic-F (F)\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 2 SpA\nQuiet Nature\n- Psychic\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nIncineroar (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Protect\n\nGrimmsnarl (M)\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Protect\n\nBasculegion (M)\nAbility: Adaptability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 2, move 1 2",
+      "move 1 1, move 3"
+    ],
+    "p2": [
+      "move 2 1, move 1 1",
+      "move 2 1, move 1 1"
+    ],
+    "max_steps": 3
+  }
+}

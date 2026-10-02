@@ -1,0 +1,22 @@
+{
+  "name": "g15_ef_wide_guard",
+  "purpose": "Step G15, Expanding Force against Wide Guard in Psychic Terrain (Indeedee's Psychic Surge): the spread version is stopped for every target of the guarded side, one -activate|move: Wide Guard line for each, for both users (Indeedee and Delphox); on the next turn without Wide Guard it is a spread move again, and Raichu's Protect stops it for Raichu only while Armarouge is hit (resisted).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000001503",
+  "teams": [
+    "Indeedee (M)\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Expanding Force\n- Protect\n- Helping Hand\n- Psychic\n\nDelphox (F)\nAbility: Blaze\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Expanding Force\n- Flamethrower\n- Protect\n- Helping Hand\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nGholdengo\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Protect\n\nIncineroar (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Protect\n\nGrimmsnarl (M)\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Protect",
+    "Armarouge (M)\nAbility: Flash Fire\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Wide Guard\n- Expanding Force\n- Protect\n- Flamethrower\n\nRaichu (F)\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Thunderbolt\n- Helping Hand\n- Protect\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nGholdengo\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Protect\n\nIncineroar (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Protect\n\nGrimmsnarl (M)\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1 2",
+      "move 1 1, move 1 2"
+    ],
+    "p2": [
+      "move 1, move 3",
+      "move 4 1, move 3"
+    ],
+    "max_steps": 3
+  }
+}
