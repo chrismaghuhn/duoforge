@@ -166,6 +166,15 @@ if(DUOFORGE_PS_REFERENCE_DIR)
                 --out "${CMAKE_CURRENT_BINARY_DIR}/diff_replay")
         set_tests_properties(duoforge.reference.diff_replay PROPERTIES TIMEOUT 900 LABELS reference
             ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+        # The random mode end to end (no machine lock: local_ci.sh holds it already): 16 battles
+        # that the pinned Showdown plays itself, twice, byte-identical, and their buckets,
+        # signatures and lengths as in tests/reference/random_smoke_golden.json.
+        add_test(NAME duoforge.reference.diff_random_smoke
+            COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_diff_random_smoke.py"
+                "${DUOFORGE_NODE}" "${DUOFORGE_PS_REFERENCE_DIR}" "$<TARGET_FILE:duoforge_diff_runner>"
+                "${CMAKE_CURRENT_BINARY_DIR}/diff_random_smoke")
+        set_tests_properties(duoforge.reference.diff_random_smoke PROPERTIES TIMEOUT 600 LABELS reference
+            ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
     endif()
 endif()
 # The conformance tables must be what the converter makes of the traces.

@@ -1,0 +1,42 @@
+{
+ "battles": 16,
+ "buckets": {
+  "CAP": 0,
+  "DIVERGENCE": 0,
+  "ORACLE_GAP": 0,
+  "PASS": 16,
+  "REF_ERROR": 0,
+  "UNSUPPORTED": 0
+ },
+ "pairings": [
+  "AB",
+  "BA",
+  "AA",
+  "BB"
+ ],
+ "policy": {
+  "max_steps": 300,
+  "mega_weight": 0.5,
+  "switch_weight": 0.1
+ },
+ "seed": 2,
+ "signatures": [],
+ "battle_lines": [
+  "AB PASS 18",
+  "BA PASS 17",
+  "AA PASS 22",
+  "BB PASS 32",
+  "AB PASS 21",
+  "BA PASS 17",
+  "AA PASS 21",
+  "BB PASS 22",
+  "AB PASS 19",
+  "BA PASS 23",
+  "AA PASS 19",
+  "BB PASS 21",
+  "AB PASS 21",
+  "BA PASS 22",
+  "AA PASS 14",
+  "BB PASS 17"
+ ]
+}
