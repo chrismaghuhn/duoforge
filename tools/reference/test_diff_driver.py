@@ -604,6 +604,8 @@ class Outputs(unittest.TestCase):
         self.assertEqual(driver.first_difference('a\nb\nc', 'a\nb\nd'), 'line 3: c against d')
         self.assertEqual(driver.first_difference('a\nb', 'a'), 'line 2: b against <end>')
         self.assertEqual(driver.clip('x' * 300), 'x' * 200 + '...')
+        self.assertEqual(driver.printable('Pokémon ☃'), 'Pok\\xe9mon \\u2603')  # the console may be cp1252
+        self.assertEqual(driver.printable('x' * 300), 'x' * 160 + '...')
         try:
             raise KeyError('k')
         except KeyError as e:

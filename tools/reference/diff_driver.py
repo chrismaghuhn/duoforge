@@ -247,6 +247,11 @@ def clip(text, n=200):
     return text if len(text) <= n else text[:n] + '...'
 
 
+def printable(text, n=160):
+    """`text` clipped for the console, in ASCII whatever the console is: the error of a worker may hold anything."""
+    return clip(text, n).encode('ascii', 'backslashreplace').decode('ascii')
+
+
 def first_difference(have, want):
     """Where two texts first differ, for the messages of a REF_ERROR."""
     a, b = have.split('\n'), want.split('\n')
@@ -438,7 +443,7 @@ def report(summary, results, outdir):
             if shown <= 40:
                 print('  %s %s %s%s' % (name, record['bucket'], record['rule'] or '-',
                                          ' step %d' % record['step'] if record['step'] is not None else ''))
-                print('      %s' % clip(str(record['detail']), 160))
+                print('      %s' % printable(str(record['detail'])))
     if shown > 40:
         print('  ... and %d more (battles.jsonl)' % (shown - 40))
     print('diff_driver: results in %s' % outdir)
