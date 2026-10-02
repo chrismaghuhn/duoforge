@@ -143,6 +143,22 @@ duoforge_status duoforge_batch_reset_terminal(duoforge_batch *batch);
    environment as it was. */
 duoforge_status duoforge_batch_reset(duoforge_batch *batch, uint32_t env, uint32_t episode);
 
+/* Resets environment envs[i] to episode episodes[i] with setup setups[i],
+   i < count (decision 0017): each setup passes the checks of
+   duoforge_battle_create (its rng fields are replaced by the seed
+   derivation, as at create and reset), becomes the environment's setup, and
+   a fresh battle starts. Outcomes are atomic per environment: a failing one
+   keeps its setup and battle and its status goes to statuses[i] when
+   statuses is given; the call returns the status of the lowest failing i, or
+   OK. Checks before any change: NULL batch, or NULL envs, episodes or setups
+   with count > 0, is E_NULL_ARGUMENT; an environment out of range or listed
+   twice is E_INVALID_ARGUMENT and nothing changes. count 0 is a no-op. It
+   runs on the batch's workers and allocates as duoforge_batch_reset does:
+   one fresh battle per environment. */
+duoforge_status duoforge_batch_reset_setups(duoforge_batch *batch, uint32_t count, const uint32_t *envs,
+                                            const uint32_t *episodes, const duoforge_battle_setup *setups,
+                                            duoforge_status *statuses);
+
 /* Native mode, in parallel: every environment plays `episodes` further
    episodes from fresh resets with the uniform random policy (each requested
    player, in player order, takes candidate next() % count of a splitmix64
