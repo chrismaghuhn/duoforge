@@ -57,9 +57,11 @@
  * step P1 added the ids and their family columns, step P2 makes the item
  * families rules (the type booster, BasePower x4915/4096, and the resist
  * berry, ModifyDamage x0.5, both read the family column) and marks the
- * sixteen new boosters and seventeen new berries. The abilities Pixilate,
- * Refrigerate, Overgrow, Torrent and Swarm stay unmarked until the steps
- * that make their families rules.
+ * sixteen new boosters and seventeen new berries; step P3 makes the "-ate"
+ * and pinch abilities rules (the family columns of the ability, the type
+ * change before STAB and immunity with BasePower x4915/4096, and ModifyAtk
+ * and ModifySpA x1.5 at a third of the HP or less) and marks Pixilate,
+ * Refrigerate, Overgrow, Torrent and Swarm.
  * Step G2 adds every row of the 17 target teams, all unmarked: the formes
  * Pelipper, Arcanine-Hisui, Annihilape and Floette-Eternal with its Mega, 22
  * moves (nine of them with a named handler id that the turn code refuses),
@@ -70,7 +72,10 @@
  * Dazzling Gleam), each used in one of the four reference battles under the
  * POOL kind g2_data_moves_a to _d. U-turn stays unmarked: its switch cause
  * is the pivot of step G5. A move is marked only by the step that records a
- * reference battle with it. */
+ * reference battle with it.
+ * Step G4 marks Focus Sash (a move hit or the confusion hit that would take all
+ * of a full-HP holder's HP leaves it 1 HP) and Rock Head (no recoil from a
+ * recoil move, Struggle's stays), each with recorded POOL battles. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -163,6 +168,11 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_UNBURDEN] = 1u,
             [DFI_ABILITY_PSYCHICSURGE] = 1u,
             [DFI_ABILITY_ROCKHEAD] = 1u,
+            [DFI_ABILITY_PIXILATE] = 1u,
+            [DFI_ABILITY_REFRIGERATE] = 1u,
+            [DFI_ABILITY_OVERGROW] = 1u,
+            [DFI_ABILITY_TORRENT] = 1u,
+            [DFI_ABILITY_SWARM] = 1u,
         },
     .items =
         {

@@ -24,10 +24,13 @@ static const dfi_position_id S0B = {0, 1};
 static const dfi_position_id S1A = {1, 0};
 static const dfi_position_id S1B = {1, 1};
 
+/* The kinds of this test are all schema 3 (no POOL tail): any such context encodes them. */
+static const duoforge_context *enc_ctx;
+
 static void encode_raw(const duoforge_battle *b, uint8_t out[DUOFORGE_STATE_V3_ENCODED_SIZE])
 {
     memset(out, 0, DUOFORGE_STATE_V3_ENCODED_SIZE);
-    dfi_encode_unchecked(b, out);
+    (void)dfi_encode_unchecked(enc_ctx, b, out);
 }
 
 /* The identity primitives do not own the request masks; a TURN state keeps
@@ -91,6 +94,7 @@ int main(void)
     DF_CHECK_EQ_U64(&t, dfi_position_flat(S1B), 3u); /* p2b */
 
     duoforge_context *c1 = df_make_context(&df_config_c1);
+    enc_ctx = c1;
     duoforge_battle *b = df_make_f1(c1);
 
     /* Member validity (F1: side 0 has 6 members, side 1 has 4). */

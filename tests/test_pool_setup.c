@@ -14,10 +14,11 @@
  * learns and its ability one of the forme's legal abilities, in a setup and
  * in the member invariant; the four other kinds keep the forme's set. The
  * support manifest decides what a battle may use: the new items (the type
- * boosters and resist berries) are marked since step P2, the new abilities
- * are not, so a setup that uses one fails with E_UNSUPPORTED after all
- * validation, and so does every step of a battle that holds one; an unmarked
- * item (the manifest edited in a copy) is gone the same way.
+ * boosters and resist berries) are marked since step P2 and the new
+ * abilities since step P3, so everything the pool adds is supported; an
+ * unmarked item or ability (the manifest edited in a copy) fails the gate
+ * functions with E_UNSUPPORTED after all validation, in a setup and at every
+ * step of a battle that holds it.
  *
  * The fingerprints are those of tools/state_model/state_v3_model.py (the
  * contexts KP and KPD).
@@ -95,13 +96,13 @@ static void expect_inv(df_test *t, const duoforge_context *ctx, const duoforge_b
 static void expect_decode(df_test *t, const duoforge_context *ctx, const duoforge_battle *b, duoforge_status want,
                           dfi_invariant want_inv, const char *what)
 {
-    uint8_t bytes[DUOFORGE_STATE_V3_ENCODED_SIZE];
-    dfi_encode_unchecked(b, bytes);
-    uint8_t *in = df_heap_copy(bytes, sizeof bytes);
+    uint8_t bytes[DF_STATE_ENCODED_MAX];
+    const size_t size = dfi_encode_unchecked(ctx, b, bytes);
+    uint8_t *in = df_heap_copy(bytes, size);
     struct duoforge_battle decoded;
     memset(&decoded, 0, sizeof decoded);
     dfi_invariant inv = DFI_INV_NONE;
-    const duoforge_status st = dfi_decode_state(ctx, in, sizeof bytes, &decoded, &inv);
+    const duoforge_status st = dfi_decode_state(ctx, in, size, &decoded, &inv);
     if (!DF_CHECK(t, st == want && inv == want_inv)) {
         fprintf(stderr, "  decode %s: %s (%s), expected %s (%s)\n", what, duoforge_status_name(st),
                 dfi_invariant_name(inv), duoforge_status_name(want), dfi_invariant_name(want_inv));
@@ -187,17 +188,17 @@ static void turn_bundle(duoforge_decision_bundle *bd, const duoforge_battle *b)
 static void step_expect(df_test *t, const duoforge_context *ctx, duoforge_battle *b,
                         const duoforge_decision_bundle *bd, duoforge_status want, const char *what)
 {
-    uint8_t before[DUOFORGE_STATE_V3_ENCODED_SIZE];
-    uint8_t after[DUOFORGE_STATE_V3_ENCODED_SIZE];
-    df_encode(ctx, b, before);
+    uint8_t before[DF_STATE_ENCODED_MAX];
+    uint8_t after[DF_STATE_ENCODED_MAX];
+    const size_t size = df_encode_n(ctx, b, before);
     duoforge_step_result res;
     const duoforge_status st = duoforge_battle_step(ctx, b, bd, &res);
     if (!DF_CHECK(t, st == want)) {
         fprintf(stderr, "  step %s: %s, expected %s\n", what, duoforge_status_name(st), duoforge_status_name(want));
     }
     if (want != DUOFORGE_OK) {
-        df_encode(ctx, b, after);
-        DF_CHECK_BYTES(t, after, before, sizeof after, what);
+        DF_CHECK_EQ_U64(t, df_encode_n(ctx, b, after), size);
+        DF_CHECK_BYTES(t, after, before, size, what);
     }
 }
 
@@ -404,8 +405,8 @@ int main(void)
     legal(&t, kc, &s, true, "an extended item under TEAM_C");
     legal(&t, kp, &s, true, "an extended item under POOL");
     /* A new ability is legal only for a forme that may have it: Rillaboom
-     * may have Overgrow (so that setup is legal and, as Overgrow is not
-     * marked, E_UNSUPPORTED), and none of the other four. Under the CLOSURE
+     * may have Overgrow (so that setup is legal and, as Overgrow is marked
+     * since step P3, supported), and none of the other four. Under the CLOSURE
      * and TEAM_C kinds Rillaboom has Grassy Surge only. */
     {
         static const struct {
@@ -421,8 +422,8 @@ int main(void)
             s = teams;
             s.sides[0].members[0].ability = added[i].ability + 1u;
             if (added[i].legal_for_rillaboom) {
-                legal(&t, kp, &s, false, "Rillaboom with Overgrow (legal, unmarked)");
-                legal(&t, kq, &s, false, "Rillaboom with Overgrow (legal, unmarked, dev)");
+                legal(&t, kp, &s, true, "Rillaboom with Overgrow (legal, marked)");
+                legal(&t, kq, &s, true, "Rillaboom with Overgrow (legal, marked, dev)");
             } else {
                 invalid(&t, kp, &s, added[i].what);
                 invalid(&t, kq, &s, added[i].what);
@@ -524,8 +525,8 @@ int main(void)
         step_expect(&t, kp, w, &bd, DUOFORGE_OK, "Mega Evolution with a learned move");
         DF_CHECK(&t, w->sides[0].members[1].is_mega == 1u && duoforge_battle_check(kp, w) == DUOFORGE_OK);
         duoforge_battle_destroy(w);
-        /* A legal ability that is not marked stops at the gate, in the
-         * state as well: Rillaboom with Overgrow. */
+        /* A legal ability that is marked runs, in the state as well:
+         * Rillaboom with Overgrow. */
         s = teams;
         s.sides[0].members[0].ability = DFI_ABILITY_OVERGROW + 1u;
         w = NULL;
@@ -534,7 +535,12 @@ int main(void)
             expect_inv(&t, kp, w, DFI_INV_NONE, "Overgrow on Rillaboom");
             expect_decode(&t, kp, w, DUOFORGE_OK, DFI_INV_NONE, "Overgrow on Rillaboom");
             team_bundle(&bd, w);
-            step_expect(&t, kp, w, &bd, DUOFORGE_E_UNSUPPORTED, "team selection with Overgrow");
+            step_expect(&t, kp, w, &bd, DUOFORGE_OK, "team selection with Overgrow");
+            /* The gate on this state, with the mark taken away in a copy. */
+            dfi_support_manifest unmarked = dfi_support;
+            DF_CHECK(&t, dfi_closure_battle_supported(&dfi_support, w));
+            unmarked.abilities[DFI_ABILITY_OVERGROW] = 0u;
+            DF_CHECK(&t, !dfi_closure_battle_supported(&unmarked, w));
             duoforge_battle_destroy(w);
         }
     }
@@ -741,12 +747,11 @@ int main(void)
             legal(&t, kq, &s, true, items[i].what);
             invalid(&t, kc, &s, items[i].what);
         }
-        /* After all validation: another fault is INVALID_ARGUMENT, not UNSUPPORTED
-         * (here with an unmarked ability, Rillaboom with Overgrow). */
+        /* After all validation: a fault is INVALID_ARGUMENT, with a pool ability too. */
         s = teams;
         s.sides[0].members[0].ability = DFI_ABILITY_OVERGROW + 1u;
         s.sides[0].members[5].gender = DUOFORGE_GENDER_MALE; /* Gholdengo is genderless */
-        invalid(&t, kp, &s, "an unmarked ability and a gender fault");
+        invalid(&t, kp, &s, "a pool ability and a gender fault");
         s = teams;
         s.sides[0].members[0].item = DFI_ITEM_BLACKBELT + 1u;
         s.sides[0].members[1].item = DFI_ITEM_BLACKBELT + 1u; /* Item Clause */
@@ -756,17 +761,18 @@ int main(void)
         legal(&t, kp, &s, true, "the same teams without the pool item");
 
         /* The abilities: only Rillaboom may have a new one through the API
-         * (Overgrow, above); the gate function itself rejects each of the
-         * five: no mark, no support, with the full manifest as the control. */
+         * (Overgrow, above); the gate function itself takes each of the five
+         * as marked and rejects it when its mark is taken away in a copy. */
         static const uint32_t added[] = {DFI_ABILITY_PIXILATE, DFI_ABILITY_REFRIGERATE, DFI_ABILITY_OVERGROW,
                                          DFI_ABILITY_TORRENT, DFI_ABILITY_SWARM};
         for (size_t i = 0u; i < sizeof added / sizeof added[0]; ++i) {
             s = teams;
             s.sides[0].members[0].ability = added[i] + 1u;
-            const dfi_support_manifest full = full_manifest();
-            DF_CHECK(&t, dfi_closure_setup_supported(&full, &s));
-            DF_CHECK(&t, !dfi_closure_setup_supported(&dfi_support, &s));
-            DF_CHECK_EQ_U64(&t, dfi_support.abilities[added[i]], 0u);
+            DF_CHECK(&t, dfi_closure_setup_supported(&dfi_support, &s));
+            DF_CHECK(&t, dfi_support.abilities[added[i]] != 0u);
+            dfi_support_manifest unmarked = dfi_support;
+            unmarked.abilities[added[i]] = 0u;
+            DF_CHECK(&t, !dfi_closure_setup_supported(&unmarked, &s));
         }
         /* An item: marked, so supported; an unmarked one (the manifest
          * copied and edited, for every P2 item) is gone. Focus Sash is marked in G4; Expert Belt and Floettite (G2) are unmarked. */
@@ -787,9 +793,8 @@ int main(void)
     }
 
     /* The step runs the same gate on the battle: a state that holds a pool
-     * item runs (it is marked), and one that holds an unmarked ability is
-     * E_UNSUPPORTED at every step, atomically; the same step of the state
-     * without it runs. */
+     * item or a new ability runs (both are marked), and the gate on it
+     * fails when the mark is taken away in a copy. */
     {
         s = teams;
         s.sides[0].members[0].item = DFI_ITEM_OCCABERRY + 1u;
@@ -822,7 +827,7 @@ int main(void)
             x->sides[0].members[0].ability = DFI_ABILITY_OVERGROW + 1u; /* Rillaboom, a lead */
             expect_inv(&t, kp, x, DFI_INV_NONE, "Overgrow at a TURN boundary");
             turn_bundle(&bd, x);
-            step_expect(&t, kp, x, &bd, DUOFORGE_E_UNSUPPORTED, "turn with an unmarked ability");
+            step_expect(&t, kp, x, &bd, DUOFORGE_OK, "turn with Overgrow");
             duoforge_battle_destroy(x);
         }
         turn_bundle(&bd, w);
@@ -993,18 +998,18 @@ int main(void)
      * are a context mismatch. */
     {
         duoforge_battle *w = df_make_battle(kp, &teams);
-        uint8_t enc[DUOFORGE_STATE_V3_ENCODED_SIZE];
-        df_encode(kp, w, enc);
-        uint8_t *in = df_heap_copy(enc, sizeof enc);
+        uint8_t enc[DF_STATE_ENCODED_MAX];
+        const size_t enc_size = df_encode_n(kp, w, enc);
+        uint8_t *in = df_heap_copy(enc, enc_size);
         duoforge_battle *d = NULL;
-        DF_CHECK(&t, duoforge_battle_create_decoded(kp, in, sizeof enc, &d) == DUOFORGE_OK && d != NULL);
+        DF_CHECK(&t, duoforge_battle_create_decoded(kp, in, enc_size, &d) == DUOFORGE_OK && d != NULL);
         bool eq = false;
         DF_CHECK(&t, duoforge_battle_equal(kp, w, d, &eq) == DUOFORGE_OK && eq);
         duoforge_battle_destroy(d);
         d = NULL;
-        DF_CHECK(&t, duoforge_battle_create_decoded(kq, in, sizeof enc, &d) == DUOFORGE_E_CONTEXT_MISMATCH);
-        DF_CHECK(&t, duoforge_battle_create_decoded(kc, in, sizeof enc, &d) == DUOFORGE_E_CONTEXT_MISMATCH);
-        DF_CHECK(&t, duoforge_battle_create_decoded(k1, in, sizeof enc, &d) == DUOFORGE_E_CONTEXT_MISMATCH);
+        DF_CHECK(&t, duoforge_battle_create_decoded(kq, in, enc_size, &d) == DUOFORGE_E_CONTEXT_MISMATCH);
+        DF_CHECK(&t, duoforge_battle_create_decoded(kc, in, enc_size, &d) == DUOFORGE_E_CONTEXT_MISMATCH);
+        DF_CHECK(&t, duoforge_battle_create_decoded(k1, in, enc_size, &d) == DUOFORGE_E_CONTEXT_MISMATCH);
         df_free(in);
         duoforge_battle_destroy(w);
     }

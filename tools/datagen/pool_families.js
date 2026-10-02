@@ -219,6 +219,16 @@ function ateChanges(ability) {
     return {changed, boosts};
 }
 
+// The moves an "-ate" ability leaves alone by id (the noModifyType list of its onModifyType handler). The
+// engine skips one of them: Weather Ball, the only one that the pool has (checked below against the pool ids).
+const NO_MODIFY_TYPE = ['judgment', 'multiattack', 'naturalgift', 'revelationdance', 'technoblast', 'terrainpulse',
+    'weatherball'];
+function ateLeavesAlone(ability, id) {
+    const move = moveOf('Normal', {id, name: id});
+    call(ability.onModifyType, battle(ability), [move, {terastallized: false}]);
+    return move.type === 'Normal';
+}
+
 // The types for which a pinch ability gives x1.5 at the HP, from both callbacks.
 function pinchTypes(ability, hp, maxhp) {
     const out = {};
@@ -336,7 +346,7 @@ function checkFocusSash(dex, root) {
     }
 }
 
-function checkAbilities(dex, rows) {
+function checkAbilities(dex, rows, moveIds) {
     const counts = {};
     for (const row of rows) {
         const ability = dex.abilities.get(row.id);
@@ -372,6 +382,13 @@ function checkAbilities(dex, rows) {
             expect(row.id + ' "-ate" BasePower', probe.boosts, {Normal: [4915, 4096]});
             expect(row.id + ' onModifyTypePriority', ability.onModifyTypePriority, -1);
             expect(row.id + ' onBasePowerPriority', ability.onBasePowerPriority, 23);
+            // The moves it does not change: the listed ones, and of the pool's moves only Weather Ball is among them.
+            for (const id of NO_MODIFY_TYPE) {
+                expect(row.id + ' leaves ' + id + ' alone', ateLeavesAlone(ability, id), true);
+            }
+            expect(row.id + ' changes a Normal move of another id', ateLeavesAlone(ability, 'probe'), false);
+            expect('the pool moves that ' + row.id + ' leaves alone',
+                [...moveIds.values()].filter((id) => NO_MODIFY_TYPE.includes(id)), ['weatherball']);
         } else if (row.family === 'PINCH') {
             const type = typeOf(row.param);
             expect(row.id + ' pinch at a third', pinchTypes(ability, 10, 30), {onModifyAtk: [type], onModifySpA: [type]});
@@ -544,7 +561,7 @@ function main() {
     }
     const items = checkItems(dex, itemRows);
     checkFocusSash(dex, root);
-    const abilities = checkAbilities(dex, abilityRows);
+    const abilities = checkAbilities(dex, abilityRows, moveIds);
     // "All 18": a booster and a resist berry for each type, and nothing else in the families.
     expect('type boosters', items.TYPE_BOOSTER, 18);
     expect('resist berries', items.RESIST_BERRY, 18);
