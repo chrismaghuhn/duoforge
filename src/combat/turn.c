@@ -1182,7 +1182,7 @@ static bool dfi_poison_immune(const struct duoforge_battle *b, const dfi_member 
  * freeze at most 3 (the Champions conditions,
  * data/mods/champions/conditions.ts). */
 static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status, uint32_t user, uint32_t move_id,
-                                      bool primary)
+                                      bool primary, uint32_t from_ability)
 {
     static const uint8_t sleep_turns[3] = {2u, 3u, 3u};
     dfi_member *m = dfi_at(r->b, flat);
@@ -1213,8 +1213,21 @@ static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status
     }
     /* SetStatus (sim/pokemon.ts:1724, after the immunities): Flower Veil blocks a status that another Pokemon's move
      * causes on a Grass type of its side (data/abilities.ts:1438-1448); the line shows for a move's own status
-     * (effect.secondaries is unset) and not for a secondary (Dire Claw's pick, Flare Blitz's burn). */
+     * (effect.secondaries is unset) and not for a secondary (Dire Claw's pick, Flare Blitz's burn).
+     * Thermal Exchange (data/abilities.ts:4990-5018, onSetStatus) refuses every burn of its holder: the -immune line
+     * shows for a move's own status (effect.status) and not for a secondary or an item. The two handlers of one
+     * SetStatus event run in speed order and the first refusal ends the event: with a Flower Veil holder in play for
+     * the same Grass-type target the order is not modelled (E_UNSUPPORTED, never a guess). */
     uint32_t holder = 0u;
+    if (status == DFI_STATUS_BRN && dfi_ability(r->b, m, DFI_ABILITY_THERMALEXCHANGE)) {
+        if (user != flat && dfi_flower_veil_holder(r->b, flat, &holder)) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
+        if (primary) {
+            dfi_immune(r, flat, 1u + DFI_ABILITY_THERMALEXCHANGE); /* [-immune] [from] ability: Thermal Exchange */
+        }
+        return DUOFORGE_OK;
+    }
     if (user != flat && dfi_flower_veil_holder(r->b, flat, &holder)) {
         if (primary) {
             dfi_flower_veil_block(r, flat, holder);
@@ -1238,6 +1251,13 @@ static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status
      * (data/mods/champions/conditions.ts:13-20) */
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_STATUS, flat);
     e.detail = m->status;
+    if (from_ability != 0u) {
+        /* psn's onStart names an ability that set it (data/conditions.ts psn): [-status] psn [from] ability: X [of]
+         * the source (Poison Touch, POOL data) */
+        e.cause = (uint8_t)DUOFORGE_CAUSE_ABILITY;
+        e.id2 = (uint16_t)from_ability;
+        e.other = (uint8_t)user;
+    }
     if (status == DFI_STATUS_SLP && move_id != DFI_NO_SOURCE_MOVE) {
         e.cause = (uint8_t)DUOFORGE_CAUSE_MOVE;
         e.id2 = (uint16_t)move_id;
@@ -2003,6 +2023,24 @@ static duoforge_status dfi_run_protect(dfi_run *r, uint32_t user)
     pos->stall_turns = (uint8_t)DFI_STALL_DURATION;
     dfi_emit_plain(r, DUOFORGE_EVENT_PROTECT, user); /* [-singleturn] Protect */
     return dfi_status_hit_end(r);
+}
+
+/* Poison Touch (POOL data, data/abilities.ts:3370-3383, onSourceDamagingHit): after a contact move that hit, the
+ * attacker's roll randomChance(3, 10) (random(10) < 3, one draw per target, also for a target that is down: the
+ * handler runs before trySetStatus fails) and then trySetStatus('psn', attacker) on the target: [-status] psn [from]
+ * ability: Poison Touch [of] the attacker; nothing for a target that is a Poison or Steel type, has a status or is
+ * down. Shield Dust and Covert Cloak, which the pin lets block it, are not marked. */
+static duoforge_status dfi_poison_touch(dfi_run *r, uint32_t user, uint32_t target, const dfi_move_data *md)
+{
+    if ((md->flags & DFI_MOVE_FLAG_CONTACT) == 0u || !dfi_ability(r->b, dfi_at(r->b, user), DFI_ABILITY_POISONTOUCH)) {
+        return DUOFORGE_OK;
+    }
+    uint32_t roll = 0u;
+    duoforge_status st = dfi_draw(r->draws, DFI_SITE_POISON_TOUCH, 0u, 10u, &roll);
+    if (st != DUOFORGE_OK || roll >= 3u) {
+        return st;
+    }
+    return dfi_try_status(r, target, DFI_STATUS_PSN, user, DFI_NO_SOURCE_MOVE, false, 1u + DFI_ABILITY_POISONTOUCH);
 }
 
 /* Wide Guard (data/moves.ts:20808-20851; POOL kinds, the side's flag is in the state tail). Its onTry (:20818) fails
@@ -2916,7 +2954,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                 continue;
             }
             const uint32_t before = dfi_at(b, targets[i])->status;
-            st = dfi_try_status(r, targets[i], md->primary_status, user, move_id, true);
+            st = dfi_try_status(r, targets[i], md->primary_status, user, move_id, true, 0u);
             if (st != DUOFORGE_OK) {
                 return st;
             }
@@ -3043,7 +3081,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             if (md->sec_kind == DFI_SECONDARY_BOOST) {
                 dfi_boost(r, targets[i], md->boosts, user, dfi_effect(DUOFORGE_CAUSE_MOVE, 0u, DFI_BOOST_SECONDARY));
             } else if (md->sec_kind == DFI_SECONDARY_STATUS) {
-                st = dfi_try_status(r, targets[i], md->sec_param, user, move_id, false);
+                st = dfi_try_status(r, targets[i], md->sec_param, user, move_id, false, 0u);
             } else if (md->sec_kind == DFI_SECONDARY_VOLATILE) {
                 st = dfi_add_volatile(r, targets[i], md->sec_param);
             } else if (md->sec_kind == DFI_SECONDARY_LOCKOUT) {
@@ -3061,7 +3099,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                 uint32_t v = 0u;
                 st = dfi_draw(r->draws, DFI_SITE_STATUS_PICK, 0u, 3u, &v);
                 if (st == DUOFORGE_OK) {
-                    st = dfi_try_status(r, targets[i], pick[v], user, DFI_NO_SOURCE_MOVE, false);
+                    st = dfi_try_status(r, targets[i], pick[v], user, DFI_NO_SOURCE_MOVE, false, 0u);
                 }
             } else {
                 st = DUOFORGE_E_UNSUPPORTED;
@@ -3080,6 +3118,22 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
      * holder out (the faint is not processed yet): a contact move costs the
      * attacker floor(maxHP / 6), at least 1. */
     const uint32_t user_before_hit = m->hp;
+    /* Rough Skin (POOL data, data/abilities.ts:3938-3950) is the order-1 handler, before Rocky Helmet's 2: a contact
+     * move costs the attacker floor(maxHP / 8), at least 1, with [from] ability: Rough Skin [of] the holder, also
+     * when the hit knocked the holder out. A contact move is one with the contact flag (checkMoveMakesContact,
+     * sim/battle.ts:1289-1298: Protective Pads are not in the pool; Long Reach, which would remove the flag from the
+     * attacker's moves, is not marked). */
+    for (uint32_t i = 0u; i < count; ++i) {
+        if (hit[i] && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u &&
+            dfi_ability(r->b, dfi_at(b, targets[i]), DFI_ABILITY_ROUGHSKIN)) {
+            const uint32_t skin = (uint32_t)m->hp_max / 8u;
+            st = dfi_deal(r, user, skin == 0u ? 1u : skin, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_ROUGHSKIN,
+                          targets[i]);
+            if (st != DUOFORGE_OK) {
+                return st;
+            }
+        }
+    }
     for (uint32_t i = 0u; i < count; ++i) {
         if (hit[i] && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u &&
             dfi_holds(dfi_at(b, targets[i]), DFI_ITEM_ROCKYHELMET)) {
@@ -3095,7 +3149,16 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
      * target (frz, status first), Stamina raises Defense by 1. */
     for (uint32_t i = 0u; i < count; ++i) {
         dfi_member *tm = dfi_at(b, targets[i]);
-        if (!hit[i] || tm->hp == 0u) {
+        if (!hit[i]) {
+            continue;
+        }
+        if (tm->hp == 0u) {
+            /* The unordered handlers of a target that is down do nothing, except the attacker's Poison Touch: it
+             * draws its roll (the handler runs, trySetStatus then fails). */
+            st = dfi_poison_touch(r, user, targets[i], md);
+            if (st != DUOFORGE_OK) {
+                return st;
+            }
             continue;
         }
         if (move_type == DFI_TYPE_FIRE && tm->status == DFI_STATUS_FRZ) {
@@ -3110,6 +3173,20 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             static const uint8_t def_up[DFI_STAT_STAGE_COUNT] = {6u, 7u, 6u, 6u, 6u, 6u, 6u};
             dfi_boost(r, targets[i], def_up, user,
                       dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_STAMINA, DFI_BOOST_PRIMARY));
+        }
+        /* Thermal Exchange (POOL data, data/abilities.ts:4990-5018, onDamagingHit): a Fire move that hit raises the
+         * holder's Attack by 1 (-ability ... boost, then -boost), as Stamina does for Defense; its holder has one
+         * ability, so it never comes with Stamina. */
+        if (dfi_ability(r->b, tm, DFI_ABILITY_THERMALEXCHANGE) && move_type == DFI_TYPE_FIRE) {
+            static const uint8_t atk_up[DFI_STAT_STAGE_COUNT] = {7u, 6u, 6u, 6u, 6u, 6u, 6u};
+            dfi_boost(r, targets[i], atk_up, user,
+                      dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_THERMALEXCHANGE, DFI_BOOST_PRIMARY));
+        }
+        /* The attacker's Poison Touch comes after the target's own handlers (its onSourceDamagingHit is appended
+         * after them, sim/battle.ts:1035-1063, and the sort is stable). */
+        st = dfi_poison_touch(r, user, targets[i], md);
+        if (st != DUOFORGE_OK) {
+            return st;
         }
     }
     /* The attacker's own Emergency Exit when DamagingHit (Rocky Helmet) took

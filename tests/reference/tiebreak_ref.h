@@ -1221,6 +1221,35 @@ static const df_tb_stop tb_g13_superpower[] = {
     {4u, 0u, 1u, 2u, {4u, 4u}, {778u, 696u}, {0x4050aaaaaaaaaaabull, 0x404ee63b24547d0cull}},
     {5u, 0u, 1u, 2u, {4u, 4u}, {778u, 667u}, {0x4050aaaaaaaaaaabull, 0x404db3f5dc83cd4full}},
 };
+static const df_tb_stop tb_g14_poison_touch[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1090u, 1130u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {721u, 769u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 1u, {4u, 3u}, {676u, 460u}, {0x404ef1de4d2e3317ull, 0x4044cac5b3f5dc84ull}},
+    {3u, 0u, 1u, 1u, {4u, 3u}, {676u, 460u}, {0x404ef1de4d2e3317ull, 0x4044cac5b3f5dc84ull}},
+    {4u, 0u, 1u, 1u, {4u, 2u}, {676u, 360u}, {0x404ef1de4d2e3317ull, 0x4040aaaaaaaaaaabull}},
+};
+static const df_tb_stop tb_g14_poison_touch_faint[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1138u, 1113u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {739u, 752u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {679u, 684u}, {0x404e2b34eda31b00ull, 0x404eb29aca6b29adull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {619u, 590u}, {0x404b011485f0e0adull, 0x404b0de43790de44ull}},
+    {5u, 0u, 1u, 3u, {3u, 3u}, {581u, 537u}, {0x4049000000000000ull, 0x4049000000000000ull}},
+    {6u, 0u, 1u, 3u, {3u, 3u}, {581u, 537u}, {0x4049000000000000ull, 0x4049000000000000ull}},
+};
+static const df_tb_stop tb_g14_rough_skin[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1172u, 1113u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {773u, 752u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 1u, {4u, 3u}, {572u, 503u}, {0x4048d1f1fbe0ab7dull, 0x40463594d653594dull}},
+    {3u, 0u, 1u, 1u, {4u, 3u}, {572u, 503u}, {0x4048d1f1fbe0ab7dull, 0x40463594d653594dull}},
+    {4u, 0u, 1u, 1u, {4u, 3u}, {520u, 451u}, {0x4046902adf6ee461ull, 0x4044319cc67319ccull}},
+};
+static const df_tb_stop tb_g14_thermal_exchange[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1117u, 1145u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {718u, 784u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {649u, 599u}, {0x404dfd84f613d850ull, 0x404a49ddd2f46857ull}},
+    {3u, 0u, 1u, 1u, {4u, 3u}, {611u, 490u}, {0x404c263398ce633bull, 0x4046079a9d260513ull}},
+    {4u, 0u, 1u, 1u, {4u, 3u}, {611u, 490u}, {0x404c263398ce633bull, 0x4046079a9d260513ull}},
+};
 static const df_tb_stop tb_g17_giga_impact[] = {
     {0u, 0u, 2u, 3u, {6u, 6u}, {1062u, 1111u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {698u, 782u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -2753,6 +2782,10 @@ static const df_tb_battle tb_battles[] = {
     {"g13_quick_attack_detect", 5u, tb_g13_quick_attack_detect, sizeof tb_g13_quick_attack_detect / sizeof tb_g13_quick_attack_detect[0]},
     {"g13_rock_tomb", 5u, tb_g13_rock_tomb, sizeof tb_g13_rock_tomb / sizeof tb_g13_rock_tomb[0]},
     {"g13_superpower", 5u, tb_g13_superpower, sizeof tb_g13_superpower / sizeof tb_g13_superpower[0]},
+    {"g14_poison_touch", 4u, tb_g14_poison_touch, sizeof tb_g14_poison_touch / sizeof tb_g14_poison_touch[0]},
+    {"g14_poison_touch_faint", 6u, tb_g14_poison_touch_faint, sizeof tb_g14_poison_touch_faint / sizeof tb_g14_poison_touch_faint[0]},
+    {"g14_rough_skin", 4u, tb_g14_rough_skin, sizeof tb_g14_rough_skin / sizeof tb_g14_rough_skin[0]},
+    {"g14_thermal_exchange", 4u, tb_g14_thermal_exchange, sizeof tb_g14_thermal_exchange / sizeof tb_g14_thermal_exchange[0]},
     {"g17_giga_impact", 4u, tb_g17_giga_impact, sizeof tb_g17_giga_impact / sizeof tb_g17_giga_impact[0]},
     {"g17_hyper_beam", 4u, tb_g17_hyper_beam, sizeof tb_g17_hyper_beam / sizeof tb_g17_hyper_beam[0]},
     {"g17_hyper_beam_encore", 6u, tb_g17_hyper_beam_encore, sizeof tb_g17_hyper_beam_encore / sizeof tb_g17_hyper_beam_encore[0]},
@@ -2897,7 +2930,7 @@ static const df_tb_battle tb_battles[] = {
     {"w8_sand_soak", 7u, tb_w8_sand_soak, sizeof tb_w8_sand_soak / sizeof tb_w8_sand_soak[0]},
 };
 
-/* 2096 stops: 139 of an ended battle; decided by the count 678,
- * the HP percentage 632, the total HP 597, a tie 50;
- * winners: side 0 1051, side 1 995, tie 50 */
+/* 2117 stops: 139 of an ended battle; decided by the count 686,
+ * the HP percentage 635, the total HP 607, a tie 50;
+ * winners: side 0 1065, side 1 1002, tie 50 */
 #endif

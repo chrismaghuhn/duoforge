@@ -44,7 +44,7 @@
 #include "state/battle_internal.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "fc1d4a74a6d15027e0d45e04088a6afbbf318c14015deda00ba9f0633f74db7f"
+#define POOL_HASH_HEX "631d6df487e6c5351257989ca9075743b0ce5c38f7c4a86b37a891a210c8d91b"
 /* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
  * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
  * produced the same bytes. Step G10 moved two of them on purpose: Scald and Recover are data now (the thaw bit and
@@ -70,7 +70,7 @@
 /* The rows that the tables do not model, pinned (the generator reports the same counts). */
 #define UNMODELED_MOVES 306u /* 313 before step G17 modelled the seven recharge moves; 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
 #define UNMODELED_ITEMS 45u
-#define UNMODELED_ABILITIES 184u
+#define UNMODELED_ABILITIES 181u /* 184 before step G14 made Rough Skin, Poison Touch and Thermal Exchange engine rows */
 
 /* How many rows of the manifest are marked and half modelled: marked, and with the UNMODELED handler or a list of
  * unmodelled features (decision 0015 section 4.2). A step marks only what it fully models. */
@@ -1112,9 +1112,12 @@ int main(void)
         }
         for (uint32_t id = DFI_ABILITY_FAIRYAURA + 1u; id < DFI_POOL_ABILITY_COUNT; ++id) {
             /* Of the whole-pool abilities after Fairy Aura only Sand Stream and Snow Warning have a family (the weather
-             * setters of the Sandstorm and Snowscape step) and are marked. */
+             * setters of the Sandstorm and Snowscape step) and are marked; Rough Skin, Poison Touch and Thermal
+             * Exchange (step G14) are marked without a family: the turn code runs them by id. */
             const bool setter = id == DFI_ABILITY_SANDSTREAM || id == DFI_ABILITY_SNOWWARNING;
-            DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, setter ? 1u : 0u);
+            const bool engine = id == DFI_ABILITY_ROUGHSKIN || id == DFI_ABILITY_POISONTOUCH ||
+                                id == DFI_ABILITY_THERMALEXCHANGE;
+            DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, (setter || engine) ? 1u : 0u);
             DF_CHECK_EQ_U64(&t, dfi_pool_ability_family[id].family,
                             setter ? DFI_ABILITY_FAMILY_WEATHER_SETTER : DFI_ABILITY_FAMILY_NONE);
         }
@@ -1269,6 +1272,9 @@ int main(void)
         DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_EXPERTBELT] == DFI_HANDLER_UNMODELED);
         DF_CHECK(&t, dfi_pool_ability_handler[DFI_ABILITY_FLOWERVEIL] == DFI_HANDLER_NONE &&
                          dfi_pool_ability_handler[DFI_ABILITY_FAIRYAURA] == DFI_HANDLER_NONE); /* engine rows, G12 */
+        DF_CHECK(&t, dfi_pool_ability_handler[DFI_ABILITY_ROUGHSKIN] == DFI_HANDLER_NONE &&
+                         dfi_pool_ability_handler[DFI_ABILITY_POISONTOUCH] == DFI_HANDLER_NONE &&
+                         dfi_pool_ability_handler[DFI_ABILITY_THERMALEXCHANGE] == DFI_HANDLER_NONE); /* engine rows, G14 */
         DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_FLOETTITE] == DFI_HANDLER_NONE); /* a Mega Stone: data of its link */
         DF_CHECK(&t, dfi_pool_moves[DFI_MOVE_UTURN].special == DFI_SPECIAL_NONE);
         /* A few whole-pool rows, by what the pin says. Earthquake: allAdjacent, a class that the turn code lacks;

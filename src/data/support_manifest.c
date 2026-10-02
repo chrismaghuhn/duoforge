@@ -104,7 +104,10 @@
  * (a burn secondary), Draining Kiss (drain 3/4), Rock Tomb and Icy Wind (a Speed drop at 100 percent, Icy Wind
  * spread), Hydro Pump, Power Gem and Earth Power (plain damage, a Special Defense secondary), Superpower (two
  * self drops), Light of Ruin (recoil 1/2), Aura Sphere (never misses, any target), Ice Shard and Quick Attack
- * (priority +1), Detect (Protect's handler and stall counter) and Poison Jab (a poison secondary). */
+ * (priority +1), Detect (Protect's handler and stall counter) and Poison Jab (a poison secondary).
+ * Step G14 marks Rough Skin, Poison Touch and Thermal Exchange (abilities that the turn code runs by id: contact damage
+ * before Rocky Helmet's, poison on a 3 in 10 roll after a contact hit, Attack +1 per Fire hit and no burn), recorded as
+ * g14_rough_skin, g14_poison_touch and g14_thermal_exchange under the POOL kind. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -242,6 +245,9 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_SWARM] = 1u,
             [DFI_ABILITY_FLOWERVEIL] = 1u,
             [DFI_ABILITY_FAIRYAURA] = 1u,
+            [DFI_ABILITY_ROUGHSKIN] = 1u,
+            [DFI_ABILITY_POISONTOUCH] = 1u,
+            [DFI_ABILITY_THERMALEXCHANGE] = 1u,
         },
     .items =
         {
