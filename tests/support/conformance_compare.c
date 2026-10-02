@@ -9,6 +9,7 @@
 
 #include <string.h>
 
+#include "data/pool_tables.h"
 #include "state/battle_internal.h"
 
 static void print_event(FILE *out, const char *label, const duoforge_event *e)
@@ -58,8 +59,7 @@ unsigned df_conf_compare_events(FILE *out, const df_conf_step *st, const char *n
  * used up, stat stages, confusion, charged moves, the field and the side
  * conditions are what the game shows. */
 unsigned df_conf_compare_observation(FILE *out, const duoforge_context *ctx, const duoforge_battle *b,
-                                     const df_conf_step *st, const df_conf_battle *cb, uint32_t step,
-                                     const dfi_forme_data *formes)
+                                     const df_conf_step *st, const df_conf_battle *cb, uint32_t step)
 {
     unsigned bad = 0;
     for (uint32_t viewer = 0; viewer < 2u; ++viewer) {
@@ -97,7 +97,7 @@ unsigned df_conf_compare_observation(FILE *out, const duoforge_context *ctx, con
                 const df_conf_member *set = &cb->members[s][m];
                 uint32_t ability = set->ability;
                 if (e->mega != 0u) {
-                    ability = 1u + formes[formes[set->species].mega_forme].ability;
+                    ability = 1u + dfi_pool_formes[dfi_pool_formes[set->species].mega_forme].ability;
                 }
                 bool ok = v->status == status && v->is_mega == e->mega && v->item_used == used && v->ability == ability;
                 for (uint32_t k = 0; k < v->move_count && k < 4u; ++k) {
