@@ -50,7 +50,8 @@ One oracle proves it. A Node helper replays every committed closure battle in th
 - **Encoding of the v1 checkpoint.**
   - The night checkpoint was trained while `features.py` had `present = species_id != 0`. Rillaboom has forme id 0, and Team A holds it. A fix session corrects the encoder.
   - Decision: the bot plays a v1 checkpoint with the encoding it was trained on, through a named switch of the encoder, `features.encode(..., legacy_present=True)`. New checkpoints use the fixed encoding.
-  - The switch comes from the fix session, or, agreed with the HauptSession, from Task 2.
+  - The switch and its test come with the fix PR (HauptSession). Do not build it here. Task 6 needs that PR merged.
+  - The checkpoint config key is the integer `"encoder"` (agreed with the HauptSession and Learner v2): 1 before the fix, 2 after; a missing key means 1.
 - **The bot's name** must contain "bot" (any case), so the name says it is a bot (spec section 7).
 - **Greedy and deterministic:** a tie between pairs or tuples goes to the lower flat index.
 - **Process:**
@@ -186,7 +187,7 @@ def test_unwritable_file_fails(self):      # FILE = an existing directory: exit 
   - `.rank_teams(obs_part) -> list[tuple[int, float]]` lists tuple indices into `duoforge_learn.selfplay.TEAM_TABLE`, best first.
   - Ties go to the lower flat index.
 - `policy.load(path) -> Policy` uses `checkpoint.load(path, obs_size=features.OBS_SIZE)`, so a 594-feature file raises.
-- `Policy.legacy_present -> bool` is true for a v1 checkpoint (config without `"encoding"`, or `"encoding": "v1"`). The widen command writes `"encoding": "v1"` into OUT's config. Any other value raises.
+- `Policy.legacy_present -> bool` is `config.get("encoder", 1) < 2`. A value other than the integers 1 and 2 raises `ValueError`. The widen command writes `"encoder": 1` into OUT's config.
 - `checkpoint.WIDEN_594_COLUMNS = (12, 37, 38, 39, 61, 62, 63, 333, 334, 335, 357, 358, 359)` gives the indices in the 607 layout.
 - `checkpoint.widen_594(params) -> params`
   - Returns a new dict whose `t1.w` has zero rows inserted at those indices.
@@ -211,9 +212,10 @@ def test_widened_network_matches_the_original(self):
     # allclose(rtol=1e-5, atol=1e-5) on real observations; greedy pair and team argmax equal
 def test_widen_refuses_other_sizes(self):    # a 607 network -> ValueError
 def test_widen_command(self):                # main(["widen", IN, OUT]): OUT loads with obs_size 607, rows zero,
-                                             # config "encoding" == "v1"; IN with obs_size 607 raises; an existing OUT is refused
+                                             # config "encoder" == 1; IN with obs_size 607 raises; an existing OUT is refused
 def test_v1_checkpoint_uses_the_legacy_encoding(self):  # policy.load of the widened file: legacy_present True;
-                                                        # "encoding": "v2" -> False; "encoding": "x" -> ValueError
+                                                        # no "encoder" key -> True; "encoder": 2 -> False;
+                                                        # "encoder": 3 or "1" -> ValueError
 ```
 
   Then in `test_learn.py` (the JAX job):
@@ -392,7 +394,7 @@ def test_unknown_line_raises(self):               # an inserted "|-futureline|p1
 - [ ] **Step 4: Run them and check that they pass.** PASS on every closure battle and both players.
 - [ ] **Step 5: Commit, CI, review, PR, hand off.**
 
-### Task 6: Game, client and CLI (PR 6, `chris/live-6-client`)
+### Task 6: Game, client and CLI (PR 6, `chris/live-6-client`, needs the encoder fix PR with `legacy_present`)
 
 **Files:**
 - Create: `python/duoforge_live/game.py`, `client.py`, `__main__.py`
