@@ -19,6 +19,9 @@ _Static_assert(sizeof(df_conf_mon) == 32u, "df_conf_mon changed: update tools/di
 _Static_assert(sizeof(df_conf_step) == 488u, "df_conf_step changed: update tools/difftest/records.c");
 _Static_assert(sizeof(dfi_tape_entry) == 16u, "dfi_tape_entry changed: update tools/difftest/records.c");
 _Static_assert(sizeof(duoforge_event) == 20u, "duoforge_event changed: update tools/difftest/records.c");
+/* dfr_choice is compared and ordered by memcmp: it must have no padding. */
+_Static_assert(sizeof(dfr_choice) == 2u + DUOFORGE_MAX_ROSTER + DUOFORGE_ACTIVE_PER_SIDE * sizeof(df_conf_cmd),
+               "dfr_choice has padding or changed: update tools/difftest/records.c");
 
 #define DFR_COUNT(a) (sizeof(a) / sizeof((a)[0]))
 
@@ -71,6 +74,8 @@ void dfr_battle_free(dfr_battle *b)
     free(b->steps);
     free(b->tape);
     free(b->events);
+    free(b->domains);
+    free(b->choices);
     memset(b, 0, sizeof *b);
 }
 
@@ -384,6 +389,105 @@ static bool rd_event(dfr_cursor *c, duoforge_event *e)
            rd_u8(c, &e->amount) && rd_u8(c, &e->flags);
 }
 
+/* "C kind pick_count picks[6] slot[0] slot[1]": the 18 values of a dfr_choice in order. */
+static bool rd_choice(dfr_cursor *c, dfr_choice *ch)
+{
+    if (!(rd_u8(c, &ch->kind) && rd_u8(c, &ch->pick_count) && rd_u8s(c, ch->picks, DFR_COUNT(ch->picks)))) {
+        return false;
+    }
+    for (size_t k = 0u; k < DFR_COUNT(ch->slots); ++k) {
+        if (!rd_cmd(c, &ch->slots[k])) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/* A slot command that a duoforge_slot_command can hold: the fields that its kind does not use are zero. */
+static bool command_fits(dfr_reader *r, const df_conf_cmd *c, uint32_t member_count)
+{
+    switch (c->kind) {
+    case DUOFORGE_SLOT_NONE:
+    case DUOFORGE_SLOT_PASS:
+        if (c->move_slot != 0u || c->target != 0u || c->mega != 0u || c->reserve != 0u) {
+            fail(r, "record C: a slot command of kind %u with other fields than its kind", (unsigned)c->kind);
+            return false;
+        }
+        return true;
+    case DUOFORGE_SLOT_MOVE:
+        if (c->move_slot > DUOFORGE_MOVE_SLOT_STRUGGLE || (c->target > 3u && c->target != DUOFORGE_TARGET_NONE) ||
+            c->mega > 1u || c->reserve != 0u) {
+            fail(r, "record C: a move command (slot %u, target %u, mega %u, reserve %u) outside the domain of one",
+                 (unsigned)c->move_slot, (unsigned)c->target, (unsigned)c->mega, (unsigned)c->reserve);
+            return false;
+        }
+        return true;
+    case DUOFORGE_SLOT_SWITCH:
+        if (c->move_slot != 0u || c->target != 0u || c->mega != 0u || c->reserve >= member_count) {
+            fail(r, "record C: a switch command with the reserve %u of %u members or with other fields than a switch",
+                 (unsigned)c->reserve, (unsigned)member_count);
+            return false;
+        }
+        return true;
+    default:
+        fail(r, "record C: slot command kind %u is not 0 to 3", (unsigned)c->kind);
+        return false;
+    }
+}
+
+/* A choice that a duoforge_side_choice can hold (the engine's candidates are such choices), by its kind. */
+static bool choice_fits(dfr_reader *r, const dfr_choice *ch, uint32_t member_count)
+{
+    dfr_choice zero;
+    memset(&zero, 0, sizeof zero);
+    if (ch->kind == DUOFORGE_CHOICE_TEAM_SELECTION) {
+        if (ch->pick_count == 0u || ch->pick_count > member_count) {
+            fail(r, "record C: %u picks of a side of %u members", (unsigned)ch->pick_count, (unsigned)member_count);
+            return false;
+        }
+        for (uint32_t i = 0u; i < DFR_COUNT(ch->picks); ++i) {
+            if (i >= ch->pick_count) {
+                if (ch->picks[i] != 0u) {
+                    fail(r, "record C: a pick beyond the %u picks", (unsigned)ch->pick_count);
+                    return false;
+                }
+                continue;
+            }
+            if (ch->picks[i] >= member_count) {
+                fail(r, "record C: pick %u is the roster index %u of a side of %u members", (unsigned)i,
+                     (unsigned)ch->picks[i], (unsigned)member_count);
+                return false;
+            }
+            for (uint32_t j = 0u; j < i; ++j) {
+                if (ch->picks[j] == ch->picks[i]) {
+                    fail(r, "record C: the roster index %u is picked twice", (unsigned)ch->picks[i]);
+                    return false;
+                }
+            }
+        }
+        if (memcmp(ch->slots, zero.slots, sizeof ch->slots) != 0) {
+            fail(r, "record C: slot commands in a team choice");
+            return false;
+        }
+        return true;
+    }
+    if (ch->kind != DUOFORGE_CHOICE_SLOTS) {
+        fail(r, "record C: choice kind %u is not %u (team) or %u (slots)", (unsigned)ch->kind,
+             (unsigned)DUOFORGE_CHOICE_TEAM_SELECTION, (unsigned)DUOFORGE_CHOICE_SLOTS);
+        return false;
+    }
+    if (ch->pick_count != 0u || memcmp(ch->picks, zero.picks, sizeof ch->picks) != 0) {
+        fail(r, "record C: picks in a slot choice");
+        return false;
+    }
+    for (size_t k = 0u; k < DFR_COUNT(ch->slots); ++k) {
+        if (!command_fits(r, &ch->slots[k], member_count)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 /* The array `data` of `count` elements of `elem` bytes, with room for one
  * more (`cap` is its capacity); NULL when out of memory. */
 static void *room_for_one_more(void *data, uint32_t count, uint32_t *cap, size_t elem)
@@ -446,13 +550,22 @@ dfr_status dfr_read_battle(dfr_reader *r, dfr_battle *b)
     uint32_t steps_cap = 0u;
     uint32_t tape_cap = 0u;
     uint32_t events_cap = 0u;
+    uint32_t domains_read = 0u;
+    uint32_t domains_cap = 0u;
+    uint32_t choices_cap = 0u;
 
     DFR_NEED(open_record(r, &c, 'B'));
     DFR_NEED(get_name(&c, b->name) && get_uint(&c, 1u, &b->team_c) && rd_u32(&c, &b->strict_kind) &&
              get_uint(&c, 6u, &b->member_count) && rd_u32(&c, &b->step_count) && rd_u32(&c, &b->dropped_total) &&
-             close_record(&c));
+             rd_u32(&c, &b->domain_count) && close_record(&c));
     if (b->member_count == 0u || b->step_count == 0u) {
         fail(r, "record B: a battle has at least one member and one step");
+        status = DFR_MALFORMED;
+        goto done;
+    }
+    if ((uint64_t)b->domain_count > 2u * (uint64_t)b->step_count) {
+        fail(r, "record B: %u domain samples in %u steps (at most one per side and step)", (unsigned)b->domain_count,
+             (unsigned)b->step_count);
         status = DFR_MALFORMED;
         goto done;
     }
@@ -481,8 +594,52 @@ dfr_status dfr_read_battle(dfr_reader *r, dfr_battle *b)
     for (uint32_t i = 0u; i < b->step_count; ++i) {
         df_conf_step *st = NULL;
         DFR_APPEND(b->steps, steps_read, steps_cap, st);
-        DFR_TRY(next_record(r, &c, 'S'));
+        /* The domain samples of a step come before its S record, side 0 before side 1. */
+        const uint32_t samples_before = domains_read;
+        DFR_TRY(next_line(r, "a 'D' or an 'S' record"));
+        while (r->line_len >= 2u && r->line[0] == 'D') {
+            dfr_domain *d = NULL;
+            if (domains_read == b->domain_count) {
+                fail(r, "record D: record B names %u samples, there are more", (unsigned)b->domain_count);
+                status = DFR_MALFORMED;
+                goto done;
+            }
+            const bool second = domains_read > samples_before;
+            const uint32_t previous_side = second ? b->domains[domains_read - 1u].side : 0u;
+            DFR_APPEND(b->domains, domains_read, domains_cap, d);
+            DFR_NEED(open_record(r, &c, 'D') && rd_u32(&c, &d->step) && get_uint(&c, 1u, &d->side) &&
+                     get_uint(&c, DUOFORGE_MAX_CANDIDATES, &d->choice_count) && close_record(&c));
+            if (d->step != i || d->choice_count == 0u || (second && d->side <= previous_side)) {
+                fail(r, "record D: step %u side %u with %u choices where step %u%s is expected", (unsigned)d->step,
+                     (unsigned)d->side, (unsigned)d->choice_count, (unsigned)i,
+                     second ? " and the side after the one before" : "");
+                status = DFR_MALFORMED;
+                goto done;
+            }
+            d->choice_off = b->choice_count;
+            for (uint32_t k = 0u; k < d->choice_count; ++k) {
+                dfr_choice *ch = NULL;
+                DFR_APPEND(b->choices, b->choice_count, choices_cap, ch);
+                DFR_TRY(next_record(r, &c, 'C'));
+                DFR_NEED(rd_choice(&c, ch) && close_record(&c) && choice_fits(r, ch, b->member_count));
+                if (k > 0u && memcmp(ch - 1, ch, sizeof *ch) >= 0) {
+                    fail(r, "record C: the choices of a sample are not strictly ascending");
+                    status = DFR_MALFORMED;
+                    goto done;
+                }
+            }
+            DFR_TRY(next_line(r, "a 'D' or an 'S' record"));
+        }
+        DFR_NEED(open_record(r, &c, 'S'));
         DFR_NEED(rd_step(&c, st) && close_record(&c));
+        for (uint32_t k = samples_before; k < domains_read; ++k) {
+            if ((b->domains[k].side == 0u ? st->answered0 : st->answered1) == 0u) {
+                fail(r, "record D: side %u is sampled before step %u, which it does not answer",
+                     (unsigned)b->domains[k].side, (unsigned)i);
+                status = DFR_MALFORMED;
+                goto done;
+            }
+        }
         /* The slices of the step are the next lines: its offsets are the counts so far. */
         if (st->tape_off != b->tape_count || st->ev_off[0] != b->event_count ||
             (uint64_t)st->ev_off[1] != (uint64_t)st->ev_off[0] + st->ev_len[0]) {
@@ -508,6 +665,12 @@ dfr_status dfr_read_battle(dfr_reader *r, dfr_battle *b)
         }
     }
 
+    if (domains_read != b->domain_count) {
+        fail(r, "record B names %u domain samples, the records hold %u", (unsigned)b->domain_count,
+             (unsigned)domains_read);
+        status = DFR_MALFORMED;
+        goto done;
+    }
     DFR_TRY(next_line(r, "END"));
     if (r->line_len != 3u || memcmp(r->line, "END", 3u) != 0) {
         fail(r, "END is expected after %u steps, found \"%.24s\"", (unsigned)b->step_count, r->line);

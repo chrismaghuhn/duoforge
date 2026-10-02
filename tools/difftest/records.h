@@ -15,6 +15,12 @@
  * DFR_MALFORMED with a message naming the line, never a guess. The tape
  * offsets of a step are into the tape of its own battle.
  *
+ * Domain samples (random play): the set of choices that the reference accepted
+ * from one side before one step, which the runner compares with the engine's
+ * candidates for that side (domain.h). They are read into dfr_domain and
+ * dfr_choice, which are not df_conf_* types (the conformance tables have no
+ * such thing).
+ *
  * White-box (it includes rng/draw.h): the consumer has src/ on its include path.
  */
 #include <stddef.h>
@@ -28,6 +34,23 @@
 
 #define DFR_NAME_MAX 63u
 
+/* A choice of a domain sample: the leaves of a duoforge_side_choice but its epoch and side, in the order of the C
+ * record. 18 bytes without padding, so two choices are equal when memcmp says so, and a set is ordered by memcmp. */
+typedef struct dfr_choice {
+    uint8_t kind;       /* DUOFORGE_CHOICE_TEAM_SELECTION or DUOFORGE_CHOICE_SLOTS */
+    uint8_t pick_count; /* TEAM_SELECTION: how many picks; else 0 */
+    uint8_t picks[DUOFORGE_MAX_ROSTER];          /* TEAM_SELECTION: roster indices, leads first; else 0 */
+    df_conf_cmd slots[DUOFORGE_ACTIVE_PER_SIDE]; /* SLOTS: the commands, all-zero for a slot not requested; else 0 */
+} dfr_choice;
+
+/* The choices that the reference accepted from `side` before step `step`. */
+typedef struct dfr_domain {
+    uint32_t step;
+    uint32_t side;         /* 0/1 */
+    uint32_t choice_off;   /* the slice of dfr_battle.choices: choice_count entries, strictly ascending by memcmp */
+    uint32_t choice_count; /* 1..DUOFORGE_MAX_CANDIDATES */
+} dfr_domain;
+
 typedef struct dfr_battle {
     char name[DFR_NAME_MAX + 1u];
     uint32_t team_c;       /* 0: the closure tables, 1: Team C's */
@@ -39,6 +62,7 @@ typedef struct dfr_battle {
     uint32_t member_count; /* 1..6, the same for both sides */
     uint32_t step_count;   /* at least 1 */
     uint32_t dropped_total;
+    uint32_t domain_count; /* the domain samples of the battle (0 for the conformance records) */
     df_conf_member members[2][6]; /* member_count per side, the rest zero */
     df_conf_step *steps;          /* step_count entries */
     /* Every step's kept draws and events; a step names its slice by offset.
@@ -48,6 +72,11 @@ typedef struct dfr_battle {
     uint32_t tape_count;
     duoforge_event *events;
     uint32_t event_count;
+    /* The domain samples in the order of the records (by step, then side) and their choices; both NULL when the
+     * battle has no sample. */
+    dfr_domain *domains;
+    dfr_choice *choices;
+    uint32_t choice_count;
 } dfr_battle;
 
 typedef enum dfr_status {

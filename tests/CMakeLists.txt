@@ -86,6 +86,11 @@ duoforge_add_test(NAME duoforge.reference.conformance SOURCES test_conformance.c
 # Team C (decision 0009): the same driver over tests/reference/conformance_team_c.h.
 duoforge_add_test(NAME duoforge.reference.conformance_team_c SOURCES test_conformance.c WHITEBOX TIMEOUT 60)
 target_compile_definitions(duoforge_reference_conformance_team_c PRIVATE DF_CONFORMANCE_TEAM_C)
+# The domain check of the differential runner (tools/difftest/domain.c): the engine's
+# candidates against the choices that the reference accepted, and the controls that
+# make that comparison worth anything (no Python or checkout needed).
+duoforge_add_test(NAME duoforge.reference.runner_domain SOURCES test_runner_domain.c WHITEBOX
+    LIBS duoforge_difftest_records TIMEOUT 60)
 duoforge_add_test(NAME duoforge.combat.turn SOURCES test_turn.c WHITEBOX TIMEOUT 120)
 duoforge_add_test(NAME duoforge.combat.closure_gate SOURCES test_closure_gate.c WHITEBOX TIMEOUT 600)
 
