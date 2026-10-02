@@ -106,6 +106,8 @@ duoforge_add_test(NAME duoforge.reference.runner_domain SOURCES test_runner_doma
 duoforge_add_test(NAME duoforge.combat.turn SOURCES test_turn.c WHITEBOX TIMEOUT 120)
 # The item families of decision 0015 (the type booster and the resist berry) against a table of the pinned handlers.
 duoforge_add_test(NAME duoforge.combat.item_family SOURCES test_item_family.c WHITEBOX TIMEOUT 60)
+# The ability families of decision 0015 (the "-ate" and pinch rules) against a table of the pinned handlers.
+duoforge_add_test(NAME duoforge.combat.ability_family SOURCES test_ability_family.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.combat.closure_gate SOURCES test_closure_gate.c WHITEBOX TIMEOUT 600)
 duoforge_add_test(NAME duoforge.combat.team_c_gate SOURCES test_team_c_gate.c WHITEBOX TIMEOUT 600)
 
