@@ -5,7 +5,19 @@ tables for the conformance test (decision 0006 sections 5.1 and 7).
 usage: python tools/reference/trace_to_c.py <repo root> [--check]
 
 Reads tests/reference/specs/*.json and tests/reference/traces/*.json and
-writes tests/reference/conformance.h (or, with --check, compares).
+writes tests/reference/conformance.h, conformance_team_c.h (the Team C
+battles) and conformance_types.h (the record types both include), or, with
+--check, compares all three.
+
+As a library: load_battle(root, name) reads a spec and a trace (the only file
+IO of a conversion), convert_battle(name, spec, trace, tables) turns them into
+plain data and format_battle(data, out, all_tape, all_events) writes that
+data as C tables; step_record(st, tape_off, ev_off, ev_len) is one step as the
+nested tuple of its df_conf_step, in declaration order. A spec or trace the
+converter does not model raises ConversionError, a SystemExit with a stable
+`rule` and an optional `detail`: a script that does not catch it still prints
+the message and exits with 1. The rule is the first argument of each raise
+below.
 
 Draws: every draw of the reference becomes a tape entry, except the
 families decision 0006 section 5.1 (proposal B) drops. Each drop rule
@@ -68,6 +80,22 @@ GENDER = {'M': 1, 'F': 2}
 GENDERLESS = 3
 
 
+class ConversionError(SystemExit):
+    """The converter refuses a spec or a trace: something it does not model,
+    never a silent fallback. A SystemExit, so an uncaught one prints the
+    message and exits with status 1. `rule` is a short stable id of the check
+    that refused; `detail` an optional grouping key (a protocol line kind, an
+    attribute, an effect)."""
+
+    def __init__(self, rule, message, detail=None):
+        super().__init__(message)
+        self.rule = rule
+        self.detail = detail
+
+    def __reduce__(self):  # copy and pickle by the constructor's arguments (the default passes only the message)
+        return (type(self), (self.rule, self.args[0], self.detail))
+
+
 def ids(header, prefix):
     out = {}
     for m in re.finditer(r'#define DFI_%s_([A-Z0-9]+) (\d+)u' % prefix, header):
@@ -99,11 +127,14 @@ def parse_team(text, tables):
             mon['gender'] = GENDER[gender_tag]
             # The reference fixes an illegal gender silently; DuoForge rejects it.
             if rule == 3 or (rule in (1, 2) and mon['gender'] != rule):
-                raise SystemExit('trace_to_c: %s cannot be (%s)' % (species_name, gender_tag))
+                raise ConversionError('gender-illegal', 'trace_to_c: %s cannot be (%s)' % (species_name, gender_tag),
+                                      detail=species_name)
         elif rule == 3:
             mon['gender'] = GENDERLESS
         else:
-            raise SystemExit('trace_to_c: %s has no gender; specs always state it' % species_name)
+            raise ConversionError('gender-missing',
+                                  'trace_to_c: %s has no gender; specs always state it' % species_name,
+                                  detail=species_name)
         for line in lines[1:]:
             if line.startswith('Ability: '):
                 name = line[len('Ability: '):]
@@ -118,11 +149,12 @@ def parse_team(text, tables):
                 mon['moves'].append(tables['MOVE'][key(line[2:])])
             elif line.startswith('Level: '):
                 if line != 'Level: 50':
-                    raise SystemExit('trace_to_c: level 50 only')
+                    raise ConversionError('team-level', 'trace_to_c: level 50 only')
             else:
-                raise SystemExit('trace_to_c: unknown line %r' % line)
+                raise ConversionError('team-line', 'trace_to_c: unknown line %r' % line, detail=line.split(':')[0])
         if mon['ability'] is None or mon['nature'] is None:
-            raise SystemExit('trace_to_c: %s needs an ability and a nature' % species_name)
+            raise ConversionError('team-incomplete', 'trace_to_c: %s needs an ability and a nature' % species_name,
+                                  detail=species_name)
         team.append(mon)
     return team
 
@@ -150,9 +182,15 @@ def side_end_tie(d, state):
     if any(state['sides'][int(x[2][1]) - 1]['conditions'][COND_INDEX[x[1]]] != 1 for x in parts):
         return None
     if d['hi'] - d['lo'] != 2 or d['lo'] != d['start']:
-        raise SystemExit('trace_to_c: unexpected side-end shuffle %s' % d)
+        raise ConversionError('side-end-shuffle', 'trace_to_c: unexpected side-end shuffle %s' % d)
     first = parts[0] if d['value'] == d['start'] else parts[1]  # random(start, start + 2): start keeps the order
     return (SITES['SPEED_TIE'], 0, 2, int(first[2][1]) - 1)
+
+
+def tie_effects(group):
+    """The effect ids of the handler entries ('H:<effect>:<holder>:<cb|end>')
+    of a tie group, sorted: the detail of the errors about such a tie."""
+    return '+'.join(sorted(set(g.split(':')[1] for g in group if isinstance(g, str) and g.startswith('H:'))))
 
 
 def drop_reason(d, state):
@@ -166,7 +204,9 @@ def drop_reason(d, state):
         # Pokemon changes nothing.
         ids = [x for g in group for x in g.split(':', 3)[3].split('+') if x]
         if not all(x in ('sitrusberry', 'grassyseed') for x in ids):
-            raise SystemExit('trace_to_c: %s tie between Pokemon with handlers: %s' % (ctx, group))
+            raise ConversionError('each-tie-handlers',
+                                  'trace_to_c: %s tie between Pokemon with handlers: %s' % (ctx, group),
+                                  detail=ctx + ':' + '+'.join(sorted(set(ids) - {'sitrusberry', 'grassyseed'})))
         if sum(1 for g in group if g.split(':', 3)[3]) <= 1:
             return 'each-event tie with at most one holder'
         return None  # the engine draws: the order of the holders' lines
@@ -178,7 +218,9 @@ def drop_reason(d, state):
         parts = [g.split(':') for g in group]
         anys = [x for p in parts if len(p) > 4 for x in p[4].split('+')]
         if any(x != 'whiteherb' for x in anys):
-            raise SystemExit('trace_to_c: switch-order tie with onAnySwitchIn handlers %s' % group)
+            raise ConversionError('switch-order-handlers',
+                                  'trace_to_c: switch-order tie with onAnySwitchIn handlers %s' % group,
+                                  detail='+'.join(sorted(set(anys) - {'whiteherb'})))
         bearers = sum(1 for p in parts if p[2] != '0' and p[3] == 'S')
         herbs = sum(1 for p in parts if len(p) > 4)
         if bearers <= 1 and herbs <= 1:
@@ -187,15 +229,18 @@ def drop_reason(d, state):
     if site == 'SPEED_TIE' and ctx == 'field:Residual':
         if all(g.startswith('H:') and g.endswith(':end') for g in group):
             if side_end_tie(d, state) is not None:
-                raise SystemExit('trace_to_c: ending side conditions reach drop_reason: %s' % group)
+                raise ConversionError('side-end-tie',
+                                      'trace_to_c: ending side conditions reach drop_reason: %s' % group)
             return 'residual tie of duration counters'
         if all(g.startswith('H:') and g.endswith(':cb') for g in group):
             return None  # callbacks (burn, Grassy Terrain): the engine draws
-        raise SystemExit('trace_to_c: residual tie with callbacks: %s' % group)
+        raise ConversionError('residual-tie-callbacks', 'trace_to_c: residual tie with callbacks: %s' % group,
+                              detail=tie_effects(group))
     if site == 'SPEED_TIE' and ctx in ('event:AfterMove', 'event:AfterMega'):
         if all(g.startswith('H:whiteherb:') and g.endswith(':cb') for g in group):
             return None  # the engine draws: the order of the holders' checks
-        raise SystemExit('trace_to_c: %s tie with %s' % (ctx, group))
+        raise ConversionError('after-event-tie', 'trace_to_c: %s tie with %s' % (ctx, group),
+                              detail=ctx + ':' + tie_effects(group))
     if site == 'SPEED_TIE' and ctx == 'event:ModifyDamage':
         # Reflect and Light Screen of both sides: each checks the target's
         # side and the move's category, so at most one applies to a hit.
@@ -206,9 +251,10 @@ def drop_reason(d, state):
         # same value (the engine checks it at compile time, turn.c).
         if sorted(g.split(':')[1] for g in group) == ['chopleberry', 'lifeorb']:
             return 'Life Orb and Chople Berry, whose modifiers commute'
-        raise SystemExit('trace_to_c: ModifyDamage tie with %s' % group)
+        raise ConversionError('modifydamage-tie', 'trace_to_c: ModifyDamage tie with %s' % group,
+                              detail=tie_effects(group))
     if site == 'SPEED_TIE' and ctx != 'queue':
-        raise SystemExit('trace_to_c: unhandled tie context %s' % ctx)
+        raise ConversionError('tie-context', 'trace_to_c: unhandled tie context %s' % ctx, detail=ctx)
     if site == 'INSERT_TIE':
         # Ties are among entry actions of one speed; runSwitch takes every
         # entry queued right behind it, so their queue order changes nothing
@@ -216,13 +262,13 @@ def drop_reason(d, state):
         runs = [i for i, g in enumerate(group) if g.startswith('A:runSwitch:')]
         if runs and runs == list(range(runs[0], runs[0] + len(runs))):
             return 'queue order of entries that run together'
-        raise SystemExit('trace_to_c: insert tie in %s' % group)
+        raise ConversionError('insert-tie', 'trace_to_c: insert tie in %s' % group)
     if site == 'RANDOM_TARGET' and ctx in ('action-speed', 'resolve'):
         return 'target computed for priority'
     if site == 'RANDOM_TARGET' and ctx == 'execute:allAdjacentFoes':
         return 'main target of a spread move'
     if site == 'UNKNOWN':
-        raise SystemExit('trace_to_c: unclassified draw')
+        raise ConversionError('unclassified-draw', 'trace_to_c: unclassified draw', detail=ctx)
     return None
 
 
@@ -231,7 +277,8 @@ def site_of(d):
     status pick, recorded as SECONDARY[0,3); any other fails loudly."""
     if d.get('context') == 'Hit':
         if d['site'] != 'SECONDARY' or (d['lo'], d['hi']) != (0, 3):
-            raise SystemExit('trace_to_c: unexpected Hit draw %s' % d)
+            raise ConversionError('hit-draw', 'trace_to_c: unexpected Hit draw %s' % d,
+                                  detail='%s[%s,%s)' % (d['site'], d.get('lo'), d.get('hi')))
         return 'STATUS_PICK'
     return d['site']
 
@@ -285,7 +332,8 @@ def convert_choice(text, side, state, roster_of, mid_turn=False):
             rows = state['sides'][side].get('enabled') or []
             struggle = slot < len(rows) and rows[slot] == [2]
             if all(pp == 0 for pp in mon['pp']) and not struggle:
-                raise SystemExit('trace_to_c: no PP left and no Struggle in the request: %r' % text)
+                raise ConversionError('struggle-request',
+                                      'trace_to_c: no PP left and no Struggle in the request: %r' % text)
             if struggle:
                 cmds.append((1, 4, 0xFF, mega, 0))  # Struggle
                 continue
@@ -309,11 +357,10 @@ def convert_choice(text, side, state, roster_of, mid_turn=False):
             # Exit on one side with one reserve, Team C). mid_turn agrees with
             # the flag for fainted Pokemon and is kept for the callers.
             mon = state['sides'][side]['pokemon'][actives[slot]]
-            del mid_turn
             asked = state['sides'][side]['request'] != 'switch' or bool(mon.get('switch_flag'))
             cmds.append((3, 0, 0, 0, 0) if asked else (0, 0, 0, 0, 0))
         else:
-            raise SystemExit('trace_to_c: choice %r is not supported' % part)
+            raise ConversionError('choice-kind', 'trace_to_c: choice %r is not supported' % part, detail=words[0])
     return ('slots', cmds)
 
 
@@ -350,14 +397,15 @@ def public_lines(log, roster_of, shown):
         side = int(who[1]) - 1
         roster = roster_of[side].get(who.split(': ', 1)[1])
         if roster is None:
-            raise SystemExit('trace_to_c: unknown Pokemon in %r' % line)
+            raise ConversionError('unknown-pokemon', 'trace_to_c: unknown Pokemon in %r' % line,
+                                  detail=who.split(': ', 1)[1])
         token = hp.split(' ')[0]
         if token == '0':
             shown[side][roster] = (0, 0)
             continue
         m = re.match(r'^(\d+)/100([gry]?)$', token)
         if not m:
-            raise SystemExit('trace_to_c: not a public HP display in %r' % line)
+            raise ConversionError('public-hp-display', 'trace_to_c: not a public HP display in %r' % line)
         shown[side][roster] = (int(m.group(1)), HP_FLAGS[m.group(2)])
 
 
@@ -426,7 +474,7 @@ def ev_cause(attrs, tables):
             elif what == 'lockedmove':
                 pass  # a MOVE flag
             else:
-                raise SystemExit('trace_to_c: unknown [from] %r' % a)
+                raise ConversionError('from-attribute', 'trace_to_c: unknown [from] %r' % a, detail=what)
         elif a.startswith('[of] '):
             other = ev_pos(a[5:])
     return cause, id2, other
@@ -438,17 +486,17 @@ def ev_hp(text, side, viewer, maxhp):
     status = 0
     if len(tokens) > 1 and tokens[1] != 'fnt':
         if tokens[1] not in AILMENT:
-            raise SystemExit('trace_to_c: unknown status in HP %r' % text)
+            raise ConversionError('hp-status', 'trace_to_c: unknown status in HP %r' % text, detail=tokens[1])
         status = AILMENT[tokens[1]]
     if tokens[0] == '0':
         return (0, maxhp if side == viewer else 100, HP_EXACT if side == viewer else HP_PERCENT, 0, 0)
     m = re.match(r'^(\d+)/(\d+)([gry]?)$', tokens[0])
     if not m:
-        raise SystemExit('trace_to_c: bad HP %r' % text)
+        raise ConversionError('hp-format', 'trace_to_c: bad HP %r' % text)
     if side == viewer:
         return (int(m.group(1)), int(m.group(2)), HP_EXACT, 0, status)
     if m.group(2) != '100':
-        raise SystemExit('trace_to_c: the opponent sees exact HP in %r' % text)
+        raise ConversionError('hp-opponent-exact', 'trace_to_c: the opponent sees exact HP in %r' % text)
     return (int(m.group(1)), 100, HP_PERCENT, HP_FLAGS_EV[m.group(3)], status)
 
 
@@ -506,7 +554,7 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                         if slot:
                             amount |= 1 << ev_pos(slot)
                 elif a:
-                    raise SystemExit('trace_to_c: unknown move attribute %r' % a)
+                    raise ConversionError('move-attribute', 'trace_to_c: unknown move attribute %r' % a, detail=a)
             if flags & (FLAG['SPREAD'] | FLAG['NOTARGET'] | FLAG['STILL']) or target is None:
                 target = NOPOS
             e = ev_tuple(EV['MOVE'], pos, target, 0, tables['MOVE'][key(args[1])], amount=amount, flags=flags)
@@ -553,7 +601,7 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             elif what.startswith('move: '):
                 e = ev_tuple(EV['ACTIVATE'], pos, NOPOS, CAUSE['MOVE'], 0, tables['MOVE'][key(what[6:])])
             else:
-                raise SystemExit('trace_to_c: unknown -activate %r' % line)
+                raise ConversionError('activate-line', 'trace_to_c: unknown -activate %r' % line, detail=what)
         elif kind in ('-boost', '-unboost'):
             cause, id2, other = ev_cause(attrs, tables)
             e = ev_tuple(EV['BOOST' if kind == '-boost' else 'UNBOOST'], ev_pos(args[0]), other, cause, 0, id2,
@@ -573,7 +621,8 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             elif what == 'ability: Flash Fire' and kind == '-start':
                 e = ev_tuple(EV['FLASH_FIRE'], ev_pos(args[0]))
             else:
-                raise SystemExit('trace_to_c: unknown %s %r' % (kind, line))
+                raise ConversionError('start-end-line', 'trace_to_c: unknown %s %r' % (kind, line),
+                                      detail='%s %s' % (kind, what))
         elif kind == '-weather':
             cause, id2, other = ev_cause(attrs, tables)
             weather = {'RainDance': 1, 'SunnyDay': 2, 'none': 0}[args[0]]
@@ -608,14 +657,14 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                 elif a == '[notarget]':
                     flags |= FLAG['NOTARGET']
                 else:
-                    raise SystemExit('trace_to_c: unknown -anim attribute %r' % a)
+                    raise ConversionError('anim-attribute', 'trace_to_c: unknown -anim attribute %r' % a, detail=a)
             shown = ev_pos(args[2])  # a fainted Pokemon has no slot ("p1: Name")
             e = ev_tuple(EV['ANIMATION'], ev_pos(args[0]), NOPOS if shown is None else shown, 0,
                          tables['MOVE'][key(args[1])], flags=flags)
         elif kind == '-ability':
             e = ev_tuple(EV['ABILITY'], ev_pos(args[0]), NOPOS, 0, 0, tables['ABILITY'][key(args[1])] + 1)
         else:
-            raise SystemExit('trace_to_c: unknown protocol line %r' % line)
+            raise ConversionError('protocol-line', 'trace_to_c: unknown protocol line %r' % line, detail=kind)
         out.append(e)
     return out
 
@@ -626,7 +675,7 @@ def boundary_of(state, log):
         return 5
     kinds = set(s['request'] for s in state['sides']) - {''}
     if len(kinds) != 1:
-        raise SystemExit('trace_to_c: mixed requests %s' % sorted(kinds))
+        raise ConversionError('mixed-requests', 'trace_to_c: mixed requests %s' % sorted(kinds))
     kind = kinds.pop()
     if kind == 'switch' and '|upkeep' not in log:
         # Without the residual action ('|upkeep') in this step the queue still
@@ -639,22 +688,42 @@ def boundary_of(state, log):
     return BOUNDARY[kind]
 
 
-def convert(root, name, tables, out, all_tape, all_events):
-    spec = json.load(io.open(os.path.join(root, 'tests', 'reference', 'specs', name + '.json'), encoding='utf-8'))
-    trace = json.load(io.open(os.path.join(root, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8'))
+def read_ascii(path):
+    with io.open(path, encoding='ascii') as f:
+        return f.read()
+
+
+def load_json(root, kind, name):
+    """tests/reference/<kind>/<name>.json, parsed."""
+    with io.open(os.path.join(root, 'tests', 'reference', kind, name + '.json'), encoding='utf-8') as f:
+        return json.load(f)
+
+
+def load_battle(root, name):
+    """The spec and the trace of the committed battle `name`: the file IO of a conversion."""
+    return load_json(root, 'specs', name), load_json(root, 'traces', name)
+
+
+def convert_battle(name, spec, trace, tables):
+    """One battle as plain data, in the field order of the df_conf_* types
+    (conformance_types.h): {'name', 'purpose', 'member_count', 'members',
+    'steps', 'dropped_total'}. 'members' holds per side its members as int
+    tuples (df_conf_member; the C array zero-fills the rest of the six). A step
+    is a dict with the df_conf_step fields, except that its own tape entries
+    (site, lo, hi, value) are 'tape' and each player's events (the fields of
+    duoforge_event as int tuples) are 'events', instead of offsets into the
+    shared arrays; 'dropped' is the number of draws the step dropped.
+    Pure: no file IO, and spec and trace are not changed. What the converter
+    does not model raises ConversionError."""
     teams = [parse_team(spec['teams'][s], tables) for s in range(2)]
-    w = out.append
-    w('/* %s: %s */' % (name, spec['purpose']))
-    w('static const df_conf_member conf_%s_members[2][6] = {' % name)
+    members = []
     for s in range(2):
         rows = []
         for mon in teams[s]:
             mv = mon['moves'] + [0] * (4 - len(mon['moves']))
-            rows.append('{%du, %du, %du, {%s}, %du, %du, %du, {%s}}' % (
-                mon['species'], mon['gender'], mon['nature'], ', '.join('%du' % x for x in mon['sp']),
-                mon['ability'], mon['item'], len(mon['moves']), ', '.join('%du' % x for x in mv)))
-        w('    {%s},' % ', '.join(rows))
-    w('};')
+            rows.append((mon['species'], mon['gender'], mon['nature'], tuple(mon['sp']), mon['ability'], mon['item'],
+                         len(mon['moves']), tuple(mv)))
+        members.append(rows)
     picks = [None, None]
     state = trace['start']['state']
     # Species are unique per team (species clause): the start state lists the
@@ -663,7 +732,7 @@ def convert(root, name, tables, out, all_tape, all_events):
     for s in range(2):
         names = [name_of(p) for p in state['sides'][s]['pokemon']]
         if len(names) != len(teams[s]) or len(set(names)) != len(names):
-            raise SystemExit('trace_to_c: %s side %d roster is not unique' % (name, s))
+            raise ConversionError('roster-unique', 'trace_to_c: %s side %d roster is not unique' % (name, s))
         roster_of.append({n: i for i, n in enumerate(names)})
     maxhp = [{name_of(p): p['maxhp'] for p in state['sides'][s]['pokemon']} for s in range(2)]
     # The protocol calls an unnamed Pokemon by its base species
@@ -689,14 +758,14 @@ def convert(root, name, tables, out, all_tape, all_events):
         for side, sid in enumerate(('p1', 'p2')):
             if sid in step['input']:
                 kinds[side] = convert_choice(step['input'][sid], side, state, roster_of, mid_turn)
-        tape_off = len(all_tape)
+        tape = []
         dropped = 0
         for d in step['draws']:
             ends = side_end_tie(d, state)
             if ends is not None:
-                all_tape.append(ends)
+                tape.append(ends)
             elif drop_reason(d, state) is None:
-                all_tape.append(tape_entry(d))
+                tape.append(tape_entry(d))
             else:
                 dropped += 1
         dropped_total += dropped
@@ -713,8 +782,7 @@ def convert(root, name, tables, out, all_tape, all_events):
             for roster in range(6):
                 p = by_roster.get(roster)
                 if p is None:
-                    row.append('{0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, '
-                               '0u, 0u, 0u, 0u, 0u}')
+                    row.append((0, 0, (0, 0, 0, 0), (0, 0, 0, 0, 0, 0, 0), 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0))
                     continue
                 pp = p['pp'] + [0] * (4 - len(p['pp']))
                 stall = 1 if 'stall' in p['volatiles'] else 0
@@ -729,34 +797,34 @@ def convert(root, name, tables, out, all_tape, all_events):
                 choice = p.get('choice')
                 if choice is not None:
                     if choice < 0 or (lock and lock[0] != choice):
-                        raise SystemExit('trace_to_c: unexpected choice lock %r (two-turn lock %r)' % (choice, lock))
+                        raise ConversionError(
+                            'choice-lock', 'trace_to_c: unexpected choice lock %r (two-turn lock %r)' % (choice, lock))
                     if not lock:
                         lslot, ltarget = choice, 0
                 seen = shown[s].get(roster)
                 vols = sum(bit for name, bit in (('protect', 1), ('flashfire', 2), ('twoturnmove', 4),
                                                  ('choicelock', 8), ('unburden', 16)) if name in p['volatiles'])
-                row.append('{1u, %du, {%s}, {%s}, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du}' % (
-                    p['hp'], ', '.join('%du' % x for x in pp), ', '.join('%du' % (x + 6) for x in p['boosts']),
-                    stall, 1 if p['fainted'] else 0, status, counter, p['confusion'], lslot, ltarget,
-                    p.get('mega', 0), 1 if p['item'] else 0, 1 if seen else 0, seen[0] if seen else 0,
-                    seen[1] if seen else 0, vols))
-            mons.append(row)
+                row.append((1, p['hp'], tuple(pp), tuple(x + 6 for x in p['boosts']),
+                            stall, 1 if p['fainted'] else 0, status, counter, p['confusion'], lslot, ltarget,
+                            p.get('mega', 0), 1 if p['item'] else 0, 1 if seen else 0, seen[0] if seen else 0,
+                            seen[1] if seen else 0, vols))
+            mons.append(tuple(row))
         cmds = []
         for s in range(2):
             if s in kinds and kinds[s][0] == 'slots':
                 c = kinds[s][1] + [(0, 0, 0, 0, 0)] * (2 - len(kinds[s][1]))
             else:
                 c = [(0, 0, 0, 0, 0)] * 2
-            cmds.append('{%s}' % ', '.join('{%du, %du, %du, %du, %du}' % x for x in c))
+            cmds.append(tuple(c))
         pk = []
         for s in range(2):
             row = (kinds[s][1] if team else []) + [0] * (6 - (len(kinds[s][1]) if team else 0))
-            pk.append('{%s}' % ', '.join('%du' % x for x in row))
+            pk.append(tuple(row))
         occ = []
         for s in range(2):
             sd = new_state['sides'][s]
             row = [roster_of[s][name_of(sd['pokemon'][i])] if i >= 0 else 0xFF for i in sd['active']]
-            occ.append('{%s}' % ', '.join('%du' % x for x in row))
+            occ.append(tuple(row))
         # The positions that received a Pokemon, in the reference's order
         # (each switch is logged twice, for the two audiences).
         entries = []
@@ -785,7 +853,7 @@ def convert(root, name, tables, out, all_tape, all_events):
                     row.append(0x10)
                 else:
                     row.append(sum(1 << i for i, e in enumerate(rows[k]) if e == 1))
-            enabled.append('{%s}' % ', '.join('%du' % x for x in row))
+            enabled.append(tuple(row))
         weather = WEATHER[new_state['weather']]
         terrain = TERRAIN[new_state['terrain']]
         field = (weather, new_state['weather_turns'] if weather else 0, terrain,
@@ -793,46 +861,89 @@ def convert(root, name, tables, out, all_tape, all_events):
                      c for sd in new_state['sides'] for c in sd['conditions'])
         boundary = boundary_of(new_state, step['log'])
         result = RESULT[new_state['winner']] if boundary == 5 else 0
+        events = [step_events(step['log'], viewer, roster_of, maxhp, tables) for viewer in range(2)]
+        steps.append({'team': 1 if team else 0, 'answered0': 1 if 0 in kinds else 0, 'answered1': 1 if 1 in kinds else 0,
+                      'turn': new_state['turn'], 'boundary': boundary, 'result': result, 'picks': tuple(pk),
+                      'cmds': tuple(cmds), 'occupants': tuple(occ), 'entries': tuple(ent), 'field': field,
+                      'enabled': tuple(enabled), 'mons': tuple(mons), 'tape': tape, 'events': events,
+                      'dropped': dropped})
+        state = new_state
+        mid_turn = not any(line.startswith('|upkeep') for line in step['log'])
+    return {'name': name, 'purpose': spec['purpose'], 'member_count': len(teams[0]), 'members': members,
+            'steps': steps, 'dropped_total': dropped_total}
+
+
+def c_init(value):
+    """A C initializer of nested int tuples: (1, (2, 3)) is {1u, {2u, 3u}}."""
+    if isinstance(value, (tuple, list)):
+        return '{%s}' % ', '.join(c_init(v) for v in value)
+    return '%du' % value
+
+
+def step_record(st, tape_off, ev_off, ev_len):
+    """A step of convert_battle's data as the nested int tuple of a
+    df_conf_step, in the order of its declaration (conformance_types.h): the
+    one place in Python that order is written down. `tape_off` is where the
+    step's tape entries start in the tape that holds them, `ev_off` and
+    `ev_len` per player where its events start in the event array and how many
+    there are."""
+    return (st['team'], st['answered0'], st['answered1'], tape_off, len(st['tape']), st['turn'], st['boundary'],
+            st['result'], st['picks'], st['cmds'], st['occupants'], st['entries'], st['field'], st['enabled'],
+            st['mons'], tuple(ev_off), tuple(ev_len))
+
+
+def format_battle(data, out, all_tape, all_events):
+    """The C tables of a battle from convert_battle's data. The lines go to
+    `out`; the tape entries and events of each step are appended to the shared
+    arrays all_tape and all_events, where the step records its offsets.
+    Returns the battle's row of conf_battles."""
+    name = data['name']
+    w = out.append
+    w('/* %s: %s */' % (name, data['purpose']))
+    w('static const df_conf_member conf_%s_members[2][6] = {' % name)
+    for rows in data['members']:
+        w('    {%s},' % ', '.join(c_init(row) for row in rows))
+    w('};')
+    steps = []
+    for st in data['steps']:
+        tape_off = len(all_tape)
+        all_tape.extend(st['tape'])
         ev_off, ev_len = [], []
-        for viewer in range(2):
-            evs = step_events(step['log'], viewer, roster_of, maxhp, tables)
+        for evs in st['events']:
             ev_off.append(len(all_events))
             ev_len.append(len(evs))
             all_events.extend(evs)
-        steps.append('    {%du, %du, %du, %du, %du, %du, %du, %du, {%s}, {%s}, {%s}, {%s}, {%s}, {%s}, {{%s}, {%s}}, '
-                     '{%du, %du}, {%du, %du}},  /* %d draws dropped */' % (
-                         1 if team else 0, 1 if 0 in kinds else 0, 1 if 1 in kinds else 0, tape_off,
-                         len(all_tape) - tape_off, new_state['turn'], boundary, result, ', '.join(pk),
-                         ', '.join(cmds), ', '.join(occ), ', '.join('%du' % x for x in ent),
-                         ', '.join('%du' % x for x in field), ', '.join(enabled), ', '.join(mons[0]),
-                         ', '.join(mons[1]), ev_off[0], ev_off[1], ev_len[0], ev_len[1], dropped))
-        state = new_state
-        mid_turn = not any(line.startswith('|upkeep') for line in step['log'])
+        steps.append('    %s,  /* %d draws dropped */' % (c_init(step_record(st, tape_off, ev_off, ev_len)),
+                                                           st['dropped']))
     w('static const df_conf_step conf_%s_steps[] = {' % name)
     out.extend(steps)
     w('};')
     return '    {"%s", %du, conf_%s_members, conf_%s_steps, sizeof conf_%s_steps / sizeof conf_%s_steps[0], %du},' % (
-        name, len(teams[0]), name, name, name, name, dropped_total)
+        name, data['member_count'], name, name, name, name, data['dropped_total'])
+
+
+def spec_is_team_c(name, spec):
+    """A spec with "data": "team_c" records a Team C battle (decision 0009 section 6.1)."""
+    data = spec.get('data')
+    if data not in (None, 'team_c'):
+        raise ConversionError('spec-data', 'trace_to_c: %s: unknown data %r' % (name, data))
+    return data == 'team_c'
 
 
 def is_team_c(root, name):
-    """A spec with "data": "team_c" records a Team C battle (decision 0009 section 6.1)."""
-    spec = json.load(io.open(os.path.join(root, 'tests', 'reference', 'specs', name + '.json'), encoding='utf-8'))
-    data = spec.get('data')
-    if data not in (None, 'team_c'):
-        raise SystemExit('trace_to_c: %s: unknown data %r' % (name, data))
-    return data == 'team_c'
+    """spec_is_team_c of the committed spec `name`."""
+    return spec_is_team_c(name, load_json(root, 'specs', name))
 
 
 def load_tables(root, team_c):
     """Name -> id tables: the closure's, or for Team C the extended tables
     (the closure ids plus Team C's, decision 0009 section 3.2)."""
-    header = io.open(os.path.join(root, 'src', 'data', 'closure_tables.h'), encoding='ascii').read()
-    source = io.open(os.path.join(root, 'src', 'data', 'closure_tables.c'), encoding='ascii').read()
+    header = read_ascii(os.path.join(root, 'src', 'data', 'closure_tables.h'))
+    source = read_ascii(os.path.join(root, 'src', 'data', 'closure_tables.c'))
     start = 'dfi_closure_formes[DFI_FORME_COUNT] = {'
     if team_c:
-        header += io.open(os.path.join(root, 'src', 'data', 'extended_tables.h'), encoding='ascii').read()
-        source = io.open(os.path.join(root, 'src', 'data', 'extended_tables.c'), encoding='ascii').read()
+        header += read_ascii(os.path.join(root, 'src', 'data', 'extended_tables.h'))
+        source = read_ascii(os.path.join(root, 'src', 'data', 'extended_tables.c'))
         start = 'dfi_ext_formes[DFI_EXT_FORME_COUNT] = {'
     tables = {k: ids(header, k) for k in ('FORME', 'MOVE', 'ITEM', 'ABILITY', 'NATURE')}
     a = source.index(start)
@@ -853,10 +964,91 @@ def main():
     rc = write_header(root, closure, load_tables(root, False), False, check)
     if team_c:
         rc |= write_header(root, team_c, load_tables(root, True), True, check)
+    rc |= write_types(root, check)
     return rc
 
 
+# The record types of the conformance tables, shared by conformance.h,
+# conformance_team_c.h and the comparators; they are written to
+# conformance_types.h, which the other two include.
+TYPES = [
+    '/* species, gender, nature, Stat Points, ability + 1 (0 none), item + 1 (0 none), moves */',
+    'typedef struct df_conf_member {',
+    '    uint32_t species, gender, nature, sp[6], ability, item, move_count, moves[4];',
+    '} df_conf_member;', '/* kind, move_slot, target, mega, reserve */',
+    'typedef struct df_conf_cmd {', '    uint8_t kind, move_slot, target, mega, reserve;', '} df_conf_cmd;',
+    '/* present, hp, pp, stages (biased by 6), stall counter present, fainted,',
+    ' * status (DFI_STATUS_*), its counter (sleep, freeze), confusion turns, the',
+    ' * locked move slot (0xFF none) and its target, Mega forme, the item still',
+    ' * held, and what the opponent has seen: seen, HP percent and colour flag',
+    ' * of the last public display (DUOFORGE_HP_FLAG_*) */',
+    'typedef struct df_conf_mon {', '    uint32_t present, hp;', '    uint8_t pp[4];', '    uint8_t stages[7];',
+    '    uint8_t stall, fainted, status, status_counter, confusion, locked_slot, locked_target, mega;',
+    '    uint8_t held, seen, seen_percent, seen_flag;',
+    '    uint8_t vols; /* volatiles: 1 protect, 2 flashfire, 4 twoturnmove, 8 choicelock, 16 unburden */',
+    '} df_conf_mon;',
+    '/* team step, side 0 / side 1 answered, tape slice, the turn, boundary and',
+    ' * result afterwards, the picks of a team step, slot commands, the occupants',
+    ' * of the positions afterwards (roster index, 0xFF empty), the positions',
+    ' * (side * 2 + slot) that received a Pokemon in the reference\'s order (0xFF',
+    ' * pads), weather, its turns, terrain, its turns, Trick Room turns, per',
+    ' * side Tailwind, Reflect and Light Screen turns, the moves the request',
+    ' * offers per slot (bit k move k, 0x10 Struggle, 0xFF none), the expected',
+    ' * members by roster index */',
+    'typedef struct df_conf_step {',
+    '    uint32_t team, answered0, answered1, tape_off, tape_len, turn, boundary, result;',
+    '    uint8_t picks[2][6];', '    df_conf_cmd cmds[2][2];', '    uint8_t occupants[2][2];',
+    '    uint8_t entries[4];', '    uint8_t field[11];',
+    '    uint8_t enabled[2][2];',
+    '    df_conf_mon mons[2][6];',
+    '    uint32_t ev_off[2], ev_len[2]; /* each player\'s events of the step in conf_events */',
+    '} df_conf_step;',
+    'typedef struct df_conf_battle {', '    const char *name;', '    uint32_t member_count;',
+    '    const df_conf_member (*members)[6];', '    const df_conf_step *steps;', '    uint32_t step_count;',
+    '    uint32_t dropped;', '} df_conf_battle;']
+
+
+def types_header():
+    """The text of conformance_types.h: TYPES with its own include guard."""
+    guard = 'DUOFORGE_TESTS_REFERENCE_CONFORMANCE_TYPES_H'
+    out = ['/*', ' * GENERATED by tools/reference/trace_to_c.py. Do not edit by hand.',
+           ' * The record types of the conformance tables (conformance.h and',
+           ' * conformance_team_c.h) and of the comparators that read them.', ' */',
+           '#ifndef %s' % guard, '#define %s' % guard, '#include <stdint.h>', ''] + TYPES + ['', '#endif']
+    return '\n'.join(out) + '\n'
+
+
+def emit(target, text, check, subject, summary=''):
+    """Writes `text` to `target`, or with `check` compares it with the file
+    (read with LF line ends); `subject` is what it must equal. Returns the exit status."""
+    if check:
+        have = read_ascii(target).replace('\r\n', '\n') if os.path.exists(target) else ''
+        if have != text:
+            sys.stderr.write('trace_to_c: %s differs from %s\n' % (target, subject))
+            return 1
+        print('trace_to_c: %s matches %s' % (target, subject))
+        return 0
+    with io.open(target, 'w', encoding='ascii', newline='\n') as f:
+        f.write(text)
+    print('trace_to_c: wrote %s%s' % (target, summary))
+    return 0
+
+
+def write_types(root, check):
+    return emit(os.path.join(root, 'tests', 'reference', 'conformance_types.h'), types_header(), check,
+                'the template in trace_to_c.py')
+
+
 def write_header(root, names, tables, team_c, check):
+    text, n_tape, n_events = build_header(root, names, tables, team_c)
+    target = os.path.join(root, 'tests', 'reference', 'conformance_team_c.h' if team_c else 'conformance.h')
+    return emit(target, text, check, 'the traces',
+                ' (%d battles, %d tape entries, %d events)' % (len(names), n_tape, n_events))
+
+
+def build_header(root, names, tables, team_c):
+    """The text of conformance.h (conformance_team_c.h for Team C) over the
+    committed battles `names`, and the sizes of its tape and event arrays."""
     guard = 'DUOFORGE_TESTS_REFERENCE_CONFORMANCE_TEAM_C_H' if team_c else 'DUOFORGE_TESTS_REFERENCE_CONFORMANCE_H'
     source_line = (' * tests/reference/traces, the Team C battles (decision 0009; pinned Showdown' if team_c else
                    ' * tests/reference/traces (pinned Showdown b2cb775b0616115b775534eaeff50300e1fc81fc).')
@@ -866,44 +1058,14 @@ def write_header(root, names, tables, team_c, check):
     out += [' * Do not edit by hand. Draw drop rules: tools/reference/trace_to_c.py.', ' */',
             '#ifndef %s' % guard, '#define %s' % guard,
            '#include <stdint.h>', '', '#include <duoforge/duoforge.h>', '', '#include "rng/draw.h"', '',
-           '/* species, gender, nature, Stat Points, ability + 1 (0 none), item + 1 (0 none), moves */',
-           'typedef struct df_conf_member {', '    uint32_t species, gender, nature, sp[6], ability, item, move_count, moves[4];',
-           '} df_conf_member;', '/* kind, move_slot, target, mega, reserve */',
-           'typedef struct df_conf_cmd {', '    uint8_t kind, move_slot, target, mega, reserve;', '} df_conf_cmd;',
-           '/* present, hp, pp, stages (biased by 6), stall counter present, fainted,',
-           ' * status (DFI_STATUS_*), its counter (sleep, freeze), confusion turns, the',
-           ' * locked move slot (0xFF none) and its target, Mega forme, the item still',
-           ' * held, and what the opponent has seen: seen, HP percent and colour flag',
-           ' * of the last public display (DUOFORGE_HP_FLAG_*) */',
-           'typedef struct df_conf_mon {', '    uint32_t present, hp;', '    uint8_t pp[4];', '    uint8_t stages[7];',
-           '    uint8_t stall, fainted, status, status_counter, confusion, locked_slot, locked_target, mega;',
-           '    uint8_t held, seen, seen_percent, seen_flag;',
-           '    uint8_t vols; /* volatiles: 1 protect, 2 flashfire, 4 twoturnmove, 8 choicelock, 16 unburden */',
-           '} df_conf_mon;',
-           '/* team step, side 0 / side 1 answered, tape slice, the turn, boundary and',
-           ' * result afterwards, the picks of a team step, slot commands, the occupants',
-           ' * of the positions afterwards (roster index, 0xFF empty), the positions',
-           ' * (side * 2 + slot) that received a Pokemon in the reference\'s order (0xFF',
-           ' * pads), weather, its turns, terrain, its turns, Trick Room turns, per',
-           ' * side Tailwind, Reflect and Light Screen turns, the moves the request',
-           ' * offers per slot (bit k move k, 0x10 Struggle, 0xFF none), the expected',
-           ' * members by roster index */',
-           'typedef struct df_conf_step {',
-           '    uint32_t team, answered0, answered1, tape_off, tape_len, turn, boundary, result;',
-           '    uint8_t picks[2][6];', '    df_conf_cmd cmds[2][2];', '    uint8_t occupants[2][2];', '    uint8_t entries[4];', '    uint8_t field[11];',
-           '    uint8_t enabled[2][2];',
-           '    df_conf_mon mons[2][6];',
-           '    uint32_t ev_off[2], ev_len[2]; /* each player\'s events of the step in conf_events */',
-           '} df_conf_step;',
-           'typedef struct df_conf_battle {', '    const char *name;', '    uint32_t member_count;',
-           '    const df_conf_member (*members)[6];', '    const df_conf_step *steps;', '    uint32_t step_count;',
-           '    uint32_t dropped;', '} df_conf_battle;', '']
+           '#include "reference/conformance_types.h"', '']
     all_tape = []
     all_events = []
     entries = []
     body = []
     for n in names:
-        entries.append(convert(root, n, tables, body, all_tape, all_events))
+        spec, trace = load_battle(root, n)
+        entries.append(format_battle(convert_battle(n, spec, trace, tables), body, all_tape, all_events))
     out.extend(body)
     out.append('')
     out.append('/* Every kept draw of every battle: site, lo, hi, value. */')
@@ -928,19 +1090,7 @@ def write_header(root, names, tables, team_c, check):
     out.append('};')
     out.append('')
     out.append('#endif')
-    text = '\n'.join(out) + '\n'
-    target = os.path.join(root, 'tests', 'reference', 'conformance_team_c.h' if team_c else 'conformance.h')
-    if check:
-        have = io.open(target, encoding='ascii').read().replace('\r\n', '\n') if os.path.exists(target) else ''
-        if have != text:
-            sys.stderr.write('trace_to_c: %s differs from the traces\n' % target)
-            return 1
-        print('trace_to_c: %s matches the traces' % target)
-        return 0
-    io.open(target, 'w', encoding='ascii', newline='\n').write(text)
-    print('trace_to_c: wrote %s (%d battles, %d tape entries, %d events)' % (target, len(names), len(all_tape),
-                                                                            len(all_events)))
-    return 0
+    return '\n'.join(out) + '\n', len(all_tape), len(all_events)
 
 
 if __name__ == '__main__':

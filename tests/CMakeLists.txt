@@ -35,9 +35,9 @@ endfunction()
 
 # Shared test support (explicit test context, no globals).
 add_library(duoforge_test_support STATIC support/check.c support/fixtures.c support/goldens.c
-            support/goldens_legacy.c support/team_c.c support/factored.c)
+            support/goldens_legacy.c support/team_c.c support/factored.c support/conformance_compare.c)
 target_include_directories(duoforge_test_support PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-# The F2 fixture builder is white-box.
+# The F2 fixture builder and the conformance comparators are white-box.
 target_include_directories(duoforge_test_support PRIVATE "${PROJECT_SOURCE_DIR}/src")
 target_link_libraries(duoforge_test_support PUBLIC duoforge)
 duoforge_configure_target(duoforge_test_support)
@@ -138,6 +138,12 @@ if(DUOFORGE_PS_REFERENCE_DIR)
                     --check "${CMAKE_CURRENT_SOURCE_DIR}/reference/traces/${_name}.json")
             set_tests_properties(duoforge.reference.trace.${_name} PROPERTIES TIMEOUT 120 LABELS reference)
         endforeach()
+        # The same specs through run() in one process, as the persistent worker
+        # records them: identical to the traces, and again after other runs.
+        add_test(NAME duoforge.reference.trace_run
+            COMMAND "${DUOFORGE_NODE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_ps_trace_run.js"
+                "${DUOFORGE_PS_REFERENCE_DIR}")
+        set_tests_properties(duoforge.reference.trace_run PROPERTIES TIMEOUT 600 LABELS reference)
     endif()
 endif()
 # The conformance tables must be what the converter makes of the traces.
@@ -147,6 +153,12 @@ if(Python3_Interpreter_FOUND)
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/trace_to_c.py"
             "${PROJECT_SOURCE_DIR}" --check)
     set_tests_properties(duoforge.reference.conformance_tables PROPERTIES TIMEOUT 60)
+    # The converter as a library: its refusals carry their rules and messages,
+    # and the three generated headers are what the library makes (no checkout needed).
+    add_test(NAME duoforge.reference.converter_api
+        COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_trace_to_c.py")
+    set_tests_properties(duoforge.reference.converter_api PROPERTIES TIMEOUT 120
+        ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
     # The table generator refuses move shapes it does not model (no checkout needed).
     add_test(NAME duoforge.data.gen_closure_refusals
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/test_gen_closure.py")
