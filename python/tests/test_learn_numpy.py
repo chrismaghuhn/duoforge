@@ -6,7 +6,9 @@ computation; the team head's tuple table against the engine's joint ranks;
 the seat and reward attribution of evaluation and self-play with stand-in
 policies (one attacks the foe, one switches); an evaluation whose episodes
 do not end counts them as ties instead of failing; the learner's input
-checks; and a checkpoint of another encoder fails at load.
+checks; a checkpoint of another encoder fails at load; and a checkpoint
+without an encoder version plays the evaluation and the ladder on the
+inputs of encoder 1.
 """
 import unittest
 
@@ -15,11 +17,14 @@ import numpy as np
 import duoforge
 from duoforge import _layout, features
 from duoforge_learn import evaluate, ladder
-from duoforge_learn.checkpoint import load
+from duoforge_learn.checkpoint import encoder_of, load
 from duoforge_learn.returns import gae
 from duoforge_learn.selfplay import OPTIONS, TEAM_ACTIONS, TEAM_TABLE, SelfPlay
 
 C = _layout.CONSTANTS
+# obs_part columns of the own roster's present flags (15 global, 8 side,
+# 2 * 24 positions, 40 per member).
+_OWN_PRESENT = 71 + 40 * np.arange(6)
 
 
 def _stand_in(params, key, obs, slots, mask, is_team, greedy=True):
@@ -121,7 +126,8 @@ class LadderTest(unittest.TestCase):
         self.assertAlmostEqual(float(even[1]), 0.0, places=6)
 
     def test_round_robin_ranks_stand_ins(self):
-        players = [("switch", {"prefer": "switch"}), ("attack", {"prefer": "attack"})]
+        players = [("switch", {"prefer": "switch"}, features.ENCODER),
+                   ("attack", {"prefer": "attack"}, features.ENCODER)]
         score, games = ladder.round_robin(players, _stand_in, envs=16, workers=2)
         self.assertEqual(games[0, 1], 16)
         self.assertEqual(score[0, 1] + score[1, 0], 16)
@@ -157,6 +163,39 @@ class LadderTest(unittest.TestCase):
             self.assertEqual(load(path, obs_size=594)[0]["t1"]["w"].shape, (594, 3))
             with self.assertRaisesRegex(ValueError, "594 observation features.*607"):
                 load(path, obs_size=features.OBS_SIZE)
+
+    def test_checkpoint_names_its_encoder(self):
+        # A config without "encoder" is a checkpoint of encoder 1 (present
+        # from the species); a version the encoder does not serve raises.
+        self.assertEqual(encoder_of({"seed": 5}), 1)
+        self.assertEqual(encoder_of({"encoder": 1}), 1)
+        self.assertEqual(encoder_of({"encoder": features.ENCODER}), 2)
+        for bad in (0, 3, "2", None):
+            with self.assertRaisesRegex(ValueError, "encoder"):
+                encoder_of({"encoder": bad})
+
+    def test_old_checkpoints_play_on_their_inputs(self):
+        # The evaluation and the ladder give each network the present flags
+        # of its encoder: encoder 1 sees Team A's Rillaboom (roster 0) as
+        # absent, encoder 2 all six members, in every call.
+        seen = {}
+
+        def act(params, key, obs, slots, mask, is_team, greedy=True):
+            seen.setdefault(params["name"], []).append(np.asarray(obs)[:, _OWN_PRESENT].copy())
+            return _stand_in(params, key, obs, slots, mask, is_team, greedy)
+
+        old, new = {"prefer": "attack", "name": "old"}, {"prefer": "switch", "name": "new"}
+        evaluate.win_rate(old, act, new, envs=8, workers=2, encoder=1, opponent_encoder=2)
+        evaluate.win_rate(new, act, old, envs=8, workers=2, encoder=2, opponent_encoder=1)
+        ladder.round_robin([("old", old, 1), ("new", new, 2)], act, envs=8, workers=2)
+        self.assertGreater(len(seen["old"]), 3)
+        self.assertGreater(len(seen["new"]), 3)
+        for present in seen["old"]:
+            # pairings e % 4 on both seats: Team A sits at rows of every call
+            self.assertTrue((present[:, 0] == 0).any())
+            self.assertTrue((present[:, 1:] == 1).all())
+        for present in seen["new"]:
+            self.assertTrue((present == 1).all())
 
 
 class InputTest(unittest.TestCase):
