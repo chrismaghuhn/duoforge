@@ -151,6 +151,15 @@ if(DUOFORGE_PS_REFERENCE_DIR)
                 "${DUOFORGE_NODE}" "${DUOFORGE_PS_REFERENCE_DIR}")
         set_tests_properties(duoforge.reference.worker_protocol PROPERTIES TIMEOUT 120 LABELS reference
             ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+        # The differential loop in replay mode: every committed battle through the
+        # worker, the converter and the runner must come out PASS.
+        add_test(NAME duoforge.reference.diff_replay
+            COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/diff_driver.py" replay
+                --checkout "${DUOFORGE_PS_REFERENCE_DIR}" --node "${DUOFORGE_NODE}"
+                --runner "$<TARGET_FILE:duoforge_diff_runner>" --workers 4
+                --out "${CMAKE_CURRENT_BINARY_DIR}/diff_replay")
+        set_tests_properties(duoforge.reference.diff_replay PROPERTIES TIMEOUT 900 LABELS reference
+            ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
     endif()
 endif()
 # The conformance tables must be what the converter makes of the traces.
@@ -188,6 +197,13 @@ if(Python3_Interpreter_FOUND)
         target_compile_definitions(duoforge_reference_runner_records PRIVATE _CRT_SECURE_NO_WARNINGS)
         target_compile_definitions(duoforge_reference_runner_records_team_c PRIVATE _CRT_SECURE_NO_WARNINGS)
     endif()
+    # The replay driver without Node: the buckets and the order of its output with
+    # fake children and the real converter, the records writer, and every committed
+    # battle through the runner of this build (a stand-in answers the reference).
+    add_test(NAME duoforge.reference.diff_driver
+        COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_diff_driver.py")
+    set_tests_properties(duoforge.reference.diff_driver PROPERTIES TIMEOUT 300
+        ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1;DUOFORGE_DIFF_RUNNER=$<TARGET_FILE:duoforge_diff_runner>")
     # The table generator refuses move shapes it does not model (no checkout needed).
     add_test(NAME duoforge.data.gen_closure_refusals
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/test_gen_closure.py")
