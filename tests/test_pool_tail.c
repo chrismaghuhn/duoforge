@@ -1338,7 +1338,8 @@ int main(void)
      * nothing else of it changes (the field, the other side conditions, the other volatiles and the member overrides
      * stay: nothing in this turn ends them). The last move and Encore are written by the step too (step G9: every move
      * used sets the last move, an Encore locks the request to its slot and counts down): the example of this block has
-     * neither, they are tested in test_pool_g9.c. The soak types of the example (Fighting and Water on the leads, which
+     * neither, they are tested in test_pool_g9.c; nor does it have a Pokemon that must recharge (step G17, test_pool_g17.c:
+     * its request is the recharge turn alone). The soak types of the example (Fighting and Water on the leads, which
      * the types now read: step G11) keep the turn from ending in a knock-out before its residual. */
     {
         duoforge_battle *x = turn_battle(&t, kp, false);
@@ -1349,6 +1350,7 @@ int main(void)
                 tp->last_move = 0u;
                 tp->encore_slot = 0u;
                 tp->encore_turns = 0u;
+                tp->must_recharge = 0u; /* step G17: a Pokemon that must recharge is offered the recharge only */
             }
         }
         dfi_pool_tail want = x->tail;

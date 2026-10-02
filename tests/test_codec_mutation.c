@@ -118,7 +118,7 @@ static const unsigned expected_f5[REGION_COUNT][STATUS_COUNT] = {
     {1019, 511, 0, 0, 0}, /* boundary */
     {509, 256, 0, 0, 0}, /* turn_result */
     {14, 1261, 0, 0, 0}, /* field */
-    {27, 30828, 0, 0, 0}, /* queue */
+    {29, 30826, 0, 0, 0}, /* queue (a queued move slot 5, the recharge turn, is valid since step G17) */
     {24, 3801, 0, 0, 0}, /* side0.header */
     {710, 10000, 0, 0, 0}, /* side0.positions */
     {0, 2550, 0, 0, 0}, /* side0.sealed */

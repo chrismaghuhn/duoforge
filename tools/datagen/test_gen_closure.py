@@ -747,7 +747,8 @@ class LenientMoves(unittest.TestCase):
             ('pseudo weather gravity', with_line(PLAIN, "pseudoWeather: 'gravity',")),
             ('secondary', with_line(PLAIN, 'secondary: { chance: 10, onHit() { }, },')),
             ('secondary self effect', with_line(PLAIN, 'secondary: { chance: 100, self: { boosts: { spe: 1, }, }, },')),
-            ('self effect', with_line(PLAIN, "self: { volatileStatus: 'mustrecharge', },")),
+            ('self effect', with_line(PLAIN, "self: { volatileStatus: 'lockedmove', },")),
+            ('recharge flag', with_line(PLAIN, "self: { volatileStatus: 'mustrecharge', },")),
             ('primary boosts on a non-self target', with_line(PLAIN, 'boosts: { atk: -1, },')),
         )
         for feature, text in cases:
