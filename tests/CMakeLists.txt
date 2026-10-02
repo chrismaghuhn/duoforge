@@ -1,11 +1,12 @@
 # DuoForge tests. Every test is finite and has an explicit timeout.
 
 # duoforge_add_test(NAME <ctest name> SOURCES <files...> [WHITEBOX]
-#                   [TIMEOUT <s>] [LABELS <labels...>] [LIBS <libs...>])
+#                   [TIMEOUT <s>] [LABELS <labels...>] [LIBS <libs...>] [ARGS <arguments...>])
 # The executable name is NAME with '.' replaced by '_'. WHITEBOX adds src/ to
-# the include path so a test can exercise internal functions.
+# the include path so a test can exercise internal functions. ARGS are the
+# command line arguments of the test.
 function(duoforge_add_test)
-    cmake_parse_arguments(T "WHITEBOX" "NAME;TIMEOUT" "SOURCES;LABELS;LIBS" ${ARGN})
+    cmake_parse_arguments(T "WHITEBOX" "NAME;TIMEOUT" "SOURCES;LABELS;LIBS;ARGS" ${ARGN})
     if(NOT T_TIMEOUT)
         set(T_TIMEOUT 30)
     endif()
@@ -20,7 +21,7 @@ function(duoforge_add_test)
         target_include_directories(${_exe} PRIVATE "${PROJECT_SOURCE_DIR}/src")
     endif()
     duoforge_configure_target(${_exe})
-    add_test(NAME ${T_NAME} COMMAND ${_exe})
+    add_test(NAME ${T_NAME} COMMAND ${_exe} ${T_ARGS})
     set_tests_properties(${T_NAME} PROPERTIES TIMEOUT ${T_TIMEOUT})
     if(T_LABELS)
         set_tests_properties(${T_NAME} PROPERTIES LABELS "${T_LABELS}")
@@ -145,6 +146,21 @@ if(DUOFORGE_PS_REFERENCE_DIR)
             COMMAND "${DUOFORGE_NODE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_ps_trace_run.js"
                 "${DUOFORGE_PS_REFERENCE_DIR}")
         set_tests_properties(duoforge.reference.trace_run PROPERTIES TIMEOUT 600 LABELS reference)
+        # The persistent worker (differential loop): its JSON-lines protocol over raw pipes.
+        add_test(NAME duoforge.reference.worker_protocol
+            COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_ps_worker.py"
+                "${DUOFORGE_NODE}" "${DUOFORGE_PS_REFERENCE_DIR}")
+        set_tests_properties(duoforge.reference.worker_protocol PROPERTIES TIMEOUT 120 LABELS reference
+            ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+        # The differential loop in replay mode: every committed battle through the
+        # worker, the converter and the runner must come out PASS.
+        add_test(NAME duoforge.reference.diff_replay
+            COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/diff_driver.py" replay
+                --checkout "${DUOFORGE_PS_REFERENCE_DIR}" --node "${DUOFORGE_NODE}"
+                --runner "$<TARGET_FILE:duoforge_diff_runner>" --workers 4
+                --out "${CMAKE_CURRENT_BINARY_DIR}/diff_replay")
+        set_tests_properties(duoforge.reference.diff_replay PROPERTIES TIMEOUT 900 LABELS reference
+            ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
     endif()
 endif()
 # The conformance tables must be what the converter makes of the traces.
@@ -160,6 +176,35 @@ if(Python3_Interpreter_FOUND)
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_trace_to_c.py")
     set_tests_properties(duoforge.reference.converter_api PROPERTIES TIMEOUT 120
         ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+    # The records of the differential runner (tools/difftest): written from the
+    # committed battles by tools/reference/conformance_records.py, they must be
+    # exactly what the compiled tables hold. The setup test writes them, the
+    # two builds of the sync test (closure, Team C) read them.
+    set(_records_dir "${CMAKE_CURRENT_BINARY_DIR}/conformance_records")
+    add_test(NAME duoforge.reference.records_write
+        COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/conformance_records.py"
+            --all "${PROJECT_SOURCE_DIR}" --out "${_records_dir}")
+    set_tests_properties(duoforge.reference.records_write PROPERTIES TIMEOUT 120
+        FIXTURES_SETUP duoforge_conformance_records ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+    duoforge_add_test(NAME duoforge.reference.runner_records SOURCES test_runner_records.c WHITEBOX
+        LIBS duoforge_difftest_records TIMEOUT 60 ARGS "${_records_dir}/closure.records")
+    duoforge_add_test(NAME duoforge.reference.runner_records_team_c SOURCES test_runner_records.c WHITEBOX
+        LIBS duoforge_difftest_records TIMEOUT 60 ARGS "${_records_dir}/team_c.records")
+    target_compile_definitions(duoforge_reference_runner_records_team_c PRIVATE DF_CONFORMANCE_TEAM_C)
+    set_tests_properties(duoforge.reference.runner_records duoforge.reference.runner_records_team_c
+        PROPERTIES FIXTURES_REQUIRED duoforge_conformance_records)
+    if(WIN32)
+        # fopen is fine in a test (the MSVC runtime warns, also under Clang).
+        target_compile_definitions(duoforge_reference_runner_records PRIVATE _CRT_SECURE_NO_WARNINGS)
+        target_compile_definitions(duoforge_reference_runner_records_team_c PRIVATE _CRT_SECURE_NO_WARNINGS)
+    endif()
+    # The replay driver without Node: the buckets and the order of its output with
+    # fake children and the real converter, the records writer, and every committed
+    # battle through the runner of this build (a stand-in answers the reference).
+    add_test(NAME duoforge.reference.diff_driver
+        COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_diff_driver.py")
+    set_tests_properties(duoforge.reference.diff_driver PROPERTIES TIMEOUT 300
+        ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1;DUOFORGE_DIFF_RUNNER=$<TARGET_FILE:duoforge_diff_runner>")
     # The table generator refuses move shapes it does not model (no checkout needed).
     add_test(NAME duoforge.data.gen_closure_refusals
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/test_gen_closure.py")
