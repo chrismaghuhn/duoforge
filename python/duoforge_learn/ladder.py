@@ -137,8 +137,9 @@ def team_matrix(context, pool, rows, player, workers, seed=LADDER_SEED):
 
 
 def _pool_of(run_dir):
-    """The team pool of a run, from its first checkpoint: format 2 names its
-    teams; format 1 (decision 0014) trained on Teams A and B."""
+    """(team pool, data kind) of a run, from its first checkpoint: format 2
+    names its teams and data kind; format 1 (decision 0014) trained on Teams
+    A and B under CLOSURE."""
     import duoforge
     from duoforge import teams
 
@@ -147,22 +148,23 @@ def _pool_of(run_dir):
     if not found:
         raise SystemExit(f"no checkpoints in {run_dir}")
     config = load(found[0][1])[1]
+    from duoforge import _layout
+    kinds = {"closure": "DUOFORGE_DATA_KIND_CLOSURE", "team_c": "DUOFORGE_DATA_KIND_TEAM_C",
+             "pool": "DUOFORGE_DATA_KIND_POOL"}
+    kind = _layout.CONSTANTS[kinds[config["data"]["kind"] if config.get("format") == 2 else "closure"]]
     saved = config["teams"] if config.get("format") == 2 else {"ids": ["A", "B"], "sha256": ["", ""],
                                                                  "weights": [1.0, 1.0]}
     if all(sha == "" for sha in saved["sha256"]) and set(saved["ids"]) <= {"A", "B"}:
         sides = duoforge.reference_setups([0])["sides"][0]
         by_id = {"A": sides[0], "B": sides[1]}
         return teams.TeamPool.from_setups(saved["ids"], np.array([by_id[t] for t in saved["ids"]]),
-                                          saved["weights"])
+                                          saved["weights"]), kind
     train = config.get("train", {})
-    kinds = {"closure": "DUOFORGE_DATA_KIND_CLOSURE", "team_c": "DUOFORGE_DATA_KIND_TEAM_C",
-             "pool": "DUOFORGE_DATA_KIND_POOL"}
-    from duoforge import _layout
-    with duoforge.Context(data_kind=_layout.CONSTANTS[kinds[config["data"]["kind"]]]) as ctx:
+    with duoforge.Context(data_kind=kind) as ctx:
         pool = teams.load(ctx, saved["ids"], root=train.get("teams_root", "data/teams"), weights=saved["weights"])
     if list(pool.sha256) != list(saved["sha256"]):
         raise SystemExit(f"{run_dir}: a team file changed since the run (sha256 {saved['sha256']} -> {pool.sha256})")
-    return pool
+    return pool, kind
 
 
 def _markdown(table, team_ids):
@@ -195,7 +197,7 @@ def main(argv=None):
     from . import evaluate, policy, suite
     from .checkpoint import encoder_of, load, model_config
 
-    pool = _pool_of(args.teams_from or args.run_dirs[0])
+    pool, kind = _pool_of(args.teams_from or args.run_dirs[0])
     rows = suite.make_suite(len(pool.ids), LADDER_SEED, games=args.games, budget=args.budget)
     models = {}
 
@@ -228,7 +230,7 @@ def main(argv=None):
                                  f"the encoder makes {features.OBS_SIZE} (a checkpoint of another encoder)")
             players.append(evaluate.Player(model_of(cfg), params, encoder_of(config), f"{label} update {u}"))
     n = len(players)
-    with duoforge.Context() as ctx:
+    with duoforge.Context(data_kind=kind) as ctx:
         records = play_round_robin(ctx, pool, rows, players, args.workers)
         elo = fit(records, n)
         low, high = bootstrap(records, n)

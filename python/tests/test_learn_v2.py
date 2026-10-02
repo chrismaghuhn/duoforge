@@ -518,7 +518,10 @@ class RegistryTrainingTest(unittest.TestCase):
             self.assertEqual(state["teams"]["weights"], [1.0, 1.0, 2.0])
             self.assertEqual(state["data"]["kind"], "team_c")
             self.assertEqual(_run(["--resume", out, "--updates", "3"]), 0)
-            self.assertEqual(ladder._pool_of(out).ids, ("A", "B", "C"))
+            self.assertEqual(ladder._pool_of(out)[0].ids, ("A", "B", "C"))
+            report = os.path.join(out, "ladder")
+            self.assertEqual(ladder.main([out, "--pick", "2", "--games", "1", "--workers", "2", "--out", report]), 0)
+            self.assertTrue(os.path.isfile(os.path.join(report, "ladder.json")))
             with self.assertRaisesRegex(SystemExit, "data_kind"):
                 _run(["--resume", out, "--updates", "4", "--data-kind", "closure"])
         finally:
