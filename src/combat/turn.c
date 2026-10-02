@@ -2656,7 +2656,7 @@ static duoforge_status dfi_run_switch(dfi_run *r, const dfi_queue_record *q)
     e.id = (uint16_t)reserve;
     if (parting_shot || pivot != NULL) {
         e.cause = (uint8_t)DUOFORGE_CAUSE_MOVE;
-        e.id2 = (uint16_t)(parting_shot ? DFI_MOVE_PARTINGSHOT : pivot->move); /* wide-operands-reviewed: < 256 */
+        e.id2 = (uint16_t)(parting_shot ? DFI_MOVE_PARTINGSHOT : pivot->move); /* wide-operands-reviewed: a move id of the pool tables, a u16 */
     }
     dfi_emit_hp(r, e);
     return dfi_insert_run_switch(r, side, slot, binding.activation_id);

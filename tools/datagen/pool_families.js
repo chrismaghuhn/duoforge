@@ -608,7 +608,13 @@ function isBoostBlock(b) {
 // Whether the tables model a move of the whole pool: no callback, no field outside the modelled ones, a modelled
 // target class, and its secondary, self block, boosts, status, volatile, side condition and pseudo weather one
 // effect each. The move's handler id (G2) or its place in the prefix is decided by the caller.
-function moveIsModelled(raw) {
+// The pool rows that carry selfSwitch and that the turn code pivots with a flag of their own (dfi_pivot_moves): U-turn
+// (a G2 row); Flip Turn is a row of the prefix.
+const ENGINE_PIVOTS = ['uturn'];
+function moveIsModelled(raw, id) {
+    if (raw.selfSwitch !== undefined && !ENGINE_PIVOTS.includes(id)) {
+        return false;
+    }
     for (const [key, value] of Object.entries(raw)) {
         if (typeof value === 'function' || !MOVE_KEYS.has(key)) {
             return false;
@@ -751,8 +757,8 @@ function checkHandlers(dex, source, header, extended) {
             bad('move ' + id + ' has no pinned entry');
             continue;
         }
-        if (moveIsModelled(raw) !== (special !== unmodeledSpecial)) {
-            bad('move ' + id + ': the pinned entry is ' + (moveIsModelled(raw) ? 'modelled' : 'unmodelled') +
+        if (moveIsModelled(raw, id) !== (special !== unmodeledSpecial)) {
+            bad('move ' + id + ': the pinned entry is ' + (moveIsModelled(raw, id) ? 'modelled' : 'unmodelled') +
                 ' but the special column says ' + (special === unmodeledSpecial ? 'UNMODELED' : 'modelled'));
         }
         if (special !== unmodeledSpecial) {

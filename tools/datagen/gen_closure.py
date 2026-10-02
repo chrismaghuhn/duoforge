@@ -344,6 +344,11 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
         value = get(key, False)
         if value is True:
             flags |= bit
+            if key == 'selfSwitch' and lenient and mid not in ENGINE_PIVOT_MOVES:
+                # The turn code pivots a damaging move only through a switch flag of its own (dfi_pivot_moves of
+                # src/state/closure_member.c: Flip Turn and U-turn, rows of the steps above); Volt Switch or
+                # Teleport carry the data flag and nothing else says how they pivot.
+                unmodeled.append('field selfSwitch without a switch flag')
         elif value is not False:
             # selfSwitch: "copyvolatile" (Baton Pass) and "shedtail" (Shed Tail) switch the user out and carry
             # something over: no flag of the tables says that.
@@ -1326,6 +1331,10 @@ HANDLER_IDS = ['NONE', 'UNMODELED']
 # here, which changes the handler column and so the POOL table hash, as any pool change does; a row that is marked and
 # still has the UNMODELED handler fails duoforge.data.pool_tables. G4: Focus Sash, Rock Head.
 ENGINE_ROWS = {'items': ['focussash'], 'abilities': ['rockhead']}
+# The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
+# src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
+# step that gives it a flag value, and adds its id here.
+ENGINE_PIVOT_MOVES = ()
 # The one ability that the pin tags as not released and that the pool still has: Aura Guard is the ability of
 # Lucario-Mega-Z, whose set the pinned validator accepts (docs/research/expansion/data/legal_pool.json, 'abilities_mega_only').
 # The row exists because the format has the forme; it is UNMODELED like every ability with a callback. Any other tag fails.

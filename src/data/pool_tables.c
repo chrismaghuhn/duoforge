@@ -972,7 +972,7 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {4u, 2u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 24u},
     /* Chilling Water -- data/moves.ts:2377-2395 */
     {17u, 1u, 50u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 100u, 1u, 0u, 2u, {5u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
-    /* Chilly Reception -- data/moves.ts:2396-2420  [unmodelled: callback priorityChargeCallback; condition block; field weather] */
+    /* Chilly Reception -- data/moves.ts:2396-2420  [unmodelled: callback priorityChargeCallback; condition block; field selfSwitch without a switch flag; field weather] */
     {11u, 2u, 0u, 0u, 10u, 12u, 8u, 9u, 1u, 16u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 24u},
     /* Circle Throw -- data/moves.ts:2451-2464  [unmodelled: field forceSwitch] */
     {5u, 0u, 60u, 90u, 10u, 12u, 2u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 24u},
@@ -1448,7 +1448,7 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {14u, 2u, 0u, 0u, 5u, 8u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 24u},
     /* Reversal -- data/moves.ts:15077-15109  [unmodelled: callback basePowerCallback] */
     {5u, 0u, 0u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 24u},
-    /* Revival Blessing -- data/moves.ts:15110-15136  [unmodelled: callback onTryHit; condition block; field slotCondition] */
+    /* Revival Blessing -- data/moves.ts:15110-15136  [unmodelled: callback onTryHit; condition block; field selfSwitch without a switch flag; field slotCondition] */
     {12u, 2u, 0u, 0u, 1u, 1u, 8u, 6u, 1u, 48u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 24u},
     /* Rising Voltage -- data/moves.ts:15137-15156  [unmodelled: callback basePowerCallback] */
     {3u, 1u, 70u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 24u},
@@ -1686,8 +1686,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {5u, 1u, 40u, 100u, 30u, 20u, 9u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Venoshock -- data/moves.ts:20357-20374  [unmodelled: callback onBasePower] */
     {13u, 1u, 65u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 24u},
-    /* Volt Switch -- data/moves.ts:20432-20445 */
-    {3u, 1u, 70u, 100u, 20u, 20u, 8u, 1u, 1u, 18u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
+    /* Volt Switch -- data/moves.ts:20432-20445  [unmodelled: field selfSwitch without a switch flag] */
+    {3u, 1u, 70u, 100u, 20u, 20u, 8u, 1u, 1u, 18u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 24u},
     /* Volt Tackle -- data/moves.ts:20446-20463 */
     {3u, 0u, 120u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {33u, 100u}, {0u, 0u}, 10u, 2u, 3u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Waterfall -- data/moves.ts:20488-20504 */
@@ -5433,7 +5433,7 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_CHARGE] = "condition block; primary volatile charge",
     [DFI_MOVE_CHARGEBEAM] = "secondary self effect",
     [DFI_MOVE_CHARM] = "primary boosts on a non-self target",
-    [DFI_MOVE_CHILLYRECEPTION] = "callback priorityChargeCallback; condition block; field weather",
+    [DFI_MOVE_CHILLYRECEPTION] = "callback priorityChargeCallback; condition block; field selfSwitch without a switch flag; field weather",
     [DFI_MOVE_CIRCLETHROW] = "field forceSwitch",
     [DFI_MOVE_CLANGINGSCALES] = "field selfBoost",
     [DFI_MOVE_CLANGOROUSSOUL] = "callback onHit; callback onTry; callback onTryHit",
@@ -5605,7 +5605,7 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_REFLECTTYPE] = "callback onHit",
     [DFI_MOVE_REST] = "callback onHit; callback onTry",
     [DFI_MOVE_REVERSAL] = "callback basePowerCallback",
-    [DFI_MOVE_REVIVALBLESSING] = "callback onTryHit; condition block; field slotCondition",
+    [DFI_MOVE_REVIVALBLESSING] = "callback onTryHit; condition block; field selfSwitch without a switch flag; field slotCondition",
     [DFI_MOVE_RISINGVOLTAGE] = "callback basePowerCallback",
     [DFI_MOVE_ROAR] = "field forceSwitch",
     [DFI_MOVE_ROCKBLAST] = "field multihit",
@@ -5705,6 +5705,7 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_UPPERHAND] = "callback onTry",
     [DFI_MOVE_UPROAR] = "callback onTryHit; condition block; self effect",
     [DFI_MOVE_VENOSHOCK] = "callback onBasePower",
+    [DFI_MOVE_VOLTSWITCH] = "field selfSwitch without a switch flag",
     [DFI_MOVE_WATERSHURIKEN] = "callback basePowerCallback; field multihit",
     [DFI_MOVE_WATERSPOUT] = "callback basePowerCallback",
     [DFI_MOVE_WHIRLPOOL] = "primary volatile partiallytrapped",
@@ -5956,10 +5957,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x59u, 0x2eu, 0xb6u, 0x0au, 0x17u, 0x6cu, 0xe8u, 0x8du,
-    0x05u, 0x69u, 0xecu, 0x7eu, 0x6fu, 0x7bu, 0x3cu, 0x9fu,
-    0x05u, 0x22u, 0x15u, 0x05u, 0xe1u, 0x8du, 0xd8u, 0x4du,
-    0xf3u, 0xe2u, 0x35u, 0x31u, 0x84u, 0xe1u, 0x15u, 0xe1u,
+    0xfdu, 0x20u, 0xccu, 0x2au, 0xefu, 0x37u, 0x0au, 0xbeu,
+    0x1eu, 0xa9u, 0xceu, 0xf7u, 0x16u, 0x5eu, 0xebu, 0x52u,
+    0x68u, 0x56u, 0xdcu, 0x93u, 0x3cu, 0x3fu, 0x5eu, 0x10u,
+    0xdeu, 0x3eu, 0x23u, 0x6au, 0xcau, 0x93u, 0x69u, 0x96u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)
