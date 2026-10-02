@@ -1,6 +1,6 @@
 # 0020 - Static dex features: a read API for formes, moves, items and abilities
 
-Status: **draft** (expansion lead, 2026-10-03; requested by Learner v2 through HauptSession). It adds new public C functions, so the owner approves it before anything is built. Builds on 0015 (the POOL tables and the data query API, section 4.1) and 0018 (the view extension).
+Status: **accepted** (owner, 2026-10-03: the four static functions, `duoforge_data_type_effect`, the generated static-flags column, static target-class values 10-15, one minor bump). Drafted by the expansion lead; requested by Learner v2 through HauptSession. Builds on 0015 (the POOL tables and the data query API, section 4.1) and 0018 (the view extension).
 
 ## Problem
 
@@ -8,7 +8,7 @@ Learner v2's model v2.1 wants static features per forme and per move next to its
 
 Today the public data API (`duoforge_data_count`, `_name`, `_find`, `_supported`, `_forme_info`, `_forme_moves`) gives names, legality and Mega links, but no types, stats or move numbers.
 
-## Decisions (proposed)
+## Decisions
 
 1. **Four read functions, one per table:**
    - `duoforge_data_forme_static`
@@ -78,14 +78,14 @@ Today the public data API (`duoforge_data_count`, `_name`, `_find`, `_supported`
    - **Python test:** checks the binding against the C values.
    - **Unchanged:** no battle, golden or trace changes.
 
-## Open points for the owner
+9. **Type effectiveness, a fifth function.** The type chart is an internal table, and a learner could derive it from the public `DUOFORGE_TYPE_*` ids only by re-implementing it, which AGENTS.md forbids. `duoforge_data_type_effect(ctx, attack_type, defend_type, uint32_t *out_num, uint32_t *out_den)` gives the pinned chart's multiplier as a fraction (0, 1/2, 1, 2), with explicit errors for an unknown type.
 
-- Approve the four functions and structs, the six static target-class values, and the new static-flags column.
+## Open points
+
 - Whether the secondary-effect kind and parameter go into a later v2 of `move_static` once the encoding stops growing, or stay internal for good.
 
 ## Not in scope
 
-- Type effectiveness: the type chart is an internal table, and a learner can derive it from the public `DUOFORGE_TYPE_*` ids only by re-implementing it, which AGENTS.md forbids. A 18 × 18 multiplier query (`duoforge_data_type_effect`) is a natural fifth function. It is listed here so the owner can add it to the same approval.
 - Learnsets beyond `duoforge_data_forme_moves`.
 - Natures: the observation already carries the member's computed stats, so the nature's +/- stats would add nothing; it stays an id.
 - Anything that depends on the battle state.
