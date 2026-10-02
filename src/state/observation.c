@@ -290,12 +290,23 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
          * by the -end lines or when the occupant leaves (the tail is cleared then), as section 6.1 says; an empty
          * position has no tail. */
         for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+            /* Step G7: Wide Guard of the side (public: [-singleturn] Wide Guard). It lasts the turn and ends in the
+             * residual, so it is set only at a boundary inside a turn (a PIVOT), as decision 0018 section 3.3 says. */
+            o.sides[s].guard_flags = battle->tail.sides[s].wide_guard != 0u ? (uint8_t)DUOFORGE_SIDE_GUARD_WIDE_GUARD : 0u;
             for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
                 const dfi_tail_pos *tail = &battle->tail.sides[s].positions[p];
                 uint32_t vol = 0u;
                 vol |= tail->heal_block_turns != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_HEAL_BLOCK : 0u;
                 vol |= tail->throat_chop_turns != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_THROAT_CHOP : 0u;
                 o.sides[s].positions[p].volatiles = vol;
+                /* Step G11, Soak: the type that it set, public (-start|X|typechange|Water): the occupant is pure
+                 * Water until it leaves, faints or Mega Evolves (the tail's soak type is cleared there). */
+                const uint32_t occupant = battle->sides[s].positions[p].occupant;
+                const uint32_t soak = occupant < DUOFORGE_MAX_ROSTER ? battle->tail.sides[s].soak_type[occupant] : 0u;
+                if (soak != 0u) {
+                    o.sides[s].positions[p].volatiles = vol | (uint32_t)DUOFORGE_POSITION_EXT_TYPE_CHANGED;
+                    o.sides[s].positions[p].type_now[0] = (uint8_t)soak; /* type id + 1: one type, the second slot stays 0 */
+                }
             }
         }
     }

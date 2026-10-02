@@ -551,6 +551,94 @@ class Library(unittest.TestCase):
         # The battles do set and clear both: something is shown in each, and every row of the last step is empty.
         self.assertTrue(any(v[0] for v in derived.values()) and any(v[1] for v in derived.values()))
 
+    def test_wide_guard_rows_are_what_the_protocol_lines_say(self):
+        """Decision 0018 section 6.1 for Wide Guard: the side of the user has the guard from the
+        `|-singleturn|X|Wide Guard` line until the next `|upkeep|` (a second Wide Guard of the same side prints no
+        line and changes nothing). The rows of the C test (guard_rows in tests/test_pool_g7.c: the guard flag of each
+        side after each step of the G7 battles, as a mask over the sides) must be exactly what these lines give for the
+        committed traces, so a guard is live at a mid-turn (pivot) boundary and never at a turn boundary, and the
+        engine's flag and view extension are checked against the protocol and not against themselves. Every
+        `-activate|X|move: Wide Guard` is at a side whose guard is up, and every `-singleturn` Wide Guard comes
+        from a move line of Wide Guard."""
+        names = ('g7_wide_guard_a', 'g7_wide_guard_b', 'g7_wide_guard_ally', 'g7_wide_guard_pivot')
+        with open(os.path.join(ROOT, 'tests', 'test_pool_g7.c'), encoding='utf-8') as f:
+            source = f.read()
+        rows = {}
+        for m in re.finditer(r'\{"(g7_\w+)", (\d+)u, 0x([0-9a-f])u\}', source):
+            rows[(m.group(1), int(m.group(2)))] = int(m.group(3), 16)
+        derived = {}
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            up = set()
+            last_move = None
+            for k, step in enumerate(trace['steps']):
+                for line in step['log']:
+                    part = line.split('|')
+                    if len(part) < 2:
+                        continue
+                    if part[1] == 'move':
+                        last_move = part[3]
+                    elif part[1] == '-singleturn' and len(part) > 3 and part[3] == 'Wide Guard':
+                        self.assertEqual(last_move, 'Wide Guard')
+                        up.add(int(part[2][1]) - 1)
+                    elif part[1] == '-activate' and len(part) > 3 and part[3] == 'move: Wide Guard':
+                        self.assertIn(int(part[2][1]) - 1, up, '%s step %d: %s' % (name, k, line))
+                    elif part[1] == 'upkeep':
+                        up.clear()
+                derived[(name, k)] = sum(1 << s for s in up)
+        self.assertEqual(rows, derived)
+        # The guard is live at a boundary inside a turn in the pivot battle, and only there.
+        self.assertEqual({k: v for k, v in derived.items() if v}, {('g7_wide_guard_pivot', 1): 1})
+
+    def test_soak_rows_are_what_the_protocol_lines_say(self):
+        """Decision 0018 section 6.1 for Soak: a position is Soaked from the `|-start|X|typechange|Water` line until the
+        occupant leaves (`|switch|`, `|drag|`, `|replace|`, `|faint|`) or Mega Evolves (`|-mega|`: setSpecies resets the
+        types, sim/pokemon.ts:1392; the research table had OUT only). The rows of the C test (rows in
+        tests/test_pool_g11.c: the Soaked positions after each step of the G11 battles, as masks over side * 2 + slot)
+        must be exactly what these lines give for the committed traces, so the engine's tail and extension are checked
+        against the protocol and not against itself. Also: the converter reads the line as TYPE_CHANGE (the type in the
+        detail, cause MOVE with Soak), and refuses one that is not a single type of the table."""
+        names = ('g11_soak', 'g11_soak_mega', 'g11_soak_stab', 'g11_soak_electro')
+        source = open(os.path.join(ROOT, 'tests', 'test_pool_g11.c'), encoding='utf-8').read()
+        rows = {}
+        for m in re.finditer(r'\{"(g11_\w+)", (\d+)u, 0x([0-9a-f])u\}', source):
+            rows[(m.group(1), int(m.group(2)))] = int(m.group(3), 16)
+        derived = {}
+        lines_seen = 0
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            soaked = set()
+            for k, step in enumerate(trace['steps']):
+                for line in step['log']:
+                    part = line.split('|')
+                    if len(part) < 3:
+                        continue
+                    if part[1] in ('switch', 'drag', 'faint', 'replace', '-mega'):
+                        soaked.discard(part[2][:3])
+                    elif part[1] == '-start' and len(part) > 4 and part[3] == 'typechange':
+                        self.assertEqual(part[4], 'Water')
+                        self.assertEqual(len(part), 5)  # no [from]: the move is Soak, the converter's rule
+                        soaked.add(part[2][:3])
+                        lines_seen += 1
+                derived[(name, k)] = sum(1 << ((int(x[1]) - 1) * 2 + 'ab'.index(x[2])) for x in soaked)
+        self.assertEqual(rows, derived)
+        self.assertTrue(any(derived.values()) and lines_seen >= 6)
+        tables = trace_to_c.load_tables(ROOT, True)
+        names_of = {'p1a': 0, 'p1b': 1, 'p2a': 2, 'p2b': 3}
+        roster = [{'Pelipper': 0}, {'Pelipper': 0}]
+        events = trace_to_c.step_events(['|-start|p2a: Pelipper|typechange|Water'], 0, roster, [{'Pelipper': 100}] * 2, tables)
+        self.assertEqual(len(events), 1)
+        e = events[0]
+        self.assertEqual((e[0], e[1], e[3], e[5], e[11]),
+                         (trace_to_c.EV['TYPE_CHANGE'], names_of['p2a'], trace_to_c.CAUSE['MOVE'],
+                          tables['MOVE'][trace_to_c.key('Soak')], trace_to_c.TYPE_IDS['Water']))
+        self.assertEqual(trace_to_c.EV['TYPE_CHANGE'], 41)
+        for bad in ('|-start|p2a: Pelipper|typechange|Water/Flying', '|-start|p2a: Pelipper|typechange|Stellar'):
+            with self.assertRaises(trace_to_c.ConversionError):
+                trace_to_c.step_events([bad], 0, roster, [{'Pelipper': 100}] * 2, tables)
+
     def test_a_two_turn_lock_lasts_while_twoturnmove_stands(self):
         """Electro Shot's onTryMove removes the move's volatile on the locked turn and the recorder's `locked` is made of
         it, but twoturnmove stays until the residual. In the last step of d02 (Emergency Exit) and d03 (Parting Shot,
@@ -672,9 +760,10 @@ class Library(unittest.TestCase):
         self.assertTrue(any(l.startswith('|switch|p1a: Arcanine|Arcanine-Hisui, L50, M|') for l in lines))
 
     def test_every_move_marked_beyond_the_extended_ids_is_used_in_a_pool_battle(self):
-        """A move that the pool manifest marks beyond the extended ids (twelve of step G2, U-turn of step G5, Moonblast and Calm Mind of step G12,
-        the fourteen of step G13) was used in a committed pool battle: a move line of it that did something (damage, a
-        heal, or a boost for a status move; for Detect, the protection of its user: -singleturn) before the next move line."""
+        """A move that the pool manifest marks beyond the extended ids (twelve of step G2, U-turn of step G5, Throat Chop
+        and Psychic Noise of step G8, Soak of step G11, Moonblast and Calm Mind of step G12, the fourteen of step G13)
+        was used in a committed pool battle: a move line of it that did something (damage, a heal, a boost, or a
+        -start line for a status move; for Detect, the protection of its user: -singleturn) before the next move line."""
         def read(*p):
             return open(os.path.join(ROOT, *p), encoding='utf-8').read()
         header, source = read('src', 'data', 'pool_tables.h'), read('src', 'data', 'pool_tables.c')
@@ -685,7 +774,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 35)  # G2, G5, G8, G12, First Impression, Scald, Recover, Low Kick (G10), then the fourteen of G13
+        self.assertEqual(len(marked), 37)  # G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), then the fourteen of G13
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -701,7 +790,11 @@ class Library(unittest.TestCase):
                         for after in lines[i + 1:]:
                             if after.startswith('|move|') or after.startswith('|turn|'):
                                 break
-                            done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|') + (('|-singleturn|',) if name == 'Detect' else ()))
+                            done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|', '|-start|'))
+                            # A side move (Wide Guard, step G7) shows its effect as its own -singleturn line; Detect's is
+                            # Protect's (step G13: its handler, and the line of the Protect condition).
+                            done = done or (after.startswith('|-singleturn|') and after.endswith('|' + name))
+                            done = done or (name == 'Detect' and after.startswith('|-singleturn|'))
             with self.subTest(move=name):
                 self.assertTrue(done, '%s is marked but no committed pool battle uses it' % name)
 

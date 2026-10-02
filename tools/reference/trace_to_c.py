@@ -518,6 +518,7 @@ STATUS = {'': 0, 'brn': 1, 'frz': 2, 'par': 3, 'slp': 4, 'psn': 5, 'fnt': 0}
 WEATHER = {'': 0, 'raindance': 1, 'sunnyday': 2}
 TERRAIN = {'': 0, 'grassyterrain': 1, 'psychicterrain': 2}
 FIELD_PSYCHIC_TERRAIN = 3  # DUOFORGE_FIELD_PSYCHIC_TERRAIN (Team C)
+BLOCK_WIDE_GUARD = 4  # DUOFORGE_BLOCK_WIDE_GUARD (POOL), a detail of BLOCKED
 RESULT = {'p1': 1, 'p2': 2, '': 3}
 
 
@@ -569,11 +570,15 @@ EV = {name: i + 1 for i, name in enumerate(
      'IMMUNE', 'FAIL', 'PROTECT', 'BLOCKED', 'BOOST', 'UNBOOST', 'STATUS', 'CURE_STATUS', 'CONFUSION_START',
      'CONFUSION_END', 'CONFUSED', 'FLASH_FIRE', 'WEATHER', 'FIELD_START', 'FIELD_END', 'SIDE_START', 'SIDE_END',
      'ITEM_END', 'FORME', 'MEGA', 'PREPARE', 'ANIMATION', 'ABILITY', 'ACTIVATE', 'UPKEEP', 'RESULT',
-     'SINGLE_TURN', 'VOLATILE_START', 'VOLATILE_END'])}
+     'SINGLE_TURN', 'VOLATILE_START', 'VOLATILE_END', 'TYPE_CHANGE'])}
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
          'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14,
          'HEAL_BLOCK': 15}
 VOLATILE_HEAL_BLOCK = 1  # DUOFORGE_VOLATILE_HEAL_BLOCK: the detail of VOLATILE_START and VOLATILE_END
+# DUOFORGE_TYPE_*: the alphabetical type ids, the detail of TYPE_CHANGE
+TYPE_IDS = {name: i for i, name in enumerate(
+    ['Bug', 'Dark', 'Dragon', 'Electric', 'Fairy', 'Fighting', 'Fire', 'Flying', 'Ghost', 'Grass', 'Ground', 'Ice',
+     'Normal', 'Poison', 'Psychic', 'Rock', 'Steel', 'Water'])}
 FLAG = {'STILL': 1, 'LOCKED': 2, 'SPREAD': 4, 'UPKEEP': 8, 'EATEN': 16, 'MESSAGE': 32, 'MISS': 64, 'NOTARGET': 128}
 AILMENT = {'brn': 1, 'frz': 2, 'par': 3, 'slp': 4, 'psn': 5}
 EV_STATS = ['atk', 'def', 'spa', 'spd', 'spe', 'accuracy', 'evasion']
@@ -779,6 +784,8 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             elif args[1] == 'Helping Hand':  # Team C: [of] the user
                 _, _, of = ev_cause(attrs, tables)
                 e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), of, 0, tables['MOVE'][key(args[1])])
+            elif args[1] == 'Wide Guard' and not attrs:  # POOL: the side condition of the user's side, one turn
+                e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), NOPOS, 0, tables['MOVE'][key(args[1])])
             elif args[1] == 'move: Follow Me' and not attrs:  # Team C: no [of]; [zeffect] is not in the format
                 e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), NOPOS, 0, tables['MOVE'][key(args[1][6:])])
             else:
@@ -797,6 +804,8 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                 e = ev_tuple(EV['BLOCKED'], pos)
             elif what == 'move: Psychic Terrain':  # Team C: a priority move stopped at a grounded target
                 e = ev_tuple(EV['BLOCKED'], pos, detail=FIELD_PSYCHIC_TERRAIN)
+            elif what == 'move: Wide Guard':  # POOL: a spread move stopped at a target of the guarded side
+                e = ev_tuple(EV['BLOCKED'], pos, detail=BLOCK_WIDE_GUARD)
             elif what == 'confusion':
                 e = ev_tuple(EV['CONFUSED'], pos)
             elif what.startswith('ability: '):
@@ -826,6 +835,13 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             elif what == 'move: Heal Block':
                 e = ev_tuple(EV['VOLATILE_START' if kind == '-start' else 'VOLATILE_END'], ev_pos(args[0]),
                              detail=VOLATILE_HEAL_BLOCK)
+            elif what == 'typechange' and kind == '-start' and len(args) == 3 and args[2] in TYPE_IDS:
+                # Soak (data/moves.ts:17186-17208): `-start|target|typechange|Water`, one type, no [from]; the move
+                # is Soak, the only mechanic of the pool that sets one single type (a [from] move would name it).
+                cause, id2, _ = ev_cause(attrs, tables)
+                if cause == 0:
+                    cause, id2 = CAUSE['MOVE'], tables['MOVE'][key('Soak')]
+                e = ev_tuple(EV['TYPE_CHANGE'], ev_pos(args[0]), NOPOS, cause, 0, id2, detail=TYPE_IDS[args[2]])
             else:
                 raise ConversionError('start-end-line', 'trace_to_c: unknown %s %r' % (kind, line),
                                       detail='%s %s' % (kind, what))
