@@ -559,11 +559,17 @@ def summarize(records, identity):
     counts = {bucket: 0 for bucket in base.RANDOM_BUCKETS}
     signatures = {}
     reproduction = {'reproduced': 0, 'not reproduced': 0}
-    domain = {'rate': identity['domain_rate'], 'samples': 0, 'request_changed': 0}
+    # 'samples': the requests whose accepted set the worker returned; 'agreed': those of the battles that ran to the
+    # end with the engine's candidates equal to the set at every sampled step (PASS and CAP: the runner compared every
+    # one); the others were not all compared (a difference, a gap of the oracle that stopped the battle before the
+    # runner); 'request_changed': the samples that were dropped.
+    domain = {'rate': identity['domain_rate'], 'samples': 0, 'agreed': 0, 'request_changed': 0}
     for record in sorted(records, key=lambda r: r['index']):
         counts[record['bucket']] += 1
         for key in ('samples', 'request_changed'):
             domain[key] += (record['domain'] or {}).get(key, 0)
+        if record['bucket'] in ('PASS', 'CAP'):
+            domain['agreed'] += (record['domain'] or {}).get('samples', 0)
         if record['reproduces'] is not None:
             reproduction['reproduced' if record['reproduces'] else 'not reproduced'] += 1
         if record['bucket'] == 'PASS':
@@ -920,6 +926,7 @@ def report(summary, outdir):
                                            entry['count'], entry['case']))
     domain = summary['domain']
     if domain['rate'] > 0:
-        print('diff_random: domain rate %s: %d requests compared, %d dropped because the request changed' % (
-            domain['rate'], domain['samples'], domain['request_changed']))
+        print('diff_random: domain rate %s: %d requests sampled, the engine offered what Showdown accepts in %d of them '
+              '(the battles that ran to the end), %d dropped because the request changed' % (
+                  domain['rate'], domain['samples'], domain['agreed'], domain['request_changed']))
     print('diff_random: results in %s' % outdir)

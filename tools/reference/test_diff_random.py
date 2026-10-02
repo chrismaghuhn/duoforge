@@ -794,12 +794,15 @@ class Domain(unittest.TestCase):
         identity = rnd.identity_of(PARAMS._replace(domain_rate=0.2), VERSION, 'h', '1', 'f' * 64)
         self.assertEqual((identity['domain_rate'], identity['policy']), (0.2, {'max_steps': 300, 'switch_weight': 0.1, 'mega_weight': 0.5}))
         records = []
-        for i, domain in enumerate(({'samples': 5, 'request_changed': 1}, None, {'samples': 2, 'request_changed': 0})):
-            records.append({'index': i, 'name': 'fz_1_%d' % i, 'pairing': 'AA', 'bucket': 'PASS', 'rule': None, 'detail': None,
+        kinds = (('PASS', {'samples': 5, 'request_changed': 1}), ('PASS', None), ('CAP', {'samples': 2, 'request_changed': 0}),
+                 ('DIVERGENCE', {'samples': 4, 'request_changed': 2}), ('ORACLE_GAP', {'samples': 3, 'request_changed': 0}))
+        for i, (bucket, domain) in enumerate(kinds):
+            records.append({'index': i, 'name': 'fz_1_%d' % i, 'pairing': 'AA', 'bucket': bucket, 'rule': None, 'detail': None,
                             'step': None, 'steps': 4, 'context': 'CLOSURE', 'ended': True, 'reproduces': None,
                             'domain': domain, 'messages': []})
         summary = rnd.summarize(records, identity)
-        self.assertEqual(summary['domain'], {'rate': 0.2, 'samples': 7, 'request_changed': 1})
+        # Sampled: all of them; agreed: those of the battles that ran to the end (PASS, CAP); dropped: all of those.
+        self.assertEqual(summary['domain'], {'rate': 0.2, 'samples': 14, 'agreed': 7, 'request_changed': 3})
 
 
 # ------------------------------------------------------------ a run, the summary, and its cut into chunks

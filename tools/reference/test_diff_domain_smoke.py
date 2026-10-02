@@ -75,9 +75,12 @@ def main(argv):
         sys.exit('requests were compared without --domain-rate: %s' % [b['domain'] for b in plain])
     if summary['domain']['rate'] != 1.0 or plain_summary['domain']['rate'] != 0.0:
         sys.exit('the rates of the runs are %s and %s' % (summary['domain']['rate'], plain_summary['domain']['rate']))
+    if summary['domain']['agreed'] != summary['domain']['samples'] or plain_summary['domain'] != {
+            'rate': 0.0, 'samples': 0, 'agreed': 0, 'request_changed': 0}:
+        sys.exit('the totals of the domain are %s and %s' % (summary['domain'], plain_summary['domain']))
     total = summary['domain']['samples'] + summary['domain']['request_changed']
-    print('diff_domain_smoke: %d battles, %d requests compared with what Showdown accepts (%d dropped as changed), all PASS, '
-          'and the same battles without the check' % (BATTLES, summary['domain']['samples'], summary['domain']['request_changed']))
+    print('diff_domain_smoke: %d battles, %d requests whose accepted set is the engine\'s candidates (%d dropped as changed), '
+          'all PASS, and the same battles without the check' % (BATTLES, summary['domain']['agreed'], summary['domain']['request_changed']))
     return 0 if total > 0 else 1
 
 
