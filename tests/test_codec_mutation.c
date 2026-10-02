@@ -49,12 +49,13 @@ static const struct {
     {721, 1009, "side1.members"},
 };
 
-/* Status column order: OK, MALFORMED, CONTEXT_MISMATCH, SCHEMA_MISMATCH, SEMANTICS_MISMATCH.
+/* Status column order: OK, MALFORMED, CONTEXT_MISMATCH, SCHEMA_MISMATCH, SEMANTICS_MISMATCH. The golden of every row is a
+ * schema 3 state under the SYNTHETIC context C1; the schema row is that of tools/state_model after the POOL tail.
  * Rows are the mutation_c lines of the structural model, in region order. */
 static const unsigned expected_f1[REGION_COUNT][STATUS_COUNT] = {
     {0, 2040, 0, 0, 0}, /* magic */
     {0, 0, 0, 510, 0}, /* kind */
-    {0, 0, 0, 510, 0}, /* schema */
+    {0, 1, 0, 509, 0}, /* schema: 0x0103, v3 + pool tail rev 1, is known, and then 1009 is the wrong size */
     {0, 0, 0, 0, 1020}, /* semantics */
     {0, 1020, 0, 0, 0}, /* total_length */
     {0, 0, 8160, 0, 0}, /* fingerprint */
@@ -80,7 +81,7 @@ static const unsigned expected_f1[REGION_COUNT][STATUS_COUNT] = {
 static const unsigned expected_f2[REGION_COUNT][STATUS_COUNT] = {
     {0, 2040, 0, 0, 0}, /* magic */
     {0, 0, 0, 510, 0}, /* kind */
-    {0, 0, 0, 510, 0}, /* schema */
+    {0, 1, 0, 509, 0}, /* schema: 0x0103, v3 + pool tail rev 1, is known, and then 1009 is the wrong size */
     {0, 0, 0, 0, 1020}, /* semantics */
     {0, 1020, 0, 0, 0}, /* total_length */
     {0, 0, 8160, 0, 0}, /* fingerprint */
@@ -106,7 +107,7 @@ static const unsigned expected_f2[REGION_COUNT][STATUS_COUNT] = {
 static const unsigned expected_f5[REGION_COUNT][STATUS_COUNT] = {
     {0, 2040, 0, 0, 0}, /* magic */
     {0, 0, 0, 510, 0}, /* kind */
-    {0, 0, 0, 510, 0}, /* schema */
+    {0, 1, 0, 509, 0}, /* schema: 0x0103, v3 + pool tail rev 1, is known, and then 1009 is the wrong size */
     {0, 0, 0, 0, 1020}, /* semantics */
     {0, 1020, 0, 0, 0}, /* total_length */
     {0, 0, 8160, 0, 0}, /* fingerprint */
@@ -148,10 +149,13 @@ static int status_column(duoforge_status st)
     }
 }
 
+/* The kinds of this test are all schema 3 (no POOL tail): any such context encodes them. */
+static const duoforge_context *enc_ctx;
+
 static void raw(const duoforge_battle *b, uint8_t out[DUOFORGE_STATE_V3_ENCODED_SIZE])
 {
     memset(out, 0, DUOFORGE_STATE_V3_ENCODED_SIZE);
-    dfi_encode_unchecked(b, out);
+    (void)dfi_encode_unchecked(enc_ctx, b, out);
 }
 
 /* Decodes one input; checks atomicity and, on OK, re-encode identity. */
@@ -232,6 +236,7 @@ int main(void)
     df_test t;
     df_test_begin(&t, "duoforge.codec.mutation");
     duoforge_context *c1 = df_make_context(&df_config_c1);
+    enc_ctx = c1;
     duoforge_battle *dst = df_make_f2(c1);
 
     sweep(&t, c1, dst, df_golden_f1, expected_f1, false, "F1 decode");

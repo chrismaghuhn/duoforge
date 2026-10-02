@@ -95,13 +95,13 @@ static void expect_inv(df_test *t, const duoforge_context *ctx, const duoforge_b
 static void expect_decode(df_test *t, const duoforge_context *ctx, const duoforge_battle *b, duoforge_status want,
                           dfi_invariant want_inv, const char *what)
 {
-    uint8_t bytes[DUOFORGE_STATE_V3_ENCODED_SIZE];
-    dfi_encode_unchecked(b, bytes);
-    uint8_t *in = df_heap_copy(bytes, sizeof bytes);
+    uint8_t bytes[DF_STATE_ENCODED_MAX];
+    const size_t size = dfi_encode_unchecked(ctx, b, bytes);
+    uint8_t *in = df_heap_copy(bytes, size);
     struct duoforge_battle decoded;
     memset(&decoded, 0, sizeof decoded);
     dfi_invariant inv = DFI_INV_NONE;
-    const duoforge_status st = dfi_decode_state(ctx, in, sizeof bytes, &decoded, &inv);
+    const duoforge_status st = dfi_decode_state(ctx, in, size, &decoded, &inv);
     if (!DF_CHECK(t, st == want && inv == want_inv)) {
         fprintf(stderr, "  decode %s: %s (%s), expected %s (%s)\n", what, duoforge_status_name(st),
                 dfi_invariant_name(inv), duoforge_status_name(want), dfi_invariant_name(want_inv));
@@ -187,17 +187,17 @@ static void turn_bundle(duoforge_decision_bundle *bd, const duoforge_battle *b)
 static void step_expect(df_test *t, const duoforge_context *ctx, duoforge_battle *b,
                         const duoforge_decision_bundle *bd, duoforge_status want, const char *what)
 {
-    uint8_t before[DUOFORGE_STATE_V3_ENCODED_SIZE];
-    uint8_t after[DUOFORGE_STATE_V3_ENCODED_SIZE];
-    df_encode(ctx, b, before);
+    uint8_t before[DF_STATE_ENCODED_MAX];
+    uint8_t after[DF_STATE_ENCODED_MAX];
+    const size_t size = df_encode_n(ctx, b, before);
     duoforge_step_result res;
     const duoforge_status st = duoforge_battle_step(ctx, b, bd, &res);
     if (!DF_CHECK(t, st == want)) {
         fprintf(stderr, "  step %s: %s, expected %s\n", what, duoforge_status_name(st), duoforge_status_name(want));
     }
     if (want != DUOFORGE_OK) {
-        df_encode(ctx, b, after);
-        DF_CHECK_BYTES(t, after, before, sizeof after, what);
+        DF_CHECK_EQ_U64(t, df_encode_n(ctx, b, after), size);
+        DF_CHECK_BYTES(t, after, before, size, what);
     }
 }
 
@@ -993,18 +993,18 @@ int main(void)
      * are a context mismatch. */
     {
         duoforge_battle *w = df_make_battle(kp, &teams);
-        uint8_t enc[DUOFORGE_STATE_V3_ENCODED_SIZE];
-        df_encode(kp, w, enc);
-        uint8_t *in = df_heap_copy(enc, sizeof enc);
+        uint8_t enc[DF_STATE_ENCODED_MAX];
+        const size_t enc_size = df_encode_n(kp, w, enc);
+        uint8_t *in = df_heap_copy(enc, enc_size);
         duoforge_battle *d = NULL;
-        DF_CHECK(&t, duoforge_battle_create_decoded(kp, in, sizeof enc, &d) == DUOFORGE_OK && d != NULL);
+        DF_CHECK(&t, duoforge_battle_create_decoded(kp, in, enc_size, &d) == DUOFORGE_OK && d != NULL);
         bool eq = false;
         DF_CHECK(&t, duoforge_battle_equal(kp, w, d, &eq) == DUOFORGE_OK && eq);
         duoforge_battle_destroy(d);
         d = NULL;
-        DF_CHECK(&t, duoforge_battle_create_decoded(kq, in, sizeof enc, &d) == DUOFORGE_E_CONTEXT_MISMATCH);
-        DF_CHECK(&t, duoforge_battle_create_decoded(kc, in, sizeof enc, &d) == DUOFORGE_E_CONTEXT_MISMATCH);
-        DF_CHECK(&t, duoforge_battle_create_decoded(k1, in, sizeof enc, &d) == DUOFORGE_E_CONTEXT_MISMATCH);
+        DF_CHECK(&t, duoforge_battle_create_decoded(kq, in, enc_size, &d) == DUOFORGE_E_CONTEXT_MISMATCH);
+        DF_CHECK(&t, duoforge_battle_create_decoded(kc, in, enc_size, &d) == DUOFORGE_E_CONTEXT_MISMATCH);
+        DF_CHECK(&t, duoforge_battle_create_decoded(k1, in, enc_size, &d) == DUOFORGE_E_CONTEXT_MISMATCH);
         df_free(in);
         duoforge_battle_destroy(w);
     }

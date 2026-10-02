@@ -4,8 +4,8 @@
 
 - canonical context bytes (with the target-class table hash) and fingerprint;
 - synthetic setup validation and init (a TEAM_SELECTION state);
-- the invariant checker v3 in its fixed order (43 ids);
-- canonical encoding v3 (1009 bytes) and strict decoding;
+- the invariant checker v3 in its fixed order (49 ids, the six TAIL ids of the POOL tail included);
+- canonical encoding v3 (1009 bytes) and strict decoding; for the POOL kinds the schema 0x0103 encoding with the 42-byte state tail (1051 bytes, decision 0015 section 7), its tail rules and the decode order with the two schemas;
 - the mechanics-free team-selection transition (it starts turn 1);
 - the knowledge record: what each player saw last of the opposing members;
 - the complete side-choice domains in documented order (team picks; TURN, REPLACEMENT and PIVOT joint slot choices with the reserve, Mega and forced-switch constraints; Struggle when no move has PP left; for closure data Fake Out disabled after a move action and a locked move offered alone; nothing at TERMINAL);
@@ -32,6 +32,7 @@ With `--goldens` it prints `tests/support/goldens.c` (the C1 context bytes and t
 ```sh
 python3 tools/state_model/state_v3_model.py > model_out.txt
 python3 tools/state_model/state_v3_model.py --goldens > tests/support/goldens.c
+python3 tools/state_model/state_v3_model.py --pool-tail   # only the POOL tail: tests/test_pool_tail.c pins its envelope, example bytes and byte sweep
 ```
 
 The run takes about three minutes (the mutation sweeps decode about 770,000 inputs). The output is identical on every platform (LF line ends).

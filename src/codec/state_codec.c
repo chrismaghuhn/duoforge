@@ -326,8 +326,10 @@ duoforge_status dfi_decode_state(const duoforge_context *ctx, const uint8_t *byt
     if (!dfi_bytes_equal(bytes, dfi_envelope_magic, DFI_ENVELOPE_MAGIC_SIZE)) {
         return DUOFORGE_E_MALFORMED;
     }
+    /* The two schemas of this build: v3 and v3 + pool tail rev 1. Which one a context takes is decided below. */
+    const uint32_t schema = dfi_load_u16le(bytes + DFI_ENVELOPE_SCHEMA_OFF);
     if (dfi_load_u16le(bytes + DFI_ENVELOPE_KIND_OFF) != DFI_ARTIFACT_BATTLE_STATE ||
-        dfi_load_u16le(bytes + DFI_ENVELOPE_SCHEMA_OFF) != DUOFORGE_STATE_SCHEMA_VERSION) {
+        (schema != DFI_STATE_SCHEMA_V3 && schema != DFI_STATE_SCHEMA_POOL_TAIL_REV1)) {
         return DUOFORGE_E_SCHEMA_MISMATCH;
     }
     if (dfi_load_u32le(bytes + DFI_ENVELOPE_SEMANTICS_OFF) != DUOFORGE_SEMANTICS_ID) {
@@ -337,16 +339,33 @@ duoforge_status dfi_decode_state(const duoforge_context *ctx, const uint8_t *byt
     if ((uint64_t)dfi_load_u32le(bytes + DFI_ENVELOPE_LENGTH_OFF) != (uint64_t)size) {
         return DUOFORGE_E_MALFORMED;
     }
-    if (size != DUOFORGE_STATE_V3_ENCODED_SIZE) {
+    const bool tailed = schema == DFI_STATE_SCHEMA_POOL_TAIL_REV1;
+    if (size != (tailed ? (size_t)DFI_STATE_POOL_ENCODED_SIZE : (size_t)DUOFORGE_STATE_V3_ENCODED_SIZE)) {
         return DUOFORGE_E_MALFORMED;
     }
     if (!dfi_context_fingerprint_matches(ctx, bytes + DFI_ENC_FINGERPRINT_OFF)) {
         return DUOFORGE_E_CONTEXT_MISMATCH;
     }
+    /* The schema of the artifact is the one of the context's kind: the POOL kinds carry the tail and no other
+     * kind does. A disagreement, or a reserved byte of the tail that is not zero, is an invariant. */
+    dfi_invariant inv = DFI_INV_NONE;
+    if (tailed != dfi_context_has_pool_tail(ctx)) {
+        inv = DFI_INV_TAIL_SCHEMA;
+    } else if (tailed && !dfi_tail_reserved_zero(bytes + DFI_ENC_TAIL_OFF)) {
+        inv = DFI_INV_TAIL_RESERVED;
+    }
+    if (inv != DFI_INV_NONE) {
+        if (out_invariant != NULL) {
+            *out_invariant = inv;
+        }
+        return DUOFORGE_E_MALFORMED;
+    }
     struct duoforge_battle tmp;
     memset(&tmp, 0, sizeof tmp);
     dfi_parse_state(bytes, &tmp);
-    dfi_invariant inv = DFI_INV_NONE;
+    if (tailed) {
+        dfi_parse_tail(bytes + DFI_ENC_TAIL_OFF, &tmp.tail);
+    }
     if (dfi_state_check(ctx, &tmp, &inv) != DUOFORGE_OK) {
         if (out_invariant != NULL) {
             *out_invariant = inv;
@@ -407,11 +426,11 @@ duoforge_status duoforge_battle_equal(const duoforge_context *ctx, const duoforg
         !dfi_context_fingerprint_matches(ctx, b->context_fingerprint)) {
         return DUOFORGE_E_CONTEXT_MISMATCH;
     }
-    uint8_t ea[DUOFORGE_STATE_V3_ENCODED_SIZE] = {0};
-    uint8_t eb[DUOFORGE_STATE_V3_ENCODED_SIZE] = {0};
-    dfi_encode_unchecked(a, ea);
-    dfi_encode_unchecked(b, eb);
-    *out_equal = dfi_bytes_equal(ea, eb, DUOFORGE_STATE_V3_ENCODED_SIZE);
+    uint8_t ea[DFI_STATE_ENCODED_MAX] = {0};
+    uint8_t eb[DFI_STATE_ENCODED_MAX] = {0};
+    const size_t size = dfi_encode_unchecked(ctx, a, ea);
+    (void)dfi_encode_unchecked(ctx, b, eb);
+    *out_equal = dfi_bytes_equal(ea, eb, size);
     return DUOFORGE_OK;
 }
 
@@ -424,7 +443,7 @@ duoforge_status duoforge_battle_encoded_size(const duoforge_context *ctx, const 
     if (!dfi_context_fingerprint_matches(ctx, battle->context_fingerprint)) {
         return DUOFORGE_E_CONTEXT_MISMATCH;
     }
-    *out_size = DUOFORGE_STATE_V3_ENCODED_SIZE;
+    *out_size = dfi_state_encoded_size_of(ctx);
     return DUOFORGE_OK;
 }
 
@@ -438,11 +457,10 @@ duoforge_status duoforge_battle_encode(const duoforge_context *ctx, const duofor
     if (status != DUOFORGE_OK) {
         return status; /* CONTEXT_MISMATCH or INVARIANT */
     }
-    if (capacity < DUOFORGE_STATE_V3_ENCODED_SIZE) {
+    if (capacity < dfi_state_encoded_size_of(ctx)) {
         return DUOFORGE_E_CAPACITY;
     }
-    dfi_encode_unchecked(battle, buffer);
-    *out_written = DUOFORGE_STATE_V3_ENCODED_SIZE;
+    *out_written = dfi_encode_unchecked(ctx, battle, buffer);
     return DUOFORGE_OK;
 }
 
@@ -456,11 +474,11 @@ duoforge_status duoforge_battle_digest(const duoforge_context *ctx, const duofor
     if (status != DUOFORGE_OK) {
         return status;
     }
-    uint8_t encoded[DUOFORGE_STATE_V3_ENCODED_SIZE] = {0};
+    uint8_t encoded[DFI_STATE_ENCODED_MAX] = {0};
     uint8_t digest[DUOFORGE_DIGEST_SIZE] = {0};
-    dfi_encode_unchecked(battle, encoded);
-    if (!dfi_sha256(encoded, sizeof encoded, digest)) {
-        return DUOFORGE_E_INVARIANT; /* unreachable: 1009 bytes */
+    const size_t size = dfi_encode_unchecked(ctx, battle, encoded);
+    if (!dfi_sha256(encoded, size, digest)) {
+        return DUOFORGE_E_INVARIANT; /* unreachable: at most 1051 bytes */
     }
     for (uint32_t i = 0u; i < DUOFORGE_DIGEST_SIZE; ++i) {
         out_digest[i] = digest[i];

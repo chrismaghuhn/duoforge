@@ -734,10 +734,10 @@ int main(void)
         w->sides[0].members[3].species_id = 99u;
         uint8_t before[DUOFORGE_STATE_V3_ENCODED_SIZE] = {0};
         uint8_t after[DUOFORGE_STATE_V3_ENCODED_SIZE] = {0};
-        dfi_encode_unchecked(w, before);
+        (void)dfi_encode_unchecked(c1, w, before);
         (void)dfi_state_check(c1, w, NULL);
         (void)duoforge_battle_check(c1, w);
-        dfi_encode_unchecked(w, after);
+        (void)dfi_encode_unchecked(c1, w, after);
         DF_CHECK_BYTES(&t, after, before, sizeof after, "checker purity");
         RESET();
     }
@@ -745,7 +745,9 @@ int main(void)
     for (unsigned i = 0; i < (unsigned)DFI_INV_COUNT; ++i) {
         DF_CHECK(&t, strcmp(dfi_invariant_name((dfi_invariant)i), "UNKNOWN") != 0);
     }
-    DF_CHECK_EQ_U64(&t, (unsigned)DFI_INV_COUNT, 43u);
+    /* 43 before the POOL tail (decision 0015 section 7), then TAIL_KIND, _SIDE, _POSITION, _MEMBER, _SCHEMA and
+     * _RESERVED; test_pool_tail.c checks each of the six. */
+    DF_CHECK_EQ_U64(&t, (unsigned)DFI_INV_COUNT, 49u);
 #undef RESET
 #undef RESET_TO
 
