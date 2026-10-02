@@ -104,7 +104,8 @@ class ScriptedPolicy:
     """The scripted baseline (spec section 4), vectorized over (E, 2, 784).
 
     Each slot command of a candidate scores: a MOVE at an occupied foe
-    position 100 minus that foe's shown HP percent; any other MOVE (no
+    position 200 minus that foe's shown HP percent (100 to 200, so a move at
+    a foe beats every other move and the weaker foe wins); any other MOVE (no
     target, an ally, an empty position) 10; a SWITCH -50; PASS and NONE 0.
     A candidate scores the sum over its two slots; the highest wins, ties to
     the lowest index. It reads only each player's own observation and
@@ -142,7 +143,7 @@ class ScriptedPolicy:
         player = np.arange(2)[None, :, None, None]
         at_foe = (kind == _C["DUOFORGE_SLOT_MOVE"]) & (target < 4) & ((target >> 1) == 1 - player)
         hp = shown[rows[:, None, None, None], player, np.where(at_foe, target & 1, 0)]
-        score = np.where(at_foe & (hp >= 0), 100 - hp,
+        score = np.where(at_foe & (hp >= 0), 200 - hp,
                          np.where(kind == _C["DUOFORGE_SLOT_MOVE"], 10,
                                   np.where(kind == _C["DUOFORGE_SLOT_SWITCH"], -50, 0)))
         total = score.sum(axis=3)
