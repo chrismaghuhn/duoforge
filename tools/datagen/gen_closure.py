@@ -2365,6 +2365,11 @@ def build_pool(root, repo, dx):
         fail('the pool type chart and immunity bits are not the extended ones plus Sandstorm')
     if [t for t, v in zip(TYPES, immunity) if v & SAND_IMMUNITY] != SAND_IMMUNE_TYPES:
         fail('the types immune to Sandstorm are not %s' % SAND_IMMUNE_TYPES)
+    # A Pokemon with Heal Block and Throat Chop has two BeforeMove handlers of equal priority whose shuffle (a draw)
+    # trace_to_c.py drops, which is right while no move is stopped by both: none may have the sound and the heal flags.
+    for m in moves:
+        if m['flags2'] & FLAGS2_BITS['sound'] and m['flags2'] & FLAGS2_BITS['heal']:
+            fail('move %s has the sound and the heal flags: the BeforeMove tie of Throat Chop and Heal Block would show' % m['id'])
     d = dict(dx, immunity=immunity, formes=formes, moves=moves, items=items, abilities=abilities,
              item_family=item_family,
              ability_family=ability_family, forme_legal=legal_formes, aliases=aliases, legal_counts=legal['counts'],

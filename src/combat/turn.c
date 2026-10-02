@@ -1,6 +1,7 @@
 #include "combat/turn.h"
 
 #include "combat/ability_family.h"
+#include "combat/residual_order.h"
 #include "combat/events.h"
 #include "combat/item_family.h"
 #include "combat/move_rules.h"
@@ -4014,9 +4015,6 @@ static duoforge_status dfi_run_mega(dfi_run *r, const dfi_queue_record *q)
  * the duration handlers of orders 26 and 27; White Herb's (order 29, Team
  * C) sorts after them. After each callback faints are processed, and a
  * finished battle stops the residual phase. */
-#define DFI_RES_WEATHER 1u
-#define DFI_RES_TERRAIN_END 2u
-#define DFI_RES_BURN 3u
 /* The side conditions that count down in the residual, by sub-order: Reflect, Light Screen, Tailwind, Aurora Veil. */
 #define DFI_SIDE_KINDS 4u
 static uint8_t *dfi_side_turns(struct duoforge_battle *b, uint32_t s, uint32_t k)
@@ -4027,44 +4025,13 @@ static uint8_t *dfi_side_turns(struct duoforge_battle *b, uint32_t s, uint32_t k
            : k == 2u ? &sd->tailwind_turns
                      : &b->tail.sides[s].aurora_veil_turns; /* the tail is zero under every kind but POOL */
 }
-#define DFI_RES_DURATION 4u
-#define DFI_RES_GRASSY 5u
-#define DFI_RES_FIELD_END 6u /* Trick Room, a side condition: duration only */
-#define DFI_RES_LEFTOVERS 7u
-#define DFI_RES_POISON 8u
-#define DFI_RES_WHITE_HERB 9u
-#define DFI_RES_ENCORE 10u /* Encore: order 16, a callback with a duration (step G9) */
-#define DFI_RES_NO_ORDER 0xFFFFFFFFu
 /* Trick Room, weather and terrain; four conditions per side (step G20 added Aurora Veil); per position
- * (DFI_RES_PER_POSITION) a status (burn or poison), seven duration ends
- * (Protect, the stall counter, flinch, a charge, Helping Hand, Follow Me and mustrecharge),
- * an item (Leftovers or White Herb), Grassy Terrain and Encore. */
-#define DFI_RES_PER_POSITION 11u
+ * (DFI_RES_PER_POSITION) a status (burn or poison), the volatiles' handlers (seven duration ends: Protect, the stall
+ * counter, flinch, a charge, Helping Hand, Follow Me and mustrecharge; Heal Block, Throat Chop and Encore), an item
+ * (Leftovers or White Herb) and Grassy Terrain. */
+#define DFI_RES_PER_POSITION 14u
 #define DFI_RES_MAX (3u + 4u * DUOFORGE_SIDE_COUNT + DFI_RES_PER_POSITION * DFI_POSITIONS)
-
-typedef struct dfi_residual_entry {
-    uint32_t kind;
-    uint32_t flat;
-    uint32_t order;
-    uint32_t speed;
-    uint32_t sub_order;
-    bool callback;
-} dfi_residual_entry;
-
-/* comparePriority for residual handlers: 0 a first, 1 tie, 2 b first. */
-static uint32_t dfi_residual_compare(const dfi_residual_entry *a, const dfi_residual_entry *b)
-{
-    if (a->order != b->order) {
-        return a->order < b->order ? 0u : 2u;
-    }
-    if (a->speed != b->speed) {
-        return a->speed > b->speed ? 0u : 2u;
-    }
-    if (a->sub_order != b->sub_order) {
-        return a->sub_order < b->sub_order ? 0u : 2u;
-    }
-    return 1u;
-}
+_Static_assert(DFI_RES_MAX <= DFI_RES_MODEL_MAX, "the exact test of residual_order.h must hold the whole list");
 
 /* Battle.speedSort over the residual handlers, continued from *sorted
  * until `want` callbacks are placed (*placed counts them). A group of tied
@@ -4195,6 +4162,23 @@ static duoforge_status dfi_residual_events(dfi_run *r)
             list[n] = (dfi_residual_entry){DFI_RES_DURATION, flat, DFI_RES_NO_ORDER, speed, 2u, false};
             n += 1u;
         }
+        /* Heal Block (order 20, data/moves.ts:8273-8320) and Throat Chop (order 22, :19389-19423) are duration handlers
+         * of a position's volatile too: they sort in the list like the others, and take their turn after the
+         * callbacks (the count and the end lines are below, their tie is the outcome draw of the Heal Blocks that
+         * end). Encore (order 16) is a volatile as well: its handler comes before the item's, not after Grassy
+         * Terrain's (sim/battle.ts:1107-1130). */
+        if (b->tail.sides[flat / 2u].positions[flat % 2u].heal_block_turns != 0u) {
+            list[n] = (dfi_residual_entry){DFI_RES_DURATION, flat, 20u, speed, 2u, false};
+            n += 1u;
+        }
+        if (b->tail.sides[flat / 2u].positions[flat % 2u].throat_chop_turns != 0u) {
+            list[n] = (dfi_residual_entry){DFI_RES_DURATION, flat, 22u, speed, 2u, false};
+            n += 1u;
+        }
+        if (b->tail.sides[flat / 2u].positions[flat % 2u].encore_slot != 0u) {
+            list[n] = (dfi_residual_entry){DFI_RES_ENCORE, flat, 16u, speed, 2u, true};
+            n += 1u;
+        }
         if (dfi_holds(r->b, m, DFI_ITEM_LEFTOVERS)) {
             list[n] = (dfi_residual_entry){DFI_RES_LEFTOVERS, flat, 5u, speed, 4u, true};
             n += 1u;
@@ -4208,12 +4192,12 @@ static duoforge_status dfi_residual_events(dfi_run *r)
             list[n] = (dfi_residual_entry){DFI_RES_GRASSY, flat, 5u, speed, 2u, true};
             n += 1u;
         }
-        /* Encore (onResidualOrder 16): one handler with a callback and a duration; Pokemon with it at equal Speed tie
-         * as callbacks (SPEED_TIE). */
-        if (b->tail.sides[flat / 2u].positions[flat % 2u].encore_slot != 0u) {
-            list[n] = (dfi_residual_entry){DFI_RES_ENCORE, flat, 16u, speed, 0u, true};
-            n += 1u;
-        }
+    }
+    /* The order in which a Pokemon's volatiles were added is not stored: the engine lists them in one fixed order, which
+     * is the reference's or changes nothing except in the cases of dfi_residual_order_ambiguous (combat/
+     * residual_order.h); those it refuses. */
+    if (dfi_residual_order_ambiguous(list, n)) {
+        return DUOFORGE_E_UNSUPPORTED;
     }
     uint32_t early = 0u; /* the callbacks of orders 1 to 10 */
     uint32_t herbs = 0u; /* White Herb's, order 29 */

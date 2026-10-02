@@ -732,6 +732,12 @@ int main(void)
                          : 0u;
         }
         DF_CHECK_EQ_U64(&t, other, 0u);
+        /* No move has both the sound and the heal flag: the BeforeMove tie of a Pokemon with Throat Chop and Heal Block
+         * shows in no move (trace_to_c.py drops it; the generator fails for such a move). */
+        for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
+            DF_CHECK(&t, (dfi_pool_move_flags2[i] & (DFI_MOVE_FLAG2_SOUND | DFI_MOVE_FLAG2_HEAL)) !=
+                             (DFI_MOVE_FLAG2_SOUND | DFI_MOVE_FLAG2_HEAL));
+        }
         DF_CHECK_EQ_U64(&t, sound, SOUND_MOVES);
         DF_CHECK_EQ_U64(&t, heal, HEAL_MOVES);
         DF_CHECK_EQ_U64(&t, thaw, THAW_MOVES);
