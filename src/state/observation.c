@@ -123,7 +123,7 @@ static void dfi_view_member(const struct duoforge_battle *b, uint32_t viewer, ui
             v->stat_points[i] = mem->stat_points[i];
         }
         v->is_mega = mem->is_mega;
-        v->item_used = mem->item_consumed;
+        v->item_used = (mem->item_consumed != 0u || b->tail.sides[s].item_now[m] == DFI_TAIL_ITEM_NONE) ? 1u : 0u;
         v->status = mem->hp != 0u ? mem->status : (uint8_t)DUOFORGE_AILMENT_NONE;
         if (b->boundary_kind == DUOFORGE_BOUNDARY_TEAM_SELECTION) {
             v->location = (uint8_t)DUOFORGE_LOCATION_UNDETERMINED;
@@ -294,6 +294,13 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
             /* Step G7: Wide Guard of the side (public: [-singleturn] Wide Guard). It lasts the turn and ends in the
              * residual, so it is set only at a boundary inside a turn (a PIVOT), as decision 0018 section 3.3 says. */
             o.sides[s].guard_flags = battle->tail.sides[s].wide_guard != 0u ? (uint8_t)DUOFORGE_SIDE_GUARD_WIDE_GUARD : 0u;
+            /* Step G16: the held item that a move took (Knock Off), public (-enditem|X|Item|[from] move: Knock Off): the
+             * member holds nothing, DUOFORGE_ITEM_NOW_NONE, and it stays across a switch-out and a faint. The tail's
+             * item_now is the overlay of decision 0018 as it is (a Trick would put an item id + 1 there; nothing does
+             * yet). A member that does not exist has none (the invariants). */
+            for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
+                o.sides[s].members[m].item_now = battle->tail.sides[s].item_now[m];
+            }
             for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
                 const dfi_tail_pos *tail = &battle->tail.sides[s].positions[p];
                 uint32_t vol = 0u;

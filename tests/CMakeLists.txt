@@ -162,6 +162,9 @@ duoforge_add_test(NAME duoforge.state.pool_g9 SOURCES test_pool_g9.c WHITEBOX TI
 duoforge_add_test(NAME duoforge.state.pool_g17 SOURCES test_pool_g17.c WHITEBOX TIMEOUT 60)
 # Step AC1: Trace in the tail, the event and the POOL view extension.
 duoforge_add_test(NAME duoforge.state.pool_ac1 SOURCES test_pool_ac1.c WHITEBOX TIMEOUT 60)
+# Step G16: Knock Off in the tail's item_now, in the ITEM_END event with the cause ITEM_TAKEN, in what reads the held item and in the
+# POOL view extension (the member's item_now, bit 11).
+duoforge_add_test(NAME duoforge.state.pool_g16 SOURCES test_pool_g16.c WHITEBOX TIMEOUT 60)
 # The queued action of a fainted Pokemon: no ability and no item of it counts for its priority and Speed (d04 to d06).
 duoforge_add_test(NAME duoforge.state.pool_fainted_holder SOURCES test_pool_fainted_holder.c WHITEBOX TIMEOUT 60)
 # The generated files must stay exactly what tools/datagen/gen_closure.py
@@ -171,8 +174,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=344bca1ab366c6e28275ff8e1936fae6282c9b60a3cafc8e5e2d456b3fc1ddbe"
-        "pool_tables.c=77c3ef3de20c23f0b9b61448638ae7c4ca1025cd721c4d5189b9d0a2c097f063")
+        "pool_tables.h=5405809fdc13dad342ef5f14c04835e1016ea4b4ecd9aa8549f17170fe35cbd9"
+        "pool_tables.c=4d4794d4845b0636a2c00791734ed0f9be5f7906c5bad9a4a805ee41add85931")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)

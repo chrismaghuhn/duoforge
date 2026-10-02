@@ -83,6 +83,11 @@ checks its precondition and fails loudly otherwise:
 Shuffle draws (SPEED_TIE queue) are made relative to the shuffled group:
 random(i, n) with i and n counted from the group's first index.
 
+Poison Touch's roll (POOL data, step G14: randomChance(3, 10) in data/abilities.ts poisontouch,
+onSourceDamagingHit) is named POISON_TOUCH by ps_trace.js (the effect and the event that the
+reference is running) and kept: the engine draws it after every contact hit of a Poison Touch
+holder, also at a target that is down.
+
 Trace's pick (step AC1, POOL) is the one draw of the ability's own onUpdate: the harness classifies it by the
 effect and the event the reference is running (trace:Update), the site TRACE (15), random(n) over the candidate foes.
 
@@ -119,7 +124,7 @@ import sys
 
 SITES = {'SPEED_TIE': 1, 'ACCURACY': 2, 'CRIT': 3, 'DAMAGE_ROLL': 4, 'SECONDARY': 5, 'STALL': 6,
          'SLEEP_TURNS': 7, 'FREEZE_THAW': 8, 'FULL_PARALYSIS': 9, 'CONFUSION_TURNS': 10,
-         'CONFUSION_HIT': 11, 'RANDOM_TARGET': 12, 'STATUS_PICK': 13, 'INSERT_TIE': 14, 'TRACE': 15}
+         'CONFUSION_HIT': 11, 'RANDOM_TARGET': 12, 'STATUS_PICK': 13, 'INSERT_TIE': 14, 'TRACE': 15, 'POISON_TOUCH': 16}
 STATS = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe']
 GENDER = {'M': 1, 'F': 2}
 GENDERLESS = 3
@@ -317,23 +322,27 @@ def drop_reason(d, state, after=None, log=None):
         # P:<slot>:<handlers>:<effect ids>. Sitrus Berry (Update) and Grassy
         # Seed (TerrainChange) act only on their holder, so the order of the
         # Pokemon changes nothing.
-        ids = [x for g in group for x in g.split(':', 3)[3].split('+') if x]
-        if ctx == 'each:Update' and 'trace' in ids:
-            # Trace's onUpdate (step AC1) returns unless the holder is still seeking after its onStart found no foe to
-            # copy, which the engine refuses (E_UNSUPPORTED); it acts on its holder alone, so the order of the
-            # Pokemon changes nothing for it. The engine's own Update draws only for Sitrus holders: another
-            # holder in the tie would make the counts differ, which is refused here.
-            if sum(1 for g in group if set(g.split(':', 3)[3].split('+')) - {'', 'trace'}) <= 1 and all(
-                    x in ('sitrusberry', 'grassyseed', 'trace') for x in ids):
-                return 'Update tie of a Trace holder (no-op unless seeking) with at most one other holder'
-            raise ConversionError('each-tie-handlers',
-                                  'trace_to_c: %s tie between Pokemon with handlers: %s' % (ctx, group),
-                                  detail=ctx + ':trace+' + '+'.join(sorted(set(ids) - {'trace'})))
+        # Thermal Exchange's onUpdate (data/abilities.ts:4990-5018, step G14) cures a burn that its holder has, and the
+        # holder cannot have one (every burn is refused by its onSetStatus, a member starts without a status): it does
+        # nothing, so it is not a holder here. The precondition is checked on the state before the step: a holder
+        # that is burned is an error.
+        for g in group:
+            if 'thermalexchange' in g.split(':', 3)[3].split('+'):
+                slot = g.split(':')[1]
+                side = state['sides'][int(slot[1]) - 1]
+                index = side['active'][' ab'.index(slot[2]) - 1]
+                if index is not None and side['pokemon'][index]['status'] == 'brn':
+                    raise ConversionError('thermal-exchange-burn',
+                                          'trace_to_c: a Thermal Exchange holder is burned: %s' % slot, detail=slot)
+        # Trace's onUpdate (step AC1) returns unless its holder is still seeking after an onStart that found no foe to
+        # copy, which the engine refuses (E_UNSUPPORTED): until then it does nothing either, so it is not a holder.
+        inert = {'thermalexchange', 'trace'}
+        ids = [x for g in group for x in g.split(':', 3)[3].split('+') if x and x not in inert]
         if not all(x in ('sitrusberry', 'grassyseed') for x in ids):
             raise ConversionError('each-tie-handlers',
                                   'trace_to_c: %s tie between Pokemon with handlers: %s' % (ctx, group),
                                   detail=ctx + ':' + '+'.join(sorted(set(ids) - {'sitrusberry', 'grassyseed'})))
-        if sum(1 for g in group if g.split(':', 3)[3]) <= 1:
+        if sum(1 for g in group if [x for x in g.split(':', 3)[3].split('+') if x and x not in inert]) <= 1:
             return 'each-event tie with at most one holder'
         return None  # the engine draws: the order of the holders' lines
     if site == 'SPEED_TIE' and ctx == 'switch-order':
@@ -628,7 +637,7 @@ EV = {name: i + 1 for i, name in enumerate(
      'SINGLE_TURN', 'VOLATILE_START', 'VOLATILE_END', 'TYPE_CHANGE'])}
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
          'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14,
-         'HEAL_BLOCK': 15, 'WEATHER': 16, 'RECHARGE': 18}
+         'HEAL_BLOCK': 15, 'WEATHER': 16, 'ITEM_TAKEN': 17, 'RECHARGE': 18}
 VOLATILE_HEAL_BLOCK = 1  # DUOFORGE_VOLATILE_HEAL_BLOCK: the detail of VOLATILE_START and VOLATILE_END
 VOLATILE_ENCORE = 2      # DUOFORGE_VOLATILE_ENCORE (step G9)
 VOLATILE_MUST_RECHARGE = 3  # DUOFORGE_VOLATILE_MUST_RECHARGE (step G17)
@@ -942,9 +951,22 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             cond = {'move: Tailwind': 1, 'Reflect': 2, 'move: Reflect': 2, 'move: Light Screen': 3}[args[1]]
             e = ev_tuple(EV['SIDE_START' if kind == '-sidestart' else 'SIDE_END'], detail=side, amount=cond)
         elif kind == '-enditem':
-            # [weaken]: the second line of a resist berry (Team C, Chople Berry), detail 1.
-            e = ev_tuple(EV['ITEM_END'], ev_pos(args[0]), NOPOS, 0, 0, tables['ITEM'][key(args[1])] + 1,
-                         detail=1 if '[weaken]' in attrs else 0, flags=FLAG['EATEN'] if '[eat]' in attrs else 0)
+            taken = [a for a in attrs if a.startswith('[from] move: ')]
+            if taken:
+                # POOL (Knock Off, data/moves.ts:9959-9984): `-enditem|X|Item|[from] move: Knock Off|[of] Y` is an item that
+                # a move took: ITEM_END with the cause ITEM_TAKEN, the move in id and its user ([of]) in other. Nothing else
+                # of the pool takes an item (Thief, Covet and Trick come with their steps), and a line without [of] or with
+                # anything else is an error.
+                of = [a for a in attrs if a.startswith('[of] ')]
+                extra = [a for a in attrs if a not in taken and a not in of]
+                if len(taken) != 1 or len(of) != 1 or extra:
+                    raise ConversionError('enditem-line', 'trace_to_c: unknown -enditem %r' % line, detail=line)
+                e = ev_tuple(EV['ITEM_END'], ev_pos(args[0]), ev_pos(of[0][5:]), CAUSE['ITEM_TAKEN'],
+                             tables['MOVE'][key(taken[0][len('[from] move: '):])], tables['ITEM'][key(args[1])] + 1)
+            else:
+                # [weaken]: the second line of a resist berry (Team C, Chople Berry), detail 1.
+                e = ev_tuple(EV['ITEM_END'], ev_pos(args[0]), NOPOS, 0, 0, tables['ITEM'][key(args[1])] + 1,
+                             detail=1 if '[weaken]' in attrs else 0, flags=FLAG['EATEN'] if '[eat]' in attrs else 0)
         elif kind == 'detailschange':
             e = ev_tuple(EV['FORME'], ev_pos(args[0]), ident=tables['FORME'][key(args[1].split(',')[0])])
         elif kind == '-mega':
