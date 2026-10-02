@@ -5,7 +5,20 @@ import re
 
 import numpy as np
 
+from duoforge import features
+
 _KEY = re.compile(r"\['([^']+)'\]")
+
+
+def encoder_of(config):
+    """The encoder version a checkpoint's network was trained with: its
+    config's "encoder" (train writes features.ENCODER), 1 for a config
+    without it (written before; present was species_id != 0). ValueError
+    for a version features.as_encoder does not serve."""
+    encoder = config.get("encoder", 1)
+    if encoder not in features.ENCODERS:
+        raise ValueError(f"encoder {encoder!r} is not one this encoder knows: {features.ENCODERS}")
+    return encoder
 
 
 def load(path, obs_size=None):

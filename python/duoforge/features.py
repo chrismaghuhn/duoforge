@@ -27,12 +27,14 @@ first, then the foe):
       flash fire, protecting, follow me, helping hand, unburden (the
       POSITION_FLAGS bits of the TEAM_C kinds; 0 under CLOSURE), occupant
       one-hot (7: roster 0..5, none)
-    per member, roster 0..5: present, hp / hp_max (0 when hp_max is 0),
-      location one-hot (LOCATIONS), status one-hot (AILMENTS), is mega,
-      mega capable, item used, item / 255, ability / 255, gender / 3,
-      nature / 24, species / 65535, move ids / 65535 (4), pp / pp_max (4,
-      0 when pp_max is 0), move count / 4, stat points / 32 (6),
-      stats / 1000 (5, at most 1)
+    per member, roster 0..5: present (move count above 0: a registered
+      member has 1 to 4 moves, an unregistered slot is all zero; not the
+      species, since id 0 is a forme, Rillaboom), hp / hp_max (0 when
+      hp_max is 0), location one-hot (LOCATIONS), status one-hot
+      (AILMENTS), is mega, mega capable, item used, item / 255,
+      ability / 255, gender / 3, nature / 24, species / 65535,
+      move ids / 65535 (4), pp / pp_max (4, 0 when pp_max is 0),
+      move count / 4, stat points / 32 (6), stats / 1000 (5, at most 1)
 
 slot_part, float32 (2, 32, SLOT_FEATURES): for slot list s and entry i,
   valid (i < slot_count[s]), kind one-hot (4: none, move, switch, pass),
@@ -44,6 +46,12 @@ slot_part, float32 (2, 32, SLOT_FEATURES): for slot list s and entry i,
 pair_mask, bool (32, 32): [i, j] is bit j of domain.allowed[i], the pair
   rule of the engine; its sum is the joint count at a SLOTS boundary and
   0 at team selection.
+
+Versions: this encoder is ENCODER (2), and a checkpoint's config names the
+version its network was trained with ("encoder"; a config without it is
+1). Version 1 took present from species_id != 0, so Rillaboom (forme 0)
+was absent; every other column is the same. as_encoder(obs_part,
+observations, 1) gives such a network exactly the inputs it learned on.
 """
 import numpy as np
 
@@ -72,7 +80,16 @@ _GLOBAL = len(BOUNDARIES) + 1 + len(WEATHERS) + 1 + len(TERRAINS) + 2
 _SIDE = 8
 _POSITION = 7 + 7 + len(POSITION_FLAGS) + 7
 _MEMBER = 2 + len(LOCATIONS) + len(AILMENTS) + 8 + 4 + 4 + 1 + 6 + 5
-OBS_SIZE = _GLOBAL + 2 * (_SIDE + 2 * _POSITION + 6 * _MEMBER)
+_SIDE_SIZE = _SIDE + 2 * _POSITION + 6 * _MEMBER
+OBS_SIZE = _GLOBAL + 2 * _SIDE_SIZE
+# obs_part columns of the present flags: row 0 the own roster, row 1 the foe's.
+_PRESENT = _GLOBAL + _SIDE + 2 * _POSITION + _SIDE_SIZE * np.arange(2)[:, None] + _MEMBER * np.arange(6)
+
+# This encoder's version, which train writes into a checkpoint's config
+# ("encoder"), and every version as_encoder serves (1: present from the
+# species id).
+ENCODER = 2
+ENCODERS = (1, ENCODER)
 
 
 _STAGES = ("atk", "def", "spa", "spd", "spe", "accuracy", "evasion")
@@ -162,7 +179,7 @@ def _sides(s):
     hp = np.divide(m["hp"].astype(_F64), hp_max, out=np.zeros(hp_max.shape), where=hp_max > 0)
     pp_max = m["pp_max"].astype(_F32)
     members = np.concatenate([
-        np.stack([(m["species_id"] != 0).astype(_F64), hp], axis=-1).astype(_F32),
+        np.stack([(m["move_count"] != 0).astype(_F64), hp], axis=-1).astype(_F32),
         _one_hot(m["location"], LOCATIONS, "location"),
         _one_hot(m["status"], AILMENTS, "ailment"),
         np.stack([m["is_mega"].astype(_F64), m["mega_capable"].astype(_F64), m["item_used"].astype(_F64),
@@ -246,3 +263,26 @@ def encode(observation, domain):
         raise TypeError("domain must be one FACTORED_DOMAIN record")
     obs_part, slot_part, pair_mask = encode_batch(ob.reshape(1), d.reshape(1))
     return obs_part[0], slot_part[0], pair_mask[0]
+
+
+def as_encoder(obs_part, observations, encoder):
+    """obs_part of encode (OBSERVATION record, (OBS_SIZE,)) or encode_batch
+    ((N,), (N, OBS_SIZE)) as encoder version `encoder` makes it, the inputs
+    a network of that version was trained on: ENCODER gives obs_part
+    itself; 1 (a checkpoint whose config names no encoder) a copy with every
+    present flag back at species_id != 0. ValueError for another version."""
+    ob = np.asarray(observations)
+    part = np.asarray(obs_part)
+    if ob.dtype != _layout.OBSERVATION or part.dtype != _F32 or part.shape != ob.shape + (OBS_SIZE,):
+        raise TypeError("obs_part must be the float32 obs_part of encode or encode_batch for these observations")
+    if encoder not in ENCODERS:
+        raise ValueError(f"encoder {encoder!r} is not one this encoder knows: {ENCODERS}")
+    if encoder == ENCODER:
+        return obs_part
+    ob = ob.reshape(-1)
+    out = part.reshape(-1, OBS_SIZE).copy()
+    rows = np.arange(ob.shape[0])
+    viewer = ob["player"].astype(np.int64)
+    for k, side in enumerate((viewer, 1 - viewer)):
+        out[:, _PRESENT[k]] = (ob["sides"][rows, side]["members"]["species_id"] != 0).astype(_F32)
+    return out.reshape(part.shape)

@@ -32,11 +32,15 @@ _REWARDS = {C["DUOFORGE_RESULT_SIDE_0"]: (1.0, -1.0), C["DUOFORGE_RESULT_SIDE_1"
 
 
 class Observation:
-    """The policy's inputs for every seat of every environment."""
+    """The policy's inputs for every seat of every environment, as encoder
+    version `encoder` makes them (features.as_encoder: a network of an older
+    version gets the inputs it was trained on)."""
 
-    def __init__(self, batch):
+    def __init__(self, batch, encoder=features.ENCODER):
         e = batch.envs
-        obs, slots, mask = features.encode_batch(batch.observations.reshape(-1), batch.domains.reshape(-1))
+        observations = batch.observations.reshape(-1)
+        obs, slots, mask = features.encode_batch(observations, batch.domains.reshape(-1))
+        obs = features.as_encoder(obs, observations, encoder)
         self.obs = obs.reshape(e, 2, -1)
         self.slots = slots.reshape(e, 2, 2, OPTIONS, features.SLOT_FEATURES)
         self.mask = mask.reshape(e, 2, OPTIONS, OPTIONS)
