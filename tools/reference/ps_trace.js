@@ -67,6 +67,7 @@ const CONDITION_SITES = {
     'par:BeforeMove': 'FULL_PARALYSIS',
     'confusion:Start': 'CONFUSION_TURNS',
     'confusion:BeforeMove': 'CONFUSION_HIT',
+    'trace:Update': 'TRACE', // Trace's this.sample(possibleTargets): one draw, also for a single candidate
 };
 
 // The event a draw happens in (innermost last), tracked by wrapping the

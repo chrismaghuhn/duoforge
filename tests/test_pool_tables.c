@@ -1108,9 +1108,10 @@ int main(void)
         }
         for (uint32_t id = DFI_ABILITY_FAIRYAURA + 1u; id < DFI_POOL_ABILITY_COUNT; ++id) {
             /* Of the whole-pool abilities after Fairy Aura only Sand Stream and Snow Warning have a family (the weather
-             * setters of the Sandstorm and Snowscape step) and are marked. */
+             * setters of the Sandstorm and Snowscape step) and are marked; Trace (step AC1) is marked and has none:
+             * the turn code reads it by id. */
             const bool setter = id == DFI_ABILITY_SANDSTREAM || id == DFI_ABILITY_SNOWWARNING;
-            DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, setter ? 1u : 0u);
+            DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, setter || id == DFI_ABILITY_TRACE ? 1u : 0u);
             DF_CHECK_EQ_U64(&t, dfi_pool_ability_family[id].family,
                             setter ? DFI_ABILITY_FAMILY_WEATHER_SETTER : DFI_ABILITY_FAMILY_NONE);
         }
@@ -1160,6 +1161,25 @@ int main(void)
             marked_count += dfi_support.moves[id] != 0u ? 1u : 0u;
         }
         DF_CHECK_EQ_U64(&t, marked_count, 39u);
+    }
+
+    /* Step AC1: Trace copies the ability of a foe unless that has the pin's notrace flag. The turn code excludes only
+     * Trace itself (dfi_trace in src/combat/turn.c), which is right while no other ability with the flag is marked: the
+     * nine abilities of the pinned data with the flag (tools/datagen/pool_families.js checks the list against the pin)
+     * are all unmarked but Trace. Marking one of them needs its place in that rule. */
+    {
+        static const char *const notrace[] = {"disguise", "forecast", "hungerswitch", "illusion", "imposter", "receiver",
+                                              "stancechange", "trace", "zerotohero"};
+        uint32_t found = 0u;
+        for (uint32_t id = 0u; id < DFI_POOL_ABILITY_COUNT; ++id) {
+            for (size_t k = 0u; k < sizeof notrace / sizeof notrace[0]; ++k) {
+                if (strcmp(dfi_pool_ability_names[id], notrace[k]) == 0) {
+                    found += 1u;
+                    DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, id == DFI_ABILITY_TRACE ? 1u : 0u);
+                }
+            }
+        }
+        DF_CHECK_EQ_U64(&t, found, 9u);
     }
 
     /* Step G12: Fairy Aura and Flower Veil. The engine reads them by id (no family column: one legal holder each);

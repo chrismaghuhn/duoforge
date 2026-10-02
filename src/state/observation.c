@@ -303,6 +303,13 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                 /* Step G11, Soak: the type that it set, public (-start|X|typechange|Water): the occupant is pure
                  * Water until it leaves, faints or Mega Evolves (the tail's soak type is cleared there). */
                 const uint32_t occupant = battle->sides[s].positions[p].occupant;
+                /* Step AC1, Trace: the ability that the occupant copied, public (-ability|X|NEW|OLD|[from] ability:
+                 * Trace); ability id + 1 when it is not the sheet's ability, else 0. Gone when the occupant leaves or
+                 * Mega Evolves (the tail's ability_now is cleared there). */
+                const uint32_t changed = occupant < DUOFORGE_MAX_ROSTER ? battle->tail.sides[s].ability_now[occupant] : 0u;
+                if (changed != 0u && changed != battle->sides[s].members[occupant].ability) {
+                    o.sides[s].positions[p].ability_now = (uint16_t)changed;
+                }
                 const uint32_t soak = occupant < DUOFORGE_MAX_ROSTER ? battle->tail.sides[s].soak_type[occupant] : 0u;
                 if (soak != 0u) {
                     o.sides[s].positions[p].volatiles = vol | (uint32_t)DUOFORGE_POSITION_EXT_TYPE_CHANGED;

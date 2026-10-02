@@ -3128,14 +3128,65 @@ static bool dfi_has_switch_in(const struct duoforge_battle *b, const dfi_member 
 }
 
 /* An entry ability: a weather or a terrain setter (the families of
- * decision 0015: Drizzle, Drought, Grassy Surge, Psychic Surge), Intimidate or
- * Fairy Aura (whose onStart only shows the ability). */
+ * decision 0015: Drizzle, Drought, Grassy Surge, Psychic Surge), Intimidate,
+ * Fairy Aura (whose onStart only shows the ability) or Trace. */
 static bool dfi_has_entry(const struct duoforge_battle *b, const dfi_member *m)
 {
     const dfi_ability_family fam = dfi_ability_family_now(b, m);
     const uint32_t now = dfi_ability_code(b, m);
     return dfi_weather_set_by_fam(fam) != DFI_WEATHER_NONE || dfi_terrain_set_by_fam(fam) != DFI_TERRAIN_NONE ||
-           now == 1u + DFI_ABILITY_INTIMIDATE || now == 1u + DFI_ABILITY_FAIRYAURA;
+           now == 1u + DFI_ABILITY_INTIMIDATE || now == 1u + DFI_ABILITY_FAIRYAURA || now == 1u + DFI_ABILITY_TRACE;
+}
+
+/* Trace (data/abilities.ts:5118-5148, onStart then its Update): the holder copies the ability of one of the foes that
+ * are standing and whose ability can be copied. `adjacentFoes()` is every foe in doubles (sim/pokemon.ts:732-735),
+ * a foe is a candidate unless its ability is none or has the notrace flag: of the abilities that a battle can hold
+ * (the marked ones) only Trace itself has it (tests/test_pool_tables.c; the pin's nine notrace abilities are
+ * checked by tools/datagen/pool_families.js), so a foe that is still Trace, or whose Trace has not run yet, is not
+ * a candidate. The pick is `this.sample(possibleTargets)`, always one draw random(n), also for a single candidate
+ * (site TRACE). The copy is the POOL tail's ability_now of the holder until it leaves the field (the switch-out reset
+ * of clearVolatile, sim/pokemon.ts:1522) or Mega Evolves, and is shown as
+ * -ability|holder|NEW|OLD|[from] ability: Trace|[of] foe (sim/pokemon.ts:1930-1945: the event has the new ability in
+ * id2, the cause ability and the foe in `other`; the old ability is the holder's own and public). setAbility then
+ * starts the new ability (singleEvent Start): a copied Intimidate or weather setter runs at once, before the
+ * entries of the Pokemon that come later in the order.
+ * With no candidate Trace goes on seeking at every later Update (`effectState.seek`): not modelled, so the entry is
+ * E_UNSUPPORTED (two Trace holders against each other, say, are the case; a battle never has no foe left). */
+static duoforge_status dfi_entry_ability(dfi_run *r, uint32_t flat);
+
+static duoforge_status dfi_trace(dfi_run *r, uint32_t flat)
+{
+    struct duoforge_battle *b = r->b;
+    uint32_t candidates[DUOFORGE_ACTIVE_PER_SIDE] = {0u, 0u};
+    uint32_t n = 0u;
+    const uint32_t foe = 1u - flat / 2u;
+    for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
+        const dfi_member *t = dfi_at(b, foe * 2u + slot);
+        if (t != NULL && t->hp != 0u) {
+            const uint32_t code = dfi_ability_code(b, t);
+            if (code != 0u && code != 1u + DFI_ABILITY_TRACE) {
+                candidates[n] = foe * 2u + slot;
+                n += 1u;
+            }
+        }
+    }
+    if (n == 0u) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
+    uint32_t pick = 0u;
+    const duoforge_status st = dfi_draw(r->draws, DFI_SITE_TRACE, 0u, n, &pick);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    const uint32_t source = candidates[pick]; /* pick < n <= 2 */
+    const uint32_t copied = dfi_ability_code(b, dfi_at(b, source));
+    b->tail.sides[flat / 2u].ability_now[dfi_pos(b, flat)->occupant] = (uint16_t)copied; /* <= the ability count */
+    const duoforge_event e = dfi_ev(DUOFORGE_EVENT_ABILITY, flat, DUOFORGE_CAUSE_ABILITY, copied, source);
+    dfi_emit(r, &e);
+    if (dfi_has_entry(b, dfi_at(b, flat))) {
+        return dfi_entry_ability(r, flat); /* setAbility's Start event */
+    }
+    return DUOFORGE_OK;
 }
 
 /* Drizzle and Drought (setWeather): the same weather is not restarted;
@@ -3172,6 +3223,8 @@ static duoforge_status dfi_entry_ability(dfi_run *r, uint32_t flat)
             dfi_emit(r, &e);
             return dfi_terrain_change(r);
         }
+    } else if (a == 1u + DFI_ABILITY_TRACE) {
+        return dfi_trace(r, flat);
     } else if (a == 1u + DFI_ABILITY_FAIRYAURA) {
         /* onStart: -ability|holder|Fairy Aura (the aura itself is onAnyBasePower) */
         const duoforge_event e = dfi_ev(DUOFORGE_EVENT_ABILITY, flat, DUOFORGE_CAUSE_NONE, a, DUOFORGE_NO_POSITION);
@@ -3313,6 +3366,8 @@ static duoforge_status dfi_run_mega(dfi_run *r, const dfi_queue_record *q)
     /* formeChange -> setSpecies -> setType(species.types, true): a type that Soak set ends (sim/pokemon.ts:1392,
      * 1427-1434), without a line. */
     b->tail.sides[q->side].soak_type[dfi_pos(b, flat)->occupant] = 0u;
+    /* The Mega forme's ability replaces one that Trace copied (formeChange -> setAbility, sim/pokemon.ts:1487). */
+    b->tail.sides[q->side].ability_now[dfi_pos(b, flat)->occupant] = 0u;
     duoforge_event forme = dfi_event_make(DUOFORGE_EVENT_FORME, flat);
     forme.id = dfi_pool_formes[m->species_id].mega_forme; /* [detailschange] */
     dfi_emit(r, &forme);
