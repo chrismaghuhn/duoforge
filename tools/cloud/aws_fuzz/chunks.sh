@@ -47,7 +47,7 @@ campaign_conf_load() { # file; sets PAIRINGS TEAMS BASE_SEED CHUNKS CHUNK_BATTLE
             *) fail "campaign.conf: unknown key '$key'" ;;
         esac
     done < "$1"
-    [[ $PAIRINGS =~ ^[A-Za-z0-9,-]+$ ]] || fail 'campaign.conf: bad pairings'
+    [[ $PAIRINGS =~ ^[A-Za-z0-9_,-]+$ ]] || fail 'campaign.conf: bad pairings'
     [[ $BASE_SEED =~ ^[0-9]{1,12}$ ]] || fail 'campaign.conf: bad base_seed'
     [[ $CHUNKS =~ ^[1-9][0-9]{0,2}$ ]] || fail 'campaign.conf: bad chunks'
     [[ $CHUNK_BATTLES =~ ^[1-9][0-9]{2,4}$ ]] && [ "$CHUNK_BATTLES" -ge 100 ] && [ "$CHUNK_BATTLES" -le 20000 ] ||
