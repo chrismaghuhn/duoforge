@@ -310,6 +310,13 @@ def drop_reason(d, state, after=None):
         # the source or the target of the move and the accuracy it was given otherwise. Whichever of the tied
         # handlers runs first, a true passes on as true and the accuracy stays what it was: one order, one value.
         return 'No Guard handlers whose order changes nothing'
+    if site == 'SPEED_TIE' and ctx == 'event:BasePower' and all(
+            g.startswith('H:fairyaura:') and g.endswith(':cb') for g in group):
+        # data/abilities.ts fairyaura (step G12): onAnyBasePower gives the move to the first holder that runs
+        # (move.auraBooster) and the others return at once, so exactly one holder applies 5448/4096 whichever order
+        # the equal-speed holders (one on each side, say) run in: one order, one value. Aura Break (3072) is in no
+        # pool forme's abilities.
+        return 'Fairy Aura handlers whose order changes nothing'
     if site == 'SPEED_TIE' and ctx != 'queue':
         raise ConversionError('tie-context', 'trace_to_c: unhandled tie context %s' % ctx, detail=ctx)
     if site == 'INSERT_TIE':
@@ -698,6 +705,13 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                 e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), NOPOS, 0, tables['MOVE'][key(args[1][6:])])
             else:
                 raise ConversionError('singleturn-line', 'trace_to_c: unknown -singleturn %r' % line, detail=args[1])
+        elif kind == '-block':
+            # Flower Veil (step G12): -block|protected|ability: Flower Veil|[of] holder is the ability's ACTIVATE event
+            # with the protected Pokemon as its position and the holder in `other`
+            _, _, of = ev_cause(attrs, tables)
+            if len(args) != 2 or not args[1].startswith('ability: ') or of == NOPOS:
+                raise ConversionError('block-line', 'trace_to_c: unknown -block %r' % line, detail=args[1] if len(args) > 1 else '')
+            e = ev_tuple(EV['ACTIVATE'], ev_pos(args[0]), of, CAUSE['ABILITY'], 0, tables['ABILITY'][key(args[1][9:])] + 1)
         elif kind == '-activate':
             pos = ev_pos(args[0])
             what = args[1]

@@ -77,6 +77,7 @@
 
 #include "data/closure_tables.h"
 #include "data/extended_tables.h"
+#include "data/pool_tables.h"
 #include "domain.h"
 #include "records.h"
 #include "state/battle_internal.h"
@@ -329,7 +330,9 @@ static outcome run_battle(const dfr_battle *b, duoforge_context *const contexts[
 
     /* The view the comparators take: the battle as the compiled tables hold it. */
     const df_conf_battle cb = {b->name, b->member_count, b->members, b->steps, b->step_count, b->dropped_total};
-    const dfi_forme_data *formes = b->team_c != 0u ? dfi_ext_formes : dfi_closure_formes;
+    /* The extended ids (Team C and the pool) index the pool table, whose first rows are the extended ones: a pool
+     * forme beyond them (Floette-Mega, step G12) must not be looked up in the shorter table. */
+    const dfi_forme_data *formes = b->team_c != 0u ? dfi_pool_formes : dfi_closure_formes;
     /* Event differences written so far; the comparator stops at its cap per run. */
     unsigned event_reports = 0u;
     uint32_t next_domain = 0u; /* the samples come in the order of the steps */

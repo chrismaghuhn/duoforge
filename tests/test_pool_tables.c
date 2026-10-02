@@ -37,6 +37,7 @@
 #include <duoforge/duoforge.h>
 
 #include "core/bytes.h"
+#include "core/modifier.h"
 #include "core/sha256.h"
 #include "data/pool_tables.h"
 #include "data/support_manifest.h"
@@ -801,10 +802,11 @@ int main(void)
             DF_CHECK(&t, dfi_support.items[id] != 0u);
             DF_CHECK(&t, dfi_pool_item_family[id].family != DFI_ITEM_FAMILY_NONE);
         }
-        /* Step G4 marks Focus Sash (onDamage at the move-damage call); Expert Belt and Floettite stay unmarked. */
+        /* Step G4 marks Focus Sash (onDamage at the move-damage call), step G12 Floettite (the Mega Stone of
+         * Floette-Eternal, with Fairy Aura); Expert Belt stays unmarked. */
         DF_CHECK(&t, dfi_support.items[DFI_ITEM_FOCUSSASH] != 0u);
         for (uint32_t id = DFI_ITEM_FOCUSSASH + 1u; id < DFI_POOL_ITEM_COUNT; ++id) {
-            DF_CHECK_EQ_U64(&t, dfi_support.items[id], 0u);
+            DF_CHECK_EQ_U64(&t, dfi_support.items[id] != 0u ? 1u : 0u, id == DFI_ITEM_FLOETTITE ? 1u : 0u);
         }
         for (uint32_t id = 0u; id < DFI_POOL_ITEM_COUNT; ++id) {
             if (dfi_pool_item_family[id].family != DFI_ITEM_FAMILY_NONE) {
@@ -812,14 +814,14 @@ int main(void)
             }
         }
         /* The P1 abilities (Pixilate to Swarm, ids below Rock Head) are marked by step P3 and have a family; the
-         * G2 abilities after them have none, and of those only Rock Head is marked (step G4: no recoil from a
-         * recoil move), Flower Veil and Fairy Aura stay unmarked until their steps. */
+         * G2 abilities after them have none, and all three are marked: Rock Head (step G4: no recoil from a recoil
+         * move), Flower Veil and Fairy Aura (step G12). */
         for (uint32_t id = DFI_EXT_ABILITY_COUNT; id < DFI_ABILITY_ROCKHEAD; ++id) {
             DF_CHECK(&t, dfi_support.abilities[id] != 0u);
             DF_CHECK(&t, dfi_pool_ability_family[id].family != DFI_ABILITY_FAMILY_NONE);
         }
         for (uint32_t id = DFI_ABILITY_ROCKHEAD; id < DFI_POOL_ABILITY_COUNT; ++id) {
-            DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, id == DFI_ABILITY_ROCKHEAD ? 1u : 0u);
+            DF_CHECK(&t, dfi_support.abilities[id] != 0u);
             DF_CHECK_EQ_U64(&t, dfi_pool_ability_family[id].family, DFI_ABILITY_FAMILY_NONE);
         }
         for (uint32_t id = 0u; id < DFI_POOL_ABILITY_COUNT; ++id) {
@@ -846,6 +848,51 @@ int main(void)
             marked_count += dfi_support.moves[id] != 0u ? 1u : 0u;
         }
         DF_CHECK_EQ_U64(&t, marked_count, 13u);
+    }
+
+    /* Step G12: Fairy Aura and Flower Veil. The engine reads them by id (no family column: one legal holder each);
+     * what it does not implement must not be in the tables. Aura Break (3072/4096 instead of 5448/4096) and Dark Aura
+     * are in no pool ability, and Mold Breaker (which ignores the breakable Flower Veil) is not either. */
+    {
+        static const char *const absent[] = {"aurabreak", "darkaura", "moldbreaker", "teravolt", "turboblaze",
+                                             "neutralizinggas", "mirrorarmor", "cleanbody", "whitesmoke"};
+        for (uint32_t id = 0u; id < DFI_POOL_ABILITY_COUNT; ++id) {
+            for (size_t k = 0u; k < sizeof absent / sizeof absent[0]; ++k) {
+                DF_CHECK(&t, strcmp(dfi_pool_ability_names[id], absent[k]) != 0);
+            }
+        }
+        DF_CHECK(&t, strcmp(dfi_pool_ability_names[DFI_ABILITY_FAIRYAURA], "fairyaura") == 0 &&
+                         strcmp(dfi_pool_ability_names[DFI_ABILITY_FLOWERVEIL], "flowerveil") == 0);
+        DF_CHECK(&t, dfi_pool_ability_family[DFI_ABILITY_FAIRYAURA].family == DFI_ABILITY_FAMILY_NONE &&
+                         dfi_pool_ability_family[DFI_ABILITY_FLOWERVEIL].family == DFI_ABILITY_FAMILY_NONE);
+        /* The BasePower chain of a Fairy move: Fairy Aura (5448, priority 20), the type booster (4915, 15) and Helping
+         * Hand (6144, 10) chain in that order in the engine; the Pokemon of the pool give a Fairy move any of them, and
+         * the six orders must give one base power for every damaging Fairy move of the tables (the rounding of a
+         * chained modifier depends on the order, the base power it makes must not: a move that breaks that needs the
+         * order tested by a battle). */
+        static const uint32_t mods[3] = {5448u, 4915u, 6144u};
+        static const uint8_t orders[6][3] = {{0, 1, 2}, {0, 2, 1}, {1, 0, 2}, {1, 2, 0}, {2, 0, 1}, {2, 1, 0}};
+        uint32_t fairy_moves = 0u;
+        for (uint32_t id = 0u; id < DFI_POOL_MOVE_COUNT; ++id) {
+            const dfi_move_data *md = &dfi_pool_moves[id];
+            if (md->type != DFI_TYPE_FAIRY || md->category == DFI_CATEGORY_STATUS || md->base_power == 0u) {
+                continue;
+            }
+            fairy_moves += 1u;
+            uint32_t first = 0u;
+            for (size_t o = 0u; o < 6u; ++o) {
+                uint32_t chain = 4096u;
+                for (size_t k = 0u; k < 3u; ++k) {
+                    DF_CHECK(&t, dfi_chain_modify(chain, mods[orders[o][k]], &chain));
+                }
+                const uint32_t power = dfi_modify(md->base_power, chain);
+                if (o == 0u) {
+                    first = power;
+                }
+                DF_CHECK_EQ_U64(&t, power, first);
+            }
+        }
+        DF_CHECK(&t, fairy_moves >= 1u); /* Dazzling Gleam; Moonblast, Draining Kiss and Light of Ruin follow with the names */
     }
 
     return df_test_end(&t);

@@ -390,8 +390,8 @@ int main(void)
      * CLOSURE and TEAM_C kinds, whose bounds are 11 and 16 items. */
     s = teams;
     s.sides[0].members[3].item = DFI_POOL_ITEM_COUNT; /* Floettite */
-    legal(&t, kp, &s, false, "the last pool item (Floettite, unmarked)");
-    legal(&t, kq, &s, false, "the last pool item (dev)");
+    legal(&t, kp, &s, true, "the last pool item (Floettite, marked in G12)");
+    legal(&t, kq, &s, true, "the last pool item (dev)");
     invalid(&t, kc, &s, "the last pool item under TEAM_C");
     s.sides[0].members[3].item = DFI_POOL_ITEM_COUNT + 1u;
     invalid(&t, kp, &s, "an item beyond the pool");
@@ -682,13 +682,14 @@ int main(void)
         invalid(&t, kp, &s, "Annihilape with Flare Blitz");
 
         /* Floette-Eternal is female only; its Mega forme is reached in battle, never set up. Flower Veil, Floettite
-         * and the Mega's Fairy Aura are all unmarked, so the setup is E_UNSUPPORTED until each is. */
+         * and the Mega's Fairy Aura are marked by step G12 (g12_*), and each is needed: the gate function with a copy
+         * of the manifest that lacks one refuses the setup. */
         static const uint32_t floette_moves[2] = {DFI_MOVE_PROTECT, DFI_MOVE_DAZZLINGGLEAM};
         s = teams;
         s.sides[1].members[0] = member_of(tpl, DFI_FORME_FLOETTEETERNAL, DFI_ABILITY_FLOWERVEIL,
                                           DFI_ITEM_FLOETTITE + 1u, 2u, floette_moves);
         DF_CHECK_EQ_U64(&t, s.sides[1].members[0].gender, DUOFORGE_GENDER_FEMALE);
-        legal(&t, kp, &s, false, "Floette-Eternal with Floettite (legal, unmarked)");
+        legal(&t, kp, &s, true, "Floette-Eternal with Floettite (marked in G12)");
         {
             dfi_support_manifest m = full_manifest();
             DF_CHECK(&t, dfi_closure_setup_supported(&m, &s));
@@ -726,7 +727,7 @@ int main(void)
             DF_CHECK_EQ_U64(&t, w->sides[1].members[0].mega_capable, 1u);
             DF_CHECK_EQ_U64(&t, w->sides[1].members[0].moves[1].pp_max, dfi_pool_moves[DFI_MOVE_DAZZLINGGLEAM].pp_max);
             team_bundle(&bd, w);
-            step_expect(&t, kp, w, &bd, DUOFORGE_E_UNSUPPORTED, "team selection with Floettite");
+            step_expect(&t, kp, w, &bd, DUOFORGE_OK, "team selection with Floettite");
             duoforge_battle_destroy(w);
         }
     }

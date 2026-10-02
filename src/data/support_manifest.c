@@ -76,7 +76,10 @@
  * of a full-HP holder's HP leaves it 1 HP) and Rock Head (no recoil from a
  * recoil move, Struggle's stays), each with recorded POOL battles. Step G5
  * marks U-turn: a damaging pivot whose switch flag names it (dfi_pivot_moves),
- * in the reference battles g5_uturn_a to _e. */
+ * in the reference battles g5_uturn_a to _e. Step G12 marks Flower Veil (it blocks the
+ * stat drops and statuses that another Pokemon causes on a Grass-type ally), Fairy Aura
+ * (5448/4096 for every Fairy move on the field, at the Mega Evolution of Floette-Eternal)
+ * and Floettite, in the reference battles g12_*. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -175,6 +178,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_OVERGROW] = 1u,
             [DFI_ABILITY_TORRENT] = 1u,
             [DFI_ABILITY_SWARM] = 1u,
+            [DFI_ABILITY_FLOWERVEIL] = 1u,
+            [DFI_ABILITY_FAIRYAURA] = 1u,
         },
     .items =
         {
@@ -195,6 +200,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_CHOICESCARF] = 1u,
             [DFI_ITEM_WHITEHERB] = 1u,
             [DFI_ITEM_FOCUSSASH] = 1u,
+            [DFI_ITEM_FLOETTITE] = 1u,
             [DFI_ITEM_BLACKBELT] = 1u,
             [DFI_ITEM_BLACKGLASSES] = 1u,
             [DFI_ITEM_CHARCOAL] = 1u,
