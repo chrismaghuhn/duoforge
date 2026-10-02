@@ -12,7 +12,7 @@ import numpy as np
 
 import duoforge
 from duoforge import features, teams
-from duoforge_learn import checkpoint, columns, evaluate, league, pairing, runstate, schedule, suite
+from duoforge_learn import checkpoint, columns, evaluate, ladder, league, pairing, runstate, schedule, suite
 from duoforge_learn.selfplay import SelfPlay
 
 
@@ -473,6 +473,39 @@ class SuitePlayTest(unittest.TestCase):
         got = evaluate.scores(rec, 2)
         self.assertAlmostEqual(got["score"], 2.5 / 4)
         self.assertEqual(got["by_team"], [1.0, 0.25])
+
+
+def _records(pairs):
+    """{(i, j): RECORD array} from {(i, j): [(learner team, opponent team, result), ...]}."""
+    out = {}
+    for key, games in pairs.items():
+        rec = np.zeros(len(games), dtype=evaluate.RECORD)
+        for k, (mine, other, result) in enumerate(games):
+            rec[k] = (mine, other, 0, result, False)
+        out[key] = rec
+    return out
+
+
+class LadderPerTeamTest(unittest.TestCase):
+    def test_per_team_fit_separates_teams(self):
+        # Player 1 beats player 0 whenever it pilots team 0 and loses whenever it pilots team 1.
+        games = [(0, 0, 1)] * 10 + [(1, 1, -1)] * 10
+        records = _records({(1, 0): games})
+        team0, team1 = ladder.fit(records, 2, team=0), ladder.fit(records, 2, team=1)
+        self.assertGreater(team0[1], team0[0])
+        self.assertLess(team1[1], team1[0])
+        overall = ladder.fit(records, 2)
+        self.assertAlmostEqual(overall[1] - overall[0], 0.0, places=6)
+
+    def test_bootstrap_contains_the_estimate_and_is_deterministic(self):
+        games = [(0, 1, 1)] * 14 + [(0, 1, -1)] * 6 + [(1, 0, 0)] * 4
+        records = _records({(1, 0): games})
+        point = ladder.fit(records, 2)
+        low, high = ladder.bootstrap(records, 2, resamples=200)
+        self.assertTrue((low <= point + 1e-9).all() and (point <= high + 1e-9).all())
+        self.assertGreater(high[1] - low[1], 0.0)
+        again = ladder.bootstrap(records, 2, resamples=200)
+        self.assertTrue(np.array_equal(low, again[0]) and np.array_equal(high, again[1]))
 
 
 if __name__ == "__main__":

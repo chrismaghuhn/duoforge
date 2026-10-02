@@ -77,14 +77,22 @@ class PipelineTest(unittest.TestCase):
             params = model.init(jax.random.PRNGKey(3), features.OBS_SIZE, features.SLOT_FEATURES, TEAM_ACTIONS)
             train.save(os.path.join(out, "params-1.npz"), params, {"seed": 7})
             train.save(os.path.join(out, "params-2.npz"), params, {"seed": 7, "encoder": features.ENCODER})
-            fake = mock.Mock(return_value={"win_rate": 0.5, "episodes": 8})
-            with mock.patch.object(evaluate, "win_rate", fake):
-                self.assertEqual(ladder.main([out, "--pick", "2", "--envs", "8"]), 0)
-            pairs = sorted((c.kwargs["encoder"], c.kwargs["opponent_encoder"]) for c in fake.call_args_list)
+            calls = []
+
+            def fake(context, pool, rows, learner, opponent, workers, seed, max_steps=1000):
+                calls.append((learner.name, learner.encoder, opponent.name, opponent.encoder))
+                rec = np.zeros(rows.shape[0], dtype=evaluate.RECORD)
+                for f in ("side0", "side1", "learner_seat"):
+                    rec[f] = rows[f]
+                return rec
+
+            with mock.patch.object(evaluate, "play_suite", fake):
+                self.assertEqual(ladder.main([out, "--pick", "2", "--games", "1"]), 0)
+            pairs = sorted((a, b) for la, a, lb, b in calls if la != lb)
             self.assertEqual(pairs, [(1, 2), (2, 1), (2, 2)])  # init-update 1, init-update 2, update 1-update 2
             train.save(os.path.join(out, "params-1.npz"), params, {"seed": 7, "encoder": 3})
-            with mock.patch.object(evaluate, "win_rate", fake), self.assertRaisesRegex(ValueError, "encoder 3"):
-                ladder.main([out, "--pick", "2", "--envs", "8"])
+            with mock.patch.object(evaluate, "play_suite", fake), self.assertRaisesRegex(ValueError, "encoder 3"):
+                ladder.main([out, "--pick", "2", "--games", "1"])
         finally:
             shutil.rmtree(out, ignore_errors=True)
 

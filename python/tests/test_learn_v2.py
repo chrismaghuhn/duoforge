@@ -421,6 +421,36 @@ class ResumeTest(unittest.TestCase):
         self.assertGreaterEqual(runstate.load_state(self.out)["counters"]["update"], 1)
 
 
+class LadderV2Test(unittest.TestCase):
+    def test_ladder_over_v1_and_v2_writes_both_files(self):
+        import json
+        import os
+        import shutil
+        import tempfile
+        from duoforge_learn import ladder, train
+        root = tempfile.mkdtemp(prefix="duoforge-ladder-v2-")
+        try:
+            runs = []
+            for name, extra in (("v1", ["--model", "v1"]), ("v2", ["--model", "v2", "--hidden", "32"])):
+                out = os.path.join(root, name)
+                self.assertEqual(train.main(["--envs", "8", "--workers", "2", "--rollout", "8", "--updates", "2",
+                                             "--minutes", "0", "--eval-every", "2", "--minibatch", "256",
+                                             "--out", out] + extra), 0)
+                runs.append(out)
+            report = os.path.join(root, "report")
+            self.assertEqual(ladder.main(runs + ["--pick", "2", "--games", "1", "--workers", "2", "--out", report]), 0)
+            with open(os.path.join(report, "ladder.json"), encoding="utf-8") as f:
+                table = json.load(f)
+            self.assertEqual(len(table["players"]), 5)
+            for row in table["players"]:
+                self.assertEqual(len(row["elo_by_team"]), 2)
+                self.assertLessEqual(row["elo_low"], row["elo"] + 1e-6)
+            self.assertEqual(len(table["team_matrix"]), 2)
+            self.assertTrue(os.path.isfile(os.path.join(report, "ladder.md")))
+        finally:
+            shutil.rmtree(root, ignore_errors=True)
+
+
 PRESET_COUNTS = {"S": 384751, "M": 2072463, "L": 7871631}
 
 
