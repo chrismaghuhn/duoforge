@@ -104,6 +104,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_DIRECLAW] = 1u,
             [DFI_MOVE_SUCKERPUNCH] = 1u,
             [DFI_MOVE_HELPINGHAND] = 1u,
+            [DFI_MOVE_FOLLOWME] = 1u,
         },
     .abilities =
         {

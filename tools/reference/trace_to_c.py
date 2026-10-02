@@ -595,6 +595,8 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             elif args[1] == 'Helping Hand':  # Team C: [of] the user
                 _, _, of = ev_cause(attrs, tables)
                 e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), of, 0, tables['MOVE'][key(args[1])])
+            elif args[1] == 'move: Follow Me':  # Team C: no [of]
+                e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), NOPOS, 0, tables['MOVE'][key(args[1][6:])])
             else:
                 raise ConversionError('singleturn-line', 'trace_to_c: unknown -singleturn %r' % line, detail=args[1])
         elif kind == '-activate':
@@ -813,7 +815,8 @@ def convert_battle(name, spec, trace, tables):
                         lslot, ltarget = choice, 0
                 seen = shown[s].get(roster)
                 vols = sum(bit for name, bit in (('protect', 1), ('flashfire', 2), ('twoturnmove', 4),
-                                                 ('choicelock', 8), ('unburden', 16), ('helpinghand', 32))
+                                                 ('choicelock', 8), ('unburden', 16), ('helpinghand', 32),
+                                                 ('followme', 64))
                            if name in p['volatiles'])
                 row.append((1, p['hp'], tuple(pp), tuple(x + 6 for x in p['boosts']),
                             stall, 1 if p['fainted'] else 0, status, counter, p['confusion'], lslot, ltarget,
@@ -996,7 +999,8 @@ TYPES = [
     'typedef struct df_conf_mon {', '    uint32_t present, hp;', '    uint8_t pp[4];', '    uint8_t stages[7];',
     '    uint8_t stall, fainted, status, status_counter, confusion, locked_slot, locked_target, mega;',
     '    uint8_t held, seen, seen_percent, seen_flag;',
-    '    uint8_t vols; /* volatiles: 1 protect, 2 flashfire, 4 twoturnmove, 8 choicelock, 16 unburden, 32 helpinghand */',
+    '    uint8_t vols; /* volatiles: 1 protect, 2 flashfire, 4 twoturnmove, 8 choicelock, 16 unburden, 32 helpinghand,',
+    '                     64 followme */',
     '} df_conf_mon;',
     '/* team step, side 0 / side 1 answered, tape slice, the turn, boundary and',
     ' * result afterwards, the picks of a team step, slot commands, the occupants',

@@ -1,6 +1,6 @@
 # 0009 — Team C: the expansion track (data kind, gate, steps, evidence)
 
-Status: **accepted** (owner, 2026-10-01: "bau das erstmal so"; setup rule: the closure rule, section 3.4). **Steps 1 to 10 built** (section 10). Builds on decision `0004` (two reference teams), `0006` (data, state v3, draw sites, fixtures, evidence), `0007` (player view) and `0010` (the certified CLOSURE profile, the role of `CLOSURE_DEV`, draw alignment B confirmed), and on the research in `docs/research/third-team/` (PR #32). "M§n" means section n of `docs/research/third-team/mechanics.md`; X1 to X9 are its executed experiments.
+Status: **accepted** (owner, 2026-10-01: "bau das erstmal so"; setup rule: the closure rule, section 3.4). **Steps 1 to 11 built** (section 10). Builds on decision `0004` (two reference teams), `0006` (data, state v3, draw sites, fixtures, evidence), `0007` (player view) and `0010` (the certified CLOSURE profile, the role of `CLOSURE_DEV`, draw alignment B confirmed), and on the research in `docs/research/third-team/` (PR #32). "M§n" means section n of `docs/research/third-team/mechanics.md`; X1 to X9 are its executed experiments.
 
 ## 1. Owner inputs (2026-10-01)
 
@@ -742,3 +742,90 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
   - `python/duoforge/{_layout,_lib}.py`, `python/tests/{test_lib,test_policies_features}.py`;
   - `tools/layout/layout_dump.c`, `tools/reference/trace_to_c.py`, `tools/state_model/state_v3_model.py`;
   - `tests/test_conformance.c`, `tests/test_api_atomicity.c` (version), `tests/test_team_c_setup.c`.
+
+### 10.12 Step 11: Follow Me
+
+- **Follow Me** (`data/moves.ts:6039-6074`) has priority +2 and targets the user.
+  - Its `onTry` needs two active Pokémon per side (`activePerHalf > 1`). That is a format property, so it never fails in doubles.
+  - The volatile lasts one turn: `-singleturn|user|move: Follow Me`, with no `[of]`. It ends in the residual without a line.
+  - Its target is the user, and Psychic Terrain skips self moves, so the terrain never stops it.
+- **Redirection** (`onFoeRedirectTarget`, priority 1). getMoveTargets runs the RedirectTarget event (`sim/pokemon.ts:821-844`, `sim/battle-actions.ts:457-468`):
+  - after the move line and after the retarget of a fainted foe;
+  - before TryMove.
+
+  priorityEvent stops at the first handler that returns, in compareRedirectOrder (`sim/battle.ts:413-419`), which puts the higher priority first. So Follow Me comes before Lightning Rod (priority 0).
+  - The handler comes only from a standing foe of the user: `foes()` keeps hp > 0 (`sim/battle.ts:1053-1063`).
+  - It takes the move when `validTarget(holder, user, move.target)` holds (`sim/battle.ts:2399-2435`). In doubles that is every single-target class here except self and the ally classes. A move aimed at the user's own ally, or at a fainted ally, is redirected too.
+  - Spread moves never reach the event.
+  - There is no line: retargetLastMove sets the move line's target. Sucker Punch's `onTry` and Armor Tail's TryMove then see the new target.
+  - Electro Shot's charge turn stores the chosen target (`lastMoveTargetLoc`), not the redirected one. Its release is redirected again.
+  - Two holders on one side would need the handlers' Speed order, so the engine returns `E_UNSUPPORTED`. Only Indeedee-F learns Follow Me, and Species Clause keeps one per side.
+- **Correction to the plan** (section 5, step 11).
+  - "An ally-targeted move is not redirected" is wrong for the pinned reference. Follow Me takes a move aimed at the user's own ally (`c11_follow_me`, `c11_follow_me_mirror`).
+  - Only Helping Hand's class (adjacentAlly) is never redirected, and it cannot meet Follow Me anyway: Helping Hand (+5) always moves first.
+  - For the same reason "Fake Out into Rocky Helmet through the redirect" cannot be recorded: Fake Out (+3) always moves before Follow Me. Flip Turn, Wave Crash, Iron Head and Darkest Lariat show Rocky Helmet through the redirect instead.
+- **State.** Volatile bit 8 (`DFI_VOL_FOLLOW_ME`) is valid only under the TEAM_C kinds. It may not be set at a TURN boundary, nor at a REPLACEMENT boundary (after the residual).
+  - Its end is one more duration handler in the residual list, which now holds nine entries per position.
+  - Ties among duration handlers are not drawn (decision 0006 section 5.1), so no battle can show that entry.
+  - The state model mirrors the bit; its output is unchanged.
+- **Public changes, library 0.19.0** (sections 4.2 and 9.4), coordinated with the main session:
+  - `DUOFORGE_POSITION_FLAG_FOLLOW_ME` (1) in the position view's `reserved` byte. It is set while the volatile lasts, so at a PIVOT boundary or at a TERMINAL one in the middle of a turn.
+  - DUOFORGE_EVENT_SINGLE_TURN (38) also carries Follow Me, with `other` `DUOFORGE_NO_POSITION`.
+
+  Python reads no event kinds. Its encoder already refuses a nonzero `reserved`.
+- **The real Team C passes the setup gate.** Follow Me was its last mechanic. `duoforge_battle_create` now accepts the real Team C under TEAM_C and TEAM_C_DEV, and setup rejects no Team C mechanic any more. Step 12, the Team C gate, still has to certify the team.
+- **Converter.**
+  - It maps `-singleturn|...|move: Follow Me`.
+  - It compares `followme` as volatile bit 64 and as the view bit.
+  - The control test for an unknown `-singleturn` now uses Rage Powder.
+- **Evidence.** Three recorded battles, so 50 Team C battles in all:
+  - `c11_follow_me`:
+    - Kingambit's Sucker Punch, aimed at Milotic, goes to an Indeedee-F that already moved, and fails.
+    - Basculegion's Flip Turn goes into Indeedee-F's Rocky Helmet and pivots while the volatile is live, so the view bit shows at the PIVOT boundary.
+    - Milotic's own move is not redirected.
+    - Charizard's Heat Wave hits both Pokémon.
+    - Kingambit's Iron Head, aimed at its own ally, goes to Indeedee-F.
+  - `c11_follow_me_rod`:
+    - The foe Raichu's Zap Cannon, aimed at the Lightning Rod Raichu, goes to Indeedee-F.
+    - Archaludon's Electro Shot charges under Follow Me. The next turn it is released at the chosen Raichu, whose Lightning Rod takes it without an `-activate` line.
+  - `c11_follow_me_mirror` (two Indeedee-F):
+    - With Follow Me on both sides, each side's moves go to the other side's user.
+    - Both volatiles end in one residual, at a Speed tie.
+    - A Wave Crash boosted by Helping Hand is redirected.
+    - Milotic's Ice Beam, aimed at a foe that fainted this turn, is retargeted and then redirected.
+    - Kingambit's Iron Head, aimed at its own ally, is redirected.
+    - After the user faints, Kingambit's Iron Head reaches its target.
+
+  API tests:
+  - the bit at a PIVOT boundary, with the view bit for both players;
+  - the bit at TURN and REPLACEMENT boundaries;
+  - the CLOSURE masks;
+  - the gate (Follow Me, the real Team C) and the manifest.
+
+  Twelve negative controls each make a test fail:
+  - no redirect, or no redirect of a move aimed at the user's own side;
+  - Lightning Rod over Follow Me;
+  - Follow Me taking its own side's moves;
+  - spread moves redirected;
+  - Electro Shot storing the redirected target;
+  - Follow Me outliving the residual;
+  - no line, or hidden in the view;
+  - no TURN or REPLACEMENT rule;
+  - out of range.
+
+  Two controls stay green, as expected:
+  - a residual end that is not counted, because ties among duration handlers are not drawn;
+  - a fainted holder that still redirects, because the faint clears the volatile first.
+- **Not recorded.**
+  - Helping Hand and Fake Out against Follow Me: both always move first.
+  - Two holders on one side: unreachable.
+- **Shared files touched:**
+  - `include/duoforge/duoforge.h` (the view bit, SINGLE_TURN's comment, version);
+  - `src/state/{battle_internal.h,closure_member.c,invariants.c,observation.c}`;
+  - `src/combat/turn.c`;
+  - `src/data/support_manifest.c`;
+  - `python/duoforge/_lib.py`, `python/tests/test_lib.py` (version);
+  - `tools/reference/{trace_to_c.py,test_trace_to_c.py}`, `tools/state_model/state_v3_model.py`;
+  - `tests/reference/conformance_types.h` (a comment only), `tests/support/conformance_compare.c`;
+  - `tests/test_conformance.c`, `tests/test_api_atomicity.c` (version), `tests/test_team_c_setup.c`;
+  - `docs/support/README.md`.

@@ -1732,6 +1732,24 @@ static duoforge_status dfi_run_helping_hand(dfi_run *r, uint32_t user, uint32_t 
     return dfi_status_hit_end(r);
 }
 
+/* Follow Me (Team C, data/moves.ts:6039-6074). Its onTry needs two active
+ * Pokemon per side (activePerHalf > 1), which doubles always has; its target
+ * is the user, so Psychic Terrain and Protect never stop it. The volatile
+ * lasts this turn: [-singleturn] user|move: Follow Me. The user cannot hold
+ * it already: one action per turn, and the residual ends it. */
+static duoforge_status dfi_run_follow_me(dfi_run *r, uint32_t user)
+{
+    dfi_active_slot *pos = dfi_pos(r->b, user);
+    if (((uint32_t)pos->flags & DFI_VOL_FOLLOW_ME) != 0u) {
+        return DUOFORGE_E_INVARIANT;
+    }
+    pos->flags = (uint8_t)((uint32_t)pos->flags | DFI_VOL_FOLLOW_ME); /* wide-operands-reviewed: < 256 */
+    duoforge_event e = dfi_ev(DUOFORGE_EVENT_SINGLE_TURN, user, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
+    e.id = (uint16_t)DFI_MOVE_FOLLOWME;
+    dfi_emit(r, &e);
+    return dfi_status_hit_end(r);
+}
+
 /* runMove and useMove for one move action (sim/battle-actions.ts:210-548,
  * the hit steps at 550-620 and the Champions hit loop). */
 static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool *ran)
@@ -1869,17 +1887,52 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     if (aimed == DUOFORGE_NO_POSITION && count == 0u) {
         return dfi_no_target(r, user); /* no target at all: before getMoveTargets */
     }
-    /* getMoveTargets: an Electric single-target move goes to a standing
-     * Lightning Rod holder the user may target (onAnyRedirectTarget). With
-     * two holders, priorityEvent sorts the handlers with compareRedirectOrder
-     * (sim/battle.ts:413-419, 788-792): the higher Speed (pokemon.speed)
-     * first, then the earlier switch-in (abilityState.effectOrder, set in
-     * switchIn, sim/battle-actions.ts:142), which is the lower activation id;
-     * the first handler returns its holder. This runs also when the chosen
+    /* getMoveTargets' RedirectTarget event (sim/pokemon.ts:829-831), after
+     * the retarget of a fainted foe and before TryMove. priorityEvent stops
+     * at the first handler that returns, in compareRedirectOrder
+     * (sim/battle.ts:413-419): the higher priority first.
+     *
+     * Follow Me (Team C, onFoeRedirectTarget at priority 1, data/moves.ts:
+     * 6061-6068): a standing foe of the user with the volatile takes the
+     * move when validTarget holds for the move's own class (sim/battle.ts:
+     * 2399-2435). In doubles that is every single-target class here but
+     * self and the ally classes, also when the user aimed at its own ally
+     * or at a fainted ally. No line; the move line is retargeted. Two
+     * holders on one side would need the handlers' Speed order; only
+     * Indeedee-F learns Follow Me, and Species Clause keeps one per side. */
+    const bool single = count <= 1u && (md->target_class == DUOFORGE_TARGET_CLASS_NORMAL ||
+                                        md->target_class == DUOFORGE_TARGET_CLASS_ANY ||
+                                        md->target_class == DUOFORGE_TARGET_CLASS_ADJACENT_FOE ||
+                                        md->target_class == DFI_TARGET_CLASS_RANDOM_NORMAL);
+    uint32_t follow = DFI_POSITIONS;
+    for (uint32_t slot = 0u; single && slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
+        const uint32_t flat = (1u - side) * 2u + slot;
+        if (dfi_alive(b, flat) && ((uint32_t)dfi_pos(b, flat)->flags & DFI_VOL_FOLLOW_ME) != 0u) {
+            if (follow != DFI_POSITIONS) {
+                return DUOFORGE_E_UNSUPPORTED;
+            }
+            follow = flat;
+        }
+    }
+    if (follow < DFI_POSITIONS) {
+        if (follow != aimed) {
+            duoforge_event *mv = dfi_last_move(r);
+            if (mv != NULL) {
+                mv->other = (uint8_t)follow; /* retargetLastMove; < 4 */
+            }
+        }
+        targets[0] = follow;
+        count = 1u;
+        aimed = follow;
+    }
+    /* Lightning Rod (onAnyRedirectTarget, priority 0): an Electric
+     * single-target move goes to a standing holder the user may target.
+     * With two holders the higher Speed (pokemon.speed) comes first, then
+     * the earlier switch-in (abilityState.effectOrder, set in switchIn,
+     * sim/battle-actions.ts:142), which is the lower activation id; the
+     * first handler returns its holder. This runs also when the chosen
      * target is gone (a fainted ally, no foe left). */
-    if (md->type == DFI_TYPE_ELECTRIC && count <= 1u &&
-        (md->target_class == DUOFORGE_TARGET_CLASS_NORMAL || md->target_class == DUOFORGE_TARGET_CLASS_ANY ||
-         md->target_class == DUOFORGE_TARGET_CLASS_ADJACENT_FOE || md->target_class == DFI_TARGET_CLASS_RANDOM_NORMAL)) {
+    if (follow == DFI_POSITIONS && md->type == DFI_TYPE_ELECTRIC && single) {
         uint32_t rod = DFI_POSITIONS;
         for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
             const dfi_member *holder = dfi_at(b, flat);
@@ -1969,6 +2022,9 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     }
     if (md->special == DFI_SPECIAL_PROTECT) {
         return dfi_run_protect(r, user);
+    }
+    if (md->special == DFI_SPECIAL_FOLLOW_ME) {
+        return dfi_run_follow_me(r, user);
     }
     const bool status_move = md->category == DFI_CATEGORY_STATUS;
     if (status_move && md->side_condition != 0u) {
@@ -2826,10 +2882,10 @@ static duoforge_status dfi_run_mega(dfi_run *r, const dfi_queue_record *q)
 #define DFI_RES_WHITE_HERB 9u
 #define DFI_RES_NO_ORDER 0xFFFFFFFFu
 /* Trick Room, weather and terrain; three conditions per side; per position
- * (DFI_RES_PER_POSITION) a status (burn or poison), five duration ends
- * (Protect, the stall counter, flinch, a charge, Helping Hand), an item
- * (Leftovers or White Herb) and Grassy Terrain. */
-#define DFI_RES_PER_POSITION 8u
+ * (DFI_RES_PER_POSITION) a status (burn or poison), six duration ends
+ * (Protect, the stall counter, flinch, a charge, Helping Hand, Follow Me),
+ * an item (Leftovers or White Herb) and Grassy Terrain. */
+#define DFI_RES_PER_POSITION 9u
 #define DFI_RES_MAX (3u + 3u * DUOFORGE_SIDE_COUNT + DFI_RES_PER_POSITION * DFI_POSITIONS)
 
 typedef struct dfi_residual_entry {
@@ -2975,7 +3031,8 @@ static duoforge_status dfi_residual_events(dfi_run *r)
                               (pos->stall_level != 0u ? 1u : 0u) +
                               ((((uint32_t)pos->flags & DFI_VOL_FLINCH) != 0u) ? 1u : 0u) +
                               (pos->charge_turns != 0u ? 1u : 0u) +
-                              ((((uint32_t)pos->flags & DFI_VOL_HELPING_HAND) != 0u) ? 1u : 0u);
+                              ((((uint32_t)pos->flags & DFI_VOL_HELPING_HAND) != 0u) ? 1u : 0u) +
+                              ((((uint32_t)pos->flags & DFI_VOL_FOLLOW_ME) != 0u) ? 1u : 0u);
         for (uint32_t k = 0u; k < ends; ++k) {
             list[n] = (dfi_residual_entry){DFI_RES_DURATION, flat, DFI_RES_NO_ORDER, speed, 2u, false};
             n += 1u;
@@ -3163,7 +3220,8 @@ static duoforge_status dfi_residual_events(dfi_run *r)
         if (pos->occupant == DFI_OCCUPANT_NONE) {
             continue;
         }
-        pos->flags = (uint8_t)((uint32_t)pos->flags & ~(DFI_VOL_PROTECT | DFI_VOL_FLINCH | DFI_VOL_HELPING_HAND)); /* wide-operands-reviewed */
+        const uint32_t ended = DFI_VOL_PROTECT | DFI_VOL_FLINCH | DFI_VOL_HELPING_HAND | DFI_VOL_FOLLOW_ME;
+        pos->flags = (uint8_t)((uint32_t)pos->flags & ~ended); /* wide-operands-reviewed */
         if (pos->charge_turns > 0u) {
             pos->charge_turns = (uint8_t)((uint32_t)pos->charge_turns - 1u); /* wide-operands-reviewed */
             if (pos->charge_turns == 0u) {
