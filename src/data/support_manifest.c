@@ -162,6 +162,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_AERILATE] = 1u,
             [DFI_ABILITY_UNBURDEN] = 1u,
             [DFI_ABILITY_PSYCHICSURGE] = 1u,
+            [DFI_ABILITY_ROCKHEAD] = 1u,
         },
     .items =
         {
@@ -181,6 +182,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_CHOPLEBERRY] = 1u,
             [DFI_ITEM_CHOICESCARF] = 1u,
             [DFI_ITEM_WHITEHERB] = 1u,
+            [DFI_ITEM_FOCUSSASH] = 1u,
             [DFI_ITEM_BLACKBELT] = 1u,
             [DFI_ITEM_BLACKGLASSES] = 1u,
             [DFI_ITEM_CHARCOAL] = 1u,

@@ -799,7 +799,9 @@ int main(void)
             DF_CHECK(&t, dfi_support.items[id] != 0u);
             DF_CHECK(&t, dfi_pool_item_family[id].family != DFI_ITEM_FAMILY_NONE);
         }
-        for (uint32_t id = DFI_ITEM_FOCUSSASH; id < DFI_POOL_ITEM_COUNT; ++id) {
+        /* Step G4 marks Focus Sash (onDamage at the move-damage call); Expert Belt and Floettite stay unmarked. */
+        DF_CHECK(&t, dfi_support.items[DFI_ITEM_FOCUSSASH] != 0u);
+        for (uint32_t id = DFI_ITEM_FOCUSSASH + 1u; id < DFI_POOL_ITEM_COUNT; ++id) {
             DF_CHECK_EQ_U64(&t, dfi_support.items[id], 0u);
         }
         for (uint32_t id = 0u; id < DFI_POOL_ITEM_COUNT; ++id) {
@@ -807,8 +809,9 @@ int main(void)
                 DF_CHECK(&t, dfi_support.items[id] != 0u);
             }
         }
+        /* Step G4 marks Rock Head (no recoil from a recoil move); the others stay unmarked here. */
         for (uint32_t id = DFI_EXT_ABILITY_COUNT; id < DFI_POOL_ABILITY_COUNT; ++id) {
-            DF_CHECK_EQ_U64(&t, dfi_support.abilities[id], 0u);
+            DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, id == DFI_ABILITY_ROCKHEAD ? 1u : 0u);
         }
         /* Step G2 marks twelve of its 22 moves, each used in a reference battle under the POOL kind (g2_data_moves_a
          * to _d); U-turn (its switch cause is G5) and the nine moves with a handler id stay unmarked. */
