@@ -7,10 +7,12 @@ sections 6 and 7: challenges and refusals, open team sheets, invalid choices,
 errors, Bo3, and the etiquette.
 """
 import asyncio
+import io
 import json
 import os
 import tempfile
 import unittest
+from pathlib import Path
 
 from duoforge_live import client, data, teams
 
@@ -84,7 +86,8 @@ class ClientTest(unittest.TestCase):
         asyncio.run(self.bot.tick())
 
     def challenge(self, fmt="gen9championsvgc2026regmc", user=FOE):
-        self.feed("|updatechallenges|" + json.dumps({"challengesFrom": {user: fmt}, "challengeTo": None}))
+        # As the pin sends it (server/ladders-challenges.ts): a PM from the challenger to the bot.
+        self.feed(f"|pm| {user}| DuoForgeBot|/challenge {fmt}|{fmt}||Accept|Reject")
 
     def start_battle(self, upto=4):
         """Accepts a challenge and feeds the stream up to message `upto` (the showteam lines are message 3)."""
@@ -105,7 +108,7 @@ class ClientTest(unittest.TestCase):
             self.assertEqual(self.logins[-1][2], "secret-pw")
             self.start_battle()
             for name in os.listdir(self.tmp.name):
-                self.assertNotIn("secret-pw", open(os.path.join(self.tmp.name, name), encoding="utf-8").read())
+                self.assertNotIn("secret-pw", Path(self.tmp.name, name).read_text(encoding="utf-8"))
             self.assertFalse(any("secret-pw" in s for s in self.server.take()))
         finally:
             del os.environ["DUOFORGE_PS_PASSWORD"]
@@ -227,7 +230,8 @@ class ClientTest(unittest.TestCase):
         self.tick()
         self.assertFalse([s for s in self.server.take() if "/forfeit" in s])
         self.assertIsNone(self.bot.busy)
-        log = [json.loads(line) for line in open(os.path.join(self.tmp.name, ROOM + ".jsonl"), encoding="utf-8")]
+        path = Path(self.tmp.name, ROOM + "-duoforgebot.jsonl")  # one file per room and bot: two bots can share a room
+        log = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
         self.assertEqual(log[-1], {"end": "|win|DuoForgeBot"})
 
     def test_bo3_series(self):
@@ -241,13 +245,57 @@ class ClientTest(unittest.TestCase):
         self.assertIn(f"{game1}|gg", self.server.take())
         self.assertIsNotNone(self.bot.busy)  # the series goes on
         prompt = ('|c|~|/uhtml controls,<div class="infobox"><p style="margin:6px">Are you ready for game 2, '
-                  'DuoForgeBot?</p></div>')
+                  'DuoForgeBot?</p><p style="margin:6px"><button class="button notifying" name="send" '
+                  f'value="/msgroom {series},/confirmready">I\'m ready!</button></p></div>')
+        waiting = ('|c|~|/uhtml controls,<div class="infobox"><p style="margin:6px">Are you ready for game 2, '
+                   'DuoForgeBot?</p><p style="margin:6px"><button class="button" disabled><i class="fa fa-check">'
+                   '</i> I\'m ready!</button> &ndash; waiting for opponent...</p></div>')
         self.feed(room([prompt], series))
-        self.assertIn(f"{series}|/confirmready", self.server.take())
+        self.assertEqual(self.server.take(), [f"{series}|/confirmready"])
+        self.feed(room([waiting], series))  # the server shows the disabled button: no second confirm
+        self.feed(room([prompt], series))  # the same game asked again: still one confirm
+        self.assertEqual(self.server.take(), [])
+        game2 = "battle-gen9championsvgc2026regmcbo3-9"
+        self.feed(room(["|init|battle"] + FIXTURE["messages"][0] + FIXTURE["messages"][1], game2))
+        self.feed(room(FIXTURE["messages"][2], game2))
+        self.feed(room(FIXTURE["messages"][3], game2))
+        self.assertTrue([s for s in self.server.take() if s.startswith(f"{game2}|/choose team ")])
         self.challenge(user="other")
         self.assertIn("|/reject other", self.server.take())
         self.feed(room(["|win|chris"], series))
         self.assertIsNone(self.bot.busy)
+
+    def test_own_and_cancelled_challenges(self):
+        # The bot's own challenge comes back as a PM from the bot; a removed one has no format: both are no
+        # challenge to answer.
+        self.feed("|pm| DuoForgeBot| chris|/challenge gen9championsvgc2026regmc|x||Accept|Reject")
+        self.feed("|pm| chris| DuoForgeBot|/challenge")
+        self.assertEqual(self.server.take(), [])
+
+    def test_failed_accept_frees_the_bot(self):
+        # The challenger cancelled before the accept (or the server refused the battle): no room opens. After
+        # 30 seconds the bot takes challenges again.
+        self.challenge()
+        self.server.take()
+        self.clock.now += 29
+        self.tick()
+        self.assertIsNotNone(self.bot.busy)
+        self.clock.now += 2
+        self.tick()
+        self.assertIsNone(self.bot.busy)
+        self.challenge(user="next")
+        self.assertEqual(self.server.take()[-1], "|/accept next")
+
+    def test_raw_conversion_error_forfeits(self):
+        # The converter's ConversionError is a SystemExit: raised anywhere in a decision it still only forfeits.
+        from duoforge_live.data import trace_to_c
+
+        class Broken(FakePolicy):
+            def rank_teams(self, observation, obs_part):
+                raise trace_to_c.ConversionError("test", "a converter refusal")
+        self.bot.policy = Broken()
+        self.start_battle()
+        self.assertEqual(self.server.take()[-2:], [f"{ROOM}|{client.INTERNAL}", f"{ROOM}|/forfeit"])
 
     def test_challenge_flag_refused_on_official_hosts(self):
         for server in ("wss://sim3.psim.us/showdown/websocket", "wss://play.pokemonshowdown.com/x"):
@@ -256,6 +304,27 @@ class ClientTest(unittest.TestCase):
                                                      team_link=None, challenge="chris", server=server))
         client.check_arguments(client.Config(name="DuoForgeBot", team="A", log_dir=self.tmp.name, team_link=None,
                                              challenge="other", server="ws://localhost:8000/showdown/websocket"))
+
+    def test_login_requests_name_the_bot(self):
+        # The login server refuses Python's default User-Agent (403): every request names the bot.
+        import io
+        import urllib.request
+        seen = []
+
+        def fake_urlopen(request, data=None, timeout=None):
+            seen.append(request)
+            body = b"ASSERTION" if request.data is None else b']{"actionsuccess": true, "assertion": "A2"}'
+            return io.BytesIO(body)
+        real = urllib.request.urlopen
+        urllib.request.urlopen = fake_urlopen
+        try:
+            self.assertEqual(client.login("DuoForgeBot", "4|abc", None), "ASSERTION")
+            self.assertEqual(client.login("DuoForgeBot", "4|abc", "pw"), "A2")
+        finally:
+            urllib.request.urlopen = real
+        for request in seen:
+            self.assertIsInstance(request, urllib.request.Request)
+            self.assertIn("bot", request.get_header("User-agent").lower())
 
     def test_name_must_say_bot(self):
         with self.assertRaises(SystemExit):
@@ -289,11 +358,13 @@ class GameTest(unittest.TestCase):
         self.assertNotEqual(ranked[0], ranked[1])
 
     def test_main_refuses_bad_arguments(self):
+        import contextlib
         from duoforge_live import __main__ as cli
-        with self.assertRaises(SystemExit):
-            cli.main(["--checkpoint", "x.npz", "--name", "Chris"])
-        with self.assertRaises(SystemExit):
-            cli.main(["--checkpoint", "x.npz", "--name", "DuoForgeBot", "--challenge", "chris"])
+        for argv in (["--checkpoint", "x.npz", "--name", "Chris"],
+                     ["--checkpoint", "x.npz", "--name", "DuoForgeBot", "--challenge", "chris"]):
+            with self.assertRaises(SystemExit) as caught, contextlib.redirect_stderr(io.StringIO()):
+                cli.main(argv)
+            self.assertEqual(caught.exception.code, 2, argv)
 
     def test_team_table_is_the_learners(self):
         from duoforge_live import game

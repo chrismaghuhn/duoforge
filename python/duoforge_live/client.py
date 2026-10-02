@@ -23,11 +23,14 @@ from pathlib import Path
 from . import teams
 from .data import trace_to_c
 from .game import Game
+from .tracker import ROOM_LINES, _kind
 
 FORMATS = {"gen9championsvgc2026regmc": 1, "gen9championsvgc2026regmcbo3": 3}  # format id -> games in the set
 OFFICIAL_SERVER = "wss://sim3.psim.us/showdown/websocket"
 LOGIN_URL = "https://play.pokemonshowdown.com/action.php"
+USER_AGENT = "DuoForgeBot/1 (research bot; github.com/chrismaghuhn/duoforge)"  # the default is refused (403)
 SHEET_WAIT = 60.0  # seconds after the team preview request (the VGC timer gives 90)
+ACCEPT_WAIT = 30.0  # seconds for the battle room after an accept; none comes when the challenger cancelled
 MAX_REJECTIONS = 64
 
 GREETING = "Hi! DuoForge bot here, good luck!"
@@ -59,29 +62,36 @@ def official(url):
     return host.endswith("psim.us") or host.endswith("pokemonshowdown.com")
 
 
+def _refuse(message):
+    print(f"duoforge_live: {message}", file=sys.stderr)
+    raise SystemExit(2)
+
+
 def check_arguments(config):
-    """SystemExit for a configuration the spec forbids."""
+    """SystemExit (status 2, the message on stderr) for a configuration the spec forbids."""
     if "bot" not in config.name.lower():
-        raise SystemExit(f"duoforge_live: the name {config.name!r} must say that this is a bot (contain 'bot')")
+        _refuse(f"the name {config.name!r} must say that this is a bot (contain 'bot')")
     if config.team not in ("A", "B", "random"):
-        raise SystemExit(f"duoforge_live: --team is A, B or random, not {config.team!r}")
+        _refuse(f"--team is A, B or random, not {config.team!r}")
     if config.challenge_format not in FORMATS:
-        raise SystemExit(f"duoforge_live: --challenge-format is one of {sorted(FORMATS)}")
+        _refuse(f"--challenge-format is one of {sorted(FORMATS)}")
     if config.challenge and official(config.server):
-        raise SystemExit("duoforge_live: --challenge is for a local server only, never the official one")
+        _refuse("--challenge is for a local server only, never the official one")
 
 
 def login(name, challstr, password):
     """An assertion for /trn: a guest name without a password, else a registered one (action.php)."""
     if password is None:
         query = urllib.parse.urlencode({"act": "getassertion", "userid": toid(name), "challstr": challstr})
-        with urllib.request.urlopen(f"{LOGIN_URL}?{query}", timeout=30) as r:
+        request = urllib.request.Request(f"{LOGIN_URL}?{query}", headers={"User-Agent": USER_AGENT})
+        with urllib.request.urlopen(request, timeout=30) as r:
             assertion = r.read().decode("utf-8").strip()
         if not assertion or assertion.startswith(";"):
             raise SystemExit(f"duoforge_live: the name {name!r} is registered; set DUOFORGE_PS_PASSWORD")
         return assertion
     body = urllib.parse.urlencode({"act": "login", "name": name, "pass": password, "challstr": challstr}).encode()
-    with urllib.request.urlopen(LOGIN_URL, data=body, timeout=30) as r:
+    request = urllib.request.Request(LOGIN_URL, data=body, headers={"User-Agent": USER_AGENT})
+    with urllib.request.urlopen(request, timeout=30) as r:
         text = r.read().decode("utf-8")
     reply = json.loads(text[1:] if text.startswith("]") else text)
     if not reply.get("actionsuccess") or not reply.get("assertion"):
@@ -122,8 +132,10 @@ class Bot:
         self.team_texts = team_texts or {"A": teams.text("A"), "B": teams.text("B")}
         self.rng = rng or random.Random()
         self.connection = None
-        self.busy = None  # {"user", "format", "games", "team"} while a battle or series runs
+        self.busy = None  # {"user", "format", "games", "team", "since", "room"} while a battle or series runs
         self.battles = {}
+        self.finished = set()  # battle rooms that ended: later lines (|deinit|) are ignored
+        self.confirmed = set()  # (series room, game number) answered with /confirmready
         self.challenged = False
 
     async def run(self):
@@ -159,7 +171,9 @@ class Bot:
             await self._global(lines)
 
     async def tick(self):
-        """Ends a sheet wait that ran out."""
+        """Ends a sheet wait that ran out, and frees the bot when an accepted challenge opened no room."""
+        if self.busy is not None and not self.busy["room"] and self.clock() - self.busy["since"] > ACCEPT_WAIT:
+            self.busy = None
         for b in list(self.battles.values()):
             if b.deadline is not None and not b.stopped and not b.game.ready and self.clock() > b.deadline:
                 await self._forfeit(b, self._sheets_message(), "no open team sheets in time")
@@ -178,11 +192,12 @@ class Bot:
                     self.challenged = True
                     team = self._pick_team()
                     self.busy = {"user": toid(self.config.challenge), "format": self.config.challenge_format,
-                                 "games": FORMATS[self.config.challenge_format], "team": team}
+                                 "games": FORMATS[self.config.challenge_format], "team": team,
+                                 "since": self.clock(), "room": False}
                     await self.send("|/utm " + teams.pack(self.team_texts[team]))
                     await self.send(f"|/challenge {self.config.challenge}, {self.config.challenge_format}")
-            elif kind == "updatechallenges":
-                await self._challenges(json.loads("|".join(parts[2:])))
+            elif kind == "pm" and len(parts) > 4:
+                await self._pm(parts[2], parts[3], "|".join(parts[4:]))
             elif kind == "nametaken":
                 raise SystemExit(f"duoforge_live: the server refused the name: {line}")
             elif kind == "popup":
@@ -191,36 +206,55 @@ class Bot:
     def _pick_team(self):
         return self.rng.choice(("A", "B")) if self.config.team == "random" else self.config.team
 
-    async def _challenges(self, update):
-        for user, fmt in (update.get("challengesFrom") or {}).items():
-            if fmt not in FORMATS:
-                await self.send(f"|/reject {user}")
-                await self.send(f"|/pm {user}, {WRONG_FORMAT}")
-            elif self.busy is not None:
-                await self.send(f"|/reject {user}")
-                await self.send(f"|/pm {user}, {BUSY}")
-            else:
-                team = self._pick_team()
-                self.busy = {"user": user, "format": fmt, "games": FORMATS[fmt], "team": team}
-                await self.send("|/utm " + teams.pack(self.team_texts[team]))
-                await self.send(f"|/accept {user}")
+    async def _pm(self, sender, recipient, text):
+        """A challenge comes as a PM "/challenge FORMAT|..." from the challenger (server/ladders-challenges.ts);
+        "/challenge" alone removes one, and the bot's own challenges come back the same way."""
+        me = toid(self.config.name)
+        if not text.startswith("/challenge ") or toid(recipient) != me or toid(sender) == me:
+            return
+        user, fmt = toid(sender), text[len("/challenge "):].split("|")[0]
+        if fmt not in FORMATS:
+            await self.send(f"|/reject {user}")
+            await self.send(f"|/pm {user}, {WRONG_FORMAT}")
+        elif self.busy is not None:
+            await self.send(f"|/reject {user}")
+            await self.send(f"|/pm {user}, {BUSY}")
+        else:
+            team = self._pick_team()
+            self.busy = {"user": user, "format": fmt, "games": FORMATS[fmt], "team": team, "since": self.clock(),
+                         "room": False}
+            await self.send("|/utm " + teams.pack(self.team_texts[team]))
+            await self.send(f"|/accept {user}")
 
     # ------------------------------------------------------------------ Bo3 series rooms
     async def _series(self, room, lines):
+        if self.busy is not None:
+            self.busy["room"] = True
         for line in lines:
-            if line.startswith("|c|~|/uhtml controls,") and "Are you ready for game" in line:
+            ready = re.search(r"Are you ready for game (\d+)", line)
+            # Only the enabled button carries the command; after the answer the server shows a disabled one.
+            if line.startswith("|c|~|/uhtml controls,") and ready and "/confirmready" in line \
+                    and (room, ready.group(1)) not in self.confirmed:
+                self.confirmed.add((room, ready.group(1)))
                 await self.send(f"{room}|/confirmready")
             elif line.startswith("|win|") or line == "|tie" or line.startswith("|tie|"):
                 self.busy = None
 
     # ------------------------------------------------------------------ battle rooms
     def _open(self, room):
+        """The battle of a room the server opened for the bot; None when the bot has no team for it (a room
+        it did not accept, with --team random)."""
         team = self.busy["team"] if self.busy is not None else self.config.team
         if team not in self.team_texts:
-            raise SystemExit(f"duoforge_live: a battle room {room} without a known team")
+            print(f"duoforge_live: ignoring the battle room {room}: no accepted challenge", file=sys.stderr)
+            self.finished.add(room)
+            return None
+        if self.busy is not None:
+            self.busy["room"] = True
         log_dir = Path(self.config.log_dir)
         log_dir.mkdir(parents=True, exist_ok=True)
-        b = _Battle(room, Game(self.data, self.policy, self.team_texts[team]), log_dir / f"{room}.jsonl")
+        log_path = log_dir / f"{room}-{toid(self.config.name)}.jsonl"  # two bots of one machine can share a room
+        b = _Battle(room, Game(self.data, self.policy, self.team_texts[team]), log_path)
         self.battles[room] = b
         return b
 
@@ -228,9 +262,13 @@ class Bot:
         return SHEETS + (f" {self.config.team_link}" if self.config.team_link else "")
 
     async def _battle(self, room, lines):
+        if room in self.finished:
+            return
         b = self.battles.get(room)
         if b is None:
             b = self._open(room)
+            if b is None:
+                return
             if "|init|battle" in lines:
                 await self.send(f"{room}|{GREETING}")
         if b.ended:
@@ -309,6 +347,8 @@ class Bot:
         await self.send(f"{b.room}|{GG}")
         b.write({"end": line})
         b.log.close()
+        del self.battles[b.room]
+        self.finished.add(b.room)
         await self.send(f"|/leave {b.room}")
         if self.busy is not None and self.busy["games"] == 1:
             self.busy = None
@@ -316,7 +356,5 @@ class Bot:
 
 def _room_line(line):
     """A line of the room that is not part of the battle (chat, joins, the timer, text)."""
-    if not line.startswith("|") or line.startswith("||"):
-        return True
-    from .tracker import ROOM_LINES
-    return line.split("|")[1] in ROOM_LINES
+    kind = _kind(line)
+    return kind is None or kind in ROOM_LINES
