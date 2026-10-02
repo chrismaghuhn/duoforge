@@ -1,0 +1,193 @@
+|gametype|doubles
+|player|p1|p1||
+|player|p2|p2||
+|gen|9
+|tier|[Gen 9 Champions] VGC 2026 Reg M-C
+|rule|Species Clause: Limit one of each Pokémon
+|rule|Item Clause: Limit 1 of each item
+|clearpoke
+|poke|p1|Kingambit, L50, M|
+|poke|p1|Incineroar, L50, M|
+|poke|p1|Indeedee-F, L50, F|
+|poke|p1|Salamence, L50, M|
+|poke|p1|Basculegion, L50, M|
+|poke|p1|Sneasler, L50, M|
+|poke|p2|Politoed, L50, M|
+|poke|p2|Farigiraf, L50, F|
+|poke|p2|Charizard, L50, M|
+|poke|p2|Grimmsnarl, L50, M|
+|poke|p2|Golisopod, L50, F|
+|poke|p2|Archaludon, L50, M|
+|teampreview|4
+|showteam|p1|Kingambit||ChopleBerry|Defiant|KowtowCleave,SuckerPunch,IronHead,Protect|Adamant||M|||50|]Incineroar||SitrusBerry|Intimidate|FakeOut,FlareBlitz,PartingShot,DarkestLariat|Careful||M|||50|]Indeedee-F||RockyHelmet|PsychicSurge|FollowMe,TrickRoom,HelpingHand,Psychic|Relaxed||F|||50|]Salamence||Salamencite|Intimidate|Protect,HyperVoice,DracoMeteor,Tailwind|Timid||M|||50|]Basculegion||ChoiceScarf|Adaptability|WaveCrash,LastRespects,FlipTurn,AquaJet|Jolly||M|||50|]Sneasler||WhiteHerb|Unburden|CloseCombat,DireClaw,Protect,FakeOut|Adamant||M|||50|
+|showteam|p2|Politoed||MysticWater|Drizzle|WeatherBall,MuddyWater,IceBeam,Protect|Modest||M|||50|]Farigiraf||SitrusBerry|ArmorTail|Psychic,GrassKnot,TrickRoom,Protect|Bold||F|||50|]Charizard||CharizarditeY|Blaze|HeatWave,WeatherBall,Hurricane,Protect|Timid||M|||50|]Grimmsnarl||LightClay|Prankster|SpiritBreak,Reflect,LightScreen,PartingShot|Sassy||M|||50|]Golisopod||Golisopite|EmergencyExit|LeechLife,IronHead,DrillRun,Protect|Adamant||F|||50|]Archaludon||Leftovers|Stamina|DragonPulse,ElectroShot,Snarl,Protect|Bold||M|||50|
+|
+|teamsize|p1|4
+|teamsize|p2|4
+|start
+|switch|p1a: Kingambit|Kingambit, L50, M|100/100
+|switch|p1b: Incineroar|Incineroar, L50, M|100/100
+|switch|p2a: Politoed|Politoed, L50, M|100/100
+|switch|p2b: Farigiraf|Farigiraf, L50, F|100/100
+|-weather|RainDance|[from] ability: Drizzle|[of] p2a: Politoed
+|-ability|p1b: Incineroar|Intimidate|boost
+|-unboost|p2a: Politoed|atk|1
+|-unboost|p2b: Farigiraf|atk|1
+|turn|1
+|
+|switch|p1a: Indeedee|Indeedee-F, L50, F|100/100
+|-fieldstart|move: Psychic Terrain|[from] ability: Psychic Surge|[of] p1a: Indeedee
+|move|p1b: Incineroar|Fake Out||[still]
+|cant|p2b: Farigiraf|ability: Armor Tail|Fake Out|[of] p1b: Incineroar
+|move|p2a: Politoed|Muddy Water|p1b: Incineroar|[spread] p1a,p1b
+|-supereffective|p1b: Incineroar|1
+|-damage|p1a: Indeedee|50/100g
+|-damage|p1b: Incineroar|13/100
+|-unboost|p1b: Incineroar|accuracy|1
+|-enditem|p1b: Incineroar|Sitrus Berry|[eat]
+|-heal|p1b: Incineroar|38/100|[from] item: Sitrus Berry
+|move|p2b: Farigiraf|Psychic|p1a: Indeedee
+|-resisted|p1a: Indeedee|1
+|-damage|p1a: Indeedee|28/100
+|
+|-weather|RainDance|[upkeep]
+|upkeep
+|turn|2
+|
+|move|p2b: Farigiraf|Protect|p2b: Farigiraf
+|-singleturn|p2b: Farigiraf|Protect
+|move|p2a: Politoed|Ice Beam|p1a: Indeedee
+|-damage|p1a: Indeedee|3/100
+|move|p1b: Incineroar|Parting Shot|p2a: Politoed
+|-unboost|p2a: Politoed|atk|1
+|-unboost|p2a: Politoed|spa|1
+|
+|switch|p1b: Kingambit|Kingambit, L50, M|100/100|[from] Parting Shot
+|move|p1a: Indeedee|Trick Room|p1a: Indeedee
+|-fieldstart|move: Trick Room|[of] p1a: Indeedee
+|
+|-weather|RainDance|[upkeep]
+|upkeep
+|turn|3
+|
+|switch|p2b: Charizard|Charizard, L50, M|100/100
+|move|p1a: Indeedee|Helping Hand|p1b: Kingambit
+|-singleturn|p1b: Kingambit|Helping Hand|[of] p1a: Indeedee
+|move|p2a: Politoed|Protect|p2a: Politoed
+|-singleturn|p2a: Politoed|Protect
+|move|p1b: Kingambit|Sucker Punch||[still]
+|-fail|p1b: Kingambit
+|
+|-weather|RainDance|[upkeep]
+|upkeep
+|turn|4
+|
+|switch|p1b: Incineroar|Incineroar, L50, M|38/100
+|-ability|p1b: Incineroar|Intimidate|boost
+|-unboost|p2a: Politoed|atk|1
+|-unboost|p2b: Charizard|atk|1
+|switch|p2a: Farigiraf|Farigiraf, L50, F|100/100
+|switch|p2b: Grimmsnarl|Grimmsnarl, L50, M|100/100
+|move|p1a: Indeedee|Trick Room|p1a: Indeedee
+|-fieldend|move: Trick Room
+|
+|-weather|RainDance|[upkeep]
+|upkeep
+|turn|5
+|
+|switch|p2b: Charizard|Charizard, L50, M|100/100
+|move|p1a: Indeedee|Follow Me|p1a: Indeedee
+|-singleturn|p1a: Indeedee|move: Follow Me
+|move|p1b: Incineroar|Flare Blitz|p2a: Farigiraf
+|-damage|p2a: Farigiraf|81/100
+|-damage|p1b: Incineroar|31/100|[from] Recoil
+|move|p2a: Farigiraf|Psychic|p1a: Indeedee
+|-resisted|p1a: Indeedee|1
+|-damage|p1a: Indeedee|0 fnt
+|faint|p1a: Indeedee
+|
+|-weather|none
+|-fieldend|move: Psychic Terrain
+|upkeep
+|
+|switch|p1a: Kingambit|Kingambit, L50, M|100/100
+|turn|6
+|
+|move|p2a: Farigiraf|Protect|p2a: Farigiraf
+|-singleturn|p2a: Farigiraf|Protect
+|move|p1a: Kingambit|Sucker Punch||[still]
+|cant|p2a: Farigiraf|ability: Armor Tail|Sucker Punch|[of] p1a: Kingambit
+|move|p2b: Charizard|Weather Ball|p1b: Incineroar
+|-damage|p1b: Incineroar|22/100
+|move|p1b: Incineroar|Flare Blitz|p2b: Charizard
+|-resisted|p2b: Charizard|1
+|-damage|p2b: Charizard|75/100
+|-damage|p1b: Incineroar|15/100|[from] Recoil
+|
+|upkeep
+|turn|7
+|
+|switch|p2a: Politoed|Politoed, L50, M|100/100
+|-weather|RainDance|[from] ability: Drizzle|[of] p2a: Politoed
+|move|p1a: Kingambit|Sucker Punch|p2b: Charizard
+|-damage|p2b: Charizard|26/100
+|move|p2b: Charizard|Heat Wave|p1b: Incineroar|[spread] p1a,p1b
+|-supereffective|p1a: Kingambit|1
+|-resisted|p1b: Incineroar|1
+|-damage|p1a: Kingambit|59/100
+|-damage|p1b: Incineroar|7/100
+|move|p1b: Incineroar|Flare Blitz|p2b: Charizard
+|-resisted|p2b: Charizard|1
+|-damage|p2b: Charizard|14/100
+|-damage|p1b: Incineroar|4/100|[from] Recoil
+|
+|-weather|RainDance|[upkeep]
+|upkeep
+|turn|8
+|
+|move|p1a: Kingambit|Sucker Punch|p2a: Politoed
+|-damage|p2a: Politoed|50/100g
+|move|p2b: Charizard|Hurricane|p1b: Incineroar
+|-damage|p1b: Incineroar|0 fnt
+|faint|p1b: Incineroar
+|move|p2a: Politoed|Muddy Water|p1a: Kingambit
+|-damage|p1a: Kingambit|0 fnt
+|faint|p1a: Kingambit
+|
+|-weather|RainDance|[upkeep]
+|upkeep
+|
+|switch|p1a: Salamence|Salamence, L50, M|100/100
+|-ability|p1a: Salamence|Intimidate|boost
+|-unboost|p2a: Politoed|atk|1
+|-unboost|p2b: Charizard|atk|1
+|turn|9
+|
+|detailschange|p2b: Charizard|Charizard-Mega-Y, L50, M
+|-mega|p2b: Charizard|Charizard|Charizardite Y
+|-weather|SunnyDay|[from] ability: Drought|[of] p2b: Charizard
+|move|p2a: Politoed|Protect|p2a: Politoed
+|-singleturn|p2a: Politoed|Protect
+|move|p1a: Salamence|Hyper Voice|p2a: Politoed|[spread] p2b
+|-activate|p2a: Politoed|move: Protect
+|-damage|p2b: Charizard|0 fnt
+|faint|p2b: Charizard
+|
+|-weather|SunnyDay|[upkeep]
+|upkeep
+|
+|switch|p2b: Farigiraf|Farigiraf, L50, F|81/100
+|turn|10
+|
+|detailschange|p1a: Salamence|Salamence-Mega, L50, M
+|-mega|p1a: Salamence|Salamence|Salamencite
+|move|p2b: Farigiraf|Protect|p2b: Farigiraf
+|-singleturn|p2b: Farigiraf|Protect
+|move|p1a: Salamence|Draco Meteor|p2b: Farigiraf
+|-activate|p2b: Farigiraf|move: Protect
+|move|p2a: Politoed|Ice Beam|p1a: Salamence
+|-supereffective|p1a: Salamence|2
+|-damage|p1a: Salamence|0 fnt
+|faint|p1a: Salamence
+|
+|win|p2
