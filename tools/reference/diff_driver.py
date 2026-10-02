@@ -398,10 +398,12 @@ def child_failure_result(name, failure):
                       messages=[line for line in failure.stderr.split('\n') if line][-20:])
 
 
-def process_battle(name, spec, committed, worker, runner, tables_for):
+def process_battle(name, spec, committed, worker, runner, tables_for, pool_kind=None):
     """One battle through the three steps; the record of its bucket. `committed`
     is the text of its committed trace (LF), `tables_for(team_c)` the name
-    tables of trace_to_c. A child that dies or hangs on it is a bucket too."""
+    tables of trace_to_c. A pool battle (decision 0015) is created under the
+    data kind `pool_kind` alone, which the caller must give. A child that dies
+    or hangs on it is a bucket too."""
     try:
         text = worker.record(spec, name + '.json')
     except WorkerError as e:
@@ -413,9 +415,12 @@ def process_battle(name, spec, committed, worker, runner, tables_for):
                           messages=[first_difference(text, committed)])
     trace = json.loads(text)
     try:
-        team_c = trace_to_c.spec_is_team_c(name, spec)
+        data_name = trace_to_c.spec_data(name, spec)
     except trace_to_c.ConversionError as e:
         return oracle_gap(name, e)
+    team_c = data_name != 'closure'
+    if data_name == 'pool' and pool_kind is None:
+        raise ToolError('process_battle: %s is a pool battle and needs the pool data kind' % name)
     tables = tables_for(team_c)
     try:
         data = trace_to_c.convert_battle(name, spec, trace, tables)
@@ -424,7 +429,7 @@ def process_battle(name, spec, committed, worker, runner, tables_for):
     except UNTYPED as e:
         return oracle_gap(name, e)
     records = io.StringIO()
-    conformance_records.write_battle(data, team_c, records)
+    conformance_records.write_battle(data, team_c, records, kind=pool_kind if data_name == 'pool' else 0)
     try:
         run = runner.run(name, records.getvalue())
     except ChildFailure as e:
@@ -608,10 +613,11 @@ def battle_handler(root, tables):
     """handle(name, worker, runner) for run_lanes: the battle `name` of the
     committed data under `root`, put in its bucket. `tables` maps team_c to the
     name tables."""
+    pool_kind = conformance_records.data_kinds(root)['POOL']
 
     def handle(name, worker, runner):
         spec, committed = load_committed(root, name)
-        return process_battle(name, spec, committed, worker, runner, tables.__getitem__)
+        return process_battle(name, spec, committed, worker, runner, tables.__getitem__, pool_kind)
 
     return handle
 

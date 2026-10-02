@@ -11,9 +11,9 @@
  * format is in records.h). Each battle is set up and stepped exactly as
  * tests/test_conformance.c does it: closure battles under CLOSURE, then
  * CLOSURE_DEV when that cannot create them; Team C battles under TEAM_C, then
- * TEAM_C_DEV. A battle whose record names a data kind (random play) is created
- * under that kind alone: a team the kind rejects is a finding, not a
- * fallback. Every step takes the reference's kept draws as its tape, which
+ * TEAM_C_DEV. A battle whose record names a data kind (random play, and the
+ * pool battles, which name POOL) is created under that kind alone: a team the
+ * kind rejects is a finding, not a fallback. Every step takes the reference's kept draws as its tape, which
  * must be consumed exactly, and then the engine's state, observations and
  * events are compared with the reference's (tests/support/conformance_compare.c)
  * and duoforge_battle_check must hold. The first step with a difference ends
@@ -35,7 +35,7 @@
  *   R <name> <PASS|DIVERGENCE|UNSUPPORTED> <context kind> <step|-> <steps> <detail>
  *
  * The context kind is the data kind the battle ran under (CLOSURE,
- * CLOSURE_DEV, TEAM_C or TEAM_C_DEV). The step is the first failing one, or -
+ * CLOSURE_DEV, TEAM_C, TEAM_C_DEV, POOL or POOL_DEV). The step is the first failing one, or -
  * when no step failed (a PASS, or a battle that could not be created); steps
  * is the number of steps the records hold; the detail is the rest of the line
  * (- for a PASS). A create that fails says "create: <status> (<kind>)" and,
@@ -69,6 +69,7 @@
 #include "state/request.h"
 #include "support/conformance_compare.h"
 #include "support/fixtures.h"
+#include "support/pool.h"
 #include "support/team_c.h"
 
 #define EXIT_MALFORMED 2
@@ -96,6 +97,10 @@ static const char *kind_name(uint32_t data_kind)
         return "TEAM_C";
     case DUOFORGE_DATA_KIND_TEAM_C_DEV:
         return "TEAM_C_DEV";
+    case DUOFORGE_DATA_KIND_POOL:
+        return "POOL";
+    case DUOFORGE_DATA_KIND_POOL_DEV:
+        return "POOL_DEV";
     default:
         return "UNKNOWN";
     }
@@ -363,12 +368,13 @@ int main(int argc, char **argv)
         }
     }
 
-    /* [0] closure, [1] Team C; in each the first context, then the DEV one. */
-    static const duoforge_context_config *const configs[2][2] = {{&df_config_k1, &df_config_k2},
-                                                                 {&df_config_team_c, &df_config_team_c_dev}};
-    duoforge_context *contexts[2][2] = {{NULL, NULL}, {NULL, NULL}};
+    /* [0] closure, [1] Team C, [2] pool; in each the first context, then the DEV one. */
+    static const duoforge_context_config *const configs[3][2] = {{&df_config_k1, &df_config_k2},
+                                                                 {&df_config_team_c, &df_config_team_c_dev},
+                                                                 {&df_config_pool, &df_config_pool_dev}};
+    duoforge_context *contexts[3][2] = {{NULL, NULL}, {NULL, NULL}, {NULL, NULL}};
     int rc = 0;
-    for (size_t kind = 0u; kind < 2u && rc == 0; ++kind) {
+    for (size_t kind = 0u; kind < 3u && rc == 0; ++kind) {
         for (size_t dev = 0u; dev < 2u && rc == 0; ++dev) {
             const duoforge_status s = duoforge_context_create(configs[kind][dev], &contexts[kind][dev]);
             if (s != DUOFORGE_OK) {
@@ -398,7 +404,9 @@ int main(int argc, char **argv)
             }
             break;
         }
-        const size_t kind = battle.team_c != 0u ? 1u : 0u;
+        /* The pool battles carry the extended ids (team_c) and name their kind. */
+        const bool pool = battle.strict_kind == DUOFORGE_DATA_KIND_POOL || battle.strict_kind == DUOFORGE_DATA_KIND_POOL_DEV;
+        const size_t kind = pool ? 2u : battle.team_c != 0u ? 1u : 0u;
         const outcome o = run_battle(&battle, contexts[kind], configs[kind], stdout);
         print_result(&battle, &o);
         dfr_battle_free(&battle);
@@ -412,7 +420,7 @@ int main(int argc, char **argv)
     if (in != stdin) {
         (void)fclose(in);
     }
-    for (size_t kind = 0u; kind < 2u; ++kind) {
+    for (size_t kind = 0u; kind < 3u; ++kind) {
         for (size_t dev = 0u; dev < 2u; ++dev) {
             duoforge_context_destroy(contexts[kind][dev]);
         }

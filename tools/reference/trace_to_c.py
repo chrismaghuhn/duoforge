@@ -6,8 +6,10 @@ usage: python tools/reference/trace_to_c.py <repo root> [--check]
 
 Reads tests/reference/specs/*.json and tests/reference/traces/*.json and
 writes tests/reference/conformance.h, conformance_team_c.h (the Team C
-battles) and conformance_types.h (the record types both include), or, with
---check, compares all three.
+battles), conformance_pool.h (the battles whose spec says "data": "pool",
+decision 0015) and conformance_types.h (the record types they include), or,
+with --check, compares them (conformance_pool.h only when a pool battle is
+committed).
 
 As a library: load_battle(root, name) reads a spec and a trace (the only file
 IO of a conversion), convert_battle(name, spec, trace, tables) turns them into
@@ -1039,12 +1041,25 @@ def format_battle(data, out, all_tape, all_events):
         name, data['member_count'], name, name, name, name, data['dropped_total'])
 
 
-def spec_is_team_c(name, spec):
-    """A spec with "data": "team_c" records a Team C battle (decision 0009 section 6.1)."""
+def spec_data(name, spec):
+    """The data of a spec: "closure" (none given), "team_c" (decision 0009
+    section 6.1) or "pool" (decision 0015, read under the POOL data kind)."""
     data = spec.get('data')
-    if data not in (None, 'team_c'):
+    if data not in (None, 'team_c', 'pool'):
         raise ConversionError('spec-data', 'trace_to_c: %s: unknown data %r' % (name, data))
-    return data == 'team_c'
+    return data or 'closure'
+
+
+def spec_is_team_c(name, spec):
+    """True for a battle read with the extended ids (Team C and pool battles:
+    the pool tables keep every extended id, decision 0015), so the tables of
+    load_tables(root, True) convert both; spec_is_pool tells them apart."""
+    return spec_data(name, spec) != 'closure'
+
+
+def spec_is_pool(name, spec):
+    """A spec with "data": "pool" records a pool battle: it runs under the POOL data kind."""
+    return spec_data(name, spec) == 'pool'
 
 
 def is_team_c(root, name):
@@ -1052,16 +1067,23 @@ def is_team_c(root, name):
     return spec_is_team_c(name, load_json(root, 'specs', name))
 
 
+def is_pool(root, name):
+    """spec_is_pool of the committed spec `name`."""
+    return spec_is_pool(name, load_json(root, 'specs', name))
+
+
 def load_tables(root, team_c):
-    """Name -> id tables: the closure's, or for Team C the extended tables
-    (the closure ids plus Team C's, decision 0009 section 3.2)."""
+    """Name -> id tables: the closure's, or for the extended ids the pool
+    tables (the closure ids, Team C's and the rows the expansion adds, decision
+    0015: every closure and Team C name keeps its id)."""
     header = read_ascii(os.path.join(root, 'src', 'data', 'closure_tables.h'))
     source = read_ascii(os.path.join(root, 'src', 'data', 'closure_tables.c'))
     start = 'dfi_closure_formes[DFI_FORME_COUNT] = {'
     if team_c:
         header += read_ascii(os.path.join(root, 'src', 'data', 'extended_tables.h'))
-        source = read_ascii(os.path.join(root, 'src', 'data', 'extended_tables.c'))
-        start = 'dfi_ext_formes[DFI_EXT_FORME_COUNT] = {'
+        header += read_ascii(os.path.join(root, 'src', 'data', 'pool_tables.h'))
+        source = read_ascii(os.path.join(root, 'src', 'data', 'pool_tables.c'))
+        start = 'dfi_pool_formes[DFI_POOL_FORME_COUNT] = {'
     tables = {k: ids(header, k) for k in ('FORME', 'MOVE', 'ITEM', 'ABILITY', 'NATURE')}
     a = source.index(start)
     rules = re.findall(r'\{\d+u, \d+u, \{\d+u, \d+u\}, \{[^}]*\}, \d+u, (\d+)u,', source[a:])
@@ -1076,18 +1098,21 @@ def main():
     root = sys.argv[1]
     check = len(sys.argv) == 3
     names = sorted(f[:-5] for f in os.listdir(os.path.join(root, 'tests', 'reference', 'traces')) if f.endswith('.json'))
-    team_c = [n for n in names if is_team_c(root, n)]
-    closure = [n for n in names if n not in team_c]
+    pool = [n for n in names if is_pool(root, n)]
+    team_c = [n for n in names if is_team_c(root, n) and n not in pool]
+    closure = [n for n in names if n not in team_c and n not in pool]
     rc = write_header(root, closure, load_tables(root, False), False, check)
     if team_c:
         rc |= write_header(root, team_c, load_tables(root, True), True, check)
+    if pool:
+        rc |= write_header(root, pool, load_tables(root, True), True, check, pool=True)
     rc |= write_types(root, check)
     return rc
 
 
 # The record types of the conformance tables, shared by conformance.h,
-# conformance_team_c.h and the comparators; they are written to
-# conformance_types.h, which the other two include.
+# conformance_team_c.h, conformance_pool.h and the comparators; they are
+# written to conformance_types.h, which the others include.
 TYPES = [
     '/* species, gender, nature, Stat Points, ability + 1 (0 none), item + 1 (0 none), moves */',
     'typedef struct df_conf_member {',
@@ -1157,22 +1182,27 @@ def write_types(root, check):
                 'the template in trace_to_c.py')
 
 
-def write_header(root, names, tables, team_c, check):
-    text, n_tape, n_events = build_header(root, names, tables, team_c)
-    target = os.path.join(root, 'tests', 'reference', 'conformance_team_c.h' if team_c else 'conformance.h')
+def write_header(root, names, tables, team_c, check, pool=False):
+    text, n_tape, n_events = build_header(root, names, tables, team_c, pool)
+    fname = 'conformance_pool.h' if pool else 'conformance_team_c.h' if team_c else 'conformance.h'
+    target = os.path.join(root, 'tests', 'reference', fname)
     return emit(target, text, check, 'the traces',
                 ' (%d battles, %d tape entries, %d events)' % (len(names), n_tape, n_events))
 
 
-def build_header(root, names, tables, team_c):
-    """The text of conformance.h (conformance_team_c.h for Team C) over the
-    committed battles `names`, and the sizes of its tape and event arrays."""
-    guard = 'DUOFORGE_TESTS_REFERENCE_CONFORMANCE_TEAM_C_H' if team_c else 'DUOFORGE_TESTS_REFERENCE_CONFORMANCE_H'
-    source_line = (' * tests/reference/traces, the Team C battles (decision 0009; pinned Showdown' if team_c else
+def build_header(root, names, tables, team_c, pool=False):
+    """The text of conformance.h (conformance_team_c.h for Team C,
+    conformance_pool.h for the pool battles) over the committed battles
+    `names`, and the sizes of its tape and event arrays."""
+    guard = ('DUOFORGE_TESTS_REFERENCE_CONFORMANCE_POOL_H' if pool else
+             'DUOFORGE_TESTS_REFERENCE_CONFORMANCE_TEAM_C_H' if team_c else 'DUOFORGE_TESTS_REFERENCE_CONFORMANCE_H')
+    source_line = (' * tests/reference/traces, the pool battles (decision 0015; pinned Showdown' if pool else
+                   ' * tests/reference/traces, the Team C battles (decision 0009; pinned Showdown' if team_c else
                    ' * tests/reference/traces (pinned Showdown b2cb775b0616115b775534eaeff50300e1fc81fc).')
     out = ['/*', ' * GENERATED by tools/reference/trace_to_c.py from tests/reference/specs and', source_line]
     if team_c:
-        out.append(' * b2cb775b0616115b775534eaeff50300e1fc81fc), read with the extended tables.')
+        out.append(' * b2cb775b0616115b775534eaeff50300e1fc81fc), read with the %s tables.' %
+                   ('pool' if pool else 'extended'))
     out += [' * Do not edit by hand. Draw drop rules: tools/reference/trace_to_c.py.', ' */',
             '#ifndef %s' % guard, '#define %s' % guard,
            '#include <stdint.h>', '', '#include <duoforge/duoforge.h>', '', '#include "rng/draw.h"', '',

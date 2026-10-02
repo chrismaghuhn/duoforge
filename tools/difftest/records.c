@@ -148,7 +148,9 @@ static bool kind_goes_with(uint32_t team_c, uint32_t kind)
     if (team_c == 0u) {
         return kind == DUOFORGE_DATA_KIND_CLOSURE || kind == DUOFORGE_DATA_KIND_CLOSURE_DEV;
     }
-    return kind == DUOFORGE_DATA_KIND_TEAM_C || kind == DUOFORGE_DATA_KIND_TEAM_C_DEV;
+    /* The extended ids: Team C, and the pool tables that keep them (decision 0015). */
+    return kind == DUOFORGE_DATA_KIND_TEAM_C || kind == DUOFORGE_DATA_KIND_TEAM_C_DEV ||
+           kind == DUOFORGE_DATA_KIND_POOL || kind == DUOFORGE_DATA_KIND_POOL_DEV;
 }
 
 /* The next line, where the input must not end: `what` names what is expected. */
