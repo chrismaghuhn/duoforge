@@ -8,9 +8,11 @@ import numpy as np
 _KEY = re.compile(r"\['([^']+)'\]")
 
 
-def load(path):
+def load(path, obs_size=None):
     """(params, config) of a checkpoint; params are nested dicts of NumPy
-    arrays, as model.init builds them."""
+    arrays, as model.init builds them. With obs_size, a network whose torso
+    takes another number of observation features (a checkpoint of another
+    encoder, such as the 594 of 2026-10-02) raises ValueError."""
     params = {}
     with np.load(path) as npz:
         config = json.loads(str(npz["config"]))
@@ -24,4 +26,7 @@ def load(path):
             for k in keys[:-1]:
                 node = node.setdefault(k, {})
             node[keys[-1]] = npz[name]
+    if obs_size is not None and params["t1"]["w"].shape[0] != obs_size:
+        raise ValueError(f"{path}: the network takes {params['t1']['w'].shape[0]} observation features, "
+                         f"the encoder makes {obs_size} (a checkpoint of another encoder)")
     return params, config

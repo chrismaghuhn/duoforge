@@ -7,6 +7,7 @@ The first long run of the learner pipeline (decision 0014), after the review fix
 - `python -m duoforge_learn.train --envs 256 --workers 8 --rollout 32 --minutes 330 --eval-every 200 --eval-envs 128` (`config.json`), 02:20 to 07:53.
 - WSL (Ubuntu 24.04), JAX 0.11.2 with CUDA 12 on an RTX 4060 Ti (8 GB); library 0.15.0, GCC Release with LTO; Ryzen 7 5800X.
 - 8 of the 16 CPU threads, so the other sessions could build and run their CI beside it, which they did all night.
+- The encoder of that day takes 594 observation features. Since #84 it takes 607 (the Team C values), and the ladder refuses these checkpoints by name: rerun it on a checkout before #84.
 
 ## Results
 

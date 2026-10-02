@@ -1,5 +1,6 @@
-"""The per-player encoder as it was before encode_batch (M7 Task 6): the
-reference the vectorized encoder must equal byte for byte. Test-only.
+"""The per-player encoder as it was before encode_batch (M7 Task 6), with
+the Team C values since: the reference the vectorized encoder must equal
+byte for byte. Test-only.
 """
 import numpy as np
 
@@ -11,15 +12,16 @@ OPTIONS = _layout.MAX_SLOT_OPTIONS
 BOUNDARIES = tuple(C[f"DUOFORGE_BOUNDARY_{n}"] for n in ("TEAM_SELECTION", "TURN", "REPLACEMENT", "PIVOT",
                                                           "TERMINAL"))
 WEATHERS = tuple(C[f"DUOFORGE_WEATHER_{n}"] for n in ("NONE", "RAIN", "SUN"))
-TERRAINS = tuple(C[f"DUOFORGE_TERRAIN_{n}"] for n in ("NONE", "GRASSY"))
+TERRAINS = tuple(C[f"DUOFORGE_TERRAIN_{n}"] for n in ("NONE", "GRASSY", "PSYCHIC"))
 LOCATIONS = tuple(C[f"DUOFORGE_LOCATION_{n}"] for n in ("UNDETERMINED", "BENCH", "ACTIVE", "NOT_BROUGHT"))
 AILMENTS = tuple(C[f"DUOFORGE_AILMENT_{n}"] for n in ("NONE", "BURN", "FREEZE", "PARALYSIS", "SLEEP", "POISON"))
 SLOT_KINDS = tuple(C[f"DUOFORGE_SLOT_{n}"] for n in ("NONE", "MOVE", "SWITCH", "PASS"))
+POSITION_FLAGS = tuple(C[f"DUOFORGE_POSITION_FLAG_{n}"] for n in ("FOLLOW_ME", "HELPING_HAND", "UNBURDEN"))
 
 SLOT_FEATURES = 12
 _GLOBAL = len(BOUNDARIES) + 1 + len(WEATHERS) + 1 + len(TERRAINS) + 2
 _SIDE = 8
-_POSITION = 7 + 7 + 7
+_POSITION = 7 + 7 + len(POSITION_FLAGS) + 7
 _MEMBER = 2 + len(LOCATIONS) + len(AILMENTS) + 8 + 4 + 4 + 1 + 6 + 5
 OBS_SIZE = _GLOBAL + 2 * (_SIDE + 2 * _POSITION + 6 * _MEMBER)
 
@@ -58,9 +60,13 @@ def _member(m):
 
 
 def _position(pos, occupant):
+    bits = int(pos["reserved"])
+    if bits & ~sum(POSITION_FLAGS):
+        raise ValueError(f"position flags {bits} are not ones this encoder knows: {POSITION_FLAGS}")
     flags = [int(pos["confused"]), int(pos["charging"]),
              1.0 if int(pos["locked_slot"]) != C["DUOFORGE_MOVE_SLOT_NONE"] else 0.0,
              int(pos["acted"]), _clip(int(pos["protect_chain"]) / 3), int(pos["flash_fire"]), int(pos["protecting"])]
+    flags += [1.0 if bits & bit else 0.0 for bit in POSITION_FLAGS]
     occupants = tuple(range(_layout.MAX_ROSTER)) + (C["DUOFORGE_ROSTER_NONE"],)
     return np.concatenate([
         pos["stages"].astype(np.float32) / 12,
