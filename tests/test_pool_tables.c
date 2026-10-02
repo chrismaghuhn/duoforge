@@ -824,7 +824,9 @@ int main(void)
             DF_CHECK(&t, dfi_support.items[id] != 0u);
             DF_CHECK(&t, dfi_pool_item_family[id].family != DFI_ITEM_FAMILY_NONE);
         }
-        for (uint32_t id = DFI_ITEM_FOCUSSASH; id < DFI_POOL_ITEM_COUNT; ++id) {
+        /* Step G4 marks Focus Sash (onDamage at the move-damage call); Expert Belt and Floettite stay unmarked. */
+        DF_CHECK(&t, dfi_support.items[DFI_ITEM_FOCUSSASH] != 0u);
+        for (uint32_t id = DFI_ITEM_FOCUSSASH + 1u; id < DFI_POOL_ITEM_COUNT; ++id) {
             DF_CHECK_EQ_U64(&t, dfi_support.items[id], 0u);
         }
         for (uint32_t id = 0u; id < DFI_POOL_ITEM_COUNT; ++id) {
@@ -832,14 +834,15 @@ int main(void)
                 DF_CHECK(&t, dfi_support.items[id] != 0u);
             }
         }
-        /* The P1 abilities (Pixilate to Swarm, ids below Rock Head) are marked by step P3 and have a family;
-         * the G2 abilities after them stay unmarked and have none. */
+        /* The P1 abilities (Pixilate to Swarm, ids below Rock Head) are marked by step P3 and have a family; the
+         * G2 abilities after them have none, and of those only Rock Head is marked (step G4: no recoil from a
+         * recoil move), Flower Veil and Fairy Aura stay unmarked until their steps. */
         for (uint32_t id = DFI_EXT_ABILITY_COUNT; id < DFI_ABILITY_ROCKHEAD; ++id) {
             DF_CHECK(&t, dfi_support.abilities[id] != 0u);
             DF_CHECK(&t, dfi_pool_ability_family[id].family != DFI_ABILITY_FAMILY_NONE);
         }
         for (uint32_t id = DFI_ABILITY_ROCKHEAD; id < DFI_POOL_ABILITY_COUNT; ++id) {
-            DF_CHECK_EQ_U64(&t, dfi_support.abilities[id], 0u);
+            DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, id == DFI_ABILITY_ROCKHEAD ? 1u : 0u);
             DF_CHECK_EQ_U64(&t, dfi_pool_ability_family[id].family, DFI_ABILITY_FAMILY_NONE);
         }
         for (uint32_t id = 0u; id < DFI_POOL_ABILITY_COUNT; ++id) {

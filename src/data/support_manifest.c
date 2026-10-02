@@ -71,14 +71,17 @@
  * Smash, Bulk Up, Liquidation, Ice Punch, Shadow Claw, Drum Beating and
  * Dazzling Gleam), each used in one of the four reference battles under the
  * POOL kind g2_data_moves_a to _d. U-turn stays unmarked: its switch cause
- * is the pivot of step G5.
+ * is the pivot of step G5. A move is marked only by the step that records a
+ * reference battle with it.
+ * Step G4 marks Focus Sash (a move hit or the confusion hit that would take all
+ * of a full-HP holder's HP leaves it 1 HP) and Rock Head (no recoil from a
+ * recoil move, Struggle's stays), each with recorded POOL battles.
  * Step G8 marks Throat Chop (the sound moves barred for two turns, the cant
  * of a queued one) and Psychic Noise (Heal Block for two turns: every heal
  * of the holder refused, the heal-flag moves barred), which are secondary
  * kinds of the generic column plus the flags2 column, no longer handler ids
  * (seven remain); recorded as g8_throat_chop, g8_heal_block and
- * g8_heal_block_pair under the POOL kind. A move is marked only by the step
- * that records a reference battle with it. */
+ * g8_heal_block_pair under the POOL kind. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -172,6 +175,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_AERILATE] = 1u,
             [DFI_ABILITY_UNBURDEN] = 1u,
             [DFI_ABILITY_PSYCHICSURGE] = 1u,
+            [DFI_ABILITY_ROCKHEAD] = 1u,
             [DFI_ABILITY_PIXILATE] = 1u,
             [DFI_ABILITY_REFRIGERATE] = 1u,
             [DFI_ABILITY_OVERGROW] = 1u,
@@ -196,6 +200,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_CHOPLEBERRY] = 1u,
             [DFI_ITEM_CHOICESCARF] = 1u,
             [DFI_ITEM_WHITEHERB] = 1u,
+            [DFI_ITEM_FOCUSSASH] = 1u,
             [DFI_ITEM_BLACKBELT] = 1u,
             [DFI_ITEM_BLACKGLASSES] = 1u,
             [DFI_ITEM_CHARCOAL] = 1u,
