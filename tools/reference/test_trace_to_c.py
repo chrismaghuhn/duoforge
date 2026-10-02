@@ -146,6 +146,28 @@ class Refusals(unittest.TestCase):
                      "trace_to_c: each:Update tie between Pokemon with handlers: ['P:p1b:1:whiteherb', 'P:p2a:0:']",
                      'each:Update:whiteherb')
 
+    def test_switch_order_tie_with_an_entry_effect_that_is_not_white_herb(self):
+        def mutate(spec, trace):
+            d = trace['steps'][0]['draws'][2]
+            self.assertEqual((d['site'], d['context']), ('SPEED_TIE', 'switch-order'))
+            self.assertEqual(d['group'], ['P:p1a:0:S:whiteherb', 'P:p2a:0:S:whiteherb'])  # two herbs: the engine draws
+            d['group'][0] = 'P:p1a:0:S:whiteherb+foo'
+        self.control('c08_herb_ties', mutate, 'switch-order-handlers',
+                     "trace_to_c: switch-order tie with onAnySwitchIn handlers "
+                     "['P:p1a:0:S:whiteherb+foo', 'P:p2a:0:S:whiteherb']", 'foo')
+
+    def test_after_event_tie_between_holders_that_are_not_white_herb(self):
+        for index, context in ((3, 'event:AfterMega'), (8, 'event:AfterMove')):  # draws of step 1 of c08_herb_ties
+            with self.subTest(context=context):
+                def mutate(spec, trace):
+                    d = trace['steps'][1]['draws'][index]
+                    self.assertEqual((d['site'], d['context']), ('SPEED_TIE', context))
+                    self.assertEqual(d['group'], ['H:whiteherb:p1a:cb', 'H:whiteherb:p2a:cb'])  # kept: the engine draws
+                    d['group'][1] = 'H:lifeorb:p2a:cb'
+                self.control('c08_herb_ties', mutate, 'after-event-tie',
+                             "trace_to_c: %s tie with ['H:whiteherb:p1a:cb', 'H:lifeorb:p2a:cb']" % context,
+                             context + ':lifeorb+whiteherb')
+
     def test_hit_draw_that_is_not_the_status_pick(self):
         for draw, text, detail in (
                 ({'site': 'ACCURACY', 'context': 'Hit', 'lo': 0, 'hi': 100, 'value': 7},
