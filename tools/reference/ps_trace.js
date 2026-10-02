@@ -35,6 +35,11 @@
 // CTest never needs Node: traces are committed under tests/reference/traces
 // and checked by duoforge.reference.traces when the checkout and Node are
 // present.
+//
+// As a module, require('./ps_trace.js') gives run(root, spec, specFile), which
+// records one battle and returns the trace text, and PIN and HARNESS_VERSION.
+// One process can record many battles: the Showdown modules stay cached, and
+// the state of this module is reset at the start of every run.
 'use strict';
 
 const fs = require('fs');
@@ -179,17 +184,19 @@ function wrapEvents(battle) {
     }
 }
 
-function main() {
-    const args = process.argv.slice(2);
-    if (args.length !== 2 && !(args.length === 4 && args[2] === '--check')) {
-        process.stderr.write('usage: ps_trace.js <pinned checkout> <spec.json> [--check <trace.json>]\n');
-        process.exit(2);
-    }
-    const root = path.resolve(args[0]);
+// Records one battle and returns the trace text. `root` is the pinned
+// checkout, `spec` the parsed spec and `specFile` its path (the trace stores
+// the file name). It never exits the process: errors throw. The Showdown
+// modules stay cached by require, so one process can record many battles; the
+// state of this module is reset first, also after a run that threw.
+function run(root, spec, specFile) {
+    eventStack.length = 0;
+    inRunSwitch = false;
+    randomTargetClass = '';
+    root = path.resolve(root);
     const {Battle} = require(path.join(root, 'dist', 'sim', 'battle'));
     const {PRNG} = require(path.join(root, 'dist', 'sim', 'prng'));
     const {Teams} = require(path.join(root, 'dist', 'sim', 'teams'));
-    const spec = JSON.parse(fs.readFileSync(args[1], 'utf8'));
 
     let battle = null;
     let draws = [];
@@ -284,7 +291,7 @@ function main() {
     const trace = {
         harness: HARNESS_VERSION,
         pin: PIN,
-        spec: path.basename(args[1]),
+        spec: path.basename(specFile),
         format: spec.format,
         seed: spec.seed,
         start: {log: takeLog(), state: snapshot()},
@@ -382,7 +389,18 @@ function main() {
             trace.steps.push({input: entry, draws, log: takeLog(), state: snapshot()});
         }
     }
-    const text = JSON.stringify(trace, null, 1) + '\n';
+    return JSON.stringify(trace, null, 1) + '\n';
+}
+
+function main() {
+    const args = process.argv.slice(2);
+    if (args.length !== 2 && !(args.length === 4 && args[2] === '--check')) {
+        process.stderr.write('usage: ps_trace.js <pinned checkout> <spec.json> [--check <trace.json>]\n');
+        process.exit(2);
+    }
+    const root = path.resolve(args[0]);
+    const spec = JSON.parse(fs.readFileSync(args[1], 'utf8'));
+    const text = run(root, spec, args[1]);
     if (text.includes('"UNKNOWN"')) process.stderr.write('ps_trace: warning: unclassified draws\n');
 
     if (args.length === 4) {
@@ -397,4 +415,6 @@ function main() {
     process.stdout.write(text);
 }
 
-main();
+module.exports = {run, PIN, HARNESS_VERSION};
+
+if (require.main === module) main();

@@ -1,0 +1,6752 @@
+{
+ "harness": 14,
+ "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
+ "spec": "c10_terrain_war.json",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c1002",
+ "start": {
+  "log": [
+   "|gametype|doubles",
+   "|player|p1|p1||",
+   "|player|p2|p2||",
+   "|gen|9",
+   "|tier|[Gen 9 Champions] VGC 2026 Reg M-C",
+   "|rule|Species Clause: Limit one of each Pokémon",
+   "|rule|Item Clause: Limit 1 of each item",
+   "|clearpoke",
+   "|poke|p1|Rillaboom, L50, M|",
+   "|poke|p1|Ceruledge, L50, M|",
+   "|poke|p1|Kingambit, L50, M|",
+   "|poke|p1|Archaludon, L50, M|",
+   "|poke|p2|Indeedee-F, L50, F|",
+   "|poke|p2|Farigiraf, L50, F|",
+   "|poke|p2|Gholdengo, L50|",
+   "|poke|p2|Milotic, L50, F|",
+   "|teampreview|4",
+   "|split|p1",
+   "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
+   "",
+   "|split|p2",
+   "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
+   ""
+  ],
+  "state": {
+   "turn": 0,
+   "ended": false,
+   "winner": "",
+   "weather": "",
+   "weather_turns": 0,
+   "terrain": "",
+   "terrain_turns": 0,
+   "trick_room": 0,
+   "sides": [
+    {
+     "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
+     "enabled": [],
+     "active": [
+      -1,
+      -1
+     ],
+     "pokemon": [
+      {
+       "species": "Rillaboom",
+       "set_species": "Rillaboom",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 193,
+       "maxhp": 193,
+       "item": "miracleseed",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        16
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Ceruledge",
+       "set_species": "Ceruledge",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 181,
+       "maxhp": 181,
+       "item": "grassyseed",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Kingambit",
+       "set_species": "Kingambit",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 207,
+       "maxhp": 207,
+       "item": "leftovers",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        16,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Archaludon",
+       "set_species": "Archaludon",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 197,
+       "maxhp": 197,
+       "item": "lightclay",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      }
+     ]
+    },
+    {
+     "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
+     "enabled": [],
+     "active": [
+      -1,
+      -1
+     ],
+     "pokemon": [
+      {
+       "species": "Indeedee-F",
+       "set_species": "Indeedee-F",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 177,
+       "maxhp": 177,
+       "item": "rockyhelmet",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Farigiraf",
+       "set_species": "Farigiraf",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 224,
+       "maxhp": 224,
+       "item": "sitrusberry",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Gholdengo",
+       "set_species": "Gholdengo",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 179,
+       "maxhp": 179,
+       "item": "lifeorb",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Milotic",
+       "set_species": "Milotic",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 202,
+       "maxhp": 202,
+       "item": "leftovers",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "steps": [
+  {
+   "input": {
+    "p1": "team 1234",
+    "p2": "team 1234"
+   },
+   "draws": [],
+   "log": [
+    "|teamsize|p1|4",
+    "|teamsize|p2|4",
+    "|start",
+    "|split|p1",
+    "|uhtmlchange|otsrequest|",
+    "",
+    "|split|p2",
+    "|uhtmlchange|otsrequest|",
+    "",
+    "|split|p1",
+    "|switch|p1a: Rillaboom|Rillaboom, L50, M|193/193",
+    "|switch|p1a: Rillaboom|Rillaboom, L50, M|100/100",
+    "|split|p1",
+    "|switch|p1b: Ceruledge|Ceruledge, L50, M|181/181",
+    "|switch|p1b: Ceruledge|Ceruledge, L50, M|100/100",
+    "|split|p2",
+    "|switch|p2a: Indeedee|Indeedee-F, L50, F|177/177",
+    "|switch|p2a: Indeedee|Indeedee-F, L50, F|100/100",
+    "|split|p2",
+    "|switch|p2b: Farigiraf|Farigiraf, L50, F|224/224",
+    "|switch|p2b: Farigiraf|Farigiraf, L50, F|100/100",
+    "|-fieldstart|move: Grassy Terrain|[from] ability: Grassy Surge|[of] p1a: Rillaboom",
+    "|-enditem|p1b: Ceruledge|Grassy Seed",
+    "|-boost|p1b: Ceruledge|def|1|[from] item: Grassy Seed",
+    "|-fieldstart|move: Psychic Terrain|[from] ability: Psychic Surge|[of] p2a: Indeedee",
+    "|turn|1"
+   ],
+   "state": {
+    "turn": 1,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 5,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 193,
+        "maxhp": 193,
+        "item": "miracleseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 181,
+        "maxhp": 181,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         1,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "lightclay",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 224,
+        "maxhp": 224,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 179,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 1, move 2",
+    "p2": "move 2 -2, move 2"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 61
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 4
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 13
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "H:protect:p1b:end",
+      "H:stall:p1b:end"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 3,
+     "hi": 6,
+     "value": 4,
+     "group": [
+      "H:helpinghand:p2b:end",
+      "H:protect:p2b:end",
+      "H:stall:p2b:end"
+     ],
+     "start": 3
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 4,
+     "hi": 6,
+     "value": 5,
+     "group": [
+      "H:helpinghand:p2b:end",
+      "H:protect:p2b:end",
+      "H:stall:p2b:end"
+     ],
+     "start": 3
+    }
+   ],
+   "log": [
+    "|move|p2a: Indeedee|Helping Hand|p2b: Farigiraf",
+    "|-singleturn|p2b: Farigiraf|Helping Hand|[of] p2a: Indeedee",
+    "|move|p1b: Ceruledge|Protect|p1b: Ceruledge",
+    "|-singleturn|p1b: Ceruledge|Protect",
+    "|move|p2b: Farigiraf|Protect|p2b: Farigiraf",
+    "|-singleturn|p2b: Farigiraf|Protect",
+    "|move|p1a: Rillaboom|Grassy Glide|p2a: Indeedee",
+    "|split|p2",
+    "|-damage|p2a: Indeedee|117/177",
+    "|-damage|p2a: Indeedee|66/100",
+    "|split|p1",
+    "|-damage|p1a: Rillaboom|161/193|[from] item: Rocky Helmet|[of] p2a: Indeedee",
+    "|-damage|p1a: Rillaboom|83/100|[from] item: Rocky Helmet|[of] p2a: Indeedee",
+    "|upkeep",
+    "|turn|2"
+   ],
+   "state": {
+    "turn": 2,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 4,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 161,
+        "maxhp": 193,
+        "item": "miracleseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 181,
+        "maxhp": 181,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         1,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         7
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "lightclay",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 117,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 224,
+        "maxhp": 224,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         7
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 179,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 1, move 2",
+    "p2": "move 1 1, move 1 1"
+   },
+   "draws": [
+    {
+     "site": "STALL",
+     "context": "StallMove",
+     "lo": 0,
+     "hi": 3,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 6
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 8
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 45
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 7
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 9
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 84
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 67
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 13
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 0
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 29
+    }
+   ],
+   "log": [
+    "|move|p1b: Ceruledge|Protect||[still]",
+    "|-fail|p1b: Ceruledge",
+    "|move|p1a: Rillaboom|Grassy Glide|p2a: Indeedee",
+    "|split|p2",
+    "|-damage|p2a: Indeedee|50/177",
+    "|-damage|p2a: Indeedee|28/100",
+    "|split|p1",
+    "|-damage|p1a: Rillaboom|129/193|[from] item: Rocky Helmet|[of] p2a: Indeedee",
+    "|-damage|p1a: Rillaboom|66/100|[from] item: Rocky Helmet|[of] p2a: Indeedee",
+    "|move|p2a: Indeedee|Psychic|p1a: Rillaboom",
+    "|split|p1",
+    "|-damage|p1a: Rillaboom|44/193",
+    "|-damage|p1a: Rillaboom|22/100",
+    "|move|p2b: Farigiraf|Psychic|p1a: Rillaboom",
+    "|split|p1",
+    "|-damage|p1a: Rillaboom|0 fnt",
+    "|-damage|p1a: Rillaboom|0 fnt",
+    "|faint|p1a: Rillaboom",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 2,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 3,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 193,
+        "item": "miracleseed",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 181,
+        "maxhp": 181,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         1,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         6
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "lightclay",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 50,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 224,
+        "maxhp": 224,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 179,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "switch 3, pass"
+   },
+   "draws": [],
+   "log": [
+    "|split|p1",
+    "|switch|p1a: Kingambit|Kingambit, L50, M|207/207",
+    "|switch|p1a: Kingambit|Kingambit, L50, M|100/100",
+    "|turn|3"
+   ],
+   "state": {
+    "turn": 3,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 3,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 181,
+        "maxhp": 181,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         1,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         6
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 193,
+        "item": "miracleseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "lightclay",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 50,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 224,
+        "maxhp": 224,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 179,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2, move 1 1",
+    "p2": "move 1 2, move 2"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 68
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 21
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 14
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "H:protect:p2b:end",
+      "H:stall:p2b:end"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 4,
+     "hi": 6,
+     "value": 5,
+     "group": [
+      "H:stall:p1a:end",
+      "H:protect:p1a:end"
+     ],
+     "start": 4
+    }
+   ],
+   "log": [
+    "|move|p2b: Farigiraf|Protect|p2b: Farigiraf",
+    "|-singleturn|p2b: Farigiraf|Protect",
+    "|move|p1a: Kingambit|Protect|p1a: Kingambit",
+    "|-singleturn|p1a: Kingambit|Protect",
+    "|move|p1b: Ceruledge|Bitter Blade|p2a: Indeedee",
+    "|split|p2",
+    "|-damage|p2a: Indeedee|0 fnt",
+    "|-damage|p2a: Indeedee|0 fnt",
+    "|split|p1",
+    "|-damage|p1b: Ceruledge|151/181|[from] item: Rocky Helmet|[of] p2a: Indeedee",
+    "|-damage|p1b: Ceruledge|83/100|[from] item: Rocky Helmet|[of] p2a: Indeedee",
+    "|faint|p2a: Indeedee",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 3,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 2,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         7
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 151,
+        "maxhp": 181,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         1,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         6
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 193,
+        "item": "miracleseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "lightclay",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 224,
+        "maxhp": 224,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         6
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 179,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p2": "switch 3, pass"
+   },
+   "draws": [],
+   "log": [
+    "|split|p2",
+    "|switch|p2a: Gholdengo|Gholdengo, L50|179/179",
+    "|switch|p2a: Gholdengo|Gholdengo, L50|100/100",
+    "|turn|4"
+   ],
+   "state": {
+    "turn": 4,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 2,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         7
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 151,
+        "maxhp": 181,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         1,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         6
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 193,
+        "item": "miracleseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "lightclay",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 179,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 224,
+        "maxhp": 224,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         6
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 2, move 2",
+    "p2": "move 1, move 2"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "STALL",
+     "context": "StallMove",
+     "lo": 0,
+     "hi": 3,
+     "value": 2
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacentFoes",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 75
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 0
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 4
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 92
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 26
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 16
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 8
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 44
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "H:protect:p1b:end",
+      "H:stall:p1b:end"
+     ],
+     "start": 2
+    }
+   ],
+   "log": [
+    "|move|p1b: Ceruledge|Protect|p1b: Ceruledge",
+    "|-singleturn|p1b: Ceruledge|Protect",
+    "|move|p2b: Farigiraf|Protect||[still]",
+    "|-fail|p2b: Farigiraf",
+    "|move|p2a: Gholdengo|Make It Rain|p1a: Kingambit|[spread] p1a",
+    "|-activate|p1b: Ceruledge|move: Protect",
+    "|-resisted|p1a: Kingambit|1",
+    "|-crit|p1a: Kingambit",
+    "|split|p1",
+    "|-damage|p1a: Kingambit|110/207",
+    "|-damage|p1a: Kingambit|53/100",
+    "|-unboost|p2a: Gholdengo|spa|2",
+    "|split|p2",
+    "|-damage|p2a: Gholdengo|162/179|[from] item: Life Orb",
+    "|-damage|p2a: Gholdengo|90/100|[from] item: Life Orb",
+    "|move|p1a: Kingambit|Iron Head|p2b: Farigiraf",
+    "|split|p2",
+    "|-damage|p2b: Farigiraf|140/224",
+    "|-damage|p2b: Farigiraf|62/100",
+    "|split|p1",
+    "|-heal|p1a: Kingambit|122/207|[from] item: Leftovers",
+    "|-heal|p1a: Kingambit|58/100|[from] item: Leftovers",
+    "|upkeep",
+    "|turn|5"
+   ],
+   "state": {
+    "turn": 5,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 1,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 122,
+        "maxhp": 207,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 151,
+        "maxhp": 181,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         1,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         5
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 193,
+        "item": "miracleseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "lightclay",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 162,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         -2,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 140,
+        "maxhp": 224,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         5
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 2, move 2",
+    "p2": "move 1, move 2"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "STALL",
+     "context": "StallMove",
+     "lo": 0,
+     "hi": 3,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacentFoes",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 17
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 2
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 13
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 80
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "H:stall:p1b:end",
+      "H:protect:p1b:end"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 4,
+     "hi": 6,
+     "value": 5,
+     "group": [
+      "H:protect:p2b:end",
+      "H:stall:p2b:end"
+     ],
+     "start": 4
+    }
+   ],
+   "log": [
+    "|move|p1b: Ceruledge|Protect|p1b: Ceruledge",
+    "|-singleturn|p1b: Ceruledge|Protect",
+    "|move|p2b: Farigiraf|Protect|p2b: Farigiraf",
+    "|-singleturn|p2b: Farigiraf|Protect",
+    "|move|p2a: Gholdengo|Make It Rain|p1a: Kingambit|[spread] p1a",
+    "|-activate|p1b: Ceruledge|move: Protect",
+    "|-resisted|p1a: Kingambit|1",
+    "|split|p1",
+    "|-damage|p1a: Kingambit|93/207",
+    "|-damage|p1a: Kingambit|44/100",
+    "|-unboost|p2a: Gholdengo|spa|2",
+    "|split|p2",
+    "|-damage|p2a: Gholdengo|145/179|[from] item: Life Orb",
+    "|-damage|p2a: Gholdengo|81/100|[from] item: Life Orb",
+    "|move|p1a: Kingambit|Iron Head|p2b: Farigiraf",
+    "|-activate|p2b: Farigiraf|move: Protect",
+    "|split|p1",
+    "|-heal|p1a: Kingambit|105/207|[from] item: Leftovers",
+    "|-heal|p1a: Kingambit|50/100g|[from] item: Leftovers",
+    "|-fieldend|move: Psychic Terrain",
+    "|upkeep",
+    "|turn|6"
+   ],
+   "state": {
+    "turn": 6,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 105,
+        "maxhp": 207,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         14,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 151,
+        "maxhp": 181,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         1,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         4
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 193,
+        "item": "miracleseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "lightclay",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 145,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         -4,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 140,
+        "maxhp": 224,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         4
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 2, move 2",
+    "p2": "move 1, move 2"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "STALL",
+     "context": "StallMove",
+     "lo": 0,
+     "hi": 9,
+     "value": 2
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "STALL",
+     "context": "StallMove",
+     "lo": 0,
+     "hi": 3,
+     "value": 2
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacentFoes",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 73
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 68
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 16
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 10
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 20
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 9
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 28
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 68
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 18
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 2
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 58
+    }
+   ],
+   "log": [
+    "|move|p1b: Ceruledge|Protect||[still]",
+    "|-fail|p1b: Ceruledge",
+    "|move|p2b: Farigiraf|Protect||[still]",
+    "|-fail|p2b: Farigiraf",
+    "|move|p2a: Gholdengo|Make It Rain|p1a: Kingambit|[spread] p1a,p1b",
+    "|-resisted|p1a: Kingambit|1",
+    "|-resisted|p1b: Ceruledge|1",
+    "|split|p1",
+    "|-damage|p1a: Kingambit|86/207",
+    "|-damage|p1a: Kingambit|41/100",
+    "|split|p1",
+    "|-damage|p1b: Ceruledge|132/181",
+    "|-damage|p1b: Ceruledge|72/100",
+    "|-unboost|p2a: Gholdengo|spa|2",
+    "|split|p2",
+    "|-damage|p2a: Gholdengo|128/179|[from] item: Life Orb",
+    "|-damage|p2a: Gholdengo|71/100|[from] item: Life Orb",
+    "|move|p1a: Kingambit|Iron Head|p2b: Farigiraf",
+    "|split|p2",
+    "|-damage|p2b: Farigiraf|52/224",
+    "|-damage|p2b: Farigiraf|23/100",
+    "|-enditem|p2b: Farigiraf|Sitrus Berry|[eat]",
+    "|split|p2",
+    "|-heal|p2b: Farigiraf|108/224|[from] item: Sitrus Berry",
+    "|-heal|p2b: Farigiraf|48/100|[from] item: Sitrus Berry",
+    "|split|p1",
+    "|-heal|p1a: Kingambit|98/207|[from] item: Leftovers",
+    "|-heal|p1a: Kingambit|47/100|[from] item: Leftovers",
+    "|upkeep",
+    "|turn|7"
+   ],
+   "state": {
+    "turn": 7,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 98,
+        "maxhp": 207,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         13,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 132,
+        "maxhp": 181,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         1,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         3
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 193,
+        "item": "miracleseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "lightclay",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 128,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         -6,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         5,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 108,
+        "maxhp": 224,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         3
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 2, move 2",
+    "p2": "move 1, move 2"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacentFoes",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 66
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 7
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 10
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 89
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "H:protect:p1b:end",
+      "H:stall:p1b:end"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 3,
+     "hi": 5,
+     "value": 3,
+     "group": [
+      "H:protect:p2b:end",
+      "H:stall:p2b:end"
+     ],
+     "start": 3
+    }
+   ],
+   "log": [
+    "|move|p1b: Ceruledge|Protect|p1b: Ceruledge",
+    "|-singleturn|p1b: Ceruledge|Protect",
+    "|move|p2b: Farigiraf|Protect|p2b: Farigiraf",
+    "|-singleturn|p2b: Farigiraf|Protect",
+    "|move|p2a: Gholdengo|Make It Rain|p1b: Ceruledge|[spread] p1a",
+    "|-activate|p1b: Ceruledge|move: Protect",
+    "|-resisted|p1a: Kingambit|1",
+    "|split|p1",
+    "|-damage|p1a: Kingambit|82/207",
+    "|-damage|p1a: Kingambit|39/100",
+    "|split|p2",
+    "|-damage|p2a: Gholdengo|111/179|[from] item: Life Orb",
+    "|-damage|p2a: Gholdengo|62/100|[from] item: Life Orb",
+    "|move|p1a: Kingambit|Iron Head|p2b: Farigiraf",
+    "|-activate|p2b: Farigiraf|move: Protect",
+    "|split|p1",
+    "|-heal|p1a: Kingambit|94/207|[from] item: Leftovers",
+    "|-heal|p1a: Kingambit|45/100|[from] item: Leftovers",
+    "|upkeep",
+    "|turn|8"
+   ],
+   "state": {
+    "turn": 8,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 94,
+        "maxhp": 207,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 132,
+        "maxhp": 181,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         1,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         2
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 193,
+        "item": "miracleseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "lightclay",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 111,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         -6,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         4,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 108,
+        "maxhp": 224,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         2
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 2, move 2",
+    "p2": "move 1, move 2"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "STALL",
+     "context": "StallMove",
+     "lo": 0,
+     "hi": 3,
+     "value": 2
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "STALL",
+     "context": "StallMove",
+     "lo": 0,
+     "hi": 3,
+     "value": 2
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacentFoes",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 53
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 76
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 14
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 10
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 18
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 15
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 91
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 22
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 12
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 8
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 13
+    }
+   ],
+   "log": [
+    "|move|p1b: Ceruledge|Protect||[still]",
+    "|-fail|p1b: Ceruledge",
+    "|move|p2b: Farigiraf|Protect||[still]",
+    "|-fail|p2b: Farigiraf",
+    "|move|p2a: Gholdengo|Make It Rain|p1a: Kingambit|[spread] p1a,p1b",
+    "|-resisted|p1a: Kingambit|1",
+    "|-resisted|p1b: Ceruledge|1",
+    "|split|p1",
+    "|-damage|p1a: Kingambit|78/207",
+    "|-damage|p1a: Kingambit|37/100",
+    "|split|p1",
+    "|-damage|p1b: Ceruledge|120/181",
+    "|-damage|p1b: Ceruledge|66/100",
+    "|split|p2",
+    "|-damage|p2a: Gholdengo|94/179|[from] item: Life Orb",
+    "|-damage|p2a: Gholdengo|52/100|[from] item: Life Orb",
+    "|move|p1a: Kingambit|Iron Head|p2b: Farigiraf",
+    "|split|p2",
+    "|-damage|p2b: Farigiraf|24/224",
+    "|-damage|p2b: Farigiraf|10/100",
+    "|split|p1",
+    "|-heal|p1a: Kingambit|90/207|[from] item: Leftovers",
+    "|-heal|p1a: Kingambit|43/100|[from] item: Leftovers",
+    "|upkeep",
+    "|turn|9"
+   ],
+   "state": {
+    "turn": 9,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 90,
+        "maxhp": 207,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 120,
+        "maxhp": 181,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         1,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         1
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 193,
+        "item": "miracleseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "lightclay",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 94,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         -6,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         3,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 24,
+        "maxhp": 224,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         1
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 2, move 2",
+    "p2": "move 1, move 2"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacentFoes",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 30
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 7
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 5
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 92
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "H:protect:p1b:end",
+      "H:stall:p1b:end"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 3,
+     "hi": 5,
+     "value": 4,
+     "group": [
+      "H:protect:p2b:end",
+      "H:stall:p2b:end"
+     ],
+     "start": 3
+    }
+   ],
+   "log": [
+    "|move|p1b: Ceruledge|Protect|p1b: Ceruledge",
+    "|-singleturn|p1b: Ceruledge|Protect",
+    "|move|p2b: Farigiraf|Protect|p2b: Farigiraf",
+    "|-singleturn|p2b: Farigiraf|Protect",
+    "|move|p2a: Gholdengo|Make It Rain|p1a: Kingambit|[spread] p1a",
+    "|-activate|p1b: Ceruledge|move: Protect",
+    "|-resisted|p1a: Kingambit|1",
+    "|split|p1",
+    "|-damage|p1a: Kingambit|74/207",
+    "|-damage|p1a: Kingambit|35/100",
+    "|split|p2",
+    "|-damage|p2a: Gholdengo|77/179|[from] item: Life Orb",
+    "|-damage|p2a: Gholdengo|43/100|[from] item: Life Orb",
+    "|move|p1a: Kingambit|Iron Head|p2b: Farigiraf",
+    "|-activate|p2b: Farigiraf|move: Protect",
+    "|split|p1",
+    "|-heal|p1a: Kingambit|86/207|[from] item: Leftovers",
+    "|-heal|p1a: Kingambit|41/100|[from] item: Leftovers",
+    "|upkeep",
+    "|turn|10"
+   ],
+   "state": {
+    "turn": 10,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        0
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 86,
+        "maxhp": 207,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 120,
+        "maxhp": 181,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         1,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         0
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 193,
+        "item": "miracleseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "lightclay",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        0
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 77,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         -6,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         2,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 24,
+        "maxhp": 224,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         0
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 2, move 1 1",
+    "p2": "move 1, move 1 1"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 39
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 0
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 10
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 7
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 4
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 9
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 12
+    }
+   ],
+   "log": [
+    "|move|p1b: Ceruledge|Bitter Blade|p2a: Gholdengo",
+    "|-supereffective|p2a: Gholdengo|1",
+    "|-crit|p2a: Gholdengo",
+    "|split|p2",
+    "|-damage|p2a: Gholdengo|0 fnt",
+    "|-damage|p2a: Gholdengo|0 fnt",
+    "|split|p1",
+    "|-heal|p1b: Ceruledge|159/181|[from] drain|[of] p2a: Gholdengo",
+    "|-heal|p1b: Ceruledge|87/100|[from] drain|[of] p2a: Gholdengo",
+    "|faint|p2a: Gholdengo",
+    "|move|p2b: Farigiraf|Psychic|p1a: Kingambit",
+    "|-immune|p1a: Kingambit",
+    "|move|p1a: Kingambit|Iron Head|p2b: Farigiraf",
+    "|split|p2",
+    "|-damage|p2b: Farigiraf|0 fnt",
+    "|-damage|p2b: Farigiraf|0 fnt",
+    "|faint|p2b: Farigiraf",
+    "|split|p1",
+    "|-heal|p1a: Kingambit|98/207|[from] item: Leftovers",
+    "|-heal|p1a: Kingambit|47/100|[from] item: Leftovers",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 10,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 98,
+        "maxhp": 207,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         9,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 159,
+        "maxhp": 181,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         1,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         0
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 193,
+        "item": "miracleseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "lightclay",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         2,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 224,
+        "item": "",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         0
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p2": "switch 4, pass"
+   },
+   "draws": [],
+   "log": [
+    "|split|p2",
+    "|switch|p2a: Milotic|Milotic, L50, F|202/202",
+    "|switch|p2a: Milotic|Milotic, L50, F|100/100",
+    "|turn|11"
+   ],
+   "state": {
+    "turn": 11,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        0
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 98,
+        "maxhp": 207,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         9,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 159,
+        "maxhp": 181,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         1,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         0
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 193,
+        "item": "miracleseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "lightclay",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        0
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 224,
+        "item": "",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         0
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         2,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 2, move 1 1",
+    "p2": "move 1 2, pass"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 85
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 22
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 4
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 20
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 6
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 72
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:normal",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 31
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 20
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 0
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 48
+    }
+   ],
+   "log": [
+    "|move|p1b: Ceruledge|Bitter Blade|p2a: Milotic",
+    "|-resisted|p2a: Milotic|1",
+    "|split|p2",
+    "|-damage|p2a: Milotic|157/202",
+    "|-damage|p2a: Milotic|77/100",
+    "|split|p1",
+    "|-heal|p1b: Ceruledge|181/181|[from] drain|[of] p2a: Milotic",
+    "|-heal|p1b: Ceruledge|100/100|[from] drain|[of] p2a: Milotic",
+    "|move|p2a: Milotic|Ice Beam|p1b: Ceruledge",
+    "|-resisted|p1b: Ceruledge|1",
+    "|split|p1",
+    "|-damage|p1b: Ceruledge|155/181",
+    "|-damage|p1b: Ceruledge|85/100",
+    "|move|p1a: Kingambit|Iron Head|p2a: Milotic",
+    "|-resisted|p2a: Milotic|1",
+    "|split|p2",
+    "|-damage|p2a: Milotic|102/202",
+    "|-damage|p2a: Milotic|50/100g",
+    "|split|p2",
+    "|-heal|p2a: Milotic|114/202|[from] item: Leftovers",
+    "|-heal|p2a: Milotic|56/100|[from] item: Leftovers",
+    "|split|p1",
+    "|-heal|p1a: Kingambit|110/207|[from] item: Leftovers",
+    "|-heal|p1a: Kingambit|53/100|[from] item: Leftovers",
+    "|upkeep",
+    "|turn|12"
+   ],
+   "state": {
+    "turn": 12,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        0
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 110,
+        "maxhp": 207,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 155,
+        "maxhp": 181,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         1,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         9,
+         0
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 193,
+        "item": "miracleseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "lightclay",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        0
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 114,
+        "maxhp": 202,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 224,
+        "item": "",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         0
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         2,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 2, move 1 1",
+    "p2": "move 1 2, pass"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 58
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 9
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 15
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 11
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 17
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 1
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 41
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:normal",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 71
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 3
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 5
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 8
+    }
+   ],
+   "log": [
+    "|move|p1b: Ceruledge|Bitter Blade|p2a: Milotic",
+    "|-resisted|p2a: Milotic|1",
+    "|split|p2",
+    "|-damage|p2a: Milotic|75/202",
+    "|-damage|p2a: Milotic|37/100",
+    "|split|p1",
+    "|-heal|p1b: Ceruledge|175/181|[from] drain|[of] p2a: Milotic",
+    "|-heal|p1b: Ceruledge|96/100|[from] drain|[of] p2a: Milotic",
+    "|move|p2a: Milotic|Ice Beam|p1b: Ceruledge",
+    "|-resisted|p1b: Ceruledge|1",
+    "|split|p1",
+    "|-damage|p1b: Ceruledge|148/181",
+    "|-damage|p1b: Ceruledge|81/100",
+    "|move|p1a: Kingambit|Iron Head|p2a: Milotic",
+    "|-resisted|p2a: Milotic|1",
+    "|split|p2",
+    "|-damage|p2a: Milotic|23/202",
+    "|-damage|p2a: Milotic|11/100",
+    "|split|p2",
+    "|-heal|p2a: Milotic|35/202|[from] item: Leftovers",
+    "|-heal|p2a: Milotic|17/100|[from] item: Leftovers",
+    "|split|p1",
+    "|-heal|p1a: Kingambit|122/207|[from] item: Leftovers",
+    "|-heal|p1a: Kingambit|58/100|[from] item: Leftovers",
+    "|upkeep",
+    "|turn|13"
+   ],
+   "state": {
+    "turn": 13,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        0
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 122,
+        "maxhp": 207,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 148,
+        "maxhp": 181,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         1,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         0
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 193,
+        "item": "miracleseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "lightclay",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        0
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 35,
+        "maxhp": 202,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 224,
+        "item": "",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         0
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         2,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 2, move 1 1",
+    "p2": "move 1 2, pass"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 56
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 18
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 14
+    }
+   ],
+   "log": [
+    "|move|p1b: Ceruledge|Bitter Blade|p2a: Milotic",
+    "|-resisted|p2a: Milotic|1",
+    "|split|p2",
+    "|-damage|p2a: Milotic|0 fnt",
+    "|-damage|p2a: Milotic|0 fnt",
+    "|split|p1",
+    "|-heal|p1b: Ceruledge|166/181|[from] drain|[of] p2a: Milotic",
+    "|-heal|p1b: Ceruledge|91/100|[from] drain|[of] p2a: Milotic",
+    "|faint|p2a: Milotic",
+    "|win|p1"
+   ],
+   "state": {
+    "turn": 13,
+    "ended": true,
+    "winner": "p1",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 122,
+        "maxhp": 207,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 166,
+        "maxhp": 181,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         1,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         0
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 193,
+        "item": "miracleseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Archaludon",
+        "set_species": "Archaludon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "lightclay",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 202,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 224,
+        "item": "",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         0
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         2,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

@@ -1,6 +1,6 @@
 # 0009 — Team C: the expansion track (data kind, gate, steps, evidence)
 
-Status: **accepted** (owner, 2026-10-01: "bau das erstmal so"; setup rule: the closure rule, section 3.4). **Steps 1 to 9a built** (section 10). Builds on decision `0004` (two reference teams), `0006` (data, state v3, draw sites, fixtures, evidence), `0007` (player view) and `0010` (the certified CLOSURE profile, the role of `CLOSURE_DEV`, draw alignment B confirmed), and on the research in `docs/research/third-team/` (PR #32). "M§n" means section n of `docs/research/third-team/mechanics.md`; X1 to X9 are its executed experiments.
+Status: **accepted** (owner, 2026-10-01: "bau das erstmal so"; setup rule: the closure rule, section 3.4). **Steps 1 to 12 built; the Team C track is complete** (section 10). Builds on decision `0004` (two reference teams), `0006` (data, state v3, draw sites, fixtures, evidence), `0007` (player view) and `0010` (the certified CLOSURE profile, the role of `CLOSURE_DEV`, draw alignment B confirmed), and on the research in `docs/research/third-team/` (PR #32). "M§n" means section n of `docs/research/third-team/mechanics.md`; X1 to X9 are its executed experiments.
 
 ## 1. Owner inputs (2026-10-01)
 
@@ -148,7 +148,7 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
 | 9b | Sucker Punch and Helping Hand: queue reads, `newlySwitched`, ally targets, BasePower priority 10 | volatile bits, view bit, event kind | turn.c, request.c |
 | 10 | Psychic Surge and Psychic Terrain: field TryHit before Protect, terrain replacement, Psychic x5325/4096 | TERRAIN_PSYCHIC, field value, event kind | turn.c |
 | 11 | Follow Me: redirects foe single-target moves, ahead of Lightning Rod | volatile bit, view bit, event kind | turn.c |
-| 12 | **Team C gate (proposal):** the real Team C passes in the profile of decision 0010. As closure step 13: random real-team battles C-A, C-B, A-C, B-C and C-C with replay, codec continuation and information equivalence, plus real-team reference battles | - | tests |
+| 12 | **Team C gate:** the real Team C passes in the profile of decision 0010. As closure step 13: random real-team battles C-A, C-B, A-C, B-C and C-C with replay, codec continuation and information equivalence, plus real-team reference battles | - | tests |
 
 **Interaction tests.** Each item of M§6 is tested in the step that makes it reachable. Recorded battles are used unless a test is marked as a unit test.
 
@@ -592,3 +592,320 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
   - Before the fix: 19 ran to the end; 17 aborted with "Invalid target for Helping Hand".
   - After the fix: all 36 ran to the end, with 0 UNKNOWN draw sites and Helping Hand used 23 times.
 - **Shared files touched:** `tools/reference/ps_trace.js` (`planMove` and its comments).
+
+### 10.10 Step 9b: Sucker Punch and Helping Hand
+
+- **Sucker Punch** (`data/moves.ts:18396-18415`): priority +1, contact, Dark, 70 power.
+  - Its `onTry` runs in trySpreadMoveHit after TryMove (Armor Tail) and before the hit steps (Protect), the same point as Fake Out's. It fails (`-fail`, `[still]`) unless `queue.willMove(target)` finds the target's queued move action and that move is not a status move.
+  - `willMove` (`sim/battle-queue.ts:324-332`) reads the actions still queued. The engine reads its own queue, bound by the target's activation. So the move fails when the target already moved, when it switches (a newcomer has no move queued), and when it fainted. No Me First and no recharge are in the data.
+  - Struggle counts as an attack; a two-turn or choice-locked move counts as its move.
+- **Helping Hand** (`data/moves.ts:8573-8606`): priority +5, target `adjacentAlly`, no `protect` flag, so Protect does not stop it.
+  - **Target.** It aims at the ally while the ally stands. With a fainted ally, or an empty slot (`getRandomTarget` finds no standing adjacent ally in doubles), the move has no target: `[notarget]` and `-fail`.
+  - **Good as Gold.** The TryHit step comes first (`sim/battle-actions.ts:643-653`). There, Good as Gold stops a status move of any other Pokémon, its ally's included (`data/abilities.ts:1630-1636`), with `-immune` and no `-fail`, so a Gholdengo partner gets no boost.
+  - **onTryHit.** It fails unless the ally switched in this turn (`newlySwitched`) or still has a move queued.
+    - With the data the failure is unreachable. Only Indeedee-F knows the move, its priority comes before every other move, and an ally that switched in is newly switched. So the plan's "on one that already moved (fails)" cannot be recorded.
+    - What is reachable is the reverse: Helping Hand on a partner that switched in this turn succeeds although the partner does not move (X4).
+  - **The volatile.** The ally gets the volatile for the turn, shown as `[-singleturn] ally|Helping Hand|[of] user`.
+    - The volatile is `chainModify(1.5)` in BasePower at priority 10: after Aerilate (23), Tough Claws (21) and the type items (15), before Grassy Terrain (6).
+    - Its duration of 1 ends in the residual, where it counts among the duration handlers.
+    - A second Helping Hand on the same Pokémon in a turn (`onRestart`) would need a second user, which doubles never has: `E_INVARIANT`.
+- **State.** Two volatile bits, valid only under the TEAM_C kinds:
+  - 16, Helping Hand: set until the residual, so never at a TURN or REPLACEMENT boundary;
+  - 128, `newlySwitched`: set when a Pokémon switches in (`dfi_run_switch`) and cleared at the end of the turn (`sim/battle.ts:1673`), so never at a TURN boundary.
+
+  A REPLACEMENT always follows the residual. A switch request in the middle of the turn is a PIVOT boundary, where both bits may be set. The state model mirrors both bits and these rules; its output is unchanged.
+- **Observation.** Helping Hand is public: `DUOFORGE_POSITION_FLAG_HELPING_HAND` (2) in the position view's `reserved` byte, set only while the volatile lasts, so at a PIVOT boundary or at a TERMINAL one in the middle of a turn. `newlySwitched` is not shown; the switch-in line is.
+- **Events.** `DUOFORGE_EVENT_SINGLE_TURN` (38): position = the ally, other = the user (`[of]`), id = the move. Protect's `-singleturn` stays `DUOFORGE_EVENT_PROTECT`.
+- **Public changes, library 0.17.0** (sections 4.2 and 9.4), coordinated with the main session:
+  - the event kind;
+  - the view bit.
+  - Python reads no event kinds, and its feature encoder already refuses a nonzero `reserved` byte.
+- **Request.** The `adjacentAlly` class already offered the ally's position (`request.c`). The turn core now resolves it (`dfi_move_targets`).
+- **Harness and converter.**
+  - The harness is unchanged since step 9a.
+  - The converter maps `-singleturn ... Helping Hand` to the new event, and any other `-singleturn` than Protect fails loudly. It compares `helpinghand` as volatile bit 32 and as the view bit.
+  - `newlySwitched` is not recorded by the harness. Its effect is: Helping Hand on a partner that switched in this turn.
+- **Evidence.** Four recorded battles:
+  - `c09_sucker_punch`:
+    - Sucker Punch fails against Gholdengo's Nasty Plot and Milotic's Coil;
+    - it hits Gholdengo's Make It Rain;
+    - Indeedee-F's Helping Hand comes first each turn (X4). The boosted Sucker Punch is a critical KO, so the x1.5 shows in Kingambit's later Iron Head hits.
+  - `c09_sucker_punch_order`:
+    - it fails against Ceruledge's faster Shadow Sneak (the target moved first), against Ceruledge's Protect, against Indeedee-F's Trick Room (a status move) and against a target that switches out;
+    - under Trick Room the slower Kingambit moves before the Shadow Sneak and hits.
+  - `c09_helping_hand`:
+    - Helping Hand on a partner that switched in this turn (X4);
+    - on Salamence's Hyper Voice, a spread move;
+    - Farigiraf's Armor Tail stops Sucker Punch;
+    - on Basculegion's Flip Turn, the boost is still shown at the PIVOT boundary.
+  - `c09_gold_and_armor_tail`:
+    - Good as Gold stops Helping Hand on its ally Gholdengo (`-immune`), so Make It Rain is not boosted;
+    - Farigiraf's Armor Tail (TryMove) stops Sucker Punch at Milotic before Sucker Punch's own `onTry` would fail against Milotic's Coil.
+
+  Tests through the public API:
+  - at a PIVOT boundary, after Helping Hand, a Flip Turn and a foe's switch in the same turn, both bits are valid; at the next TURN boundary both are gone, and either one there is `VOLATILE`;
+  - at a REPLACEMENT boundary, which follows the residual, Helping Hand's bit is `VOLATILE` and `newlySwitched`'s is valid;
+  - the gate and the manifest now include both moves;
+  - the CLOSURE masks hold neither bit.
+
+  Twelve negative controls each make a test fail:
+  - Sucker Punch that never fails, or that ignores the queued move's category;
+  - no Helping Hand boost;
+  - no `newlySwitched`, or `newlySwitched` never cleared;
+  - Helping Hand that ignores `newlySwitched` or Good as Gold, that outlives the residual, without its line, or hidden in the view;
+  - no TURN rule for the two bits, or no REPLACEMENT rule for Helping Hand.
+- **Not recorded.** Swords Dance and Reflect against Sucker Punch: they take the status-move path of Nasty Plot and Coil.
+- **Review findings, fixed.**
+  - Good as Gold did not stop Helping Hand, because Helping Hand skipped the TryHit step. This was a silent divergence with a mixed team.
+  - The residual list was sized for four duration ends per position; Helping Hand makes five. A decoded state could overflow it. It is now eight entries per position, with an explicit guard.
+  - The REPLACEMENT rule and the Armor Tail order had no test.
+- **Shared files touched:**
+  - `include/duoforge/duoforge.h` (the event kind, the view bit, version);
+  - `src/state/{battle_internal.h,closure_member.c,invariants.c,observation.c}`;
+  - `src/combat/{turn.c,events.c}`;
+  - `src/data/support_manifest.c`;
+  - `python/duoforge/_lib.py`, `python/tests/test_lib.py` (version);
+  - `tools/reference/{trace_to_c.py,test_trace_to_c.py}`, `tools/state_model/state_v3_model.py`;
+  - `tests/reference/conformance_types.h` (a comment only), `tests/support/conformance_compare.c`;
+  - `tests/test_conformance.c`, `tests/test_api_atomicity.c` (version), `tests/test_team_c_setup.c`;
+  - `docs/support/README.md`.
+
+### 10.11 Step 10: Psychic Surge and Psychic Terrain
+
+- **Psychic Surge** (`data/abilities.ts:3580-3588`) is an entry ability. Its `onStart` calls `setTerrain('psychicterrain')` (`sim/field.ts:130-157`).
+  - The same terrain is not restarted.
+  - A different terrain is replaced without an end line (no FieldEnd), and TerrainChange follows; a Grassy Seed acts only on Grassy Terrain.
+  - Two setters entering together run in runSwitch's speed order, so the slower one's terrain stays.
+- **Psychic Terrain** (`data/moves.ts`, `psychicterrain` condition) lasts 5 turns; the data has no Terrain Extender. It ends in the residual at order 27, sub-order 7, with `-fieldend|move: Psychic Terrain`.
+  - **`onTryHit`** (priority 4, before Protect's 3) stops a move with positive priority at a grounded foe. It shows `-activate|target|move: Psychic Terrain` and returns null, so there is no `-fail`.
+    - The priority is the one `getActionSpeed` wrote into the active move (`sim/battle.ts`, `action.move.priority = priority`), so Prankster's +1 counts. The engine uses `dfi_move_priority`, as Armor Tail does.
+    - Allies, self moves and Flying targets are not stopped (the data has no other way to be ungrounded).
+    - A spread move would run every target's terrain handler before any Protect handler, in one TryHit event. No spread move in the data has positive priority (Prankster raises status moves, and none of them is spread). The engine returns `E_UNSUPPORTED` for one rather than check target by target.
+    - Stopped: Fake Out, Shadow Sneak, Aqua Jet, Sucker Punch (after its own `onTry`) and Grimmsnarl's Prankster Parting Shot.
+    - Not stopped: Helping Hand on the ally and Protect.
+    - Grassy Glide has priority 0 here: its +1 needs Grassy Terrain, which Psychic Terrain replaces.
+  - **BasePower:** a grounded user's Psychic move gets ×5325/4096 at priority 6, the place of Grassy Terrain's boost; the two terrains are never up together.
+- **State.** Terrain 2, `DFI_TERRAIN_PSYCHIC`, valid only under the TEAM_C kinds (`dfi_kind_limits.terrain_max`). The state model mirrors the range; its output is unchanged.
+- **Public changes, library 0.18.0** (sections 4.2 and 9.4):
+  - `DUOFORGE_TERRAIN_PSYCHIC` (2) in the observation's terrain;
+  - `DUOFORGE_FIELD_PSYCHIC_TERRAIN` (3) in FIELD_START and FIELD_END;
+  - the block as `DUOFORGE_EVENT_BLOCKED` with detail `DUOFORGE_FIELD_PSYCHIC_TERRAIN`; Protect's block keeps detail 0.
+
+  **This differs from the plan.** Sections 4.2 and 5 planned a new event kind for this line. Section 4.2 also lets a new distinction be a `detail` value. A detail on the existing BLOCKED keeps "the move was blocked at this target" in one kind, so a reader of BLOCKED sees both blocks. The choice needs the owner's approval together with the other values.
+- **Python.** `_layout.CONSTANTS` and `tools/layout/layout_dump.c` name the new terrain. The feature encoder keeps its terrains (none, Grassy): encoding Psychic Terrain would add a column to `OBS_SIZE`, which is the main session's decision. Until then the encoder refuses terrain 2 with `ValueError` (tested), as it refuses every value it does not know.
+- **Converter.** It maps:
+  - `-fieldstart|move: Psychic Terrain|[from] ability: Psychic Surge|[of] ...`;
+  - `-fieldend|move: Psychic Terrain`;
+  - `-activate|...|move: Psychic Terrain`;
+  - the state's `psychicterrain`.
+
+  The harness is unchanged.
+- **Evidence.** Four recorded battles:
+  - `c10_psychic_terrain`:
+    - Raichu's Fake Out at Indeedee-F, Grimmsnarl's Prankster Parting Shot and Kingambit's Sucker Punch are stopped;
+    - Sneasler's Fake Out at Flying Staraptor hits;
+    - Helping Hand on the ally goes on.
+  - `c10_priority_blocks`:
+    - Fake Out, Basculegion's Aqua Jet and Ceruledge's Shadow Sneak are stopped;
+    - Indeedee-F's Psychic gets the boost;
+    - the terrain ends after five turns.
+  - `c10_terrain_war`: Rillaboom's Grassy Surge, then Ceruledge's Grassy Seed, then the slower Indeedee-F's Psychic Surge, which replaces Grassy Terrain without an end line. Under Psychic Terrain Rillaboom's Grassy Glide has priority 0, so the terrain does not stop it: it hits the grounded Indeedee-F twice.
+  - `c10_terrain_orders`:
+    - Basculegion's Aqua Jet at a protecting Ceruledge gets Psychic Terrain's line, not Protect's;
+    - Raichu's Fake Out at its own protecting ally gets Protect's line, because the terrain does not stop a move at an ally;
+    - Raichu's Grassy Seed waits under Psychic Terrain. Rillaboom's Grassy Surge replaces the terrain without an end line, the seed acts, and Aqua Jet hits again.
+
+  A white-box test: terrain 2 is valid under TEAM_C and `FIELD` under CLOSURE, and terrain 3 is `FIELD` under every kind.
+
+  Ten negative controls each make a test fail:
+  - no block;
+  - a block at Flying targets too, or at allies too;
+  - a block without priority;
+  - Protect checked before the terrain;
+  - no Psychic boost;
+  - no terrain replacement;
+  - the end always naming Grassy Terrain;
+  - a Grassy Seed that acts on any terrain;
+  - Psychic Terrain out of range under TEAM_C.
+- **Not recorded.** Trick Room reversing the entry order of two setters: the order is runSwitch's speed order, which the closure's battles already pin.
+- **Review findings, fixed.**
+  - The terrain's place before Protect and its ally exception had no battle. `c10_terrain_orders` records both, and each has a negative control.
+  - A spread move with positive priority would have been checked target by target. It now fails with `E_UNSUPPORTED`; the data cannot reach it.
+  - The block's detail value differs from the plan's event kind. This section now says so.
+  - The `c10_terrain_war` text above was wrong.
+  - Grassy Glide's priority and both terrain boosts now use `dfi_grounded`.
+- **Shared files touched:**
+  - `include/duoforge/duoforge.h` (the terrain, the field value, BLOCKED's detail, version);
+  - `src/state/{battle_internal.h,closure_member.h,closure_member.c,invariants.c,observation.c}`;
+  - `src/combat/turn.c`;
+  - `src/data/support_manifest.c`;
+  - `python/duoforge/{_layout,_lib}.py`, `python/tests/{test_lib,test_policies_features}.py`;
+  - `tools/layout/layout_dump.c`, `tools/reference/trace_to_c.py`, `tools/state_model/state_v3_model.py`;
+  - `tests/test_conformance.c`, `tests/test_api_atomicity.c` (version), `tests/test_team_c_setup.c`.
+
+### 10.12 Step 11: Follow Me
+
+- **Follow Me** (`data/moves.ts:6039-6074`) has priority +2 and targets the user.
+  - Its `onTry` needs two active Pokémon per side (`activePerHalf > 1`). That is a format property, so it never fails in doubles.
+  - The volatile lasts one turn: `-singleturn|user|move: Follow Me`, with no `[of]`. It ends in the residual without a line.
+  - Its target is the user, and Psychic Terrain skips self moves, so the terrain never stops it.
+- **Redirection** (`onFoeRedirectTarget`, priority 1). getMoveTargets runs the RedirectTarget event (`sim/pokemon.ts:821-844`, `sim/battle-actions.ts:457-468`):
+  - after the move line and after the retarget of a fainted foe;
+  - before TryMove.
+
+  priorityEvent stops at the first handler that returns, in compareRedirectOrder (`sim/battle.ts:413-419`), which puts the higher priority first. So Follow Me comes before Lightning Rod (priority 0).
+  - The handler comes only from a standing foe of the user: `foes()` keeps hp > 0 (`sim/side.ts:390-403`), and the handlers are collected in `sim/battle.ts:1053-1063`.
+  - It takes the move when `validTarget(holder, user, move.target)` holds (`sim/battle.ts:2399-2435`). In doubles that is every single-target class here except self and the ally classes. A move aimed at the user's own ally, or at a fainted ally, is redirected too.
+  - Spread moves never reach the event.
+  - There is no line: retargetLastMove sets the move line's target. Sucker Punch's `onTry` and Armor Tail's TryMove then see the new target.
+  - Electro Shot's charge turn stores the chosen target (`lastMoveTargetLoc`), not the redirected one. Its release is redirected again.
+  - Two holders on one side would need the handlers' Speed order, so the engine returns `E_UNSUPPORTED`. Only Indeedee-F learns Follow Me, and Species Clause keeps one per side.
+- **Correction to the plan** (section 5, step 11).
+  - "An ally-targeted move is not redirected" is wrong for the pinned reference. Follow Me takes a move aimed at the user's own ally (`c11_follow_me`, `c11_follow_me_mirror`).
+  - Only Helping Hand's class (adjacentAlly) is never redirected, and it cannot meet Follow Me anyway: Helping Hand (+5) always moves first.
+  - For the same reason "Fake Out into Rocky Helmet through the redirect" cannot be recorded: Fake Out (+3) always moves before Follow Me. Flip Turn and Iron Head (`c11_follow_me`) and Wave Crash (`c11_follow_me_mirror`) show Rocky Helmet through the redirect instead.
+- **State.** Volatile bit 8 (`DFI_VOL_FOLLOW_ME`) is valid only under the TEAM_C kinds. It may not be set at a TURN boundary, nor at a REPLACEMENT boundary (after the residual).
+  - Its end is one more duration handler in the residual list, which now holds nine entries per position.
+  - The reference draws ties among duration handlers, but such a draw decides nothing, and the converter drops it (decision 0006 section 5.1). So no battle can show that entry.
+  - The state model mirrors the bit; its output is unchanged.
+- **Public changes, library 0.19.0** (sections 4.2 and 9.4), coordinated with the main session:
+  - `DUOFORGE_POSITION_FLAG_FOLLOW_ME` (1) in the position view's `reserved` byte. It is set while the volatile lasts, so at a PIVOT boundary or at a TERMINAL one in the middle of a turn.
+  - DUOFORGE_EVENT_SINGLE_TURN (38) also carries Follow Me, with `other` `DUOFORGE_NO_POSITION`.
+
+  Python reads no event kinds. Its encoder already refuses a nonzero `reserved`.
+- **The real Team C passes the setup gate.** Follow Me was its last mechanic. `duoforge_battle_create` now accepts the real Team C under TEAM_C and TEAM_C_DEV, and setup rejects no Team C mechanic any more. Step 12, the Team C gate, still has to certify the team.
+- **Converter.**
+  - It maps `-singleturn|...|move: Follow Me`.
+  - It compares `followme` as volatile bit 64 and as the view bit.
+  - The control test for an unknown `-singleturn` now uses Rage Powder.
+- **Evidence.** Four recorded battles, so 51 Team C battles in all:
+  - `c11_follow_me`:
+    - Kingambit's Sucker Punch, aimed at Milotic, goes to an Indeedee-F that already moved, and fails.
+    - Basculegion's Flip Turn goes into Indeedee-F's Rocky Helmet and pivots while the volatile is live, so the view bit shows at the PIVOT boundary.
+    - Milotic's own move is not redirected.
+    - Charizard's Heat Wave hits both Pokémon.
+    - Kingambit's Iron Head, aimed at its own ally, goes to Indeedee-F.
+  - `c11_follow_me_rod`:
+    - The foe Raichu's Zap Cannon, aimed at the Lightning Rod Raichu, goes to Indeedee-F.
+    - Archaludon's Electro Shot charges under Follow Me. The next turn it is released at the chosen Raichu, whose Lightning Rod takes it without an `-activate` line.
+  - `c11_follow_me_mirror` (two Indeedee-F):
+    - With Follow Me on both sides, each side's moves go to the other side's user.
+    - Both volatiles end in one residual, at a Speed tie.
+    - A Wave Crash boosted by Helping Hand is redirected.
+    - Milotic's Ice Beam, aimed at a foe that fainted this turn, is retargeted to the only standing foe, the Follow Me user, with the reference's random-target draws.
+    - Kingambit's Iron Head, aimed at its own ally, is redirected.
+    - After the user faints, Kingambit's Iron Head reaches its target.
+  - `c11_follow_me_paths`:
+    - Archaludon's Electro Shot charges at Farigiraf. Its release under Follow Me goes to Indeedee-F.
+    - Basculegion's Aqua Jet, aimed at its own ally, goes to Indeedee-F, where Farigiraf's Armor Tail stops it: TryMove sees the new target.
+    - After Farigiraf left, the same Aqua Jet is stopped by Psychic Terrain at the grounded Indeedee-F. The terrain's ally exception is decided on the new target.
+    - Archaludon's Dragon Pulse (any target), aimed at its own ally, goes to Indeedee-F. It does so also after Gholdengo's Shadow Ball knocked that ally out in the same turn, so a move aimed at a fainted ally is redirected.
+
+  API tests:
+  - the bit at a PIVOT boundary, with the view bit for both players;
+  - the bit at TURN and REPLACEMENT boundaries;
+  - the CLOSURE masks;
+  - the gate (Follow Me, the real Team C) and the manifest.
+
+  Seventeen negative controls each make a test fail:
+  - no redirect, or no redirect of a move aimed at the user's own side, at a fainted ally, with an any target, or released after a charge;
+  - Armor Tail or Psychic Terrain judged on the chosen target instead of the new one;
+  - Lightning Rod over Follow Me;
+  - Follow Me taking its own side's moves;
+  - spread moves redirected;
+  - Electro Shot storing the redirected target;
+  - Follow Me outliving the residual;
+  - no line, or hidden in the view;
+  - no TURN or REPLACEMENT rule;
+  - out of range.
+
+  Two controls stay green, as expected:
+  - a residual end that is not counted, because its tie draws decide nothing and are dropped;
+  - a fainted holder that still redirects, because the faint clears the volatile first.
+- **Not recorded.**
+  - Helping Hand and Fake Out against Follow Me: both always move first.
+  - Two holders on one side: unreachable.
+  - Struggle (a random target) against Follow Me: no recorded battle runs out of PP. Struggle takes the path of the other single-target classes.
+  - The view bit at a TERMINAL boundary: the conformance compare skips `reserved` there.
+- **Review findings, fixed.**
+  - Several claimed paths had no battle: a move aimed at a fainted ally, an any-target move, Electro Shot's redirected release, and Armor Tail and Psychic Terrain after the redirect. `c11_follow_me_paths` records them, and five more controls are red.
+  - The evidence list named Darkest Lariat, which no c11 battle uses.
+  - A citation and two wordings above.
+  - The converter now refuses a Follow Me line with any attribute (for example `[zeffect]`), with a control test.
+  - Stale comments in `src/data/support_manifest.c` and `tests/test_team_c_setup.c`.
+- **Shared files touched:**
+  - `include/duoforge/duoforge.h` (the view bit, SINGLE_TURN's comment, version);
+  - `src/state/{battle_internal.h,closure_member.c,invariants.c,observation.c}`;
+  - `src/combat/turn.c`;
+  - `src/data/support_manifest.c`;
+  - `python/duoforge/_lib.py`, `python/tests/test_lib.py` (version);
+  - `tools/reference/{trace_to_c.py,test_trace_to_c.py}`, `tools/state_model/state_v3_model.py`;
+  - `tests/reference/conformance_types.h` (a comment only), `tests/support/conformance_compare.c`;
+  - `tests/test_conformance.c`, `tests/test_api_atomicity.c` (version), `tests/test_team_c_setup.c`;
+  - `docs/support/README.md`.
+
+### 10.13 Step 12: the Team C gate
+
+- **The gate** is `duoforge.combat.team_c_gate` (`tests/test_team_c_gate.c`), modelled on the closure gate (closure step 13).
+  - **Teams:** the real Team C (`docs/research/third-team/team-c.txt`) and the two reference teams of decision 0004.
+  - **Profile:** TEAM_C data, the certified profile of decision 0010 (six registered, four brought).
+  - **Battles:** the five pairings C-A, C-B, A-C, B-C and C-C, 1000 seeds each, from team selection to TERMINAL. The choices are random and legal: team picks, moves, Mega Evolution, switches, replacements and PIVOT answers.
+  - **Checks:**
+    - every step returns OK: the battles reach no `E_UNSUPPORTED` or other error;
+    - every committed state passes the checker;
+    - a copy decoded from the bytes of every boundary continues byte for byte like the original;
+    - a replay of the recorded bundles from the setup ends in the same bytes;
+    - information equivalence holds at every boundary of every fourth battle, for both viewers. The gate uses the closure gate's pairs with two changes:
+      - one more RNG pair flips every bit of the state, the stream and the draw count;
+      - the locked-target pair runs only for a charging move, because a choice lock has no target.
+  - **Coverage:**
+    - every move slot of every member of the three teams is used;
+    - all five Mega formes appear;
+    - the Team C state is reached at the boundaries the gate continues from (not TERMINAL), both in all battles and in the battles with information pairs:
+      - Psychic Terrain, poison, the choice lock and Unburden;
+      - at a PIVOT, the volatiles of Follow Me and Helping Hand and newlySwitched.
+- **Result:** no check failed (1,565,097 checks).
+  - 5000 battles in 71,157 steps (longest 42), with 5000 identical replays;
+  - 15,045 REPLACEMENTs, 3,198 PIVOTs and 6,326 Megas;
+  - 236,018 equivalent pairs and 81,017 shown changes (HP displays, weather turns and stat stages).
+- **Recorded battles of the real Team C.**
+  - `tools/reference/gen_real_specs.py --checkout <pin> --team-c` records 40 candidates per pairing. With `--team-c` the defaults are seed 2026100212 and prefix `c12_real`. It keeps 4 per pairing by the coverage they add: 20 battles `c12_real_*`, 237 features.
+  - `duoforge.reference.conformance_team_c` ties the gate's fixture (`df_put_team_c`) to `team-c.txt`: each Team C member of the 20 battles equals the fixture's member of its species.
+  - DuoForge matches all of them. With `c12_scarf_tie` (below), 22 of the 72 Team C battles run under TEAM_C itself, with six registered members.
+  - Without `--team-c` the generator's output is unchanged: it reproduces all 16 `m5_real_*` specs byte for byte.
+- **Negative controls**, each red in the gate alone:
+  - Follow Me failing at run time (a step error);
+  - the codec dropping Follow Me's bit (the decoded copy diverges);
+  - no Unburden volatile (the Team C coverage);
+  - an information leak in the view: the RNG state's lowest bit, its second bit, or a bit of its stream.
+
+  The closure gate's RNG pair flips only some bits of the state, so a leak of the second bit or of the stream passes it. The pair that flips every bit catches both. The closure gate keeps its pairs; changing it is a separate decision.
+- **Converter: no volatile is ignored silently** (asked by the expansion lead after the step 11 review).
+  - `trace_to_c.py` lists the reference volatiles it compares as bits of the state (protect 1, flashfire 2, twoturnmove 4, choicelock 8, unburden 16, helpinghand 32, followme 64, flinch 128).
+  - It lists the ones it compares through another field: `stall` (the stall field), `confusion` (its turns), and `electroshot` (the locked slot and target).
+  - Any other volatile fails with `ConversionError('unknown-volatile')`, and so does `electroshot` without `twoturnmove`. Both have control tests.
+  - Flinch was ignored before. The reference keeps it until the residual (duration 1), and so does the engine after `cant`. Two recorded PIVOT boundaries hold it (Fake Out, then a pivot); a control that compares the wrong bit is red.
+- **Converter: Choice Scarf's onStart decides no switch-in order** (found by the differential loop, A3, case `fz_11_44`, before this step merged).
+  - Battle.getCallback runs an item's `onStart` as a SwitchIn handler unless the item has `onAnySwitchIn` (`sim/battle.ts:1018-1032`). Choice Scarf's `onStart` (`data/items.ts:989-994`) only removes a choicelock, which an entering Pokémon never has.
+  - Two Scarf Basculegion entering together at one Speed therefore tie in runSwitch, and the reference draws an order that decides nothing. The engine draws none, and the converter kept the draw.
+  - Now an entering Choice Scarf holder's handler does not count as an entry effect. The converter fails loudly if a holder's recorded handler count is too small.
+  - A probe of the pin confirmed the handler ids: `Item:choicescarf` for both Basculegion, and among the data's items only Grassy Seed and Choice Scarf map `onStart` that way (White Herb has `onAnySwitchIn`).
+  - The case is recorded whole as `c12_scarf_tie`. Before the fix its step 0 left the tape unconsumed; now all 16 steps match. A converter control covers the new refusal.
+- **What the gate cannot show by design.**
+  - It checks determinism, the codec and information equivalence, but not the rules: a rule that is deterministic but wrong passes it. Fidelity rests on the 71 recorded battles.
+  - The battles only play what the request offers, so a missing legal option goes unnoticed.
+  - Interactions that the whole teams never reach rest on the recorded battles alone, for example Good as Gold against Helping Hand, or Follow Me against Lightning Rod.
+  - The pick policy of the closure gate favours side 1: side 0 lists its own ally first, so it hits its ally more often: side 1 wins 3,145 of the 5,000 battles.
+- **Review findings, fixed.**
+  - The coverage counted states the gate never continues from: TERMINAL, and battles without information pairs. It now counts only boundaries the gate continues from, with a second mask for the battles with pairs, and newlySwitched joined it.
+  - The leak blind spot of the RNG pair; a second pair now covers it.
+  - The documented generator call did not reproduce the committed battles. `--team-c` now brings its own defaults.
+  - Move coverage counted move ids across teams; it now counts each member's slots.
+  - The locked-target pair failed the checker silently on choice locks.
+  - Several doc lines, and the tie between the fixture and `team-c.txt`.
+- **Not part of the gate.** The M5 certification dataset (`certify/`) stays the closure's. A Team C certification is a later decision for the owner.
+- **Shared files touched:**
+  - `tools/reference/{gen_real_specs.py,README.md}`;
+  - `tests/CMakeLists.txt`;
+  - `tests/test_conformance.c` (the battle counts, the fixture tie);
+  - `README.md`, `docs/support/README.md`.

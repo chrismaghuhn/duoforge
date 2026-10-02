@@ -1,0 +1,72 @@
+{
+  "name": "c12_scarf_tie",
+  "purpose": "Two Choice Scarf Basculegion enter together at one Speed (the real Team C on both sides): runSwitch sorts their SwitchIn handlers, which are Choice Scarf's onStart. It only removes a choicelock, which an entering Pokemon never has, so the reference's tie draw decides nothing and the converter drops it. Found by the differential loop (A3, case fz_11_44 of seed 11).",
+  "data": "team_c",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,076a058abccfedf242830838dc5b8b8daf204f773b090f38b517e4b76ec08646",
+  "teams": [
+    "Basculegion (M) @ Choice Scarf\nAbility: Adaptability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Wave Crash\n- Last Respects\n- Flip Turn\n- Aqua Jet\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Protect\n- Hyper Voice\n- Draco Meteor\n- Tailwind\n\nIncineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Flare Blitz\n- Parting Shot\n- Darkest Lariat\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Follow Me\n- Trick Room\n- Helping Hand\n- Psychic\n\nSneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Close Combat\n- Dire Claw\n- Protect\n- Fake Out\n\nKingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Sucker Punch\n- Iron Head\n- Protect",
+    "Salamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Protect\n- Hyper Voice\n- Draco Meteor\n- Tailwind\n\nIncineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Flare Blitz\n- Parting Shot\n- Darkest Lariat\n\nBasculegion (M) @ Choice Scarf\nAbility: Adaptability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Wave Crash\n- Last Respects\n- Flip Turn\n- Aqua Jet\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Follow Me\n- Trick Room\n- Helping Hand\n- Psychic\n\nSneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Close Combat\n- Dire Claw\n- Protect\n- Fake Out\n\nKingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Sucker Punch\n- Iron Head\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 1435",
+      "p2": "team 6341"
+    },
+    {
+      "p1": "move 1 1, move 1",
+      "p2": "move 1 2, move 3 2"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "move 1 2, move 2 -1",
+      "p2": "move 4, move 2"
+    },
+    {
+      "p1": "move 1 1, move 3 2",
+      "p2": "move 4, switch 3"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "move 1 -2, move 4 -1",
+      "p2": "move 1 2, move 2 2"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 2 -2, pass",
+      "p2": "move 2 2, move 2 2"
+    },
+    {
+      "p1": "move 3 1, pass",
+      "p2": "move 2 1, move 2 -1"
+    },
+    {
+      "p1": "move 4 -2, pass",
+      "p2": "move 1 -2, move 2 -1"
+    },
+    {
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "move 3 -2, pass",
+      "p2": "move 1 2, move 3 2 mega"
+    },
+    {
+      "p1": "move 2 2, pass",
+      "p2": "move 3 -2, move 1"
+    },
+    {
+      "p1": "move 2 -2, pass",
+      "p2": "switch 3, move 3 2"
+    }
+  ]
+}

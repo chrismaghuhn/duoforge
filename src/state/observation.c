@@ -49,7 +49,7 @@ _Static_assert(DUOFORGE_AILMENT_BURN == DFI_STATUS_BRN && DUOFORGE_AILMENT_FREEZ
                    DUOFORGE_AILMENT_POISON == DFI_STATUS_PSN,
                "public ailments are the internal statuses");
 _Static_assert(DUOFORGE_WEATHER_RAIN == DFI_WEATHER_RAIN && DUOFORGE_WEATHER_SUN == DFI_WEATHER_SUN &&
-                   DUOFORGE_TERRAIN_GRASSY == DFI_TERRAIN_GRASSY,
+                   DUOFORGE_TERRAIN_GRASSY == DFI_TERRAIN_GRASSY && DUOFORGE_TERRAIN_PSYCHIC == DFI_TERRAIN_PSYCHIC,
                "public field values are the internal ones");
 
 static bool dfi_is_occupant(const dfi_side *side, uint32_t m)
@@ -164,7 +164,10 @@ static void dfi_view_position(const struct duoforge_battle *b, uint32_t viewer, 
     out->protecting = (((uint32_t)slot->flags & DFI_VOL_PROTECT) != 0u) ? 1u : 0u;
     /* Unburden is public by inference: the ability and the item's use are
      * shown (Team C). */
-    out->reserved = (((uint32_t)slot->flags & DFI_VOL_UNBURDEN) != 0u) ? (uint8_t)DUOFORGE_POSITION_FLAG_UNBURDEN : 0u;
+    const uint32_t follow = ((uint32_t)slot->flags & DFI_VOL_FOLLOW_ME) != 0u ? DUOFORGE_POSITION_FLAG_FOLLOW_ME : 0u;
+    const uint32_t helping = ((uint32_t)slot->flags & DFI_VOL_HELPING_HAND) != 0u ? DUOFORGE_POSITION_FLAG_HELPING_HAND : 0u;
+    const uint32_t unburden = ((uint32_t)slot->flags & DFI_VOL_UNBURDEN) != 0u ? DUOFORGE_POSITION_FLAG_UNBURDEN : 0u;
+    out->reserved = (uint8_t)(follow | helping | unburden); /* wide-operands-reviewed: < 8 */
     out->acted = slot->move_actions != 0u ? 1u : 0u;
     out->protect_chain = slot->stall_level;
     out->flash_fire = ((uint32_t)slot->flags & DFI_VOL_FLASH_FIRE) != 0u ? 1u : 0u;
