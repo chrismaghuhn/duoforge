@@ -72,6 +72,8 @@ duoforge_add_test(NAME duoforge.request.contract SOURCES test_contract.c WHITEBO
 duoforge_add_test(NAME duoforge.request.information SOURCES test_information.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.request.accepts SOURCES test_step_accepts.c TIMEOUT 120)
 duoforge_add_test(NAME duoforge.request.query_checks SOURCES test_query_checks.c WHITEBOX)
+# The POOL player-view extension at tier 0 (decision 0018): layout, constants, the query, all zero.
+duoforge_add_test(NAME duoforge.request.observation_ext SOURCES test_observation_ext.c WHITEBOX)
 duoforge_add_test(NAME duoforge.request.candidates_digest SOURCES test_candidates_digest.c TIMEOUT 120)
 duoforge_add_test(NAME duoforge.batch.equivalence SOURCES test_batch.c LIBS duoforge_batch TIMEOUT 300)
 duoforge_add_test(NAME duoforge.api.reference SOURCES test_reference_api.c)
