@@ -1,0 +1,44 @@
+Baxcalibur (M) @ Leftovers
+Ability: Thermal Exchange
+Level: 50
+EVs: 32 HP / 32 Def / 2 SpD
+Impish Nature
+- Ice Beam
+- Protect
+- Dragon Pulse
+
+Milotic (F) @ Sitrus Berry
+Ability: Competitive
+Level: 50
+EVs: 32 HP / 29 Def / 5 SpD
+Calm Nature
+- Coil
+- Protect
+
+Ceruledge (M) @ Grassy Seed
+Ability: Flash Fire
+Level: 50
+EVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe
+Adamant Nature
+- Protect
+
+Gholdengo @ Life Orb
+Ability: Good as Gold
+Level: 50
+EVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe
+Modest Nature
+- Protect
+
+Raichu (F) @ Light Clay
+Ability: Lightning Rod
+Level: 50
+EVs: 29 HP / 5 Def / 32 Spe
+Timid Nature
+- Protect
+
+Politoed (M) @ Mystic Water
+Ability: Drizzle
+Level: 50
+EVs: 32 HP / 2 Def / 32 SpD
+Calm Nature
+- Protect

@@ -210,8 +210,11 @@ def _run(paths, prior_path, out, wanted, done, run, workers, limit_parts, format
     games_now = 0
 
     def wait_unpaused():
-        while os.path.exists(pause_file()):
-            time.sleep(1)
+        if os.path.exists(pause_file()):
+            log(f"paused: {pause_file()} exists (a measurement); waiting until it is removed")
+            while os.path.exists(pause_file()):
+                time.sleep(1)
+            log("resumed")
 
     def take(result):
         nonlocal games_now

@@ -15,6 +15,27 @@ from pathlib import Path
 
 from duoforge_live import data, lines
 
+_PAUSE = {}
+
+
+def setUpModule():
+    # The builds here honour the fuzz pause file. The machine's own one ($TEMP/duoforge-fuzz.pause) exists while a
+    # measurement runs, and would hold every build of this module until it ends (a ctest timeout): the module gets a
+    # pause file of its own, absent, as tools/reference/test_diff_random.py does.
+    import os
+    _PAUSE["dir"] = tempfile.TemporaryDirectory()
+    _PAUSE["saved"] = os.environ.get("DUOFORGE_FUZZ_PAUSE")
+    os.environ["DUOFORGE_FUZZ_PAUSE"] = os.path.join(_PAUSE["dir"].name, "duoforge-fuzz.pause")
+
+
+def tearDownModule():
+    import os
+    if _PAUSE["saved"] is None:
+        os.environ.pop("DUOFORGE_FUZZ_PAUSE", None)
+    else:
+        os.environ["DUOFORGE_FUZZ_PAUSE"] = _PAUSE["saved"]
+    _PAUSE["dir"].cleanup()
+
 
 def _define(header, name):
     return int(re.search(rf"#define {name} (\d+)u", header).group(1))

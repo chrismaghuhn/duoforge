@@ -1215,8 +1215,14 @@ class Library(unittest.TestCase):
         Arcanine-Hisui and Floette-Eternal. The pool battles g2_data_moves_b names Arcanine-Hisui in the switch line."""
         self.assertEqual(trace_to_c.BASE_SPECIES_NAME,
                          {'Indeedee-F': 'Indeedee', 'Arcanine-Hisui': 'Arcanine', 'Floette-Eternal': 'Floette',
-                          'Ninetales-Alola': 'Ninetales'})
+                          'Ninetales-Alola': 'Ninetales', 'Meowstic-F': 'Meowstic'})
         spec = json.load(open(os.path.join(ROOT, 'tests', 'reference', 'traces', 'g2_data_moves_b.json')))
+        # Meowstic-F (step G15, g15_ef_retarget_*) is called Meowstic.
+        for name in ('g15_ef_retarget_terrain', 'g15_ef_retarget_plain'):
+            log = [l for step in json.load(open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json')))['steps']
+                   for l in step['log']]
+            self.assertTrue(any('|Meowstic-F, L50, F|' in l and l.startswith('|switch|p2') and ': Meowstic|' in l
+                                for l in log), name)
         lines = [l for step in spec['steps'] for l in step['log']]
         self.assertTrue(any(l.startswith('|switch|p1a: Arcanine|Arcanine-Hisui, L50, M|') for l in lines))
 
@@ -1236,7 +1242,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 75)  # the 28 of G21, G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off)
+        self.assertEqual(len(marked), 76)  # the 28 of G21, G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
