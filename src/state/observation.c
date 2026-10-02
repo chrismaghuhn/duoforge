@@ -299,6 +299,14 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                 vol |= tail->heal_block_turns != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_HEAL_BLOCK : 0u;
                 vol |= tail->throat_chop_turns != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_THROAT_CHOP : 0u;
                 o.sides[s].positions[p].volatiles = vol;
+                /* Step G11, Soak: the type that it set, public (-start|X|typechange|Water): the occupant is pure
+                 * Water until it leaves, faints or Mega Evolves (the tail's soak type is cleared there). */
+                const uint32_t occupant = battle->sides[s].positions[p].occupant;
+                const uint32_t soak = occupant < DUOFORGE_MAX_ROSTER ? battle->tail.sides[s].soak_type[occupant] : 0u;
+                if (soak != 0u) {
+                    o.sides[s].positions[p].volatiles = vol | (uint32_t)DUOFORGE_POSITION_EXT_TYPE_CHANGED;
+                    o.sides[s].positions[p].type_now[0] = (uint8_t)soak; /* type id + 1: one type, the second slot stays 0 */
+                }
             }
         }
     }

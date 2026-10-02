@@ -211,6 +211,7 @@ int main(void)
                 want.epoch = ob.epoch;
                 want.supported = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) |
                                  ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK) |
+                                 ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TYPE_CHANGE) | /* step G11 */
                                  ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WIDE_GUARD);
                 for (uint32_t s = 0u; s < 2u; ++s) {
                     want.sides[s].guard_flags = ((guard >> s) & 1u) != 0u ? (uint8_t)DUOFORGE_SIDE_GUARD_WIDE_GUARD : 0u;

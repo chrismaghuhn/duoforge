@@ -104,16 +104,38 @@ static const dfi_pool_forme_data *dfi_forme_of(const dfi_member *m)
     return m->is_mega != 0u ? &dfi_pool_formes[base->mega_forme] : base;
 }
 
-static bool dfi_has_type(const dfi_member *m, uint32_t type)
+/* The member's types now (Pokemon.getTypes): its forme's, or the one type that Soak set (setType, sim/pokemon.ts:2109;
+ * the POOL tail's soak_type of the member, zero under every other kind), which lasts until the Pokemon leaves the field,
+ * faints or Mega Evolves (setSpecies resets the types, sim/pokemon.ts:1392). `m` is a member of `b`. */
+static void dfi_types_of(const struct duoforge_battle *b, const dfi_member *m, uint32_t types[2])
 {
     const dfi_pool_forme_data *f = dfi_forme_of(m);
-    return f->types[0] == type || f->types[1] == type;
+    types[0] = f->types[0];
+    types[1] = f->types[1];
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        const dfi_member *first = &b->sides[s].members[0];
+        if (m >= first && m < first + DUOFORGE_MAX_ROSTER) {
+            const uint32_t soak = b->tail.sides[s].soak_type[m - first];
+            if (soak != 0u) {
+                types[0] = soak - 1u; /* a single type */
+                types[1] = DFI_CLOSURE_NONE;
+            }
+            return;
+        }
+    }
+}
+
+static bool dfi_has_type(const struct duoforge_battle *b, const dfi_member *m, uint32_t type)
+{
+    uint32_t t[2];
+    dfi_types_of(b, m, t);
+    return t[0] == type || t[1] == type;
 }
 
 /* isGrounded with the data: not Flying (no Levitate, Air Balloon or Gravity). */
-static bool dfi_grounded(const dfi_member *m)
+static bool dfi_grounded(const struct duoforge_battle *b, const dfi_member *m)
 {
-    return !dfi_has_type(m, DFI_TYPE_FLYING);
+    return !dfi_has_type(b, m, DFI_TYPE_FLYING);
 }
 
 /* The member holds item `id` and has not used it up (items are stored as
@@ -173,7 +195,7 @@ static bool dfi_fairy_aura_on_field(struct duoforge_battle *b)
 static bool dfi_flower_veil_holder(struct duoforge_battle *b, uint32_t flat, uint32_t *holder)
 {
     const dfi_member *target = dfi_at(b, flat);
-    if (target == NULL || !dfi_has_type(target, DFI_TYPE_GRASS)) {
+    if (target == NULL || !dfi_has_type(b, target, DFI_TYPE_GRASS)) {
         return false;
     }
     for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
@@ -320,7 +342,7 @@ static uint32_t dfi_move_priority(const struct duoforge_battle *b, const dfi_mem
     if (dfi_ability(m, DFI_ABILITY_PRANKSTER) && md->category == DFI_CATEGORY_STATUS) {
         priority += 1u;
     }
-    if (md->special == DFI_SPECIAL_GRASSY_GLIDE && b->terrain == DFI_TERRAIN_GRASSY && dfi_grounded(m)) {
+    if (md->special == DFI_SPECIAL_GRASSY_GLIDE && b->terrain == DFI_TERRAIN_GRASSY && dfi_grounded(b, m)) {
         priority += 1u;
     }
     return priority;
@@ -783,14 +805,15 @@ static duoforge_status dfi_move_targets(dfi_run *r, uint32_t user, uint32_t cls,
 /* ---------------------------------------------------------------- damage */
 
 /* runImmunity for the move's type (typeless never is immune). */
-static bool dfi_type_immune(const dfi_member *target, uint32_t move_type)
+static bool dfi_type_immune(const struct duoforge_battle *b, const dfi_member *target, uint32_t move_type)
 {
     if (move_type >= DFI_TYPE_COUNT) {
         return false;
     }
-    const dfi_pool_forme_data *f = dfi_forme_of(target);
+    uint32_t types[2];
+    dfi_types_of(b, target, types);
     for (uint32_t i = 0u; i < 2u; ++i) {
-        const uint32_t t = f->types[i];
+        const uint32_t t = types[i];
         if (t < DFI_TYPE_COUNT && dfi_closure_type_chart[t][move_type] == DFI_EFFECT_IMMUNE) {
             return true;
         }
@@ -800,15 +823,16 @@ static bool dfi_type_immune(const dfi_member *target, uint32_t move_type)
 
 /* runEffectiveness, biased by 6: +1 per super effective, -1 per resisted
  * defending type. */
-static uint32_t dfi_type_mod(const dfi_member *target, uint32_t move_type)
+static uint32_t dfi_type_mod(const struct duoforge_battle *b, const dfi_member *target, uint32_t move_type)
 {
     uint32_t mod = DFI_BIAS6;
     if (move_type >= DFI_TYPE_COUNT) {
         return mod;
     }
-    const dfi_pool_forme_data *f = dfi_forme_of(target);
+    uint32_t types[2];
+    dfi_types_of(b, target, types);
     for (uint32_t i = 0u; i < 2u; ++i) {
-        const uint32_t t = f->types[i];
+        const uint32_t t = types[i];
         if (t >= DFI_TYPE_COUNT) {
             continue;
         }
@@ -927,13 +951,13 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     if (((uint32_t)dfi_pos(r->b, user)->flags & DFI_VOL_HELPING_HAND) != 0u) {
         ok = ok && dfi_chain_modify(bp_chain, 6144u, &bp_chain);
     }
-    if (move_type == DFI_TYPE_GRASS && r->b->terrain == DFI_TERRAIN_GRASSY && dfi_grounded(a)) {
+    if (move_type == DFI_TYPE_GRASS && r->b->terrain == DFI_TERRAIN_GRASSY && dfi_grounded(r->b, a)) {
         ok = ok && dfi_chain_modify(bp_chain, 5325u, &bp_chain);
     }
     /* Psychic Terrain (Team C): 5325/4096 for a grounded user's Psychic move
      * (onBasePowerPriority 6, like Grassy Terrain's, which cannot be up at
      * the same time). */
-    if (move_type == DFI_TYPE_PSYCHIC && r->b->terrain == DFI_TERRAIN_PSYCHIC && dfi_grounded(a)) {
+    if (move_type == DFI_TYPE_PSYCHIC && r->b->terrain == DFI_TERRAIN_PSYCHIC && dfi_grounded(r->b, a)) {
         ok = ok && dfi_chain_modify(bp_chain, 5325u, &bp_chain);
     }
     const uint32_t base_power = bp_chain == 4096u ? power : dfi_modify(power, bp_chain);
@@ -986,11 +1010,11 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     uint32_t mod = DFI_BIAS6; /* neutral for Struggle's typeless hit */
     if (move_type < DFI_TYPE_COUNT) {
         /* STAB 1.5; Adaptability 2 (Team C, data/abilities.ts:43-56; no Tera) */
-        const uint32_t stab = !dfi_has_type(a, move_type) ? 4096u
+        const uint32_t stab = !dfi_has_type(r->b, a, move_type) ? 4096u
                               : dfi_ability(a, DFI_ABILITY_ADAPTABILITY) ? 8192u
                                                                          : 6144u;
         damage = dfi_modify(damage, stab);
-        mod = dfi_type_mod(d, move_type);
+        mod = dfi_type_mod(r->b, d, move_type);
         if (!dfi_type_damage(damage, mod, &damage)) {
             return DUOFORGE_E_INVARIANT;
         }
@@ -1083,10 +1107,10 @@ static duoforge_status dfi_deal(dfi_run *r, uint32_t flat, uint32_t amount, uint
 
 /* runStatusImmunity('psn') (Team C): a type whose chart entry carries the
  * psn key, Poison and Steel (data/typechart.ts). */
-static bool dfi_poison_immune(const dfi_member *m)
+static bool dfi_poison_immune(const struct duoforge_battle *b, const dfi_member *m)
 {
     for (uint32_t type = 0u; type < DFI_TYPE_COUNT; ++type) {
-        if ((dfi_pool_type_immunity[type] & DFI_IMMUNE_PSN) != 0u && dfi_has_type(m, type)) {
+        if ((dfi_pool_type_immunity[type] & DFI_IMMUNE_PSN) != 0u && dfi_has_type(b, m, type)) {
             return true;
         }
     }
@@ -1124,10 +1148,10 @@ static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status
         }
         return DUOFORGE_OK;
     }
-    if ((status == DFI_STATUS_BRN && dfi_has_type(m, DFI_TYPE_FIRE)) ||
-        (status == DFI_STATUS_PAR && dfi_has_type(m, DFI_TYPE_ELECTRIC)) ||
-        (status == DFI_STATUS_FRZ && (dfi_has_type(m, DFI_TYPE_ICE) || r->b->weather == DFI_WEATHER_SUN)) ||
-        (status == DFI_STATUS_PSN && dfi_poison_immune(m))) {
+    if ((status == DFI_STATUS_BRN && dfi_has_type(r->b, m, DFI_TYPE_FIRE)) ||
+        (status == DFI_STATUS_PAR && dfi_has_type(r->b, m, DFI_TYPE_ELECTRIC)) ||
+        (status == DFI_STATUS_FRZ && (dfi_has_type(r->b, m, DFI_TYPE_ICE) || r->b->weather == DFI_WEATHER_SUN)) ||
+        (status == DFI_STATUS_PSN && dfi_poison_immune(r->b, m))) {
         if (primary) {
             dfi_immune(r, flat, 0u);
         }
@@ -1780,6 +1804,33 @@ static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, uint32_t move_
     return DUOFORGE_OK;
 }
 
+/* Soak's onHit (data/moves.ts:17186-17208): a target that is already pure Water, or whose type cannot be set, gives
+ * -fail|target (the move still animates) and null; otherwise target.setType('Water') and -start|target|typechange|Water.
+ * setType refuses (without `enforce`) Arceus and Silvally (species numbers 493 and 773, sim/pokemon.ts:2113-2118; no
+ * pool forme is one) and a Terastallized Pokemon (the format has no Terastallization). The type stays until the
+ * occupant leaves, faints or Mega Evolves (dfi_tail_clear_occupant, dfi_run_mega). True when the type was set. */
+static bool dfi_soak(dfi_run *r, uint32_t flat, uint32_t move_id)
+{
+    struct duoforge_battle *b = r->b;
+    const dfi_member *m = dfi_at(b, flat);
+    const uint32_t occupant = dfi_pos(b, flat)->occupant;
+    if (m == NULL || m->hp == 0u || occupant >= DUOFORGE_MAX_ROSTER) {
+        return false;
+    }
+    uint32_t types[2];
+    dfi_types_of(b, m, types);
+    const uint32_t dex = dfi_forme_of(m)->dex_num;
+    if ((types[0] == DFI_TYPE_WATER && types[1] == DFI_CLOSURE_NONE) || dex == 493u || dex == 773u) {
+        dfi_emit_plain(r, DUOFORGE_EVENT_FAIL, flat); /* -fail|target, not the user */
+        return false;
+    }
+    b->tail.sides[flat / 2u].soak_type[occupant] = DFI_TYPE_WATER + 1u; /* 18, a constant that fits the byte */
+    duoforge_event e = dfi_ev(DUOFORGE_EVENT_TYPE_CHANGE, flat, DUOFORGE_CAUSE_MOVE, move_id, DUOFORGE_NO_POSITION);
+    e.detail = (uint8_t)DFI_TYPE_WATER; /* -start|target|typechange|Water */
+    dfi_emit(r, &e);
+    return true;
+}
+
 /* A status move that did something to a target ends the Champions hit
  * loop like a hit: its Update (data/mods/champions/scripts.ts:537), the
  * faint lines, then the Update after it (:574). A side or field move does
@@ -2273,7 +2324,8 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         dfi_emit(r, &e);
         return DUOFORGE_OK;
     }
-    if (status_move && md->primary_status == DFI_STATUS_NONE && md->special != DFI_SPECIAL_PARTING_SHOT) {
+    if (status_move && md->primary_status == DFI_STATUS_NONE && md->special != DFI_SPECIAL_PARTING_SHOT &&
+        md->special != DFI_SPECIAL_SOAK) {
         if (dfi_pool_move_heal[move_id][1] != 0u) {
             return dfi_run_heal_move(r, user, move_id);
         }
@@ -2289,7 +2341,8 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
      * specials of later steps are also kept out by the support manifest. */
     if (md->special > DFI_SPECIAL_STRUGGLE && md->special != DFI_SPECIAL_DARKEST_LARIAT &&
         md->special != DFI_SPECIAL_LAST_RESPECTS && md->special != DFI_SPECIAL_SUCKER_PUNCH &&
-        md->special != DFI_SPECIAL_FIRST_IMPRESSION && md->special != DFI_SPECIAL_LOW_KICK) {
+        md->special != DFI_SPECIAL_FIRST_IMPRESSION && md->special != DFI_SPECIAL_LOW_KICK &&
+        md->special != DFI_SPECIAL_SOAK) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Fake Out's and First Impression's onTry (in trySpreadMoveHit, after
@@ -2376,7 +2429,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         if (guarded[i]) {
             continue;
         }
-        if (psychic_block && t / 2u != side && dfi_grounded(dfi_at(b, t))) {
+        if (psychic_block && t / 2u != side && dfi_grounded(b, dfi_at(b, t))) {
             duoforge_event e = dfi_event_make(DUOFORGE_EVENT_BLOCKED, t);
             e.detail = (uint8_t)DUOFORGE_FIELD_PSYCHIC_TERRAIN; /* [-activate] move: Psychic Terrain */
             dfi_emit(r, &e);
@@ -2423,7 +2476,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         }
     }
     for (uint32_t i = 0u; i < count && !status_move; ++i) {
-        if (hit[i] && dfi_type_immune(dfi_at(b, targets[i]), move_type)) {
+        if (hit[i] && dfi_type_immune(b, dfi_at(b, targets[i]), move_type)) {
             hit[i] = false; /* a status move ignores type immunity */
             dfi_immune(r, targets[i], 0u);
         }
@@ -2431,7 +2484,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     /* hitStepTryImmunity: a Prankster-boosted status move fails on a Dark
      * foe. */
     for (uint32_t i = 0u; i < count && status_move && dfi_ability(m, DFI_ABILITY_PRANKSTER); ++i) {
-        if (hit[i] && targets[i] / 2u != side && dfi_has_type(dfi_at(b, targets[i]), DFI_TYPE_DARK)) {
+        if (hit[i] && targets[i] / 2u != side && dfi_has_type(b, dfi_at(b, targets[i]), DFI_TYPE_DARK)) {
             hit[i] = false;
             dfi_immune(r, targets[i], 0u);
         }
@@ -2501,6 +2554,10 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                     pos->switch_flag = (uint8_t)DFI_SWITCH_MOVE;
                 }
                 did = true;
+                continue;
+            }
+            if (md->special == DFI_SPECIAL_SOAK) {
+                did = dfi_soak(r, targets[i], move_id) || did;
                 continue;
             }
             const uint32_t before = dfi_at(b, targets[i])->status;
@@ -3126,6 +3183,9 @@ static duoforge_status dfi_run_mega(dfi_run *r, const dfi_queue_record *q)
         return DUOFORGE_E_INVARIANT; /* the domain offers Mega only to a holder of its stone */
     }
     sd->mega_used = 1u;
+    /* formeChange -> setSpecies -> setType(species.types, true): a type that Soak set ends (sim/pokemon.ts:1392,
+     * 1427-1434), without a line. */
+    b->tail.sides[q->side].soak_type[dfi_pos(b, flat)->occupant] = 0u;
     duoforge_event forme = dfi_event_make(DUOFORGE_EVENT_FORME, flat);
     forme.id = dfi_pool_formes[m->species_id].mega_forme; /* [detailschange] */
     dfi_emit(r, &forme);
@@ -3414,7 +3474,7 @@ static duoforge_status dfi_residual_events(dfi_run *r)
         if (e->kind == DFI_RES_GRASSY) {
             /* heal(baseMaxhp / 16): at least 1, not above the maximum, not
              * for a Pokemon that is not grounded or at full HP. */
-            if (dfi_grounded(m) && m->hp < m->hp_max && !dfi_heal_blocked(b, e->flat)) {
+            if (dfi_grounded(b, m) && m->hp < m->hp_max && !dfi_heal_blocked(b, e->flat)) {
                 uint32_t heal = (uint32_t)m->hp_max / 16u;
                 heal = heal == 0u ? 1u : heal;
                 const uint32_t hp = (uint32_t)m->hp + heal;
