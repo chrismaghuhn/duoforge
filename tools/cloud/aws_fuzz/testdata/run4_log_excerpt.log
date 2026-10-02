@@ -1,0 +1,84 @@
+2026-10-02T21:30:27Z 72 chunks of 1000 battles in 3 phase(s) of 24, parallel 5 7 9, 64 vCPUs
+2026-10-02T21:31:21Z phase 0: chunks 0 to 23, parallel 5, 12 workers per driver, 64 vCPUs
+2026-10-02T21:31:43Z chunk 0002: 1000 battles in 22 s (45.5 battles/s), 168.3 CPU-s, 12% of the 64 vCPUs while it ran
+2026-10-02T21:31:43Z chunk 0000: 1000 battles in 22 s (45.5 battles/s), 170.5 CPU-s, 12% of the 64 vCPUs while it ran
+2026-10-02T21:31:43Z chunk 0001: 1000 battles in 22 s (45.5 battles/s), 170.4 CPU-s, 12% of the 64 vCPUs while it ran
+2026-10-02T21:31:43Z chunk 0003: 1000 battles in 22 s (45.5 battles/s), 171.5 CPU-s, 12% of the 64 vCPUs while it ran
+2026-10-02T21:31:43Z chunk 0004: 1000 battles in 22 s (45.5 battles/s), 172.1 CPU-s, 12% of the 64 vCPUs while it ran
+2026-10-02T21:32:06Z chunk 0005: 1000 battles in 23 s (43.5 battles/s), 174.0 CPU-s, 12% of the 64 vCPUs while it ran
+2026-10-02T21:32:06Z chunk 0007: 1000 battles in 22 s (45.5 battles/s), 172.2 CPU-s, 12% of the 64 vCPUs while it ran
+2026-10-02T21:32:06Z chunk 0008: 1000 battles in 22 s (45.5 battles/s), 171.2 CPU-s, 12% of the 64 vCPUs while it ran
+2026-10-02T21:32:06Z chunk 0006: 1000 battles in 22 s (45.5 battles/s), 174.5 CPU-s, 12% of the 64 vCPUs while it ran
+2026-10-02T21:32:06Z chunk 0009: 1000 battles in 22 s (45.5 battles/s), 172.1 CPU-s, 12% of the 64 vCPUs while it ran
+2026-10-02T21:32:21Z rate (phase 0): 12971 battles in 60 s, 12971 in the last minute, 216.2 battles/s overall; the machine was 61% busy
+2026-10-02T21:32:29Z chunk 0010: 1000 battles in 23 s (43.5 battles/s), 173.4 CPU-s, 12% of the 64 vCPUs while it ran
+2026-10-02T21:32:29Z chunk 0011: 1000 battles in 22 s (45.5 battles/s), 170.7 CPU-s, 12% of the 64 vCPUs while it ran
+2026-10-02T21:32:29Z chunk 0012: 1000 battles in 22 s (45.5 battles/s), 171.9 CPU-s, 12% of the 64 vCPUs while it ran
+2026-10-02T21:32:29Z chunk 0013: 1000 battles in 22 s (45.5 battles/s), 173.0 CPU-s, 12% of the 64 vCPUs while it ran
+2026-10-02T21:32:29Z chunk 0014: 1000 battles in 22 s (45.5 battles/s), 172.7 CPU-s, 12% of the 64 vCPUs while it ran
+2026-10-02T21:32:52Z chunk 0015: 1000 battles in 23 s (43.5 battles/s), 175.9 CPU-s, 12% of the 64 vCPUs while it ran
+2026-10-02T21:32:52Z chunk 0016: 1000 battles in 23 s (43.5 battles/s), 174.2 CPU-s, 12% of the 64 vCPUs while it ran
+2026-10-02T21:32:52Z chunk 0018: 1000 battles in 22 s (45.5 battles/s), 172.0 CPU-s, 12% of the 64 vCPUs while it ran
+2026-10-02T21:32:52Z chunk 0017: 1000 battles in 22 s (45.5 battles/s), 173.4 CPU-s, 12% of the 64 vCPUs while it ran
+2026-10-02T21:32:53Z chunk 0019: 1000 battles in 23 s (43.5 battles/s), 177.2 CPU-s, 12% of the 64 vCPUs while it ran
+2026-10-02T21:33:13Z chunk 0021: 1000 battles in 21 s (47.6 battles/s), 165.0 CPU-s, 12% of the 64 vCPUs while it ran
+2026-10-02T21:33:13Z chunk 0020: 1000 battles in 21 s (47.6 battles/s), 164.9 CPU-s, 12% of the 64 vCPUs while it ran
+2026-10-02T21:33:13Z chunk 0022: 1000 battles in 20 s (50.0 battles/s), 166.7 CPU-s, 13% of the 64 vCPUs while it ran
+2026-10-02T21:33:13Z chunk 0023: 1000 battles in 20 s (50.0 battles/s), 167.0 CPU-s, 13% of the 64 vCPUs while it ran
+2026-10-02T21:33:18Z phase 0 (parallel 5): 203.4 battles/s steady state (14 of 24 chunks over 68.8 s), 212.6 battles/s over the phase; the machine was 56% busy
+2026-10-02T21:33:18Z phase 1: chunks 24 to 47, parallel 7, 9 workers per driver, 64 vCPUs
+2026-10-02T21:33:21Z rate (phase 1): 24285 battles in 120 s, 11314 in the last minute, 202.4 battles/s overall; the machine was 53% busy
+2026-10-02T21:33:44Z chunk 0024: 1000 battles in 26 s (38.5 battles/s), 175.4 CPU-s, 11% of the 64 vCPUs while it ran
+2026-10-02T21:33:44Z chunk 0026: 1000 battles in 26 s (38.5 battles/s), 177.0 CPU-s, 11% of the 64 vCPUs while it ran
+2026-10-02T21:33:44Z chunk 0029: 1000 battles in 26 s (38.5 battles/s), 176.5 CPU-s, 11% of the 64 vCPUs while it ran
+2026-10-02T21:33:44Z chunk 0027: 1000 battles in 26 s (38.5 battles/s), 175.9 CPU-s, 11% of the 64 vCPUs while it ran
+2026-10-02T21:33:44Z chunk 0025: 1000 battles in 26 s (38.5 battles/s), 178.6 CPU-s, 11% of the 64 vCPUs while it ran
+2026-10-02T21:33:44Z chunk 0030: 1000 battles in 26 s (38.5 battles/s), 177.2 CPU-s, 11% of the 64 vCPUs while it ran
+2026-10-02T21:33:45Z chunk 0028: 1000 battles in 27 s (37.0 battles/s), 177.5 CPU-s, 10% of the 64 vCPUs while it ran
+2026-10-02T21:34:10Z chunk 0031: 1000 battles in 25 s (40.0 battles/s), 175.5 CPU-s, 11% of the 64 vCPUs while it ran
+2026-10-02T21:34:11Z chunk 0032: 1000 battles in 25 s (40.0 battles/s), 175.8 CPU-s, 11% of the 64 vCPUs while it ran
+2026-10-02T21:34:11Z chunk 0035: 1000 battles in 26 s (38.5 battles/s), 175.1 CPU-s, 11% of the 64 vCPUs while it ran
+2026-10-02T21:34:11Z chunk 0033: 1000 battles in 26 s (38.5 battles/s), 174.1 CPU-s, 10% of the 64 vCPUs while it ran
+2026-10-02T21:34:11Z chunk 0034: 1000 battles in 26 s (38.5 battles/s), 177.0 CPU-s, 11% of the 64 vCPUs while it ran
+2026-10-02T21:34:11Z chunk 0036: 1000 battles in 26 s (38.5 battles/s), 177.9 CPU-s, 11% of the 64 vCPUs while it ran
+2026-10-02T21:34:11Z chunk 0037: 1000 battles in 26 s (38.5 battles/s), 175.0 CPU-s, 11% of the 64 vCPUs while it ran
+2026-10-02T21:34:21Z rate (phase 1): 40152 battles in 180 s, 15867 in the last minute, 223.1 battles/s overall; the machine was 75% busy
+2026-10-02T21:34:37Z chunk 0038: 1000 battles in 26 s (38.5 battles/s), 177.8 CPU-s, 11% of the 64 vCPUs while it ran
+2026-10-02T21:34:37Z chunk 0039: 1000 battles in 26 s (38.5 battles/s), 175.0 CPU-s, 11% of the 64 vCPUs while it ran
+2026-10-02T21:34:37Z chunk 0040: 1000 battles in 26 s (38.5 battles/s), 177.8 CPU-s, 11% of the 64 vCPUs while it ran
+2026-10-02T21:34:37Z chunk 0043: 1000 battles in 25 s (40.0 battles/s), 175.8 CPU-s, 11% of the 64 vCPUs while it ran
+2026-10-02T21:34:38Z chunk 0042: 1000 battles in 26 s (38.5 battles/s), 174.8 CPU-s, 11% of the 64 vCPUs while it ran
+2026-10-02T21:34:38Z chunk 0041: 1000 battles in 27 s (37.0 battles/s), 183.0 CPU-s, 11% of the 64 vCPUs while it ran
+2026-10-02T21:34:38Z chunk 0044: 1000 battles in 26 s (38.5 battles/s), 176.0 CPU-s, 11% of the 64 vCPUs while it ran
+2026-10-02T21:34:58Z chunk 0046: 1000 battles in 20 s (50.0 battles/s), 152.1 CPU-s, 12% of the 64 vCPUs while it ran
+2026-10-02T21:34:58Z chunk 0045: 1000 battles in 20 s (50.0 battles/s), 153.1 CPU-s, 12% of the 64 vCPUs while it ran
+2026-10-02T21:34:58Z chunk 0047: 1000 battles in 20 s (50.0 battles/s), 152.4 CPU-s, 12% of the 64 vCPUs while it ran
+2026-10-02T21:35:02Z phase 1 (parallel 7): 189.4 battles/s steady state (10 of 24 chunks over 52.8 s), 238.6 battles/s over the phase; the machine was 64% busy
+2026-10-02T21:35:02Z phase 2: chunks 48 to 71, parallel 9, 7 workers per driver, 64 vCPUs
+2026-10-02T21:35:21Z rate (phase 2): 53113 battles in 240 s, 12961 in the last minute, 221.3 battles/s overall; the machine was 58% busy
+2026-10-02T21:35:32Z chunk 0050: 1000 battles in 29 s (34.5 battles/s), 172.8 CPU-s, 9% of the 64 vCPUs while it ran
+2026-10-02T21:35:33Z chunk 0052: 1000 battles in 30 s (33.3 battles/s), 173.3 CPU-s, 9% of the 64 vCPUs while it ran
+2026-10-02T21:35:33Z chunk 0054: 1000 battles in 30 s (33.3 battles/s), 172.2 CPU-s, 9% of the 64 vCPUs while it ran
+2026-10-02T21:35:33Z chunk 0053: 1000 battles in 30 s (33.3 battles/s), 173.5 CPU-s, 9% of the 64 vCPUs while it ran
+2026-10-02T21:35:33Z chunk 0049: 1000 battles in 30 s (33.3 battles/s), 173.7 CPU-s, 9% of the 64 vCPUs while it ran
+2026-10-02T21:35:33Z chunk 0056: 1000 battles in 30 s (33.3 battles/s), 171.5 CPU-s, 9% of the 64 vCPUs while it ran
+2026-10-02T21:35:33Z chunk 0048: 1000 battles in 30 s (33.3 battles/s), 176.6 CPU-s, 9% of the 64 vCPUs while it ran
+2026-10-02T21:35:33Z chunk 0055: 1000 battles in 30 s (33.3 battles/s), 177.3 CPU-s, 9% of the 64 vCPUs while it ran
+2026-10-02T21:35:33Z chunk 0051: 1000 battles in 30 s (33.3 battles/s), 179.4 CPU-s, 9% of the 64 vCPUs while it ran
+2026-10-02T21:36:04Z chunk 0059: 1000 battles in 31 s (32.3 battles/s), 175.4 CPU-s, 9% of the 64 vCPUs while it ran
+2026-10-02T21:36:04Z chunk 0060: 1000 battles in 31 s (32.3 battles/s), 176.9 CPU-s, 9% of the 64 vCPUs while it ran
+2026-10-02T21:36:04Z chunk 0061: 1000 battles in 31 s (32.3 battles/s), 174.4 CPU-s, 9% of the 64 vCPUs while it ran
+2026-10-02T21:36:04Z chunk 0064: 1000 battles in 30 s (33.3 battles/s), 173.7 CPU-s, 9% of the 64 vCPUs while it ran
+2026-10-02T21:36:04Z chunk 0058: 1000 battles in 31 s (32.3 battles/s), 177.4 CPU-s, 9% of the 64 vCPUs while it ran
+2026-10-02T21:36:04Z chunk 0057: 1000 battles in 31 s (32.3 battles/s), 183.7 CPU-s, 9% of the 64 vCPUs while it ran
+2026-10-02T21:36:04Z chunk 0062: 1000 battles in 31 s (32.3 battles/s), 178.7 CPU-s, 9% of the 64 vCPUs while it ran
+2026-10-02T21:36:04Z chunk 0065: 1000 battles in 30 s (33.3 battles/s), 176.6 CPU-s, 9% of the 64 vCPUs while it ran
+2026-10-02T21:36:04Z chunk 0063: 1000 battles in 30 s (33.3 battles/s), 174.8 CPU-s, 9% of the 64 vCPUs while it ran
+2026-10-02T21:36:21Z rate (phase 2): 69799 battles in 300 s, 16686 in the last minute, 232.7 battles/s overall; the machine was 76% busy
+2026-10-02T21:36:29Z chunk 0066: 1000 battles in 25 s (40.0 battles/s), 161.1 CPU-s, 10% of the 64 vCPUs while it ran
+2026-10-02T21:36:29Z chunk 0067: 1000 battles in 25 s (40.0 battles/s), 161.8 CPU-s, 10% of the 64 vCPUs while it ran
+2026-10-02T21:36:29Z chunk 0070: 1000 battles in 24 s (41.7 battles/s), 157.9 CPU-s, 10% of the 64 vCPUs while it ran
+2026-10-02T21:36:30Z chunk 0069: 1000 battles in 25 s (40.0 battles/s), 156.5 CPU-s, 10% of the 64 vCPUs while it ran
+2026-10-02T21:36:30Z chunk 0071: 1000 battles in 25 s (40.0 battles/s), 158.3 CPU-s, 10% of the 64 vCPUs while it ran
+2026-10-02T21:36:30Z chunk 0068: 1000 battles in 26 s (38.5 battles/s), 161.0 CPU-s, 10% of the 64 vCPUs while it ran
+2026-10-02T21:36:36Z phase 2 (parallel 9): 195.2 battles/s steady state (6 of 24 chunks over 30.7 s), 273.9 battles/s over the phase; the machine was 70% busy

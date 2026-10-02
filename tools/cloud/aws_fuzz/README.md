@@ -87,18 +87,31 @@ with warnings as errors and IPO, then the target `duoforge_diff_runner`.
   workers each made 55.6 to 58.8 battles/s each at 13 to 14% of the vCPUs, about 8.6 vCPUs per driver, and about 167
   battles/s together (pilot 3, 0.278 CPU-s per battle). A driver stays near 58 battles/s whatever its worker count.
   `parallel` in the `campaign.conf` is the number of chunks computed at the same time, each its own driver process with
-  `vCPUs / parallel` workers; `auto` (the default) is `vCPUs / 9`, at least 1 (7 on 64 vCPUs, so about 7 x 8.6 vCPUs).
-  The upload of a finished chunk runs in the background while the next chunks compute.
+  `vCPUs / parallel` workers; `auto` (the default) is `vCPUs / 7`, at least 1 (9 on 64 vCPUs). The first sweep (pilot 4,
+  64 vCPUs, 24 chunks of 1000 per phase) gave, over the whole phase, 213 battles/s with 5 drivers (56% of the machine
+  busy), 239 with 7 (64%) and 274 with 9 (70%): still rising at 9, hence 7 vCPUs per driver. The upload of a finished
+  chunk runs in the background while the next chunks compute.
 - **Parallel sweep** (`sweep=5,7,9` in the `campaign.conf`, instead of `parallel`): one launch measures several values of
   `parallel`, one **phase** each, played one after the other. Each phase has `chunks` chunks (so the campaign has
   `chunks` x the number of values; the seeds go on across the phases, no battle is played twice) and needs at least
-  2 x parallel + 3 of them (a sweep of 5, 7 and 9 needs 21; `campaigns/throughput-sweep` has 24 chunks of 1000). Per phase
-  the log gives the **steady-state** battles/s: the chunks completed between the completion of the first `parallel`
-  chunks (the first wave starts together and finishes together) and the completion of the chunk `parallel` before the
-  last (after which the drivers run dry), divided by that time, so that neither the start-up nor a single tail chunk is
-  in it; and the overall rate of the phase and the machine's busy share. The same lines go to
-  `fuzz/<campaign>/<run id>/sweep.jsonl`, and the per-minute log names the phase. The sweep is part of the manifest
-  (`parallel` is recorded as `sweep=5,7,9`), so a resume must use the same sweep.
+  `parallel` + 3 of them, better 3 x `parallel` (`campaigns/throughput-sweep` has 24 chunks of 1000 for 5, 7 and 9;
+  `campaigns/throughput-sweep-9-13` has 40 for 9, 11 and 13). Per phase the log gives two rates and the machine's busy
+  share. The **overall** rate is all the chunks over the whole phase: the ramp-up and the tail (the last wave of chunks
+  is usually not full and runs with fewer neighbours) are in it. The **steady** rate is what the machine does with all
+  `parallel` drivers busy: `parallel x chunk_battles` over the **median duration of the chunks that started before
+  the last `parallel` ones** (those had all their neighbours). Equally long chunks start and finish in waves, which
+  makes any rate over completion times (a straight line through a staircase) depend on where the window cuts the waves;
+  the median of the durations does not, and ignores a slow first wave and a stray slow chunk. The steady rate is never
+  reported below the overall rate (with a ramp and a tail it cannot be lower): when the figure from the chunk times
+  comes out lower, the overall rate is given and the entry says `steady_clamped`. Needs at least 3 chunks before the last
+  wave, else "no steady state". Replayed on the real log of pilot 4 (`testdata/run4_*`) it gives 227, 269 and 300
+  battles/s for 5, 7 and 9 drivers (22, 26 and 30 s per chunk), above the overall rates and consistent with the
+  per-minute rates of the log (up to 264/s in the phase of 7); the first estimator (a window between completions) had
+  given 203, 189 and 195, below the overall rates for 7 and 9. The same figures go to
+  `fuzz/<campaign>/<run id>/sweep.jsonl` (one line per phase: `steady_battles_per_second`, `overall_battles_per_second`,
+  `median_chunk_seconds`, `steady_chunks`, `steady_clamped`, `machine_busy_percent`), and the per-minute log names the
+  phase. The sweep is part of the manifest (`parallel` is recorded as `sweep=5,7,9`), so a resume must use the same
+  sweep.
 - **Runs and the manifest.** Every launch is a **run** with a prefix of its own,
   `fuzz/<campaign>/<run id>/`, where the run id is `<first 12 digits of the commit>-<chunk_battles>-<base_seed>-<launch
   time>` (launch.sh prints it). Everything the box writes is under that prefix, so a run of another commit or geometry,
@@ -290,6 +303,7 @@ CLOSURE mirrors and the Team C mirror. The table gives the chunks of the campaig
 | `closure-mirror` | team A and team B mirrors: `AA,BB` (CLOSURE) | 5 x 1000 | yes |
 | `team-c-mirror` | Team C mirror: `CC` (TEAM_C) | 5 x 1000 | yes |
 | `throughput-sweep` | the closure mirrors `AA,BB` at 5, 7 and 9 drivers (`sweep=5,7,9`, `bench=1`) | 3 phases x 24 x 1000 | yes (not a pilot: it measures the machine) |
+| `throughput-sweep-9-13` | the same at 9, 11 and 13 drivers (`sweep=9,11,13`) | 3 phases x 40 x 1000 | yes (not a pilot: it measures the machine) |
 | `g7-wide-guard` | the step's teams (Wide Guard) | ten times the step's | to be added by the step's owner |
 | `g8-throat-chop-heal-block` | the step's teams | ten times the step's | to be added |
 | `g9-encore` | the step's teams (Encore) | ten times the step's | to be added |
@@ -300,7 +314,7 @@ CLOSURE mirrors and the Team C mirror. The table gives the chunks of the campaig
 
 A campaign is a directory `campaigns/<id>/` with `campaign.conf` (`pairings`, `teams`, `base_seed`, `chunks`: four
 required `key=value` lines, and the optional `chunk_battles` (100 to 20000, default 2000), `parallel` (`auto` or 1 to 16)
-or `sweep` (1 to 6 values, not with `parallel`) and `bench` (0 or 1); see the four that exist) and the team pastes it names (`teams=D=sand.txt E=snow.txt`: a letter, a
+or `sweep` (1 to 6 values, not with `parallel`) and `bench` (0 or 1); see the five that exist) and the team pastes it names (`teams=D=sand.txt E=snow.txt`: a letter, a
 file of six sets with every gender stated, as `diff_driver.py random --team` takes them; or the id of a team of the
 registry). It is read from the commit that is built, so a campaign is reviewed with the PR that adds it. Pick a base seed
 range that no other campaign uses: the names of the battles are `fz_<seed>_<index>`.
