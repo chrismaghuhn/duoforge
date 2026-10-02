@@ -1,0 +1,90 @@
+{
+  "name": "fz_9640000_1_prefix",
+  "purpose": "Corpus (defect): case fz_9640000_1 of run 9640000 (tools/reference/diff_driver.py random), team PP_8E37C3B00CBBA6B6 against team PP_8E37C3B00CBBA6B6, found as DIVERGENCE events reference kind 5 differs in pos, hp, kind2. The shortest prefix that showed it, 21 of 25 choices; it passes now, fixed by the residual handler list of the pin, step residual-order (2026-10-03).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0229d79e24790c57411c3cce7fc39eabe9c19bd3c2e45b292ec34a9c29126039",
+  "teams": [
+    "Golisopod (M) @ Golisopite\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 1 Def / 1 SpD\nBrave Nature\n- First Impression\n- Leech Life\n- Close Combat\n- Iron Head\n\nFarigiraf (M) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 18 HP / 20 Def / 23 SpD / 5 Spe\nCalm Nature\n- Psychic\n- Trick Room\n- Helping Hand\n- Protect\n\nIncineroar (M) @ Leftovers\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 1 Atk / 10 Def / 10 SpD / 13 Spe\nImpish Nature\n- Flare Blitz\n- Throat Chop\n- Parting Shot\n- Fake Out\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 1 HP / 32 SpA / 1 SpD / 32 Spe\nModest Nature\n- Hyper Voice\n- Draco Meteor\n- Tailwind\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 3 Def / 12 SpD / 1 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- U-turn\n- Fake Out\n\nBasculegion (M) @ Life Orb\nAbility: Adaptability\nLevel: 50\nEVs: 6 HP / 18 Atk / 29 Def / 1 SpD / 12 Spe\nAdamant Nature\n- Last Respects\n- Wave Crash\n- Aqua Jet\n- Protect",
+    "Golisopod (M) @ Golisopite\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 1 Def / 1 SpD\nBrave Nature\n- First Impression\n- Leech Life\n- Close Combat\n- Iron Head\n\nIncineroar (M) @ Leftovers\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 1 Atk / 10 Def / 10 SpD / 13 Spe\nImpish Nature\n- Flare Blitz\n- Throat Chop\n- Parting Shot\n- Fake Out\n\nFarigiraf (M) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 18 HP / 20 Def / 23 SpD / 5 Spe\nCalm Nature\n- Psychic\n- Trick Room\n- Helping Hand\n- Protect\n\nBasculegion (M) @ Life Orb\nAbility: Adaptability\nLevel: 50\nEVs: 6 HP / 18 Atk / 29 Def / 1 SpD / 12 Spe\nAdamant Nature\n- Last Respects\n- Wave Crash\n- Aqua Jet\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 3 Def / 12 SpD / 1 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- U-turn\n- Fake Out\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 1 HP / 32 SpA / 1 SpD / 32 Spe\nModest Nature\n- Hyper Voice\n- Draco Meteor\n- Tailwind\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 5432",
+      "p2": "team 6423"
+    },
+    {
+      "p1": "move 3 -2, move 3 mega",
+      "p2": "move 2 -2, move 4"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 1 1, move 2 2",
+      "p2": "move 2 1, move 3 2"
+    },
+    {
+      "p1": "move 4, move 2 2",
+      "p2": "move 1, move 2 2"
+    },
+    {
+      "p1": "move 3 -2, move 3",
+      "p2": "move 2 1 mega, move 4"
+    },
+    {
+      "p1": "move 3 -2, move 3",
+      "p2": "move 1, move 3 -1"
+    },
+    {
+      "p1": "move 1 -2, switch 3",
+      "p2": "move 3, move 1 -1"
+    },
+    {
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "move 3 -2, move 3 2",
+      "p2": "move 2 2, switch 3"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "move 3 -2, move 2 2",
+      "p2": "move 4, move 1 -1"
+    },
+    {
+      "p1": "move 1 1, move 2 -1",
+      "p2": "move 4, switch 3"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 1 1, move 1 1",
+      "p2": "move 1 1, move 4"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 4 2, move 3 1",
+      "p2": "move 1 2, move 3 -1"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "move 3 2, move 4 2",
+      "p2": "move 2 -2, move 3 -1"
+    },
+    {
+      "p1": "move 3 1, move 1 1",
+      "p2": "move 2 1, move 2"
+    }
+  ]
+}

@@ -39,10 +39,14 @@ static uint32_t rng_next(rng *g)
 }
 
 /* The reference's selection sort with shuffles. The draws are taken from `values` in order. */
+static uint32_t g_ranges[MAX_LIST];
+static uint32_t g_draws;
+
 static void model_sort(dfi_residual_entry *list, uint32_t n, const uint32_t *values)
 {
     uint32_t sorted = 0u;
     uint32_t used = 0u;
+    g_draws = 0u;
     while (sorted + 1u < n) {
         uint32_t next[MAX_LIST] = {0};
         uint32_t count = 1u;
@@ -67,7 +71,9 @@ static void model_sort(dfi_residual_entry *list, uint32_t n, const uint32_t *val
         if (list[sorted].callback) {
             for (uint32_t start = sorted; start + 1u < sorted + count; ++start) {
                 const uint32_t lo = start - sorted;
+                g_ranges[used] = count - lo;
                 const uint32_t v = lo + values[used++] % (count - lo);
+                g_draws = used;
                 if (sorted + v != start) {
                     const dfi_residual_entry e = list[start];
                     list[start] = list[sorted + v];
@@ -177,23 +183,94 @@ static bool same_outcome(const shape *a, const shape *b, const uint32_t *values)
     return na == nb && memcmp(oa, ob, sizeof(uint32_t) * na) == 0;
 }
 
-static void draw_values(rng *g, uint32_t *values)
+/* Every value of every draw (an odometer over the ranges that the model recorded for these values) and a number of
+ * random orders of the volatiles: does the outcome ever differ from the list as it is? Returns false when there are too
+ * many draws to try all values. */
+/* The number of orders of the volatiles of the Pokemon with two keys or more (equal entries counted once), saturating. */
+static uint32_t arrangements(const shape *s)
 {
-    for (uint32_t i = 0u; i < MAX_LIST; ++i) {
-        values[i] = rng_next(g);
+    uint32_t total = 1u;
+    for (uint32_t m = 0u; m < s->mons; ++m) {
+        const dfi_residual_entry *v = &s->list[s->vol_start[m]];
+        const uint32_t len = s->vol_len[m];
+        bool distinct = false;
+        for (uint32_t i = 1u; i < len; ++i) {
+            distinct = distinct || v[i].order != v[0].order || v[i].sub_order != v[0].sub_order;
+        }
+        if (!distinct) {
+            continue;
+        }
+        uint32_t perms = 1u;
+        for (uint32_t i = 2u; i <= len; ++i) {
+            perms *= i;
+        }
+        for (uint32_t i = 0u; i < len; ++i) { /* divide by the factorial of each group of equal entries */
+            uint32_t same = 0u;
+            for (uint32_t j = 0u; j <= i; ++j) {
+                same += (v[j].order == v[i].order && v[j].sub_order == v[i].sub_order) ? 1u : 0u;
+            }
+            perms /= same;
+        }
+        total *= perms;
+        if (total > 100000u) {
+            return 100000u;
+        }
     }
+    return total;
+}
+
+static bool differs_somewhere(rng *g, const shape *base, bool *tried_all)
+{
+    uint32_t values[MAX_LIST] = {0};
+    dfi_residual_entry probe[MAX_LIST];
+    memcpy(probe, base->list, sizeof(dfi_residual_entry) * base->n);
+    model_sort(probe, base->n, values);
+    uint32_t ranges[MAX_LIST];
+    const uint32_t draws = g_draws;
+    uint32_t combos = 1u;
+    for (uint32_t k = 0u; k < draws; ++k) {
+        ranges[k] = g_ranges[k];
+        combos *= ranges[k];
+        if (combos > 4096u) {
+            *tried_all = false;
+            return false;
+        }
+    }
+    *tried_all = arrangements(base) <= 1024u; /* more orders than that and the engine's test gives up (refuses) */
+    for (uint32_t rep = 0u; rep < 60u; ++rep) {
+        shape other = *base;
+        scramble(g, &other);
+        memset(values, 0, sizeof values);
+        for (uint32_t c = 0u; c < combos; ++c) {
+            if (!same_outcome(base, &other, values)) {
+                return true;
+            }
+            for (uint32_t k = 0u; k < draws; ++k) {
+                values[k] += 1u;
+                if (values[k] < ranges[k]) {
+                    break;
+                }
+                values[k] = 0u;
+            }
+        }
+    }
+    return false;
 }
 
 static void test_random_lists(df_test *t)
 {
     rng g = {0x5EEDC0DEull};
-    unsigned long flagged = 0u;
-    unsigned long flagged_that_differ = 0u;
-    unsigned long unflagged_multi = 0u; /* unflagged lists with a Pokemon that has volatiles of two keys */
-    for (uint32_t trial = 0u; trial < 60000u; ++trial) {
+    unsigned long may_matter = 0u;
+    unsigned long refused = 0u;
+    unsigned long cleared_by_exact = 0u; /* the cheap test cannot clear them, the exact one does */
+    unsigned long refused_but_no_difference = 0u;
+    unsigned long unrefused_multi = 0u; /* unrefused lists with a Pokemon that has volatiles of two keys */
+    for (uint32_t trial = 0u; trial < 40000u; ++trial) {
         shape base;
         random_shape(&g, &base, rng_next(&g) % 4u == 0u, rng_next(&g) % 4u == 0u);
+        const bool may = dfi_residual_order_may_matter(base.list, base.n);
         const bool amb = dfi_residual_order_ambiguous(base.list, base.n);
+        DF_CHECK(t, !amb || may); /* the exact test only narrows the cheap one */
         bool multi = false;
         for (uint32_t m = 0u; m < base.mons; ++m) {
             for (uint32_t i = 1u; i < base.vol_len[m]; ++i) {
@@ -201,85 +278,100 @@ static void test_random_lists(df_test *t)
                 multi = multi || a[i].order != a[0].order || a[i].sub_order != a[0].sub_order;
             }
         }
-        if (amb) {
-            flagged += 1u;
-        } else if (multi) {
-            unflagged_multi += 1u;
+        may_matter += may ? 1u : 0u;
+        refused += amb ? 1u : 0u;
+        cleared_by_exact += (may && !amb) ? 1u : 0u;
+        unrefused_multi += (!amb && multi) ? 1u : 0u;
+        bool tried_all = false;
+        const bool differs = differs_somewhere(&g, &base, &tried_all);
+        if (!amb && differs) {
+            /* a list that is not refused and whose outcome depends on the order: the argument is wrong */
+            DF_CHECK(t, !differs);
+            return;
         }
-        bool differs = false;
-        for (uint32_t rep = 0u; rep < 12u; ++rep) {
-            shape other = base;
-            scramble(&g, &other);
-            uint32_t values[MAX_LIST];
-            draw_values(&g, values);
-            if (!same_outcome(&base, &other, values)) {
-                differs = true;
-                if (!amb) {
-                    /* an unflagged list whose outcome depends on the order: the argument is wrong */
-                    DF_CHECK(t, !differs);
-                    return;
-                }
-            }
-        }
-        if (amb && differs) {
-            flagged_that_differ += 1u;
+        if (amb && tried_all && !differs) {
+            refused_but_no_difference += 1u; /* only the random orders missed it, or the exact test is too careful */
         }
     }
-    /* The brute force is not vacuous: lists that are flagged exist, some of them really change, and so do unflagged
-     * lists with volatiles of two keys (which the argument says are fine). */
-    DF_CHECK(t, flagged > 100u);
-    DF_CHECK(t, flagged_that_differ > 10u);
-    DF_CHECK(t, unflagged_multi > 100u);
+    /* The brute force is not vacuous: lists that the cheap test flags exist, the exact test clears some of them and
+     * refuses others, and unrefused lists with volatiles of two keys (which the argument says are fine) are many. */
+    DF_CHECK(t, may_matter > 100u);
+    DF_CHECK(t, refused > 10u);
+    DF_CHECK(t, cleared_by_exact > 10u);
+    DF_CHECK(t, unrefused_multi > 100u);
+    /* what is refused really changes an outcome: found by 60 random orders of the volatiles and every draw */
+    DF_CHECK(t, refused_but_no_difference * 100u <= refused);
 }
 
-static const dfi_residual_entry E_COUNTER0 = {DFI_RES_DURATION, 0u, DFI_RES_NO_ORDER, 100u, 2u, false};
-static const dfi_residual_entry E_HEAL0 = {DFI_RES_DURATION, 0u, 20u, 100u, 2u, false};
-static const dfi_residual_entry E_CHOP0 = {DFI_RES_DURATION, 0u, 22u, 100u, 2u, false};
-static const dfi_residual_entry E_ENCORE0 = {DFI_RES_ENCORE, 0u, 16u, 100u, 2u, true};
-static const dfi_residual_entry E_ENCORE1 = {DFI_RES_ENCORE, 1u, 16u, 100u, 2u, true};
-static const dfi_residual_entry E_LEFT0 = {DFI_RES_LEFTOVERS, 0u, 5u, 100u, 4u, true};
-static const dfi_residual_entry E_LEFT1 = {DFI_RES_LEFTOVERS, 1u, 5u, 100u, 4u, true};
-static const dfi_residual_entry E_HERB0 = {DFI_RES_WHITE_HERB, 0u, 29u, 100u, 8u, true};
-static const dfi_residual_entry E_HERB1 = {DFI_RES_WHITE_HERB, 1u, 29u, 100u, 8u, true};
-static const dfi_residual_entry E_CHOP1 = {DFI_RES_DURATION, 1u, 22u, 100u, 2u, false};
+static dfi_residual_entry ent(uint32_t kind, uint32_t flat, uint32_t order, uint32_t sub, bool cb)
+{
+    return (dfi_residual_entry){kind, flat, order, 100u, sub, cb};
+}
+
+#define COUNTER(f) ent(DFI_RES_DURATION, (f), DFI_RES_NO_ORDER, 2u, false)
+#define HEAL(f) ent(DFI_RES_DURATION, (f), 20u, 2u, false)
+#define CHOP(f) ent(DFI_RES_DURATION, (f), 22u, 2u, false)
+#define ENCORE(f) ent(DFI_RES_ENCORE, (f), 16u, 2u, true)
+#define LEFT(f) ent(DFI_RES_LEFTOVERS, (f), 5u, 4u, true)
+#define HERB(f) ent(DFI_RES_WHITE_HERB, (f), 29u, 8u, true)
 
 static void test_examples(df_test *t)
 {
-    /* One Pokemon with Encore and Throat Chop (two keys) and Leftovers tied with another's: Leftovers is order 5, before
-     * both volatiles, so the order of the volatiles cannot change it. */
+    /* Encore and Throat Chop on one Pokemon and Leftovers tied with another's: Leftovers is order 5, before both
+     * volatiles: the cheap test clears it. */
     {
-        const dfi_residual_entry l[] = {E_ENCORE0, E_CHOP0, E_LEFT0, E_LEFT1};
+        const dfi_residual_entry l[] = {ENCORE(0), CHOP(0), LEFT(0), LEFT(1)};
+        DF_CHECK(t, !dfi_residual_order_may_matter(l, 4u));
         DF_CHECK(t, !dfi_residual_order_ambiguous(l, 4u));
     }
-    /* The same Pokemon with Encore tied with another Pokemon's Encore: a draw of order 16 on a list whose earlier part is
-     * not stored. */
+    /* Duration counters have one key: their order shows nowhere, even with a White Herb tie after them. */
     {
-        const dfi_residual_entry l[] = {E_ENCORE0, E_CHOP0, E_ENCORE1, E_CHOP1};
-        DF_CHECK(t, dfi_residual_order_ambiguous(l, 4u));
-    }
-    /* A Pokemon with Throat Chop and Heal Block, a White Herb tie (order 29, after the volatiles). */
-    {
-        const dfi_residual_entry l[] = {E_HEAL0, E_CHOP0, E_HERB0, E_HERB1};
-        DF_CHECK(t, dfi_residual_order_ambiguous(l, 4u));
-    }
-    /* Duration counters have one key: their order shows nowhere, so even a White Herb tie is fine. */
-    {
-        const dfi_residual_entry l[] = {E_COUNTER0, E_COUNTER0, E_HERB0, E_HERB1};
-        DF_CHECK(t, !dfi_residual_order_ambiguous(l, 4u));
+        const dfi_residual_entry l[] = {COUNTER(0), COUNTER(0), HERB(0), HERB(1)};
+        DF_CHECK(t, !dfi_residual_order_may_matter(l, 4u));
     }
     /* Two keys but no tie: nothing draws. */
     {
-        const dfi_residual_entry l[] = {E_ENCORE0, E_HEAL0, E_HERB0, E_LEFT1};
+        const dfi_residual_entry l[] = {ENCORE(0), HEAL(0), HERB(0), LEFT(1)};
         DF_CHECK(t, !dfi_residual_order_ambiguous(l, 4u));
     }
     /* Encore tied between two Pokemon that each hold one key only. */
     {
-        const dfi_residual_entry l[] = {E_ENCORE0, E_ENCORE1};
+        const dfi_residual_entry l[] = {ENCORE(0), ENCORE(1)};
         DF_CHECK(t, !dfi_residual_order_ambiguous(l, 2u));
     }
-    DF_CHECK_EQ_U64(t, dfi_residual_compare(&E_ENCORE0, &E_ENCORE1), 1u);
-    DF_CHECK_EQ_U64(t, dfi_residual_compare(&E_LEFT0, &E_ENCORE0), 0u);
-    DF_CHECK_EQ_U64(t, dfi_residual_compare(&E_HERB0, &E_CHOP0), 2u);
+    /* Encore tied between two Pokemon, one of which also has two Protect-style counters, and Leftovers tied before them
+     * (the AWS case fz_9630002_84 of 2026-10-03): the cheap test cannot clear it, the exact one does (the Leftovers
+     * rounds put the first Pokemon's Encore after the second's whichever way the second's volatiles are listed). */
+    {
+        const dfi_residual_entry l[] = {ENCORE(1), LEFT(1), COUNTER(2), COUNTER(2), ENCORE(2), LEFT(2)};
+        DF_CHECK(t, dfi_residual_order_may_matter(l, 6u));
+        DF_CHECK(t, !dfi_residual_order_ambiguous(l, 6u));
+    }
+    /* Two White Herbs tied after a Pokemon with Throat Chop and Encore: the selection sort moves the Encore and the Chop
+     * to the front past the herbs, and which herb comes first depends on the order of the two volatiles. Refused. */
+    {
+        const dfi_residual_entry l[] = {HERB(0), HERB(1), CHOP(2), ENCORE(2)};
+        DF_CHECK(t, dfi_residual_order_may_matter(l, 4u));
+        DF_CHECK(t, dfi_residual_order_ambiguous(l, 4u));
+        const dfi_residual_entry other[] = {HERB(0), HERB(1), ENCORE(2), CHOP(2)};
+        DF_CHECK(t, dfi_residual_order_ambiguous(other, 4u));
+    }
+    /* Encore tied between two Pokemon that each hold Encore and Throat Chop, one with Heal Block between: no group
+     * before them moves anything, the first Pokemon's Encore stays before the second's. */
+    {
+        const dfi_residual_entry l[] = {ENCORE(0), CHOP(0), ENCORE(1), HEAL(1), CHOP(1)};
+        DF_CHECK(t, dfi_residual_order_may_matter(l, 5u));
+        DF_CHECK(t, !dfi_residual_order_ambiguous(l, 5u));
+    }
+    DF_CHECK_EQ_U64(t, dfi_residual_compare(&(dfi_residual_entry){DFI_RES_ENCORE, 0u, 16u, 100u, 2u, true},
+                                            &(dfi_residual_entry){DFI_RES_ENCORE, 1u, 16u, 100u, 2u, true}),
+                    1u);
+    DF_CHECK_EQ_U64(t, dfi_residual_compare(&(dfi_residual_entry){DFI_RES_LEFTOVERS, 0u, 5u, 100u, 4u, true},
+                                            &(dfi_residual_entry){DFI_RES_ENCORE, 0u, 16u, 100u, 2u, true}),
+                    0u);
+    DF_CHECK_EQ_U64(t, dfi_residual_compare(&(dfi_residual_entry){DFI_RES_WHITE_HERB, 0u, 29u, 100u, 8u, true},
+                                            &(dfi_residual_entry){DFI_RES_DURATION, 0u, 22u, 100u, 2u, false}),
+                    2u);
 }
 
 int main(void)

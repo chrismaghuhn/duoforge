@@ -1,0 +1,70 @@
+{
+  "name": "fz_9700008_650_prefix",
+  "purpose": "Corpus (defect): case fz_9700008_650 of run 9700008 (tools/reference/diff_driver.py random), team PP_4C6EB1D0D2CBB3F3 against team PP_FC5A33ABDD155CA3, found as DIVERGENCE events reference kind 5 differs in pos, hp, kind2. The shortest prefix that showed it, 16 of 17 choices; it passes now, fixed by the residual handler list of the pin, step residual-order (2026-10-03).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,3655ff18364194664e025a3c5e4c964e01672c3c1cf742733474616448688b43",
+  "teams": [
+    "Salamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 1 HP / 21 Atk / 15 SpA / 29 Spe\nNaive Nature\n- Tailwind\n- Double-Edge\n- Protect\n- Hyper Voice\n\nBasculegion (M) @ Choice Scarf\nAbility: Adaptability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Wave Crash\n- Last Respects\n- Aqua Jet\n- Soak\n\nGolisopod (M) @ Golisopite\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nImpish Nature\n- Iron Head\n- U-turn\n- Sucker Punch\n- Close Combat\n\nFarigiraf (M) @ Grassy Seed\nAbility: Armor Tail\nLevel: 50\nEVs: 24 HP / 31 Def / 1 SpA / 10 SpD\nBold Nature\n- Helping Hand\n- Thunderbolt\n- Trick Room\n- Psychic\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Grassy Glide\n- U-turn\n- Fake Out\n- Wood Hammer\n\nSneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Fake Out\n- Close Combat\n- Protect\n- Dire Claw",
+    "Golisopod (M) @ Golisopite\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- First Impression\n- Iron Head\n- U-turn\n- Protect\n\nKingambit (M) @ Life Orb\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 1 SpD / 1 Spe\nAdamant Nature\n- Kowtow Cleave\n- Sucker Punch\n- Swords Dance\n- Protect\n\nIncineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 30 HP / 10 Def / 10 SpD / 16 Spe\nCareful Nature\n- Flare Blitz\n- Throat Chop\n- Fake Out\n- Parting Shot\n\nMilotic (M) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 32 Def / 2 Spe\nCalm Nature\n- Muddy Water\n- Hypnosis\n- Coil\n- Protect\n\nRaichu (M) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 25 HP / 11 Def / 2 SpA / 28 Spe\nTimid Nature\n- Zap Cannon\n- Focus Blast\n- Fake Out\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 32 HP / 25 SpD / 9 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- U-turn\n- Fake Out"
+  ],
+  "choices": [
+    {
+      "p1": "team 6235",
+      "p2": "team 4132"
+    },
+    {
+      "p1": "move 4 1, move 1 1",
+      "p2": "move 3, move 3 2"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 2 -2, move 1 1",
+      "p2": "move 3, move 4 -1"
+    },
+    {
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "move 3, move 1 2",
+      "p2": "move 1, move 2 -1"
+    },
+    {
+      "p1": "move 2 1, move 1 2",
+      "p2": "move 2 1, switch 4"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 4 -2, move 1 -1",
+      "p2": "move 4, move 1 2"
+    },
+    {
+      "p1": "switch 3, switch 4"
+    },
+    {
+      "p1": "move 3 -2, move 2 2",
+      "p2": "move 1 2, move 4 1"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 1 -2 mega, pass",
+      "p2": "move 2 2, move 3 -1 mega"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 2 1, pass",
+      "p2": "move 3 1, move 2 1"
+    }
+  ]
+}

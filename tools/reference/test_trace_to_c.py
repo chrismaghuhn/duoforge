@@ -202,10 +202,15 @@ class Refusals(unittest.TestCase):
         """Step AC1 follow-up (the AWS triage of 2026-10-03): the two BeforeMove handlers of a Pokemon that holds Heal
         Block and Throat Chop, in either order, are dropped (no pool move has both flags); any other BeforeMove tie, and
         the pair on two Pokemon, are refused."""
-        def tie(group):
-            return trace_to_c.drop_reason({'site': 'SPEED_TIE', 'context': 'event:BeforeMove', 'group': group}, {})
+        def tie(group, context='event:BeforeMove'):
+            return trace_to_c.drop_reason({'site': 'SPEED_TIE', 'context': context, 'group': group}, {})
         self.assertIn('Heal Block', tie(['H:healblock:p1b:cb', 'H:throatchop:p1b:cb']))
         self.assertIn('Heal Block', tie(['H:throatchop:p2a:cb', 'H:healblock:p2a:cb']))
+        # the ModifyMove handlers of the same two conditions (data/moves.ts:8314, :19417) are the same case
+        self.assertIn('ModifyMove', tie(['H:healblock:p1b:cb', 'H:throatchop:p1b:cb'], 'event:ModifyMove'))
+        self.assertIn('Heal Block', tie(['H:throatchop:p2a:cb', 'H:healblock:p2a:cb'], 'event:ModifyMove'))
+        with self.assertRaises(trace_to_c.ConversionError):
+            tie(['H:healblock:p1b:cb', 'H:throatchop:p1b:cb'], 'event:TryHit')
         for bad in (['H:healblock:p1b:cb', 'H:throatchop:p2a:cb'], ['H:healblock:p1b:cb', 'H:flinch:p1b:cb'],
                     ['H:healblock:p1b:cb', 'H:throatchop:p1b:cb', 'H:slp:p1b:cb'], ['H:healblock:p1b:cb', 'H:healblock:p1b:cb']):
             with self.assertRaises(trace_to_c.ConversionError) as cm:
