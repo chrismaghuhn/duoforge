@@ -138,6 +138,12 @@ if(DUOFORGE_PS_REFERENCE_DIR)
                     --check "${CMAKE_CURRENT_SOURCE_DIR}/reference/traces/${_name}.json")
             set_tests_properties(duoforge.reference.trace.${_name} PROPERTIES TIMEOUT 120 LABELS reference)
         endforeach()
+        # The same specs through run() in one process, as the persistent worker
+        # records them: identical to the traces, and again after other runs.
+        add_test(NAME duoforge.reference.trace_run
+            COMMAND "${DUOFORGE_NODE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_ps_trace_run.js"
+                "${DUOFORGE_PS_REFERENCE_DIR}")
+        set_tests_properties(duoforge.reference.trace_run PROPERTIES TIMEOUT 600 LABELS reference)
     endif()
 endif()
 # The conformance tables must be what the converter makes of the traces.
