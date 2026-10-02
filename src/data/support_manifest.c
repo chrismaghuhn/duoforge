@@ -57,9 +57,11 @@
  * step P1 added the ids and their family columns, step P2 makes the item
  * families rules (the type booster, BasePower x4915/4096, and the resist
  * berry, ModifyDamage x0.5, both read the family column) and marks the
- * sixteen new boosters and seventeen new berries. The abilities Pixilate,
- * Refrigerate, Overgrow, Torrent and Swarm stay unmarked until the steps
- * that make their families rules.
+ * sixteen new boosters and seventeen new berries; step P3 makes the "-ate"
+ * and pinch abilities rules (the family columns of the ability, the type
+ * change before STAB and immunity with BasePower x4915/4096, and ModifyAtk
+ * and ModifySpA x1.5 at a third of the HP or less) and marks Pixilate,
+ * Refrigerate, Overgrow, Torrent and Swarm.
  * Step G2 adds every row of the 17 target teams, all unmarked: the formes
  * Pelipper, Arcanine-Hisui, Annihilape and Floette-Eternal with its Mega, 22
  * moves (nine of them with a named handler id that the turn code refuses),
@@ -162,6 +164,11 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_AERILATE] = 1u,
             [DFI_ABILITY_UNBURDEN] = 1u,
             [DFI_ABILITY_PSYCHICSURGE] = 1u,
+            [DFI_ABILITY_PIXILATE] = 1u,
+            [DFI_ABILITY_REFRIGERATE] = 1u,
+            [DFI_ABILITY_OVERGROW] = 1u,
+            [DFI_ABILITY_TORRENT] = 1u,
+            [DFI_ABILITY_SWARM] = 1u,
         },
     .items =
         {

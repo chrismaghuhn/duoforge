@@ -1666,7 +1666,19 @@ def check_pool_prefix(dp, dx, dc):
         fail('the legal moves and abilities do not have one row per forme')
 
 
+def check_names(dp):
+    """The names of the data query API are the ids of the rows: Showdown ids (toID), never empty and unique per
+    table, so that a name finds exactly one id."""
+    for key in ('formes', 'moves', 'items', 'abilities', 'natures'):
+        names = [r['id'] for r in dp[key]]
+        if any(re.fullmatch(r'[a-z0-9]+', n) is None for n in names):
+            fail('a %s id is not a Showdown id (lower-case letters and digits)' % key)
+        if len(set(names)) != len(names):
+            fail('two %s have the same id' % key)
+
+
 def render_pool(dp, dx):
+    check_names(dp)
     can = canonical_pool(dp)
     digest = hashlib.sha256(can).hexdigest()
     nx = {key: len(dx[key]) for key in ('formes', 'moves', 'items', 'abilities')}
@@ -1789,6 +1801,19 @@ extern const dfi_item_family dfi_pool_item_family[DFI_POOL_ITEM_COUNT];
 extern const dfi_ability_family dfi_pool_ability_family[DFI_POOL_ABILITY_COUNT];
 extern const dfi_forme_legal dfi_pool_forme_legal[DFI_POOL_FORME_COUNT];
 
+/* ---- names ----
+ * The Showdown id (toID: lower-case letters and digits) of every row, as a
+ * constant string, for the data query API (duoforge_data_find, _name). They
+ * come from the same run as the tables, so an id and its name always belong
+ * together; they are not part of the canonical bytes, the table hash or any
+ * fingerprint. The CLOSURE and TEAM_C kinds read their prefix of them. A
+ * Mega forme's name is the forme's own id (for example staraptormega). */
+extern const char *const dfi_pool_forme_names[DFI_POOL_FORME_COUNT];
+extern const char *const dfi_pool_move_names[DFI_POOL_MOVE_COUNT];
+extern const char *const dfi_pool_item_names[DFI_POOL_ITEM_COUNT];
+extern const char *const dfi_pool_ability_names[DFI_POOL_ABILITY_COUNT];
+extern const char *const dfi_pool_nature_names[DFI_NATURE_COUNT];
+
 /* SHA-256 of the canonical pool bytes (written by the generator). */
 #define DFI_POOL_CANONICAL_SIZE %du
 extern const uint8_t dfi_pool_table_hash[32];
@@ -1861,6 +1886,16 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity);
         slots += ['DFI_CLOSURE_NONE'] * (FORME_ABILITIES_MAX - len(slots))
         c.append('    [DFI_FORME_%s] = {{%s}, %du, {%s}},' % (
             fo['id'].upper(), ', '.join('0x%02xu' % b for b in fl['learnable']), len(fl['abilities']), ', '.join(slots)))
+    c += ['};', '', '/* Names: the Showdown id of every row (toID), not part of any hash. */']
+    for what, rows, table in (('forme', dp['formes'], 'FORME'), ('move', dp['moves'], 'MOVE'),
+                              ('item', dp['items'], 'ITEM'), ('ability', dp['abilities'], 'ABILITY')):
+        c.append('const char *const dfi_pool_%s_names[DFI_POOL_%s_COUNT] = {' % (what, table))
+        for r in rows:
+            c.append('    [DFI_%s_%s] = "%s",' % (table, r['id'].upper(), r['id']))
+        c += ['};', '']
+    c.append('const char *const dfi_pool_nature_names[DFI_NATURE_COUNT] = {')
+    for n in dp['natures']:
+        c.append('    [DFI_NATURE_%s] = "%s",' % (n['id'].upper(), n['id']))
     c += ['};', '', 'const uint8_t dfi_pool_table_hash[32] = {']
     hb = bytes.fromhex(digest)
     for i in range(0, 32, 8):

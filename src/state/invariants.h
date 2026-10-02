@@ -21,6 +21,13 @@
  * KNOWLEDGE (nothing about an unseen member; the display of an active member
  * is current; a revealed fact is a fact) and QUEUE (non-empty exactly at
  * PIVOT).
+ *
+ * The TAIL ids (docs/decisions/0015 section 7) check the POOL state tail: it
+ * is all zero under every other kind (TAIL_KIND); under the POOL kinds each
+ * value is in its range, a position without a standing occupant has none, a
+ * soak type is on a member standing on the field and not Mega Evolved
+ * (TAIL_SIDE, TAIL_POSITION, TAIL_MEMBER). TAIL_SCHEMA and TAIL_RESERVED
+ * are reported by the decoder only.
  */
 #include <duoforge/duoforge.h>
 
@@ -70,6 +77,12 @@ typedef enum dfi_invariant {
     DFI_INV_SEEN_MASK,
     DFI_INV_KNOWLEDGE,
     DFI_INV_QUEUE,
+    DFI_INV_TAIL_KIND,     /* a tail that is not all zero under a kind without the POOL tail */
+    DFI_INV_TAIL_SIDE,     /* Wide Guard flag above 1 */
+    DFI_INV_TAIL_POSITION, /* a position's tail out of range, inconsistent, or nonzero at an empty or fainted position */
+    DFI_INV_TAIL_MEMBER,   /* a soak type out of range, or on a member that is not standing on the field */
+    DFI_INV_TAIL_SCHEMA,   /* decode: the artifact's schema is not the one of the context's kind */
+    DFI_INV_TAIL_RESERVED, /* decode: a reserved byte of the tail is not zero */
     DFI_INV_COUNT
 } dfi_invariant;
 

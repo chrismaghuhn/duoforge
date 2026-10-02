@@ -1,5 +1,6 @@
 #include "combat/turn.h"
 
+#include "combat/ability_family.h"
 #include "combat/events.h"
 #include "combat/item_family.h"
 
@@ -837,10 +838,11 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     }
     uint32_t bp_chain = 4096u;
     bool ok = true;
-    /* Aerilate (Team C, Salamence-Mega): a Normal move it turned into Flying
-     * gets 4915/4096 (data/abilities.ts:57-77, onBasePowerPriority 23: first). */
-    if (md->type == DFI_TYPE_NORMAL && move_type == DFI_TYPE_FLYING && dfi_ability(a, DFI_ABILITY_AERILATE)) {
-        ok = dfi_chain_modify(bp_chain, 4915u, &bp_chain);
+    /* An -ate ability (the ATE family: Aerilate, Pixilate and Refrigerate,
+     * decision 0015): a Normal move it turned into its type gets 4915/4096
+     * (data/abilities.ts, onBasePowerPriority 23: first). */
+    if (dfi_ate_boosts(a, md->type, move_type)) {
+        ok = dfi_chain_modify(bp_chain, DFI_ATE_MODIFIER, &bp_chain);
     }
     if (dfi_ability(a, DFI_ABILITY_TOUGHCLAWS) && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u) {
         ok = dfi_chain_modify(bp_chain, 5325u, &bp_chain); /* onBasePowerPriority 21: first */
@@ -867,12 +869,13 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
         ok = ok && dfi_chain_modify(bp_chain, 5325u, &bp_chain);
     }
     const uint32_t base_power = bp_chain == 4096u ? power : dfi_modify(power, bp_chain);
-    /* ModifyAtk / ModifySpA, one chained modifier: Blaze for Fire moves at a
-     * third of the HP or less, Flash Fire's boost for Fire moves once it
-     * took one; 1.5 each. */
+    /* ModifyAtk / ModifySpA, one chained modifier: a pinch ability (the
+     * PINCH family: Blaze, Overgrow, Torrent and Swarm, decision 0015) for a
+     * move of its type at a third of the HP or less, Flash Fire's boost for
+     * Fire moves once it took one; 1.5 each. */
     uint32_t atk_chain = 4096u;
-    if (move_type == DFI_TYPE_FIRE && dfi_ability(a, DFI_ABILITY_BLAZE) && (uint32_t)a->hp * 3u <= a->hp_max) {
-        ok = ok && dfi_chain_modify(atk_chain, 6144u, &atk_chain);
+    if (dfi_pinch_applies(a, move_type)) {
+        ok = ok && dfi_chain_modify(atk_chain, DFI_PINCH_MODIFIER, &atk_chain);
     }
     if (move_type == DFI_TYPE_FIRE && dfi_ability(a, DFI_ABILITY_FLASHFIRE) &&
         ((uint32_t)ap->flags & DFI_VOL_FLASH_FIRE) != 0u) {
@@ -2120,14 +2123,11 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     /* Struggle is typeless; Weather Ball turns Water in rain, Fire under sun
      * (its onModifyType, before the hit steps). */
     uint32_t move_type = md->special == DFI_SPECIAL_STRUGGLE ? DFI_CLOSURE_NONE : md->type;
-    /* Aerilate (Team C, Salamence-Mega): onModifyType (priority -1) turns a
-     * Normal move into Flying before immunity and STAB; Weather Ball is in
-     * its noModifyType list and Struggle is typeless by then
-     * (data/abilities.ts:57-77). */
-    if (move_type == DFI_TYPE_NORMAL && md->special != DFI_SPECIAL_WEATHER_BALL &&
-        dfi_ability(m, DFI_ABILITY_AERILATE)) {
-        move_type = DFI_TYPE_FLYING;
-    }
+    /* An -ate ability (the ATE family, decision 0015): onModifyType
+     * (priority -1) turns a Normal move into its type before immunity and
+     * STAB; Weather Ball is in its noModifyType list and Struggle is
+     * typeless by then (data/abilities.ts). */
+    move_type = dfi_ate_type_of(m, md, move_type);
     if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_RAIN) {
         move_type = DFI_TYPE_WATER;
     } else if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_SUN) {
@@ -2672,11 +2672,12 @@ static bool dfi_has_switch_in(const dfi_member *m)
     return dfi_has_entry(m) || dfi_holds(m, DFI_ITEM_GRASSYSEED);
 }
 
+/* An entry ability: a weather or a terrain setter (the families of
+ * decision 0015: Drizzle, Drought, Grassy Surge, Psychic Surge) or Intimidate. */
 static bool dfi_has_entry(const dfi_member *m)
 {
-    const uint32_t a = m->ability; /* 1 + id, 0 none */
-    return a == 1u + DFI_ABILITY_DRIZZLE || a == 1u + DFI_ABILITY_DROUGHT || a == 1u + DFI_ABILITY_GRASSYSURGE ||
-           a == 1u + DFI_ABILITY_PSYCHICSURGE || a == 1u + DFI_ABILITY_INTIMIDATE;
+    return dfi_weather_set_by(m) != DFI_WEATHER_NONE || dfi_terrain_set_by(m) != DFI_TERRAIN_NONE ||
+           m->ability == 1u + DFI_ABILITY_INTIMIDATE;
 }
 
 /* Drizzle and Drought (setWeather): the same weather is not restarted;
@@ -2689,8 +2690,9 @@ static duoforge_status dfi_entry_ability(dfi_run *r, uint32_t flat)
     struct duoforge_battle *b = r->b;
     const dfi_member *m = dfi_at(b, flat);
     const uint32_t a = m->ability;
-    if (a == 1u + DFI_ABILITY_DRIZZLE || a == 1u + DFI_ABILITY_DROUGHT) {
-        const uint32_t w = a == 1u + DFI_ABILITY_DRIZZLE ? DFI_WEATHER_RAIN : DFI_WEATHER_SUN;
+    const uint32_t w = dfi_weather_set_by(m);
+    const uint32_t terrain = dfi_terrain_set_by(m);
+    if (w != DFI_WEATHER_NONE) {
         if (b->weather != w) {
             b->weather = (uint8_t)w;
             b->weather_turns = (uint8_t)DFI_FIELD_TURNS_MAX;
@@ -2699,9 +2701,8 @@ static duoforge_status dfi_entry_ability(dfi_run *r, uint32_t flat)
             e.detail = (uint8_t)w; /* DUOFORGE_WEATHER_* */
             dfi_emit(r, &e);
         }
-    } else if (a == 1u + DFI_ABILITY_GRASSYSURGE || a == 1u + DFI_ABILITY_PSYCHICSURGE) {
-        const bool grassy = a == 1u + DFI_ABILITY_GRASSYSURGE;
-        const uint32_t terrain = grassy ? DFI_TERRAIN_GRASSY : DFI_TERRAIN_PSYCHIC;
+    } else if (terrain != DFI_TERRAIN_NONE) {
+        const bool grassy = terrain == DFI_TERRAIN_GRASSY;
         if (b->terrain != terrain) {
             b->terrain = (uint8_t)terrain;
             b->terrain_turns = (uint8_t)DFI_FIELD_TURNS_MAX;
