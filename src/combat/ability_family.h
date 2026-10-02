@@ -28,13 +28,20 @@
 /* The family row of the member's ability (stored as 1 + id, 0 for none); the
  * row of no family without one. The member invariant bounds the ability id,
  * so the guard on it only keeps the read in the table. */
-static inline dfi_ability_family dfi_ability_family_of(const dfi_member *m)
+static inline dfi_ability_family dfi_ability_family_for(uint32_t ability)
 {
     dfi_ability_family none = {DFI_ABILITY_FAMILY_NONE, DFI_FAMILY_PARAM_NONE};
-    if (m == NULL || m->ability == 0u || m->ability > DFI_POOL_ABILITY_COUNT) {
+    if (ability == 0u || ability > DFI_POOL_ABILITY_COUNT) {
         return none;
     }
-    return dfi_pool_ability_family[m->ability - 1u];
+    return dfi_pool_ability_family[ability - 1u];
+}
+
+/* The family row of the member's sheet ability. The turn code reads the ability now (dfi_ability_family_now in
+ * combat/turn.c, which asks the POOL tail) and uses the *_fam rules below. */
+static inline dfi_ability_family dfi_ability_family_of(const dfi_member *m)
+{
+    return dfi_ability_family_for(m == NULL ? 0u : m->ability);
 }
 
 /* onModifyType of an -ate ability: a Normal move becomes the ability's type;
@@ -42,9 +49,8 @@ static inline dfi_ability_family dfi_ability_family_of(const dfi_member *m)
  * lists as not to be changed (noModifyType: of the pool's moves only Weather
  * Ball, which the cross-check of the pool ids confirms). The typeless hit of
  * Struggle is not Normal. */
-static inline uint32_t dfi_ate_type_of(const dfi_member *user, const dfi_move_data *md, uint32_t move_type)
+static inline uint32_t dfi_ate_type_fam(dfi_ability_family fam, const dfi_move_data *md, uint32_t move_type)
 {
-    const dfi_ability_family fam = dfi_ability_family_of(user);
     if (fam.family == DFI_ABILITY_FAMILY_ATE && move_type == DFI_TYPE_NORMAL &&
         md->special != DFI_SPECIAL_WEATHER_BALL) {
         return fam.param;
@@ -54,18 +60,16 @@ static inline uint32_t dfi_ate_type_of(const dfi_member *user, const dfi_move_da
 
 /* onBasePower of an -ate ability (typeChangerBoosted): the move was Normal
  * and its type is now the ability's. */
-static inline bool dfi_ate_boosts(const dfi_member *user, uint32_t base_type, uint32_t move_type)
+static inline bool dfi_ate_boosts_fam(dfi_ability_family fam, uint32_t base_type, uint32_t move_type)
 {
-    const dfi_ability_family fam = dfi_ability_family_of(user);
     return fam.family == DFI_ABILITY_FAMILY_ATE && base_type == DFI_TYPE_NORMAL && move_type == fam.param;
 }
 
 /* onModifyAtk and onModifySpA of a pinch ability: a move of its type at a
  * third of the maximum HP or less (hp <= maxhp / 3 in the handler, so
  * 3 hp <= maxhp). */
-static inline bool dfi_pinch_applies(const dfi_member *user, uint32_t move_type)
+static inline bool dfi_pinch_applies_fam(dfi_ability_family fam, const dfi_member *user, uint32_t move_type)
 {
-    const dfi_ability_family fam = dfi_ability_family_of(user);
     return fam.family == DFI_ABILITY_FAMILY_PINCH && move_type == fam.param &&
            (uint32_t)user->hp * 3u <= (uint32_t)user->hp_max;
 }
@@ -74,9 +78,8 @@ static inline bool dfi_pinch_applies(const dfi_member *user, uint32_t move_type)
  * state value DFI_WEATHER_*, or DFI_WEATHER_NONE when it is no weather
  * setter. The column holds a family code, so each code is named here; a code
  * that is none of them is no setter, which the table test excludes. */
-static inline uint32_t dfi_weather_set_by(const dfi_member *m)
+static inline uint32_t dfi_weather_set_by_fam(dfi_ability_family fam)
 {
-    const dfi_ability_family fam = dfi_ability_family_of(m);
     if (fam.family != DFI_ABILITY_FAMILY_WEATHER_SETTER) {
         return DFI_WEATHER_NONE;
     }
@@ -89,15 +92,40 @@ static inline uint32_t dfi_weather_set_by(const dfi_member *m)
 
 /* The terrain that an ability sets on entry (onStart, setTerrain) as a state
  * value DFI_TERRAIN_*, or DFI_TERRAIN_NONE. */
-static inline uint32_t dfi_terrain_set_by(const dfi_member *m)
+static inline uint32_t dfi_terrain_set_by_fam(dfi_ability_family fam)
 {
-    const dfi_ability_family fam = dfi_ability_family_of(m);
     if (fam.family != DFI_ABILITY_FAMILY_TERRAIN_SETTER) {
         return DFI_TERRAIN_NONE;
     }
     return fam.param == DFI_FAMILY_TERRAIN_GRASSY    ? DFI_TERRAIN_GRASSY
            : fam.param == DFI_FAMILY_TERRAIN_PSYCHIC ? DFI_TERRAIN_PSYCHIC
                                                      : DFI_TERRAIN_NONE;
+}
+
+/* The same rules over a member's sheet ability (the tests of every ability against every type use these). */
+static inline uint32_t dfi_ate_type_of(const dfi_member *user, const dfi_move_data *md, uint32_t move_type)
+{
+    return dfi_ate_type_fam(dfi_ability_family_of(user), md, move_type);
+}
+
+static inline bool dfi_ate_boosts(const dfi_member *user, uint32_t base_type, uint32_t move_type)
+{
+    return dfi_ate_boosts_fam(dfi_ability_family_of(user), base_type, move_type);
+}
+
+static inline bool dfi_pinch_applies(const dfi_member *user, uint32_t move_type)
+{
+    return dfi_pinch_applies_fam(dfi_ability_family_of(user), user, move_type);
+}
+
+static inline uint32_t dfi_weather_set_by(const dfi_member *m)
+{
+    return dfi_weather_set_by_fam(dfi_ability_family_of(m));
+}
+
+static inline uint32_t dfi_terrain_set_by(const dfi_member *m)
+{
+    return dfi_terrain_set_by_fam(dfi_ability_family_of(m));
 }
 
 #endif
