@@ -44,7 +44,7 @@
 #include "state/battle_internal.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "bb64d4f467ff7935f1ec777484bea51d6ec5115ab31129541a4b1ef7e9fc957a"
+#define POOL_HASH_HEX "f6a7e2f42e64c4b316925b2b06e5dc970b2cf6f06eaa5301d81b8a9c3f1309a4"
 /* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
  * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
  * produced the same bytes. Step G10 moved two of them on purpose: Scald and Recover are data now (the thaw bit and
@@ -67,9 +67,9 @@
 #define POOL_ABILITIES 215u
 
 /* The rows that the tables do not model, pinned (the generator reports the same counts). */
-#define UNMODELED_MOVES 315u /* 321 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
+#define UNMODELED_MOVES 313u /* 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
 #define UNMODELED_ITEMS 45u
-#define UNMODELED_ABILITIES 186u
+#define UNMODELED_ABILITIES 184u
 
 /* How many rows of the manifest are marked and half modelled: marked, and with the UNMODELED handler or a list of
  * unmodelled features (decision 0015 section 4.2). A step marks only what it fully models. */
@@ -201,6 +201,13 @@ static const family_case new_abilities[] = {
     {DFI_ABILITY_OVERGROW, DFI_ABILITY_FAMILY_PINCH, DFI_TYPE_GRASS, "Overgrow"},
     {DFI_ABILITY_TORRENT, DFI_ABILITY_FAMILY_PINCH, DFI_TYPE_WATER, "Torrent"},
     {DFI_ABILITY_SWARM, DFI_ABILITY_FAMILY_PINCH, DFI_TYPE_BUG, "Swarm"},
+};
+
+/* The weather setters of the Sandstorm and Snowscape step (their handlers are in data/abilities.ts: onStart sets
+ * the weather, no Primal guard): table rules like Drizzle and Drought, marked by that step. */
+static const family_case weather_abilities[] = {
+    {DFI_ABILITY_SANDSTREAM, DFI_ABILITY_FAMILY_WEATHER_SETTER, DFI_WEATHER_SAND, "Sand Stream"},
+    {DFI_ABILITY_SNOWWARNING, DFI_ABILITY_FAMILY_WEATHER_SETTER, DFI_WEATHER_SNOW, "Snow Warning"},
 };
 
 typedef struct legal_case {
@@ -576,8 +583,12 @@ int main(void)
             diff += item_equals_ext(&dfi_pool_items[i], &dfi_closure_items[i]) ? 0u : 1u;
         }
         /* The type immunity bits are the extended ones (the closure's plus
-         * psn); the pool adds no type. */
-        diff += dfi_bytes_equal(dfi_pool_type_immunity, dfi_ext_type_immunity, DFI_TYPE_COUNT) ? 0u : 1u;
+         * psn) plus the pool's own bit, DFI_IMMUNE_SAND, which is set for Ground, Rock and Steel and for no other
+         * type; the pool adds no type. */
+        for (uint32_t i = 0u; i < DFI_TYPE_COUNT; ++i) {
+            const bool sand = i == DFI_TYPE_GROUND || i == DFI_TYPE_ROCK || i == DFI_TYPE_STEEL;
+            diff += dfi_pool_type_immunity[i] == (dfi_ext_type_immunity[i] | (sand ? DFI_IMMUNE_SAND : 0u)) ? 0u : 1u;
+        }
         DF_CHECK_EQ_U64(&t, diff, 0u);
     }
 
@@ -648,16 +659,21 @@ int main(void)
         uint32_t handlers = 0u;
         for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
             handlers += dfi_pool_moves[i].special >= DFI_SPECIAL_ENCORE &&
-                                dfi_pool_moves[i].special <= DFI_SPECIAL_LOW_KICK
+                                dfi_pool_moves[i].special <= DFI_SPECIAL_SNOWSCAPE
                             ? 1u
                             : 0u;
         }
-        /* Seven ids, of which Scald and Recover are not any move's after step G10. */
-        DF_CHECK_EQ_U64(&t, handlers, DFI_SPECIAL_LOW_KICK - DFI_SPECIAL_ENCORE + 1u - 2u);
+        /* Seven ids of G2 remain after step G8 (Scald and Recover are not any move's after step G10), and the two
+         * weather moves (Sandstorm and Snowscape: the field `weather`, which no column models) have one each. */
+        DF_CHECK_EQ_U64(&t, handlers, DFI_SPECIAL_SNOWSCAPE - DFI_SPECIAL_ENCORE + 1u - 2u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_ENCORE, DFI_SPECIAL_FOLLOW_ME + 1u);
-        /* UNMODELED follows the seven handler ids of G2 that remain after step G8. Step G10 made Scald and Recover
-         * data (the thaw bit and the heal column): their ids are still defined, and no pool move has them. */
-        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_LOW_KICK + 1u);
+        /* UNMODELED follows them. Step G10 made Scald and Recover data (the thaw bit and the heal column): their ids
+         * are still defined, and no pool move has them. */
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_LOW_KICK + 1u, DFI_SPECIAL_SANDSTORM);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_SANDSTORM + 1u, DFI_SPECIAL_SNOWSCAPE);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_SNOWSCAPE + 1u);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_SANDSTORM].special, DFI_SPECIAL_SANDSTORM);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_SNOWSCAPE].special, DFI_SPECIAL_SNOWSCAPE);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_SCALD].special, DFI_SPECIAL_NONE);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_RECOVER].special, DFI_SPECIAL_NONE);
         /* Step G8: Throat Chop and Psychic Noise are modelled (a secondary kind of their own, chance 100), not
@@ -714,6 +730,7 @@ int main(void)
         uint8_t ext[DFI_EXT_CANONICAL_SIZE];
         uint8_t sha[DUOFORGE_DIGEST_SIZE];
         const uint32_t closure_bits = DFI_IMMUNE_BRN | DFI_IMMUNE_FRZ | DFI_IMMUNE_PAR | DFI_IMMUNE_PRANKSTER;
+        const uint32_t ext_bits = closure_bits | DFI_IMMUNE_PSN; /* every bit but the pool's DFI_IMMUNE_SAND */
         DF_CHECK_EQ_U64(&t, dfi_closure_canonical_bytes(closure, sizeof closure), DFI_CLOSURE_CANONICAL_SIZE);
         size_t n = dfi_pool_canonical_bytes_of(from_pool, sizeof from_pool, DFI_FORME_COUNT, DFI_MOVE_COUNT,
                                                DFI_ITEM_COUNT, DFI_ABILITY_COUNT, closure_bits);
@@ -724,7 +741,7 @@ int main(void)
 
         DF_CHECK_EQ_U64(&t, dfi_ext_canonical_bytes(ext, sizeof ext), DFI_EXT_CANONICAL_SIZE);
         n = dfi_pool_canonical_bytes_of(from_pool, sizeof from_pool, DFI_EXT_FORME_COUNT, DFI_EXT_MOVE_COUNT,
-                                        DFI_EXT_ITEM_COUNT, DFI_EXT_ABILITY_COUNT, 0xFFu);
+                                        DFI_EXT_ITEM_COUNT, DFI_EXT_ABILITY_COUNT, ext_bits);
         DF_CHECK_EQ_U64(&t, n, DFI_EXT_CANONICAL_SIZE);
         DF_CHECK_BYTES(&t, from_pool, ext, DFI_EXT_CANONICAL_SIZE, "extended canonical bytes from the pool prefix");
         DF_CHECK(&t, dfi_sha256(from_pool, n, sha));
@@ -740,7 +757,8 @@ int main(void)
         uint8_t sha[DUOFORGE_DIGEST_SIZE];
         uint8_t want[DUOFORGE_DIGEST_SIZE];
         const size_t n = dfi_pool_canonical_bytes_of(rows, sizeof rows, G2_FORMES, G2_MOVES, G2_ITEMS, G2_ABILITIES,
-                                                     0xFFu);
+                                                     DFI_IMMUNE_BRN | DFI_IMMUNE_FRZ | DFI_IMMUNE_PAR |
+                                                         DFI_IMMUNE_PRANKSTER | DFI_IMMUNE_PSN);
         DF_CHECK_EQ_U64(&t, n, 12u + G2_FORMES * 24u + G2_MOVES * 29u + G2_ITEMS * 2u + 324u + 18u + 50u);
         DF_CHECK(&t, dfi_sha256(rows, n, sha));
         DF_CHECK(&t, df_hex_to_bytes(STEPS_ROWS_HASH_HEX, want, sizeof want));
@@ -906,6 +924,9 @@ int main(void)
         for (size_t i = 0u; i < n_new_abilities; ++i) {
             check_ability(&t, &new_abilities[i]);
         }
+        for (size_t i = 0u; i < sizeof weather_abilities / sizeof weather_abilities[0]; ++i) {
+            check_ability(&t, &weather_abilities[i]);
+        }
         uint32_t stray = 0u;
         for (uint32_t id = 0u; id < DFI_POOL_ITEM_COUNT; ++id) {
             if (!listed(prefix_items, n_prefix_items, id) && !listed(new_items, n_new_items, id)) {
@@ -916,7 +937,8 @@ int main(void)
             }
         }
         for (uint32_t id = 0u; id < DFI_POOL_ABILITY_COUNT; ++id) {
-            if (!listed(prefix_abilities, n_prefix_abilities, id) && !listed(new_abilities, n_new_abilities, id)) {
+            if (!listed(prefix_abilities, n_prefix_abilities, id) && !listed(new_abilities, n_new_abilities, id) &&
+                !listed(weather_abilities, sizeof weather_abilities / sizeof weather_abilities[0], id)) {
                 stray += dfi_pool_ability_family[id].family != DFI_ABILITY_FAMILY_NONE ||
                                  dfi_pool_ability_family[id].param != DFI_FAMILY_PARAM_NONE
                              ? 1u
@@ -1084,12 +1106,20 @@ int main(void)
             DF_CHECK(&t, dfi_support.abilities[id] != 0u);
             DF_CHECK_EQ_U64(&t, dfi_pool_ability_family[id].family, DFI_ABILITY_FAMILY_NONE);
         }
+        for (uint32_t id = DFI_ABILITY_FAIRYAURA + 1u; id < DFI_POOL_ABILITY_COUNT; ++id) {
+            /* Of the whole-pool abilities after Fairy Aura only Sand Stream and Snow Warning have a family (the weather
+             * setters of the Sandstorm and Snowscape step) and are marked. */
+            const bool setter = id == DFI_ABILITY_SANDSTREAM || id == DFI_ABILITY_SNOWWARNING;
+            DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, setter ? 1u : 0u);
+            DF_CHECK_EQ_U64(&t, dfi_pool_ability_family[id].family,
+                            setter ? DFI_ABILITY_FAMILY_WEATHER_SETTER : DFI_ABILITY_FAMILY_NONE);
+        }
         for (uint32_t id = 0u; id < DFI_POOL_ABILITY_COUNT; ++id) {
             if (dfi_pool_ability_family[id].family != DFI_ABILITY_FAMILY_NONE) {
                 DF_CHECK(&t, dfi_support.abilities[id] != 0u);
             }
         }
-        /* Steps G2, G5, G8, G7, G10, G11 and G12 mark twenty-three moves in all (G10: First Impression, Scald, Recover, Low
+        /* Steps G2, G5, G8, G7, G10, G11 and G12 mark twenty-five moves in all (G10: First Impression, Scald, Recover, Low
          * Kick: g10_*), and step G13 fourteen more of the whole pool (Flamethrower, Draining Kiss, Rock Tomb, Hydro Pump,
          * Superpower, Light of Ruin, Earth Power, Power Gem, Aura Sphere, Icy Wind, Ice Shard, Quick Attack, Detect and
          * Poison Jab: g13_*), each used in a reference battle under the POOL kind (g2_data_moves_a to _d; U-turn: g5_uturn_a
@@ -1103,8 +1133,9 @@ int main(void)
                                                 DFI_MOVE_BULKUP, DFI_MOVE_LIQUIDATION, DFI_MOVE_ICEPUNCH,
                                                 DFI_MOVE_SHADOWCLAW, DFI_MOVE_DRUMBEATING, DFI_MOVE_DAZZLINGGLEAM,
                                                 DFI_MOVE_UTURN, DFI_MOVE_THROATCHOP, DFI_MOVE_PSYCHICNOISE,
-                                                DFI_MOVE_WIDEGUARD, DFI_MOVE_SOAK, DFI_MOVE_MOONBLAST, DFI_MOVE_CALMMIND, DFI_MOVE_FIRSTIMPRESSION,
-                                                DFI_MOVE_SCALD, DFI_MOVE_RECOVER, DFI_MOVE_LOWKICK,
+                                                DFI_MOVE_WIDEGUARD, DFI_MOVE_SOAK, DFI_MOVE_MOONBLAST, DFI_MOVE_CALMMIND,
+                                                DFI_MOVE_FIRSTIMPRESSION, DFI_MOVE_SCALD, DFI_MOVE_RECOVER, DFI_MOVE_LOWKICK,
+                                                DFI_MOVE_SANDSTORM, DFI_MOVE_SNOWSCAPE,
                                                 DFI_MOVE_FLAMETHROWER, DFI_MOVE_DRAININGKISS, DFI_MOVE_ROCKTOMB,
                                                 DFI_MOVE_HYDROPUMP, DFI_MOVE_SUPERPOWER, DFI_MOVE_LIGHTOFRUIN,
                                                 DFI_MOVE_EARTHPOWER, DFI_MOVE_POWERGEM, DFI_MOVE_AURASPHERE,
@@ -1118,16 +1149,17 @@ int main(void)
             }
             DF_CHECK_EQ_U64(&t, dfi_support.moves[id] != 0u ? 1u : 0u, want ? 1u : 0u);
             /* A marked move has a handler id only if the engine has the code for it: First Impression (Fake Out's
-             * family) and Low Kick (Grass Knot's) and Soak (step G11) and Wide Guard (step G7) and Detect (Protect's, step G13);
-             * the others are data. Never the UNMODELED one. */
+             * family), Low Kick (Grass Knot's), Soak (step G11), Wide Guard (step G7), the two weather moves and Detect
+             * (Protect's, step G13); the others are data. Never the UNMODELED one. */
             DF_CHECK(&t, !want || dfi_pool_moves[id].special == DFI_SPECIAL_NONE ||
                              id == DFI_MOVE_FIRSTIMPRESSION || id == DFI_MOVE_LOWKICK || id == DFI_MOVE_SOAK ||
+                             id == DFI_MOVE_SANDSTORM || id == DFI_MOVE_SNOWSCAPE ||
                              (id == DFI_MOVE_WIDEGUARD && dfi_pool_moves[id].special == DFI_SPECIAL_WIDE_GUARD) ||
                              (id == DFI_MOVE_DETECT && dfi_pool_moves[id].special == DFI_SPECIAL_PROTECT));
             DF_CHECK(&t, !want || dfi_pool_moves[id].special != DFI_SPECIAL_UNMODELED);
             marked_count += dfi_support.moves[id] != 0u ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, marked_count, 37u);
+        DF_CHECK_EQ_U64(&t, marked_count, 39u);
     }
 
     /* Step G12: Fairy Aura and Flower Veil. The engine reads them by id (no family column: one legal holder each);

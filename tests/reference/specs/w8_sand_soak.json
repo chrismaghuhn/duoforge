@@ -1,0 +1,28 @@
+{
+  "name": "w8_sand_soak",
+  "purpose": "Soak under Sandstorm: Pelipper's Soak makes Tyranitar a Water type alone, so Sandstorm hurts it (a Rock type is immune) and its Special Defense loses the sand boost (Ice Beam after Soak does more than before), while the Steel type Kingambit stays immune; the types are read as they are now (decision 0015 step G11).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000006108",
+  "teams": [
+    "Pelipper (F) @ Sitrus Berry\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 SpA\nModest Nature\n- Soak\n- Protect\n- Ice Beam\n- Hurricane\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Iron Head\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n\nSneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Protect\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Protect\n- Tailwind\n\nRaichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Protect",
+    "Tyranitar (M) @ Chople Berry\nAbility: Sand Stream\nLevel: 50\nEVs: 32 HP / 2 Atk / 32 SpD\nCalm Nature\n- Rock Slide\n- Protect\n- Ice Beam\n- Sandstorm\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Ice Beam\n- Hypnosis\n- Weather Ball\n\nFarigiraf (M) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 2 HP / 32 SpD / 32 Spe\nTimid Nature\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nIncineroar (M) @ Charcoal\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 2",
+      "move 3 1, move 2",
+      "move 3 1, move 2",
+      "move 3 1, move 2",
+      "move 3 1, move 2"
+    ],
+    "p2": [
+      "move 1, move 1",
+      "move 1, move 1",
+      "move 1, move 1",
+      "move 1, move 1",
+      "move 1, move 1"
+    ],
+    "max_steps": 7
+  }
+}

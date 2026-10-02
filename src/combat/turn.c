@@ -906,6 +906,14 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
         !dfi_stage_stat(d->stats[def_index], def_stage, &defense)) {
         return DUOFORGE_E_INVARIANT;
     }
+    /* ModifyDef and ModifySpD (sim/battle-actions.ts:1707-1709) of the weather conditions, priority 10, so the first
+     * handler: Sandstorm's onModifySpD gives a Rock type 1.5x its Special Defense, Snowscape's onModifyDef an Ice
+     * type 1.5x its Defense (data/conditions.ts:640-645 and 706-711; this.modify(x, 1.5) is 6144/4096). */
+    if (r->b->weather == DFI_WEATHER_SAND && def_index == DFI_STAGE_SPD && dfi_has_type(r->b, d, DFI_TYPE_ROCK)) {
+        defense = dfi_modify(defense, 6144u);
+    } else if (r->b->weather == DFI_WEATHER_SNOW && def_index == DFI_STAGE_DEF && dfi_has_type(r->b, d, DFI_TYPE_ICE)) {
+        defense = dfi_modify(defense, 6144u);
+    }
     /* BasePower (after the critical hit roll), one chained modifier: Mystic
      * Water (Water) and Miracle Seed (Grass) 4915/4096, Grassy Terrain
      * 5325/4096 for a grounded user's Grass move. */
@@ -1586,6 +1594,62 @@ static duoforge_status dfi_update(dfi_run *r)
             dfi_use_item(r, flat);
             dfi_heal(r, flat, (uint32_t)m->hp_max / 4u, DUOFORGE_CAUSE_ITEM, 1u + DFI_ITEM_SITRUSBERRY,
                      DUOFORGE_NO_POSITION);
+        }
+    }
+    return DUOFORGE_OK;
+}
+
+/* runStatusImmunity('sandstorm'): a type whose chart entry carries the sandstorm key, Rock, Ground and Steel
+ * (data/typechart.ts), judged by the types now (dfi_types_of: a Soaked Pokemon is a Water type alone, step G11). An
+ * ability or item that gives the immunity (Overcoat, Sand Force, Sand Rush, Sand Veil,
+ * Safety Goggles) or stops indirect damage (Magic Guard) is not marked in the support manifest, so no battle
+ * holds one (tests/test_pool_weather.c checks that); marking one needs its immunity here. */
+static bool dfi_sand_immune(const struct duoforge_battle *b, const dfi_member *m)
+{
+    for (uint32_t type = 0u; type < DFI_TYPE_COUNT; ++type) {
+        if ((dfi_pool_type_immunity[type] & DFI_IMMUNE_SAND) != 0u && dfi_has_type(b, m, type)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/* eachEvent('Weather') under Sandstorm (sim/battle.ts:465-476, the onWeather of data/conditions.ts:659-661): every
+ * active Pokemon that has not fainted, in eachEvent's order, takes baseMaxhp / 16 (at least 1) as [-damage]
+ * [from] Sandstorm unless it is immune (Battle.spreadDamage, sim/battle.ts: a Weather effect on a target that fails
+ * runStatusImmunity does no damage). Every active has the handler, so a tie between two Pokemon that both take
+ * damage shows in the order of their lines and is drawn (the group is shuffled as a whole, the converter keeps the
+ * draws of such a group, see trace_to_c.py drop_reason); a tie with an immune Pokemon changes nothing. The faints
+ * wait for the end of the residual handler. */
+static duoforge_status dfi_sand_damage(dfi_run *r)
+{
+    uint32_t bearers = 0u;
+    for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
+        const dfi_member *m = dfi_at(r->b, flat);
+        if (m != NULL && m->hp != 0u && !dfi_sand_immune(r->b, m)) {
+            bearers |= 1u << flat;
+        }
+    }
+    if (bearers == 0u) {
+        return DUOFORGE_OK;
+    }
+    uint32_t list[DFI_POSITIONS] = {0u, 0u, 0u, 0u};
+    uint32_t n = 0u;
+    duoforge_status st = dfi_each_order(r, bearers, list, &n);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    for (uint32_t i = 0u; i < n; ++i) {
+        const uint32_t flat = list[i];
+        const dfi_member *m = dfi_at(r->b, flat);
+        if (((bearers >> flat) & 1u) == 0u || m->hp == 0u) {
+            continue;
+        }
+        const uint32_t damage = (uint32_t)m->hp_max / 16u;
+        st = dfi_deal(r, flat, damage == 0u ? 1u : damage, DUOFORGE_CAUSE_WEATHER, DFI_WEATHER_SAND,
+                      DUOFORGE_NO_POSITION);
+        if (st != DUOFORGE_OK) {
+            return st;
         }
     }
     return DUOFORGE_OK;
@@ -2312,6 +2376,22 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         dfi_emit(r, &e);
         return DUOFORGE_OK;
     }
+    if (status_move && (md->special == DFI_SPECIAL_SANDSTORM || md->special == DFI_SPECIAL_SNOWSCAPE)) {
+        /* Sandstorm and Snowscape (moveHit, sim/battle-actions.ts:1248-1251): Field.setWeather (sim/field.ts:39-82)
+         * fails when the same weather is up (the move fails), and otherwise replaces the weather for 5 turns
+         * (the rock items that make it 8 are not marked) with -weather|X, no [from]. */
+        const uint32_t w = md->special == DFI_SPECIAL_SANDSTORM ? DFI_WEATHER_SAND : DFI_WEATHER_SNOW;
+        if (b->weather == w) {
+            dfi_fail_still(r, user);
+            return DUOFORGE_OK;
+        }
+        b->weather = (uint8_t)w;
+        b->weather_turns = (uint8_t)DFI_FIELD_TURNS_MAX;
+        duoforge_event e = dfi_event_make(DUOFORGE_EVENT_WEATHER, DUOFORGE_NO_POSITION);
+        e.detail = (uint8_t)w; /* DUOFORGE_WEATHER_* */
+        dfi_emit(r, &e);
+        return DUOFORGE_OK;
+    }
     if (status_move && md->pseudo_weather == DFI_PSEUDO_WEATHER_TRICK_ROOM) {
         /* addPseudoWeather: Trick Room again ends it (onFieldRestart). */
         const bool ends = b->trick_room_turns != 0u;
@@ -2388,6 +2468,10 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         move_type = DFI_TYPE_WATER;
     } else if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_SUN) {
         move_type = DFI_TYPE_FIRE;
+    } else if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_SAND) {
+        move_type = DFI_TYPE_ROCK; /* data/moves.ts:20711-20713 */
+    } else if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_SNOW) {
+        move_type = DFI_TYPE_ICE; /* data/moves.ts:20714-20717 (snowscape) */
     }
     const bool spread = count > 1u;
     /* Hit steps: Psychic Terrain and Protect (TryHit), type immunity,
@@ -3455,9 +3539,19 @@ static duoforge_status dfi_residual_events(dfi_run *r)
                 w.detail = b->weather;
                 w.flags = (uint8_t)DUOFORGE_EVENT_FLAG_UPKEEP;
                 dfi_emit(r, &w); /* -weather|...|[upkeep] */
-                st = dfi_update(r); /* the upkeep: eachEvent('Weather'), then 'Update' */
+                if (b->weather == DFI_WEATHER_SAND) {
+                    st = dfi_sand_damage(r); /* eachEvent('Weather'): Sandstorm's onWeather */
+                    if (st != DUOFORGE_OK) {
+                        return st;
+                    }
+                }
+                st = dfi_update(r); /* the upkeep: eachEvent('Weather') ends with 'Update' */
                 if (st != DUOFORGE_OK) {
                     return st;
+                }
+                dfi_process_faints(r); /* fieldEvent: faintMessages after each handler (sim/battle.ts:569-570) */
+                if (r->ended) {
+                    return DUOFORGE_OK;
                 }
             }
             continue;
