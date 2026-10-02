@@ -12,6 +12,13 @@
  * Built with DF_CONFORMANCE_TEAM_C it is duoforge.reference.conformance_team_c:
  * the same driver over the Team C battles (tests/reference/conformance_team_c.h,
  * decision 0009 section 6.1) with TEAM_C and TEAM_C_DEV contexts.
+ *
+ * Built with DF_CONFORMANCE_POOL (on its own, or with DF_CONFORMANCE_TEAM_C) it
+ * is duoforge.reference.conformance_pool (or _team_c_pool): the same battles
+ * under the POOL and POOL_DEV contexts (decision 0015 section 5). The pool
+ * tables have the closure and the extended tables as their prefix and the
+ * POOL profile is the certified one, so every battle must pass as before and
+ * the same battles run under POOL itself, not under POOL_DEV.
  */
 #include <stdio.h>
 #include <string.h>
@@ -27,6 +34,12 @@
 #include "data/closure_tables.h"
 #include "reference/conformance.h"
 #define DF_CONF_FORMES dfi_closure_formes
+#endif
+#ifdef DF_CONFORMANCE_POOL
+#include "data/pool_tables.h"
+#include "support/pool.h"
+#undef DF_CONF_FORMES
+#define DF_CONF_FORMES dfi_pool_formes
 #endif
 #include "state/battle_internal.h"
 #include "state/request.h"
@@ -63,12 +76,22 @@ static void build_setup(const df_conf_battle *cb, duoforge_battle_setup *s)
 int main(void)
 {
     df_test t;
-#ifdef DF_CONFORMANCE_TEAM_C
+#if defined(DF_CONFORMANCE_POOL) && defined(DF_CONFORMANCE_TEAM_C)
+    df_test_begin(&t, "duoforge.reference.conformance_team_c_pool");
+#elif defined(DF_CONFORMANCE_POOL)
+    df_test_begin(&t, "duoforge.reference.conformance_pool");
+#elif defined(DF_CONFORMANCE_TEAM_C)
     df_test_begin(&t, "duoforge.reference.conformance_team_c");
+#else
+    df_test_begin(&t, "duoforge.reference.conformance");
+#endif
+#ifdef DF_CONFORMANCE_POOL
+    duoforge_context *k1 = df_make_context(&df_config_pool);
+    duoforge_context *k2 = df_make_context(&df_config_pool_dev);
+#elif defined(DF_CONFORMANCE_TEAM_C)
     duoforge_context *k1 = df_make_context(&df_config_team_c);
     duoforge_context *k2 = df_make_context(&df_config_team_c_dev);
 #else
-    df_test_begin(&t, "duoforge.reference.conformance");
     duoforge_context *k1 = df_make_context(&df_config_k1);
     duoforge_context *k2 = df_make_context(&df_config_k2);
 #endif
@@ -197,7 +220,9 @@ int main(void)
      * of battles found by the differential loop. */
     DF_CHECK_EQ_U64(&t, real, 26u);
 #endif
-#ifdef DF_CONFORMANCE_TEAM_C
+#if defined(DF_CONFORMANCE_POOL)
+    fprintf(stderr, "  %u of the battles run under POOL data\n", real);
+#elif defined(DF_CONFORMANCE_TEAM_C)
     fprintf(stderr, "  %u of the battles run under TEAM_C data\n", real);
 #else
     fprintf(stderr, "  %u of the battles run under CLOSURE data\n", real);

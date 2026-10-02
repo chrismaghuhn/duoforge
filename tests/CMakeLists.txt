@@ -36,7 +36,8 @@ endfunction()
 
 # Shared test support (explicit test context, no globals).
 add_library(duoforge_test_support STATIC support/check.c support/fixtures.c support/goldens.c
-            support/goldens_legacy.c support/team_c.c support/factored.c support/conformance_compare.c)
+            support/goldens_legacy.c support/team_c.c support/pool.c support/factored.c
+            support/conformance_compare.c)
 target_include_directories(duoforge_test_support PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 # The F2 fixture builder and the conformance comparators are white-box.
 target_include_directories(duoforge_test_support PRIVATE "${PROJECT_SOURCE_DIR}/src")
@@ -86,6 +87,14 @@ duoforge_add_test(NAME duoforge.reference.conformance SOURCES test_conformance.c
 # Team C (decision 0009): the same driver over tests/reference/conformance_team_c.h.
 duoforge_add_test(NAME duoforge.reference.conformance_team_c SOURCES test_conformance.c WHITEBOX TIMEOUT 60)
 target_compile_definitions(duoforge_reference_conformance_team_c PRIVATE DF_CONFORMANCE_TEAM_C)
+# POOL (decision 0015): every committed battle again, under the POOL contexts: the closure
+# battles (conformance.h) and the Team C battles (conformance_team_c.h). The real-team ones
+# run under POOL itself, the development ones under POOL_DEV, as in the builds above.
+duoforge_add_test(NAME duoforge.reference.conformance_pool SOURCES test_conformance.c WHITEBOX TIMEOUT 60)
+target_compile_definitions(duoforge_reference_conformance_pool PRIVATE DF_CONFORMANCE_POOL)
+duoforge_add_test(NAME duoforge.reference.conformance_team_c_pool SOURCES test_conformance.c WHITEBOX TIMEOUT 60)
+target_compile_definitions(duoforge_reference_conformance_team_c_pool PRIVATE DF_CONFORMANCE_TEAM_C
+    DF_CONFORMANCE_POOL)
 # The domain check of the differential runner (tools/difftest/domain.c): the engine's
 # candidates against the choices that the reference accepted, and the controls that
 # make that comparison worth anything (no Python or checkout needed).
@@ -100,13 +109,19 @@ duoforge_add_test(NAME duoforge.data.closure_tables SOURCES test_closure_tables.
 # Team C (decision 0009): the extended tables, whose prefix is the closure.
 duoforge_add_test(NAME duoforge.data.extended_tables SOURCES test_extended_tables.c WHITEBOX)
 duoforge_add_test(NAME duoforge.state.team_c_setup SOURCES test_team_c_setup.c WHITEBOX)
+# POOL (decision 0015): the pool tables, whose prefix is the extended tables, with their family
+# columns, and the POOL kinds.
+duoforge_add_test(NAME duoforge.data.pool_tables SOURCES test_pool_tables.c WHITEBOX)
+duoforge_add_test(NAME duoforge.state.pool_setup SOURCES test_pool_setup.c WHITEBOX TIMEOUT 60)
 # The generated files must stay exactly what tools/datagen/gen_closure.py
 # wrote; regenerate and update these hashes together.
 foreach(_gen IN ITEMS
         "closure_tables.h=f6ef34b31d74a60f9c28e0bce8d3cc39a68a2ee03c7d17532090c9fca42fb25b"
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
-        "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17")
+        "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
+        "pool_tables.h=5459ef2f67ec59774891b899a0e4039d705e29d3896f86d00baa484350f1b6bf"
+        "pool_tables.c=8a1728bf47e712987a3afce74c598c07ea6da27f4be56966ad25d5a1daa80c07")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -128,6 +143,10 @@ if(DUOFORGE_PS_REFERENCE_DIR)
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/gen_closure.py"
             "${DUOFORGE_PS_REFERENCE_DIR}" --team-c --check)
     set_tests_properties(duoforge.data.extended_regen PROPERTIES TIMEOUT 120 LABELS reference)
+    add_test(NAME duoforge.data.pool_regen
+        COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/gen_closure.py"
+            "${DUOFORGE_PS_REFERENCE_DIR}" --pool --check)
+    set_tests_properties(duoforge.data.pool_regen PROPERTIES TIMEOUT 120 LABELS reference)
     # The arithmetic reference values, recomputed by the pinned Showdown.
     find_program(DUOFORGE_NODE node)
     if(DUOFORGE_NODE)
@@ -135,6 +154,14 @@ if(DUOFORGE_PS_REFERENCE_DIR)
             COMMAND "${DUOFORGE_NODE}" "${PROJECT_SOURCE_DIR}/tools/reference/arith_ref.js"
                 "${DUOFORGE_PS_REFERENCE_DIR}" --check "${CMAKE_CURRENT_SOURCE_DIR}/reference/arith_ref.h")
         set_tests_properties(duoforge.reference.arith PROPERTIES TIMEOUT 120 LABELS reference)
+        # The family columns of the pool tables (decision 0015), against the pinned handlers: every
+        # family member's handler is called with a probe for each of the 18 types and must agree
+        # with the generated type, weather or terrain; the pool's ids are also validated by the
+        # pinned TeamValidator.
+        add_test(NAME duoforge.data.pool_families
+            COMMAND "${DUOFORGE_NODE}" "${PROJECT_SOURCE_DIR}/tools/datagen/pool_families.js"
+                "${DUOFORGE_PS_REFERENCE_DIR}" "${PROJECT_SOURCE_DIR}")
+        set_tests_properties(duoforge.data.pool_families PROPERTIES TIMEOUT 120 LABELS reference)
         # Every committed battle trace is reproduced by the pinned Showdown.
         file(GLOB _specs "${CMAKE_CURRENT_SOURCE_DIR}/reference/specs/*.json")
         foreach(_spec IN LISTS _specs)
