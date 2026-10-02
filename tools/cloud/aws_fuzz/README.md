@@ -52,11 +52,14 @@ AWS_PROFILE=pokeengine tools/cloud/aws_fuzz/check.sh --bucket <BUCKET>
 # print the request of a campaign (nothing is launched)
 tools/cloud/aws_fuzz/launch.sh --campaign weather-sand-snow --commit <sha of main> --bucket <BUCKET>
 
-# after the owner's approval only:
+# after the owner's approval only (it prints the run id; the results are under fuzz/<campaign>/<run id>/):
 tools/cloud/aws_fuzz/launch.sh --campaign weather-sand-snow --commit <sha of main> --bucket <BUCKET> --i-have-owner-approval
 
+# continue an interrupted run, explicitly (the same commit, chunk_battles and base_seed, or the box refuses):
+tools/cloud/aws_fuzz/launch.sh --campaign weather-sand-snow --commit <sha of main> --bucket <BUCKET> --resume <run id> --i-have-owner-approval
+
 # the results; every kept case is replayed on this machine (build the runner of the same commit first)
-tools/cloud/aws_fuzz/collect.sh --campaign weather-sand-snow --bucket <BUCKET> --runner build/<dir>/tools/difftest/duoforge_diff_runner
+tools/cloud/aws_fuzz/collect.sh --campaign weather-sand-snow --run <run id> --bucket <BUCKET> --runner build/<dir>/tools/difftest/duoforge_diff_runner
 ```
 
 `check.sh` checks: the security group (exists, 0 inbound rules, tag), the bucket (`s3:ListBucket` with the prefix
@@ -77,7 +80,7 @@ with warnings as errors and IPO, then the target `duoforge_diff_runner`.
 - **Chunks** are seed ranges: chunk *c* of a campaign is `diff_driver.py random --no-lock --battles <chunk_battles>
   --seed <base_seed + c>` with the campaign's pairings and teams. `chunk_battles` is set per campaign (default 2000,
   100 to 20000). When a chunk is done its `summary.json`, `run.json`, `battles.jsonl`, `timing.json` and `cases/` (the
-  spec and `trace.json.gz` of every battle that is not a PASS) go to `s3://<BUCKET>/fuzz/<campaign>/chunk-<NNNN>/`.
+  spec and `trace.json.gz` of every battle that is not a PASS) go to `s3://<BUCKET>/fuzz/<campaign>/<run id>/chunk-<NNNN>/`.
 - **Parallel chunks and overlapped uploads** (`chunks.sh`). One driver process cannot keep a big machine busy: its
   Python side (the converter, the JSON of the traces) runs under the interpreter lock, which is the likely reason that the first pilot
   (one driver, 64 workers, 500-battle chunks) ran 55 battles/s inside its chunks with only about 24 of 64 vCPUs busy.
@@ -85,10 +88,19 @@ with warnings as errors and IPO, then the target `duoforge_diff_runner`.
   `vCPUs / parallel` workers; `auto` (the default) is `vCPUs / 20` (3 on 64 vCPUs). The upload of a finished chunk runs
   in the background while the next chunks compute. The figure to compare is the one the log gives (below); the target is
   about 140 battles/s on 64 vCPUs, **to be measured**, not yet a result.
-- **Done-manifest.** `fuzz/<campaign>/manifest/done.txt` lists the finished chunks; a chunk is added only after every
-  file of it is uploaded. A relaunch of the same campaign skips them.
+- **Runs and the manifest.** Every launch is a **run** with a prefix of its own,
+  `fuzz/<campaign>/<run id>/`, where the run id is `<first 12 digits of the commit>-<chunk_battles>-<base_seed>-<launch
+  time>` (launch.sh prints it). Everything the box writes is under that prefix, so a run of another commit or geometry,
+  or an earlier launch, can never be read by this one (the second pilot's box found the first pilot's manifest of 8
+  chunks of 500 under the old shared prefix, took every chunk of its 4 x 1000 campaign for done, and played nothing).
+  `manifest/run.json` says which run it is (`run_id`, `campaign`, `commit`, `chunk_battles`, `base_seed`, `chunks` and
+  `parallel` as the campaign.conf has it: `auto` or a number) and `manifest/done.txt` lists the finished chunks, a chunk
+  being added only after every file of it is uploaded. A new run needs a prefix without a manifest. A run is continued
+  only with an explicit `launch.sh --resume <run id>`, and the box then requires the manifest of exactly this
+  commit, `chunk_battles`, `base_seed`, `chunks` and `parallel`, else it stops. A done-list with more finished chunks
+  than the campaign has, a duplicate, a malformed line or a chunk out of range is a hard error, never a skip.
 - **Spot interruption.** IMDSv2 is polled every 5 seconds for `spot/instance-action`; on a notice every chunk in
-  flight (computing, or computed and not yet in the manifest) is synced to `fuzz/<campaign>/partial/chunk-<NNNN>/`. A
+  flight (computing, or computed and not yet in the manifest) is synced to `fuzz/<campaign>/<run id>/partial/chunk-<NNNN>/`. A
   relaunch resumes from it (the driver skips battles that have a result) when the same Node made it, else it starts
   that chunk again.
 - **Utilisation in the log.** Per chunk: `N battles in W s (B battles/s), C CPU-s, U% of the V vCPUs while it ran`
@@ -99,16 +111,19 @@ with warnings as errors and IPO, then the target `duoforge_diff_runner`.
   (`duoforge_bench --families batch`: the loop over the games in C on a pool of worker threads, no Python, no
   Showdown; the closure pairings, 5000 battles per pairing, 32 repetitions per invocation) on every vCPU for about 30
   seconds, and on 16 threads for about a third of that (the owner's PC plays 16 threads, so the two compare). It uploads
-  `fuzz/<campaign>/bench.json`: `games_per_second`, `decisions_per_second`, `steps_per_second`, `threads`, `vcpus`,
-  `instance_type` (from IMDSv2), the same figures for 16 threads under `threads_16`, and every run.
+  `fuzz/<campaign>/<run id>/bench.json`: `games_per_second`, `decisions_per_second`, `steps_per_second`, `threads`, `vcpus`,
+  `instance_type` (from IMDSv2), the same figures for 16 threads under `threads_16`, and every run. The parser reads
+  what `duoforge_bench` really writes: the `--out` JSON, its `results` entry with `"family": "BATCH_NATIVE"` and the
+  `per_second` figures (a real capture is in `testdata/`, and a test reads it). A benchmark that fails, for any reason,
+  is recorded as an `error` in `bench.json` (or in `threads_16`) and the campaign goes on.
 - **Rate.** Every minute the log says how many battles were played and the battles per second. The local rate is about
   24 battles per second; if the first ten minutes are below 2 times that, the box aborts, uploads the log and the
   partial chunk and powers off.
-- **End.** The log goes to `fuzz/<campaign>/log/`, then `shutdown -h now` (also on any error).
+- **End.** The log goes to `fuzz/<campaign>/<run id>/log/`, then `shutdown -h now` (also on any error).
 
 ## `collect.sh`
 
-Downloads `fuzz/<campaign>/` (not `partial/`), prints the totals and signatures of the finished chunks, checks that this
+Downloads `fuzz/<campaign>/<run id>/` (`--run`; without it the runs of the campaign are listed; not `partial/`), prints the totals and signatures of the finished chunks, checks that this
 checkout is the commit the campaign ran (`--allow-other-commit` to override), builds a corpus directory from the kept
 cases and runs `diff_driver.py corpus` on it. A case is **REPRODUCED** when the local replay is a non-PASS in the same
 bucket; only those count as findings. A `domain` finding (the engine's candidate set against Showdown's) cannot be

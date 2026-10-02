@@ -97,7 +97,8 @@ else
     if [ ${#subnets[@]} -eq 0 ] || [ -z "${subnets[0]}" ]; then
         bad "no subnet in the VPC of $DF_SG_NAME"
     else
-        userdata=$(df_render_user_data "$campaign" "$(printf '%040d' 0)" "${bucket:-placeholder-bucket}" $((DF_MAX_HOURS_LIMIT * 60)))
+        userdata=$(df_render_user_data "$campaign" "$(printf '%040d' 0)" "${bucket:-placeholder-bucket}" $((DF_MAX_HOURS_LIMIT * 60)) \
+            "0123456789ab-2000-1-20000101T000000Z" no)
         last_unauthorized=''
         for t in "${type_list[@]}"; do
             result=''

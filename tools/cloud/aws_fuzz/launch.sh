@@ -2,12 +2,15 @@
 # Launches one differential fuzz campaign on one spot instance (tools/cloud/aws_fuzz/README.md).
 #
 # usage: launch.sh --campaign ID --commit SHA --bucket B [--max-hours H] [--types t1,t2,...] [--sg-name NAME]
-#                  [--i-have-owner-approval]
+#                  [--resume RUN_ID] [--i-have-owner-approval]
 #   --campaign  campaign id: the directory tools/cloud/aws_fuzz/campaigns/<id>/ at the commit
 #   --commit    the exact 40-digit sha of a commit on main; the box fetches and builds this commit
 #   --bucket    the results bucket (objects go under fuzz/<campaign>/)
 #   --max-hours the watchdog: the box powers itself off after this long (default 2, hard maximum 2)
 #   --types     candidate instance types, tried in order (default c7a.16xlarge,c6a.16xlarge,c7i.16xlarge,m7a.16xlarge)
+#   --resume    continue the run RUN_ID (printed by the launch that started it; the same commit, chunk_battles and
+#               base_seed, or the box refuses). Without it every launch is a new run with a prefix of its own:
+#               fuzz/<campaign>/<commit12>-<chunk_battles>-<base_seed>-<launch time>/, and an old manifest is never read.
 #   --sg-name   must be duoforge-fuzz (any other group is refused; the option only makes the refusal testable)
 #   --i-have-owner-approval  actually request the instance. WITHOUT it nothing is launched: the request is printed and
 #               the script exits. That is the default and the only mode until the owner has approved the cost cap
@@ -25,6 +28,8 @@ bucket=${DUOFORGE_FUZZ_BUCKET:-}
 max_hours=$DF_DEFAULT_MAX_HOURS
 types=$DF_DEFAULT_TYPES
 sg_name=$DF_SG_NAME
+resume=''
+resume_given=no
 approved=no
 while [ $# -gt 0 ]; do
     case $1 in
@@ -34,8 +39,9 @@ while [ $# -gt 0 ]; do
         --max-hours) [ $# -ge 2 ] || df_die '--max-hours needs a value'; max_hours=$2; shift 2 ;;
         --types) [ $# -ge 2 ] || df_die '--types needs a value'; types=$2; shift 2 ;;
         --sg-name) [ $# -ge 2 ] || df_die '--sg-name needs a value'; sg_name=$2; shift 2 ;;
+        --resume) [ $# -ge 2 ] || df_die '--resume needs a value'; resume=$2; resume_given=yes; shift 2 ;;
         --i-have-owner-approval) approved=yes; shift ;;
-        -h | --help) sed -n '2,17p' "${BASH_SOURCE[0]}"; exit 0 ;;
+        -h | --help) sed -n '2,21p' "${BASH_SOURCE[0]}"; exit 0 ;;
         *) df_die "unknown argument '$1' (see --help)" ;;
     esac
 done
@@ -59,6 +65,22 @@ for t in "${type_list[@]}"; do
 done
 df_check_commit_on_main "$commit" "$campaign"
 
+# --- the run: its own prefix, or an explicit continuation of an identical one
+run_prefix=$(df_run_id_prefix "$commit" "$campaign")
+if [ "$resume_given" = yes ]; then
+    df_valid_run_id "$resume" || df_die "--resume '$resume' is not a run id (<commit12>-<chunk_battles>-<base_seed>-<time>)"
+    case $resume in
+        "$run_prefix"*) ;;
+        *) df_die "--resume $resume is a run of another commit, chunk_battles or base_seed than this launch ($run_prefix...)" ;;
+    esac
+    run_id=$resume
+    resume_flag=yes
+else
+    run_id="$run_prefix$(date -u +%Y%m%dT%H%M%SZ)"
+    resume_flag=no
+fi
+df_valid_run_id "$run_id" || df_die "internal error: the run id '$run_id' is malformed"
+
 # --- the security group, the AMI and the subnet
 df_sg_inspect "$DF_SG_NAME"
 if [ ${#DF_SG_PROBLEMS[@]} -gt 0 ]; then
@@ -73,12 +95,13 @@ if [ ${#subnets[@]} -eq 0 ] || [ -z "${subnets[0]}" ]; then
 fi
 
 max_minutes=$((max_hours * 60))
-userdata=$(df_render_user_data "$campaign" "$commit" "$bucket" "$max_minutes")
+userdata=$(df_render_user_data "$campaign" "$commit" "$bucket" "$max_minutes" "$run_id" "$resume_flag")
 price=$(df_max_price "$max_hours")
 
 echo "campaign      $campaign"
 echo "commit        $commit"
-echo "bucket        s3://$bucket/fuzz/$campaign/"
+echo "run id        $run_id ($([ "$resume_flag" = yes ] && echo 'resumes that run' || echo 'a new run'); to continue it later: --resume $run_id)"
+echo "results       s3://$bucket/fuzz/$campaign/$run_id/"
 echo "types         ${type_list[*]} (in this order)"
 echo "max hours     $max_hours (watchdog: shutdown -h +$max_minutes, behaviour terminate)"
 echo "price ceiling \$$price per instance hour ($DF_COST_CAP_USD / $max_hours: at most \$$DF_COST_CAP_USD for the campaign)"
@@ -113,7 +136,7 @@ fi
 for t in "${type_list[@]}"; do
     df_build_run_args "$ami" "$t" "${subnets[0]}" "$DF_SG_ID" "$campaign" "$max_hours" "$userdata"
     if out=$(df_aws ec2 run-instances "${DF_RUN_ARGS[@]}" --query 'Instances[0].InstanceId' --output text 2>&1); then
-        echo "launched $out ($t, campaign $campaign): watch s3://$bucket/fuzz/$campaign/"
+        echo "launched $out ($t, campaign $campaign, run $run_id): watch s3://$bucket/fuzz/$campaign/$run_id/"
         exit 0
     fi
     case $out in
