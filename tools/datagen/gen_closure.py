@@ -457,11 +457,17 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
             bad('move %s: unknown secondary' % mid, 'secondary')
             rec['sec_chance'] = 0
     if 'self' in f:
-        if lenient and not re.search(r'\bboosts: ', f['self'][1]):
+        if pool and norm(f['self'][1]) == RECHARGE_SELF:
+            # Step G17: the recharge moves (flags.recharge and this self effect, which the turn code reads as the
+            # second flags byte's RECHARGE bit: the user must recharge after a hit).
+            rec['flags2'] |= FLAG2_RECHARGE
+        elif lenient and not re.search(r'\bboosts: ', f['self'][1]):
             unmodeled.append('self effect')
         else:
             rec['boost_role'], rec['boosts'] = BOOST_ROLE['SELF_AFTER_HIT'], boosts_of(f['self'][1])
             vectors += 1
+    if pool and ('recharge: 1' in norm(f['flags'][1])) != ((rec['flags2'] & FLAG2_RECHARGE) != 0):
+        bad('move %s: the recharge flag and the mustrecharge self effect do not come together' % mid, 'recharge flag')
     if 'boosts' in f:
         if rec['target_class'] != TARGET_CLASS['self']:
             bad('move %s: primary boosts on a non-self target' % mid, 'primary boosts on a non-self target')
@@ -1357,6 +1363,8 @@ G8_SECONDARIES = {
     "secondary: { chance: 100, volatileStatus: 'healblock', },": (SECONDARY_HEAL_BLOCK, False),
 }
 FLAGS2_BITS = {'sound': 1, 'heal': 2}
+FLAG2_RECHARGE = 8  # step G17: flags.recharge with self: {volatileStatus: 'mustrecharge'} (data/moves.ts, Hyper Beam 9113-9128)
+RECHARGE_SELF = "self: { volatileStatus: 'mustrecharge', },"
 FLAG2_THAWS_TARGET = 4  # step G10: thawsTarget (data/moves.ts:15770), the move cures a frozen target after the secondaries
 # What the engine hard-codes about the two conditions, read from the pin (build_pool checks it): the duration and the
 # residual order of Throat Chop's condition, and Heal Block's (the move healblock) order and Psychic Noise duration.
@@ -1804,7 +1812,7 @@ def parse_pool_move(mid, moves_ts, champ_moves):
     if rec['unmodeled']:
         rec.update(sec_chance=0, sec_kind=0, sec_param=0, boost_role=0, boosts=[0] * 7, primary_status=0,
                    side_condition=0, pseudo_weather=0, special=SPECIAL_IDS_P.index('UNMODELED'), heal=[0, 0],
-                   flags2=rec['flags2'] & ~FLAG2_THAWS_TARGET)
+                   flags2=rec['flags2'] & ~(FLAG2_THAWS_TARGET | FLAG2_RECHARGE))
     return rec
 
 
@@ -2424,6 +2432,7 @@ def render_pool(dp, dx):
 #define DFI_MOVE_FLAG2_SOUND 1u /* data/moves.ts flags.sound: Throat Chop bars these moves */
 #define DFI_MOVE_FLAG2_HEAL 2u  /* flags.heal: Heal Block bars these moves */
 #define DFI_MOVE_FLAG2_THAWS_TARGET 4u /* thawsTarget (step G10): the move cures a frozen target after the secondaries */
+#define DFI_MOVE_FLAG2_RECHARGE 8u /* flags.recharge with self.volatileStatus mustrecharge (step G17): the user must recharge after a hit */
 #define DFI_SECONDARY_LOCKOUT 5u    /* chance 100: the target may not use sound moves (Throat Chop) */
 #define DFI_SECONDARY_HEAL_BLOCK 6u /* chance 100: the target may not heal (Psychic Noise) */
 
@@ -2728,7 +2737,7 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity);
           'const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {']
     for m in dp['moves']:
         names = [n for n, bit in (('DFI_MOVE_FLAG2_SOUND', 1), ('DFI_MOVE_FLAG2_HEAL', 2),
-                                  ('DFI_MOVE_FLAG2_THAWS_TARGET', 4)) if m['flags2'] & bit]
+                                  ('DFI_MOVE_FLAG2_THAWS_TARGET', 4), ('DFI_MOVE_FLAG2_RECHARGE', 8)) if m['flags2'] & bit]
         c.append('    [DFI_MOVE_%s] = %s, /* %s */' % (m['id'].upper(), ' | '.join(names) if names else '0u', m['name']))
     c += ['};', '', '/* The heal fraction of the moves that heal by one (step G10): numerator, denominator. */',
           'const uint8_t dfi_pool_move_heal[DFI_POOL_MOVE_COUNT][2] = {']

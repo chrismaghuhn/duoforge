@@ -152,7 +152,7 @@ typedef struct dfi_queue_record {
     uint8_t kind;           /* DFI_Q_* */
     uint8_t side;
     uint8_t slot;
-    uint8_t move_slot; /* MOVE: 0..3 or DFI_MOVE_SLOT_STRUGGLE */
+    uint8_t move_slot; /* MOVE: 0..3, DFI_MOVE_SLOT_STRUGGLE or DUOFORGE_MOVE_SLOT_RECHARGE */
     uint8_t target;    /* MOVE: flat position or DUOFORGE_TARGET_NONE */
     uint8_t reserve;   /* SWITCH and SWITCH_IN: roster index */
 } dfi_queue_record;

@@ -922,8 +922,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {1u, 0u, 60u, 100u, 25u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 30u, 3u, 1u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Bitter Malice -- data/moves.ts:1381-1398 */
     {8u, 1u, 75u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 100u, 1u, 0u, 2u, {5u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
-    /* Blast Burn -- data/moves.ts:1414-1429  [unmodelled: self effect] */
-    {6u, 1u, 150u, 90u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 25u},
+    /* Blast Burn -- data/moves.ts:1414-1429 */
+    {6u, 1u, 150u, 90u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Blaze Kick -- data/moves.ts:1430-1447 */
     {6u, 0u, 85u, 90u, 10u, 12u, 8u, 1u, 2u, 3u, {0u, 0u}, {0u, 0u}, 10u, 2u, 1u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Blizzard -- data/moves.ts:1491-1510  [unmodelled: callback onModifyMove] */
@@ -1150,8 +1150,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {1u, 0u, 95u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 25u},
     /* Freeze-Dry -- data/moves.ts:6158-6177, data/mods/champions/moves.ts:415-418  [unmodelled: callback onEffectiveness; secondary] */
     {11u, 1u, 70u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 25u},
-    /* Frenzy Plant -- data/moves.ts:6242-6257  [unmodelled: self effect] */
-    {9u, 1u, 150u, 90u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 25u},
+    /* Frenzy Plant -- data/moves.ts:6242-6257 */
+    {9u, 1u, 150u, 90u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Frost Breath -- data/moves.ts:6258-6271  [unmodelled: field willCrit] */
     {11u, 1u, 60u, 90u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 25u},
     /* Future Sight -- data/moves.ts:6391-6425  [unmodelled: callback onTry; field ignoreImmunity] */
@@ -1160,8 +1160,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {13u, 2u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 25u},
     /* Giga Drain -- data/moves.ts:6559-6572 */
     {9u, 1u, 75u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {1u, 2u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
-    /* Giga Impact -- data/moves.ts:6573-6588  [unmodelled: self effect] */
-    {12u, 0u, 150u, 90u, 5u, 8u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 25u},
+    /* Giga Impact -- data/moves.ts:6573-6588 */
+    {12u, 0u, 150u, 90u, 5u, 8u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Gigaton Hammer -- data/moves.ts:6589-6600 */
     {16u, 0u, 160u, 100u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Glaive Rush -- data/moves.ts:6647-6678  [unmodelled: condition block; self effect] */
@@ -1214,12 +1214,12 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {9u, 0u, 75u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {1u, 2u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Howl -- data/moves.ts:9009-9025, data/mods/champions/moves.ts:512-515  [unmodelled: primary boosts on a non-self target; target allies] */
     {12u, 2u, 0u, 0u, 40u, 20u, 8u, 14u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 25u},
-    /* Hydro Cannon -- data/moves.ts:9055-9070  [unmodelled: self effect] */
-    {17u, 1u, 150u, 90u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 25u},
+    /* Hydro Cannon -- data/moves.ts:9055-9070 */
+    {17u, 1u, 150u, 90u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Hydro Pump -- data/moves.ts:9071-9083 */
     {17u, 1u, 110u, 80u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
-    /* Hyper Beam -- data/moves.ts:9113-9128  [unmodelled: self effect] */
-    {12u, 1u, 150u, 90u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 25u},
+    /* Hyper Beam -- data/moves.ts:9113-9128 */
+    {12u, 1u, 150u, 90u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Ice Fang -- data/moves.ts:9347-9368  [unmodelled: field secondaries] */
     {11u, 0u, 65u, 95u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 25u},
     /* Ice Hammer -- data/moves.ts:9369-9386 */
@@ -1306,8 +1306,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {16u, 0u, 0u, 100u, 10u, 12u, 8u, 12u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 25u},
     /* Metal Sound -- data/moves.ts:11706-11722  [unmodelled: primary boosts on a non-self target] */
     {16u, 2u, 0u, 85u, 40u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 25u},
-    /* Meteor Assault -- data/moves.ts:11723-11738, data/mods/champions/moves.ts:635-639  [unmodelled: self effect] */
-    {5u, 0u, 170u, 100u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 25u},
+    /* Meteor Assault -- data/moves.ts:11723-11738, data/mods/champions/moves.ts:635-639 */
+    {5u, 0u, 170u, 100u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Meteor Beam -- data/moves.ts:11739-11762  [unmodelled: callback onTryMove] */
     {15u, 1u, 120u, 90u, 10u, 12u, 8u, 1u, 1u, 6u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 25u},
     /* Meteor Mash -- data/moves.ts:11763-11783  [unmodelled: secondary self effect] */
@@ -1460,8 +1460,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {15u, 2u, 0u, 0u, 20u, 20u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 1u, {6u, 6u, 6u, 6u, 8u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Rock Tomb -- data/moves.ts:15288-15306 */
     {15u, 0u, 60u, 95u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 100u, 1u, 0u, 2u, {6u, 6u, 6u, 6u, 5u, 6u, 6u}, 0u, 0u, 0u, 0u},
-    /* Rock Wrecker -- data/moves.ts:15307-15322  [unmodelled: self effect] */
-    {15u, 0u, 150u, 90u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 25u},
+    /* Rock Wrecker -- data/moves.ts:15307-15322 */
+    {15u, 0u, 150u, 90u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Role Play -- data/moves.ts:15323-15344  [unmodelled: callback onHit; callback onTryHit] */
     {14u, 2u, 0u, 0u, 10u, 12u, 8u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 25u},
     /* Roost -- data/moves.ts:15428-15463  [unmodelled: condition block; self effect] */
@@ -4190,7 +4190,7 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_BIND] = 0u, /* Bind */
     [DFI_MOVE_BITE] = 0u, /* Bite */
     [DFI_MOVE_BITTERMALICE] = 0u, /* Bitter Malice */
-    [DFI_MOVE_BLASTBURN] = 0u, /* Blast Burn */
+    [DFI_MOVE_BLASTBURN] = DFI_MOVE_FLAG2_RECHARGE, /* Blast Burn */
     [DFI_MOVE_BLAZEKICK] = 0u, /* Blaze Kick */
     [DFI_MOVE_BLIZZARD] = 0u, /* Blizzard */
     [DFI_MOVE_BLOCK] = 0u, /* Block */
@@ -4304,12 +4304,12 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_FORESTSCURSE] = 0u, /* Forest's Curse */
     [DFI_MOVE_FOULPLAY] = 0u, /* Foul Play */
     [DFI_MOVE_FREEZEDRY] = 0u, /* Freeze-Dry */
-    [DFI_MOVE_FRENZYPLANT] = 0u, /* Frenzy Plant */
+    [DFI_MOVE_FRENZYPLANT] = DFI_MOVE_FLAG2_RECHARGE, /* Frenzy Plant */
     [DFI_MOVE_FROSTBREATH] = 0u, /* Frost Breath */
     [DFI_MOVE_FUTURESIGHT] = 0u, /* Future Sight */
     [DFI_MOVE_GASTROACID] = 0u, /* Gastro Acid */
     [DFI_MOVE_GIGADRAIN] = DFI_MOVE_FLAG2_HEAL, /* Giga Drain */
-    [DFI_MOVE_GIGAIMPACT] = 0u, /* Giga Impact */
+    [DFI_MOVE_GIGAIMPACT] = DFI_MOVE_FLAG2_RECHARGE, /* Giga Impact */
     [DFI_MOVE_GIGATONHAMMER] = 0u, /* Gigaton Hammer */
     [DFI_MOVE_GLAIVERUSH] = 0u, /* Glaive Rush */
     [DFI_MOVE_GLARE] = 0u, /* Glare */
@@ -4336,9 +4336,9 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_HORNDRILL] = 0u, /* Horn Drill */
     [DFI_MOVE_HORNLEECH] = DFI_MOVE_FLAG2_HEAL, /* Horn Leech */
     [DFI_MOVE_HOWL] = DFI_MOVE_FLAG2_SOUND, /* Howl */
-    [DFI_MOVE_HYDROCANNON] = 0u, /* Hydro Cannon */
+    [DFI_MOVE_HYDROCANNON] = DFI_MOVE_FLAG2_RECHARGE, /* Hydro Cannon */
     [DFI_MOVE_HYDROPUMP] = 0u, /* Hydro Pump */
-    [DFI_MOVE_HYPERBEAM] = 0u, /* Hyper Beam */
+    [DFI_MOVE_HYPERBEAM] = DFI_MOVE_FLAG2_RECHARGE, /* Hyper Beam */
     [DFI_MOVE_ICEFANG] = 0u, /* Ice Fang */
     [DFI_MOVE_ICEHAMMER] = 0u, /* Ice Hammer */
     [DFI_MOVE_ICESHARD] = 0u, /* Ice Shard */
@@ -4382,7 +4382,7 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_MEMENTO] = 0u, /* Memento */
     [DFI_MOVE_METALBURST] = 0u, /* Metal Burst */
     [DFI_MOVE_METALSOUND] = DFI_MOVE_FLAG2_SOUND, /* Metal Sound */
-    [DFI_MOVE_METEORASSAULT] = 0u, /* Meteor Assault */
+    [DFI_MOVE_METEORASSAULT] = DFI_MOVE_FLAG2_RECHARGE, /* Meteor Assault */
     [DFI_MOVE_METEORBEAM] = 0u, /* Meteor Beam */
     [DFI_MOVE_METEORMASH] = 0u, /* Meteor Mash */
     [DFI_MOVE_MILKDRINK] = DFI_MOVE_FLAG2_HEAL, /* Milk Drink */
@@ -4459,7 +4459,7 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_ROCKBLAST] = 0u, /* Rock Blast */
     [DFI_MOVE_ROCKPOLISH] = 0u, /* Rock Polish */
     [DFI_MOVE_ROCKTOMB] = 0u, /* Rock Tomb */
-    [DFI_MOVE_ROCKWRECKER] = 0u, /* Rock Wrecker */
+    [DFI_MOVE_ROCKWRECKER] = DFI_MOVE_FLAG2_RECHARGE, /* Rock Wrecker */
     [DFI_MOVE_ROLEPLAY] = 0u, /* Role Play */
     [DFI_MOVE_ROOST] = DFI_MOVE_FLAG2_HEAL, /* Roost */
     [DFI_MOVE_ROUND] = DFI_MOVE_FLAG2_SOUND, /* Round */
@@ -5936,7 +5936,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_BELCH] = "callback onTry; field onDisableMove",
     [DFI_MOVE_BELLYDRUM] = "callback onHit",
     [DFI_MOVE_BIND] = "primary volatile partiallytrapped",
-    [DFI_MOVE_BLASTBURN] = "self effect",
     [DFI_MOVE_BLIZZARD] = "callback onModifyMove",
     [DFI_MOVE_BLOCK] = "callback onHit",
     [DFI_MOVE_BODYPRESS] = "field overrideOffensiveStat",
@@ -6018,11 +6017,9 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_FORESTSCURSE] = "callback onHit",
     [DFI_MOVE_FOULPLAY] = "field overrideOffensivePokemon",
     [DFI_MOVE_FREEZEDRY] = "callback onEffectiveness; secondary",
-    [DFI_MOVE_FRENZYPLANT] = "self effect",
     [DFI_MOVE_FROSTBREATH] = "field willCrit",
     [DFI_MOVE_FUTURESIGHT] = "callback onTry; field ignoreImmunity",
     [DFI_MOVE_GASTROACID] = "callback onTryHit; condition block; primary volatile gastroacid",
-    [DFI_MOVE_GIGAIMPACT] = "self effect",
     [DFI_MOVE_GLAIVERUSH] = "condition block; self effect",
     [DFI_MOVE_GRASSYTERRAIN] = "condition block; field terrain",
     [DFI_MOVE_GRAVAPPLE] = "callback onBasePower",
@@ -6043,8 +6040,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_HIGHJUMPKICK] = "callback onMoveFail; field hasCrashDamage",
     [DFI_MOVE_HORNDRILL] = "field ohko",
     [DFI_MOVE_HOWL] = "primary boosts on a non-self target; target allies",
-    [DFI_MOVE_HYDROCANNON] = "self effect",
-    [DFI_MOVE_HYPERBEAM] = "self effect",
     [DFI_MOVE_ICEFANG] = "field secondaries",
     [DFI_MOVE_ICESPINNER] = "callback onAfterHit; callback onAfterSubDamage",
     [DFI_MOVE_ICICLESPEAR] = "field multihit",
@@ -6069,7 +6064,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_MEMENTO] = "field selfdestruct; primary boosts on a non-self target",
     [DFI_MOVE_METALBURST] = "callback damageCallback; callback onModifyTarget; callback onTry; target scripted",
     [DFI_MOVE_METALSOUND] = "primary boosts on a non-self target",
-    [DFI_MOVE_METEORASSAULT] = "self effect",
     [DFI_MOVE_METEORBEAM] = "callback onTryMove",
     [DFI_MOVE_METEORMASH] = "secondary self effect",
     [DFI_MOVE_MILKDRINK] = "target adjacentAllyOrSelf",
@@ -6123,7 +6117,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_RISINGVOLTAGE] = "callback basePowerCallback",
     [DFI_MOVE_ROAR] = "field forceSwitch",
     [DFI_MOVE_ROCKBLAST] = "field multihit",
-    [DFI_MOVE_ROCKWRECKER] = "self effect",
     [DFI_MOVE_ROLEPLAY] = "callback onHit; callback onTryHit",
     [DFI_MOVE_ROOST] = "condition block; self effect",
     [DFI_MOVE_ROUND] = "callback basePowerCallback; callback onTry",
@@ -6461,10 +6454,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x0du, 0xf2u, 0xf0u, 0x5cu, 0x53u, 0x9du, 0x88u, 0x51u,
-    0x04u, 0xdfu, 0x43u, 0x9du, 0xa2u, 0x2cu, 0xdcu, 0x83u,
-    0x47u, 0x9au, 0xf4u, 0x9bu, 0x84u, 0xdeu, 0xd9u, 0x95u,
-    0x70u, 0xfau, 0x3fu, 0x80u, 0x91u, 0x18u, 0x27u, 0x67u,
+    0xb2u, 0x24u, 0x16u, 0x04u, 0xd6u, 0x84u, 0xb4u, 0x21u,
+    0xfau, 0x9cu, 0x7cu, 0x9fu, 0x5bu, 0x7fu, 0x0eu, 0x5au,
+    0x79u, 0xe6u, 0x3au, 0x27u, 0xf9u, 0x42u, 0x07u, 0xbau,
+    0xb5u, 0xa5u, 0xa6u, 0xefu, 0x16u, 0x0du, 0x36u, 0x96u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)

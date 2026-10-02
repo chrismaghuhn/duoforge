@@ -417,7 +417,7 @@ static bool command_fits(dfr_reader *r, const df_conf_cmd *c, uint32_t member_co
         }
         return true;
     case DUOFORGE_SLOT_MOVE:
-        if (c->move_slot > DUOFORGE_MOVE_SLOT_STRUGGLE || (c->target > 3u && c->target != DUOFORGE_TARGET_NONE) ||
+        if (c->move_slot > DUOFORGE_MOVE_SLOT_RECHARGE || (c->target > 3u && c->target != DUOFORGE_TARGET_NONE) ||
             c->mega > 1u || c->reserve != 0u) {
             fail(r, "record C: a move command (slot %u, target %u, mega %u, reserve %u) outside the domain of one",
                  (unsigned)c->move_slot, (unsigned)c->target, (unsigned)c->mega, (unsigned)c->reserve);

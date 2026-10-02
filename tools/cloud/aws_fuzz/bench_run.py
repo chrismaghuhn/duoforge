@@ -12,8 +12,9 @@ usage: bench_run.py --bench "<duoforge_bench command>" --vcpus N --out bench.jso
                     [--instance-type T] [--campaign ID] [--commit SHA]
 
 bench.json: games_per_second, decisions_per_second (the two sides' decisions), steps_per_second, threads (all
-vCPUs), instance_type, the same figures for 16 threads under "threads_16", and every run. Exit status 0 when every
-run succeeded and reported no error."""
+vCPUs), instance_type, the same figures for 16 threads under "threads_16", and every run. A measurement that fails
+is recorded as an "error" (in the file's top level, or in threads_16) and the file is still written; the exit status is
+then 1, which the box logs and goes on from: a failed benchmark never ends a campaign."""
 import argparse
 import json
 import os
@@ -28,6 +29,7 @@ BATTLES_PER_PAIRING = 5000
 REPETITIONS = 32
 WARMUP = 1
 COMPARE_THREADS = 16
+BATCH_FAMILY = 'BATCH_NATIVE'  # the "family" that duoforge_bench writes for the batch mode (bench/bench.h)
 
 
 def one_invocation(command, threads, out_path):
@@ -41,9 +43,10 @@ def one_invocation(command, threads, out_path):
         data = json.load(f)
     if data.get('errors'):
         raise RuntimeError('duoforge_bench reported %s error(s)' % data['errors'])
-    entries = [r for r in data['results'] if r['family'] == 'batch']
+    entries = [r for r in data['results'] if r['family'] == BATCH_FAMILY and r.get('workers') == threads]
     if len(entries) != 1:
-        raise RuntimeError('expected one batch result, got %d' % len(entries))
+        raise RuntimeError('expected one %s result with %d workers, got %d (families in the file: %s)' % (
+            BATCH_FAMILY, threads, len(entries), sorted({r['family'] for r in data['results']})))
     entry = entries[0]
     if entry.get('errors'):
         raise RuntimeError('the batch family reported %s error(s)' % entry['errors'])
@@ -83,24 +86,43 @@ def main(argv=None):
     if args.vcpus < 1 or args.seconds <= 0:
         ap.error('--vcpus must be at least 1 and --seconds positive')
     command = shlex.split(args.bench)
-    with tempfile.TemporaryDirectory(prefix='bench_run_') as workdir:
-        main_result = measure(command, args.vcpus, args.seconds, workdir)
-        compare = measure(command, COMPARE_THREADS, args.seconds / 3, workdir) if args.vcpus > COMPARE_THREADS else None
     result = {'campaign': args.campaign, 'commit': args.commit, 'instance_type': args.instance_type,
-              'vcpus': args.vcpus, 'threads': main_result['threads'],
-              'games_per_second': main_result['games_per_second'],
-              'decisions_per_second': main_result['decisions_per_second'],
-              'steps_per_second': main_result['steps_per_second'],
+              'vcpus': args.vcpus, 'threads': args.vcpus,
               'workload': 'closure-pairings-v1, %d battles per pairing, %d repetitions' % (BATTLES_PER_PAIRING, REPETITIONS),
-              'runs': main_result['runs'], 'threads_16': compare}
+              'threads_16': None}
+    status = 0
+
+    def attempt(threads, seconds, workdir):
+        """The measurement, or {"threads": N, "error": text}: a benchmark that fails is a result of this file, not the
+        end of the campaign."""
+        try:
+            return measure(command, threads, seconds, workdir)
+        except Exception as e:  # noqa: BLE001 - whatever went wrong is recorded
+            return {'threads': threads, 'error': '%s: %s' % (type(e).__name__, e)}
+
+    with tempfile.TemporaryDirectory(prefix='bench_run_') as workdir:
+        main_result = attempt(args.vcpus, args.seconds, workdir)
+        compare = attempt(COMPARE_THREADS, args.seconds / 3, workdir) if args.vcpus > COMPARE_THREADS else None
+    if 'error' in main_result:
+        result['error'] = main_result['error']
+        status = 1
+    else:
+        result.update({k: main_result[k] for k in ('games_per_second', 'decisions_per_second', 'steps_per_second', 'runs')})
+    result['threads_16'] = compare
+    if compare is not None and 'error' in compare:
+        status = 1
     with open(args.out, 'w', encoding='utf-8', newline='\n') as f:
         json.dump(result, f, indent=1)
         f.write('\n')
-    print('bench: %d games/s, %d decisions/s on %d threads (%s)' % (
-        result['games_per_second'], result['decisions_per_second'], result['threads'], args.instance_type))
+    if 'error' in result:
+        print('bench: FAILED: %s' % result['error'])
+    else:
+        print('bench: %d games/s, %d decisions/s on %d threads (%s)' % (
+            result['games_per_second'], result['decisions_per_second'], result['threads'], args.instance_type))
     if compare is not None:
-        print('bench: %d games/s on %d threads' % (compare['games_per_second'], compare['threads']))
-    return 0
+        print('bench: FAILED on 16 threads: %s' % compare['error'] if 'error' in compare else
+              'bench: %d games/s on %d threads' % (compare['games_per_second'], compare['threads']))
+    return status
 
 
 if __name__ == '__main__':

@@ -449,7 +449,7 @@ function checkFocusSash(dex, root) {
 
 // The four moves of step G10 against the pinned data: Low Kick's weight table is Grass Knot's (the engine shares
 // one), First Impression has Fake Out's first-turn rule, Scald thaws its target and Recover heals half.
-// Step G9, Encore: the pinned facts that the engine hard-codes (decision 0015, item 5c): the condition's duration and
+// Step G9, Encore: the pinned facts that the engine hard-codes (decision 0015, item 5e): the condition's duration and
 // residual order, the failencore flag of the moves a gated member can have (the list in tests/test_pool_g9.c is the pin's
 // whole list), and the behaviour of onStart (the Champions version, with the replacement of the queued action),
 // onResidual and onDisableMove, called with stand-ins for the battle and the target.
@@ -505,6 +505,36 @@ function checkEncore(dex, repo) {
     c.onDisableMove.call({effectState: {move: 'icebeam'}}, {hasMove: () => true, moveSlots: [{id: 'icebeam'}, {id: 'coil'},
         {id: 'protect'}], disableMove: (id) => disabled.push(id)});
     expect('onDisableMove', disabled, ['coil', 'protect']);
+}
+
+// Step G17, the recharge moves: the pinned facts that the engine hard-codes (decision 0015, item 5f): the ten moves with
+// flags.recharge are exactly the ten with the mustrecharge self effect, the condition's duration, priority and lock, what
+// its onBeforeMove and onStart show, and Sucker Punch's onTry reading the volatile.
+function checkRecharge(dex) {
+    const move = (id) => dex.moves.get(id);
+    const flagged = dex.moves.all().filter((m) => m.flags.recharge).map((m) => m.id).sort();
+    const selfs = dex.moves.all().filter((m) => m.self && m.self.volatileStatus === 'mustrecharge').map((m) => m.id).sort();
+    expect('recharge flag and mustrecharge self effect', flagged, selfs);
+    expect('recharge moves', flagged, ['blastburn', 'eternabeam', 'frenzyplant', 'gigaimpact', 'hydrocannon', 'hyperbeam',
+        'meteorassault', 'prismaticlaser', 'roaroftime', 'rockwrecker']);
+    expect('hyper beam', [move('hyperbeam').basePower, move('hyperbeam').accuracy, move('hyperbeam').priority], [150, 90, 0]);
+    expect('meteor assault (Champions)', move('meteorassault').basePower, 170);
+    const c = dex.conditions.get('mustrecharge');
+    expect('mustrecharge duration, priority, lock', [c.duration, c.onBeforeMovePriority, c.onLockMove], [2, 11, 'recharge']);
+    const logs = [];
+    const removed = [];
+    const self = {add: (...a) => logs.push(a.map((x) => (typeof x === 'string' ? x : 'POKEMON')).join(':'))};
+    const pokemon = {removeVolatile: (v) => removed.push(v)};
+    const result = c.onBeforeMove.call(self, pokemon);
+    expect('mustrecharge onBeforeMove', [result, logs, removed], [null, ['cant:POKEMON:recharge'], ['mustrecharge', 'truant']]);
+    logs.length = 0;
+    c.onStart.call(self, pokemon);
+    expect('mustrecharge onStart', logs, ['-mustrecharge:POKEMON']);
+    // Sucker Punch fails against a Pokemon with the volatile, also when its queued action is a damaging move.
+    const onTry = move('suckerpunch').onTry;
+    const attack = {choice: 'move', move: {category: 'Physical', id: 'tackle'}};
+    const sucker = (willMove, volatiles) => onTry.call({queue: {willMove: () => willMove}}, {}, {volatiles});
+    expect('sucker punch', [sucker(attack, {}), sucker(attack, {mustrecharge: {}}), sucker(null, {})], [undefined, false, false]);
 }
 
 function checkG10Moves(dex) {
@@ -823,7 +853,14 @@ function moveIsModelled(raw, id) {
             return false;
         }
     }
-    if (raw.self !== undefined) {
+    // Step G17: the recharge moves: flags.recharge with exactly the mustrecharge self effect (the RECHARGE bit of the second
+    // flags byte), one without the other is not modelled.
+    const rechargeSelf = raw.self !== undefined && raw.self !== null && typeof raw.self === 'object' &&
+        Object.keys(raw.self).length === 1 && raw.self.volatileStatus === 'mustrecharge';
+    if (rechargeSelf !== !!(raw.flags && raw.flags.recharge)) {
+        return false;
+    }
+    if (raw.self !== undefined && !rechargeSelf) {
         if (raw.self === null || typeof raw.self !== 'object' || !isBoostBlock(raw.self.boosts) || Object.keys(raw.self).length !== 1) {
             return false;
         }
@@ -1068,6 +1105,7 @@ function main() {
     checkWeather(dex, source);
     checkG10Moves(dex);
     checkEncore(dex, repo);
+    checkRecharge(dex);
     const abilities = checkAbilities(dex, abilityRows, moveIds, unmodeledAbilities, unmodeledMoves);
     // "All 18": a booster and a resist berry for each type, and nothing else in the families.
     expect('type boosters', items.TYPE_BOOSTER, 18);

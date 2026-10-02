@@ -142,9 +142,40 @@ df_ami() {
 
 # ---------------------------------------------------------------------------------------------- the request
 
+# A run is one launch and everything it writes: fuzz/<campaign>/<run id>/. The id is <the first 12 digits of the commit>-
+# <chunk_battles>-<base_seed>-<the launch time (UTC)>, so a run of another commit or geometry, or an earlier launch,
+# can never be the same prefix; a launch continues a run only when told to (launch.sh --resume <run id>).
+DF_RUN_ID_RE='^[0-9a-f]{12}-[0-9]{3,5}-[0-9]{1,12}-[0-9]{8}T[0-9]{6}Z$'
+df_valid_run_id() { [[ $1 =~ $DF_RUN_ID_RE ]]; }
+
+# A key of the campaign's campaign.conf in the commit that the box will build (the working copy only for the offline
+# tests, which say so with DUOFORGE_FUZZ_NO_GIT_CHECK=1), or the default.
+df_conf_value() { # commit campaign key default
+    local text
+    if [ "${DUOFORGE_FUZZ_NO_GIT_CHECK:-}" = 1 ]; then
+        text=$(cat "$DF_DIR/campaigns/$2/campaign.conf") || return 1
+    else
+        text=$(git -C "$DF_DIR" show "$1:tools/cloud/aws_fuzz/campaigns/$2/campaign.conf") || return 1
+    fi
+    local value
+    value=$(printf '%s\n' "$text" | sed -n "s/^$3=//p" | head -n 1)
+    printf '%s' "${value:-$4}"
+}
+
+# The run id up to the launch time: "<commit12>-<chunk_battles>-<base_seed>-".
+df_run_id_prefix() { # commit campaign
+    local chunk seed
+    chunk=$(df_conf_value "$1" "$2" chunk_battles 2000) || df_die "cannot read campaign.conf of '$2' at $1"
+    seed=$(df_conf_value "$1" "$2" base_seed '') || df_die "cannot read campaign.conf of '$2' at $1"
+    [[ $chunk =~ ^[0-9]{3,5}$ ]] || df_die "campaign '$2': chunk_battles '$chunk' is not a number"
+    [[ $seed =~ ^[0-9]{1,12}$ ]] || df_die "campaign '$2': base_seed '$seed' is not a number"
+    printf '%s-%s-%s-' "${1:0:12}" "$chunk" "$seed"
+}
+
 # $DF_DIR/user_data.sh with its placeholders filled; every value is validated before it gets here.
-df_render_user_data() { # campaign commit bucket max-minutes
-    sed -e "s|@CAMPAIGN@|$1|g" -e "s|@COMMIT@|$2|g" -e "s|@BUCKET@|$3|g" -e "s|@MAX_MINUTES@|$4|g" "$DF_DIR/user_data.sh"
+df_render_user_data() { # campaign commit bucket max-minutes run-id resume(yes|no)
+    sed -e "s|@CAMPAIGN@|$1|g" -e "s|@COMMIT@|$2|g" -e "s|@BUCKET@|$3|g" -e "s|@MAX_MINUTES@|$4|g" \
+        -e "s|@RUN_ID@|$5|g" -e "s|@RESUME@|$6|g" "$DF_DIR/user_data.sh"
 }
 
 # The price ceiling per instance hour that keeps the campaign under the cost cap: cap / hours (two decimals).
