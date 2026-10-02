@@ -1373,6 +1373,125 @@ class Library(unittest.TestCase):
             with self.subTest(move=name):
                 self.assertTrue(done, '%s is marked but no committed pool battle uses it' % name)
 
+    def test_inner_focus_fail_line_is_a_fail_event_of_the_ability(self):
+        """Inner Focus (step G22, data/abilities.ts:2157-2162): `-fail|X|unboost|atk|[from] ability: Inner Focus|[of] X`
+        is a FAIL whose cause is the ability (id2 = ability + 1) and whose `other` is the holder; any other stat, a
+        missing [of] or another cause is refused, not mapped, and a `-fail` of a heal move or an ailment stays what it
+        was."""
+        tables = trace_to_c.load_tables(ROOT, True)
+        roster = [{'Dragonite': 0}, {'Dragonite': 0}]
+        maxhp = [{'Dragonite': 100}] * 2
+        line = '|-fail|p2a: Dragonite|unboost|atk|[from] ability: Inner Focus|[of] p2a: Dragonite'
+        events = trace_to_c.step_events([line], 0, roster, maxhp, tables)
+        self.assertEqual(len(events), 1)
+        e = events[0]
+        self.assertEqual((e[0], e[1], e[2], e[3], e[5]),
+                         (trace_to_c.EV['FAIL'], 2, 2, trace_to_c.CAUSE['ABILITY'],
+                          tables['ABILITY'][trace_to_c.key('Inner Focus')] + 1))
+        for bad in ('|-fail|p2a: Dragonite|unboost|def|[from] ability: Inner Focus|[of] p2a: Dragonite',
+                    '|-fail|p2a: Dragonite|unboost|atk|[from] ability: Inner Focus',
+                    '|-fail|p2a: Dragonite|unboost|atk|[from] move: Protect|[of] p2a: Dragonite'):
+            with self.assertRaises(trace_to_c.ConversionError) as ctx:
+                trace_to_c.step_events([bad], 0, roster, maxhp, tables)
+            self.assertEqual(ctx.exception.rule, 'fail-line')
+        plain = trace_to_c.step_events(['|-fail|p2a: Dragonite|heal'], 0, roster, maxhp, tables)[0]
+        self.assertEqual((plain[0], plain[3], plain[11]), (trace_to_c.EV['FAIL'], 0, 0))
+
+    def test_every_ability_marked_by_g22_shows_its_effect_in_a_pool_battle(self):
+        """The six abilities of step G22 are used in committed pool battles that show what the engine reads, from the
+        protocol lines alone: the Speed abilities as an order of the move lines that the weather turns around (the same
+        two Pokemon, the slower first without the weather and the faster first with it), Sand Rush's holder with no
+        Sandstorm line while foes have them, Inner Focus as its -fail lines and no flinch of its holders, Liquid Voice as
+        a hit that the sound move's own type forbids."""
+        def trace(name):
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                return json.load(f)
+
+        def moves(step):
+            return [l.split('|')[2] for l in step['log'] if l.startswith('|move|')]
+
+        def first_before(step, a, b):
+            order = moves(step)
+            return a in order and b in order and order.index(a) < order.index(b)
+
+        def weather_of(steps):
+            """The weather after each step, from the -weather lines (upkeep lines keep it)."""
+            now, out = '', []
+            for step in steps:
+                for l in step['log']:
+                    if l.startswith('|-weather|'):
+                        now = '' if l.split('|')[2] == 'none' else l.split('|')[2]
+                out.append(now)
+            return out
+
+        # Swift Swim: Raichu first without rain, Basculegion first (twice its Speed) in the same turn that the rain starts.
+        swim = trace('g22_swift_swim')['steps']
+        self.assertTrue(first_before(swim[1], 'p2a: Raichu', 'p1a: Basculegion'))
+        self.assertTrue(first_before(swim[2], 'p1a: Basculegion', 'p2a: Raichu') or 'p2a: Raichu' not in moves(swim[2]))
+        self.assertTrue(any(l.startswith('|-weather|RainDance|[from] ability: Drizzle') for l in swim[2]['log']))
+        # ... and the queued action of the knocked-out holder ties Politoed's: the draw of the queue site.
+        self.assertTrue(any(d['site'] == 'SPEED_TIE' and d['context'] == 'queue' and
+                            sorted(d['group']) == ['A:move:p1a:liquidation', 'A:move:p1b:weatherball']
+                            for step in swim for d in step['draws']))
+        # Sand Rush: sand damage on Raichu and Milotic and none on the holders (Houndstone is a Ghost); Houndstone
+        # (88 raw Speed, 176 in the sand) before Raichu (130) in the turn after the sandstorm began.
+        sand = trace('g22_sand_rush')['steps']
+        hits = [l for step in sand for l in step['log'] if l.endswith('[from] Sandstorm')]
+        self.assertTrue(any('p2a: Raichu' in l for l in hits) and any('p2b: Milotic' in l for l in hits))
+        self.assertFalse([l for l in hits if 'Houndstone' in l or 'Lycanroc' in l])
+        self.assertTrue(first_before(sand[2], 'p1a: Houndstone', 'p2a: Raichu'))
+        self.assertTrue(any(l.startswith('|move|p1a: Houndstone|Sandstorm') for l in sand[1]['log']))
+        # Slush Rush: Milotic before Beartic on the turn of Snowscape, Beartic before Milotic on the next.
+        slush = trace('g22_slush_rush')['steps']
+        self.assertTrue(first_before(slush[1], 'p2a: Milotic', 'p1a: Beartic'))
+        self.assertTrue(first_before(slush[2], 'p1a: Beartic', 'p2a: Milotic'))
+        # Chlorophyll: Raichu before Venusaur without the sun, Venusaur before Raichu in the turn that Drought starts it.
+        sun = trace('g22_chlorophyll')['steps']
+        self.assertTrue(first_before(sun[1], 'p2a: Raichu', 'p1b: Venusaur'))
+        self.assertTrue(first_before(sun[2], 'p1b: Venusaur', 'p2a: Raichu') or
+                        ('p2a: Raichu' not in moves(sun[2]) and '|faint|p2a: Raichu' in sun[2]['log']))
+        self.assertTrue(any(l.startswith('|-weather|SunnyDay|[from] ability: Drought') for l in sun[2]['log']))
+        # In a weather that is not theirs the abilities change nothing: the foes at 101 to 120 Speed move before the 98
+        # (Basculegion), 88 (Houndstone) and 100 (Venusaur) holders in the sun and the snow, and Beartic (70) is last in the sun.
+        foreign = trace('g22_foreign_weather')['steps']
+        self.assertEqual(moves(foreign[2]), ['p2a: Milotic', 'p1a: Basculegion', 'p1b: Beartic'])
+        self.assertTrue(any(l.startswith('|-weather|SunnyDay|[from] ability: Drought') for l in foreign[2]['log']))
+        self.assertEqual(moves(foreign[3]), ['p1b: Beartic', 'p2b: Ninetales', 'p1a: Basculegion'])
+        self.assertTrue(any(l.startswith('|-weather|Snowscape|[from] ability: Snow Warning') for l in foreign[3]['log']))
+        self.assertEqual(moves(foreign[5])[:4], ['p2b: Ninetales', 'p2a: Abomasnow', 'p1b: Venusaur', 'p1a: Houndstone'])
+        # Inner Focus: its Intimidate lines say -fail (three times: the entry, and Staraptor's switch-in), the other foe
+        # is lowered, Fake Out and the 30 percent Rock Slide flinch Raichu and never Dragonite.
+        focus = trace('g22_inner_focus')['steps']
+        lines = [l for step in focus for l in step['log']]
+        fails = [l for l in lines if l.startswith('|-fail|') and 'unboost|atk' in l]
+        self.assertEqual(len(fails), 2)
+        self.assertTrue(all(l.endswith('[from] ability: Inner Focus|[of] p2a: Dragonite') for l in fails))
+        self.assertTrue(any(l == '|-unboost|p2b: Raichu|atk|1' for l in lines))
+        flinches = [l for l in lines if l.startswith('|cant|') and l.endswith('|flinch')]
+        self.assertEqual(sorted(set(flinches)), ['|cant|p2b: Raichu|flinch'])
+        self.assertGreaterEqual(len(flinches), 2)
+        self.assertTrue(any(l.startswith('|move|p1a: Incineroar|Fake Out|p2a: Dragonite') for l in lines))
+        # Parting Shot (an effect that is not Intimidate) lowers its Attack all the same.
+        self.assertTrue(any(l == '|-unboost|p2a: Dragonite|atk|1' for l in lines))
+        # Liquid Voice: Psychic Noise (Psychic) hits Incineroar (a Dark type: immune to Psychic) as a super effective
+        # Water move, and Hyper Voice (Normal) hits a Ghost.
+        voice = trace('g22_liquid_voice')['steps']
+        step = [s for s in voice if any(l.startswith('|move|p1a: Primarina|Psychic Noise|p2b: Incineroar') for l in s['log'])][0]
+        after = step['log'][[i for i, l in enumerate(step['log']) if l.startswith('|move|p1a: Primarina|Psychic Noise')][0]:]
+        self.assertTrue(after[1].startswith('|-supereffective|p2b: Incineroar'), after[:3])
+        self.assertTrue(any(l.startswith('|-damage|p2b: Incineroar|') for l in after[:4]))
+        hv = [(s, i) for s in voice for i, l in enumerate(s['log']) if l.startswith('|move|p1a: Primarina|Hyper Voice')]
+        self.assertTrue(hv)
+        s, i = hv[0]
+        self.assertTrue(any(l.startswith('|-damage|p2a: Gholdengo|') for l in s['log'][i:i + 6]))
+        self.assertFalse(any(l.startswith('|-immune|') for l in s['log'][i:i + 6]))
+        # Every one of the six is marked and has a battle: the manifest lists exactly these.
+        with open(os.path.join(ROOT, 'src', 'data', 'support_manifest.c'), encoding='utf-8') as f:
+            marked = f.read()
+        for name in ('SANDRUSH', 'SWIFTSWIM', 'SLUSHRUSH', 'CHLOROPHYLL', 'INNERFOCUS', 'LIQUIDVOICE'):
+            self.assertIn('[DFI_ABILITY_%s] = 1u' % name, marked)
+        self.assertNotIn('[DFI_ABILITY_CURSEDBODY] = 1u', marked)
+
     def test_the_switch_of_a_damaging_pivot_names_its_move(self):
         """[from] U-turn (step G5) is [from] of the move, as Flip Turn and Parting Shot: the cause MOVE and the move's
         id (the pool tables have U-turn, the extended tables do not: a bare KeyError there, the converter's way to say

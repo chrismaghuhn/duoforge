@@ -1622,12 +1622,20 @@ static const df_tb_stop tb_g22_chlorophyll[] = {
     {5u, 0u, 2u, 2u, {3u, 3u}, {447u, 512u}, {0x4045127ad6260bf5ull, 0x4045b8fb967bba88ull}},
     {6u, 0u, 2u, 2u, {3u, 3u}, {447u, 512u}, {0x4045127ad6260bf5ull, 0x4045b8fb967bba88ull}},
 };
+static const df_tb_stop tb_g22_foreign_weather[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1189u, 1150u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {795u, 786u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {795u, 781u}, {0x4050aaaaaaaaaaabull, 0x40509043973bfc9full}},
+    {3u, 0u, 1u, 3u, {4u, 4u}, {795u, 786u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {6u, 0u, 2u, 2u, {4u, 4u}, {631u, 747u}, {0x4049ef40f997b471ull, 0x404fa6d0fa45c99dull}},
+    {7u, 0u, 2u, 1u, {3u, 4u}, {592u, 747u}, {0x40481e7307e4ef15ull, 0x404fa6d0fa45c99dull}},
+};
 static const df_tb_stop tb_g22_inner_focus[] = {
     {0u, 0u, 1u, 3u, {6u, 6u}, {1157u, 1143u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {748u, 779u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
     {2u, 0u, 2u, 2u, {4u, 4u}, {634u, 705u}, {0x404c6e4ef9368bcfull, 0x404dcc065693c54full}},
-    {3u, 0u, 1u, 2u, {4u, 4u}, {634u, 598u}, {0x404c6e4ef9368bcfull, 0x4048ed29316e40a7ull}},
-    {4u, 0u, 2u, 1u, {3u, 4u}, {378u, 544u}, {0x40412acac0f30796ull, 0x4046a757bd112961ull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {510u, 603u}, {0x40471b5a1b048a44ull, 0x4049250872fef121ull}},
+    {4u, 0u, 2u, 2u, {4u, 4u}, {510u, 603u}, {0x40471b5a1b048a44ull, 0x4049250872fef121ull}},
 };
 static const df_tb_stop tb_g22_liquid_voice[] = {
     {0u, 0u, 1u, 3u, {6u, 6u}, {1157u, 1154u}, {0x4059000000000000ull, 0x4059000000000000ull}},
@@ -1635,6 +1643,7 @@ static const df_tb_stop tb_g22_liquid_voice[] = {
     {2u, 0u, 1u, 1u, {4u, 3u}, {677u, 539u}, {0x404e2b59e588712bull, 0x40482f10b6fb99f4ull}},
     {3u, 0u, 1u, 1u, {4u, 3u}, {677u, 539u}, {0x404e2b59e588712bull, 0x40482f10b6fb99f4ull}},
     {4u, 0u, 1u, 1u, {4u, 3u}, {599u, 370u}, {0x404ab182f7546bb1ull, 0x4040eca56368aff1ull}},
+    {5u, 0u, 1u, 1u, {4u, 2u}, {537u, 165u}, {0x4048121b709da01cull, 0x40314f8fdf055bedull}},
 };
 static const df_tb_stop tb_g22_sand_rush[] = {
     {0u, 0u, 1u, 3u, {6u, 6u}, {1104u, 1097u}, {0x4059000000000000ull, 0x4059000000000000ull}},
@@ -3174,8 +3183,9 @@ static const df_tb_battle tb_battles[] = {
     {"g20_aurora_veil_pair_b", 8u, tb_g20_aurora_veil_pair_b, sizeof tb_g20_aurora_veil_pair_b / sizeof tb_g20_aurora_veil_pair_b[0]},
     {"g20_aurora_veil_screens", 7u, tb_g20_aurora_veil_screens, sizeof tb_g20_aurora_veil_screens / sizeof tb_g20_aurora_veil_screens[0]},
     {"g22_chlorophyll", 6u, tb_g22_chlorophyll, sizeof tb_g22_chlorophyll / sizeof tb_g22_chlorophyll[0]},
+    {"g22_foreign_weather", 7u, tb_g22_foreign_weather, sizeof tb_g22_foreign_weather / sizeof tb_g22_foreign_weather[0]},
     {"g22_inner_focus", 4u, tb_g22_inner_focus, sizeof tb_g22_inner_focus / sizeof tb_g22_inner_focus[0]},
-    {"g22_liquid_voice", 4u, tb_g22_liquid_voice, sizeof tb_g22_liquid_voice / sizeof tb_g22_liquid_voice[0]},
+    {"g22_liquid_voice", 5u, tb_g22_liquid_voice, sizeof tb_g22_liquid_voice / sizeof tb_g22_liquid_voice[0]},
     {"g22_sand_rush", 4u, tb_g22_sand_rush, sizeof tb_g22_sand_rush / sizeof tb_g22_sand_rush[0]},
     {"g22_slush_rush", 4u, tb_g22_slush_rush, sizeof tb_g22_slush_rush / sizeof tb_g22_slush_rush[0]},
     {"g22_swift_swim", 6u, tb_g22_swift_swim, sizeof tb_g22_swift_swim / sizeof tb_g22_swift_swim[0]},
@@ -3312,7 +3322,7 @@ static const df_tb_battle tb_battles[] = {
     {"w8_sand_soak", 7u, tb_w8_sand_soak, sizeof tb_w8_sand_soak / sizeof tb_w8_sand_soak[0]},
 };
 
-/* 2352 stops: 139 of an ended battle; decided by the count 720,
- * the HP percentage 708, the total HP 734, a tie 51;
- * winners: side 0 1180, side 1 1121, tie 51 */
+/* 2359 stops: 139 of an ended battle; decided by the count 721,
+ * the HP percentage 711, the total HP 737, a tie 51;
+ * winners: side 0 1184, side 1 1124, tie 51 */
 #endif

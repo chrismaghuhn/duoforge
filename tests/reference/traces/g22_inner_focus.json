@@ -80,7 +80,7 @@
        ],
        "pp": [
         12,
-        16,
+        20,
         8,
         16
        ],
@@ -509,7 +509,7 @@
         ],
         "pp": [
          12,
-         16,
+         20,
          8,
          16
         ],
@@ -998,7 +998,7 @@
         ],
         "pp": [
          11,
-         16,
+         20,
          8,
          16
         ],
@@ -1241,7 +1241,7 @@
   },
   {
    "input": {
-    "p1": "move 3, move 2",
+    "p1": "move 2 1, move 2",
     "p2": "move 2, move 1 1"
    },
    "draws": [
@@ -1289,20 +1289,6 @@
     },
     {
      "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 1
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 1
-    },
-    {
-     "site": "RANDOM_TARGET",
      "context": "execute:allAdjacentFoes",
      "lo": 0,
      "hi": 2,
@@ -1313,14 +1299,28 @@
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 64
+     "value": 87
     },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 66
+     "value": 83
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 15
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 10
     },
     {
      "site": "CRIT",
@@ -1337,39 +1337,25 @@
      "value": 6
     },
     {
-     "site": "CRIT",
+     "site": "SECONDARY",
      "context": "",
      "lo": 0,
-     "hi": 24,
-     "value": 5
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 3
+     "hi": 100,
+     "value": 22
     },
     {
      "site": "SECONDARY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 14
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 4
+     "value": 22
     },
     {
      "site": "RANDOM_TARGET",
      "context": "action-speed",
      "lo": 0,
      "hi": 2,
-     "value": 1
+     "value": 0
     },
     {
      "site": "RANDOM_TARGET",
@@ -1383,48 +1369,96 @@
      "context": "execute:allAdjacentFoes",
      "lo": 0,
      "hi": 2,
-     "value": 0
+     "value": 1
     },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 96
+     "value": 9
     },
     {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "H:stall:p1a:end",
-      "H:protect:p1a:end"
-     ],
-     "start": 1
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 37
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 23
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 6
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 4
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 10
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 89
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 74
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 62
     }
    ],
    "log": [
-    "|move|p1a: Incineroar|Protect|p1a: Incineroar",
-    "|-singleturn|p1a: Incineroar|Protect",
     "|move|p1b: Kangaskhan|Rock Slide|p2b: Raichu|[spread] p2a,p2b",
     "|-supereffective|p2a: Dragonite|1",
     "|split|p2",
-    "|-damage|p2a: Dragonite|118/198",
-    "|-damage|p2a: Dragonite|59/100",
+    "|-damage|p2a: Dragonite|122/198",
+    "|-damage|p2a: Dragonite|61/100",
     "|split|p2",
-    "|-damage|p2b: Raichu|66/167",
-    "|-damage|p2b: Raichu|39/100",
+    "|-damage|p2b: Raichu|67/167",
+    "|-damage|p2b: Raichu|40/100",
     "|cant|p2b: Raichu|flinch",
-    "|move|p2a: Dragonite|Rock Slide|p1a: Incineroar|[spread] ",
-    "|-activate|p1a: Incineroar|move: Protect",
-    "|-miss|p2a: Dragonite|p1b: Kangaskhan",
-    "|upkeep",
-    "|turn|3"
+    "|move|p2a: Dragonite|Rock Slide|p1b: Kangaskhan|[spread] p1a,p1b",
+    "|-supereffective|p1a: Incineroar|1",
+    "|split|p1",
+    "|-damage|p1a: Incineroar|54/202",
+    "|-damage|p1a: Incineroar|26/100",
+    "|split|p1",
+    "|-damage|p1b: Kangaskhan|92/182",
+    "|-damage|p1b: Kangaskhan|50/100g",
+    "|move|p1a: Incineroar|Parting Shot|p2a: Dragonite",
+    "|-unboost|p2a: Dragonite|atk|1",
+    "|-unboost|p2a: Dragonite|spa|1"
    ],
    "state": {
-    "turn": 3,
+    "turn": 2,
     "ended": false,
     "winner": "",
     "weather": "",
@@ -1434,26 +1468,13 @@
     "trick_room": 0,
     "sides": [
      {
-      "request": "move",
+      "request": "switch",
       "conditions": [
        0,
        0,
        0
       ],
-      "enabled": [
-       [
-        0,
-        1,
-        1,
-        1
-       ],
-       [
-        0,
-        1,
-        1,
-        1
-       ]
-      ],
+      "enabled": [],
       "active": [
        0,
        1
@@ -1463,8 +1484,8 @@
         "species": "Incineroar",
         "set_species": "Incineroar",
         "mega": 0,
-        "switch_flag": 0,
-        "hp": 132,
+        "switch_flag": 1,
+        "hp": 54,
         "maxhp": 202,
         "item": "blackglasses",
         "status": "",
@@ -1482,13 +1503,11 @@
         ],
         "pp": [
          11,
-         16,
-         7,
+         19,
+         8,
          16
         ],
-        "volatiles": [
-         "stall"
-        ],
+        "volatiles": [],
         "locked": null
        },
        {
@@ -1496,7 +1515,7 @@
         "set_species": "Kangaskhan",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 138,
+        "hp": 92,
         "maxhp": 182,
         "item": "silkscarf",
         "status": "",
@@ -1578,26 +1597,13 @@
       ]
      },
      {
-      "request": "move",
+      "request": "",
       "conditions": [
        0,
        0,
        0
       ],
-      "enabled": [
-       [
-        1,
-        1,
-        1,
-        1
-       ],
-       [
-        1,
-        1,
-        1,
-        1
-       ]
-      ],
+      "enabled": [],
       "active": [
        0,
        1
@@ -1608,7 +1614,7 @@
         "set_species": "Dragonite",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 118,
+        "hp": 122,
         "maxhp": 198,
         "item": "dragonfang",
         "status": "",
@@ -1616,9 +1622,9 @@
         "confusion": 0,
         "fainted": false,
         "boosts": [
+         -1,
          0,
-         0,
-         0,
+         -1,
          0,
          0,
          0,
@@ -1638,7 +1644,7 @@
         "set_species": "Raichu",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 66,
+        "hp": 67,
         "maxhp": 167,
         "item": "lightclay",
         "status": "",
@@ -1660,7 +1666,9 @@
          20,
          8
         ],
-        "volatiles": [],
+        "volatiles": [
+         "flinch"
+        ],
         "locked": null
        },
        {
@@ -1727,196 +1735,18 @@
   },
   {
    "input": {
-    "p1": "switch 3, move 2",
-    "p2": "move 2, move 1 1"
+    "p1": "switch 3, pass"
    },
-   "draws": [
-    {
-     "site": "RANDOM_TARGET",
-     "context": "resolve",
-     "lo": 0,
-     "hi": 2,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 1
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "resolve",
-     "lo": 0,
-     "hi": 2,
-     "value": 1
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 1
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 1
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "execute:allAdjacentFoes",
-     "lo": 0,
-     "hi": 2,
-     "value": 0
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 5
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 90
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 22
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 14
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 15
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 1
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 20
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 23
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 11
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 64
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "execute:allAdjacentFoes",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 21
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 2
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 6
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 47
-    }
-   ],
+   "draws": [],
    "log": [
     "|split|p1",
-    "|switch|p1a: Staraptor|Staraptor, L50, F|192/192",
-    "|switch|p1a: Staraptor|Staraptor, L50, F|100/100",
+    "|switch|p1a: Staraptor|Staraptor, L50, F|192/192|[from] Parting Shot",
+    "|switch|p1a: Staraptor|Staraptor, L50, F|100/100|[from] Parting Shot",
     "|-ability|p1a: Staraptor|Intimidate|boost",
     "|-fail|p2a: Dragonite|unboost|atk|[from] ability: Inner Focus|[of] p2a: Dragonite",
     "|-unboost|p2b: Raichu|atk|1",
-    "|move|p1b: Kangaskhan|Rock Slide|p2a: Dragonite|[spread] p2a",
-    "|-miss|p1b: Kangaskhan|p2b: Raichu",
-    "|-supereffective|p2a: Dragonite|1",
-    "|split|p2",
-    "|-damage|p2a: Dragonite|64/198",
-    "|-damage|p2a: Dragonite|32/100",
-    "|move|p2b: Raichu|Thunderbolt|p1a: Staraptor",
-    "|-supereffective|p1a: Staraptor|1",
-    "|split|p1",
-    "|-damage|p1a: Staraptor|0 fnt",
-    "|-damage|p1a: Staraptor|0 fnt",
-    "|faint|p1a: Staraptor",
-    "|move|p2a: Dragonite|Rock Slide|p1b: Kangaskhan",
-    "|split|p1",
-    "|-damage|p1b: Kangaskhan|74/182",
-    "|-damage|p1b: Kangaskhan|40/100",
-    "|upkeep"
+    "|upkeep",
+    "|turn|3"
    ],
    "state": {
     "turn": 3,
@@ -1929,13 +1759,23 @@
     "trick_room": 0,
     "sides": [
      {
-      "request": "switch",
+      "request": "move",
       "conditions": [
        0,
        0,
        0
       ],
-      "enabled": [],
+      "enabled": [
+       [
+        1
+       ],
+       [
+        0,
+        1,
+        1,
+        1
+       ]
+      ],
       "active": [
        0,
        1
@@ -1945,14 +1785,14 @@
         "species": "Staraptor",
         "set_species": "Staraptor",
         "mega": 0,
-        "switch_flag": 1,
-        "hp": 0,
+        "switch_flag": 0,
+        "hp": 192,
         "maxhp": 192,
         "item": "staraptite",
-        "status": "fnt",
+        "status": "",
         "status_time": 0,
         "confusion": 0,
-        "fainted": true,
+        "fainted": false,
         "boosts": [
          0,
          0,
@@ -1973,7 +1813,7 @@
         "set_species": "Kangaskhan",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 74,
+        "hp": 92,
         "maxhp": 182,
         "item": "silkscarf",
         "status": "",
@@ -1991,7 +1831,7 @@
         ],
         "pp": [
          11,
-         10,
+         11,
          8,
          16
         ],
@@ -2003,7 +1843,7 @@
         "set_species": "Incineroar",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 132,
+        "hp": 54,
         "maxhp": 202,
         "item": "blackglasses",
         "status": "",
@@ -2021,8 +1861,8 @@
         ],
         "pp": [
          11,
-         16,
-         7,
+         19,
+         8,
          16
         ],
         "volatiles": [],
@@ -2058,13 +1898,26 @@
       ]
      },
      {
-      "request": "",
+      "request": "move",
       "conditions": [
        0,
        0,
        0
       ],
-      "enabled": [],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
       "active": [
        0,
        1
@@ -2075,7 +1928,7 @@
         "set_species": "Dragonite",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 64,
+        "hp": 122,
         "maxhp": 198,
         "item": "dragonfang",
         "status": "",
@@ -2083,9 +1936,9 @@
         "confusion": 0,
         "fainted": false,
         "boosts": [
+         -1,
          0,
-         0,
-         0,
+         -1,
          0,
          0,
          0,
@@ -2093,7 +1946,7 @@
         ],
         "pp": [
          8,
-         9,
+         10,
          8,
          12
         ],
@@ -2105,7 +1958,7 @@
         "set_species": "Raichu",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 66,
+        "hp": 67,
         "maxhp": 167,
         "item": "lightclay",
         "status": "",
@@ -2122,7 +1975,7 @@
          0
         ],
         "pp": [
-         15,
+         16,
          8,
          20,
          8

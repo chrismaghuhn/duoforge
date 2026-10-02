@@ -1,6 +1,6 @@
 {
   "name": "g22_liquid_voice",
-  "purpose": "Liquid Voice: Primarina's Hyper Voice and Psychic Noise (sound moves) are Water: a Ghost is hit by the Normal move, a Dark type by the Psychic one, with STAB and the rain Politoed brings.",
+  "purpose": "Liquid Voice: Primarina's Hyper Voice and Psychic Noise (sound moves) are Water: a Ghost is hit by the Normal move, a Dark type by the Psychic one, with STAB and the rain Politoed brings; Moonblast, which is no sound move, stays Fairy.",
   "data": "pool",
   "format": "gen9championsvgc2026regmc",
   "seed": "sodium,0000000000000000000000000000000000000000000000000000000000002206",
@@ -12,13 +12,13 @@
     "p1": [
       "move 2 2, move 2",
       "move 1, move 1 1",
-      "move 1, move 1 1"
+      "move 4 1, move 1 1"
     ],
     "p2": [
       "move 1 1, move 4",
       "move 1 1, move 1",
-      "move 1 1, move 1"
+      "move 1 2, move 1"
     ],
-    "max_steps": 4
+    "max_steps": 5
   }
 }
