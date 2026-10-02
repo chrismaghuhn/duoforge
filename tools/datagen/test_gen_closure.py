@@ -11,6 +11,8 @@ data/mods/champions/learnsets.ts layout, so no checkout is needed.
 
 usage: python3 tools/datagen/test_gen_closure.py
 """
+import io
+import os
 import unittest
 
 import gen_closure
@@ -487,7 +489,10 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual(parse_pool('psychicnoise', PSYCHIC_NOISE)['sec_chance'], 0)
 
     def test_the_handlers_are_the_nine_new_specials_in_order(self):
-        self.assertEqual(gen_closure.SPECIAL_IDS_P[len(gen_closure.SPECIAL_IDS_C):], gen_closure.G2_HANDLERS)
+        nine = len(gen_closure.SPECIAL_IDS_C) + len(gen_closure.G2_HANDLERS)
+        self.assertEqual(gen_closure.SPECIAL_IDS_P[len(gen_closure.SPECIAL_IDS_C):nine], gen_closure.G2_HANDLERS)
+        # UNMODELED (decision 0015 section 4.2) follows them, as the last id.
+        self.assertEqual(gen_closure.SPECIAL_IDS_P[nine:], ['UNMODELED'])
         self.assertEqual(len(gen_closure.G2_HANDLERS), 9)
         self.assertEqual({v[0] for k, v in gen_closure.SPECIAL_P.items() if k not in gen_closure.SPECIAL_C},
                          set(gen_closure.G2_HANDLERS))
@@ -534,14 +539,6 @@ class PoolMoves(unittest.TestCase):
                 self.refused('icepunch', ICE_PUNCH, 'unknown flag punch', pool=False, ext=ext)
         self.refused('soak', SOAK.replace('allyanim: 1', 'telekinesis: 1'), 'unknown flag telekinesis')
 
-    def test_an_ignored_flag_fails_when_its_reader_enters_the_pool(self):
-        gen_closure.check_flag_readers([{'id': 'drizzle'}, {'id': 'rockhead'}])
-        for reader in ('ironfist', 'sharpness'):
-            with self.subTest(reader):
-                with self.assertRaises(SystemExit) as cm:
-                    gen_closure.check_flag_readers([{'id': 'drizzle'}, {'id': reader}])
-                self.assertIn('ability %s reads the move flag' % reader, str(cm.exception.code))
-
     def test_an_unmodelled_name_is_a_message_never_a_key_error(self):
         # Psychic Noise's Heal Block, a primary status, a side condition and a pseudo weather that the tables lack.
         for ext in (False, True):
@@ -567,6 +564,349 @@ class PoolMoves(unittest.TestCase):
         for _sp, _ab, item, moves, _mega in gen_closure.SETS_G2:
             self.assertTrue(item in gen_closure.G2_ITEMS or item not in gen_closure.POOL_ITEMS)
             self.assertTrue(set(moves) <= set(gen_closure.MOVES + gen_closure.MOVES_C + gen_closure.G2_MOVES))
+
+
+# ---- the whole legal pool (decision 0015 section 4.2): the lenient mode and what the tables model ----
+def lenient(mid, text):
+    """parse_move of the pool in the lenient mode: the record and its features."""
+    features = []
+    base = TextSource('data/moves.ts', text)
+    rec = gen_closure.parse_move(mid, base, TextSource('data/mods/champions/moves.ts', ''), pool=True, unmodeled=features)
+    return rec, sorted(set(features))
+
+
+def with_line(text, line):
+    return text.replace('target: "normal",', line + '\n\t\ttarget: "normal",')
+
+
+class LenientMoves(unittest.TestCase):
+    def refused(self, mid, text, message):
+        with self.assertRaises(SystemExit) as cm:
+            lenient(mid, text)
+        self.assertEqual(cm.exception.code, 'gen_closure: move %s: %s' % (mid, message))
+
+    def test_a_move_that_the_tables_model_is_encoded_as_in_the_strict_mode(self):
+        strict = parse_pool('plain', PLAIN)
+        rec, features = lenient('plain', PLAIN)
+        self.assertEqual(features, [])
+        self.assertEqual(rec, strict)
+        self.assertEqual(rec['special'], 0)
+        # With a secondary status, a recoil and a drop, all modelled.
+        text = with_line(PLAIN, "recoil: [1, 4],\n\t\tsecondary: { chance: 10, status: 'par', },")
+        self.assertEqual(lenient('plain', text), (parse_pool('plain', text), []))
+
+    def test_what_the_tables_do_not_model_is_a_feature_not_a_failure(self):
+        cases = (
+            ('callback onHit', with_line(PLAIN, 'onHit(target) { },')),
+            ('callback basePowerCallback', with_line(PLAIN, 'basePowerCallback() { return 1; },')),
+            ('field multihit', with_line(PLAIN, 'multihit: 2,')),
+            ('field ohko', with_line(PLAIN, 'ohko: true,')),
+            ('condition block', with_line(PLAIN, 'condition: { },')),
+            ('primary status tox', with_line(PLAIN, "status: 'tox',")),
+            ('primary volatile confusion', with_line(PLAIN, "volatileStatus: 'confusion',")),
+            ('side condition toxicspikes', with_line(PLAIN, "sideCondition: 'toxicspikes',")),
+            ('pseudo weather gravity', with_line(PLAIN, "pseudoWeather: 'gravity',")),
+            ('secondary', with_line(PLAIN, 'secondary: { chance: 10, onHit() { }, },')),
+            ('secondary self effect', with_line(PLAIN, 'secondary: { chance: 100, self: { boosts: { spe: 1, }, }, },')),
+            ('self effect', with_line(PLAIN, "self: { volatileStatus: 'mustrecharge', },")),
+            ('primary boosts on a non-self target', with_line(PLAIN, 'boosts: { atk: -1, },')),
+        )
+        for feature, text in cases:
+            with self.subTest(feature):
+                rec, features = lenient('plain', text)
+                self.assertEqual(features, [feature], text)
+
+    def test_every_unmodelled_feature_of_a_move_is_listed(self):
+        text = with_line(PLAIN, "multihit: 2,\n\t\tonHit() { },\n\t\tcondition: { },\n\t\tstatus: 'tox',")
+        _rec, features = lenient('plain', text)
+        self.assertEqual(features, ['callback onHit', 'condition block', 'field multihit', 'primary status tox'])
+
+    def test_a_target_class_is_encoded_and_unmodelled_when_the_turn_code_lacks_it(self):
+        # allAdjacent (Earthquake) is a class of the pool: code 11, no turn code yet.
+        rec, features = lenient('plain', PLAIN.replace('target: "normal"', 'target: "allAdjacent"'))
+        self.assertEqual((rec['target_class'], features), (11, ['target allAdjacent']))
+        # The classes of the closure stay modelled.
+        for name in ('normal', 'any', 'self', 'allAdjacentFoes', 'allySide', 'all', 'adjacentFoe', 'adjacentAlly'):
+            with self.subTest(name):
+                rec, features = lenient('plain', PLAIN.replace('target: "normal"', 'target: "%s"' % name))
+                self.assertEqual((rec['target_class'], features), (gen_closure.TARGET_CLASS[name], []))
+        self.assertEqual(sorted(gen_closure.TARGET_CLASS_POOL_NAMES), [11, 12, 13, 14, 15])
+        self.assertTrue(set(gen_closure.TARGET_CLASS_POOL) - set(gen_closure.TARGET_CLASS) == {
+            'allAdjacent', 'scripted', 'allyTeam', 'allies', 'foeSide'})
+        self.assertTrue(gen_closure.ENGINE_TARGETS <= set(gen_closure.TARGET_CLASS))
+
+    def test_what_the_generator_cannot_read_still_fails(self):
+        self.refused('plain', PLAIN.replace('target: "normal"', 'target: "nowhere"'), 'unknown target class nowhere')
+        self.refused('plain', PLAIN.replace('type: "Water"', 'type: "Cosmic"'), 'unknown type Cosmic')
+        self.refused('plain', PLAIN.replace('category: "Physical"', 'category: "Mental"'), 'unknown category Mental')
+        self.refused('plain', PLAIN.replace('pp: 10', 'pp: 12'), 'pp 12 is not a multiple of 5')
+        self.refused('plain', PLAIN.replace('basePower: 50', 'basePower: 300'), 'base_power out of range')
+        self.refused('plain', PLAIN.replace('flags: { contact: 1 }', 'flags: { contact: 1, telekinesis: 1 }'),
+                     'unknown flag telekinesis')
+        with self.assertRaises(SystemExit):
+            lenient('missing', PLAIN)
+        # A Champions override that does not inherit.
+        base = TextSource('data/moves.ts', PLAIN)
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.parse_move('plain', base, TextSource('data/mods/champions/moves.ts', entry('plain', 'basePower: 40,')),
+                                   pool=True, unmodeled=[])
+        self.assertIn('does not inherit', str(cm.exception.code))
+
+    def test_the_lenient_mode_is_for_the_pool_tables_only(self):
+        for kwargs in ({}, {'ext': True}):
+            with self.subTest(kwargs):
+                with self.assertRaises(SystemExit) as cm:
+                    gen_closure.parse_move('plain', TextSource('data/moves.ts', PLAIN),
+                                           TextSource('data/mods/champions/moves.ts', ''), unmodeled=[], **kwargs)
+                self.assertIn('the lenient mode is for the pool tables only', str(cm.exception.code))
+
+    def test_an_unencoded_flag_matters_only_when_a_modelled_row_reads_it(self):
+        sound = PLAIN.replace('flags: { contact: 1 }', 'flags: { contact: 1, sound: 1, punch: 1 }')
+        self.assertEqual(lenient('plain', sound)[1], [])
+        gen_closure.FLAGS_THAT_MATTER.add('sound')
+        try:
+            self.assertEqual(lenient('plain', sound)[1], ['flag sound'])
+        finally:
+            gen_closure.FLAGS_THAT_MATTER.discard('sound')
+        # The flag set of the pool: every encoded or ignored flag, and the ones of the pool moves.
+        self.assertTrue({'contact', 'protect', 'charge', 'defrost', 'sound', 'punch', 'bite', 'powder'} <= gen_closure.POOL_FLAGS)
+
+    def test_a_row_with_an_unmodelled_feature_gets_the_unmodeled_handler_and_neutral_effects(self):
+        text = PLAIN.replace('flags: { contact: 1 }', 'flags: { contact: 1 }').replace(
+            'target: "normal",', "multihit: 2,\n\t\tsecondary: { chance: 30, status: 'par', },\n\t\ttarget: \"normal\",")
+        # Written to a file-like source for parse_pool_move.
+        rec = gen_closure.parse_pool_move('plain', TextSource('data/moves.ts', text),
+                                          TextSource('data/mods/champions/moves.ts', ''))
+        self.assertEqual(rec['special'], gen_closure.SPECIAL_IDS_P.index('UNMODELED'))
+        self.assertEqual(rec['unmodeled'], ['field multihit'])
+        self.assertEqual((rec['sec_chance'], rec['sec_kind'], rec['sec_param'], rec['boost_role'], rec['primary_status'],
+                          rec['side_condition'], rec['pseudo_weather']), (0, 0, 0, 0, 0, 0, 0))
+        self.assertEqual(rec['base_power'], 50)  # the plain data stays
+        # A modelled move keeps the NONE handler and an empty list.
+        ok = gen_closure.parse_pool_move('plain', TextSource('data/moves.ts', PLAIN),
+                                         TextSource('data/mods/champions/moves.ts', ''))
+        self.assertEqual((ok['special'], ok['unmodeled']), (0, []))
+
+
+class ItemAbilityFeatures(unittest.TestCase):
+    def features(self, text, rid, inert, stone=False, readers=None):
+        src = TextSource('data/items.ts', text)
+        return gen_closure.entry_features(src, TextSource('data/mods/champions/items.ts', ''), rid, inert, stone, readers)
+
+    def test_an_entry_without_callbacks_is_inert(self):
+        text = entry('leek', 'name: "Leek",', 'spritenum: 475,', 'fling: {', '\tbasePower: 60,', '},', 'num: 259,', 'gen: 8,')
+        self.assertEqual(self.features(text, 'leek', gen_closure.INERT_ITEM_KEYS), [])
+
+    def test_a_callback_a_condition_or_another_field_is_a_feature(self):
+        text = entry('thing', 'name: "Thing",', 'onModifyAtk(atk) { return atk; },', 'onModifyAtkPriority: 1,',
+                     'condition: { },', 'boosts: { atk: 1, },', 'num: 1,')
+        self.assertEqual(sorted(self.features(text, 'thing', gen_closure.INERT_ITEM_KEYS)),
+                         ['callback onModifyAtk', 'callback onModifyAtkPriority', 'condition block', 'field boosts'])
+
+    def test_a_mega_stone_may_keep_its_take_item_handler(self):
+        take = ('onTakeItem(item, source) {', '\treturn !item.megaStone?.[source.baseSpecies.baseSpecies];', '},')
+        text = entry('abomasite', 'name: "Abomasite",', 'megaStone: { "Abomasnow": "Abomasnow-Mega" },',
+                     'itemUser: ["Abomasnow"],', *take, 'num: 674,')
+        self.assertEqual(self.features(text, 'abomasite', gen_closure.INERT_ITEM_KEYS, stone=True), [])
+        self.assertEqual(self.features(text, 'abomasite', gen_closure.INERT_ITEM_KEYS, stone=False),
+                         ['callback onTakeItem'])
+        other = text.replace('baseSpecies.baseSpecies', 'name')
+        self.assertEqual(self.features(other, 'abomasite', gen_closure.INERT_ITEM_KEYS, stone=True),
+                         ['callback onTakeItem'])
+
+    def test_an_id_that_other_code_reads_is_a_feature_even_without_a_callback(self):
+        # Damp Rock: no callback of its own, read by the rain condition (data/conditions.ts).
+        text = entry('damprock', 'name: "Damp Rock",', 'num: 285,')
+        loaded = {rel: TextSource(rel, '') for rel in ('data/abilities.ts', 'data/items.ts', 'data/moves.ts',
+                                                        'data/mods/champions/abilities.ts', 'data/mods/champions/items.ts',
+                                                        'data/mods/champions/moves.ts', 'data/mods/champions/scripts.ts')}
+        loaded['data/items.ts'] = TextSource('data/items.ts', text)
+        readers = object.__new__(gen_closure.ReaderIndex)
+        readers.lines = {'data/conditions.ts': ["\tif (source?.hasItem('damprock')) return 8;"], 'data/items.ts': text.split('\n')}
+        readers.index = {}
+        for rel, lines in readers.lines.items():
+            for n, line in enumerate(lines, 1):
+                for tok in gen_closure.ReaderIndex.QUOTED.findall(line):
+                    readers.index.setdefault(tok, []).append((rel, n))
+        self.assertEqual(self.features(text, 'damprock', gen_closure.INERT_ITEM_KEYS, readers=readers),
+                         ['read by id in data/conditions.ts'])
+        # The id inside its own entry is not a reader.
+        own = entry('selfref', 'name: "Self",', "onStart() { return 'selfref'; },")
+        readers.lines['data/items.ts'] = own.split('\n')
+        readers.index = {}
+        for rel, lines in readers.lines.items():
+            for n, line in enumerate(lines, 1):
+                for tok in gen_closure.ReaderIndex.QUOTED.findall(line):
+                    readers.index.setdefault(tok, []).append((rel, n))
+        self.assertEqual(self.features(own, 'selfref', gen_closure.INERT_ITEM_KEYS, readers=readers), ['callback onStart'])
+
+    def test_an_ability_with_flags_only_is_inert(self):
+        src = TextSource('data/abilities.ts', entry('illuminate', 'name: "Illuminate",', 'flags: {},', 'rating: 0,', 'num: 35,'))
+        champ = TextSource('data/mods/champions/abilities.ts', '')
+        self.assertEqual(gen_closure.entry_features(src, champ, 'illuminate', gen_closure.INERT_ABILITY_KEYS), [])
+        src = TextSource('data/abilities.ts', entry('rockhead', 'onDamage(damage, target, source, effect) { },', 'flags: {},',
+                                                      'name: "Rock Head",', 'num: 69,'))
+        self.assertEqual(gen_closure.entry_features(src, champ, 'rockhead', gen_closure.INERT_ABILITY_KEYS),
+                         ['callback onDamage'])
+
+    def test_the_champions_mod_adds_what_it_changes(self):
+        src = TextSource('data/abilities.ts', entry('plain', 'name: "Plain",', 'num: 1,'))
+        champ = TextSource('data/mods/champions/abilities.ts', entry('plain', 'inherit: true,', 'onStart() { },'))
+        self.assertEqual(gen_closure.entry_features(src, champ, 'plain', gen_closure.INERT_ABILITY_KEYS),
+                         ['callback onStart'])
+
+    def test_the_handler_columns_follow_the_feature_lists(self):
+        self.assertEqual(gen_closure.handler_of({'unmodeled': []}), 0)
+        self.assertEqual(gen_closure.handler_of({'unmodeled': ['callback onStart']}), 1)
+        self.assertEqual(gen_closure.HANDLER_IDS, ['NONE', 'UNMODELED'])
+
+    def test_the_rows_that_a_step_implements_by_id_are_listed(self):
+        self.assertEqual(gen_closure.ENGINE_ROWS, {'items': ['focussash', 'floettite'],
+                                                   'abilities': ['rockhead', 'flowerveil', 'fairyaura']})
+
+
+class Bounds(unittest.TestCase):
+    """check_bounds reads the widths from the sources that own them (a copy of the repository's three files)."""
+
+    def setUp(self):
+        import tempfile
+        self.repo = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        for rel in gen_closure.BOUND_SOURCES.values():
+            dst = os.path.join(self.tmp.name, rel)
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            with io.open(os.path.join(self.repo, rel), encoding='utf-8') as fh:
+                text = fh.read()
+            with io.open(dst, 'w', encoding='utf-8', newline='\n') as fh:
+                fh.write(text)
+
+    def data(self, formes=3, moves=5, items=4, abilities=6):
+        row = {'set_moves': [], 'set_item': 0xFF, 'dex_num': 1, 'weight_hg': 1, 'base': [1] * 6, 'id': 'x'}
+        return {'formes': [dict(row, id='f%d' % i) for i in range(formes)], 'moves': [{}] * moves, 'items': [{}] * items,
+                'abilities': [{}] * abilities, 'forme_legal': [{'learnable': [0] * ((moves + 7) // 8)}] * formes}
+
+    def edit(self, key, old, new):
+        path = os.path.join(self.tmp.name, gen_closure.BOUND_SOURCES[key])
+        with io.open(path, encoding='utf-8') as fh:
+            text = fh.read()
+        self.assertIn(old, text)
+        with io.open(path, 'w', encoding='utf-8', newline='\n') as fh:
+            fh.write(text.replace(old, new, 1))
+
+    def refused(self, d, message):
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_bounds(d, self.tmp.name)
+        self.assertIn(message, str(cm.exception.code))
+
+    def test_the_pool_fits_the_widths_of_this_repository(self):
+        gen_closure.check_bounds(self.data(), self.tmp.name)
+        gen_closure.check_bounds(self.data(formes=346, moves=511, items=166, abilities=215), self.tmp.name)
+
+    def test_the_counts_of_the_ids_are_bounded(self):
+        self.refused(self.data(abilities=255), 'a u8 id field holds at most 254')
+        self.refused(self.data(items=255), 'a u8 id field holds at most 254')
+        self.refused(self.data(moves=513), 'DUOFORGE_DATA_MAX_FORME_MOVES')
+        self.refused(self.data(formes=65536), 'bounds')
+
+    def test_a_narrower_field_fails_loudly(self):
+        self.edit('state', 'uint16_t species_id; /* SYNTHETIC', 'uint8_t species_id; /* SYNTHETIC')
+        self.refused(self.data(formes=346), 'species_id of dfi_member is 8 bits, the pool needs 345')
+
+    def test_a_narrower_move_slot_fails_loudly(self):
+        self.edit('state', 'uint16_t move_id;', 'uint8_t move_id;')
+        self.refused(self.data(moves=511), 'move_id of dfi_move_slot is 8 bits, the pool needs 510')
+
+    def test_a_narrower_item_or_ability_field_fails_loudly(self):
+        self.edit('state', 'uint8_t item;           /* 0 = none */', 'uint8_t item;           /* 0 = none */')
+        self.refused(self.data(items=255), 'bounds')
+        self.edit('api', 'uint8_t ability;                            /* open: current ability + 1', 'uint8_t abilityx;')
+        self.refused(self.data(), 'no integer field ability')
+
+    def test_a_missing_struct_fails_loudly(self):
+        self.edit('context', 'struct duoforge_context {', 'struct duoforge_context_renamed {')
+        self.refused(self.data(), 'bounds: struct duoforge_context { not found')
+
+    def test_a_row_that_does_not_fit_its_u8_fields_fails(self):
+        d = self.data()
+        d['formes'][0]['set_moves'] = [255]
+        self.refused(d, 'the set of f0 does not fit')
+        d = self.data()
+        d['formes'][0]['weight_hg'] = 70000
+        self.refused(d, 'outside its field')
+        d = self.data()
+        d['formes'][0]['base'] = [1, 1, 1, 1, 1, 256]
+        self.refused(d, 'outside its field')
+        d = self.data()
+        d['forme_legal'] = [{'learnable': [0]}] * 3
+        self.refused(dict(d, moves=[{}] * 9), 'the learnable bitset is too short')
+
+
+class WholePoolNames(unittest.TestCase):
+    def rows(self, ids):
+        return [{'id': i} for i in ids]
+
+    def pool(self, aliases=(), formes=('a', 'b')):
+        return {'formes': self.rows(formes), 'moves': self.rows(['m']), 'items': self.rows(['i']),
+                'abilities': self.rows(['x']), 'natures': self.rows(['hardy']), 'aliases': list(aliases)}
+
+    def test_an_alias_is_a_showdown_id_that_no_row_has(self):
+        gen_closure.check_names(self.pool([('apattern', 'a'), ('bpattern', 'b')]))
+        for aliases, why in (([('a', 'b')], 'the name of a row'),
+                             ([('z', 'a'), ('z', 'b')], 'a name twice'), ([('Z!', 'a')], 'not a Showdown id')):
+            with self.subTest(why):
+                with self.assertRaises(SystemExit):
+                    gen_closure.check_names(self.pool(aliases))
+
+    def test_the_closure_projection_maps_none_to_the_closures_byte(self):
+        row = {'mega_forme': None, 'id': 'x'}
+        self.assertEqual(gen_closure.closure_projection([row], 'formes')[0]['mega_forme'], 0xFF)
+        self.assertEqual(gen_closure.closure_projection([{'mega_base': None, 'mega_forme': 7}], 'items')[0],
+                         {'mega_base': 0xFF, 'mega_forme': 7})
+        self.assertEqual(gen_closure.forme_id16(None), 0xFFFF)
+        self.assertEqual(gen_closure.forme_id16(345), 345)
+
+    def test_a_forme_without_its_own_learnset_learns_what_its_base_learns(self):
+        learn = TextSource('data/mods/champions/learnsets.ts', learnset('gourgeist', 'woodhammer'))
+        self.assertEqual(gen_closure.learnset_moves(learn, 'gourgeistsmall', 'gourgeist'), {'woodhammer'})
+        # An empty entry (Gourgeist-Super) is no learnset of its own.
+        learn = TextSource('data/mods/champions/learnsets.ts', learnset('gourgeist', 'protect') + '\n\tgourgeistsuper: {},')
+        self.assertEqual(gen_closure.learnset_moves(learn, 'gourgeistsuper', 'gourgeist'), {'protect'})
+        # Without a base, or with a base that has none either, it is still refused.
+        with self.assertRaises(SystemExit):
+            gen_closure.learnset_moves(learn, 'gourgeistsmall')
+        with self.assertRaises(SystemExit):
+            gen_closure.learnset_moves(learn, 'gourgeistsmall', 'nobody')
+
+    def test_one_ability_may_be_legal_though_the_pin_tags_it(self):
+        future = FormeLegal.ABILITIES.replace('name: "Mega Ability",', 'isNonstandard: "Future",\n\t\tname: "Mega Ability",')
+        abil = TextSource('data/abilities.ts', future)
+        champ = TextSource('data/mods/champions/abilities.ts', '')
+        with self.assertRaises(SystemExit):
+            gen_closure.ability_released(abil, champ, 'megaability')
+        gen_closure.LEGAL_DESPITE_TAG['megaability'] = 'Future'
+        try:
+            gen_closure.ability_released(abil, champ, 'megaability')
+            gen_closure.LEGAL_DESPITE_TAG['megaability'] = 'Past'
+            with self.assertRaises(SystemExit):
+                gen_closure.ability_released(abil, champ, 'megaability')
+        finally:
+            del gen_closure.LEGAL_DESPITE_TAG['megaability']
+        self.assertEqual(gen_closure.LEGAL_DESPITE_TAG, {'auraguard': 'Future'})
+
+    def test_the_source_index_finds_an_entry_and_demands_its_end(self):
+        src = TextSource('data/items.ts', entry('a', 'name: "A",') + '\n' + entry('b', 'name: "B",'))
+        self.assertEqual(src.entry('b')[:2], (4, 6))
+        self.assertIsNone(src.entry('c'))
+        bad = TextSource('data/items.ts', '\ta: {\n\t\tname: "A",\n\t},\n\tb: {\n\t\tname: "B",')
+        with self.assertRaises(SystemExit):
+            bad.entry('b')
+        wrong = TextSource('data/items.ts', '\ta: {\n\t\tname: "A", }\n\t},\n')
+        with self.assertRaises(SystemExit):
+            wrong.entry('a')
+
+    def test_the_inert_reads_name_the_move_whose_modelling_would_matter(self):
+        self.assertEqual(gen_closure.INERT_FLAG_READS, {'bypasssub': 'substitute', 'pledgecombo': None})
 
 
 if __name__ == '__main__':

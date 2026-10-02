@@ -28,6 +28,10 @@ typedef struct dfi_support_manifest {
     uint8_t moves[DFI_POOL_MOVE_COUNT]; /* Struggle's entry is part of the turn core */
     uint8_t abilities[DFI_POOL_ABILITY_COUNT];
     uint8_t items[DFI_POOL_ITEM_COUNT];
+    /* The features of the POOL player-view extension (decision 0018) whose mechanic is implemented and tested:
+     * bit DUOFORGE_VIEWEXT_FEATURE_*, the value of duoforge_observation_ext.supported. Only the step that
+     * verifies the feature's protocol signals at the pin with recorded battles sets its bit. */
+    uint64_t view_ext_features;
 } dfi_support_manifest;
 
 /* The manifest of this build. */

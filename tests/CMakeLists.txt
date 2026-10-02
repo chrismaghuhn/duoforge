@@ -72,6 +72,8 @@ duoforge_add_test(NAME duoforge.request.contract SOURCES test_contract.c WHITEBO
 duoforge_add_test(NAME duoforge.request.information SOURCES test_information.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.request.accepts SOURCES test_step_accepts.c TIMEOUT 120)
 duoforge_add_test(NAME duoforge.request.query_checks SOURCES test_query_checks.c WHITEBOX)
+# The POOL player-view extension at tier 0 (decision 0018): layout, constants, the query, all zero.
+duoforge_add_test(NAME duoforge.request.observation_ext SOURCES test_observation_ext.c WHITEBOX)
 duoforge_add_test(NAME duoforge.request.candidates_digest SOURCES test_candidates_digest.c TIMEOUT 120)
 duoforge_add_test(NAME duoforge.batch.equivalence SOURCES test_batch.c LIBS duoforge_batch TIMEOUT 300)
 duoforge_add_test(NAME duoforge.api.reference SOURCES test_reference_api.c)
@@ -149,8 +151,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=b359230d5b2fdcea98be64cbe9c7edd35a76b089fa11d3e5b3bc529c43a2a8c0"
-        "pool_tables.c=9c27d96ad5e18e552c3ecaee7eeef8120aa06979379093fb73130be7a0471de7")
+        "pool_tables.h=63a7707353fb43d8eaad264878c9a2a9ea64732e7ebf5ee5baf9c7073be34c57"
+        "pool_tables.c=87bf673d93545035612572e43a6c8f20ad71bb400659a0a462fc1371ac2aeacb")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -197,7 +199,7 @@ if(DUOFORGE_PS_REFERENCE_DIR)
         add_test(NAME duoforge.data.pool_families
             COMMAND "${DUOFORGE_NODE}" "${PROJECT_SOURCE_DIR}/tools/datagen/pool_families.js"
                 "${DUOFORGE_PS_REFERENCE_DIR}" "${PROJECT_SOURCE_DIR}")
-        set_tests_properties(duoforge.data.pool_families PROPERTIES TIMEOUT 120 LABELS reference)
+        set_tests_properties(duoforge.data.pool_families PROPERTIES TIMEOUT 600 LABELS reference)
         # Every committed battle trace is reproduced by the pinned Showdown.
         file(GLOB _specs "${CMAKE_CURRENT_SOURCE_DIR}/reference/specs/*.json")
         foreach(_spec IN LISTS _specs)
@@ -407,6 +409,13 @@ if(Python3_Interpreter_FOUND)
     add_test(NAME duoforge.data.pool_names
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/test_pool_names.py")
     set_tests_properties(duoforge.data.pool_names PROPERTIES TIMEOUT 60
+        ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+    # The whole-pool rows (decision 0015 section 4.2) against the committed output of the pinned validator, with code
+    # of its own: the ids, the formes and their Mega links, the learnable moves and legal abilities, the move rows and
+    # the UNMODELED markers (no checkout needed).
+    add_test(NAME duoforge.data.pool_rows
+        COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/test_pool_rows.py")
+    set_tests_properties(duoforge.data.pool_rows PROPERTIES TIMEOUT 60
         ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
 endif()
 

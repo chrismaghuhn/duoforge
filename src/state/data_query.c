@@ -66,8 +66,12 @@ bool dfi_data_supported(const dfi_support_manifest *manifest, uint32_t table, ui
     case DUOFORGE_DATA_TABLE_ABILITY:
         return dfi_manifest_ability(manifest, id);
     case DUOFORGE_DATA_TABLE_SPECIES:
-        /* No mark of its own; a Mega forme is reached by Mega Evolution of its base forme. */
-        return dfi_pool_formes[id].is_mega == 0u || dfi_manifest_mega(manifest, dfi_pool_formes[id].base_forme);
+        /* No mark of its own; a Mega forme is reached by Mega Evolution of its base forme, and only the Mega forme
+         * that the base forme's row links is reached (Charizard-Mega-X is a row of the pool, but the base forme
+         * links Charizard-Mega-Y: the engine has no way into the other one). */
+        return dfi_pool_formes[id].is_mega == 0u ||
+               (dfi_pool_formes[dfi_pool_formes[id].base_forme].mega_forme == id &&
+                dfi_manifest_mega(manifest, dfi_pool_formes[id].base_forme));
     default:
         return true; /* a nature carries no mark */
     }
@@ -76,16 +80,16 @@ bool dfi_data_supported(const dfi_support_manifest *manifest, uint32_t table, ui
 void dfi_data_forme_info(const dfi_kind_limits *lim, const dfi_support_manifest *manifest, uint32_t species,
                          duoforge_forme_info *out)
 {
-    const dfi_forme_data *f = &dfi_pool_formes[species];
+    const dfi_pool_forme_data *f = &dfi_pool_formes[species];
     duoforge_forme_info info = {0};
     info.dex_num = f->dex_num;
     info.is_mega = f->is_mega;
     info.setup_legal = dfi_forme_setup_legal(lim, species) ? 1u : 0u;
     info.base_species = f->base_forme;
-    info.mega_species = f->mega_forme != DFI_CLOSURE_NONE ? (uint32_t)f->mega_forme : DUOFORGE_DATA_NONE;
+    info.mega_species = f->mega_forme != DFI_FORME_NONE ? (uint32_t)f->mega_forme : DUOFORGE_DATA_NONE;
     const uint32_t stone = dfi_forme_stone(species);
     info.mega_stone = stone != DFI_CLOSURE_NONE ? stone : DUOFORGE_DATA_NONE;
-    info.mega_ability = f->mega_forme != DFI_CLOSURE_NONE ? (uint32_t)dfi_pool_formes[f->mega_forme].ability
+    info.mega_ability = f->mega_forme != DFI_FORME_NONE ? (uint32_t)dfi_pool_formes[f->mega_forme].ability
                                                           : DUOFORGE_DATA_NONE;
     info.mega_supported = manifest->turn_core != 0u && dfi_manifest_mega(manifest, species) ? 1u : 0u;
     if (info.setup_legal != 0u) {

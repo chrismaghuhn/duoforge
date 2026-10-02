@@ -77,7 +77,6 @@
 
 #include "data/closure_tables.h"
 #include "data/extended_tables.h"
-#include "data/pool_tables.h"
 #include "domain.h"
 #include "records.h"
 #include "state/battle_internal.h"
@@ -330,9 +329,6 @@ static outcome run_battle(const dfr_battle *b, duoforge_context *const contexts[
 
     /* The view the comparators take: the battle as the compiled tables hold it. */
     const df_conf_battle cb = {b->name, b->member_count, b->members, b->steps, b->step_count, b->dropped_total};
-    /* The extended ids (Team C and the pool) index the pool table, whose first rows are the extended ones: a pool
-     * forme beyond them (Floette-Mega, step G12) must not be looked up in the shorter table. */
-    const dfi_forme_data *formes = b->team_c != 0u ? dfi_pool_formes : dfi_closure_formes;
     /* Event differences written so far; the comparator stops at its cap per run. */
     unsigned event_reports = 0u;
     uint32_t next_domain = 0u; /* the samples come in the order of the steps */
@@ -378,7 +374,7 @@ static outcome run_battle(const dfr_battle *b, duoforge_context *const contexts[
             break;
         }
         const unsigned state_bad = df_conf_compare_state(out, ctx, battle, st, b->name, si);
-        const unsigned observation_bad = df_conf_compare_observation(out, ctx, battle, st, &cb, si, formes);
+        const unsigned observation_bad = df_conf_compare_observation(out, ctx, battle, st, &cb, si);
         const unsigned events_bad = df_conf_compare_events(out, st, b->name, si, buffers, b->events, &event_reports);
         const duoforge_status check = duoforge_battle_check(ctx, battle);
         if (check != DUOFORGE_OK) {
