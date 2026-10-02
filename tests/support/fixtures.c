@@ -465,8 +465,21 @@ duoforge_battle *df_make_f13(const duoforge_context *c4)
 void df_encode(const duoforge_context *ctx, const duoforge_battle *b, uint8_t out[DUOFORGE_STATE_V3_ENCODED_SIZE])
 {
     size_t written = 0;
-    if (duoforge_battle_encode(ctx, b, out, DUOFORGE_STATE_V3_ENCODED_SIZE, &written) != DUOFORGE_OK ||
-        written != DUOFORGE_STATE_V3_ENCODED_SIZE) {
+    const duoforge_status st = duoforge_battle_encode(ctx, b, out, DUOFORGE_STATE_V3_ENCODED_SIZE, &written);
+    if (st != DUOFORGE_OK || written != DUOFORGE_STATE_V3_ENCODED_SIZE) {
+        dfi_invariant inv = DFI_INV_NONE;
+        (void)dfi_state_check(ctx, b, &inv);
+        fprintf(stderr, "df_encode: %s (%s), %u bytes written (a POOL state is larger: use df_encode_n)\n",
+                duoforge_status_name(st), dfi_invariant_name(inv), (unsigned)written);
         df_fail("duoforge_battle_encode");
     }
+}
+
+size_t df_encode_n(const duoforge_context *ctx, const duoforge_battle *b, uint8_t out[DF_STATE_ENCODED_MAX])
+{
+    size_t written = 0;
+    if (duoforge_battle_encode(ctx, b, out, DF_STATE_ENCODED_MAX, &written) != DUOFORGE_OK) {
+        df_fail("duoforge_battle_encode");
+    }
+    return written;
 }

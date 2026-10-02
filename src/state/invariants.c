@@ -497,6 +497,70 @@ static bool dfi_field_valid(const duoforge_context *ctx, const struct duoforge_b
 }
 
 
+/* The POOL tail (decision 0015 section 7). Runs after the side checks, so every occupant is below the member count
+ * and every move count is 1..4; each index is still bounded here. Under the other kinds the tail is absent: zero. */
+static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct duoforge_battle *b)
+{
+    const dfi_kind_limits lim = dfi_kind_limits_of(ctx->data_kind);
+    if (!lim.pool_rules) {
+        uint32_t any = 0u;
+        for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+            const dfi_tail_side *ts = &b->tail.sides[s];
+            any |= ts->wide_guard;
+            for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+                const dfi_tail_pos *tp = &ts->positions[p];
+                any |= (uint32_t)tp->last_move | tp->encore_slot | tp->encore_turns | tp->throat_chop_turns |
+                       tp->heal_block_turns;
+            }
+            for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
+                any |= ts->soak_type[m];
+            }
+        }
+        return any == 0u ? DFI_INV_NONE : DFI_INV_TAIL_KIND;
+    }
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        const dfi_tail_side *ts = &b->tail.sides[s];
+        const dfi_side *side = &b->sides[s];
+        if (ts->wide_guard > DFI_TAIL_WIDE_GUARD_MAX) {
+            return DFI_INV_TAIL_SIDE;
+        }
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            const dfi_tail_pos *tp = &ts->positions[p];
+            const uint32_t occupant = side->positions[p].occupant;
+            const bool standing = occupant < DUOFORGE_MAX_ROSTER && occupant < side->member_count &&
+                                  side->members[occupant].hp != 0u;
+            const bool none = tp->last_move == 0u && tp->encore_slot == 0u && tp->encore_turns == 0u &&
+                              tp->throat_chop_turns == 0u && tp->heal_block_turns == 0u;
+            if (!standing) {
+                if (!none) {
+                    return DFI_INV_TAIL_POSITION; /* cleared when the occupant leaves or faints */
+                }
+                continue;
+            }
+            const uint32_t move_count = side->members[occupant].move_count;
+            if (tp->last_move > DFI_TAIL_MOVE_MAX ||
+                (tp->last_move != DFI_TAIL_MOVE_MAX && tp->last_move > move_count) ||
+                tp->encore_slot > DFI_TAIL_ENCORE_SLOT_MAX || tp->encore_slot > move_count ||
+                tp->encore_turns > DFI_TAIL_ENCORE_TURNS_MAX || (tp->encore_slot == 0u) != (tp->encore_turns == 0u) ||
+                tp->throat_chop_turns > DFI_TAIL_THROAT_CHOP_MAX || tp->heal_block_turns > DFI_TAIL_HEAL_BLOCK_MAX) {
+                return DFI_INV_TAIL_POSITION;
+            }
+        }
+        for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
+            const uint32_t type = ts->soak_type[m];
+            if (type == 0u) {
+                continue;
+            }
+            const bool on_field = m < side->member_count && (side->positions[0].occupant == m ||
+                                                             side->positions[1].occupant == m);
+            if (type > DFI_TYPE_COUNT || !on_field || side->members[m].hp == 0u || side->members[m].is_mega != 0u) {
+                return DFI_INV_TAIL_MEMBER; /* the type ends when the member leaves, faints or Mega Evolves */
+            }
+        }
+    }
+    return DFI_INV_NONE;
+}
+
 static duoforge_status dfi_state_check_mode(const duoforge_context *ctx, const struct duoforge_battle *b,
                                            const struct duoforge_battle *validated, bool full,
                                            dfi_invariant *out_first)
@@ -562,6 +626,9 @@ static duoforge_status dfi_state_check_mode(const duoforge_context *ctx, const s
     }
     if (inv == DFI_INV_NONE && !dfi_queue_valid(b)) {
         inv = DFI_INV_QUEUE;
+    }
+    if (inv == DFI_INV_NONE) {
+        inv = dfi_check_tail(ctx, b);
     }
     if (inv != DFI_INV_NONE) {
         if (out_first != NULL) {
@@ -661,6 +728,18 @@ const char *dfi_invariant_name(dfi_invariant id)
         return "KNOWLEDGE";
     case DFI_INV_QUEUE:
         return "QUEUE";
+    case DFI_INV_TAIL_KIND:
+        return "TAIL_KIND";
+    case DFI_INV_TAIL_SIDE:
+        return "TAIL_SIDE";
+    case DFI_INV_TAIL_POSITION:
+        return "TAIL_POSITION";
+    case DFI_INV_TAIL_MEMBER:
+        return "TAIL_MEMBER";
+    case DFI_INV_TAIL_SCHEMA:
+        return "TAIL_SCHEMA";
+    case DFI_INV_TAIL_RESERVED:
+        return "TAIL_RESERVED";
     case DFI_INV_COUNT:
     default:
         return "UNKNOWN";

@@ -21,10 +21,13 @@ static bool api_equal(df_test *t, const duoforge_context *ctx, const duoforge_ba
     return eq;
 }
 
+/* The kinds of this test are all schema 3 (no POOL tail): any such context encodes them. */
+static const duoforge_context *enc_ctx;
+
 static void raw(const duoforge_battle *b, uint8_t out[DUOFORGE_STATE_V3_ENCODED_SIZE])
 {
     memset(out, 0, DUOFORGE_STATE_V3_ENCODED_SIZE);
-    dfi_encode_unchecked(b, out);
+    (void)dfi_encode_unchecked(enc_ctx, b, out);
 }
 
 /* Runs an equal() call that must fail, with *out preset to both false and
@@ -138,6 +141,20 @@ static void copy_named_fields(duoforge_battle *x, const duoforge_battle *src)
                 dm->moves[q].pp_max = sm->moves[q].pp_max;
             }
         }
+        /* The POOL tail (decision 0015 section 7): zero under these kinds, but named like every other field. */
+        const dfi_tail_side *st = &src->tail.sides[s];
+        dfi_tail_side *dt = &x->tail.sides[s];
+        dt->wide_guard = st->wide_guard;
+        for (unsigned p = 0; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            dt->positions[p].last_move = st->positions[p].last_move;
+            dt->positions[p].encore_slot = st->positions[p].encore_slot;
+            dt->positions[p].encore_turns = st->positions[p].encore_turns;
+            dt->positions[p].throat_chop_turns = st->positions[p].throat_chop_turns;
+            dt->positions[p].heal_block_turns = st->positions[p].heal_block_turns;
+        }
+        for (unsigned m = 0; m < DUOFORGE_MAX_ROSTER; ++m) {
+            dt->soak_type[m] = st->soak_type[m];
+        }
     }
 }
 
@@ -147,6 +164,7 @@ int main(void)
     df_test_begin(&t, "duoforge.state.clone_equal");
 
     duoforge_context *c1 = df_make_context(&df_config_c1);
+    enc_ctx = c1;
     duoforge_context *c2 = df_make_context(&df_config_c2);
     duoforge_battle *f1 = df_make_f1(c1);
     duoforge_battle *f2 = df_make_f2(c1);
