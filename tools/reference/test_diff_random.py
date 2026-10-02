@@ -21,8 +21,6 @@ import io
 import json
 import os
 import re
-import shutil
-import subprocess
 import sys
 import tempfile
 import threading
@@ -758,6 +756,19 @@ class Run(unittest.TestCase):
                         rnd.check_identity(tmp, dict(IDENTITY, **change))
                     self.assertIn('belongs to another run', str(cm.exception))
                     self.assertIn(part, str(cm.exception))
+
+    def test_the_loop_refuses_a_directory_of_another_run_before_it_starts_a_chunk(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            rnd.check_parameters(tmp, PARAMS)  # no run.json yet: nothing to refuse
+            rnd.check_identity(tmp, IDENTITY)
+            rnd.check_parameters(tmp, PARAMS)  # the same run
+            for other, part in ((PARAMS._replace(seed=2), 'seed'), (PARAMS._replace(battles=25), 'battles'),
+                                (PARAMS._replace(pairings=('AB',)), 'pairings'), (PARAMS._replace(max_steps=50), 'policy'),
+                                (PARAMS._replace(switch_weight=0.2), 'policy')):
+                with self.subTest(part):
+                    with self.assertRaises(driver.ToolError) as cm:
+                        rnd.check_parameters(tmp, other)
+                    self.assertIn('belongs to another run (it differs in %s)' % part, str(cm.exception))
 
     def test_a_result_is_written_whole_or_not_at_all(self):
         with tempfile.TemporaryDirectory() as tmp:

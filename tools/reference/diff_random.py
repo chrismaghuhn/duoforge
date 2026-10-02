@@ -62,7 +62,6 @@ every battle has a result). Children run below normal priority.
 Exit status: 0 when the run is complete (the buckets are in the files), 2 for a
 bad command line, 3 for a failure of the tool. This file only orchestrates.
 """
-import argparse
 import collections
 import copy
 import datetime
@@ -454,25 +453,51 @@ def read_partial(outdir, index):
         return json.load(f)
 
 
-def identity_of(params, version, head, library, runner_sha256):
+def run_parameters(params):
+    """What the battles of a run follow from, apart from the code that plays them."""
     return {'seed': params.seed, 'battles': params.battles, 'pairings': list(params.pairings),
             'policy': {'max_steps': params.max_steps, 'switch_weight': params.switch_weight,
-                       'mega_weight': params.mega_weight},
-            'node': version['node'], 'pin': version['pin'], 'harness': version['harness'], 'git_head': head,
-            'library_version': library, 'runner_sha256': runner_sha256}
+                       'mega_weight': params.mega_weight}}
+
+
+def identity_of(params, version, head, library, runner_sha256):
+    """run.json: the parameters and the code that plays the battles (Node, the pin, the harness, the git HEAD, the
+    library and the runner), all of which the results depend on."""
+    identity = run_parameters(params)
+    identity.update({'node': version['node'], 'pin': version['pin'], 'harness': version['harness'], 'git_head': head,
+                     'library_version': library, 'runner_sha256': runner_sha256})
+    return identity
+
+
+def read_identity(outdir):
+    """run.json of the directory, or None."""
+    path = os.path.join(outdir, 'run.json')
+    if not os.path.exists(path):
+        return None
+    with io.open(path, encoding='utf-8') as f:
+        return json.load(f)
+
+
+def other_run(outdir, differ):
+    return base.ToolError('%s belongs to another run (it differs in %s): use another --out' % (outdir, ', '.join(differ)))
 
 
 def check_identity(outdir, identity):
     """run.json of the directory is this run, or it is written: a chunk never mixes into another run's results."""
-    path = os.path.join(outdir, 'run.json')
-    if not os.path.exists(path):
-        write_atomically(path, dumps(identity).encode('utf-8'))
-        return
-    with io.open(path, encoding='utf-8') as f:
-        have = json.load(f)
-    if have != identity:
-        differ = sorted(k for k in set(have) | set(identity) if have.get(k) != identity.get(k))
-        raise base.ToolError('%s belongs to another run (it differs in %s): use another --out' % (outdir, ', '.join(differ)))
+    have = read_identity(outdir)
+    if have is None:
+        write_atomically(os.path.join(outdir, 'run.json'), dumps(identity).encode('utf-8'))
+    elif have != identity:
+        raise other_run(outdir, sorted(k for k in set(have) | set(identity) if have.get(k) != identity.get(k)))
+
+
+def check_parameters(outdir, params):
+    """The loop that starts the chunks has no versions to compare (the chunks have), but a directory that holds the
+    results of another run is refused at once, also when there is nothing left to run and a report would be made."""
+    have = read_identity(outdir)
+    want = run_parameters(params)
+    if have is not None and any(have.get(k) != v for k, v in want.items()):
+        raise other_run(outdir, sorted(k for k, v in want.items() if have.get(k) != v))
 
 
 def finalize(outdir, battles):
@@ -690,6 +715,7 @@ def run(args, params):
     start = args.start
     if not args.no_lock:
         minutes = args.chunk_minutes if args.chunk_minutes is not None else DEFAULT_CHUNK_MINUTES
+        check_parameters(outdir, params)
         orchestrate(params, outdir, forwarded(args, outdir), minutes, start=start, run=run_process)
     else:
         node = args.node or shutil.which('node')
