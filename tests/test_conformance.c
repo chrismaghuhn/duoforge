@@ -190,7 +190,7 @@ int main(void)
         DF_CHECK_EQ_U64(&t, matched, 24u * 6u); /* Team C on 4 x 4 + 4 x 2 sides */
     }
 #else
-    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 88u);
+    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 89u);
     /* Exactly the battles of the real teams run under CLOSURE, the certified
      * profile (decision 0010): the closure gate's 8, the 16 of M5 step 3 and
      * d01_noguard_accuracy_tie, a cut of a battle found by the differential
