@@ -867,6 +867,8 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_EVENT_VOLATILE_START  39u /* [-start] position (POOL kinds), detail: DUOFORGE_VOLATILE_* (a volatile that the
                                               game shows: -start|X|move: Heal Block) */
 #define DUOFORGE_EVENT_VOLATILE_END    40u /* [-end] position (POOL kinds), detail: DUOFORGE_VOLATILE_* */
+#define DUOFORGE_EVENT_TYPE_CHANGE     41u /* [-start|X|typechange|TYPE] position (POOL kinds): the occupant's type is now the single
+                                              type in detail (DUOFORGE_TYPE_*; Soak: Water); cause MOVE, id2: the move */
 
 /* Causes ([from] and [of] in the protocol). */
 #define DUOFORGE_CAUSE_NONE      0u /* the move or the plain mechanic */

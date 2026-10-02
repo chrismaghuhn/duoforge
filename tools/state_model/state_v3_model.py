@@ -827,7 +827,8 @@ def tail_is_zero(tail):
 
 def check_tail(ctx, st):
     """The POOL tail: absent (all zero) under every other kind; under POOL each value in range, none at a position
-    without a standing occupant, a soak type only on a standing, not Mega Evolved member on the field."""
+    without a standing occupant, a soak type only on a standing member on the field (step G11: a Mega Evolved member can
+    be Soaked, so the Mega forme is no part of the rule)."""
     if not has_pool_tail(ctx):
         return 'OK' if tail_is_zero(st['tail']) else 'TAIL_KIND'
     for s in range(2):
@@ -853,7 +854,7 @@ def check_tail(ctx, st):
             if ty == 0:
                 continue
             on_field = m < sd['member_count'] and (sd['pos'][0]['occ'] == m or sd['pos'][1]['occ'] == m)
-            if ty > TYPE_COUNT or not on_field or sd['members'][m]['hp'] == 0 or sd['members'][m]['is_mega'] != 0:
+            if ty > TYPE_COUNT or not on_field or sd['members'][m]['hp'] == 0:
                 return 'TAIL_MEMBER'
     return 'OK'
 
