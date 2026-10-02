@@ -1326,6 +1326,9 @@ KNOCK_OFF_CALLBACKS = {
     'onAfterHit': "onAfterHit(target, source) { const item = target.takeItem(); if (item) { "
                   "this.add('-enditem', target, item.name, '[from] move: Knock Off', `[of] ${source}`); } },",
 }
+# Step G15 (Psychic Terrain): Expanding Force has a handler of its own, because its two callbacks change the move's
+# base power and its target class and no column holds either; the turn code implements it, and the row is marked.
+G15_HANDLERS = ['EXPANDING_FORCE']
 SPECIAL_P = dict(SPECIAL_C, **{
     'knockoff': ('KNOCK_OFF', {'onAfterHit', 'onBasePower'}),             # G16: takes the target's item, x1.5 while it has one
     'encore': ('ENCORE', set()),                                          # G9 (implemented): last move, a volatile, a queue change
@@ -1336,6 +1339,7 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'lowkick': ('LOW_KICK', {'basePowerCallback', 'onTryHit'}),           # G10d: base power by the target's weight
     'sandstorm': ('SANDSTORM', set()),                                    # weather: sets the weather (for 5 turns)
     'snowscape': ('SNOWSCAPE', set()),
+    'expandingforce': ('EXPANDING_FORCE', {'onBasePower', 'onModifyMove'}),  # G15: x1.5 and a spread in Psychic Terrain
 })
 # Step G13: Detect is Protect (data/moves.ts:3526-3547 against 13961-14005): the same handler (not one of the G2 handlers,
 # so it is added to the pool's map only), and the generator checks that its stalling fields and both callbacks are,
@@ -1348,7 +1352,7 @@ PROTECT_COPIES = {'detect': 'protect'}
 # champions/moves.ts:581-584) sets isNonstandard to null, which makes it legal, and the tag has no reader in the tables.
 TAGS_PAST_UNOBTAINABLE = 'tags: ["Past Unobtainable"],'
 PROTECT_COPY_FIELDS = ('onPrepareHit', 'onHit', 'stallingMove', 'volatileStatus', 'priority', 'accuracy', 'target')
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G20_HANDLERS + ['UNMODELED']
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G20_HANDLERS + ['UNMODELED']
 # Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags
 # byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
@@ -1459,8 +1463,8 @@ HANDLER_IDS = ['NONE', 'UNMODELED']
 # by definition, like the closure and Team C rows. The step that marks such a row in the support manifest adds its id
 # here, which changes the handler column and so the POOL table hash, as any pool change does; a row that is marked and
 # still has the UNMODELED handler fails duoforge.data.pool_tables. G4: Focus Sash, Rock Head. G12: Floettite (the Mega
-# Stone of Floette-Eternal), Flower Veil and Fairy Aura. G14: Rough Skin, Poison Touch and Thermal Exchange. G16: Sticky Hold (Knock Off reads it by id). AC1: Trace (the entry copy of a foe's ability).
-ENGINE_ROWS = {'items': ['focussash', 'floettite'],
+# Stone of Floette-Eternal), Flower Veil and Fairy Aura. G14: Rough Skin, Poison Touch and Thermal Exchange. G16: Sticky Hold (Knock Off reads it by id). AC1: Trace (the entry copy of a foe's ability). G15: Psychic Seed (Grassy Seed's rule for the other terrain).
+ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed'],
                'abilities': ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange',
                              'stickyhold', 'trace']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
@@ -2012,6 +2016,56 @@ def check_weather_facts(conditions_ts, moves_ts):
             fail('move weatherball: the entry no longer has "%s"' % fact)
 
 
+# Step G15 (Psychic Terrain), what the engine hard-codes, as normalised texts that must be in the pinned entries:
+#  - Expanding Force (data/moves.ts:4943-4965): 80 base power, a x1.5 chain modifier from the move's own onBasePower
+#    (handler priority 0, so after the terrain's 5325/4096 at 6 and Helping Hand's 1.5 at 10) and the target class
+#    allAdjacentFoes from onModifyMove, both for a user that isGrounded in Psychic Terrain; its base target is "normal";
+#  - Psychic Terrain (data/moves.ts:14095-14150): the base power modifier and the priority block that Team C reads;
+#  - Psychic Seed (data/items.ts:4903-4922) is Grassy Seed (data/items.ts:2595-2614) for the other terrain and the Special
+#    Defense instead of the Defense: the same switch-in priority, onStart and onTerrainChange, one boost of +1.
+EXPANDING_FORCE_FACTS = (
+    'basePower: 80,', 'category: "Special",', 'accuracy: 100,', 'priority: 0,', 'target: "normal",', 'type: "Psychic",',
+    "onBasePower(basePower, source) { if (this.field.isTerrain('psychicterrain') && source.isGrounded()) { "
+    "this.debug('terrain buff'); return this.chainModify(1.5); } },",
+    "onModifyMove(move, source, target) { if (this.field.isTerrain('psychicterrain') && source.isGrounded()) { "
+    "move.target = 'allAdjacentFoes'; } },")
+PSYCHIC_TERRAIN_FACTS = (
+    'onBasePowerPriority: 6,',
+    "onBasePower(basePower, attacker, defender, move) { if (move.type === 'Psychic' && attacker.isGrounded() && "
+    "!attacker.isSemiInvulnerable()) { this.debug('psychic terrain boost'); return this.chainModify([5325, 4096]); } },",
+    'duration: 5,')
+SEED_PAIRS = (('psychicseed', 'psychicterrain', 'spd'),)
+
+
+def check_g15_facts(moves_ts, items_ts):
+    """Every fact of EXPANDING_FORCE_FACTS and PSYCHIC_TERRAIN_FACTS is in the pinned move entry, and each seed of
+    SEED_PAIRS is Grassy Seed with its terrain and its stat (the engine reads one rule for the terrain seeds)."""
+    for mid, facts in (('expandingforce', EXPANDING_FORCE_FACTS), ('psychicterrain', PSYCHIC_TERRAIN_FACTS)):
+        e = moves_ts.entry(mid)
+        if e is None:
+            fail('move %s not found' % mid)
+        text = norm(chr(10).join(e[2]))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('move %s: the entry no longer has "%s"' % (mid, fact))
+    grassy = items_ts.entry('grassyseed')
+    if grassy is None:
+        fail('item grassyseed not found')
+    g = fields(grassy[2])
+    for iid, terrain, stat in SEED_PAIRS:
+        e = items_ts.entry(iid)
+        if e is None:
+            fail('item %s not found' % iid)
+        f = fields(e[2])
+        for name in ('onSwitchInPriority', 'onStart', 'onTerrainChange'):
+            if name not in f or name not in g or norm(f[name][1]) != norm(g[name][1]).replace('grassyterrain', terrain):
+                fail('item %s: %s is not that of grassyseed for %s' % (iid, name, terrain))
+        if 'boosts' not in f or norm(f['boosts'][1]) != 'boosts: { %s: 1, },' % stat:
+            fail('item %s: boosts is not %s +1' % (iid, stat))
+        if set(f) != set(g):
+            fail('item %s has other fields than grassyseed: %s' % (iid, sorted(set(f) ^ set(g))))
+
+
 def check_g8_conditions(moves_ts, only=None):
     """The engine hard-codes the durations, orders and tests of the Throat Chop and Heal Block conditions (step G8) and
     those of Aurora Veil (step G20): every one of them must be in the pinned entry, as one normalised text. `only`: a
@@ -2040,6 +2094,7 @@ def build_pool(root, repo, dx):
     formats, learn = Source(root, 'data/mods/champions/formats-data.ts'), Source(root, 'data/mods/champions/learnsets.ts')
     legal = load_legal_pool(repo)
     check_g8_conditions(moves_ts)
+    check_g15_facts(moves_ts, items_ts)
     check_weather_facts(Source(root, 'data/conditions.ts', READER_INPUTS), moves_ts)
     FLAGS_THAT_MATTER.clear()
     FLAGS_THAT_MATTER.update(prefix_flag_reads((items_ts, champ_items, abil_ts, champ_abil, moves_ts, champ_moves), dx)

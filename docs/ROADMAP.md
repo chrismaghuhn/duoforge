@@ -182,6 +182,45 @@ Levers recorded by the owner on 2026-10-03, most promising first. The first two 
 
 Exit: each lever is measured on its own, as an Elo difference at a fixed time per move against the previous best agent, before the next one is stacked on it.
 
+More levers recorded by the owner on 2026-10-03. Search mainly solves the endgame; these aim at the early game and at the tournament format. The owner's favourites are 7 and 11.
+
+**The early game:**
+
+7. **Exact engine aids as network inputs:** the engine (in C, no rule in Python) answers questions about the current state. Jaxcalibur and mikumiku37 both feed their networks no damage calculator, so this is our own edge. This needs a new public query and an owner OK. The questions:
+   - the damage range of each move against each target, and whether it reaches a KO;
+   - the speed order under Tailwind, Trick Room, stat stages, abilities and items.
+8. **Team preview and leads by simulation:** with open sheets the opponent's team is known before the game. Evaluate our best bring-four and lead choices against the opponent's most likely ones over many fast played-out games. The team preview's time allows it.
+9. **An opening book against the meta:** the replays give the frequent ladder teams. Offline search with heavy compute (AWS CPUs) fixes bring, leads and the first one or two turns against them; at game time it is a lookup.
+10. **Human openings predicted:** turns 1 and 2 repeat common human patterns: who protects against Fake Out, who sets Tailwind or Trick Room at once, where the double target goes. The human-play model (lever 2) predicts them.
+
+**The tournament format:**
+
+11. **Adapting within a Bo3:** games 2 and 3 use what the opponent brought, led with and did in game 1. The opponent model is updated after every game.
+
+**Training and decisions:**
+
+12. **Training against the real meta:** self-play opponent teams are drawn by their ladder frequency, as the replays show it.
+13. **Mixed strategies on purpose:** the move choice is solved as a mixed strategy, as in mikumiku37's payoff table, so humans find no fixed pattern to read.
+14. **Ensembles and checkpoint tournaments:** several networks decide together, and large AWS tournaments pick the strongest checkpoint.
+15. **Risk by game state:** a value head that also estimates the uncertainty. The agent plays safe when ahead and takes chances when behind.
+16. **Exact chance nodes in the search:** damage rolls, critical hits and accuracy are weighted exactly by the engine instead of only sampled.
+
+Related public work, as reference points:
+- **Metamon** (UT Austin): offline RL on human Showdown replays, with spectator logs rebuilt into first-person trajectories (as M11 does). Gens 1 to 4 singles, about 79 percent GXE; code and data are open.
+- **PokéChamp:** a minimax language-model agent.
+
+
+## M14 — Closed team sheets (the Bo1 ladder)
+
+Today the bot plays only with open team sheets (decision 0016). In Bo3 they are forced. In Bo1 it asks for them and forfeits politely if the opponent refuses. In the replay spike only about 4 percent of Bo1 games had open sheets, so broad Bo1 laddering needs closed sheets. Owner, 2026-10-03: play Bo3 first; closed sheets come as their own step after M13. It needs:
+1. **Reveal tracking:** the battle state records what each side has revealed (moves, item, ability; species at team preview). The observation marks the foe's unrevealed fields as unknown. That changes the state and the public view, so it needs an owner OK.
+2. **The tracker:** it folds the reveals of a live game into that observation.
+3. **Training with hidden foe sets:** the self-play viewer sees only what is revealed.
+4. **Set prediction for the search:** the hidden sets are sampled from a predictor, for example a net head trained on the M11 replays, not from a uniform guess.
+5. **The live adapter:** it accepts Bo1 games without open sheets.
+
+Exit: the Elo on the Bo1 ladder without open sheets, against the bot's Bo3 Elo with open sheets.
+
 ## Later
 
 Additional certified teams (a certification of the M8 teams in the manner of M5), broader regulation profiles, recurrent agents, belief-conditioned hypothetical search, best-of-three orchestration and further external clients. Add these based on measured needs, not speculative scaffolding.

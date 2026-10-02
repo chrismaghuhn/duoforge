@@ -432,6 +432,22 @@ static uint32_t dfi_move_priority(const struct duoforge_battle *b, const dfi_mem
     return priority;
 }
 
+/* Expanding Force (data/moves.ts:4943-4965, step G15): its onModifyMove makes the target allAdjacentFoes while the user
+ * isGrounded in Psychic Terrain; useMoveInner runs it after BeforeMove and the PP (sim/battle-actions.ts:431), so
+ * getTarget (runMove) and the choice's target still see "normal", and the request offers a target. Wide Guard, the
+ * spread modifier and the protect check read the active move's target, so they see the class that this returns; the
+ * redirection of getMoveTargets' default branch (Follow Me, Lightning Rod) is not run for a spread class. The user's
+ * grounding is its type alone (no Levitate, Air Balloon, Ingrain, Gravity, Magnet Rise, Telekinesis, Smack Down or
+ * Roost is modelled; no pool forme that learns the move is a Flying type: tools/datagen/test_pool_rows.py). The
+ * terrain and the user stay the same through the move, so base power and target class agree. */
+static uint32_t dfi_effective_target_class(const struct duoforge_battle *b, const dfi_member *m, const dfi_move_data *md)
+{
+    if (md->special == DFI_SPECIAL_EXPANDING_FORCE && b->terrain == DFI_TERRAIN_PSYCHIC && dfi_grounded(b, m)) {
+        return DUOFORGE_TARGET_CLASS_ALL_ADJACENT_FOES;
+    }
+    return md->target_class;
+}
+
 /* The sort key of an action (getActionSpeed): the order of its kind, the
  * move's priority (switches have none), and the action speed of the
  * Pokemon in the slot: the one leaving for a switch, the fainted one for a
@@ -1051,6 +1067,12 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
      * the same time). */
     if (move_type == DFI_TYPE_PSYCHIC && r->b->terrain == DFI_TERRAIN_PSYCHIC && dfi_grounded(r->b, a)) {
         ok = ok && dfi_chain_modify(bp_chain, 5325u, &bp_chain);
+    }
+    /* Expanding Force's own onBasePower (step G15, data/moves.ts:4952-4957): chainModify(1.5) for a grounded user in
+     * Psychic Terrain. runEvent puts the move's handler first and sorts by priority: its priority is 0, so it runs
+     * after the terrain's (6), Helping Hand's (10) and the items' (15), and the chain rounds once at the end. */
+    if (md->special == DFI_SPECIAL_EXPANDING_FORCE && r->b->terrain == DFI_TERRAIN_PSYCHIC && dfi_grounded(r->b, a)) {
+        ok = ok && dfi_chain_modify(bp_chain, 6144u, &bp_chain);
     }
     /* Knock Off's onBasePower (data/moves.ts:9959-9984, priority 0, so after every handler above): 1.5x while its
      * target holds an item that can be taken (Sticky Hold does not matter here: only the item's own TakeItem is asked). */
@@ -2601,6 +2623,16 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             dfi_ev(DUOFORGE_EVENT_ACTIVATE, user, DUOFORGE_CAUSE_MOVE, DFI_MOVE_STRUGGLE, DUOFORGE_NO_POSITION);
         dfi_emit(r, &e);
     }
+    /* ModifyMove's change of the target class (Expanding Force in Psychic Terrain): useMoveInner takes the target again
+     * with the new class (getRandomTarget, whose draw only labels the move line, as for any spread move), and
+     * getMoveTargets then collects the foes. runMove's own target (r->move_target, AfterMove's) stays the old one. */
+    const uint32_t target_class = dfi_effective_target_class(b, m, md);
+    if (target_class != md->target_class) {
+        st = dfi_move_targets(r, user, target_class, q->target, targets, &count);
+        if (st != DUOFORGE_OK) {
+            return st;
+        }
+    }
     /* The move line's target (useMoveInner, sim/battle-actions.ts:457): the
      * one Pokemon to hit, or, when there is none, the chosen fainted ally or
      * else the foe in slot 0 (side.randomFoe() || foe.active[0],
@@ -2644,10 +2676,10 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
      * or at a fainted ally. No line; the move line is retargeted. Two
      * holders on one side would need the handlers' Speed order; only
      * Indeedee-F learns Follow Me, and Species Clause keeps one per side. */
-    const bool single = count <= 1u && (md->target_class == DUOFORGE_TARGET_CLASS_NORMAL ||
-                                        md->target_class == DUOFORGE_TARGET_CLASS_ANY ||
-                                        md->target_class == DUOFORGE_TARGET_CLASS_ADJACENT_FOE ||
-                                        md->target_class == DFI_TARGET_CLASS_RANDOM_NORMAL);
+    const bool single = count <= 1u && (target_class == DUOFORGE_TARGET_CLASS_NORMAL ||
+                                        target_class == DUOFORGE_TARGET_CLASS_ANY ||
+                                        target_class == DUOFORGE_TARGET_CLASS_ADJACENT_FOE ||
+                                        target_class == DFI_TARGET_CLASS_RANDOM_NORMAL);
     uint32_t follow = DFI_POSITIONS;
     for (uint32_t slot = 0u; single && slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
         const uint32_t flat = (1u - side) * 2u + slot;
@@ -2847,7 +2879,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         md->special != DFI_SPECIAL_LAST_RESPECTS && md->special != DFI_SPECIAL_SUCKER_PUNCH &&
         md->special != DFI_SPECIAL_FIRST_IMPRESSION && md->special != DFI_SPECIAL_LOW_KICK &&
         md->special != DFI_SPECIAL_SOAK && md->special != DFI_SPECIAL_ENCORE &&
-        md->special != DFI_SPECIAL_KNOCK_OFF) {
+        md->special != DFI_SPECIAL_KNOCK_OFF && md->special != DFI_SPECIAL_EXPANDING_FORCE) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Fake Out's and First Impression's onTry (in trySpreadMoveHit, after
@@ -2925,7 +2957,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
      * targets are left, one -activate line per guarded target. A guarded target that also protects gets this line
      * only (its Protect handler is skipped). */
     bool guarded[DFI_POSITIONS] = {false, false, false, false};
-    if (md->target_class == DUOFORGE_TARGET_CLASS_ALL_ADJACENT_FOES && (md->flags & DFI_MOVE_FLAG_PROTECT) != 0u) {
+    if (target_class == DUOFORGE_TARGET_CLASS_ALL_ADJACENT_FOES && (md->flags & DFI_MOVE_FLAG_PROTECT) != 0u) {
         for (uint32_t i = 0u; i < count; ++i) {
             const uint32_t t = targets[i];
             if (b->tail.sides[t / 2u].wide_guard != 0u) {
@@ -3550,25 +3582,50 @@ static duoforge_status dfi_run_switch(dfi_run *r, const dfi_queue_record *q)
  * SwitchIn handler (Battle.getCallback). */
 static bool dfi_has_entry(const struct duoforge_battle *b, const dfi_member *m);
 
-/* Grassy Seed (useItem): Defense +1 once, when Grassy Terrain is up. */
-static void dfi_grassy_seed(dfi_run *r, uint32_t flat)
+/* The terrain seeds (data/items.ts:2595-2614 Grassy Seed, :4903-4922 Psychic Seed; the generator checks that the second
+ * is the first for its terrain and its stat): onSwitchInPriority -1, onStart (not ignoringItem, the terrain is up)
+ * and onTerrainChange (the terrain is up) both call useItem, and the item's boosts raise one stat by one stage. The
+ * terrain a seed waits for, or DFI_TERRAIN_NONE for a member that holds none. The Electric and Misty Seeds are
+ * UNMODELED rows (no Electric or Misty Terrain in the pool tables' setters). */
+static uint32_t dfi_seed_terrain(const struct duoforge_battle *b, const dfi_member *m)
 {
-    static const uint8_t def_up[DFI_STAT_STAGE_COUNT] = {6u, 7u, 6u, 6u, 6u, 6u, 6u};
-    const dfi_member *m = dfi_at(r->b, flat);
-    if (m != NULL && m->hp != 0u && dfi_holds(r->b, m, DFI_ITEM_GRASSYSEED) && r->b->terrain == DFI_TERRAIN_GRASSY) {
-        dfi_use_item(r, flat);
-        dfi_boost(r, flat, def_up, DFI_POSITIONS,
-                  dfi_effect(DUOFORGE_CAUSE_ITEM, 1u + DFI_ITEM_GRASSYSEED, DFI_BOOST_PRIMARY));
+    if (dfi_holds(b, m, DFI_ITEM_GRASSYSEED)) {
+        return DFI_TERRAIN_GRASSY;
     }
+    if (dfi_holds(b, m, DFI_ITEM_PSYCHICSEED)) {
+        return DFI_TERRAIN_PSYCHIC;
+    }
+    return DFI_TERRAIN_NONE;
 }
 
-/* eachEvent('TerrainChange'): every Grassy Seed on the field in
- * eachEvent's order; a seed acts only while Grassy Terrain is up. */
+/* A terrain seed (useItem): its stat +1 once, when its terrain is up: Grassy Seed's Defense, Psychic Seed's Special
+ * Defense. A holder that fainted does nothing. */
+static void dfi_terrain_seed(dfi_run *r, uint32_t flat)
+{
+    static const uint8_t def_up[DFI_STAT_STAGE_COUNT] = {6u, 7u, 6u, 6u, 6u, 6u, 6u};
+    static const uint8_t spd_up[DFI_STAT_STAGE_COUNT] = {6u, 6u, 6u, 7u, 6u, 6u, 6u};
+    const dfi_member *m = dfi_at(r->b, flat);
+    if (m == NULL || m->hp == 0u) {
+        return;
+    }
+    const uint32_t terrain = dfi_seed_terrain(r->b, m);
+    if (terrain == DFI_TERRAIN_NONE || r->b->terrain != terrain) {
+        return;
+    }
+    const bool grassy = terrain == DFI_TERRAIN_GRASSY;
+    const uint32_t item = grassy ? DFI_ITEM_GRASSYSEED : DFI_ITEM_PSYCHICSEED;
+    dfi_use_item(r, flat);
+    dfi_boost(r, flat, grassy ? def_up : spd_up, DFI_POSITIONS,
+              dfi_effect(DUOFORGE_CAUSE_ITEM, 1u + item, DFI_BOOST_PRIMARY));
+}
+
+/* eachEvent('TerrainChange'): every terrain seed on the field in
+ * eachEvent's order; a seed acts only while its terrain is up. */
 static duoforge_status dfi_terrain_change(dfi_run *r)
 {
     uint32_t bearers = 0u;
     for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
-        bearers |= dfi_holds(r->b, dfi_at(r->b, flat), DFI_ITEM_GRASSYSEED) ? 1u << flat : 0u;
+        bearers |= dfi_seed_terrain(r->b, dfi_at(r->b, flat)) != DFI_TERRAIN_NONE ? 1u << flat : 0u;
     }
     if (bearers == 0u) {
         return DUOFORGE_OK;
@@ -3580,16 +3637,16 @@ static duoforge_status dfi_terrain_change(dfi_run *r)
         return st;
     }
     for (uint32_t i = 0u; i < n; ++i) {
-        dfi_grassy_seed(r, list[i]);
+        dfi_terrain_seed(r, list[i]);
     }
     return DUOFORGE_OK;
 }
 
-/* A SwitchIn handler: an entry ability (priority 0) or Grassy Seed's
+/* A SwitchIn handler: an entry ability (priority 0) or a terrain seed's
  * onStart (onSwitchInPriority -1). */
 static bool dfi_has_switch_in(const struct duoforge_battle *b, const dfi_member *m)
 {
-    return dfi_has_entry(b, m) || dfi_holds(b, m, DFI_ITEM_GRASSYSEED);
+    return dfi_has_entry(b, m) || dfi_seed_terrain(b, m) != DFI_TERRAIN_NONE;
 }
 
 /* An entry ability: a weather or a terrain setter (the families of
@@ -3779,8 +3836,8 @@ static duoforge_status dfi_run_entries(dfi_run *r, uint32_t entering)
         }
         sorted += count;
     }
-    /* The abilities (priority 0) in that order, then the Grassy Seeds
-     * (priority -1), then White Herb's onAnySwitchIn of every holder on the
+    /* The abilities (priority 0) in that order, then the terrain seeds
+     * (Grassy and Psychic Seed, priority -1), then White Herb's onAnySwitchIn of every holder on the
      * field (priority -2, Team C), in the same order: the handlers'
      * fractional speeds follow it (sim/battle.ts:1008-1013). */
     for (uint32_t pass = 0u; pass < 2u; ++pass) {
@@ -3795,8 +3852,8 @@ static duoforge_status dfi_run_entries(dfi_run *r, uint32_t entering)
                 if (st != DUOFORGE_OK) {
                     return st;
                 }
-            } else if (pass == 1u && dfi_holds(r->b, m, DFI_ITEM_GRASSYSEED)) {
-                dfi_grassy_seed(r, flat);
+            } else if (pass == 1u && dfi_seed_terrain(r->b, m) != DFI_TERRAIN_NONE) {
+                dfi_terrain_seed(r, flat);
             } else {
                 continue;
             }
