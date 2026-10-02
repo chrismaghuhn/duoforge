@@ -205,6 +205,14 @@ More levers recorded by the owner on 2026-10-03. Search mainly solves the endgam
 15. **Risk by game state:** a value head that also estimates the uncertainty. The agent plays safe when ahead and takes chances when behind.
 16. **Exact chance nodes in the search:** damage rolls, critical hits and accuracy are weighted exactly by the engine instead of only sampled.
 
+**Training data:**
+
+17. **Plausible random teams** (owner, 2026-10-03):
+   - **Why:** random teams make the network learn Pokémon in general rather than a fixed meta, together with the static dex features of decision 0020. They give data without limit and also widen the engine's random testing. Jaxcalibur trained entirely on random teams.
+   - **Where the sets come from:** the pinned Showdown's own Champions random doubles sets (the "[Gen 9 Champions] Random Doubles Battle" format), taken as data. DuoForge's setup validates every team, and the generator draws only from what the engine supports, so it grows with the coverage.
+   - **Mix, not replace:** for example about half real meta teams, a third plausible random teams and a small rest fully random. The ratio is measured.
+   - **A second ladder:** Showdown's Champions Random Doubles ladder needs no team building. Its foe sets are hidden, so it needs M14 first.
+
 Related public work, as reference points:
 - **Metamon** (UT Austin): offline RL on human Showdown replays, with spectator logs rebuilt into first-person trajectories (as M11 does). Gens 1 to 4 singles, about 79 percent GXE; code and data are open.
 - **PokéChamp:** a minimax language-model agent.
