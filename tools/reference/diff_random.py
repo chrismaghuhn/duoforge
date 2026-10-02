@@ -54,8 +54,10 @@ the machine lock, stops starting battles after M minutes, finishes the running
 ones and exits; between chunks the lock is free and the loop sleeps 30 s, so a
 waiting CI or benchmark gets it. --no-lock runs all battles from --start in
 this process with no lock (CTest does: local_ci.sh holds the lock already); an
-explicit --chunk-minutes with it makes this process one chunk. Children run
-below normal priority.
+explicit --chunk-minutes with it makes this process one chunk, which writes the
+results of its battles and no summary: the files of the whole run are written by
+the process that owns it (the loop above, or a run without --chunk-minutes once
+every battle has a result). Children run below normal priority.
 
 Exit status: 0 when the run is complete (the buckets are in the files), 2 for a
 bad command line, 3 for a failure of the tool. This file only orchestrates.
@@ -711,15 +713,16 @@ def run(args, params):
         ran = run_chunk(params, outdir, start, args.chunk_minutes, make_worker, make_runner, tables.__getitem__, kinds,
                         lambda index: derive(params, index, teams), args.workers)
         print('diff_random: %d battles run in this process' % ran, flush=True)
-    done = first_missing(outdir, params.battles)
-    if done == params.battles:
-        finalize(outdir, params.battles)
-        with io.open(os.path.join(outdir, 'summary.json'), encoding='ascii') as f:
-            summary = json.load(f)
-        report(summary, outdir)
-    else:
-        print('diff_random: %d of %d battles done in %s; run again with the same arguments to go on' % (
-            done, params.battles, outdir))
+        if args.chunk_minutes is not None:
+            # One chunk of a run: its results are in partial/. The files of the whole run are written by whoever owns
+            # the run: the loop that started the chunk, or a run of this mode without --chunk-minutes.
+            print('diff_random: the first %d of %d battles have a result in %s' % (
+                first_missing(outdir, params.battles), params.battles, outdir), flush=True)
+            return 0
+    finalize(outdir, params.battles)
+    with io.open(os.path.join(outdir, 'summary.json'), encoding='ascii') as f:
+        summary = json.load(f)
+    report(summary, outdir)
     return 0
 
 
