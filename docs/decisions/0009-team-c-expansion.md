@@ -880,6 +880,11 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
   - an information leak in the view: the RNG state's lowest bit, its second bit, or a bit of its stream.
 
   The closure gate's RNG pair flips only some bits of the state, so a leak of the second bit or of the stream passes it. The pair that flips every bit catches both. The closure gate keeps its pairs; changing it is a separate decision.
+- **Converter: no volatile is ignored silently** (asked by the expansion lead after the step 11 review).
+  - `trace_to_c.py` lists the reference volatiles it compares as bits of the state (protect 1, flashfire 2, twoturnmove 4, choicelock 8, unburden 16, helpinghand 32, followme 64, flinch 128).
+  - It lists the ones it compares through another field: `stall` (the stall field), `confusion` (its turns), and `electroshot` (the locked slot and target).
+  - Any other volatile fails with `ConversionError('unknown-volatile')`, and so does `electroshot` without `twoturnmove`. Both have control tests.
+  - Flinch was ignored before. The reference keeps it until the residual (duration 1), and so does the engine after `cant`. Two recorded PIVOT boundaries hold it (Fake Out, then a pivot); a control that compares the wrong bit is red.
 - **What the gate cannot show by design.**
   - It checks determinism, the codec and information equivalence, but not the rules: a rule that is deterministic but wrong passes it. Fidelity rests on the 71 recorded battles.
   - The battles only play what the request offers, so a missing legal option goes unnoticed.

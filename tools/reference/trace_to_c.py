@@ -427,6 +427,25 @@ FLAG = {'STILL': 1, 'LOCKED': 2, 'SPREAD': 4, 'UPKEEP': 8, 'EATEN': 16, 'MESSAGE
 AILMENT = {'brn': 1, 'frz': 2, 'par': 3, 'slp': 4, 'psn': 5}
 EV_STATS = ['atk', 'def', 'spa', 'spd', 'spe', 'accuracy', 'evasion']
 NOPOS = 0xFF
+
+# The reference's volatiles (Pokemon.volatiles, as ps_trace.js records them)
+# and how the state comparison covers them. COMPARED_VOLATILES are bits of
+# df_conf_mon.vols; IGNORED_VOLATILES are compared through another field.
+# Any other volatile is refused: a new mechanic's volatile must be placed in
+# one of the two tables before its traces convert.
+COMPARED_VOLATILES = (('protect', 1), ('flashfire', 2), ('twoturnmove', 4), ('choicelock', 8), ('unburden', 16),
+                      ('helpinghand', 32), ('followme', 64), ('flinch', 128))
+IGNORED_VOLATILES = {
+    # data/conditions.ts stall: compared as df_conf_mon.stall (its presence).
+    'stall': 'the stall field',
+    # data/conditions.ts confusion: compared as df_conf_mon.confusion (its turns).
+    'confusion': 'the confusion field',
+    # twoturnmove's onStart adds the move's own volatile with the target
+    # (data/conditions.ts twoturnmove); compared as locked_slot and
+    # locked_target. twoturnmove's onEnd and Electro Shot's onTryMove remove
+    # it, so it never stands without twoturnmove (checked below).
+    'electroshot': 'the locked slot and target',
+}
 HP_EXACT, HP_PERCENT = 1, 2
 HP_FLAGS_EV = {'': 0, 'r': 1, 'y': 2, 'g': 3}
 # Lines that are not events: setup, layout, hints, and what the game does
@@ -814,10 +833,15 @@ def convert_battle(name, spec, trace, tables):
                     if not lock:
                         lslot, ltarget = choice, 0
                 seen = shown[s].get(roster)
-                vols = sum(bit for name, bit in (('protect', 1), ('flashfire', 2), ('twoturnmove', 4),
-                                                 ('choicelock', 8), ('unburden', 16), ('helpinghand', 32),
-                                                 ('followme', 64))
-                           if name in p['volatiles'])
+                compared = dict(COMPARED_VOLATILES)
+                for v in p['volatiles']:
+                    if v not in compared and v not in IGNORED_VOLATILES:
+                        raise ConversionError('unknown-volatile', 'trace_to_c: unknown volatile %r of %s' %
+                                              (v, name_of(p)), detail=v)
+                if 'electroshot' in p['volatiles'] and 'twoturnmove' not in p['volatiles']:
+                    raise ConversionError('unknown-volatile', 'trace_to_c: electroshot without twoturnmove on %s' %
+                                          name_of(p), detail='electroshot')
+                vols = sum(bit for name, bit in COMPARED_VOLATILES if name in p['volatiles'])
                 row.append((1, p['hp'], tuple(pp), tuple(x + 6 for x in p['boosts']),
                             stall, 1 if p['fainted'] else 0, status, counter, p['confusion'], lslot, ltarget,
                             p.get('mega', 0), 1 if p['item'] else 0, 1 if seen else 0, seen[0] if seen else 0,
@@ -1000,7 +1024,7 @@ TYPES = [
     '    uint8_t stall, fainted, status, status_counter, confusion, locked_slot, locked_target, mega;',
     '    uint8_t held, seen, seen_percent, seen_flag;',
     '    uint8_t vols; /* volatiles: 1 protect, 2 flashfire, 4 twoturnmove, 8 choicelock, 16 unburden, 32 helpinghand,',
-    '                     64 followme */',
+    '                     64 followme, 128 flinch */',
     '} df_conf_mon;',
     '/* team step, side 0 / side 1 answered, tape slice, the turn, boundary and',
     ' * result afterwards, the picks of a team step, slot commands, the occupants',
