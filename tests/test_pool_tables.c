@@ -785,12 +785,14 @@ int main(void)
                      DFI_ABILITY_FAMILY_WEATHER_SETTER != DFI_ABILITY_FAMILY_TERRAIN_SETTER);
 
     /* The support manifest covers the pool ids. Step P2 made the two item
-     * families rules: every new item (a booster or a berry) is marked, and
-     * so is every item with a family column, the prefix included; the
-     * abilities the expansion adds stay unmarked until the step that makes
-     * their family a rule. Step G2 adds the items Focus Sash, Expert Belt and
-     * Floettite (no family, unmarked) and 22 moves, of which twelve are marked
-     * with the recorded battles that test them. */
+     * families rules and step P3 the two ability families (the "-ate" and
+     * pinch ones): every new item and ability of those steps is marked, and
+     * so is every item and ability with a family column that makes it a rule,
+     * the prefix included. Step G2 adds the items Focus Sash, Expert Belt and
+     * Floettite and the abilities Rock Head, Flower Veil and Fairy Aura (none
+     * has a family): they stay unmarked until the steps that make them rules,
+     * and so do the G2 moves apart from the twelve marked with the recorded
+     * battles that test them. */
     {
         DF_CHECK_EQ_U64(&t, sizeof dfi_support.moves, DFI_POOL_MOVE_COUNT);
         DF_CHECK_EQ_U64(&t, sizeof dfi_support.abilities, DFI_POOL_ABILITY_COUNT);
@@ -807,8 +809,20 @@ int main(void)
                 DF_CHECK(&t, dfi_support.items[id] != 0u);
             }
         }
-        for (uint32_t id = DFI_EXT_ABILITY_COUNT; id < DFI_POOL_ABILITY_COUNT; ++id) {
+        /* The P1 abilities (Pixilate to Swarm, ids below Rock Head) are marked by step P3 and have a family;
+         * the G2 abilities after them stay unmarked and have none. */
+        for (uint32_t id = DFI_EXT_ABILITY_COUNT; id < DFI_ABILITY_ROCKHEAD; ++id) {
+            DF_CHECK(&t, dfi_support.abilities[id] != 0u);
+            DF_CHECK(&t, dfi_pool_ability_family[id].family != DFI_ABILITY_FAMILY_NONE);
+        }
+        for (uint32_t id = DFI_ABILITY_ROCKHEAD; id < DFI_POOL_ABILITY_COUNT; ++id) {
             DF_CHECK_EQ_U64(&t, dfi_support.abilities[id], 0u);
+            DF_CHECK_EQ_U64(&t, dfi_pool_ability_family[id].family, DFI_ABILITY_FAMILY_NONE);
+        }
+        for (uint32_t id = 0u; id < DFI_POOL_ABILITY_COUNT; ++id) {
+            if (dfi_pool_ability_family[id].family != DFI_ABILITY_FAMILY_NONE) {
+                DF_CHECK(&t, dfi_support.abilities[id] != 0u);
+            }
         }
         /* Step G2 marks twelve of its 22 moves, each used in a reference battle under the POOL kind (g2_data_moves_a
          * to _d), and step G5 U-turn (g5_uturn_a to _e); the nine moves with a handler id stay unmarked. */

@@ -181,6 +181,36 @@ typedef struct dfi_side {
     uint8_t tailwind_turns;
 } dfi_side;
 
+/* The POOL state tail (docs/decisions/0015 section 7, "v3 + pool tail rev 1"): the room that the pool mechanics
+ * need (Encore, Throat Chop, Psychic Noise's Heal Block, Soak, Wide Guard) and nothing else. It is part of the
+ * state only under the two POOL kinds (encode, decode, digest, equal, invariants); under the four other kinds it
+ * is absent: all zero in memory (an invariant) and not in the encoding. No mechanic writes it yet. Every field is
+ * a plain byte, so the struct has no padding and no pointer; its size is fixed. */
+#define DFI_TAIL_MOVE_MAX 5u          /* last_move: 0 none, 1..4 move slot + 1, 5 Struggle */
+#define DFI_TAIL_ENCORE_SLOT_MAX 4u   /* encore_slot: 0 none, 1..4 move slot + 1 */
+#define DFI_TAIL_ENCORE_TURNS_MAX 4u  /* Encore lasts 3 turns, 4 when the target had moved */
+#define DFI_TAIL_THROAT_CHOP_MAX 2u
+#define DFI_TAIL_HEAL_BLOCK_MAX 5u    /* Heal Block lasts 5 turns, 2 from Psychic Noise */
+#define DFI_TAIL_WIDE_GUARD_MAX 1u    /* set by Wide Guard, ends in the residual of the turn */
+
+typedef struct dfi_tail_pos {
+    uint8_t last_move;         /* Encore: the move the occupant used last */
+    uint8_t encore_slot;       /* the one move slot the occupant may choose; 0 = not encored */
+    uint8_t encore_turns;      /* 0 exactly when encore_slot is 0 */
+    uint8_t throat_chop_turns; /* sound moves are barred while nonzero */
+    uint8_t heal_block_turns;  /* healing and heal-flag moves are barred while nonzero */
+} dfi_tail_pos;
+
+typedef struct dfi_tail_side {
+    uint8_t wide_guard; /* 0/1: this turn only */
+    dfi_tail_pos positions[DUOFORGE_ACTIVE_PER_SIDE];
+    uint8_t soak_type[DUOFORGE_MAX_ROSTER]; /* per roster member: 0 none, else type id + 1 (the type Soak set) */
+} dfi_tail_side;
+
+typedef struct dfi_pool_tail {
+    dfi_tail_side sides[DUOFORGE_SIDE_COUNT];
+} dfi_pool_tail;
+
 struct duoforge_battle {
     uint8_t context_fingerprint[DUOFORGE_DIGEST_SIZE];
     dfi_rng rng;
@@ -198,6 +228,7 @@ struct duoforge_battle {
     uint8_t queue_len;
     dfi_queue_record queue[DFI_QUEUE_CAPACITY];
     dfi_side sides[DUOFORGE_SIDE_COUNT];
+    dfi_pool_tail tail; /* POOL kinds only; all zero otherwise */
 };
 
 #endif

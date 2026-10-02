@@ -106,6 +106,8 @@ duoforge_add_test(NAME duoforge.reference.runner_domain SOURCES test_runner_doma
 duoforge_add_test(NAME duoforge.combat.turn SOURCES test_turn.c WHITEBOX TIMEOUT 120)
 # The item families of decision 0015 (the type booster and the resist berry) against a table of the pinned handlers.
 duoforge_add_test(NAME duoforge.combat.item_family SOURCES test_item_family.c WHITEBOX TIMEOUT 60)
+# The ability families of decision 0015 (the "-ate" and pinch rules) against a table of the pinned handlers.
+duoforge_add_test(NAME duoforge.combat.ability_family SOURCES test_ability_family.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.combat.closure_gate SOURCES test_closure_gate.c WHITEBOX TIMEOUT 600)
 duoforge_add_test(NAME duoforge.combat.team_c_gate SOURCES test_team_c_gate.c WHITEBOX TIMEOUT 600)
 
@@ -118,6 +120,8 @@ duoforge_add_test(NAME duoforge.state.team_c_setup SOURCES test_team_c_setup.c W
 # columns, and the POOL kinds.
 duoforge_add_test(NAME duoforge.data.pool_tables SOURCES test_pool_tables.c WHITEBOX)
 duoforge_add_test(NAME duoforge.state.pool_setup SOURCES test_pool_setup.c WHITEBOX TIMEOUT 60)
+# The POOL state tail (decision 0015 section 7): schema "v3 + pool tail rev 1", present under the POOL kinds only.
+duoforge_add_test(NAME duoforge.state.pool_tail SOURCES test_pool_tail.c WHITEBOX TIMEOUT 120)
 # The generated files must stay exactly what tools/datagen/gen_closure.py
 # wrote; regenerate and update these hashes together.
 foreach(_gen IN ITEMS
@@ -459,7 +463,7 @@ endif()
 
 # The Python package (M7, decision 0013), run with DUOFORGE_PYTHON; without
 # an interpreter each test reports skipped instead of passing silently.
-foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit)
+foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client)
     if(DUOFORGE_PYTHON)
         add_test(NAME duoforge.python.${_py}
             COMMAND "${DUOFORGE_PYTHON}" -m unittest -v python.tests.test_${_py}
