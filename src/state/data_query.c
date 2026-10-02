@@ -189,6 +189,21 @@ duoforge_status duoforge_data_find(const duoforge_context *ctx, uint32_t table, 
             return DUOFORGE_OK;
         }
     }
+    if (table == DUOFORGE_DATA_TABLE_SPECIES) {
+        /* The cosmetic aliases (generated data, decision 0015 section 4.2): the row of the base forme, bound by the
+         * kind's count like the row itself. The same exact, NUL-safe comparison as above. */
+        for (uint32_t a = 0u; a < DFI_POOL_ALIAS_COUNT; ++a) {
+            const char *candidate = dfi_pool_forme_aliases[a].name;
+            size_t k = 0u;
+            while (k < length && candidate[k] != '\0' && candidate[k] == name[k]) {
+                ++k;
+            }
+            if (k == length && candidate[k] == '\0' && (uint32_t)dfi_pool_forme_aliases[a].forme < count) {
+                *out_id = (uint32_t)dfi_pool_forme_aliases[a].forme;
+                return DUOFORGE_OK;
+            }
+        }
+    }
     return DUOFORGE_E_INVALID_ARGUMENT;
 }
 
