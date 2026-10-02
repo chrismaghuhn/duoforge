@@ -61,11 +61,15 @@ def _rows(o, e):
             o.mask.reshape((2 * e,) + o.mask.shape[2:]), o.is_team.reshape(-1))
 
 
-def collect(env, params, act, key, steps, state=None, opponents=None):
+def collect(env, params, act, key, steps, state=None, opponents=None, timings=None):
     """One rollout: arrays over (T, E, 2) and the bootstrap values. With a
     league (state, opponents), the opponent seat of every league
-    environment plays its slot's snapshot."""
+    environment plays its slot's snapshot. timings (a dict) receives the
+    seconds of the engine (step and query), the encoder (observe) and the
+    policy (act, opponents)."""
     e = env.batch.envs
+    clock = time.perf_counter
+    spent = {"t_engine": 0.0, "t_encode": 0.0, "t_policy": 0.0}
     keep = {k: [] for k in ("obs", "slots", "mask", "is_team", "acting", "actions", "logp", "values", "rewards",
                             "done")}
     episodes = 0
@@ -74,7 +78,9 @@ def collect(env, params, act, key, steps, state=None, opponents=None):
         league_envs = np.flatnonzero(~state.self_play)
         opponent_rows = 2 * league_envs + (1 - state.learner_seat[league_envs])
     for _ in range(steps):
+        t0 = clock()
         o = env.observe()
+        t1 = clock()
         key, sub, other = jax.random.split(key, 3)
         obs, slots, mask, is_team = _rows(o, e)
         actions, logp, values = act(params, sub, obs, slots, mask, is_team)
@@ -83,7 +89,13 @@ def collect(env, params, act, key, steps, state=None, opponents=None):
             r = opponent_rows
             chosen = opponents.act(other, obs[r], slots[r], mask[r], is_team[r], state.slot_of[league_envs])
             actions.reshape(-1)[r] = chosen
+        logp, values = np.asarray(logp), np.asarray(values)
+        t2 = clock()
         rewards, done = env.step(actions)
+        t3 = clock()
+        spent["t_encode"] += t1 - t0
+        spent["t_policy"] += t2 - t1
+        spent["t_engine"] += t3 - t2
         episodes += int(done.sum())
         for name, value in (("obs", o.obs), ("slots", o.slots), ("mask", o.mask), ("is_team", o.is_team),
                             ("acting", o.acting), ("actions", actions), ("logp", np.asarray(logp).reshape(e, 2)),
@@ -93,6 +105,8 @@ def collect(env, params, act, key, steps, state=None, opponents=None):
     key, sub = jax.random.split(key)
     _, _, bootstrap = act(params, sub, *_rows(o, e))
     rollout = {k: np.stack(v) for k, v in keep.items()}
+    if timings is not None:
+        timings.update(spent)
     return rollout, np.asarray(bootstrap).reshape(e, 2), episodes, key
 
 
@@ -378,7 +392,8 @@ def _run(args, pool, on_start, stop):
             update += 1
             counts[:] = 0
             t0 = time.perf_counter()
-            rollout, bootstrap, ended, key = collect(env, params, act, key, args.rollout, state, opponents)
+            timings = {}
+            rollout, bootstrap, ended, key = collect(env, params, act, key, args.rollout, state, opponents, timings)
             advantages, _, value_targets = gae(rollout["values"], rollout["rewards"], rollout["done"],
                                                rollout["acting"], bootstrap)
             samples = samples_of(rollout, advantages, value_targets, learner_rows)
@@ -396,6 +411,8 @@ def _run(args, pool, on_start, stop):
                       "decisions_per_s": round(acted / (t2 - t0)), "policy_rows": acted,
                       "acted_rows": int(rollout["acting"].sum()), "entropy_coef": round(entropy_coef, 8),
                       "team_episodes": counts.tolist()}
+            record |= {k: round(v, 4) for k, v in timings.items()}
+            record["t_other"] = round(max(0.0, (t1 - t0) - sum(timings.values())), 4)
             record |= {k: round(float(v), 5) for k, v in stats.items()}
             elapsed_min = (t2 - start) / 60
             last = ((args.updates and update >= args.updates) or (args.minutes and elapsed_min >= args.minutes)

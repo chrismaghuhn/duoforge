@@ -195,6 +195,10 @@ class TrainingV2Test(unittest.TestCase):
             with open(os.path.join(out, "log.jsonl"), encoding="utf-8") as f:
                 records = [json.loads(line) for line in f]
             self.assertEqual([r["update"] for r in records], [1, 2])
+            for r in records:
+                for k in ("t_engine", "t_encode", "t_policy", "t_other", "t_transfer", "t_compute"):
+                    self.assertGreaterEqual(r[k], 0.0, k)
+                self.assertLessEqual(r["t_engine"] + r["t_encode"] + r["t_policy"], r["collect_s"] + 1e-3)
             params, config = checkpoint.load(os.path.join(out, "params-2.npz"))
             self.assertEqual(config["format"], 2)
             self.assertEqual(config["model"]["version"], 2)
@@ -449,6 +453,36 @@ class LadderV2Test(unittest.TestCase):
             self.assertTrue(os.path.isfile(os.path.join(report, "ladder.md")))
         finally:
             shutil.rmtree(root, ignore_errors=True)
+
+
+class DeviceUpdateTest(unittest.TestCase):
+    def test_device_resident_update_equals_host_path(self):
+        import jax
+        from duoforge_learn import ppo, train
+        from duoforge_learn.returns import gae, samples_of
+        from duoforge_learn.selfplay import SelfPlay
+        env = SelfPlay(8, 1, 0x2026100200000177)
+        try:
+            net = policy.make(dict(policy.V1_DEFAULT))
+            params = net.init(jax.random.PRNGKey(40))
+            rollout, bootstrap, _, _ = train.collect(env, params, net.act, jax.random.PRNGKey(41), 12)
+        finally:
+            env.close()
+        adv, _, targets = gae(rollout["values"], rollout["rewards"], rollout["done"], rollout["acting"], bootstrap)
+        samples = samples_of(rollout, adv, targets)
+        self.assertGreater(samples["actions"].shape[0] % 80, 0)  # a padded last minibatch
+        tx = ppo.optimizer(3e-4)
+        results = []
+        for fn in (ppo.update, ppo._update_host):
+            out, opt, stats = fn(params, tx.init(params), tx, samples, np.random.default_rng(9), net.evaluate,
+                                 epochs=2, minibatch=80, entropy_coef=0.01)
+            results.append((out, stats))
+        for a, b in zip(jax.tree_util.tree_leaves(results[0][0]), jax.tree_util.tree_leaves(results[1][0])):
+            np.testing.assert_allclose(np.asarray(a), np.asarray(b), rtol=1e-5, atol=1e-6)
+        for k in ("loss", "policy_loss", "value_loss", "entropy"):
+            self.assertAlmostEqual(float(results[0][1][k]), float(results[1][1][k]), places=4)
+        self.assertIn("t_transfer", results[0][1])
+        self.assertIn("t_compute", results[0][1])
 
 
 PRESET_COUNTS = {"S": 384751, "M": 2072463, "L": 7871631}
