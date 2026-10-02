@@ -298,31 +298,31 @@ static void test_refusals(df_test *t, const kase *c)
     const char *rill = "rillaboom";
 
     /* NULL. */
-    DF_CHECK(t, duoforge_data_count(NULL, S, &count) == DUOFORGE_E_INVALID_ARGUMENT && count == 0xA5A5A5A5u);
-    DF_CHECK(t, duoforge_data_count(ctx, S, NULL) == DUOFORGE_E_INVALID_ARGUMENT);
-    DF_CHECK(t, duoforge_data_name(NULL, S, 0u, &name) == DUOFORGE_E_INVALID_ARGUMENT &&
+    DF_CHECK(t, duoforge_data_count(NULL, S, &count) == DUOFORGE_E_NULL_ARGUMENT && count == 0xA5A5A5A5u);
+    DF_CHECK(t, duoforge_data_count(ctx, S, NULL) == DUOFORGE_E_NULL_ARGUMENT);
+    DF_CHECK(t, duoforge_data_name(NULL, S, 0u, &name) == DUOFORGE_E_NULL_ARGUMENT &&
                     name == (const char *)&sentinel);
-    DF_CHECK(t, duoforge_data_name(ctx, S, 0u, NULL) == DUOFORGE_E_INVALID_ARGUMENT);
-    DF_CHECK(t, duoforge_data_find(NULL, S, rill, 9u, &out) == DUOFORGE_E_INVALID_ARGUMENT && out == 0xA5A5A5A5u);
-    DF_CHECK(t, duoforge_data_find(ctx, S, NULL, 9u, &out) == DUOFORGE_E_INVALID_ARGUMENT && out == 0xA5A5A5A5u);
-    DF_CHECK(t, duoforge_data_find(ctx, S, NULL, 0u, &out) == DUOFORGE_E_INVALID_ARGUMENT && out == 0xA5A5A5A5u);
-    DF_CHECK(t, duoforge_data_find(ctx, S, rill, 9u, NULL) == DUOFORGE_E_INVALID_ARGUMENT);
+    DF_CHECK(t, duoforge_data_name(ctx, S, 0u, NULL) == DUOFORGE_E_NULL_ARGUMENT);
+    DF_CHECK(t, duoforge_data_find(NULL, S, rill, 9u, &out) == DUOFORGE_E_NULL_ARGUMENT && out == 0xA5A5A5A5u);
+    DF_CHECK(t, duoforge_data_find(ctx, S, NULL, 9u, &out) == DUOFORGE_E_NULL_ARGUMENT && out == 0xA5A5A5A5u);
+    DF_CHECK(t, duoforge_data_find(ctx, S, NULL, 0u, &out) == DUOFORGE_E_NULL_ARGUMENT && out == 0xA5A5A5A5u);
+    DF_CHECK(t, duoforge_data_find(ctx, S, rill, 9u, NULL) == DUOFORGE_E_NULL_ARGUMENT);
     for (int preset = 0; preset < 2; ++preset) { /* rule S3: a bool output is checked at both values */
         bool supported = preset != 0;
-        DF_CHECK(t, duoforge_data_supported(NULL, S, 0u, &supported) == DUOFORGE_E_INVALID_ARGUMENT &&
+        DF_CHECK(t, duoforge_data_supported(NULL, S, 0u, &supported) == DUOFORGE_E_NULL_ARGUMENT &&
                         supported == (preset != 0));
-        DF_CHECK(t, duoforge_data_supported(ctx, S, 0u, NULL) == DUOFORGE_E_INVALID_ARGUMENT);
+        DF_CHECK(t, duoforge_data_supported(ctx, S, 0u, NULL) == DUOFORGE_E_NULL_ARGUMENT);
         DF_CHECK(t, duoforge_data_supported(ctx, S, c->n[S], &supported) == DUOFORGE_E_INVALID_ARGUMENT &&
                         supported == (preset != 0));
         DF_CHECK(t, duoforge_data_supported(ctx, 0u, 0u, &supported) == DUOFORGE_E_INVALID_ARGUMENT &&
                         supported == (preset != 0));
     }
-    DF_CHECK(t, duoforge_data_forme_info(NULL, 0u, &info) == DUOFORGE_E_INVALID_ARGUMENT);
-    DF_CHECK(t, duoforge_data_forme_info(ctx, 0u, NULL) == DUOFORGE_E_INVALID_ARGUMENT);
+    DF_CHECK(t, duoforge_data_forme_info(NULL, 0u, &info) == DUOFORGE_E_NULL_ARGUMENT);
+    DF_CHECK(t, duoforge_data_forme_info(ctx, 0u, NULL) == DUOFORGE_E_NULL_ARGUMENT);
     uint32_t buffer[4] = {0xA5A5A5A5u, 0xA5A5A5A5u, 0xA5A5A5A5u, 0xA5A5A5A5u};
-    DF_CHECK(t, duoforge_data_forme_moves(NULL, 0u, buffer, 4u, &count) == DUOFORGE_E_INVALID_ARGUMENT);
-    DF_CHECK(t, duoforge_data_forme_moves(ctx, 0u, buffer, 4u, NULL) == DUOFORGE_E_INVALID_ARGUMENT);
-    DF_CHECK(t, duoforge_data_forme_moves(ctx, 0u, NULL, 4u, &count) == DUOFORGE_E_INVALID_ARGUMENT &&
+    DF_CHECK(t, duoforge_data_forme_moves(NULL, 0u, buffer, 4u, &count) == DUOFORGE_E_NULL_ARGUMENT);
+    DF_CHECK(t, duoforge_data_forme_moves(ctx, 0u, buffer, 4u, NULL) == DUOFORGE_E_NULL_ARGUMENT);
+    DF_CHECK(t, duoforge_data_forme_moves(ctx, 0u, NULL, 4u, &count) == DUOFORGE_E_NULL_ARGUMENT &&
                     count == 0xA5A5A5A5u);
 
     /* A table outside 1..5, and an id or species beyond the kind's count. */
@@ -410,7 +410,7 @@ static void test_synthetic(df_test *t)
     DF_CHECK(t, duoforge_data_forme_moves(ctx, 0u, buffer, 4u, &count) == DUOFORGE_E_UNSUPPORTED &&
                     count == 0xA5A5A5A5u && buffer[0] == 0xA5A5A5A5u);
     /* NULL still comes first, and so does a table outside its domain. */
-    DF_CHECK(t, duoforge_data_count(ctx, 1u, NULL) == DUOFORGE_E_INVALID_ARGUMENT);
+    DF_CHECK(t, duoforge_data_count(ctx, 1u, NULL) == DUOFORGE_E_NULL_ARGUMENT);
     DF_CHECK(t, duoforge_data_count(ctx, 0u, &count) == DUOFORGE_E_INVALID_ARGUMENT);
     DF_CHECK(t, duoforge_data_find(ctx, 9u, "rillaboom", 9u, &out) == DUOFORGE_E_INVALID_ARGUMENT);
     duoforge_context_destroy(ctx);

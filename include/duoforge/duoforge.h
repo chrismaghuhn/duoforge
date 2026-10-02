@@ -213,7 +213,8 @@ typedef struct duoforge_battle_setup {
    Pure and allocation-free: no state changes, every output is written only on
    success (the one exception is the required count on E_CAPACITY, as in
    duoforge_battle_candidates). A SYNTHETIC context has no tables: every call
-   is E_UNSUPPORTED. A NULL argument, a table or id outside its domain and a
+   is E_UNSUPPORTED. A NULL pointer argument is E_NULL_ARGUMENT (also a NULL
+   buffer with a capacity above 0); a table or id outside its domain and a
    name that is not in the kind's table are E_INVALID_ARGUMENT. Checks, in
    order: NULL, table, SYNTHETIC, id or name.
    An id is the row of the table (0-based). The setup fields differ in two

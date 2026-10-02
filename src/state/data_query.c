@@ -131,7 +131,7 @@ static duoforge_status dfi_data_begin(const duoforge_context *ctx, uint32_t tabl
 duoforge_status duoforge_data_count(const duoforge_context *ctx, uint32_t table, uint32_t *out_count)
 {
     if (ctx == NULL || out_count == NULL) {
-        return DUOFORGE_E_INVALID_ARGUMENT;
+        return DUOFORGE_E_NULL_ARGUMENT;
     }
     dfi_kind_limits lim;
     const duoforge_status st = dfi_data_begin(ctx, table, true, &lim);
@@ -145,7 +145,7 @@ duoforge_status duoforge_data_count(const duoforge_context *ctx, uint32_t table,
 duoforge_status duoforge_data_name(const duoforge_context *ctx, uint32_t table, uint32_t id, const char **out_name)
 {
     if (ctx == NULL || out_name == NULL) {
-        return DUOFORGE_E_INVALID_ARGUMENT;
+        return DUOFORGE_E_NULL_ARGUMENT;
     }
     dfi_kind_limits lim;
     const duoforge_status st = dfi_data_begin(ctx, table, true, &lim);
@@ -163,7 +163,7 @@ duoforge_status duoforge_data_find(const duoforge_context *ctx, uint32_t table, 
                                    uint32_t *out_id)
 {
     if (ctx == NULL || name == NULL || out_id == NULL) {
-        return DUOFORGE_E_INVALID_ARGUMENT;
+        return DUOFORGE_E_NULL_ARGUMENT;
     }
     dfi_kind_limits lim;
     const duoforge_status st = dfi_data_begin(ctx, table, true, &lim);
@@ -192,7 +192,7 @@ duoforge_status duoforge_data_supported(const duoforge_context *ctx, uint32_t ta
                                         bool *out_supported)
 {
     if (ctx == NULL || out_supported == NULL) {
-        return DUOFORGE_E_INVALID_ARGUMENT;
+        return DUOFORGE_E_NULL_ARGUMENT;
     }
     dfi_kind_limits lim;
     const duoforge_status st = dfi_data_begin(ctx, table, true, &lim);
@@ -209,7 +209,7 @@ duoforge_status duoforge_data_supported(const duoforge_context *ctx, uint32_t ta
 duoforge_status duoforge_data_forme_info(const duoforge_context *ctx, uint32_t species_id, duoforge_forme_info *out)
 {
     if (ctx == NULL || out == NULL) {
-        return DUOFORGE_E_INVALID_ARGUMENT;
+        return DUOFORGE_E_NULL_ARGUMENT;
     }
     dfi_kind_limits lim;
     const duoforge_status st = dfi_data_begin(ctx, 0u, false, &lim);
@@ -232,7 +232,7 @@ duoforge_status duoforge_data_forme_moves(const duoforge_context *ctx, uint32_t 
                                           uint32_t capacity, uint32_t *out_count)
 {
     if (ctx == NULL || out_count == NULL || (buffer == NULL && capacity != 0u)) {
-        return DUOFORGE_E_INVALID_ARGUMENT;
+        return DUOFORGE_E_NULL_ARGUMENT;
     }
     dfi_kind_limits lim;
     const duoforge_status st = dfi_data_begin(ctx, 0u, false, &lim);
