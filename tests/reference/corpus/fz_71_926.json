@@ -1,0 +1,66 @@
+{
+  "name": "fz_71_926",
+  "purpose": "Corpus (coverage): random differential battle 926 of run 71 (tools/reference/diff_driver.py random), Team C against Team C, the whole battle. It adds 1 signatures that no committed battle and no earlier corpus battle has: request:turn:disabled-move+locked-choice+mega+switch.",
+  "data": "team_c",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,f4470c0cbc94072e267285b3cbc7033379706eae95c54fe3eb6a0cd23bd75485",
+  "teams": [
+    "Basculegion (M) @ Choice Scarf\nAbility: Adaptability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Wave Crash\n- Last Respects\n- Flip Turn\n- Aqua Jet\n\nKingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Sucker Punch\n- Iron Head\n- Protect\n\nIncineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Flare Blitz\n- Parting Shot\n- Darkest Lariat\n\nSneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Close Combat\n- Dire Claw\n- Protect\n- Fake Out\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Protect\n- Hyper Voice\n- Draco Meteor\n- Tailwind\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Follow Me\n- Trick Room\n- Helping Hand\n- Psychic",
+    "Sneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Close Combat\n- Dire Claw\n- Protect\n- Fake Out\n\nIncineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Flare Blitz\n- Parting Shot\n- Darkest Lariat\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Protect\n- Hyper Voice\n- Draco Meteor\n- Tailwind\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Follow Me\n- Trick Room\n- Helping Hand\n- Psychic\n\nKingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Sucker Punch\n- Iron Head\n- Protect\n\nBasculegion (M) @ Choice Scarf\nAbility: Adaptability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Wave Crash\n- Last Respects\n- Flip Turn\n- Aqua Jet"
+  ],
+  "choices": [
+    {
+      "p1": "team 1354",
+      "p2": "team 4136"
+    },
+    {
+      "p1": "move 1 -2, move 2 1",
+      "p2": "move 1, switch 4"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 1 -2, move 2 -1",
+      "p2": "move 4, move 2 2"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "move 1 2, move 4",
+      "p2": "move 1 mega, switch 4"
+    },
+    {
+      "p1": "move 1 1, move 2 mega",
+      "p2": "move 1, switch 4"
+    },
+    {
+      "p1": "switch 4, move 1",
+      "p2": "move 3 -2, move 3 2"
+    },
+    {
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "move 1 -2, move 4",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p1": "move 3, move 1",
+      "p2": "move 2, move 1 2"
+    },
+    {
+      "p1": "move 1 1, move 1",
+      "p2": "move 4, move 1 -1"
+    },
+    {
+      "p1": "move 2 2, move 2",
+      "p2": "move 1, move 2 1"
+    },
+    {
+      "p1": "move 2 2, move 3 2",
+      "p2": "move 3 1, pass"
+    }
+  ]
+}
