@@ -49,7 +49,7 @@ One oracle proves it. A Node helper replays every committed closure battle in th
 - **`duoforge_learn/checkpoint.py`:** gets only `widen_594` and the `widen IN OUT` command (agreed with the Learner v2 session).
 - **Encoding of the v1 checkpoint.**
   - The night checkpoint was trained while `features.py` had `present = species_id != 0`. Rillaboom has forme id 0, and Team A holds it. A fix session corrects the encoder.
-  - Decision: the bot plays a v1 checkpoint with the encoding it was trained on, through a named switch of the encoder, `features.encode(..., legacy_present=True)`. New checkpoints use the fixed encoding.
+  - Decision: the bot plays a v1 checkpoint with the encoding it was trained on, through the fix PR #88: `features.as_encoder(obs_part, observations, checkpoint.encoder_of(config))` (version 1 rebuilds the old `present` column; 2 is the fixed encoding; others raise). New checkpoints use the fixed encoding.
   - The switch and its test come with the fix PR (HauptSession). Do not build it here. Task 6 needs that PR merged.
   - The checkpoint config key is the integer `"encoder"` (agreed with the HauptSession and Learner v2): 1 before the fix, 2 after; a missing key means 1.
 - **The bot's name** must contain "bot" (any case), so the name says it is a bot (spec section 7).
@@ -65,7 +65,7 @@ One oracle proves it. A Node helper replays every committed closure battle in th
 The inputs most likely to hurt a live game that no spec test names. Each has a test in its owning task.
 
 1. **A foe whose Pokémon have nicknames.** The protocol says `p2a: Nick`, and the sheet has no names. The tracker must map a Pokémon by the species of its first `|switch|`, and the observation must stay the same. Test: Task 5, `test_foe_nicknames_change_nothing`.
-2. **A room line between a request and its battle update** (chat, the timer). The decision waits for the battle update. Tests: Task 5, `test_room_lines_do_not_complete_a_decision`; Task 6, `test_chat_between_request_and_update`.
+2. **Room lines in the battle room** (chat, the timer, joins) between a step's update and its request. They change no observation and never make a decision point. Tests: Task 5, `test_room_lines_do_not_complete_a_decision`; Task 6, `test_chat_between_request_and_update`.
 3. **The same request twice** (a reconnect, the same `rqid`). There is no new decision point, the epoch does not move, and the bot sends one `/choose`. Tests: Task 5 `test_repeated_request_is_one_decision`; Task 6 `test_repeated_request_one_choice`.
 4. **The tracker raises `ConversionError`** (a `SystemExit`) on an unknown line. The bot catches it, forfeits with the internal-error message and keeps running. Test: Task 6, `test_unknown_line_forfeits_and_keeps_running`.
 5. **The battle ends while the bot waits** (the foe forfeits during the sheet wait or between Bo3 games). The bot sends no `/forfeit`, sends "gg", closes the log and is free for the next challenge. Test: Task 6, `test_foe_forfeits_during_sheet_wait`.
@@ -168,7 +168,7 @@ def test_unwritable_file_fails(self):      # FILE = an existing directory: exit 
   - `ctest --test-dir build/dev -R "dump_views|client_streams|diff_replay|diff_driver|diff_random|runner_records|runner_domain" --output-on-failure`
   - Expected: all PASS.
 - [ ] **Step 5: Write decision 0016.**
-  - About 40 lines: status, the owner decisions (spec section 2), scope and refusals, the information argument (spec section 4), the v1 encoding (`legacy_present`), the evidence (spec section 8), the coordination.
+  - About 40 lines: status, the owner decisions (spec section 2), scope and refusals, the information argument (spec section 4), the v1 encoding (`as_encoder`), the evidence (spec section 8), the coordination.
 - [ ] **Step 6: Commit, run CI, hand off.**
   - Commit; `local_ci.sh --quick`; review agent; full `local_ci.sh`.
   - Open the PR; send the PR number to the lead (runner review) and to the main session.
@@ -187,7 +187,7 @@ def test_unwritable_file_fails(self):      # FILE = an existing directory: exit 
   - `.rank_teams(obs_part) -> list[tuple[int, float]]` lists tuple indices into `duoforge_learn.selfplay.TEAM_TABLE`, best first.
   - Ties go to the lower flat index.
 - `policy.load(path) -> Policy` uses `checkpoint.load(path, obs_size=features.OBS_SIZE)`, so a 594-feature file raises.
-- `Policy.legacy_present -> bool` is `config.get("encoder", 1) < 2`. A value other than the integers 1 and 2 raises `ValueError`. The widen command writes `"encoder": 1` into OUT's config.
+- `Policy.encoder -> int` is `checkpoint.encoder_of(config)` (#88). `Policy.rank_pairs` and `rank_teams` take the raw `obs_part` and apply `features.as_encoder(obs_part, observations, self.encoder)` themselves, so they also take the observations. The widen command writes `"encoder": 1` into OUT's config.
 - `checkpoint.WIDEN_594_COLUMNS = (12, 37, 38, 39, 61, 62, 63, 333, 334, 335, 357, 358, 359)` gives the indices in the 607 layout.
 - `checkpoint.widen_594(params) -> params`
   - Returns a new dict whose `t1.w` has zero rows inserted at those indices.
@@ -213,9 +213,9 @@ def test_widened_network_matches_the_original(self):
 def test_widen_refuses_other_sizes(self):    # a 607 network -> ValueError
 def test_widen_command(self):                # main(["widen", IN, OUT]): OUT loads with obs_size 607, rows zero,
                                              # config "encoder" == 1; IN with obs_size 607 raises; an existing OUT is refused
-def test_v1_checkpoint_uses_the_legacy_encoding(self):  # policy.load of the widened file: legacy_present True;
-                                                        # no "encoder" key -> True; "encoder": 2 -> False;
-                                                        # "encoder": 3 or "1" -> ValueError
+def test_v1_checkpoint_uses_the_legacy_encoding(self):  # policy.load of the widened file: encoder 1;
+                                                        # no "encoder" key -> 1; "encoder": 2 -> 2;
+                                                        # "encoder": 3 -> ValueError (encoder_of/as_encoder)
 ```
 
   Then in `test_learn.py` (the JAX job):
@@ -352,8 +352,8 @@ def test_unknown_target_type_raises(self):   # a target type outside the table r
   - `.domain() -> FACTORED_DOMAIN record` and `.options() -> list[list[Option]]` both come from `options` with the tracker's roster and locks.
 
 - **Decision points.**
-  - A `|request|` with a new `rqid` is pending. A repeated `rqid` is ignored.
-  - The point is ready after the next message with a battle line. At team preview it also needs the `|showteam|` lines of both sides.
+  - At the pin, `Battle.sendUpdates` sends a step's update before its requests (Task 1 ruling). So a `|request|` with a new `rqid` is a decision point, over the battle lines received since the previous one. A repeated `rqid` is ignored.
+  - At team preview the point also needs the `|showteam|` lines of both sides; live they come after the request.
   - The epoch is 1 plus the number of earlier decision points.
   - Room lines are folded by nobody: text lines without `|`, `||…`, `c`, `c:`, `chat`, `j`, `J`, `l`, `L`, `n`, `N`, `raw`, `html`, `uhtml`, `uhtmlchange`, `inactive`, `inactiveoff`, `tempnotify`, `tempnotifyoff`, `controlshtml`, `fieldhtml`, `cantleave`, `allowleave`, `title`, `init`, `deinit`, `noinit`, `expire`, `badge`, `rated`, `message`, `notify`, `bigerror`, `error`, `timer`, `request`, `showteam`.
   - Every other line goes to `step_events`.
@@ -361,7 +361,7 @@ def test_unknown_target_type_raises(self):   # a target type outside the table r
 
 | Field | Source |
 |---|---|
-| `boundary_kind` | `teamPreview` TEAM_SELECTION. `active` TURN. `forceSwitch` or `wait`: REPLACEMENT if the point's message has `\|upkeep`, else PIVOT (`trace_to_c.boundary_of`). |
+| `boundary_kind` | `teamPreview` TEAM_SELECTION. `active` TURN. `forceSwitch` or `wait`: REPLACEMENT if the lines since the previous request have `\|upkeep`, else PIVOT (`trace_to_c.boundary_of`). |
 | `turn` | the last TURN event |
 | `player`, own `requested`/`requested_slots`, `slot_mask` | the request: TEAM_SELECTION 0 slots; TURN the occupied positions; switch `forceSwitch`. `wait` is not requested. |
 | foe `requested`/`requested_slots` | TEAM_SELECTION and TURN as the own. REPLACEMENT: foe positions fainted in this step while a foe reserve is left (4 brought minus the foe members seen fainted or standing). PIVOT: the foe position of this step's Parting Shot or Emergency Exit. |
@@ -394,7 +394,7 @@ def test_unknown_line_raises(self):               # an inserted "|-futureline|p1
 - [ ] **Step 4: Run them and check that they pass.** PASS on every closure battle and both players.
 - [ ] **Step 5: Commit, CI, review, PR, hand off.**
 
-### Task 6: Game, client and CLI (PR 6, `chris/live-6-client`, needs the encoder fix PR with `legacy_present`)
+### Task 6: Game, client and CLI (PR 6, `chris/live-6-client`, needs the encoder fix PR #88)
 
 **Files:**
 - Create: `python/duoforge_live/game.py`, `client.py`, `__main__.py`
@@ -408,7 +408,7 @@ def test_unknown_line_raises(self):               # an inserted "|-futureline|p1
     - `.feed(lines)`
     - `.phase -> 'wait' | 'sheets' | 'decide' | 'ended'`
     - `.foe_sets`
-    - `.candidates() -> list[Candidate(text, probability)]`: ranked. The input is `features.encode(observation, domain, legacy_present=policy.legacy_present)`. Team tuples come from `rank_teams`. Pairs come from `rank_pairs`, with `pair_text` built from the options.
+    - `.candidates() -> list[Candidate(text, probability)]`: ranked. The input is `features.encode(observation, domain)`; the policy applies `as_encoder`. Team tuples come from `rank_teams`. Pairs come from `rank_pairs`, with `pair_text` built from the options.
     - `.accepted(text)`
     - `.rqid`
   - `client.Bot(config, connect, login, clock)`, with `async run()`. The connection is `send(str)`/`recv() -> str` (async). `login(name, challstr, password) -> assertion` uses urllib against `https://play.pokemonshowdown.com/action.php`. Tests inject fakes for all three.
@@ -446,7 +446,7 @@ def test_bo3_series(self):                     # ready prompt -> /confirmready i
                                                # the series |win| frees the bot
 def test_challenge_flag_refused_on_official_hosts(self):
 def test_name_must_say_bot(self):              # "--name Chris" exits 2; "--name DuoForgeBot" is accepted
-def test_game_uses_the_policy_encoding(self):  # a legacy Policy: Game passes legacy_present=True to features.encode
+def test_game_uses_the_policy_encoding(self):  # an encoder-1 Policy ranks with the old present column
 ```
 
 - [ ] **Step 2: Run them and check that they fail.** `ctest --test-dir build/dev -R "python.live_unit" --output-on-failure`: FAIL.

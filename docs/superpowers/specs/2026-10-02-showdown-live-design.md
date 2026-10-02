@@ -56,7 +56,7 @@ Under CLOSURE these inputs are always 0, so the widened network gives the same o
 
 **Encoding of the night checkpoint.**
 - The night checkpoint was trained while the encoder set a member's `present` input from `species_id != 0`. Rillaboom of Team A has forme id 0, so its `present` was always 0.
-- The bot plays this checkpoint with the encoding it was trained on, through a named switch of the encoder (`legacy_present`). The fix PR brings the switch.
+- The bot plays this checkpoint with the encoding it was trained on, through the fix PR's `features.as_encoder(obs_part, observations, version)` (#88): version 1 rebuilds the old `present` column, version 2 is the fixed encoding.
 - A checkpoint's config says its encoding with one integer key, `"encoder"`: 1 before the fix, 2 after (agreed with the main session and Learner v2). A missing key means 1, because no earlier checkpoint has it. The widened file records `"encoder": 1`.
 - New checkpoints use the fixed encoding.
 

@@ -124,6 +124,17 @@ R <name> <PASS|DIVERGENCE|UNSUPPORTED> <CLOSURE|CLOSURE_DEV|TEAM_C|TEAM_C_DEV> <
 
 The step is the first failing one (`-` for a PASS and for a battle that could not be created), `steps` is how many the records hold, and the detail is the rest of the line (`-` for a PASS). UNSUPPORTED: the create (after the DEV fallback) or a step returned `DUOFORGE_E_UNSUPPORTED`. DIVERGENCE: any other create or step failure (the status name is in the detail), a tape not consumed exactly (used of length), or a difference of a comparator or of the check. Exit status 0 at the end of the input, 2 for input that is not the format (a bug of whoever wrote it: stderr names the line), 1 for any other failure. Line ends are LF on every platform (stdin and stdout are binary on Windows).
 
+`duoforge_diff_runner --dump-views FILE [records file]` also writes what DuoForge shows each player at every state the engine reached, for the Showdown live adapter's tests: after the create (`k` 0) and after every step whose comparisons passed (`k` = step + 1), one line per viewer, viewer 0 first: `V <name> <k> <viewer> <observation hex> <factored domain hex>` (`duoforge_battle_observe`, `duoforge_battle_factored`). A failing query is a DIVERGENCE `views: <status> (step K)`; a file that cannot be opened or written exits 1. Without the flag nothing changes. `duoforge.reference.dump_views` (`test_dump_views.py`) checks the lines of every closure battle and the first views of `m5_real_ab_1` against the public API.
+
+### `ps_client.js`
+
+```sh
+node tools/reference/ps_client.js <pinned checkout> <repo root> (--all | NAME...) [--check]
+node tools/reference/ps_client.js <pinned checkout> --pack <team file>
+```
+
+The client streams of committed closure battles: what a websocket client of each player receives. It replays each battle from its spec and its trace's recorded choices through a `Battle` whose output goes through `send` (with `sendUpdates()` after every command, as `BattleStream` does), shows the open team sheets at team preview, and writes one JSON object per message: `{"battle", "to": "p1"|"p2", "lines"}` (split lines resolved for the player, no timestamps). At this pin each update comes before its requests (`Battle.sendUpdates`). Every step's omniscient lines must equal the trace's, or it exits 1; `duoforge.reference.client_streams` runs it over every closure battle with `--check`. `--pack` prints `Teams.pack(Teams.import(text))`.
+
 ### `diff_driver.py`
 
 ```sh
