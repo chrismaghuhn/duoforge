@@ -181,7 +181,9 @@ unsigned df_conf_compare_state(FILE *out, const duoforge_context *ctx, const duo
         }
     }
     /* The moves the request offers per slot match the reference's request:
-     * disabled moves (no PP, Fake Out) and Struggle. */
+     * disabled moves (no PP, Fake Out) and Struggle. A request that offers
+     * only Struggle has no canMegaEvo (Struggle becomes its locked move in
+     * sim/pokemon.ts getMoveRequestData), so no candidate declares Mega there. */
     if (b->boundary_kind == DUOFORGE_BOUNDARY_TURN) {
         for (uint32_t s = 0; s < 2u; ++s) {
             static duoforge_side_choice cands[DUOFORGE_MAX_CANDIDATES];
@@ -192,11 +194,13 @@ unsigned df_conf_compare_state(FILE *out, const duoforge_context *ctx, const duo
                 continue;
             }
             uint32_t mask[2] = {0u, 0u};
+            bool mega[2] = {false, false};
             for (uint32_t i = 0; i < n; ++i) {
                 for (uint32_t k = 0; k < 2u; ++k) {
                     const duoforge_slot_command *c = &cands[i].slots[k];
                     if (c->kind == DUOFORGE_SLOT_MOVE) {
                         mask[k] |= c->move_slot == DUOFORGE_MOVE_SLOT_STRUGGLE ? 0x10u : 1u << c->move_slot;
+                        mega[k] = mega[k] || c->mega != 0u;
                     }
                 }
             }
@@ -206,6 +210,10 @@ unsigned df_conf_compare_state(FILE *out, const duoforge_context *ctx, const duo
                 if (st->enabled[s][k] != 0xFFu && alive && mask[k] != st->enabled[s][k]) {
                     fprintf(out, "  %s step %u: side %u slot %u offers 0x%x, reference 0x%x\n", name, step, s,
                             k, mask[k], st->enabled[s][k]);
+                    ++bad;
+                }
+                if (st->enabled[s][k] == 0x10u && alive && mega[k]) {
+                    fprintf(out, "  %s step %u: side %u slot %u offers Struggle with Mega\n", name, step, s, k);
                     ++bad;
                 }
             }

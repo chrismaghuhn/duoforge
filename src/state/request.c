@@ -99,8 +99,10 @@ static uint32_t dfi_reserves(const dfi_side *side, uint8_t out[DUOFORGE_MAX_ROST
 }
 
 /* Candidates of one requested slot in documented order. An alive occupant
- * without a move with PP left gets Struggle instead of its moves (target
- * NONE, with the Mega declarations its moves would have). */
+ * without a selectable move gets Struggle instead of its moves: target NONE
+ * and no Mega declaration (the reference locks the request to Struggle,
+ * which then has no canMegaEvo, sim/pokemon.ts getMoveRequestData; a typed
+ * mega is dropped with it, sim/side.ts chooseMove). */
 static duoforge_status dfi_slot_candidates(const duoforge_context *ctx, const struct duoforge_battle *b,
                                            uint32_t s, uint32_t slot, dfi_slot_list *out)
 {
@@ -153,13 +155,9 @@ static duoforge_status dfi_slot_candidates(const duoforge_context *ctx, const st
             }
             ++moves;
         }
-        if (moves == 0u) {
-            for (uint32_t mg = 0u; mg < megas; ++mg) {
-                if (!dfi_list_push(out, DUOFORGE_SLOT_MOVE, DUOFORGE_MOVE_SLOT_STRUGGLE, DUOFORGE_TARGET_NONE, mg,
-                                   0u)) {
-                    return DUOFORGE_E_INVARIANT;
-                }
-            }
+        if (moves == 0u &&
+            !dfi_list_push(out, DUOFORGE_SLOT_MOVE, DUOFORGE_MOVE_SLOT_STRUGGLE, DUOFORGE_TARGET_NONE, 0u, 0u)) {
+            return DUOFORGE_E_INVARIANT;
         }
     }
     const uint32_t nr = dfi_reserves(side, reserves);
