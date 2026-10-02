@@ -7,8 +7,6 @@ library.
 import random
 import unittest
 
-import numpy as np
-
 from duoforge_live import data, teams
 
 # The |showteam| payload of Team A as the pinned Showdown sends it at team
@@ -20,6 +18,13 @@ SHOWTEAM_A = ("Ceruledge||GrassySeed|FlashFire|BitterBlade,ShadowSneak,SwordsDan
               "Staraptor||Staraptite|Intimidate|BraveBird,CloseCombat,Tailwind,Protect|Jolly||F|||50|]"
               "Raichu||RaichuniteY|LightningRod|ZapCannon,FocusBlast,FakeOut,Protect|Timid||F|||50|]"
               "Rillaboom||MiracleSeed|GrassySurge|WoodHammer,GrassyGlide,FakeOut,HighHorsepower|Adamant||M|||50|")
+# Team B's, from the same battle.
+SHOWTEAM_B = ("Grimmsnarl||LightClay|Prankster|SpiritBreak,Reflect,LightScreen,PartingShot|Sassy||M|||50|]"
+              "Farigiraf||SitrusBerry|ArmorTail|Psychic,GrassKnot,TrickRoom,Protect|Bold||F|||50|]"
+              "Politoed||MysticWater|Drizzle|WeatherBall,MuddyWater,IceBeam,Protect|Modest||M|||50|]"
+              "Golisopod||Golisopite|EmergencyExit|LeechLife,IronHead,DrillRun,Protect|Adamant||F|||50|]"
+              "Archaludon||Leftovers|Stamina|DragonPulse,ElectroShot,Snarl,Protect|Bold||M|||50|]"
+              "Charizard||CharizarditeY|Blaze|HeatWave,WeatherBall,Hurricane,Protect|Timid||M|||50|")
 
 
 class TeamsTest(unittest.TestCase):
@@ -42,12 +47,13 @@ class TeamsTest(unittest.TestCase):
     def test_match(self):
         a = teams.unpack(SHOWTEAM_A)
         self.assertTrue(teams.match(a, teams.text("A")))
-        self.assertTrue(teams.match(teams.unpack(teams.pack(teams.text("B"))), teams.text("B")))
+        self.assertTrue(teams.match(teams.unpack(SHOWTEAM_B), teams.text("B")))
+        self.assertFalse(teams.match(teams.unpack(SHOWTEAM_B), teams.text("A")))
         shuffled = [dict(s, moves=list(reversed(s["moves"]))) for s in a]
         random.Random(1).shuffle(shuffled)
         self.assertTrue(teams.match(shuffled, teams.text("A")))
         for field, value in (("species", "Pikachu"), ("item", "Leftovers"), ("ability", "Blaze"),
-                             ("nature", "Bold"), ("gender", "F")):
+                             ("nature", "Bold"), ("gender", "F"), ("level", 100)):
             changed = [dict(s) for s in a]
             changed[0][field] = value
             self.assertFalse(teams.match(changed, teams.text("A")), field)
@@ -56,6 +62,14 @@ class TeamsTest(unittest.TestCase):
         self.assertFalse(teams.match(changed, teams.text("A")))
         self.assertFalse(teams.match(a, teams.text("B")))
         self.assertFalse(teams.match(a[:5], teams.text("A")))
+
+
+    def test_unsupported_input_raises(self):
+        with self.assertRaises(ValueError):
+            teams.pack("Leafy (Rillaboom) (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nAdamant Nature\n"
+                       "- Protect")  # a nickname: Showdown packs it apart from the species; the paste reader does not
+        with self.assertRaises(ValueError):
+            teams.unpack(SHOWTEAM_A.split("]")[0].rsplit("|", 1)[0])  # eleven fields, not twelve
 
 
 class DataTest(unittest.TestCase):

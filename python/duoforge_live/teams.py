@@ -36,6 +36,8 @@ def _paste(paste):
         if " @ " in head:
             head, item = head.split(" @ ")
         m = re.match(r"^(.+?)(?: \(([MF])\))?$", head)
+        if "(" in m.group(1):
+            raise ValueError(f"a nickname or forme in parentheses is not supported: {head!r}")
         s = {"name": m.group(1), "species": m.group(1), "item": item, "ability": "", "moves": [], "nature": "",
              "evs": [0] * 6, "gender": m.group(2) or "", "level": 100}
         for line in lines[1:]:
@@ -75,7 +77,7 @@ def unpack(packed):
     sets = []
     for chunk in packed.split("]"):
         f = chunk.split("|")
-        if len(f) < 11:
+        if len(f) != 12:
             raise ValueError(f"not a packed set: {chunk!r}")
         evs = [int(v) if v else 0 for v in f[6].split(",")] if f[6] else [0] * 6
         if len(evs) != 6:
