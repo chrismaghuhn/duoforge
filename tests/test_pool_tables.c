@@ -44,7 +44,7 @@
 #include "state/battle_internal.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "59e76a9b6d9f263f4bdfb26b2d146bc8fe9dbbe70cb30abdc4afdbb2bc2a1707"
+#define POOL_HASH_HEX "bb64d4f467ff7935f1ec777484bea51d6ec5115ab31129541a4b1ef7e9fc957a"
 /* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
  * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
  * produced the same bytes. Step G10 moved two of them on purpose: Scald and Recover are data now (the thaw bit and
@@ -67,7 +67,7 @@
 #define POOL_ABILITIES 215u
 
 /* The rows that the tables do not model, pinned (the generator reports the same counts). */
-#define UNMODELED_MOVES 321u /* 324 before step G10 modelled Slack Off, Matcha Gotcha and Scorching Sands */
+#define UNMODELED_MOVES 315u /* 321 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
 #define UNMODELED_ITEMS 45u
 #define UNMODELED_ABILITIES 186u
 
@@ -1090,7 +1090,9 @@ int main(void)
             }
         }
         /* Steps G2, G5, G8, G10 and G12 mark twenty-one of the 22 moves (G10: First Impression, Scald, Recover, Low Kick:
-         * g10_*), each used in a reference battle under the POOL kind
+         * g10_*), and step G13 fourteen more of the whole pool (Flamethrower, Draining Kiss, Rock Tomb, Hydro Pump,
+         * Superpower, Light of Ruin, Earth Power, Power Gem, Aura Sphere, Icy Wind, Ice Shard, Quick Attack, Detect and
+         * Poison Jab: g13_*), each used in a reference battle under the POOL kind
          * (g2_data_moves_a to _d; U-turn: g5_uturn_a to _e; Throat Chop and Psychic Noise, whose lockout and Heal
          * Block are secondary kinds, not handlers: g8_throat_chop, g8_heal_block, g8_heal_block_pair and _tie_a/_b;
          * Moonblast and Calm Mind: g12_floette_moves); the seven moves with a handler id stay unmarked. */
@@ -1100,7 +1102,12 @@ int main(void)
                                                 DFI_MOVE_SHADOWCLAW, DFI_MOVE_DRUMBEATING, DFI_MOVE_DAZZLINGGLEAM,
                                                 DFI_MOVE_UTURN, DFI_MOVE_THROATCHOP, DFI_MOVE_PSYCHICNOISE,
                                                 DFI_MOVE_MOONBLAST, DFI_MOVE_CALMMIND, DFI_MOVE_FIRSTIMPRESSION,
-                                                DFI_MOVE_SCALD, DFI_MOVE_RECOVER, DFI_MOVE_LOWKICK};
+                                                DFI_MOVE_SCALD, DFI_MOVE_RECOVER, DFI_MOVE_LOWKICK,
+                                                DFI_MOVE_FLAMETHROWER, DFI_MOVE_DRAININGKISS, DFI_MOVE_ROCKTOMB,
+                                                DFI_MOVE_HYDROPUMP, DFI_MOVE_SUPERPOWER, DFI_MOVE_LIGHTOFRUIN,
+                                                DFI_MOVE_EARTHPOWER, DFI_MOVE_POWERGEM, DFI_MOVE_AURASPHERE,
+                                                DFI_MOVE_ICYWIND, DFI_MOVE_ICESHARD, DFI_MOVE_QUICKATTACK,
+                                                DFI_MOVE_DETECT, DFI_MOVE_POISONJAB};
         uint32_t marked_count = 0u;
         for (uint32_t id = DFI_EXT_MOVE_COUNT; id < DFI_POOL_MOVE_COUNT; ++id) {
             bool want = false;
@@ -1109,13 +1116,15 @@ int main(void)
             }
             DF_CHECK_EQ_U64(&t, dfi_support.moves[id] != 0u ? 1u : 0u, want ? 1u : 0u);
             /* A marked move has a handler id only if the engine has the code for it: First Impression (Fake Out's
-             * family) and Low Kick (Grass Knot's); the others are data. Never the UNMODELED one. */
+             * family), Low Kick (Grass Knot's) and Detect (Protect's, step G13); the others are data. Never the
+             * UNMODELED one. */
             DF_CHECK(&t, !want || dfi_pool_moves[id].special == DFI_SPECIAL_NONE ||
-                             id == DFI_MOVE_FIRSTIMPRESSION || id == DFI_MOVE_LOWKICK);
+                             id == DFI_MOVE_FIRSTIMPRESSION || id == DFI_MOVE_LOWKICK ||
+                             (id == DFI_MOVE_DETECT && dfi_pool_moves[id].special == DFI_SPECIAL_PROTECT));
             DF_CHECK(&t, !want || dfi_pool_moves[id].special != DFI_SPECIAL_UNMODELED);
             marked_count += dfi_support.moves[id] != 0u ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, marked_count, 21u);
+        DF_CHECK_EQ_U64(&t, marked_count, 35u);
     }
 
     /* Step G12: Fairy Aura and Flower Veil. The engine reads them by id (no family column: one legal holder each);

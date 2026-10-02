@@ -672,9 +672,9 @@ class Library(unittest.TestCase):
         self.assertTrue(any(l.startswith('|switch|p1a: Arcanine|Arcanine-Hisui, L50, M|') for l in lines))
 
     def test_every_move_marked_beyond_the_extended_ids_is_used_in_a_pool_battle(self):
-        """A move that the pool manifest marks beyond the extended ids (twelve of step G2, U-turn of step G5, Moonblast and Calm Mind of step G12) was used in
-        a committed pool battle: a move line of it that did something (damage, or a boost for a status move) before
-        the next move line."""
+        """A move that the pool manifest marks beyond the extended ids (twelve of step G2, U-turn of step G5, Moonblast and Calm Mind of step G12,
+        the fourteen of step G13) was used in a committed pool battle: a move line of it that did something (damage, a
+        heal, or a boost for a status move; for Detect, the protection of its user: -singleturn) before the next move line."""
         def read(*p):
             return open(os.path.join(ROOT, *p), encoding='utf-8').read()
         header, source = read('src', 'data', 'pool_tables.h'), read('src', 'data', 'pool_tables.c')
@@ -685,7 +685,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 21)  # G2, G5, G8, G12, then First Impression, Scald, Recover, Low Kick (G10)
+        self.assertEqual(len(marked), 35)  # G2, G5, G8, G12, First Impression, Scald, Recover, Low Kick (G10), then the fourteen of G13
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -701,7 +701,7 @@ class Library(unittest.TestCase):
                         for after in lines[i + 1:]:
                             if after.startswith('|move|') or after.startswith('|turn|'):
                                 break
-                            done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|'))
+                            done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|') + (('|-singleturn|',) if name == 'Detect' else ()))
             with self.subTest(move=name):
                 self.assertTrue(done, '%s is marked but no committed pool battle uses it' % name)
 

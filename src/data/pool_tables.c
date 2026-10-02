@@ -904,7 +904,7 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {4u, 2u, 0u, 100u, 30u, 20u, 9u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 22u},
     /* Baneful Bunker -- data/moves.ts:985-1037, data/mods/champions/moves.ts:43-46  [unmodelled: callback onHit; callback onPrepareHit; condition block; primary volatile banefulbunker] */
     {13u, 2u, 0u, 0u, 5u, 8u, 12u, 6u, 1u, 8u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 22u},
-    /* Barb Barrage -- data/moves.ts:1038-1058  [unmodelled: callback onBasePower; secondary status psn] */
+    /* Barb Barrage -- data/moves.ts:1038-1058  [unmodelled: callback onBasePower] */
     {13u, 0u, 60u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 22u},
     /* Baton Pass -- data/moves.ts:1092-1118  [unmodelled: callback onHit; field selfSwitch copyvolatile; self effect] */
     {12u, 2u, 0u, 0u, 40u, 20u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 22u},
@@ -1008,8 +1008,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {17u, 0u, 100u, 95u, 10u, 12u, 8u, 1u, 2u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Cross Chop -- data/moves.ts:3174-3187 */
     {5u, 0u, 100u, 80u, 5u, 8u, 8u, 1u, 2u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
-    /* Cross Poison -- data/moves.ts:3188-3205  [unmodelled: secondary status psn] */
-    {13u, 0u, 70u, 100u, 20u, 20u, 8u, 1u, 2u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 22u},
+    /* Cross Poison -- data/moves.ts:3188-3205 */
+    {13u, 0u, 70u, 100u, 20u, 20u, 8u, 1u, 2u, 3u, {0u, 0u}, {0u, 0u}, 10u, 2u, 5u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Crunch -- data/moves.ts:3206-3224 */
     {1u, 0u, 80u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 20u, 1u, 0u, 2u, {6u, 5u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Crush Claw -- data/moves.ts:3225-3243, data/mods/champions/moves.ts:157-160 */
@@ -1024,8 +1024,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {7u, 2u, 0u, 0u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 22u},
     /* Destiny Bond -- data/moves.ts:3482-3525  [unmodelled: callback onPrepareHit; condition block; primary volatile destinybond] */
     {8u, 2u, 0u, 0u, 5u, 8u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 22u},
-    /* Detect -- data/moves.ts:3526-3547  [unmodelled: callback onHit; callback onPrepareHit] */
-    {5u, 2u, 0u, 0u, 5u, 8u, 12u, 6u, 1u, 8u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 22u},
+    /* Detect -- data/moves.ts:3526-3547 */
+    {5u, 2u, 0u, 0u, 5u, 8u, 12u, 6u, 1u, 8u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 8u},
     /* Dig -- data/moves.ts:3585-3628  [unmodelled: callback onTryMove; condition block] */
     {10u, 0u, 80u, 100u, 10u, 12u, 8u, 1u, 1u, 7u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 22u},
     /* Disable -- data/moves.ts:3648-3716, data/mods/champions/moves.ts:228-239  [unmodelled: callback onTryHit; condition block; primary volatile disable] */
@@ -1182,8 +1182,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {14u, 2u, 0u, 0u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 22u},
     /* Guillotine -- data/moves.ts:8001-8016  [unmodelled: field ohko] */
     {12u, 0u, 0u, 30u, 5u, 8u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 22u},
-    /* Gunk Shot -- data/moves.ts:8017-8033  [unmodelled: secondary status psn] */
-    {13u, 0u, 120u, 80u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 22u},
+    /* Gunk Shot -- data/moves.ts:8017-8033 */
+    {13u, 0u, 120u, 80u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 30u, 2u, 5u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Gyro Ball -- data/moves.ts:8047-8068  [unmodelled: callback basePowerCallback] */
     {16u, 0u, 0u, 100u, 5u, 8u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 22u},
     /* Hammer Arm -- data/moves.ts:8085-8102 */
@@ -1272,8 +1272,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {9u, 2u, 0u, 90u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 22u},
     /* Life Dew -- data/moves.ts:10286-10298  [unmodelled: target allies] */
     {17u, 2u, 0u, 0u, 10u, 12u, 8u, 14u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 22u},
-    /* Light of Ruin -- data/moves.ts:10299-10314, data/mods/champions/moves.ts:581-584  [unmodelled: field tags] */
-    {4u, 1u, 140u, 90u, 5u, 8u, 8u, 1u, 1u, 2u, {1u, 2u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 22u},
+    /* Light of Ruin -- data/moves.ts:10299-10314, data/mods/champions/moves.ts:581-584 */
+    {4u, 1u, 140u, 90u, 5u, 8u, 8u, 1u, 1u, 2u, {1u, 2u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Lock-On -- data/moves.ts:10394-10425  [unmodelled: callback onHit; callback onTryHit; condition block] */
     {12u, 2u, 0u, 0u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 22u},
     /* Low Sweep -- data/moves.ts:10482-10500 */
@@ -1328,7 +1328,7 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {4u, 2u, 0u, 0u, 5u, 8u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 22u},
     /* Morning Sun -- data/moves.ts:12278-12313  [unmodelled: callback onHit] */
     {12u, 2u, 0u, 0u, 5u, 8u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 22u},
-    /* Mortal Spin -- data/moves.ts:12314-12361  [unmodelled: callback onAfterHit; callback onAfterSubDamage; secondary status psn] */
+    /* Mortal Spin -- data/moves.ts:12314-12361  [unmodelled: callback onAfterHit; callback onAfterSubDamage] */
     {13u, 0u, 30u, 100u, 15u, 16u, 8u, 7u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 22u},
     /* Mountain Gale -- data/moves.ts:12362-12377, data/mods/champions/moves.ts:677-680 */
     {11u, 0u, 120u, 85u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 30u, 3u, 1u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
@@ -1380,8 +1380,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {7u, 0u, 60u, 100u, 20u, 20u, 8u, 2u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 22u},
     /* Poison Fang -- data/moves.ts:13463-13479  [unmodelled: secondary status tox] */
     {13u, 0u, 50u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 22u},
-    /* Poison Jab -- data/moves.ts:13495-13511  [unmodelled: secondary status psn] */
-    {13u, 0u, 80u, 100u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 22u},
+    /* Poison Jab -- data/moves.ts:13495-13511 */
+    {13u, 0u, 80u, 100u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 30u, 2u, 5u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Poison Powder -- data/moves.ts:13512-13526 */
     {13u, 2u, 0u, 75u, 35u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 5u, 0u, 0u, 0u},
     /* Pollen Puff -- data/moves.ts:13562-13594  [unmodelled: callback onHit; callback onTryHit; callback onTryMove] */
@@ -1498,7 +1498,7 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {12u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 22u},
     /* Sheer Cold -- data/moves.ts:16198-16213  [unmodelled: field ohko] */
     {11u, 1u, 0u, 30u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 22u},
-    /* Shell Side Arm -- data/moves.ts:16214-16254  [unmodelled: callback onAfterSubDamage; callback onHit; callback onModifyMove; callback onPrepareHit; secondary status psn] */
+    /* Shell Side Arm -- data/moves.ts:16214-16254  [unmodelled: callback onAfterSubDamage; callback onHit; callback onModifyMove; callback onPrepareHit] */
     {13u, 1u, 90u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 22u},
     /* Shell Smash -- data/moves.ts:16255-16275 */
     {12u, 2u, 0u, 0u, 15u, 16u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 1u, {8u, 5u, 8u, 5u, 8u, 6u, 6u}, 0u, 0u, 0u, 0u},
@@ -1524,9 +1524,9 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {9u, 2u, 0u, 75u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 4u, 0u, 0u, 0u},
     /* Sleep Talk -- data/moves.ts:16866-16902  [unmodelled: callback onHit; callback onTry; field callsMove; field sleepUsable] */
     {12u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 22u},
-    /* Sludge Bomb -- data/moves.ts:16920-16936  [unmodelled: secondary status psn] */
-    {13u, 1u, 90u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 22u},
-    /* Sludge Wave -- data/moves.ts:16937-16953  [unmodelled: secondary status psn; target allAdjacent] */
+    /* Sludge Bomb -- data/moves.ts:16920-16936 */
+    {13u, 1u, 90u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 30u, 2u, 5u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
+    /* Sludge Wave -- data/moves.ts:16937-16953  [unmodelled: target allAdjacent] */
     {13u, 1u, 95u, 100u, 10u, 12u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 22u},
     /* Smack Down -- data/moves.ts:16954-16999  [unmodelled: condition block; primary volatile smackdown] */
     {15u, 0u, 50u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 22u},
@@ -5929,7 +5929,7 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_AXEKICK] = "callback onMoveFail; field hasCrashDamage",
     [DFI_MOVE_BABYDOLLEYES] = "primary boosts on a non-self target",
     [DFI_MOVE_BANEFULBUNKER] = "callback onHit; callback onPrepareHit; condition block; primary volatile banefulbunker",
-    [DFI_MOVE_BARBBARRAGE] = "callback onBasePower; secondary status psn",
+    [DFI_MOVE_BARBBARRAGE] = "callback onBasePower",
     [DFI_MOVE_BATONPASS] = "callback onHit; field selfSwitch copyvolatile; self effect",
     [DFI_MOVE_BEAKBLAST] = "callback onAfterMove; callback priorityChargeCallback; condition block",
     [DFI_MOVE_BEATUP] = "callback basePowerCallback; callback onModifyMove",
@@ -5968,12 +5968,10 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_COUNTER] = "callback beforeTurnCallback; callback damageCallback; callback onTry; condition block; target scripted",
     [DFI_MOVE_COURTCHANGE] = "callback onHitField",
     [DFI_MOVE_COVET] = "callback onAfterHit",
-    [DFI_MOVE_CROSSPOISON] = "secondary status psn",
     [DFI_MOVE_CURSE] = "callback onHit; callback onModifyMove; callback onTryHit; condition block; primary volatile undefined, // no inherit",
     [DFI_MOVE_DECORATE] = "primary boosts on a non-self target",
     [DFI_MOVE_DEFOG] = "callback onHit",
     [DFI_MOVE_DESTINYBOND] = "callback onPrepareHit; condition block; primary volatile destinybond",
-    [DFI_MOVE_DETECT] = "callback onHit; callback onPrepareHit",
     [DFI_MOVE_DIG] = "callback onTryMove; condition block",
     [DFI_MOVE_DISABLE] = "callback onTryHit; condition block; primary volatile disable",
     [DFI_MOVE_DISCHARGE] = "target allAdjacent",
@@ -6033,7 +6031,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_GUARDSPLIT] = "callback onHit",
     [DFI_MOVE_GUARDSWAP] = "callback onHit",
     [DFI_MOVE_GUILLOTINE] = "field ohko",
-    [DFI_MOVE_GUNKSHOT] = "secondary status psn",
     [DFI_MOVE_GYROBALL] = "callback basePowerCallback",
     [DFI_MOVE_HARDPRESS] = "callback basePowerCallback",
     [DFI_MOVE_HAZE] = "callback onHitField",
@@ -6064,7 +6061,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_LAVAPLUME] = "target allAdjacent",
     [DFI_MOVE_LEECHSEED] = "callback onTryImmunity; condition block; primary volatile leechseed",
     [DFI_MOVE_LIFEDEW] = "target allies",
-    [DFI_MOVE_LIGHTOFRUIN] = "field tags",
     [DFI_MOVE_LOCKON] = "callback onHit; callback onTryHit; condition block",
     [DFI_MOVE_MAGICPOWDER] = "callback onHit",
     [DFI_MOVE_MAGICROOM] = "condition block; pseudo weather magicroom",
@@ -6084,7 +6080,7 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_MISTYTERRAIN] = "condition block; field terrain",
     [DFI_MOVE_MOONLIGHT] = "callback onHit",
     [DFI_MOVE_MORNINGSUN] = "callback onHit",
-    [DFI_MOVE_MORTALSPIN] = "callback onAfterHit; callback onAfterSubDamage; secondary status psn",
+    [DFI_MOVE_MORTALSPIN] = "callback onAfterHit; callback onAfterSubDamage",
     [DFI_MOVE_NIGHTSHADE] = "field damage",
     [DFI_MOVE_NOBLEROAR] = "primary boosts on a non-self target",
     [DFI_MOVE_NORETREAT] = "callback onTry; condition block; primary volatile noretreat",
@@ -6100,7 +6096,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_PINMISSILE] = "field multihit",
     [DFI_MOVE_PLUCK] = "callback onHit",
     [DFI_MOVE_POISONFANG] = "secondary status tox",
-    [DFI_MOVE_POISONJAB] = "secondary status psn",
     [DFI_MOVE_POLLENPUFF] = "callback onHit; callback onTryHit; callback onTryMove",
     [DFI_MOVE_POLTERGEIST] = "callback onTry; callback onTryHit",
     [DFI_MOVE_POPULATIONBOMB] = "field multiaccuracy; field multihit",
@@ -6145,13 +6140,12 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_SELFDESTRUCT] = "field selfdestruct; target allAdjacent",
     [DFI_MOVE_SHEDTAIL] = "callback onHit; callback onTryHit; field selfSwitch shedtail; primary volatile substitute; self effect",
     [DFI_MOVE_SHEERCOLD] = "field ohko",
-    [DFI_MOVE_SHELLSIDEARM] = "callback onAfterSubDamage; callback onHit; callback onModifyMove; callback onPrepareHit; secondary status psn",
+    [DFI_MOVE_SHELLSIDEARM] = "callback onAfterSubDamage; callback onHit; callback onModifyMove; callback onPrepareHit",
     [DFI_MOVE_SIMPLEBEAM] = "callback onHit; callback onTryHit",
     [DFI_MOVE_SKILLSWAP] = "callback onHit",
     [DFI_MOVE_SKYATTACK] = "callback onTryMove",
     [DFI_MOVE_SLEEPTALK] = "callback onHit; callback onTry; field callsMove; field sleepUsable",
-    [DFI_MOVE_SLUDGEBOMB] = "secondary status psn",
-    [DFI_MOVE_SLUDGEWAVE] = "secondary status psn; target allAdjacent",
+    [DFI_MOVE_SLUDGEWAVE] = "target allAdjacent",
     [DFI_MOVE_SMACKDOWN] = "condition block; primary volatile smackdown",
     [DFI_MOVE_SNAPTRAP] = "primary volatile partiallytrapped",
     [DFI_MOVE_SNIPESHOT] = "field tracksTarget",
@@ -6473,10 +6467,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x59u, 0xe7u, 0x6au, 0x9bu, 0x6du, 0x9fu, 0x26u, 0x3fu,
-    0x4bu, 0xdfu, 0xb2u, 0x6bu, 0x2du, 0x14u, 0x6bu, 0xc8u,
-    0xfeu, 0x9du, 0xbbu, 0xe7u, 0x0cu, 0xb3u, 0x0au, 0xbdu,
-    0xc4u, 0xafu, 0xdbu, 0xb2u, 0xbcu, 0x2au, 0x17u, 0x07u,
+    0xbbu, 0x64u, 0xd4u, 0xf4u, 0x67u, 0xffu, 0x79u, 0x35u,
+    0xf1u, 0xecu, 0x77u, 0x74u, 0x84u, 0xbeu, 0xa5u, 0x1du,
+    0x6eu, 0xc5u, 0x11u, 0x5au, 0xb3u, 0x11u, 0x29u, 0x54u,
+    0x1au, 0x4bu, 0x1eu, 0xf7u, 0xe9u, 0xfcu, 0x95u, 0x7au,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)
