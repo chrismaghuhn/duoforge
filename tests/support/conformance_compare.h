@@ -26,11 +26,10 @@
 unsigned df_conf_compare_state(FILE *out, const duoforge_context *ctx, const duoforge_battle *b,
                                const df_conf_step *st, const char *name, uint32_t step);
 
-/* Both players' observations. `formes` is the forme table the battle's
- * species index into: dfi_closure_formes, or dfi_ext_formes for Team C. */
+/* Both players' observations. The Mega forme's ability is read from the pool tables, whose prefix is the closure
+ * and Team C tables (decision 0015), so one table serves every data kind. */
 unsigned df_conf_compare_observation(FILE *out, const duoforge_context *ctx, const duoforge_battle *b,
-                                     const df_conf_step *st, const df_conf_battle *cb, uint32_t step,
-                                     const dfi_forme_data *formes);
+                                     const df_conf_step *st, const df_conf_battle *cb, uint32_t step);
 
 /* Each player's events of the step: `buffers` are the engine's, `events` the
  * array the step's ev_off and ev_len index (conf_events). `event_reports`

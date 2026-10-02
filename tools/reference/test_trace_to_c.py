@@ -612,7 +612,7 @@ class Library(unittest.TestCase):
         self.assertEqual(extended['ITEM']['CHOPLEBERRY'], 14)
         self.assertEqual(extended['ITEM']['MYSTICWATER'], 6)
         self.assertNotIn('CHILANBERRY', tables(False)['ITEM'])
-        self.assertEqual(len(extended['GENDER_RULE']), 28)  # the pool's formes after step G2
+        self.assertEqual(len(extended['GENDER_RULE']), 346)  # the pool's formes: the whole legal pool (decision 0015 4.2)
 
     def test_the_protocol_names_of_the_formes_with_a_base_species(self):
         """An unnamed Pokemon is called by its base species in the protocol (sim/pokemon.ts:339-341): Indeedee-F,

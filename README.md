@@ -154,8 +154,16 @@ Every call is failure-atomic: on error nothing is mutated or leaked, and the onl
 - Task statements: `tasks/M0_BOOTSTRAP.md`, `tasks/M1_DETERMINISTIC_PRIMITIVES.md`, `tasks/M2_REQUESTS_AND_COMMANDS.md`, `tasks/M3_M4_COMBAT_CLOSURE.md` (next, not started)
 - Research drafts (unverified): `docs/research/`
 
-## Licensing facts
+## License
 
-`third_party/pcg-c-basic/` and `src/rng/pcg32_derived.{h,c}` contain material from pcg-c-basic, licensed by its author under the Apache License 2.0 (see `third_party/pcg-c-basic/LICENSE.txt`). The root `LICENSE` is the owner's placeholder; how it refers to third-party material is an open owner decision.
+DuoForge is source-available under the [PolyForm Noncommercial License 1.0.0](LICENSE):
+
+- **Noncommercial use is free.** You may use, change and share it for any noncommercial purpose: research, education, hobby projects and noncommercial organizations.
+- **Commercial use** needs a separate license from the owner. Ask via GitHub (`chrismaghuhn`).
+
+Third-party parts keep their own licenses (`THIRD_PARTY_NOTICES.md`):
+
+- **pcg-c-basic.** `third_party/pcg-c-basic/` and `src/rng/pcg32_derived.{h,c}` contain material from it, licensed by its author under the Apache License 2.0 (see `third_party/pcg-c-basic/LICENSE.txt`).
+- **Pokémon Showdown.** The generated tables and the recorded traces derive from it, under the MIT License.
 
 DuoForge makes no claim of full Gen 9 support, VGC compatibility, Pokémon Showdown parity or high performance.

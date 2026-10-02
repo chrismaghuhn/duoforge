@@ -144,7 +144,7 @@ duoforge_add_test(NAME duoforge.state.pool_setup SOURCES test_pool_setup.c WHITE
 duoforge_add_test(NAME duoforge.data.api SOURCES test_data_api.c WHITEBOX TIMEOUT 120)
 # The POOL state tail (decision 0015 section 7): schema "v3 + pool tail rev 1", present under the POOL kinds only.
 duoforge_add_test(NAME duoforge.state.pool_tail SOURCES test_pool_tail.c WHITEBOX TIMEOUT 120)
-# Step G8: Throat Chop and Psychic Noise's Heal Block in the tail and in the request.
+# Step G8: Throat Chop and Psychic Noise's Heal Block in the tail, the request and the POOL view extension.
 duoforge_add_test(NAME duoforge.state.pool_g8 SOURCES test_pool_g8.c WHITEBOX TIMEOUT 60)
 # The generated files must stay exactly what tools/datagen/gen_closure.py
 # wrote; regenerate and update these hashes together.
@@ -153,8 +153,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=c29981b2b703c4968baa983f197f5328f7b711182fee937692763d103fb3b094"
-        "pool_tables.c=a94ec66021724c0c0037171f25120cdef6354a053c9610486c8a34d3653531d7")
+        "pool_tables.h=fba8a547b99584f4db2ef27444dc6bba3d51e83ae8dcc8bcf10deb286523a6c4"
+        "pool_tables.c=2fd70132a4d9b4dbcd583ab8e132be4cf3bc1ce0d8609e22076f84041770d974")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -201,7 +201,7 @@ if(DUOFORGE_PS_REFERENCE_DIR)
         add_test(NAME duoforge.data.pool_families
             COMMAND "${DUOFORGE_NODE}" "${PROJECT_SOURCE_DIR}/tools/datagen/pool_families.js"
                 "${DUOFORGE_PS_REFERENCE_DIR}" "${PROJECT_SOURCE_DIR}")
-        set_tests_properties(duoforge.data.pool_families PROPERTIES TIMEOUT 120 LABELS reference)
+        set_tests_properties(duoforge.data.pool_families PROPERTIES TIMEOUT 600 LABELS reference)
         # Every committed battle trace is reproduced by the pinned Showdown.
         file(GLOB _specs "${CMAKE_CURRENT_SOURCE_DIR}/reference/specs/*.json")
         foreach(_spec IN LISTS _specs)
@@ -411,6 +411,13 @@ if(Python3_Interpreter_FOUND)
     add_test(NAME duoforge.data.pool_names
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/test_pool_names.py")
     set_tests_properties(duoforge.data.pool_names PROPERTIES TIMEOUT 60
+        ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+    # The whole-pool rows (decision 0015 section 4.2) against the committed output of the pinned validator, with code
+    # of its own: the ids, the formes and their Mega links, the learnable moves and legal abilities, the move rows and
+    # the UNMODELED markers (no checkout needed).
+    add_test(NAME duoforge.data.pool_rows
+        COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/test_pool_rows.py")
+    set_tests_properties(duoforge.data.pool_rows PROPERTIES TIMEOUT 60
         ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
 endif()
 

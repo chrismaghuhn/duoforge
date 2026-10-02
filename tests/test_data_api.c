@@ -54,6 +54,10 @@ typedef struct kase {
     uint32_t n[DUOFORGE_DATA_TABLE_COUNT + 1u]; /* counts by table */
     duoforge_forme_info info[DFI_POOL_FORME_COUNT];
     uint32_t moves[DFI_POOL_FORME_COUNT][DUOFORGE_DATA_MAX_FORME_MOVES];
+    /* Members that hold nothing, supported, of different dex numbers: the rest of a swept setup (built once). */
+    duoforge_member_setup filler[8];
+    uint32_t filler_dex[8];
+    uint32_t n_filler;
 } kase;
 static kase g_kase[KIND_COUNT];
 
@@ -422,7 +426,7 @@ static void test_synthetic(df_test *t)
 static uint32_t expected_moves(const kase *c, uint32_t sp, uint32_t *out)
 {
     uint32_t n = 0u;
-    const dfi_forme_data *f = &dfi_pool_formes[sp];
+    const dfi_pool_forme_data *f = &dfi_pool_formes[sp];
     if (f->is_mega != 0u) {
         return 0u;
     }
@@ -446,7 +450,7 @@ static uint32_t expected_moves(const kase *c, uint32_t sp, uint32_t *out)
 static uint32_t expected_abilities(const kase *c, uint32_t sp, uint32_t *out)
 {
     uint32_t n = 0u;
-    const dfi_forme_data *f = &dfi_pool_formes[sp];
+    const dfi_pool_forme_data *f = &dfi_pool_formes[sp];
     if (f->is_mega != 0u) {
         return 0u;
     }
@@ -473,16 +477,16 @@ static void test_forme_info(df_test *t, const kase *c)
     uint32_t max_moves = 0u;
     for (uint32_t sp = 0u; sp < c->n[DUOFORGE_DATA_TABLE_SPECIES]; ++sp) {
         const duoforge_forme_info *in = &c->info[sp];
-        const dfi_forme_data *f = &dfi_pool_formes[sp];
+        const dfi_pool_forme_data *f = &dfi_pool_formes[sp];
         const bool base = f->is_mega == 0u;
         bool ok = in->dex_num == f->dex_num && in->is_mega == f->is_mega && in->setup_legal == (base ? 1u : 0u) &&
                   in->base_species == f->base_forme;
         /* The Mega forme and the stone, from the rows. */
-        const uint32_t mega_species = f->mega_forme != DFI_CLOSURE_NONE ? f->mega_forme : DUOFORGE_DATA_NONE;
+        const uint32_t mega_species = f->mega_forme != DFI_FORME_NONE ? f->mega_forme : DUOFORGE_DATA_NONE;
         ok = ok && in->mega_species == mega_species;
         if (mega_species != DUOFORGE_DATA_NONE) {
             ok = ok && in->mega_stone == f->mega_item && in->mega_ability == dfi_pool_formes[mega_species].ability &&
-                 dfi_pool_items[in->mega_stone].mega_base == sp && dfi_pool_items[in->mega_stone].mega_forme == mega_species &&
+                 dfi_pool_formes[mega_species].mega_item == in->mega_stone && dfi_pool_formes[mega_species].base_forme == sp &&
                  mega_species < c->n[DUOFORGE_DATA_TABLE_SPECIES] && in->mega_stone < c->n[DUOFORGE_DATA_TABLE_ITEM];
         } else {
             ok = ok && in->mega_stone == DUOFORGE_DATA_NONE && in->mega_ability == DUOFORGE_DATA_NONE &&
@@ -611,13 +615,16 @@ static void test_support(df_test *t, const kase *c)
         DF_CHECK(t, api_supported(t, c, DUOFORGE_DATA_TABLE_NATURE, id));
     }
     for (uint32_t sp = 0u; sp < c->n[DUOFORGE_DATA_TABLE_SPECIES]; ++sp) {
-        const dfi_forme_data *f = &dfi_pool_formes[sp];
+        const dfi_pool_forme_data *f = &dfi_pool_formes[sp];
         bool want = true;
-        if (f->is_mega != 0u) { /* Mega Evolution into it: the manifest's flag and the ability it brings */
-            want = s->mega_evolution != 0u && s->abilities[f->ability] != 0u;
+        if (f->is_mega != 0u) { /* Mega Evolution into it: the manifest's flag and the ability it brings, and only
+                                   the Mega forme that its base forme links (the other Mega formes of Absol, Charizard,
+                                   Garchomp, Lucario and Raichu cannot be reached) */
+            want = s->mega_evolution != 0u && s->abilities[f->ability] != 0u &&
+                   dfi_pool_formes[f->base_forme].mega_forme == sp;
         }
         DF_CHECK(t, api_supported(t, c, DUOFORGE_DATA_TABLE_SPECIES, sp) == want);
-        if (f->is_mega == 0u && f->mega_forme != DFI_CLOSURE_NONE) {
+        if (f->is_mega == 0u && f->mega_forme != DFI_FORME_NONE) {
             const bool mega_ok = s->mega_evolution != 0u && s->abilities[dfi_pool_formes[f->mega_forme].ability] != 0u;
             DF_CHECK(t, (c->info[sp].mega_supported != 0u) == mega_ok);
         }
@@ -1004,30 +1011,42 @@ static void test_random_setups(df_test *t, kase *c, uint32_t kind_index)
 
 /* ---------------------------------------------------------- exhaustive sweep */
 
-/* A side-0 member under test, with the rest of both sides made of fillers that hold nothing
- * (no item) and whose dex numbers differ from the member's. */
-static void fillers(df_test *t, const kase *c, uint32_t avoid_dex, uint32_t dex_taken[], uint32_t *taken,
-                    duoforge_side_setup *side, uint32_t count)
+/* The fillers of a swept setup: members that hold nothing (no item), supported, with different dex numbers; the
+ * first ones that the tables give, built once per kind. */
+static void ensure_fillers(df_test *t, kase *c)
 {
+    if (c->n_filler != 0u) {
+        return;
+    }
     uint64_t rng = 7u;
-    for (uint32_t sp = 0u; sp < c->n[DUOFORGE_DATA_TABLE_SPECIES] && side->member_count < count; ++sp) {
+    for (uint32_t sp = 0u; sp < c->n[DUOFORGE_DATA_TABLE_SPECIES] && c->n_filler < 8u; ++sp) {
         if (!forme_pickable(t, c, sp, PICK_SUPPORTED)) {
             continue;
         }
         const uint32_t dex = c->info[sp].dex_num;
-        if (dex == avoid_dex || in_list(dex_taken, *taken, dex)) {
+        if (in_list(c->filler_dex, c->n_filler, dex)) {
             continue;
         }
-        duoforge_member_setup m;
-        build_member(t, c, &rng, sp, PICK_SUPPORTED, &m);
-        m.item = 0u;
-        side->members[side->member_count++] = m;
-        dex_taken[(*taken)++] = dex;
+        build_member(t, c, &rng, sp, PICK_SUPPORTED, &c->filler[c->n_filler]);
+        c->filler[c->n_filler].item = 0u;
+        c->filler_dex[c->n_filler] = dex;
+        c->n_filler += 1u;
+    }
+}
+
+/* A side-0 member under test, with the rest of both sides made of fillers whose dex numbers differ from the member's. */
+static void fillers(const kase *c, uint32_t avoid_dex, duoforge_side_setup *side, uint32_t count)
+{
+    for (uint32_t k = 0u; k < c->n_filler && side->member_count < count; ++k) {
+        if (c->filler_dex[k] != avoid_dex) {
+            side->members[side->member_count++] = c->filler[k];
+        }
     }
 }
 
 static void sweep_member(df_test *t, kase *c, const duoforge_member_setup *under_test)
 {
+    ensure_fillers(t, c);
     duoforge_battle_setup s;
     memset(&s, 0, sizeof s);
     s.rng_initseq = 1u;
@@ -1037,19 +1056,26 @@ static void sweep_member(df_test *t, kase *c, const duoforge_member_setup *under
     }
     const uint32_t count = c->dev ? 4u : DUOFORGE_MAX_ROSTER;
     for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
-        uint32_t taken[DUOFORGE_MAX_ROSTER * 2u];
-        uint32_t ntaken = 0u;
         if (side == 0u) {
             s.sides[0].members[0] = *under_test;
             s.sides[0].member_count = 1u;
-            if (avoid != 0xFFFFFFFFu) {
-                taken[ntaken++] = avoid;
-            }
         }
-        fillers(t, c, avoid, taken, &ntaken, &s.sides[side], count);
+        fillers(c, avoid, &s.sides[side], count);
         DF_CHECK(t, s.sides[side].member_count == count); /* the fixture needs enough supported fillers */
     }
     check_setup(t, c, &s, "sweep");
+}
+
+/* The formes that get the full sweep, every move, ability, gender, item and nature id against them: the prefix (the
+ * closure, Team C and G2), every 23rd forme, and the formes with two Mega formes or a Mega Stone that two bases
+ * share (Absol, Charizard, Garchomp, Lucario, Raichu, Meowstic). The others get the light sweep: the member as the
+ * API describes it, each id the API lists for it, and a few ids it does not list. The whole pool has 346 formes, so a
+ * full sweep of each would be 300 thousand setups per kind. */
+static bool full_sweep(const kase *c, uint32_t sp)
+{
+    const uint32_t dex = c->info[sp].dex_num;
+    return sp < DFI_EXT_FORME_COUNT + 5u || sp % 23u == 0u || dex == 359u || dex == 6u || dex == 445u || dex == 448u ||
+           dex == 26u || dex == 678u;
 }
 
 static void test_exhaustive(df_test *t, kase *c)
@@ -1068,27 +1094,67 @@ static void test_exhaustive(df_test *t, kase *c)
         memset(&base.moves[1], 0, sizeof base.moves[1] * (DUOFORGE_MAX_MOVE_SLOTS - 1u));
         sweep_member(t, c, &base);
         duoforge_member_setup m = base;
-        for (uint32_t mv = 0u; mv < DFI_POOL_MOVE_COUNT + 2u; ++mv) {
-            m = base;
-            m.moves[0].move_id = mv;
-            sweep_member(t, c, &m);
-        }
-        for (uint32_t ab = 0u; ab < DFI_POOL_ABILITY_COUNT + 3u; ++ab) {
-            m = base;
-            m.ability = ab;
-            sweep_member(t, c, &m);
+        if (full_sweep(c, sp)) {
+            for (uint32_t mv = 0u; mv < DFI_POOL_MOVE_COUNT + 2u; ++mv) {
+                m = base;
+                m.moves[0].move_id = mv;
+                sweep_member(t, c, &m);
+            }
+            for (uint32_t ab = 0u; ab < DFI_POOL_ABILITY_COUNT + 3u; ++ab) {
+                m = base;
+                m.ability = ab;
+                sweep_member(t, c, &m);
+            }
+            for (uint32_t it = 0u; it < DFI_POOL_ITEM_COUNT + 3u; ++it) {
+                m = base;
+                m.item = it;
+                sweep_member(t, c, &m);
+            }
+        } else {
+            const duoforge_forme_info *in = &c->info[sp];
+            for (uint32_t k = 0u; k < in->move_count; ++k) { /* the moves the API lists */
+                m = base;
+                m.moves[0].move_id = c->moves[sp][k];
+                sweep_member(t, c, &m);
+            }
+            for (uint32_t k = 0u; k < 4u; ++k) { /* and some that it does not (the nearest ids below and above) */
+                for (uint32_t mv = (sp * 7u + k * 131u) % (DFI_POOL_MOVE_COUNT + 2u);; mv = (mv + 1u) % (DFI_POOL_MOVE_COUNT + 2u)) {
+                    if (mv >= DFI_POOL_MOVE_COUNT || !in_list(c->moves[sp], in->move_count, mv)) {
+                        m = base;
+                        m.moves[0].move_id = mv;
+                        sweep_member(t, c, &m);
+                        break;
+                    }
+                }
+            }
+            for (uint32_t k = 0u; k < in->ability_count; ++k) { /* the abilities the API lists, and 4 it does not */
+                m = base;
+                m.ability = in->abilities[k] + 1u;
+                sweep_member(t, c, &m);
+            }
+            for (uint32_t k = 0u; k < 4u; ++k) {
+                for (uint32_t ab = (sp * 5u + k * 53u) % (DFI_POOL_ABILITY_COUNT + 3u);;
+                     ab = (ab + 1u) % (DFI_POOL_ABILITY_COUNT + 3u)) {
+                    if (ab == 0u ? !c->dev : (ab > DFI_POOL_ABILITY_COUNT || !in_list(in->abilities, in->ability_count, ab - 1u))) {
+                        m = base;
+                        m.ability = ab;
+                        sweep_member(t, c, &m);
+                        break;
+                    }
+                }
+            }
+            for (uint32_t it = sp % 7u; it < DFI_POOL_ITEM_COUNT + 3u; it += 7u) {
+                m = base;
+                m.item = it;
+                sweep_member(t, c, &m);
+            }
         }
         for (uint32_t g = 0u; g < 6u; ++g) {
             m = base;
             m.gender = g;
             sweep_member(t, c, &m);
         }
-        for (uint32_t it = 0u; it < DFI_POOL_ITEM_COUNT + 3u; ++it) {
-            m = base;
-            m.item = it;
-            sweep_member(t, c, &m);
-        }
-        for (uint32_t nat = 0u; nat < DFI_NATURE_COUNT + 3u; ++nat) {
+        for (uint32_t nat = 0u; nat < DFI_NATURE_COUNT + 3u; nat += (full_sweep(c, sp) ? 1u : 12u)) {
             m = base;
             m.nature = nat;
             sweep_member(t, c, &m);
@@ -1107,6 +1173,70 @@ static void test_exhaustive(df_test *t, kase *c)
     }
 }
 
+/* Every row of the move, item, ability and species tables is in a setup that the oracle judges (decision 0015
+ * section 4.2): for each id, a member that legally has it and is otherwise as supported as its forme allows, and
+ * setup must say OK, or E_UNSUPPORTED exactly when the API says the row (or something else of the member) is not
+ * supported. A row that no forme can have is counted (Struggle, and the Mega formes for the species table). */
+static void test_every_row(df_test *t, kase *c)
+{
+    static uint32_t first_move[DFI_POOL_MOVE_COUNT];
+    static uint32_t first_ability[DFI_POOL_ABILITY_COUNT];
+    for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
+        first_move[i] = 0xFFFFFFFFu;
+    }
+    for (uint32_t i = 0u; i < DFI_POOL_ABILITY_COUNT; ++i) {
+        first_ability[i] = 0xFFFFFFFFu;
+    }
+    /* Prefer a forme that is otherwise supported; else any forme that has the row. */
+    for (int pass = 0; pass < 2; ++pass) {
+        for (uint32_t sp = 0u; sp < c->n[DUOFORGE_DATA_TABLE_SPECIES]; ++sp) {
+            if (c->info[sp].setup_legal == 0u || (pass == 0 && !forme_pickable(t, c, sp, PICK_SUPPORTED))) {
+                continue;
+            }
+            for (uint32_t k = 0u; k < c->info[sp].move_count; ++k) {
+                if (first_move[c->moves[sp][k]] == 0xFFFFFFFFu) {
+                    first_move[c->moves[sp][k]] = sp;
+                }
+            }
+            for (uint32_t k = 0u; k < c->info[sp].ability_count; ++k) {
+                if (first_ability[c->info[sp].abilities[k]] == 0xFFFFFFFFu) {
+                    first_ability[c->info[sp].abilities[k]] = sp;
+                }
+            }
+        }
+    }
+    uint64_t rng = 4242u;
+    duoforge_member_setup m;
+    uint32_t nobody = 0u;
+    for (uint32_t mv = 0u; mv < c->n[DUOFORGE_DATA_TABLE_MOVE]; ++mv) {
+        if (first_move[mv] == 0xFFFFFFFFu) {
+            nobody += 1u; /* Struggle: the engine's own, no forme has it */
+            continue;
+        }
+        build_member(t, c, &rng, first_move[mv], PICK_SUPPORTED, &m);
+        m.item = 0u;
+        m.moves[0].move_id = mv;
+        m.move_count = 1u;
+        memset(&m.moves[1], 0, sizeof m.moves[1] * (DUOFORGE_MAX_MOVE_SLOTS - 1u));
+        sweep_member(t, c, &m);
+    }
+    DF_CHECK(t, nobody <= 1u);
+    for (uint32_t ab = 0u; ab < c->n[DUOFORGE_DATA_TABLE_ABILITY]; ++ab) {
+        if (first_ability[ab] == 0xFFFFFFFFu) {
+            continue; /* a Mega-only ability: no base forme lists it */
+        }
+        build_member(t, c, &rng, first_ability[ab], PICK_SUPPORTED, &m);
+        m.item = 0u;
+        m.ability = ab + 1u;
+        sweep_member(t, c, &m);
+    }
+    const uint32_t sp0 = first_move[DFI_MOVE_PROTECT];
+    for (uint32_t it = 0u; it < c->n[DUOFORGE_DATA_TABLE_ITEM]; ++it) {
+        build_member(t, c, &rng, sp0, PICK_SUPPORTED, &m);
+        m.item = it + 1u;
+        sweep_member(t, c, &m);
+    }
+}
 /* ------------------------------------------- the composition of the support gate */
 
 /* The gate composition of the header (a member is supported exactly when its ability, item and
@@ -1204,6 +1334,7 @@ int main(void)
         test_support(&t, c);
         test_random_setups(&t, c, k);
         test_exhaustive(&t, c);
+        test_every_row(&t, c);
         test_gate_composition(&t, c, k);
         fprintf(stderr, "  %s: setups OK %lu, UNSUPPORTED %lu, INVALID_ARGUMENT %lu\n", c->kind_name,
                 g_outcomes[k][0], g_outcomes[k][1], g_outcomes[k][2]);

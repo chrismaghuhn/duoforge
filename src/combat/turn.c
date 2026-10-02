@@ -97,15 +97,15 @@ static uint32_t dfi_fainted_members(const struct duoforge_battle *b, uint32_t si
     return n;
 }
 
-static const dfi_forme_data *dfi_forme_of(const dfi_member *m)
+static const dfi_pool_forme_data *dfi_forme_of(const dfi_member *m)
 {
-    const dfi_forme_data *base = &dfi_pool_formes[m->species_id];
+    const dfi_pool_forme_data *base = &dfi_pool_formes[m->species_id];
     return m->is_mega != 0u ? &dfi_pool_formes[base->mega_forme] : base;
 }
 
 static bool dfi_has_type(const dfi_member *m, uint32_t type)
 {
-    const dfi_forme_data *f = dfi_forme_of(m);
+    const dfi_pool_forme_data *f = dfi_forme_of(m);
     return f->types[0] == type || f->types[1] == type;
 }
 
@@ -724,7 +724,7 @@ static bool dfi_type_immune(const dfi_member *target, uint32_t move_type)
     if (move_type >= DFI_TYPE_COUNT) {
         return false;
     }
-    const dfi_forme_data *f = dfi_forme_of(target);
+    const dfi_pool_forme_data *f = dfi_forme_of(target);
     for (uint32_t i = 0u; i < 2u; ++i) {
         const uint32_t t = f->types[i];
         if (t < DFI_TYPE_COUNT && dfi_closure_type_chart[t][move_type] == DFI_EFFECT_IMMUNE) {
@@ -742,7 +742,7 @@ static uint32_t dfi_type_mod(const dfi_member *target, uint32_t move_type)
     if (move_type >= DFI_TYPE_COUNT) {
         return mod;
     }
-    const dfi_forme_data *f = dfi_forme_of(target);
+    const dfi_pool_forme_data *f = dfi_forme_of(target);
     for (uint32_t i = 0u; i < 2u; ++i) {
         const uint32_t t = f->types[i];
         if (t >= DFI_TYPE_COUNT) {
@@ -2720,7 +2720,7 @@ static duoforge_status dfi_run_switch(dfi_run *r, const dfi_queue_record *q)
     e.id = (uint16_t)reserve;
     if (parting_shot || pivot != NULL) {
         e.cause = (uint8_t)DUOFORGE_CAUSE_MOVE;
-        e.id2 = (uint16_t)(parting_shot ? DFI_MOVE_PARTINGSHOT : pivot->move); /* wide-operands-reviewed: < 256 */
+        e.id2 = (uint16_t)(parting_shot ? DFI_MOVE_PARTINGSHOT : pivot->move); /* wide-operands-reviewed: a move id of the pool tables, a u16 */
     }
     dfi_emit_hp(r, e);
     return dfi_insert_run_switch(r, side, slot, binding.activation_id);

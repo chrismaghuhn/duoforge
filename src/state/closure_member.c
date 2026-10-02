@@ -4,6 +4,21 @@
 #include "data/formulas.h"
 #include "data/pool_tables.h"
 
+/* The widths that the whole pool must fit (decision 0015 section 4.2). gen_closure.py checks the same from these
+ * sources when it writes the tables; here the build fails if a table or a field changes under it. A member's species
+ * and each move slot hold the row id (u16); its item and ability hold 1 + the id in a byte, and the tables use 0xFF
+ * as their "none", so an id is at most 254; a forme link of the pool rows is a u16 with DFI_FORME_NONE as "none". */
+#define DFI_FIELD_SIZE(type, field) sizeof(((type *)0)->field)
+_Static_assert(DFI_FIELD_SIZE(dfi_member, species_id) == 2u && DFI_FIELD_SIZE(dfi_move_slot, move_id) == 2u,
+               "a species and a move id are u16 in the state");
+_Static_assert(DFI_POOL_FORME_COUNT < DFI_FORME_NONE && DFI_POOL_MOVE_COUNT <= UINT16_MAX,
+               "the pool has more formes or moves than the state's u16 ids hold");
+_Static_assert(DFI_FIELD_SIZE(dfi_member, item) == 1u && DFI_FIELD_SIZE(dfi_member, ability) == 1u,
+               "an item and an ability are one byte (1 + the id) in the state");
+_Static_assert(DFI_POOL_ITEM_COUNT < DFI_CLOSURE_NONE && DFI_POOL_ABILITY_COUNT < DFI_CLOSURE_NONE,
+               "1 + an item or ability id must fit a byte, and 0xFF is the tables' none");
+_Static_assert(DFI_POOL_LEARN_BYTES * 8u >= DFI_POOL_MOVE_COUNT, "the learnable bitset has a bit for every move");
+
 
 const dfi_pivot_move dfi_pivot_moves[DFI_PIVOT_MOVE_COUNT] = {
     {DFI_SWITCH_FLIP_TURN, DFI_MOVE_FLIPTURN},
@@ -71,7 +86,7 @@ bool dfi_gender_legal(uint32_t gender_rule, uint32_t gender)
 }
 
 /* True iff move is one of the forme's set moves. */
-static bool dfi_in_set(const dfi_forme_data *f, uint32_t move)
+static bool dfi_in_set(const dfi_pool_forme_data *f, uint32_t move)
 {
     for (uint32_t k = 0u; k < f->set_move_count && k < DUOFORGE_MAX_MOVE_SLOTS; ++k) {
         if (f->set_moves[k] == move) {
@@ -129,8 +144,8 @@ bool dfi_forme_ability_legal(const dfi_kind_limits *lim, uint32_t species, uint3
 
 uint32_t dfi_forme_stone(uint32_t species)
 {
-    const dfi_forme_data *f = &dfi_pool_formes[species];
-    return f->mega_forme != DFI_CLOSURE_NONE ? (uint32_t)f->mega_item : (uint32_t)DFI_CLOSURE_NONE;
+    const dfi_pool_forme_data *f = &dfi_pool_formes[species];
+    return f->mega_forme != DFI_FORME_NONE ? (uint32_t)f->mega_item : (uint32_t)DFI_CLOSURE_NONE;
 }
 
 bool dfi_stat_points_valid(const uint32_t *sp)
@@ -150,7 +165,7 @@ bool dfi_closure_member_setup_valid(const dfi_kind_limits *lim, const duoforge_m
     if (m->species_id >= lim->forme_count) {
         return false;
     }
-    const dfi_forme_data *f = &dfi_pool_formes[m->species_id];
+    const dfi_pool_forme_data *f = &dfi_pool_formes[m->species_id];
     if (f->is_mega != 0u) {
         return false; /* a Mega forme is reached in battle, never set up */
     }
@@ -235,11 +250,11 @@ bool dfi_manifest_item(const dfi_support_manifest *s, uint32_t item)
 
 bool dfi_manifest_mega(const dfi_support_manifest *s, uint32_t species)
 {
-    if (species >= DFI_POOL_FORME_COUNT || dfi_pool_formes[species].mega_forme == DFI_CLOSURE_NONE) {
+    if (species >= DFI_POOL_FORME_COUNT || dfi_pool_formes[species].mega_forme == DFI_FORME_NONE) {
         return false;
     }
     /* Mega Evolution, and the ability the Mega forme brings. */
-    const dfi_forme_data *mega = &dfi_pool_formes[dfi_pool_formes[species].mega_forme];
+    const dfi_pool_forme_data *mega = &dfi_pool_formes[dfi_pool_formes[species].mega_forme];
     return s->mega_evolution != 0u && dfi_manifest_ability(s, mega->ability);
 }
 
@@ -312,10 +327,10 @@ bool dfi_closure_battle_supported(const dfi_support_manifest *manifest, const st
 static bool dfi_derive_stats(uint32_t species, uint32_t is_mega, uint32_t nature, const uint8_t *sp,
                              uint16_t *hp_max, uint16_t *stats)
 {
-    const dfi_forme_data *base = &dfi_pool_formes[species];
-    const dfi_forme_data *cur = base;
+    const dfi_pool_forme_data *base = &dfi_pool_formes[species];
+    const dfi_pool_forme_data *cur = base;
     if (is_mega != 0u) {
-        if (base->mega_forme == DFI_CLOSURE_NONE) {
+        if (base->mega_forme == DFI_FORME_NONE) {
             return false;
         }
         cur = &dfi_pool_formes[base->mega_forme];
@@ -367,8 +382,8 @@ bool dfi_closure_member_init(const duoforge_member_setup *src, dfi_member *dst)
 
 bool dfi_closure_member_mega_evolve(dfi_member *m)
 {
-    const dfi_forme_data *base = &dfi_pool_formes[m->species_id];
-    if (m->is_mega != 0u || m->mega_capable == 0u || base->mega_forme == DFI_CLOSURE_NONE) {
+    const dfi_pool_forme_data *base = &dfi_pool_formes[m->species_id];
+    if (m->is_mega != 0u || m->mega_capable == 0u || base->mega_forme == DFI_FORME_NONE) {
         return false;
     }
     uint16_t hp_max = 0u;
@@ -380,13 +395,13 @@ bool dfi_closure_member_mega_evolve(dfi_member *m)
     for (uint32_t i = 0u; i < DFI_MEMBER_STAT_COUNT; ++i) {
         m->stats[i] = stats[i];
     }
-    m->ability = (uint8_t)((uint32_t)dfi_pool_formes[base->mega_forme].ability + 1u); /* wide-operands-reviewed: < 26 */
+    m->ability = (uint8_t)((uint32_t)dfi_pool_formes[base->mega_forme].ability + 1u); /* wide-operands-reviewed: an ability id is below DFI_POOL_ABILITY_COUNT, at most 254 (generator bound) */
     return true;
 }
 
 bool dfi_closure_member_ranges(const dfi_kind_limits *lim, const dfi_member *m)
 {
-    const dfi_forme_data *base = &dfi_pool_formes[m->species_id]; /* below the context species count */
+    const dfi_pool_forme_data *base = &dfi_pool_formes[m->species_id]; /* below the context species count */
     if (base->is_mega != 0u || !dfi_gender_legal(base->gender_rule, m->gender)) {
         return false;
     }

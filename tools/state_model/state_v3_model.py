@@ -201,7 +201,7 @@ KIND_TEAM_C, KIND_TEAM_C_DEV = 4, 5
 
 class TeamCContext(ClosureContext):
     def __init__(self, data_kind, max_roster, brought_count):
-        Context.__init__(self, data_kind, max_roster, brought_count, 28, 72, b'')
+        Context.__init__(self, data_kind, max_roster, brought_count, 346, 511, b'')
 
     def valid(self):
         if self.data_kind == KIND_TEAM_C and (self.max_roster != MAX_ROSTER or self.brought_count != 4):
@@ -222,17 +222,18 @@ KC = TeamCContext(KIND_TEAM_C, 6, 4)
 KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 
 # POOL contexts (decision 0015 section 2): the pool tables (the extended tables
-# followed by the rows of the expansion steps: 28 formes and 72 moves after step
-# G2) and their hash, which tests/test_pool_tables.c recomputes from the pool
-# canonical bytes: the closure layout over the pool data, then the family
-# columns, then the moves and abilities that each forme may have.
-POOL_TABLE_HASH = bytes.fromhex('d60d6ba5744da21301addc22df62e04464a6c96a0fe454008771879d563b5818')
+# followed by the rows of the expansion steps and then every other forme, move,
+# item and ability of the legal pool: 346 formes and 511 moves) and their hash,
+# which tests/test_pool_tables.c recomputes from the pool canonical bytes: the
+# pool layout over the pool data, then the family columns, the handler columns
+# and the moves and abilities that each forme may have.
+POOL_TABLE_HASH = bytes.fromhex('f653e6d869fa08697ba043365a33cdfca733ba24a977f942eeea055b6a0382b0')
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 
 class PoolContext(ClosureContext):
     def __init__(self, data_kind, max_roster, brought_count):
-        Context.__init__(self, data_kind, max_roster, brought_count, 28, 72, b'')
+        Context.__init__(self, data_kind, max_roster, brought_count, 346, 511, b'')
 
     def valid(self):
         if self.data_kind == KIND_POOL and (self.max_roster != MAX_ROSTER or self.brought_count != 4):

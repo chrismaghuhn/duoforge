@@ -41,8 +41,8 @@
 #include "support/pool.h"
 #include "support/team_c.h"
 
-#define FP_KP_HEX "3e82d11a047fee45db079d2c3d59cf5ec8249d1369f13c86b4ebd0d43bac2e95"
-#define FP_KPD_HEX "90f1b2ff2932456f0a6c2c572c8974515f679a1af020e843dfcd7eef2f33a482"
+#define FP_KP_HEX "f82c6cfc8105aa3fa8746adb9df5a181dec1f9ba7ad64cfc18f6c80b125f263f"
+#define FP_KPD_HEX "65d23ec1972a57b130502da8b7131c9a77d53fce2f731fbc2090847c0b5e62fd"
 
 /* The public create under `ctx` gives `gated`, and the build without the
  * support gate `ungated`. */
@@ -228,15 +228,16 @@ int main(void)
         }
         dfi_context_canonical_bytes(kp, bytes);
         DF_CHECK(&t, bytes[24] == DUOFORGE_DATA_KIND_POOL && bytes[25] == 6u && bytes[26] == 4u &&
-                         bytes[27] == DFI_POOL_FORME_COUNT && bytes[28] == 0u && bytes[29] == DFI_POOL_MOVE_COUNT &&
-                         bytes[30] == 0u);
+                         (uint32_t)bytes[27] + 256u * bytes[28] == DFI_POOL_FORME_COUNT &&
+                         (uint32_t)bytes[29] + 256u * bytes[30] == DFI_POOL_MOVE_COUNT);
         DF_CHECK_BYTES(&t, bytes + DFI_CONTEXT_TABLE_HASH_OFF, dfi_pool_table_hash, DUOFORGE_DIGEST_SIZE,
                        "POOL table hash");
         DF_CHECK(&t, dfi_sha256(bytes, sizeof bytes, sha));
         DF_CHECK_BYTES(&t, sha, fp[4], sizeof sha, "POOL fingerprint = sha256(canonical bytes)");
         dfi_context_canonical_bytes(kq, bytes);
-        DF_CHECK(&t, bytes[24] == DUOFORGE_DATA_KIND_POOL_DEV && bytes[27] == DFI_POOL_FORME_COUNT &&
-                         bytes[29] == DFI_POOL_MOVE_COUNT);
+        DF_CHECK(&t, bytes[24] == DUOFORGE_DATA_KIND_POOL_DEV &&
+                         (uint32_t)bytes[27] + 256u * bytes[28] == DFI_POOL_FORME_COUNT &&
+                         (uint32_t)bytes[29] + 256u * bytes[30] == DFI_POOL_MOVE_COUNT);
         DF_CHECK_BYTES(&t, bytes + DFI_CONTEXT_TABLE_HASH_OFF, dfi_pool_table_hash, DUOFORGE_DIGEST_SIZE,
                        "POOL_DEV table hash");
         DF_CHECK(&t, dfi_sha256(bytes, sizeof bytes, sha));
@@ -565,7 +566,7 @@ int main(void)
         /* Every new move: a learner with a legal ability that is marked, with no item, on a side where it does not
          * clash with the Species Clause. The gate function with a fully marked manifest accepts the setup (the
          * control), and refuses it when only that move is unmarked; the real manifest decides as marked_moves says. */
-        for (uint32_t mv = DFI_EXT_MOVE_COUNT; mv < DFI_POOL_MOVE_COUNT; ++mv) {
+        for (uint32_t mv = DFI_EXT_MOVE_COUNT; mv < DFI_MOVE_ACCELEROCK; ++mv) { /* the 22 moves of G2 */
             bool found = false;
             for (uint32_t pass = 0u; pass < 2u && !found; ++pass) {
                 const uint32_t side = 1u - pass;

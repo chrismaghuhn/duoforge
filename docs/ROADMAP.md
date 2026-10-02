@@ -8,7 +8,7 @@ Every milestone is a separate authorization boundary. A milestone may require mu
   - The batch runtime is measured (M6, `docs/benchmarks/`).
   - Team C (decision 0009) is built and passes its gate, but is not certified.
 - **CI:** the local CI (`tools/ci/local_ci.sh`, eleven jobs on Windows and WSL) is the merge gate. GitHub Actions runs nightly.
-- **Next:** M8 to M10 below.
+- **Next:** M8 to M12 below. M10 is built.
 
 ## M0 — Workspace, build and development foundation
 
@@ -123,6 +123,42 @@ Exit:
 - The tracker equals DuoForge's own observation byte for byte on recorded battles.
 - The client protocol is tested without a network.
 - A first logged game on the official server.
+
+Status: built on 2026-10-02 (#93, #97 to #100, #103) and played on the official server.
+- **The first game:** The bot lost, and at the end it chose Protect turn after turn. The night run had scored a battle cut off after 500 steps as a tie, so stalling was worth more to the policy than a likely loss.
+- **The fix:** Learner v2 scores cut-offs with Showdown's tiebreak (`duoforge_battle_tiebreak`, #109).
+- **Report:** decision 0016.
+
+## M11 — Learning from human replays
+
+Use public Showdown replays of the format as the starting point for the learner:
+- **Source:** about 713,000 "Champions VGC 2026" games in the HolidayOugi dataset on Hugging Face.
+- **Data:** each game becomes, per player, the observation and the action of every decision. The M10 tracker reads the protocol in a spectator mode, and DuoForge's data query API supplies the ids.
+- **Training:** behavior cloning, and offline RL where it helps, give the policy and the value a human prior. M9's self-play then improves on it.
+
+Constraints:
+- **Teams:** Only teams the tables hold count.
+- **Hidden information:** Open team sheets give a player's full sheet. Own exact HP and stat points are estimated, and the estimate is documented.
+- **No rules in Python:** the option sets are judged by Showdown or the engine.
+- **Data stays local:** the data set states no license, so it is not redistributed.
+- **Gate:** the spike of 2026-10-02 measures how much of the data is usable before anything is built.
+
+Exit:
+- The measured share of usable decisions.
+- A replay-trained policy that beats the self-play policy of M9 on the ladder, or improves it as its initialization, measured at an equal number of decisions.
+
+## M12 — Search
+
+Search on top of the learned policy and value, with the engine as the exact model (the engine clones and steps states). Built in stages:
+1. A one-turn lookahead: the best own pairs against likely opponent pairs over sampled random outcomes, scored by the value head.
+2. A simultaneous-move tree search. The policy gives the priors; chance and the opponent's hidden stat points are sampled.
+3. Expert iteration: the search's choices become training targets.
+
+The search must stay deterministic given its seeds.
+
+Exit:
+- The Elo gain over the raw policy on the ladder, at a fixed time per move.
+- A report like the learning reports in `docs/learning/`.
 
 ## Later
 

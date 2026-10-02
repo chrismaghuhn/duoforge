@@ -174,7 +174,7 @@ int main(void)
                 break;
             }
             bad += df_conf_compare_state(stderr, ctx, b, st, cb->name, si);
-            bad += df_conf_compare_observation(stderr, ctx, b, st, cb, si, DF_CONF_FORMES);
+            bad += df_conf_compare_observation(stderr, ctx, b, st, cb, si);
             bad += df_conf_compare_events(stderr, st, cb->name, si, buffers, conf_events, &event_reports);
             DF_CHECK(&t, duoforge_battle_check(ctx, b) == DUOFORGE_OK);
         }
