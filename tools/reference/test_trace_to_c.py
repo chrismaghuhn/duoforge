@@ -580,9 +580,10 @@ class Library(unittest.TestCase):
         lines = [l for step in spec['steps'] for l in step['log']]
         self.assertTrue(any(l.startswith('|switch|p1a: Arcanine|Arcanine-Hisui, L50, M|') for l in lines))
 
-    def test_every_move_marked_by_step_g2_is_used_in_a_pool_battle(self):
-        """A move that the pool manifest marks beyond the extended ids was used in a committed pool battle: a move
-        line of it that did something (damage, or a boost for a status move) before the next move line."""
+    def test_every_move_marked_beyond_the_extended_ids_is_used_in_a_pool_battle(self):
+        """A move that the pool manifest marks beyond the extended ids (twelve of step G2, U-turn of step G5) was used in
+        a committed pool battle: a move line of it that did something (damage, or a boost for a status move) before
+        the next move line."""
         def read(*p):
             return open(os.path.join(ROOT, *p), encoding='utf-8').read()
         header, source = read('src', 'data', 'pool_tables.h'), read('src', 'data', 'pool_tables.c')
@@ -593,7 +594,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 14)
+        self.assertEqual(len(marked), 15)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -612,6 +613,30 @@ class Library(unittest.TestCase):
                             done = done or after.startswith(('|-damage|', '|-boost|'))
             with self.subTest(move=name):
                 self.assertTrue(done, '%s is marked but no committed pool battle uses it' % name)
+
+    def test_the_switch_of_a_damaging_pivot_names_its_move(self):
+        """[from] U-turn (step G5) is [from] of the move, as Flip Turn and Parting Shot: the cause MOVE and the move's
+        id (the pool tables have U-turn, the extended tables do not: a bare KeyError there, the converter's way to say
+        that a name is not in the tables); and every pool battle with a [from] U-turn switch line converts."""
+        pool, ext = trace_to_c.load_tables(ROOT, True), trace_to_c.load_tables(ROOT, False)
+        move = pool['MOVE']
+        self.assertEqual(trace_to_c.ev_cause(['[from] U-turn'], pool)[:2], (trace_to_c.CAUSE['MOVE'], move['UTURN']))
+        self.assertEqual(trace_to_c.ev_cause(['[from] Flip Turn'], pool)[:2], (trace_to_c.CAUSE['MOVE'], move['FLIPTURN']))
+        self.assertEqual(trace_to_c.ev_cause(['[from] Parting Shot'], pool)[:2], (trace_to_c.CAUSE['MOVE'], move['PARTINGSHOT']))
+        self.assertNotEqual(move['UTURN'], move['FLIPTURN'])
+        with self.assertRaises(KeyError):
+            trace_to_c.ev_cause(['[from] U-turn'], ext)
+        with self.assertRaises(trace_to_c.ConversionError) as cm:
+            trace_to_c.ev_cause(['[from] Baton Pass'], pool)  # not a move that the converter knows as a cause
+        self.assertEqual(cm.exception.rule, 'from-attribute')
+        names = ('g5_uturn_a', 'g5_uturn_b', 'g5_uturn_c', 'g5_uturn_d', 'g5_uturn_e')
+        seen = {}
+        for n in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', n + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            seen[n] = sum(1 for step in trace['steps'] for l in step['log'] if '[from] U-turn' in l)
+        self.assertEqual(seen['g5_uturn_b'], 0)  # Protect: no pivot
+        self.assertTrue(all(seen[n] > 0 for n in names if n not in ('g5_uturn_b',)), seen)
 
     def test_pass_for_both_slots_converts_per_slot(self):
         """A choice that passes both slots of a switch request: each slot is

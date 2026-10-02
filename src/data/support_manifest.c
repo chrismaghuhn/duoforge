@@ -70,12 +70,13 @@
  * (Rock Slide, Double-Edge, Thunderbolt, Flash Cannon, Extreme Speed, Head
  * Smash, Bulk Up, Liquidation, Ice Punch, Shadow Claw, Drum Beating and
  * Dazzling Gleam), each used in one of the four reference battles under the
- * POOL kind g2_data_moves_a to _d. U-turn stays unmarked: its switch cause
- * is the pivot of step G5. A move is marked only by the step that records a
- * reference battle with it.
+ * POOL kind g2_data_moves_a to _d. A move is marked only by the step that
+ * records a reference battle with it.
  * Step G4 marks Focus Sash (a move hit or the confusion hit that would take all
  * of a full-HP holder's HP leaves it 1 HP) and Rock Head (no recoil from a
- * recoil move, Struggle's stays), each with recorded POOL battles.
+ * recoil move, Struggle's stays), each with recorded POOL battles. Step G5
+ * marks U-turn: a damaging pivot whose switch flag names it (dfi_pivot_moves),
+ * in the reference battles g5_uturn_a to _e.
  * Step G8 marks Throat Chop (the sound moves barred for two turns, the cant
  * of a queued one) and Psychic Noise (Heal Block for two turns: every heal
  * of the holder refused, the heal-flag moves barred), which are secondary
@@ -149,6 +150,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_SHADOWCLAW] = 1u,
             [DFI_MOVE_DRUMBEATING] = 1u,
             [DFI_MOVE_DAZZLINGGLEAM] = 1u,
+            [DFI_MOVE_UTURN] = 1u,
             [DFI_MOVE_THROATCHOP] = 1u,
             [DFI_MOVE_PSYCHICNOISE] = 1u,
         },

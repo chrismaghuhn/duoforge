@@ -323,11 +323,14 @@ int main(void)
         DF_CHECK(&t, l1.forme_count == DFI_FORME_COUNT && l1.item_count == DFI_ITEM_COUNT && !l1.dev);
         DF_CHECK(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_CLOSURE_DEV).dev &&
                          dfi_kind_limits_of(DUOFORGE_DATA_KIND_TEAM_C_DEV).dev);
-        DF_CHECK(&t, lp.switch_flag_max == lc.switch_flag_max && lp.status_max == lc.status_max &&
-                         lp.terrain_max == lc.terrain_max && lp.vol_flags_mask == lc.vol_flags_mask);
-        DF_CHECK(&t, lq.switch_flag_max == lc.switch_flag_max && lq.status_max == lc.status_max &&
+        /* The pool has U-turn's switch flag (step G5) on top of Team C's; everything else of Team C's is the pool's. */
+        DF_CHECK(&t, lp.switch_flag_max == DFI_SWITCH_UTURN && lc.switch_flag_max == DFI_SWITCH_FLIP_TURN &&
+                         DFI_SWITCH_UTURN == DFI_SWITCH_FLIP_TURN + 1u);
+        DF_CHECK(&t, lp.status_max == lc.status_max && lp.terrain_max == lc.terrain_max &&
+                         lp.vol_flags_mask == lc.vol_flags_mask);
+        DF_CHECK(&t, lq.switch_flag_max == lp.switch_flag_max && lq.status_max == lc.status_max &&
                          lq.terrain_max == lc.terrain_max && lq.vol_flags_mask == lc.vol_flags_mask);
-        DF_CHECK(&t, lp.switch_flag_max == DFI_SWITCH_FLIP_TURN && lp.status_max == DFI_STATUS_PSN &&
+        DF_CHECK(&t, lp.switch_flag_max == DFI_SWITCH_UTURN && lp.status_max == DFI_STATUS_PSN &&
                          lp.terrain_max == DFI_TERRAIN_PSYCHIC && l1.switch_flag_max == DFI_SWITCH_FAINTED &&
                          l1.status_max == DFI_STATUS_SLP && l1.terrain_max == DFI_TERRAIN_GRASSY);
     }
@@ -547,8 +550,9 @@ int main(void)
 
     /* Step G2 (docs/research/expansion/data/team_gaps.json): the formes Pelipper, Arcanine-Hisui, Annihilape and
      * Floette-Eternal under the set rule, and the 22 new moves behind the gate. Twelve of them are marked (their
-     * data runs on the existing paths, each in a reference battle under the POOL kind: g2_data_moves_a to _d), so a
-     * setup that has one is supported; the other ten (U-turn and the nine with a handler id) are unmarked, so a
+     * data runs on the existing paths, each in a reference battle under the POOL kind: g2_data_moves_a to _d), and
+     * step G5 marks U-turn (g5_uturn_a to _e), so a setup that has one is supported; the other nine (those with a
+     * handler id) are unmarked, so a
      * setup that has one is E_UNSUPPORTED after all validation. A species is complete with its base data, so a
      * Pelipper whose ability, item and moves are marked is a supported setup. Team B's lead is replaced. */
     {
@@ -556,7 +560,7 @@ int main(void)
                                                 DFI_MOVE_FLASHCANNON, DFI_MOVE_EXTREMESPEED, DFI_MOVE_HEADSMASH,
                                                 DFI_MOVE_BULKUP, DFI_MOVE_LIQUIDATION, DFI_MOVE_ICEPUNCH,
                                                 DFI_MOVE_SHADOWCLAW, DFI_MOVE_DRUMBEATING, DFI_MOVE_DAZZLINGGLEAM,
-                                                DFI_MOVE_THROATCHOP, DFI_MOVE_PSYCHICNOISE};
+                                                DFI_MOVE_UTURN, DFI_MOVE_THROATCHOP, DFI_MOVE_PSYCHICNOISE};
         const duoforge_member_setup *tpl = &teams.sides[1].members[0];
         /* Every new move: a learner with a legal ability that is marked, with no item, on a side where it does not
          * clash with the Species Clause. The gate function with a fully marked manifest accepts the setup (the
@@ -673,7 +677,7 @@ int main(void)
         s.sides[1].members[0].moves[3].move_id = DFI_MOVE_ICEPUNCH;
         legal(&t, kp, &s, true, "Annihilape with Ice Punch (marked in G2)");
         s.sides[1].members[0].moves[3].move_id = DFI_MOVE_UTURN;
-        legal(&t, kp, &s, false, "Annihilape with U-turn (unmarked: its switch cause is G5)");
+        legal(&t, kp, &s, true, "Annihilape with U-turn (marked in G5)");
         s.sides[1].members[0].moves[3].move_id = DFI_MOVE_FLAREBLITZ; /* Annihilape does not learn it */
         invalid(&t, kp, &s, "Annihilape with Flare Blitz");
 
@@ -1015,6 +1019,57 @@ int main(void)
         duoforge_battle_destroy(w);
     }
 #undef FRESH
+
+    /* Step G5: the damaging self-switch moves and their switch flags (dfi_pivot_moves). The flags are consecutive from
+     * Flip Turn's, each paired with a move of the pool tables that has the SELF_SWITCH data flag and no handler, and
+     * every such move of the tables has its flag: a new pivot move without one would be refused by the turn code
+     * (E_UNSUPPORTED), and this test says so before. Parting Shot (a handler, flag 1), Emergency Exit (2) and a
+     * fainted position (3) are no damaging pivots. */
+    {
+        DF_CHECK_EQ_U64(&t, DFI_PIVOT_MOVE_COUNT, 2u);
+        for (uint32_t i = 0u; i < DFI_PIVOT_MOVE_COUNT; ++i) {
+            const dfi_pivot_move *pm = &dfi_pivot_moves[i];
+            DF_CHECK_EQ_U64(&t, pm->flag, DFI_SWITCH_FLIP_TURN + i);
+            DF_CHECK(&t, pm->move < DFI_POOL_MOVE_COUNT);
+            DF_CHECK(&t, (dfi_pool_moves[pm->move].flags & DFI_MOVE_FLAG_SELF_SWITCH) != 0u &&
+                             dfi_pool_moves[pm->move].special == DFI_SPECIAL_NONE);
+            DF_CHECK(&t, dfi_pivot_of_move(pm->move) == pm && dfi_pivot_of_flag(pm->flag) == pm);
+            DF_CHECK(&t, pm->flag <= dfi_kind_limits_of(DUOFORGE_DATA_KIND_POOL).switch_flag_max);
+        }
+        DF_CHECK_EQ_U64(&t, dfi_pivot_moves[0].move, DFI_MOVE_FLIPTURN);
+        DF_CHECK_EQ_U64(&t, dfi_pivot_moves[1].move, DFI_MOVE_UTURN);
+        for (uint32_t id = 0u; id < DFI_POOL_MOVE_COUNT; ++id) {
+            const bool pivots = (dfi_pool_moves[id].flags & DFI_MOVE_FLAG_SELF_SWITCH) != 0u &&
+                                dfi_pool_moves[id].special == DFI_SPECIAL_NONE;
+            DF_CHECK_EQ_U64(&t, dfi_pivot_of_move(id) != NULL ? 1u : 0u, pivots ? 1u : 0u);
+            /* A marked move that pivots has its flag. */
+            DF_CHECK(&t, dfi_support.moves[id] == 0u || !pivots || dfi_pivot_of_move(id) != NULL);
+        }
+        DF_CHECK(&t, dfi_pivot_of_move(DFI_MOVE_PARTINGSHOT) == NULL);
+        DF_CHECK(&t, dfi_pivot_of_flag(DFI_SWITCH_NONE) == NULL && dfi_pivot_of_flag(DFI_SWITCH_MOVE) == NULL &&
+                         dfi_pivot_of_flag(DFI_SWITCH_EMERGENCY_EXIT) == NULL &&
+                         dfi_pivot_of_flag(DFI_SWITCH_FAINTED) == NULL && dfi_pivot_of_flag(DFI_SWITCH_UTURN + 1u) == NULL);
+        /* The kinds: U-turn's flag is the POOL kinds' alone, Flip Turn's the extended ones'. */
+        DF_CHECK_EQ_U64(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_TEAM_C).switch_flag_max, DFI_SWITCH_FLIP_TURN);
+        DF_CHECK_EQ_U64(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_TEAM_C_DEV).switch_flag_max, DFI_SWITCH_FLIP_TURN);
+        DF_CHECK_EQ_U64(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_POOL_DEV).switch_flag_max, DFI_SWITCH_UTURN);
+        DF_CHECK_EQ_U64(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_CLOSURE).switch_flag_max, DFI_SWITCH_FAINTED);
+        /* In a state under POOL: both flags are in range (a flag is wrong at a TURN boundary, which the invariant
+         * names), one past U-turn's is out of range. */
+        duoforge_battle *w = df_make_battle(kp, &teams);
+        duoforge_decision_bundle bd;
+        team_bundle(&bd, w);
+        step_expect(&t, kp, w, &bd, DUOFORGE_OK, "team selection");
+        DF_CHECK(&t, w->boundary_kind == DUOFORGE_BOUNDARY_TURN);
+        expect_inv(&t, kp, w, DFI_INV_NONE, "no switch flag at a TURN boundary");
+        w->sides[0].positions[0].switch_flag = (uint8_t)DFI_SWITCH_FLIP_TURN;
+        expect_inv(&t, kp, w, DFI_INV_SWITCH_FLAG, "Flip Turn's flag at a TURN boundary");
+        w->sides[0].positions[0].switch_flag = (uint8_t)DFI_SWITCH_UTURN;
+        expect_inv(&t, kp, w, DFI_INV_SWITCH_FLAG, "U-turn's flag at a TURN boundary");
+        w->sides[0].positions[0].switch_flag = (uint8_t)(DFI_SWITCH_UTURN + 1u);
+        expect_inv(&t, kp, w, DFI_INV_VOLATILE, "one past U-turn's flag");
+        duoforge_battle_destroy(w);
+    }
 
     duoforge_context_destroy(k1);
     duoforge_context_destroy(k2);
