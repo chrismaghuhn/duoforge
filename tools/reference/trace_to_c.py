@@ -27,7 +27,7 @@ checks its precondition and fails loudly otherwise:
 
   TEAM_ORDER        always: the team-preview actions are independent per side
   SPEED_TIE each:*  only if at most one tied Pokemon has a handler for
-                    that event (Sitrus Berry, Grassy Seed): with two, the
+                    that event (Sitrus Berry, Grassy Seed, Psychic Seed): with two, the
                     tie orders their lines and the engine draws
   SPEED_TIE switch-order
                     only if at most one tied entering Pokemon has a SwitchIn
@@ -303,14 +303,14 @@ def drop_reason(d, state, after=None, log=None):
             return 'Sandstorm damage tie with at most one damaged Pokemon'
         return None  # the engine draws: the order of the damage lines
     if site == 'SPEED_TIE' and ctx.startswith('each:'):
-        # P:<slot>:<handlers>:<effect ids>. Sitrus Berry (Update) and Grassy
-        # Seed (TerrainChange) act only on their holder, so the order of the
-        # Pokemon changes nothing.
+        # P:<slot>:<handlers>:<effect ids>. Sitrus Berry (Update) and the terrain
+        # seeds (TerrainChange: Grassy Seed, and Psychic Seed of step G15) act only on
+        # their holder, so the order of the Pokemon changes nothing.
         ids = [x for g in group for x in g.split(':', 3)[3].split('+') if x]
-        if not all(x in ('sitrusberry', 'grassyseed') for x in ids):
+        if not all(x in EACH_HANDLERS for x in ids):
             raise ConversionError('each-tie-handlers',
                                   'trace_to_c: %s tie between Pokemon with handlers: %s' % (ctx, group),
-                                  detail=ctx + ':' + '+'.join(sorted(set(ids) - {'sitrusberry', 'grassyseed'})))
+                                  detail=ctx + ':' + '+'.join(sorted(set(ids) - EACH_HANDLERS)))
         if sum(1 for g in group if g.split(':', 3)[3]) <= 1:
             return 'each-event tie with at most one holder'
         return None  # the engine draws: the order of the holders' lines
@@ -416,6 +416,10 @@ def drop_reason(d, state, after=None, log=None):
     if site == 'UNKNOWN':
         raise ConversionError('unclassified-draw', 'trace_to_c: unclassified draw', detail=ctx)
     return None
+
+
+# The items whose each-event handlers (Update, TerrainChange) act on their holder alone.
+EACH_HANDLERS = frozenset(('sitrusberry', 'grassyseed', 'psychicseed'))
 
 
 def site_of(d):

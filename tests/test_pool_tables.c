@@ -67,8 +67,8 @@
 #define POOL_ABILITIES 215u
 
 /* The rows that the tables do not model, pinned (the generator reports the same counts). */
-#define UNMODELED_MOVES 313u /* 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
-#define UNMODELED_ITEMS 45u
+#define UNMODELED_MOVES 312u /* 313 before step G15 modelled Expanding Force; 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
+#define UNMODELED_ITEMS 44u /* 45 before step G15 modelled Psychic Seed */
 #define UNMODELED_ABILITIES 184u
 
 /* How many rows of the manifest are marked and half modelled: marked, and with the UNMODELED handler or a list of
@@ -659,19 +659,27 @@ int main(void)
         uint32_t handlers = 0u;
         for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
             handlers += dfi_pool_moves[i].special >= DFI_SPECIAL_ENCORE &&
-                                dfi_pool_moves[i].special <= DFI_SPECIAL_SNOWSCAPE
+                                dfi_pool_moves[i].special <= DFI_SPECIAL_EXPANDING_FORCE
                             ? 1u
                             : 0u;
         }
         /* Seven ids of G2 remain after step G8 (Scald and Recover are not any move's after step G10), and the two
-         * weather moves (Sandstorm and Snowscape: the field `weather`, which no column models) have one each. */
-        DF_CHECK_EQ_U64(&t, handlers, DFI_SPECIAL_SNOWSCAPE - DFI_SPECIAL_ENCORE + 1u - 2u);
+         * weather moves (Sandstorm and Snowscape: the field `weather`, which no column models) have one each, and step
+         * G15 adds Expanding Force's (its callbacks change the base power and the target class). */
+        DF_CHECK_EQ_U64(&t, handlers, DFI_SPECIAL_EXPANDING_FORCE - DFI_SPECIAL_ENCORE + 1u - 2u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_ENCORE, DFI_SPECIAL_FOLLOW_ME + 1u);
         /* UNMODELED follows them. Step G10 made Scald and Recover data (the thaw bit and the heal column): their ids
          * are still defined, and no pool move has them. */
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_LOW_KICK + 1u, DFI_SPECIAL_SANDSTORM);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_SANDSTORM + 1u, DFI_SPECIAL_SNOWSCAPE);
-        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_SNOWSCAPE + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_EXPANDING_FORCE, DFI_SPECIAL_SNOWSCAPE + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_EXPANDING_FORCE + 1u);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_EXPANDINGFORCE].special, DFI_SPECIAL_EXPANDING_FORCE);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_EXPANDINGFORCE].base_power, 80u);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_EXPANDINGFORCE].target_class, DUOFORGE_TARGET_CLASS_NORMAL);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_EXPANDINGFORCE].category, DFI_CATEGORY_SPECIAL);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_EXPANDINGFORCE].type, DFI_TYPE_PSYCHIC);
+        DF_CHECK(&t, dfi_pool_move_unmodeled[DFI_MOVE_EXPANDINGFORCE] == NULL);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_SANDSTORM].special, DFI_SPECIAL_SANDSTORM);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_SNOWSCAPE].special, DFI_SPECIAL_SNOWSCAPE);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_SCALD].special, DFI_SPECIAL_NONE);
@@ -1085,10 +1093,12 @@ int main(void)
             DF_CHECK(&t, dfi_pool_item_family[id].family != DFI_ITEM_FAMILY_NONE);
         }
         /* Step G4 marks Focus Sash (onDamage at the move-damage call), step G12 Floettite (the Mega Stone of
-         * Floette-Eternal, with Fairy Aura); Expert Belt stays unmarked. */
+         * Floette-Eternal, with Fairy Aura), step G15 Psychic Seed (Grassy Seed's rule); Expert Belt stays unmarked, and
+         * so do the Electric and Misty Seeds. */
         DF_CHECK(&t, dfi_support.items[DFI_ITEM_FOCUSSASH] != 0u);
         for (uint32_t id = DFI_ITEM_FOCUSSASH + 1u; id < DFI_POOL_ITEM_COUNT; ++id) {
-            DF_CHECK_EQ_U64(&t, dfi_support.items[id] != 0u ? 1u : 0u, id == DFI_ITEM_FLOETTITE ? 1u : 0u);
+            DF_CHECK_EQ_U64(&t, dfi_support.items[id] != 0u ? 1u : 0u,
+                            id == DFI_ITEM_FLOETTITE || id == DFI_ITEM_PSYCHICSEED ? 1u : 0u);
         }
         for (uint32_t id = 0u; id < DFI_POOL_ITEM_COUNT; ++id) {
             if (dfi_pool_item_family[id].family != DFI_ITEM_FAMILY_NONE) {
@@ -1140,7 +1150,7 @@ int main(void)
                                                 DFI_MOVE_HYDROPUMP, DFI_MOVE_SUPERPOWER, DFI_MOVE_LIGHTOFRUIN,
                                                 DFI_MOVE_EARTHPOWER, DFI_MOVE_POWERGEM, DFI_MOVE_AURASPHERE,
                                                 DFI_MOVE_ICYWIND, DFI_MOVE_ICESHARD, DFI_MOVE_QUICKATTACK,
-                                                DFI_MOVE_DETECT, DFI_MOVE_POISONJAB};
+                                                DFI_MOVE_DETECT, DFI_MOVE_POISONJAB, DFI_MOVE_EXPANDINGFORCE};
         uint32_t marked_count = 0u;
         for (uint32_t id = DFI_EXT_MOVE_COUNT; id < DFI_POOL_MOVE_COUNT; ++id) {
             bool want = false;
@@ -1155,11 +1165,12 @@ int main(void)
                              id == DFI_MOVE_FIRSTIMPRESSION || id == DFI_MOVE_LOWKICK || id == DFI_MOVE_SOAK ||
                              id == DFI_MOVE_SANDSTORM || id == DFI_MOVE_SNOWSCAPE ||
                              (id == DFI_MOVE_WIDEGUARD && dfi_pool_moves[id].special == DFI_SPECIAL_WIDE_GUARD) ||
-                             (id == DFI_MOVE_DETECT && dfi_pool_moves[id].special == DFI_SPECIAL_PROTECT));
+                             (id == DFI_MOVE_DETECT && dfi_pool_moves[id].special == DFI_SPECIAL_PROTECT) ||
+                             (id == DFI_MOVE_EXPANDINGFORCE && dfi_pool_moves[id].special == DFI_SPECIAL_EXPANDING_FORCE));
             DF_CHECK(&t, !want || dfi_pool_moves[id].special != DFI_SPECIAL_UNMODELED);
             marked_count += dfi_support.moves[id] != 0u ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, marked_count, 39u);
+        DF_CHECK_EQ_U64(&t, marked_count, 40u);
     }
 
     /* Step G12: Fairy Aura and Flower Veil. The engine reads them by id (no family column: one legal holder each);
@@ -1262,6 +1273,9 @@ int main(void)
         DF_CHECK(&t, dfi_pool_ability_handler[DFI_ABILITY_FLOWERVEIL] == DFI_HANDLER_NONE &&
                          dfi_pool_ability_handler[DFI_ABILITY_FAIRYAURA] == DFI_HANDLER_NONE); /* engine rows, G12 */
         DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_FLOETTITE] == DFI_HANDLER_NONE); /* a Mega Stone: data of its link */
+        DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_PSYCHICSEED] == DFI_HANDLER_NONE &&
+                         dfi_pool_item_handler[DFI_ITEM_ELECTRICSEED] == DFI_HANDLER_UNMODELED &&
+                         dfi_pool_item_handler[DFI_ITEM_MISTYSEED] == DFI_HANDLER_UNMODELED); /* an engine row, G15 */
         DF_CHECK(&t, dfi_pool_moves[DFI_MOVE_UTURN].special == DFI_SPECIAL_NONE);
         /* A few whole-pool rows, by what the pin says. Earthquake: allAdjacent, a class that the turn code lacks;
          * Hydro Pump: pure data; Substitute: a volatile with callbacks; Stealth Rock: a side condition and a class

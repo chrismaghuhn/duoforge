@@ -909,7 +909,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 39)  # G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), then the fourteen of G13
+        self.assertEqual(len(marked), 40)  # G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, then Expanding Force (G15)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
