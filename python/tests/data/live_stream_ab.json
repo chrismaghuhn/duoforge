@@ -1,0 +1,99 @@
+{
+ "source": "node tools/reference/ps_client.js <pinned checkout> <repo root> m5_real_ab_1: the first 10 messages to p1",
+ "battle": "m5_real_ab_1",
+ "team": "Ceruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Bitter Blade\n- Shadow Sneak\n- Swords Dance\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Nasty Plot\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Muddy Water\n- Coil\n- Ice Beam\n- Hypnosis\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Close Combat\n- Tailwind\n- Protect\n\nRaichu (F) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Zap Cannon\n- Focus Blast\n- Fake Out\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- High Horsepower",
+ "foe_team": "Grimmsnarl (M) @ Light Clay\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Spirit Break\n- Reflect\n- Light Screen\n- Parting Shot\n\nFarigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Grass Knot\n- Trick Room\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Weather Ball\n- Muddy Water\n- Ice Beam\n- Protect\n\nGolisopod (F) @ Golisopite\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 1 SpD / 1 Spe\nAdamant Nature\n- Leech Life\n- Iron Head\n- Drill Run\n- Protect\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Electro Shot\n- Snarl\n- Protect\n\nCharizard (M) @ Charizardite Y\nAbility: Blaze\nLevel: 50\nEVs: 16 HP / 18 Def / 3 SpA / 29 Spe\nTimid Nature\n- Heat Wave\n- Weather Ball\n- Hurricane\n- Protect",
+ "inputs": [
+  "team 1234",
+  "move 2 2, move 3",
+  "move 3, move 4",
+  "move 4, move 3",
+  "move 1 2, move 3"
+ ],
+ "messages": [
+  [
+   "|gametype|doubles",
+   "|player|p1|p1||"
+  ],
+  [
+   "|player|p2|p2||",
+   "|gen|9",
+   "|tier|[Gen 9 Champions] VGC 2026 Reg M-C",
+   "|rule|Species Clause: Limit one of each Pokémon",
+   "|rule|Item Clause: Limit 1 of each item",
+   "|clearpoke",
+   "|poke|p1|Ceruledge, L50, M|",
+   "|poke|p1|Gholdengo, L50|",
+   "|poke|p1|Milotic, L50, F|",
+   "|poke|p1|Staraptor, L50, F|",
+   "|poke|p1|Raichu, L50, F|",
+   "|poke|p1|Rillaboom, L50, M|",
+   "|poke|p2|Grimmsnarl, L50, M|",
+   "|poke|p2|Farigiraf, L50, F|",
+   "|poke|p2|Politoed, L50, M|",
+   "|poke|p2|Golisopod, L50, F|",
+   "|poke|p2|Archaludon, L50, M|",
+   "|poke|p2|Charizard, L50, M|",
+   "|teampreview|4",
+   "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>"
+  ],
+  [
+   "|request|{\"teamPreview\":true,\"maxChosenTeamSize\":4,\"side\":{\"name\":\"p1\",\"id\":\"p1\",\"pokemon\":[{\"ident\":\"p1: Ceruledge\",\"details\":\"Ceruledge, L50, M\",\"condition\":\"181/181\",\"active\":true,\"stats\":{\"atk\":167,\"def\":124,\"spa\":72,\"spd\":123,\"spe\":106},\"moves\":[\"bitterblade\",\"shadowsneak\",\"swordsdance\",\"protect\"],\"baseAbility\":\"flashfire\",\"item\":\"grassyseed\",\"pokeball\":\"pokeball\",\"ability\":\"flashfire\",\"commanding\":false,\"reviving\":false},{\"ident\":\"p1: Gholdengo\",\"details\":\"Gholdengo, L50\",\"condition\":\"179/179\",\"active\":true,\"stats\":{\"atk\":72,\"def\":117,\"spa\":187,\"spd\":127,\"spe\":118},\"moves\":[\"makeitrain\",\"shadowball\",\"nastyplot\",\"protect\"],\"baseAbility\":\"goodasgold\",\"item\":\"lifeorb\",\"pokeball\":\"pokeball\",\"ability\":\"goodasgold\",\"commanding\":false,\"reviving\":false},{\"ident\":\"p1: Milotic\",\"details\":\"Milotic, L50, F\",\"condition\":\"202/202\",\"active\":false,\"stats\":{\"atk\":72,\"def\":128,\"spa\":120,\"spd\":165,\"spe\":101},\"moves\":[\"muddywater\",\"coil\",\"icebeam\",\"hypnosis\"],\"baseAbility\":\"competitive\",\"item\":\"sitrusberry\",\"pokeball\":\"pokeball\",\"ability\":\"competitive\",\"commanding\":false,\"reviving\":false},{\"ident\":\"p1: Staraptor\",\"details\":\"Staraptor, L50, F\",\"condition\":\"192/192\",\"active\":false,\"stats\":{\"atk\":140,\"def\":90,\"spa\":63,\"spd\":82,\"spe\":167},\"moves\":[\"bravebird\",\"closecombat\",\"tailwind\",\"protect\"],\"baseAbility\":\"intimidate\",\"item\":\"staraptite\",\"pokeball\":\"pokeball\",\"ability\":\"intimidate\",\"commanding\":false,\"reviving\":false},{\"ident\":\"p1: Raichu\",\"details\":\"Raichu, L50, F\",\"condition\":\"164/164\",\"active\":false,\"stats\":{\"atk\":99,\"def\":80,\"spa\":110,\"spd\":100,\"spe\":178},\"moves\":[\"zapcannon\",\"focusblast\",\"fakeout\",\"protect\"],\"baseAbility\":\"lightningrod\",\"item\":\"raichunitey\",\"pokeball\":\"pokeball\",\"ability\":\"lightningrod\",\"commanding\":false,\"reviving\":false},{\"ident\":\"p1: Rillaboom\",\"details\":\"Rillaboom, L50, M\",\"condition\":\"193/193\",\"active\":false,\"stats\":{\"atk\":194,\"def\":112,\"spa\":72,\"spd\":96,\"spe\":113},\"moves\":[\"woodhammer\",\"grassyglide\",\"fakeout\",\"highhorsepower\"],\"baseAbility\":\"grassysurge\",\"item\":\"miracleseed\",\"pokeball\":\"pokeball\",\"ability\":\"grassysurge\",\"commanding\":false,\"reviving\":false}]},\"rqid\":1}"
+  ],
+  [
+   "|showteam|p1|Ceruledge||GrassySeed|FlashFire|BitterBlade,ShadowSneak,SwordsDance,Protect|Adamant||M|||50|]Gholdengo||LifeOrb|GoodasGold|MakeItRain,ShadowBall,NastyPlot,Protect|Modest|||||50|]Milotic||SitrusBerry|Competitive|MuddyWater,Coil,IceBeam,Hypnosis|Calm||F|||50|]Staraptor||Staraptite|Intimidate|BraveBird,CloseCombat,Tailwind,Protect|Jolly||F|||50|]Raichu||RaichuniteY|LightningRod|ZapCannon,FocusBlast,FakeOut,Protect|Timid||F|||50|]Rillaboom||MiracleSeed|GrassySurge|WoodHammer,GrassyGlide,FakeOut,HighHorsepower|Adamant||M|||50|",
+   "|showteam|p2|Grimmsnarl||LightClay|Prankster|SpiritBreak,Reflect,LightScreen,PartingShot|Sassy||M|||50|]Farigiraf||SitrusBerry|ArmorTail|Psychic,GrassKnot,TrickRoom,Protect|Bold||F|||50|]Politoed||MysticWater|Drizzle|WeatherBall,MuddyWater,IceBeam,Protect|Modest||M|||50|]Golisopod||Golisopite|EmergencyExit|LeechLife,IronHead,DrillRun,Protect|Adamant||F|||50|]Archaludon||Leftovers|Stamina|DragonPulse,ElectroShot,Snarl,Protect|Bold||M|||50|]Charizard||CharizarditeY|Blaze|HeatWave,WeatherBall,Hurricane,Protect|Timid||M|||50|"
+  ],
+  [
+   "|",
+   "|teamsize|p1|4",
+   "|teamsize|p2|4",
+   "|start",
+   "|uhtmlchange|otsrequest|",
+   "|switch|p1a: Ceruledge|Ceruledge, L50, M|181/181",
+   "|switch|p1b: Gholdengo|Gholdengo, L50|179/179",
+   "|switch|p2a: Grimmsnarl|Grimmsnarl, L50, M|100/100",
+   "|switch|p2b: Farigiraf|Farigiraf, L50, F|100/100",
+   "|turn|1"
+  ],
+  [
+   "|request|{\"active\":[{\"moves\":[{\"move\":\"Bitter Blade\",\"id\":\"bitterblade\",\"pp\":12,\"maxpp\":12,\"target\":\"normal\",\"disabled\":false},{\"move\":\"Shadow Sneak\",\"id\":\"shadowsneak\",\"pp\":20,\"maxpp\":20,\"target\":\"normal\",\"disabled\":false},{\"move\":\"Swords Dance\",\"id\":\"swordsdance\",\"pp\":20,\"maxpp\":20,\"target\":\"self\",\"disabled\":false},{\"move\":\"Protect\",\"id\":\"protect\",\"pp\":8,\"maxpp\":8,\"target\":\"self\",\"disabled\":false}]},{\"moves\":[{\"move\":\"Make It Rain\",\"id\":\"makeitrain\",\"pp\":8,\"maxpp\":8,\"target\":\"allAdjacentFoes\",\"disabled\":false},{\"move\":\"Shadow Ball\",\"id\":\"shadowball\",\"pp\":16,\"maxpp\":16,\"target\":\"normal\",\"disabled\":false},{\"move\":\"Nasty Plot\",\"id\":\"nastyplot\",\"pp\":20,\"maxpp\":20,\"target\":\"self\",\"disabled\":false},{\"move\":\"Protect\",\"id\":\"protect\",\"pp\":8,\"maxpp\":8,\"target\":\"self\",\"disabled\":false}]}],\"side\":{\"name\":\"p1\",\"id\":\"p1\",\"pokemon\":[{\"ident\":\"p1: Ceruledge\",\"details\":\"Ceruledge, L50, M\",\"condition\":\"181/181\",\"active\":true,\"stats\":{\"atk\":167,\"def\":124,\"spa\":72,\"spd\":123,\"spe\":106},\"moves\":[\"bitterblade\",\"shadowsneak\",\"swordsdance\",\"protect\"],\"baseAbility\":\"flashfire\",\"item\":\"grassyseed\",\"pokeball\":\"pokeball\",\"ability\":\"flashfire\",\"commanding\":false,\"reviving\":false},{\"ident\":\"p1: Gholdengo\",\"details\":\"Gholdengo, L50\",\"condition\":\"179/179\",\"active\":true,\"stats\":{\"atk\":72,\"def\":117,\"spa\":187,\"spd\":127,\"spe\":118},\"moves\":[\"makeitrain\",\"shadowball\",\"nastyplot\",\"protect\"],\"baseAbility\":\"goodasgold\",\"item\":\"lifeorb\",\"pokeball\":\"pokeball\",\"ability\":\"goodasgold\",\"commanding\":false,\"reviving\":false},{\"ident\":\"p1: Milotic\",\"details\":\"Milotic, L50, F\",\"condition\":\"202/202\",\"active\":false,\"stats\":{\"atk\":72,\"def\":128,\"spa\":120,\"spd\":165,\"spe\":101},\"moves\":[\"muddywater\",\"coil\",\"icebeam\",\"hypnosis\"],\"baseAbility\":\"competitive\",\"item\":\"sitrusberry\",\"pokeball\":\"pokeball\",\"ability\":\"competitive\",\"commanding\":false,\"reviving\":false},{\"ident\":\"p1: Staraptor\",\"details\":\"Staraptor, L50, F\",\"condition\":\"192/192\",\"active\":false,\"stats\":{\"atk\":140,\"def\":90,\"spa\":63,\"spd\":82,\"spe\":167},\"moves\":[\"bravebird\",\"closecombat\",\"tailwind\",\"protect\"],\"baseAbility\":\"intimidate\",\"item\":\"staraptite\",\"pokeball\":\"pokeball\",\"ability\":\"intimidate\",\"commanding\":false,\"reviving\":false}]},\"rqid\":3}"
+  ],
+  [
+   "|",
+   "|move|p2b: Farigiraf|Protect|p2b: Farigiraf",
+   "|-singleturn|p2b: Farigiraf|Protect",
+   "|move|p1a: Ceruledge|Shadow Sneak||[still]",
+   "|cant|p2b: Farigiraf|ability: Armor Tail|Shadow Sneak|[of] p1a: Ceruledge",
+   "|move|p1b: Gholdengo|Nasty Plot|p1b: Gholdengo",
+   "|-boost|p1b: Gholdengo|spa|2",
+   "|move|p2a: Grimmsnarl|Spirit Break|p1b: Gholdengo",
+   "|-resisted|p1b: Gholdengo|1",
+   "|-damage|p1b: Gholdengo|151/179",
+   "|-unboost|p1b: Gholdengo|spa|1",
+   "|",
+   "|upkeep",
+   "|turn|2"
+  ],
+  [
+   "|request|{\"active\":[{\"moves\":[{\"move\":\"Bitter Blade\",\"id\":\"bitterblade\",\"pp\":12,\"maxpp\":12,\"target\":\"normal\",\"disabled\":false},{\"move\":\"Shadow Sneak\",\"id\":\"shadowsneak\",\"pp\":19,\"maxpp\":20,\"target\":\"normal\",\"disabled\":false},{\"move\":\"Swords Dance\",\"id\":\"swordsdance\",\"pp\":20,\"maxpp\":20,\"target\":\"self\",\"disabled\":false},{\"move\":\"Protect\",\"id\":\"protect\",\"pp\":8,\"maxpp\":8,\"target\":\"self\",\"disabled\":false}]},{\"moves\":[{\"move\":\"Make It Rain\",\"id\":\"makeitrain\",\"pp\":8,\"maxpp\":8,\"target\":\"allAdjacentFoes\",\"disabled\":false},{\"move\":\"Shadow Ball\",\"id\":\"shadowball\",\"pp\":16,\"maxpp\":16,\"target\":\"normal\",\"disabled\":false},{\"move\":\"Nasty Plot\",\"id\":\"nastyplot\",\"pp\":19,\"maxpp\":20,\"target\":\"self\",\"disabled\":false},{\"move\":\"Protect\",\"id\":\"protect\",\"pp\":8,\"maxpp\":8,\"target\":\"self\",\"disabled\":false}]}],\"side\":{\"name\":\"p1\",\"id\":\"p1\",\"pokemon\":[{\"ident\":\"p1: Ceruledge\",\"details\":\"Ceruledge, L50, M\",\"condition\":\"181/181\",\"active\":true,\"stats\":{\"atk\":167,\"def\":124,\"spa\":72,\"spd\":123,\"spe\":106},\"moves\":[\"bitterblade\",\"shadowsneak\",\"swordsdance\",\"protect\"],\"baseAbility\":\"flashfire\",\"item\":\"grassyseed\",\"pokeball\":\"pokeball\",\"ability\":\"flashfire\",\"commanding\":false,\"reviving\":false},{\"ident\":\"p1: Gholdengo\",\"details\":\"Gholdengo, L50\",\"condition\":\"151/179\",\"active\":true,\"stats\":{\"atk\":72,\"def\":117,\"spa\":187,\"spd\":127,\"spe\":118},\"moves\":[\"makeitrain\",\"shadowball\",\"nastyplot\",\"protect\"],\"baseAbility\":\"goodasgold\",\"item\":\"lifeorb\",\"pokeball\":\"pokeball\",\"ability\":\"goodasgold\",\"commanding\":false,\"reviving\":false},{\"ident\":\"p1: Milotic\",\"details\":\"Milotic, L50, F\",\"condition\":\"202/202\",\"active\":false,\"stats\":{\"atk\":72,\"def\":128,\"spa\":120,\"spd\":165,\"spe\":101},\"moves\":[\"muddywater\",\"coil\",\"icebeam\",\"hypnosis\"],\"baseAbility\":\"competitive\",\"item\":\"sitrusberry\",\"pokeball\":\"pokeball\",\"ability\":\"competitive\",\"commanding\":false,\"reviving\":false},{\"ident\":\"p1: Staraptor\",\"details\":\"Staraptor, L50, F\",\"condition\":\"192/192\",\"active\":false,\"stats\":{\"atk\":140,\"def\":90,\"spa\":63,\"spd\":82,\"spe\":167},\"moves\":[\"bravebird\",\"closecombat\",\"tailwind\",\"protect\"],\"baseAbility\":\"intimidate\",\"item\":\"staraptite\",\"pokeball\":\"pokeball\",\"ability\":\"intimidate\",\"commanding\":false,\"reviving\":false}]},\"rqid\":5}"
+  ],
+  [
+   "|",
+   "|move|p1b: Gholdengo|Protect|p1b: Gholdengo",
+   "|-singleturn|p1b: Gholdengo|Protect",
+   "|move|p1a: Ceruledge|Swords Dance|p1a: Ceruledge",
+   "|-boost|p1a: Ceruledge|atk|2",
+   "|move|p2a: Grimmsnarl|Spirit Break|p1b: Gholdengo",
+   "|-activate|p1b: Gholdengo|move: Protect",
+   "|move|p2b: Farigiraf|Trick Room|p2b: Farigiraf",
+   "|-fieldstart|move: Trick Room|[of] p2b: Farigiraf",
+   "|",
+   "|upkeep",
+   "|turn|3"
+  ],
+  [
+   "|request|{\"active\":[{\"moves\":[{\"move\":\"Bitter Blade\",\"id\":\"bitterblade\",\"pp\":12,\"maxpp\":12,\"target\":\"normal\",\"disabled\":false},{\"move\":\"Shadow Sneak\",\"id\":\"shadowsneak\",\"pp\":19,\"maxpp\":20,\"target\":\"normal\",\"disabled\":false},{\"move\":\"Swords Dance\",\"id\":\"swordsdance\",\"pp\":19,\"maxpp\":20,\"target\":\"self\",\"disabled\":false},{\"move\":\"Protect\",\"id\":\"protect\",\"pp\":8,\"maxpp\":8,\"target\":\"self\",\"disabled\":false}]},{\"moves\":[{\"move\":\"Make It Rain\",\"id\":\"makeitrain\",\"pp\":8,\"maxpp\":8,\"target\":\"allAdjacentFoes\",\"disabled\":false},{\"move\":\"Shadow Ball\",\"id\":\"shadowball\",\"pp\":16,\"maxpp\":16,\"target\":\"normal\",\"disabled\":false},{\"move\":\"Nasty Plot\",\"id\":\"nastyplot\",\"pp\":19,\"maxpp\":20,\"target\":\"self\",\"disabled\":false},{\"move\":\"Protect\",\"id\":\"protect\",\"pp\":7,\"maxpp\":8,\"target\":\"self\",\"disabled\":false}]}],\"side\":{\"name\":\"p1\",\"id\":\"p1\",\"pokemon\":[{\"ident\":\"p1: Ceruledge\",\"details\":\"Ceruledge, L50, M\",\"condition\":\"181/181\",\"active\":true,\"stats\":{\"atk\":167,\"def\":124,\"spa\":72,\"spd\":123,\"spe\":106},\"moves\":[\"bitterblade\",\"shadowsneak\",\"swordsdance\",\"protect\"],\"baseAbility\":\"flashfire\",\"item\":\"grassyseed\",\"pokeball\":\"pokeball\",\"ability\":\"flashfire\",\"commanding\":false,\"reviving\":false},{\"ident\":\"p1: Gholdengo\",\"details\":\"Gholdengo, L50\",\"condition\":\"151/179\",\"active\":true,\"stats\":{\"atk\":72,\"def\":117,\"spa\":187,\"spd\":127,\"spe\":118},\"moves\":[\"makeitrain\",\"shadowball\",\"nastyplot\",\"protect\"],\"baseAbility\":\"goodasgold\",\"item\":\"lifeorb\",\"pokeball\":\"pokeball\",\"ability\":\"goodasgold\",\"commanding\":false,\"reviving\":false},{\"ident\":\"p1: Milotic\",\"details\":\"Milotic, L50, F\",\"condition\":\"202/202\",\"active\":false,\"stats\":{\"atk\":72,\"def\":128,\"spa\":120,\"spd\":165,\"spe\":101},\"moves\":[\"muddywater\",\"coil\",\"icebeam\",\"hypnosis\"],\"baseAbility\":\"competitive\",\"item\":\"sitrusberry\",\"pokeball\":\"pokeball\",\"ability\":\"competitive\",\"commanding\":false,\"reviving\":false},{\"ident\":\"p1: Staraptor\",\"details\":\"Staraptor, L50, F\",\"condition\":\"192/192\",\"active\":false,\"stats\":{\"atk\":140,\"def\":90,\"spa\":63,\"spd\":82,\"spe\":167},\"moves\":[\"bravebird\",\"closecombat\",\"tailwind\",\"protect\"],\"baseAbility\":\"intimidate\",\"item\":\"staraptite\",\"pokeball\":\"pokeball\",\"ability\":\"intimidate\",\"commanding\":false,\"reviving\":false}]},\"rqid\":7}"
+  ]
+ ]
+}
