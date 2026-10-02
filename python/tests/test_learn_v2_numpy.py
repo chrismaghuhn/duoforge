@@ -10,8 +10,10 @@ import unittest
 
 import numpy as np
 
-from duoforge import features
+import duoforge
+from duoforge import features, teams
 from duoforge_learn import checkpoint, columns, pairing
+from duoforge_learn.selfplay import SelfPlay
 
 
 def _config(**extra):
@@ -140,6 +142,49 @@ class PairingTest(unittest.TestCase):
         want = mix((mix((mix((5 + pairing.PAIR_SIDE1) & mask) + 3) & mask) + 9) & mask)
         got = pairing.draw(5, pairing.PAIR_SIDE1, np.array([3]), np.array([9]))
         self.assertEqual(int(got[0]), want)
+
+
+def _first_legal(o):
+    """Actions (E, 2): the first allowed pair, or team tuple 0."""
+    flat = o.mask.reshape(o.mask.shape[0], 2, -1)
+    return np.where(o.is_team, 0, np.argmax(flat, axis=-1))
+
+
+class SelfPlayPoolTest(unittest.TestCase):
+    def test_ended_environment_gets_its_drawn_pairing(self):
+        seed = 0x2026100200000174
+        pool = teams.TeamPool.from_setups(("A", "B"), duoforge.reference_setups([0])["sides"][0], (1.0, 2.0))
+        env = SelfPlay(6, 1, seed, pool=pool, max_steps=40)
+        try:
+            for _ in range(200):
+                _, done = env.step(_first_legal(env.observe()))
+                if done.any():
+                    break
+            e = int(np.flatnonzero(done)[0])
+            k = int(env.episodes[e])
+            self.assertEqual(k, 1)
+            p0, p1 = pairing.pairings(seed, [e], [k], pool.weights)
+            self.assertEqual(env.pairing[e].tolist(), [int(p0[0]), int(p1[0])])
+            setups = pool.setups(np.zeros(6, dtype=np.int64), np.zeros(6, dtype=np.int64))
+            setups[e] = pool.setups(p0, p1)[0]
+            with duoforge.Batch(env.context, setups, 1, seed) as fresh:
+                fresh.reset(e, k)
+                self.assertEqual(env.batch.digest(e), fresh.digest(e))
+        finally:
+            env.close()
+
+    def test_start_episodes_are_used(self):
+        seed = 0x2026100200000175
+        starts = []
+        env = SelfPlay(2, 1, seed, start_episodes=np.array([5, 9], dtype=np.uint32),
+                       on_start=lambda envs, eps: starts.append((list(envs), list(eps))))
+        try:
+            self.assertEqual([env.batch.episode(0), env.batch.episode(1)], [5, 9])
+            p0, p1 = pairing.pairings(seed, [0, 1], [5, 9], env.pool.weights)
+            self.assertEqual(env.pairing.tolist(), [[int(p0[0]), int(p1[0])], [int(p0[1]), int(p1[1])]])
+            self.assertEqual(starts, [([0, 1], [5, 9])])
+        finally:
+            env.close()
 
 
 if __name__ == "__main__":
