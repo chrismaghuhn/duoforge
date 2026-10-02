@@ -83,6 +83,11 @@ checks its precondition and fails loudly otherwise:
 Shuffle draws (SPEED_TIE queue) are made relative to the shuffled group:
 random(i, n) with i and n counted from the group's first index.
 
+Poison Touch's roll (POOL data, step G14: randomChance(3, 10) in data/abilities.ts poisontouch,
+onSourceDamagingHit) is named POISON_TOUCH by ps_trace.js (the effect and the event that the
+reference is running) and kept: the engine draws it after every contact hit of a Poison Touch
+holder, also at a target that is down.
+
 Dire Claw's status pick (Team C) is recorded as SECONDARY[0,3) in context
 Hit; it becomes STATUS_PICK, and every one is kept: the engine draws it
 after each successful secondary roll, as the reference does (decision 0009
@@ -116,7 +121,7 @@ import sys
 
 SITES = {'SPEED_TIE': 1, 'ACCURACY': 2, 'CRIT': 3, 'DAMAGE_ROLL': 4, 'SECONDARY': 5, 'STALL': 6,
          'SLEEP_TURNS': 7, 'FREEZE_THAW': 8, 'FULL_PARALYSIS': 9, 'CONFUSION_TURNS': 10,
-         'CONFUSION_HIT': 11, 'RANDOM_TARGET': 12, 'STATUS_PICK': 13, 'INSERT_TIE': 14}
+         'CONFUSION_HIT': 11, 'RANDOM_TARGET': 12, 'STATUS_PICK': 13, 'INSERT_TIE': 14, 'POISON_TOUCH': 16}
 STATS = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe']
 GENDER = {'M': 1, 'F': 2}
 GENDERLESS = 3
@@ -314,12 +319,25 @@ def drop_reason(d, state, after=None, log=None):
         # P:<slot>:<handlers>:<effect ids>. Sitrus Berry (Update) and Grassy
         # Seed (TerrainChange) act only on their holder, so the order of the
         # Pokemon changes nothing.
-        ids = [x for g in group for x in g.split(':', 3)[3].split('+') if x]
+        # Thermal Exchange's onUpdate (data/abilities.ts:4990-5018, step G14) cures a burn that its holder has, and the
+        # holder cannot have one (every burn is refused by its onSetStatus, a member starts without a status): it does
+        # nothing, so it is not a holder here. The precondition is checked on the state before the step: a holder
+        # that is burned is an error.
+        for g in group:
+            if 'thermalexchange' in g.split(':', 3)[3].split('+'):
+                slot = g.split(':')[1]
+                side = state['sides'][int(slot[1]) - 1]
+                index = side['active'][' ab'.index(slot[2]) - 1]
+                if index is not None and side['pokemon'][index]['status'] == 'brn':
+                    raise ConversionError('thermal-exchange-burn',
+                                          'trace_to_c: a Thermal Exchange holder is burned: %s' % slot, detail=slot)
+        inert = {'thermalexchange'}
+        ids = [x for g in group for x in g.split(':', 3)[3].split('+') if x and x not in inert]
         if not all(x in ('sitrusberry', 'grassyseed') for x in ids):
             raise ConversionError('each-tie-handlers',
                                   'trace_to_c: %s tie between Pokemon with handlers: %s' % (ctx, group),
                                   detail=ctx + ':' + '+'.join(sorted(set(ids) - {'sitrusberry', 'grassyseed'})))
-        if sum(1 for g in group if g.split(':', 3)[3]) <= 1:
+        if sum(1 for g in group if [x for x in g.split(':', 3)[3].split('+') if x and x not in inert]) <= 1:
             return 'each-event tie with at most one holder'
         return None  # the engine draws: the order of the holders' lines
     if site == 'SPEED_TIE' and ctx == 'switch-order':

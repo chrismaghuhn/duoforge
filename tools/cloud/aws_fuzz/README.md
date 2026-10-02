@@ -20,7 +20,7 @@ then the scripts are used with `check.sh`, which makes read-only and `--dry-run`
 | `chunks.sh` | the chunk scheduler the box sources: parallel chunks, background uploads, done-manifest, partial uploads |
 | `bench_run.py` | the raw engine benchmark of `bench=1`: `duoforge_bench` on all vCPUs, `bench.json` |
 | `collect.sh` | downloads a campaign and replays every kept case locally (`diff_driver.py corpus`) |
-| `campaigns/<id>/` | `campaign.conf` (pairings, teams, base seed, chunks, and optionally chunk_battles, parallel, bench) and the team pastes of a campaign |
+| `campaigns/<id>/` | `campaign.conf` (pairings, teams, base seed, chunks, and optionally chunk_battles, parallel or sweep, bench) and the team pastes of a campaign |
 | `test_guards.py` | offline tests with a stub `aws` (CTest: `duoforge.cloud.aws_fuzz_guards`) |
 
 ## The rules every script follows
@@ -82,12 +82,23 @@ with warnings as errors and IPO, then the target `duoforge_diff_runner`.
   100 to 20000). When a chunk is done its `summary.json`, `run.json`, `battles.jsonl`, `timing.json` and `cases/` (the
   spec and `trace.json.gz` of every battle that is not a PASS) go to `s3://<BUCKET>/fuzz/<campaign>/<run id>/chunk-<NNNN>/`.
 - **Parallel chunks and overlapped uploads** (`chunks.sh`). One driver process cannot keep a big machine busy: its
-  Python side (the converter, the JSON of the traces) runs under the interpreter lock, which is the likely reason that the first pilot
-  (one driver, 64 workers, 500-battle chunks) ran 55 battles/s inside its chunks with only about 24 of 64 vCPUs busy.
+  Python side (the converter, the JSON of the traces) runs under the interpreter lock. Measured on a c7a.16xlarge
+  (64 vCPUs): one driver with 64 workers made 55 battles/s with about 24 vCPUs busy (pilot 2); three drivers with 21
+  workers each made 55.6 to 58.8 battles/s each at 13 to 14% of the vCPUs, about 8.6 vCPUs per driver, and about 167
+  battles/s together (pilot 3, 0.278 CPU-s per battle). A driver stays near 58 battles/s whatever its worker count.
   `parallel` in the `campaign.conf` is the number of chunks computed at the same time, each its own driver process with
-  `vCPUs / parallel` workers; `auto` (the default) is `vCPUs / 20` (3 on 64 vCPUs). The upload of a finished chunk runs
-  in the background while the next chunks compute. The figure to compare is the one the log gives (below); the target is
-  about 140 battles/s on 64 vCPUs, **to be measured**, not yet a result.
+  `vCPUs / parallel` workers; `auto` (the default) is `vCPUs / 9`, at least 1 (7 on 64 vCPUs, so about 7 x 8.6 vCPUs).
+  The upload of a finished chunk runs in the background while the next chunks compute.
+- **Parallel sweep** (`sweep=5,7,9` in the `campaign.conf`, instead of `parallel`): one launch measures several values of
+  `parallel`, one **phase** each, played one after the other. Each phase has `chunks` chunks (so the campaign has
+  `chunks` x the number of values; the seeds go on across the phases, no battle is played twice) and needs at least
+  2 x parallel + 3 of them (a sweep of 5, 7 and 9 needs 21; `campaigns/throughput-sweep` has 24 chunks of 1000). Per phase
+  the log gives the **steady-state** battles/s: the chunks completed between the completion of the first `parallel`
+  chunks (the first wave starts together and finishes together) and the completion of the chunk `parallel` before the
+  last (after which the drivers run dry), divided by that time, so that neither the start-up nor a single tail chunk is
+  in it; and the overall rate of the phase and the machine's busy share. The same lines go to
+  `fuzz/<campaign>/<run id>/sweep.jsonl`, and the per-minute log names the phase. The sweep is part of the manifest
+  (`parallel` is recorded as `sweep=5,7,9`), so a resume must use the same sweep.
 - **Runs and the manifest.** Every launch is a **run** with a prefix of its own,
   `fuzz/<campaign>/<run id>/`, where the run id is `<first 12 digits of the commit>-<chunk_battles>-<base_seed>-<launch
   time>` (launch.sh prints it). Everything the box writes is under that prefix, so a run of another commit or geometry,
@@ -278,6 +289,7 @@ CLOSURE mirrors and the Team C mirror. The table gives the chunks of the campaig
 | `weather-sand-snow` | sand team D, snow team E: `DE,ED,DD,EE,DA,AD,EA,AE` (POOL) | 4 x 1000 = 4000 battles, ten times the step's 400; `bench=1` | yes |
 | `closure-mirror` | team A and team B mirrors: `AA,BB` (CLOSURE) | 5 x 1000 | yes |
 | `team-c-mirror` | Team C mirror: `CC` (TEAM_C) | 5 x 1000 | yes |
+| `throughput-sweep` | the closure mirrors `AA,BB` at 5, 7 and 9 drivers (`sweep=5,7,9`, `bench=1`) | 3 phases x 24 x 1000 | yes (not a pilot: it measures the machine) |
 | `g7-wide-guard` | the step's teams (Wide Guard) | ten times the step's | to be added by the step's owner |
 | `g8-throat-chop-heal-block` | the step's teams | ten times the step's | to be added |
 | `g9-encore` | the step's teams (Encore) | ten times the step's | to be added |
@@ -288,7 +300,7 @@ CLOSURE mirrors and the Team C mirror. The table gives the chunks of the campaig
 
 A campaign is a directory `campaigns/<id>/` with `campaign.conf` (`pairings`, `teams`, `base_seed`, `chunks`: four
 required `key=value` lines, and the optional `chunk_battles` (100 to 20000, default 2000), `parallel` (`auto` or 1 to 16)
-and `bench` (0 or 1); see the three that exist) and the team pastes it names (`teams=D=sand.txt E=snow.txt`: a letter, a
+or `sweep` (1 to 6 values, not with `parallel`) and `bench` (0 or 1); see the four that exist) and the team pastes it names (`teams=D=sand.txt E=snow.txt`: a letter, a
 file of six sets with every gender stated, as `diff_driver.py random --team` takes them; or the id of a team of the
 registry). It is read from the commit that is built, so a campaign is reviewed with the PR that adds it. Pick a base seed
 range that no other campaign uses: the names of the battles are `fz_<seed>_<index>`.

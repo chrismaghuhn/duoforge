@@ -916,6 +916,40 @@ class Library(unittest.TestCase):
             trace_to_c.drop_reason(other, before)
         self.assertEqual(ctx.exception.rule, 'insert-tie')
 
+    def test_poison_touch_rolls_are_kept_as_their_own_site(self):
+        """Poison Touch's randomChance(3, 10) (step G14) is a draw of the site POISON_TOUCH, random(10), that the harness
+        names by the effect and the event it runs in (ps_trace.js CONDITION_SITES) and the converter keeps as a tape entry
+        of site 16: after every contact hit of a holder, also at a target that is down or immune. The recorded battle has
+        draws below and above 3 and none outside [0, 10)."""
+        with open(os.path.join(ROOT, 'tests', 'reference', 'traces', 'g14_poison_touch.json'), encoding='utf-8') as f:
+            trace = json.load(f)
+        draws = [d for step in trace['steps'] for d in step['draws'] if d['site'] == 'POISON_TOUCH']
+        self.assertTrue(draws)
+        self.assertTrue(all((d['lo'], d['hi']) == (0, 10) and 0 <= d['value'] < 10 for d in draws))
+        self.assertTrue(any(d['value'] < 3 for d in draws) and any(d['value'] >= 3 for d in draws))
+        self.assertEqual(trace_to_c.SITES['POISON_TOUCH'], 16)
+        for d in draws:
+            self.assertEqual(trace_to_c.tape_entry(d), (16, 0, 10, d['value']))
+        # No draw of the battle is unclassified.
+        self.assertFalse([d for step in trace['steps'] for d in step['draws'] if d['site'] == 'UNKNOWN'])
+
+    def test_thermal_exchange_is_no_holder_of_an_update_tie(self):
+        """Thermal Exchange's onUpdate (step G14) cures a burn that its holder cannot have, so an each:Update tie with it
+        is dropped as one without a holder; a Sitrus Berry beside it is a holder like any other, and a burned holder
+        (the precondition) is an error."""
+        def state(status):
+            side = {'active': [0, None], 'pokemon': [{'status': status}]}
+            return {'sides': [side, {'active': [None, None], 'pokemon': []}]}
+
+        d = {'site': 'SPEED_TIE', 'context': 'each:Update', 'lo': 0, 'hi': 2, 'value': 0, 'start': 0,
+             'group': ['P:p1a:1:thermalexchange', 'P:p2a:1:sitrusberry']}
+        self.assertEqual(trace_to_c.drop_reason(d, state('')), 'each-event tie with at most one holder')
+        both = dict(d, group=['P:p1a:1:sitrusberry', 'P:p2a:1:sitrusberry', 'P:p1b:1:thermalexchange'])
+        self.assertIsNone(trace_to_c.drop_reason(both, state('')))  # two Sitrus holders: the engine draws
+        with self.assertRaises(trace_to_c.ConversionError) as ctx:
+            trace_to_c.drop_reason(d, state('brn'))
+        self.assertEqual(ctx.exception.rule, 'thermal-exchange-burn')
+
     def test_recharge_rows_are_what_the_protocol_lines_say(self):
         """Decision 0018 section 6.1 for the recharge (step G17): a position must recharge from the `|-mustrecharge|X`
         line until the `|cant|X|recharge` line or until the occupant leaves (`|switch|`, `|drag|`, `|replace|`,

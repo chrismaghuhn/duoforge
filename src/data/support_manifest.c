@@ -105,6 +105,9 @@
  * spread), Hydro Pump, Power Gem and Earth Power (plain damage, a Special Defense secondary), Superpower (two
  * self drops), Light of Ruin (recoil 1/2), Aura Sphere (never misses, any target), Ice Shard and Quick Attack
  * (priority +1), Detect (Protect's handler and stall counter) and Poison Jab (a poison secondary).
+ * Step G14 marks Rough Skin, Poison Touch and Thermal Exchange (abilities that the turn code runs by id: contact damage
+ * before Rocky Helmet's, poison on a 3 in 10 roll after a contact hit, Attack +1 per Fire hit and no burn), recorded as
+ * g14_rough_skin, g14_poison_touch and g14_thermal_exchange under the POOL kind.
  * Step G16 marks Knock Off (base power x1.5 while the target holds an item that can be taken, and the item taken after
  * the hit unless the target is alive with Sticky Hold; a Mega Stone is never taken from its own species) and Sticky
  * Hold, with the view bit 11 for the item that a move took (item_now of the member, public): Trick, Switcheroo and
@@ -247,6 +250,9 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_SWARM] = 1u,
             [DFI_ABILITY_FLOWERVEIL] = 1u,
             [DFI_ABILITY_FAIRYAURA] = 1u,
+            [DFI_ABILITY_ROUGHSKIN] = 1u,
+            [DFI_ABILITY_POISONTOUCH] = 1u,
+            [DFI_ABILITY_THERMALEXCHANGE] = 1u,
             [DFI_ABILITY_STICKYHOLD] = 1u,
         },
     .items =
