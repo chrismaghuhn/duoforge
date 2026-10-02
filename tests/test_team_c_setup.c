@@ -734,6 +734,50 @@ int main(void)
                          (dfi_kind_limits_of(DUOFORGE_DATA_KIND_TEAM_C_DEV).vol_flags_mask & bits) == bits);
     }
 
+    /* White-box (step 9b): a REPLACEMENT comes after the residual, so it holds
+     * no Helping Hand, while newlySwitched still lasts until the end of the
+     * turn. A Fake Out into a Rocky Helmet makes its 1-HP user faint, and side
+     * 0 is asked for a replacement after the turn. */
+    {
+        duoforge_battle_setup u = teams;
+        put_dev_side(&u.sides[0]);
+        put_dev_side(&u.sides[1]);
+        duoforge_battle *w = df_make_battle(kd, &u);
+        duoforge_decision_bundle bd;
+        memset(&bd, 0, sizeof bd);
+        bd.epoch = w->request_epoch;
+        bd.response_mask = 3u;
+        const uint8_t picks[2][4] = {{0u, 4u, 1u, 2u}, {0u, 3u, 1u, 2u}}; /* leads first */
+        for (uint32_t side = 0u; side < 2u; ++side) {
+            duoforge_side_choice *c = &bd.responses[side];
+            c->epoch = w->request_epoch;
+            c->side = (uint8_t)side;
+            c->kind = (uint8_t)DUOFORGE_CHOICE_TEAM_SELECTION;
+            c->pick_count = 4u;
+            memcpy(c->picks, picks[side], sizeof picks[side]);
+        }
+        duoforge_step_result res;
+        DF_CHECK(&t, duoforge_battle_step(kd, w, &bd, &res) == DUOFORGE_OK &&
+                         w->boundary_kind == DUOFORGE_BOUNDARY_TURN);
+        dfi_member *user = &w->sides[0].members[0];
+        dfi_knowledge *shown = &w->sides[1].knowledge[0];
+        user->hp = 1u;
+        dfi_hp_display(user->hp, user->hp_max, &shown->hp_percent, &shown->hp_flag);
+        w->sides[1].members[0].item = (uint8_t)(1u + DFI_ITEM_ROCKYHELMET);
+        const uint8_t turn1[2][2][3] = {{{DUOFORGE_SLOT_MOVE, 2u, 2u}, {DUOFORGE_SLOT_MOVE, 0u, 3u}},
+                                        {{DUOFORGE_SLOT_MOVE, 0u, 0u}, {DUOFORGE_SLOT_MOVE, 1u, 0u}}};
+        DF_CHECK(&t, slots_step(kd, w, 3u, turn1) == DUOFORGE_OK &&
+                         w->boundary_kind == DUOFORGE_BOUNDARY_REPLACEMENT);
+        dfi_invariant inv = DFI_INV_NONE;
+        dfi_active_slot *pos = &w->sides[1].positions[1]; /* the standing Indeedee-F */
+        DF_CHECK(&t, dfi_state_check(kd, w, &inv) == DUOFORGE_OK);
+        pos->flags = (uint8_t)((uint32_t)pos->flags | DFI_VOL_HELPING_HAND);
+        DF_CHECK(&t, dfi_state_check(kd, w, &inv) == DUOFORGE_E_INVARIANT && inv == DFI_INV_VOLATILE);
+        pos->flags = (uint8_t)(((uint32_t)pos->flags & ~DFI_VOL_HELPING_HAND) | DFI_VOL_NEWLY_SWITCHED);
+        DF_CHECK(&t, dfi_state_check(kd, w, &inv) == DUOFORGE_OK);
+        duoforge_battle_destroy(w);
+    }
+
     /* The gate per Team C mechanic: the dev side plus exactly one of them.
      * Steps (decision 0009 section 5) mark them one by one; step 1: Kowtow
      * Cleave, Hyper Voice, Draco Meteor, Wave Crash, Aqua Jet, Defiant and

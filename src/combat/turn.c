@@ -1654,7 +1654,7 @@ static duoforge_status dfi_run_protect(dfi_run *r, uint32_t user)
             return DUOFORGE_OK;
         }
     }
-    pos->flags = (uint8_t)((uint32_t)pos->flags | DFI_VOL_PROTECT); /* wide-operands-reviewed: <= 71 */
+    pos->flags = (uint8_t)((uint32_t)pos->flags | DFI_VOL_PROTECT); /* wide-operands-reviewed: < 256 */
     pos->stall_level = (uint8_t)(level < DFI_STALL_LEVEL_MAX ? level + 1u : level); /* wide-operands-reviewed */
     pos->stall_turns = (uint8_t)DFI_STALL_DURATION;
     dfi_emit_plain(r, DUOFORGE_EVENT_PROTECT, user); /* [-singleturn] Protect */
@@ -1692,13 +1692,20 @@ static const dfi_queue_record *dfi_will_move(struct duoforge_battle *b, uint32_t
     return NULL;
 }
 
-/* Helping Hand (Team C, data/moves.ts:8573-8606). Its onTryHit fails unless
- * the ally switched in this turn (newlySwitched) or still has a move queued;
- * then the ally gets the volatile for this turn: [-singleturn] ally|Helping
- * Hand|[of] user. A second one on the same Pokemon in a turn (onRestart)
- * would need a second user, which doubles never has. */
+/* Helping Hand (Team C, data/moves.ts:8573-8606). The TryHit step comes
+ * first (sim/battle-actions.ts:643-653): Good as Gold stops a status move of
+ * any other Pokemon, its ally's included (data/abilities.ts:1630-1636), with
+ * -immune and no -fail. Then its own onTryHit fails unless the ally switched
+ * in this turn (newlySwitched) or still has a move queued; then the ally
+ * gets the volatile for this turn: [-singleturn] ally|Helping Hand|[of]
+ * user. A second one on the same Pokemon in a turn (onRestart) would need a
+ * second user, which doubles never has. */
 static duoforge_status dfi_run_helping_hand(dfi_run *r, uint32_t user, uint32_t ally)
 {
+    if (dfi_ability(dfi_at(r->b, ally), DFI_ABILITY_GOODASGOLD)) {
+        dfi_immune(r, ally, 1u + DFI_ABILITY_GOODASGOLD); /* the move steps stop: no Update */
+        return DUOFORGE_OK;
+    }
     dfi_active_slot *pos = dfi_pos(r->b, ally);
     if (((uint32_t)pos->flags & DFI_VOL_NEWLY_SWITCHED) == 0u && dfi_will_move(r->b, ally) == NULL) {
         dfi_fail_still(r, user); /* the hit loop stops at its first hit */
@@ -2785,9 +2792,11 @@ static duoforge_status dfi_run_mega(dfi_run *r, const dfi_queue_record *q)
 #define DFI_RES_WHITE_HERB 9u
 #define DFI_RES_NO_ORDER 0xFFFFFFFFu
 /* Trick Room, weather and terrain; three conditions per side; per position
- * a status (burn or poison), four duration ends, an item (Leftovers or White
- * Herb) and Grassy Terrain. */
-#define DFI_RES_MAX (3u + 3u * DUOFORGE_SIDE_COUNT + 7u * DFI_POSITIONS)
+ * (DFI_RES_PER_POSITION) a status (burn or poison), five duration ends
+ * (Protect, the stall counter, flinch, a charge, Helping Hand), an item
+ * (Leftovers or White Herb) and Grassy Terrain. */
+#define DFI_RES_PER_POSITION 8u
+#define DFI_RES_MAX (3u + 3u * DUOFORGE_SIDE_COUNT + DFI_RES_PER_POSITION * DFI_POSITIONS)
 
 typedef struct dfi_residual_entry {
     uint32_t kind;
@@ -2921,6 +2930,9 @@ static duoforge_status dfi_residual_events(dfi_run *r)
         const dfi_member *m = dfi_at(b, flat);
         if (m == NULL) {
             continue;
+        }
+        if (n + DFI_RES_PER_POSITION > DFI_RES_MAX) {
+            return DUOFORGE_E_INVARIANT; /* the bound above is exact: never */
         }
         const uint32_t speed = r->speed_seen[flat];
         if (m->status == DFI_STATUS_BRN) {
