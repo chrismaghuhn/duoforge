@@ -754,7 +754,7 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
   - before TryMove.
 
   priorityEvent stops at the first handler that returns, in compareRedirectOrder (`sim/battle.ts:413-419`), which puts the higher priority first. So Follow Me comes before Lightning Rod (priority 0).
-  - The handler comes only from a standing foe of the user: `foes()` keeps hp > 0 (`sim/battle.ts:1053-1063`).
+  - The handler comes only from a standing foe of the user: `foes()` keeps hp > 0 (`sim/side.ts:390-403`), and the handlers are collected in `sim/battle.ts:1053-1063`.
   - It takes the move when `validTarget(holder, user, move.target)` holds (`sim/battle.ts:2399-2435`). In doubles that is every single-target class here except self and the ally classes. A move aimed at the user's own ally, or at a fainted ally, is redirected too.
   - Spread moves never reach the event.
   - There is no line: retargetLastMove sets the move line's target. Sucker Punch's `onTry` and Armor Tail's TryMove then see the new target.
@@ -763,10 +763,10 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
 - **Correction to the plan** (section 5, step 11).
   - "An ally-targeted move is not redirected" is wrong for the pinned reference. Follow Me takes a move aimed at the user's own ally (`c11_follow_me`, `c11_follow_me_mirror`).
   - Only Helping Hand's class (adjacentAlly) is never redirected, and it cannot meet Follow Me anyway: Helping Hand (+5) always moves first.
-  - For the same reason "Fake Out into Rocky Helmet through the redirect" cannot be recorded: Fake Out (+3) always moves before Follow Me. Flip Turn, Wave Crash, Iron Head and Darkest Lariat show Rocky Helmet through the redirect instead.
+  - For the same reason "Fake Out into Rocky Helmet through the redirect" cannot be recorded: Fake Out (+3) always moves before Follow Me. Flip Turn and Iron Head (`c11_follow_me`) and Wave Crash (`c11_follow_me_mirror`) show Rocky Helmet through the redirect instead.
 - **State.** Volatile bit 8 (`DFI_VOL_FOLLOW_ME`) is valid only under the TEAM_C kinds. It may not be set at a TURN boundary, nor at a REPLACEMENT boundary (after the residual).
   - Its end is one more duration handler in the residual list, which now holds nine entries per position.
-  - Ties among duration handlers are not drawn (decision 0006 section 5.1), so no battle can show that entry.
+  - The reference draws ties among duration handlers, but such a draw decides nothing, and the converter drops it (decision 0006 section 5.1). So no battle can show that entry.
   - The state model mirrors the bit; its output is unchanged.
 - **Public changes, library 0.19.0** (sections 4.2 and 9.4), coordinated with the main session:
   - `DUOFORGE_POSITION_FLAG_FOLLOW_ME` (1) in the position view's `reserved` byte. It is set while the volatile lasts, so at a PIVOT boundary or at a TERMINAL one in the middle of a turn.
@@ -778,7 +778,7 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
   - It maps `-singleturn|...|move: Follow Me`.
   - It compares `followme` as volatile bit 64 and as the view bit.
   - The control test for an unknown `-singleturn` now uses Rage Powder.
-- **Evidence.** Three recorded battles, so 50 Team C battles in all:
+- **Evidence.** Four recorded battles, so 51 Team C battles in all:
   - `c11_follow_me`:
     - Kingambit's Sucker Punch, aimed at Milotic, goes to an Indeedee-F that already moved, and fails.
     - Basculegion's Flip Turn goes into Indeedee-F's Rocky Helmet and pivots while the volatile is live, so the view bit shows at the PIVOT boundary.
@@ -792,9 +792,14 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
     - With Follow Me on both sides, each side's moves go to the other side's user.
     - Both volatiles end in one residual, at a Speed tie.
     - A Wave Crash boosted by Helping Hand is redirected.
-    - Milotic's Ice Beam, aimed at a foe that fainted this turn, is retargeted and then redirected.
+    - Milotic's Ice Beam, aimed at a foe that fainted this turn, is retargeted to the only standing foe, the Follow Me user, with the reference's random-target draws.
     - Kingambit's Iron Head, aimed at its own ally, is redirected.
     - After the user faints, Kingambit's Iron Head reaches its target.
+  - `c11_follow_me_paths`:
+    - Archaludon's Electro Shot charges at Farigiraf. Its release under Follow Me goes to Indeedee-F.
+    - Basculegion's Aqua Jet, aimed at its own ally, goes to Indeedee-F, where Farigiraf's Armor Tail stops it: TryMove sees the new target.
+    - After Farigiraf left, the same Aqua Jet is stopped by Psychic Terrain at the grounded Indeedee-F. The terrain's ally exception is decided on the new target.
+    - Archaludon's Dragon Pulse (any target), aimed at its own ally, goes to Indeedee-F. It does so also after Gholdengo's Shadow Ball knocked that ally out in the same turn, so a move aimed at a fainted ally is redirected.
 
   API tests:
   - the bit at a PIVOT boundary, with the view bit for both players;
@@ -802,8 +807,9 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
   - the CLOSURE masks;
   - the gate (Follow Me, the real Team C) and the manifest.
 
-  Twelve negative controls each make a test fail:
-  - no redirect, or no redirect of a move aimed at the user's own side;
+  Seventeen negative controls each make a test fail:
+  - no redirect, or no redirect of a move aimed at the user's own side, at a fainted ally, with an any target, or released after a charge;
+  - Armor Tail or Psychic Terrain judged on the chosen target instead of the new one;
   - Lightning Rod over Follow Me;
   - Follow Me taking its own side's moves;
   - spread moves redirected;
@@ -814,11 +820,19 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
   - out of range.
 
   Two controls stay green, as expected:
-  - a residual end that is not counted, because ties among duration handlers are not drawn;
+  - a residual end that is not counted, because its tie draws decide nothing and are dropped;
   - a fainted holder that still redirects, because the faint clears the volatile first.
 - **Not recorded.**
   - Helping Hand and Fake Out against Follow Me: both always move first.
   - Two holders on one side: unreachable.
+  - Struggle (a random target) against Follow Me: no recorded battle runs out of PP. Struggle takes the path of the other single-target classes.
+  - The view bit at a TERMINAL boundary: the conformance compare skips `reserved` there.
+- **Review findings, fixed.**
+  - Several claimed paths had no battle: a move aimed at a fainted ally, an any-target move, Electro Shot's redirected release, and Armor Tail and Psychic Terrain after the redirect. `c11_follow_me_paths` records them, and five more controls are red.
+  - The evidence list named Darkest Lariat, which no c11 battle uses.
+  - A citation and two wordings above.
+  - The converter now refuses a Follow Me line with any attribute (for example `[zeffect]`), with a control test.
+  - Stale comments in `src/data/support_manifest.c` and `tests/test_team_c_setup.c`.
 - **Shared files touched:**
   - `include/duoforge/duoforge.h` (the view bit, SINGLE_TURN's comment, version);
   - `src/state/{battle_internal.h,closure_member.c,invariants.c,observation.c}`;

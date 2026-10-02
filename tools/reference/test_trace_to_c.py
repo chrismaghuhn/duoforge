@@ -177,6 +177,16 @@ class Refusals(unittest.TestCase):
                      "trace_to_c: unknown -singleturn '|-singleturn|p1b: Kingambit|move: Rage Powder'",
                      'move: Rage Powder')
 
+    def test_follow_me_line_with_an_attribute(self):
+        def mutate(spec, trace):
+            log = trace['steps'][1]['log']
+            self.assertIn('|-singleturn|p1a: Indeedee|move: Follow Me', log)
+            i = log.index('|-singleturn|p1a: Indeedee|move: Follow Me')
+            log[i] = '|-singleturn|p1a: Indeedee|move: Follow Me|[zeffect]'
+        self.control('c11_follow_me', mutate, 'singleturn-line',
+                     "trace_to_c: unknown -singleturn '|-singleturn|p1a: Indeedee|move: Follow Me|[zeffect]'",
+                     'move: Follow Me')
+
     def test_hit_draw_that_is_not_the_status_pick(self):
         for draw, text, detail in (
                 ({'site': 'ACCURACY', 'context': 'Hit', 'lo': 0, 'hi': 100, 'value': 7},

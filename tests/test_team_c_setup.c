@@ -6,8 +6,9 @@
  * CLOSURE kinds keep seeing only the closure. Setups follow the closure rules
  * over the extended tables (mixed teams, any table item); TEAM_C_DEV also
  * allows No Ability. A legal setup whose mechanics are not all implemented is
- * rejected with E_UNSUPPORTED; until a step marks a Team C mechanic, every
- * setup that needs it fails that way.
+ * rejected with E_UNSUPPORTED. Since step 11 every Team C mechanic is marked,
+ * so the real Team C passes; the reject path itself is tested with a manifest
+ * of its own (duoforge.state.closure_setup).
  */
 #include <stdio.h>
 #include <string.h>

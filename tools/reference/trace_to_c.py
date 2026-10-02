@@ -595,7 +595,7 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             elif args[1] == 'Helping Hand':  # Team C: [of] the user
                 _, _, of = ev_cause(attrs, tables)
                 e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), of, 0, tables['MOVE'][key(args[1])])
-            elif args[1] == 'move: Follow Me':  # Team C: no [of]
+            elif args[1] == 'move: Follow Me' and not attrs:  # Team C: no [of]; [zeffect] is not in the format
                 e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), NOPOS, 0, tables['MOVE'][key(args[1][6:])])
             else:
                 raise ConversionError('singleturn-line', 'trace_to_c: unknown -singleturn %r' % line, detail=args[1])
