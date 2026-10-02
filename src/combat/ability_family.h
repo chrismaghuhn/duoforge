@@ -2,7 +2,8 @@
 #define DUOFORGE_COMBAT_ABILITY_FAMILY_H
 /*
  * The ability families of decision 0015 as the battle reads them: the "-ate"
- * abilities and the pinch abilities. An ability has the family and the
+ * abilities, the pinch abilities and the weather and terrain setters of the
+ * entry. An ability has the family and the
  * parameter (a type) that the family columns of data/pool_tables.h give it,
  * and the rules below read only that: no ability is named here. What each
  * rule does to the damage (the modifier, its place in the chain) is in
@@ -67,6 +68,34 @@ static inline bool dfi_pinch_applies(const dfi_member *user, uint32_t move_type)
     const dfi_ability_family fam = dfi_ability_family_of(user);
     return fam.family == DFI_ABILITY_FAMILY_PINCH && move_type == fam.param &&
            (uint32_t)user->hp * 3u <= (uint32_t)user->hp_max;
+}
+
+/* The weather that an ability sets on entry (onStart, setWeather) as a
+ * state value DFI_WEATHER_*, or DFI_WEATHER_NONE when it is no weather
+ * setter. The column holds a family code, so each code is named here; a code
+ * that is none of them is no setter, which the table test excludes. */
+static inline uint32_t dfi_weather_set_by(const dfi_member *m)
+{
+    const dfi_ability_family fam = dfi_ability_family_of(m);
+    if (fam.family != DFI_ABILITY_FAMILY_WEATHER_SETTER) {
+        return DFI_WEATHER_NONE;
+    }
+    return fam.param == DFI_FAMILY_WEATHER_RAIN  ? DFI_WEATHER_RAIN
+           : fam.param == DFI_FAMILY_WEATHER_SUN ? DFI_WEATHER_SUN
+                                                 : DFI_WEATHER_NONE;
+}
+
+/* The terrain that an ability sets on entry (onStart, setTerrain) as a state
+ * value DFI_TERRAIN_*, or DFI_TERRAIN_NONE. */
+static inline uint32_t dfi_terrain_set_by(const dfi_member *m)
+{
+    const dfi_ability_family fam = dfi_ability_family_of(m);
+    if (fam.family != DFI_ABILITY_FAMILY_TERRAIN_SETTER) {
+        return DFI_TERRAIN_NONE;
+    }
+    return fam.param == DFI_FAMILY_TERRAIN_GRASSY    ? DFI_TERRAIN_GRASSY
+           : fam.param == DFI_FAMILY_TERRAIN_PSYCHIC ? DFI_TERRAIN_PSYCHIC
+                                                     : DFI_TERRAIN_NONE;
 }
 
 #endif

@@ -2,6 +2,7 @@
  * duoforge.combat.ability_family (white-box): the ability families of
  * decision 0015 as the battle reads them (src/combat/ability_family.h). The
  * "-ate" and the pinch rules decide from the family column and its type and
+ * the setters of the entry from the column and its weather or terrain, and
  * from nothing else; here every ability of the pool is run against every
  * type (and the typeless hit of Struggle), and for the pinch rule against
  * HP values around a third, and the answer is compared with a table written
@@ -46,6 +47,18 @@ static const ability_type PINCHES[] = {
     {DFI_ABILITY_SWARM, DFI_TYPE_BUG},
 };
 
+/* WEATHER_SETTER and TERRAIN_SETTER: what the entry (onStart) sets, as the state value. */
+static const ability_type WEATHER_SETTERS[] = {
+    {DFI_ABILITY_DRIZZLE, DFI_WEATHER_RAIN},
+    {DFI_ABILITY_DROUGHT, DFI_WEATHER_SUN},
+};
+static const ability_type TERRAIN_SETTERS[] = {
+    {DFI_ABILITY_GRASSYSURGE, DFI_TERRAIN_GRASSY},
+    {DFI_ABILITY_PSYCHICSURGE, DFI_TERRAIN_PSYCHIC},
+};
+
+#define N_WEATHER_SETTERS (sizeof WEATHER_SETTERS / sizeof WEATHER_SETTERS[0])
+#define N_TERRAIN_SETTERS (sizeof TERRAIN_SETTERS / sizeof TERRAIN_SETTERS[0])
 #define N_ATES (sizeof ATES / sizeof ATES[0])
 #define N_PINCHES (sizeof PINCHES / sizeof PINCHES[0])
 
@@ -158,6 +171,21 @@ int main(void)
         DF_CHECK(&t, normal_moves >= 2u); /* Weather Ball and at least one other */
     }
 
+    /* The setters: every ability of the pool, the answer from the table above. The state values are the
+     * engine's own (DFI_WEATHER_*, DFI_TERRAIN_*), not the family codes of the column. */
+    for (uint32_t id = 0u; id < DFI_POOL_ABILITY_COUNT; ++id) {
+        const dfi_member m = holder(id, 100u, 300u);
+        const uint32_t weather = type_in(WEATHER_SETTERS, N_WEATHER_SETTERS, id);
+        const uint32_t terrain = type_in(TERRAIN_SETTERS, N_TERRAIN_SETTERS, id);
+        DF_CHECK_EQ_U64(&t, dfi_weather_set_by(&m), weather == DFI_CLOSURE_NONE ? DFI_WEATHER_NONE : weather);
+        DF_CHECK_EQ_U64(&t, dfi_terrain_set_by(&m), terrain == DFI_CLOSURE_NONE ? DFI_TERRAIN_NONE : terrain);
+        const uint32_t family = dfi_pool_ability_family[id].family;
+        DF_CHECK_EQ_U64(&t, family == DFI_ABILITY_FAMILY_WEATHER_SETTER, weather != DFI_CLOSURE_NONE);
+        DF_CHECK_EQ_U64(&t, family == DFI_ABILITY_FAMILY_TERRAIN_SETTER, terrain != DFI_CLOSURE_NONE);
+    }
+    DF_CHECK_EQ_U64(&t, N_WEATHER_SETTERS, 2u);
+    DF_CHECK_EQ_U64(&t, N_TERRAIN_SETTERS, 2u);
+
     /* No ability at all, and a holder that is not there. */
     {
         dfi_member none = holder(0u, 1u, 300u);
@@ -166,6 +194,10 @@ int main(void)
             DF_CHECK(&t, dfi_ate_type_of(&none, &dfi_pool_moves[DFI_MOVE_HYPERVOICE], type) == type);
             DF_CHECK(&t, !dfi_ate_boosts(&none, DFI_TYPE_NORMAL, type));
             DF_CHECK(&t, !dfi_pinch_applies(&none, type));
+            DF_CHECK_EQ_U64(&t, dfi_weather_set_by(&none), DFI_WEATHER_NONE);
+            DF_CHECK_EQ_U64(&t, dfi_terrain_set_by(&none), DFI_TERRAIN_NONE);
+            DF_CHECK_EQ_U64(&t, dfi_weather_set_by(NULL), DFI_WEATHER_NONE);
+            DF_CHECK_EQ_U64(&t, dfi_terrain_set_by(NULL), DFI_TERRAIN_NONE);
             DF_CHECK(&t, dfi_ate_type_of(NULL, &dfi_pool_moves[DFI_MOVE_HYPERVOICE], type) == type);
             DF_CHECK(&t, !dfi_ate_boosts(NULL, DFI_TYPE_NORMAL, type));
             DF_CHECK(&t, !dfi_pinch_applies(NULL, type));
@@ -178,7 +210,14 @@ int main(void)
         }
     }
 
-    /* The gate: every -ate and pinch ability is marked supported since step P3. */
+    /* The gate: every -ate and pinch ability is marked supported since step P3, the setters since the
+     * prefix. */
+    for (size_t i = 0u; i < N_WEATHER_SETTERS; ++i) {
+        DF_CHECK(&t, dfi_support.abilities[WEATHER_SETTERS[i].ability] != 0u);
+    }
+    for (size_t i = 0u; i < N_TERRAIN_SETTERS; ++i) {
+        DF_CHECK(&t, dfi_support.abilities[TERRAIN_SETTERS[i].ability] != 0u);
+    }
     for (size_t i = 0u; i < N_ATES; ++i) {
         DF_CHECK(&t, dfi_support.abilities[ATES[i].ability] != 0u);
     }

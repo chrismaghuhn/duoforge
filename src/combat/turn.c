@@ -2672,11 +2672,12 @@ static bool dfi_has_switch_in(const dfi_member *m)
     return dfi_has_entry(m) || dfi_holds(m, DFI_ITEM_GRASSYSEED);
 }
 
+/* An entry ability: a weather or a terrain setter (the families of
+ * decision 0015: Drizzle, Drought, Grassy Surge, Psychic Surge) or Intimidate. */
 static bool dfi_has_entry(const dfi_member *m)
 {
-    const uint32_t a = m->ability; /* 1 + id, 0 none */
-    return a == 1u + DFI_ABILITY_DRIZZLE || a == 1u + DFI_ABILITY_DROUGHT || a == 1u + DFI_ABILITY_GRASSYSURGE ||
-           a == 1u + DFI_ABILITY_PSYCHICSURGE || a == 1u + DFI_ABILITY_INTIMIDATE;
+    return dfi_weather_set_by(m) != DFI_WEATHER_NONE || dfi_terrain_set_by(m) != DFI_TERRAIN_NONE ||
+           m->ability == 1u + DFI_ABILITY_INTIMIDATE;
 }
 
 /* Drizzle and Drought (setWeather): the same weather is not restarted;
@@ -2689,8 +2690,9 @@ static duoforge_status dfi_entry_ability(dfi_run *r, uint32_t flat)
     struct duoforge_battle *b = r->b;
     const dfi_member *m = dfi_at(b, flat);
     const uint32_t a = m->ability;
-    if (a == 1u + DFI_ABILITY_DRIZZLE || a == 1u + DFI_ABILITY_DROUGHT) {
-        const uint32_t w = a == 1u + DFI_ABILITY_DRIZZLE ? DFI_WEATHER_RAIN : DFI_WEATHER_SUN;
+    const uint32_t w = dfi_weather_set_by(m);
+    const uint32_t terrain = dfi_terrain_set_by(m);
+    if (w != DFI_WEATHER_NONE) {
         if (b->weather != w) {
             b->weather = (uint8_t)w;
             b->weather_turns = (uint8_t)DFI_FIELD_TURNS_MAX;
@@ -2699,9 +2701,8 @@ static duoforge_status dfi_entry_ability(dfi_run *r, uint32_t flat)
             e.detail = (uint8_t)w; /* DUOFORGE_WEATHER_* */
             dfi_emit(r, &e);
         }
-    } else if (a == 1u + DFI_ABILITY_GRASSYSURGE || a == 1u + DFI_ABILITY_PSYCHICSURGE) {
-        const bool grassy = a == 1u + DFI_ABILITY_GRASSYSURGE;
-        const uint32_t terrain = grassy ? DFI_TERRAIN_GRASSY : DFI_TERRAIN_PSYCHIC;
+    } else if (terrain != DFI_TERRAIN_NONE) {
+        const bool grassy = terrain == DFI_TERRAIN_GRASSY;
         if (b->terrain != terrain) {
             b->terrain = (uint8_t)terrain;
             b->terrain_turns = (uint8_t)DFI_FIELD_TURNS_MAX;

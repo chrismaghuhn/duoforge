@@ -90,6 +90,7 @@ One PR per step.
 3. **P3, abilities:** "-ate" and pinch become table rules, Pixilate, Refrigerate, Overgrow, Torrent and Swarm are marked, with recorded battles.
    - Only Overgrow on Rillaboom is reachable through the setup rules now (a pool forme with Pixilate, Refrigerate, Torrent or Swarm comes with the content steps), so the recorded battle is Overgrow in pinch range; Aerilate (Normal move from Mega Salamence) is already recorded. The others are covered by a unit test of the dispatch over every ability and type and by the Node cross-check of their pinned handlers against the family columns.
 4. **P4:** weather setters and surges become table rules over the prefix members. There is no behaviour change, which the conformance tests show.
+   - Done: `dfi_has_entry` and `dfi_entry_ability` read the weather and terrain columns through `src/combat/ability_family.h`; Intimidate is no family and stays named. The Primal exception of the pinned weather handlers (Kyogre with Blue Orb, Groudon with Red Orb) is checked by the cross-check; no Primal forme is in the pool.
 
 ## 5. Evidence for every step
 
