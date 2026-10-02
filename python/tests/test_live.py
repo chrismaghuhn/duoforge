@@ -10,8 +10,10 @@ and by duoforge_diff_runner --dump-views (what DuoForge shows each player at
 every step). Decision point k of a player is its k-th request; DuoForge's
 view k is the state after k steps.
 """
+import atexit
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -99,6 +101,7 @@ class Reference:
 
     def __init__(self):
         self.tmp = tempfile.mkdtemp(prefix="duoforge_live_")
+        atexit.register(shutil.rmtree, self.tmp, True)
         root = str(data.ROOT)
         subprocess.run([sys.executable, str(data.ROOT / "tools" / "reference" / "conformance_records.py"), "--all",
                         root, "--out", self.tmp], check=True, timeout=600)
@@ -152,6 +155,10 @@ class OptionsTest(unittest.TestCase):
         points = 0
         for battle in self.ref.battles:
             for player in (0, 1):
+                # One point per step, and one more when the battle did not end (its last view asks again).
+                count = sum(1 for _ in battle.points(player))
+                steps = len(battle.trace["steps"])
+                self.assertIn(count, (steps, steps + 1), (battle.name, player))
                 for point in battle.points(player):
                     where = (battle.name, point.k, player)
                     dom = point.domain
@@ -168,6 +175,9 @@ class OptionsTest(unittest.TestCase):
                     self.assertEqual(int(dom["kind"]), SLOTS, where)
                     lists = self.lists(point)
                     mine = options.domain(lists, point.k + 1)
+                    # The documented order too, not only the sets (options.py promises it).
+                    self.assertEqual(mine["slot_count"].tobytes(), dom["slot_count"].tobytes(), where)
+                    self.assertEqual(mine["slots"].tobytes(), dom["slots"].tobytes(), where)
                     for s in (0, 1):
                         theirs = {command(dom["slots"][s][i]) for i in range(int(dom["slot_count"][s]))}
                         ours = [(o.kind, o.move_slot, o.target, o.mega, o.reserve) for o in lists[s]]
