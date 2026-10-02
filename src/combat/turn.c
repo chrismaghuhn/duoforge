@@ -145,10 +145,33 @@ static bool dfi_holds(const dfi_member *m, uint32_t id)
     return m != NULL && m->item == 1u + id && m->item_consumed == 0u;
 }
 
-/* The member's ability is `id` (abilities are stored as 1 + id). */
-static bool dfi_ability(const dfi_member *m, uint32_t id)
+/* The member's ability now, stored as 1 + id (0 = none): the one the member's sheet says, or the one that the POOL tail's
+ * ability_now holds for it (Trace and the other effects that change an ability; zero under every other kind, and zero
+ * unless something changed it). Every rule of the turn code reads the ability through this, never through
+ * dfi_member.ability, which is the sheet's (and the Mega forme's) ability. `m` is a member of `b`; no heap, one tail
+ * read for a member that is found on a side. */
+static uint32_t dfi_ability_code(const struct duoforge_battle *b, const dfi_member *m)
 {
-    return m != NULL && m->ability == 1u + id;
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        const dfi_member *first = &b->sides[s].members[0];
+        if (m >= first && m < first + DUOFORGE_MAX_ROSTER) {
+            const uint32_t now = b->tail.sides[s].ability_now[m - first];
+            return now != 0u ? now : m->ability;
+        }
+    }
+    return m->ability;
+}
+
+/* The family row of the member's ability now (src/combat/ability_family.h). */
+static dfi_ability_family dfi_ability_family_now(const struct duoforge_battle *b, const dfi_member *m)
+{
+    return dfi_ability_family_for(m == NULL ? 0u : dfi_ability_code(b, m));
+}
+
+/* The member's ability is `id` (abilities are stored as 1 + id). */
+static bool dfi_ability(const struct duoforge_battle *b, const dfi_member *m, uint32_t id)
+{
+    return m != NULL && dfi_ability_code(b, m) == 1u + id;
 }
 
 /* ---------------------------------------------------------------- events */
@@ -180,7 +203,7 @@ static bool dfi_fairy_aura_on_field(struct duoforge_battle *b)
 {
     for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
         const dfi_member *m = dfi_at(b, flat);
-        if (m != NULL && m->hp != 0u && dfi_ability(m, DFI_ABILITY_FAIRYAURA)) {
+        if (m != NULL && m->hp != 0u && dfi_ability(b, m, DFI_ABILITY_FAIRYAURA)) {
             return true;
         }
     }
@@ -201,7 +224,7 @@ static bool dfi_flower_veil_holder(struct duoforge_battle *b, uint32_t flat, uin
     for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
         const uint32_t other = (flat / 2u) * 2u + slot;
         const dfi_member *m = dfi_at(b, other);
-        if (m != NULL && m->hp != 0u && dfi_ability(m, DFI_ABILITY_FLOWERVEIL)) {
+        if (m != NULL && m->hp != 0u && dfi_ability(b, m, DFI_ABILITY_FLOWERVEIL)) {
             *holder = other;
             return true;
         }
@@ -356,7 +379,7 @@ static uint32_t dfi_move_priority(const struct duoforge_battle *b, const dfi_mem
 {
     uint32_t priority = md->priority;
     const bool standing = m->hp != 0u; /* isActive: the holder's ability and item count */
-    if (standing && dfi_ability(m, DFI_ABILITY_PRANKSTER) && md->category == DFI_CATEGORY_STATUS) {
+    if (standing && dfi_ability(b, m, DFI_ABILITY_PRANKSTER) && md->category == DFI_CATEGORY_STATUS) {
         priority += 1u;
     }
     if (md->special == DFI_SPECIAL_GRASSY_GLIDE && b->terrain == DFI_TERRAIN_GRASSY && dfi_grounded(b, m)) {
@@ -611,7 +634,7 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
     dfi_active_slot *pos = dfi_pos(b, flat);
     uint8_t capped[DFI_STAT_STAGE_COUNT] = {6u, 6u, 6u, 6u, 6u, 6u, 6u}; /* biased by 6 */
     for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
-        const uint32_t want = dfi_ability(m, DFI_ABILITY_CONTRARY) ? 12u - (uint32_t)boosts[i] : boosts[i];
+        const uint32_t want = dfi_ability(r->b, m, DFI_ABILITY_CONTRARY) ? 12u - (uint32_t)boosts[i] : boosts[i];
         const uint32_t sum = (uint32_t)pos->stages[i] + want; /* the target stage, biased by 12 */
         const uint32_t to = sum < 6u ? 0u : (sum - 6u > 12u ? 12u : sum - 6u);
         const uint32_t delta = to + 6u - (uint32_t)pos->stages[i];
@@ -661,7 +684,7 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
                 e.id2 = (uint16_t)effect.id2;
             }
             dfi_emit(r, &e);
-            if (capped[i] < DFI_BIAS6 && dfi_ability(m, DFI_ABILITY_COMPETITIVE) && source < DFI_POSITIONS &&
+            if (capped[i] < DFI_BIAS6 && dfi_ability(r->b, m, DFI_ABILITY_COMPETITIVE) && source < DFI_POSITIONS &&
                 source / 2u != flat / 2u) {
                 static const uint8_t raise[DFI_STAT_STAGE_COUNT] = {6u, 6u, 8u, 6u, 6u, 6u, 6u}; /* SpA +2 */
                 dfi_boost(r, flat, raise, flat,
@@ -669,7 +692,7 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
             }
             /* Defiant (Team C, decision 0009): Competitive's shape with
              * Attack (data/abilities.ts:901-921). */
-            if (capped[i] < DFI_BIAS6 && dfi_ability(m, DFI_ABILITY_DEFIANT) && source < DFI_POSITIONS &&
+            if (capped[i] < DFI_BIAS6 && dfi_ability(r->b, m, DFI_ABILITY_DEFIANT) && source < DFI_POSITIONS &&
                 source / 2u != flat / 2u) {
                 static const uint8_t raise_atk[DFI_STAT_STAGE_COUNT] = {8u, 6u, 6u, 6u, 6u, 6u, 6u}; /* Atk +2 */
                 dfi_boost(r, flat, raise_atk, flat,
@@ -953,10 +976,10 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     /* An -ate ability (the ATE family: Aerilate, Pixilate and Refrigerate,
      * decision 0015): a Normal move it turned into its type gets 4915/4096
      * (data/abilities.ts, onBasePowerPriority 23: first). */
-    if (dfi_ate_boosts(a, md->type, move_type)) {
+    if (dfi_ate_boosts_fam(dfi_ability_family_now(r->b, a), md->type, move_type)) {
         ok = dfi_chain_modify(bp_chain, DFI_ATE_MODIFIER, &bp_chain);
     }
-    if (dfi_ability(a, DFI_ABILITY_TOUGHCLAWS) && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u) {
+    if (dfi_ability(r->b, a, DFI_ABILITY_TOUGHCLAWS) && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u) {
         ok = dfi_chain_modify(bp_chain, 5325u, &bp_chain); /* onBasePowerPriority 21: first */
     }
     /* Fairy Aura (the Mega Floette's ability, onAnyBasePower priority 20: after Tough Claws, before the items): a
@@ -991,10 +1014,10 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
      * move of its type at a third of the HP or less, Flash Fire's boost for
      * Fire moves once it took one; 1.5 each. */
     uint32_t atk_chain = 4096u;
-    if (dfi_pinch_applies(a, move_type)) {
+    if (dfi_pinch_applies_fam(dfi_ability_family_now(r->b, a), a, move_type)) {
         ok = ok && dfi_chain_modify(atk_chain, DFI_PINCH_MODIFIER, &atk_chain);
     }
-    if (move_type == DFI_TYPE_FIRE && dfi_ability(a, DFI_ABILITY_FLASHFIRE) &&
+    if (move_type == DFI_TYPE_FIRE && dfi_ability(r->b, a, DFI_ABILITY_FLASHFIRE) &&
         ((uint32_t)ap->flags & DFI_VOL_FLASH_FIRE) != 0u) {
         ok = ok && dfi_chain_modify(atk_chain, 6144u, &atk_chain);
     }
@@ -1036,7 +1059,7 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     if (move_type < DFI_TYPE_COUNT) {
         /* STAB 1.5; Adaptability 2 (Team C, data/abilities.ts:43-56; no Tera) */
         const uint32_t stab = !dfi_has_type(r->b, a, move_type) ? 4096u
-                              : dfi_ability(a, DFI_ABILITY_ADAPTABILITY) ? 8192u
+                              : dfi_ability(r->b, a, DFI_ABILITY_ADAPTABILITY) ? 8192u
                                                                          : 6144u;
         damage = dfi_modify(damage, stab);
         mod = dfi_type_mod(r->b, d, move_type);
@@ -1294,7 +1317,7 @@ static bool dfi_can_switch(const struct duoforge_battle *b, uint32_t side)
 static bool dfi_exits(struct duoforge_battle *b, uint32_t flat, uint32_t hp_before)
 {
     const dfi_member *m = dfi_at(b, flat);
-    return m != NULL && m->hp != 0u && m->ability == 1u + DFI_ABILITY_EMERGENCYEXIT &&
+    return m != NULL && m->hp != 0u && dfi_ability_code(b, m) == 1u + DFI_ABILITY_EMERGENCYEXIT &&
            (uint32_t)m->hp * 2u <= m->hp_max && hp_before * 2u > m->hp_max && dfi_can_switch(b, flat / 2u) &&
            dfi_pos(b, flat)->switch_flag == 0u;
 }
@@ -1325,7 +1348,7 @@ static void dfi_use_item(dfi_run *r, uint32_t flat)
     e.flags = berry ? (uint8_t)DUOFORGE_EVENT_FLAG_EATEN : 0u;
     dfi_emit(r, &e);
     /* AfterUseItem: Unburden adds its volatile (Team C, data/abilities.ts). */
-    if (b->sides[side].members[occupant].ability == 1u + DFI_ABILITY_UNBURDEN) {
+    if (dfi_ability(b, &b->sides[side].members[occupant], DFI_ABILITY_UNBURDEN)) {
         dfi_active_slot *pos = dfi_pos(b, flat);
         pos->flags = (uint8_t)((uint32_t)pos->flags | DFI_VOL_UNBURDEN); /* wide-operands-reviewed: < 256 */
     }
@@ -2029,7 +2052,7 @@ static const dfi_queue_record *dfi_will_move(struct duoforge_battle *b, uint32_t
  * second user, which doubles never has. */
 static duoforge_status dfi_run_helping_hand(dfi_run *r, uint32_t user, uint32_t ally)
 {
-    if (dfi_ability(dfi_at(r->b, ally), DFI_ABILITY_GOODASGOLD)) {
+    if (dfi_ability(r->b, dfi_at(r->b, ally), DFI_ABILITY_GOODASGOLD)) {
         dfi_immune(r, ally, 1u + DFI_ABILITY_GOODASGOLD); /* the move steps stop: no Update */
         return DUOFORGE_OK;
     }
@@ -2276,7 +2299,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         uint32_t rod = DFI_POSITIONS;
         for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
             const dfi_member *holder = dfi_at(b, flat);
-            if (flat == user || holder == NULL || holder->hp == 0u || !dfi_ability(holder, DFI_ABILITY_LIGHTNINGROD)) {
+            if (flat == user || holder == NULL || holder->hp == 0u || !dfi_ability(r->b, holder, DFI_ABILITY_LIGHTNINGROD)) {
                 continue;
             }
             if (rod == DFI_POSITIONS || r->speed_seen[flat] > r->speed_seen[rod] ||
@@ -2342,7 +2365,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             md->target_class != DUOFORGE_TARGET_CLASS_ALLY_SIDE && md->target_class != DUOFORGE_TARGET_CLASS_ALL) {
             for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
                 const dfi_member *holder = dfi_at(b, (1u - side) * 2u + slot);
-                if (holder != NULL && holder->hp != 0u && dfi_ability(holder, DFI_ABILITY_ARMORTAIL)) {
+                if (holder != NULL && holder->hp != 0u && dfi_ability(r->b, holder, DFI_ABILITY_ARMORTAIL)) {
                     /* [still], then cant|holder|ability: Armor Tail|move|[of] user */
                     dfi_still(r);
                     duoforge_event e = dfi_ev(DUOFORGE_EVENT_CANT, (1u - side) * 2u + slot, DUOFORGE_CAUSE_ABILITY,
@@ -2480,7 +2503,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
      * (priority -1) turns a Normal move into its type before immunity and
      * STAB; Weather Ball is in its noModifyType list and Struggle is
      * typeless by then (data/abilities.ts). */
-    move_type = dfi_ate_type_of(m, md, move_type);
+    move_type = dfi_ate_type_fam(dfi_ability_family_now(r->b, m), md, move_type);
     if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_RAIN) {
         move_type = DFI_TYPE_WATER;
     } else if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_SUN) {
@@ -2551,7 +2574,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         if (!hit[i] || t == user || tm == NULL) {
             continue;
         }
-        if (dfi_ability(tm, DFI_ABILITY_FLASHFIRE) && move_type == DFI_TYPE_FIRE) {
+        if (dfi_ability(r->b, tm, DFI_ABILITY_FLASHFIRE) && move_type == DFI_TYPE_FIRE) {
             dfi_active_slot *tp = dfi_pos(b, t);
             /* -start ability: Flash Fire, or -immune when it is already on */
             if (((uint32_t)tp->flags & DFI_VOL_FLASH_FIRE) != 0u) {
@@ -2564,14 +2587,14 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             /* Its onTryHit sets move.accuracy = true on the shared active
              * move: the other targets of a spread move need no accuracy draw. */
             base_accuracy = 0u;
-        } else if (dfi_ability(tm, DFI_ABILITY_LIGHTNINGROD) && move_type == DFI_TYPE_ELECTRIC) {
+        } else if (dfi_ability(r->b, tm, DFI_ABILITY_LIGHTNINGROD) && move_type == DFI_TYPE_ELECTRIC) {
             static const uint8_t spa_up[DFI_STAT_STAGE_COUNT] = {6u, 6u, 7u, 6u, 6u, 6u, 6u};
             if (!dfi_boost(r, t, spa_up, user,
                            dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_LIGHTNINGROD, DFI_BOOST_PRIMARY))) {
                 dfi_immune(r, t, 1u + DFI_ABILITY_LIGHTNINGROD);
             }
             hit[i] = false;
-        } else if (dfi_ability(tm, DFI_ABILITY_GOODASGOLD) && status_move) {
+        } else if (dfi_ability(r->b, tm, DFI_ABILITY_GOODASGOLD) && status_move) {
             dfi_immune(r, t, 1u + DFI_ABILITY_GOODASGOLD);
             hit[i] = false;
         }
@@ -2584,7 +2607,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     }
     /* hitStepTryImmunity: a Prankster-boosted status move fails on a Dark
      * foe. */
-    for (uint32_t i = 0u; i < count && status_move && dfi_ability(m, DFI_ABILITY_PRANKSTER); ++i) {
+    for (uint32_t i = 0u; i < count && status_move && dfi_ability(r->b, m, DFI_ABILITY_PRANKSTER); ++i) {
         if (hit[i] && targets[i] / 2u != side && dfi_has_type(b, dfi_at(b, targets[i]), DFI_TYPE_DARK)) {
             hit[i] = false;
             dfi_immune(r, targets[i], 0u);
@@ -2596,7 +2619,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                 continue;
             }
             /* No Guard on the user or the target: the move cannot miss. */
-            if (dfi_ability(m, DFI_ABILITY_NOGUARD) || dfi_ability(dfi_at(b, targets[i]), DFI_ABILITY_NOGUARD)) {
+            if (dfi_ability(r->b, m, DFI_ABILITY_NOGUARD) || dfi_ability(r->b, dfi_at(b, targets[i]), DFI_ABILITY_NOGUARD)) {
                 continue;
             }
             /* The user's accuracy stage minus the target's evasion, clamped. */
@@ -2835,7 +2858,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             tm->status = (uint8_t)DFI_STATUS_NONE;
             tm->status_counter = 0u;
         }
-        if (dfi_ability(tm, DFI_ABILITY_STAMINA)) {
+        if (dfi_ability(r->b, tm, DFI_ABILITY_STAMINA)) {
             static const uint8_t def_up[DFI_STAT_STAGE_COUNT] = {6u, 7u, 6u, 6u, 6u, 6u, 6u};
             dfi_boost(r, targets[i], def_up, user,
                       dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_STAMINA, DFI_BOOST_PRIMARY));
@@ -2873,7 +2896,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
              * recoil (the branch above) is directDamage and never reaches
              * the handler. The Emergency Exit check that follows sees no
              * change of HP. */
-            if (dfi_ability(m, DFI_ABILITY_ROCKHEAD)) {
+            if (dfi_ability(r->b, m, DFI_ABILITY_ROCKHEAD)) {
                 recoil = 0u;
             }
         }
@@ -3060,7 +3083,7 @@ static duoforge_status dfi_run_switch(dfi_run *r, const dfi_queue_record *q)
 
 /* The entry abilities of the closure: an ability's onStart runs as a
  * SwitchIn handler (Battle.getCallback). */
-static bool dfi_has_entry(const dfi_member *m);
+static bool dfi_has_entry(const struct duoforge_battle *b, const dfi_member *m);
 
 /* Grassy Seed (useItem): Defense +1 once, when Grassy Terrain is up. */
 static void dfi_grassy_seed(dfi_run *r, uint32_t flat)
@@ -3099,18 +3122,20 @@ static duoforge_status dfi_terrain_change(dfi_run *r)
 
 /* A SwitchIn handler: an entry ability (priority 0) or Grassy Seed's
  * onStart (onSwitchInPriority -1). */
-static bool dfi_has_switch_in(const dfi_member *m)
+static bool dfi_has_switch_in(const struct duoforge_battle *b, const dfi_member *m)
 {
-    return dfi_has_entry(m) || dfi_holds(m, DFI_ITEM_GRASSYSEED);
+    return dfi_has_entry(b, m) || dfi_holds(m, DFI_ITEM_GRASSYSEED);
 }
 
 /* An entry ability: a weather or a terrain setter (the families of
  * decision 0015: Drizzle, Drought, Grassy Surge, Psychic Surge), Intimidate or
  * Fairy Aura (whose onStart only shows the ability). */
-static bool dfi_has_entry(const dfi_member *m)
+static bool dfi_has_entry(const struct duoforge_battle *b, const dfi_member *m)
 {
-    return dfi_weather_set_by(m) != DFI_WEATHER_NONE || dfi_terrain_set_by(m) != DFI_TERRAIN_NONE ||
-           m->ability == 1u + DFI_ABILITY_INTIMIDATE || m->ability == 1u + DFI_ABILITY_FAIRYAURA;
+    const dfi_ability_family fam = dfi_ability_family_now(b, m);
+    const uint32_t now = dfi_ability_code(b, m);
+    return dfi_weather_set_by_fam(fam) != DFI_WEATHER_NONE || dfi_terrain_set_by_fam(fam) != DFI_TERRAIN_NONE ||
+           now == 1u + DFI_ABILITY_INTIMIDATE || now == 1u + DFI_ABILITY_FAIRYAURA;
 }
 
 /* Drizzle and Drought (setWeather): the same weather is not restarted;
@@ -3122,9 +3147,10 @@ static duoforge_status dfi_entry_ability(dfi_run *r, uint32_t flat)
 {
     struct duoforge_battle *b = r->b;
     const dfi_member *m = dfi_at(b, flat);
-    const uint32_t a = m->ability;
-    const uint32_t w = dfi_weather_set_by(m);
-    const uint32_t terrain = dfi_terrain_set_by(m);
+    const uint32_t a = dfi_ability_code(b, m);
+    const dfi_ability_family fam = dfi_ability_family_now(b, m);
+    const uint32_t w = dfi_weather_set_by_fam(fam);
+    const uint32_t terrain = dfi_terrain_set_by_fam(fam);
     if (w != DFI_WEATHER_NONE) {
         if (b->weather != w) {
             b->weather = (uint8_t)w;
@@ -3211,7 +3237,7 @@ static duoforge_status dfi_run_entries(dfi_run *r, uint32_t entering)
         for (uint32_t i = 0u; i < count; ++i) {
             const uint32_t flat = list[next[i]];
             const dfi_member *m = dfi_at(b, flat);
-            bearers += (((entering >> flat) & 1u) != 0u && m->hp != 0u && dfi_has_switch_in(m)) ? 1u : 0u;
+            bearers += (((entering >> flat) & 1u) != 0u && m->hp != 0u && dfi_has_switch_in(b, m)) ? 1u : 0u;
             herbs += dfi_herb_holder(b, flat) ? 1u : 0u;
         }
         for (uint32_t i = 0u; i < count; ++i) {
@@ -3246,7 +3272,7 @@ static duoforge_status dfi_run_entries(dfi_run *r, uint32_t entering)
             if (((entering >> flat) & 1u) == 0u || m->hp == 0u) {
                 continue;
             }
-            if (pass == 0u && dfi_has_entry(m)) {
+            if (pass == 0u && dfi_has_entry(b, m)) {
                 const duoforge_status st = dfi_entry_ability(r, flat);
                 if (st != DUOFORGE_OK) {
                     return st;
@@ -3293,7 +3319,7 @@ static duoforge_status dfi_run_mega(dfi_run *r, const dfi_queue_record *q)
     duoforge_event mega = dfi_event_make(DUOFORGE_EVENT_MEGA, flat);
     mega.id2 = m->item; /* [-mega] the stone, item + 1 */
     dfi_emit(r, &mega);
-    if (dfi_has_entry(m)) {
+    if (dfi_has_entry(b, m)) {
         const duoforge_status st = dfi_entry_ability(r, flat);
         if (st != DUOFORGE_OK) {
             return st;

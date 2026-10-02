@@ -702,7 +702,9 @@ def check_side(ctx, st, s):
                 return 'VOLATILE'
             if p['flags'] & VOL_CHOICE_LOCK and (mem['item'] != ITEM_CHOICE_SCARF or mem['item_consumed']):
                 return 'VOLATILE'
-            if p['flags'] & VOL_UNBURDEN and (mem['ability'] != ABILITY_UNBURDEN or not mem['item']
+            # The holder is the Pokemon whose ability now is Unburden: the sheet's, or the tail's ability_now.
+            ability_now = (st['tail']['sides'][s]['ability_now'][p['occ']] if has_pool_tail(ctx) else 0) or mem['ability']
+            if p['flags'] & VOL_UNBURDEN and (ability_now != ABILITY_UNBURDEN or not mem['item']
                                               or not mem['item_consumed']):
                 return 'VOLATILE'
             # Follow Me and Helping Hand end in the residual, newlySwitched at the end of the turn.

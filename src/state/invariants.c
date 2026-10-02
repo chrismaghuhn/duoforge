@@ -285,9 +285,11 @@ static dfi_invariant dfi_check_side(const struct duoforge_context *ctx, const st
                 (occupant->item != 1u + DFI_ITEM_CHOICESCARF || occupant->item_consumed != 0u)) {
                 return DFI_INV_VOLATILE;
             }
-            /* Unburden's volatile: set when its holder used its item. */
+            /* Unburden's volatile: set when its holder used its item. The holder is the Pokemon whose ability now is
+             * Unburden: the sheet's, or the one that the POOL tail's ability_now holds (zero under every other kind). */
+            const uint32_t now = lim.pool_rules ? b->tail.sides[s].ability_now[slot->occupant] : 0u; /* the tail is absent elsewhere */
             if (((uint32_t)slot->flags & DFI_VOL_UNBURDEN) != 0u &&
-                (occupant->ability != 1u + DFI_ABILITY_UNBURDEN || occupant->item == 0u ||
+                ((now != 0u ? now : occupant->ability) != 1u + DFI_ABILITY_UNBURDEN || occupant->item == 0u ||
                  occupant->item_consumed == 0u)) {
                 return DFI_INV_VOLATILE;
             }
