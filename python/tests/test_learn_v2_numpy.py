@@ -12,7 +12,7 @@ import numpy as np
 
 import duoforge
 from duoforge import features, teams
-from duoforge_learn import checkpoint, columns, league, pairing, runstate, schedule
+from duoforge_learn import checkpoint, columns, league, pairing, runstate, schedule, suite
 from duoforge_learn.selfplay import SelfPlay
 
 
@@ -368,6 +368,42 @@ class RunStateTest(unittest.TestCase):
                     self.assertRaises(OSError):
                 runstate.save_state(d, broken)
             self.assertEqual(runstate.load_state(d)["counters"]["update"], 7)
+
+
+def _learner_team(rows):
+    return np.where(rows["learner_seat"] == 0, rows["side0"], rows["side1"]).astype(np.int64)
+
+
+def _opponent_team(rows):
+    return np.where(rows["learner_seat"] == 0, rows["side1"], rows["side0"]).astype(np.int64)
+
+
+class SuiteTest(unittest.TestCase):
+    def test_small_pool_is_complete(self):
+        rows = suite.make_suite(3, 7)
+        self.assertEqual(rows.shape, (36,))
+        keys = list(zip(_learner_team(rows).tolist(), _opponent_team(rows).tolist(), rows["learner_seat"].tolist()))
+        for i in range(3):
+            for j in range(3):
+                for seat in (0, 1):
+                    self.assertEqual(keys.count((i, j, seat)), 2)
+
+    def test_large_pool_is_stratified(self):
+        rows = suite.make_suite(12, 7, budget=512)
+        self.assertEqual(rows.shape, (512,))
+        mine = _learner_team(rows)
+        per_team = np.bincount(mine, minlength=12)
+        self.assertTrue(set(per_team.tolist()) <= {42, 43}, per_team.tolist())
+        for i in range(12):
+            opp = np.bincount(_opponent_team(rows[mine == i]), minlength=12)
+            self.assertLessEqual(int(opp.max() - opp.min()), 1)
+        seats = np.bincount(rows["learner_seat"], minlength=2)
+        self.assertLessEqual(abs(int(seats[0] - seats[1])), 12)
+
+    def test_suite_is_deterministic(self):
+        self.assertEqual(suite.make_suite(12, 7).tobytes(), suite.make_suite(12, 7).tobytes())
+        self.assertNotEqual(suite.make_suite(12, 7).tobytes(), suite.make_suite(12, 8).tobytes())
+        self.assertEqual(suite.make_suite(3, 7).tobytes(), suite.make_suite(3, 7).tobytes())
 
 
 if __name__ == "__main__":
