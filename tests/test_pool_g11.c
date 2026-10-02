@@ -206,10 +206,14 @@ static void check_battles(df_test *t, const duoforge_context *ctx, uint32_t *com
                 want.revision = (uint8_t)DUOFORGE_OBSERVATION_EXT_REVISION;
                 want.player = (uint8_t)viewer;
                 want.epoch = ob.epoch;
-                want.supported = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) |
+                /* The mask is the build's (later steps add their bits); the G8 and G11 bits are checked below. */
+                want.supported = dfi_support.view_ext_features;
+                DF_CHECK(t, (want.supported & (((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) |
+                                               ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TYPE_CHANGE) |
+                                               ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK))) ==
+                                (((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) |
                                  ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TYPE_CHANGE) |
-                                 ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK) |
-                                 ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WIDE_GUARD); /* step G7 */
+                                 ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK)));
                 for (uint32_t flat = 0u; flat < 4u; ++flat) {
                     if (((soaked >> flat) & 1u) != 0u) {
                         want.sides[flat / 2u].positions[flat % 2u].volatiles = (uint32_t)DUOFORGE_POSITION_EXT_TYPE_CHANGED;

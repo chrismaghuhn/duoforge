@@ -20,6 +20,7 @@
 #include <duoforge/duoforge.h>
 
 #include "data/pool_tables.h"
+#include "data/support_manifest.h"
 #include "reference/conformance_pool.h"
 #include "state/battle_internal.h"
 #include "state/identity.h"
@@ -265,10 +266,12 @@ static void check_view_ext(df_test *t, const duoforge_context *ctx)
                 want.revision = (uint8_t)DUOFORGE_OBSERVATION_EXT_REVISION;
                 want.player = (uint8_t)viewer;
                 want.epoch = ob.epoch;
-                want.supported = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) |
-                                 ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TYPE_CHANGE) | /* step G11 */
-                                 ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK) |
-                                 ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WIDE_GUARD); /* step G7 */
+                /* The mask is the build's: G8's two bits are set (checked here) and later steps add theirs. */
+                want.supported = dfi_support.view_ext_features;
+                DF_CHECK(t, (want.supported & (((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) |
+                                               ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK))) ==
+                                (((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) |
+                                 ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK)));
                 for (uint32_t flat = 0u; flat < 4u; ++flat) {
                     want.sides[flat / 2u].positions[flat % 2u].volatiles =
                         (((tc >> flat) & 1u) != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_THROAT_CHOP : 0u) |
@@ -400,8 +403,8 @@ int main(void)
             const uint32_t occupant = b->sides[1].positions[0].occupant;
             const uint32_t other = b->sides[1].positions[1].occupant;
             DF_CHECK(&t, occupant < DUOFORGE_MAX_ROSTER && other < DUOFORGE_MAX_ROSTER && occupant != other);
-            b->tail.sides[1].positions[0] = (dfi_tail_pos){1u, 2u, 3u, 1u, 1u};
-            b->tail.sides[1].positions[1] = (dfi_tail_pos){2u, 0u, 0u, 2u, 1u};
+            b->tail.sides[1].positions[0] = (dfi_tail_pos){.last_move = 1u, .encore_slot = 2u, .encore_turns = 3u, .throat_chop_turns = 1u, .heal_block_turns = 1u};
+            b->tail.sides[1].positions[1] = (dfi_tail_pos){.last_move = 2u, .throat_chop_turns = 2u, .heal_block_turns = 1u};
             b->tail.sides[1].soak_type[occupant] = 5u;
             b->tail.sides[1].soak_type[other] = 7u;
             b->tail.sides[0].positions[0].heal_block_turns = 1u;

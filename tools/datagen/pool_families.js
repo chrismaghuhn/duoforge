@@ -49,7 +49,7 @@ const TYPES = ['Bug', 'Dark', 'Dragon', 'Electric', 'Fairy', 'Fighting', 'Fire',
 const ITEM_FAMILIES = ['NONE', 'TYPE_BOOSTER', 'RESIST_BERRY'];
 const ABILITY_FAMILIES = ['NONE', 'ATE', 'PINCH', 'WEATHER_SETTER', 'TERRAIN_SETTER'];
 // The names of the generated weather and terrain codes, as Showdown calls them.
-const WEATHER = {RAIN: 'raindance', SUN: 'sunnyday'};
+const WEATHER = {RAIN: 'raindance', SUN: 'sunnyday', SAND: 'sandstorm', SNOW: 'snowscape'};
 const TERRAIN = {GRASSY: 'grassyterrain', PSYCHIC: 'psychicterrain'};
 // The Primal Pokemon that Drizzle and Drought leave alone.
 const PRIMAL = {raindance: ['kyogre', 'blueorb'], sunnyday: ['groudon', 'redorb']};
@@ -305,6 +305,50 @@ function setterEffect(ability, speciesId, itemId) {
     return set;
 }
 
+// Sandstorm and Snowscape, Weather Ball: what the engine reads about them (src/combat/turn.c), called on the pinned
+// handlers: the types immune to Sandstorm damage (the type chart's sandstorm key, against the generated immunity bit
+// 32 of dfi_pool_type_immunity), the damage of onWeather, Snowscape's lack of any, the Rock and Ice stat boosts, and
+// the type and the power of Weather Ball in each weather.
+function checkWeather(dex, source) {
+    const start = source.indexOf('const uint8_t dfi_pool_type_immunity[');
+    const bits = source.slice(start, source.indexOf('};', start)).match(/\{([^}]*)/)[1].split(',').map((x) => parseInt(x, 10));
+    TYPES.forEach((type, i) => {
+        const immune = dex.types.get(type).damageTaken.sandstorm === 3;
+        expect('type ' + type + ' immune to Sandstorm', (bits[i] & 32) !== 0, immune);
+    });
+    expect('the types immune to Sandstorm', TYPES.filter((t) => dex.types.get(t).damageTaken.sandstorm === 3),
+        ['Ground', 'Rock', 'Steel']);
+    const sand = dex.conditions.get('sandstorm');
+    const snow = dex.conditions.get('snowscape');
+    let damage = null;
+    call(sand.onWeather, battle(sand, {damage(n) { damage = n; }}), [{baseMaxhp: 160}]);
+    expect('Sandstorm damage', damage, 10);
+    expect('Snowscape has no onWeather', snow.onWeather, undefined);
+    expect('Sandstorm duration', [sand.duration, snow.duration], [5, 5]);
+    expect('Sandstorm onFieldResidualOrder', [sand.onFieldResidualOrder, snow.onFieldResidualOrder], [1, 1]);
+    const user = (w) => ({effectiveWeather: () => w});
+    const modify = (spd, m) => ({modified: [spd, m]});
+    const rock = {hasType: (t) => t === 'Rock', effectiveWeather: () => 'sandstorm'};
+    const ice = {hasType: (t) => t === 'Ice', effectiveWeather: () => 'snowscape'};
+    expect('Sandstorm SpD of a Rock type', call(sand.onModifySpD, battle(sand, {modify}), [100, rock]), {modified: [100, 1.5]});
+    expect('Sandstorm SpD of a non-Rock type', call(sand.onModifySpD, battle(sand, {modify}), [100, ice]), undefined);
+    expect('Snowscape Def of an Ice type', call(snow.onModifyDef, battle(snow, {modify}), [100, ice]), {modified: [100, 1.5]});
+    expect('Snowscape Def of a non-Ice type', call(snow.onModifyDef, battle(snow, {modify}), [100, rock]), undefined);
+    expect('Sandstorm onModifySpDPriority', sand.onModifySpDPriority, 10);
+    expect('Snowscape onModifyDefPriority', snow.onModifyDefPriority, 10);
+    const ball = dex.moves.get('weatherball');
+    for (const [w, type] of [['raindance', 'Water'], ['sunnyday', 'Fire'], ['sandstorm', 'Rock'], ['snowscape', 'Ice']]) {
+        const move = moveOf('Normal', {basePower: 50});
+        call(ball.onModifyType, battle(ball), [move, user(w)]);
+        call(ball.onModifyMove, battle(ball), [move, user(w)]);
+        expect('Weather Ball in ' + w, [move.type, move.basePower], [type, 100]);
+    }
+    const none = moveOf('Normal', {basePower: 50});
+    call(ball.onModifyType, battle(ball), [none, user('')]);
+    call(ball.onModifyMove, battle(ball), [none, user('')]);
+    expect('Weather Ball without weather', [none.type, none.basePower], ['Normal', 50]);
+}
+
 // ----------------------------------------------------------------- the check
 function checkItems(dex, rows, unmodeled) {
     const counts = {};
@@ -504,8 +548,11 @@ function checkAbilities(dex, rows, moveIds, unmodeled, unmodeledMoves) {
             const weather = weatherOf(row.param);
             expect(row.id + ' sets', setterEffect(ability, 'garchomp', ''), {weather, terrain: null});
             // The Primal Pokemon with their orb are left alone, nothing else is.
-            const [species, orb] = PRIMAL[weather] || ['', ''];
-            expect(row.id + ' with the Primal orb', setterEffect(ability, species, orb), {weather: null, terrain: null});
+            // Sand Stream and Snow Warning have no guard: the Primal Pokemon of rain and sun are not special to them.
+            const [species, orb] = PRIMAL[weather] || ['groudon', 'redorb'];
+            const guarded = PRIMAL[weather] !== undefined;
+            expect(row.id + ' with the Primal orb', setterEffect(ability, species, orb),
+                {weather: guarded ? null : weather, terrain: null});
             expect(row.id + ' without the orb', setterEffect(ability, species, ''), {weather, terrain: null});
         } else {
             const terrain = terrainOf(row.param);
@@ -924,6 +971,7 @@ function main() {
         .map((row, number) => (row[28] === specialUnmodeled ? moveIds.get(number) : undefined)).filter((id) => id !== undefined));
     const items = checkItems(dex, itemRows, unmodeledItems);
     checkFocusSash(dex, root);
+    checkWeather(dex, source);
     checkG10Moves(dex);
     const abilities = checkAbilities(dex, abilityRows, moveIds, unmodeledAbilities, unmodeledMoves);
     // "All 18": a booster and a resist berry for each type, and nothing else in the families.
@@ -931,7 +979,7 @@ function main() {
     expect('resist berries', items.RESIST_BERRY, 18);
     expect('"-ate" abilities', abilities.ATE, 3);
     expect('pinch abilities', abilities.PINCH, 4);
-    expect('weather setters', abilities.WEATHER_SETTER, 2);
+    expect('weather setters', abilities.WEATHER_SETTER, 4);
     expect('terrain setters', abilities.TERRAIN_SETTER, 2);
     checkLegal(dex, TeamValidator.get(FORMAT_ID), itemRows, abilityRows, extendedAbilities);
     const legal = checkFormes(dex, TeamValidator.get(FORMAT_ID), formeRowsList, moveIds, abilityIds);

@@ -79,6 +79,9 @@
  * recoil move, Struggle's stays), each with recorded POOL battles. Step G5
  * marks U-turn: a damaging pivot whose switch flag names it (dfi_pivot_moves),
  * in the reference battles g5_uturn_a to _e.
+ * The weather step marks Sand Stream and Snow Warning (table rules of the weather-setter family), Sandstorm and
+ * Snowscape (named handlers) and the weather values Sand and Snow of the player view: Sandstorm's damage in
+ * eachEvent order, the Rock and Ice defense boosts, Weather Ball's types, ten recorded POOL battles w1 to w8.
  * Step G8 marks Throat Chop (the sound moves barred for two turns, the cant
  * of a queued one) and Psychic Noise (Heal Block for two turns: every heal
  * of the holder refused, the heal-flag moves barred), which are secondary
@@ -169,6 +172,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_DRUMBEATING] = 1u,
             [DFI_MOVE_DAZZLINGGLEAM] = 1u,
             [DFI_MOVE_UTURN] = 1u,
+            [DFI_MOVE_SANDSTORM] = 1u,
+            [DFI_MOVE_SNOWSCAPE] = 1u,
             [DFI_MOVE_THROATCHOP] = 1u,
             [DFI_MOVE_PSYCHICNOISE] = 1u,
             [DFI_MOVE_WIDEGUARD] = 1u,
@@ -200,6 +205,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_UNBURDEN] = 1u,
             [DFI_ABILITY_PSYCHICSURGE] = 1u,
             [DFI_ABILITY_ROCKHEAD] = 1u,
+            [DFI_ABILITY_SANDSTREAM] = 1u,
+            [DFI_ABILITY_SNOWWARNING] = 1u,
             [DFI_ABILITY_PIXILATE] = 1u,
             [DFI_ABILITY_REFRIGERATE] = 1u,
             [DFI_ABILITY_OVERGROW] = 1u,
@@ -267,7 +274,12 @@ const dfi_support_manifest dfi_support = {
      * duoforge.state.pool_g8). Step G11: the type change of Soak (bit 9: TYPE_CHANGED and type_now of the position, public,
      * verified against the four g11 battles in duoforge.state.pool_g11). Step G7: Wide Guard (bit 17: guard_flags, public,
      * verified in duoforge.state.pool_g7). */
-    .view_ext_features = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) | ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK) |
+    /* Step Sandstorm and Snowscape: bits 0 and 1, the weather values of the old observation's weather field (the
+     * -weather lines of Sand Stream, Snow Warning and the two moves, verified step by step in duoforge.state.pool_weather). */
+    .view_ext_features = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TYPE_CHANGE) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WIDE_GUARD),
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WIDE_GUARD) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WEATHER_SAND) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WEATHER_SNOW),
 };

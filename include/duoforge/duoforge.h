@@ -33,9 +33,9 @@ extern "C" {
 #endif
 
 #define DUOFORGE_VERSION_MAJOR 0
-#define DUOFORGE_VERSION_MINOR 27
+#define DUOFORGE_VERSION_MINOR 28
 #define DUOFORGE_VERSION_PATCH 0
-#define DUOFORGE_VERSION_STRING "0.27.0"
+#define DUOFORGE_VERSION_STRING "0.28.0"
 
 /* Identifiers of the artifacts that exist now (registry: decisions 0002, 0005, 0006). */
 #define DUOFORGE_SEMANTICS_ID           3u   /* "duoforge-m3-closure" */
@@ -889,6 +889,9 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_CAUSE_FLINCH    12u
 #define DUOFORGE_CAUSE_NO_PP     13u
 #define DUOFORGE_CAUSE_POISON    14u /* poison's residual damage (Team C) */
+#define DUOFORGE_CAUSE_WEATHER   16u /* DAMAGE (POOL kinds): the residual damage of a weather ([from] Sandstorm); id2: the
+                                         DUOFORGE_WEATHER_* value. Generic for every weather that damages; in this format
+                                         it fires only for Sand: Snow has no residual damage and Hail is not in the format */
 #define DUOFORGE_CAUSE_HEAL_BLOCK 15u /* CANT (POOL kinds): a move that heals, stopped by Heal Block; id: the stopped move.
                                          A sound move stopped by Throat Chop is CANT with cause MOVE, id2: Throat Chop
                                          (the line names no move, so id is 0) */

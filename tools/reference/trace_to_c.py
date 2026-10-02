@@ -284,6 +284,24 @@ def drop_reason(d, state, after=None, log=None):
     site, ctx, group = d['site'], d.get('context', ''), d.get('group')
     if site == 'TEAM_ORDER':
         return 'team-preview order'
+    if site == 'SPEED_TIE' and ctx == 'each:Weather' and any('sandstorm' in g.split(':', 3)[3].split('+') for g in group):
+        # P:<slot>:<handlers>:<effect ids>. eachEvent('Weather') sorts every active Pokemon; under Sandstorm each has
+        # the weather's own onWeather (effect id sandstorm), which damages it unless it is immune. The order shows
+        # only between two Pokemon that take the damage (the engine draws then, among the tied group); a group with
+        # at most one damaged Pokemon shows no order. Any other handler of the event is not modelled. (Under another
+        # weather no Pokemon has a Weather handler: the general rule below drops the tie.)
+        ids = sorted(set(x for g in group for x in g.split(':', 3)[3].split('+') if x))
+        if ids != ['sandstorm']:
+            raise ConversionError('weather-tie-handlers', 'trace_to_c: Weather tie with handlers %s: %s' % (ids, group),
+                                  detail='+'.join(ids))
+        if log is None:
+            raise ConversionError('weather-tie-log', 'trace_to_c: a Weather tie needs the step log: %s' % group)
+        damaged = {line.split('|')[2].split(':')[0] for line in log
+                   if line.startswith('|-damage|') and line.endswith('|[from] Sandstorm')}
+        slots = [g.split(':')[1] for g in group]
+        if sum(1 for sl in slots if sl in damaged) <= 1:
+            return 'Sandstorm damage tie with at most one damaged Pokemon'
+        return None  # the engine draws: the order of the damage lines
     if site == 'SPEED_TIE' and ctx.startswith('each:'):
         # P:<slot>:<handlers>:<effect ids>. Sitrus Berry (Update) and Grassy
         # Seed (TerrainChange) act only on their holder, so the order of the
@@ -427,7 +445,8 @@ def name_of(p):
 
 # Set species whose protocol name is another (the base species), decision 0009. Arcanine-Hisui and Floette-Eternal
 # are called Arcanine and Floette in the switch line (pool step G2); the species clause keeps the alias unique.
-BASE_SPECIES_NAME = {'Indeedee-F': 'Indeedee', 'Arcanine-Hisui': 'Arcanine', 'Floette-Eternal': 'Floette'}
+BASE_SPECIES_NAME = {'Indeedee-F': 'Indeedee', 'Arcanine-Hisui': 'Arcanine', 'Floette-Eternal': 'Floette',
+                     'Ninetales-Alola': 'Ninetales'}
 
 
 def abs_target(side, loc):
@@ -515,7 +534,9 @@ def convert_choice(text, side, state, roster_of, mid_turn=False):
 
 BOUNDARY = {'teampreview': 1, 'move': 2, 'switch': 3}
 STATUS = {'': 0, 'brn': 1, 'frz': 2, 'par': 3, 'slp': 4, 'psn': 5, 'fnt': 0}
-WEATHER = {'': 0, 'raindance': 1, 'sunnyday': 2}
+WEATHER = {'': 0, 'raindance': 1, 'sunnyday': 2, 'sandstorm': 3, 'snowscape': 4}
+WEATHER_LINE = {'none': 0, 'RainDance': 1, 'SunnyDay': 2, 'Sandstorm': 3, 'Snowscape': 4}  # the names of -weather lines
+WEATHER_CAUSE = {'Sandstorm': 3}  # [from] <weather>: the residual damage of a weather (cause WEATHER, id2 = its value)
 TERRAIN = {'': 0, 'grassyterrain': 1, 'psychicterrain': 2}
 FIELD_PSYCHIC_TERRAIN = 3  # DUOFORGE_FIELD_PSYCHIC_TERRAIN (Team C)
 BLOCK_WIDE_GUARD = 4  # DUOFORGE_BLOCK_WIDE_GUARD (POOL), a detail of BLOCKED
@@ -573,7 +594,7 @@ EV = {name: i + 1 for i, name in enumerate(
      'SINGLE_TURN', 'VOLATILE_START', 'VOLATILE_END', 'TYPE_CHANGE'])}
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
          'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14,
-         'HEAL_BLOCK': 15}
+         'HEAL_BLOCK': 15, 'WEATHER': 16}
 VOLATILE_HEAL_BLOCK = 1  # DUOFORGE_VOLATILE_HEAL_BLOCK: the detail of VOLATILE_START and VOLATILE_END
 # DUOFORGE_TYPE_*: the alphabetical type ids, the detail of TYPE_CHANGE
 TYPE_IDS = {name: i for i, name in enumerate(
@@ -651,6 +672,10 @@ def ev_cause(attrs, tables):
                 cause = CAUSE['POISON']
             elif what == 'confusion':
                 cause = CAUSE['CONFUSION']
+            elif what == 'Hail':
+                raise ConversionError('from-attribute', 'trace_to_c: [from] Hail: no Hail in the format', detail=what)
+            elif what in WEATHER_CAUSE:
+                cause, id2 = CAUSE['WEATHER'], WEATHER_CAUSE[what]
             elif what == 'Grassy Terrain':
                 cause = CAUSE['TERRAIN']
             elif what in ('Parting Shot', 'Flip Turn', 'U-turn'):  # the move that made the switch (U-turn: pool tables)
@@ -847,7 +872,11 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                                       detail='%s %s' % (kind, what))
         elif kind == '-weather':
             cause, id2, other = ev_cause(attrs, tables)
-            weather = {'RainDance': 1, 'SunnyDay': 2, 'none': 0}[args[0]]
+            if args[0] not in WEATHER_LINE:
+                # Hail (isNonstandard "Past" at the pin) and every other weather are not in the format: refused, never mapped.
+                raise ConversionError('weather-line', 'trace_to_c: unknown weather %r in %r' % (args[0], line),
+                                      detail=args[0])
+            weather = WEATHER_LINE[args[0]]
             e = ev_tuple(EV['WEATHER'], NOPOS, other, cause, 0, id2, detail=weather,
                          flags=FLAG['UPKEEP'] if '[upkeep]' in attrs else 0)
         elif kind in ('-fieldstart', '-fieldend'):
