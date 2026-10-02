@@ -319,7 +319,7 @@ class Guards(unittest.TestCase):
             self.assertNotIn(secret, text)
         with open(os.path.join(HERE, 'chunks.sh'), encoding='utf-8') as f:
             chunks = f.read()
-        for needle in ('manifest/done.txt', 'DF_DEFAULT_CHUNK_BATTLES=2000', 'DF_VCPUS_PER_DRIVER=9', 'run_chunks()'):
+        for needle in ('manifest/done.txt', 'DF_DEFAULT_CHUNK_BATTLES=2000', 'DF_VCPUS_PER_DRIVER=7', 'run_chunks()'):
             self.assertIn(needle, chunks)
         for needle in ('b2cb775b0616115b775534eaeff50300e1fc81fc', 'npm ci --ignore-scripts --omit=dev', 'node build',
                        'DDUOFORGE_ENABLE_IPO=ON', '--no-lock', 'spot/instance-action', 'X-aws-ec2-metadata-token',
@@ -502,22 +502,22 @@ esac
 
     BASE_CONF = 'pairings=AA\nteams=\nbase_seed=1\n'
 
-    def test_parallel_auto_is_the_vcpus_over_nine_at_least_one(self):
-        for vcpus, expected in ((64, 7), (63, 7), (72, 8), (16, 1), (9, 1), (8, 1), (18, 2), (1, 1), (144, 16)):
+    def test_parallel_auto_is_the_vcpus_over_seven_at_least_one(self):
+        for vcpus, expected in ((64, 9), (63, 9), (72, 10), (16, 2), (14, 2), (13, 1), (7, 1), (6, 1), (1, 1), (112, 16)):
             with self.subTest(vcpus=vcpus):
                 r = self.chunks_eval('resolve_parallel auto %d; echo $RESOLVED_PARALLEL' % vcpus)
                 self.assertEqual((r.returncode, r.stdout.strip()), (0, str(expected)), r.stderr)
-        r = self.chunks_eval('resolve_parallel auto 200')  # 22: more than the 16 drivers that are allowed
+        r = self.chunks_eval('resolve_parallel auto 200')  # 28: more than the 16 drivers that are allowed
         self.assertEqual(r.returncode, 1)
         self.assertIn('parallel must be auto or 1 to 16', r.stderr)
 
     def test_an_explicit_parallel_and_the_default_of_a_conf_without_one(self):
         r = self.plan(self.BASE_CONF + 'chunks=4\n')
-        self.assertEqual((r.returncode, r.stdout.strip()), (0, '4 4|7|auto'), r.stderr)  # 64 vCPUs: 7 drivers
+        self.assertEqual((r.returncode, r.stdout.strip()), (0, '4 4|9|auto'), r.stderr)  # 64 vCPUs: 9 drivers
         r = self.plan(self.BASE_CONF + 'chunks=4\nparallel=3\n')
         self.assertEqual((r.returncode, r.stdout.strip()), (0, '4 4|3|3'), r.stderr)
         r = self.plan(self.BASE_CONF + 'chunks=4\n', vcpus=16)
-        self.assertEqual(r.stdout.strip(), '4 4|1|auto')
+        self.assertEqual(r.stdout.strip(), '4 4|2|auto')
         for bad in ('0', '17', 'x', '08', '-1'):
             with self.subTest(parallel=bad):
                 r = self.plan(self.BASE_CONF + 'chunks=4\nparallel=%s\n' % bad)
@@ -527,13 +527,15 @@ esac
     def test_a_sweep_is_one_phase_per_value_each_with_the_chunks_of_the_campaign(self):
         r = self.plan(self.BASE_CONF + 'chunks=24\nchunk_battles=1000\nsweep=5,7,9\n')
         self.assertEqual((r.returncode, r.stdout.strip()), (0, '24 72|5 7 9|sweep=5,7,9'), r.stderr)
-        r = self.plan(self.BASE_CONF + 'chunks=21\nsweep=5,7,9\n')  # 2 x 9 + 3: the smallest phase that has a steady state
-        self.assertEqual(r.stdout.strip(), '21 63|5 7 9|sweep=5,7,9', r.stderr)
+        r = self.plan(self.BASE_CONF + 'chunks=12\nsweep=5,7,9\n')  # 9 + 3: the smallest phase that has a steady state
+        self.assertEqual(r.stdout.strip(), '12 36|5 7 9|sweep=5,7,9', r.stderr)
+        r = self.plan(self.BASE_CONF + 'chunks=40\nsweep=9,11,13\n')
+        self.assertEqual(r.stdout.strip(), '40 120|9 11 13|sweep=9,11,13', r.stderr)
         r = self.plan(self.BASE_CONF + 'chunks=5\nsweep=1\n')
         self.assertEqual(r.stdout.strip(), '5 5|1|sweep=1', r.stderr)
 
     def test_a_bad_sweep_is_refused(self):
-        for conf, text in (('chunks=20\nsweep=5,7,9\n', 'parallel 9 needs at least 21 chunks'),
+        for conf, text in (('chunks=11\nsweep=5,7,9\n', 'parallel 9 needs at least 12 chunks'),
                            ('chunks=24\nsweep=5,5\n', 'listed twice'),
                            ('chunks=24\nsweep=0,5\n', 'sweep must be'),
                            ('chunks=24\nsweep=5,17\n', 'above 16'),
@@ -559,7 +561,7 @@ set -euo pipefail
 WORK=$1; EVENTS=$2; LOGF=$3; HERE=$4
 mkdir -p "$WORK/out"; : > "$WORK/done.txt"
 S3_BASE=s3://my-fuzz-bucket/fuzz/c
-CHUNKS=12; PARALLEL=1; CHUNK_BATTLES=10; BASE_SEED=100; VCPUS=6; WORKERS_PER=1
+CHUNKS=12; PARALLEL=1; CHUNK_BATTLES=${CB:-10}; BASE_SEED=100; VCPUS=6; WORKERS_PER=1
 log() { printf '%s\n' "$*" >> "$LOGF"; }
 fail() { log "FAILED: $*"; exit 1; }
 node() { echo v1; }
@@ -571,15 +573,14 @@ run_driver() { # idx seed dir
 case ${MODE:-phases} in
     phases) run_phase 0 0 6 2; run_phase 1 6 12 3 ;;
     summary)
-        printf '%s\n' $COMPLETIONS | sed 's/^/0 x /' | awk '{print $1, $2, $3}' > /dev/null
-        : > "$WORK/completions.txt"
-        for t in $COMPLETIONS; do echo "0 chunk $t" >> "$WORK/completions.txt"; done
-        phase_summary 0 "$P" 100 50 ;;
+        cp "$COMP_FILE" "$WORK/completions.txt"
+        phase_summary "${PH:-0}" "$P" "$T0" "${BUSY:-50}" ;;
 esac
 """
 
     def run_phase_harness(self, mode='phases', **env):
-        work = os.path.join(self.tmp, 'work')
+        work = os.path.join(self.tmp, 'work_phase')
+        shutil.rmtree(work, ignore_errors=True)
         events = os.path.join(self.tmp, 'events.txt')
         logf = os.path.join(self.tmp, 'harness.log')
         for path in (events, logf):
@@ -631,24 +632,104 @@ esac
         self.assertIn('phase 0: chunks 0 to 5, parallel 2, 3 workers per driver', log)
         self.assertIn('phase 1: chunks 6 to 11, parallel 3, 2 workers per driver', log)
 
-    def test_the_steady_state_of_a_phase_leaves_out_the_first_wave_and_the_tail(self):
-        # parallel 2, 10 chunks of 10 battles finishing at these times (the phase started at 100): the steady state is
-        # the 6 chunks between the 2nd completion (111) and the 8th (141): 60 battles over 30 s; overall 100 over 51 s
-        times = '110 111 120 121 130 131 140 141 150 151'
-        r, _ev, log, work = self.run_phase_harness(mode='summary', COMPLETIONS=times, P='2')
+    def summarize(self, rows, p, t0, cb=10, ph=0, busy=50):
+        """phase_summary over completions.txt rows (phase, idx, end, start); (log line, the sweep.jsonl entry)."""
+        comp = os.path.join(self.tmp, 'comp.txt')
+        with open(comp, 'w', newline=chr(10)) as f:
+            for row in rows:
+                f.write(' '.join(str(x) for x in row) + chr(10))
+        r, _ev, log, work = self.run_phase_harness(mode='summary', COMP_FILE=posix(comp), P=str(p), T0=str(t0), CB=str(cb),
+                                                  PH=str(ph), BUSY=str(busy))
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr + log)
-        self.assertIn('phase 0 (parallel 2): 2.0 battles/s steady state (6 of 10 chunks over 30.0 s), 2.0 battles/s over the phase', log)
         with open(os.path.join(work, 'sweep.jsonl'), encoding='utf-8') as f:
-            d = json.loads(f.read())
-        self.assertEqual((d['steady_battles_per_second'], d['overall_battles_per_second'], d['window_chunks'], d['chunks']),
-                         (2.0, 2.0, 6, 10))
+            return log, json.loads(f.read())
 
-    def test_a_phase_with_too_few_chunks_reports_no_steady_state(self):
-        r, _ev, log, work = self.run_phase_harness(mode='summary', COMPLETIONS='110 111 120 121 130 131', P='2')
-        self.assertEqual(r.returncode, 0, r.stdout + r.stderr + log)
-        self.assertIn('phase 0 (parallel 2): no steady state (6 chunks, a window of 2: too few)', log)
-        with open(os.path.join(work, 'sweep.jsonl'), encoding='utf-8') as f:
-            self.assertIsNone(json.loads(f.read())['steady_battles_per_second'])
+    def test_the_steady_rate_is_parallel_times_the_battles_over_the_median_chunk_time(self):
+        # parallel 3, 11 chunks of 10 battles that start and end in waves of 3 (every chunk takes 10 s with all three
+        # drivers busy), the last wave of two chunks, alone, takes 8 s: 3 x 10 / 10 s = 3.0; over the phase 110 / 38 s
+        rows = []
+        for k, (start, end, count) in enumerate(((0, 10, 3), (10, 20, 3), (20, 30, 3), (30, 38, 2))):
+            for j in range(count):
+                rows.append((0, '%04d' % (3 * k + j), end + 0.01 * j, start))
+        log, d = self.summarize(rows, 3, 0)
+        self.assertEqual((d['steady_battles_per_second'], d['median_chunk_seconds'], d['steady_chunks'], d['steady_clamped']),
+                         (3.0, 10.01, 8, False))
+        self.assertAlmostEqual(d['overall_battles_per_second'], 110 / 38.01, places=1)
+        self.assertGreater(d['steady_battles_per_second'], d['overall_battles_per_second'])  # the tail is below it
+        self.assertIn('3.0 battles/s steady state (3 x 10 over the median chunk time of 10.01 s, from 8 of 11 chunks)', log)
+
+    def test_the_median_ignores_a_slow_first_wave_and_a_stray_slow_chunk(self):
+        # parallel 2, chunks starting two at a time every 10 s: the first wave is slow (start-up) and one chunk stalls
+        rows = [(0, '0000', 14, 0), (0, '0001', 14, 0), (0, '0002', 24, 14), (0, '0003', 25, 14),
+                (0, '0004', 34, 24), (0, '0005', 60, 25), (0, '0006', 44, 34), (0, '0007', 44, 34), (0, '0008', 50, 44),
+                (0, '0009', 50, 44)]
+        log, d = self.summarize(rows, 2, 0)
+        # the first 8 chunks to start have the durations 14 14 10 11 10 35 10 10: the median is 10.5
+        self.assertEqual((d['median_chunk_seconds'], d['steady_chunks']), (10.5, 8))
+        self.assertAlmostEqual(d['steady_battles_per_second'], 2 * 10 / 10.5, places=1)
+
+    def test_the_steady_rate_is_never_below_the_rate_over_the_phase(self):
+        # six chunks overlap completely, which cannot happen with parallel 2: the figure from the chunk time (2.0) would
+        # be below the phase rate (6.0), so the phase rate is given and the entry says so
+        rows = [(0, '%04d' % i, 10 + 0.01 * i, 0) for i in range(6)]
+        log, d = self.summarize(rows, 2, 0)
+        self.assertTrue(d['steady_clamped'])
+        self.assertEqual(d['steady_battles_per_second'], d['overall_battles_per_second'])
+        self.assertIn('not below the phase rate', log)
+
+    def test_a_phase_with_fewer_than_three_chunks_before_the_last_wave_reports_no_steady_state(self):
+        rows = [(0, '0000', 10, 0), (0, '0001', 10, 0), (0, '0002', 20, 10), (0, '0003', 20, 10)]
+        log, d = self.summarize(rows, 2, 0)  # 4 chunks, the last 2 excluded: 2 are left
+        self.assertIsNone(d['steady_battles_per_second'])
+        self.assertIn('no steady state (4 chunks: fewer than 3 started before the last 2)', log)
+
+    # ------------------------------------------------------------------ run 4's real sweep
+    def run4_phases(self):
+        """From the log of AWS run 4 (testdata/run4_log_excerpt.log): per phase the start, the completion rows (a chunk
+        line is written when the chunk is done, its "in N s" is the time it took) and the per-minute rates; and the
+        sweep.jsonl that the box wrote then (with the estimator that this replaced)."""
+        import datetime
+        def epoch(s):
+            return datetime.datetime.strptime(s, '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=datetime.timezone.utc).timestamp()
+        phases = {}
+        with open(os.path.join(HERE, 'testdata', 'run4_log_excerpt.log'), encoding='utf-8') as f:
+            for line in f:
+                m = re.match(r'(\S+) phase (\d): chunks', line)
+                if m:
+                    phases.setdefault(int(m.group(2)), {'rows': [], 'minutes': []})['t0'] = epoch(m.group(1))
+                m = re.match(r'(\S+) chunk (\d{4}): 1000 battles in (\d+) s', line)
+                if m:
+                    end, idx, took = epoch(m.group(1)), m.group(2), int(m.group(3))
+                    phases.setdefault(int(idx) // 24, {'rows': [], 'minutes': []})['rows'].append((int(idx) // 24, idx, end, end - took))
+                m = re.match(r'\S+ rate \(phase (\d)\): \d+ battles in \d+ s, (\d+) in the last minute', line)
+                if m:
+                    phases.setdefault(int(m.group(1)), {'rows': [], 'minutes': []})['minutes'].append(int(m.group(2)) / 60.0)
+        with open(os.path.join(HERE, 'testdata', 'run4_sweep.jsonl'), encoding='utf-8') as f:
+            sweep = [json.loads(line) for line in f if line.strip()]
+        return phases, sweep
+
+    def test_the_estimator_on_the_real_sweep_of_run_4(self):
+        phases, sweep = self.run4_phases()
+        self.assertEqual(sorted(phases), [0, 1, 2])
+        got = {}
+        for ph, parallel in ((0, 5), (1, 7), (2, 9)):
+            rows = sorted(phases[ph]['rows'], key=lambda r: r[2])
+            self.assertEqual(len(rows), 24)
+            log, d = self.summarize(rows, parallel, phases[ph]['t0'], cb=1000, ph=ph, busy=sweep[ph]['machine_busy_percent'])
+            got[ph] = d['steady_battles_per_second']
+            real_overall = sweep[ph]['overall_battles_per_second']
+            self.assertFalse(d['steady_clamped'], log)
+            # never below what the whole phase did (the old estimator gave 189.4 and 195.2 for phases 1 and 2, below 238.6
+            # and 273.9), and not above what the per-minute log shows the drivers can do by a margin
+            self.assertGreaterEqual(d['steady_battles_per_second'], 0.98 * real_overall, log)
+            self.assertGreaterEqual(d['steady_battles_per_second'], 0.95 * max(phases[ph]['minutes']), log)
+            self.assertLessEqual(d['steady_battles_per_second'], 1.15 * max(phases[ph]['minutes']), log)
+        self.assertLess(got[0], got[1])
+        self.assertLess(got[1], got[2])
+        # the figures: 5 x 1000 / 22 s, 7 x 1000 / 26 s, 9 x 1000 / 30 s
+        self.assertAlmostEqual(got[0], 227.3, delta=6)
+        self.assertAlmostEqual(got[1], 269.2, delta=7)
+        self.assertAlmostEqual(got[2], 300.0, delta=8)
 
     # ------------------------------------------------------------------ the manifest of a run
     THIS_RUN = ('{"run_id":"run-x","campaign":"c","commit":"%s","chunk_battles":10,"base_seed":100,"chunks":%d,'

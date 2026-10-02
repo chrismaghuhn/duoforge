@@ -1,0 +1,3 @@
+{"phase":0,"parallel":5,"workers_per_driver":12,"chunks":24,"chunk_battles":1000,"steady_battles_per_second":203.4,"overall_battles_per_second":212.6,"window_chunks":14,"machine_busy_percent":56}
+{"phase":1,"parallel":7,"workers_per_driver":9,"chunks":24,"chunk_battles":1000,"steady_battles_per_second":189.4,"overall_battles_per_second":238.6,"window_chunks":10,"machine_busy_percent":64}
+{"phase":2,"parallel":9,"workers_per_driver":7,"chunks":24,"chunk_battles":1000,"steady_battles_per_second":195.2,"overall_battles_per_second":273.9,"window_chunks":6,"machine_busy_percent":70}
