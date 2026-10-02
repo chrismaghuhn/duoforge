@@ -24,7 +24,7 @@ import numpy as np
 
 from duoforge import features
 
-from . import checkpoint, evaluate, league, pairing, policy, ppo
+from . import checkpoint, evaluate, league, pairing, policy, ppo, schedule
 from .returns import gae, samples_of
 from .selfplay import SelfPlay
 
@@ -110,7 +110,8 @@ def _arguments(argv):
     p.add_argument("--epochs", type=int, default=4)
     p.add_argument("--minibatch", type=int, default=4096)
     p.add_argument("--learning-rate", type=float, default=3e-4)
-    p.add_argument("--entropy", type=float, default=0.01)
+    p.add_argument("--entropy", type=schedule.Schedule.parse, default=schedule.Schedule.parse("0.01"),
+                   help="entropy bonus: a number, or a schedule over decisions such as 0:0.02,500M:0.01,2G:0.003")
     p.add_argument("--eval-every", type=int, default=25)
     p.add_argument("--eval-envs", type=int, default=64)
     p.add_argument("--seed", type=lambda s: int(s, 0), default=0x2026100200000021)
@@ -154,7 +155,8 @@ def main(argv=None):
     if os.path.isdir(args.out) and os.listdir(args.out):
         raise SystemExit(f"{args.out} is not empty: a run writes into a fresh directory")
     os.makedirs(args.out, exist_ok=True)
-    config = vars(args) | {"devices": [str(d) for d in jax.devices()], "encoder": features.ENCODER}
+    config = vars(args) | {"devices": [str(d) for d in jax.devices()], "encoder": features.ENCODER,
+                           "entropy": str(args.entropy)}
     print(json.dumps(config), flush=True)
     state = league.LeagueState(args.envs, args.self_play_share, args.league_slots, args.slot_refresh, args.seed)
     env = SelfPlay(args.envs, args.workers, args.seed, max_steps=args.max_steps, on_start=state.start,
@@ -193,16 +195,17 @@ def main(argv=None):
             samples = samples_of(rollout, advantages, value_targets, learner_rows)
             acted = int(samples["acting"].sum())
             t1 = time.perf_counter()
+            entropy_coef = args.entropy(decisions)
             params, opt_state, stats = ppo.update(params, opt_state, tx, samples, rng, net.evaluate,
                                                   epochs=args.epochs, minibatch=args.minibatch,
-                                                  entropy_coef=args.entropy)
+                                                  entropy_coef=entropy_coef)
             t2 = time.perf_counter()
             decisions += acted
             episodes += ended
             record = {"update": update, "seconds": round(t2 - start, 1), "decisions": decisions,
                       "episodes": episodes, "collect_s": round(t1 - t0, 3), "update_s": round(t2 - t1, 3),
                       "decisions_per_s": round(acted / (t2 - t0)), "policy_rows": acted,
-                      "acted_rows": int(rollout["acting"].sum())}
+                      "acted_rows": int(rollout["acting"].sum()), "entropy_coef": round(entropy_coef, 8)}
             record |= {k: round(float(v), 5) for k, v in stats.items()}
             elapsed_min = (t2 - start) / 60
             last = (args.updates and update >= args.updates) or (args.minutes and elapsed_min >= args.minutes)

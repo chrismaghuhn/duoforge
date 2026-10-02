@@ -39,7 +39,7 @@ def _loss(params, batch, evaluate_fn, clip, entropy_coef, value_coef):
     return loss, (policy_loss, value_loss, entropy_mean)
 
 
-@functools.partial(jax.jit, static_argnames=("tx", "evaluate_fn", "clip", "entropy_coef", "value_coef"))
+@functools.partial(jax.jit, static_argnames=("tx", "evaluate_fn", "clip", "value_coef"))
 def _update_step(params, opt_state, batch, tx, evaluate_fn, clip, entropy_coef, value_coef):
     (loss, aux), grads = jax.value_and_grad(_loss, has_aux=True)(params, batch, evaluate_fn, clip, entropy_coef,
                                                                  value_coef)
@@ -61,7 +61,7 @@ def update(params, opt_state, tx, samples, rng, evaluate_fn=model.evaluate, epoc
             batch = {k: _pad(v[rows], minibatch) for k, v in samples.items()}
             batch["weight"] = _pad(np.ones(len(rows), dtype=np.float32), minibatch)
             params, opt_state, loss, aux = _update_step(params, opt_state, batch, tx, evaluate_fn, clip,
-                                                        entropy_coef, value_coef)
+                                                        jnp.float32(entropy_coef), value_coef)
             stats.append([float(loss)] + [float(a) for a in aux])
     mean = np.mean(stats, axis=0) if stats else np.zeros(4)
     return params, opt_state, {"loss": mean[0], "policy_loss": mean[1], "value_loss": mean[2], "entropy": mean[3]}

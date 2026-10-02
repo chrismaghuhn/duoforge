@@ -12,7 +12,7 @@ import numpy as np
 
 import duoforge
 from duoforge import features, teams
-from duoforge_learn import checkpoint, columns, league, pairing
+from duoforge_learn import checkpoint, columns, league, pairing, schedule
 from duoforge_learn.selfplay import SelfPlay
 
 
@@ -288,6 +288,26 @@ class LeagueTest(unittest.TestCase):
         samples = samples_of(rollout, np.zeros((t, e, 2)), np.zeros((t, e, 2)), rows)
         keep = np.broadcast_to(rows, (t, e, 2)).reshape(-1)
         self.assertEqual(samples["actions"].tolist(), np.arange(t * e * 2)[keep].tolist())
+
+
+class ScheduleTest(unittest.TestCase):
+    def test_constant(self):
+        s = schedule.Schedule.parse("0.01")
+        self.assertEqual((s(0), s(10 ** 9)), (0.01, 0.01))
+
+    def test_interpolates_and_holds(self):
+        s = schedule.Schedule.parse("0:0.02,500M:0.01,2G:0.003")
+        self.assertAlmostEqual(s(250_000_000), 0.015)
+        self.assertAlmostEqual(s(500_000_000), 0.01)
+        self.assertAlmostEqual(s(1_250_000_000), 0.0065)
+        self.assertAlmostEqual(s(5_000_000_000), 0.003)
+        self.assertEqual(schedule.Schedule.parse(str(s)).points, s.points)
+        self.assertEqual(schedule.Schedule.parse("0:1,2K:0")(1000), 0.5)
+
+    def test_refusals(self):
+        for bad in ("", "5:0.1", "0:0.1,0:0.2", "0:-1", "0:0.1,1X:0.2", "0:nan", "abc", "0:0.1,,1M:0.2"):
+            with self.assertRaises(ValueError, msg=bad):
+                schedule.Schedule.parse(bad)
 
 
 if __name__ == "__main__":

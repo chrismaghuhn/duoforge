@@ -254,6 +254,31 @@ class LeagueJaxTest(unittest.TestCase):
             shutil.rmtree(out, ignore_errors=True)
 
 
+class ScheduleTrainingTest(unittest.TestCase):
+    def test_entropy_schedule_is_logged(self):
+        import json
+        import os
+        import shutil
+        import tempfile
+        from duoforge_learn import schedule, train
+        out = tempfile.mkdtemp(prefix="duoforge-schedule-")
+        try:
+            code = train.main(["--envs", "8", "--workers", "2", "--rollout", "8", "--updates", "3", "--minutes", "0",
+                               "--eval-every", "3", "--eval-envs", "8", "--minibatch", "256",
+                               "--entropy", "0:0.05,1K:0", "--out", out])
+            self.assertEqual(code, 0)
+            with open(os.path.join(out, "log.jsonl"), encoding="utf-8") as f:
+                records = [json.loads(line) for line in f]
+            plan = schedule.Schedule.parse("0:0.05,1K:0")
+            seen = 0
+            for r in records:
+                self.assertAlmostEqual(r["entropy_coef"], plan(seen), places=6)
+                seen = r["decisions"]
+            self.assertGreater(records[0]["entropy_coef"], records[-1]["entropy_coef"])
+        finally:
+            shutil.rmtree(out, ignore_errors=True)
+
+
 PRESET_COUNTS = {"S": 384751, "M": 2072463, "L": 7871631}
 
 
