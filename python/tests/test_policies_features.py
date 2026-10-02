@@ -212,7 +212,7 @@ class PoliciesFeaturesTest(unittest.TestCase):
         # section 4.2) sets one feature after a position's seven older
         # flags: own slot 0 at 37..39 (15 global, 8 side, 7 stages, 7
         # flags), foe slot 1 at 357..359 (a side is 8 + 2 * 24 + 6 * 40).
-        # A bit outside the three raises.
+        # Every bit outside the three raises, in both encoders.
         c = _layout.CONSTANTS
         self.assertEqual(features.OBS_SIZE, 607)
         with duoforge.Batch(self.ctx, _setups(), 1, SEED) as batch:
@@ -228,9 +228,12 @@ class PoliciesFeaturesTest(unittest.TestCase):
                     diff = features.encode(changed, d)[0] - before
                     self.assertEqual(np.flatnonzero(diff).tolist(), [first + k])
                     self.assertEqual(float(diff[first + k]), 1.0)
-            ob["sides"][me]["positions"][0]["reserved"] = 8
-            with self.assertRaisesRegex(ValueError, "position flags"):
-                features.encode(ob, d)
+            from python.tests import _reference_features as reference
+            for bad in (8, 16, 32, 64, 128):
+                ob["sides"][me]["positions"][0]["reserved"] = bad
+                for encoder in (features, reference):
+                    with self.assertRaisesRegex(ValueError, "position flags"):
+                        encoder.encode(ob, d)
 
     def test_encode_psychic_terrain(self):
         # Psychic Terrain (TEAM_C) is the third entry of the terrain one-hot
