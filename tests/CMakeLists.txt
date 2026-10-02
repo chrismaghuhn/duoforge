@@ -122,6 +122,8 @@ duoforge_add_test(NAME duoforge.state.team_c_setup SOURCES test_team_c_setup.c W
 # columns, and the POOL kinds.
 duoforge_add_test(NAME duoforge.data.pool_tables SOURCES test_pool_tables.c WHITEBOX)
 duoforge_add_test(NAME duoforge.state.pool_setup SOURCES test_pool_setup.c WHITEBOX TIMEOUT 60)
+# The data query API (duoforge_data_*): names and legality per kind, differential against the setup.
+duoforge_add_test(NAME duoforge.data.api SOURCES test_data_api.c WHITEBOX TIMEOUT 120)
 # The POOL state tail (decision 0015 section 7): schema "v3 + pool tail rev 1", present under the POOL kinds only.
 duoforge_add_test(NAME duoforge.state.pool_tail SOURCES test_pool_tail.c WHITEBOX TIMEOUT 120)
 # The generated files must stay exactly what tools/datagen/gen_closure.py
@@ -131,8 +133,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=bba0fa9ac44a6d52053bec88702d96604a4720524c3f94a0cd6a188cc4012310"
-        "pool_tables.c=da55d5b321c2886c41c41acdde3a91676e9c1234822bd628fed1fee2d3516401")
+        "pool_tables.h=b359230d5b2fdcea98be64cbe9c7edd35a76b089fa11d3e5b3bc529c43a2a8c0"
+        "pool_tables.c=9c27d96ad5e18e552c3ecaee7eeef8120aa06979379093fb73130be7a0471de7")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -368,6 +370,12 @@ if(Python3_Interpreter_FOUND)
     add_test(NAME duoforge.data.gen_closure_refusals
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/test_gen_closure.py")
     set_tests_properties(duoforge.data.gen_closure_refusals PROPERTIES TIMEOUT 60
+        ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+    # The generated names of the data query API against the macros of the headers and the
+    # key() mapping of the trace converter (no checkout needed).
+    add_test(NAME duoforge.data.pool_names
+        COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/test_pool_names.py")
+    set_tests_properties(duoforge.data.pool_names PROPERTIES TIMEOUT 60
         ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
 endif()
 
