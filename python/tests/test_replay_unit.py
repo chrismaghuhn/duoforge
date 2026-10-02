@@ -157,6 +157,13 @@ class LinesTest(unittest.TestCase):
         # folds it: the line still stops the perspective
         self.assertEqual(lines.SUPPORTED & ~lines.TRACKER_FOLDS, 0)
         self.assertEqual(self.stop("|-start|p1a: Staraptor|Throat Chop|[silent]"), "feature:THROAT_CHOP")
+        # #124: the library supports Sand and Snow (bits 0 and 1); the rows carry no fold of them yet, so they stop
+        f = lines.FEATURES
+        self.assertTrue(lines.LIBRARY_SUPPORTED >> f["WEATHER_SAND"] & 1 and lines.LIBRARY_SUPPORTED >> f["WEATHER_SNOW"] & 1)
+        self.assertEqual(self.stop("|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Gholdengo"),
+                         "feature:WEATHER_SAND")
+        self.assertEqual(self.stop("|-weather|Snowscape|[from] ability: Snow Warning|[of] p2a: Gholdengo"),
+                         "feature:WEATHER_SNOW")
 
     def test_choice_items(self):
         self.assertEqual(lines.CHOICE_ITEMS, ("choiceband", "choicescarf", "choicespecs"))
