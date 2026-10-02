@@ -576,7 +576,7 @@ class Library(unittest.TestCase):
         self.assertTrue(any(l.startswith('|switch|p1a: Arcanine|Arcanine-Hisui, L50, M|') for l in lines))
 
     def test_every_move_marked_beyond_the_extended_ids_is_used_in_a_pool_battle(self):
-        """A move that the pool manifest marks beyond the extended ids (twelve of step G2, U-turn of step G5) was used in
+        """A move that the pool manifest marks beyond the extended ids (twelve of step G2, U-turn of step G5, Moonblast and Calm Mind of step G12) was used in
         a committed pool battle: a move line of it that did something (damage, or a boost for a status move) before
         the next move line."""
         def read(*p):
@@ -589,7 +589,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 13)
+        self.assertEqual(len(marked), 15)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []

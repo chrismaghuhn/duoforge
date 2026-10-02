@@ -1027,12 +1027,13 @@ int main(void)
             }
         }
         /* Step G2 marks twelve of its 22 moves, each used in a reference battle under the POOL kind (g2_data_moves_a
-         * to _d), and step G5 U-turn (g5_uturn_a to _e); the nine moves with a handler id stay unmarked. */
+         * to _d), step G5 U-turn (g5_uturn_a to _e) and step G12 Moonblast and Calm Mind (g12_floette_moves); the
+         * nine moves with a handler id stay unmarked. */
         static const uint32_t marked_moves[] = {DFI_MOVE_ROCKSLIDE, DFI_MOVE_DOUBLEEDGE, DFI_MOVE_THUNDERBOLT,
                                                 DFI_MOVE_FLASHCANNON, DFI_MOVE_EXTREMESPEED, DFI_MOVE_HEADSMASH,
                                                 DFI_MOVE_BULKUP, DFI_MOVE_LIQUIDATION, DFI_MOVE_ICEPUNCH,
                                                 DFI_MOVE_SHADOWCLAW, DFI_MOVE_DRUMBEATING, DFI_MOVE_DAZZLINGGLEAM,
-                                                DFI_MOVE_UTURN};
+                                                DFI_MOVE_UTURN, DFI_MOVE_MOONBLAST, DFI_MOVE_CALMMIND};
         uint32_t marked_count = 0u;
         for (uint32_t id = DFI_EXT_MOVE_COUNT; id < DFI_POOL_MOVE_COUNT; ++id) {
             bool want = false;
@@ -1044,7 +1045,7 @@ int main(void)
             DF_CHECK(&t, !want || dfi_pool_moves[id].special == DFI_SPECIAL_NONE);
             marked_count += dfi_support.moves[id] != 0u ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, marked_count, 13u);
+        DF_CHECK_EQ_U64(&t, marked_count, 15u);
     }
 
     /* Step G12: Fairy Aura and Flower Veil. The engine reads them by id (no family column: one legal holder each);
