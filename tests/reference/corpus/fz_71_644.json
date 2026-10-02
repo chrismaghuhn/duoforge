@@ -1,0 +1,80 @@
+{
+  "name": "fz_71_644",
+  "purpose": "Corpus (coverage): random differential battle 644 of run 71 (tools/reference/diff_driver.py random), team A against Team C, the whole battle. It adds 1 signatures that no committed battle and no earlier corpus battle has: move:Aqua Jet[miss].",
+  "data": "team_c",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,571cfe00c740fff418cc0bce88d527af4c3b25e4e01426515ac34e8a5c528cfc",
+  "teams": [
+    "Raichu (F) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Zap Cannon\n- Focus Blast\n- Fake Out\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- High Horsepower\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Muddy Water\n- Coil\n- Ice Beam\n- Hypnosis\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Bitter Blade\n- Shadow Sneak\n- Swords Dance\n- Protect\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Close Combat\n- Tailwind\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Nasty Plot\n- Protect",
+    "Incineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Flare Blitz\n- Parting Shot\n- Darkest Lariat\n\nKingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Sucker Punch\n- Iron Head\n- Protect\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Follow Me\n- Trick Room\n- Helping Hand\n- Psychic\n\nSneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Close Combat\n- Dire Claw\n- Protect\n- Fake Out\n\nBasculegion (M) @ Choice Scarf\nAbility: Adaptability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Wave Crash\n- Last Respects\n- Flip Turn\n- Aqua Jet\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Protect\n- Hyper Voice\n- Draco Meteor\n- Tailwind"
+  ],
+  "choices": [
+    {
+      "p1": "team 4132",
+      "p2": "team 5214"
+    },
+    {
+      "p1": "switch 4, move 4 mega",
+      "p2": "move 3 -2, switch 4"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 2 -2, move 2 2",
+      "p2": "move 2 1, move 1 2"
+    },
+    {
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "move 1 -2, move 2 1",
+      "p2": "switch 3, move 4 1"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "switch 3, move 2 1",
+      "p2": "switch 3, move 4 2"
+    },
+    {
+      "p1": "move 1, move 2 2",
+      "p2": "switch 3, move 4 2"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 3 -2, move 2 -1",
+      "p2": "move 1 -2, move 4 -1"
+    },
+    {
+      "p1": "switch 3, move 4",
+      "p2": "move 2 2, pass"
+    },
+    {
+      "p1": "move 2 -2, move 3",
+      "p2": "move 1 -2, pass"
+    },
+    {
+      "p1": "move 4 2, move 4",
+      "p2": "move 2 -2, pass"
+    },
+    {
+      "p1": "move 4 1, move 3",
+      "p2": "move 2 2, pass"
+    },
+    {
+      "p1": "move 1 -2, switch 3",
+      "p2": "move 2 -2, pass"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "move 4 2, move 1 1",
+      "p2": "move 3 2, pass"
+    }
+  ]
+}
