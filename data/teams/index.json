@@ -528,6 +528,149 @@
       },
       "notes": "VGCPastes Reg M-C survey of 2026-10-02, row MC408 (EVs stated in the paste), pokepast.es paste 7c9c0663ef60180e, retrieved on 2026-10-02; the id is PP_ and the upper case paste id. 6 changes by import_paste.py: set 1: gender (M) added to Politoed: the species can be either (M 50%, F 50%), the owner's standard is male; set 2: gender (M) added to Golisopod: the species can be either (M 50%, F 50%), the owner's standard is male; set 3: gender (M) added to Archaludon: the species can be either (M 50%, F 50%), the owner's standard is male; set 4: gender (M) added to Farigiraf: the species can be either (M 50%, F 50%), the owner's standard is male; set 5: gender (M) added to Charizard: the species can be either (M 87.5%, F 12.5%), the owner's standard is male; dry run: would write data/teams/PP_7C9C0663EF60180E.txt (sha256 536a942081ac04718e75af76de706bc771cde4a7d805729370684a9b7ba7ef2f) and its entry, 5 changes.",
       "sha256": "536a942081ac04718e75af76de706bc771cde4a7d805729370684a9b7ba7ef2f"
+    },
+    {
+      "id": "PP_D3A1849223A946F8",
+      "name": "Conner's Baltimore Regional 2027 Top 8 Team (survey MC403)",
+      "source": {
+        "url": "https://pokepast.es/d3a1849223a946f8",
+        "event": "Baltimore Regional 2027",
+        "placing": "7th"
+      },
+      "notes": "VGCPastes Reg M-C survey of 2026-10-02, row MC403 (EVs stated in the paste), pokepast.es paste d3a1849223a946f8, retrieved on 2026-10-02; the id is PP_ and the upper case paste id. 17 changes by import_paste.py: set 1 (Staraptor): the nickname 'Aang' is dropped; set 1: gender (M) added to Staraptor: the species can be either (M 50%, F 50%), the owner's standard is male; set 1 (Staraptor): \"Level: 50\" added; set 2 (Raichu): the nickname 'Ryuji' is dropped; set 2: gender (M) added to Raichu: the species can be either (M 50%, F 50%), the owner's standard is male; set 2 (Raichu): \"Level: 50\" added; set 3 (Gholdengo): the nickname 'Parlayprince' is dropped; set 3 (Gholdengo): \"Level: 50\" added; set 4 (Arcanine-Hisui): the nickname 'Appa' is dropped; set 4: gender (M) added to Arcanine-Hisui: the species can be either (M 75%, F 25%), the owner's standard is male; set 4 (Arcanine-Hisui): \"Level: 50\" added; set 5 (Sylveon): the nickname 'Nico robin' is dropped; set 5: gender (M) added to Sylveon: the species can be either (M 87.5%, F 12.5%), the owner's standard is male; set 5 (Sylveon): \"Level: 50\" added; set 5 (Sylveon): dropped the cosmetic line 'Shiny: Yes'; set 6 (Rillaboom): the nickname 'Flower man' is dropped; set 6: gender (M) added to Rillaboom: the species can be either (M 87.5%, F 12.5%), the owner's standard is male.",
+      "sha256": "ac6d358afdd6895a086a7e7897756a4bdd8cb560a09b5499e5dbaf02d45b2e9c"
+    },
+    {
+      "id": "PP_DDCF443E371A3A19",
+      "name": "vgcluca's Maddo's Cup #12 Champion Team (survey MC340)",
+      "source": {
+        "url": "https://pokepast.es/ddcf443e371a3a19",
+        "event": "Maddo's Cup #12",
+        "placing": "Champion"
+      },
+      "notes": "VGCPastes Reg M-C survey of 2026-10-02, row MC340 (EVs stated in the paste), pokepast.es paste ddcf443e371a3a19, retrieved on 2026-10-02; the id is PP_ and the upper case paste id. 5 changes by import_paste.py: set 1: gender (M) added to Salamence: the species can be either (M 50%, F 50%), the owner's standard is male; set 2: gender (M) added to Rillaboom: the species can be either (M 87.5%, F 12.5%), the owner's standard is male; set 3: gender (M) added to Arcanine-Hisui: the species can be either (M 75%, F 25%), the owner's standard is male; set 5: gender (M) added to Raichu: the species can be either (M 50%, F 50%), the owner's standard is male; set 6: gender (M) added to Sylveon: the species can be either (M 87.5%, F 12.5%), the owner's standard is male.",
+      "sha256": "a4e5a77dc616cf6a9303ab9adaa88892ce452ebb2b7b5e6c3a0543494b233cdd"
+    },
+    {
+      "id": "PP_56F0A0120CD736E5",
+      "name": "PhoNoodle's Recreation of MichaelderBeste's VR September Challenge Champion Team (survey MC312)",
+      "source": {
+        "url": "https://pokepast.es/56f0a0120cd736e5",
+        "event": "-",
+        "placing": null
+      },
+      "notes": "VGCPastes Reg M-C survey of 2026-10-02, row MC312 (EVs stated in the paste), pokepast.es paste 56f0a0120cd736e5, retrieved on 2026-10-02; the id is PP_ and the upper case paste id. 11 changes by import_paste.py: set 1: gender (M) added to Staraptor: the species can be either (M 50%, F 50%), the owner's standard is male; set 1 (Staraptor): \"Level: 50\" added; set 2: gender (M) added to Rillaboom: the species can be either (M 87.5%, F 12.5%), the owner's standard is male; set 2 (Rillaboom): \"Level: 50\" added; set 3: gender (M) added to Raichu: the species can be either (M 50%, F 50%), the owner's standard is male; set 3 (Raichu): \"Level: 50\" added; set 4 (Gholdengo): \"Level: 50\" added; set 5: gender (M) added to Arcanine-Hisui: the species can be either (M 75%, F 25%), the owner's standard is male; set 5 (Arcanine-Hisui): \"Level: 50\" added; set 6: gender (M) added to Sylveon: the species can be either (M 87.5%, F 12.5%), the owner's standard is male; set 6 (Sylveon): \"Level: 50\" added.",
+      "sha256": "cf4566e2d311d6ec5f52de8adc2e9d365345ae49da54aab46b6cf0bd7b2c82c0"
+    },
+    {
+      "id": "PP_F85133BAC58B317F",
+      "name": "PokeReplaysVGC's Salamence Tailroom Team (survey MC311)",
+      "source": {
+        "url": "https://pokepast.es/f85133bac58b317f",
+        "event": "-",
+        "placing": null
+      },
+      "notes": "VGCPastes Reg M-C survey of 2026-10-02, row MC311 (EVs stated in the paste), pokepast.es paste f85133bac58b317f, retrieved on 2026-10-02; the id is PP_ and the upper case paste id. 7 changes by import_paste.py: set 1: gender (M) added to Salamence: the species can be either (M 50%, F 50%), the owner's standard is male; set 2: gender (M) added to Arcanine-Hisui: the species can be either (M 75%, F 25%), the owner's standard is male; set 3: gender (M) added to Rillaboom: the species can be either (M 87.5%, F 12.5%), the owner's standard is male; set 4: gender (M) added to Kingambit: the species can be either (M 50%, F 50%), the owner's standard is male; set 5: gender (M) added to Farigiraf: the species can be either (M 50%, F 50%), the owner's standard is male; set 6: gender (M) added to Sylveon: the species can be either (M 87.5%, F 12.5%), the owner's standard is male; set 6 (Sylveon): \"Level: 50\" added.",
+      "sha256": "f44e69caea2d4b2d1dd20750badbe4ec5a4c8eeae13214e1fff23c13fe5cb8ae"
+    },
+    {
+      "id": "PP_EE7A2C6A9F775208",
+      "name": "Justin's Recreation of MichaelderBeste's VR September Challenge Champion Team (survey MC272)",
+      "source": {
+        "url": "https://pokepast.es/ee7a2c6a9f775208",
+        "event": "-",
+        "placing": null
+      },
+      "notes": "VGCPastes Reg M-C survey of 2026-10-02, row MC272 (EVs stated in the paste), pokepast.es paste ee7a2c6a9f775208, retrieved on 2026-10-02; the id is PP_ and the upper case paste id. 11 changes by import_paste.py: set 1: gender (M) added to Raichu: the species can be either (M 50%, F 50%), the owner's standard is male; set 1 (Raichu): \"Level: 50\" added; set 2: gender (M) added to Rillaboom: the species can be either (M 87.5%, F 12.5%), the owner's standard is male; set 2 (Rillaboom): \"Level: 50\" added; set 3: gender (M) added to Arcanine-Hisui: the species can be either (M 75%, F 25%), the owner's standard is male; set 3 (Arcanine-Hisui): \"Level: 50\" added; set 4: gender (M) added to Sylveon: the species can be either (M 87.5%, F 12.5%), the owner's standard is male; set 4 (Sylveon): \"Level: 50\" added; set 5 (Gholdengo): \"Level: 50\" added; set 6: gender (M) added to Staraptor: the species can be either (M 50%, F 50%), the owner's standard is male; set 6 (Staraptor): \"Level: 50\" added.",
+      "sha256": "06873c6f285c870f6b58466d1eec500dcc371f169557e55537fed8e3e1783266"
+    },
+    {
+      "id": "PP_D943321333ED8846",
+      "name": "ayoitsbenji's WCG VGC Challenge Champion Team (Recreation of MichaelderBeste's VR September Challenge Champion Team) (survey MC271)",
+      "source": {
+        "url": "https://pokepast.es/d943321333ed8846",
+        "event": "WCG VGC Challenge",
+        "placing": "Champion"
+      },
+      "notes": "VGCPastes Reg M-C survey of 2026-10-02, row MC271 (EVs stated in the paste), pokepast.es paste d943321333ed8846, retrieved on 2026-10-02; the id is PP_ and the upper case paste id. 11 changes by import_paste.py: set 1: gender (M) added to Staraptor: the species can be either (M 50%, F 50%), the owner's standard is male; set 1 (Staraptor): \"Level: 50\" added; set 2: gender (M) added to Raichu: the species can be either (M 50%, F 50%), the owner's standard is male; set 2 (Raichu): \"Level: 50\" added; set 3: gender (M) added to Rillaboom: the species can be either (M 87.5%, F 12.5%), the owner's standard is male; set 3 (Rillaboom): \"Level: 50\" added; set 4: gender (M) added to Arcanine-Hisui: the species can be either (M 75%, F 25%), the owner's standard is male; set 4 (Arcanine-Hisui): \"Level: 50\" added; set 5: gender (M) added to Sylveon: the species can be either (M 87.5%, F 12.5%), the owner's standard is male; set 5 (Sylveon): \"Level: 50\" added; set 6 (Gholdengo): \"Level: 50\" added.",
+      "sha256": "71ffb61f7740c34e04f4a936f5c2788ea07b36e5c93cb942deb7fc3c807e26bc"
+    },
+    {
+      "id": "PP_2D234B4EC11A9ACA",
+      "name": "parrobot7's Local Tour Champion Team (Recreation of MichaelderBeste's VR September Challenge Champion Team) (survey MC256)",
+      "source": {
+        "url": "https://pokepast.es/2d234b4ec11a9aca",
+        "event": "Local Tour",
+        "placing": "Champion"
+      },
+      "notes": "VGCPastes Reg M-C survey of 2026-10-02, row MC256 (EVs stated in the paste), pokepast.es paste 2d234b4ec11a9aca, retrieved on 2026-10-02; the id is PP_ and the upper case paste id. 11 changes by import_paste.py: set 1 (Gholdengo): \"Level: 50\" added; set 2: gender (M) added to Rillaboom: the species can be either (M 87.5%, F 12.5%), the owner's standard is male; set 2 (Rillaboom): \"Level: 50\" added; set 3: gender (M) added to Arcanine-Hisui: the species can be either (M 75%, F 25%), the owner's standard is male; set 3 (Arcanine-Hisui): \"Level: 50\" added; set 4: gender (M) added to Sylveon: the species can be either (M 87.5%, F 12.5%), the owner's standard is male; set 4 (Sylveon): \"Level: 50\" added; set 5: gender (M) added to Raichu: the species can be either (M 50%, F 50%), the owner's standard is male; set 5 (Raichu): \"Level: 50\" added; set 6: gender (M) added to Staraptor: the species can be either (M 50%, F 50%), the owner's standard is male; set 6 (Staraptor): \"Level: 50\" added.",
+      "sha256": "b4a61b435c3e0d8cb839eac4e426fe455d71d92be6b1113c25f3b33dc49692cd"
+    },
+    {
+      "id": "PP_2F25D07C9B26E73C",
+      "name": "ntmgpoke's Salamence Sylveon Team (survey MC217)",
+      "source": {
+        "url": "https://pokepast.es/2f25d07c9b26e73c",
+        "event": "-",
+        "placing": null
+      },
+      "notes": "VGCPastes Reg M-C survey of 2026-10-02, row MC217 (EVs stated in the paste), pokepast.es paste 2f25d07c9b26e73c, retrieved on 2026-10-02; the id is PP_ and the upper case paste id. 5 changes by import_paste.py: set 1: gender (M) added to Salamence: the species can be either (M 50%, F 50%), the owner's standard is male; set 2: gender (M) added to Sylveon: the species can be either (M 87.5%, F 12.5%), the owner's standard is male; set 3: gender (M) added to Rillaboom: the species can be either (M 87.5%, F 12.5%), the owner's standard is male; set 4: gender (M) added to Kingambit: the species can be either (M 50%, F 50%), the owner's standard is male; set 6: gender (M) added to Sneasler: the species can be either (M 50%, F 50%), the owner's standard is male.",
+      "sha256": "66d6787390cbc309a71e398e70cf68a9ff090416dd94e027b8f064d70008b25f"
+    },
+    {
+      "id": "PP_B80C5F3E363597C2",
+      "name": "speedykid's Salamence Sylveon Team (survey MC81)",
+      "source": {
+        "url": "https://pokepast.es/b80c5f3e363597c2",
+        "event": "-",
+        "placing": null
+      },
+      "notes": "VGCPastes Reg M-C survey of 2026-10-02, row MC81 (EVs stated in the paste), pokepast.es paste b80c5f3e363597c2, retrieved on 2026-10-02; the id is PP_ and the upper case paste id. 6 changes by import_paste.py: set 1: gender (M) added to Salamence: the species can be either (M 50%, F 50%), the owner's standard is male; set 2: gender (M) added to Sylveon: the species can be either (M 87.5%, F 12.5%), the owner's standard is male; set 3: gender (M) added to Sneasler: the species can be either (M 50%, F 50%), the owner's standard is male; set 4: gender (M) added to Pelipper: the species can be either (M 50%, F 50%), the owner's standard is male; set 5: gender (M) added to Farigiraf: the species can be either (M 50%, F 50%), the owner's standard is male; set 6: gender (M) added to Golisopod: the species can be either (M 50%, F 50%), the owner's standard is male.",
+      "sha256": "40bb77f5640383f8b52ba284ce3a4aa18cebd15ad9eaf4f8ed69431b2364cde8"
+    },
+    {
+      "id": "PP_0A93AE91073CC690",
+      "name": "Twilite's Salamence Raichu-Y Team (survey MC64)",
+      "source": {
+        "url": "https://pokepast.es/0a93ae91073cc690",
+        "event": "-",
+        "placing": null
+      },
+      "notes": "VGCPastes Reg M-C survey of 2026-10-02, row MC64 (EVs stated in the paste), pokepast.es paste 0a93ae91073cc690, retrieved on 2026-10-02; the id is PP_ and the upper case paste id. 5 changes by import_paste.py: set 1: gender (M) added to Salamence: the species can be either (M 50%, F 50%), the owner's standard is male; set 2: gender (M) added to Raichu: the species can be either (M 50%, F 50%), the owner's standard is male; set 4: gender (M) added to Rillaboom: the species can be either (M 87.5%, F 12.5%), the owner's standard is male; set 5: gender (M) added to Sneasler: the species can be either (M 50%, F 50%), the owner's standard is male; set 6: gender (M) added to Sylveon: the species can be either (M 87.5%, F 12.5%), the owner's standard is male.",
+      "sha256": "7558d7eab830e9fb318d725db825a5beddfe76d56450a19dadb88b4fd162ea23"
+    },
+    {
+      "id": "PP_F853DAF986849F1D",
+      "name": "Shuuka's Salamence Kingambit Team (survey MC41)",
+      "source": {
+        "url": "https://pokepast.es/f853daf986849f1d",
+        "event": "-",
+        "placing": null
+      },
+      "notes": "VGCPastes Reg M-C survey of 2026-10-02, row MC41 (EVs stated in the paste), pokepast.es paste f853daf986849f1d, retrieved on 2026-10-02; the id is PP_ and the upper case paste id. 5 changes by import_paste.py: set 1: gender (M) added to Salamence: the species can be either (M 50%, F 50%), the owner's standard is male; set 2: gender (M) added to Sylveon: the species can be either (M 87.5%, F 12.5%), the owner's standard is male; set 3: gender (M) added to Kingambit: the species can be either (M 50%, F 50%), the owner's standard is male; set 5: gender (M) added to Sneasler: the species can be either (M 50%, F 50%), the owner's standard is male; set 6: gender (M) added to Rillaboom: the species can be either (M 87.5%, F 12.5%), the owner's standard is male.",
+      "sha256": "6b24103a44818792f801b20730e90597acd5bd28841bc074c5a2f1991610f1ac"
+    },
+    {
+      "id": "PP_89FAA497014B5641",
+      "name": "Apex__Dragon's Floette Rillaboom Team (survey MC17)",
+      "source": {
+        "url": "https://pokepast.es/89faa497014b5641",
+        "event": "-",
+        "placing": null
+      },
+      "notes": "VGCPastes Reg M-C survey of 2026-10-02, row MC17 (EVs stated in the paste), pokepast.es paste 89faa497014b5641, retrieved on 2026-10-02; the id is PP_ and the upper case paste id. 4 changes by import_paste.py: set 1: gender (M) added to Salamence: the species can be either (M 50%, F 50%), the owner's standard is male; set 2: gender (M) added to Rillaboom: the species can be either (M 87.5%, F 12.5%), the owner's standard is male; set 5: gender (M) added to Sneasler: the species can be either (M 50%, F 50%), the owner's standard is male; set 6: gender (M) added to Kingambit: the species can be either (M 50%, F 50%), the owner's standard is male.",
+      "sha256": "23f258091979c01dcf407e5581f518f8812ad1fa4306b973e1e406b08b56750b"
+    },
+    {
+      "id": "PP_8F4C2600A4A63A90",
+      "name": "koyuki's Salamence Sneasler Team (survey MC5)",
+      "source": {
+        "url": "https://pokepast.es/8f4c2600a4a63a90",
+        "event": "-",
+        "placing": null
+      },
+      "notes": "VGCPastes Reg M-C survey of 2026-10-02, row MC5 (EVs stated in the paste), pokepast.es paste 8f4c2600a4a63a90, retrieved on 2026-10-02; the id is PP_ and the upper case paste id. 4 changes by import_paste.py: set 1: gender (M) added to Salamence: the species can be either (M 50%, F 50%), the owner's standard is male; set 2: gender (M) added to Rillaboom: the species can be either (M 87.5%, F 12.5%), the owner's standard is male; set 3: gender (M) added to Incineroar: the species can be either (M 87.5%, F 12.5%), the owner's standard is male; set 5: gender (M) added to Sneasler: the species can be either (M 50%, F 50%), the owner's standard is male.",
+      "sha256": "3e230d50ed4f1bb3d5b0d37d5d771cd7cf76e57ac8496513b7ef7ea3aa67ecfb"
     }
   ]
 }
