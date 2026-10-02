@@ -235,5 +235,141 @@ def _first_tuples(batch):
     return choices
 
 
+def _random_params(obs_size, seed):
+    """Parameters of model.init's shapes (hidden 256, option 128) with random values, in NumPy."""
+    rng = np.random.default_rng(seed)
+    shapes = {"t1": (obs_size, 256), "t2": (256, 256), "option_torso": (256, 128),
+              "option_features": (features.SLOT_FEATURES, 128), "option_out": (128, 2), "team": (256, TEAM_ACTIONS),
+              "value": (256, 1)}
+    return {k: {"w": rng.normal(0, 0.1, s).astype(np.float32), "b": rng.normal(0, 0.1, s[1]).astype(np.float32)}
+            for k, s in shapes.items()}
+
+
+def _closure_inputs(steps=120):
+    """(observations, obs_part, slot_part, pair_mask) of both seats of 16 reference battles over `steps` batch
+    steps, the first allowed pair (team tuple 0) played."""
+    env = SelfPlay(16, 2, 0x2026100200000016)
+    rows = []
+    try:
+        for _ in range(steps):
+            observations = env.batch.observations.reshape(-1).copy()
+            obs, slots, mask = features.encode_batch(observations, env.batch.domains.reshape(-1))
+            rows.append((observations, obs, slots, mask))
+            o = env.observe()
+            flat = o.mask.reshape(16, 2, -1)
+            env.step(np.where(o.is_team, 0, flat.argmax(axis=-1)))
+    finally:
+        env.close()
+    return tuple(np.concatenate([r[i] for r in rows]) for i in range(4))
+
+
+class WidenTest(unittest.TestCase):
+    """The night checkpoint (594 features) on the encoder of 607 (decision 0016, spec section 5)."""
+
+    def test_widened_columns_are_the_new_features(self):
+        from duoforge_learn.checkpoint import WIDEN_594_COLUMNS
+        ob = np.zeros((), dtype=_layout.OBSERVATION)
+        ob["boundary_kind"] = C["DUOFORGE_BOUNDARY_TURN"]
+        ob["sides"]["occupant"] = C["DUOFORGE_ROSTER_NONE"]
+        dom = np.zeros((), dtype=_layout.FACTORED_DOMAIN)
+        base = features.encode(ob, dom)[0]
+        for terrain in ("NONE", "GRASSY", "PSYCHIC"):
+            o = ob.copy()
+            o["terrain"] = C[f"DUOFORGE_TERRAIN_{terrain}"]
+            self.assertEqual(features.encode(o, dom)[0][12], 1.0 if terrain == "PSYCHIC" else 0.0)
+        changed = set()
+        for side in (0, 1):
+            for slot in (0, 1):
+                for bit in features.POSITION_FLAGS:
+                    o = ob.copy()
+                    o["sides"][side]["positions"][slot]["reserved"] = bit
+                    diff = np.flatnonzero(features.encode(o, dom)[0] != base)
+                    self.assertEqual(len(diff), 1, (side, slot, bit))
+                    changed.add(int(diff[0]))
+        self.assertEqual(WIDEN_594_COLUMNS[0], 12)
+        self.assertEqual(sorted(changed), list(WIDEN_594_COLUMNS[1:]))
+
+    def test_widened_columns_are_zero_under_closure(self):
+        from duoforge_learn.checkpoint import WIDEN_594_COLUMNS
+        _, obs, _, _ = _closure_inputs()
+        self.assertFalse(obs[:, list(WIDEN_594_COLUMNS)].any())
+
+    def test_widened_network_matches_the_original(self):
+        from duoforge_learn.checkpoint import WIDEN_594_COLUMNS, widen_594
+        from duoforge_live.policy import forward
+        _, obs, slots, mask = _closure_inputs(40)
+        params = _random_params(594, 3)
+        wide = widen_594(params)
+        self.assertEqual(wide["t1"]["w"].shape, (features.OBS_SIZE, 256))
+        self.assertFalse(wide["t1"]["w"][list(WIDEN_594_COLUMNS)].any())
+        self.assertEqual(params["t1"]["w"].shape, (594, 256))  # the original is not changed
+        narrow = np.delete(obs, WIDEN_594_COLUMNS, axis=1)
+        a = forward(wide, obs, slots, mask)
+        b = forward(params, narrow, slots, mask)
+        for x, y in zip(a, b):
+            self.assertTrue(np.allclose(x, y, rtol=1e-5, atol=1e-5))
+        self.assertTrue((a[0].argmax(axis=1) == b[0].argmax(axis=1)).all())
+        self.assertTrue((a[1].argmax(axis=1) == b[1].argmax(axis=1)).all())
+
+    def test_widen_refuses_other_sizes(self):
+        from duoforge_learn.checkpoint import widen_594
+        with self.assertRaises(ValueError):
+            widen_594(_random_params(features.OBS_SIZE, 1))
+
+    def test_widen_command(self):
+        import json
+        import os
+        import tempfile
+        from duoforge_learn import checkpoint
+        params = _random_params(594, 4)
+        arrays = {f"['{a}']['{b}']": v for a, d in params.items() for b, v in d.items()}
+        with tempfile.TemporaryDirectory() as folder:
+            src, dst = os.path.join(folder, "params-25000.npz"), os.path.join(folder, "wide.npz")
+            np.savez(src, config=json.dumps({"seed": 7}), **arrays)
+            self.assertEqual(checkpoint.main(["widen", src, dst]), 0)
+            back, config = load(dst, obs_size=features.OBS_SIZE)
+            self.assertEqual(config, {"seed": 7, "encoder": 1})
+            self.assertTrue(np.array_equal(np.delete(back["t1"]["w"], checkpoint.WIDEN_594_COLUMNS, axis=0),
+                                           params["t1"]["w"]))
+            with self.assertRaises(ValueError):
+                load(src, obs_size=features.OBS_SIZE)
+            with self.assertRaises(SystemExit):
+                checkpoint.main(["widen", src, dst])  # OUT exists
+
+    def test_v1_checkpoint_uses_the_legacy_encoding(self):
+        import json
+        import os
+        import tempfile
+        from duoforge_live import policy
+        params = _random_params(features.OBS_SIZE, 5)
+        arrays = {f"['{a}']['{b}']": v for a, d in params.items() for b, v in d.items()}
+        with tempfile.TemporaryDirectory() as folder:
+            path = os.path.join(folder, "p.npz")
+            for config, encoder in (({"encoder": 1}, 1), ({}, 1), ({"encoder": 2}, 2)):
+                np.savez(path, config=json.dumps(config), **arrays)
+                self.assertEqual(policy.load(path).encoder, encoder)
+            np.savez(path, config=json.dumps({"encoder": 3}), **arrays)
+            with self.assertRaises(ValueError):
+                policy.load(path)
+
+    def test_policy_ranks_with_its_encoder(self):
+        # A network that reads only the own roster-0 present flag: Team A's Rillaboom (forme 0) is absent under
+        # encoder 1 and present under 2, so the team head's probabilities differ.
+        from duoforge_live.policy import Policy
+        observations, obs, _, _ = _closure_inputs(1)
+        rows = [r for r in range(len(observations)) if
+                int(observations[r]["sides"][int(observations[r]["player"])]["members"][0]["species_id"]) == 0]
+        r = rows[0]
+        params = _random_params(features.OBS_SIZE, 6)
+        params["t1"]["w"][:] = 0
+        params["t1"]["w"][_OWN_PRESENT[0], :] = 1.0
+        teams1 = Policy(params, 1).rank_teams(observations[r], obs[r])
+        teams2 = Policy(params, 2).rank_teams(observations[r], obs[r])
+        self.assertNotEqual([p for _, p in teams1], [p for _, p in teams2])
+        probs = dict(teams2)
+        order = [i for i, _ in teams2]
+        self.assertEqual(order, sorted(order, key=lambda i: (-probs[i], i)))  # best first, ties to the lower index
+
+
 if __name__ == "__main__":
     unittest.main()

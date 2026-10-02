@@ -1,7 +1,9 @@
 """Checkpoints of the learner (decision 0014): the parameters train.save
 writes, read back without JAX."""
 import json
+import os
 import re
+import sys
 
 import numpy as np
 
@@ -45,3 +47,46 @@ def load(path, obs_size=None):
         raise ValueError(f"{path}: the network takes {params['t1']['w'].shape[0]} observation features, "
                          f"the encoder makes {obs_size} (a checkpoint of another encoder layout)")
     return params, config
+
+
+# The 13 inputs the encoder added in #84 (Psychic Terrain, the three position flags of each of the four
+# positions), as indices of its 607 features; a 594-feature network gets zero rows there (decision 0016).
+WIDEN_594_COLUMNS = (12, 37, 38, 39, 61, 62, 63, 333, 334, 335, 357, 358, 359)
+
+
+def widen_594(params):
+    """A copy of a 594-feature network whose torso takes the 607 features of this encoder: zero rows at
+    WIDEN_594_COLUMNS, which are 0 under CLOSURE, so the outputs do not change there. ValueError for another
+    width."""
+    w = params["t1"]["w"]
+    if w.shape[0] != 594:
+        raise ValueError(f"widen_594 takes a 594-feature network, not {w.shape[0]}")
+    wide = np.zeros((w.shape[0] + len(WIDEN_594_COLUMNS),) + w.shape[1:], dtype=w.dtype)
+    keep = np.ones(wide.shape[0], dtype=bool)
+    keep[list(WIDEN_594_COLUMNS)] = False
+    wide[keep] = w
+    out = {k: dict(v) for k, v in params.items()}
+    out["t1"]["w"] = wide
+    return out
+
+
+def main(argv=None):
+    """python -m duoforge_learn.checkpoint widen IN OUT: a 594-feature checkpoint of encoder 1 as one of 607."""
+    argv = sys.argv[1:] if argv is None else argv
+    if len(argv) != 3 or argv[0] != "widen":
+        raise SystemExit("usage: python -m duoforge_learn.checkpoint widen IN OUT")
+    _, src, dst = argv
+    if os.path.exists(dst) or os.path.exists(dst + ".npz"):
+        raise SystemExit(f"duoforge_learn.checkpoint: {dst} exists")
+    params, config = load(src, obs_size=594)
+    if encoder_of(config) != 1:
+        raise SystemExit(f"duoforge_learn.checkpoint: {src} is not a checkpoint of encoder 1")
+    config = dict(config, encoder=1)  # the network's own version, never features.ENCODER
+    wide = widen_594(params)
+    arrays = {f"['{a}']['{b}']": v for a, d in wide.items() for b, v in d.items()}
+    np.savez(dst, config=json.dumps(config), **arrays)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
