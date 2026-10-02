@@ -20,7 +20,7 @@ import numpy as np
 
 from duoforge import _layout
 
-from . import options, teams
+from . import lines, options, teams
 from .data import trace_to_c
 
 C = _layout.CONSTANTS
@@ -44,12 +44,7 @@ STALL_DURATION, STALL_LEVEL_MAX = 2, 6  # DFI_STALL_DURATION (src/combat/turn.c)
 CHARGE_TURNS = 2  # twoturnmove's duration: the charge and the locked turn end in the second residual
 STATUS = {"brn": 1, "frz": 2, "par": 3, "slp": 4, "psn": 5}
 
-# Lines of the room, not of the battle: nobody folds them. "-message" is text too: a forfeit or a timer loss
-# ("<name> forfeited.", server/room-battle.ts) and the sim's own notes come that way before |win|.
-ROOM_LINES = {"c", "c:", "chat", "j", "J", "l", "L", "n", "N", "raw", "html", "uhtml", "uhtmlchange", "inactive",
-              "inactiveoff", "tempnotify", "tempnotifyoff", "controlshtml", "fieldhtml", "cantleave", "allowleave",
-              "title", "badge", "rated", "message", "-message", "notify", "error", "timer", "seed", "debug", "",
-              "join", "leave", "name", "b", "B", "battle", "unlink", "hidelines"}
+ROOM_LINES = lines.ROOM_LINES  # lines of the room, not of the battle: nobody folds them
 # Lines that end or restart the battle session: a reconnect replays the whole log after |init| (and shows a
 # choice already sent as |sentchoice|), the others end the session. The tracker cannot fold them correctly.
 SESSION_LINES = {"init", "sentchoice", "deinit", "noinit", "expire", "bigerror"}
@@ -143,6 +138,7 @@ class Tracker:
         self._accepted = None  # the own choice accepted at the last TURN decision point (it queued the moves)
         self._last_move = None  # (position, move id, target) of the last MOVE event
         self._parting_shot = data.tables["MOVE"]["PARTINGSHOT"]
+        self._turn_scoped = set()  # single-turn features of decision 0018 seen since the turn began (lines.TURN_SCOPED)
 
     # ------------------------------------------------------------------ input
     def feed(self, lines):
@@ -161,8 +157,39 @@ class Tracker:
             elif kind == "showteam":
                 self._on_showteam(line)
             else:
-                self._lines.append(line)
-                self._fold(line)
+                self._battle_line(line)
+
+    def _battle_line(self, line):
+        """A battle line: classified (lines.check), then folded; a single-turn feature line is remembered for the
+        turn instead (it can matter only at a PIVOT of the same turn, _turn_scoped_stop)."""
+        cls = lines.check(line, self) if self._foe_members is not None else "fold"
+        if cls is None:
+            return
+        self._lines.append(line)
+        if cls.startswith("turn:"):
+            self._turn_scoped.add(cls[len("turn:"):])
+            return
+        self._fold(line)
+
+    def _turn_scoped_stop(self, boundary):
+        """Stop at a PIVOT boundary while a single-turn feature of this turn is up and its bit is not supported."""
+        if boundary == PIVOT and self._turn_scoped:
+            raise lines.Stop(f"feature:{sorted(self._turn_scoped)[0]}")
+
+    # ------------------------------------------------------------------ what lines.check reads
+    def sheet_of(self, ident):
+        """The sheet of the member a protocol ident ("p1a: Name") names."""
+        return self._member_of(ident).sheet
+
+    def ability_now(self, ident):
+        """The current ability + 1 of the member a protocol ident names."""
+        return self._member_of(ident).ability
+
+    def _member_of(self, ident):
+        side, name = int(ident[1]) - 1, ident.split(": ", 1)[1]
+        if name not in self._names[side]:
+            raise lines.Stop(f"structure:{ident} names no member seen yet")
+        return self._member(side)[self._names[side][name]]
 
     def accepted(self, text):
         """The own choice Showdown accepted at the current decision point."""
@@ -196,6 +223,7 @@ class Tracker:
         self.request = request
         self.epoch += 1
         self._step_lines, self._lines = self._lines, []
+        self._turn_scoped_stop(self.boundary())
         own = self._own_members
         for mon in request["side"]["pokemon"]:
             name = mon["ident"].split(": ", 1)[1]
@@ -274,7 +302,7 @@ class Tracker:
         try:
             events = trace_to_c.step_events([line], self.side, self._names, maxhp, self.data.tables)
         except trace_to_c.ConversionError as e:  # a SystemExit: callers catch one kind of error
-            raise ValueError(f"{e.rule}: {e}") from e
+            raise lines.Stop(f"converter:{e.rule}") from e
         for e in events:
             self._event(e)
 
@@ -291,6 +319,7 @@ class Tracker:
         foe = pos != NOPOS and pos // 2 != self.side
         if kind == EV["TURN"]:
             self._turn = ident
+            self._turn_scoped.clear()
         elif kind == EV["SWITCH"]:
             p = self._at(pos)
             p.occupant, p.flag, p.fainted = ident, 0, False
@@ -397,6 +426,7 @@ class Tracker:
                 p.charge, p.locked_slot, p.locked_target = 0, MOVE_SLOT_NONE, TARGET_NONE
         elif kind == EV["UPKEEP"]:
             self._upkeep()
+            self._turn_scoped.clear()
         elif kind == EV["RESULT"]:
             self.ended = True
 
