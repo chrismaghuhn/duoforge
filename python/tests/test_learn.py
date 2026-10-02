@@ -96,6 +96,28 @@ class PipelineTest(unittest.TestCase):
         finally:
             shutil.rmtree(out, ignore_errors=True)
 
+    def test_numpy_policy_equals_model_apply(self):
+        # The live adapter's NumPy forward pass (duoforge_live.policy) is model.apply: on random parameters and
+        # inputs, both log-probabilities and the value agree, and so do the greedy pair and team.
+        import jax
+        from duoforge_live import policy
+        params = model.init(jax.random.PRNGKey(3), features.OBS_SIZE, features.SLOT_FEATURES, TEAM_ACTIONS)
+        rng = np.random.default_rng(4)
+        n = 64
+        obs = rng.random((n, features.OBS_SIZE), dtype=np.float32)
+        slots = rng.random((n, 2, 32, features.SLOT_FEATURES), dtype=np.float32)
+        mask = rng.random((n, 32, 32)) < rng.random((n, 1, 1))
+        mask[:, 0, 0] = True  # at least one pair
+        theirs = [np.asarray(x) for x in model.apply(params, obs, slots, mask)]
+        numpy_params = jax.tree_util.tree_map(np.asarray, params)
+        ours = policy.forward(numpy_params, obs, slots, mask)
+        for a, b in zip(ours, theirs):
+            self.assertTrue(np.allclose(a, b, rtol=1e-5, atol=1e-4))
+        allowed = mask.reshape(n, -1)
+        self.assertTrue((np.where(allowed, ours[0], -np.inf).argmax(axis=1) ==
+                         np.where(allowed, theirs[0], -np.inf).argmax(axis=1)).all())
+        self.assertTrue((ours[1].argmax(axis=1) == theirs[1].argmax(axis=1)).all())
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -583,7 +583,7 @@ duoforge_status duoforge_batch_reset_setups(duoforge_batch *batch, uint32_t coun
         if (e >= batch->env_count || (seen[e >> 3] & (1u << (e & 7u))) != 0u) {
             return DUOFORGE_E_INVALID_ARGUMENT;
         }
-        seen[e >> 3] = (uint8_t)(seen[e >> 3] | (1u << (e & 7u)));
+        seen[e >> 3] = (uint8_t)(seen[e >> 3] | (1u << (e & 7u))); /* wide-operands-reviewed: < 256 */
     }
     /* count <= env_count, so the batch's own array holds every entry. */
     duoforge_status *out = statuses != NULL ? statuses : batch->statuses;

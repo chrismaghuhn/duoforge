@@ -80,6 +80,7 @@ set(DUOFORGE_SOURCES
     src/state/observation.c
     src/data/closure_tables.c
     src/data/extended_tables.c
+    src/data/pool_tables.c
     src/data/formulas.c
     src/data/support_manifest.c
     src/codec/state_codec.c

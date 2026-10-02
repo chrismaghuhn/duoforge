@@ -1,10 +1,11 @@
 #include "combat/turn.h"
 
 #include "combat/events.h"
+#include "combat/item_family.h"
 
 #include "core/arith.h"
 #include "core/modifier.h"
-#include "data/extended_tables.h"
+#include "data/pool_tables.h"
 #include "data/support_manifest.h"
 #include "state/closure_member.h"
 #include "state/context_internal.h"
@@ -97,8 +98,8 @@ static uint32_t dfi_fainted_members(const struct duoforge_battle *b, uint32_t si
 
 static const dfi_forme_data *dfi_forme_of(const dfi_member *m)
 {
-    const dfi_forme_data *base = &dfi_ext_formes[m->species_id];
-    return m->is_mega != 0u ? &dfi_ext_formes[base->mega_forme] : base;
+    const dfi_forme_data *base = &dfi_pool_formes[m->species_id];
+    return m->is_mega != 0u ? &dfi_pool_formes[base->mega_forme] : base;
 }
 
 static bool dfi_has_type(const dfi_member *m, uint32_t type)
@@ -315,7 +316,7 @@ static duoforge_status dfi_key_of(dfi_run *r, const dfi_queue_record *q, dfi_key
         return DUOFORGE_E_INVARIANT;
     }
     if (q->kind == DFI_Q_MOVE) {
-        out->priority = dfi_move_priority(r->b, m, &dfi_ext_moves[dfi_move_of(m, q->move_slot)]);
+        out->priority = dfi_move_priority(r->b, m, &dfi_pool_moves[dfi_move_of(m, q->move_slot)]);
     }
     out->speed = speed;
     return DUOFORGE_OK;
@@ -844,9 +845,11 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     if (dfi_ability(a, DFI_ABILITY_TOUGHCLAWS) && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u) {
         ok = dfi_chain_modify(bp_chain, 5325u, &bp_chain); /* onBasePowerPriority 21: first */
     }
-    if ((move_type == DFI_TYPE_WATER && dfi_holds(a, DFI_ITEM_MYSTICWATER)) ||
-        (move_type == DFI_TYPE_GRASS && dfi_holds(a, DFI_ITEM_MIRACLESEED))) {
-        ok = ok && dfi_chain_modify(bp_chain, 4915u, &bp_chain);
+    /* A type booster (the TYPE_BOOSTER family: Mystic Water, Miracle Seed
+     * and the sixteen others, decision 0015): 4915/4096 for a move of its
+     * type (onBasePowerPriority 15). */
+    if (dfi_type_booster_applies(a, move_type)) {
+        ok = ok && dfi_chain_modify(bp_chain, DFI_TYPE_BOOSTER_MODIFIER, &bp_chain);
     }
     /* Helping Hand's volatile (Team C): chainModify(1.5) at
      * onBasePowerPriority 10, after the items (15) and before Grassy Terrain
@@ -955,13 +958,17 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     if (dfi_holds(a, DFI_ITEM_LIFEORB)) {
         ok = dfi_chain_modify(chain, 5324u, &chain);
     }
-    if (move_type == DFI_TYPE_FIGHTING && mod > DFI_BIAS6 && dfi_holds(d, DFI_ITEM_CHOPLEBERRY)) {
+    /* A resist berry (the RESIST_BERRY family: Chople Berry and the sixteen
+     * others, decision 0015; combat/item_family.h) is eaten by a super
+     * effective hit of its type, the Normal berry by any Normal hit. */
+    if (dfi_resist_berry_applies(d, move_type, mod)) {
+        const uint32_t berry_item = d->item;
         dfi_use_item(r, target); /* [-enditem] [eat] */
         duoforge_event weaken =
-            dfi_ev(DUOFORGE_EVENT_ITEM_END, target, DUOFORGE_CAUSE_NONE, 1u + DFI_ITEM_CHOPLEBERRY, DUOFORGE_NO_POSITION);
+            dfi_ev(DUOFORGE_EVENT_ITEM_END, target, DUOFORGE_CAUSE_NONE, berry_item, DUOFORGE_NO_POSITION);
         weaken.detail = 1u;
         dfi_emit(r, &weaken); /* [-enditem] [weaken] */
-        ok = ok && dfi_chain_modify(chain, 2048u, &chain);
+        ok = ok && dfi_chain_modify(chain, DFI_RESIST_BERRY_MODIFIER, &chain);
     }
     if (!crit && target != user &&
         ((physical && ds->reflect_turns != 0u) ||
@@ -1008,7 +1015,7 @@ static duoforge_status dfi_deal(dfi_run *r, uint32_t flat, uint32_t amount, uint
 static bool dfi_poison_immune(const dfi_member *m)
 {
     for (uint32_t type = 0u; type < DFI_TYPE_COUNT; ++type) {
-        if ((dfi_ext_type_immunity[type] & DFI_IMMUNE_PSN) != 0u && dfi_has_type(m, type)) {
+        if ((dfi_pool_type_immunity[type] & DFI_IMMUNE_PSN) != 0u && dfi_has_type(m, type)) {
             return true;
         }
     }
@@ -1182,7 +1189,9 @@ static void dfi_use_item(dfi_run *r, uint32_t flat)
     b->sides[side].members[occupant].item_consumed = 1u;
     const uint32_t item = b->sides[side].members[occupant].item;
     duoforge_event e = dfi_ev(DUOFORGE_EVENT_ITEM_END, flat, DUOFORGE_CAUSE_NONE, item, DUOFORGE_NO_POSITION);
-    const bool berry = item == 1u + DFI_ITEM_SITRUSBERRY || item == 1u + DFI_ITEM_CHOPLEBERRY;
+    const bool berry = item == 1u + DFI_ITEM_SITRUSBERRY ||
+                       (item != 0u && item <= DFI_POOL_ITEM_COUNT &&
+                        dfi_pool_item_family[item - 1u].family == DFI_ITEM_FAMILY_RESIST_BERRY);
     e.flags = berry ? (uint8_t)DUOFORGE_EVENT_FLAG_EATEN : 0u;
     dfi_emit(r, &e);
     /* AfterUseItem: Unburden adds its volatile (Team C, data/abilities.ts). */
@@ -1781,7 +1790,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         pos->move_actions = (uint8_t)((uint32_t)pos->move_actions + 1u); /* wide-operands-reviewed */
     }
     const uint32_t move_id = dfi_move_of(m, q->move_slot);
-    const dfi_move_data *md = &dfi_ext_moves[move_id];
+    const dfi_move_data *md = &dfi_pool_moves[move_id];
     if (move_id != DFI_MOVE_STRUGGLE && dfi_support.moves[move_id] == 0u) {
         return DUOFORGE_E_UNSUPPORTED;
     }
@@ -2092,7 +2101,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         if (next != NULL) {
             const dfi_member *t = dfi_at(b, targets[0]);
             attacks = next->move_slot == DUOFORGE_MOVE_SLOT_STRUGGLE ||
-                      dfi_ext_moves[dfi_move_of(t, next->move_slot)].category != DFI_CATEGORY_STATUS;
+                      dfi_pool_moves[dfi_move_of(t, next->move_slot)].category != DFI_CATEGORY_STATUS;
         }
         if (!attacks) {
             dfi_fail_still(r, user);
@@ -2571,8 +2580,8 @@ static duoforge_status dfi_run_switch(dfi_run *r, const dfi_queue_record *q)
     }
     const uint32_t ability = sd->members[reserve].ability;
     const uint32_t item = sd->members[reserve].item;
-    if ((ability != 0u && (ability > DFI_EXT_ABILITY_COUNT || dfi_support.abilities[ability - 1u] == 0u)) ||
-        (item != 0u && (item > DFI_EXT_ITEM_COUNT || dfi_support.items[item - 1u] == 0u))) {
+    if ((ability != 0u && (ability > DFI_POOL_ABILITY_COUNT || dfi_support.abilities[ability - 1u] == 0u)) ||
+        (item != 0u && (item > DFI_POOL_ITEM_COUNT || dfi_support.items[item - 1u] == 0u))) {
         return DUOFORGE_E_UNSUPPORTED; /* not marked in the support manifest */
     }
     const dfi_member *leaving = dfi_at(b, side * 2u + slot);
@@ -2838,7 +2847,7 @@ static duoforge_status dfi_run_mega(dfi_run *r, const dfi_queue_record *q)
     }
     sd->mega_used = 1u;
     duoforge_event forme = dfi_event_make(DUOFORGE_EVENT_FORME, flat);
-    forme.id = dfi_ext_formes[m->species_id].mega_forme; /* [detailschange] */
+    forme.id = dfi_pool_formes[m->species_id].mega_forme; /* [detailschange] */
     dfi_emit(r, &forme);
     duoforge_event mega = dfi_event_make(DUOFORGE_EVENT_MEGA, flat);
     mega.id2 = m->item; /* [-mega] the stone, item + 1 */

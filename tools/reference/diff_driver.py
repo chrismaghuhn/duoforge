@@ -28,7 +28,9 @@ leaves with a status at the end is a failure of the tool: the run stops with
 status 3 and writes nothing.
 
 The mode "random" (diff_random.py) plays random battles instead of replaying
-committed ones: see there.
+committed ones: see there. The modes "corpus" and "promote" (diff_corpus.py)
+replay the corpus of kept fuzz battles without Node and put battles of a run
+into it.
 
 --out (default build/diff/<UTC yyyymmdd-hhmmss>-replay) gets battles.jsonl,
 one line per battle in name order (name, bucket, rule, detail, step, steps,
@@ -398,10 +400,12 @@ def child_failure_result(name, failure):
                       messages=[line for line in failure.stderr.split('\n') if line][-20:])
 
 
-def process_battle(name, spec, committed, worker, runner, tables_for):
+def process_battle(name, spec, committed, worker, runner, tables_for, pool_kind=None):
     """One battle through the three steps; the record of its bucket. `committed`
     is the text of its committed trace (LF), `tables_for(team_c)` the name
-    tables of trace_to_c. A child that dies or hangs on it is a bucket too."""
+    tables of trace_to_c. A pool battle (decision 0015) is created under the
+    data kind `pool_kind` alone, which the caller must give. A child that dies
+    or hangs on it is a bucket too."""
     try:
         text = worker.record(spec, name + '.json')
     except WorkerError as e:
@@ -413,9 +417,12 @@ def process_battle(name, spec, committed, worker, runner, tables_for):
                           messages=[first_difference(text, committed)])
     trace = json.loads(text)
     try:
-        team_c = trace_to_c.spec_is_team_c(name, spec)
+        data_name = trace_to_c.spec_data(name, spec)
     except trace_to_c.ConversionError as e:
         return oracle_gap(name, e)
+    team_c = data_name != 'closure'
+    if data_name == 'pool' and pool_kind is None:
+        raise ToolError('process_battle: %s is a pool battle and needs the pool data kind' % name)
     tables = tables_for(team_c)
     try:
         data = trace_to_c.convert_battle(name, spec, trace, tables)
@@ -424,7 +431,7 @@ def process_battle(name, spec, committed, worker, runner, tables_for):
     except UNTYPED as e:
         return oracle_gap(name, e)
     records = io.StringIO()
-    conformance_records.write_battle(data, team_c, records)
+    conformance_records.write_battle(data, team_c, records, kind=pool_kind if data_name == 'pool' else 0)
     try:
         run = runner.run(name, records.getvalue())
     except ChildFailure as e:
@@ -608,10 +615,11 @@ def battle_handler(root, tables):
     """handle(name, worker, runner) for run_lanes: the battle `name` of the
     committed data under `root`, put in its bucket. `tables` maps team_c to the
     name tables."""
+    pool_kind = conformance_records.data_kinds(root)['POOL']
 
     def handle(name, worker, runner):
         spec, committed = load_committed(root, name)
-        return process_battle(name, spec, committed, worker, runner, tables.__getitem__)
+        return process_battle(name, spec, committed, worker, runner, tables.__getitem__, pool_kind)
 
     return handle
 
@@ -631,10 +639,12 @@ def replay(root, names, node, args):
 
 
 def main(argv):
-    import diff_random  # here, not above: it imports this module
+    import diff_corpus  # here, not above: they import this module
+    import diff_random
     parser = argparse.ArgumentParser(prog='diff_driver.py', description=__doc__.split('\n')[0])
     modes = parser.add_subparsers(dest='mode', required=True)
     diff_random.add_arguments(modes)
+    diff_corpus.add_arguments(modes)
     p = modes.add_parser('replay', help='put every committed battle in a bucket')
     p.add_argument('--checkout', required=True, help='the pinned Showdown checkout (built: dist/sim exists)')
     p.add_argument('--runner', required=True, help='the duoforge_diff_runner executable')
@@ -647,6 +657,12 @@ def main(argv):
         params = diff_random.validate(parser, args)
         try:
             return diff_random.run(args, params)
+        except ToolError as e:
+            sys.stderr.write('diff_driver: %s\n' % e)
+            return EXIT_TOOL
+    if args.mode in ('corpus', 'promote'):
+        try:
+            return diff_corpus.run_corpus(args) if args.mode == 'corpus' else diff_corpus.run_promote(args)
         except ToolError as e:
             sys.stderr.write('diff_driver: %s\n' % e)
             return EXIT_TOOL

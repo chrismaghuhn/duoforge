@@ -207,6 +207,22 @@ class Buckets(unittest.TestCase):
             driver.process_battle(CLOSURE, spec, text, worker, runner, tables)
         self.assertEqual(runner.requests, [])
 
+    def test_a_pool_battle_runs_under_the_pool_kind_alone(self):
+        """The records of a pool battle (decision 0015) carry team_c 1 and the data kind POOL, which the runner
+        creates it under with no fallback; the caller must give the kind."""
+        name = 'p2_chilan_berry'
+        spec, text = committed(name)
+        pool_kind = conformance_records.data_kinds(ROOT)['POOL']
+        worker, runner = FakeWorker(lambda s, f: text), FakeRunner(runner_result('PASS', 'POOL'))
+        record = driver.process_battle(name, spec, text, worker, runner, tables, pool_kind)
+        self.assertEqual((record['bucket'], record['context']), ('PASS', 'POOL'))
+        head = runner.requests[0][1].splitlines()[0].split(' ')
+        self.assertEqual(head[:4], ['B', name, '1', str(pool_kind)])
+        runner = FakeRunner()
+        with self.assertRaises(driver.ToolError):
+            driver.process_battle(name, spec, text, FakeWorker(lambda s, f: text), runner, tables)
+        self.assertEqual(runner.requests, [])
+
     def test_the_verdicts_of_the_runner_are_the_buckets(self):
         for name, team_c in ((CLOSURE, 0), (TEAM_C, 1)):
             spec, text = committed(name)
@@ -916,7 +932,10 @@ class RealRunner(unittest.TestCase):
             self.assertEqual(list(record), SCHEMA)
             self.assertEqual((record['rule'], record['detail'], record['step'], record['messages']), (None, None, None, []))
             self.assertGreaterEqual(record['steps'], 1)
-        self.assertEqual({r['context'] for r in results.values()}, {'CLOSURE', 'CLOSURE_DEV', 'TEAM_C', 'TEAM_C_DEV'})
+        self.assertEqual({r['context'] for r in results.values()},
+                         {'CLOSURE', 'CLOSURE_DEV', 'TEAM_C', 'TEAM_C_DEV', 'POOL'})
+        self.assertEqual({n for n, r in results.items() if r['context'] == 'POOL'},
+                         {n for n in names if trace_to_c.is_pool(ROOT, n)})
 
     def test_the_lanes_do_not_change_what_a_battle_comes_to(self):
         names = sorted(set(driver.spec_names(ROOT)[:10] + [TEAM_C, 's3_struggle_end']))
@@ -1122,20 +1141,26 @@ class Records(unittest.TestCase):
                     conformance_records.write_battle(bad, flag, out)
                 self.assertEqual(out.getvalue(), '')
 
-    def test_the_two_files_of_every_committed_battle(self):
+    def test_the_three_files_of_every_committed_battle(self):
         with tempfile.TemporaryDirectory() as tmp:
             written = conformance_records.write_all(ROOT, tmp)
-            self.assertEqual([os.path.basename(p) for p, _ in written], ['closure.records', 'team_c.records'])
+            self.assertEqual([os.path.basename(p) for p, _ in written],
+                             ['closure.records', 'team_c.records', 'pool.records'])
             names = conformance_records.committed_battles(ROOT)
-            team_c = [n for n in names if trace_to_c.is_team_c(ROOT, n)]
-            for (path, count), want in zip(written, ([n for n in names if n not in team_c], team_c)):
+            pool = [n for n in names if trace_to_c.is_pool(ROOT, n)]
+            team_c = [n for n in names if trace_to_c.is_team_c(ROOT, n) and n not in pool]
+            closure = [n for n in names if n not in team_c and n not in pool]
+            pool_kind = conformance_records.data_kinds(ROOT)['POOL']
+            for (path, count), want, flag, kind in zip(written, (closure, team_c, pool), ('0', '1', '1'),
+                                                       ('0', '0', str(pool_kind))):
                 with io.open(path, encoding='ascii', newline='') as f:
                     text = f.read()
                 heads = [line.split(' ') for line in text.split('\n') if line.startswith('B ')]
                 self.assertEqual([h[1] for h in heads], want)
                 self.assertEqual(count, len(want))
-                self.assertEqual({h[2] for h in heads}, {'1' if want is team_c else '0'})
-                self.assertEqual({h[3] for h in heads}, {'0'})  # the conformance fallback: no strict kind
+                self.assertEqual({h[2] for h in heads}, {flag} if want else set())
+                # the conformance fallback: no strict kind, except the pool battles, which run under POOL alone
+                self.assertEqual({h[3] for h in heads}, {kind} if want else set())
                 self.assertEqual(text.count('\nEND\n'), len(want))
 
     def test_a_choice_as_the_c_record_has_it(self):

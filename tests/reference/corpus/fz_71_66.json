@@ -1,0 +1,74 @@
+{
+  "name": "fz_71_66",
+  "purpose": "Corpus (coverage): random differential battle 66 of run 71 (tools/reference/diff_driver.py random), team B against team B, the whole battle. It adds 2 signatures that no committed battle and no earlier corpus battle has: cant:ability: Armor Tail|Parting Shot|[of] p1b: Grimmsnarl, move:Hurricane[notarget].",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,f8f17d1202b60035b59ed86f038d92b0006e593b4832c29b46c7467e2a8cde7d",
+  "teams": [
+    "Farigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Grass Knot\n- Trick Room\n- Protect\n\nGolisopod (F) @ Golisopite\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 1 SpD / 1 Spe\nAdamant Nature\n- Leech Life\n- Iron Head\n- Drill Run\n- Protect\n\nCharizard (M) @ Charizardite Y\nAbility: Blaze\nLevel: 50\nEVs: 16 HP / 18 Def / 3 SpA / 29 Spe\nTimid Nature\n- Heat Wave\n- Weather Ball\n- Hurricane\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Weather Ball\n- Muddy Water\n- Ice Beam\n- Protect\n\nGrimmsnarl (M) @ Light Clay\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Spirit Break\n- Reflect\n- Light Screen\n- Parting Shot\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Electro Shot\n- Snarl\n- Protect",
+    "Grimmsnarl (M) @ Light Clay\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Spirit Break\n- Reflect\n- Light Screen\n- Parting Shot\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Weather Ball\n- Muddy Water\n- Ice Beam\n- Protect\n\nCharizard (M) @ Charizardite Y\nAbility: Blaze\nLevel: 50\nEVs: 16 HP / 18 Def / 3 SpA / 29 Spe\nTimid Nature\n- Heat Wave\n- Weather Ball\n- Hurricane\n- Protect\n\nGolisopod (F) @ Golisopite\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 1 SpD / 1 Spe\nAdamant Nature\n- Leech Life\n- Iron Head\n- Drill Run\n- Protect\n\nFarigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Grass Knot\n- Trick Room\n- Protect\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Electro Shot\n- Snarl\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 3521",
+      "p2": "team 6254"
+    },
+    {
+      "p1": "move 2 2 mega, move 3",
+      "p2": "move 2 2, move 2"
+    },
+    {
+      "p1": "move 1, move 4 2",
+      "p2": "move 1, move 1 -1"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 4, move 2 -1",
+      "p2": "move 1 2 mega, move 4"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "move 3 1, move 4",
+      "p2": "switch 3, move 1 1"
+    },
+    {
+      "p1": "move 2 -2, move 3 1",
+      "p2": "move 3, move 1 2"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "move 1, move 3",
+      "p2": "move 4, move 3 1"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 2 2, move 4 2",
+      "p2": "move 2 1, move 3 2"
+    },
+    {
+      "p1": "move 3 2, move 1 -1",
+      "p2": "move 1 2, move 3 2"
+    },
+    {
+      "p1": "move 3 -2, pass",
+      "p2": "move 4, move 1 1"
+    },
+    {
+      "p1": "move 2 1, pass",
+      "p2": "move 1 1, move 3 -1"
+    }
+  ]
+}

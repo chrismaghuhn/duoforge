@@ -5,16 +5,22 @@
 #include "core/arith.h"
 #include "core/bytes.h"
 #include "core/sha256.h"
-#include "data/extended_tables.h"
+#include "data/pool_tables.h"
 
 static bool dfi_kind_is_team_c(uint32_t kind)
 {
     return kind == DUOFORGE_DATA_KIND_TEAM_C || kind == DUOFORGE_DATA_KIND_TEAM_C_DEV;
 }
 
+static bool dfi_kind_is_pool(uint32_t kind)
+{
+    return kind == DUOFORGE_DATA_KIND_POOL || kind == DUOFORGE_DATA_KIND_POOL_DEV;
+}
+
 static bool dfi_kind_is_combat(uint32_t kind)
 {
-    return kind == DUOFORGE_DATA_KIND_CLOSURE || kind == DUOFORGE_DATA_KIND_CLOSURE_DEV || dfi_kind_is_team_c(kind);
+    return kind == DUOFORGE_DATA_KIND_CLOSURE || kind == DUOFORGE_DATA_KIND_CLOSURE_DEV || dfi_kind_is_team_c(kind) ||
+           dfi_kind_is_pool(kind);
 }
 
 bool dfi_context_is_closure(const struct duoforge_context *ctx)
@@ -24,7 +30,8 @@ bool dfi_context_is_closure(const struct duoforge_context *ctx)
 
 bool dfi_kind_full_roster(uint32_t data_kind)
 {
-    return data_kind == DUOFORGE_DATA_KIND_CLOSURE || data_kind == DUOFORGE_DATA_KIND_TEAM_C;
+    return data_kind == DUOFORGE_DATA_KIND_CLOSURE || data_kind == DUOFORGE_DATA_KIND_TEAM_C ||
+           data_kind == DUOFORGE_DATA_KIND_POOL;
 }
 
 void dfi_context_canonical_bytes(const struct duoforge_context *ctx, uint8_t out[DFI_CONTEXT_BYTES_SIZE])
@@ -62,6 +69,7 @@ duoforge_status duoforge_context_create(const duoforge_context_config *config,
     /* Validate on the u32 values before any narrowing. */
     const bool closure = dfi_kind_is_combat(c.data_kind);
     const bool team_c = dfi_kind_is_team_c(c.data_kind);
+    const bool pool = dfi_kind_is_pool(c.data_kind);
     if (c.data_kind != DUOFORGE_DATA_KIND_SYNTHETIC && !closure) {
         return DUOFORGE_E_INVALID_ARGUMENT;
     }
@@ -105,10 +113,12 @@ duoforge_status duoforge_context_create(const duoforge_context_config *config,
     if (p == NULL) {
         return DUOFORGE_E_OUT_OF_MEMORY;
     }
-    /* The CLOSURE kinds see the closure prefix of the extended tables, the
-     * TEAM_C kinds all of them (decision 0009 section 3.2). */
-    const uint32_t closure_species = team_c ? DFI_EXT_FORME_COUNT : DFI_FORME_COUNT;
-    const uint32_t closure_moves = team_c ? DFI_EXT_MOVE_COUNT : DFI_MOVE_COUNT;
+    /* The engine reads the pool tables under every combat kind. The CLOSURE
+     * kinds see their closure prefix, the TEAM_C kinds the extended prefix
+     * (decision 0009 section 3.2), the POOL kinds all of them (decision 0015
+     * section 2). */
+    const uint32_t closure_species = pool ? DFI_POOL_FORME_COUNT : team_c ? DFI_EXT_FORME_COUNT : DFI_FORME_COUNT;
+    const uint32_t closure_moves = pool ? DFI_POOL_MOVE_COUNT : team_c ? DFI_EXT_MOVE_COUNT : DFI_MOVE_COUNT;
     const uint32_t species_count = closure ? closure_species : c.species_count;
     const uint32_t move_count = closure ? closure_moves : c.move_count;
     if (!dfi_u32_to_u8(c.data_kind, &p->data_kind) || !dfi_u32_to_u8(c.max_roster, &p->max_roster) ||
@@ -120,12 +130,13 @@ duoforge_status duoforge_context_create(const duoforge_context_config *config,
     if (closure) {
         /* Target classes of the kind's moves (Struggle's class 10 is never
          * selectable); the fingerprint covers all of the kind's data by its
-         * hash: the closure's for the CLOSURE kinds, whose rows the extended
-         * tables repeat unchanged, the extended one for the TEAM_C kinds. */
+         * hash: the closure's for the CLOSURE kinds, whose rows the pool
+         * tables repeat unchanged, the extended one for the TEAM_C kinds and
+         * the pool's (with its family columns) for the POOL kinds. */
         for (uint32_t i = 0u; i < move_count; ++i) {
-            p->move_target_classes[i] = dfi_ext_moves[i].target_class;
+            p->move_target_classes[i] = dfi_pool_moves[i].target_class;
         }
-        const uint8_t *hash = team_c ? dfi_ext_table_hash : dfi_closure_table_hash;
+        const uint8_t *hash = pool ? dfi_pool_table_hash : team_c ? dfi_ext_table_hash : dfi_closure_table_hash;
         for (uint32_t i = 0u; i < DUOFORGE_DIGEST_SIZE; ++i) {
             p->table_hash[i] = hash[i];
         }

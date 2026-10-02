@@ -1,11 +1,11 @@
 #ifndef DUOFORGE_STATE_CLOSURE_MEMBER_H
 #define DUOFORGE_STATE_CLOSURE_MEMBER_H
 /*
- * Members of the combat data kinds (docs/decisions/0006 section 2, 0009):
- * setup validation, the derived fields (stats, PP, stone flag), the support
- * gate and the member invariant. Every function reads the generated extended
- * tables only (the CLOSURE kinds see their closure prefix through
- * dfi_kind_limits); none allocates or mutates global state.
+ * Members of the combat data kinds (docs/decisions/0006 section 2, 0009,
+ * 0015): setup validation, the derived fields (stats, PP, stone flag), the
+ * support gate and the member invariant. Every function reads the generated
+ * pool tables only (the CLOSURE and TEAM_C kinds see their prefix of them
+ * through dfi_kind_limits); none allocates or mutates global state.
  */
 #include <stdbool.h>
 #include <stdint.h>
@@ -23,20 +23,25 @@
 /* True iff the gender is legal for a forme's gender rule. */
 bool dfi_gender_legal(uint32_t gender_rule, uint32_t gender);
 
-/* What a combat data kind may use (decision 0009 section 3): the CLOSURE
- * kinds the closure prefix of the extended tables, the TEAM_C kinds all of
- * them; the DEV kinds also allow No Ability. */
+/* What a combat data kind may use (decisions 0009 section 3, 0015 section 2):
+ * the CLOSURE kinds the closure prefix of the pool tables, the TEAM_C kinds
+ * the extended prefix, the POOL kinds all of them; the DEV kinds also allow
+ * No Ability. The ids of the kind's counts bound every id at setup and in
+ * the invariants (an ability is bounded through its forme). The first four
+ * kinds take a member's moves and ability from the forme's set; the POOL
+ * kinds from the moves it learns and the abilities it may have. */
 typedef struct dfi_kind_limits {
     uint32_t forme_count;     /* species ids below this */
     uint32_t item_count;      /* an item is 1 + its id, so at most this */
-    uint32_t switch_flag_max; /* DFI_SWITCH_FAINTED; DFI_SWITCH_FLIP_TURN for TEAM_C */
-    uint32_t status_max;      /* DFI_STATUS_SLP; DFI_STATUS_PSN for TEAM_C */
-    uint32_t vol_flags_mask;  /* DFI_VOL_* bits a position may carry: TEAM_C adds the choice lock */
-    uint32_t terrain_max;     /* DFI_TERRAIN_GRASSY; DFI_TERRAIN_PSYCHIC for TEAM_C */
+    uint32_t switch_flag_max; /* DFI_SWITCH_FAINTED; DFI_SWITCH_FLIP_TURN for TEAM_C and POOL */
+    uint32_t status_max;      /* DFI_STATUS_SLP; DFI_STATUS_PSN for TEAM_C and POOL */
+    uint32_t vol_flags_mask;  /* DFI_VOL_* bits a position may carry: TEAM_C and POOL add the choice lock */
+    uint32_t terrain_max;     /* DFI_TERRAIN_GRASSY; DFI_TERRAIN_PSYCHIC for TEAM_C and POOL */
+    bool pool_rules;          /* POOL kinds: the learnable moves and legal abilities of the forme, not its set */
     bool dev;
 } dfi_kind_limits;
 
-/* Precondition: data_kind is one of the four combat kinds. */
+/* Precondition: data_kind is one of the six combat kinds. */
 dfi_kind_limits dfi_kind_limits_of(uint32_t data_kind);
 
 /* Validation of one registered member of a combat setup (the side rules,
@@ -65,9 +70,10 @@ bool dfi_closure_member_init(const duoforge_member_setup *src, dfi_member *dst);
  * ability of the forme (or No Ability for dev), an item the kind allows, the
  * stone flag and the Mega forme consistent with the item, stats and PP equal
  * to the formulas, moves of the set without repeats, and a status with a
- * matching counter. Precondition: the generic member checks passed (species
- * and move ids below the context's counts, move count 1..4, pp <= pp_max,
- * hp <= hp_max, stone flag <= 1). */
+ * matching counter. Under the POOL kinds the ability is one of the forme's
+ * legal abilities and the moves are ones it learns. Precondition: the generic
+ * member checks passed (species and move ids below the context's counts, move
+ * count 1..4, pp <= pp_max, hp <= hp_max, stone flag <= 1). */
 bool dfi_closure_member_valid(const dfi_kind_limits *lim, const dfi_member *m);
 /* The part of dfi_closure_member_valid without the derived values and the
  * move legality (stats and HP maximum from the formulas, moves of the set
