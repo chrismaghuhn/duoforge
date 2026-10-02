@@ -70,7 +70,7 @@
 /* The rows that the tables do not model, pinned (the generator reports the same counts). */
 #define UNMODELED_MOVES 304u /* 305u before step G15 modelled Expanding Force; 306 before step G16 modelled Knock Off; 313 before step G17 modelled the seven recharge moves; 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
 #define UNMODELED_ITEMS 44u /* one fewer since step G15 modelled Psychic Seed */
-#define UNMODELED_ABILITIES 179u /* 180 before step AC1 made Trace an engine row; 181 before step G16 made Sticky Hold an engine row; 184 before step G14 made Rough Skin, Poison Touch and Thermal Exchange engine rows */
+#define UNMODELED_ABILITIES 173u /* 179 before step G22 made six abilities engine rows; 180 before step AC1 made Trace an engine row; 181 before step G16 made Sticky Hold an engine row; 184 before step G14 made Rough Skin, Poison Touch and Thermal Exchange engine rows */
 
 /* How many rows of the manifest are marked and half modelled: marked, and with the UNMODELED handler or a list of
  * unmodelled features (decision 0015 section 4.2). A step marks only what it fully models. */
@@ -1133,7 +1133,11 @@ int main(void)
             /* ... and Rough Skin, Poison Touch, Thermal Exchange (step G14) and Sticky Hold (step G16): engine rows that the turn code runs by id. */
             const bool engine = id == DFI_ABILITY_ROUGHSKIN || id == DFI_ABILITY_POISONTOUCH ||
                                 id == DFI_ABILITY_THERMALEXCHANGE || id == DFI_ABILITY_STICKYHOLD ||
-                                id == DFI_ABILITY_TRACE /* step AC1: Trace, by id too */;
+                                id == DFI_ABILITY_TRACE /* step AC1: Trace, by id too */ ||
+                                /* step G22: the weather Speed abilities, Inner Focus and Liquid Voice, by id */
+                                id == DFI_ABILITY_SANDRUSH || id == DFI_ABILITY_SWIFTSWIM ||
+                                id == DFI_ABILITY_SLUSHRUSH || id == DFI_ABILITY_CHLOROPHYLL ||
+                                id == DFI_ABILITY_INNERFOCUS || id == DFI_ABILITY_LIQUIDVOICE;
             DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, (setter || engine) ? 1u : 0u);
             DF_CHECK_EQ_U64(&t, dfi_pool_ability_family[id].family,
                             setter ? DFI_ABILITY_FAMILY_WEATHER_SETTER : DFI_ABILITY_FAMILY_NONE);
@@ -1329,6 +1333,14 @@ int main(void)
         DF_CHECK(&t, dfi_pool_ability_handler[DFI_ABILITY_ROUGHSKIN] == DFI_HANDLER_NONE &&
                          dfi_pool_ability_handler[DFI_ABILITY_POISONTOUCH] == DFI_HANDLER_NONE &&
                          dfi_pool_ability_handler[DFI_ABILITY_THERMALEXCHANGE] == DFI_HANDLER_NONE); /* engine rows, G14 */
+        DF_CHECK(&t, dfi_pool_ability_handler[DFI_ABILITY_SANDRUSH] == DFI_HANDLER_NONE &&
+                         dfi_pool_ability_handler[DFI_ABILITY_SWIFTSWIM] == DFI_HANDLER_NONE &&
+                         dfi_pool_ability_handler[DFI_ABILITY_SLUSHRUSH] == DFI_HANDLER_NONE &&
+                         dfi_pool_ability_handler[DFI_ABILITY_CHLOROPHYLL] == DFI_HANDLER_NONE &&
+                         dfi_pool_ability_handler[DFI_ABILITY_INNERFOCUS] == DFI_HANDLER_NONE &&
+                         dfi_pool_ability_handler[DFI_ABILITY_LIQUIDVOICE] == DFI_HANDLER_NONE); /* engine rows, G22 */
+        /* Cursed Body needs the Disable volatile: still UNMODELED. */
+        DF_CHECK(&t, dfi_pool_ability_handler[DFI_ABILITY_CURSEDBODY] == DFI_HANDLER_UNMODELED);
         DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_FLOETTITE] == DFI_HANDLER_NONE); /* a Mega Stone: data of its link */
         DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_PSYCHICSEED] == DFI_HANDLER_NONE &&
                          dfi_pool_item_handler[DFI_ITEM_ELECTRICSEED] == DFI_HANDLER_UNMODELED &&

@@ -836,7 +836,9 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_EVENT_SUPER_EFFECTIVE 10u /* [-supereffective] position: target, amount: 1 or 2 (x2, x4) */
 #define DUOFORGE_EVENT_RESISTED        11u /* [-resisted] position: target, amount: 1 or 2 (x1/2, x1/4) */
 #define DUOFORGE_EVENT_IMMUNE          12u /* [-immune] position; cause ABILITY + id2 when an ability did it */
-#define DUOFORGE_EVENT_FAIL            13u /* [-fail] position; detail: the ailment it already has, when that is why */
+#define DUOFORGE_EVENT_FAIL            13u /* [-fail] position; detail: the ailment it already has, when that is why.
+                                              POOL kinds: cause ABILITY + id2 (Inner Focus), other the holder:
+                                              [-fail] unboost atk [from] ability: Inner Focus, an Intimidate drop. */
 #define DUOFORGE_EVENT_PROTECT         14u /* [-singleturn Protect] position */
 #define DUOFORGE_EVENT_BLOCKED         15u /* [-activate move: Protect] position: the protected Pokemon
                                               (detail 0); detail DUOFORGE_FIELD_PSYCHIC_TERRAIN: [-activate move:

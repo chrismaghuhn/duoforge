@@ -118,7 +118,12 @@
  * Step G18 marks four Mega Stones whose Mega ability the manifest already marks and whose base forme has a marked
  * ability and exactly one Mega: Tyranitarite (Sand Stream), Baxcalibrite (Thermal Exchange), Aerodactylite (Tough
  * Claws) and Manectite (Intimidate), recorded as g18_* under the POOL kind. The Mega Evolution itself is the generic
- * path. Charizardite X stays unmarked: the tables link one Mega per base forme (Charizard: Mega-Y). */
+ * path. Charizardite X stays unmarked: the tables link one Mega per base forme (Charizard: Mega-Y).
+ * Step G22 marks six abilities that the turn code runs by id: Sand Rush, Swift Swim, Slush Rush and Chlorophyll (Speed x2
+ * in the speed key while their weather is up, a standing holder only; Sand Rush's holder also takes no Sandstorm damage),
+ * Inner Focus (no flinch, and an Attack drop that Intimidate causes fails with -fail ... [from] ability: Inner Focus) and
+ * Liquid Voice (a sound move is Water), recorded as g22_* under the POOL kind. Cursed Body stays unmarked: it needs the
+ * Disable volatile. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -263,6 +268,14 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_POISONTOUCH] = 1u,
             [DFI_ABILITY_THERMALEXCHANGE] = 1u,
             [DFI_ABILITY_STICKYHOLD] = 1u,
+            /* Step G22: the weather Speed abilities (doubled Speed in their weather; Sand Rush also takes no Sandstorm damage),
+             * Inner Focus (no flinch, no Intimidate drop) and Liquid Voice (sound moves are Water). */
+            [DFI_ABILITY_SANDRUSH] = 1u,
+            [DFI_ABILITY_SWIFTSWIM] = 1u,
+            [DFI_ABILITY_SLUSHRUSH] = 1u,
+            [DFI_ABILITY_CHLOROPHYLL] = 1u,
+            [DFI_ABILITY_INNERFOCUS] = 1u,
+            [DFI_ABILITY_LIQUIDVOICE] = 1u,
         },
     .items =
         {
