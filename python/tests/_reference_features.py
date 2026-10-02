@@ -1,6 +1,7 @@
 """The per-player encoder as it was before encode_batch (M7 Task 6), with
-the Team C values since: the reference the vectorized encoder must equal
-byte for byte. Test-only.
+the Team C values and the present flag of a registered member (move count
+above 0, not species above 0: id 0 is Rillaboom) since: the reference the
+vectorized encoder must equal byte for byte. Test-only.
 """
 import numpy as np
 
@@ -43,7 +44,7 @@ def _member(m):
     hp_max = int(m["hp_max"])
     pp_max = m["pp_max"].astype(np.float32)
     pp = np.divide(m["pp"].astype(np.float32), pp_max, out=np.zeros(4, np.float32), where=pp_max > 0)
-    head = [1.0 if int(m["species_id"]) != 0 else 0.0, int(m["hp"]) / hp_max if hp_max > 0 else 0.0]
+    head = [1.0 if int(m["move_count"]) != 0 else 0.0, int(m["hp"]) / hp_max if hp_max > 0 else 0.0]
     tail = [int(m["is_mega"]), int(m["mega_capable"]), int(m["item_used"]), int(m["item"]) / 255,
             int(m["ability"]) / 255, int(m["gender"]) / 3, int(m["nature"]) / 24, int(m["species_id"]) / 65535]
     return np.concatenate([

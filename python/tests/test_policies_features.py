@@ -6,7 +6,9 @@ below their counts, and two runs end in the same states. encode is pure
 its pair mask holds the joint count, and both policies refuse a requested
 player with 0 candidates (Review Focus 5). Psychic Terrain and the position
 flags of the TEAM_C kinds encode at their documented places and alike in
-both encoders; values outside them raise.
+both encoders; values outside them raise. A member is present exactly when
+registered: Team A's Rillaboom (species 0) too, an unregistered slot of a
+DEV-kind roster of four or five not.
 """
 import unittest
 
@@ -72,6 +74,35 @@ def _play_scripted(ctx, test, check_reference=False):
             test.fail("the scripted battles did not end")
         test.assertTrue(all(batch.result(e) != 0 for e in range(ENVS)))
         return [batch.digest(e) for e in range(ENVS)]
+
+
+# obs_part index of roster member k's present flag: own side 71 + 40 k (15
+# global, 8 side, 2 * 24 positions), the foe 367 + 40 k (a side is 296).
+_OWN_PRESENT = 71 + 40 * np.arange(6)
+_FOE_PRESENT = 367 + 40 * np.arange(6)
+
+
+def _play_present(ctx, setups, test):
+    """Plays the setups to the end with RandomPolicy; per step the
+    observations (2E,) and the present flags of the own and the foe roster
+    (2E, 6 each) as encode_batch makes them, the reference encoder agreeing."""
+    from python.tests import _reference_features as reference
+    envs = setups.shape[0]
+    policy = duoforge.RandomPolicy(SEED, envs)
+    policy.start_episodes(np.arange(envs), np.zeros(envs, dtype=np.uint64))
+    steps = []
+    with duoforge.Batch(ctx, setups, 1, SEED) as batch:
+        for _ in range(400):
+            batch.query_factored()
+            obs, domains = batch.observations.reshape(-1).copy(), batch.domains.reshape(-1)
+            got = features.encode_batch(obs, domains)[0]
+            for n in range(obs.shape[0]):
+                test.assertTrue(np.array_equal(got[n], reference.encode(obs[n], domains[n])[0]))
+            steps.append((obs, got[:, _OWN_PRESENT], got[:, _FOE_PRESENT]))
+            if not (batch.requests["requested"] != 0).any():
+                return steps
+            batch.step_factored(policy.choose_factored(batch))
+    test.fail("the battles did not end")
 
 
 class _Scene:
@@ -274,6 +305,38 @@ class PoliciesFeaturesTest(unittest.TestCase):
                         compared += 1
                 batch.step_factored(policy.choose_factored(batch))
         self.assertEqual(compared, 3 * 2 * ENVS)
+
+    def test_encode_present_marks_every_registered_member(self):
+        # Team A registers Rillaboom (species 0) at roster 0: in pairings 0
+        # (A-B) and 2 (A-A) all six members of both sides are present, at
+        # every boundary of the battles, in both encoders.
+        steps = _play_present(self.ctx, duoforge.reference_setups([0, 2] * 4), self)
+        self.assertEqual(steps[0][0]["sides"][:, 0]["members"][:, 0]["species_id"].tolist(), [0] * 16)
+        for _, own, foe in steps:
+            self.assertTrue((own == 1).all())
+            self.assertTrue((foe == 1).all())
+
+    def test_encode_present_of_unregistered_slots(self):
+        # A DEV kind registers brought_count to max_roster members: side 0
+        # four (Team A, Rillaboom first), side 1 five. Every registered
+        # member is present, the one not brought too, and an unregistered
+        # slot is not, in both encoders.
+        counts = (4, 5)
+        setups = duoforge.reference_setups([0, 2] * 4)
+        for s, count in enumerate(counts):
+            setups["sides"][:, s]["member_count"] = count
+            setups["sides"][:, s]["members"][:, count:] = 0
+        with duoforge.Context(data_kind=3) as dev:  # DUOFORGE_DATA_KIND_CLOSURE_DEV
+            steps = _play_present(dev, setups, self)
+        registered = np.array([[1.0] * c + [0.0] * (6 - c) for c in counts], dtype=np.float32)
+        not_brought = 0
+        for obs, own, foe in steps:
+            me = obs["player"].astype(np.int64)
+            self.assertTrue(np.array_equal(own, registered[me]))
+            self.assertTrue(np.array_equal(foe, registered[1 - me]))
+            location = obs["sides"][np.arange(obs.shape[0]), me]["members"]["location"]
+            not_brought += int((location == _layout.CONSTANTS["DUOFORGE_LOCATION_NOT_BROUGHT"]).sum())
+        self.assertGreater(not_brought, 0)
 
     def test_zero_count_raises(self):
         with duoforge.Batch(self.ctx, _setups(), 1, SEED) as batch:

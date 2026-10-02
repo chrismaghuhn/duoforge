@@ -27,12 +27,14 @@ first, then the foe):
       flash fire, protecting, follow me, helping hand, unburden (the
       POSITION_FLAGS bits of the TEAM_C kinds; 0 under CLOSURE), occupant
       one-hot (7: roster 0..5, none)
-    per member, roster 0..5: present, hp / hp_max (0 when hp_max is 0),
-      location one-hot (LOCATIONS), status one-hot (AILMENTS), is mega,
-      mega capable, item used, item / 255, ability / 255, gender / 3,
-      nature / 24, species / 65535, move ids / 65535 (4), pp / pp_max (4,
-      0 when pp_max is 0), move count / 4, stat points / 32 (6),
-      stats / 1000 (5, at most 1)
+    per member, roster 0..5: present (move count above 0: a registered
+      member has 1 to 4 moves, an unregistered slot is all zero; not the
+      species, since id 0 is a forme, Rillaboom), hp / hp_max (0 when
+      hp_max is 0), location one-hot (LOCATIONS), status one-hot
+      (AILMENTS), is mega, mega capable, item used, item / 255,
+      ability / 255, gender / 3, nature / 24, species / 65535,
+      move ids / 65535 (4), pp / pp_max (4, 0 when pp_max is 0),
+      move count / 4, stat points / 32 (6), stats / 1000 (5, at most 1)
 
 slot_part, float32 (2, 32, SLOT_FEATURES): for slot list s and entry i,
   valid (i < slot_count[s]), kind one-hot (4: none, move, switch, pass),
@@ -118,7 +120,7 @@ def _sides(s):
     hp = np.divide(m["hp"].astype(_F64), hp_max, out=np.zeros(hp_max.shape), where=hp_max > 0)
     pp_max = m["pp_max"].astype(_F32)
     members = np.concatenate([
-        np.stack([(m["species_id"] != 0).astype(_F64), hp], axis=-1).astype(_F32),
+        np.stack([(m["move_count"] != 0).astype(_F64), hp], axis=-1).astype(_F32),
         _one_hot(m["location"], LOCATIONS, "location"),
         _one_hot(m["status"], AILMENTS, "ailment"),
         np.stack([m["is_mega"].astype(_F64), m["mega_capable"].astype(_F64), m["item_used"].astype(_F64),
