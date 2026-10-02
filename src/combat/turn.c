@@ -107,6 +107,12 @@ static bool dfi_has_type(const dfi_member *m, uint32_t type)
     return f->types[0] == type || f->types[1] == type;
 }
 
+/* isGrounded with the data: not Flying (no Levitate, Air Balloon or Gravity). */
+static bool dfi_grounded(const dfi_member *m)
+{
+    return !dfi_has_type(m, DFI_TYPE_FLYING);
+}
+
 /* The member holds item `id` and has not used it up (items are stored as
  * 1 + id). */
 static bool dfi_holds(const dfi_member *m, uint32_t id)
@@ -850,6 +856,12 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
         ok = ok && dfi_chain_modify(bp_chain, 6144u, &bp_chain);
     }
     if (move_type == DFI_TYPE_GRASS && r->b->terrain == DFI_TERRAIN_GRASSY && !dfi_has_type(a, DFI_TYPE_FLYING)) {
+        ok = ok && dfi_chain_modify(bp_chain, 5325u, &bp_chain);
+    }
+    /* Psychic Terrain (Team C): 5325/4096 for a grounded user's Psychic move
+     * (onBasePowerPriority 6, like Grassy Terrain's, which cannot be up at
+     * the same time). */
+    if (move_type == DFI_TYPE_PSYCHIC && r->b->terrain == DFI_TERRAIN_PSYCHIC && !dfi_has_type(a, DFI_TYPE_FLYING)) {
         ok = ok && dfi_chain_modify(bp_chain, 5325u, &bp_chain);
     }
     const uint32_t base_power = bp_chain == 4096u ? power : dfi_modify(power, bp_chain);
@@ -2058,11 +2070,23 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         move_type = DFI_TYPE_FIRE;
     }
     const bool spread = count > 1u;
-    /* Hit steps: Protect (TryHit), type immunity, accuracy per target. */
+    /* Hit steps: Psychic Terrain and Protect (TryHit), type immunity,
+     * accuracy per target. Psychic Terrain's onTryHit (Team C, priority 4,
+     * before Protect's 3) stops a move with positive priority (Prankster's
+     * included) at a grounded foe: [-activate] move: Psychic Terrain, and no
+     * -fail (it returns null; data/moves.ts psychicterrain). */
+    const bool psychic_block =
+        b->terrain == DFI_TERRAIN_PSYCHIC && dfi_move_priority(b, m, md) > DFI_PRIORITY_BIAS;
     bool hit[DFI_POSITIONS] = {false, false, false, false};
     for (uint32_t i = 0u; i < count; ++i) {
         const uint32_t t = targets[i];
         const dfi_active_slot *tp = dfi_pos(b, t);
+        if (psychic_block && t / 2u != side && dfi_grounded(dfi_at(b, t))) {
+            duoforge_event e = dfi_event_make(DUOFORGE_EVENT_BLOCKED, t);
+            e.detail = (uint8_t)DUOFORGE_FIELD_PSYCHIC_TERRAIN; /* [-activate] move: Psychic Terrain */
+            dfi_emit(r, &e);
+            continue;
+        }
         hit[i] = !((((uint32_t)tp->flags & DFI_VOL_PROTECT) != 0u) && ((md->flags & DFI_MOVE_FLAG_PROTECT) != 0u));
         if (!hit[i]) {
             dfi_emit_plain(r, DUOFORGE_EVENT_BLOCKED, t); /* [-activate] move: Protect */
@@ -2580,13 +2604,14 @@ static bool dfi_has_entry(const dfi_member *m)
 {
     const uint32_t a = m->ability; /* 1 + id, 0 none */
     return a == 1u + DFI_ABILITY_DRIZZLE || a == 1u + DFI_ABILITY_DROUGHT || a == 1u + DFI_ABILITY_GRASSYSURGE ||
-           a == 1u + DFI_ABILITY_INTIMIDATE;
+           a == 1u + DFI_ABILITY_PSYCHICSURGE || a == 1u + DFI_ABILITY_INTIMIDATE;
 }
 
 /* Drizzle and Drought (setWeather): the same weather is not restarted;
- * otherwise the weather is replaced for 5 turns. Grassy Surge
- * (setTerrain) likewise. Intimidate lowers the Attack of every standing
- * adjacent foe by 1. */
+ * otherwise the weather is replaced for 5 turns. Grassy Surge and Psychic
+ * Surge (setTerrain, sim/field.ts:130-157) likewise: a terrain that is
+ * replaced ends without a line. Intimidate lowers the Attack of every
+ * standing adjacent foe by 1. */
 static duoforge_status dfi_entry_ability(dfi_run *r, uint32_t flat)
 {
     struct duoforge_battle *b = r->b;
@@ -2602,14 +2627,16 @@ static duoforge_status dfi_entry_ability(dfi_run *r, uint32_t flat)
             e.detail = (uint8_t)w; /* DUOFORGE_WEATHER_* */
             dfi_emit(r, &e);
         }
-    } else if (a == 1u + DFI_ABILITY_GRASSYSURGE) {
-        if (b->terrain != DFI_TERRAIN_GRASSY) {
-            b->terrain = (uint8_t)DFI_TERRAIN_GRASSY;
+    } else if (a == 1u + DFI_ABILITY_GRASSYSURGE || a == 1u + DFI_ABILITY_PSYCHICSURGE) {
+        const bool grassy = a == 1u + DFI_ABILITY_GRASSYSURGE;
+        const uint32_t terrain = grassy ? DFI_TERRAIN_GRASSY : DFI_TERRAIN_PSYCHIC;
+        if (b->terrain != terrain) {
+            b->terrain = (uint8_t)terrain;
             b->terrain_turns = (uint8_t)DFI_FIELD_TURNS_MAX;
-            /* -fieldstart|move: Grassy Terrain|[from] ability: X|[of] holder */
+            /* -fieldstart|move: X Terrain|[from] ability: X|[of] holder */
             duoforge_event e =
                 dfi_ev(DUOFORGE_EVENT_FIELD_START, DUOFORGE_NO_POSITION, DUOFORGE_CAUSE_ABILITY, a, flat);
-            e.detail = (uint8_t)DUOFORGE_FIELD_GRASSY_TERRAIN;
+            e.detail = (uint8_t)(grassy ? DUOFORGE_FIELD_GRASSY_TERRAIN : DUOFORGE_FIELD_PSYCHIC_TERRAIN); /* wide-operands-reviewed: < 4 */
             dfi_emit(r, &e);
             return dfi_terrain_change(r);
         }
@@ -2871,11 +2898,6 @@ static duoforge_status dfi_residual_sort(dfi_run *r, dfi_residual_entry *list, u
     return DUOFORGE_OK;
 }
 
-static bool dfi_grounded(const dfi_member *m)
-{
-    return !dfi_has_type(m, DFI_TYPE_FLYING);
-}
-
 static duoforge_status dfi_residual_events(dfi_run *r);
 
 /* The residual action. It keeps each position's HP from before its events
@@ -3098,9 +3120,10 @@ static duoforge_status dfi_residual_events(dfi_run *r)
     if (b->terrain != DFI_TERRAIN_NONE) {
         b->terrain_turns = (uint8_t)((uint32_t)b->terrain_turns - 1u); /* wide-operands-reviewed: >= 1 */
         if (b->terrain_turns == 0u) {
+            const bool grassy = b->terrain == DFI_TERRAIN_GRASSY;
             b->terrain = (uint8_t)DFI_TERRAIN_NONE;
             duoforge_event e = dfi_event_make(DUOFORGE_EVENT_FIELD_END, DUOFORGE_NO_POSITION);
-            e.detail = (uint8_t)DUOFORGE_FIELD_GRASSY_TERRAIN;
+            e.detail = (uint8_t)(grassy ? DUOFORGE_FIELD_GRASSY_TERRAIN : DUOFORGE_FIELD_PSYCHIC_TERRAIN); /* wide-operands-reviewed: < 4 */
             dfi_emit(r, &e); /* [-fieldend] */
             st = dfi_terrain_change(r);
             if (st != DUOFORGE_OK) {

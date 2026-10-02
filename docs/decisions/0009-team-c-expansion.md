@@ -1,6 +1,6 @@
 # 0009 — Team C: the expansion track (data kind, gate, steps, evidence)
 
-Status: **accepted** (owner, 2026-10-01: "bau das erstmal so"; setup rule: the closure rule, section 3.4). **Steps 1 to 9b built** (section 10). Builds on decision `0004` (two reference teams), `0006` (data, state v3, draw sites, fixtures, evidence), `0007` (player view) and `0010` (the certified CLOSURE profile, the role of `CLOSURE_DEV`, draw alignment B confirmed), and on the research in `docs/research/third-team/` (PR #32). "M§n" means section n of `docs/research/third-team/mechanics.md`; X1 to X9 are its executed experiments.
+Status: **accepted** (owner, 2026-10-01: "bau das erstmal so"; setup rule: the closure rule, section 3.4). **Steps 1 to 10 built** (section 10). Builds on decision `0004` (two reference teams), `0006` (data, state v3, draw sites, fixtures, evidence), `0007` (player view) and `0010` (the certified CLOSURE profile, the role of `CLOSURE_DEV`, draw alignment B confirmed), and on the research in `docs/research/third-team/` (PR #32). "M§n" means section n of `docs/research/third-team/mechanics.md`; X1 to X9 are its executed experiments.
 
 ## 1. Owner inputs (2026-10-01)
 
@@ -669,3 +669,64 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
   - `tests/reference/conformance_types.h` (a comment only), `tests/support/conformance_compare.c`;
   - `tests/test_conformance.c`, `tests/test_api_atomicity.c` (version), `tests/test_team_c_setup.c`;
   - `docs/support/README.md`.
+
+### 10.11 Step 10: Psychic Surge and Psychic Terrain
+
+- **Psychic Surge** (`data/abilities.ts:3580-3588`) is an entry ability. Its `onStart` calls `setTerrain('psychicterrain')` (`sim/field.ts:130-157`).
+  - The same terrain is not restarted.
+  - A different terrain is replaced without an end line (no FieldEnd), and TerrainChange follows; a Grassy Seed acts only on Grassy Terrain.
+  - Two setters entering together run in runSwitch's speed order, so the slower one's terrain stays.
+- **Psychic Terrain** (`data/moves.ts`, `psychicterrain` condition) lasts 5 turns; the data has no Terrain Extender. It ends in the residual at order 27, sub-order 7, with `-fieldend|move: Psychic Terrain`.
+  - **`onTryHit`** (priority 4, before Protect's 3) stops a move with positive priority at a grounded foe. It shows `-activate|target|move: Psychic Terrain` and returns null, so there is no `-fail`.
+    - The priority is the one `getActionSpeed` wrote into the active move (`sim/battle.ts`, `action.move.priority = priority`), so Prankster's +1 counts. The engine uses `dfi_move_priority`, as Armor Tail does.
+    - Allies, self moves and Flying targets are not stopped (the data has no other way to be ungrounded).
+    - Stopped: Fake Out, Shadow Sneak, Aqua Jet, Sucker Punch (after its own `onTry`) and Grimmsnarl's Prankster Parting Shot.
+    - Not stopped: Helping Hand on the ally and Protect.
+    - Grassy Glide has priority 0 here: its +1 needs Grassy Terrain, which Psychic Terrain replaces.
+  - **BasePower:** a grounded user's Psychic move gets ×5325/4096 at priority 6, the place of Grassy Terrain's boost; the two terrains are never up together.
+- **State.** Terrain 2, `DFI_TERRAIN_PSYCHIC`, valid only under the TEAM_C kinds (`dfi_kind_limits.terrain_max`). The state model mirrors the range; its output is unchanged.
+- **Public changes, library 0.18.0** (sections 4.2 and 9.4):
+  - `DUOFORGE_TERRAIN_PSYCHIC` (2) in the observation's terrain;
+  - `DUOFORGE_FIELD_PSYCHIC_TERRAIN` (3) in FIELD_START and FIELD_END;
+  - the block as `DUOFORGE_EVENT_BLOCKED` with detail `DUOFORGE_FIELD_PSYCHIC_TERRAIN`. Section 4.2 lets a new distinction be a kind or a detail value; a detail on the existing BLOCKED (Protect's block, detail 0) keeps "the move was blocked at this target" in one kind.
+- **Python.** `_layout.CONSTANTS` and `tools/layout/layout_dump.c` name the new terrain. The feature encoder keeps its terrains (none, Grassy): encoding Psychic Terrain would add a column to `OBS_SIZE`, which is the main session's decision. Until then the encoder refuses terrain 2 with `ValueError` (tested), as it refuses every value it does not know.
+- **Converter.** It maps:
+  - `-fieldstart|move: Psychic Terrain|[from] ability: Psychic Surge|[of] ...`;
+  - `-fieldend|move: Psychic Terrain`;
+  - `-activate|...|move: Psychic Terrain`;
+  - the state's `psychicterrain`.
+
+  The harness is unchanged.
+- **Evidence.** Three recorded battles:
+  - `c10_psychic_terrain`:
+    - Raichu's Fake Out at Indeedee-F, Grimmsnarl's Prankster Parting Shot and Kingambit's Sucker Punch are stopped;
+    - Sneasler's Fake Out at Flying Staraptor hits;
+    - Helping Hand on the ally goes on.
+  - `c10_priority_blocks`:
+    - Fake Out, Basculegion's Aqua Jet and Ceruledge's Shadow Sneak are stopped;
+    - Indeedee-F's Psychic gets the boost;
+    - the terrain ends after five turns.
+  - `c10_terrain_war`: Rillaboom's Grassy Surge, then Ceruledge's Grassy Seed, then the slower Indeedee-F's Psychic Surge, which replaces Grassy Terrain without an end line. Under Psychic Terrain Rillaboom's Grassy Glide moves at priority 0, meets Protect and later hits.
+
+  A white-box test: terrain 2 is valid under TEAM_C and `FIELD` under CLOSURE, and terrain 3 is `FIELD` under every kind.
+
+  Seven negative controls each make a test fail:
+  - no block;
+  - a block at Flying targets too;
+  - a block without priority;
+  - no Psychic boost;
+  - no terrain replacement;
+  - the end always naming Grassy Terrain;
+  - Psychic Terrain out of range under TEAM_C.
+- **Not recorded.**
+  - Trick Room reversing the entry order of two setters: the order is runSwitch's speed order, which the closure's battles already pin.
+  - A Fake Out into an ally: the ally rule is the one Helping Hand shows.
+  - A priority move at a protecting grounded target, where Psychic Terrain's line comes instead of Protect's.
+- **Shared files touched:**
+  - `include/duoforge/duoforge.h` (the terrain, the field value, BLOCKED's detail, version);
+  - `src/state/{battle_internal.h,closure_member.h,closure_member.c,invariants.c,observation.c}`;
+  - `src/combat/turn.c`;
+  - `src/data/support_manifest.c`;
+  - `python/duoforge/{_layout,_lib}.py`, `python/tests/{test_lib,test_policies_features}.py`;
+  - `tools/layout/layout_dump.c`, `tools/reference/trace_to_c.py`, `tools/state_model/state_v3_model.py`;
+  - `tests/test_conformance.c`, `tests/test_api_atomicity.c` (version), `tests/test_team_c_setup.c`.

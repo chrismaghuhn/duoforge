@@ -547,6 +547,25 @@ int main(void)
         duoforge_battle_destroy(w);
     }
 
+    /* White-box (step 10): Psychic Terrain (terrain 2) is in range only under
+     * the TEAM_C kinds; one past it is out of range under every kind. */
+    for (uint32_t team_c = 0u; team_c < 2u; ++team_c) {
+        const duoforge_context *ctx = team_c != 0u ? kc : k1;
+        duoforge_battle *w = df_make_battle(ctx, &teams);
+        dfi_invariant inv = DFI_INV_NONE;
+        w->terrain = (uint8_t)DFI_TERRAIN_PSYCHIC;
+        w->terrain_turns = 5u;
+        const duoforge_status st = dfi_state_check(ctx, w, &inv);
+        if (team_c != 0u) {
+            DF_CHECK(&t, st == DUOFORGE_OK);
+        } else {
+            DF_CHECK(&t, st == DUOFORGE_E_INVARIANT && inv == DFI_INV_FIELD);
+        }
+        w->terrain = (uint8_t)(DFI_TERRAIN_PSYCHIC + 1u);
+        DF_CHECK(&t, dfi_state_check(ctx, w, &inv) == DUOFORGE_E_INVARIANT && inv == DFI_INV_FIELD);
+        duoforge_battle_destroy(w);
+    }
+
     /* White-box: the choice lock (bit 64, step 7) is in range only under the
      * TEAM_C kinds. It keeps a move slot in the locked-move byte without a
      * charge and without a target, and its holder holds a Choice Scarf. */
@@ -785,7 +804,7 @@ int main(void)
      * with Aerilate; step 4: Last Respects and Flip Turn; step 5: Chople Berry
      * and Rocky Helmet; step 6: Dire Claw (poison); step 7: Choice Scarf;
      * step 8: White Herb and Unburden; step 9b: Sucker Punch and Helping
-     * Hand. */
+     * Hand; step 10: Psychic Surge (Psychic Terrain). */
     {
         typedef struct gate_case {
             uint32_t member, ability_plus1, item_plus1, move;
@@ -808,7 +827,7 @@ int main(void)
             {5u, 0u, 0u, DFI_MOVE_FLIPTURN, true, "Flip Turn"},
             {5u, 0u, 0u, DFI_MOVE_AQUAJET, true, "Aqua Jet"},
             {0u, DFI_ABILITY_UNBURDEN + 1u, 0u, keep, true, "Unburden"},
-            {3u, DFI_ABILITY_PSYCHICSURGE + 1u, 0u, keep, false, "Psychic Surge"},
+            {3u, DFI_ABILITY_PSYCHICSURGE + 1u, 0u, keep, true, "Psychic Surge"},
             {4u, DFI_ABILITY_DEFIANT + 1u, 0u, keep, true, "Defiant"},
             {0u, 0u, DFI_ITEM_WHITEHERB + 1u, keep, true, "White Herb"},
             {2u, 0u, DFI_ITEM_SALAMENCITE + 1u, keep, true, "Salamencite (Mega, Aerilate)"},
@@ -841,6 +860,7 @@ int main(void)
         abilities[DFI_ABILITY_ADAPTABILITY - DFI_ABILITY_COUNT] = 1u;
         abilities[DFI_ABILITY_AERILATE - DFI_ABILITY_COUNT] = 1u;
         abilities[DFI_ABILITY_UNBURDEN - DFI_ABILITY_COUNT] = 1u;
+        abilities[DFI_ABILITY_PSYCHICSURGE - DFI_ABILITY_COUNT] = 1u;
         items[DFI_ITEM_SALAMENCITE - DFI_ITEM_COUNT] = 1u;
         items[DFI_ITEM_CHOPLEBERRY - DFI_ITEM_COUNT] = 1u;
         items[DFI_ITEM_ROCKYHELMET - DFI_ITEM_COUNT] = 1u;

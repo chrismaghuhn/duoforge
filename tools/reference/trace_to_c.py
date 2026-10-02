@@ -367,7 +367,8 @@ def convert_choice(text, side, state, roster_of, mid_turn=False):
 BOUNDARY = {'teampreview': 1, 'move': 2, 'switch': 3}
 STATUS = {'': 0, 'brn': 1, 'frz': 2, 'par': 3, 'slp': 4, 'psn': 5, 'fnt': 0}
 WEATHER = {'': 0, 'raindance': 1, 'sunnyday': 2}
-TERRAIN = {'': 0, 'grassyterrain': 1}
+TERRAIN = {'': 0, 'grassyterrain': 1, 'psychicterrain': 2}
+FIELD_PSYCHIC_TERRAIN = 3  # DUOFORGE_FIELD_PSYCHIC_TERRAIN (Team C)
 RESULT = {'p1': 1, 'p2': 2, '': 3}
 
 
@@ -601,6 +602,8 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             what = args[1]
             if what == 'move: Protect':
                 e = ev_tuple(EV['BLOCKED'], pos)
+            elif what == 'move: Psychic Terrain':  # Team C: a priority move stopped at a grounded target
+                e = ev_tuple(EV['BLOCKED'], pos, detail=FIELD_PSYCHIC_TERRAIN)
             elif what == 'confusion':
                 e = ev_tuple(EV['CONFUSED'], pos)
             elif what.startswith('ability: '):
@@ -637,7 +640,7 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                          flags=FLAG['UPKEEP'] if '[upkeep]' in attrs else 0)
         elif kind in ('-fieldstart', '-fieldend'):
             cause, id2, other = ev_cause(attrs, tables)
-            field = {'move: Grassy Terrain': 1, 'move: Trick Room': 2}[args[0]]
+            field = {'move: Grassy Terrain': 1, 'move: Trick Room': 2, 'move: Psychic Terrain': FIELD_PSYCHIC_TERRAIN}[args[0]]
             e = ev_tuple(EV['FIELD_START' if kind == '-fieldstart' else 'FIELD_END'], NOPOS, other, cause, 0, id2,
                          detail=field)
         elif kind in ('-sidestart', '-sideend'):
