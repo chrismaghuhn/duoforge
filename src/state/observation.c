@@ -300,6 +300,9 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                 vol |= tail->heal_block_turns != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_HEAL_BLOCK : 0u;
                 vol |= tail->throat_chop_turns != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_THROAT_CHOP : 0u;
                 o.sides[s].positions[p].volatiles = vol;
+                /* Step G9, Encore: the one move slot (slot + 1) that the occupant may use, public (-start|X|Encore: the
+                 * slot is the one of its last move line); the turns are never shown. */
+                o.sides[s].positions[p].encore_slot = tail->encore_slot;
                 /* Step G11, Soak: the type that it set, public (-start|X|typechange|Water): the occupant is pure
                  * Water until it leaves, faints or Mega Evolves (the tail's soak type is cleared there). */
                 const uint32_t occupant = battle->sides[s].positions[p].occupant;

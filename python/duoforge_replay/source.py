@@ -6,6 +6,8 @@ line) serve tests and small samples. select() keeps the open-sheet games of
 the format and counts the rest.
 """
 import json
+import re
+from dataclasses import dataclass
 from pathlib import Path
 
 FORMAT_PREFIX = "gen9championsvgc2026regmc"
@@ -25,30 +27,74 @@ def files(paths):
 
 
 def games(paths, format_prefix="", counters=None):
-    """(id, formatid, log) of every game of the files, in file and row order. A parquet row group without a
-    formatid starting with format_prefix is skipped unread; its rows count as read and skipped (skip:format)."""
+    """(id, formatid, log) of every game of the files, in file and row order: read_unit over units()."""
+    counters = counters if counters is not None else {}
+    for unit in units(paths):
+        yield from read_unit(unit, format_prefix, counters)
+
+
+@dataclass(frozen=True)
+class Unit:
+    """A fixed piece of the source: a parquet row group, or a block of unit_lines lines of a JSON lines file. A unit
+    is one part of the dataset (build.py): which games it holds depends on the source files only."""
+    id: str  # "<file stem as letters and digits>-<index>", unique per source set
+    path: str
+    index: int  # the row group, or the block
+    unit_lines: int
+
+
+def _stem(path):
+    return re.sub(r"[^a-z0-9]", "", Path(path).stem.lower()) or "source"
+
+
+def units(paths, unit_lines=4096):
+    """The units of the source files, in file order then index order."""
+    out = []
     for path in files(paths):
         if path.suffix == ".jsonl":
             with open(path, encoding="utf-8") as f:
-                for line in f:
-                    if line.strip():
-                        row = json.loads(line)
-                        yield row["id"], row["formatid"], row["log"]
-            continue
-        try:
-            import pyarrow.parquet as pq
-        except ImportError as e:
-            raise RuntimeError("reading parquet needs pyarrow (pip install pyarrow)") from e
-        parquet = pq.ParquetFile(path)
-        for group in range(parquet.metadata.num_row_groups):
-            formats = parquet.read_row_group(group, columns=["formatid"]).column(0).to_pylist()
-            if not any(f.startswith(format_prefix) for f in formats):
-                if counters is not None:
-                    counters["games.read"] += len(formats)
-                    counters["games.skipped.skip:format"] += len(formats)
-                continue
-            table = parquet.read_row_group(group, columns=["id", "formatid", "log"])
-            yield from zip(*(table.column(c).to_pylist() for c in ("id", "formatid", "log")))
+                count = sum(1 for line in f if line.strip())
+            blocks = (count + unit_lines - 1) // unit_lines
+        else:
+            parquet = _parquet().ParquetFile(path)
+            blocks = parquet.metadata.num_row_groups
+        out += [Unit(f"{_stem(path)}-{i:05d}", str(path), i, unit_lines) for i in range(blocks)]
+    ids = [u.id for u in out]
+    if len(set(ids)) != len(ids):
+        raise ValueError("two source files have the same name in letters and digits: their parts would collide")
+    return out
+
+
+def read_unit(unit, format_prefix, counters):
+    """(id, formatid, log) of the games of one unit, in source order. A parquet row group without the format is
+    skipped unread; its rows count as read and skipped (skip:format)."""
+    path = Path(unit.path)
+    if path.suffix == ".jsonl":
+        start, stop = unit.index * unit.unit_lines, (unit.index + 1) * unit.unit_lines
+        with open(path, encoding="utf-8") as f:
+            for n, line in enumerate(line for line in f if line.strip()):
+                if n >= stop:
+                    break
+                if n >= start:
+                    row = json.loads(line)
+                    yield row["id"], row["formatid"], row["log"]
+        return
+    parquet = _parquet().ParquetFile(path)
+    formats = parquet.read_row_group(unit.index, columns=["formatid"]).column(0).to_pylist()
+    if not any(f.startswith(format_prefix) for f in formats):
+        counters["games.read"] = counters.get("games.read", 0) + len(formats)
+        counters["games.skipped.skip:format"] = counters.get("games.skipped.skip:format", 0) + len(formats)
+        return
+    table = parquet.read_row_group(unit.index, columns=["id", "formatid", "log"])
+    yield from zip(*(table.column(c).to_pylist() for c in ("id", "formatid", "log")))
+
+
+def _parquet():
+    try:
+        import pyarrow.parquet as pq
+    except ImportError as e:
+        raise RuntimeError("reading parquet needs pyarrow (pip install pyarrow)") from e
+    return pq
 
 
 def select(rows, format_prefix, counters):

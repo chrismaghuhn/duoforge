@@ -33,9 +33,9 @@ extern "C" {
 #endif
 
 #define DUOFORGE_VERSION_MAJOR 0
-#define DUOFORGE_VERSION_MINOR 28
+#define DUOFORGE_VERSION_MINOR 29
 #define DUOFORGE_VERSION_PATCH 0
-#define DUOFORGE_VERSION_STRING "0.28.0"
+#define DUOFORGE_VERSION_STRING "0.29.0"
 
 /* Identifiers of the artifacts that exist now (registry: decisions 0002, 0005, 0006). */
 #define DUOFORGE_SEMANTICS_ID           3u   /* "duoforge-m3-closure" */
@@ -908,6 +908,7 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 
 #define DUOFORGE_BLOCK_WIDE_GUARD 4u /* BLOCKED detail: Wide Guard (POOL kinds); 0 Protect, 3 Psychic Terrain */
 #define DUOFORGE_VOLATILE_HEAL_BLOCK 1u /* VOLATILE_START / VOLATILE_END: Heal Block (Psychic Noise, 2 turns) */
+#define DUOFORGE_VOLATILE_ENCORE     2u /* VOLATILE_START / VOLATILE_END: Encore (-start|X|Encore, -end|X|Encore) */
 #define DUOFORGE_FIELD_GRASSY_TERRAIN 1u
 #define DUOFORGE_FIELD_TRICK_ROOM     2u
 #define DUOFORGE_FIELD_PSYCHIC_TERRAIN 3u /* Team C */
