@@ -328,8 +328,49 @@ class TrackerTest(unittest.TestCase):
         stream = [list(lines) for lines in battle.streams[0]]
         last = max(i for i, lines in enumerate(stream) if any(line.startswith("|turn|") for line in lines))
         stream[last].insert(0, "|-futureline|p1a: Someone")
-        with self.assertRaises(trace_to_c.ConversionError):
+        with self.assertRaisesRegex(ValueError, "futureline"):  # the parser's ConversionError, as a ValueError
             run_tracker(battle, 0, stream)
+
+    def test_forfeit_message_is_room_text(self):
+        # A forfeit or a timer loss: the server adds "|-message|<name> forfeited." before |win| (room-battle.ts).
+        for battle in self.ref.battles[:10]:
+            for player in (0, 1):
+                stream = [list(lines) for lines in battle.streams[player]]
+                for lines in stream:
+                    for i, line in enumerate(lines):
+                        if line.startswith("|turn|"):
+                            lines.insert(i, "|-message|Somebody has 30 seconds left.")
+                            break
+                self.assertSameView(battle, player, run_tracker(battle, player, stream))
+        from duoforge_live.tracker import Tracker
+        tracker = Tracker(self.ref.data, self.ref.battles[0].spec["teams"][0])
+        tracker.feed(["|-message|chris forfeited.", "|win|p1"])  # before any sheet: no error
+        self.assertTrue(tracker.ended)
+
+    def test_session_lines_raise(self):
+        # A reconnect replays the whole log after |init|, a choice already sent shows |sentchoice|, an updated
+        # request (update: true) or one without rqid cannot be placed, and the end of the session ends the
+        # battle: each raises instead of folding something wrong.
+        battle = self.ref.battles[0]
+        stream = [list(lines) for lines in battle.streams[0]]
+        last = max(i for i, lines in enumerate(stream) if any(line.startswith("|turn|") for line in lines))
+        for bad in (["|init|battle"], ["|sentchoice|move 1"], ["|bigerror|The simulator process crashed."],
+                    ["|deinit"], ["|noinit|nonexistent|x"], ["|expire|x"]):
+            with self.assertRaises(ValueError, msg=bad):
+                run_tracker(battle, 0, stream[:last] + [bad] + stream[last:])
+        request = next(i for i in range(last, len(stream)) if any(l.startswith("|request|") for l in stream[i]))
+        for change in ({"update": True}, {"rqid": None}):
+            lines = []
+            for line in stream[request]:
+                if line.startswith("|request|"):
+                    r = json.loads(line[len("|request|"):])
+                    r.update(change)
+                    if r["rqid"] is None:
+                        del r["rqid"]
+                    line = "|request|" + json.dumps(r)
+                lines.append(line)
+            with self.assertRaises(ValueError, msg=change):
+                run_tracker(battle, 0, stream[:request] + [lines] + stream[request + 1:])
 
 
 if __name__ == "__main__":

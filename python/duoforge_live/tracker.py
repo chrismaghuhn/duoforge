@@ -44,11 +44,15 @@ STALL_DURATION, STALL_LEVEL_MAX = 2, 6  # DFI_STALL_DURATION (src/combat/turn.c)
 CHARGE_TURNS = 2  # twoturnmove's duration: the charge and the locked turn end in the second residual
 STATUS = {"brn": 1, "frz": 2, "par": 3, "slp": 4, "psn": 5}
 
-# Lines of the room, not of the battle: nobody folds them.
+# Lines of the room, not of the battle: nobody folds them. "-message" is text too: a forfeit or a timer loss
+# ("<name> forfeited.", server/room-battle.ts) and the sim's own notes come that way before |win|.
 ROOM_LINES = {"c", "c:", "chat", "j", "J", "l", "L", "n", "N", "raw", "html", "uhtml", "uhtmlchange", "inactive",
               "inactiveoff", "tempnotify", "tempnotifyoff", "controlshtml", "fieldhtml", "cantleave", "allowleave",
-              "title", "init", "deinit", "noinit", "expire", "badge", "rated", "message", "notify", "bigerror",
-              "error", "timer", "seed", "debug", "", "join", "leave", "name", "b", "B", "battle", "unlink", "hidelines"}
+              "title", "badge", "rated", "message", "-message", "notify", "error", "timer", "seed", "debug", "",
+              "join", "leave", "name", "b", "B", "battle", "unlink", "hidelines"}
+# Lines that end or restart the battle session: a reconnect replays the whole log after |init| (and shows a
+# choice already sent as |sentchoice|), the others end the session. The tracker cannot fold them correctly.
+SESSION_LINES = {"init", "sentchoice", "deinit", "noinit", "expire", "bigerror"}
 
 
 def _kind(line):
@@ -126,6 +130,7 @@ class Tracker:
         self._own_members = [_Member(s, data) for s in self.own_sheets]
         self._foe_members = None  # from the foe's |showteam|
         self._packed = [None, None]  # the |showteam| payload per side
+        self._teamsize = [None, None]  # brought per side (|teamsize|)
         self._names = [{}, {}]  # protocol name -> roster index, per side
         self._positions = [[_Position(), _Position()], [_Position(), _Position()]]
         self._turn = 0
@@ -145,6 +150,12 @@ class Tracker:
             kind = _kind(line)
             if kind is None or kind in ROOM_LINES:
                 continue
+            if kind in SESSION_LINES:
+                if kind == "init" and self.epoch == 0 and not self._lines and self._foe_members is None:
+                    continue  # the room's first line
+                raise ValueError(f"the battle session restarted or ended ({line!r}): the tracker cannot follow")
+            if kind == "teamsize":
+                self._teamsize[int(line.split("|")[2][1]) - 1] = int(line.split("|")[3])
             if kind == "request":
                 self._on_request(json.loads(line[len("|request|"):]))
             elif kind == "showteam":
@@ -169,6 +180,10 @@ class Tracker:
 
     def _on_request(self, request):
         rqid = request.get("rqid")
+        if not isinstance(rqid, int):
+            raise ValueError("a request without an rqid")
+        if request.get("update"):
+            raise ValueError("an updated request (after an unavailable choice): not a decision point")
         if rqid in self._rqids:
             return  # sent again (a reconnect): the same decision point
         self._rqids.add(rqid)
@@ -246,6 +261,9 @@ class Tracker:
     def _fold(self, line):
         if _kind(line) in trace_to_c.NOT_EVENTS:
             return  # setup and layout lines: no event (step_events skips them too)
+        if _kind(line) in ("win", "tie") and self._foe_members is None:
+            self.ended = True  # over before the sheets (a forfeit during the wait): nothing to fold
+            return
         if self._foe_members is None:
             raise ValueError(f"a battle line before both open team sheets: {line!r}")
         self._register(line)
@@ -253,7 +271,11 @@ class Tracker:
         own = self._member(self.side)
         for name, index in self._names[self.side].items():
             maxhp[self.side][name] = own[index].hp_max
-        for e in trace_to_c.step_events([line], self.side, self._names, maxhp, self.data.tables):
+        try:
+            events = trace_to_c.step_events([line], self.side, self._names, maxhp, self.data.tables)
+        except trace_to_c.ConversionError as e:  # a SystemExit: callers catch one kind of error
+            raise ValueError(f"{e.rule}: {e}") from e
+        for e in events:
             self._event(e)
 
     def _at(self, pos):
@@ -444,7 +466,10 @@ class Tracker:
         members = self._member(side)
         gone = sum(1 for m in members if m.seen and m.hp_percent == 0)
         standing = sum(1 for p in self._positions[side] if p.occupant != ROSTER_NONE and not p.fainted)
-        reserve = min(4, len(members)) - gone - standing > 0
+        brought = self._teamsize[side]
+        if brought is None:
+            raise ValueError("no |teamsize| line for the foe")
+        reserve = brought - gone - standing > 0
         out = 0
         for k, p in enumerate(self._positions[side]):
             if p.occupant == ROSTER_NONE or not p.flag:
