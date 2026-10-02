@@ -318,6 +318,17 @@ def drop_reason(d, state, after=None, log=None):
         # Seed (TerrainChange) act only on their holder, so the order of the
         # Pokemon changes nothing.
         ids = [x for g in group for x in g.split(':', 3)[3].split('+') if x]
+        if ctx == 'each:Update' and 'trace' in ids:
+            # Trace's onUpdate (step AC1) returns unless the holder is still seeking after its onStart found no foe to
+            # copy, which the engine refuses (E_UNSUPPORTED); it acts on its holder alone, so the order of the
+            # Pokemon changes nothing for it. The engine's own Update draws only for Sitrus holders: another
+            # holder in the tie would make the counts differ, which is refused here.
+            if sum(1 for g in group if set(g.split(':', 3)[3].split('+')) - {'', 'trace'}) <= 1 and all(
+                    x in ('sitrusberry', 'grassyseed', 'trace') for x in ids):
+                return 'Update tie of a Trace holder (no-op unless seeking) with at most one other holder'
+            raise ConversionError('each-tie-handlers',
+                                  'trace_to_c: %s tie between Pokemon with handlers: %s' % (ctx, group),
+                                  detail=ctx + ':trace+' + '+'.join(sorted(set(ids) - {'trace'})))
         if not all(x in ('sitrusberry', 'grassyseed') for x in ids):
             raise ConversionError('each-tie-handlers',
                                   'trace_to_c: %s tie between Pokemon with handlers: %s' % (ctx, group),

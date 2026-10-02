@@ -184,6 +184,21 @@ class Refusals(unittest.TestCase):
                      "trace_to_c: each:Update tie between Pokemon with handlers: ['P:p1b:1:whiteherb', 'P:p2a:0:']",
                      'each:Update:whiteherb')
 
+    def test_an_update_tie_of_a_trace_holder_is_dropped_and_other_mixes_are_refused(self):
+        """Step AC1: a Trace holder at an Update (its onUpdate returns unless it is still seeking, which the engine
+        refuses) does not make the tie matter: with at most one other holder the draw is dropped; with two other
+        holders, or a handler that is not known, the converter refuses."""
+        def tie(group):
+            return trace_to_c.drop_reason({'site': 'SPEED_TIE', 'context': 'each:Update', 'group': group}, {})
+        self.assertIn('Trace', tie(['P:p1b:1:trace', 'P:p2a:0:']))
+        self.assertIn('Trace', tie(['P:p1b:1:trace', 'P:p2a:1:sitrusberry']))
+        self.assertIn('Trace', tie(['P:p1b:1:trace', 'P:p2a:1:trace']))
+        with self.assertRaises(trace_to_c.ConversionError) as cm:
+            tie(['P:p1b:1:trace', 'P:p2a:1:sitrusberry', 'P:p2b:1:sitrusberry'])
+        self.assertEqual(cm.exception.rule, 'each-tie-handlers')
+        with self.assertRaises(trace_to_c.ConversionError):
+            tie(['P:p1b:1:trace', 'P:p2a:1:whiteherb'])
+
     def test_switch_order_tie_with_an_entry_effect_that_is_not_white_herb(self):
         def mutate(spec, trace):
             d = trace['steps'][0]['draws'][2]
