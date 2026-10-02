@@ -1,6 +1,9 @@
 """The per-player encoder as it was before encode_batch (M7 Task 6), with
-the Team C values since: the reference the vectorized encoder must equal
-byte for byte. Test-only.
+the Team C values and the present flag of a registered member (move count
+above 0, not species above 0: id 0 is Rillaboom) since: the reference the
+vectorized encoder must equal byte for byte. encoder=1 keeps the present
+flag of encoder version 1 (species above 0), the reference of
+features.as_encoder. Test-only.
 """
 import numpy as np
 
@@ -39,11 +42,12 @@ def _clip(x):
     return min(max(float(x), 0.0), 1.0)
 
 
-def _member(m):
+def _member(m, encoder):
     hp_max = int(m["hp_max"])
     pp_max = m["pp_max"].astype(np.float32)
     pp = np.divide(m["pp"].astype(np.float32), pp_max, out=np.zeros(4, np.float32), where=pp_max > 0)
-    head = [1.0 if int(m["species_id"]) != 0 else 0.0, int(m["hp"]) / hp_max if hp_max > 0 else 0.0]
+    present = int(m["species_id"]) != 0 if encoder == 1 else int(m["move_count"]) != 0
+    head = [1.0 if present else 0.0, int(m["hp"]) / hp_max if hp_max > 0 else 0.0]
     tail = [int(m["is_mega"]), int(m["mega_capable"]), int(m["item_used"]), int(m["item"]) / 255,
             int(m["ability"]) / 255, int(m["gender"]) / 3, int(m["nature"]) / 24, int(m["species_id"]) / 65535]
     return np.concatenate([
@@ -75,13 +79,13 @@ def _position(pos, occupant):
     ])
 
 
-def _side(side):
+def _side(side, encoder):
     head = [int(side["member_count"]) / 6, int(side["mega_used"]), int(side["requested"]),
             int(side["requested_slots"]) & 1, (int(side["requested_slots"]) >> 1) & 1,
             int(side["reflect_turns"]) / 8, int(side["light_screen_turns"]) / 8, int(side["tailwind_turns"]) / 4]
     parts = [np.array(head, np.float32)]
     parts += [_position(side["positions"][k], side["occupant"][k]) for k in range(2)]
-    parts += [_member(side["members"][i]) for i in range(_layout.MAX_ROSTER)]
+    parts += [_member(side["members"][i], encoder) for i in range(_layout.MAX_ROSTER)]
     return np.concatenate(parts)
 
 
@@ -101,10 +105,12 @@ def _slot(cmd, viewer, f):
         f[11] = int(cmd["reserve"]) / 5
 
 
-def encode(observation, domain):
+def encode(observation, domain, encoder=2):
     """(obs_part, slot_part, pair_mask) of one player's observation
-    (OBSERVATION) and factored domain (FACTORED_DOMAIN); see the module
-    docstring for the layout."""
+    (OBSERVATION) and factored domain (FACTORED_DOMAIN), as encoder version
+    `encoder` (1 or 2) makes them; see the module docstring for the layout."""
+    if encoder not in (1, 2):
+        raise ValueError(f"encoder {encoder!r} is not 1 or 2")
     ob = np.asarray(observation)
     if ob.dtype != _layout.OBSERVATION or ob.shape != ():
         raise TypeError("observation must be one OBSERVATION record")
@@ -122,7 +128,8 @@ def encode(observation, domain):
         _one_hot(ob["terrain"], TERRAINS, "terrain"),
         np.array([int(ob["terrain_turns"]) / 8, int(ob["trick_room_turns"]) / 5], np.float32),
     ])
-    obs_part = np.concatenate([glob, _side(ob["sides"][me]), _side(ob["sides"][1 - me])]).astype(np.float32)
+    obs_part = np.concatenate([glob, _side(ob["sides"][me], encoder),
+                               _side(ob["sides"][1 - me], encoder)]).astype(np.float32)
 
     slot_part = np.zeros((2, OPTIONS, SLOT_FEATURES), dtype=np.float32)
     pair_mask = np.zeros((OPTIONS, OPTIONS), dtype=bool)
