@@ -104,7 +104,11 @@
  * (a burn secondary), Draining Kiss (drain 3/4), Rock Tomb and Icy Wind (a Speed drop at 100 percent, Icy Wind
  * spread), Hydro Pump, Power Gem and Earth Power (plain damage, a Special Defense secondary), Superpower (two
  * self drops), Light of Ruin (recoil 1/2), Aura Sphere (never misses, any target), Ice Shard and Quick Attack
- * (priority +1), Detect (Protect's handler and stall counter) and Poison Jab (a poison secondary). */
+ * (priority +1), Detect (Protect's handler and stall counter) and Poison Jab (a poison secondary).
+ * Step G16 marks Knock Off (base power x1.5 while the target holds an item that can be taken, and the item taken after
+ * the hit unless the target is alive with Sticky Hold; a Mega Stone is never taken from its own species) and Sticky
+ * Hold, with the view bit 11 for the item that a move took (item_now of the member, public): Trick, Switcheroo and
+ * Thief stay unmarked, so no accepted battle has an item that was swapped. Recorded as g16_* under the POOL kind. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -199,6 +203,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_QUICKATTACK] = 1u,
             [DFI_MOVE_DETECT] = 1u,
             [DFI_MOVE_POISONJAB] = 1u,
+            [DFI_MOVE_KNOCKOFF] = 1u,
         },
     .abilities =
         {
@@ -233,6 +238,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_SWARM] = 1u,
             [DFI_ABILITY_FLOWERVEIL] = 1u,
             [DFI_ABILITY_FAIRYAURA] = 1u,
+            [DFI_ABILITY_STICKYHOLD] = 1u,
         },
     .items =
         {
@@ -300,5 +306,6 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TYPE_CHANGE) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WIDE_GUARD) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WEATHER_SAND) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WEATHER_SNOW),
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WEATHER_SNOW) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ITEM_CHANGE),
 };

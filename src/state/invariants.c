@@ -279,18 +279,27 @@ static dfi_invariant dfi_check_side(const struct duoforge_context *ctx, const st
             if (!dfi_volatile_valid(slot, occupant->move_count, &lim)) {
                 return DFI_INV_VOLATILE;
             }
-            /* A choice lock needs its Choice item (no item is ever lost while
-             * it holds: nothing in the data takes a Choice Scarf). */
-            if (((uint32_t)slot->flags & DFI_VOL_CHOICE_LOCK) != 0u &&
-                (occupant->item != 1u + DFI_ITEM_CHOICESCARF || occupant->item_consumed != 0u)) {
+            /* The item the occupant holds now: its sheet's unless that was used up, or the one that the POOL tail's
+             * item_now holds for it (DFI_TAIL_ITEM_NONE after a Knock Off; zero under every other kind: the tail is
+             * absent there). */
+            const uint32_t item_now = lim.pool_rules ? b->tail.sides[s].item_now[slot->occupant] : 0u;
+            const uint32_t held = occupant->item_consumed != 0u ? 0u
+                                  : item_now == DFI_TAIL_ITEM_NONE ? 0u
+                                  : item_now != 0u                 ? item_now
+                                                                   : occupant->item;
+            /* A choice lock needs its Choice item: one that a move took ends the lock with it (Knock Off, step G16;
+             * nothing else of the data takes a Choice Scarf). */
+            if (((uint32_t)slot->flags & DFI_VOL_CHOICE_LOCK) != 0u && held != 1u + DFI_ITEM_CHOICESCARF) {
                 return DFI_INV_VOLATILE;
             }
-            /* Unburden's volatile: set when its holder used its item. The holder is the Pokemon whose ability now is
-             * Unburden: the sheet's, or the one that the POOL tail's ability_now holds (zero under every other kind). */
+            /* Unburden's volatile: set when its holder used its item or lost it to a move. The holder is the Pokemon
+             * whose ability now is Unburden: the sheet's, or the one that the POOL tail's ability_now holds (zero under
+             * every other kind). The item is gone: used up, or taken. */
             const uint32_t now = lim.pool_rules ? b->tail.sides[s].ability_now[slot->occupant] : 0u; /* the tail is absent elsewhere */
+            const bool item_gone = item_now == DFI_TAIL_ITEM_NONE ||
+                                   (occupant->item_consumed != 0u && (occupant->item != 0u || item_now != 0u));
             if (((uint32_t)slot->flags & DFI_VOL_UNBURDEN) != 0u &&
-                ((now != 0u ? now : occupant->ability) != 1u + DFI_ABILITY_UNBURDEN || occupant->item == 0u ||
-                 occupant->item_consumed == 0u)) {
+                ((now != 0u ? now : occupant->ability) != 1u + DFI_ABILITY_UNBURDEN || !item_gone)) {
                 return DFI_INV_VOLATILE;
             }
             /* Follow Me's and Helping Hand's volatiles end in the residual and
@@ -412,7 +421,9 @@ static bool dfi_knowledge_valid(const struct duoforge_battle *b, uint32_t p)
         if (k->revealed > (DFI_REVEALED_ITEM_CONSUMED | DFI_REVEALED_MEGA)) {
             return false;
         }
-        if ((k->revealed & DFI_REVEALED_ITEM_CONSUMED) != 0u && mem->item_consumed != 1u) {
+        /* The old item_used: the item is gone, used up or taken by a move (the tail's item_now, step G16). */
+        if ((k->revealed & DFI_REVEALED_ITEM_CONSUMED) != 0u && mem->item_consumed != 1u &&
+            b->tail.sides[1u - p].item_now[m] != DFI_TAIL_ITEM_NONE) {
             return false;
         }
         if (((k->revealed & DFI_REVEALED_MEGA) != 0u) != (mem->is_mega == 1u)) {

@@ -187,8 +187,8 @@ typedef struct dfi_side {
  * beyond the schema-3 state (Encore, Throat Chop, Heal Block, Soak and Wide Guard of rev 1; the volatile, side and
  * field conditions and the per-member overrides that decision 0018 declares as view fields, rev 2) and nothing else.
  * It is part of the state only under the two POOL kinds (encode, decode, digest, equal, invariants); under the four
- * other kinds it is absent: all zero in memory (an invariant) and not in the encoding. Nothing writes the fields that
- * rev 2 adds yet. Every field is a plain byte or an aligned u16, so the structs have no padding and no pointer, and
+ * other kinds it is absent: all zero in memory (an invariant) and not in the encoding. Of the fields that rev 2
+ * adds, only item_now is written so far (Knock Off, step G16). Every field is a plain byte or an aligned u16, so the structs have no padding and no pointer, and
  * their size is fixed (static asserts in codec/state_codec.h).
  *
  * The bounds below are those of the pinned data and of the research, not mechanics: a step that finds one wrong

@@ -75,6 +75,14 @@ static dfi_member holder(uint32_t item)
     return m;
 }
 
+/* The item that the holder has now, as the turn code's dfi_item_code reads it for a member whose tail says nothing: its
+ * sheet's unless used up (1 + id, 0 for none). The functions under test take that code, so that an item that a move
+ * took (step G16) is none to them as well. */
+static uint32_t held(const dfi_member *m)
+{
+    return m == NULL || m->item_consumed != 0u ? 0u : m->item;
+}
+
 int main(void)
 {
     df_test t;
@@ -103,7 +111,7 @@ int main(void)
         /* Every move type, the typeless hit of Struggle (DFI_TYPE_COUNT) and a value beyond it included. */
         for (uint32_t type = 0u; type <= DFI_TYPE_COUNT + 1u; ++type) {
             const bool want_booster = booster_type == type;
-            if (!DF_CHECK(&t, dfi_type_booster_applies(&m, type) == want_booster)) {
+            if (!DF_CHECK(&t, dfi_type_booster_applies(held(&m), type) == want_booster)) {
                 fprintf(stderr, "  booster: item %u, type %u: expected %d\n", (unsigned)id, (unsigned)type,
                         (int)want_booster);
             }
@@ -111,7 +119,7 @@ int main(void)
             for (uint32_t mod = 0u; mod <= DFI_BIAS6_MAX; ++mod) {
                 /* A berry weakens a super effective hit of its type; Chilan's type alone. */
                 const bool want_berry = berry_type == type && (mod > DFI_BIAS6 || berry_type == DFI_TYPE_NORMAL);
-                if (!DF_CHECK(&t, dfi_resist_berry_applies(&m, type, mod) == want_berry)) {
+                if (!DF_CHECK(&t, dfi_resist_berry_applies(held(&m), type, mod) == want_berry)) {
                     fprintf(stderr, "  berry: item %u, type %u, mod %u: expected %d\n", (unsigned)id,
                             (unsigned)type, (unsigned)mod, (int)want_berry);
                 }
@@ -121,8 +129,8 @@ int main(void)
         /* A used-up item is not held, whatever it was. */
         m.item_consumed = 1u;
         for (uint32_t type = 0u; type < DFI_TYPE_COUNT; ++type) {
-            DF_CHECK(&t, !dfi_type_booster_applies(&m, type));
-            DF_CHECK(&t, !dfi_resist_berry_applies(&m, type, DFI_BIAS6 + 2u));
+            DF_CHECK(&t, !dfi_type_booster_applies(held(&m), type));
+            DF_CHECK(&t, !dfi_resist_berry_applies(held(&m), type, DFI_BIAS6 + 2u));
         }
     }
     /* Each booster fires for its one type, each berry for its one type at each of the six super effective mods;
@@ -135,16 +143,16 @@ int main(void)
         dfi_member none = holder(0u);
         none.item = 0u;
         for (uint32_t type = 0u; type < DFI_TYPE_COUNT; ++type) {
-            DF_CHECK(&t, !dfi_type_booster_applies(&none, type));
-            DF_CHECK(&t, !dfi_resist_berry_applies(&none, type, DFI_BIAS6 + 2u));
-            DF_CHECK(&t, !dfi_type_booster_applies(NULL, type));
-            DF_CHECK(&t, !dfi_resist_berry_applies(NULL, type, DFI_BIAS6 + 2u));
+            DF_CHECK(&t, !dfi_type_booster_applies(held(&none), type));
+            DF_CHECK(&t, !dfi_resist_berry_applies(held(&none), type, DFI_BIAS6 + 2u));
+            DF_CHECK(&t, !dfi_type_booster_applies(held(NULL), type));
+            DF_CHECK(&t, !dfi_resist_berry_applies(held(NULL), type, DFI_BIAS6 + 2u));
         }
         /* An id beyond the pool is no family (the invariant keeps it out of a state). */
         dfi_member beyond = holder(DFI_POOL_ITEM_COUNT);
         for (uint32_t type = 0u; type < DFI_TYPE_COUNT; ++type) {
-            DF_CHECK(&t, !dfi_type_booster_applies(&beyond, type));
-            DF_CHECK(&t, !dfi_resist_berry_applies(&beyond, type, DFI_BIAS6 + 2u));
+            DF_CHECK(&t, !dfi_type_booster_applies(held(&beyond), type));
+            DF_CHECK(&t, !dfi_resist_berry_applies(held(&beyond), type, DFI_BIAS6 + 2u));
         }
     }
 
@@ -154,26 +162,26 @@ int main(void)
         dfi_member m = holder(DFI_ITEM_FOCUSSASH);
         m.hp = 150u;
         m.hp_max = 150u;
-        DF_CHECK(&t, dfi_focus_sash_saves(&m, 150u));
-        DF_CHECK(&t, dfi_focus_sash_saves(&m, 151u));
-        DF_CHECK(&t, dfi_focus_sash_saves(&m, 4000u));
-        DF_CHECK(&t, !dfi_focus_sash_saves(&m, 149u));
-        DF_CHECK(&t, !dfi_focus_sash_saves(&m, 1u));
+        DF_CHECK(&t, dfi_focus_sash_saves(held(&m), &m, 150u));
+        DF_CHECK(&t, dfi_focus_sash_saves(held(&m), &m, 151u));
+        DF_CHECK(&t, dfi_focus_sash_saves(held(&m), &m, 4000u));
+        DF_CHECK(&t, !dfi_focus_sash_saves(held(&m), &m, 149u));
+        DF_CHECK(&t, !dfi_focus_sash_saves(held(&m), &m, 1u));
         m.hp = 149u;
-        DF_CHECK(&t, !dfi_focus_sash_saves(&m, 4000u));
+        DF_CHECK(&t, !dfi_focus_sash_saves(held(&m), &m, 4000u));
         m.hp = 150u;
         m.item_consumed = 1u;
-        DF_CHECK(&t, !dfi_focus_sash_saves(&m, 4000u));
+        DF_CHECK(&t, !dfi_focus_sash_saves(held(&m), &m, 4000u));
         m.item_consumed = 0u;
         for (uint32_t id = 0u; id < DFI_POOL_ITEM_COUNT; ++id) {
             if (id != DFI_ITEM_FOCUSSASH) {
                 m.item = (uint8_t)(id + 1u);
-                DF_CHECK(&t, !dfi_focus_sash_saves(&m, 4000u));
+                DF_CHECK(&t, !dfi_focus_sash_saves(held(&m), &m, 4000u));
             }
         }
         m.item = 0u;
-        DF_CHECK(&t, !dfi_focus_sash_saves(&m, 4000u));
-        DF_CHECK(&t, !dfi_focus_sash_saves(NULL, 4000u));
+        DF_CHECK(&t, !dfi_focus_sash_saves(held(&m), &m, 4000u));
+        DF_CHECK(&t, !dfi_focus_sash_saves(held(NULL), NULL, 4000u));
     }
 
     /* The gate: every booster and berry is marked supported since step P2, no other new id is an item. */

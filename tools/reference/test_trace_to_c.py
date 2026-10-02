@@ -724,6 +724,63 @@ class Library(unittest.TestCase):
         # The guard is live at a boundary inside a turn in the pivot battle, and only there.
         self.assertEqual({k: v for k, v in derived.items() if v}, {('g7_wide_guard_pivot', 1): 1})
 
+    def test_item_taken_rows_are_what_the_protocol_lines_say(self):
+        """Decision 0018 section 6.1 for Knock Off: a member holds nothing from the `|-enditem|X|Item|[from] move: Knock Off|
+        [of] Y` line on, and nothing clears it (the item stays gone across a switch-out and a faint: sim/pokemon.ts:1851-1866
+        takeItem sets pokemon.item to the empty item for good). The rows of the C test (rows in tests/test_pool_g16.c: per
+        step the members that hold nothing as a mask over side * 6 + roster index, the number of such lines, the number of
+        `|-activate|X|ability: Sticky Hold` lines) must be exactly what these lines give for the committed traces, so the
+        engine's tail, events and extension are checked against the protocol and not against itself. Also: the converter
+        reads the line as ITEM_END with the cause ITEM_TAKEN (the move in id, the user in other, the item in id2), and
+        refuses any other shape of a `[from] move:` item line."""
+        names = ('g16_removal', 'g16_unburden', 'g16_stones', 'g16_sticky_hold', 'g16_scarf_helmet', 'g16_helmet_faint')
+        source = open(os.path.join(ROOT, 'tests', 'test_pool_g16.c'), encoding='utf-8').read()
+        rows = {}
+        for m in re.finditer(r'\{"(g16_\w+)", (\d+)u, 0x([0-9a-f]+)u, (\d+)u, (\d+)u\}', source):
+            rows[(m.group(1), int(m.group(2)))] = (int(m.group(3), 16), int(m.group(4)), int(m.group(5)))
+        derived = {}
+        taken_total = 0
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'specs', name + '.json'), encoding='utf-8') as f:
+                spec = json.load(f)
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            rosters = [re.findall(r'^([A-Za-z-]+)(?: \([MF]\))? @', text, re.M) for text in spec['teams']]
+            gone = 0
+            for k, step in enumerate(trace['steps']):
+                taken = blocked = 0
+                for line in step['log']:
+                    part = line.split('|')
+                    if len(part) > 4 and part[1] == '-enditem' and '[from] move: Knock Off' in part[4:]:
+                        side = int(part[2][1]) - 1
+                        gone |= 1 << (side * 6 + rosters[side].index(part[2][5:]))
+                        taken += 1
+                    elif len(part) > 3 and part[1] == '-activate' and part[3] == 'ability: Sticky Hold':
+                        blocked += 1
+                derived[(name, k)] = (gone, taken, blocked)
+                taken_total += taken
+        self.assertEqual(rows, derived)
+        self.assertTrue(taken_total >= 8 and any(b for (_, _, b) in derived.values()))
+        # The converter.
+        tables = trace_to_c.load_tables(ROOT, True)
+        roster = [{'Meowscarada': 0}, {'Pelipper': 0}]
+        line = '|-enditem|p2a: Pelipper|Sitrus Berry|[from] move: Knock Off|[of] p1a: Meowscarada'
+        (e,) = trace_to_c.step_events([line], 0, roster, [{'Meowscarada': 100}, {'Pelipper': 100}], tables)
+        self.assertEqual((e[0], e[1], e[2], e[3], e[4], e[5], e[11], e[13]),
+                         (trace_to_c.EV['ITEM_END'], 2, 0, trace_to_c.CAUSE['ITEM_TAKEN'],
+                          tables['MOVE'][trace_to_c.key('Knock Off')], tables['ITEM'][trace_to_c.key('Sitrus Berry')] + 1,
+                          0, 0))
+        self.assertEqual(trace_to_c.CAUSE['ITEM_TAKEN'], 17)
+        for bad in ('|-enditem|p2a: Pelipper|Sitrus Berry|[from] move: Knock Off',
+                    '|-enditem|p2a: Pelipper|Sitrus Berry|[from] move: Knock Off|[of] p1a: Meowscarada|[eat]'):
+            with self.assertRaises(trace_to_c.ConversionError):
+                trace_to_c.step_events([bad], 0, roster, [{'Meowscarada': 100}, {'Pelipper': 100}], tables)
+        # An item used up is the old line, unchanged: no cause, no move.
+        (e,) = trace_to_c.step_events(['|-enditem|p2a: Pelipper|Sitrus Berry|[eat]'], 0, roster,
+                                      [{'Meowscarada': 100}, {'Pelipper': 100}], tables)
+        self.assertEqual((e[0], e[1], e[3], e[4], e[13]),
+                         (trace_to_c.EV['ITEM_END'], 2, 0, 0, trace_to_c.FLAG['EATEN']))
+
     def test_soak_rows_are_what_the_protocol_lines_say(self):
         """Decision 0018 section 6.1 for Soak: a position is Soaked from the `|-start|X|typechange|Water` line until the
         occupant leaves (`|switch|`, `|drag|`, `|replace|`, `|faint|`) or Mega Evolves (`|-mega|`: setSpecies resets the
@@ -909,7 +966,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 39)  # G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), then the fourteen of G13
+        self.assertEqual(len(marked), 40)  # G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G16 (Knock Off)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []

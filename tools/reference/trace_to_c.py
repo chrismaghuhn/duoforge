@@ -594,7 +594,7 @@ EV = {name: i + 1 for i, name in enumerate(
      'SINGLE_TURN', 'VOLATILE_START', 'VOLATILE_END', 'TYPE_CHANGE'])}
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
          'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14,
-         'HEAL_BLOCK': 15, 'WEATHER': 16}
+         'HEAL_BLOCK': 15, 'WEATHER': 16, 'ITEM_TAKEN': 17}
 VOLATILE_HEAL_BLOCK = 1  # DUOFORGE_VOLATILE_HEAL_BLOCK: the detail of VOLATILE_START and VOLATILE_END
 # DUOFORGE_TYPE_*: the alphabetical type ids, the detail of TYPE_CHANGE
 TYPE_IDS = {name: i for i, name in enumerate(
@@ -889,9 +889,22 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             cond = {'move: Tailwind': 1, 'Reflect': 2, 'move: Reflect': 2, 'move: Light Screen': 3}[args[1]]
             e = ev_tuple(EV['SIDE_START' if kind == '-sidestart' else 'SIDE_END'], detail=side, amount=cond)
         elif kind == '-enditem':
-            # [weaken]: the second line of a resist berry (Team C, Chople Berry), detail 1.
-            e = ev_tuple(EV['ITEM_END'], ev_pos(args[0]), NOPOS, 0, 0, tables['ITEM'][key(args[1])] + 1,
-                         detail=1 if '[weaken]' in attrs else 0, flags=FLAG['EATEN'] if '[eat]' in attrs else 0)
+            taken = [a for a in attrs if a.startswith('[from] move: ')]
+            if taken:
+                # POOL (Knock Off, data/moves.ts:9959-9984): `-enditem|X|Item|[from] move: Knock Off|[of] Y` is an item that
+                # a move took: ITEM_END with the cause ITEM_TAKEN, the move in id and its user ([of]) in other. Nothing else
+                # of the pool takes an item (Thief, Covet and Trick come with their steps), and a line without [of] or with
+                # anything else is an error.
+                of = [a for a in attrs if a.startswith('[of] ')]
+                extra = [a for a in attrs if a not in taken and a not in of]
+                if len(taken) != 1 or len(of) != 1 or extra:
+                    raise ConversionError('enditem-line', 'trace_to_c: unknown -enditem %r' % line, detail=line)
+                e = ev_tuple(EV['ITEM_END'], ev_pos(args[0]), ev_pos(of[0][5:]), CAUSE['ITEM_TAKEN'],
+                             tables['MOVE'][key(taken[0][len('[from] move: '):])], tables['ITEM'][key(args[1])] + 1)
+            else:
+                # [weaken]: the second line of a resist berry (Team C, Chople Berry), detail 1.
+                e = ev_tuple(EV['ITEM_END'], ev_pos(args[0]), NOPOS, 0, 0, tables['ITEM'][key(args[1])] + 1,
+                             detail=1 if '[weaken]' in attrs else 0, flags=FLAG['EATEN'] if '[eat]' in attrs else 0)
         elif kind == 'detailschange':
             e = ev_tuple(EV['FORME'], ev_pos(args[0]), ident=tables['FORME'][key(args[1].split(',')[0])])
         elif kind == '-mega':

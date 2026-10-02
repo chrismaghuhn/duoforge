@@ -336,6 +336,10 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
     missing = handled[1] - set(n for n, v in f.items() if v[0])
     if missing:
         fail('move %s: expected callbacks %s are absent' % (mid, sorted(missing)))
+    if pool and handled[0] == 'KNOCK_OFF':
+        for name, text in KNOCK_OFF_CALLBACKS.items():
+            if name not in f or norm(f[name][1]) != text:
+                fail('move %s: %s is not the pinned text' % (mid, name))
     if pool and mid in PROTECT_COPIES:
         pe = fields(base.entry(PROTECT_COPIES[mid])[2])
         for name in PROTECT_COPY_FIELDS:
@@ -1294,7 +1298,21 @@ G2_HANDLERS = ['ENCORE', 'SCALD', 'WIDE_GUARD', 'FIRST_IMPRESSION', 'RECOVER', '
 # The two weather moves of the Sandstorm and Snowscape step: rows of the whole pool (not of G2) with a named handler,
 # because the field `weather` that sets the weather has no column; the turn code implements both.
 WEATHER_HANDLERS = ['SANDSTORM', 'SNOWSCAPE']
+# Step G16: Knock Off keeps its two callbacks as a handler of its own that the turn code implements (a row of the whole
+# pool, like the weather moves: not one of G2's). The generator checks the callbacks' whole text, whitespace aside
+# (data/moves.ts:9959-9984; the Champions mod does not change the move): the item is read with the same
+# singleEvent('TakeItem') that the turn code knows (a Mega Stone refuses its own species), the boost is 1.5, and the item is
+# taken after the hit with the -enditem line that the converter reads.
+G16_HANDLERS = ['KNOCK_OFF']
+KNOCK_OFF_CALLBACKS = {
+    'onBasePower': "onBasePower(basePower, source, target, move) { const item = target.getItem(); "
+                   "if (!this.singleEvent('TakeItem', item, target.itemState, target, target, move, item)) return; "
+                   "if (item.id) { return this.chainModify(1.5); } },",
+    'onAfterHit': "onAfterHit(target, source) { const item = target.takeItem(); if (item) { "
+                  "this.add('-enditem', target, item.name, '[from] move: Knock Off', `[of] ${source}`); } },",
+}
 SPECIAL_P = dict(SPECIAL_C, **{
+    'knockoff': ('KNOCK_OFF', {'onAfterHit', 'onBasePower'}),             # G16: takes the target's item, x1.5 while it has one
     'encore': ('ENCORE', set()),                                          # G9: the last move, a volatile, a queue change
     'wideguard': ('WIDE_GUARD', {'onTry', 'onHitSide'}),                  # G7: a side condition against spread moves
     'firstimpression': ('FIRST_IMPRESSION', {'onTry', 'onDisableMove'}),  # G10a: first turn out only (Fake Out's rule)
@@ -1314,7 +1332,7 @@ PROTECT_COPIES = {'detect': 'protect'}
 # champions/moves.ts:581-584) sets isNonstandard to null, which makes it legal, and the tag has no reader in the tables.
 TAGS_PAST_UNOBTAINABLE = 'tags: ["Past Unobtainable"],'
 PROTECT_COPY_FIELDS = ('onPrepareHit', 'onHit', 'stallingMove', 'volatileStatus', 'priority', 'accuracy', 'target')
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + ['UNMODELED']
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + ['UNMODELED']
 # Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags
 # byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
@@ -1407,8 +1425,8 @@ HANDLER_IDS = ['NONE', 'UNMODELED']
 # by definition, like the closure and Team C rows. The step that marks such a row in the support manifest adds its id
 # here, which changes the handler column and so the POOL table hash, as any pool change does; a row that is marked and
 # still has the UNMODELED handler fails duoforge.data.pool_tables. G4: Focus Sash, Rock Head. G12: Floettite (the Mega
-# Stone of Floette-Eternal), Flower Veil and Fairy Aura.
-ENGINE_ROWS = {'items': ['focussash', 'floettite'], 'abilities': ['rockhead', 'flowerveil', 'fairyaura']}
+# Stone of Floette-Eternal), Flower Veil and Fairy Aura. G16: Sticky Hold (Knock Off reads it by id).
+ENGINE_ROWS = {'items': ['focussash', 'floettite'], 'abilities': ['rockhead', 'flowerveil', 'fairyaura', 'stickyhold']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
