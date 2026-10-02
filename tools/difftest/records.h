@@ -31,6 +31,11 @@
 typedef struct dfr_battle {
     char name[DFR_NAME_MAX + 1u];
     uint32_t team_c;       /* 0: the closure tables, 1: Team C's */
+    /* 0: the conformance fallback (CLOSURE, then CLOSURE_DEV; TEAM_C, then
+     * TEAM_C_DEV); else the DUOFORGE_DATA_KIND_* the battle must be created
+     * under, with no fallback. It goes with team_c: a closure kind for a
+     * closure battle, a Team C kind for a Team C battle. */
+    uint32_t strict_kind;
     uint32_t member_count; /* 1..6, the same for both sides */
     uint32_t step_count;   /* at least 1 */
     uint32_t dropped_total;

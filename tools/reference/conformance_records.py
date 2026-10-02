@@ -9,14 +9,14 @@ Converts every committed battle (tests/reference/specs and traces) with
 trace_to_c and writes <dir>/closure.records and <dir>/team_c.records: the
 battles of conformance.h and of conformance_team_c.h, in the same order.
 
-As a library, write_battle(data, team_c, out) writes one battle of
+As a library, write_battle(data, team_c, out, kind=0) writes one battle of
 convert_battle's data to the text stream `out`, all or nothing.
 
 The format is ASCII, LF line ends, one record per line, tokens separated by
 one space. Every number is an unsigned decimal integer below 2**32; every
 value is written, there are no defaults. A battle is
 
-    B <name> <team_c> <member_count> <step_count> <dropped_total>
+    B <name> <team_c> <kind> <member_count> <step_count> <dropped_total>
     M <side> <index> <member row>          member_count lines per side, side 0 first
     S <step record>                        step_count times, each followed by
     T <site> <lo> <hi> <value>             the step's kept draws (tape_len lines) and
@@ -24,8 +24,12 @@ value is written, there are no defaults. A battle is
                                            (ev_len[0] + ev_len[1] lines)
     END
 
-<name> is [A-Za-z0-9_]{1,63}, <team_c> is 0 (closure) or 1 (Team C). The
-member row, the step record and the event are the nested int tuples of
+<name> is [A-Za-z0-9_]{1,63}, <team_c> is 0 (closure) or 1 (Team C). <kind>
+is the data kind the runner must create the battle under, with no fallback (a
+DUOFORGE_DATA_KIND_* value of duoforge.h: CLOSURE or CLOSURE_DEV for a closure
+battle, TEAM_C or TEAM_C_DEV for Team C), or 0 for the conformance fallback of
+the replay: CLOSURE, then CLOSURE_DEV when that cannot create it, and the Team
+C pair likewise. The member row, the step record and the event are the nested int tuples of
 convert_battle's data and of step_record() below, flattened in order: the
 leaves of a df_conf_member, of a df_conf_step and of a duoforge_event, in the
 order they are declared in tests/reference/conformance_types.h. Nothing here
@@ -65,11 +69,19 @@ def record(tag, value, where):
     return ' '.join([tag] + [str(v) for v in flatten(value, where)])
 
 
-def write_battle(data, team_c, out):
+def data_kinds(root):
+    """{name: value} of the DUOFORGE_DATA_KIND_* constants of include/duoforge/duoforge.h."""
+    with io.open(os.path.join(root, 'include', 'duoforge', 'duoforge.h'), encoding='utf-8') as f:
+        text = f.read()
+    return {m.group(1): int(m.group(2)) for m in re.finditer(r'^#define DUOFORGE_DATA_KIND_(\w+)\s+(\d+)u', text, re.M)}
+
+
+def write_battle(data, team_c, out, kind=0):
     """One battle of convert_battle's data as records, to the text stream
     `out`. `team_c` says which tables the battle was converted with (the
-    runner picks its contexts by it). ValueError for data the format cannot
-    hold; then nothing has been written."""
+    runner picks its contexts by it); `kind` the data kind it must run under
+    with no fallback, or 0. ValueError for data the format cannot hold; then
+    nothing has been written."""
     name = data['name']
     if NAME.fullmatch(name) is None:
         raise ValueError('battle name %r is not [A-Za-z0-9_]{1,63}' % name)
@@ -82,7 +94,7 @@ def write_battle(data, team_c, out):
     if not steps:
         raise ValueError('%s: a battle has at least one step' % name)
     lines = ['B ' + name + ' ' + ' '.join(str(v) for v in flatten(
-        (int(team_c), count, len(steps), data['dropped_total']), 'B ' + name))]
+        (int(team_c), kind, count, len(steps), data['dropped_total']), 'B ' + name))]
     for side, rows in enumerate(data['members']):
         for index, row in enumerate(rows):
             lines.append(record('M', (side, index, row), '%s member %d of side %d' % (name, index, side)))

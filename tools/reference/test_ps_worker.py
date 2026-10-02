@@ -126,7 +126,8 @@ class Worker(unittest.TestCase):
             ('{"id": "7", "cmd": "version"}', None, 'id must be an integer'),
             ('{"id": 1.5, "cmd": "version"}', None, 'id must be an integer'),
             ('{"id": 8}', 8, 'unknown command'),
-            ('{"id": 9, "cmd": "play"}', 9, 'unknown command: "play"'),  # A3
+            ('{"id": 9, "cmd": "replay"}', 9, 'unknown command: "replay"'),
+            ('{"id": 17, "cmd": "play"}', 17, 'play: battle must be an object'),
             ('{"id": 10, "cmd": "constructor"}', 10, 'unknown command'),  # not found on the prototype chain
             (json.dumps({'id': 11, 'cmd': 'record', 'spec_file': 'x.json'}), 11, 'spec must be an object'),
             (json.dumps({'id': 12, 'cmd': 'record', 'spec': [], 'spec_file': 'x.json'}), 12, 'spec must be an object'),
@@ -157,6 +158,63 @@ class Worker(unittest.TestCase):
         want = copy.deepcopy(json.loads(committed('traces', 's2_turn_core_1')))
         want['spec'] = 'renamed.json'
         self.assertEqual(json.loads(renamed['trace']), want)
+
+    def play_request(self, rid=1, battle_seed=1, policy_seed=1, **policy):
+        """A play request for team A against team B: the battle of the spec of a committed battle, the choices left out."""
+        spec = spec_of('m5_real_ab_1')
+        battle = {'format': spec['format'], 'seed': 'sodium,' + '%064x' % battle_seed, 'teams': spec['teams']}
+        return {'id': rid, 'cmd': 'play', 'battle': battle,
+                'policy': {'seed': policy_seed, 'max_steps': 300, 'switch_weight': 0.1, 'mega_weight': 0.5, **policy}}
+
+    def test_play_answers_with_choices_that_replay(self):
+        """The choices are the answers of both sides, and recording them as a spec gives a battle of the same
+        length and result: what Showdown judged in the play is what it replays."""
+        s = self.session()
+        request = self.play_request()
+        reply = s.send(request)
+        self.assertEqual((reply['id'], reply['ok'], list(reply)), (1, True, ['id', 'ok', 'choices', 'ended', 'steps']))
+        self.assertEqual((reply['steps'], reply['ended']), (len(reply['choices']), True))
+        self.assertTrue(all(set(entry) <= {'p1', 'p2'} and entry for entry in reply['choices']))
+        self.assertRegex(reply['choices'][0]['p1'], r'^team \d{4}$')
+        spec = {'name': 'play_test', 'purpose': 'test', 'format': request['battle']['format'],
+                'seed': request['battle']['seed'], 'teams': request['battle']['teams'], 'choices': reply['choices']}
+        recorded = s.send({'id': 2, 'cmd': 'record', 'spec': spec, 'spec_file': 'play_test.json'})
+        self.assertTrue(recorded['ok'], recorded)
+        trace = json.loads(recorded['trace'])
+        self.assertEqual(len(trace['steps']), reply['steps'])
+        self.assertEqual([step['input'] for step in trace['steps']], reply['choices'])
+        self.assertTrue(trace['steps'][-1]['state']['ended'])
+
+    def test_play_is_the_same_for_the_same_request_and_not_for_another_policy_seed(self):
+        s = self.session()
+        first = s.send(self.play_request(1))
+        again = s.send(self.play_request(2))
+        other = s.send(self.play_request(3, policy_seed=2))
+        self.assertEqual({k: v for k, v in first.items() if k != 'id'}, {k: v for k, v in again.items() if k != 'id'})
+        self.assertNotEqual(first['choices'], other['choices'])
+
+    def test_play_stops_at_max_steps(self):
+        s = self.session()
+        reply = s.send(self.play_request(max_steps=2))
+        self.assertEqual((reply['ok'], reply['steps'], reply['ended'], len(reply['choices'])), (True, 2, False, 2))
+
+    def test_play_refuses_a_request_that_is_not_the_documented_one(self):
+        s = self.session()
+        good = self.play_request()
+        cases = [
+            ('a missing policy', {k: v for k, v in good.items() if k != 'policy'}, 'play: policy must be an object'),
+            ('a missing battle', {k: v for k, v in good.items() if k != 'battle'}, 'play: battle must be an object'),
+            ('a policy key too many', dict(good, policy=dict(good['policy'], extra=1)), 'play: policy has the keys'),
+            ('a seed that is not a uint32', dict(good, policy=dict(good['policy'], seed=2 ** 32)), 'play: policy.seed'),
+            ('a weight above 1', dict(good, policy=dict(good['policy'], mega_weight=2)), 'play: policy.mega_weight'),
+            ('one team', dict(good, battle=dict(good['battle'], teams=['x'])), 'play: battle.teams'),
+        ]
+        for what, request, part in cases:
+            with self.subTest(what):
+                reply = s.send(request)
+                self.assertEqual((reply['id'], reply['ok']), (1, False))
+                self.assertIn(part, reply['error'])
+        self.assertTrue(s.send(good)['ok'])  # and it keeps serving
 
     def test_stdout_carries_only_responses(self):
         """What a library prints after the start goes to stderr: a preload prints through console.log and

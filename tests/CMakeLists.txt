@@ -152,6 +152,12 @@ if(DUOFORGE_PS_REFERENCE_DIR)
                 "${DUOFORGE_NODE}" "${DUOFORGE_PS_REFERENCE_DIR}")
         set_tests_properties(duoforge.reference.worker_protocol PROPERTIES TIMEOUT 120 LABELS reference
             ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+        # Random play (the worker's "play"): the policy generator, how a choice is drawn,
+        # judged by Showdown and enumerated, and real battles of the committed teams.
+        add_test(NAME duoforge.reference.play_policy
+            COMMAND "${DUOFORGE_NODE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_ps_play.js"
+                "${DUOFORGE_PS_REFERENCE_DIR}")
+        set_tests_properties(duoforge.reference.play_policy PROPERTIES TIMEOUT 300 LABELS reference)
         # The differential loop in replay mode: every committed battle through the
         # worker, the converter and the runner must come out PASS.
         add_test(NAME duoforge.reference.diff_replay
@@ -160,6 +166,16 @@ if(DUOFORGE_PS_REFERENCE_DIR)
                 --runner "$<TARGET_FILE:duoforge_diff_runner>" --workers 4
                 --out "${CMAKE_CURRENT_BINARY_DIR}/diff_replay")
         set_tests_properties(duoforge.reference.diff_replay PROPERTIES TIMEOUT 900 LABELS reference
+            ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+        # The random mode end to end (no machine lock: local_ci.sh holds it already): 16 battles
+        # that the pinned Showdown plays itself, run twice and once in pieces (chunks), the files
+        # byte-identical, and their buckets, signatures and lengths as in
+        # tests/reference/random_smoke_golden.json.
+        add_test(NAME duoforge.reference.diff_random_smoke
+            COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_diff_random_smoke.py"
+                "${DUOFORGE_NODE}" "${DUOFORGE_PS_REFERENCE_DIR}" "$<TARGET_FILE:duoforge_diff_runner>"
+                "${CMAKE_CURRENT_BINARY_DIR}/diff_random_smoke")
+        set_tests_properties(duoforge.reference.diff_random_smoke PROPERTIES TIMEOUT 600 LABELS reference
             ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
     endif()
 endif()
@@ -204,6 +220,14 @@ if(Python3_Interpreter_FOUND)
     add_test(NAME duoforge.reference.diff_driver
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_diff_driver.py")
     set_tests_properties(duoforge.reference.diff_driver PROPERTIES TIMEOUT 300
+        ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1;DUOFORGE_DIFF_RUNNER=$<TARGET_FILE:duoforge_diff_runner>")
+    # The random mode of the driver without Node: how battle i follows from (seed, i), the bucket of
+    # each step of the pipeline and what wins, the files of a case, a run cut into chunks (the result
+    # does not depend on the cut), children that die or hang (stand-in processes), the machine lock
+    # (in a temporary directory, never the real one) and committed battles through the real runner.
+    add_test(NAME duoforge.reference.diff_random
+        COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_diff_random.py")
+    set_tests_properties(duoforge.reference.diff_random PROPERTIES TIMEOUT 300
         ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1;DUOFORGE_DIFF_RUNNER=$<TARGET_FILE:duoforge_diff_runner>")
     # The table generator refuses move shapes it does not model (no checkout needed).
     add_test(NAME duoforge.data.gen_closure_refusals

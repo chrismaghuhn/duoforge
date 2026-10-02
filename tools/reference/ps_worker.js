@@ -13,6 +13,9 @@
 //     -> {"id": n, "ok": true, "node": process.version, "pin": PIN, "harness": HARNESS_VERSION}
 //   {"id": n, "cmd": "record", "spec": <spec object>, "spec_file": "<basename.json>"}
 //     -> {"id": n, "ok": true, "trace": "<the trace text of ps_trace.run>"}
+//   {"id": n, "cmd": "play", "battle": {"format", "seed", "teams": [p1, p2]},
+//    "policy": {"seed": <uint32>, "max_steps": n, "switch_weight": 0.1, "mega_weight": 0.5}}
+//     -> {"id": n, "ok": true, "choices": [{"p1": "...", "p2": "..."}, ...], "ended": bool, "steps": n}
 //   anything that throws, an unknown command or a malformed line
 //     -> {"id": n, "ok": false, "error": "<message>", "stack": "<first lines>"}
 //
@@ -20,6 +23,8 @@
 // a JSON object with an integer id is answered with id null. The worker keeps
 // serving after an error. It has no recording logic of its own: `record` is
 // ps_trace.run(), whose result is the exact text the command line prints.
+// `play` (ps_play.js) draws random choices, judged by Showdown, and records
+// nothing: the evidence is the recording of the choices it returns.
 'use strict';
 
 const fs = require('fs');
@@ -27,6 +32,7 @@ const path = require('path');
 const readline = require('readline');
 
 const {run, PIN, HARNESS_VERSION} = require('./ps_trace.js');
+const {play} = require('./ps_play.js');
 
 const args = process.argv.slice(2);
 if (args.length !== 1) {
@@ -65,10 +71,11 @@ const COMMANDS = {
         }
         return {trace: run(root, req.spec, req.spec_file)};
     },
-    // A3: "play" goes here: the worker draws random choices and Showdown
-    // judges each one (side.choose, isChoiceDone, clearChoice); the battle is
-    // saved as a normal "choices" spec. It is not built yet, so a request for
-    // it fails like any unknown command.
+    // Random choices for a battle, each judged by Showdown (ps_play.js); the
+    // client saves them as a normal "choices" spec and records that.
+    play(req) {
+        return play(root, req.battle, req.policy);
+    },
 };
 
 function describe(err) {
