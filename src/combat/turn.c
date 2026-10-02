@@ -2320,20 +2320,28 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             }
         }
     }
-    /* selfSwitch of a damaging move (Flip Turn, Team C, the only one in the
-     * data): runMoveEffects flags the user when the move hit a target and the
+    /* selfSwitch of a damaging move (Flip Turn, U-turn): runMoveEffects
+     * flags the user with the move's id when the move hit a target and the
      * user still stands; with no reserve the request would clear it again
      * (sim/battle-actions.ts:1290-1312), so the engine sets it only when a
-     * reserve can come in, as for Parting Shot. A user that a Rocky Helmet
-     * then knocks out loses it again (faint(), sim/pokemon.ts:1585): here
-     * with the position's other state when the faint is processed. */
+     * reserve can come in, as for Parting Shot. The flag is the move's own
+     * (dfi_pivot_moves), so that the switch is named for the move that made
+     * it ([from] U-turn, not [from] Flip Turn). A self-switch move that has
+     * no flag is refused here, never made to pivot as another one. A user
+     * that a Rocky Helmet then knocks out loses it again (faint(),
+     * sim/pokemon.ts:1585): here with the position's other state when the
+     * faint is processed. */
     if ((md->flags & DFI_MOVE_FLAG_SELF_SWITCH) != 0u) {
+        const dfi_pivot_move *pivot = dfi_pivot_of_move(move_id);
+        if (pivot == NULL) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
         bool hit_any = false;
         for (uint32_t i = 0u; i < count; ++i) {
             hit_any = hit_any || hit[i];
         }
         if (hit_any && m->hp != 0u && dfi_can_switch(b, side)) {
-            pos->switch_flag = (uint8_t)DFI_SWITCH_FLIP_TURN;
+            pos->switch_flag = pivot->flag;
         }
     }
     /* selfDrops: once, after the first target that was hit, a roll of
@@ -2587,7 +2595,8 @@ static duoforge_status dfi_run_switch(dfi_run *r, const dfi_queue_record *q)
     const dfi_member *leaving = dfi_at(b, side * 2u + slot);
     const uint32_t flag = sd->positions[slot].switch_flag;
     const bool parting_shot = leaving != NULL && leaving->hp != 0u && flag == DFI_SWITCH_MOVE;
-    const bool flip_turn = leaving != NULL && leaving->hp != 0u && flag == DFI_SWITCH_FLIP_TURN;
+    /* A damaging pivot move's flag names the move that pivots. */
+    const dfi_pivot_move *pivot = leaving != NULL && leaving->hp != 0u ? dfi_pivot_of_flag(flag) : NULL;
     if (leaving != NULL && leaving->hp != 0u && sd->positions[slot].switch_flag == 0u) {
         const duoforge_status us = dfi_update(r); /* BeforeSwitchOut, then Update (sim/battle-actions.ts:80-84) */
         if (us != DUOFORGE_OK) {
@@ -2615,12 +2624,12 @@ static duoforge_status dfi_run_switch(dfi_run *r, const dfi_queue_record *q)
     dfi_active_slot *entered = dfi_pos(b, side * 2u + slot);
     const uint32_t newly = dfi_kind_limits_of(r->ctx->data_kind).vol_flags_mask & DFI_VOL_NEWLY_SWITCHED;
     entered->flags = (uint8_t)((uint32_t)entered->flags | newly); /* wide-operands-reviewed: < 256 */
-    /* [switch], with [from] Parting Shot or Flip Turn when the move made it */
+    /* [switch], with [from] and the move (Parting Shot, Flip Turn, U-turn) when the move made it */
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_SWITCH, side * 2u + slot);
     e.id = (uint16_t)reserve;
-    if (parting_shot || flip_turn) {
+    if (parting_shot || pivot != NULL) {
         e.cause = (uint8_t)DUOFORGE_CAUSE_MOVE;
-        e.id2 = (uint16_t)(parting_shot ? DFI_MOVE_PARTINGSHOT : DFI_MOVE_FLIPTURN); /* wide-operands-reviewed: < 50 */
+        e.id2 = (uint16_t)(parting_shot ? DFI_MOVE_PARTINGSHOT : pivot->move); /* wide-operands-reviewed: < 256 */
     }
     dfi_emit_hp(r, e);
     return dfi_insert_run_switch(r, side, slot, binding.activation_id);

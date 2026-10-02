@@ -5,6 +5,31 @@
 #include "data/pool_tables.h"
 
 
+const dfi_pivot_move dfi_pivot_moves[DFI_PIVOT_MOVE_COUNT] = {
+    {DFI_SWITCH_FLIP_TURN, DFI_MOVE_FLIPTURN},
+    {DFI_SWITCH_UTURN, DFI_MOVE_UTURN},
+};
+
+const dfi_pivot_move *dfi_pivot_of_move(uint32_t move)
+{
+    for (uint32_t i = 0u; i < DFI_PIVOT_MOVE_COUNT; ++i) {
+        if (dfi_pivot_moves[i].move == move) {
+            return &dfi_pivot_moves[i];
+        }
+    }
+    return NULL;
+}
+
+const dfi_pivot_move *dfi_pivot_of_flag(uint32_t flag)
+{
+    for (uint32_t i = 0u; i < DFI_PIVOT_MOVE_COUNT; ++i) {
+        if (dfi_pivot_moves[i].flag == flag) {
+            return &dfi_pivot_moves[i];
+        }
+    }
+    return NULL;
+}
+
 dfi_kind_limits dfi_kind_limits_of(uint32_t data_kind)
 {
     const bool pool = data_kind == DUOFORGE_DATA_KIND_POOL || data_kind == DUOFORGE_DATA_KIND_POOL_DEV;
@@ -14,7 +39,8 @@ dfi_kind_limits dfi_kind_limits_of(uint32_t data_kind)
     dfi_kind_limits lim;
     lim.forme_count = pool ? DFI_POOL_FORME_COUNT : team_c ? DFI_EXT_FORME_COUNT : DFI_FORME_COUNT;
     lim.item_count = pool ? DFI_POOL_ITEM_COUNT : team_c ? DFI_EXT_ITEM_COUNT : DFI_ITEM_COUNT;
-    lim.switch_flag_max = extended ? DFI_SWITCH_FLIP_TURN : DFI_SWITCH_FAINTED;
+    /* Flip Turn's flag is in the extended tables (Team C), U-turn's only in the pool's. */
+    lim.switch_flag_max = pool ? DFI_SWITCH_UTURN : team_c ? DFI_SWITCH_FLIP_TURN : DFI_SWITCH_FAINTED;
     lim.status_max = extended ? DFI_STATUS_PSN : DFI_STATUS_SLP;
     lim.terrain_max = extended ? DFI_TERRAIN_PSYCHIC : DFI_TERRAIN_GRASSY;
     lim.vol_flags_mask = extended ? (DFI_VOL_FLAGS_MAX | DFI_VOL_FOLLOW_ME | DFI_VOL_HELPING_HAND | DFI_VOL_UNBURDEN |

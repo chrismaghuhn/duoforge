@@ -68,9 +68,10 @@
  * (Rock Slide, Double-Edge, Thunderbolt, Flash Cannon, Extreme Speed, Head
  * Smash, Bulk Up, Liquidation, Ice Punch, Shadow Claw, Drum Beating and
  * Dazzling Gleam), each used in one of the four reference battles under the
- * POOL kind g2_data_moves_a to _d. U-turn stays unmarked: its switch cause
- * is the pivot of step G5. A move is marked only by the step that records a
- * reference battle with it. */
+ * POOL kind g2_data_moves_a to _d. Step G5 marks U-turn: a damaging pivot
+ * whose flag names it (dfi_pivot_moves), in the reference battles g5_uturn_a
+ * to _e. A move is marked only by the step that records a reference battle
+ * with it. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -138,6 +139,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_SHADOWCLAW] = 1u,
             [DFI_MOVE_DRUMBEATING] = 1u,
             [DFI_MOVE_DAZZLINGGLEAM] = 1u,
+            [DFI_MOVE_UTURN] = 1u,
         },
     .abilities =
         {
