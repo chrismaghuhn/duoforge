@@ -699,11 +699,17 @@ function isBoostBlock(b) {
 // The pool rows that carry selfSwitch and that the turn code pivots with a flag of their own (dfi_pivot_moves): U-turn
 // (a G2 row); Flip Turn is a row of the prefix.
 const ENGINE_PIVOTS = ['uturn'];
+// Step G13: the moves that are another move's handler under another name (gen_closure.py PROTECT_COPIES).
+const PROTECT_COPIES = {detect: 'protect'};
 function moveIsModelled(raw, id) {
     if (raw.selfSwitch !== undefined && !ENGINE_PIVOTS.includes(id)) {
         return false;
     }
     for (const [key, value] of Object.entries(raw)) {
+        // Step G13: Light of Ruin's tags (the Champions mod clears isNonstandard); no other tag value is read.
+        if (key === 'tags' && JSON.stringify(value) === JSON.stringify(['Past Unobtainable'])) {
+            continue;
+        }
         if (typeof value === 'function' || !MOVE_KEYS.has(key)) {
             return false;
         }
@@ -730,7 +736,7 @@ function moveIsModelled(raw, id) {
             return false;
         }
         if (effects[0] === 'status') {
-            if (!['brn', 'frz', 'par', 'slp'].includes(sec.status)) { // a secondary poison is unmodelled (Dire Claw's pick is its own)
+            if (!['brn', 'frz', 'par', 'slp', 'psn'].includes(sec.status)) { // step G13: a poison secondary is modelled (status 5)
                 return false;
             }
         } else if (effects[0] === 'volatileStatus') {
@@ -851,6 +857,16 @@ function checkHandlers(dex, source, header, extended) {
         const raw = dex.data.Moves[id];
         if (raw === undefined) {
             bad('move ' + id + ' has no pinned entry');
+            continue;
+        }
+        if (PROTECT_COPIES[id] !== undefined) {
+            // Step G13: Detect has Protect's handler and, field for field and callback for callback, Protect's text.
+            const original = dex.data.Moves[PROTECT_COPIES[id]];
+            for (const key of ['onPrepareHit', 'onHit', 'stallingMove', 'volatileStatus', 'priority', 'accuracy', 'target']) {
+                expect('move ' + id + ' ' + key + ' is that of ' + PROTECT_COPIES[id], String(raw[key]), String(original[key]));
+            }
+            expect('move ' + id + ' has the special of ' + PROTECT_COPIES[id], special,
+                   columns[moveIds.find((e) => e[1] === PROTECT_COPIES[id])[0]][28]);
             continue;
         }
         if (moveIsModelled(raw, id) !== (special !== unmodeledSpecial)) {

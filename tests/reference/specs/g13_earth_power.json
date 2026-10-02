@@ -1,0 +1,23 @@
+{
+  "name": "g13_earth_power",
+  "purpose": "Earth Power (Special Ground, 10 percent Special Defense drop): Torkoal and Rillaboom hit Raichu (Electric, super effective) and Staraptor (Flying, immune); a predicate picks a seed on which the drop lands once.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000009402",
+  "teams": [
+    "Torkoal (M) @ Charcoal\nAbility: Drought\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nQuiet Nature\n- Earth Power\n- Weather Ball\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 17 HP / 15 Atk / 4 Def / 15 SpD / 15 Spe\nAdamant Nature\n- Earth Power\n- Grassy Glide\n- Wood Hammer\n- Superpower\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 7 HP / 27 SpA / 32 Spe\nModest Nature\n- Protect",
+    "Staraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Protect\n\nRaichu (F) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Zap Cannon\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 7 HP / 27 SpA / 32 Spe\nModest Nature\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 2, move 1 2",
+      "move 1 1, move 1 2",
+      "move 1 2, move 1 2",
+      "move 1 2, move 1 2"
+    ],
+    "p2": [
+      "move 2, move 2"
+    ],
+    "max_steps": 5
+  }
+}

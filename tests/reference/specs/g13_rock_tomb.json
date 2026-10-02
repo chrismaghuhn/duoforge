@@ -1,0 +1,23 @@
+{
+  "name": "g13_rock_tomb",
+  "purpose": "Rock Tomb (95 accuracy, Speed -1 at 100 percent): Sneasler hits Kingambit (Defiant: the drop raises its Attack by two) and Milotic (Competitive: Special Attack by two); on a miss nothing drops. A predicate picks a seed with both hits and one miss.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000009101",
+  "teams": [
+    "Sneasler (M) @ Grassy Seed\nAbility: Unburden\nLevel: 50\nEVs: 18 HP / 10 Atk / 8 Def / 30 Spe\nAdamant Nature\n- Rock Tomb\n- Close Combat\n- Dire Claw\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 7 HP / 27 SpA / 32 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Power Gem\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Protect\n\nRaichu (F) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Protect",
+    "Kingambit (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Iron Head\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 9 Def / 12 SpA / 13 Spe\nModest Nature\n- Ice Beam\n- Scald\n- Protect\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 7 HP / 27 SpA / 32 Spe\nModest Nature\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 4",
+      "move 1 2, move 4",
+      "move 1 1, move 4",
+      "move 1 2, move 4"
+    ],
+    "p2": [
+      "move 3 2, move 1 2"
+    ],
+    "max_steps": 5
+  }
+}
