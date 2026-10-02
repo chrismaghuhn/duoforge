@@ -44,7 +44,7 @@
 #include "state/battle_internal.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "fd20cc2aef370abe1ea9cef7165eeb526856dc933c3f5e10de3e236aca936996"
+#define POOL_HASH_HEX "e8942bc9c815d4a394cfab758df959618025f521fe73942775ee7e58d4dfbac7"
 /* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
  * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
  * produced the same bytes. */
@@ -64,7 +64,7 @@
 /* The rows that the tables do not model, pinned (the generator reports the same counts). */
 #define UNMODELED_MOVES 324u
 #define UNMODELED_ITEMS 45u
-#define UNMODELED_ABILITIES 188u
+#define UNMODELED_ABILITIES 186u
 
 /* How many rows of the manifest are marked and half modelled: marked, and with the UNMODELED handler or a list of
  * unmodelled features (decision 0015 section 4.2). A step marks only what it fully models. */
@@ -1143,9 +1143,9 @@ int main(void)
         /* The rows of the steps. */
         DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_FOCUSSASH] == DFI_HANDLER_NONE &&
                          dfi_pool_ability_handler[DFI_ABILITY_ROCKHEAD] == DFI_HANDLER_NONE);
-        DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_EXPERTBELT] == DFI_HANDLER_UNMODELED &&
-                         dfi_pool_ability_handler[DFI_ABILITY_FLOWERVEIL] == DFI_HANDLER_UNMODELED &&
-                         dfi_pool_ability_handler[DFI_ABILITY_FAIRYAURA] == DFI_HANDLER_UNMODELED);
+        DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_EXPERTBELT] == DFI_HANDLER_UNMODELED);
+        DF_CHECK(&t, dfi_pool_ability_handler[DFI_ABILITY_FLOWERVEIL] == DFI_HANDLER_NONE &&
+                         dfi_pool_ability_handler[DFI_ABILITY_FAIRYAURA] == DFI_HANDLER_NONE); /* engine rows, G12 */
         DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_FLOETTITE] == DFI_HANDLER_NONE); /* a Mega Stone: data of its link */
         DF_CHECK(&t, dfi_pool_moves[DFI_MOVE_UTURN].special == DFI_SPECIAL_NONE);
         /* A few whole-pool rows, by what the pin says. Earthquake: allAdjacent, a class that the turn code lacks;

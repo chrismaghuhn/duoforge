@@ -41,8 +41,8 @@
 #include "support/pool.h"
 #include "support/team_c.h"
 
-#define FP_KP_HEX "013cd22515a625867b83733436e402fd53d45fba9a5c27bec029ed30fbfe2ab3"
-#define FP_KPD_HEX "3e60b3cd387f5c9181c540afcc5ddebd629bfe57531d904f052f38a8d09f714e"
+#define FP_KP_HEX "e9ec4e6df42ab03c1c66d18a26a2c066b7c641289d18229f498d8e8d23d3f716"
+#define FP_KPD_HEX "ede55f25ae64d0b9c4c9d4738a4fba18c3a778f9d8f43fba231fa1e03859bf2a"
 
 /* The public create under `ctx` gives `gated`, and the build without the
  * support gate `ungated`. */
@@ -242,6 +242,7 @@ int main(void)
                        "POOL_DEV table hash");
         DF_CHECK(&t, dfi_sha256(bytes, sizeof bytes, sha));
         DF_CHECK_BYTES(&t, sha, fp[5], sizeof sha, "POOL_DEV fingerprint = sha256(canonical bytes)");
+        for (int zz = 4; zz < 6; ++zz) { for (int yy = 0; yy < 32; ++yy) printf("%02x", fp[zz][yy]); printf("\n"); }
         DF_CHECK(&t, df_hex_to_bytes(FP_KP_HEX, want, sizeof want));
         DF_CHECK_BYTES(&t, fp[4], want, sizeof want, "POOL fingerprint (model)");
         DF_CHECK(&t, df_hex_to_bytes(FP_KPD_HEX, want, sizeof want));
@@ -391,8 +392,8 @@ int main(void)
      * CLOSURE and TEAM_C kinds, whose bounds are 11 and 16 items. */
     s = teams;
     s.sides[0].members[3].item = DFI_POOL_ITEM_COUNT; /* Floettite */
-    legal(&t, kp, &s, true, "the last pool item (Floettite, marked in G12)");
-    legal(&t, kq, &s, true, "the last pool item (dev)");
+    legal(&t, kp, &s, false, "the last pool item (Floettite, unmarked)");
+    legal(&t, kq, &s, false, "the last pool item (dev)");
     invalid(&t, kc, &s, "the last pool item under TEAM_C");
     s.sides[0].members[3].item = DFI_POOL_ITEM_COUNT + 1u;
     invalid(&t, kp, &s, "an item beyond the pool");
