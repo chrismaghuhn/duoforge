@@ -13,7 +13,8 @@
  *  - a replay of the recorded bundles from the setup ends in the same bytes;
  *  - information equivalence on real states: at every boundary of every
  *    fourth battle and for both viewers, a state that differs only in hidden information (the
- *    RNG, the opponent's PP, the opponent's exact HP inside one display
+ *    RNG, also with every bit of its state, its stream and its draw count
+ *    changed, the opponent's PP, the opponent's exact HP inside one display
  *    bucket, unseen reserves, what the opponent knows about the viewer, the
  *    opponent's queued actions at a PIVOT) gives the same request,
  *    candidates and observation; an HP change that moves the display shows.
@@ -56,7 +57,8 @@ static bool mega_forme[DFI_FORME_COUNT];
 static const char *const pair_kinds[] = {
     "active foe pp",           "confusion turns",           "foe actions in the queue",
     "foe hp inside one display bucket", "foe pick order",   "opponent knowledge",
-    "rng",                     "sleep or freeze turns",     "the foe's locked target",
+    "rng",                     "rng, every bit",            "sleep or freeze turns",
+    "the foe's locked target",
     "unseen foe reserve hp/pp", "which members the opponent brought",
 };
 #define PAIR_KINDS (sizeof pair_kinds / sizeof pair_kinds[0])
@@ -118,6 +120,13 @@ static void pairs(df_test *t, const duoforge_context *ctx, const duoforge_battle
     b->rng.state ^= UINT64_C(0x9E3779B97F4A7C15);
     b->rng.draws += 5u;
     expect_same(t, ctx, a, b, viewer, "rng", c);
+    /* every bit of its state, its stream (inc stays odd) and its draw count:
+     * the pair above flips only some bits of the state */
+    DF_CHECK(t, duoforge_battle_copy(ctx, b, a) == DUOFORGE_OK);
+    b->rng.state = ~a->rng.state;
+    b->rng.inc ^= 2u;
+    b->rng.draws ^= 1u;
+    expect_same(t, ctx, a, b, viewer, "rng, every bit", c);
 
     const dfi_side *fs = &a->sides[foe];
     for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
