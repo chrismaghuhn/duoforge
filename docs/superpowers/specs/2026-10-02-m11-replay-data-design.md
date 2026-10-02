@@ -303,7 +303,15 @@ A reason code per slot says why the set has its size.
 
 ## 11. Dataset
 
-The writer refuses an output directory inside the repository.
+The writer refuses an output directory inside any work tree of the repository.
+
+**Parts** (the owner's rules for a long run on a VM, #127):
+- The output holds one part per source unit: a parquet row group, or a block of lines of a JSON lines file. Which games a part holds depends on the source files only.
+- A part is a directory `part-<unit>/` with the files below. It is written as `part-<unit>.tmp/`, its files flushed to the disk, and renamed once complete.
+- `replay-dataset.json` records the inputs: sources, prior, filters, unit size, code commit, Showdown pin, library version and fingerprint.
+- A resumed run with other inputs is refused, and so is a second build holding `build.lock`.
+- A finished part whose files do not match its manifest is redone.
+- The output's own `counters.json` sums the parts, and its `manifest.json` lists them, with the run's timing.
 
 **`rows-00000.npz`, …** 65,536 rows per shard. Each row holds:
 - `observation`: an `_layout.OBSERVATION` record;
@@ -350,16 +358,18 @@ The writer refuses an output directory inside the repository.
 
 ```
 python -m duoforge_replay prior --pastes DIR --out PRIOR.json
-python -m duoforge_replay build --source DIR --prior PRIOR.json --out DIR [--workers N] [--limit-games N]
+python -m duoforge_replay build --source DIR --prior PRIOR.json --out DIR [--workers N] [--limit-parts N] [--unit-lines N]
 ```
 
 **What `build` needs:** NumPy, pyarrow, the library, Node and the pinned checkout (`--ps-dir`, default `$DUOFORGE_PS_REFERENCE_DIR`).
 
 **How it runs**
-- Workers process chunks of games, and the writer merges the results in order.
-- Between chunks it waits while the fuzz pause file (`$DUOFORGE_FUZZ_PAUSE`) exists.
+- Each worker writes whole parts; at most one part per worker is in flight.
+- Before each submission it waits while the fuzz pause file (`$DUOFORGE_FUZZ_PAUSE`) exists.
+- Stdout gets one line per finished part, with games per second so far.
+- Running the same command again resumes: finished parts are skipped.
 - A full run starts only after the name rows are on main. It is announced to the HauptSession and stays out of the quiet windows.
-- Short development runs (`--limit-games`) may run before that. They too stay out of the quiet windows.
+- Short development runs (`--limit-parts`) may run before that. They too stay out of the quiet windows.
 
 ## 13. Errors
 

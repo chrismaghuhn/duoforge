@@ -41,14 +41,18 @@ def main(argv=None):
         return 0
     if args.workers < 1:
         parser.error("--workers must be at least 1")
+    if args.limit_parts is not None and args.limit_parts < 0:
+        parser.error("--limit-parts must be 0 or more")
+    if args.unit_lines < 1:
+        parser.error("--unit-lines must be at least 1")
     counters = build.build(args.source, args.prior, args.out, workers=args.workers, limit_parts=args.limit_parts,
                            format_prefix=args.format_prefix, unit_lines=args.unit_lines, node=args.node,
                            ps_dir=args.ps_dir)
     examples = counters.pop("internal.examples")
     for key, value in sorted(counters.items()):
         print(f"{key} {value}")
-    if examples:
-        print("internal errors (bugs):", json.dumps(examples, indent=1))
+    if examples or any(key.startswith("internal:") for key in counters):
+        print("internal errors (bugs) in the output's parts:", json.dumps(examples, indent=1))
         return 1
     return 0
 

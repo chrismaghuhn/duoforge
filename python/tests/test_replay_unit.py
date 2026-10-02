@@ -650,8 +650,9 @@ class DatasetTest(unittest.TestCase):
 
     def build(self, name, workers=1, **kw):
         from duoforge_replay import build
+        kw.setdefault("stats_factory", stats_factory)
         return build.build([self.source], self.prior_path, self.tmp / name, workers=workers, unit_lines=2,
-                           stats_factory=stats_factory, **kw)
+                           log=lambda _: None, **kw)
 
     def test_counters_add_up(self):
         c = self.build("counted")
@@ -705,7 +706,113 @@ class DatasetTest(unittest.TestCase):
         stranger.mkdir()
         (stranger / "notes.txt").write_text("x")
         with self.assertRaisesRegex(ValueError, "not a replay dataset"):
-            build.build([self.source], self.prior_path, stranger, unit_lines=2, stats_factory=stats_factory)
+            build.build([self.source], self.prior_path, stranger, unit_lines=2, stats_factory=stats_factory,
+                        log=lambda _: None)
+
+
+def broken_stats_factory():
+    """A stat source that fails like a dead Node process: every game is an internal error."""
+    class Broken:
+        def stats(self, species, nature, stat_points):
+            raise RuntimeError("ps_stats.js ended")
+    return Broken()
+
+
+class PartsReviewTest(unittest.TestCase):
+    """Review of #127: resume keeps bugs visible, refuses changed inputs and broken parts, pauses, validates."""
+
+    @classmethod
+    def setUpClass(cls):
+        import json
+        cls.tmp = Path(tempfile.mkdtemp(prefix="duoforge_parts_"))
+        cls.log = FIXTURE.read_text(encoding="utf-8")
+        cls.prior_path = cls.tmp / "prior.json"
+        cls.prior_path.write_text(json.dumps({"version": 1, "pastes": 0, "skipped": {}, "levels": [{}, {}, {}, {}]}),
+                                  encoding="utf-8")
+        cls.source = cls.tmp / "source.jsonl"
+        with open(cls.source, "w", encoding="utf-8", newline=chr(10)) as f:
+            for i in range(4):
+                f.write(json.dumps({"id": f"fixture-{i}", "formatid": "gen9championsvgc2026regmc", "log": cls.log})
+                        + chr(10))
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.tmp, ignore_errors=True)
+
+    def build(self, name, **kw):
+        from duoforge_replay import build
+        kw.setdefault("stats_factory", stats_factory)
+        kw.setdefault("unit_lines", 2)
+        return build.build([self.source], self.prior_path, self.tmp / name, log=lambda _: None, **kw)
+
+    def test_internal_errors_survive_a_resume(self):
+        # I1: a part written with internal errors keeps its replay ids; a resume still reports them
+        first = self.build("broken", stats_factory=broken_stats_factory, limit_parts=1)
+        self.assertTrue(first["internal.examples"])
+        again = self.build("broken")  # the clean remaining part
+        self.assertEqual(again["parts.written"], 1)
+        self.assertTrue(any("fixture-0" in e for e in again["internal.examples"]), again["internal.examples"])
+        self.assertGreater(again["internal:RuntimeError"], 0)
+
+    def test_changed_inputs_are_refused(self):
+        # I2/I5: another unit size, prior or Showdown pin is another dataset
+        self.build("inputs", limit_parts=1)
+        with self.assertRaisesRegex(ValueError, "other inputs"):
+            self.build("inputs", unit_lines=3)
+        with self.assertRaisesRegex(ValueError, "other inputs"):
+            self.build("inputs", ps_dir=str(self.tmp))
+
+    def test_a_broken_part_is_redone(self):
+        # I4: a part whose files a host crash left empty is not finished
+        self.build("crash")
+        part = self.tmp / "crash" / "part-source-00001"
+        (part / "manifest.json").write_text("", encoding="utf-8")
+        c = self.build("crash")
+        self.assertEqual(c["parts.written"], 1)
+        self.assertEqual(c["parts.redone.broken"], 1)
+
+    def test_pause_holds_every_worker(self):
+        # I3: with two workers the build submits nothing while the pause file exists
+        import os
+        import threading
+        import time
+        pause = self.tmp / "pause"
+        pause.write_text("x")
+        saved = os.environ.get("DUOFORGE_FUZZ_PAUSE")
+        os.environ["DUOFORGE_FUZZ_PAUSE"] = str(pause)
+        threading.Timer(2.0, pause.unlink).start()
+        start = time.monotonic()
+        try:
+            c = self.build("paused", workers=2)
+        finally:
+            if saved is None:
+                os.environ.pop("DUOFORGE_FUZZ_PAUSE", None)
+            else:
+                os.environ["DUOFORGE_FUZZ_PAUSE"] = saved
+        self.assertGreaterEqual(time.monotonic() - start, 2.0)
+        self.assertEqual(c["parts.written"], 2)
+
+    def test_a_second_run_on_the_same_output_is_refused(self):
+        # M4: the lock of a running build
+        out = self.tmp / "locked"
+        self.build("locked", limit_parts=0)
+        (out / "build.lock").write_text("12345")
+        with self.assertRaisesRegex(ValueError, "another build"):
+            self.build("locked")
+
+    def test_bad_arguments(self):
+        # M3
+        from duoforge_replay import __main__ as cli
+        for args in (["--limit-parts", "-1"], ["--unit-lines", "0"]):
+            with self.assertRaises(SystemExit):
+                cli.main(["build", "--source", str(self.source), "--prior", str(self.prior_path),
+                          "--out", str(self.tmp / "never"), *args])
+
+    def test_an_unfinished_parts_output_reads_empty(self):
+        # M1: a parts dataset with no finished part is empty, not the single-directory layout
+        from duoforge_replay import dataset
+        self.build("empty", limit_parts=0)
+        self.assertEqual(list(dataset.read(self.tmp / "empty")), [])
 
 
 class _FakeParquet:
@@ -751,8 +858,12 @@ class SourceTest(unittest.TestCase):
             tmp = Path(tempfile.mkdtemp(prefix="duoforge_source_"))
             (tmp / "x.parquet").write_bytes(b"")
             counters = collections.Counter()
-            rows = list(source.select(source.games([tmp], "gen9championsvgc2026regmc", counters),
-                                      "gen9championsvgc2026regmc", counters))
+            units = source.units([tmp])
+            self.assertEqual([u.id for u in units], ["x-00000", "x-00001"])
+            rows = []
+            for unit in units:
+                rows += list(source.select(source.read_unit(unit, "gen9championsvgc2026regmc", counters),
+                                           "gen9championsvgc2026regmc", counters))
             shutil.rmtree(tmp, ignore_errors=True)
         finally:
             for k, v in saved.items():
