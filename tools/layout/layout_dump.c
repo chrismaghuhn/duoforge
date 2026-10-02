@@ -106,6 +106,24 @@ int main(void)
            FIELD(duoforge_observation, weather_turns), FIELD(duoforge_observation, terrain),
            FIELD(duoforge_observation, terrain_turns), FIELD(duoforge_observation, trick_room_turns),
            FIELD(duoforge_observation, reserved), FIELD(duoforge_observation, sides));
+    STRUCT(duoforge_field_ext, false, FIELD(duoforge_field_ext, gravity_turns), FIELD(duoforge_field_ext, reserved));
+    STRUCT(duoforge_position_ext, false, FIELD(duoforge_position_ext, volatiles),
+           FIELD(duoforge_position_ext, ability_now), FIELD(duoforge_position_ext, type_now),
+           FIELD(duoforge_position_ext, encore_slot), FIELD(duoforge_position_ext, disable_slot),
+           FIELD(duoforge_position_ext, stockpile), FIELD(duoforge_position_ext, perish),
+           FIELD(duoforge_position_ext, reserved));
+    STRUCT(duoforge_member_ext, false, FIELD(duoforge_member_ext, forme), FIELD(duoforge_member_ext, item_now),
+           FIELD(duoforge_member_ext, reserved));
+    STRUCT(duoforge_side_ext, false, FIELD(duoforge_side_ext, positions), FIELD(duoforge_side_ext, members),
+           FIELD(duoforge_side_ext, aurora_veil_turns), FIELD(duoforge_side_ext, stealth_rock),
+           FIELD(duoforge_side_ext, spikes), FIELD(duoforge_side_ext, toxic_spikes),
+           FIELD(duoforge_side_ext, sticky_web), FIELD(duoforge_side_ext, guard_flags),
+           FIELD(duoforge_side_ext, reserved));
+    STRUCT(duoforge_observation_ext, false, FIELD(duoforge_observation_ext, revision),
+           FIELD(duoforge_observation_ext, player), FIELD(duoforge_observation_ext, reserved0),
+           FIELD(duoforge_observation_ext, epoch), FIELD(duoforge_observation_ext, supported),
+           FIELD(duoforge_observation_ext, field), FIELD(duoforge_observation_ext, sides),
+           FIELD(duoforge_observation_ext, reserved1));
     STRUCT(duoforge_batch_config, false, FIELD(duoforge_batch_config, env_count),
            FIELD(duoforge_batch_config, worker_count), FIELD(duoforge_batch_config, seed),
            FIELD(duoforge_batch_config, setups));
@@ -162,7 +180,9 @@ int main(void)
     CONSTANT(DUOFORGE_LOCATION_UNDETERMINED, false);
     CONSTANT(DUOFORGE_LOCATION_BENCH, false);
     CONSTANT(DUOFORGE_LOCATION_ACTIVE, false);
-    CONSTANT(DUOFORGE_LOCATION_NOT_BROUGHT, true);
+    CONSTANT(DUOFORGE_LOCATION_NOT_BROUGHT, false);
+    CONSTANT(DUOFORGE_OBSERVATION_EXT_SIZE, false);
+    CONSTANT(DUOFORGE_OBSERVATION_EXT_REVISION, true);
     printf("  }\n}\n");
     return 0;
 }

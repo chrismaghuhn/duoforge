@@ -21,9 +21,33 @@
 #include "core/arith.h"
 #include "data/closure_tables.h"
 #include "data/extended_tables.h"
+#include "data/support_manifest.h"
 #include "state/battle_internal.h"
+#include "state/closure_member.h"
 #include "state/context_internal.h"
 #include "state/invariants.h"
+
+/* The POOL player-view extension (decision 0018): size and every offset, so that no edit moves a field unseen. */
+_Static_assert(sizeof(duoforge_field_ext) == 16u, "field ext is 16 bytes");
+_Static_assert(sizeof(duoforge_position_ext) == 16u, "position ext is 16 bytes");
+_Static_assert(offsetof(duoforge_position_ext, ability_now) == 4u, "position ext layout: ability_now");
+_Static_assert(offsetof(duoforge_position_ext, type_now) == 6u, "position ext layout: type_now");
+_Static_assert(offsetof(duoforge_position_ext, encore_slot) == 8u, "position ext layout: encore_slot");
+_Static_assert(offsetof(duoforge_position_ext, perish) == 11u, "position ext layout: perish");
+_Static_assert(offsetof(duoforge_position_ext, reserved) == 12u, "position ext layout: reserved");
+_Static_assert(sizeof(duoforge_member_ext) == 4u, "member ext is 4 bytes");
+_Static_assert(offsetof(duoforge_member_ext, item_now) == 2u, "member ext layout: item_now");
+_Static_assert(sizeof(duoforge_side_ext) == 64u, "side ext is 64 bytes");
+_Static_assert(offsetof(duoforge_side_ext, members) == 32u, "side ext layout: members");
+_Static_assert(offsetof(duoforge_side_ext, aurora_veil_turns) == 56u, "side ext layout: aurora_veil_turns");
+_Static_assert(offsetof(duoforge_side_ext, guard_flags) == 61u, "side ext layout: guard_flags");
+_Static_assert(offsetof(duoforge_side_ext, reserved) == 62u, "side ext layout: reserved");
+_Static_assert(sizeof(duoforge_observation_ext) == DUOFORGE_OBSERVATION_EXT_SIZE, "observation ext is 192 bytes");
+_Static_assert(offsetof(duoforge_observation_ext, epoch) == 4u, "observation ext layout: epoch");
+_Static_assert(offsetof(duoforge_observation_ext, supported) == 8u, "observation ext layout: supported");
+_Static_assert(offsetof(duoforge_observation_ext, field) == 16u, "observation ext layout: field");
+_Static_assert(offsetof(duoforge_observation_ext, sides) == 32u, "observation ext layout: sides");
+_Static_assert(offsetof(duoforge_observation_ext, reserved1) == 160u, "observation ext layout: reserved1");
 
 _Static_assert(sizeof(duoforge_member_view) == 52u, "member view is 52 bytes");
 _Static_assert(offsetof(duoforge_member_view, move_ids) == 6u, "member view layout: move ids");
@@ -234,5 +258,35 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
         dfi_view_side(battle, player, s, &o.sides[s]);
     }
     *out_observation = o;
+    return DUOFORGE_OK;
+}
+
+duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const duoforge_battle *battle,
+                                            uint32_t viewer, duoforge_observation_ext *out)
+{
+    if (ctx == NULL || battle == NULL || out == NULL) {
+        return DUOFORGE_E_NULL_ARGUMENT;
+    }
+    if (!dfi_context_fingerprint_matches(ctx, battle->context_fingerprint)) {
+        return DUOFORGE_E_CONTEXT_MISMATCH;
+    }
+    if (viewer >= DUOFORGE_SIDE_COUNT) {
+        return DUOFORGE_E_INVALID_ARGUMENT;
+    }
+    if (dfi_state_check_query(ctx, battle, NULL) != DUOFORGE_OK) { /* decision 0011 */
+        return DUOFORGE_E_INVARIANT;
+    }
+    duoforge_observation_ext o;
+    memset(&o, 0, sizeof o);
+    /* Only the POOL kinds have an extension; every other kind gets the all-zero struct. */
+    if (dfi_context_is_closure(ctx) && dfi_kind_limits_of(ctx->data_kind).pool_rules) {
+        o.revision = (uint8_t)DUOFORGE_OBSERVATION_EXT_REVISION;
+        o.player = (uint8_t)viewer;
+        o.epoch = battle->request_epoch;
+        o.supported = dfi_support.view_ext_features;
+        /* Tier 0 (decision 0018 section 13): no mechanic writes a field yet, so every field stays zero and
+         * every supported bit is clear. A feature's step fills its fields here and sets its bit in the manifest. */
+    }
+    *out = o;
     return DUOFORGE_OK;
 }
