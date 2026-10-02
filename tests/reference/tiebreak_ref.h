@@ -1250,6 +1250,50 @@ static const df_tb_stop tb_g14_thermal_exchange[] = {
     {3u, 0u, 1u, 1u, {4u, 3u}, {611u, 490u}, {0x404c263398ce633bull, 0x4046079a9d260513ull}},
     {4u, 0u, 1u, 1u, {4u, 3u}, {611u, 490u}, {0x404c263398ce633bull, 0x4046079a9d260513ull}},
 };
+static const df_tb_stop tb_g16_helmet_faint[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1049u, 1174u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {725u, 765u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {647u, 696u}, {0x404d15c06b15c06bull, 0x404e422ae5139f41ull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {588u, 628u}, {0x4049df17fb89c2a7ull, 0x404b3a68f497803bull}},
+    {4u, 0u, 2u, 1u, {3u, 4u}, {485u, 588u}, {0x40453e578b464cefull, 0x404995fc68dbaf9full}},
+};
+static const df_tb_stop tb_g16_removal[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1049u, 1114u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {725u, 705u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {532u, 538u}, {0x404827438f9bfd43ull, 0x4048cb1cb58b2d95ull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {553u, 407u}, {0x4049296587217024ull, 0x4042b1d889af68b1ull}},
+    {4u, 0u, 1u, 2u, {4u, 4u}, {488u, 319u}, {0x40457c6696a26cc7ull, 0x403c745529552a28ull}},
+    {5u, 0u, 1u, 2u, {3u, 3u}, {398u, 327u}, {0x4041b397255e41d0ull, 0x403d4f5ea7bd51d0ull}},
+};
+static const df_tb_stop tb_g16_scarf_helmet[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1049u, 1174u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {725u, 765u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {563u, 611u}, {0x4049fd135478e00bull, 0x404a985225f72f10ull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {484u, 525u}, {0x4045dae5cdc7e2b5ull, 0x4046d11d3183433cull}},
+    {4u, 0u, 2u, 2u, {3u, 3u}, {414u, 486u}, {0x40422d8a63ec8bb7ull, 0x40451bb8f6098795ull}},
+};
+static const df_tb_stop tb_g16_sticky_hold[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1049u, 1161u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {725u, 752u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {660u, 575u}, {0x404dcb03e775ae91ull, 0x404897bf16696469ull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {621u, 457u}, {0x404bab397255e41cull, 0x4043f2aa43b52753ull}},
+    {4u, 0u, 1u, 1u, {4u, 2u}, {599u, 381u}, {0x404a787878787879ull, 0x4040aaaaaaaaaaabull}},
+    {5u, 0u, 1u, 1u, {4u, 2u}, {599u, 381u}, {0x404a787878787879ull, 0x4040aaaaaaaaaaabull}},
+};
+static const df_tb_stop tb_g16_stones[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1049u, 1154u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {725u, 745u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {725u, 677u}, {0x4050aaaaaaaaaaabull, 0x404e402fa0be82f9ull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {725u, 606u}, {0x4050aaaaaaaaaaabull, 0x404b09b496d25b49ull}},
+    {4u, 0u, 1u, 2u, {4u, 4u}, {725u, 564u}, {0x4050aaaaaaaaaaabull, 0x404916bd304a167full}},
+};
+static const df_tb_stop tb_g16_unburden[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1049u, 1114u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {725u, 745u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {668u, 539u}, {0x404e3a8fe53a8fe5ull, 0x40474ffd3b12f98bull}},
+    {3u, 0u, 1u, 1u, {4u, 3u}, {596u, 460u}, {0x404a4ea3f94ea3f9ull, 0x40435fa9093d6b13ull}},
+    {4u, 0u, 1u, 1u, {4u, 3u}, {596u, 460u}, {0x404a4ea3f94ea3f9ull, 0x40435fa9093d6b13ull}},
+};
 static const df_tb_stop tb_g17_giga_impact[] = {
     {0u, 0u, 2u, 3u, {6u, 6u}, {1062u, 1111u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {698u, 782u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -2786,6 +2830,12 @@ static const df_tb_battle tb_battles[] = {
     {"g14_poison_touch_faint", 6u, tb_g14_poison_touch_faint, sizeof tb_g14_poison_touch_faint / sizeof tb_g14_poison_touch_faint[0]},
     {"g14_rough_skin", 4u, tb_g14_rough_skin, sizeof tb_g14_rough_skin / sizeof tb_g14_rough_skin[0]},
     {"g14_thermal_exchange", 4u, tb_g14_thermal_exchange, sizeof tb_g14_thermal_exchange / sizeof tb_g14_thermal_exchange[0]},
+    {"g16_helmet_faint", 4u, tb_g16_helmet_faint, sizeof tb_g16_helmet_faint / sizeof tb_g16_helmet_faint[0]},
+    {"g16_removal", 5u, tb_g16_removal, sizeof tb_g16_removal / sizeof tb_g16_removal[0]},
+    {"g16_scarf_helmet", 4u, tb_g16_scarf_helmet, sizeof tb_g16_scarf_helmet / sizeof tb_g16_scarf_helmet[0]},
+    {"g16_sticky_hold", 5u, tb_g16_sticky_hold, sizeof tb_g16_sticky_hold / sizeof tb_g16_sticky_hold[0]},
+    {"g16_stones", 4u, tb_g16_stones, sizeof tb_g16_stones / sizeof tb_g16_stones[0]},
+    {"g16_unburden", 4u, tb_g16_unburden, sizeof tb_g16_unburden / sizeof tb_g16_unburden[0]},
     {"g17_giga_impact", 4u, tb_g17_giga_impact, sizeof tb_g17_giga_impact / sizeof tb_g17_giga_impact[0]},
     {"g17_hyper_beam", 4u, tb_g17_hyper_beam, sizeof tb_g17_hyper_beam / sizeof tb_g17_hyper_beam[0]},
     {"g17_hyper_beam_encore", 6u, tb_g17_hyper_beam_encore, sizeof tb_g17_hyper_beam_encore / sizeof tb_g17_hyper_beam_encore[0]},
@@ -2930,7 +2980,7 @@ static const df_tb_battle tb_battles[] = {
     {"w8_sand_soak", 7u, tb_w8_sand_soak, sizeof tb_w8_sand_soak / sizeof tb_w8_sand_soak[0]},
 };
 
-/* 2117 stops: 139 of an ended battle; decided by the count 686,
- * the HP percentage 635, the total HP 607, a tie 50;
- * winners: side 0 1065, side 1 1002, tie 50 */
+/* 2149 stops: 139 of an ended battle; decided by the count 691,
+ * the HP percentage 650, the total HP 619, a tie 50;
+ * winners: side 0 1079, side 1 1020, tie 50 */
 #endif

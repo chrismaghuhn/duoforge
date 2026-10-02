@@ -33,9 +33,9 @@ extern "C" {
 #endif
 
 #define DUOFORGE_VERSION_MAJOR 0
-#define DUOFORGE_VERSION_MINOR 30
+#define DUOFORGE_VERSION_MINOR 31
 #define DUOFORGE_VERSION_PATCH 0
-#define DUOFORGE_VERSION_STRING "0.30.0"
+#define DUOFORGE_VERSION_STRING "0.31.0"
 
 /* Identifiers of the artifacts that exist now (registry: decisions 0002, 0005, 0006). */
 #define DUOFORGE_SEMANTICS_ID           3u   /* "duoforge-m3-closure" */
@@ -901,6 +901,10 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_CAUSE_HEAL_BLOCK 15u /* CANT (POOL kinds): a move that heals, stopped by Heal Block; id: the stopped move.
                                          A sound move stopped by Throat Chop is CANT with cause MOVE, id2: Throat Chop
                                          (the line names no move, so id is 0) */
+#define DUOFORGE_CAUSE_ITEM_TAKEN 17u /* ITEM_END (POOL kinds): the item was taken by a move ([from] move: Knock Off [of]
+                                         the user); id: the move, other: the user, id2: item + 1. The old item_used
+                                         of the view shows it gone as for an item used up; item_now tells them apart
+                                         (DUOFORGE_ITEM_NOW_NONE) */
 
 #define DUOFORGE_EVENT_FLAG_STILL  1u  /* MOVE: the charge turn of a two-turn move */
 #define DUOFORGE_EVENT_FLAG_LOCKED 2u  /* MOVE: the locked turn ([from] lockedmove) */

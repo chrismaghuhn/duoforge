@@ -107,7 +107,11 @@
  * (priority +1), Detect (Protect's handler and stall counter) and Poison Jab (a poison secondary).
  * Step G14 marks Rough Skin, Poison Touch and Thermal Exchange (abilities that the turn code runs by id: contact damage
  * before Rocky Helmet's, poison on a 3 in 10 roll after a contact hit, Attack +1 per Fire hit and no burn), recorded as
- * g14_rough_skin, g14_poison_touch and g14_thermal_exchange under the POOL kind. */
+ * g14_rough_skin, g14_poison_touch and g14_thermal_exchange under the POOL kind.
+ * Step G16 marks Knock Off (base power x1.5 while the target holds an item that can be taken, and the item taken after
+ * the hit unless the target is alive with Sticky Hold; a Mega Stone is never taken from its own species) and Sticky
+ * Hold, with the view bit 11 for the item that a move took (item_now of the member, public): Trick, Switcheroo and
+ * Thief stay unmarked, so no accepted battle has an item that was swapped. Recorded as g16_* under the POOL kind. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -211,6 +215,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_HYDROCANNON] = 1u,
             [DFI_MOVE_HYPERBEAM] = 1u,
             [DFI_MOVE_ROCKWRECKER] = 1u,
+            [DFI_MOVE_KNOCKOFF] = 1u,
         },
     .abilities =
         {
@@ -248,6 +253,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_ROUGHSKIN] = 1u,
             [DFI_ABILITY_POISONTOUCH] = 1u,
             [DFI_ABILITY_THERMALEXCHANGE] = 1u,
+            [DFI_ABILITY_STICKYHOLD] = 1u,
         },
     .items =
         {
@@ -319,5 +325,6 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_MUST_RECHARGE) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WIDE_GUARD) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WEATHER_SAND) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WEATHER_SNOW),
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WEATHER_SNOW) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ITEM_CHANGE),
 };
