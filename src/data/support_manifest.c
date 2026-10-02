@@ -236,5 +236,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_TANGABERRY] = 1u,
             [DFI_ITEM_WACANBERRY] = 1u,
             [DFI_ITEM_YACHEBERRY] = 1u,
-        },
+        },    /* Tier 0 of the POOL player-view extension (decision 0018): no feature is implemented yet, so every bit is
+     * clear. A step that sets a bit does so together with its recorded battles. */
+    .view_ext_features = 0u,
 };

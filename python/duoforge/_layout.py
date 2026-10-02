@@ -78,6 +78,8 @@ CONSTANTS = {
     "DUOFORGE_LOCATION_BENCH": 1,
     "DUOFORGE_LOCATION_ACTIVE": 2,
     "DUOFORGE_LOCATION_NOT_BROUGHT": 3,
+    "DUOFORGE_OBSERVATION_EXT_SIZE": 192,
+    "DUOFORGE_OBSERVATION_EXT_REVISION": 1,
 }
 MAX_CANDIDATES = CONSTANTS["DUOFORGE_MAX_CANDIDATES"]
 MAX_SLOT_OPTIONS = CONSTANTS["DUOFORGE_MAX_SLOT_OPTIONS"]
@@ -247,6 +249,52 @@ OBSERVATION = _struct([
     ("sides", (SIDE_VIEW, (2,)), 16),
 ], 736)
 
+# The POOL player-view extension (decision 0018): 192 bytes, alignment 8, all zero under every non-POOL kind.
+FIELD_EXT = _struct([
+    ("gravity_turns", _U1, 0),
+    ("reserved", (_U1, (15,)), 1),
+], 16)
+
+POSITION_EXT = _struct([
+    ("volatiles", _U4, 0),
+    ("ability_now", _U2, 4),
+    ("type_now", (_U1, (2,)), 6),
+    ("encore_slot", _U1, 8),
+    ("disable_slot", _U1, 9),
+    ("stockpile", _U1, 10),
+    ("perish", _U1, 11),
+    ("reserved", (_U1, (4,)), 12),
+], 16)
+
+MEMBER_EXT = _struct([
+    ("forme", _U2, 0),
+    ("item_now", _U1, 2),
+    ("reserved", _U1, 3),
+], 4)
+
+SIDE_EXT = _struct([
+    ("positions", (POSITION_EXT, (2,)), 0),
+    ("members", (MEMBER_EXT, (6,)), 32),
+    ("aurora_veil_turns", _U1, 56),
+    ("stealth_rock", _U1, 57),
+    ("spikes", _U1, 58),
+    ("toxic_spikes", _U1, 59),
+    ("sticky_web", _U1, 60),
+    ("guard_flags", _U1, 61),
+    ("reserved", (_U1, (2,)), 62),
+], 64)
+
+OBSERVATION_EXT = _struct([
+    ("revision", _U1, 0),
+    ("player", _U1, 1),
+    ("reserved0", (_U1, (2,)), 2),
+    ("epoch", _U4, 4),
+    ("supported", _U8, 8),
+    ("field", FIELD_EXT, 16),
+    ("sides", (SIDE_EXT, (2,)), 32),
+    ("reserved1", (_U1, (32,)), 160),
+], 192)
+
 # duoforge_batch_config: two uint32, the seed, then the setups pointer.
 _SETUPS_OFFSET = _align(16, _PTR)
 BATCH_CONFIG = _struct([
@@ -283,6 +331,11 @@ BY_C_NAME = {
     "duoforge_position_view": POSITION_VIEW,
     "duoforge_side_view": SIDE_VIEW,
     "duoforge_observation": OBSERVATION,
+    "duoforge_field_ext": FIELD_EXT,
+    "duoforge_position_ext": POSITION_EXT,
+    "duoforge_member_ext": MEMBER_EXT,
+    "duoforge_side_ext": SIDE_EXT,
+    "duoforge_observation_ext": OBSERVATION_EXT,
     "duoforge_batch_config": BATCH_CONFIG,
     "duoforge_batch_episode": EPISODE,
 }
