@@ -44,7 +44,7 @@
 #include "state/battle_internal.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "04cadcf109b08193de11fe2adebaa4d1a992af183826726123d4b90bb06810d9"
+#define POOL_HASH_HEX "38556ca890d6bc1fb8817e05c7c0d0acbccaa7fd9af83c71dee38953677ec6d1"
 /* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
  * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
  * produced the same bytes. Step G10 moved two of them on purpose: Scald and Recover are data now (the thaw bit and
@@ -68,7 +68,7 @@
 #define POOL_ABILITIES 215u
 
 /* The rows that the tables do not model, pinned (the generator reports the same counts). */
-#define UNMODELED_MOVES 305u /* 306 before step G16 modelled Knock Off; 313 before step G17 modelled the seven recharge moves; 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
+#define UNMODELED_MOVES 302u /* 305 before step G19 modelled Coaching and Glaive Rush (and one more row); 306 before step G16 modelled Knock Off; 313 before step G17 modelled the seven recharge moves; 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
 #define UNMODELED_ITEMS 45u
 #define UNMODELED_ABILITIES 179u /* 180 before step AC1 made Trace an engine row; 181 before step G16 made Sticky Hold an engine row; 184 before step G14 made Rough Skin, Poison Touch and Thermal Exchange engine rows */
 
@@ -674,7 +674,8 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_LOW_KICK + 1u, DFI_SPECIAL_SANDSTORM);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_SANDSTORM + 1u, DFI_SPECIAL_SNOWSCAPE);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_KNOCK_OFF, DFI_SPECIAL_SNOWSCAPE + 1u);
-        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_KNOCK_OFF + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_GLAIVE_RUSH, DFI_SPECIAL_KNOCK_OFF + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_GLAIVE_RUSH + 1u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_KNOCK_OFF, 24u);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_KNOCKOFF].special, DFI_SPECIAL_KNOCK_OFF);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_SANDSTORM].special, DFI_SPECIAL_SANDSTORM);
@@ -1140,7 +1141,7 @@ int main(void)
          * Noise, whose lockout and Heal Block are secondary kinds, not handlers: g8_throat_chop, g8_heal_block,
          * g8_heal_block_pair and _tie_a/_b; Wide Guard, whose handler id the turn code runs: g7_wide_guard_*; Soak, whose
          * handler id the turn code implements since step G11: g11_soak, _mega, _stab and _electro; Moonblast and Calm
-         * Mind: g12_floette_moves); step G17 six of the seven recharge moves (g17_*; Meteor Assault stays unmarked: its only learner, Sirfetch'd, has no supported ability). No move with a handler id is left
+         * Mind: g12_floette_moves); step G19 Coaching and Glaive Rush (g19_*); step G17 six of the seven recharge moves (g17_*; Meteor Assault stays unmarked: its only learner, Sirfetch'd, has no supported ability). No move with a handler id is left
          * unmarked. */
         static const uint32_t marked_moves[] = {DFI_MOVE_ROCKSLIDE, DFI_MOVE_DOUBLEEDGE, DFI_MOVE_THUNDERBOLT,
                                                 DFI_MOVE_FLASHCANNON, DFI_MOVE_EXTREMESPEED, DFI_MOVE_HEADSMASH,
@@ -1157,7 +1158,8 @@ int main(void)
                                                 DFI_MOVE_ICYWIND, DFI_MOVE_ICESHARD, DFI_MOVE_QUICKATTACK,
                                                 DFI_MOVE_DETECT, DFI_MOVE_POISONJAB,
                                                 DFI_MOVE_BLASTBURN, DFI_MOVE_FRENZYPLANT, DFI_MOVE_GIGAIMPACT,
-                                                DFI_MOVE_HYDROCANNON, DFI_MOVE_HYPERBEAM, DFI_MOVE_ROCKWRECKER, DFI_MOVE_KNOCKOFF};
+                                                DFI_MOVE_HYDROCANNON, DFI_MOVE_HYPERBEAM, DFI_MOVE_ROCKWRECKER, DFI_MOVE_KNOCKOFF,
+                                                DFI_MOVE_COACHING, DFI_MOVE_GLAIVERUSH};
         uint32_t marked_count = 0u;
         for (uint32_t id = DFI_EXT_MOVE_COUNT; id < DFI_POOL_MOVE_COUNT; ++id) {
             bool want = false;
@@ -1171,13 +1173,13 @@ int main(void)
             DF_CHECK(&t, !want || dfi_pool_moves[id].special == DFI_SPECIAL_NONE ||
                              id == DFI_MOVE_FIRSTIMPRESSION || id == DFI_MOVE_LOWKICK || id == DFI_MOVE_SOAK ||
                              id == DFI_MOVE_ENCORE || id == DFI_MOVE_SANDSTORM || id == DFI_MOVE_SNOWSCAPE ||
-                             id == DFI_MOVE_KNOCKOFF ||
+                             id == DFI_MOVE_KNOCKOFF || id == DFI_MOVE_GLAIVERUSH ||
                              (id == DFI_MOVE_WIDEGUARD && dfi_pool_moves[id].special == DFI_SPECIAL_WIDE_GUARD) ||
                              (id == DFI_MOVE_DETECT && dfi_pool_moves[id].special == DFI_SPECIAL_PROTECT));
             DF_CHECK(&t, !want || dfi_pool_moves[id].special != DFI_SPECIAL_UNMODELED);
             marked_count += dfi_support.moves[id] != 0u ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, marked_count, 47u);
+        DF_CHECK_EQ_U64(&t, marked_count, 49u);
     }
 
     /* Step AC1: Trace copies the ability of a foe unless that has the pin's notrace flag. The turn code excludes only

@@ -349,7 +349,7 @@ int main(void)
     DF_CHECK_EQ_U64(&t, DUOFORGE_ITEM_NOW_NONE, DFI_TAIL_ITEM_NONE);
     DF_CHECK_EQ_U64(&t, DUOFORGE_VIEWEXT_FEATURE_ITEM_CHANGE, 11u);
     DF_CHECK_EQ_U64(&t, DFI_SPECIAL_KNOCK_OFF, 24u);
-    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, 25u);
+    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, 26u); /* 25 before step G19 added the Glaive Rush handler */
     DF_CHECK(&t, dfi_support.moves[DFI_MOVE_KNOCKOFF] != 0u && dfi_support.abilities[DFI_ABILITY_STICKYHOLD] != 0u);
     DF_CHECK(&t, (dfi_support.view_ext_features & ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ITEM_CHANGE)) != 0u);
     /* Trick, Switcheroo and Thief stay unmarked: no accepted battle has a swapped item (item_now is 0 or 255 only). */

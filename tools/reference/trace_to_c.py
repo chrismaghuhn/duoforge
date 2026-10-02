@@ -406,6 +406,13 @@ def drop_reason(d, state, after=None, log=None):
         # same value (the engine checks it at compile time, turn.c).
         if sorted(g.split(':')[1] for g in group) == ['chopleberry', 'lifeorb']:
             return 'Life Orb and Chople Berry, whose modifiers commute'
+        # Step G19: Glaive Rush's onSourceModifyDamage (x2) with the attacker's Life Orb, the target's resist berry and a
+        # screen: every order of any three of the four chains to the same value; all four at once do not (3552 or 3551),
+        # which the engine refuses (E_UNSUPPORTED) instead of drawing, so such a tie never reaches a conversion.
+        kinds = {g.split(':')[1] for g in group}
+        if 'glaiverush' in kinds and all(k in ('glaiverush', 'lifeorb', 'reflect', 'lightscreen') or k.endswith('berry')
+                                         for k in kinds):
+            return 'Glaive Rush and the other ModifyDamage modifiers, which commute (all four at once is refused)'
         raise ConversionError('modifydamage-tie', 'trace_to_c: ModifyDamage tie with %s' % group,
                               detail=tie_effects(group))
     if site == 'SPEED_TIE' and ctx == 'event:DisableMove':
@@ -681,6 +688,9 @@ IGNORED_VOLATILES = {
     # Pool step G17 (the recharge turn): the volatile shows in the request of the next turn (the one candidate, the
     # recharge slot), the start line (`-mustrecharge`) and the cant line (`cant|X|recharge`), and the view bit.
     'mustrecharge': 'the request of the recharge turn, the start line and the cant line',
+    # Pool step G19 (Glaive Rush): `-singlemove|X|Glaive Rush|[silent]` is not shown; the volatile shows in the accuracy
+    # draws that are missing (the moves against it cannot miss) and in the doubled damage of every move that hits it.
+    'glaiverush': 'the damage of the moves against it and the accuracy draws that it removes',
 }
 HP_EXACT, HP_PERCENT = 1, 2
 HP_FLAGS_EV = {'': 0, 'r': 1, 'y': 2, 'g': 3}

@@ -214,6 +214,9 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_GIGAIMPACT] = 1u,
             [DFI_MOVE_HYDROCANNON] = 1u,
             [DFI_MOVE_HYPERBEAM] = 1u,
+            /* Step G19: Coaching (boosts to the ally) and Glaive Rush (its user is hit by moves that never miss and take twice the damage). */
+            [DFI_MOVE_COACHING] = 1u,
+            [DFI_MOVE_GLAIVERUSH] = 1u,
             [DFI_MOVE_ROCKWRECKER] = 1u,
             [DFI_MOVE_KNOCKOFF] = 1u,
         },
@@ -316,7 +319,8 @@ const dfi_support_manifest dfi_support = {
      * verified against the four g11 battles in duoforge.state.pool_g11). Step G7: Wide Guard (bit 17: guard_flags, public,
      * verified in duoforge.state.pool_g7). Step G9: Encore (bit 7: encore_slot of the position, public, verified against
      * the g09_encore battles step by step in duoforge.state.pool_g9). Step G17: the recharge (bit 15: MUST_RECHARGE of the
-     * position's volatiles, public, verified against the g17 battles step by step in duoforge.state.pool_g17). */
+     * position's volatiles, public, verified against the g17 battles step by step in duoforge.state.pool_g17). Step G19: Glaive Rush (bit 20:
+     * GLAIVE_RUSH of the position's volatiles, public, verified against the g19 battles in duoforge.state.pool_g19). */
     /* Step Sandstorm and Snowscape: bits 0 and 1, the weather values of the old observation's weather field (the
      * -weather lines of Sand Stream, Snow Warning and the two moves, verified step by step in duoforge.state.pool_weather).
      * Step AC1: the ability change of Trace (bit 2: position_ext.ability_now, public, verified against the ac1 battles in
@@ -327,6 +331,7 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TYPE_CHANGE) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ENCORE) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_MUST_RECHARGE) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_GLAIVE_RUSH) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WIDE_GUARD) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WEATHER_SAND) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WEATHER_SNOW) |
