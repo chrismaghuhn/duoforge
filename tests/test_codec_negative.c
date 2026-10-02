@@ -393,7 +393,7 @@ int main(void)
             {FX_F5, 95, 0x07, DFI_INV_QUEUE},
             {FX_F5, 96, 0x02, DFI_INV_QUEUE},
             {FX_F5, 97, 0x02, DFI_INV_QUEUE},
-            {FX_F5, 98, 0x05, DFI_INV_QUEUE},
+            {FX_F5, 98, 0x06, DFI_INV_QUEUE}, /* 5 is the recharge turn since step G17 */
             {FX_F5, 99, 0x04, DFI_INV_QUEUE},
             {FX_F5, 100, 0x01, DFI_INV_QUEUE},
             {FX_F5, 101, 0x05, DFI_INV_QUEUE},

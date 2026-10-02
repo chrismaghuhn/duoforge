@@ -571,8 +571,8 @@ int main(void)
     w->queue[0].slot = 2u;
     expect_inv(&t, c1, w, DFI_INV_QUEUE, "record slot 2");
     RESET_TO(f5);
-    w->queue[0].move_slot = 5u;
-    expect_inv(&t, c1, w, DFI_INV_QUEUE, "move slot 5");
+    w->queue[0].move_slot = 6u; /* 5 is the recharge turn since step G17 */
+    expect_inv(&t, c1, w, DFI_INV_QUEUE, "move slot 6");
     RESET_TO(f5);
     w->queue[0].target = 4u;
     expect_inv(&t, c1, w, DFI_INV_QUEUE, "move target 4");
