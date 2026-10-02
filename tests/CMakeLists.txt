@@ -144,6 +144,12 @@ if(DUOFORGE_PS_REFERENCE_DIR)
             COMMAND "${DUOFORGE_NODE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_ps_trace_run.js"
                 "${DUOFORGE_PS_REFERENCE_DIR}")
         set_tests_properties(duoforge.reference.trace_run PROPERTIES TIMEOUT 600 LABELS reference)
+        # The persistent worker (differential loop): its JSON-lines protocol over raw pipes.
+        add_test(NAME duoforge.reference.worker_protocol
+            COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_ps_worker.py"
+                "${DUOFORGE_NODE}" "${DUOFORGE_PS_REFERENCE_DIR}")
+        set_tests_properties(duoforge.reference.worker_protocol PROPERTIES TIMEOUT 120 LABELS reference
+            ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
     endif()
 endif()
 # The conformance tables must be what the converter makes of the traces.
