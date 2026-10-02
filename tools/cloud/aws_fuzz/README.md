@@ -292,29 +292,38 @@ launch resources and not on the four supporting ones, `CreateTags` only with `ec
 `TerminateInstances` only on tagged instances, `PassRole` only for the role `duoforge-fuzz` to `ec2.amazonaws.com`,
 and no IAM action but `iam:PassRole`.
 
-## The pilot campaigns
+## The campaigns
 
-Every POOL step team (G7 to G13, the weather step, Encore) at ten times the battles of the step's own campaign, plus the
-CLOSURE mirrors and the Team C mirror. The table gives the chunks of the campaign (`chunk_battles` of each is in its `campaign.conf`).
+AWS is used for real evidence campaigns only, each with its own owner OK (the throughput sweeps measured the machine and
+are done). The evidence campaigns: every merged POOL mechanics step at ten times the battles of the step's own local
+campaign (steps that recorded none: 2000), `parallel=auto` (vCPUs / 7, 9 on 64), `bench=0`, and a mix over the registry.
+Each `campaign.conf` names in its comment the source of its teams: the step's own campaign team where it is in the
+repository or in the builder's files (copied next to the conf), else registry teams (`data/teams`, ids `PP_...` of the
+VGCPastes survey) that use the mechanic, else the teams of the step's recorded specs. A local run of a few battles of
+each (all PASS under POOL, 2026-10-03) shows that the teams play.
 
-| Campaign id | Teams and pairings | Chunks | In this directory |
-| --- | --- | --- | --- |
-| `weather-sand-snow` | sand team D, snow team E: `DE,ED,DD,EE,DA,AD,EA,AE` (POOL) | 4 x 1000 = 4000 battles, ten times the step's 400; `bench=1` | yes |
-| `closure-mirror` | team A and team B mirrors: `AA,BB` (CLOSURE) | 5 x 1000 | yes |
-| `team-c-mirror` | Team C mirror: `CC` (TEAM_C) | 5 x 1000 | yes |
-| `throughput-sweep` | the closure mirrors `AA,BB` at 5, 7 and 9 drivers (`sweep=5,7,9`, `bench=1`) | 3 phases x 24 x 1000 | yes (not a pilot: it measures the machine) |
-| `throughput-sweep-9-13` | the same at 9, 11 and 13 drivers (`sweep=9,11,13`) | 3 phases x 40 x 1000 | yes (not a pilot: it measures the machine) |
-| `g7-wide-guard` | the step's teams (Wide Guard) | ten times the step's | to be added by the step's owner |
-| `g8-throat-chop-heal-block` | the step's teams | ten times the step's | to be added |
-| `g9-encore` | the step's teams (Encore) | ten times the step's | to be added |
-| `g10-moves` | the step's teams | ten times the step's | to be added |
-| `g11-soak` | the step's teams | ten times the step's | to be added |
-| `g12-floette` | the step's teams | ten times the step's | to be added |
-| `g13` | the step's teams | ten times the step's | to be added |
+| Campaign id | Teams (source) and pairings | Battles |
+| --- | --- | --- |
+| `g7-wide-guard` | `tests/reference/teams/team_wide_guard.txt` (D); `DA,AD,DD,DB,BD` | 4 x 1000 (the step ran 400) |
+| `g8-throat-chop-heal-block` | registry: Psychic Noise team and a Throat Chop team; against each other, themselves, A, B | 3 x 150 (the step ran 45) |
+| `g9-encore` | the Encore builder's `team_encore.txt` (D) and a registry Encore team | 4 x 550 (the step ran 120 and 100) |
+| `g10-moves` | registry: First Impression, Scald/Recover and Low Kick teams | 2 x 1000 (no step campaign) |
+| `g11-soak` | registry: the two Soak teams | 2 x 1000 (no step campaign) |
+| `g12-floette` | registry `PP_8025F0AEF5F2D1B6` (the step's own team) against A, B, itself | 30 x 1000 (the step ran 3000) |
+| `g13-moves` | the G13 builder's `team_g13_d.txt` (D) and `team_g13_e.txt` (E); `DE,ED,DD,EE` and against A, B | 3 x 800 (the step ran 240) |
+| `g14-abilities` | teams of the step's recorded specs (`g14_poison_touch`, `g14_rough_skin`, `g14_thermal_exchange`: D, E, F) | 13 x 1000 (the step ran 300 and 1000) |
+| `g17-hyper-beam` | the G17 builder's `team_hb.txt` (D) and the two teams of `g17_recharge_moves` (E, F) | 4 x 1000 (the step ran 100, 100 and 200) |
+| `registry-mix` | the 44 VGCPastes teams of the registry as 88 pairings (every team in both seats) | 10 x 1000 (no step campaign) |
+| `weather-sand-snow` | sand team D, snow team E: `DE,ED,DD,EE,DA,AD,EA,AE` (POOL) | 4 x 1000, ten times the step's 400; `bench=1` |
+| `closure-mirror` | team A and team B mirrors: `AA,BB` (CLOSURE) | 5 x 1000 |
+| `team-c-mirror` | Team C mirror: `CC` (TEAM_C) | 5 x 1000 |
+| `throughput-sweep`, `throughput-sweep-9-13` | the closure mirrors at 5/7/9 and 9/11/13 drivers (`sweep=`) | measurements of the machine, done |
+
+Not yet: the steps G15 and G16 (not merged when this was written) and AC1.
 
 A campaign is a directory `campaigns/<id>/` with `campaign.conf` (`pairings`, `teams`, `base_seed`, `chunks`: four
 required `key=value` lines, and the optional `chunk_battles` (100 to 20000, default 2000), `parallel` (`auto` or 1 to 16)
-or `sweep` (1 to 6 values, not with `parallel`) and `bench` (0 or 1); see the five that exist) and the team pastes it names (`teams=D=sand.txt E=snow.txt`: a letter, a
+or `sweep` (1 to 6 values, not with `parallel`) and `bench` (0 or 1); see the existing ones) and the team pastes it names (`teams=D=sand.txt E=snow.txt`: a letter, a
 file of six sets with every gender stated, as `diff_driver.py random --team` takes them; or the id of a team of the
 registry). It is read from the commit that is built, so a campaign is reviewed with the PR that adds it. Pick a base seed
 range that no other campaign uses: the names of the battles are `fz_<seed>_<index>`.
