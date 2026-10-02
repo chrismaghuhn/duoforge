@@ -71,6 +71,7 @@ class FakeWorker:
         self.reported = version
         self.requests = []
         self.closed = self.killed = 0
+        self.failed = False  # set by a test that plays a worker that died: it is replaced
 
     def version(self):
         return dict(self.reported)
@@ -90,14 +91,18 @@ class FakeWorker:
 class FakeRunner:
     """run() answers `result`; a runner that must not be asked has none."""
 
-    def __init__(self, result=None, leaves_with=()):
+    def __init__(self, result=None, leaves_with=(), raises=None):
         self.result = result
         self.leaves_with = list(leaves_with)
+        self.raises = raises
         self.requests = []
         self.closed = self.killed = 0
+        self.failed = False
 
     def run(self, name, records):
         self.requests.append((name, records))
+        if self.raises is not None:
+            raise self.raises
         if self.result is None:
             raise AssertionError('the runner must not be asked for %s' % name)
         return self.result
@@ -117,9 +122,9 @@ def runner_result(verdict, context='CLOSURE_DEV', step=None, steps=4, detail='-'
 class Buckets(unittest.TestCase):
     """One battle through the three steps, by the bucket it ends in."""
 
-    def process(self, name, spec, text, answer=None, result=None):
+    def process(self, name, spec, text, answer=None, result=None, runner_raises=None):
         worker = FakeWorker(answer or (lambda s, f: text))
-        runner = FakeRunner(result)
+        runner = FakeRunner(result, raises=runner_raises)
         record = driver.process_battle(name, spec, text, worker, runner, tables)
         return record, worker, runner
 
@@ -227,6 +232,42 @@ class Buckets(unittest.TestCase):
                     self.assertTrue(records.endswith('\nEND\n'))
                     self.assertEqual(records.count('\nB '), 0)
 
+    def test_a_runner_that_died_or_hung_on_the_battle_is_a_divergence(self):
+        spec, text = committed(CLOSURE)
+        for failure, detail in (
+                (driver.ChildFailure('the runner gave no answer: exited with status 3', 'runner', 'died', 3,
+                                     'assertion failed\nat turn.c:12'), 'runner died (exit 3)'),
+                (driver.ChildFailure('the runner gave no answer: exited with status 3221225477', 'runner', 'died',
+                                     3221225477, ''), 'runner died (exit 0xc0000005)'),
+                (driver.ChildFailure('the runner gave no answer: no answer in 60 s, killed', 'runner', 'timed out', 1,
+                                     ''), 'runner timed out')):
+            with self.subTest(detail):
+                record, worker, runner = self.process(CLOSURE, spec, text, runner_raises=failure)
+                self.assertEqual(list(record), SCHEMA)
+                self.assertEqual((record['bucket'], record['rule'], record['detail'], record['step'], record['context']),
+                                 ('DIVERGENCE', None, detail, None, None))
+                self.assertEqual(record['messages'], [line for line in failure.stderr.split('\n') if line])
+
+    def test_a_worker_that_died_or_hung_on_the_battle_is_a_ref_error(self):
+        spec, text = committed(CLOSURE)
+        for failure, detail in (
+                (driver.ChildFailure('the reference worker gave no answer', 'worker', 'died', 134, 'Error: heap'),
+                 'worker died (exit 134)'),
+                (driver.ChildFailure('the reference worker gave no answer', 'worker', 'timed out', 1, ''),
+                 'worker timed out')):
+            with self.subTest(detail):
+                def die(s, f):
+                    raise failure
+                record, worker, runner = self.process(CLOSURE, spec, text, die)
+                self.assertEqual((record['bucket'], record['rule'], record['detail']), ('REF_ERROR', None, detail))
+                self.assertEqual(runner.requests, [])
+
+    def test_a_tool_error_that_is_not_a_child_failure_still_stops_the_replay(self):
+        spec, text = committed(CLOSURE)
+        with self.assertRaises(driver.ToolError) as cm:
+            self.process(CLOSURE, spec, text, runner_raises=driver.ToolError('the runner: not a result line'))
+        self.assertNotIsInstance(cm.exception, driver.ChildFailure)
+
     def test_every_result_has_one_bucket_and_one_schema(self):
         spec, text = committed(CLOSURE)
         records = [self.process(CLOSURE, spec, text, result=runner_result(v))[0] for v in driver.VERDICTS]
@@ -268,7 +309,22 @@ for line in sys.stdin:
         sys.stdout.write('R %s DIVERGENCE CLOSURE 2 9 differences: state 1\r\n' % name)
         sys.stdout.flush()
 '''
-RECORDS = 'B x 0 1 1 0\nEND\n'
+RECORDS = 'B x 0 0 1 1 0\nEND\n'  # what the stand-ins read: the name is all they look at
+# A child that says its own priority and waits for EOF.
+PRIORITY = r'''
+import os
+if os.name == 'nt':
+    import ctypes
+    k = ctypes.windll.kernel32
+    k.GetCurrentProcess.restype = ctypes.c_void_p
+    k.GetPriorityClass.argtypes = [ctypes.c_void_p]
+    k.GetPriorityClass.restype = ctypes.c_uint32
+    print(hex(k.GetPriorityClass(k.GetCurrentProcess())))
+else:
+    print(os.nice(0))
+sys.stdout.flush()
+sys.stdin.read()
+'''
 
 
 class Runner(unittest.TestCase):
@@ -285,18 +341,47 @@ class Runner(unittest.TestCase):
                                                       ['  %s step 2: side 0 member 0 hp 5, reference 6' % name]))
         self.assertEqual(runner.close(), [])  # EOF on stdin, status 0
 
-    def test_a_runner_that_dies_is_a_failure_of_the_tool_with_its_stderr(self):
+    def test_a_runner_that_refuses_its_input_is_a_bug_of_the_tool_with_its_stderr(self):
+        """Status 2 and "malformed input" is the reader refusing what the driver wrote: not a finding about a battle."""
         runner = self.stand_in("sys.stdin.readline()\nsys.stderr.write('duoforge_diff_runner: malformed input: line 3: boom\\n')\nsys.exit(2)")
         with self.assertRaises(driver.ToolError) as cm:
             runner.run('x', RECORDS)
+        self.assertNotIsInstance(cm.exception, driver.ChildFailure)
         self.assertRegex(str(cm.exception), r'^the runner .*exited with status 2: duoforge_diff_runner: malformed input: line 3: boom$')
+
+    def test_a_runner_that_dies_on_a_battle_is_a_child_failure(self):
+        """Any other death (a crash, an abort, a sanitizer's exit) is a finding: the exit code and the stderr are kept."""
+        runner = self.stand_in("sys.stdin.readline()\nsys.stderr.write('assertion failed\\nat turn.c:12\\n')\nsys.exit(3)")
+        with self.assertRaises(driver.ChildFailure) as cm:
+            runner.run('x', RECORDS)
+        e = cm.exception
+        self.assertEqual((e.role, e.kind, e.exit_code, e.detail()), ('runner', 'died', 3, 'runner died (exit 3)'))
+        self.assertEqual(e.stderr, 'assertion failed\nat turn.c:12')
+        self.assertIsInstance(e, driver.ToolError)  # code that does not know better stops
+        self.assertTrue(runner.failed)
 
     def test_a_runner_that_does_not_answer_is_killed_after_the_timeout(self):
         runner = self.stand_in('sys.stdin.readline()\nimport time\ntime.sleep(60)', timeout=1)
-        with self.assertRaises(driver.ToolError) as cm:
+        with self.assertRaises(driver.ChildFailure) as cm:
             runner.run('x', RECORDS)
         self.assertIn('no answer in 1 s, killed', str(cm.exception))
+        self.assertEqual((cm.exception.role, cm.exception.kind, cm.exception.detail()), ('runner', 'timed out', 'runner timed out'))
         self.assertIsNotNone(runner.proc.poll())
+        self.assertTrue(runner.failed)
+
+    def test_exit_codes_as_a_person_reads_them(self):
+        self.assertEqual([driver.format_exit(c) for c in (0, 3, 134, -11, 3221225477, 0xC0000409)],
+                         ['0', '3', '134', '-11', '0xc0000005', '0xc0000409'])
+
+    def test_a_child_runs_below_normal_priority(self):
+        """BELOW_NORMAL_PRIORITY_CLASS on Windows, nice 10 elsewhere: the child reports it itself."""
+        runner = self.stand_in(PRIORITY)
+        reported = runner.readline().decode('ascii').strip()
+        if os.name == 'nt':
+            self.assertEqual(reported, '0x4000')
+        else:
+            self.assertGreaterEqual(int(reported), 10)
+        self.assertEqual(runner.close(), [])
 
     def test_result_lines_that_are_not_the_format_are_failures_of_the_tool(self):
         for line, part in (('R other PASS CLOSURE - 1 -', 'not a result line'),  # another battle's
@@ -337,6 +422,19 @@ for line in sys.stdin:
         reply = {'id': req['id'], 'ok': False, 'error': 'the request is not ASCII'}
     elif req['cmd'] == 'version':
         reply = {'id': req['id'], 'ok': True, 'node': 'v0', 'pin': 'p', 'harness': 3}
+    elif req['cmd'] == 'play':
+        kind = req['battle'].get('kind')
+        ok = {'ok': True, 'choices': [{'p1': 'team 1234', 'p2': 'team 4321'}, {'p1': 'move 1'}], 'ended': True, 'steps': 2}
+        if kind == 'bad':
+            reply = {'id': req['id'], 'ok': False, 'error': 'no accepted choice', 'stack': 'Error: no accepted choice'}
+        elif kind == 'choices':
+            reply = dict(ok, id=req['id'], choices='x')
+        elif kind == 'steps':
+            reply = dict(ok, id=req['id'], steps=3)
+        elif kind == 'ended':
+            reply = dict(ok, id=req['id'], ended='yes')
+        else:
+            reply = dict(ok, id=req['id'])
     elif req['spec_file'] == 'bad.json':
         reply = {'id': req['id'], 'ok': False, 'error': 'it broke', 'stack': 'Error: it broke\n    at here'}
     elif req['spec_file'] == 'skew.json':
@@ -387,15 +485,40 @@ class Worker(unittest.TestCase):
 
     def test_a_worker_that_dies(self):
         worker = self.stand_in("sys.stdin.readline()\nsys.stderr.write('Error: out of memory\\n')\nsys.exit(134)")
-        with self.assertRaises(driver.ToolError) as cm:
+        with self.assertRaises(driver.ChildFailure) as cm:
             worker.record({}, 'a.json')
         self.assertRegex(str(cm.exception), r'exited with status 134: Error: out of memory$')
+        e = cm.exception
+        self.assertEqual((e.role, e.kind, e.exit_code, e.detail(), e.stderr),
+                         ('worker', 'died', 134, 'worker died (exit 134)', 'Error: out of memory'))
+        self.assertTrue(worker.failed)
+
+    def test_a_worker_that_does_not_answer(self):
+        worker = StandInWorker('sys.stdin.readline()\nimport time\ntime.sleep(60)', timeout=1)
+        self.addCleanup(worker.kill)
+        with self.assertRaises(driver.ChildFailure) as cm:
+            worker.play({}, {})
+        self.assertEqual((cm.exception.role, cm.exception.detail()), ('worker', 'worker timed out'))
+
+    def test_play(self):
+        worker = self.stand_in()
+        self.assertEqual(worker.play({'kind': 'ok'}, {'seed': 1}),
+                         {'choices': [{'p1': 'team 1234', 'p2': 'team 4321'}, {'p1': 'move 1'}], 'ended': True, 'steps': 2})
+        with self.assertRaises(driver.WorkerError) as cm:
+            worker.play({'kind': 'bad'}, {'seed': 1})
+        self.assertEqual((cm.exception.error, cm.exception.stack), ('no accepted choice', 'Error: no accepted choice'))
+        self.assertTrue(worker.play({'kind': 'ok'}, {'seed': 1})['ended'])  # it keeps serving
+        for kind in ('choices', 'steps', 'ended'):  # answers that are not a play
+            with self.subTest(kind):
+                with self.assertRaises(driver.ToolError) as cm:
+                    worker.play({'kind': kind}, {'seed': 1})
+                self.assertIn('answered a play without choices, ended and steps', str(cm.exception))
 
 
 class Lanes(unittest.TestCase):
     """The threads: every battle once, the children closed or killed, the order of the output."""
 
-    def lanes(self, names, workers, handle, make_worker=None, make_runner=None):
+    def lanes(self, names, workers, handle, make_worker=None, make_runner=None, **kwargs):
         made = {'workers': [], 'runners': []}
         lock = threading.Lock()
 
@@ -410,7 +533,7 @@ class Lanes(unittest.TestCase):
         outcome = None
         try:
             outcome = driver.run_lanes(names, workers, make('workers', make_worker or (lambda: FakeWorker())),
-                                       make('runners', make_runner or (lambda: FakeRunner())), handle)
+                                       make('runners', make_runner or (lambda: FakeRunner())), handle, **kwargs)
             error = None
         except BaseException as e:
             error = e
@@ -435,6 +558,82 @@ class Lanes(unittest.TestCase):
         self.assertEqual((len(made['workers']), len(made['runners'])), (3, 3))
         for child in made['workers'] + made['runners']:
             self.assertEqual((child.closed, child.killed), (1, 0))
+
+    def test_a_child_that_failed_is_replaced_before_the_next_battle(self):
+        served = {}
+
+        def handle(name, worker, runner):
+            served[name] = (id(worker), id(runner))
+            if name == 'b01':
+                runner.failed = True  # the runner died on this battle; the handler made a bucket of it
+            if name == 'b03':
+                worker.failed = True
+            return driver.new_result(name, 'PASS')
+
+        outcome, error, made = self.lanes(['b00', 'b01', 'b02', 'b03', 'b04'], 1, handle)
+        self.assertIsNone(error)
+        self.assertEqual(sorted(outcome[0]), ['b00', 'b01', 'b02', 'b03', 'b04'])
+        (w0, w1), (r0, r1) = made['workers'], made['runners']
+        self.assertEqual((len(made['workers']), len(made['runners'])), (2, 2))
+        # The runner is new from b02 on, the worker from b04 on.
+        self.assertEqual([served[n] for n in ('b00', 'b01', 'b02', 'b03', 'b04')],
+                         [(id(w0), id(r0)), (id(w0), id(r0)), (id(w0), id(r1)), (id(w0), id(r1)), (id(w1), id(r1))])
+        self.assertEqual([(c.killed, c.closed) for c in (r0, r1, w0, w1)], [(1, 0), (0, 1), (1, 0), (0, 1)])
+
+    def test_a_worker_that_comes_back_with_another_version_stops_the_run(self):
+        versions = iter([VERSION, dict(VERSION, node='v9.9.9')])
+
+        def handle(name, worker, runner):
+            worker.failed = True
+            return driver.new_result(name, 'PASS')
+
+        outcome, error, made = self.lanes(['a', 'b'], 1, handle, make_worker=lambda: FakeWorker(version=next(versions)))
+        self.assertIsInstance(error, driver.ToolError)
+        self.assertIn('another version', str(error))
+        for child in made['workers'] + made['runners']:
+            self.assertEqual(child.closed + child.killed, 1)
+
+    def test_a_replacement_that_cannot_be_started_stops_the_run(self):
+        count = [0]
+
+        def make_runner():
+            count[0] += 1
+            if count[0] > 1:
+                raise driver.ToolError('cannot start the runner')
+            return FakeRunner()
+
+        def handle(name, worker, runner):
+            runner.failed = True
+            return driver.new_result(name, 'PASS')
+
+        outcome, error, made = self.lanes(['a', 'b', 'c'], 1, handle, make_runner=make_runner)
+        self.assertEqual(str(error), 'cannot start the runner')
+        for child in made['workers'] + made['runners']:
+            self.assertEqual(child.closed + child.killed, 1)
+
+    def test_a_stop_request_ends_the_lanes_between_battles(self):
+        done = []
+
+        def handle(name, worker, runner):
+            done.append(name)
+            return driver.new_result(name, 'PASS')
+
+        names = ['b%02d' % i for i in range(10)]
+        seen = []
+        outcome, error, made = self.lanes(names, 1, handle, should_stop=lambda: len(done) >= 3,
+                                          on_result=lambda name, record: seen.append((name, record['bucket'])))
+        self.assertIsNone(error)
+        self.assertEqual((sorted(outcome[0]), done), (names[:3], names[:3]))  # no battle is left half done
+        self.assertEqual(seen, [(n, 'PASS') for n in names[:3]])  # and every result was handed on, in order
+        for child in made['workers'] + made['runners']:
+            self.assertEqual((child.closed, child.killed), (1, 0))
+
+    def test_a_failure_in_the_result_callback_stops_the_run(self):
+        def on_result(name, record):
+            raise OSError('disk full')
+
+        outcome, error, made = self.lanes(['a', 'b'], 1, self.passes, on_result=on_result)
+        self.assertIsInstance(error, OSError)
 
     def test_nothing_to_replay_is_a_failure(self):
         outcome, error, made = self.lanes([], 4, self.passes)

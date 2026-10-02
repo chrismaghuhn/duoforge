@@ -19,9 +19,16 @@ For each committed spec (tests/reference/specs, in name order):
  3. conformance_records writes the records and the runner (tools/difftest)
     answers PASS, DIVERGENCE or UNSUPPORTED, with its messages.
 
-N threads (default 4) each own one worker and one runner process. A process
-that dies, does not answer in time or answers out of protocol is a failure of
-the tool, not a bucket: the replay stops with status 3 and writes nothing.
+N threads (default 4) each own one worker and one runner process, below normal
+priority. A child that dies or does not answer in time on a battle is a bucket
+of that battle (a runner: DIVERGENCE "runner died (exit X)" or "runner timed
+out"; a worker: REF_ERROR) and is replaced before the next one. A child that
+answers out of protocol, cannot be started, comes back with another version or
+leaves with a status at the end is a failure of the tool: the run stops with
+status 3 and writes nothing.
+
+The mode "random" (diff_random.py) plays random battles instead of replaying
+committed ones: see there.
 
 --out (default build/diff/<UTC yyyymmdd-hhmmss>-replay) gets battles.jsonl,
 one line per battle in name order (name, bucket, rule, detail, step, steps,
@@ -49,6 +56,9 @@ import threading
 from collections import namedtuple
 
 sys.dont_write_bytecode = True  # a direct run must not leave __pycache__ in the source tree
+# Run as a script this module is __main__; diff_random imports it as diff_driver and must get this very module, with
+# its classes, not a second copy of it.
+sys.modules.setdefault('diff_driver', sys.modules[__name__])
 
 import conformance_records  # noqa: E402
 import trace_to_c  # noqa: E402
@@ -65,7 +75,31 @@ EXIT_NOT_ALL_PASS, EXIT_TOOL = 1, 3  # a bad command line is argparse's 2
 
 
 class ToolError(Exception):
-    """The driver's own machinery failed: a child died, hung or answered out of protocol. Never a bucket."""
+    """The driver's own machinery failed: a child answered out of protocol, could not be started... Never a bucket."""
+
+
+class ChildFailure(ToolError):
+    """A child process died or did not answer in time. That is a finding about the battle it was working on: the
+    lane makes a bucket of it (a runner: DIVERGENCE, a worker: REF_ERROR), restarts the child and goes on. Code that
+    does not know that sees a ToolError and stops."""
+
+    def __init__(self, message, role, kind, exit_code, stderr):
+        super().__init__(message)
+        self.role = role  # 'runner' or 'worker'
+        self.kind = kind  # 'died' or 'timed out'
+        self.exit_code = exit_code
+        self.stderr = stderr  # the end of what the child wrote to stderr
+
+    def detail(self):
+        """The detail of the bucket: "runner died (exit 3221225477)" or "runner timed out"."""
+        if self.kind == 'timed out':
+            return '%s timed out' % self.role
+        return '%s died (exit %s)' % (self.role, format_exit(self.exit_code))
+
+
+def format_exit(code):
+    """A process exit code as a person reads it: the status of a Windows crash in hex, a signal as a negative number."""
+    return hex(code) if code >= 0x80000000 else str(code)
 
 
 class WorkerError(Exception):
@@ -82,17 +116,36 @@ RunnerResult = namedtuple('RunnerResult', 'verdict context step steps detail mes
 
 # ------------------------------------------------------------ child processes
 
+def low_priority(argv):
+    """`argv` and the Popen arguments that start the process below normal
+    priority, as the machine is shared: BELOW_NORMAL_PRIORITY_CLASS on Windows,
+    nice 10 elsewhere."""
+    if os.name == 'nt':
+        return list(argv), {'creationflags': subprocess.BELOW_NORMAL_PRIORITY_CLASS}
+    nice = shutil.which('nice')
+    if nice is None:
+        raise ToolError('nice is not on the PATH: a child cannot be started at lower priority')
+    return [nice, '-n', '10'] + list(argv), {}
+
+
 class Child:
-    """A child process spoken to in lines over binary pipes. Its stderr goes to
-    a temporary file, which is read when something went wrong."""
+    """A child process spoken to in lines over binary pipes, below normal
+    priority. Its stderr goes to a temporary file, which is read when something
+    went wrong. `failed` says it died or hung: it is gone and must be replaced."""
+
+    role = 'child'  # 'runner' or 'worker': what a failure is a finding about
 
     def __init__(self, argv, label, timeout):
         self.label = label
         self.timeout = timeout
         self.timed_out = False
+        self.failed = False
+        self.exit_code = None
         self.stderr = tempfile.TemporaryFile()
+        command, kwargs = low_priority(argv)
         try:
-            self.proc = subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=self.stderr)
+            self.proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=self.stderr,
+                                         **kwargs)
         except OSError as e:
             self.stderr.close()
             raise ToolError('cannot start %s (%s): %s' % (label, argv[0], e)) from None
@@ -103,26 +156,34 @@ class Child:
 
     def _stderr_tail(self):
         self.stderr.seek(0)
-        text = self.stderr.read()[-1500:].decode('utf-8', 'replace').strip()
+        text = self.stderr.read()[-1500:].decode('utf-8', 'replace').replace('\r\n', '\n').strip()
         return ': ' + text if text else ''
 
     def _death(self):
         """What became of the process, for the message of a ToolError."""
         try:
-            code = self.proc.wait(timeout=10)
+            self.exit_code = self.proc.wait(timeout=10)
         except subprocess.TimeoutExpired:
             self.proc.kill()
-            code = self.proc.wait()
+            self.exit_code = self.proc.wait()
         if self.timed_out:
             return 'no answer in %d s, killed%s' % (self.timeout, self._stderr_tail())
-        return 'exited with status %s%s' % (code, self._stderr_tail())
+        return 'exited with status %s%s' % (self.exit_code, self._stderr_tail())
+
+    def _failure(self, what):
+        """The exception for a child that is gone or gave no answer; the child is marked failed."""
+        text = self._death()
+        self.failed = True
+        stderr = self._stderr_tail()[2:]
+        return ChildFailure('%s %s: %s' % (self.label, what, text), self.role, 'timed out' if self.timed_out else 'died',
+                            self.exit_code, stderr)
 
     def send(self, data):
         try:
             self.proc.stdin.write(data)
             self.proc.stdin.flush()
         except OSError:
-            raise ToolError('%s closed its input: %s' % (self.label, self._death())) from None
+            raise self._failure('closed its input') from None
 
     def readline(self):
         """The next line from the child, without its line end."""
@@ -133,7 +194,7 @@ class Child:
         finally:
             timer.cancel()
         if not line.endswith(b'\n'):
-            raise ToolError('%s gave no answer: %s' % (self.label, self._death()))
+            raise self._failure('gave no answer')
         return line
 
     def _release(self):
@@ -174,6 +235,8 @@ class Child:
 class NodeWorker(Child):
     """The client of ps_worker.js (its protocol is in that file)."""
 
+    role = 'worker'
+
     def __init__(self, node, checkout, timeout=REQUEST_TIMEOUT):
         super().__init__([node, WORKER_SCRIPT, checkout], 'the reference worker', timeout)
         self.next_id = 1
@@ -207,12 +270,30 @@ class NodeWorker(Child):
             raise ToolError('%s answered a record without a trace' % self.label)
         return trace
 
+    def play(self, battle, policy):
+        """Random choices for a battle, each judged by Showdown (ps_play.js): {'choices', 'ended', 'steps'}."""
+        reply = self.request('play', battle=battle, policy=policy)
+        choices, ended, steps = reply.get('choices'), reply.get('ended'), reply.get('steps')
+        if (not isinstance(choices, list) or not isinstance(ended, bool) or type(steps) is not int
+                or steps != len(choices)):
+            raise ToolError('%s answered a play without choices, ended and steps: %r' % (self.label, reply))
+        return {'choices': choices, 'ended': ended, 'steps': steps}
+
 
 class DiffRunner(Child):
     """The client of duoforge_diff_runner (its output format is in diff_runner.c)."""
 
+    role = 'runner'
+
     def __init__(self, exe, timeout=REQUEST_TIMEOUT):
         super().__init__([exe], 'the runner', timeout)
+
+    def _failure(self, what):
+        failure = super()._failure(what)
+        # Status 2 with that message is the reader refusing what the driver wrote: a bug of the tool, not of a battle.
+        if failure.kind == 'died' and failure.exit_code == 2 and 'malformed input' in failure.stderr:
+            return ToolError(str(failure))
+        return failure
 
     def run(self, name, records):
         """Feeds one battle (`records` text) and returns its RunnerResult."""
@@ -279,14 +360,24 @@ def oracle_gap(name, e):
                       messages=['%s: %s' % (type(e).__name__, e)])
 
 
+def child_failure_result(name, failure):
+    """The bucket of a battle on which a child died or hung: a runner that did is a DIVERGENCE (the engine crashed or
+    looped on this battle), a worker that did is a REF_ERROR; what the child wrote to stderr is the message."""
+    bucket = 'DIVERGENCE' if failure.role == 'runner' else 'REF_ERROR'
+    return new_result(name, bucket, detail=failure.detail(),
+                      messages=[line for line in failure.stderr.split('\n') if line][-20:])
+
+
 def process_battle(name, spec, committed, worker, runner, tables_for):
     """One battle through the three steps; the record of its bucket. `committed`
     is the text of its committed trace (LF), `tables_for(team_c)` the name
-    tables of trace_to_c."""
+    tables of trace_to_c. A child that dies or hangs on it is a bucket too."""
     try:
         text = worker.record(spec, name + '.json')
     except WorkerError as e:
         return new_result(name, 'REF_ERROR', detail=e.error, messages=e.stack.split('\n') if e.stack else [])
+    except ChildFailure as e:
+        return child_failure_result(name, e)
     if text != committed:
         return new_result(name, 'REF_ERROR', detail='trace differs from the committed trace',
                           messages=[first_difference(text, committed)])
@@ -304,7 +395,10 @@ def process_battle(name, spec, committed, worker, runner, tables_for):
         return oracle_gap(name, e)
     records = io.StringIO()
     conformance_records.write_battle(data, team_c, records)
-    run = runner.run(name, records.getvalue())
+    try:
+        run = runner.run(name, records.getvalue())
+    except ChildFailure as e:
+        return child_failure_result(name, e)
     return new_result(name, run.verdict, detail=None if run.verdict == 'PASS' else run.detail, step=run.step,
                       steps=run.steps, context=run.context, messages=run.messages)
 
@@ -323,13 +417,21 @@ def load_committed(root, name):
         return spec, f.read().decode('utf-8').replace('\r\n', '\n')
 
 
-def run_lanes(names, workers, make_worker, make_runner, handle):
+def run_lanes(names, workers, make_worker, make_runner, handle, should_stop=None, on_result=None):
     """Serves `names` with `workers` lanes: each lane makes its own worker and
     runner, asks the worker for its version, and takes the next name until none
     is left; handle(name, worker, runner) returns the record of a battle.
-    Returns ({name: record}, version). The first failure of a lane stops the
-    others and is raised once all are done; a lane closes its children (and
-    reports one that does not leave cleanly), or kills them after a failure."""
+    Returns ({name: record}, version).
+
+    A child that the handler found dead or hung (its `failed` flag) is replaced
+    before the next battle; a worker that comes back must say the version it
+    said before. `should_stop()`, asked before each new battle, ends the lane
+    when it is true: the battles it took are finished, none is left half done.
+    `on_result(name, record)` is called as each battle finishes.
+
+    The first other failure of a lane stops the others and is raised once all
+    are done; a lane closes its children (and reports one that does not leave
+    cleanly), or kills them after a failure."""
     if not names:
         raise ToolError('there are no battles to replay')
     jobs = queue.Queue()
@@ -340,16 +442,15 @@ def run_lanes(names, workers, make_worker, make_runner, handle):
     abort = threading.Event()
 
     def lane():
-        children = []
+        worker = runner = None
         failed = False
         try:
-            for make in (make_worker, make_runner):
-                children.append(make())
-            worker, runner = children
+            worker = make_worker()
+            runner = make_runner()
             version = worker.version()
             with lock:
                 versions.append(version)
-            while not abort.is_set():
+            while not abort.is_set() and not (should_stop is not None and should_stop()):
                 try:
                     name = jobs.get_nowait()
                 except queue.Empty:
@@ -357,13 +458,27 @@ def run_lanes(names, workers, make_worker, make_runner, handle):
                 record = handle(name, worker, runner)
                 with lock:
                     results[name] = record
-        except BaseException as e:  # a failure of any kind ends the whole replay
+                if on_result is not None:
+                    on_result(name, record)
+                if getattr(worker, 'failed', False):
+                    worker.kill()
+                    worker = None  # gone: the cleanup below must not touch it again if the new one cannot start
+                    worker = make_worker()
+                    if worker.version() != version:
+                        raise ToolError('a worker came back with another version: %r' % (worker.version(),))
+                if getattr(runner, 'failed', False):
+                    runner.kill()
+                    runner = None
+                    runner = make_runner()
+        except BaseException as e:  # a failure of any kind ends the whole run
             failed = True
             with lock:
                 errors.append(e)
             abort.set()
         finally:
-            for child in reversed(children):
+            for child in (runner, worker):
+                if child is None:
+                    continue
                 if failed:
                     child.kill()
                 else:
@@ -379,7 +494,7 @@ def run_lanes(names, workers, make_worker, make_runner, handle):
         t.join()
     if errors:
         raise errors[0]
-    if sorted(results) != sorted(names):
+    if should_stop is None and sorted(results) != sorted(names):
         raise ToolError('%d battles have no result' % (len(names) - len(results)))
     if any(v != versions[0] for v in versions):
         raise ToolError('the workers disagree about their versions: %r' % versions)
