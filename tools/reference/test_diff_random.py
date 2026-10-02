@@ -22,6 +22,7 @@ import itertools
 import json
 import os
 import re
+import shutil
 import sys
 import tempfile
 import threading
@@ -33,6 +34,7 @@ sys.dont_write_bytecode = True  # a direct run must not leave __pycache__ in the
 import conformance_records  # noqa: E402
 import diff_driver as driver  # noqa: E402
 import diff_random as rnd  # noqa: E402
+import team_registry  # noqa: E402
 import trace_to_c  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -46,6 +48,23 @@ REAL_TEAM_C = 'c01_team_c_profile'  # six real members, ends: a PASS under TEAM_
 DEV = 's3_struggle_end'  # sets without an ability, ends: needs CLOSURE_DEV
 
 _tables = {}
+_pause = {}
+
+
+def setUpModule():
+    """The tests never look at the real pause file of this machine (a measurement may have made it): the path that they
+    run with is one that does not exist, and the tests that need the file make it there."""
+    _pause['saved'] = os.environ.get('DUOFORGE_FUZZ_PAUSE')
+    _pause['dir'] = tempfile.TemporaryDirectory()
+    os.environ['DUOFORGE_FUZZ_PAUSE'] = os.path.join(_pause['dir'].name, 'duoforge-fuzz.pause')
+
+
+def tearDownModule():
+    if _pause['saved'] is None:
+        os.environ.pop('DUOFORGE_FUZZ_PAUSE', None)
+    else:
+        os.environ['DUOFORGE_FUZZ_PAUSE'] = _pause['saved']
+    _pause['dir'].cleanup()
 
 
 def tables(team_c):
@@ -567,9 +586,16 @@ class Cases(unittest.TestCase):
             trace['steps'][1]['log'].append('|foo|bar')
         outcome, _, _ = process(World(scenario=lambda i: {'mutate': inject}))
         files = rnd.case_files(outcome)
-        self.assertEqual(sorted(files), ['messages.txt', 'spec.json', 'trace.json.gz'])  # the trace the converter refused
+        # The trace the converter refused, and the shortest prefix of the battle that it refuses (the step with the
+        # line it does not know and none after it): the cut that a fix of the converter is promoted from.
+        self.assertEqual(sorted(files), ['messages.txt', 'prefix_result.json', 'prefix_spec.json', 'spec.json',
+                                         'trace.json.gz'])
         self.assertEqual(files['messages.txt'].decode('utf-8').split('\n')[:2],
                          ['ORACLE_GAP | protocol-line | foo', "trace_to_c: unknown protocol line '|foo|bar'"])
+        self.assertEqual(json.loads(files['prefix_result.json'].decode('utf-8')),
+                         {'bucket': 'ORACLE_GAP', 'step': 1, 'choices': 2, 'reproduces': True})
+        cut = json.loads(files['prefix_spec.json'].decode('utf-8'))
+        self.assertEqual((cut['name'], cut['choices']), ('fz_1_0_prefix', json.loads(files['spec.json'].decode('utf-8'))['choices'][:2]))
 
     def test_a_case_is_written_to_a_directory_of_its_name(self):
         outcome = self.outcome_with_divergence()
@@ -1327,6 +1353,567 @@ def driver_parser():
     modes = parser.add_subparsers(dest='mode', required=True)
     rnd.add_arguments(modes)
     return parser
+
+
+# ------------------------------------------------------------ the pause file
+
+class PauseFile(unittest.TestCase):
+    """Measurements pause the fuzzing by making a file (docs/TESTING_AND_BENCHMARKS.md section 7): the loop looks at it
+    before each chunk, and a chunk that holds the lock looks again."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.path = os.path.join(self.tmp.name, 'pause')
+        self.addCleanup(self.tmp.cleanup)
+
+    def make(self):
+        with io.open(self.path, 'w') as f:
+            f.write('a measurement\n')
+
+    def test_the_path_is_the_variable_or_a_file_in_the_temporary_folder(self):
+        self.assertEqual(rnd.pause_path({'DUOFORGE_FUZZ_PAUSE': 'x/pause', 'TEMP': 'T'}), 'x/pause')
+        self.assertEqual(rnd.pause_path({'TEMP': 'T'}), os.path.join('T', 'duoforge-fuzz.pause'))
+        self.assertEqual(rnd.pause_path({'DUOFORGE_FUZZ_PAUSE': '', 'TEMP': 'T'}), os.path.join('T', 'duoforge-fuzz.pause'))
+        self.assertEqual(rnd.pause_path({}), os.path.join(tempfile.gettempdir(), 'duoforge-fuzz.pause'))
+        self.assertEqual(rnd.pause_path(), os.environ['DUOFORGE_FUZZ_PAUSE'])  # what these tests run with
+
+    def test_without_the_file_there_is_nothing_to_wait_for(self):
+        out = io.StringIO()
+        self.assertFalse(rnd.wait_while_paused(self.path, sleep=self.fail, out=out))
+        self.assertEqual(out.getvalue(), '')
+
+    def test_it_says_so_once_and_looks_every_fifteen_seconds_until_the_file_is_gone(self):
+        self.make()
+        out, sleeps = io.StringIO(), []
+
+        def sleep(seconds):
+            sleeps.append(seconds)
+            if len(sleeps) == 3:
+                os.remove(self.path)
+
+        self.assertTrue(rnd.wait_while_paused(self.path, sleep=sleep, out=out))
+        self.assertEqual(sleeps, [15, 15, 15])
+        self.assertEqual(rnd.PAUSE_POLL, 15)
+        self.assertEqual(out.getvalue(), 'fuzz paused by %s\n' % self.path)  # one line, however long it takes
+
+    def orchestrate(self, run, sleep, battles=6, **kw):
+        outdir = os.path.join(self.tmp.name, 'out')
+        out = io.StringIO()
+        rnd.orchestrate(PARAMS._replace(battles=battles), outdir, [], 5, run=run, sleep=sleep, bash='bash', lock_script='l',
+                        python='p', driver_script='d', out=out, pause=self.path, **kw)
+        return out.getvalue()
+
+    def ran(self, outdir_battles=6):
+        """A chunk that runs every battle that is left: the results are what first_missing looks at."""
+        def run(command):
+            outdir = os.path.join(self.tmp.name, 'out')
+            for index in range(rnd.first_missing(outdir, outdir_battles), outdir_battles):
+                rnd.write_atomically(rnd.partial_path(outdir, index), b'{}')
+            return 0
+        return run
+
+    def test_the_loop_waits_before_it_starts_a_chunk(self):
+        self.make()
+        starts, sleeps = [], []
+
+        def run(command):
+            self.assertFalse(os.path.exists(self.path))  # not a chunk while the file is there
+            starts.append(command)
+            return self.ran()(command)
+
+        def sleep(seconds):
+            sleeps.append(seconds)
+            if len(sleeps) == 2:
+                os.remove(self.path)
+
+        text = self.orchestrate(run, sleep)
+        self.assertEqual((len(starts), sleeps), (1, [15, 15]))
+        self.assertEqual(text.count('fuzz paused by'), 1)
+        self.assertIn('fuzz paused by %s\n' % self.path, text)
+        self.assertLess(text.index('fuzz paused by'), text.index('chunk from battle 0'))
+
+    def test_a_chunk_that_found_the_file_after_it_got_the_lock_is_a_wait_not_a_failure(self):
+        """It leaves with PAUSED_STATUS and the lock goes with it: the loop makes no progress, and no error of it, waits
+        for the file to go (one line) and starts the chunk again."""
+        statuses, sleeps = [], []
+
+        def run(command):
+            if not statuses:
+                statuses.append(rnd.PAUSED_STATUS)
+                self.make()  # the measurement started while the chunk waited for the lock
+                return rnd.PAUSED_STATUS
+            statuses.append(0)
+            return self.ran()(command)
+
+        def sleep(seconds):
+            sleeps.append(seconds)
+            if os.path.exists(self.path):
+                os.remove(self.path)
+
+        text = self.orchestrate(run, sleep)
+        self.assertEqual(statuses, [rnd.PAUSED_STATUS, 0])
+        self.assertEqual(sleeps, [15])
+        self.assertEqual(text.count('fuzz paused by'), 1)
+        self.assertEqual(text.count('chunk from battle 0'), 2)  # the same chunk, again
+
+    def test_no_file_changes_nothing(self):
+        sleeps = []
+        text = self.orchestrate(self.ran(), sleeps.append, battles=6)
+        self.assertEqual((sleeps, 'paused' in text), ([], False))
+
+    def args_of(self, *extra):
+        with tempfile.TemporaryDirectory() as tmp:
+            os.makedirs(os.path.join(tmp, 'dist', 'sim'))
+            exe = os.path.abspath(__file__)
+            parser = driver_parser()
+            args = parser.parse_args(['random', '--checkout', tmp, '--runner', exe, '--battles', '4', '--seed', '1',
+                                      '--node', exe, '--no-lock', '--chunk-minutes', '5', '--out', self.tmp.name] + list(extra))
+            return args, rnd.validate(parser, args)
+
+    def test_a_chunk_that_holds_the_lock_leaves_without_starting_a_battle(self):
+        self.make()
+
+        class Started(Exception):
+            pass
+
+        args, params = self.args_of()
+        with mock.patch.dict(os.environ, {rnd.LOCK_HELD_ENV: '1', 'DUOFORGE_FUZZ_PAUSE': self.path}), \
+                mock.patch.object(driver, 'NodeWorker', side_effect=Started):
+            self.assertEqual(rnd.run(args, params), rnd.PAUSED_STATUS)  # no worker was made
+            os.remove(self.path)
+            with self.assertRaises(Started):  # without the file the chunk goes on to its first worker
+                rnd.run(args, params)
+
+    def test_a_run_without_the_lock_never_looks_at_the_file(self):
+        """CTest runs with --no-lock inside local_ci.sh, which holds the lock: a pause that the measurement makes while it
+        waits for that lock must not stop them, or the two would wait for each other."""
+        self.make()
+
+        class Started(Exception):
+            pass
+
+        args, params = self.args_of()
+        environ = {k: v for k, v in os.environ.items() if k != rnd.LOCK_HELD_ENV}
+        environ['DUOFORGE_FUZZ_PAUSE'] = self.path
+        with mock.patch.dict(os.environ, environ, clear=True), mock.patch.object(driver, 'NodeWorker', side_effect=Started):
+            with self.assertRaises(Started):
+                rnd.run(args, params)
+
+    def test_the_chunks_of_the_loop_are_told_that_they_hold_the_lock(self):
+        seen = []
+
+        def fake_run(argv, **kwargs):
+            seen.append((argv, kwargs))
+            return mock.Mock(returncode=0)
+
+        with mock.patch.object(rnd.subprocess, 'run', fake_run), \
+                mock.patch.object(driver, 'low_priority', lambda command: (list(command), {'creationflags': 7})):
+            self.assertEqual(rnd.run_process(['prog', 'a']), 0)
+        argv, kwargs = seen[0]
+        self.assertEqual((argv, kwargs['creationflags'], kwargs['env'][rnd.LOCK_HELD_ENV]), (['prog', 'a'], 7, '1'))
+        self.assertEqual(kwargs['env']['PATH'], os.environ['PATH'])  # the rest of the environment is the loop's
+
+
+# ------------------------------------------------------------ team files
+
+TEAM_A = os.path.join(ROOT, 'tests', 'reference', 'teams', 'team_a.txt')
+TEAM_B = os.path.join(ROOT, 'tests', 'reference', 'teams', 'team_b.txt')
+TEAM_C = os.path.join(ROOT, 'docs', 'research', 'third-team', 'team-c.txt')
+
+
+def read_text(path):
+    with io.open(path, encoding='utf-8') as f:
+        return f.read()
+
+
+class TeamFiles(unittest.TestCase):
+    """--team NAME=path: a paste of six sets as one more letter of the pairings."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+
+    def write(self, name, text, newline=None):
+        path = os.path.join(self.tmp.name, name)
+        with io.open(path, 'w', encoding='utf-8', newline=newline) as f:
+            f.write(text)
+        return path
+
+    def test_the_options(self):
+        self.assertEqual(rnd.parse_team_options(['d=a.txt', ' E = b=c ']), [('D', 'a.txt'), ('E', 'b=c')])
+        # An id of the registry is given by itself (no file, any case); a file of your own as NAME=path.
+        self.assertEqual(rnd.parse_team_options(['mc405', 'D=x', 'A', 'Team_7']), [('MC405', None), ('D', 'x'), ('A', None),
+                                                                                  ('TEAM_7', None)])
+        for bad, part in (('d=', 'an id of the registry or NAME=path'), ('dd=x', 'one letter'), ('1=x', 'one letter'),
+                          ('=x', 'one letter'), ('a=x', 'committed teams'), ('C=x', 'committed teams'),
+                          ('', 'by its id'), ('1d', 'by its id'), ('mc-405', 'by its id'), ('m c', 'by its id'),
+                          ('x' * 33, 'by its id')):
+            with self.subTest(bad), self.assertRaises(ValueError) as cm:
+                rnd.parse_team_options([bad])
+            self.assertIn(part, str(cm.exception))
+        for twice in (['d=x', 'D=y'], ['mc405', 'MC405'], ['a', 'A'], ['d', 'd=x']):
+            with self.subTest(twice), self.assertRaises(ValueError) as cm:
+                rnd.parse_team_options(twice)
+            self.assertIn('given twice', str(cm.exception))
+
+    def test_pairings_may_use_the_letters_of_the_team_files(self):
+        self.assertEqual(rnd.parse_pairings('ad, DA,dd', 'ABCD'), ('AD', 'DA', 'DD'))
+        self.assertEqual(rnd.parse_pairings('AB,CD', tuple('ABCDE')), ('AB', 'CD'))
+        for bad in ('AE', 'DD', 'D'):
+            with self.subTest(bad), self.assertRaises(ValueError) as cm:
+                rnd.parse_pairings(bad, tuple('ABC'))
+            self.assertIn('pairings are some of', str(cm.exception))
+        self.assertEqual(rnd.parse_pairings('AB,CC'), ('AB', 'CC'))  # the committed teams as ever
+
+    def test_pairings_of_ids_of_more_than_one_character_are_joined_by_a_dash(self):
+        ids = ('A', 'B', 'C', 'MC405', 'D')
+        # The dash is how two ids are joined; a pair of one-character ids is the same pairing either way, written without it.
+        self.assertEqual(rnd.parse_pairings('A-MC405, mc405-a, MC405-MC405, AD, D-A, A-B', ids),
+                         ('A-MC405', 'MC405-A', 'MC405-MC405', 'AD', 'DA', 'AB'))
+        for bad in ('MC405', 'A-X', 'A-MC405-D', 'AMC405', 'MC405A', '-A', 'A-', 'A--B', 'MC-405'):
+            with self.subTest(bad), self.assertRaises(ValueError) as cm:
+                rnd.parse_pairings(bad, ids)
+            self.assertIn('pairings are some of', str(cm.exception))
+        self.assertEqual(rnd.pairing_ids('AB'), ('A', 'B'))
+        self.assertEqual(rnd.pairing_ids('A-MC405'), ('A', 'MC405'))
+        self.assertEqual(rnd.pairing_ids('MC405-MC408'), ('MC405', 'MC408'))
+
+    def test_the_data_kind_follows_the_members(self):
+        sets_a, sets_c = rnd.read_team_file(TEAM_A), rnd.read_team_file(TEAM_C)
+        self.assertEqual((rnd.team_data_kind('t', sets_a), rnd.team_data_kind('t', sets_c)), ('closure', 'team_c'))
+        # One member that is not in the closure tables makes the team Team C data; with the rest of team A's sets too.
+        self.assertEqual(rnd.team_data_kind('t', sets_a[:5] + sets_c[:1]), 'team_c')
+
+    def test_a_team_file_that_equals_team_a_derives_the_same_battles_as_team_a(self):
+        path = self.write('d.txt', read_text(TEAM_A))
+        teams = rnd.check_teams([('D', path)])
+        self.assertEqual([(t.id, t.data) for t in teams], [('D', 'closure')])
+        params_d = rnd.Params(5, 40, ('DB', 'BD', 'DD', 'DA'), 300, 0.1, 0.5, 0.1, teams)
+        params_a = params_d._replace(pairings=('AB', 'BA', 'AA', 'AA'), teams=None)
+        by_d, by_a = rnd.read_teams(ROOT, teams), rnd.read_teams(ROOT)
+        self.assertEqual(by_d['D'], by_a['A'])
+        for index in range(40):
+            with self.subTest(index=index):
+                d, policy_d, pairing_d = rnd.derive(params_d, index, by_d)
+                a, policy_a, pairing_a = rnd.derive(params_a, index, by_a)
+                self.assertEqual(pairing_d.replace('D', 'A'), pairing_a)
+                self.assertEqual(policy_d, policy_a)
+                for key in ('name', 'format', 'seed', 'teams'):
+                    self.assertEqual(d[key], a[key])
+                self.assertEqual(d.get('data'), a.get('data'))
+                self.assertEqual(list(d), list(a))
+                self.assertIn('team D', d['purpose'])  # every pairing of this run has the letter D
+                self.assertNotIn('team D', a['purpose'])
+
+    def test_a_team_file_of_team_c_data_makes_the_battles_team_c_data(self):
+        teams = rnd.check_teams([('D', self.write('d.txt', read_text(TEAM_C)))])
+        self.assertEqual(teams[0].data, 'team_c')
+        params = rnd.Params(1, 8, ('DA', 'AB'), 300, 0.1, 0.5, 0.1, teams)
+        by = rnd.read_teams(ROOT, teams)
+        self.assertEqual(rnd.derive(params, 0, by)[0]['data'], 'team_c')  # D against A
+        self.assertNotIn('data', rnd.derive(params, 1, by)[0])  # A against B
+        self.assertEqual(rnd.derive(params, 0, by)[0]['teams'][0].count('Basculegion'), 1)
+
+    def test_the_crlf_of_a_file_made_on_windows_is_no_difference(self):
+        crlf = self.write('d.txt', read_text(TEAM_A).replace('\n', '\r\n'), newline='')
+        with io.open(crlf, 'rb') as f:
+            self.assertIn(b'\r\n', f.read())
+        self.assertEqual(rnd.read_team_file(crlf), rnd.read_team_file(TEAM_A))
+        self.assertEqual(rnd.team_sha256(rnd.read_team_file(crlf)), rnd.team_sha256(rnd.read_team_file(TEAM_A)))
+
+    def refusal(self, text, name='d.txt'):
+        path = self.write(name, text)
+        with self.assertRaises(ValueError) as cm:
+            rnd.check_teams([('D', path)])
+        return str(cm.exception)
+
+    def test_what_the_driver_refuses_before_it_plays(self):
+        sets = rnd.read_team_file(TEAM_A)
+        text = '\n\n'.join(sets)
+        # A name that no data kind has: the thing, the set and where the POOL data kind will go.
+        for old, new, what in (('Rillaboom (M) @ Miracle Seed', 'Fakemon (M) @ Miracle Seed', "species 'Fakemon'"),
+                               ('@ Miracle Seed', '@ Fake Item', "item 'Fake Item'"),
+                               ('Ability: Grassy Surge', 'Ability: Fake Ability', "ability 'Fake Ability'"),
+                               ('- Protect', '- Fake Move', "move 'Fake Move'"),
+                               ('Adamant Nature', 'Fake Nature', "nature 'Fake'")):
+            with self.subTest(what):
+                self.assertIn(old, text)
+                message = self.refusal(text.replace(old, new, 1))
+                self.assertIn(what, message)
+                self.assertIn('(set ', message)
+                self.assertIn('POOL', message)  # the hook: the next data kind
+                self.assertIn('team D', message)
+        # A paste of five or seven sets, a gender that is not stated, a level other than 50, a line that no set has, and
+        # a file that is not there.
+        self.assertIn('has 5 sets, not 6', self.refusal('\n\n'.join(sets[:5])))
+        self.assertIn('has 7 sets, not 6', self.refusal('\n\n'.join(sets + sets[:1])))
+        self.assertIn('Rillaboom has no gender', self.refusal(text.replace('Rillaboom (M)', 'Rillaboom', 1)))
+        self.assertIn('level 50 only', self.refusal(text.replace('Level: 50', 'Level: 100', 1)))
+        self.assertIn('not a Showdown paste that the converter reads', self.refusal(text.replace('EVs: ', 'EVs: x / ', 1)))
+        with self.assertRaises(ValueError) as cm:
+            rnd.check_teams([('D', os.path.join(self.tmp.name, 'none.txt'))])
+        self.assertIn('cannot read the team file', str(cm.exception))
+
+    def test_a_refused_team_is_a_refusal_of_the_command_line(self):
+        """Status 2 with the message, before anything is played: not a REF_ERROR of a battle."""
+        sets = rnd.read_team_file(TEAM_A)
+        bad = self.write('bad.txt', '\n\n'.join(sets).replace('Miracle Seed', 'Fake Item', 1))
+        parser = driver_parser()
+        with tempfile.TemporaryDirectory() as tmp:
+            os.makedirs(os.path.join(tmp, 'dist', 'sim'))
+            exe = os.path.abspath(__file__)
+            args = parser.parse_args(['random', '--checkout', tmp, '--runner', exe, '--battles', '4', '--seed', '1',
+                                      '--node', exe, '--team', 'D=' + bad, '--pairings', 'AD'])
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err), self.assertRaises(SystemExit) as cm:
+                rnd.validate(parser, args)
+            self.assertEqual(cm.exception.code, 2)
+            self.assertIn("item 'Fake Item'", err.getvalue())
+            # A pairing with a letter that is no team is refused as the others are.
+            good = self.write('good.txt', read_text(TEAM_A))
+            args = parser.parse_args(['random', '--checkout', tmp, '--runner', exe, '--battles', '4', '--seed', '1',
+                                      '--node', exe, '--team', 'D=' + good, '--pairings', 'AE'])
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err), self.assertRaises(SystemExit):
+                rnd.validate(parser, args)
+            self.assertIn('pairings are some of', err.getvalue())
+
+    def test_the_run_knows_its_team_files(self):
+        path = self.write('d.txt', read_text(TEAM_A))
+        parser = driver_parser()
+        with tempfile.TemporaryDirectory() as tmp:
+            os.makedirs(os.path.join(tmp, 'dist', 'sim'))
+            exe = os.path.abspath(__file__)
+            base_args = ['random', '--checkout', tmp, '--runner', exe, '--battles', '4', '--seed', '1', '--node', exe]
+            args = parser.parse_args(base_args + ['--team', 'd=' + path, '--pairings', 'AD,DB', '--keep-traces'])
+            params = rnd.validate(parser, args)
+            self.assertEqual(params.pairings, ('AD', 'DB'))
+            team = params.teams[0]
+            self.assertEqual((team.id, team.path, team.data), ('D', os.path.abspath(path), 'closure'))
+            # The identity of the run holds the letter, the hash and the data kind; a run without a team file has none.
+            self.assertEqual(rnd.run_parameters(params)['teams'], {'D': {'sha256': team.sha256, 'data': 'closure'}})
+            self.assertNotIn('teams', rnd.run_parameters(params._replace(teams=None)))
+            # A chunk is told the file, by its absolute path, and keeps what the run keeps.
+            forwarded = rnd.forwarded(args, '/out')
+            self.assertEqual(forwarded[forwarded.index('--team') + 1], 'D=' + os.path.abspath(path))
+            self.assertIn('--keep-traces', forwarded)
+            chunk = parser.parse_args(['random'] + forwarded + ['--start', '2', '--chunk-minutes', '3', '--no-lock'])
+            self.assertEqual(rnd.validate(parser, chunk), params)
+            # Another file under the same letter is another run; so is a file that changes while the run is on.
+            other = self.write('e.txt', read_text(TEAM_A).replace('Adamant Nature', 'Jolly Nature', 1))
+            changed = rnd.validate(parser, parser.parse_args(base_args + ['--team', 'D=' + other, '--pairings', 'AD']))
+            self.assertNotEqual(rnd.run_parameters(changed)['teams'], rnd.run_parameters(params)['teams'])
+            rnd.read_teams(ROOT, params.teams)
+            with io.open(path, 'a', encoding='utf-8') as f:
+                f.write('\n')  # a blank line more does not change the sets
+            rnd.read_teams(ROOT, params.teams)
+            self.write('d.txt', read_text(TEAM_A).replace('Adamant Nature', 'Jolly Nature', 1))
+            with self.assertRaises(driver.ToolError) as cm:
+                rnd.read_teams(ROOT, params.teams)
+            self.assertIn('changed since the run was set up', str(cm.exception))
+
+
+class TeamRegistryIds(unittest.TestCase):
+    """--team ID: a team of the registry (data/teams, tools/reference/team_registry.py) by its id. The registry here is a
+    copy in a temporary directory, with the teams a test adds (the committed one has A, B and C and nothing else yet)."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = self.tmp.name
+        shutil.copytree(team_registry.registry_dir(ROOT), team_registry.registry_dir(self.root))
+
+    def add(self, team_id, text):
+        sets = team_registry.split_sets(text)
+        team_registry.add_team(self.root, team_registry.new_entry(team_id, 'a team of the test', sets), sets)
+
+    def test_the_committed_teams_are_read_from_the_registry(self):
+        sets = rnd.read_teams(self.root)
+        self.assertEqual(sorted(sets), ['A', 'B', 'C'])
+        for letter, old in (('A', TEAM_A), ('B', TEAM_B), ('C', TEAM_C)):
+            self.assertEqual(sets[letter], rnd.read_team_file(old))  # the files they were read from before the registry
+        # The registry is where they come from: another file under the id A is another team A.
+        with io.open(team_registry.team_path(self.root, 'A'), 'w', encoding='utf-8', newline='\n') as f:
+            f.write(read_text(TEAM_C))
+        self.assertEqual(rnd.read_teams(self.root)['A'], rnd.read_team_file(TEAM_C))
+        os.remove(team_registry.index_path(self.root))
+        with self.assertRaises(driver.ToolError) as cm:
+            rnd.read_teams(self.root)
+        self.assertIn('cannot read the team index', str(cm.exception))
+
+    def test_a_team_of_the_registry_is_taken_by_its_id_and_a_committed_one_needs_no_option(self):
+        self.add('MC405', read_text(TEAM_A))
+        self.add('TC1', read_text(TEAM_C))
+        teams = rnd.check_teams(rnd.parse_team_options(['mc405', 'TC1', 'a', 'C']), root=self.root)
+        self.assertEqual([(t.id, t.data) for t in teams], [('MC405', 'closure'), ('TC1', 'team_c')])  # A and C are no Team
+        self.assertEqual(teams[0].path, os.path.abspath(team_registry.team_path(self.root, 'MC405')))
+        self.assertEqual(teams[0].sha256, rnd.team_sha256(rnd.read_team_file(TEAM_A)))
+        self.assertEqual(rnd.check_teams([('A', None), ('B', None), ('C', None)], root=self.root), ())
+
+    def test_an_id_that_the_registry_does_not_have_is_refused_with_the_ids_it_has(self):
+        self.add('MC405', read_text(TEAM_A))
+        with self.assertRaises(ValueError) as cm:
+            rnd.check_teams([('MC406', None)], root=self.root)
+        self.assertIn('--team MC406: no team MC406 in the registry', str(cm.exception))
+        self.assertIn('ids are A, B, C, MC405', str(cm.exception))
+
+    def test_a_file_of_your_own_must_not_take_the_name_of_a_team_of_the_registry(self):
+        self.add('D', read_text(TEAM_A))
+        mine = os.path.join(self.root, 'mine.txt')
+        with io.open(mine, 'w', encoding='utf-8', newline='\n') as f:
+            f.write(read_text(TEAM_A))
+        with self.assertRaises(ValueError) as cm:
+            rnd.check_teams([('D', mine)], root=self.root)
+        self.assertIn('D is a team of the registry', str(cm.exception))
+        self.assertIn('--team D is that team', str(cm.exception))
+        self.assertEqual([t.id for t in rnd.check_teams([('E', mine)], root=self.root)], ['E'])  # another letter is free
+
+    def test_a_registry_team_that_the_driver_cannot_play_is_refused_before_it_plays(self):
+        """The registry holds what a team is made of, not what the engine plays: a name that no data kind has (the POOL
+        data kind comes with P1) is the driver's to refuse, as for a file of your own, never a REF_ERROR of a battle."""
+        self.add('FAKE1', read_text(TEAM_A).replace('Miracle Seed', 'Fake Item', 1))
+        with self.assertRaises(ValueError) as cm:
+            rnd.check_teams([('FAKE1', None)], root=self.root)
+        self.assertIn("item 'Fake Item'", str(cm.exception))
+        self.assertIn('team FAKE1', str(cm.exception))
+        self.assertIn('POOL', str(cm.exception))
+
+    def test_a_registry_team_that_equals_team_a_gives_the_same_battles_as_team_a(self):
+        self.add('MC405', read_text(TEAM_A))
+        teams = rnd.check_teams([('MC405', None)], root=self.root)
+        pairings = rnd.parse_pairings('MC405-B,B-MC405,MC405-MC405,MC405-A', ('A', 'B', 'C', 'MC405'))
+        self.assertEqual(pairings, ('MC405-B', 'B-MC405', 'MC405-MC405', 'MC405-A'))
+        params_m = rnd.Params(5, 40, pairings, 300, 0.1, 0.5, 0.1, teams)
+        params_a = params_m._replace(pairings=('AB', 'BA', 'AA', 'AA'), teams=None)
+        by_m, by_a = rnd.read_teams(self.root, teams), rnd.read_teams(self.root)
+        self.assertEqual(by_m['MC405'], by_a['A'])
+        for index in range(40):
+            with self.subTest(index=index):
+                m, policy_m, pairing_m = rnd.derive(params_m, index, by_m)
+                a, policy_a, pairing_a = rnd.derive(params_a, index, by_a)
+                self.assertEqual(tuple('A' if t == 'MC405' else t for t in rnd.pairing_ids(pairing_m)),
+                                 rnd.pairing_ids(pairing_a))
+                self.assertEqual(policy_m, policy_a)
+                for key in ('name', 'format', 'seed', 'teams'):
+                    self.assertEqual(m[key], a[key])
+                self.assertEqual(m.get('data'), a.get('data'))
+                self.assertEqual(list(m), list(a))
+                self.assertIn('team MC405', m['purpose'])  # every pairing of this run has the id MC405
+                self.assertNotIn('team MC405', a['purpose'])
+
+    def test_a_registry_team_of_team_c_data_makes_the_battles_team_c_data(self):
+        self.add('TC1', read_text(TEAM_C))
+        teams = rnd.check_teams([('TC1', None)], root=self.root)
+        params = rnd.Params(1, 4, ('A-TC1', 'AB'), 300, 0.1, 0.5, 0.1, teams)
+        by = rnd.read_teams(self.root, teams)
+        self.assertEqual(rnd.derive(params, 0, by)[0]['data'], 'team_c')  # A against TC1
+        self.assertNotIn('data', rnd.derive(params, 1, by)[0])  # A against B
+
+    def test_a_registry_file_that_changed_since_the_run_was_set_up_is_refused(self):
+        self.add('MC405', read_text(TEAM_A))
+        teams = rnd.check_teams([('MC405', None)], root=self.root)
+        rnd.read_teams(self.root, teams)
+        with io.open(team_registry.team_path(self.root, 'MC405'), 'w', encoding='utf-8', newline='\n') as f:
+            f.write(read_text(TEAM_A).replace('Adamant Nature', 'Jolly Nature', 1))
+        with self.assertRaises(driver.ToolError) as cm:
+            rnd.read_teams(self.root, teams)
+        self.assertIn('changed since the run was set up', str(cm.exception))
+
+    def test_the_command_line_with_ids(self):
+        parser = driver_parser()
+        with tempfile.TemporaryDirectory() as tmp:
+            os.makedirs(os.path.join(tmp, 'dist', 'sim'))
+            exe = os.path.abspath(__file__)
+            base_args = ['random', '--checkout', tmp, '--runner', exe, '--battles', '4', '--seed', '1', '--node', exe]
+
+            def refused(*extra):
+                err = io.StringIO()
+                with contextlib.redirect_stderr(err), self.assertRaises(SystemExit) as cm:
+                    rnd.validate(parser, parser.parse_args(base_args + list(extra)))
+                self.assertEqual(cm.exception.code, 2)
+                return err.getvalue()
+
+            # A, B and C are always there: the option adds no team, and a chunk is told it as it is.
+            args = parser.parse_args(base_args + ['--team', 'a', '--team', 'C', '--pairings', 'AC,CA'])
+            params = rnd.validate(parser, args)
+            self.assertEqual((params.pairings, params.teams), (('AC', 'CA'), None))
+            forwarded = rnd.forwarded(args, '/out')
+            self.assertEqual([forwarded[i + 1] for i, v in enumerate(forwarded) if v == '--team'], ['A', 'C'])
+            # An id that the registry does not have is refused, with the ids it has, before anything is played.
+            message = refused('--team', 'MC999')
+            self.assertIn('no team MC999 in the registry', message)
+            self.assertIn('ids are A, B, C', message)
+            self.assertIn('by its id', refused('--team', 'mc-999'))
+            # A pairing with an id that is no team of the run is refused as every other pairing that is none.
+            self.assertIn('pairings are some of', refused('--pairings', 'A-MC405'))
+            # A team of the registry that is not A, B or C: by its id in the chunk, not by a path.
+            team = rnd.Team('MC405', '/registry/MC405.txt', 'closure', 'f' * 64)
+            with mock.patch.object(rnd, 'check_teams', lambda options, *rest, **kwargs: (team,)):
+                args = parser.parse_args(base_args + ['--team', 'mc405', '--pairings', 'a-mc405,MC405-A'])
+                params = rnd.validate(parser, args)
+            self.assertEqual((params.pairings, params.teams), (('A-MC405', 'MC405-A'), (team,)))
+            self.assertEqual(rnd.run_parameters(params)['teams'], {'MC405': {'sha256': 'f' * 64, 'data': 'closure'}})
+            forwarded = rnd.forwarded(args, '/out')
+            self.assertEqual(forwarded[forwarded.index('--team') + 1], 'MC405')
+            self.assertEqual(forwarded[forwarded.index('--pairings') + 1], 'a-mc405,MC405-A')
+
+
+# ------------------------------------------------------------ the pieces a corpus is made from
+
+class Kept(unittest.TestCase):
+    """--keep-traces: the spec and the trace of every PASS battle, for `promote` to choose coverage from."""
+
+    def test_pass_battles_are_kept_and_the_others_have_their_case(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            for keep in (False, True):
+                outdir = os.path.join(tmp, 'keep' if keep else 'no')
+                world = World(scenario=scenario_of)
+                make_worker = lambda: WorldWorker(world)
+                rnd.run_chunk(PARAMS, outdir, 0, None, make_worker, lambda: WorldRunner(world), tables, KINDS,
+                              world.spec_for, 2, out=io.StringIO(), keep_traces=keep)
+                records = [rnd.read_partial(outdir, i)['record'] for i in range(PARAMS.battles)]
+                passed = sorted(r['name'] for r in records if r['bucket'] == 'PASS')
+                self.assertEqual(passed, sorted('fz_1_%d' % i for i in range(0, 24, 6)))
+                if not keep:
+                    self.assertFalse(os.path.exists(os.path.join(outdir, 'kept')))
+                    continue
+                self.assertEqual(sorted(os.listdir(os.path.join(outdir, 'kept'))), passed)
+                for name in passed:
+                    files = sorted(os.listdir(os.path.join(outdir, 'kept', name)))
+                    self.assertEqual(files, ['spec.json', 'trace.json.gz'])  # no case for a PASS, no temporary file
+                    with io.open(os.path.join(outdir, 'kept', name, 'spec.json'), encoding='utf-8') as f:
+                        spec = json.load(f)
+                    with gzip.open(os.path.join(outdir, 'kept', name, 'trace.json.gz')) as f:
+                        trace = json.loads(f.read().decode('utf-8'))
+                    self.assertEqual((spec['name'], len(spec['choices'])), (name, len(trace['steps'])))
+                    self.assertEqual(spec['choices'], [step['input'] for step in trace['steps']])
+                self.assertTrue(set(os.listdir(os.path.join(outdir, 'cases'))).isdisjoint(passed))  # a PASS has no case
+
+    def test_the_step_at_which_the_converter_refuses_a_trace(self):
+        world = World()
+        spec = copy.deepcopy(world.spec_for(0)[0])
+        trace = copy.deepcopy(world.trace)
+        trace['steps'][2]['log'].append('|foo|bar')
+        result = driver.oracle_gap('x', self.refusal_of(spec, trace))
+        self.assertEqual(rnd.refusing_step('x', spec, trace, tables, result), 2)  # the first step that is refused, not the last
+        trace['steps'][4]['log'].append('|baz|qux')  # a later refusal of its own does not move it
+        self.assertEqual(rnd.refusing_step('x', spec, trace, tables, result), 2)
+        # An error of the converter that is not a refusal of a rule (a KeyError of a lookup) has its step too.
+        trace = copy.deepcopy(world.trace)
+        del trace['steps'][3]['state']['sides'][0]['pokemon'][0]['hp']
+        error = self.refusal_of(spec, trace)
+        self.assertIsInstance(error, KeyError)
+        self.assertEqual(rnd.refusing_step('x', spec, trace, tables, driver.oracle_gap('x', error)), 3)
+        # A result that the cuts do not make again (another rule) has no step.
+        other = driver.new_result('x', 'ORACLE_GAP', rule='something-else', detail='x')
+        self.assertIsNone(rnd.refusing_step('x', spec, trace, tables, other))
+
+    def refusal_of(self, spec, trace):
+        try:
+            trace_to_c.convert_battle('x', spec, trace, tables(False))
+        except (trace_to_c.ConversionError, KeyError, IndexError, ValueError, TypeError) as e:
+            return e
+        raise AssertionError('the converter did not refuse the trace')
 
 
 # ------------------------------------------------------------ the real runner

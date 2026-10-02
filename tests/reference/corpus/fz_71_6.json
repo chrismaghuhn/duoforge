@@ -1,0 +1,69 @@
+{
+  "name": "fz_71_6",
+  "purpose": "Corpus (coverage): random differential battle 6 of run 71 (tools/reference/diff_driver.py random), Team C against team B, the whole battle. It adds 2 signatures that no committed battle and no earlier corpus battle has: move:Leech Life[notarget], move:Wave Crash[notarget].",
+  "data": "team_c",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,57e703b895a660497b25ffdd8fc8af601ee298cf4c20eb4d85b2c418b71f94b6",
+  "teams": [
+    "Incineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Flare Blitz\n- Parting Shot\n- Darkest Lariat\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Follow Me\n- Trick Room\n- Helping Hand\n- Psychic\n\nKingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Sucker Punch\n- Iron Head\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Protect\n- Hyper Voice\n- Draco Meteor\n- Tailwind\n\nSneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Close Combat\n- Dire Claw\n- Protect\n- Fake Out\n\nBasculegion (M) @ Choice Scarf\nAbility: Adaptability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Wave Crash\n- Last Respects\n- Flip Turn\n- Aqua Jet",
+    "Farigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Grass Knot\n- Trick Room\n- Protect\n\nGrimmsnarl (M) @ Light Clay\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Spirit Break\n- Reflect\n- Light Screen\n- Parting Shot\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Electro Shot\n- Snarl\n- Protect\n\nGolisopod (F) @ Golisopite\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 1 SpD / 1 Spe\nAdamant Nature\n- Leech Life\n- Iron Head\n- Drill Run\n- Protect\n\nCharizard (M) @ Charizardite Y\nAbility: Blaze\nLevel: 50\nEVs: 16 HP / 18 Def / 3 SpA / 29 Spe\nTimid Nature\n- Heat Wave\n- Weather Ball\n- Hurricane\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Weather Ball\n- Muddy Water\n- Ice Beam\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 6324",
+      "p2": "team 3245"
+    },
+    {
+      "p1": "move 3 2, switch 3",
+      "p2": "move 2 1, switch 3"
+    },
+    {
+      "p1": "switch 3, pass"
+    },
+    {
+      "p1": "move 3 -2, move 3 -1",
+      "p2": "move 1, move 4 mega"
+    },
+    {
+      "p1": "move 1 1, move 3 -1",
+      "p2": "move 3, move 2 2"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "move 1 -2, move 3 1",
+      "p2": "move 3, move 1 -1"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "pass, switch 4",
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 1 1, move 1 -1",
+      "p2": "switch 4, move 1 1"
+    },
+    {
+      "p1": "pass, move 1 -1",
+      "p2": "move 4, move 2 -1"
+    },
+    {
+      "p1": "pass, move 1 2",
+      "p2": "move 1, move 4"
+    },
+    {
+      "p1": "pass, move 1 1",
+      "p2": "move 3 2, switch 4"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "pass, move 1 2",
+      "p2": "move 3 1, move 2"
+    }
+  ]
+}

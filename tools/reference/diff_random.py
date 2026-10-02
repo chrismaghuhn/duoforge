@@ -8,13 +8,33 @@ The command line is diff_driver.py's:
         [--pairings AB,BA,AA,BB] [--workers W] [--out DIR] [--start K]
         [--chunk-minutes M] [--no-lock] [--node <node>]
         [--max-steps 300] [--switch-weight 0.1] [--mega-weight 0.5] [--domain-rate 0.1]
+        [--team ID | NAME=<paste file>]... [--keep-traces]
 
 Battle i of run S is derived from (S, i) alone: the pairing is pairings[i %
-len(pairings)] (A and B are tests/reference/teams/team_a.txt and team_b.txt, C
-is docs/research/third-team/team-c.txt; a pairing with C is Team C data and
+len(pairings)] (A, B and C are teams of the registry, data/teams: team A, team B,
+and Team C of docs/research/third-team; a pairing with C is Team C data and
 opt-in), the team orders and the reference seed come from gen_real_specs's
 splitmix64 and shuffle, the policy seed from the same stream. Its name is
-fz_<S>_<i>. The pipeline, and the bucket of the first step that ends it:
+fz_<S>_<i>.
+
+Teams. The registry (data/teams/index.json and <id>.txt, tools/reference/
+team_registry.py) is the one list of teams, shared with the learner: --team MC405
+adds the team of that id (repeat the option for more). --team D=path adds a paste
+of your own as the pairing letter D (any letter but A, B and C, and no id of the
+registry). A pairing is two teams, two letters when both ids have one character
+(`--team D=d.txt --pairings AD,DA`), else the ids joined by a dash
+(`--team MC405 --pairings A-MC405,MC405-A`). The paste has six sets with the
+gender of every Pokemon that has one stated (the converter refuses a missing gender
+whatever the driver does; tools/reference/import_paste.py makes a registry file of
+any paste). The data kind follows the members: sets that are all in the closure
+tables play under CLOSURE, with Team C ids under TEAM_C. A name in neither (the
+POOL data kind of decision 0015 comes with P1: add it to DATA_KINDS) is a
+refusal of the driver, status 2 with the name, before anything is played, never
+a REF_ERROR; so are an id that the registry does not have, a file that is not six
+sets and one that the converter cannot read. The run's identity holds the hash of
+each team.
+
+The pipeline, and the bucket of the first step that ends it:
 
  1. play      the worker plays the battle with random choices that Showdown
               accepts (ps_play.js); failing, or a worker that dies or hangs:
@@ -71,6 +91,21 @@ results of its battles and no summary: the files of the whole run are written by
 the process that owns it (the loop above, or a run without --chunk-minutes once
 every battle has a result). Children run below normal priority.
 
+The pause file. For measurements fuzzing pauses completely: before it starts a
+chunk, and again right after a chunk got the lock, the loop looks for the file
+named by $DUOFORGE_FUZZ_PAUSE (default duoforge-fuzz.pause in $TEMP). While it
+exists the lock is not held, one line "fuzz paused by <file>" is logged and the
+loop looks again every 15 seconds. A chunk that finds the file once it holds the
+lock leaves with status 75 without starting a battle, so the lock is released,
+and the loop waits as above. Measurements create the file and remove it
+afterwards. Runs with --no-lock (CTest) never look at it: they hold no lock to
+give back, and a pause that waits for the lock that the CI holds would wait for
+ever.
+
+--keep-traces writes the spec and the gzipped trace of every PASS battle to
+kept/<name>/ (the other battles have them in cases/): what `diff_driver.py
+promote` chooses coverage battles from (diff_corpus.py). It changes no result.
+
 Exit status: 0 when the run is complete (the buckets are in the files), 2 for a
 bad command line, 3 for a failure of the tool. This file only orchestrates.
 """
@@ -86,6 +121,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 
@@ -94,6 +130,7 @@ sys.dont_write_bytecode = True  # a direct run must not leave __pycache__ in the
 import conformance_records  # noqa: E402
 import diff_driver as base  # noqa: E402
 import gen_real_specs  # noqa: E402
+import team_registry  # noqa: E402
 import trace_to_c  # noqa: E402
 
 PAIRINGS = ('AB', 'BA', 'AA', 'BB', 'CA', 'AC', 'CB', 'BC', 'CC')
@@ -104,6 +141,9 @@ DEFAULT_MEGA_WEIGHT = 0.5
 DEFAULT_DOMAIN_RATE = 0.1
 DEFAULT_CHUNK_MINUTES = 10
 CHUNK_PAUSE = 30  # seconds between chunks, the lock released
+PAUSE_POLL = 15  # seconds between two looks at the pause file
+PAUSED_STATUS = 75  # a chunk that found the pause file once it held the lock leaves with this (EX_TEMPFAIL)
+LOCK_HELD_ENV = 'DUOFORGE_FUZZ_LOCK_HELD'  # set in the environment of the chunks the loop starts: they hold the lock
 WORKER_TIMEOUT = 300  # seconds for one answer of the worker (a play of 300 steps is a few seconds)
 RUNNER_TIMEOUT = 60  # seconds for one battle in the engine
 PHASES = ('play', 'record', 'convert', 'run', 'prefix')
@@ -111,9 +151,20 @@ BUCKET_ORDER = {bucket: i for i, bucket in enumerate(base.RANDOM_BUCKETS)}
 RECORD_KEYS = ['index', 'name', 'pairing', 'bucket', 'rule', 'detail', 'step', 'steps', 'context', 'ended', 'reproduces',
                'domain', 'messages']
 WHO = {'A': 'team A', 'B': 'team B', 'C': 'Team C'}
+COMMITTED_TEAMS = ('A', 'B', 'C')
+DEFAULT_DATA = {'A': 'closure', 'B': 'closure', 'C': 'team_c'}  # the data kind that each committed team plays under
+# The data kinds that a team can need, the smallest first: (name, the `team_c` flag of trace_to_c.load_tables, which
+# the runner's kinds follow: CLOSURE, TEAM_C). The POOL data kind of decision 0015 (the pool tables, after P1) goes
+# here, once trace_to_c.load_tables, conformance_records.data_kinds and the runner know it: a team that needs a kind
+# that is not in this list is refused before anything is played (team_data_kind).
+DATA_KINDS = (('closure', False), ('team_c', True))
 
-Params = collections.namedtuple('Params', 'seed battles pairings max_steps switch_weight mega_weight domain_rate',
-                                defaults=(0.0,))
+# A team of the run that is not one of A, B and C (--team): its id (a team of the registry) or its letter (a file of
+# your own), the file, the data kind its members need, the SHA-256 of the sets as they are used (what the run's identity
+# holds).
+Team = collections.namedtuple('Team', 'id path data sha256')
+Params = collections.namedtuple('Params', 'seed battles pairings max_steps switch_weight mega_weight domain_rate teams',
+                                defaults=(0.0, None))
 
 
 # ------------------------------------------------------------ what battle i is
@@ -125,14 +176,57 @@ def battle_seed(seed, index):
     return gen_real_specs.SplitMix64(first ^ ((index * 0x9E3779B97F4A7C15) & gen_real_specs.MASK)).next()
 
 
-def read_teams(root):
-    """{'A': [six sets], 'B': [...], 'C': [...]}: the paste text of each set of the committed teams."""
-    teams = {'A': gen_real_specs.read_team('team_a.txt'), 'B': gen_real_specs.read_team('team_b.txt')}
-    with io.open(os.path.join(root, 'docs', 'research', 'third-team', 'team-c.txt'), encoding='utf-8') as f:
-        teams['C'] = [s.strip() for s in f.read().split('\n\n') if s.strip()]
-    if len(teams['C']) != 6:
-        raise base.ToolError('team-c.txt has %d sets, not 6' % len(teams['C']))
+split_sets = team_registry.split_sets
+team_sha256 = team_registry.team_sha256
+
+
+def read_team_file(path):
+    """The sets of the paste in `path` (six of them, or ToolError)."""
+    try:
+        return team_registry.read_team_file(path)
+    except team_registry.RegistryError as e:
+        raise base.ToolError(str(e)) from None
+
+
+def read_teams(root, custom=None):
+    """{'A': [six sets], 'B': [...], 'C': [...]}, those of the registry (data/teams), and an id or a letter for each other
+    team of the run (`custom`, the Team tuples of Params.teams): the paste text of each set."""
+    teams = {}
+    for team_id in COMMITTED_TEAMS:
+        try:
+            teams[team_id] = team_registry.read_team(root, team_id)[0]
+        except team_registry.RegistryError as e:
+            raise base.ToolError(str(e)) from None
+    for team in custom or ():
+        sets = read_team_file(team.path)
+        if team_sha256(sets) != team.sha256:
+            raise base.ToolError('the team file %s changed since the run was set up (team %s)' % (team.path, team.id))
+        teams[team.id] = sets
     return teams
+
+
+def who(team_id):
+    """How a purpose names a team: 'team A', 'Team C', 'team MC405' or 'team D' for another."""
+    return WHO.get(team_id, 'team %s' % team_id)
+
+
+def data_of(params, team_id):
+    """The data kind ('closure' or 'team_c') that team `team_id` plays under."""
+    if team_id in DEFAULT_DATA:
+        return DEFAULT_DATA[team_id]
+    for team in params.teams or ():
+        if team.id == team_id:
+            return team.data
+    raise KeyError(team_id)
+
+
+def pairing_ids(pairing):
+    """The ids of the two teams of a pairing: 'AB' is A and B, 'A-MC405' is A and MC405 (a dash joins ids of more than one
+    character)."""
+    if '-' in pairing:
+        first, second = pairing.split('-')
+        return first, second
+    return pairing[0], pairing[1]
 
 
 def derive(params, index, teams):
@@ -140,7 +234,8 @@ def derive(params, index, teams):
     seed are drawn as gen_real_specs does for its candidates, the policy seed follows from the same stream."""
     rng = gen_real_specs.SplitMix64(battle_seed(params.seed, index))
     pairing = params.pairings[index % len(params.pairings)]
-    sides = ['\n\n'.join(gen_real_specs.shuffled(rng, teams[letter])) for letter in pairing]
+    ids = pairing_ids(pairing)
+    sides = ['\n\n'.join(gen_real_specs.shuffled(rng, teams[team_id])) for team_id in ids]
     ps_seed = 'sodium,' + ''.join('%016x' % rng.next() for _ in range(4))
     policy_seed = rng.next() & 0xFFFFFFFF
     name = 'fz_%d_%d' % (params.seed, index)
@@ -149,9 +244,9 @@ def derive(params, index, teams):
         'purpose': ('Random differential battle %d of run %d (tools/reference/diff_driver.py random): %s against %s, '
                     'the sets in a seeded random order, team preview to the end or to the cap, both sides answering '
                     'every request with random choices (policy seed %d, tools/reference/ps_play.js) that the pinned '
-                    'Showdown accepted.' % (index, params.seed, WHO[pairing[0]], WHO[pairing[1]], policy_seed)),
+                    'Showdown accepted.' % (index, params.seed, who(ids[0]), who(ids[1]), policy_seed)),
     }
-    if 'C' in pairing:
+    if any(data_of(params, team_id) == 'team_c' for team_id in ids):
         spec['data'] = 'team_c'
     spec.update({'format': gen_real_specs.FORMAT, 'seed': ps_seed, 'teams': sides})
     return spec, policy_seed, pairing
@@ -283,11 +378,13 @@ def runner_bucket(verdict, ended):
     return 'PASS' if ended else 'CAP'
 
 
-def evaluate(name, spec, worker, runner, tables_for, kinds, play_ended, seconds, clock=time.monotonic, domain=()):
+def evaluate(name, spec, worker, runner, tables_for, kinds, play_ended, seconds, clock=time.monotonic, domain=(),
+             cap=True):
     """record -> convert -> runner for a choices spec. `play_ended` is what the play said about the end (None for a
     prefix); `seconds` collects the time of each phase; `domain` the samples of the play for the steps of the spec.
     Returns an Evaluated: the record of a bucket (the schema of diff_driver.new_result), the trace, whether the battle
-    ended and its domain samples as the records have them, as far as the pipeline got."""
+    ended and its domain samples as the records have them, as far as the pipeline got. `cap` false: a PASS of a battle that
+    did not end is a PASS (convert_and_run)."""
     t0 = clock()
     try:
         text = worker.record(spec, name + '.json')
@@ -305,6 +402,14 @@ def evaluate(name, spec, worker, runner, tables_for, kinds, play_ended, seconds,
         return Evaluated(base.new_result(name, 'REF_ERROR', detail='the choices spec does not replay',
                                          messages=['the play said ended %s, the recording of its choices ended %s'
                                                    % (play_ended, ended)]), text, trace, ended)
+    return convert_and_run(name, spec, text, trace, ended, runner, tables_for, kinds, seconds, clock, domain, cap)
+
+
+def convert_and_run(name, spec, text, trace, ended, runner, tables_for, kinds, seconds, clock=time.monotonic, domain=(),
+                    cap=True):
+    """convert -> runner for a recorded battle: the Evaluated of evaluate() from the converter on. The strict kinds: a
+    battle of team_c data runs under TEAM_C, any other under CLOSURE, with no DEV fallback. A PASS of a battle that did
+    not end is a CAP unless `cap` is false (a cut of a battle, as the corpus holds them, need not end)."""
     t0 = clock()
     try:
         team_c = trace_to_c.spec_is_team_c(name, spec)
@@ -330,7 +435,7 @@ def evaluate(name, spec, worker, runner, tables_for, kinds, play_ended, seconds,
         seconds['run'] += clock() - t0
         return Evaluated(base.child_failure_result(name, e), text, trace, ended)
     seconds['run'] += clock() - t0
-    bucket = runner_bucket(run.verdict, ended)
+    bucket = runner_bucket(run.verdict, ended or not cap)
     if bucket == 'CAP':
         result = base.new_result(name, 'CAP', detail='the battle did not end within %d steps' % run.steps,
                                  steps=run.steps, context=run.context)
@@ -340,7 +445,26 @@ def evaluate(name, spec, worker, runner, tables_for, kinds, play_ended, seconds,
     return Evaluated(result, text, trace, ended, sets)
 
 
-Outcome = collections.namedtuple('Outcome', 'record spec trace_text trace play_request domain', defaults=((),))
+Outcome = collections.namedtuple('Outcome', 'record spec trace_text trace play_request domain refusing_step',
+                                 defaults=((), None))
+
+
+def refusing_step(name, spec, trace, tables_for, result):
+    """The step at which trace_to_c refuses a trace, as `result` (its ORACLE_GAP) says. The converter goes step by step,
+    so it is run on the trace cut after each step in turn and the first cut that is refused names the step: the shortest
+    prefix of the battle that shows the gap. None if no cut is refused the same way (it is about more than a step)."""
+    want = (result['rule'], result['detail'])
+    try:
+        tables = tables_for(trace_to_c.spec_is_team_c(name, spec))
+    except trace_to_c.ConversionError:
+        return None
+    for k in range(len(trace['steps'])):
+        try:
+            trace_to_c.convert_battle(name, spec, dict(trace, steps=trace['steps'][:k + 1]), tables)
+        except (trace_to_c.ConversionError,) + base.UNTYPED as e:
+            gap = base.oracle_gap(name, e)
+            return k if (gap['rule'], gap['detail']) == want else None
+    return None
 
 
 def process_random(index, params, worker, runner, tables_for, kinds, spec_for, seconds, clock=time.monotonic):
@@ -389,8 +513,11 @@ def process_random(index, params, worker, runner, tables_for, kinds, spec_for, s
                          domain=cut_samples)
         reproduces = again.result['bucket'] == result['bucket'] and again.result['step'] == result['step']
         seconds['prefix'] += clock() - t0
+    gap_step = None
+    if result['bucket'] == 'ORACLE_GAP' and first.trace is not None:
+        gap_step = refusing_step(name, spec, first.trace, tables_for, result)
     return Outcome(record_of(result, first.ended, reproduces, played), spec, first.trace_text, first.trace, None,
-                   first.domain)
+                   first.domain, gap_step)
 
 
 # ------------------------------------------------------------ what to say about a battle that is not a PASS
@@ -452,6 +579,13 @@ def case_files(outcome, prefix_result=None):
         files['prefix_spec.json'] = dumps(cut).encode('utf-8')
         files['prefix_result.json'] = dumps({'bucket': record['bucket'], 'step': record['step'],
                                              'choices': len(cut['choices']), 'reproduces': record['reproduces']}).encode('utf-8')
+    elif outcome.refusing_step is not None:
+        # An ORACLE_GAP: the shortest prefix that the converter refuses (refusing_step), with the same fields as the
+        # prefix of a DIVERGENCE; the converter said so on the cut trace, so it reproduces.
+        cut = prefix_spec(outcome.spec, outcome.refusing_step)
+        files['prefix_spec.json'] = dumps(cut).encode('utf-8')
+        files['prefix_result.json'] = dumps({'bucket': record['bucket'], 'step': outcome.refusing_step,
+                                             'choices': len(cut['choices']), 'reproduces': True}).encode('utf-8')
     return files
 
 
@@ -467,6 +601,16 @@ def write_atomically(path, data):
 def write_case(outdir, name, files):
     for fname, data in files.items():
         write_atomically(os.path.join(outdir, 'cases', name, fname), data)
+
+
+def kept_files(outcome):
+    """{file name: bytes} of a battle that --keep-traces keeps: its spec, with its choices, and its trace gzipped."""
+    return {'spec.json': dumps(outcome.spec).encode('utf-8'), 'trace.json.gz': gzipped(outcome.trace_text)}
+
+
+def write_kept(outdir, name, files):
+    for fname, data in files.items():
+        write_atomically(os.path.join(outdir, 'kept', name, fname), data)
 
 
 # ------------------------------------------------------------ the signature of a battle that is not a PASS
@@ -614,11 +758,15 @@ def read_partial(outdir, index):
 
 
 def run_parameters(params):
-    """What the battles of a run follow from, apart from the code that plays them."""
-    return {'seed': params.seed, 'battles': params.battles, 'pairings': list(params.pairings),
-            'policy': {'max_steps': params.max_steps, 'switch_weight': params.switch_weight,
-                       'mega_weight': params.mega_weight},
-            'domain_rate': params.domain_rate}
+    """What the battles of a run follow from, apart from the code that plays them. The team files of a run (--team) are
+    in it by letter, with the hash of their sets and their data kind: a chunk of another team file is another run."""
+    out = {'seed': params.seed, 'battles': params.battles, 'pairings': list(params.pairings),
+           'policy': {'max_steps': params.max_steps, 'switch_weight': params.switch_weight,
+                      'mega_weight': params.mega_weight},
+           'domain_rate': params.domain_rate}
+    if params.teams:
+        out['teams'] = {t.id: {'sha256': t.sha256, 'data': t.data} for t in sorted(params.teams)}
+    return out
 
 
 def identity_of(params, version, head, library, runner_sha256):
@@ -695,11 +843,11 @@ def finalize(outdir, battles):
 # ------------------------------------------------------------ a chunk: the battles of this process
 
 def run_chunk(params, outdir, start, minutes, make_worker, make_runner, tables_for, kinds, spec_for, workers,
-              clock=time.monotonic, out=sys.stdout):
+              clock=time.monotonic, out=sys.stdout, keep_traces=False):
     """Runs the battles from `start` that have no result yet, until all are done or `minutes` have passed (None: no
     limit): no battle is started after that and the running ones are finished. Every result is written to partial/
-    when it is done, and a case to cases/. Returns how many battles this call ran. The caller checks the identity of
-    the directory first."""
+    when it is done, and a case to cases/; with `keep_traces` a PASS battle is kept in kept/ (write_kept). Returns how
+    many battles this call ran. The caller checks the identity of the directory first."""
     indices = [i for i in range(start, params.battles) if not os.path.exists(partial_path(outdir, i))]
     if not indices:
         return 0
@@ -714,6 +862,8 @@ def run_chunk(params, outdir, start, minutes, make_worker, make_runner, tables_f
         record = outcome.record
         if record['bucket'] != 'PASS':
             write_case(outdir, record['name'], case_files(outcome))
+        elif keep_traces:
+            write_kept(outdir, record['name'], kept_files(outcome))
         return record, seconds
 
     def on_result(index, result):
@@ -765,21 +915,50 @@ def chunk_command(args_forward, start, minutes, python=None, driver_script=None,
 
 
 def run_process(command):
-    """Runs a chunk below normal priority (what it starts inherits that); its exit status."""
+    """Runs a chunk below normal priority (what it starts inherits that); its exit status. The chunk is told that it
+    holds the machine lock (LOCK_HELD_ENV): it looks at the pause file once it has it."""
     argv, kwargs = base.low_priority(command)
-    return subprocess.run(argv, **kwargs).returncode
+    return subprocess.run(argv, env=dict(os.environ, **{LOCK_HELD_ENV: '1'}), **kwargs).returncode
+
+
+# ------------------------------------------------------------ the pause file
+
+def pause_path(environ=None):
+    """The pause file of the fuzz runs: $DUOFORGE_FUZZ_PAUSE, else duoforge-fuzz.pause in $TEMP (where TEMP is not set,
+    in the temporary directory that tempfile names). Measurements create it and remove it afterwards."""
+    environ = os.environ if environ is None else environ
+    return environ.get('DUOFORGE_FUZZ_PAUSE') or os.path.join(environ.get('TEMP') or tempfile.gettempdir(),
+                                                              'duoforge-fuzz.pause')
+
+
+def wait_while_paused(path, sleep=time.sleep, poll=PAUSE_POLL, out=sys.stdout, exists=os.path.exists):
+    """While the pause file `path` exists: say so, once, and look again every `poll` seconds. Called where no lock is
+    held (before a chunk); a chunk that finds the file after it got the lock gives the lock back by leaving, with
+    PAUSED_STATUS, and the loop waits. True if it waited."""
+    if not exists(path):
+        return False
+    print('fuzz paused by %s' % path, file=out, flush=True)
+    while exists(path):
+        sleep(poll)
+    return True
 
 
 def orchestrate(params, outdir, args_forward, minutes, start=0, run=run_process, sleep=time.sleep, python=None,
-                driver_script=None, bash=None, lock_script=None, out=sys.stdout):
+                driver_script=None, bash=None, lock_script=None, out=sys.stdout, pause=None, poll=PAUSE_POLL):
     """The chunks one after the other, from the first battle from `start` that has no result, until every battle
     from there has one; each is a process that holds the machine lock, and between two the lock is free for
-    CHUNK_PAUSE seconds. Returns when the last chunk is done."""
+    CHUNK_PAUSE seconds. Before each chunk the pause file `pause` (pause_path() by default) must not exist: while it
+    does the loop waits (wait_while_paused), and a chunk that found it after it got the lock (PAUSED_STATUS) is no
+    failure but the same wait. Returns when the last chunk is done."""
+    pause = pause_path() if pause is None else pause
     done = first_missing(outdir, params.battles, start)
     while done < params.battles:
+        wait_while_paused(pause, sleep, poll, out)
         command = chunk_command(args_forward, done, minutes, python, driver_script, bash, lock_script)
         print('diff_random: chunk from battle %d of %d' % (done, params.battles), file=out, flush=True)
         status = run(command)
+        if status == PAUSED_STATUS:
+            continue  # it found the pause file and the lock is free again: the wait at the top of the loop
         if status != 0:
             raise base.ToolError('a chunk (from battle %d) exited with status %d' % (done, status))
         progress = first_missing(outdir, params.battles, done)
@@ -792,13 +971,136 @@ def orchestrate(params, outdir, args_forward, minutes, start=0, run=run_process,
 
 # ------------------------------------------------------------ the command line
 
-def parse_pairings(text):
-    """'AB,ba,CC' -> ('AB', 'BA', 'CC'); ValueError for one that is not a pairing of A, B and C."""
-    out = tuple(p.strip().upper() for p in text.split(',') if p.strip())
-    bad = [p for p in out if p not in PAIRINGS]
+def parse_pairings(text, ids=COMMITTED_TEAMS):
+    """'AB,ba,CC' -> ('AB', 'BA', 'CC'); ValueError for one that is not a pairing of two of the teams `ids` (A, B and C, and
+    the ids and letters of the other teams of the run). A pairing is two teams, written as two letters ('AB') when both
+    have a one-character id, else as the two ids joined by a dash ('A-MC405'); in the result a dash is only where an id
+    has more than one character."""
+    ids = tuple(ids)
+    out, bad = [], []
+    for token in (p.strip().upper() for p in text.split(',') if p.strip()):
+        parts = token.split('-') if '-' in token else list(token) if len(token) == 2 else []
+        if len(parts) == 2 and all(part in ids for part in parts):
+            out.append(parts[0] + parts[1] if len(parts[0]) == len(parts[1]) == 1 else '%s-%s' % tuple(parts))
+        else:
+            bad.append(token)
     if not out or bad:
-        raise ValueError('pairings are some of %s, not %r' % (','.join(PAIRINGS), bad or text))
+        allowed = PAIRINGS if ids == COMMITTED_TEAMS else tuple(
+            a + b if len(a) == len(b) == 1 else '%s-%s' % (a, b) for a in ids for b in ids)
+        raise ValueError('pairings are some of %s, not %r' % (','.join(allowed), bad or text))
+    return tuple(out)
+
+
+_name_tables = {}
+
+
+def name_tables(team_c):
+    """trace_to_c.load_tables of the data kind with the `team_c` flag, read once."""
+    if team_c not in _name_tables:
+        _name_tables[team_c] = trace_to_c.load_tables(base.ROOT, team_c)
+    return _name_tables[team_c]
+
+
+def unknown_name(sets, tables):
+    """What the first name of the paste that `tables` does not know is: "species 'Foo' (set 3)". For the message of a
+    refusal only: which name the converter's lookup missed, which its KeyError does not say."""
+    for i, block in enumerate(sets, 1):
+        lines = [line.strip() for line in block.split('\n')]
+        head, item = lines[0], None
+        if ' @ ' in head:
+            head, item = head.split(' @ ', 1)
+        checks = [('species', re.sub(r' \([MF]\)$', '', head), 'FORME')] + ([('item', item, 'ITEM')] if item else [])
+        for line in lines[1:]:
+            if line.startswith('Ability: ') and line != 'Ability: No Ability':
+                checks.append(('ability', line[len('Ability: '):], 'ABILITY'))
+            elif line.endswith(' Nature'):
+                checks.append(('nature', line[:-len(' Nature')], 'NATURE'))
+            elif line.startswith('- '):
+                checks.append(('move', line[2:], 'MOVE'))
+        for what, name, table in checks:
+            if trace_to_c.key(name) not in tables[table]:
+                return "%s '%s' (set %d)" % (what, name, i)
+    return 'a name'
+
+
+def team_data_kind(label, sets, tables_for=name_tables):
+    """The data kind of DATA_KINDS that holds every member of a team: the first one whose tables the converter reads the
+    whole paste with. ValueError, with a message that names the team and the thing, for a paste the converter does not
+    read at all (a missing gender, a level other than 50, a line it does not know) and for a name that no data kind has.
+    The POOL data kind is not one of them yet: a team that needs it is refused here, before anything is played."""
+    text = '\n\n'.join(sets)
+    for kind, team_c in DATA_KINDS:
+        try:
+            trace_to_c.parse_team(text, tables_for(team_c))
+        except trace_to_c.ConversionError as e:  # none of the kinds would lift it
+            raise ValueError('%s: %s' % (label, e.code)) from None
+        except KeyError:  # a name that this kind does not have
+            continue
+        except (AttributeError, IndexError, ValueError) as e:  # a line that no Showdown set has
+            raise ValueError('%s: not a Showdown paste that the converter reads (%s: %s)' % (label, type(e).__name__, e)) from None
+        return kind
+    raise ValueError('%s: %s is in none of the data kinds that the driver plays (%s); the POOL data kind comes with P1, '
+                     'decision 0015' % (label, unknown_name(sets, tables_for(DATA_KINDS[-1][1])),
+                                        ', '.join(kind.upper() for kind, _ in DATA_KINDS)))
+
+
+def parse_team_options(values):
+    """['mc405', 'd=path'] -> [('MC405', None), ('D', 'path')]: a team of the registry by its id (no path), or a paste of
+    your own as a pairing letter (NAME=path, NAME one letter that is no committed team). ValueError for anything else and
+    for a team that is given twice."""
+    out = []
+    for value in values:
+        name, sep, path = value.partition('=')
+        name = name.strip().upper()
+        if not sep:
+            if not team_registry.ID.fullmatch(name):
+                raise ValueError('--team %s: a team of the registry is given by its id (upper case letters, digits and '
+                                 'underscores, starting with a letter), a file as NAME=path' % value)
+            path = None
+        else:
+            if not path.strip():
+                raise ValueError('--team is an id of the registry or NAME=path, not %r' % value)
+            if len(name) != 1 or not 'A' <= name <= 'Z':
+                raise ValueError('--team %s: the name of a team of your own is one letter' % value)
+            if name in COMMITTED_TEAMS:
+                raise ValueError('--team %s: A, B and C are the committed teams' % value)
+            path = path.strip()
+        if name in [n for n, _ in out]:
+            raise ValueError('--team: team %s is given twice' % name)
+        out.append((name, path))
     return out
+
+
+def check_teams(options, tables_for=name_tables, root=None):
+    """The Team tuples of parsed --team options, each file read and its data kind found; ValueError (a message for the
+    command line) for one the driver cannot play. A team of the registry (no path) is read from data/teams (A, B and C
+    are always there, and are no Team); a letter of your own must not be the id of a team of the registry."""
+    root = root or base.ROOT
+    teams = []
+    for name, path in options:
+        if path is None:
+            if name in COMMITTED_TEAMS:
+                continue  # always there, and from the registry
+            try:
+                team_registry.get_entry(root, name)
+            except team_registry.RegistryError as e:
+                raise ValueError('--team %s: %s' % (name, e)) from None
+            path = team_registry.team_path(root, name)
+        else:
+            try:
+                team_registry.get_entry(root, name)
+            except team_registry.RegistryError:
+                pass
+            else:
+                raise ValueError('--team %s=%s: %s is a team of the registry, which a file of your own must not take the '
+                                 'name of (--team %s is that team)' % (name, path, name, name))
+        label = 'team %s (%s)' % (name, path)
+        try:
+            sets = read_team_file(path)
+        except base.ToolError as e:
+            raise ValueError('team %s: %s' % (name, e)) from None
+        teams.append(Team(name, os.path.abspath(path), team_data_kind(label, sets, tables_for), team_sha256(sets)))
+    return tuple(teams)
 
 
 def add_arguments(modes):
@@ -808,8 +1110,16 @@ def add_arguments(modes):
     p.add_argument('--battles', type=int, required=True, help='how many battles (index 0 to N - 1)')
     p.add_argument('--seed', type=int, required=True, help='the seed of the run (0 or more)')
     p.add_argument('--pairings', default=','.join(DEFAULT_PAIRINGS),
-                   help='which teams meet, battle i takes the pairing at i mod the number of pairings: some of %s '
-                   '(C is opt-in; default %s)' % (','.join(PAIRINGS), ','.join(DEFAULT_PAIRINGS)))
+                   help='which teams meet, battle i takes the pairing at i mod the number of pairings: some of %s, and '
+                   'the teams of --team: two letters (AD), or two ids joined by a dash for an id of more than one '
+                   'character (A-MC405) (C is opt-in; default %s)' % (','.join(PAIRINGS), ','.join(DEFAULT_PAIRINGS)))
+    p.add_argument('--team', action='append', default=[], metavar='ID | NAME=FILE',
+                   help='one more team: ID is a team of the registry (data/teams/index.json), NAME=FILE a paste of your '
+                   'own as a pairing letter (NAME one letter but A, B or C); six sets with every gender stated; the data '
+                   'kind (CLOSURE or TEAM_C) follows its members, and a name that no data kind has is refused before '
+                   'anything is played; repeat for more teams')
+    p.add_argument('--keep-traces', action='store_true',
+                   help='keep the spec and the trace of every PASS battle in kept/ (what `promote` chooses coverage from)')
     p.add_argument('--workers', type=int, default=4, help='threads, each with a worker and a runner (default 4)')
     p.add_argument('--out', metavar='DIR', help='default build/diff/<UTC yyyymmdd-hhmmss>-random-s<S>')
     p.add_argument('--start', type=int, default=0, help='the first battle to run in this process (default 0)')
@@ -832,7 +1142,8 @@ def add_arguments(modes):
 def validate(parser, args):
     """The Params of a parsed command line, or parser.error."""
     try:
-        pairings = parse_pairings(args.pairings)
+        teams = check_teams(parse_team_options(args.team))
+        pairings = parse_pairings(args.pairings, COMMITTED_TEAMS + tuple(t.id for t in teams))
     except ValueError as e:
         parser.error(str(e))
     if args.battles < 1 or args.seed < 0 or args.workers < 1 or args.start < 0 or args.max_steps < 1:
@@ -850,7 +1161,7 @@ def validate(parser, args):
     if (args.node or shutil.which('node')) is None:
         parser.error('node is not on the PATH (--node)')
     return Params(args.seed, args.battles, pairings, args.max_steps, args.switch_weight, args.mega_weight,
-                  args.domain_rate)
+                  args.domain_rate, teams or None)
 
 
 def forwarded(args, outdir):
@@ -859,6 +1170,10 @@ def forwarded(args, outdir):
            '--seed', str(args.seed), '--pairings', args.pairings, '--workers', str(args.workers), '--out', outdir,
            '--max-steps', str(args.max_steps), '--switch-weight', repr(args.switch_weight), '--mega-weight',
            repr(args.mega_weight), '--domain-rate', repr(args.domain_rate)]
+    for name, path in parse_team_options(args.team):
+        out += ['--team', name if path is None else '%s=%s' % (name, os.path.abspath(path))]
+    if args.keep_traces:
+        out.append('--keep-traces')
     if args.node:
         out += ['--node', args.node]
     return out
@@ -883,6 +1198,10 @@ def run(args, params):
         check_parameters(outdir, params)
         orchestrate(params, outdir, forwarded(args, outdir), minutes, start=start, run=run_process)
     else:
+        if os.environ.get(LOCK_HELD_ENV) and os.path.exists(pause_path()):
+            # A chunk of the loop: it has the machine lock and a measurement has asked for a pause. Leaving gives the
+            # lock back (its wrapper releases it); the loop says so and waits for the file to go.
+            return PAUSED_STATUS
         node = args.node or shutil.which('node')
         runner_path = os.path.abspath(args.runner)
         make_worker = lambda: base.NodeWorker(node, args.checkout, WORKER_TIMEOUT)
@@ -898,11 +1217,11 @@ def run(args, params):
         identity = identity_of(params, version, base.git_head(root), base.library_version(root), file_sha256(runner_path))
         os.makedirs(outdir, exist_ok=True)
         check_identity(outdir, identity)
-        teams = read_teams(root)
+        teams = read_teams(root, params.teams)
         tables = {team_c: trace_to_c.load_tables(root, team_c) for team_c in (False, True)}
         kinds = conformance_records.data_kinds(root)
         ran = run_chunk(params, outdir, start, args.chunk_minutes, make_worker, make_runner, tables.__getitem__, kinds,
-                        lambda index: derive(params, index, teams), args.workers)
+                        lambda index: derive(params, index, teams), args.workers, keep_traces=args.keep_traces)
         print('diff_random: %d battles run in this process' % ran, flush=True)
         if args.chunk_minutes is not None:
             # One chunk of a run: its results are in partial/. The files of the whole run are written by whoever owns

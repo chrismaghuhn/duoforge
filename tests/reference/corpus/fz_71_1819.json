@@ -1,0 +1,111 @@
+{
+  "name": "fz_71_1819",
+  "purpose": "Corpus (coverage): random differential battle 1819 of run 71 (tools/reference/diff_driver.py random), team B against team A, the whole battle. It adds 4 signatures that no committed battle and no earlier corpus battle has: cant:ability: Armor Tail|Fake Out|[of] p2a: Raichu, cant:ability: Armor Tail|Fake Out|[of] p2b: Rillaboom, move:Brave Bird[notarget], move:Close Combat[notarget].",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,f14541fcfac39088fc799be5ff62f89a729077a5a0fa815bd9af6e6573806a94",
+  "teams": [
+    "Charizard (M) @ Charizardite Y\nAbility: Blaze\nLevel: 50\nEVs: 16 HP / 18 Def / 3 SpA / 29 Spe\nTimid Nature\n- Heat Wave\n- Weather Ball\n- Hurricane\n- Protect\n\nGrimmsnarl (M) @ Light Clay\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Spirit Break\n- Reflect\n- Light Screen\n- Parting Shot\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Weather Ball\n- Muddy Water\n- Ice Beam\n- Protect\n\nGolisopod (F) @ Golisopite\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 1 SpD / 1 Spe\nAdamant Nature\n- Leech Life\n- Iron Head\n- Drill Run\n- Protect\n\nFarigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Grass Knot\n- Trick Room\n- Protect\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Electro Shot\n- Snarl\n- Protect",
+    "Gholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Nasty Plot\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Bitter Blade\n- Shadow Sneak\n- Swords Dance\n- Protect\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Close Combat\n- Tailwind\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Muddy Water\n- Coil\n- Ice Beam\n- Hypnosis\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- High Horsepower\n\nRaichu (F) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Zap Cannon\n- Focus Blast\n- Fake Out\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 2453",
+      "p2": "team 2563"
+    },
+    {
+      "p1": "move 4 2, switch 4",
+      "p2": "move 2 1, switch 3"
+    },
+    {
+      "p1": "switch 3, pass"
+    },
+    {
+      "p1": "move 2 -2, switch 4",
+      "p2": "move 4, move 2 2 mega"
+    },
+    {
+      "p1": "move 3, move 3 1 mega",
+      "p2": "move 4, move 1 2"
+    },
+    {
+      "p1": "move 2 1, move 2 1",
+      "p2": "move 3, move 4"
+    },
+    {
+      "p1": "move 1 -2, move 2 -1",
+      "p2": "move 3, move 1 2"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "move 4, move 3",
+      "p2": "move 4, move 1 -1"
+    },
+    {
+      "p1": "move 1 1, move 3",
+      "p2": "move 1 2, switch 4"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "move 4, move 3 1",
+      "p2": "move 1 1, switch 3"
+    },
+    {
+      "p1": "move 2 2, move 3 -1",
+      "p2": "move 4, move 3 2"
+    },
+    {
+      "p1": "move 2 2, move 4",
+      "p2": "switch 4, move 2 2"
+    },
+    {
+      "p1": "move 1 -2, move 1 -1",
+      "p2": "move 3 1, move 1 -1"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 4, move 1 1",
+      "p2": "move 2 -2, move 4 1"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 4, move 1 -1",
+      "p2": "move 3, move 4 2"
+    },
+    {
+      "p1": "move 1 2, move 1 2",
+      "p2": "move 3, move 4 1"
+    },
+    {
+      "p1": "move 4, move 4",
+      "p2": "move 3, pass"
+    },
+    {
+      "p1": "move 2 -2, move 3 2",
+      "p2": "move 2 -2, pass"
+    },
+    {
+      "p1": "move 4, move 3 1",
+      "p2": "move 4, pass"
+    },
+    {
+      "p1": "move 2 1, move 4",
+      "p2": "move 3, pass"
+    },
+    {
+      "p1": "move 1 -2, move 1 -1",
+      "p2": "move 1 -2, pass"
+    },
+    {
+      "p1": "pass, move 1 2",
+      "p2": "move 3, pass"
+    }
+  ]
+}
