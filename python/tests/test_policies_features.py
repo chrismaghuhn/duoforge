@@ -48,7 +48,7 @@ def _reference_choice(batch, e, p):
                         shown = int(m["hp"]) * 100 // int(m["hp_max"])
                     else:
                         shown = 100
-                    score += 100 - shown
+                    score += 200 - shown
                 else:
                     score += 10
             elif kind == c["DUOFORGE_SLOT_SWITCH"]:
@@ -159,17 +159,20 @@ class PoliciesFeaturesTest(unittest.TestCase):
         choose = duoforge.ScriptedPolicy().choose
         none, foe0, foe1 = ("NONE", 0xFF), ("MOVE", 2), ("MOVE", 3)
         untargeted = ("MOVE", 0xFF)
-        # switches -50 each against 0 for a move at a full foe
+        # switches -50 each against 100 for a move at a full foe
         self.assertEqual(choose(_Scene([(("SWITCH", 0), ("SWITCH", 0)), (foe0, ("PASS", 0xFF))]))[0, 0], 1)
-        # a move without a foe target scores 10
-        self.assertEqual(choose(_Scene([(foe0, none), (untargeted, none)]))[0, 0], 1)
-        # 100 minus the shown HP percent: the weaker foe wins
+        # a move at a foe scores at least 100: a move at a full foe beats a move without a foe target (10)
+        self.assertEqual(choose(_Scene([(untargeted, none), (foe0, none)]))[0, 0], 1)
+        # a move without a foe target (10) beats PASS (0)
+        self.assertEqual(choose(_Scene([(("PASS", 0xFF), none), (untargeted, none)]))[0, 0], 1)
+        # 200 minus the shown HP percent: the weaker foe wins (160 against 100)
         self.assertEqual(choose(_Scene([(foe0, none), (foe1, none)], foe=((100, 100, 2), (40, 100, 2))))[0, 0], 1)
         # exact HP is shown as hp * 100 // hp_max: 50 of 200 is 25 percent
         self.assertEqual(choose(_Scene([(foe1, none), (foe0, none)], foe=((50, 200, 1), (30, 100, 2))))[0, 0], 1)
-        # an empty foe position counts as a move without a target (10 against 5)
-        self.assertEqual(choose(_Scene([(foe1, none), (foe0, none)], foe=((95, 100, 2), (100, 100, 2)),
-                                       empty_slot=1))[0, 0], 0)
+        # an empty foe position counts as a move without a target: 10 ties with an untargeted move (the
+        # lower index wins) and loses to a move at a full foe (100)
+        self.assertEqual(choose(_Scene([(untargeted, none), (foe1, none)], empty_slot=1))[0, 0], 0)
+        self.assertEqual(choose(_Scene([(foe1, none), (foe0, none)], empty_slot=1))[0, 0], 1)
         # ties go to the lowest index
         self.assertEqual(choose(_Scene([(untargeted, none), (untargeted, none)]))[0, 0], 0)
 
