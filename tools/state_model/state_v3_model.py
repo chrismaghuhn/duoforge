@@ -107,6 +107,7 @@ STALL_TURNS_MAX = 2
 CONFUSION_TURNS_MAX = 5
 CHARGE_TURNS_MAX = 2
 MOVE_SLOT_STRUGGLE = 4
+MOVE_SLOT_RECHARGE = 5  # step G17: the recharge turn (POOL kinds), no target, no Mega
 SWITCH_NONE, SWITCH_MOVE, SWITCH_EMERGENCY_EXIT, SWITCH_FAINTED = 0, 1, 2, 3
 SWITCH_FLIP_TURN = 4  # TEAM_C and POOL kinds (decision 0009)
 SWITCH_UTURN = 5  # POOL kinds only: U-turn's flag, a damaging pivot that names its move (step G5)
@@ -260,7 +261,7 @@ KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 # which tests/test_pool_tables.c recomputes from the pool canonical bytes: the
 # pool layout over the pool data, then the family columns, the handler columns
 # and the moves and abilities that each forme may have.
-POOL_TABLE_HASH = bytes.fromhex('0950d57b4ffc7d430d5a80e66b0cb16d156557e89399290de3973f97b1e5defd')
+POOL_TABLE_HASH = bytes.fromhex('4d93e4bb7ed48c2a881c8c67c5312efed9d9a7090a6ac26d789420d43ef53743')
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 
@@ -571,12 +572,12 @@ def cmd_is_zero(c):
 
 def sealed_cmd_valid(c, mc):
     if c['kind'] == SLOT_MOVE:
-        if c['move_slot'] == MOVE_SLOT_STRUGGLE:
+        if c['move_slot'] in (MOVE_SLOT_STRUGGLE, MOVE_SLOT_RECHARGE):
             target_ok = c['target'] == TARGET_NONE
         else:
             target_ok = c['move_slot'] < MOVE_SLOTS and (c['target'] < 4 or c['target'] == TARGET_NONE)
         # Struggle never carries a Mega declaration.
-        mega_max = 0 if c['move_slot'] == MOVE_SLOT_STRUGGLE else 1
+        mega_max = 0 if c['move_slot'] in (MOVE_SLOT_STRUGGLE, MOVE_SLOT_RECHARGE) else 1
         return target_ok and c['mega'] <= mega_max and c['reserve'] == 0
     if c['kind'] == SLOT_SWITCH:
         return c['reserve'] < mc and not (c['move_slot'] or c['target'] or c['mega'])
@@ -797,7 +798,7 @@ def queue_record_valid(st, r):
     if r['kind'] in (Q_RUN_SWITCH, Q_MEGA):
         return plain and bound and r['reserve'] == 0
     if r['kind'] == Q_MOVE:
-        return (bound and r['reserve'] == 0 and r['move_slot'] <= MOVE_SLOT_STRUGGLE
+        return (bound and r['reserve'] == 0 and r['move_slot'] <= MOVE_SLOT_RECHARGE
                 and (r['target'] < 4 or r['target'] == TARGET_NONE))
     return r == qrec(Q_RESIDUAL)
 

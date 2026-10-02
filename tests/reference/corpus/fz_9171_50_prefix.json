@@ -1,0 +1,29 @@
+{
+  "name": "fz_9171_50_prefix",
+  "purpose": "Corpus (defect): case fz_9171_50 of run 9171 (tools/reference/diff_driver.py random), team H against team A, found as DIVERGENCE events reference kind 5 differs in pos, hp. The shortest prefix that showed it, 4 of 15 choices; it passes now, fixed by G17 (the mustrecharge end handler in the residual sort).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,a0ee9affa749971937081c9a36c2df987d7e8ee4152405d123173268f3c0599b",
+  "teams": [
+    "Raichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Hyper Beam\n- Thunderbolt\n- Protect\n- Encore\n\nIncineroar (M) @ Black Glasses\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Blast Burn\n- Fake Out\n- Protect\n- Snarl\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Ice Beam\n- Coil\n- Protect\n- Muddy Water\n\nKingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect\n- Low Kick\n- Swords Dance\n\nSwampert (M) @ Sitrus Berry\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpA\nModest Nature\n- Hydro Cannon\n- Protect\n- Ice Beam\n- Muddy Water\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Giga Impact\n- Encore\n- Protect\n- Helping Hand",
+    "Milotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Muddy Water\n- Coil\n- Ice Beam\n- Hypnosis\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Nasty Plot\n- Protect\n\nRaichu (F) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Zap Cannon\n- Focus Blast\n- Fake Out\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Bitter Blade\n- Shadow Sneak\n- Swords Dance\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- High Horsepower\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Close Combat\n- Tailwind\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 5234",
+      "p2": "team 5214"
+    },
+    {
+      "p1": "move 2, move 1 -1",
+      "p2": "move 3 2, move 1"
+    },
+    {
+      "p1": "move 2, move 3",
+      "p2": "move 1 2, switch 3"
+    },
+    {
+      "p1": "move 1 2, move 4",
+      "p2": "move 4 1, switch 3"
+    }
+  ]
+}

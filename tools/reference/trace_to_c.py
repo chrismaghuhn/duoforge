@@ -507,6 +507,11 @@ def convert_choice(text, side, state, roster_of, mid_turn=False):
                 # A locked move: its slot and the stored target, whatever was typed.
                 cmds.append((1, mon['locked'][0], abs_target(side, mon['locked'][1]), 0, 0))
                 continue
+            if 'mustrecharge' in mon['volatiles']:
+                # The recharge turn (step G17): the request is the one move "Recharge" (sim/pokemon.ts:964-972), so
+                # "move 1" is the recharge slot, whatever target or Mega was typed (no target is accepted, side.ts).
+                cmds.append((1, MOVE_SLOT_RECHARGE, 0xFF, 0, 0))
+                continue
             n = int(words[1]) - 1
             mega = 1 if words[-1] == 'mega' else 0
             if mega:
@@ -613,9 +618,11 @@ EV = {name: i + 1 for i, name in enumerate(
      'SINGLE_TURN', 'VOLATILE_START', 'VOLATILE_END', 'TYPE_CHANGE'])}
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
          'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14,
-         'HEAL_BLOCK': 15, 'WEATHER': 16}
+         'HEAL_BLOCK': 15, 'WEATHER': 16, 'RECHARGE': 18}
 VOLATILE_HEAL_BLOCK = 1  # DUOFORGE_VOLATILE_HEAL_BLOCK: the detail of VOLATILE_START and VOLATILE_END
 VOLATILE_ENCORE = 2      # DUOFORGE_VOLATILE_ENCORE (step G9)
+VOLATILE_MUST_RECHARGE = 3  # DUOFORGE_VOLATILE_MUST_RECHARGE (step G17)
+MOVE_SLOT_RECHARGE = 5   # DUOFORGE_MOVE_SLOT_RECHARGE (step G17)
 # DUOFORGE_TYPE_*: the alphabetical type ids, the detail of TYPE_CHANGE
 TYPE_IDS = {name: i for i, name in enumerate(
     ['Bug', 'Dark', 'Dragon', 'Electric', 'Fairy', 'Fighting', 'Fire', 'Flying', 'Ghost', 'Grass', 'Ground', 'Ice',
@@ -652,6 +659,9 @@ IGNORED_VOLATILES = {
     # Pool step G9 (Encore): its turns are not a field of the record either: the moves of the next requests (every
     # slot but the Encored one is disabled), the replaced move line and the start and end lines show them.
     'encore': 'the moves of the requests, the replaced move and the start and end lines',
+    # Pool step G17 (the recharge turn): the volatile shows in the request of the next turn (the one candidate, the
+    # recharge slot), the start line (`-mustrecharge`) and the cant line (`cant|X|recharge`), and the view bit.
+    'mustrecharge': 'the request of the recharge turn, the start line and the cant line',
 }
 HP_EXACT, HP_PERCENT = 1, 2
 HP_FLAGS_EV = {'': 0, 'r': 1, 'y': 2, 'g': 3}
@@ -811,7 +821,8 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             elif reason == 'move: Heal Block':
                 e = ev_tuple(EV['CANT'], pos, NOPOS, CAUSE['HEAL_BLOCK'], tables['MOVE'][key(args[2])])
             else:
-                cause = {'par': 'PARALYSIS', 'slp': 'SLEEP', 'frz': 'FREEZE', 'flinch': 'FLINCH', 'nopp': 'NO_PP'}
+                cause = {'par': 'PARALYSIS', 'slp': 'SLEEP', 'frz': 'FREEZE', 'flinch': 'FLINCH', 'nopp': 'NO_PP',
+                         'recharge': 'RECHARGE'}
                 e = ev_tuple(EV['CANT'], pos, NOPOS, CAUSE[cause[reason]])
         elif kind == '-miss':
             e = ev_tuple(EV['MISS'], ev_pos(args[0]), ev_pos(args[1]))
@@ -874,6 +885,10 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             cause, id2, other = ev_cause(attrs, tables)
             e = ev_tuple(EV['CURE_STATUS'], ev_pos(args[0]), other, cause, 0, id2, detail=AILMENT[args[1]],
                          flags=FLAG['MESSAGE'] if '[msg]' in attrs else 0)
+        elif kind == '-mustrecharge':
+            # data/conditions.ts:374-376 mustrecharge onStart: the user of a recharge move that hit (step G17). The
+            # volatile has no end line: it ends with `cant|X|recharge` or with the occupant.
+            e = ev_tuple(EV['VOLATILE_START'], ev_pos(args[0]), detail=VOLATILE_MUST_RECHARGE)
         elif kind in ('-start', '-end'):
             what = args[1]
             if what == 'confusion':
@@ -1126,7 +1141,7 @@ def convert_battle(name, spec, trace, tables):
                     entries.append(flat)
         ent = entries + [0xFF] * (4 - len(entries))
         # The moves the reference's request offers per slot: bit k for move k,
-        # 0x10 for Struggle, 0xFF where there is nothing to compare.
+        # 0x10 for Struggle, 0x20 for the recharge turn, 0xFF where there is nothing to compare.
         enabled = []
         for s in range(2):
             rows = new_state['sides'][s]['enabled']
@@ -1135,7 +1150,9 @@ def convert_battle(name, spec, trace, tables):
                 sd = new_state['sides'][s]
                 ai = sd['active'][k] if k < len(sd['active']) else -1
                 lock = sd['pokemon'][ai].get('locked') if ai >= 0 else None
-                if lock and k < len(rows) and rows[k]:
+                if ai >= 0 and 'mustrecharge' in sd['pokemon'][ai]['volatiles'] and k < len(rows) and rows[k]:
+                    row.append(0x20)  # the recharge turn (step G17): the one move "Recharge", the recharge slot 5
+                elif lock and k < len(rows) and rows[k]:
                     row.append(1 << lock[0])
                 elif k >= len(rows) or not rows[k]:
                     row.append(0xFF)

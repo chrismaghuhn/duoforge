@@ -44,7 +44,7 @@
 #include "state/battle_internal.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "0950d57b4ffc7d430d5a80e66b0cb16d156557e89399290de3973f97b1e5defd"
+#define POOL_HASH_HEX "4d93e4bb7ed48c2a881c8c67c5312efed9d9a7090a6ac26d789420d43ef53743"
 /* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
  * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
  * produced the same bytes. Step G10 moved two of them on purpose: Scald and Recover are data now (the thaw bit and
@@ -62,12 +62,13 @@
 #define POOL_MOVES 511u
 #define SOUND_MOVES 25u /* the pool moves with the pinned sound flag (duoforge.data.pool_regen reproduces the table from the pin) */
 #define HEAL_MOVES 23u  /* and with the heal flag */
+#define RECHARGE_MOVES 7u /* and with the recharge bit (step G17: flags2 bit 8): Blast Burn, Frenzy Plant, Giga Impact, Hydro Cannon, Hyper Beam, Meteor Assault, Rock Wrecker */
 #define THAW_MOVES 3u   /* and with thawsTarget (step G10: flags2 bit 4): Scald, Matcha Gotcha, Scorching Sands */
 #define POOL_ITEMS 166u
 #define POOL_ABILITIES 215u
 
 /* The rows that the tables do not model, pinned (the generator reports the same counts). */
-#define UNMODELED_MOVES 312u /* 313 before step G15 modelled Expanding Force; 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
+#define UNMODELED_MOVES 305u /* 306 before step G15 modelled Expanding Force; 313 before step G17 modelled the seven recharge moves; 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
 #define UNMODELED_ITEMS 44u /* 45 before step G15 modelled Psychic Seed */
 #define UNMODELED_ABILITIES 184u
 
@@ -705,12 +706,14 @@ int main(void)
         uint32_t heal = 0u;
         uint32_t other = 0u;
         uint32_t thaw = 0u;
+        uint32_t recharge = 0u;
         for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
+            recharge += (dfi_pool_move_flags2[i] & DFI_MOVE_FLAG2_RECHARGE) != 0u ? 1u : 0u;
             thaw += (dfi_pool_move_flags2[i] & DFI_MOVE_FLAG2_THAWS_TARGET) != 0u ? 1u : 0u;
             sound += (dfi_pool_move_flags2[i] & DFI_MOVE_FLAG2_SOUND) != 0u ? 1u : 0u;
             heal += (dfi_pool_move_flags2[i] & DFI_MOVE_FLAG2_HEAL) != 0u ? 1u : 0u;
             other += (dfi_pool_move_flags2[i] &
-                      ~(uint32_t)(DFI_MOVE_FLAG2_SOUND | DFI_MOVE_FLAG2_HEAL | DFI_MOVE_FLAG2_THAWS_TARGET)) != 0u
+                      ~(uint32_t)(DFI_MOVE_FLAG2_SOUND | DFI_MOVE_FLAG2_HEAL | DFI_MOVE_FLAG2_THAWS_TARGET | DFI_MOVE_FLAG2_RECHARGE)) != 0u
                          ? 1u
                          : 0u;
         }
@@ -718,6 +721,7 @@ int main(void)
         DF_CHECK_EQ_U64(&t, sound, SOUND_MOVES);
         DF_CHECK_EQ_U64(&t, heal, HEAL_MOVES);
         DF_CHECK_EQ_U64(&t, thaw, THAW_MOVES);
+        DF_CHECK_EQ_U64(&t, recharge, RECHARGE_MOVES);
         /* The heal column (step G10): Recover and Slack Off heal 1/2, no other move heals by a fraction. */
         for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
             const bool halves = i == DFI_MOVE_RECOVER || i == DFI_MOVE_SLACKOFF;
@@ -1137,7 +1141,8 @@ int main(void)
          * Noise, whose lockout and Heal Block are secondary kinds, not handlers: g8_throat_chop, g8_heal_block,
          * g8_heal_block_pair and _tie_a/_b; Wide Guard, whose handler id the turn code runs: g7_wide_guard_*; Soak, whose
          * handler id the turn code implements since step G11: g11_soak, _mega, _stab and _electro; Moonblast and Calm
-         * Mind: g12_floette_moves). No move with a handler id is left unmarked. */
+         * Mind: g12_floette_moves); step G17 six of the seven recharge moves (g17_*; Meteor Assault stays unmarked: its only learner, Sirfetch'd, has no supported ability). No move with a handler id is left
+         * unmarked. */
         static const uint32_t marked_moves[] = {DFI_MOVE_ROCKSLIDE, DFI_MOVE_DOUBLEEDGE, DFI_MOVE_THUNDERBOLT,
                                                 DFI_MOVE_FLASHCANNON, DFI_MOVE_EXTREMESPEED, DFI_MOVE_HEADSMASH,
                                                 DFI_MOVE_BULKUP, DFI_MOVE_LIQUIDATION, DFI_MOVE_ICEPUNCH,
@@ -1151,7 +1156,10 @@ int main(void)
                                                 DFI_MOVE_HYDROPUMP, DFI_MOVE_SUPERPOWER, DFI_MOVE_LIGHTOFRUIN,
                                                 DFI_MOVE_EARTHPOWER, DFI_MOVE_POWERGEM, DFI_MOVE_AURASPHERE,
                                                 DFI_MOVE_ICYWIND, DFI_MOVE_ICESHARD, DFI_MOVE_QUICKATTACK,
-                                                DFI_MOVE_DETECT, DFI_MOVE_POISONJAB, DFI_MOVE_EXPANDINGFORCE};
+                                                DFI_MOVE_DETECT, DFI_MOVE_POISONJAB,
+                                                DFI_MOVE_BLASTBURN, DFI_MOVE_FRENZYPLANT, DFI_MOVE_GIGAIMPACT,
+                                                DFI_MOVE_HYDROCANNON, DFI_MOVE_HYPERBEAM, DFI_MOVE_ROCKWRECKER,
+                                                DFI_MOVE_EXPANDINGFORCE};
         uint32_t marked_count = 0u;
         for (uint32_t id = DFI_EXT_MOVE_COUNT; id < DFI_POOL_MOVE_COUNT; ++id) {
             bool want = false;
@@ -1171,7 +1179,7 @@ int main(void)
             DF_CHECK(&t, !want || dfi_pool_moves[id].special != DFI_SPECIAL_UNMODELED);
             marked_count += dfi_support.moves[id] != 0u ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, marked_count, 41u);
+        DF_CHECK_EQ_U64(&t, marked_count, 47u);
     }
 
     /* Step G12: Fairy Aura and Flower Veil. The engine reads them by id (no family column: one legal holder each);
