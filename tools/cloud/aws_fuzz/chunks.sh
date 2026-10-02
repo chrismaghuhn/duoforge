@@ -11,7 +11,9 @@
 #
 # Expects from the caller: the functions log and fail and run_driver <idx> <seed> <dir> (plays the chunk into <dir>
 # and, when it can, writes "<user seconds> <system seconds>" of the whole driver to "<dir>.time"), and the variables
-# WORK, S3_BASE, CHUNKS, PARALLEL, CHUNK_BATTLES, BASE_SEED and VCPUS.
+# WORK, S3_BASE (the prefix of this run), CHUNKS, PARALLEL, CHUNK_BATTLES, BASE_SEED and VCPUS, and for the manifest
+# RUN_ID, RESUME (yes or no), DF_CAMPAIGN, DF_COMMIT and PARALLEL_CONF (the parallel of the campaign.conf: auto or a
+# number).
 
 # 0 present, 1 absent, anything else is an error
 s3_has() { # s3 url
@@ -24,6 +26,59 @@ s3_has() { # s3 url
 # busy and total CPU ticks of the machine (user, nice, system, irq, softirq of all: user..steal)
 cpu_ticks() {
     awk '/^cpu /{busy = $2 + $3 + $4 + $7 + $8; total = 0; for (i = 2; i <= NF; i++) total += $i; print busy, total}' /proc/stat
+}
+
+# --- the manifest of a run: manifest/run.json says which run it is, manifest/done.txt lists its finished chunks.
+# A run never reads a manifest of another geometry or commit: a new run needs a prefix without a manifest, a resumed
+# run needs the manifest of exactly this run.
+manifest_json() {
+    printf '{"run_id":"%s","campaign":"%s","commit":"%s","chunk_battles":%s,"base_seed":%s,"chunks":%s,"parallel":"%s"}\n' \
+        "$RUN_ID" "$DF_CAMPAIGN" "$DF_COMMIT" "$CHUNK_BATTLES" "$BASE_SEED" "$CHUNKS" "$PARALLEL_CONF"
+}
+
+# A done-list is a hard error unless it holds distinct chunk numbers of this campaign: more finished than exist means
+# that it belongs to another run.
+done_check() { # file
+    local n bad dup c
+    n=$(grep -c . "$1" || true)
+    if [ "$n" -gt "$CHUNKS" ]; then
+        fail "the done-manifest lists $n finished chunks but the campaign has only $CHUNKS: it belongs to another run"
+    fi
+    bad=$(grep -v -E '^[0-9]{4}$' "$1" | grep . || true)
+    [ -z "$bad" ] || fail "the done-manifest has a malformed line: $bad"
+    dup=$(sort "$1" | uniq -d)
+    [ -z "$dup" ] || fail "the done-manifest lists a chunk twice: $dup"
+    while read -r c; do
+        if [ -n "$c" ] && [ "$((10#$c))" -ge "$CHUNKS" ]; then
+            fail "the done-manifest lists chunk $c but the campaign has only $CHUNKS chunks"
+        fi
+    done < "$1"
+}
+
+done_manifest_open() {
+    local run_json="$S3_BASE/manifest/run.json" differences
+    : > "$WORK/done.txt"
+    manifest_json > "$WORK/run.json"
+    if [ "$RESUME" = yes ]; then
+        s3_has "$run_json" || fail "resume $RUN_ID: there is no such run (no manifest at $run_json)"
+        aws s3 cp "$run_json" "$WORK/run-remote.json" --only-show-errors
+        differences=$(python3 -c 'import json, sys
+a = json.load(open(sys.argv[1]))
+b = json.load(open(sys.argv[2]))
+print(", ".join("%s: this launch %r, the run %r" % (k, a.get(k), b.get(k)) for k in sorted(set(a) | set(b)) if a.get(k) != b.get(k)))' \
+            "$WORK/run.json" "$WORK/run-remote.json")
+        [ -z "$differences" ] || fail "resume $RUN_ID: the manifest of the run differs from this launch ($differences)"
+        if s3_has "$S3_BASE/manifest/done.txt"; then
+            aws s3 cp "$S3_BASE/manifest/done.txt" "$WORK/done.txt" --only-show-errors
+        fi
+        done_check "$WORK/done.txt"
+    else
+        if s3_has "$run_json" || s3_has "$S3_BASE/manifest/done.txt"; then
+            fail "run $RUN_ID already has a manifest: relaunch with --resume $RUN_ID, or start a new launch"
+        fi
+        aws s3 cp "$WORK/run.json" "$run_json" --only-show-errors
+    fi
+    log "run $RUN_ID ($([ "$RESUME" = yes ] && echo resumed || echo new)): $(grep -c . "$WORK/done.txt" || true) of $CHUNKS chunks finished"
 }
 
 # --- the chunks in flight: computing, or computed and not yet in the done-manifest ("<idx> <dir>" per line)
@@ -131,6 +186,7 @@ run_chunks() {
         else
             uploading=$((uploading - 1))
             printf '%s\n' "$idx" >> "$WORK/done.txt"
+            done_check "$WORK/done.txt"
             aws s3 cp "$WORK/done.txt" "$S3_BASE/manifest/done.txt" --only-show-errors
             inflight_remove "$idx"
             log "chunk $idx uploaded and in the done-manifest"
