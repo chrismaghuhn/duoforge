@@ -439,6 +439,20 @@ if(Python3_Interpreter_FOUND)
     add_test(NAME duoforge.reference.import_paste
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_import_paste.py")
     set_tests_properties(duoforge.reference.import_paste PROPERTIES TIMEOUT 120 ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+    # The AWS fuzz tooling (tools/cloud/aws_fuzz): its guards, the request, the user data and the policy text, offline,
+    # with a stub aws first on the PATH. It needs a bash; on Windows that is Git's, not the WSL launcher in System32.
+    if(WIN32)
+        find_program(DUOFORGE_BASH NAMES bash HINTS "$ENV{ProgramFiles}/Git/bin" "$ENV{LocalAppData}/Programs/Git/bin"
+            NO_DEFAULT_PATH)
+    else()
+        find_program(DUOFORGE_BASH NAMES bash)
+    endif()
+    if(DUOFORGE_BASH)
+        add_test(NAME duoforge.cloud.aws_fuzz_guards
+            COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/cloud/aws_fuzz/test_guards.py")
+        set_tests_properties(duoforge.cloud.aws_fuzz_guards PROPERTIES TIMEOUT 300
+            ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1;DUOFORGE_BASH=${DUOFORGE_BASH}")
+    endif()
     # The table generator refuses move shapes it does not model (no checkout needed).
     add_test(NAME duoforge.data.gen_closure_refusals
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/test_gen_closure.py")

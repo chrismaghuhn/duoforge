@@ -1,0 +1,264 @@
+#!/bin/bash
+shutdown -h +@MAX_MINUTES@ "duoforge fuzz watchdog: at most @MAX_MINUTES@ minutes"
+# The user data of a fuzz box (tools/cloud/aws_fuzz/README.md), rendered by launch.sh and check.sh, which fill the four
+# @...@ placeholders with values they have validated. The first command above is the watchdog: whatever happens below,
+# the box is gone after @MAX_MINUTES@ minutes (the instance-initiated shutdown behaviour is terminate).
+#
+# What it does, as the hosted linux-full job does it (.github/workflows/ci.yml): the packages, Node 22, the public
+# repository at the exact commit, the pinned Pokemon Showdown (npm ci, node build), the engine in Release and the
+# differential runner. Then it plays the chunks of the campaign (campaigns/<id>/campaign.conf at that commit): a chunk
+# is the random mode over 500 battles of one seed (base seed + chunk index) and is uploaded when it is done together
+# with a done-manifest, so that a relaunch skips what is finished. A spot interruption notice uploads the chunk that
+# is running; a rate under twice the local rate in the first ten minutes aborts the campaign. At the end, or on any
+# error, the box powers itself off. There is no secret on the box: S3 is reached with the instance profile.
+set -euo pipefail
+
+DF_CAMPAIGN='@CAMPAIGN@'
+DF_COMMIT='@COMMIT@'
+DF_BUCKET='@BUCKET@'
+DF_MAX_MINUTES=@MAX_MINUTES@
+DF_REGION=eu-central-1
+DF_REPO_URL=https://github.com/chrismaghuhn/duoforge.git
+DF_SHOWDOWN_URL=https://github.com/smogon/pokemon-showdown.git
+DF_SHOWDOWN_PIN=b2cb775b0616115b775534eaeff50300e1fc81fc
+DF_CHUNK_BATTLES=500
+DF_LOCAL_RATE=24 # battles per second on the development machine
+DF_MIN_FACTOR=2  # the rate of the first ten minutes must be this many times the local one
+DF_RATE_WINDOW=600
+
+export AWS_DEFAULT_REGION=$DF_REGION AWS_REGION=$DF_REGION
+export DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a HOME=/root
+WORK=/opt/duoforge-fuzz
+LOG=/var/log/duoforge-fuzz.log
+S3_BASE="s3://$DF_BUCKET/fuzz/$DF_CAMPAIGN"
+BOOT=$(date -u +%Y%m%dT%H%M%SZ)
+mkdir -p "$WORK"
+: > "$LOG"
+
+log() { printf '%s %s\n' "$(date -u +%FT%TZ)" "$*" | tee -a "$LOG"; }
+
+upload_log() {
+    if command -v aws > /dev/null 2>&1; then
+        aws s3 cp "$LOG" "$S3_BASE/log/$BOOT.log" --only-show-errors || true
+    fi
+}
+
+# The chunk that is running (idx and directory), for the interruption poll and for the exit: files, because the
+# poll is a background process.
+upload_partial() {
+    local idx dir
+    [ -f "$WORK/current" ] || return 0
+    read -r idx dir < "$WORK/current" || return 0
+    [ -d "$dir" ] || return 0
+    log "uploading the partial chunk $idx"
+    aws s3 sync "$dir" "$S3_BASE/partial/chunk-$idx/" --only-show-errors || true
+}
+
+finish() {
+    local rc=$?
+    log "leaving with status $rc"
+    if [ "$rc" -ne 0 ]; then upload_partial; fi
+    upload_log
+    shutdown -h now
+}
+trap finish EXIT
+trap 'exit 143' TERM INT # the abort of the monitor: leave through the exit trap (upload, power off)
+
+fail() {
+    log "FAILED: $*"
+    exit 1
+}
+
+# --- the packages, Node 22, the AWS CLI
+log "box up: campaign $DF_CAMPAIGN, commit $DF_COMMIT, at most $DF_MAX_MINUTES minutes, $(nproc) cpus"
+apt-get update -qq
+apt-get install -y -qq build-essential cmake git python3 curl unzip xz-utils ca-certificates
+curl -fsSL https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o /tmp/awscli.zip
+unzip -q /tmp/awscli.zip -d /tmp
+/tmp/aws/install > /dev/null
+aws --version
+
+NODE_BASE=https://nodejs.org/dist/latest-v22.x
+curl -fsSL "$NODE_BASE/SHASUMS256.txt" -o /tmp/node-sums
+[ "$(grep -c -E ' node-v22\.[0-9]+\.[0-9]+-linux-x64\.tar\.xz$' /tmp/node-sums)" = 1 ] || fail 'no unique Node 22 tarball in SHASUMS256.txt'
+NODE_LINE=$(grep -E ' node-v22\.[0-9]+\.[0-9]+-linux-x64\.tar\.xz$' /tmp/node-sums)
+NODE_FILE=${NODE_LINE##* }
+curl -fsSL "$NODE_BASE/$NODE_FILE" -o "/tmp/$NODE_FILE"
+(cd /tmp && grep " $NODE_FILE\$" node-sums | sha256sum -c -)
+tar -xJf "/tmp/$NODE_FILE" -C /usr/local --strip-components=1
+node --version
+
+# --- the sources at the exact commits
+fetch_commit() { # directory url sha
+    mkdir -p "$1"
+    git -C "$1" init -q
+    git -C "$1" remote add origin "$2"
+    git -C "$1" fetch -q --depth 1 origin "$3"
+    git -C "$1" checkout -q --detach FETCH_HEAD
+    [ "$(git -C "$1" rev-parse HEAD)" = "$3" ] || fail "$2 is not at $3"
+}
+REPO="$WORK/duoforge"
+PS="$WORK/pokemon-showdown"
+fetch_commit "$REPO" "$DF_REPO_URL" "$DF_COMMIT"
+fetch_commit "$PS" "$DF_SHOWDOWN_URL" "$DF_SHOWDOWN_PIN"
+
+log 'building the pinned Showdown'
+(cd "$PS" && npm ci --ignore-scripts --omit=dev && node build)
+
+log 'building the engine (Release) and the differential runner'
+CC=gcc CXX=g++ cmake -S "$REPO" -B "$REPO/build" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON \
+    -DDUOFORGE_WARNINGS_AS_ERRORS=ON -DDUOFORGE_ENABLE_IPO=ON > /dev/null
+cmake --build "$REPO/build" --parallel --target duoforge_diff_runner > /dev/null
+RUNNER=$(find "$REPO/build" -name duoforge_diff_runner -type f | head -n 1)
+[ -x "$RUNNER" ] || fail 'the differential runner was not built'
+
+# --- the campaign: tools/cloud/aws_fuzz/campaigns/<id>/campaign.conf, key=value lines
+CAMP_DIR="$REPO/tools/cloud/aws_fuzz/campaigns/$DF_CAMPAIGN"
+[ -f "$CAMP_DIR/campaign.conf" ] || fail "no campaign.conf for $DF_CAMPAIGN at $DF_COMMIT"
+PAIRINGS=''
+TEAMS=''
+BASE_SEED=''
+CHUNKS=''
+while IFS='=' read -r key value; do
+    case $key in
+        '' | '#'*) ;;
+        pairings) PAIRINGS=$value ;;
+        teams) TEAMS=$value ;;
+        base_seed) BASE_SEED=$value ;;
+        chunks) CHUNKS=$value ;;
+        *) fail "campaign.conf: unknown key '$key'" ;;
+    esac
+done < "$CAMP_DIR/campaign.conf"
+[[ $PAIRINGS =~ ^[A-Za-z0-9,-]+$ ]] || fail 'campaign.conf: bad pairings'
+[[ $BASE_SEED =~ ^[0-9]{1,12}$ ]] || fail 'campaign.conf: bad base_seed'
+[[ $CHUNKS =~ ^[0-9]{1,3}$ ]] || fail 'campaign.conf: bad chunks'
+TEAM_ARGS=()
+read -r -a TEAM_LIST <<< "$TEAMS"
+for team in "${TEAM_LIST[@]}"; do # an id of the registry, or LETTER=file in the campaign's directory
+    if [[ $team =~ ^[A-Z]=([A-Za-z0-9._-]+)$ ]]; then
+        [ -f "$CAMP_DIR/${BASH_REMATCH[1]}" ] || fail "campaign.conf: no file ${BASH_REMATCH[1]}"
+        TEAM_ARGS+=(--team "${team%%=*}=$CAMP_DIR/${BASH_REMATCH[1]}")
+    elif [[ $team =~ ^[A-Za-z0-9_]+$ ]]; then
+        TEAM_ARGS+=(--team "$team")
+    else
+        fail "campaign.conf: bad team '$team'"
+    fi
+done
+WORKERS=$(nproc)
+
+# --- the done-manifest: one finished chunk index per line
+s3_has() { # key; 0 present, 1 absent, anything else is an error
+    local rc=0
+    aws s3 ls "$1" > /dev/null 2>&1 || rc=$?
+    [ "$rc" -le 1 ] || fail "aws s3 ls $1 failed (status $rc)"
+    return "$rc"
+}
+: > "$WORK/done.txt"
+if s3_has "$S3_BASE/manifest/done.txt"; then
+    aws s3 cp "$S3_BASE/manifest/done.txt" "$WORK/done.txt" --only-show-errors
+fi
+log "done-manifest: $(wc -l < "$WORK/done.txt") chunk(s) finished of $CHUNKS"
+
+# --- the monitors: battles per minute (and the abort), the spot interruption notice
+count_done() { find "$WORK/out" -path '*/partial/*.json' -newer "$WORK/fuzz-started" 2> /dev/null | wc -l || true; }
+
+MAIN_PID=$$
+monitor() {
+    local start=$SECONDS last=0 total elapsed rate judged=no
+    while sleep 60; do
+        total=$(count_done)
+        elapsed=$((SECONDS - start))
+        rate=$(awk -v a="$total" -v s="$elapsed" 'BEGIN { printf "%.1f", (s > 0 ? a / s : 0) }')
+        log "rate: $total battles in $elapsed s, $((total - last)) in the last minute, $rate battles/s overall"
+        last=$total
+        if [ "$judged" = no ] && [ "$elapsed" -ge "$DF_RATE_WINDOW" ]; then
+            judged=yes
+            if awk -v r="$rate" -v m=$((DF_LOCAL_RATE * DF_MIN_FACTOR)) 'BEGIN { exit !(r < m) }'; then
+                log "ABORT: $rate battles/s in the first $DF_RATE_WINDOW s is under $DF_MIN_FACTOR x the local $DF_LOCAL_RATE"
+                touch "$WORK/abort"
+                kill -TERM "$MAIN_PID"
+                return 0
+            fi
+        fi
+    done
+}
+
+poll_interruption() {
+    local token code
+    token=$(curl -fsS -X PUT http://169.254.169.254/latest/api/token -H 'X-aws-ec2-metadata-token-ttl-seconds: 21600') || {
+        log 'no IMDSv2 token: the interruption notice is not polled'
+        return 0
+    }
+    while sleep 5; do
+        code=$(curl -s -o /dev/null -w '%{http_code}' -H "X-aws-ec2-metadata-token: $token" \
+            http://169.254.169.254/latest/meta-data/spot/instance-action || true)
+        if [ "$code" = 200 ]; then
+            log 'spot interruption notice: uploading the running chunk'
+            upload_partial
+            upload_log
+            return 0
+        fi
+    done
+}
+
+# --- the chunks
+resume_partial() { # idx dir: take the partial results of an interrupted run if the same Node produced them
+    local idx=$1 dir=$2 had
+    if s3_has "$S3_BASE/partial/chunk-$idx/run.json"; then
+        mkdir -p "$dir"
+        aws s3 sync "$S3_BASE/partial/chunk-$idx/" "$dir" --only-show-errors
+        had=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["node"])' "$dir/run.json")
+        if [ "$had" != "$(node --version)" ]; then
+            log "partial chunk $idx was made with Node $had, not $(node --version): starting it again"
+            rm -rf "$dir"
+        else
+            log "resuming chunk $idx from its partial results"
+        fi
+    fi
+}
+
+upload_chunk() { # idx dir
+    local dest="$S3_BASE/chunk-$1" f
+    for f in summary.json run.json battles.jsonl timing.json; do
+        if [ -f "$2/$f" ]; then aws s3 cp "$2/$f" "$dest/$f" --only-show-errors; fi
+    done
+    if [ -d "$2/cases" ]; then aws s3 cp "$2/cases" "$dest/cases" --recursive --only-show-errors; fi
+    printf '%s\n' "$1" >> "$WORK/done.txt"
+    aws s3 cp "$WORK/done.txt" "$S3_BASE/manifest/done.txt" --only-show-errors
+}
+
+printf '{"campaign":"%s","commit":"%s","boot":"%s","cpus":%s,"node":"%s","pin":"%s"}\n' \
+    "$DF_CAMPAIGN" "$DF_COMMIT" "$BOOT" "$WORKERS" "$(node --version)" "$DF_SHOWDOWN_PIN" > "$WORK/meta.json"
+aws s3 cp "$WORK/meta.json" "$S3_BASE/meta-$BOOT.json" --only-show-errors
+
+mkdir -p "$WORK/out"
+touch "$WORK/fuzz-started"
+monitor &
+MON_PID=$!
+poll_interruption &
+POLL_PID=$!
+
+for ((c = 0; c < CHUNKS; c++)); do
+    idx=$(printf '%04d' "$c")
+    if grep -qx "$idx" "$WORK/done.txt"; then
+        log "chunk $idx is in the done-manifest: skipped"
+        continue
+    fi
+    dir="$WORK/out/chunk-$idx"
+    printf '%s %s\n' "$idx" "$dir" > "$WORK/current"
+    resume_partial "$idx" "$dir"
+    seed=$((BASE_SEED + c))
+    log "chunk $idx: seed $seed, $DF_CHUNK_BATTLES battles, $WORKERS workers"
+    (cd "$REPO" && python3 tools/reference/diff_driver.py random --checkout "$PS" --runner "$RUNNER" \
+        --battles "$DF_CHUNK_BATTLES" --seed "$seed" --pairings "$PAIRINGS" "${TEAM_ARGS[@]}" \
+        --workers "$WORKERS" --no-lock --out "$dir") >> "$LOG" 2>&1 || fail "chunk $idx: the driver failed"
+    upload_chunk "$idx" "$dir"
+    log "chunk $idx uploaded: $(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["buckets"])' "$dir/summary.json")"
+    : > "$WORK/current"
+done
+
+kill "$MON_PID" "$POLL_PID" 2> /dev/null || true
+TOTAL=$(count_done)
+SPENT=$((SECONDS))
+log "campaign $DF_CAMPAIGN finished: $TOTAL battles this boot in $SPENT s ($(awk -v a="$TOTAL" -v s="$SPENT" 'BEGIN { printf "%.1f", (s > 0 ? a / s : 0) }') battles/s including the build)"
+exit 0
