@@ -38,6 +38,8 @@ class Columns:
     slot_scalar: np.ndarray  # (10,): valid, kind, target, mega
     slot_move: np.ndarray    # (1,)
     slot_reserve: np.ndarray  # (1,)
+    slot_is_move: np.ndarray  # (1,): kind.MOVE
+    slot_is_switch: np.ndarray  # (1,): kind.SWITCH
 
 
 def columns(feature_names=features.FEATURE_NAMES, slot_names=features.SLOT_FEATURE_NAMES):
@@ -91,6 +93,8 @@ def columns(feature_names=features.FEATURE_NAMES, slot_names=features.SLOT_FEATU
         slot_scalar=np.array([i for n, i in slot.items() if n not in ("move_slot", "reserve")], dtype=np.int64),
         slot_move=np.array([slot["move_slot"]], dtype=np.int64),
         slot_reserve=np.array([slot["reserve"]], dtype=np.int64),
+        slot_is_move=np.array([slot["kind.MOVE"]], dtype=np.int64),
+        slot_is_switch=np.array([slot["kind.SWITCH"]], dtype=np.int64),
     )
 
 
