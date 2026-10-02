@@ -88,6 +88,7 @@ One PR per step.
    - the interactions with Life Orb, Chople's ModifyDamage order, and a booster under Helping Hand.
    - A spec with `"data": "pool"` is converted with the pool tables into `tests/reference/conformance_pool.h` and runs under POOL alone (no DEV fallback, so the records name the data kind). The records writer, the diff runner and the replay driver carry that third kind; random play over POOL teams (`diff_random.py`) is a separate step, as it needs team files that carry the new members.
 3. **P3, abilities:** "-ate" and pinch become table rules, Pixilate, Refrigerate, Overgrow, Torrent and Swarm are marked, with recorded battles.
+   - Only Overgrow on Rillaboom is reachable through the setup rules now (a pool forme with Pixilate, Refrigerate, Torrent or Swarm comes with the content steps), so the recorded battle is Overgrow in pinch range; Aerilate (Normal move from Mega Salamence) is already recorded. The others are covered by a unit test of the dispatch over every ability and type and by the Node cross-check of their pinned handlers against the family columns.
 4. **P4:** weather setters and surges become table rules over the prefix members. There is no behaviour change, which the conformance tests show.
 
 ## 5. Evidence for every step
