@@ -197,7 +197,7 @@ class SpectatorTracker(Tracker):
             v["location"] = NOT_BROUGHT
         forme = member.sheet["species"]
         if member.is_mega:
-            forme = self.data.mega_forme(forme)
+            forme = self.data.mega_of(forme, member.sheet["item"])
         stats, stat_points = self._stats_of(m, forme)
         v["stats"] = stats[1:6]
         v["stat_points"] = stat_points

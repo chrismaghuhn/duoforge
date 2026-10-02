@@ -108,11 +108,15 @@ class LinesTest(unittest.TestCase):
         self.assertEqual(self.stop("|move|p1a: Staraptor|Baton Pass|p1a: Staraptor"), "line:move Baton Pass")
         self.assertEqual(self.stop("|-activate|p1a: Staraptor|move: Court Change"), "line:-activate move: Court Change")
         self.assertEqual(self.stop("|-ability|p1a: Staraptor|Pressure"), "line:-ability Pressure")
+        self.assertEqual(self.stop("|-fail|p1a: Staraptor|unboost|[from] ability: Clear Body|[of] p1a: Staraptor"),
+                         "line:-fail unboost")
 
     def test_fold_and_room_lines(self):
         self.assertEqual(lines.check("|-enditem|p1a: Staraptor|Sitrus Berry|[eat]", self.view), "fold")
         self.assertEqual(lines.check("|-ability|p1a: Staraptor|Intimidate|boost", self.view), "fold")
         self.assertEqual(lines.check("|-damage|p2a: Gholdengo|50/100|[from] item: Life Orb", self.view), "fold")
+        self.assertEqual(lines.check("|-item|p1a: Staraptor|Sitrus Berry", self.view), "fold")  # own item announced
+        self.assertEqual(self.stop("|-item|p1a: Staraptor|Life Orb"), "line:-item Life Orb")
         self.assertIsNone(lines.check("|j|☆x", self.view))
         self.assertIsNone(lines.check("|c|☆x|hi|there", self.view))
 

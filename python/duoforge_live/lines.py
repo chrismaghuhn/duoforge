@@ -173,6 +173,8 @@ def check(line, view):
         if len(args) > 1 and args[1] in SILENT_MOVES:
             _unknown(kind, args[1])
         return "fold"
+    if kind == "-fail" and len(args) > 1 and args[1] not in trace_to_c.AILMENT:
+        _unknown(kind, args[1])  # a failure the converter does not parse (a stat drop Clear Body stopped: unboost)
     if kind in GENERIC:
         return "fold"
     if kind == "-clearnegativeboost" and attrs == ["[silent]"]:
@@ -249,15 +251,16 @@ def check(line, view):
     if kind == "-item":
         froms = _froms(attrs)
         item = tables["ITEM"].get(trace_to_c.key(effect))
-        if "[identify]" in attrs and item is not None and item + 1 == view.sheet_of(args[0])["item"]:
-            return "fold"  # Frisk shows an item the open sheet already shows
+        own = item is not None and item + 1 == view.sheet_of(args[0])["item"]
+        if own and ("[identify]" in attrs or not froms):
+            return "fold"  # Frisk, or the holder's own announcement (Air Balloon): an item the open sheet shows
         if any(f in _ITEM_CHANGE_FROM for f in froms):
             return _feature("ITEM_CHANGE")
         _unknown(kind, effect)
     if kind == "detailschange":
         sheet = view.sheet_of(args[0])
         forme = tables["FORME"].get(trace_to_c.key(effect.split(",")[0]))
-        if forme is not None and forme == view.data.mega_forme(sheet["species"]):
+        if forme is not None and forme == view.data.mega_of(sheet["species"], sheet["item"]):
             return "fold"  # Mega Evolution; the -mega line follows
         return _feature("FORME_CHANGE")
     if kind == "-formechange":

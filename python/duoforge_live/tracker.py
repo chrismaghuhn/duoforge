@@ -325,6 +325,8 @@ class Tracker:
             events = trace_to_c.step_events([line], viewer, self._names, maxhp, self.data.tables)
         except trace_to_c.ConversionError as e:  # a SystemExit: callers catch one kind of error
             raise lines.Stop(f"converter:{e.rule}") from e
+        except (KeyError, IndexError) as e:  # a form of a known line the parser does not know (untyped, as diff_driver)
+            raise lines.Stop(f"converter:untyped {_kind(line)} {type(e).__name__} {e}") from e
         for e in events:
             self._event(e)
 
@@ -448,7 +450,7 @@ class Tracker:
             if public:
                 m = self._occupant(pos)
                 m.is_mega = 1
-                m.ability = self.data.ability_of(self.data.mega_forme(m.sheet["species"]))
+                m.ability = self.data.ability_of(self.data.mega_of(m.sheet["species"], m.sheet["item"]))
         elif kind == EV["PREPARE"]:
             p = self._at(pos)
             m = self._occupant(pos)

@@ -241,6 +241,12 @@ class SpectatorTest(unittest.TestCase):
                         missing = commands(theirs, s) - commands(domain, s)
                         self.assertFalse(missing, (where, s, sorted(missing)))
 
+    def test_fixture_is_showdowns_output(self):
+        # the unit tests' committed spectator log is the pinned Showdown's, never stale
+        fixture = data.ROOT / "python" / "tests" / "data" / "replay" / "c12_real_cb_4.log"
+        battle = next(b for b in self.ref.battles if b.name == "c12_real_cb_4")
+        self.assertEqual(fixture.read_text(encoding="utf-8").splitlines(), battle.lines)
+
     def test_true_choice_in_label(self):
         from duoforge_live.data import trace_to_c
         from duoforge_live.game import TEAM_TABLE
