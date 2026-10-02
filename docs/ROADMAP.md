@@ -154,11 +154,33 @@ Search on top of the learned policy and value, with the engine as the exact mode
 2. A simultaneous-move tree search. The policy gives the priors; chance and the opponent's hidden stat points are sampled.
 3. Expert iteration: the search's choices become training targets.
 
+Owner direction (2026-10-03): search deeper than one turn. A public reference point: mikumiku37 (Smogon, 2026-10-03) reached #1 on the Reg M-C ladder with a one-turn search. In each of 16 sampled worlds it solves an 8 x 8 payoff table of joint actions for a mixed strategy, and that added about 110 Elo over its raw policy. The engine's speed makes more affordable; the cost lies in the network evaluations, which are batched on the GPU. In order:
+- **One turn first:** the same simultaneous-move payoff table.
+- **Then two turns ahead.**
+- **Endgame solving:** with few Pokémon left, search to the end instead of using the value estimate.
+
 The search must stay deterministic given its seeds.
 
 Exit:
 - The Elo gain over the raw policy on the ladder, at a fixed time per move.
 - A report like the learning reports in `docs/learning/`.
+
+## M13 — Playing strength beyond self-play
+
+Levers recorded by the owner on 2026-10-03, most promising first. The first two have the most weight: search with the exact engine (M12), and a model of human play.
+1. **Deeper search and endgame solving:** see M12.
+2. **A model of human play:** a policy trained on the human replays (M11) predicts how people play. The search uses it as the opponent model on the ladder, where the opponents are people, so it can exploit common habits (Protect, Fake Out, the usual switches). mikumiku37 never saw human games.
+3. **A belief over the hidden stat points:** with open team sheets mostly the stat points are hidden. Observed damage and turn order narrow them down during a game. The search samples its worlds from that belief, not uniformly.
+4. **Scale and breadth:**
+   - more training games: the encoder in C, then a rented GPU after a measured trial;
+   - a larger network with static dex features: decision 0020, model v2.1;
+   - many teams, through the expansion's mechanic coverage.
+5. **A robust league with exploiters:** agents trained only to beat the main agent, as in AlphaStar. They punish any weakness at once, so the self-play cycling of the first night run (a plateau of 750 to 830 Elo) does not come back.
+6. **Team preview and team choice:**
+   - the bring-four decision and the leads against the opponent's sheet, trained as a decision of their own;
+   - the teams played on the ladder, chosen by how they fare against the current field.
+
+Exit: each lever is measured on its own, as an Elo difference at a fixed time per move against the previous best agent, before the next one is stacked on it.
 
 ## Later
 

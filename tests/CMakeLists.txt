@@ -160,6 +160,8 @@ duoforge_add_test(NAME duoforge.state.pool_g11 SOURCES test_pool_g11.c WHITEBOX 
 duoforge_add_test(NAME duoforge.state.pool_g9 SOURCES test_pool_g9.c WHITEBOX TIMEOUT 60)
 # Step G17: the recharge moves in the tail, the request (the recharge slot), the queue and the POOL view extension.
 duoforge_add_test(NAME duoforge.state.pool_g17 SOURCES test_pool_g17.c WHITEBOX TIMEOUT 60)
+# Step AC1: Trace in the tail, the event and the POOL view extension.
+duoforge_add_test(NAME duoforge.state.pool_ac1 SOURCES test_pool_ac1.c WHITEBOX TIMEOUT 60)
 # Step G16: Knock Off in the tail's item_now, in the ITEM_END event with the cause ITEM_TAKEN, in what reads the held item and in the
 # POOL view extension (the member's item_now, bit 11).
 duoforge_add_test(NAME duoforge.state.pool_g16 SOURCES test_pool_g16.c WHITEBOX TIMEOUT 60)
@@ -176,7 +178,7 @@ foreach(_gen IN ITEMS
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
         "pool_tables.h=5405809fdc13dad342ef5f14c04835e1016ea4b4ecd9aa8549f17170fe35cbd9"
-        "pool_tables.c=e39e1d4e1cb6068570c3eae3b3c0087f524994362cc757f306f259df1289c887")
+        "pool_tables.c=4d4794d4845b0636a2c00791734ed0f9be5f7906c5bad9a4a805ee41add85931")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
