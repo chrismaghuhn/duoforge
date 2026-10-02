@@ -37,9 +37,14 @@ Start it inside `tmux`, so a dropped SSH session does not stop it. The run direc
 ```bash
 tmux new -s train
 ~/df-learn/bin/python -m duoforge_learn.train --model v2 --preset M --envs 1024 --workers 30 \
-    --minutes 600 --out /workspace/runs/<name> 2>&1 | tee -a /workspace/runs/<name>.out
+    --teams A,B,C --data-kind team_c --minutes 600 --out /workspace/runs/<name> \
+    2>&1 | tee -a /workspace/runs/<name>.out
 ```
 
+- `--teams` and `--data-kind`:
+  - `--teams` takes registry ids from `data/teams/index.json`.
+  - `--data-kind` names the kind those teams need: `team_c` for A, B and C, later the frozen pool profile.
+  - The library checks every team at the start. A refused team stops the run and names its status.
 - `--workers`: the vCPUs minus two (the Python thread and the system).
 - The run state is saved every `--save-minutes` (10), at the end, and after SIGTERM or SIGINT: the run then ends at the next update boundary with `"stopped": "signal"` in its last log line.
 
