@@ -398,8 +398,8 @@ int main(void)
             const uint32_t occupant = b->sides[1].positions[0].occupant;
             const uint32_t other = b->sides[1].positions[1].occupant;
             DF_CHECK(&t, occupant < DUOFORGE_MAX_ROSTER && other < DUOFORGE_MAX_ROSTER && occupant != other);
-            b->tail.sides[1].positions[0] = (dfi_tail_pos){1u, 2u, 3u, 1u, 1u};
-            b->tail.sides[1].positions[1] = (dfi_tail_pos){2u, 0u, 0u, 2u, 1u};
+            b->tail.sides[1].positions[0] = (dfi_tail_pos){.last_move = 1u, .encore_slot = 2u, .encore_turns = 3u, .throat_chop_turns = 1u, .heal_block_turns = 1u};
+            b->tail.sides[1].positions[1] = (dfi_tail_pos){.last_move = 2u, .throat_chop_turns = 2u, .heal_block_turns = 1u};
             b->tail.sides[1].soak_type[occupant] = 5u;
             b->tail.sides[1].soak_type[other] = 7u;
             b->tail.sides[0].positions[0].heal_block_turns = 1u;

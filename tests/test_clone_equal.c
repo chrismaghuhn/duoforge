@@ -145,17 +145,49 @@ static void copy_named_fields(duoforge_battle *x, const duoforge_battle *src)
         const dfi_tail_side *st = &src->tail.sides[s];
         dfi_tail_side *dt = &x->tail.sides[s];
         dt->wide_guard = st->wide_guard;
+        dt->aurora_veil_turns = st->aurora_veil_turns;
+        dt->toxic_spikes = st->toxic_spikes;
+        dt->stealth_rock = st->stealth_rock;
+        dt->spikes = st->spikes;
+        dt->sticky_web = st->sticky_web;
         for (unsigned p = 0; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
-            dt->positions[p].last_move = st->positions[p].last_move;
-            dt->positions[p].encore_slot = st->positions[p].encore_slot;
-            dt->positions[p].encore_turns = st->positions[p].encore_turns;
-            dt->positions[p].throat_chop_turns = st->positions[p].throat_chop_turns;
-            dt->positions[p].heal_block_turns = st->positions[p].heal_block_turns;
+            const dfi_tail_pos *sp = &st->positions[p];
+            dfi_tail_pos *dp = &dt->positions[p];
+            dp->substitute_hp = sp->substitute_hp;
+            dp->trap_move = sp->trap_move;
+            dp->last_move = sp->last_move;
+            dp->encore_slot = sp->encore_slot;
+            dp->encore_turns = sp->encore_turns;
+            dp->throat_chop_turns = sp->throat_chop_turns;
+            dp->heal_block_turns = sp->heal_block_turns;
+            dp->perish = sp->perish;
+            dp->taunt_turns = sp->taunt_turns;
+            dp->disable_slot = sp->disable_slot;
+            dp->disable_turns = sp->disable_turns;
+            dp->imprison = sp->imprison;
+            dp->must_recharge = sp->must_recharge;
+            dp->trap_turns = sp->trap_turns;
+            dp->trap_source = sp->trap_source;
+            dp->trap_band = sp->trap_band;
+            dp->leech_seed_source = sp->leech_seed_source;
+            dp->yawn_turns = sp->yawn_turns;
+            dp->focus_energy = sp->focus_energy;
+            dp->stockpile = sp->stockpile;
+            dp->stockpile_def = sp->stockpile_def;
+            dp->stockpile_spd = sp->stockpile_spd;
+            dp->charge = sp->charge;
+            dp->glaive_rush = sp->glaive_rush;
         }
         for (unsigned m = 0; m < DUOFORGE_MAX_ROSTER; ++m) {
+            dt->ability_now[m] = st->ability_now[m];
+            dt->forme_now[m] = st->forme_now[m];
             dt->soak_type[m] = st->soak_type[m];
+            dt->item_now[m] = st->item_now[m];
+            dt->toxic_stage[m] = st->toxic_stage[m];
         }
     }
+    x->tail.gravity_turns = src->tail.gravity_turns;
+    x->tail.field_pad = src->tail.field_pad;
 }
 
 int main(void)

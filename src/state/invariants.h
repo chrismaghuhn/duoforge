@@ -24,10 +24,11 @@
  *
  * The TAIL ids (docs/decisions/0015 section 7) check the POOL state tail: it
  * is all zero under every other kind (TAIL_KIND); under the POOL kinds each
- * value is in its range, a position without a standing occupant has none, a
- * soak type is on a member standing on the field and not Mega Evolved
- * (TAIL_SIDE, TAIL_POSITION, TAIL_MEMBER). TAIL_SCHEMA and TAIL_RESERVED
- * are reported by the decoder only.
+ * value is in its range, a pair that is zero together is, a position without a
+ * standing occupant has no tail, a soak type, a current ability and a toxic
+ * stage are on a member standing on the field (the soak type also not Mega
+ * Evolved) (TAIL_FIELD, TAIL_SIDE, TAIL_POSITION, TAIL_MEMBER). TAIL_SCHEMA
+ * and TAIL_RESERVED are reported by the decoder only.
  */
 #include <duoforge/duoforge.h>
 
@@ -78,11 +79,12 @@ typedef enum dfi_invariant {
     DFI_INV_KNOWLEDGE,
     DFI_INV_QUEUE,
     DFI_INV_TAIL_KIND,     /* a tail that is not all zero under a kind without the POOL tail */
-    DFI_INV_TAIL_SIDE,     /* Wide Guard flag above 1 */
+    DFI_INV_TAIL_SIDE,     /* a side condition (Wide Guard, Aurora Veil, Toxic Spikes, Stealth Rock, Spikes, Sticky Web) out of range */
     DFI_INV_TAIL_POSITION, /* a position's tail out of range, inconsistent, or nonzero at an empty or fainted position */
-    DFI_INV_TAIL_MEMBER,   /* a soak type out of range, or on a member that is not standing on the field */
+    DFI_INV_TAIL_MEMBER,   /* a roster member's soak type, current ability, forme, item or toxic stage out of range or where it cannot be */
     DFI_INV_TAIL_SCHEMA,   /* decode: the artifact's schema is not the one of the context's kind */
     DFI_INV_TAIL_RESERVED, /* decode: a reserved byte of the tail is not zero */
+    DFI_INV_TAIL_FIELD,    /* Gravity's turns out of range (or the field block's pad byte is not zero) */
     DFI_INV_COUNT
 } dfi_invariant;
 

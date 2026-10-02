@@ -497,31 +497,69 @@ static bool dfi_field_valid(const duoforge_context *ctx, const struct duoforge_b
 }
 
 
+/* True iff every byte of `n` bytes at p is zero (the tail structs have no padding: static asserts in
+ * codec/state_codec.h). */
+static bool dfi_bytes_zero(const void *p, size_t n)
+{
+    const uint8_t *q = (const uint8_t *)p;
+    uint32_t any = 0u;
+    for (size_t i = 0u; i < n; ++i) {
+        any |= q[i];
+    }
+    return any == 0u;
+}
+
+/* The tail of a standing occupant's position: the ranges, the pairs that are zero together and the sources that are
+ * never the occupant itself (flat is its position, side * 2 + slot). */
+static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *tp, uint32_t flat,
+                               const dfi_member *occupant)
+{
+    const uint32_t move_count = occupant->move_count;
+    const bool encore_ok = tp->last_move <= DFI_TAIL_MOVE_MAX &&
+                           (tp->last_move == DFI_TAIL_MOVE_MAX || tp->last_move <= move_count) &&
+                           tp->encore_slot <= DFI_TAIL_ENCORE_SLOT_MAX && tp->encore_slot <= move_count &&
+                           tp->encore_turns <= DFI_TAIL_ENCORE_TURNS_MAX &&
+                           (tp->encore_slot == 0u) == (tp->encore_turns == 0u);
+    const bool bars_ok = tp->throat_chop_turns <= DFI_TAIL_THROAT_CHOP_MAX &&
+                         tp->heal_block_turns <= DFI_TAIL_HEAL_BLOCK_MAX && tp->perish <= DFI_TAIL_PERISH_MAX &&
+                         tp->taunt_turns <= DFI_TAIL_TAUNT_MAX && tp->yawn_turns <= DFI_TAIL_YAWN_MAX;
+    const bool disable_ok = tp->disable_slot <= DFI_TAIL_DISABLE_SLOT_MAX && tp->disable_slot <= move_count &&
+                            tp->disable_turns <= DFI_TAIL_DISABLE_TURNS_MAX &&
+                            (tp->disable_slot == 0u) == (tp->disable_turns == 0u);
+    const bool flags_ok = tp->imprison <= DFI_TAIL_FLAG_MAX && tp->must_recharge <= DFI_TAIL_FLAG_MAX &&
+                          tp->focus_energy <= DFI_TAIL_FLAG_MAX && tp->charge <= DFI_TAIL_FLAG_MAX &&
+                          tp->glaive_rush <= DFI_TAIL_FLAG_MAX;
+    /* A Substitute has at most a quarter of the maximum HP (floor), as it is made. */
+    const bool substitute_ok = tp->substitute_hp <= (uint32_t)occupant->hp_max / 4u;
+    /* A partial trap: turns, source (another position) and move together, the band only with them. */
+    const bool trap_ok = tp->trap_turns <= DFI_TAIL_TRAP_TURNS_MAX && tp->trap_source <= DFI_TAIL_SOURCE_MAX &&
+                         tp->trap_source != flat + 1u && tp->trap_move <= lim->move_count &&
+                         (tp->trap_turns == 0u) == (tp->trap_source == 0u) &&
+                         (tp->trap_turns == 0u) == (tp->trap_move == 0u) && tp->trap_band <= DFI_TAIL_FLAG_MAX &&
+                         (tp->trap_turns != 0u || tp->trap_band == 0u);
+    const bool leech_ok = tp->leech_seed_source <= DFI_TAIL_SOURCE_MAX && tp->leech_seed_source != flat + 1u;
+    const bool stockpile_ok = tp->stockpile <= DFI_TAIL_STOCKPILE_MAX && tp->stockpile_def <= tp->stockpile &&
+                              tp->stockpile_spd <= tp->stockpile;
+    return encore_ok && bars_ok && disable_ok && flags_ok && substitute_ok && trap_ok && leech_ok && stockpile_ok;
+}
+
 /* The POOL tail (decision 0015 section 7). Runs after the side checks, so every occupant is below the member count
  * and every move count is 1..4; each index is still bounded here. Under the other kinds the tail is absent: zero. */
 static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct duoforge_battle *b)
 {
     const dfi_kind_limits lim = dfi_kind_limits_of(ctx->data_kind);
     if (!lim.pool_rules) {
-        uint32_t any = 0u;
-        for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
-            const dfi_tail_side *ts = &b->tail.sides[s];
-            any |= ts->wide_guard;
-            for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
-                const dfi_tail_pos *tp = &ts->positions[p];
-                any |= (uint32_t)tp->last_move | tp->encore_slot | tp->encore_turns | tp->throat_chop_turns |
-                       tp->heal_block_turns;
-            }
-            for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
-                any |= ts->soak_type[m];
-            }
-        }
-        return any == 0u ? DFI_INV_NONE : DFI_INV_TAIL_KIND;
+        return dfi_bytes_zero(&b->tail, sizeof b->tail) ? DFI_INV_NONE : DFI_INV_TAIL_KIND;
+    }
+    if (b->tail.gravity_turns > DFI_TAIL_GRAVITY_MAX || b->tail.field_pad != 0u) {
+        return DFI_INV_TAIL_FIELD;
     }
     for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
         const dfi_tail_side *ts = &b->tail.sides[s];
         const dfi_side *side = &b->sides[s];
-        if (ts->wide_guard > DFI_TAIL_WIDE_GUARD_MAX) {
+        if (ts->wide_guard > DFI_TAIL_WIDE_GUARD_MAX || ts->aurora_veil_turns > DFI_TAIL_AURORA_VEIL_MAX ||
+            ts->toxic_spikes > DFI_TAIL_TOXIC_SPIKES_MAX || ts->stealth_rock > DFI_TAIL_STEALTH_ROCK_MAX ||
+            ts->spikes > DFI_TAIL_SPIKES_MAX || ts->sticky_web > DFI_TAIL_STICKY_WEB_MAX) {
             return DFI_INV_TAIL_SIDE;
         }
         for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
@@ -529,32 +567,48 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
             const uint32_t occupant = side->positions[p].occupant;
             const bool standing = occupant < DUOFORGE_MAX_ROSTER && occupant < side->member_count &&
                                   side->members[occupant].hp != 0u;
-            const bool none = tp->last_move == 0u && tp->encore_slot == 0u && tp->encore_turns == 0u &&
-                              tp->throat_chop_turns == 0u && tp->heal_block_turns == 0u;
             if (!standing) {
-                if (!none) {
+                if (!dfi_bytes_zero(tp, sizeof *tp)) {
                     return DFI_INV_TAIL_POSITION; /* cleared when the occupant leaves or faints */
                 }
                 continue;
             }
-            const uint32_t move_count = side->members[occupant].move_count;
-            if (tp->last_move > DFI_TAIL_MOVE_MAX ||
-                (tp->last_move != DFI_TAIL_MOVE_MAX && tp->last_move > move_count) ||
-                tp->encore_slot > DFI_TAIL_ENCORE_SLOT_MAX || tp->encore_slot > move_count ||
-                tp->encore_turns > DFI_TAIL_ENCORE_TURNS_MAX || (tp->encore_slot == 0u) != (tp->encore_turns == 0u) ||
-                tp->throat_chop_turns > DFI_TAIL_THROAT_CHOP_MAX || tp->heal_block_turns > DFI_TAIL_HEAL_BLOCK_MAX) {
+            if (!dfi_tail_pos_valid(&lim, tp, s * DUOFORGE_ACTIVE_PER_SIDE + p, &side->members[occupant])) {
                 return DFI_INV_TAIL_POSITION;
             }
         }
         for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
-            const uint32_t type = ts->soak_type[m];
-            if (type == 0u) {
+            const bool any = ts->soak_type[m] != 0u || ts->ability_now[m] != 0u || ts->forme_now[m] != 0u ||
+                             ts->item_now[m] != 0u || ts->toxic_stage[m] != 0u;
+            if (!any) {
                 continue;
             }
-            const bool on_field = m < side->member_count && (side->positions[0].occupant == m ||
-                                                             side->positions[1].occupant == m);
-            if (type > DFI_TYPE_COUNT || !on_field || side->members[m].hp == 0u || side->members[m].is_mega != 0u) {
-                return DFI_INV_TAIL_MEMBER; /* the type ends when the member leaves, faints or Mega Evolves */
+            if (m >= side->member_count) {
+                return DFI_INV_TAIL_MEMBER; /* a member that does not exist has no tail */
+            }
+            const dfi_member *mem = &side->members[m];
+            const bool standing_on_field =
+                mem->hp != 0u && (side->positions[0].occupant == m || side->positions[1].occupant == m);
+            /* The type ends when the member leaves, faints or Mega Evolves. */
+            if (ts->soak_type[m] != 0u &&
+                (ts->soak_type[m] > DFI_TYPE_COUNT || !standing_on_field || mem->is_mega != 0u)) {
+                return DFI_INV_TAIL_MEMBER;
+            }
+            /* A current ability that something swapped in ends when the member leaves or faints. */
+            if (ts->ability_now[m] != 0u && (ts->ability_now[m] > lim.ability_count || !standing_on_field)) {
+                return DFI_INV_TAIL_MEMBER;
+            }
+            if (ts->forme_now[m] > lim.forme_count) {
+                return DFI_INV_TAIL_MEMBER;
+            }
+            if (ts->item_now[m] != 0u && ts->item_now[m] != DFI_TAIL_ITEM_NONE && ts->item_now[m] > lim.item_count) {
+                return DFI_INV_TAIL_MEMBER;
+            }
+            /* The toxic counter belongs to a badly poisoned member on the field. */
+            if (ts->toxic_stage[m] != 0u &&
+                (ts->toxic_stage[m] > DFI_TAIL_TOXIC_STAGE_MAX || !standing_on_field ||
+                 mem->status != DFI_TAIL_TOXIC_STATUS)) {
+                return DFI_INV_TAIL_MEMBER;
             }
         }
     }
@@ -740,6 +794,8 @@ const char *dfi_invariant_name(dfi_invariant id)
         return "TAIL_SCHEMA";
     case DFI_INV_TAIL_RESERVED:
         return "TAIL_RESERVED";
+    case DFI_INV_TAIL_FIELD:
+        return "TAIL_FIELD";
     case DFI_INV_COUNT:
     default:
         return "UNKNOWN";
