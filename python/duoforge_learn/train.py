@@ -145,7 +145,8 @@ def main(argv=None):
             if update % args.eval_every == 0 or last:
                 save(os.path.join(args.out, f"params-{update}.npz"), params, config)
                 for name, opponent in (("random", "random"), ("scripted", "scripted"), ("previous", previous)):
-                    result = evaluate.win_rate(params, act, opponent, envs=args.eval_envs, workers=args.workers)
+                    result = evaluate.win_rate(params, act, opponent, envs=args.eval_envs, workers=args.workers,
+                                               encoder=features.ENCODER, opponent_encoder=features.ENCODER)
                     record[f"vs_{name}"] = round(result["win_rate"], 4)
                     if result["unfinished"]:
                         record[f"unfinished_vs_{name}"] = result["unfinished"]

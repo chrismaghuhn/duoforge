@@ -19,7 +19,7 @@ from duoforge import _layout, features
 from duoforge_learn import evaluate, ladder
 from duoforge_learn.checkpoint import encoder_of, load
 from duoforge_learn.returns import gae
-from duoforge_learn.selfplay import OPTIONS, TEAM_ACTIONS, TEAM_TABLE, SelfPlay
+from duoforge_learn.selfplay import OPTIONS, TEAM_ACTIONS, TEAM_TABLE, Observation, SelfPlay
 
 C = _layout.CONSTANTS
 # obs_part columns of the own roster's present flags (15 global, 8 side,
@@ -81,8 +81,8 @@ class SeatTest(unittest.TestCase):
 
     def test_evaluation_credits_the_right_seat(self):
         attack, switch = {"prefer": "attack"}, {"prefer": "switch"}
-        strong = evaluate.win_rate(attack, _stand_in, switch, envs=16, workers=2, rounds=2)
-        weak = evaluate.win_rate(switch, _stand_in, attack, envs=16, workers=2, rounds=2)
+        strong = evaluate.win_rate(attack, _stand_in, switch, envs=16, workers=2, rounds=2, encoder=2, opponent_encoder=2)
+        weak = evaluate.win_rate(switch, _stand_in, attack, envs=16, workers=2, rounds=2, encoder=2, opponent_encoder=2)
         self.assertGreater(strong["win_rate"], 0.75)
         self.assertLess(weak["win_rate"], 0.25)
         self.assertEqual(strong["episodes"], 32)
@@ -107,7 +107,8 @@ class SeatTest(unittest.TestCase):
 
     def test_endless_evaluation_counts_ties(self):
         switch = {"prefer": "switch"}
-        result = evaluate.win_rate(switch, _stand_in, switch, envs=8, workers=2, max_steps=30)
+        result = evaluate.win_rate(switch, _stand_in, switch, envs=8, workers=2, max_steps=30, encoder=2,
+                                   opponent_encoder=2)
         self.assertEqual(result["episodes"], 8)
         self.assertEqual(result["wins"] + result["losses"] + result["ties"], 8)
         self.assertGreater(result["unfinished"], 0)  # two switchers never end a battle
@@ -170,7 +171,7 @@ class LadderTest(unittest.TestCase):
         self.assertEqual(encoder_of({"seed": 5}), 1)
         self.assertEqual(encoder_of({"encoder": 1}), 1)
         self.assertEqual(encoder_of({"encoder": features.ENCODER}), 2)
-        for bad in (0, 3, "2", None):
+        for bad in (0, 3, "2", None, True, 1.0, 2.0):  # True == 1, 2.0 == 2: only ints count
             with self.assertRaisesRegex(ValueError, "encoder"):
                 encoder_of({"encoder": bad})
 
@@ -201,7 +202,7 @@ class LadderTest(unittest.TestCase):
 class InputTest(unittest.TestCase):
     def test_learner_inputs_are_checked(self):
         with self.assertRaises(ValueError):
-            evaluate.win_rate({"prefer": "attack"}, _stand_in, "random", envs=12)
+            evaluate.win_rate({"prefer": "attack"}, _stand_in, "random", envs=12, encoder=2)
         with duoforge.Context() as ctx, duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 1) as batch:
             batch.query_factored()
             batch.step_factored(_first_tuples(batch))
@@ -211,6 +212,21 @@ class InputTest(unittest.TestCase):
             d[0, 0]["slot_count"][0] = OPTIONS + 8
             with self.assertRaises(ValueError):
                 features.encode_batch(ob[:, 0], d[:, 0])
+
+    def test_encoder_versions_are_named_where_a_network_plays(self):
+        # Review of #88: no default may pick a version for a network. The
+        # evaluation needs the network's version, and the opponent's when
+        # it is parameters; the policy's inputs need the version too.
+        attack, switch = {"prefer": "attack"}, {"prefer": "switch"}
+        with self.assertRaises(TypeError):
+            evaluate.win_rate(attack, _stand_in, "random", envs=8)
+        with self.assertRaisesRegex(ValueError, "opponent_encoder"):
+            evaluate.win_rate(attack, _stand_in, switch, envs=8, encoder=2)
+        with duoforge.Context() as ctx, duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 1) as batch:
+            batch.query_factored()
+            with self.assertRaises(TypeError):
+                Observation(batch)
+            self.assertEqual(Observation(batch, features.ENCODER).obs.shape, (1, 2, features.OBS_SIZE))
 
 
 def _first_tuples(batch):

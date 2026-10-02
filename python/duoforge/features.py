@@ -221,6 +221,12 @@ def encode(observation, domain):
     return obs_part[0], slot_part[0], pair_mask[0]
 
 
+def is_version(encoder):
+    """encoder is an int version as_encoder serves (True == 1 and 1.0 == 1
+    are not versions)."""
+    return isinstance(encoder, (int, np.integer)) and not isinstance(encoder, bool) and encoder in ENCODERS
+
+
 def as_encoder(obs_part, observations, encoder):
     """obs_part of encode (OBSERVATION record, (OBS_SIZE,)) or encode_batch
     ((N,), (N, OBS_SIZE)) as encoder version `encoder` makes it, the inputs
@@ -231,7 +237,7 @@ def as_encoder(obs_part, observations, encoder):
     part = np.asarray(obs_part)
     if ob.dtype != _layout.OBSERVATION or part.dtype != _F32 or part.shape != ob.shape + (OBS_SIZE,):
         raise TypeError("obs_part must be the float32 obs_part of encode or encode_batch for these observations")
-    if encoder not in ENCODERS:
+    if not is_version(encoder):
         raise ValueError(f"encoder {encoder!r} is not one this encoder knows: {ENCODERS}")
     if encoder == ENCODER:
         return obs_part

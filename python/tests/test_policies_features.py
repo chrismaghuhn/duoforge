@@ -19,6 +19,9 @@ from duoforge import _layout, features
 
 SEED = 0x2026100200000016
 ENVS = 32
+# The encoder-1 trajectory hash (test_as_encoder_1_matches_the_recorded_old_encoder).
+V1_SEED = 0x2026100200000088
+V1_GOLDEN = "f15954182cb6be1707d36447bfd2e513f68d3ff15c564c7cf53e3b561cb76a6a"
 
 
 def _setups():
@@ -373,12 +376,34 @@ class PoliciesFeaturesTest(unittest.TestCase):
             part = features.encode(ob, d)[0]
             self.assertEqual(features.as_encoder(part, ob, 1)[_OWN_PRESENT].tolist(), [0.0] + [1.0] * 5)
             self.assertEqual(part[_OWN_PRESENT].tolist(), [1.0] * 6)  # one record, untouched
-            for bad in (0, 3, "2", None):
+            for bad in (0, 3, "2", None, True, 1.0):  # only ints count: True == 1, 1.0 == 1
                 with self.assertRaisesRegex(ValueError, "encoder"):
                     features.as_encoder(part, ob, bad)
             for odd in (part[:-1], part.astype(np.float64), np.stack([part, part])):
                 with self.assertRaises(TypeError):
                     features.as_encoder(odd, ob, 1)
+
+    def test_as_encoder_1_matches_the_recorded_old_encoder(self):
+        # SHA-256 of encoder 1's obs_part over a fixed trajectory, recorded
+        # with the encoder from before the present fix (main 2fb40d6, whose
+        # encode_batch was version 1). The reference encoder changes with
+        # features.py, so this pins version 1 against drifting with both.
+        import hashlib
+        h = hashlib.sha256()
+        rows = 0
+        policy = duoforge.RandomPolicy(V1_SEED, 8)
+        policy.start_episodes(np.arange(8), np.zeros(8, dtype=np.uint64))
+        with duoforge.Batch(self.ctx, duoforge.reference_setups([0, 2] * 4), 2, V1_SEED) as batch:
+            for _ in range(60):
+                batch.query_factored()
+                observations = batch.observations.reshape(-1)
+                obs = features.encode_batch(observations, batch.domains.reshape(-1))[0]
+                h.update(np.ascontiguousarray(features.as_encoder(obs, observations, 1)).tobytes())
+                rows += obs.shape[0]
+                if not (batch.requests["requested"] != 0).any():
+                    break
+                batch.step_factored(policy.choose_factored(batch))
+        self.assertEqual((h.hexdigest(), rows), (V1_GOLDEN, 464))
 
     def test_zero_count_raises(self):
         with duoforge.Batch(self.ctx, _setups(), 1, SEED) as batch:

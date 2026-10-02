@@ -23,15 +23,18 @@ _SIDE_WINS = (C["DUOFORGE_RESULT_SIDE_0"], C["DUOFORGE_RESULT_SIDE_1"])
 _TIE = C["DUOFORGE_RESULT_TIE"]
 
 
-def win_rate(params, act, opponent, envs=64, workers=4, seed=0x2026100200000020, rounds=1, max_steps=1000,
-             encoder=features.ENCODER, opponent_encoder=features.ENCODER):
+def win_rate(params, act, opponent, envs=64, workers=4, seed=0x2026100200000020, rounds=1, max_steps=1000, *,
+             encoder, opponent_encoder=None):
     """{"win_rate", "wins", "losses", "ties", "unfinished", "episodes"} of
     the policy against `opponent` ("random", "scripted" or parameters); act
     is model.act (jitted). envs is a multiple of 8, so both seats of all four
-    pairings play equally often. encoder and opponent_encoder are the
-    encoder versions the parameters were trained with."""
+    pairings play equally often. encoder is the encoder version the
+    parameters were trained with (checkpoint.encoder_of), opponent_encoder
+    the opponent's when it is parameters; no default picks one."""
     if envs <= 0 or envs % 8 != 0:
         raise ValueError(f"envs must be a positive multiple of 8, not {envs}")
+    if isinstance(opponent, dict) and opponent_encoder is None:
+        raise ValueError("opponent_encoder is required when the opponent is parameters")
     seat = (np.arange(envs) // 4) % 2
     wins = losses = ties = unfinished = 0
     with duoforge.Context() as ctx:
