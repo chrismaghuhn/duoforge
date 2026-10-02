@@ -489,7 +489,7 @@ static bool dfi_queue_valid(const struct duoforge_battle *b)
 static bool dfi_field_valid(const duoforge_context *ctx, const struct duoforge_battle *b)
 {
     const dfi_kind_limits lim = dfi_kind_limits_of(ctx->data_kind);
-    return b->weather <= DFI_WEATHER_SUN && b->weather_turns <= DFI_FIELD_TURNS_MAX &&
+    return b->weather <= lim.weather_max && b->weather_turns <= DFI_FIELD_TURNS_MAX &&
            (b->weather == DFI_WEATHER_NONE) == (b->weather_turns == 0u) && b->terrain <= lim.terrain_max &&
            b->terrain_turns <= DFI_FIELD_TURNS_MAX &&
            (b->terrain == DFI_TERRAIN_NONE) == (b->terrain_turns == 0u) &&

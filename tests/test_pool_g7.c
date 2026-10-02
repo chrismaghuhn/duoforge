@@ -209,10 +209,16 @@ int main(void)
                 want.revision = (uint8_t)DUOFORGE_OBSERVATION_EXT_REVISION;
                 want.player = (uint8_t)viewer;
                 want.epoch = ob.epoch;
-                want.supported = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) |
+                /* The mask is the build's (later steps add their bits); the bits of G8, G11 and G7 are checked here. */
+                want.supported = dfi_support.view_ext_features;
+                DF_CHECK(&t, (want.supported & (((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) |
+                                               ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK) |
+                                               ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TYPE_CHANGE) |
+                                               ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WIDE_GUARD))) ==
+                                (((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) |
                                  ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK) |
-                                 ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TYPE_CHANGE) | /* step G11 */
-                                 ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WIDE_GUARD);
+                                 ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TYPE_CHANGE) |
+                                 ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WIDE_GUARD)));
                 for (uint32_t s = 0u; s < 2u; ++s) {
                     want.sides[s].guard_flags = ((guard >> s) & 1u) != 0u ? (uint8_t)DUOFORGE_SIDE_GUARD_WIDE_GUARD : 0u;
                 }

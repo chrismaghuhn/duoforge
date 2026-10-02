@@ -129,6 +129,30 @@ class Refusals(unittest.TestCase):
         mutate(spec, trace)
         self.assert_refused(lambda: convert(name, spec, trace), rule, message, detail)
 
+    def test_hail_is_refused_never_mapped(self):
+        """Hail is isNonstandard "Past" at the pin and not in the format (Snow Warning sets Snowscape, which does no
+        damage): a -weather line that names it, and damage [from] Hail, are ConversionErrors, not silently another weather."""
+        def hail_weather(spec, trace):
+            for step in trace['steps']:
+                for i, line in enumerate(step['log']):
+                    if line == '|-weather|Sandstorm|[upkeep]':
+                        step['log'][i] = '|-weather|Hail|[upkeep]'
+                        return
+            self.fail('no upkeep line')
+
+        def hail_damage(spec, trace):
+            for step in trace['steps']:
+                for i, line in enumerate(step['log']):
+                    if line.endswith('|[from] Sandstorm'):
+                        step['log'][i] = line[:-len('Sandstorm')] + 'Hail'
+                        return
+            self.fail('no sandstorm damage')
+
+        self.control('w1_sand_stream', hail_weather, 'weather-line',
+                     "trace_to_c: unknown weather 'Hail' in '|-weather|Hail|[upkeep]'", 'Hail')
+        self.control('w1_sand_stream', hail_damage, 'from-attribute', 'trace_to_c: [from] Hail: no Hail in the format',
+                     'Hail')
+
     def test_unknown_protocol_line(self):
         self.control('s2_turn_core_1', lambda spec, trace: trace['steps'][1]['log'].append('|foo|bar'),
                      'protocol-line', "trace_to_c: unknown protocol line '|foo|bar'", 'foo')
@@ -508,6 +532,115 @@ class Library(unittest.TestCase):
             self.assertIsNone(trace_to_c.heal_block_end_tie(dict(d, group=['H:protect:p1a:end', 'H:stall:p1a:end']),
                                                             trace['steps'][k]['log']))
 
+    # ---- the weather step (Sandstorm, Snowscape; decision 0018, view bits 0 and 1) ----
+    WEATHER_BATTLES = ('w1_sand_stream', 'w2_sandstorm_move', 'w3_snow_warning', 'w4_snowscape_move',
+                       'w5_sand_tie_four', 'w5_sand_tie_pairs', 'w5_sand_tie_mixed', 'w6_sand_residual_order',
+                       'w7_sand_ko_sitrus', 'w8_sand_soak')
+
+    def weather_ties(self, name):
+        """(step, draw, drop reason) of the each:Weather draws of a committed battle, with the step's log."""
+        spec, trace = battle(name)
+        found = []
+        for k, step in enumerate(trace['steps']):
+            before = trace['steps'][k - 1]['state'] if k else None
+            for d in step['draws']:
+                if d['site'] == 'SPEED_TIE' and d.get('context') == 'each:Weather':
+                    found.append((k, d, trace_to_c.drop_reason(d, before, step['state'], step['log']), step['log']))
+        return found
+
+    def test_the_weather_rows_of_the_view_are_what_the_weather_lines_say(self):
+        """Decision 0018 section 6.1, weather values Sand and Snow: a -weather line that names a weather sets it for 5
+        turns, each [upkeep] line is a turn gone, -weather|none ends it. The rows of the C test (weather_rows in
+        tests/test_pool_weather.c: the weather and the turns left after each step of the nine weather battles, for
+        both players) must be exactly what these lines give for the committed traces, so that the engine's view is
+        checked against the protocol and not against itself."""
+        source = open(os.path.join(ROOT, 'tests', 'test_pool_weather.c'), encoding='utf-8').read()
+        rows = {}
+        for m in re.finditer(r'\{"(w\d_\w+)", (\d+)u, (\d)u, (\d)u\}', source):
+            rows[(m.group(1), int(m.group(2)))] = (int(m.group(3)), int(m.group(4)))
+        code = {'Sandstorm': 3, 'Snowscape': 4, 'RainDance': 1, 'SunnyDay': 2}
+        derived = {}
+        for name in self.WEATHER_BATTLES:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            weather, turns = 0, 0
+            for k, step in enumerate(trace['steps']):
+                for line in step['log']:
+                    part = line.split('|')
+                    if len(part) < 3 or part[1] != '-weather':
+                        continue
+                    if part[2] == 'none':
+                        weather, turns = 0, 0
+                    elif '[upkeep]' in part:
+                        turns -= 1
+                    else:
+                        weather, turns = code[part[2]], 5
+                derived[(name, k)] = (weather, turns)
+        self.assertEqual(rows, derived)
+        values = {v[0] for v in derived.values()}
+        self.assertTrue({0, 3, 4} <= values)  # both new weathers are shown, and they end
+
+    def test_every_weather_line_the_battles_show_is_a_known_start_end_or_upkeep(self):
+        """The -weather lines of the weather battles: starts from an ability ([from] ability: Sand Stream or Snow Warning
+        with [of]) or a move (no attribute), the upkeep, and none; and the damage lines [from] Sandstorm, the
+        Sandstorm of the move whose line names it, nothing else."""
+        starts, causes = set(), set()
+        for name in self.WEATHER_BATTLES:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            for step in trace['steps']:
+                for line in step['log']:
+                    part = line.split('|')
+                    if len(part) > 2 and part[1] == '-weather' and part[2] != 'none' and '[upkeep]' not in part:
+                        starts.add((part[2], part[3] if len(part) > 3 else ''))
+                    if len(part) > 3 and part[1] == '-damage' and part[-1].startswith('[from] ') and 'item' not in part[-1]:
+                        causes.add(part[-1])
+        self.assertEqual(starts, {('Sandstorm', ''), ('Sandstorm', '[from] ability: Sand Stream'), ('Snowscape', ''),
+                                  ('Snowscape', '[from] ability: Snow Warning'), ('RainDance', '[from] ability: Drizzle')})
+        self.assertEqual(causes, {'[from] Sandstorm', '[from] psn', '[from] brn'})
+        pool = trace_to_c.load_tables(ROOT, True)
+        self.assertEqual(trace_to_c.ev_cause(['[from] Sandstorm'], pool)[:2], (trace_to_c.CAUSE['WEATHER'], 3))
+        self.assertEqual(trace_to_c.WEATHER_LINE['Snowscape'], 4)
+        self.assertEqual(trace_to_c.WEATHER['snowscape'], 4)
+
+    def test_sandstorm_damage_ties_are_kept_when_two_tied_pokemon_take_damage(self):
+        """Under Sandstorm every active Pokemon has the weather's onWeather, so eachEvent('Weather') shuffles every tie of
+        Speed (the group is all the tied actives); the order shows only between two that take the damage. w5_sand_tie_four
+        (four of Speed 101: two Milotic, two immune Tyranitar) keeps its draws; in w5_sand_tie_pairs the pair of Milotic
+        keeps them and the pair of Tyranitar (immune) is dropped; in w5_sand_tie_mixed a Milotic and a Tyranitar tie and
+        the draw is dropped (one damage line shows no order). The other weather battles have no such tie."""
+        for name, expect in (('w5_sand_tie_four', {True}), ('w5_sand_tie_pairs', {True, False}),
+                             ('w5_sand_tie_mixed', {False})):
+            with self.subTest(name):
+                found = self.weather_ties(name)
+                self.assertTrue(found)
+                kept = {reason is None for _k, _d, reason, _log in found}
+                self.assertEqual(kept, expect)
+                for _k, d, reason, log in found:
+                    self.assertTrue(reason is None or 'Sandstorm' in reason)
+                    damaged = {l.split('|')[2].split(':')[0] for l in log
+                               if l.startswith('|-damage|') and l.endswith('|[from] Sandstorm')}
+                    slots = [g.split(':')[1] for g in d['group']]
+                    self.assertEqual(reason is None, sum(1 for x in slots if x in damaged) >= 2)
+        for name in ('w1_sand_stream', 'w2_sandstorm_move', 'w3_snow_warning', 'w4_snowscape_move',
+                     'w6_sand_residual_order', 'w7_sand_ko_sitrus'):
+            with self.subTest(name):
+                self.assertEqual([k for k in self.weather_ties(name) if k[2] is None], [])
+
+    def test_a_weather_tie_with_a_handler_the_converter_does_not_know_is_refused(self):
+        found = self.weather_ties('w5_sand_tie_four')
+        _k, d, _reason, log = found[0]
+        other = dict(d, group=[d['group'][0].replace('sandstorm', 'sandstorm+dryskin')] + d['group'][1:])
+        with self.assertRaises(trace_to_c.ConversionError) as cm:
+            trace_to_c.drop_reason(other, None, None, log)
+        self.assertEqual((cm.exception.rule, cm.exception.detail), ('weather-tie-handlers', 'dryskin+sandstorm'))
+        with self.assertRaises(trace_to_c.ConversionError) as cm:
+            trace_to_c.drop_reason(d, None, None, None)
+        self.assertEqual(cm.exception.rule, 'weather-tie-log')
+        # Without Sandstorm the event has no handler at all, and the tie is dropped as every each: tie of no holder.
+        rain = dict(d, group=['P:%s:0:' % g.split(':')[1] for g in d['group']])
+        self.assertEqual(trace_to_c.drop_reason(rain, None, None, log), 'each-event tie with at most one holder')
+
     def test_view_extension_rows_are_what_the_protocol_lines_say(self):
         """Decision 0018 section 6.1 for Throat Chop and Heal Block: a position has the bit from the -start line
         (`|-start|X|Throat Chop|[silent]`, `|-start|X|move: Heal Block`) until the matching -end line, or until the
@@ -754,16 +887,17 @@ class Library(unittest.TestCase):
         """An unnamed Pokemon is called by its base species in the protocol (sim/pokemon.ts:339-341): Indeedee-F,
         Arcanine-Hisui and Floette-Eternal. The pool battles g2_data_moves_b names Arcanine-Hisui in the switch line."""
         self.assertEqual(trace_to_c.BASE_SPECIES_NAME,
-                         {'Indeedee-F': 'Indeedee', 'Arcanine-Hisui': 'Arcanine', 'Floette-Eternal': 'Floette'})
+                         {'Indeedee-F': 'Indeedee', 'Arcanine-Hisui': 'Arcanine', 'Floette-Eternal': 'Floette',
+                          'Ninetales-Alola': 'Ninetales'})
         spec = json.load(open(os.path.join(ROOT, 'tests', 'reference', 'traces', 'g2_data_moves_b.json')))
         lines = [l for step in spec['steps'] for l in step['log']]
         self.assertTrue(any(l.startswith('|switch|p1a: Arcanine|Arcanine-Hisui, L50, M|') for l in lines))
 
     def test_every_move_marked_beyond_the_extended_ids_is_used_in_a_pool_battle(self):
         """A move that the pool manifest marks beyond the extended ids (twelve of step G2, U-turn of step G5, Throat Chop
-        and Psychic Noise of step G8, Soak of step G11, Moonblast and Calm Mind of step G12) was used in a committed
-        pool battle: a move line of it that did something (damage, a boost, or a -start line for a status move) before
-        the next move line."""
+        and Psychic Noise of step G8, Soak of step G11, Moonblast and Calm Mind of step G12, Sandstorm and Snowscape
+        of the weather step) was used in a committed pool battle: a move line of it that did something (damage, a boost,
+        a heal, a -start line for a status move, or a -weather line for a weather move) before the next move line."""
         def read(*p):
             return open(os.path.join(ROOT, *p), encoding='utf-8').read()
         header, source = read('src', 'data', 'pool_tables.h'), read('src', 'data', 'pool_tables.c')
@@ -774,7 +908,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 23)  # G2, G5, G8, G12, G10 (First Impression, Scald, Recover, Low Kick), G11 (Soak), G7 (Wide Guard)
+        self.assertEqual(len(marked), 25)  # G2, G5, G8, G12, G10 (First Impression, Scald, Recover, Low Kick), G11 (Soak), G7 (Wide Guard), weather
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -790,7 +924,7 @@ class Library(unittest.TestCase):
                         for after in lines[i + 1:]:
                             if after.startswith('|move|') or after.startswith('|turn|'):
                                 break
-                            done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|', '|-start|'))
+                            done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|', '|-start|', '|-weather|'))
                             # A side move (Wide Guard, step G7) shows its effect as its own -singleturn line.
                             done = done or (after.startswith('|-singleturn|') and after.endswith('|' + name))
             with self.subTest(move=name):

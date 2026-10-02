@@ -1,0 +1,3885 @@
+{
+ "harness": 14,
+ "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
+ "spec": "w4_snowscape_move.json",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,0000000000000000000000000000000000000000000000000000000000006101",
+ "start": {
+  "log": [
+   "|gametype|doubles",
+   "|player|p1|p1||",
+   "|player|p2|p2||",
+   "|gen|9",
+   "|tier|[Gen 9 Champions] VGC 2026 Reg M-C",
+   "|rule|Species Clause: Limit one of each Pokémon",
+   "|rule|Item Clause: Limit 1 of each item",
+   "|clearpoke",
+   "|poke|p1|Pelipper, L50, F|",
+   "|poke|p1|Gholdengo, L50|",
+   "|poke|p1|Staraptor, L50, F|",
+   "|poke|p1|Sneasler, L50, M|",
+   "|poke|p1|Raichu, L50, F|",
+   "|poke|p1|Incineroar, L50, M|",
+   "|poke|p2|Hippowdon, L50, M|",
+   "|poke|p2|Kingambit, L50, M|",
+   "|poke|p2|Farigiraf, L50, M|",
+   "|poke|p2|Ceruledge, L50, M|",
+   "|poke|p2|Rillaboom, L50, M|",
+   "|poke|p2|Milotic, L50, F|",
+   "|teampreview|4",
+   "|split|p1",
+   "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
+   "",
+   "|split|p2",
+   "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
+   ""
+  ],
+  "state": {
+   "turn": 0,
+   "ended": false,
+   "winner": "",
+   "weather": "",
+   "weather_turns": 0,
+   "terrain": "",
+   "terrain_turns": 0,
+   "trick_room": 0,
+   "sides": [
+    {
+     "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
+     "enabled": [],
+     "active": [
+      -1,
+      -1
+     ],
+     "pokemon": [
+      {
+       "species": "Pelipper",
+       "set_species": "Pelipper",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 167,
+       "maxhp": 167,
+       "item": "sitrusberry",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        12,
+        8,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Gholdengo",
+       "set_species": "Gholdengo",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 179,
+       "maxhp": 179,
+       "item": "lifeorb",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        16,
+        8,
+        8,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Staraptor",
+       "set_species": "Staraptor",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 192,
+       "maxhp": 192,
+       "item": "staraptite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        16,
+        8,
+        16
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Sneasler",
+       "set_species": "Sneasler",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 157,
+       "maxhp": 157,
+       "item": "whiteherb",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Raichu",
+       "set_species": "Raichu",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 164,
+       "maxhp": 164,
+       "item": "lightclay",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Incineroar",
+       "set_species": "Incineroar",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 202,
+       "maxhp": 202,
+       "item": "charcoal",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      }
+     ]
+    },
+    {
+     "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
+     "enabled": [],
+     "active": [
+      -1,
+      -1
+     ],
+     "pokemon": [
+      {
+       "species": "Hippowdon",
+       "set_species": "Hippowdon",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 215,
+       "maxhp": 215,
+       "item": "leftovers",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        12,
+        8,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Kingambit",
+       "set_species": "Kingambit",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 207,
+       "maxhp": 207,
+       "item": "chopleberry",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        8,
+        16,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Farigiraf",
+       "set_species": "Farigiraf",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 197,
+       "maxhp": 197,
+       "item": "sitrusberry",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Ceruledge",
+       "set_species": "Ceruledge",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 181,
+       "maxhp": 181,
+       "item": "grassyseed",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Rillaboom",
+       "set_species": "Rillaboom",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 193,
+       "maxhp": 193,
+       "item": "miracleseed",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        16,
+        12,
+        20,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Milotic",
+       "set_species": "Milotic",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 202,
+       "maxhp": 202,
+       "item": "mysticwater",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        8,
+        12,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "steps": [
+  {
+   "input": {
+    "p1": "team 1234",
+    "p2": "team 1234"
+   },
+   "draws": [],
+   "log": [
+    "|teamsize|p1|4",
+    "|teamsize|p2|4",
+    "|start",
+    "|split|p1",
+    "|uhtmlchange|otsrequest|",
+    "",
+    "|split|p2",
+    "|uhtmlchange|otsrequest|",
+    "",
+    "|split|p1",
+    "|switch|p1a: Pelipper|Pelipper, L50, F|167/167",
+    "|switch|p1a: Pelipper|Pelipper, L50, F|100/100",
+    "|split|p1",
+    "|switch|p1b: Gholdengo|Gholdengo, L50|179/179",
+    "|switch|p1b: Gholdengo|Gholdengo, L50|100/100",
+    "|split|p2",
+    "|switch|p2a: Hippowdon|Hippowdon, L50, M|215/215",
+    "|switch|p2a: Hippowdon|Hippowdon, L50, M|100/100",
+    "|split|p2",
+    "|switch|p2b: Kingambit|Kingambit, L50, M|207/207",
+    "|switch|p2b: Kingambit|Kingambit, L50, M|100/100",
+    "|-weather|RainDance|[from] ability: Drizzle|[of] p1a: Pelipper",
+    "|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Hippowdon",
+    "|turn|1"
+   ],
+   "state": {
+    "turn": 1,
+    "ended": false,
+    "winner": "",
+    "weather": "sandstorm",
+    "weather_turns": 5,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Pelipper",
+        "set_species": "Pelipper",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 167,
+        "maxhp": 167,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         12,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 179,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         8,
+         8,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 192,
+        "maxhp": 192,
+        "item": "staraptite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sneasler",
+        "set_species": "Sneasler",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 157,
+        "maxhp": 157,
+        "item": "whiteherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Hippowdon",
+        "set_species": "Hippowdon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 215,
+        "maxhp": 215,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         8,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         8,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 181,
+        "maxhp": 181,
+        "item": "grassyseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1, move 3",
+    "p2": "move 4, move 1"
+   },
+   "draws": [],
+   "log": [
+    "|move|p1b: Gholdengo|Sandstorm||[still]",
+    "|-fail|p1b: Gholdengo",
+    "|move|p1a: Pelipper|Snowscape|p1a: Pelipper",
+    "|-weather|Snowscape",
+    "|move|p2b: Kingambit|Sandstorm|p2b: Kingambit",
+    "|-weather|Sandstorm",
+    "|move|p2a: Hippowdon|Sandstorm||[still]",
+    "|-fail|p2a: Hippowdon",
+    "|-weather|Sandstorm|[upkeep]",
+    "|split|p1",
+    "|-damage|p1a: Pelipper|157/167|[from] Sandstorm",
+    "|-damage|p1a: Pelipper|94/100|[from] Sandstorm",
+    "|upkeep",
+    "|turn|2"
+   ],
+   "state": {
+    "turn": 2,
+    "ended": false,
+    "winner": "",
+    "weather": "sandstorm",
+    "weather_turns": 4,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Pelipper",
+        "set_species": "Pelipper",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 157,
+        "maxhp": 167,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         12,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 179,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         8,
+         7,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 192,
+        "maxhp": 192,
+        "item": "staraptite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sneasler",
+        "set_species": "Sneasler",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 157,
+        "maxhp": 157,
+        "item": "whiteherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Hippowdon",
+        "set_species": "Hippowdon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 215,
+        "maxhp": 215,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         8,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         8,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 181,
+        "maxhp": 181,
+        "item": "grassyseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1, move 3",
+    "p2": "move 4, move 1"
+   },
+   "draws": [],
+   "log": [
+    "|move|p1b: Gholdengo|Sandstorm||[still]",
+    "|-fail|p1b: Gholdengo",
+    "|move|p1a: Pelipper|Snowscape|p1a: Pelipper",
+    "|-weather|Snowscape",
+    "|move|p2b: Kingambit|Sandstorm|p2b: Kingambit",
+    "|-weather|Sandstorm",
+    "|move|p2a: Hippowdon|Sandstorm||[still]",
+    "|-fail|p2a: Hippowdon",
+    "|-weather|Sandstorm|[upkeep]",
+    "|split|p1",
+    "|-damage|p1a: Pelipper|147/167|[from] Sandstorm",
+    "|-damage|p1a: Pelipper|88/100|[from] Sandstorm",
+    "|upkeep",
+    "|turn|3"
+   ],
+   "state": {
+    "turn": 3,
+    "ended": false,
+    "winner": "",
+    "weather": "sandstorm",
+    "weather_turns": 4,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Pelipper",
+        "set_species": "Pelipper",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 147,
+        "maxhp": 167,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         12,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 179,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         8,
+         6,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 192,
+        "maxhp": 192,
+        "item": "staraptite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sneasler",
+        "set_species": "Sneasler",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 157,
+        "maxhp": 157,
+        "item": "whiteherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Hippowdon",
+        "set_species": "Hippowdon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 215,
+        "maxhp": 215,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         8,
+         6
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         8,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 181,
+        "maxhp": 181,
+        "item": "grassyseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2 1, move 1 1",
+    "p2": "move 3, move 3 1"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 54
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 15
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 15
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 27
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "H:stall:p2a:end",
+      "H:protect:p2a:end"
+     ],
+     "start": 2
+    }
+   ],
+   "log": [
+    "|move|p2a: Hippowdon|Protect|p2a: Hippowdon",
+    "|-singleturn|p2a: Hippowdon|Protect",
+    "|move|p1b: Gholdengo|Shadow Ball|p2a: Hippowdon",
+    "|-activate|p2a: Hippowdon|move: Protect",
+    "|move|p1a: Pelipper|Weather Ball|p2a: Hippowdon",
+    "|-activate|p2a: Hippowdon|move: Protect",
+    "|move|p2b: Kingambit|Iron Head|p1a: Pelipper",
+    "|-resisted|p1a: Pelipper|1",
+    "|split|p1",
+    "|-damage|p1a: Pelipper|108/167",
+    "|-damage|p1a: Pelipper|64/100",
+    "|-weather|Sandstorm|[upkeep]",
+    "|split|p1",
+    "|-damage|p1a: Pelipper|98/167|[from] Sandstorm",
+    "|-damage|p1a: Pelipper|58/100|[from] Sandstorm",
+    "|upkeep",
+    "|turn|4"
+   ],
+   "state": {
+    "turn": 4,
+    "ended": false,
+    "winner": "",
+    "weather": "sandstorm",
+    "weather_turns": 3,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Pelipper",
+        "set_species": "Pelipper",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 98,
+        "maxhp": 167,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         11,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 179,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         8,
+         6,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 192,
+        "maxhp": 192,
+        "item": "staraptite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sneasler",
+        "set_species": "Sneasler",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 157,
+        "maxhp": 157,
+        "item": "whiteherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Hippowdon",
+        "set_species": "Hippowdon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 215,
+        "maxhp": 215,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         7,
+         6
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         8,
+         15,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 181,
+        "maxhp": 181,
+        "item": "grassyseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 3, move 1 1",
+    "p2": "move 3, move 3 1"
+   },
+   "draws": [
+    {
+     "site": "STALL",
+     "context": "StallMove",
+     "lo": 0,
+     "hi": 3,
+     "value": 2
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 75
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 2
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 8
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 69
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "H:stall:p1a:end",
+      "H:protect:p1a:end"
+     ],
+     "start": 2
+    }
+   ],
+   "log": [
+    "|move|p1a: Pelipper|Protect|p1a: Pelipper",
+    "|-singleturn|p1a: Pelipper|Protect",
+    "|move|p2a: Hippowdon|Protect||[still]",
+    "|-fail|p2a: Hippowdon",
+    "|move|p1b: Gholdengo|Shadow Ball|p2a: Hippowdon",
+    "|split|p2",
+    "|-damage|p2a: Hippowdon|86/215",
+    "|-damage|p2a: Hippowdon|40/100",
+    "|split|p1",
+    "|-damage|p1b: Gholdengo|162/179|[from] item: Life Orb",
+    "|-damage|p1b: Gholdengo|90/100|[from] item: Life Orb",
+    "|move|p2b: Kingambit|Iron Head|p1a: Pelipper",
+    "|-activate|p1a: Pelipper|move: Protect",
+    "|-weather|Sandstorm|[upkeep]",
+    "|split|p1",
+    "|-damage|p1a: Pelipper|88/167|[from] Sandstorm",
+    "|-damage|p1a: Pelipper|52/100|[from] Sandstorm",
+    "|split|p2",
+    "|-heal|p2a: Hippowdon|99/215|[from] item: Leftovers",
+    "|-heal|p2a: Hippowdon|46/100|[from] item: Leftovers",
+    "|upkeep",
+    "|turn|5"
+   ],
+   "state": {
+    "turn": 5,
+    "ended": false,
+    "winner": "",
+    "weather": "sandstorm",
+    "weather_turns": 2,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Pelipper",
+        "set_species": "Pelipper",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 88,
+        "maxhp": 167,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         11,
+         7,
+         12
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 162,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         14,
+         8,
+         6,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 192,
+        "maxhp": 192,
+        "item": "staraptite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sneasler",
+        "set_species": "Sneasler",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 157,
+        "maxhp": 157,
+        "item": "whiteherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Hippowdon",
+        "set_species": "Hippowdon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 99,
+        "maxhp": 215,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         6,
+         6
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         8,
+         14,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 181,
+        "maxhp": 181,
+        "item": "grassyseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1, move 1 1",
+    "p2": "move 4, move 3 1"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 87
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 20
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 15
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 14
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 71
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 9
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 13
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 33
+    }
+   ],
+   "log": [
+    "|move|p1b: Gholdengo|Shadow Ball|p2a: Hippowdon",
+    "|split|p2",
+    "|-damage|p2a: Hippowdon|0 fnt",
+    "|-damage|p2a: Hippowdon|0 fnt",
+    "|faint|p2a: Hippowdon",
+    "|split|p1",
+    "|-damage|p1b: Gholdengo|145/179|[from] item: Life Orb",
+    "|-damage|p1b: Gholdengo|81/100|[from] item: Life Orb",
+    "|move|p1a: Pelipper|Snowscape|p1a: Pelipper",
+    "|-weather|Snowscape",
+    "|move|p2b: Kingambit|Iron Head|p1a: Pelipper",
+    "|-resisted|p1a: Pelipper|1",
+    "|split|p1",
+    "|-damage|p1a: Pelipper|49/167",
+    "|-damage|p1a: Pelipper|29/100",
+    "|-enditem|p1a: Pelipper|Sitrus Berry|[eat]",
+    "|split|p1",
+    "|-heal|p1a: Pelipper|90/167|[from] item: Sitrus Berry",
+    "|-heal|p1a: Pelipper|53/100|[from] item: Sitrus Berry",
+    "|-weather|Snowscape|[upkeep]",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 5,
+    "ended": false,
+    "winner": "",
+    "weather": "snowscape",
+    "weather_turns": 4,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Pelipper",
+        "set_species": "Pelipper",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 90,
+        "maxhp": 167,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         5,
+         11,
+         7,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 145,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         13,
+         8,
+         6,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 192,
+        "maxhp": 192,
+        "item": "staraptite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sneasler",
+        "set_species": "Sneasler",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 157,
+        "maxhp": 157,
+        "item": "whiteherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Hippowdon",
+        "set_species": "Hippowdon",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 215,
+        "item": "leftovers",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         6,
+         6
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         8,
+         13,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 181,
+        "maxhp": 181,
+        "item": "grassyseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p2": "switch 3, pass"
+   },
+   "draws": [],
+   "log": [
+    "|split|p2",
+    "|switch|p2a: Farigiraf|Farigiraf, L50, M|197/197",
+    "|switch|p2a: Farigiraf|Farigiraf, L50, M|100/100",
+    "|turn|6"
+   ],
+   "state": {
+    "turn": 6,
+    "ended": false,
+    "winner": "",
+    "weather": "snowscape",
+    "weather_turns": 4,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Pelipper",
+        "set_species": "Pelipper",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 90,
+        "maxhp": 167,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         5,
+         11,
+         7,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 145,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         13,
+         8,
+         6,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 192,
+        "maxhp": 192,
+        "item": "staraptite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sneasler",
+        "set_species": "Sneasler",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 157,
+        "maxhp": 157,
+        "item": "whiteherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         8,
+         13,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Hippowdon",
+        "set_species": "Hippowdon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 215,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         6,
+         6
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 181,
+        "maxhp": 181,
+        "item": "grassyseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 3, move 3",
+    "p2": "move 1, move 3 1"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "H:protect:p2a:end",
+      "H:stall:p2a:end"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 3,
+     "hi": 5,
+     "value": 3,
+     "group": [
+      "H:protect:p1a:end",
+      "H:stall:p1a:end"
+     ],
+     "start": 3
+    }
+   ],
+   "log": [
+    "|move|p2a: Farigiraf|Protect|p2a: Farigiraf",
+    "|-singleturn|p2a: Farigiraf|Protect",
+    "|move|p1a: Pelipper|Protect|p1a: Pelipper",
+    "|-singleturn|p1a: Pelipper|Protect",
+    "|move|p1b: Gholdengo|Sandstorm|p1b: Gholdengo",
+    "|-weather|Sandstorm",
+    "|move|p2b: Kingambit|Iron Head|p1a: Pelipper",
+    "|-activate|p1a: Pelipper|move: Protect",
+    "|-weather|Sandstorm|[upkeep]",
+    "|split|p2",
+    "|-damage|p2a: Farigiraf|185/197|[from] Sandstorm",
+    "|-damage|p2a: Farigiraf|93/100|[from] Sandstorm",
+    "|split|p1",
+    "|-damage|p1a: Pelipper|80/167|[from] Sandstorm",
+    "|-damage|p1a: Pelipper|47/100|[from] Sandstorm",
+    "|upkeep",
+    "|turn|7"
+   ],
+   "state": {
+    "turn": 7,
+    "ended": false,
+    "winner": "",
+    "weather": "sandstorm",
+    "weather_turns": 4,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Pelipper",
+        "set_species": "Pelipper",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 80,
+        "maxhp": 167,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         5,
+         11,
+         6,
+         12
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 145,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         13,
+         8,
+         5,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 192,
+        "maxhp": 192,
+        "item": "staraptite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sneasler",
+        "set_species": "Sneasler",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 157,
+        "maxhp": 157,
+        "item": "whiteherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 185,
+        "maxhp": 197,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         8,
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Hippowdon",
+        "set_species": "Hippowdon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 215,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         6,
+         6
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 181,
+        "maxhp": 181,
+        "item": "grassyseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1, move 1 1",
+    "p2": "move 1, move 3 1"
+   },
+   "draws": [
+    {
+     "site": "STALL",
+     "context": "StallMove",
+     "lo": 0,
+     "hi": 3,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 60
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 0
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 1
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 4
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "H:stall:p2a:end",
+      "H:protect:p2a:end"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 3,
+     "hi": 5,
+     "value": 3,
+     "group": [
+      "H:stall:p1a:end",
+      "H:flinch:p1a:end"
+     ],
+     "start": 3
+    }
+   ],
+   "log": [
+    "|move|p2a: Farigiraf|Protect|p2a: Farigiraf",
+    "|-singleturn|p2a: Farigiraf|Protect",
+    "|move|p1b: Gholdengo|Shadow Ball|p2a: Farigiraf",
+    "|-activate|p2a: Farigiraf|move: Protect",
+    "|move|p1a: Pelipper|Snowscape|p1a: Pelipper",
+    "|-weather|Snowscape",
+    "|move|p2b: Kingambit|Iron Head|p1a: Pelipper",
+    "|-resisted|p1a: Pelipper|1",
+    "|-crit|p1a: Pelipper",
+    "|split|p1",
+    "|-damage|p1a: Pelipper|11/167",
+    "|-damage|p1a: Pelipper|6/100",
+    "|-weather|Snowscape|[upkeep]",
+    "|upkeep",
+    "|turn|8"
+   ],
+   "state": {
+    "turn": 8,
+    "ended": false,
+    "winner": "",
+    "weather": "snowscape",
+    "weather_turns": 4,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Pelipper",
+        "set_species": "Pelipper",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 11,
+        "maxhp": 167,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         4,
+         11,
+         6,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 145,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         5,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 192,
+        "maxhp": 192,
+        "item": "staraptite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sneasler",
+        "set_species": "Sneasler",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 157,
+        "maxhp": 157,
+        "item": "whiteherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 185,
+        "maxhp": 197,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         8,
+         11,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Hippowdon",
+        "set_species": "Hippowdon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 215,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         6,
+         6
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 181,
+        "maxhp": 181,
+        "item": "grassyseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 3, move 3",
+    "p2": "move 1, move 3 1"
+   },
+   "draws": [
+    {
+     "site": "STALL",
+     "context": "StallMove",
+     "lo": 0,
+     "hi": 9,
+     "value": 6
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "H:protect:p1a:end",
+      "H:stall:p1a:end"
+     ],
+     "start": 1
+    }
+   ],
+   "log": [
+    "|move|p2a: Farigiraf|Protect||[still]",
+    "|-fail|p2a: Farigiraf",
+    "|move|p1a: Pelipper|Protect|p1a: Pelipper",
+    "|-singleturn|p1a: Pelipper|Protect",
+    "|move|p1b: Gholdengo|Sandstorm|p1b: Gholdengo",
+    "|-weather|Sandstorm",
+    "|move|p2b: Kingambit|Iron Head|p1a: Pelipper",
+    "|-activate|p1a: Pelipper|move: Protect",
+    "|-weather|Sandstorm|[upkeep]",
+    "|split|p2",
+    "|-damage|p2a: Farigiraf|173/197|[from] Sandstorm",
+    "|-damage|p2a: Farigiraf|87/100|[from] Sandstorm",
+    "|split|p1",
+    "|-damage|p1a: Pelipper|1/167|[from] Sandstorm",
+    "|-damage|p1a: Pelipper|1/100|[from] Sandstorm",
+    "|upkeep",
+    "|turn|9"
+   ],
+   "state": {
+    "turn": 9,
+    "ended": false,
+    "winner": "",
+    "weather": "sandstorm",
+    "weather_turns": 4,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Pelipper",
+        "set_species": "Pelipper",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 1,
+        "maxhp": 167,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         4,
+         11,
+         5,
+         12
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 145,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         4,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 192,
+        "maxhp": 192,
+        "item": "staraptite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sneasler",
+        "set_species": "Sneasler",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 157,
+        "maxhp": 157,
+        "item": "whiteherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 173,
+        "maxhp": 197,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         5
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         8,
+         10,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Hippowdon",
+        "set_species": "Hippowdon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 215,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         6,
+         6
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 181,
+        "maxhp": 181,
+        "item": "grassyseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

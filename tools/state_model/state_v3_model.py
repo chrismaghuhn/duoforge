@@ -91,6 +91,7 @@ CLASS_COUNT = 9
 # state v3 value ranges (decision 0006 section 3)
 RESULT_NONE, RESULT_SIDE0, RESULT_SIDE1, RESULT_TIE = 0, 1, 2, 3
 WEATHER_NONE, WEATHER_RAIN, WEATHER_SUN = 0, 1, 2
+WEATHER_SAND, WEATHER_SNOW = 3, 4  # POOL kinds only (Sandstorm, Snowscape)
 TERRAIN_NONE, TERRAIN_GRASSY = 0, 1
 TERRAIN_PSYCHIC = 2  # TEAM_C kinds only (Psychic Surge)
 FIELD_TURNS_MAX = 5
@@ -259,7 +260,7 @@ KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 # which tests/test_pool_tables.c recomputes from the pool canonical bytes: the
 # pool layout over the pool data, then the family columns, the handler columns
 # and the moves and abilities that each forme may have.
-POOL_TABLE_HASH = bytes.fromhex('59e76a9b6d9f263f4bdfb26b2d146bc8fe9dbbe70cb30abdc4afdbb2bc2a1707')
+POOL_TABLE_HASH = bytes.fromhex('d68dfe70ad18170d09dc44b8fa1df911eb14de717b585c9609929df4b8a825ae')
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 
@@ -291,6 +292,7 @@ KPD = PoolContext(KIND_POOL_DEV, 6, 4)
 # profile (exactly six registered members) is CLOSURE's, TEAM_C's and POOL's.
 COMBAT_KINDS = (KIND_CLOSURE, KIND_CLOSURE_DEV, KIND_TEAM_C, KIND_TEAM_C_DEV, KIND_POOL, KIND_POOL_DEV)
 EXTENDED_KINDS = (KIND_TEAM_C, KIND_TEAM_C_DEV, KIND_POOL, KIND_POOL_DEV)
+POOL_KINDS = (KIND_POOL, KIND_POOL_DEV)
 FULL_ROSTER_KINDS = (KIND_CLOSURE, KIND_TEAM_C, KIND_POOL)
 
 
@@ -834,7 +836,7 @@ def check_state(ctx, st):
         return 'TURN_COUNTER'
     if st['result'] > RESULT_TIE or (st['boundary'] == TERMINAL) != (st['result'] != RESULT_NONE):
         return 'RESULT'
-    if (st['weather'] > WEATHER_SUN or st['weather_turns'] > FIELD_TURNS_MAX
+    if (st['weather'] > (WEATHER_SNOW if ctx.data_kind in POOL_KINDS else WEATHER_SUN) or st['weather_turns'] > FIELD_TURNS_MAX
             or (st['weather'] == 0) != (st['weather_turns'] == 0)
             or st['terrain'] > (TERRAIN_PSYCHIC if ctx.data_kind in EXTENDED_KINDS else TERRAIN_GRASSY)
             or st['terrain_turns'] > FIELD_TURNS_MAX
