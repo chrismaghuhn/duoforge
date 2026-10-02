@@ -734,7 +734,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 18)
+        self.assertEqual(len(marked), 22)  # G2, G5, G8, G12, G10 (First Impression, Scald, Recover, Low Kick), G11 (Soak)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -750,7 +750,7 @@ class Library(unittest.TestCase):
                         for after in lines[i + 1:]:
                             if after.startswith('|move|') or after.startswith('|turn|'):
                                 break
-                            done = done or after.startswith(('|-damage|', '|-boost|', '|-start|'))
+                            done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|', '|-start|'))
             with self.subTest(move=name):
                 self.assertTrue(done, '%s is marked but no committed pool battle uses it' % name)
 

@@ -3,6 +3,7 @@
 #include "combat/ability_family.h"
 #include "combat/events.h"
 #include "combat/item_family.h"
+#include "combat/move_rules.h"
 
 #include "core/arith.h"
 #include "core/modifier.h"
@@ -908,14 +909,13 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     /* BasePower (after the critical hit roll), one chained modifier: Mystic
      * Water (Water) and Miracle Seed (Grass) 4915/4096, Grassy Terrain
      * 5325/4096 for a grounded user's Grass move. */
-    /* Weather Ball doubles in rain or sun (onModifyMove); Grass Knot's power
-     * follows the target's weight (basePowerCallback). */
+    /* Weather Ball doubles in rain or sun (onModifyMove); Grass Knot's and
+     * Low Kick's power follow the target's weight (basePowerCallback). */
     uint32_t power = md->base_power;
     if (md->special == DFI_SPECIAL_WEATHER_BALL && r->b->weather != DFI_WEATHER_NONE) {
         power *= 2u;
-    } else if (md->special == DFI_SPECIAL_GRASS_KNOT) {
-        const uint32_t w = dfi_forme_of(d)->weight_hg;
-        power = w >= 2000u ? 120u : w >= 1000u ? 100u : w >= 500u ? 80u : w >= 250u ? 60u : w >= 100u ? 40u : 20u;
+    } else if (dfi_move_power_by_weight(md)) {
+        power = dfi_weight_power(dfi_forme_of(d)->weight_hg);
     } else if (md->special == DFI_SPECIAL_LAST_RESPECTS) {
         /* Last Respects (Team C): 50 + 50 per fainted member of the user's
          * side (basePowerCallback, data/moves.ts:10091-10105). side.totalFainted
@@ -1958,6 +1958,30 @@ static duoforge_status dfi_run_follow_me(dfi_run *r, uint32_t user)
     return dfi_status_hit_end(r);
 }
 
+/* A move that heals its user by a fraction of the maximum HP (Recover: heal:
+ * [1, 2], data/moves.ts:14806-14820; the fraction is the heal column dfi_pool_move_heal).
+ * runMoveEffects (sim/battle-actions.ts:1201-1222): at full HP [-fail|user|heal]
+ * with [still] (the event is a plain FAIL), otherwise Battle.heal of
+ * Math.round(baseMaxhp * a / b), at least 1, shown as a plain [-heal]. The
+ * heal goes through dfi_heal, the one place that every kind of healing (items,
+ * drain, this move) passes, where Heal Block refuses it (dfi_heal_blocked). A
+ * blocked user never gets here: its heal moves are disabled in the request and
+ * stopped before the move (the heal flag, flags2 bit 2: [cant] Heal Block). */
+static duoforge_status dfi_run_heal_move(dfi_run *r, uint32_t user, uint32_t move_id)
+{
+    dfi_member *m = dfi_at(r->b, user);
+    if (m->hp >= m->hp_max) {
+        dfi_fail_still(r, user);
+        return DUOFORGE_OK;
+    }
+    const uint32_t num = dfi_pool_move_heal[move_id][0];
+    const uint32_t den = dfi_pool_move_heal[move_id][1];
+    uint32_t amount = ((uint32_t)m->hp_max * num * 2u + den) / (2u * den); /* Math.round(hp_max * num / den) */
+    amount = amount < 1u ? 1u : amount;
+    dfi_heal(r, user, amount, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
+    return dfi_status_hit_end(r);
+}
+
 /* runMove and useMove for one move action (sim/battle-actions.ts:210-548,
  * the hit steps at 550-620 and the Champions hit loop). */
 static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool *ran)
@@ -2272,6 +2296,9 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     }
     if (status_move && md->primary_status == DFI_STATUS_NONE && md->special != DFI_SPECIAL_PARTING_SHOT &&
         md->special != DFI_SPECIAL_SOAK) {
+        if (dfi_pool_move_heal[move_id][1] != 0u) {
+            return dfi_run_heal_move(r, user, move_id);
+        }
         if (md->boost_role != DFI_BOOST_ROLE_PRIMARY_SELF || md->target_class != DUOFORGE_TARGET_CLASS_SELF) {
             return DUOFORGE_E_UNSUPPORTED;
         }
@@ -2284,12 +2311,13 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
      * specials of later steps are also kept out by the support manifest. */
     if (md->special > DFI_SPECIAL_STRUGGLE && md->special != DFI_SPECIAL_DARKEST_LARIAT &&
         md->special != DFI_SPECIAL_LAST_RESPECTS && md->special != DFI_SPECIAL_SUCKER_PUNCH &&
+        md->special != DFI_SPECIAL_FIRST_IMPRESSION && md->special != DFI_SPECIAL_LOW_KICK &&
         md->special != DFI_SPECIAL_SOAK) {
         return DUOFORGE_E_INVARIANT;
     }
-    /* Fake Out's onTry (in trySpreadMoveHit, after TryMove): only on the
-     * first move action since it entered. */
-    if (md->special == DFI_SPECIAL_FAKE_OUT && pos->move_actions > 1u) {
+    /* Fake Out's and First Impression's onTry (in trySpreadMoveHit, after
+     * TryMove): only on the first move action since it entered. */
+    if (dfi_move_first_turn_only(md) && pos->move_actions > 1u) {
         dfi_fail_still(r, user);
         return DUOFORGE_OK;
     }
@@ -2709,6 +2737,24 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         st = dfi_update(r);
         if (st != DUOFORGE_OK) {
             return st;
+        }
+        /* AfterMoveSecondary: a move that thaws its target (Scald,
+         * thawsTarget) cures a frozen one after the secondaries and the second
+         * Update (frz.onAfterMoveSecondary, data/conditions.ts:112-116, run by
+         * afterMoveSecondaryEvent, data/mods/champions/scripts.ts:574-576),
+         * before the targets' Emergency Exit. */
+        if ((dfi_pool_move_flags2[move_id] & DFI_MOVE_FLAG2_THAWS_TARGET) != 0u) {
+            for (uint32_t i = 0u; i < count; ++i) {
+                dfi_member *tm = dfi_at(b, targets[i]);
+                if (hit[i] && tm->hp != 0u && tm->status == DFI_STATUS_FRZ) {
+                    duoforge_event cure = dfi_event_make(DUOFORGE_EVENT_CURE_STATUS, targets[i]);
+                    cure.detail = tm->status;
+                    cure.flags = (uint8_t)DUOFORGE_EVENT_FLAG_MESSAGE;
+                    dfi_emit(r, &cure); /* [-curestatus] frz [msg] */
+                    tm->status = (uint8_t)DFI_STATUS_NONE;
+                    tm->status_counter = 0u;
+                }
+            }
         }
         /* After the secondaries of the hit loop: a target that fell to half
          * HP (sim/battle-actions.ts:1005-1017). */

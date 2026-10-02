@@ -41,8 +41,8 @@
 #include "support/pool.h"
 #include "support/team_c.h"
 
-#define FP_KP_HEX "06e5aa0ac461d675fe11c5e111c17b75f21a555c32a497211ef7708f402fc5b2"
-#define FP_KPD_HEX "244d4a8157cfc0a2759cd5a7e9fc1abb54b54c8cef38bf78fe14d9f68b8fd273"
+#define FP_KP_HEX "dbf332fbd2333e795c01e206f6b65066c2904b5ba3481ecb0142ebbf5ad1baea"
+#define FP_KPD_HEX "42ae74c5c60dd3014dd4deb37b898c467da0ae718bcf6f514f8ac4db9871d1be"
 
 /* The public create under `ctx` gives `gated`, and the build without the
  * support gate `ungated`. */
@@ -563,7 +563,8 @@ int main(void)
                                                 DFI_MOVE_BULKUP, DFI_MOVE_LIQUIDATION, DFI_MOVE_ICEPUNCH,
                                                 DFI_MOVE_SHADOWCLAW, DFI_MOVE_DRUMBEATING, DFI_MOVE_DAZZLINGGLEAM,
                                                 DFI_MOVE_UTURN, DFI_MOVE_THROATCHOP, DFI_MOVE_PSYCHICNOISE,
-                                                DFI_MOVE_SOAK};
+                                                DFI_MOVE_FIRSTIMPRESSION, DFI_MOVE_SCALD, DFI_MOVE_RECOVER,
+                                                DFI_MOVE_LOWKICK, DFI_MOVE_SOAK};
         const duoforge_member_setup *tpl = &teams.sides[1].members[0];
         /* Every new move: a learner with a legal ability that is marked, with no item, on a side where it does not
          * clash with the Species Clause. The gate function with a fully marked manifest accepts the setup (the

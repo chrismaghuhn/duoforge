@@ -774,7 +774,9 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             cause, id2, _ = ev_cause(attrs, tables)
             e = ev_tuple(EV['IMMUNE'], ev_pos(args[0]), NOPOS, cause, 0, id2)
         elif kind == '-fail':
-            e = ev_tuple(EV['FAIL'], ev_pos(args[0]), detail=AILMENT[args[1]] if len(args) > 1 else 0)
+            # `-fail|X|heal` (a heal move at full HP) is a plain FAIL: the event has no field for the reason, which
+            # for a status is the ailment the target already has.
+            e = ev_tuple(EV['FAIL'], ev_pos(args[0]), detail=AILMENT[args[1]] if len(args) > 1 and args[1] != 'heal' else 0)
         elif kind == '-singleturn':
             if args[1] == 'Protect':
                 e = ev_tuple(EV['PROTECT'], ev_pos(args[0]))
