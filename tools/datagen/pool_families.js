@@ -731,7 +731,10 @@ function checkHandlers(dex, source, header, extended) {
         ability: defineOf(header, 'DFI_POOL_ABILITY_COUNT'),
     };
     const unmodeledSpecial = defineOf(header, 'DFI_SPECIAL_UNMODELED');
-    const firstHandler = defineOf(header, 'DFI_SPECIAL_THROAT_CHOP');
+    const firstHandler = defineOf(header, 'DFI_SPECIAL_ENCORE');
+    // Step G8: Throat Chop and Psychic Noise are rows of the G2 step that the generator reads strictly (their secondaries
+    // are modelled kinds with a recorded engine and no handler id), so they have no UNMODELED marker to cross-check.
+    const strictRows = new Set(['throatchop', 'psychicnoise']);
     const itemFamily = familyRows(source, 'ITEM', 'dfi_pool_item_family', counts.item);
     const abilityFamily = familyRows(source, 'ABILITY', 'dfi_pool_ability_family', counts.ability);
     const result = {moves: 0, items: 0, abilities: 0};
@@ -750,7 +753,7 @@ function checkHandlers(dex, source, header, extended) {
         if ((special === unmodeledSpecial) !== unmodeledMoves.has(id)) {
             bad('move ' + id + ': the UNMODELED special and its feature list disagree');
         }
-        if (number < extended.moveCount || (special >= firstHandler && special < unmodeledSpecial)) {
+        if (number < extended.moveCount || strictRows.has(id) || (special >= firstHandler && special < unmodeledSpecial)) {
             continue; // the closure, Team C and the G2 handler moves: code in the turn core, or a handler id of their own
         }
         const raw = dex.data.Moves[id];

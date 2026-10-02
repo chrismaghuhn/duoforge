@@ -44,11 +44,11 @@
 #include "state/battle_internal.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "e8942bc9c815d4a394cfab758df959618025f521fe73942775ee7e58d4dfbac7"
+#define POOL_HASH_HEX "86f75f8532394877e10350a4b093aad09440edfb92187be952e983fd8bbc387e"
 /* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
  * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
  * produced the same bytes. */
-#define STEPS_ROWS_HASH_HEX "52e85b0461b75d92729656791e39b11ed58263da70af82a20e638d1f33010b87"
+#define STEPS_ROWS_HASH_HEX "40c2cb90eb08727328dbd076ae4192434ba6537f41511505dc4daa04fe3a12d9"
 
 /* The counts of the rows of the steps, and of the whole pool (legal_pool.json: 264 distinct selectable formes and
  * 82 Mega formes, 510 moves and Struggle, 166 items, 215 abilities). */
@@ -58,6 +58,8 @@
 #define G2_ABILITIES 29u
 #define POOL_FORMES 346u
 #define POOL_MOVES 511u
+#define SOUND_MOVES 25u /* the pool moves with the pinned sound flag (duoforge.data.pool_regen reproduces the table from the pin) */
+#define HEAL_MOVES 23u  /* and with the heal flag */
 #define POOL_ITEMS 166u
 #define POOL_ABILITIES 215u
 
@@ -392,7 +394,7 @@ static const move_case new_moves[] = {
      DUOFORGE_TARGET_CLASS_ALL_ADJACENT_FOES, 1u, DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 30u, DFI_SECONDARY_VOLATILE,
      DFI_VOLATILE_FLINCH, 0u, NB, 0u},
     {DFI_MOVE_THROATCHOP, "Throat Chop", DFI_TYPE_DARK, DFI_CATEGORY_PHYSICAL, 80u, 100u, 16u, 8u, 1u, 1u,
-     DFI_MOVE_FLAG_CONTACT | DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 0u, 0u, 0u, 0u, NB, DFI_SPECIAL_THROAT_CHOP},
+     DFI_MOVE_FLAG_CONTACT | DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 100u, DFI_SECONDARY_LOCKOUT, 0u, 0u, NB, 0u},
     {DFI_MOVE_ENCORE, "Encore", DFI_TYPE_NORMAL, DFI_CATEGORY_STATUS, 0u, 100u, 8u, 8u, 1u, 1u, DFI_MOVE_FLAG_PROTECT,
      {0u, 0u}, 0u, 0u, 0u, 0u, NB, DFI_SPECIAL_ENCORE},
     {DFI_MOVE_DOUBLEEDGE, "Double-Edge", DFI_TYPE_NORMAL, DFI_CATEGORY_PHYSICAL, 120u, 100u, 16u, 8u, 1u, 1u,
@@ -427,7 +429,7 @@ static const move_case new_moves[] = {
     {DFI_MOVE_SOAK, "Soak", DFI_TYPE_WATER, DFI_CATEGORY_STATUS, 0u, 100u, 20u, 8u, 1u, 1u, DFI_MOVE_FLAG_PROTECT,
      {0u, 0u}, 0u, 0u, 0u, 0u, NB, DFI_SPECIAL_SOAK},
     {DFI_MOVE_PSYCHICNOISE, "Psychic Noise", DFI_TYPE_PSYCHIC, DFI_CATEGORY_SPECIAL, 75u, 100u, 12u, 8u, 1u, 1u,
-     DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 0u, 0u, 0u, 0u, NB, DFI_SPECIAL_PSYCHIC_NOISE},
+     DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 100u, DFI_SECONDARY_HEAL_BLOCK, 0u, 0u, NB, 0u},
     {DFI_MOVE_DRUMBEATING, "Drum Beating", DFI_TYPE_GRASS, DFI_CATEGORY_PHYSICAL, 80u, 100u, 12u, 8u, 1u, 1u,
      DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 100u, DFI_SECONDARY_BOOST, 0u, DFI_BOOST_ROLE_SECONDARY_TARGET,
      {0, 0, 0, 0, -1, 0, 0}, 0u},
@@ -642,15 +644,42 @@ int main(void)
         }
         uint32_t handlers = 0u;
         for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
-            handlers += dfi_pool_moves[i].special >= DFI_SPECIAL_THROAT_CHOP &&
+            handlers += dfi_pool_moves[i].special >= DFI_SPECIAL_ENCORE &&
                                 dfi_pool_moves[i].special <= DFI_SPECIAL_LOW_KICK
                             ? 1u
                             : 0u;
         }
-        DF_CHECK_EQ_U64(&t, handlers, DFI_SPECIAL_LOW_KICK - DFI_SPECIAL_THROAT_CHOP + 1u);
-        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_THROAT_CHOP, DFI_SPECIAL_FOLLOW_ME + 1u);
-        /* UNMODELED follows the nine handlers of G2. */
+        DF_CHECK_EQ_U64(&t, handlers, DFI_SPECIAL_LOW_KICK - DFI_SPECIAL_ENCORE + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_ENCORE, DFI_SPECIAL_FOLLOW_ME + 1u);
+        /* UNMODELED follows the seven handlers of G2 that remain after step G8. */
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_LOW_KICK + 1u);
+        /* Step G8: Throat Chop and Psychic Noise are modelled (a secondary kind of their own, chance 100), not
+         * handlers; the second flags byte holds the pinned sound and heal flags and nothing else. Every named move
+         * has its bits; the counts over the whole pool are those of the pinned data (the generator's test reads
+         * them from the pinned text). */
+        static const struct {
+            uint32_t move;
+            uint32_t flags2;
+        } flagged[] = {{DFI_MOVE_SNARL, DFI_MOVE_FLAG2_SOUND}, {DFI_MOVE_PARTINGSHOT, DFI_MOVE_FLAG2_SOUND},
+                       {DFI_MOVE_HYPERVOICE, DFI_MOVE_FLAG2_SOUND}, {DFI_MOVE_PSYCHICNOISE, DFI_MOVE_FLAG2_SOUND},
+                       {DFI_MOVE_BITTERBLADE, DFI_MOVE_FLAG2_HEAL}, {DFI_MOVE_LEECHLIFE, DFI_MOVE_FLAG2_HEAL},
+                       {DFI_MOVE_RECOVER, DFI_MOVE_FLAG2_HEAL}, {DFI_MOVE_THROATCHOP, 0u}, {DFI_MOVE_PROTECT, 0u}};
+        for (size_t k = 0u; k < sizeof flagged / sizeof flagged[0]; ++k) {
+            DF_CHECK_EQ_U64(&t, dfi_pool_move_flags2[flagged[k].move], flagged[k].flags2);
+        }
+        uint32_t sound = 0u;
+        uint32_t heal = 0u;
+        uint32_t other = 0u;
+        for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
+            sound += (dfi_pool_move_flags2[i] & DFI_MOVE_FLAG2_SOUND) != 0u ? 1u : 0u;
+            heal += (dfi_pool_move_flags2[i] & DFI_MOVE_FLAG2_HEAL) != 0u ? 1u : 0u;
+            other += (dfi_pool_move_flags2[i] & ~(uint32_t)(DFI_MOVE_FLAG2_SOUND | DFI_MOVE_FLAG2_HEAL)) != 0u ? 1u : 0u;
+        }
+        DF_CHECK_EQ_U64(&t, other, 0u);
+        DF_CHECK_EQ_U64(&t, sound, SOUND_MOVES);
+        DF_CHECK_EQ_U64(&t, heal, HEAL_MOVES);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_THROATCHOP].special, DFI_SPECIAL_NONE);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_PSYCHICNOISE].special, DFI_SPECIAL_NONE);
     }
 
     /* The closure and extended canonical bytes recomputed from the prefix,
@@ -712,11 +741,11 @@ int main(void)
         const size_t n = dfi_pool_canonical_bytes(bytes, sizeof bytes);
         DF_CHECK_EQ_U64(&t, n, DFI_POOL_CANONICAL_SIZE);
         /* 12 + 346 * 26 + 511 * 29 + 166 * 4 + 324 + 18 + 50, then 166 * 2 + 215 * 2, then 166 + 215, then
-         * 346 * (64 + 1 + 3) */
+         * 346 * (64 + 1 + 3), then the second flags byte of 511 moves (step G8) */
         DF_CHECK_EQ_U64(&t, DFI_POOL_CANONICAL_SIZE, 12u + POOL_FORMES * 26u + POOL_MOVES * 29u + POOL_ITEMS * 4u + 324u +
                                                          18u + 50u + POOL_ITEMS * 2u + POOL_ABILITIES * 2u +
                                                          POOL_ITEMS + POOL_ABILITIES +
-                                                         POOL_FORMES * (DFI_POOL_LEARN_BYTES + 1u + 3u));
+                                                         POOL_FORMES * (DFI_POOL_LEARN_BYTES + 1u + 3u) + POOL_MOVES);
         DF_CHECK(&t, bytes[DFI_POOL_CANONICAL_SIZE] == 0xA5u);
         uint32_t at = 0u;
         uint32_t bad = 0u;
@@ -799,6 +828,10 @@ int main(void)
             }
             at += DFI_POOL_FORME_ABILITIES_MAX;
         }
+        for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
+            bad += bytes[at + i] != dfi_pool_move_flags2[i] ? 1u : 0u;
+        }
+        at += DFI_POOL_MOVE_COUNT;
         DF_CHECK_EQ_U64(&t, bad, 0u);
         DF_CHECK_EQ_U64(&t, at, DFI_POOL_CANONICAL_SIZE);
         DF_CHECK(&t, dfi_sha256(bytes, n, sha));
@@ -1026,14 +1059,16 @@ int main(void)
                 DF_CHECK(&t, dfi_support.abilities[id] != 0u);
             }
         }
-        /* Step G2 marks twelve of its 22 moves, each used in a reference battle under the POOL kind (g2_data_moves_a
-         * to _d), step G5 U-turn (g5_uturn_a to _e) and step G12 Moonblast and Calm Mind (g12_floette_moves); the
-         * nine moves with a handler id stay unmarked. */
+        /* Steps G2, G5, G8 and G12 mark seventeen of the 22 moves, each used in a reference battle under the POOL kind
+         * (g2_data_moves_a to _d; U-turn: g5_uturn_a to _e; Throat Chop and Psychic Noise, whose lockout and Heal
+         * Block are secondary kinds, not handlers: g8_throat_chop, g8_heal_block, g8_heal_block_pair and _tie_a/_b;
+         * Moonblast and Calm Mind: g12_floette_moves); the seven moves with a handler id stay unmarked. */
         static const uint32_t marked_moves[] = {DFI_MOVE_ROCKSLIDE, DFI_MOVE_DOUBLEEDGE, DFI_MOVE_THUNDERBOLT,
                                                 DFI_MOVE_FLASHCANNON, DFI_MOVE_EXTREMESPEED, DFI_MOVE_HEADSMASH,
                                                 DFI_MOVE_BULKUP, DFI_MOVE_LIQUIDATION, DFI_MOVE_ICEPUNCH,
                                                 DFI_MOVE_SHADOWCLAW, DFI_MOVE_DRUMBEATING, DFI_MOVE_DAZZLINGGLEAM,
-                                                DFI_MOVE_UTURN, DFI_MOVE_MOONBLAST, DFI_MOVE_CALMMIND};
+                                                DFI_MOVE_UTURN, DFI_MOVE_THROATCHOP, DFI_MOVE_PSYCHICNOISE,
+                                                DFI_MOVE_MOONBLAST, DFI_MOVE_CALMMIND};
         uint32_t marked_count = 0u;
         for (uint32_t id = DFI_EXT_MOVE_COUNT; id < DFI_POOL_MOVE_COUNT; ++id) {
             bool want = false;
@@ -1045,7 +1080,7 @@ int main(void)
             DF_CHECK(&t, !want || dfi_pool_moves[id].special == DFI_SPECIAL_NONE);
             marked_count += dfi_support.moves[id] != 0u ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, marked_count, 15u);
+        DF_CHECK_EQ_U64(&t, marked_count, 17u);
     }
 
     /* Step G12: Fairy Aura and Flower Veil. The engine reads them by id (no family column: one legal holder each);

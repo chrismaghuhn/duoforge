@@ -30,6 +30,19 @@ void dfi_slot_clear(dfi_active_slot *slot)
     slot->switch_flag = 0u;
 }
 
+void dfi_tail_clear_occupant(struct duoforge_battle *b, uint32_t flat)
+{
+    if (flat >= DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE) {
+        return;
+    }
+    dfi_tail_side *ts = &b->tail.sides[flat / DUOFORGE_ACTIVE_PER_SIDE];
+    const uint32_t occupant = b->sides[flat / DUOFORGE_ACTIVE_PER_SIDE].positions[flat % DUOFORGE_ACTIVE_PER_SIDE].occupant;
+    ts->positions[flat % DUOFORGE_ACTIVE_PER_SIDE] = (dfi_tail_pos){0u, 0u, 0u, 0u, 0u};
+    if (occupant < DUOFORGE_MAX_ROSTER) {
+        ts->soak_type[occupant] = 0u;
+    }
+}
+
 bool dfi_slot_volatile_is_clear(const dfi_active_slot *slot)
 {
     for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
@@ -81,6 +94,7 @@ duoforge_status dfi_place(struct duoforge_battle *b, dfi_position_id p, uint8_t 
         return DUOFORGE_E_EXHAUSTED; /* unreachable after the check above */
     }
     const uint32_t id = b->next_activation_id;
+    dfi_tail_clear_occupant(b, dfi_position_flat(p)); /* before the old occupant is overwritten */
     dfi_slot_clear(&side->positions[p.slot]); /* a fresh activation has no volatile state */
     side->positions[p.slot].activation_id = id;
     side->positions[p.slot].occupant = roster;
@@ -102,6 +116,7 @@ duoforge_status dfi_vacate(struct duoforge_battle *b, dfi_position_id p)
         return DUOFORGE_E_INVARIANT;
     }
     /* The opponent keeps the HP display it saw last (its knowledge record). */
+    dfi_tail_clear_occupant(b, dfi_position_flat(p));
     dfi_slot_clear(slot);
     return DUOFORGE_OK;
 }

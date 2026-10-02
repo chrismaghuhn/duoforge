@@ -21,7 +21,7 @@ duoforge_event dfi_event_make(uint32_t kind, uint32_t position)
 {
     duoforge_event e;
     memset(&e, 0, sizeof e);
-    e.kind = (uint8_t)kind;         /* <= DUOFORGE_EVENT_SINGLE_TURN */
+    e.kind = (uint8_t)kind;         /* <= DUOFORGE_EVENT_VOLATILE_END */
     e.position = (uint8_t)position; /* < 4 or DUOFORGE_NO_POSITION */
     e.other = (uint8_t)DUOFORGE_NO_POSITION;
     return e;
