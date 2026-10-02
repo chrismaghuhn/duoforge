@@ -1,3 +1,5 @@
+#include <duoforge/duoforge.h>
+
 #include "data/support_manifest.h"
 
 /* Step 2 (turn core): turn order with speed ties, single-target and spread
@@ -236,7 +238,9 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_TANGABERRY] = 1u,
             [DFI_ITEM_WACANBERRY] = 1u,
             [DFI_ITEM_YACHEBERRY] = 1u,
-        },    /* Tier 0 of the POOL player-view extension (decision 0018): no feature is implemented yet, so every bit is
-     * clear. A step that sets a bit does so together with its recorded battles. */
-    .view_ext_features = 0u,
+        },    /* The POOL player-view extension (decision 0018): a bit is set by the step that implements the feature and
+     * records its battles. Step G8: Throat Chop and Heal Block (the position bits of duoforge_observation_ext, public,
+     * verified against g8_throat_chop, g8_heal_block, g8_heal_block_pair and _tie_a/_b step by step in
+     * duoforge.state.pool_g8). */
+    .view_ext_features = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) | ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK),
 };

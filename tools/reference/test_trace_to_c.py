@@ -460,6 +460,49 @@ class Library(unittest.TestCase):
             self.assertIsNone(trace_to_c.heal_block_end_tie(dict(d, group=['H:protect:p1a:end', 'H:stall:p1a:end']),
                                                             trace['steps'][k]['log']))
 
+    def test_view_extension_rows_are_what_the_protocol_lines_say(self):
+        """Decision 0018 section 6.1 for Throat Chop and Heal Block: a position has the bit from the -start line
+        (`|-start|X|Throat Chop|[silent]`, `|-start|X|move: Heal Block`) until the matching -end line, or until the
+        occupant leaves (`|switch|`, `|drag|`, `|replace|`, `|faint|`). The rows of the C test (view_ext_rows in
+        tests/test_pool_g8.c: the expected view extension after each step of the G8 battles, for both viewers, as
+        masks over side * 2 + slot) must be exactly what these lines give for the committed traces, so the engine's
+        extension is checked against the protocol and not against itself."""
+        names = ('g8_throat_chop', 'g8_heal_block', 'g8_heal_block_pair', 'g8_heal_block_tie_a', 'g8_heal_block_tie_b')
+        source = open(os.path.join(ROOT, 'tests', 'test_pool_g8.c'), encoding='utf-8').read()
+        rows = {}
+        for m in re.finditer(r'\{"(g8_\w+)", (\d+)u, 0x([0-9a-f])u, 0x([0-9a-f])u\}', source):
+            rows[(m.group(1), int(m.group(2)))] = (int(m.group(3), 16), int(m.group(4), 16))
+        derived = {}
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            throat, block = set(), set()
+            for k, step in enumerate(trace['steps']):
+                for line in step['log']:
+                    part = line.split('|')
+                    if len(part) < 3:
+                        continue
+                    if part[1] in ('switch', 'drag', 'faint', 'replace'):
+                        throat.discard(part[2][:3])
+                        block.discard(part[2][:3])
+                    elif part[1] == '-start' and len(part) > 3 and part[3] == 'Throat Chop':
+                        self.assertEqual(part[-1], '[silent]')
+                        throat.add(part[2][:3])
+                    elif part[1] == '-end' and len(part) > 3 and part[3] == 'Throat Chop':
+                        throat.discard(part[2][:3])
+                    elif part[1] == '-start' and len(part) > 3 and part[3] == 'move: Heal Block':
+                        block.add(part[2][:3])
+                    elif part[1] == '-end' and len(part) > 3 and part[3] == 'move: Heal Block':
+                        block.discard(part[2][:3])
+
+                def mask(s):
+                    return sum(1 << ((int(x[1]) - 1) * 2 + 'ab'.index(x[2])) for x in s)
+
+                derived[(name, k)] = (mask(throat), mask(block))
+        self.assertEqual(rows, derived)
+        # The battles do set and clear both: something is shown in each, and every row of the last step is empty.
+        self.assertTrue(any(v[0] for v in derived.values()) and any(v[1] for v in derived.values()))
+
     def test_a_two_turn_lock_lasts_while_twoturnmove_stands(self):
         """Electro Shot's onTryMove removes the move's volatile on the locked turn and the recorder's `locked` is made of
         it, but twoturnmove stays until the residual. In the last step of d02 (Emergency Exit) and d03 (Parting Shot,
