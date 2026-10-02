@@ -1,9 +1,24 @@
 name: CI
 
-# Nightly on main and on demand only: the free plan's minutes do not carry
-# a run per pull request. The merge gate is the local CI (tools/ci/local_ci.sh,
-# docs/TESTING_AND_BENCHMARKS.md section 7), which runs the full matrix.
+# The repository is public since 2026-10-02, so hosted minutes are free. The
+# workflow runs on pull requests to main (not on drafts), on pushes to main,
+# nightly and on demand; a newer push cancels the run of the older one, and a
+# change that only touches docs runs nothing. It covers the Linux matrix, the
+# Python, JAX and reference tests against the pinned Pokemon Showdown, the
+# sanitizers and MSVC. The merge gate stays the local CI (tools/ci/local_ci.sh,
+# docs/TESTING_AND_BENCHMARKS.md section 7) until the owner decides otherwise.
 on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+  push:
+    branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
   schedule:
     - cron: "17 3 * * *"
   workflow_dispatch:
@@ -18,13 +33,16 @@ concurrency:
 jobs:
   linux:
     name: Linux / ${{ matrix.cc }} / ${{ matrix.build_type }}
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        cc: [clang]
-        build_type: [Release]
+        include:
+          - { cc: gcc, build_type: Debug }
+          - { cc: clang, build_type: Debug }
+          - { cc: clang, build_type: Release }
     env:
       CC: ${{ matrix.cc }}
     steps:
@@ -46,8 +64,81 @@ jobs:
       - name: Test
         run: ctest --test-dir build --output-on-failure --no-tests=error --timeout 120
 
+  # GCC Release with link-time optimization, as the local linux-gcc-release-ipo
+  # job, plus everything the other jobs leave out: the Python package tests,
+  # the learner's JAX test (CPU) and the reference tests against the pinned
+  # Showdown (data regeneration, arithmetic, every committed battle trace, the
+  # worker and the differential tools).
+  linux-full:
+    name: Linux / gcc / Release / Python, JAX, reference
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      CC: gcc
+      CXX: g++
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0 (verified via git ls-remote 2026-09-30)
+      - name: Check out the pinned Pokemon Showdown
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0 (verified via git ls-remote 2026-09-30)
+        with:
+          repository: smogon/pokemon-showdown
+          ref: b2cb775b0616115b775534eaeff50300e1fc81fc
+          path: pokemon-showdown
+          persist-credentials: false
+      - name: Node 22 (the pin's engines field asks for >= 22.18)
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0 (verified via git ls-remote 2026-10-02)
+        with:
+          node-version: "22"
+      - name: Python 3.12
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0 (verified via git ls-remote 2026-10-02)
+        with:
+          python-version: "3.12"
+      - name: Build the pinned Showdown
+        working-directory: pokemon-showdown
+        run: |
+          node --version
+          npm ci --ignore-scripts --omit=dev
+          node build
+      - name: NumPy, JAX (CPU) and optax, at the learner's versions
+        run: |
+          python -m venv "$RUNNER_TEMP/py"
+          "$RUNNER_TEMP/py/bin/pip" install --quiet numpy==2.5.3 jax==0.11.2 optax==0.2.8
+          "$RUNNER_TEMP/py/bin/python" -c "import numpy, jax, optax; print(numpy.__version__, jax.__version__, optax.__version__, jax.devices())"
+      - name: Toolchain versions
+        run: |
+          cmake --version
+          "$CC" --version
+      - name: Configure
+        run: >-
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE=Release
+          -DBUILD_TESTING=ON
+          -DDUOFORGE_WARNINGS_AS_ERRORS=ON
+          -DDUOFORGE_ENABLE_IPO=ON
+          -DPython3_EXECUTABLE="$RUNNER_TEMP/py/bin/python"
+          -DDUOFORGE_PYTHON="$RUNNER_TEMP/py/bin/python"
+          -DDUOFORGE_LEARN_PYTHON="$RUNNER_TEMP/py/bin/python"
+          -DDUOFORGE_PS_REFERENCE_DIR="$GITHUB_WORKSPACE/pokemon-showdown"
+      - name: Build
+        run: cmake --build build --parallel
+      - name: Test
+        run: ctest --test-dir build --output-on-failure --no-tests=error --timeout 120 --parallel 4 2>&1 | tee ctest.log
+      - name: No Python or reference test skipped
+        # These tests report themselves skipped when their interpreter or
+        # checkout is missing; in this job that is a broken setup, not a pass.
+        run: |
+          if grep -E '\*\*\*Skipped' ctest.log | grep -E 'duoforge\.(python|reference)\.'; then
+            echo "Python or reference tests were skipped"
+            exit 1
+          fi
+          grep -c -E 'Test +#[0-9]+: duoforge\.reference\.trace\.' ctest.log
+          grep -E 'Test +#[0-9]+: duoforge\.python\.learn ' ctest.log
+
   linux-sanitizers:
     name: Linux / gcc / ASan+UBSan
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
@@ -73,6 +164,7 @@ jobs:
 
   linux-tsan:
     name: Linux / clang / TSan
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
@@ -102,13 +194,16 @@ jobs:
 
   windows:
     name: Windows / MSVC / ${{ matrix.arch }} / ${{ matrix.config }}
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: windows-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
         include:
           - { arch: x64, config: Release, bits: 64 }
+          - { arch: x64, config: Debug, bits: 64 }
+          - { arch: Win32, config: Release, bits: 32 }
     steps:
       - name: Check out source
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0 (verified via git ls-remote 2026-09-30)

@@ -114,4 +114,13 @@ Remote CI is PASS only after observing an actual run on the relevant revision. C
 - Several sessions share the machine: `local_ci.sh` takes the machine lock (`tools/ci/machine_lock.sh`, a lock directory in the user's temp folder) and a second run waits; benchmarks can take it too (`tools/ci/machine_lock.sh <label> <command...>`). The Linux jobs build under `~/df-build/ci/<checkout>-<hash>`, one directory per checkout or worktree.
 - The Python package tests (label `python`, M7) run in Windows GCC Debug when the project venv `.venv` exists, and in Linux GCC Release with LTO when `~/df-venv` exists (`tools/ci/linux_ci.sh --setup-python` creates it after `sudo apt install python3.12-venv`). Without an interpreter (`DUOFORGE_PYTHON` empty) they report skipped.
 
-The pull request states the result. The hosted CI runs nightly on main (Clang Release, GCC ASan+UBSan, Clang TSan, MSVC x64 Release) and on demand; the RNG reference weekly and when its files change on main.
+The pull request states the result.
+
+**Hosted CI again on pull requests (2026-10-02).** The repository is public, so hosted minutes are free. `.github/workflows/ci.yml` runs on pull requests to main (not on drafts), on pushes to main, nightly and on demand. A newer push cancels the older run, and a change to docs only runs nothing. It runs:
+
+- the Linux matrix: GCC Debug, Clang Debug and Clang Release;
+- one GCC Release job with link-time optimization that also runs the Python tests, the learner's JAX test (CPU) and every reference test against the pinned Showdown (Node 22);
+- GCC ASan+UBSan and Clang TSan;
+- MSVC x64 Release, x64 Debug and Win32 Release.
+
+The RNG reference runs weekly and when its files change in a pull request or on main. The local CI stays the merge gate until the owner decides otherwise. It still adds the Windows GCC and Clang jobs and the WSL builds.
