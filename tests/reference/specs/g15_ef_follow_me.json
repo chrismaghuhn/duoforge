@@ -1,0 +1,22 @@
+{
+  "name": "g15_ef_follow_me",
+  "purpose": "Step G15, Expanding Force against Follow Me: the foe's Indeedee-F (Psychic Surge, so the terrain is up) uses Follow Me, which redirects Raichu's Thunderbolt but not Delphox's Expanding Force, which as a spread move hits both foes (Rillaboom protects, Indeedee is resisted); in the second turn Indeedee faints to the Thunderbolt first and the move, with one foe left, is a single-target hit that Rillaboom's Protect stops (no [spread]).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000001504",
+  "teams": [
+    "Delphox (F)\nAbility: Blaze\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Expanding Force\n- Flamethrower\n- Protect\n- Helping Hand\n\nRaichu (F)\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Thunderbolt\n- Helping Hand\n- Protect\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nGholdengo\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Protect\n\nIncineroar (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Protect\n\nGrimmsnarl (M)\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Protect",
+    "Indeedee-F (F)\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Follow Me\n- Helping Hand\n- Protect\n- Psychic\n\nRillaboom (M)\nAbility: Overgrow\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- Protect\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nGholdengo\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Protect\n\nIncineroar (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Protect\n\nGrimmsnarl (M)\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1 1",
+      "move 1 1, move 1 1"
+    ],
+    "p2": [
+      "move 1, move 4",
+      "move 1, move 4"
+    ],
+    "max_steps": 3
+  }
+}

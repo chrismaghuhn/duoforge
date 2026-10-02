@@ -845,7 +845,8 @@
 #define DFI_SPECIAL_LOW_KICK 21u
 #define DFI_SPECIAL_SANDSTORM 22u
 #define DFI_SPECIAL_SNOWSCAPE 23u
-#define DFI_SPECIAL_UNMODELED 24u
+#define DFI_SPECIAL_EXPANDING_FORCE 24u
+#define DFI_SPECIAL_UNMODELED 25u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */

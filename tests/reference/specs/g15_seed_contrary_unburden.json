@@ -1,0 +1,22 @@
+{
+  "name": "g15_seed_contrary_unburden",
+  "purpose": "Step G15, Psychic Seed with Contrary (the foe Malamar: the boost is a drop, -unboost spd 1) and with Unburden (Sneasler: using the seed starts Unburden, which doubles its Speed in the turn orders that follow).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000150a",
+  "teams": [
+    "Sneasler (M) @ Psychic Seed\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Close Combat\n- Protect\n\nIndeedee (M)\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Expanding Force\n- Protect\n- Helping Hand\n- Psychic\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nIncineroar (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Protect\n\nGrimmsnarl (M)\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Protect\n\nRaichu (F)\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Thunderbolt\n- Helping Hand\n- Protect",
+    "Malamar (M) @ Psychic Seed\nAbility: Contrary\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 Spe\nQuiet Nature\n- Protect\n- Psychic\n\nGholdengo\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Protect\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nIncineroar (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Protect\n\nGrimmsnarl (M)\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Protect\n\nRaichu (F)\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Thunderbolt\n- Helping Hand\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 4 2",
+      "move 1 1, move 4 2"
+    ],
+    "p2": [
+      "move 1, move 2 1",
+      "move 1, move 2 1"
+    ],
+    "max_steps": 3
+  }
+}

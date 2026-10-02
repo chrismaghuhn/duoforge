@@ -41,8 +41,8 @@
 #include "support/pool.h"
 #include "support/team_c.h"
 
-#define FP_KP_HEX "6139ab74a9f1710a52a0b26e315ac6ac6cf35d02148c619175f6e961201387fa"
-#define FP_KPD_HEX "d8f27ac14c295390d46ae0f66982bd5f8665c6f5584a53f9142126c42f107276"
+#define FP_KP_HEX "488179841299e7e6e4a7be3e1962ed6ed4c33ed252d28731b72a9502a041b83d"
+#define FP_KPD_HEX "32f9ca9984c12a6a38e029096412356f7b68e456f038a374feb2e839d10d9863"
 
 /* The public create under `ctx` gives `gated`, and the build without the
  * support gate `ungated`. */
