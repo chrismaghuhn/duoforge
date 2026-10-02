@@ -7,10 +7,89 @@
 #include "core/sha256.h"
 #include "state/context_internal.h"
 
-void dfi_encode_unchecked(const struct duoforge_battle *b, uint8_t out[DUOFORGE_STATE_V3_ENCODED_SIZE])
+bool dfi_context_has_pool_tail(const struct duoforge_context *ctx)
 {
-    dfi_write_envelope(out, DFI_ARTIFACT_BATTLE_STATE, (uint16_t)DUOFORGE_STATE_SCHEMA_VERSION,
-                       DUOFORGE_SEMANTICS_ID, DUOFORGE_STATE_V3_ENCODED_SIZE);
+    return ctx->data_kind == DUOFORGE_DATA_KIND_POOL || ctx->data_kind == DUOFORGE_DATA_KIND_POOL_DEV;
+}
+
+uint16_t dfi_state_schema_of(const struct duoforge_context *ctx)
+{
+    return dfi_context_has_pool_tail(ctx) ? (uint16_t)DFI_STATE_SCHEMA_POOL_TAIL_REV1 : (uint16_t)DFI_STATE_SCHEMA_V3;
+}
+
+size_t dfi_state_encoded_size_of(const struct duoforge_context *ctx)
+{
+    return dfi_context_has_pool_tail(ctx) ? (size_t)DFI_STATE_POOL_ENCODED_SIZE : (size_t)DUOFORGE_STATE_V3_ENCODED_SIZE;
+}
+
+/* The tail of the POOL kinds, byte by byte, with the reserved bytes zero. */
+static void dfi_encode_tail(const dfi_pool_tail *tail, uint8_t *out)
+{
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        const dfi_tail_side *ts = &tail->sides[s];
+        uint8_t *so = out + s * DFI_ENC_TAIL_SIDE_SIZE;
+        so[DFI_ENC_TAIL_WIDE_GUARD_OFF] = ts->wide_guard;
+        for (uint32_t i = 0u; i < DFI_ENC_TAIL_SIDE_RESERVED_SIZE; ++i) {
+            so[DFI_ENC_TAIL_SIDE_RESERVED_OFF + i] = 0u;
+        }
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            const dfi_tail_pos *tp = &ts->positions[p];
+            uint8_t *po = so + DFI_ENC_TAIL_POS_OFF + p * DFI_ENC_TAIL_POS_SIZE;
+            po[DFI_ENC_TAIL_POS_LAST_MOVE_OFF] = tp->last_move;
+            po[DFI_ENC_TAIL_POS_ENCORE_SLOT_OFF] = tp->encore_slot;
+            po[DFI_ENC_TAIL_POS_ENCORE_TURNS_OFF] = tp->encore_turns;
+            po[DFI_ENC_TAIL_POS_THROAT_CHOP_OFF] = tp->throat_chop_turns;
+            po[DFI_ENC_TAIL_POS_HEAL_BLOCK_OFF] = tp->heal_block_turns;
+            po[DFI_ENC_TAIL_POS_RESERVED_OFF] = 0u;
+        }
+        for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
+            so[DFI_ENC_TAIL_SOAK_OFF + m] = ts->soak_type[m];
+        }
+    }
+}
+
+/* True iff the reserved bytes of an encoded tail are all zero (bounded loops, no stored index). */
+static bool dfi_tail_reserved_zero(const uint8_t *in)
+{
+    uint32_t any = 0u;
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        const uint8_t *so = in + s * DFI_ENC_TAIL_SIDE_SIZE;
+        for (uint32_t i = 0u; i < DFI_ENC_TAIL_SIDE_RESERVED_SIZE; ++i) {
+            any |= so[DFI_ENC_TAIL_SIDE_RESERVED_OFF + i];
+        }
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            any |= so[DFI_ENC_TAIL_POS_OFF + p * DFI_ENC_TAIL_POS_SIZE + DFI_ENC_TAIL_POS_RESERVED_OFF];
+        }
+    }
+    return any == 0u;
+}
+
+static void dfi_parse_tail(const uint8_t *in, dfi_pool_tail *tail)
+{
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        dfi_tail_side *ts = &tail->sides[s];
+        const uint8_t *so = in + s * DFI_ENC_TAIL_SIDE_SIZE;
+        ts->wide_guard = so[DFI_ENC_TAIL_WIDE_GUARD_OFF];
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            dfi_tail_pos *tp = &ts->positions[p];
+            const uint8_t *po = so + DFI_ENC_TAIL_POS_OFF + p * DFI_ENC_TAIL_POS_SIZE;
+            tp->last_move = po[DFI_ENC_TAIL_POS_LAST_MOVE_OFF];
+            tp->encore_slot = po[DFI_ENC_TAIL_POS_ENCORE_SLOT_OFF];
+            tp->encore_turns = po[DFI_ENC_TAIL_POS_ENCORE_TURNS_OFF];
+            tp->throat_chop_turns = po[DFI_ENC_TAIL_POS_THROAT_CHOP_OFF];
+            tp->heal_block_turns = po[DFI_ENC_TAIL_POS_HEAL_BLOCK_OFF];
+        }
+        for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
+            ts->soak_type[m] = so[DFI_ENC_TAIL_SOAK_OFF + m];
+        }
+    }
+}
+
+size_t dfi_encode_unchecked(const struct duoforge_context *ctx, const struct duoforge_battle *b, uint8_t *out)
+{
+    const size_t size = dfi_state_encoded_size_of(ctx);
+    dfi_write_envelope(out, DFI_ARTIFACT_BATTLE_STATE, dfi_state_schema_of(ctx), DUOFORGE_SEMANTICS_ID,
+                       (uint32_t)size);
     for (uint32_t i = 0u; i < DUOFORGE_DIGEST_SIZE; ++i) {
         out[DFI_ENC_FINGERPRINT_OFF + i] = b->context_fingerprint[i];
     }
@@ -119,6 +198,10 @@ void dfi_encode_unchecked(const struct duoforge_battle *b, uint8_t out[DUOFORGE_
             }
         }
     }
+    if (dfi_context_has_pool_tail(ctx)) {
+        dfi_encode_tail(&b->tail, out + DFI_ENC_TAIL_OFF);
+    }
+    return size;
 }
 
 static void dfi_parse_state(const uint8_t *in, struct duoforge_battle *b)
