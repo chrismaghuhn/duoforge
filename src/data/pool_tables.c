@@ -2066,8 +2066,8 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   torrent -- data/abilities.ts:5046-5065
  *   swarm -- data/abilities.ts:4766-4785
  *   rockhead -- data/abilities.ts:3906-3917
- *   flowerveil -- data/abilities.ts:1419-1457  [unmodelled: callback onAllySetStatus; callback onAllyTryAddVolatile; callback onAllyTryBoost]
- *   fairyaura -- data/abilities.ts:1266-1282  [unmodelled: callback onAnyBasePower; callback onAnyBasePowerPriority; callback onStart]
+ *   flowerveil -- data/abilities.ts:1419-1457
+ *   fairyaura -- data/abilities.ts:1266-1282
  *   aftermath -- data/abilities.ts:78-89  [unmodelled: callback onDamagingHit; callback onDamagingHitOrder]
  *   analytic -- data/abilities.ts:110-130  [unmodelled: callback onBasePower; callback onBasePowerPriority]
  *   angerpoint -- data/abilities.ts:131-142  [unmodelled: callback onHit; read by id in sim/battle.ts]
@@ -2845,8 +2845,8 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_TORRENT] = DFI_HANDLER_NONE,
     [DFI_ABILITY_SWARM] = DFI_HANDLER_NONE,
     [DFI_ABILITY_ROCKHEAD] = DFI_HANDLER_NONE,
-    [DFI_ABILITY_FLOWERVEIL] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_FAIRYAURA] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_FLOWERVEIL] = DFI_HANDLER_NONE,
+    [DFI_ABILITY_FAIRYAURA] = DFI_HANDLER_NONE,
     [DFI_ABILITY_AFTERMATH] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_ANALYTIC] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_ANGERPOINT] = DFI_HANDLER_UNMODELED,
@@ -6284,8 +6284,6 @@ const char *const dfi_pool_item_unmodeled[DFI_POOL_ITEM_COUNT] = {
 };
 
 const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
-    [DFI_ABILITY_FLOWERVEIL] = "callback onAllySetStatus; callback onAllyTryAddVolatile; callback onAllyTryBoost",
-    [DFI_ABILITY_FAIRYAURA] = "callback onAnyBasePower; callback onAnyBasePowerPriority; callback onStart",
     [DFI_ABILITY_AFTERMATH] = "callback onDamagingHit; callback onDamagingHitOrder",
     [DFI_ABILITY_ANALYTIC] = "callback onBasePower; callback onBasePowerPriority",
     [DFI_ABILITY_ANGERPOINT] = "callback onHit; read by id in sim/battle.ts",
@@ -6475,10 +6473,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0xf6u, 0x03u, 0xa6u, 0xb1u, 0x37u, 0x89u, 0x5au, 0x2au,
-    0xf2u, 0x3cu, 0xd3u, 0x9au, 0x83u, 0xd6u, 0x29u, 0x00u,
-    0x39u, 0x88u, 0x77u, 0xc4u, 0x64u, 0xaau, 0xb9u, 0x65u,
-    0x34u, 0x6du, 0xccu, 0x80u, 0x28u, 0x7cu, 0xc8u, 0x40u,
+    0x59u, 0xe7u, 0x6au, 0x9bu, 0x6du, 0x9fu, 0x26u, 0x3fu,
+    0x4bu, 0xdfu, 0xb2u, 0x6bu, 0x2du, 0x14u, 0x6bu, 0xc8u,
+    0xfeu, 0x9du, 0xbbu, 0xe7u, 0x0cu, 0xb3u, 0x0au, 0xbdu,
+    0xc4u, 0xafu, 0xdbu, 0xb2u, 0xbcu, 0x2au, 0x17u, 0x07u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)

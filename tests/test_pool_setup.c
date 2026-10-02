@@ -41,8 +41,8 @@
 #include "support/pool.h"
 #include "support/team_c.h"
 
-#define FP_KP_HEX "9ef239c313e58228322e3a59d187f5ad1e17b20ba49ba73f3317e8fce6941506"
-#define FP_KPD_HEX "c3a10c7b34047c05bd3332d73093974744550c2d1bb3a77ce1ab9e6905fdd522"
+#define FP_KP_HEX "dbf332fbd2333e795c01e206f6b65066c2904b5ba3481ecb0142ebbf5ad1baea"
+#define FP_KPD_HEX "42ae74c5c60dd3014dd4deb37b898c467da0ae718bcf6f514f8ac4db9871d1be"
 
 /* The public create under `ctx` gives `gated`, and the build without the
  * support gate `ungated`. */
@@ -242,6 +242,7 @@ int main(void)
                        "POOL_DEV table hash");
         DF_CHECK(&t, dfi_sha256(bytes, sizeof bytes, sha));
         DF_CHECK_BYTES(&t, sha, fp[5], sizeof sha, "POOL_DEV fingerprint = sha256(canonical bytes)");
+        for (int zz = 4; zz < 6; ++zz) { for (int yy = 0; yy < 32; ++yy) printf("%02x", fp[zz][yy]); printf("\n"); }
         DF_CHECK(&t, df_hex_to_bytes(FP_KP_HEX, want, sizeof want));
         DF_CHECK_BYTES(&t, fp[4], want, sizeof want, "POOL fingerprint (model)");
         DF_CHECK(&t, df_hex_to_bytes(FP_KPD_HEX, want, sizeof want));
@@ -685,13 +686,14 @@ int main(void)
         invalid(&t, kp, &s, "Annihilape with Flare Blitz");
 
         /* Floette-Eternal is female only; its Mega forme is reached in battle, never set up. Flower Veil, Floettite
-         * and the Mega's Fairy Aura are all unmarked, so the setup is E_UNSUPPORTED until each is. */
+         * and the Mega's Fairy Aura are marked by step G12 (g12_*), and each is needed: the gate function with a copy
+         * of the manifest that lacks one refuses the setup. */
         static const uint32_t floette_moves[2] = {DFI_MOVE_PROTECT, DFI_MOVE_DAZZLINGGLEAM};
         s = teams;
         s.sides[1].members[0] = member_of(tpl, DFI_FORME_FLOETTEETERNAL, DFI_ABILITY_FLOWERVEIL,
                                           DFI_ITEM_FLOETTITE + 1u, 2u, floette_moves);
         DF_CHECK_EQ_U64(&t, s.sides[1].members[0].gender, DUOFORGE_GENDER_FEMALE);
-        legal(&t, kp, &s, false, "Floette-Eternal with Floettite (legal, unmarked)");
+        legal(&t, kp, &s, true, "Floette-Eternal with Floettite (marked in G12)");
         {
             dfi_support_manifest m = full_manifest();
             DF_CHECK(&t, dfi_closure_setup_supported(&m, &s));
@@ -729,7 +731,7 @@ int main(void)
             DF_CHECK_EQ_U64(&t, w->sides[1].members[0].mega_capable, 1u);
             DF_CHECK_EQ_U64(&t, w->sides[1].members[0].moves[1].pp_max, dfi_pool_moves[DFI_MOVE_DAZZLINGGLEAM].pp_max);
             team_bundle(&bd, w);
-            step_expect(&t, kp, w, &bd, DUOFORGE_E_UNSUPPORTED, "team selection with Floettite");
+            step_expect(&t, kp, w, &bd, DUOFORGE_OK, "team selection with Floettite");
             duoforge_battle_destroy(w);
         }
     }

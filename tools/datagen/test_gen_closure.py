@@ -820,7 +820,8 @@ class ItemAbilityFeatures(unittest.TestCase):
         self.assertEqual(gen_closure.HANDLER_IDS, ['NONE', 'UNMODELED'])
 
     def test_the_rows_that_a_step_implements_by_id_are_listed(self):
-        self.assertEqual(gen_closure.ENGINE_ROWS, {'items': ['focussash'], 'abilities': ['rockhead']})
+        self.assertEqual(gen_closure.ENGINE_ROWS, {'items': ['focussash', 'floettite'],
+                                                   'abilities': ['rockhead', 'flowerveil', 'fairyaura']})
 
 
 class Bounds(unittest.TestCase):
