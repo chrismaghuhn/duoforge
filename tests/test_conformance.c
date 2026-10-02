@@ -21,8 +21,8 @@
 #include "reference/conformance_team_c.h"
 #include "support/team_c.h"
 #define DF_CONF_FORMES dfi_ext_formes
-#define DF_TEAM_C_BATTLES 51u /* the recorded Team C battles */
-#define DF_TEAM_C_REAL 1u    /* of them under TEAM_C itself (six registered members) */
+#define DF_TEAM_C_BATTLES 71u /* the recorded Team C battles */
+#define DF_TEAM_C_REAL 21u   /* of them under TEAM_C itself (six registered members) */
 #else
 #include "data/closure_tables.h"
 #include "reference/conformance.h"

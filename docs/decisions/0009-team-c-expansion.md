@@ -1,6 +1,6 @@
 # 0009 — Team C: the expansion track (data kind, gate, steps, evidence)
 
-Status: **accepted** (owner, 2026-10-01: "bau das erstmal so"; setup rule: the closure rule, section 3.4). **Steps 1 to 11 built** (section 10). Builds on decision `0004` (two reference teams), `0006` (data, state v3, draw sites, fixtures, evidence), `0007` (player view) and `0010` (the certified CLOSURE profile, the role of `CLOSURE_DEV`, draw alignment B confirmed), and on the research in `docs/research/third-team/` (PR #32). "M§n" means section n of `docs/research/third-team/mechanics.md`; X1 to X9 are its executed experiments.
+Status: **accepted** (owner, 2026-10-01: "bau das erstmal so"; setup rule: the closure rule, section 3.4). **Steps 1 to 12 built; the Team C track is complete** (section 10). Builds on decision `0004` (two reference teams), `0006` (data, state v3, draw sites, fixtures, evidence), `0007` (player view) and `0010` (the certified CLOSURE profile, the role of `CLOSURE_DEV`, draw alignment B confirmed), and on the research in `docs/research/third-team/` (PR #32). "M§n" means section n of `docs/research/third-team/mechanics.md`; X1 to X9 are its executed experiments.
 
 ## 1. Owner inputs (2026-10-01)
 
@@ -842,4 +842,42 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
   - `tools/reference/{trace_to_c.py,test_trace_to_c.py}`, `tools/state_model/state_v3_model.py`;
   - `tests/reference/conformance_types.h` (a comment only), `tests/support/conformance_compare.c`;
   - `tests/test_conformance.c`, `tests/test_api_atomicity.c` (version), `tests/test_team_c_setup.c`;
+  - `docs/support/README.md`.
+
+### 10.13 Step 12: the Team C gate
+
+- **The gate** is `duoforge.combat.team_c_gate` (`tests/test_team_c_gate.c`), modelled on the closure gate (closure step 13).
+  - **Teams:** the real Team C (`docs/research/third-team/team-c.txt`) and the two reference teams of decision 0004.
+  - **Profile:** TEAM_C data, the certified profile of decision 0010 (six registered, four brought).
+  - **Battles:** the five pairings C-A, C-B, A-C, B-C and C-C, 1000 seeds each, from team selection to TERMINAL. The choices are random and legal: team picks, moves, Mega Evolution, switches, replacements and PIVOT answers.
+  - **Checks:**
+    - every step returns OK, so no `E_UNSUPPORTED` or other error is reachable with these teams;
+    - every committed state passes the checker;
+    - a copy decoded from the bytes of every boundary continues byte for byte like the original;
+    - a replay of the recorded bundles from the setup ends in the same bytes;
+    - information equivalence holds at every boundary of every fourth battle, for both viewers, with the closure gate's pairs.
+  - **Coverage:**
+    - every move of the three teams is used;
+    - all five Mega formes appear;
+    - the Team C state is reached at committed boundaries: Psychic Terrain, poison, the choice lock, Unburden, and the volatiles of Follow Me and Helping Hand.
+- **Result:** no check failed (1,462,709 checks).
+  - 5000 battles in 71,157 steps (longest 42), with 5000 identical replays;
+  - 15,045 REPLACEMENTs, 3,198 PIVOTs and 6,326 Megas;
+  - 200,666 equivalent pairs and 81,017 shown HP changes.
+- **Recorded battles of the real Team C.**
+  - `tools/reference/gen_real_specs.py --team-c` records 40 candidates per pairing. It keeps 4 per pairing by the coverage they add: 20 battles `c12_real_*` (generator seed 2026100212, 237 features).
+  - DuoForge matches all of them. 21 of the 70 Team C battles now run under TEAM_C itself, with six registered members.
+  - Without `--team-c` the generator's output is unchanged: it reproduces all 16 `m5_real_*` specs byte for byte.
+- **Negative controls**, each red in the gate alone:
+  - Follow Me failing at run time (a step error);
+  - the codec dropping Follow Me's bit (the decoded copy diverges);
+  - no Unburden volatile (the Team C coverage);
+  - the RNG's lowest bit in the view (an information leak).
+
+  A first version of the last control used the RNG's second bit. It stayed green, because the gate's RNG pair flips only some bits of the state. The pairs are the closure gate's own.
+- **Not part of the gate.** The M5 certification dataset (`certify/`) stays the closure's. A Team C certification is a later decision for the owner.
+- **Shared files touched:**
+  - `tools/reference/gen_real_specs.py`;
+  - `tests/CMakeLists.txt`;
+  - `tests/test_conformance.c` (the battle counts);
   - `docs/support/README.md`.
