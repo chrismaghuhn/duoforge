@@ -1357,6 +1357,8 @@ int main(void)
         dfi_pool_tail want = x->tail;
         for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
             want.sides[s].wide_guard = 0u;
+            /* step G20: Aurora Veil counts down in the residual (the example's 8 turns are 7 after the turn) */
+            want.sides[s].aurora_veil_turns = (uint8_t)(want.sides[s].aurora_veil_turns != 0u ? want.sides[s].aurora_veil_turns - 1u : 0u);
             for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
                 dfi_tail_pos *tp = &want.sides[s].positions[p];
                 tp->throat_chop_turns = (uint8_t)(tp->throat_chop_turns != 0u ? tp->throat_chop_turns - 1u : 0u);

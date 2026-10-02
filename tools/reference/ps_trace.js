@@ -268,6 +268,9 @@ function run(root, spec, specFile) {
             // Remaining duration of Tailwind, Reflect and Light Screen (0 when absent).
             conditions: ['tailwind', 'reflect', 'lightscreen'].map((id) =>
                 (side.sideConditions[id] ? side.sideConditions[id].duration || 0 : 0)),
+            // Aurora Veil's remaining duration (step G20), a key only while the side has it: the conformance rows hold the
+            // three above, and a state without the key is what every trace recorded before had.
+            ...(side.sideConditions.auroraveil ? {aurora_veil: side.sideConditions.auroraveil.duration || 0} : {}),
             // Per active slot of a move request: 1 a selectable move, 0 a
             // disabled one (no PP, Fake Out), 2 Struggle.
             enabled: side.requestState === 'move' && side.activeRequest && side.activeRequest.active ?

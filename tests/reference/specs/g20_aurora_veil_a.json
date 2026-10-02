@@ -1,0 +1,26 @@
+{
+  "name": "g20_aurora_veil_a",
+  "purpose": "Aurora Veil: Ninetales-Alola (Snow Warning) protects on turn 1 and casts Aurora Veil on turn 2; Salamence Hyper Voice (special, spread) and Double-Edge and Staraptor Double-Edge (physical) and Hurricane (special) hit the side at 2732/4096 each; the screen outlasts the snow by a turn and ends with -sideend.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000008001",
+  "teams": [
+    "Ninetales-Alola (F) @ Leftovers\nAbility: Snow Warning\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nTimid Nature\n- Aurora Veil\n- Protect\n- Helping Hand\n- Icy Wind\n\nKingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Swords Dance\n- Protect\n- Iron Head\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Fake Out\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n\nRaichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Protect",
+    "Salamence (M) @ Leftovers\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Hyper Voice\n- Double-Edge\n- Protect\n\nStaraptor (F) @ Sharp Beak\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Double-Edge\n- Hurricane\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n\nRaichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 2, move 1",
+      "move 1, move 1",
+      "move 3 2, move 1"
+    ],
+    "p2": [
+      "move 3, move 3",
+      "move 1, move 1 1",
+      "move 2 1, move 2 2",
+      "move 1, move 2 2",
+      "move 2 2, move 1 1"
+    ],
+    "max_steps": 8
+  }
+}
