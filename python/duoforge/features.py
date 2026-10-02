@@ -7,9 +7,9 @@ encode_batch(observations, domains) the same for N players at once
 battle, so it carries nothing beyond what decision 0007 proves for the
 observation. Every value is scaled to [0, 1] (ids by 65535, so a network
 can recover them exactly as round(x * 65535) for an embedding). A value
-outside the known sets below (an ailment, weather, terrain, location or
-boundary kind this encoder does not know, or a position flag of the TEAM_C
-kinds, such as Unburden's) raises ValueError; it is never encoded as zeros.
+outside the known sets below (an ailment, weather, terrain, location,
+boundary kind or position flag bit this encoder does not know) raises
+ValueError; it is never encoded as zeros.
 So does a domain of another boundary than the observation's (another
 epoch, or a request where the observation has none):
 query() refreshes observations but not domains, query_factored() both.
@@ -24,7 +24,9 @@ first, then the foe):
       requested slot 1, reflect / 8, light screen / 8, tailwind / 4
     per position, slot 0 then 1: stages / 12 (7), confused, charging,
       locked (a locked move slot), acted, protect chain / 3 (at most 1),
-      flash fire, protecting, occupant one-hot (7: roster 0..5, none)
+      flash fire, protecting, follow me, helping hand, unburden (the
+      POSITION_FLAGS bits of the TEAM_C kinds; 0 under CLOSURE), occupant
+      one-hot (7: roster 0..5, none)
     per member, roster 0..5: present, hp / hp_max (0 when hp_max is 0),
       location one-hot (LOCATIONS), status one-hot (AILMENTS), is mega,
       mega capable, item used, item / 255, ability / 255, gender / 3,
@@ -53,15 +55,16 @@ OPTIONS = _layout.MAX_SLOT_OPTIONS
 BOUNDARIES = tuple(C[f"DUOFORGE_BOUNDARY_{n}"] for n in ("TEAM_SELECTION", "TURN", "REPLACEMENT", "PIVOT",
                                                           "TERMINAL"))
 WEATHERS = tuple(C[f"DUOFORGE_WEATHER_{n}"] for n in ("NONE", "RAIN", "SUN"))
-TERRAINS = tuple(C[f"DUOFORGE_TERRAIN_{n}"] for n in ("NONE", "GRASSY"))
+TERRAINS = tuple(C[f"DUOFORGE_TERRAIN_{n}"] for n in ("NONE", "GRASSY", "PSYCHIC"))
 LOCATIONS = tuple(C[f"DUOFORGE_LOCATION_{n}"] for n in ("UNDETERMINED", "BENCH", "ACTIVE", "NOT_BROUGHT"))
 AILMENTS = tuple(C[f"DUOFORGE_AILMENT_{n}"] for n in ("NONE", "BURN", "FREEZE", "PARALYSIS", "SLEEP", "POISON"))
 SLOT_KINDS = tuple(C[f"DUOFORGE_SLOT_{n}"] for n in ("NONE", "MOVE", "SWITCH", "PASS"))
+POSITION_FLAGS = tuple(C[f"DUOFORGE_POSITION_FLAG_{n}"] for n in ("FOLLOW_ME", "HELPING_HAND", "UNBURDEN"))
 
 SLOT_FEATURES = 12
 _GLOBAL = len(BOUNDARIES) + 1 + len(WEATHERS) + 1 + len(TERRAINS) + 2
 _SIDE = 8
-_POSITION = 7 + 7 + 7
+_POSITION = 7 + 7 + len(POSITION_FLAGS) + 7
 _MEMBER = 2 + len(LOCATIONS) + len(AILMENTS) + 8 + 4 + 4 + 1 + 6 + 5
 OBS_SIZE = _GLOBAL + 2 * (_SIDE + 2 * _POSITION + 6 * _MEMBER)
 
@@ -98,14 +101,16 @@ def _sides(s):
                      s["light_screen_turns"].astype(_F64) / 8, s["tailwind_turns"].astype(_F64) / 4],
                     axis=1).astype(_F32)
     pos = s["positions"]
-    if (pos["reserved"] != 0).any():
-        # DUOFORGE_POSITION_FLAG_* of the TEAM_C kinds (decision 0009 section 4.2): not encoded yet.
-        bad = int(pos["reserved"][pos["reserved"] != 0].flat[0])
-        raise ValueError(f"position flags {bad} are not ones this encoder knows")
+    bits = pos["reserved"].astype(np.int64)  # DUOFORGE_POSITION_FLAG_* of the TEAM_C kinds (decision 0009 4.2)
+    unknown = bits & ~sum(POSITION_FLAGS)
+    if unknown.any():
+        bad = int(bits[unknown != 0].flat[0])
+        raise ValueError(f"position flags {bad} are not ones this encoder knows: {POSITION_FLAGS}")
     flags = np.stack([pos["confused"].astype(_F64), pos["charging"].astype(_F64),
                       (pos["locked_slot"] != C["DUOFORGE_MOVE_SLOT_NONE"]).astype(_F64), pos["acted"].astype(_F64),
                       np.clip(pos["protect_chain"].astype(_F64) / 3, 0.0, 1.0), pos["flash_fire"].astype(_F64),
-                      pos["protecting"].astype(_F64)], axis=-1).astype(_F32)
+                      pos["protecting"].astype(_F64)] + [((bits & bit) != 0).astype(_F64) for bit in POSITION_FLAGS],
+                     axis=-1).astype(_F32)
     positions = np.concatenate([pos["stages"].astype(_F32) / 12, flags,
                                 _one_hot(s["occupant"], _OCCUPANTS, "occupant")], axis=-1).reshape(n, -1)
     m = s["members"]

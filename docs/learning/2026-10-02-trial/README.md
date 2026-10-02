@@ -8,6 +8,7 @@ The first run of the learner pipeline (decision 0014): 30 minutes of self-play P
 - WSL (Ubuntu 24.04), JAX 0.11.2 with CUDA 12 on an RTX 4060 Ti (8 GB), optax 0.2.8, NumPy 2.5.3; library 0.15.0, GCC Release with LTO; Ryzen 7 5800X.
 - The machine was shared: during the second half two full local CI runs (another session's and #67's) ran beside it.
 - The run used the pipeline as first written, before the review of #68: the value loss covered only the rows where a seat acted, self-play episodes had no cut-off, and the JAX key used the low 31 bits of the seed.
+- The encoder of that day takes 594 observation features. Since #84 it takes 607 (the Team C values), and the ladder refuses these checkpoints by name: rerun it on a checkout before #84.
 
 ## Results
 

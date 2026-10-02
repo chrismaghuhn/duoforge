@@ -5,8 +5,8 @@ GAE and the value targets over each seat's own decisions against a hand
 computation; the team head's tuple table against the engine's joint ranks;
 the seat and reward attribution of evaluation and self-play with stand-in
 policies (one attacks the foe, one switches); an evaluation whose episodes
-do not end counts them as ties instead of failing; and the learner's input
-checks.
+do not end counts them as ties instead of failing; the learner's input
+checks; and a checkpoint of another encoder fails at load.
 """
 import unittest
 
@@ -144,6 +144,19 @@ class LadderTest(unittest.TestCase):
             np.savez(path, config="{}", **{"odd name": np.zeros(1)})
             with self.assertRaises(ValueError):
                 load(path)
+
+    def test_checkpoint_of_another_encoder_is_refused(self):
+        # The checkpoints of 2026-10-02 take 594 observation features; with
+        # obs_size, load refuses a network of another encoder by name.
+        import os
+        import tempfile
+        arrays = {"['t1']['w']": np.zeros((594, 3), np.float32), "['t1']['b']": np.zeros(3, np.float32)}
+        with tempfile.TemporaryDirectory() as folder:
+            path = os.path.join(folder, "params-1.npz")
+            np.savez(path, config="{}", **arrays)
+            self.assertEqual(load(path, obs_size=594)[0]["t1"]["w"].shape, (594, 3))
+            with self.assertRaisesRegex(ValueError, "594 observation features.*607"):
+                load(path, obs_size=features.OBS_SIZE)
 
 
 class InputTest(unittest.TestCase):
