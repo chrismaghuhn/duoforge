@@ -16,7 +16,7 @@ This is a status manifest, **not** a mechanics certificate. For the mechanics of
 | Team-selection transition (mechanics-free) | **IMPLEMENTED + TESTED** |
 | Turn / replacement / pivot execution | **IMPLEMENTED + TESTED** for CLOSURE data (decision 0006 sections 4.1, 4.2 and 4.12); every bundle under SYNTHETIC data stays `E_UNSUPPORTED` |
 | Rule-authorized re-prompt | **STRUCTURAL** (`dfi_reprompt_side`, white-box; no mechanic triggers it) |
-| Struggle (all pp 0) | **IMPLEMENTED + TESTED** (offered in the request since step 2c; typeless, random target, recoil) |
+| Struggle (no selectable move) | **IMPLEMENTED + TESTED** (offered in the request since step 2c, without a Mega declaration; typeless, random target, recoil) |
 | Observation v2: what a player sees (decision 0007) | **IMPLEMENTED + TESTED**: the oracle gives the same bytes for every fixture and player; paired tests on synthetic and real states keep the hidden rolls hidden; the conformance test compares both players' views with the recorded Showdown battles |
 | Event log per player (decision 0007 sections 6 and 11) | **IMPLEMENTED + TESTED**: every event of both players matches the protocol lines of the recorded Showdown battles, field by field (61 battles, 19,154 events, all 37 kinds); API failures are atomic; since step 3c each player's knowledge is folded from its events only |
 | Information-equivalence evidence | **TESTED** on paired synthetic states (`duoforge.request.information`) and on real states in the closure gate and the Team C gate |
