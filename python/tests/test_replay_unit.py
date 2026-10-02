@@ -7,7 +7,10 @@ teams and a committed spectator log of one reference battle
 input.
 """
 import re
+import shutil
+import tempfile
 import unittest
+from pathlib import Path
 
 from duoforge_live import data, lines
 
@@ -125,6 +128,59 @@ class LinesTest(unittest.TestCase):
 
     def test_choice_items(self):
         self.assertEqual(lines.CHOICE_ITEMS, ("choiceband", "choicescarf", "choicespecs"))
+
+
+TEAMS = data.ROOT / "tests" / "reference" / "teams"
+
+
+class PriorTest(unittest.TestCase):
+    """The stat point prior (Task 4, spec section 10), on pastes of our reference teams."""
+
+    @classmethod
+    def setUpClass(cls):
+        from duoforge_replay import prior
+        cls.prior_module = prior
+        cls.tmp = Path(tempfile.mkdtemp(prefix="duoforge_prior_"))
+        team_a = (TEAMS / "team_a.txt").read_text(encoding="utf-8")
+        shutil.copy(TEAMS / "team_a.txt", cls.tmp / "a.txt")
+        shutil.copy(TEAMS / "team_b.txt", cls.tmp / "b.txt")
+        # Team A again, its Rillaboom with another spread: a tie of two spreads, the smaller tuple wins
+        other = team_a.replace("EVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe", "EVs: 32 HP / 32 Atk / 2 Spe", 1)
+        assert other != team_a
+        head = "Nick (Rillaboom) (M) @ Miracle Seed  " + chr(10) + "Shiny: Yes" + chr(10)
+        (cls.tmp / "c.txt").write_text(head + other.split(chr(10), 1)[1], encoding="utf-8")
+        cls.prior = prior.Prior(prior.build(cls.tmp))
+        cls.rillaboom = {"species": "Rillaboom", "item": "MiracleSeed", "ability": "GrassySurge", "nature": "Adamant",
+                         "moves": ["WoodHammer", "GrassyGlide", "FakeOut", "HighHorsepower"]}
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.tmp, ignore_errors=True)
+
+    def lookup(self, **change):
+        return self.prior.lookup({**self.rillaboom, **change})
+
+    def test_levels(self):
+        self.assertEqual(self.lookup(), ([18, 32, 2, 0, 6, 8], 0))  # tie of two: (18, ...) < (32, ...)
+        self.assertEqual(self.lookup(moves=["WoodHammer", "Protect"])[1], 1)
+        self.assertEqual(self.lookup(moves=["Protect"], item="Leftovers")[1], 2)
+        self.assertEqual(self.lookup(moves=["Protect"], item="Leftovers", nature="Jolly")[1], 3)
+        self.assertEqual(self.lookup(species="Pikachu"), ([0] * 6, 4))
+
+    def test_move_order_does_not_matter(self):
+        self.assertEqual(self.lookup(moves=list(reversed(self.rillaboom["moves"])))[1], 0)
+
+    def test_pastes_counted(self):
+        self.assertEqual(self.prior.data["pastes"], 3)
+
+    def test_evs_are_refused(self):
+        with self.assertRaisesRegex(ValueError, "EVs, not stat points"):
+            self.prior_module.parse_paste("Rillaboom @ Miracle Seed\nAbility: Grassy Surge\nEVs: 252 Atk\n"
+                                          "Adamant Nature\n- Fake Out")
+
+    def test_unknown_line_refused(self):
+        with self.assertRaisesRegex(ValueError, "unknown paste line"):
+            self.prior_module.parse_paste("Rillaboom @ Miracle Seed\nWeird: line\n- Fake Out")
 
 
 if __name__ == "__main__":
