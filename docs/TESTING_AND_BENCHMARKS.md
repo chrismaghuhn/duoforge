@@ -116,7 +116,7 @@ Remote CI is PASS only after observing an actual run on the relevant revision. C
 
 The pull request states the result.
 
-**Hosted CI again on pull requests (2026-10-02).** The repository is public, so hosted minutes are free. `.github/workflows/ci.yml` runs on pull requests to main (not on drafts), on pushes to main, nightly and on demand. A newer push cancels the older run, and a change to docs only runs nothing. It runs:
+**Hosted CI again on pull requests (2026-10-02).** The repository is public, so hosted minutes are free. `.github/workflows/ci.yml` runs on pull requests (not on drafts; stacked ones too, against their base), on pushes to main, nightly and on demand. A newer push cancels the older run, and a change to docs only runs nothing. It runs:
 
 - the Linux matrix: GCC Debug, Clang Debug and Clang Release;
 - one GCC Release job with link-time optimization that also runs the Python tests, the learner's JAX test (CPU) and every reference test against the pinned Showdown (Node 22);

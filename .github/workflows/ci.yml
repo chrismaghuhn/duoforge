@@ -1,7 +1,7 @@
 name: CI
 
 # The repository is public since 2026-10-02, so hosted minutes are free. The
-# workflow runs on pull requests to main (not on drafts), on pushes to main,
+# workflow runs on pull requests (not on drafts), on pushes to main,
 # nightly and on demand; a newer push cancels the run of the older one, and a
 # change that only touches docs runs nothing. It covers the matrix of the
 # local CI: Linux GCC and Clang, the Python, JAX and reference tests against the
@@ -11,8 +11,9 @@ name: CI
 # (docs/TESTING_AND_BENCHMARKS.md section 7). The local CI (tools/ci/local_ci.sh)
 # stays for quick runs before a push, offline work and measurements.
 on:
+  # Every pull request, also one stacked on another branch: its merge with its
+  # base gets the checks, so a stack is tested before it is retargeted.
   pull_request:
-    branches: [main]
     types: [opened, synchronize, reopened, ready_for_review]
     paths-ignore:
       - "docs/**"
