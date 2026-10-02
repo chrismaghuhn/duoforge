@@ -28,7 +28,9 @@ leaves with a status at the end is a failure of the tool: the run stops with
 status 3 and writes nothing.
 
 The mode "random" (diff_random.py) plays random battles instead of replaying
-committed ones: see there.
+committed ones: see there. The modes "corpus" and "promote" (diff_corpus.py)
+replay the corpus of kept fuzz battles without Node and put battles of a run
+into it.
 
 --out (default build/diff/<UTC yyyymmdd-hhmmss>-replay) gets battles.jsonl,
 one line per battle in name order (name, bucket, rule, detail, step, steps,
@@ -637,10 +639,12 @@ def replay(root, names, node, args):
 
 
 def main(argv):
-    import diff_random  # here, not above: it imports this module
+    import diff_corpus  # here, not above: they import this module
+    import diff_random
     parser = argparse.ArgumentParser(prog='diff_driver.py', description=__doc__.split('\n')[0])
     modes = parser.add_subparsers(dest='mode', required=True)
     diff_random.add_arguments(modes)
+    diff_corpus.add_arguments(modes)
     p = modes.add_parser('replay', help='put every committed battle in a bucket')
     p.add_argument('--checkout', required=True, help='the pinned Showdown checkout (built: dist/sim exists)')
     p.add_argument('--runner', required=True, help='the duoforge_diff_runner executable')
@@ -653,6 +657,12 @@ def main(argv):
         params = diff_random.validate(parser, args)
         try:
             return diff_random.run(args, params)
+        except ToolError as e:
+            sys.stderr.write('diff_driver: %s\n' % e)
+            return EXIT_TOOL
+    if args.mode in ('corpus', 'promote'):
+        try:
+            return diff_corpus.run_corpus(args) if args.mode == 'corpus' else diff_corpus.run_promote(args)
         except ToolError as e:
             sys.stderr.write('diff_driver: %s\n' % e)
             return EXIT_TOOL
