@@ -1,6 +1,6 @@
 # 0018 - The POOL player-view extension: `duoforge_observation_ext`
 
-Status: **draft, for one bundled owner OK** before anything is built. Design only: no code, no header change, no version change in this PR. Builds on decision 0007 (what a player sees), 0015 (the POOL data kind and, in section 7, the POOL state tail), 0013 and 0014 (the Python encoder), 0016 (the live adapter and its tracker). The number 0017 is reserved for Learner v2.
+Status: **accepted** (owner, 2026-10-02: all points of section 14, with one change: Throat Chop is public, section 5). The first draft was design only; the build follows in steps (section 13). Builds on decision 0007 (what a player sees), 0015 (the POOL data kind and, in section 7, the POOL state tail), 0013 and 0014 (the Python encoder), 0016 (the live adapter and its tracker). The number 0017 is reserved for Learner v2.
 
 ## 1. Decided already (owner, in principle)
 
@@ -14,7 +14,7 @@ This note fixes the exact layout, who sees what, where each field comes from in 
 
 - **Everything is declared now, written later.** Revision 1 names a field for every effect of the replay spike's list and of the G7 to G11 steps (Wide Guard, Throat Chop, Heal Block, Encore, Soak). A field is zero until the step that implements its mechanic sets its bit in a `supported` mask in the struct. So the layout, the encoder shape and the Python layout pin change **once**, not once per mechanic.
 - **Same style as the old observation:** fixed size, no pointers, no padding, every record zero-filled, reserved bytes zero, `*_ext` records mirroring the `*_view` ones (field-wide, per side, per position, per member). `sides[]` stays in absolute side order, like `duoforge_observation`.
-- **Information rule (0007):** a field is **public** when the game shows it to both players, or when it follows from what both see (the open team sheets, the rules, the lines); it is **own side only** when only the owner's screen shows it. An own-side-only field is zero in the opponent's section. Durations that Showdown never shows are **not exposed**: only presence is, or what is publicly derivable (for example Perish counts).
+- **Information rule (0007):** a field is **public** when the game shows it to both players, or when it follows from what both see (the open team sheets, the rules, the lines); it would be **own side only** when only the owner's screen shows it, and then zero in the opponent's section. No field of revision 1 is own side only. Durations that Showdown never shows are **not exposed**: only presence is, or what is publicly derivable (for example Perish counts).
 - **Pure and checked like `duoforge_battle_observe`:** checks NULL -> `E_CONTEXT_MISMATCH` -> `E_INVALID_ARGUMENT` (player) -> `E_INVARIANT`; `*out` is written only on success. Under a non-POOL kind it checks the same things and then writes zeros.
 
 ## 3. Layout (revision 1): 192 bytes
@@ -94,7 +94,7 @@ An empty position (no occupant, or a fainted one) is all zero. Every field belon
 | 13 | `SALT_CURE` | public | Salt Cure |
 | 14 | `CHARGE` | public | Charge: its next Electric move is doubled |
 | 15 | `HEAL_BLOCK` | public | Heal Block (G7 to G11 table) |
-| 16 | `THROAT_CHOP` | **own side only** | sound moves are barred (G7 to G11 table); zero in the foe's section |
+| 16 | `THROAT_CHOP` | public (owner decision, 2026-10-02) | sound moves are barred (G7 to G11 table); set for both players |
 | 17 | `RAGE_POWDER` | public | Rage Powder draws single-target moves this turn (PIVOT boundary only, like the guards) |
 | 18 | `TYPE_CHANGED` | public | `type_now` holds the types |
 | 19 | `ILLUSION_UP` | public | the occupant has Illusion and it is not broken yet (known from the open sheet and the lines) |
@@ -127,7 +127,7 @@ These values never occur under the other kinds. Python's `features.encode` raise
 
 ## 5. Visibility per field (decision 0007)
 
-Everything above is **public** except `THROAT_CHOP`, which is own side only: its protocol lines are `[silent]` (the game shows no message, as 0007 section 11 treats `[silent]` lines), and the owner sees the effect only on its own screen, as sound moves disabled in its request. The opponent can only guess it from the move used, so the field is zero in the foe's section, in the observation and in the tracker (the tracker reads the `[silent]` line for its own side's Pokemon only, and drops it for the foe's even though the stream carries it).
+Everything above is **public**, `THROAT_CHOP` included (owner decision, 2026-10-02): the move that causes it, Throat Chop, is a public move line, its secondary effect applies on every hit, and the `[silent]` start line is in both players' streams. The first draft had it own side only; the opponent's field is set exactly like the owner's. No field of revision 1 is own side only.
 
 **Hidden by the game, hence not exposed** (decision 0007 section 9 point C, applied to the new effects). Only presence, or a publicly derivable count, is in the layout:
 
@@ -146,7 +146,7 @@ Everything above is **public** except `THROAT_CHOP`, which is own side only: its
 
 ## 6. Protocol signals (what sets a field, what clears it)
 
-The live tracker (decision 0016) and the M11 spectator pipeline fill every field from the Showdown protocol alone, through the converter's parser (`trace_to_c.step_events`), which raises on a line it does not know. "OUT" means the occupant leaves the position: `|switch|`, `|drag|`, `|faint|` (a `|replace|` for Illusion). The lines below follow the replay spike's list and the pinned protocol; **each is verified against a recorded trace at the pin by the step that sets the field's supported bit** (decision 0007's rule for abilities: one test per line). A spectator has no own side: `THROAT_CHOP` stays 0.
+The live tracker (decision 0016) and the M11 spectator pipeline fill every field from the Showdown protocol alone, through the converter's parser (`trace_to_c.step_events`), which raises on a line it does not know. "OUT" means the occupant leaves the position: `|switch|`, `|drag|`, `|faint|` (a `|replace|` for Illusion). The lines below follow the replay spike's list and the pinned protocol; **owner rule (2026-10-02): every step that sets a `supported` bit verifies the protocol signals of its fields at the pin with recorded battles** (a spec, `ps_trace.js`, `trace_to_c.py`; one recorded battle per line that sets or clears the field, as decision 0007 does for abilities), and the bit is not set before they agree with the engine. A spectator sees the same public lines as a player and has no own side, so it fills every field of this section the same way.
 
 ### 6.1 Per field
 
@@ -163,7 +163,7 @@ The live tracker (decision 0016) and the M11 spectator pipeline fill every field
 | `aurora_veil_turns` | `\|-sidestart\|pN: NAME\|move: Aurora Veil` (5, or 8 when the setter holds Light Clay: sheet) | `\|-sideend\|pN: NAME\|move: Aurora Veil` (also `[from] move: Brick Break` and the like); counts down in the residual | yes |
 | `perish` | `\|-start\|POKEMON\|perishN` (N = 3, 2, 1): store N | `\|faint\|`, OUT | yes |
 | `encore_slot` | `\|-start\|POKEMON\|Encore`; the slot is the one of the occupant's last `\|move\|` line on the open sheet | `\|-end\|POKEMON\|Encore`, OUT | presence yes; the slot derives from the move history (public) |
-| `THROAT_CHOP` (own only) | `\|-start\|POKEMON\|Throat Chop\|[silent]` for an own occupant; the request then disables its sound moves | `\|-end\|POKEMON\|Throat Chop\|[silent]`, OUT | own side only: the foe's silent lines are dropped |
+| `THROAT_CHOP` | `\|-start\|POKEMON\|Throat Chop\|[silent]` (both players' streams carry it; the own request also disables the sound moves) | `\|-end\|POKEMON\|Throat Chop\|[silent]`, OUT | yes, for both sides |
 | `HEAL_BLOCK` | `\|-start\|POKEMON\|move: Heal Block` | `\|-end\|POKEMON\|move: Heal Block`, OUT | yes |
 | `toxic_spikes`, `spikes`, `stealth_rock`, `sticky_web` | `\|-sidestart\|pN: NAME\|move: Toxic Spikes` (Spikes, Stealth Rock, Sticky Web); each Toxic Spikes or Spikes line adds a layer | `\|-sideend\|pN: NAME\|move: ...` (absorbed: `[of] POKEMON`; Rapid Spin, Defog: `[from] move: ...`) | yes |
 | `guard_flags` | `\|-singleturn\|POKEMON\|Wide Guard` (resp. Quick Guard): the user's side | the next `\|upkeep\|` / `\|turn\|` | yes |
@@ -189,7 +189,6 @@ The live tracker (decision 0016) and the M11 spectator pipeline fill every field
 | Transform | the copied moves and PP are hidden from the foe; only the forme would show (`\|-transform\|`). Below 0.1 percent. Not in revision 1; a later revision may add a `TRANSFORMED` bit if the copy rule turns out public |
 | Substitute's HP, the toxic counter, every hidden duration of section 5 | the game does not show them |
 | The disguise of Illusion, the source of Leech Seed, partial traps and Curse | the line carries them but this revision gives them no field (appendable) |
-| A foe's Throat Chop | `[silent]`; own side only |
 
 ## 7. The `supported` mask
 
@@ -225,7 +224,7 @@ The percentages are the replay spike's "share of decisions" with the effect on t
 
 The state side is not designed here: each step that needs a new state byte revises the tail (decision 0015 section 7: 0x0203 and on) and says so. The view reads the state through `dfi_battle` like `duoforge_battle_observe`; it never reads the opponent's hidden state: an own-side-only field is read only for the viewer's side, and a public field only from state that follows from what the viewer saw (the check of 0007 section 7, extended in section 12).
 
-How the tail rev 1 fills the view: `wide_guard` -> `guard_flags` bit `WIDE_GUARD`; `encore_slot` -> `encore_slot`; `throat_chop_turns` != 0 -> `THROAT_CHOP` (own side only); `heal_block_turns` != 0 -> `HEAL_BLOCK`; `soak_type` of the occupant -> `TYPE_CHANGED` and `type_now[0]`. The turn counters of the tail (`encore_turns`, `throat_chop_turns`, `heal_block_turns`) never leave the engine.
+How the tail rev 1 fills the view: `wide_guard` -> `guard_flags` bit `WIDE_GUARD`; `encore_slot` -> `encore_slot`; `throat_chop_turns` != 0 -> `THROAT_CHOP` (both sides); `heal_block_turns` != 0 -> `HEAL_BLOCK`; `soak_type` of the occupant -> `TYPE_CHANGED` and `type_now[0]`. The turn counters of the tail (`encore_turns`, `throat_chop_turns`, `heal_block_turns`) never leave the engine.
 
 ## 9. Revision and growth rule
 
@@ -273,7 +272,7 @@ How the tail rev 1 fills the view: `wide_guard` -> `guard_flags` bit `WIDE_GUARD
 
 ## 12. Evidence (for every step that sets a bit)
 
-- **Information equivalence** (0007 section 7): paired states that differ only in what the viewer must not see (the foe's `throat_chop_turns`, a hidden Taunt or Encore counter, a Substitute's HP, a toxic stage) give byte-identical extensions for that viewer; planted leaks are reported by their pair. Under every non-POOL kind the extension is all zero, tested on the existing closure gate states.
+- **Information equivalence** (0007 section 7): paired states that differ only in what the viewer must not see (the foe's `throat_chop_turns` counter, a hidden Taunt or Encore counter, a Substitute's HP, a toxic stage) give byte-identical extensions for that viewer; planted leaks are reported by their pair. Under every non-POOL kind the extension is all zero, tested on the existing closure gate states.
 - **Against the reference:** a recorded POOL battle per feature (spec -> `ps_trace.js` -> `trace_to_c.py`), with the tracker's extension and the engine's equal at every request, and the protocol lines of section 6.1 read from the trace. Negative controls: a field read from the foe's `[silent]` line, a counter exposed, a bit set without its battle.
 - **Layout:** `duoforge.python.layout` and the size and offset asserts; a test that `supported` is zero and the rest of the struct zero until the first mechanic marks a bit, and that every set bit has a recorded battle.
 - **Zero-ness:** a write of any nonzero reserved byte or field of a clear bit is an `E_INVARIANT` of the engine's own test.
@@ -288,7 +287,7 @@ How the tail rev 1 fills the view: `wide_guard` -> `guard_flags` bit `WIDE_GUARD
 
 1. **Size 192 bytes with 81 reserved** (about 256 at most per revision), rather than a smaller struct: the reserve is the cheap way to stay additive.
 2. **Everything declared now**, zero until supported, with a `supported` mask in the struct.
-3. **Throat Chop own side only** (as Builder D's table has it); the opponent's field stays 0 although the stream carries the `[silent]` line.
+3. **Throat Chop public**, set for both players (owner decision 2026-10-02, changing the draft's own-side-only: the hitting move line is public, the secondary applies on every hit, and the `[silent]` start line is in both streams).
 4. **Hidden durations not exposed**: presence, slot, or a public count only (Perish, Stockpile, Aurora Veil, Gravity).
 5. **Overlay fields** (`ability_now`, `forme`, `item_now`, `type_now`): 0 means "as the old observation says", so the old fields stay valid and complete for every non-POOL consumer.
 6. **A size growth is a new struct and function, never a bigger old struct.**
