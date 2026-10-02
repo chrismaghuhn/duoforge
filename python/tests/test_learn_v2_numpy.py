@@ -481,7 +481,7 @@ def _records(pairs):
     for key, games in pairs.items():
         rec = np.zeros(len(games), dtype=evaluate.RECORD)
         for k, (mine, other, result) in enumerate(games):
-            rec[k] = (mine, other, 0, result, False)
+            rec[k] = (mine, other, 0, result, False, False)
         out[key] = rec
     return out
 
@@ -506,6 +506,71 @@ class LadderPerTeamTest(unittest.TestCase):
         self.assertGreater(high[1] - low[1], 0.0)
         again = ladder.bootstrap(records, 2, resamples=200)
         self.assertTrue(np.array_equal(low, again[0]) and np.array_equal(high, again[1]))
+
+
+class TiebreakTest(unittest.TestCase):
+    def test_cut_offs_are_scored_by_tiebreak(self):
+        from duoforge_learn import selfplay
+        seen = []
+        env = [None]
+
+        def ended(envs, rewards):
+            for e, r in zip(envs.tolist(), rewards.tolist()):
+                if env[0]._steps[e] >= env[0].max_steps:  # a cut-off, before the reset
+                    try:
+                        want = selfplay._REWARDS[env[0].batch.tiebreak(e)]
+                    except duoforge.DuoforgeError:
+                        want = (-1.0, -1.0)
+                    seen.append((tuple(r), tuple(want)))
+
+        env[0] = SelfPlay(8, 1, 0x2026100200000178, max_steps=5, on_end=ended)
+        try:
+            for _ in range(25):
+                env[0].step(_first_legal(env[0].observe()))
+        finally:
+            env[0].close()
+        self.assertGreater(len(seen), 8)
+        self.assertTrue(all(got == want for got, want in seen), seen[:5])
+        self.assertTrue(any(got != (0.0, 0.0) for got, _ in seen))
+
+    def test_unfinished_suite_games_are_scored_by_tiebreak(self):
+        rows = suite.make_suite(2, 3, games=1)
+        attack = evaluate.Player(_StandIn("attack"), None, features.ENCODER, "attack")
+        switch = evaluate.Player(_StandIn("switch"), None, features.ENCODER, "switch")
+        with duoforge.Context() as ctx:
+            rec = evaluate.play_suite(ctx, _ab_pool(), rows, attack, switch, workers=1, seed=5, max_steps=4)
+        self.assertTrue(rec["unfinished"].all())
+        self.assertTrue((rec["result"] != 0).any())
+        self.assertFalse(rec["unresolved"].any())
+
+
+class UnresolvedTiebreakTest(unittest.TestCase):
+    def _unsupported(self, *args):
+        raise duoforge.DuoforgeError("DUOFORGE_E_UNSUPPORTED")
+
+    def test_unresolved_cut_off_is_a_loss_for_both_and_counted(self):
+        from unittest import mock
+        ends = []
+        env = SelfPlay(4, 1, 0x2026100200000179, max_steps=3,
+                       on_end=lambda envs, rewards: ends.extend(rewards.tolist()))
+        try:
+            with mock.patch.object(duoforge.Batch, "tiebreak", self._unsupported):
+                for _ in range(3):
+                    env.step(_first_legal(env.observe()))
+        finally:
+            env.close()
+        self.assertEqual(env.unresolved, env.cuts)
+        self.assertGreater(env.cuts, 0)
+        self.assertTrue(all(r == [-1.0, -1.0] for r in ends), ends)
+
+    def test_unresolved_suite_game_is_the_learners_loss(self):
+        from unittest import mock
+        rows = suite.make_suite(2, 3, games=1)
+        attack = evaluate.Player(_StandIn("attack"), None, features.ENCODER, "attack")
+        with duoforge.Context() as ctx, mock.patch.object(duoforge.Batch, "tiebreak", self._unsupported):
+            rec = evaluate.play_suite(ctx, _ab_pool(), rows, attack, attack, workers=1, seed=5, max_steps=2)
+        self.assertTrue(rec["unresolved"].all())
+        self.assertTrue((rec["result"] == -1).all())
 
 
 if __name__ == "__main__":

@@ -199,6 +199,15 @@ class Batch:
         self._check(self._lib.duoforge_battle_result(self.context.handle, self._battle(env), ctypes.byref(out)))
         return out.value
 
+    def tiebreak(self, env):
+        """DUOFORGE_RESULT_* the pinned reference's tiebreak gives the
+        environment's battle as it stands (duoforge_battle_tiebreak); its own
+        result at TERMINAL. DuoforgeError E_UNSUPPORTED where the reference's
+        bench order would decide."""
+        out = ctypes.c_uint32()
+        self._check(self._lib.duoforge_battle_tiebreak(self.context.handle, self._battle(env), ctypes.byref(out)))
+        return out.value
+
     def digest(self, env):
         """The environment's state digest (32 bytes)."""
         out = (ctypes.c_uint8 * _layout.DIGEST_SIZE)()

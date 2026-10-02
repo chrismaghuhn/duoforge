@@ -21,7 +21,7 @@ from .selfplay import Observation, choices_of
 # One finished game of a suite: its pairing, the learner's seat and the result
 # from the learner's view (+1 win, -1 loss, 0 tie or unfinished).
 RECORD = np.dtype([("side0", np.uint32), ("side1", np.uint32), ("learner_seat", np.uint32), ("result", np.int8),
-                   ("unfinished", np.bool_)])
+                   ("unfinished", np.bool_), ("unresolved", np.bool_)])
 
 
 class Player:
@@ -39,7 +39,9 @@ def play_suite(context, pool, rows, learner, opponent, workers, seed, max_steps=
     """The records (RECORD, one per suite row) of the greedy learner against
     opponent (a Player, greedy too, or "random") over the suite rows, one
     environment per row at episode 1 of a batch seeded with seed. A game
-    still running after max_steps steps is a tie and marked unfinished."""
+    still running after max_steps steps is marked unfinished and scored by
+    the reference's tiebreak (Batch.tiebreak); one the tiebreak cannot
+    resolve counts as the learner's loss, marked unresolved."""
     n = rows.shape[0]
     seat = rows["learner_seat"].astype(np.int64)
     every = np.arange(n)
@@ -73,7 +75,13 @@ def play_suite(context, pool, rows, learner, opponent, workers, seed, max_steps=
             result = batch.result(e)
             if result == 0:
                 out["unfinished"][e] = True
-            elif result != _TIE:
+                try:
+                    result = batch.tiebreak(e)
+                except duoforge.DuoforgeError:
+                    out["unresolved"][e] = True  # the reference's bench order would decide: the learner's loss
+                    out["result"][e] = -1
+                    continue
+            if result not in (0, _TIE):
                 out["result"][e] = 1 if result == _SIDE_WINS[seat[e]] else -1
     return out
 

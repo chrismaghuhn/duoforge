@@ -417,7 +417,7 @@ def _run(args, pool, on_start, stop):
             counts[:] = 0
             t0 = time.perf_counter()
             timings = {}
-            cuts_before = env.cuts
+            cuts_before, unresolved_before = env.cuts, env.unresolved
             rollout, bootstrap, ended, key = collect(env, params, act, key, args.rollout, state, opponents, timings)
             advantages, _, value_targets = gae(rollout["values"], rollout["rewards"], rollout["done"],
                                                rollout["acting"], bootstrap)
@@ -435,7 +435,8 @@ def _run(args, pool, on_start, stop):
                       "episodes": episodes, "collect_s": round(t1 - t0, 3), "update_s": round(t2 - t1, 3),
                       "decisions_per_s": round(acted / (t2 - t0)), "policy_rows": acted,
                       "acted_rows": int(rollout["acting"].sum()), "entropy_coef": round(entropy_coef, 8),
-                      "team_episodes": counts.tolist(), "cut_episodes": env.cuts - cuts_before}
+                      "team_episodes": counts.tolist(), "cut_episodes": env.cuts - cuts_before,
+                      "tiebreak_unresolved": env.unresolved - unresolved_before}
             record |= {k: round(v, 4) for k, v in timings.items()}
             record["t_other"] = round(max(0.0, (t1 - t0) - sum(timings.values())), 4)
             record |= {k: round(float(v), 5) for k, v in stats.items()}
@@ -465,6 +466,8 @@ def _run(args, pool, on_start, stop):
                     record[f"vs_{name}_by_team"] = [None if x is None else round(x, 4) for x in result["by_team"]]
                     if games["unfinished"].any():
                         record[f"unfinished_vs_{name}"] = int(games["unfinished"].sum())
+                    if games["unresolved"].any():
+                        record[f"unresolved_vs_{name}"] = int(games["unresolved"].sum())
                 if state.has_league:
                     record["league"] = {k: list(v) for k, v in state.stats.items()}
                 previous, last_eval = params, update

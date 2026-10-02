@@ -74,8 +74,11 @@ class SelfPlay:
     and side-1 teams of the pool, by weight, a pure function of the seed,
     the environment and the episode. The engine has no turn limit, and two
     policies that only switch never end a battle, so an episode that
-    reaches max_steps steps is cut off and scored as a tie: a training
-    choice, not a battle rule.
+    reaches max_steps steps is cut off and scored by the reference's
+    tiebreak (Batch.tiebreak: the most Pokemon left, then the HP percentage,
+    then the total HP), so stalling while behind does not pay; a cut-off the
+    tiebreak cannot resolve (the reference's bench order would decide) is a
+    loss for both seats, counted in unresolved.
 
     pool: a duoforge.teams.TeamPool (default: Teams A and B of the
     reference setups, CLOSURE data); context: the context the pool's teams
@@ -108,7 +111,8 @@ class SelfPlay:
         if on_start is not None:
             on_start(everyone, self.episodes.copy())
         self._steps = np.zeros(envs, dtype=np.int64)
-        self.cuts = 0  # episodes cut off at max_steps so far (scored as ties)
+        self.cuts = 0  # episodes cut off at max_steps so far, scored by tiebreak
+        self.unresolved = 0  # cut-offs the tiebreak could not resolve (a loss for both seats)
         self._choices = np.zeros((envs, 2), dtype=_layout.FACTORED_CHOICE)
         self.batch.query_factored()
 
@@ -127,7 +131,13 @@ class SelfPlay:
         rewards = np.zeros((b.envs, 2), dtype=np.float32)
         for e in np.flatnonzero(terminal):
             rewards[e] = _REWARDS[b.result(e)]
-        cut = ~terminal & (self._steps >= self.max_steps)  # a tie: both rewards stay 0
+        cut = ~terminal & (self._steps >= self.max_steps)
+        for e in np.flatnonzero(cut):
+            try:
+                rewards[e] = _REWARDS[b.tiebreak(e)]  # scored as the reference's tiebreak scores it
+            except duoforge.DuoforgeError:
+                rewards[e] = (-1.0, -1.0)  # the reference's bench order would decide: a loss for both,
+                self.unresolved += 1       # so steering into it never pays
         done = terminal | cut
         self.cuts += int(cut.sum())
         if done.any():
