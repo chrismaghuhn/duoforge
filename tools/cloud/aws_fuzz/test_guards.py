@@ -27,6 +27,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 BASH = os.environ.get('DUOFORGE_BASH') or shutil.which('bash')
 ACCOUNT = '%012d' % 7  # a made-up account id, built here so that no number of that shape is in the repository
 SHA = 'a' * 40
+SWITCHES = ('MSYS_NO_PATHCONV', 'MSYS2_ARG_CONV_EXCL')
 
 STUB = r'''#!/usr/bin/env bash
 # The stub aws of the tests: logs the call, answers from STUB_* variables.
@@ -215,8 +216,8 @@ class Guards(unittest.TestCase):
 
     def test_df_init_does_not_export_the_path_conversion_switches(self):
         # Exported, MSYS_NO_PATHCONV made git -C "$DF_DIR" fail under Git Bash: only the aws call may have them.
-        env = {k: v for k, v in self.env.items() if not k.startswith('MSYS')}
-        script = '. "%s/lib.sh"; df_init; env | grep -c "^MSYS" || true; git -C "$DF_DIR" rev-parse --show-toplevel' % posix(HERE)
+        env = {k: v for k, v in self.env.items() if k not in SWITCHES}
+        script = '. "%s/lib.sh"; df_init; env | grep -c -E "^(MSYS_NO_PATHCONV|MSYS2_ARG_CONV_EXCL)=" || true; git -C "$DF_DIR" rev-parse --show-toplevel' % posix(HERE)
         r = subprocess.run([BASH, '-c', script], env=env, capture_output=True, text=True)
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertEqual(r.stdout.splitlines()[0], '0', r.stdout)
@@ -232,7 +233,7 @@ class Guards(unittest.TestCase):
                     'echo "PATHCONV=${MSYS_NO_PATHCONV:-unset} EXCL=${MSYS2_ARG_CONV_EXCL:-unset}"' + chr(10))
         os.chmod(probe, 0o755)
         env = dict(self.env, PATH=probe_dir + os.pathsep + self.env['PATH'])
-        env = {k: v for k, v in env.items() if not k.startswith('MSYS')}
+        env = {k: v for k, v in env.items() if k not in SWITCHES}
         script = '. "%s/lib.sh"; df_init; df_aws x; echo "after: ${MSYS_NO_PATHCONV:-unset}"' % posix(HERE)
         r = subprocess.run([BASH, '-c', script], env=env, capture_output=True, text=True)
         self.assertEqual(r.stdout.splitlines()[:2], ['PATHCONV=1 EXCL=*', 'after: unset'], r.stdout + r.stderr)
