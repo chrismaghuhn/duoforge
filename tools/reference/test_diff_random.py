@@ -18,6 +18,7 @@ import contextlib
 import copy
 import gzip
 import io
+import itertools
 import json
 import os
 import re
@@ -59,8 +60,9 @@ class World:
     """What the reference does, as one committed battle: play answers the choices of its trace, record answers its
     trace cut to the choices it is given. scenario(index) says what goes wrong for battle `index`: a dict with
     'steps' (a play that stops there, the battle not over), 'play_error', 'record_error' (exceptions),
-    'mutate' (changes the trace: mutate(trace, is_prefix)) and 'runner' (a function of (steps, is_prefix) that
-    answers instead of the runner saying PASS)."""
+    'mutate' (changes the trace: mutate(trace, is_prefix)), 'runner' (a function of (steps, is_prefix) that
+    answers instead of the runner saying PASS), 'samples' (the domain samples of the play, see sample_of) and
+    'request_changed' (how many samples the play dropped)."""
 
     def __init__(self, battle=REAL, scenario=None, seed=1):
         spec, text = driver.load_committed(ROOT, battle)
@@ -68,6 +70,12 @@ class World:
         self.trace = json.loads(text)
         self.seed = seed
         self.scenario = scenario or (lambda index: {})
+
+    def sample_of(self, step, side, extra=(), played=True):
+        """A domain sample of the play: the text that was played at that step by that side (unless `played` is false)
+        and the texts of `extra`, as accepted."""
+        text = self.trace['steps'][step]['input'][('p1', 'p2')[side]]
+        return {'step': step, 'side': side, 'accepted': ([text] if played else []) + list(extra)}
 
     def spec_for(self, index):
         spec = copy.deepcopy(self.spec)
@@ -104,7 +112,8 @@ class WorldWorker:
         trace = self.world.trace
         steps = what.get('steps', len(trace['steps']))
         return {'choices': [s['input'] for s in trace['steps'][:steps]], 'ended': trace['steps'][steps - 1]['state']['ended'],
-                'steps': steps}
+                'steps': steps,
+                'domain': {'samples': copy.deepcopy(what.get('samples', [])), 'request_changed': what.get('request_changed', 0)}}
 
     def record(self, spec, spec_file):
         index, prefix = index_of(spec_file)
@@ -274,7 +283,10 @@ class Buckets(unittest.TestCase):
         (index, battle, policy), = worker.plays
         spec = world.spec_for(5)[0]
         self.assertEqual((index, battle), (5, {'format': spec['format'], 'seed': spec['seed'], 'teams': spec['teams']}))
-        self.assertEqual(policy, {'seed': 1005, 'max_steps': 300, 'switch_weight': 0.1, 'mega_weight': 0.5})
+        self.assertEqual(policy, {'seed': 1005, 'max_steps': 300, 'switch_weight': 0.1, 'mega_weight': 0.5, 'domain_rate': 0.0})
+        # The rate of the run goes to the worker as it is.
+        outcome, worker, runner = process(world, 6, params=PARAMS._replace(domain_rate=0.25))
+        self.assertEqual(worker.plays[0][2]['domain_rate'], 0.25)
 
     def test_a_battle_that_did_not_end_is_a_cap(self):
         outcome, worker, runner = process(World(scenario=lambda i: {'steps': 6}))
@@ -567,6 +579,229 @@ class Cases(unittest.TestCase):
             self.assertEqual([f for f in os.listdir(os.path.join(tmp, 'cases', 'fz_1_0')) if f.endswith('.tmp')], [])
 
 
+# ------------------------------------------------------------ the domain of a request
+
+ALL_TEAM_TEXTS = ['team ' + ''.join(str(i + 1) for i in picks) for picks in itertools.permutations(range(6), 4)]
+
+
+class Domain(unittest.TestCase):
+    """What Showdown accepts for a request, as the driver makes it a set for the records."""
+
+    def test_what_was_played_is_the_choice_that_the_converter_made_of_it(self):
+        """The driver makes its own state, roster and mid-turn flag for trace_to_c.convert_choice (the converter builds
+        them inline in convert_battle): for what was played they must give what convert_battle put in its data."""
+        names = driver.spec_names(ROOT)
+        names = sorted(set(names[::4]) | {n for n in (DEV, 's12_parting_shot', 's13_replacement_before_entry', 'c11_follow_me',
+                                                      REAL, REAL_TEAM_C) if n in names})
+        self.assertGreater(len(names), 30)
+        compared = {'team': 0, 'slots': 0, 'mid_turn': 0}
+        for name in names:
+            spec, trace = trace_to_c.load_battle(ROOT, name)
+            team_c = trace_to_c.spec_is_team_c(name, spec)
+            data = trace_to_c.convert_battle(name, spec, trace, tables(team_c))
+            roster_of = rnd.roster_tables(trace)
+            for k, step in enumerate(trace['steps']):
+                for side, sid in enumerate(('p1', 'p2')):
+                    if sid not in step['input']:
+                        continue
+                    mid_turn = rnd.mid_turn_before(trace, k)
+                    got = rnd.canonical_choice(step['input'][sid], side, rnd.state_before(trace, k), roster_of, mid_turn)
+                    if data['steps'][k]['team']:
+                        picks = tuple(data['steps'][k]['picks'][side])
+                        want = ('team', picks[:len(got[1])])
+                        self.assertEqual(picks[len(got[1]):], (0,) * (6 - len(got[1])), (name, k))
+                    else:
+                        want = ('slots', tuple(tuple(c) for c in data['steps'][k]['cmds'][side]))
+                    self.assertEqual(got, want, (name, k, side, step['input'][sid]))
+                    compared[got[0]] += 1
+                    compared['mid_turn'] += 1 if mid_turn else 0
+        self.assertTrue(all(compared.values()), compared)  # team preview, turns and mid-turn requests were all seen
+
+    def test_the_state_before_a_step_and_the_mid_turn_flag(self):
+        trace = World().trace
+        self.assertIs(rnd.state_before(trace, 0), trace['start']['state'])
+        self.assertIs(rnd.state_before(trace, 3), trace['steps'][2]['state'])
+        self.assertFalse(rnd.mid_turn_before(trace, 0))
+        has_upkeep = lambda k: any(line.startswith('|upkeep') for line in trace['steps'][k]['log'])
+        self.assertEqual(rnd.mid_turn_before(trace, 1), not has_upkeep(0))
+        fake = {'steps': [{'log': ['|move|x', '|upkeep']}, {'log': ['|move|x']}, {'log': []}]}
+        self.assertEqual([rnd.mid_turn_before(fake, k) for k in range(3)], [False, False, True])
+
+    def test_the_roster_has_the_aliases_of_the_converter(self):
+        state = {'sides': [{'pokemon': [{'species': 'Indeedee-F', 'set_species': 'Indeedee-F'}, {'species': 'Milotic'}]},
+                           {'pokemon': [{'species': 'Milotic'}]}]}
+        roster_of = rnd.roster_tables({'start': {'state': state}})
+        self.assertEqual(roster_of, [{'Indeedee-F': 0, 'Indeedee': 0, 'Milotic': 1}, {'Milotic': 0}])
+
+    def test_a_sample_becomes_a_set_in_the_order_of_the_records(self):
+        world = World()
+        trace = world.trace
+        played = trace['steps'][0]['input']['p1']
+        others = [t for t in ('team 6543', 'team 1234', 'team 2143') if t != played]
+        sets = rnd.domain_choices(trace, [world.sample_of(1, 1), {'step': 0, 'side': 0, 'accepted': [others[1], played, others[0]]}])
+        self.assertEqual([(s['step'], s['side']) for s in sets], [(0, 0), (1, 1)])  # by step and side
+        team = sets[0]
+        flats = [conformance_records.flat_choice(c) for c in team['choices']]
+        self.assertEqual(flats, sorted(flats))
+        self.assertEqual(len(team['choices']), 3)
+        self.assertEqual(sorted(team['rendered']), sorted([others[1], played, others[0]]))
+        for text, rendered in team['rendered'].items():
+            self.assertEqual(rendered, 'team ' + ' '.join(str(int(c) - 1) for c in text[len('team '):]))
+        self.assertEqual(team['accepted'], [others[1], played, others[0]])  # the texts as Showdown listed them
+        self.assertEqual(rnd.domain_choices(trace, []), [])
+
+    def test_what_was_played_must_be_among_what_showdown_accepted(self):
+        world = World()
+        played = world.trace['steps'][0]['input']['p1']
+        other = 'team 6543' if played != 'team 6543' else 'team 1234'
+        with self.assertRaises(rnd.DomainError) as cm:
+            rnd.domain_choices(world.trace, [{'step': 0, 'side': 0, 'accepted': [other]}])
+        self.assertIn('step 0 side 0: what was played (%r) is not among the 1 choices' % played, str(cm.exception))
+
+    def test_a_sample_must_be_of_a_side_and_a_step_of_the_recording(self):
+        world = World('s13_replacement_before_entry')
+        one = next(k for k, step in enumerate(world.trace['steps']) if len(step['input']) == 1)  # only one side answers
+        missing = 1 if 'p1' in world.trace['steps'][one]['input'] else 0
+        with self.assertRaises(rnd.DomainError) as cm:
+            rnd.domain_choices(world.trace, [{'step': one, 'side': missing, 'accepted': ['pass']}])
+        self.assertIn('the side did not answer a step of the recording', str(cm.exception))
+        with self.assertRaises(rnd.DomainError):
+            rnd.domain_choices(world.trace, [{'step': len(world.trace['steps']), 'side': 0, 'accepted': ['pass']}])
+
+    def test_the_refusals_of_the_converter_pass_through(self):
+        world = World()
+        with self.assertRaises(trace_to_c.ConversionError) as cm:
+            rnd.domain_choices(world.trace, [{'step': 1, 'side': 0, 'accepted': ['dance 1, dance 1']}])
+        self.assertEqual((cm.exception.rule, cm.exception.detail), ('choice-kind', 'dance'))
+
+    def test_a_choice_as_the_runner_prints_it(self):
+        # The same strings as the unit test of the runner (tests/test_runner_domain.c): the two sides agree on the text.
+        self.assertEqual(rnd.format_choice(('team', (2, 4, 0, 1))), 'team 2 4 0 1')
+        self.assertEqual(rnd.format_choice(('slots', ((1, 1, 2, 1, 0), (2, 0, 0, 0, 3)))), 'slots move 1 -> 2 mega, switch 3')
+        self.assertEqual(rnd.format_choice(('slots', ((1, 4, 255, 0, 0), (3, 0, 0, 0, 0)))), 'slots move 4 -> none, pass')
+        self.assertEqual(rnd.format_choice(('slots', ((0, 0, 0, 0, 0), (1, 0, 0, 0, 0)))), 'slots none, move 0 -> 0')
+
+    def test_the_shape_of_a_printed_choice(self):
+        shapes = {'team 2 4 0 1': 'team', 'slots move 1 -> 2 mega, switch 3': 'move+mega+target/switch',
+                  'slots move 4 -> none, pass': 'move/pass', 'slots none, move 0 -> 0': 'none/move+target',
+                  'slots move 0 -> none mega, move 3 -> 1': 'move+mega/move+target'}
+        for text, shape in shapes.items():
+            self.assertEqual(rnd.choice_shape(text), shape, text)
+
+    # ---- through the pipeline, with a fake reference and a fake runner
+
+    def test_the_samples_are_written_before_their_steps_and_counted(self):
+        world = World()
+        samples = [world.sample_of(0, 0, ['team 6543', 'team 1234']), world.sample_of(0, 1), world.sample_of(1, 0),
+                   world.sample_of(1, 1)]
+        world.scenario = lambda i: {'samples': samples, 'request_changed': 2}
+        outcome, worker, runner = process(world)
+        r = outcome.record
+        self.assertEqual((r['bucket'], r['domain']), ('PASS', {'samples': 4, 'request_changed': 2}))
+        (_, records), = runner.requests
+        lines = records.split('\n')
+        n0 = len(set(samples[0]['accepted']))
+        self.assertEqual([l for l in lines if l.startswith('D ')], ['D 0 0 %d' % n0, 'D 0 1 1', 'D 1 0 1', 'D 1 1 1'])
+        self.assertEqual(lines[0].split(' ')[-1], '4')  # the B line says how many
+        s_at = [i for i, l in enumerate(lines) if l.startswith('S ')]
+        d_at = [i for i, l in enumerate(lines) if l.startswith('D ')]
+        self.assertTrue(d_at[1] < s_at[0] < d_at[2] < d_at[3] < s_at[1])
+        self.assertEqual(len(outcome.domain), 4)
+
+    def test_no_samples_is_a_battle_of_the_same_records_as_before(self):
+        outcome, _, runner = process(World())
+        self.assertEqual(outcome.record['domain'], {'samples': 0, 'request_changed': 0})
+        (_, records), = runner.requests
+        self.assertEqual(records.split('\n')[0].split(' ')[-1], '0')
+        self.assertNotIn('\nD ', records)
+
+    def test_a_play_that_failed_has_no_domain_counts(self):
+        failure = driver.WorkerError('no accepted choice', 'Error: no accepted choice')
+        outcome, _, _ = process(World(scenario=lambda i: {'play_error': failure}))
+        self.assertIsNone(outcome.record['domain'])
+
+    def test_a_prefix_gets_the_samples_of_its_steps_only(self):
+        world = World()
+        samples = [world.sample_of(k, s) for k in range(5) for s in (0, 1)]
+        world.scenario = lambda i: {'samples': samples, 'runner': diverges(2)}
+        outcome, worker, runner = process(world)
+        (_, first), (prefix_name, prefix) = runner.requests
+        self.assertEqual((prefix_name, first.count('\nD '), prefix.count('\nD ')), ('fz_1_0_prefix', 10, 6))  # steps 0, 1 and 2
+        self.assertEqual((first.split('\n')[0].split(' ')[-1], prefix.split('\n')[0].split(' ')[-1]), ('10', '6'))
+        self.assertEqual(outcome.record['reproduces'], True)
+
+    def test_a_sample_that_disagrees_with_the_recording_is_a_ref_error(self):
+        world = World()
+        played = world.trace['steps'][0]['input']['p1']
+        other = 'team 6543' if played != 'team 6543' else 'team 1234'
+        world.scenario = lambda i: {'samples': [{'step': 0, 'side': 0, 'accepted': [other]}]}
+        outcome, _, runner = process(world)
+        r = outcome.record
+        self.assertEqual((r['bucket'], r['detail'], r['domain']), ('REF_ERROR', 'a domain sample disagrees with the recording',
+                                                                   {'samples': 1, 'request_changed': 0}))
+        self.assertIn('what was played', r['messages'][0])
+        self.assertEqual(runner.requests, [])
+        self.assertIsNotNone(outcome.trace_text)  # the recording is in the case
+
+    def test_a_text_the_converter_refuses_is_an_oracle_gap(self):
+        world = World()
+        world.scenario = lambda i: {'samples': [{'step': 1, 'side': 0, 'accepted': ['dance 1, dance 1']}]}
+        outcome, _, runner = process(world)
+        r = outcome.record
+        self.assertEqual((r['bucket'], r['rule'], r['detail']), ('ORACLE_GAP', 'choice-kind', 'dance'))
+        self.assertEqual(runner.requests, [])
+
+    def difference(self, engine_only, reference_only, step=1, side=0):
+        lines = ['  fz_1_0 step %d: domain side %d engine-only: %s' % (step, side, t) for t in engine_only]
+        lines += ['  fz_1_0 step %d: domain side %d reference-only: %s' % (step, side, t) for t in reference_only]
+        detail = 'domain: engine-only %d, reference-only %d (step %d side %d)' % (len(engine_only) + 4, len(reference_only), step, side)
+        return lambda steps, prefix: driver.RunnerResult('DIVERGENCE', 'CLOSURE', step, steps, detail, lines)
+
+    def test_a_difference_of_the_domain_is_a_divergence_with_a_signature_and_a_case(self):
+        world = World()
+        world.scenario = lambda i: {'samples': [world.sample_of(1, 0, ['move 1 1, move 1 2']), world.sample_of(1, 1)],
+                                    'runner': self.difference(['slots move 0 -> 2, pass', 'slots move 1 -> none mega, switch 3'],
+                                                              ['team 2 4 0 1'])}
+        outcome, _, runner = process(world)
+        r = outcome.record
+        self.assertEqual((r['bucket'], r['step'], r['reproduces'], r['domain']),
+                         ('DIVERGENCE', 1, True, {'samples': 2, 'request_changed': 0}))
+        self.assertEqual(rnd.signature(r), ('domain', 'engine-only move+mega/switch, move+target/pass, reference-only team'))
+        files = rnd.case_files(outcome)
+        self.assertIn('domain.json', files)
+        self.assertIn('step.json', files)
+        domain = json.loads(files['domain.json'].decode('utf-8'))
+        self.assertEqual((domain['step'], domain['side']), (1, 0))
+        self.assertEqual([a['text'] for a in domain['accepted']], outcome.domain[0]['accepted'])
+        for a in domain['accepted']:
+            self.assertTrue(a['choice'].startswith('slots '), a)  # each text with its choice as the runner prints it
+        self.assertEqual(domain['accepted'][0]['choice'],
+                         rnd.format_choice(rnd.canonical_choice(domain['accepted'][0]['text'], 0, rnd.state_before(world.trace, 1),
+                                                                rnd.roster_tables(world.trace), rnd.mid_turn_before(world.trace, 1))))
+
+    def test_the_failure_of_a_candidates_call_is_a_signature_too(self):
+        detail = 'domain: candidates: DUOFORGE_E_UNSUPPORTED (step 3 side 1)'
+        self.assertEqual(rnd.runner_signature(detail, ['  x step 3: domain side 1: the engine\'s candidates: DUOFORGE_E_UNSUPPORTED']),
+                         ('domain', 'candidates: DUOFORGE_E_UNSUPPORTED'))
+        self.assertEqual(rnd.runner_signature('domain: engine-only 2, reference-only 0 (step 3 side 1)', []),
+                         ('domain', 'engine-only -, reference-only -'))  # no example in the messages: nothing to say of them
+
+    def test_a_case_of_another_difference_has_no_domain_file(self):
+        outcome, _, _ = process(World(scenario=lambda i: {'runner': diverges(2)}))
+        self.assertNotIn('domain.json', rnd.case_files(outcome))
+
+    def test_the_summary_counts_the_samples_and_the_rate_is_part_of_the_identity_of_a_run(self):
+        identity = rnd.identity_of(PARAMS._replace(domain_rate=0.2), VERSION, 'h', '1', 'f' * 64)
+        self.assertEqual((identity['domain_rate'], identity['policy']), (0.2, {'max_steps': 300, 'switch_weight': 0.1, 'mega_weight': 0.5}))
+        records = []
+        for i, domain in enumerate(({'samples': 5, 'request_changed': 1}, None, {'samples': 2, 'request_changed': 0})):
+            records.append({'index': i, 'name': 'fz_1_%d' % i, 'pairing': 'AA', 'bucket': 'PASS', 'rule': None, 'detail': None,
+                            'step': None, 'steps': 4, 'context': 'CLOSURE', 'ended': True, 'reproduces': None,
+                            'domain': domain, 'messages': []})
+        summary = rnd.summarize(records, identity)
+        self.assertEqual(summary['domain'], {'rate': 0.2, 'samples': 7, 'request_changed': 1})
+
+
 # ------------------------------------------------------------ a run, the summary, and its cut into chunks
 
 def scenario_of(index):
@@ -763,6 +998,7 @@ class Run(unittest.TestCase):
             for change, part in (({'seed': 2}, 'seed'), ({'battles': 25}, 'battles'),
                                  ({'pairings': ['AB']}, 'pairings'), ({'node': 'v1.0.0'}, 'node'),
                                  ({'runner_sha256': '0' * 64}, 'runner_sha256'), ({'git_head': 'def456'}, 'git_head'),
+                                 ({'domain_rate': 0.5}, 'domain_rate'),
                                  ({'policy': dict(IDENTITY['policy'], mega_weight=0.9)}, 'policy')):
                 with self.subTest(part):
                     with self.assertRaises(driver.ToolError) as cm:
@@ -777,7 +1013,8 @@ class Run(unittest.TestCase):
             rnd.check_parameters(tmp, PARAMS)  # the same run
             for other, part in ((PARAMS._replace(seed=2), 'seed'), (PARAMS._replace(battles=25), 'battles'),
                                 (PARAMS._replace(pairings=('AB',)), 'pairings'), (PARAMS._replace(max_steps=50), 'policy'),
-                                (PARAMS._replace(switch_weight=0.2), 'policy')):
+                                (PARAMS._replace(switch_weight=0.2), 'policy'),
+                                (PARAMS._replace(domain_rate=0.5), 'domain_rate')):
                 with self.subTest(part):
                     with self.assertRaises(driver.ToolError) as cm:
                         rnd.check_parameters(tmp, other)
@@ -830,7 +1067,7 @@ for line in sys.stdin:
             sys.exit(134)
         if n == 9:
             time.sleep(60)
-        reply.update(choices=choices, ended=True, steps=len(choices))
+        reply.update(choices=choices, ended=True, steps=len(choices), domain={'samples': [], 'request_changed': 0})
     else:
         reply.update(trace=trace_text)
     sys.stdout.write(json.dumps(reply) + '\n')
@@ -1048,6 +1285,8 @@ class CommandLine(unittest.TestCase):
                                 (['--seed', '-1'], 'at least 0'), (['--workers', '0'], 'at least 1'),
                                 (['--max-steps', '0'], 'at least 1'), (['--chunk-minutes', '0'], '--chunk-minutes is at least 1'),
                                 (['--switch-weight', '1.5'], 'from 0 to 1'), (['--mega-weight', '-0.1'], 'from 0 to 1'),
+                                (['--domain-rate', '1.5'], 'from 0 to 1'), (['--domain-rate', '-0.5'], 'from 0 to 1'),
+                                (['--domain-rate', 'nan'], 'from 0 to 1'),
                                 (['--start', '10'], 'is not before --battles')):
                 with self.subTest(extra):
                     # The option is given twice, and the later one wins (argparse).
@@ -1056,10 +1295,10 @@ class CommandLine(unittest.TestCase):
             self.assertIn('has no dist/sim', self.refused(*(base_args + ['--checkout', ROOT])))
             parser, args = self.parse(*base_args)
             params = rnd.validate(parser, args)
-            self.assertEqual(params, rnd.Params(1, 10, rnd.DEFAULT_PAIRINGS, 300, 0.1, 0.5))
+            self.assertEqual(params, rnd.Params(1, 10, rnd.DEFAULT_PAIRINGS, 300, 0.1, 0.5, 0.1))  # 10% of the requests
             parser, args = self.parse(*(base_args + ['--pairings', 'ab,cc', '--max-steps', '50', '--switch-weight', '0.3',
-                                                     '--mega-weight', '1']))
-            self.assertEqual(rnd.validate(parser, args), rnd.Params(1, 10, ('AB', 'CC'), 50, 0.3, 1.0))
+                                                     '--mega-weight', '1', '--domain-rate', '0']))
+            self.assertEqual(rnd.validate(parser, args), rnd.Params(1, 10, ('AB', 'CC'), 50, 0.3, 1.0, 0.0))
             self.assertFalse(args.no_lock)
             self.assertEqual((args.chunk_minutes, args.start), (None, 0))
 
@@ -1071,7 +1310,8 @@ class CommandLine(unittest.TestCase):
                                       '--pairings', 'AB,CC', '--switch-weight', '0.25', '--node', 'node')
             self.assertEqual(rnd.forwarded(args, '/out/dir'), [
                 '--checkout', tmp, '--runner', exe, '--battles', '10', '--seed', '3', '--pairings', 'AB,CC', '--workers', '5',
-                '--out', '/out/dir', '--max-steps', '300', '--switch-weight', '0.25', '--mega-weight', '0.5', '--node', 'node'])
+                '--out', '/out/dir', '--max-steps', '300', '--switch-weight', '0.25', '--mega-weight', '0.5',
+                '--domain-rate', '0.1', '--node', 'node'])
             # The chunk parses that again into the same run.
             chunk_args = parser.parse_args(['random'] + rnd.forwarded(args, '/out/dir') + ['--start', '4', '--chunk-minutes', '9', '--no-lock'])
             self.assertEqual(rnd.validate(parser, chunk_args), rnd.validate(parser, args))
@@ -1092,13 +1332,55 @@ def driver_parser():
 class RealRunner(unittest.TestCase):
     """The pipeline with the real runner and converter; only the reference is a committed battle."""
 
-    def process(self, battle, scenario=None):
+    def process_outcome(self, battle, scenario=None):
         world = World(battle, scenario)
         runner = driver.DiffRunner(RUNNER)
         self.addCleanup(runner.kill)
         worker = WorldWorker(world)
-        outcome = rnd.process_random(0, PARAMS, worker, runner, tables, KINDS, world.spec_for, rnd.collections.defaultdict(float))
-        return outcome.record
+        return rnd.process_random(0, PARAMS, worker, runner, tables, KINDS, world.spec_for, rnd.collections.defaultdict(float))
+
+    def process(self, battle, scenario=None):
+        return self.process_outcome(battle, scenario).record
+
+    # The domain: at team preview Showdown accepts the 360 ordered picks of four of six, and so does the engine.
+    def team_samples(self, battle, leave_out=()):
+        accepted = [t for t in ALL_TEAM_TEXTS if t not in leave_out]
+        return lambda i: {'samples': [{'step': 0, 'side': side, 'accepted': accepted} for side in (0, 1)]}
+
+    def test_the_domain_at_team_preview_is_the_same_set_for_the_engine_and_the_reference(self):
+        outcome = self.process_outcome(REAL, self.team_samples(REAL))
+        r = outcome.record
+        self.assertEqual((r['bucket'], r['domain'], r['messages']), ('PASS', {'samples': 2, 'request_changed': 0}, []))
+        self.assertEqual(len(outcome.domain[0]['choices']), 360)
+
+    def test_a_pick_that_showdown_does_not_accept_is_engine_only_end_to_end(self):
+        played = World(REAL).trace['steps'][0]['input']['p1']
+        left_out = next(t for t in ALL_TEAM_TEXTS if t != played)
+        outcome = self.process_outcome(REAL, self.team_samples(REAL, [left_out]))
+        r = outcome.record
+        self.assertEqual((r['bucket'], r['step'], r['reproduces']), ('DIVERGENCE', 0, True))
+        self.assertEqual(r['detail'], 'domain: engine-only 1, reference-only 0 (step 0 side 0)')
+        self.assertEqual(len(r['messages']), 1)
+        self.assertEqual(r['messages'][0], '  fz_1_0 step 0: domain side 0 engine-only: ' + rnd.format_choice(
+            ('team', tuple(int(c) - 1 for c in left_out[len('team '):]))))
+        self.assertEqual(rnd.signature(r), ('domain', 'engine-only team, reference-only -'))
+        domain = json.loads(rnd.case_files(outcome)['domain.json'].decode('utf-8'))
+        self.assertEqual((domain['step'], domain['side'], len(domain['accepted'])), (0, 0, 359))
+        self.assertNotIn(left_out, [a['text'] for a in domain['accepted']])
+
+    def test_a_choice_that_the_engine_does_not_offer_is_reference_only_end_to_end(self):
+        world = World(REAL)
+        # Switching to the two Pokemon in the field: Showdown would not accept it, and the engine does not offer it.
+        scenario = lambda i: {'samples': [world.sample_of(1, 0, ['switch 1, switch 2'])]}
+        outcome = self.process_outcome(REAL, scenario)
+        r = outcome.record
+        self.assertEqual((r['bucket'], r['step'], r['reproduces']), ('DIVERGENCE', 1, True))
+        self.assertRegex(r['detail'], r'^domain: engine-only [1-9]\d*, reference-only 1 \(step 1 side 0\)$')
+        self.assertTrue(any(re.match(r'^  fz_1_0 step 1: domain side 0 reference-only: slots switch \d, switch \d$', m)
+                            for m in r['messages']), r['messages'])
+        # The set has the played choice and the lie: the engine offers many more, of which three are shown.
+        self.assertEqual(len([m for m in r['messages'] if 'engine-only' in m]), 3)
+        self.assertEqual(rnd.signature(r)[0], 'domain')
 
     def test_real_teams_pass_under_the_strict_kinds(self):
         r = self.process(REAL)

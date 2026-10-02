@@ -181,6 +181,15 @@ if(DUOFORGE_PS_REFERENCE_DIR)
                 "${CMAKE_CURRENT_BINARY_DIR}/diff_random_smoke")
         set_tests_properties(duoforge.reference.diff_random_smoke PROPERTIES TIMEOUT 600 LABELS reference
             ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+        # The domain check end to end: 8 battles with every request sampled (--domain-rate 1.0),
+        # the engine's candidates against what Showdown accepts for the side, before every step;
+        # the same battles without the check come to the same: sampling changes nothing else.
+        add_test(NAME duoforge.reference.diff_domain_smoke
+            COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_diff_domain_smoke.py"
+                "${DUOFORGE_NODE}" "${DUOFORGE_PS_REFERENCE_DIR}" "$<TARGET_FILE:duoforge_diff_runner>"
+                "${CMAKE_CURRENT_BINARY_DIR}/diff_domain_smoke")
+        set_tests_properties(duoforge.reference.diff_domain_smoke PROPERTIES TIMEOUT 600 LABELS reference
+            ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
     endif()
 endif()
 # The conformance tables must be what the converter makes of the traces.
@@ -228,7 +237,8 @@ if(Python3_Interpreter_FOUND)
     # The random mode of the driver without Node: how battle i follows from (seed, i), the bucket of
     # each step of the pipeline and what wins, the files of a case, a run cut into chunks (the result
     # does not depend on the cut), children that die or hang (stand-in processes), the machine lock
-    # (in a temporary directory, never the real one) and committed battles through the real runner.
+    # (in a temporary directory, never the real one), the domain samples (made sets of choices as the
+    # converter makes them) and committed battles through the real runner.
     add_test(NAME duoforge.reference.diff_random
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_diff_random.py")
     set_tests_properties(duoforge.reference.diff_random PROPERTIES TIMEOUT 300

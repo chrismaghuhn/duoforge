@@ -440,7 +440,10 @@ for line in sys.stdin:
         reply = {'id': req['id'], 'ok': True, 'node': 'v0', 'pin': 'p', 'harness': 3}
     elif req['cmd'] == 'play':
         kind = req['battle'].get('kind')
-        ok = {'ok': True, 'choices': [{'p1': 'team 1234', 'p2': 'team 4321'}, {'p1': 'move 1'}], 'ended': True, 'steps': 2}
+        domain = {'samples': [{'step': 0, 'side': 0, 'accepted': ['team 1234', 'team 1243']},
+                              {'step': 1, 'side': 0, 'accepted': ['move 1', 'move 2']}], 'request_changed': 1}
+        ok = {'ok': True, 'choices': [{'p1': 'team 1234', 'p2': 'team 4321'}, {'p1': 'move 1'}], 'ended': True, 'steps': 2,
+              'domain': domain}
         if kind == 'bad':
             reply = {'id': req['id'], 'ok': False, 'error': 'no accepted choice', 'stack': 'Error: no accepted choice'}
         elif kind == 'choices':
@@ -449,6 +452,21 @@ for line in sys.stdin:
             reply = dict(ok, id=req['id'], steps=3)
         elif kind == 'ended':
             reply = dict(ok, id=req['id'], ended='yes')
+        elif kind == 'no domain':
+            reply = {k: v for k, v in ok.items() if k != 'domain'}
+            reply['id'] = req['id']
+        elif kind.startswith('domain '):
+            bad = {'extra': dict(domain, extra=1), 'list': ['x'], 'changed': dict(domain, request_changed=-1),
+                   'changed text': dict(domain, request_changed='1'), 'samples': dict(domain, samples='x'),
+                   'keys': dict(domain, samples=[{'step': 0, 'side': 0}]),
+                   'step': dict(domain, samples=[{'step': 2, 'side': 0, 'accepted': ['a']}]),
+                   'negative step': dict(domain, samples=[{'step': -1, 'side': 0, 'accepted': ['a']}]),
+                   'side': dict(domain, samples=[{'step': 0, 'side': 2, 'accepted': ['a']}]),
+                   'accepted': dict(domain, samples=[{'step': 0, 'side': 0, 'accepted': 'a'}]),
+                   'empty': dict(domain, samples=[{'step': 0, 'side': 0, 'accepted': []}]),
+                   'not text': dict(domain, samples=[{'step': 0, 'side': 0, 'accepted': [1]}]),
+                   'twice': dict(domain, samples=domain['samples'][:1] * 2)}[kind[len('domain '):]]
+            reply = dict(ok, id=req['id'], domain=bad)
         else:
             reply = dict(ok, id=req['id'])
     elif req['spec_file'] == 'bad.json':
@@ -519,7 +537,10 @@ class Worker(unittest.TestCase):
     def test_play(self):
         worker = self.stand_in()
         self.assertEqual(worker.play({'kind': 'ok'}, {'seed': 1}),
-                         {'choices': [{'p1': 'team 1234', 'p2': 'team 4321'}, {'p1': 'move 1'}], 'ended': True, 'steps': 2})
+                         {'choices': [{'p1': 'team 1234', 'p2': 'team 4321'}, {'p1': 'move 1'}], 'ended': True, 'steps': 2,
+                          'domain': {'samples': [{'step': 0, 'side': 0, 'accepted': ['team 1234', 'team 1243']},
+                                                 {'step': 1, 'side': 0, 'accepted': ['move 1', 'move 2']}],
+                                     'request_changed': 1}})
         with self.assertRaises(driver.WorkerError) as cm:
             worker.play({'kind': 'bad'}, {'seed': 1})
         self.assertEqual((cm.exception.error, cm.exception.stack), ('no accepted choice', 'Error: no accepted choice'))
@@ -529,6 +550,27 @@ class Worker(unittest.TestCase):
                 with self.assertRaises(driver.ToolError) as cm:
                     worker.play({'kind': kind}, {'seed': 1})
                 self.assertIn('answered a play without choices, ended and steps', str(cm.exception))
+
+    def test_a_play_without_a_proper_domain_is_a_failure_of_the_tool(self):
+        worker = self.stand_in()
+        with self.assertRaises(driver.ToolError) as cm:
+            worker.play({'kind': 'no domain'}, {'seed': 1})
+        self.assertIn('without its domain', str(cm.exception))
+        for what in ('extra', 'list'):
+            with self.subTest(what):
+                with self.assertRaises(driver.ToolError) as cm:
+                    worker.play({'kind': 'domain ' + what}, {'seed': 1})
+                self.assertIn('without its domain', str(cm.exception))
+        for what in ('changed', 'changed text', 'samples'):
+            with self.subTest(what):
+                with self.assertRaises(driver.ToolError) as cm:
+                    worker.play({'kind': 'domain ' + what}, {'seed': 1})
+                self.assertIn('not a list of samples and a count', str(cm.exception))
+        for what in ('keys', 'step', 'negative step', 'side', 'accepted', 'empty', 'not text', 'twice'):
+            with self.subTest(what):
+                with self.assertRaises(driver.ToolError) as cm:
+                    worker.play({'kind': 'domain ' + what}, {'seed': 1})
+                self.assertIn('not step, side and accepted texts', str(cm.exception))
 
 
 class Lanes(unittest.TestCase):
