@@ -394,6 +394,59 @@ class GameTest(unittest.TestCase):
         self.assertEqual(int(side0[0].observation["boundary_kind"]), 1)
         self.assertEqual(result.counters["perspectives.stopped.picks-incomplete"], 1)
 
+    def test_forfeit_hides_nothing_it_cannot_know(self):
+        # review C1: the game ends while players choose: no action ran, a switch was as possible as a move
+        cut = next(i for i, line in enumerate(self.log) if line.startswith("|turn|5")) + 1
+        result = self.run_game(self.log[:cut] + ["|-message|p1 forfeited.", "|win|p2"])
+        last = [r for r in result.rows if int(r.observation["turn"]) == 5]
+        self.assertTrue(last)
+        from duoforge_replay import labels
+        for row in last:
+            self.assertNotIn(labels.MOVE_HIDDEN, row.label.reasons, row.side)
+
+    def test_weather_extended_by_an_item_stops(self):
+        # review C2: Politoed's Drizzle with Damp Rock lasts 8 turns, and no line says so
+        lines = [line.replace("|MysticWater|", "|DampRock|", 1) if line.startswith("|showteam|p2|") else line
+                 for line in self.log]
+        result = self.run_game(lines)
+        self.assertEqual(result.counters["perspectives.stopped.line:-weather RainDance Damp Rock"], 2)
+        self.assertTrue(all(int(r.observation["boundary_kind"]) == 1 for r in result.rows))
+
+    def test_sheet_the_converter_refuses_skips(self):
+        # review I2: a refusal of the converter is a counted skip, not an escaping SystemExit
+        lines = [line.replace("|Modest|", "||", 1) if line.startswith("|showteam|p2|") else line for line in self.log]
+        reason = self.skip_reason(lines)
+        self.assertTrue(reason.startswith("sheet:"), reason)
+
+    def test_wide_guard_raises_the_stall_counter(self):
+        # review I4: Wide Guard adds the stall volatile (data/moves.ts wideguard onHitSide): the chain shows 1
+        lines = self.insert_after("|turn|5", "|-singleturn|p2a: Farigiraf|Wide Guard")
+        lines = self.insert_after_in(lines, "|turn|5", "|move|p2a: Farigiraf|Wide Guard|p2a: Farigiraf")
+        turn6 = [r for r in self.run_game(lines).rows if r.side == 0 and int(r.observation["turn"]) == 6
+                 and int(r.observation["boundary_kind"]) == 2]
+        self.assertEqual(int(turn6[0].observation["sides"][1]["positions"][0]["protect_chain"]), 1)
+
+    def test_failed_detect_resets_the_stall_counter(self):
+        # review I4: Detect shows "-singleturn|Protect"; its failure resets the counter like Protect's. The reset is
+        # visible inside the turn (at a PIVOT); by the next TURN the stall duration ends the chain anyway.
+        from duoforge_live import teams
+        from duoforge_replay.spectator import SpectatorTracker
+        lines = self.insert_after("|turn|1", "|-singleturn|p2a: Politoed|Protect")
+        lines = self.insert_after_in(lines, "|turn|1", "|move|p2a: Politoed|Detect|p2a: Politoed")
+        lines = self.insert_after_in(lines, "|turn|2", "|-fail|p2a: Politoed")
+        lines = self.insert_after_in(lines, "|turn|2", "|move|p2a: Politoed|Detect||[still]")
+        sheets = tuple(teams.unpack(line.split("|", 3)[3]) for line in lines if line.startswith("|showteam|"))
+        tracker = SpectatorTracker(self.data, sheets, 0, None, lambda m, f: ([100] * 6, [0] * 6), lines)
+        fail = lines.index("|-fail|p2a: Politoed")
+        tracker.feed(lines[:fail])
+        self.assertEqual(tracker._positions[1][0].chain, 1)  # Detect succeeded in turn 1
+        tracker.feed([lines[fail]])
+        self.assertEqual(tracker._positions[1][0].chain, 0)
+
+    def insert_after_in(self, lines, prefix, new):
+        i = next(i for i, line in enumerate(lines) if line.startswith(prefix))
+        return lines[:i + 1] + [new] + lines[i + 1:]
+
     def test_bo3_game_number(self):
         lines = ['|uhtml|bestof|<h2><strong>Game 2</strong> of <a href="/game-bestof3-x">a best-of-3</a></h2>'] + self.log
         self.assertEqual(self.run_game(lines).record.bo3_game, 2)
@@ -490,9 +543,33 @@ class DatasetTest(unittest.TestCase):
             self.assertEqual(_sha(path), _sha(self.tmp / "b" / path.name), path.name)
 
     def test_refuses_the_repository(self):
+        import subprocess
         from duoforge_replay import dataset
         with self.assertRaisesRegex(ValueError, "inside the repository"):
             dataset.Writer(data.ROOT / "build" / "replay-out", {})
+        # review I3: any work tree of this repository (the main checkout of a worktree too), and the prior file
+        common = subprocess.run(["git", "-C", str(data.ROOT), "rev-parse", "--path-format=absolute",
+                                 "--git-common-dir"], capture_output=True, text=True, check=True).stdout.strip()
+        with self.assertRaisesRegex(ValueError, "inside the repository"):
+            dataset.Writer(Path(common).parent / "replay-out", {})
+        with self.assertRaisesRegex(ValueError, "inside the repository"):
+            dataset.refuse_repository(Path(common).parent / "prior.json")
+
+    def test_refuses_a_used_directory(self):
+        from duoforge_replay import dataset
+        self.write("used")
+        with self.assertRaisesRegex(ValueError, "not empty"):
+            dataset.Writer(self.tmp / "used", {})
+
+    def test_counters_add_up(self):
+        from duoforge_replay import build
+        out = self.tmp / "counted"
+        c = build.build([self.source], self.prior_path, out, workers=1, chunk=2, stats_factory=stats_factory)
+        skipped = sum(v for k, v in c.items() if k.startswith("games.skipped."))
+        internal = sum(v for k, v in c.items() if k.startswith("internal:"))
+        self.assertEqual(c["games.read"], c["games.processed"] + skipped + internal)
+        stopped = sum(v for k, v in c.items() if k.startswith("perspectives.stopped."))
+        self.assertEqual(c["perspectives.kept"] + stopped, 2 * c["games.processed"])
 
     def test_workers_same_bytes(self):
         from duoforge_replay import build

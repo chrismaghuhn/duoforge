@@ -78,11 +78,16 @@ def turn_label(log, point, side, lists, moves, member_of, tables, stop_line, vac
     roster index of a switch line's details; vacant holds the flat positions empty or fainted at the point."""
     end = min(point.end, stop_line)
     segment = log[point.line:end]
+    # A slot whose action never showed chose a move only if the switch phase of the turn is over (Showdown runs
+    # switches first): some move, cant, Mega Evolution or confusion line came. A game that ends while the players
+    # choose (a forfeit, the timer) shows none, and then a switch is as possible as a move.
+    acted = any(_kind(line) in ("move", "cant", "-mega") or
+                (_kind(line) == "-activate" and line.split("|")[3:4] == ["confusion"]) for line in segment)
     slots, reasons = [], []
     for k in (0, 1):
         mask, reason = _slot_label(segment, side, k, lists[k], moves[k], member_of, tables, vacant)
         if reason is None:
-            reason, mask = UNKNOWN if end < point.end else MOVE_HIDDEN, None
+            reason, mask = UNKNOWN if end < point.end or not acted else MOVE_HIDDEN, None
             if reason == MOVE_HIDDEN:
                 mask = _move_options(lists[k], _mega_shown(segment, side * 2 + k))
                 if not mask:

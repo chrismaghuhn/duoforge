@@ -119,6 +119,11 @@ def _prepass(replay_id, format_id, log, data):
         raise Skip("skip:sheets")
     sheets = tuple(teams.unpack(packed[s]) for s in (0, 1))
     _check_names(sheets[0] + sheets[1], data)
+    for s in (0, 1):
+        try:
+            data.team(teams.to_text(sheets[s]))  # what the tracker parses: a refusal is a skip, not a SystemExit
+        except trace_to_c.ConversionError as e:
+            raise Skip(f"sheet:{e.rule}") from None
     record = GameRecord(replay_id, format_id, bo3, tuple(ratings), winner, turns,
                         tuple(_hash8(_to_id(players.get(s, ""))) for s in (0, 1)),
                         tuple(_hash8(packed[s]) for s in (0, 1)))
@@ -159,7 +164,7 @@ def _perspective(lines, points, side, sheets, data, prior, stats, counters):
     try:
         leads, back = hindsight(lines, side, data, sheets)
         picks = hindsight_picks(lines, side, data, sheets)
-        tracker = SpectatorTracker(data, sheets, side, picks, stats_of)
+        tracker = SpectatorTracker(data, sheets, side, picks, stats_of, lines)
     except line_classes.Stop as stop:
         counters[f"perspectives.stopped.{stop.reason}"] += 1
         counters[f"points.dropped.{stop.reason}"] += len(points)

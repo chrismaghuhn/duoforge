@@ -12,7 +12,7 @@ import json
 import sys
 from pathlib import Path
 
-from . import build, prior
+from . import build, dataset, prior
 
 
 def main(argv=None):
@@ -32,6 +32,7 @@ def main(argv=None):
     b.add_argument("--ps-dir", default=None)
     args = parser.parse_args(argv)
     if args.command == "prior":
+        dataset.refuse_repository(args.out)  # derived from public pastes, kept with the data (decision 0019)
         built = prior.build(args.pastes)
         args.out.write_text(json.dumps(built, indent=1, sort_keys=True) + "\n", encoding="utf-8")
         print(f"prior: {built['pastes']} pastes, skipped {built['skipped']}, keys per level "

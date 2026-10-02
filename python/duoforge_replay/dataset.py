@@ -16,6 +16,7 @@ import collections
 import hashlib
 import io
 import json
+import subprocess
 import zipfile
 from pathlib import Path
 
@@ -30,10 +31,24 @@ FORMAT_VERSION = 1
 _DATE = (1980, 1, 1, 0, 0, 0)
 
 
-def _inside_repository(path):
+def _common_dir(path):
+    """The git common directory of the work tree that holds path (its nearest existing ancestor), or None."""
+    path = Path(path).resolve()
+    while not path.exists():
+        path = path.parent
+    out = subprocess.run(["git", "-C", str(path), "rev-parse", "--path-format=absolute", "--git-common-dir"],
+                         capture_output=True, text=True)
+    return Path(out.stdout.strip()).resolve() if out.returncode == 0 else None
+
+
+def refuse_repository(path):
+    """ValueError when path lies in any work tree of this repository (the checkout of this code, its main
+    checkout, any worktree): replay data never goes there."""
     path = Path(path).resolve()
     root = ROOT.resolve()
-    return path == root or root in path.parents
+    ours = _common_dir(root)
+    if path == root or root in path.parents or (ours is not None and _common_dir(path) == ours):
+        raise ValueError(f"the output {path} is inside the repository: replay data never goes there")
 
 
 def write_npz(path, arrays):
@@ -53,9 +68,10 @@ def _sha256(path):
 
 class Writer:
     def __init__(self, out_dir, manifest, shard_rows=65536):
-        if _inside_repository(out_dir):
-            raise ValueError(f"the output {out_dir} is inside the repository: replay data never goes there")
+        refuse_repository(out_dir)
         self.out = Path(out_dir)
+        if self.out.exists() and any(self.out.iterdir()):
+            raise ValueError(f"the output {out_dir} is not empty: old shards would mix with new ones")
         self.out.mkdir(parents=True, exist_ok=True)
         self.manifest = dict(manifest)
         self.shard_rows = shard_rows

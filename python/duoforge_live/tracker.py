@@ -40,6 +40,9 @@ HP_UNKNOWN = 3  # DUOFORGE_HP_UNKNOWN (include/duoforge/duoforge.h)
 FLAG_FOLLOW_ME, FLAG_HELPING_HAND, FLAG_UNBURDEN = (C[f"DUOFORGE_POSITION_FLAG_{n}"] for n in
                                                     ("FOLLOW_ME", "HELPING_HAND", "UNBURDEN"))
 SPECTATOR = 2  # the converter's viewer of a spectator: no side, so every HP line reads as the public percent
+# The items that lengthen a weather from 5 to 8 turns (data/items.ts, data/conditions.ts durationCallback).
+_WEATHER_ITEM = {"RainDance": "Damp Rock", "SunnyDay": "Heat Rock", "Sandstorm": "Smooth Rock", "Snowscape": "Icy Rock",
+                 "Snow": "Icy Rock"}
 PP_EXACT, PP_DERIVED = 1, 2  # DUOFORGE_PP_EXACT, DUOFORGE_PP_DERIVED
 STAGE_NEUTRAL = 6  # DFI_STAGE_NEUTRAL: stages are stored biased (src/state/battle_internal.h)
 FIELD_TURNS = 5  # DFI_FIELD_TURNS_MAX: weather, terrain, Trick Room
@@ -151,6 +154,8 @@ class Tracker:
         self._choice_items = {tables["ITEM"][k.upper()] + 1 for k in lines.CHOICE_ITEMS if k.upper() in tables["ITEM"]}
         self._unburden = tables["ABILITY"]["UNBURDEN"] + 1 if "UNBURDEN" in tables["ABILITY"] else None
         self._follow_me = tables["MOVE"].get("FOLLOWME")
+        # Protect and Detect both show "-singleturn|POKEMON|Protect"; a failed one resets the stall counter
+        self._stall_moves = {tables["MOVE"][k] for k in ("PROTECT", "DETECT") if k in tables["MOVE"]}
         self._helping_hand = tables["MOVE"].get("HELPINGHAND")
 
     # ------------------------------------------------------------------ input
@@ -180,9 +185,17 @@ class Tracker:
             return
         self._lines.append(line)
         if cls.startswith("turn:"):
-            self._turn_scoped.add(cls[len("turn:"):])
-            self.turn_scoped_seen[cls[len("turn:"):]] += 1
+            name = cls[len("turn:"):]
+            self._turn_scoped.add(name)
+            self.turn_scoped_seen[name] += 1
+            if name in ("WIDE_GUARD", "QUICK_GUARD") and line.startswith("|-singleturn|"):
+                # Wide Guard and Quick Guard add the stall volatile (data/moves.ts onHitSide addVolatile('stall')),
+                # the counter a Protect reads: the view's protect_chain counts them.
+                p = self._at(trace_to_c.ev_pos(line.split("|")[2]))
+                p.chain = min(p.chain + 1, STALL_LEVEL_MAX)
+                p.stall = STALL_DURATION
             return
+        self._extended_field(line)
         if line.startswith("|-clearnegativeboost|"):
             # White Herb (Team C): the [silent] line the converter skips, after its -enditem; the stages below
             # neutral return to it.
@@ -190,6 +203,28 @@ class Tracker:
             p.stages = [max(s, STAGE_NEUTRAL) for s in p.stages]
             return
         self._fold(line)
+
+    def _extended_field(self, line):
+        """Stop at a weather or terrain set by a member holding an item that lengthens it (Damp Rock, Heat Rock,
+        Smooth Rock, Icy Rock, Terrain Extender: data/conditions.ts): no line shows the 8 turns, and the fold
+        counts 5."""
+        parts = line.split("|")
+        kind = parts[1] if len(parts) > 1 else ""
+        if kind == "-weather" and len(parts) > 2 and parts[2] in _WEATHER_ITEM and "[upkeep]" not in parts:
+            item = _WEATHER_ITEM[parts[2]]
+        elif kind == "-fieldstart" and len(parts) > 2 and parts[2].endswith(" Terrain"):
+            item = "Terrain Extender"
+        else:
+            return
+        of = [p[len("[of] "):] for p in parts if p.startswith("[of] ")]
+        holder = None
+        if of:
+            holder = self._member_of(of[0])
+        elif self._last_move is not None:
+            holder = self._occupant(self._last_move[0])
+        item_id = self.data.tables["ITEM"].get(trace_to_c.key(item))
+        if holder is not None and item_id is not None and holder.sheet["item"] == item_id + 1:
+            raise lines.Stop(f"line:{kind} {parts[2]} {item}")
 
     def _turn_scoped_stop(self, boundary):
         """Stop at a PIVOT boundary while a single-turn feature of this turn is up and its bit is not supported."""
@@ -405,7 +440,7 @@ class Tracker:
             p.chain = min(p.chain + 1, STALL_LEVEL_MAX)
             p.stall = STALL_DURATION
         elif kind == EV["FAIL"]:
-            if self._last_move is not None and self._last_move[:2] == (pos, self.data.tables["MOVE"]["PROTECT"]):
+            if self._last_move is not None and self._last_move[0] == pos and self._last_move[1] in self._stall_moves:
                 p = self._at(pos)
                 p.chain = p.stall = 0
         elif kind == EV["WEATHER"]:

@@ -46,7 +46,9 @@ def _work(chunk):
                                            _STATE["stats"])))
         except game.Skip as e:
             out.append(("skip", e.reason, replay_id))
-        except Exception as e:  # noqa: BLE001 - a bug: counted and reported, the run goes on
+        except KeyboardInterrupt:
+            raise
+        except BaseException as e:  # noqa: BLE001 - a bug (a SystemExit too): counted and reported, the run goes on
             out.append(("internal", f"{type(e).__name__}: {str(e)[:120]}", replay_id))
     return out
 

@@ -79,7 +79,7 @@ def hindsight_picks(log, side, data, sheets):
 class SpectatorTracker(Tracker):
     """One side of a replay as its player saw it, from the spectator log."""
 
-    def __init__(self, data, sheets, side, picks, stats_of, log=()):
+    def __init__(self, data, sheets, side, picks, stats_of, log):
         super().__init__(data, teams.to_text(sheets[side]))
         self.side = side
         self._log = list(log)  # the whole log, for the hindsight of an own charging move's target

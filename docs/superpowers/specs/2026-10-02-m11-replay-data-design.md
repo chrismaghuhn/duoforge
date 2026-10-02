@@ -189,7 +189,7 @@ The spectator's observation for side s at a point is DuoForge's observation for 
 | own `stats` | Showdown's stats of the prior spread, for the current forme (the Mega forme after Mega Evolution) | exact | DuoForge, with the true team as the prior |
 | own `location` | ACTIVE, BENCH or NOT_BROUGHT, from the hindsight picks; UNDETERMINED at team selection | the same | DuoForge, exactly |
 | own `brought_order` | the leads in slot order, then the back members in ascending roster order | the chosen order | the leads exactly, the back members as a set |
-| own positions' `locked_target` | the target on the raw `\|move\|` line of the charge turn | the stored target | DuoForge, exactly |
+| own positions' `locked_target` | the target on the release turn's `\|move\|` line (`[from] lockedmove`), since the charge turn's line shows none; when the move was drawn (Lightning Rod, Storm Drain, Follow Me, Rage Powder, Spotlight), retargeted (a faint or an empty position on the target's side) or never released, the perspective stops (`charge-target-hidden`) at its next own point | the stored target | DuoForge, exactly |
 | `requested`, `requested_slots` (both sides), `slot_mask` | as in section 7 | the same | DuoForge, exactly |
 | `epoch` | the number of decision points so far, both sides together | the same | DuoForge, exactly |
 

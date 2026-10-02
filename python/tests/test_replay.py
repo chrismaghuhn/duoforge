@@ -23,6 +23,7 @@ TEAM_SELECTION = C["DUOFORGE_BOUNDARY_TEAM_SELECTION"]
 PUBLIC_OWN = ("hp", "hp_max", "hp_kind", "hp_flag", "pp", "pp_kind")
 FROM_PRIOR = ("stats", "stat_points")
 HP_UNKNOWN = 3  # DUOFORGE_HP_UNKNOWN (include/duoforge/duoforge.h)
+NEWLINE = chr(10)
 
 
 def node_stats(*args, stdin=None):
@@ -100,22 +101,14 @@ STOPS = {}
 
 
 def label_of(tracker, log, point, lists, leads, back):
-    """The label at the tracker's point (None before labels.py exists)."""
-    try:
-        from duoforge_replay import labels
-    except ImportError:
-        return None
-    if lists is None and point.boundary != TEAM_SELECTION:
-        return None
+    """The label at the tracker's point."""
+    from duoforge_replay import labels
     return labels.for_point(tracker, log, point, lists, len(log), leads, back)
 
 
 def superset_of(tracker):
-    """The superset domain and slot lists at the tracker's point (None, None before superset.py exists)."""
-    try:
-        from duoforge_replay import superset
-    except ImportError:
-        return None, None
+    """The superset domain and slot lists at the tracker's point."""
+    from duoforge_replay import superset
     domain, lists = superset.domain(tracker)
     return domain.copy(), lists
 
@@ -240,6 +233,24 @@ class SpectatorTest(unittest.TestCase):
                     for s in (0, 1):
                         missing = commands(theirs, s) - commands(domain, s)
                         self.assertFalse(missing, (where, s, sorted(missing)))
+
+    def test_production_path_keeps_known_charge_targets(self):
+        # review I1: game.process (the production path) must know the own charging targets spectate() knows
+        from duoforge_replay import game, prior
+        empty = prior.Prior({"version": 1, "pastes": 0, "skipped": {}, "levels": [{}, {}, {}, {}]})
+        checked = 0
+        for battle in self.ref.battles:
+            if not any("[still]" in line for line in battle.lines):
+                continue
+            try:
+                result = game.process(battle.name, "gen9championsvgc2026regmc", NEWLINE.join(battle.lines),
+                                      self.ref.data, empty, self.source)
+            except game.Skip:
+                continue  # a development team (No Ability): never in a replay
+            checked += 1
+            hidden = result.counters["perspectives.stopped.charge-target-hidden"]
+            self.assertLessEqual(hidden, sum(1 for name, _ in STOPS if name == battle.name), battle.name)
+        self.assertGreater(checked, 20)
 
     def test_fixture_is_showdowns_output(self):
         # the unit tests' committed spectator log is the pinned Showdown's, never stale
