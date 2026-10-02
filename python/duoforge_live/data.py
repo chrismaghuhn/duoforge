@@ -24,10 +24,13 @@ if str(ROOT / "tools" / "reference") not in sys.path:
 import trace_to_c  # noqa: E402
 
 NONE = 0xFF  # DFI_CLOSURE_NONE
+# "No such row" in the generated rows: a number (DFI_CLOSURE_NONE is 0xFF in the closure's 8-bit fields) or a symbol
+# (the pool's 16-bit forme links use DFI_FORME_NONE).
+_NONE_SYMBOLS = {"DFI_CLOSURE_NONE", "DFI_FORME_NONE"}
 
 # dfi_forme_data: dex_num, weight_hg, types[2], base[6], ability, gender_rule, is_mega, base_forme, mega_forme,
 # mega_item, ...
-_FORME_ROW = re.compile(r"\{\d+u, \d+u, \{\d+u, \d+u\}, \{[^}]*\}, (\d+)u, \d+u, \d+u, (\d+)u, (\d+)u, (\d+)u,")
+_FORME_ROW = re.compile(r"\{\d+u, \d+u, \{\w+, \w+\}, \{[^}]*\}, (\w+), \w+, \w+, (\w+), (\w+), (\w+),")
 # dfi_move_data: type, category, base_power, accuracy, pp_base, pp_max, priority, target_class, ...
 _MOVE_ROW = re.compile(r"^    \{\d+u, \d+u, \d+u, \d+u, \d+u, (\d+)u, \d+u, (\d+)u,", re.M)
 # DUOFORGE_TARGET_CLASS_* (include/duoforge/duoforge.h) and DFI_TARGET_CLASS_RANDOM_NORMAL (10, Struggle only,
@@ -41,6 +44,15 @@ _KINDS = {
     "pool": ("pool_tables.h", "pool_tables.c", "DFI_POOL_",
              "dfi_pool_formes[DFI_POOL_FORME_COUNT] = {", "dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {"),
 }
+
+
+def _value(token):
+    """A field of a generated row: 12u -> 12, a NONE symbol -> None."""
+    if token in _NONE_SYMBOLS:
+        return None
+    if not token.endswith("u") or not token[:-1].isdigit():
+        raise ValueError(f"a row field {token!r} is neither a number nor a NONE symbol")
+    return int(token[:-1])
 
 
 def _rows(source, start, row, count):
@@ -66,7 +78,7 @@ class Data:
         source = (root / "src" / "data" / file).read_text(encoding="ascii")
         self.counts = {t: int(re.search(rf"#define {prefix}{t}_COUNT (\d+)u", header).group(1)) for t in ("FORME", "MOVE")}
         formes = _rows(source, forme_start, _FORME_ROW, self.counts["FORME"])
-        self._formes = [tuple(int(x) for x in f) for f in formes]  # (ability, base_forme, mega_forme, mega_item)
+        self._formes = [tuple(_value(x) for x in f) for f in formes]  # (ability, base_forme, mega_forme, mega_item)
         moves = _rows(source, move_start, _MOVE_ROW, self.counts["MOVE"])
         self._pp_max = [int(pp) for pp, _ in moves]
         self._target_class = [int(target) for _, target in moves]
@@ -105,12 +117,12 @@ class Data:
     def mega_forme(self, forme):
         """The forme's Mega forme, or None."""
         mega = self._formes[forme][2]
-        return None if mega == NONE else mega
+        return None if mega is None or (self.kind == "closure" and mega == NONE) else mega
 
     def mega_capable(self, forme, item):
         """Whether `item` (1-based, 0 for none) is the stone of the forme's Mega."""
         stone = self._formes[forme][3]
-        return item != 0 and stone != NONE and item - 1 == stone
+        return item != 0 and stone is not None and stone != NONE and item - 1 == stone
 
 
 def load(root=ROOT, kind="closure"):
