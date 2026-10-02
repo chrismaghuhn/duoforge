@@ -7,7 +7,7 @@
 An entry is {"id", "name", "source": {"url", "event", "placing"}, "notes", "sha256"} and, once a correction has
 replaced the team, "superseded_by": the id of the team that replaced it. The id is upper case ([A-Z][A-Z0-9_]*, 32
 characters at most; a dash is how a pairing joins two ids, so an id has none); `source` has the three keys, each a string
-or null; `sha256` is the SHA-256 of the bytes of the paste.
+or null; `sha256` is the SHA-256 of the text of the paste file with CRLF turned into LF (sha256_of).
 
 Ids are stable and never reused, and a team file never changes under its id: the learner records the SHA-256 of each file
 and refuses a file that changed. A correction of a team is a new team, with a new id and its own entry; the old entry
@@ -74,7 +74,10 @@ def team_path(root, team_id):
 
 
 def sha256_of(data):
-    return hashlib.sha256(data).hexdigest()
+    """The `sha256` of the index: the SHA-256 of the text of a file with CRLF turned into LF (as tools/datagen/gen_closure.py
+    hashes its inputs), so that a checkout with Windows line ends (git's autocrlf, a copy through another tool) has the
+    hash of the file as it is committed. Everything that hashes a registry file uses this."""
+    return hashlib.sha256(data.replace(b'\r\n', b'\n')).hexdigest()
 
 
 def split_sets(text):

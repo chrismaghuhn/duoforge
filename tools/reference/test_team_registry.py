@@ -11,6 +11,7 @@ sources and supersessions that README.md of this directory documents; the gender
 reads it; and the three teams that the registry starts with are copies of the files that other tests use.
 """
 import copy
+import hashlib
 import io
 import json
 import os
@@ -175,6 +176,20 @@ class Made(unittest.TestCase):
         with io.open(os.path.join(reg.registry_dir(self.root), 'README.md'), 'w') as f:
             f.write('the one other file that is allowed')
         self.assertEqual(self.problems(), [])
+
+    def test_a_crlf_copy_of_a_file_has_the_hash_of_the_lf_file(self):
+        """The sha256 is that of the text with CRLF turned into LF: a checkout with Windows line ends is the same team."""
+        for entry in reg.entries(self.root):
+            data = read(reg.team_path(self.root, entry['id']))
+            self.assertNotIn(b'\r', data)
+            crlf = data.replace(b'\n', b'\r\n')
+            self.assertEqual(reg.sha256_of(crlf), reg.sha256_of(data))
+            self.assertEqual(reg.sha256_of(crlf), entry['sha256'])
+            self.assertNotEqual(hashlib.sha256(crlf).hexdigest(), entry['sha256'])  # a hash of the bytes would differ
+        self.write_team('A', read(reg.team_path(self.root, 'A')).replace(b'\n', b'\r\n'), rehash=False)
+        found = self.problems()
+        self.assertEqual([c for c, _ in found], ['form'])  # the hash holds; only the line ends are named
+        self.assertIn('carriage returns', found[0][1])
 
     def test_a_file_that_changed_is_not_the_team_of_its_id(self):
         data = read(reg.team_path(self.root, 'A')).replace(b'Jolly', b'Timid')

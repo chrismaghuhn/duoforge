@@ -1826,6 +1826,16 @@ class TeamRegistryIds(unittest.TestCase):
         self.assertEqual(rnd.derive(params, 0, by)[0]['data'], 'team_c')  # A against TC1
         self.assertNotIn('data', rnd.derive(params, 1, by)[0])  # A against B
 
+    def test_a_registry_file_with_windows_line_ends_is_the_team_the_index_says(self):
+        for team_id in ('A', 'B', 'C'):
+            path = team_registry.team_path(self.root, team_id)
+            with io.open(path, 'rb') as f:
+                data = f.read()
+            with io.open(path, 'wb') as f:
+                f.write(data.replace(b'\n', b'\r\n'))
+        self.assertEqual(rnd.read_teams(self.root)['A'], rnd.read_team_file(TEAM_A))  # the sha256 is of the text, CRLF as LF
+        self.assertEqual(rnd.check_teams([('B', None), ('C', None)], root=self.root), ())
+
     def test_a_registry_file_that_changed_since_the_run_was_set_up_is_refused(self):
         self.add('MC405', read_text(TEAM_A))
         teams = rnd.check_teams([('MC405', None)], root=self.root)
