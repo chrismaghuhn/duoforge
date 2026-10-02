@@ -192,7 +192,7 @@ The acceptance test for 1 to 4 is that all committed battles replay without a di
 ## 6. Latent issues found (none affects today's data)
 
 1. **Generator, silent misencoding.** `tools/datagen/gen_closure.py` encodes a secondary with a nested `self: { boosts }` (Flame Charge) as a boost on the target, without an error. The Team C session confirmed it by reading the code; a separate session is fixing it so that the generator fails loudly.
-2. **Wrong switch cause.** In `src/combat/turn.c`, the switch event of a damaging self-switch always names Flip Turn. U-turn and Volt Switch need a fix before they are marked.
+2. **Wrong switch cause.** In `src/combat/turn.c`, the switch event of a damaging self-switch always named Flip Turn. **Fixed in step G5**: a damaging pivot has a switch flag of its own (`dfi_pivot_moves`, `src/state/closure_member.c`), the event names the move that set it, and U-turn is marked with five recorded POOL battles (`g5_uturn_a` to `_e`). A further damaging pivot (Volt Switch, Teleport is a status move) needs one more flag value and its row, and must be marked only with its own battle.
 3. **Converter, Struggle.** `convert_choice` in `trace_to_c.py` detects Struggle only when every PP is 0. When a disabled Fake Out is the only move with PP, both Showdown and the engine also give Struggle. Random play would report that as a false divergence.
 4. **Full flags byte.** The `flags` byte of the move row is full, so new flag bits need a format change.
 5. **Grassy Terrain.** Its halving of Earthquake and Bulldoze is missing. It matters once `allAdjacent` moves come.
