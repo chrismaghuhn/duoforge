@@ -53,7 +53,7 @@ dfi_kind_limits dfi_kind_limits_of(uint32_t data_kind);
  * and the support manifest marks only moves that are here (tests/test_pool_tables.c). */
 typedef struct dfi_pivot_move {
     uint8_t flag; /* DFI_SWITCH_* */
-    uint8_t move; /* the move id of the pool tables (an id below 256) */
+    uint16_t move; /* the move id of the pool tables: a u16, as everywhere (the pool has 511 moves; Volt Switch is above 255) */
 } dfi_pivot_move;
 #define DFI_PIVOT_MOVE_COUNT 2u
 extern const dfi_pivot_move dfi_pivot_moves[DFI_PIVOT_MOVE_COUNT];
