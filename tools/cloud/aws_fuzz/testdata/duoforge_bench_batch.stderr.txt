@@ -1,0 +1,6 @@
+duoforge_bench: recording 10 battles per pairing...
+  recorded 40 battles, 723 steps, 526 turns, 0 truncations, 0 errors (DUOFORGE_OK)
+  side 0 chose: 812 moves (32 Mega, 0 Struggle; targets foe 450, ally 210, none 152), 81 switches, 87 replacements, 164 passes
+  side 1 chose: 851 moves (34 Mega, 0 Struggle; targets foe 446, ally 210, none 195), 104 switches, 78 replacements, 99 passes
+  BATCH_NATIVE   workers=2                  median   85.327 ms over 3 (disturbed 0), 55539 steps/s
+duoforge_bench: done

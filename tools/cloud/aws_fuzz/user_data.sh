@@ -19,6 +19,8 @@ set -euo pipefail
 DF_CAMPAIGN='@CAMPAIGN@'
 DF_COMMIT='@COMMIT@'
 DF_BUCKET='@BUCKET@'
+DF_RUN_ID='@RUN_ID@'
+DF_RESUME=@RESUME@ # yes: continue the run DF_RUN_ID (its manifest must be exactly this campaign's); no: a new run
 DF_MAX_MINUTES=@MAX_MINUTES@
 DF_REGION=eu-central-1
 DF_REPO_URL=https://github.com/chrismaghuhn/duoforge.git
@@ -34,7 +36,7 @@ export AWS_DEFAULT_REGION=$DF_REGION AWS_REGION=$DF_REGION
 export DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a HOME=/root
 WORK=/opt/duoforge-fuzz
 LOG=/var/log/duoforge-fuzz.log
-S3_BASE="s3://$DF_BUCKET/fuzz/$DF_CAMPAIGN"
+S3_BASE="s3://$DF_BUCKET/fuzz/$DF_CAMPAIGN/$DF_RUN_ID"
 BOOT=$(date -u +%Y%m%dT%H%M%SZ)
 mkdir -p "$WORK"
 : > "$LOG"
@@ -135,6 +137,13 @@ done < "$CAMP_DIR/campaign.conf"
     fail 'campaign.conf: chunk_battles must be between 100 and 20000'
 [[ $BENCH =~ ^[01]$ ]] || fail 'campaign.conf: bench must be 0 or 1'
 VCPUS=$(nproc)
+PARALLEL_CONF=$PARALLEL
+case $DF_RUN_ID in
+    "${DF_COMMIT:0:12}-$CHUNK_BATTLES-$BASE_SEED-"*) ;;
+    *) fail "the run id $DF_RUN_ID is not of this commit, chunk_battles $CHUNK_BATTLES and base_seed $BASE_SEED" ;;
+esac
+RUN_ID=$DF_RUN_ID
+RESUME=$DF_RESUME
 if [ "$PARALLEL" = auto ]; then
     PARALLEL=$((VCPUS / DF_VCPUS_PER_DRIVER))
     [ "$PARALLEL" -ge 1 ] || PARALLEL=1
@@ -164,11 +173,8 @@ run_driver() { # idx seed dir: the random mode over one chunk, timed (user and s
 }
 # shellcheck source=chunks.sh
 . "$REPO/tools/cloud/aws_fuzz/chunks.sh"
-: > "$WORK/done.txt"
-if s3_has "$S3_BASE/manifest/done.txt"; then
-    aws s3 cp "$S3_BASE/manifest/done.txt" "$WORK/done.txt" --only-show-errors
-fi
-log "done-manifest: $(wc -l < "$WORK/done.txt") chunk(s) finished of $CHUNKS; $CHUNK_BATTLES battles each, $PARALLEL at a time, $WORKERS_PER workers each, $VCPUS vCPUs"
+done_manifest_open
+log "$CHUNKS chunks of $CHUNK_BATTLES battles, $PARALLEL at a time, $WORKERS_PER workers each, $VCPUS vCPUs"
 
 # --- the monitors: battles per minute (and the abort), the spot interruption notice
 count_done() { find "$WORK/out" -path '*/partial/*.json' -newer "$WORK/fuzz-started" 2> /dev/null | wc -l || true; }
@@ -223,16 +229,28 @@ instance_type() {
     token=$(curl -fsS -X PUT http://169.254.169.254/latest/api/token -H 'X-aws-ec2-metadata-token-ttl-seconds: 600') || return 0
     curl -fsS -H "X-aws-ec2-metadata-token: $token" http://169.254.169.254/latest/meta-data/instance-type || true
 }
+# A benchmark that fails is a result (bench.json says why), never the end of the campaign.
+bench_error() { # text
+    printf '{"campaign":"%s","commit":"%s","error":"%s"}\n' "$DF_CAMPAIGN" "$DF_COMMIT" "$1" > "$WORK/bench.json"
+}
 if [ "$BENCH" = 1 ]; then
     log 'bench=1: building duoforge_bench'
-    cmake --build "$REPO/build" --parallel --target duoforge_bench > /dev/null
-    BENCH_EXE=$(find "$REPO/build" -name duoforge_bench -type f | head -n 1)
-    [ -x "$BENCH_EXE" ] || fail 'duoforge_bench was not built'
-    python3 "$REPO/tools/cloud/aws_fuzz/bench_run.py" --bench "$BENCH_EXE" --vcpus "$VCPUS" --seconds 30 \
-        --instance-type "$(instance_type)" --campaign "$DF_CAMPAIGN" --commit "$DF_COMMIT" --out "$WORK/bench.json" >> "$LOG" 2>&1 ||
-        fail 'the benchmark failed'
-    aws s3 cp "$WORK/bench.json" "$S3_BASE/bench.json" --only-show-errors
-    log "bench.json uploaded: $(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d["games_per_second"], "games/s on", d["threads"], "threads")' "$WORK/bench.json")"
+    BENCH_EXE=''
+    if cmake --build "$REPO/build" --parallel --target duoforge_bench > /dev/null 2>> "$LOG"; then
+        BENCH_EXE=$(find "$REPO/build" -name duoforge_bench -type f | head -n 1)
+    fi
+    if [ -z "$BENCH_EXE" ] || [ ! -x "$BENCH_EXE" ]; then
+        log 'duoforge_bench was not built'
+        bench_error 'duoforge_bench was not built'
+    elif ! python3 "$REPO/tools/cloud/aws_fuzz/bench_run.py" --bench "$BENCH_EXE" --vcpus "$VCPUS" --seconds 30 \
+        --instance-type "$(instance_type)" --campaign "$DF_CAMPAIGN" --commit "$DF_COMMIT" --out "$WORK/bench.json" >> "$LOG" 2>&1; then
+        log 'the benchmark failed; bench.json says why'
+        [ -f "$WORK/bench.json" ] || bench_error 'bench_run.py failed before it wrote a result'
+    fi
+    aws s3 cp "$WORK/bench.json" "$S3_BASE/bench.json" --only-show-errors || log 'the upload of bench.json failed'
+    log "bench.json: $(python3 -c 'import json, sys
+d = json.load(open(sys.argv[1]))
+print("ERROR: " + d["error"] if "error" in d else "%s games/s on %s threads" % (d["games_per_second"], d["threads"]))' "$WORK/bench.json" || echo unreadable)"
 fi
 
 printf '{"campaign":"%s","commit":"%s","boot":"%s","cpus":%s,"parallel":%s,"workers_per_driver":%s,"chunk_battles":%s,"node":"%s","pin":"%s"}\n' \
