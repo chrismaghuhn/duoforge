@@ -497,7 +497,7 @@ int main(void)
 
     /* The schema is the one of the context's kind; sizes, schema ids and truncations. */
     {
-        uint8_t m[DF_STATE_ENCODED_MAX];
+        uint8_t m[DF_STATE_ENCODED_MAX + 1u]; /* one byte past a state, for the length check */
         dfi_invariant inv = DFI_INV_NONE;
         /* A POOL state with the schema and length of schema 3 and without its tail. */
         memcpy(m, enc, DFI_STATE_POOL_ENCODED_SIZE);
