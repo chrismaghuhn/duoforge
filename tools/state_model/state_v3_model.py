@@ -30,6 +30,18 @@ POS_SIZE = 21
 KNOW_SIZE = 7
 MEMBER_SIZE = 48
 STATE_SIZE = HEADER_SIZE + 2 * SIDE_SIZE
+# The POOL state tail (decision 0015 section 7): schema 0x0103 = "v3 + pool tail rev 1", 42 bytes after the 1009.
+SCHEMA_POOL_TAIL_REV1 = 0x0103
+TAIL_SIDE_SIZE = 21
+TAIL_SIZE = 2 * TAIL_SIDE_SIZE
+POOL_STATE_SIZE = STATE_SIZE + TAIL_SIZE
+TAIL_MOVE_MAX = 5
+TAIL_ENCORE_SLOT_MAX = 4
+TAIL_ENCORE_TURNS_MAX = 4
+TAIL_THROAT_CHOP_MAX = 2
+TAIL_HEAL_BLOCK_MAX = 5
+TAIL_WIDE_GUARD_MAX = 1
+TYPE_COUNT = 18
 assert STATE_SIZE == 1009 and QUEUE_OFF + QUEUE_CAP * QUEUE_REC_SIZE == HEADER_SIZE
 MAX_ROSTER = 6
 MOVE_SLOTS = 4
@@ -280,8 +292,22 @@ def empty_side():
             'members': [empty_member() for _ in range(MAX_ROSTER)]}
 
 
+def has_pool_tail(ctx):
+    return ctx.data_kind in (KIND_POOL, KIND_POOL_DEV)
+
+
+def empty_tail_pos():
+    return {'last_move': 0, 'encore_slot': 0, 'encore_turns': 0, 'throat_chop': 0, 'heal_block': 0}
+
+
+def empty_tail_side():
+    return {'wide_guard': 0, 'pos': [empty_tail_pos(), empty_tail_pos()], 'soak': [0] * MAX_ROSTER}
+
+
 def empty_state(ctx):
-    return {'fp': ctx.fingerprint(), 'rng_state': 0, 'rng_inc': 0, 'draws': 0, 'next': 1,
+    # 'tailed': the state carries the POOL tail (schema 0x0103); 'tail': its two sides, all zero unless a test sets them.
+    return {'tailed': has_pool_tail(ctx), 'tail': [empty_tail_side(), empty_tail_side()],
+            'fp': ctx.fingerprint(), 'rng_state': 0, 'rng_inc': 0, 'draws': 0, 'next': 1,
             'boundary': TEAM_SELECTION, 'request_mask': 3, 'epoch': 1, 'turn': 0, 'result': RESULT_NONE,
             'weather': 0, 'weather_turns': 0, 'terrain': 0, 'terrain_turns': 0, 'trick_room_turns': 0,
             'queue_len': 0, 'queue': [qrec(Q_NONE) for _ in range(QUEUE_CAP)],
@@ -486,8 +512,9 @@ INVARIANTS = ['NONE', 'CONTEXT_FINGERPRINT', 'RNG_INC_EVEN', 'NEXT_ACTIVATION_ZE
               'EMPTY_WITH_ACTIVATION', 'OCCUPIED_WITHOUT_ACTIVATION', 'OCCUPANT_RANGE', 'OCCUPANT_NOT_BROUGHT',
               'ACTIVATION_NOT_ISSUED', 'OCCUPANT_DUPLICATE', 'VOLATILE', 'REQUESTED_SLOTS', 'SWITCH_FLAG',
               'SEALED_RANGE',
-              'SEALED_RULE', 'SEALED_COMMAND', 'ACTIVATION_DUPLICATE', 'SEEN_MASK', 'KNOWLEDGE', 'QUEUE']
-assert len(INVARIANTS) == 43
+              'SEALED_RULE', 'SEALED_COMMAND', 'ACTIVATION_DUPLICATE', 'SEEN_MASK', 'KNOWLEDGE', 'QUEUE',
+              'TAIL_KIND', 'TAIL_SIDE', 'TAIL_POSITION', 'TAIL_MEMBER', 'TAIL_SCHEMA', 'TAIL_RESERVED']
+assert len(INVARIANTS) == 49
 
 
 def cmd_is_zero(c):
@@ -787,6 +814,44 @@ def check_state(ctx, st):
             return 'KNOWLEDGE'
     if not check_queue(st):
         return 'QUEUE'
+    return check_tail(ctx, st)
+
+
+def tail_is_zero(tail):
+    return all(ts['wide_guard'] == 0 and all(v == 0 for p in ts['pos'] for v in p.values())
+               and all(v == 0 for v in ts['soak']) for ts in tail)
+
+
+def check_tail(ctx, st):
+    """The POOL tail: absent (all zero) under every other kind; under POOL each value in range, none at a position
+    without a standing occupant, a soak type only on a standing, not Mega Evolved member on the field."""
+    if not has_pool_tail(ctx):
+        return 'OK' if tail_is_zero(st['tail']) else 'TAIL_KIND'
+    for s in range(2):
+        ts, sd = st['tail'][s], st['sides'][s]
+        if ts['wide_guard'] > TAIL_WIDE_GUARD_MAX:
+            return 'TAIL_SIDE'
+        for p in range(2):
+            tp = ts['pos'][p]
+            occ = sd['pos'][p]['occ']
+            standing = occ < MAX_ROSTER and occ < sd['member_count'] and sd['members'][occ]['hp'] != 0
+            if not standing:
+                if any(v != 0 for v in tp.values()):
+                    return 'TAIL_POSITION'
+                continue
+            mc = sd['members'][occ]['move_count']
+            if (tp['last_move'] > TAIL_MOVE_MAX or (tp['last_move'] != TAIL_MOVE_MAX and tp['last_move'] > mc)
+                    or tp['encore_slot'] > TAIL_ENCORE_SLOT_MAX or tp['encore_slot'] > mc
+                    or tp['encore_turns'] > TAIL_ENCORE_TURNS_MAX or (tp['encore_slot'] == 0) != (tp['encore_turns'] == 0)
+                    or tp['throat_chop'] > TAIL_THROAT_CHOP_MAX or tp['heal_block'] > TAIL_HEAL_BLOCK_MAX):
+                return 'TAIL_POSITION'
+        for m in range(MAX_ROSTER):
+            ty = ts['soak'][m]
+            if ty == 0:
+                continue
+            on_field = m < sd['member_count'] and (sd['pos'][0]['occ'] == m or sd['pos'][1]['occ'] == m)
+            if ty > TYPE_COUNT or not on_field or sd['members'][m]['hp'] == 0 or sd['members'][m]['is_mega'] != 0:
+                return 'TAIL_MEMBER'
     return 'OK'
 
 
@@ -799,7 +864,8 @@ QUEUE_BYTE_FIELDS = ['kind', 'side', 'slot', 'move_slot', 'target', 'reserve']
 
 
 def encode(st):
-    b = bytearray(MAGIC + struct.pack('<HHII', KIND_BATTLE_STATE, SCHEMA, SEMANTICS, STATE_SIZE))
+    schema, size = (SCHEMA_POOL_TAIL_REV1, POOL_STATE_SIZE) if st['tailed'] else (SCHEMA, STATE_SIZE)
+    b = bytearray(MAGIC + struct.pack('<HHII', KIND_BATTLE_STATE, schema, SEMANTICS, size))
     b += st['fp']
     b += struct.pack('<QQQI', st['rng_state'], st['rng_inc'], st['draws'], st['next'])
     b += struct.pack('<BBIHB', st['boundary'], st['request_mask'], st['epoch'], st['turn'], st['result'])
@@ -827,11 +893,40 @@ def encode(st):
             for mv in mem['moves']:
                 b += struct.pack('<HBB', mv['id'], mv['pp'], mv['pp_max'])
     assert len(b) == STATE_SIZE
+    if st['tailed']:
+        for ts in st['tail']:
+            b += bytes([ts['wide_guard'], 0, 0])
+            for tp in ts['pos']:
+                b += bytes([tp['last_move'], tp['encore_slot'], tp['encore_turns'], tp['throat_chop'],
+                            tp['heal_block'], 0])
+            b += bytes(ts['soak'])
+        assert len(b) == POOL_STATE_SIZE
     return bytes(b)
 
 
+def tail_reserved_zero(b):
+    for s in range(2):
+        o = STATE_SIZE + TAIL_SIDE_SIZE * s
+        if b[o + 1] or b[o + 2] or any(b[o + 3 + 6 * p + 5] for p in range(2)):
+            return False
+    return True
+
+
+def parse_tail(b):
+    tail = []
+    for s in range(2):
+        o = STATE_SIZE + TAIL_SIDE_SIZE * s
+        ts = {'wide_guard': b[o], 'pos': [], 'soak': list(b[o + 15:o + 21])}
+        for p in range(2):
+            po = o + 3 + 6 * p
+            ts['pos'].append({'last_move': b[po], 'encore_slot': b[po + 1], 'encore_turns': b[po + 2],
+                              'throat_chop': b[po + 3], 'heal_block': b[po + 4]})
+        tail.append(ts)
+    return tail
+
+
 def parse(b):
-    st = {'fp': bytes(b[20:52])}
+    st = {'fp': bytes(b[20:52]), 'tailed': False, 'tail': [empty_tail_side(), empty_tail_side()]}
     st['rng_state'], st['rng_inc'], st['draws'], st['next'] = struct.unpack_from('<QQQI', b, 52)
     st['boundary'], st['request_mask'], st['epoch'], st['turn'], st['result'] = struct.unpack_from('<BBIHB', b, 80)
     (st['weather'], st['weather_turns'], st['terrain'], st['terrain_turns'], st['trick_room_turns'],
@@ -889,17 +984,26 @@ def decode(ctx, b):
     if bytes(b[0:8]) != MAGIC:
         return 'MALFORMED', None
     kind, schema, semantics, total = struct.unpack_from('<HHII', b, 8)
-    if kind != KIND_BATTLE_STATE or schema != SCHEMA:
+    if kind != KIND_BATTLE_STATE or schema not in (SCHEMA, SCHEMA_POOL_TAIL_REV1):
         return 'SCHEMA_MISMATCH', None
     if semantics != SEMANTICS:
         return 'SEMANTICS_MISMATCH', None
     if total != size:
         return 'MALFORMED', None
-    if size != STATE_SIZE:
+    tailed = schema == SCHEMA_POOL_TAIL_REV1
+    if size != (POOL_STATE_SIZE if tailed else STATE_SIZE):
         return 'MALFORMED', None
     if bytes(b[20:52]) != ctx.fingerprint():
         return 'CONTEXT_MISMATCH', None
+    # The schema is the one of the context's kind; the reserved bytes of the tail are zero (both are invariants).
+    if tailed != has_pool_tail(ctx):
+        return 'MALFORMED', 'TAIL_SCHEMA'
+    if tailed and not tail_reserved_zero(b):
+        return 'MALFORMED', 'TAIL_RESERVED'
     st = parse(b)
+    if tailed:
+        st['tailed'] = True
+        st['tail'] = parse_tail(b)
     inv = check_state(ctx, st)
     if inv != 'OK':
         return 'MALFORMED', inv
@@ -1514,8 +1618,95 @@ def emit_goldens(encoded):
         print(c_array('df_golden_%s' % name.lower(), encoded[name]))
 
 
+# ---------------------------------------------------------------- the POOL tail (decision 0015 section 7)
+# A tail with a value in every field, for the state of tests/test_pool_tail.c: both sides have members 0 and 1 on the
+# field (all standing, four moves, none Mega Evolved); soak types sit on those two members only.
+TAIL_EXAMPLE = [
+    {'wide_guard': 1,
+     'pos': [{'last_move': 1, 'encore_slot': 2, 'encore_turns': 3, 'throat_chop': 2, 'heal_block': 5},
+             {'last_move': 5, 'encore_slot': 0, 'encore_turns': 0, 'throat_chop': 1, 'heal_block': 2}],
+     'soak': [5, 18, 0, 0, 0, 0]},
+    {'wide_guard': 0,
+     'pos': [{'last_move': 4, 'encore_slot': 4, 'encore_turns': 1, 'throat_chop': 0, 'heal_block': 3},
+             {'last_move': 0, 'encore_slot': 0, 'encore_turns': 0, 'throat_chop': 0, 'heal_block': 0}],
+     'soak': [1, 0, 0, 0, 0, 0]},
+]
+
+
+def tail_bytes(tail):
+    st = {'tailed': True, 'tail': tail}
+    out = bytearray()
+    for ts in st['tail']:
+        out += bytes([ts['wide_guard'], 0, 0])
+        for tp in ts['pos']:
+            out += bytes([tp['last_move'], tp['encore_slot'], tp['encore_turns'], tp['throat_chop'], tp['heal_block'], 0])
+        out += bytes(ts['soak'])
+    return bytes(out)
+
+
+def tail_model_state():
+    st = empty_state(KP)
+    for sd in st['sides']:
+        sd['member_count'] = 6
+        sd['pos'][0]['occ'], sd['pos'][1]['occ'] = 0, 1
+        for mem in sd['members']:
+            mem['hp'], mem['move_count'] = 1, 4
+    return st
+
+
+def tail_outcome(raw):
+    """decode() of the tail alone: the reserved bytes first, then the tail rules, over tail_model_state()."""
+    full = bytes(STATE_SIZE) + raw
+    if not tail_reserved_zero(full):
+        return 'TAIL_RESERVED'
+    st = tail_model_state()
+    st['tail'] = parse_tail(full)
+    return check_tail(KP, st)
+
+
+def print_pool_tail():
+    base_tail = tail_bytes(TAIL_EXAMPLE)
+    assert tail_outcome(base_tail) == 'OK' and len(base_tail) == TAIL_SIZE
+    head = MAGIC + struct.pack('<HHII', KIND_BATTLE_STATE, SCHEMA_POOL_TAIL_REV1, SEMANTICS, POOL_STATE_SIZE)
+    print('pool_tail envelope %s' % head.hex())
+    print('pool_tail example %s' % base_tail.hex())
+    for off in range(TAIL_SIZE):
+        counts = {}
+        for v in range(256):
+            if v == base_tail[off]:
+                continue
+            raw = bytearray(base_tail)
+            raw[off] = v
+            r = tail_outcome(bytes(raw))
+            counts[r] = counts.get(r, 0) + 1
+        print('pool_tail_sweep %2d %s' % (off, ' '.join('%s=%d' % kv for kv in sorted(counts.items()))))
+        print('pool_tail_sweep_c %2d {%d, %d, %d, %d, %d},' % (off, counts.get('OK', 0), counts.get('TAIL_SIDE', 0),
+                                                                counts.get('TAIL_POSITION', 0), counts.get('TAIL_MEMBER', 0),
+                                                                counts.get('TAIL_RESERVED', 0)))
+    # Decode order with the tail: the schema of the artifact against the context's kind.
+    for ctx_name, ctx in (('C1', C1), ('KP', KP)):
+        st = empty_state(ctx)
+        st['tailed'] = has_pool_tail(ctx)
+        b = bytearray(encode(st))
+        print('pool_tail decode %s size %d status %s' % (ctx_name, len(b), decode(ctx, b)))
+    for label, ctx, tailed in (('KP', KP, False), ('C1', C1, True)):
+        st = empty_state(ctx)
+        st['tailed'] = tailed
+        b = bytearray(encode(st))
+        print('pool_tail wrong-schema %s tailed=%s %s' % (label, tailed, decode(ctx, b)))
+    for label, ctx, tailed in (('KP', KP, False), ('C1', C1, True)):
+        st = empty_state(ctx)
+        st['tailed'] = tailed
+        b = bytearray(encode(st))
+        struct.pack_into('<H', b, 10, 4)
+        print('pool_tail schema4 %s %s' % (label, decode(ctx, b)))
+
+
 def main():
     sys.stdout.reconfigure(newline=chr(10))  # LF on every platform
+    if '--pool-tail' in sys.argv[1:]:
+        print_pool_tail()
+        return
     encoded = {}
     contexts = {}
     for name, ctx, build in FIXTURES:
@@ -1607,6 +1798,8 @@ def main():
         struct.pack_into('<H', b, 10, old)
         assert decode(C1, b)[0] == 'SCHEMA_MISMATCH'
         print('schema %d at %d bytes: SCHEMA_MISMATCH' % (old, STATE_SIZE))
+
+    print_pool_tail()
 
     for label, ctx, base in (('G1/C1', C1, setup_g1()), ('G3/C3', C3, setup_g3())):
         classes = setup_sweep(ctx, base)

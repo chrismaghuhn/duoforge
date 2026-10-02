@@ -92,6 +92,7 @@ One PR per step.
 4. **P4:** weather setters and surges become table rules over the prefix members. There is no behaviour change, which the conformance tests show.
    - Done: `dfi_has_entry` and `dfi_entry_ability` read the weather and terrain columns through `src/combat/ability_family.h`; Intimidate is no family and stays named. The Primal exception of the pinned weather handlers (Kyogre with Blue Orb, Groudon with Red Orb) is checked by the cross-check; no Primal forme is in the pool.
 5. **G2, the rows of the 17 target teams** (`docs/research/expansion/team-gaps.md`, `data/team_gaps.json` `pool_rows`): every row they need, added at once and unmarked, so that the pool table content is fixed for the rest of the track: the formes Pelipper, Arcanine-Hisui, Annihilape, Floette-Eternal and Floette-Mega, 22 moves, the items Focus Sash, Expert Belt and Floettite and the abilities Rock Head, Flower Veil and Fairy Aura, with their learnable moves and legal abilities. No new column: a move whose callback or field no column models is mapped to a named handler id in its special column (decision 0009 section 3.3), which the turn code refuses; a step that needs a column changes the tables and the POOL fingerprint and says so. A move is marked by the step that records a reference battle with it under the POOL kind: G2 marks twelve (the data-only ones, in four battles `g2_data_moves_a` to `_d`), not U-turn (G5) and not the nine handler moves.
+6. **G3, the POOL state tail** (section 7): the container for the state of G7 to G11, under the POOL kinds only, as its own schema (0x0103). No mechanic and no public field; the CLOSURE and TEAM_C states are byte for byte unchanged.
 
 ## 5. Evidence for every step
 
@@ -112,7 +113,28 @@ One PR per step.
   - `diff_random.py` checks it before each chunk and waits, with a log line, while it exists.
   - Measurements create it and remove it afterwards. `docs/TESTING_AND_BENCHMARKS.md` documents it.
 
-## 7. Alternatives considered
+## 7. The POOL state tail (step G3)
+
+The owner decided (2026-10-02): the pool mechanics of steps G7 to G11 (Wide Guard, Throat Chop and Heal Block, Encore, Soak) need state that the schema-3 layout has no room for. They get a **POOL-only tail**, not schema 4.
+
+- **Registry.** The state artifact (kind BATTLE_STATE, semantics 3) now has two schemas, told apart by the envelope's `schema_version` (u16; the low byte is the layout of the body, the high byte the revision of the tail):
+
+  | Schema | Name | Size | Carried by |
+  |---|---|---|---|
+  | 3 (0x0003) | v3 | 1009 | CLOSURE, CLOSURE_DEV, TEAM_C, TEAM_C_DEV, SYNTHETIC: unchanged, byte for byte |
+  | 0x0103 | v3 + pool tail rev 1 | 1051 | POOL, POOL_DEV |
+  | 4 | (reserved) | - | the certified pool teams, see below |
+
+  The context artifact and the semantics id are unchanged, so no fingerprint changes (the POOL fingerprint does not depend on the state layout). The schema is a function of the context's kind: a POOL context decodes only 0x0103 and every other kind only 3.
+- **Layout.** The 1009 bytes of schema 3, then 42 bytes (`src/codec/state_codec.h` has the offsets and static asserts; `tools/state_model/state_v3_model.py` is the oracle, `--pool-tail`). Per side (21 bytes): `wide_guard`; two reserved bytes; per position (6 bytes): `last_move`, `encore_slot`, `encore_turns`, `throat_chop_turns`, `heal_block_turns` and one reserved byte; then `soak_type` of each of the six roster members. The reserved bytes are the reserve (8 of the 42): they are always written as zero, a decoder refuses anything else, and a later revision may give them a meaning. The size is fixed; in memory the tail is a plain struct of 34 bytes in the battle (`dfi_pool_tail`), with no padding, no pointer and no allocation.
+- **Values (rev 1).** `last_move` 0 none, 1 to 4 move slot + 1, 5 Struggle; `encore_slot` 0 or 1 to 4, `encore_turns` 0 to 4, zero exactly together; `throat_chop_turns` 0 to 2; `heal_block_turns` 0 to 5; `wide_guard` 0 or 1; `soak_type` 0 or a type id + 1 (1 to 18). These are bounds from the pinned data and the research (team-gaps.md), not mechanics: nothing reads or writes the tail yet, and a step that finds a bound wrong changes the revision (0x0203) and says so.
+- **Under POOL the tail is state like any other:** encode, decode, digest, `equal`, `clone`, `copy`, the invariants and the model-facing query check all carry it, and a state of 1009 bytes is not a POOL state. A tail never enters an observation, a view or an event: G3 adds no public field, size or constant (`DUOFORGE_STATE_V3_ENCODED_SIZE` stays 1009 and means schema 3; a caller sizes its buffer with `duoforge_battle_encoded_size`, which says 1051 under the POOL kinds).
+- **Under the other kinds it is absent:** all zero in memory (invariant `TAIL_KIND`, so check, encode and digest return `E_INVARIANT` for a state that has one) and not in the encoding. The digests of states of those kinds are what they were (tests pin three digests of each kind taken before the tail existed).
+- **Invariants** (after the side checks): the ranges above; a position without a standing occupant (empty or fainted) has no tail (`TAIL_POSITION`, with the Encore pair and the move count of the occupant); a soak type only on a member standing on the field and not Mega Evolved (`TAIL_MEMBER`); `TAIL_SIDE` for the Wide Guard flag. The decoder adds `TAIL_SCHEMA` (the artifact's schema is not the one of the context's kind: an artifact with a tail under another kind, or a POOL state without one) and `TAIL_RESERVED`; both are reported as MALFORMED with the invariant id, as every decode refusal is (decision 0002 section 6, step 9). A mechanic that writes the tail clears it where it clears the position (a switch, a faint, a Mega Evolution): the invariants catch a miss.
+- **Schema 4 comes only with the certified pool teams** (roadmap "Later"): a certification of the M8 teams is when the state layout is frozen into one schema for every kind; until then the tail keeps CLOSURE and TEAM_C states and their certified evidence untouched. The tail may be revised (0x0203, and so on) until then.
+
+## 8. Alternatives considered
 
 - **Generate the whole legal pool once, with a fixed fingerprint.** The row format must grow first (the move flags byte is full; the family parameters are missing), and 510 moves would be encoded before any of them is tested. Rejected for now.
+- **Schema 4 for every kind now** (the pool tail in every state). Every CLOSURE and TEAM_C golden, digest and certified battle would change, and the evidence of decisions 0006 to 0010 would no longer name the bytes it was recorded on. Rejected until the pool teams are certified.
 - **Grow TEAM_C's extended tables.** The TEAM_C fingerprint would change with every step, and Team C's gate evidence would no longer name its data. Rejected.
