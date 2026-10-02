@@ -48,6 +48,7 @@ CLASS_COUNT = 9
 RESULT_NONE, RESULT_SIDE0, RESULT_SIDE1, RESULT_TIE = 0, 1, 2, 3
 WEATHER_NONE, WEATHER_RAIN, WEATHER_SUN = 0, 1, 2
 TERRAIN_NONE, TERRAIN_GRASSY = 0, 1
+TERRAIN_PSYCHIC = 2  # TEAM_C kinds only (Psychic Surge)
 FIELD_TURNS_MAX = 5
 SCREEN_TURNS_MAX = 8
 TAILWIND_TURNS_MAX = 4
@@ -717,7 +718,8 @@ def check_state(ctx, st):
         return 'RESULT'
     if (st['weather'] > WEATHER_SUN or st['weather_turns'] > FIELD_TURNS_MAX
             or (st['weather'] == 0) != (st['weather_turns'] == 0)
-            or st['terrain'] > TERRAIN_GRASSY or st['terrain_turns'] > FIELD_TURNS_MAX
+            or st['terrain'] > (TERRAIN_PSYCHIC if ctx.data_kind in (KIND_TEAM_C, KIND_TEAM_C_DEV) else TERRAIN_GRASSY)
+            or st['terrain_turns'] > FIELD_TURNS_MAX
             or (st['terrain'] == 0) != (st['terrain_turns'] == 0)
             or st['trick_room_turns'] > FIELD_TURNS_MAX):
         return 'FIELD'

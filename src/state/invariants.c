@@ -484,10 +484,11 @@ static bool dfi_queue_valid(const struct duoforge_battle *b)
     return true;
 }
 
-static bool dfi_field_valid(const struct duoforge_battle *b)
+static bool dfi_field_valid(const duoforge_context *ctx, const struct duoforge_battle *b)
 {
+    const dfi_kind_limits lim = dfi_kind_limits_of(ctx->data_kind);
     return b->weather <= DFI_WEATHER_SUN && b->weather_turns <= DFI_FIELD_TURNS_MAX &&
-           (b->weather == DFI_WEATHER_NONE) == (b->weather_turns == 0u) && b->terrain <= DFI_TERRAIN_GRASSY &&
+           (b->weather == DFI_WEATHER_NONE) == (b->weather_turns == 0u) && b->terrain <= lim.terrain_max &&
            b->terrain_turns <= DFI_FIELD_TURNS_MAX &&
            (b->terrain == DFI_TERRAIN_NONE) == (b->terrain_turns == 0u) &&
            b->trick_room_turns <= DFI_FIELD_TURNS_MAX;
@@ -521,7 +522,7 @@ static duoforge_status dfi_state_check_mode(const duoforge_context *ctx, const s
         inv = DFI_INV_TURN_COUNTER;
     } else if (b->result > DFI_RESULT_TIE || terminal != (b->result != DFI_RESULT_NONE)) {
         inv = DFI_INV_RESULT;
-    } else if (!dfi_field_valid(b)) {
+    } else if (!dfi_field_valid(ctx, b)) {
         inv = DFI_INV_FIELD;
     } else {
         for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT && inv == DFI_INV_NONE; ++s) {

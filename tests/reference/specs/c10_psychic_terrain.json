@@ -1,0 +1,27 @@
+{
+  "name": "c10_psychic_terrain",
+  "purpose": "Psychic Surge's Psychic Terrain stops Raichu's Fake Out at Indeedee-F, Grimmsnarl's Prankster Parting Shot (+1) and Kingambit's Sucker Punch at grounded targets; Sneasler's Fake Out at Flying Staraptor still hits, and Helping Hand on an ally (+5) goes on.",
+  "data": "team_c",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c1003",
+  "teams": [
+    "Indeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Psychic\n- Helping Hand\n\nSneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Fake Out\n- Dire Claw\n\nKingambit (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n\nBasculegion (M) @ Choice Scarf\nAbility: Adaptability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Aqua Jet",
+    "Raichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Fake Out\n- Focus Blast\n\nStaraptor (F) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Brave Bird\n- Protect\n\nCeruledge (M) @ Leftovers\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 28 Spe\nJolly Nature\n- Shadow Sneak\n- Protect\n\nGrimmsnarl (M) @ Mystic Water\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCareful Nature\n- Parting Shot\n- Spirit Break"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1 2",
+      "move 2, move 2 1",
+      "move 1 1, switch 3",
+      "move 1 1, move 1 2",
+      "move 1 1, move 1 2"
+    ],
+    "p2": [
+      "move 1 1, move 1 1",
+      "move 2 2, switch 4",
+      "move 2 1, move 1 1",
+      "move 2 2, move 2 2"
+    ],
+    "max_steps": 40
+  }
+}

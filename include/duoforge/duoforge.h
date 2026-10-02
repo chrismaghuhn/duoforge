@@ -32,9 +32,9 @@ extern "C" {
 #endif
 
 #define DUOFORGE_VERSION_MAJOR 0
-#define DUOFORGE_VERSION_MINOR 17
+#define DUOFORGE_VERSION_MINOR 18
 #define DUOFORGE_VERSION_PATCH 0
-#define DUOFORGE_VERSION_STRING "0.17.0"
+#define DUOFORGE_VERSION_STRING "0.18.0"
 
 /* Identifiers of the artifacts that exist now (registry: decisions 0002, 0005, 0006). */
 #define DUOFORGE_SEMANTICS_ID           3u   /* "duoforge-m3-closure" */
@@ -388,6 +388,7 @@ duoforge_status duoforge_battle_step(const duoforge_context *ctx, duoforge_battl
 #define DUOFORGE_WEATHER_SUN  2u
 #define DUOFORGE_TERRAIN_NONE   0u
 #define DUOFORGE_TERRAIN_GRASSY 1u
+#define DUOFORGE_TERRAIN_PSYCHIC 2u /* Team C (Psychic Surge) */
 #define DUOFORGE_MOVE_SLOT_NONE 0xFFu /* position view: no locked move */
 
 typedef struct duoforge_member_view {
@@ -502,7 +503,10 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_EVENT_IMMUNE          12u /* [-immune] position; cause ABILITY + id2 when an ability did it */
 #define DUOFORGE_EVENT_FAIL            13u /* [-fail] position; detail: the ailment it already has, when that is why */
 #define DUOFORGE_EVENT_PROTECT         14u /* [-singleturn Protect] position */
-#define DUOFORGE_EVENT_BLOCKED         15u /* [-activate move: Protect] position: the protected Pokemon */
+#define DUOFORGE_EVENT_BLOCKED         15u /* [-activate move: Protect] position: the protected Pokemon
+                                              (detail 0); detail DUOFORGE_FIELD_PSYCHIC_TERRAIN: [-activate move:
+                                              Psychic Terrain], a priority move stopped at a grounded target
+                                              (Team C) */
 #define DUOFORGE_EVENT_BOOST           16u /* [-boost] position, detail: stat (0 atk .. 6 evasion), amount; cause */
 #define DUOFORGE_EVENT_UNBOOST         17u /* [-unboost] as BOOST */
 #define DUOFORGE_EVENT_STATUS          18u /* [-status] position, detail: DUOFORGE_AILMENT_* */
@@ -558,6 +562,7 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 
 #define DUOFORGE_FIELD_GRASSY_TERRAIN 1u
 #define DUOFORGE_FIELD_TRICK_ROOM     2u
+#define DUOFORGE_FIELD_PSYCHIC_TERRAIN 3u /* Team C */
 #define DUOFORGE_SIDE_TAILWIND     1u
 #define DUOFORGE_SIDE_REFLECT      2u
 #define DUOFORGE_SIDE_LIGHT_SCREEN 3u

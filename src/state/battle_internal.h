@@ -51,6 +51,7 @@ typedef struct dfi_move_slot {
 #define DFI_WEATHER_SUN 2u
 #define DFI_TERRAIN_NONE 0u
 #define DFI_TERRAIN_GRASSY 1u
+#define DFI_TERRAIN_PSYCHIC 2u /* Team C: Psychic Surge */
 #define DFI_FIELD_TURNS_MAX 5u  /* weather, terrain and Trick Room */
 #define DFI_SCREEN_TURNS_MAX 8u /* Reflect and Light Screen with Light Clay */
 #define DFI_TAILWIND_TURNS_MAX 4u

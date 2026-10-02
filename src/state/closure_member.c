@@ -13,6 +13,7 @@ dfi_kind_limits dfi_kind_limits_of(uint32_t data_kind)
     lim.item_count = team_c ? DFI_EXT_ITEM_COUNT : DFI_ITEM_COUNT;
     lim.switch_flag_max = team_c ? DFI_SWITCH_FLIP_TURN : DFI_SWITCH_FAINTED;
     lim.status_max = team_c ? DFI_STATUS_PSN : DFI_STATUS_SLP;
+    lim.terrain_max = team_c ? DFI_TERRAIN_PSYCHIC : DFI_TERRAIN_GRASSY;
     lim.vol_flags_mask = team_c ? (DFI_VOL_FLAGS_MAX | DFI_VOL_HELPING_HAND | DFI_VOL_UNBURDEN | DFI_VOL_CHOICE_LOCK |
                                    DFI_VOL_NEWLY_SWITCHED)
                                 : DFI_VOL_FLAGS_MAX;

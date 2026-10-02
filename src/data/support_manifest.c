@@ -47,7 +47,9 @@
  * Step 8: White Herb (switch-in, after Mega, after a move, residual 29) and
  * Unburden (x2 Speed once its holder's item is used).
  * Step 9b: Sucker Punch (onTry reads the target's queued move) and Helping
- * Hand (the ally target, newlySwitched, BasePower x1.5). */
+ * Hand (the ally target, newlySwitched, BasePower x1.5).
+ * Step 10: Psychic Surge and Psychic Terrain (priority moves stopped at
+ * grounded foes, Psychic moves x5325/4096, the terrain replaced). */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -125,6 +127,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_ADAPTABILITY] = 1u,
             [DFI_ABILITY_AERILATE] = 1u,
             [DFI_ABILITY_UNBURDEN] = 1u,
+            [DFI_ABILITY_PSYCHICSURGE] = 1u,
         },
     .items =
         {
