@@ -351,7 +351,9 @@ int main(void)
         duoforge_battle_destroy(f1);
 
         /* A move at pp 0 is not selectable; an actor without any move with PP
-         * gets Struggle (move slot 4, no target) instead. */
+         * gets Struggle (move slot 4, no target) instead, with no Mega
+         * declaration although s1a holds its stone and side 1 has not used
+         * Mega (the reference's request has no canMegaEvo with Struggle). */
         duoforge_battle *f9 = df_make_f9(c4);
         f9->sides[1].members[1].moves[0].pp = 0u; /* s1a roster 1: its only move */
         duoforge_request r;
@@ -372,8 +374,11 @@ int main(void)
             (duoforge_slot_command){DUOFORGE_SLOT_MOVE, 0u, DUOFORGE_TARGET_NONE, 0u, 0u, {0u, 0u, 0u}};
         step_fails(&t, c4, f9, &bd, DUOFORGE_E_INVALID_ARGUMENT, "the move at pp 0");
         bd.responses[1].slots[0] = (duoforge_slot_command){DUOFORGE_SLOT_MOVE, DUOFORGE_MOVE_SLOT_STRUGGLE,
-                                                           DUOFORGE_TARGET_NONE, 1u, 0u, {0u, 0u, 0u}};
+                                                           DUOFORGE_TARGET_NONE, 0u, 0u, {0u, 0u, 0u}};
         step_fails(&t, c4, f9, &bd, DUOFORGE_E_UNSUPPORTED, "Struggle (valid, no combat under SYNTHETIC)");
+        bd.responses[1].slots[0].mega = 1u;
+        step_fails(&t, c4, f9, &bd, DUOFORGE_E_INVALID_ARGUMENT, "Struggle with Mega");
+        bd.responses[1].slots[0].mega = 0u;
         bd.responses[1].slots[0].target = 0u;
         step_fails(&t, c4, f9, &bd, DUOFORGE_E_INVALID_ARGUMENT, "Struggle with a target");
         duoforge_battle_destroy(f9);

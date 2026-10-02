@@ -1,0 +1,32 @@
+{
+ "name": "s16_struggle_mega",
+ "purpose": "A Pokemon that must Struggle cannot Mega Evolve: Raichu holds Raichunite Y but knows only Fake Out, which Champions disables after its first move action; from turn 2 its request offers only Struggle and no Mega (sim/pokemon.ts getMoveRequestData), and a typed mega is dropped with it (sim/side.ts chooseMove). The side's Mega stays available: Charizard Mega Evolves in the same choice in turn 3.",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,0000000000000000000000000000000000000000000000000000000000005160",
+ "teams": [
+  "Raichu (F) @ Raichunite Y\nAbility: No Ability\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Fake Out\n\nCharizard (M) @ Charizardite Y\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Protect\n\nCeruledge (M)\nAbility: No Ability\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Swords Dance\n\nGholdengo\nAbility: No Ability\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Nasty Plot",
+  "Milotic (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n\nArchaludon (M)\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Protect\n\nCeruledge (F)\nAbility: No Ability\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Swords Dance\n\nGholdengo\nAbility: No Ability\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Nasty Plot"
+ ],
+ "choices": [
+  {
+   "p1": "team 1234",
+   "p2": "team 1234"
+  },
+  {
+   "p1": "move 1 1, move 1",
+   "p2": "move 1, move 1"
+  },
+  {
+   "p1": "move 1 mega, move 1",
+   "p2": "move 1, move 1"
+  },
+  {
+   "p1": "move 1 mega, move 1 mega",
+   "p2": "move 1, move 1"
+  },
+  {
+   "p1": "move 1, move 1",
+   "p2": "move 1, move 1"
+  }
+ ]
+}
