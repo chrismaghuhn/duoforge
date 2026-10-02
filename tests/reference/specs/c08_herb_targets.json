@@ -1,0 +1,20 @@
+{
+  "name": "c08_herb_targets",
+  "purpose": "White Herb after another Pokemon's move (AnyAfterMove): Archaludon's Snarl lowers Salamence's Special Attack and Incineroar's Parting Shot lowers Sneasler's attacks; each holder's herb restores them after that move.",
+  "data": "team_c",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c0804",
+  "teams": [
+    "Sneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Dire Claw\n- Fake Out\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Snarl\n- Protect\n\nKingambit (M) @ Miracle Seed\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Iron Head\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Coil",
+    "Salamence (M) @ White Herb\nAbility: No Ability\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Hyper Voice\n- Protect\n\nIncineroar (M) @ Sitrus Berry\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Parting Shot\n- Darkest Lariat\n\nFarigiraf (F) @ Leftovers\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 2, move 1"
+    ],
+    "p2": [
+      "move 2, move 1 1"
+    ],
+    "max_steps": 30
+  }
+}

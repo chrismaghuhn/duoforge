@@ -1,0 +1,20 @@
+{
+  "name": "c08_herb_mirror",
+  "purpose": "Two White Herbs due at one switch-in: both sides lead Sneasler and Incineroar, both Intimidates lower both Sneaslers' Attack, and the two herbs, at one Speed, run in runSwitch's speed order, whose tie is drawn (onAnySwitchIn, priority -2).",
+  "data": "team_c",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c0807",
+  "teams": [
+    "Sneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Dire Claw\n- Protect\n\nIncineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Darkest Lariat\n\nKingambit (M) @ Miracle Seed\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Iron Head\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Protect",
+    "Sneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Dire Claw\n- Protect\n\nIncineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Darkest Lariat\n\nFarigiraf (F) @ Leftovers\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 2, move 1 2"
+    ],
+    "p2": [
+      "move 1 2, move 1 2"
+    ],
+    "max_steps": 30
+  }
+}

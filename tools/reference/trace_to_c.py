@@ -16,13 +16,18 @@ checks its precondition and fails loudly otherwise:
                     that event (Sitrus Berry, Grassy Seed): with two, the
                     tie orders their lines and the engine draws
   SPEED_TIE switch-order
-                    only if no tied Pokemon has a SwitchIn handler
+                    only if at most one tied entering Pokemon has a SwitchIn
+                    handler and at most one tied standing Pokemon holds a
+                    White Herb (its onAnySwitchIn runs in this order)
   SPEED_TIE field:Residual
                     only if every tied handler only counts down a duration;
                     both sides' same side condition running out in this
                     residual is kept instead: the tie orders their two end
                     lines, and the entry states which side's line comes
                     first (the engine's draw; see side_end_tie)
+  SPEED_TIE event:AfterMove, event:AfterMega
+                    never: White Herb's are the only handlers of these events
+                    in the data, and the engine draws every tie among them
   SPEED_TIE event:ModifyDamage
                     only between screens, of which at most one applies, or
                     between the attacker's Life Orb and the target's Chople
@@ -166,10 +171,17 @@ def drop_reason(d, state):
             return 'each-event tie with at most one holder'
         return None  # the engine draws: the order of the holders' lines
     if site == 'SPEED_TIE' and ctx == 'switch-order':
-        # P:<slot>:<SwitchIn handlers>:<S entering | - not>; the order decides
-        # something only between two entering Pokemon with handlers.
-        bearers = sum(1 for g in group if g.split(':')[2] != '0' and g.split(':')[3] == 'S')
-        if bearers <= 1:
+        # P:<slot>:<SwitchIn handlers>:<S entering | - not>[:<onAnySwitchIn
+        # effects of a standing Pokemon>]; the order decides something only
+        # between two entering Pokemon with handlers, or between two standing
+        # White Herb holders (Team C).
+        parts = [g.split(':') for g in group]
+        anys = [x for p in parts if len(p) > 4 for x in p[4].split('+')]
+        if any(x != 'whiteherb' for x in anys):
+            raise SystemExit('trace_to_c: switch-order tie with onAnySwitchIn handlers %s' % group)
+        bearers = sum(1 for p in parts if p[2] != '0' and p[3] == 'S')
+        herbs = sum(1 for p in parts if len(p) > 4)
+        if bearers <= 1 and herbs <= 1:
             return 'switch-in order with at most one entry effect'
         return None  # the engine draws
     if site == 'SPEED_TIE' and ctx == 'field:Residual':
@@ -180,6 +192,10 @@ def drop_reason(d, state):
         if all(g.startswith('H:') and g.endswith(':cb') for g in group):
             return None  # callbacks (burn, Grassy Terrain): the engine draws
         raise SystemExit('trace_to_c: residual tie with callbacks: %s' % group)
+    if site == 'SPEED_TIE' and ctx in ('event:AfterMove', 'event:AfterMega'):
+        if all(g.startswith('H:whiteherb:') and g.endswith(':cb') for g in group):
+            return None  # the engine draws: the order of the holders' checks
+        raise SystemExit('trace_to_c: %s tie with %s' % (ctx, group))
     if site == 'SPEED_TIE' and ctx == 'event:ModifyDamage':
         # Reflect and Light Screen of both sides: each checks the target's
         # side and the move's category, so at most one applies to a hit.
@@ -718,7 +734,7 @@ def convert(root, name, tables, out, all_tape, all_events):
                         lslot, ltarget = choice, 0
                 seen = shown[s].get(roster)
                 vols = sum(bit for name, bit in (('protect', 1), ('flashfire', 2), ('twoturnmove', 4),
-                                                 ('choicelock', 8)) if name in p['volatiles'])
+                                                 ('choicelock', 8), ('unburden', 16)) if name in p['volatiles'])
                 row.append('{1u, %du, {%s}, {%s}, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du}' % (
                     p['hp'], ', '.join('%du' % x for x in pp), ', '.join('%du' % (x + 6) for x in p['boosts']),
                     stall, 1 if p['fainted'] else 0, status, counter, p['confusion'], lslot, ltarget,
@@ -862,7 +878,7 @@ def write_header(root, names, tables, team_c, check):
            'typedef struct df_conf_mon {', '    uint32_t present, hp;', '    uint8_t pp[4];', '    uint8_t stages[7];',
            '    uint8_t stall, fainted, status, status_counter, confusion, locked_slot, locked_target, mega;',
            '    uint8_t held, seen, seen_percent, seen_flag;',
-           '    uint8_t vols; /* volatiles: 1 protect, 2 flashfire, 4 twoturnmove, 8 choicelock */',
+           '    uint8_t vols; /* volatiles: 1 protect, 2 flashfire, 4 twoturnmove, 8 choicelock, 16 unburden */',
            '} df_conf_mon;',
            '/* team step, side 0 / side 1 answered, tape slice, the turn, boundary and',
            ' * result afterwards, the picks of a team step, slot commands, the occupants',

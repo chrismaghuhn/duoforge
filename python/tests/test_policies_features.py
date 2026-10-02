@@ -205,6 +205,16 @@ class PoliciesFeaturesTest(unittest.TestCase):
                 batch.step_factored(policy.choose_factored(batch))
         self.assertGreater(compared, 1000)
 
+    def test_encode_refuses_position_flags(self):
+        with duoforge.Batch(self.ctx, _setups(), 1, SEED) as batch:
+            batch.query_factored()
+            ob = np.array(batch.observations[0, 0])
+            d = batch.domains[0, 0]
+            features.encode(ob, d)
+            ob["sides"][0]["positions"][0]["reserved"] = 4  # DUOFORGE_POSITION_FLAG_UNBURDEN (TEAM_C)
+            with self.assertRaises(ValueError):
+                features.encode(ob, d)
+
     def test_zero_count_raises(self):
         with duoforge.Batch(self.ctx, _setups(), 1, SEED) as batch:
             batch.query()

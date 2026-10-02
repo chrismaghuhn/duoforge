@@ -20,7 +20,7 @@
 #include "reference/conformance_team_c.h"
 #include "support/team_c.h"
 #define DF_CONF_FORMES dfi_ext_formes
-#define DF_TEAM_C_BATTLES 31u /* the recorded Team C battles */
+#define DF_TEAM_C_BATTLES 39u /* the recorded Team C battles */
 #define DF_TEAM_C_REAL 1u    /* of them under TEAM_C itself (six registered members) */
 #else
 #include "data/closure_tables.h"
@@ -177,6 +177,7 @@ static unsigned compare_observation(const duoforge_context *ctx, const duoforge_
                           pv->protecting == ((e->vols & 1u) != 0u ? 1u : 0u) &&
                           pv->flash_fire == ((e->vols & 2u) != 0u ? 1u : 0u) &&
                           pv->charging == ((e->vols & 4u) != 0u ? 1u : 0u) &&
+                          pv->reserved == ((e->vols & 16u) != 0u ? DUOFORGE_POSITION_FLAG_UNBURDEN : 0u) &&
                           (pv->protect_chain != 0u) == (e->stall != 0u);
                 if (b->boundary_kind == DUOFORGE_BOUNDARY_TERMINAL) {
                     ok = memcmp(pv->stages, e->stages, 7u) == 0; /* locks are not compared at the end */
@@ -335,16 +336,18 @@ static unsigned compare_state(const duoforge_context *ctx, const duoforge_battle
                         mem->status, mem->status_counter, e->status, e->status_counter);
                 ++bad;
             }
-            /* A two-turn move's lock and a Choice item's lock (Team C), at
-             * TURN and REPLACEMENT boundaries. */
+            /* A two-turn move's lock, a Choice item's lock and Unburden (Team
+             * C), at TURN and REPLACEMENT boundaries. */
             if (pos != NULL && b->boundary_kind != DUOFORGE_BOUNDARY_TERMINAL) {
                 const uint32_t lslot = pos->locked_move != 0u ? (uint32_t)pos->locked_move - 1u : 0xFFu;
                 const uint32_t ltarget = pos->locked_move != 0u ? pos->locked_target : 0u;
                 const uint32_t choice = ((uint32_t)pos->flags & DFI_VOL_CHOICE_LOCK) != 0u ? 8u : 0u;
-                if (lslot != e->locked_slot || ltarget != e->locked_target || choice != (e->vols & 8u)) {
-                    fprintf(stderr, "  %s step %u: side %u member %u locked %u/%u choice %u, reference %u/%u %u\n",
-                            name, step, s, m, lslot, ltarget, choice, e->locked_slot, e->locked_target,
-                            e->vols & 8u);
+                const uint32_t unburden = ((uint32_t)pos->flags & DFI_VOL_UNBURDEN) != 0u ? 16u : 0u;
+                if (lslot != e->locked_slot || ltarget != e->locked_target || choice != (e->vols & 8u) ||
+                    unburden != (e->vols & 16u)) {
+                    fprintf(stderr, "  %s step %u: side %u member %u locked %u/%u choice %u unburden %u, reference %u/%u %u %u\n",
+                            name, step, s, m, lslot, ltarget, choice, unburden, e->locked_slot, e->locked_target,
+                            e->vols & 8u, e->vols & 16u);
                     ++bad;
                 }
             }
