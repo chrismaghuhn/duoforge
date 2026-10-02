@@ -257,6 +257,7 @@ static void check_view_ext(df_test *t, const duoforge_context *ctx)
             duoforge_observation_ext ext[2];
             for (uint32_t viewer = 0u; viewer < 2u; ++viewer) {
                 duoforge_observation ob;
+                memset(&ob, 0, sizeof ob);
                 DF_CHECK(t, duoforge_battle_observe_ext(ctx, b, viewer, &ext[viewer]) == DUOFORGE_OK &&
                                 duoforge_battle_observe(ctx, b, viewer, &ob) == DUOFORGE_OK);
                 duoforge_observation_ext want;
