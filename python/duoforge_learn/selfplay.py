@@ -108,6 +108,7 @@ class SelfPlay:
         if on_start is not None:
             on_start(everyone, self.episodes.copy())
         self._steps = np.zeros(envs, dtype=np.int64)
+        self.cuts = 0  # episodes cut off at max_steps so far (scored as ties)
         self._choices = np.zeros((envs, 2), dtype=_layout.FACTORED_CHOICE)
         self.batch.query_factored()
 
@@ -128,6 +129,7 @@ class SelfPlay:
             rewards[e] = _REWARDS[b.result(e)]
         cut = ~terminal & (self._steps >= self.max_steps)  # a tie: both rewards stay 0
         done = terminal | cut
+        self.cuts += int(cut.sum())
         if done.any():
             envs = np.flatnonzero(done).astype(np.uint32)
             if self.on_end is not None:

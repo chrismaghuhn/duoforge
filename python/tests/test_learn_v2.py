@@ -485,6 +485,19 @@ class DeviceUpdateTest(unittest.TestCase):
         self.assertIn("t_compute", results[0][1])
 
 
+class CutOffTest(unittest.TestCase):
+    def test_cut_off_episodes_are_logged(self):
+        out = __import__("tempfile").mkdtemp(prefix="duoforge-cut-")
+        try:
+            self.assertEqual(_run(["--envs", "8", "--updates", "2", "--max-steps", "5", "--out", out] + _SMALL), 0)
+            records = [r for r in _log(out) if "update" in r]
+            self.assertTrue(all(r["cut_episodes"] >= 0 for r in records))
+            self.assertGreater(sum(r["cut_episodes"] for r in records), 0)
+            self.assertLessEqual(records[-1]["cut_episodes"], records[-1]["episodes"])
+        finally:
+            __import__("shutil").rmtree(out, ignore_errors=True)
+
+
 PRESET_COUNTS = {"S": 384751, "M": 2072463, "L": 7871631}
 
 
