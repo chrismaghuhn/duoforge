@@ -83,7 +83,7 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DUOFORGE_SEMANTICS_ID, 3u);
         DF_CHECK_EQ_U64(&t, DUOFORGE_CONTEXT_SCHEMA_VERSION, 3u);
         DF_CHECK_EQ_U64(&t, DUOFORGE_STATE_SCHEMA_VERSION, 3u);
-        DF_CHECK(&t, strcmp(duoforge_version_string(), "0.27.0") == 0);
+        DF_CHECK(&t, strcmp(duoforge_version_string(), "0.28.0") == 0);
     }
 
     duoforge_context *c1 = df_make_context(&df_config_c1);

@@ -1,0 +1,34 @@
+{
+  "name": "w4_snowscape_move",
+  "purpose": "The Snowscape move: Pelipper's Drizzle and Hippowdon's Sand Stream, then Snowscape replaces sand, Sandstorm (Kingambit and Gholdengo) replaces snow, each fails when its weather is up; Sandstorm hurts Pelipper and a switched-in Farigiraf and no Steel or Ground type.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000006101",
+  "teams": [
+    "Pelipper (F) @ Sitrus Berry\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 SpA\nModest Nature\n- Snowscape\n- Weather Ball\n- Protect\n- Hurricane\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Shadow Ball\n- Protect\n- Sandstorm\n- Make It Rain\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Protect\n- Tailwind\n\nSneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Protect\n\nRaichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Protect\n\nIncineroar (M) @ Charcoal\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out",
+    "Hippowdon (M) @ Leftovers\nAbility: Sand Stream\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Rock Slide\n- High Horsepower\n- Protect\n- Sandstorm\n\nKingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sandstorm\n- Protect\n- Iron Head\n- Sucker Punch\n\nFarigiraf (M) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 2 HP / 32 SpD / 32 Spe\nTimid Nature\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Fake Out\n- Grassy Glide\n- Protect\n\nMilotic (F) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Weather Ball\n- Protect\n- Ice Beam\n- Hypnosis"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 3",
+      "move 1, move 3",
+      "move 2 1, move 1 1",
+      "move 3, move 1 1",
+      "move 1, move 1 1",
+      "move 3, move 3",
+      "move 1, move 1 1",
+      "move 3, move 3"
+    ],
+    "p2": [
+      "move 4, move 1",
+      "move 4, move 1",
+      "move 3, move 3",
+      "move 3, move 3",
+      "move 4, move 3",
+      "move 3, move 3",
+      "move 3, move 3",
+      "move 3, move 3"
+    ],
+    "max_steps": 10
+  }
+}

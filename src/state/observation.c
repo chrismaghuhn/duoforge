@@ -73,6 +73,7 @@ _Static_assert(DUOFORGE_AILMENT_BURN == DFI_STATUS_BRN && DUOFORGE_AILMENT_FREEZ
                    DUOFORGE_AILMENT_POISON == DFI_STATUS_PSN,
                "public ailments are the internal statuses");
 _Static_assert(DUOFORGE_WEATHER_RAIN == DFI_WEATHER_RAIN && DUOFORGE_WEATHER_SUN == DFI_WEATHER_SUN &&
+                   DUOFORGE_WEATHER_SAND == DFI_WEATHER_SAND && DUOFORGE_WEATHER_SNOW == DFI_WEATHER_SNOW &&
                    DUOFORGE_TERRAIN_GRASSY == DFI_TERRAIN_GRASSY && DUOFORGE_TERRAIN_PSYCHIC == DFI_TERRAIN_PSYCHIC,
                "public field values are the internal ones");
 

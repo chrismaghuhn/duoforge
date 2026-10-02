@@ -1,0 +1,34 @@
+{
+  "name": "w3_snow_warning",
+  "purpose": "Snow Warning: Abomasnow enters after the two Sand Stream holders and replaces their sand (Snowscape, no damage); the Rock Slide of Hippowdon and Tyranitar hits the Ice type with its Defense x1.5; Weather Ball is an Ice move; Snowscape fails while snow is up; the weather ends after five turns.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000006101",
+  "teams": [
+    "Abomasnow (M) @ Sitrus Berry\nAbility: Snow Warning\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpA\nQuiet Nature\n- Weather Ball\n- Ice Beam\n- Protect\n- Snowscape\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Weather Ball\n- Protect\n- Ice Beam\n- Hypnosis\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Protect\n- Tailwind\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n\nSneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Protect\n\nRaichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Protect",
+    "Hippowdon (M) @ Leftovers\nAbility: Sand Stream\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nJolly Nature\n- Rock Slide\n- High Horsepower\n- Protect\n- Sandstorm\n\nTyranitar (M) @ Chople Berry\nAbility: Sand Stream\nLevel: 50\nEVs: 32 HP / 2 Atk / 32 SpD\nCalm Nature\n- Rock Slide\n- Ice Beam\n- Protect\n- Sandstorm\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nFarigiraf (M) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 2 HP / 32 SpD / 32 Spe\nTimid Nature\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Fake Out\n- Grassy Glide\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1 1",
+      "move 1 1, move 1 1",
+      "move 4, move 1 1",
+      "move 3, move 3",
+      "move 1 1, move 1 1",
+      "move 3, move 3",
+      "move 3, move 1 1",
+      "move 3, move 3"
+    ],
+    "p2": [
+      "move 1, move 1",
+      "move 1, move 1",
+      "move 4, move 3",
+      "move 3, move 3",
+      "move 1, move 1",
+      "move 3, move 3",
+      "move 3, move 3",
+      "move 3, move 3"
+    ],
+    "max_steps": 10
+  }
+}
