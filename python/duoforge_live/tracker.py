@@ -14,13 +14,14 @@ Decision points: at the pin a step's update comes before its requests
 the battle lines received since the previous one. At team preview it waits
 for the |showteam| lines of both sides.
 """
+import collections
 import json
 
 import numpy as np
 
 from duoforge import _layout
 
-from . import options, teams
+from . import lines, options, teams
 from .data import trace_to_c
 
 C = _layout.CONSTANTS
@@ -36,6 +37,12 @@ UNDETERMINED, BENCH, ACTIVE, NOT_BROUGHT = (C[f"DUOFORGE_LOCATION_{n}"] for n in
                                             ("UNDETERMINED", "BENCH", "ACTIVE", "NOT_BROUGHT"))
 HP_EXACT, HP_PERCENT = C["DUOFORGE_HP_EXACT"], C["DUOFORGE_HP_PERCENT"]
 HP_UNKNOWN = 3  # DUOFORGE_HP_UNKNOWN (include/duoforge/duoforge.h)
+FLAG_FOLLOW_ME, FLAG_HELPING_HAND, FLAG_UNBURDEN = (C[f"DUOFORGE_POSITION_FLAG_{n}"] for n in
+                                                    ("FOLLOW_ME", "HELPING_HAND", "UNBURDEN"))
+SPECTATOR = 2  # the converter's viewer of a spectator: no side, so every HP line reads as the public percent
+# The items that lengthen a weather from 5 to 8 turns (data/items.ts, data/conditions.ts durationCallback).
+_WEATHER_ITEM = {"RainDance": "Damp Rock", "SunnyDay": "Heat Rock", "Sandstorm": "Smooth Rock", "Snowscape": "Icy Rock",
+                 "Snow": "Icy Rock"}
 PP_EXACT, PP_DERIVED = 1, 2  # DUOFORGE_PP_EXACT, DUOFORGE_PP_DERIVED
 STAGE_NEUTRAL = 6  # DFI_STAGE_NEUTRAL: stages are stored biased (src/state/battle_internal.h)
 FIELD_TURNS = 5  # DFI_FIELD_TURNS_MAX: weather, terrain, Trick Room
@@ -44,22 +51,12 @@ STALL_DURATION, STALL_LEVEL_MAX = 2, 6  # DFI_STALL_DURATION (src/combat/turn.c)
 CHARGE_TURNS = 2  # twoturnmove's duration: the charge and the locked turn end in the second residual
 STATUS = {"brn": 1, "frz": 2, "par": 3, "slp": 4, "psn": 5}
 
-# Lines of the room, not of the battle: nobody folds them. "-message" is text too: a forfeit or a timer loss
-# ("<name> forfeited.", server/room-battle.ts) and the sim's own notes come that way before |win|.
-ROOM_LINES = {"c", "c:", "chat", "j", "J", "l", "L", "n", "N", "raw", "html", "uhtml", "uhtmlchange", "inactive",
-              "inactiveoff", "tempnotify", "tempnotifyoff", "controlshtml", "fieldhtml", "cantleave", "allowleave",
-              "title", "badge", "rated", "message", "-message", "notify", "error", "timer", "seed", "debug", "",
-              "join", "leave", "name", "b", "B", "battle", "unlink", "hidelines"}
+ROOM_LINES = lines.ROOM_LINES
+_kind = lines.line_kind  # lines of the room, not of the battle: nobody folds them
 # Lines that end or restart the battle session: a reconnect replays the whole log after |init| (and shows a
 # choice already sent as |sentchoice|), the others end the session. The tracker cannot fold them correctly.
 SESSION_LINES = {"init", "sentchoice", "deinit", "noinit", "expire", "bigerror"}
 
-
-def _kind(line):
-    """The kind of a protocol line, or None for a text line of the room."""
-    if not line.startswith("|") or line.startswith("||"):
-        return None
-    return line.split("|")[1]
 
 
 def _condition(text):
@@ -90,6 +87,9 @@ class _Position:
         self.stall = 0
         self.flash_fire = 0
         self.protecting = 0
+        self.choice_slot = MOVE_SLOT_NONE  # the move slot a Choice item locks (TEAM_C and POOL)
+        self.flags = 0  # DUOFORGE_POSITION_FLAG_* (TEAM_C and POOL): Follow Me, Helping Hand, Unburden
+        self.guard_undo = None  # (chain, stall) before a Wide or Quick Guard, until it is known to have run
 
 
 class _Member:
@@ -143,6 +143,17 @@ class Tracker:
         self._accepted = None  # the own choice accepted at the last TURN decision point (it queued the moves)
         self._last_move = None  # (position, move id, target) of the last MOVE event
         self._parting_shot = data.tables["MOVE"]["PARTINGSHOT"]
+        self._turn_scoped = set()  # single-turn features of decision 0018 seen since the turn began (lines.TURN_SCOPED)
+        self._spectator = False  # the own side folded like the foe's, from the public lines (duoforge_replay)
+        self.turn_scoped_seen = collections.Counter()  # single-turn feature lines seen, by feature (counters)
+        tables = data.tables
+        self._choice_items = {tables["ITEM"][k.upper()] + 1 for k in lines.CHOICE_ITEMS if k.upper() in tables["ITEM"]}
+        self._unburden = tables["ABILITY"]["UNBURDEN"] + 1 if "UNBURDEN" in tables["ABILITY"] else None
+        self._follow_me = tables["MOVE"].get("FOLLOWME")
+        # Protect and Detect both show "-singleturn|POKEMON|Protect"; a failed one resets the stall counter
+        self._stall_moves = {tables["MOVE"][k] for k in ("PROTECT", "DETECT") if k in tables["MOVE"]}
+        self._guard_moves = {tables["MOVE"][k] for k in ("WIDEGUARD", "QUICKGUARD") if k in tables["MOVE"]}
+        self._helping_hand = tables["MOVE"].get("HELPINGHAND")
 
     # ------------------------------------------------------------------ input
     def feed(self, lines):
@@ -161,8 +172,76 @@ class Tracker:
             elif kind == "showteam":
                 self._on_showteam(line)
             else:
-                self._lines.append(line)
-                self._fold(line)
+                self._battle_line(line)
+
+    def _battle_line(self, line):
+        """A battle line: classified (lines.check), then folded; a single-turn feature line is remembered for the
+        turn instead (it can matter only at a PIVOT of the same turn, _turn_scoped_stop)."""
+        cls = lines.check(line, self) if self._foe_members is not None else "fold"
+        if cls is None:
+            return
+        self._lines.append(line)
+        if cls.startswith("turn:"):
+            name = cls[len("turn:"):]
+            self._turn_scoped.add(name)
+            self.turn_scoped_seen[name] += 1
+            return
+        self._extended_field(line)
+        if line.startswith("|-clearnegativeboost|"):
+            # White Herb (Team C): the [silent] line the converter skips, after its -enditem; the stages below
+            # neutral return to it.
+            p = self._at(trace_to_c.ev_pos(line.split("|")[2]))
+            p.stages = [max(s, STAGE_NEUTRAL) for s in p.stages]
+            return
+        self._fold(line)
+
+    def _extended_field(self, line):
+        """Stop at a weather or terrain set by a member holding an item that lengthens it (Damp Rock, Heat Rock,
+        Smooth Rock, Icy Rock, Terrain Extender: data/conditions.ts): no line shows the 8 turns, and the fold
+        counts 5."""
+        parts = line.split("|")
+        kind = parts[1] if len(parts) > 1 else ""
+        if kind == "-weather" and len(parts) > 2 and parts[2] in _WEATHER_ITEM and "[upkeep]" not in parts:
+            item = _WEATHER_ITEM[parts[2]]
+        elif kind == "-fieldstart" and len(parts) > 2 and parts[2].endswith(" Terrain"):
+            item = "Terrain Extender"
+        else:
+            return
+        of = [p[len("[of] "):] for p in parts if p.startswith("[of] ")]
+        holder = None
+        if of:
+            holder = self._member_of(of[0])
+        elif self._last_move is not None:
+            holder = self._occupant(self._last_move[0])
+        item_id = self.data.tables["ITEM"].get(trace_to_c.key(item))
+        if holder is not None and item_id is not None and holder.sheet["item"] == item_id + 1:
+            raise lines.Stop(f"line:{kind} {parts[2]} {item}")
+
+    def _turn_scoped_stop(self, boundary):
+        """Stop at a PIVOT boundary while a single-turn feature of this turn is up and its bit is not supported."""
+        if boundary == PIVOT and self._turn_scoped:
+            raise lines.Stop(f"feature:{sorted(self._turn_scoped)[0]}")
+
+    # ------------------------------------------------------------------ what lines.check reads
+    def sheet_of(self, ident):
+        """The sheet of the member a protocol ident ("p1a: Name") names."""
+        return self._member_of(ident).sheet
+
+    def known_sheet(self, ident):
+        """The sheet of the member a protocol ident names, or None before its name was seen."""
+        side, name = int(ident[1]) - 1, ident.split(": ", 1)[1]
+        index = self._names[side].get(name)
+        return None if index is None else self._member(side)[index].sheet
+
+    def ability_now(self, ident):
+        """The current ability + 1 of the member a protocol ident names."""
+        return self._member_of(ident).ability
+
+    def _member_of(self, ident):
+        side, name = int(ident[1]) - 1, ident.split(": ", 1)[1]
+        if name not in self._names[side]:
+            raise lines.Stop(f"structure:{ident} names no member seen yet")
+        return self._member(side)[self._names[side][name]]
 
     def accepted(self, text):
         """The own choice Showdown accepted at the current decision point."""
@@ -196,6 +275,7 @@ class Tracker:
         self.request = request
         self.epoch += 1
         self._step_lines, self._lines = self._lines, []
+        self._turn_scoped_stop(self.boundary())
         own = self._own_members
         for mon in request["side"]["pokemon"]:
             name = mon["ident"].split(": ", 1)[1]
@@ -269,12 +349,17 @@ class Tracker:
         self._register(line)
         maxhp = [{n: 100 for n in self._names[s]} for s in (0, 1)]
         own = self._member(self.side)
-        for name, index in self._names[self.side].items():
-            maxhp[self.side][name] = own[index].hp_max
+        if not self._spectator:
+            for name, index in self._names[self.side].items():
+                maxhp[self.side][name] = own[index].hp_max
+        viewer = SPECTATOR if self._spectator else self.side
         try:
-            events = trace_to_c.step_events([line], self.side, self._names, maxhp, self.data.tables)
+            events = trace_to_c.step_events([line], viewer, self._names, maxhp, self.data.tables)
         except trace_to_c.ConversionError as e:  # a SystemExit: callers catch one kind of error
-            raise ValueError(f"{e.rule}: {e}") from e
+            detail = getattr(e, "detail", None)
+            raise lines.Stop(f"converter:{e.rule}" + (f" {detail}" if detail else "")) from e
+        except (KeyError, IndexError) as e:  # a form of a known line the parser does not know (untyped, as diff_driver)
+            raise lines.Stop(f"converter:untyped {_kind(line)} {type(e).__name__} {e}") from e
         for e in events:
             self._event(e)
 
@@ -289,21 +374,36 @@ class Tracker:
         kind, pos, ident, ident2 = e[0], e[1], e[4], e[5]
         hp, hp_kind, hp_flag, status, detail, amount, flags = e[6], e[8], e[9], e[10], e[11], e[12], e[13]
         foe = pos != NOPOS and pos // 2 != self.side
+        public = foe or (self._spectator and pos != NOPOS)  # folded from the public lines
         if kind == EV["TURN"]:
             self._turn = ident
+            self._turn_scoped.clear()
         elif kind == EV["SWITCH"]:
             p = self._at(pos)
             p.occupant, p.flag, p.fainted = ident, 0, False
             p.reset()
-            if foe:
+            if public:
                 m = self._member(pos // 2)[ident]
                 m.seen, m.hp_percent, m.hp_flag, m.status = True, hp, hp_flag, status
         elif kind == EV["MOVE"]:
-            self._at(pos).acted = 1
+            p = self._at(pos)
+            p.acted = 1
             self._last_move = (pos, ident, e[2])
             m = self._occupant(pos)
             if not flags & FLAG["LOCKED"] and ident in m.sheet["moves"]:
                 m.uses[m.sheet["moves"].index(ident)] += 1
+            if ident in self._guard_moves and not flags & FLAG["LOCKED"]:
+                # Wide Guard and Quick Guard add the stall volatile when they run (data/moves.ts onHitSide
+                # addVolatile('stall')), also when the side has the guard already (no -singleturn line then), the
+                # counter a Protect reads: protect_chain counts them (g7_wide_guard_ally). A -fail undoes it.
+                p.guard_undo = (p.chain, p.stall)
+                p.chain = min(p.chain + 1, STALL_LEVEL_MAX)
+                p.stall = STALL_DURATION
+            if (p.choice_slot == MOVE_SLOT_NONE and m.sheet["item"] in self._choice_items and not m.item_used
+                    and ident in m.sheet["moves"]):
+                # A Choice item locks its holder into the move of its |move| line (data/items.ts onModifyMove,
+                # set right before the line) until it leaves (c07 battles, Choice Scarf).
+                p.choice_slot = m.sheet["moves"].index(ident)
         elif kind == EV["ACTIVATE"]:
             if ident2 == self.data.tables["ABILITY"]["EMERGENCYEXIT"] + 1:
                 self._at(pos).flag = 1  # it leaves: asked to switch
@@ -317,14 +417,14 @@ class Tracker:
         elif kind == EV["CONFUSED"]:
             self._at(pos).acted = 1
         elif kind in (EV["DAMAGE"], EV["HEAL"]):
-            if foe:
+            if public:
                 m = self._occupant(pos)
                 m.hp_percent, m.hp_flag = hp, hp_flag
         elif kind == EV["STATUS"]:
-            if foe:
+            if public:
                 self._occupant(pos).status = detail
         elif kind == EV["CURE_STATUS"]:
-            if foe:
+            if public:
                 self._occupant(pos).status = 0
         elif kind in (EV["BOOST"], EV["UNBOOST"]):
             p = self._at(pos)
@@ -345,9 +445,14 @@ class Tracker:
             p.chain = min(p.chain + 1, STALL_LEVEL_MAX)
             p.stall = STALL_DURATION
         elif kind == EV["FAIL"]:
-            if self._last_move is not None and self._last_move[:2] == (pos, self.data.tables["MOVE"]["PROTECT"]):
+            if self._last_move is not None and self._last_move[0] == pos and self._last_move[1] in self._stall_moves:
                 p = self._at(pos)
                 p.chain = p.stall = 0
+            elif (self._last_move is not None and self._last_move[0] == pos and self._last_move[1] in self._guard_moves
+                  and self._at(pos).guard_undo is not None):
+                p = self._at(pos)
+                p.chain, p.stall = p.guard_undo  # the guard failed (nobody acts after it): no stall added
+                p.guard_undo = None
         elif kind == EV["WEATHER"]:
             if not flags & FLAG["UPKEEP"]:
                 self._weather = detail
@@ -373,16 +478,24 @@ class Tracker:
         elif kind == EV["SIDE_END"]:
             self._conditions[detail][{1: 2, 2: 0, 3: 1}[amount]] = 0
         elif kind == EV["ITEM_END"]:
-            if foe:
-                self._occupant(pos).item_used = 1
+            m = self._occupant(pos)
+            if public:
+                m.item_used = 1
+            if self._unburden is not None and m.ability == self._unburden:
+                self._at(pos).flags |= FLAG_UNBURDEN  # Unburden doubles Speed once the item is gone (c08 battles)
+        elif kind == EV["SINGLE_TURN"]:
+            if ident == self._follow_me:
+                self._at(pos).flags |= FLAG_FOLLOW_ME  # this turn (c11 battles)
+            elif ident == self._helping_hand:
+                self._at(pos).flags |= FLAG_HELPING_HAND  # on the boosted ally, this turn (c09 battles)
         elif kind == EV["FORME"]:
             pass  # the view keeps the set's species; MEGA sets is_mega and the ability
         elif kind == EV["MEGA"]:
             self._mega_used[pos // 2] = 1
-            if foe:
+            if public:
                 m = self._occupant(pos)
                 m.is_mega = 1
-                m.ability = self.data.ability_of(self.data.mega_forme(m.sheet["species"]))
+                m.ability = self.data.ability_of(self.data.mega_of(m.sheet["species"], m.sheet["item"]))
         elif kind == EV["PREPARE"]:
             p = self._at(pos)
             m = self._occupant(pos)
@@ -397,6 +510,7 @@ class Tracker:
                 p.charge, p.locked_slot, p.locked_target = 0, MOVE_SLOT_NONE, TARGET_NONE
         elif kind == EV["UPKEEP"]:
             self._upkeep()
+            self._turn_scoped.clear()
         elif kind == EV["RESULT"]:
             self.ended = True
 
@@ -420,6 +534,7 @@ class Tracker:
             for p in side:
                 p.flag = 1 if p.fainted else 0  # checkFainted at the end of the turn; no other flag carries over
                 p.protecting = 0
+                p.flags &= ~(FLAG_FOLLOW_ME | FLAG_HELPING_HAND)  # single-turn
                 if p.stall:
                     p.stall -= 1
                     if not p.stall:
@@ -509,7 +624,8 @@ class Tracker:
                 continue
             pv["stages"] = p.stages
             pv["confused"], pv["charging"] = p.confused, 1 if p.charge else 0
-            pv["locked_slot"] = p.locked_slot
+            pv["locked_slot"] = p.locked_slot if p.locked_slot != MOVE_SLOT_NONE else p.choice_slot
+            pv["reserved"] = p.flags
             if own and p.charge:
                 pv["locked_target"] = p.locked_target
             pv["acted"], pv["protect_chain"] = p.acted, p.chain

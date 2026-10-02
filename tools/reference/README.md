@@ -140,11 +140,21 @@ The step is the first failing one (`-` for a PASS and for a battle that could no
 ### `ps_client.js`
 
 ```sh
-node tools/reference/ps_client.js <pinned checkout> <repo root> (--all | NAME...) [--check]
+node tools/reference/ps_client.js <pinned checkout> <repo root> (--all | --every | NAME...) [--spectator] [--check]
 node tools/reference/ps_client.js <pinned checkout> --pack <team file>
 ```
 
 The client streams of committed closure battles: what a websocket client of each player receives. It replays each battle from its spec and its trace's recorded choices through a `Battle` whose output goes through `send` (with `sendUpdates()` after every command, as `BattleStream` does), shows the open team sheets at team preview, and writes one JSON object per message: `{"battle", "to": "p1"|"p2", "lines"}` (split lines resolved for the player, no timestamps). At this pin each update comes before its requests (`Battle.sendUpdates`). Every step's omniscient lines must equal the trace's, or it exits 1; `duoforge.reference.client_streams` runs it over every closure battle with `--check`. `--pack` prints `Teams.pack(Teams.import(text))`.
+
+`--every` takes every committed battle (closure, Team C and pool) instead of the closure ones. `--spectator` writes, instead of the players' streams, what a spectator of the room receives (`extractChannelMessages` channel 0), one message per update with `"to": "spectator"` and no requests: exactly what a Showdown replay log holds. They are the fixtures of the M11 replay pipeline (`python/duoforge_replay`); `duoforge.reference.spectator_streams` runs `--every --spectator --check`.
+
+### `ps_stats.js`
+
+```sh
+node tools/reference/ps_stats.js <pinned checkout> [--serve | --choice-items]
+```
+
+The stats of the pinned Showdown for the M11 replay pipeline, whose own-side stats come from a stat point prior (Python computes no stat). It reads a JSON array of `{"species", "nature", "sp": [6]}` and writes a JSON array of `[hp, atk, def, spa, spd, spe]`: `Battle.spreadModify` of `gen9championsvgc2026regmc` (Stat Points in the EV field, level 50). `--serve` answers one array per input line until stdin closes (`{"error": ...}` for a bad query); a one-shot call exits 2 on one. `--choice-items` prints the sorted ids of the items with `isChoice`.
 
 ### `diff_driver.py`
 
