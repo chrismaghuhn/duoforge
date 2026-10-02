@@ -70,10 +70,13 @@
  * (Rock Slide, Double-Edge, Thunderbolt, Flash Cannon, Extreme Speed, Head
  * Smash, Bulk Up, Liquidation, Ice Punch, Shadow Claw, Drum Beating and
  * Dazzling Gleam), each used in one of the four reference battles under the
- * POOL kind g2_data_moves_a to _d. Step G5 marks U-turn: a damaging pivot
- * whose flag names it (dfi_pivot_moves), in the reference battles g5_uturn_a
- * to _e. A move is marked only by the step that records a reference battle
- * with it. */
+ * POOL kind g2_data_moves_a to _d. A move is marked only by the step that
+ * records a reference battle with it.
+ * Step G4 marks Focus Sash (a move hit or the confusion hit that would take all
+ * of a full-HP holder's HP leaves it 1 HP) and Rock Head (no recoil from a
+ * recoil move, Struggle's stays), each with recorded POOL battles. Step G5
+ * marks U-turn: a damaging pivot whose switch flag names it (dfi_pivot_moves),
+ * in the reference battles g5_uturn_a to _e. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -166,6 +169,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_AERILATE] = 1u,
             [DFI_ABILITY_UNBURDEN] = 1u,
             [DFI_ABILITY_PSYCHICSURGE] = 1u,
+            [DFI_ABILITY_ROCKHEAD] = 1u,
             [DFI_ABILITY_PIXILATE] = 1u,
             [DFI_ABILITY_REFRIGERATE] = 1u,
             [DFI_ABILITY_OVERGROW] = 1u,
@@ -190,6 +194,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_CHOPLEBERRY] = 1u,
             [DFI_ITEM_CHOICESCARF] = 1u,
             [DFI_ITEM_WHITEHERB] = 1u,
+            [DFI_ITEM_FOCUSSASH] = 1u,
             [DFI_ITEM_BLACKBELT] = 1u,
             [DFI_ITEM_BLACKGLASSES] = 1u,
             [DFI_ITEM_CHARCOAL] = 1u,
