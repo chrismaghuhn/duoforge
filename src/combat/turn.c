@@ -1339,11 +1339,50 @@ static bool dfi_herbs_matter(dfi_run *r)
 
 /* heal(): at least 1, nothing at full HP, not above the maximum
  * ([-heal] with its cause). */
+/* Heal Block (POOL kinds; the tail is zero elsewhere): onTryHeal returns false for every heal of the holder, and
+ * Sitrus Berry's onTryEatItem asks the same event, so the berry is not eaten (data/moves.ts:8273-8347 healblock
+ * onTryHeal, data/items.ts:5757-5759, sim/pokemon.ts:1779-1782). */
+static bool dfi_heal_blocked(const struct duoforge_battle *b, uint32_t flat)
+{
+    return b->tail.sides[flat / 2u].positions[flat % 2u].heal_block_turns != 0u;
+}
+
+/* Psychic Noise's Heal Block lasts 2 turns (durationCallback, data/moves.ts:8286-8289); Throat Chop's condition has
+ * duration 2 (data/moves.ts:19391-19393, DFI_TAIL_THROAT_CHOP_MAX). */
+#define DFI_HEAL_BLOCK_PSYCHIC_NOISE_TURNS 2u
+
+/* addVolatile('throatchop') on a standing target without it: no onRestart, so a second hit changes nothing; its
+ * -start line is [silent]. */
+static void dfi_add_lockout(dfi_run *r, uint32_t flat)
+{
+    const dfi_member *m = dfi_at(r->b, flat);
+    dfi_tail_pos *tail = &r->b->tail.sides[flat / 2u].positions[flat % 2u];
+    if (m == NULL || m->hp == 0u || tail->throat_chop_turns != 0u) {
+        return;
+    }
+    tail->throat_chop_turns = (uint8_t)DFI_TAIL_THROAT_CHOP_MAX;
+}
+
+/* addVolatile('healblock') from Psychic Noise on a standing target: -start|X|move: Heal Block. A target that has
+ * it keeps it (onRestart returns at once for Psychic Noise: no refresh, no line). */
+static void dfi_add_heal_block(dfi_run *r, uint32_t flat)
+{
+    const dfi_member *m = dfi_at(r->b, flat);
+    dfi_tail_pos *tail = &r->b->tail.sides[flat / 2u].positions[flat % 2u];
+    if (m == NULL || m->hp == 0u || tail->heal_block_turns != 0u) {
+        return;
+    }
+    tail->heal_block_turns = (uint8_t)DFI_HEAL_BLOCK_PSYCHIC_NOISE_TURNS;
+    duoforge_event e = dfi_event_make(DUOFORGE_EVENT_VOLATILE_START, flat);
+    e.detail = (uint8_t)DUOFORGE_VOLATILE_HEAL_BLOCK;
+    dfi_emit(r, &e);
+}
+
 static void dfi_heal(dfi_run *r, uint32_t flat, uint32_t amount, uint32_t cause, uint32_t id2, uint32_t other)
 {
     struct duoforge_battle *b = r->b;
     dfi_member *m = dfi_at(b, flat);
-    if (m == NULL || m->hp == 0u || m->hp >= m->hp_max) {
+    if (m == NULL || m->hp == 0u || m->hp >= m->hp_max || dfi_heal_blocked(b, flat)) {
         return;
     }
     const uint32_t hp = (uint32_t)m->hp + (amount == 0u ? 1u : amount);
@@ -1440,7 +1479,8 @@ static duoforge_status dfi_update(dfi_run *r)
     for (uint32_t i = 0u; i < n; ++i) {
         const uint32_t flat = list[i];
         const dfi_member *m = dfi_at(r->b, flat);
-        if (m->hp != 0u && dfi_holds(m, DFI_ITEM_SITRUSBERRY) && (uint32_t)m->hp * 2u <= m->hp_max) {
+        if (m->hp != 0u && dfi_holds(m, DFI_ITEM_SITRUSBERRY) && (uint32_t)m->hp * 2u <= m->hp_max &&
+            !dfi_heal_blocked(r->b, flat)) {
             dfi_use_item(r, flat);
             dfi_heal(r, flat, (uint32_t)m->hp_max / 4u, DUOFORGE_CAUSE_ITEM, 1u + DFI_ITEM_SITRUSBERRY,
                      DUOFORGE_NO_POSITION);
@@ -1498,6 +1538,7 @@ static void dfi_process_faints(dfi_run *r)
         if (i >= r->faint_announced) {
             dfi_emit_plain(r, DUOFORGE_EVENT_FAINT, flat); /* [faint] */
         }
+        dfi_tail_clear_occupant(b, flat); /* the POOL tail ends with the volatiles (decision 0015 section 7) */
         dfi_clear_volatile(dfi_pos(b, flat));
         /* clearVolatile ends with setSpecies, which sets pokemon.speed to the
          * raw Speed stat (sim/pokemon.ts:1418); a fainted Pokemon is not
@@ -1562,7 +1603,7 @@ static bool dfi_faint_shown(const dfi_run *r, uint32_t flat)
  * ends the event (data/conditions.ts, data/mods/champions/conditions.ts).
  * A frozen user of a defrost move (Flare Blitz, Team C) skips the freeze
  * check: no draw, no counter (data/mods/champions/conditions.ts:47). */
-static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, const dfi_move_data *md, bool *can)
+static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, uint32_t move_id, const dfi_move_data *md, bool *can)
 {
     dfi_member *m = dfi_at(r->b, user);
     dfi_active_slot *pos = dfi_pos(r->b, user);
@@ -1596,6 +1637,25 @@ static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, const dfi_move
         const duoforge_event e = dfi_ev(DUOFORGE_EVENT_CANT, user, DUOFORGE_CAUSE_FLINCH, 0u, DUOFORGE_NO_POSITION);
         dfi_emit(r, &e); /* [cant] flinch */
         return DUOFORGE_OK;
+    }
+    /* Throat Chop and Heal Block, both onBeforeMovePriority 6: between the flinch and the confusion (data/moves.ts:
+     * 19410-19422, 8307-8313). A sound move (Throat Chop) or a move that heals (Heal Block) shows cant and uses no PP;
+     * Struggle has neither flag. No move of the pool is both. */
+    {
+        const dfi_tail_pos *tail = &r->b->tail.sides[user / 2u].positions[user % 2u];
+        const uint32_t flags2 = move_id == DFI_MOVE_STRUGGLE ? 0u : dfi_pool_move_flags2[move_id];
+        if (tail->throat_chop_turns != 0u && (flags2 & DFI_MOVE_FLAG2_SOUND) != 0u) {
+            const duoforge_event e = dfi_ev(DUOFORGE_EVENT_CANT, user, DUOFORGE_CAUSE_MOVE, DFI_MOVE_THROATCHOP,
+                                            DUOFORGE_NO_POSITION);
+            dfi_emit(r, &e); /* [cant] move: Throat Chop */
+            return DUOFORGE_OK;
+        }
+        if (tail->heal_block_turns != 0u && (flags2 & DFI_MOVE_FLAG2_HEAL) != 0u) {
+            duoforge_event e = dfi_ev(DUOFORGE_EVENT_CANT, user, DUOFORGE_CAUSE_HEAL_BLOCK, 0u, DUOFORGE_NO_POSITION);
+            e.id = (uint16_t)move_id;
+            dfi_emit(r, &e); /* [cant] move: Heal Block|move */
+            return DUOFORGE_OK;
+        }
     }
     if (pos->confusion_turns != 0u) {
         pos->confusion_turns = (uint8_t)((uint32_t)pos->confusion_turns - 1u); /* wide-operands-reviewed */
@@ -1817,7 +1877,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
      * onMoveAborted). */
     const bool locked = pos->charge_turns != 0u;
     bool can = false;
-    st = dfi_before_move(r, user, md, &can);
+    st = dfi_before_move(r, user, move_id, md, &can);
     if (st != DUOFORGE_OK) {
         return st;
     }
@@ -2374,6 +2434,10 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                 st = dfi_try_status(r, targets[i], md->sec_param, user, move_id, false);
             } else if (md->sec_kind == DFI_SECONDARY_VOLATILE) {
                 st = dfi_add_volatile(r, targets[i], md->sec_param);
+            } else if (md->sec_kind == DFI_SECONDARY_LOCKOUT) {
+                dfi_add_lockout(r, targets[i]); /* Throat Chop (POOL data) */
+            } else if (md->sec_kind == DFI_SECONDARY_HEAL_BLOCK) {
+                dfi_add_heal_block(r, targets[i]); /* Psychic Noise (POOL data) */
             } else if (md->sec_kind == DFI_SECONDARY_STATUS_PICK) {
                 /* Dire Claw (Team C, data/mods/champions/moves.ts:217-227):
                  * sample(['psn', 'par', 'slp']), then trySetStatus without a
@@ -3135,7 +3199,7 @@ static duoforge_status dfi_residual_events(dfi_run *r)
         if (e->kind == DFI_RES_GRASSY) {
             /* heal(baseMaxhp / 16): at least 1, not above the maximum, not
              * for a Pokemon that is not grounded or at full HP. */
-            if (dfi_grounded(m) && m->hp < m->hp_max) {
+            if (dfi_grounded(m) && m->hp < m->hp_max && !dfi_heal_blocked(b, e->flat)) {
                 uint32_t heal = (uint32_t)m->hp_max / 16u;
                 heal = heal == 0u ? 1u : heal;
                 const uint32_t hp = (uint32_t)m->hp + heal;
@@ -3159,6 +3223,48 @@ static duoforge_status dfi_residual_events(dfi_run *r)
         dfi_process_faints(r);
         if (r->ended) {
             return DUOFORGE_OK;
+        }
+    }
+    /* Heal Block (order 20) and Throat Chop (order 22), duration handlers of a position's volatile (POOL tail): the
+     * count goes down; at 0 Heal Block shows its end line (-end|X|move: Heal Block) and Throat Chop's is [silent].
+     * Two Heal Blocks that end now come in the speed order of their holders; at equal speed the reference shuffles
+     * and draws, which the converter drops for duration handlers, so the engine cannot say which line is first:
+     * E_UNSUPPORTED, as for two White Herbs. */
+    {
+        uint32_t ending[DFI_POSITIONS] = {0u, 0u, 0u, 0u};
+        uint32_t ne = 0u;
+        for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
+            dfi_tail_pos *tail = &b->tail.sides[flat / 2u].positions[flat % 2u];
+            if (tail->heal_block_turns != 0u) {
+                tail->heal_block_turns = (uint8_t)((uint32_t)tail->heal_block_turns - 1u); /* wide-operands-reviewed */
+                if (tail->heal_block_turns == 0u) {
+                    ending[ne] = flat;
+                    ne += 1u;
+                }
+            }
+        }
+        for (uint32_t i = 1u; i < ne; ++i) {
+            for (uint32_t j = i; j > 0u && r->speed_seen[ending[j]] > r->speed_seen[ending[j - 1u]]; --j) {
+                const uint32_t swap = ending[j];
+                ending[j] = ending[j - 1u];
+                ending[j - 1u] = swap;
+            }
+        }
+        for (uint32_t i = 1u; i < ne; ++i) {
+            if (r->speed_seen[ending[i]] == r->speed_seen[ending[i - 1u]]) {
+                return DUOFORGE_E_UNSUPPORTED;
+            }
+        }
+        for (uint32_t i = 0u; i < ne; ++i) {
+            duoforge_event e = dfi_event_make(DUOFORGE_EVENT_VOLATILE_END, ending[i]);
+            e.detail = (uint8_t)DUOFORGE_VOLATILE_HEAL_BLOCK;
+            dfi_emit(r, &e);
+        }
+        for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
+            dfi_tail_pos *tail = &b->tail.sides[flat / 2u].positions[flat % 2u];
+            if (tail->throat_chop_turns != 0u) {
+                tail->throat_chop_turns = (uint8_t)((uint32_t)tail->throat_chop_turns - 1u); /* wide-operands-reviewed */
+            }
         }
     }
     /* The duration handlers in their order: the side conditions (26), Trick

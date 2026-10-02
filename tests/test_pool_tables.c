@@ -43,7 +43,7 @@
 #include "state/battle_internal.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "1d402745eba5e5e0b4878fee1e8d0aa10db8875a0ef1077a625358db791cea68"
+#define POOL_HASH_HEX "d60d6ba5744da21301addc22df62e04464a6c96a0fe454008771879d563b5818"
 
 typedef struct family_case {
     uint32_t id;
@@ -318,7 +318,7 @@ static const move_case new_moves[] = {
      DUOFORGE_TARGET_CLASS_ALL_ADJACENT_FOES, 1u, DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 30u, DFI_SECONDARY_VOLATILE,
      DFI_VOLATILE_FLINCH, 0u, NB, 0u},
     {DFI_MOVE_THROATCHOP, "Throat Chop", DFI_TYPE_DARK, DFI_CATEGORY_PHYSICAL, 80u, 100u, 16u, 8u, 1u, 1u,
-     DFI_MOVE_FLAG_CONTACT | DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 0u, 0u, 0u, 0u, NB, DFI_SPECIAL_THROAT_CHOP},
+     DFI_MOVE_FLAG_CONTACT | DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 100u, DFI_SECONDARY_LOCKOUT, 0u, 0u, NB, 0u},
     {DFI_MOVE_ENCORE, "Encore", DFI_TYPE_NORMAL, DFI_CATEGORY_STATUS, 0u, 100u, 8u, 8u, 1u, 1u, DFI_MOVE_FLAG_PROTECT,
      {0u, 0u}, 0u, 0u, 0u, 0u, NB, DFI_SPECIAL_ENCORE},
     {DFI_MOVE_DOUBLEEDGE, "Double-Edge", DFI_TYPE_NORMAL, DFI_CATEGORY_PHYSICAL, 120u, 100u, 16u, 8u, 1u, 1u,
@@ -353,7 +353,7 @@ static const move_case new_moves[] = {
     {DFI_MOVE_SOAK, "Soak", DFI_TYPE_WATER, DFI_CATEGORY_STATUS, 0u, 100u, 20u, 8u, 1u, 1u, DFI_MOVE_FLAG_PROTECT,
      {0u, 0u}, 0u, 0u, 0u, 0u, NB, DFI_SPECIAL_SOAK},
     {DFI_MOVE_PSYCHICNOISE, "Psychic Noise", DFI_TYPE_PSYCHIC, DFI_CATEGORY_SPECIAL, 75u, 100u, 12u, 8u, 1u, 1u,
-     DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 0u, 0u, 0u, 0u, NB, DFI_SPECIAL_PSYCHIC_NOISE},
+     DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 100u, DFI_SECONDARY_HEAL_BLOCK, 0u, 0u, NB, 0u},
     {DFI_MOVE_DRUMBEATING, "Drum Beating", DFI_TYPE_GRASS, DFI_CATEGORY_PHYSICAL, 80u, 100u, 12u, 8u, 1u, 1u,
      DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 100u, DFI_SECONDARY_BOOST, 0u, DFI_BOOST_ROLE_SECONDARY_TARGET,
      {0, 0, 0, 0, -1, 0, 0}, 0u},
@@ -531,10 +531,29 @@ int main(void)
         }
         uint32_t handlers = 0u;
         for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
-            handlers += dfi_pool_moves[i].special >= DFI_SPECIAL_THROAT_CHOP ? 1u : 0u;
+            handlers += dfi_pool_moves[i].special >= DFI_SPECIAL_ENCORE ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, handlers, DFI_SPECIAL_LOW_KICK - DFI_SPECIAL_THROAT_CHOP + 1u);
-        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_THROAT_CHOP, DFI_SPECIAL_FOLLOW_ME + 1u);
+        DF_CHECK_EQ_U64(&t, handlers, DFI_SPECIAL_LOW_KICK - DFI_SPECIAL_ENCORE + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_ENCORE, DFI_SPECIAL_FOLLOW_ME + 1u);
+        /* Step G8: Throat Chop and Psychic Noise are modelled (a secondary kind of their own, chance 100), not
+         * handlers; the second flags byte has the sound and heal flags of the pin and nothing else. */
+        static const struct {
+            uint32_t move;
+            uint32_t flags2;
+        } flagged[] = {{DFI_MOVE_SNARL, DFI_MOVE_FLAG2_SOUND}, {DFI_MOVE_PARTINGSHOT, DFI_MOVE_FLAG2_SOUND},
+                       {DFI_MOVE_HYPERVOICE, DFI_MOVE_FLAG2_SOUND}, {DFI_MOVE_PSYCHICNOISE, DFI_MOVE_FLAG2_SOUND},
+                       {DFI_MOVE_BITTERBLADE, DFI_MOVE_FLAG2_HEAL}, {DFI_MOVE_LEECHLIFE, DFI_MOVE_FLAG2_HEAL},
+                       {DFI_MOVE_RECOVER, DFI_MOVE_FLAG2_HEAL}};
+        uint32_t wrong_flags = 0u;
+        for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
+            uint32_t want = 0u;
+            for (size_t k = 0u; k < sizeof flagged / sizeof flagged[0]; ++k) {
+                want = flagged[k].move == i ? flagged[k].flags2 : want;
+            }
+            wrong_flags += dfi_pool_move_flags2[i] != want ? 1u : 0u;
+        }
+        DF_CHECK_EQ_U64(&t, wrong_flags, 0u);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_THROATCHOP].special, 0u);
     }
 
     /* The closure and extended canonical bytes recomputed from the prefix,
@@ -578,8 +597,8 @@ int main(void)
         const size_t n = dfi_pool_canonical_bytes(bytes, sizeof bytes);
         DF_CHECK_EQ_U64(&t, n, DFI_POOL_CANONICAL_SIZE);
         /* 12 + 28 * 24 + 72 * 29 + 52 * 2 + 324 + 18 + 50, then 52 * 2 + 29 * 2,
-         * then 28 * (9 + 1 + 3) */
-        DF_CHECK_EQ_U64(&t, DFI_POOL_CANONICAL_SIZE, 3794u);
+         * then 28 * (9 + 1 + 3), then the second flags byte of 72 moves (step G8) */
+        DF_CHECK_EQ_U64(&t, DFI_POOL_CANONICAL_SIZE, 3866u);
         DF_CHECK(&t, bytes[DFI_POOL_CANONICAL_SIZE] == 0xA5u);
         const size_t row_bytes = dfi_pool_canonical_bytes_of(rows, sizeof rows, DFI_POOL_FORME_COUNT,
                                                              DFI_POOL_MOVE_COUNT, DFI_POOL_ITEM_COUNT,
@@ -612,6 +631,10 @@ int main(void)
             }
             at += DFI_POOL_FORME_ABILITIES_MAX;
         }
+        for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
+            bad += bytes[at + i] != dfi_pool_move_flags2[i] ? 1u : 0u;
+        }
+        at += DFI_POOL_MOVE_COUNT;
         DF_CHECK_EQ_U64(&t, bad, 0u);
         DF_CHECK_EQ_U64(&t, at, DFI_POOL_CANONICAL_SIZE);
         DF_CHECK(&t, dfi_sha256(bytes, n, sha));
@@ -824,12 +847,15 @@ int main(void)
                 DF_CHECK(&t, dfi_support.abilities[id] != 0u);
             }
         }
-        /* Step G2 marks twelve of its 22 moves, each used in a reference battle under the POOL kind (g2_data_moves_a
-         * to _d); U-turn (its switch cause is G5) and the nine moves with a handler id stay unmarked. */
+        /* Steps G2 and G8 mark fourteen of the 22 moves, each used in a reference battle under the POOL kind
+         * (g2_data_moves_a to _d; g8_throat_chop, g8_heal_block, g8_heal_block_pair for Throat Chop and Psychic
+         * Noise, whose lockout and Heal Block are secondary kinds, not handlers); U-turn (its switch cause is G5) and
+         * the seven moves with a handler id stay unmarked. */
         static const uint32_t marked_moves[] = {DFI_MOVE_ROCKSLIDE, DFI_MOVE_DOUBLEEDGE, DFI_MOVE_THUNDERBOLT,
                                                 DFI_MOVE_FLASHCANNON, DFI_MOVE_EXTREMESPEED, DFI_MOVE_HEADSMASH,
                                                 DFI_MOVE_BULKUP, DFI_MOVE_LIQUIDATION, DFI_MOVE_ICEPUNCH,
-                                                DFI_MOVE_SHADOWCLAW, DFI_MOVE_DRUMBEATING, DFI_MOVE_DAZZLINGGLEAM};
+                                                DFI_MOVE_SHADOWCLAW, DFI_MOVE_DRUMBEATING, DFI_MOVE_DAZZLINGGLEAM,
+                                                DFI_MOVE_THROATCHOP, DFI_MOVE_PSYCHICNOISE};
         uint32_t marked_count = 0u;
         for (uint32_t id = DFI_EXT_MOVE_COUNT; id < DFI_POOL_MOVE_COUNT; ++id) {
             bool want = false;
@@ -841,7 +867,7 @@ int main(void)
             DF_CHECK(&t, !want || dfi_pool_moves[id].special == DFI_SPECIAL_NONE);
             marked_count += dfi_support.moves[id] != 0u ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, marked_count, 12u);
+        DF_CHECK_EQ_U64(&t, marked_count, 14u);
     }
 
     return df_test_end(&t);

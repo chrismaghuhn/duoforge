@@ -6,6 +6,7 @@
 #include "core/arith.h"
 #include "core/bytes.h"
 #include "data/closure_tables.h"
+#include "data/pool_tables.h"
 #include "state/context_internal.h"
 #include "state/invariants.h"
 #include "state/transition.h"
@@ -137,6 +138,17 @@ static duoforge_status dfi_slot_candidates(const duoforge_context *ctx, const st
             }
             if (mv->move_id >= ctx->move_count) {
                 return DUOFORGE_E_INVARIANT;
+            }
+            /* Throat Chop disables every move with the sound flag and Heal Block every move with the heal flag
+             * (onDisableMove, data/moves.ts:19403-19409 and 8300-8306; POOL kinds, the tail is zero elsewhere); with
+             * no move left the slot gets Struggle, as for any disabled move. */
+            {
+                const dfi_tail_pos *tail = &b->tail.sides[s].positions[slot];
+                const uint32_t flags2 = dfi_pool_move_flags2[mv->move_id];
+                if ((tail->throat_chop_turns != 0u && (flags2 & DFI_MOVE_FLAG2_SOUND) != 0u) ||
+                    (tail->heal_block_turns != 0u && (flags2 & DFI_MOVE_FLAG2_HEAL) != 0u)) {
+                    continue;
+                }
             }
             /* Champions disables Fake Out once its user has taken a move
              * action since it entered (data/mods/champions/moves.ts:354-361). */

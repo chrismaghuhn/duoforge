@@ -122,6 +122,8 @@ duoforge_add_test(NAME duoforge.data.pool_tables SOURCES test_pool_tables.c WHIT
 duoforge_add_test(NAME duoforge.state.pool_setup SOURCES test_pool_setup.c WHITEBOX TIMEOUT 60)
 # The POOL state tail (decision 0015 section 7): schema "v3 + pool tail rev 1", present under the POOL kinds only.
 duoforge_add_test(NAME duoforge.state.pool_tail SOURCES test_pool_tail.c WHITEBOX TIMEOUT 120)
+# Step G8: Throat Chop and Psychic Noise's Heal Block in the tail and in the request.
+duoforge_add_test(NAME duoforge.state.pool_g8 SOURCES test_pool_g8.c WHITEBOX TIMEOUT 60)
 # The generated files must stay exactly what tools/datagen/gen_closure.py
 # wrote; regenerate and update these hashes together.
 foreach(_gen IN ITEMS
@@ -129,8 +131,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=bba0fa9ac44a6d52053bec88702d96604a4720524c3f94a0cd6a188cc4012310"
-        "pool_tables.c=da55d5b321c2886c41c41acdde3a91676e9c1234822bd628fed1fee2d3516401")
+        "pool_tables.h=78a72697232b5648952ebd790b9faaa7a162133d73115308113a99d6f7e7fc95"
+        "pool_tables.c=5530719ad2e23dd80e4297644e89888c0ff185c9601a71eff5f5f0cad11463fd")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)

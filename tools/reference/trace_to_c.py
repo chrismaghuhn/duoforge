@@ -304,6 +304,15 @@ def drop_reason(d, state, after=None):
             return 'Life Orb and Chople Berry, whose modifiers commute'
         raise ConversionError('modifydamage-tie', 'trace_to_c: ModifyDamage tie with %s' % group,
                               detail=tie_effects(group))
+    if site == 'SPEED_TIE' and ctx == 'event:DisableMove':
+        # The DisableMove handlers of one Pokemon: the Choice lock's, Throat Chop's and Heal Block's onDisableMove
+        # (data/conditions.ts choicelock, data/moves.ts throatchop and healblock) each only set `disabled` on
+        # move slots, and setting a flag twice is setting it once: whichever runs first, the request offers the
+        # same moves. Any other handler is a mechanic that has not been looked at.
+        if all(g.startswith(('H:choicelock:', 'H:throatchop:', 'H:healblock:')) and g.endswith(':cb') for g in group):
+            return 'DisableMove handlers whose order changes nothing'
+        raise ConversionError('disablemove-tie', 'trace_to_c: DisableMove tie with %s' % group,
+                              detail=tie_effects(group))
     if site == 'SPEED_TIE' and ctx == 'event:Accuracy' and all(
             g.startswith('H:noguard:') and g.endswith(':cb') for g in group):
         # data/abilities.ts noguard: onAnyAccuracy(accuracy, target, source, move) returns true when its holder is
@@ -498,9 +507,11 @@ EV = {name: i + 1 for i, name in enumerate(
      'IMMUNE', 'FAIL', 'PROTECT', 'BLOCKED', 'BOOST', 'UNBOOST', 'STATUS', 'CURE_STATUS', 'CONFUSION_START',
      'CONFUSION_END', 'CONFUSED', 'FLASH_FIRE', 'WEATHER', 'FIELD_START', 'FIELD_END', 'SIDE_START', 'SIDE_END',
      'ITEM_END', 'FORME', 'MEGA', 'PREPARE', 'ANIMATION', 'ABILITY', 'ACTIVATE', 'UPKEEP', 'RESULT',
-     'SINGLE_TURN'])}
+     'SINGLE_TURN', 'VOLATILE_START', 'VOLATILE_END'])}
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
-         'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14}
+         'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14,
+         'HEAL_BLOCK': 15}
+VOLATILE_HEAL_BLOCK = 1  # DUOFORGE_VOLATILE_HEAL_BLOCK: the detail of VOLATILE_START and VOLATILE_END
 FLAG = {'STILL': 1, 'LOCKED': 2, 'SPREAD': 4, 'UPKEEP': 8, 'EATEN': 16, 'MESSAGE': 32, 'MISS': 64, 'NOTARGET': 128}
 AILMENT = {'brn': 1, 'frz': 2, 'par': 3, 'slp': 4, 'psn': 5}
 EV_STATS = ['atk', 'def', 'spa', 'spd', 'spe', 'accuracy', 'evasion']
@@ -525,6 +536,11 @@ IGNORED_VOLATILES = {
     # can stand without it, from the locked turn to the residual, and the lock
     # is then the one remembered (two_turn_lock).
     'electroshot': 'the locked slot and target',
+    # Pool step G8 (the POOL tail, decision 0015 section 7). Their turns are not a field of the state record; each
+    # shows in the steps that the comparison already covers: the moves of the next request (disabled slots, the
+    # request that offers Struggle), the cant lines, the heal that is missing, and Heal Block's start and end lines.
+    'throatchop': 'the moves of the requests and the cant lines',
+    'healblock': 'the moves of the requests, the cant, start and end lines and the heals',
 }
 HP_EXACT, HP_PERCENT = 1, 2
 HP_FLAGS_EV = {'': 0, 'r': 1, 'y': 2, 'g': 3}
@@ -674,6 +690,11 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                 _, _, other = ev_cause(attrs, tables)
                 e = ev_tuple(EV['CANT'], pos, other, CAUSE['ABILITY'], tables['MOVE'][key(args[2])],
                              tables['ABILITY'][key(reason[9:])] + 1)
+            elif reason == 'move: Throat Chop':
+                # The line names no move: the cause is the move that bars it (a sound move of the holder).
+                e = ev_tuple(EV['CANT'], pos, NOPOS, CAUSE['MOVE'], 0, tables['MOVE'][key('Throat Chop')])
+            elif reason == 'move: Heal Block':
+                e = ev_tuple(EV['CANT'], pos, NOPOS, CAUSE['HEAL_BLOCK'], tables['MOVE'][key(args[2])])
             else:
                 cause = {'par': 'PARALYSIS', 'slp': 'SLEEP', 'frz': 'FREEZE', 'flinch': 'FLINCH', 'nopp': 'NO_PP'}
                 e = ev_tuple(EV['CANT'], pos, NOPOS, CAUSE[cause[reason]])
@@ -731,6 +752,9 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                 e = ev_tuple(EV['CONFUSION_START' if kind == '-start' else 'CONFUSION_END'], ev_pos(args[0]))
             elif what == 'ability: Flash Fire' and kind == '-start':
                 e = ev_tuple(EV['FLASH_FIRE'], ev_pos(args[0]))
+            elif what == 'move: Heal Block':
+                e = ev_tuple(EV['VOLATILE_START' if kind == '-start' else 'VOLATILE_END'], ev_pos(args[0]),
+                             detail=VOLATILE_HEAL_BLOCK)
             else:
                 raise ConversionError('start-end-line', 'trace_to_c: unknown %s %r' % (kind, line),
                                       detail='%s %s' % (kind, what))
