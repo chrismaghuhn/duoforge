@@ -86,7 +86,7 @@ decode_unauthorized() { # message
 # of DryRunOperation or UnauthorizedOperation is about the permissions, anything else about the image is reported.
 placeholder=no
 if [ -z "$ami" ]; then
-    ami=ami-0123456789abcdef0
+    ami='ami-0123456789abcdef0'
     placeholder=yes
     df_log 'the AMI parameter could not be read: the dry runs use a placeholder image (permissions only)'
 fi
