@@ -27,12 +27,16 @@ registry). A pairing is two teams, two letters when both ids have one character
 gender of every Pokemon that has one stated (the converter refuses a missing gender
 whatever the driver does; tools/reference/import_paste.py makes a registry file of
 any paste). The data kind follows the members: sets that are all in the closure
-tables play under CLOSURE, with Team C ids under TEAM_C. A name in neither (the
-POOL data kind of decision 0015 comes with P1: add it to DATA_KINDS) is a
+tables play under CLOSURE, with Team C ids under TEAM_C, with an id of the pool
+tables (decision 0015: a forme, move, item or ability that Team C does not have,
+U-turn for one) under POOL; a battle with such a team is "data": "pool" and runs
+under the POOL kind alone, no DEV fallback. A name in none of them is a
 refusal of the driver, status 2 with the name, before anything is played, never
 a REF_ERROR; so are an id that the registry does not have, a file that is not six
-sets and one that the converter cannot read. The run's identity holds the hash of
-each team.
+sets and one that the converter cannot read. Whether the engine takes the
+members under POOL (their moves must be ones the forme learns, their ability
+and item marked) is its to say: a team it rejects is a `create:` finding. The
+run's identity holds the hash and the data kind of each team.
 
 The pipeline, and the bucket of the first step that ends it:
 
@@ -44,7 +48,7 @@ The pipeline, and the bucket of the first step that ends it:
               "the choices spec does not replay";
  3. convert   trace_to_c; a ConversionError, or one of the untyped errors of
               diff_driver: ORACLE_GAP;
- 4. run       the runner creates the battle under CLOSURE (Team C: TEAM_C) with
+ 4. run       the runner creates the battle under CLOSURE (Team C: TEAM_C, pool: POOL) with
               no DEV fallback: a real team that is rejected is a finding.
               UNSUPPORTED or DIVERGENCE as it says; a runner that dies or hangs
               is a DIVERGENCE "runner died (exit X)" / "runner timed out";
@@ -156,10 +160,12 @@ WHO = {'A': 'team A', 'B': 'team B', 'C': 'Team C'}
 COMMITTED_TEAMS = ('A', 'B', 'C')
 DEFAULT_DATA = {'A': 'closure', 'B': 'closure', 'C': 'team_c'}  # the data kind that each committed team plays under
 # The data kinds that a team can need, the smallest first: (name, the `team_c` flag of trace_to_c.load_tables, which
-# the runner's kinds follow: CLOSURE, TEAM_C). The POOL data kind of decision 0015 (the pool tables, after P1) goes
-# here, once trace_to_c.load_tables, conformance_records.data_kinds and the runner know it: a team that needs a kind
-# that is not in this list is refused before anything is played (team_data_kind).
-DATA_KINDS = (('closure', False), ('team_c', True))
+# the runner's kinds follow: CLOSURE, TEAM_C, POOL). The Team C and POOL kinds read the same tables (the pool tables
+# keep every extended id, decision 0015), so a team is Team C data while every one of its ids is an extended one and POOL
+# data from the first id beyond them (team_data_kind). A team that needs a kind that is not in this list is refused
+# before anything is played.
+DATA_KINDS = (('closure', False), ('team_c', True), ('pool', True))
+STRICT_KIND = {'closure': 'CLOSURE', 'team_c': 'TEAM_C', 'pool': 'POOL'}  # the runner's data kind of each (no DEV)
 
 # A team of the run that is not one of A, B and C (--team): its id (a team of the registry) or its letter (a file of
 # your own), the file, the data kind its members need, the SHA-256 of the sets as they are used (what the run's identity
@@ -267,7 +273,10 @@ def derive(params, index, teams):
                     'every request with random choices (policy seed %d, tools/reference/ps_play.js) that the pinned '
                     'Showdown accepted.' % (index, params.seed, who(ids[0]), who(ids[1]), policy_seed)),
     }
-    if any(data_of(params, team_id) == 'team_c' for team_id in ids):
+    kinds = [data_of(params, team_id) for team_id in ids]
+    if 'pool' in kinds:
+        spec['data'] = 'pool'
+    elif 'team_c' in kinds:
         spec['data'] = 'team_c'
     spec.update({'format': gen_real_specs.FORMAT, 'seed': ps_seed, 'teams': sides})
     return spec, policy_seed, pairing
@@ -429,8 +438,8 @@ def evaluate(name, spec, worker, runner, tables_for, kinds, play_ended, seconds,
 def convert_and_run(name, spec, text, trace, ended, runner, tables_for, kinds, seconds, clock=time.monotonic, domain=(),
                     cap=True):
     """convert -> runner for a recorded battle: the Evaluated of evaluate() from the converter on. The strict kinds: a
-    battle of team_c data runs under TEAM_C, any other under CLOSURE, with no DEV fallback. A PASS of a battle that did
-    not end is a CAP unless `cap` is false (a cut of a battle, as the corpus holds them, need not end)."""
+    battle of team_c data runs under TEAM_C, of pool data under POOL, any other under CLOSURE, with no DEV fallback. A
+    PASS of a battle that did not end is a CAP unless `cap` is false (a cut of a battle, as the corpus holds them, need not end)."""
     t0 = clock()
     try:
         team_c = trace_to_c.spec_is_team_c(name, spec)
@@ -447,7 +456,8 @@ def convert_and_run(name, spec, text, trace, ended, runner, tables_for, kinds, s
         return Evaluated(base.new_result(name, 'REF_ERROR', detail='a domain sample disagrees with the recording',
                                          messages=[str(e)]), text, trace, ended)
     records = io.StringIO()
-    conformance_records.write_battle(data, team_c, records, kind=kinds['TEAM_C' if team_c else 'CLOSURE'], domain=sets)
+    strict = STRICT_KIND[trace_to_c.spec_data(name, spec)]
+    conformance_records.write_battle(data, team_c, records, kind=kinds[strict], domain=sets)
     seconds['convert'] += clock() - t0
     t0 = clock()
     try:
@@ -1044,25 +1054,50 @@ def unknown_name(sets, tables):
     return 'a name'
 
 
-def team_data_kind(label, sets, tables_for=name_tables):
+_extended_counts = {}
+
+
+def extended_counts(root=None):
+    """{'FORME', 'MOVE', 'ITEM', 'ABILITY': how many ids the extended tables (Team C's) have}, from extended_tables.h: the
+    pool tables keep these ids, so an id below them is Team C data and one at or above them is the pool's."""
+    root = root or base.ROOT
+    if root not in _extended_counts:
+        text = trace_to_c.read_ascii(os.path.join(root, 'src', 'data', 'extended_tables.h'))
+        _extended_counts[root] = {k: int(re.search(r'#define DFI_EXT_%s_COUNT (\d+)u' % k, text).group(1))
+                                  for k in ('FORME', 'MOVE', 'ITEM', 'ABILITY')}
+    return _extended_counts[root]
+
+
+def within_extended(team, counts):
+    """True iff every id of the parsed team (trace_to_c.parse_team) is an extended one: the forme, the item (1 + its id, 0
+    none), the ability (1 + its id, 0 none) and the moves."""
+    return all(m['species'] < counts['FORME'] and m['item'] <= counts['ITEM'] and (m['ability'] or 0) <= counts['ABILITY']
+               and all(mv < counts['MOVE'] for mv in m['moves']) for m in team)
+
+
+def team_data_kind(label, sets, tables_for=name_tables, counts=None):
     """The data kind of DATA_KINDS that holds every member of a team: the first one whose tables the converter reads the
-    whole paste with. ValueError, with a message that names the team and the thing, for a paste the converter does not
-    read at all (a missing gender, a level other than 50, a line it does not know) and for a name that no data kind has.
-    The POOL data kind is not one of them yet: a team that needs it is refused here, before anything is played."""
+    whole paste with, and for Team C data one whose ids are all extended ones (else the pool's). ValueError, with a
+    message that names the team and the thing, for a paste the converter does not read at all (a missing gender, a level
+    other than 50, a line it does not know) and for a name that no data kind has. Whether the engine accepts the members
+    under the kind (a POOL member's moves must be ones its forme learns) is the runner's to say: a team that it rejects
+    is a `create:` finding of the run."""
     text = '\n\n'.join(sets)
+    counts = counts or extended_counts()
     for kind, team_c in DATA_KINDS:
         try:
-            trace_to_c.parse_team(text, tables_for(team_c))
+            team = trace_to_c.parse_team(text, tables_for(team_c))
         except trace_to_c.ConversionError as e:  # none of the kinds would lift it
             raise ValueError('%s: %s' % (label, e.code)) from None
         except KeyError:  # a name that this kind does not have
             continue
         except (AttributeError, IndexError, ValueError) as e:  # a line that no Showdown set has
             raise ValueError('%s: not a Showdown paste that the converter reads (%s: %s)' % (label, type(e).__name__, e)) from None
+        if kind == 'team_c' and not within_extended(team, counts):
+            continue  # the same tables as the pool's, with ids beyond Team C's
         return kind
-    raise ValueError('%s: %s is in none of the data kinds that the driver plays (%s); the POOL data kind comes with P1, '
-                     'decision 0015' % (label, unknown_name(sets, tables_for(DATA_KINDS[-1][1])),
-                                        ', '.join(kind.upper() for kind, _ in DATA_KINDS)))
+    raise ValueError('%s: %s is in none of the data kinds that the driver plays (%s)' % (
+        label, unknown_name(sets, tables_for(DATA_KINDS[-1][1])), ', '.join(kind.upper() for kind, _ in DATA_KINDS)))
 
 
 def parse_team_options(values):
@@ -1144,7 +1179,7 @@ def add_arguments(modes):
     p.add_argument('--team', action='append', default=[], metavar='ID | NAME=FILE',
                    help='one more team: ID is a team of the registry (data/teams/index.json), NAME=FILE a paste of your '
                    'own as a pairing letter (NAME one letter but A, B or C); six sets with every gender stated; the data '
-                   'kind (CLOSURE or TEAM_C) follows its members, and a name that no data kind has is refused before '
+                   'kind (CLOSURE, TEAM_C or POOL) follows its members, and a name that no data kind has is refused before '
                    'anything is played; repeat for more teams')
     p.add_argument('--keep-traces', action='store_true',
                    help='keep the spec and the trace of every PASS battle in kept/ (what `promote` chooses coverage from)')

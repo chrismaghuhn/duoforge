@@ -231,6 +231,14 @@ if(DUOFORGE_PS_REFERENCE_DIR)
                 "${CMAKE_CURRENT_BINARY_DIR}/diff_team_smoke")
         set_tests_properties(duoforge.reference.diff_team_smoke PROPERTIES TIMEOUT 600 LABELS reference
             ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+        # Random play under the POOL data kind (step G5): a team that carries U-turn (an id of the pool tables, which
+        # Team C does not have) plays ten battles that all PASS under POOL, some with [from] U-turn.
+        add_test(NAME duoforge.reference.diff_pool_smoke
+            COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_diff_pool_smoke.py"
+                "${DUOFORGE_NODE}" "${DUOFORGE_PS_REFERENCE_DIR}" "$<TARGET_FILE:duoforge_diff_runner>"
+                "${CMAKE_CURRENT_BINARY_DIR}/diff_pool_smoke")
+        set_tests_properties(duoforge.reference.diff_pool_smoke PROPERTIES TIMEOUT 600 LABELS reference
+            ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
         # The paste importer (data/teams) with the pinned pokedex: the facts it reads, the owner's raw pastes of
         # decision 0004, the registry as a fixed point of the importer, and the command line end to end.
         add_test(NAME duoforge.reference.import_paste_pin

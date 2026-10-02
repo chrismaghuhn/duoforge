@@ -336,7 +336,7 @@ class Layout(unittest.TestCase):
         spec, text = entry_of('m5_real_aa_1')
         for change, part in ((lambda s: s.update(name='other'), "its name is 'other'"), (lambda s: s.pop('seed'), 'no seed'),
                              (lambda s: s.pop('choices'), 'no choices'), (lambda s: s.update(plan={}), 'has its choices, not a plan'),
-                             (lambda s: s.update(data='pool'), "data 'pool'")):
+                             (lambda s: s.update(data='synthetic'), "data 'synthetic'")):
             with self.subTest(part):
                 changed = copy.deepcopy(spec)
                 change(changed)
@@ -407,6 +407,13 @@ class Replay(unittest.TestCase):
                          ('corpus', 3, 3, None))
         self.assertEqual(summary['pin'], corpus_tools.harness_constants(ROOT)[0])
         self.assertEqual(self.replay(names=['m5_real_aa_1'])[1]['battles'], 1)
+
+    def test_a_pool_battle_is_a_corpus_entry_and_runs_under_the_pool_kind(self):
+        made(self.corpus, 'g5_uturn_e')  # "data": "pool": U-turn is not in the Team C tables
+        self.assertEqual(corpus_tools.layout_problems(ROOT, self.corpus), [])
+        results, summary = self.replay()
+        self.assertEqual(results['g5_uturn_e']['bucket'], 'PASS')
+        self.assertEqual(results['g5_uturn_e']['context'], 'POOL')
 
     def test_a_checkout_that_git_cannot_read_does_not_fail_the_replay_and_the_summary_says_so(self):
         """A worktree made by Windows git and seen from WSL has no readable HEAD: the corpus CTest runs there too."""
