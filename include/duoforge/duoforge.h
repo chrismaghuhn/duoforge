@@ -33,9 +33,9 @@ extern "C" {
 #endif
 
 #define DUOFORGE_VERSION_MAJOR 0
-#define DUOFORGE_VERSION_MINOR 24
+#define DUOFORGE_VERSION_MINOR 25
 #define DUOFORGE_VERSION_PATCH 0
-#define DUOFORGE_VERSION_STRING "0.24.0"
+#define DUOFORGE_VERSION_STRING "0.25.0"
 
 /* Identifiers of the artifacts that exist now (registry: decisions 0002, 0005, 0006). */
 #define DUOFORGE_SEMANTICS_ID           3u   /* "duoforge-m3-closure" */
@@ -864,6 +864,9 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_EVENT_RESULT          37u /* [win] or [tie] detail: DUOFORGE_RESULT_* */
 #define DUOFORGE_EVENT_SINGLE_TURN     38u /* [-singleturn] position (Team C): id: the move; other: the user ([of]) for
                                               Helping Hand, DUOFORGE_NO_POSITION for Follow Me */
+#define DUOFORGE_EVENT_VOLATILE_START  39u /* [-start] position (POOL kinds), detail: DUOFORGE_VOLATILE_* (a volatile that the
+                                              game shows: -start|X|move: Heal Block) */
+#define DUOFORGE_EVENT_VOLATILE_END    40u /* [-end] position (POOL kinds), detail: DUOFORGE_VOLATILE_* */
 
 /* Causes ([from] and [of] in the protocol). */
 #define DUOFORGE_CAUSE_NONE      0u /* the move or the plain mechanic */
@@ -881,6 +884,9 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_CAUSE_FLINCH    12u
 #define DUOFORGE_CAUSE_NO_PP     13u
 #define DUOFORGE_CAUSE_POISON    14u /* poison's residual damage (Team C) */
+#define DUOFORGE_CAUSE_HEAL_BLOCK 15u /* CANT (POOL kinds): a move that heals, stopped by Heal Block; id: the stopped move.
+                                         A sound move stopped by Throat Chop is CANT with cause MOVE, id2: Throat Chop
+                                         (the line names no move, so id is 0) */
 
 #define DUOFORGE_EVENT_FLAG_STILL  1u  /* MOVE: the charge turn of a two-turn move */
 #define DUOFORGE_EVENT_FLAG_LOCKED 2u  /* MOVE: the locked turn ([from] lockedmove) */
@@ -891,6 +897,7 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_EVENT_FLAG_MISS     64u  /* MOVE: a single-target move missed ([miss]) */
 #define DUOFORGE_EVENT_FLAG_NOTARGET 128u /* MOVE: no target left ([notarget]) */
 
+#define DUOFORGE_VOLATILE_HEAL_BLOCK 1u /* VOLATILE_START / VOLATILE_END: Heal Block (Psychic Noise, 2 turns) */
 #define DUOFORGE_FIELD_GRASSY_TERRAIN 1u
 #define DUOFORGE_FIELD_TRICK_ROOM     2u
 #define DUOFORGE_FIELD_PSYCHIC_TERRAIN 3u /* Team C */

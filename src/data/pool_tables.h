@@ -836,16 +836,21 @@
  * field that the columns do not model. The engine refuses every one of them, and so does the support manifest,
  * which leaves the move unmarked. UNMODELED is the handler of every move of the pool that has any unmodelled
  * feature (dfi_pool_move_unmodeled lists them). ---- */
-#define DFI_SPECIAL_THROAT_CHOP 15u
-#define DFI_SPECIAL_ENCORE 16u
-#define DFI_SPECIAL_SCALD 17u
-#define DFI_SPECIAL_WIDE_GUARD 18u
-#define DFI_SPECIAL_FIRST_IMPRESSION 19u
-#define DFI_SPECIAL_RECOVER 20u
-#define DFI_SPECIAL_SOAK 21u
-#define DFI_SPECIAL_PSYCHIC_NOISE 22u
-#define DFI_SPECIAL_LOW_KICK 23u
-#define DFI_SPECIAL_UNMODELED 24u
+#define DFI_SPECIAL_ENCORE 15u
+#define DFI_SPECIAL_SCALD 16u
+#define DFI_SPECIAL_WIDE_GUARD 17u
+#define DFI_SPECIAL_FIRST_IMPRESSION 18u
+#define DFI_SPECIAL_RECOVER 19u
+#define DFI_SPECIAL_SOAK 20u
+#define DFI_SPECIAL_LOW_KICK 21u
+#define DFI_SPECIAL_UNMODELED 22u
+
+/* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
+ * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */
+#define DFI_MOVE_FLAG2_SOUND 1u /* data/moves.ts flags.sound: Throat Chop bars these moves */
+#define DFI_MOVE_FLAG2_HEAL 2u  /* flags.heal: Heal Block bars these moves */
+#define DFI_SECONDARY_LOCKOUT 5u    /* chance 100: the target may not use sound moves (Throat Chop) */
+#define DFI_SECONDARY_HEAL_BLOCK 6u /* chance 100: the target may not heal (Psychic Noise) */
 
 /* ---- target classes of the pool beyond the public DUOFORGE_TARGET_CLASS_* values (1 to 9) and Struggle's 10:
  * encoded, not implemented by the turn code, so a move with one is UNMODELED. ---- */
@@ -1308,6 +1313,8 @@ extern const dfi_ability_family dfi_pool_ability_family[DFI_POOL_ABILITY_COUNT];
 extern const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT];       /* DFI_HANDLER_* */
 extern const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT]; /* DFI_HANDLER_* */
 extern const dfi_forme_legal dfi_pool_forme_legal[DFI_POOL_FORME_COUNT];
+/* The second flags byte of every move (DFI_MOVE_FLAG2_*), by move id; the last part of the canonical pool bytes. */
+extern const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT];
 extern const dfi_pool_alias dfi_pool_forme_aliases[DFI_POOL_ALIAS_COUNT];
 
 /* ---- names ----
@@ -1332,7 +1339,7 @@ extern const char *const dfi_pool_item_unmodeled[DFI_POOL_ITEM_COUNT];
 extern const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT];
 
 /* SHA-256 of the canonical pool bytes (written by the generator). */
-#define DFI_POOL_CANONICAL_SIZE 49554u
+#define DFI_POOL_CANONICAL_SIZE 50065u
 extern const uint8_t dfi_pool_table_hash[32];
 /* The canonical bytes of the closure layout over the first `formes`, `moves`,
  * `items` and `abilities` rows of the tables above, with every immunity byte

@@ -1,7 +1,8 @@
 /*
  * duoforge.request.observation_ext (white-box): the POOL player-view
  * extension at tier 0 (decision 0018): the types, the query and its
- * conventions, the supported mask, with every field zero and every bit clear.
+ * conventions and the supported mask. Every field is zero and every bit clear until a step implements its
+ * feature (step G8: Throat Chop and Heal Block; their fields are checked in test_pool_g8.c).
  *
  *   - the struct sizes and every offset of decision 0018 section 3 (literal
  *     numbers, not read back from the header's own macros);
@@ -169,9 +170,9 @@ static void test_constants(df_test *t)
     DF_CHECK(t, DUOFORGE_WEATHER_SUN == 2u && DUOFORGE_WEATHER_SAND == 3u && DUOFORGE_WEATHER_SNOW == 4u);
     DF_CHECK(t, DUOFORGE_TERRAIN_PSYCHIC == 2u && DUOFORGE_TERRAIN_ELECTRIC == 3u && DUOFORGE_TERRAIN_MISTY == 4u);
     DF_CHECK(t, DUOFORGE_AILMENT_POISON == 5u && DUOFORGE_AILMENT_TOX == 6u);
-    /* Tier 0: no feature is implemented, so every bit of the build's mask is clear. A step that sets a bit
-     * changes this expectation together with its recorded battles (decision 0018 section 7). */
-    DF_CHECK(t, dfi_support.view_ext_features == 0u);
+    /* The bits that the build's steps have set (decision 0018 section 7): step G8, Throat Chop (bit 6) and Heal Block
+     * (bit 16). A step that sets a bit changes this expectation together with its recorded battles. */
+    DF_CHECK(t, dfi_support.view_ext_features == (((uint64_t)1u << 6u) | ((uint64_t)1u << 16u)));
 }
 
 /* The expected extension: all zero, and under POOL the header of the paired observation. */
@@ -189,12 +190,13 @@ static void expect_ext(df_test *t, const duoforge_context *ctx, const duoforge_b
         want.revision = (uint8_t)DUOFORGE_OBSERVATION_EXT_REVISION;
         want.player = (uint8_t)viewer;
         want.epoch = ob.epoch;
+        want.supported = dfi_support.view_ext_features;
     }
     if (!DF_CHECK(t, ss == DUOFORGE_OK && os == DUOFORGE_OK && memcmp(&got, &want, sizeof got) == 0)) {
         fprintf(stderr, "  %s viewer %u: status %u, the extension is not the expected one\n", what, viewer, ss);
     }
     if (pool) {
-        DF_CHECK(t, got.player == ob.player && got.epoch == ob.epoch && got.supported == 0u);
+        DF_CHECK(t, got.player == ob.player && got.epoch == ob.epoch && got.supported == dfi_support.view_ext_features);
     }
     /* Purity: the battle and the answer do not change by asking, twice. */
     uint8_t d0[DUOFORGE_DIGEST_SIZE], d1[DUOFORGE_DIGEST_SIZE];
