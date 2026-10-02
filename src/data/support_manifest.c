@@ -121,7 +121,10 @@
  * path. Charizardite X stays unmarked: the tables link one Mega per base forme (Charizard: Mega-Y).
  * Step G20 marks Aurora Veil (fails outside snow, 5 turns or 8 with Light Clay, 2732/4096 against every category unless a
  * crit or the screen of that category already does it, ends with its own line in the residual after Tailwind), with the
- * view bit 3 (aurora_veil_turns of the side, public). Recorded as g20_aurora_veil_* under the POOL kind. */
+ * view bit 3 (aurora_veil_turns of the side, public). Recorded as g20_aurora_veil_* under the POOL kind.
+ * Step G20 also marks Spiky Shield (Protect with a contact punishment, floor(max HP / 8) at the attacker; the variant is the tail's
+ * protect_kind, tail rev 3). Baneful Bunker and King's Shield stay unmarked: their only learners (Toxapex, Aegislash) have no
+ * supported ability, so no accepted battle could use them. Recorded as g20_spiky_shield_* under the POOL kind. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -231,6 +234,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_ROCKWRECKER] = 1u,
             [DFI_MOVE_KNOCKOFF] = 1u,
             [DFI_MOVE_AURORAVEIL] = 1u,
+            [DFI_MOVE_SPIKYSHIELD] = 1u,
         },
     .abilities =
         {

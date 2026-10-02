@@ -210,11 +210,10 @@ typedef struct dfi_side {
 #define DFI_TAIL_YAWN_MAX 2u          /* yawn: duration 2 */
 #define DFI_TAIL_STOCKPILE_MAX 3u     /* layers; stockpile_def and stockpile_spd count the boosts the layers gave */
 #define DFI_TAIL_FLAG_MAX 1u          /* imprison, must_recharge, trap_band, focus_energy, charge, glaive_rush */
-/* rev 3: the variants of the Protect volatile (Protect and Detect, Spiky Shield, Baneful Bunker) */
+/* rev 3: the variants of the Protect volatile (Protect and Detect, Spiky Shield; Baneful Bunker is next when a Toxapex ability is marked) */
 #define DFI_PROTECT_PLAIN 0u
 #define DFI_PROTECT_SPIKY_SHIELD 1u
-#define DFI_PROTECT_BANEFUL_BUNKER 2u
-#define DFI_TAIL_PROTECT_KIND_MAX 2u
+#define DFI_TAIL_PROTECT_KIND_MAX 1u
 /* rev 2, per side and per field */
 #define DFI_TAIL_AURORA_VEIL_MAX 8u   /* 5 turns, 8 with Light Clay */
 #define DFI_TAIL_TOXIC_SPIKES_MAX 2u
@@ -256,6 +255,7 @@ typedef struct dfi_tail_pos {
     uint8_t glaive_rush;       /* 0/1: hit as vulnerable until it moves again */
     uint8_t protect_kind;      /* tail rev 3 (step G20): which Protect variant the DFI_VOL_PROTECT volatile is, DFI_PROTECT_*;
                                 * nonzero only while the volatile is up (it ends with it, in the residual) */
+    uint8_t pad;               /* always 0: the u16 fields above align the struct, so the odd byte count needs it */
 } dfi_tail_pos;
 
 typedef struct dfi_tail_side {

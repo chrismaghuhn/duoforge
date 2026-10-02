@@ -2131,8 +2131,8 @@ static duoforge_status dfi_status_hit_end(dfi_run *r)
 
 /* Protect (data/moves.ts protect, data/conditions.ts stall): fails without a
  * draw when nobody acts after the user; with a stall counter it succeeds on
- * random(counter) == 0 (STALL) and otherwise loses the counter. Step G20: Spiky Shield (data/moves.ts:17532-17584) and
- * Baneful Bunker (:985-1037) have the same onPrepareHit, onHit, stall and -singleturn line (their text is checked by the
+ * random(counter) == 0 (STALL) and otherwise loses the counter. Step G20: Spiky Shield (data/moves.ts:17532-17584) has
+ * the same onPrepareHit, onHit and stall as Protect and prints `-singleturn|X|move: Protect` (its text is checked by the
  * generator against Protect's); `kind` is the variant that the volatile is (DFI_PROTECT_*), kept in the user's tail
  * until the residual. */
 static duoforge_status dfi_run_protect(dfi_run *r, uint32_t user, uint32_t kind)
@@ -2840,9 +2840,6 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     if (md->special == DFI_SPECIAL_SPIKY_SHIELD) {
         return dfi_run_protect(r, user, DFI_PROTECT_SPIKY_SHIELD);
     }
-    if (md->special == DFI_SPECIAL_BANEFUL_BUNKER) {
-        return dfi_run_protect(r, user, DFI_PROTECT_BANEFUL_BUNKER);
-    }
     if (md->special == DFI_SPECIAL_WIDE_GUARD) {
         return dfi_run_wide_guard(r, user);
     }
@@ -3016,6 +3013,22 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             }
         }
     }
+    /* One TryHit event runs the handlers of every target ordered by priority, then by the holders' speed (a tie draws):
+     * two holders of a punishing variant that both stop a contact move would show their lines in that order, which is not
+     * modelled (E_UNSUPPORTED, never a guess). */
+    if ((md->flags & DFI_MOVE_FLAG_CONTACT) != 0u && (md->flags & DFI_MOVE_FLAG_PROTECT) != 0u) {
+        uint32_t punishers = 0u;
+        for (uint32_t i = 0u; i < count; ++i) {
+            const uint32_t t = targets[i];
+            punishers += (!guarded[i] && ((uint32_t)dfi_pos(b, t)->flags & DFI_VOL_PROTECT) != 0u &&
+                          b->tail.sides[t / 2u].positions[t % 2u].protect_kind != DFI_PROTECT_PLAIN)
+                             ? 1u
+                             : 0u;
+        }
+        if (punishers > 1u) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
+    }
     for (uint32_t i = 0u; i < count; ++i) {
         const uint32_t t = targets[i];
         const dfi_active_slot *tp = dfi_pos(b, t);
@@ -3031,22 +3044,14 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         hit[i] = !((((uint32_t)tp->flags & DFI_VOL_PROTECT) != 0u) && ((md->flags & DFI_MOVE_FLAG_PROTECT) != 0u));
         if (!hit[i]) {
             dfi_emit_plain(r, DUOFORGE_EVENT_BLOCKED, t); /* [-activate] move: Protect */
-            /* Step G20: the contact punishment of Spiky Shield and Baneful Bunker, in the same onTryHit after the
-             * -activate line (data/moves.ts:17550-17559, :1003-1012; checkMoveMakesContact is the contact flag: Protective
-             * Pads are not in the pool). Spiky Shield costs the attacker floor(maxHP / 8), at least 1, with
-             * [-damage] ... [from] Spiky Shield [of] the holder (CAUSE_MOVE, the move in id2, the holder in other); Baneful
-             * Bunker poisons it (trySetStatus without a move: a plain -status, silent when it cannot). */
+            /* Step G20: the contact punishment of Spiky Shield, in the same onTryHit after the -activate line
+             * (data/moves.ts:17550-17559; checkMoveMakesContact is the contact flag: Protective Pads are not in the
+             * pool). It costs the attacker floor(maxHP / 8), at least 1, with [-damage] ... [from] Spiky Shield [of] the
+             * holder (CAUSE_MOVE, the move in id2, the holder in other), also when the attacker is knocked out. */
             const uint32_t kind = r->b->tail.sides[t / 2u].positions[t % 2u].protect_kind;
             if (kind != DFI_PROTECT_PLAIN && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u) {
-                if (count > 1u) {
-                    return DUOFORGE_E_UNSUPPORTED; /* one TryHit event orders the holders by speed (a tie draws): not modelled */
-                }
-                if (kind == DFI_PROTECT_SPIKY_SHIELD) {
-                    const uint32_t spikes = (uint32_t)m->hp_max / 8u;
-                    st = dfi_deal(r, user, spikes == 0u ? 1u : spikes, DUOFORGE_CAUSE_MOVE, DFI_MOVE_SPIKYSHIELD, t);
-                } else {
-                    st = dfi_try_status(r, user, DFI_STATUS_PSN, t, DFI_NO_SOURCE_MOVE, false, 0u);
-                }
+                const uint32_t spikes = (uint32_t)m->hp_max / 8u;
+                st = dfi_deal(r, user, spikes == 0u ? 1u : spikes, DUOFORGE_CAUSE_MOVE, DFI_MOVE_SPIKYSHIELD, t);
                 if (st != DUOFORGE_OK) {
                     return st;
                 }
