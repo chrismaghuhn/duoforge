@@ -75,7 +75,8 @@ CONFUSION_TURNS_MAX = 5
 CHARGE_TURNS_MAX = 2
 MOVE_SLOT_STRUGGLE = 4
 SWITCH_NONE, SWITCH_MOVE, SWITCH_EMERGENCY_EXIT, SWITCH_FAINTED = 0, 1, 2, 3
-SWITCH_FLIP_TURN = 4  # TEAM_C kinds only (decision 0009)
+SWITCH_FLIP_TURN = 4  # TEAM_C and POOL kinds (decision 0009)
+SWITCH_UTURN = 5  # POOL kinds only: U-turn's flag, a damaging pivot that names its move (step G5)
 VOL_CHOICE_LOCK = 64  # TEAM_C kinds only: Choice Scarf's lock, its move in locked_move
 VOL_FOLLOW_ME = 8  # TEAM_C kinds only: Follow Me's volatile, until the residual
 VOL_HELPING_HAND = 16  # TEAM_C kinds only: Helping Hand's volatile, until the residual
@@ -648,7 +649,8 @@ def check_side(ctx, st, s):
             mem = sd['members'][p['occ']]
             team_c_mask = (VOL_FLAGS_MAX | VOL_FOLLOW_ME | VOL_HELPING_HAND | VOL_UNBURDEN | VOL_CHOICE_LOCK |
                            VOL_NEWLY_SWITCHED)
-            if not volatile_valid(p, mem['move_count'], SWITCH_FLIP_TURN if team_c else None,
+            switch_max = SWITCH_UTURN if ctx.data_kind in (KIND_POOL, KIND_POOL_DEV) else SWITCH_FLIP_TURN if team_c else None
+            if not volatile_valid(p, mem['move_count'], switch_max,
                                   team_c_mask if team_c else None):
                 return 'VOLATILE'
             if p['flags'] & VOL_CHOICE_LOCK and (mem['item'] != ITEM_CHOICE_SCARF or mem['item_consumed']):

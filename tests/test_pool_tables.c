@@ -29,7 +29,7 @@
  * Aura. Their values are literal, as the pin has them; nine of the moves have a
  * callback or a field that the columns do not model and carry a named handler id
  * in the special column. The items and abilities are unmarked in the support
- * manifest; twelve moves are marked, and U-turn and the nine handler moves are not.
+ * manifest; thirteen moves are marked (twelve in G2, U-turn in G5), and the nine handler moves are not.
  */
 #include <stdio.h>
 #include <string.h>
@@ -828,11 +828,12 @@ int main(void)
             }
         }
         /* Step G2 marks twelve of its 22 moves, each used in a reference battle under the POOL kind (g2_data_moves_a
-         * to _d); U-turn (its switch cause is G5) and the nine moves with a handler id stay unmarked. */
+         * to _d), and step G5 U-turn (g5_uturn_a to _e); the nine moves with a handler id stay unmarked. */
         static const uint32_t marked_moves[] = {DFI_MOVE_ROCKSLIDE, DFI_MOVE_DOUBLEEDGE, DFI_MOVE_THUNDERBOLT,
                                                 DFI_MOVE_FLASHCANNON, DFI_MOVE_EXTREMESPEED, DFI_MOVE_HEADSMASH,
                                                 DFI_MOVE_BULKUP, DFI_MOVE_LIQUIDATION, DFI_MOVE_ICEPUNCH,
-                                                DFI_MOVE_SHADOWCLAW, DFI_MOVE_DRUMBEATING, DFI_MOVE_DAZZLINGGLEAM};
+                                                DFI_MOVE_SHADOWCLAW, DFI_MOVE_DRUMBEATING, DFI_MOVE_DAZZLINGGLEAM,
+                                                DFI_MOVE_UTURN};
         uint32_t marked_count = 0u;
         for (uint32_t id = DFI_EXT_MOVE_COUNT; id < DFI_POOL_MOVE_COUNT; ++id) {
             bool want = false;
@@ -844,7 +845,7 @@ int main(void)
             DF_CHECK(&t, !want || dfi_pool_moves[id].special == DFI_SPECIAL_NONE);
             marked_count += dfi_support.moves[id] != 0u ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, marked_count, 12u);
+        DF_CHECK_EQ_U64(&t, marked_count, 13u);
     }
 
     return df_test_end(&t);

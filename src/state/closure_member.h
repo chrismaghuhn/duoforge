@@ -35,7 +35,7 @@ typedef struct dfi_kind_limits {
     uint32_t move_count;      /* move ids below this */
     uint32_t item_count;      /* an item is 1 + its id, so at most this */
     uint32_t ability_count;   /* ability ids below this (an ability is 1 + its id) */
-    uint32_t switch_flag_max; /* DFI_SWITCH_FAINTED; DFI_SWITCH_FLIP_TURN for TEAM_C and POOL */
+    uint32_t switch_flag_max; /* DFI_SWITCH_FAINTED; DFI_SWITCH_FLIP_TURN for TEAM_C; DFI_SWITCH_UTURN for POOL */
     uint32_t status_max;      /* DFI_STATUS_SLP; DFI_STATUS_PSN for TEAM_C and POOL */
     uint32_t vol_flags_mask;  /* DFI_VOL_* bits a position may carry: TEAM_C and POOL add the choice lock */
     uint32_t terrain_max;     /* DFI_TERRAIN_GRASSY; DFI_TERRAIN_PSYCHIC for TEAM_C and POOL */
@@ -45,6 +45,23 @@ typedef struct dfi_kind_limits {
 
 /* Precondition: data_kind is one of the six combat kinds. */
 dfi_kind_limits dfi_kind_limits_of(uint32_t data_kind);
+
+/* The damaging self-switch moves: the switch flag that a position gets when the move pivots, and the move. The
+ * flags are consecutive from DFI_SWITCH_FLIP_TURN, in the order of the table; dfi_kind_limits.switch_flag_max
+ * of a kind is the last flag whose move its tables hold. A move with the SELF_SWITCH data flag and a status move
+ * of Parting Shot's kind are not in it: a damaging one that is missing is refused at the move (E_UNSUPPORTED),
+ * and the support manifest marks only moves that are here (tests/test_pool_tables.c). */
+typedef struct dfi_pivot_move {
+    uint8_t flag; /* DFI_SWITCH_* */
+    uint8_t move; /* the move id of the pool tables (an id below 256) */
+} dfi_pivot_move;
+#define DFI_PIVOT_MOVE_COUNT 2u
+extern const dfi_pivot_move dfi_pivot_moves[DFI_PIVOT_MOVE_COUNT];
+
+/* The entry for a move, or NULL when the move does not pivot with a flag of its own. */
+const dfi_pivot_move *dfi_pivot_of_move(uint32_t move);
+/* The entry for a switch flag value, or NULL when the value is none, Parting Shot's, Emergency Exit's or fainted. */
+const dfi_pivot_move *dfi_pivot_of_flag(uint32_t flag);
 
 /* The rules of what a member may have, one implementation for the setup, the
  * member invariant and the data query API (duoforge_data_*): none of them

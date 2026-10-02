@@ -625,9 +625,10 @@ static void test_support(df_test *t, const kase *c)
     /* Struggle: literally what the manifest says (unmarked: the turn core runs it, and no member has it). */
     DF_CHECK(t, !api_supported(t, c, DUOFORGE_DATA_TABLE_MOVE, DFI_MOVE_STRUGGLE));
     if (c->pool_rules) {
-        /* Step G2: Rock Slide is marked, U-turn is not. */
+        /* Step G2: Rock Slide is marked; step G5: U-turn is marked; Throat Chop (a handler id) is not. */
         DF_CHECK(t, api_supported(t, c, DUOFORGE_DATA_TABLE_MOVE, DFI_MOVE_ROCKSLIDE));
-        DF_CHECK(t, !api_supported(t, c, DUOFORGE_DATA_TABLE_MOVE, DFI_MOVE_UTURN));
+        DF_CHECK(t, api_supported(t, c, DUOFORGE_DATA_TABLE_MOVE, DFI_MOVE_UTURN));
+        DF_CHECK(t, !api_supported(t, c, DUOFORGE_DATA_TABLE_MOVE, DFI_MOVE_THROATCHOP));
         DF_CHECK(t, !api_supported(t, c, DUOFORGE_DATA_TABLE_ITEM, DFI_ITEM_FLOETTITE));
     }
 }

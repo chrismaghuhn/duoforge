@@ -1007,6 +1007,47 @@ static const df_tb_stop tb_g4_rock_head_struggle[] = {
     {12u, 0u, 1u, 1u, {4u, 3u}, {695u, 448u}, {0x404e5125f0f30329ull, 0x4043ec81f3014cabull}},
     {13u, 0u, 1u, 1u, {4u, 3u}, {628u, 384u}, {0x404b1223f4eb130bull, 0x40413771ec130f29ull}},
 };
+static const df_tb_stop tb_g5_uturn_a[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1078u, 1126u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {754u, 775u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {682u, 615u}, {0x404e355555555555ull, 0x404abb9079a9d261ull}},
+    {3u, 0u, 1u, 1u, {4u, 3u}, {663u, 573u}, {0x404d6238e38e38e3ull, 0x4049000000000000ull}},
+    {5u, 0u, 1u, 1u, {4u, 3u}, {663u, 537u}, {0x404d6238e38e38e3ull, 0x40472bb512bb512bull}},
+    {6u, 0u, 1u, 1u, {4u, 3u}, {663u, 537u}, {0x404d6238e38e38e3ull, 0x40472bb512bb512bull}},
+};
+static const df_tb_stop tb_g5_uturn_b[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1078u, 1126u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {754u, 775u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {754u, 775u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 3u, {4u, 4u}, {754u, 775u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+};
+static const df_tb_stop tb_g5_uturn_c[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1078u, 1126u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {709u, 760u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {544u, 703u}, {0x4048f5bf75e63428ull, 0x404eae00f414f9cdull}},
+    {3u, 0u, 2u, 1u, {3u, 4u}, {408u, 686u}, {0x4041e33175f1de4dull, 0x404de3658ab9ebfbull}},
+    {6u, 0u, 2u, 1u, {3u, 4u}, {389u, 666u}, {0x40411015042ac1dbull, 0x404cf5090ec74520ull}},
+    {8u, 0u, 2u, 1u, {2u, 4u}, {263u, 660u}, {0x4036ca14ed93d29bull, 0x404cad86e9981311ull}},
+    {9u, 0u, 2u, 1u, {2u, 4u}, {78u, 633u}, {0x401b0d0b0db4d5ffull, 0x404b6bbd4243b1d1ull}},
+};
+static const df_tb_stop tb_g5_uturn_d[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1078u, 1136u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {754u, 793u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {735u, 759u}, {0x4050411c71c71c71ull, 0x404fc6cc6cc6cc6cull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {735u, 722u}, {0x4050411c71c71c71ull, 0x404e151951951951ull}},
+    {6u, 0u, 1u, 2u, {4u, 4u}, {695u, 654u}, {0x404eb8f50f50f510ull, 0x404af80780780780ull}},
+    {7u, 0u, 1u, 2u, {4u, 4u}, {695u, 654u}, {0x404eb8f50f50f510ull, 0x404af80780780780ull}},
+    {8u, 0u, 1u, 2u, {4u, 4u}, {644u, 615u}, {0x404c824a64a64a65ull, 0x40496618d0daf76dull}},
+};
+static const df_tb_stop tb_g5_uturn_e[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1078u, 1126u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {709u, 760u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {683u, 729u}, {0x404ff40aded8529dull, 0x40500aec9ff2cef2ull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {552u, 719u}, {0x4049cb10268d6118ull, 0x404faec9ff2cef19ull}},
+    {6u, 0u, 2u, 2u, {4u, 4u}, {389u, 640u}, {0x4041a2872eb48357ull, 0x404c809e4cad23ddull}},
+    {8u, 0u, 2u, 1u, {2u, 4u}, {276u, 640u}, {0x4037df1c71c71c73ull, 0x404c809e4cad23ddull}},
+    {9u, 1u, 2u, 0u, {0u, 4u}, {0u, 560u}, {0x0000000000000000ull, 0x4049482446e7ad8dull}},
+};
 static const df_tb_stop tb_m5_real_aa_1[] = {
     {0u, 0u, 3u, 4u, {6u, 6u}, {1111u, 1111u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {717u, 751u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -2147,6 +2188,11 @@ static const df_tb_battle tb_battles[] = {
     {"g4_focus_sash_unburden", 4u, tb_g4_focus_sash_unburden, sizeof tb_g4_focus_sash_unburden / sizeof tb_g4_focus_sash_unburden[0]},
     {"g4_rock_head", 4u, tb_g4_rock_head, sizeof tb_g4_rock_head / sizeof tb_g4_rock_head[0]},
     {"g4_rock_head_struggle", 13u, tb_g4_rock_head_struggle, sizeof tb_g4_rock_head_struggle / sizeof tb_g4_rock_head_struggle[0]},
+    {"g5_uturn_a", 6u, tb_g5_uturn_a, sizeof tb_g5_uturn_a / sizeof tb_g5_uturn_a[0]},
+    {"g5_uturn_b", 3u, tb_g5_uturn_b, sizeof tb_g5_uturn_b / sizeof tb_g5_uturn_b[0]},
+    {"g5_uturn_c", 9u, tb_g5_uturn_c, sizeof tb_g5_uturn_c / sizeof tb_g5_uturn_c[0]},
+    {"g5_uturn_d", 8u, tb_g5_uturn_d, sizeof tb_g5_uturn_d / sizeof tb_g5_uturn_d[0]},
+    {"g5_uturn_e", 9u, tb_g5_uturn_e, sizeof tb_g5_uturn_e / sizeof tb_g5_uturn_e[0]},
     {"m5_real_aa_1", 23u, tb_m5_real_aa_1, sizeof tb_m5_real_aa_1 / sizeof tb_m5_real_aa_1[0]},
     {"m5_real_aa_2", 15u, tb_m5_real_aa_2, sizeof tb_m5_real_aa_2 / sizeof tb_m5_real_aa_2[0]},
     {"m5_real_aa_3", 22u, tb_m5_real_aa_3, sizeof tb_m5_real_aa_3 / sizeof tb_m5_real_aa_3[0]},
@@ -2244,7 +2290,7 @@ static const df_tb_battle tb_battles[] = {
     {"s9_self_drops", 10u, tb_s9_self_drops, sizeof tb_s9_self_drops / sizeof tb_s9_self_drops[0]},
 };
 
-/* 1668 stops: 138 of an ended battle; decided by the count 575,
- * the HP percentage 485, the total HP 425, a tie 45;
- * winners: side 0 799, side 1 824, tie 45 */
+/* 1699 stops: 139 of an ended battle; decided by the count 583,
+ * the HP percentage 495, the total HP 437, a tie 45;
+ * winners: side 0 808, side 1 846, tie 45 */
 #endif
