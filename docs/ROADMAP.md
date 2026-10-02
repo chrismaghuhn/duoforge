@@ -182,6 +182,17 @@ Levers recorded by the owner on 2026-10-03, most promising first. The first two 
 
 Exit: each lever is measured on its own, as an Elo difference at a fixed time per move against the previous best agent, before the next one is stacked on it.
 
+## M14 — Closed team sheets (the Bo1 ladder)
+
+Today the bot plays only with open team sheets (decision 0016). In Bo3 they are forced. In Bo1 it asks for them and forfeits politely if the opponent refuses. In the replay spike only about 4 percent of Bo1 games had open sheets, so broad Bo1 laddering needs closed sheets. Owner, 2026-10-03: play Bo3 first; closed sheets come as their own step after M13. It needs:
+1. **Reveal tracking:** the battle state records what each side has revealed (moves, item, ability; species at team preview). The observation marks the foe's unrevealed fields as unknown. That changes the state and the public view, so it needs an owner OK.
+2. **The tracker:** it folds the reveals of a live game into that observation.
+3. **Training with hidden foe sets:** the self-play viewer sees only what is revealed.
+4. **Set prediction for the search:** the hidden sets are sampled from a predictor, for example a net head trained on the M11 replays, not from a uniform guess.
+5. **The live adapter:** it accepts Bo1 games without open sheets.
+
+Exit: the Elo on the Bo1 ladder without open sheets, against the bot's Bo3 Elo with open sheets.
+
 ## Later
 
 Additional certified teams (a certification of the M8 teams in the manner of M5), broader regulation profiles, recurrent agents, belief-conditioned hypothetical search, best-of-three orchestration and further external clients. Add these based on measured needs, not speculative scaffolding.
