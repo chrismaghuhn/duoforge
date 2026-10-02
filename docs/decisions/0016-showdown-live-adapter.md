@@ -1,6 +1,6 @@
 # 0016 — Showdown live adapter
 
-Status: owner decisions 2026-10-02 (design in chat, the written spec and the plan: "ja"). Design: `docs/superpowers/specs/2026-10-02-showdown-live-design.md`. Plan: `docs/superpowers/plans/2026-10-02-showdown-live.md`. Builds on decisions 0007 (what a player sees), 0013 (Python adapter) and 0014 (learner).
+Status: owner decisions 2026-10-02 (design in chat, the written spec and the plan: "ja"). Design: `docs/superpowers/specs/2026-10-02-showdown-live-design.md`. Plan: `docs/superpowers/plans/2026-10-02-showdown-live.md`. Builds on decisions 0007 (what a player sees), 0013 (Python adapter) and 0014 (learner). **Built** (#93, #97, #98, #99, #100, #103) and played on the official server on 2026-10-02 (section 6).
 
 ## 1. Decisions
 
@@ -23,7 +23,7 @@ DuoForge's observation shows the foe's open sheet (species, moves, item, ability
 - `duoforge.reference.client_streams`: `tools/reference/ps_client.js` replays every closure battle in the pinned Showdown from its trace's choices and writes each player's client stream; every step's lines equal the trace.
 - `duoforge.reference.dump_views`: `duoforge_diff_runner --dump-views` writes DuoForge's observation and factored domain of both players at every state; checked against the public API.
 - `duoforge.python.live`: the tracker's observations and the options against these views; the choice texts back through the converter; packing Teams A and B equal to Showdown's.
-- `duoforge.python.live_unit`: teams, the client protocol with a fake server (challenges, refusals, open team sheets, invalid choices, Bo3, errors).
+- `duoforge.python.live_unit` and `duoforge.python.live_client`: teams, and the client protocol with a fake server (challenges, refusals, open team sheets, invalid choices, Bo3, errors).
 - `duoforge.python.learn_numpy` and `duoforge.python.learn`: the widening, and the NumPy forward pass against JAX.
 - By hand: two bots on a local pinned server (Bo1, Bo3), then a first game on the official server against the owner.
 
@@ -33,3 +33,17 @@ DuoForge's observation shows the foe's open sheet (species, moves, item, ability
 - `duoforge_learn/checkpoint.py` gets only `widen_594` and the `widen` command (agreed with Learner v2).
 - New dependency: `websockets` in `.venv` (owner OK), imported only for the live connection.
 - No library change, no version bump.
+
+## 6. Results (2026-10-02)
+
+- **Local server.** Two bots on a copy of the pinned server, Team A against Team B with the widened night checkpoint and real guest logins, played a Bo1 and a Bo3 (three games) to the end. No forfeit, no internal error.
+- **Official server.** The owner (christest1111, Team A) challenged DuoForgeBot (registered name, password from the environment) in a Bo1 with open team sheets. The bot accepted, matched the sheet as Team A, chose its team, and played all 9 turns: 12 decisions, no internal error. The owner won.
+- **Rejected pairs.** Showdown refused "pass, pass" twice at a replacement ("You need to switch in a Pokémon"). The bot then sent the next best pair. This is the provisional pair mask working as designed (spec section 5). Every rejected choice costs one round trip.
+- **Found while playing, fixed in #103.**
+  - At the pin, a challenge reaches the bot as a PM "/challenge FORMAT|...", not as |updatechallenges|.
+  - The login server refuses Python's default User-Agent (403), so the bot names itself in the header.
+  - Two bots on one machine need one log per room and bot.
+- **Chat.** The official server did not let the account speak ("Due to spam from your internet provider, you can't speak except to staff"). The greeting, gg and the refusal texts did not appear. The server says an account with more history may chat. The game itself was not affected.
+- **Open.**
+  - The bot does not reconnect when its connection drops. A reconnect's replay fails explicitly (forfeit) instead of folding the log twice.
+  - The pair mask could follow DuoForge's forced-switch rule to avoid the refused passes. The spec chose to let Showdown judge.
