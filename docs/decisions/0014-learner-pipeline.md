@@ -30,6 +30,8 @@ PPO with clipping 0.2, GAE (gamma 0.99, lambda 0.95) over each seat's own decisi
 
 Every N updates the parameters are saved as `.npz` with the configuration, and the policy (most likely action) plays fixed-seed episodes against the scripted and the random baselines and against the parameters of the previous evaluation (`vs_previous`: above 0.5 while it still improves), on both seats and over the four pairings (the evaluation environments are a multiple of 8). An evaluation episode still running after 1000 steps counts as a tie and is logged as unfinished. The log records win rates, losses, entropy, episodes and decisions per second (JSON lines); a run writes only into an empty directory.
 
+Encoder versions: the configuration of a checkpoint names the encoder version its network was trained with (`"encoder"`). `features.ENCODER` is 2 since a member's present flag means registered (`move_count != 0`). A configuration without the entry is version 1, whose present flag was `species_id != 0` and so marked Rillaboom (forme 0) as absent. The evaluation and the ladder give every network the inputs of its version (`checkpoint.encoder_of`, `features.as_encoder`), so an old checkpoint plays exactly on the inputs it was trained on. A version the encoder does not serve raises.
+
 ## 7. Trial run
 
 A short run (the owner's trial) reports the learning curve, the win rates against both baselines and the throughput in `docs/learning/`. Success for the trial: the pipeline runs end to end, the losses are finite, and the win rate against the random baseline rises clearly.

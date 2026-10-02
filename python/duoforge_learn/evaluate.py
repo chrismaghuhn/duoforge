@@ -7,12 +7,14 @@ action; the opponent is the random or the scripted baseline, or another
 set of parameters (an earlier checkpoint), which also plays its most likely
 action. A tie counts half. The engine has no turn limit, and two policies
 that only switch never end a battle: an episode still running after
-max_steps steps counts as a tie and is reported as unfinished.
+max_steps steps counts as a tie and is reported as unfinished. Each set of
+parameters plays on the inputs of its encoder version
+(checkpoint.encoder_of, features.as_encoder).
 """
 import numpy as np
 
 import duoforge
-from duoforge import _layout
+from duoforge import _layout, features
 
 from .selfplay import Observation, choices_of
 
@@ -21,11 +23,13 @@ _SIDE_WINS = (C["DUOFORGE_RESULT_SIDE_0"], C["DUOFORGE_RESULT_SIDE_1"])
 _TIE = C["DUOFORGE_RESULT_TIE"]
 
 
-def win_rate(params, act, opponent, envs=64, workers=4, seed=0x2026100200000020, rounds=1, max_steps=1000):
+def win_rate(params, act, opponent, envs=64, workers=4, seed=0x2026100200000020, rounds=1, max_steps=1000,
+             encoder=features.ENCODER, opponent_encoder=features.ENCODER):
     """{"win_rate", "wins", "losses", "ties", "unfinished", "episodes"} of
     the policy against `opponent` ("random", "scripted" or parameters); act
     is model.act (jitted). envs is a multiple of 8, so both seats of all four
-    pairings play equally often."""
+    pairings play equally often. encoder and opponent_encoder are the
+    encoder versions the parameters were trained with."""
     if envs <= 0 or envs % 8 != 0:
         raise ValueError(f"envs must be a positive multiple of 8, not {envs}")
     seat = (np.arange(envs) // 4) % 2
@@ -34,7 +38,7 @@ def win_rate(params, act, opponent, envs=64, workers=4, seed=0x2026100200000020,
         setups = duoforge.reference_setups([e % 4 for e in range(envs)])
         with duoforge.Batch(ctx, setups, workers, seed) as batch:
             if isinstance(opponent, dict):
-                other = _Snapshot(opponent, act, envs)
+                other = _Snapshot(opponent, act, envs, opponent_encoder)
             elif opponent == "random":
                 other = duoforge.RandomPolicy(seed, envs)
             elif opponent == "scripted":
@@ -58,7 +62,7 @@ def win_rate(params, act, opponent, envs=64, workers=4, seed=0x2026100200000020,
                     mine = requested[rows, seat]
                     if mine.any():
                         e = rows[mine]
-                        indices[e, seat[mine]] = _greedy_indices(params, act, batch, choices)[e, seat[mine]]
+                        indices[e, seat[mine]] = _greedy_indices(params, act, batch, choices, encoder)[e, seat[mine]]
                     batch.step(indices)
                 for e in range(envs):
                     result = batch.result(e)
@@ -76,11 +80,12 @@ def win_rate(params, act, opponent, envs=64, workers=4, seed=0x2026100200000020,
             "unfinished": unfinished, "episodes": episodes}
 
 
-def _greedy_indices(params, act, batch, choices):
+def _greedy_indices(params, act, batch, choices, encoder):
     """The candidate index of the most likely action of every requested
-    seat (E, 2), NO_CHOICE elsewhere."""
+    seat (E, 2), NO_CHOICE elsewhere, on the inputs of encoder version
+    `encoder`."""
     envs = batch.envs
-    o = Observation(batch)
+    o = Observation(batch, encoder)
     actions, _, _ = act(params, None, o.obs.reshape(2 * envs, -1), o.slots.reshape((2 * envs,) + o.slots.shape[2:]),
                         o.mask.reshape((2 * envs,) + o.mask.shape[2:]), o.is_team.reshape(-1), greedy=True)
     choices_of(batch, np.asarray(actions).reshape(envs, 2), choices)
@@ -94,9 +99,9 @@ def _greedy_indices(params, act, batch, choices):
 class _Snapshot:
     """Earlier parameters as an opponent with the baselines' choose()."""
 
-    def __init__(self, params, act, envs):
-        self.params, self.act = params, act
+    def __init__(self, params, act, envs, encoder):
+        self.params, self.act, self.encoder = params, act, encoder
         self.choices = np.zeros((envs, 2), dtype=_layout.FACTORED_CHOICE)
 
     def choose(self, batch):
-        return _greedy_indices(self.params, self.act, batch, self.choices)
+        return _greedy_indices(self.params, self.act, batch, self.choices, self.encoder)
