@@ -1,5 +1,10 @@
-"""Teams for training (decision 0017): the team pool, and (Task 17) the
-registry loader.
+"""Teams for training (decision 0017): the registry loader and the team pool.
+
+load reads teams from the registry (data/teams: index.json and <id>.txt,
+Showdown pastes with every gender stated), checks each file against the
+index hash, maps names to ids with the library's data query API and lets
+the library judge each team by creating a battle of the team against
+itself; a team it refuses raises TeamError naming the team and the status.
 
 A TeamPool holds the teams a run plays: their registry ids, the sha256 of
 their files ("" for teams made from setups), sampling weights and side
@@ -7,14 +12,19 @@ setups (SIDE_SETUP). It builds the battle setups of pairs of team indices;
 the library checks them when a battle starts, so nothing here decides
 legality.
 """
+import ctypes
 import dataclasses
 import hashlib
+import json
 import math
+import os
 import re
 
 import numpy as np
 
-from . import _layout
+from . import _layout, data
+from ._lib import load_library, ptr, status_name
+from .errors import DuoforgeError
 
 
 class TeamError(ValueError):
@@ -146,3 +156,74 @@ class TeamPool:
         out["sides"][:, 0] = self.sides[side0]
         out["sides"][:, 1] = self.sides[side1]
         return out
+
+
+_GENDERS = {"M": _layout.CONSTANTS["DUOFORGE_GENDER_MALE"], "F": _layout.CONSTANTS["DUOFORGE_GENDER_FEMALE"],
+            None: _layout.CONSTANTS["DUOFORGE_GENDER_NONE"]}
+
+
+def side_setup(context, members, team):
+    """The SIDE_SETUP record of parsed members (parse); TeamError for a name
+    the context's data kind does not have."""
+    side = np.zeros((), dtype=_layout.SIDE_SETUP)
+    if len(members) > _layout.MAX_ROSTER:
+        raise TeamError(f"team {team}: {len(members)} members, at most {_layout.MAX_ROSTER}")
+    side["member_count"] = len(members)
+
+    def find(table, name, k):
+        try:
+            return data.find(context, table, data.to_id(name))
+        except DuoforgeError:
+            raise TeamError(f"team {team}: member {k + 1}: {table} {data.to_id(name)!r} is not in the tables of "
+                            f"this context's data kind") from None
+
+    for k, m in enumerate(members):
+        out = side["members"][k]
+        out["species_id"] = find("species", m["species"], k)
+        out["gender"] = _GENDERS[m["gender"]]
+        out["nature"] = find("nature", m["nature"], k)
+        out["stat_points"] = m["stat_points"]
+        out["ability"] = 1 + find("ability", m["ability"], k)
+        out["item"] = 0 if m["item"] is None else 1 + find("item", m["item"], k)
+        out["move_count"] = len(m["moves"])
+        for j, move in enumerate(m["moves"]):
+            out["moves"][j]["move_id"] = find("move", move, k)
+    return side
+
+
+def check(context, side):
+    """The status of duoforge_battle_create for the team against itself (0: accepted)."""
+    lib = load_library()
+    setup = np.zeros(1, dtype=_layout.SETUP)
+    setup["sides"][0, 0] = side
+    setup["sides"][0, 1] = side
+    battle = ctypes.c_void_p()
+    st = lib.duoforge_battle_create(context.handle, ptr(setup), ctypes.byref(battle))
+    if st == 0:
+        lib.duoforge_battle_destroy(battle)
+    return int(st)
+
+
+def load(context, ids, root="data/teams", weights=None):
+    """The TeamPool of registry teams ids under the context: each file must
+    match its index hash, parse, map to ids and be accepted by the library."""
+    index_path = os.path.join(root, "index.json")
+    with open(index_path, encoding="utf-8") as f:
+        index = {t["id"]: t for t in json.load(f)["teams"]}
+    shas, sides = [], []
+    for team in ids:
+        if team not in index:
+            raise TeamError(f"team {team} is not in {index_path}")
+        path = os.path.join(root, f"{team}.txt")
+        with open(path, "rb") as f:
+            raw = f.read()
+        sha = text_sha256(raw)
+        if sha != index[team]["sha256"]:
+            raise TeamError(f"team {team}: {path} has sha256 {sha}, the index says {index[team]['sha256']}")
+        side = side_setup(context, parse(raw.decode("utf-8"), path), team)
+        st = check(context, side)
+        if st != 0:
+            raise TeamError(f"team {team} is refused under this context's data kind: {status_name(st)}")
+        shas.append(sha)
+        sides.append(side)
+    return TeamPool(tuple(ids), tuple(shas), weights, np.array(sides, dtype=_layout.SIDE_SETUP))

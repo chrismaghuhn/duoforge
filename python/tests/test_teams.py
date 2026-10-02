@@ -3,12 +3,19 @@
 A pool holds ids, file hashes, weights and side setups; it builds battle
 setups for pairs of team indices and refuses weights a sampler cannot use.
 """
+import os
+import shutil
+import tempfile
 import unittest
 
 import numpy as np
 
 import duoforge
-from duoforge import teams
+from duoforge import _layout, data, teams
+
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "data", "teams")
+TEAM_C = _layout.CONSTANTS["DUOFORGE_DATA_KIND_TEAM_C"]
+INVALID = "DUOFORGE_E_INVALID_ARGUMENT"
 
 
 def _pool(weights=None):
@@ -92,6 +99,84 @@ class ParseTest(unittest.TestCase):
         self.assertEqual(teams.text_sha256(_PASTE.replace("\n", "\r\n").encode()),
                          teams.text_sha256(_PASTE.encode()))
         self.assertNotEqual(teams.text_sha256(b"a"), teams.text_sha256(b"b"))
+
+
+class DataTest(unittest.TestCase):
+    def test_names_and_ids_round_trip(self):
+        with duoforge.Context() as closure, duoforge.Context(data_kind=TEAM_C) as team_c:
+            self.assertEqual(data.count(closure, "species"), 16)
+            self.assertEqual(data.count(team_c, "species"), 23)
+            move = data.find(team_c, "move", "closecombat")
+            self.assertEqual(data.name(team_c, "move", move), "closecombat")
+            self.assertEqual(data.find(team_c, "species", "indeedeef"), data.find(team_c, "species", "indeedeef"))
+            with self.assertRaises(duoforge.DuoforgeError):
+                data.find(closure, "species", "sneasler")  # a Team C species is outside the closure
+            with self.assertRaises(ValueError):
+                data.find(closure, "weather", "rain")
+        self.assertEqual(data.to_id("Indeedee-F"), "indeedeef")
+        self.assertEqual(data.to_id("U-turn"), "uturn")
+
+
+class LoadTest(unittest.TestCase):
+    def test_registry_teams_a_and_b_equal_the_reference_setups(self):
+        with duoforge.Context() as ctx:
+            pool = teams.load(ctx, ["A", "B"], root=ROOT)
+        want = duoforge.reference_setups([0])["sides"][0]
+        self.assertEqual(pool.ids, ("A", "B"))
+        self.assertEqual(pool.sides.tobytes(), want.tobytes())
+        self.assertEqual(len(pool.sha256[0]), 64)
+
+    def test_team_c_accepted_under_team_c_refused_under_closure(self):
+        with duoforge.Context(data_kind=TEAM_C) as ctx:
+            pool = teams.load(ctx, ["A", "B", "C"], root=ROOT)
+        self.assertEqual(pool.ids, ("A", "B", "C"))
+        with duoforge.Context() as ctx, self.assertRaises(teams.TeamError) as caught:
+            teams.load(ctx, ["C"], root=ROOT)
+        self.assertIn("team C", str(caught.exception))
+
+    def _registry(self, edit):
+        """A copy of the registry with team A's text edited; the index hash is updated."""
+        import json
+        d = tempfile.mkdtemp(prefix="duoforge-teams-")
+        self.addCleanup(shutil.rmtree, d, True)
+        for f in os.listdir(ROOT):
+            shutil.copy(os.path.join(ROOT, f), d)
+        path = os.path.join(d, "A.txt")
+        with open(path, encoding="utf-8") as f:
+            text = edit(f.read())
+        with open(path, "w", encoding="utf-8", newline="\n") as f:
+            f.write(text)
+        index_path = os.path.join(d, "index.json")
+        with open(index_path, encoding="utf-8") as f:
+            index = json.load(f)
+        index["teams"][0]["sha256"] = teams.text_sha256(text.encode("utf-8"))
+        with open(index_path, "w", encoding="utf-8") as f:
+            json.dump(index, f)
+        return d
+
+    def test_unknown_name_is_refused(self):
+        root = self._registry(lambda t: t.replace("- Wood Hammer", "- Not A Move"))
+        with duoforge.Context() as ctx, self.assertRaises(teams.TeamError) as caught:
+            teams.load(ctx, ["A"], root=root)
+        self.assertIn("move", str(caught.exception))
+        self.assertIn("notamove", str(caught.exception))
+
+    def test_missing_gender_refused_for_a_gendered_species(self):
+        root = self._registry(lambda t: t.replace("Rillaboom (M)", "Rillaboom"))
+        with duoforge.Context() as ctx, self.assertRaises(teams.TeamError) as caught:
+            teams.load(ctx, ["A"], root=root)
+        self.assertIn(INVALID, str(caught.exception))
+
+    def test_changed_file_against_the_index_is_refused(self):
+        root = self._registry(lambda t: t)
+        with open(os.path.join(root, "A.txt"), "a", encoding="utf-8") as f:
+            f.write("\n")
+        with duoforge.Context() as ctx, self.assertRaisesRegex(teams.TeamError, "sha256"):
+            teams.load(ctx, ["A"], root=root)
+
+    def test_unknown_id_is_refused(self):
+        with duoforge.Context() as ctx, self.assertRaisesRegex(teams.TeamError, "MC999"):
+            teams.load(ctx, ["MC999"], root=ROOT)
 
 
 if __name__ == "__main__":
