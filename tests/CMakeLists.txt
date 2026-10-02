@@ -210,6 +210,14 @@ if(Python3_Interpreter_FOUND)
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_diff_driver.py")
     set_tests_properties(duoforge.reference.diff_driver PROPERTIES TIMEOUT 300
         ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1;DUOFORGE_DIFF_RUNNER=$<TARGET_FILE:duoforge_diff_runner>")
+    # The random mode of the driver without Node: how battle i follows from (seed, i), the bucket of
+    # each step of the pipeline and what wins, the files of a case, a run cut into chunks (the result
+    # does not depend on the cut), children that die or hang (stand-in processes), the machine lock
+    # (in a temporary directory, never the real one) and committed battles through the real runner.
+    add_test(NAME duoforge.reference.diff_random
+        COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_diff_random.py")
+    set_tests_properties(duoforge.reference.diff_random PROPERTIES TIMEOUT 300
+        ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1;DUOFORGE_DIFF_RUNNER=$<TARGET_FILE:duoforge_diff_runner>")
     # The table generator refuses move shapes it does not model (no checkout needed).
     add_test(NAME duoforge.data.gen_closure_refusals
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/test_gen_closure.py")

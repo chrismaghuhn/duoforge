@@ -68,6 +68,7 @@ ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 WORKER_SCRIPT = os.path.join(HERE, 'ps_worker.js')
 
 BUCKETS = ('PASS', 'DIVERGENCE', 'UNSUPPORTED', 'ORACLE_GAP', 'REF_ERROR')
+RANDOM_BUCKETS = BUCKETS + ('CAP',)  # random mode: a PASS of a battle that did not end within its step cap is a CAP
 VERDICTS = ('PASS', 'DIVERGENCE', 'UNSUPPORTED')  # what the runner says
 UNTYPED = (KeyError, IndexError, ValueError, TypeError)  # the errors of convert_battle that are an ORACLE_GAP
 REQUEST_TIMEOUT = 300  # seconds a child may take for one answer
@@ -319,7 +320,7 @@ class DiffRunner(Child):
 
 def new_result(name, bucket, rule=None, detail=None, step=None, steps=None, context=None, messages=()):
     """The record of a battle: one schema, null where there is nothing."""
-    assert bucket in BUCKETS, bucket
+    assert bucket in RANDOM_BUCKETS, bucket
     return {'name': name, 'bucket': bucket, 'rule': rule, 'detail': detail, 'step': step, 'steps': steps,
             'context': context, 'messages': list(messages)}
 
@@ -601,8 +602,10 @@ def replay(root, names, node, args):
 
 
 def main(argv):
+    import diff_random  # here, not above: it imports this module
     parser = argparse.ArgumentParser(prog='diff_driver.py', description=__doc__.split('\n')[0])
     modes = parser.add_subparsers(dest='mode', required=True)
+    diff_random.add_arguments(modes)
     p = modes.add_parser('replay', help='put every committed battle in a bucket')
     p.add_argument('--checkout', required=True, help='the pinned Showdown checkout (built: dist/sim exists)')
     p.add_argument('--runner', required=True, help='the duoforge_diff_runner executable')
@@ -611,6 +614,13 @@ def main(argv):
     p.add_argument('--out', metavar='DIR', help='default build/diff/<UTC yyyymmdd-hhmmss>-replay')
     p.add_argument('--node', metavar='EXE', help='default: node on the PATH')
     args = parser.parse_args(argv)
+    if args.mode == 'random':
+        params = diff_random.validate(parser, args)
+        try:
+            return diff_random.run(args, params)
+        except ToolError as e:
+            sys.stderr.write('diff_driver: %s\n' % e)
+            return EXIT_TOOL
     if args.workers < 1:
         parser.error('--workers must be at least 1')
     if not os.path.isfile(args.runner):
