@@ -183,34 +183,95 @@ typedef struct dfi_side {
     uint8_t tailwind_turns;
 } dfi_side;
 
-/* The POOL state tail (docs/decisions/0015 section 7, "v3 + pool tail rev 1"): the room that the pool mechanics
- * need (Encore, Throat Chop, Psychic Noise's Heal Block, Soak, Wide Guard) and nothing else. It is part of the
- * state only under the two POOL kinds (encode, decode, digest, equal, invariants); under the four other kinds it
- * is absent: all zero in memory (an invariant) and not in the encoding. No mechanic writes it yet. Every field is
- * a plain byte, so the struct has no padding and no pointer; its size is fixed. */
+/* The POOL state tail (docs/decisions/0015 section 7, "v3 + pool tail rev 2"): the room that the pool mechanics need
+ * beyond the schema-3 state (Encore, Throat Chop, Heal Block, Soak and Wide Guard of rev 1; the volatile, side and
+ * field conditions and the per-member overrides that decision 0018 declares as view fields, rev 2) and nothing else.
+ * It is part of the state only under the two POOL kinds (encode, decode, digest, equal, invariants); under the four
+ * other kinds it is absent: all zero in memory (an invariant) and not in the encoding. Nothing writes the fields that
+ * rev 2 adds yet. Every field is a plain byte or an aligned u16, so the structs have no padding and no pointer, and
+ * their size is fixed (static asserts in codec/state_codec.h).
+ *
+ * The bounds below are those of the pinned data and of the research, not mechanics: a step that finds one wrong
+ * changes the revision (0x0303) and says so. */
+/* rev 1 */
 #define DFI_TAIL_MOVE_MAX 5u          /* last_move: 0 none, 1..4 move slot + 1, 5 Struggle */
 #define DFI_TAIL_ENCORE_SLOT_MAX 4u   /* encore_slot: 0 none, 1..4 move slot + 1 */
 #define DFI_TAIL_ENCORE_TURNS_MAX 4u  /* Encore lasts 3 turns, 4 when the target had moved */
 #define DFI_TAIL_THROAT_CHOP_MAX 2u
 #define DFI_TAIL_HEAL_BLOCK_MAX 5u    /* Heal Block lasts 5 turns, 2 from Psychic Noise */
 #define DFI_TAIL_WIDE_GUARD_MAX 1u    /* set by Wide Guard, ends in the residual of the turn */
+/* rev 2, per position (data/moves.ts and data/conditions.ts of the pin) */
+#define DFI_TAIL_PERISH_MAX 4u        /* perishsong: duration 4, the count shown is duration - 1 */
+#define DFI_TAIL_TAUNT_MAX 4u         /* taunt: duration 3, 4 when the target had not moved */
+#define DFI_TAIL_DISABLE_SLOT_MAX 4u  /* disable_slot: 0 none, 1..4 move slot + 1 */
+#define DFI_TAIL_DISABLE_TURNS_MAX 5u /* disable: duration 5 */
+#define DFI_TAIL_TRAP_TURNS_MAX 8u    /* partiallytrapped: 5 or 6 turns, 8 with a Grip Claw */
+#define DFI_TAIL_SOURCE_MAX 4u        /* trap_source and leech_seed_source: 0 none, else flat position + 1 */
+#define DFI_TAIL_YAWN_MAX 2u          /* yawn: duration 2 */
+#define DFI_TAIL_STOCKPILE_MAX 3u     /* layers; stockpile_def and stockpile_spd count the boosts the layers gave */
+#define DFI_TAIL_FLAG_MAX 1u          /* imprison, must_recharge, trap_band, focus_energy, charge, glaive_rush */
+/* rev 2, per side and per field */
+#define DFI_TAIL_AURORA_VEIL_MAX 8u   /* 5 turns, 8 with Light Clay */
+#define DFI_TAIL_TOXIC_SPIKES_MAX 2u
+#define DFI_TAIL_STEALTH_ROCK_MAX 1u
+#define DFI_TAIL_SPIKES_MAX 3u
+#define DFI_TAIL_STICKY_WEB_MAX 1u
+#define DFI_TAIL_GRAVITY_MAX 5u       /* gravity: duration 5 */
+/* rev 2, per roster member */
+#define DFI_TAIL_ITEM_NONE 255u       /* item_now: the member holds nothing (0 = as the member says, 1..254 = item id + 1) */
+#define DFI_TAIL_TOXIC_STAGE_MAX 15u  /* the toxic counter stops at 15 */
+#define DFI_TAIL_TOXIC_STATUS 6u      /* DUOFORGE_AILMENT_TOX: the status that a toxic stage needs. No state has it yet (the
+                                       * status bound of every kind is below it), so no stage is valid until the step
+                                       * that makes Toxic raises that bound. */
 
 typedef struct dfi_tail_pos {
+    uint16_t substitute_hp;    /* 0 = no Substitute, else its HP (at most a quarter of the occupant's maximum HP) */
+    uint16_t trap_move;        /* the move that partially traps the occupant: move id + 1, 0 = not trapped */
     uint8_t last_move;         /* Encore: the move the occupant used last */
     uint8_t encore_slot;       /* the one move slot the occupant may choose; 0 = not encored */
     uint8_t encore_turns;      /* 0 exactly when encore_slot is 0 */
     uint8_t throat_chop_turns; /* sound moves are barred while nonzero */
     uint8_t heal_block_turns;  /* healing and heal-flag moves are barred while nonzero */
+    uint8_t perish;            /* Perish Song: the duration counter, 0 = none */
+    uint8_t taunt_turns;       /* status moves are barred while nonzero */
+    uint8_t disable_slot;      /* the move slot that Disable bars (move slot + 1); 0 exactly when disable_turns is 0 */
+    uint8_t disable_turns;
+    uint8_t imprison;          /* 0/1: the occupant used Imprison */
+    uint8_t must_recharge;     /* 0/1: the occupant must recharge on its next action */
+    uint8_t trap_turns;        /* partial trap: turns left; zero exactly when trap_source and trap_move are */
+    uint8_t trap_source;       /* flat position of the trapper + 1 (never the occupant's own) */
+    uint8_t trap_band;         /* 0/1: the trapper holds a Binding Band (1/6 per turn, not 1/8); 0 when not trapped */
+    uint8_t leech_seed_source; /* flat position that gets the HP + 1, 0 = no Leech Seed (never the occupant's own) */
+    uint8_t yawn_turns;        /* Yawn: turns until sleep, 0 = none */
+    uint8_t focus_energy;      /* 0/1 */
+    uint8_t stockpile;         /* layers 0..3 */
+    uint8_t stockpile_def;     /* the Defense boosts the layers gave (0..stockpile) */
+    uint8_t stockpile_spd;     /* the Special Defense boosts the layers gave (0..stockpile) */
+    uint8_t charge;            /* 0/1: Charge, its next Electric move is doubled */
+    uint8_t glaive_rush;       /* 0/1: hit as vulnerable until it moves again */
 } dfi_tail_pos;
 
 typedef struct dfi_tail_side {
-    uint8_t wide_guard; /* 0/1: this turn only */
     dfi_tail_pos positions[DUOFORGE_ACTIVE_PER_SIDE];
-    uint8_t soak_type[DUOFORGE_MAX_ROSTER]; /* per roster member: 0 none, else type id + 1 (the type Soak set) */
+    uint16_t ability_now[DUOFORGE_MAX_ROSTER]; /* per roster member: 0 = the member's own ability, else ability id + 1
+                                                * (Trace, Skill Swap...); only for a member standing on the field */
+    uint16_t forme_now[DUOFORGE_MAX_ROSTER];   /* 0 = the member's own forme, else forme id + 1 (Aegislash, Palafin...) */
+    uint8_t wide_guard;                        /* 0/1: this turn only */
+    uint8_t aurora_veil_turns;
+    uint8_t toxic_spikes;                      /* layers */
+    uint8_t stealth_rock;                      /* 0/1 */
+    uint8_t spikes;                            /* layers */
+    uint8_t sticky_web;                        /* 0/1 */
+    uint8_t soak_type[DUOFORGE_MAX_ROSTER];    /* per roster member: 0 none, else type id + 1 (the type Soak set) */
+    uint8_t item_now[DUOFORGE_MAX_ROSTER];     /* per roster member: 0 = as the member says, 1..254 = item id + 1,
+                                                * DFI_TAIL_ITEM_NONE = holds nothing (Trick, Knock Off) */
+    uint8_t toxic_stage[DUOFORGE_MAX_ROSTER];  /* per roster member: the toxic counter, 0 = none */
 } dfi_tail_side;
 
 typedef struct dfi_pool_tail {
     dfi_tail_side sides[DUOFORGE_SIDE_COUNT];
+    uint8_t gravity_turns;
+    uint8_t field_pad; /* always zero: keeps the struct without padding (the encoded field block reserves 7 bytes) */
 } dfi_pool_tail;
 
 struct duoforge_battle {

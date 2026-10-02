@@ -90,7 +90,7 @@ The checker reports the **first** violation in a fixed order: context fingerprin
   | CONTEXT (1) | 1 | 1 |
   | BATTLE_STATE (2) | 1 | 1 |
 
-  Later schemas are recorded in the decisions that introduced them: state schema 3 in 0006 section 3, and the POOL kinds' schema 0x0103 ("v3 + pool tail rev 1") in 0015 section 7.
+  Later schemas are recorded in the decisions that introduced them: state schema 3 in 0006 section 3, and the POOL kinds' schema 0x0203 ("v3 + pool tail rev 2"; rev 1, 0x0103, is refused) in 0015 section 7.
 
   Semantics 1 = "duoforge-m1-foundation": RNG contract 0001, the §3 init rules, the §5 invariants and no state transitions.
 - **Bump rules:**
