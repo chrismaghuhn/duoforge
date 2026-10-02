@@ -353,7 +353,7 @@ int main(void)
         c.species_count = DFI_EXT_FORME_COUNT;
         DF_CHECK(&t, duoforge_context_create(&c, &out) == DUOFORGE_E_INVALID_ARGUMENT && out == NULL);
         c = df_config_team_c;
-        c.data_kind = DUOFORGE_DATA_KIND_TEAM_C_DEV + 1u;
+        c.data_kind = DUOFORGE_DATA_KIND_POOL_DEV + 1u; /* 6 and 7 are the POOL kinds (decision 0015) */
         DF_CHECK(&t, duoforge_context_create(&c, &out) == DUOFORGE_E_INVALID_ARGUMENT && out == NULL);
         /* TEAM_C takes over the certified profile (decision 0010): a context
          * of roster 6 and brought 4 only; TEAM_C_DEV takes any. */
