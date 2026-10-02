@@ -492,8 +492,9 @@ def finalize(outdir, battles):
     totals = {k: round(sum(p['seconds'][k] for p in parts), 3) for k in PHASES}
     chunks = []
     chunk_dir = os.path.join(outdir, 'chunks')
-    if os.path.isdir(chunk_dir):
-        for fname in sorted(os.listdir(chunk_dir), key=lambda f: int(f.split('.')[0])):
+    if os.path.isdir(chunk_dir):  # a chunk that was killed may have left a temporary file: it is not a result
+        names = [f for f in os.listdir(chunk_dir) if re.fullmatch(r'\d+\.json', f)]
+        for fname in sorted(names, key=lambda f: int(f.split('.')[0])):
             with io.open(os.path.join(chunk_dir, fname), encoding='ascii') as f:
                 chunks.append(json.load(f))
     slowest = sorted(({'name': r['name'], 'seconds': round(sum(p['seconds'].values()), 3)} for r, p in zip(records, parts)),

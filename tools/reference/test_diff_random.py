@@ -287,6 +287,19 @@ class Buckets(unittest.TestCase):
         self.assertEqual([name for name, _ in runner.requests], ['fz_1_0', 'fz_1_0_prefix'])
         self.assertEqual(len(runner.requests[1][1].split('\nS ')) - 1, 6)
 
+    def test_a_battle_that_did_not_end_is_a_cap_only_if_the_runner_passes_it(self):
+        # CAP is what a PASS becomes when the battle did not end; a finding of the runner is never hidden by it.
+        outcome, worker, runner = process(World(scenario=lambda i: {'steps': 6, 'runner': diverges(3)}))
+        r = outcome.record
+        self.assertEqual((r['bucket'], r['step'], r['steps'], r['ended'], r['reproduces']), ('DIVERGENCE', 3, 6, False, True))
+
+        def unsupported(steps, prefix):
+            return driver.RunnerResult('UNSUPPORTED', 'CLOSURE', 4, steps, 'step: DUOFORGE_E_UNSUPPORTED, tape 3 of 8', [])
+        outcome, worker, runner = process(World(scenario=lambda i: {'steps': 6, 'runner': unsupported}))
+        r = outcome.record
+        self.assertEqual((r['bucket'], r['step'], r['ended'], r['reproduces']), ('UNSUPPORTED', 4, False, None))
+        self.assertEqual(len(runner.requests), 1)  # an UNSUPPORTED has no prefix, at a step or not
+
     def test_a_divergence_is_reproduced_by_its_prefix(self):
         outcome, worker, runner = process(World(scenario=lambda i: {'runner': diverges(3)}))
         r = outcome.record
@@ -295,7 +308,7 @@ class Buckets(unittest.TestCase):
         (_, _), (prefix_name, prefix_records) = runner.requests
         self.assertEqual(prefix_name, 'fz_1_0_prefix')
         self.assertEqual(len(prefix_records.split('\nS ')) - 1, 4)  # the choices up to and including step 3
-        self.assertEqual([c for c in worker.plays], [c for c in worker.plays][:1])  # the prefix is not played again
+        self.assertEqual(len(worker.plays), 1)  # the prefix is recorded again, not played again
 
     def test_a_divergence_that_its_prefix_does_not_show_is_not_reproduced(self):
         def flaky(steps, prefix):
@@ -711,6 +724,18 @@ class Run(unittest.TestCase):
             self.assertEqual(run_chunk_of(world, outdir, 0, None, 2, clock), 12)
             self.assertEqual(rnd.first_missing(outdir, 24), 24)
 
+    def test_a_temporary_file_that_a_killed_chunk_left_is_not_a_result(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            outdir = self.finished(tmp, 'x')
+            with io.open(os.path.join(outdir, 'timing.json'), encoding='ascii') as f:
+                before = f.read()
+            rnd.write_atomically(os.path.join(outdir, 'chunks', '0.json.4242.7.tmp'), b'{"half')
+            rnd.write_atomically(os.path.join(outdir, 'partial', '3.json.4242.7.tmp'), b'{"half')
+            rnd.finalize(outdir, PARAMS.battles)
+            with io.open(os.path.join(outdir, 'timing.json'), encoding='ascii') as f:
+                self.assertEqual(f.read(), before)
+            self.assertEqual(rnd.first_missing(outdir, PARAMS.battles), PARAMS.battles)
+
     def test_finalize_needs_every_battle(self):
         with tempfile.TemporaryDirectory() as tmp:
             outdir = os.path.join(tmp, 'x')
@@ -989,8 +1014,7 @@ class CommandLine(unittest.TestCase):
                                 (['--switch-weight', '1.5'], 'from 0 to 1'), (['--mega-weight', '-0.1'], 'from 0 to 1'),
                                 (['--start', '10'], 'is not before --battles')):
                 with self.subTest(extra):
-                    argv = [a for a in base_args if a not in extra[:1]]
-                    # an option given twice: the later one wins in argparse
+                    # The option is given twice, and the later one wins (argparse).
                     self.assertIn(part, self.refused(*(base_args + extra)))
             self.assertIn('is not a file', self.refused(*(base_args + ['--runner', exe + '.none'])))
             self.assertIn('has no dist/sim', self.refused(*(base_args + ['--checkout', ROOT])))

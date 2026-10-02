@@ -383,6 +383,21 @@ class Runner(unittest.TestCase):
             self.assertGreaterEqual(int(reported), 10)
         self.assertEqual(runner.close(), [])
 
+    def test_how_a_child_is_started_below_normal_priority(self):
+        which = {'nice': '/usr/bin/nice', 'prog': '/opt/prog'}.get
+        self.assertEqual(driver.low_priority(['prog', 'a', 'b'], windows=False, which=which),
+                         (['/usr/bin/nice', '-n', '10', 'prog', 'a', 'b'], {}))
+        self.assertEqual(driver.low_priority(['prog', 'a'], windows=True, which=lambda name: None),
+                         (['prog', 'a'], {'creationflags': 0x4000}))  # BELOW_NORMAL_PRIORITY_CLASS of the Windows API
+        # A program that is not there is refused as Popen refuses it. Left to nice(1) it would be started all the
+        # same, and the driver would see a child that died (exit 127) on its first battle.
+        with self.assertRaises(FileNotFoundError) as cm:
+            driver.low_priority(['/no/such/prog'], windows=False, which=which)
+        self.assertEqual(cm.exception.filename, '/no/such/prog')
+        with self.assertRaises(driver.ToolError) as cm:  # no nice: a failure of the tool, said so
+            driver.low_priority(['prog'], windows=False, which=lambda name: None)
+        self.assertIn('nice is not on the PATH', str(cm.exception))
+
     def test_result_lines_that_are_not_the_format_are_failures_of_the_tool(self):
         for line, part in (('R other PASS CLOSURE - 1 -', 'not a result line'),  # another battle's
                            ('R x PASS CLOSURE - 1', 'not a result line'),  # no detail

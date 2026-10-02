@@ -42,6 +42,7 @@ the engine's.
 """
 import argparse
 import datetime
+import errno
 import fnmatch
 import io
 import json
@@ -117,15 +118,23 @@ RunnerResult = namedtuple('RunnerResult', 'verdict context step steps detail mes
 
 # ------------------------------------------------------------ child processes
 
-def low_priority(argv):
+BELOW_NORMAL_PRIORITY_CLASS = 0x00004000  # of the Windows API; subprocess has the name on Windows only
+
+
+def low_priority(argv, windows=os.name == 'nt', which=shutil.which):
     """`argv` and the Popen arguments that start the process below normal
     priority, as the machine is shared: BELOW_NORMAL_PRIORITY_CLASS on Windows,
-    nice 10 elsewhere."""
-    if os.name == 'nt':
-        return list(argv), {'creationflags': subprocess.BELOW_NORMAL_PRIORITY_CLASS}
-    nice = shutil.which('nice')
+    nice 10 elsewhere. Through nice(1) a program that is not there or cannot run
+    would be started all the same (nice leaves with 127 or 126, long after Popen
+    returned, and the driver would see a child that died on its first battle), so
+    that is checked here and refused with the OSError that Popen raises for it."""
+    if windows:
+        return list(argv), {'creationflags': BELOW_NORMAL_PRIORITY_CLASS}
+    nice = which('nice')
     if nice is None:
         raise ToolError('nice is not on the PATH: a child cannot be started at lower priority')
+    if which(argv[0]) is None:
+        raise FileNotFoundError(errno.ENOENT, 'No such file or directory (or it cannot be executed)', argv[0])
     return [nice, '-n', '10'] + list(argv), {}
 
 
@@ -143,8 +152,8 @@ class Child:
         self.failed = False
         self.exit_code = None
         self.stderr = tempfile.TemporaryFile()
-        command, kwargs = low_priority(argv)
         try:
+            command, kwargs = low_priority(argv)
             self.proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=self.stderr,
                                          **kwargs)
         except OSError as e:
