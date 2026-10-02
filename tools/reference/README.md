@@ -13,6 +13,17 @@ node tools/reference/arith_ref.js <checkout> --check tests/reference/arith_ref.h
 
 CTest runs the `--check` form as `duoforge.reference.arith` (label `reference`). `duoforge.unit.modifier` compares `src/core/modifier.c` with the committed header.
 
+## `tiebreak_ref.js`
+
+Reference values of `Battle.tiebreak()` (`sim/battle.ts:1467-1508`), for `duoforge_battle_tiebreak`. The committed battles (`tests/reference/specs`, with the choices actually made in `tests/reference/traces`) are replayed on a fresh `Battle` up to several prefixes of their choice entries (the first three, every third one after them, the last two), and at each stop the pinned `tiebreak()` is called; it ends the battle, so each stop is its own replay. A battle that had already ended at its stop is recorded with its own winner, which is what the engine returns for a terminal battle. For every stop the header holds the winner, the stage that decided (the count, the HP percentage, the total HP, or a tie) and the three quantities `tiebreak()` compares, computed from the battle's state just before the call with the pin's own expressions: the Pokemon not fainted, the total HP, and the HP percentage as the 64 bits of its double (the sum of `hp / maxhp` over `side.pokemon` in its array order, times 100, divided by 6). They are cross-checked against what `tiebreak()` prints and against a copy of its three steps in the script, so a drift is an error of the script and not a silent fixture.
+
+```sh
+node tools/reference/tiebreak_ref.js <checkout> . > tests/reference/tiebreak_ref.h
+node tools/reference/tiebreak_ref.js <checkout> . --check tests/reference/tiebreak_ref.h
+```
+
+CTest runs the `--check` form as `duoforge.reference.tiebreak_ref` (label `reference`, about 40 s). The engine's side is `tests/test_tiebreak.c`: the same battles replayed with the conformance tapes, in the five builds of the conformance test (`duoforge.reference.tiebreak`, `_team_c`, `_pool`, `_team_c_pool`, `_pool_data`).
+
 ## `ps_trace.js`
 
 Records a complete battle. A spec (`tests/reference/specs/*.json`) gives the format, a PRNG seed, both teams as Showdown paste text (gender always given) and either the choices in request order (`choices`) or a plan (`plan`: per side the choices for its move requests in order, the last one repeated, and `max_steps`). In plan mode the harness answers team preview with the first four, a replacement with the first standing reserves and a fainted slot with `pass`; a planned move without PP falls back to the first move with PP, a target is dropped for a move that takes none and is 1 for a move that needs one. A planned switch of a trapped Pokémon (for example one charging a two-turn move) becomes "move 1 1". It records the choices it made. Draws inside a status or confusion handler are named by the effect and event the reference is running (sleep and confusion turns, freeze thaw, full paralysis, confusion self-hit). In the speed sort of `runSwitch` each Pokémon is labelled with its SwitchIn handlers and whether it is entering, in the speed sort of an `each:` event with the effects of its handlers; the snapshot records the weather and terrain durations and the moves each request offers. The harness runs the battle with a recording PRNG and writes a trace (`tests/reference/traces/*.json`): for every choice entry the draws it caused (site, context, bounds, value), the protocol lines and the state at the next boundary (exact HP, status, stages, PP, volatiles, active slots, requests).
