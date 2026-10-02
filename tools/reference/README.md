@@ -54,3 +54,9 @@ Reference battles of the real teams for the certification (decision 0010, M5 ste
 ```
 python tools/reference/gen_real_specs.py --checkout <pinned checkout> --candidates 40 --keep 4
 ```
+
+With `--team-c` it builds the pairings of the Team C gate instead (decision 0009, step 12): C-A, C-B, A-C, B-C and C-C, with the real Team C of `docs/research/third-team/team-c.txt`, under the TEAM_C data kind. The defaults then are `--seed 2026100212 --prefix c12_real`, which reproduce the committed `c12_real_*` battles.
+
+```
+python tools/reference/gen_real_specs.py --checkout <pinned checkout> --team-c
+```

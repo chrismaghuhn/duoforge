@@ -148,7 +148,7 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
 | 9b | Sucker Punch and Helping Hand: queue reads, `newlySwitched`, ally targets, BasePower priority 10 | volatile bits, view bit, event kind | turn.c, request.c |
 | 10 | Psychic Surge and Psychic Terrain: field TryHit before Protect, terrain replacement, Psychic x5325/4096 | TERRAIN_PSYCHIC, field value, event kind | turn.c |
 | 11 | Follow Me: redirects foe single-target moves, ahead of Lightning Rod | volatile bit, view bit, event kind | turn.c |
-| 12 | **Team C gate (proposal):** the real Team C passes in the profile of decision 0010. As closure step 13: random real-team battles C-A, C-B, A-C, B-C and C-C with replay, codec continuation and information equivalence, plus real-team reference battles | - | tests |
+| 12 | **Team C gate:** the real Team C passes in the profile of decision 0010. As closure step 13: random real-team battles C-A, C-B, A-C, B-C and C-C with replay, codec continuation and information equivalence, plus real-team reference battles | - | tests |
 
 **Interaction tests.** Each item of M§6 is tested in the step that makes it reachable. Recorded battles are used unless a test is marked as a unit test.
 
@@ -851,33 +851,50 @@ There is one PR per step, in M§7's order with the owner's set changes. "Shared"
   - **Profile:** TEAM_C data, the certified profile of decision 0010 (six registered, four brought).
   - **Battles:** the five pairings C-A, C-B, A-C, B-C and C-C, 1000 seeds each, from team selection to TERMINAL. The choices are random and legal: team picks, moves, Mega Evolution, switches, replacements and PIVOT answers.
   - **Checks:**
-    - every step returns OK, so no `E_UNSUPPORTED` or other error is reachable with these teams;
+    - every step returns OK: the battles reach no `E_UNSUPPORTED` or other error;
     - every committed state passes the checker;
     - a copy decoded from the bytes of every boundary continues byte for byte like the original;
     - a replay of the recorded bundles from the setup ends in the same bytes;
-    - information equivalence holds at every boundary of every fourth battle, for both viewers, with the closure gate's pairs.
+    - information equivalence holds at every boundary of every fourth battle, for both viewers. The gate uses the closure gate's pairs with two changes:
+      - one more RNG pair flips every bit of the state, the stream and the draw count;
+      - the locked-target pair runs only for a charging move, because a choice lock has no target.
   - **Coverage:**
-    - every move of the three teams is used;
+    - every move slot of every member of the three teams is used;
     - all five Mega formes appear;
-    - the Team C state is reached at committed boundaries: Psychic Terrain, poison, the choice lock, Unburden, and the volatiles of Follow Me and Helping Hand.
-- **Result:** no check failed (1,462,709 checks).
+    - the Team C state is reached at the boundaries the gate continues from (not TERMINAL), both in all battles and in the battles with information pairs:
+      - Psychic Terrain, poison, the choice lock and Unburden;
+      - at a PIVOT, the volatiles of Follow Me and Helping Hand and newlySwitched.
+- **Result:** no check failed (1,565,097 checks).
   - 5000 battles in 71,157 steps (longest 42), with 5000 identical replays;
   - 15,045 REPLACEMENTs, 3,198 PIVOTs and 6,326 Megas;
-  - 200,666 equivalent pairs and 81,017 shown HP changes.
+  - 236,018 equivalent pairs and 81,017 shown changes (HP displays, weather turns and stat stages).
 - **Recorded battles of the real Team C.**
-  - `tools/reference/gen_real_specs.py --team-c` records 40 candidates per pairing. It keeps 4 per pairing by the coverage they add: 20 battles `c12_real_*` (generator seed 2026100212, 237 features).
+  - `tools/reference/gen_real_specs.py --checkout <pin> --team-c` records 40 candidates per pairing. With `--team-c` the defaults are seed 2026100212 and prefix `c12_real`. It keeps 4 per pairing by the coverage they add: 20 battles `c12_real_*`, 237 features.
+  - `duoforge.reference.conformance_team_c` ties the gate's fixture (`df_put_team_c`) to `team-c.txt`: each Team C member of the 20 battles equals the fixture's member of its species.
   - DuoForge matches all of them. 21 of the 70 Team C battles now run under TEAM_C itself, with six registered members.
   - Without `--team-c` the generator's output is unchanged: it reproduces all 16 `m5_real_*` specs byte for byte.
 - **Negative controls**, each red in the gate alone:
   - Follow Me failing at run time (a step error);
   - the codec dropping Follow Me's bit (the decoded copy diverges);
   - no Unburden volatile (the Team C coverage);
-  - the RNG's lowest bit in the view (an information leak).
+  - an information leak in the view: the RNG state's lowest bit, its second bit, or a bit of its stream.
 
-  A first version of the last control used the RNG's second bit. It stayed green, because the gate's RNG pair flips only some bits of the state. The pairs are the closure gate's own.
+  The closure gate's RNG pair flips only some bits of the state, so a leak of the second bit or of the stream passes it. The pair that flips every bit catches both. The closure gate keeps its pairs; changing it is a separate decision.
+- **What the gate cannot show by design.**
+  - It checks determinism, the codec and information equivalence, but not the rules: a rule that is deterministic but wrong passes it. Fidelity rests on the 71 recorded battles.
+  - The battles only play what the request offers, so a missing legal option goes unnoticed.
+  - Interactions that the whole teams never reach rest on the recorded battles alone, for example Good as Gold against Helping Hand, or Follow Me against Lightning Rod.
+  - The pick policy of the closure gate favours side 1: side 0 lists its own ally first, so it hits its ally more often: side 1 wins 3,145 of the 5,000 battles.
+- **Review findings, fixed.**
+  - The coverage counted states the gate never continues from: TERMINAL, and battles without information pairs. It now counts only boundaries the gate continues from, with a second mask for the battles with pairs, and newlySwitched joined it.
+  - The leak blind spot of the RNG pair; a second pair now covers it.
+  - The documented generator call did not reproduce the committed battles. `--team-c` now brings its own defaults.
+  - Move coverage counted move ids across teams; it now counts each member's slots.
+  - The locked-target pair failed the checker silently on choice locks.
+  - Several doc lines, and the tie between the fixture and `team-c.txt`.
 - **Not part of the gate.** The M5 certification dataset (`certify/`) stays the closure's. A Team C certification is a later decision for the owner.
 - **Shared files touched:**
-  - `tools/reference/gen_real_specs.py`;
+  - `tools/reference/{gen_real_specs.py,README.md}`;
   - `tests/CMakeLists.txt`;
-  - `tests/test_conformance.c` (the battle counts);
-  - `docs/support/README.md`.
+  - `tests/test_conformance.c` (the battle counts, the fixture tie);
+  - `README.md`, `docs/support/README.md`.

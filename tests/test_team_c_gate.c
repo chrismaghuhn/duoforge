@@ -5,17 +5,21 @@
  * B-C and C-C, from team selection to TERMINAL with random legal choices,
  * with the checks of duoforge.combat.closure_gate:
  *
- *  - every step returns OK: no E_UNSUPPORTED (or any other error) is
- *    reachable with these teams; every move of the three teams is used and
- *    all five Mega formes appear (Team C brings Salamence-Mega);
+ *  - every step returns OK: the battles reach no E_UNSUPPORTED (or any
+ *    other error); every move slot of every member of the three teams is
+ *    used and all five Mega formes appear (Team C brings Salamence-Mega);
  *  - every committed state passes the checker, and a copy decoded from the
  *    bytes of every boundary continues byte for byte like the original;
  *  - a replay of the recorded bundles from the setup ends in the same bytes;
  *  - information equivalence on real states at every boundary of every
- *    fourth battle, for both viewers, with the pairs of the closure gate;
- *  - the Team C state is reached at committed boundaries: Psychic Terrain,
- *    poison, the choice lock, Unburden, and the volatiles of Follow Me and
- *    Helping Hand (both live only at a PIVOT inside a turn).
+ *    fourth battle, for both viewers, with the pairs of the closure gate, a
+ *    stronger RNG pair (every bit of the state, the stream and the draw
+ *    count) and the locked-target pair only for a charging move (a choice
+ *    lock has no target);
+ *  - the Team C state is reached at the boundaries the gate continues from
+ *    (not TERMINAL), in all battles and in the battles with information
+ *    pairs: Psychic Terrain, poison, the choice lock, Unburden, and at a
+ *    PIVOT the volatiles of Follow Me and Helping Hand and newlySwitched.
  */
 #include <stdio.h>
 #include <string.h>
@@ -50,7 +54,7 @@ static surface sa;
 static surface sb;
 static duoforge_side_choice pool[DUOFORGE_MAX_CANDIDATES];
 static duoforge_decision_bundle tape[GATE_MAX_STEPS];
-static bool used_move[DFI_EXT_MOVE_COUNT];
+static bool used_slot[3][DUOFORGE_MAX_ROSTER][DUOFORGE_MAX_MOVE_SLOTS]; /* team, member, move slot */
 static bool mega_forme[DFI_EXT_FORME_COUNT];
 
 /* The Team C state the gate must reach at a committed boundary. */
@@ -60,10 +64,14 @@ static bool mega_forme[DFI_EXT_FORME_COUNT];
 #define SEEN_UNBURDEN 8u
 #define SEEN_FOLLOW_ME 16u
 #define SEEN_HELPING_HAND 32u
-#define SEEN_ALL 63u
+#define SEEN_NEWLY_SWITCHED 64u
+#define SEEN_ALL 127u
 
 static uint32_t team_c_state(const duoforge_battle *b)
 {
+    /* Follow Me, Helping Hand and newlySwitched live inside a turn: a PIVOT
+     * is where the gate continues from them. */
+    const bool pivot = b->boundary_kind == DUOFORGE_BOUNDARY_PIVOT;
     uint32_t seen = b->terrain == DFI_TERRAIN_PSYCHIC ? SEEN_PSYCHIC_TERRAIN : 0u;
     for (uint32_t s = 0u; s < 2u; ++s) {
         const dfi_side *sd = &b->sides[s];
@@ -74,8 +82,9 @@ static uint32_t team_c_state(const duoforge_battle *b)
             const uint32_t flags = sd->positions[p].flags;
             seen |= (flags & DFI_VOL_CHOICE_LOCK) != 0u ? SEEN_CHOICE_LOCK : 0u;
             seen |= (flags & DFI_VOL_UNBURDEN) != 0u ? SEEN_UNBURDEN : 0u;
-            seen |= (flags & DFI_VOL_FOLLOW_ME) != 0u ? SEEN_FOLLOW_ME : 0u;
-            seen |= (flags & DFI_VOL_HELPING_HAND) != 0u ? SEEN_HELPING_HAND : 0u;
+            seen |= pivot && (flags & DFI_VOL_FOLLOW_ME) != 0u ? SEEN_FOLLOW_ME : 0u;
+            seen |= pivot && (flags & DFI_VOL_HELPING_HAND) != 0u ? SEEN_HELPING_HAND : 0u;
+            seen |= pivot && (flags & DFI_VOL_NEWLY_SWITCHED) != 0u ? SEEN_NEWLY_SWITCHED : 0u;
         }
     }
     return seen;
@@ -85,7 +94,8 @@ static uint32_t team_c_state(const duoforge_battle *b)
 static const char *const pair_kinds[] = {
     "active foe pp",           "confusion turns",           "foe actions in the queue",
     "foe hp inside one display bucket", "foe pick order",   "opponent knowledge",
-    "rng",                     "sleep or freeze turns",     "the foe's locked target",
+    "rng",                     "rng, every bit",            "sleep or freeze turns",
+    "the foe's locked target",
     "unseen foe reserve hp/pp", "which members the opponent brought",
 };
 #define PAIR_KINDS (sizeof pair_kinds / sizeof pair_kinds[0])
@@ -147,6 +157,12 @@ static void pairs(df_test *t, const duoforge_context *ctx, const duoforge_battle
     b->rng.state ^= UINT64_C(0x9E3779B97F4A7C15);
     b->rng.draws += 5u;
     expect_same(t, ctx, a, b, viewer, "rng", c);
+    /* every bit of its state, its stream (inc stays odd) and its draw count */
+    DF_CHECK(t, duoforge_battle_copy(ctx, b, a) == DUOFORGE_OK);
+    b->rng.state = ~a->rng.state;
+    b->rng.inc ^= 2u;
+    b->rng.draws ^= 1u;
+    expect_same(t, ctx, a, b, viewer, "rng, every bit", c);
 
     const dfi_side *fs = &a->sides[foe];
     for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
@@ -236,8 +252,9 @@ static void pairs(df_test *t, const duoforge_context *ctx, const duoforge_battle
                     expect_same(t, ctx, a, b, viewer, "confusion turns", c);
                 }
             }
-            /* the foe's charged move: its target is hidden, the move is not */
-            if (s == foe && slot->locked_move != 0u) {
+            /* the foe's charged move: its target is hidden, the move is not
+             * (a choice lock has no target) */
+            if (s == foe && slot->locked_move != 0u && slot->charge_turns != 0u) {
                 DF_CHECK(t, duoforge_battle_copy(ctx, b, a) == DUOFORGE_OK);
                 const uint32_t other = slot->locked_target == viewer * 2u ? viewer * 2u + 1u : viewer * 2u;
                 b->sides[s].positions[p].locked_target = (uint8_t)other;
@@ -425,7 +442,8 @@ int main(void)
     unsigned steps = 0;
     unsigned ended = 0;
     unsigned results[4] = {0, 0, 0, 0};
-    uint32_t team_c_seen = 0u;
+    uint32_t team_c_seen = 0u; /* at the boundaries the gate continues from */
+    uint32_t paired_seen = 0u; /* the same, in the battles with information pairs */
     unsigned errors = 0;
     unsigned mismatches = 0;
     unsigned replays = 0;
@@ -485,7 +503,11 @@ int main(void)
                     duoforge_battle_destroy(copy);
                 }
                 DF_CHECK(&t, duoforge_battle_check(kc, b) == DUOFORGE_OK);
-                team_c_seen |= team_c_state(b);
+                if (b->boundary_kind != DUOFORGE_BOUNDARY_TERMINAL) {
+                    const uint32_t state = team_c_state(b);
+                    team_c_seen |= state;
+                    paired_seen |= seed % GATE_PAIRS_EVERY == 1u ? state : 0u;
+                }
                 if (seed % GATE_PAIRS_EVERY == 1u) {
                     pairs(&t, kc, b, 0u, &c);
                     pairs(&t, kc, b, 1u, &c);
@@ -513,8 +535,9 @@ int main(void)
                     for (uint32_t m = 0u; m < sd->member_count; ++m) {
                         const dfi_member *mem = &sd->members[m];
                         for (uint32_t k = 0u; k < mem->move_count; ++k) {
-                            if (mem->moves[k].pp < mem->moves[k].pp_max && mem->moves[k].move_id < DFI_EXT_MOVE_COUNT) {
-                                used_move[mem->moves[k].move_id] = true;
+                            if (mem->moves[k].pp < mem->moves[k].pp_max && m < DUOFORGE_MAX_ROSTER &&
+                                k < DUOFORGE_MAX_MOVE_SLOTS) {
+                                used_slot[pairing[pi][side]][m][k] = true;
                             }
                         }
                         if (mem->is_mega != 0u && mem->species_id < DFI_EXT_FORME_COUNT) {
@@ -539,14 +562,16 @@ int main(void)
             duoforge_battle_destroy(b);
         }
     }
-    /* Coverage: every move of the three teams was used, every Mega forme seen. */
+    /* Coverage: every move slot of every member of the three teams was used
+     * (the members keep their team order in a side), every Mega forme seen. */
     unsigned unused = 0;
     for (uint32_t side = 0u; side < 3u; ++side) {
         for (uint32_t m = 0u; m < three[side].member_count; ++m) {
             const duoforge_member_setup *d = &three[side].members[m];
             for (uint32_t k = 0u; k < d->move_count; ++k) {
-                if (!used_move[d->moves[k].move_id % DFI_EXT_MOVE_COUNT]) {
-                    fprintf(stderr, "  never used: move %u of species %u\n", d->moves[k].move_id, d->species_id);
+                if (!used_slot[side][m][k]) {
+                    fprintf(stderr, "  never used: move %u of species %u (team %u)\n", d->moves[k].move_id,
+                            d->species_id, side);
                     unused += 1u;
                 }
             }
@@ -569,12 +594,13 @@ int main(void)
         }
     }
     DF_CHECK_EQ_U64(&t, team_c_seen, SEEN_ALL);
+    DF_CHECK_EQ_U64(&t, paired_seen, SEEN_ALL);
     DF_CHECK(&t, results[1] > 0u && results[2] > 0u && replacements > 0u && pivots > 0u && megas > 0u &&
                      c.equivalent > 0u && c.shown > 0u);
     fprintf(stderr,
             "  team c gate: %u battles ended in %u steps (longest %u; side 0 %u, side 1 %u, tie %u), "
             "%u replays identical; REPLACEMENTs %u (Emergency Exits at the end of a turn %u), PIVOTs %u, Megas %u; "
-            "equivalent pairs %u, shown HP changes %u\n",
+            "equivalent pairs %u, shown changes (HP displays, weather turns, stat stages) %u\n",
             ended, steps, longest, results[1], results[2], results[3], replays, replacements, exits, pivots, megas,
             c.equivalent, c.shown);
     duoforge_context_destroy(kc);

@@ -19,6 +19,9 @@ Everything is deterministic for the same arguments and the same pin.
 
 usage: gen_real_specs.py --checkout <pinned reference> [--candidates 40]
        [--keep 4] [--seed 2026100101] [--prefix m5_real] [--jobs 8] [--team-c]
+
+With --team-c the defaults are --seed 2026100212 --prefix c12_real, the
+committed Team C gate battles.
 """
 import argparse
 import concurrent.futures
@@ -59,7 +62,11 @@ class SplitMix64:
         return self.next() % n
 
 
-def read_team(path):
+def read_team(name):
+    return read_team_file(os.path.join(ROOT, 'tests', 'reference', 'teams', name))
+
+
+def read_team_file(path):
     with open(path, encoding='utf-8') as f:
         sets = [s.strip() for s in f.read().split('\n\n') if s.strip()]
     assert len(sets) == 6, path
@@ -170,16 +177,19 @@ def main():
     ap.add_argument('--checkout', required=True)
     ap.add_argument('--candidates', type=int, default=40)
     ap.add_argument('--keep', type=int, default=4)
-    ap.add_argument('--seed', type=int, default=2026100101)
-    ap.add_argument('--prefix', default='m5_real')
+    ap.add_argument('--seed', type=int, default=None, help='default 2026100101, with --team-c 2026100212')
+    ap.add_argument('--prefix', default=None, help='default m5_real, with --team-c c12_real')
     ap.add_argument('--jobs', type=int, default=os.cpu_count() or 4)
     ap.add_argument('--team-c', action='store_true', help='the Team C gate pairings (decision 0009, step 12)')
     args = ap.parse_args()
-    teams_dir = os.path.join(ROOT, 'tests', 'reference', 'teams')
-    teams = [read_team(os.path.join(teams_dir, 'team_a.txt')), read_team(os.path.join(teams_dir, 'team_b.txt'))]
+    if args.seed is None:
+        args.seed = 2026100212 if args.team_c else 2026100101
+    if args.prefix is None:
+        args.prefix = 'c12_real' if args.team_c else 'm5_real'
+    teams = [read_team('team_a.txt'), read_team('team_b.txt')]
     pairings = PAIRINGS
     if args.team_c:
-        teams.append(read_team(TEAM_C_FILE))
+        teams.append(read_team_file(TEAM_C_FILE))
         pairings = TEAM_C_PAIRINGS
     rng = SplitMix64(args.seed)
     seeds = {p[0]: [rng.next() for _ in range(args.candidates)] for p in pairings}

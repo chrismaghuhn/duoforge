@@ -19,7 +19,7 @@ This is a status manifest, **not** a mechanics certificate. For the mechanics of
 | Struggle (all pp 0) | **IMPLEMENTED + TESTED** (offered in the request since step 2c; typeless, random target, recoil) |
 | Observation v2: what a player sees (decision 0007) | **IMPLEMENTED + TESTED**: the oracle gives the same bytes for every fixture and player; paired tests on synthetic and real states keep the hidden rolls hidden; the conformance test compares both players' views with the recorded Showdown battles |
 | Event log per player (decision 0007 sections 6 and 11) | **IMPLEMENTED + TESTED**: every event of both players matches the protocol lines of the recorded Showdown battles, field by field (61 battles, 19,154 events, all 37 kinds); API failures are atomic; since step 3c each player's knowledge is folded from its events only |
-| Information-equivalence evidence | **TESTED** on paired synthetic states (`duoforge.request.information`) |
+| Information-equivalence evidence | **TESTED** on paired synthetic states (`duoforge.request.information`) and on real states in the closure gate and the Team C gate |
 | Closure data tables (16 formes, 36 moves plus Struggle, 16 abilities, 11 items, type chart, natures) | **GENERATED + TESTED** from the pin with provenance per record (`tools/datagen/gen_closure.py`, `src/data/closure_tables.*`). Used by every CLOSURE battle |
 | Champions stat and PP formulas | **IMPLEMENTED + TESTED** (all 16 formes of the two teams; decision 0006) |
 | CLOSURE contexts (`CLOSURE`, `CLOSURE_DEV`), setup validation, derived stats and PP, support gate | **IMPLEMENTED + TESTED** (decision 0006 section 2.1); since step 12 the manifest marks every mechanic of the closure |
@@ -39,6 +39,7 @@ This is a status manifest, **not** a mechanics certificate. For the mechanics of
 | Electro Shot (charge, rain, locked move in the request) | **IMPLEMENTED + TESTED** against recorded reference battles (decision 0006 section 4.10) |
 | Mega Evolution with the four stones, Contrary, No Guard, Tough Claws | **IMPLEMENTED + TESTED** against recorded reference battles (decision 0006 section 4.11) |
 | Emergency Exit, Parting Shot, PIVOT boundaries | **IMPLEMENTED + TESTED** against recorded reference battles, including Emergency Exit at the end of a turn and two Emergency Exits at once (decision 0006 section 4.12) |
+| Team C gate: the real Team C with both reference teams in five pairings | **PASSED** (decision 0009 step 12): 5000 random battles end without errors, replay byte for byte and keep information equivalence; 20 recorded battles with the real Team C (`c12_real_*`) |
 | Closure gate: both real teams in all four pairings | **PASSED** (step 13): 4000 random battles end without errors, replay byte for byte and keep information equivalence; 58 recorded reference battles at the gate, 8 of them with the real teams (decision 0006 section 4.13); 61 since the event log |
 
 State snapshots and decodability are foundation evidence, **not proof that unimplemented future mechanics restore correctly**.
