@@ -55,7 +55,10 @@ def hindsight(log, side, data, sheets):
             turn = True
         elif kind == "switch" and started and line.split("|")[2][:2] == f"p{side + 1}":
             parts = line.split("|")
-            base = data.base_forme(data.forme(parts[3].split(",")[0]))
+            try:
+                base = data.base_forme(data.forme(parts[3].split(",")[0]))
+            except ValueError:
+                continue  # a forme changed on the bench (Palafin-Hero): the member entered before in its own forme
             if roster.count(base) != 1:
                 raise lines.Stop(f"structure:{parts[2]} is not one member of its sheet")
             member = roster.index(base)

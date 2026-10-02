@@ -76,6 +76,9 @@ class _View:
     def sheet_of(self, ident):
         return self._members[ident.split(": ")[0][:2] + ": " + ident.split(": ")[1]]
 
+    def known_sheet(self, ident):
+        return self._members.get(ident.split(": ")[0][:2] + ": " + ident.split(": ")[1])
+
     def ability_now(self, ident):
         return self.sheet_of(ident)["ability"]
 
@@ -446,6 +449,16 @@ class GameTest(unittest.TestCase):
     def insert_after_in(self, lines, prefix, new):
         i = next(i for i, line in enumerate(lines) if line.startswith(prefix))
         return lines[:i + 1] + [new] + lines[i + 1:]
+
+    def test_forme_changed_on_the_bench_stops(self):
+        # full run: Zero to Hero turns Palafin into Palafin-Hero on its way out, silently; its next switch line
+        # shows the new forme (decision 0018 FORME_CHANGE), never an internal error
+        i = max(i for i, line in enumerate(self.log) if line.startswith("|switch|p2a: Politoed|"))
+        lines = list(self.log)
+        lines[i] = lines[i].replace("Politoed, L50, M", "Politoed-Hero, L50, M")
+        result = self.run_game(lines)
+        self.assertEqual(result.counters["perspectives.stopped.feature:FORME_CHANGE"], 2)
+        self.assertGreater(len(result.rows), 4)
 
     def test_bo3_game_number(self):
         lines = ['|uhtml|bestof|<h2><strong>Game 2</strong> of <a href="/game-bestof3-x">a best-of-3</a></h2>'] + self.log

@@ -169,6 +169,17 @@ def check(line, view):
         return _feature("AILMENT_TOX")
     if kind == "replace":
         return _feature("ILLUSION")
+    if kind == "switch" and len(args) > 1:
+        # A member back in another forme than its own or its Mega changed on the way out, silently (Zero to Hero:
+        # Palafin-Hero): decision 0018's FORME_CHANGE, its permanent forme shown by the switch line.
+        try:
+            forme = view.data.forme(args[1].split(",")[0])
+        except ValueError:
+            return _feature("FORME_CHANGE")
+        sheet = view.known_sheet(args[0])
+        if sheet is not None and view.data.base_forme(forme) != sheet["species"]:
+            return _feature("FORME_CHANGE")
+        return "fold"
     if kind == "move":
         if len(args) > 1 and args[1] in SILENT_MOVES:
             _unknown(kind, args[1])

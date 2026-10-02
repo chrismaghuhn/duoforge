@@ -236,6 +236,12 @@ class Tracker:
         """The sheet of the member a protocol ident ("p1a: Name") names."""
         return self._member_of(ident).sheet
 
+    def known_sheet(self, ident):
+        """The sheet of the member a protocol ident names, or None before its name was seen."""
+        side, name = int(ident[1]) - 1, ident.split(": ", 1)[1]
+        index = self._names[side].get(name)
+        return None if index is None else self._member(side)[index].sheet
+
     def ability_now(self, ident):
         """The current ability + 1 of the member a protocol ident names."""
         return self._member_of(ident).ability
