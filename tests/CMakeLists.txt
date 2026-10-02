@@ -206,6 +206,12 @@ if(DUOFORGE_PS_REFERENCE_DIR)
                 "${DUOFORGE_NODE}" "${DUOFORGE_PS_REFERENCE_DIR}")
         set_tests_properties(duoforge.reference.import_paste_pin PROPERTIES TIMEOUT 300 LABELS reference
             ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+        # The client streams of the live adapter's tests: every closure battle replayed from its
+        # trace's inputs, with each step's lines equal to the trace.
+        add_test(NAME duoforge.reference.client_streams
+            COMMAND "${DUOFORGE_NODE}" "${PROJECT_SOURCE_DIR}/tools/reference/ps_client.js"
+                "${DUOFORGE_PS_REFERENCE_DIR}" "${PROJECT_SOURCE_DIR}" --all --check)
+        set_tests_properties(duoforge.reference.client_streams PROPERTIES TIMEOUT 300 LABELS reference)
     endif()
 endif()
 # The conformance tables must be what the converter makes of the traces.
@@ -242,6 +248,20 @@ if(Python3_Interpreter_FOUND)
         # fopen is fine in a test (the MSVC runtime warns, also under Clang).
         target_compile_definitions(duoforge_reference_runner_records PRIVATE _CRT_SECURE_NO_WARNINGS)
         target_compile_definitions(duoforge_reference_runner_records_team_c PRIVATE _CRT_SECURE_NO_WARNINGS)
+    endif()
+    # The runner's --dump-views (the Showdown live adapter's oracle): every closure battle's views
+    # at every step, the first ones against the public API (needs DUOFORGE_PYTHON).
+    if(DUOFORGE_PYTHON)
+        add_test(NAME duoforge.reference.dump_views
+            COMMAND "${DUOFORGE_PYTHON}" "${PROJECT_SOURCE_DIR}/tools/reference/test_dump_views.py"
+                "$<TARGET_FILE:duoforge_diff_runner>" "${_records_dir}/closure.records")
+        set_tests_properties(duoforge.reference.dump_views PROPERTIES TIMEOUT 300
+            FIXTURES_REQUIRED duoforge_conformance_records ENVIRONMENT
+            "DUOFORGE_LIBRARY=$<TARGET_FILE:duoforge_shared>;PYTHONPATH=${PROJECT_SOURCE_DIR}/python;PYTHONDONTWRITEBYTECODE=1")
+    else()
+        add_test(NAME duoforge.reference.dump_views
+            COMMAND "${CMAKE_COMMAND}" -E echo "DUOFORGE_SKIP: DUOFORGE_PYTHON is empty")
+        set_tests_properties(duoforge.reference.dump_views PROPERTIES SKIP_REGULAR_EXPRESSION "DUOFORGE_SKIP:")
     endif()
     # The replay driver without Node: the buckets and the order of its output with
     # fake children and the real converter, the records writer, and every committed
