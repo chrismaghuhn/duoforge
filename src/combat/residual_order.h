@@ -26,7 +26,7 @@
  *     places are the holes of the group's members: where a volatile handler of a later order lands changes no member
  *     of a group of earlier order and no draw);
  *   - or the sort, run over every order of the volatiles of the Pokemon that have two sort keys or more and over every
- *     value of every draw, comes out with the same callbacks in the same order each time (the exact test below; it
+ *     value of every draw, comes out with the same callbacks in the same order every round (the exact test below; it
  *     runs only for the lists that the cheap test cannot clear, and gives up, as ambiguous, past a bound on the number
  *     of orders and of draws that it tries). The sizes of the groups, and so the draws, do not depend on the order.
  * Anything else is dfi_residual_order_ambiguous: the engine refuses it (E_UNSUPPORTED) rather than guess.
