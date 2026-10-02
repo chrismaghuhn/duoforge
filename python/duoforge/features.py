@@ -52,14 +52,20 @@ from . import _layout
 C = _layout.CONSTANTS
 OPTIONS = _layout.MAX_SLOT_OPTIONS
 
-BOUNDARIES = tuple(C[f"DUOFORGE_BOUNDARY_{n}"] for n in ("TEAM_SELECTION", "TURN", "REPLACEMENT", "PIVOT",
-                                                          "TERMINAL"))
-WEATHERS = tuple(C[f"DUOFORGE_WEATHER_{n}"] for n in ("NONE", "RAIN", "SUN"))
-TERRAINS = tuple(C[f"DUOFORGE_TERRAIN_{n}"] for n in ("NONE", "GRASSY", "PSYCHIC"))
-LOCATIONS = tuple(C[f"DUOFORGE_LOCATION_{n}"] for n in ("UNDETERMINED", "BENCH", "ACTIVE", "NOT_BROUGHT"))
-AILMENTS = tuple(C[f"DUOFORGE_AILMENT_{n}"] for n in ("NONE", "BURN", "FREEZE", "PARALYSIS", "SLEEP", "POISON"))
-SLOT_KINDS = tuple(C[f"DUOFORGE_SLOT_{n}"] for n in ("NONE", "MOVE", "SWITCH", "PASS"))
-POSITION_FLAGS = tuple(C[f"DUOFORGE_POSITION_FLAG_{n}"] for n in ("FOLLOW_ME", "HELPING_HAND", "UNBURDEN"))
+_BOUNDARY_NAMES = ("TEAM_SELECTION", "TURN", "REPLACEMENT", "PIVOT", "TERMINAL")
+_WEATHER_NAMES = ("NONE", "RAIN", "SUN")
+_TERRAIN_NAMES = ("NONE", "GRASSY", "PSYCHIC")
+_LOCATION_NAMES = ("UNDETERMINED", "BENCH", "ACTIVE", "NOT_BROUGHT")
+_AILMENT_NAMES = ("NONE", "BURN", "FREEZE", "PARALYSIS", "SLEEP", "POISON")
+_SLOT_KIND_NAMES = ("NONE", "MOVE", "SWITCH", "PASS")
+_POSITION_FLAG_NAMES = ("FOLLOW_ME", "HELPING_HAND", "UNBURDEN")
+BOUNDARIES = tuple(C[f"DUOFORGE_BOUNDARY_{n}"] for n in _BOUNDARY_NAMES)
+WEATHERS = tuple(C[f"DUOFORGE_WEATHER_{n}"] for n in _WEATHER_NAMES)
+TERRAINS = tuple(C[f"DUOFORGE_TERRAIN_{n}"] for n in _TERRAIN_NAMES)
+LOCATIONS = tuple(C[f"DUOFORGE_LOCATION_{n}"] for n in _LOCATION_NAMES)
+AILMENTS = tuple(C[f"DUOFORGE_AILMENT_{n}"] for n in _AILMENT_NAMES)
+SLOT_KINDS = tuple(C[f"DUOFORGE_SLOT_{n}"] for n in _SLOT_KIND_NAMES)
+POSITION_FLAGS = tuple(C[f"DUOFORGE_POSITION_FLAG_{n}"] for n in _POSITION_FLAG_NAMES)
 
 SLOT_FEATURES = 12
 _GLOBAL = len(BOUNDARIES) + 1 + len(WEATHERS) + 1 + len(TERRAINS) + 2
@@ -67,6 +73,44 @@ _SIDE = 8
 _POSITION = 7 + 7 + len(POSITION_FLAGS) + 7
 _MEMBER = 2 + len(LOCATIONS) + len(AILMENTS) + 8 + 4 + 4 + 1 + 6 + 5
 OBS_SIZE = _GLOBAL + 2 * (_SIDE + 2 * _POSITION + 6 * _MEMBER)
+
+
+_STAGES = ("atk", "def", "spa", "spd", "spe", "accuracy", "evasion")
+_FLAGS = ("confused", "charging", "locked", "acted", "protect_chain", "flash_fire", "protecting")
+_STATS6 = ("hp", "atk", "def", "spa", "spd", "spe")
+
+
+def _feature_names():
+    """One name per obs_part column, in the encoder's order (the layout of
+    the module docstring), from the same tuples as the sizes above."""
+    names = [f"global.boundary.{n}" for n in _BOUNDARY_NAMES] + ["global.turn"]
+    names += [f"global.weather.{n}" for n in _WEATHER_NAMES] + ["global.weather_turns"]
+    names += [f"global.terrain.{n}" for n in _TERRAIN_NAMES] + ["global.terrain_turns", "global.trick_room_turns"]
+    for s in ("own", "foe"):
+        names += [f"{s}.side.{n}" for n in ("member_count", "mega_used", "requested", "requested_slot0",
+                                             "requested_slot1", "reflect_turns", "light_screen_turns",
+                                             "tailwind_turns")]
+        for p in range(2):
+            pre = f"{s}.pos{p}"
+            names += [f"{pre}.stage.{n}" for n in _STAGES] + [f"{pre}.flag.{n}" for n in _FLAGS]
+            names += [f"{pre}.flag.{n.lower()}" for n in _POSITION_FLAG_NAMES]
+            names += [f"{pre}.occupant.{k}" for k in range(_layout.MAX_ROSTER)] + [f"{pre}.occupant.none"]
+        for m in range(_layout.MAX_ROSTER):
+            pre = f"{s}.member{m}"
+            names += [f"{pre}.present", f"{pre}.hp"] + [f"{pre}.location.{n}" for n in _LOCATION_NAMES]
+            names += [f"{pre}.status.{n}" for n in _AILMENT_NAMES]
+            names += [f"{pre}.{n}" for n in ("is_mega", "mega_capable", "item_used", "item", "ability", "gender",
+                                              "nature", "species")]
+            names += [f"{pre}.move{k}" for k in range(4)] + [f"{pre}.pp{k}" for k in range(4)]
+            names += [f"{pre}.move_count"] + [f"{pre}.sp.{n}" for n in _STATS6]
+            names += [f"{pre}.stat.{n}" for n in _STATS6[1:]]
+    return tuple(names)
+
+
+FEATURE_NAMES = _feature_names()
+SLOT_FEATURE_NAMES = (("valid",) + tuple(f"kind.{n}" for n in _SLOT_KIND_NAMES) + ("move_slot",)
+                      + tuple(f"target.{n}" for n in ("own0", "own1", "foe0", "foe1")) + ("mega", "reserve"))
+assert len(FEATURE_NAMES) == OBS_SIZE and len(SLOT_FEATURE_NAMES) == SLOT_FEATURES
 
 
 _F64 = np.float64

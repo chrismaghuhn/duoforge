@@ -288,6 +288,30 @@ class PoliciesFeaturesTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 duoforge.RandomPolicy(SEED, ENVS).choose_factored(batch)
 
+    def test_feature_names_cover_the_layout(self):
+        names = features.FEATURE_NAMES
+        self.assertEqual(len(names), features.OBS_SIZE)
+        self.assertEqual(len(set(names)), len(names))
+        self.assertEqual(names[10:13], ("global.terrain.NONE", "global.terrain.GRASSY", "global.terrain.PSYCHIC"))
+        self.assertEqual(names[37:40], ("own.pos0.flag.follow_me", "own.pos0.flag.helping_hand",
+                                        "own.pos0.flag.unburden"))
+        self.assertEqual(len(features.SLOT_FEATURE_NAMES), features.SLOT_FEATURES)
+        self.assertEqual(len(set(features.SLOT_FEATURE_NAMES)), features.SLOT_FEATURES)
+
+    def test_feature_names_name_the_encoded_values(self):
+        with duoforge.Batch(self.ctx, _setups(), 1, SEED) as batch:
+            batch.query_factored()
+            ob = batch.observations[0, 0]
+            obs = features.encode(ob, batch.domains[0, 0])[0]
+        col = {n: i for i, n in enumerate(features.FEATURE_NAMES)}
+        me = int(ob["player"])
+        own, foe = ob["sides"][me]["members"], ob["sides"][1 - me]["members"]
+        self.assertEqual(obs[col["own.member1.species"]], np.float32(int(own[1]["species_id"]) / 65535))
+        self.assertEqual(obs[col["foe.member2.move3"]], np.float32(int(foe[2]["move_ids"][3]) / 65535))
+        self.assertEqual(obs[col["own.member0.stat.spe"]], np.float32(min(int(own[0]["stats"][4]) / 1000, 1.0)))
+        self.assertEqual(obs[col["foe.member5.nature"]], np.float32(int(foe[5]["nature"]) / 24))
+        self.assertEqual(obs[col["global.boundary.TEAM_SELECTION"]], 1.0)
+
 
 if __name__ == "__main__":
     unittest.main()
