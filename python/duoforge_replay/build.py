@@ -106,7 +106,7 @@ def build(paths, prior_path, out_dir, workers=1, limit_games=None, format_prefix
     paths = [Path(p) for p in paths]
     writer = dataset.Writer(out_dir, manifest(paths, prior_path, format_prefix, ps_dir, workers, limit_games))
     counters = collections.Counter()
-    rows = source.select(source.games(paths, format_prefix), format_prefix, counters)
+    rows = source.select(source.games(paths, format_prefix, counters), format_prefix, counters)
     if limit_games is not None:
         rows = itertools.islice(rows, limit_games)
     examples = collections.defaultdict(list)

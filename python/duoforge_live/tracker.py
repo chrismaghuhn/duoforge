@@ -51,17 +51,12 @@ STALL_DURATION, STALL_LEVEL_MAX = 2, 6  # DFI_STALL_DURATION (src/combat/turn.c)
 CHARGE_TURNS = 2  # twoturnmove's duration: the charge and the locked turn end in the second residual
 STATUS = {"brn": 1, "frz": 2, "par": 3, "slp": 4, "psn": 5}
 
-ROOM_LINES = lines.ROOM_LINES  # lines of the room, not of the battle: nobody folds them
+ROOM_LINES = lines.ROOM_LINES
+_kind = lines.line_kind  # lines of the room, not of the battle: nobody folds them
 # Lines that end or restart the battle session: a reconnect replays the whole log after |init| (and shows a
 # choice already sent as |sentchoice|), the others end the session. The tracker cannot fold them correctly.
 SESSION_LINES = {"init", "sentchoice", "deinit", "noinit", "expire", "bigerror"}
 
-
-def _kind(line):
-    """The kind of a protocol line, or None for a text line of the room."""
-    if not line.startswith("|") or line.startswith("||"):
-        return None
-    return line.split("|")[1]
 
 
 def _condition(text):

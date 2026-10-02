@@ -19,6 +19,7 @@ action comes later gets UNKNOWN. The BC loss is -log P(label set).
 from dataclasses import dataclass
 
 from duoforge_live import options
+from duoforge_live.lines import flat_position, line_kind
 from duoforge_live.data import trace_to_c
 from duoforge_live.game import TEAM_TABLE
 
@@ -27,7 +28,7 @@ from .points import TEAM_SELECTION, TURN
 NOT_REQUESTED, EXACT, TARGET_UNKNOWN, MOVE_HIDDEN, FORCED, UNKNOWN = range(6)
 TEAM_BYTES = (len(TEAM_TABLE) + 7) // 8
 # The other side's single-turn lines that draw single-target moves (Follow Me, Rage Powder, Spotlight).
-_REDIRECT_TURN = {"move: Follow Me", "move: Rage Powder", "Rage Powder", "move: Spotlight", "Spotlight"}
+REDIRECT_TURN = {"move: Follow Me", "move: Rage Powder", "Rage Powder", "move: Spotlight", "Spotlight"}
 # Abilities whose -activate right before a move line draws it (sim: onAnyRedirectTarget).
 _REDIRECT_ABILITY = {"ability: Lightning Rod", "ability: Storm Drain"}
 
@@ -50,17 +51,6 @@ def _all(options_list):
     return (1 << len(options_list)) - 1
 
 
-def _kind(line):
-    if not line.startswith("|") or line.startswith("||"):
-        return None
-    return line.split("|")[1]
-
-
-def _pos(ident):
-    """The flat position of "p1a: Name", or None for a side ident or no ident."""
-    if len(ident) < 4 or ident[0] != "p" or ident[2] not in "ab":
-        return None
-    return (int(ident[1]) - 1) * 2 + "ab".index(ident[2])
 
 
 def team_label(leads, seen_back, member_count=6):
@@ -81,8 +71,8 @@ def turn_label(log, point, side, lists, moves, member_of, tables, stop_line, vac
     # A slot whose action never showed chose a move only if the switch phase of the turn is over (Showdown runs
     # switches first): some move, cant, Mega Evolution or confusion line came. A game that ends while the players
     # choose (a forfeit, the timer) shows none, and then a switch is as possible as a move.
-    acted = any(_kind(line) in ("move", "cant", "-mega") or
-                (_kind(line) == "-activate" and line.split("|")[3:4] == ["confusion"]) for line in segment)
+    acted = any(line_kind(line) in ("move", "cant", "-mega") or
+                (line_kind(line) == "-activate" and line.split("|")[3:4] == ["confusion"]) for line in segment)
     slots, reasons = [], []
     for k in (0, 1):
         mask, reason = _slot_label(segment, side, k, lists[k], moves[k], member_of, tables, vacant)
@@ -100,7 +90,7 @@ def turn_label(log, point, side, lists, moves, member_of, tables, stop_line, vac
 
 
 def _mega_shown(segment, position):
-    return 1 if any(_kind(line) == "-mega" and _pos(line.split("|")[2]) == position for line in segment) else 0
+    return 1 if any(line_kind(line) == "-mega" and flat_position(line.split("|")[2]) == position for line in segment) else 0
 
 
 def _move_options(options_list, mega, move_slot=None):
@@ -119,9 +109,9 @@ def _slot_label(segment, side, k, options_list, moves, member_of, tables, vacant
     mega = _mega_shown(segment, position)
     acted = False  # a move-phase line of anyone came before
     for index, line in enumerate(segment):
-        kind = _kind(line)
+        kind = line_kind(line)
         parts = line.split("|")
-        if kind == "switch" and _pos(parts[2]) == position:
+        if kind == "switch" and flat_position(parts[2]) == position:
             if acted:
                 return None, None  # it left (a pivot) before acting
             member = member_of(parts[3])
@@ -129,9 +119,9 @@ def _slot_label(segment, side, k, options_list, moves, member_of, tables, vacant
             return (_mask(found), EXACT) if len(found) == 1 else (_all(options_list), UNKNOWN)
         if kind in ("move", "cant", "-mega"):
             acted = True
-        if kind == "faint" and _pos(parts[2]) == position:
+        if kind == "faint" and flat_position(parts[2]) == position:
             return None, None
-        if kind == "cant" and _pos(parts[2]) == position:
+        if kind == "cant" and flat_position(parts[2]) == position:
             if parts[3] == "recharge":
                 return _all(options_list), FORCED
             if len(parts) > 4 and parts[4]:
@@ -139,7 +129,7 @@ def _slot_label(segment, side, k, options_list, moves, member_of, tables, vacant
                 if move is not None and moves is not None and move in moves:
                     return _move_options(options_list, mega, moves.index(move)), TARGET_UNKNOWN
             return None, None
-        if kind == "move" and _pos(parts[2]) == position:
+        if kind == "move" and flat_position(parts[2]) == position:
             return _move_label(segment, index, parts, side, options_list, moves, mega, tables, vacant)
     return None, None
 
@@ -163,7 +153,7 @@ def _move_label(segment, index, parts, side, options_list, moves, mega, tables, 
     targets = {options_list[i].target for i in candidates}
     if targets == {options.TARGET_NONE}:
         return _mask(candidates), EXACT
-    shown = _pos(parts[4]) if len(parts) > 4 else None
+    shown = flat_position(parts[4]) if len(parts) > 4 else None
     uncertain = shown is None or "[notarget]" in attrs or any(a.startswith("[spread]") for a in attrs)
     if not uncertain and any(position // 2 == shown // 2 for position in vacant):
         uncertain = True  # a position of the target's side was empty at the point: Showdown retargets
@@ -171,15 +161,15 @@ def _move_label(segment, index, parts, side, options_list, moves, mega, tables, 
         target_side = shown // 2
         before = segment[:index]
         for line in before:
-            kind, p = _kind(line), line.split("|")
-            if kind == "-singleturn" and len(p) > 3 and p[3] in _REDIRECT_TURN and _pos(p[2]) is not None \
-                    and _pos(p[2]) // 2 == target_side:
+            kind, p = line_kind(line), line.split("|")
+            if kind == "-singleturn" and len(p) > 3 and p[3] in REDIRECT_TURN and flat_position(p[2]) is not None \
+                    and flat_position(p[2]) // 2 == target_side:
                 uncertain = True  # a redirector of the target's side was up
-            if kind == "faint" and _pos(p[2]) is not None and _pos(p[2]) // 2 == target_side:
+            if kind == "faint" and flat_position(p[2]) is not None and flat_position(p[2]) // 2 == target_side:
                 uncertain = True  # the chosen target may have fainted: Showdown retargets
-        previous = [line for line in before if _kind(line) is not None][-1:]
-        following = [line for line in segment[index + 1:] if _kind(line) is not None][:1]
-        if any(_kind(line) == "-activate" and line.split("|")[3:4] and line.split("|")[3] in _REDIRECT_ABILITY
+        previous = [line for line in before if line_kind(line) is not None][-1:]
+        following = [line for line in segment[index + 1:] if line_kind(line) is not None][:1]
+        if any(line_kind(line) == "-activate" and line.split("|")[3:4] and line.split("|")[3] in _REDIRECT_ABILITY
                for line in previous + following):
             uncertain = True  # Lightning Rod or Storm Drain drew it (its line comes right after the move line)
     if not uncertain:
@@ -202,7 +192,7 @@ def switch_label(log, point, side, lists, member_of, stop_line):
             reasons.append(NOT_REQUESTED)
             continue
         position = side * 2 + k
-        lines_k = [line for line in segment if _kind(line) == "switch" and _pos(line.split("|")[2]) == position]
+        lines_k = [line for line in segment if line_kind(line) == "switch" and flat_position(line.split("|")[2]) == position]
         if lines_k and position in point.run:
             member = member_of(lines_k[0].split("|")[3])
             found = [i for i, o in enumerate(options_list) if o.kind == options.SWITCH and o.reserve == member]

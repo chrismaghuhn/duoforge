@@ -21,7 +21,7 @@ point does (spectator.SpectatorTracker.at_point).
 from dataclasses import dataclass
 
 from duoforge import _layout
-from duoforge_live.lines import Stop
+from duoforge_live.lines import Stop, flat_position, line_kind
 
 C = _layout.CONSTANTS
 TEAM_SELECTION, TURN, REPLACEMENT, PIVOT = (C[f"DUOFORGE_BOUNDARY_{n}"] for n in
@@ -49,15 +49,6 @@ class Point:
     end: int = 0  # the label's lines are lines[line:end]: a TURN's until its |upkeep|, a switch point's run
 
 
-def _kind(line):
-    if not line.startswith("|") or line.startswith("||"):
-        return None
-    return line.split("|")[1]
-
-
-def _position(ident):
-    """The flat position of "p1a: Name"."""
-    return (int(ident[1]) - 1) * 2 + "ab".index(ident[2])
 
 
 def find(lines):
@@ -67,7 +58,7 @@ def find(lines):
     sheets = [i for i, line in enumerate(lines) if line.startswith("|showteam|")]
     if len(sheets) != 2:
         raise Skip("skip:sheets")
-    starts = [i for i, line in enumerate(lines) if _kind(line) == "start"]
+    starts = [i for i, line in enumerate(lines) if line_kind(line) == "start"]
     if len(starts) != 1:
         raise Stop("structure:not one |start|")
     if starts[0] < sheets[1]:
@@ -80,7 +71,7 @@ def find(lines):
     runs = {}  # point index -> its run
     occupants = {}  # flat position -> the protocol name of its occupant (from the switch lines)
     for i in range(starts[0] + 1, len(lines)):
-        kind = _kind(lines[i])
+        kind = line_kind(lines[i])
         if kind in ("win", "tie"):
             break
         if run is not None and kind in _RUN_ENDS:
@@ -94,7 +85,7 @@ def find(lines):
             acted = True
         elif kind == "switch":
             parts = lines[i].split("|")
-            position = _position(parts[2])
+            position = flat_position(parts[2])
             incoming = (position // 2, parts[2].split(": ", 1)[1])
             outgoing = occupants.get(position)
             occupants[position] = incoming[1]
@@ -139,7 +130,7 @@ def _ends(points, lines):
             end = p.end
         else:
             for i in range(p.line, n):
-                kind = _kind(lines[i])
+                kind = line_kind(lines[i])
                 if kind in ("win", "tie") or (p.boundary == TURN and kind == "upkeep"):
                     end = i
                     break

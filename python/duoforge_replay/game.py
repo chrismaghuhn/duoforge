@@ -21,13 +21,14 @@ from dataclasses import dataclass
 from duoforge_live import lines as line_classes
 from duoforge_live import teams
 from duoforge_live.data import trace_to_c
+from duoforge_live.lines import line_kind
+from duoforge_live.tracker import SESSION_LINES
 
 from . import labels, superset
 from .points import TEAM_SELECTION, Skip, find
 from .prior import LEVELS
-from .spectator import SpectatorTracker, hindsight, hindsight_picks, own_requested
+from .spectator import SpectatorTracker, feed_lines, hindsight, hindsight_picks, own_requested, walk
 
-SESSION_LINES = {"init", "deinit", "noinit", "sentchoice", "expire", "bigerror"}
 REASONS = ("NOT_REQUESTED", "EXACT", "TARGET_UNKNOWN", "MOVE_HIDDEN", "FORCED", "UNKNOWN")
 
 __all__ = ["GameRecord", "GameResult", "Row", "Skip", "process"]
@@ -70,11 +71,6 @@ def _to_id(name):
     return re.sub(r"[^a-z0-9]", "", name.lower())
 
 
-def _kind(line):
-    if not line.startswith("|") or line.startswith("||"):
-        return None
-    return line.split("|")[1]
-
 
 def _check_names(sets, data):
     """Skip("name:<table> <name>") for a name of a sheet the tables do not have; Skip("skip:illusion") for an
@@ -96,7 +92,7 @@ def _check_names(sets, data):
 def _prepass(replay_id, format_id, log, data):
     players, ratings, winner, turns, bo3, packed = {}, [-1, -1], -1, 0, 0, {}
     for line in log:
-        kind = _kind(line)
+        kind = line_kind(line)
         if kind in SESSION_LINES:
             raise Skip("skip:session")
         parts = line.split("|")
@@ -117,6 +113,8 @@ def _prepass(replay_id, format_id, log, data):
             bo3 = int(m.group(1)) if m else 0
     if sorted(packed) != [0, 1]:
         raise Skip("skip:sheets")
+    if sum(1 for line in log if line_kind(line) == "start") > 1:
+        raise Skip("skip:two-games")  # a Bo3 log that holds a second game's lines: one game per row
     sheets = tuple(teams.unpack(packed[s]) for s in (0, 1))
     _check_names(sheets[0] + sheets[1], data)
     for s in (0, 1):
@@ -170,31 +168,15 @@ def _perspective(lines, points, side, sheets, data, prior, stats, counters):
         counters[f"points.dropped.{stop.reason}"] += len(points)
         return []
     taken, stop, done = [], None, 0
-    for point in points:
-        try:
-            for i in range(done, point.line):
-                try:
-                    tracker.feed([lines[i]])
-                except line_classes.Stop as e:
-                    e.line = i
-                    raise
+    try:
+        for point in walk(tracker, lines, points):
             done = point.line
-            tracker.at_point(point)
-        except line_classes.Stop as e:
-            stop = e
-            if not hasattr(e, "line"):
-                e.line = point.line
-            break
-        if own_requested(tracker):
-            domain, lists = superset.domain(tracker)
-            taken.append((point, tracker.observation().copy(), domain.copy(), lists, labels.context(tracker)))
-    if stop is None:  # the rest of the log after the last point: a stop there still cuts the last labels
-        for i in range(done, len(lines)):
-            try:
-                tracker.feed([lines[i]])
-            except line_classes.Stop as e:
-                stop, e.line = e, i
-                break
+            if own_requested(tracker):
+                domain, lists = superset.domain(tracker)
+                taken.append((point, tracker.observation().copy(), domain.copy(), lists, labels.context(tracker)))
+        feed_lines(tracker, lines, done, len(lines))  # a stop after the last point still cuts the last labels
+    except line_classes.Stop as e:
+        stop = e
     stop_line = len(lines) if stop is None else stop.line
     rows = []
     for point, observation, domain, lists, ctx in taken:

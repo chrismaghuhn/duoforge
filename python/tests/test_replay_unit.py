@@ -8,6 +8,7 @@ input.
 """
 import re
 import shutil
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -126,6 +127,11 @@ class LinesTest(unittest.TestCase):
     def test_turn_scoped(self):
         self.assertEqual(lines.check("|-singleturn|p1a: Staraptor|move: Rage Powder", self.view), "turn:RAGE_POWDER")
         self.assertEqual(lines.check("|-singleturn|p1a: Staraptor|Wide Guard", self.view), "turn:WIDE_GUARD")
+
+    def test_guard_blocks_are_turn_scoped(self):
+        self.assertEqual(lines.check("|-activate|p1a: Staraptor|move: Wide Guard", self.view), "turn:WIDE_GUARD")
+        self.assertEqual(lines.check("|-activate|p1a: Staraptor|move: Quick Guard", self.view), "turn:QUICK_GUARD")
+        self.assertEqual(lines.check("|-activate|p2a: Gholdengo|ability: Storm Drain", self.view), "fold")
 
     def test_features_from_the_header(self):
         self.assertEqual(lines.FEATURES["WEATHER_SAND"], 0)
@@ -460,6 +466,21 @@ class GameTest(unittest.TestCase):
         self.assertEqual(result.counters["perspectives.stopped.feature:FORME_CHANGE"], 2)
         self.assertGreater(len(result.rows), 4)
 
+    def test_charge_target_hidden_when_its_side_has_a_vacancy(self):
+        from duoforge_live import teams
+        from duoforge_replay.spectator import HIDDEN_TARGET, SpectatorTracker
+        sheets = tuple(teams.unpack(line.split("|", 3)[3]) for line in self.log if line.startswith("|showteam|"))
+        tracker = SpectatorTracker(self.data, sheets, 0, None, lambda m, f: ([100] * 6, [0] * 6), self.log)
+        faint = self.log.index("|faint|p2b: Charizard")
+        tracker.feed(self.log[:faint + 1])  # p2b fainted, not replaced yet
+        tracker._log = self.log[:tracker._fed + 1] + ["|move|p1a: Salamence|Draco Meteor|p2a: Politoed|[from]lockedmove"]
+        self.assertEqual(tracker._own_target(0), HIDDEN_TARGET)
+
+    def test_two_games_in_one_log_skip(self):
+        # a Bo3 log with a second game's lines: one game per row, so the log is skipped and counted
+        start = self.log.index("|start")
+        self.assertEqual(self.skip_reason(self.log + self.log[start:]), "skip:two-games")
+
     def test_bo3_game_number(self):
         lines = ['|uhtml|bestof|<h2><strong>Game 2</strong> of <a href="/game-bestof3-x">a best-of-3</a></h2>'] + self.log
         self.assertEqual(self.run_game(lines).record.bo3_game, 2)
@@ -485,6 +506,25 @@ class SupersetTest(unittest.TestCase):
         # after turn 5 p1a fainted: the alive bench members, then pass
         self.assertTrue(seen)
         self.assertTrue(all(kinds[-1] == options.PASS and set(kinds[:-1]) <= {options.SWITCH} for kinds in seen), seen)
+
+    def test_struggle_beside_every_move_list(self):
+        # an effect outside the view can disable every move (two or more too), and then the request is Struggle
+        from duoforge_live import options, teams
+        from duoforge_replay import points, spectator, superset
+        log = FIXTURE.read_text(encoding="utf-8").splitlines()
+        pool = data.load(kind="pool")
+        sheets = tuple(teams.unpack(line.split("|", 3)[3]) for line in log if line.startswith("|showteam|"))
+        picks = spectator.hindsight_picks(log, 0, pool, sheets)
+        tracker = spectator.SpectatorTracker(pool, sheets, 0, picks, lambda m, f: ([100] * 6, [0] * 6), log)
+        moving = 0
+        for point in spectator.walk(tracker, log, points.find(log)):
+            if point.boundary == points.TURN and spectator.own_requested(tracker):
+                _, lists = superset.domain(tracker)
+                for slot in lists:
+                    if any(o.kind == options.MOVE for o in slot):
+                        moving += 1
+                        self.assertTrue(any(o.move_slot == options.STRUGGLE for o in slot), slot)
+        self.assertGreater(moving, 10)
 
 
 def stats_factory():
@@ -599,7 +639,63 @@ class DatasetTest(unittest.TestCase):
                 self.assertEqual(_sha(path), _sha(outs[1] / path.name), path.name)
 
 
+class _FakeParquet:
+    """pyarrow.parquet for one fake file: two row groups, the first of another format."""
+
+    class _Column:
+        def __init__(self, values):
+            self.values = values
+
+        def to_pylist(self):
+            return list(self.values)
+
+    class _Table:
+        def __init__(self, rows, columns):
+            self.cols = {c: [r[c] for r in rows] for c in columns}
+
+        def column(self, c):
+            return _FakeParquet._Column(self.cols[c] if isinstance(c, str) else list(self.cols.values())[c])
+
+    class ParquetFile:
+        groups = [[{"id": "a", "formatid": "gen9ou", "log": ""}, {"id": "b", "formatid": "gen9ou", "log": ""}],
+                  [{"id": "c", "formatid": "gen9championsvgc2026regmc", "log": "x"}]]
+
+        def __init__(self, path):
+            self.metadata = type("M", (), {"num_row_groups": 2})()
+
+        def read_row_group(self, group, columns):
+            return _FakeParquet._Table(self.groups[group], columns)
+
+
 class SourceTest(unittest.TestCase):
+    def test_skipped_row_groups_are_counted(self):
+        import collections
+        import types
+        from duoforge_replay import source
+        fake = types.ModuleType("pyarrow.parquet")
+        fake.ParquetFile = _FakeParquet.ParquetFile
+        package = types.ModuleType("pyarrow")
+        package.parquet = fake
+        saved = {k: sys.modules.get(k) for k in ("pyarrow", "pyarrow.parquet")}
+        sys.modules.update({"pyarrow": package, "pyarrow.parquet": fake})
+        try:
+            tmp = Path(tempfile.mkdtemp(prefix="duoforge_source_"))
+            (tmp / "x.parquet").write_bytes(b"")
+            counters = collections.Counter()
+            rows = list(source.select(source.games([tmp], "gen9championsvgc2026regmc", counters),
+                                      "gen9championsvgc2026regmc", counters))
+            shutil.rmtree(tmp, ignore_errors=True)
+        finally:
+            for k, v in saved.items():
+                if v is None:
+                    sys.modules.pop(k, None)
+                else:
+                    sys.modules[k] = v
+        self.assertEqual(counters["games.read"], 3)
+        self.assertEqual(counters["games.skipped.skip:format"], 2)
+        self.assertEqual(counters["games.skipped.skip:sheets"], 1)
+        self.assertEqual(rows, [])
+
     def test_select(self):
         import collections
         from duoforge_replay import source

@@ -24,9 +24,9 @@ def files(paths):
     return out
 
 
-def games(paths, format_prefix=""):
+def games(paths, format_prefix="", counters=None):
     """(id, formatid, log) of every game of the files, in file and row order. A parquet row group without a
-    formatid starting with format_prefix is skipped unread (its rows are not yielded)."""
+    formatid starting with format_prefix is skipped unread; its rows count as read and skipped (skip:format)."""
     for path in files(paths):
         if path.suffix == ".jsonl":
             with open(path, encoding="utf-8") as f:
@@ -43,6 +43,9 @@ def games(paths, format_prefix=""):
         for group in range(parquet.metadata.num_row_groups):
             formats = parquet.read_row_group(group, columns=["formatid"]).column(0).to_pylist()
             if not any(f.startswith(format_prefix) for f in formats):
+                if counters is not None:
+                    counters["games.read"] += len(formats)
+                    counters["games.skipped.skip:format"] += len(formats)
                 continue
             table = parquet.read_row_group(group, columns=["id", "formatid", "log"])
             yield from zip(*(table.column(c).to_pylist() for c in ("id", "formatid", "log")))

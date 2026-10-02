@@ -25,6 +25,20 @@ import re
 from .data import ROOT, trace_to_c
 
 
+def line_kind(line):
+    """The kind of a protocol line ("move" for "|move|..."), or None for a text line of the room."""
+    if not line.startswith("|") or line.startswith("||"):
+        return None
+    return line.split("|")[1]
+
+
+def flat_position(ident):
+    """The flat position (side * 2 + slot) of "p1a: Name", or None for a side ident or anything else."""
+    if len(ident) < 4 or ident[0] != "p" or not ident[1].isdigit() or ident[2] not in "ab":
+        return None
+    return (int(ident[1]) - 1) * 2 + "ab".index(ident[2])
+
+
 class Stop(ValueError):
     """A line the view cannot represent: the perspective ends here (reason: the counter's name)."""
 
@@ -119,7 +133,9 @@ _ITEM_CHANGE_FROM = {"move: Trick", "move: Switcheroo", "move: Thief", "move: Co
 # logs never stop): a Protect block, a Psychic Terrain block, confusion, Emergency Exit (folded), and two
 # announcements that change no field: Lightning Rod drawing a move, Struggle when no move is left.
 _FOLD_ACTIVATE = {"move: Protect", "move: Psychic Terrain", "confusion", "ability: Emergency Exit",
-                  "ability: Lightning Rod", "move: Struggle"}
+                  "ability: Lightning Rod", "ability: Storm Drain", "move: Struggle"}
+# A guard blocking a move this turn: the same single-turn feature as its -singleturn line.
+_GUARD_ACTIVATE = {"move: Wide Guard": "WIDE_GUARD", "move: Quick Guard": "QUICK_GUARD"}
 _FOLD_SINGLE_TURN = {"Protect", "Helping Hand", "move: Follow Me"}
 _FOLD_START = {"confusion", "ability: Flash Fire"}
 _FOLD_END = {"confusion"}
@@ -194,6 +210,8 @@ def check(line, view):
     if kind == "-activate":
         if effect in _FOLD_ACTIVATE:
             return "fold"
+        if effect in _GUARD_ACTIVATE:
+            return _feature(_GUARD_ACTIVATE[effect])
         if effect in ("move: Skill Swap",):
             return _feature("ABILITY_CHANGE")
         if effect in _START:

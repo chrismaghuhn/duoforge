@@ -24,8 +24,8 @@ from duoforge_live import options
 from duoforge_live.tracker import MOVE_SLOT_NONE
 
 from .points import TEAM_SELECTION, TURN
+from .spectator import BROUGHT
 
-BROUGHT = 4
 
 
 def _move_name(tracker, move_id):
@@ -75,7 +75,7 @@ def domain(tracker):
             if not any(usable):  # no PP left, or none for the choice-locked move: Struggle
                 request["active"].append({"moves": [{"id": "struggle"}]})
                 continue
-            struggle_too[k] = sum(usable) == 1
+            struggle_too[k] = True  # effects outside the view can disable every move: the request is then Struggle
             moves = []
             for i, move_id in enumerate(sheet_moves):
                 disabled = not usable[i]
@@ -90,8 +90,8 @@ def domain(tracker):
     for k, needs in enumerate(struggle_too):
         has = any(o.kind == options.MOVE and o.move_slot == options.STRUGGLE for o in lists[k])
         if needs and not has and any(o.kind == options.MOVE for o in lists[k]):
-            # One usable move only (a choice lock, or PP left in one move): an effect outside the view can disable it
-            # (Fake Out after the first turn, c07_choice_lock), and then the request offers Struggle.
+            # An effect outside the view can disable the usable moves (Fake Out after the first turn under a choice
+            # lock, c07_choice_lock; Assault Vest with status moves; Taunt), and then the request offers Struggle.
             lists[k] = lists[k] + [options.Option(options.MOVE, options.STRUGGLE, options.TARGET_NONE, 0, 0, "move 1")]
     return options.domain(lists, epoch), lists
 

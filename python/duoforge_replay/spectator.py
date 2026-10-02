@@ -19,27 +19,18 @@ at every own point of every committed battle, field by field, the fields
 above compared with their documented sources.
 """
 from duoforge_live import lines, teams
+from duoforge_live.lines import flat_position, line_kind
 from duoforge_live.data import trace_to_c
-from duoforge_live.tracker import ACTIVE, BENCH, HP_PERCENT, NOT_BROUGHT, TARGET_NONE, UNDETERMINED, Tracker
+from duoforge_live.tracker import (ACTIVE, BENCH, HP_PERCENT, NOT_BROUGHT, ROSTER_NONE, TARGET_NONE, UNDETERMINED,
+                                   Tracker)
 
+from .labels import REDIRECT_TURN
 from .points import TEAM_SELECTION, TURN
 
-BROUGHT = 4
+BROUGHT = 4  # the format brings four (DUOFORGE_DATA_KIND_POOL's profile: max_roster 6, brought_count 4)
 HIDDEN_TARGET = -1  # an own charging move's stored target that no line shows
-_REDIRECTORS = {"move: Follow Me", "move: Rage Powder", "Rage Powder", "move: Spotlight", "Spotlight"}  # the format brings four (DUOFORGE_DATA_KIND_POOL's profile: max_roster 6, brought_count 4)
 
 
-def _kind(line):
-    if not line.startswith("|") or line.startswith("||"):
-        return None
-    return line.split("|")[1]
-
-
-def _position(ident):
-    """The flat position of "p1a: Name", None for anything else."""
-    if len(ident) < 4 or ident[0] != "p" or ident[2] not in "ab":
-        return None
-    return (int(ident[1]) - 1) * 2 + "ab".index(ident[2])
 
 
 def hindsight(log, side, data, sheets):
@@ -48,7 +39,7 @@ def hindsight(log, side, data, sheets):
     roster = [data.base_forme(data.forme(s["species"])) for s in sheets[side]]
     leads, seen, started, turn = [None, None], set(), False, False
     for line in log:
-        kind = _kind(line)
+        kind = line_kind(line)
         if kind == "start":
             started = True
         elif kind == "turn":
@@ -113,24 +104,26 @@ class SpectatorTracker(Tracker):
         for i in range(self._fed + 1, len(log)):
             parts = log[i].split("|")
             kind = parts[1] if len(parts) > 1 else ""
-            if kind in ("switch", "faint") and len(parts) > 2 and _position(parts[2]) == position:
+            if kind in ("switch", "faint") and len(parts) > 2 and flat_position(parts[2]) == position:
                 break  # it left before the release
-            if kind == "move" and _position(parts[2]) == position:
+            if kind == "move" and flat_position(parts[2]) == position:
                 if "[from]lockedmove" not in parts and "[from] lockedmove" not in parts:
                     break
-                target = _position(parts[4]) if len(parts) > 4 else None
+                target = flat_position(parts[4]) if len(parts) > 4 else None
                 if target is None:
                     break
                 near = log[max(i - 1, 0):i + 3]
                 if any("ability: Lightning Rod" in line or "ability: Storm Drain" in line for line in near):
                     break
-                if any(line.startswith("|faint|") and _position(line.split("|")[2]) is not None
-                       and _position(line.split("|")[2]) // 2 == target // 2 for line in log[self._fed:i]):
+                if any(line.startswith("|faint|") and flat_position(line.split("|")[2]) is not None
+                       and flat_position(line.split("|")[2]) // 2 == target // 2 for line in log[self._fed:i]):
                     break
+                if any(p.occupant == ROSTER_NONE or p.fainted for p in self._positions[target // 2]):
+                    break  # a position of the target's side is empty now: Showdown may retarget the move
                 turn = max(j for j in range(i) if log[j].startswith("|turn|"))
-                if any(line.startswith("|-singleturn|") and line.split("|")[3] in _REDIRECTORS
-                       and _position(line.split("|")[2]) is not None
-                       and _position(line.split("|")[2]) // 2 == target // 2 for line in log[turn:i]):
+                if any(line.startswith("|-singleturn|") and line.split("|")[3] in REDIRECT_TURN
+                       and flat_position(line.split("|")[2]) is not None
+                       and flat_position(line.split("|")[2]) // 2 == target // 2 for line in log[turn:i]):
                     break  # a redirector of the target's side was up: the line shows the drawn target
                 return target
         return HIDDEN_TARGET  # at_point stops if an observation would show it
@@ -213,11 +206,26 @@ def own_requested(tracker):
 
 def walk(tracker, log, points):
     """Folds the log point by point: yields each point after tracker.at_point (read the observation then). A Stop
-    ends the walk (the caller counts it)."""
+    ends the walk (the caller counts it); its `line` is the index of the line that stopped it, or the point's line
+    when at_point did."""
     done = 0
     for point in points:
-        tracker.feed(log[done:point.line])
+        feed_lines(tracker, log, done, point.line)
         done = point.line
-        tracker.at_point(point)
+        try:
+            tracker.at_point(point)
+        except lines.Stop as e:
+            e.line = point.line
+            raise
         yield point
+
+
+def feed_lines(tracker, log, start, end):
+    """Feeds log[start:end] line by line; a Stop gets `line`, the index of its line."""
+    for i in range(start, end):
+        try:
+            tracker.feed([log[i]])
+        except lines.Stop as e:
+            e.line = i
+            raise
 
