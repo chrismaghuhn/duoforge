@@ -529,7 +529,7 @@ class Library(unittest.TestCase):
 
     def test_every_move_marked_by_step_g2_is_used_in_a_pool_battle(self):
         """A move that the pool manifest marks beyond the extended ids was used in a committed pool battle: a move
-        line of it that did something (damage, or a boost for a status move) before the next move line."""
+        line of it that did something (damage, a heal or a boost for a status move) before the next move line."""
         def read(*p):
             return open(os.path.join(ROOT, *p), encoding='utf-8').read()
         header, source = read('src', 'data', 'pool_tables.h'), read('src', 'data', 'pool_tables.c')
@@ -540,7 +540,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 12)
+        self.assertEqual(len(marked), 16)  # the twelve of step G2, then First Impression, Scald, Recover, Low Kick (G10)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -556,7 +556,7 @@ class Library(unittest.TestCase):
                         for after in lines[i + 1:]:
                             if after.startswith('|move|') or after.startswith('|turn|'):
                                 break
-                            done = done or after.startswith(('|-damage|', '|-boost|'))
+                            done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|'))
             with self.subTest(move=name):
                 self.assertTrue(done, '%s is marked but no committed pool battle uses it' % name)
 

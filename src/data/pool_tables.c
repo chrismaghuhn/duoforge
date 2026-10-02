@@ -175,7 +175,7 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     /* Thunderbolt -- data/moves.ts:19467-19483 */
     {3u, 1u, 90u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 10u, 2u, 3u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Scald -- data/moves.ts:15761-15778 */
-    {17u, 1u, 80u, 100u, 15u, 16u, 8u, 1u, 1u, 130u, {0u, 0u}, {0u, 0u}, 30u, 2u, 1u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 17u},
+    {17u, 1u, 80u, 100u, 15u, 16u, 8u, 1u, 1u, 130u, {0u, 0u}, {0u, 0u}, 30u, 2u, 1u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Wide Guard -- data/moves.ts:20808-20851 */
     {15u, 2u, 0u, 0u, 10u, 12u, 11u, 8u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 18u},
     /* Flash Cannon -- data/moves.ts:5678-5696 */
@@ -195,7 +195,7 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     /* Shadow Claw -- data/moves.ts:16059-16072, data/mods/champions/moves.ts:871-874 */
     {8u, 0u, 70u, 100u, 15u, 16u, 8u, 1u, 2u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Recover -- data/moves.ts:14806-14820 */
-    {12u, 2u, 0u, 0u, 5u, 8u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 20u},
+    {12u, 2u, 0u, 0u, 5u, 8u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Soak -- data/moves.ts:17186-17208 */
     {17u, 2u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 21u},
     /* Psychic Noise -- data/moves.ts:14079-14094 */
@@ -530,6 +530,12 @@ const dfi_forme_legal dfi_pool_forme_legal[DFI_POOL_FORME_COUNT] = {
     [DFI_FORME_FLOETTEMEGA] = {{0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u}, 1u, {DFI_ABILITY_FAIRYAURA, DFI_CLOSURE_NONE, DFI_CLOSURE_NONE}},
 };
 
+/* The move extra column (step G10): thaws a frozen target, and the heal fraction. */
+const dfi_move_extra dfi_pool_move_extra[DFI_POOL_MOVE_COUNT] = {
+    [DFI_MOVE_SCALD] = {DFI_EXTRA_THAWS_TARGET, {0u, 0u}},
+    [DFI_MOVE_RECOVER] = {0u, {1u, 2u}},
+};
+
 /* Names: the Showdown id of every row (toID), not part of any hash. */
 const char *const dfi_pool_forme_names[DFI_POOL_FORME_COUNT] = {
     [DFI_FORME_RILLABOOM] = "rillaboom",
@@ -753,10 +759,10 @@ const char *const dfi_pool_nature_names[DFI_NATURE_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x1du, 0x40u, 0x27u, 0x45u, 0xebu, 0xa5u, 0xe5u, 0xe0u,
-    0xb4u, 0x87u, 0x8fu, 0xeeu, 0x1eu, 0x8du, 0x0au, 0xa1u,
-    0x0du, 0xb8u, 0x87u, 0x5au, 0x0eu, 0xf1u, 0x07u, 0x7au,
-    0x62u, 0x53u, 0x58u, 0xdbu, 0x79u, 0x1cu, 0xeau, 0x68u,
+    0x14u, 0x31u, 0xebu, 0xe9u, 0xd5u, 0x4fu, 0x43u, 0x40u,
+    0xcbu, 0x1au, 0xc4u, 0x33u, 0x93u, 0x24u, 0xe4u, 0xdfu,
+    0x8bu, 0x2bu, 0xa9u, 0x32u, 0x41u, 0x12u, 0xc9u, 0x75u,
+    0x29u, 0x86u, 0xc8u, 0xd6u, 0x50u, 0x26u, 0x3eu, 0x07u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)
@@ -878,6 +884,11 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity)
         for (uint32_t k = 0u; k < DFI_POOL_FORME_ABILITIES_MAX; ++k) {
             out[n++] = l->abilities[k];
         }
+    }
+    for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
+        out[n++] = dfi_pool_move_extra[i].flags;
+        out[n++] = dfi_pool_move_extra[i].heal[0];
+        out[n++] = dfi_pool_move_extra[i].heal[1];
     }
     return n;
 }

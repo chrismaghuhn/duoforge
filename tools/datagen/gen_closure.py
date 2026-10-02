@@ -268,7 +268,8 @@ def parse_move(mid, base, champ, ext=False, pool=False):
         if is_fn:
             if name not in handled[1]:
                 fail('move %s: callback %s is not mapped to a handler' % (mid, name))
-        elif name not in DATA_KEYS and name not in IGNORED_KEYS and name not in owned_fields and name not in owned:
+        elif (name not in DATA_KEYS and name not in IGNORED_KEYS and name not in owned_fields and name not in owned
+              and not (pool and name in POOL_COLUMN_KEYS)):
             fail('move %s: unknown field %s' % (mid, name))
     missing = handled[1] - set(n for n, v in f.items() if v[0])
     if missing:
@@ -304,6 +305,7 @@ def parse_move(mid, base, champ, ext=False, pool=False):
         'crit_ratio': get('critRatio', 1), 'flags': flags,
         'recoil': [0, 0], 'drain': [0, 0], 'sec_chance': 0, 'sec_kind': 0, 'sec_param': 0,
         'boost_role': 0, 'boosts': [0] * 7, 'primary_status': 0, 'side_condition': 0, 'pseudo_weather': 0,
+        'thaws_target': 0, 'heal': [0, 0],
         'special': (SPECIAL_IDS_P if pool else SPECIAL_IDS_C if ext else SPECIAL_IDS).index(handled[0]),
     }
     for key in ('recoil', 'drain'):
@@ -312,6 +314,15 @@ def parse_move(mid, base, champ, ext=False, pool=False):
             if len(nums) != 2:
                 fail('move %s: %s is not a fraction' % (mid, key))
             rec[key] = nums
+    if pool and 'thawsTarget' in f:
+        if norm(f['thawsTarget'][1]) != 'thawsTarget: true,':
+            fail('move %s: thawsTarget is not "thawsTarget: true,"' % mid)
+        rec['thaws_target'] = 1
+    if pool and 'heal' in f:
+        heal = re.fullmatch(r'heal: \[(\d+), (\d+)\],', norm(f['heal'][1]))
+        if heal is None or not 0 < int(heal.group(1)) <= int(heal.group(2)) <= 255:
+            fail('move %s: heal is not a fraction "heal: [a, b],"' % mid)
+        rec['heal'] = [int(heal.group(1)), int(heal.group(2))]
     vectors = 0
     if 'secondary' in f and owned_secondary is None:
         # The whole secondary must be one modelled effect; anything else (a
@@ -1162,18 +1173,17 @@ G2_HANDLERS = ['THROAT_CHOP', 'ENCORE', 'SCALD', 'WIDE_GUARD', 'FIRST_IMPRESSION
 SPECIAL_P = dict(SPECIAL_C, **{
     'throatchop': ('THROAT_CHOP', set()),                                 # G8a: a lockout volatile of the sound moves
     'encore': ('ENCORE', set()),                                          # G9: the last move, a volatile, a queue change
-    'scald': ('SCALD', set()),                                            # G10b: thaws its frozen target
     'wideguard': ('WIDE_GUARD', {'onTry', 'onHitSide'}),                  # G7: a side condition against spread moves
     'firstimpression': ('FIRST_IMPRESSION', {'onTry', 'onDisableMove'}),  # G10a: first turn out only (Fake Out's rule)
-    'recover': ('RECOVER', set()),                                        # G10c: heals half of the maximum HP
     'soak': ('SOAK', {'onHit'}),                                          # G11: sets the target's type to Water
     'psychicnoise': ('PSYCHIC_NOISE', set()),                             # G8b: Heal Block on every hit target
     'lowkick': ('LOW_KICK', {'basePowerCallback', 'onTryHit'}),           # G10d: base power by the target's weight
 })
 SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS
+# Step G10 made two of the nine handlers data: Scald (thawsTarget) and Recover (heal) are read into the move extra
+# column below and have the special NONE; their ids stay defined (the ids after them keep their values).
+POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {
-    'SCALD': {'thawsTarget': 'thawsTarget: true,'},
-    'RECOVER': {'heal': 'heal: [1, 2],'},
     'ENCORE': {'volatileStatus': "volatileStatus: 'encore',"},
     'WIDE_GUARD': {'sideCondition': "sideCondition: 'wideguard',"},
 }
@@ -1611,8 +1621,11 @@ def build_pool(root, repo, dx):
             fail('the %s items do not cover each of the %d types exactly once' % (fam, len(TYPES)))
     legal_formes = forme_legal(formes, [m['id'] for m in moves], [a['id'] for a in abilities], learn,
                                legal['species'], abil_ts, champ_abil)
+    # The move extra column: what a move needs beyond the closure row (step G10), one row per pool move. The rows of
+    # the extended moves come from a build without these fields, so they have none.
+    move_extra = [{'thaws_target': m.get('thaws_target', 0), 'heal': m.get('heal', [0, 0])} for m in moves]
     return dict(dx, formes=formes, moves=moves, items=items, abilities=abilities, item_family=item_family,
-                ability_family=ability_family, forme_legal=legal_formes)
+                ability_family=ability_family, forme_legal=legal_formes, move_extra=move_extra)
 
 
 def family_bytes(d):
@@ -1635,10 +1648,20 @@ def forme_legal_bytes(d):
     return bytes(b)
 
 
+def move_extra_bytes(d):
+    """The move extra column in the canonical pool bytes: per move, in id order, the flags (bit 0: the move thaws a
+    frozen target) and the heal fraction (numerator, denominator; 0 and 0 for none)."""
+    b = bytearray()
+    for x in d['move_extra']:
+        b.extend([x['thaws_target'], x['heal'][0], x['heal'][1]])
+    return bytes(b)
+
+
 def canonical_pool(d):
     """The canonical pool bytes hashed into the context fingerprint of the POOL kinds: the closure layout over the
-    pool data, then the family columns, then the legal moves and abilities of the formes."""
-    return canonical(d) + family_bytes(d) + forme_legal_bytes(d)
+    pool data, then the family columns, then the legal moves and abilities of the formes, then the move extra
+    column."""
+    return canonical(d) + family_bytes(d) + forme_legal_bytes(d) + move_extra_bytes(d)
 
 
 def ext_prefix(dp, dx):
@@ -1664,6 +1687,10 @@ def check_pool_prefix(dp, dx, dc):
         fail('a family column does not have one row per id')
     if len(dp['forme_legal']) != len(dp['formes']):
         fail('the legal moves and abilities do not have one row per forme')
+    if len(dp['move_extra']) != len(dp['moves']):
+        fail('the move extra column does not have one row per move')
+    if any(x['thaws_target'] or x['heal'] != [0, 0] for x in dp['move_extra'][:len(dx['moves'])]):
+        fail('a move of the extended tables has a move extra row')
 
 
 def check_names(dp):
@@ -1801,6 +1828,22 @@ extern const dfi_item_family dfi_pool_item_family[DFI_POOL_ITEM_COUNT];
 extern const dfi_ability_family dfi_pool_ability_family[DFI_POOL_ABILITY_COUNT];
 extern const dfi_forme_legal dfi_pool_forme_legal[DFI_POOL_FORME_COUNT];
 
+/* ---- the move extra column (step G10) ----
+ * What a move needs beyond the closure row, one row per pool move, like the
+ * family columns: flags (DFI_EXTRA_THAWS_TARGET: the move thaws a frozen
+ * target, thawsTarget in the pinned data) and the fraction of the maximum HP
+ * that the move heals its user by (heal: [numerator, denominator], 0 and 0 for
+ * none). Part of the canonical pool bytes, not of the closure or extended
+ * ones. */
+#define DFI_EXTRA_THAWS_TARGET 1u
+
+typedef struct dfi_move_extra {
+    uint8_t flags;
+    uint8_t heal[2];
+} dfi_move_extra;
+
+extern const dfi_move_extra dfi_pool_move_extra[DFI_POOL_MOVE_COUNT];
+
 /* ---- names ----
  * The Showdown id (toID: lower-case letters and digits) of every row, as a
  * constant string, for the data query API (duoforge_data_find, _name). They
@@ -1886,6 +1929,13 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity);
         slots += ['DFI_CLOSURE_NONE'] * (FORME_ABILITIES_MAX - len(slots))
         c.append('    [DFI_FORME_%s] = {{%s}, %du, {%s}},' % (
             fo['id'].upper(), ', '.join('0x%02xu' % b for b in fl['learnable']), len(fl['abilities']), ', '.join(slots)))
+    c += ['};', '', '/* The move extra column (step G10): thaws a frozen target, and the heal fraction. */',
+          'const dfi_move_extra dfi_pool_move_extra[DFI_POOL_MOVE_COUNT] = {']
+    for m, x in zip(dp['moves'], dp['move_extra']):
+        if x['thaws_target'] or x['heal'] != [0, 0]:
+            c.append('    [DFI_MOVE_%s] = {%s, {%du, %du}},' % (
+                m['id'].upper(), 'DFI_EXTRA_THAWS_TARGET' if x['thaws_target'] else '0u', x['heal'][0],
+                x['heal'][1]))
     c += ['};', '', '/* Names: the Showdown id of every row (toID), not part of any hash. */']
     for what, rows, table in (('forme', dp['formes'], 'FORME'), ('move', dp['moves'], 'MOVE'),
                               ('item', dp['items'], 'ITEM'), ('ability', dp['abilities'], 'ABILITY')):
@@ -2019,6 +2069,11 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity)
         for (uint32_t k = 0u; k < DFI_POOL_FORME_ABILITIES_MAX; ++k) {
             out[n++] = l->abilities[k];
         }
+    }
+    for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
+        out[n++] = dfi_pool_move_extra[i].flags;
+        out[n++] = dfi_pool_move_extra[i].heal[0];
+        out[n++] = dfi_pool_move_extra[i].heal[1];
     }
     return n;
 }

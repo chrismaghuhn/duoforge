@@ -41,8 +41,8 @@
 #include "support/pool.h"
 #include "support/team_c.h"
 
-#define FP_KP_HEX "66e30759b6b926a739e99712ec974a0774d06b640f3e3dda9014febf9e508a60"
-#define FP_KPD_HEX "3560f266a9afbb938df9cf06cd56ea26031400ffb52795e339fc7ccb0b5ae905"
+#define FP_KP_HEX "51b6a6cf3dcd128aaa01efeb60a2813080815613de8c4cfb9cc4c805a623362f"
+#define FP_KPD_HEX "37c916b3a3a768aa46818863c6d8c36df2ee6ece45caf0cb68a7306bf0f373a2"
 
 /* The public create under `ctx` gives `gated`, and the build without the
  * support gate `ungated`. */
@@ -547,15 +547,18 @@ int main(void)
 
     /* Step G2 (docs/research/expansion/data/team_gaps.json): the formes Pelipper, Arcanine-Hisui, Annihilape and
      * Floette-Eternal under the set rule, and the 22 new moves behind the gate. Twelve of them are marked (their
-     * data runs on the existing paths, each in a reference battle under the POOL kind: g2_data_moves_a to _d), so a
-     * setup that has one is supported; the other ten (U-turn and the nine with a handler id) are unmarked, so a
-     * setup that has one is E_UNSUPPORTED after all validation. A species is complete with its base data, so a
+     * data runs on the existing paths, each in a reference battle under the POOL kind: g2_data_moves_a to _d), and
+     * step G10 marks First Impression, Scald, Recover and Low Kick (g10_*), so a setup that has one is supported;
+     * the other six (U-turn and the five with a handler id of a later step) are unmarked, so a setup that has one
+     * is E_UNSUPPORTED after all validation. A species is complete with its base data, so a
      * Pelipper whose ability, item and moves are marked is a supported setup. Team B's lead is replaced. */
     {
         static const uint32_t marked_moves[] = {DFI_MOVE_ROCKSLIDE, DFI_MOVE_DOUBLEEDGE, DFI_MOVE_THUNDERBOLT,
                                                 DFI_MOVE_FLASHCANNON, DFI_MOVE_EXTREMESPEED, DFI_MOVE_HEADSMASH,
                                                 DFI_MOVE_BULKUP, DFI_MOVE_LIQUIDATION, DFI_MOVE_ICEPUNCH,
-                                                DFI_MOVE_SHADOWCLAW, DFI_MOVE_DRUMBEATING, DFI_MOVE_DAZZLINGGLEAM};
+                                                DFI_MOVE_SHADOWCLAW, DFI_MOVE_DRUMBEATING, DFI_MOVE_DAZZLINGGLEAM,
+                                                DFI_MOVE_FIRSTIMPRESSION, DFI_MOVE_SCALD, DFI_MOVE_RECOVER,
+                                                DFI_MOVE_LOWKICK};
         const duoforge_member_setup *tpl = &teams.sides[1].members[0];
         /* Every new move: a learner with a legal ability that is marked, with no item, on a side where it does not
          * clash with the Species Clause. The gate function with a fully marked manifest accepts the setup (the

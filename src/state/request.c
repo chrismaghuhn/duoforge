@@ -2,6 +2,7 @@
 
 #include <string.h>
 
+#include "combat/move_rules.h"
 #include "combat/turn.h"
 #include "core/arith.h"
 #include "core/bytes.h"
@@ -138,9 +139,10 @@ static duoforge_status dfi_slot_candidates(const duoforge_context *ctx, const st
             if (mv->move_id >= ctx->move_count) {
                 return DUOFORGE_E_INVARIANT;
             }
-            /* Champions disables Fake Out once its user has taken a move
-             * action since it entered (data/mods/champions/moves.ts:354-361). */
-            if (dfi_context_is_closure(ctx) && mv->move_id == DFI_MOVE_FAKEOUT &&
+            /* Champions disables Fake Out and First Impression once their
+             * user has taken a move action since it entered
+             * (data/mods/champions/moves.ts:354-361 and :386-394). */
+            if (dfi_context_is_closure(ctx) && dfi_move_first_turn_only(&dfi_pool_moves[mv->move_id]) &&
                 side->positions[slot].move_actions != 0u) {
                 continue;
             }

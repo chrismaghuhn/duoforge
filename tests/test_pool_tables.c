@@ -28,8 +28,11 @@
  * Expert Belt and Floettite and the abilities Rock Head, Flower Veil and Fairy
  * Aura. Their values are literal, as the pin has them; nine of the moves have a
  * callback or a field that the columns do not model and carry a named handler id
- * in the special column. The items and abilities are unmarked in the support
- * manifest; twelve moves are marked, and U-turn and the nine handler moves are not.
+ * in the special column (step G10 made two of them data: Scald and Recover read
+ * the move extra column and have no handler). The items and abilities are
+ * unmarked in the support manifest; sixteen moves are marked (twelve of step G2,
+ * then First Impression, Scald, Recover and Low Kick of step G10), and U-turn
+ * and the handler moves of the later steps are not.
  */
 #include <stdio.h>
 #include <string.h>
@@ -43,7 +46,7 @@
 #include "state/battle_internal.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "1d402745eba5e5e0b4878fee1e8d0aa10db8875a0ef1077a625358db791cea68"
+#define POOL_HASH_HEX "1431ebe9d54f4340cb1ac4339324e4df8b2ba9324112c9752986c8d650263e07"
 
 typedef struct family_case {
     uint32_t id;
@@ -327,7 +330,7 @@ static const move_case new_moves[] = {
      DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 10u, DFI_SECONDARY_STATUS, DFI_STATUS_PAR, 0u, NB, 0u},
     {DFI_MOVE_SCALD, "Scald", DFI_TYPE_WATER, DFI_CATEGORY_SPECIAL, 80u, 100u, 16u, 8u, 1u, 1u,
      DFI_MOVE_FLAG_PROTECT | DFI_MOVE_FLAG_DEFROST, {0u, 0u}, 30u, DFI_SECONDARY_STATUS, DFI_STATUS_BRN, 0u, NB,
-     DFI_SPECIAL_SCALD},
+     DFI_SPECIAL_NONE}, /* step G10: thawsTarget is the move extra column */
     {DFI_MOVE_WIDEGUARD, "Wide Guard", DFI_TYPE_ROCK, DFI_CATEGORY_STATUS, 0u, 0u, 12u, 11u,
      DUOFORGE_TARGET_CLASS_ALLY_SIDE, 1u, 0u, {0u, 0u}, 0u, 0u, 0u, 0u, NB, DFI_SPECIAL_WIDE_GUARD},
     {DFI_MOVE_FLASHCANNON, "Flash Cannon", DFI_TYPE_STEEL, DFI_CATEGORY_SPECIAL, 80u, 100u, 12u, 8u, 1u, 1u,
@@ -349,7 +352,7 @@ static const move_case new_moves[] = {
     {DFI_MOVE_SHADOWCLAW, "Shadow Claw", DFI_TYPE_GHOST, DFI_CATEGORY_PHYSICAL, 70u, 100u, 16u, 8u, 1u, 2u,
      DFI_MOVE_FLAG_CONTACT | DFI_MOVE_FLAG_PROTECT, {0u, 0u}, 0u, 0u, 0u, 0u, NB, 0u},
     {DFI_MOVE_RECOVER, "Recover", DFI_TYPE_NORMAL, DFI_CATEGORY_STATUS, 0u, 0u, 8u, 8u, DUOFORGE_TARGET_CLASS_SELF, 1u,
-     0u, {0u, 0u}, 0u, 0u, 0u, 0u, NB, DFI_SPECIAL_RECOVER},
+     0u, {0u, 0u}, 0u, 0u, 0u, 0u, NB, DFI_SPECIAL_NONE}, /* step G10: heal is the move extra column */
     {DFI_MOVE_SOAK, "Soak", DFI_TYPE_WATER, DFI_CATEGORY_STATUS, 0u, 100u, 20u, 8u, 1u, 1u, DFI_MOVE_FLAG_PROTECT,
      {0u, 0u}, 0u, 0u, 0u, 0u, NB, DFI_SPECIAL_SOAK},
     {DFI_MOVE_PSYCHICNOISE, "Psychic Noise", DFI_TYPE_PSYCHIC, DFI_CATEGORY_SPECIAL, 75u, 100u, 12u, 8u, 1u, 1u,
@@ -533,7 +536,8 @@ int main(void)
         for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
             handlers += dfi_pool_moves[i].special >= DFI_SPECIAL_THROAT_CHOP ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, handlers, DFI_SPECIAL_LOW_KICK - DFI_SPECIAL_THROAT_CHOP + 1u);
+        /* The nine ids of step G2, minus Scald and Recover (data since step G10). */
+        DF_CHECK_EQ_U64(&t, handlers, DFI_SPECIAL_LOW_KICK - DFI_SPECIAL_THROAT_CHOP + 1u - 2u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_THROAT_CHOP, DFI_SPECIAL_FOLLOW_ME + 1u);
     }
 
@@ -566,9 +570,10 @@ int main(void)
     /* The pool hash: SHA-256 of the pool canonical bytes, which are the
      * closure layout over every pool row followed by the family columns (an
      * item's family and type, then an ability's family and parameter, in id
-     * order) and the legal moves and abilities of the formes (per forme the
-     * learnable bytes, the ability count and the three ability ids); equal to
-     * the generator's literal and different from the other two. */
+     * order), the legal moves and abilities of the formes (per forme the
+     * learnable bytes, the ability count and the three ability ids) and the
+     * move extra column (per move the flags and the heal fraction, step G10);
+     * equal to the generator's literal and different from the other two. */
     {
         uint8_t bytes[DFI_POOL_CANONICAL_SIZE + 8u];
         uint8_t rows[DFI_POOL_CANONICAL_SIZE];
@@ -578,8 +583,8 @@ int main(void)
         const size_t n = dfi_pool_canonical_bytes(bytes, sizeof bytes);
         DF_CHECK_EQ_U64(&t, n, DFI_POOL_CANONICAL_SIZE);
         /* 12 + 28 * 24 + 72 * 29 + 52 * 2 + 324 + 18 + 50, then 52 * 2 + 29 * 2,
-         * then 28 * (9 + 1 + 3) */
-        DF_CHECK_EQ_U64(&t, DFI_POOL_CANONICAL_SIZE, 3794u);
+         * then 28 * (9 + 1 + 3), then 72 * 3 */
+        DF_CHECK_EQ_U64(&t, DFI_POOL_CANONICAL_SIZE, 4010u);
         DF_CHECK(&t, bytes[DFI_POOL_CANONICAL_SIZE] == 0xA5u);
         const size_t row_bytes = dfi_pool_canonical_bytes_of(rows, sizeof rows, DFI_POOL_FORME_COUNT,
                                                              DFI_POOL_MOVE_COUNT, DFI_POOL_ITEM_COUNT,
@@ -611,6 +616,14 @@ int main(void)
                 bad += bytes[at + k] != l->abilities[k] ? 1u : 0u;
             }
             at += DFI_POOL_FORME_ABILITIES_MAX;
+        }
+        DF_CHECK_EQ_U64(&t, bad, 0u);
+        for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
+            bad += bytes[at] != dfi_pool_move_extra[i].flags || bytes[at + 1u] != dfi_pool_move_extra[i].heal[0] ||
+                           bytes[at + 2u] != dfi_pool_move_extra[i].heal[1]
+                       ? 1u
+                       : 0u;
+            at += 3u;
         }
         DF_CHECK_EQ_U64(&t, bad, 0u);
         DF_CHECK_EQ_U64(&t, at, DFI_POOL_CANONICAL_SIZE);
@@ -784,6 +797,22 @@ int main(void)
     DF_CHECK(&t, DFI_ABILITY_FAMILY_ATE != DFI_ABILITY_FAMILY_PINCH &&
                      DFI_ABILITY_FAMILY_WEATHER_SETTER != DFI_ABILITY_FAMILY_TERRAIN_SETTER);
 
+    /* The move extra column (step G10): Scald thaws its target, Recover heals half of the maximum HP, no other
+     * move has a row, and no extended move does (so the prefix is unchanged). */
+    {
+        for (uint32_t id = 0u; id < DFI_POOL_MOVE_COUNT; ++id) {
+            const bool scald = id == DFI_MOVE_SCALD;
+            const bool recover = id == DFI_MOVE_RECOVER;
+            DF_CHECK_EQ_U64(&t, dfi_pool_move_extra[id].flags, scald ? DFI_EXTRA_THAWS_TARGET : 0u);
+            DF_CHECK_EQ_U64(&t, dfi_pool_move_extra[id].heal[0], recover ? 1u : 0u);
+            DF_CHECK_EQ_U64(&t, dfi_pool_move_extra[id].heal[1], recover ? 2u : 0u);
+            if (scald || recover) {
+                DF_CHECK_EQ_U64(&t, dfi_pool_moves[id].special, DFI_SPECIAL_NONE); /* data, no handler */
+            }
+        }
+        DF_CHECK(&t, DFI_MOVE_SCALD >= DFI_EXT_MOVE_COUNT && DFI_MOVE_RECOVER >= DFI_EXT_MOVE_COUNT);
+    }
+
     /* The support manifest covers the pool ids. Step P2 made the two item
      * families rules and step P3 the two ability families (the "-ate" and
      * pinch ones): every new item and ability of those steps is marked, and
@@ -825,11 +854,14 @@ int main(void)
             }
         }
         /* Step G2 marks twelve of its 22 moves, each used in a reference battle under the POOL kind (g2_data_moves_a
-         * to _d); U-turn (its switch cause is G5) and the nine moves with a handler id stay unmarked. */
+         * to _d), and step G10 four more (First Impression, Scald, Recover, Low Kick: g10_*); U-turn (its switch
+         * cause is G5) and the moves with a handler id of a later step stay unmarked. */
         static const uint32_t marked_moves[] = {DFI_MOVE_ROCKSLIDE, DFI_MOVE_DOUBLEEDGE, DFI_MOVE_THUNDERBOLT,
                                                 DFI_MOVE_FLASHCANNON, DFI_MOVE_EXTREMESPEED, DFI_MOVE_HEADSMASH,
                                                 DFI_MOVE_BULKUP, DFI_MOVE_LIQUIDATION, DFI_MOVE_ICEPUNCH,
-                                                DFI_MOVE_SHADOWCLAW, DFI_MOVE_DRUMBEATING, DFI_MOVE_DAZZLINGGLEAM};
+                                                DFI_MOVE_SHADOWCLAW, DFI_MOVE_DRUMBEATING, DFI_MOVE_DAZZLINGGLEAM,
+                                                DFI_MOVE_FIRSTIMPRESSION, DFI_MOVE_SCALD, DFI_MOVE_RECOVER,
+                                                DFI_MOVE_LOWKICK};
         uint32_t marked_count = 0u;
         for (uint32_t id = DFI_EXT_MOVE_COUNT; id < DFI_POOL_MOVE_COUNT; ++id) {
             bool want = false;
@@ -837,11 +869,13 @@ int main(void)
                 want = want || marked_moves[k] == id;
             }
             DF_CHECK_EQ_U64(&t, dfi_support.moves[id] != 0u ? 1u : 0u, want ? 1u : 0u);
-            /* A marked move has no handler id: the engine has no code for one. */
-            DF_CHECK(&t, !want || dfi_pool_moves[id].special == DFI_SPECIAL_NONE);
+            /* A marked move has a handler id only if the engine has the code for it: First Impression (Fake Out's
+             * family) and Low Kick (Grass Knot's); the others are data. */
+            DF_CHECK(&t, !want || dfi_pool_moves[id].special == DFI_SPECIAL_NONE ||
+                             id == DFI_MOVE_FIRSTIMPRESSION || id == DFI_MOVE_LOWKICK);
             marked_count += dfi_support.moves[id] != 0u ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, marked_count, 12u);
+        DF_CHECK_EQ_U64(&t, marked_count, 16u);
     }
 
     return df_test_end(&t);

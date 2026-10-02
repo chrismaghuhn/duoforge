@@ -186,6 +186,22 @@ extern const dfi_item_family dfi_pool_item_family[DFI_POOL_ITEM_COUNT];
 extern const dfi_ability_family dfi_pool_ability_family[DFI_POOL_ABILITY_COUNT];
 extern const dfi_forme_legal dfi_pool_forme_legal[DFI_POOL_FORME_COUNT];
 
+/* ---- the move extra column (step G10) ----
+ * What a move needs beyond the closure row, one row per pool move, like the
+ * family columns: flags (DFI_EXTRA_THAWS_TARGET: the move thaws a frozen
+ * target, thawsTarget in the pinned data) and the fraction of the maximum HP
+ * that the move heals its user by (heal: [numerator, denominator], 0 and 0 for
+ * none). Part of the canonical pool bytes, not of the closure or extended
+ * ones. */
+#define DFI_EXTRA_THAWS_TARGET 1u
+
+typedef struct dfi_move_extra {
+    uint8_t flags;
+    uint8_t heal[2];
+} dfi_move_extra;
+
+extern const dfi_move_extra dfi_pool_move_extra[DFI_POOL_MOVE_COUNT];
+
 /* ---- names ----
  * The Showdown id (toID: lower-case letters and digits) of every row, as a
  * constant string, for the data query API (duoforge_data_find, _name). They
@@ -200,7 +216,7 @@ extern const char *const dfi_pool_ability_names[DFI_POOL_ABILITY_COUNT];
 extern const char *const dfi_pool_nature_names[DFI_NATURE_COUNT];
 
 /* SHA-256 of the canonical pool bytes (written by the generator). */
-#define DFI_POOL_CANONICAL_SIZE 3794u
+#define DFI_POOL_CANONICAL_SIZE 4010u
 extern const uint8_t dfi_pool_table_hash[32];
 /* The canonical bytes of the closure layout over the first `formes`, `moves`,
  * `items` and `abilities` rows of the tables above, with every immunity byte
