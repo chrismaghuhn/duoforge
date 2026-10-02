@@ -42,18 +42,24 @@ def ratings(score, games, prior=0.5, iterations=2000):
 
 def round_robin(players, act, envs=128, workers=8):
     """(score, games) over every pair of players [(name, params, encoder
-    version)]."""
+    version)] played by act, or [(name, params, encoder version, act)] each
+    played by its own act (checkpoints of different models)."""
     n = len(players)
     score = np.zeros((n, n))
     games = np.zeros((n, n))
     for i in range(n):
         for j in range(i + 1, n):
-            r = evaluate.win_rate(players[i][1], act, players[j][1], envs=envs, workers=workers,
-                                  encoder=players[i][2], opponent_encoder=players[j][2])
+            r = evaluate.win_rate(players[i][1], _act_of(players[i], act), players[j][1], envs=envs,
+                                  workers=workers, encoder=players[i][2], opponent_encoder=players[j][2],
+                                  opponent_act=_act_of(players[j], act))
             score[i, j] = r["win_rate"] * r["episodes"]
             score[j, i] = r["episodes"] - score[i, j]
             games[i, j] = games[j, i] = r["episodes"]
     return score, games
+
+
+def _act_of(player, act):
+    return player[3] if len(player) > 3 else act
 
 
 def _checkpoints(run_dir):
@@ -75,9 +81,8 @@ def main(argv=None):
     args = p.parse_args(sys.argv[1:] if argv is None else list(argv))
     import jax  # the ladder plays the policies
 
-    from . import model
-    from .checkpoint import encoder_of, load
-    from .selfplay import TEAM_ACTIONS
+    from . import policy
+    from .checkpoint import encoder_of, load, model_config
     from duoforge import features
 
     found = _checkpoints(args.run_dir)
@@ -86,21 +91,34 @@ def main(argv=None):
     chosen = [found[round(k * (len(found) - 1) / max(args.pick - 1, 1))] for k in range(min(args.pick, len(found)))]
     chosen = sorted(dict(chosen).items())
     players = []
-    config = load(chosen[0][1])[1]
+    models = {}
+
+    def model_of(cfg):
+        key = json.dumps(cfg, sort_keys=True)
+        if key not in models:
+            models[key] = policy.make(cfg)
+        return models[key]
+
+    params, config = load(chosen[0][1])
+    first = model_config(config, params)
     if not args.no_init:
-        seed = int(config["seed"])
+        train = config.get("train", config)
+        seed = int(train["seed"])
         key = jax.random.fold_in(jax.random.PRNGKey(seed & 0xFFFFFFFF), seed >> 32)
         key, sub = jax.random.split(key)
-        players.append(("init", model.init(sub, features.OBS_SIZE, features.SLOT_FEATURES, TEAM_ACTIONS),
-                        features.ENCODER))
+        net = model_of(first)
+        players.append(("init", net.init(sub), features.ENCODER, net.act))
     for u, path in chosen:
-        params, config = load(path, obs_size=features.OBS_SIZE)
-        players.append((f"update {u}", params, encoder_of(config)))
-    act = jax.jit(model.act, static_argnames=("greedy",))
-    score, games = round_robin(players, act, envs=args.envs, workers=args.workers)
+        params, config = load(path)
+        cfg = model_config(config, params)
+        if cfg["version"] == 1 and params["t1"]["w"].shape[0] != features.OBS_SIZE:
+            raise ValueError(f"{path}: the network takes {params['t1']['w'].shape[0]} observation features, "
+                             f"the encoder makes {features.OBS_SIZE} (a checkpoint of another encoder)")
+        players.append((f"update {u}", params, encoder_of(config), model_of(cfg).act))
+    score, games = round_robin(players, None, envs=args.envs, workers=args.workers)
     elo = ratings(score, games)
     table = [{"player": name, "elo": round(float(e), 1), "score": round(float(score[i].sum() / games[i].sum()), 4)}
-             for i, ((name, _, _), e) in enumerate(zip(players, elo))]
+             for i, (player, e) in enumerate(zip(players, elo)) for name in (player[0],)]
     for row in table:
         print(f"{row['player']:>14}  Elo {row['elo']:8.1f}  score {row['score']:.3f}")
     with open(os.path.join(args.run_dir, "ladder.json"), "w", encoding="utf-8") as f:

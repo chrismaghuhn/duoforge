@@ -179,6 +179,34 @@ class WideningTest(unittest.TestCase):
         self.assertFalse(np.asarray(moments["species"][1024:]).any())
 
 
+class TrainingV2Test(unittest.TestCase):
+    def test_training_runs_with_model_v2(self):
+        import json
+        import os
+        import shutil
+        import tempfile
+        from duoforge_learn import checkpoint, train
+        out = tempfile.mkdtemp(prefix="duoforge-learn-v2-")
+        try:
+            code = train.main(["--envs", "8", "--workers", "2", "--rollout", "8", "--updates", "2", "--minutes", "0",
+                               "--eval-every", "1", "--eval-envs", "8", "--minibatch", "256", "--model", "v2",
+                               "--preset", "S", "--hidden", "64", "--out", out])
+            self.assertEqual(code, 0)
+            with open(os.path.join(out, "log.jsonl"), encoding="utf-8") as f:
+                records = [json.loads(line) for line in f]
+            self.assertEqual([r["update"] for r in records], [1, 2])
+            params, config = checkpoint.load(os.path.join(out, "params-2.npz"))
+            self.assertEqual(config["format"], 2)
+            self.assertEqual(config["model"]["version"], 2)
+            self.assertEqual(config["model"]["hidden"], 64)
+            self.assertEqual(config["encoder"], features.ENCODER)
+            self.assertEqual(config["features"], list(features.FEATURE_NAMES))
+            model = policy.make(config["model"], config["features"], config["slot_features"])
+            self.assertEqual(model.count(params), model.count(model.init(__import__("jax").random.PRNGKey(0))))
+        finally:
+            shutil.rmtree(out, ignore_errors=True)
+
+
 PRESET_COUNTS = {"S": 384751, "M": 2072463, "L": 7871631}
 
 

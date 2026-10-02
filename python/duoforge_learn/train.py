@@ -20,13 +20,23 @@ import numpy as np
 
 from duoforge import features
 
-from . import evaluate, model, ppo
+from . import checkpoint, evaluate, policy, ppo
 from .returns import gae
-from .selfplay import TEAM_ACTIONS, SelfPlay
+from .selfplay import SelfPlay
+
+_DIMS = ("embed", "member", "position", "hidden", "layers", "option")
 
 
-def _act():
-    return jax.jit(model.act, static_argnames=("greedy",))
+def model_config(args):
+    """The model configuration of the command line: v1 (with --hidden) or a
+    v2 preset with its dimension overrides."""
+    dims = {k: getattr(args, k) for k in _DIMS if getattr(args, k) is not None}
+    if args.model == "v1":
+        extra = sorted(set(dims) - {"hidden"})
+        if extra:
+            raise SystemExit(f"model v1 takes only --hidden, not {extra}")
+        return {**policy.V1_DEFAULT, **dims}
+    return policy.v2_config(args.preset, **dims)
 
 
 def collect(env, params, act, key, steps):
@@ -72,9 +82,21 @@ def samples_of(rollout, advantages, value_targets):
 
 
 def save(path, params, config):
+    """A format-1 checkpoint (decision 0014): params with a free config, as
+    the runs of 2026-10-02 wrote them; new runs write format 2
+    (checkpoint.save)."""
     flat, _ = jax.tree_util.tree_flatten_with_path(params)
     arrays = {jax.tree_util.keystr(k): np.asarray(v) for k, v in flat}
     np.savez(path, config=json.dumps(config), **arrays)
+
+
+def snapshot_config(train_config, model_cfg, context, update, decisions):
+    """The format-2 config of a snapshot of this run."""
+    return {"model": model_cfg, "encoder": features.ENCODER, "features": list(features.FEATURE_NAMES),
+            "slot_features": list(features.SLOT_FEATURE_NAMES),
+            "data": {"kind": "closure", "fingerprint": context.fingerprint().hex()},
+            "teams": {"ids": ["A", "B"], "sha256": ["", ""], "weights": [1.0, 1.0]},
+            "update": update, "decisions": decisions, "train": train_config}
 
 
 def _arguments(argv):
@@ -93,6 +115,10 @@ def _arguments(argv):
     p.add_argument("--seed", type=lambda s: int(s, 0), default=0x2026100200000021)
     p.add_argument("--max-steps", type=int, default=500, help="steps before a self-play episode is cut off as a tie")
     p.add_argument("--out", required=True)
+    p.add_argument("--model", choices=("v1", "v2"), default="v1")
+    p.add_argument("--preset", choices=("S", "M", "L"), default="S", help="model v2 size")
+    for dim in _DIMS:
+        p.add_argument(f"--{dim}", type=int, default=None, help="overrides the preset (v1: --hidden only)")
     args = p.parse_args(argv)
     if args.minutes <= 0 and args.updates <= 0:
         p.error("give --minutes or --updates")
@@ -112,10 +138,13 @@ def main(argv=None):
     # All 64 bits of the seed: the low half makes the key, the high half is folded in.
     key = jax.random.fold_in(jax.random.PRNGKey(args.seed & 0xFFFFFFFF), args.seed >> 32)
     key, sub = jax.random.split(key)
-    params = model.init(sub, features.OBS_SIZE, features.SLOT_FEATURES, TEAM_ACTIONS)
+    model_cfg = model_config(args)
+    net = policy.make(model_cfg)
+    config["model"] = model_cfg
+    params = net.init(sub)
     tx = ppo.optimizer(args.learning_rate)
     opt_state = tx.init(params)
-    act = _act()
+    act = net.act
     rng = np.random.default_rng(args.seed)
     start = time.perf_counter()
     decisions = episodes = 0
@@ -131,8 +160,9 @@ def main(argv=None):
             samples = samples_of(rollout, advantages, value_targets)
             acted = int(rollout["acting"].sum())
             t1 = time.perf_counter()
-            params, opt_state, stats = ppo.update(params, opt_state, tx, samples, rng, epochs=args.epochs,
-                                                  minibatch=args.minibatch, entropy_coef=args.entropy)
+            params, opt_state, stats = ppo.update(params, opt_state, tx, samples, rng, net.evaluate,
+                                                  epochs=args.epochs, minibatch=args.minibatch,
+                                                  entropy_coef=args.entropy)
             t2 = time.perf_counter()
             decisions += acted
             episodes += ended
@@ -143,9 +173,11 @@ def main(argv=None):
             elapsed_min = (t2 - start) / 60
             last = (args.updates and update >= args.updates) or (args.minutes and elapsed_min >= args.minutes)
             if update % args.eval_every == 0 or last:
-                save(os.path.join(args.out, f"params-{update}.npz"), params, config)
+                checkpoint.save(os.path.join(args.out, f"params-{update}.npz"), params,
+                                snapshot_config(config, model_cfg, env.context, update, decisions))
                 for name, opponent in (("random", "random"), ("scripted", "scripted"), ("previous", previous)):
-                    result = evaluate.win_rate(params, act, opponent, envs=args.eval_envs, workers=args.workers)
+                    result = evaluate.win_rate(params, act, opponent, envs=args.eval_envs, workers=args.workers,
+                                               encoder=features.ENCODER, opponent_encoder=features.ENCODER)
                     record[f"vs_{name}"] = round(result["win_rate"], 4)
                     if result["unfinished"]:
                         record[f"unfinished_vs_{name}"] = result["unfinished"]

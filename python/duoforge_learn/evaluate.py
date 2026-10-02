@@ -24,12 +24,13 @@ _TIE = C["DUOFORGE_RESULT_TIE"]
 
 
 def win_rate(params, act, opponent, envs=64, workers=4, seed=0x2026100200000020, rounds=1, max_steps=1000,
-             encoder=features.ENCODER, opponent_encoder=features.ENCODER):
+             encoder=features.ENCODER, opponent_encoder=features.ENCODER, opponent_act=None):
     """{"win_rate", "wins", "losses", "ties", "unfinished", "episodes"} of
     the policy against `opponent` ("random", "scripted" or parameters); act
     is model.act (jitted). envs is a multiple of 8, so both seats of all four
     pairings play equally often. encoder and opponent_encoder are the
-    encoder versions the parameters were trained with."""
+    encoder versions the parameters were trained with; opponent_act plays
+    opponent parameters of another model (default: act)."""
     if envs <= 0 or envs % 8 != 0:
         raise ValueError(f"envs must be a positive multiple of 8, not {envs}")
     seat = (np.arange(envs) // 4) % 2
@@ -38,7 +39,7 @@ def win_rate(params, act, opponent, envs=64, workers=4, seed=0x2026100200000020,
         setups = duoforge.reference_setups([e % 4 for e in range(envs)])
         with duoforge.Batch(ctx, setups, workers, seed) as batch:
             if isinstance(opponent, dict):
-                other = _Snapshot(opponent, act, envs, opponent_encoder)
+                other = _Snapshot(opponent, opponent_act or act, envs, opponent_encoder)
             elif opponent == "random":
                 other = duoforge.RandomPolicy(seed, envs)
             elif opponent == "scripted":

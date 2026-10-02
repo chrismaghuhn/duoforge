@@ -16,7 +16,19 @@ from duoforge import features
 
 from . import columns
 
-_KEY = re.compile(r"\['([^']+)'\]")
+_KEY = re.compile(r"\['([^']+)'\]|\[(\d+)\]")
+
+
+def _lists(node):
+    """Nested dicts whose keys are all ints become lists (model v2's torso)."""
+    if not isinstance(node, dict):
+        return node
+    out = {k: _lists(v) for k, v in node.items()}
+    if out and all(isinstance(k, int) for k in out):
+        if sorted(out) != list(range(len(out))):
+            raise ValueError(f"checkpoint list indices {sorted(out)} are not 0..{len(out) - 1}")
+        return [out[k] for k in range(len(out))]
+    return out
 
 
 def encoder_of(config):
@@ -41,13 +53,14 @@ def load(path, obs_size=None):
         for name in npz.files:
             if name == "config":
                 continue
-            keys = _KEY.findall(name)
-            if not keys or "".join(f"['{k}']" for k in keys) != name:
+            keys = [k if k else int(i) for k, i in _KEY.findall(name)]
+            if not keys or "".join(f"['{k}']" if isinstance(k, str) else f"[{k}]" for k in keys) != name:
                 raise ValueError(f"{path}: unknown checkpoint entry {name!r}")
             node = params
-            for k in keys[:-1]:
-                node = node.setdefault(k, {})
+            for k, nxt in zip(keys[:-1], keys[1:]):
+                node = node.setdefault(k, {} if isinstance(nxt, str) else {})
             node[keys[-1]] = npz[name]
+    params = _lists(params)
     if obs_size is not None and params["t1"]["w"].shape[0] != obs_size:
         raise ValueError(f"{path}: the network takes {params['t1']['w'].shape[0]} observation features, "
                          f"the encoder makes {obs_size} (a checkpoint of another encoder)")
