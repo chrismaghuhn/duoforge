@@ -1614,6 +1614,13 @@ static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, const dfi_move
                 if (st != DUOFORGE_OK) {
                     return st;
                 }
+                /* The confusion hit is damage with a Move effect
+                 * (data/conditions.ts:193-194): a Focus Sash holder at full
+                 * HP that it would faint uses the item and keeps 1 HP. */
+                if (dfi_focus_sash_saves(m, damage)) {
+                    dfi_use_item(r, user);
+                    damage = (uint32_t)m->hp - 1u;
+                }
                 return dfi_deal(r, user, damage, DUOFORGE_CAUSE_CONFUSION, 0u, DUOFORGE_NO_POSITION);
             }
         }
@@ -2308,6 +2315,18 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         if (hit[i]) {
             const uint32_t before = dfi_at(b, targets[i])->hp;
             hp_before[i] = before;
+            /* Focus Sash (combat/item_family.h): a move hit that would take
+             * all of a full-HP holder's HP uses the item up ([-enditem],
+             * before the [-damage] line) and leaves 1 HP. Each target decides
+             * for itself. Only the damage of a Move comes here (and the
+             * confusion hit, below): recoil, Life Orb, Rocky Helmet, weather
+             * and status damage are not Move effects and go through dfi_deal
+             * on their own. */
+            const dfi_member *tm = dfi_at(b, targets[i]);
+            if (dfi_focus_sash_saves(tm, damage[i])) {
+                dfi_use_item(r, targets[i]);
+                damage[i] = (uint32_t)tm->hp - 1u;
+            }
             st = dfi_deal(r, targets[i], damage[i], DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
             if (st != DUOFORGE_OK) {
                 return st;
@@ -2463,6 +2482,14 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         } else if (md->recoil[1] != 0u && total != 0u) {
             recoil = (total * md->recoil[0] * 2u + md->recoil[1]) / (2u * md->recoil[1]);
             recoil = recoil < 1u ? 1u : recoil;
+            /* Rock Head (data/abilities.ts rockhead, onDamage): the damage of
+             * a recoil move's recoil is cancelled, with no line. Struggle's
+             * recoil (the branch above) is directDamage and never reaches
+             * the handler. The Emergency Exit check that follows sees no
+             * change of HP. */
+            if (dfi_ability(m, DFI_ABILITY_ROCKHEAD)) {
+                recoil = 0u;
+            }
         }
         if (recoil != 0u) {
             const uint32_t user_before = m->hp;
