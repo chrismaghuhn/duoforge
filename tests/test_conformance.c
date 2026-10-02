@@ -190,10 +190,12 @@ int main(void)
         DF_CHECK_EQ_U64(&t, matched, 24u * 6u); /* Team C on 4 x 4 + 4 x 2 sides */
     }
 #else
-    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 87u);
+    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 88u);
     /* Exactly the battles of the real teams run under CLOSURE, the certified
-     * profile (decision 0010): the closure gate's 8 and the 16 of M5 step 3. */
-    DF_CHECK_EQ_U64(&t, real, 24u);
+     * profile (decision 0010): the closure gate's 8, the 16 of M5 step 3 and
+     * d01_noguard_accuracy_tie, a cut of a battle found by the differential
+     * loop. */
+    DF_CHECK_EQ_U64(&t, real, 25u);
 #endif
 #ifdef DF_CONFORMANCE_TEAM_C
     fprintf(stderr, "  %u of the battles run under TEAM_C data\n", real);
