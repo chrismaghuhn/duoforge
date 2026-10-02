@@ -18,7 +18,7 @@ import os
 
 from .errors import DuoforgeError, DuoforgeLibraryError
 
-EXPECTED_VERSION = "0.22.0"
+EXPECTED_VERSION = "0.23.0"
 
 _NAMES = ("duoforge_shared.dll", "libduoforge_shared.dll", "libduoforge_shared.so", "libduoforge_shared.dylib")
 
