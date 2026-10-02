@@ -11,7 +11,7 @@ import unittest
 import numpy as np
 
 from duoforge import features
-from duoforge_learn import checkpoint, columns
+from duoforge_learn import checkpoint, columns, pairing
 
 
 def _config(**extra):
@@ -102,6 +102,44 @@ class CheckpointTest(unittest.TestCase):
             self.assertFalse(w[features.FEATURE_NAMES.index(n)].any())
         for i, n in enumerate(old):
             self.assertTrue(np.array_equal(w[features.FEATURE_NAMES.index(n)], params["t1"]["w"][i]))
+
+
+class PairingTest(unittest.TestCase):
+    def test_pairings_are_pure_and_uniform(self):
+        envs = np.repeat(np.arange(100), 90)
+        episodes = np.tile(np.arange(90), 100)
+        weights = np.ones(3)
+        a0, a1 = pairing.pairings(7, envs, episodes, weights)
+        b0, b1 = pairing.pairings(7, envs, episodes, weights)
+        self.assertTrue(np.array_equal(a0, b0) and np.array_equal(a1, b1))
+        alone = [pairing.pairings(7, envs[i:i + 1], episodes[i:i + 1], weights) for i in range(0, 9000, 997)]
+        for k, i in enumerate(range(0, 9000, 997)):
+            self.assertEqual((int(alone[k][0][0]), int(alone[k][1][0])), (int(a0[i]), int(a1[i])))
+        counts = np.bincount(a0 * 3 + a1, minlength=9)
+        self.assertTrue(((counts > 880) & (counts < 1120)).all(), counts.tolist())
+        c0, _ = pairing.pairings(8, envs, episodes, weights)
+        self.assertFalse(np.array_equal(a0, c0))
+
+    def test_zero_weight_is_never_drawn(self):
+        envs = np.arange(4000)
+        side0, side1 = pairing.pairings(11, envs, np.zeros(4000, dtype=np.int64), np.array([1.0, 0.0, 3.0]))
+        both = np.concatenate([side0, side1])
+        self.assertFalse((both == 1).any())
+        ratio = (both == 2).sum() / (both == 0).sum()
+        self.assertTrue(2.6 <= ratio <= 3.4, ratio)
+
+    def test_draw_is_the_documented_formula(self):
+        mask = (1 << 64) - 1
+
+        def mix(x):
+            z = (x + 0x9E3779B97F4A7C15) & mask
+            z = ((z ^ (z >> 30)) * 0xBF58476D1CE4E5B9) & mask
+            z = ((z ^ (z >> 27)) * 0x94D049BB133111EB) & mask
+            return z ^ (z >> 31)
+
+        want = mix((mix((mix((5 + pairing.PAIR_SIDE1) & mask) + 3) & mask) + 9) & mask)
+        got = pairing.draw(5, pairing.PAIR_SIDE1, np.array([3]), np.array([9]))
+        self.assertEqual(int(got[0]), want)
 
 
 if __name__ == "__main__":

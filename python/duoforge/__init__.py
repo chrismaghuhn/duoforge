@@ -7,6 +7,7 @@ from .batch import Batch, factored_choice, factored_choices, joint_counts, joint
 from .context import Context, reference_setups
 from .errors import DuoforgeError, DuoforgeLibraryError
 from .policies import RandomPolicy, ScriptedPolicy, seeds
+from . import teams
 
 __all__ = [
     "Batch",
