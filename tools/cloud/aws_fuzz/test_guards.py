@@ -19,11 +19,13 @@ import shutil
 import stat
 import subprocess
 import sys
+import shlex
 import tempfile
 import textwrap
 import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
 BASH = os.environ.get('DUOFORGE_BASH') or shutil.which('bash')
 ACCOUNT = '%012d' % 7  # a made-up account id, built here so that no number of that shape is in the repository
 SHA = 'a' * 40
@@ -50,6 +52,8 @@ case "$svc $op" in
             *IpPermissions*) echo "${STUB_SG_INBOUND:-0}" ;;
             *"Key=="*) echo "${STUB_SG_TAG:-duoforge}" ;;
         esac ;;
+    "s3 ls") exit "${STUB_S3LS:-1}" ;;
+    "s3 cp") case "$1" in *done.txt) echo "MANIFEST $(tr '\n' ',' < "$1")" >> "$STUB_LOG" ;; esac ;;
     "ec2 describe-subnets") echo subnet-0abc123 ;;
     "ssm get-parameter") echo "${STUB_AMI:-ami-0abc123}" ;;
     "s3api list-objects-v2")
@@ -69,6 +73,21 @@ case "$svc $op" in
 esac
 exit 0
 '''
+
+
+FAKE_BENCH = """
+import json, sys
+a = sys.argv
+if '--fail' in a:
+    sys.exit(1)
+threads = int(a[a.index('--workers') + 1])
+out = a[a.index('--out') + 1]
+entry = {'family': 'batch', 'workers': threads, 'median_wall_ns': 1000000, 'battles': 20000, 'errors': 0,
+         'disturbed_repetitions': 0,
+         'per_second': {'battles': 1000 * threads, 'turns': 9000 * threads, 'steps': 20000 * threads,
+                        'side_decisions': 30000 * threads, 'calls': 0}}
+json.dump({'results': [entry], 'errors': 0}, open(out, 'w'))
+"""
 
 
 def posix(path):
@@ -214,10 +233,28 @@ class Guards(unittest.TestCase):
         self.assertIn('commit ' + SHA, r.stderr)
         self.assertEqual(self.real_launches(), [])
 
+    def fresh_repo(self):
+        """A repository of its own in the temporary directory: the tool in it, one commit, origin/main at that commit.
+        What runs git on the tool's directory runs it here, never in the checkout that the tests happen to be in (a
+        worktree whose .git file points to another system's path is no repository for this bash). Returns (the tool's
+        directory in it, the sha)."""
+        repo = os.path.join(self.tmp, 'repo')
+        shutil.copytree(HERE, os.path.join(repo, 'tools', 'cloud', 'aws_fuzz'),
+                        ignore=shutil.ignore_patterns('__pycache__'))
+        git = ['git', '-C', repo, '-c', 'user.name=t', '-c', 'user.email=t@example.invalid']
+        subprocess.run(git + ['init', '-q'], check=True, capture_output=True)
+        subprocess.run(git + ['add', '-A'], check=True, capture_output=True)
+        subprocess.run(git + ['commit', '-q', '-m', 'x'], check=True, capture_output=True)
+        sha = subprocess.run(git + ['rev-parse', 'HEAD'], check=True, capture_output=True, text=True).stdout.strip()
+        subprocess.run(git + ['update-ref', 'refs/remotes/origin/main', sha], check=True)
+        return os.path.join(repo, 'tools', 'cloud', 'aws_fuzz'), sha
+
     def test_df_init_does_not_export_the_path_conversion_switches(self):
         # Exported, MSYS_NO_PATHCONV made git -C "$DF_DIR" fail under Git Bash: only the aws call may have them.
+        tool, _sha = self.fresh_repo()
         env = {k: v for k, v in self.env.items() if k not in SWITCHES}
-        script = '. "%s/lib.sh"; df_init; env | grep -c -E "^(MSYS_NO_PATHCONV|MSYS2_ARG_CONV_EXCL)=" || true; git -C "$DF_DIR" rev-parse --show-toplevel' % posix(HERE)
+        script = ('. "%s/lib.sh"; df_init; env | grep -c -E "^(MSYS_NO_PATHCONV|MSYS2_ARG_CONV_EXCL)=" || true; '
+                  'git -C "$DF_DIR" rev-parse --show-toplevel') % posix(tool)
         r = subprocess.run([BASH, '-c', script], env=env, capture_output=True, text=True)
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertEqual(r.stdout.splitlines()[0], '0', r.stdout)
@@ -241,28 +278,18 @@ class Guards(unittest.TestCase):
     def test_print_mode_reaches_the_request_with_a_commit_of_a_real_main(self):
         # a repository of its own with the tool in it and an origin/main: the real check (git -C on the script's
         # directory, merge-base, cat-file of the campaign) runs, as it does on the owner's machine
-        repo = os.path.join(self.tmp, 'repo')
-        shutil.copytree(HERE, os.path.join(repo, 'tools', 'cloud', 'aws_fuzz'),
-                        ignore=shutil.ignore_patterns('__pycache__'))
-        git = ['git', '-C', repo, '-c', 'user.name=t', '-c', 'user.email=t@example.invalid']
-        subprocess.run(git + ['init', '-q'], check=True, capture_output=True)
-        subprocess.run(git + ['add', '-A'], check=True, capture_output=True)
-        subprocess.run(git + ['commit', '-q', '-m', 'x'], check=True, capture_output=True)
-        sha = subprocess.run(git + ['rev-parse', 'HEAD'], check=True, capture_output=True, text=True).stdout.strip()
-        subprocess.run(git + ['update-ref', 'refs/remotes/origin/main', sha], check=True)
+        tool, sha = self.fresh_repo()
         env = dict(self.env, DUOFORGE_FUZZ_NO_GIT_CHECK='')
-        r = subprocess.run([BASH, posix(os.path.join(repo, 'tools', 'cloud', 'aws_fuzz', 'launch.sh')), '--campaign',
-                            'weather-sand-snow', '--commit', sha, '--bucket', 'my-fuzz-bucket'],
-                           env=env, capture_output=True, text=True, timeout=120)
+        r = subprocess.run([BASH, posix(os.path.join(tool, 'launch.sh')), '--campaign', 'weather-sand-snow', '--commit',
+                            sha, '--bucket', 'my-fuzz-bucket'], env=env, capture_output=True, text=True, timeout=120)
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         self.assertIn('nothing was launched', r.stdout)
         self.assertIn(sha, r.stdout)
         self.assertNotIn('fatal', r.stderr)
         self.assertEqual(self.real_launches(), [])
         # and a campaign that this commit does not have is refused by the same check
-        r = subprocess.run([BASH, posix(os.path.join(repo, 'tools', 'cloud', 'aws_fuzz', 'launch.sh')), '--campaign',
-                            'no-such-campaign', '--commit', sha, '--bucket', 'my-fuzz-bucket'],
-                           env=env, capture_output=True, text=True, timeout=120)
+        r = subprocess.run([BASH, posix(os.path.join(tool, 'launch.sh')), '--campaign', 'no-such-campaign', '--commit',
+                            sha, '--bucket', 'my-fuzz-bucket'], env=env, capture_output=True, text=True, timeout=120)
         self.assertEqual(r.returncode, 2)
         self.assertIn('has no tools/cloud/aws_fuzz/campaigns/no-such-campaign/campaign.conf', r.stderr)
 
@@ -283,7 +310,7 @@ class Guards(unittest.TestCase):
         for needle in ('b2cb775b0616115b775534eaeff50300e1fc81fc', 'npm ci --ignore-scripts --omit=dev', 'node build',
                        'DDUOFORGE_ENABLE_IPO=ON', '--no-lock', 'spot/instance-action', 'X-aws-ec2-metadata-token',
                        'done.txt', 'trap finish EXIT', 'shutdown -h now', 'DF_LOCAL_RATE=24', 'DF_MIN_FACTOR=2',
-                       'DF_CHUNK_BATTLES=500', 'latest-v22.x'):
+                       'DF_DEFAULT_CHUNK_BATTLES=2000', 'latest-v22.x', 'chunks.sh', 'run_chunks', 'bench_run.py', '/usr/bin/time'):
             self.assertIn(needle, text)
 
     def test_the_rendered_user_data_has_no_placeholder_left_and_the_watchdog_matches_max_hours(self):
@@ -337,6 +364,137 @@ class Guards(unittest.TestCase):
         self.assertEqual(r.returncode, 1)
         self.assertIn('no bucket given', r.stdout)
 
+    # ------------------------------------------------------------------ the chunk scheduler (chunks.sh)
+    HARNESS = r"""
+set -euo pipefail
+WORK=$1; EVENTS=$2; LOGF=$3; HERE=$4
+mkdir -p "$WORK/out"
+[ -f "$WORK/done.txt" ] || : > "$WORK/done.txt"
+S3_BASE=s3://my-fuzz-bucket/fuzz/c
+CHUNKS=${CHUNKS:-6}; PARALLEL=${PARALLEL:-2}; CHUNK_BATTLES=10; BASE_SEED=100; VCPUS=4
+log() { printf '%s\n' "$*" >> "$LOGF"; }
+fail() { log "FAILED: $*"; exit 1; }
+node() { echo v1; }
+run_driver() { # idx seed dir
+    mkdir -p "$3/cases/x"
+    echo '{}' > "$3/summary.json"; echo '{"node":"v1"}' > "$3/run.json"
+    echo "S$1" >> "$EVENTS"; sleep 0.4
+    echo "8 0.5" > "$3.time"
+    echo "E$1" >> "$EVENTS"
+    [ "$1" != "${FAIL_IDX:-none}" ]
+}
+. "$HERE/chunks.sh"
+case ${MODE:-run} in
+    run) run_chunks ;;
+    partial) mkdir -p "$WORK/out/chunk-0003"; echo "0003 $WORK/out/chunk-0003" > "$WORK/inflight"; upload_partial ;;
+esac
+"""
+
+    def run_harness(self, mode='run', **env):
+        work = os.path.join(self.tmp, 'work')
+        events = os.path.join(self.tmp, 'events.txt')
+        logf = os.path.join(self.tmp, 'harness.log')
+        for path in (events, logf):
+            open(path, 'w').close()
+        script = os.path.join(self.tmp, 'harness.sh')
+        with open(script, 'w', newline=chr(10)) as f:
+            f.write(self.HARNESS)
+        e = dict(self.env, MODE=mode, **env)
+        r = subprocess.run([BASH, posix(script), posix(work), posix(events), posix(logf), posix(HERE)], env=e,
+                           capture_output=True, text=True, timeout=120)
+        with open(events, encoding='utf-8') as f:
+            ev = f.read().split()
+        with open(logf, encoding='utf-8') as f:
+            log = f.read()
+        return r, ev, log, work
+
+    def test_the_scheduler_runs_the_chunks_in_parallel_uploads_each_and_keeps_the_manifest_safe(self):
+        os.makedirs(os.path.join(self.tmp, 'work'))
+        with open(os.path.join(self.tmp, 'work', 'done.txt'), 'w', newline=chr(10)) as f:
+            f.write('0001' + chr(10))  # finished by an earlier box
+        r, ev, log, work = self.run_harness()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr + log)
+        started = [e[1:] for e in ev if e[0] == 'S']
+        self.assertEqual(sorted(started), ['0000', '0002', '0003', '0004', '0005'])  # 0001 is skipped
+        self.assertIn('chunk 0001 is in the done-manifest: skipped', log)
+        running = peak = 0
+        for e in ev:
+            running += 1 if e[0] == 'S' else -1
+            peak = max(peak, running)
+        self.assertEqual(peak, 2)  # PARALLEL, and the chunks do overlap
+        with open(os.path.join(work, 'done.txt'), encoding='utf-8') as f:
+            self.assertEqual(sorted(f.read().split()), ['0000', '0001', '0002', '0003', '0004', '0005'])
+        calls = self.calls()
+        # the manifest is written after the upload of the chunk it adds, every time
+        uploaded = set()
+        manifests = 0
+        for c in calls:
+            m = re.search(r'chunk-(\d{4})/summary.json', c)
+            if m:
+                uploaded.add(m.group(1))
+            if c.startswith('MANIFEST'):
+                manifests += 1
+                listed = [x for x in c[len('MANIFEST '):].split(',') if x and x != '0001']
+                self.assertTrue(set(listed) <= uploaded, (c, uploaded))
+        self.assertEqual(manifests, 5)
+        for idx in ('0000', '0002', '0003', '0004', '0005'):
+            self.assertTrue(any('chunk-%s/summary.json' % idx in c for c in calls), idx)
+            self.assertTrue(any('chunk-%s/cases' % idx in c and '--recursive' in c for c in calls), idx)
+        self.assertFalse(any('chunk-0001/' in c for c in calls))
+        with open(os.path.join(work, 'inflight'), encoding='utf-8') as f:
+            self.assertEqual(f.read().strip(), '')
+        self.assertRegex(log, r'chunk 0000: 10 battles in \d+ s \([0-9.]+ battles/s\), 8\.5 CPU-s, \d+% of the 4 vCPUs')
+
+    def test_the_seed_of_a_chunk_is_the_base_seed_plus_its_index(self):
+        r, _ev, log, _work = self.run_harness(CHUNKS='3', PARALLEL='1')
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr + log)
+        for idx, seed in (('0000', 100), ('0001', 101), ('0002', 102)):
+            self.assertIn('chunk %s: seed %d, 10 battles, started' % (idx, seed), log)
+
+    def test_a_failing_chunk_fails_the_campaign_and_is_not_in_the_manifest(self):
+        r, _ev, log, work = self.run_harness(FAIL_IDX='0002')
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn('FAILED: chunk 0002', log)
+        with open(os.path.join(work, 'done.txt'), encoding='utf-8') as f:
+            self.assertNotIn('0002', f.read().split())
+
+    def test_the_partial_results_of_every_chunk_in_flight_are_uploaded(self):
+        r, _ev, log, work = self.run_harness(mode='partial')
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr + log)
+        self.assertTrue(any(c.startswith('s3 sync ') and c.endswith('s3://my-fuzz-bucket/fuzz/c/partial/chunk-0003/ --only-show-errors')
+                            for c in self.calls()), self.calls())
+
+    # ------------------------------------------------------------------ the benchmark step
+    def fake_bench(self, fail=False):
+        path = os.path.join(self.tmp, 'fake_bench.py')
+        with open(path, 'w', newline=chr(10)) as f:
+            f.write(FAKE_BENCH)
+        return shlex.quote(posix(sys.executable)) + ' ' + shlex.quote(posix(path)) + (' --fail' if fail else '')
+
+    def test_bench_run_reports_games_and_decisions_per_second_on_all_vcpus_and_on_16_threads(self):
+        import bench_run
+        out = os.path.join(self.tmp, 'bench.json')
+        self.assertEqual(bench_run.main(['--bench', self.fake_bench(), '--vcpus', '64', '--seconds', '0.3', '--out', out,
+                                         '--instance-type', 'c7a.16xlarge', '--campaign', 'weather-sand-snow',
+                                         '--commit', SHA]), 0)
+        with open(out, encoding='utf-8') as f:
+            d = json.load(f)
+        self.assertEqual((d['threads'], d['vcpus'], d['instance_type']), (64, 64, 'c7a.16xlarge'))
+        self.assertEqual((d['games_per_second'], d['decisions_per_second']), (64000, 64 * 30000))
+        self.assertEqual(d['threads_16']['threads'], 16)
+        self.assertEqual(d['threads_16']['games_per_second'], 16000)
+        self.assertGreaterEqual(len(d['runs']), 1)
+        self.assertEqual((d['campaign'], d['commit']), ('weather-sand-snow', SHA))
+
+    def test_bench_run_with_16_or_fewer_vcpus_has_no_comparison_and_a_failing_bench_fails(self):
+        import bench_run
+        out = os.path.join(self.tmp, 'bench2.json')
+        self.assertEqual(bench_run.main(['--bench', self.fake_bench(), '--vcpus', '8', '--seconds', '0.1', '--out', out]), 0)
+        with open(out, encoding='utf-8') as f:
+            self.assertIsNone(json.load(f)['threads_16'])
+        with self.assertRaises(Exception):
+            bench_run.main(['--bench', self.fake_bench(fail=True), '--vcpus', '8', '--seconds', '0.1', '--out', out])
+
     # ------------------------------------------------------------------ the repository
     def test_no_account_id_and_no_access_key_anywhere_in_the_tool(self):
         for base, _dirs, files in os.walk(HERE):
@@ -362,7 +520,14 @@ class Guards(unittest.TestCase):
                         if line.strip() and not line.startswith('#'):
                             k, _, v = line.rstrip('\n').partition('=')
                             keys[k] = v
-                self.assertEqual(sorted(keys), ['base_seed', 'chunks', 'pairings', 'teams'])
+                self.assertTrue({'base_seed', 'chunks', 'pairings', 'teams'} <= set(keys), keys)
+                self.assertLessEqual(set(keys), {'base_seed', 'chunks', 'pairings', 'teams', 'chunk_battles', 'parallel', 'bench'})
+                if 'chunk_battles' in keys:
+                    self.assertTrue(100 <= int(keys['chunk_battles']) <= 20000)
+                if 'parallel' in keys:
+                    self.assertRegex(keys['parallel'], r'^(auto|[0-9]{1,2})$')
+                if 'bench' in keys:
+                    self.assertIn(keys['bench'], ('0', '1'))
                 self.assertRegex(keys['base_seed'], r'^[0-9]{1,12}$')
                 self.assertRegex(keys['chunks'], r'^[0-9]{1,3}$')
                 self.assertRegex(keys['pairings'], r'^[A-Za-z0-9,-]+$')
@@ -409,7 +574,7 @@ class Guards(unittest.TestCase):
     # ------------------------------------------------------------------ shellcheck
     @unittest.skipIf(shutil.which('shellcheck') is None, 'shellcheck is not installed')
     def test_shellcheck_is_clean(self):
-        scripts = [os.path.join(HERE, n) for n in ('lib.sh', 'check.sh', 'launch.sh', 'collect.sh', 'user_data.sh')]
+        scripts = [os.path.join(HERE, n) for n in ('lib.sh', 'check.sh', 'launch.sh', 'collect.sh', 'user_data.sh', 'chunks.sh')]
         r = subprocess.run(['shellcheck', '-x', '-S', 'warning', *[posix(s) for s in scripts]], capture_output=True, text=True,
                            cwd=HERE)
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
