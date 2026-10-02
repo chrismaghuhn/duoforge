@@ -377,6 +377,11 @@ duoforge_status duoforge_battle_reseed(const duoforge_context *ctx, duoforge_bat
    exactly when an occupant has no selectable move (no PP left, Fake Out
    disabled, a choice lock; sim/pokemon.ts, the reference's request). */
 #define DUOFORGE_MOVE_SLOT_STRUGGLE 4u
+/* move_slot of the recharge turn (POOL kinds, step G17): a Pokemon that used a recharge move (Hyper Beam) and hit must
+   recharge on its next action. Its slot is offered exactly one candidate, MOVE with this move_slot, DUOFORGE_TARGET_NONE
+   and no Mega declaration; no other move and no switch (sim/pokemon.ts getMoveRequestData, trapped; Showdown's
+   "move 1" is the move "Recharge"). The action prints "cant|X|recharge" (DUOFORGE_CAUSE_RECHARGE) and uses no PP. */
+#define DUOFORGE_MOVE_SLOT_RECHARGE 5u
 #define DUOFORGE_CHOICE_TEAM_SELECTION 1u
 #define DUOFORGE_CHOICE_SLOTS          2u
 /* Profile bound on a complete side-choice domain: max(720 ordered picks of 6,
@@ -385,7 +390,7 @@ duoforge_status duoforge_battle_reseed(const duoforge_context *ctx, duoforge_bat
 
 typedef struct duoforge_slot_command {
     uint8_t kind;        /* DUOFORGE_SLOT_* */
-    uint8_t move_slot;   /* MOVE: 0..3, or DUOFORGE_MOVE_SLOT_STRUGGLE */
+    uint8_t move_slot;   /* MOVE: 0..3, or DUOFORGE_MOVE_SLOT_STRUGGLE, or DUOFORGE_MOVE_SLOT_RECHARGE */
     uint8_t target;      /* MOVE: flat position side*2+slot, or DUOFORGE_TARGET_NONE */
     uint8_t mega;        /* MOVE: 0/1 Mega Evolution declaration */
     uint8_t reserve;     /* SWITCH: roster index of the reserve */
@@ -892,6 +897,7 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_CAUSE_WEATHER   16u /* DAMAGE (POOL kinds): the residual damage of a weather ([from] Sandstorm); id2: the
                                          DUOFORGE_WEATHER_* value. Generic for every weather that damages; in this format
                                          it fires only for Sand: Snow has no residual damage and Hail is not in the format */
+#define DUOFORGE_CAUSE_RECHARGE  18u /* CANT (POOL kinds): the recharge turn after a recharge move ([cant] recharge) */
 #define DUOFORGE_CAUSE_HEAL_BLOCK 15u /* CANT (POOL kinds): a move that heals, stopped by Heal Block; id: the stopped move.
                                          A sound move stopped by Throat Chop is CANT with cause MOVE, id2: Throat Chop
                                          (the line names no move, so id is 0) */
@@ -908,6 +914,8 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_BLOCK_WIDE_GUARD 4u /* BLOCKED detail: Wide Guard (POOL kinds); 0 Protect, 3 Psychic Terrain */
 #define DUOFORGE_VOLATILE_HEAL_BLOCK 1u /* VOLATILE_START / VOLATILE_END: Heal Block (Psychic Noise, 2 turns) */
 #define DUOFORGE_VOLATILE_ENCORE     2u /* VOLATILE_START / VOLATILE_END: Encore (-start|X|Encore, -end|X|Encore) */
+#define DUOFORGE_VOLATILE_MUST_RECHARGE 3u /* VOLATILE_START: -mustrecharge|X (a recharge move hit); no END, it ends with the
+                                              [cant] recharge line or with the occupant */
 #define DUOFORGE_FIELD_GRASSY_TERRAIN 1u
 #define DUOFORGE_FIELD_TRICK_ROOM     2u
 #define DUOFORGE_FIELD_PSYCHIC_TERRAIN 3u /* Team C */
