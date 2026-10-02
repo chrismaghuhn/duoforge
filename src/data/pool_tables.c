@@ -2242,7 +2242,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   thermalexchange -- data/abilities.ts:4990-5013
  *   thickfat -- data/abilities.ts:5014-5033  [unmodelled: callback onSourceModifyAtk; callback onSourceModifyAtkPriority; callback onSourceModifySpA; callback onSourceModifySpAPriority]
  *   toxicdebris -- data/abilities.ts:5104-5117  [unmodelled: callback onDamagingHit]
- *   trace -- data/abilities.ts:5118-5151  [unmodelled: callback onStart; callback onUpdate]
+ *   trace -- data/abilities.ts:5118-5151
  *   unaware -- data/abilities.ts:5214-5234  [unmodelled: callback onAnyModifyBoost]
  *   unnerve -- data/abilities.ts:5258-5275  [unmodelled: callback onEnd; callback onFoeTryEatItem; callback onStart; callback onSwitchInPriority]
  *   unseenfist -- data/abilities.ts:5276-5284, data/mods/champions/abilities.ts:86-95  [unmodelled: callback onHitProtect; callback onModifyMove]
@@ -3021,7 +3021,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_THERMALEXCHANGE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_THICKFAT] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_TOXICDEBRIS] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_TRACE] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_TRACE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_UNAWARE] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_UNNERVE] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_UNSEENFIST] = DFI_HANDLER_UNMODELED,
@@ -6436,7 +6436,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_TELEPATHY] = "callback onTryHit",
     [DFI_ABILITY_THICKFAT] = "callback onSourceModifyAtk; callback onSourceModifyAtkPriority; callback onSourceModifySpA; callback onSourceModifySpAPriority",
     [DFI_ABILITY_TOXICDEBRIS] = "callback onDamagingHit",
-    [DFI_ABILITY_TRACE] = "callback onStart; callback onUpdate",
     [DFI_ABILITY_UNAWARE] = "callback onAnyModifyBoost",
     [DFI_ABILITY_UNNERVE] = "callback onEnd; callback onFoeTryEatItem; callback onStart; callback onSwitchInPriority",
     [DFI_ABILITY_UNSEENFIST] = "callback onHitProtect; callback onModifyMove",
@@ -6451,10 +6450,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x5fu, 0x01u, 0xbbu, 0xf7u, 0x6du, 0xd3u, 0x93u, 0xa9u,
-    0x6du, 0x69u, 0x14u, 0x99u, 0xe4u, 0x54u, 0xb9u, 0x76u,
-    0xadu, 0xb2u, 0xbau, 0x02u, 0x46u, 0x34u, 0xa4u, 0xffu,
-    0x14u, 0xf2u, 0xa3u, 0x08u, 0xdfu, 0x79u, 0x47u, 0xceu,
+    0x04u, 0xcau, 0xdcu, 0xf1u, 0x09u, 0xb0u, 0x81u, 0x93u,
+    0xdeu, 0x11u, 0xfeu, 0x2au, 0xdeu, 0xbau, 0xa4u, 0xd1u,
+    0xa9u, 0x92u, 0xafu, 0x18u, 0x38u, 0x26u, 0x72u, 0x61u,
+    0x23u, 0xd4u, 0xb9u, 0x0bu, 0xb0u, 0x68u, 0x10u, 0xd9u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)
