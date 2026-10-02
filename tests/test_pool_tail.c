@@ -1334,14 +1334,16 @@ int main(void)
     }
 
     /* A valid tail passes through a step: the residual counts the Throat Chop and Heal Block timers of every position
-     * down by one (step G8), and nothing else of it changes (the field, the side conditions, the other volatiles and
-     * the member overrides stay: nothing in this turn ends them). The soak types of the example (Fighting and Water on
+     * down by one (step G8) and ends the wide guard of both sides (step G7: a side condition of duration 1), and
+     * nothing else of it changes (the field, the other side conditions, the other volatiles and the member overrides
+     * stay: nothing in this turn ends them). The soak types of the example (Fighting and Water on
      * the leads, which the types now read: step G11) keep the turn from ending in a knock-out before its residual. */
     {
         duoforge_battle *x = turn_battle(&t, kp, false);
         set_example_tail(x);
         dfi_pool_tail want = x->tail;
         for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+            want.sides[s].wide_guard = 0u;
             for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
                 dfi_tail_pos *tp = &want.sides[s].positions[p];
                 tp->throat_chop_turns = (uint8_t)(tp->throat_chop_turns != 0u ? tp->throat_chop_turns - 1u : 0u);

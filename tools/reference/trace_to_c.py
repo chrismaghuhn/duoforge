@@ -518,6 +518,7 @@ STATUS = {'': 0, 'brn': 1, 'frz': 2, 'par': 3, 'slp': 4, 'psn': 5, 'fnt': 0}
 WEATHER = {'': 0, 'raindance': 1, 'sunnyday': 2}
 TERRAIN = {'': 0, 'grassyterrain': 1, 'psychicterrain': 2}
 FIELD_PSYCHIC_TERRAIN = 3  # DUOFORGE_FIELD_PSYCHIC_TERRAIN (Team C)
+BLOCK_WIDE_GUARD = 4  # DUOFORGE_BLOCK_WIDE_GUARD (POOL), a detail of BLOCKED
 RESULT = {'p1': 1, 'p2': 2, '': 3}
 
 
@@ -783,6 +784,8 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             elif args[1] == 'Helping Hand':  # Team C: [of] the user
                 _, _, of = ev_cause(attrs, tables)
                 e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), of, 0, tables['MOVE'][key(args[1])])
+            elif args[1] == 'Wide Guard' and not attrs:  # POOL: the side condition of the user's side, one turn
+                e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), NOPOS, 0, tables['MOVE'][key(args[1])])
             elif args[1] == 'move: Follow Me' and not attrs:  # Team C: no [of]; [zeffect] is not in the format
                 e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), NOPOS, 0, tables['MOVE'][key(args[1][6:])])
             else:
@@ -801,6 +804,8 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                 e = ev_tuple(EV['BLOCKED'], pos)
             elif what == 'move: Psychic Terrain':  # Team C: a priority move stopped at a grounded target
                 e = ev_tuple(EV['BLOCKED'], pos, detail=FIELD_PSYCHIC_TERRAIN)
+            elif what == 'move: Wide Guard':  # POOL: a spread move stopped at a target of the guarded side
+                e = ev_tuple(EV['BLOCKED'], pos, detail=BLOCK_WIDE_GUARD)
             elif what == 'confusion':
                 e = ev_tuple(EV['CONFUSED'], pos)
             elif what.startswith('ability: '):
