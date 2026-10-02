@@ -229,7 +229,21 @@ if(DUOFORGE_PS_REFERENCE_DIR)
             COMMAND "${DUOFORGE_NODE}" "${PROJECT_SOURCE_DIR}/tools/reference/ps_client.js"
                 "${DUOFORGE_PS_REFERENCE_DIR}" "${PROJECT_SOURCE_DIR}" --all --check)
         set_tests_properties(duoforge.reference.client_streams PROPERTIES TIMEOUT 300 LABELS reference)
+        # The Showdown live adapter against the pinned Showdown and the runner's views (spec section 8).
+        if(DUOFORGE_PYTHON)
+            add_test(NAME duoforge.python.live
+                COMMAND "${DUOFORGE_PYTHON}" -m unittest -v python.tests.test_live
+                WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
+            set_tests_properties(duoforge.python.live PROPERTIES LABELS "python;reference" TIMEOUT 900 ENVIRONMENT
+                "DUOFORGE_NODE=${DUOFORGE_NODE};DUOFORGE_PS_REFERENCE_DIR=${DUOFORGE_PS_REFERENCE_DIR};DUOFORGE_DIFF_RUNNER=$<TARGET_FILE:duoforge_diff_runner>;DUOFORGE_LIBRARY=$<TARGET_FILE:duoforge_shared>;PYTHONPATH=${PROJECT_SOURCE_DIR}/python;PYTHONDONTWRITEBYTECODE=1")
+            set(_duoforge_live_registered ON)
+        endif()
     endif()
+endif()
+if(NOT _duoforge_live_registered)
+    add_test(NAME duoforge.python.live
+        COMMAND "${CMAKE_COMMAND}" -E echo "DUOFORGE_SKIP: needs DUOFORGE_PYTHON, Node and DUOFORGE_PS_REFERENCE_DIR")
+    set_tests_properties(duoforge.python.live PROPERTIES LABELS python SKIP_REGULAR_EXPRESSION "DUOFORGE_SKIP:")
 endif()
 # The conformance tables must be what the converter makes of the traces.
 find_package(Python3 COMPONENTS Interpreter)
@@ -393,7 +407,7 @@ endif()
 
 # The Python package (M7, decision 0013), run with DUOFORGE_PYTHON; without
 # an interpreter each test reports skipped instead of passing silently.
-foreach(_py layout lib equivalence recipes policies_features example learn_numpy)
+foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit)
     if(DUOFORGE_PYTHON)
         add_test(NAME duoforge.python.${_py}
             COMMAND "${DUOFORGE_PYTHON}" -m unittest -v python.tests.test_${_py}
