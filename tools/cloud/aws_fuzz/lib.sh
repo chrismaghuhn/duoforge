@@ -39,16 +39,17 @@ df_mask() {
 }
 
 df_init() {
-    # Git Bash would turn the argument /aws/service/... into a Windows path before it reaches the CLI.
-    export MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*'
     AWS_PROFILE=${AWS_PROFILE:-$DF_PROFILE_DEFAULT}
     AWS_REGION=$DF_REGION
     AWS_DEFAULT_REGION=$DF_REGION
     export AWS_PROFILE AWS_REGION AWS_DEFAULT_REGION
 }
 
+# Every AWS call goes through here. Git Bash would turn an argument such as /aws/service/... into a Windows path before it
+# reaches the CLI, so the conversion is switched off for this one command only: exported, it would also break git and
+# every other program that is given a POSIX path.
 df_aws() {
-    aws --region "$DF_REGION" "$@"
+    MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*' aws --region "$DF_REGION" "$@"
 }
 
 # The first AWS action of every script: who is calling. Anything but the user pokeengine is refused.
