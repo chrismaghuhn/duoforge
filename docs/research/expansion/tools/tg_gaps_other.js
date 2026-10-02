@@ -1,0 +1,212 @@
+// The species, ability and item entries of docs/research/expansion/data/
+// team_gaps.json: Pelipper, Arcanine-Hisui, Annihilape and Floette-Eternal
+// (with Floette-Mega), Rock Head, Flower Veil and Fairy Aura (the Mega's
+// ability, a gap the survey list does not name), and Focus Sash, Expert Belt,
+// Colbur Berry, Occa Berry, Black Glasses and Floettite. Curated research (see
+// tg_build.js). Citation forms: see tg_gaps_moves.js.
+'use strict';
+
+const probe = s => `tg_probe_reference.js ${s}`;
+const SPECIES_STATE = ['None: species_id is u16 (battle_internal.h:97); the forme row is data. The fixed-set columns of the row are replaced by the legal-move set of G1.'];
+
+module.exports = [
+	// ------------------------------------------------------------- species
+	{
+		id: 'species:pelipper', kind: 'species', name: 'Pelipper', step: 'G2', effort: 'XS',
+		pinned: ['pokedex.ts:5458-5470: Water/Flying, 60/50/100/95/70/65, abilities Keen Eye / Drizzle / Rain Dish(H), 28 kg, dex 279. No override. All 28 Pelipper sets of the 227 pastes use Drizzle, so one ability per forme is enough here.'],
+		draws: ['None.'],
+		protocol: {lines: ['`|switch|p1a: Pelipper|Pelipper, L50, M|..` (the protocol name is the species name).'], unknown: []},
+		duoforge: {
+			tables: 'no (23 formes)', generator: 'needs a SETS row (species, Drizzle, item, four moves, no Mega); parse_forme reads the dex entry, the Champions formats-data and the learnset (gen_closure.py:340-359, 456-470)',
+			classification: 'none (species are not classified)', recheck: 'Data only: weight 280 hg, gender rule any, no Mega. The moves of its sets are Weather Ball, Hurricane, Tailwind (built), Wide Guard (G7), Protect, Helping Hand, Ice Beam.',
+			engine: 'Drizzle is built (turn.c:2683-2692). Flying makes it not grounded (turn.c:111-114).',
+		},
+		state: SPECIES_STATE,
+		interactions: ['Flying: Psychic Terrain does not stop priority moves at it and Grassy Terrain neither heals nor boosts for it; x4 weak to Electric (Thunderbolt, Zap Cannon, Electro Shot), x2 to Rock (Rock Slide), immune to Ground; Soak makes it grounded Water (G11).', 'Rain from Drizzle: Hurricane never misses, Weather Ball is Water; its own Tailwind and Wide Guard; Intimidate and Competitive entries run in switch order.'],
+		evidence: {specs: ['g02_species_pelipper: the lead entry (Drizzle), Hurricane in rain, Weather Ball, Tailwind; Wide Guard follows with G7'], tests: ['Prefix and row tests: weight, types, stats against the pin.']},
+		cites: [{file: 'ps:data/pokedex.ts', line: 5463, contains: 'Drizzle'}, {file: 'src/state/battle_internal.h', line: 97, contains: 'species_id'}],
+	},
+	{
+		id: 'species:arcaninehisui', kind: 'species', name: 'Arcanine-Hisui', step: 'G2', effort: 'XS',
+		pinned: ['pokedex.ts:1515-1531: Fire/Rock, 95/115/80/95/80/90, abilities Intimidate / Flash Fire / Rock Head(H), 168 kg, dex 59, 75 % male. Rock Head in 28 of 33 sets of the 227 pastes, Intimidate in 5.'],
+		draws: ['None.'],
+		protocol: {lines: ['The protocol name of an unnamed Pokemon is its base species: `|switch|p1a: Arcanine|Arcanine-Hisui, L50, M|..` (sim/pokemon.ts:339-341).'], unknown: ['trace_to_c.py:356 maps only `Indeedee-F` to its protocol name; `Arcanine-Hisui` -> `Arcanine` is a new entry (an unmapped name stops with `unknown-pokemon`).']},
+		duoforge: {
+			tables: 'no', generator: 'needs a SETS row (Rock Head for the 17 teams)',
+			classification: 'none', recheck: 'Data only: weight 1680 hg, gender rule any, no Mega. The five Intimidate sets need the ability list of G1.',
+			engine: 'Rock Head is G4; Intimidate and Flash Fire are built.',
+		},
+		state: SPECIES_STATE,
+		interactions: ['Fire/Rock: x4 weak to Water and Ground (`-supereffective` amount 2), x2 to Fighting and Rock; cannot be burned; Flash Fire absorbs Fire moves (turn.c:2168-2180).', 'Head Smash and Flare Blitz with Rock Head: no recoil (G4); Extreme Speed (priority +2) against Psychic Terrain and Armor Tail; Focus Sash on the lead.'],
+		evidence: {specs: ['g02_species_arcanine: Intimidate set and Rock Head set (with G4)'], tests: ['Alias test: `Arcanine` names Arcanine-Hisui in a trace.']},
+		cites: [{file: 'ps:data/pokedex.ts', line: 1523, contains: 'Rock Head'}, {file: 'ps:sim/pokemon.ts', line: 330, contains: 'baseSpecies.baseSpecies'}, {file: 'tools/reference/trace_to_c.py', line: 356, contains: 'BASE_SPECIES_NAME'}],
+	},
+	{
+		id: 'species:annihilape', kind: 'species', name: 'Annihilape', step: 'G2', effort: 'XS',
+		pinned: ['pokedex.ts:18771-18784: Fighting/Ghost, 110/115/80/50/90/90, abilities Vital Spirit / Inner Focus / Defiant(H), 56 kg, dex 979. The one set in the 227 pastes (MC196) is Choice Scarf, Defiant, Close Combat / Ice Punch / Shadow Claw / U-turn.'],
+		draws: ['None.'],
+		protocol: {lines: ['`|switch|p1a: Annihilape|Annihilape, L50, M|..`.'], unknown: []},
+		duoforge: {tables: 'no', generator: 'needs a SETS row (Defiant, Choice Scarf)', classification: 'none', recheck: 'Data only: weight 560 hg, gender rule any, no Mega. Defiant and Choice Scarf are built; Ice Punch, Shadow Claw are A (G2), U-turn is G5.', engine: 'Defiant turn.c:567-572; Choice Scarf lock turn.c:1849-1853.'},
+		state: SPECIES_STATE,
+		interactions: ['Ghost: immune to Normal and Fighting (Fake Out, Extreme Speed, a foe\'s Close Combat); Fighting/Ghost weak to Flying, Psychic, Ghost, Fairy; Choice Scarf lock with U-turn ends on leaving.'],
+		evidence: {specs: ['g02_species_annihilape: Close Combat, Ice Punch, Shadow Claw, then U-turn (with G5)'], tests: []},
+		cites: [{file: 'ps:data/pokedex.ts', line: 18776, contains: 'Defiant'}, {file: 'src/combat/turn.c', line: 567, contains: 'DFI_ABILITY_DEFIANT'}],
+	},
+	{
+		id: 'species:floetteeternal', kind: 'species', name: 'Floette-Eternal (and Floette-Mega)', step: 'G12', effort: 'S',
+		pinned: [
+			'pokedex.ts:12573-12586: Fairy, 74/65/67/125/128/92, abilities Flower Veil / Symbiosis(H), gender F only, 0.9 kg, dex 670. Floette-Mega (:12587-12603): Fairy, 74/85/87/155/148/102, ability Fairy Aura, 100.8 kg, requiredItem Floettite, battleOnly Floette-Eternal.',
+			'58 of the 227 pastes carry it: Flower Veil 55 / Fairy Aura 3 (a paste that names the Mega), item always Floettite, moves Protect 58, Dazzling Gleam 55, Calm Mind 44, Moonblast 40, Draining Kiss 19, Light of Ruin 16.',
+		],
+		draws: ['None.'],
+		protocol: {
+			lines: ['`|switch|p1a: Floette|Floette-Eternal, L50, F|..`; at the Mega `|detailschange|p1a: Floette|Floette-Mega, L50, F`, `|-mega|p1a: Floette|Floette|Floettite`, `|-ability|p1a: Floette|Fairy Aura` (probe `fairyaura`).'],
+			unknown: ['The protocol name is `Floette`: `Floette-Eternal` -> `Floette` is a new alias (trace_to_c.py:356).'],
+		},
+		duoforge: {
+			tables: 'no', generator: 'needs a SETS row with the Mega (gen_closure.py:471-482 checks that the stone matches: items.ts megaStone {Floette-Eternal: Floette-Mega})',
+			classification: 'none', recheck: 'Two rows (base and Mega), gender rule FEMALE, Mega weight 1008 hg. Not the name the survey list uses: a paste that says `Floette-Mega` is Floette-Eternal holding Floettite (MC221, MC222, MC296, MC354, MC210 in the survey). Other set moves: Moonblast (Champions override: 10 %), Calm Mind and Draining Kiss encode today; Light of Ruin is rejected only for its `tags` data key (a Champions-enabled Past move, 1/2 recoil).',
+			engine: 'The Mega machinery is generic (closure_member.c:131-135, turn.c:2827-2855) and the setup gate needs the Mega\'s ability marked (closure_member.c:145-150): Floette-Eternal cannot hold Floettite before Fairy Aura is built.',
+		},
+		state: SPECIES_STATE,
+		interactions: ['Flower Veil protects its Grass allies (Rillaboom) from Intimidate and status moves; Fairy Aura boosts every Fairy move on the field after the Mega (G12).', 'Species Clause: dex 670; weight 9 hg before and 1008 hg after the Mega (Low Kick, Grass Knot).'],
+		evidence: {specs: ['g12_floette_mega: Mega Evolution (forme line, Mega line, ability line), Dazzling Gleam before and after'], tests: ['Setup test: Floette-Eternal with Floettite is `E_UNSUPPORTED` until Fairy Aura is marked.']},
+		cites: [{file: 'ps:data/pokedex.ts', line: 12587, contains: 'floettemega'}, {file: 'ps:data/pokedex.ts', line: 12595, contains: 'Fairy Aura'}, {file: 'src/state/closure_member.c', line: 148, contains: 'mega_evolution'}],
+	},
+	// ------------------------------------------------------------- abilities
+	{
+		id: 'ability:rockhead', kind: 'ability', name: 'Rock Head', step: 'G4', effort: 'S',
+		pinned: ['abilities.ts:3906-3917: onDamage: when the effect is `recoil` and the active move is not Struggle, return null (the damage is cancelled). Struggle\'s recoil never reaches the handler: it is applied with directDamage as `strugglerecoil` (sim/battle-actions.ts:1388-1389), and spreadDamage skips the Damage event for that id (sim/battle.ts:2115). Life Orb damage is an item effect, not `recoil`. No override.'],
+		draws: ['None.'],
+		protocol: {lines: ['None: the recoil line is simply absent (probe `rockhead`: Head Smash hits, no `[from] Recoil`).'], unknown: []},
+		duoforge: {
+			tables: 'no (21 abilities)', generator: 'ability ids carry no data; the row needs the id',
+			classification: 'D, size M', recheck: 'S, not M: one predicate where the recoil is applied. D/S.',
+			engine: 'Recoil is applied at turn.c:2449-2465; Struggle\'s is the same code with the STRUGGLE_RECOIL flag (turn.c:2451), which must stay.',
+		},
+		state: ['None.'],
+		interactions: ['Recoil moves: Head Smash, Flare Blitz, Double-Edge, Wood Hammer, Brave Bird, Wave Crash; not Struggle, not Life Orb.', 'The attacker\'s Emergency Exit check after the recoil (turn.c:2464) must not run when no damage happened; a recoil that would have faulted the user no longer does (a battle ends differently).', 'Focus Sash and Rock Head on one Arcanine-Hisui are the two items of MC172 and MC385: Sash is lost to a lethal hit, Rock Head never.'],
+		evidence: {specs: ['g04_rock_head: Head Smash and Flare Blitz with no recoil line, a Rock Head user that would have fainted from recoil, Struggle with a Rock Head user (recoil stays)'], tests: ['Negative controls: recoil on Struggle skipped; Life Orb skipped.']},
+		cites: [{file: 'ps:data/abilities.ts', line: 3910, contains: "'struggle'"}, {file: 'ps:sim/battle.ts', line: 2115, contains: 'strugglerecoil'}, {file: 'src/combat/turn.c', line: 2451, contains: 'DFI_MOVE_FLAG_STRUGGLE_RECOIL'}],
+	},
+	{
+		id: 'ability:flowerveil', kind: 'ability', name: 'Flower Veil', step: 'G12', effort: 'M',
+		pinned: ['abilities.ts:1419-1457: onAllyTryBoost: for a Grass-type holder or ally (not a self-inflicted change) every negative boost is deleted and `-block|target|ability: Flower Veil|[of] holder` is shown unless the effect has secondaries; onAllySetStatus: a status from another Pokemon\'s move without secondaries (or Synchronize) is blocked with the same line, a status from a secondary is blocked silently; onAllyTryAddVolatile: Yawn. flags breakable. No override.'],
+		draws: ['None.'],
+		protocol: {lines: ['`|-block|p1b: Rillaboom|ability: Flower Veil|[of] p1a: Floette` after Intimidate\'s `-ability` line, with no `-unboost` for that target (probe `flowerveil`, step 0).'], unknown: ['`-block`: trace_to_c.py:774-775 (`protocol-line`).']},
+		duoforge: {
+			tables: 'no', generator: 'ability ids carry no data',
+			classification: 'D, size M', recheck: 'D/M confirmed: two hooks and a new public line.',
+			engine: 'The TryBoost point is in dfi_boost after Contrary and the cap (turn.c:522-529); the status point is dfi_try_status (turn.c:1028-1081). The holder\'s own side is the flat position XOR 1.',
+		},
+		state: ['None; one event kind (BLOCK with the holder in `other`, cause ABILITY + id2).'],
+		interactions: [
+			'Intimidate on Rillaboom: no drop, so Defiant/Competitive of that Pokemon never trigger; the line is shown per Grass target.',
+			'Hypnosis, Will-O-Wisp, Spore and the like are blocked on Grass allies; Dire Claw\'s status pick is blocked silently (it is a secondary), but its SECONDARY and STATUS_PICK draws still happen.',
+			'Soak makes a Grass ally Water, ending the protection; Contrary reverses the drop first, so nothing is blocked.',
+			'Floette itself is Fairy, so the holder has no self protection; what it covers is every Grass-type ally on the field.',
+		],
+		evidence: {specs: ['g12_flower_veil: the opening Intimidates against a Rillaboom ally, Hypnosis at it, Snarl\'s secondary drop (silent), the same without the holder'], tests: ['Negative controls: no block for a non-Grass ally; Defiant triggering through the block.']},
+		cites: [{file: 'ps:data/abilities.ts', line: 1432, contains: 'Flower Veil'}, {file: 'src/combat/turn.c', line: 524, contains: 'DFI_ABILITY_CONTRARY'}, {file: 'tools/reference/trace_to_c.py', line: 775, contains: 'protocol-line'}],
+	},
+	{
+		id: 'ability:fairyaura', kind: 'ability', name: 'Fairy Aura (the Mega\'s ability)', step: 'G12', effort: 'S',
+		pinned: ['abilities.ts:1266-1282: onStart `-ability|X|Fairy Aura`; onAnyBasePower at priority 20: a non-status Fairy move that is not self-targeted gets x5448/4096 (x3072/4096 with Aura Break), applied once per move through `move.auraBooster`. Mega-only: Floette-Mega has no other ability. The Start runs at the Mega Evolution (sim/pokemon.ts:1487, 1943). No override.'],
+		draws: ['None.'],
+		protocol: {lines: ['`|-ability|p1a: Floette|Fairy Aura` after the `-mega` line (probe `fairyaura`).'], unknown: []},
+		duoforge: {
+			tables: 'no', generator: 'ability ids carry no data; it is the ability of a Mega forme row (gen_closure.py:476-479)',
+			classification: 'C, aura, param', recheck: 'C confirmed; the family has one legal member, so one rule. The survey list does not name it: it is a gap of Floette-Eternal + Floettite.',
+			engine: 'BasePower chain turn.c:837-866 (Aerilate 23, Tough Claws 21, the type items 15, Helping Hand 10, terrains 6); the Mega entry runs turn.c:2846-2851 through dfi_has_entry.',
+		},
+		state: ['None.'],
+		interactions: ['Any Fairy move of anyone on the field, a foe\'s included (Hyper Voice under Pixilate later); two holders boost once; Dazzling Gleam, Moonblast, Draining Kiss (a drain move), Light of Ruin.', 'Chain order: Aerilate/-ate (23) before Fairy Aura (20) before the type items (15): the rounding of the chained modifier depends on it.'],
+		evidence: {specs: ['g12_fairy_aura: Dazzling Gleam before and after the Mega, a foe\'s Fairy move, two holders (one boost)'], tests: ['Negative control: the boost for a status move and for a self-targeted one.']},
+		cites: [{file: 'ps:data/abilities.ts', line: 1271, contains: 'onAnyBasePowerPriority: 20'}, {file: 'ps:sim/pokemon.ts', line: 1943, contains: "'Start'"}, {file: 'src/combat/turn.c', line: 2846, contains: 'dfi_has_entry'}],
+	},
+	// ------------------------------------------------------------- items
+	{
+		id: 'item:focussash', kind: 'item', name: 'Focus Sash', step: 'G4', effort: 'S',
+		pinned: ['items.ts:2269-2285: onDamage at priority -40: when the target is at full HP, the damage is at least its HP and the effect is a Move, `target.useItem()` and the damage becomes `hp - 1`. Recoil (effect type Recoil), Rocky Helmet, Life Orb, weather and status damage are not Moves, so the sash ignores them. A confusion hit is a Move, but cannot be lethal at full HP. No override.'],
+		draws: ['None.'],
+		protocol: {lines: ['`|-enditem|p2a: Pelipper|Focus Sash` before the `-damage` line (probes `focussash`, `rockhead`: after `-supereffective` in a spread hit).'], unknown: []},
+		duoforge: {
+			tables: 'no (16 items)', generator: 'items carry only the Mega mapping',
+			classification: 'C, focus_item, shape', recheck: 'C (shape) confirmed: one member in the pool. The hook is the move-damage call of the spread loop (turn.c:2296-2313), per target, with cause NONE.',
+			engine: 'dfi_deal (turn.c:982-1004) is shared by moves, recoil, helmet, burn and poison; the sash must sit at the move-damage call, not in dfi_deal.',
+		},
+		state: ['None (item_consumed exists); Unburden fires through dfi_use_item (turn.c:1177-1193).'],
+		interactions: [
+			'Multi-target hits: each target decides for itself and the lines come in target order (`-enditem` between the `-damage` lines of two targets); the hit that left a holder at 1 HP still counts as a hit for the secondaries and for Dire Claw\'s pick draw.',
+			'Recoil and drain follow the damage actually dealt (hp - 1): Head Smash into a sash holder recoils from that amount (turn.c:2306).',
+			'Life Orb: the attacker\'s item damage is not a Move effect and is not stopped; the target\'s survival does not cancel it.',
+			'Rocky Helmet: one item per Pokemon, so a sash holder has no helmet; a helmet holder next to it is unaffected, and the sash never saves an attacker from helmet damage (an item effect).',
+			'Sitrus Berry: not on the same Pokemon; after the sash the holder sits at 1 HP, so an ally\'s Update phase is unchanged, Emergency Exit fires for a Golisopod holder (turn.c:2472-2476 with hp_before = max) and Unburden starts for Sneasler through dfi_use_item.',
+		],
+		evidence: {specs: ['g04_focus_sash: a lethal hit at full HP (`-enditem`, 1 HP), the next hit kills, a hit that is not lethal keeps the sash, a hit after any damage keeps no sash use', 'g04_focus_sash_spread: Hyper Voice into two sash holders, one at full HP and one not; Golisopod with a sash and Emergency Exit; Sneasler with Unburden'], tests: ['Negative controls: sash for recoil damage; sash for a hit that is not lethal; sash below full HP.']},
+		cites: [{file: 'ps:data/items.ts', line: 2275, contains: 'onDamagePriority: -40'}, {file: 'ps:sim/battle.ts', line: 2121, contains: "'Damage'"}, {file: 'src/combat/turn.c', line: 2302, contains: 'dfi_deal'}],
+	},
+	{
+		id: 'item:expertbelt', kind: 'item', name: 'Expert Belt', step: 'G6', effort: 'S',
+		pinned: ['items.ts:1901-1914: onModifyDamage (the attacker\'s item): `target.getMoveHitData(move).typeMod > 0` gives chainModify([4915, 4096]). The typeMod is the Champions modifyDamage\'s own (champions/scripts.ts:266-268), set before the ModifyDamage event. No override.'],
+		draws: ['None of its own; a speed tie between two ModifyDamage holders (the attacker\'s belt, the target\'s berry) shuffles with SPEED_TIE `event:ModifyDamage`.'],
+		protocol: {lines: ['None.'], unknown: ['The tie rule: trace_to_c.py:293-304 drops ModifyDamage ties only for screens and for {Life Orb, Chople Berry}; {Expert Belt, resist berry} needs the same commutation argument (4915, 2048 and 2732 chain to 1639 in each of the six orders, computed by tg_check_cites.js) or the converter stops.']},
+		duoforge: {
+			tables: 'no', generator: 'items carry only the Mega mapping',
+			classification: 'D, size M', recheck: 'S: it joins the ModifyDamage chain next to Life Orb. Not a family of 0015; it rides with P2 because P2 rewrites the same chain and the same static asserts.',
+			engine: 'The chain is turn.c:941-976; its static asserts (turn.c:765-769) cover Life Orb, Chople and a screen only; the type-chart test is `mod > DFI_BIAS6` (turn.c:925).',
+		},
+		state: ['None.'],
+		interactions: ['The type chart: the belt reads the net effectiveness of both defending types (a x2 and a x1/2 type give no boost), as `-supereffective` does; immunity stops the move before the damage.', 'Chain partners: the target\'s resist berry (Colbur, Occa, Chople), a screen, and no Life Orb (one item); three modifiers at most: 4915, 2048, 2732 chain to 1639 in any order (the assert to add).', 'Speed order of the handlers only matters for the draw; the value does not.'],
+		evidence: {specs: ['p02_/g06_expert_belt: a super-effective hit with and without the belt, into a resisted hit, into Colbur Berry and Reflect in one chain'], tests: ['The extended `_Static_assert` for the new factor.']},
+		cites: [{file: 'ps:data/items.ts', line: 1908, contains: 'typeMod > 0'}, {file: 'src/combat/turn.c', line: 765, contains: 'DFI_CHAIN'}, {file: 'src/combat/turn.c', line: 925, contains: 'mod != DFI_BIAS6'}],
+	},
+	{
+		id: 'item:colburberry', kind: 'item', name: 'Colbur Berry', step: 'G6', effort: 'S',
+		pinned: ['items.ts:1133-1156: onSourceModifyDamage (the target\'s item): a Dark move with typeMod > 0, not into a Substitute, `target.eatItem()` and chainModify(0.5) with `-enditem|X|Colbur Berry|[weaken]` after eatItem\'s own `-enditem|..|[eat]` (sim/pokemon.ts:1768-1809). Same shape as Occa Berry (:4347-4370) and Chople Berry (built, items.ts:1030-1053). No override.'],
+		draws: ['None; the ModifyDamage tie with the attacker\'s Life Orb or Expert Belt is dropped by the commutation rule.'],
+		protocol: {lines: ['`-enditem|X|Colbur Berry|[eat]` then `-enditem|X|Colbur Berry|[weaken]` (known: Chople, ITEM_END detail 1).'], unknown: []},
+		duoforge: {
+			tables: 'no', generator: 'items carry only the Mega mapping',
+			classification: 'C, resist_berry, param', recheck: 'C confirmed: decision 0015 P2 turns the hard-coded Chople check (turn.c:958-965) and the berry list of dfi_use_item (turn.c:1185) into table rules for all 18 berries.',
+			engine: 'turn.c:958-965 is `move_type == DFI_TYPE_FIGHTING && mod > DFI_BIAS6 && dfi_holds(d, DFI_ITEM_CHOPLEBERRY)`.',
+		},
+		state: ['None (item_consumed exists).'],
+		interactions: ['Dark moves: Kowtow Cleave and Sucker Punch (Kingambit), Throat Chop (Incineroar), Snarl (spread: eaten at the first super-effective target). The holders of the 17 teams, Ceruledge (Fire/Ghost, MC246) and Farigiraf (Normal/Psychic, MC56), are weak to Dark.', 'No Substitute in the tables, so the hitSub test never applies; Unburden through dfi_use_item.'],
+		evidence: {specs: ['p02_colbur_*: the P2 builder\'s recorded battles; g06_resist_berry_dark adds Throat Chop and a spread Snarl'], tests: []},
+		cites: [{file: 'ps:data/items.ts', line: 1142, contains: "move.type === 'Dark'"}, {file: 'src/combat/turn.c', line: 958, contains: 'DFI_ITEM_CHOPLEBERRY'}, {file: 'src/combat/turn.c', line: 1185, contains: 'DFI_ITEM_CHOPLEBERRY'}],
+	},
+	{
+		id: 'item:occaberry', kind: 'item', name: 'Occa Berry', step: 'G6', effort: 'S',
+		pinned: ['items.ts:4347-4370: as Colbur Berry for Fire moves (`move.type === \'Fire\'`, :4356). No override.'],
+		draws: ['None.'],
+		protocol: {lines: ['`-enditem|X|Occa Berry|[eat]`, `-enditem|X|Occa Berry|[weaken]`.'], unknown: []},
+		duoforge: {tables: 'no', generator: 'items carry only the Mega mapping', classification: 'C, resist_berry, param', recheck: 'C confirmed (P2).', engine: 'As Colbur Berry.'},
+		state: ['None.'],
+		interactions: ['Fire moves: Flare Blitz, Heat Wave (spread: eaten at the first super-effective target); the holder of the 17 teams is Rillaboom (Grass, MC36); a Flash Fire holder takes no damage, so a berry next to it stays.', 'Rain halves Fire damage before the berry (WeatherModifyDamage) and the berry still needs typeMod > 0.'],
+		evidence: {specs: ['p02_occa_*: the P2 builder\'s recorded battles; g06_resist_berry_fire adds Heat Wave against two berry holders and a Flash Fire holder'], tests: []},
+		cites: [{file: 'ps:data/items.ts', line: 4356, contains: "move.type === 'Fire'"}],
+	},
+	{
+		id: 'item:blackglasses', kind: 'item', name: 'Black Glasses', step: 'G6', effort: 'S',
+		pinned: ['items.ts:523-537: onBasePower at priority 15: a Dark move gets chainModify([4915, 4096]). No override.'],
+		draws: ['None.'],
+		protocol: {lines: ['None.'], unknown: []},
+		duoforge: {tables: 'no', generator: 'items carry only the Mega mapping', classification: 'C, type_boost_item, param', recheck: 'C confirmed (P2: 18 type boosters).', engine: 'turn.c:847-850 hard-codes Mystic Water and Miracle Seed in the BasePower chain.'},
+		state: ['None.'],
+		interactions: ['Dark moves of Kingambit (Kowtow Cleave, Sucker Punch; Defiant), Incineroar (Throat Chop), Grimmsnarl\'s Spirit Break; after Aerilate/Tough Claws (23, 21) and before Helping Hand (10) and the terrains (6): the chained rounding.', 'A move that Aerilate turned into Flying gets the Flying item, not the Normal one.'],
+		evidence: {specs: ['p02_type_booster_*: the P2 builder\'s recorded battles; g06_black_glasses adds Sucker Punch under Helping Hand'], tests: []},
+		cites: [{file: 'ps:data/items.ts', line: 529, contains: 'onBasePowerPriority: 15'}, {file: 'src/combat/turn.c', line: 847, contains: 'DFI_ITEM_MYSTICWATER'}],
+	},
+	{
+		id: 'item:floettite', kind: 'item', name: 'Floettite', step: 'G12', effort: 'XS',
+		pinned: ['items.ts:2189-2201: `megaStone {Floette-Eternal: Floette-Mega}`, itemUser Floette-Eternal, onTakeItem keeps the stone on its holder; champions/items.ts:342-345 clears isNonstandard. No handler that fires in the data.'],
+		draws: ['None.'],
+		protocol: {lines: ['`-mega|X|Floette|Floettite` (known: trace_to_c.py:754-755).'], unknown: []},
+		duoforge: {tables: 'no', generator: 'a stone row from the SETS entry (gen_closure.py:432-441)', classification: 'A, mega_stone, param', recheck: 'A confirmed. The setup gate also needs the Mega forme\'s ability marked.', engine: 'closure_member.c:131-135 (own stone), :145-150 (gate), :266-283 (evolve).'},
+		state: ['None.'],
+		interactions: ['Needs Fairy Aura (the ability gate), Flower Veil only for the base forme\'s ability.'],
+		evidence: {specs: ['g12_floette_mega (above)'], tests: ['Setup gate test per member.']},
+		cites: [{file: 'ps:data/items.ts', line: 2192, contains: 'megaStone'}, {file: 'src/state/closure_member.c', line: 131, contains: 'dfi_holds_own_stone'}],
+	},
+];
