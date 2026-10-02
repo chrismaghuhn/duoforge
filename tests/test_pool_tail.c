@@ -735,8 +735,8 @@ int main(void)
     }
 
     /* A valid tail passes through a step: the residual counts the Throat Chop and Heal Block timers of every position
-     * down by one (step G8), and nothing else of it changes (the wide guard, the last move, Encore and the soak types
-     * stay: nothing in this turn ends them). Before step G8 nothing wrote the tail and it stayed byte for byte; the turn
+     * down by one (step G8) and ends the wide guard of both sides (step G7: a side condition of duration 1), and nothing
+     * else of it changes (the last move, Encore and the soak types stay: nothing in this turn ends them). Before step G8 nothing wrote the tail and it stayed byte for byte; the turn
      * is the same, and with the soak types of the example (Fighting and Water on the leads, which the types now read:
      * step G11) it no longer ends in a knock-out before its residual. */
     {
@@ -744,6 +744,7 @@ int main(void)
         set_example_tail(x);
         dfi_pool_tail want = x->tail;
         for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+            want.sides[s].wide_guard = 0u;
             for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
                 dfi_tail_pos *tp = &want.sides[s].positions[p];
                 tp->throat_chop_turns = (uint8_t)(tp->throat_chop_turns != 0u ? tp->throat_chop_turns - 1u : 0u);
