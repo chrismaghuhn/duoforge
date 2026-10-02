@@ -2,7 +2,13 @@
 
 Every milestone is a separate authorization boundary. A milestone may require multiple small tasks. Prefer one implemented contract with tests per task, not a single prompt asking for an entire engine.
 
-No hosted CI, benchmark or rules certificate exists yet. All exit gates below are future requirements.
+**Status 2026-10-02:**
+- **M0 to M7 are done.**
+  - The closure matchups are certified (M5, `docs/certification/closure-v1/`).
+  - The batch runtime is measured (M6, `docs/benchmarks/`).
+  - Team C (decision 0009) is built and passes its gate, but is not certified.
+- **CI:** the local CI (`tools/ci/local_ci.sh`, eleven jobs on Windows and WSL) is the merge gate. GitHub Actions runs nightly.
+- **Next:** M8 to M10 below.
 
 ## M0 — Workspace, build and development foundation
 
@@ -74,9 +80,53 @@ Status: done 2026-10-01 (decision 0013 section 8). The Python package `python/du
 
 An initial candidate-scoring learner may follow in a separate task. Selecting PPO, recurrent architectures, search or leagues is not part of the engine gate.
 
+That learner followed as decision 0014: PPO self-play over the factored domain. Its trial and night runs are in `docs/learning/`. The night run plateaued after about an hour on the two teams, which is what M8 and M9 address.
+
+## M8 — Team pool expansion, complete teams first
+
+Extend the tables and mechanics beyond the closure and Team C:
+- **Data kind:** POOL (decision 0015).
+- **How:** in families, each one C rule with parameters generated into the tables.
+- **Order:** complete real teams. The owner decided on 2026-10-02 that the cheapest complete Reg M-C tournament team comes first, based on the pastes of the VGCPastes repository.
+
+Every new mechanic is checked against the pinned reference, through recorded battles and the differential loop (A1 to A6). The engine refuses anything it does not support.
+
+Exit:
+- 6 to 12 complete real teams play under a frozen POOL profile.
+- Each team has recorded reference battles and a clean differential run.
+- Nothing is unsupported in silence.
+
+## M9 — Learner v2 and a multi-team training run
+
+Teach the learner many teams:
+- team setups from Showdown pastes;
+- self-play over all pairings of N teams;
+- an opponent pool of past checkpoints against cycling;
+- an entropy schedule;
+- runs that resume from a checkpoint;
+- evaluation and a ladder per team.
+
+Then train on the M8 teams, if useful on a rented GPU machine.
+
+Exit:
+- A reproducible training report like `docs/learning/2026-10-02-night`: configuration, measured rates, the ladder across teams and the evaluation per team.
+- Performance claims carry measurements.
+
+## M10 — Live play on Pokémon Showdown
+
+A client, `python/duoforge_live`, lets a trained bot accept challenges on the official server, in Reg M-C with open team sheets. The design is in `docs/superpowers/specs/2026-10-02-showdown-live-design.md`.
+- It builds exactly the observation DuoForge would show the player.
+- It refuses explicitly any team outside its training.
+- First version: Teams A and B, challenges only. Ladder play waits for M9.
+
+Exit:
+- The tracker equals DuoForge's own observation byte for byte on recorded battles.
+- The client protocol is tested without a network.
+- A first logged game on the official server.
+
 ## Later
 
-Additional certified teams, broader regulation profiles, recurrent agents, belief-conditioned hypothetical search, best-of-three orchestration and external clients. Add these based on measured needs, not speculative scaffolding.
+Additional certified teams (a certification of the M8 teams in the manner of M5), broader regulation profiles, recurrent agents, belief-conditioned hypothetical search, best-of-three orchestration and further external clients. Add these based on measured needs, not speculative scaffolding.
 
 ## Review standard for every slice
 
