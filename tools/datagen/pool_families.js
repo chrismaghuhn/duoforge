@@ -449,6 +449,64 @@ function checkFocusSash(dex, root) {
 
 // The four moves of step G10 against the pinned data: Low Kick's weight table is Grass Knot's (the engine shares
 // one), First Impression has Fake Out's first-turn rule, Scald thaws its target and Recover heals half.
+// Step G9, Encore: the pinned facts that the engine hard-codes (decision 0015, item 5c): the condition's duration and
+// residual order, the failencore flag of the moves a gated member can have (the list in tests/test_pool_g9.c is the pin's
+// whole list), and the behaviour of onStart (the Champions version, with the replacement of the queued action),
+// onResidual and onDisableMove, called with stand-ins for the battle and the target.
+function checkEncore(dex, repo) {
+    const move = dex.moves.get('encore');
+    const c = move.condition;
+    expect('encore duration and residual order', [c.duration, c.onResidualOrder], [3, 16]);
+    expect('encore flags, accuracy, target, pp', [move.flags.failencore, move.flags.bypasssub, move.flags.protect,
+        move.accuracy, move.target, move.pp], [1, 1, 1, 100, 'normal', 5]);
+    const text = readText(path.join(repo, 'tests', 'test_pool_g9.c'));
+    const listed = (text.match(/failencore:begin \*\/([\s\S]*?)\/\* failencore:end/) || ['', ''])[1].match(/"[a-z]+"/g) || [];
+    expect('failencore moves', dex.moves.all().filter((m) => m.flags.failencore).map((m) => m.id).sort(),
+        listed.map((x) => x.slice(1, -1)));
+    const slots = (pp) => ({icebeam: {id: 'icebeam', pp}, protect: {id: 'protect', pp: 5}});
+    const run = (lastMove, ppOfLast, queued, extra) => {
+        const state = {};
+        const logs = [];
+        const changes = [];
+        const target = Object.assign({lastMove, volatiles: {}, getMoveData: (id) => slots(ppOfLast)[id],
+            hasItem: () => false}, extra);
+        const self = {effectState: state, add: (...a) => logs.push(a), dex,
+            queue: {willMove: () => queued, changeAction: (t, a) => changes.push(a)}};
+        state.duration = c.duration;
+        const result = c.onStart.call(self, target);
+        return {result, state, logs: logs.map((l) => l[0] + ':' + l[2]), changes, queued};
+    };
+    const mv = (id) => dex.moves.get(id);
+    expect('onStart without a last move', run(null, 5, null).result, false);
+    expect('onStart on struggle', run(mv('struggle'), 5, null).result, false);
+    expect('onStart on encore', run(mv('encore'), 5, null).result, false);
+    expect('onStart without PP', run(mv('icebeam'), 0, null).result, false);
+    expect('onStart on a Dynamaxed target', run(mv('icebeam'), 5, null, {volatiles: {dynamax: {}}}).result, false);
+    const plain = run(mv('icebeam'), 5, null);
+    expect('onStart without a queued move', [plain.state.move, plain.state.duration, plain.logs, plain.changes.length],
+        ['icebeam', 4, ['-start:Encore'], 0]);
+    const queued = {moveid: 'protect', priority: 1, order: 200, choice: 'move'};
+    const replaced = run(mv('icebeam'), 5, queued);
+    expect('onStart with another move queued', [replaced.state.duration, replaced.changes,
+        replaced.queued.priority], [3, [{choice: 'move', moveid: 'icebeam', order: 200}], 1 - 4 + 0]);
+    const same = run(mv('icebeam'), 5, {moveid: 'icebeam', priority: 0, order: 200, choice: 'move'});
+    expect('onStart with the same move queued', [same.state.duration, same.changes.length], [3, 0]);
+    const herb = run(mv('icebeam'), 5, queued, {hasItem: (id) => id === 'mentalherb'});
+    expect('onStart of a Mental Herb holder', [herb.state.duration, herb.changes.length], [3, 0]);
+    // onResidual: it ends the volatile only when the Encored move has no PP; onDisableMove: every other slot.
+    const removed = [];
+    const ended = (pp) => {
+        removed.length = 0;
+        c.onResidual.call({effectState: {move: 'icebeam'}}, {getMoveData: () => ({pp}), removeVolatile: (v) => removed.push(v)});
+        return removed.slice();
+    };
+    expect('onResidual with and without PP', [ended(1), ended(0)], [[], ['encore']]);
+    const disabled = [];
+    c.onDisableMove.call({effectState: {move: 'icebeam'}}, {hasMove: () => true, moveSlots: [{id: 'icebeam'}, {id: 'coil'},
+        {id: 'protect'}], disableMove: (id) => disabled.push(id)});
+    expect('onDisableMove', disabled, ['coil', 'protect']);
+}
+
 function checkG10Moves(dex) {
     const move = (id) => dex.moves.get(id);
     const power = (m, weight) => call(m.basePowerCallback, battle(m), [{}, {getWeight() { return weight; }}]);
@@ -1009,6 +1067,7 @@ function main() {
     checkFocusSash(dex, root);
     checkWeather(dex, source);
     checkG10Moves(dex);
+    checkEncore(dex, repo);
     const abilities = checkAbilities(dex, abilityRows, moveIds, unmodeledAbilities, unmodeledMoves);
     // "All 18": a booster and a resist berry for each type, and nothing else in the families.
     expect('type boosters', items.TYPE_BOOSTER, 18);

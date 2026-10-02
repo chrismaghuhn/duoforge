@@ -133,8 +133,9 @@ static void expect_tail(df_test *t, const duoforge_battle *b, uint32_t side, uin
                         uint32_t heal_block, const char *what)
 {
     const dfi_tail_pos *p = tail_at(b, side, slot);
+    /* last_move is written by every move used (step G9), so it is no part of what these battles pin down; no Encore. */
     if (!DF_CHECK(t, p->throat_chop_turns == throat_chop && p->heal_block_turns == heal_block &&
-                         p->last_move == 0u && p->encore_slot == 0u && p->encore_turns == 0u)) {
+                         p->encore_slot == 0u && p->encore_turns == 0u)) {
         fprintf(stderr, "  %s: throat chop %u (want %u), heal block %u (want %u)\n", what, p->throat_chop_turns,
                 throat_chop, p->heal_block_turns, heal_block);
     }

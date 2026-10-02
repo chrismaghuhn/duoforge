@@ -1336,11 +1336,21 @@ int main(void)
     /* A valid tail passes through a step: the residual counts the Throat Chop and Heal Block timers of every position
      * down by one (step G8) and ends the wide guard of both sides (step G7: a side condition of duration 1), and
      * nothing else of it changes (the field, the other side conditions, the other volatiles and the member overrides
-     * stay: nothing in this turn ends them). The soak types of the example (Fighting and Water on
-     * the leads, which the types now read: step G11) keep the turn from ending in a knock-out before its residual. */
+     * stay: nothing in this turn ends them). The last move and Encore are written by the step too (step G9: every move
+     * used sets the last move, an Encore locks the request to its slot and counts down): the example of this block has
+     * neither, they are tested in test_pool_g9.c. The soak types of the example (Fighting and Water on the leads, which
+     * the types now read: step G11) keep the turn from ending in a knock-out before its residual. */
     {
         duoforge_battle *x = turn_battle(&t, kp, false);
         set_example_tail(x);
+        for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+            for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+                dfi_tail_pos *tp = &x->tail.sides[s].positions[p];
+                tp->last_move = 0u;
+                tp->encore_slot = 0u;
+                tp->encore_turns = 0u;
+            }
+        }
         dfi_pool_tail want = x->tail;
         for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
             want.sides[s].wide_guard = 0u;
@@ -1353,6 +1363,13 @@ int main(void)
         duoforge_decision_bundle bd;
         turn_bundle(&bd, x);
         step_ok(&t, kp, x, &bd, "a turn with a tail");
+        for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+            for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+                /* each position that acted used slot 0 (turn_bundle's plan): last_move 1; one that did not has none */
+                DF_CHECK(&t, x->tail.sides[s].positions[p].last_move <= 1u);
+                want.sides[s].positions[p].last_move = x->tail.sides[s].positions[p].last_move;
+            }
+        }
         DF_CHECK(&t, memcmp(&x->tail, &want, sizeof want) == 0);
         DF_CHECK(&t, duoforge_battle_check(kp, x) == DUOFORGE_OK);
         duoforge_battle_destroy(x);
