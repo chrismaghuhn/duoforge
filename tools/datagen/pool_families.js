@@ -352,6 +352,34 @@ function checkItems(dex, rows) {
     return counts;
 }
 
+// The four moves of step G10 against the pinned data: Low Kick's weight table is Grass Knot's (the engine shares
+// one), First Impression has Fake Out's first-turn rule, Scald thaws its target and Recover heals half.
+function checkG10Moves(dex) {
+    const move = (id) => dex.moves.get(id);
+    const power = (m, weight) => call(m.basePowerCallback, battle(m), [{}, {getWeight() { return weight; }}]);
+    const weights = [0, 99, 100, 101, 249, 250, 499, 500, 999, 1000, 1999, 2000, 5000];
+    const table = [20, 20, 40, 40, 40, 60, 60, 80, 80, 100, 100, 120, 120];
+    expect('lowkick power by weight', weights.map((w) => power(move('lowkick'), w)), table);
+    expect('grassknot power by weight', weights.map((w) => power(move('grassknot'), w)), table);
+    expect('lowkick type and category', [move('lowkick').type, move('lowkick').category], ['Fighting', 'Physical']);
+    for (const id of ['firstimpression', 'fakeout']) {
+        const m = move(id);
+        const tried = (n) => call(m.onTry, battle(m, {hint() {}}), [{activeMoveActions: n}]);
+        expect(id + ' onTry on the first and the second move action', [tried(1), tried(2)], [undefined, false]);
+        const disabled = [];
+        for (const n of [0, 1]) {
+            call(m.onDisableMove, battle(m), [{activeMoveActions: n, disableMove(x) { disabled.push([n, x]); }}]);
+        }
+        expect(id + ' onDisableMove', disabled, [[1, id]]);
+    }
+    expect('firstimpression base power and priority (Champions)', [move('firstimpression').basePower,
+        move('firstimpression').priority], [100, 2]);
+    const scald = move('scald');
+    expect('scald thawsTarget and defrost', [scald.thawsTarget, scald.flags.defrost], [true, 1]);
+    expect('scald secondary', [scald.secondary.chance, scald.secondary.status], [30, 'brn']);
+    expect('recover heal', move('recover').heal, [1, 2]);
+}
+
 function checkAbilities(dex, rows, moveIds) {
     const counts = {};
     for (const row of rows) {
@@ -566,6 +594,7 @@ function main() {
         }
     }
     const items = checkItems(dex, itemRows);
+    checkG10Moves(dex);
     const abilities = checkAbilities(dex, abilityRows, moveIds);
     // "All 18": a booster and a resist berry for each type, and nothing else in the families.
     expect('type boosters', items.TYPE_BOOSTER, 18);
