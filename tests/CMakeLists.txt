@@ -86,6 +86,11 @@ duoforge_add_test(NAME duoforge.reference.conformance SOURCES test_conformance.c
 # Team C (decision 0009): the same driver over tests/reference/conformance_team_c.h.
 duoforge_add_test(NAME duoforge.reference.conformance_team_c SOURCES test_conformance.c WHITEBOX TIMEOUT 60)
 target_compile_definitions(duoforge_reference_conformance_team_c PRIVATE DF_CONFORMANCE_TEAM_C)
+# The domain check of the differential runner (tools/difftest/domain.c): the engine's
+# candidates against the choices that the reference accepted, and the controls that
+# make that comparison worth anything (no Python or checkout needed).
+duoforge_add_test(NAME duoforge.reference.runner_domain SOURCES test_runner_domain.c WHITEBOX
+    LIBS duoforge_difftest_records TIMEOUT 60)
 duoforge_add_test(NAME duoforge.combat.turn SOURCES test_turn.c WHITEBOX TIMEOUT 120)
 duoforge_add_test(NAME duoforge.combat.closure_gate SOURCES test_closure_gate.c WHITEBOX TIMEOUT 600)
 duoforge_add_test(NAME duoforge.combat.team_c_gate SOURCES test_team_c_gate.c WHITEBOX TIMEOUT 600)
@@ -177,6 +182,15 @@ if(DUOFORGE_PS_REFERENCE_DIR)
                 "${CMAKE_CURRENT_BINARY_DIR}/diff_random_smoke")
         set_tests_properties(duoforge.reference.diff_random_smoke PROPERTIES TIMEOUT 600 LABELS reference
             ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+        # The domain check end to end: 8 battles with every request sampled (--domain-rate 1.0),
+        # the engine's candidates against what Showdown accepts for the side, before every step;
+        # the same battles without the check come to the same: sampling changes nothing else.
+        add_test(NAME duoforge.reference.diff_domain_smoke
+            COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_diff_domain_smoke.py"
+                "${DUOFORGE_NODE}" "${DUOFORGE_PS_REFERENCE_DIR}" "$<TARGET_FILE:duoforge_diff_runner>"
+                "${CMAKE_CURRENT_BINARY_DIR}/diff_domain_smoke")
+        set_tests_properties(duoforge.reference.diff_domain_smoke PROPERTIES TIMEOUT 600 LABELS reference
+            ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
     endif()
 endif()
 # The conformance tables must be what the converter makes of the traces.
@@ -224,7 +238,8 @@ if(Python3_Interpreter_FOUND)
     # The random mode of the driver without Node: how battle i follows from (seed, i), the bucket of
     # each step of the pipeline and what wins, the files of a case, a run cut into chunks (the result
     # does not depend on the cut), children that die or hang (stand-in processes), the machine lock
-    # (in a temporary directory, never the real one) and committed battles through the real runner.
+    # (in a temporary directory, never the real one), the domain samples (made sets of choices as the
+    # converter makes them) and committed battles through the real runner.
     add_test(NAME duoforge.reference.diff_random
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_diff_random.py")
     set_tests_properties(duoforge.reference.diff_random PROPERTIES TIMEOUT 300

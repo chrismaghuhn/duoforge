@@ -14,7 +14,8 @@
 
 const fs = require('fs');
 const path = require('path');
-const {play, PolicyRng, chooseFor, enumerate, draw, MAX_REJECTIONS} = require('./ps_play.js');
+const {play, PolicyRng, chooseFor, enumerate, draw, domainHash, domainSampled, domainSample, MAX_REJECTIONS} =
+    require('./ps_play.js');
 const {run} = require('./ps_trace.js');
 
 const REPO = path.resolve(__dirname, '..', '..');
@@ -265,6 +266,100 @@ function enumerating() {
         ['pass, pass', 'switch 3, pass', 'switch 4, pass', 'switch 5, pass', 'switch 6, pass', 'move 1, pass']);
 }
 
+// ---------------------------------------------------------------- the domain of a request
+
+// Known answers, from an independent Python implementation of the hash that ps_play.js documents.
+const DOMAIN_HASH = [
+    [0, 0, 0, 3341786526], [0, 0, 1, 2503378128], [1, 0, 0, 574037688], [1, 3, 1, 1098631492],
+    [42, 17, 0, 3998770238], [123456789, 5, 1, 1726878130], [4294967295, 99, 1, 743359916],
+    [7000, 0, 0, 197846074], [7000, 1, 1, 2249556593],
+];
+
+function domainHashes() {
+    for (const [seed, step, side, want] of DOMAIN_HASH) {
+        check(`domain hash of (${seed}, ${step}, ${side})`, domainHash(seed, step, side) === want, String(domainHash(seed, step, side)));
+    }
+    // The rate: 0 samples nothing, 1 everything, 0.25 about a quarter, and the same triple always gives the same answer.
+    let quarter = 0;
+    for (let seed = 0; seed < 100; seed++) {
+        for (let step = 0; step < 100; step++) {
+            for (const side of [0, 1]) {
+                check('rate 0 samples nothing', !domainSampled(seed, step, side, 0));
+                check('rate 1 samples everything', domainSampled(seed, step, side, 1));
+                if (domainSampled(seed, step, side, 0.25)) quarter++;
+            }
+        }
+    }
+    check('rate 0.25 samples about a quarter of 20000 triples', quarter === 5062, String(quarter));
+    check('the same triple, the same answer', [0.1, 0.5].every((r) => domainSampled(5, 6, 1, r) === domainSampled(5, 6, 1, r)));
+    // Monotone in the rate: what is sampled at a rate is sampled at a higher one.
+    let monotone = true;
+    for (let step = 0; step < 300; step++) {
+        if (domainSampled(9, step, 0, 0.2) && !domainSampled(9, step, 0, 0.6)) monotone = false;
+    }
+    check('a request sampled at 0.2 is sampled at 0.6', monotone);
+    // Step, side and seed all count: the answers are not all one.
+    const kinds = new Set([0, 1, 2, 3, 4, 5].map((step) => domainHash(3, step, 0)));
+    check('another step, another hash', kinds.size === 6);
+    check('another side, another hash', domainHash(3, 2, 0) !== domainHash(3, 2, 1));
+    check('another seed, another hash', domainHash(3, 2, 0) !== domainHash(4, 2, 0));
+}
+
+// A side that remembers what was judged, whose request is what the test says: `mutate(request, text)` may change it
+// when a text is judged, as Showdown does for an "Unavailable choice".
+function sampledSide(request, accept, mutate) {
+    const {side, log} = standIn('move', request, {pokemon: mons([])}, accept);
+    side.pokemon.forEach((p) => {
+        p.maybeTrapped = false;
+        p.maybeDisabled = true;
+        p.maybeLocked = true;
+    });
+    const judged = side.choose;
+    side.choose = (text) => {
+        if (mutate) mutate(side, text);
+        return judged(text);
+    };
+    return {side, log};
+}
+
+function sampling() {
+    const req = (extra) => ({moves: [{move: 'Tackle', id: 'tackle', target: 'adjacentFoe', disabled: false},
+        {move: 'Protect', id: 'protect', target: 'self', disabled: false}], canMegaEvo: false, ...extra});
+    // The accepted texts, in the order of enumerate(), every one judged and cleared; nothing is left changed.
+    let {side, log} = sampledSide({active: [req({}), req({})]}, (t) => !/switch/.test(t) && !/pass/.test(t.split(', ')[1]));
+    const before = JSON.stringify(side.activeRequest);
+    const all = enumerate(side);
+    const accepted = domainSample(side);
+    same('the accepted texts are the enumerated ones that were accepted, in order', accepted,
+        all.filter((t) => !/switch/.test(t) && !/pass/.test(t.split(', ')[1])));
+    check('every option was judged once, and the choice cleared after each', log.length === 2 * all.length &&
+        log.every((e, i) => e[0] === (i % 2 ? 'clear' : 'choose')) && log.filter((e) => e[0] === 'choose').every((e, i) => e[1] === all[i]));
+    check('the request is as it was', JSON.stringify(side.activeRequest) === before);
+    check('and so are the flags of the Pokemon', side.pokemon.every((p) => !p.maybeTrapped && p.maybeDisabled && p.maybeLocked));
+
+    // A request that changes while it is judged (a move found to be disabled, the lock known): the sample is dropped,
+    // and the request and the flags are put back, in place.
+    const requestObject = {active: [req({}), req({})]};
+    ({side} = sampledSide(requestObject, () => true, (s, text) => {
+        if (text.startsWith('move 2')) {
+            s.activeRequest.active[0].moves[1].disabled = true; // found out by the choice
+            s.activeRequest.update = true; // what emitRequest adds
+            s.pokemon[0].maybeLocked = false; // updateDisabledRequest
+        }
+    }));
+    const original = JSON.stringify(requestObject);
+    check('a request that changed gives no sample', domainSample(side) === null);
+    check('and is put back as it was', JSON.stringify(side.activeRequest) === original && side.activeRequest === requestObject);
+    check('with the flags', side.pokemon[0].maybeLocked === true && side.pokemon[0].maybeDisabled === true);
+    // Only the flags changed: the same.
+    ({side} = sampledSide({active: [req({}), req({})]}, () => true, (s) => { s.pokemon[1].maybeTrapped = true; }));
+    check('flags that changed alone give no sample either', domainSample(side) === null && side.pokemon[1].maybeTrapped === false);
+    // Team preview is a request like the others.
+    ({side} = standIn('teampreview', {teamPreview: true}, {pokemon: mons([])}, (t) => t.startsWith('team 1')));
+    const picks = domainSample(side);
+    check('team preview: the picks that start with 1', picks.length === 60 && picks.every((t) => /^team 1\d{3}$/.test(t)), String(picks.length));
+}
+
 // ---------------------------------------------------------------- the request
 
 function request() {
@@ -280,6 +375,11 @@ function request() {
         ['a weight above 1', battle, {...POLICY, switch_weight: 1.5}, 'play: policy.switch_weight'],
         ['a weight that is not a number', battle, {...POLICY, mega_weight: '0.5'}, 'play: policy.mega_weight'],
         ['a NaN weight', battle, {...POLICY, mega_weight: NaN}, 'play: policy.mega_weight'],
+        ['a domain rate above 1', battle, {...POLICY, domain_rate: 1.5}, 'play: policy.domain_rate'],
+        ['a negative domain rate', battle, {...POLICY, domain_rate: -0.1}, 'play: policy.domain_rate'],
+        ['a domain rate that is not a number', battle, {...POLICY, domain_rate: '0.1'}, 'play: policy.domain_rate'],
+        ['a NaN domain rate', battle, {...POLICY, domain_rate: NaN}, 'play: policy.domain_rate'],
+        ['a domain rate of null', battle, {...POLICY, domain_rate: null}, 'play: policy.domain_rate'],
         ['no battle', undefined, POLICY, 'play: battle must be an object'],
         ['a battle with a missing key', {format: battle.format, seed: battle.seed}, POLICY, 'play: battle has the keys'],
         ['one team', {...battle, teams: ['a']}, POLICY, 'play: battle.teams'],
@@ -310,8 +410,10 @@ function realBattles(checkout) {
         const policy = {seed: 7000 + i, max_steps: 300, switch_weight: 0.1, mega_weight: 0.5};
         const result = play(checkout, battle, policy);
         same(`${pairing}: the same policy plays the same battle`, play(checkout, battle, policy), result);
-        check(`${pairing}: the result has the documented shape`, Object.keys(result).join() === 'choices,ended,steps' &&
-            result.steps === result.choices.length && result.choices.every((e) => Object.keys(e).every((k) => k === 'p1' || k === 'p2')));
+        check(`${pairing}: the result has the documented shape`, Object.keys(result).join() === 'choices,ended,steps,domain' &&
+            result.steps === result.choices.length && result.choices.every((e) => Object.keys(e).every((k) => k === 'p1' || k === 'p2')) &&
+            Object.keys(result.domain).join() === 'samples,request_changed');
+        same(`${pairing}: no domain_rate, no sample`, result.domain, {samples: [], request_changed: 0});
         check(`${pairing}: team preview first, both sides`, /^team \d{4}$/.test(result.choices[0].p1) && /^team \d{4}$/.test(result.choices[0].p2));
         // The authoritative recording of the choices agrees with the play.
         const trace = JSON.parse(run(checkout, specOf(pairing, battle, result.choices), 'play_policy.json'));
@@ -348,6 +450,66 @@ function realBattles(checkout) {
     const none = play(checkout, battle, {seed: 3, max_steps: 300, switch_weight: 0, mega_weight: 0});
     check('switch_weight 0 and mega_weight 0: no mega, and no switch in a move request',
         none.choices.slice(1).every((e) => Object.values(e).every((t) => !/mega/.test(t) && !(/move/.test(t) && /switch/.test(t)))));
+    domains(checkout, make, pairings);
+}
+
+// Real battles with their domains sampled: the samples are what Showdown accepts, and they change nothing else.
+function domains(checkout, make, pairings) {
+    const base = (i) => ({seed: 7000 + i, max_steps: 300, switch_weight: 0.1, mega_weight: 0.5});
+    let sampled = 0;
+    let withMega = 0;
+    let changedTotal = 0;
+    let moveRequests = 0;
+    for (const [i, pairing] of pairings.entries()) {
+        const battle = make(pairing, 100 + i);
+        const plain = play(checkout, battle, base(i));
+        const all = play(checkout, battle, {...base(i), domain_rate: 1});
+        same(`${pairing}: sampling every request leaves the choices, the end and the length as they were`,
+            [all.choices, all.ended, all.steps], [plain.choices, plain.ended, plain.steps]);
+        // Every request has a sample (or is counted as changed), in the order of steps, p1 before p2.
+        const asked = plain.choices.reduce((n, e) => n + Object.keys(e).length, 0);
+        check(`${pairing}: every request is sampled or counted`, all.domain.samples.length + all.domain.request_changed === asked,
+            `${all.domain.samples.length} + ${all.domain.request_changed} against ${asked}`);
+        const order = all.domain.samples.map((s) => s.step * 2 + s.side);
+        check(`${pairing}: the samples come in the order of step and side`, order.every((x, k) => k === 0 || order[k - 1] < x));
+        for (const sample of all.domain.samples) {
+            check(`${pairing}: a sample has step, side and accepted`, Object.keys(sample).join() === 'step,side,accepted' &&
+                Number.isInteger(sample.step) && (sample.side === 0 || sample.side === 1) && Array.isArray(sample.accepted));
+            const text = plain.choices[sample.step][sample.side === 0 ? 'p1' : 'p2'];
+            check(`${pairing}: the side answered the step it is sampled at`, text !== undefined);
+            check(`${pairing}: what was chosen is among the accepted (step ${sample.step} side ${sample.side}: ${text})`,
+                sample.accepted.includes(text));
+            check(`${pairing}: the accepted texts are distinct`, new Set(sample.accepted).size === sample.accepted.length);
+            if (sample.step === 0) {
+                check(`${pairing}: team preview accepts the 360 ordered picks of four of six`,
+                    sample.accepted.length === 360 && sample.accepted[0] === 'team 1234' && sample.accepted[359] === 'team 6543');
+            } else if (sample.accepted.some((t) => /^(move|switch|pass)/.test(t))) {
+                moveRequests++;
+            }
+            if (sample.accepted.some((t) => /mega/.test(t))) withMega++;
+        }
+        sampled += all.domain.samples.length;
+        changedTotal += all.domain.request_changed;
+        // A lower rate samples some of the same requests, with the same sets: the decision is the hash's alone.
+        const some = play(checkout, battle, {...base(i), domain_rate: 0.25});
+        same(`${pairing}: a rate of 0.25 changes no choice either`, some.choices, plain.choices);
+        const byKey = new Map(all.domain.samples.map((s) => [`${s.step}:${s.side}`, s]));
+        check(`${pairing}: what a rate of 0.25 samples, a rate of 1 samples too, with the same set`,
+            some.domain.samples.every((s) => JSON.stringify(byKey.get(`${s.step}:${s.side}`)) === JSON.stringify(s)));
+        check(`${pairing}: and it samples fewer`, some.domain.samples.length < all.domain.samples.length ||
+            all.domain.samples.length < 4, `${some.domain.samples.length} of ${all.domain.samples.length}`);
+        same(`${pairing}: the same request and rate give the same samples`, play(checkout, battle, {...base(i), domain_rate: 0.25}), some);
+    }
+    check('over the battles: many requests are sampled, including move requests and Mega options', sampled > 100 &&
+        moveRequests > 50 && withMega > 0, `${sampled} samples, ${moveRequests} move or switch requests, ${withMega} with Mega`);
+    check('a request that changed while it was judged is rare (it is counted, not an error)', changedTotal <= sampled / 4,
+        String(changedTotal));
+    // domain_rate is optional and checked when given.
+    const battle = make('AB', 500);
+    same('no domain_rate is a rate of 0', play(checkout, battle, {seed: 1, max_steps: 3, switch_weight: 0.1, mega_weight: 0.5}).domain,
+        {samples: [], request_changed: 0});
+    same('a rate of 0 samples nothing', play(checkout, battle, {seed: 1, max_steps: 3, switch_weight: 0.1, mega_weight: 0.5, domain_rate: 0}).domain,
+        {samples: [], request_changed: 0});
 }
 
 function main() {
@@ -360,6 +522,8 @@ function main() {
     drawing();
     judging();
     enumerating();
+    domainHashes();
+    sampling();
     request();
     if (args.length === 1) realBattles(path.resolve(args[0]));
     if (failures.length) {

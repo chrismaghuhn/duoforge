@@ -281,13 +281,33 @@ class NodeWorker(Child):
         return trace
 
     def play(self, battle, policy):
-        """Random choices for a battle, each judged by Showdown (ps_play.js): {'choices', 'ended', 'steps'}."""
+        """Random choices for a battle, each judged by Showdown (ps_play.js): {'choices', 'ended', 'steps', 'domain'}.
+        'domain' is {'samples': [{'step', 'side', 'accepted': [texts]}], 'request_changed': n}: what Showdown accepts
+        for the requests that the policy's domain_rate sampled, and how many samples were dropped."""
         reply = self.request('play', battle=battle, policy=policy)
         choices, ended, steps = reply.get('choices'), reply.get('ended'), reply.get('steps')
         if (not isinstance(choices, list) or not isinstance(ended, bool) or type(steps) is not int
                 or steps != len(choices)):
             raise ToolError('%s answered a play without choices, ended and steps: %r' % (self.label, reply))
-        return {'choices': choices, 'ended': ended, 'steps': steps}
+        domain = reply.get('domain')
+        if not isinstance(domain, dict) or set(domain) != {'samples', 'request_changed'}:
+            raise ToolError('%s answered a play without its domain: %r' % (self.label, domain))
+        samples, changed = domain['samples'], domain['request_changed']
+        if not isinstance(samples, list) or type(changed) is not int or changed < 0:
+            raise ToolError('%s answered a play with a domain that is not a list of samples and a count: %r'
+                            % (self.label, domain))
+        seen = set()
+        for sample in samples:
+            if (not isinstance(sample, dict) or set(sample) != {'step', 'side', 'accepted'}
+                    or type(sample['step']) is not int or not 0 <= sample['step'] < steps
+                    or type(sample['side']) is not int or sample['side'] not in (0, 1)
+                    or not isinstance(sample['accepted'], list) or not sample['accepted']
+                    or not all(isinstance(t, str) for t in sample['accepted'])
+                    or (sample['step'], sample['side']) in seen):
+                raise ToolError('%s answered a play with a domain sample that is not step, side and accepted texts '
+                                '(once for each request): %r' % (self.label, str(sample)[:200]))
+            seen.add((sample['step'], sample['side']))
+        return {'choices': choices, 'ended': ended, 'steps': steps, 'domain': domain}
 
 
 class DiffRunner(Child):

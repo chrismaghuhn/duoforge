@@ -19,6 +19,16 @@
  * and duoforge_battle_check must hold. The first step with a difference ends
  * the battle.
  *
+ * The domain check (random play): a battle may hold samples, each the set of
+ * choices that the reference accepted from a side before a step. Before that
+ * step is applied the engine's candidates for the side are compared with the
+ * set (domain.h); any difference ends the battle there as a DIVERGENCE
+ *
+ *   domain: engine-only N, reference-only M (step K side S)
+ *
+ * with up to three examples of each kind in the messages. A candidates call
+ * that fails is a finding too (UNSUPPORTED for DUOFORGE_E_UNSUPPORTED).
+ *
  * stdout: the messages of the comparators (and of this file), indented two
  * spaces, then one line per battle, flushed:
  *
@@ -53,6 +63,7 @@
 
 #include "data/closure_tables.h"
 #include "data/extended_tables.h"
+#include "domain.h"
 #include "records.h"
 #include "state/battle_internal.h"
 #include "state/request.h"
@@ -164,6 +175,54 @@ static void tape_text(char *out, size_t cap, uint32_t used, uint32_t len)
     }
 }
 
+/* The domain sample `d` of a battle, before its step is applied: the engine's candidates for the side against the
+ * choices that the reference accepted. True when they are the same set; else the outcome says how they differ, and
+ * the messages (up to DFD_EXAMPLES of each kind) are written to `out` as the comparators write theirs. */
+static bool domain_agrees(const dfr_battle *b, const dfr_domain *d, const duoforge_context *ctx,
+                          const duoforge_battle *battle, outcome *o, FILE *out)
+{
+    static duoforge_side_choice candidates[DUOFORGE_MAX_CANDIDATES];
+    static dfr_choice engine[DUOFORGE_MAX_CANDIDATES];
+    char text[200];
+    uint32_t count = 0u;
+    const duoforge_status status =
+        duoforge_battle_candidates(ctx, battle, d->side, candidates, DUOFORGE_MAX_CANDIDATES, &count);
+    if (status != DUOFORGE_OK || count > DUOFORGE_MAX_CANDIDATES) {
+        (void)snprintf(text, sizeof text, "domain: candidates: %s (step %u side %u)", duoforge_status_name(status),
+                       (unsigned)d->step, (unsigned)d->side);
+        fprintf(out, "  %s step %u: domain side %u: the engine's candidates: %s\n", b->name, (unsigned)d->step,
+                (unsigned)d->side, duoforge_status_name(status));
+        o->has_step = true;
+        o->step = d->step;
+        set_detail(o, status == DUOFORGE_E_UNSUPPORTED ? VERDICT_UNSUPPORTED : VERDICT_DIVERGENCE, text);
+        return false;
+    }
+    for (uint32_t i = 0u; i < count; ++i) {
+        engine[i] = dfd_choice_of(&candidates[i]);
+    }
+    dfd_diff diff;
+    dfd_compare(engine, count, &b->choices[d->choice_off], d->choice_count, &diff);
+    if (diff.engine_only == 0u && diff.reference_only == 0u) {
+        return true;
+    }
+    for (uint32_t k = 0u; k < diff.engine_only && k < DFD_EXAMPLES; ++k) {
+        dfd_format(&diff.engine_examples[k], text, sizeof text);
+        fprintf(out, "  %s step %u: domain side %u engine-only: %s\n", b->name, (unsigned)d->step, (unsigned)d->side,
+                text);
+    }
+    for (uint32_t k = 0u; k < diff.reference_only && k < DFD_EXAMPLES; ++k) {
+        dfd_format(&diff.reference_examples[k], text, sizeof text);
+        fprintf(out, "  %s step %u: domain side %u reference-only: %s\n", b->name, (unsigned)d->step,
+                (unsigned)d->side, text);
+    }
+    (void)snprintf(text, sizeof text, "domain: engine-only %u, reference-only %u (step %u side %u)",
+                   (unsigned)diff.engine_only, (unsigned)diff.reference_only, (unsigned)d->step, (unsigned)d->side);
+    o->has_step = true;
+    o->step = d->step;
+    set_detail(o, VERDICT_DIVERGENCE, text);
+    return false;
+}
+
 /* One battle. contexts[0] is CLOSURE or TEAM_C, contexts[1] the DEV context of the same data. A battle with a
  * strict kind is created under that context alone; any other first under contexts[0], and under contexts[1] when
  * that cannot create it, as tests/test_conformance.c does. */
@@ -214,8 +273,18 @@ static outcome run_battle(const dfr_battle *b, duoforge_context *const contexts[
     const dfi_forme_data *formes = b->team_c != 0u ? dfi_ext_formes : dfi_closure_formes;
     /* Event differences written so far; the comparator stops at its cap per run. */
     unsigned event_reports = 0u;
+    uint32_t next_domain = 0u; /* the samples come in the order of the steps */
     for (uint32_t si = 0u; si < b->step_count; ++si) {
         const df_conf_step *st = &b->steps[si];
+        /* What the reference accepted before this step, against what the engine offers now. */
+        bool domain_ok = true;
+        while (domain_ok && next_domain < b->domain_count && b->domains[next_domain].step == si) {
+            domain_ok = domain_agrees(b, &b->domains[next_domain], ctx, battle, &o, out);
+            ++next_domain;
+        }
+        if (!domain_ok) {
+            break;
+        }
         duoforge_decision_bundle bd;
         build_bundle(battle, st, &bd);
         duoforge_step_result res;

@@ -17,6 +17,7 @@ import contextlib
 import copy
 import inspect
 import io
+import itertools
 import json
 import linecache
 import os
@@ -439,7 +440,10 @@ for line in sys.stdin:
         reply = {'id': req['id'], 'ok': True, 'node': 'v0', 'pin': 'p', 'harness': 3}
     elif req['cmd'] == 'play':
         kind = req['battle'].get('kind')
-        ok = {'ok': True, 'choices': [{'p1': 'team 1234', 'p2': 'team 4321'}, {'p1': 'move 1'}], 'ended': True, 'steps': 2}
+        domain = {'samples': [{'step': 0, 'side': 0, 'accepted': ['team 1234', 'team 1243']},
+                              {'step': 1, 'side': 0, 'accepted': ['move 1', 'move 2']}], 'request_changed': 1}
+        ok = {'ok': True, 'choices': [{'p1': 'team 1234', 'p2': 'team 4321'}, {'p1': 'move 1'}], 'ended': True, 'steps': 2,
+              'domain': domain}
         if kind == 'bad':
             reply = {'id': req['id'], 'ok': False, 'error': 'no accepted choice', 'stack': 'Error: no accepted choice'}
         elif kind == 'choices':
@@ -448,6 +452,21 @@ for line in sys.stdin:
             reply = dict(ok, id=req['id'], steps=3)
         elif kind == 'ended':
             reply = dict(ok, id=req['id'], ended='yes')
+        elif kind == 'no domain':
+            reply = {k: v for k, v in ok.items() if k != 'domain'}
+            reply['id'] = req['id']
+        elif kind.startswith('domain '):
+            bad = {'extra': dict(domain, extra=1), 'list': ['x'], 'changed': dict(domain, request_changed=-1),
+                   'changed text': dict(domain, request_changed='1'), 'samples': dict(domain, samples='x'),
+                   'keys': dict(domain, samples=[{'step': 0, 'side': 0}]),
+                   'step': dict(domain, samples=[{'step': 2, 'side': 0, 'accepted': ['a']}]),
+                   'negative step': dict(domain, samples=[{'step': -1, 'side': 0, 'accepted': ['a']}]),
+                   'side': dict(domain, samples=[{'step': 0, 'side': 2, 'accepted': ['a']}]),
+                   'accepted': dict(domain, samples=[{'step': 0, 'side': 0, 'accepted': 'a'}]),
+                   'empty': dict(domain, samples=[{'step': 0, 'side': 0, 'accepted': []}]),
+                   'not text': dict(domain, samples=[{'step': 0, 'side': 0, 'accepted': [1]}]),
+                   'twice': dict(domain, samples=domain['samples'][:1] * 2)}[kind[len('domain '):]]
+            reply = dict(ok, id=req['id'], domain=bad)
         else:
             reply = dict(ok, id=req['id'])
     elif req['spec_file'] == 'bad.json':
@@ -518,7 +537,10 @@ class Worker(unittest.TestCase):
     def test_play(self):
         worker = self.stand_in()
         self.assertEqual(worker.play({'kind': 'ok'}, {'seed': 1}),
-                         {'choices': [{'p1': 'team 1234', 'p2': 'team 4321'}, {'p1': 'move 1'}], 'ended': True, 'steps': 2})
+                         {'choices': [{'p1': 'team 1234', 'p2': 'team 4321'}, {'p1': 'move 1'}], 'ended': True, 'steps': 2,
+                          'domain': {'samples': [{'step': 0, 'side': 0, 'accepted': ['team 1234', 'team 1243']},
+                                                 {'step': 1, 'side': 0, 'accepted': ['move 1', 'move 2']}],
+                                     'request_changed': 1}})
         with self.assertRaises(driver.WorkerError) as cm:
             worker.play({'kind': 'bad'}, {'seed': 1})
         self.assertEqual((cm.exception.error, cm.exception.stack), ('no accepted choice', 'Error: no accepted choice'))
@@ -528,6 +550,27 @@ class Worker(unittest.TestCase):
                 with self.assertRaises(driver.ToolError) as cm:
                     worker.play({'kind': kind}, {'seed': 1})
                 self.assertIn('answered a play without choices, ended and steps', str(cm.exception))
+
+    def test_a_play_without_a_proper_domain_is_a_failure_of_the_tool(self):
+        worker = self.stand_in()
+        with self.assertRaises(driver.ToolError) as cm:
+            worker.play({'kind': 'no domain'}, {'seed': 1})
+        self.assertIn('without its domain', str(cm.exception))
+        for what in ('extra', 'list'):
+            with self.subTest(what):
+                with self.assertRaises(driver.ToolError) as cm:
+                    worker.play({'kind': 'domain ' + what}, {'seed': 1})
+                self.assertIn('without its domain', str(cm.exception))
+        for what in ('changed', 'changed text', 'samples'):
+            with self.subTest(what):
+                with self.assertRaises(driver.ToolError) as cm:
+                    worker.play({'kind': 'domain ' + what}, {'seed': 1})
+                self.assertIn('not a list of samples and a count', str(cm.exception))
+        for what in ('keys', 'step', 'negative step', 'side', 'accepted', 'empty', 'not text', 'twice'):
+            with self.subTest(what):
+                with self.assertRaises(driver.ToolError) as cm:
+                    worker.play({'kind': 'domain ' + what}, {'seed': 1})
+                self.assertIn('not step, side and accepted texts', str(cm.exception))
 
 
 class Lanes(unittest.TestCase):
@@ -881,18 +924,80 @@ class RealRunner(unittest.TestCase):
         three, _ = self.replay(names, 3)
         self.assertEqual(one, three)
 
-    def result_of(self, name, kind=0, mutate=None):
-        """The runner's result for the committed battle `name` written with data kind `kind`, its data changed by `mutate`."""
+    def result_of(self, name, kind=0, mutate=None, domain=()):
+        """The runner's result for the committed battle `name` written with data kind `kind`, its data changed by
+        `mutate` and with the domain samples `domain`."""
         spec, text = committed(name)
         team_c = trace_to_c.spec_is_team_c(name, spec)
         data = trace_to_c.convert_battle(name, spec, json.loads(text), tables(team_c))
         if mutate:
             mutate(data)
         records = io.StringIO()
-        conformance_records.write_battle(data, team_c, records, kind=kind)
+        conformance_records.write_battle(data, team_c, records, kind=kind, domain=domain)
         runner = driver.DiffRunner(RUNNER)
         self.addCleanup(runner.kill)
         return runner.run(name, records.getvalue())
+
+    # The domain check: before a step the engine's candidates for a side are compared with the set of choices that
+    # the reference accepted. At team selection of a battle of six members the set is the 360 ordered picks of four.
+    ALL_PICKS = [('team', list(p)) for p in itertools.permutations(range(6), 4)]
+    REAL = 'm5_real_aa_1'
+
+    def domain_result(self, samples):
+        return self.result_of(self.REAL, conformance_records.data_kinds(ROOT)['CLOSURE'], domain=samples)
+
+    def test_the_domain_of_the_engine_is_the_domain_of_the_reference_when_they_are_the_same_set(self):
+        result = self.domain_result([{'step': 0, 'side': 0, 'choices': self.ALL_PICKS},
+                                     {'step': 0, 'side': 1, 'choices': self.ALL_PICKS}])
+        self.assertEqual((result.verdict, result.step, result.detail, result.messages), ('PASS', None, '-', []))
+        # What the reference played at the turn that follows is among the engine's candidates (nothing reference-only).
+        spec, text = committed(self.REAL)
+        data = trace_to_c.convert_battle(self.REAL, spec, json.loads(text), tables(False))
+        played = ('slots', [tuple(c) for c in data['steps'][1]['cmds'][0]])
+        result = self.domain_result([{'step': 1, 'side': 0, 'choices': [played]}])
+        self.assertEqual((result.verdict, result.step), ('DIVERGENCE', 1))
+        self.assertRegex(result.detail, r'^domain: engine-only [1-9]\d*, reference-only 0 \(step 1 side 0\)$')
+
+    def test_a_choice_that_the_reference_does_not_accept_is_engine_only(self):
+        missing = self.ALL_PICKS[137]
+        result = self.domain_result([{'step': 0, 'side': 1, 'choices': self.ALL_PICKS[:137] + self.ALL_PICKS[138:]}])
+        self.assertEqual((result.verdict, result.context, result.step), ('DIVERGENCE', 'CLOSURE', 0))
+        self.assertEqual(result.detail, 'domain: engine-only 1, reference-only 0 (step 0 side 1)')
+        self.assertEqual(result.messages, ['  %s step 0: domain side 1 engine-only: team %s' % (self.REAL, ' '.join(map(str, missing[1])))])
+
+    def test_a_choice_that_the_engine_does_not_offer_is_reference_only(self):
+        # Showdown does not accept a slots choice at team preview, so one in the set is a lie about the reference: the
+        # engine does not offer it.
+        slots = ('slots', [(1, 0, 255, 0, 0), (3, 0, 0, 0, 0)])
+        result = self.domain_result([{'step': 0, 'side': 0, 'choices': self.ALL_PICKS + [slots]}])
+        self.assertEqual((result.verdict, result.step), ('DIVERGENCE', 0))
+        self.assertEqual(result.detail, 'domain: engine-only 0, reference-only 1 (step 0 side 0)')
+        self.assertEqual(result.messages, ['  %s step 0: domain side 0 reference-only: slots move 0 -> none, pass' % self.REAL])
+
+    def test_both_kinds_of_difference_at_once_are_counted_and_at_most_three_examples_of_each_are_given(self):
+        slots = [('slots', [(1, s, 255, 0, 0), (3, 0, 0, 0, 0)]) for s in range(4)]
+        result = self.domain_result([{'step': 0, 'side': 0, 'choices': self.ALL_PICKS[5:] + slots}])
+        self.assertEqual(result.detail, 'domain: engine-only 5, reference-only 4 (step 0 side 0)')
+        engine_only = [m for m in result.messages if 'engine-only: ' in m]
+        reference_only = [m for m in result.messages if 'reference-only: ' in m]
+        self.assertEqual([m.split('engine-only: ')[1] for m in engine_only],
+                         ['team 0 1 2 3', 'team 0 1 2 4', 'team 0 1 2 5'])  # the first three in the order of the sets
+        self.assertEqual(len(reference_only), 3)
+        self.assertEqual(len(result.messages), 6)
+
+    def test_the_first_sample_with_a_difference_ends_the_battle_and_a_later_one_is_not_looked_at(self):
+        wrong = self.ALL_PICKS[1:]
+        result = self.domain_result([{'step': 0, 'side': 0, 'choices': self.ALL_PICKS}, {'step': 0, 'side': 1, 'choices': wrong},
+                                     {'step': 1, 'side': 0, 'choices': self.ALL_PICKS[:1]}])
+        self.assertEqual((result.step, result.detail), (0, 'domain: engine-only 1, reference-only 0 (step 0 side 1)'))
+        # The same wrong sample of step 1 alone: found there, before step 1 is applied.
+        result = self.domain_result([{'step': 1, 'side': 1, 'choices': [('slots', [(1, 0, 255, 0, 0), (3, 0, 0, 0, 0)])]}])
+        self.assertEqual(result.step, 1)
+
+    def test_a_domain_sample_does_not_change_what_the_rest_of_the_battle_comes_to(self):
+        plain = self.result_of(self.REAL, conformance_records.data_kinds(ROOT)['CLOSURE'])
+        sampled = self.domain_result([{'step': 0, 'side': 0, 'choices': self.ALL_PICKS}])
+        self.assertEqual((sampled.verdict, sampled.steps, sampled.context), (plain.verdict, plain.steps, plain.context))
 
     def test_a_strict_kind_is_the_context_and_there_is_no_fallback(self):
         kinds = conformance_records.data_kinds(ROOT)
@@ -951,7 +1056,7 @@ class Records(unittest.TestCase):
                 self.assertNotIn('\r', text)
                 text.encode('ascii')
                 # What the format says, rebuilt from the data.
-                want = ['B %s %d 0 %d %d %d' % (name, team_c, data['member_count'], len(data['steps']), data['dropped_total'])]
+                want = ['B %s %d 0 %d %d %d 0' % (name, team_c, data['member_count'], len(data['steps']), data['dropped_total'])]
                 for side, rows in enumerate(data['members']):
                     for index, row in enumerate(rows):
                         want.append(' '.join(['M', str(side), str(index)] + self.flat(row)))
@@ -1032,6 +1137,75 @@ class Records(unittest.TestCase):
                 self.assertEqual({h[2] for h in heads}, {'1' if want is team_c else '0'})
                 self.assertEqual({h[3] for h in heads}, {'0'})  # the conformance fallback: no strict kind
                 self.assertEqual(text.count('\nEND\n'), len(want))
+
+    def test_a_choice_as_the_c_record_has_it(self):
+        flat = conformance_records.flat_choice
+        self.assertEqual(flat(('team', [2, 4, 0, 1])), (1, 4, 2, 4, 0, 1, 0, 0) + (0,) * 10)
+        self.assertEqual(flat(('team', (5, 4, 3, 2, 1, 0))), (1, 6, 5, 4, 3, 2, 1, 0) + (0,) * 10)
+        self.assertEqual(flat(('slots', [(1, 0, 255, 0, 0), (3, 0, 0, 0, 0)])),
+                         (2, 0, 0, 0, 0, 0, 0, 0, 1, 0, 255, 0, 0, 3, 0, 0, 0, 0))
+        self.assertEqual(len(flat(('team', [0]))), conformance_records.FLAT_CHOICE_LEN)
+        self.assertEqual(len(flat(('slots', [(0,) * 5, (0,) * 5]))), conformance_records.FLAT_CHOICE_LEN)
+        for bad in (('team', []), ('team', list(range(7))), ('slots', [(1, 0, 255, 0, 0)]),
+                    ('slots', [(1, 0, 255, 0)] * 2), ('slots', [(1, 0, 255, 0, 0)] * 3), ('pass', []), 'team', None, 5):
+            with self.subTest(bad=bad):
+                with self.assertRaises(ValueError):
+                    flat(bad)
+
+    def test_domain_samples_come_before_their_step_in_the_order_of_step_and_side(self):
+        data, team_c = self.data(CLOSURE)
+        team = [('team', [0, 1, 2, 3]), ('team', [0, 1, 2, 4])]
+        slots = [('slots', [(1, 0, 255, 0, 0), (3, 0, 0, 0, 0)])]
+        samples = [{'step': 1, 'side': 1, 'choices': slots}, {'step': 0, 'side': 1, 'choices': team[:1]},
+                   {'step': 0, 'side': 0, 'choices': team}]  # not in order: the writer puts them in
+        out = io.StringIO()
+        conformance_records.write_battle(data, team_c, out, domain=samples)
+        lines = out.getvalue().split('\n')
+        self.assertEqual(lines[0].split(' ')[-1], '3')  # the B line says how many
+        s_at = [i for i, line in enumerate(lines) if line.startswith('S ')]
+        flat = conformance_records.flat_choice
+        want_before_step0 = (['D 0 0 2', 'C ' + ' '.join(map(str, flat(team[0]))), 'C ' + ' '.join(map(str, flat(team[1]))),
+                              'D 0 1 1', 'C ' + ' '.join(map(str, flat(team[0])))])
+        self.assertEqual(lines[s_at[0] - len(want_before_step0):s_at[0]], want_before_step0)
+        self.assertEqual(lines[s_at[1] - 2:s_at[1]], ['D 1 1 1', 'C ' + ' '.join(map(str, flat(slots[0])))])
+        # Nothing else changed: without the samples the battle is the same text but for the B line.
+        plain = self.write(data, team_c).split('\n')
+        self.assertEqual([l for l in lines if l[:2] not in ('D ', 'C ')][1:], plain[1:])
+        self.assertEqual(lines[0].split(' ')[:-1], plain[0].split(' ')[:-1])
+
+    def test_domain_samples_the_format_cannot_hold_are_refused_and_nothing_is_written(self):
+        data, team_c = self.data(CLOSURE)
+        team = [('team', [0, 1, 2, 3]), ('team', [0, 1, 2, 4])]
+        one_side = copy.deepcopy(data)
+        one_side['steps'][0]['answered1'] = 0  # a battle in which side 1 does not answer step 0
+        many = [('team', [a, b, c, d]) for a in range(6) for b in range(6) for c in range(6) for d in range(6)
+                if len({a, b, c, d}) == 4]
+        cases = {
+            'a step beyond the battle': (data, [{'step': len(data['steps']), 'side': 0, 'choices': team}]),
+            'a negative step': (data, [{'step': -1, 'side': 0, 'choices': team}]),
+            'a side that is not 0 or 1': (data, [{'step': 0, 'side': 2, 'choices': team}]),
+            'a side that is a bool': (data, [{'step': 0, 'side': True, 'choices': team}]),
+            'two samples of one side and step': (data, [{'step': 0, 'side': 0, 'choices': team}] * 2),
+            'a side that does not answer the step': (one_side, [{'step': 0, 'side': 1, 'choices': team}]),
+            'a sample without choices': (data, [{'step': 0, 'side': 0, 'choices': []}]),
+            'more choices than a domain holds': (data, [{'step': 0, 'side': 0, 'choices': many * 3}]),
+            'choices in descending order': (data, [{'step': 0, 'side': 0, 'choices': team[::-1]}]),
+            'the same choice twice': (data, [{'step': 0, 'side': 0, 'choices': team[:1] * 2}]),
+            'a choice that is not one': (data, [{'step': 0, 'side': 0, 'choices': [('dance', [])]}]),
+            'a command of four numbers': (data, [{'step': 1, 'side': 0, 'choices': [('slots', [(1, 0, 255, 0)] * 2)]}]),
+            'a pick above 2**32 - 1': (data, [{'step': 0, 'side': 0, 'choices': [('team', [2 ** 32, 1, 2, 3])]}]),
+        }
+        self.assertGreater(len(many), 300)
+        for what, (battle, samples) in cases.items():
+            with self.subTest(what):
+                out = io.StringIO()
+                with self.assertRaises(ValueError):
+                    conformance_records.write_battle(battle, team_c, out, domain=samples)
+                self.assertEqual(out.getvalue(), '')
+        # The control of the one that depends on the battle: the same sample is right for the side that answers.
+        out = io.StringIO()
+        conformance_records.write_battle(one_side, team_c, out, domain=[{'step': 0, 'side': 0, 'choices': team}])
+        self.assertIn('\nD 0 0 2\n', out.getvalue())
 
     def test_the_data_kind_of_a_battle(self):
         """A strict kind is written after team_c; 0 is the conformance fallback; the kinds are those of duoforge.h."""

@@ -172,8 +172,9 @@ class Worker(unittest.TestCase):
         s = self.session()
         request = self.play_request()
         reply = s.send(request)
-        self.assertEqual((reply['id'], reply['ok'], list(reply)), (1, True, ['id', 'ok', 'choices', 'ended', 'steps']))
+        self.assertEqual((reply['id'], reply['ok'], list(reply)), (1, True, ['id', 'ok', 'choices', 'ended', 'steps', 'domain']))
         self.assertEqual((reply['steps'], reply['ended']), (len(reply['choices']), True))
+        self.assertEqual(reply['domain'], {'samples': [], 'request_changed': 0})  # no domain_rate: nothing sampled
         self.assertTrue(all(set(entry) <= {'p1', 'p2'} and entry for entry in reply['choices']))
         self.assertRegex(reply['choices'][0]['p1'], r'^team \d{4}$')
         spec = {'name': 'play_test', 'purpose': 'test', 'format': request['battle']['format'],
@@ -198,6 +199,35 @@ class Worker(unittest.TestCase):
         reply = s.send(self.play_request(max_steps=2))
         self.assertEqual((reply['ok'], reply['steps'], reply['ended'], len(reply['choices'])), (True, 2, False, 2))
 
+    def test_play_samples_the_domain_of_requests_without_changing_the_battle(self):
+        """With a domain_rate the reply holds, for the sampled requests, what Showdown accepts; the choices are the
+        same as without it."""
+        s = self.session()
+        plain = s.send(self.play_request(1))
+        every = s.send(self.play_request(2, domain_rate=1))
+        self.assertEqual((every['ok'], list(every)), (True, ['id', 'ok', 'choices', 'ended', 'steps', 'domain']))
+        for key in ('choices', 'ended', 'steps'):
+            self.assertEqual(every[key], plain[key], key)
+        domain = every['domain']
+        self.assertEqual(list(domain), ['samples', 'request_changed'])
+        asked = sum(len(entry) for entry in every['choices'])
+        self.assertEqual(len(domain['samples']) + domain['request_changed'], asked)  # every request, rate 1
+        first = domain['samples'][0]
+        self.assertEqual((list(first), first['step'], first['side']), (['step', 'side', 'accepted'], 0, 0))
+        self.assertEqual(len(first['accepted']), 360)  # team preview: the ordered picks of four of six
+        self.assertIn(every['choices'][0]['p1'], first['accepted'])
+        for sample in domain['samples']:
+            side = 'p1' if sample['side'] == 0 else 'p2'
+            self.assertIn(every['choices'][sample['step']][side], sample['accepted'])
+        # A lower rate samples some of them, the same ones every time, with the sets of the full run.
+        some = s.send(self.play_request(3, domain_rate=0.3))
+        again = s.send(self.play_request(4, domain_rate=0.3))
+        self.assertEqual(some['domain'], again['domain'])
+        full = {(x['step'], x['side']): x for x in domain['samples']}
+        self.assertTrue(0 < len(some['domain']['samples']) < len(domain['samples']))
+        for sample in some['domain']['samples']:
+            self.assertEqual(sample, full[(sample['step'], sample['side'])])
+
     def test_play_refuses_a_request_that_is_not_the_documented_one(self):
         s = self.session()
         good = self.play_request()
@@ -207,6 +237,8 @@ class Worker(unittest.TestCase):
             ('a policy key too many', dict(good, policy=dict(good['policy'], extra=1)), 'play: policy has the keys'),
             ('a seed that is not a uint32', dict(good, policy=dict(good['policy'], seed=2 ** 32)), 'play: policy.seed'),
             ('a weight above 1', dict(good, policy=dict(good['policy'], mega_weight=2)), 'play: policy.mega_weight'),
+            ('a domain rate above 1', dict(good, policy=dict(good['policy'], domain_rate=1.5)), 'play: policy.domain_rate'),
+            ('a domain rate that is text', dict(good, policy=dict(good['policy'], domain_rate='1')), 'play: policy.domain_rate'),
             ('one team', dict(good, battle=dict(good['battle'], teams=['x'])), 'play: battle.teams'),
         ]
         for what, request, part in cases:

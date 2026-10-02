@@ -9,15 +9,17 @@ Converts every committed battle (tests/reference/specs and traces) with
 trace_to_c and writes <dir>/closure.records and <dir>/team_c.records: the
 battles of conformance.h and of conformance_team_c.h, in the same order.
 
-As a library, write_battle(data, team_c, out, kind=0) writes one battle of
-convert_battle's data to the text stream `out`, all or nothing.
+As a library, write_battle(data, team_c, out, kind=0, domain=()) writes one
+battle of convert_battle's data to the text stream `out`, all or nothing.
 
 The format is ASCII, LF line ends, one record per line, tokens separated by
 one space. Every number is an unsigned decimal integer below 2**32; every
 value is written, there are no defaults. A battle is
 
-    B <name> <team_c> <kind> <member_count> <step_count> <dropped_total>
+    B <name> <team_c> <kind> <member_count> <step_count> <dropped_total> <domain_count>
     M <side> <index> <member row>          member_count lines per side, side 0 first
+    D <step> <side> <count>                a domain sample, before the S record of its step
+    C <choice>                             its count choices
     S <step record>                        step_count times, each followed by
     T <site> <lo> <hi> <value>             the step's kept draws (tape_len lines) and
     E <event>                              its events, player 0's then player 1's
@@ -29,7 +31,27 @@ is the data kind the runner must create the battle under, with no fallback (a
 DUOFORGE_DATA_KIND_* value of duoforge.h: CLOSURE or CLOSURE_DEV for a closure
 battle, TEAM_C or TEAM_C_DEV for Team C), or 0 for the conformance fallback of
 the replay: CLOSURE, then CLOSURE_DEV when that cannot create it, and the Team
-C pair likewise. The member row, the step record and the event are the nested int tuples of
+C pair likewise.
+
+A domain sample (random play) is the set of choices that the reference accepted
+from one side before one step: the runner compares it with the engine's
+candidates for that side (duoforge_battle_candidates) before it applies the
+step. <domain_count> says how many there are (0 for the conformance battles).
+A sample of step <step> comes right before that step's S record, side 0 before
+side 1, and only for a side that answers the step; its <count> (1 to 784) C
+records follow, strictly ascending (as the 18 numbers read, so a set has no
+duplicate). A choice is the engine's side choice without its epoch and side:
+
+    C <kind> <pick_count> <6 picks> <2 slot commands of 5 numbers each>
+
+<kind> is DUOFORGE_CHOICE_TEAM_SELECTION (1) or DUOFORGE_CHOICE_SLOTS (2); a
+team choice has its <pick_count> picks (roster indices, leads first, the rest 0)
+and zero commands, a slots choice zero picks and the commands in the order of
+duoforge_slot_command (kind, move_slot, target, mega, reserve), all-zero for a
+slot that is not requested. A choice is what trace_to_c.convert_choice makes of a
+Showdown choice text ('team' or 'slots', see flat_choice).
+
+The member row, the step record and the event are the nested int tuples of
 convert_battle's data and of step_record() below, flattened in order: the
 leaves of a df_conf_member, of a df_conf_step and of a duoforge_event, in the
 order they are declared in tests/reference/conformance_types.h. Nothing here
@@ -76,12 +98,67 @@ def data_kinds(root):
     return {m.group(1): int(m.group(2)) for m in re.finditer(r'^#define DUOFORGE_DATA_KIND_(\w+)\s+(\d+)u', text, re.M)}
 
 
-def write_battle(data, team_c, out, kind=0):
+CHOICE_TEAM = 1   # DUOFORGE_CHOICE_TEAM_SELECTION
+CHOICE_SLOTS = 2  # DUOFORGE_CHOICE_SLOTS
+MAX_PICKS = 6     # DUOFORGE_MAX_ROSTER
+MAX_CANDIDATES = 784  # DUOFORGE_MAX_CANDIDATES: the most choices of a sample
+FLAT_CHOICE_LEN = 18  # kind, pick_count, 6 picks, 2 commands of 5
+
+
+def flat_choice(choice):
+    """The 18 ints of a C record for a choice as trace_to_c.convert_choice returns it: ('team', picks) or ('slots',
+    [command, command]) with a command (kind, move_slot, target, mega, reserve). ValueError for anything else."""
+    try:
+        kind, value = choice
+    except (TypeError, ValueError):
+        raise ValueError('a choice is (kind, value), not %r' % (choice,)) from None
+    if kind == 'team':
+        picks = list(value)
+        if not 1 <= len(picks) <= MAX_PICKS:
+            raise ValueError('a team choice has 1 to %d picks, not %r' % (MAX_PICKS, picks))
+        return (CHOICE_TEAM, len(picks), *picks, *([0] * (MAX_PICKS - len(picks))), *([0] * 10))
+    if kind == 'slots':
+        commands = [tuple(c) for c in value]
+        if len(commands) != 2 or any(len(c) != 5 for c in commands):
+            raise ValueError('a slots choice has 2 commands of 5 numbers, not %r' % (value,))
+        return (CHOICE_SLOTS, 0, *([0] * MAX_PICKS), *commands[0], *commands[1])
+    raise ValueError('a choice is a team or slots choice, not %r' % (kind,))
+
+
+def domain_lines(name, steps, domain):
+    """{step: [D and C lines]} of the domain samples `domain` (dicts with 'step', 'side' and 'choices', the choices of
+    a sample in ascending order of their flat form) of a battle of `steps`; ValueError for what the format cannot
+    hold: a sample outside the battle, for a side that does not answer its step, twice, empty, too large, with
+    choices that are not strictly ascending."""
+    by_step = {}
+    seen = set()
+    for sample in domain:
+        step, side, choices = sample['step'], sample['side'], sample['choices']
+        where = '%s domain sample of step %r side %r' % (name, step, side)
+        if type(step) is not int or not 0 <= step < len(steps) or type(side) is not int or side not in (0, 1):
+            raise ValueError('%s: not a step of the battle (%d steps) and a side' % (where, len(steps)))
+        if (step, side) in seen:
+            raise ValueError('%s: given twice' % where)
+        seen.add((step, side))
+        if not steps[step]['answered%d' % side]:
+            raise ValueError('%s: the side does not answer the step' % where)
+        flats = [flat_choice(c) for c in choices]
+        if not 1 <= len(flats) <= MAX_CANDIDATES:
+            raise ValueError('%s: %d choices, not 1 to %d' % (where, len(flats), MAX_CANDIDATES))
+        if any(a >= b for a, b in zip(flats, flats[1:])):
+            raise ValueError('%s: the choices are not strictly ascending' % where)
+        lines = [record('D', (step, side, len(flats)), where)]
+        lines += [record('C', flat, where + ' choice') for flat in flats]
+        by_step.setdefault(step, []).append((side, lines))
+    return {step: [line for _, lines in sorted(groups) for line in lines] for step, groups in by_step.items()}
+
+
+def write_battle(data, team_c, out, kind=0, domain=()):
     """One battle of convert_battle's data as records, to the text stream
     `out`. `team_c` says which tables the battle was converted with (the
     runner picks its contexts by it); `kind` the data kind it must run under
-    with no fallback, or 0. ValueError for data the format cannot hold; then
-    nothing has been written."""
+    with no fallback, or 0; `domain` its domain samples (see domain_lines).
+    ValueError for data the format cannot hold; then nothing has been written."""
     name = data['name']
     if NAME.fullmatch(name) is None:
         raise ValueError('battle name %r is not [A-Za-z0-9_]{1,63}' % name)
@@ -93,8 +170,10 @@ def write_battle(data, team_c, out, kind=0):
     steps = data['steps']
     if not steps:
         raise ValueError('%s: a battle has at least one step' % name)
+    domain = list(domain)
+    sampled = domain_lines(name, steps, domain)
     lines = ['B ' + name + ' ' + ' '.join(str(v) for v in flatten(
-        (int(team_c), kind, count, len(steps), data['dropped_total']), 'B ' + name))]
+        (int(team_c), kind, count, len(steps), data['dropped_total'], len(domain)), 'B ' + name))]
     for side, rows in enumerate(data['members']):
         for index, row in enumerate(rows):
             lines.append(record('M', (side, index, row), '%s member %d of side %d' % (name, index, side)))
@@ -106,6 +185,7 @@ def write_battle(data, team_c, out, kind=0):
             raise ValueError('%s: events of %d players, not 2' % (where, len(st['events'])))
         ev_len = tuple(len(evs) for evs in st['events'])
         offsets = (ev_off, ev_off + ev_len[0])
+        lines.extend(sampled.get(i, ()))
         lines.append(record('S', trace_to_c.step_record(st, tape_off, offsets, ev_len), where))
         for entry in st['tape']:
             lines.append(record('T', entry, where + ' tape'))

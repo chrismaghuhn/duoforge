@@ -72,6 +72,10 @@ static unsigned compare_battle(const dfr_battle *p, const df_conf_battle *w, uin
     if (p->strict_kind != 0u) { /* the conformance records keep the replay's fallback */
         DF_DIFF("  battle %s: strict kind %u, the conformance records have none\n", p->name, (unsigned)p->strict_kind);
     }
+    if (p->domain_count != 0u || p->choice_count != 0u) { /* and no domain samples: those are random play's */
+        DF_DIFF("  battle %s: %u domain samples, the conformance records have none\n", p->name,
+                (unsigned)p->domain_count);
+    }
     if (p->member_count != w->member_count || p->step_count != w->step_count || p->dropped_total != w->dropped) {
         DF_DIFF("  battle %s: members %u steps %u dropped %u, tables %u %u %u\n", p->name, (unsigned)p->member_count,
                 (unsigned)p->step_count, (unsigned)p->dropped_total, (unsigned)w->member_count,
@@ -130,6 +134,14 @@ static dfr_battle clone_battle(const dfr_battle *src)
     memcpy(c.tape, src->tape, src->tape_count * sizeof *src->tape);
     c.events = must_alloc(src->event_count * sizeof *src->events);
     memcpy(c.events, src->events, src->event_count * sizeof *src->events);
+    c.domains = must_alloc(src->domain_count * sizeof *src->domains);
+    if (src->domain_count != 0u) {
+        memcpy(c.domains, src->domains, src->domain_count * sizeof *src->domains);
+    }
+    c.choices = must_alloc(src->choice_count * sizeof *src->choices);
+    if (src->choice_count != 0u) {
+        memcpy(c.choices, src->choices, src->choice_count * sizeof *src->choices);
+    }
     return c;
 }
 
@@ -149,6 +161,10 @@ static void flip_strict_kind(dfr_battle *b)
 static void flip_dropped(dfr_battle *b)
 {
     b->dropped_total += 1u;
+}
+static void flip_domain_count(dfr_battle *b)
+{
+    b->domain_count += 1u;
 }
 static void flip_step_count(dfr_battle *b)
 {
@@ -189,6 +205,7 @@ static const control CONTROLS[] = {
     {"team_c", flip_team_c},
     {"the strict kind", flip_strict_kind},
     {"the dropped count", flip_dropped},
+    {"the domain count", flip_domain_count},
     {"the step count", flip_step_count},
     {"a member", flip_member},
     {"a mon of a step", flip_mon},
@@ -389,6 +406,118 @@ static void refuse_damaged_copies(df_test *t, const sample *s)
         free(bad[i].text);
     }
 }
+
+/* ---- domain samples: D and C records ---- */
+
+/* Choices of 18 numbers: a team choice (picks 0 1 2 3, and 0 1 2 4) and a slots choice (a move at no target, a pass). */
+#define DF_C_TEAM_A "C 1 4 0 1 2 3 0 0 0 0 0 0 0 0 0 0 0 0\n"
+#define DF_C_TEAM_B "C 1 4 0 1 2 4 0 0 0 0 0 0 0 0 0 0 0 0\n"
+#define DF_C_SLOTS "C 2 0 0 0 0 0 0 0 1 0 255 0 0 3 0 0 0 0\n"
+
+/* The sample with its B line announcing `count` domain samples and `d_text` (D and C lines) before its first S line;
+ * the answered1 value of that S line replaced by `answered1` when it is not NULL. */
+static char *with_samples(const sample *s, const char *count, const char *d_text, const char *answered1, size_t *out_len)
+{
+    size_t len = 0u;
+    char *a = replace_value(s, 0u, 6u, count, &len);
+    sample cur = {a, len};
+    const size_t s_at = (size_t)(strstr(cur.text, "\nS ") - cur.text) + 1u;
+    char *b = splice(&cur, s_at, 0u, d_text, &len);
+    free(a);
+    if (answered1 == NULL) {
+        *out_len = len;
+        return b;
+    }
+    cur.text = b;
+    cur.len = len;
+    const size_t s_now = (size_t)(strstr(cur.text, "\nS ") - cur.text) + 1u;
+    char *c = replace_value(&cur, s_now, 2u, answered1, &len);
+    free(b);
+    *out_len = len;
+    return c;
+}
+
+static void domain_records(df_test *t, const sample *s)
+{
+    char error[256];
+    bool then_eof = false;
+    uint32_t kind = 0u;
+    size_t len = 0u;
+
+    /* A valid pair of samples at step 0, which both sides answer: the reader hands them on as written. */
+    char *good = with_samples(s, "2", "D 0 0 2\n" DF_C_TEAM_A DF_C_TEAM_B "D 0 1 1\n" DF_C_SLOTS, NULL, &len);
+    dfr_reader r;
+    dfr_battle b;
+    dfr_reader_init_memory(&r, good, len);
+    const dfr_status st = dfr_read_battle(&r, &b);
+    if (DF_CHECK_EQ_U64(t, st, DFR_OK)) {
+        DF_CHECK_EQ_U64(t, b.domain_count, 2u);
+        DF_CHECK_EQ_U64(t, b.choice_count, 3u);
+        DF_CHECK(t, b.domains[0].step == 0u && b.domains[0].side == 0u && b.domains[0].choice_off == 0u &&
+                        b.domains[0].choice_count == 2u);
+        DF_CHECK(t, b.domains[1].step == 0u && b.domains[1].side == 1u && b.domains[1].choice_off == 2u &&
+                        b.domains[1].choice_count == 1u);
+        DF_CHECK(t, b.choices[0].kind == DUOFORGE_CHOICE_TEAM_SELECTION && b.choices[0].pick_count == 4u &&
+                        b.choices[0].picks[3] == 3u && b.choices[1].picks[3] == 4u);
+        DF_CHECK(t, b.choices[2].kind == DUOFORGE_CHOICE_SLOTS && b.choices[2].slots[0].kind == DUOFORGE_SLOT_MOVE &&
+                        b.choices[2].slots[0].target == DUOFORGE_TARGET_NONE &&
+                        b.choices[2].slots[1].kind == DUOFORGE_SLOT_PASS);
+        dfr_battle_free(&b);
+        DF_CHECK(t, dfr_read_battle(&r, &b) == DFR_EOF); /* and nothing else is in the text */
+    } else {
+        fprintf(stderr, "  %s\n", r.error);
+    }
+    dfr_reader_destroy(&r);
+    free(good);
+
+    typedef struct {
+        const char *what;
+        const char *count;    /* the domain count of the B line */
+        const char *d_text;   /* inserted before the first S line */
+        const char *answered1; /* the answered1 value of that S line, or NULL to keep it */
+    } damaged;
+    static const damaged bad[] = {
+        {"more samples than the B line names", "1", "D 0 0 1\n" DF_C_TEAM_A "D 0 1 1\n" DF_C_TEAM_A, NULL},
+        {"fewer samples than the B line names", "3", "D 0 0 1\n" DF_C_TEAM_A "D 0 1 1\n" DF_C_TEAM_A, NULL},
+        {"a domain count above two per step", "4294967295", "D 0 0 1\n" DF_C_TEAM_A, NULL},
+        {"a sample of another step", "1", "D 1 0 1\n" DF_C_TEAM_A, NULL},
+        {"a side that is not 0 or 1", "1", "D 0 2 1\n" DF_C_TEAM_A, NULL},
+        {"two samples of one side", "2", "D 0 0 1\n" DF_C_TEAM_A "D 0 0 1\n" DF_C_TEAM_A, NULL},
+        {"side 1 before side 0", "2", "D 0 1 1\n" DF_C_TEAM_A "D 0 0 1\n" DF_C_TEAM_A, NULL},
+        {"a sample without choices", "1", "D 0 0 0\n", NULL},
+        {"a sample of more choices than a domain holds", "1", "D 0 0 785\n" DF_C_TEAM_A, NULL},
+        {"fewer C records than the sample says", "1", "D 0 0 2\n" DF_C_TEAM_A, NULL},
+        {"a C record of 17 numbers", "1", "D 0 0 1\nC 1 4 0 1 2 3 0 0 0 0 0 0 0 0 0 0 0\n", NULL},
+        {"a C record of 19 numbers", "1", "D 0 0 1\nC 1 4 0 1 2 3 0 0 0 0 0 0 0 0 0 0 0 0 0\n", NULL},
+        {"a choice kind that is neither team nor slots", "1", "D 0 0 1\nC 3 4 0 1 2 3 0 0 0 0 0 0 0 0 0 0 0 0\n", NULL},
+        {"a pick that is twice in a team", "1", "D 0 0 1\nC 1 4 0 0 2 3 0 0 0 0 0 0 0 0 0 0 0 0\n", NULL},
+        {"a pick that is not a member", "1", "D 0 0 1\nC 1 4 0 1 2 6 0 0 0 0 0 0 0 0 0 0 0 0\n", NULL},
+        {"a pick beyond the pick count", "1", "D 0 0 1\nC 1 4 0 1 2 3 1 0 0 0 0 0 0 0 0 0 0 0\n", NULL},
+        {"slot commands in a team choice", "1", "D 0 0 1\nC 1 4 0 1 2 3 0 0 1 0 0 0 0 0 0 0 0 0\n", NULL},
+        {"picks in a slots choice", "1", "D 0 0 1\nC 2 1 0 0 0 0 0 0 1 0 255 0 0 3 0 0 0 0\n", NULL},
+        {"a switch to a reserve that is not a member", "1", "D 0 0 1\nC 2 0 0 0 0 0 0 0 2 0 0 0 6 3 0 0 0 0\n", NULL},
+        {"a move that declares a Mega twice", "1", "D 0 0 1\nC 2 0 0 0 0 0 0 0 1 0 255 2 0 3 0 0 0 0\n", NULL},
+        {"a move with a reserve", "1", "D 0 0 1\nC 2 0 0 0 0 0 0 0 1 0 255 0 1 3 0 0 0 0\n", NULL},
+        {"a slot command of a kind that does not exist", "1", "D 0 0 1\nC 2 0 0 0 0 0 0 0 4 0 0 0 0 3 0 0 0 0\n", NULL},
+        {"a pass with a target", "1", "D 0 0 1\nC 2 0 0 0 0 0 0 0 1 0 255 0 0 3 0 2 0 0\n", NULL},
+        {"choices in descending order", "1", "D 0 0 2\n" DF_C_TEAM_B DF_C_TEAM_A, NULL},
+        {"the same choice twice", "1", "D 0 0 2\n" DF_C_TEAM_A DF_C_TEAM_A, NULL},
+        {"a sample of a side that does not answer the step", "1", "D 0 1 1\n" DF_C_TEAM_A, "0"},
+        {"text after the sample's last C record", "1", "D 0 0 1\n" DF_C_TEAM_A "X\n", NULL},
+    };
+    for (size_t i = 0u; i < sizeof bad / sizeof bad[0]; ++i) {
+        char *text = with_samples(s, bad[i].count, bad[i].d_text, bad[i].answered1, &len);
+        const dfr_status refused = read_text(text, len, error, sizeof error, &then_eof, &kind);
+        if (!DF_CHECK(t, refused == DFR_MALFORMED && strncmp(error, "line ", 5u) == 0)) {
+            fprintf(stderr, "  the reader accepts %s (status %u)\n", bad[i].what, (unsigned)refused);
+        }
+        free(text);
+    }
+    /* The control of the last refusal: with side 1 not answering, a sample of side 0 is right. */
+    char *valid = with_samples(s, "1", "D 0 0 1\n" DF_C_TEAM_A, "0", &len);
+    DF_CHECK_EQ_U64(t, read_text(valid, len, error, sizeof error, &then_eof, &kind), DFR_OK);
+    free(valid);
+}
 #endif
 
 int main(int argc, char **argv)
@@ -449,6 +578,7 @@ int main(int argc, char **argv)
         if (DF_CHECK(&t, end != NULL)) {
             const sample first = {text, (size_t)(end - text) + 5u};
             refuse_damaged_copies(&t, &first);
+            domain_records(&t, &first);
         }
         free(text);
     }
