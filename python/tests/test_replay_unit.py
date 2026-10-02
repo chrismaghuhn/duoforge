@@ -756,11 +756,13 @@ class PartsReviewTest(unittest.TestCase):
 
     def test_changed_inputs_are_refused(self):
         # I2/I5: another unit size, prior or Showdown pin is another dataset
-        self.build("inputs", limit_parts=1)
+        pin = str(data.ROOT)  # any git checkout stands in for the Showdown pin here; the tmp directory has none
+        self.build("inputs", limit_parts=1, ps_dir=pin)
         with self.assertRaisesRegex(ValueError, "other inputs"):
-            self.build("inputs", unit_lines=3)
+            self.build("inputs", unit_lines=3, ps_dir=pin)
         with self.assertRaisesRegex(ValueError, "other inputs"):
             self.build("inputs", ps_dir=str(self.tmp))
+        self.assertEqual(self.build("inputs", ps_dir=pin)["parts.written"], 1)  # the same inputs resume
 
     def test_a_broken_part_is_redone(self):
         # I4: a part whose files a host crash left empty is not finished
