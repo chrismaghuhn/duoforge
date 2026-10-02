@@ -1,6 +1,6 @@
 # Third-party notices
 
-DuoForge's own code is under the notice in `LICENSE`. The repository also contains, or is derived from, the third-party works below.
+DuoForge's own code is under the PolyForm Noncommercial License 1.0.0 in `LICENSE`. The repository also contains, or is derived from, the third-party works below.
 
 ## Pokémon Showdown (MIT License)
 
