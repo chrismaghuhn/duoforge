@@ -29,9 +29,20 @@ Over all 54 evaluations: against the random baseline at least 0.938 (mean 0.981)
 
 For comparison, untrained networks (two seeds, greedy, 256 episodes each) won 0.16 and 0.42 against the random baseline and 0.25 and 0.63 against the scripted one.
 
+A round robin of six checkpoints (`python -m duoforge_learn.ladder <run> --pick 5 --envs 64`, 64 fixed-seed games per pair, greedy; the untrained network of the run's seed included; `ladder.json`) rates them by Bradley-Terry:
+
+| Player | Elo | Mean score |
+|---|---|---|
+| untrained | 0 | 0.006 |
+| update 50 | 655 | 0.453 |
+| update 700 | 677 | 0.481 |
+| update 1350 | 764 | 0.600 |
+| update 2050 | 803 | 0.653 |
+| update 2667 | 924 | 0.806 |
+
 ## Reading
 
 - **The pipeline works end to end:** self-play over the factored domain, masked sampling (the engine rejected no choice), PPO, evaluation and checkpoints, with finite losses throughout.
-- **The baselines are beaten within the first minute** and say nothing about later progress. The comparison with the previous checkpoint does: the policy kept beating its own earlier versions until the end of the run, so a longer run would still improve - against these four matchups.
+- **The baselines are beaten within the first minute** and say nothing about later progress. The checkpoints do: the ladder rises monotonically, by about 270 Elo from update 50 to the end, so a longer run would still improve - against these four matchups.
 - **With two teams this is memorisation of four matchups**, not a general player; the run checks the pipeline. More teams (Team C, the expansion) make longer runs worth more.
-- The comparison with the previous checkpoint is noisy at 128 greedy episodes; a ladder over several checkpoints would measure progress more reliably.
+- The comparison with the previous checkpoint is noisy at 128 greedy episodes; the ladder over several checkpoints measures progress more reliably.
