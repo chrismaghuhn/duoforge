@@ -44,7 +44,7 @@
 #include "state/battle_internal.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "d68dfe70ad18170d09dc44b8fa1df911eb14de717b585c9609929df4b8a825ae"
+#define POOL_HASH_HEX "f6a7e2f42e64c4b316925b2b06e5dc970b2cf6f06eaa5301d81b8a9c3f1309a4"
 /* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
  * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
  * produced the same bytes. Step G10 moved two of them on purpose: Scald and Recover are data now (the thaw bit and
@@ -67,7 +67,7 @@
 #define POOL_ABILITIES 215u
 
 /* The rows that the tables do not model, pinned (the generator reports the same counts). */
-#define UNMODELED_MOVES 319u /* 324 before step G10 modelled Slack Off, Matcha Gotcha and Scorching Sands, and the weather step the two weather moves */
+#define UNMODELED_MOVES 313u /* 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
 #define UNMODELED_ITEMS 45u
 #define UNMODELED_ABILITIES 184u
 
@@ -1120,12 +1120,14 @@ int main(void)
             }
         }
         /* Steps G2, G5, G7, G8, G9, G10, G11 and G12 mark twenty-six moves in all (G9: Encore, whose handler id the turn
-         * code implements: g09_encore_*; G10: First Impression, Scald, Recover, Low Kick: g10_*), each used in a reference
-         * battle under the POOL kind (g2_data_moves_a to _d; U-turn: g5_uturn_a to _e; Throat Chop and Psychic Noise, whose
-         * lockout and Heal Block are secondary kinds, not handlers: g8_throat_chop, g8_heal_block, g8_heal_block_pair and
-         * _tie_a/_b; Wide Guard, whose handler id the turn code runs: g7_wide_guard_*; Soak, whose handler id the turn
-         * code implements since step G11: g11_soak, _mega, _stab and _electro; Moonblast and Calm Mind:
-         * g12_floette_moves). No move with a handler id is left unmarked. */
+         * code implements: g09_encore_*; G10: First Impression, Scald, Recover, Low Kick: g10_*), and step G13 fourteen
+         * more of the whole pool (Flamethrower, Draining Kiss, Rock Tomb, Hydro Pump, Superpower, Light of Ruin, Earth
+         * Power, Power Gem, Aura Sphere, Icy Wind, Ice Shard, Quick Attack, Detect and Poison Jab: g13_*), each used in a
+         * reference battle under the POOL kind (g2_data_moves_a to _d; U-turn: g5_uturn_a to _e; Throat Chop and Psychic
+         * Noise, whose lockout and Heal Block are secondary kinds, not handlers: g8_throat_chop, g8_heal_block,
+         * g8_heal_block_pair and _tie_a/_b; Wide Guard, whose handler id the turn code runs: g7_wide_guard_*; Soak, whose
+         * handler id the turn code implements since step G11: g11_soak, _mega, _stab and _electro; Moonblast and Calm
+         * Mind: g12_floette_moves). No move with a handler id is left unmarked. */
         static const uint32_t marked_moves[] = {DFI_MOVE_ROCKSLIDE, DFI_MOVE_DOUBLEEDGE, DFI_MOVE_THUNDERBOLT,
                                                 DFI_MOVE_FLASHCANNON, DFI_MOVE_EXTREMESPEED, DFI_MOVE_HEADSMASH,
                                                 DFI_MOVE_BULKUP, DFI_MOVE_LIQUIDATION, DFI_MOVE_ICEPUNCH,
@@ -1134,7 +1136,12 @@ int main(void)
                                                 DFI_MOVE_WIDEGUARD, DFI_MOVE_SOAK, DFI_MOVE_ENCORE, DFI_MOVE_MOONBLAST,
                                                 DFI_MOVE_CALMMIND, DFI_MOVE_FIRSTIMPRESSION, DFI_MOVE_SCALD,
                                                 DFI_MOVE_RECOVER, DFI_MOVE_LOWKICK, DFI_MOVE_SANDSTORM,
-                                                DFI_MOVE_SNOWSCAPE};
+                                                DFI_MOVE_SNOWSCAPE,
+                                                DFI_MOVE_FLAMETHROWER, DFI_MOVE_DRAININGKISS, DFI_MOVE_ROCKTOMB,
+                                                DFI_MOVE_HYDROPUMP, DFI_MOVE_SUPERPOWER, DFI_MOVE_LIGHTOFRUIN,
+                                                DFI_MOVE_EARTHPOWER, DFI_MOVE_POWERGEM, DFI_MOVE_AURASPHERE,
+                                                DFI_MOVE_ICYWIND, DFI_MOVE_ICESHARD, DFI_MOVE_QUICKATTACK,
+                                                DFI_MOVE_DETECT, DFI_MOVE_POISONJAB};
         uint32_t marked_count = 0u;
         for (uint32_t id = DFI_EXT_MOVE_COUNT; id < DFI_POOL_MOVE_COUNT; ++id) {
             bool want = false;
@@ -1143,16 +1150,17 @@ int main(void)
             }
             DF_CHECK_EQ_U64(&t, dfi_support.moves[id] != 0u ? 1u : 0u, want ? 1u : 0u);
             /* A marked move has a handler id only if the engine has the code for it: First Impression (Fake Out's
-             * family), Low Kick (Grass Knot's), Soak (step G11), Wide Guard (step G7) and the two weather moves; the others
-             * are data. Never the UNMODELED one. */
+             * family), Low Kick (Grass Knot's), Soak (step G11), Wide Guard (step G7), the two weather moves and Detect
+             * (Protect's, step G13); the others are data. Never the UNMODELED one. */
             DF_CHECK(&t, !want || dfi_pool_moves[id].special == DFI_SPECIAL_NONE ||
                              id == DFI_MOVE_FIRSTIMPRESSION || id == DFI_MOVE_LOWKICK || id == DFI_MOVE_SOAK ||
                              id == DFI_MOVE_ENCORE || id == DFI_MOVE_SANDSTORM || id == DFI_MOVE_SNOWSCAPE ||
-                             (id == DFI_MOVE_WIDEGUARD && dfi_pool_moves[id].special == DFI_SPECIAL_WIDE_GUARD));
+                             (id == DFI_MOVE_WIDEGUARD && dfi_pool_moves[id].special == DFI_SPECIAL_WIDE_GUARD) ||
+                             (id == DFI_MOVE_DETECT && dfi_pool_moves[id].special == DFI_SPECIAL_PROTECT));
             DF_CHECK(&t, !want || dfi_pool_moves[id].special != DFI_SPECIAL_UNMODELED);
             marked_count += dfi_support.moves[id] != 0u ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, marked_count, 26u);
+        DF_CHECK_EQ_U64(&t, marked_count, 40u);
     }
 
     /* Step G12: Fairy Aura and Flower Veil. The engine reads them by id (no family column: one legal holder each);

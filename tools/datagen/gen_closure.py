@@ -306,7 +306,7 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
             fail('champions override of %s does not inherit' % mid)
         f.update(cf)
         refs.append(champ.ref(mid))
-    handled = (SPECIAL_P if pool else SPECIAL_C if ext else SPECIAL).get(mid, ('NONE', set()))
+    handled = (SPECIAL_POOL if pool else SPECIAL_C if ext else SPECIAL).get(mid, ('NONE', set()))
     owned_fields = SPECIAL_FIELDS_C.get(handled[0], set()) if ext else set()
     # What a pool handler owns: data fields and a secondary that only it consumes, each of which must be present and
     # exactly the pinned text, and a condition block (the callbacks inside it are code, not data).
@@ -330,11 +330,17 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
             if name not in handled[1]:
                 bad('move %s: callback %s is not mapped to a handler' % (mid, name), 'callback %s' % name)
         elif (name not in DATA_KEYS and name not in IGNORED_KEYS and name not in owned_fields and name not in owned
-              and not (pool and name in POOL_COLUMN_KEYS)):
+              and not (pool and name in POOL_COLUMN_KEYS)
+              and not (pool and name == 'tags' and norm(f[name][1]) == TAGS_PAST_UNOBTAINABLE)):
             bad('move %s: unknown field %s' % (mid, name), 'field %s' % name)
     missing = handled[1] - set(n for n, v in f.items() if v[0])
     if missing:
         fail('move %s: expected callbacks %s are absent' % (mid, sorted(missing)))
+    if pool and mid in PROTECT_COPIES:
+        pe = fields(base.entry(PROTECT_COPIES[mid])[2])
+        for name in PROTECT_COPY_FIELDS:
+            if name not in f or name not in pe or norm(f[name][1]) != norm(pe[name][1]):
+                fail('move %s: %s is not that of %s' % (mid, name, PROTECT_COPIES[mid]))
 
     def get(name, default=None):
         return scalar(f[name][1]) if name in f else default
@@ -429,7 +435,8 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
         if effect is None:
             rec['sec_chance'] = 0
         elif st:
-            rec['sec_kind'], rec['sec_param'] = 2, modelled(STATUS, st.group(1), mid, 'secondary status', unmodeled)
+            rec['sec_kind'], rec['sec_param'] = 2, modelled(STATUS_C if pool else STATUS, st.group(1), mid, 'secondary status',
+                                                            unmodeled)
         elif vo:
             rec['sec_kind'], rec['sec_param'] = 3, modelled(VOLATILE, vo.group(1), mid, 'secondary volatile',
                                                             unmodeled)
@@ -1297,6 +1304,17 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'sandstorm': ('SANDSTORM', set()),                                    # weather: sets the weather (for 5 turns)
     'snowscape': ('SNOWSCAPE', set()),
 })
+# Step G13: Detect is Protect (data/moves.ts:3526-3547 against 13961-14005): the same handler (not one of the G2 handlers,
+# so it is added to the pool's map only), and the generator checks that its stalling fields and both callbacks are,
+# whitespace aside, the text of Protect's; its volatile 'protect' is Protect's condition, which lives on the Protect
+# entry. The engine reads the special column, so the stall counter is shared (the pin's StallMove event is per Pokemon,
+# not per move).
+SPECIAL_POOL = dict(SPECIAL_P, detect=('PROTECT', {'onPrepareHit', 'onHit'}))
+PROTECT_COPIES = {'detect': 'protect'}
+# Step G13: Light of Ruin carries tags: ["Past Unobtainable"] next to isNonstandard: "Past"; the Champions mod (data/mods/
+# champions/moves.ts:581-584) sets isNonstandard to null, which makes it legal, and the tag has no reader in the tables.
+TAGS_PAST_UNOBTAINABLE = 'tags: ["Past Unobtainable"],'
+PROTECT_COPY_FIELDS = ('onPrepareHit', 'onHit', 'stallingMove', 'volatileStatus', 'priority', 'accuracy', 'target')
 SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + ['UNMODELED']
 # Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags
 # byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after

@@ -99,7 +99,12 @@
  * (5448/4096 for every Fairy move on the field, at the Mega Evolution of Floette-Eternal)
  * and Floettite, and the two moves of the real Floette set that nothing marked yet,
  * Moonblast (10 percent Special Attack drop, the Champions override) and Calm Mind,
- * in the reference battles g12_*. */
+ * in the reference battles g12_*.
+ * Step G13 marks fourteen moves that the existing paths run, each in recorded POOL battles (g13_*): Flamethrower
+ * (a burn secondary), Draining Kiss (drain 3/4), Rock Tomb and Icy Wind (a Speed drop at 100 percent, Icy Wind
+ * spread), Hydro Pump, Power Gem and Earth Power (plain damage, a Special Defense secondary), Superpower (two
+ * self drops), Light of Ruin (recoil 1/2), Aura Sphere (never misses, any target), Ice Shard and Quick Attack
+ * (priority +1), Detect (Protect's handler and stall counter) and Poison Jab (a poison secondary). */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -181,6 +186,20 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_ENCORE] = 1u,
             [DFI_MOVE_MOONBLAST] = 1u,
             [DFI_MOVE_CALMMIND] = 1u,
+            [DFI_MOVE_FLAMETHROWER] = 1u,
+            [DFI_MOVE_DRAININGKISS] = 1u,
+            [DFI_MOVE_ROCKTOMB] = 1u,
+            [DFI_MOVE_HYDROPUMP] = 1u,
+            [DFI_MOVE_SUPERPOWER] = 1u,
+            [DFI_MOVE_LIGHTOFRUIN] = 1u,
+            [DFI_MOVE_EARTHPOWER] = 1u,
+            [DFI_MOVE_POWERGEM] = 1u,
+            [DFI_MOVE_AURASPHERE] = 1u,
+            [DFI_MOVE_ICYWIND] = 1u,
+            [DFI_MOVE_ICESHARD] = 1u,
+            [DFI_MOVE_QUICKATTACK] = 1u,
+            [DFI_MOVE_DETECT] = 1u,
+            [DFI_MOVE_POISONJAB] = 1u,
         },
     .abilities =
         {

@@ -148,6 +148,7 @@ duoforge_add_test(NAME duoforge.data.api SOURCES test_data_api.c WHITEBOX TIMEOU
 duoforge_add_test(NAME duoforge.state.pool_tail SOURCES test_pool_tail.c WHITEBOX TIMEOUT 120)
 # Step G8: Throat Chop and Psychic Noise's Heal Block in the tail, the request and the POOL view extension.
 duoforge_add_test(NAME duoforge.state.pool_g8 SOURCES test_pool_g8.c WHITEBOX TIMEOUT 60)
+duoforge_add_test(NAME duoforge.state.ability_now SOURCES test_ability_now.c WHITEBOX TIMEOUT 60)
 # Step G7: Wide Guard in the tail, the stall counter and the POOL view extension.
 duoforge_add_test(NAME duoforge.state.pool_g7 SOURCES test_pool_g7.c WHITEBOX TIMEOUT 60)
 # Sandstorm and Snowscape (the weather step): the view of the weather battles against the protocol lines, the sources of
@@ -157,6 +158,8 @@ duoforge_add_test(NAME duoforge.state.pool_weather SOURCES test_pool_weather.c W
 duoforge_add_test(NAME duoforge.state.pool_g11 SOURCES test_pool_g11.c WHITEBOX TIMEOUT 60)
 # Step G9: Encore in the tail, the queue, the request, the residual and the POOL view extension.
 duoforge_add_test(NAME duoforge.state.pool_g9 SOURCES test_pool_g9.c WHITEBOX TIMEOUT 60)
+# The queued action of a fainted Pokemon: no ability and no item of it counts for its priority and Speed (d04 to d06).
+duoforge_add_test(NAME duoforge.state.pool_fainted_holder SOURCES test_pool_fainted_holder.c WHITEBOX TIMEOUT 60)
 # The generated files must stay exactly what tools/datagen/gen_closure.py
 # wrote; regenerate and update these hashes together.
 foreach(_gen IN ITEMS
@@ -165,7 +168,7 @@ foreach(_gen IN ITEMS
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
         "pool_tables.h=59965e00e25b614a60ca721dc7a17ed51b1aee426d39880d4d6e4c02b8b436c0"
-        "pool_tables.c=7e78d7eb6253929b8f6903240295d247bb1b0ef81ff23f8cf7790f02294cfa05")
+        "pool_tables.c=4f18c5a5cf86ec8dc6f335b42bb613e9cee322109e11e3352c2755e44430cf04")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
