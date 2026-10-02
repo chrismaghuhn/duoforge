@@ -38,7 +38,8 @@ first, then the foe):
 
 slot_part, float32 (2, 32, SLOT_FEATURES): for slot list s and entry i,
   valid (i < slot_count[s]), kind one-hot (4: none, move, switch, pass),
-  move slot / 4 (moves only; Struggle is 4), target one-hot relative to
+  move slot / 4 (moves only; Struggle is 4, any other slot is refused),
+  target one-hot relative to
   the viewer (4: own slot 0, own slot 1, foe slot 0, foe slot 1; none for
   a move without a target), mega, reserve / 5 (switches only). All zero
   past slot_count and at team selection.
@@ -190,7 +191,11 @@ def encode_batch(observations, domains):
     f[:, 0] = 1.0
     f[:, 1:5] = _one_hot(kind, SLOT_KINDS, "slot command kind")
     move = kind == C["DUOFORGE_SLOT_MOVE"]
-    f[move, 5] = _ratio(cmd["move_slot"][move], 4)
+    move_slot = cmd["move_slot"][move]
+    unknown = move_slot > C["DUOFORGE_MOVE_SLOT_STRUGGLE"]
+    if unknown.any():
+        raise ValueError(f"move slot {int(move_slot[unknown][0])} is not one this encoder knows (0 to 3, or Struggle)")
+    f[move, 5] = _ratio(move_slot, C["DUOFORGE_MOVE_SLOT_STRUGGLE"])
     target = cmd["target"].astype(np.int64)
     aimed = move & (target != C["DUOFORGE_TARGET_NONE"])
     if (target[aimed] >= 4).any():

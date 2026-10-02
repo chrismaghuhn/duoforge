@@ -68,6 +68,14 @@ checks its precondition and fails loudly otherwise:
   RANDOM_TARGET action-speed, resolve
                     always: the target computed for ModifyPriority or a
                     queued choice is read by no closure handler
+  RANDOM_TARGET resolve:insert
+                    never: the target of the action that Encore puts in the
+                    place of a queued move (insertChoice resolves the new
+                    action) is drawn here and decides who is hit; the engine
+                    draws it (a tape entry)
+  INSERT_TIE        (Encore) the index of a replaced action among the moves
+                    that tie it is a tape entry as well, unless the tied
+                    actions are runSwitch entries (above)
   RANDOM_TARGET execute:allAdjacentFoes
                     always: the main target of a spread move only labels
                     the protocol line; the move hits every adjacent foe
@@ -108,7 +116,7 @@ import sys
 
 SITES = {'SPEED_TIE': 1, 'ACCURACY': 2, 'CRIT': 3, 'DAMAGE_ROLL': 4, 'SECONDARY': 5, 'STALL': 6,
          'SLEEP_TURNS': 7, 'FREEZE_THAW': 8, 'FULL_PARALYSIS': 9, 'CONFUSION_TURNS': 10,
-         'CONFUSION_HIT': 11, 'RANDOM_TARGET': 12, 'STATUS_PICK': 13}
+         'CONFUSION_HIT': 11, 'RANDOM_TARGET': 12, 'STATUS_PICK': 13, 'INSERT_TIE': 14}
 STATS = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe']
 GENDER = {'M': 1, 'F': 2}
 GENDERLESS = 3
@@ -382,7 +390,8 @@ def drop_reason(d, state, after=None, log=None):
         # (data/conditions.ts choicelock, data/moves.ts throatchop and healblock) each only set `disabled` on
         # move slots, and setting a flag twice is setting it once: whichever runs first, the request offers the
         # same moves. Any other handler is a mechanic that has not been looked at.
-        if all(g.startswith(('H:choicelock:', 'H:throatchop:', 'H:healblock:')) and g.endswith(':cb') for g in group):
+        if all(g.startswith(('H:choicelock:', 'H:throatchop:', 'H:healblock:', 'H:encore:')) and g.endswith(':cb')
+               for g in group):
             return 'DisableMove handlers whose order changes nothing'
         raise ConversionError('disablemove-tie', 'trace_to_c: DisableMove tie with %s' % group,
                               detail=tie_effects(group))
@@ -408,6 +417,12 @@ def drop_reason(d, state, after=None, log=None):
         runs = [i for i, g in enumerate(group) if g.startswith('A:runSwitch:')]
         if runs and runs == list(range(runs[0], runs[0] + len(runs))):
             return 'queue order of entries that run together'
+        # The tie of a replaced action (Encore, step G9): the insertion index random(lo, hi) among the actions that
+        # tie it or, at the end, the one that follows them decides which Pokemon moves first: kept (the engine draws
+        # it, DFI_SITE_INSERT_TIE) when the actions in [lo, hi) are moves.
+        lo, hi = d['lo'], d['hi']
+        if hi - lo >= 2 and all(g.startswith(('A:move:', 'A:residual:')) for g in group[lo:hi]) and                 any(g.startswith('A:move:') for g in group[lo:hi]):
+            return None
         raise ConversionError('insert-tie', 'trace_to_c: insert tie in %s' % group)
     if site == 'RANDOM_TARGET' and ctx in ('action-speed', 'resolve'):
         return 'target computed for priority'
@@ -596,6 +611,7 @@ CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5,
          'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14,
          'HEAL_BLOCK': 15, 'WEATHER': 16, 'ITEM_TAKEN': 17}
 VOLATILE_HEAL_BLOCK = 1  # DUOFORGE_VOLATILE_HEAL_BLOCK: the detail of VOLATILE_START and VOLATILE_END
+VOLATILE_ENCORE = 2      # DUOFORGE_VOLATILE_ENCORE (step G9)
 # DUOFORGE_TYPE_*: the alphabetical type ids, the detail of TYPE_CHANGE
 TYPE_IDS = {name: i for i, name in enumerate(
     ['Bug', 'Dark', 'Dragon', 'Electric', 'Fairy', 'Fighting', 'Fire', 'Flying', 'Ghost', 'Grass', 'Ground', 'Ice',
@@ -629,6 +645,9 @@ IGNORED_VOLATILES = {
     # request that offers Struggle), the cant lines, the heal that is missing, and Heal Block's start and end lines.
     'throatchop': 'the moves of the requests and the cant lines',
     'healblock': 'the moves of the requests, the cant, start and end lines and the heals',
+    # Pool step G9 (Encore): its turns are not a field of the record either: the moves of the next requests (every
+    # slot but the Encored one is disabled), the replaced move line and the start and end lines show them.
+    'encore': 'the moves of the requests, the replaced move and the start and end lines',
 }
 HP_EXACT, HP_PERCENT = 1, 2
 HP_FLAGS_EV = {'': 0, 'r': 1, 'y': 2, 'g': 3}
@@ -860,6 +879,11 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             elif what == 'move: Heal Block':
                 e = ev_tuple(EV['VOLATILE_START' if kind == '-start' else 'VOLATILE_END'], ev_pos(args[0]),
                              detail=VOLATILE_HEAL_BLOCK)
+            elif what == 'Encore':
+                # data/moves.ts:4724-4783 encore: `-start|X|Encore` from onStart, `-end|X|Encore` from onEnd (the
+                # duration or an exhausted move; a switch-out or a faint clears it with no line).
+                e = ev_tuple(EV['VOLATILE_START' if kind == '-start' else 'VOLATILE_END'], ev_pos(args[0]),
+                             detail=VOLATILE_ENCORE)
             elif what == 'typechange' and kind == '-start' and len(args) == 3 and args[2] in TYPE_IDS:
                 # Soak (data/moves.ts:17186-17208): `-start|target|typechange|Water`, one type, no [from]; the move
                 # is Soak, the only mechanic of the pool that sets one single type (a [from] move would name it).

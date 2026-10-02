@@ -1293,7 +1293,8 @@ G2_MOVES = ['uturn', 'rockslide', 'throatchop', 'encore', 'doubleedge', 'thunder
 # secondary, exactly this text of the pinned data; everything else about the move is read by parse_move as for any
 # other move, and anything it does not know still fails. Each step that implements one of them (G7 to G11) consumes
 # the handler id and, if it needs a column, changes the tables and the POOL fingerprint and says so.
-# (SOAK is implemented by the turn code since step G11 and marked; it keeps its handler id, so no table byte changed.)
+# (SOAK is implemented by the turn code since step G11 and marked; it keeps its handler id, so no table byte changed. The same
+# holds for ENCORE since step G9.)
 G2_HANDLERS = ['ENCORE', 'SCALD', 'WIDE_GUARD', 'FIRST_IMPRESSION', 'RECOVER', 'SOAK', 'LOW_KICK']
 # The two weather moves of the Sandstorm and Snowscape step: rows of the whole pool (not of G2) with a named handler,
 # because the field `weather` that sets the weather has no column; the turn code implements both.
@@ -1313,7 +1314,7 @@ KNOCK_OFF_CALLBACKS = {
 }
 SPECIAL_P = dict(SPECIAL_C, **{
     'knockoff': ('KNOCK_OFF', {'onAfterHit', 'onBasePower'}),             # G16: takes the target's item, x1.5 while it has one
-    'encore': ('ENCORE', set()),                                          # G9: the last move, a volatile, a queue change
+    'encore': ('ENCORE', set()),                                          # G9 (implemented): last move, a volatile, a queue change
     'wideguard': ('WIDE_GUARD', {'onTry', 'onHitSide'}),                  # G7: a side condition against spread moves
     'firstimpression': ('FIRST_IMPRESSION', {'onTry', 'onDisableMove'}),  # G10a: first turn out only (Fake Out's rule)
     'soak': ('SOAK', {'onHit'}),                                          # G11: sets the target's type to Water
