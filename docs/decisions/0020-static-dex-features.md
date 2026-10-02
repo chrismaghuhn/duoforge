@@ -49,10 +49,11 @@ Today the public data API (`duoforge_data_count`, `_name`, `_find`, `_supported`
    - `crit_stage`.
    - `drain` and `recoil`: numerator and denominator, 0/0 for none.
    - `secondary_chance`: percent, 0 for none.
+   - `hits_min` and `hits_max`: the pin's `multihit` (2/5 for Bullet Seed, 2/2 for Dual Wingbeat, 3/3 for Triple Axel), 1/1 for a single hit. The tables do not hold it today (multihit rows are UNMODELED), so the generator writes it into the static column of decision 5, with no engine reader (Learner v2 review, 2026-10-03).
 
    The secondary effect's kind and parameter stay out of v1. Their table encoding is internal and still growing step by step, and exposing it would freeze it.
 
-5. **Move flags need one new table column.** The tables store only the flags the engine reads: contact, protect, charge, defrost, self-switch, sound, heal, recharge and a few internal ones. A learner wants the rest as well: punch, bite, bullet, pulse, slicing, wind, dance, powder, sound and contact. The generator would add a column `dfi_pool_move_static_flags` (u32), generated from the pin's flags object for every row.
+5. **Move flags need one new table column.** The tables store only the flags the engine reads: contact, protect, charge, defrost, self-switch, sound, heal, recharge and a few internal ones. A learner wants the rest as well: punch, bite, bullet, pulse, slicing, wind, dance, powder, sound and contact. The generator would add a column `dfi_pool_move_static_flags` (u32), generated from the pin's flags object for every row, next to `dfi_pool_move_static_hits` (min, max) from its `multihit`.
    - **No engine reader:** nothing in the engine reads it. It is data for the API only, and a test pins that.
    - **Fingerprints:** POOL fingerprints change once. The CLOSURE and TEAM_C prefix bytes are untouched, because the column sits outside the closure layout.
    - **Public bit order:** fixed in the header, one bit per Showdown flag name, additive only.
