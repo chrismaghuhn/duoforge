@@ -1351,6 +1351,7 @@ int main(void)
                 tp->encore_slot = 0u;
                 tp->encore_turns = 0u;
                 tp->must_recharge = 0u; /* step G17: a Pokemon that must recharge is offered the recharge only */
+                tp->glaive_rush = 0u;   /* step G19: the first BeforeMove of a Pokemon ends it (test_pool_g19.c) */
             }
         }
         dfi_pool_tail want = x->tail;

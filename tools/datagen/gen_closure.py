@@ -131,7 +131,7 @@ DATA_KEYS = {'num', 'accuracy', 'basePower', 'category', 'name', 'pp', 'priority
 # Keys that describe other generations, contests or mechanics outside the
 # closure (Z-Moves, Max Moves, Sheer Force), or mod bookkeeping.
 IGNORED_KEYS = {'contestType', 'zMove', 'maxMove', 'isNonstandard', 'hasSheerForceBoost', 'inherit'}
-BOOST_ROLE = {'NONE': 0, 'PRIMARY_SELF': 1, 'SECONDARY_TARGET': 2, 'SELF_AFTER_HIT': 3}
+BOOST_ROLE = {'NONE': 0, 'PRIMARY_SELF': 1, 'SECONDARY_TARGET': 2, 'SELF_AFTER_HIT': 3, 'PRIMARY_ALLY': 4}
 
 # ---- Team C (decision 0009): appended to the closure in the extended tables ----
 # The closure mode never reads anything below, so its output stays byte-identical.
@@ -336,6 +336,9 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
     missing = handled[1] - set(n for n, v in f.items() if v[0])
     if missing:
         fail('move %s: expected callbacks %s are absent' % (mid, sorted(missing)))
+    if pool and handled[0] == 'GLAIVE_RUSH':
+        if 'condition' not in f or norm(f['condition'][1]) != GLAIVE_RUSH_CONDITION:
+            fail('move %s: the condition is not the pinned text' % mid)
     if pool and handled[0] == 'KNOCK_OFF':
         for name, text in KNOCK_OFF_CALLBACKS.items():
             if name not in f or norm(f[name][1]) != text:
@@ -458,7 +461,7 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
         else:
             bad('move %s: unknown secondary' % mid, 'secondary')
             rec['sec_chance'] = 0
-    if 'self' in f:
+    if 'self' in f and 'self' not in owned:
         if pool and norm(f['self'][1]) == RECHARGE_SELF:
             # Step G17: the recharge moves (flags.recharge and this self effect, which the turn code reads as the
             # second flags byte's RECHARGE bit: the user must recharge after a hit).
@@ -471,7 +474,11 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
     if pool and ('recharge: 1' in norm(f['flags'][1])) != ((rec['flags2'] & FLAG2_RECHARGE) != 0):
         bad('move %s: the recharge flag and the mustrecharge self effect do not come together' % mid, 'recharge flag')
     if 'boosts' in f:
-        if rec['target_class'] != TARGET_CLASS['self']:
+        if pool and rec['target_class'] == TARGET_CLASS['adjacentAlly'] and rec['category'] == CATEGORIES['Status']:
+            # Step G19: Coaching, a status move whose primary boosts go to the ally (BOOST_ROLE PRIMARY_ALLY).
+            rec['boost_role'], rec['boosts'] = BOOST_ROLE['PRIMARY_ALLY'], boosts_of(f['boosts'][1])
+            vectors += 1
+        elif rec['target_class'] != TARGET_CLASS['self']:
             bad('move %s: primary boosts on a non-self target' % mid, 'primary boosts on a non-self target')
         else:
             rec['boost_role'], rec['boosts'] = BOOST_ROLE['PRIMARY_SELF'], boosts_of(f['boosts'][1])
@@ -1313,6 +1320,14 @@ WEATHER_HANDLERS = ['SANDSTORM', 'SNOWSCAPE']
 # singleEvent('TakeItem') that the turn code knows (a Mega Stone refuses its own species), the boost is 1.5, and the item is
 # taken after the hit with the -enditem line that the converter reads.
 G16_HANDLERS = ['KNOCK_OFF']
+# Step G19: Glaive Rush keeps its self effect and its condition as a handler of its own that the turn code implements: the
+# user is hit by moves that never miss and deal double damage until its next move starts (data/moves.ts:6647-6678). The
+# generator checks the self effect and the whole condition text, whitespace aside.
+G19_HANDLERS = ['GLAIVE_RUSH']
+GLAIVE_RUSH_CONDITION = ("condition: { noCopy: true, onStart(pokemon) { this.add('-singlemove', pokemon, 'Glaive Rush', '[silent]'); }, "
+                         "onAccuracy() { return true; }, onSourceModifyDamage() { return this.chainModify(2); }, "
+                         "onBeforeMovePriority: 100, onBeforeMove(pokemon) { this.debug('removing Glaive Rush drawback before attack'); "
+                         "pokemon.removeVolatile('glaiverush'); }, },")
 # Step G20: Aurora Veil is a handler of its own that the turn code implements (a row of the whole pool, like Knock Off:
 # not one of G2's). Its onTry is the snow test (data/moves.ts:830-877; the Champions mod does not change the move); the
 # condition is read from the pinned text (G20_CONDITION_FACTS) and the side condition itself (a tail field, not a column)
@@ -1330,6 +1345,7 @@ KNOCK_OFF_CALLBACKS = {
 # base power and its target class and no column holds either; the turn code implements it, and the row is marked.
 G15_HANDLERS = ['EXPANDING_FORCE']
 SPECIAL_P = dict(SPECIAL_C, **{
+    'glaiverush': ('GLAIVE_RUSH', set()),                                 # G19: the volatile that makes its user hit as vulnerable
     'knockoff': ('KNOCK_OFF', {'onAfterHit', 'onBasePower'}),             # G16: takes the target's item, x1.5 while it has one
     'encore': ('ENCORE', set()),                                          # G9 (implemented): last move, a volatile, a queue change
     'auroraveil': ('AURORA_VEIL', {'onTry'}),                             # G20: a screen against both categories, in snow only
@@ -1352,7 +1368,7 @@ PROTECT_COPIES = {'detect': 'protect'}
 # champions/moves.ts:581-584) sets isNonstandard to null, which makes it legal, and the tag has no reader in the tables.
 TAGS_PAST_UNOBTAINABLE = 'tags: ["Past Unobtainable"],'
 PROTECT_COPY_FIELDS = ('onPrepareHit', 'onHit', 'stallingMove', 'volatileStatus', 'priority', 'accuracy', 'target')
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G20_HANDLERS + ['UNMODELED']
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + ['UNMODELED']
 # Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags
 # byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
@@ -1363,9 +1379,10 @@ G2_OWNED_FIELDS = {
     'AURORA_VEIL': {'sideCondition': "sideCondition: 'auroraveil',"},
     'SANDSTORM': {'weather': "weather: 'Sandstorm',"},
     'SNOWSCAPE': {'weather': "weather: 'snowscape',"},
+    'GLAIVE_RUSH': {'self': "self: { volatileStatus: 'glaiverush', },"},
 }
 G2_OWNED_SECONDARY = {}
-G2_OWNED_CONDITION = {'ENCORE', 'WIDE_GUARD', 'AURORA_VEIL'}
+G2_OWNED_CONDITION = {'ENCORE', 'WIDE_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL'}
 # Step G8 (Throat Chop and Psychic Noise): the two secondaries become modelled kinds, and the column that their
 # consumers read is the move's second flags byte (the first is full): the `sound` flag (Throat Chop bars the sound
 # moves) and the `heal` flag (Heal Block bars the moves that heal). Both are derived for every pool move, the prefix
@@ -2516,6 +2533,7 @@ def render_pool(dp, dx):
 #define DFI_MOVE_FLAG2_HEAL 2u  /* flags.heal: Heal Block bars these moves */
 #define DFI_MOVE_FLAG2_THAWS_TARGET 4u /* thawsTarget (step G10): the move cures a frozen target after the secondaries */
 #define DFI_MOVE_FLAG2_RECHARGE 8u /* flags.recharge with self.volatileStatus mustrecharge (step G17): the user must recharge after a hit */
+#define DFI_BOOST_ROLE_PRIMARY_ALLY 4u /* step G19: a status move whose primary boosts go to the adjacent ally (Coaching) */
 #define DFI_SECONDARY_LOCKOUT 5u    /* chance 100: the target may not use sound moves (Throat Chop) */
 #define DFI_SECONDARY_HEAL_BLOCK 6u /* chance 100: the target may not heal (Psychic Noise) */
 

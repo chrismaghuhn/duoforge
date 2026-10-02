@@ -492,6 +492,15 @@ KNOCK_OFF = move_entry(
 AURORA_VEIL = move_entry(
     'auroraveil', 'Aurora Veil', "sideCondition: 'auroraveil',", 'onTry() {', "\treturn this.field.isWeather(['hail', 'snowscape']);",
     '},', 'condition: {', '\tduration: 5,', '},', pp=20, flags='snatch: 1, metronome: 1', target='allySide', type_='Ice')
+GLAIVE_RUSH = move_entry(
+    'glaiverush', 'Glaive Rush', 'self: {', "\tvolatileStatus: 'glaiverush',", '},', 'condition: {', '\tnoCopy: true,',
+    '\tonStart(pokemon) {', "\t\tthis.add('-singlemove', pokemon, 'Glaive Rush', '[silent]');", '\t},',
+    '\tonAccuracy() {', '\t\treturn true;', '\t},', '\tonSourceModifyDamage() {', '\t\treturn this.chainModify(2);', '\t},',
+    '\tonBeforeMovePriority: 100,', '\tonBeforeMove(pokemon) {',
+    "\t\tthis.debug('removing Glaive Rush drawback before attack');", "\t\tpokemon.removeVolatile('glaiverush');", '\t},', '},',
+    category='Physical', base_power=120, pp=5, type_='Dragon', flags='contact: 1, protect: 1, mirror: 1, metronome: 1')
+COACHING = move_entry('coaching', 'Coaching', 'boosts: {', '\tatk: 1,', '\tdef: 1,', '},', target='adjacentAlly', type_='Fighting',
+                      flags='bypasssub: 1, allyanim: 1, metronome: 1')
 
 PLAIN = move_entry('plain', 'Plain', category='Physical', base_power=50, flags='contact: 1')
 
@@ -590,21 +599,22 @@ class PoolMoves(unittest.TestCase):
         seven = len(gen_closure.SPECIAL_IDS_C) + len(gen_closure.G2_HANDLERS)
         self.assertEqual(gen_closure.SPECIAL_IDS_P[len(gen_closure.SPECIAL_IDS_C):seven], gen_closure.G2_HANDLERS)
         # UNMODELED (decision 0015 section 4.2) follows them, as the last id.
-        self.assertEqual(gen_closure.SPECIAL_IDS_P[seven:],
-                         ['SANDSTORM', 'SNOWSCAPE', 'KNOCK_OFF', 'EXPANDING_FORCE', 'AURORA_VEIL', 'UNMODELED'])
+        self.assertEqual(gen_closure.SPECIAL_IDS_P[seven:], ['SANDSTORM', 'SNOWSCAPE', 'KNOCK_OFF', 'EXPANDING_FORCE', 'GLAIVE_RUSH', 'AURORA_VEIL', 'UNMODELED'])
         self.assertEqual(len(gen_closure.G2_HANDLERS), 7)
-        # Step G16: Knock Off's handler is 24 in the tables; step G15's Expanding Force is 25, step G20's Aurora Veil 26
-        # and UNMODELED 27.
+        # Step G16: Knock Off's handler is 24 in the tables; step G15's Expanding Force is 25, step G19's Glaive Rush 26,
+        # step G20's Aurora Veil 27 and UNMODELED 28.
         self.assertEqual(gen_closure.G16_HANDLERS, ['KNOCK_OFF'])
         self.assertEqual(gen_closure.G20_HANDLERS, ['AURORA_VEIL'])
         self.assertEqual(gen_closure.SPECIAL_IDS_P.index('KNOCK_OFF'), 24)
         self.assertEqual(gen_closure.SPECIAL_IDS_P.index('EXPANDING_FORCE'), 25)
-        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('AURORA_VEIL'), 26)
-        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 27)
+        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('GLAIVE_RUSH'), 26)  # step G19
+        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('AURORA_VEIL'), 27)
+        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 28)
         # Scald and Recover became data in step G10: their ids stay defined and no move maps to them.
         self.assertEqual({v[0] for k, v in gen_closure.SPECIAL_P.items() if k not in gen_closure.SPECIAL_C},
                          (set(gen_closure.G2_HANDLERS) - {'SCALD', 'RECOVER'}) | set(gen_closure.WEATHER_HANDLERS) |
-                         set(gen_closure.G16_HANDLERS) | set(gen_closure.G15_HANDLERS) | set(gen_closure.G20_HANDLERS))
+                         set(gen_closure.G16_HANDLERS) | set(gen_closure.G15_HANDLERS) | set(gen_closure.G19_HANDLERS) |
+                         set(gen_closure.G20_HANDLERS))
 
     def test_aurora_veil_is_a_handler_whose_onTry_and_condition_are_the_pinned_text(self):
         rec = parse_pool('auroraveil', AURORA_VEIL)
@@ -654,6 +664,23 @@ class PoolMoves(unittest.TestCase):
         # Outside the pool mode the move is refused for its callbacks.
         for ext in (False, True):
             self.refused('knockoff', KNOCK_OFF, 'callback onBasePower is not mapped to a handler', pool=False, ext=ext)
+
+    def test_glaive_rush_is_a_handler_whose_self_effect_and_condition_are_the_pinned_text(self):
+        rec = parse_pool('glaiverush', GLAIVE_RUSH)
+        self.assertEqual(rec['special'], gen_closure.SPECIAL_IDS_P.index('GLAIVE_RUSH'))
+        self.assertEqual((rec['base_power'], rec['boost_role'], rec['flags2']), (120, 0, 0))
+        self.refused('glaiverush', GLAIVE_RUSH.replace('chainModify(2)', 'chainModify(1.5)'),
+                     'the condition is not the pinned text')
+        self.refused('glaiverush', GLAIVE_RUSH.replace("volatileStatus: 'glaiverush'", "volatileStatus: 'mustrecharge'"),
+                     'self is not "self: { volatileStatus: \'glaiverush\', },"')
+
+    def test_coaching_is_a_status_move_with_primary_boosts_for_the_ally(self):
+        rec = parse_pool('coaching', COACHING)
+        self.assertEqual((rec['boost_role'], rec['target_class'], rec['special']),
+                         (gen_closure.BOOST_ROLE['PRIMARY_ALLY'], gen_closure.TARGET_CLASS['adjacentAlly'], 0))
+        self.assertEqual(rec['boosts'][:2], [1, 1])  # atk and def
+        # The same boosts on a foe (a Physical or Status move aimed at the opponent) stay refused.
+        self.refused('coaching', COACHING.replace('adjacentAlly', 'normal'), 'primary boosts on a non-self target')
 
     def test_the_same_move_is_refused_outside_the_pool_mode(self):
         # The closure and extended tables keep failing for what they do not model: no handler leaks into them.
@@ -711,7 +738,7 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual([s[0] for s in gen_closure.SETS_G2], ['pelipper', 'arcaninehisui', 'annihilape', 'floetteeternal'])
         # Every handler move is one of the rows, and every set move is a pool move or one of the rows.
         self.assertTrue({k for k in gen_closure.SPECIAL_P if k not in gen_closure.SPECIAL_C} <=
-                        set(gen_closure.G2_MOVES) | {'sandstorm', 'snowscape', 'knockoff', 'expandingforce', 'auroraveil'})
+                        set(gen_closure.G2_MOVES) | {'sandstorm', 'snowscape', 'knockoff', 'expandingforce', 'glaiverush', 'auroraveil'})
         self.assertEqual(gen_closure.WEATHER_HANDLERS, ['SANDSTORM', 'SNOWSCAPE'])
         for _sp, _ab, item, moves, _mega in gen_closure.SETS_G2:
             self.assertTrue(item in gen_closure.G2_ITEMS or item not in gen_closure.POOL_ITEMS)
