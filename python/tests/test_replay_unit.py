@@ -648,29 +648,173 @@ class DatasetTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "not empty"):
             dataset.Writer(self.tmp / "used", {})
 
-    def test_counters_add_up(self):
+    def build(self, name, workers=1, **kw):
         from duoforge_replay import build
-        out = self.tmp / "counted"
-        c = build.build([self.source], self.prior_path, out, workers=1, chunk=2, stats_factory=stats_factory)
+        kw.setdefault("stats_factory", stats_factory)
+        return build.build([self.source], self.prior_path, self.tmp / name, workers=workers, unit_lines=2,
+                           log=lambda _: None, **kw)
+
+    def test_counters_add_up(self):
+        c = self.build("counted")
         skipped = sum(v for k, v in c.items() if k.startswith("games.skipped."))
         internal = sum(v for k, v in c.items() if k.startswith("internal:"))
         self.assertEqual(c["games.read"], c["games.processed"] + skipped + internal)
         stopped = sum(v for k, v in c.items() if k.startswith("perspectives.stopped."))
         self.assertEqual(c["perspectives.kept"] + stopped, 2 * c["games.processed"])
+        self.assertEqual(c["games.processed"], 3)
+        self.assertEqual(c["games.skipped.skip:format"], 1)
+
+    def test_parts_are_source_units(self):
+        # two source lines per unit: four games give two parts, each its own directory
+        from duoforge_replay import dataset
+        self.build("units")
+        parts = sorted(p.name for p in (self.tmp / "units").iterdir() if p.is_dir())
+        self.assertEqual(parts, ["part-source-00000", "part-source-00001"])
+        rows = sum(len(shard["side"]) for shard in dataset.read(self.tmp / "units"))
+        self.assertEqual(rows, sum(len(r.rows) for r in self.results) * 3 // 2)
 
     def test_workers_same_bytes(self):
-        from duoforge_replay import build
-        outs = []
         for workers in (1, 2):
-            out = self.tmp / f"w{workers}"
-            counters = build.build([self.source], self.prior_path, out, workers=workers, chunk=1,
-                                   stats_factory=stats_factory)
-            self.assertEqual(counters["games.skipped.skip:format"], 1)
-            self.assertEqual(counters["games.processed"], 3)
-            outs.append(out)
-        for path in sorted(outs[0].iterdir()):
-            if path.name != "manifest.json":
-                self.assertEqual(_sha(path), _sha(outs[1] / path.name), path.name)
+            self.build(f"w{workers}", workers=workers)
+        files = sorted(p.relative_to(self.tmp / "w1") for p in (self.tmp / "w1").rglob("*") if p.is_file())
+        self.assertTrue(any(f.parts[0].startswith("part-") for f in files))
+        for f in files:
+            if f.name != "manifest.json" or len(f.parts) > 1:  # a part's manifest names no worker count
+                self.assertEqual(_sha(self.tmp / "w1" / f), _sha(self.tmp / "w2" / f), f)
+
+    def test_resume_writes_only_missing_parts(self):
+        whole = self.tmp / "whole"
+        self.build("whole")
+        resumed = self.tmp / "resumed"
+        self.build("resumed")
+        shutil.rmtree(resumed / "part-source-00001")  # a run stopped before this part
+        (resumed / "part-source-00000.tmp").mkdir()  # a half-written part of a killed run
+        (resumed / "part-source-00000.tmp" / "junk").write_text("x")
+        c = self.build("resumed")
+        self.assertEqual(c["parts.written"], 1)
+        self.assertEqual(c["parts.skipped.done"], 1)
+        self.assertFalse((resumed / "part-source-00000.tmp").exists())
+        files = sorted(p.relative_to(whole) for p in whole.rglob("*") if p.is_file())
+        self.assertIn(Path("counters.json"), files)
+        for f in files:
+            if f != Path("manifest.json"):  # the output's manifest records the last run (parts written, seconds)
+                self.assertEqual(_sha(whole / f), _sha(resumed / f), f)
+
+    def test_the_output_must_be_a_dataset_or_empty(self):
+        from duoforge_replay import build
+        stranger = self.tmp / "stranger"
+        stranger.mkdir()
+        (stranger / "notes.txt").write_text("x")
+        with self.assertRaisesRegex(ValueError, "not a replay dataset"):
+            build.build([self.source], self.prior_path, stranger, unit_lines=2, stats_factory=stats_factory,
+                        log=lambda _: None)
+
+
+def broken_stats_factory():
+    """A stat source that fails like a dead Node process: every game is an internal error."""
+    class Broken:
+        def stats(self, species, nature, stat_points):
+            raise RuntimeError("ps_stats.js ended")
+    return Broken()
+
+
+class PartsReviewTest(unittest.TestCase):
+    """Review of #127: resume keeps bugs visible, refuses changed inputs and broken parts, pauses, validates."""
+
+    @classmethod
+    def setUpClass(cls):
+        import json
+        cls.tmp = Path(tempfile.mkdtemp(prefix="duoforge_parts_"))
+        cls.log = FIXTURE.read_text(encoding="utf-8")
+        cls.prior_path = cls.tmp / "prior.json"
+        cls.prior_path.write_text(json.dumps({"version": 1, "pastes": 0, "skipped": {}, "levels": [{}, {}, {}, {}]}),
+                                  encoding="utf-8")
+        cls.source = cls.tmp / "source.jsonl"
+        with open(cls.source, "w", encoding="utf-8", newline=chr(10)) as f:
+            for i in range(4):
+                f.write(json.dumps({"id": f"fixture-{i}", "formatid": "gen9championsvgc2026regmc", "log": cls.log})
+                        + chr(10))
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.tmp, ignore_errors=True)
+
+    def build(self, name, **kw):
+        from duoforge_replay import build
+        kw.setdefault("stats_factory", stats_factory)
+        kw.setdefault("unit_lines", 2)
+        return build.build([self.source], self.prior_path, self.tmp / name, log=lambda _: None, **kw)
+
+    def test_internal_errors_survive_a_resume(self):
+        # I1: a part written with internal errors keeps its replay ids; a resume still reports them
+        first = self.build("broken", stats_factory=broken_stats_factory, limit_parts=1)
+        self.assertTrue(first["internal.examples"])
+        again = self.build("broken")  # the clean remaining part
+        self.assertEqual(again["parts.written"], 1)
+        self.assertTrue(any("fixture-0" in e for e in again["internal.examples"]), again["internal.examples"])
+        self.assertGreater(again["internal:RuntimeError"], 0)
+
+    def test_changed_inputs_are_refused(self):
+        # I2/I5: another unit size, prior or Showdown pin is another dataset
+        pin = str(data.ROOT)  # any git checkout stands in for the Showdown pin here; the tmp directory has none
+        self.build("inputs", limit_parts=1, ps_dir=pin)
+        with self.assertRaisesRegex(ValueError, "other inputs"):
+            self.build("inputs", unit_lines=3, ps_dir=pin)
+        with self.assertRaisesRegex(ValueError, "other inputs"):
+            self.build("inputs", ps_dir=str(self.tmp))
+        self.assertEqual(self.build("inputs", ps_dir=pin)["parts.written"], 1)  # the same inputs resume
+
+    def test_a_broken_part_is_redone(self):
+        # I4: a part whose files a host crash left empty is not finished
+        self.build("crash")
+        part = self.tmp / "crash" / "part-source-00001"
+        (part / "manifest.json").write_text("", encoding="utf-8")
+        c = self.build("crash")
+        self.assertEqual(c["parts.written"], 1)
+        self.assertEqual(c["parts.redone.broken"], 1)
+
+    def test_pause_holds_every_worker(self):
+        # I3: with two workers the build submits nothing while the pause file exists
+        import os
+        import threading
+        import time
+        pause = self.tmp / "pause"
+        pause.write_text("x")
+        saved = os.environ.get("DUOFORGE_FUZZ_PAUSE")
+        os.environ["DUOFORGE_FUZZ_PAUSE"] = str(pause)
+        threading.Timer(2.0, pause.unlink).start()
+        start = time.monotonic()
+        try:
+            c = self.build("paused", workers=2)
+        finally:
+            if saved is None:
+                os.environ.pop("DUOFORGE_FUZZ_PAUSE", None)
+            else:
+                os.environ["DUOFORGE_FUZZ_PAUSE"] = saved
+        self.assertGreaterEqual(time.monotonic() - start, 2.0)
+        self.assertEqual(c["parts.written"], 2)
+
+    def test_a_second_run_on_the_same_output_is_refused(self):
+        # M4: the lock of a running build
+        out = self.tmp / "locked"
+        self.build("locked", limit_parts=0)
+        (out / "build.lock").write_text("12345")
+        with self.assertRaisesRegex(ValueError, "another build"):
+            self.build("locked")
+
+    def test_bad_arguments(self):
+        # M3
+        from duoforge_replay import __main__ as cli
+        for args in (["--limit-parts", "-1"], ["--unit-lines", "0"]):
+            with self.assertRaises(SystemExit):
+                cli.main(["build", "--source", str(self.source), "--prior", str(self.prior_path),
+                          "--out", str(self.tmp / "never"), *args])
+
+    def test_an_unfinished_parts_output_reads_empty(self):
+        # M1: a parts dataset with no finished part is empty, not the single-directory layout
+        from duoforge_replay import dataset
+        self.build("empty", limit_parts=0)
+        self.assertEqual(list(dataset.read(self.tmp / "empty")), [])
 
 
 class _FakeParquet:
@@ -716,8 +860,12 @@ class SourceTest(unittest.TestCase):
             tmp = Path(tempfile.mkdtemp(prefix="duoforge_source_"))
             (tmp / "x.parquet").write_bytes(b"")
             counters = collections.Counter()
-            rows = list(source.select(source.games([tmp], "gen9championsvgc2026regmc", counters),
-                                      "gen9championsvgc2026regmc", counters))
+            units = source.units([tmp])
+            self.assertEqual([u.id for u in units], ["x-00000", "x-00001"])
+            rows = []
+            for unit in units:
+                rows += list(source.select(source.read_unit(unit, "gen9championsvgc2026regmc", counters),
+                                           "gen9championsvgc2026regmc", counters))
             shutil.rmtree(tmp, ignore_errors=True)
         finally:
             for k, v in saved.items():

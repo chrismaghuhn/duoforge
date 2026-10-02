@@ -16,6 +16,7 @@ import collections
 import hashlib
 import io
 import json
+import os
 import subprocess
 import zipfile
 from pathlib import Path
@@ -51,6 +52,32 @@ def refuse_repository(path):
         raise ValueError(f"the output {path} is inside the repository: replay data never goes there")
 
 
+def fsync_file(path):
+    """Flushes a written file to the disk: a part counts as finished only once its files survive a host crash."""
+    with open(path, "rb+") as f:
+        os.fsync(f.fileno())
+
+
+def fsync_dir(path):
+    """Flushes a directory's entries (POSIX; Windows has no directory handle to flush and commits renames itself)."""
+    if os.name == "posix":
+        fd = os.open(path, os.O_RDONLY)
+        try:
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+
+
+def write_json_atomic(path, value):
+    """Writes JSON to path.tmp, flushes it and renames it over path: a reader never sees half a file."""
+    path = Path(path)
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(json.dumps(value, indent=1, sort_keys=True) + "\n", encoding="utf-8")
+    fsync_file(tmp)
+    os.replace(tmp, path)
+    fsync_dir(path.parent)
+
+
 def write_npz(path, arrays):
     """An .npz with fixed timestamps and a fixed member order (byte-identical for equal arrays)."""
     with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_DEFLATED) as z:
@@ -60,6 +87,7 @@ def write_npz(path, arrays):
             info = zipfile.ZipInfo(f"{name}.npy", date_time=_DATE)
             info.compress_type = zipfile.ZIP_DEFLATED
             z.writestr(info, buffer.getvalue())
+    fsync_file(path)
 
 
 def _sha256(path):
@@ -133,20 +161,40 @@ class Writer:
         counters = dict(sorted(self.counters.items()))
         manifest = {**self.manifest, "format_version": FORMAT_VERSION, "games": len(g), "shards": self.shards,
                     "games_sha256": _sha256(self.out / "games.npz"), "counters": counters}
+        (self.out / "counters.json").write_text(json.dumps(counters, indent=1) + "\n", encoding="utf-8")
+        fsync_file(self.out / "counters.json")
         (self.out / "manifest.json").write_text(json.dumps(manifest, indent=1, sort_keys=True) + "\n",
                                                 encoding="utf-8")
-        (self.out / "counters.json").write_text(json.dumps(counters, indent=1) + "\n", encoding="utf-8")
+        fsync_file(self.out / "manifest.json")
+        fsync_dir(self.out)
         return collections.Counter(self.counters)
 
 
+MARKER = "replay-dataset.json"  # the inputs of a dataset built in parts (build.py)
+
+
+def parts(out_dir):
+    """The finished part directories of a dataset built in parts (build.py), in name order (none yet: []); the
+    output itself for a dataset written in one directory."""
+    out = Path(out_dir)
+    if not (out / MARKER).exists():
+        return [out]
+    return sorted(p for p in out.glob("part-*") if p.is_dir() and not p.name.endswith(".tmp"))
+
+
 def read(out_dir):
-    """The shards of a dataset, in order: one dict of arrays per shard."""
-    manifest = json.loads((Path(out_dir) / "manifest.json").read_text(encoding="utf-8"))
-    for shard in manifest["shards"]:
-        with np.load(Path(out_dir) / shard["file"]) as z:
-            yield {name: z[name] for name in z.files}
+    """The shards of a dataset, in order: one dict of arrays per shard, with "part" naming its part directory (a row's
+    game indexes that part's games table)."""
+    for part in parts(out_dir):
+        manifest = json.loads((part / "manifest.json").read_text(encoding="utf-8"))
+        for shard in manifest["shards"]:
+            with np.load(part / shard["file"]) as z:
+                arrays = {name: z[name] for name in z.files}
+            arrays["part"] = part.name
+            yield arrays
 
 
-def read_games(out_dir):
-    with np.load(Path(out_dir) / "games.npz") as z:
+def read_games(part_dir):
+    """The games table of one part (or of a single-part dataset)."""
+    with np.load(Path(part_dir) / "games.npz") as z:
         return {name: z[name] for name in z.files}
