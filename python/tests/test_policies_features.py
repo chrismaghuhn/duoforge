@@ -6,7 +6,9 @@ below their counts, and two runs end in the same states. encode is pure
 its pair mask holds the joint count, and both policies refuse a requested
 player with 0 candidates (Review Focus 5). Psychic Terrain and the position
 flags of the TEAM_C kinds encode at their documented places and alike in
-both encoders; values outside them raise.
+both encoders; values outside them raise. A member is present exactly when
+registered: Team A's Rillaboom (species 0) too, an unregistered slot of a
+DEV-kind roster of four or five not.
 """
 import unittest
 
@@ -17,6 +19,9 @@ from duoforge import _layout, features
 
 SEED = 0x2026100200000016
 ENVS = 32
+# The encoder-1 trajectory hash (test_as_encoder_1_matches_the_recorded_old_encoder).
+V1_SEED = 0x2026100200000088
+V1_GOLDEN = "f15954182cb6be1707d36447bfd2e513f68d3ff15c564c7cf53e3b561cb76a6a"
 
 
 def _setups():
@@ -72,6 +77,47 @@ def _play_scripted(ctx, test, check_reference=False):
             test.fail("the scripted battles did not end")
         test.assertTrue(all(batch.result(e) != 0 for e in range(ENVS)))
         return [batch.digest(e) for e in range(ENVS)]
+
+
+# obs_part index of roster member k's present flag: own side 71 + 40 k (15
+# global, 8 side, 2 * 24 positions), the foe 367 + 40 k (a side is 296).
+_OWN_PRESENT = 71 + 40 * np.arange(6)
+_FOE_PRESENT = 367 + 40 * np.arange(6)
+_DEV_COUNTS = (4, 5)  # registered members of side 0 and side 1 in _dev_setups
+
+
+def _dev_setups():
+    """Pairings 0 and 2, four times, with rosters of four (side 0: Team A
+    from Rillaboom) and five (side 1) for a DEV kind, which registers
+    brought_count to max_roster members."""
+    setups = duoforge.reference_setups([0, 2] * 4)
+    for s, count in enumerate(_DEV_COUNTS):
+        setups["sides"][:, s]["member_count"] = count
+        setups["sides"][:, s]["members"][:, count:] = 0
+    return setups
+
+
+def _play_encoded(ctx, setups, test):
+    """Plays the setups to the end with RandomPolicy; per step the
+    observations and factored domains (2E,) and encode_batch's obs_part
+    (2E, OBS_SIZE), which the reference encoder equals."""
+    from python.tests import _reference_features as reference
+    envs = setups.shape[0]
+    policy = duoforge.RandomPolicy(SEED, envs)
+    policy.start_episodes(np.arange(envs), np.zeros(envs, dtype=np.uint64))
+    steps = []
+    with duoforge.Batch(ctx, setups, 1, SEED) as batch:
+        for _ in range(400):
+            batch.query_factored()
+            obs, domains = batch.observations.reshape(-1).copy(), batch.domains.reshape(-1).copy()
+            got = features.encode_batch(obs, domains)[0]
+            for n in range(obs.shape[0]):
+                test.assertTrue(np.array_equal(got[n], reference.encode(obs[n], domains[n])[0]))
+            steps.append((obs, domains, got))
+            if not (batch.requests["requested"] != 0).any():
+                return steps
+            batch.step_factored(policy.choose_factored(batch))
+    test.fail("the battles did not end")
 
 
 class _Scene:
@@ -274,6 +320,90 @@ class PoliciesFeaturesTest(unittest.TestCase):
                         compared += 1
                 batch.step_factored(policy.choose_factored(batch))
         self.assertEqual(compared, 3 * 2 * ENVS)
+
+    def test_encode_present_marks_every_registered_member(self):
+        # Team A registers Rillaboom (species 0) at roster 0: in pairings 0
+        # (A-B) and 2 (A-A) all six members of both sides are present, at
+        # every boundary of the battles, in both encoders.
+        steps = _play_encoded(self.ctx, duoforge.reference_setups([0, 2] * 4), self)
+        self.assertEqual(steps[0][0]["sides"][:, 0]["members"][:, 0]["species_id"].tolist(), [0] * 16)
+        for _, _, got in steps:
+            self.assertTrue((got[:, _OWN_PRESENT] == 1).all())
+            self.assertTrue((got[:, _FOE_PRESENT] == 1).all())
+
+    def test_encode_present_of_unregistered_slots(self):
+        # Every registered member of the DEV rosters (four and five) is
+        # present, the one not brought too, and an unregistered slot is
+        # not, in both encoders.
+        with duoforge.Context(data_kind=3) as dev:  # DUOFORGE_DATA_KIND_CLOSURE_DEV
+            steps = _play_encoded(dev, _dev_setups(), self)
+        registered = np.array([[1.0] * c + [0.0] * (6 - c) for c in _DEV_COUNTS], dtype=np.float32)
+        not_brought = 0
+        for obs, _, got in steps:
+            me = obs["player"].astype(np.int64)
+            self.assertTrue(np.array_equal(got[:, _OWN_PRESENT], registered[me]))
+            self.assertTrue(np.array_equal(got[:, _FOE_PRESENT], registered[1 - me]))
+            location = obs["sides"][np.arange(obs.shape[0]), me]["members"]["location"]
+            not_brought += int((location == _layout.CONSTANTS["DUOFORGE_LOCATION_NOT_BROUGHT"]).sum())
+        self.assertGreater(not_brought, 0)
+
+    def test_as_encoder_1_is_the_old_encoder(self):
+        # A network of encoder 1 gets exactly that encoder's inputs: present
+        # from species_id != 0, everything else as encoder 2. At every step
+        # of the CLOSURE pairings 0 and 2 and of the DEV rosters, byte for
+        # byte the reference encoder's encoder=1; only Rillaboom's present
+        # differs from encoder 2 (Team A at roster 0, own side and foe).
+        from python.tests import _reference_features as reference
+        steps = _play_encoded(self.ctx, duoforge.reference_setups([0, 2] * 4), self)
+        with duoforge.Context(data_kind=3) as dev:  # DUOFORGE_DATA_KIND_CLOSURE_DEV
+            steps += _play_encoded(dev, _dev_setups(), self)
+        for obs, domains, got in steps:
+            self.assertIs(features.as_encoder(got, obs, features.ENCODER), got)
+            old = features.as_encoder(got, obs, 1)
+            for n in range(obs.shape[0]):
+                self.assertTrue(np.array_equal(old[n], reference.encode(obs[n], domains[n], encoder=1)[0]))
+            self.assertTrue(set(np.flatnonzero((old != got).any(axis=0))) <= {71, 367})
+        # Pairing 0 at team selection, player 0 (Team A): the old encoder's
+        # [0, 1, 1, 1, 1, 1] against all six.
+        obs, _, got = steps[0]
+        self.assertEqual(features.as_encoder(got, obs, 1)[0, _OWN_PRESENT].tolist(), [0.0] + [1.0] * 5)
+        self.assertEqual(got[0, _OWN_PRESENT].tolist(), [1.0] * 6)
+
+    def test_as_encoder_refuses_what_it_does_not_know(self):
+        with duoforge.Batch(self.ctx, duoforge.reference_setups([0]), 1, SEED) as batch:
+            batch.query_factored()
+            ob, d = batch.observations[0, 0], batch.domains[0, 0]
+            part = features.encode(ob, d)[0]
+            self.assertEqual(features.as_encoder(part, ob, 1)[_OWN_PRESENT].tolist(), [0.0] + [1.0] * 5)
+            self.assertEqual(part[_OWN_PRESENT].tolist(), [1.0] * 6)  # one record, untouched
+            for bad in (0, 3, "2", None, True, 1.0):  # only ints count: True == 1, 1.0 == 1
+                with self.assertRaisesRegex(ValueError, "encoder"):
+                    features.as_encoder(part, ob, bad)
+            for odd in (part[:-1], part.astype(np.float64), np.stack([part, part])):
+                with self.assertRaises(TypeError):
+                    features.as_encoder(odd, ob, 1)
+
+    def test_as_encoder_1_matches_the_recorded_old_encoder(self):
+        # SHA-256 of encoder 1's obs_part over a fixed trajectory, recorded
+        # with the encoder from before the present fix (main 2fb40d6, whose
+        # encode_batch was version 1). The reference encoder changes with
+        # features.py, so this pins version 1 against drifting with both.
+        import hashlib
+        h = hashlib.sha256()
+        rows = 0
+        policy = duoforge.RandomPolicy(V1_SEED, 8)
+        policy.start_episodes(np.arange(8), np.zeros(8, dtype=np.uint64))
+        with duoforge.Batch(self.ctx, duoforge.reference_setups([0, 2] * 4), 2, V1_SEED) as batch:
+            for _ in range(60):
+                batch.query_factored()
+                observations = batch.observations.reshape(-1)
+                obs = features.encode_batch(observations, batch.domains.reshape(-1))[0]
+                h.update(np.ascontiguousarray(features.as_encoder(obs, observations, 1)).tobytes())
+                rows += obs.shape[0]
+                if not (batch.requests["requested"] != 0).any():
+                    break
+                batch.step_factored(policy.choose_factored(batch))
+        self.assertEqual((h.hexdigest(), rows), (V1_GOLDEN, 464))
 
     def test_zero_count_raises(self):
         with duoforge.Batch(self.ctx, _setups(), 1, SEED) as batch:
