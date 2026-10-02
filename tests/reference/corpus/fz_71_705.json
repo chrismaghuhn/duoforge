@@ -1,0 +1,118 @@
+{
+  "name": "fz_71_705",
+  "purpose": "Corpus (coverage): random differential battle 705 of run 71 (tools/reference/diff_driver.py random), team B against team B, the whole battle. It adds 1 signatures that no committed battle and no earlier corpus battle has: move:Snarl[notarget].",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,caddd6e7db28334391df9bbf9877cbd2f6d56e2709a97b5c5ad448af2eac366f",
+  "teams": [
+    "Farigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Grass Knot\n- Trick Room\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Weather Ball\n- Muddy Water\n- Ice Beam\n- Protect\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Electro Shot\n- Snarl\n- Protect\n\nGrimmsnarl (M) @ Light Clay\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Spirit Break\n- Reflect\n- Light Screen\n- Parting Shot\n\nGolisopod (F) @ Golisopite\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 1 SpD / 1 Spe\nAdamant Nature\n- Leech Life\n- Iron Head\n- Drill Run\n- Protect\n\nCharizard (M) @ Charizardite Y\nAbility: Blaze\nLevel: 50\nEVs: 16 HP / 18 Def / 3 SpA / 29 Spe\nTimid Nature\n- Heat Wave\n- Weather Ball\n- Hurricane\n- Protect",
+    "Golisopod (F) @ Golisopite\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 1 SpD / 1 Spe\nAdamant Nature\n- Leech Life\n- Iron Head\n- Drill Run\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Weather Ball\n- Muddy Water\n- Ice Beam\n- Protect\n\nGrimmsnarl (M) @ Light Clay\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Spirit Break\n- Reflect\n- Light Screen\n- Parting Shot\n\nFarigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Grass Knot\n- Trick Room\n- Protect\n\nCharizard (M) @ Charizardite Y\nAbility: Blaze\nLevel: 50\nEVs: 16 HP / 18 Def / 3 SpA / 29 Spe\nTimid Nature\n- Heat Wave\n- Weather Ball\n- Hurricane\n- Protect\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Electro Shot\n- Snarl\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 1543",
+      "p2": "team 2563"
+    },
+    {
+      "p1": "move 1 2, move 2 2",
+      "p2": "move 3 -2, move 4"
+    },
+    {
+      "p1": "move 2 -2, move 4",
+      "p2": "move 1 2, move 4"
+    },
+    {
+      "p1": "move 4, move 2 1 mega",
+      "p2": "move 1 1, move 2 -1 mega"
+    },
+    {
+      "p1": "move 2 1, switch 3",
+      "p2": "move 1 -2, move 2 1"
+    },
+    {
+      "p1": "move 4, move 3",
+      "p2": "move 4, switch 4"
+    },
+    {
+      "p1": "move 4, move 2",
+      "p2": "switch 3, move 3"
+    },
+    {
+      "p1": "move 4, move 1 1",
+      "p2": "move 1 -2, move 2"
+    },
+    {
+      "p1": "move 1 -2, move 4 2",
+      "p2": "move 3, move 3"
+    },
+    {
+      "p1": "move 3, move 4 1",
+      "p2": "move 3, move 4 1"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "move 3, move 2 2",
+      "p2": "move 4, move 3"
+    },
+    {
+      "p1": "move 1 1, switch 4",
+      "p2": "move 4, move 2"
+    },
+    {
+      "p1": "switch 4, switch 3",
+      "p2": "move 4, move 1 -1"
+    },
+    {
+      "p1": "move 1 2, move 1 -1",
+      "p2": "move 2 2, move 2"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "switch 3, move 1 -1",
+      "p2": "move 1, move 4"
+    },
+    {
+      "p1": "move 3, move 2",
+      "p2": "move 2 -2, move 2"
+    },
+    {
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "move 4, move 1 1",
+      "p2": "move 4, move 1"
+    },
+    {
+      "p1": "move 2 2, move 4 -1",
+      "p2": "move 1 1, move 1"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "move 1, switch 3",
+      "p2": "move 3, move 1"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "pass, move 3",
+      "p2": "move 1 -2, move 3 2"
+    },
+    {
+      "p1": "pass, move 4",
+      "p2": "move 2 2, move 4"
+    },
+    {
+      "p1": "pass, move 1 2",
+      "p2": "move 1, move 1"
+    }
+  ]
+}
