@@ -1,0 +1,38 @@
+{
+  "registry": 1,
+  "teams": [
+    {
+      "id": "A",
+      "name": "Balt Top 8",
+      "source": {
+        "url": "https://pokepast.es/470a6ec2468af8a4",
+        "event": "Baltimore Regional",
+        "placing": "Top 8"
+      },
+      "notes": "Team A of decision 0004, the owner's selection: retrieved from pokepast.es on 2026-09-30 (author field \"Guest 10677393\", note \"Format: gen9championsvgc2026regmc\"). The paste states no gender. The genders here are those of tests/reference/teams/team_a.txt, which the reference battles and the conformance tables are made with, not what import_paste.py writes for the same paste (male for a Pokemon that can be either), and they must not change. The event and the placing are read from the title of the paste. This file is a copy of tests/reference/teams/team_a.txt, which other tests use and which stays; a test holds the two equal.",
+      "sha256": "4955f90d9f8650ef5e526fec4a2d5853fa1c98910c0a77c85084d9935977852f"
+    },
+    {
+      "id": "B",
+      "name": "Baltimore Regional Finalist",
+      "source": {
+        "url": "https://pokepast.es/7c9c0663ef60180e",
+        "event": "Baltimore Regional",
+        "placing": "Finalist"
+      },
+      "notes": "Team B of decision 0004, the owner's selection: retrieved from pokepast.es on 2026-09-30 (author field \"Adi (ck49)\"). The paste states only Grimmsnarl's gender (M). The other genders here are those of tests/reference/teams/team_b.txt, which the reference battles and the conformance tables are made with, not what import_paste.py writes for the same paste, and they must not change. The event and the placing are read from the title of the paste. This file is a copy of tests/reference/teams/team_b.txt, which other tests use and which stays; a test holds the two equal.",
+      "sha256": "d936ae39ba48a382395e79b795ed8fe024370dcf5d72c4a736127219f0ec5300"
+    },
+    {
+      "id": "C",
+      "name": "Team C (usage-based)",
+      "source": {
+        "url": "https://pokechamdb.com/en?format=double&season=M-6&view=pokemon",
+        "event": null,
+        "placing": null
+      },
+      "notes": "Team C of decision 0009, the third reference team: the six Pokemon of the doubles ranking of season M-6 on pokechamdb.com that the owner chose, with their most used sets (read on 2026-10-01; docs/research/third-team/README.md says how). It has no event and no placing. Genders as stated in the file; Indeedee-F is female. This file is a copy of docs/research/third-team/team-c.txt, which other tests use and which stays; a test holds the two equal.",
+      "sha256": "4c625aff89a656e1e52ffe75e98d429d5f9f915aa17ba05dde6941a38004fd3b"
+    }
+  ]
+}

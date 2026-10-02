@@ -1,0 +1,338 @@
+{
+  "name": "fz_71_1641",
+  "purpose": "Corpus (coverage): random differential battle 1641 of run 71 (tools/reference/diff_driver.py random), team B against team B, the whole battle. It adds 1 signatures that no committed battle and no earlier corpus battle has: request:turn:disabled-move+locked-twoturn+pass.",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,97565c22cf2292a7f2090161af3ee8c5f9d97e91b5a3c780186c8c903fcc6bab",
+  "teams": [
+    "Archaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Electro Shot\n- Snarl\n- Protect\n\nGolisopod (F) @ Golisopite\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 1 SpD / 1 Spe\nAdamant Nature\n- Leech Life\n- Iron Head\n- Drill Run\n- Protect\n\nFarigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Grass Knot\n- Trick Room\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Weather Ball\n- Muddy Water\n- Ice Beam\n- Protect\n\nGrimmsnarl (M) @ Light Clay\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Spirit Break\n- Reflect\n- Light Screen\n- Parting Shot\n\nCharizard (M) @ Charizardite Y\nAbility: Blaze\nLevel: 50\nEVs: 16 HP / 18 Def / 3 SpA / 29 Spe\nTimid Nature\n- Heat Wave\n- Weather Ball\n- Hurricane\n- Protect",
+    "Archaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Electro Shot\n- Snarl\n- Protect\n\nFarigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Grass Knot\n- Trick Room\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Weather Ball\n- Muddy Water\n- Ice Beam\n- Protect\n\nGolisopod (F) @ Golisopite\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 1 SpD / 1 Spe\nAdamant Nature\n- Leech Life\n- Iron Head\n- Drill Run\n- Protect\n\nGrimmsnarl (M) @ Light Clay\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Spirit Break\n- Reflect\n- Light Screen\n- Parting Shot\n\nCharizard (M) @ Charizardite Y\nAbility: Blaze\nLevel: 50\nEVs: 16 HP / 18 Def / 3 SpA / 29 Spe\nTimid Nature\n- Heat Wave\n- Weather Ball\n- Hurricane\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 2341",
+      "p2": "team 5132"
+    },
+    {
+      "p1": "switch 3, move 4",
+      "p2": "move 4 -2, move 1 1"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 2, move 4",
+      "p2": "move 1 -2, move 2 1"
+    },
+    {
+      "p1": "switch 3, move 2 1",
+      "p2": "move 2 -2, move 1 1"
+    },
+    {
+      "p1": "move 2 2, move 2 2",
+      "p2": "move 1 1, move 1 1"
+    },
+    {
+      "p1": "switch 3, pass"
+    },
+    {
+      "p1": "switch 3, pass"
+    },
+    {
+      "p1": "move 4 mega, move 3",
+      "p2": "move 1 1, move 4"
+    },
+    {
+      "p1": "move 3 2, move 3",
+      "p2": "move 2 -2, switch 3"
+    },
+    {
+      "p1": "move 2 1, move 2 1",
+      "p2": "move 2 1, move 4"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 1 -2, move 4",
+      "p2": "move 3, move 1 -1"
+    },
+    {
+      "p1": "move 1 2, move 4",
+      "p2": "move 3, move 2"
+    },
+    {
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "move 3 1, move 2 -1",
+      "p2": "move 4, move 3"
+    },
+    {
+      "p1": "move 3 2, move 2 -1",
+      "p2": "move 3, move 3"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 2 2, move 4",
+      "p2": "move 2 2, move 3"
+    },
+    {
+      "p1": "move 1, move 4",
+      "p2": "move 1, move 4 -1"
+    },
+    {
+      "p1": "move 2 1, move 4",
+      "p2": "move 1 1, move 4 -1"
+    },
+    {
+      "p1": "move 1, move 4",
+      "p2": "move 3, move 4 1"
+    },
+    {
+      "p1": "move 1 2, move 1 1",
+      "p2": "move 4, move 2"
+    },
+    {
+      "p1": "move 3, move 3",
+      "p2": "move 3, move 1 1"
+    },
+    {
+      "p1": "move 3, move 3",
+      "p2": "move 1 1, move 4 2"
+    },
+    {
+      "p1": "move 4, move 3",
+      "p2": "move 1 -2, move 1 2"
+    },
+    {
+      "p1": "move 2 -2, move 3",
+      "p2": "move 1 2, move 2"
+    },
+    {
+      "p1": "move 1, move 2 1",
+      "p2": "move 4, move 2"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 3, move 4 -1"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 3, move 3"
+    },
+    {
+      "p1": "move 2 1, pass",
+      "p2": "move 3, move 1 -1"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 4, move 3"
+    },
+    {
+      "p1": "move 1 1, pass",
+      "p2": "move 1 1, move 2"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 1 1, move 3"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 4, move 1 -1"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 3, move 1 2"
+    },
+    {
+      "p1": "move 2 2, pass",
+      "p2": "move 2 2, move 3"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "move 1 1, move 2"
+    },
+    {
+      "p1": "move 2 -2, pass",
+      "p2": "move 2 1, move 2"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p1": "move 2 1, pass",
+      "p2": "move 4, move 2"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 3, move 4 1"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "move 4, move 3"
+    },
+    {
+      "p1": "move 2 1, pass",
+      "p2": "move 2 2, move 3"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 1, move 1 -1"
+    },
+    {
+      "p1": "move 1 2, pass",
+      "p2": "move 3, move 4 -1"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 1 -2, move 3"
+    },
+    {
+      "p1": "move 1 2, pass",
+      "p2": "move 2 2, move 2"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 1, move 4 2"
+    },
+    {
+      "p1": "move 1 -2, pass",
+      "p2": "move 1 -2, move 2"
+    },
+    {
+      "p1": "move 1 2, pass",
+      "p2": "move 2 2, move 2"
+    },
+    {
+      "p1": "move 2 2, pass",
+      "p2": "move 1, move 2"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 3, move 4 -1"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "move 3, move 3"
+    },
+    {
+      "p1": "move 2 1, pass",
+      "p2": "move 3, move 1 1"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 2 -2, move 2"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "move 1, move 2"
+    },
+    {
+      "p1": "move 1 2, pass",
+      "p2": "move 2 2, move 1 2"
+    },
+    {
+      "p1": "move 1 2, pass",
+      "p2": "move 1, move 4 1"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "move 2 1, move 3"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 1, move 2"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "move 2 2, move 4 1"
+    },
+    {
+      "p1": "move 1 1, pass",
+      "p2": "move 1, move 2"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 2 2, move 1 -1"
+    },
+    {
+      "p1": "move 1 -2, pass",
+      "p2": "move 1, move 4 -1"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 3, move 3"
+    },
+    {
+      "p1": "move 1 1, pass",
+      "p2": "move 3, move 1 2"
+    },
+    {
+      "p1": "move 1 -2, pass",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 1, move 4 -1"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "move 1, move 4 1"
+    },
+    {
+      "p1": "move 2 2, pass",
+      "p2": "move 1, move 4 2"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 1, move 2"
+    },
+    {
+      "p1": "move 2 -2, pass",
+      "p2": "pass, move 1 2"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "pass, move 1 1"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "pass, move 1 2"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "pass, move 1 -1"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "pass, move 3"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "pass, move 1 -1"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "pass, move 3"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "pass, move 1 -1"
+    }
+  ]
+}
