@@ -1805,7 +1805,7 @@ class TeamRegistryIds(unittest.TestCase):
         with self.assertRaises(ValueError) as cm:
             rnd.check_teams([('MC406', None)], root=self.root)
         self.assertIn('--team MC406: no team MC406 in the registry', str(cm.exception))
-        self.assertIn('ids are A, B, C, MC405', str(cm.exception))
+        self.assertIn('ids are ' + ', '.join([e['id'] for e in team_registry.entries(ROOT)] + ['MC405']), str(cm.exception))
 
     def test_a_file_of_your_own_must_not_take_the_name_of_a_team_of_the_registry(self):
         self.add('D', read_text(TEAM_A))

@@ -87,7 +87,13 @@
  * g8_heal_block_pair, g8_heal_block_tie_a and _b under the POOL kind.
  * Step G11 marks Soak (the target is pure Water until it leaves the field, faints or Mega Evolves: the soak type of the
  * POOL tail, read through dfi_types_of by every rule that reads a type; its handler id is code in the turn core now;
- * six handler ids remain), recorded as g11_soak, g11_soak_mega, g11_soak_stab and g11_soak_electro under the POOL kind. */
+ * six handler ids remain), recorded as g11_soak, g11_soak_mega, g11_soak_stab and g11_soak_electro under the POOL kind.
+ * Step G12 marks Flower Veil (it blocks the
+ * stat drops and statuses that another Pokemon causes on a Grass-type ally), Fairy Aura
+ * (5448/4096 for every Fairy move on the field, at the Mega Evolution of Floette-Eternal)
+ * and Floettite, and the two moves of the real Floette set that nothing marked yet,
+ * Moonblast (10 percent Special Attack drop, the Champions override) and Calm Mind,
+ * in the reference battles g12_*. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -159,6 +165,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_THROATCHOP] = 1u,
             [DFI_MOVE_PSYCHICNOISE] = 1u,
             [DFI_MOVE_SOAK] = 1u,
+            [DFI_MOVE_MOONBLAST] = 1u,
+            [DFI_MOVE_CALMMIND] = 1u,
         },
     .abilities =
         {
@@ -189,6 +197,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_OVERGROW] = 1u,
             [DFI_ABILITY_TORRENT] = 1u,
             [DFI_ABILITY_SWARM] = 1u,
+            [DFI_ABILITY_FLOWERVEIL] = 1u,
+            [DFI_ABILITY_FAIRYAURA] = 1u,
         },
     .items =
         {
@@ -209,6 +219,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_CHOICESCARF] = 1u,
             [DFI_ITEM_WHITEHERB] = 1u,
             [DFI_ITEM_FOCUSSASH] = 1u,
+            [DFI_ITEM_FLOETTITE] = 1u,
             [DFI_ITEM_BLACKBELT] = 1u,
             [DFI_ITEM_BLACKGLASSES] = 1u,
             [DFI_ITEM_CHARCOAL] = 1u,

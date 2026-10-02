@@ -1,0 +1,20 @@
+{
+  "name": "g12_flower_veil_b",
+  "purpose": "Flower Veil against statuses: Hypnosis at Rillaboom is blocked with the line, and Dire Claw (a secondary that rolled and picked a status) is blocked silently: its SECONDARY and status pick draws still happen, nothing shows.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000000a",
+  "teams": [
+    "Floette-Eternal (F) @ Floettite\nAbility: Flower Veil\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Dazzling Gleam\n- Protect\n- Psychic\n- Light Screen\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nImpish Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- Snarl\n\nStaraptor (F) @ Life Orb\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Close Combat\n- U-turn\n- Protect\n\nAnnihilape (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Close Combat\n- Ice Punch\n- Shadow Claw\n- U-turn\n\nPelipper (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Hurricane\n- Weather Ball\n- U-turn\n- Protect\n\nSneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Close Combat\n- Dire Claw\n- U-turn\n- Fake Out",
+    "Sneasler (M) @ Charcoal\nAbility: Unburden\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nTimid Nature\n- Close Combat\n- Dire Claw\n- Protect\n- Fake Out\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Muddy Water\n- Hypnosis\n- Ice Beam\n- Protect\n\nRaichu (F) @ Fairy Feather\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Dazzling Gleam\n- Thunderbolt\n- Helping Hand\n- Protect\n\nGrimmsnarl (M) @ Light Clay\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Dazzling Gleam\n- Spirit Break\n- Reflect\n- Light Screen\n\nIncineroar (M) @ Black Glasses\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Flare Blitz\n- Parting Shot\n- Darkest Lariat\n\nKingambit (M) @ Rocky Helmet\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Sucker Punch\n- Iron Head\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 4, move 4"
+    ],
+    "p2": [
+      "move 2 2, move 2 2"
+    ],
+    "max_steps": 3
+  }
+}
