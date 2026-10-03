@@ -194,6 +194,9 @@ duoforge_add_test(NAME duoforge.state.pool_g34 SOURCES test_pool_g34.c WHITEBOX 
 duoforge_add_test(NAME duoforge.state.pool_g35 SOURCES test_pool_g35.c WHITEBOX TIMEOUT 60)
 # Step G20, Spiky Shield: the protect_kind of the position (POOL tail rev 3), the state round trip, the volatile.
 duoforge_add_test(NAME duoforge.state.pool_g20_protect SOURCES test_pool_g20_protect.c WHITEBOX TIMEOUT 60)
+# Step G27: Cursed Body and Disable in the tail's disable_slot and disable_turns, the request, the cant line and the POOL view
+# extension (the position's disable_slot, bit 21).
+duoforge_add_test(NAME duoforge.state.pool_g27 SOURCES test_pool_g27.c WHITEBOX TIMEOUT 60)
 # The queued action of a fainted Pokemon: no ability and no item of it counts for its priority and Speed (d04 to d06).
 duoforge_add_test(NAME duoforge.state.pool_fainted_holder SOURCES test_pool_fainted_holder.c WHITEBOX TIMEOUT 60)
 # Step G22: the queued action of a fainted Swift Swim holder, and an Intimidate drop that the cap already took to nothing.
@@ -205,8 +208,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=39106b0bbbcc9cbef6493a97db3a2cb63b6cb35d274e4db391fcd964e9d019ee"
-        "pool_tables.c=ab1f1bc36fc1d28799d0425ec49279c14ff56bdc817af0a1b3148d2a2a72c45a")
+        "pool_tables.h=e0d5bd6f8e0946f3dab890218f144412248856e45ff8b63e6dcee56ee1426be1"
+        "pool_tables.c=00ed935930cab2ddf3c331881f08a29f415519eb8d3d2d191e9d5b56cb153398")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
