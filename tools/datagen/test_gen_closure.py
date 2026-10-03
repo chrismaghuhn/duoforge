@@ -618,7 +618,9 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual(parse_pool('recover', RECOVER)['flags2'], 2)
         both = move_entry('plain', 'Plain', category='Physical', base_power=50, flags='sound: 1, heal: 1')
         self.assertEqual(parse_pool('plain', both)['flags2'], 3)
-        self.assertEqual(parse_pool('icepunch', ICE_PUNCH)['flags2'], 0)
+        self.assertEqual(parse_pool('icepunch', ICE_PUNCH)['flags2'], 32)  # step G34: the punch flag is the byte's bit 32
+        slicing = move_entry('plain', 'Plain', category='Physical', base_power=50, flags='slicing: 1')
+        self.assertEqual(parse_pool('plain', slicing)['flags2'], 64)  # and slicing is bit 64
         # The CLOSURE and extended parses carry the value too (their bytes do not).
         self.assertEqual(parse_pool('plain', plain, pool=False, ext=False)['flags2'], 1)
 
@@ -653,7 +655,8 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual(gen_closure.SPECIAL_IDS_P[seven:], ['SANDSTORM', 'SNOWSCAPE', 'KNOCK_OFF', 'EXPANDING_FORCE', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD',
                           'SHELL_SMASH', 'ACROBATICS', 'BLIZZARD', 'FEINT', 'RAGE_POWDER', 'PSYCHIC_FANGS', 'SOLAR_BEAM',
                           'HP_POWER', 'BODY_PRESS', 'FOUL_PLAY', 'PSYSHOCK',
-                          'RAIN_DANCE', 'SUNNY_DAY', 'FREEZE_DRY', 'CLANGING_SCALES', 'MULTI_HIT_2', 'TRIPLE_AXEL', 'UNMODELED'])
+                          'RAIN_DANCE', 'SUNNY_DAY', 'FREEZE_DRY', 'CLANGING_SCALES',
+                          'STEEL_ROLLER', 'CLANGOROUS_SOUL', 'BRICK_BREAK', 'MULTI_HIT_2', 'TRIPLE_AXEL', 'UNMODELED'])
         self.assertEqual(len(gen_closure.G2_HANDLERS), 7)
         # Step G16: Knock Off's handler is 24 in the tables; step G15's Expanding Force is 25, step G19's Glaive Rush 26,
         # step G20's Aurora Veil 27, Spiky Shield 28, the four of step G28 29 to 32, the eight of step G32 33 to 40 and
@@ -670,15 +673,17 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual(gen_closure.G30_HANDLERS, ['RAGE_POWDER', 'PSYCHIC_FANGS', 'SOLAR_BEAM'])  # step G30
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G30_HANDLERS], [33, 34, 35])
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G32_HANDLERS], list(range(36, 44)))
-        self.assertEqual(gen_closure.G33_HANDLERS, ['MULTI_HIT_2', 'TRIPLE_AXEL'])
-        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G33_HANDLERS], [44, 45])
-        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 46)
+        self.assertEqual(gen_closure.G34_HANDLERS, ['STEEL_ROLLER', 'CLANGOROUS_SOUL', 'BRICK_BREAK'])  # step G34
+        self.assertEqual(gen_closure.G33_HANDLERS, ['MULTI_HIT_2', 'TRIPLE_AXEL'])  # step G33
+        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G33_HANDLERS], [47, 48])
+        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G34_HANDLERS], [44, 45, 46])
+        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 49)
         # Scald and Recover became data in step G10: their ids stay defined and no move maps to them.
         self.assertEqual({v[0] for k, v in gen_closure.SPECIAL_P.items() if k not in gen_closure.SPECIAL_C},
                          (set(gen_closure.G2_HANDLERS) - {'SCALD', 'RECOVER'}) | set(gen_closure.WEATHER_HANDLERS) |
                          set(gen_closure.G16_HANDLERS) | set(gen_closure.G15_HANDLERS) | set(gen_closure.G19_HANDLERS) |
                          set(gen_closure.G20_HANDLERS) | set(gen_closure.G20_PROTECT_HANDLERS) | set(gen_closure.G28_HANDLERS) |
-                         set(gen_closure.G30_HANDLERS) | set(gen_closure.G32_HANDLERS) | set(gen_closure.G33_HANDLERS))
+                         set(gen_closure.G30_HANDLERS) | set(gen_closure.G32_HANDLERS) | set(gen_closure.G34_HANDLERS) | set(gen_closure.G33_HANDLERS))
 
     def test_aurora_veil_is_a_handler_whose_onTry_and_condition_are_the_pinned_text(self):
         rec = parse_pool('auroraveil', AURORA_VEIL)
@@ -899,7 +904,8 @@ class PoolMoves(unittest.TestCase):
                                                                 'shellsmash', 'acrobatics', 'blizzard', 'feint',
                                                                 'ragepowder', 'psychicfangs', 'solarbeam', 'eruption', 'waterspout',
                                                                 'bodypress', 'foulplay', 'psyshock', 'raindance', 'sunnyday', 'freezedry',
-                                                                'clangingscales', 'dualwingbeat', 'twinbeam', 'tripleaxel'})
+                                                                'clangingscales', 'steelroller', 'clangoroussoul', 'brickbreak', 'dualwingbeat', 'twinbeam',
+                                                                'tripleaxel'})
         self.assertEqual(gen_closure.WEATHER_HANDLERS, ['SANDSTORM', 'SNOWSCAPE'])
         for _sp, _ab, item, moves, _mega in gen_closure.SETS_G2:
             self.assertTrue(item in gen_closure.G2_ITEMS or item not in gen_closure.POOL_ITEMS)
@@ -965,11 +971,19 @@ class G13Rows(unittest.TestCase):
                 with self.assertRaises(SystemExit) as cm:
                     parse_pool('poisonjab', POISON_JAB, pool=False, ext=ext)
                 self.assertEqual(cm.exception.code, 'gen_closure: move poisonjab: secondary status psn is not modelled')
-        # Anything else that the tables lack stays unmodelled (there is no toxic source).
+        # Badly poisoned is the pool's alone (step G36); a status that the tables lack stays unmodelled.
+        rec = parse_pool('poisonjab', POISON_JAB.replace("'psn'", "'tox'"))
+        self.assertEqual((rec['sec_chance'], rec['sec_kind'], rec['sec_param']), (30, 2, gen_closure.STATUS_P['tox']))
+        self.assertEqual(gen_closure.STATUS_P['tox'], 6)
+        for ext in (False, True):
+            with self.subTest(ext=ext):
+                with self.assertRaises(SystemExit) as cm:
+                    parse_pool('poisonjab', POISON_JAB.replace("'psn'", "'tox'"), pool=False, ext=ext)
+                self.assertEqual(cm.exception.code, 'gen_closure: move poisonjab: secondary status tox is not modelled')
         features = []
-        base = TextSource('data/moves.ts', POISON_JAB.replace("'psn'", "'tox'"))
+        base = TextSource('data/moves.ts', POISON_JAB.replace("'psn'", "'frostbite'"))
         gen_closure.parse_move('poisonjab', base, TextSource('data/mods/champions/moves.ts', ''), True, True, features)
-        self.assertEqual(features, ['secondary status tox'])
+        self.assertEqual(features, ['secondary status frostbite'])
 
 
 # ---- the whole legal pool (decision 0015 section 4.2): the lenient mode and what the tables model ----
@@ -1036,7 +1050,7 @@ class LenientMoves(unittest.TestCase):
             ('field multihit', with_line(PLAIN, 'multihit: 2,')),
             ('field ohko', with_line(PLAIN, 'ohko: true,')),
             ('condition block', with_line(PLAIN, 'condition: { },')),
-            ('primary status tox', with_line(PLAIN, "status: 'tox',")),
+            ('primary status frostbite', with_line(PLAIN, "status: 'frostbite',")),
             ('primary volatile confusion', with_line(PLAIN, "volatileStatus: 'confusion',")),
             ('side condition toxicspikes', with_line(PLAIN, "sideCondition: 'toxicspikes',")),
             ('pseudo weather gravity', with_line(PLAIN, "pseudoWeather: 'gravity',")),
@@ -1052,9 +1066,9 @@ class LenientMoves(unittest.TestCase):
                 self.assertEqual(features, [feature], text)
 
     def test_every_unmodelled_feature_of_a_move_is_listed(self):
-        text = with_line(PLAIN, "multihit: 2,\n\t\tonHit() { },\n\t\tcondition: { },\n\t\tstatus: 'tox',")
+        text = with_line(PLAIN, "multihit: 2,\n\t\tonHit() { },\n\t\tcondition: { },\n\t\tstatus: 'frostbite',")
         _rec, features = lenient('plain', text)
-        self.assertEqual(features, ['callback onHit', 'condition block', 'field multihit', 'primary status tox'])
+        self.assertEqual(features, ['callback onHit', 'condition block', 'field multihit', 'primary status frostbite'])
 
     def test_a_target_class_is_encoded_and_unmodelled_when_the_turn_code_lacks_it(self):
         # allAdjacent (Earthquake) is a class of the pool, code 11, which the turn code has since step G28, and allies (Life
@@ -1204,13 +1218,15 @@ class ItemAbilityFeatures(unittest.TestCase):
         self.assertEqual(gen_closure.HANDLER_IDS, ['NONE', 'UNMODELED'])
 
     def test_the_rows_that_a_step_implements_by_id_are_listed(self):
-        self.assertEqual(gen_closure.ENGINE_ROWS, {'items': ['focussash', 'floettite', 'psychicseed', 'expertbelt', 'ejectbutton'],
+        self.assertEqual(gen_closure.ENGINE_ROWS, {'items': ['focussash', 'floettite', 'psychicseed', 'expertbelt', 'ejectbutton', 'widelens'],
                                                    'abilities': ['rockhead', 'flowerveil', 'fairyaura', 'roughskin',
                                                                  'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
                                                                  'levitate', 'sandrush', 'swiftswim', 'slushrush',
                                                                  'chlorophyll', 'innerfocus', 'liquidvoice',
                                                                  'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof',
-                                                                 'unnerve', 'speedboost', 'mirrorarmor']})
+                                                                 'unnerve', 'speedboost', 'compoundeyes', 'ironfist',
+                                                                 'sharpness', 'solidrock', 'technician', 'multiscale',
+                                                                 'galewings', 'mirrorarmor']})
 
 
 class Bounds(unittest.TestCase):

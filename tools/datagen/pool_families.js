@@ -648,7 +648,7 @@ function checkG22(dex, formes, itemIds, abilityIds) {
 // Freeze-Dry (Water is super effective), Soundproof (a sound move aimed at the holder by another Pokemon is -immune), Unnerve
 // (berries of the foes are not eaten while the holder stands) and Speed Boost (+1 Speed in the residual, not in the turn of
 // the switch-in). Eject Button is a text fact of the generator (G32_ENTRY_FACTS).
-// Step G33, the multi-hit batch and Mirror Armor: the pinned facts that the engine hard-codes (decision 0015, item 5x). The
+// Step G33, the multi-hit batch and Mirror Armor: the pinned facts that the engine hard-codes (decision 0015, item 5y). The
 // four moves' hit counts and Triple Axel's rising power; Mirror Armor's handler against stubs: it deletes every drop of
 // another Pokemon that is still one (a stat at -6 has none), shows its ability line and gives the drop to a source that
 // stands, and leaves a self change, a bounced drop, and a rise alone; no Grass-type forme has the ability.
@@ -819,11 +819,11 @@ function checkG10Moves(dex) {
 }
 
 // The callbacks that change the priority of a move or the Speed of a Pokemon, on the entry or on its own condition
-// (Unburden's volatile). The engine implements Prankster (+1 for a status move), Unburden (x2 Speed without an item)
+// (Unburden's volatile). The engine implements Prankster (+1 for a status move), Gale Wings (+1 for a Flying move at full HP, step G34), Unburden (x2 Speed without an item)
 // and Choice Scarf (x1.5 Speed); every other modelled row has none.
 const ORDER_CALLBACKS = ['onModifyPriority', 'onFractionalPriority', 'onModifySpe'];
 const ENGINE_ORDER = {
-    ability: {prankster: ['onModifyPriority'], unburden: ['condition.onModifySpe'], sandrush: ['onModifySpe'],
+    ability: {prankster: ['onModifyPriority'], galewings: ['onModifyPriority'], unburden: ['condition.onModifySpe'], sandrush: ['onModifySpe'],
         swiftswim: ['onModifySpe'], slushrush: ['onModifySpe'], chlorophyll: ['onModifySpe']},
     item: {choicescarf: ['onModifySpe']},
 };
@@ -1022,10 +1022,11 @@ function checkFormes(dex, validator, rows, moves, abilities) {
 // The UNMODELED markers of gen_closure.py --pool, re-derived from the pinned data in this file's own words: the
 // special column of a move, the handler column of an item and of an ability, and the lists of unmodelled features.
 // implemented in the turn code by id (G4: Focus Sash, Rock Head; G12: Floettite, Flower Veil, Fairy Aura)
-const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'expertbelt', 'ejectbutton'],
+const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'expertbelt', 'ejectbutton', 'widelens'],
     abilities: ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
         'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll', 'innerfocus', 'liquidvoice',
-        'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof', 'unnerve', 'speedboost', 'mirrorarmor']};
+        'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof', 'unnerve', 'speedboost',
+        'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'mirrorarmor']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
     'randomNormal', 'allAdjacent', 'allies']);
 // The fields of a move that the tables model (gen_closure.py DATA_KEYS and IGNORED_KEYS), nothing else.
@@ -1033,7 +1034,7 @@ const MOVE_KEYS = new Set(['num', 'accuracy', 'basePower', 'category', 'name', '
     'critRatio', 'secondary', 'self', 'boosts', 'recoil', 'drain', 'status', 'volatileStatus', 'sideCondition',
     'pseudoWeather', 'selfSwitch', 'stallingMove', 'noPPBoosts', 'struggleRecoil', 'condition', 'contestType', 'zMove',
     'maxMove', 'isNonstandard', 'hasSheerForceBoost', 'inherit', 'thawsTarget', 'heal']);
-const MODELLED_STATUS = new Set(['brn', 'frz', 'par', 'slp', 'psn']);
+const MODELLED_STATUS = new Set(['brn', 'frz', 'par', 'slp', 'psn', 'tox']);
 const MODELLED_SIDE = new Set(['tailwind', 'reflect', 'lightscreen']);
 const STAT_NAMES = ['atk', 'def', 'spa', 'spd', 'spe', 'accuracy', 'evasion'];
 
@@ -1084,7 +1085,7 @@ function moveIsModelled(raw, id) {
             return false;
         }
         if (effects[0] === 'status') {
-            if (!['brn', 'frz', 'par', 'slp', 'psn'].includes(sec.status)) { // step G13: a poison secondary is modelled (status 5)
+            if (!['brn', 'frz', 'par', 'slp', 'psn', 'tox'].includes(sec.status)) { // step G13: a poison secondary is modelled (status 5), step G36: a badly poisoning one (status 6)
                 return false;
             }
         } else if (effects[0] === 'volatileStatus') {

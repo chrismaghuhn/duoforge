@@ -1,0 +1,22 @@
+{
+  "name": "g34_steel_roller_seeds",
+  "purpose": "Step G34, Steel Roller's edges: Aggron's Steel Roller at a protecting Rillaboom (Grassy Surge) leaves the terrain; the next one hits and ends it, and the two Raichu with a Psychic Seed (equal Speed, no Psychic Terrain to eat it) draw the TerrainChange tie.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000003413",
+  "teams": [
+    "Aggron (M)\nAbility: Rock Head\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Steel Roller\n- Iron Defense\n- Brick Break\n- Protect\n\nRaichu (F) @ Psychic Seed\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Thunderbolt\n- Helping Hand\n- Protect\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nGholdengo\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Protect\n\nGrimmsnarl (M)\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Protect\n\nIncineroar (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Flare Blitz\n- Parting Shot\n- Protect",
+    "Rillaboom (M)\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- Protect\n\nRaichu (F) @ Psychic Seed\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Thunderbolt\n- Helping Hand\n- Protect\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nGholdengo\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Protect\n\nGrimmsnarl (M)\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Protect\n\nIncineroar (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Flare Blitz\n- Parting Shot\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 3",
+      "move 1 1, move 3"
+    ],
+    "p2": [
+      "move 4, move 3",
+      "move 1 1, move 3"
+    ],
+    "max_steps": 3
+  }
+}

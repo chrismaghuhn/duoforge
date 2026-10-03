@@ -30,13 +30,17 @@ bool dfi_gender_legal(uint32_t gender_rule, uint32_t gender);
  * the invariants (an ability is bounded through its forme). The first four
  * kinds take a member's moves and ability from the forme's set; the POOL
  * kinds from the moves it learns and the abilities it may have. */
+/* Badly poisoned (POOL only: Toxic and Poison Fang's secondary, step G36); the public ailment DUOFORGE_AILMENT_TOX has the
+ * same value. Its counter is the tail's toxic_stage of the member. */
+#define DFI_STATUS_TOX 6u
+
 typedef struct dfi_kind_limits {
     uint32_t forme_count;     /* species ids below this */
     uint32_t move_count;      /* move ids below this */
     uint32_t item_count;      /* an item is 1 + its id, so at most this */
     uint32_t ability_count;   /* ability ids below this (an ability is 1 + its id) */
     uint32_t switch_flag_max; /* DFI_SWITCH_FAINTED; DFI_SWITCH_FLIP_TURN for TEAM_C; DFI_SWITCH_VOLT_SWITCH for POOL */
-    uint32_t status_max;      /* DFI_STATUS_SLP; DFI_STATUS_PSN for TEAM_C and POOL */
+    uint32_t status_max;      /* DFI_STATUS_SLP; DFI_STATUS_PSN for TEAM_C; DFI_STATUS_TOX for POOL (Toxic, step G36) */
     uint32_t vol_flags_mask;  /* DFI_VOL_* bits a position may carry: TEAM_C and POOL add the choice lock */
     uint32_t terrain_max;     /* DFI_TERRAIN_GRASSY; DFI_TERRAIN_PSYCHIC for TEAM_C and POOL */
     uint32_t weather_max;     /* DFI_WEATHER_SUN; DFI_WEATHER_SNOW for POOL (Sandstorm and Snowscape) */

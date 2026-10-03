@@ -314,6 +314,9 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_ENERGYBALL] = 1u,
             [DFI_MOVE_PLAYROUGH] = 1u,
             [DFI_MOVE_SPIKYSHIELD] = 1u,
+            /* Step G36: Toxic (badly poisoned; a Poison-type user never misses) and Poison Fang (a 50 percent tox secondary). */
+            [DFI_MOVE_TOXIC] = 1u,
+            [DFI_MOVE_POISONFANG] = 1u,
             /* Step G32: Eruption and Water Spout (power by the user's HP), Life Dew (the user and its ally), Body Press, Foul Play
              * and Psyshock (the stat overrides), Rain Dance and Sunny Day, Volt Switch (a pivot of its own), Clanging Scales (the
              * user's Defense falls after the hit) and Freeze-Dry (Water takes it super effective). */
@@ -340,6 +343,15 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_ANCIENTPOWER] = 1u,
             [DFI_MOVE_FEINT] = 1u,
             [DFI_MOVE_EARTHQUAKE] = 1u, /* hits the ally too (allAdjacent); Grassy Terrain halves it */
+            /* Step G34: Steel Roller (ends the terrain), Clangorous Soul, Brick Break (the screens go), and the data rows that waited
+             * for a recorded battle: Fiery Dance, Psycho Cut, Iron Defense, Electroweb. */
+            [DFI_MOVE_STEELROLLER] = 1u,
+            [DFI_MOVE_CLANGOROUSSOUL] = 1u,
+            [DFI_MOVE_BRICKBREAK] = 1u,
+            [DFI_MOVE_FIERYDANCE] = 1u,
+            [DFI_MOVE_PSYCHOCUT] = 1u,
+            [DFI_MOVE_IRONDEFENSE] = 1u,
+            [DFI_MOVE_ELECTROWEB] = 1u,
         },
     .abilities =
         {
@@ -393,6 +405,14 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_CHLOROPHYLL] = 1u,
             [DFI_ABILITY_INNERFOCUS] = 1u,
             [DFI_ABILITY_LIQUIDVOICE] = 1u,
+            /* Step G34: Compound Eyes, Iron Fist, Sharpness, Solid Rock, Technician, Multiscale and Gale Wings. */
+            [DFI_ABILITY_COMPOUNDEYES] = 1u,
+            [DFI_ABILITY_IRONFIST] = 1u,
+            [DFI_ABILITY_SHARPNESS] = 1u,
+            [DFI_ABILITY_SOLIDROCK] = 1u,
+            [DFI_ABILITY_TECHNICIAN] = 1u,
+            [DFI_ABILITY_MULTISCALE] = 1u,
+            [DFI_ABILITY_GALEWINGS] = 1u,
             [DFI_ABILITY_SOUNDPROOF] = 1u, /* step G32 */
             [DFI_ABILITY_UNNERVE] = 1u,
             [DFI_ABILITY_SPEEDBOOST] = 1u,
@@ -420,6 +440,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_FLOETTITE] = 1u,
             [DFI_ITEM_PSYCHICSEED] = 1u,
             [DFI_ITEM_EXPERTBELT] = 1u, /* step G28 */
+            [DFI_ITEM_WIDELENS] = 1u,   /* step G34 */
             [DFI_ITEM_EJECTBUTTON] = 1u, /* step G32 */
             [DFI_ITEM_TYRANITARITE] = 1u,
             [DFI_ITEM_BAXCALIBRITE] = 1u,
@@ -499,5 +520,6 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ITEM_CHANGE) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ABILITY_CHANGE) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_AURORA_VEIL) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_RAGE_POWDER),
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_RAGE_POWDER) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_AILMENT_TOX),
 };

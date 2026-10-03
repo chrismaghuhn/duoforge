@@ -320,6 +320,40 @@ def resist_berries():
     return _RESIST_BERRIES
 
 
+def modify_damage_values():
+    """The ModifyDamage modifier (out of 4096) of each handler that the engine chains (turn.c dfi_get_damage): by handler name."""
+    values = {'lifeorb': 5324, 'expertbelt': 4915, 'reflect': 2732, 'lightscreen': 2732, 'auroraveil': 2732, 'glaiverush': 8192,
+              'solidrock': 3072, 'multiscale': 2048}
+    values.update({berry: 2048 for berry in resist_berries()})
+    return values
+
+
+def modifiers_commute(mods):
+    """Whether every order of `mods` chains (chainModify, from 4096) to one value."""
+    import itertools
+    results = set()
+    for order in itertools.permutations(mods):
+        c = 4096
+        for m in order:
+            c = (c * m + 2048) >> 12
+        results.add(c)
+    return len(results) <= 1
+
+
+def modifier_subsets(kinds, values):
+    """The modifier lists that one hit can have from the handlers `kinds`: any subset with one screen at most, one of Life Orb and
+    Expert Belt, and one of Solid Rock and Multiscale."""
+    import itertools
+    exclusive = (('reflect', 'lightscreen', 'auroraveil'), ('lifeorb', 'expertbelt'), ('solidrock', 'multiscale'))
+    out = []
+    for r in range(1, len(kinds) + 1):
+        for sub in itertools.combinations(kinds, r):
+            if any(sum(1 for k in sub if k in group) > 1 for group in exclusive):
+                continue
+            out.append([values[k] for k in sub])
+    return out
+
+
 def drop_reason(d, state, after=None, log=None):
     """Why draw `d` is not a tape entry, or None; `state` is the state before the step, `after` the one after
     it (an entering Pokemon stands in its slot there), `log` the step's protocol lines (needed for the residual tie of
@@ -447,6 +481,21 @@ def drop_reason(d, state, after=None, log=None):
         if 'glaiverush' in kinds and all(k in ('glaiverush', 'lifeorb', 'reflect', 'lightscreen') or k.endswith('berry')
                                          for k in kinds):
             return 'Glaive Rush and the other ModifyDamage modifiers, which commute (all four at once is refused)'
+        # Step G34: Solid Rock (x0.75), Multiscale (x0.5) and Expert Belt (x1.2) join the handlers. Every handler that is
+        # tied is one of the known modifiers, and every order of the modifiers that can apply together chains to the same
+        # value (the engine's dfi_mods_commute; a combination that does not is refused by the engine, E_UNSUPPORTED, and
+        # never reaches a conversion): checked here over every subset of the group that one hit can have (one screen at
+        # most; Life Orb or Expert Belt, one item; Solid Rock or Multiscale, one ability).
+        values = modify_damage_values()
+        # A hit has one handler of each kind (the attacker's item and ability, the target's berry and ability, the screen of
+        # the target's side), so a group with the same handler twice, or with two resist berries, is not a state the
+        # analysis covers: it stays refused, as before step G34.
+        berries = [g.split(':')[1] for g in group if g.split(':')[1].endswith('berry')]
+        if all(k in values for k in kinds) and len(group) == len(kinds) and len(berries) <= 1:
+            if any(not modifiers_commute(sub) for sub in modifier_subsets(sorted(kinds), values)):
+                raise ConversionError('modifydamage-tie', 'trace_to_c: ModifyDamage tie with modifiers that do not commute: %s' % group,
+                                      detail=tie_effects(group))
+            return 'ModifyDamage modifiers whose every order chains to the same value'
         raise ConversionError('modifydamage-tie', 'trace_to_c: ModifyDamage tie with %s' % group,
                               detail=tie_effects(group))
     if site == 'SPEED_TIE' and ctx == 'event:DisableMove':
@@ -632,7 +681,7 @@ def convert_choice(text, side, state, roster_of, mid_turn=False):
 
 
 BOUNDARY = {'teampreview': 1, 'move': 2, 'switch': 3}
-STATUS = {'': 0, 'brn': 1, 'frz': 2, 'par': 3, 'slp': 4, 'psn': 5, 'fnt': 0}
+STATUS = {'': 0, 'brn': 1, 'frz': 2, 'par': 3, 'slp': 4, 'psn': 5, 'tox': 6, 'fnt': 0}
 WEATHER = {'': 0, 'raindance': 1, 'sunnyday': 2, 'sandstorm': 3, 'snowscape': 4}
 WEATHER_LINE = {'none': 0, 'RainDance': 1, 'SunnyDay': 2, 'Sandstorm': 3, 'Snowscape': 4}  # the names of -weather lines
 WEATHER_CAUSE = {'Sandstorm': 3}  # [from] <weather>: the residual damage of a weather (cause WEATHER, id2 = its value)
@@ -703,7 +752,7 @@ TYPE_IDS = {name: i for i, name in enumerate(
     ['Bug', 'Dark', 'Dragon', 'Electric', 'Fairy', 'Fighting', 'Fire', 'Flying', 'Ghost', 'Grass', 'Ground', 'Ice',
      'Normal', 'Poison', 'Psychic', 'Rock', 'Steel', 'Water'])}
 FLAG = {'STILL': 1, 'LOCKED': 2, 'SPREAD': 4, 'UPKEEP': 8, 'EATEN': 16, 'MESSAGE': 32, 'MISS': 64, 'NOTARGET': 128}
-AILMENT = {'brn': 1, 'frz': 2, 'par': 3, 'slp': 4, 'psn': 5}
+AILMENT = {'brn': 1, 'frz': 2, 'par': 3, 'slp': 4, 'psn': 5, 'tox': 6}
 EV_STATS = ['atk', 'def', 'spa', 'spd', 'spe', 'accuracy', 'evasion']
 NOPOS = 0xFF
 
@@ -784,8 +833,8 @@ def ev_cause(attrs, tables):
                 cause = CAUSE['DRAIN']
             elif what == 'brn':
                 cause = CAUSE['BURN']
-            elif what == 'psn':
-                cause = CAUSE['POISON']
+            elif what in ('psn', 'tox'):
+                cause = CAUSE['POISON']  # the residual damage of tox is poison's cause too (the status in the HP field tells them apart)
             elif what == 'confusion':
                 cause = CAUSE['CONFUSION']
             elif what == 'Hail':

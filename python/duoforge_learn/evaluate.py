@@ -25,14 +25,16 @@ RECORD = np.dtype([("side0", np.uint32), ("side1", np.uint32), ("learner_seat", 
 
 
 class Player:
-    """A model with its parameters and the encoder version they were
-    trained with (checkpoint.encoder_of): its observations are encoded so."""
+    """A model with its parameters, the encoder version and the
+    view-extension mask they were trained with (checkpoint.encoder_of,
+    checkpoint.ext_supported_of): its observations are encoded so."""
 
-    def __init__(self, model, params, encoder, name):
+    def __init__(self, model, params, encoder, name, ext_supported=0):
         self.model, self.params, self.encoder, self.name = model, params, encoder, name
+        self.ext_supported = ext_supported
 
     def indices(self, batch, choices):
-        return _greedy_indices(self.params, self.model.act, batch, choices, self.encoder)
+        return _greedy_indices(self.params, self.model.act, batch, choices, self.encoder, self.ext_supported)
 
 
 def play_suite(context, pool, rows, learner, opponent, workers, seed, max_steps=1000):
@@ -122,7 +124,9 @@ def win_rate(params, act, opponent, envs=64, workers=4, seed=0x2026100200000020,
     pairings play equally often. encoder is the encoder version the
     parameters were trained with (checkpoint.encoder_of), opponent_encoder
     the opponent's when it is parameters; no default picks one.
-    opponent_act plays opponent parameters of another model (default: act)."""
+    opponent_act plays opponent parameters of another model (default: act).
+    The battles are the CLOSURE reference pairings, where encoder 3's block
+    is zero under any mask, so no view-extension mask is needed."""
     if envs <= 0 or envs % 8 != 0:
         raise ValueError(f"envs must be a positive multiple of 8, not {envs}")
     if isinstance(opponent, dict) and opponent_encoder is None:
@@ -175,12 +179,12 @@ def win_rate(params, act, opponent, envs=64, workers=4, seed=0x2026100200000020,
             "unfinished": unfinished, "episodes": episodes}
 
 
-def _greedy_indices(params, act, batch, choices, encoder):
+def _greedy_indices(params, act, batch, choices, encoder, ext_supported=0):
     """The candidate index of the most likely action of every requested
     seat (E, 2), NO_CHOICE elsewhere, on the inputs of encoder version
-    `encoder`."""
+    `encoder` with the view-extension mask ext_supported."""
     envs = batch.envs
-    o = Observation(batch, encoder)
+    o = Observation(batch, encoder, ext_supported)
     actions, _, _ = act(params, None, o.obs.reshape(2 * envs, -1), o.slots.reshape((2 * envs,) + o.slots.shape[2:]),
                         o.mask.reshape((2 * envs,) + o.mask.shape[2:]), o.is_team.reshape(-1), greedy=True)
     choices_of(batch, np.asarray(actions).reshape(envs, 2), choices)
