@@ -962,7 +962,7 @@ const MOVE_KEYS = new Set(['num', 'accuracy', 'basePower', 'category', 'name', '
     'critRatio', 'secondary', 'self', 'boosts', 'recoil', 'drain', 'status', 'volatileStatus', 'sideCondition',
     'pseudoWeather', 'selfSwitch', 'stallingMove', 'noPPBoosts', 'struggleRecoil', 'condition', 'contestType', 'zMove',
     'maxMove', 'isNonstandard', 'hasSheerForceBoost', 'inherit', 'thawsTarget', 'heal']);
-const MODELLED_STATUS = new Set(['brn', 'frz', 'par', 'slp', 'psn']);
+const MODELLED_STATUS = new Set(['brn', 'frz', 'par', 'slp', 'psn', 'tox']);
 const MODELLED_SIDE = new Set(['tailwind', 'reflect', 'lightscreen']);
 const STAT_NAMES = ['atk', 'def', 'spa', 'spd', 'spe', 'accuracy', 'evasion'];
 
@@ -1013,7 +1013,7 @@ function moveIsModelled(raw, id) {
             return false;
         }
         if (effects[0] === 'status') {
-            if (!['brn', 'frz', 'par', 'slp', 'psn'].includes(sec.status)) { // step G13: a poison secondary is modelled (status 5)
+            if (!['brn', 'frz', 'par', 'slp', 'psn', 'tox'].includes(sec.status)) { // step G13: a poison secondary is modelled (status 5), step G36: a badly poisoning one (status 6)
                 return false;
             }
         } else if (effects[0] === 'volatileStatus') {
