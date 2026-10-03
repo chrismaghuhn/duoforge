@@ -1,6 +1,6 @@
 # 0022 — Search support: leaf expansion and search seeds (M12 stage 1)
 
-Status: owner decisions 2026-10-03. The owner approved the specification `docs/superpowers/specs/2026-10-03-m12-search-stage1-design.md` ("ja geht klar"), including approach A and the public additions below. Its section 4.3 is written against decision 0021's interface on `chris/encoder-in-c` at 8515e21. It is checked against `main` again once 0021 is merged; at most a detail may change, since the layout (encoder 4, decision 0018 §10.2) is fixed. The plan `docs/superpowers/plans/2026-10-03-m12-search-stage1.md` awaits his review. Follows decisions 0012 (batch runtime), 0013 §6 (search support, named there) and 0021 (the C encoder).
+Status: owner decisions 2026-10-03. The owner approved the specification `docs/superpowers/specs/2026-10-03-m12-search-stage1-design.md` ("ja geht klar"), including approach A and the public additions below. Its section 4.3 is written against decision 0021's interface on `chris/encoder-in-c` at 8515e21. It is checked against `main` again once 0021 is merged; at most a detail may change, since the layout (encoder 4, decision 0018 §10.2) is fixed. The owner approved the plan `docs/superpowers/plans/2026-10-03-m12-search-stage1.md` on 2026-10-03 ("plan sieht gut aus"). Follows decisions 0012 (batch runtime), 0013 §6 (search support, named there) and 0021 (the C encoder).
 
 ## 1. Context
 
