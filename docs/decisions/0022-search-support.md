@@ -52,6 +52,12 @@ The leaf seeds therefore depend on the seed, the key and the sample only:
 - **Roots must not change during the call.** Only one caller uses either batch at a time, as decision 0012 requires of every batch call.
 - **No allocation per call:** a leaf's temporaries (observation, domain, extension, slots and pair mask) live on the stack, as in `duoforge_batch_query_encoded`.
 - **Additive API:** it gets a MINOR version bump, assigned by the HauptSession at merge.
+- **Internal hooks, as for the encoder:**
+  - `batch/batch_each.h` gains the leaf hook `dfi_batch_leaves` (environment i's battle, which the hook may overwrite, and its TERMINAL flag) and the factored bundle builder that `duoforge_batch_step_factored` now shares.
+  - `encode/encode_internal.h` holds the encoder's one-player path and its version and mask check, which `duoforge_batch_query_encoded` now uses too. A leaf's row is therefore that row, by the same code.
+- **The source lint's floating-point exception** covers the three files that pass the encoder's float32 rows through: `src/search/search.c`, `include/duoforge/duoforge_search.h` and `src/encode/encode_internal.h`. They compute nothing in floating point; the lint selftest pins the exception.
+- **Two status arrays:** `encode_statuses[i]` is the status of the leaf's row, the viewer's query or the encoder. A refused step never reads as an encoder refusal.
+- **Further checks:** the call refuses `leaves == roots` (E_INVALID_ARGUMENT), since a leaf would overwrite a root while others read it. A pre-check compares the two contexts by fingerprint, as `duoforge_battle_copy` does.
 - **Not decided here:**
   - building a battle from a view and a hypothesis (`duoforge_battle_from_view`, stage 2; it needs the belief model, decision 0013 §6.2);
   - tree search;

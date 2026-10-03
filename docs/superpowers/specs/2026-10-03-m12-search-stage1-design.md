@@ -166,7 +166,9 @@ duoforge_status duoforge_batch_expand(
 - **Equivalence:** leaf i equals `duoforge_battle_copy`, `duoforge_battle_reseed`, the factored step and then `duoforge_batch_query_encoded`'s row of the viewer for that environment, byte for byte, for every worker count.
 - **Checks before any leaf is touched:**
   - an unknown version, or a mask past the version, is E_INVALID_ARGUMENT, exactly as `duoforge_encode` checks it;
-  - a NULL pointer, a count past the leaf batch, a root environment past the root batch, a viewer other than 0 or 1, or batches of different contexts are E_NULL_ARGUMENT, E_INVALID_ARGUMENT or E_CONTEXT_MISMATCH.
+  - a NULL pointer, a count past the leaf batch, a root environment past the root batch, a viewer other than 0 or 1, or batches of different contexts are E_NULL_ARGUMENT, E_INVALID_ARGUMENT or E_CONTEXT_MISMATCH;
+  - the same batch as leaves and roots is E_INVALID_ARGUMENT: a leaf would overwrite a root that other leaves read.
+  - Their order: NULL, then the contexts, then the version and mask, then the rest (`include/duoforge/duoforge_search.h`).
 
 ### 4.4 Cost per decision
 
