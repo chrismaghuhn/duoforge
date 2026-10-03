@@ -155,6 +155,9 @@ def apply(params, cfg, cols, obs, slots, mask):
     actor = occ[:, 0, :]                                                      # (B,2)
     actor_h = jnp.take_along_axis(h[:, 0], actor[..., None], axis=1) * occupied[:, 0, :, None]  # (B,2,Dm)
     actor_tokens = jnp.take_along_axis(tokens[:, 0], actor[:, :, None, None], axis=1)            # (B,2,4,E)
+    # The move slot as an id: 0..3 the actor's moves, 4 Struggle, 5 Recharge (encoder 3). Recharge gathers the token
+    # of move 3 here, which is harmless only because it is the one legal option of its slot (its score is a constant
+    # of every pair and cancels in the softmax); a reader that ranks single options must map 5 explicitly.
     slot_k = _ids(slots[..., cols.slot_move[0]], 4)                           # (B,2,32)
     move_tok = jnp.take_along_axis(actor_tokens, jnp.clip(slot_k, 0, 3)[..., None], axis=2)      # (B,2,32,E)
     move_tok = jnp.where((slot_k == 4)[..., None], params["struggle"], move_tok) * kind_move[..., None]

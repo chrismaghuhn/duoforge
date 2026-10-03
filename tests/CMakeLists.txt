@@ -186,6 +186,9 @@ duoforge_add_test(NAME duoforge.state.pool_g20 SOURCES test_pool_g20.c WHITEBOX 
 duoforge_add_test(NAME duoforge.state.pool_g30 SOURCES test_pool_g30.c WHITEBOX TIMEOUT 60)
 # Step G36: Toxic and the badly poisoned status: the tail's toxic_stage, the member's status Tox, the view's ailment value.
 duoforge_add_test(NAME duoforge.state.pool_g36 SOURCES test_pool_g36.c WHITEBOX TIMEOUT 60)
+# Step G34: a batch of small rules (Gale Wings, accuracy and base power abilities, Solid Rock and Multiscale in the damage chain,
+# Steel Roller, Clangorous Soul, Brick Break): the marks, the flag bits and the commutation test of the ModifyDamage chain.
+duoforge_add_test(NAME duoforge.state.pool_g34 SOURCES test_pool_g34.c WHITEBOX TIMEOUT 60)
 # Step G20, Spiky Shield: the protect_kind of the position (POOL tail rev 3), the state round trip, the volatile.
 duoforge_add_test(NAME duoforge.state.pool_g20_protect SOURCES test_pool_g20_protect.c WHITEBOX TIMEOUT 60)
 # The queued action of a fainted Pokemon: no ability and no item of it counts for its priority and Speed (d04 to d06).
@@ -199,8 +202,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=9aa9a0b8f01edd0a5af5b44a209a54e104bebbe3b03c172ad90e0d6d6e03f4ea"
-        "pool_tables.c=1eb6def348d0c5358628344fd87fe81a14005bc826052dce5a21fff7953fd3df")
+        "pool_tables.h=39106b0bbbcc9cbef6493a97db3a2cb63b6cb35d274e4db391fcd964e9d019ee"
+        "pool_tables.c=09ccb6b6136c8428a6faf9561bb189ec5faf6da548e49ad5f26281253ff28b42")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -596,7 +599,7 @@ endif()
 
 # The Python package (M7, decision 0013), run with DUOFORGE_PYTHON; without
 # an interpreter each test reports skipped instead of passing silently.
-foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client replay_unit data batch_setups learn_v2_numpy teams)
+foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client replay_unit data batch_setups learn_v2_numpy teams features_ext)
     if(DUOFORGE_PYTHON)
         add_test(NAME duoforge.python.${_py}
             COMMAND "${DUOFORGE_PYTHON}" -m unittest -v python.tests.test_${_py}

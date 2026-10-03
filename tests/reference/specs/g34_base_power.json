@@ -1,0 +1,26 @@
+{
+  "name": "g34_base_power",
+  "purpose": "Step G34, the base power abilities: Scizor's Technician boosts Bullet Punch (40) and Quick Attack (40) and not Iron Head (80); Infernape's Iron Fist boosts Mach Punch and not Close Combat; Gallade's Sharpness boosts Psycho Cut.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000003406",
+  "teams": [
+    "Scizor (M)\nAbility: Technician\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Bullet Punch\n- Quick Attack\n- Iron Head\n- Protect\n\nInfernape (M)\nAbility: Iron Fist\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Mach Punch\n- Close Combat\n- Flamethrower\n- Protect\n\nGallade (M)\nAbility: Sharpness\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Psycho Cut\n- Close Combat\n- Protect\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nGholdengo\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Protect\n\nGrimmsnarl (M)\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Protect",
+    "Dragonite (M)\nAbility: Multiscale\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Dragon Dance\n- Dragon Claw\n- Protect\n\nAggron (M)\nAbility: Rock Head\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Iron Defense\n- Steel Roller\n- Protect\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nGholdengo\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Protect\n\nGrimmsnarl (M)\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Protect\n\nRaichu (F)\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Thunderbolt\n- Helping Hand\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 2, move 1 2",
+      "move 2 2, move 2 2",
+      "move 3 1, switch 3",
+      "move 3 1, move 1 2"
+    ],
+    "p2": [
+      "move 1, move 1",
+      "move 1, move 1",
+      "move 1, move 1",
+      "move 1, move 1"
+    ],
+    "max_steps": 5
+  }
+}
