@@ -180,9 +180,19 @@ static const struct {
     {"g26_perish_survivor_b", 7u, {0u, 2u, 2u, 2u}},
     {"g26_perish_survivor_b", 8u, {0u, 1u, 1u, 1u}},
     {"g26_perish_survivor_b", 9u, {0u, 0u, 0u, 0u}},
+    {"g26_perish_soundproof", 0u, {0u, 0u, 0u, 0u}},
+    {"g26_perish_soundproof", 1u, {3u, 3u, 0u, 3u}},
+    {"g26_perish_soundproof", 2u, {2u, 2u, 0u, 2u}},
+    {"g26_perish_soundproof", 3u, {1u, 1u, 0u, 1u}},
+    {"g26_perish_soundproof", 4u, {0u, 0u, 0u, 0u}},
+    {"g26_perish_soundproof", 5u, {0u, 0u, 0u, 0u}},
+    {"g26_perish_soundproof", 6u, {0u, 0u, 0u, 0u}},
+    {"g26_perish_soundproof", 7u, {0u, 0u, 0u, 0u}},
+    {"g26_perish_soundproof", 8u, {0u, 0u, 0u, 0u}},
+    {"g26_perish_soundproof", 9u, {0u, 0u, 0u, 0u}},
 };
 
-static const char *const names[] = {"g26_perish_song", "g26_perish_recast", "g26_perish_end", "g26_perish_survivor_a", "g26_perish_survivor_b"};
+static const char *const names[] = {"g26_perish_song", "g26_perish_recast", "g26_perish_end", "g26_perish_survivor_a", "g26_perish_survivor_b", "g26_perish_soundproof"};
 
 static const uint8_t *row_of(const char *battle, uint32_t step)
 {
@@ -435,8 +445,8 @@ int main(void)
     DF_CHECK(&t, dfi_support.moves[DFI_MOVE_PERISHSONG] != 0u);
     DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_PERISHSONG].special, DFI_SPECIAL_PERISH_SONG);
     DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_PERISHSONG].target_class, DUOFORGE_TARGET_CLASS_ALL);
-    /* Soundproof stays unmarked: it would stop the move, and nothing here models that. */
-    DF_CHECK_EQ_U64(&t, dfi_support.abilities[DFI_ABILITY_SOUNDPROOF], 0u);
+    /* Soundproof is marked (step G32) and stops the cast at its holder (g26_perish_soundproof). */
+    DF_CHECK(&t, dfi_support.abilities[DFI_ABILITY_SOUNDPROOF] != 0u);
 
     uint32_t compared = 0u;
     uint32_t unannounced = 0u;

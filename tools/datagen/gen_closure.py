@@ -308,6 +308,10 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
         if 'inherit' not in cf:
             fail('champions override of %s does not inherit' % mid)
         f.update(cf)
+        for _name in list(cf):
+            # `secondary: undefined, // no inherit` (the Champions Freeze-Dry): the field is removed, not changed.
+            if re.match(r'^\t\t%s: undefined,' % _name, cf[_name][1]):
+                del f[_name]
         refs.append(champ.ref(mid))
     handled = (SPECIAL_POOL if pool else SPECIAL_C if ext else SPECIAL).get(mid, ('NONE', set()))
     owned_fields = SPECIAL_FIELDS_C.get(handled[0], set()) if ext else set()
@@ -1423,6 +1427,88 @@ G28_FACTS = (
     ('ancientpower', ['accuracy: 100,', 'basePower: 60,', 'category: "Special",', 'target: "normal",', 'type: "Rock",',
                       "secondary: { chance: 10, self: { boosts: { atk: 1, def: 1, spa: 1, spd: 1, spe: 1, }, }, },"]),
 )
+# Step G32 (small rules): eight handlers of the turn code, one per rule that the generic columns cannot hold: HP_POWER
+# (Eruption and Water Spout: power 150 x HP / maximum HP, one callback), BODY_PRESS, FOUL_PLAY and PSYSHOCK (the three
+# `override...` fields of the damage formula), RAIN_DANCE and SUNNY_DAY (the weather moves, like Sandstorm and Snowscape),
+# FREEZE_DRY (the Water type takes it super effective: onEffectiveness; the Champions mod drops its freeze) and
+# CLANGING_SCALES (selfBoost: the user's own Defense drop after a hit). The generator checks their texts (G32_FACTS), and the
+# entries of the ability and item rows of the step (G32_ENTRY_FACTS: Soundproof, Unnerve, Speed Boost and the Champions
+# Eject Button), because the engine hard-codes them. Life Dew needs no handler (its target class `allies` is now an engine
+# class: ENGINE_TARGETS), Volt Switch none (ENGINE_PIVOT_MOVES: a switch flag of its own).
+G32_HANDLERS = ['HP_POWER', 'BODY_PRESS', 'FOUL_PLAY', 'PSYSHOCK', 'RAIN_DANCE', 'SUNNY_DAY', 'FREEZE_DRY', 'CLANGING_SCALES']
+_HP_POWER_CALLBACK = ("basePowerCallback(pokemon, target, move) { const bp = move.basePower * pokemon.hp / pokemon.maxhp; "
+                      "this.debug(`BP: ${bp}`); return bp; },")
+G32_FACTS = (
+    ('eruption', ['accuracy: 100,', 'basePower: 150,', _HP_POWER_CALLBACK, 'category: "Special",', 'priority: 0,',
+                  'flags: { protect: 1, mirror: 1, metronome: 1 },', 'target: "allAdjacentFoes",', 'type: "Fire",']),
+    ('waterspout', ['accuracy: 100,', 'basePower: 150,', _HP_POWER_CALLBACK, 'category: "Special",', 'priority: 0,',
+                    'flags: { protect: 1, mirror: 1, metronome: 1 },', 'target: "allAdjacentFoes",', 'type: "Water",']),
+    ('bodypress', ['accuracy: 100,', 'basePower: 80,', 'category: "Physical",', 'priority: 0,',
+                   'flags: { contact: 1, protect: 1, mirror: 1 },', "overrideOffensiveStat: 'def',", 'target: "normal",',
+                   'type: "Fighting",']),
+    ('foulplay', ['accuracy: 100,', 'basePower: 95,', 'category: "Physical",', 'priority: 0,',
+                  'flags: { contact: 1, protect: 1, mirror: 1, metronome: 1 },', "overrideOffensivePokemon: 'target',",
+                  'target: "normal",', 'type: "Dark",']),
+    ('psyshock', ['accuracy: 100,', 'basePower: 80,', 'category: "Special",', "overrideDefensiveStat: 'def',", 'priority: 0,',
+                  'flags: { protect: 1, mirror: 1, metronome: 1 },', 'target: "normal",', 'type: "Psychic",']),
+    ('raindance', ['accuracy: true,', 'category: "Status",', 'priority: 0,', 'flags: { metronome: 1 },', "weather: 'RainDance',",
+                   'target: "all",', 'type: "Water",']),
+    ('sunnyday', ['accuracy: true,', 'category: "Status",', 'priority: 0,', 'flags: { metronome: 1 },', "weather: 'sunnyday',",
+                  'target: "all",', 'type: "Fire",']),
+    ('freezedry', ['accuracy: 100,', 'basePower: 70,', 'category: "Special",', 'priority: 0,',
+                   'flags: { protect: 1, mirror: 1, metronome: 1 },',
+                   "onEffectiveness(typeMod, target, type) { if (type === 'Water') return 1; },", 'target: "normal",',
+                   'type: "Ice",']),
+    ('clangingscales', ['accuracy: 100,', 'basePower: 110,', 'category: "Special",', 'priority: 0,',
+                        'flags: { protect: 1, mirror: 1, sound: 1, bypasssub: 1, metronome: 1 },',
+                        'selfBoost: { boosts: { def: -1, }, },', 'target: "allAdjacentFoes",', 'type: "Dragon",']),
+    ('voltswitch', ['accuracy: 100,', 'basePower: 70,', 'category: "Special",', 'priority: 0,',
+                    'flags: { protect: 1, mirror: 1, metronome: 1 },', 'selfSwitch: true,', 'target: "normal",',
+                    'type: "Electric",']),
+    ('lifedew', ['accuracy: true,', 'category: "Status",', 'priority: 0,', 'flags: { snatch: 1, heal: 1, bypasssub: 1 },',
+                 'heal: [1, 4],', 'target: "allies",', 'type: "Water",']),
+)
+# Ability and item rows that the turn code runs by id: the entry of the pin (or of the Champions mod, which is read first
+# for the item) must have exactly these texts. (kind, id, in the Champions file, texts)
+G32_ENTRY_FACTS = (
+    ('ability', 'soundproof', False,
+     ["onTryHit(target, source, move) { if (target !== source && move.flags['sound']) { "
+      "this.add('-immune', target, '[from] ability: Soundproof'); return null; } },",
+      'flags: { breakable: 1 },']),
+    ('ability', 'unnerve', False,
+     ['onSwitchInPriority: 1,',
+      "onStart(pokemon) { if (this.effectState.unnerved) return; this.add('-ability', pokemon, 'Unnerve'); "
+      "this.effectState.unnerved = true; },",
+      'onEnd() { this.effectState.unnerved = false; },',
+      'onFoeTryEatItem() { return !this.effectState.unnerved; },', 'flags: {},']),
+    ('ability', 'speedboost', False,
+     ['onResidualOrder: 28,', 'onResidualSubOrder: 2,', 'onResidual(pokemon) { if (pokemon.activeTurns) { this.boost({ spe: 1 }); } },',
+      'flags: {},']),
+    ('item', 'ejectbutton', True,
+     ["onAfterMoveSecondary(target, source, move) { if (source && source !== target && target.hp && move && "
+      "move.category !== 'Status' && !move.flags['futuremove']) { if (!this.canSwitch(target.side) || target.forceSwitchFlag || "
+      "target.beingCalledBack || target.isSkyDropped()) return; if (target.volatiles['commanding'] || "
+      "target.volatiles['commanded']) return; for (const pokemon of this.getAllActive()) { "
+      "if (pokemon.switchFlag === true) return; } target.switchFlag = true; if (!target.useItem()) { "
+      "target.switchFlag = false; } } },"]),
+)
+# Rain Dance and Sunny Day (data/conditions.ts, as Sandstorm and Snowscape): the duration (5; 8 with the rock item, which is
+# UNMODELED and so never held), the start line without a source, the upkeep and the end line.
+G32_WEATHER_FACTS = (
+    ('raindance', ['duration: 5,', "if (source?.hasItem('damprock')) { return 8; } return 5;",
+                   "onFieldStart(field, source, effect) { if (effect?.effectType === 'Ability') { if (this.gen <= 5) "
+                   "this.effectState.duration = 0; this.add('-weather', 'RainDance', '[from] ability: ' + effect.name, `[of] ${source}`); } "
+                   "else { this.add('-weather', 'RainDance'); } },", 'onFieldResidualOrder: 1,',
+                   "this.add('-weather', 'RainDance', '[upkeep]'); this.eachEvent('Weather');",
+                   "this.add('-weather', 'none');"]),
+    ('sunnyday', ['duration: 5,', "if (source?.hasItem('heatrock')) { return 8; } return 5;",
+                  "onFieldStart(battle, source, effect) { if (effect?.effectType === 'Ability') { if (this.gen <= 5) "
+                  "this.effectState.duration = 0; this.add('-weather', 'SunnyDay', '[from] ability: ' + effect.name, `[of] ${source}`); } "
+                  "else { this.add('-weather', 'SunnyDay'); } },", 'onFieldResidualOrder: 1,',
+                  "this.add('-weather', 'SunnyDay', '[upkeep]'); this.eachEvent('Weather');",
+                  "this.add('-weather', 'none');",
+                  "onImmunity(type, pokemon) { if (pokemon.effectiveWeather() !== 'sunnyday') return; if (type === 'frz') return false; },"]),
+)
 G28_ITEM_FACTS = (
     ('expertbelt', ["onModifyDamage(damage, source, target, move) { if (move && target.getMoveHitData(move).typeMod > 0) { "
                     "return this.chainModify([4915, 4096]); } },"]),
@@ -1519,6 +1605,15 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'ragepowder': ('RAGE_POWDER', {'onTry'}),                              # G30: Follow Me for the foes that are not powder immune
     'psychicfangs': ('PSYCHIC_FANGS', {'onTryHit'}),                       # G30: the screens go before the hit
     'solarbeam': ('SOLAR_BEAM', {'onBasePower', 'onTryMove'}),             # G30: a two-turn move that sun skips, x0.5 in rain, sand, snow
+    'eruption': ('HP_POWER', {'basePowerCallback'}),                      # G32: power by the user's HP
+    'waterspout': ('HP_POWER', {'basePowerCallback'}),
+    'bodypress': ('BODY_PRESS', set()),                                   # G32: the Defense stat attacks
+    'foulplay': ('FOUL_PLAY', set()),                                     # G32: the target's Attack and stages
+    'psyshock': ('PSYSHOCK', set()),                                      # G32: a special hit at the Defense stat
+    'raindance': ('RAIN_DANCE', set()),                                   # G32: weather moves
+    'sunnyday': ('SUNNY_DAY', set()),
+    'freezedry': ('FREEZE_DRY', {'onEffectiveness'}),                     # G32: Water takes it super effective
+    'clangingscales': ('CLANGING_SCALES', set()),                         # G32: the user's Defense falls after a hit
 })
 # Step G13: Detect is Protect (data/moves.ts:3526-3547 against 13961-14005): the same handler (not one of the G2 handlers,
 # so it is added to the pool's map only), and the generator checks that its stalling fields and both callbacks are,
@@ -1531,7 +1626,7 @@ PROTECT_COPIES = {'detect': 'protect'}
 # champions/moves.ts:581-584) sets isNonstandard to null, which makes it legal, and the tag has no reader in the tables.
 TAGS_PAST_UNOBTAINABLE = 'tags: ["Past Unobtainable"],'
 PROTECT_COPY_FIELDS = ('onPrepareHit', 'onHit', 'stallingMove', 'volatileStatus', 'priority', 'accuracy', 'target')
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G26_HANDLERS + ['UNMODELED']
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G26_HANDLERS + ['UNMODELED']
 # Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags
 # byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
@@ -1547,6 +1642,12 @@ G2_OWNED_FIELDS = {
     'FEINT': {'breaksProtect': "breaksProtect: true, // Breaking protection implemented in scripts.js"},
     'GLAIVE_RUSH': {'self': "self: { volatileStatus: 'glaiverush', },"},
     'RAGE_POWDER': {'volatileStatus': "volatileStatus: 'ragepowder',"},
+    'BODY_PRESS': {'overrideOffensiveStat': "overrideOffensiveStat: 'def',"},
+    'FOUL_PLAY': {'overrideOffensivePokemon': "overrideOffensivePokemon: 'target',"},
+    'PSYSHOCK': {'overrideDefensiveStat': "overrideDefensiveStat: 'def',"},
+    'RAIN_DANCE': {'weather': "weather: 'RainDance',"},
+    'SUNNY_DAY': {'weather': "weather: 'sunnyday',"},
+    'CLANGING_SCALES': {'selfBoost': "selfBoost: { boosts: { def: -1, }, },"},
 }
 G2_OWNED_SECONDARY = {}
 G2_OWNED_CONDITION = {'ENCORE', 'WIDE_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD', 'RAGE_POWDER', 'PERISH_SONG'}
@@ -1634,7 +1735,7 @@ TARGET_CLASS_POOL = dict(TARGET_CLASS, allAdjacent=11, scripted=12, allyTeam=13,
 TARGET_CLASS_POOL_NAMES = {11: 'ALL_ADJACENT', 12: 'SCRIPTED', 13: 'ALLY_TEAM', 14: 'ALLIES', 15: 'FOE_SIDE'}
 # The target classes that the turn code resolves (src/combat/turn.c, dfi_resolve_targets and request.c).
 ENGINE_TARGETS = {'normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
-                  'randomNormal', 'allAdjacent'}  # allAdjacent: step G28 (Earthquake hits the ally too)
+                  'randomNormal', 'allAdjacent', 'allies'}  # allAdjacent: step G28 (Earthquake hits the ally too); allies: G32 (Life Dew)
 # Every move flag of the 510 pool moves: a flag outside this set is something the generator cannot read.
 POOL_FLAGS = (set(FLAG_BITS_C) | IGNORED_FLAGS | G2_IGNORED_FLAGS |
               {'bite', 'recharge', 'minimize', 'gravity', 'powder', 'noparentalbond', 'futuremove', 'cantusetwice',
@@ -1654,14 +1755,15 @@ HANDLER_IDS = ['NONE', 'UNMODELED']
 # here, which changes the handler column and so the POOL table hash, as any pool change does; a row that is marked and
 # still has the UNMODELED handler fails duoforge.data.pool_tables. G4: Focus Sash, Rock Head. G12: Floettite (the Mega
 # Stone of Floette-Eternal), Flower Veil and Fairy Aura. G14: Rough Skin, Poison Touch and Thermal Exchange. G16: Sticky Hold (Knock Off reads it by id). AC1: Trace (the entry copy of a foe's ability). G15: Psychic Seed (Grassy Seed's rule for the other terrain). G22: Sand Rush, Swift Swim, Slush Rush and Chlorophyll (the doubled Speed in their weather, tools/datagen/pool_families.js ENGINE_ORDER), Sand Rush's immunity to Sandstorm, Inner Focus (no flinch, no Intimidate drop) and Liquid Voice (a sound move becomes Water). G23-C: Levitate (isGrounded and the Ground immunity).
-ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'expertbelt'],
+ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'expertbelt', 'ejectbutton'],
                'abilities': ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange',
                              'stickyhold', 'trace', 'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll',
-                             'innerfocus', 'liquidvoice', 'flamebody', 'clearbody', 'hospitality', 'overcoat']}
+                             'innerfocus', 'liquidvoice', 'flamebody', 'clearbody', 'hospitality', 'overcoat',
+                             'soundproof', 'unnerve', 'speedboost']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
-ENGINE_PIVOT_MOVES = ()
+ENGINE_PIVOT_MOVES = ('voltswitch',)  # step G32: switch flag 6
 # The one ability that the pin tags as not released and that the pool still has: Aura Guard is the ability of
 # Lucario-Mega-Z, whose set the pinned validator accepts (docs/research/expansion/data/legal_pool.json, 'abilities_mega_only').
 # The row exists because the format has the forme; it is UNMODELED like every ability with a callback. Any other tag fails.
@@ -2187,7 +2289,7 @@ WEATHER_BALL_FACTS = ("case 'sandstorm': move.type = 'Rock'; break; case 'hail':
 def check_weather_facts(conditions_ts, moves_ts):
     """Every fact of WEATHER_FACTS is in the pinned condition entry, the absent ones are not, and Weather Ball has the
     types and the doubling that the engine reads for every weather."""
-    for cid, facts in WEATHER_FACTS:
+    for cid, facts in WEATHER_FACTS + G32_WEATHER_FACTS:
         e = conditions_ts.entry(cid)
         if e is None:
             fail('condition %s not found' % cid)
@@ -2284,11 +2386,25 @@ def check_g28_items(items_ts, only=None):
                 fail('item %s: the entry no longer has "%s"' % (iid, fact))
 
 
+def check_g32_entries(items_ts, champ_items, abil_ts, champ_abil, only=None):
+    """Step G32: the ability and item entries that the turn code runs by id (G32_ENTRY_FACTS) have the pinned texts, whole;
+    the Champions Eject Button is read from the mod's file. `only`: a tuple of such entries (the generator's tests)."""
+    for kind, eid, champ, facts in (G32_ENTRY_FACTS if only is None else only):
+        src = (champ_items if champ else items_ts) if kind == 'item' else (champ_abil if champ else abil_ts)
+        e = src.entry(eid)
+        if e is None:
+            fail('%s %s not found' % (kind, eid))
+        text = norm(chr(10).join(e[2]))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('%s %s: the entry no longer has "%s"' % (kind, eid, fact))
+
+
 def check_g8_conditions(moves_ts, only=None):
     """The engine hard-codes the durations, orders and tests of the Throat Chop and Heal Block conditions (step G8) and
     those of Aurora Veil (step G20): every one of them must be in the pinned entry, as one normalised text. `only`: a
     tuple of (move id, facts) to check instead of all of them (the generator's tests)."""
-    for mid, facts in (G8_CONDITION_FACTS + G20_CONDITION_FACTS + G28_FACTS if only is None else only):
+    for mid, facts in (G8_CONDITION_FACTS + G20_CONDITION_FACTS + G28_FACTS + G32_FACTS if only is None else only):
         e = moves_ts.entry(mid)
         if e is None:
             fail('move %s not found' % mid)
@@ -2315,6 +2431,7 @@ def build_pool(root, repo, dx):
     check_g15_facts(moves_ts, items_ts)
     check_g30_facts(abil_ts, champ_abil)
     check_g28_items(items_ts)
+    check_g32_entries(items_ts, champ_items, abil_ts, champ_abil)
     check_weather_facts(Source(root, 'data/conditions.ts', READER_INPUTS), moves_ts)
     FLAGS_THAT_MATTER.clear()
     FLAGS_THAT_MATTER.update(prefix_flag_reads((items_ts, champ_items, abil_ts, champ_abil, moves_ts, champ_moves), dx)

@@ -114,6 +114,7 @@ MOVE_SLOT_RECHARGE = 5  # step G17: the recharge turn (POOL kinds), no target, n
 SWITCH_NONE, SWITCH_MOVE, SWITCH_EMERGENCY_EXIT, SWITCH_FAINTED = 0, 1, 2, 3
 SWITCH_FLIP_TURN = 4  # TEAM_C and POOL kinds (decision 0009)
 SWITCH_UTURN = 5  # POOL kinds only: U-turn's flag, a damaging pivot that names its move (step G5)
+SWITCH_VOLT_SWITCH = 6  # POOL kinds only: Volt Switch's flag (step G32)
 VOL_CHOICE_LOCK = 64  # TEAM_C kinds only: Choice Scarf's lock, its move in locked_move
 VOL_FOLLOW_ME = 8  # TEAM_C kinds only: Follow Me's volatile, until the residual
 VOL_HELPING_HAND = 16  # TEAM_C kinds only: Helping Hand's volatile, until the residual
@@ -264,7 +265,7 @@ KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 # which tests/test_pool_tables.c recomputes from the pool canonical bytes: the
 # pool layout over the pool data, then the family columns, the handler columns
 # and the moves and abilities that each forme may have.
-POOL_TABLE_HASH = bytes.fromhex('a56b0cb8b0a4542b75264d3f02dd0a973c7f8a3a4beffb1ebc7354ae4b7452d5')
+POOL_TABLE_HASH = bytes.fromhex('04b1008b0fd25b30efa3c1c6839de4bde526b95d02580c5c8ce5f7c0021847b2')
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 
@@ -701,7 +702,7 @@ def check_side(ctx, st, s):
             mem = sd['members'][p['occ']]
             team_c_mask = (VOL_FLAGS_MAX | VOL_FOLLOW_ME | VOL_HELPING_HAND | VOL_UNBURDEN | VOL_CHOICE_LOCK |
                            VOL_NEWLY_SWITCHED)
-            switch_max = SWITCH_UTURN if ctx.data_kind in (KIND_POOL, KIND_POOL_DEV) else SWITCH_FLIP_TURN if team_c else None
+            switch_max = SWITCH_VOLT_SWITCH if ctx.data_kind in (KIND_POOL, KIND_POOL_DEV) else SWITCH_FLIP_TURN if team_c else None
             if not volatile_valid(p, mem['move_count'], switch_max,
                                   team_c_mask if team_c else None):
                 return 'VOLATILE'

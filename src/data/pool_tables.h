@@ -857,8 +857,16 @@
 #define DFI_SPECIAL_RAGE_POWDER 33u
 #define DFI_SPECIAL_PSYCHIC_FANGS 34u
 #define DFI_SPECIAL_SOLAR_BEAM 35u
-#define DFI_SPECIAL_PERISH_SONG 36u
-#define DFI_SPECIAL_UNMODELED 37u
+#define DFI_SPECIAL_HP_POWER 36u
+#define DFI_SPECIAL_BODY_PRESS 37u
+#define DFI_SPECIAL_FOUL_PLAY 38u
+#define DFI_SPECIAL_PSYSHOCK 39u
+#define DFI_SPECIAL_RAIN_DANCE 40u
+#define DFI_SPECIAL_SUNNY_DAY 41u
+#define DFI_SPECIAL_FREEZE_DRY 42u
+#define DFI_SPECIAL_CLANGING_SCALES 43u
+#define DFI_SPECIAL_PERISH_SONG 44u
+#define DFI_SPECIAL_UNMODELED 45u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */
