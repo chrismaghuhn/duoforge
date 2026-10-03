@@ -35,7 +35,8 @@ _Static_assert(offsetof(duoforge_position_ext, ability_now) == 4u, "position ext
 _Static_assert(offsetof(duoforge_position_ext, type_now) == 6u, "position ext layout: type_now");
 _Static_assert(offsetof(duoforge_position_ext, encore_slot) == 8u, "position ext layout: encore_slot");
 _Static_assert(offsetof(duoforge_position_ext, perish) == 11u, "position ext layout: perish");
-_Static_assert(offsetof(duoforge_position_ext, reserved) == 12u, "position ext layout: reserved");
+_Static_assert(offsetof(duoforge_position_ext, move_failed) == 12u, "position ext layout: move_failed");
+_Static_assert(offsetof(duoforge_position_ext, reserved) == 13u, "position ext layout: reserved");
 _Static_assert(sizeof(duoforge_member_ext) == 4u, "member ext is 4 bytes");
 _Static_assert(offsetof(duoforge_member_ext, item_now) == 2u, "member ext layout: item_now");
 _Static_assert(sizeof(duoforge_side_ext) == 64u, "side ext is 64 bytes");

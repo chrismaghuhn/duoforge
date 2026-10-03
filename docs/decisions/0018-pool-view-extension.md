@@ -65,14 +65,15 @@ An empty position (no occupant, or a fainted one) is all zero. Every field belon
 
 | Field | Type | Offset | Range | Unit | Meaning |
 |---|---|---|---|---|---|
-| `volatiles` | u32 | 0 | bits (3.4.1) | `DUOFORGE_POSITION_EXT_*` | presence flags of public conditions of the occupant. Bits 20 to 31 reserved (0) |
+| `volatiles` | u32 | 0 | bits (3.4.1) | `DUOFORGE_POSITION_EXT_*` | presence flags of public conditions of the occupant. Bits 21 to 31 reserved (0) |
 | `ability_now` | u16 | 4 | 0 to 65535 | ability id + 1 | the occupant's current ability when it differs from `duoforge_member_view.ability` (Trace, Skill Swap, Role Play, Worry Seed...); 0 = no change. The effective ability is `ability_now` if nonzero, else the member view's |
 | `type_now[2]` | u8[2] | 6 | 0 to 18 | type id + 1 (alphabetical: Bug = 1 ... Water = 18) | the occupant's types after a type change (Soak); 0 in a slot = no type there. Zero unless `TYPE_CHANGED` is set |
 | `encore_slot` | u8 | 8 | 0 to 4 | move slot + 1 | the one move slot the occupant is forced into by Encore; 0 = not encored. Public |
 | `disable_slot` | u8 | 9 | 0 to 4 | move slot + 1 | the move slot that Disable bars; 0 = none. Public |
 | `stockpile` | u8 | 10 | 0 to 3 | levels | Stockpile level |
 | `perish` | u8 | 11 | 0 to 3 | count shown | the Perish count the game announced (3, 2, 1); 0 = no Perish. Public: the game announces every count |
-| `reserved` | u8[4] | 12 | 0 | - | reserve |
+| `move_failed` | u8 | 12 | 0/1 | flag | the occupant's last move failed last turn (the pin's `moveLastTurnResult === false`: a failed, missed or interrupted move, not a move that had no target to choose). Public: the failure shows in the `-fail`, `-miss`, `cant` and `-immune` lines and decides Stomping Tantrum's doubling. Appended by tail rev 4 into the position reserve (feature bit 41) |
+| `reserved` | u8[3] | 13 | 0 | - | reserve |
 
 #### 3.4.1 The `volatiles` bits
 
@@ -98,6 +99,7 @@ An empty position (no occupant, or a fainted one) is all zero. Every field belon
 | 17 | `RAGE_POWDER` | public | Rage Powder draws single-target moves this turn (PIVOT boundary only, like the guards) |
 | 18 | `TYPE_CHANGED` | public | `type_now` holds the types |
 | 19 | `ILLUSION_UP` | public | the occupant has Illusion and it is not broken yet (known from the open sheet and the lines) |
+| 20 | `ROOST` | public | Roost: the occupant's Flying type is off until the end of the turn (`-singleturn ... move: Roost`; PIVOT boundary only, like the guards). Appended by tail rev 4 (feature bit 40) |
 
 ### 3.5 `duoforge_member_ext` (4 bytes)
 
@@ -168,6 +170,8 @@ The live tracker (decision 0016) and the M11 spectator pipeline fill every field
 | `toxic_spikes`, `spikes`, `stealth_rock`, `sticky_web` | `\|-sidestart\|pN: NAME\|move: Toxic Spikes` (Spikes, Stealth Rock, Sticky Web); each Toxic Spikes or Spikes line adds a layer | `\|-sideend\|pN: NAME\|move: ...` (absorbed: `[of] POKEMON`; Rapid Spin, Defog: `[from] move: ...`) | yes |
 | `guard_flags` | `\|-singleturn\|POKEMON\|Wide Guard` (resp. Quick Guard): the user's side | the next `\|upkeep\|` / `\|turn\|` | yes |
 | `RAGE_POWDER` | `\|-singleturn\|POKEMON\|move: Rage Powder` | the next `\|upkeep\|` / `\|turn\|` | yes |
+| `ROOST` | `\|-singleturn\|POKEMON\|move: Roost` | the next `\|upkeep\|` / `\|turn\|` | yes. Not set yet: the feature bit (40) stays clear until the Roost mechanic is built |
+| `move_failed` | the occupant's last move, as the lines say: `\|-fail\|`, `\|-miss\|`, `\|cant\|`, `\|-immune\|` and the like make it 1, any other outcome 0 | the end of the turn after the next (it describes the last turn); OUT | yes, from the lines. Not set yet: the feature bit (41) stays clear until Stomping Tantrum is built |
 | `TAUNT` | `\|-start\|POKEMON\|move: Taunt` | `\|-end\|POKEMON\|move: Taunt`, OUT | yes |
 | `IMPRISON` | `\|-start\|POKEMON\|move: Imprison` | OUT | yes |
 | `DISABLE` (`disable_slot`) | `\|-start\|POKEMON\|Disable\|MOVE`: the slot of MOVE on the open sheet | `\|-end\|POKEMON\|Disable`, OUT | yes |
@@ -201,7 +205,7 @@ The live tracker (decision 0016) and the M11 spectator pipeline fill every field
 
 ### 7.1 The bits (`DUOFORGE_VIEWEXT_FEATURE_*`)
 
-Numbered by tier (section 8), then by frequency. A bit stays assigned forever; bits 40 to 63 are free for appended features. The bits that stand for the new enum values of section 4 are 0 (Sand), 1 (Snow), 5 (Electric Terrain), 10 (Tox) and 32 (Misty Terrain).
+Numbered by tier (section 8), then by frequency. A bit stays assigned forever; bits 42 to 63 are free for appended features. The bits that stand for the new enum values of section 4 are 0 (Sand), 1 (Snow), 5 (Electric Terrain), 10 (Tox) and 32 (Misty Terrain).
 
 | Tier | Bits |
 |---|---|
@@ -209,6 +213,7 @@ Numbered by tier (section 8), then by frequency. A bit stays assigned forever; b
 | 2 | 6 `THROAT_CHOP`, 7 `ENCORE`, 8 `TOXIC_SPIKES`, 9 `TYPE_CHANGE`, 10 `AILMENT_TOX`, 11 `ITEM_CHANGE`, 12 `IMPRISON`, 13 `STEALTH_ROCK`, 14 `TAUNT`, 15 `MUST_RECHARGE`, 16 `HEAL_BLOCK`, 17 `WIDE_GUARD` |
 | 3 | 18 `PARTIAL_TRAP`, 19 `FORME_CHANGE`, 20 `GLAIVE_RUSH`, 21 `DISABLE`, 22 `STOCKPILE`, 23 `SUBSTITUTE`, 24 `DRAGON_CHEER`, 25 `YAWN`, 26 `ILLUSION`, 27 `GRAVITY`, 28 `LEECH_SEED`, 29 `FOCUS_ENERGY` |
 | 4 | 30 `SPIKES`, 31 `CHARGE`, 32 `TERRAIN_MISTY`, 33 `STICKY_WEB`, 34 `SALT_CURE`, 35 `DESTINY_BOND`, 36 `CURSE`, 37 `NO_RETREAT`, 38 `QUICK_GUARD`, 39 `RAGE_POWDER` |
+| appended with tail rev 4 | 40 `ROOST`, 41 `MOVE_FAILED` (the feature count is 42) |
 
 ## 8. Priority tiers (replay spike frequencies)
 
@@ -230,7 +235,7 @@ How the tail rev 1 fills the view: `wide_guard` -> `guard_flags` bit `WIDE_GUARD
 
 1. **`revision`** is 0 (absent) or the number of the layout family. Revision 1 is this note. A struct of revision N never changes size or any offset.
 2. **Reserved bytes** are always written as zero and a consumer ignores them. The reserve is spread by section: 2 bytes in the header, 15 in `duoforge_field_ext`, 4 in each position (16), 1 in each member (12), 2 in each side (4), and 32 at the end: **81 bytes**, 42 percent of 192.
-3. **Fields are only appended into a reserve** within a revision. A new named field takes bytes from the reserve of its own record (a position field from the position's 4 bytes, a whole new record from the 32 at the end); no existing offset moves and no existing meaning changes. Such a field comes with a new `DUOFORGE_VIEWEXT_FEATURE_*` bit (bits 40 to 63 are free), so a consumer built before it sees a zero reserve and a clear bit it does not know. This is an additive public API change: **minor library version**; the layout pin (below) and the encoder (section 10) change in the same PR.
+3. **Fields are only appended into a reserve** within a revision. A new named field takes bytes from the reserve of its own record (a position field from the position's 4 bytes, a whole new record from the 32 at the end); no existing offset moves and no existing meaning changes. Such a field comes with a new `DUOFORGE_VIEWEXT_FEATURE_*` bit (bits 42 to 63 are free), so a consumer built before it sees a zero reserve and a clear bit it does not know. This is an additive public API change: **minor library version**; the layout pin (below) and the encoder (section 10) change in the same PR.
 4. **What bumps the struct size:** only a new revision. If a field needs more than the reserve of its record, or an existing field needs a different width, the answer is a **new struct and a new function** (`duoforge_observation_ext2`, `duoforge_battle_observe_ext2`, `revision` 2), never a changed size of the old one: the query takes no size argument, so a caller that allocated `sizeof(duoforge_observation_ext)` must never be overrun. Revision 1 stays in the library, with its function, for as long as the library claims it. A new revision is a **minor library version** too. A ceiling of about 256 bytes per revision keeps one struct cache-friendly; beyond it the content should go into a second, separate record.
 5. **Setting a `supported` bit** (a step marking its mechanic) changes no struct and no API: no minor bump. The rule of the project's versioning for behaviour is unchanged.
 6. **Introduction (step V1)** is a minor bump: it adds one function, the structs, `DUOFORGE_OBSERVATION_EXT_SIZE` (192), `DUOFORGE_OBSERVATION_EXT_REVISION` (1), the feature bits, the volatile and guard bits, the new enum values and `DUOFORGE_TYPE_*`. The library version is assigned at merge by the main session, like the data query API's (the expected number then is the next free minor).
