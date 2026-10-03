@@ -252,17 +252,18 @@ def side_end_tie(d, state):
     return (SITES['SPEED_TIE'], 0, 2, int(first[2][1]) - 1)
 
 
-# The volatiles whose duration handler has an onEnd line and so shows the order of a residual tie (Heal Block, order 20;
-# Disable, order 17, step G27): the handler id and the end of its `-end` line.
-END_TIE_LINES = {'healblock': 'move: Heal Block', 'disable': 'Disable'}
+# The volatiles whose duration handler has an onEnd that shows an order (the end line, or for Yawn the silent end whose
+# sleep follows): the handler id and the end of its line. Each is an entry of the engine's sorted residual list, a callback
+# while it ends now (Heal Block, order 20; Disable, order 17, step G27; Taunt and Yawn, step G31).
+END_TIE_LINES = {'healblock': 'move: Heal Block', 'disable': 'Disable', 'taunt': 'move: Taunt', 'yawn': 'move: Yawn|[silent]'}
 
 
 def heal_block_end_tie(d, log):
     """A residual tie of two Heal Blocks (Psychic Noise, order 20; and of two Disables, order 17, the same way) of holders of equal Speed that both end in this step:
     the shuffle of the two orders their `-end|X|move: Heal Block` lines, so the tie is kept like a side-end tie
-    (side_end_tie) and is the reference's own draw: the engine runs the same sorted list (the Heal Block and Disable ends
-    are entries of it, callbacks while they end now) and draws the same shuffle, so the entry is the draw as it is
-    (SPEED_TIE, 0, 2, 0 when the shuffle keeps the pair in the order of the group, else 1).
+    (side_end_tie). The engine draws it after the callbacks of the residual and orders the pair by it; the entry
+    is the reference's own draw: the engine runs the same sorted list and draws the same shuffle, so the entry is the draw as
+    it is (SPEED_TIE, 0, 2, 0 when the shuffle keeps the pair in the order of the group, else 1); Taunt and Yawn ends likewise.
     The precondition for keeping it is that both end lines are in the step's `log` (`log` is the step's protocol
     lines): a tie of which fewer than two holders end shows no order (the drop rule for duration ties stays: None
     here). The order that the draw states is checked against the order of the two lines, so a handler list that is
@@ -510,7 +511,7 @@ def drop_reason(d, state, after=None, log=None):
             return 'switch-in order with at most one entry effect'
         return None  # the engine draws
     if site == 'SPEED_TIE' and ctx == 'field:Residual':
-        if all(g.startswith(('H:healblock:', 'H:disable:')) and g.endswith(':end') for g in group):
+        if all(g.startswith(('H:healblock:', 'H:disable:', 'H:taunt:', 'H:yawn:')) and g.endswith(':end') for g in group):
             # Precondition of the drop: the order of the ends shows in no pair of lines. heal_block_end_tie keeps the
             # tie when two of the holders end now, so reaching this with two end lines is a bug of the caller.
             if log is None:
@@ -581,11 +582,11 @@ def drop_reason(d, state, after=None, log=None):
         raise ConversionError('modifydamage-tie', 'trace_to_c: ModifyDamage tie with %s' % group,
                               detail=tie_effects(group))
     if site == 'SPEED_TIE' and ctx == 'event:DisableMove':
-        # The DisableMove handlers of one Pokemon: the Choice lock's, Throat Chop's and Heal Block's onDisableMove
+        # The DisableMove handlers of one Pokemon: the Choice lock's, Throat Chop's, Heal Block's, Encore's and Taunt's onDisableMove
         # (data/conditions.ts choicelock, data/moves.ts throatchop and healblock) each only set `disabled` on
         # move slots, and setting a flag twice is setting it once: whichever runs first, the request offers the
         # same moves. Any other handler is a mechanic that has not been looked at.
-        if all(g.startswith(('H:choicelock:', 'H:throatchop:', 'H:healblock:', 'H:encore:', 'H:disable:', 'H:imprison:')) and g.endswith(':cb')
+        if all(g.startswith(('H:choicelock:', 'H:throatchop:', 'H:healblock:', 'H:encore:', 'H:disable:', 'H:imprison:', 'H:taunt:')) and g.endswith(':cb')
                for g in group):
             return 'DisableMove handlers whose order changes nothing'
         raise ConversionError('disablemove-tie', 'trace_to_c: DisableMove tie with %s' % group,
@@ -844,13 +845,15 @@ EV = {name: i + 1 for i, name in enumerate(
      'SINGLE_TURN', 'VOLATILE_START', 'VOLATILE_END', 'TYPE_CHANGE', 'ITEM_START'])}
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
          'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14,
-         'HEAL_BLOCK': 15, 'WEATHER': 16, 'ITEM_TAKEN': 17, 'RECHARGE': 18, 'DISABLE': 19, 'IMPRISON': 21}
+         'HEAL_BLOCK': 15, 'WEATHER': 16, 'ITEM_TAKEN': 17, 'RECHARGE': 18, 'DISABLE': 19, 'TAUNT': 20, 'IMPRISON': 21}
 VOLATILE_HEAL_BLOCK = 1  # DUOFORGE_VOLATILE_HEAL_BLOCK: the detail of VOLATILE_START and VOLATILE_END
 VOLATILE_ENCORE = 2      # DUOFORGE_VOLATILE_ENCORE (step G9)
 VOLATILE_DISABLE = 4     # DUOFORGE_VOLATILE_DISABLE (step G27)
 VOLATILE_MUST_RECHARGE = 3  # DUOFORGE_VOLATILE_MUST_RECHARGE (step G17)
 VOLATILE_PERISH = 5  # DUOFORGE_VOLATILE_PERISH (step G26)
 VOLATILE_IMPRISON = 8    # DUOFORGE_VOLATILE_IMPRISON (step G38): START only
+VOLATILE_TAUNT = 6       # DUOFORGE_VOLATILE_TAUNT (step G31)
+VOLATILE_YAWN = 7        # DUOFORGE_VOLATILE_YAWN (step G31)
 MOVE_SLOT_RECHARGE = 5   # DUOFORGE_MOVE_SLOT_RECHARGE (step G17)
 # DUOFORGE_TYPE_*: the alphabetical type ids, the detail of TYPE_CHANGE
 TYPE_IDS = {name: i for i, name in enumerate(
@@ -895,6 +898,10 @@ IGNORED_VOLATILES = {
     # Pool step G9 (Encore): its turns are not a field of the record either: the moves of the next requests (every
     # slot but the Encored one is disabled), the replaced move line and the start and end lines show them.
     'encore': 'the moves of the requests, the replaced move and the start and end lines',
+    # Pool step G31: Taunt's turns are not a field of the record: the moves of the next requests (every Status move is
+    # disabled), the cant lines and the start and end lines show them; Yawn's show in the start line and the sleep.
+    'taunt': 'the moves of the requests, the cant lines and the start and end lines',
+    'yawn': 'the start line and the sleep that it brings',
     # Pool step G17 (the recharge turn): the volatile shows in the request of the next turn (the one candidate, the
     # recharge slot), the start line (`-mustrecharge`) and the cant line (`cant|X|recharge`), and the view bit.
     'mustrecharge': 'the request of the recharge turn, the start line and the cant line',
@@ -1104,6 +1111,9 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             elif reason == 'move: Imprison':
                 # data/moves.ts:9511-9519 onFoeBeforeMove: `cant|X|move: Imprison|Move`, the stopped move in id (step G38).
                 e = ev_tuple(EV['CANT'], pos, NOPOS, CAUSE['IMPRISON'], tables['MOVE'][key(args[2])])
+            elif reason == 'move: Taunt':
+                # data/moves.ts:19004-19010: `cant|X|move: Taunt|MOVE`, the stopped Status move in id (step G31)
+                e = ev_tuple(EV['CANT'], pos, NOPOS, CAUSE['TAUNT'], tables['MOVE'][key(args[2])])
             else:
                 cause = {'par': 'PARALYSIS', 'slp': 'SLEEP', 'frz': 'FREEZE', 'flinch': 'FLINCH', 'nopp': 'NO_PP',
                          'recharge': 'RECHARGE'}
@@ -1224,6 +1234,16 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                 # data/moves.ts:9501 onStart: `-start|user|move: Imprison` (step G38); the volatile has no end line, it ends
                 # with the occupant.
                 e = ev_tuple(EV['VOLATILE_START'], ev_pos(args[0]), detail=VOLATILE_IMPRISON)
+            elif what == 'move: Taunt':
+                # data/moves.ts:18974-19016 taunt: `-start|X|move: Taunt` from onStart, `-end|X|move: Taunt` from onEnd
+                # (the duration; a switch-out or a faint clears it with no line) (step G31)
+                e = ev_tuple(EV['VOLATILE_START' if kind == '-start' else 'VOLATILE_END'], ev_pos(args[0]),
+                             detail=VOLATILE_TAUNT)
+            elif what == 'move: Yawn' and kind == '-start':
+                # data/moves.ts:21131-21162 yawn: `-start|X|move: Yawn|[of] source` from onStart; the end line is [silent]
+                # (dropped) and the sleep it brings is the ordinary STATUS line (step G31)
+                _, _, other = ev_cause(attrs, tables)
+                e = ev_tuple(EV['VOLATILE_START'], ev_pos(args[0]), other, detail=VOLATILE_YAWN)
             elif what == 'Encore':
                 # data/moves.ts:4724-4783 encore: `-start|X|Encore` from onStart, `-end|X|Encore` from onEnd (the
                 # duration or an exhausted move; a switch-out or a faint clears it with no line).

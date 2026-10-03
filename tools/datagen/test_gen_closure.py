@@ -599,6 +599,11 @@ PROTECT_BASE = move_entry('protect', 'Protect', 'stallingMove: true,', "volatile
                           flags='noassist: 1, failcopycat: 1', target='self', type_='Normal')
 SPIKY_SHIELD = protect_variant('spikyshield', 'Spiky Shield', 'spikyshield', 'this.damage(source.baseMaxhp / 8, source, target);')
 
+TAUNT = move_entry('taunt', 'Taunt', "volatileStatus: 'taunt',", gen_closure.TAUNT_CONDITION, type_='Dark', pp=20,
+                   flags='protect: 1, reflectable: 1, mirror: 1, bypasssub: 1, metronome: 1')
+YAWN = move_entry('yawn', 'Yawn', "volatileStatus: 'yawn',", gen_closure.YAWN_ONTRYHIT, gen_closure.YAWN_CONDITION, type_='Normal',
+                  flags='protect: 1, reflectable: 1, mirror: 1, metronome: 1')
+
 PLAIN = move_entry('plain', 'Plain', category='Physical', base_power=50, flags='contact: 1')
 
 # ---- step G30: Rage Powder, Psychic Fangs, Solar Beam (handlers) and the four abilities of ENGINE_ROWS ----
@@ -731,7 +736,7 @@ class PoolMoves(unittest.TestCase):
                           'RAIN_DANCE', 'SUNNY_DAY', 'FREEZE_DRY', 'CLANGING_SCALES',
                           'STEEL_ROLLER', 'CLANGOROUS_SOUL', 'BRICK_BREAK', 'DISABLE',
                           'ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'RISING_VOLTAGE', 'TERRAIN_PULSE', 'PERISH_SONG', 'MULTI_HIT_2', 'TRIPLE_AXEL', 'IMPRISON',
-                          'TRICK', 'SWITCHEROO', 'THIEF', 'COVET', 'SUPER_FANG', 'UNMODELED'])
+                          'TRICK', 'SWITCHEROO', 'THIEF', 'COVET', 'SUPER_FANG', 'TAUNT', 'YAWN', 'UNMODELED'])
         self.assertEqual(len(gen_closure.G2_HANDLERS), 7)
         # Step G16: Knock Off's handler is 24 in the tables; step G15's Expanding Force is 25, step G19's Glaive Rush 26,
         # step G20's Aurora Veil 27, Spiky Shield 28, the four of step G28 29 to 32, the eight of step G32 33 to 40 and
@@ -763,14 +768,32 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G29_HANDLERS], [56, 57, 58, 59])
         self.assertEqual(gen_closure.G39_HANDLERS, ['SUPER_FANG'])  # step G39
         self.assertEqual(gen_closure.SPECIAL_IDS_P.index('SUPER_FANG'), 60)
-        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 61)
+        self.assertEqual(gen_closure.G31_HANDLERS, ['TAUNT', 'YAWN'])  # step G31, after step G39's
+        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G31_HANDLERS], [61, 62])
+        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 63)
         # Scald and Recover became data in step G10: their ids stay defined and no move maps to them.
         self.assertEqual({v[0] for k, v in gen_closure.SPECIAL_P.items() if k not in gen_closure.SPECIAL_C},
                          (set(gen_closure.G2_HANDLERS) - {'SCALD', 'RECOVER'}) | set(gen_closure.WEATHER_HANDLERS) |
                          set(gen_closure.G16_HANDLERS) | set(gen_closure.G15_HANDLERS) | set(gen_closure.G19_HANDLERS) |
                          set(gen_closure.G20_HANDLERS) | set(gen_closure.G20_PROTECT_HANDLERS) | set(gen_closure.G28_HANDLERS) |
                          set(gen_closure.G30_HANDLERS) | set(gen_closure.G32_HANDLERS) | set(gen_closure.G34_HANDLERS) |
-                         set(gen_closure.G27_HANDLERS) | set(gen_closure.G25_HANDLERS) | set(gen_closure.G26_HANDLERS) | set(gen_closure.G33_HANDLERS) | set(gen_closure.G38_HANDLERS) | set(gen_closure.G29_HANDLERS) | set(gen_closure.G39_HANDLERS) | {'DARKEST_LARIAT'})
+                         set(gen_closure.G27_HANDLERS) | set(gen_closure.G25_HANDLERS) | set(gen_closure.G26_HANDLERS) | set(gen_closure.G33_HANDLERS) | set(gen_closure.G38_HANDLERS) | set(gen_closure.G29_HANDLERS) | set(gen_closure.G39_HANDLERS) | set(gen_closure.G31_HANDLERS) | {'DARKEST_LARIAT'})
+
+    def test_taunt_and_yawn_are_handlers_whose_conditions_are_the_pinned_text(self):
+        for mid, text, special in (('taunt', TAUNT, 'TAUNT'), ('yawn', YAWN, 'YAWN')):
+            rec = parse_pool(mid, text)
+            self.assertEqual(rec['special'], gen_closure.SPECIAL_IDS_P.index(special))
+            self.assertEqual((rec['side_condition'], rec['sec_kind'], rec['primary_status']), (0, 0, 0))
+        self.refused('taunt', TAUNT.replace('duration: 3', 'duration: 4'), 'the condition is not the pinned text')
+        self.refused('taunt', TAUNT.replace('onResidualOrder: 15', 'onResidualOrder: 16'), 'the condition is not the pinned text')
+        self.refused('taunt', TAUNT.replace('onBeforeMovePriority: 5', 'onBeforeMovePriority: 6'), 'the condition is not the pinned text')
+        self.refused('taunt', TAUNT.replace("move.category === 'Status'", "move.category === 'Physical'"), 'the condition is not the pinned text')
+        self.refused('yawn', YAWN.replace('duration: 2', 'duration: 3'), 'the condition is not the pinned text')
+        self.refused('yawn', YAWN.replace('onResidualOrder: 23', 'onResidualOrder: 22'), 'the condition is not the pinned text')
+        self.refused('yawn', YAWN.replace("target.trySetStatus('slp'", "target.trySetStatus('par'"), 'the condition is not the pinned text')
+        self.refused('yawn', YAWN.replace('target.status ||', ''), 'onTryHit is not the pinned text')
+        self.refused('taunt', TAUNT.replace("volatileStatus: 'taunt',", "volatileStatus: 'yawn',"),
+                     "volatileStatus is not \"volatileStatus: 'taunt',\"")
 
     def test_aurora_veil_is_a_handler_whose_onTry_and_condition_are_the_pinned_text(self):
         rec = parse_pool('auroraveil', AURORA_VEIL)
@@ -1065,7 +1088,7 @@ class PoolMoves(unittest.TestCase):
                                                                 'clangingscales', 'steelroller', 'clangoroussoul', 'brickbreak', 'disable',
                                                                 'electricterrain', 'mistyterrain', 'risingvoltage', 'terrainpulse', 'perishsong',
                                                                 'dualwingbeat', 'twinbeam', 'tripleaxel', 'imprison',
-                                                                'trick', 'switcheroo', 'thief', 'covet', 'sacredsword', 'superfang'})
+                                                                'trick', 'switcheroo', 'thief', 'covet', 'sacredsword', 'superfang', 'taunt', 'yawn'})
         self.assertEqual(gen_closure.WEATHER_HANDLERS, ['SANDSTORM', 'SNOWSCAPE'])
         for _sp, _ab, item, moves, _mega in gen_closure.SETS_G2:
             self.assertTrue(item in gen_closure.G2_ITEMS or item not in gen_closure.POOL_ITEMS)

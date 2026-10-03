@@ -205,6 +205,9 @@ duoforge_add_test(NAME duoforge.state.pool_mega2 SOURCES test_pool_mega2.c WHITE
 duoforge_add_test(NAME duoforge.state.pool_g39 SOURCES test_pool_g39.c WHITEBOX TIMEOUT 60)
 # Step G20, Spiky Shield: the protect_kind of the position (POOL tail rev 3), the state round trip, the volatile.
 duoforge_add_test(NAME duoforge.state.pool_g20_protect SOURCES test_pool_g20_protect.c WHITEBOX TIMEOUT 60)
+# Step G31: Taunt and Yawn in the tail's taunt_turns and yawn_turns, the request, the cant line, the residual and the POOL view
+# extension (the position's TAUNT and YAWN bits, 14 and 25).
+duoforge_add_test(NAME duoforge.state.pool_g31 SOURCES test_pool_g31.c WHITEBOX TIMEOUT 60)
 # Step G27: Cursed Body and Disable in the tail's disable_slot and disable_turns, the request, the cant line and the POOL view
 # extension (the position's disable_slot, bit 21).
 duoforge_add_test(NAME duoforge.state.pool_g27 SOURCES test_pool_g27.c WHITEBOX TIMEOUT 60)
@@ -219,8 +222,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=b57a962676e8c5d8456b820e5567d6ec0052fb014a0b7ca29fa00597d2e454f1"
-        "pool_tables.c=78a46234973c46ef44768c410402149e6d2eb677ce9c567ee3fd706442be9634")
+        "pool_tables.h=debe1fce378c7deb09a05a0593a21b4241506eed8801433d9fde2c1a7ccb0a02"
+        "pool_tables.c=4a35da811fc0f510ae26326bfc67f150366fc147f28cd7ef351c0f3e3f33723c")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)

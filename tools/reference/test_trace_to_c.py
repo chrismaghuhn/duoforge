@@ -1231,6 +1231,57 @@ class Library(unittest.TestCase):
         self.assertEqual(rows, derived)
         self.assertTrue(damages > 0 and any(v & 255 >= 3 for r in derived.values() for v in r))
 
+    def test_taunt_and_yawn_rows_are_what_the_protocol_lines_say(self):
+        """Decision 0018 section 6.1 for Taunt and Yawn (step G31): a position has Taunt (bit 0) from `|-start|X|move: Taunt`
+        until `|-end|X|move: Taunt`, and Yawn (bit 1) from `|-start|X|move: Yawn|[of] SRC` until the `|-status|X|slp` that it
+        brings, and both end when the occupant leaves (`|switch|` at the position) or faints. The rows of the C test (rows in
+        tests/test_pool_g31.c) must be exactly what these lines give for the committed traces; the sleep that Yawn brings
+        has no [from], there are `cant|X|move: Taunt|MOVE` lines, and the new public numbers are the header's."""
+        self.assertEqual(trace_to_c.CAUSE['TAUNT'], 20)
+        self.assertEqual(trace_to_c.VOLATILE_TAUNT, 6)
+        self.assertEqual(trace_to_c.VOLATILE_YAWN, 7)
+        with open(os.path.join(ROOT, 'tests', 'test_pool_g31.c'), encoding='utf-8') as f:
+            source = f.read()
+        rows = {}
+        for m in re.finditer(r'\{"(g31_\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}', source):
+            rows[(m.group(1), int(m.group(2)))] = tuple(int(m.group(i)) for i in range(3, 7))
+        names = sorted({n for n, _ in rows})
+        listed = re.search(r'names\[\] = \{(.*?)\};', source, re.S).group(1)
+        self.assertEqual(sorted(re.findall(r'"(g31_\w+)"', listed)), names)
+        self.assertEqual(names, sorted(n[:-5] for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
+                                       if n.startswith('g31_')))
+
+        def flat(label):
+            return (int(label[1]) - 1) * 2 + 'ab'.index(label[2])
+        derived = {}
+        cants = sleeps = 0
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            bits = [0, 0, 0, 0]
+            for k, step in enumerate(trace['steps']):
+                for line in [l for l in step['log'] if not l.startswith('|split')]:
+                    part = line.split('|')
+                    if len(part) < 3:
+                        continue
+                    if part[1] == '-start' and part[3] == 'move: Taunt':
+                        bits[flat(part[2])] |= 1
+                    elif part[1] == '-end' and part[3] == 'move: Taunt':
+                        bits[flat(part[2])] &= ~1
+                    elif part[1] == '-start' and part[3] == 'move: Yawn':
+                        bits[flat(part[2])] |= 2
+                    elif part[1] == '-status' and part[3] == 'slp':
+                        self.assertEqual(len(part), 4, line)  # no [from]
+                        bits[flat(part[2])] &= ~2
+                        sleeps += 1
+                    elif part[1] == 'cant' and part[3] == 'move: Taunt':
+                        cants += 1
+                    elif part[1] in ('switch', 'faint', 'drag'):
+                        bits[flat(part[2])] = 0
+                derived[(name, k)] = tuple(bits)
+        self.assertEqual(rows, derived)
+        self.assertTrue(cants > 0 and sleeps > 0 and any(any(v) for v in derived.values()))
+
     def test_aurora_veil_rows_are_what_the_protocol_lines_say(self):
         """Decision 0018 section 6.1 for Aurora Veil: a side has the screen from the `|-sidestart|pN: X|move: Aurora Veil`
         line (5 turns, 8 when the user of the move holds Light Clay: the sheet, which is the spec's team text) and its turns
@@ -2071,7 +2122,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 143)  # the four of G39 (Charm, Fake Tears, Sacred Sword, Super Fang), the four of G29 (Trick, Switcheroo, Thief, Covet), Imprison (G38), the three of G33 (Dual Wingbeat, Triple Axel, Twin Beam), Perish Song (G26), the four of G25 (Electric Terrain, Misty Terrain, Rising Voltage, Terrain Pulse), Disable (G27), the ten of G35 (Thunder Punch, X-Scissor, Lumina Crash, Overdrive, Scorching Sands, Leaf Blade, Boomburst, Sludge Wave, Volt Tackle, Discharge), Toxic and Poison Fang (G36), the seven of G34 (Steel Roller, Clangorous Soul, Brick Break, Fiery Dance, Psycho Cut, Iron Defense, Electroweb), the eleven of G32, the ten of G30, the six of G28 (Shell Smash, Acrobatics, Blizzard, Ancient Power, Feint, Earthquake), the 27 of G21, Spiky Shield (G20), G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
+        self.assertEqual(len(marked), 145)  # Taunt and Yawn (G31), the four of G39 (Charm, Fake Tears, Sacred Sword, Super Fang), the four of G29 (Trick, Switcheroo, Thief, Covet), Imprison (G38), the three of G33 (Dual Wingbeat, Triple Axel, Twin Beam), Perish Song (G26), the four of G25 (Electric Terrain, Misty Terrain, Rising Voltage, Terrain Pulse), Disable (G27), the ten of G35 (Thunder Punch, X-Scissor, Lumina Crash, Overdrive, Scorching Sands, Leaf Blade, Boomburst, Sludge Wave, Volt Tackle, Discharge), Toxic and Poison Fang (G36), the seven of G34 (Steel Roller, Clangorous Soul, Brick Break, Fiery Dance, Psycho Cut, Iron Defense, Electroweb), the eleven of G32, the ten of G30, the six of G28 (Shell Smash, Acrobatics, Blizzard, Ancient Power, Feint, Earthquake), the 27 of G21, Spiky Shield (G20), G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []

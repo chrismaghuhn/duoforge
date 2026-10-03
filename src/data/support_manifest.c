@@ -143,6 +143,10 @@
  * Step G20 also marks Spiky Shield (Protect with a contact punishment, floor(max HP / 8) at the attacker; the variant is the tail's
  * protect_kind, tail rev 3). Baneful Bunker and King's Shield stay unmarked: their only learners (Toxapex, Aegislash) have no
  * supported ability, so no accepted battle could use them. Recorded as g20_spiky_shield_* under the POOL kind.
+ * Step G31 marks Taunt (the Status moves barred for 3 turns, 4 when the target has been out a turn and has no move queued:
+ * the request, the cant line with the new cause TAUNT, the end in the residual at order 15) and Yawn (the sleep at the end of
+ * the next turn: the residual pass at order 23, no end line), with the view bits 14 and 25 (volatiles TAUNT and YAWN, public),
+ * the new public values VOLATILE_TAUNT = 6 and VOLATILE_YAWN = 7 and CAUSE_TAUNT = 20. Recorded as g31_* under the POOL kind.
  * Step G24 (a Mega Stone batch) marks nine stones whose Mega ability and a base ability are marked and whose base forme has exactly
  * one Mega: Gardevoirite (Pixilate; the base forme's Trace has been marked since AC1: the Mega Evolution replaces the copied
  * ability), Abomasite (Snow Warning), Barbaracite (Tough Claws), Beedrillite (Adaptability), Falinksite (Defiant), Hawluchanite
@@ -346,6 +350,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_MISTYTERRAIN] = 1u,
             [DFI_MOVE_RISINGVOLTAGE] = 1u,
             [DFI_MOVE_TERRAINPULSE] = 1u,
+            [DFI_MOVE_TAUNT] = 1u,
+            [DFI_MOVE_YAWN] = 1u,
             /* Step G32: Eruption and Water Spout (power by the user's HP), Life Dew (the user and its ally), Body Press, Foul Play
              * and Psyshock (the stat overrides), Rain Dance and Sunny Day, Volt Switch (a pivot of its own), Clanging Scales (the
              * user's Defense falls after the hit) and Freeze-Dry (Water takes it super effective). */
@@ -608,5 +614,7 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TERRAIN_ELECTRIC) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TERRAIN_MISTY) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_PERISH) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_IMPRISON),
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_IMPRISON) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TAUNT) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_YAWN),
 };
