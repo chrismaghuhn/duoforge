@@ -1523,8 +1523,8 @@ static duoforge_status dfi_deal(dfi_run *r, uint32_t flat, uint32_t amount, uint
     return DUOFORGE_OK;
 }
 
-/* runStatusImmunity('psn') (Team C): a type whose chart entry carries the
- * psn key, Poison and Steel (data/typechart.ts). */
+/* runStatusImmunity('psn') (Team C; Toxic asks for 'psn' too, sim/pokemon.ts:1713): a type whose chart entry carries the
+ * psn key, Poison and Steel (data/typechart.ts). Corrosion (a Poison-type user's way past it) is not marked. */
 static bool dfi_poison_immune(const struct duoforge_battle *b, const dfi_member *m)
 {
     for (uint32_t type = 0u; type < DFI_TYPE_COUNT; ++type) {
@@ -1569,7 +1569,7 @@ static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status
     if ((status == DFI_STATUS_BRN && dfi_has_type(r->b, m, DFI_TYPE_FIRE)) ||
         (status == DFI_STATUS_PAR && dfi_has_type(r->b, m, DFI_TYPE_ELECTRIC)) ||
         (status == DFI_STATUS_FRZ && (dfi_has_type(r->b, m, DFI_TYPE_ICE) || r->b->weather == DFI_WEATHER_SUN)) ||
-        (status == DFI_STATUS_PSN && dfi_poison_immune(r->b, m))) {
+        ((status == DFI_STATUS_PSN || status == DFI_STATUS_TOX) && dfi_poison_immune(r->b, m))) {
         if (primary) {
             dfi_immune(r, flat, 0u);
         }
@@ -1609,7 +1609,7 @@ static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status
     } else if (status == DFI_STATUS_FRZ) {
         counter = 3u;
     }
-    m->status = (uint8_t)status;          /* <= DFI_STATUS_PSN */
+    m->status = (uint8_t)status;          /* <= DFI_STATUS_TOX */
     m->status_counter = (uint8_t)counter; /* <= 3 */
     /* [-status]; sleep says [from] move when a move is its source
      * (data/mods/champions/conditions.ts:13-20) */
@@ -3471,6 +3471,11 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     if (md->special == DFI_SPECIAL_BLIZZARD && b->weather == DFI_WEATHER_SNOW) {
         base_accuracy = 0u;
     }
+    /* Toxic never misses when its user is a Poison type (gen 8 on: the accuracy step and the invulnerability step,
+     * sim/battle-actions.ts:627 and :731; the move's accuracy is 90 otherwise, data/moves.ts:19733-19748). */
+    if (move_id == DFI_MOVE_TOXIC && dfi_has_type(b, m, DFI_TYPE_POISON)) {
+        base_accuracy = 0u;
+    }
     /* hitStepAccuracy's ModifyAccuracy event (sim/battle-actions.ts:711), before the stages: the attacker's Compound Eyes
      * (priority -1, 5325/4096, step G34, data/abilities.ts:666-677) and Wide Lens (priority -2, 4505/4096, data/items.ts:
      * 7713-7727) chain into one modifier that modifies a numeric accuracy (a move that never misses is `true`: untouched). */
@@ -4681,12 +4686,16 @@ static duoforge_status dfi_run_mega(dfi_run *r, const dfi_queue_record *q)
     b->tail.sides[q->side].soak_type[dfi_pos(b, flat)->occupant] = 0u;
     /* The Mega forme's ability replaces one that Trace copied (formeChange -> setAbility, sim/pokemon.ts:1487). */
     b->tail.sides[q->side].ability_now[dfi_pos(b, flat)->occupant] = 0u;
-    /* setAbility ends the old ability first (sim/pokemon.ts:1923): Unburden's onEnd removes its volatile
-     * (data/abilities.ts:5243-5245), which a holder of its own Mega Stone may have since a Knock Off (dfi_knock_off); no
-     * ability of a Mega forme in the pool is Unburden. */
+    /* setAbility ends the old ability first (sim/pokemon.ts:1923, singleEvent End), and of the abilities that the engine
+     * models three have an onEnd (data/abilities.ts; the Champions mod has none): Unburden's removes its volatile
+     * (:5243-5245; a holder of its own Mega Stone may have it since a Knock Off, dfi_knock_off), Flash Fire's removes the
+     * flashfire volatile (:1351-1353; a Trace holder that copied Flash Fire has it after a Fire move hit it, shown as
+     * `-end|X|ability: Flash Fire|[silent]`), and Unnerve's (:5265-5267) clears the `unnerved` flag of its ability state, which the
+     * engine does not keep (the foes' berries follow the ability that the holder has). Nothing else that the engine keeps
+     * on a position belongs to an ability, and no ability of a Mega forme in the pool is Unburden or Flash Fire. */
     {
         dfi_active_slot *mega_pos = dfi_pos(b, flat);
-        mega_pos->flags = (uint8_t)((uint32_t)mega_pos->flags & ~(uint32_t)DFI_VOL_UNBURDEN); /* wide-operands-reviewed */
+        mega_pos->flags = (uint8_t)((uint32_t)mega_pos->flags & ~((uint32_t)DFI_VOL_UNBURDEN | (uint32_t)DFI_VOL_FLASH_FIRE)); /* wide-operands-reviewed */
     }
     duoforge_event forme = dfi_event_make(DUOFORGE_EVENT_FORME, flat);
     forme.id = (uint16_t)dfi_mega_of(m->species_id, m->item); /* [detailschange]: < DFI_POOL_FORME_COUNT */
@@ -4866,7 +4875,8 @@ static duoforge_status dfi_residual_events(dfi_run *r)
         if (m->status == DFI_STATUS_BRN) {
             list[n] = (dfi_residual_entry){DFI_RES_BURN, flat, 10u, speed, 0u, true};
             n += 1u;
-        } else if (m->status == DFI_STATUS_PSN) {
+        } else if (m->status == DFI_STATUS_PSN || m->status == DFI_STATUS_TOX) {
+            /* psn and tox have the same handler order (9, data/conditions.ts:123-161) */
             list[n] = (dfi_residual_entry){DFI_RES_POISON, flat, 9u, speed, 0u, true};
             n += 1u;
         }
@@ -5043,8 +5053,20 @@ static duoforge_status dfi_residual_events(dfi_run *r)
             return DUOFORGE_E_INVARIANT;
         }
         const bool poison = e->kind == DFI_RES_POISON;
-        const uint32_t damage = (uint32_t)m->hp_max / (poison ? 8u : 16u);
-        st = dfi_deal(r, e->flat, damage == 0u ? 1u : damage, poison ? DUOFORGE_CAUSE_POISON : DUOFORGE_CAUSE_BURN, 0u,
+        uint32_t damage = (uint32_t)m->hp_max / (poison ? 8u : 16u);
+        damage = damage == 0u ? 1u : damage;
+        if (poison && m->status == DFI_STATUS_TOX) {
+            /* tox (data/conditions.ts:138-161): the stage goes up first (to 15 at most), then the damage is
+             * clampIntRange(baseMaxhp / 16, 1) * stage; the stage is the tail's, zero at the status's start and after a
+             * switch-in (onSwitchIn). */
+            uint8_t *stage = &b->tail.sides[e->flat / 2u].toxic_stage[dfi_pos(b, e->flat)->occupant];
+            if (*stage < DFI_TAIL_TOXIC_STAGE_MAX) {
+                *stage = (uint8_t)((uint32_t)*stage + 1u); /* wide-operands-reviewed: < 15 */
+            }
+            damage = (uint32_t)m->hp_max / 16u;
+            damage = (damage == 0u ? 1u : damage) * (uint32_t)*stage; /* wide-operands-reviewed: <= 15 * hp_max */
+        }
+        st = dfi_deal(r, e->flat, damage, poison ? DUOFORGE_CAUSE_POISON : DUOFORGE_CAUSE_BURN, 0u,
                       DUOFORGE_NO_POSITION);
         if (st != DUOFORGE_OK) {
             return st;

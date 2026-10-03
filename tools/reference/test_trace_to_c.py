@@ -876,6 +876,66 @@ class Library(unittest.TestCase):
         self.assertEqual(rows, derived)
         self.assertTrue(any(any(v) for v in derived.values()) and punished > 0 and stopped_without > 0)
 
+    def test_toxic_rows_are_what_the_protocol_lines_say(self):
+        """Decision 0015 section 7 for the toxic stage (step G36): the occupant of a position is badly poisoned from the
+        `|-status|X|tox` line until it faints (the status stays through a switch-out), and its stage (the tail's toxic_stage)
+        is the number of `|-damage|X|HP tox|[from] psn` events since that line or since it last switched in (the stage
+        starts again: tox's onSwitchIn), at most 15. The rows of the C test (rows in tests/test_pool_g36.c: bit 8 the status,
+        the low byte the stage, of the four positions after each step) must be exactly that for the committed traces. The
+        residual damage of tox names psn as its source, so no new cause exists, and the HP field carries the status tox."""
+        self.assertEqual(trace_to_c.STATUS['tox'], 6)
+        self.assertEqual(trace_to_c.AILMENT['tox'], 6)
+        with open(os.path.join(ROOT, 'tests', 'test_pool_g36.c'), encoding='utf-8') as f:
+            source = f.read()
+        rows = {}
+        for m in re.finditer(r'\{"(g36_\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}', source):
+            rows[(m.group(1), int(m.group(2)))] = tuple(int(m.group(i)) for i in range(3, 7))
+        names = sorted({n for n, _ in rows})
+        listed = re.search(r'names\[\] = \{(.*?)\};', source, re.S).group(1)
+        self.assertEqual(sorted(re.findall(r'"(g36_\w+)"', listed)), names)
+        self.assertEqual(names, sorted(n[:-5] for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
+                                       if n.startswith('g36_')))
+
+        def flat(label):
+            return (int(label[1]) - 1) * 2 + 'ab'.index(label[2])
+        derived = {}
+        damages = 0
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            occupant, tox, stage = {}, set(), {}
+            for k, step in enumerate(trace['steps']):
+                prev = None
+                for line in [l for l in step['log'] if not l.startswith('|split')]:
+                    part = line.split('|')
+                    dup = prev is not None and prev[1:3] == part[1:3] and len(part) > 1 and part[1] == '-damage'
+                    prev = part
+                    if dup or len(part) < 3:
+                        continue  # the percentage line of the same event
+                    key = None
+                    if part[1] in ('switch', 'drag'):
+                        occupant[flat(part[2])] = part[2].split(': ')[1]
+                        stage[(flat(part[2]) // 2, occupant[flat(part[2])])] = 0
+                    elif part[1] == '-status' and part[3] == 'tox':
+                        key = (flat(part[2]) // 2, part[2].split(': ')[1])
+                        tox.add(key)
+                        stage[key] = 0
+                    elif part[1] == '-damage' and len(part) > 4 and part[4] == '[from] psn' and ' tox' in part[3]:
+                        key = (flat(part[2]) // 2, part[2].split(': ')[1])
+                        stage[key] = min(stage.get(key, 0) + 1, 15)
+                        damages += 1
+                    elif part[1] == 'faint':
+                        key = (flat(part[2]) // 2, part[2].split(': ')[1])
+                        tox.discard(key)
+                        stage[key] = 0
+                row = []
+                for f in range(4):
+                    key = (f // 2, occupant.get(f))
+                    row.append(((1 if key in tox else 0) << 8) | stage.get(key, 0))
+                derived[(name, k)] = tuple(row)
+        self.assertEqual(rows, derived)
+        self.assertTrue(damages > 0 and any(v & 255 >= 3 for r in derived.values() for v in r))
+
     def test_aurora_veil_rows_are_what_the_protocol_lines_say(self):
         """Decision 0018 section 6.1 for Aurora Veil: a side has the screen from the `|-sidestart|pN: X|move: Aurora Veil`
         line (5 turns, 8 when the user of the move holds Light Clay: the sheet, which is the spec's team text) and its turns
@@ -1493,7 +1553,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 123)  # the ten of G35 (Thunder Punch, X-Scissor, Lumina Crash, Overdrive, Scorching Sands, Leaf Blade, Boomburst, Sludge Wave, Volt Tackle, Discharge), the seven of G34 (Steel Roller, Clangorous Soul, Brick Break, Fiery Dance, Psycho Cut, Iron Defense, Electroweb), the eleven of G32, the ten of G30, the six of G28 (Shell Smash, Acrobatics, Blizzard, Ancient Power, Feint, Earthquake), the 27 of G21, Spiky Shield (G20), G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
+        self.assertEqual(len(marked), 125)  # the ten of G35 (Thunder Punch, X-Scissor, Lumina Crash, Overdrive, Scorching Sands, Leaf Blade, Boomburst, Sludge Wave, Volt Tackle, Discharge), Toxic and Poison Fang (G36), the seven of G34 (Steel Roller, Clangorous Soul, Brick Break, Fiery Dance, Psycho Cut, Iron Defense, Electroweb), the eleven of G32, the ten of G30, the six of G28 (Shell Smash, Acrobatics, Blizzard, Ancient Power, Feint, Earthquake), the 27 of G21, Spiky Shield (G20), G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []

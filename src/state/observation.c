@@ -71,7 +71,7 @@ _Static_assert(offsetof(duoforge_observation, turn) == 8u, "observation layout: 
 _Static_assert(offsetof(duoforge_observation, sides) == 16u, "observation layout: sides");
 _Static_assert(DUOFORGE_AILMENT_BURN == DFI_STATUS_BRN && DUOFORGE_AILMENT_FREEZE == DFI_STATUS_FRZ &&
                    DUOFORGE_AILMENT_PARALYSIS == DFI_STATUS_PAR && DUOFORGE_AILMENT_SLEEP == DFI_STATUS_SLP &&
-                   DUOFORGE_AILMENT_POISON == DFI_STATUS_PSN,
+                   DUOFORGE_AILMENT_POISON == DFI_STATUS_PSN && DUOFORGE_AILMENT_TOX == DFI_STATUS_TOX,
                "public ailments are the internal statuses");
 _Static_assert(DUOFORGE_WEATHER_RAIN == DFI_WEATHER_RAIN && DUOFORGE_WEATHER_SUN == DFI_WEATHER_SUN &&
                    DUOFORGE_WEATHER_SAND == DFI_WEATHER_SAND && DUOFORGE_WEATHER_SNOW == DFI_WEATHER_SNOW &&

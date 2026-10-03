@@ -968,11 +968,19 @@ class G13Rows(unittest.TestCase):
                 with self.assertRaises(SystemExit) as cm:
                     parse_pool('poisonjab', POISON_JAB, pool=False, ext=ext)
                 self.assertEqual(cm.exception.code, 'gen_closure: move poisonjab: secondary status psn is not modelled')
-        # Anything else that the tables lack stays unmodelled (there is no toxic source).
+        # Badly poisoned is the pool's alone (step G36); a status that the tables lack stays unmodelled.
+        rec = parse_pool('poisonjab', POISON_JAB.replace("'psn'", "'tox'"))
+        self.assertEqual((rec['sec_chance'], rec['sec_kind'], rec['sec_param']), (30, 2, gen_closure.STATUS_P['tox']))
+        self.assertEqual(gen_closure.STATUS_P['tox'], 6)
+        for ext in (False, True):
+            with self.subTest(ext=ext):
+                with self.assertRaises(SystemExit) as cm:
+                    parse_pool('poisonjab', POISON_JAB.replace("'psn'", "'tox'"), pool=False, ext=ext)
+                self.assertEqual(cm.exception.code, 'gen_closure: move poisonjab: secondary status tox is not modelled')
         features = []
-        base = TextSource('data/moves.ts', POISON_JAB.replace("'psn'", "'tox'"))
+        base = TextSource('data/moves.ts', POISON_JAB.replace("'psn'", "'frostbite'"))
         gen_closure.parse_move('poisonjab', base, TextSource('data/mods/champions/moves.ts', ''), True, True, features)
-        self.assertEqual(features, ['secondary status tox'])
+        self.assertEqual(features, ['secondary status frostbite'])
 
 
 # ---- the whole legal pool (decision 0015 section 4.2): the lenient mode and what the tables model ----
@@ -1039,7 +1047,7 @@ class LenientMoves(unittest.TestCase):
             ('field multihit', with_line(PLAIN, 'multihit: 2,')),
             ('field ohko', with_line(PLAIN, 'ohko: true,')),
             ('condition block', with_line(PLAIN, 'condition: { },')),
-            ('primary status tox', with_line(PLAIN, "status: 'tox',")),
+            ('primary status frostbite', with_line(PLAIN, "status: 'frostbite',")),
             ('primary volatile confusion', with_line(PLAIN, "volatileStatus: 'confusion',")),
             ('side condition toxicspikes', with_line(PLAIN, "sideCondition: 'toxicspikes',")),
             ('pseudo weather gravity', with_line(PLAIN, "pseudoWeather: 'gravity',")),
@@ -1055,9 +1063,9 @@ class LenientMoves(unittest.TestCase):
                 self.assertEqual(features, [feature], text)
 
     def test_every_unmodelled_feature_of_a_move_is_listed(self):
-        text = with_line(PLAIN, "multihit: 2,\n\t\tonHit() { },\n\t\tcondition: { },\n\t\tstatus: 'tox',")
+        text = with_line(PLAIN, "multihit: 2,\n\t\tonHit() { },\n\t\tcondition: { },\n\t\tstatus: 'frostbite',")
         _rec, features = lenient('plain', text)
-        self.assertEqual(features, ['callback onHit', 'condition block', 'field multihit', 'primary status tox'])
+        self.assertEqual(features, ['callback onHit', 'condition block', 'field multihit', 'primary status frostbite'])
 
     def test_a_target_class_is_encoded_and_unmodelled_when_the_turn_code_lacks_it(self):
         # allAdjacent (Earthquake) is a class of the pool, code 11, which the turn code has since step G28, and allies (Life

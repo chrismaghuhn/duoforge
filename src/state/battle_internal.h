@@ -225,9 +225,8 @@ typedef struct dfi_side {
 /* rev 2, per roster member */
 #define DFI_TAIL_ITEM_NONE 255u       /* item_now: the member holds nothing (0 = as the member says, 1..254 = item id + 1) */
 #define DFI_TAIL_TOXIC_STAGE_MAX 15u  /* the toxic counter stops at 15 */
-#define DFI_TAIL_TOXIC_STATUS 6u      /* DUOFORGE_AILMENT_TOX: the status that a toxic stage needs. No state has it yet (the
-                                       * status bound of every kind is below it), so no stage is valid until the step
-                                       * that makes Toxic raises that bound. */
+#define DFI_TAIL_TOXIC_STATUS 6u      /* DUOFORGE_AILMENT_TOX (DFI_STATUS_TOX): the status that a toxic stage needs. POOL only (the
+                                       * status bound of the other kinds is below it, step G36). */
 
 typedef struct dfi_tail_pos {
     uint16_t substitute_hp;    /* 0 = no Substitute, else its HP (at most a quarter of the occupant's maximum HP) */
