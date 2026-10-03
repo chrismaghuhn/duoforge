@@ -76,15 +76,28 @@ def split_key(sheets):
     return int.from_bytes(digest[:8], "little") % SPLIT_BUCKETS == 0
 
 
+def _pack(a):
+    """(N, ...) bool -> (N, bytes) u8, little bit order."""
+    return np.packbits(np.asarray(a, dtype=bool).reshape(len(a), -1), axis=1, bitorder="little")
+
+
+def _unpack(bits, shape):
+    n = len(bits)
+    count = int(np.prod(shape))
+    return np.unpackbits(bits, axis=1, count=count, bitorder="little").astype(bool).reshape((n,) + shape)
+
+
 @dataclass
 class Rows:
-    """Training rows, one per shard row (N). obs, slots and mask are features.encode_batch's."""
+    """Training rows, one per shard row (N). obs, slots and the pair mask are features.encode_batch's. The three bool
+    masks are kept bit-packed (1.1 million M-C and M-B rows must fit in memory) and read through mask, label_pairs and
+    label_team."""
     obs: np.ndarray          # (N, OBS_SIZE) f32
     slots: np.ndarray        # (N, 2, 32, 12) f32
-    mask: np.ndarray         # (N, 32, 32) bool, the pair mask
+    mask_bits: np.ndarray    # (N, 128) u8: the pair mask (N, 32, 32)
     is_team: np.ndarray      # (N,) bool
-    label_pairs: np.ndarray  # (N, 32, 32) bool, the label set of a decision (False for a team row)
-    label_team: np.ndarray   # (N, 360) bool, the label set of a team selection (False for a decision)
+    pair_bits: np.ndarray    # (N, 128) u8: the label set of a decision (N, 32, 32), empty for a team row
+    team_bits: np.ndarray    # (N, 45) u8: the label set of a team selection (N, 360), empty for a decision
     reason: np.ndarray       # (N, 2) u8, the labels.* reason per slot
     z: np.ndarray            # (N,) f32, +1 won / -1 lost / 0 no winner
     has_z: np.ndarray        # (N,) bool
@@ -94,6 +107,23 @@ class Rows:
     fmt: np.ndarray          # (N,) str, the format id
     replay: np.ndarray       # (N,) str, the replay id (for errors)
     point: np.ndarray        # (N,) u16
+
+    @classmethod
+    def from_arrays(cls, mask, label_pairs, label_team, **rest):
+        """Rows of unpacked bool masks."""
+        return cls(mask_bits=_pack(mask), pair_bits=_pack(label_pairs), team_bits=_pack(label_team), **rest)
+
+    @property
+    def mask(self):
+        return _unpack(self.mask_bits, (OPTIONS, OPTIONS))
+
+    @property
+    def label_pairs(self):
+        return _unpack(self.pair_bits, (OPTIONS, OPTIONS))
+
+    @property
+    def label_team(self):
+        return _unpack(self.team_bits, (TEAMS,))
 
     def take(self, index):
         return Rows(**{f.name: getattr(self, f.name)[index] for f in fields(self)})
@@ -125,20 +155,39 @@ def _format_weight(fmt, format_weights):
     return 1.0
 
 
+def _shard_rows(out):
+    """The number of rows of every finished part's shards (their manifests)."""
+    return sum(s["rows"] for part in dataset.parts(out)
+               for s in json.loads((Path(part) / "manifest.json").read_text(encoding="utf-8"))["shards"])
+
+
 def load(dirs, context, mask, format_weights=None, weights="rating"):
-    """The Rows of every shard of the datasets `dirs`, encoded under `mask`. weights: "rating" (rating_weight) or
-    "uniform"; format_weights: {format prefix: factor}."""
+    """The Rows of every shard of the datasets `dirs`, encoded under `mask`, into arrays allocated once (no copy of
+    the whole set). weights: "rating" (rating_weight) or "uniform"; format_weights: {format prefix: factor}."""
     if weights not in ("rating", "uniform"):
         raise ValueError(f"weights must be 'rating' or 'uniform', not {weights!r}")
-    chunks = []
     for out in dirs:
         _check_dataset(out, context)
+    n = sum(_shard_rows(out) for out in dirs)
+    if n == 0:
+        raise ValueError(f"no rows in {list(map(str, dirs))}")
+    rows = Rows(obs=np.empty((n, features.OBS_SIZE), np.float32),
+                slots=np.empty((n, 2, OPTIONS, features.SLOT_FEATURES), np.float32),
+                mask_bits=np.empty((n, OPTIONS * OPTIONS // 8), np.uint8), is_team=np.empty(n, bool),
+                pair_bits=np.empty((n, OPTIONS * OPTIONS // 8), np.uint8), team_bits=np.empty((n, 45), np.uint8),
+                reason=np.empty((n, 2), np.uint8), z=np.empty(n, np.float32), has_z=np.empty(n, bool),
+                weight=np.empty(n, np.float32), val=np.empty(n, bool), side=np.empty(n, np.uint8),
+                fmt=np.empty(n, object), replay=np.empty(n, object), point=np.empty(n, np.uint16))
+    at = 0
+    for out in dirs:
         games_of = {}
         for shard in dataset.read(out):
             part = shard["part"]
             if part not in games_of:
                 games_of[part] = dataset.read_games(Path(out) / part)
             g = games_of[part]
+            k = len(shard["game"])
+            sl = slice(at, at + k)
             game, side = shard["game"].astype(np.int64), shard["side"].astype(np.int64)
             obs, slots, pair_mask = features.encode_batch(shard["observation"], shard["domain"], ext=None,
                                                           ext_supported=mask)
@@ -146,31 +195,34 @@ def load(dirs, context, mask, format_weights=None, weights="rating"):
             pairs = (_bits(shard["label_slots"][:, 0], OPTIONS)[:, :, None]
                      & _bits(shard["label_slots"][:, 1], OPTIONS)[:, None, :] & pair_mask)
             pairs[is_team] = False
-            team = np.unpackbits(shard["label_team"], axis=1, bitorder="little")[:, :TEAMS].astype(bool)
-            team[~is_team] = False
+            team = shard["label_team"].copy()
+            team[~is_team] = 0
             winner = g["winner"][game].astype(np.int64)
             has_z = winner >= 0
-            z = np.where(~has_z, 0.0, np.where(winner == side, 1.0, -1.0)).astype(np.float32)
             fmt = g["format_id"][game]
             rating = g["ratings"][game, side]
-            w = np.array([(rating_weight(int(r)) if weights == "rating" else 1.0) * _format_weight(f, format_weights)
-                          for r, f in zip(rating, fmt)], dtype=np.float32)
-            val = np.array([split_key(g["sheets"][i]) for i in game], dtype=bool)
-            chunks.append(Rows(obs=obs.astype(np.float32), slots=slots.astype(np.float32), mask=pair_mask,
-                               is_team=is_team, label_pairs=pairs, label_team=team,
-                               reason=shard["label_reason"].astype(np.uint8), z=z, has_z=has_z, weight=w,
-                               val=val, side=shard["side"].astype(np.uint8), fmt=fmt,
-                               replay=g["replay_id"][game], point=shard["point"].astype(np.uint16)))
-    if not chunks:
-        raise ValueError(f"no rows in {list(map(str, dirs))}")
-    return Rows(**{f.name: np.concatenate([getattr(c, f.name) for c in chunks]) for f in fields(Rows)})
+            rows.obs[sl], rows.slots[sl] = obs, slots
+            rows.mask_bits[sl], rows.pair_bits[sl], rows.team_bits[sl] = _pack(pair_mask), _pack(pairs), team
+            rows.is_team[sl], rows.reason[sl] = is_team, shard["label_reason"]
+            rows.has_z[sl] = has_z
+            rows.z[sl] = np.where(~has_z, 0.0, np.where(winner == side, 1.0, -1.0))
+            rows.weight[sl] = [(rating_weight(int(r)) if weights == "rating" else 1.0)
+                               * _format_weight(f, format_weights) for r, f in zip(rating, fmt)]
+            rows.val[sl] = [split_key(g["sheets"][i]) for i in game]
+            rows.side[sl], rows.fmt[sl], rows.replay[sl] = shard["side"], fmt, g["replay_id"][game]
+            rows.point[sl] = shard["point"]
+            at += k
+    if at != n:
+        raise ValueError(f"the manifests name {n} rows, the shards hold {at}")
+    rows.fmt, rows.replay = rows.fmt.astype(str), rows.replay.astype(str)
+    return rows
 
 
 def check_labels(rows):
     """ValueError naming the first row whose label set is empty (a decision without a pair inside its pair mask, a
     team selection without a tuple): the labeler guarantees the logged choice is inside, so an empty set is a bug,
     never a row to train on with -log 0."""
-    empty = np.where(rows.is_team, ~rows.label_team.any(axis=1), ~rows.label_pairs.reshape(len(rows), -1).any(axis=1))
+    empty = np.where(rows.is_team, ~rows.team_bits.any(axis=1), ~rows.pair_bits.any(axis=1))
     if empty.any():
         i = int(np.flatnonzero(empty)[0])
         raise ValueError(f"replay {rows.replay[i]} point {int(rows.point[i])} side {int(rows.side[i])}: an empty label "

@@ -104,7 +104,7 @@ def _rows(args, context, mask, dirs, format_weights):
     from . import bc_data
     if args.cache is None:
         return bc_data.load(dirs, context, mask, format_weights, args.weights)
-    key = hashlib.sha256(json.dumps([_dataset_key(dirs), mask, args.weights, format_weights],
+    key = hashlib.sha256(json.dumps(["rows-v2", _dataset_key(dirs), mask, args.weights, format_weights],
                                     sort_keys=True).encode()).hexdigest()[:24]
     path = Path(args.cache) / f"bc-rows-{key}.npz"
     if path.exists():

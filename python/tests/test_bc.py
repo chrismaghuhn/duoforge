@@ -32,7 +32,7 @@ def _rows(n_decisions, n_teams, rng, forced_first=False):
     for i in np.flatnonzero(is_team):
         team[i, rng.integers(360)] = True
     reason = np.full((n, 2), labels.EXACT, dtype=np.uint8)
-    return bc_data.Rows(obs=np.zeros((n, 1), np.float32), slots=np.zeros((n, 1), np.float32), mask=mask,
+    return bc_data.Rows.from_arrays(obs=np.zeros((n, 1), np.float32), slots=np.zeros((n, 1), np.float32), mask=mask,
                         is_team=is_team, label_pairs=pairs, label_team=team, reason=reason,
                         z=rng.choice([-1.0, 1.0], n).astype(np.float32), has_z=rng.random(n) < 0.8,
                         weight=rng.random(n).astype(np.float32) + 0.25, val=np.zeros(n, bool),
@@ -84,7 +84,7 @@ class LossTest(unittest.TestCase):
     def test_empty_label_set_raises(self):
         rng = np.random.default_rng(13)
         rows = _rows(3, 1, rng)
-        rows.label_pairs[1] = False
+        rows.pair_bits[1] = 0
         with self.assertRaises(ValueError) as caught:
             bc_data.check_labels(rows)
         self.assertIn("r1", str(caught.exception))

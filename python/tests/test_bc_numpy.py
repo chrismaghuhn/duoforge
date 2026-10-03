@@ -130,6 +130,17 @@ class BcDataTest(unittest.TestCase):
             self.assertTrue(np.array_equal(r.label_pairs[i], expected), i)
             self.assertTrue(r.label_pairs[i].any(), i)  # the logged choice is inside the set
 
+    def test_rows_are_packed(self):
+        # 1.1 million M-C and M-B rows must fit: the three bool masks are kept bit-packed, unpacked on access
+        r = self.rows
+        n = len(r)
+        self.assertEqual((r.mask_bits.dtype, r.mask_bits.shape), (np.uint8, (n, 128)))
+        self.assertEqual((r.pair_bits.shape, r.team_bits.shape), ((n, 128), (n, 45)))
+        self.assertEqual((r.mask.shape, r.label_pairs.shape, r.label_team.shape), ((n, 32, 32), (n, 32, 32), (n, 360)))
+        part = r.take(np.array([2, 0]))
+        self.assertTrue(np.array_equal(part.label_pairs, r.label_pairs[[2, 0]]))
+        self.assertTrue(np.array_equal(part.mask, r.mask[[2, 0]]))
+
     def test_value_targets(self):
         from duoforge_replay import dataset
         r = self.rows
