@@ -275,6 +275,31 @@ class LeagueJaxTest(unittest.TestCase):
         self.assertGreater(int((want_a != want_b).sum()), obs.shape[0] // 4)
         np.testing.assert_array_equal(got, np.where(slot == 0, want_a, want_b))
 
+    def test_bfloat16_opponents_choose_as_float32(self):
+        # The opponents' matrix products in bfloat16 (jax.default_matmul_precision) leave the ids, the masks and
+        # the sampling in float32: with peaked scores every row chooses as under float32, and an unknown precision
+        # is refused.
+        import jax
+        from duoforge_learn import league
+        _, turn = _scenes()
+        obs, slots, mask = turn
+        is_team = np.zeros(obs.shape[0], dtype=bool)
+        m = policy.make(policy.v2_config("S", hidden=32))
+        a, b = m.init(jax.random.PRNGKey(10)), m.init(jax.random.PRNGKey(11))
+        a["option_out"]["w"] = a["option_out"]["w"] * 1e4
+        b["option_out"]["w"] = a["option_out"]["w"] * -1.0
+        slot = np.arange(obs.shape[0]) % 2
+        key = jax.random.PRNGKey(12)
+        got = {}
+        for precision in ("float32", "bfloat16"):
+            opp = league.Opponents(m, 2, precision=precision)
+            opp.set(0, a)
+            opp.set(1, b)
+            got[precision] = opp.act(key, obs, slots, mask, is_team, slot)
+        np.testing.assert_array_equal(got["bfloat16"], got["float32"])
+        with self.assertRaisesRegex(ValueError, "precision"):
+            league.Opponents(m, 2, precision="float16")
+
     def test_training_with_league_excludes_opponent_rows(self):
         import json
         import os
@@ -480,6 +505,14 @@ class ResumeTest(unittest.TestCase):
         runstate.save_state(self.out, state)
         with self.assertRaisesRegex(SystemExit, "no id tables"):
             _run(["--resume", self.out, "--updates", "3"])
+
+    def test_opponent_precision_is_resumable(self):
+        # bfloat16 opponents train end to end, and a resume may switch the precision (logged as a change).
+        self.assertEqual(_run(["--envs", "8", "--updates", "1", "--out", self.out, "--opponent-precision",
+                               "bfloat16"] + _SMALL), 0)
+        self.assertEqual(_run(["--resume", self.out, "--updates", "2", "--opponent-precision", "float32"]), 0)
+        resume = [r for r in _log(self.out) if "resume" in r][-1]["resume"]
+        self.assertEqual(resume["opponent_precision"], ["bfloat16", "float32"])
 
     def test_refused_option_names_itself(self):
         self.assertEqual(_run(["--envs", "8", "--updates", "1", "--out", self.out] + _SMALL), 0)
