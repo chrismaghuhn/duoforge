@@ -2137,7 +2137,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   keeneye -- data/abilities.ts:2260-2277  [unmodelled: callback onModifyMove; callback onTryBoost]
  *   klutz -- data/abilities.ts:2278-2290  [unmodelled: callback onStart; callback onSwitchInPriority; read by id in sim/pokemon.ts]
  *   leafguard -- data/abilities.ts:2291-2310  [unmodelled: callback onSetStatus; callback onTryAddVolatile]
- *   levitate -- data/abilities.ts:2311-2317  [unmodelled: read by id in data/moves.ts; read by id in sim/pokemon.ts]
+ *   levitate -- data/abilities.ts:2311-2317
  *   libero -- data/abilities.ts:2318-2333  [unmodelled: callback onPrepareHit]
  *   lightmetal -- data/abilities.ts:2334-2342  [unmodelled: callback onModifyWeight]
  *   limber -- data/abilities.ts:2368-2386  [unmodelled: callback onSetStatus; callback onUpdate]
@@ -2916,7 +2916,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_KEENEYE] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_KLUTZ] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_LEAFGUARD] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_LEVITATE] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_LEVITATE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_LIBERO] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_LIGHTMETAL] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_LIMBER] = DFI_HANDLER_UNMODELED,
@@ -7096,7 +7096,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_KEENEYE] = "callback onModifyMove; callback onTryBoost",
     [DFI_ABILITY_KLUTZ] = "callback onStart; callback onSwitchInPriority; read by id in sim/pokemon.ts",
     [DFI_ABILITY_LEAFGUARD] = "callback onSetStatus; callback onTryAddVolatile",
-    [DFI_ABILITY_LEVITATE] = "read by id in data/moves.ts; read by id in sim/pokemon.ts",
     [DFI_ABILITY_LIBERO] = "callback onPrepareHit",
     [DFI_ABILITY_LIGHTMETAL] = "callback onModifyWeight",
     [DFI_ABILITY_LIMBER] = "callback onSetStatus; callback onUpdate",
@@ -7209,10 +7208,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x59u, 0x53u, 0x9du, 0x63u, 0x88u, 0xfeu, 0x50u, 0xd1u,
-    0x7fu, 0x34u, 0x7au, 0x66u, 0x4au, 0x37u, 0xe8u, 0x05u,
-    0x7eu, 0xecu, 0xafu, 0x90u, 0xd8u, 0x5bu, 0x93u, 0xeeu,
-    0x63u, 0x08u, 0xe7u, 0x2fu, 0xd2u, 0x66u, 0x56u, 0xd1u,
+    0xf3u, 0x9eu, 0x6fu, 0xfau, 0x15u, 0x60u, 0x33u, 0x8fu,
+    0x86u, 0x4cu, 0xc2u, 0x9bu, 0x1bu, 0x11u, 0x85u, 0x8bu,
+    0xf4u, 0xdbu, 0xefu, 0x48u, 0x61u, 0xfau, 0x1au, 0x72u,
+    0x2du, 0xecu, 0xdbu, 0xadu, 0xd2u, 0x9cu, 0x79u, 0x7eu,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)
