@@ -118,9 +118,11 @@ static bool play_alike(df_test *t, const duoforge_context *ctx, duoforge_batch *
         }
         for (uint32_t at = 0u; at < SLOTS; ++at) {
             const uint64_t r = next(&policy);
-            indices[at] = a_arr.requests[at].requested != 0u && a_arr.counts[at] > 0u
-                              ? (uint16_t)(r % a_arr.counts[at])
-                              : DUOFORGE_BATCH_NO_CHOICE;
+            if (a_arr.requests[at].requested != 0u && a_arr.counts[at] > 0u) {
+                indices[at] = (uint16_t)(r % a_arr.counts[at]); /* < counts <= DUOFORGE_MAX_CANDIDATES */
+            } else {
+                indices[at] = (uint16_t)DUOFORGE_BATCH_NO_CHOICE;
+            }
         }
         (void)duoforge_batch_step_indices(a, a_arr.requests, a_arr.candidates, a_arr.counts, indices, a_arr.statuses,
                                           a_arr.results);
