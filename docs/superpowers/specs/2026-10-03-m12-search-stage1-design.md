@@ -221,8 +221,11 @@ The leaves are not stepped further. A PIVOT leaf is mid-turn; how often leaves a
 ### 5.5 The reductions
 
 - **Nash (main rule, agent N):**
-  - The table is solved as a zero-sum matrix game by an exact linear program, in NumPy with float64: a small dense simplex with Bland's rule. No new dependency.
-  - **Certificate:** the exploitability max_i (A y)_i − min_j (xᵀA)_j of the solution (x, y) must be at most 1e-9. Otherwise the run stops and writes the table.
+  - The table is solved as a zero-sum matrix game by an exact linear program, in NumPy with float64: a small dense simplex with Bland's rule, on the table scaled to its range. Its final basis is solved again from the table. No new dependency, and no BLAS or LAPACK: every product and sum runs in a fixed order, so the result does not depend on the machine's linear algebra library.
+  - **Exact rescue:** if the float simplex fails or misses the certificate, the same simplex runs in exact rational arithmetic. Rounding on near-duplicate rows causes this: 4 of 20,000 random tables with such rows needed it (measured while answering the review of #199). The record says which path decided.
+  - **Certificate:** the exploitability max_i (A y)_i − min_j (xᵀA)_j of the solution (x, y) must be at most 1e-9. Where the table's range is below 1, it must also be at most 1e-9 times that range, so a flat table cannot pass wrong strategies. Otherwise the run stops and writes the table.
+  - **The value:** the midpoint of min_j (xᵀA)_j and max_i (A y)_i, the interval the certificate bounds.
+  - **Rows and columns in prior-rank order:** where a table has several equilibria, which one is returned follows that order. A constant table plays the first row.
   - **The move:** drawn from x by the decision's play seed (section 6). Probabilities below 1e-9 count as 0; the rest is renormalized.
 - **Expected value (agent E):**
   - The own pair with the highest Σ_j q_j A[i, j].
