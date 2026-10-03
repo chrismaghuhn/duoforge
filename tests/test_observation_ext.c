@@ -182,6 +182,7 @@ static void test_constants(df_test *t)
                      ((uint64_t)1u << 39u) | /* step G30: Rage Powder (bit 39) */
                      ((uint64_t)1u << 10u) | /* step G36: the ailment Tox (bit 10) */
                      ((uint64_t)1u << 21u) | /* step G27: Disable (bit 21) */
+                     ((uint64_t)1u << 5u) | ((uint64_t)1u << 32u) | /* step G25: the terrain values Electric (bit 5) and Misty (bit 32) */
                      ((uint64_t)1u << 4u))); /* step G26: Perish (bit 4) */
 }
 

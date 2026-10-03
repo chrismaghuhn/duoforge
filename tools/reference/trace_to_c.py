@@ -624,7 +624,7 @@ def drop_reason(d, state, after=None, log=None):
 
 
 # The items and abilities whose each-event handlers (Update, TerrainChange, Weather: Rain Dish, step G35) act on their holder alone.
-EACH_HANDLERS = frozenset(('sitrusberry', 'grassyseed', 'psychicseed', 'raindish'))
+EACH_HANDLERS = frozenset(('sitrusberry', 'grassyseed', 'psychicseed', 'electricseed', 'mistyseed', 'raindish'))
 
 
 def site_of(d):
@@ -751,8 +751,10 @@ STATUS = {'': 0, 'brn': 1, 'frz': 2, 'par': 3, 'slp': 4, 'psn': 5, 'tox': 6, 'fn
 WEATHER = {'': 0, 'raindance': 1, 'sunnyday': 2, 'sandstorm': 3, 'snowscape': 4}
 WEATHER_LINE = {'none': 0, 'RainDance': 1, 'SunnyDay': 2, 'Sandstorm': 3, 'Snowscape': 4}  # the names of -weather lines
 WEATHER_CAUSE = {'Sandstorm': 3}  # [from] <weather>: the residual damage of a weather (cause WEATHER, id2 = its value)
-TERRAIN = {'': 0, 'grassyterrain': 1, 'psychicterrain': 2}
+TERRAIN = {'': 0, 'grassyterrain': 1, 'psychicterrain': 2, 'electricterrain': 3, 'mistyterrain': 4}  # DFI_TERRAIN_* (3 and 4: POOL, step G25)
 FIELD_PSYCHIC_TERRAIN = 3  # DUOFORGE_FIELD_PSYCHIC_TERRAIN (Team C)
+FIELD_ELECTRIC_TERRAIN = 4  # DUOFORGE_FIELD_ELECTRIC_TERRAIN (POOL, step G25)
+FIELD_MISTY_TERRAIN = 5  # DUOFORGE_FIELD_MISTY_TERRAIN (POOL, step G25)
 BLOCK_WIDE_GUARD = 4  # DUOFORGE_BLOCK_WIDE_GUARD (POOL), a detail of BLOCKED
 RESULT = {'p1': 1, 'p2': 2, '': 3}
 
@@ -1178,7 +1180,13 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                          flags=FLAG['UPKEEP'] if '[upkeep]' in attrs else 0)
         elif kind in ('-fieldstart', '-fieldend'):
             cause, id2, other = ev_cause(attrs, tables)
-            field = {'move: Grassy Terrain': 1, 'move: Trick Room': 2, 'move: Psychic Terrain': FIELD_PSYCHIC_TERRAIN}[args[0]]
+            names = {'move: Grassy Terrain': 1, 'move: Trick Room': 2, 'move: Psychic Terrain': FIELD_PSYCHIC_TERRAIN,
+                     'move: Electric Terrain': FIELD_ELECTRIC_TERRAIN, 'move: Misty Terrain': FIELD_MISTY_TERRAIN}
+            if kind == '-fieldend' and args[0] == 'Misty Terrain':
+                # Misty Terrain's onFieldEnd has no "move: " in its line (data/moves.ts:12198-12200 at the pin); no other
+                # line of the field has this form, and a -fieldstart of it is an error.
+                names['Misty Terrain'] = FIELD_MISTY_TERRAIN
+            field = names[args[0]]
             e = ev_tuple(EV['FIELD_START' if kind == '-fieldstart' else 'FIELD_END'], NOPOS, other, cause, 0, id2,
                          detail=field)
         elif kind in ('-sidestart', '-sideend'):
