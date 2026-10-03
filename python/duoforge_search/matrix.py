@@ -293,17 +293,25 @@ def _ranks(prior_rank, k):
     return rank.astype(np.int64)
 
 
-def expected_choice(a, q, prior_rank):
-    """The row with the highest expected value sum_j q_j a[i, j], q
-    renormalized; ties, compared exactly, go to the better (lower)
-    prior_rank. prior_rank orders the own pairs by policy probability, ties
-    already broken to the lower flat index (spec section 5.6)."""
+def expected_values(a, q):
+    """The expected value sum_j q_j a[i, j] of every row, q renormalized,
+    accumulated over the columns in a fixed order: the scores
+    expected_choice compares."""
     a = _table(a)
     q = np.asarray(q, dtype=np.float64)
     if q.shape != (a.shape[1],) or not np.isfinite(q).all() or (q < 0).any() or not q.sum() > 0.0:
         raise SearchError(f"q must be {a.shape[1]} nonnegative probabilities with a positive sum (got {q!r})")
-    rank = _ranks(prior_rank, a.shape[0])
-    score = _matvec(a, q / math.fsum(q.tolist()))
+    return _matvec(a, q / math.fsum(q.tolist()))
+
+
+def expected_choice(a, q, prior_rank):
+    """The row with the highest expected value sum_j q_j a[i, j], q
+    renormalized (expected_values); ties, compared exactly, go to the better
+    (lower) prior_rank. prior_rank orders the own pairs by policy
+    probability, ties already broken to the lower flat index (spec section
+    5.6)."""
+    score = expected_values(a, q)
+    rank = _ranks(prior_rank, score.shape[0])
     best = np.flatnonzero(score == score.max())
     return int(best[np.argmin(rank[best])])
 

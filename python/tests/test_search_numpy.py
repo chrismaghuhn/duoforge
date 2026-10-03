@@ -2,8 +2,9 @@
 
 The matrix game (an exact linear program with its certificate and its
 exact rescue), the expected-value rule, the tie rules and the play draw
-(spec sections 5.5 and 5.6), and the decision keys and play draws (decision
-0022 section 2). The contract is pinned by literals, never by the module's
+(spec sections 5.5 and 5.6), the decision keys and play draws (decision
+0022 section 2), the lookahead's candidates, leaf plan, table rules and
+split halves (spec sections 5 and 7), and Batch.encode. The contract is pinned by literals, never by the module's
 own constants. The JAX parts are in test_search.py.
 """
 import itertools
@@ -14,7 +15,7 @@ import numpy as np
 
 from duoforge_learn.pairing import draw as pairing_draw
 from duoforge_learn.pairing import splitmix64
-from duoforge_search import SearchError, matrix, seeds
+from duoforge_search import SearchError, lookahead, matrix, seeds
 
 _MASK = (1 << 64) - 1
 _CERTIFICATE = 1e-9  # spec section 5.5, plan Review Focus 5: never relaxed
@@ -377,6 +378,155 @@ class Seeds(unittest.TestCase):
             seeds.decision_keys(0, [-1], [0], [0], [0])
         with self.assertRaises(ValueError):
             seeds.play_uniforms(0, [0.5])
+
+
+_OK = 0
+_UNSUPPORTED = 11  # DUOFORGE_E_UNSUPPORTED
+_SIDE_0, _SIDE_1, _TIE = 1, 2, 3  # DUOFORGE_RESULT_*
+
+
+def _table(values, step, encode, results, tiebreaks, seat, last_step=False, k=1, m=2, s=2):
+    _, i, j, sample = lookahead.leaf_plan([k], [m], s)
+    return lookahead.table(np.array(values, dtype=np.float32), np.array(step), np.array(encode),
+                           np.array(results), np.array(tiebreaks), (i, j, sample), seat, last_step)
+
+
+class LookaheadParts(unittest.TestCase):
+    """The NumPy parts of the lookahead (plan task 9): candidates, the leaf
+    plan, the table rules of spec sections 5.3 and 7, split halves."""
+
+    def test_contract_constants(self):
+        self.assertEqual(lookahead.SEARCH_SEED, 0x2026100300000221)
+        self.assertEqual(lookahead.CAPACITY, 16384)
+        self.assertEqual(lookahead.NEAR_DUPLICATE, 1e-6)
+        self.assertEqual((_UNSUPPORTED, _SIDE_0, _SIDE_1, _TIE), (lookahead._UNSUPPORTED, *lookahead._RESULTS))
+
+    def test_select_top_k_and_ties(self):
+        logp = np.full(1024, -50.0, dtype=np.float32)
+        mask = np.zeros(1024, dtype=bool)
+        legal = [3, 7, 40, 41, 900, 1023]
+        mask[legal] = True
+        logp[legal] = [-1.0, -0.5, -0.5, -2.0, -0.5, -3.0]
+        logp[5] = 0.0  # the best value, but illegal
+        pairs, probs = lookahead.select(logp, mask, 4)
+        self.assertEqual(pairs.tolist(), [7, 40, 900, 3])  # equal values to the lower flat index
+        np.testing.assert_array_equal(probs, np.exp(np.float32([-0.5, -0.5, -0.5, -1.0]).astype(np.float64)))
+        self.assertEqual(lookahead.select(logp, mask, 8)[0].tolist(), [7, 40, 900, 3, 41, 1023])  # k' = 6
+        self.assertEqual(lookahead.select(logp, mask.reshape(32, 32), 1)[0].tolist(), [7])
+        one_ulp = logp.copy()
+        one_ulp[900] = np.nextafter(np.float32(-0.5), np.float32(0.0))  # exact comparisons
+        self.assertEqual(lookahead.select(one_ulp, mask, 2)[0].tolist(), [900, 7])
+        with self.assertRaises(SearchError):
+            lookahead.select(logp, np.zeros(1024, dtype=bool), 1)
+        with self.assertRaises(ValueError):
+            lookahead.select(logp, mask, 0)
+        bad = logp.copy()
+        bad[41] = np.nan
+        with self.assertRaises(SearchError):
+            lookahead.select(bad, mask, 2)
+
+    def test_leaf_plan_order(self):
+        d, i, j, s = lookahead.leaf_plan([2, 1], [1, 3], 2)
+        self.assertEqual(list(zip(d.tolist(), i.tolist(), j.tolist(), s.tolist())),
+                         [(0, 0, 0, 0), (0, 0, 0, 1), (0, 1, 0, 0), (0, 1, 0, 1), (1, 0, 0, 0), (1, 0, 0, 1),
+                          (1, 0, 1, 0), (1, 0, 1, 1), (1, 0, 2, 0), (1, 0, 2, 1)])
+        self.assertEqual(lookahead.leaf_plan([8] * 3, [8] * 3, 16)[0].size, 3 * 1024)
+        for k, m, s in (([0], [1], 1), ([1], [1], 0), ([1, 1], [1], 1)):
+            with self.assertRaises(ValueError):
+                lookahead.leaf_plan(k, m, s)
+
+    def test_table_rules(self):
+        # A terminal win, a value-head leaf, a tie, a refused step, from both seats.
+        for seat, want in ((0, [0.625, -0.5]), (1, [-0.375, -0.5])):
+            t = _table([0.9, 0.25, 0.9, 0.9], [_OK, _OK, _OK, _UNSUPPORTED], [0] * 4, [_SIDE_0, 0, _TIE, 0],
+                       [0] * 4, seat)
+            np.testing.assert_array_equal(t.a, [want])
+            self.assertEqual(t.counts, {"refused": 1, "terminal": 2, "cut_off": 0, "unresolved": 0})
+        # The arena's cut-off: the tiebreak (unresolvable: -1) and never the value head; TERMINAL by its result.
+        t = _table([0.9] * 4, [_OK] * 4, [0] * 4, [0, 0, 0, _TIE], [_SIDE_1, _SIDE_0, lookahead.UNRESOLVED, 0],
+                   1, last_step=True)
+        np.testing.assert_array_equal(t.a, [[0.0, -0.5]])
+        self.assertEqual(t.counts, {"refused": 0, "terminal": 1, "cut_off": 3, "unresolved": 1})
+        np.testing.assert_array_equal(t.values, [[[1.0, -1.0], [-1.0, 0.0]]])
+        # Standard errors over the samples; one sample has none.
+        t = _table([0.25, 0.75, 0.5, 0.5], [_OK] * 4, [0] * 4, [0] * 4, [0] * 4, 0)
+        np.testing.assert_array_equal(t.a, [[0.5, 0.5]])
+        np.testing.assert_allclose(t.stderr, [[0.25, 0.0]], rtol=0, atol=1e-15)
+        t = _table([0.25, 0.75], [_OK] * 2, [0] * 2, [0] * 2, [0] * 2, 0, s=1)
+        self.assertTrue(np.isnan(t.stderr).all())
+        # Leaves in another order give the same table.
+        _, i, j, sample = lookahead.leaf_plan([2], [2], 2)
+        v = np.float32([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
+        perm = np.array([5, 0, 7, 2, 1, 6, 3, 4])
+        zero = np.zeros(8, dtype=np.int64)
+        a = lookahead.table(v, zero, zero, zero, zero, (i, j, sample), 0)
+        b = lookahead.table(v[perm], zero, zero, zero, zero, (i[perm], j[perm], sample[perm]), 0)
+        np.testing.assert_array_equal(a.a, b.a)
+        np.testing.assert_array_equal(a.values, b.values)
+
+    def test_fatal_leaves_stop_the_run(self):
+        # Spec section 7: every step status but OK and E_UNSUPPORTED stops the run, naming the leaf.
+        for status in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12):  # every status but OK and E_UNSUPPORTED (11)
+            step = [_OK, _OK, status, _OK]
+            with self.assertRaises(SearchError) as caught:
+                _table([0.0] * 4, step, [0] * 4, [0] * 4, [0] * 4, 0)
+            self.assertEqual(caught.exception.leaf, 2)
+        with self.assertRaisesRegex(SearchError, "leaf 1: the value head") as caught:
+            _table([0.0, np.nan, 0.0, 0.0], [_OK] * 4, [0] * 4, [0] * 4, [0] * 4, 0)
+        with self.assertRaisesRegex(SearchError, "not at the cut-off"):
+            _table([0.0] * 4, [_OK] * 4, [0] * 4, [0] * 4, [0, _SIDE_0, 0, 0], 0)
+        with self.assertRaisesRegex(SearchError, "at the cut-off"):
+            _table([0.0] * 4, [_OK] * 4, [0] * 4, [0] * 4, [_SIDE_0, 0, _TIE, _TIE], 0, last_step=True)
+        with self.assertRaises(SearchError):
+            _table([0.0] * 4, [_OK] * 4, [0] * 4, [0, 9, 0, 0], [0] * 4, 0)  # an unknown result
+        with self.assertRaises(ValueError):
+            _table([0.0] * 3, [_OK] * 3, [0] * 3, [0] * 3, [0] * 3, 0)
+
+    def test_encoder_refusal_stops_the_run(self):
+        # Spec section 7: a refused row is never scored -1; the run stops, naming the leaf.
+        with self.assertRaisesRegex(SearchError, "leaf 3: the encoder refused") as caught:
+            _table([0.0] * 4, [_OK] * 4, [0, 0, 0, 2], [0] * 4, [0] * 4, 1)
+        self.assertEqual(caught.exception.leaf, 3)
+
+    def test_split_half(self):
+        pennies = [[1.0, -1.0], [-1.0, 1.0]]  # x = y = (1/2, 1/2)
+        biased = [[2.0, 0.0], [0.0, 1.0]]  # x = y = (1/3, 2/3)
+        cube = np.concatenate([np.repeat(np.array(pennies)[:, :, None], 2, axis=2),
+                               np.repeat(np.array(biased)[:, :, None], 2, axis=2)], axis=2)
+        out = lookahead.split_half(cube, [0.5, 0.5], "nash")
+        np.testing.assert_allclose(out["exploitability"], [0.5, 2.0 / 3.0], rtol=0, atol=1e-12)
+        self.assertEqual(lookahead.split_half(cube, [0.5, 0.5], "ev"), {"same_choice": True})
+        swap = cube.copy()
+        swap[:, :, :2] = [[[0.0], [0.0]], [[1.0], [1.0]]]  # the first half prefers row 1
+        self.assertEqual(lookahead.split_half(swap, [0.5, 0.5], "ev"), {"same_choice": False})
+        self.assertIsNone(lookahead.split_half(cube[:, :, :3], [0.5, 0.5], "ev"))
+        with self.assertRaises(ValueError):
+            lookahead.split_half(cube, [0.5, 0.5], "mean")
+
+    def test_near_duplicates(self):
+        a = np.array([[0.5, -0.25], [0.5 + 5e-7, -0.25], [0.5, -0.25 - 2e-6], [0.5, -0.25]])
+        self.assertEqual(lookahead.near_duplicates(a), 3)  # (0, 1), (0, 3), (1, 3)
+        self.assertEqual(lookahead.near_duplicates(a[:1]), 0)
+
+
+class BatchEncode(unittest.TestCase):
+    def test_encode_is_the_canonical_state(self):
+        # Batch.encode, privileged: the reproduction data of a stopped search (spec section 7).
+        import hashlib
+
+        import duoforge
+        with duoforge.Context() as ctx, duoforge.Batch(ctx, duoforge.reference_setups([0, 3]), 1, 7) as b, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0, 3]), 1, 7) as twin:
+            for e in range(2):
+                self.assertEqual(hashlib.sha256(b.encode(e)).digest(), b.digest(e))
+                self.assertEqual(b.encode(e), twin.encode(e))
+            before = b.encode(0)
+            b.query_factored()
+            b.step_factored(duoforge.RandomPolicy(7, 2).choose_factored(b))
+            self.assertNotEqual(b.encode(0), before)
+            self.assertEqual(hashlib.sha256(b.encode(0)).digest(), b.digest(0))
+            with self.assertRaises(IndexError):
+                b.encode(2)
 
 
 if __name__ == "__main__":
