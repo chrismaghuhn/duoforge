@@ -2062,6 +2062,39 @@ static bool dfi_can_switch(const struct duoforge_battle *b, uint32_t side)
     return false;
 }
 
+/* Shadow Tag (step G41, data/abilities.ts:4156-4173): at every nextTurn the reference clears `trapped` on each active Pokemon and
+ * runs TrapPokemon (sim/battle.ts:1726-1730), where a standing foe's Shadow Tag calls tryTrap(true) on every Pokemon that is not
+ * itself a Shadow Tag holder and is adjacent to the holder (in doubles every foe is: sim/pokemon.ts isAdjacent). tryTrap
+ * (sim/pokemon.ts:1607-1612) fails for a Pokemon immune to the status 'trapped': a Ghost type (typechart `trapped: 3`,
+ * tools/datagen/pool_families.js checkG41), by its current types, so Soak's Water makes it trappable again. The trap is read
+ * only where the next request is made, at the TURN boundary, so it is derived from the board and keeps no state: a trapped
+ * Pokemon's request refuses every switch (side.chooseSwitch: "Can't switch: The active Pokemon is trapped"; the hint
+ * `trapped` or `maybeTrapped` of the request is information, not a rule). Replacements, pivots (a move's selfSwitch, Emergency
+ * Exit, Eject Button) and a forced switch ignore it. Shed Shell and Run Away free their holder (items.ts shedshell, the Champions
+ * mod's runaway, onTrapPokemon at priority -10 after Shadow Tag's): neither is marked, so no battle has them. The ability is
+ * the current one: a Mega's, or one that Trace copied. `flat` must be an occupied position. */
+static const dfi_member *dfi_member_at(const struct duoforge_battle *b, uint32_t flat)
+{
+    const uint32_t occupant = b->sides[flat / 2u].positions[flat % 2u].occupant;
+    return occupant < DUOFORGE_MAX_ROSTER ? &b->sides[flat / 2u].members[occupant] : NULL;
+}
+
+bool dfi_switch_trapped(const struct duoforge_battle *b, uint32_t flat)
+{
+    const dfi_member *m = dfi_member_at(b, flat);
+    if (m == NULL || m->hp == 0u || dfi_ability(b, m, DFI_ABILITY_SHADOWTAG) || dfi_has_type(b, m, DFI_TYPE_GHOST)) {
+        return false;
+    }
+    const uint32_t foe = 1u - flat / 2u;
+    for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
+        const dfi_member *f = dfi_member_at(b, foe * 2u + slot);
+        if (f != NULL && f->hp != 0u && dfi_ability(b, f, DFI_ABILITY_SHADOWTAG)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 /* Emergency Exit (onEmergencyExit, data/mods/champions/abilities.ts): a
  * standing holder that fell from above half HP to half or less, with a
  * reserve and no switch flag yet, leaves. Unlike the base game, the

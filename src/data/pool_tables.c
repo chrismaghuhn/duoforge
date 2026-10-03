@@ -2200,7 +2200,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   scrappy -- data/abilities.ts:4079-4098
  *   screencleaner -- data/abilities.ts:4099-4118  [unmodelled: callback onStart]
  *   seedsower -- data/abilities.ts:4119-4127  [unmodelled: callback onDamagingHit]
- *   shadowtag -- data/abilities.ts:4156-4173  [unmodelled: callback onFoeMaybeTrapPokemon; callback onFoeTrapPokemon]
+ *   shadowtag -- data/abilities.ts:4156-4173
  *   sharpness -- data/abilities.ts:4174-4186
  *   shedskin -- data/abilities.ts:4187-4201  [unmodelled: callback onResidual; callback onResidualOrder; callback onResidualSubOrder]
  *   sheerforce -- data/abilities.ts:4202-4221  [unmodelled: callback onBasePower; callback onBasePowerPriority; callback onModifyMove; read by id in data/abilities.ts; read by id in data/mods/champions/scripts.ts; read by id in sim/battle-actions.ts]
@@ -2979,7 +2979,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_SCRAPPY] = DFI_HANDLER_NONE,
     [DFI_ABILITY_SCREENCLEANER] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_SEEDSOWER] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_SHADOWTAG] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_SHADOWTAG] = DFI_HANDLER_NONE,
     [DFI_ABILITY_SHARPNESS] = DFI_HANDLER_NONE,
     [DFI_ABILITY_SHEDSKIN] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_SHEERFORCE] = DFI_HANDLER_UNMODELED,
@@ -7045,7 +7045,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_SAPSIPPER] = "callback onAllyTryHitSide; callback onTryHit; callback onTryHitPriority; read by id in data/moves.ts",
     [DFI_ABILITY_SCREENCLEANER] = "callback onStart",
     [DFI_ABILITY_SEEDSOWER] = "callback onDamagingHit",
-    [DFI_ABILITY_SHADOWTAG] = "callback onFoeMaybeTrapPokemon; callback onFoeTrapPokemon",
     [DFI_ABILITY_SHEDSKIN] = "callback onResidual; callback onResidualOrder; callback onResidualSubOrder",
     [DFI_ABILITY_SHEERFORCE] = "callback onBasePower; callback onBasePowerPriority; callback onModifyMove; read by id in data/abilities.ts; read by id in data/mods/champions/scripts.ts; read by id in sim/battle-actions.ts",
     [DFI_ABILITY_SHELLARMOR] = "callback onCriticalHit",
@@ -7085,10 +7084,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0xfbu, 0x08u, 0x26u, 0xfeu, 0x95u, 0x70u, 0x8eu, 0xedu,
-    0xd5u, 0xe5u, 0xa8u, 0x58u, 0xafu, 0xdcu, 0xa5u, 0x56u,
-    0xb8u, 0x4cu, 0xf0u, 0x4du, 0xa8u, 0x23u, 0x68u, 0x7fu,
-    0x58u, 0x74u, 0x72u, 0xb3u, 0x32u, 0x8du, 0xb7u, 0x50u,
+    0x25u, 0x15u, 0xabu, 0x6au, 0x5bu, 0x02u, 0xa9u, 0x27u,
+    0x3eu, 0xd5u, 0xb4u, 0xd6u, 0x5cu, 0xadu, 0x76u, 0x6eu,
+    0x6fu, 0x29u, 0x8eu, 0x81u, 0xf4u, 0x70u, 0x83u, 0x88u,
+    0xebu, 0x4fu, 0xa0u, 0xdcu, 0x70u, 0x6eu, 0xf2u, 0x54u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)

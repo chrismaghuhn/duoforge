@@ -501,6 +501,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_SOLARPOWER] = 1u,
             [DFI_ABILITY_REGENERATOR] = 1u,
             [DFI_ABILITY_TOXICDEBRIS] = 1u, /* step G37: a Physical hit puts Toxic Spikes on the attacker's side */
+            [DFI_ABILITY_SHADOWTAG] = 1u, /* step G41 */
         },
     .items =
         {
@@ -535,6 +536,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_CHARIZARDITEX] = 1u,
             [DFI_ITEM_GARCHOMPITEZ] = 1u,
             [DFI_ITEM_DELPHOXITE] = 1u,
+            [DFI_ITEM_GENGARITE] = 1u, /* step G41: the Mega Stone of Gengar, whose Mega has Shadow Tag */
             [DFI_ITEM_GARDEVOIRITE] = 1u,
             [DFI_ITEM_ABOMASITE] = 1u,
             [DFI_ITEM_BARBARACITE] = 1u,
