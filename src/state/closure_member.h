@@ -35,7 +35,7 @@ typedef struct dfi_kind_limits {
     uint32_t move_count;      /* move ids below this */
     uint32_t item_count;      /* an item is 1 + its id, so at most this */
     uint32_t ability_count;   /* ability ids below this (an ability is 1 + its id) */
-    uint32_t switch_flag_max; /* DFI_SWITCH_FAINTED; DFI_SWITCH_FLIP_TURN for TEAM_C; DFI_SWITCH_UTURN for POOL */
+    uint32_t switch_flag_max; /* DFI_SWITCH_FAINTED; DFI_SWITCH_FLIP_TURN for TEAM_C; DFI_SWITCH_VOLT_SWITCH for POOL */
     uint32_t status_max;      /* DFI_STATUS_SLP; DFI_STATUS_PSN for TEAM_C and POOL */
     uint32_t vol_flags_mask;  /* DFI_VOL_* bits a position may carry: TEAM_C and POOL add the choice lock */
     uint32_t terrain_max;     /* DFI_TERRAIN_GRASSY; DFI_TERRAIN_PSYCHIC for TEAM_C and POOL */
@@ -56,7 +56,7 @@ typedef struct dfi_pivot_move {
     uint8_t flag; /* DFI_SWITCH_* */
     uint16_t move; /* the move id of the pool tables: a u16, as everywhere (the pool has 511 moves; Volt Switch is above 255) */
 } dfi_pivot_move;
-#define DFI_PIVOT_MOVE_COUNT 2u
+#define DFI_PIVOT_MOVE_COUNT 3u
 extern const dfi_pivot_move dfi_pivot_moves[DFI_PIVOT_MOVE_COUNT];
 
 /* The entry for a move, or NULL when the move does not pivot with a flag of its own. */

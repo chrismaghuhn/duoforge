@@ -1,0 +1,26 @@
+{
+  "name": "g32_clanging_soundproof",
+  "purpose": "Clanging Scales (Kommo-o, a sound spread move, Defense -1 for the user after the hit): Bastiodon's Soundproof makes it immune (-immune [from] ability: Soundproof) while Salamence is hit; Salamence's Hyper Voice at Kommo-o (Soundproof) is immune as well.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000009501",
+  "teams": [
+    "Kommo-o (M) @ Leftovers\nAbility: Soundproof\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpA\nModest Nature\n- Clanging Scales\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect",
+    "Salamence (M) @ Charcoal\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Hyper Voice\n- Protect\n\nBastiodon (M) @ Light Clay\nAbility: Soundproof\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 2",
+      "move 1, move 2",
+      "move 1, move 2",
+      "move 1, move 2"
+    ],
+    "p2": [
+      "move 1 1, move 2",
+      "move 1 1, move 2",
+      "move 1 1, move 2",
+      "move 1 1, move 2"
+    ],
+    "max_steps": 6
+  }
+}
