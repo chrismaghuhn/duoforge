@@ -257,10 +257,10 @@ def _closure_inputs(steps=120):
     rows = []
     try:
         for _ in range(steps):
+            o = env.observe()  # refreshes the batch's observations and domains (one query per step)
             observations = env.batch.observations.reshape(-1).copy()
             obs, slots, mask = features.encode_batch(observations, env.batch.domains.reshape(-1))
             rows.append((observations, obs, slots, mask))
-            o = env.observe()
             flat = o.mask.reshape(16, 2, -1)
             env.step(np.where(o.is_team, 0, flat.argmax(axis=-1)))
     finally:

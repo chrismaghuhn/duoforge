@@ -112,7 +112,13 @@ find_package(Threads REQUIRED)
 set(DUOFORGE_BATCH_SOURCES
     src/batch/pool.c
     src/batch/batch.c
+    src/encode/encode.c
 )
+# The encoder (src/encode/encode.c, decision 0021) is byte-equal to the reference's float32
+# encoder: as for the tiebreak, nothing may contract into a fused multiply-add.
+if(NOT MSVC)
+    set_source_files_properties(src/encode/encode.c PROPERTIES COMPILE_OPTIONS "-ffp-contract=off")
+endif()
 add_library(duoforge_batch STATIC ${DUOFORGE_BATCH_SOURCES})
 target_include_directories(duoforge_batch PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_link_libraries(duoforge_batch PUBLIC duoforge Threads::Threads)

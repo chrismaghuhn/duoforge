@@ -18,7 +18,7 @@ import os
 
 from .errors import DuoforgeError, DuoforgeLibraryError
 
-EXPECTED_VERSION = "0.40.0"
+EXPECTED_VERSION = "0.41.0"
 
 _NAMES = ("duoforge_shared.dll", "libduoforge_shared.dll", "libduoforge_shared.so", "libduoforge_shared.dylib")
 
@@ -55,6 +55,10 @@ _SIGNATURES = {
     "duoforge_batch_reset": (_STATUS, (_P, _U32, _U32)),
     "duoforge_batch_reset_terminal": (_STATUS, (_P,)),
     "duoforge_batch_reset_setups": (_STATUS, (_P, _U32, _P, _P, _P, _P)),
+    "duoforge_batch_observe_ext": (_STATUS, (_P, _P)),
+    "duoforge_encoder_size": (_STATUS, (_U32, ctypes.POINTER(_U32))),
+    "duoforge_encode": (_STATUS, (_U32, _U64, _P, _P, _P, _P, _P, _P)),
+    "duoforge_batch_query_encoded": (_STATUS, (_P, _U32, _U64, _P, _P, _P, _P, _P, _P, _P)),
     "duoforge_batch_play_random": (_STATUS, (_P, _U32, _U32, _P)),
     # the data API (decisions 0015 and 0020)
     "duoforge_data_count": (_STATUS, (_P, _U32, ctypes.POINTER(_U32))),

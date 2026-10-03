@@ -345,6 +345,13 @@ class FeaturesExtTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "ext_supported"):
                 features.encode_batch(ob, d, None, bad)
 
+    def test_a_viewer_other_than_0_or_1_raises(self):
+        # The viewer indexes the sides: anything else is a malformed observation, refused as one (not an IndexError).
+        ob = self.obs.copy()
+        ob["player"][0] = 2
+        with self.assertRaisesRegex(ValueError, "player 2"):
+            features.encode_batch(ob, self.domains, None, 0)
+
     def test_records_of_another_boundary_raise(self):
         ob, d = self.obs, self.domains
         ext = _records(ob)

@@ -487,6 +487,8 @@ def encode_batch(observations, domains, ext=None, ext_supported=0):
         raise TypeError("domains must be a FACTORED_DOMAIN array of the observations' shape")
     if ((ob["epoch"] != d["epoch"]) | ((ob["requested"] != 0) != (d["kind"] != 0))).any():
         raise ValueError("the domain is not of the observation's boundary (query_factored() refreshes both)")
+    if (ob["player"] > 1).any():
+        raise ValueError(f"observation player {int(ob['player'][ob['player'] > 1][0])} is not a viewer (0 or 1)")
     mask = _mask_of(ext_supported)
     if ext is None:
         if mask & RECORD_FEATURES:

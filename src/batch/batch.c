@@ -7,6 +7,7 @@
 
 #include <string.h>
 
+#include "batch/batch_each.h"
 #include "batch/pool.h"
 #include "core/alloc.h"
 
@@ -203,36 +204,46 @@ typedef struct dfi_query_job {
     duoforge_status *statuses;
 } dfi_query_job;
 
+duoforge_status dfi_batch_query_player(const duoforge_context *ctx, const duoforge_battle *battle, uint32_t p,
+                                       duoforge_request *request, duoforge_observation *observation,
+                                       duoforge_side_choice *candidates, uint32_t *count,
+                                       duoforge_factored_domain *domain)
+{
+    duoforge_status st = DUOFORGE_OK;
+    if (request != NULL) {
+        st = duoforge_battle_request(ctx, battle, p, request);
+    }
+    if (st == DUOFORGE_OK && observation != NULL) {
+        st = duoforge_battle_observe(ctx, battle, p, observation);
+    }
+    if (st == DUOFORGE_OK && count != NULL) {
+        uint32_t n = 0u;
+        if (candidates != NULL) {
+            st = duoforge_battle_candidates(ctx, battle, p, candidates, DUOFORGE_MAX_CANDIDATES, &n);
+        } else {
+            duoforge_request rq;
+            st = duoforge_battle_request(ctx, battle, p, &rq);
+            n = rq.candidate_count;
+        }
+        *count = n;
+    }
+    if (st == DUOFORGE_OK && domain != NULL) {
+        st = duoforge_battle_factored(ctx, battle, p, domain);
+    }
+    return st;
+}
+
 /* The query outputs of environment `e`; its status. */
 static duoforge_status dfi_query_env(const dfi_query_job *j, uint32_t e)
 {
-    const duoforge_context *ctx = j->b->ctx;
-    const duoforge_battle *battle = j->b->env[e].battle;
     duoforge_status st = DUOFORGE_OK;
     for (uint32_t p = 0u; p < DUOFORGE_SIDE_COUNT && st == DUOFORGE_OK; ++p) {
         const size_t at = (size_t)e * DUOFORGE_SIDE_COUNT + p;
-        if (j->requests != NULL) {
-            st = duoforge_battle_request(ctx, battle, p, &j->requests[at]);
-        }
-        if (st == DUOFORGE_OK && j->observations != NULL) {
-            st = duoforge_battle_observe(ctx, battle, p, &j->observations[at]);
-        }
-        if (st == DUOFORGE_OK && j->counts != NULL) {
-            duoforge_side_choice *out =
-                j->candidates != NULL ? &j->candidates[at * DUOFORGE_MAX_CANDIDATES] : NULL;
-            uint32_t n = 0u;
-            if (out != NULL) {
-                st = duoforge_battle_candidates(ctx, battle, p, out, DUOFORGE_MAX_CANDIDATES, &n);
-            } else {
-                duoforge_request rq;
-                st = duoforge_battle_request(ctx, battle, p, &rq);
-                n = rq.candidate_count;
-            }
-            j->counts[at] = n;
-        }
-        if (st == DUOFORGE_OK && j->domains != NULL) {
-            st = duoforge_battle_factored(ctx, battle, p, &j->domains[at]);
-        }
+        st = dfi_batch_query_player(
+            j->b->ctx, j->b->env[e].battle, p, j->requests != NULL ? &j->requests[at] : NULL,
+            j->observations != NULL ? &j->observations[at] : NULL,
+            j->candidates != NULL ? &j->candidates[at * DUOFORGE_MAX_CANDIDATES] : NULL,
+            j->counts != NULL ? &j->counts[at] : NULL, j->domains != NULL ? &j->domains[at] : NULL);
     }
     return st;
 }
@@ -700,4 +711,60 @@ duoforge_status duoforge_batch_play_random(duoforge_batch *batch, uint32_t episo
     dfi_play_job job = {batch, episodes, max_steps, records, batch->statuses};
     dfi_pool_run(batch->pool, dfi_play_slice, &job, batch->env_count);
     return dfi_batch_first(batch->statuses, batch->env_count);
+}
+
+/* ------------------------------------------------------- view extension */
+
+typedef struct dfi_ext_job {
+    struct duoforge_batch *b;
+    duoforge_observation_ext *out;
+} dfi_ext_job;
+
+static void dfi_ext_slice(void *job, uint32_t worker, uint32_t begin, uint32_t end)
+{
+    (void)worker;
+    const dfi_ext_job *j = job;
+    for (uint32_t e = begin; e < end; ++e) {
+        duoforge_status st = DUOFORGE_OK;
+        for (uint32_t p = 0u; p < DUOFORGE_SIDE_COUNT && st == DUOFORGE_OK; ++p) {
+            st = duoforge_battle_observe_ext(j->b->ctx, j->b->env[e].battle, p,
+                                             &j->out[(size_t)e * DUOFORGE_SIDE_COUNT + p]);
+        }
+        j->b->statuses[e] = st;
+    }
+}
+
+duoforge_status duoforge_batch_observe_ext(duoforge_batch *batch, duoforge_observation_ext *out)
+{
+    if (batch == NULL || out == NULL) {
+        return DUOFORGE_E_NULL_ARGUMENT;
+    }
+    dfi_ext_job job = {batch, out};
+    dfi_pool_run(batch->pool, dfi_ext_slice, &job, batch->env_count);
+    return dfi_batch_first(batch->statuses, batch->env_count);
+}
+
+/* ------------------------------------------------------- the encoder hook */
+
+typedef struct dfi_each_job {
+    struct duoforge_batch *b;
+    dfi_batch_env_fn fn;
+    void *arg;
+    duoforge_status *statuses;
+} dfi_each_job;
+
+static void dfi_each_slice(void *job, uint32_t worker, uint32_t begin, uint32_t end)
+{
+    (void)worker;
+    const dfi_each_job *j = job;
+    for (uint32_t e = begin; e < end; ++e) {
+        j->statuses[e] = j->fn(j->arg, e, j->b->ctx, j->b->env[e].battle);
+    }
+}
+
+duoforge_status dfi_batch_each(duoforge_batch *batch, dfi_batch_env_fn fn, void *arg, duoforge_status *statuses)
+{
+    dfi_each_job job = {batch, fn, arg, statuses};
+    dfi_pool_run(batch->pool, dfi_each_slice, &job, batch->env_count);
+    return dfi_batch_first(statuses, batch->env_count);
 }
