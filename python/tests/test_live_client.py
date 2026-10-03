@@ -342,7 +342,7 @@ class GameTest(unittest.TestCase):
         from duoforge_live.game import Game
         from duoforge_live.policy import Policy
         rng = np.random.default_rng(1)
-        shapes = {"t1": (features.OBS_SIZE, 8), "t2": (8, 8), "option_torso": (8, 4),
+        shapes = {"t1": (features.BASE_OBS_SIZE, 8), "t2": (8, 8), "option_torso": (8, 4),  # encoders 1 and 2
                   "option_features": (features.SLOT_FEATURES, 4), "option_out": (4, 2), "team": (8, 360),
                   "value": (8, 1)}
         params = {k: {"w": rng.normal(0, 1, s).astype(np.float32), "b": np.zeros(s[1], np.float32)}
@@ -356,6 +356,29 @@ class GameTest(unittest.TestCase):
                 game.feed([line.replace("|p1|", "|p1|") for line in lines])
             ranked.append([c.probability for c in game.candidates()][:5])
         self.assertNotEqual(ranked[0], ranked[1])
+
+    def test_game_plays_an_encoder_3_policy_with_its_mask(self):
+        # A network of encoder 3 (842 columns) whose mask has only base-value bits plays through the live Game, and
+        # the Game encodes with the policy's mask (the tracker fills no extension records yet).
+        import numpy as np
+        from unittest import mock
+        from duoforge import features
+        from duoforge_live.game import Game
+        from duoforge_live.policy import Policy
+        rng = np.random.default_rng(2)
+        shapes = {"t1": (features.OBS_SIZE, 8), "t2": (8, 8), "option_torso": (8, 4),
+                  "option_features": (features.SLOT_FEATURES, 4), "option_out": (4, 2), "team": (8, 360),
+                  "value": (8, 1)}
+        params = {k: {"w": rng.normal(0, 1, s).astype(np.float32), "b": np.zeros(s[1], np.float32)}
+                  for k, s in shapes.items()}
+        game = Game(data.load(), Policy(params, 3, features.BASE_VALUE_FEATURES), teams.text("A"))
+        with mock.patch.object(features, "encode", wraps=features.encode) as encode:
+            for lines in FIXTURE["messages"][:4]:
+                game.feed(lines)
+            ranked = [c.probability for c in game.candidates()]
+        self.assertAlmostEqual(sum(ranked), 1.0, places=4)
+        self.assertTrue(encode.call_args_list)
+        self.assertTrue(all(c.args[3] == features.BASE_VALUE_FEATURES for c in encode.call_args_list))
 
     def test_main_refuses_bad_arguments(self):
         import contextlib

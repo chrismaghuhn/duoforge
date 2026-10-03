@@ -72,6 +72,19 @@ def encoder_of(config):
     return encoder
 
 
+def ext_supported_of(config):
+    """The view-extension mask a checkpoint's network was trained with (its
+    config's "ext_supported", 0 without it): which DUOFORGE_VIEWEXT_FEATURE_*
+    columns of encoder 3's block it reads. ValueError for a value that is no
+    such mask or a nonzero mask of an older encoder version."""
+    mask = config.get("ext_supported", 0)
+    if not isinstance(mask, int) or isinstance(mask, bool) or not 0 <= mask <= features.ALL_FEATURES:
+        raise ValueError(f"ext_supported {mask!r} is not a mask of the {features.FEATURE_COUNT} feature bits")
+    if mask and encoder_of(config) != features.ENCODER:
+        raise ValueError(f"a checkpoint of encoder {encoder_of(config)} has no ext_supported ({mask:#x})")
+    return mask
+
+
 def load(path, obs_size=None):
     """(params, config) of a checkpoint; params are nested dicts of NumPy
     arrays, as model.init builds them. With obs_size, a network whose torso
@@ -104,18 +117,25 @@ def save(path, params, config):
 
 def load_current(path):
     """(params, config) of a checkpoint widened to the current encoder layout
-    (features.FEATURE_NAMES): format 2 by column name; a format-1 file must
-    already have the current width (widen_594 converts the 594-feature ones)."""
+    (features.FEATURE_NAMES): format 2 by column name, and a network of
+    encoder 2 widened so is one of features.ENCODER (its new rows are zero,
+    and with no "ext_supported" the encoder zeros the block too); a format-1
+    file must have the width of its own encoder version (widen_594 converts
+    the 594-feature ones) and keeps it."""
     params, config = load(path)
     if config.get("format") != 2:
-        width = params["t1"]["w"].shape[0]
-        if width != features.OBS_SIZE:
+        width, want = params["t1"]["w"].shape[0], features.obs_size(encoder_of(config))
+        if width != want:
             raise ValueError(f"{path}: the network takes {width} observation features, the encoder makes "
-                             f"{features.OBS_SIZE} (a checkpoint of another encoder layout)")
+                             f"{want} (a checkpoint of another encoder layout)")
         return params, config
     if config["features"] != list(features.FEATURE_NAMES) or \
             config["slot_features"] != list(features.SLOT_FEATURE_NAMES):
+        encoder = encoder_of(config)
+        if encoder not in (2, features.ENCODER):
+            raise ValueError(f"{path}: a format-2 checkpoint of encoder {encoder} cannot be widened")
         params, config = widen(params, config, features.FEATURE_NAMES, features.SLOT_FEATURE_NAMES)
+        config["encoder"] = features.ENCODER
     return params, config
 
 

@@ -258,6 +258,27 @@ How the tail rev 1 fills the view: `wide_guard` -> `guard_flags` bit `WIDE_GUARD
 - **Fields are declared now,** so later mechanics do **not** change the encoder shape: columns of an unsupported feature are zero. A reserve field added later (growth rule 3) is a new encoder version.
 - **The tracker** (decision 0016) fills the extension for a Showdown game exactly where its feature bit is set, from the lines of section 6; the existing byte-for-byte test against DuoForge's observation extends to the ext at every request of every committed POOL battle, for the features supported at that commit.
 
+### 10.1 Encoder 3 as built (2026-10-03)
+
+`python/duoforge/features.py` is encoder 3 with the block above, names and order as in the table (`EXT_COLUMN_FEATURES` gives each column's bit). The points the table leaves open were decided so:
+
+- **Two sources.** Sand, Snow, Electric, Misty and Tox (bits 0, 1, 5, 32, 10: `BASE_VALUE_FEATURES`) come from the old observation, so they need no record. Every other bit reads the records: `encode_batch(observations, domains, ext, ext_supported)`, with `ext` from `Batch.observe_ext()` (one `duoforge_battle_observe_ext` per player; no batch C API).
+- **No old group lies.** A new base value whose bit is clear in the mask raises `ValueError`, as under encoders 1 and 2, instead of an all-zero old group the network never saw.
+- **Explicit refusals.** These raise `ValueError`:
+  - a record bit in the mask without records;
+  - records of another player, epoch or revision;
+  - a mask bit the records' `supported` lacks (a library older than the network);
+  - a field above its documented range, with `ability_now` at most 255 (the width of the member view's ability id it overlays; POOL has 215 abilities);
+  - a `type_now` while the `TYPE_CHANGED` volatile is clear.
+- **Records of revision 0** (every kind but POOL, where none of these effects can arise) read as an empty record under any mask: zero, and "none" in the Encore and Disable one-hots. So a POOL network sees, in a CLOSURE battle, only states it saw in training. A record of revision 0 with any nonzero byte is refused.
+- **Recharge.** The move slot of a Recharge option (`DUOFORGE_MOVE_SLOT_RECHARGE`, 5) is 5 / 4 in the slot part, the one value above 1. `slots_as_encoder` refuses it for encoders 1 and 2, which never saw it; `as_encoder` gives them their 607 columns and refuses the new base values.
+- **Checkpoints.**
+  - A format-2 checkpoint of encoder 2 is widened by name to encoder 3, with zero rows for the block and no mask (0).
+  - A format-1 file keeps the width of its own version.
+  - A new training run reads by default every feature the library supports under its data kind (`--ext-supported` sets the mask) and records it as `"ext_supported"`. A resumed run keeps its mask; only an explicit, different `--ext-supported` is a change, and it is refused.
+  - Self-play refuses a mask with a bit the library does not support under the run's context (`check_ext_supported`), the stored mask of a resumed run included, before anything is played or saved: a network never records a feature it could not see while it learned. Evaluation and the ladder only encode and are not checked; their zeros are true.
+- **Live play.** The live tracker fills no records yet, so the live policy refuses a mask with a record bit. It plays a network whose mask has only base-value bits.
+
 ## 11. Size, in one table
 
 | Section | Bytes | Used | Reserve |
