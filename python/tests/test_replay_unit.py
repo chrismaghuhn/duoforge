@@ -14,6 +14,7 @@ import unittest
 from pathlib import Path
 
 from duoforge_live import data, lines
+from duoforge_live.data import trace_to_c
 
 _PAUSE = {}
 
@@ -41,6 +42,81 @@ def _define(header, name):
     return int(re.search(rf"#define {name} (\d+)u", header).group(1))
 
 
+# The generated rows as duoforge_live.data read them before decision 0020 (src/data/*_tables.c): the reference of
+# GeneratedRowsTest, which shows the library's data API answering the same for every row of both kinds.
+_ROW_KINDS = {"closure": ("closure_tables.h", "closure_tables.c", "DFI_", "dfi_closure_formes[DFI_FORME_COUNT] = {",
+                          "dfi_closure_moves[DFI_MOVE_COUNT] = {", "dfi_closure_items[DFI_ITEM_COUNT] = {"),
+              "pool": ("pool_tables.h", "pool_tables.c", "DFI_POOL_", "dfi_pool_formes[DFI_POOL_FORME_COUNT] = {",
+                       "dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {", "dfi_pool_items[DFI_POOL_ITEM_COUNT] = {")}
+# dfi_forme_data: dex_num, weight_hg, types[2], base[6], ability, gender_rule, is_mega, base_forme, mega_forme, ...
+_FORME_ROW = re.compile(r"\{\d+u, \d+u, \{\w+, \w+\}, \{[^}]*\}, (\w+), \w+, \w+, (\w+), (\w+), \w+,")
+# dfi_move_data: type, category, base_power, accuracy, pp_base, pp_max, priority, target_class, ...
+_MOVE_ROW = re.compile(r"^    \{\d+u, \d+u, \d+u, \d+u, \d+u, (\d+)u, \d+u, (\d+)u,", re.M)
+# dfi_item_data: the forme that holds it as a Mega Stone, the Mega forme it reaches
+_ITEM_ROW = re.compile(r"^    \{(\w+), (\w+)\},", re.M)
+
+
+def _generated_rows(kind):
+    """(formes [(ability, base, mega)], moves [(pp_max, target class)], items [(holder, mega)]) of a kind's generated
+    rows; None for a NONE symbol or the closure's 0xFF."""
+    header_file, file, prefix, *starts = _ROW_KINDS[kind]
+    header = (data.ROOT / "src" / "data" / header_file).read_text(encoding="ascii")
+    source = (data.ROOT / "src" / "data" / file).read_text(encoding="ascii")
+
+    def value(token):
+        if token in ("DFI_CLOSURE_NONE", "DFI_FORME_NONE") or (kind == "closure" and token == "255u"):
+            return None
+        return int(token[:-1])
+
+    out = []
+    for table, start, row in zip(("FORME", "MOVE", "ITEM"), starts, (_FORME_ROW, _MOVE_ROW, _ITEM_ROW)):
+        a = source.index(start)
+        rows = row.findall(source[a:source.index("};", a)])
+        assert len(rows) == _define(header, f"{prefix}{table}_COUNT"), (kind, table)
+        out.append([tuple(value(x) if not x.isdigit() else int(x) for x in r) for r in rows])
+    return out
+
+
+class GeneratedRowsTest(unittest.TestCase):
+    """The data the fold reads (decision 0020): what the generated rows hold, row by row, for both kinds."""
+
+    def test_the_data_equals_the_generated_rows(self):
+        for kind in ("closure", "pool"):
+            d = data.load(kind=kind)
+            formes, moves, items = _generated_rows(kind)
+            self.assertEqual((d.counts["FORME"], d.counts["MOVE"], d.counts["ITEM"]), (len(formes), len(moves), len(items)))
+            for forme, (ability, base, mega) in enumerate(formes):
+                where = (kind, "forme", forme)
+                self.assertEqual(d.ability_of(forme), ability + 1, where)
+                self.assertEqual(d.base_forme(forme), base, where)
+                self.assertEqual(d.mega_forme(forme), mega, where)
+            for move, (pp_max, target_class) in enumerate(moves):
+                self.assertEqual(d.pp_max(move), pp_max, (kind, "move", move))
+                self.assertEqual(d.target_type(move), data.TARGET_TYPES[target_class], (kind, "move", move))
+            for item, (holder, mega) in enumerate(items):
+                where = (kind, "item", item)
+                for forme in range(len(formes)):
+                    expected = mega if holder is not None and mega is not None and holder == forme else None
+                    self.assertEqual(d.mega_of(forme, item + 1), expected, where + (forme,))
+                self.assertIsNone(d.mega_of(0, 0))
+
+
+    def test_a_checkout_the_library_does_not_match_is_refused(self):
+        # the ids are the converter's (the checkout's headers), the rows the library's: a DLL of other tables is an
+        # explicit error, never rows of the wrong ids
+        from unittest import mock
+        real = trace_to_c.load_tables
+
+        def swapped(root, pool):
+            tables = real(root, pool)
+            tables["MOVE"]["PROTECT"], tables["MOVE"]["TAILWIND"] = tables["MOVE"]["TAILWIND"], tables["MOVE"]["PROTECT"]
+            return tables
+
+        with mock.patch.object(trace_to_c, "load_tables", swapped):
+            with self.assertRaisesRegex(ValueError, "the library's MOVE names differ from the converter's tables"):
+                data.load(kind="pool")
+
+
 class DataTest(unittest.TestCase):
     """The POOL tables of the fold (Task 2)."""
 
@@ -51,7 +127,8 @@ class DataTest(unittest.TestCase):
         cls.header = (data.ROOT / "src" / "data" / "pool_tables.h").read_text(encoding="ascii")
 
     def test_pool_counts(self):
-        self.assertEqual(len(self.pool._formes), _define(self.header, "DFI_POOL_FORME_COUNT"))
+        self.assertEqual(self.pool.counts["FORME"], _define(self.header, "DFI_POOL_FORME_COUNT"))
+        self.assertEqual(self.pool.counts["ITEM"], _define(self.header, "DFI_POOL_ITEM_COUNT"))
         self.assertEqual(len(self.pool._pp_max), _define(self.header, "DFI_POOL_MOVE_COUNT"))
         self.assertEqual(len(self.pool._target_class), _define(self.header, "DFI_POOL_MOVE_COUNT"))
 
@@ -133,6 +210,27 @@ class LinesTest(unittest.TestCase):
         self.assertEqual(self.stop("|move|p1a: Staraptor|Baton Pass|p1a: Staraptor"), "line:move Baton Pass")
         self.assertEqual(self.stop("|-activate|p1a: Staraptor|move: Court Change"), "line:-activate move: Court Change")
         self.assertEqual(self.stop("|-ability|p1a: Staraptor|Pressure"), "line:-ability Pressure")
+
+    def test_a_drop_kept_by_the_holders_ability_is_kept(self):
+        # the seven forms of Reg M-C replays: an Intimidate (or another drop) that the holder's own ability stops
+        view = _View({"p1: Dragonite": ("DRAGONITE", None, "INNERFOCUS"), "p1: Metagross": ("METAGROSS", None, "CLEARBODY"),
+                      "p2: Kangaskhan": ("KANGASKHAN", None, "SCRAPPY"), "p2: Mamoswine": ("MAMOSWINE", None, "OBLIVIOUS"),
+                      "p2: Gliscor": ("GLISCOR", None, "HYPERCUTTER"), "p2: Slowbro": ("SLOWBRO", None, "OWNTEMPO"),
+                      "p2: Torkoal": ("TORKOAL", None, "WHITESMOKE")})
+        for ident, ability, stat in (("p1a: Dragonite", "Inner Focus", "atk|"), ("p1b: Metagross", "Clear Body", ""),
+                                     ("p2a: Kangaskhan", "Scrappy", "atk|"), ("p2b: Mamoswine", "Oblivious", "atk|"),
+                                     ("p2a: Gliscor", "Hyper Cutter", "atk|"), ("p2b: Slowbro", "Own Tempo", "atk|"),
+                                     ("p2a: Torkoal", "White Smoke", "")):
+            line = f"|-fail|{ident}|unboost|{stat}[from] ability: {ability}|[of] {ident}"
+            self.assertEqual(lines.check(line, view), "keep", line)
+        for line in ("|-fail|p1a: Dragonite|unboost|atk|[from] ability: Clear Body|[of] p1a: Dragonite",  # not its own
+                     "|-fail|p1a: Dragonite|unboost|atk|[from] ability: Inner Focus|[of] p1b: Metagross",  # another holder
+                     "|-fail|p1a: Dragonite|unboost|atk|[from] ability: Inner Focus",  # no holder
+                     "|-fail|p1a: Dragonite|unboost|power|[from] ability: Inner Focus|[of] p1a: Dragonite",  # no stat
+                     "|-fail|p1a: Dragonite|unboost|atk|[from] item: Clear Amulet|[of] p1a: Dragonite"):  # an item
+            with self.assertRaises(lines.Stop, msg=line) as caught:
+                lines.check(line, view)
+            self.assertEqual(caught.exception.reason, "line:-fail unboost")
 
     def test_fold_and_room_lines(self):
         self.assertEqual(lines.check("|-enditem|p1a: Staraptor|Sitrus Berry|[eat]", self.view), "fold")
@@ -499,6 +597,36 @@ class GameTest(unittest.TestCase):
         tracker.feed([lines[fail]])
         self.assertEqual(tracker._positions[1][0].chain, 0)
 
+    def protected_farigiraf(self, ability=None):
+        """A tracker of p1 fed up to Farigiraf's Protect in turn 2 (p2b, chain 1); `ability` replaces Armor Tail on
+        its open sheet."""
+        from duoforge_live import teams
+        from duoforge_replay.spectator import SpectatorTracker
+        log = [line.replace("]Farigiraf||SitrusBerry|ArmorTail|", f"]Farigiraf||SitrusBerry|{ability}|")
+               if ability is not None and line.startswith("|showteam|p2|") else line for line in self.log]
+        sheets = tuple(teams.unpack(line.split("|", 3)[3]) for line in log if line.startswith("|showteam|"))
+        tracker = SpectatorTracker(self.data, sheets, 0, None, lambda m, f: ([100] * 6, [0] * 6), log)
+        tracker.feed(log[:log.index("|-singleturn|p2b: Farigiraf|Protect") + 1])
+        self.assertEqual(tracker._positions[1][1].chain, 1)
+        return tracker
+
+    def test_an_ability_failure_keeps_the_stall_counter(self):
+        # G22 (#160): an Intimidate that Inner Focus stops is a FAIL of its holder with cause ABILITY (duoforge.h
+        # DUOFORGE_EVENT_FAIL); after the holder's Protect it is not the Protect failing: the chain stays
+        tracker = self.protected_farigiraf()
+        tracker._event(trace_to_c.ev_tuple(trace_to_c.EV["FAIL"], 3, 3, trace_to_c.CAUSE["ABILITY"], 0,
+                                           self.data.tables["ABILITY"]["INNERFOCUS"] + 1))
+        self.assertEqual(tracker._positions[1][1].chain, 1)
+
+    def test_a_drop_kept_by_the_holders_ability_is_kept(self):
+        # an Intimidate after a Protect, stopped by the holder's own ability: the line changes no field; the
+        # perspective goes on and the stall chain stays
+        tracker = self.protected_farigiraf("InnerFocus")
+        line = "|-fail|p2b: Farigiraf|unboost|atk|[from] ability: Inner Focus|[of] p2b: Farigiraf"
+        tracker.feed([line])
+        self.assertEqual(tracker._positions[1][1].chain, 1)
+        self.assertEqual(tracker._positions[1][1].stages, self.protected_farigiraf()._positions[1][1].stages)
+
     def insert_after_in(self, lines, prefix, new):
         i = next(i for i, line in enumerate(lines) if line.startswith(prefix))
         return lines[:i + 1] + [new] + lines[i + 1:]
@@ -529,12 +657,18 @@ class GameTest(unittest.TestCase):
         self.assertEqual(self.skip_reason(self.log + self.log[start:]), "skip:two-games")
 
     def test_a_failure_the_converter_does_not_parse_stops(self):
-        # -fail|X|unboost (Clear Body stopped a drop): the converter decides which -fail forms it reads (main reads
-        # "heal" since G8); the one it cannot read is a named stop, never an internal error
-        lines = self.insert_after("|turn|3", "|-fail|p2a: Politoed|unboost|[from] ability: Clear Body|[of] p2a: Politoed")
+        # the converter decides which -fail forms it reads (main reads "heal" since G8); the one it cannot read is a
+        # named stop, never an internal error
+        lines = self.insert_after("|turn|3", "|-fail|p2a: Politoed|move: Substitute")
         result = self.run_game(lines)
         stops = [k for k in result.counters if k.startswith("perspectives.stopped.converter:untyped -fail")]
         self.assertEqual(sum(result.counters[k] for k in stops), 2, result.counters)
+
+    def test_a_drop_kept_by_another_ability_stops(self):
+        # -fail|X|unboost from an ability the holder does not have (Politoed: Drizzle) is no form the fold knows
+        lines = self.insert_after("|turn|3", "|-fail|p2a: Politoed|unboost|[from] ability: Clear Body|[of] p2a: Politoed")
+        result = self.run_game(lines)
+        self.assertEqual(result.counters["perspectives.stopped.line:-fail unboost"], 2, result.counters)
 
     def test_bo3_game_number(self):
         lines = ['|uhtml|bestof|<h2><strong>Game 2</strong> of <a href="/game-bestof3-x">a best-of-3</a></h2>'] + self.log

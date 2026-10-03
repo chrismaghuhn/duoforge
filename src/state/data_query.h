@@ -24,4 +24,11 @@ bool dfi_data_supported(const dfi_support_manifest *manifest, uint32_t table, ui
 void dfi_data_forme_info(const dfi_kind_limits *lim, const dfi_support_manifest *manifest, uint32_t species,
                          duoforge_forme_info *out);
 
+/* How many Mega Stones of the kind take the species to a Mega forme, and the index-th of them in ascending item id
+ * (duoforge_mega_info). Preconditions: species is below the kind's forme count; for dfi_data_mega_at, index is below
+ * the count. */
+uint32_t dfi_data_mega_count(const dfi_kind_limits *lim, uint32_t species);
+void dfi_data_mega_at(const dfi_kind_limits *lim, const dfi_support_manifest *manifest, uint32_t species, uint32_t index,
+                      duoforge_mega_info *out);
+
 #endif

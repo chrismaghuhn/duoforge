@@ -101,8 +101,9 @@ static uint32_t dfi_fainted_members(const struct duoforge_battle *b, uint32_t si
 
 static const dfi_pool_forme_data *dfi_forme_of(const dfi_member *m)
 {
-    const dfi_pool_forme_data *base = &dfi_pool_formes[m->species_id];
-    return m->is_mega != 0u ? &dfi_pool_formes[base->mega_forme] : base;
+    /* The Mega forme is that of the pair (base forme, stone): the member still holds the stone (a Mega Stone is never
+     * taken from its own species, dfi_item_takeable). */
+    return m->is_mega != 0u ? &dfi_pool_formes[dfi_mega_of(m->species_id, m->item)] : &dfi_pool_formes[m->species_id];
 }
 
 /* The member's types now (Pokemon.getTypes): its forme's, or the one type that Soak set (setType, sim/pokemon.ts:2109;
@@ -4014,7 +4015,7 @@ static duoforge_status dfi_run_mega(dfi_run *r, const dfi_queue_record *q)
         mega_pos->flags = (uint8_t)((uint32_t)mega_pos->flags & ~(uint32_t)DFI_VOL_UNBURDEN); /* wide-operands-reviewed */
     }
     duoforge_event forme = dfi_event_make(DUOFORGE_EVENT_FORME, flat);
-    forme.id = dfi_pool_formes[m->species_id].mega_forme; /* [detailschange] */
+    forme.id = (uint16_t)dfi_mega_of(m->species_id, m->item); /* [detailschange]: < DFI_POOL_FORME_COUNT */
     dfi_emit(r, &forme);
     duoforge_event mega = dfi_event_make(DUOFORGE_EVENT_MEGA, flat);
     mega.id2 = m->item; /* [-mega] the stone, item + 1 */
