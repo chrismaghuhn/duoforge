@@ -1339,6 +1339,12 @@ extern const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT];
 /* The heal fraction of every move (step G10, heal: [numerator, denominator] in the pin; 0 and 0 for none), by move id;
  * the very last part of the canonical pool bytes. */
 extern const uint8_t dfi_pool_move_heal[DFI_POOL_MOVE_COUNT][2];
+/* Decision 0020: the static flags of every move (DUOFORGE_MOVE_STATIC_FLAG_*: one bit per Showdown flag name, plus
+ * POWER_RULE for a move with a basePowerCallback) and its hit counts (the pin's multihit; 1 and 1 for a single hit), by
+ * move id, for every row, modelled or not. The engine reads neither: they are data for duoforge_data_move_static, and the
+ * last parts of the canonical pool bytes. */
+extern const uint32_t dfi_pool_move_static_flags[DFI_POOL_MOVE_COUNT];
+extern const uint8_t dfi_pool_move_static_hits[DFI_POOL_MOVE_COUNT][2];
 extern const dfi_pool_alias dfi_pool_forme_aliases[DFI_POOL_ALIAS_COUNT];
 
 /* ---- names ----
@@ -1363,7 +1369,7 @@ extern const char *const dfi_pool_item_unmodeled[DFI_POOL_ITEM_COUNT];
 extern const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT];
 
 /* SHA-256 of the canonical pool bytes (written by the generator). */
-#define DFI_POOL_CANONICAL_SIZE 51087u
+#define DFI_POOL_CANONICAL_SIZE 54153u
 extern const uint8_t dfi_pool_table_hash[32];
 /* The canonical bytes of the closure layout over the first `formes`, `moves`,
  * `items` and `abilities` rows of the tables above, with every immunity byte

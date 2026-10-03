@@ -44,7 +44,7 @@
 #include "state/battle_internal.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "818580bc4fdbae52d5154243bfe58e2d8ae40e00c6c8ed3043af893b9eb98165"
+#define POOL_HASH_HEX "992bbee94a43560cacfd70241655906d4cbe14f8ec0ba2687f8bbab03934cc41"
 /* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
  * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
  * produced the same bytes. Step G10 moved two of them on purpose: Scald and Recover are data now (the thaw bit and
@@ -831,7 +831,7 @@ int main(void)
                                                          18u + 50u + POOL_ITEMS * 2u + POOL_ABILITIES * 2u +
                                                          POOL_ITEMS + POOL_ABILITIES +
                                                          POOL_FORMES * (DFI_POOL_LEARN_BYTES + 1u + 3u) + POOL_MOVES +
-                                                         POOL_MOVES * 2u);
+                                                         POOL_MOVES * 2u + POOL_MOVES * 4u + POOL_MOVES * 2u);
         DF_CHECK(&t, bytes[DFI_POOL_CANONICAL_SIZE] == 0xA5u);
         uint32_t at = 0u;
         uint32_t bad = 0u;
@@ -920,6 +920,19 @@ int main(void)
         at += DFI_POOL_MOVE_COUNT;
         for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) { /* the heal fractions (step G10), the last part */
             bad += bytes[at + 2u * i] != dfi_pool_move_heal[i][0] || bytes[at + 2u * i + 1u] != dfi_pool_move_heal[i][1]
+                       ? 1u
+                       : 0u;
+        }
+        at += 2u * DFI_POOL_MOVE_COUNT;
+        for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) { /* the static flags (decision 0020), 4 bytes little-endian */
+            const uint32_t v = (uint32_t)bytes[at + 4u * i] | ((uint32_t)bytes[at + 4u * i + 1u] << 8) |
+                               ((uint32_t)bytes[at + 4u * i + 2u] << 16) | ((uint32_t)bytes[at + 4u * i + 3u] << 24);
+            bad += v != dfi_pool_move_static_flags[i] ? 1u : 0u;
+        }
+        at += 4u * DFI_POOL_MOVE_COUNT;
+        for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) { /* the hit counts (decision 0020), the last part */
+            bad += bytes[at + 2u * i] != dfi_pool_move_static_hits[i][0] ||
+                           bytes[at + 2u * i + 1u] != dfi_pool_move_static_hits[i][1]
                        ? 1u
                        : 0u;
         }
