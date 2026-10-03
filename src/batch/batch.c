@@ -82,11 +82,15 @@ static duoforge_status dfi_batch_make(const struct duoforge_batch *b, uint32_t e
     return duoforge_battle_create(b->ctx, &setup, out);
 }
 
-/* Resets environment `e` to `episode`; it keeps its battle on failure. */
-static duoforge_status dfi_batch_reset(struct duoforge_batch *b, uint32_t e, uint32_t episode)
+/* Resets environment `e` to `episode` with `given`, which becomes its setup;
+   it keeps its setup and battle on failure. */
+static duoforge_status dfi_batch_reset_with(struct duoforge_batch *b, uint32_t e, uint32_t episode,
+                                            const duoforge_battle_setup *given)
 {
+    duoforge_battle_setup setup = *given;
+    duoforge_batch_seeds(b->seed, e, episode, &setup.rng_initstate, &setup.rng_initseq, NULL);
     duoforge_battle *fresh = NULL;
-    const duoforge_status st = dfi_batch_make(b, e, episode, &fresh);
+    const duoforge_status st = duoforge_battle_create(b->ctx, &setup, &fresh);
     if (st != DUOFORGE_OK) {
         return st;
     }
@@ -94,7 +98,14 @@ static duoforge_status dfi_batch_reset(struct duoforge_batch *b, uint32_t e, uin
     b->env[e].battle = fresh;
     b->env[e].episode = episode;
     b->env[e].terminal = false;
+    b->setups[e] = *given;
     return DUOFORGE_OK;
+}
+
+/* Resets environment `e` to `episode`; it keeps its battle on failure. */
+static duoforge_status dfi_batch_reset(struct duoforge_batch *b, uint32_t e, uint32_t episode)
+{
+    return dfi_batch_reset_with(b, e, episode, &b->setups[e]);
 }
 
 /* The lowest failing environment's status, or OK. */
@@ -533,6 +544,52 @@ duoforge_status duoforge_batch_reset(duoforge_batch *batch, uint32_t env, uint32
         return DUOFORGE_E_INVALID_ARGUMENT;
     }
     return dfi_batch_reset(batch, env, episode);
+}
+
+typedef struct dfi_reset_setups_job {
+    struct duoforge_batch *b;
+    const uint32_t *envs;
+    const uint32_t *episodes;
+    const duoforge_battle_setup *setups;
+    duoforge_status *statuses;
+} dfi_reset_setups_job;
+
+static void dfi_reset_setups_slice(void *job, uint32_t worker, uint32_t begin, uint32_t end)
+{
+    (void)worker;
+    const dfi_reset_setups_job *j = job;
+    for (uint32_t i = begin; i < end; ++i) {
+        j->statuses[i] = dfi_batch_reset_with(j->b, j->envs[i], j->episodes[i], &j->setups[i]);
+    }
+}
+
+duoforge_status duoforge_batch_reset_setups(duoforge_batch *batch, uint32_t count, const uint32_t *envs,
+                                            const uint32_t *episodes, const duoforge_battle_setup *setups,
+                                            duoforge_status *statuses)
+{
+    if (batch == NULL || (count > 0u && (envs == NULL || episodes == NULL || setups == NULL))) {
+        return DUOFORGE_E_NULL_ARGUMENT;
+    }
+    if (count == 0u) {
+        return DUOFORGE_OK;
+    }
+    if (count > batch->env_count) {
+        return DUOFORGE_E_INVALID_ARGUMENT; /* some environment is out of range or listed twice */
+    }
+    uint8_t seen[DUOFORGE_BATCH_MAX_ENVS / 8u];
+    memset(seen, 0, sizeof seen);
+    for (uint32_t i = 0u; i < count; ++i) {
+        const uint32_t e = envs[i];
+        if (e >= batch->env_count || (seen[e >> 3] & (1u << (e & 7u))) != 0u) {
+            return DUOFORGE_E_INVALID_ARGUMENT;
+        }
+        seen[e >> 3] = (uint8_t)(seen[e >> 3] | (1u << (e & 7u))); /* wide-operands-reviewed: < 256 */
+    }
+    /* count <= env_count, so the batch's own array holds every entry. */
+    duoforge_status *out = statuses != NULL ? statuses : batch->statuses;
+    dfi_reset_setups_job job = {batch, envs, episodes, setups, out};
+    dfi_pool_run(batch->pool, dfi_reset_setups_slice, &job, count);
+    return dfi_batch_first(out, count);
 }
 
 /* ------------------------------------------------------------ native mode */
