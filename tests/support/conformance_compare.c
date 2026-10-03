@@ -11,6 +11,7 @@
 
 #include "data/pool_tables.h"
 #include "state/battle_internal.h"
+#include "state/closure_member.h"
 
 static void print_event(FILE *out, const char *label, const duoforge_event *e)
 {
@@ -97,7 +98,7 @@ unsigned df_conf_compare_observation(FILE *out, const duoforge_context *ctx, con
                 const df_conf_member *set = &cb->members[s][m];
                 uint32_t ability = set->ability;
                 if (e->mega != 0u) {
-                    ability = 1u + dfi_pool_formes[dfi_pool_formes[set->species].mega_forme].ability;
+                    ability = 1u + dfi_pool_formes[dfi_mega_of(set->species, set->item)].ability; /* the Mega of (forme, stone) */
                 }
                 bool ok = v->status == status && v->is_mega == e->mega && v->item_used == used && v->ability == ability;
                 for (uint32_t k = 0; k < v->move_count && k < 4u; ++k) {

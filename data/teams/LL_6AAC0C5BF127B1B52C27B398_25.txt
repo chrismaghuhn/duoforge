@@ -1,0 +1,53 @@
+Raichu (M) @ Raichunite Y
+Ability: Lightning Rod
+Level: 50
+Timid Nature
+- Zap Cannon
+- Focus Blast
+- Encore
+- Protect
+
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Wood Hammer
+- Grassy Glide
+- Superpower
+- Fake Out
+
+Kingambit (M) @ Life Orb
+Ability: Defiant
+Level: 50
+Adamant Nature
+- Kowtow Cleave
+- Sucker Punch
+- Swords Dance
+- Protect
+
+Sylveon (M) @ Grassy Seed
+Ability: Pixilate
+Level: 50
+Modest Nature
+- Hyper Voice
+- Hyper Beam
+- Moonblast
+- Detect
+
+Incineroar (M) @ Chople Berry
+Ability: Intimidate
+Level: 50
+Adamant Nature
+- Fake Out
+- Flare Blitz
+- Parting Shot
+- Throat Chop
+
+Baxcalibur (M) @ Baxcalibrite
+Ability: Thermal Exchange
+Level: 50
+Adamant Nature
+- Ice Shard
+- Glaive Rush
+- Swords Dance
+- Protect

@@ -1,0 +1,53 @@
+Raichu (M) @ Raichunite Y
+Ability: Lightning Rod
+Level: 50
+Timid Nature
+- Protect
+- Fake Out
+- Zap Cannon
+- Focus Blast
+
+Rillaboom (M) @ Miracle Seed
+Ability: Overgrow
+Level: 50
+Adamant Nature
+- Fake Out
+- Wood Hammer
+- High Horsepower
+- Grassy Glide
+
+Staraptor (M) @ Staraptite
+Ability: Intimidate
+Level: 50
+Jolly Nature
+- Protect
+- Close Combat
+- Brave Bird
+- Tailwind
+
+Arcanine-Hisui (M) @ Focus Sash
+Ability: Intimidate
+Level: 50
+Jolly Nature
+- Protect
+- Rock Slide
+- Flare Blitz
+- Extreme Speed
+
+Gholdengo @ Life Orb
+Ability: Good as Gold
+Level: 50
+Timid Nature
+- Protect
+- Nasty Plot
+- Make It Rain
+- Shadow Ball
+
+Sylveon (M) @ Fairy Feather
+Ability: Pixilate
+Level: 50
+Modest Nature
+- Protect
+- Hyper Beam
+- Hyper Voice
+- Moonblast

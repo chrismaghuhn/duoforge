@@ -1,0 +1,53 @@
+Pelipper (M) @ Sitrus Berry
+Ability: Drizzle
+Level: 50
+Modest Nature
+- Hurricane
+- Tailwind
+- Weather Ball
+- Protect
+
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Grassy Glide
+- Fake Out
+- Wood Hammer
+- High Horsepower
+
+Incineroar (M) @ Chople Berry
+Ability: Intimidate
+Level: 50
+Brave Nature
+- Flare Blitz
+- Throat Chop
+- Fake Out
+- Parting Shot
+
+Sneasler (M) @ Grassy Seed
+Ability: Unburden
+Level: 50
+Adamant Nature
+- Dire Claw
+- Close Combat
+- Fake Out
+- Protect
+
+Charizard (M) @ Charizardite Y
+Ability: Blaze
+Level: 50
+Modest Nature
+- Weather Ball
+- Hurricane
+- Heat Wave
+- Protect
+
+Gholdengo @ Life Orb
+Ability: Good as Gold
+Level: 50
+Modest Nature
+- Protect
+- Nasty Plot
+- Make It Rain
+- Shadow Ball

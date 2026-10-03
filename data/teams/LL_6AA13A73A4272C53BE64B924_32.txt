@@ -1,0 +1,53 @@
+Rillaboom (M) @ Life Orb
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Wood Hammer
+- Grassy Glide
+- U-turn
+- Fake Out
+
+Archaludon (M) @ Leftovers
+Ability: Stamina
+Level: 50
+Modest Nature
+- Protect
+- Electro Shot
+- Dragon Pulse
+- Flash Cannon
+
+Pelipper (M) @ Sitrus Berry
+Ability: Drizzle
+Level: 50
+Modest Nature
+- Wide Guard
+- Weather Ball
+- Hurricane
+- Tailwind
+
+Sneasler (M) @ Grassy Seed
+Ability: Unburden
+Level: 50
+Adamant Nature
+- Close Combat
+- Gunk Shot
+- Rock Slide
+- Protect
+
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Modest Nature
+- Draco Meteor
+- Hyper Voice
+- Tailwind
+- Protect
+
+Floette-Eternal (F) @ Floettite
+Ability: Flower Veil
+Level: 50
+Modest Nature
+- Calm Mind
+- Draining Kiss
+- Dazzling Gleam
+- Protect

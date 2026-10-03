@@ -271,6 +271,22 @@ class LinesTest(unittest.TestCase):
         self.assertEqual(lines.check("|-singleturn|p1a: Staraptor|move: Rage Powder", self.view), "turn:RAGE_POWDER")
         self.assertEqual(lines.check("|-singleturn|p1a: Staraptor|Wide Guard", self.view), "turn:WIDE_GUARD")
 
+    def test_the_protect_variants_single_turn_line_folds(self):
+        # Spiky Shield, Baneful Bunker and Burning Bulwark print `move: Protect` (Protect and Detect print `Protect`).
+        self.assertEqual(lines.check("|-singleturn|p1a: Staraptor|move: Protect", self.view), "fold")
+        self.assertEqual(lines.check("|-singleturn|p1a: Staraptor|Protect", self.view), "fold")
+        self.assertEqual(self.stop("|-singleturn|p1a: Staraptor|move: Court Change"), "line:-singleturn move: Court Change")
+
+    def test_spiky_shield_damage_folds_with_a_known_source(self):
+        # `-damage|attacker|hp|[from] Spiky Shield|[of] holder`: the generic damage fold applies the HP; the converter's
+        # ev_cause knows the source (the cause MOVE with the move in id2 and the holder in other).
+        line = "|-damage|p2a: Gholdengo|87/100|[from] Spiky Shield|[of] p1a: Staraptor"
+        self.assertEqual(lines.check(line, self.view), "fold")
+        tables = self.view.data.tables
+        cause, id2, other = lines.trace_to_c.ev_cause(["[from] Spiky Shield", "[of] p1a: Staraptor"], tables)
+        self.assertEqual((cause, id2), (lines.trace_to_c.CAUSE["MOVE"], tables["MOVE"]["SPIKYSHIELD"]))
+        self.assertNotEqual(other, lines.trace_to_c.NOPOS)
+
     def test_guard_blocks_are_turn_scoped(self):
         self.assertEqual(lines.check("|-activate|p1a: Staraptor|move: Wide Guard", self.view), "turn:WIDE_GUARD")
         self.assertEqual(lines.check("|-activate|p1a: Staraptor|move: Quick Guard", self.view), "turn:QUICK_GUARD")

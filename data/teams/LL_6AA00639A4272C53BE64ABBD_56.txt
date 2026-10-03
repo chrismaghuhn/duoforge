@@ -1,0 +1,53 @@
+Indeedee-F (F) @ Sitrus Berry
+Ability: Psychic Surge
+Level: 50
+Sassy Nature
+- Follow Me
+- Trick Room
+- Protect
+- Psychic
+
+Gardevoir (M) @ Gardevoirite
+Ability: Trace
+Level: 50
+Quiet Nature
+- Hyper Voice
+- Expanding Force
+- Shadow Ball
+- Protect
+
+Sneasler (M) @ Psychic Seed
+Ability: Unburden
+Level: 50
+Adamant Nature
+- Dire Claw
+- Close Combat
+- Rock Tomb
+- Fake Out
+
+Kingambit (M) @ Occa Berry
+Ability: Defiant
+Level: 50
+Brave Nature
+- Kowtow Cleave
+- Sucker Punch
+- Iron Head
+- Protect
+
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Timid Nature
+- Hyper Voice
+- Draco Meteor
+- Tailwind
+- Protect
+
+Armarouge (M) @ Life Orb
+Ability: Flash Fire
+Level: 50
+Quiet Nature
+- Heat Wave
+- Expanding Force
+- Wide Guard
+- Trick Room

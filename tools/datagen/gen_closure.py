@@ -131,7 +131,8 @@ DATA_KEYS = {'num', 'accuracy', 'basePower', 'category', 'name', 'pp', 'priority
 # Keys that describe other generations, contests or mechanics outside the
 # closure (Z-Moves, Max Moves, Sheer Force), or mod bookkeeping.
 IGNORED_KEYS = {'contestType', 'zMove', 'maxMove', 'isNonstandard', 'hasSheerForceBoost', 'inherit'}
-BOOST_ROLE = {'NONE': 0, 'PRIMARY_SELF': 1, 'SECONDARY_TARGET': 2, 'SELF_AFTER_HIT': 3, 'PRIMARY_ALLY': 4}
+BOOST_ROLE = {'NONE': 0, 'PRIMARY_SELF': 1, 'SECONDARY_TARGET': 2, 'SELF_AFTER_HIT': 3, 'PRIMARY_ALLY': 4,
+              'SECONDARY_SELF': 5}
 
 # ---- Team C (decision 0009): appended to the closure in the extended tables ----
 # The closure mode never reads anything below, so its output stays byte-identical.
@@ -174,6 +175,7 @@ SPECIAL_VOLATILE_C = {'FOLLOW_ME': 'followme', 'HELPING_HAND': 'helpinghand'}
 STATUS_PICK_ONHIT = ("onHit(target, source) { const status = this.sample(['psn', 'par', 'slp']); "
                      "target.trySetStatus(status, source); },")
 SECONDARY_STATUS_PICK = 4
+SECONDARY_SELF_BOOST = 7  # step G28: the secondary's own boosts go to the user (Ancient Power)
 
 
 def fail(msg):
@@ -345,6 +347,14 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
                 fail('move %s: %s is not the pinned text' % (mid, name))
     if pool and handled[0] == 'AURORA_VEIL' and ('onTry' not in f or norm(f['onTry'][1]) != AURORA_VEIL_ONTRY):
         fail('move %s: onTry is not the pinned text' % mid)
+    if pool and handled[0] in G20_PROTECT_HANDLERS:
+        punish = PROTECT_VARIANT_PUNISHMENT[handled[0]]
+        if 'condition' not in f or norm(f['condition'][1]) != PROTECT_VARIANT_CONDITION % (punish, punish):
+            fail('move %s: the condition is not the pinned text' % mid)
+        pe = fields(base.entry('protect')[2])
+        for name in PROTECT_VARIANT_COPY_FIELDS:
+            if name not in f or name not in pe or norm(f[name][1]) != norm(pe[name][1]):
+                fail('move %s: %s is not that of protect' % (mid, name))
     if pool and mid in PROTECT_COPIES:
         pe = fields(base.entry(PROTECT_COPIES[mid])[2])
         for name in PROTECT_COPY_FIELDS:
@@ -467,6 +477,11 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
             vectors += 1
         elif ext and effect == STATUS_PICK_ONHIT:
             rec['sec_kind'] = SECONDARY_STATUS_PICK
+        elif pool and re.fullmatch(r'self: \{ boosts: \{ (?:(?:%s): -?\d+, )+\}, \},' % '|'.join(BOOSTS), effect):
+            # Step G28: a secondary whose own effect is a stat change of the user (Ancient Power: all five at 10 percent).
+            rec['sec_kind'] = SECONDARY_SELF_BOOST
+            rec['boost_role'], rec['boosts'] = BOOST_ROLE['SECONDARY_SELF'], boosts_of(effect)
+            vectors += 1
         elif re.search(r'\bself: \{', effect):
             bad('move %s: secondary self effects are not supported' % mid, 'secondary self effect')
             rec['sec_chance'] = 0
@@ -1345,6 +1360,56 @@ GLAIVE_RUSH_CONDITION = ("condition: { noCopy: true, onStart(pokemon) { this.add
 # condition is read from the pinned text (G20_CONDITION_FACTS) and the side condition itself (a tail field, not a column)
 # is owned by the handler.
 G20_HANDLERS = ['AURORA_VEIL']
+# Step G20, the Protect variants: Spiky Shield (data/moves.ts:17532-17584) is Protect with a contact punishment, so it has a
+# handler of its own that the turn code implements (the Protect path plus the punishment). Baneful Bunker (:985-1037) is the
+# same with poison, but its only learner, Toxapex, has no supported ability, so it stays UNMODELED until one is marked.
+# The generator checks that the fields and both callbacks are Protect's (not its volatile, whose name is the move's, and
+# not its type) and the whole condition text of the variant, whitespace aside: onTryHit's contact punishment is the one
+# thing that differs. King's Shield stays unmarked (its only learner, Aegislash, has no supported ability either).
+G20_PROTECT_HANDLERS = ['SPIKY_SHIELD']
+PROTECT_VARIANT_COPY_FIELDS = ('onPrepareHit', 'onHit', 'stallingMove', 'flags', 'priority', 'accuracy', 'target')
+PROTECT_VARIANT_CONDITION = (
+    "condition: { duration: 1, onStart(target) { this.add('-singleturn', target, 'move: Protect'); }, onTryHitPriority: 3, "
+    "onTryHit(target, source, move) { if (this.checkMoveBypassesProtect(move, source, target)) return; "
+    "if (move.smartTarget) { move.smartTarget = false; } else { this.add('-activate', target, 'move: Protect'); } "
+    "const lockedmove = source.getVolatile('lockedmove'); if (lockedmove) { // Outrage counter is reset "
+    "if (source.volatiles['lockedmove'].duration === 2) { delete source.volatiles['lockedmove']; } } "
+    "if (this.checkMoveMakesContact(move, source, target)) { %s } return this.NOT_FAIL; }, "
+    "onHit(target, source, move) { if (move.isZOrMaxPowered && this.checkMoveMakesContact(move, source, target)) { %s } }, },")
+PROTECT_VARIANT_PUNISHMENT = {'SPIKY_SHIELD': 'this.damage(source.baseMaxhp / 8, source, target);'}
+# Step G28 (a batch of move rules): Shell Smash keeps its boost order (the pin lists def and spd before atk, spa and spe and the
+# engine applies a vector in stat order), Acrobatics and Blizzard their one callback, Feint its `breaksProtect`: handlers
+# of their own that the turn code implements. The generator checks their texts (G28_FACTS; Expert Belt, an item rule
+# of the turn code, G28_ITEM_FACTS), because the engine hard-codes them. Ancient Power needs no handler: its secondary
+# self boost is a new secondary kind (SECONDARY_SELF_BOOST) of the generic columns.
+G28_HANDLERS = ['SHELL_SMASH', 'ACROBATICS', 'BLIZZARD', 'FEINT']
+G28_FACTS = (
+    ('shellsmash', ['accuracy: true,', 'category: "Status",', 'target: "self",', 'priority: 0,',
+                    'boosts: { def: -1, spd: -1, atk: 2, spa: 2, spe: 2, },']),
+    ('acrobatics', ['accuracy: 100,', 'basePower: 55,', 'category: "Physical",', 'target: "any",', 'type: "Flying",',
+                    'flags: { contact: 1, protect: 1, mirror: 1, distance: 1, metronome: 1 },',
+                    "basePowerCallback(pokemon, target, move) { if (!pokemon.item) { this.debug(\"BP doubled for no item\"); "
+                    "return move.basePower * 2; } return move.basePower; },"]),
+    ('blizzard', ['accuracy: 70,', 'basePower: 110,', 'category: "Special",', 'target: "allAdjacentFoes",', 'type: "Ice",',
+                  "onModifyMove(move) { if (this.field.isWeather(['hail', 'snowscape'])) move.accuracy = true; },",
+                  "secondary: { chance: 10, status: 'frz', },"]),
+    ('feint', ['accuracy: 100,', 'basePower: 30,', 'category: "Physical",', 'priority: 2,', 'target: "normal",', 'type: "Normal",',
+               'flags: { mirror: 1, noassist: 1, failcopycat: 1 },', 'breaksProtect: true,']),
+    ('grassyterrain', ['onBasePowerPriority: 6,',
+                       "onBasePower(basePower, attacker, defender, move) { const weakenedMoves = ['earthquake', 'bulldoze', 'magnitude']; "
+                       "if (weakenedMoves.includes(move.id) && defender.isGrounded() && !defender.isSemiInvulnerable()) { "
+                       "this.debug('move weakened by grassy terrain'); return this.chainModify(0.5); } "
+                       "if (move.type === 'Grass' && attacker.isGrounded()) { this.debug('grassy terrain boost'); "
+                       "return this.chainModify([5325, 4096]); } },"]),
+    ('earthquake', ['accuracy: 100,', 'basePower: 100,', 'category: "Physical",', 'priority: 0,', 'target: "allAdjacent",',
+                    'type: "Ground",', 'flags: { protect: 1, mirror: 1, nonsky: 1, metronome: 1 },']),
+    ('ancientpower', ['accuracy: 100,', 'basePower: 60,', 'category: "Special",', 'target: "normal",', 'type: "Rock",',
+                      "secondary: { chance: 10, self: { boosts: { atk: 1, def: 1, spa: 1, spd: 1, spe: 1, }, }, },"]),
+)
+G28_ITEM_FACTS = (
+    ('expertbelt', ["onModifyDamage(damage, source, target, move) { if (move && target.getMoveHitData(move).typeMod > 0) { "
+                    "return this.chainModify([4915, 4096]); } },"]),
+)
 AURORA_VEIL_ONTRY = "onTry() { return this.field.isWeather(['hail', 'snowscape']); },"
 KNOCK_OFF_CALLBACKS = {
     'onBasePower': "onBasePower(basePower, source, target, move) { const item = target.getItem(); "
@@ -1360,6 +1425,7 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'glaiverush': ('GLAIVE_RUSH', set()),                                 # G19: the volatile that makes its user hit as vulnerable
     'knockoff': ('KNOCK_OFF', {'onAfterHit', 'onBasePower'}),             # G16: takes the target's item, x1.5 while it has one
     'encore': ('ENCORE', set()),                                          # G9 (implemented): last move, a volatile, a queue change
+    'spikyshield': ('SPIKY_SHIELD', {'onPrepareHit', 'onHit'}),           # G20: Protect that damages a contact attacker
     'auroraveil': ('AURORA_VEIL', {'onTry'}),                             # G20: a screen against both categories, in snow only
     'wideguard': ('WIDE_GUARD', {'onTry', 'onHitSide'}),                 # G7: a side condition against spread moves
     'firstimpression': ('FIRST_IMPRESSION', {'onTry', 'onDisableMove'}),  # G10a: first turn out only (Fake Out's rule)
@@ -1368,6 +1434,10 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'sandstorm': ('SANDSTORM', set()),                                    # weather: sets the weather (for 5 turns)
     'snowscape': ('SNOWSCAPE', set()),
     'expandingforce': ('EXPANDING_FORCE', {'onBasePower', 'onModifyMove'}),  # G15: x1.5 and a spread in Psychic Terrain
+    'shellsmash': ('SHELL_SMASH', set()),                                 # G28: its boosts apply in the pin's order
+    'acrobatics': ('ACROBATICS', {'basePowerCallback'}),                  # G28: doubled without an item
+    'blizzard': ('BLIZZARD', {'onModifyMove'}),                           # G28: never misses in snow
+    'feint': ('FEINT', set()),                                            # G28: breaks Protect and Wide Guard
 })
 # Step G13: Detect is Protect (data/moves.ts:3526-3547 against 13961-14005): the same handler (not one of the G2 handlers,
 # so it is added to the pool's map only), and the generator checks that its stalling fields and both callbacks are,
@@ -1380,7 +1450,7 @@ PROTECT_COPIES = {'detect': 'protect'}
 # champions/moves.ts:581-584) sets isNonstandard to null, which makes it legal, and the tag has no reader in the tables.
 TAGS_PAST_UNOBTAINABLE = 'tags: ["Past Unobtainable"],'
 PROTECT_COPY_FIELDS = ('onPrepareHit', 'onHit', 'stallingMove', 'volatileStatus', 'priority', 'accuracy', 'target')
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + ['UNMODELED']
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + ['UNMODELED']
 # Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags
 # byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
@@ -1389,12 +1459,15 @@ G2_OWNED_FIELDS = {
     'ENCORE': {'volatileStatus': "volatileStatus: 'encore',"},
     'WIDE_GUARD': {'sideCondition': "sideCondition: 'wideguard',"},
     'AURORA_VEIL': {'sideCondition': "sideCondition: 'auroraveil',"},
+    'SPIKY_SHIELD': {'volatileStatus': "volatileStatus: 'spikyshield',"},
     'SANDSTORM': {'weather': "weather: 'Sandstorm',"},
     'SNOWSCAPE': {'weather': "weather: 'snowscape',"},
+    'SHELL_SMASH': {'boosts': "boosts: { def: -1, spd: -1, atk: 2, spa: 2, spe: 2, },"},
+    'FEINT': {'breaksProtect': "breaksProtect: true, // Breaking protection implemented in scripts.js"},
     'GLAIVE_RUSH': {'self': "self: { volatileStatus: 'glaiverush', },"},
 }
 G2_OWNED_SECONDARY = {}
-G2_OWNED_CONDITION = {'ENCORE', 'WIDE_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL'}
+G2_OWNED_CONDITION = {'ENCORE', 'WIDE_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD'}
 # Step G8 (Throat Chop and Psychic Noise): the two secondaries become modelled kinds, and the column that their
 # consumers read is the move's second flags byte (the first is full): the `sound` flag (Throat Chop bars the sound
 # moves) and the `heal` flag (Heal Block bars the moves that heal). Both are derived for every pool move, the prefix
@@ -1479,7 +1552,7 @@ TARGET_CLASS_POOL = dict(TARGET_CLASS, allAdjacent=11, scripted=12, allyTeam=13,
 TARGET_CLASS_POOL_NAMES = {11: 'ALL_ADJACENT', 12: 'SCRIPTED', 13: 'ALLY_TEAM', 14: 'ALLIES', 15: 'FOE_SIDE'}
 # The target classes that the turn code resolves (src/combat/turn.c, dfi_resolve_targets and request.c).
 ENGINE_TARGETS = {'normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
-                  'randomNormal'}
+                  'randomNormal', 'allAdjacent'}  # allAdjacent: step G28 (Earthquake hits the ally too)
 # Every move flag of the 510 pool moves: a flag outside this set is something the generator cannot read.
 POOL_FLAGS = (set(FLAG_BITS_C) | IGNORED_FLAGS | G2_IGNORED_FLAGS |
               {'bite', 'recharge', 'minimize', 'gravity', 'powder', 'noparentalbond', 'futuremove', 'cantusetwice',
@@ -1498,10 +1571,11 @@ HANDLER_IDS = ['NONE', 'UNMODELED']
 # by definition, like the closure and Team C rows. The step that marks such a row in the support manifest adds its id
 # here, which changes the handler column and so the POOL table hash, as any pool change does; a row that is marked and
 # still has the UNMODELED handler fails duoforge.data.pool_tables. G4: Focus Sash, Rock Head. G12: Floettite (the Mega
-# Stone of Floette-Eternal), Flower Veil and Fairy Aura. G14: Rough Skin, Poison Touch and Thermal Exchange. G16: Sticky Hold (Knock Off reads it by id). AC1: Trace (the entry copy of a foe's ability). G15: Psychic Seed (Grassy Seed's rule for the other terrain).
-ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed'],
+# Stone of Floette-Eternal), Flower Veil and Fairy Aura. G14: Rough Skin, Poison Touch and Thermal Exchange. G16: Sticky Hold (Knock Off reads it by id). AC1: Trace (the entry copy of a foe's ability). G15: Psychic Seed (Grassy Seed's rule for the other terrain). G22: Sand Rush, Swift Swim, Slush Rush and Chlorophyll (the doubled Speed in their weather, tools/datagen/pool_families.js ENGINE_ORDER), Sand Rush's immunity to Sandstorm, Inner Focus (no flinch, no Intimidate drop) and Liquid Voice (a sound move becomes Water). G23-C: Levitate (isGrounded and the Ground immunity).
+ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'expertbelt'],
                'abilities': ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange',
-                             'stickyhold', 'trace']}
+                             'stickyhold', 'trace', 'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll',
+                             'innerfocus', 'liquidvoice']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -2101,11 +2175,23 @@ def check_g15_facts(moves_ts, items_ts):
             fail('item %s has other fields than grassyseed: %s' % (iid, sorted(set(f) ^ set(g))))
 
 
+def check_g28_items(items_ts, only=None):
+    """Step G28: the text of Expert Belt's onModifyDamage (G28_ITEM_FACTS) is in the pinned entry, whole."""
+    for iid, facts in (G28_ITEM_FACTS if only is None else only):
+        e = items_ts.entry(iid)
+        if e is None:
+            fail('item %s not found' % iid)
+        text = norm(chr(10).join(e[2]))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('item %s: the entry no longer has "%s"' % (iid, fact))
+
+
 def check_g8_conditions(moves_ts, only=None):
     """The engine hard-codes the durations, orders and tests of the Throat Chop and Heal Block conditions (step G8) and
     those of Aurora Veil (step G20): every one of them must be in the pinned entry, as one normalised text. `only`: a
     tuple of (move id, facts) to check instead of all of them (the generator's tests)."""
-    for mid, facts in (G8_CONDITION_FACTS + G20_CONDITION_FACTS if only is None else only):
+    for mid, facts in (G8_CONDITION_FACTS + G20_CONDITION_FACTS + G28_FACTS if only is None else only):
         e = moves_ts.entry(mid)
         if e is None:
             fail('move %s not found' % mid)
@@ -2130,6 +2216,7 @@ def build_pool(root, repo, dx):
     legal = load_legal_pool(repo)
     check_g8_conditions(moves_ts)
     check_g15_facts(moves_ts, items_ts)
+    check_g28_items(items_ts)
     check_weather_facts(Source(root, 'data/conditions.ts', READER_INPUTS), moves_ts)
     FLAGS_THAT_MATTER.clear()
     FLAGS_THAT_MATTER.update(prefix_flag_reads((items_ts, champ_items, abil_ts, champ_abil, moves_ts, champ_moves), dx)
@@ -2578,6 +2665,8 @@ def render_pool(dp, dx):
 #define DFI_MOVE_FLAG2_THAWS_TARGET 4u /* thawsTarget (step G10): the move cures a frozen target after the secondaries */
 #define DFI_MOVE_FLAG2_RECHARGE 8u /* flags.recharge with self.volatileStatus mustrecharge (step G17): the user must recharge after a hit */
 #define DFI_BOOST_ROLE_PRIMARY_ALLY 4u /* step G19: a status move whose primary boosts go to the adjacent ally (Coaching) */
+#define DFI_BOOST_ROLE_SECONDARY_SELF 5u /* step G28: the secondary's roll gives these boosts to the user (Ancient Power) */
+#define DFI_SECONDARY_SELF_BOOST 7u /* step G28: boosts[] applied to the user with the secondary roll */
 #define DFI_SECONDARY_LOCKOUT 5u    /* chance 100: the target may not use sound moves (Throat Chop) */
 #define DFI_SECONDARY_HEAL_BLOCK 6u /* chance 100: the target may not heal (Psychic Noise) */
 

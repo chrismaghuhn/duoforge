@@ -133,11 +133,25 @@
  * orders its boosts Defense, Special Defense, Attack, Special Attack, Speed, the engine in stat order), Earthquake,
  * Ancient Power, Blizzard, Dual Wingbeat, Feint, Life Dew, Acrobatics, Terrain Pulse and Expert Belt stay unmarked: each needs
  * logic that no column or handler has (docs/decisions/0015-content-expansion-pool.md, step G21).
+ * Step G20 also marks Spiky Shield (Protect with a contact punishment, floor(max HP / 8) at the attacker; the variant is the tail's
+ * protect_kind, tail rev 3). Baneful Bunker and King's Shield stay unmarked: their only learners (Toxapex, Aegislash) have no
+ * supported ability, so no accepted battle could use them. Recorded as g20_spiky_shield_* under the POOL kind.
  * Step G24 (a Mega Stone batch) marks nine stones whose Mega ability and a base ability are marked and whose base forme has exactly
  * one Mega: Gardevoirite (Pixilate; the base forme's Trace has been marked since AC1: the Mega Evolution replaces the copied
  * ability), Abomasite (Snow Warning), Barbaracite (Tough Claws), Beedrillite (Adaptability), Falinksite (Defiant), Hawluchanite
  * (No Guard), Malamarite (Contrary), Sceptilite (Lightning Rod) and Scraftinite (Intimidate), recorded as g24_* under the POOL
- * kind. Meowsticite stays unmarked: one stone names two (base, Mega) pairs (Meowstic-M and -F) and its row links the first only. */
+ * kind. Meowsticite stays unmarked: one stone names two (base, Mega) pairs (Meowstic-M and -F) and its row links the first only.
+ * Step G22 marks six abilities that the turn code runs by id: Sand Rush, Swift Swim, Slush Rush and Chlorophyll (Speed x2
+ * in the speed key while their weather is up, a standing holder only; Sand Rush's holder also takes no Sandstorm damage),
+ * Inner Focus (no flinch, and an Attack drop that Intimidate causes fails with -fail ... [from] ability: Inner Focus) and
+ * Liquid Voice (a sound move is Water), recorded as g22_* under the POOL kind. Cursed Body stays unmarked: it needs the
+ * Disable volatile.
+ * Step G28 marks six moves and one item that the turn code now has rules for: Earthquake (the target class allAdjacent: the ally
+ * is hit too, allies before foes; Wide Guard stops it; Grassy Terrain halves it at a grounded target), Shell Smash (which step G21 left out: the stats
+ * change in the pinned order, Defense and Special Defense first), Acrobatics (twice the power while the user holds no item),
+ * Blizzard (never misses in snow, the freeze at 10 percent is data), Ancient Power (a secondary that raises the user's five
+ * stats at 10 percent: a new secondary kind), Feint (removes the target's Protect and the Wide Guard of its side, and its stall
+ * counter) and Expert Belt (4915/4096 for a super effective hit), recorded as g28_* under the POOL kind. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -274,6 +288,15 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_DRAINPUNCH] = 1u,
             [DFI_MOVE_NUZZLE] = 1u,
             [DFI_MOVE_AURORAVEIL] = 1u,
+            [DFI_MOVE_SPIKYSHIELD] = 1u,
+            /* Step G28: Shell Smash (its boosts in the pin's order), Acrobatics (doubled without an item), Blizzard (never misses
+             * in snow), Ancient Power (a secondary that boosts its user), Feint (breaks Protect and Wide Guard). */
+            [DFI_MOVE_SHELLSMASH] = 1u,
+            [DFI_MOVE_ACROBATICS] = 1u,
+            [DFI_MOVE_BLIZZARD] = 1u,
+            [DFI_MOVE_ANCIENTPOWER] = 1u,
+            [DFI_MOVE_FEINT] = 1u,
+            [DFI_MOVE_EARTHQUAKE] = 1u, /* hits the ally too (allAdjacent); Grassy Terrain halves it */
         },
     .abilities =
         {
@@ -313,6 +336,15 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_POISONTOUCH] = 1u,
             [DFI_ABILITY_THERMALEXCHANGE] = 1u,
             [DFI_ABILITY_STICKYHOLD] = 1u,
+            [DFI_ABILITY_LEVITATE] = 1u,
+            /* Step G22: the weather Speed abilities (doubled Speed in their weather; Sand Rush also takes no Sandstorm damage),
+             * Inner Focus (no flinch, no Intimidate drop) and Liquid Voice (sound moves are Water). */
+            [DFI_ABILITY_SANDRUSH] = 1u,
+            [DFI_ABILITY_SWIFTSWIM] = 1u,
+            [DFI_ABILITY_SLUSHRUSH] = 1u,
+            [DFI_ABILITY_CHLOROPHYLL] = 1u,
+            [DFI_ABILITY_INNERFOCUS] = 1u,
+            [DFI_ABILITY_LIQUIDVOICE] = 1u,
         },
     .items =
         {
@@ -335,10 +367,14 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_FOCUSSASH] = 1u,
             [DFI_ITEM_FLOETTITE] = 1u,
             [DFI_ITEM_PSYCHICSEED] = 1u,
+            [DFI_ITEM_EXPERTBELT] = 1u, /* step G28 */
             [DFI_ITEM_TYRANITARITE] = 1u,
             [DFI_ITEM_BAXCALIBRITE] = 1u,
             [DFI_ITEM_AERODACTYLITE] = 1u,
             [DFI_ITEM_MANECTITE] = 1u,
+            [DFI_ITEM_CHARIZARDITEX] = 1u,
+            [DFI_ITEM_GARCHOMPITEZ] = 1u,
+            [DFI_ITEM_DELPHOXITE] = 1u,
             [DFI_ITEM_GARDEVOIRITE] = 1u,
             [DFI_ITEM_ABOMASITE] = 1u,
             [DFI_ITEM_BARBARACITE] = 1u,
