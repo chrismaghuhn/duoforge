@@ -1223,7 +1223,7 @@ class ItemAbilityFeatures(unittest.TestCase):
                                                                  'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof',
                                                                  'unnerve', 'speedboost', 'compoundeyes', 'ironfist',
                                                                  'sharpness', 'solidrock', 'technician', 'multiscale',
-                                                                 'galewings', 'raindish', 'friendguard']})
+                                                                 'galewings', 'raindish', 'friendguard', 'shadowtag']})
 
 
 class Bounds(unittest.TestCase):

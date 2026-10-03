@@ -421,6 +421,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_SPEEDBOOST] = 1u,
             [DFI_ABILITY_RAINDISH] = 1u, /* step G35 */
             [DFI_ABILITY_FRIENDGUARD] = 1u,
+            [DFI_ABILITY_SHADOWTAG] = 1u, /* step G41 */
         },
     .items =
         {

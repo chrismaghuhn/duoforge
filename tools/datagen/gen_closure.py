@@ -1477,6 +1477,17 @@ G35_ABILITY_FACTS = (
     ('raindish', ("onWeather(target, source, effect) { if (target.effectiveWeather() !== effect.id) return; "
                   "if (effect.id === 'raindance' || effect.id === 'primordialsea') { this.heal(target.baseMaxhp / 16); } },",)),
 )
+# Step G41: Shadow Tag (the Mega ability of Gengar) is an engine row read by id: a foe's switch is refused at the TURN boundary
+# (src/combat/turn.c dfi_switch_trapped, read by the request builder), no event and no state. The Champions mod overrides it
+# nowhere; Shed Shell and Run Away, which free their holders (the mod's runaway), are not marked, so they never meet it.
+G41_ABILITY_FACTS = (
+    ('shadowtag', ("onFoeTrapPokemon(pokemon) { if (!pokemon.hasAbility('shadowtag') && "
+                   "pokemon.isAdjacent(this.effectState.target)) { pokemon.tryTrap(true); } },",
+                   "onFoeMaybeTrapPokemon(pokemon, source) { if (!source) source = this.effectState.target; "
+                   "if (!source || !pokemon.isAdjacent(source)) return; if (!pokemon.hasAbility('shadowtag')) { "
+                   "pokemon.maybeTrapped = true; } },",
+                   'flags: {},')),
+)
 G34_ITEM_FACTS = (
     ('widelens', ('onSourceModifyAccuracyPriority: -2,',
                   "onSourceModifyAccuracy(accuracy) { if (typeof accuracy === 'number') { return this.chainModify([4505, 4096]); } },")),
@@ -1801,7 +1812,7 @@ ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'expertbelt', 
                              'stickyhold', 'trace', 'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll',
                              'innerfocus', 'liquidvoice', 'flamebody', 'clearbody', 'hospitality', 'overcoat',
                              'soundproof', 'unnerve', 'speedboost', 'compoundeyes', 'ironfist', 'sharpness', 'solidrock',
-                             'technician', 'multiscale', 'galewings', 'raindish', 'friendguard']}
+                             'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'shadowtag']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -2431,7 +2442,7 @@ def check_g28_items(items_ts, only=None):
 def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
     """Steps G34 and G35: every fact of G34_ABILITY_FACTS, G35_ABILITY_FACTS and G34_ITEM_FACTS is in the pinned entry, whitespace aside, and the
     Champions mod has no entry of its own for it (an override would change what the engine reads)."""
-    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS, abil_ts, champ_abil),
+    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + G41_ABILITY_FACTS, abil_ts, champ_abil),
                                           ('item', G34_ITEM_FACTS, items_ts, champ_items)):
         for rid, facts in facts_by_id:
             e = src.entry(rid)
