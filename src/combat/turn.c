@@ -2830,6 +2830,13 @@ static duoforge_status dfi_run_heal_move(dfi_run *r, uint32_t user, uint32_t mov
             mv->amount = (uint8_t)mask; /* < 16 */
         }
     }
+    /* spreadMoveHit's `if (!moveDamage.some(val => val !== false)) break;` (the Champions mod's loop, data/mods/champions/scripts.ts:526 and its Update at :537, the format runs it; sim/battle-actions.ts:954 is the base's) leaves the hit loop
+     * before its eachEvent('Update') when every target's heal failed (damage[i] is false for a target at full HP): no Update,
+     * so no Sitrus Berry check. This is what the single-target branch did before step G32 (an early return); the spread
+     * rewrite of step G32 fell through to the hit end and drew the Update's speed ties of the Sitrus holders too. */
+    if (!did) {
+        return DUOFORGE_OK;
+    }
     return dfi_status_hit_end(r);
 }
 
