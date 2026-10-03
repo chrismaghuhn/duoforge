@@ -219,8 +219,8 @@ SLOT_FEATURE_NAMES = (("valid",) + tuple(f"kind.{n}" for n in _SLOT_KIND_NAMES) 
 assert len(FEATURE_NAMES) == OBS_SIZE and len(SLOT_FEATURE_NAMES) == SLOT_FEATURES
 assert len(_base_names()) == BASE_OBS_SIZE and EXT_SIZE == 5 + 2 * (7 + 2 * 36 + 6 * 6)
 _EXT_SIDE = 7 + 2 * 36 + 6 * 6
-# The block columns read from the records (every bit but the base values').
-_RECORD_COLUMNS = ((1 << EXT_COLUMN_FEATURES) & BASE_VALUE_FEATURES) == 0
+_VOLATILE_SHIFTS = np.arange(len(VOLATILES))
+_EYE5 = np.eye(5)
 _MOVE_SLOT = SLOT_FEATURE_NAMES.index("move_slot")
 _KIND_MOVE = SLOT_FEATURE_NAMES.index("kind.MOVE")
 
@@ -366,50 +366,42 @@ def _check_records(ob, ext, mask):
 
 
 def _ext_block(ob, ext, present, viewer):
-    """The block of the module docstring (N, EXT_SIZE) before the mask."""
+    """The block of the module docstring (N, EXT_SIZE) before the mask. Each
+    side's columns are built for both absolute sides at once, then ordered
+    own first by the viewer; rows without a record (revision 0) keep their
+    record columns zero."""
     n = ob.shape[0]
-    rows = np.arange(n)
+    rows = np.arange(n)[:, None]
+    order = np.stack([viewer, 1 - viewer], axis=1)  # (N, 2): the absolute side of own, of foe
     block = np.zeros((n, EXT_SIZE), dtype=_F32)
+    sides = block[:, 5:].reshape(n, 2, _EXT_SIDE)  # a view of the per-side columns, own then foe
+    if ext is not None and present.any():
+        rec = np.asarray(ext)
+        s = rec["sides"]  # (N, 2), absolute
+        guards = s["guard_flags"].astype(np.int64)
+        head = np.stack([s["aurora_veil_turns"] / 8, s["stealth_rock"], s["spikes"] / 3, s["toxic_spikes"] / 2,
+                         s["sticky_web"]] + [(guards & bit) != 0 for bit, _ in _GUARDS], axis=-1)  # (N, 2, 7)
+        pos = s["positions"]  # (N, 2, 2)
+        ability = pos["ability_now"].astype(np.int64)
+        position = np.concatenate([
+            (pos["volatiles"].astype(np.int64)[..., None] >> _VOLATILE_SHIFTS) & 1,
+            _EYE5[pos["encore_slot"]], _EYE5[pos["disable_slot"]],
+            np.stack([pos["stockpile"] / 3, pos["perish"] / 3, ability != 0, ability / 255], axis=-1),
+            pos["type_now"] / 18], axis=-1)  # (N, 2, 2, 36)
+        forme = s["members"]["forme"].astype(np.int64)
+        item = s["members"]["item_now"].astype(np.int64)
+        member = np.stack([np.zeros(forme.shape), forme != 0, forme / 65535, item != 0, item == _ITEM_NOW_NONE,
+                           item / 255], axis=-1)  # (N, 2, 6, 6); the tox column comes from the observation
+        absolute = np.concatenate([head, position.reshape(n, 2, 72), member.reshape(n, 2, 36)], axis=-1)
+        absolute[~present] = 0.0
+        sides[...] = absolute[rows, order]
+        block[:, 4] = np.where(present, rec["field"]["gravity_turns"] / 5, 0.0)
+    # The base values, from the observation itself.
     block[:, 0] = ob["weather"] == C["DUOFORGE_WEATHER_SAND"]
     block[:, 1] = ob["weather"] == C["DUOFORGE_WEATHER_SNOW"]
     block[:, 2] = ob["terrain"] == C["DUOFORGE_TERRAIN_ELECTRIC"]
     block[:, 3] = ob["terrain"] == C["DUOFORGE_TERRAIN_MISTY"]
-    for k, side in enumerate((viewer, 1 - viewer)):
-        base = 5 + k * _EXT_SIDE
-        tox = (ob["sides"][rows, side]["members"]["status"] == _TOX).astype(_F32)  # (N, 6)
-        block[:, base + 79 + 6 * np.arange(6)] = tox
-    if ext is None or not present.any():
-        return block
-    rec = np.asarray(ext)
-    out = np.zeros((n, EXT_SIZE), dtype=_F32)
-    out[:, 4] = _ratio(rec["field"]["gravity_turns"], 5)
-    for k, side in enumerate((viewer, 1 - viewer)):
-        base = 5 + k * _EXT_SIDE
-        s = rec["sides"][rows, side]
-        guards = s["guard_flags"].astype(np.int64)
-        out[:, base:base + 7] = np.stack([
-            _ratio(s["aurora_veil_turns"], 8), s["stealth_rock"].astype(_F32), _ratio(s["spikes"], 3),
-            _ratio(s["toxic_spikes"], 2), s["sticky_web"].astype(_F32)]
-            + [((guards & bit) != 0).astype(_F32) for bit, _ in _GUARDS], axis=1)
-        pos = s["positions"]
-        volatiles = pos["volatiles"].astype(np.int64)
-        ability = pos["ability_now"].astype(np.int64)
-        position = np.concatenate([
-            np.stack([((volatiles & bit) != 0).astype(_F32) for _, bit, _ in VOLATILES], axis=-1),
-            np.eye(5, dtype=_F32)[pos["encore_slot"].astype(np.int64)],
-            np.eye(5, dtype=_F32)[pos["disable_slot"].astype(np.int64)],
-            np.stack([_ratio(pos["stockpile"], 3), _ratio(pos["perish"], 3), (ability != 0).astype(_F32),
-                      _ratio(ability, 255)], axis=-1),
-            _ratio(pos["type_now"], 18)], axis=-1)  # (N, 2, 36)
-        out[:, base + 7:base + 79] = position.reshape(n, -1)
-        m = s["members"]
-        forme = m["forme"].astype(np.int64)
-        item = m["item_now"].astype(np.int64)
-        member = np.stack([np.zeros(forme.shape, _F32), (forme != 0).astype(_F32), _ratio(forme, 65535),
-                           (item != 0).astype(_F32), (item == _ITEM_NOW_NONE).astype(_F32), _ratio(item, 255)],
-                          axis=-1)  # (N, 6, 6)
-        out[:, base + 79:base + 115] = member.reshape(n, -1)
-    block[np.ix_(present, _RECORD_COLUMNS)] = out[np.ix_(present, _RECORD_COLUMNS)]
+    sides[:, :, 79::6] = (ob["sides"]["members"]["status"] == _TOX)[rows, order]
     return block
 
 
