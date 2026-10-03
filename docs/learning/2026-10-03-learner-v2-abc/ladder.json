@@ -1,0 +1,389 @@
+{
+ "players": [
+  {
+   "player": "init",
+   "elo": 0.0,
+   "elo_low": 0.0,
+   "elo_high": 0.0,
+   "elo_by_team": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "elo_by_team_low": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "elo_by_team_high": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "player": "v1 update 0",
+   "elo": 0.0,
+   "elo_low": -51.6,
+   "elo_high": 57.6,
+   "elo_by_team": [
+    18.1,
+    11.5,
+    -28.5
+   ],
+   "elo_by_team_low": [
+    -56.7,
+    -46.2,
+    -101.7
+   ],
+   "elo_by_team_high": [
+    112.2,
+    67.0,
+    44.1
+   ]
+  },
+  {
+   "player": "v1 update 1600",
+   "elo": 499.0,
+   "elo_low": 444.1,
+   "elo_high": 569.0,
+   "elo_by_team": [
+    516.3,
+    390.0,
+    356.0
+   ],
+   "elo_by_team_low": [
+    437.6,
+    332.4,
+    283.8
+   ],
+   "elo_by_team_high": [
+    644.1,
+    448.8,
+    433.7
+   ]
+  },
+  {
+   "player": "v1 update 3000",
+   "elo": 451.3,
+   "elo_low": 395.4,
+   "elo_high": 507.9,
+   "elo_by_team": [
+    530.0,
+    295.8,
+    315.4
+   ],
+   "elo_by_team_low": [
+    453.1,
+    242.2,
+    242.6
+   ],
+   "elo_by_team_high": [
+    659.2,
+    355.4,
+    375.4
+   ]
+  },
+  {
+   "player": "v1 update 4600",
+   "elo": 512.7,
+   "elo_low": 464.0,
+   "elo_high": 576.3,
+   "elo_by_team": [
+    653.9,
+    326.1,
+    337.9
+   ],
+   "elo_by_team_low": [
+    555.3,
+    267.4,
+    265.9
+   ],
+   "elo_by_team_high": [
+    779.9,
+    394.0,
+    400.5
+   ]
+  },
+  {
+   "player": "v2-S update 0",
+   "elo": -35.9,
+   "elo_low": -87.0,
+   "elo_high": 22.4,
+   "elo_by_team": [
+    103.7,
+    -11.8,
+    -167.9
+   ],
+   "elo_by_team_low": [
+    31.3,
+    -69.8,
+    -245.0
+   ],
+   "elo_by_team_high": [
+    189.9,
+    40.2,
+    -95.5
+   ]
+  },
+  {
+   "player": "v2-S update 1600",
+   "elo": 546.4,
+   "elo_low": 495.9,
+   "elo_high": 605.8,
+   "elo_by_team": [
+    607.1,
+    378.6,
+    420.0
+   ],
+   "elo_by_team_low": [
+    519.1,
+    309.4,
+    353.9
+   ],
+   "elo_by_team_high": [
+    743.4,
+    447.5,
+    486.7
+   ]
+  },
+  {
+   "player": "v2-S update 3000",
+   "elo": 574.3,
+   "elo_low": 522.3,
+   "elo_high": 626.8,
+   "elo_by_team": [
+    616.3,
+    420.5,
+    443.6
+   ],
+   "elo_by_team_low": [
+    521.7,
+    356.7,
+    369.4
+   ],
+   "elo_by_team_high": [
+    728.5,
+    482.8,
+    516.9
+   ]
+  },
+  {
+   "player": "v2-S update 4600",
+   "elo": 565.0,
+   "elo_low": 508.9,
+   "elo_high": 622.6,
+   "elo_by_team": [
+    593.4,
+    382.4,
+    488.3
+   ],
+   "elo_by_team_low": [
+    491.6,
+    321.3,
+    412.2
+   ],
+   "elo_by_team_high": [
+    709.8,
+    451.3,
+    579.3
+   ]
+  },
+  {
+   "player": "v2-M update 0",
+   "elo": -406.6,
+   "elo_low": -462.7,
+   "elo_high": -359.1,
+   "elo_by_team": [
+    -161.1,
+    -328.4,
+    -391.6
+   ],
+   "elo_by_team_low": [
+    -221.0,
+    -397.5,
+    -483.4
+   ],
+   "elo_by_team_high": [
+    -92.7,
+    -256.3,
+    -317.7
+   ]
+  },
+  {
+   "player": "v2-M update 1600",
+   "elo": 471.5,
+   "elo_low": 424.0,
+   "elo_high": 521.6,
+   "elo_by_team": [
+    539.1,
+    374.9,
+    269.7
+   ],
+   "elo_by_team_low": [
+    452.3,
+    305.9,
+    200.4
+   ],
+   "elo_by_team_high": [
+    676.7,
+    435.8,
+    328.8
+   ]
+  },
+  {
+   "player": "v2-M update 3000",
+   "elo": 494.4,
+   "elo_low": 448.3,
+   "elo_high": 552.0,
+   "elo_by_team": [
+    548.1,
+    382.4,
+    319.9
+   ],
+   "elo_by_team_low": [
+    466.8,
+    325.9,
+    249.2
+   ],
+   "elo_by_team_high": [
+    677.0,
+    451.5,
+    390.2
+   ]
+  },
+  {
+   "player": "v2-M update 4600",
+   "elo": 616.1,
+   "elo_low": 554.0,
+   "elo_high": 674.1,
+   "elo_by_team": [
+    741.0,
+    393.8,
+    483.1
+   ],
+   "elo_by_team_low": [
+    648.4,
+    325.6,
+    414.0
+   ],
+   "elo_by_team_high": [
+    881.6,
+    464.5,
+    572.9
+   ]
+  },
+  {
+   "player": "v2-L update 0",
+   "elo": -367.5,
+   "elo_low": -452.4,
+   "elo_high": -299.3,
+   "elo_by_team": [
+    -234.9,
+    -204.9,
+    -377.8
+   ],
+   "elo_by_team_low": [
+    -321.5,
+    -288.5,
+    -473.7
+   ],
+   "elo_by_team_high": [
+    -138.5,
+    -133.7,
+    -301.8
+   ]
+  },
+  {
+   "player": "v2-L update 1600",
+   "elo": 454.5,
+   "elo_low": 412.1,
+   "elo_high": 508.5,
+   "elo_by_team": [
+    460.2,
+    390.0,
+    279.0
+   ],
+   "elo_by_team_low": [
+    379.3,
+    325.4,
+    212.5
+   ],
+   "elo_by_team_high": [
+    577.8,
+    463.0,
+    341.8
+   ]
+  },
+  {
+   "player": "v2-L update 3000",
+   "elo": 557.2,
+   "elo_low": 503.3,
+   "elo_high": 620.5,
+   "elo_by_team": [
+    566.2,
+    493.3,
+    360.5
+   ],
+   "elo_by_team_low": [
+    474.4,
+    432.5,
+    298.9
+   ],
+   "elo_by_team_high": [
+    685.6,
+    560.2,
+    422.6
+   ]
+  },
+  {
+   "player": "v2-L update 4600",
+   "elo": 561.8,
+   "elo_low": 508.3,
+   "elo_high": 610.8,
+   "elo_by_team": [
+    621.0,
+    416.7,
+    406.0
+   ],
+   "elo_by_team_low": [
+    529.2,
+    352.6,
+    338.4
+   ],
+   "elo_by_team_high": [
+    750.2,
+    478.2,
+    473.3
+   ]
+  }
+ ],
+ "teams": [
+  "A",
+  "B",
+  "C"
+ ],
+ "suite": {
+  "games": 2,
+  "budget": 512,
+  "rows": 36
+ },
+ "team_matrix_player": "v2-M update 4600",
+ "team_matrix": [
+  [
+   0.75,
+   1.0,
+   0.5
+  ],
+  [
+   0.0,
+   0.25,
+   0.5
+  ],
+  [
+   0.75,
+   0.25,
+   0.75
+  ]
+ ]
+}
