@@ -533,7 +533,7 @@ static bool dfi_bytes_zero(const void *p, size_t n)
 /* The tail of a standing occupant's position: the ranges, the pairs that are zero together and the sources that are
  * never the occupant itself (flat is its position, side * 2 + slot). */
 static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *tp, uint32_t flat,
-                               const dfi_member *occupant)
+                               const dfi_member *occupant, const dfi_active_slot *slot)
 {
     const uint32_t move_count = occupant->move_count;
     const bool encore_ok = tp->last_move <= DFI_TAIL_MOVE_MAX &&
@@ -561,7 +561,12 @@ static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *t
     const bool leech_ok = tp->leech_seed_source <= DFI_TAIL_SOURCE_MAX && tp->leech_seed_source != flat + 1u;
     const bool stockpile_ok = tp->stockpile <= DFI_TAIL_STOCKPILE_MAX && tp->stockpile_def <= tp->stockpile &&
                               tp->stockpile_spd <= tp->stockpile;
-    return encore_ok && bars_ok && disable_ok && flags_ok && substitute_ok && trap_ok && leech_ok && stockpile_ok;
+    /* Rev 3 (step G20): the variant of the Protect volatile belongs to the volatile (zero when it is down), and the pad
+     * byte that aligns the struct is zero. */
+    const bool protect_ok = tp->protect_kind <= DFI_TAIL_PROTECT_KIND_MAX &&
+                            (tp->protect_kind == 0u || ((uint32_t)slot->flags & DFI_VOL_PROTECT) != 0u) && tp->pad == 0u;
+    return encore_ok && bars_ok && disable_ok && flags_ok && substitute_ok && trap_ok && leech_ok && stockpile_ok &&
+           protect_ok;
 }
 
 /* The POOL tail (decision 0015 section 7). Runs after the side checks, so every occupant is below the member count
@@ -594,7 +599,8 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
                 }
                 continue;
             }
-            if (!dfi_tail_pos_valid(&lim, tp, s * DUOFORGE_ACTIVE_PER_SIDE + p, &side->members[occupant])) {
+            if (!dfi_tail_pos_valid(&lim, tp, s * DUOFORGE_ACTIVE_PER_SIDE + p, &side->members[occupant],
+                                    &side->positions[p])) {
                 return DFI_INV_TAIL_POSITION;
             }
         }

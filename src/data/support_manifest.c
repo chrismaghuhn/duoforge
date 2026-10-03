@@ -133,6 +133,9 @@
  * orders its boosts Defense, Special Defense, Attack, Special Attack, Speed, the engine in stat order), Earthquake,
  * Ancient Power, Blizzard, Dual Wingbeat, Feint, Life Dew, Acrobatics, Terrain Pulse and Expert Belt stay unmarked: each needs
  * logic that no column or handler has (docs/decisions/0015-content-expansion-pool.md, step G21).
+ * Step G20 also marks Spiky Shield (Protect with a contact punishment, floor(max HP / 8) at the attacker; the variant is the tail's
+ * protect_kind, tail rev 3). Baneful Bunker and King's Shield stay unmarked: their only learners (Toxapex, Aegislash) have no
+ * supported ability, so no accepted battle could use them. Recorded as g20_spiky_shield_* under the POOL kind.
  * Step G24 (a Mega Stone batch) marks nine stones whose Mega ability and a base ability are marked and whose base forme has exactly
  * one Mega: Gardevoirite (Pixilate; the base forme's Trace has been marked since AC1: the Mega Evolution replaces the copied
  * ability), Abomasite (Snow Warning), Barbaracite (Tough Claws), Beedrillite (Adaptability), Falinksite (Defiant), Hawluchanite
@@ -274,6 +277,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_DRAINPUNCH] = 1u,
             [DFI_MOVE_NUZZLE] = 1u,
             [DFI_MOVE_AURORAVEIL] = 1u,
+            [DFI_MOVE_SPIKYSHIELD] = 1u,
         },
     .abilities =
         {

@@ -777,6 +777,63 @@ class Library(unittest.TestCase):
         # The guard is live at a boundary inside a turn in the pivot battle, and only there.
         self.assertEqual({k: v for k, v in derived.items() if v}, {('g7_wide_guard_pivot', 1): 1})
 
+    def test_spiky_shield_rows_are_what_the_protocol_lines_say(self):
+        """Decision 0015 section 7 for the Protect variant of tail rev 3: a position has protect_kind 1 from the
+        `|-singleturn|X|move: Protect` line that follows its `|move|X|Spiky Shield|` line until the next `|upkeep|` or until
+        its occupant leaves or faints (Protect and Detect print `-singleturn|X|Protect`: the variant 0). The rows of the C
+        test (kind_rows in tests/test_pool_g20_protect.c: protect_kind of the four positions, side * 2 + slot, after each
+        step of the G20 Spiky Shield battles) must be exactly what these lines give for the committed traces, so the
+        variant is live at a boundary inside a turn (a pivot) and never at a turn boundary. Every contact move that a
+        Spiky Shield stops is followed by `-damage|attacker|hp|[from] Spiky Shield|[of] holder`, a move without contact by
+        nothing of the kind."""
+        with open(os.path.join(ROOT, 'tests', 'test_pool_g20_protect.c'), encoding='utf-8') as f:
+            source = f.read()
+        rows = {}
+        for m in re.finditer(r'\{"(g20_spiky\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}', source):
+            rows[(m.group(1), int(m.group(2)))] = tuple(int(m.group(i)) for i in range(3, 7))
+        names = sorted({n for n, _ in rows})
+        self.assertTrue(names)
+        listed = re.search(r'names\[\] = \{(.*?)\};', source, re.S).group(1)
+        self.assertEqual(sorted(re.findall(r'"(g20_spiky\w+)"', listed)), names)
+        contact = {'Iron Head', 'Sucker Punch', 'Double-Edge', 'U-turn', 'Wood Hammer', 'Brave Bird'}
+
+        def flat(label):  # `p1a: Name` -> side * 2 + slot
+            return (int(label[1]) - 1) * 2 + 'ab'.index(label[2])
+        derived = {}
+        punished = stopped_without = 0
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            kind = [0, 0, 0, 0]
+            last = None
+            for k, step in enumerate(trace['steps']):
+                lines = [l for l in step['log'] if not l.startswith('|split')]
+                for i, line in enumerate(lines):
+                    part = line.split('|')
+                    if len(part) < 2:
+                        continue
+                    if part[1] == 'move':
+                        last = (part[2], part[3])
+                    elif part[1] == '-singleturn' and part[3] == 'move: Protect':
+                        self.assertEqual(last[1], 'Spiky Shield', line)
+                        kind[flat(part[2])] = 1
+                    elif part[1] == '-activate' and part[3] == 'move: Protect' and kind[flat(part[2])] == 1:
+                        nxt = lines[i + 1].split('|') if i + 1 < len(lines) else []
+                        if last[1] in contact:
+                            self.assertEqual(nxt[1:2], ['-damage'], '%s step %d: %s' % (name, k, line))
+                            self.assertEqual(nxt[4:], ['[from] Spiky Shield', '[of] ' + part[2]])
+                            punished += 1
+                        else:
+                            self.assertNotEqual(nxt[1:2], ['-damage'], '%s step %d: %s' % (name, k, line))
+                            stopped_without += 1
+                    elif part[1] == 'upkeep':
+                        kind = [0, 0, 0, 0]
+                    elif part[1] in ('switch', 'faint', 'drag'):
+                        kind[flat(part[2])] = 0
+                derived[(name, k)] = tuple(kind)
+        self.assertEqual(rows, derived)
+        self.assertTrue(any(any(v) for v in derived.values()) and punished > 0 and stopped_without > 0)
+
     def test_aurora_veil_rows_are_what_the_protocol_lines_say(self):
         """Decision 0018 section 6.1 for Aurora Veil: a side has the screen from the `|-sidestart|pN: X|move: Aurora Veil`
         line (5 turns, 8 when the user of the move holds Light Clay: the sheet, which is the spec's team text) and its turns
@@ -1394,7 +1451,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 78)  # the 27 of G21, G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
+        self.assertEqual(len(marked), 79)  # the 27 of G21, Spiky Shield (G20), G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -1417,6 +1474,8 @@ class Library(unittest.TestCase):
                             # Protect's (step G13: its handler, and the line of the Protect condition).
                             done = done or (after.startswith('|-singleturn|') and after.endswith('|' + name))
                             done = done or (name == 'Detect' and after.startswith('|-singleturn|'))
+                            # Spiky Shield (step G20) prints Protect's line, `move: Protect`, for its own volatile.
+                            done = done or (name == 'Spiky Shield' and after.startswith('|-singleturn|'))
             with self.subTest(move=name):
                 self.assertTrue(done, '%s is marked but no committed pool battle uses it' % name)
 
