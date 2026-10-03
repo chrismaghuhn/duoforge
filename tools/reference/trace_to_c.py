@@ -254,8 +254,9 @@ END_TIE_LINES = {'healblock': 'move: Heal Block', 'disable': 'Disable'}
 def heal_block_end_tie(d, log):
     """A residual tie of two Heal Blocks (Psychic Noise, order 20; and of two Disables, order 17, the same way) of holders of equal Speed that both end in this step:
     the shuffle of the two orders their `-end|X|move: Heal Block` lines, so the tie is kept like a side-end tie
-    (side_end_tie). The engine draws it after the callbacks of the residual and orders the pair by it; the entry
-    states the outcome: (SPEED_TIE, 0, 2, 0 when the line of the holder at the lower position comes first, else 1).
+    (side_end_tie) and is the reference's own draw: the engine runs the same sorted list (the Heal Block and Disable ends
+    are entries of it, callbacks while they end now) and draws the same shuffle, so the entry is the draw as it is
+    (SPEED_TIE, 0, 2, 0 when the shuffle keeps the pair in the order of the group, else 1).
     The precondition for keeping it is that both end lines are in the step's `log` (`log` is the step's protocol
     lines): a tie of which fewer than two holders end shows no order (the drop rule for duration ties stays: None
     here). The order that the draw states is checked against the order of the two lines, so a handler list that is
@@ -289,7 +290,7 @@ def heal_block_end_tie(d, log):
     def flat(x):
         return (int(x[2][1]) - 1) * 2 + 'ab'.index(x[2][2])
 
-    return (SITES['SPEED_TIE'], 0, 2, 0 if flat(first) < flat(other) else 1)
+    return (SITES['SPEED_TIE'], 0, 2, d['value'] - d['start'])
 
 
 def tie_effects(group):

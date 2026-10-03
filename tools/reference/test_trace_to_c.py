@@ -565,7 +565,7 @@ class Library(unittest.TestCase):
             lines = [l for l in trace['steps'][k]['log'] if l.startswith('|-end|') and l.endswith('|move: Heal Block')]
             self.assertEqual(len(lines), 2)
             lower_first = lines[0].startswith('|-end|p1a')
-            self.assertEqual(entry, (trace_to_c.SITES['SPEED_TIE'], 0, 2, 0 if lower_first else 1), name)
+            self.assertEqual(entry, (trace_to_c.SITES['SPEED_TIE'], 0, 2, d['value'] - d['start']), name)  # the draw as it is
             # name a: the line of p1a is first, name b: the line of p2a
             self.assertEqual(lower_first, name.endswith('_a'))
             # The same draw with the lines in the other order contradicts the draw: an error, no entry.
@@ -1680,7 +1680,7 @@ class Library(unittest.TestCase):
             marked = f.read()
         for name in ('SANDRUSH', 'SWIFTSWIM', 'SLUSHRUSH', 'CHLOROPHYLL', 'INNERFOCUS', 'LIQUIDVOICE'):
             self.assertIn('[DFI_ABILITY_%s] = 1u' % name, marked)
-        self.assertNotIn('[DFI_ABILITY_CURSEDBODY] = 1u', marked)
+        # (Cursed Body, which G22 left unmarked for want of the Disable volatile, is marked by step G27.)
 
     def test_the_switch_of_a_damaging_pivot_names_its_move(self):
         """[from] U-turn (step G5) is [from] of the move, as Flip Turn and Parting Shot: the cause MOVE and the move's

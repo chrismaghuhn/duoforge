@@ -148,8 +148,8 @@
  * Step G22 marks six abilities that the turn code runs by id: Sand Rush, Swift Swim, Slush Rush and Chlorophyll (Speed x2
  * in the speed key while their weather is up, a standing holder only; Sand Rush's holder also takes no Sandstorm damage),
  * Inner Focus (no flinch, and an Attack drop that Intimidate causes fails with -fail ... [from] ability: Inner Focus) and
- * Liquid Voice (a sound move is Water), recorded as g22_* under the POOL kind. Cursed Body stays unmarked: it needs the
- * Disable volatile. */
+ * Liquid Voice (a sound move is Water), recorded as g22_* under the POOL kind. Cursed Body, which needed the Disable
+ * volatile, is marked by step G27. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,

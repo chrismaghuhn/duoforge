@@ -1245,7 +1245,7 @@ int main(void)
             DF_CHECK(&t, !want || dfi_pool_moves[id].special != DFI_SPECIAL_UNMODELED);
             marked_count += dfi_support.moves[id] != 0u ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, marked_count, 79u);
+        DF_CHECK_EQ_U64(&t, marked_count, 80u);
     }
 
     /* Step AC1: Trace copies the ability of a foe unless that has the pin's notrace flag. The turn code excludes only
@@ -1391,8 +1391,7 @@ int main(void)
                          dfi_pool_ability_handler[DFI_ABILITY_CHLOROPHYLL] == DFI_HANDLER_NONE &&
                          dfi_pool_ability_handler[DFI_ABILITY_INNERFOCUS] == DFI_HANDLER_NONE &&
                          dfi_pool_ability_handler[DFI_ABILITY_LIQUIDVOICE] == DFI_HANDLER_NONE); /* engine rows, G22 */
-        /* Cursed Body needs the Disable volatile: still UNMODELED. */
-        DF_CHECK(&t, dfi_pool_ability_handler[DFI_ABILITY_CURSEDBODY] == DFI_HANDLER_UNMODELED);
+        DF_CHECK(&t, dfi_pool_ability_handler[DFI_ABILITY_CURSEDBODY] == DFI_HANDLER_NONE); /* an engine row, G27 */
         DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_FLOETTITE] == DFI_HANDLER_NONE); /* a Mega Stone: data of its link */
         DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_PSYCHICSEED] == DFI_HANDLER_NONE &&
                          dfi_pool_item_handler[DFI_ITEM_ELECTRICSEED] == DFI_HANDLER_UNMODELED &&

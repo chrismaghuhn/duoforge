@@ -4357,21 +4357,8 @@ static duoforge_status dfi_residual_events(dfi_run *r)
             list[n] = (dfi_residual_entry){DFI_RES_POISON, flat, 9u, speed, 0u, true};
             n += 1u;
         }
-        const uint32_t ends = ((((uint32_t)pos->flags & DFI_VOL_PROTECT) != 0u) ? 1u : 0u) +
-                              (pos->stall_level != 0u ? 1u : 0u) +
-                              ((((uint32_t)pos->flags & DFI_VOL_FLINCH) != 0u) ? 1u : 0u) +
-                              (pos->charge_turns != 0u ? 1u : 0u) +
-                              ((((uint32_t)pos->flags & DFI_VOL_HELPING_HAND) != 0u) ? 1u : 0u) +
-                              ((((uint32_t)pos->flags & DFI_VOL_FOLLOW_ME) != 0u) ? 1u : 0u) +
-                              /* mustrecharge has a duration (2) and no callback: an end handler of the residual's sort,
-                               * like the stall counter (data/conditions.ts:364-378; step G17). */
-                              (b->tail.sides[flat / 2u].positions[flat % 2u].must_recharge != 0u ? 1u : 0u);
-        for (uint32_t k = 0u; k < ends; ++k) {
-            list[n] = (dfi_residual_entry){DFI_RES_DURATION, flat, DFI_RES_NO_ORDER, speed, 2u, false};
-            n += 1u;
-        }
-        /* The volatiles with a duration handler of their own, in the one fixed order of residual_order.h (counters, Heal
-         * Block, Disable, Throat Chop, Encore): Heal Block (order 20, data/moves.ts:8273-8320), Disable (17, :3693),
+        /* The volatiles with a duration handler of their own, in the one fixed order of residual_order.h (Heal
+         * Block, Disable, Throat Chop, Encore, then the counters of the turn): Heal Block (order 20, data/moves.ts:8273-8320), Disable (17, :3693),
          * Throat Chop (22, :19389-19423) and Encore (16). Each is an entry of the sorted list at its order (the
          * reference's fieldEvent counts every duration down and ends it when its turn comes, sim/battle.ts:517-527). The
          * ones whose end shows a line (Heal Block, Disable) are callbacks, a tie that draws, exactly when they end in this
@@ -4395,6 +4382,19 @@ static duoforge_status dfi_residual_events(dfi_run *r)
                 list[n] = (dfi_residual_entry){DFI_RES_ENCORE, flat, 16u, speed, 2u, true};
                 n += 1u;
             }
+        }
+        const uint32_t ends = ((((uint32_t)pos->flags & DFI_VOL_PROTECT) != 0u) ? 1u : 0u) +
+                              (pos->stall_level != 0u ? 1u : 0u) +
+                              ((((uint32_t)pos->flags & DFI_VOL_FLINCH) != 0u) ? 1u : 0u) +
+                              (pos->charge_turns != 0u ? 1u : 0u) +
+                              ((((uint32_t)pos->flags & DFI_VOL_HELPING_HAND) != 0u) ? 1u : 0u) +
+                              ((((uint32_t)pos->flags & DFI_VOL_FOLLOW_ME) != 0u) ? 1u : 0u) +
+                              /* mustrecharge has a duration (2) and no callback: an end handler of the residual's sort,
+                               * like the stall counter (data/conditions.ts:364-378; step G17). */
+                              (b->tail.sides[flat / 2u].positions[flat % 2u].must_recharge != 0u ? 1u : 0u);
+        for (uint32_t k = 0u; k < ends; ++k) {
+            list[n] = (dfi_residual_entry){DFI_RES_DURATION, flat, DFI_RES_NO_ORDER, speed, 2u, false};
+            n += 1u;
         }
         if (dfi_holds(r->b, m, DFI_ITEM_LEFTOVERS)) {
             list[n] = (dfi_residual_entry){DFI_RES_LEFTOVERS, flat, 5u, speed, 4u, true};
