@@ -457,6 +457,35 @@ class ExtSupportedTest(unittest.TestCase):
         finally:
             env.close()
 
+    def test_self_play_refuses_a_mask_the_library_cannot_produce(self):
+        # A run never records a feature it could not see: a given mask must lie in the library's mask under the
+        # context, before anything is played or saved. A strict subset is fine.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            probe = SelfPlay(2, 1, 0x2026100300000033, pool=self._pool(ctx), context=ctx)
+            library = probe.ext_supported
+            probe.close()
+            lacking = features.ALL_FEATURES & ~library
+            self.assertTrue(lacking)  # some feature is not built yet
+            first = (lacking & -lacking).bit_length() - 1
+            name = next(n for n, b in features.FEATURE_BITS.items() if b == first)
+            for mask in (library | (1 << first), features.BASE_VALUE_FEATURES | (1 << first)):
+                with self.assertRaisesRegex(ValueError, name):
+                    SelfPlay(2, 1, 0x2026100300000033, pool=self._pool(ctx), context=ctx, ext_supported=mask)
+            for bad in (-1, 1 << 40, 1.0):
+                with self.assertRaisesRegex(ValueError, "ext_supported"):
+                    SelfPlay(2, 1, 0x2026100300000033, pool=self._pool(ctx), context=ctx, ext_supported=bad)
+            low = library & -library
+            subset = SelfPlay(2, 1, 0x2026100300000033, pool=self._pool(ctx), context=ctx, ext_supported=library & ~low)
+            try:
+                self.assertEqual(subset.ext_supported, library & ~low)
+            finally:
+                subset.close()
+        for mask in (features.BASE_VALUE_FEATURES, 1 << features.FEATURE_BITS["AURORA_VEIL"]):
+            with self.assertRaisesRegex(ValueError, "does not support"):
+                SelfPlay(2, 1, 0x2026100300000032, ext_supported=mask)  # CLOSURE: the library supports none
+            with self.assertRaisesRegex(ValueError, "does not support"):
+                SelfPlay(2, 1, 0x2026100300000032, encoder=2, ext_supported=mask)
+
     def test_checkpoint_names_its_mask(self):
         from duoforge_learn.checkpoint import ext_supported_of
         self.assertEqual(ext_supported_of({"encoder": 3}), 0)

@@ -268,13 +268,15 @@ How the tail rev 1 fills the view: `wide_guard` -> `guard_flags` bit `WIDE_GUARD
   - a record bit in the mask without records;
   - records of another player, epoch or revision;
   - a mask bit the records' `supported` lacks (a library older than the network);
-  - a field above its documented range.
-  Records of revision 0 (every kind but POOL) leave the record columns zero for any mask.
+  - a field above its documented range, with `ability_now` at most 255 (the width of the member view's ability id it overlays; POOL has 215 abilities);
+  - a `type_now` while the `TYPE_CHANGED` volatile is clear.
+- **Records of revision 0** (every kind but POOL, where none of these effects can arise) read as an empty record under any mask: zero, and "none" in the Encore and Disable one-hots. So a POOL network sees, in a CLOSURE battle, only states it saw in training. A record of revision 0 with any nonzero byte is refused.
 - **Recharge.** The move slot of a Recharge option (`DUOFORGE_MOVE_SLOT_RECHARGE`, 5) is 5 / 4 in the slot part, the one value above 1. `slots_as_encoder` refuses it for encoders 1 and 2, which never saw it; `as_encoder` gives them their 607 columns and refuses the new base values.
 - **Checkpoints.**
   - A format-2 checkpoint of encoder 2 is widened by name to encoder 3, with zero rows for the block and no mask (0).
   - A format-1 file keeps the width of its own version.
-  - A new training run reads by default every feature the library supports under its data kind (`--ext-supported` sets the mask) and records it as `"ext_supported"`. A resumed run keeps its mask.
+  - A new training run reads by default every feature the library supports under its data kind (`--ext-supported` sets the mask) and records it as `"ext_supported"`. A resumed run keeps its mask; only an explicit, different `--ext-supported` is a change, and it is refused.
+  - Self-play refuses a mask with a bit the library does not support under the run's context (`check_ext_supported`), the stored mask of a resumed run included, before anything is played or saved: a network never records a feature it could not see while it learned. Evaluation and the ladder only encode and are not checked; their zeros are true.
 - **Live play.** The live tracker fills no records yet, so the live policy refuses a mask with a record bit. It plays a network whose mask has only base-value bits.
 
 ## 11. Size, in one table

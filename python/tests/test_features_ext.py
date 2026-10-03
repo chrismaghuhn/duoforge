@@ -51,13 +51,29 @@ def _turn_scene(ctx):
         return batch.observations.reshape(-1).copy(), batch.domains.reshape(-1).copy()
 
 
+# The fields of _records, per absolute side s (0, 1), position k and member r: every value differs between the two
+# sides, and no two fields of one side that a swapped column could confuse hold the same value.
+SIDE_VALUES = {"aurora_veil_turns": (5, 2), "stealth_rock": (1, 0), "spikes": (1, 3), "toxic_spikes": (2, 1),
+               "sticky_web": (0, 1)}
+GUARDS = ("DUOFORGE_SIDE_GUARD_WIDE_GUARD", "DUOFORGE_SIDE_GUARD_QUICK_GUARD")  # side 0 wide, side 1 quick
+
+
+def _position_values(s, k):
+    """(volatile bits, ability_now, type_now, encore slot, disable slot, stockpile, perish) of position k of side s."""
+    bits = (1 << (s * 2 + k)) | C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]
+    if s == 1:
+        bits |= C["DUOFORGE_POSITION_EXT_TYPE_CHANGED"]
+    return bits, 17 + k + 10 * s, (7, 3) if s == 1 else (0, 0), 1 + s + 2 * k, 4 - s - 2 * k, 1 + s, 3 - s - k
+
+
+def _member_values(s, r):
+    """(forme, item_now) of member r of side s."""
+    return 0x1234 + 16 * s + r, (10 + s if r % 2 == 0 else C["DUOFORGE_ITEM_NOW_NONE"])
+
+
 def _records(observations, supported=ALL):
-    """Extension records of revision 1 for the observations, every field set:
-    gravity 3; side s: Aurora Veil 5 - s, Stealth Rock, Spikes 2, Toxic Spikes
-    1, Sticky Web, both guards; position k of side s: volatiles bit s * 2 + k
-    and MUST_RECHARGE, ability_now 17 + k, type_now (6, 0), encore slot 2,
-    disable slot 4, stockpile 2, perish 3; member r: forme 0x1234 + r, item_now
-    10 (r even) or ITEM_NOW_NONE (r odd)."""
+    """Extension records of revision 1 for the observations, every field set
+    (gravity 3, SIDE_VALUES, GUARDS, _position_values, _member_values)."""
     ext = np.zeros(observations.shape, dtype=_layout.OBSERVATION_EXT)
     ext["revision"] = C["DUOFORGE_OBSERVATION_EXT_REVISION"]
     ext["player"] = observations["player"]
@@ -66,24 +82,21 @@ def _records(observations, supported=ALL):
     ext["field"]["gravity_turns"] = 3
     sides = ext["sides"]
     for s in range(2):
-        sides["aurora_veil_turns"][:, s] = 5 - s
-        sides["stealth_rock"][:, s] = 1
-        sides["spikes"][:, s] = 2
-        sides["toxic_spikes"][:, s] = 1
-        sides["sticky_web"][:, s] = 1
-        sides["guard_flags"][:, s] = C["DUOFORGE_SIDE_GUARD_WIDE_GUARD"] | C["DUOFORGE_SIDE_GUARD_QUICK_GUARD"]
+        for name, values in SIDE_VALUES.items():
+            sides[name][:, s] = values[s]
+        sides["guard_flags"][:, s] = C[GUARDS[s]]
+        pos = sides["positions"]
         for k in range(2):
-            pos = sides["positions"]
-            pos["volatiles"][:, s, k] = (1 << (s * 2 + k)) | C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]
-            pos["ability_now"][:, s, k] = 17 + k
-            pos["type_now"][:, s, k] = (6, 0)
-            pos["encore_slot"][:, s, k] = 2
-            pos["disable_slot"][:, s, k] = 4
-            pos["stockpile"][:, s, k] = 2
-            pos["perish"][:, s, k] = 3
+            bits, ability, types, encore, disable, stockpile, perish = _position_values(s, k)
+            pos["volatiles"][:, s, k] = bits
+            pos["ability_now"][:, s, k] = ability
+            pos["type_now"][:, s, k] = types
+            pos["encore_slot"][:, s, k] = encore
+            pos["disable_slot"][:, s, k] = disable
+            pos["stockpile"][:, s, k] = stockpile
+            pos["perish"][:, s, k] = perish
         for r in range(_layout.MAX_ROSTER):
-            sides["members"]["forme"][:, s, r] = 0x1234 + r
-            sides["members"]["item_now"][:, s, r] = 10 if r % 2 == 0 else C["DUOFORGE_ITEM_NOW_NONE"]
+            sides["members"]["forme"][:, s, r], sides["members"]["item_now"][:, s, r] = _member_values(s, r)
     ext["sides"] = sides
     return ext
 
@@ -149,8 +162,12 @@ class FeaturesExtTest(unittest.TestCase):
             self.assertEqual(int(bits[COL[name] - features.BASE_OBS_SIZE]), BIT[feature], name)
         self.assertEqual(features.BASE_VALUE_FEATURES, _mask(*BASE_BITS))
 
-    def test_closure_battles_keep_encoder_2_and_a_zero_block(self):
+    def test_closure_battles_keep_encoder_2_and_an_empty_block(self):
+        # Under CLOSURE the records have revision 0: the first 607 columns are encoder 2's, and the block is that of
+        # an empty record (mask 0: all zero; every bit: only the "none" of Encore and Disable).
         from python.tests import _reference_features as reference
+        empty_columns = sorted(COL[f"ext.{o}.pos{k}.{g}.none"] for o in ("own", "foe") for k in range(2)
+                               for g in ("encore", "disable"))
         policy = duoforge.RandomPolicy(SEED, ENVS)
         policy.start_episodes(np.arange(ENVS), np.zeros(ENVS, dtype=np.uint64))
         compared = 0
@@ -164,7 +181,9 @@ class FeaturesExtTest(unittest.TestCase):
                 for mask in (0, ALL):
                     obs, slots, pairs = features.encode_batch(ob, d, ext.reshape(-1), mask)
                     self.assertEqual(obs.shape, (2 * ENVS, 842))
-                    self.assertFalse(obs[:, 607:].any())
+                    on = sorted(set((np.flatnonzero(obs[:, 607:].any(axis=0)) + 607).tolist()))
+                    self.assertEqual(on, empty_columns if mask else [])
+                    self.assertTrue((obs[:, empty_columns] == (1.0 if mask else 0.0)).all())
                     for n in range(ob.shape[0]):
                         want = reference.encode(ob[n], d[n])
                         self.assertTrue(np.array_equal(obs[n, :607], want[0]))
@@ -177,39 +196,43 @@ class FeaturesExtTest(unittest.TestCase):
         self.assertGreater(compared, 200)
 
     def test_record_columns_hold_the_fields(self):
+        # Every field at its column, from both viewers: own is the viewer's absolute side (the values of _records
+        # differ between the sides, so a swapped side or a swapped column shows).
         ob, d = self.obs, self.domains
+        self.assertEqual(set(ob["player"].tolist()), {0, 1})
         part = features.encode_batch(ob, d, _records(ob), ALL)[0]
+        slots = ("none", "slot0", "slot1", "slot2", "slot3")
         for n in range(ob.shape[0]):
             row = part[n]
             self.assertEqual(row[COL["ext.global.gravity_turns"]], np.float32(3 / 5))
             for s in range(2):
                 o = _side_name(ob[n], s)
-                self.assertEqual(row[COL[f"ext.{o}.aurora_veil_turns"]], np.float32((5 - s) / 8))
-                self.assertEqual(row[COL[f"ext.{o}.stealth_rock"]], 1.0)
-                self.assertEqual(row[COL[f"ext.{o}.spikes"]], np.float32(2 / 3))
-                self.assertEqual(row[COL[f"ext.{o}.toxic_spikes"]], 0.5)
-                self.assertEqual(row[COL[f"ext.{o}.sticky_web"]], 1.0)
-                self.assertEqual(row[COL[f"ext.{o}.wide_guard"]], 1.0)
-                self.assertEqual(row[COL[f"ext.{o}.quick_guard"]], 1.0)
+                scales = {"aurora_veil_turns": 8, "stealth_rock": 1, "spikes": 3, "toxic_spikes": 2, "sticky_web": 1}
+                for name, values in SIDE_VALUES.items():
+                    self.assertEqual(row[COL[f"ext.{o}.{name}"]], np.float32(values[s] / scales[name]), (n, s, name))
+                self.assertEqual((row[COL[f"ext.{o}.wide_guard"]], row[COL[f"ext.{o}.quick_guard"]]),
+                                 ((1.0, 0.0) if s == 0 else (0.0, 1.0)))
                 for k in range(2):
                     p = f"ext.{o}.pos{k}."
+                    bits, ability, types, encore, disable, stockpile, perish = _position_values(s, k)
                     on = {name for name in COL if name.startswith(p + "volatile.") and row[COL[name]] != 0}
-                    self.assertEqual(on, {p + "volatile." + VOLATILES[s * 2 + k], p + "volatile.must_recharge"})
-                    slots = ("none", "slot0", "slot1", "slot2", "slot3")
-                    self.assertEqual([row[COL[p + f"encore.{x}"]] for x in slots], [0, 0, 1, 0, 0])  # slot 2 - 1
-                    self.assertEqual([row[COL[p + f"disable.{x}"]] for x in slots], [0, 0, 0, 0, 1])
-                    self.assertEqual(row[COL[p + "stockpile"]], np.float32(2 / 3))
-                    self.assertEqual(row[COL[p + "perish"]], 1.0)
+                    self.assertEqual(on, {p + "volatile." + VOLATILES[b] for b in range(len(VOLATILES)) if bits >> b & 1})
+                    self.assertEqual([row[COL[p + f"encore.{x}"]] for x in slots], [float(i == encore) for i in range(5)])
+                    self.assertEqual([row[COL[p + f"disable.{x}"]] for x in slots], [float(i == disable) for i in range(5)])
+                    self.assertEqual(row[COL[p + "stockpile"]], np.float32(stockpile / 3))
+                    self.assertEqual(row[COL[p + "perish"]], np.float32(perish / 3))
                     self.assertEqual(row[COL[p + "ability_changed"]], 1.0)
-                    self.assertEqual(row[COL[p + "ability_now"]], np.float32((17 + k) / 255))
-                    self.assertEqual((row[COL[p + "type_now0"]], row[COL[p + "type_now1"]]), (np.float32(6 / 18), 0.0))
+                    self.assertEqual(row[COL[p + "ability_now"]], np.float32(ability / 255))
+                    self.assertEqual((row[COL[p + "type_now0"]], row[COL[p + "type_now1"]]),
+                                     (np.float32(types[0] / 18), np.float32(types[1] / 18)))
                 for r in range(6):
                     m = f"ext.{o}.mem{r}."
+                    forme, item = _member_values(s, r)
                     self.assertEqual(row[COL[m + "forme_changed"]], 1.0)
-                    self.assertEqual(row[COL[m + "forme"]], np.float32((0x1234 + r) / 65535))
+                    self.assertEqual(row[COL[m + "forme"]], np.float32(forme / 65535))
                     self.assertEqual(row[COL[m + "item_changed"]], 1.0)
-                    self.assertEqual(row[COL[m + "item_removed"]], float(r % 2))
-                    self.assertEqual(row[COL[m + "item_now"]], np.float32(10 / 255) if r % 2 == 0 else 1.0)
+                    self.assertEqual(row[COL[m + "item_removed"]], float(item == C["DUOFORGE_ITEM_NOW_NONE"]))
+                    self.assertEqual(row[COL[m + "item_now"]], np.float32(item / 255))
                     self.assertEqual(row[COL[m + "tox"]], 0.0)
         # An empty record of revision 1: no encore and no disable (their none columns), nothing else.
         empty = np.zeros(ob.shape, dtype=_layout.OBSERVATION_EXT)
@@ -218,6 +241,26 @@ class FeaturesExtTest(unittest.TestCase):
         on = {features.FEATURE_NAMES[i] for i in np.flatnonzero(part[0, 607:]) + 607}
         self.assertEqual(on, {f"ext.{o}.pos{k}.{g}.none" for o in ("own", "foe") for k in range(2)
                               for g in ("encore", "disable")})
+
+    def test_rows_without_records_read_as_empty_records(self):
+        # A record of revision 0 (every kind but POOL) encodes as an empty record of revision 1 under every mask:
+        # no Encore and no Disable ("none"), all else zero, so a POOL network sees in a CLOSURE battle only states
+        # it knows. A revision-0 record with any nonzero byte is refused.
+        ob, d = self.obs, self.domains
+        empty = np.zeros(ob.shape, dtype=_layout.OBSERVATION_EXT)
+        empty["revision"], empty["player"], empty["epoch"], empty["supported"] = 1, ob["player"], ob["epoch"], ALL
+        absent = np.zeros(ob.shape, dtype=_layout.OBSERVATION_EXT)
+        for mask in (ALL, _mask("ENCORE", "DISABLE"), _mask("AURORA_VEIL"), 0):
+            self.assertTrue(np.array_equal(features.encode_batch(ob, d, absent, mask)[0],
+                                           features.encode_batch(ob, d, empty, mask)[0]), hex(mask))
+        mixed = _records(ob)
+        mixed[1::2] = np.zeros((), dtype=_layout.OBSERVATION_EXT)
+        want = features.encode_batch(ob, d, empty, ALL)[0]
+        self.assertTrue(np.array_equal(features.encode_batch(ob, d, mixed, ALL)[0][1::2], want[1::2]))
+        odd = absent.copy()
+        odd["sides"]["spikes"][0, 1] = 1
+        with self.assertRaisesRegex(ValueError, "revision 0"):
+            features.encode_batch(ob, d, odd, ALL)
 
     def test_a_clear_bit_zeros_its_columns(self):
         ob, d = self.obs, self.domains
@@ -314,7 +357,10 @@ class FeaturesExtTest(unittest.TestCase):
                  ("disable_slot", lambda e: e["sides"]["positions"]["disable_slot"].__setitem__((0, 1, 1), 5)),
                  ("stockpile", lambda e: e["sides"]["positions"]["stockpile"].__setitem__((0, 1, 1), 4)),
                  ("perish", lambda e: e["sides"]["positions"]["perish"].__setitem__((0, 1, 1), 4)),
-                 ("type_now", lambda e: e["sides"]["positions"]["type_now"].__setitem__((0, 1, 1, 0), 19)))
+                 ("type_now", lambda e: e["sides"]["positions"]["type_now"].__setitem__((0, 1, 1, 0), 19)),
+                 ("ability_now", lambda e: e["sides"]["positions"]["ability_now"].__setitem__((0, 1, 1), 256)),
+                 # side 0 has no TYPE_CHANGED volatile in _records: a type there contradicts it
+                 ("TYPE_CHANGED", lambda e: e["sides"]["positions"]["type_now"].__setitem__((0, 0, 0, 0), 5)))
         for field, edit in cases:
             with self.subTest(field=field):
                 ext = _records(ob)

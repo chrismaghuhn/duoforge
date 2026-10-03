@@ -57,8 +57,11 @@ first, then the foe):
   cannot. Every other bit reads the extension records (ext, OBSERVATION_EXT
   per player, Batch.observe_ext): a set bit without records, records of
   another boundary or revision, a set bit the records' library does not
-  support and a field outside its documented range raise ValueError. Records
-  of revision 0 (every kind but POOL) leave the record columns zero.
+  support and a field outside its range raise ValueError. A record of
+  revision 0 (every kind but POOL, where none of these effects can arise)
+  reads as an empty record: zero, and "none" in the Encore and Disable
+  one-hots. check_ext_supported is the check of a training mask against
+  the library: a network never records a feature it could not see.
 
 slot_part, float32 (2, 32, SLOT_FEATURES): for slot list s and entry i,
   valid (i < slot_count[s]), kind one-hot (4: none, move, switch, pass),
@@ -221,6 +224,9 @@ assert len(_base_names()) == BASE_OBS_SIZE and EXT_SIZE == 5 + 2 * (7 + 2 * 36 +
 _EXT_SIDE = 7 + 2 * 36 + 6 * 6
 _VOLATILE_SHIFTS = np.arange(len(VOLATILES))
 _EYE5 = np.eye(5)
+# One side's columns of an empty record: no Encore and no Disable at either position ("none" of each one-hot).
+_EMPTY_SIDE = np.zeros(_EXT_SIDE)
+_EMPTY_SIDE[[7 + 36 * k + len(VOLATILES) + g for k in range(2) for g in (0, 5)]] = 1.0
 _MOVE_SLOT = SLOT_FEATURE_NAMES.index("move_slot")
 _KIND_MOVE = SLOT_FEATURE_NAMES.index("kind.MOVE")
 
@@ -311,6 +317,21 @@ def _mask_of(ext_supported):
     return int(ext_supported)
 
 
+def check_ext_supported(ext_supported, library):
+    """ext_supported as an int mask when every bit of it is one the library
+    supports (library: the `supported` of its duoforge_observation_ext under
+    the context, 0 under every kind but POOL). ValueError for anything else,
+    naming the first bit the library lacks: a network must never record a
+    feature it could not see while it learned."""
+    mask = _mask_of(ext_supported)
+    extra = mask & ~int(library)
+    if extra:
+        bit = (extra & -extra).bit_length() - 1
+        raise ValueError(f"ext_supported {mask:#x} has the bit of {_FEATURE_NAME[bit]}, which the library does not "
+                         f"support under this context ({int(library):#x})")
+    return mask
+
+
 def _new_values(mask):
     """The new values of the old fields that mask shows: (weathers, terrains,
     tox)."""
@@ -319,7 +340,8 @@ def _new_values(mask):
     return weathers, terrains, bool(mask >> FEATURE_BITS["AILMENT_TOX"] & 1)
 
 
-# Each record field with its documented largest value (decision 0018 section 3).
+# Each record field with the largest value the encoder takes: the documented range (decision 0018 section 3), and
+# ability_now at most 255, the width of the member view's ability id it overlays (POOL has 215 abilities).
 _SIDE_RANGES = (("aurora_veil_turns", 8), ("stealth_rock", 1), ("spikes", 3), ("toxic_spikes", 2), ("sticky_web", 1))
 _POSITION_RANGES = (("encore_slot", 4), ("disable_slot", 4), ("stockpile", 3), ("perish", 3), ("ability_now", 255),
                     ("type_now", 18))
@@ -358,24 +380,31 @@ def _check_records(ob, ext, mask):
     if guards.any():
         raise ValueError(f"extension field guard_flags bits {int(guards[guards != 0].flat[0])} are not ones this "
                          "encoder knows")
-    volatiles = rec["sides"]["positions"]["volatiles"].astype(np.int64) & ~sum(bit for _, bit, _ in VOLATILES)
-    if volatiles.any():
-        raise ValueError(f"extension field volatiles bits {int(volatiles[volatiles != 0].flat[0])} are not ones "
+    volatiles = rec["sides"]["positions"]["volatiles"].astype(np.int64)
+    unknown = volatiles & ~sum(bit for _, bit, _ in VOLATILES)
+    if unknown.any():
+        raise ValueError(f"extension field volatiles bits {int(unknown[unknown != 0].flat[0])} are not ones "
                          "this encoder knows")
+    typed = (rec["sides"]["positions"]["type_now"] != 0).any(axis=-1)
+    if (typed & ((volatiles & C["DUOFORGE_POSITION_EXT_TYPE_CHANGED"]) == 0)).any():
+        raise ValueError("extension field type_now is set while the volatile TYPE_CHANGED is clear")
     return present
 
 
 def _ext_block(ob, ext, present, viewer):
     """The block of the module docstring (N, EXT_SIZE) before the mask. Each
     side's columns are built for both absolute sides at once, then ordered
-    own first by the viewer; rows without a record (revision 0) keep their
-    record columns zero."""
+    own first by the viewer. A row whose record has revision 0 (every kind
+    but POOL, where none of these effects can arise) reads as an empty
+    record: zero, and "none" in the Encore and Disable one-hots."""
     n = ob.shape[0]
     rows = np.arange(n)[:, None]
     order = np.stack([viewer, 1 - viewer], axis=1)  # (N, 2): the absolute side of own, of foe
     block = np.zeros((n, EXT_SIZE), dtype=_F32)
     sides = block[:, 5:].reshape(n, 2, _EXT_SIDE)  # a view of the per-side columns, own then foe
-    if ext is not None and present.any():
+    if ext is not None and not present.any():
+        sides[...] = _EMPTY_SIDE
+    elif ext is not None:
         rec = np.asarray(ext)
         s = rec["sides"]  # (N, 2), absolute
         guards = s["guard_flags"].astype(np.int64)
@@ -393,7 +422,7 @@ def _ext_block(ob, ext, present, viewer):
         member = np.stack([np.zeros(forme.shape), forme != 0, forme / 65535, item != 0, item == _ITEM_NOW_NONE,
                            item / 255], axis=-1)  # (N, 2, 6, 6); the tox column comes from the observation
         absolute = np.concatenate([head, position.reshape(n, 2, 72), member.reshape(n, 2, 36)], axis=-1)
-        absolute[~present] = 0.0
+        absolute[~present] = _EMPTY_SIDE
         sides[...] = absolute[rows, order]
         block[:, 4] = np.where(present, rec["field"]["gravity_turns"] / 5, 0.0)
     # The base values, from the observation itself.

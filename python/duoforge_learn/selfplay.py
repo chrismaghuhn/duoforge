@@ -97,7 +97,9 @@ class SelfPlay:
     observations (features.as_encoder); ext_supported: the view-extension
     features the observations show (Observation), None for every feature the
     library supports under the context (0 under every kind but POOL, and
-    for encoders before features.ENCODER)."""
+    for encoders before features.ENCODER); a given mask with a bit the
+    library does not support there raises ValueError
+    (features.check_ext_supported), before anything is played or saved."""
 
     def __init__(self, envs, workers, seed, pool=None, max_steps=500, start_episodes=None,
                  encoder=features.ENCODER, context=None, on_start=None, on_end=None, ext_supported=None):
@@ -117,9 +119,13 @@ class SelfPlay:
         self.pairing = np.stack(pairing.pairings(self.seed, everyone, self.episodes, pool.weights), axis=1)
         setups = pool.setups(self.pairing[:, 0], self.pairing[:, 1])
         self.batch = duoforge.Batch(self.context, setups, workers, seed)
-        if ext_supported is None:
-            ext_supported = int(self.batch.observe_ext()[0, 0]["supported"]) if encoder == features.ENCODER else 0
-        self.ext_supported = ext_supported
+        library = int(self.batch.observe_ext()[0, 0]["supported"]) if encoder == features.ENCODER else 0
+        try:
+            self.ext_supported = (library if ext_supported is None
+                                  else features.check_ext_supported(ext_supported, library))
+        except ValueError:
+            self.close()
+            raise
         if self.episodes.any():
             self.batch.reset_setups(everyone, self.episodes, setups)
         if on_start is not None:

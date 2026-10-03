@@ -405,19 +405,28 @@ class ResumeTest(unittest.TestCase):
             _run(["--resume", self.out, "--updates", "2", "--ext-supported", "0x1"])
 
     def test_resume_keeps_its_ext_supported(self):
-        # A plain resume uses the mask the run resolved when it started, whatever the library supports now; an
-        # explicit --ext-supported equal to it is no change.
+        # A plain resume uses the mask the run resolved when it started, not the library's current one (here a
+        # strict subset of it, as if the library had gained a bit since); an explicit --ext-supported equal to it
+        # is no change. A stored mask with a bit the library lacks is refused like a given one.
         from duoforge_learn import runstate
-        self.assertEqual(_run(["--envs", "8", "--updates", "1", "--out", self.out] + _SMALL), 0)
+        pool = ["--teams", "A,B", "--data-kind", "pool"]
+        self.assertEqual(_run(["--envs", "8", "--updates", "1", "--out", self.out] + pool + _SMALL), 0)
         state = runstate.load_state(self.out)
-        self.assertEqual(state["ext_supported"], 0)  # CLOSURE
-        state["ext_supported"] = features.BASE_VALUE_FEATURES  # as if the library had supported other bits then
+        library = state["ext_supported"]
+        self.assertTrue(library)  # POOL: the library supports features
+        subset = library & ~(library & -library)
+        state["ext_supported"] = subset
         runstate.save_state(self.out, state)
         self.assertEqual(_run(["--resume", self.out, "--updates", "2"]), 0)
-        self.assertEqual(runstate.load_state(self.out)["ext_supported"], features.BASE_VALUE_FEATURES)
-        self.assertEqual(_run(["--resume", self.out, "--updates", "3", "--ext-supported",
-                               hex(features.BASE_VALUE_FEATURES)]), 0)
+        self.assertEqual(runstate.load_state(self.out)["ext_supported"], subset)
+        self.assertEqual(_run(["--resume", self.out, "--updates", "3", "--ext-supported", hex(subset)]), 0)
         self.assertNotIn("ext_supported", [r for r in _log(self.out) if "resume" in r][-1]["resume"])
+        state = runstate.load_state(self.out)
+        lacking = features.ALL_FEATURES & ~library
+        state["ext_supported"] = library | (lacking & -lacking)
+        runstate.save_state(self.out, state)
+        with self.assertRaisesRegex(ValueError, "does not support"):
+            _run(["--resume", self.out, "--updates", "4"])
 
     def test_refused_option_names_itself(self):
         self.assertEqual(_run(["--envs", "8", "--updates", "1", "--out", self.out] + _SMALL), 0)
