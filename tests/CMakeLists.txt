@@ -618,7 +618,7 @@ endif()
 
 # The Python package (M7, decision 0013), run with DUOFORGE_PYTHON; without
 # an interpreter each test reports skipped instead of passing silently.
-foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client replay_unit data batch_setups learn_v2_numpy teams features_ext)
+foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client replay_unit data batch_setups learn_v2_numpy teams features_ext bc_numpy)
     if(DUOFORGE_PYTHON)
         add_test(NAME duoforge.python.${_py}
             COMMAND "${DUOFORGE_PYTHON}" -m unittest -v python.tests.test_${_py}
@@ -634,7 +634,7 @@ foreach(_py layout lib equivalence recipes policies_features example learn_numpy
 endforeach()
 
 # The learner pipeline (decisions 0014, 0017) needs JAX: DUOFORGE_LEARN_PYTHON.
-foreach(_learn learn learn_v2)
+foreach(_learn learn learn_v2 bc)
     if(DUOFORGE_LEARN_PYTHON)
         add_test(NAME duoforge.python.${_learn}
             COMMAND "${DUOFORGE_LEARN_PYTHON}" -m unittest -v python.tests.test_${_learn}

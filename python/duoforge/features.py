@@ -231,6 +231,12 @@ _EXT3 = _ext_columns()
 _EXT = _EXT3 + _ext4_columns()
 EXT3_SIZE = len(_EXT3)
 EXT_SIZE = len(_EXT)
+
+
+def columns_of(mask):
+    """The names of the block columns whose feature bit is in mask, in the encoder's order: the columns a network
+    trained without those bits always read as 0 (checkpoint.zero_columns)."""
+    return [name for name, bit in _EXT if int(mask) >> bit & 1]
 OBS_SIZE = BASE_OBS_SIZE + EXT_SIZE
 _OBS_SIZES = {1: BASE_OBS_SIZE, 2: BASE_OBS_SIZE, 3: BASE_OBS_SIZE + EXT3_SIZE, 4: OBS_SIZE}
 # The DUOFORGE_VIEWEXT_FEATURE_* bit of every block column.
