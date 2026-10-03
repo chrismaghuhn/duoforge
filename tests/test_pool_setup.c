@@ -41,8 +41,8 @@
 #include "support/pool.h"
 #include "support/team_c.h"
 
-#define FP_KP_HEX "0bbe37d9d6d1ecf31d9a152a15c388f1f60e94d3714b517e78cafa0d1b3be088"
-#define FP_KPD_HEX "c20346bdd2205709bbe621f13f908a4e7bd17e8a94ab4674fcb7184e9880edef"
+#define FP_KP_HEX "5bf92a728395b8d41842770d9e77b2c8be3443eacb2ec89219196cb038c2f5aa"
+#define FP_KPD_HEX "2f99c03318a27791f0daf93e7c1c25c97fa66753f65f6fdb2368de4498a7b0f0"
 
 /* The public create under `ctx` gives `gated`, and the build without the
  * support gate `ungated`. */
@@ -661,13 +661,13 @@ int main(void)
                 legal(&t, kp, &s, arcanine[i].supported == 1, arcanine[i].what);
             }
         }
-        /* Focus Sash is marked in G4, Expert Belt is not, and a genderless Arcanine-Hisui is not legal. */
+        /* Focus Sash is marked in G4, Scope Lens is not, and a genderless Arcanine-Hisui is not legal. */
         s = teams;
         s.sides[1].members[0] = member_of(tpl, DFI_FORME_ARCANINEHISUI, DFI_ABILITY_INTIMIDATE, DFI_ITEM_FOCUSSASH + 1u,
                                           4u, arcanine_moves);
         legal(&t, kp, &s, true, "Arcanine-Hisui with a Focus Sash");
-        s.sides[1].members[0].item = DFI_ITEM_EXPERTBELT + 1u;
-        legal(&t, kp, &s, false, "Arcanine-Hisui with an Expert Belt");
+        s.sides[1].members[0].item = DFI_ITEM_SCOPELENS + 1u;
+        legal(&t, kp, &s, false, "Arcanine-Hisui with a Scope Lens");
         s.sides[1].members[0].item = 0u;
         legal(&t, kp, &s, true, "Arcanine-Hisui without an item");
         s.sides[1].members[0].gender = DUOFORGE_GENDER_NONE;
