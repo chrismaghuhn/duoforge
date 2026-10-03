@@ -212,6 +212,14 @@ def parse_team(text, tables):
 COND_INDEX = {'tailwind': 0, 'reflect': 1, 'lightscreen': 2}  # the order of a side's 'conditions'
 
 
+def condition_turns(side, cid):
+    """The turns left of side condition `cid` in a side of a trace state: the three of 'conditions', and Aurora Veil
+    (step G20), which the harness records as the key 'aurora_veil' only while the side has it."""
+    if cid == 'auroraveil':
+        return side.get('aurora_veil', 0)
+    return side['conditions'][COND_INDEX[cid]]
+
+
 def side_end_tie(d, state):
     """A residual tie of both sides' same side condition, both at 1 turn in
     `state` (the state before the step): both end now, and the shuffle of
@@ -227,9 +235,10 @@ def side_end_tie(d, state):
     parts = [g.split(':') for g in group]
     if len(group) != 2 or any(len(x) != 4 or x[0] != 'H' or x[3] != 'end' for x in parts):
         return None
-    if parts[0][1] != parts[1][1] or parts[0][1] not in COND_INDEX or {parts[0][2], parts[1][2]} != {'p1', 'p2'}:
+    if (parts[0][1] != parts[1][1] or (parts[0][1] not in COND_INDEX and parts[0][1] != 'auroraveil') or
+            {parts[0][2], parts[1][2]} != {'p1', 'p2'}):
         return None
-    if any(state['sides'][int(x[2][1]) - 1]['conditions'][COND_INDEX[x[1]]] != 1 for x in parts):
+    if any(condition_turns(state['sides'][int(x[2][1]) - 1], x[1]) != 1 for x in parts):
         return None
     if d['hi'] - d['lo'] != 2 or d['lo'] != d['start']:
         raise ConversionError('side-end-shuffle', 'trace_to_c: unexpected side-end shuffle %s' % d)
@@ -398,8 +407,10 @@ def drop_reason(d, state, after=None, log=None):
                               detail=ctx + ':' + tie_effects(group))
     if site == 'SPEED_TIE' and ctx == 'event:ModifyDamage':
         # Reflect and Light Screen of both sides: each checks the target's
-        # side and the move's category, so at most one applies to a hit.
-        if all(g.startswith(('H:reflect:', 'H:lightscreen:')) for g in group):
+        # side and the move's category, so at most one applies to a hit; Aurora Veil (step G20) returns without an effect
+        # when the target's side has the screen of the move's category (data/moves.ts:849-853) and applies to the other
+        # category and to a side that has no screen, so it never adds a second 2732 to a hit.
+        if all(g.startswith(('H:reflect:', 'H:lightscreen:', 'H:auroraveil:')) for g in group):
             return 'screen handlers of which at most one applies'
         # The attacker's Life Orb and the target's Chople Berry (Team C) at
         # one speed: every order of the ModifyDamage modifiers chains to the
@@ -438,6 +449,17 @@ def drop_reason(d, state, after=None, log=None):
         # the equal-speed holders (one on each side, say) run in: one order, one value. Aura Break (3072) is in no
         # pool forme's abilities.
         return 'Fairy Aura handlers whose order changes nothing'
+    if site == 'SPEED_TIE' and ctx in ('event:BeforeMove', 'event:ModifyMove'):
+        # The BeforeMove handlers (data/moves.ts:8307 and :19410, both priority 6) and the ModifyMove handlers (:8314 and
+        # :19417) of one Pokemon that holds both Heal Block and Throat Chop: each stops the move only if the move has
+        # its own flag (heal, sound), with its own line, and no move of the pool has both (build_pool fails for one,
+        # tests/test_pool_tables.c checks it), so whichever runs first, the same moves are stopped with the same line.
+        # Any other BeforeMove or ModifyMove tie is a handler that has not been looked at.
+        parts = [g.split(':') for g in group or []]
+        if (len(parts) == 2 and all(len(x) == 4 and x[0] == 'H' and x[3] == 'cb' for x in parts)
+                and sorted(x[1] for x in parts) == ['healblock', 'throatchop'] and parts[0][2] == parts[1][2]):
+            return '%s tie of Heal Block and Throat Chop of one Pokemon: no move has both flags' % ctx[6:]
+        raise ConversionError('tie-context', 'trace_to_c: unhandled tie context %s' % ctx, detail=ctx)
     if site == 'SPEED_TIE' and ctx != 'queue':
         raise ConversionError('tie-context', 'trace_to_c: unhandled tie context %s' % ctx, detail=ctx)
     if site == 'INSERT_TIE':
@@ -962,7 +984,8 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                          detail=field)
         elif kind in ('-sidestart', '-sideend'):
             side = int(args[0][1]) - 1
-            cond = {'move: Tailwind': 1, 'Reflect': 2, 'move: Reflect': 2, 'move: Light Screen': 3}[args[1]]
+            cond = {'move: Tailwind': 1, 'Reflect': 2, 'move: Reflect': 2, 'move: Light Screen': 3,
+                    'move: Aurora Veil': 4}[args[1]]  # 4: DUOFORGE_SIDE_AURORA_VEIL (POOL kinds, step G20)
             e = ev_tuple(EV['SIDE_START' if kind == '-sidestart' else 'SIDE_END'], detail=side, amount=cond)
         elif kind == '-enditem':
             taken = [a for a in attrs if a.startswith('[from] move: ')]

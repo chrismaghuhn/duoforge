@@ -1,6 +1,7 @@
 #include "combat/turn.h"
 
 #include "combat/ability_family.h"
+#include "combat/residual_order.h"
 #include "combat/events.h"
 #include "combat/item_family.h"
 #include "combat/move_rules.h"
@@ -1187,9 +1188,14 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
         ok = ok && dfi_chain_modify(chain, DFI_RESIST_BERRY_MODIFIER, &chain);
         mods += 1u;
     }
+    /* Aurora Veil (step G20, data/moves.ts:846-860) weakens both categories by the same 2732/4096 and returns without an
+     * effect when the target's side has the screen of the move's category (so the two never multiply): the test is one
+     * 2732 for a screen of the category or Aurora Veil. A critical hit and `infiltrates` (no Infiltrator or move that
+     * has it is marked) skip all three. */
     if (!crit && target != user &&
         ((physical && ds->reflect_turns != 0u) ||
-         (md->category == DFI_CATEGORY_SPECIAL && ds->light_screen_turns != 0u))) {
+         (md->category == DFI_CATEGORY_SPECIAL && ds->light_screen_turns != 0u) ||
+         r->b->tail.sides[target / 2u].aurora_veil_turns != 0u)) {
         ok = ok && dfi_chain_modify(chain, 2732u, &chain);
         mods += 1u;
     }
@@ -2204,6 +2210,30 @@ static duoforge_status dfi_run_wide_guard(dfi_run *r, uint32_t user)
     return DUOFORGE_OK;
 }
 
+/* Aurora Veil (POOL data, data/moves.ts:830-877; the side's turns are in the state tail). Its onTry (:840) fails the
+ * move unless the weather is snow (Field.isWeather, sim/field.ts:118; nothing here suppresses a weather: Cloud Nine and
+ * Air Lock are not marked): -fail with [still], as every failed side move. addSideCondition does not restart an active
+ * condition, so a second one fails the same way. The duration is 5, or 8 when the user holds Light Clay
+ * (durationCallback, :842-847); the line is -sidestart|side|move: Aurora Veil (:861-863). A side move does not reach the
+ * Champions hit loop (no Update), as Wide Guard's does not. */
+static duoforge_status dfi_run_aurora_veil(dfi_run *r, uint32_t user)
+{
+    struct duoforge_battle *b = r->b;
+    const uint32_t side = user / 2u;
+    uint8_t *turns = &b->tail.sides[side].aurora_veil_turns;
+    if (b->weather != DFI_WEATHER_SNOW || *turns != 0u) {
+        dfi_fail_still(r, user);
+        return DUOFORGE_OK;
+    }
+    const uint32_t duration = dfi_holds(b, dfi_at(b, user), DFI_ITEM_LIGHTCLAY) ? DFI_SCREEN_TURNS_MAX : 5u;
+    *turns = (uint8_t)duration; /* <= 8 */
+    duoforge_event e = dfi_event_make(DUOFORGE_EVENT_SIDE_START, DUOFORGE_NO_POSITION);
+    e.detail = (uint8_t)side;
+    e.amount = (uint8_t)DUOFORGE_SIDE_AURORA_VEIL;
+    dfi_emit(r, &e);
+    return DUOFORGE_OK;
+}
+
 /* Nothing to hit: [notarget] on the last move line, then -fail. */
 static duoforge_status dfi_no_target(dfi_run *r, uint32_t user)
 {
@@ -2806,6 +2836,9 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     }
     if (md->special == DFI_SPECIAL_WIDE_GUARD) {
         return dfi_run_wide_guard(r, user);
+    }
+    if (md->special == DFI_SPECIAL_AURORA_VEIL) {
+        return dfi_run_aurora_veil(r, user);
     }
     if (md->special == DFI_SPECIAL_FOLLOW_ME) {
         return dfi_run_follow_me(r, user);
@@ -3947,47 +3980,23 @@ static duoforge_status dfi_run_mega(dfi_run *r, const dfi_queue_record *q)
  * the duration handlers of orders 26 and 27; White Herb's (order 29, Team
  * C) sorts after them. After each callback faints are processed, and a
  * finished battle stops the residual phase. */
-#define DFI_RES_WEATHER 1u
-#define DFI_RES_TERRAIN_END 2u
-#define DFI_RES_BURN 3u
-#define DFI_RES_DURATION 4u
-#define DFI_RES_GRASSY 5u
-#define DFI_RES_FIELD_END 6u /* Trick Room, a side condition: duration only */
-#define DFI_RES_LEFTOVERS 7u
-#define DFI_RES_POISON 8u
-#define DFI_RES_WHITE_HERB 9u
-#define DFI_RES_ENCORE 10u /* Encore: order 16, a callback with a duration (step G9) */
-#define DFI_RES_NO_ORDER 0xFFFFFFFFu
-/* Trick Room, weather and terrain; three conditions per side; per position
- * (DFI_RES_PER_POSITION) a status (burn or poison), seven duration ends
- * (Protect, the stall counter, flinch, a charge, Helping Hand, Follow Me and mustrecharge),
- * an item (Leftovers or White Herb), Grassy Terrain and Encore. */
-#define DFI_RES_PER_POSITION 11u
-#define DFI_RES_MAX (3u + 3u * DUOFORGE_SIDE_COUNT + DFI_RES_PER_POSITION * DFI_POSITIONS)
-
-typedef struct dfi_residual_entry {
-    uint32_t kind;
-    uint32_t flat;
-    uint32_t order;
-    uint32_t speed;
-    uint32_t sub_order;
-    bool callback;
-} dfi_residual_entry;
-
-/* comparePriority for residual handlers: 0 a first, 1 tie, 2 b first. */
-static uint32_t dfi_residual_compare(const dfi_residual_entry *a, const dfi_residual_entry *b)
+/* The side conditions that count down in the residual, by sub-order: Reflect, Light Screen, Tailwind, Aurora Veil. */
+#define DFI_SIDE_KINDS 4u
+static uint8_t *dfi_side_turns(struct duoforge_battle *b, uint32_t s, uint32_t k)
 {
-    if (a->order != b->order) {
-        return a->order < b->order ? 0u : 2u;
-    }
-    if (a->speed != b->speed) {
-        return a->speed > b->speed ? 0u : 2u;
-    }
-    if (a->sub_order != b->sub_order) {
-        return a->sub_order < b->sub_order ? 0u : 2u;
-    }
-    return 1u;
+    dfi_side *sd = &b->sides[s];
+    return k == 0u ? &sd->reflect_turns
+           : k == 1u ? &sd->light_screen_turns
+           : k == 2u ? &sd->tailwind_turns
+                     : &b->tail.sides[s].aurora_veil_turns; /* the tail is zero under every kind but POOL */
 }
+/* Trick Room, weather and terrain; four conditions per side (step G20 added Aurora Veil); per position
+ * (DFI_RES_PER_POSITION) a status (burn or poison), the volatiles' handlers (seven duration ends: Protect, the stall
+ * counter, flinch, a charge, Helping Hand, Follow Me and mustrecharge; Heal Block, Throat Chop and Encore), an item
+ * (Leftovers or White Herb) and Grassy Terrain. */
+#define DFI_RES_PER_POSITION 14u
+#define DFI_RES_MAX (3u + 4u * DUOFORGE_SIDE_COUNT + DFI_RES_PER_POSITION * DFI_POSITIONS)
+_Static_assert(DFI_RES_MAX <= DFI_RES_MODEL_MAX, "the exact test of residual_order.h must hold the whole list");
 
 /* Battle.speedSort over the residual handlers, continued from *sorted
  * until `want` callbacks are placed (*placed counts them). A group of tied
@@ -4082,7 +4091,8 @@ static duoforge_status dfi_residual_events(dfi_run *r)
             /* The side's conditions come before its Pokemon (order 26). */
             const dfi_side *sd = &b->sides[flat / 2u];
             const uint32_t conditions = (sd->reflect_turns != 0u ? 1u : 0u) + (sd->light_screen_turns != 0u ? 1u : 0u) +
-                                        (sd->tailwind_turns != 0u ? 1u : 0u);
+                                        (sd->tailwind_turns != 0u ? 1u : 0u) +
+                                        (b->tail.sides[flat / 2u].aurora_veil_turns != 0u ? 1u : 0u);
             for (uint32_t k = 0u; k < conditions; ++k) {
                 list[n] = (dfi_residual_entry){DFI_RES_FIELD_END, 0u, 26u, 0u, 1u, false};
                 n += 1u;
@@ -4117,6 +4127,23 @@ static duoforge_status dfi_residual_events(dfi_run *r)
             list[n] = (dfi_residual_entry){DFI_RES_DURATION, flat, DFI_RES_NO_ORDER, speed, 2u, false};
             n += 1u;
         }
+        /* Heal Block (order 20, data/moves.ts:8273-8320) and Throat Chop (order 22, :19389-19423) are duration handlers
+         * of a position's volatile too: they sort in the list like the others, and take their turn after the
+         * callbacks (the count and the end lines are below, their tie is the outcome draw of the Heal Blocks that
+         * end). Encore (order 16) is a volatile as well: its handler comes before the item's, not after Grassy
+         * Terrain's (sim/battle.ts:1107-1130). */
+        if (b->tail.sides[flat / 2u].positions[flat % 2u].heal_block_turns != 0u) {
+            list[n] = (dfi_residual_entry){DFI_RES_DURATION, flat, 20u, speed, 2u, false};
+            n += 1u;
+        }
+        if (b->tail.sides[flat / 2u].positions[flat % 2u].throat_chop_turns != 0u) {
+            list[n] = (dfi_residual_entry){DFI_RES_DURATION, flat, 22u, speed, 2u, false};
+            n += 1u;
+        }
+        if (b->tail.sides[flat / 2u].positions[flat % 2u].encore_slot != 0u) {
+            list[n] = (dfi_residual_entry){DFI_RES_ENCORE, flat, 16u, speed, 2u, true};
+            n += 1u;
+        }
         if (dfi_holds(r->b, m, DFI_ITEM_LEFTOVERS)) {
             list[n] = (dfi_residual_entry){DFI_RES_LEFTOVERS, flat, 5u, speed, 4u, true};
             n += 1u;
@@ -4130,12 +4157,12 @@ static duoforge_status dfi_residual_events(dfi_run *r)
             list[n] = (dfi_residual_entry){DFI_RES_GRASSY, flat, 5u, speed, 2u, true};
             n += 1u;
         }
-        /* Encore (onResidualOrder 16): one handler with a callback and a duration; Pokemon with it at equal Speed tie
-         * as callbacks (SPEED_TIE). */
-        if (b->tail.sides[flat / 2u].positions[flat % 2u].encore_slot != 0u) {
-            list[n] = (dfi_residual_entry){DFI_RES_ENCORE, flat, 16u, speed, 0u, true};
-            n += 1u;
-        }
+    }
+    /* The order in which a Pokemon's volatiles were added is not stored: the engine lists them in one fixed order, which
+     * is the reference's or changes nothing except in the cases of dfi_residual_order_ambiguous (combat/
+     * residual_order.h); those it refuses. */
+    if (dfi_residual_order_ambiguous(list, n)) {
+        return DUOFORGE_E_UNSUPPORTED;
     }
     uint32_t early = 0u; /* the callbacks of orders 1 to 10 */
     uint32_t herbs = 0u; /* White Herb's, order 29 */
@@ -4155,18 +4182,14 @@ static duoforge_status dfi_residual_events(dfi_run *r)
         return st;
     }
     /* The side conditions end in the group of order 26, sub-order by kind
-     * (Reflect 1, Light Screen 2, Tailwind 5). The same kind on both sides
+     * (Reflect 1, Light Screen 2, Tailwind 5, Aurora Veil 10: data/moves.ts:864-865). The same kind on both sides
      * ties; the shuffle decides the order of the two end lines when both
      * run out now: only then a draw (decision 0007 section 6). `first`: the
      * side whose line comes first, per kind. */
-    uint32_t first[3] = {0u, 0u, 0u};
-    for (uint32_t k = 0u; k < 3u; ++k) {
-        const uint8_t *t0 = k == 0u ? &b->sides[0].reflect_turns
-                            : k == 1u ? &b->sides[0].light_screen_turns
-                                      : &b->sides[0].tailwind_turns;
-        const uint8_t *t1 = k == 0u ? &b->sides[1].reflect_turns
-                            : k == 1u ? &b->sides[1].light_screen_turns
-                                      : &b->sides[1].tailwind_turns;
+    uint32_t first[DFI_SIDE_KINDS] = {0u, 0u, 0u, 0u};
+    for (uint32_t k = 0u; k < DFI_SIDE_KINDS; ++k) {
+        const uint8_t *t0 = dfi_side_turns(b, 0u, k);
+        const uint8_t *t1 = dfi_side_turns(b, 1u, k);
         if (*t0 == 1u && *t1 == 1u) {
             st = dfi_draw(r->draws, DFI_SITE_SPEED_TIE, 0u, 2u, &first[k]);
             if (st != DUOFORGE_OK) {
@@ -4336,12 +4359,12 @@ static duoforge_status dfi_residual_events(dfi_run *r)
      * Room (27, sub-order 1), the terrain (27, 7); each that runs out shows
      * its end line (and the terrain's end runs TerrainChange). Protect,
      * flinch and the stall counter end without a line. */
-    static const uint8_t side_kind[3] = {DUOFORGE_SIDE_REFLECT, DUOFORGE_SIDE_LIGHT_SCREEN, DUOFORGE_SIDE_TAILWIND};
-    for (uint32_t k = 0u; k < 3u; ++k) {
+    static const uint8_t side_kind[DFI_SIDE_KINDS] = {DUOFORGE_SIDE_REFLECT, DUOFORGE_SIDE_LIGHT_SCREEN,
+                                                      DUOFORGE_SIDE_TAILWIND, DUOFORGE_SIDE_AURORA_VEIL};
+    for (uint32_t k = 0u; k < DFI_SIDE_KINDS; ++k) {
         for (uint32_t j = 0u; j < DUOFORGE_SIDE_COUNT; ++j) {
             const uint32_t s = j ^ first[k];
-            dfi_side *sd = &b->sides[s];
-            uint8_t *turns = k == 0u ? &sd->reflect_turns : k == 1u ? &sd->light_screen_turns : &sd->tailwind_turns;
+            uint8_t *turns = dfi_side_turns(b, s, k);
             if (*turns == 0u) {
                 continue;
             }
