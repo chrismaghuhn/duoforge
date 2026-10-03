@@ -1699,6 +1699,13 @@ static const df_tb_stop tb_g23_garchomp_terrain[] = {
     {3u, 0u, 2u, 2u, {4u, 4u}, {694u, 675u}, {0x404d613d84f613d8ull, 0x404da9663b24547dull}},
     {4u, 0u, 2u, 2u, {4u, 4u}, {645u, 662u}, {0x404b7b09ec27b09full, 0x404d201b094b31d9ull}},
 };
+static const df_tb_stop tb_g23_psychic_terrain_levitate[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1099u, 1110u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {713u, 760u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {695u, 710u}, {0x4050412c12c12c13ull, 0x404efab26162d518ull}},
+    {3u, 0u, 2u, 1u, {3u, 4u}, {543u, 635u}, {0x40482d02d02d02d0ull, 0x404b72bdf37714bbull}},
+    {4u, 0u, 2u, 1u, {3u, 4u}, {543u, 635u}, {0x40482d02d02d02d0ull, 0x404b72bdf37714bbull}},
+};
 static const df_tb_stop tb_g24_abomasnow_scrafty[] = {
     {0u, 0u, 1u, 3u, {6u, 6u}, {1164u, 1093u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 1u, 3u, {4u, 4u}, {778u, 724u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -3276,6 +3283,7 @@ static const df_tb_battle tb_battles[] = {
     {"g23_charizard_x", 4u, tb_g23_charizard_x, sizeof tb_g23_charizard_x / sizeof tb_g23_charizard_x[0]},
     {"g23_garchomp_levitate", 4u, tb_g23_garchomp_levitate, sizeof tb_g23_garchomp_levitate / sizeof tb_g23_garchomp_levitate[0]},
     {"g23_garchomp_terrain", 4u, tb_g23_garchomp_terrain, sizeof tb_g23_garchomp_terrain / sizeof tb_g23_garchomp_terrain[0]},
+    {"g23_psychic_terrain_levitate", 4u, tb_g23_psychic_terrain_levitate, sizeof tb_g23_psychic_terrain_levitate / sizeof tb_g23_psychic_terrain_levitate[0]},
     {"g24_abomasnow_scrafty", 4u, tb_g24_abomasnow_scrafty, sizeof tb_g24_abomasnow_scrafty / sizeof tb_g24_abomasnow_scrafty[0]},
     {"g24_barbaracle_beedrill", 4u, tb_g24_barbaracle_beedrill, sizeof tb_g24_barbaracle_beedrill / sizeof tb_g24_barbaracle_beedrill[0]},
     {"g24_falinks_pelipper", 6u, tb_g24_falinks_pelipper, sizeof tb_g24_falinks_pelipper / sizeof tb_g24_falinks_pelipper[0]},
@@ -3416,7 +3424,7 @@ static const df_tb_battle tb_battles[] = {
     {"w8_sand_soak", 7u, tb_w8_sand_soak, sizeof tb_w8_sand_soak / sizeof tb_w8_sand_soak[0]},
 };
 
-/* 2420 stops: 139 of an ended battle; decided by the count 721,
- * the HP percentage 749, the total HP 760, a tie 51;
- * winners: side 0 1221, side 1 1148, tie 51 */
+/* 2425 stops: 139 of an ended battle; decided by the count 723,
+ * the HP percentage 750, the total HP 762, a tie 51;
+ * winners: side 0 1222, side 1 1152, tie 51 */
 #endif

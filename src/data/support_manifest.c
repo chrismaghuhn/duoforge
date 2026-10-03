@@ -342,6 +342,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_MANECTITE] = 1u,
             [DFI_ITEM_CHARIZARDITEX] = 1u,
             [DFI_ITEM_GARCHOMPITEZ] = 1u,
+            [DFI_ITEM_DELPHOXITE] = 1u,
             [DFI_ITEM_GARDEVOIRITE] = 1u,
             [DFI_ITEM_ABOMASITE] = 1u,
             [DFI_ITEM_BARBARACITE] = 1u,

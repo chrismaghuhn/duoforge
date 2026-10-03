@@ -1115,7 +1115,7 @@ int main(void)
          * Floette-Eternal, with Fairy Aura), step G18 four more Mega Stones (Tyranitarite, Baxcalibrite,
          * Aerodactylite, Manectite: the Mega ability is marked and the base forme has exactly one Mega), the Mega batch nine
          * more (Gardevoirite, Abomasite, Barbaracite, Beedrillite, Falinksite, Hawluchanite, Malamarite, Sceptilite,
-         * Scraftinite), step G23-C Charizardite X and Garchompite Z; Expert Belt stays unmarked. */
+         * Scraftinite), step G23-C Charizardite X, Garchompite Z and Delphoxite; Expert Belt stays unmarked. */
         DF_CHECK(&t, dfi_support.items[DFI_ITEM_FOCUSSASH] != 0u);
         for (uint32_t id = DFI_ITEM_FOCUSSASH + 1u; id < DFI_POOL_ITEM_COUNT; ++id) {
             const bool stone = id == DFI_ITEM_FLOETTITE || id == DFI_ITEM_PSYCHICSEED || id == DFI_ITEM_TYRANITARITE ||
@@ -1123,7 +1123,7 @@ int main(void)
                                id == DFI_ITEM_GARDEVOIRITE || id == DFI_ITEM_ABOMASITE || id == DFI_ITEM_BARBARACITE ||
                                id == DFI_ITEM_BEEDRILLITE || id == DFI_ITEM_FALINKSITE || id == DFI_ITEM_HAWLUCHANITE ||
                                id == DFI_ITEM_MALAMARITE || id == DFI_ITEM_SCEPTILITE || id == DFI_ITEM_SCRAFTINITE ||
-                               id == DFI_ITEM_CHARIZARDITEX || id == DFI_ITEM_GARCHOMPITEZ;
+                               id == DFI_ITEM_CHARIZARDITEX || id == DFI_ITEM_GARCHOMPITEZ || id == DFI_ITEM_DELPHOXITE;
             DF_CHECK_EQ_U64(&t, dfi_support.items[id] != 0u ? 1u : 0u, stone ? 1u : 0u);
         }
         for (uint32_t id = 0u; id < DFI_POOL_ITEM_COUNT; ++id) {
