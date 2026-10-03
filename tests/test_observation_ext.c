@@ -178,7 +178,8 @@ static void test_constants(df_test *t)
     DF_CHECK(t, dfi_support.view_ext_features ==
                     (((uint64_t)1u << 6u) | ((uint64_t)1u << 7u) | ((uint64_t)1u << 9u) | ((uint64_t)1u << 15u) |
                      ((uint64_t)1u << 16u) | ((uint64_t)1u << 17u) | ((uint64_t)1u << 0u) | ((uint64_t)1u << 1u) |
-                     ((uint64_t)1u << 11u) | ((uint64_t)1u << 2u) | ((uint64_t)1u << 20u) | ((uint64_t)1u << 3u)));
+                     ((uint64_t)1u << 11u) | ((uint64_t)1u << 2u) | ((uint64_t)1u << 20u) | ((uint64_t)1u << 3u) |
+                     ((uint64_t)1u << 39u))); /* step G30: Rage Powder (bit 39) */
 }
 
 /* The expected extension: all zero, and under POOL the header of the paired observation. */

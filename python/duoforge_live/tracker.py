@@ -412,8 +412,8 @@ class Tracker:
                 # set right before the line) until it leaves (c07 battles, Choice Scarf).
                 p.choice_slot = m.sheet["moves"].index(ident)
         elif kind == EV["ACTIVATE"]:
-            if ident2 == self.data.tables["ABILITY"]["EMERGENCYEXIT"] + 1:
-                self._at(pos).flag = 1  # it leaves: asked to switch
+            if e[3] == trace_to_c.CAUSE["ABILITY"] and ident2 == self.data.tables["ABILITY"]["EMERGENCYEXIT"] + 1:
+                self._at(pos).flag = 1  # it leaves: asked to switch (id2 names an ability only with cause ABILITY)
             elif e[3] == trace_to_c.CAUSE["MOVE"] and ident2 == self._feint:
                 # Feint broke something (step G28, sim/battle-actions.ts hitStepBreakProtect, printed only then): the
                 # target's own Protect (its flag) and its stall volatile (chain and stall, a guard_undo that is no longer

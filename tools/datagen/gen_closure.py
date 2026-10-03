@@ -158,6 +158,7 @@ SAND_IMMUNITY = 32
 STATUS_IMMUNITY_P = dict(STATUS_IMMUNITY_C, sandstorm=SAND_IMMUNITY)
 IGNORED_TYPE_KEYS_P = IGNORED_TYPE_KEYS_C - {'sandstorm'}
 SAND_IMMUNE_TYPES = ['Ground', 'Rock', 'Steel']  # in the order of TYPES
+POWDER_IMMUNE_TYPES = ['Grass']  # step G30: the chart's `powder: 3`; the engine reads it as the type, no column
 FLAG_BITS_C = dict(FLAG_BITS, defrost=128)         # Flare Blitz: step 2
 SPECIAL_C = dict(SPECIAL, **{
     'darkestlariat': ('DARKEST_LARIAT', set()),                   # step 2
@@ -343,6 +344,17 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
             fail('move %s: the condition is not the pinned text' % mid)
     if pool and handled[0] == 'KNOCK_OFF':
         for name, text in KNOCK_OFF_CALLBACKS.items():
+            if name not in f or norm(f[name][1]) != text:
+                fail('move %s: %s is not the pinned text' % (mid, name))
+    if pool and handled[0] == 'RAGE_POWDER':
+        if 'onTry' not in f or norm(f['onTry'][1]) != RAGE_POWDER_ONTRY:
+            fail('move %s: onTry is not the pinned text' % mid)
+        if 'condition' not in f or norm(f['condition'][1]) != RAGE_POWDER_CONDITION:
+            fail('move %s: the condition is not the pinned text' % mid)
+    if pool and handled[0] == 'PSYCHIC_FANGS' and ('onTryHit' not in f or norm(f['onTryHit'][1]) != PSYCHIC_FANGS_ONTRYHIT):
+        fail('move %s: onTryHit is not the pinned text' % mid)
+    if pool and handled[0] == 'SOLAR_BEAM':
+        for name, text in SOLAR_BEAM_CALLBACKS.items():
             if name not in f or norm(f[name][1]) != text:
                 fail('move %s: %s is not the pinned text' % (mid, name))
     if pool and handled[0] == 'AURORA_VEIL' and ('onTry' not in f or norm(f['onTry'][1]) != AURORA_VEIL_ONTRY):
@@ -1421,6 +1433,51 @@ KNOCK_OFF_CALLBACKS = {
 # Step G15 (Psychic Terrain): Expanding Force has a handler of its own, because its two callbacks change the move's
 # base power and its target class and no column holds either; the turn code implements it, and the row is marked.
 G15_HANDLERS = ['EXPANDING_FORCE']
+# Step G30: Rage Powder, Psychic Fangs and Solar Beam keep what the columns cannot hold as handlers of their own that the turn
+# code implements (rows of the whole pool, like Knock Off). Rage Powder is Follow Me's redirection with the powder immunity of
+# its user's foes (data/moves.ts:14598-14630); Psychic Fangs breaks the screens before the hit (14060-14078); Solar Beam is a
+# two-turn move that sun skips and rain, sand and snow halve (17224-17258). The generator checks the whole text of each callback
+# and of the condition, whitespace aside; the Champions mod changes none of them.
+G30_HANDLERS = ['RAGE_POWDER', 'PSYCHIC_FANGS', 'SOLAR_BEAM']
+RAGE_POWDER_ONTRY = "onTry(source) { return this.activePerHalf > 1; },"
+RAGE_POWDER_CONDITION = ("condition: { duration: 1, onStart(pokemon) { this.add('-singleturn', pokemon, 'move: Rage Powder'); }, "
+                         "onFoeRedirectTargetPriority: 1, onFoeRedirectTarget(target, source, source2, move) { "
+                         "const ragePowderUser = this.effectState.target; if (ragePowderUser.isSkyDropped()) return; "
+                         "if (source.runStatusImmunity('powder') && this.validTarget(ragePowderUser, source, move.target)) { "
+                         "if (move.smartTarget) move.smartTarget = false; this.debug(\"Rage Powder redirected target of move\"); "
+                         "return ragePowderUser; } }, },")
+PSYCHIC_FANGS_ONTRYHIT = ("onTryHit(pokemon) { // will shatter screens through sub, before you hit pokemon.side.removeSideCondition('reflect'); "
+                          "pokemon.side.removeSideCondition('lightscreen'); pokemon.side.removeSideCondition('auroraveil'); },")
+SOLAR_BEAM_CALLBACKS = {
+    'onTryMove': "onTryMove(attacker, defender, move) { if (attacker.removeVolatile(move.id)) { return; } "
+                 "this.add('-prepare', attacker, move.name); "
+                 "if (['sunnyday', 'desolateland'].includes(attacker.effectiveWeather(undefined, true))) { "
+                 "this.attrLastMove('[still]'); this.addMove('-anim', attacker, move.name, defender); return; } "
+                 "if (!this.runEvent('ChargeMove', attacker, defender, move)) { return; } "
+                 "attacker.addVolatile('twoturnmove', defender); return null; },",
+    'onBasePower': "onBasePower(basePower, pokemon, target) { "
+                   "const weakWeathers = ['raindance', 'primordialsea', 'sandstorm', 'hail', 'snowscape']; "
+                   "if (weakWeathers.includes(pokemon.effectiveWeather())) { this.debug('weakened by weather'); "
+                   "return this.chainModify(0.5); } },",
+}
+# Step G30: the abilities that the turn code implements by id (ENGINE_ROWS), as whole callbacks of the pinned entries, whitespace
+# aside; the Champions mod overrides none of them (data/mods/champions/abilities.ts). The engine reads Flame Body's 3 in 10 as
+# one draw (DFI_SITE_FLAME_BODY), Clear Body's drop filter for the sources other than the holder, Hospitality's quarter heal of
+# the adjacent allies at the switch-in priority -2, and Overcoat's immunity to sand and powder.
+G30_ABILITY_FACTS = (
+    ('flamebody', ("onDamagingHit(damage, target, source, move) { if (this.checkMoveMakesContact(move, source, target)) { "
+                   "if (this.randomChance(3, 10)) { source.trySetStatus('brn', target); } } },",)),
+    ('clearbody', ("onTryBoost(boost, target, source, effect) { if (source && target === source) return; "
+                   "let showMsg = false; let i: BoostID; for (i in boost) { if (boost[i]! < 0) { delete boost[i]; showMsg = true; } } "
+                   "if (showMsg && !(effect as ActiveMove).secondaries && effect.id !== 'octolock') { "
+                   "this.add('-fail', target, 'unboost', '[from] ability: Clear Body', `[of] ${target}`); } },",)),
+    ('hospitality', ("onSwitchInPriority: -2,",
+                     "onStart(pokemon) { for (const ally of pokemon.adjacentAllies()) { this.heal(ally.baseMaxhp / 4, ally, pokemon); } },")),
+    ('overcoat', ("onImmunity(type, pokemon) { if (type === 'sandstorm' || type === 'hail' || type === 'powder') return false; },",
+                  "onTryHitPriority: 1,",
+                  "onTryHit(target, source, move) { if (move.flags['powder'] && target !== source && "
+                  "this.dex.getImmunity('powder', target)) { this.add('-immune', target, '[from] ability: Overcoat'); return null; } },")),
+)
 SPECIAL_P = dict(SPECIAL_C, **{
     'glaiverush': ('GLAIVE_RUSH', set()),                                 # G19: the volatile that makes its user hit as vulnerable
     'knockoff': ('KNOCK_OFF', {'onAfterHit', 'onBasePower'}),             # G16: takes the target's item, x1.5 while it has one
@@ -1438,6 +1495,9 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'acrobatics': ('ACROBATICS', {'basePowerCallback'}),                  # G28: doubled without an item
     'blizzard': ('BLIZZARD', {'onModifyMove'}),                           # G28: never misses in snow
     'feint': ('FEINT', set()),                                            # G28: breaks Protect and Wide Guard
+    'ragepowder': ('RAGE_POWDER', {'onTry'}),                              # G30: Follow Me for the foes that are not powder immune
+    'psychicfangs': ('PSYCHIC_FANGS', {'onTryHit'}),                       # G30: the screens go before the hit
+    'solarbeam': ('SOLAR_BEAM', {'onBasePower', 'onTryMove'}),             # G30: a two-turn move that sun skips, x0.5 in rain, sand, snow
 })
 # Step G13: Detect is Protect (data/moves.ts:3526-3547 against 13961-14005): the same handler (not one of the G2 handlers,
 # so it is added to the pool's map only), and the generator checks that its stalling fields and both callbacks are,
@@ -1450,7 +1510,7 @@ PROTECT_COPIES = {'detect': 'protect'}
 # champions/moves.ts:581-584) sets isNonstandard to null, which makes it legal, and the tag has no reader in the tables.
 TAGS_PAST_UNOBTAINABLE = 'tags: ["Past Unobtainable"],'
 PROTECT_COPY_FIELDS = ('onPrepareHit', 'onHit', 'stallingMove', 'volatileStatus', 'priority', 'accuracy', 'target')
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + ['UNMODELED']
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + ['UNMODELED']
 # Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags
 # byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
@@ -1465,9 +1525,10 @@ G2_OWNED_FIELDS = {
     'SHELL_SMASH': {'boosts': "boosts: { def: -1, spd: -1, atk: 2, spa: 2, spe: 2, },"},
     'FEINT': {'breaksProtect': "breaksProtect: true, // Breaking protection implemented in scripts.js"},
     'GLAIVE_RUSH': {'self': "self: { volatileStatus: 'glaiverush', },"},
+    'RAGE_POWDER': {'volatileStatus': "volatileStatus: 'ragepowder',"},
 }
 G2_OWNED_SECONDARY = {}
-G2_OWNED_CONDITION = {'ENCORE', 'WIDE_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD'}
+G2_OWNED_CONDITION = {'ENCORE', 'WIDE_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD', 'RAGE_POWDER'}
 # Step G8 (Throat Chop and Psychic Noise): the two secondaries become modelled kinds, and the column that their
 # consumers read is the move's second flags byte (the first is full): the `sound` flag (Throat Chop bars the sound
 # moves) and the `heal` flag (Heal Block bars the moves that heal). Both are derived for every pool move, the prefix
@@ -1478,7 +1539,7 @@ G8_SECONDARIES = {
     "secondary: { chance: 100, onHit(target) { target.addVolatile('throatchop'); }, },": (SECONDARY_LOCKOUT, True),
     "secondary: { chance: 100, volatileStatus: 'healblock', },": (SECONDARY_HEAL_BLOCK, False),
 }
-FLAGS2_BITS = {'sound': 1, 'heal': 2}
+FLAGS2_BITS = {'sound': 1, 'heal': 2, 'powder': 16}  # step G30: powder (bit 16), the powder immunity of the target
 # Decision 0020: the public static flags of a move (DUOFORGE_MOVE_STATIC_FLAG_*, include/duoforge/duoforge.h), one bit per
 # Showdown flag name, additive only; the generated column dfi_pool_move_static_flags holds them for every pool row and has
 # no engine reader. POWER_RULE is not a flag of the pin: the move has a basePowerCallback (its basePower is not the damage).
@@ -1575,7 +1636,7 @@ HANDLER_IDS = ['NONE', 'UNMODELED']
 ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'expertbelt'],
                'abilities': ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange',
                              'stickyhold', 'trace', 'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll',
-                             'innerfocus', 'liquidvoice']}
+                             'innerfocus', 'liquidvoice', 'flamebody', 'clearbody', 'hospitality', 'overcoat']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -2175,6 +2236,21 @@ def check_g15_facts(moves_ts, items_ts):
             fail('item %s has other fields than grassyseed: %s' % (iid, sorted(set(f) ^ set(g))))
 
 
+def check_g30_facts(abil_ts, champ_abil):
+    """Every fact of G30_ABILITY_FACTS is in the pinned ability entry, whitespace aside, and the Champions mod has no
+    entry of its own for it (an override would change what the engine reads)."""
+    for aid, facts in G30_ABILITY_FACTS:
+        e = abil_ts.entry(aid)
+        if e is None:
+            fail('ability %s not found' % aid)
+        if champ_abil.entry(aid) is not None:
+            fail('ability %s: the champions mod overrides the entry' % aid)
+        text = norm(chr(10).join(e[2]))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('ability %s: the entry no longer has "%s"' % (aid, fact))
+
+
 def check_g28_items(items_ts, only=None):
     """Step G28: the text of Expert Belt's onModifyDamage (G28_ITEM_FACTS) is in the pinned entry, whole."""
     for iid, facts in (G28_ITEM_FACTS if only is None else only):
@@ -2216,6 +2292,7 @@ def build_pool(root, repo, dx):
     legal = load_legal_pool(repo)
     check_g8_conditions(moves_ts)
     check_g15_facts(moves_ts, items_ts)
+    check_g30_facts(abil_ts, champ_abil)
     check_g28_items(items_ts)
     check_weather_facts(Source(root, 'data/conditions.ts', READER_INPUTS), moves_ts)
     FLAGS_THAT_MATTER.clear()
@@ -2448,6 +2525,11 @@ def build_pool(root, repo, dx):
         fail('the pool type chart and immunity bits are not the extended ones plus Sandstorm')
     if [t for t, v in zip(TYPES, immunity) if v & SAND_IMMUNITY] != SAND_IMMUNE_TYPES:
         fail('the types immune to Sandstorm are not %s' % SAND_IMMUNE_TYPES)
+    # Step G30: the engine reads the powder immunity of the types as the Grass type (a key of the chart that no column holds)
+    tc = Source(root, 'data/typechart.ts')
+    powder = [t for t in TYPES if re.search(r'^			powder: 3,', chr(10).join(tc.entry(t.lower())[2]), re.M)]
+    if powder != POWDER_IMMUNE_TYPES:
+        fail('the types immune to powder moves are not %s' % POWDER_IMMUNE_TYPES)
     # A Pokemon with Heal Block and Throat Chop has two BeforeMove handlers of equal priority whose shuffle (a draw)
     # trace_to_c.py drops, which is right while no move is stopped by both: none may have the sound and the heal flags.
     for m in moves:
@@ -2664,6 +2746,7 @@ def render_pool(dp, dx):
 #define DFI_MOVE_FLAG2_HEAL 2u  /* flags.heal: Heal Block bars these moves */
 #define DFI_MOVE_FLAG2_THAWS_TARGET 4u /* thawsTarget (step G10): the move cures a frozen target after the secondaries */
 #define DFI_MOVE_FLAG2_RECHARGE 8u /* flags.recharge with self.volatileStatus mustrecharge (step G17): the user must recharge after a hit */
+#define DFI_MOVE_FLAG2_POWDER 16u /* flags.powder (step G30): a Grass type, Overcoat and Safety Goggles are immune to the move */
 #define DFI_BOOST_ROLE_PRIMARY_ALLY 4u /* step G19: a status move whose primary boosts go to the adjacent ally (Coaching) */
 #define DFI_BOOST_ROLE_SECONDARY_SELF 5u /* step G28: the secondary's roll gives these boosts to the user (Ancient Power) */
 #define DFI_SECONDARY_SELF_BOOST 7u /* step G28: boosts[] applied to the user with the secondary roll */
@@ -2977,7 +3060,8 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity);
           'const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {']
     for m in dp['moves']:
         names = [n for n, bit in (('DFI_MOVE_FLAG2_SOUND', 1), ('DFI_MOVE_FLAG2_HEAL', 2),
-                                  ('DFI_MOVE_FLAG2_THAWS_TARGET', 4), ('DFI_MOVE_FLAG2_RECHARGE', 8)) if m['flags2'] & bit]
+                                  ('DFI_MOVE_FLAG2_THAWS_TARGET', 4), ('DFI_MOVE_FLAG2_RECHARGE', 8),
+                                  ('DFI_MOVE_FLAG2_POWDER', 16)) if m['flags2'] & bit]
         c.append('    [DFI_MOVE_%s] = %s, /* %s */' % (m['id'].upper(), ' | '.join(names) if names else '0u', m['name']))
     c += ['};', '', '/* The heal fraction of the moves that heal by one (step G10): numerator, denominator. */',
           'const uint8_t dfi_pool_move_heal[DFI_POOL_MOVE_COUNT][2] = {']
