@@ -1,0 +1,136 @@
+"""duoforge.python.bc_numpy: the BC data path without JAX (M11 BC spec sections 5 and 6).
+
+The fixture dataset is built with the replay pipeline from our own reference
+battle's spectator log (python/tests/data/replay/c12_real_cb_4.log), into a
+temporary directory outside the repository.
+"""
+import itertools
+import json
+import shutil
+import tempfile
+import unittest
+from pathlib import Path
+
+import numpy as np
+
+import duoforge
+from duoforge import _layout, features
+from duoforge_live import lines
+
+FIXTURE = Path(__file__).resolve().parent / "data" / "replay" / "c12_real_cb_4.log"
+
+
+class _Stats:
+    """A stand-in for the Showdown stat source (no Node): fixed stats per forme."""
+
+    def stats(self, species, nature, stat_points):
+        return [100 + len(species), 90, 80, 70, 60, 50]
+
+
+def stats_factory():
+    return _Stats()
+
+
+def build_fixture(tmp, copies=2, format_id="gen9championsvgc2026regmc"):
+    """A dataset of `copies` games of the fixture log (ids fixture-0..), built into tmp/"dataset"."""
+    from duoforge_replay import build
+    log = FIXTURE.read_text(encoding="utf-8")
+    prior_path = tmp / "prior.json"
+    prior_path.write_text(json.dumps({"version": 1, "pastes": 0, "skipped": {}, "levels": [{}, {}, {}, {}]}),
+                          encoding="utf-8")
+    source = tmp / "source.jsonl"
+    with open(source, "w", encoding="utf-8", newline=chr(10)) as f:
+        for i in range(copies):
+            f.write(json.dumps({"id": f"fixture-{i}", "formatid": format_id, "log": log}) + chr(10))
+    out = tmp / "dataset"
+    build.build([source], prior_path, out, stats_factory=stats_factory, log=lambda _: None,
+                format_prefix=format_id[:len("gen9championsvgc2026regmc")])
+    return out
+
+
+class BcDataTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        from duoforge_learn import bc_data
+        cls.bc_data = bc_data
+        cls.tmp = Path(tempfile.mkdtemp(prefix="duoforge_bc_"))
+        cls.out = build_fixture(cls.tmp)
+        cls.context = duoforge.Context(data_kind=_layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"])
+        cls.mask = bc_data.bc_mask(cls.context)
+        cls.rows = bc_data.load([cls.out], cls.context, cls.mask)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.context.close()
+        shutil.rmtree(cls.tmp, ignore_errors=True)
+
+    def test_rating_weight(self):
+        w = self.bc_data.rating_weight
+        self.assertEqual((w(1300), w(1000), w(1150), w(-1), w(1600), w(900)), (1.0, 0.25, 0.625, 0.25, 1.0, 0.25))
+
+    def test_split_by_team_pair(self):
+        rng = np.random.default_rng(7)
+        pairs = rng.integers(0, 2 ** 63, size=(10000, 2), dtype=np.uint64)
+        val = np.array([self.bc_data.split_key(p) for p in pairs])
+        self.assertTrue(0.03 < val.mean() < 0.07, val.mean())
+        self.assertTrue(all(self.bc_data.split_key(p) == self.bc_data.split_key(p[::-1]) for p in pairs[:200]))
+        self.assertTrue(all(self.bc_data.split_key(p) == v for p, v in zip(pairs[:200], val[:200])))
+
+    def test_rows_and_labels(self):
+        from duoforge_replay import dataset
+        r = self.rows
+        n = sum(len(s["game"]) for s in dataset.read(self.out))
+        self.assertEqual(len(r.weight), n)
+        self.assertEqual(r.obs.shape, (n, features.OBS_SIZE))
+        shards = list(dataset.read(self.out))
+        label_slots = np.concatenate([s["label_slots"] for s in shards])
+        for i in range(n):
+            if r.is_team[i]:
+                self.assertTrue(r.label_team[i].any(), i)
+                continue
+            a = [(int(label_slots[i, 0]) >> k) & 1 == 1 for k in range(32)]
+            b = [(int(label_slots[i, 1]) >> k) & 1 == 1 for k in range(32)]
+            expected = np.outer(a, b) & r.mask[i]
+            self.assertTrue(np.array_equal(r.label_pairs[i], expected), i)
+            self.assertTrue(r.label_pairs[i].any(), i)  # the logged choice is inside the set
+
+    def test_value_targets(self):
+        from duoforge_replay import dataset
+        r = self.rows
+        games = dataset.read_games(dataset.parts(self.out)[0])
+        winner = int(games["winner"][0])
+        self.assertIn(winner, (0, 1))
+        self.assertTrue(r.has_z.all())
+        self.assertTrue(np.array_equal(r.z, np.where(r.side == winner, 1.0, -1.0).astype(np.float32)))
+
+    def test_mask_mismatch_raises(self):
+        from unittest import mock
+        with mock.patch.object(lines, "LIBRARY_SUPPORTED", lines.LIBRARY_SUPPORTED ^ 1):
+            with self.assertRaises(ValueError) as caught:
+                self.bc_data.bc_mask(self.context)
+        message = str(caught.exception)
+        self.assertIn(f"{lines.LIBRARY_SUPPORTED ^ 1:#x}", message)
+        self.assertIn(f"{lines.LIBRARY_SUPPORTED:#x}", message)
+
+    def test_dataset_of_another_library_is_refused(self):
+        other = self.tmp / "other"
+        shutil.copytree(self.out, other)
+        marker = other / "replay-dataset.json"
+        inputs = json.loads(marker.read_text(encoding="utf-8"))
+        inputs["fingerprint"] = "00" * 32
+        marker.write_text(json.dumps(inputs), encoding="utf-8")
+        with self.assertRaises(ValueError) as caught:
+            self.bc_data.load([other], self.context, self.mask)
+        self.assertIn("00" * 32, str(caught.exception))
+        self.assertIn(self.context.fingerprint().hex(), str(caught.exception))
+
+    def test_team_table_order(self):
+        from duoforge_learn import selfplay
+        from duoforge_live import game
+        self.assertEqual(game.TEAM_TABLE, [tuple(int(x) for x in row) for row in selfplay.TEAM_TABLE])
+        self.assertEqual(game.TEAM_TABLE, list(itertools.permutations(range(6), 4)))
+        self.assertEqual(self.rows.label_team.shape[1], 360)
+
+
+if __name__ == "__main__":
+    unittest.main()
