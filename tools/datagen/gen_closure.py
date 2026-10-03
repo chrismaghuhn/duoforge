@@ -95,6 +95,9 @@ TARGET_CLASS = {'normal': 1, 'any': 2, 'adjacentAlly': 3, 'adjacentAllyOrSelf': 
 STATUS = {'brn': 1, 'frz': 2, 'par': 3, 'slp': 4}
 VOLATILE = {'flinch': 1, 'confusion': 2}
 SIDE_CONDITION = {'tailwind': 1, 'reflect': 2, 'lightscreen': 3}
+# Step G37 (POOL only): the four entry hazards. The values are the DUOFORGE_SIDE_* values of SIDE_START and SIDE_END (Aurora Veil is 4, a
+# handler of its own): Stealth Rock 5, Spikes 6, Toxic Spikes 7, Sticky Web 8. Their moves have the target class foeSide.
+SIDE_CONDITION_P = dict(SIDE_CONDITION, stealthrock=5, spikes=6, toxicspikes=7, stickyweb=8)
 PSEUDO_WEATHER = {'trickroom': 1}
 STATUS_IMMUNITY = {'brn': 1, 'frz': 2, 'par': 4, 'prankster': 8}
 # Type-chart keys without a consumer in the closure (no poison source, powder
@@ -379,6 +382,13 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
         for name, text in SOLAR_BEAM_CALLBACKS.items():
             if name not in f or norm(f[name][1]) != text:
                 fail('move %s: %s is not the pinned text' % (mid, name))
+    if pool and handled[0] == 'TAUNT' and ('condition' not in f or norm(f['condition'][1]) != TAUNT_CONDITION):
+        fail('move %s: the condition is not the pinned text' % mid)
+    if pool and handled[0] == 'YAWN':
+        if 'onTryHit' not in f or norm(f['onTryHit'][1]) != YAWN_ONTRYHIT:
+            fail('move %s: onTryHit is not the pinned text' % mid)
+        if 'condition' not in f or norm(f['condition'][1]) != YAWN_CONDITION:
+            fail('move %s: the condition is not the pinned text' % mid)
     if pool and handled[0] == 'AURORA_VEIL' and ('onTry' not in f or norm(f['onTry'][1]) != AURORA_VEIL_ONTRY):
         fail('move %s: onTry is not the pinned text' % mid)
     if pool and handled[0] in G20_PROTECT_HANDLERS:
@@ -558,7 +568,7 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
     if 'volatileStatus' in f and 'volatileStatus' not in owned and get('volatileStatus') not in ('protect', owned_volatile):
         bad('move %s: unknown primary volatile' % mid, 'primary volatile %s' % get('volatileStatus'))
     if 'sideCondition' in f and 'sideCondition' not in owned:
-        rec['side_condition'] = modelled(SIDE_CONDITION, get('sideCondition'), mid, 'side condition', unmodeled)
+        rec['side_condition'] = modelled(SIDE_CONDITION_P if pool else SIDE_CONDITION, get('sideCondition'), mid, 'side condition', unmodeled)
     if 'pseudoWeather' in f:
         rec['pseudo_weather'] = modelled(PSEUDO_WEATHER, get('pseudoWeather'), mid, 'pseudo weather', unmodeled)
     if 'condition' in f and not (rec['side_condition'] or rec['pseudo_weather'] or mid == 'protect' or
@@ -1512,6 +1522,49 @@ G34_FACTS = (
                     "onTryHit(pokemon) { // will shatter screens through sub, before you hit pokemon.side.removeSideCondition('reflect'); "
                     "pokemon.side.removeSideCondition('lightscreen'); pokemon.side.removeSideCondition('auroraveil'); },"]),
 )
+# Step G37 (the entry hazards): the four moves with the target class foeSide are rows of the tables without a handler of
+# their own (the side condition is a column: SIDE_CONDITION_P) and the turn code runs their conditions: the layers, the
+# damage of the switch-in and the status and the stat drop. The generator checks the whole pinned text the engine hard-codes:
+# the Champions mod overrides none of the four (data/mods/champions/moves.ts). Toxic Debris (Glimmora's ability) is an engine
+# row (ENGINE_ROWS) with its own text (G37_ABILITY_FACTS).
+G37_FACTS = (
+    ('stealthrock', ['accuracy: true,', 'category: "Status",', 'target: "foeSide",', 'type: "Rock",', 'priority: 0,',
+                     'flags: { reflectable: 1, metronome: 1, mustpressure: 1 },', "sideCondition: 'stealthrock',",
+                     "onSideStart(side) { this.add('-sidestart', side, 'move: Stealth Rock'); },",
+                     "onSwitchIn(pokemon) { if (pokemon.hasItem('heavydutyboots')) return; "
+                     "const typeMod = this.clampIntRange(pokemon.runEffectiveness(this.dex.getActiveMove('stealthrock')), -6, 6); "
+                     "this.damage(pokemon.maxhp * (2 ** typeMod) / 8); },"]),
+    ('spikes', ['accuracy: true,', 'category: "Status",', 'target: "foeSide",', 'type: "Ground",', 'priority: 0,',
+                'flags: { reflectable: 1, nonsky: 1, metronome: 1, mustpressure: 1 },', "sideCondition: 'spikes',",
+                "onSideStart(side) { this.add('-sidestart', side, 'Spikes'); this.effectState.layers = 1; },",
+                "onSideRestart(side) { if (this.effectState.layers >= 3) return false; this.add('-sidestart', side, 'Spikes'); "
+                "this.effectState.layers++; },",
+                "onSwitchIn(pokemon) { if (!pokemon.isGrounded() || pokemon.hasItem('heavydutyboots')) return; "
+                "const damageAmounts = [0, 3, 4, 6]; // 1/8, 1/6, 1/4 this.damage(damageAmounts[this.effectState.layers] * pokemon.maxhp / 24); },"]),
+    ('toxicspikes', ['accuracy: true,', 'category: "Status",', 'target: "foeSide",', 'type: "Poison",', 'priority: 0,',
+                     'flags: { reflectable: 1, nonsky: 1, metronome: 1, mustpressure: 1 },', "sideCondition: 'toxicspikes',",
+                     "onSideStart(side) { this.add('-sidestart', side, 'move: Toxic Spikes'); this.effectState.layers = 1; },",
+                     "onSideRestart(side) { if (this.effectState.layers >= 2) return false; "
+                     "this.add('-sidestart', side, 'move: Toxic Spikes'); this.effectState.layers++; },",
+                     "onSwitchIn(pokemon) { if (!pokemon.isGrounded()) return; if (pokemon.hasType('Poison')) { "
+                     "this.add('-sideend', pokemon.side, 'move: Toxic Spikes', `[of] ${pokemon}`); "
+                     "pokemon.side.removeSideCondition('toxicspikes'); } else if (pokemon.hasType('Steel') || "
+                     "pokemon.hasItem('heavydutyboots')) { // do nothing } else if (this.effectState.layers >= 2) { "
+                     "pokemon.trySetStatus('tox', pokemon.side.foe.active[0]); } else { "
+                     "pokemon.trySetStatus('psn', pokemon.side.foe.active[0]); } },"]),
+    ('stickyweb', ['accuracy: true,', 'category: "Status",', 'target: "foeSide",', 'type: "Bug",', 'priority: 0,',
+                   'flags: { reflectable: 1, metronome: 1 },', "sideCondition: 'stickyweb',",
+                   "onSideStart(side) { this.add('-sidestart', side, 'move: Sticky Web'); },",
+                   "onSwitchIn(pokemon) { if (!pokemon.isGrounded() || pokemon.hasItem('heavydutyboots')) return; "
+                   "this.add('-activate', pokemon, 'move: Sticky Web'); "
+                   "this.boost({ spe: -1 }, pokemon, pokemon.side.foe.active[0], this.dex.getActiveMove('stickyweb')); },"]),
+)
+G37_ABILITY_FACTS = (
+    ('toxicdebris', ("onDamagingHit(damage, target, source, move) { const side = source.isAlly(target) ? source.side.foe : source.side; "
+                     "const toxicSpikes = side.sideConditions['toxicspikes']; "
+                     "if (move.category === 'Physical' && (!toxicSpikes || toxicSpikes.layers < 2)) { "
+                     "this.add('-activate', target, 'ability: Toxic Debris'); side.addSideCondition('toxicspikes', target); } },",)),
+)
 G34_ABILITY_FACTS = (
     ('compoundeyes', ('onSourceModifyAccuracyPriority: -1,',
                       "onSourceModifyAccuracy(accuracy) { if (typeof accuracy !== 'number') return; "
@@ -1734,6 +1787,25 @@ G28_ITEM_FACTS = (
     ('expertbelt', ["onModifyDamage(damage, source, target, move) { if (move && target.getMoveHitData(move).typeMod > 0) { "
                     "return this.chainModify([4915, 4096]); } },"]),
 )
+# Step G31: Taunt (data/moves.ts:18974-19016) and Yawn (:21131-21162) are handlers of their own that the turn code implements
+# (a condition whose state is the tail's taunt_turns / yawn_turns). The Champions mod changes neither. The generator checks
+# the whole condition text of both and Yawn's onTryHit, whitespace aside: Taunt's duration 3 (4 when the target has been out
+# for a turn and has no move queued), order 15, onBeforeMove priority 5 and the Status-category bar; Yawn's duration 2,
+# order 23 and the silent end that calls trySetStatus('slp').
+G31_HANDLERS = ['TAUNT', 'YAWN']
+TAUNT_CONDITION = (
+    "condition: { duration: 3, onStart(target) { if (target.activeTurns && !this.queue.willMove(target)) { "
+    "this.effectState.duration!++; } this.add('-start', target, 'move: Taunt'); }, onResidualOrder: 15, onEnd(target) { "
+    "this.add('-end', target, 'move: Taunt'); }, onDisableMove(pokemon) { for (const moveSlot of pokemon.moveSlots) { "
+    "const move = this.dex.moves.get(moveSlot.id); if (move.category === 'Status' && move.id !== 'mefirst') { "
+    "pokemon.disableMove(moveSlot.id); } } }, onBeforeMovePriority: 5, onBeforeMove(attacker, defender, move) { "
+    "if (!(move.isZ && move.isZOrMaxPowered) && move.category === 'Status' && move.id !== 'mefirst') { "
+    "this.add('cant', attacker, 'move: Taunt', move); return false; } }, },")
+YAWN_ONTRYHIT = "onTryHit(target) { if (target.status || !target.runStatusImmunity('slp')) { return false; } },"
+YAWN_CONDITION = (
+    "condition: { noCopy: true, // doesn't get copied by Baton Pass duration: 2, onStart(target, source) { "
+    "this.add('-start', target, 'move: Yawn', `[of] ${source}`); }, onResidualOrder: 23, onEnd(target) { "
+    "this.add('-end', target, 'move: Yawn', '[silent]'); target.trySetStatus('slp', this.effectState.source); }, },")
 # Step G25 (Electric Terrain, Misty Terrain): the two terrain moves keep their `terrain` field and their condition as handlers of
 # their own that the turn code implements (setTerrain, then the terrain's rules in the damage chain and in SetStatus and
 # TryAddVolatile), and Rising Voltage and Terrain Pulse keep the callback that reads the terrain (base power; type and
@@ -1841,6 +1913,8 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'encore': ('ENCORE', set()),                                          # G9 (implemented): last move, a volatile, a queue change
     'disable': ('DISABLE', {'onTryHit'}),                                 # G27: bars the target's last move
     'spikyshield': ('SPIKY_SHIELD', {'onPrepareHit', 'onHit'}),           # G20: Protect that damages a contact attacker
+    'taunt': ('TAUNT', set()),                                            # G31: bars the Status moves for three or four turns
+    'yawn': ('YAWN', {'onTryHit'}),                                       # G31: sleep at the end of the next turn
     'auroraveil': ('AURORA_VEIL', {'onTry'}),                             # G20: a screen against both categories, in snow only
     'trick': ('TRICK', {'onTryImmunity', 'onHit'}),                         # G29: swaps the two items
     'switcheroo': ('SWITCHEROO', {'onTryImmunity', 'onHit'}),               # G29: Trick's text with its own name in the lines
@@ -1894,7 +1968,7 @@ PROTECT_COPIES = {'detect': 'protect'}
 # champions/moves.ts:581-584) sets isNonstandard to null, which makes it legal, and the tag has no reader in the tables.
 TAGS_PAST_UNOBTAINABLE = 'tags: ["Past Unobtainable"],'
 PROTECT_COPY_FIELDS = ('onPrepareHit', 'onHit', 'stallingMove', 'volatileStatus', 'priority', 'accuracy', 'target')
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + ['UNMODELED']
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + ['UNMODELED']
 # Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags
 # byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
@@ -1905,6 +1979,8 @@ G2_OWNED_FIELDS = {
     'AURORA_VEIL': {'sideCondition': "sideCondition: 'auroraveil',"},
     'DISABLE': {'volatileStatus': "volatileStatus: 'disable',"},
     'SPIKY_SHIELD': {'volatileStatus': "volatileStatus: 'spikyshield',"},
+    'TAUNT': {'volatileStatus': "volatileStatus: 'taunt',"},
+    'YAWN': {'volatileStatus': "volatileStatus: 'yawn',"},
     'SANDSTORM': {'weather': "weather: 'Sandstorm',"},
     'SNOWSCAPE': {'weather': "weather: 'snowscape',"},
     'ELECTRIC_TERRAIN': {'terrain': "terrain: 'electricterrain',"},
@@ -1925,7 +2001,7 @@ G2_OWNED_FIELDS = {
 }
 G2_OWNED_SECONDARY = {}
 G2_OWNED_CONDITION = {'ENCORE', 'WIDE_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD', 'RAGE_POWDER', 'DISABLE',
-                      'ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'PERISH_SONG', 'IMPRISON'}
+                      'ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'PERISH_SONG', 'IMPRISON', 'TAUNT', 'YAWN'}
 # Step G8 (Throat Chop and Psychic Noise): the two secondaries become modelled kinds, and the column that their
 # consumers read is the move's second flags byte (the first is full): the `sound` flag (Throat Chop bars the sound
 # moves) and the `heal` flag (Heal Block bars the moves that heal). Both are derived for every pool move, the prefix
@@ -2055,7 +2131,7 @@ TARGET_CLASS_POOL = dict(TARGET_CLASS, allAdjacent=11, scripted=12, allyTeam=13,
 TARGET_CLASS_POOL_NAMES = {11: 'ALL_ADJACENT', 12: 'SCRIPTED', 13: 'ALLY_TEAM', 14: 'ALLIES', 15: 'FOE_SIDE'}
 # The target classes that the turn code resolves (src/combat/turn.c, dfi_resolve_targets and request.c).
 ENGINE_TARGETS = {'normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
-                  'randomNormal', 'allAdjacent', 'allies'}  # allAdjacent: step G28 (Earthquake hits the ally too); allies: G32 (Life Dew)
+                  'randomNormal', 'allAdjacent', 'allies', 'foeSide'}  # allAdjacent: step G28 (Earthquake hits the ally too); allies: G32 (Life Dew); foeSide: G37 (the four hazards)
 # Every move flag of the 510 pool moves: a flag outside this set is something the generator cannot read.
 POOL_FLAGS = (set(FLAG_BITS_C) | IGNORED_FLAGS | G2_IGNORED_FLAGS |
               {'bite', 'recharge', 'minimize', 'gravity', 'powder', 'noparentalbond', 'futuremove', 'cantusetwice',
@@ -2094,7 +2170,7 @@ ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed'
                              'justified',
                              'limber',
                              'solarpower',
-                             'regenerator']}
+                             'regenerator', 'toxicdebris']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -2737,6 +2813,23 @@ def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
             for fact in facts:
                 if norm(fact) not in text:
                     fail('%s %s: the entry no longer has "%s"' % (kind, rid, fact))
+
+
+def check_g37_facts(abil_ts, champ_abil):
+    """Step G37: the text of Toxic Debris that the engine hard-codes (G37_ABILITY_FACTS) is in the pinned entry, whitespace aside, and
+    the Champions mod has no entry of its own for it."""
+    for rid, facts in G37_ABILITY_FACTS:
+        e = abil_ts.entry(rid)
+        if e is None:
+            fail('ability %s not found' % rid)
+        if champ_abil.entry(rid) is not None:
+            fail('ability %s: the champions mod overrides the entry' % rid)
+        text = norm(chr(10).join(e[2]))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('ability %s: the entry no longer has "%s"' % (rid, fact))
+
+
 def check_g32_entries(items_ts, champ_items, abil_ts, champ_abil, only=None):
     """Step G32: the ability and item entries that the turn code runs by id (G32_ENTRY_FACTS) have the pinned texts, whole;
     the Champions Eject Button is read from the mod's file. `only`: a tuple of such entries (the generator's tests)."""
@@ -2757,7 +2850,7 @@ def check_g8_conditions(moves_ts, only=None):
     must be in the pinned entry, as one normalised text. `only`: a tuple of (move id, facts) to check instead of all of
     them (the generator's tests)."""
     for mid, facts in (G8_CONDITION_FACTS + G20_CONDITION_FACTS + G28_FACTS + G32_FACTS + G34_FACTS + G25_FACTS +
-                       G33_FACTS + G38_FACTS + G39_FACTS if only is None else only):
+                       G33_FACTS + G38_FACTS + G39_FACTS + G37_FACTS if only is None else only):
         e = moves_ts.entry(mid)
         if e is None:
             fail('move %s not found' % mid)
@@ -2785,6 +2878,7 @@ def build_pool(root, repo, dx):
     check_g30_facts(abil_ts, champ_abil)
     check_g28_items(items_ts)
     check_g34_facts(abil_ts, champ_abil, items_ts, champ_items)
+    check_g37_facts(abil_ts, champ_abil)
     check_g32_entries(items_ts, champ_items, abil_ts, champ_abil)
     check_weather_facts(Source(root, 'data/conditions.ts', READER_INPUTS), moves_ts)
     FLAGS_THAT_MATTER.clear()
