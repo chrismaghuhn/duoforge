@@ -3136,17 +3136,6 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             hit[i] = false;
         }
     }
-    /* Disable's own onTryHit (data/moves.ts:3658-3662, priority 0: after Protect's and the abilities'): a target without a
-     * last move, or whose last move is Struggle, fails the move with -fail and [still] (hitStepTryHitEvent,
-     * sim/battle-actions.ts:643-653). */
-    for (uint32_t i = 0u; i < count && md->special == DFI_SPECIAL_DISABLE; ++i) {
-        const uint32_t t = targets[i];
-        const uint32_t last = b->tail.sides[t / 2u].positions[t % 2u].last_move;
-        if (hit[i] && t != user && (last == 0u || last == DFI_TAIL_MOVE_MAX)) {
-            hit[i] = false;
-            dfi_fail_still(r, user);
-        }
-    }
     for (uint32_t i = 0u; i < count && !status_move; ++i) {
         if (hit[i] && dfi_type_immune(b, dfi_at(b, targets[i]), move_type)) {
             hit[i] = false; /* a status move ignores type immunity */
@@ -3238,8 +3227,14 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                 continue;
             }
             if (md->special == DFI_SPECIAL_DISABLE) {
-                /* The volatile's onStart fails the move when it does not start (no PP left, already disabled). */
-                if (dfi_disable_start(r, targets[i], DUOFORGE_NO_POSITION, false)) {
+                /* The move's own onTryHit (data/moves.ts:3658-3662) runs in spreadMoveHit, after the accuracy (recorded in
+                 * g27_disable_b: the draw comes first): a target without a last move, or whose last move is Struggle, fails
+                 * the move with -fail and [still]. Then the volatile's onStart fails it when it does not start (no PP
+                 * left, already disabled). */
+                const uint32_t last = b->tail.sides[targets[i] / 2u].positions[targets[i] % 2u].last_move;
+                if (last == 0u || last == DFI_TAIL_MOVE_MAX) {
+                    dfi_fail_still(r, user);
+                } else if (dfi_disable_start(r, targets[i], DUOFORGE_NO_POSITION, false)) {
                     did = true;
                 } else {
                     dfi_fail_still(r, user);
@@ -3437,7 +3432,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         uint32_t holders = 0u;
         for (uint32_t i = 0u; i < count; ++i) {
             const dfi_member *tm = dfi_at(b, targets[i]);
-            holders += (hit[i] && tm != NULL && tm->hp != 0u && dfi_ability(r->b, tm, DFI_ABILITY_CURSEDBODY)) ? 1u : 0u;
+            holders += (hit[i] && tm != NULL && dfi_ability(r->b, tm, DFI_ABILITY_CURSEDBODY)) ? 1u : 0u;
         }
         if (holders > 1u) {
             return DUOFORGE_E_UNSUPPORTED;
@@ -3479,8 +3474,16 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             continue;
         }
         if (tm->hp == 0u) {
-            /* The unordered handlers of a target that is down do nothing, except the attacker's Poison Touch: it
-             * draws its roll (the handler runs, trySetStatus then fails). */
+            /* The unordered handlers of a target that is down do nothing, except Cursed Body (a holder that the hit knocked
+             * out still makes its attacker roll: its onDamagingHit runs before the faint is processed and `-start|...|Disable
+             * ... [from] ability: Cursed Body [of] holder` shows before the faint line, recorded in g27_cursed_body_a) and
+             * the attacker's Poison Touch: it draws its roll (the handler runs, trySetStatus then fails). */
+            if (dfi_ability(r->b, tm, DFI_ABILITY_CURSEDBODY)) {
+                st = dfi_cursed_body(r, user, targets[i], move_id);
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
+            }
             st = dfi_poison_touch(r, user, targets[i], md);
             if (st != DUOFORGE_OK) {
                 return st;
@@ -3509,7 +3512,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                       dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_THERMALEXCHANGE, DFI_BOOST_PRIMARY));
         }
         /* Cursed Body (POOL data): the target's own onDamagingHit, after Thermal Exchange's place and before the attacker's
-         * Poison Touch; the target is standing here (a holder that is down does nothing, as Stamina's). */
+         * Poison Touch; the target is standing here (a holder that is down rolls too: see above). */
         if (dfi_ability(r->b, tm, DFI_ABILITY_CURSEDBODY)) {
             st = dfi_cursed_body(r, user, targets[i], move_id);
             if (st != DUOFORGE_OK) {

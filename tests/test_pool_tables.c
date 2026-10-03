@@ -1150,7 +1150,8 @@ int main(void)
             /* ... and Rough Skin, Poison Touch, Thermal Exchange (step G14) and Sticky Hold (step G16): engine rows that the turn code runs by id. */
             const bool engine = id == DFI_ABILITY_ROUGHSKIN || id == DFI_ABILITY_POISONTOUCH ||
                                 id == DFI_ABILITY_THERMALEXCHANGE || id == DFI_ABILITY_STICKYHOLD ||
-                                id == DFI_ABILITY_TRACE /* step AC1: Trace, by id too */;
+                                id == DFI_ABILITY_TRACE /* step AC1: Trace, by id too */ ||
+                                id == DFI_ABILITY_CURSEDBODY /* step G27: Cursed Body, by id too */;
             DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, (setter || engine) ? 1u : 0u);
             DF_CHECK_EQ_U64(&t, dfi_pool_ability_family[id].family,
                             setter ? DFI_ABILITY_FAMILY_WEATHER_SETTER : DFI_ABILITY_FAMILY_NONE);

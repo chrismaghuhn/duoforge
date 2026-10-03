@@ -104,10 +104,58 @@ static const struct {
     uint32_t step;
     uint32_t slot[4];
 } slot_rows[] = {
-    {"g27_placeholder", 0u, {0u, 0u, 0u, 0u}}, /* replaced when the battles are recorded */
+    {"g27_cursed_body_a", 0u, {0u, 0u, 0u, 0u}},
+    {"g27_cursed_body_a", 1u, {0u, 0u, 1u, 1u}},
+    {"g27_cursed_body_a", 2u, {0u, 0u, 1u, 1u}},
+    {"g27_cursed_body_a", 3u, {0u, 0u, 1u, 1u}},
+    {"g27_cursed_body_a", 4u, {0u, 0u, 1u, 1u}},
+    {"g27_cursed_body_a", 5u, {0u, 0u, 0u, 0u}},
+    {"g27_cursed_body_a", 6u, {0u, 0u, 0u, 0u}},
+    {"g27_cursed_body_a", 7u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_b", 0u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_b", 1u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_b", 2u, {0u, 0u, 1u, 1u}},
+    {"g27_disable_b", 3u, {0u, 0u, 1u, 1u}},
+    {"g27_disable_b", 4u, {0u, 0u, 1u, 1u}},
+    {"g27_disable_b", 5u, {0u, 0u, 0u, 1u}},
+    {"g27_disable_b", 6u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_b", 7u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_lock", 0u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_lock", 1u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_lock", 2u, {0u, 0u, 1u, 0u}},
+    {"g27_disable_lock", 3u, {0u, 0u, 1u, 1u}},
+    {"g27_disable_lock", 4u, {0u, 0u, 1u, 1u}},
+    {"g27_disable_lock", 5u, {0u, 0u, 0u, 1u}},
+    {"g27_disable_lock", 6u, {0u, 0u, 0u, 1u}},
+    {"g27_disable_lock", 7u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_pair_a", 0u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_pair_a", 1u, {1u, 0u, 1u, 0u}},
+    {"g27_disable_pair_a", 2u, {1u, 0u, 1u, 0u}},
+    {"g27_disable_pair_a", 3u, {1u, 0u, 1u, 0u}},
+    {"g27_disable_pair_a", 4u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_pair_a", 5u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_pair_a", 6u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_pair_a", 7u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_pair_a", 8u, {1u, 0u, 0u, 0u}},
+    {"g27_disable_pair_b", 0u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_pair_b", 1u, {0u, 0u, 1u, 0u}},
+    {"g27_disable_pair_b", 2u, {0u, 0u, 1u, 0u}},
+    {"g27_disable_pair_b", 3u, {0u, 0u, 1u, 0u}},
+    {"g27_disable_pair_b", 4u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_pair_b", 5u, {1u, 0u, 1u, 0u}},
+    {"g27_disable_pair_b", 6u, {1u, 0u, 1u, 0u}},
+    {"g27_disable_pair_b", 7u, {1u, 0u, 1u, 0u}},
+    {"g27_disable_pair_b", 8u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_switch", 0u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_switch", 1u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_switch", 2u, {0u, 0u, 1u, 0u}},
+    {"g27_disable_switch", 3u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_switch", 4u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_switch", 5u, {0u, 0u, 0u, 1u}},
+    {"g27_disable_switch", 6u, {0u, 0u, 0u, 1u}},
 };
 
-static const char *const names[] = {"g27_placeholder"};
+static const char *const names[] = {"g27_cursed_body_a", "g27_disable_b", "g27_disable_lock", "g27_disable_pair_a", "g27_disable_pair_b", "g27_disable_switch"};
 
 int main(void)
 {
