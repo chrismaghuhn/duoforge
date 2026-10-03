@@ -122,6 +122,17 @@
  * Step G20 marks Aurora Veil (fails outside snow, 5 turns or 8 with Light Clay, 2732/4096 against every category unless a
  * crit or the screen of that category already does it, ends with its own line in the residual after Tailwind), with the
  * view bit 3 (aurora_veil_turns of the side, public). Recorded as g20_aurora_veil_* under the POOL kind.
+ * Step G21 marks twenty-seven moves that the existing paths run (the rows were modelled before, with no unmodelled
+ * feature; the pin was read again for each): Sludge Bomb and Gunk Shot (a poison secondary), Dragon Claw, Night Slash
+ * and Slash (the last two with critical hit ratio 2), Air Slash, Icicle Crash, Waterfall and Dark Pulse (a flinch
+ * secondary; Dark Pulse and Air Slash target any), Crunch and Bug Buzz and Mystical Fire (a stat drop secondary),
+ * Struggle Bug (spread, a Special Attack drop on both foes), Nuzzle (paralysis at 100 percent), Fire Blast, Power Whip,
+ * Overheat, Leaf Storm and Armor Cannon (self drops after the hit), Dragon Dance, Quiver Dance and Agility
+ * (boosts of the user), Will-O-Wisp (a burn that Thermal Exchange and a Fire type refuse), Accelerock, Bullet Punch and
+ * Mach Punch (priority +1) and Drain Punch (drain 1/2), recorded as g21_* under the POOL kind. Shell Smash (the pin
+ * orders its boosts Defense, Special Defense, Attack, Special Attack, Speed, the engine in stat order), Earthquake,
+ * Ancient Power, Blizzard, Dual Wingbeat, Feint, Life Dew, Acrobatics, Terrain Pulse and Expert Belt stay unmarked: each needs
+ * logic that no column or handler has (docs/decisions/0015-content-expansion-pool.md, step G21).
  * Step G24 (a Mega Stone batch) marks nine stones whose Mega ability and a base ability are marked and whose base forme has exactly
  * one Mega: Gardevoirite (Pixilate; the base forme's Trace has been marked since AC1: the Mega Evolution replaces the copied
  * ability), Abomasite (Snow Warning), Barbaracite (Tough Claws), Beedrillite (Adaptability), Falinksite (Defiant), Hawluchanite
@@ -235,6 +246,33 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_GLAIVERUSH] = 1u,
             [DFI_MOVE_ROCKWRECKER] = 1u,
             [DFI_MOVE_KNOCKOFF] = 1u,
+            [DFI_MOVE_SLUDGEBOMB] = 1u,
+            [DFI_MOVE_GUNKSHOT] = 1u,
+            [DFI_MOVE_DRAGONCLAW] = 1u,
+            [DFI_MOVE_DRAGONDANCE] = 1u,
+            [DFI_MOVE_QUIVERDANCE] = 1u,
+            [DFI_MOVE_AGILITY] = 1u,
+            [DFI_MOVE_MYSTICALFIRE] = 1u,
+            [DFI_MOVE_STRUGGLEBUG] = 1u,
+            [DFI_MOVE_DARKPULSE] = 1u,
+            [DFI_MOVE_AIRSLASH] = 1u,
+            [DFI_MOVE_ICICLECRASH] = 1u,
+            [DFI_MOVE_WATERFALL] = 1u,
+            [DFI_MOVE_OVERHEAT] = 1u,
+            [DFI_MOVE_LEAFSTORM] = 1u,
+            [DFI_MOVE_ARMORCANNON] = 1u,
+            [DFI_MOVE_WILLOWISP] = 1u,
+            [DFI_MOVE_NIGHTSLASH] = 1u,
+            [DFI_MOVE_SLASH] = 1u,
+            [DFI_MOVE_FIREBLAST] = 1u,
+            [DFI_MOVE_POWERWHIP] = 1u,
+            [DFI_MOVE_ACCELEROCK] = 1u,
+            [DFI_MOVE_BULLETPUNCH] = 1u,
+            [DFI_MOVE_MACHPUNCH] = 1u,
+            [DFI_MOVE_CRUNCH] = 1u,
+            [DFI_MOVE_BUGBUZZ] = 1u,
+            [DFI_MOVE_DRAINPUNCH] = 1u,
+            [DFI_MOVE_NUZZLE] = 1u,
             [DFI_MOVE_AURORAVEIL] = 1u,
         },
     .abilities =

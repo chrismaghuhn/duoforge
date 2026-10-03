@@ -1614,6 +1614,70 @@ static const df_tb_stop tb_g20_aurora_veil_screens[] = {
     {6u, 0u, 2u, 2u, {4u, 4u}, {642u, 693u}, {0x404b6d42cd2b4c2full, 0x404ffce38e38e38dull}},
     {7u, 0u, 2u, 2u, {4u, 4u}, {644u, 693u}, {0x404b6d2ab1e60c3dull, 0x404ffce38e38e38dull}},
 };
+static const df_tb_stop tb_g21_armarouge_wisp_thermal[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1113u, 1178u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {757u, 818u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {709u, 665u}, {0x404f400000000000ull, 0x404b971024e6a170ull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {643u, 614u}, {0x404c361975646b7full, 0x40497c72fee18fb3ull}},
+    {5u, 0u, 1u, 2u, {4u, 4u}, {643u, 533u}, {0x404c361975646b7full, 0x40462500efac5567ull}},
+    {6u, 0u, 1u, 2u, {4u, 4u}, {643u, 547u}, {0x404c361975646b7full, 0x4046b8dbc2e4f0dcull}},
+};
+static const df_tb_stop tb_g21_crit_slashes[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1133u, 1154u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {773u, 783u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {773u, 706u}, {0x4050aaaaaaaaaaabull, 0x404e2821cb9dfe50ull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {773u, 661u}, {0x4050aaaaaaaaaaabull, 0x404c4ce26dd5c17bull}},
+    {5u, 0u, 1u, 2u, {4u, 4u}, {773u, 576u}, {0x4050aaaaaaaaaaabull, 0x4048c18b86a99ec7ull}},
+    {6u, 0u, 1u, 2u, {4u, 4u}, {773u, 515u}, {0x4050aaaaaaaaaaabull, 0x4046336721b48f93ull}},
+};
+static const df_tb_stop tb_g21_dragon_dance_claw[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1119u, 1141u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {748u, 770u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {748u, 770u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 3u, {4u, 4u}, {748u, 770u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {5u, 0u, 1u, 2u, {4u, 4u}, {748u, 681u}, {0x4050aaaaaaaaaaabull, 0x404d84401255c1e0ull}},
+    {6u, 0u, 1u, 2u, {4u, 4u}, {748u, 685u}, {0x4050aaaaaaaaaaabull, 0x404db49bdb48c03dull}},
+};
+static const df_tb_stop tb_g21_mach_punch_power_whip[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1110u, 1125u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {739u, 780u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {714u, 708u}, {0x404ff8bfdc4e1531ull, 0x404e4d89272574e0ull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {689u, 644u}, {0x404e9c2a6346d50full, 0x404b9a3a03f15af8ull}},
+    {5u, 0u, 1u, 2u, {4u, 4u}, {606u, 554u}, {0x404a867ba3e9c1c4ull, 0x4047ab136eae0bd4ull}},
+    {6u, 0u, 1u, 2u, {4u, 4u}, {585u, 520u}, {0x40495424b06064e5ull, 0x404635260511be19ull}},
+};
+static const df_tb_stop tb_g21_poison_agility_nuzzle[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1066u, 1138u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {706u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {706u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {706u, 759u}, {0x4050aaaaaaaaaaabull, 0x405046562d9faee4ull}},
+    {5u, 0u, 1u, 2u, {4u, 4u}, {706u, 695u}, {0x4050aaaaaaaaaaabull, 0x404de8c403612967ull}},
+    {6u, 0u, 1u, 2u, {4u, 4u}, {706u, 704u}, {0x4050aaaaaaaaaaabull, 0x404e47d0afbc68c4ull}},
+};
+static const df_tb_stop tb_g21_priority_punches[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1063u, 1125u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {718u, 780u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {678u, 660u}, {0x404f23ee08fb823full, 0x404c2466833d1d03ull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {663u, 611u}, {0x404e51674c59d317ull, 0x404a1ee89ff6fce7ull}},
+    {5u, 0u, 1u, 2u, {4u, 4u}, {633u, 611u}, {0x404cac59d31674c5ull, 0x404a1ee89ff6fce7ull}},
+    {6u, 0u, 1u, 2u, {4u, 4u}, {618u, 581u}, {0x404bd9d31674c59dull, 0x4048e213b6c6d459ull}},
+};
+static const df_tb_stop tb_g21_quiver_bug_fire[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1113u, 1141u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {768u, 770u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {768u, 770u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {749u, 730u}, {0x4050411c71c71c71ull, 0x404fa42b51006ee4ull}},
+    {5u, 0u, 1u, 2u, {4u, 4u}, {711u, 512u}, {0x404edc0000000000ull, 0x404633f61bb7c9a3ull}},
+    {6u, 0u, 1u, 2u, {4u, 4u}, {692u, 482u}, {0x404e08e38e38e38dull, 0x4044e156470fd479ull}},
+};
+static const df_tb_stop tb_g21_waterfall_pulse_crunch[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1133u, 1154u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {762u, 783u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {723u, 783u}, {0x404fa40000000000ull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {700u, 767u}, {0x404ea471c71c71c8ull, 0x4050562d9faee41full}},
+    {5u, 0u, 2u, 2u, {4u, 4u}, {653u, 714u}, {0x404c9a38e38e38e4ull, 0x404e7c9ed699c4dcull}},
+    {6u, 0u, 2u, 2u, {4u, 4u}, {625u, 704u}, {0x404b631c71c71c71ull, 0x404e130288df0cacull}},
+};
 static const df_tb_stop tb_g24_abomasnow_scrafty[] = {
     {0u, 0u, 1u, 3u, {6u, 6u}, {1164u, 1093u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 1u, 3u, {4u, 4u}, {778u, 724u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -3180,6 +3244,14 @@ static const df_tb_battle tb_battles[] = {
     {"g20_aurora_veil_pair_a", 8u, tb_g20_aurora_veil_pair_a, sizeof tb_g20_aurora_veil_pair_a / sizeof tb_g20_aurora_veil_pair_a[0]},
     {"g20_aurora_veil_pair_b", 8u, tb_g20_aurora_veil_pair_b, sizeof tb_g20_aurora_veil_pair_b / sizeof tb_g20_aurora_veil_pair_b[0]},
     {"g20_aurora_veil_screens", 7u, tb_g20_aurora_veil_screens, sizeof tb_g20_aurora_veil_screens / sizeof tb_g20_aurora_veil_screens[0]},
+    {"g21_armarouge_wisp_thermal", 6u, tb_g21_armarouge_wisp_thermal, sizeof tb_g21_armarouge_wisp_thermal / sizeof tb_g21_armarouge_wisp_thermal[0]},
+    {"g21_crit_slashes", 6u, tb_g21_crit_slashes, sizeof tb_g21_crit_slashes / sizeof tb_g21_crit_slashes[0]},
+    {"g21_dragon_dance_claw", 6u, tb_g21_dragon_dance_claw, sizeof tb_g21_dragon_dance_claw / sizeof tb_g21_dragon_dance_claw[0]},
+    {"g21_mach_punch_power_whip", 6u, tb_g21_mach_punch_power_whip, sizeof tb_g21_mach_punch_power_whip / sizeof tb_g21_mach_punch_power_whip[0]},
+    {"g21_poison_agility_nuzzle", 6u, tb_g21_poison_agility_nuzzle, sizeof tb_g21_poison_agility_nuzzle / sizeof tb_g21_poison_agility_nuzzle[0]},
+    {"g21_priority_punches", 6u, tb_g21_priority_punches, sizeof tb_g21_priority_punches / sizeof tb_g21_priority_punches[0]},
+    {"g21_quiver_bug_fire", 6u, tb_g21_quiver_bug_fire, sizeof tb_g21_quiver_bug_fire / sizeof tb_g21_quiver_bug_fire[0]},
+    {"g21_waterfall_pulse_crunch", 6u, tb_g21_waterfall_pulse_crunch, sizeof tb_g21_waterfall_pulse_crunch / sizeof tb_g21_waterfall_pulse_crunch[0]},
     {"g24_abomasnow_scrafty", 4u, tb_g24_abomasnow_scrafty, sizeof tb_g24_abomasnow_scrafty / sizeof tb_g24_abomasnow_scrafty[0]},
     {"g24_barbaracle_beedrill", 4u, tb_g24_barbaracle_beedrill, sizeof tb_g24_barbaracle_beedrill / sizeof tb_g24_barbaracle_beedrill[0]},
     {"g24_falinks_pelipper", 6u, tb_g24_falinks_pelipper, sizeof tb_g24_falinks_pelipper / sizeof tb_g24_falinks_pelipper[0]},
@@ -3320,7 +3392,7 @@ static const df_tb_battle tb_battles[] = {
     {"w8_sand_soak", 7u, tb_w8_sand_soak, sizeof tb_w8_sand_soak / sizeof tb_w8_sand_soak[0]},
 };
 
-/* 2357 stops: 139 of an ended battle; decided by the count 719,
- * the HP percentage 714, the total HP 734, a tie 51;
- * winners: side 0 1188, side 1 1118, tie 51 */
+/* 2405 stops: 139 of an ended battle; decided by the count 719,
+ * the HP percentage 742, the total HP 754, a tie 51;
+ * winners: side 0 1212, side 1 1142, tie 51 */
 #endif
