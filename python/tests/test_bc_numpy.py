@@ -31,18 +31,54 @@ def stats_factory():
     return _Stats()
 
 
-def build_fixture(tmp, copies=2, format_id="gen9championsvgc2026regmc"):
-    """A dataset of `copies` games of the fixture log (ids fixture-0..), built into tmp/"dataset"."""
+NATURES = ("Adamant", "Jolly", "Brave", "Lonely", "Naughty", "Hardy", "Docile", "Serious", "Bashful", "Quirky",
+           "Bold", "Relaxed", "Impish", "Lax", "Timid", "Hasty", "Naive", "Modest", "Mild", "Quiet", "Rash", "Calm",
+           "Gentle", "Sassy", "Careful")
+
+
+def variant(log, n1, n2):
+    """The fixture log with Kingambit's nature n1 (p1) and Politoed's n2 (p2): another sheet pair, the same game."""
+    out = []
+    for line in log.split(chr(10)):
+        if line.startswith("|showteam|p1|"):
+            line = line.replace("KowtowCleave,SuckerPunch,IronHead,Protect|Adamant|", f"KowtowCleave,SuckerPunch,IronHead,Protect|{n1}|")
+        elif line.startswith("|showteam|p2|"):
+            line = line.replace("WeatherBall,MuddyWater,IceBeam,Protect|Modest|", f"WeatherBall,MuddyWater,IceBeam,Protect|{n2}|")
+        out.append(line)
+    return chr(10).join(out)
+
+
+def split_variants(train, val):
+    """(n1, n2) nature pairs whose sheet pairs give `train` games outside and `val` games inside the validation
+    bucket (bc_data.split_key)."""
+    from duoforge_learn import bc_data
+    from duoforge_replay import game
+    log = FIXTURE.read_text(encoding="utf-8")
+    picked = {False: [], True: []}
+    for n1, n2 in itertools.product(NATURES, NATURES):
+        packed = [line.split("|", 3)[3] for line in variant(log, n1, n2).split(chr(10)) if line.startswith("|showteam|")]
+        is_val = bc_data.split_key(np.array([game._hash8(p) for p in packed], dtype=np.uint64))
+        if len(picked[is_val]) < (val if is_val else train):
+            picked[is_val].append((n1, n2))
+        if len(picked[False]) == train and len(picked[True]) == val:
+            return picked[False] + picked[True]
+    raise AssertionError("no nature pairs for the split")
+
+
+def build_fixture(tmp, copies=2, format_id="gen9championsvgc2026regmc", natures=None, name="dataset"):
+    """A dataset of games of the fixture log (ids fixture-0..): `copies` plain copies, or one game per nature pair
+    of `natures` (split_variants); built into tmp/name."""
     from duoforge_replay import build
     log = FIXTURE.read_text(encoding="utf-8")
     prior_path = tmp / "prior.json"
     prior_path.write_text(json.dumps({"version": 1, "pastes": 0, "skipped": {}, "levels": [{}, {}, {}, {}]}),
                           encoding="utf-8")
-    source = tmp / "source.jsonl"
+    logs = [variant(log, n1, n2) for n1, n2 in natures] if natures else [log] * copies
+    source = tmp / f"{name}.jsonl"
     with open(source, "w", encoding="utf-8", newline=chr(10)) as f:
-        for i in range(copies):
-            f.write(json.dumps({"id": f"fixture-{i}", "formatid": format_id, "log": log}) + chr(10))
-    out = tmp / "dataset"
+        for i, text in enumerate(logs):
+            f.write(json.dumps({"id": f"fixture-{i}", "formatid": format_id, "log": text}) + chr(10))
+    out = tmp / name
     build.build([source], prior_path, out, stats_factory=stats_factory, log=lambda _: None,
                 format_prefix=format_id[:len("gen9championsvgc2026regmc")])
     return out

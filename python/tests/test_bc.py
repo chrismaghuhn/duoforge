@@ -91,5 +91,86 @@ class LossTest(unittest.TestCase):
         self.assertIn("point 1", str(caught.exception))
 
 
+class TrainerTest(unittest.TestCase):
+    """bc.main on a fixture dataset: 3 training games and 1 validation game of our own reference battle."""
+
+    @classmethod
+    def setUpClass(cls):
+        import tempfile
+        from pathlib import Path
+        from . import test_bc_numpy as fixture
+        cls.tmp = Path(tempfile.mkdtemp(prefix="duoforge_bc_train_"))
+        cls.data = fixture.build_fixture(cls.tmp, natures=fixture.split_variants(3, 1))
+
+    @classmethod
+    def tearDownClass(cls):
+        import shutil
+        shutil.rmtree(cls.tmp, ignore_errors=True)
+
+    def run_bc(self, name, *extra):
+        from duoforge_learn import bc
+        out = self.tmp / name
+        bc.main(["--data", str(self.data), "--out", str(out), "--preset", "S", "--batch", "8", "--seed", "5", *extra])
+        return out
+
+    def test_bc_runs_and_writes_a_checkpoint(self):
+        import json
+        import duoforge
+        from duoforge import _layout
+        from duoforge_learn import bc, checkpoint
+        out = self.run_bc("one", "--epochs", "1")
+        params, config = checkpoint.load_current(out / "bc.npz")
+        for key in checkpoint.FORMAT2_KEYS + ("ext_supported", "train", "ids"):
+            self.assertIn(key, config)
+        self.assertEqual((config["update"], config["teams"], config["data"]["kind"]), (0, [], "pool"))
+        self.assertEqual(config["train"]["seed"], 5)
+        with duoforge.Context(data_kind=_layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"]) as context:
+            self.assertEqual(config["ext_supported"], bc_data.bc_mask(context))
+            self.assertEqual(config["ids"], bc.ids_of(context))
+            self.assertEqual(config["data"]["fingerprint"], context.fingerprint().hex())
+        log = [json.loads(line) for line in (out / "bc-log.jsonl").read_text(encoding="utf-8").splitlines()]
+        self.assertEqual([r["epoch"] for r in log], [1])
+        self.assertGreater(log[0]["val_rows"], 0)
+
+    def test_bc_loss_falls(self):
+        import json
+        out = self.run_bc("three", "--epochs", "3", "--patience", "3")
+        log = [json.loads(line) for line in (out / "bc-log.jsonl").read_text(encoding="utf-8").splitlines()]
+        self.assertLess(log[-1]["train_nll"], log[0]["train_nll"])
+
+    def test_bc_refuses_output_in_repo(self):
+        from pathlib import Path
+        from duoforge_learn import bc
+        inside = Path(__file__).resolve().parents[2] / "bc-out-never"
+        with self.assertRaises((ValueError, SystemExit)):
+            bc.main(["--data", str(self.data), "--out", str(inside), "--epochs", "1"])
+        self.assertFalse(inside.exists())
+
+    def test_empty_validation_is_refused(self):
+        from . import test_bc_numpy as fixture
+        from duoforge_learn import bc
+        only_train = fixture.build_fixture(self.tmp, natures=fixture.split_variants(2, 0), name="trainonly")
+        with self.assertRaisesRegex(ValueError, "validation"):
+            bc.main(["--data", str(only_train), "--out", str(self.tmp / "noval"), "--epochs", "1"])
+
+    def test_bc_deterministic(self):
+        # two runs with the same seed on the CPU give the same parameters, byte for byte
+        import os
+        import subprocess
+        import sys
+        from pathlib import Path
+        env = {**os.environ, "JAX_PLATFORMS": "cpu"}
+        root = Path(__file__).resolve().parents[2]
+        outs = []
+        for name in ("det-a", "det-b"):
+            out = self.tmp / name
+            subprocess.run([sys.executable, "-m", "duoforge_learn.bc", "--data", str(self.data), "--out", str(out),
+                            "--preset", "S", "--batch", "8", "--seed", "9", "--epochs", "2"], env=env, cwd=root,
+                           check=True, capture_output=True)
+            with np.load(out / "bc.npz") as z:
+                outs.append({k: z[k].tobytes() for k in z.files if k != "config"})
+        self.assertEqual(outs[0], outs[1])
+
+
 if __name__ == "__main__":
     unittest.main()
