@@ -1,0 +1,53 @@
+Floette-Eternal (F) @ Floettite
+Ability: Flower Veil
+Level: 50
+Bold Nature
+- Draining Kiss
+- Calm Mind
+- Protect
+- Dazzling Gleam
+
+Incineroar (M) @ Charcoal
+Ability: Intimidate
+Level: 50
+Adamant Nature
+- Flare Blitz
+- Darkest Lariat
+- Fake Out
+- Parting Shot
+
+Farigiraf (M) @ Sitrus Berry
+Ability: Armor Tail
+Level: 50
+Relaxed Nature
+- Helping Hand
+- Psychic
+- Thunderbolt
+- Trick Room
+
+Pelipper (M) @ Focus Sash
+Ability: Drizzle
+Level: 50
+Timid Nature
+- Wide Guard
+- Weather Ball
+- Tailwind
+- Hurricane
+
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Careful Nature
+- Fake Out
+- Grassy Glide
+- Wood Hammer
+- U-turn
+
+Golisopod (M) @ Golisopite
+Ability: Emergency Exit
+Level: 50
+Brave Nature
+- First Impression
+- Iron Head
+- Protect
+- Liquidation

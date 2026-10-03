@@ -1,0 +1,53 @@
+Farigiraf (M) @ Grassy Seed
+Ability: Armor Tail
+Level: 50
+Calm Nature
+- Protect
+- Psychic
+- Helping Hand
+- Trick Room
+
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Wood Hammer
+- Grassy Glide
+- U-turn
+- Fake Out
+
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Timid Nature
+- Protect
+- Draco Meteor
+- Hyper Voice
+- Tailwind
+
+Arcanine-Hisui (M) @ Focus Sash
+Ability: Rock Head
+Level: 50
+Jolly Nature
+- Protect
+- Flare Blitz
+- Head Smash
+- Rock Slide
+
+Politoed (M) @ Choice Scarf
+Ability: Drizzle
+Level: 50
+Timid Nature
+- Weather Ball
+- Muddy Water
+- Ice Beam
+- Earth Power
+
+Golisopod (M) @ Golisopite
+Ability: Emergency Exit
+Level: 50
+Brave Nature
+- First Impression
+- U-turn
+- Iron Head
+- Close Combat

@@ -1,0 +1,53 @@
+Floette-Eternal (F) @ Floettite
+Ability: Flower Veil
+Level: 50
+Modest Nature
+- Moonblast
+- Dazzling Gleam
+- Light of Ruin
+- Protect
+
+Whimsicott (M) @ Focus Sash
+Ability: Prankster
+Level: 50
+Timid Nature
+- Moonblast
+- Tailwind
+- Encore
+- Protect
+
+Basculegion (M) @ Choice Scarf
+Ability: Adaptability
+Level: 50
+Jolly Nature
+- Last Respects
+- Wave Crash
+- Aqua Jet
+- Flip Turn
+
+Kingambit (M) @ Black Glasses
+Ability: Defiant
+Level: 50
+Adamant Nature
+- Sucker Punch
+- Kowtow Cleave
+- Iron Head
+- Protect
+
+Arcanine-Hisui (M) @ Sitrus Berry
+Ability: Rock Head
+Level: 50
+Jolly Nature
+- Flare Blitz
+- Rock Slide
+- Head Smash
+- Protect
+
+Raichu (M) @ Raichunite Y
+Ability: Lightning Rod
+Level: 50
+Timid Nature
+- Fake Out
+- Zap Cannon
+- Focus Blast
+- Protect

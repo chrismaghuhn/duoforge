@@ -849,11 +849,12 @@
 #define DFI_SPECIAL_EXPANDING_FORCE 25u
 #define DFI_SPECIAL_GLAIVE_RUSH 26u
 #define DFI_SPECIAL_AURORA_VEIL 27u
-#define DFI_SPECIAL_TRICK 28u
-#define DFI_SPECIAL_SWITCHEROO 29u
-#define DFI_SPECIAL_THIEF 30u
-#define DFI_SPECIAL_COVET 31u
-#define DFI_SPECIAL_UNMODELED 32u
+#define DFI_SPECIAL_SPIKY_SHIELD 28u
+#define DFI_SPECIAL_TRICK 29u
+#define DFI_SPECIAL_SWITCHEROO 30u
+#define DFI_SPECIAL_THIEF 31u
+#define DFI_SPECIAL_COVET 32u
+#define DFI_SPECIAL_UNMODELED 33u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */

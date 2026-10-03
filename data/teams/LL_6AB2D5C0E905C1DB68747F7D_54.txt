@@ -1,0 +1,53 @@
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Timid Nature
+- Draco Meteor
+- Hyper Voice
+- Flamethrower
+- Protect
+
+Golisopod (M) @ Golisopite
+Ability: Emergency Exit
+Level: 50
+Adamant Nature
+- Leech Life
+- Iron Head
+- Close Combat
+- Protect
+
+Sneasler (M) @ White Herb
+Ability: Unburden
+Level: 50
+Jolly Nature
+- Close Combat
+- Dire Claw
+- Coaching
+- Protect
+
+Farigiraf (M) @ Sitrus Berry
+Ability: Armor Tail
+Level: 50
+Calm Nature
+- Psychic
+- Thunderbolt
+- Helping Hand
+- Trick Room
+
+Basculegion (M) @ Choice Scarf
+Ability: Adaptability
+Level: 50
+Jolly Nature
+- Wave Crash
+- Last Respects
+- Aqua Jet
+- Flip Turn
+
+Incineroar (M) @ Chople Berry
+Ability: Intimidate
+Level: 50
+Sassy Nature
+- Flare Blitz
+- Darkest Lariat
+- Fake Out
+- Parting Shot

@@ -30,10 +30,12 @@ POS_SIZE = 21
 KNOW_SIZE = 7
 MEMBER_SIZE = 48
 STATE_SIZE = HEADER_SIZE + 2 * SIDE_SIZE
-# The POOL state tail (decision 0015 section 7): schema 0x0203 = "v3 + pool tail rev 2", 248 bytes after the 1009.
-# Rev 1 (0x0103, 42 bytes) is no schema of any kind any more: it is refused as unknown, there is no migration.
+# The POOL state tail (decision 0015 section 7): schema 0x0303 = "v3 + pool tail rev 3", 248 bytes after the 1009.
+# Rev 1 (0x0103, 42 bytes) and rev 2 (0x0203, the same size, the byte at +26 of a position reserved) are no schema of any
+# kind any more: they are refused as unknown, there is no migration.
 SCHEMA_POOL_TAIL_REV1 = 0x0103
 SCHEMA_POOL_TAIL_REV2 = 0x0203
+SCHEMA_POOL_TAIL_REV3 = 0x0303
 TAIL_FIELD_SIZE = 8                 # gravity_turns, then 7 reserved bytes
 TAIL_SIDE_SIZE = 120                # 6 side bytes + 2 reserved, 2 positions of 32, 6 members of 8
 TAIL_POS_SIZE = 32
@@ -55,6 +57,7 @@ TAIL_SOURCE_MAX = 4
 TAIL_YAWN_MAX = 2
 TAIL_STOCKPILE_MAX = 3
 TAIL_FLAG_MAX = 1
+TAIL_PROTECT_KIND_MAX = 1           # rev 3: 0 Protect and Detect, 1 Spiky Shield (Baneful Bunker would be 2)
 TAIL_AURORA_VEIL_MAX = 8
 TAIL_TOXIC_SPIKES_MAX = 2
 TAIL_STEALTH_ROCK_MAX = 1
@@ -67,7 +70,7 @@ TAIL_TOXIC_STATUS = 6               # DUOFORGE_AILMENT_TOX: no state has it yet 
 # What the pool tables hold (decision 0015 section 2, tests/test_pool_tables.c): the bounds of the member overrides.
 POOL_FORME_COUNT, POOL_MOVE_COUNT, POOL_ITEM_COUNT, POOL_ABILITY_COUNT = 346, 511, 166, 215
 # The byte fields of a position's tail in their encoded order (offset 0 to 21), then two u16: substitute_hp at 22 and
-# trap_move at 24, then 6 reserved bytes.
+# trap_move at 24, then (rev 3) protect_kind at 26 and 5 reserved bytes.
 TAIL_POS_BYTE_FIELDS = ['last_move', 'encore_slot', 'encore_turns', 'throat_chop', 'heal_block', 'perish', 'taunt',
                         'disable_slot', 'disable_turns', 'imprison', 'must_recharge', 'trap_turns', 'trap_source',
                         'trap_band', 'leech_seed', 'yawn', 'focus_energy', 'stockpile', 'stockpile_def',
@@ -261,7 +264,7 @@ KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 # which tests/test_pool_tables.c recomputes from the pool canonical bytes: the
 # pool layout over the pool data, then the family columns, the handler columns
 # and the moves and abilities that each forme may have.
-POOL_TABLE_HASH = bytes.fromhex('547132dac73609dc3715fdbdf5cb40ea296e78be1098545f612abdc77aa606c3')
+POOL_TABLE_HASH = bytes.fromhex('aaebf6d34bc494124b87da0d8a355a664873097eaafff2e8ee7d43226128b31a')
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 
@@ -337,6 +340,7 @@ def empty_tail_pos():
     p = {f: 0 for f in TAIL_POS_BYTE_FIELDS}
     p['substitute_hp'] = 0
     p['trap_move'] = 0
+    p['protect_kind'] = 0
     return p
 
 
@@ -353,7 +357,7 @@ def empty_tail():
 
 
 def empty_state(ctx):
-    # 'tailed': the state carries the POOL tail (schema 0x0203); 'tail': the field block and the two sides, all zero
+    # 'tailed': the state carries the POOL tail (schema 0x0303); 'tail': the field block and the two sides, all zero
     # unless a test sets them.
     return {'tailed': has_pool_tail(ctx), 'tail': empty_tail(),
             'fp': ctx.fingerprint(), 'rng_state': 0, 'rng_inc': 0, 'draws': 0, 'next': 1,
@@ -877,7 +881,7 @@ def tail_is_zero(tail):
     return tail['gravity'] == 0 and all(side_zero(ts) for ts in tail['sides'])
 
 
-def tail_pos_valid(ctx, tp, flat, mem):
+def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0):
     """The tail of a standing occupant's position (the rules of decision 0015 section 7)."""
     mc = mem['move_count']
     if not (tp['last_move'] <= TAIL_MOVE_MAX and (tp['last_move'] == TAIL_MOVE_MAX or tp['last_move'] <= mc)
@@ -900,6 +904,8 @@ def tail_pos_valid(ctx, tp, flat, mem):
             and tp['trap_band'] <= TAIL_FLAG_MAX and (tp['trap_turns'] != 0 or tp['trap_band'] == 0)):
         return False
     if not (tp['leech_seed'] <= TAIL_SOURCE_MAX and tp['leech_seed'] != flat + 1):
+        return False
+    if not (tp['protect_kind'] <= TAIL_PROTECT_KIND_MAX and (tp['protect_kind'] == 0 or slot_flags & VOL_PROTECT)):
         return False
     return (tp['stockpile'] <= TAIL_STOCKPILE_MAX and tp['stockpile_def'] <= tp['stockpile']
             and tp['stockpile_spd'] <= tp['stockpile'])
@@ -929,7 +935,7 @@ def check_tail(ctx, st):
                 if any(v != 0 for v in tp.values()):
                     return 'TAIL_POSITION'
                 continue
-            if not tail_pos_valid(ctx, tp, 2 * s + p, sd['members'][occ]):
+            if not tail_pos_valid(ctx, tp, 2 * s + p, sd['members'][occ], sd['pos'][p]['flags']):
                 return 'TAIL_POSITION'
         for m in range(MAX_ROSTER):
             ab, fo, ty, it, tx = ts['ability_now'][m], ts['forme_now'][m], ts['soak'][m], ts['item_now'][m], ts['toxic_stage'][m]
@@ -961,7 +967,7 @@ QUEUE_BYTE_FIELDS = ['kind', 'side', 'slot', 'move_slot', 'target', 'reserve']
 
 
 def encode(st):
-    schema, size = (SCHEMA_POOL_TAIL_REV2, POOL_STATE_SIZE) if st['tailed'] else (SCHEMA, STATE_SIZE)
+    schema, size = (SCHEMA_POOL_TAIL_REV3, POOL_STATE_SIZE) if st['tailed'] else (SCHEMA, STATE_SIZE)
     b = bytearray(MAGIC + struct.pack('<HHII', KIND_BATTLE_STATE, schema, SEMANTICS, size))
     b += st['fp']
     b += struct.pack('<QQQI', st['rng_state'], st['rng_inc'], st['draws'], st['next'])
@@ -1003,7 +1009,7 @@ def tail_bytes(tail):
         out += bytes([ts[f] for f in TAIL_SIDE_BYTE_FIELDS]) + bytes(2)
         for tp in ts['pos']:
             out += bytes([tp[f] for f in TAIL_POS_BYTE_FIELDS])
-            out += struct.pack('<HH', tp['substitute_hp'], tp['trap_move']) + bytes(6)
+            out += struct.pack('<HH', tp['substitute_hp'], tp['trap_move']) + bytes([tp['protect_kind']]) + bytes(5)
         for m in range(MAX_ROSTER):
             out += struct.pack('<HH', ts['ability_now'][m], ts['forme_now'][m])
             out += bytes([ts['soak'][m], ts['item_now'][m], ts['toxic_stage'][m], 0])
@@ -1012,15 +1018,15 @@ def tail_bytes(tail):
 
 
 def tail_reserved_offsets():
-    """The offsets (within the tail) of the 47 reserved bytes."""
+    """The offsets (within the tail) of the 43 reserved bytes."""
     offs = list(range(1, TAIL_FIELD_SIZE))
     for s in range(2):
         so = TAIL_FIELD_SIZE + TAIL_SIDE_SIZE * s
         offs += [so + 6, so + 7]
         for p in range(2):
-            offs += [so + 8 + TAIL_POS_SIZE * p + 26 + i for i in range(6)]
+            offs += [so + 8 + TAIL_POS_SIZE * p + 27 + i for i in range(5)]
         offs += [so + 72 + TAIL_MEMBER_SIZE * m + 7 for m in range(MAX_ROSTER)]
-    assert len(offs) == 47
+    assert len(offs) == 43
     return offs
 
 
@@ -1039,6 +1045,7 @@ def parse_tail(b):
             po = so + 8 + TAIL_POS_SIZE * p
             tp = {f: b[po + i] for i, f in enumerate(TAIL_POS_BYTE_FIELDS)}
             tp['substitute_hp'], tp['trap_move'] = struct.unpack_from('<HH', b, po + 22)
+            tp['protect_kind'] = b[po + 26]
             ts['pos'].append(tp)
         for f in ('ability_now', 'forme_now', 'soak', 'item_now', 'toxic_stage'):
             ts[f] = []
@@ -1113,14 +1120,15 @@ def decode(ctx, b):
     if bytes(b[0:8]) != MAGIC:
         return 'MALFORMED', None
     kind, schema, semantics, total = struct.unpack_from('<HHII', b, 8)
-    # Rev 1 of the tail (0x0103) is refused here like every schema that is not v3 or v3 + pool tail rev 2.
-    if kind != KIND_BATTLE_STATE or schema not in (SCHEMA, SCHEMA_POOL_TAIL_REV2):
+    # Rev 1 (0x0103) and rev 2 (0x0203) of the tail are refused here like every schema that is not v3 or v3 + pool tail
+    # rev 3.
+    if kind != KIND_BATTLE_STATE or schema not in (SCHEMA, SCHEMA_POOL_TAIL_REV3):
         return 'SCHEMA_MISMATCH', None
     if semantics != SEMANTICS:
         return 'SEMANTICS_MISMATCH', None
     if total != size:
         return 'MALFORMED', None
-    tailed = schema == SCHEMA_POOL_TAIL_REV2
+    tailed = schema == SCHEMA_POOL_TAIL_REV3
     if size != (POOL_STATE_SIZE if tailed else STATE_SIZE):
         return 'MALFORMED', None
     if bytes(b[20:52]) != ctx.fingerprint():
@@ -1817,7 +1825,7 @@ def print_pool_tail():
     example = tail_example()
     base_tail = tail_bytes(example)
     assert tail_outcome(base_tail) == 'OK' and len(base_tail) == TAIL_SIZE
-    head = MAGIC + struct.pack('<HHII', KIND_BATTLE_STATE, SCHEMA_POOL_TAIL_REV2, SEMANTICS, POOL_STATE_SIZE)
+    head = MAGIC + struct.pack('<HHII', KIND_BATTLE_STATE, SCHEMA_POOL_TAIL_REV3, SEMANTICS, POOL_STATE_SIZE)
     print('pool_tail envelope %s' % head.hex())
     print('pool_tail example %s' % base_tail.hex())
     reserved = set(tail_reserved_offsets())
@@ -1844,11 +1852,11 @@ def print_pool_tail():
         st['tailed'] = tailed
         b = bytearray(encode(st))
         print('pool_tail wrong-schema %s tailed=%s %s' % (label, tailed, decode(ctx, b)))
-    # Rev 1 (0x0103) and schema 4 are unknown schemas of every kind: an artifact that carries them is refused.
+    # Rev 1 (0x0103), rev 2 (0x0203) and schema 4 are unknown schemas of every kind: an artifact that carries them is refused.
     for label, ctx, tailed in (('KP', KP, False), ('C1', C1, True)):
         st = empty_state(ctx)
         st['tailed'] = tailed
-        for schema in (SCHEMA_POOL_TAIL_REV1, 4):
+        for schema in (SCHEMA_POOL_TAIL_REV1, SCHEMA_POOL_TAIL_REV2, 4):
             b = bytearray(encode(st))
             struct.pack_into('<H', b, 10, schema)
             print('pool_tail schema %#06x %s tailed=%s %s' % (schema, label, tailed, decode(ctx, b)))

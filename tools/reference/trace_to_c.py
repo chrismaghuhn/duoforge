@@ -292,12 +292,22 @@ def tie_effects(group):
     return '+'.join(sorted(set(g.split(':')[1] for g in group if isinstance(g, str) and g.startswith('H:'))))
 
 
-def choice_scarf_slots(state):
-    """The active slots ('p1a', ...) whose Pokemon holds a Choice Scarf in `state`."""
+def choice_scarf_slots(state, before=None):
+    """The active slots ('p1a', ...) whose Pokemon holds a Choice Scarf in `state`. With `before`, the state before the
+    step: the item of a Pokemon is then the one that the same species (one per team) holds in `before`, which is what it
+    holds when it enters, because nothing moves the item of a Pokemon on the bench: the item at the end of the step can be
+    another one (step G29: a Trick, Thief or Covet after the switch-in gives or takes a Scarf), and the entry's handler
+    list is the one of the item it came in with."""
     slots = set()
     for s, side in enumerate(state['sides']):
+        standing = {}
+        if before is not None and s < len(before.get('sides', [])):
+            standing = {p['species']: p['item'] for p in before['sides'][s]['pokemon']}
         for pos, i in enumerate(side['active']):
-            if i is not None and 0 <= i < len(side['pokemon']) and side['pokemon'][i]['item'] == 'choicescarf':
+            if i is None or not 0 <= i < len(side['pokemon']):
+                continue
+            mon = side['pokemon'][i]
+            if (standing.get(mon['species'], mon['item'])) == 'choicescarf':
                 slots.add('p%d%s' % (s + 1, 'ab'[pos]))
     return slots
 
@@ -386,7 +396,7 @@ def drop_reason(d, state, after=None, log=None):
                                   detail='+'.join(sorted(set(anys) - {'whiteherb'})))
         # An entering Choice Scarf holder counts one SwitchIn handler without
         # an effect (data/items.ts choicescarf onStart).
-        scarves = choice_scarf_slots(after) if after is not None else set()
+        scarves = choice_scarf_slots(after, state) if after is not None else set()
         effective = []
         for p in parts:
             n = int(p[2]) - (1 if p[3] == 'S' and p[1] in scarves else 0)
@@ -709,8 +719,9 @@ NOPOS = 0xFF
 # and how the state comparison covers them. COMPARED_VOLATILES are bits of
 # df_conf_mon.vols; IGNORED_VOLATILES are compared through another field.
 # Any other volatile is refused: a new mechanic's volatile must be placed in
-# one of the two tables before its traces convert.
-COMPARED_VOLATILES = (('protect', 1), ('flashfire', 2), ('twoturnmove', 4), ('choicelock', 8), ('unburden', 16),
+# one of the two tables before its traces convert. Spiky Shield (step G20, POOL) is Protect's bit: its own volatile
+# is the Protect volatile of the engine, with the variant in the tail (never both at once).
+COMPARED_VOLATILES = (('protect', 1), ('spikyshield', 1), ('flashfire', 2), ('twoturnmove', 4), ('choicelock', 8), ('unburden', 16),
                       ('helpinghand', 32), ('followme', 64), ('flinch', 128))
 IGNORED_VOLATILES = {
     # data/conditions.ts stall: compared as df_conf_mon.stall (its presence).
@@ -787,7 +798,8 @@ def ev_cause(attrs, tables):
                 cause, id2 = CAUSE['WEATHER'], WEATHER_CAUSE[what]
             elif what == 'Grassy Terrain':
                 cause = CAUSE['TERRAIN']
-            elif what in ('Parting Shot', 'Flip Turn', 'U-turn'):  # the move that made the switch (U-turn: pool tables)
+            elif what in ('Parting Shot', 'Flip Turn', 'U-turn', 'Spiky Shield'):  # the move that made the switch (U-turn: pool tables)
+                # Spiky Shield (step G20, POOL): `-damage|attacker|hp|[from] Spiky Shield|[of] holder`, the condition's own name
                 cause, id2 = CAUSE['MOVE'], tables['MOVE'][key(what)]
             elif what == 'lockedmove':
                 pass  # a MOVE flag
@@ -911,12 +923,21 @@ def step_events(log, viewer, roster_of, maxhp, tables):
         elif kind == '-immune':
             cause, id2, _ = ev_cause(attrs, tables)
             e = ev_tuple(EV['IMMUNE'], ev_pos(args[0]), NOPOS, cause, 0, id2)
+        elif kind == '-fail' and len(args) == 3 and args[1] == 'unboost':
+            # Inner Focus (step G22, data/abilities.ts:2157-2162): `-fail|X|unboost|atk|[from] ability: Inner Focus|[of] X`,
+            # an Intimidate drop that the ability deleted: a FAIL with the ability as its cause and the holder in `other`.
+            # No other ability writes this line for a stat (Clear Body and the like are `-fail` with another shape and
+            # are not marked); anything else is refused, never mapped.
+            cause, id2, other = ev_cause(attrs, tables)
+            if args[2] != 'atk' or cause != CAUSE['ABILITY'] or other == NOPOS:
+                raise ConversionError('fail-line', 'trace_to_c: unknown -fail %r' % line, detail=line)
+            e = ev_tuple(EV['FAIL'], ev_pos(args[0]), other, cause, 0, id2)
         elif kind == '-fail':
             # `-fail|X|heal` (a heal move at full HP) is a plain FAIL: the event has no field for the reason, which
             # for a status is the ailment the target already has.
             e = ev_tuple(EV['FAIL'], ev_pos(args[0]), detail=AILMENT[args[1]] if len(args) > 1 and args[1] != 'heal' else 0)
         elif kind == '-singleturn':
-            if args[1] == 'Protect':
+            if args[1] in ('Protect', 'move: Protect'):  # Spiky Shield and Baneful Bunker (step G20) print `move: Protect`
                 e = ev_tuple(EV['PROTECT'], ev_pos(args[0]))
             elif args[1] == 'Helping Hand':  # Team C: [of] the user
                 _, _, of = ev_cause(attrs, tables)

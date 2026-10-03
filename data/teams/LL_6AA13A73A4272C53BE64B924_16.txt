@@ -1,0 +1,53 @@
+Raichu (M) @ Raichunite Y
+Ability: Lightning Rod
+Level: 50
+Timid Nature
+- Fake Out
+- Protect
+- Zap Cannon
+- Focus Blast
+
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Drum Beating
+- Grassy Glide
+- Fake Out
+- High Horsepower
+
+Floette-Eternal (F) @ Floettite
+Ability: Flower Veil
+Level: 50
+Modest Nature
+- Calm Mind
+- Draining Kiss
+- Dazzling Gleam
+- Protect
+
+Gholdengo @ Grassy Seed
+Ability: Good as Gold
+Level: 50
+Modest Nature
+- Make It Rain
+- Shadow Ball
+- Power Gem
+- Protect
+
+Salamence (M) @ Life Orb
+Ability: Intimidate
+Level: 50
+Timid Nature
+- Draco Meteor
+- Heat Wave
+- Tailwind
+- Protect
+
+Arcanine-Hisui (M) @ Focus Sash
+Ability: Intimidate
+Level: 50
+Jolly Nature
+- Head Smash
+- Flare Blitz
+- Protect
+- Extreme Speed

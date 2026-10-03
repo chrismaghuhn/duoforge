@@ -1,0 +1,53 @@
+Golisopod (M) @ Golisopite
+Ability: Emergency Exit
+Level: 50
+Adamant Nature
+- Drill Run
+- Leech Life
+- Iron Head
+- Protect
+
+Farigiraf (M) @ Sitrus Berry
+Ability: Armor Tail
+Level: 50
+Calm Nature
+- Trick Room
+- Psychic
+- Grass Knot
+- Helping Hand
+
+Grimmsnarl (M) @ Light Clay
+Ability: Prankster
+Level: 50
+Careful Nature
+- Reflect
+- Light Screen
+- Spirit Break
+- Parting Shot
+
+Politoed (M) @ Mystic Water
+Ability: Drizzle
+Level: 50
+Modest Nature
+- Muddy Water
+- Ice Beam
+- Weather Ball
+- Protect
+
+Archaludon (M) @ Leftovers
+Ability: Stamina
+Level: 50
+Bold Nature
+- Aura Sphere
+- Dragon Pulse
+- Electro Shot
+- Protect
+
+Charizard (M) @ Charizardite Y
+Ability: Blaze
+Level: 50
+Timid Nature
+- Hurricane
+- Heat Wave
+- Weather Ball
+- Protect

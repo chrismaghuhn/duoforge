@@ -1,0 +1,53 @@
+Gholdengo @ Grassy Seed
+Ability: Good as Gold
+Level: 50
+Modest Nature
+- Shadow Ball
+- Make It Rain
+- Nasty Plot
+- Protect
+
+Incineroar (M) @ Sitrus Berry
+Ability: Intimidate
+Level: 50
+Impish Nature
+- Fake Out
+- Flare Blitz
+- Parting Shot
+- Darkest Lariat
+
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Fake Out
+- Grassy Glide
+- Wood Hammer
+- U-turn
+
+Raichu (M) @ Raichunite Y
+Ability: Lightning Rod
+Level: 50
+Timid Nature
+- Fake Out
+- Zap Cannon
+- Focus Blast
+- Protect
+
+Milotic (M) @ Leftovers
+Ability: Competitive
+Level: 50
+Calm Nature
+- Muddy Water
+- Coil
+- Hypnosis
+- Recover
+
+Baxcalibur (M) @ Baxcalibrite
+Ability: Thermal Exchange
+Level: 50
+Adamant Nature
+- Icicle Crash
+- Dragon Claw
+- Dragon Dance
+- Protect

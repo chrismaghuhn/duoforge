@@ -24,6 +24,9 @@
  *                     a Focus Sash that the hit uses up is not taken a second time; a fainted Swalot loses its item.
  *   g16_scarf_helmet  A Choice Scarf goes with the lock, the Rocky Helmet hurts the user first and goes.
  *   g16_helmet_faint  A user that the Rocky Helmet knocks out takes the item all the same (the Champions mod).
+ *   g16_scarf_lock_stays  A Choice Scarf holder that has moved loses the Scarf to a Knock Off later in a turn that stops for
+ *                     a replacement: the choicelock volatile is still there (conditions.ts onDisableMove ends it in endTurn,
+ *                     sim/battle.ts:1691); next turn it is gone.
  *
  * Step G24 adds one check of the state: g24_hawlucha_malamar, where a Knock Off finds Hawlucha (Unburden) with its own
  * Hawluchanite: the volatile is set and the stone stays (check_invariants).
@@ -146,10 +149,15 @@ static const struct {
     {"g16_helmet_faint", 1u, 0x0u, 0u, 0u},
     {"g16_helmet_faint", 2u, 0x0u, 0u, 0u},
     {"g16_helmet_faint", 3u, 0x40u, 1u, 0u},
+    {"g16_scarf_lock_stays", 0u, 0x0u, 0u, 0u},
+    {"g16_scarf_lock_stays", 1u, 0x40u, 1u, 0u},
+    {"g16_scarf_lock_stays", 2u, 0x40u, 0u, 0u},
+    {"g16_scarf_lock_stays", 3u, 0xc0u, 1u, 0u},
 };
 
 static const char *const battle_names[] = {"g16_removal",      "g16_unburden",     "g16_stones",
-                                           "g16_sticky_hold", "g16_scarf_helmet", "g16_helmet_faint"};
+                                           "g16_sticky_hold", "g16_scarf_helmet", "g16_helmet_faint",
+                                           "g16_scarf_lock_stays"};
 
 /* After every step of the battles: the tail's item_now of every roster member is DUOFORGE_ITEM_NOW_NONE exactly for the
  * members of the row (and nothing else of the tail is touched by the item: no other tail field is set here), the step's
@@ -375,6 +383,29 @@ static void check_invariants(df_test *t, const duoforge_context *ctx)
         DF_CHECK(t, check_of(ctx, b) == DFI_INV_NONE);
         duoforge_battle_destroy(b);
     }
+    /* The lock stays until the pin ends it (g16_scarf_lock_stays): after step 1 (two entries) the turn stops at a replacement, the
+     * Annihilape (p2a) has moved and lost the Scarf to a Knock Off, and the lock is still there, with the Scarf gone;
+     * that state is valid at the replacement boundary; at a turn boundary it is refused (the g16_scarf_helmet block above:
+     * DFI_INV_VOLATILE), only a boundary in the middle of a turn may show it. After step 2 (three entries) the turn
+     * has ended: onDisableMove ended the lock. */
+    b = replay_to(t, ctx, "g16_scarf_lock_stays", 2u);
+    if (b != NULL) {
+        dfi_active_slot *pos = &b->sides[1].positions[0];
+        const uint32_t m = pos->occupant;
+        DF_CHECK_EQ_U64(t, b->boundary_kind, DUOFORGE_BOUNDARY_REPLACEMENT);
+        DF_CHECK_EQ_U64(t, b->tail.sides[1].item_now[m], DUOFORGE_ITEM_NOW_NONE);
+        DF_CHECK(t, ((uint32_t)pos->flags & DFI_VOL_CHOICE_LOCK) != 0u && pos->locked_move == 1u); /* Close Combat */
+        DF_CHECK(t, check_of(ctx, b) == DFI_INV_NONE);
+        duoforge_battle_destroy(b);
+    }
+    b = replay_to(t, ctx, "g16_scarf_lock_stays", 3u);
+    if (b != NULL) {
+        const dfi_active_slot *pos = &b->sides[1].positions[0];
+        DF_CHECK_EQ_U64(t, b->boundary_kind, DUOFORGE_BOUNDARY_TURN);
+        DF_CHECK(t, ((uint32_t)pos->flags & DFI_VOL_CHOICE_LOCK) == 0u && pos->locked_move == 0u);
+        DF_CHECK(t, check_of(ctx, b) == DFI_INV_NONE);
+        duoforge_battle_destroy(b);
+    }
 }
 
 int main(void)
@@ -392,7 +423,7 @@ int main(void)
     DF_CHECK_EQ_U64(&t, DFI_SPECIAL_KNOCK_OFF, 24u);
     DF_CHECK_EQ_U64(&t, DFI_SPECIAL_EXPANDING_FORCE, 25u); /* step G15 */
     DF_CHECK_EQ_U64(&t, DFI_SPECIAL_GLAIVE_RUSH, 26u); /* step G19 */
-    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_AURORA_VEIL, 27u); /* step G20; step G29 put four ids after it, UNMODELED at 32 */
+    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_AURORA_VEIL, 27u); /* step G20; step G29 put four ids after Spiky Shield (28), UNMODELED at 33 */
     DF_CHECK(&t, dfi_support.moves[DFI_MOVE_KNOCKOFF] != 0u && dfi_support.abilities[DFI_ABILITY_STICKYHOLD] != 0u);
     DF_CHECK(&t, (dfi_support.view_ext_features & ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ITEM_CHANGE)) != 0u);
     /* Trick, Switcheroo, Thief and Covet were unmarked here (item_now was 0 or 255 only); step G29 marks them (the item that a

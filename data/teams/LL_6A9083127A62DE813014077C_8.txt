@@ -1,0 +1,53 @@
+Milotic (M) @ Sitrus Berry
+Ability: Competitive
+Level: 50
+Serious Nature
+- Coil
+- Hypnosis
+- Ice Beam
+- Muddy Water
+
+Raichu (M) @ Raichunite Y
+Ability: Lightning Rod
+Level: 50
+Timid Nature
+- Zap Cannon
+- Protect
+- Fake Out
+- Focus Blast
+
+Ceruledge (M) @ Grassy Seed
+Ability: Flash Fire
+Level: 50
+Adamant Nature
+- Protect
+- Bitter Blade
+- Swords Dance
+- Shadow Sneak
+
+Staraptor (M) @ Staraptite
+Ability: Intimidate
+Level: 50
+Jolly Nature
+- Brave Bird
+- Tailwind
+- Protect
+- Close Combat
+
+Gholdengo @ Life Orb
+Ability: Good as Gold
+Level: 50
+Modest Nature
+- Shadow Ball
+- Nasty Plot
+- Make It Rain
+- Protect
+
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Wood Hammer
+- Fake Out
+- High Horsepower
+- Grassy Glide

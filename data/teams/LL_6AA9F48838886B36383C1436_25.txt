@@ -1,0 +1,53 @@
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Hasty Nature
+- Protect
+- Tailwind
+- Hyper Voice
+- Double-Edge
+
+Basculegion (M) @ Life Orb
+Ability: Adaptability
+Level: 50
+Adamant Nature
+- Protect
+- Aqua Jet
+- Wave Crash
+- Last Respects
+
+Kingambit (M) @ Black Glasses
+Ability: Defiant
+Level: 50
+Adamant Nature
+- Protect
+- Swords Dance
+- Sucker Punch
+- Kowtow Cleave
+
+Arcanine-Hisui (M) @ Focus Sash
+Ability: Rock Head
+Level: 50
+Jolly Nature
+- Protect
+- Extreme Speed
+- Flare Blitz
+- Head Smash
+
+Rillaboom (M) @ Sitrus Berry
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Fake Out
+- Grassy Glide
+- U-turn
+- Wood Hammer
+
+Raichu (M) @ Raichunite Y
+Ability: Lightning Rod
+Level: 50
+Timid Nature
+- Protect
+- Fake Out
+- Zap Cannon
+- Focus Blast

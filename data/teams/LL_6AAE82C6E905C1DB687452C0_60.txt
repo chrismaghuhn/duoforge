@@ -1,0 +1,53 @@
+Charizard (M) @ Charizardite Y
+Ability: Blaze
+Level: 50
+Timid Nature
+- Heat Wave
+- Hurricane
+- Weather Ball
+- Protect
+
+Golisopod (M) @ Golisopite
+Ability: Emergency exit
+Level: 50
+Adamant Nature
+- Leech Life
+- Drill Run
+- Iron Head
+- Protect
+
+Archaludon (M) @ Leftovers
+Ability: Stamina
+Level: 50
+Bold Nature
+- Dragon Pulse
+- Snarl
+- Electro Shot
+- Protect
+
+Farigiraf (M) @ Sitrus Berry
+Ability: Armor Tail
+Level: 50
+Calm Nature
+- Trick Room
+- Psychic
+- Grass Knot
+- Protect
+
+Sneasler (M) @ White Herb
+Ability: Unburden
+Level: 50
+Adamant Nature
+- Close Combat
+- Throat Chop
+- Dire Claw
+- Protect
+
+Politoed (M) @ Mystic Water
+Ability: Drizzle
+Level: 50
+Modest Nature
+- Muddy Water
+- Ice Beam
+- Weather Ball
+- Protect

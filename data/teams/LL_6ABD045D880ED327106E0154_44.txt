@@ -1,0 +1,53 @@
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Brave Nature
+- Wood Hammer
+- Grassy Glide
+- U-turn
+- Fake Out
+
+Pelipper (M) @ Focus Sash
+Ability: Drizzle
+Level: 50
+Modest Nature
+- Hurricane
+- Protect
+- Tailwind
+- Weather Ball
+
+Golisopod (M) @ Golisopite
+Ability: Emergency Exit
+Level: 50
+Adamant Nature
+- Iron Head
+- Leech Life
+- Protect
+- Sucker Punch
+
+Archaludon (M) @ Leftovers
+Ability: Stamina
+Level: 50
+Modest Nature
+- Dragon Pulse
+- Electro Shot
+- Flash Cannon
+- Protect
+
+Sneasler (M) @ Grassy Seed
+Ability: Unburden
+Level: 50
+Adamant Nature
+- Protect
+- Close Combat
+- Dire Claw
+- Fake Out
+
+Incineroar (M) @ Sitrus Berry
+Ability: Intimidate
+Level: 50
+Impish Nature
+- Flare Blitz
+- Fake Out
+- Throat Chop
+- Parting Shot

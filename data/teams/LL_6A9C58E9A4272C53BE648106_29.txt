@@ -1,0 +1,53 @@
+Golisopod (M) @ Golisopite
+Ability: Emergency Exit
+Level: 50
+Adamant Nature
+- Leech Life
+- Iron Head
+- Close Combat
+- First Impression
+
+Pelipper (M) @ Life Orb
+Ability: Drizzle
+Level: 50
+Modest Nature
+- Weather Ball
+- Hurricane
+- Tailwind
+- Protect
+
+Archaludon (M) @ Leftovers
+Ability: Stamina
+Level: 50
+Modest Nature
+- Electro Shot
+- Dragon Pulse
+- Flash Cannon
+- Protect
+
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Wood Hammer
+- Grassy Glide
+- High Horsepower
+- Fake Out
+
+Basculegion (M) @ Choice Scarf
+Ability: Adaptability
+Level: 50
+Jolly Nature
+- Wave Crash
+- Flip Turn
+- Aqua Jet
+- Last Respects
+
+Farigiraf (M) @ Sitrus Berry
+Ability: Armor Tail
+Level: 50
+Bold Nature
+- Psychic
+- Helping Hand
+- Trick Room
+- Protect
