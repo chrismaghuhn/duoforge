@@ -92,8 +92,8 @@
        "set_species": "Venusaur",
        "mega": 0,
        "switch_flag": 0,
-       "hp": 157,
-       "maxhp": 157,
+       "hp": 187,
+       "maxhp": 187,
        "item": "miracleseed",
        "status": "",
        "status_time": 0,
@@ -437,7 +437,7 @@
     "|switch|p1a: Whimsicott|Whimsicott, L50, M|167/167",
     "|switch|p1a: Whimsicott|Whimsicott, L50, M|100/100",
     "|split|p1",
-    "|switch|p1b: Venusaur|Venusaur, L50, M|157/157",
+    "|switch|p1b: Venusaur|Venusaur, L50, M|187/187",
     "|switch|p1b: Venusaur|Venusaur, L50, M|100/100",
     "|split|p2",
     "|switch|p2a: Raichu|Raichu, L50, F|137/137",
@@ -518,8 +518,8 @@
         "set_species": "Venusaur",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 157,
-        "maxhp": 157,
+        "hp": 187,
+        "maxhp": 187,
         "item": "miracleseed",
         "status": "",
         "status_time": 0,
@@ -749,7 +749,7 @@
   },
   {
    "input": {
-    "p1": "move 1, move 2 1",
+    "p1": "move 3, move 2 1",
     "p2": "move 1 1, move 2"
    },
    "draws": [
@@ -775,50 +775,31 @@
      "value": 0
     },
     {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 33
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 25
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 18
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 2
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "H:stall:p1a:end",
+      "H:protect:p1a:end"
+     ],
+     "start": 1
     }
    ],
    "log": [
+    "|move|p1a: Whimsicott|Protect|p1a: Whimsicott",
+    "|-singleturn|p1a: Whimsicott|Protect",
     "|move|p2a: Raichu|Thunderbolt|p1a: Whimsicott",
-    "|-resisted|p1a: Whimsicott|1",
-    "|split|p1",
-    "|-damage|p1a: Whimsicott|136/167",
-    "|-damage|p1a: Whimsicott|81/100",
-    "|move|p1b: Venusaur|Grass Knot|p2a: Raichu",
-    "|split|p2",
-    "|-damage|p2a: Raichu|64/137",
-    "|-damage|p2a: Raichu|46/100",
-    "|move|p1a: Whimsicott|Tailwind|p1a: Whimsicott",
-    "|-sidestart|p1: p1|move: Tailwind",
+    "|-activate|p1a: Whimsicott|move: Protect",
     "|move|p2b: Milotic|Coil|p2b: Milotic",
     "|-boost|p2b: Milotic|atk|1",
     "|-boost|p2b: Milotic|def|1",
     "|-boost|p2b: Milotic|accuracy|1",
+    "|move|p1b: Venusaur|Grass Knot|p2a: Raichu",
+    "|split|p2",
+    "|-damage|p2a: Raichu|77/137",
+    "|-damage|p2a: Raichu|56/100",
     "|upkeep",
     "|turn|2"
    ],
@@ -835,7 +816,7 @@
      {
       "request": "move",
       "conditions": [
-       3,
+       0,
        0,
        0
       ],
@@ -863,7 +844,7 @@
         "set_species": "Whimsicott",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 136,
+        "hp": 167,
         "maxhp": 167,
         "item": "fairyfeather",
         "status": "",
@@ -880,12 +861,14 @@
          0
         ],
         "pp": [
-         15,
          16,
-         8,
+         16,
+         7,
          8
         ],
-        "volatiles": [],
+        "volatiles": [
+         "stall"
+        ],
         "locked": null
        },
        {
@@ -893,8 +876,8 @@
         "set_species": "Venusaur",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 157,
-        "maxhp": 157,
+        "hp": 187,
+        "maxhp": 187,
         "item": "miracleseed",
         "status": "",
         "status_time": 0,
@@ -1005,7 +988,7 @@
         "set_species": "Raichu",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 64,
+        "hp": 77,
         "maxhp": 137,
         "item": "lightclay",
         "status": "",
@@ -1133,14 +1116,14 @@
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 53
+     "value": 25
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 6
+     "value": 18
     },
     {
      "site": "DAMAGE_ROLL",
@@ -1150,46 +1133,32 @@
      "value": 2
     },
     {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
+     "site": "SECONDARY",
+     "context": "",
      "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "execute:normal",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
+     "hi": 100,
+     "value": 53
     },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 67
+     "value": 25
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 6
+     "value": 3
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 11
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 27
+     "value": 2
     }
    ],
    "log": [
@@ -1197,16 +1166,15 @@
     "|switch|p2b: Ninetales|Ninetales, L50, M|180/180",
     "|switch|p2b: Ninetales|Ninetales, L50, M|100/100",
     "|-weather|SunnyDay|[from] ability: Drought|[of] p2b: Ninetales",
+    "|move|p1a: Whimsicott|Moonblast|p2a: Raichu",
+    "|split|p2",
+    "|-damage|p2a: Raichu|4/137",
+    "|-damage|p2a: Raichu|2/100",
     "|move|p1b: Venusaur|Weather Ball|p2a: Raichu",
     "|split|p2",
     "|-damage|p2a: Raichu|0 fnt",
     "|-damage|p2a: Raichu|0 fnt",
     "|faint|p2a: Raichu",
-    "|move|p1a: Whimsicott|Moonblast|p2b: Ninetales",
-    "|-resisted|p2b: Ninetales|1",
-    "|split|p2",
-    "|-damage|p2b: Ninetales|160/180",
-    "|-damage|p2b: Ninetales|88/100",
     "|-weather|SunnyDay|[upkeep]",
     "|upkeep"
    ],
@@ -1223,7 +1191,7 @@
      {
       "request": "",
       "conditions": [
-       2,
+       0,
        0,
        0
       ],
@@ -1238,7 +1206,7 @@
         "set_species": "Whimsicott",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 136,
+        "hp": 167,
         "maxhp": 167,
         "item": "fairyfeather",
         "status": "",
@@ -1255,9 +1223,9 @@
          0
         ],
         "pp": [
+         16,
          15,
-         15,
-         8,
+         7,
          8
         ],
         "volatiles": [],
@@ -1268,8 +1236,8 @@
         "set_species": "Venusaur",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 157,
-        "maxhp": 157,
+        "hp": 187,
+        "maxhp": 187,
         "item": "miracleseed",
         "status": "",
         "status_time": 0,
@@ -1397,7 +1365,7 @@
         "set_species": "Ninetales",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 160,
+        "hp": 180,
         "maxhp": 180,
         "item": "charcoal",
         "status": "",
@@ -1508,7 +1476,7 @@
      {
       "request": "move",
       "conditions": [
-       2,
+       0,
        0,
        0
       ],
@@ -1536,7 +1504,7 @@
         "set_species": "Whimsicott",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 136,
+        "hp": 167,
         "maxhp": 167,
         "item": "fairyfeather",
         "status": "",
@@ -1553,9 +1521,9 @@
          0
         ],
         "pp": [
+         16,
          15,
-         15,
-         8,
+         7,
          8
         ],
         "volatiles": [],
@@ -1566,8 +1534,8 @@
         "set_species": "Venusaur",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 157,
-        "maxhp": 157,
+        "hp": 187,
+        "maxhp": 187,
         "item": "miracleseed",
         "status": "",
         "status_time": 0,
@@ -1708,7 +1676,7 @@
         "set_species": "Ninetales",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 160,
+        "hp": 180,
         "maxhp": 180,
         "item": "charcoal",
         "status": "",
@@ -1797,7 +1765,7 @@
   },
   {
    "input": {
-    "p1": "move 2 1, move 1 1",
+    "p1": "move 1, move 1 1",
     "p2": "move 1 1, move 1 1"
    },
    "draws": [
@@ -1806,146 +1774,102 @@
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 20
+     "value": 68
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 23
+     "value": 16
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
+     "value": 4
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 74
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
      "value": 6
     },
     {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 44
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 13
-    },
-    {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 12
+     "value": 3
     },
     {
      "site": "SECONDARY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 54
+     "value": 97
     },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 39
+     "value": 41
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 9
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
      "value": 10
     },
     {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 33
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "execute:normal",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 95
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 2
-    },
-    {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 9
+     "value": 8
     },
     {
      "site": "SECONDARY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 55
+     "value": 75
     }
    ],
    "log": [
+    "|move|p1a: Whimsicott|Tailwind|p1a: Whimsicott",
+    "|-sidestart|p1: p1|move: Tailwind",
     "|move|p1b: Venusaur|Weather Ball|p2a: Milotic",
     "|-resisted|p2a: Milotic|1",
     "|split|p2",
-    "|-damage|p2a: Milotic|173/202",
-    "|-damage|p2a: Milotic|85/100",
-    "|move|p1a: Whimsicott|Moonblast|p2a: Milotic",
-    "|split|p2",
-    "|-damage|p2a: Milotic|133/202",
-    "|-damage|p2a: Milotic|65/100",
+    "|-damage|p2a: Milotic|178/202",
+    "|-damage|p2a: Milotic|88/100",
     "|move|p2b: Ninetales|Flamethrower|p1a: Whimsicott",
+    "|-supereffective|p1a: Whimsicott|1",
+    "|split|p1",
+    "|-damage|p1a: Whimsicott|11/167",
+    "|-damage|p1a: Whimsicott|6/100",
+    "|move|p2a: Milotic|Ice Beam|p1a: Whimsicott",
     "|-supereffective|p1a: Whimsicott|1",
     "|split|p1",
     "|-damage|p1a: Whimsicott|0 fnt",
     "|-damage|p1a: Whimsicott|0 fnt",
     "|faint|p1a: Whimsicott",
-    "|move|p2a: Milotic|Ice Beam|p1b: Venusaur",
-    "|-supereffective|p1b: Venusaur|1",
-    "|split|p1",
-    "|-damage|p1b: Venusaur|83/157",
-    "|-damage|p1b: Venusaur|52/100",
     "|-weather|SunnyDay|[upkeep]",
     "|split|p2",
-    "|-heal|p2a: Milotic|145/202|[from] item: Leftovers",
-    "|-heal|p2a: Milotic|71/100|[from] item: Leftovers",
+    "|-heal|p2a: Milotic|190/202|[from] item: Leftovers",
+    "|-heal|p2a: Milotic|94/100|[from] item: Leftovers",
     "|upkeep"
    ],
    "state": {
@@ -1961,7 +1885,7 @@
      {
       "request": "switch",
       "conditions": [
-       1,
+       3,
        0,
        0
       ],
@@ -1994,8 +1918,8 @@
         ],
         "pp": [
          15,
-         14,
-         8,
+         15,
+         7,
          8
         ],
         "volatiles": [],
@@ -2006,8 +1930,8 @@
         "set_species": "Venusaur",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 83,
-        "maxhp": 157,
+        "hp": 187,
+        "maxhp": 187,
         "item": "miracleseed",
         "status": "",
         "status_time": 0,
@@ -2105,7 +2029,7 @@
         "set_species": "Milotic",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 145,
+        "hp": 190,
         "maxhp": 202,
         "item": "leftovers",
         "status": "",
@@ -2135,7 +2059,7 @@
         "set_species": "Ninetales",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 160,
+        "hp": 180,
         "maxhp": 180,
         "item": "charcoal",
         "status": "",
@@ -2251,7 +2175,7 @@
      {
       "request": "move",
       "conditions": [
-       1,
+       3,
        0,
        0
       ],
@@ -2303,8 +2227,8 @@
         "set_species": "Venusaur",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 83,
-        "maxhp": 157,
+        "hp": 187,
+        "maxhp": 187,
         "item": "miracleseed",
         "status": "",
         "status_time": 0,
@@ -2351,8 +2275,8 @@
         ],
         "pp": [
          15,
-         14,
-         8,
+         15,
+         7,
          8
         ],
         "volatiles": [],
@@ -2418,7 +2342,7 @@
         "set_species": "Milotic",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 145,
+        "hp": 190,
         "maxhp": 202,
         "item": "leftovers",
         "status": "",
@@ -2448,7 +2372,7 @@
         "set_species": "Ninetales",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 160,
+        "hp": 180,
         "maxhp": 180,
         "item": "charcoal",
         "status": "",
