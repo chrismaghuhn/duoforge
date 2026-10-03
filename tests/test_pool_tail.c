@@ -1390,6 +1390,8 @@ int main(void)
                 tp->throat_chop_turns = (uint8_t)(tp->throat_chop_turns != 0u ? tp->throat_chop_turns - 1u : 0u);
                 tp->heal_block_turns = (uint8_t)(tp->heal_block_turns != 0u ? tp->heal_block_turns - 1u : 0u);
                 tp->perish = (uint8_t)(tp->perish != 0u ? tp->perish - 1u : 0u); /* step G26: the residual's count */
+                /* step G27: Disable counts down in the residual (the example's 5 turns are 4 after the turn, its slot stays) */
+                tp->disable_turns = (uint8_t)(tp->disable_turns != 0u ? tp->disable_turns - 1u : 0u);
             }
         }
         duoforge_decision_bundle bd;

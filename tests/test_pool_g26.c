@@ -270,10 +270,12 @@ static void check_battles(df_test *t, const duoforge_context *ctx, uint32_t *com
     }
 }
 
-/* A Heal Block that ends in the same residual as a Perish count is refused: the engine runs Heal Block's duration handler
- * (order 20) after the callbacks, so its end line would come after the counts that the pin prints after it (order 24).
- * g26_perish_song before its third turn, with Politoed's Heal Block set to its last turn by hand. */
-static void check_heal_block_refusal(df_test *t, const duoforge_context *ctx)
+/* A Heal Block that ends in the same residual as a Perish count: since step G27 Heal Block's end is an entry of the sorted
+ * residual list at its order (20), so its end line comes before the counts of Perish Song (24), as the pin's fieldEvent
+ * has them; before, the engine ran Heal Block's duration handler after the callbacks and refused the case.
+ * g26_perish_song before its third turn, with Wigglytuff's Heal Block set to its last turn by hand.
+ * The recorded step is played as it is (with the same tape: no tie of the two entries draws) and with the Heal Block. */
+static void check_heal_block_order(df_test *t, const duoforge_context *ctx)
 {
     const df_conf_battle *cb = find("g26_perish_song");
     if (!DF_CHECK(t, cb != NULL) || !DF_CHECK(t, cb->step_count > 3u)) {
@@ -297,10 +299,27 @@ static void check_heal_block_refusal(df_test *t, const duoforge_context *ctx)
     c = NULL;
     if (DF_CHECK(t, duoforge_battle_clone(ctx, b, &c) == DUOFORGE_OK)) {
         c->tail.sides[1].positions[0].heal_block_turns = 1u; /* Wigglytuff: Heal Block ends in this residual */
+        static duoforge_event ev0[DUOFORGE_MAX_EVENTS];
+        static duoforge_event ev1[DUOFORGE_MAX_EVENTS];
+        duoforge_event_buffer buffers[2] = {{ev0, DUOFORGE_MAX_EVENTS, 0u}, {ev1, DUOFORGE_MAX_EVENTS, 0u}};
         duoforge_step_result res;
         uint32_t used = 0u;
-        DF_CHECK(t, dfi_battle_step_tape(ctx, c, &bd, &conf_tape[st->tape_off], st->tape_len, &used, &res) ==
-                        DUOFORGE_E_UNSUPPORTED);
+        const duoforge_status status = dfi_battle_step_events_tape(ctx, c, &bd, &conf_tape[st->tape_off], st->tape_len, &used,
+                                                                   &res, buffers);
+        if (DF_CHECK(t, status == DUOFORGE_OK)) {
+            uint32_t end_at = UINT32_MAX;
+            uint32_t count_at = UINT32_MAX;
+            for (uint32_t i = 0u; i < buffers[0].count; ++i) {
+                const duoforge_event *e = &ev0[i];
+                if (e->kind == DUOFORGE_EVENT_VOLATILE_END && e->detail == DUOFORGE_VOLATILE_HEAL_BLOCK && end_at == UINT32_MAX) {
+                    end_at = i;
+                }
+                if (e->kind == DUOFORGE_EVENT_VOLATILE_START && e->detail == DUOFORGE_VOLATILE_PERISH && count_at == UINT32_MAX) {
+                    count_at = i;
+                }
+            }
+            DF_CHECK(t, end_at != UINT32_MAX && count_at != UINT32_MAX && end_at < count_at);
+        }
         duoforge_battle_destroy(c);
     }
     duoforge_battle_destroy(b);
@@ -453,8 +472,8 @@ int main(void)
     check_battles(&t, kp, &compared, &unannounced);
     DF_CHECK(&t, unannounced >= 4u); /* g26_perish_recast has a request in the middle of the turn of a cast */
     DF_CHECK_EQ_U64(&t, compared, 2u * (uint32_t)(sizeof rows / sizeof rows[0]));
-    check_heal_block_refusal(&t, kp);
-    check_heal_block_refusal(&t, kd);
+    check_heal_block_order(&t, kp);
+    check_heal_block_order(&t, kd);
     check_side_condition_refusals(&t, kp);
     check_side_condition_refusals(&t, kd);
     check_no_order_faint_point(&t, kp);

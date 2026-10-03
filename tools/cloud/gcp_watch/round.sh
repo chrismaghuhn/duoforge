@@ -10,6 +10,11 @@
 # a half round is resumed, and what a campaign had uploaded stays). The hard limit of a boot is the shutdown that
 # startup.sh schedules first, and every campaign has its own cap (RD_CAMPAIGN_CAP_MINUTES).
 #
+# A bench round replaces the fuzz round when the instance metadata has bench_refs (start.sh --bench SHA1,SHA2, once per
+# bench_run): the two commits are built (duoforge_bench only), the benchmark of A and B runs alternately (bench_ab.py),
+# bench.json goes to gs://<bucket>/bench/<run>/ and the VM powers off. The round logic is the one of the head of main,
+# so a bench round needs a head of main that has this code.
+#
 # No secret: the bucket comes from the instance metadata, the token of the service account from the metadata server, in
 # memory only (never logged, never written).
 set -euo pipefail
@@ -20,6 +25,12 @@ RD_ROUND_BATTLES=${RD_ROUND_BATTLES:-600}               # battles per campaign a
 RD_CAMPAIGN_CAP_MINUTES=${RD_CAMPAIGN_CAP_MINUTES:-20}  # the hard cap of one campaign
 RD_SEED_OFFSET=10000000                                  # keeps the seeds away from the campaigns of the AWS runs
 RD_UPLOAD_TRIES=3
+RD_REPO_URL=https://github.com/chrismaghuhn/duoforge.git # the one repository a bench round builds
+RD_BENCH_ROUNDS=${RD_BENCH_ROUNDS:-5}                    # alternating rounds of A and B
+RD_BENCH_BATTLES=${RD_BENCH_BATTLES:-400}                # battles per pairing of the benchmark workload
+RD_BENCH_REPETITIONS=${RD_BENCH_REPETITIONS:-7}          # repetitions inside one invocation of duoforge_bench
+RD_BENCH_WORKERS=${RD_BENCH_WORKERS:-1}                  # worker counts of the batch family: one thread
+RD_BENCH_RUN=''
 
 RD_WORK=${GW_WORK:-/opt/duoforge-watch}
 RD_REPO=${GW_REPO:-$RD_WORK/duoforge}
@@ -42,6 +53,10 @@ fail() { # the name chunks.sh's campaign_conf_load expects
 
 rd_metadata() { # key
     curl -fsS -H 'Metadata-Flavor: Google' "http://metadata.google.internal/computeMetadata/v1/instance/attributes/$1"
+}
+
+rd_metadata_path() { # path below instance/
+    curl -fsS -H 'Metadata-Flavor: Google' "http://metadata.google.internal/computeMetadata/v1/instance/$1"
 }
 
 # gs://<bucket>/<object> from a local file, with the token of the instance's service account. The token stays in a
@@ -119,11 +134,15 @@ rd_runner() {
     find "$RD_WORK/build" -name duoforge_diff_runner -type f 2> /dev/null | head -n 1
 }
 
-rd_ensure_tools() {
+rd_ensure_build_tools() {
     if ! command -v cmake > /dev/null 2>&1 || ! command -v gcc > /dev/null 2>&1 || ! command -v python3 > /dev/null 2>&1; then
         apt-get update -qq
         apt-get install -y -qq build-essential cmake git python3 curl unzip xz-utils ca-certificates time
     fi
+}
+
+rd_ensure_tools() {
+    rd_ensure_build_tools
     if ! node --version 2> /dev/null | grep -q '^v22\.'; then
         local base=https://nodejs.org/dist/latest-v22.x line file
         curl -fsSL "$base/SHASUMS256.txt" -o /tmp/node-sums
@@ -214,6 +233,65 @@ print(json.dumps({k: v for k, v in d.get("buckets", {}).items() if v}, sort_keys
     rd_log "campaign $name: $status in $((SECONDS - start)) s, buckets $buckets"
 }
 
+# ---------------------------------------------------------------------------------------------- a bench round
+
+# The checkout of one commit of this repository and a Release build of duoforge_bench from it, cached on the disk by the
+# full sha (a commit never changes). Sets RD_BENCH_BIN. The flags are those of the fuzz build, except that a warning is not
+# an error (it cannot change a speed, and a failed build would end a paid round).
+rd_bench_build() { # sha
+    local sha=$1 dir=$RD_WORK/bench/$1
+    [[ $sha =~ ^[0-9a-f]{40}$ ]] || fail "not a commit: $sha"
+    mkdir -p "$dir/src"
+    if [ "$(git -C "$dir/src" rev-parse HEAD 2> /dev/null || true)" != "$sha" ]; then
+        rm -rf "$dir/src"
+        mkdir -p "$dir/src"
+        git -C "$dir/src" init -q
+        git -C "$dir/src" remote add origin "$RD_REPO_URL"
+        git -C "$dir/src" fetch -q --depth 1 origin "$sha" || fail "commit $sha could not be fetched from $RD_REPO_URL"
+        git -C "$dir/src" checkout -q --detach FETCH_HEAD
+        [ "$(git -C "$dir/src" rev-parse HEAD)" = "$sha" ] || fail "the checkout is not at $sha"
+    fi
+    rd_log "building duoforge_bench (Release) at ${sha:0:12}"
+    CC=gcc CXX=g++ cmake -S "$dir/src" -B "$dir/build" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON \
+        -DDUOFORGE_WARNINGS_AS_ERRORS=OFF -DDUOFORGE_ENABLE_IPO=ON > /dev/null
+    cmake --build "$dir/build" --parallel --target duoforge_bench > /dev/null
+    RD_BENCH_BIN=$(find "$dir/build" -name duoforge_bench -type f 2> /dev/null | head -n 1)
+    [ -x "$RD_BENCH_BIN" ] || fail "duoforge_bench was not built at ${sha:0:12}"
+}
+
+rd_instance_type() {
+    rd_metadata_path machine-type 2> /dev/null | sed 's|.*/||' || true
+}
+
+# A bench round: refs is the metadata bench_refs (SHA1,SHA2), run the metadata bench_run. Everything is checked before the
+# first build; whatever bench_ab.py wrote is uploaded, a failed measurement included, and then the round fails.
+rd_bench_main() { # refs run
+    local refs=$1 run=$2 families sha_a sha_b bin_a bin_b rc=0 tool=$RD_REPO/tools/cloud/gcp_watch/bench_ab.py
+    RD_BENCH_RUN=$run
+    [[ $refs =~ ^([0-9a-f]{40}),([0-9a-f]{40})$ ]] || fail "bench_refs '$refs' is not SHA1,SHA2 (two 40-digit commits)"
+    sha_a=${BASH_REMATCH[1]}
+    sha_b=${BASH_REMATCH[2]}
+    families=$(rd_metadata bench_families) || fail 'bench_refs is set but bench_families is not'
+    python3 "$tool" --validate-only --a-sha "$sha_a" --b-sha "$sha_b" --families "$families" --workers "$RD_BENCH_WORKERS" \
+        --out "$RD_STATE/bench-check.json" || fail 'the bench round was refused: bad commits or families'
+    rd_log "bench round $run: A ${sha_a:0:12}, B ${sha_b:0:12}, families $families, $RD_BENCH_ROUNDS rounds, $(nproc) cpus"
+    rd_set_state benchmarking
+    rd_ensure_build_tools
+    rd_bench_build "$sha_a"
+    bin_a=$RD_BENCH_BIN
+    rd_bench_build "$sha_b"
+    bin_b=$RD_BENCH_BIN
+    rm -f "$RD_STATE/bench.json"
+    python3 "$tool" --a-bin "$bin_a" --b-bin "$bin_b" --a-sha "$sha_a" --b-sha "$sha_b" --families "$families" \
+        --workers "$RD_BENCH_WORKERS" --rounds "$RD_BENCH_ROUNDS" --battles "$RD_BENCH_BATTLES" \
+        --repetitions "$RD_BENCH_REPETITIONS" --run "$run" --instance-type "$(rd_instance_type)" \
+        --out "$RD_STATE/bench.json" || rc=$?
+    [ ! -f "$RD_STATE/bench.json" ] || rd_gcs_put "$RD_STATE/bench.json" "bench/$run/bench.json" || true
+    [ "$rc" -eq 0 ] || fail "bench_ab.py failed with status $rc (bench.json says why)"
+    rd_set_state "done"
+    rd_log "bench round $run finished"
+}
+
 # ---------------------------------------------------------------------------------------------- the round
 
 rd_finish() {
@@ -223,7 +301,11 @@ rd_finish() {
     [ -z "${HB_PID:-}" ] || kill "$HB_PID" 2> /dev/null || true
     if [ -n "$RD_BUCKET" ] && [ -n "$RD_HEAD" ]; then
         tail -n 3000 "$RD_LOG" > "$RD_STATE/log-tail.txt" 2> /dev/null || true
-        rd_gcs_put "$RD_STATE/log-tail.txt" "watch/${RD_HEAD:0:12}/$RD_ROUND_ID/log.txt" || true
+        if [ -n "$RD_BENCH_RUN" ]; then
+            rd_gcs_put "$RD_STATE/log-tail.txt" "bench/$RD_BENCH_RUN/log.txt" || true
+        else
+            rd_gcs_put "$RD_STATE/log-tail.txt" "watch/${RD_HEAD:0:12}/$RD_ROUND_ID/log.txt" || true
+        fi
         rd_heartbeat || true
     fi
     [ "${RD_NO_SHUTDOWN:-}" = 1 ] || shutdown -h now
@@ -241,6 +323,21 @@ rd_main() {
     rd_heartbeat
     rd_heartbeat_loop &
     HB_PID=$!
+    # A bench round replaces the fuzz round when the metadata asks for one that has not been played yet (the metadata stays
+    # on the instance: a boot with the run id of the last bench round is a fuzz round again, so one start is one bench).
+    local bench_refs bench_run
+    bench_refs=$(rd_metadata bench_refs 2> /dev/null || true)
+    if [ -n "$bench_refs" ]; then
+        bench_run=$(rd_metadata bench_run 2> /dev/null || true)
+        [[ $bench_run =~ ^b[0-9]{8}T[0-9]{6}Z$ ]] || fail "bench_refs is set but bench_run is not a bench run id (start.sh --bench sets both)"
+        if [ "$(cat "$RD_STATE/bench-last" 2> /dev/null || true)" != "$bench_run" ]; then
+            printf '%s\n' "$bench_run" > "$RD_STATE/bench-last"
+            rd_bench_main "$bench_refs" "$bench_run"
+            kill "$HB_PID" 2> /dev/null || true
+            return 0
+        fi
+        rd_log "the bench round $bench_run was played already: this boot is a fuzz round"
+    fi
     rd_log "round $RD_ROUND_ID on ${RD_HEAD:0:12}, $(nproc) cpus, $RD_ROUND_BATTLES battles per campaign"
 
     rd_ensure_tools

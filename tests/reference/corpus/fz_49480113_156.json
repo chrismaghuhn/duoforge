@@ -1,0 +1,165 @@
+{
+  "name": "fz_49480113_156",
+  "purpose": "Corpus (defect): case fz_49480113_156 of run 49480113 (tools/reference/diff_driver.py random, GCP watchdog round 3 on main 71896d6), team D against team D, found as DIVERGENCE \"step: DUOFORGE_E_INVARIANT\" at step 6: a heal move at full HP (Recover) ran the hit loop's Update, which the pin skips when every target failed (sim/battle-actions.ts:954), and the Update drew a tie between two Sitrus Berry holders that the reference never drew. The whole battle; it passes now, fixed by the heal-fail Update fix of step G32.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,d866473ee1bf92e3647ada907dfefe830866c46dea3c7ea50c6ac242ff19cf6c",
+  "teams": [
+    "Raichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Encore\n- Thunderbolt\n- Protect\n- Helping Hand\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Encore\n- Weather Ball\n- Protect\n- Ice Beam\n\nIndeedee-F (F) @ Leftovers\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Helping Hand\n- Psychic\n- Protect\n- Follow Me\n\nKingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect\n- Low Kick\n- Swords Dance\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Ice Beam\n- Coil\n- Protect\n- Muddy Water\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Shadow Ball\n- Thunderbolt\n- Protect\n- Recover",
+    "Politoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Encore\n- Weather Ball\n- Protect\n- Ice Beam\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Shadow Ball\n- Thunderbolt\n- Protect\n- Recover\n\nIndeedee-F (F) @ Leftovers\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Helping Hand\n- Psychic\n- Protect\n- Follow Me\n\nKingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect\n- Low Kick\n- Swords Dance\n\nRaichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Encore\n- Thunderbolt\n- Protect\n- Helping Hand\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Ice Beam\n- Coil\n- Protect\n- Muddy Water"
+  ],
+  "choices": [
+    {
+      "p1": "team 5621",
+      "p2": "team 5621"
+    },
+    {
+      "p1": "move 4, move 3",
+      "p2": "move 3, move 4"
+    },
+    {
+      "p1": "move 3, move 2 -1",
+      "p2": "move 2 -2, move 3"
+    },
+    {
+      "p1": "move 2, move 1 2",
+      "p2": "move 2 -2, move 3"
+    },
+    {
+      "p1": "move 1 -2, move 3",
+      "p2": "move 4 -2, move 3"
+    },
+    {
+      "p1": "move 4, move 2 2",
+      "p2": "move 4 -2, move 2"
+    },
+    {
+      "p1": "move 4, move 4",
+      "p2": "move 4 -2, move 4"
+    },
+    {
+      "p1": "move 4, move 3",
+      "p2": "move 2 2, move 1 2"
+    },
+    {
+      "p1": "move 2, move 2 -1",
+      "p2": "move 3, move 4"
+    },
+    {
+      "p1": "move 1 -2, move 2 1",
+      "p2": "move 2 1, move 2"
+    },
+    {
+      "p1": "switch 3, pass"
+    },
+    {
+      "p1": "move 4 1, move 1 1",
+      "p2": "move 1 1, switch 4"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 4 2, move 4",
+      "p2": "move 4, move 3"
+    },
+    {
+      "p1": "move 3, move 4",
+      "p2": "move 2, move 2 1"
+    },
+    {
+      "p1": "move 3, switch 4",
+      "p2": "move 2, switch 3"
+    },
+    {
+      "p1": "move 4 2, move 2 2",
+      "p2": "move 2, switch 3"
+    },
+    {
+      "p1": "move 1 1, move 3",
+      "p2": "move 4, move 1 -1"
+    },
+    {
+      "p1": "switch 4, move 3",
+      "p2": "switch 3, move 3"
+    },
+    {
+      "p1": "move 4, move 2 2",
+      "p2": "move 3, move 3"
+    },
+    {
+      "p1": "move 4, move 2 -1",
+      "p2": "move 4, move 2 -1"
+    },
+    {
+      "p1": "move 4, move 3",
+      "p2": "switch 3, move 2 1"
+    },
+    {
+      "p1": "move 4, switch 4",
+      "p2": "move 4, move 3"
+    },
+    {
+      "p1": "move 4, move 2 -1",
+      "p2": "move 1 2, move 3"
+    },
+    {
+      "p1": "move 2 1, switch 4",
+      "p2": "move 3, move 3"
+    },
+    {
+      "p1": "move 1 -2, move 3",
+      "p2": "move 4, move 4 1"
+    },
+    {
+      "p1": "move 1 -2, move 3",
+      "p2": "switch 3, move 1 2"
+    },
+    {
+      "p1": "move 3, move 3",
+      "p2": "move 1 2, move 3"
+    },
+    {
+      "p1": "move 1 -2, move 3",
+      "p2": "switch 3, move 1 2"
+    },
+    {
+      "p1": "move 2 1, move 3",
+      "p2": "switch 3, move 2 -1"
+    },
+    {
+      "p1": "switch 4, move 2 -1",
+      "p2": "move 2 2, move 3"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 1 1, move 1 -1",
+      "p2": "move 2 2, move 4 2"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "pass, move 2 2",
+      "p2": "move 3, move 1 -1"
+    },
+    {
+      "p1": "pass, move 2 -1",
+      "p2": "move 4, pass"
+    },
+    {
+      "p1": "pass, move 4 -1",
+      "p2": "move 2, pass"
+    },
+    {
+      "p1": "pass, move 2 2",
+      "p2": "move 3, pass"
+    },
+    {
+      "p1": "pass, move 2 2",
+      "p2": "move 2, pass"
+    }
+  ]
+}

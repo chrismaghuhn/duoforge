@@ -775,6 +775,79 @@ function checkG26(dex) {
     return 1;
 }
 
+// Step G27, Disable and Cursed Body: the pinned facts that the engine hard-codes (decision 0015, the G27 item), run on the
+// pinned callbacks: Disable's onTryHit (no last move, Struggle, a Z or Max move fail), its condition (duration 5, one turn off
+// when the target has not moved or when Cursed Body acts, the failures of onStart, the two -start lines, the order, the
+// BeforeMove stop and its Champions form, the bar on the slot of its move) and Cursed Body's roll and conditions.
+function checkG27(dex) {
+    const move = (id) => dex.moves.get(id);
+    const d = move('disable');
+    expect('disable', [d.accuracy, d.priority, d.category, d.target, d.flags.protect, d.flags.bypasssub, d.pp],
+        [100, 0, 'Status', 'normal', 1, 1, 20]);
+    const tryHit = (lastMove) => d.onTryHit.call({}, {lastMove});
+    expect('disable onTryHit', [tryHit(undefined), tryHit({id: 'struggle'}), tryHit({id: 'tackle'}),
+        tryHit({id: 'tackle', isMax: true}), tryHit({id: 'tackle', isZOrMaxPowered: true})],
+        [false, false, undefined, false, false]);
+    const c = d.condition;
+    expect('disable condition', [c.duration, c.noCopy, c.onResidualOrder, c.onBeforeMovePriority], [5, true, 17, 7]);
+    // onStart: the target is queued (willMove), or acts now (the active Pokemon with its own move), or neither.
+    const start = (opts) => {
+        const logs = [];
+        const effectState = {duration: 5};
+        const self = {
+            queue: {willMove: () => opts.queued}, activePokemon: opts.active, activeMove: opts.activeMove, effectState,
+            add: (...a) => logs.push(a.map((x) => (typeof x === 'string' ? x : 'POKEMON')).join(':')),
+            debug: () => {},
+        };
+        const pokemon = {lastMove: opts.lastMove, moveSlots: opts.slots || []};
+        if (opts.active === true) self.activePokemon = pokemon;
+        const result = c.onStart.call(self, pokemon, 'SOURCE', opts.effect || {effectType: 'Move', name: 'Disable'});
+        return [result, effectState.duration, effectState.move, logs];
+    };
+    const tackle = {id: 'tackle', name: 'Tackle'};
+    const slots = [{id: 'tackle', pp: 5}];
+    expect('disable onStart: the target has not moved', start({queued: true, lastMove: tackle, slots}),
+        [undefined, 4, 'tackle', ['-start:POKEMON:Disable:Tackle']]);
+    expect('disable onStart: it has moved', start({queued: false, lastMove: tackle, slots}),
+        [undefined, 5, 'tackle', ['-start:POKEMON:Disable:Tackle']]);
+    expect('disable onStart: Cursed Body (the active Pokemon, a move of its own)',
+        start({queued: false, active: true, activeMove: {isExternal: false}, lastMove: tackle, slots,
+            effect: {effectType: 'Ability', name: 'Cursed Body'}}),
+        [undefined, 4, 'tackle', ['-start:POKEMON:Disable:Tackle:[from] ability: Cursed Body:[of] SOURCE']]);
+    expect('disable onStart: no last move', start({queued: false, lastMove: undefined, slots})[0], false);
+    expect('disable onStart: the move has no PP', start({queued: false, lastMove: tackle, slots: [{id: 'tackle', pp: 0}]})[0], false);
+    // onBeforeMove: only the barred move stops, with the cant line and no PP.
+    const before = (condition, barred, moveId, flags) => {
+        const logs = [];
+        const self = {effectState: {move: barred}, add: (...a) => logs.push(a.map((x) => (typeof x === 'string' ? x : x.id || 'X')).join(':'))};
+        return [condition.onBeforeMove.call(self, 'ATTACKER', 'DEFENDER', {id: moveId, flags: flags || {}}), logs];
+    };
+    expect('disable onBeforeMove', [before(c, 'tackle', 'tackle'), before(c, 'tackle', 'growl')],
+        [[false, ['cant:ATTACKER:Disable:tackle']], [undefined, []]]);
+    // The Champions mod: the same, except that a move with the cantusetwice flag is not stopped (no marked move has it).
+    const champ = dex.moves.get('disable').condition;
+    expect('disable Champions onBeforeMove', [before(champ, 'tackle', 'tackle'), before(champ, 'tackle', 'tackle', {cantusetwice: 1})],
+        [[false, ['cant:ATTACKER:Disable:tackle']], [undefined, []]]);
+    // onDisableMove bars the slot of its move only.
+    const barred = [];
+    c.onDisableMove.call({effectState: {move: 'tackle'}}, {moveSlots: [{id: 'tackle'}, {id: 'growl'}], disableMove: (id) => barred.push(id)});
+    expect('disable onDisableMove', barred, ['tackle']);
+    // Cursed Body: 3 in 10 on a damaging hit that is not Struggle's, never when the attacker is disabled already.
+    const a = dex.abilities.get('cursedbody');
+    const hit = (volatiles, moveOpts, roll) => {
+        const added = [];
+        const draws = [];
+        const self = {randomChance: (n, m) => { draws.push([n, m]); return roll; }, effectState: {target: 'HOLDER'}};
+        const source = {volatiles, addVolatile: (...args) => added.push(args)};
+        a.onDamagingHit.call(self, 7, 'TARGET', source, moveOpts);
+        return [added, draws];
+    };
+    expect('cursed body', [hit({}, {id: 'tackle', flags: {}}, true), hit({}, {id: 'tackle', flags: {}}, false),
+        hit({disable: {}}, {id: 'tackle', flags: {}}, true), hit({}, {id: 'struggle', flags: {}}, true),
+        hit({}, {id: 'tackle', isMax: true, flags: {}}, true), hit({}, {id: 'tackle', flags: {futuremove: 1}}, true)],
+        [[[['disable', 'HOLDER']], [[3, 10]]], [[], [[3, 10]]], [[], []], [[], []], [[], []], [[], []]]);
+}
+
 function checkG10Moves(dex) {
     const move = (id) => dex.moves.get(id);
     const power = (m, weight) => call(m.basePowerCallback, battle(m), [{}, {getWeight() { return weight; }}]);
@@ -819,11 +892,11 @@ function checkG10Moves(dex) {
 }
 
 // The callbacks that change the priority of a move or the Speed of a Pokemon, on the entry or on its own condition
-// (Unburden's volatile). The engine implements Prankster (+1 for a status move), Unburden (x2 Speed without an item)
+// (Unburden's volatile). The engine implements Prankster (+1 for a status move), Gale Wings (+1 for a Flying move at full HP, step G34), Unburden (x2 Speed without an item)
 // and Choice Scarf (x1.5 Speed); every other modelled row has none.
 const ORDER_CALLBACKS = ['onModifyPriority', 'onFractionalPriority', 'onModifySpe'];
 const ENGINE_ORDER = {
-    ability: {prankster: ['onModifyPriority'], unburden: ['condition.onModifySpe'], sandrush: ['onModifySpe'],
+    ability: {prankster: ['onModifyPriority'], galewings: ['onModifyPriority'], unburden: ['condition.onModifySpe'], sandrush: ['onModifySpe'],
         swiftswim: ['onModifySpe'], slushrush: ['onModifySpe'], chlorophyll: ['onModifySpe']},
     item: {choicescarf: ['onModifySpe']},
 };
@@ -1022,10 +1095,11 @@ function checkFormes(dex, validator, rows, moves, abilities) {
 // The UNMODELED markers of gen_closure.py --pool, re-derived from the pinned data in this file's own words: the
 // special column of a move, the handler column of an item and of an ability, and the lists of unmodelled features.
 // implemented in the turn code by id (G4: Focus Sash, Rock Head; G12: Floettite, Flower Veil, Fairy Aura)
-const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'expertbelt', 'ejectbutton'],
+const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'expertbelt', 'ejectbutton', 'widelens'],
     abilities: ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
         'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll', 'innerfocus', 'liquidvoice',
-        'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof', 'unnerve', 'speedboost']};
+        'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof', 'unnerve', 'speedboost',
+        'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
     'randomNormal', 'allAdjacent', 'allies']);
 // The fields of a move that the tables model (gen_closure.py DATA_KEYS and IGNORED_KEYS), nothing else.
@@ -1033,7 +1107,7 @@ const MOVE_KEYS = new Set(['num', 'accuracy', 'basePower', 'category', 'name', '
     'critRatio', 'secondary', 'self', 'boosts', 'recoil', 'drain', 'status', 'volatileStatus', 'sideCondition',
     'pseudoWeather', 'selfSwitch', 'stallingMove', 'noPPBoosts', 'struggleRecoil', 'condition', 'contestType', 'zMove',
     'maxMove', 'isNonstandard', 'hasSheerForceBoost', 'inherit', 'thawsTarget', 'heal']);
-const MODELLED_STATUS = new Set(['brn', 'frz', 'par', 'slp', 'psn']);
+const MODELLED_STATUS = new Set(['brn', 'frz', 'par', 'slp', 'psn', 'tox']);
 const MODELLED_SIDE = new Set(['tailwind', 'reflect', 'lightscreen']);
 const STAT_NAMES = ['atk', 'def', 'spa', 'spd', 'spe', 'accuracy', 'evasion'];
 
@@ -1084,7 +1158,7 @@ function moveIsModelled(raw, id) {
             return false;
         }
         if (effects[0] === 'status') {
-            if (!['brn', 'frz', 'par', 'slp', 'psn'].includes(sec.status)) { // step G13: a poison secondary is modelled (status 5)
+            if (!['brn', 'frz', 'par', 'slp', 'psn', 'tox'].includes(sec.status)) { // step G13: a poison secondary is modelled (status 5), step G36: a badly poisoning one (status 6)
                 return false;
             }
         } else if (effects[0] === 'volatileStatus') {
@@ -1377,6 +1451,7 @@ function main() {
     checkRecharge(dex);
     checkG19(dex);
     checkG26(dex);
+    checkG27(dex);
     checkG32(dex);
     checkG22(dex, formeRowsList, new Set(definedIds(headers, 'ITEM').values()), new Set(abilityIds.values()));
     const abilities = checkAbilities(dex, abilityRows, moveIds, unmodeledAbilities, unmodeledMoves);

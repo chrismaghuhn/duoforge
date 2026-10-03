@@ -41,12 +41,20 @@ class ColumnsTest(unittest.TestCase):
         every = np.concatenate([p.reshape(-1) for p in parts])
         self.assertEqual(sorted(every.tolist()), list(range(features.OBS_SIZE)))
         names = features.FEATURE_NAMES
-        self.assertTrue(all(names[i].startswith("global.") for i in cols.glob))
+        self.assertTrue(all(names[i].startswith(("global.", "ext.global.")) for i in cols.glob))
         self.assertTrue(all(".occupant." in names[i] for i in cols.occupant.reshape(-1)))
         self.assertEqual(names[cols.species[1, 3]], "foe.member3.species")
         self.assertEqual(names[cols.moves[0, 2, 1]], "own.member2.move1")
         self.assertEqual(names[cols.position[1, 0, 0]], "foe.pos0.stage.atk")
-        self.assertEqual(cols.position.shape, (2, 2, 17))
+        # Encoder 3's block joins the scalars of its global, side, position and member.
+        self.assertEqual(cols.glob.shape, (15 + 5,))
+        self.assertEqual(cols.position.shape, (2, 2, 17 + 36))
+        self.assertEqual(names[cols.position[1, 0, 17]], "ext.foe.pos0.volatile.substitute")
+        self.assertEqual(names[cols.side[1, -1]], "ext.foe.quick_guard")
+        self.assertEqual(names[cols.member[0, 3, -1]], "ext.own.mem3.item_now")
+        for groups in (cols.side, cols.position, cols.member):
+            for s, side in enumerate(("own", "foe")):
+                self.assertTrue(all(names[i].startswith((f"{side}.", f"ext.{side}.")) for i in groups[s].reshape(-1)))
         self.assertEqual([features.SLOT_FEATURE_NAMES[i] for i in cols.slot_move], ["move_slot"])
         self.assertEqual([features.SLOT_FEATURE_NAMES[i] for i in cols.slot_reserve], ["reserve"])
         self.assertEqual(cols.slot_scalar.shape, (10,))

@@ -3,9 +3,12 @@ embeds (decision 0017, spec section 8).
 
 columns(names) splits the encoder's columns (features.FEATURE_NAMES) into
 the groups model v2 reads: global, side and position scalars, the occupant
-one-hots, member scalars and the member ids. A name the grouping does not
-know raises, so a new encoder column is never dropped silently; a
-checkpoint keeps its own names, so its groups follow its layout.
+one-hots, member scalars and the member ids. The columns of encoder 3's
+block ("ext.global.*", "ext.<side>.*", "ext.<side>.pos<k>.*",
+"ext.<side>.mem<r>.*") join the global, side, position and member scalars.
+A name the grouping does not know raises, so a new encoder column is never
+dropped silently; a checkpoint keeps its own names, so its groups follow its
+layout.
 """
 import dataclasses
 
@@ -49,8 +52,19 @@ def columns(feature_names=features.FEATURE_NAMES, slot_names=features.SLOT_FEATU
     ids = {k: {} for k in _MEMBER_IDS}
     for i, name in enumerate(feature_names):
         parts = name.split(".")
-        if parts[0] == "global":
+        if parts[0] == "global" or parts[:2] == ["ext", "global"]:
             glob.append(i)
+            continue
+        if parts[0] == "ext" and len(parts) >= 3 and parts[1] in _SIDES:
+            s = _SIDES.index(parts[1])
+            if len(parts) == 3:
+                side.setdefault(s, []).append(i)
+            elif parts[2].startswith("pos") and parts[2][3:].isdigit():
+                position.setdefault((s, int(parts[2][3:])), []).append(i)
+            elif parts[2].startswith("mem") and parts[2][3:].isdigit():
+                member.setdefault((s, int(parts[2][3:])), []).append(i)
+            else:
+                raise ValueError(f"observation column {name!r} is not one model v2 knows")
             continue
         if parts[0] not in _SIDES or len(parts) < 3:
             raise ValueError(f"observation column {name!r} is not one model v2 knows")

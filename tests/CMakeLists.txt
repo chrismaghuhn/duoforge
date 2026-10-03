@@ -185,8 +185,19 @@ duoforge_add_test(NAME duoforge.state.pool_g20 SOURCES test_pool_g20.c WHITEBOX 
 # powder immunity, Psychic Fangs, Solar Beam, Flame Body, Clear Body, Hospitality and Overcoat, on their recorded battles.
 duoforge_add_test(NAME duoforge.state.pool_g26 SOURCES test_pool_g26.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g30 SOURCES test_pool_g30.c WHITEBOX TIMEOUT 60)
+# Step G36: Toxic and the badly poisoned status: the tail's toxic_stage, the member's status Tox, the view's ailment value.
+duoforge_add_test(NAME duoforge.state.pool_g36 SOURCES test_pool_g36.c WHITEBOX TIMEOUT 60)
+# Step G34: a batch of small rules (Gale Wings, accuracy and base power abilities, Solid Rock and Multiscale in the damage chain,
+# Steel Roller, Clangorous Soul, Brick Break): the marks, the flag bits and the commutation test of the ModifyDamage chain.
+duoforge_add_test(NAME duoforge.state.pool_g34 SOURCES test_pool_g34.c WHITEBOX TIMEOUT 60)
+# Step G35: ten data rows, Rain Dish and Friend Guard: the marks, the flags, Gigaton Hammer left out, and Friend Guard in the
+# commutation test and the refusal of the ModifyDamage chain.
+duoforge_add_test(NAME duoforge.state.pool_g35 SOURCES test_pool_g35.c WHITEBOX TIMEOUT 60)
 # Step G20, Spiky Shield: the protect_kind of the position (POOL tail rev 3), the state round trip, the volatile.
 duoforge_add_test(NAME duoforge.state.pool_g20_protect SOURCES test_pool_g20_protect.c WHITEBOX TIMEOUT 60)
+# Step G27: Cursed Body and Disable in the tail's disable_slot and disable_turns, the request, the cant line and the POOL view
+# extension (the position's disable_slot, bit 21).
+duoforge_add_test(NAME duoforge.state.pool_g27 SOURCES test_pool_g27.c WHITEBOX TIMEOUT 60)
 # The queued action of a fainted Pokemon: no ability and no item of it counts for its priority and Speed (d04 to d06).
 duoforge_add_test(NAME duoforge.state.pool_fainted_holder SOURCES test_pool_fainted_holder.c WHITEBOX TIMEOUT 60)
 # Step G22: the queued action of a fainted Swift Swim holder, and an Intimidate drop that the cap already took to nothing.
@@ -198,8 +209,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=107bc81547815606bec1c7eb70e8bad916c3dd458c560ad47e68fd4da06f4416"
-        "pool_tables.c=3d121e711a1c76fc74c7c99e2c5dc6ac09292ad94f35375a1e290ef49349ce96")
+        "pool_tables.h=a5424aab943db7435a18479c24019de5eeb9b8e5f20669efeaec04192ff91cb9"
+        "pool_tables.c=51478a5d2da146b6769c4b270bfb74d1da4d39df8faf4eff51c1c6c7d6f617d7")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -486,7 +497,7 @@ if(Python3_Interpreter_FOUND)
         # The Google Cloud watchdog (tools/cloud/gcp_watch): the same, with a stub gcloud and the round with stand-ins.
         add_test(NAME duoforge.cloud.gcp_watch_guards
             COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/cloud/gcp_watch/test_guards.py")
-        set_tests_properties(duoforge.cloud.gcp_watch_guards PROPERTIES TIMEOUT 300
+        set_tests_properties(duoforge.cloud.gcp_watch_guards PROPERTIES TIMEOUT 600
             ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1;DUOFORGE_BASH=${DUOFORGE_BASH}")
     endif()
     # The table generator refuses move shapes it does not model (no checkout needed).
@@ -595,7 +606,7 @@ endif()
 
 # The Python package (M7, decision 0013), run with DUOFORGE_PYTHON; without
 # an interpreter each test reports skipped instead of passing silently.
-foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client replay_unit data batch_setups learn_v2_numpy teams)
+foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client replay_unit data batch_setups learn_v2_numpy teams features_ext)
     if(DUOFORGE_PYTHON)
         add_test(NAME duoforge.python.${_py}
             COMMAND "${DUOFORGE_PYTHON}" -m unittest -v python.tests.test_${_py}

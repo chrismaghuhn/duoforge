@@ -71,7 +71,7 @@ _Static_assert(offsetof(duoforge_observation, turn) == 8u, "observation layout: 
 _Static_assert(offsetof(duoforge_observation, sides) == 16u, "observation layout: sides");
 _Static_assert(DUOFORGE_AILMENT_BURN == DFI_STATUS_BRN && DUOFORGE_AILMENT_FREEZE == DFI_STATUS_FRZ &&
                    DUOFORGE_AILMENT_PARALYSIS == DFI_STATUS_PAR && DUOFORGE_AILMENT_SLEEP == DFI_STATUS_SLP &&
-                   DUOFORGE_AILMENT_POISON == DFI_STATUS_PSN,
+                   DUOFORGE_AILMENT_POISON == DFI_STATUS_PSN && DUOFORGE_AILMENT_TOX == DFI_STATUS_TOX,
                "public ailments are the internal statuses");
 _Static_assert(DUOFORGE_WEATHER_RAIN == DFI_WEATHER_RAIN && DUOFORGE_WEATHER_SUN == DFI_WEATHER_SUN &&
                    DUOFORGE_WEATHER_SAND == DFI_WEATHER_SAND && DUOFORGE_WEATHER_SNOW == DFI_WEATHER_SNOW &&
@@ -335,6 +335,9 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                 /* Step G9, Encore: the one move slot (slot + 1) that the occupant may use, public (-start|X|Encore: the
                  * slot is the one of its last move line); the turns are never shown. */
                 o.sides[s].positions[p].encore_slot = tail->encore_slot;
+                /* Step G27, Disable: the one move slot (slot + 1) that the occupant may not use, public (-start|X|Disable|MOVE: the
+                 * slot is the one of MOVE on the open sheet); the turns are never shown. */
+                o.sides[s].positions[p].disable_slot = tail->disable_slot;
                 /* Step G26, Perish Song: the count that the game announced last, public (-start|X|perishN, N = 3, 2, 1:
                  * the cast's own line is [silent], the first count comes in the residual of that turn). The state keeps
                  * the duration, 4 from the cast to that residual: nothing was announced yet, so the view shows 0 then
