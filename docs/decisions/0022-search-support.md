@@ -54,8 +54,10 @@ The leaf seeds therefore depend on the seed, the key and the sample only:
 - **Additive API:** it gets a MINOR version bump, assigned by the HauptSession at merge.
 - **Internal hooks, as for the encoder:**
   - `batch/batch_each.h` gains the leaf hook `dfi_batch_leaves` (environment i's battle, which the hook may overwrite, and its TERMINAL flag) and the factored bundle builder that `duoforge_batch_step_factored` now shares.
-  - `encode/encode_internal.h` holds the encoder's one-player path and its version and mask check, which `duoforge_batch_query_encoded` now uses too. A leaf's row is therefore that row, by the same code.
-- **The source lint's floating-point exception** covers the three files that pass the encoder's float32 rows through: `src/search/search.c`, `include/duoforge/duoforge_search.h` and `src/encode/encode_internal.h`. They compute nothing in floating point; the lint selftest pins the exception.
+  - `encode/encode_internal.h` gives the search the encoder's version and mask check and two row helpers: `dfi_encode_leaf` encodes one player into a row index, and `dfi_encode_clear` clears one. Both run the one-player path of `duoforge_batch_query_encoded` in `encode.c`, and the check is the one that call uses, so a leaf's row is that row by the same code.
+- **No new floating-point exception** (owner, 2026-10-03: `float` stays approved for `encode.c` and `duoforge_encode.h` only).
+  - `duoforge_search.h` takes the rows as `void *`: count rows of `duoforge_encoder_size(version)` float32 values, as `duoforge_batch_query_encoded` writes them.
+  - `search.c` and `encode_internal.h` pass a row index; only `encode.c` computes the row's address.
 - **Two status arrays:** `encode_statuses[i]` is the status of the leaf's row, the viewer's query or the encoder. A refused step never reads as an encoder refusal.
 - **Further checks:** the call refuses `leaves == roots` (E_INVALID_ARGUMENT), since a leaf would overwrite a root while others read it. A pre-check compares the two contexts by fingerprint, as `duoforge_battle_copy` does.
 - **Not decided here:**

@@ -589,10 +589,16 @@ duoforge_status dfi_encoder_check(uint32_t version, uint64_t ext_supported, uint
     return DUOFORGE_OK;
 }
 
-duoforge_status dfi_encode_player(const duoforge_context *ctx, const duoforge_battle *battle, uint32_t p,
-                                  uint32_t version, uint64_t ext_supported, uint32_t obs_size,
-                                  duoforge_request *request, duoforge_observation *observation,
-                                  duoforge_factored_domain *domain, float *obs, float *slots, uint8_t *pair_mask)
+/* Player p of `battle` as duoforge_batch_query_encoded queries and encodes
+   one row: the request, observation and factored domain (into the given
+   records, request may be NULL), the view extension when the mask has a
+   record bit, then duoforge_encode. A failing query leaves the row all zero,
+   as a refused one is. */
+static duoforge_status dfi_encode_player(const duoforge_context *ctx, const duoforge_battle *battle, uint32_t p,
+                                         uint32_t version, uint64_t ext_supported, uint32_t obs_size,
+                                         duoforge_request *request, duoforge_observation *observation,
+                                         duoforge_factored_domain *domain, float *obs, float *slots,
+                                         uint8_t *pair_mask)
 {
     const bool records = (ext_supported & ~DFI_ENC_BASE_VALUES) != 0u;
     duoforge_observation_ext ext;
@@ -606,6 +612,24 @@ duoforge_status dfi_encode_player(const duoforge_context *ctx, const duoforge_ba
         return st;
     }
     return duoforge_encode(version, ext_supported, observation, domain, records ? &ext : NULL, obs, slots, pair_mask);
+}
+
+duoforge_status dfi_encode_leaf(const duoforge_context *ctx, const duoforge_battle *battle, uint32_t p,
+                                uint32_t version, uint64_t ext_supported, uint32_t obs_size, void *rows, uint32_t row)
+{
+    float *obs = (float *)rows + (size_t)row * obs_size;
+    float slots[DUOFORGE_ENCODER_SLOT_VALUES];
+    uint8_t pair_mask[DUOFORGE_ENCODER_PAIR_VALUES];
+    duoforge_observation observation;
+    duoforge_factored_domain domain;
+    return dfi_encode_player(ctx, battle, p, version, ext_supported, obs_size, NULL, &observation, &domain, obs,
+                             slots, pair_mask);
+}
+
+void dfi_encode_clear(void *rows, uint32_t obs_size, uint32_t row)
+{
+    float *obs = (float *)rows + (size_t)row * obs_size;
+    memset(obs, 0, (size_t)obs_size * sizeof *obs);
 }
 
 /* Query and encode both players of one environment (dfi_batch_each). */

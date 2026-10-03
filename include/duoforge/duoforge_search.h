@@ -5,9 +5,10 @@
  * Search support (decision 0022, roadmap M12): the leaves of a one-turn
  * lookahead expanded in the batch workers, and the seeds of their chance.
  * The engine holds no search logic here: it copies, reseeds, steps and
- * encodes; choosing the pairs and reading the values is the caller's. One of
- * the files of the source lint's floating-point exception: the rows are the
- * encoder's float32 rows, passed through.
+ * encodes; choosing the pairs and reading the values is the caller's. The
+ * rows are the encoder's float32 rows (duoforge_encode.h), taken here as
+ * void *, so this header holds no floating point (the source lint's
+ * exception stays with the encoder's two files).
  *
  * A leaf is a copy of a root (an environment of another batch, the "root
  * batch") after one step with one factored choice per requested player, its
@@ -52,10 +53,11 @@ void duoforge_search_seeds(uint64_t seed, uint64_t key, uint32_t sample, uint64_
         zero and encode_statuses[i] is OK: such a leaf is scored by its
         result. Otherwise leaf_results[i] is 0, and player viewers[r] of the
         leaf is queried and encoded as duoforge_batch_query_encoded queries
-        and encodes one row (version, ext_supported) into
-        obs[i * width .. (i + 1) * width), width = duoforge_encoder_size
-        (version); encode_statuses[i] receives the row's status, the query's
-        or the encoder's. A failed step leaves encode_statuses[i] OK and the
+        and encodes one row (version, ext_supported) into row i of obs:
+        obs holds count rows of width = duoforge_encoder_size(version)
+        float32 values, as duoforge_batch_query_encoded's obs does;
+        encode_statuses[i] receives the row's status, the query's or the
+        encoder's. A failed step leaves encode_statuses[i] OK and the
         row all zero.
    Outcomes are atomic per leaf: the call returns the lowest failing leaf's
    step status, else the lowest failing leaf's encode status, else OK. Two
@@ -79,7 +81,7 @@ duoforge_status duoforge_batch_expand(duoforge_batch *leaves, const duoforge_bat
                                       const uint8_t *viewers, uint32_t count, const uint32_t *root_envs,
                                       const uint32_t *samples, const duoforge_factored_choice *choices,
                                       duoforge_status *step_statuses, duoforge_status *encode_statuses,
-                                      duoforge_step_result *results, uint32_t *leaf_results, float *obs);
+                                      duoforge_step_result *results, uint32_t *leaf_results, void *obs);
 
 #ifdef __cplusplus
 }

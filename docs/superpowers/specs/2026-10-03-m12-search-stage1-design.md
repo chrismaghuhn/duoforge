@@ -144,8 +144,10 @@ duoforge_status duoforge_batch_expand(
     duoforge_status *encode_statuses,               /* count */
     duoforge_step_result *results,                  /* count */
     uint32_t *leaf_results,                         /* count: DUOFORGE_RESULT_* at TERMINAL, else 0 */
-    float *obs);                                    /* count * duoforge_encoder_size(version) */
+    void *obs);                                     /* count rows of duoforge_encoder_size(version) float32 values */
 ```
+
+The rows are taken as `void *`, so `duoforge_search.h` holds no floating point. The source lint's `float` exception stays with `encode.c` and `duoforge_encode.h` (owner, 2026-10-03).
 
 **Inputs**
 - **The leaf batch:** an ordinary batch of L environments, created once with the roots' context. Leaf i is environment i. Every leaf environment is overwritten at each call, so its setup does not matter.

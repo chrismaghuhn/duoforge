@@ -31,13 +31,10 @@ set(_re_alloc_call "${_boundary}(malloc|calloc|realloc|free)[ \t]*\\(")
 set(_re_banned_token "${_boundary}(float|double|_Thread_local|thread_local|long|short|int|signed|unsigned|int8_t|int16_t|int32_t|int64_t|intptr_t|intmax_t|ptrdiff_t)([^A-Za-z0-9_]|$)")
 # The files that compute in floating point: src/state/tiebreak.c (the reference's
 # tiebreak arithmetic) and the encoder, whose outputs are float32 by contract
-# (src/encode/encode.c and its header, decision 0021); and the files that only
-# pass the encoder's float32 rows through: its internal header for one player
-# and the search's leaf expansion (decision 0022). Every other banned token
+# (src/encode/encode.c and its header, decision 0021); every other banned token
 # still applies to them.
 set(_re_banned_token_fp "${_boundary}(_Thread_local|thread_local|long|short|int|signed|unsigned|int8_t|int16_t|int32_t|int64_t|intptr_t|intmax_t|ptrdiff_t)([^A-Za-z0-9_]|$)")
-set(_fp_files "src/state/tiebreak.c" "src/encode/encode.c" "include/duoforge/duoforge_encode.h"
-    "src/encode/encode_internal.h" "src/search/search.c" "include/duoforge/duoforge_search.h")
+set(_fp_files "src/state/tiebreak.c" "src/encode/encode.c" "include/duoforge/duoforge_encode.h")
 set(_re_long_suffix "${_boundary}(0[xX][0-9a-fA-F]+|[0-9]+)[uU]?[lL]")
 set(_re_pragma_pack "#[ \t]*pragma[ \t]+pack")
 set(_re_attr_packed "__attribute__[ \t]*\\(\\(packed")
