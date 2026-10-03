@@ -2073,7 +2073,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   angerpoint -- data/abilities.ts:131-142  [unmodelled: callback onHit; read by id in sim/battle.ts]
  *   anticipation -- data/abilities.ts:174-195  [unmodelled: callback onStart]
  *   aromaveil -- data/abilities.ts:234-248  [unmodelled: callback onAllyTryAddVolatile]
- *   auraguard -- data/abilities.ts:310-319  [unmodelled: callback onSourceModifyDamage]
+ *   auraguard -- data/abilities.ts:310-319
  *   battlearmor -- data/abilities.ts:355-361  [unmodelled: callback onCriticalHit]
  *   berserk -- data/abilities.ts:414-444, data/mods/champions/abilities.ts:8-13  [unmodelled: callback onAfterMoveSecondary; callback onDamage; callback onTryEatItem]
  *   bigpecks -- data/abilities.ts:445-459  [unmodelled: callback onTryBoost]
@@ -2852,7 +2852,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_ANGERPOINT] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_ANTICIPATION] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_AROMAVEIL] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_AURAGUARD] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_AURAGUARD] = DFI_HANDLER_NONE,
     [DFI_ABILITY_BATTLEARMOR] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_BERSERK] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_BIGPECKS] = DFI_HANDLER_UNMODELED,
@@ -6987,7 +6987,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_ANGERPOINT] = "callback onHit; read by id in sim/battle.ts",
     [DFI_ABILITY_ANTICIPATION] = "callback onStart",
     [DFI_ABILITY_AROMAVEIL] = "callback onAllyTryAddVolatile",
-    [DFI_ABILITY_AURAGUARD] = "callback onSourceModifyDamage",
     [DFI_ABILITY_BATTLEARMOR] = "callback onCriticalHit",
     [DFI_ABILITY_BERSERK] = "callback onAfterMoveSecondary; callback onDamage; callback onTryEatItem",
     [DFI_ABILITY_BIGPECKS] = "callback onTryBoost",
@@ -7141,10 +7140,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0xecu, 0x06u, 0x4cu, 0xafu, 0x0eu, 0x50u, 0xaau, 0x9du,
-    0x67u, 0x73u, 0xefu, 0x43u, 0x44u, 0x16u, 0x18u, 0x29u,
-    0xa5u, 0xd2u, 0xadu, 0xa3u, 0x88u, 0x03u, 0xd9u, 0xf1u,
-    0x95u, 0xb9u, 0xa3u, 0x5fu, 0x2au, 0x6au, 0xb5u, 0x1au,
+    0xf1u, 0x7du, 0xb3u, 0x99u, 0xf9u, 0x77u, 0x54u, 0xa5u,
+    0x69u, 0x91u, 0x59u, 0x5du, 0xeeu, 0xf2u, 0xf9u, 0x26u,
+    0xa0u, 0x99u, 0xa9u, 0x95u, 0xb7u, 0x00u, 0xebu, 0xfbu,
+    0x67u, 0x97u, 0x69u, 0xd0u, 0xd3u, 0x7bu, 0xd3u, 0xeeu,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)

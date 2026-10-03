@@ -1223,7 +1223,8 @@ class ItemAbilityFeatures(unittest.TestCase):
                                                                  'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof',
                                                                  'unnerve', 'speedboost', 'compoundeyes', 'ironfist',
                                                                  'sharpness', 'solidrock', 'technician', 'multiscale',
-                                                                 'galewings', 'raindish', 'friendguard']})
+                                                                 'galewings', 'raindish', 'friendguard',
+                                                                 'auraguard']})
 
 
 class Bounds(unittest.TestCase):
@@ -1581,7 +1582,7 @@ class SmallRulesG35(unittest.TestCase):
 
     def sources(self, skip=(None, None)):
         abilities = []
-        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS:
+        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS:
             kept = [f for i, f in enumerate(facts) if (aid, i) != skip]
             abilities.append(entry(aid, *kept))
         items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS]
@@ -1602,6 +1603,15 @@ class SmallRulesG35(unittest.TestCase):
     def test_the_rows_of_the_step(self):
         for ability in ('raindish', 'friendguard'):
             self.assertIn(ability, gen_closure.ENGINE_ROWS['abilities'])
+
+    def test_aura_guard_of_mega_batch_2_is_demanded_whole(self):
+        self.assertEqual([aid for aid, _ in gen_closure.MEGA2_ABILITY_FACTS], ['auraguard'])
+        self.assertIn('auraguard', gen_closure.ENGINE_ROWS['abilities'])
+        for aid, facts in gen_closure.MEGA2_ABILITY_FACTS:
+            for i in range(len(facts)):
+                with self.subTest(ability=aid, fact=facts[i]), self.assertRaises(SystemExit) as cm:
+                    gen_closure.check_g34_facts(*self.sources((aid, i)))
+                self.assertIn('the entry no longer has', str(cm.exception.code))
 
 
 if __name__ == '__main__':

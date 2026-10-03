@@ -954,7 +954,7 @@ const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'expertbel
     abilities: ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
         'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll', 'innerfocus', 'liquidvoice',
         'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof', 'unnerve', 'speedboost',
-        'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard']};
+        'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'auraguard']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
     'randomNormal', 'allAdjacent', 'allies']);
 // The fields of a move that the tables model (gen_closure.py DATA_KEYS and IGNORED_KEYS), nothing else.

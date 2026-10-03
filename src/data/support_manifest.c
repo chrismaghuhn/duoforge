@@ -421,6 +421,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_SPEEDBOOST] = 1u,
             [DFI_ABILITY_RAINDISH] = 1u, /* step G35 */
             [DFI_ABILITY_FRIENDGUARD] = 1u,
+            [DFI_ABILITY_AURAGUARD] = 1u, /* Mega batch 2 (the Mega ability of Lucario-Mega-Z) */
         },
     .items =
         {
@@ -462,6 +463,11 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_MALAMARITE] = 1u,
             [DFI_ITEM_SCEPTILITE] = 1u,
             [DFI_ITEM_SCRAFTINITE] = 1u,
+            /* Mega batch 2: Swampertite (Swift Swim), Metagrossite (Tough Claws) and Lucarionite Z (Aura Guard); the base
+             * formes' abilities (Torrent, Clear Body, Inner Focus) are marked. */
+            [DFI_ITEM_SWAMPERTITE] = 1u,
+            [DFI_ITEM_METAGROSSITE] = 1u,
+            [DFI_ITEM_LUCARIONITEZ] = 1u,
             [DFI_ITEM_BLACKBELT] = 1u,
             [DFI_ITEM_BLACKGLASSES] = 1u,
             [DFI_ITEM_CHARCOAL] = 1u,
