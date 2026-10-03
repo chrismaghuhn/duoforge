@@ -249,9 +249,11 @@ unsigned df_conf_compare_state(FILE *out, const duoforge_context *ctx, const duo
             }
             const dfi_member *mem = &b->sides[s].members[m];
             /* The item the member holds now: its sheet's unless used up, and not one that a move took (the POOL tail's
-             * item_now, DFI_TAIL_ITEM_NONE; zero under the other kinds). */
+             * item_now, DFI_TAIL_ITEM_NONE; zero under the other kinds); an item that a move gave it (item_now 1 to 254,
+             * step G29) is held even without a sheet item. */
+            const uint32_t now = b->tail.sides[s].item_now[m];
             const uint32_t held =
-                mem->item != 0u && mem->item_consumed == 0u && b->tail.sides[s].item_now[m] != DFI_TAIL_ITEM_NONE ? 1u : 0u;
+                mem->item_consumed == 0u && now != DFI_TAIL_ITEM_NONE && (now != 0u || mem->item != 0u) ? 1u : 0u;
             if (held != e->held) {
                 fprintf(out, "  %s step %u: side %u member %u holds %u, reference %u\n", name, step, s, m, held,
                         e->held);

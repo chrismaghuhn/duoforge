@@ -33,9 +33,9 @@ extern "C" {
 #endif
 
 #define DUOFORGE_VERSION_MAJOR 0
-#define DUOFORGE_VERSION_MINOR 36
+#define DUOFORGE_VERSION_MINOR 42
 #define DUOFORGE_VERSION_PATCH 0
-#define DUOFORGE_VERSION_STRING "0.36.0"
+#define DUOFORGE_VERSION_STRING "0.42.0"
 
 /* Identifiers of the artifacts that exist now (registry: decisions 0002, 0005, 0006). */
 #define DUOFORGE_SEMANTICS_ID           3u   /* "duoforge-m3-closure" */
@@ -697,8 +697,8 @@ duoforge_status duoforge_battle_step(const duoforge_context *ctx, duoforge_battl
 #define DUOFORGE_TERRAIN_NONE   0u
 #define DUOFORGE_TERRAIN_GRASSY 1u
 #define DUOFORGE_TERRAIN_PSYCHIC 2u /* Team C (Psychic Surge) */
-#define DUOFORGE_TERRAIN_ELECTRIC 3u /* POOL (decision 0018): not produced yet */
-#define DUOFORGE_TERRAIN_MISTY    4u /* POOL: not produced yet */
+#define DUOFORGE_TERRAIN_ELECTRIC 3u /* POOL (decision 0018): produced since step G25 (#163: Electric Terrain, Electric Surge; Steel Roller ends it) */
+#define DUOFORGE_TERRAIN_MISTY    4u /* POOL: produced since step G25 (#163: Misty Terrain; Steel Roller ends it) */
 #define DUOFORGE_MOVE_SLOT_NONE 0xFFu /* position view: no locked move */
 
 typedef struct duoforge_member_view {
@@ -831,7 +831,7 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_TYPE_STEEL    16u
 #define DUOFORGE_TYPE_WATER    17u
 
-/* Bits of duoforge_position_ext.volatiles (bits 20 to 31 are reserved, 0). */
+/* Bits of duoforge_position_ext.volatiles (bits 21 to 31 are reserved, 0). */
 #define DUOFORGE_POSITION_EXT_SUBSTITUTE   0x00000001u
 #define DUOFORGE_POSITION_EXT_TAUNT        0x00000002u
 #define DUOFORGE_POSITION_EXT_IMPRISON     0x00000004u
@@ -852,13 +852,14 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_POSITION_EXT_RAGE_POWDER  0x00020000u
 #define DUOFORGE_POSITION_EXT_TYPE_CHANGED 0x00040000u
 #define DUOFORGE_POSITION_EXT_ILLUSION_UP  0x00080000u
+#define DUOFORGE_POSITION_EXT_ROOST        0x00100000u /* Roost: the Flying type is off until the end of the turn */
 /* Bits of duoforge_side_ext.guard_flags (this turn only). */
 #define DUOFORGE_SIDE_GUARD_WIDE_GUARD  1u
 #define DUOFORGE_SIDE_GUARD_QUICK_GUARD 2u
 /* duoforge_member_ext.item_now: the member holds nothing (Knock Off, Thief). */
 #define DUOFORGE_ITEM_NOW_NONE 255u
 
-/* Bit numbers of duoforge_observation_ext.supported, by tier (decision 0018 section 7.1). Bits 40 to 63 are free. */
+/* Bit numbers of duoforge_observation_ext.supported, by tier (decision 0018 section 7.1). Bits 42 to 63 are free. */
 #define DUOFORGE_VIEWEXT_FEATURE_WEATHER_SAND     0u
 #define DUOFORGE_VIEWEXT_FEATURE_WEATHER_SNOW     1u
 #define DUOFORGE_VIEWEXT_FEATURE_ABILITY_CHANGE   2u
@@ -899,7 +900,9 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_VIEWEXT_FEATURE_NO_RETREAT       37u
 #define DUOFORGE_VIEWEXT_FEATURE_QUICK_GUARD      38u
 #define DUOFORGE_VIEWEXT_FEATURE_RAGE_POWDER      39u
-#define DUOFORGE_VIEWEXT_FEATURE_COUNT            40u
+#define DUOFORGE_VIEWEXT_FEATURE_ROOST            40u
+#define DUOFORGE_VIEWEXT_FEATURE_MOVE_FAILED      41u
+#define DUOFORGE_VIEWEXT_FEATURE_COUNT            42u
 
 /* Field-wide, public. */
 typedef struct duoforge_field_ext {
@@ -916,7 +919,8 @@ typedef struct duoforge_position_ext {
     uint8_t disable_slot;  /* the barred move slot + 1; 0: none */
     uint8_t stockpile;     /* 0 to 3 levels */
     uint8_t perish;        /* the Perish count shown, 3 to 1; 0: none */
-    uint8_t reserved[4];   /* zero */
+    uint8_t move_failed;   /* 0/1: the occupant's last move failed last turn (the pin's moveLastTurnResult === false), public */
+    uint8_t reserved[3];   /* zero */
 } duoforge_position_ext; /* 16 bytes */
 
 /* One roster member, bench included. */
@@ -1015,7 +1019,9 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_EVENT_ABILITY         34u /* [-ability] position, id2: ability + 1. POOL kinds, cause ABILITY (Trace copying
                                                a foe's): other is the foe, id2 the copied ability + 1 */
 #define DUOFORGE_EVENT_ACTIVATE        35u /* [-activate] position; cause ABILITY + id2 (Lightning Rod, Emergency Exit) or MOVE + id2 (Struggle);
-                                                    Flower Veil's [-block] too: position the protected Pokemon, other the holder ([of]) */
+                                                    Flower Veil's [-block] too: position the protected Pokemon, other the holder ([of]);
+                                                    POOL kinds: [-fieldactivate|move: Perish Song] is cause MOVE, id2 the move, position
+                                                    and other DUOFORGE_NO_POSITION */
 #define DUOFORGE_EVENT_UPKEEP          36u /* [upkeep] the end-of-turn effects are done */
 #define DUOFORGE_EVENT_RESULT          37u /* [win] or [tie] detail: DUOFORGE_RESULT_* */
 #define DUOFORGE_EVENT_SINGLE_TURN     38u /* [-singleturn] position (Team C): id: the move; other: the user ([of]) for
@@ -1025,6 +1031,11 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_EVENT_VOLATILE_END    40u /* [-end] position (POOL kinds), detail: DUOFORGE_VOLATILE_* */
 #define DUOFORGE_EVENT_TYPE_CHANGE     41u /* [-start|X|typechange|TYPE] position (POOL kinds): the occupant's type is now the single
                                               type in detail (DUOFORGE_TYPE_*; Soak: Water); cause MOVE, id2: the move */
+#define DUOFORGE_EVENT_ITEM_START      42u /* [-item|X|Item|[from] move: M[|[of] Y]] position (POOL kinds): the Pokemon now holds the
+                                              item that move M gave it (Trick, Switcheroo, Thief, Covet); id2: the item + 1, cause
+                                              MOVE with id: the move, other: the Pokemon it came from when the line says [of]
+                                              (Thief, Covet), else DUOFORGE_NO_POSITION. The item that left the other Pokemon is
+                                              ITEM_END with the cause ITEM_TAKEN (Thief, Trick, Switcheroo), or no line (Covet) */
 
 /* Causes ([from] and [of] in the protocol). */
 #define DUOFORGE_CAUSE_NONE      0u /* the move or the plain mechanic */
@@ -1049,6 +1060,7 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                          it fires only for Sand: Snow has no residual damage and Hail is not in the format */
 #define DUOFORGE_CAUSE_RECHARGE  18u /* CANT (POOL kinds): the recharge turn after a recharge move ([cant] recharge) */
 #define DUOFORGE_CAUSE_DISABLE   19u /* CANT (POOL kinds): the move that Disable bars ([cant] Disable|move); id: the move */
+#define DUOFORGE_CAUSE_TAUNT     20u /* CANT (POOL kinds): a Status move stopped by Taunt ([cant] move: Taunt|move); id: the move */
 #define DUOFORGE_CAUSE_HEAL_BLOCK 15u /* CANT (POOL kinds): a move that heals, stopped by Heal Block; id: the stopped move.
                                          A sound move stopped by Throat Chop is CANT with cause MOVE, id2: Throat Chop
                                          (the line names no move, so id is 0) */
@@ -1056,6 +1068,8 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                          the user); id: the move, other: the user, id2: item + 1. The old item_used
                                          of the view shows it gone as for an item used up; item_now tells them apart
                                          (DUOFORGE_ITEM_NOW_NONE) */
+#define DUOFORGE_CAUSE_IMPRISON  21u /* CANT (POOL kinds): a move that the foe's Imprison forbids, queued before it was used
+                                         ([cant] move: Imprison|Move); id: the stopped move, no PP is used */
 
 #define DUOFORGE_EVENT_FLAG_STILL  1u  /* MOVE: the charge turn of a two-turn move */
 #define DUOFORGE_EVENT_FLAG_LOCKED 2u  /* MOVE: the locked turn ([from] lockedmove) */
@@ -1073,13 +1087,30 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                               [cant] recharge line or with the occupant */
 #define DUOFORGE_VOLATILE_DISABLE    4u /* VOLATILE_START / VOLATILE_END: Disable (-start|X|Disable|MOVE, -end|X|Disable); START: id: the
                                               barred move, and for Cursed Body cause ABILITY, id2: ability + 1, other: its holder */
+#define DUOFORGE_VOLATILE_PERISH     5u /* VOLATILE_START: -start|X|perishN (Perish Song): amount N, 3 to 0, one line per count
+                                              in the residual; at 0 the holder faints (a FAINT event follows the UPKEEP). No
+                                              END; the cast itself shows nothing (its -start perish3 is [silent]) */
+#define DUOFORGE_VOLATILE_IMPRISON   8u /* VOLATILE_START (POOL kinds): -start|X|move: Imprison; no END, it ends with the occupant
+                                              (position: the Pokemon that used it; its foes may not use the moves it knows) */
+#define DUOFORGE_VOLATILE_TAUNT      6u /* VOLATILE_START / VOLATILE_END: Taunt (-start|X|move: Taunt, -end|X|move: Taunt) */
+#define DUOFORGE_VOLATILE_YAWN       7u /* VOLATILE_START: Yawn (-start|X|move: Yawn|[of] source; other: the source). No END: the end line is
+                                              silent, and the sleep it brings is the STATUS event of the residual */
 #define DUOFORGE_FIELD_GRASSY_TERRAIN 1u
 #define DUOFORGE_FIELD_TRICK_ROOM     2u
 #define DUOFORGE_FIELD_PSYCHIC_TERRAIN 3u /* Team C */
+#define DUOFORGE_FIELD_ELECTRIC_TERRAIN 4u /* POOL kinds (step G25): FIELD_START / FIELD_END detail */
+#define DUOFORGE_FIELD_MISTY_TERRAIN   5u /* POOL kinds (step G25) */
 #define DUOFORGE_SIDE_TAILWIND     1u
 #define DUOFORGE_SIDE_REFLECT      2u
 #define DUOFORGE_SIDE_LIGHT_SCREEN 3u
 #define DUOFORGE_SIDE_AURORA_VEIL  4u /* SIDE_START / SIDE_END amount (POOL kinds): -sidestart|side|move: Aurora Veil */
+/* The entry hazards (POOL kinds, step G37; values awaiting the owner's OK). SIDE_START / SIDE_END amount: -sidestart|side|move: Stealth Rock
+   (Spikes, Toxic Spikes and Sticky Web alike); a Spikes or Toxic Spikes layer is another SIDE_START of the same amount. SIDE_END: -sideend|side|
+   move: Toxic Spikes|[of] POKEMON (a grounded Poison type absorbed them; other = that Pokemon). The side field of the view has the layers. */
+#define DUOFORGE_SIDE_STEALTH_ROCK 5u
+#define DUOFORGE_SIDE_SPIKES       6u
+#define DUOFORGE_SIDE_TOXIC_SPIKES 7u
+#define DUOFORGE_SIDE_STICKY_WEB   8u
 #define DUOFORGE_RESULT_SIDE_0 1u
 #define DUOFORGE_RESULT_SIDE_1 2u
 #define DUOFORGE_RESULT_TIE    3u

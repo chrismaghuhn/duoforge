@@ -315,9 +315,15 @@ static void check_invariants(df_test *t, const duoforge_context *ctx)
         DF_CHECK_EQ_U64(t, b->tail.sides[1].item_now[pos->occupant], DUOFORGE_ITEM_NOW_NONE);
         DF_CHECK(t, ((uint32_t)pos->flags & DFI_VOL_UNBURDEN) != 0u); /* set by the removal */
         DF_CHECK(t, check_of(ctx, b) == DFI_INV_NONE);
-        /* The same Pokemon with its item back: the volatile has no loss behind it. */
+        /* The same Pokemon with its item back: since step G29 the volatile may stand with an item held (a Trick, Thief or Covet
+         * that took the item and gave another back, or failed after the TakeItem handlers ran: data/moves.ts:19865-19911,
+         * sim/pokemon.ts:1851-1866), and no state tells that from this one, so the check no longer refuses it under the POOL kinds
+         * (tests/test_pool_g29.c check_kind_rules runs the same state under TEAM_C_DEV, where it is still refused). */
         b->tail.sides[1].item_now[pos->occupant] = 0u;
-        DF_CHECK(t, check_of(ctx, b) == DFI_INV_VOLATILE);
+        DF_CHECK(t, check_of(ctx, b) == DFI_INV_KNOWLEDGE); /* the foe saw the item go: a fact, as the Scarf case below says */
+        b->sides[0].knowledge[pos->occupant].revealed =
+            (uint8_t)((uint32_t)b->sides[0].knowledge[pos->occupant].revealed & ~(uint32_t)DFI_REVEALED_ITEM_CONSUMED);
+        DF_CHECK(t, check_of(ctx, b) == DFI_INV_NONE);
         /* An item that was only used up gives the volatile as before (Sitrus Berry eaten), the taken one as well. */
         b->sides[1].members[pos->occupant].item_consumed = 1u;
         DF_CHECK(t, check_of(ctx, b) == DFI_INV_NONE);
@@ -345,10 +351,10 @@ static void check_invariants(df_test *t, const duoforge_context *ctx)
         DF_CHECK(t, duoforge_battle_observe(ctx, b, 1u, &obs) == DUOFORGE_OK);
         DF_CHECK(t, (obs.sides[0].positions[0].reserved & DUOFORGE_POSITION_FLAG_UNBURDEN) == 0u);
         DF_CHECK(t, check_of(ctx, b) == DFI_INV_NONE);
-        /* The same member with an item that is no stone of its own: the volatile has no loss behind it. */
+        /* The same member with an item that is no stone of its own: valid as well since step G29 (see above), under POOL only. */
         hawlucha->item = 1u + DFI_ITEM_SITRUSBERRY;
         hawlucha->mega_capable = 0u;
-        DF_CHECK(t, check_of(ctx, b) == DFI_INV_VOLATILE);
+        DF_CHECK(t, check_of(ctx, b) == DFI_INV_NONE);
         duoforge_battle_destroy(b);
     }
     b = replay_to(t, ctx, "g24_hawlucha_malamar", 4u);
@@ -417,12 +423,13 @@ int main(void)
     DF_CHECK_EQ_U64(&t, DFI_SPECIAL_KNOCK_OFF, 24u);
     DF_CHECK_EQ_U64(&t, DFI_SPECIAL_EXPANDING_FORCE, 25u); /* step G15 */
     DF_CHECK_EQ_U64(&t, DFI_SPECIAL_GLAIVE_RUSH, 26u); /* step G19 */
-    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_DISABLE + 1u); /* after Aurora Veil (G20), Spiky Shield, the four of step G28, the three of step G30, the eight of step G32 and the three of step G34 */
+    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_YAWN + 1u); /* after Aurora Veil (G20), Spiky Shield, the four of step G28, the three of step G30, the eight of step G32, the three of step G34, Disable (G27), the four of step G25 and Super Fang (G39) */
     DF_CHECK(&t, dfi_support.moves[DFI_MOVE_KNOCKOFF] != 0u && dfi_support.abilities[DFI_ABILITY_STICKYHOLD] != 0u);
     DF_CHECK(&t, (dfi_support.view_ext_features & ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ITEM_CHANGE)) != 0u);
-    /* Trick, Switcheroo and Thief stay unmarked: no accepted battle has a swapped item (item_now is 0 or 255 only). */
-    DF_CHECK(&t, dfi_support.moves[DFI_MOVE_TRICK] == 0u && dfi_support.moves[DFI_MOVE_SWITCHEROO] == 0u &&
-                     dfi_support.moves[DFI_MOVE_THIEF] == 0u);
+    /* Trick, Switcheroo, Thief and Covet were unmarked here (item_now was 0 or 255 only); step G29 marks them (the item that a
+     * move gave is item_now too: tests/test_pool_g29.c). */
+    DF_CHECK(&t, dfi_support.moves[DFI_MOVE_TRICK] != 0u && dfi_support.moves[DFI_MOVE_SWITCHEROO] != 0u &&
+                     dfi_support.moves[DFI_MOVE_THIEF] != 0u && dfi_support.moves[DFI_MOVE_COVET] != 0u);
 
     uint32_t compared = 0u;
     check_battles(&t, kp, &compared);

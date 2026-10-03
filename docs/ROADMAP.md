@@ -168,6 +168,19 @@ A second reference point (owner, 2026-10-03): nessie123 (Smogon, 2026-09-28) was
 
 The search must stay deterministic given its seeds.
 
+Memory layout for the stage 2 tree (owner, 2026-10-03): allocate the nodes from a preallocated arena and link them by 32-bit indices, not by pointers. This also keeps heap allocation out of the hot path, as AGENTS.md requires. Parallelism comes from many trees at once, one per game, not from threads sharing one tree.
+- **Reference:** the poke-engine fork larry-the-table-guy/poke-engine, PR #10 ("perf: Arena!") and PR #11 (4-byte handles).
+- **What PR #10 measured:** a 5-second-search benchmark went from 2:50 to 2:24 on one thread and from 3:54 to 2:30 on eight. Most of the gain comes from dropping a whole tree at once.
+- These are their numbers on their engine, not ours.
+
+Status of stage 1 (spec `docs/superpowers/specs/2026-10-03-m12-search-stage1-design.md`, decision 0022, plan `docs/superpowers/plans/2026-10-03-m12-search-stage1.md`):
+- **Built and merged on 2026-10-03:**
+  - the matrix game and the decision keys (plan PR C, #204);
+  - the library's leaf expansion and search seeds (plan PR A, #203, 0.42.0);
+  - the Python bindings (plan PR B, #205);
+  - `Model.value`, the lookahead and `SearchPlayer` (plan PR D, #206).
+- **Open:** the arena measurement against the same network without search (plan PR E). It needs the GPU, so it runs after the night run. It should also vary the number of sampled worlds: mikumiku37's author reports nonsensical plays at 4 worlds, uses 16, and considers 64 to 128 ideal.
+
 Exit:
 - The Elo gain over the raw policy on the ladder, at a fixed time per move.
 - A report like the learning reports in `docs/learning/`.

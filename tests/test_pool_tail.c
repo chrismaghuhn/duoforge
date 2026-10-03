@@ -1,16 +1,17 @@
 /*
- * duoforge.state.pool_tail (white-box): the POOL state tail of decision 0015 section 7, schema 0x0303 = "v3 + pool
- * tail rev 3".
+ * duoforge.state.pool_tail (white-box): the POOL state tail of decision 0015 section 7, schema 0x0403 = "v3 + pool
+ * tail rev 4".
  *
- * The tail is part of the state under the two POOL kinds only: 248 more bytes (1257 in all) that the encoder, the
+ * The tail is part of the state under the two POOL kinds only: 288 more bytes (1297 in all) that the encoder, the
  * decoder, the digest, equal, the invariants, clone and copy all carry; under CLOSURE, CLOSURE_DEV, TEAM_C and
  * TEAM_C_DEV it is absent (all zero in memory, not in the encoding) and the states of those kinds are byte for byte
  * what they were: the digests below were taken from the tree before the tail existed. Rev 1 (schema 0x0103, 42
  * bytes) is not decodable: pool states are not frozen, there is no migration. Rev 2 adds the volatile, side and
- * field conditions and the member overrides that decision 0018 declares as view fields; no mechanic writes them
- * yet, so the tests set them by hand.
+ * field conditions and the member overrides that decision 0018 declares as view fields; rev 3 the Protect variant; rev 4
+ * the move result, the single-turn markers, the hits taken, the ability state, the lock counter, Quick Guard, the second
+ * type and the member flags (tail-rev4-proposal.md, cut B). Rev 4 has no mechanic yet, so the tests set its fields by hand.
  *
- * The independent oracle is tools/state_model/state_v3_model.py (run with --pool-tail): the envelope, the 248 tail
+ * The independent oracle is tools/state_model/state_v3_model.py (run with --pool-tail): the envelope, the 288 tail
  * bytes of the example and, for every tail byte, how many of the 255 other values the decoder accepts or refuses
  * with which invariant, are its output.
  */
@@ -32,16 +33,17 @@
 #include "support/pool.h"
 #include "support/team_c.h"
 
-/* The model's envelope of a POOL state (tools/state_model, "pool_tail envelope"): magic, kind 2, schema 0x0303,
- * semantics 3, length 1257. */
-static const char ENVELOPE_HEX[] = "8944554f0d0a1a0a0200030303000000e9040000";
+/* The model's envelope of a POOL state (tools/state_model, "pool_tail envelope"): magic, kind 2, schema 0x0403,
+ * semantics 3, length 1297. */
+static const char ENVELOPE_HEX[] = "8944554f0d0a1a0a020003040300000011050000";
 /* The model's tail bytes of the example below ("pool_tail example"). */
 static const char TAIL_HEX[] =
-    "0500000000000000010802010301000001020302050304030501000603010402010302030100140025000000000000000500"
-    "00010201010000000100000000000001010000010100000000000000000005002c01050c0000d7005a0112ff000000000100"
-    "00a6000000000000000100000000000000000000000000000000000000000000010000000404010003000000000000000000"
-    "010100000000000000000000000000000000000000000000000000000001030000000000000000000000ff01000000000000"
-    "010000000100000000000000000000000000000000000000000000000000000000000000000000000000070000640000";
+    "050000000000000001080201030101b101020302050304030501000603010402010302030100140025000006020606030000"
+    "00000500000102010100000001000000000000010100000101000000000f000101010000000005002c01050c00120100d700"
+    "5a0112ff00ff00000000010000a6000001000000000000010000000000000000000000000000000000000000000000000000"
+    "0000010000010404010003000000000000000000010100000000000000000000000400030000000000000000000000000000"
+    "00000001030000000000000000000000ff010009020000000000000001000000010000010000000000000000000000000000"
+    "0000000000000000000000000000000000000000000000000000000000000700006400000100";
 
 /* The maximum HP of the members 0 and 1 of both sides at the first TURN boundary (the Substitute bound is a quarter
  * of it): the model's LEAD_HP_MAX, asserted below. */
@@ -61,12 +63,12 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 0, 0, 0, 255},
     {1, 254, 0, 0, 0, 0},
     {8, 247, 0, 0, 0, 0},
+    {1, 254, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0},
     {2, 253, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0},
     {1, 254, 0, 0, 0, 0},
-    {3, 252, 0, 0, 0, 0},
-    {1, 254, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 255},
-    {0, 0, 0, 0, 0, 255},
+    {23, 232, 0, 0, 0, 0},
     {5, 0, 250, 0, 0, 0},
     {3, 0, 252, 0, 0, 0},
     {3, 0, 252, 0, 0, 0},
@@ -94,7 +96,11 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {254, 0, 1, 0, 0, 0},
     {1, 0, 254, 0, 0, 0},
     {0, 0, 255, 0, 0, 0},
-    {0, 0, 0, 0, 0, 255},
+    {15, 0, 240, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0},
+    {6, 0, 249, 0, 0, 0},
+    {6, 0, 249, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0},
     {0, 0, 0, 0, 0, 255},
     {0, 0, 0, 0, 0, 255},
     {0, 0, 0, 0, 0, 255},
@@ -126,7 +132,11 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 255, 0, 0, 0},
     {0, 0, 255, 0, 0, 0},
     {0, 0, 255, 0, 0, 0},
-    {0, 0, 0, 0, 0, 255},
+    {15, 0, 240, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0},
+    {6, 0, 249, 0, 0, 0},
+    {6, 0, 249, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0},
     {0, 0, 0, 0, 0, 255},
     {0, 0, 0, 0, 0, 255},
     {0, 0, 0, 0, 0, 255},
@@ -138,6 +148,8 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {18, 0, 0, 237, 0, 0},
     {167, 0, 0, 88, 0, 0},
     {0, 0, 0, 255, 0, 0},
+    {19, 0, 0, 236, 0, 0},
+    {1, 0, 0, 254, 0, 0},
     {0, 0, 0, 0, 0, 255},
     {215, 0, 0, 40, 0, 0},
     {0, 0, 0, 255, 0, 0},
@@ -146,6 +158,8 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {18, 0, 0, 237, 0, 0},
     {167, 0, 0, 88, 0, 0},
     {0, 0, 0, 255, 0, 0},
+    {19, 0, 0, 236, 0, 0},
+    {1, 0, 0, 254, 0, 0},
     {0, 0, 0, 0, 0, 255},
     {0, 0, 0, 255, 0, 0},
     {0, 0, 0, 255, 0, 0},
@@ -154,6 +168,8 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 0, 255, 0, 0},
     {167, 0, 0, 88, 0, 0},
     {0, 0, 0, 255, 0, 0},
+    {0, 0, 0, 255, 0, 0},
+    {1, 0, 0, 254, 0, 0},
     {0, 0, 0, 0, 0, 255},
     {0, 0, 0, 255, 0, 0},
     {0, 0, 0, 255, 0, 0},
@@ -162,6 +178,8 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 0, 255, 0, 0},
     {167, 0, 0, 88, 0, 0},
     {0, 0, 0, 255, 0, 0},
+    {0, 0, 0, 255, 0, 0},
+    {1, 0, 0, 254, 0, 0},
     {0, 0, 0, 0, 0, 255},
     {0, 0, 0, 255, 0, 0},
     {0, 0, 0, 255, 0, 0},
@@ -170,6 +188,8 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 0, 255, 0, 0},
     {167, 0, 0, 88, 0, 0},
     {0, 0, 0, 255, 0, 0},
+    {0, 0, 0, 255, 0, 0},
+    {1, 0, 0, 254, 0, 0},
     {0, 0, 0, 0, 0, 255},
     {0, 0, 0, 255, 0, 0},
     {0, 0, 0, 255, 0, 0},
@@ -178,15 +198,17 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 0, 255, 0, 0},
     {167, 0, 0, 88, 0, 0},
     {0, 0, 0, 255, 0, 0},
+    {0, 0, 0, 255, 0, 0},
+    {1, 0, 0, 254, 0, 0},
     {0, 0, 0, 0, 0, 255},
     {1, 254, 0, 0, 0, 0},
     {8, 247, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0},
+    {1, 254, 0, 0, 0, 0},
     {2, 253, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0},
     {1, 254, 0, 0, 0, 0},
-    {3, 252, 0, 0, 0, 0},
-    {1, 254, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 255},
-    {0, 0, 0, 0, 0, 255},
+    {0, 255, 0, 0, 0, 0},
     {5, 0, 250, 0, 0, 0},
     {3, 0, 252, 0, 0, 0},
     {3, 0, 252, 0, 0, 0},
@@ -214,7 +236,11 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 255, 0, 0, 0},
     {0, 0, 255, 0, 0, 0},
     {0, 0, 255, 0, 0, 0},
-    {0, 0, 0, 0, 0, 255},
+    {15, 0, 240, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0},
+    {6, 0, 249, 0, 0, 0},
+    {6, 0, 249, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0},
     {0, 0, 0, 0, 0, 255},
     {0, 0, 0, 0, 0, 255},
     {0, 0, 0, 0, 0, 255},
@@ -246,7 +272,11 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {255, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0},
     {0, 0, 255, 0, 0, 0},
-    {0, 0, 0, 0, 0, 255},
+    {15, 0, 240, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0},
+    {6, 0, 249, 0, 0, 0},
+    {6, 0, 249, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0},
     {0, 0, 0, 0, 0, 255},
     {0, 0, 0, 0, 0, 255},
     {0, 0, 0, 0, 0, 255},
@@ -258,6 +288,8 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {18, 0, 0, 237, 0, 0},
     {167, 0, 0, 88, 0, 0},
     {0, 0, 0, 255, 0, 0},
+    {19, 0, 0, 236, 0, 0},
+    {1, 0, 0, 254, 0, 0},
     {0, 0, 0, 0, 0, 255},
     {215, 0, 0, 40, 0, 0},
     {0, 0, 0, 255, 0, 0},
@@ -266,6 +298,8 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {18, 0, 0, 237, 0, 0},
     {167, 0, 0, 88, 0, 0},
     {0, 0, 0, 255, 0, 0},
+    {19, 0, 0, 236, 0, 0},
+    {1, 0, 0, 254, 0, 0},
     {0, 0, 0, 0, 0, 255},
     {0, 0, 0, 255, 0, 0},
     {0, 0, 0, 255, 0, 0},
@@ -274,6 +308,8 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 0, 255, 0, 0},
     {167, 0, 0, 88, 0, 0},
     {0, 0, 0, 255, 0, 0},
+    {0, 0, 0, 255, 0, 0},
+    {1, 0, 0, 254, 0, 0},
     {0, 0, 0, 0, 0, 255},
     {0, 0, 0, 255, 0, 0},
     {0, 0, 0, 255, 0, 0},
@@ -282,6 +318,8 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 0, 255, 0, 0},
     {167, 0, 0, 88, 0, 0},
     {0, 0, 0, 255, 0, 0},
+    {0, 0, 0, 255, 0, 0},
+    {1, 0, 0, 254, 0, 0},
     {0, 0, 0, 0, 0, 255},
     {0, 0, 0, 255, 0, 0},
     {0, 0, 0, 255, 0, 0},
@@ -290,6 +328,8 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 0, 255, 0, 0},
     {167, 0, 0, 88, 0, 0},
     {0, 0, 0, 255, 0, 0},
+    {0, 0, 0, 255, 0, 0},
+    {1, 0, 0, 254, 0, 0},
     {0, 0, 0, 0, 0, 255},
     {0, 0, 0, 255, 0, 0},
     {0, 0, 0, 255, 0, 0},
@@ -298,6 +338,8 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 0, 255, 0, 0},
     {167, 0, 0, 88, 0, 0},
     {0, 0, 0, 255, 0, 0},
+    {0, 0, 0, 255, 0, 0},
+    {1, 0, 0, 254, 0, 0},
     {0, 0, 0, 0, 0, 255},
 };
 
@@ -397,15 +439,22 @@ static void set_example_tail(duoforge_battle *b)
     a->stealth_rock = 1u;
     a->spikes = 3u;
     a->sticky_web = 1u;
+    a->quick_guard = 1u;
+    /* all four hazards up, created in the order Spikes, Stealth Rock, Sticky Web, Toxic Spikes */
+    a->hazard_order = (uint8_t)(DFI_HAZARD_SPIKES | (DFI_HAZARD_STEALTH_ROCK << 2u) | (DFI_HAZARD_STICKY_WEB << 4u) |
+                                (DFI_HAZARD_TOXIC_SPIKES << 6u));
     a->positions[0] = (dfi_tail_pos){.substitute_hp = 20u, .trap_move = 37u, .last_move = 1u, .encore_slot = 2u,
                                      .encore_turns = 3u, .throat_chop_turns = 2u, .heal_block_turns = 5u,
                                      .perish = 3u, .taunt_turns = 4u, .disable_slot = 3u, .disable_turns = 5u,
                                      .imprison = 1u, .trap_turns = 6u, .trap_source = 3u, .trap_band = 1u,
                                      .leech_seed_source = 4u, .yawn_turns = 2u, .focus_energy = 1u,
-                                     .stockpile = 3u, .stockpile_def = 2u, .stockpile_spd = 3u, .charge = 1u};
+                                     .stockpile = 3u, .stockpile_def = 2u, .stockpile_spd = 3u, .charge = 1u,
+                                     .move_result = 6u, .single_turn = DFI_SINGLE_TURN_ROOST, .hits_taken = 6u,
+                                     .ability_state = 6u, .lock_turns = 3u};
     a->positions[1] = (dfi_tail_pos){.substitute_hp = 1u, .last_move = 5u, .throat_chop_turns = 1u,
                                      .heal_block_turns = 2u, .perish = 1u, .taunt_turns = 1u, .must_recharge = 1u,
-                                     .stockpile = 1u, .stockpile_def = 1u, .glaive_rush = 1u};
+                                     .stockpile = 1u, .stockpile_def = 1u, .glaive_rush = 1u, .move_result = 15u,
+                                     .hits_taken = 1u, .ability_state = 1u, .lock_turns = 1u};
     a->ability_now[0] = 5u;
     a->ability_now[1] = DFI_POOL_ABILITY_COUNT;
     a->forme_now[0] = 300u;
@@ -417,15 +466,23 @@ static void set_example_tail(duoforge_battle *b)
     a->item_now[1] = DFI_TAIL_ITEM_NONE;
     a->item_now[2] = DFI_POOL_ITEM_COUNT;
     a->item_now[3] = 1u;
+    a->type2[0] = 18u;
+    a->type2[1] = DFI_TAIL_TYPE2_TYPELESS;
+    a->member_flags[0] = DFI_TAIL_MEMBER_FLAG_HERO_SHOWN;
+    a->member_flags[2] = DFI_TAIL_MEMBER_FLAG_HERO_SHOWN;
     dfi_tail_side *c = &b->tail.sides[1];
     c->spikes = 1u;
+    c->hazard_order = (uint8_t)DFI_HAZARD_SPIKES;
     c->positions[0] = (dfi_tail_pos){.last_move = 4u, .encore_slot = 4u, .encore_turns = 1u, .heal_block_turns = 3u,
-                                     .leech_seed_source = 1u, .yawn_turns = 1u};
-    c->positions[1] = (dfi_tail_pos){.trap_move = DFI_POOL_MOVE_COUNT, .trap_turns = 1u, .trap_source = 3u};
+                                     .leech_seed_source = 1u, .yawn_turns = 1u, .move_result = 4u, .hits_taken = 3u};
+    c->positions[1] = (dfi_tail_pos){.trap_move = DFI_POOL_MOVE_COUNT, .trap_turns = 1u, .trap_source = 3u,
+                                     .move_result = 9u, .single_turn = DFI_SINGLE_TURN_ROOST};
     c->ability_now[0] = 1u;
     c->forme_now[5] = 7u;
     c->soak_type[0] = 1u;
     c->item_now[5] = 100u;
+    c->type2[0] = 1u;
+    c->member_flags[5] = DFI_TAIL_MEMBER_FLAG_HERO_SHOWN;
 }
 
 static void digest_of(df_test *t, const duoforge_context *ctx, const duoforge_battle *b, uint8_t out[DUOFORGE_DIGEST_SIZE])
@@ -510,9 +567,9 @@ static void put_write(uint8_t *tail, const tail_write *w)
 #define W2(off, v) {(off), 2u, (v)}
 #define NO_WRITE {0u, 0u, 0u}
 
-/* Every field of the tail that a state can hold on its own, one at a time: 125 settings (the toxic stage is not one:
- * it needs a status that no state has). */
-enum { SETTINGS_MAX = 160 };
+/* Every field of the tail that a state can hold on its own, one at a time: 167 settings (the toxic stage is not one:
+ * it needs a status that no state has; Rage Powder's single-turn bit is not one either, it needs the Follow Me flag). */
+enum { SETTINGS_MAX = 200 };
 static size_t build_settings(tail_setting *out)
 {
     size_t n = 0u;
@@ -521,10 +578,23 @@ static size_t build_settings(tail_setting *out)
         const size_t so = DFI_ENC_TAIL_SIDES_OFF + s * DFI_ENC_TAIL_SIDE_SIZE;
         out[n++] = (tail_setting){"wide_guard", {W1(so + DFI_ENC_TAIL_WIDE_GUARD_OFF, 1u), NO_WRITE, NO_WRITE}};
         out[n++] = (tail_setting){"aurora_veil", {W1(so + DFI_ENC_TAIL_AURORA_VEIL_OFF, 1u), NO_WRITE, NO_WRITE}};
-        out[n++] = (tail_setting){"toxic_spikes", {W1(so + DFI_ENC_TAIL_TOXIC_SPIKES_OFF, 1u), NO_WRITE, NO_WRITE}};
+        /* a hazard that is up has its kind in the first slot of hazard_order (Stealth Rock is code 0, so it needs no write) */
+        out[n++] = (tail_setting){"toxic_spikes", {W1(so + DFI_ENC_TAIL_TOXIC_SPIKES_OFF, 1u),
+                                                   W1(so + DFI_ENC_TAIL_HAZARD_ORDER_OFF, DFI_HAZARD_TOXIC_SPIKES), NO_WRITE}};
         out[n++] = (tail_setting){"stealth_rock", {W1(so + DFI_ENC_TAIL_STEALTH_ROCK_OFF, 1u), NO_WRITE, NO_WRITE}};
-        out[n++] = (tail_setting){"spikes", {W1(so + DFI_ENC_TAIL_SPIKES_OFF, 1u), NO_WRITE, NO_WRITE}};
-        out[n++] = (tail_setting){"sticky_web", {W1(so + DFI_ENC_TAIL_STICKY_WEB_OFF, 1u), NO_WRITE, NO_WRITE}};
+        out[n++] = (tail_setting){"spikes", {W1(so + DFI_ENC_TAIL_SPIKES_OFF, 1u),
+                                             W1(so + DFI_ENC_TAIL_HAZARD_ORDER_OFF, DFI_HAZARD_SPIKES), NO_WRITE}};
+        out[n++] = (tail_setting){"sticky_web", {W1(so + DFI_ENC_TAIL_STICKY_WEB_OFF, 1u),
+                                                 W1(so + DFI_ENC_TAIL_HAZARD_ORDER_OFF, DFI_HAZARD_STICKY_WEB), NO_WRITE}};
+        /* two hazards, each order: Spikes then Stealth Rock (1 | 0 << 2), Stealth Rock then Spikes (0 | 1 << 2) */
+        out[n++] = (tail_setting){"hazard_order_spikes_first", {W1(so + DFI_ENC_TAIL_SPIKES_OFF, 1u),
+                                                                W1(so + DFI_ENC_TAIL_STEALTH_ROCK_OFF, 1u),
+                                                                W1(so + DFI_ENC_TAIL_HAZARD_ORDER_OFF, DFI_HAZARD_SPIKES)}};
+        out[n++] = (tail_setting){"hazard_order_stealth_rock_first", {W1(so + DFI_ENC_TAIL_SPIKES_OFF, 1u),
+                                                                      W1(so + DFI_ENC_TAIL_STEALTH_ROCK_OFF, 1u),
+                                                                      W1(so + DFI_ENC_TAIL_HAZARD_ORDER_OFF,
+                                                                         DFI_HAZARD_STEALTH_ROCK | (DFI_HAZARD_SPIKES << 2u))}};
+        out[n++] = (tail_setting){"quick_guard", {W1(so + DFI_ENC_TAIL_QUICK_GUARD_OFF, 1u), NO_WRITE, NO_WRITE}};
         for (uint32_t p = 0u; p < 2u; ++p) {
             const size_t po = so + DFI_ENC_TAIL_POS_OFF + p * DFI_ENC_TAIL_POS_SIZE;
             const unsigned other = 2u * s + p == 3u ? 1u : 4u; /* a source that is another position */
@@ -557,12 +627,19 @@ static size_t build_settings(tail_setting *out)
             out[n++] = (tail_setting){"charge", {W1(po + DFI_ENC_TAIL_POS_CHARGE_OFF, 1u), NO_WRITE, NO_WRITE}};
             out[n++] = (tail_setting){"glaive_rush", {W1(po + DFI_ENC_TAIL_POS_GLAIVE_RUSH_OFF, 1u), NO_WRITE, NO_WRITE}};
             out[n++] = (tail_setting){"substitute_hp", {W2(po + DFI_ENC_TAIL_POS_SUBSTITUTE_OFF, 1u), NO_WRITE, NO_WRITE}};
+            out[n++] = (tail_setting){"move_result", {W1(po + DFI_ENC_TAIL_POS_MOVE_RESULT_OFF, 9u), NO_WRITE, NO_WRITE}};
+            out[n++] = (tail_setting){"single_turn", {W1(po + DFI_ENC_TAIL_POS_SINGLE_TURN_OFF, DFI_SINGLE_TURN_ROOST), NO_WRITE, NO_WRITE}};
+            out[n++] = (tail_setting){"hits_taken", {W1(po + DFI_ENC_TAIL_POS_HITS_TAKEN_OFF, 1u), NO_WRITE, NO_WRITE}};
+            out[n++] = (tail_setting){"ability_state", {W1(po + DFI_ENC_TAIL_POS_ABILITY_STATE_OFF, 1u), NO_WRITE, NO_WRITE}};
+            out[n++] = (tail_setting){"lock_turns", {W1(po + DFI_ENC_TAIL_POS_LOCK_TURNS_OFF, 1u), NO_WRITE, NO_WRITE}};
         }
         for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
             const size_t mo = so + DFI_ENC_TAIL_MEMBER_OFF + m * DFI_ENC_TAIL_MEMBER_SIZE;
             out[n++] = (tail_setting){"forme_now", {W2(mo + DFI_ENC_TAIL_MEMBER_FORME_OFF, 2u), NO_WRITE, NO_WRITE}};
             out[n++] = (tail_setting){"item_now", {W1(mo + DFI_ENC_TAIL_MEMBER_ITEM_OFF, 3u), NO_WRITE, NO_WRITE}};
+            out[n++] = (tail_setting){"member_flags", {W1(mo + DFI_ENC_TAIL_MEMBER_FLAGS_OFF, DFI_TAIL_MEMBER_FLAG_HERO_SHOWN), NO_WRITE, NO_WRITE}};
             if (m < 2u) {
+                out[n++] = (tail_setting){"type2", {W1(mo + DFI_ENC_TAIL_MEMBER_TYPE2_OFF, DFI_TAIL_TYPE2_TYPELESS), NO_WRITE, NO_WRITE}};
                 out[n++] = (tail_setting){"ability_now", {W2(mo + DFI_ENC_TAIL_MEMBER_ABILITY_OFF, 1u), NO_WRITE, NO_WRITE}};
                 out[n++] = (tail_setting){"soak_type", {W1(mo + DFI_ENC_TAIL_MEMBER_SOAK_OFF, 1u), NO_WRITE, NO_WRITE}};
             }
@@ -599,6 +676,36 @@ MUT(m_toxic_spikes, ts->toxic_spikes = 3u)
 MUT(m_stealth_rock, ts->stealth_rock = 2u)
 MUT(m_spikes, ts->spikes = 4u)
 MUT(m_sticky_web, ts->sticky_web = 2u)
+MUT(m_quick_guard, ts->quick_guard = 2u)
+MUT(m_hazard_no_hazard, ts->hazard_order = 1u) /* nothing is up: the byte is 0 */
+MUT(m_hazard_missing_kind, {
+    ts->spikes = 1u; /* Spikes is up and its slot says Stealth Rock (code 0) */
+    ts->hazard_order = 0u;
+})
+MUT(m_hazard_duplicate, {
+    ts->spikes = 1u;
+    ts->stealth_rock = 1u;
+    ts->hazard_order = (uint8_t)(DFI_HAZARD_SPIKES | (DFI_HAZARD_SPIKES << 2u)); /* Spikes twice */
+})
+MUT(m_hazard_slot_beyond, {
+    ts->spikes = 1u;
+    ts->hazard_order = (uint8_t)(DFI_HAZARD_SPIKES | (DFI_HAZARD_STICKY_WEB << 2u)); /* a second slot with one kind up */
+})
+MUT(m_hazard_absent_kind, {
+    ts->spikes = 1u;
+    ts->sticky_web = 1u;
+    ts->hazard_order = (uint8_t)(DFI_HAZARD_SPIKES | (DFI_HAZARD_TOXIC_SPIKES << 2u)); /* Toxic Spikes is not up */
+})
+MUT(m_hazard_dropped_gap, {
+    ts->spikes = 1u;
+    ts->sticky_web = 1u;
+    ts->toxic_spikes = 1u;
+    ts->hazard_order = (uint8_t)(DFI_HAZARD_SPIKES | (DFI_HAZARD_STICKY_WEB << 2u)); /* three kinds up, two slots */
+})
+MUT(m_hazard_extra_slot, {
+    ts->stealth_rock = 1u;
+    ts->hazard_order = (uint8_t)(DFI_HAZARD_STEALTH_ROCK | (DFI_HAZARD_SPIKES << 2u)); /* a slot after the only kind */
+})
 MUT(m_last_above, p0->last_move = 6u)
 MUT(m_last_beyond, p0->last_move = 3u) /* the short lead has two moves */
 MUT(m_encore_beyond, {
@@ -644,7 +751,12 @@ MUT(m_protect_above, {
     p0->protect_kind = 2u;
 })
 MUT(m_protect_no_volatile, p0->protect_kind = 1u) /* the volatile is down */
-MUT(m_pos_pad, p0->pad = 1u)
+MUT(m_move_result_high, p0->move_result = 0x10u) /* bits 4-7 are zero */
+MUT(m_single_turn_bit2, p0->single_turn = 4u)
+MUT(m_rage_no_follow_me, p0->single_turn = DFI_SINGLE_TURN_RAGE_POWDER) /* the Follow Me flag is down */
+MUT(m_hits_taken7, p0->hits_taken = 7u)
+MUT(m_ability_state7, p0->ability_state = 7u)
+MUT(m_lock_turns4, p0->lock_turns = 4u)
 MUT(m_substitute_above, p0->substitute_hp = (uint16_t)(y->sides[0].members[y->sides[0].positions[0].occupant].hp_max / 4u + 1u))
 MUT(m_trap_turns_only, p0->trap_turns = 1u)
 MUT(m_trap_source_only, p0->trap_source = 2u)
@@ -739,6 +851,16 @@ MUT(m_item_254, ts->item_now[3] = 254u)
 MUT(m_toxic_no_status, ts->toxic_stage[0] = 1u) /* no state has the status Tox yet */
 MUT(m_toxic_16, ts->toxic_stage[0] = 16u)
 MUT(m_toxic_reserve, ts->toxic_stage[3] = 1u)
+MUT(m_type2_19, ts->type2[0] = 19u)
+MUT(m_type2_254, ts->type2[0] = 254u)
+MUT(m_type2_reserve, ts->type2[3] = 1u)
+MUT(m_type2_fainted, {
+    y->sides[0].members[1].hp = 0u;
+    df_knowledge_refresh_active(y);
+    ts->type2[1] = 1u;
+})
+MUT(m_member_flags2, ts->member_flags[0] = 2u)
+MUT(m_member_flags_high, ts->member_flags[3] = 0x80u)
 /* Valid: the edges. */
 MUT(v_struggle, p0->last_move = 5u)
 MUT(v_encore_edge, {
@@ -748,19 +870,39 @@ MUT(v_encore_edge, {
 MUT(v_maxima, {
     y->tail.gravity_turns = 5u;
     *ts = (dfi_tail_side){.wide_guard = 1u, .aurora_veil_turns = 8u, .toxic_spikes = 2u, .stealth_rock = 1u,
-                          .spikes = 3u, .sticky_web = 1u};
+                          .spikes = 3u, .sticky_web = 1u, .quick_guard = 1u,
+                          .hazard_order = (uint8_t)(DFI_HAZARD_TOXIC_SPIKES | (DFI_HAZARD_STICKY_WEB << 2u) |
+                                                    (DFI_HAZARD_SPIKES << 4u) | (DFI_HAZARD_STEALTH_ROCK << 6u))};
     ts->positions[0] = (dfi_tail_pos){.substitute_hp = 1u, .trap_move = DFI_POOL_MOVE_COUNT, .last_move = 5u,
                                       .encore_slot = 4u, .encore_turns = 4u, .throat_chop_turns = 2u,
                                       .heal_block_turns = 5u, .perish = 4u, .taunt_turns = 4u, .disable_slot = 4u,
                                       .disable_turns = 5u, .imprison = 1u, .must_recharge = 1u, .trap_turns = 8u,
                                       .trap_source = 4u, .trap_band = 1u, .leech_seed_source = 4u, .yawn_turns = 2u,
                                       .focus_energy = 1u, .stockpile = 3u, .stockpile_def = 3u,
-                                      .stockpile_spd = 3u, .charge = 1u, .glaive_rush = 1u};
+                                      .stockpile_spd = 3u, .charge = 1u, .glaive_rush = 1u, .move_result = 0x0Fu,
+                                      .single_turn = DFI_SINGLE_TURN_ROOST, .hits_taken = 6u, .ability_state = 6u,
+                                      .lock_turns = 3u};
     ts->ability_now[0] = DFI_POOL_ABILITY_COUNT;
     ts->forme_now[5] = DFI_POOL_FORME_COUNT;
     ts->item_now[2] = DFI_POOL_ITEM_COUNT;
     ts->item_now[3] = DFI_TAIL_ITEM_NONE;
     ts->soak_type[1] = 18u;
+    ts->type2[0] = DFI_TAIL_TYPE2_TYPELESS;
+    ts->type2[1] = 18u;
+    ts->member_flags[0] = DFI_TAIL_MEMBER_FLAG_HERO_SHOWN;
+    ts->member_flags[4] = DFI_TAIL_MEMBER_FLAG_HERO_SHOWN; /* a reserve keeps it: the message was shown once for the battle */
+})
+/* No valid case for Rage Powder's marker: the Follow Me flag it needs lives only at a PIVOT boundary, and these states are at a
+ * TURN one; the invalid case above (the marker without the flag) and the model say what the rule is. */
+MUT(v_move_result_null, p0->move_result = (uint8_t)((DFI_MOVE_RESULT_NULL << DFI_MOVE_RESULT_LAST_SHIFT) | DFI_MOVE_RESULT_FALSE))
+MUT(v_hazard_order_two, {
+    ts->spikes = 2u;
+    ts->toxic_spikes = 1u;
+    ts->hazard_order = (uint8_t)(DFI_HAZARD_TOXIC_SPIKES | (DFI_HAZARD_SPIKES << 2u)); /* Toxic Spikes first */
+})
+MUT(v_hazard_order_gone, {
+    ts->sticky_web = 1u; /* an ended kind leaves, the later ones shift down: Sticky Web alone in slot 0 */
+    ts->hazard_order = (uint8_t)DFI_HAZARD_STICKY_WEB;
 })
 MUT(v_substitute_quarter, p0->substitute_hp = (uint16_t)(y->sides[0].members[y->sides[0].positions[0].occupant].hp_max / 4u))
 MUT(v_bench_overrides, {
@@ -791,6 +933,14 @@ static const tail_case cases[] = {
     {"stealth rock above 1", DFI_INV_TAIL_SIDE, false, m_stealth_rock},
     {"spikes above 3", DFI_INV_TAIL_SIDE, false, m_spikes},
     {"sticky web above 1", DFI_INV_TAIL_SIDE, false, m_sticky_web},
+    {"quick guard above 1", DFI_INV_TAIL_SIDE, false, m_quick_guard},
+    {"a hazard order with no hazard up", DFI_INV_TAIL_SIDE, false, m_hazard_no_hazard},
+    {"a hazard that is up whose slot names another kind", DFI_INV_TAIL_SIDE, false, m_hazard_missing_kind},
+    {"a hazard order that names a kind twice", DFI_INV_TAIL_SIDE, false, m_hazard_duplicate},
+    {"a hazard order with a slot beyond the kinds that are up", DFI_INV_TAIL_SIDE, false, m_hazard_slot_beyond},
+    {"a hazard order that names a kind that is not up", DFI_INV_TAIL_SIDE, false, m_hazard_absent_kind},
+    {"a hazard order that misses a kind that is up", DFI_INV_TAIL_SIDE, false, m_hazard_dropped_gap},
+    {"a hazard order with a nonzero slot after the only kind", DFI_INV_TAIL_SIDE, false, m_hazard_extra_slot},
     {"last move above Struggle", DFI_INV_TAIL_POSITION, false, m_last_above},
     {"last move beyond the move count", DFI_INV_TAIL_POSITION, true, m_last_beyond},
     {"Encore slot beyond the move count", DFI_INV_TAIL_POSITION, true, m_encore_beyond},
@@ -815,7 +965,12 @@ static const tail_case cases[] = {
     {"Glaive Rush above 1", DFI_INV_TAIL_POSITION, false, m_glaive},
     {"protect kind above 1", DFI_INV_TAIL_POSITION, false, m_protect_above},
     {"protect kind without the Protect volatile", DFI_INV_TAIL_POSITION, false, m_protect_no_volatile},
-    {"the pad byte of a position", DFI_INV_TAIL_POSITION, false, m_pos_pad},
+    {"a move result above its two nibbles", DFI_INV_TAIL_POSITION, false, m_move_result_high},
+    {"a single-turn bit that is not defined", DFI_INV_TAIL_POSITION, false, m_single_turn_bit2},
+    {"Rage Powder's marker without the Follow Me flag", DFI_INV_TAIL_POSITION, false, m_rage_no_follow_me},
+    {"hits taken above 6", DFI_INV_TAIL_POSITION, false, m_hits_taken7},
+    {"an ability state above 6", DFI_INV_TAIL_POSITION, false, m_ability_state7},
+    {"lock turns above 3", DFI_INV_TAIL_POSITION, false, m_lock_turns4},
     {"a Substitute above a quarter of the maximum HP", DFI_INV_TAIL_POSITION, false, m_substitute_above},
     {"a trap with turns alone", DFI_INV_TAIL_POSITION, false, m_trap_turns_only},
     {"a trap with a source alone", DFI_INV_TAIL_POSITION, false, m_trap_source_only},
@@ -851,13 +1006,22 @@ static const tail_case cases[] = {
     {"a toxic stage without the status Tox", DFI_INV_TAIL_MEMBER, false, m_toxic_no_status},
     {"a toxic stage above 15", DFI_INV_TAIL_MEMBER, false, m_toxic_16},
     {"a toxic stage on a reserve", DFI_INV_TAIL_MEMBER, false, m_toxic_reserve},
+    {"a second type above 18 that is not the typeless value", DFI_INV_TAIL_MEMBER, false, m_type2_19},
+    {"a second type 254", DFI_INV_TAIL_MEMBER, false, m_type2_254},
+    {"a second type on a reserve", DFI_INV_TAIL_MEMBER, false, m_type2_reserve},
+    {"a second type on a fainted member", DFI_INV_TAIL_MEMBER, false, m_type2_fainted},
+    {"member flags with an undefined bit", DFI_INV_TAIL_MEMBER, false, m_member_flags2},
+    {"member flags with the top bit", DFI_INV_TAIL_MEMBER, false, m_member_flags_high},
     {"Struggle as the last move is valid for any move count", DFI_INV_NONE, false, v_struggle},
     {"the last Encore turn and slot 4 are valid", DFI_INV_NONE, false, v_encore_edge},
     {"every maximum at once is valid", DFI_INV_NONE, false, v_maxima},
+    {"two hazards in either order are valid", DFI_INV_NONE, false, v_hazard_order_two},
+    {"a hazard alone in the first slot is valid", DFI_INV_NONE, false, v_hazard_order_gone},
     {"a Substitute of exactly a quarter is valid", DFI_INV_NONE, false, v_substitute_quarter},
     {"the item and forme of a reserve and a fainted member are valid", DFI_INV_NONE, false, v_bench_overrides},
     {"a trap by the ally is valid", DFI_INV_NONE, false, v_ally_trap},
-    {"a Protect variant under its volatile is valid", DFI_INV_NONE, false, v_protect_variant}};
+    {"a Protect variant under its volatile is valid", DFI_INV_NONE, false, v_protect_variant},
+    {"a move result of this turn false and last turn null is valid", DFI_INV_NONE, false, v_move_result_null}};
 
 /* True iff the byte at `off` of the encoded tail is a reserved one (by the layout alone). */
 static bool is_reserved_offset(size_t off)
@@ -889,32 +1053,40 @@ int main(void)
 
     /* The layout: sizes, schema ids, which kinds carry the tail. */
     {
-        DF_CHECK_EQ_U64(&t, DFI_STATE_POOL_ENCODED_SIZE, 1257u);
+        DF_CHECK_EQ_U64(&t, DFI_STATE_POOL_ENCODED_SIZE, 1297u);
         DF_CHECK_EQ_U64(&t, DFI_STATE_ENCODED_MAX, DF_STATE_ENCODED_MAX);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_OFF, 1009u);
-        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_SIZE, 248u);
-        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_RESERVED_COUNT, 43u); /* 47 in rev 2: rev 3 defines the protect kind of each position */
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_SIZE, 288u);
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_RESERVED_COUNT, 35u); /* 43 in rev 3: rev 4 adds 40 bytes and defines 48 */
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_V3, 3u);
-        DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV3, 0x0303u);
+        DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV4, 0x0403u);
+        DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV3, 0x0303u); /* refused since rev 4 */
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV2, 0x0203u); /* refused since rev 3 */
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV1, 0x0103u);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_POS_PROTECT_KIND_OFF, 26u);
-        DF_CHECK(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV3 != 4u); /* schema 4 stays free: certified pool teams */
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_POS_MOVE_RESULT_OFF, 27u);
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_POS_LOCK_TURNS_OFF, 31u);
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_QUICK_GUARD_OFF, 6u);
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_HAZARD_ORDER_OFF, 7u);
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_SIDE_RESERVED_SIZE, 0u);
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_MEMBER_TYPE2_OFF, 7u);
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_MEMBER_FLAGS_OFF, 8u);
+        DF_CHECK(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV4 != 4u); /* schema 4 stays free: certified pool teams */
         /* The tail in memory: the encoded size without the reserved bytes, and the one pad byte of the field block. */
-        DF_CHECK_EQ_U64(&t, sizeof(dfi_pool_tail), 210u); /* a position has a pad byte since rev 3 */
-        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_side), 104u);
-        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_pos), 28u);
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_pool_tail), 254u); /* a position and a side have none since rev 4 */
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_side), 126u);
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_pos), 32u);
         unsigned reserved = 0u;
         for (size_t off = 0u; off < DFI_ENC_TAIL_SIZE; ++off) {
             reserved += is_reserved_offset(off) ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, reserved, 43u);
+        DF_CHECK_EQ_U64(&t, reserved, 35u);
         const duoforge_context *with[] = {kp, kq};
         const duoforge_context *without[] = {k1, k2, kc, kd, c1};
         for (size_t i = 0u; i < 2u; ++i) {
             DF_CHECK(&t, dfi_context_has_pool_tail(with[i]));
-            DF_CHECK_EQ_U64(&t, dfi_state_schema_of(with[i]), 0x0303u);
-            DF_CHECK_EQ_U64(&t, dfi_state_encoded_size_of(with[i]), 1257u);
+            DF_CHECK_EQ_U64(&t, dfi_state_schema_of(with[i]), 0x0403u);
+            DF_CHECK_EQ_U64(&t, dfi_state_encoded_size_of(with[i]), 1297u);
         }
         for (size_t i = 0u; i < 5u; ++i) {
             DF_CHECK(&t, !dfi_context_has_pool_tail(without[i]));
@@ -988,13 +1160,13 @@ int main(void)
         }
         uint8_t zero_tail[DFI_ENC_TAIL_SIZE];
         memset(zero_tail, 0, sizeof zero_tail);
-        DF_CHECK_EQ_U64(&t, df_encode_n(kp, w, zero_enc), 1257u);
-        DF_CHECK_BYTES(&t, zero_enc + DFI_ENC_TAIL_OFF, zero_tail, sizeof zero_tail, "an empty tail is 248 zero bytes");
+        DF_CHECK_EQ_U64(&t, df_encode_n(kp, w, zero_enc), 1297u);
+        DF_CHECK_BYTES(&t, zero_enc + DFI_ENC_TAIL_OFF, zero_tail, sizeof zero_tail, "an empty tail is 288 zero bytes");
         digest_of(&t, kp, w, d0);
 
         set_example_tail(w);
         const size_t n = df_encode_n(kp, w, enc);
-        DF_CHECK_EQ_U64(&t, n, 1257u);
+        DF_CHECK_EQ_U64(&t, n, 1297u);
         check_hex(&t, enc, ENVELOPE_HEX, DFI_ENVELOPE_SIZE, "envelope of a POOL state (model)");
         check_hex(&t, enc + DFI_ENC_TAIL_OFF, TAIL_HEX, DFI_ENC_TAIL_SIZE, "tail of the example (model)");
         /* The rest of the state is untouched by the tail. */
@@ -1010,7 +1182,7 @@ int main(void)
         digest_of(&t, kp, w, d1);
         DF_CHECK(&t, memcmp(d0, d1, sizeof d0) != 0);
         size_t size = 0u;
-        DF_CHECK(&t, duoforge_battle_encoded_size(kp, w, &size) == DUOFORGE_OK && size == 1257u);
+        DF_CHECK(&t, duoforge_battle_encoded_size(kp, w, &size) == DUOFORGE_OK && size == 1297u);
     }
 
     /* Round trip, equality, clone, copy, load into an existing handle; nothing of the tail is lost. */
@@ -1022,7 +1194,7 @@ int main(void)
         DF_CHECK(&t, duoforge_battle_equal(kp, w, d, &eq) == DUOFORGE_OK && eq);
         DF_CHECK(&t, memcmp(&d->tail, &w->tail, sizeof w->tail) == 0);
         uint8_t again[DF_STATE_ENCODED_MAX];
-        DF_CHECK_EQ_U64(&t, df_encode_n(kp, d, again), 1257u);
+        DF_CHECK_EQ_U64(&t, df_encode_n(kp, d, again), 1297u);
         DF_CHECK_BYTES(&t, again, enc, DFI_STATE_POOL_ENCODED_SIZE, "decode then encode");
         uint8_t dd[DUOFORGE_DIGEST_SIZE];
         digest_of(&t, kp, d, dd);
@@ -1066,7 +1238,7 @@ int main(void)
         static tail_setting settings[SETTINGS_MAX];
         static uint8_t digests[SETTINGS_MAX][DUOFORGE_DIGEST_SIZE];
         const size_t count = build_settings(settings);
-        DF_CHECK_EQ_U64(&t, count, 125u);
+        DF_CHECK_EQ_U64(&t, count, 167u);
         duoforge_battle *x = turn_battle(&t, kp, false);
         uint8_t base[DUOFORGE_DIGEST_SIZE];
         digest_of(&t, kp, x, base);
@@ -1152,7 +1324,7 @@ int main(void)
             }
         }
         DF_CHECK_EQ_U64(&t, wrong, 0u);
-        DF_CHECK_EQ_U64(&t, all_reserved, 43u);
+        DF_CHECK_EQ_U64(&t, all_reserved, 35u);
     }
 
     /* The schema is the one of the context's kind; sizes, schema ids and truncations. */
@@ -1166,11 +1338,11 @@ int main(void)
         DF_CHECK(&t, decode_both(&t, kq, m, 1009u, &inv) == DUOFORGE_E_CONTEXT_MISMATCH); /* the POOL fingerprint */
         /* Pool schema and no tail; schema 3 with a tail. */
         memcpy(m, enc, DFI_STATE_POOL_ENCODED_SIZE);
-        set_envelope(m, 0x0303u, 1009u);
+        set_envelope(m, 0x0403u, 1009u);
         DF_CHECK(&t, decode_both(&t, kp, m, 1009u, &inv) == DUOFORGE_E_MALFORMED && inv == DFI_INV_NONE);
         memcpy(m, enc, DFI_STATE_POOL_ENCODED_SIZE);
-        set_envelope(m, 3u, 1257u);
-        DF_CHECK(&t, decode_both(&t, kp, m, 1257u, &inv) == DUOFORGE_E_MALFORMED && inv == DFI_INV_NONE);
+        set_envelope(m, 3u, 1297u);
+        DF_CHECK(&t, decode_both(&t, kp, m, 1297u, &inv) == DUOFORGE_E_MALFORMED && inv == DFI_INV_NONE);
         /* Rev 1 is refused, explicitly: a genuine rev 1 artifact (the 1009 bytes of schema 3, schema 0x0103, 42 more
          * bytes, length 1051) under either POOL kind, and under the other kinds; its schema is no schema of this
          * build. The same bytes with the schema of rev 2 are the wrong size. */
@@ -1180,29 +1352,43 @@ int main(void)
         DF_CHECK(&t, decode_both(&t, kp, m, 1051u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH && inv == DFI_INV_NONE);
         DF_CHECK(&t, decode_both(&t, kq, m, 1051u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH);
         DF_CHECK(&t, decode_both(&t, k1, m, 1051u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH);
-        set_envelope(m, 0x0303u, 1051u);
+        set_envelope(m, 0x0403u, 1051u);
         DF_CHECK(&t, decode_both(&t, kp, m, 1051u, &inv) == DUOFORGE_E_MALFORMED && inv == DFI_INV_NONE);
-        /* Rev 2 is refused the same way (schema 0x0203, step G20 made it 0x0303): a genuine rev 2 artifact is the 1257
-         * bytes of a rev 3 one with the old schema, under either POOL kind and under the other kinds. */
-        memcpy(m, enc, DFI_STATE_POOL_ENCODED_SIZE);
+        /* Rev 2 is refused the same way (schema 0x0203): a genuine rev 2 artifact is the 1009 bytes of schema 3 and the 248
+         * bytes of the rev 2 tail, length 1257, under either POOL kind and under the other kinds. */
+        memcpy(m, enc, 1009u);
+        memset(m + 1009u, 0, 248u);
         set_envelope(m, 0x0203u, 1257u);
         DF_CHECK(&t, decode_both(&t, kp, m, 1257u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH && inv == DFI_INV_NONE);
         DF_CHECK(&t, decode_both(&t, kq, m, 1257u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH);
         DF_CHECK(&t, decode_both(&t, k1, m, 1257u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH);
-        /* A rev 3 artifact that says rev 1 is refused too, whatever the length says. */
-        memcpy(m, enc, DFI_STATE_POOL_ENCODED_SIZE);
-        set_envelope(m, 0x0103u, 1257u);
-        DF_CHECK(&t, decode_both(&t, kp, m, 1257u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH);
+        /* Rev 3 is refused by name since rev 4 (schema 0x0303, 1257 bytes: the same tail without the rev 4 fields): a genuine
+         * rev 3 artifact under either POOL kind and under the other kinds, and the same bytes with the schema of rev 4 are
+         * the wrong size. */
+        set_envelope(m, 0x0303u, 1257u);
+        DF_CHECK(&t, decode_both(&t, kp, m, 1257u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH && inv == DFI_INV_NONE);
+        DF_CHECK(&t, decode_both(&t, kq, m, 1257u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH);
+        DF_CHECK(&t, decode_both(&t, k1, m, 1257u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH);
+        DF_CHECK(&t, decode_both(&t, kc, m, 1257u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH);
+        set_envelope(m, 0x0403u, 1257u);
+        DF_CHECK(&t, decode_both(&t, kp, m, 1257u, &inv) == DUOFORGE_E_MALFORMED && inv == DFI_INV_NONE);
+        /* A rev 4 artifact that says rev 1, 2 or 3 is refused too, whatever the length says. */
+        static const uint32_t older[] = {0x0103u, 0x0203u, 0x0303u};
+        for (size_t i = 0u; i < sizeof older / sizeof older[0]; ++i) {
+            memcpy(m, enc, DFI_STATE_POOL_ENCODED_SIZE);
+            set_envelope(m, older[i], 1297u);
+            DF_CHECK(&t, decode_both(&t, kp, m, 1297u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH);
+        }
         static const uint32_t unknown[] = {0u,      1u,      2u,      4u,      0x0100u, 0x0103u, 0x0104u, 0x0204u,
-                                           0x0203u, 0x0403u, 0x8203u, 0xFFFFu};
+                                           0x0203u, 0x0303u, 0x0404u, 0x0503u, 0x8203u, 0x8403u, 0xFFFFu};
         for (size_t i = 0u; i < sizeof unknown / sizeof unknown[0]; ++i) {
             memcpy(m, enc, DFI_STATE_POOL_ENCODED_SIZE);
-            set_envelope(m, unknown[i], 1257u);
-            DF_CHECK(&t, decode_both(&t, kp, m, 1257u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH);
+            set_envelope(m, unknown[i], 1297u);
+            DF_CHECK(&t, decode_both(&t, kp, m, 1297u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH);
         }
-        /* Every length from 0 to 1256 bytes, and one byte more, is malformed (the length field says 1257). */
+        /* Every length from 0 to 1296 bytes, and one byte more, is malformed (the length field says 1297). */
         unsigned not_malformed = 0u;
-        for (size_t n = 0u; n <= 1256u; ++n) {
+        for (size_t n = 0u; n <= 1296u; ++n) {
             not_malformed += decode_both(&t, kp, enc, n, NULL) != DUOFORGE_E_MALFORMED ? 1u : 0u;
         }
         memcpy(m, enc, DFI_STATE_POOL_ENCODED_SIZE);
@@ -1226,8 +1412,8 @@ int main(void)
                 if (with_tail != 0u) {
                     DF_CHECK(&t, df_hex_to_bytes(TAIL_HEX, m + 1009u, DFI_ENC_TAIL_SIZE));
                 }
-                set_envelope(m, 0x0303u, 1257u);
-                DF_CHECK(&t, decode_both(&t, kinds[i], m, 1257u, &inv) == DUOFORGE_E_MALFORMED &&
+                set_envelope(m, 0x0403u, 1297u);
+                DF_CHECK(&t, decode_both(&t, kinds[i], m, 1297u, &inv) == DUOFORGE_E_MALFORMED &&
                                  inv == DFI_INV_TAIL_SCHEMA);
             }
             duoforge_battle_destroy(b);
@@ -1350,6 +1536,9 @@ int main(void)
         DF_CHECK(&t, memcmp(&ts->positions[0], &zero, sizeof zero) == 0);
         DF_CHECK(&t, memcmp(&ts->positions[1], &zero, sizeof zero) != 0); /* the ally keeps its tail */
         DF_CHECK(&t, ts->soak_type[occupant] == 0u && ts->ability_now[occupant] == 0u && ts->toxic_stage[occupant] == 0u);
+        /* tail rev 4: the second type goes with the occupant, the ally's stays, the member flags outlive the field */
+        DF_CHECK(&t, ts->type2[occupant] == 0u && ts->type2[1] == DFI_TAIL_TYPE2_TYPELESS);
+        DF_CHECK(&t, ts->member_flags[occupant] == DFI_TAIL_MEMBER_FLAG_HERO_SHOWN);
         DF_CHECK(&t, ts->item_now[occupant] == 12u && ts->forme_now[occupant] == 300u);
         DF_CHECK(&t, ts->soak_type[1] == 18u && ts->ability_now[1] == DFI_POOL_ABILITY_COUNT); /* the ally's member */
         DF_CHECK(&t, x->tail.sides[1].positions[0].last_move == 4u && x->tail.gravity_turns == 5u && ts->spikes == 3u);
@@ -1375,6 +1564,9 @@ int main(void)
                 tp->encore_turns = 0u;
                 tp->must_recharge = 0u; /* step G17: a Pokemon that must recharge is offered the recharge only */
                 tp->glaive_rush = 0u;   /* step G19: the first BeforeMove of a Pokemon ends it (test_pool_g19.c) */
+                if (tp->perish == 1u) {
+                    tp->perish = 0u; /* step G26: a count of 1 ends in the residual: the holder faints (test_pool_g26.c) */
+                }
             }
         }
         dfi_pool_tail want = x->tail;
@@ -1386,6 +1578,10 @@ int main(void)
                 dfi_tail_pos *tp = &want.sides[s].positions[p];
                 tp->throat_chop_turns = (uint8_t)(tp->throat_chop_turns != 0u ? tp->throat_chop_turns - 1u : 0u);
                 tp->heal_block_turns = (uint8_t)(tp->heal_block_turns != 0u ? tp->heal_block_turns - 1u : 0u);
+                /* step G31: Taunt and Yawn count down in the residual (a Yawn that runs out puts its holder to sleep) */
+                tp->taunt_turns = (uint8_t)(tp->taunt_turns != 0u ? tp->taunt_turns - 1u : 0u);
+                tp->yawn_turns = (uint8_t)(tp->yawn_turns != 0u ? tp->yawn_turns - 1u : 0u);
+                tp->perish = (uint8_t)(tp->perish != 0u ? tp->perish - 1u : 0u); /* step G26: the residual's count */
                 /* step G27: Disable counts down in the residual (the example's 5 turns are 4 after the turn, its slot stays) */
                 tp->disable_turns = (uint8_t)(tp->disable_turns != 0u ? tp->disable_turns - 1u : 0u);
             }
@@ -1405,17 +1601,18 @@ int main(void)
         duoforge_battle_destroy(x);
     }
 
-    /* Capacity: a POOL state needs its 1257 bytes, the others 1009; POOL_DEV is a POOL kind. */
+    /* Capacity: a POOL state needs its 1297 bytes, the others 1009; POOL_DEV is a POOL kind. */
     {
         uint8_t big[DF_STATE_ENCODED_MAX];
         size_t written = 0u;
         DF_CHECK(&t, duoforge_battle_encode(kp, w, big, 1009u, &written) == DUOFORGE_E_CAPACITY);
         DF_CHECK(&t, duoforge_battle_encode(kp, w, big, 1051u, &written) == DUOFORGE_E_CAPACITY); /* rev 1's size */
-        DF_CHECK(&t, duoforge_battle_encode(kp, w, big, 1256u, &written) == DUOFORGE_E_CAPACITY);
-        DF_CHECK(&t, duoforge_battle_encode(kp, w, big, 1257u, &written) == DUOFORGE_OK && written == 1257u);
+        DF_CHECK(&t, duoforge_battle_encode(kp, w, big, 1257u, &written) == DUOFORGE_E_CAPACITY); /* rev 3's size */
+        DF_CHECK(&t, duoforge_battle_encode(kp, w, big, 1296u, &written) == DUOFORGE_E_CAPACITY);
+        DF_CHECK(&t, duoforge_battle_encode(kp, w, big, 1297u, &written) == DUOFORGE_OK && written == 1297u);
         duoforge_battle *q = turn_battle(&t, kq, false);
         set_example_tail(q);
-        DF_CHECK(&t, duoforge_battle_encode(kq, q, big, 1257u, &written) == DUOFORGE_OK && written == 1257u);
+        DF_CHECK(&t, duoforge_battle_encode(kq, q, big, 1297u, &written) == DUOFORGE_OK && written == 1297u);
         DF_CHECK(&t, duoforge_battle_check(kq, q) == DUOFORGE_OK);
         duoforge_battle_destroy(q);
         duoforge_battle *b1 = turn_battle(&t, k1, false);

@@ -176,6 +176,65 @@ class DataTest(unittest.TestCase):
             pool.target_type(0)
 
 
+class AliasTest(unittest.TestCase):
+    """The cosmetic aliases of the POOL tables (#118) through the library's find (BC spec section 5)."""
+
+    @classmethod
+    def setUpClass(cls):
+        from duoforge_replay import prior
+        cls.pool = data.load(kind="pool")
+        cls.prior = prior.Prior({"version": 1, "pastes": 0, "skipped": {}, "levels": [{}, {}, {}, {}]})
+        cls.log = FIXTURE.read_text(encoding="utf-8").splitlines()
+
+    def run_game(self, lines_):
+        from duoforge_replay import game
+        return game.process("fixture-alias", "gen9championsvgc2026regmcbo3", chr(10).join(lines_), self.pool,
+                            self.prior, _Stats())
+
+    def with_species(self, species):
+        """The committed log with p2's Politoed (nickname kept) shown as `species`, genderless (Sinistcha), on its
+        sheet and in its details."""
+        out = []
+        for line in self.log:
+            if line.startswith("|showteam|p2|"):
+                line = line.replace("|showteam|p2|Politoed||", f"|showteam|p2|Politoed|{species}|")
+                line = line.replace("Protect|Modest||M|||50|]Farigiraf", "Protect|Modest|||||50|]Farigiraf")
+            elif line.startswith(("|poke|p2|Politoed,", "|switch|p2a: Politoed|", "|switch|p2b: Politoed|")):
+                line = line.replace("|Politoed, L50, M", f"|{species}, L50")
+            out.append(line)
+        return out
+
+    def test_alias_resolves_to_its_base(self):
+        self.assertEqual(self.pool.forme("Vivillon-Pokeball"), self.pool.forme("Vivillon"))
+        self.assertEqual(self.pool.forme("Sinistcha-Masterpiece"), self.pool.forme("Sinistcha"))
+        self.assertEqual(self.pool.forme(self.pool.canonical("Vivillon-Pokeball")), self.pool.forme("Vivillon"))
+        with self.assertRaises(ValueError):
+            self.pool.forme("Vivillon-Nonsense")
+
+    def test_unknown_alias_stays_a_name_skip(self):
+        from duoforge_replay import game
+        with self.assertRaises(game.Skip) as caught:
+            self.run_game(self.with_species("Vivillon-Nonsense"))
+        self.assertEqual(caught.exception.reason, "name:FORME Vivillon-Nonsense")
+
+    def test_alias_game_runs(self):
+        # the fixture keeps Politoed's set (Drizzle, its moves) under Sinistcha's name, which POOL setup would refuse;
+        # legality is not this test's subject (test_pool_illegal_skip is), so the check passes here
+        from unittest import mock
+        with mock.patch.object(type(self.pool), "setup_issue", return_value=None):
+            result = self.run_game(self.with_species("Sinistcha-Masterpiece"))
+        self.assertFalse([k for k in result.counters if "name:" in k or k.startswith("internal:")], result.counters)
+        self.assertGreater(result.counters["points.written"], 4)
+        # the alias in the |switch| details folds as its base forme: no stop the plain log does not have
+        stops = lambda c: {k: v for k, v in c.items() if k.startswith("perspectives.stopped.")}
+        with mock.patch.object(type(self.pool), "setup_issue", return_value=None):
+            plain = self.run_game(self.log)
+        self.assertEqual(stops(result.counters), stops(plain.counters))
+        sinistcha = self.pool.forme("Sinistcha")
+        species = {int(m["species_id"]) for r in result.rows for m in r.observation["sides"][1]["members"]}
+        self.assertIn(sinistcha, species)
+
+
 class _View:
     """What lines.check reads of a tracker: the data and, per protocol ident, the sheet and current ability."""
 
@@ -211,13 +270,14 @@ class LinesTest(unittest.TestCase):
         return caught.exception.reason
 
     def test_feature_lines_stop(self):
-        self.assertEqual(self.stop("|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Gholdengo"),
-                         "feature:WEATHER_SAND")
+        self.assertEqual(self.stop("|-fieldstart|move: Electric Terrain|[from] ability: Electric Surge|[of] p2a: Gholdengo"),
+                         "feature:TERRAIN_ELECTRIC")
         self.assertEqual(self.stop("|-ability|p2a: Gholdengo|Intimidate|[from] ability: Trace|[of] p1a: Staraptor"),
                          "feature:ABILITY_CHANGE")
         self.assertEqual(self.stop("|-enditem|p1a: Staraptor|Sitrus Berry|[from] move: Knock Off|[of] p2a: Gholdengo"),
                          "feature:ITEM_CHANGE")
-        self.assertEqual(self.stop("|-status|p1a: Staraptor|tox"), "feature:AILMENT_TOX")
+        self.assertEqual(self.stop("|-start|p1a: Staraptor|Encore"), "feature:ENCORE")
+        self.assertEqual(lines.check("|-status|p1a: Staraptor|tox", self.view), "fold")  # Tox folds (BC spec 5)
         self.assertEqual(self.stop("|replace|p1a: Zoroark|Zoroark-Hisui, L50, M"), "feature:ILLUSION")
 
     def test_item_transfer_lines_are_item_change(self):
@@ -269,6 +329,14 @@ class LinesTest(unittest.TestCase):
             lines.check(line_z, plain)
         self.assertEqual(caught.exception.reason, "feature:FORME_CHANGE")
 
+    def test_full_stat_name_is_kept(self):
+        # Reg M-B replays come from an older server that writes the stat's full name ("Attack", not "atk")
+        view = _View({"p1: Dragonite": ("DRAGONITE", None, "INNERFOCUS")})
+        self.assertEqual(lines.check("|-fail|p1a: Dragonite|unboost|Attack|[from] ability: Inner Focus|[of] p1a: Dragonite",
+                                     view), "keep")
+        with self.assertRaises(lines.Stop):
+            lines.check("|-fail|p1a: Dragonite|unboost|Power|[from] ability: Inner Focus|[of] p1a: Dragonite", view)
+
     def test_fold_and_room_lines(self):
         self.assertEqual(lines.check("|-enditem|p1a: Staraptor|Sitrus Berry|[eat]", self.view), "fold")
         self.assertEqual(lines.check("|-ability|p1a: Staraptor|Intimidate|boost", self.view), "fold")
@@ -306,7 +374,8 @@ class LinesTest(unittest.TestCase):
     def test_features_from_the_header(self):
         self.assertEqual(lines.FEATURES["WEATHER_SAND"], 0)
         self.assertEqual(lines.FEATURES["RAGE_POWDER"], 39)
-        self.assertEqual(len(lines.FEATURES), 40)
+        self.assertEqual(lines.FEATURES["MOVE_FAILED"], 41)
+        self.assertEqual(len(lines.FEATURES), 42)  # tail revision 4: ROOST 40, MOVE_FAILED 41
 
     def test_supported_mask_forms(self):
         f = lines.FEATURES
@@ -329,13 +398,12 @@ class LinesTest(unittest.TestCase):
         # folds it: the line still stops the perspective
         self.assertEqual(lines.SUPPORTED & ~lines.TRACKER_FOLDS, 0)
         self.assertEqual(self.stop("|-start|p1a: Staraptor|Throat Chop|[silent]"), "feature:THROAT_CHOP")
-        # #124: the library supports Sand and Snow (bits 0 and 1); the rows carry no fold of them yet, so they stop
+        # the base-value features fold (BC spec section 5): Sand and Snow, which the library supports (#124), and Tox
         f = lines.FEATURES
         self.assertTrue(lines.LIBRARY_SUPPORTED >> f["WEATHER_SAND"] & 1 and lines.LIBRARY_SUPPORTED >> f["WEATHER_SNOW"] & 1)
-        self.assertEqual(self.stop("|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Gholdengo"),
-                         "feature:WEATHER_SAND")
-        self.assertEqual(self.stop("|-weather|Snowscape|[from] ability: Snow Warning|[of] p2a: Gholdengo"),
-                         "feature:WEATHER_SNOW")
+        self.assertEqual(lines.check("|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Gholdengo", self.view), "fold")
+        self.assertEqual(lines.check("|-weather|Snowscape|[from] ability: Snow Warning|[of] p2a: Gholdengo", self.view),
+                         "fold")
 
     def test_choice_items(self):
         self.assertEqual(lines.CHOICE_ITEMS, ("choiceband", "choicescarf", "choicespecs"))
@@ -543,11 +611,13 @@ class GameTest(unittest.TestCase):
         self.assertEqual(result.record.winner, 1)
         self.assertEqual(result.record.turns, 10)
 
-    def test_sandstorm_stops_after_turn_two(self):
+    def test_a_feature_stops_after_turn_two(self):
+        # a feature the tracker does not fold (Throat Chop; Sand folds since the BC PR) ends both perspectives there:
+        # the points before it are written, the later ones dropped
         clean = self.run_game(self.log)
-        result = self.run_game(self.insert_after("|turn|2", "|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Politoed"))
-        self.assertEqual(result.counters["perspectives.stopped.feature:WEATHER_SAND"], 2)
-        self.assertGreater(result.counters["points.dropped.feature:WEATHER_SAND"], 0)
+        result = self.run_game(self.insert_after("|turn|2", "|-start|p2a: Politoed|Throat Chop|[silent]"))
+        self.assertEqual(result.counters["perspectives.stopped.feature:THROAT_CHOP"], 2)
+        self.assertGreater(result.counters["points.dropped.feature:THROAT_CHOP"], 0)
         turn2 = [int(r.observation["epoch"]) for r in clean.rows if int(r.observation["turn"]) == 2
                  and r.observation["boundary_kind"] == 2]
         self.assertTrue(all(int(r.observation["epoch"]) <= max(turn2) for r in result.rows))
@@ -747,6 +817,48 @@ class GameTest(unittest.TestCase):
         result = self.run_game(self.charizard_mega("Charizardite Y", "Charizard-Mega-X"))
         self.assertEqual(result.counters["perspectives.stopped.feature:FORME_CHANGE"], 2, result.counters)
 
+    def turn_rows(self, result, turn, side=0):
+        return [r for r in result.rows if r.side == side and int(r.observation["turn"]) == turn
+                and int(r.observation["boundary_kind"]) == 2]
+
+    def test_sandstorm_folds(self):
+        # spec 5: the base-value features fold (TRACKER_FOLDS); Sand and Snow were the largest curable stops
+        from duoforge._layout import CONSTANTS as C
+        lines_ = self.insert_after("|turn|2", "|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Politoed")
+        result = self.run_game(lines_)
+        self.assertFalse([k for k in result.counters if "WEATHER_SAND" in k], result.counters)
+        o = self.turn_rows(result, 3)[0].observation
+        self.assertEqual((int(o["weather"]), int(o["weather_turns"])), (C["DUOFORGE_WEATHER_SAND"], 4))
+
+    def test_snowscape_folds(self):
+        from duoforge._layout import CONSTANTS as C
+        result = self.run_game(self.insert_after("|turn|2", "|-weather|Snowscape"))
+        self.assertFalse([k for k in result.counters if "WEATHER_SNOW" in k], result.counters)
+        self.assertEqual(int(self.turn_rows(result, 3)[0].observation["weather"]), C["DUOFORGE_WEATHER_SNOW"])
+
+    def test_tox_folds(self):
+        from duoforge_live import teams
+        from duoforge_replay.spectator import SpectatorTracker
+        lines_ = self.insert_after("|turn|2", "|-status|p2a: Politoed|tox")
+        self.assertFalse([k for k in self.run_game(lines_).counters if "AILMENT_TOX" in k])
+        sheets = tuple(teams.unpack(line.split("|", 3)[3]) for line in lines_ if line.startswith("|showteam|"))
+        tracker = SpectatorTracker(self.data, sheets, 0, None, lambda m, f: ([100] * 6, [0] * 6), lines_)
+        tracker.feed(lines_[:lines_.index("|-status|p2a: Politoed|tox") + 1])
+        self.assertEqual(tracker._member_of("p2a: Politoed").status, trace_to_c.STATUS["tox"])
+
+    def test_unknown_weather_form_still_stops(self):
+        # "-weather|Snow" (an older server's name) is no form the converter reads: a named stop, never a fold
+        result = self.run_game(self.insert_after("|turn|2", "|-weather|Snow"))
+        stops = [k for k in result.counters if k.startswith("perspectives.stopped.")]
+        self.assertTrue(stops and all(k.startswith("perspectives.stopped.converter:") for k in stops), result.counters)
+
+    def test_unsupported_base_bit_still_stops(self):
+        from unittest import mock
+        without_sand = lines.SUPPORTED & ~(1 << lines.FEATURES["WEATHER_SAND"])
+        with mock.patch.object(lines, "SUPPORTED", without_sand):
+            result = self.run_game(self.insert_after("|turn|2", "|-weather|Sandstorm"))
+        self.assertEqual(result.counters["perspectives.stopped.feature:WEATHER_SAND"], 2, result.counters)
+
     def insert_after_in(self, lines, prefix, new):
         i = next(i for i, line in enumerate(lines) if line.startswith(prefix))
         return lines[:i + 1] + [new] + lines[i + 1:]
@@ -770,6 +882,25 @@ class GameTest(unittest.TestCase):
         tracker.feed(self.log[:faint + 1])  # p2b fainted, not replaced yet
         tracker._log = self.log[:tracker._fed + 1] + ["|move|p1a: Salamence|Draco Meteor|p2a: Politoed|[from]lockedmove"]
         self.assertEqual(tracker._own_target(0), HIDDEN_TARGET)
+
+    def with_moves(self, old, new):
+        """The committed log with a sheet's move list `old` replaced by `new`."""
+        return [line.replace(old, new) if line.startswith("|showteam|") else line for line in self.log]
+
+    def test_regmb_pp_skip(self):
+        # BC spec 11: Strength Sap and Wish have other PP in Reg M-B (10) than in the engine's M-C data (5)
+        from duoforge_replay import game
+        lines_ = self.with_moves("KowtowCleave,SuckerPunch,IronHead,Protect", "KowtowCleave,SuckerPunch,IronHead,Wish")
+        with self.assertRaises(game.Skip) as caught:
+            game.process("fixture-mb", "gen9championsvgc2026regmbbo3", chr(10).join(lines_), self.data, self.prior, _Stats())
+        self.assertEqual(caught.exception.reason, "skip:regmb-pp")
+        with self.assertRaises(game.Skip) as caught:
+            self.run_game(lines_)  # Reg M-C: no PP difference; Kingambit cannot learn Wish under POOL
+        self.assertEqual(caught.exception.reason, "skip:pool-illegal Kingambit move Wish")
+
+    def test_pool_illegal_skip(self):
+        lines_ = self.with_moves("DragonPulse,ElectroShot,Snarl,Protect", "DragonPulse,ElectroShot,MirrorCoat,Protect")
+        self.assertEqual(self.skip_reason(lines_), "skip:pool-illegal Archaludon move MirrorCoat")
 
     def test_two_games_in_one_log_skip(self):
         # a Bo3 log with a second game's lines: one game per row, so the log is skipped and counted

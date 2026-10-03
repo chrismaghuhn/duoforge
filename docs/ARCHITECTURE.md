@@ -170,6 +170,8 @@ Cheap trusted snapshot/restore enables future search. It does not authorize a co
 
 A future fair planner builds hypothetical states from its own observation/history and an explicit belief model, using separate search RNG. Planning on a privileged snapshot is an oracle benchmark and must be labeled as such. Search algorithm choice is outside the initial engine milestones.
 
+Search leaves are expanded by `duoforge_batch_expand` (decision 0022): each leaf is a copy of its root reseeded from the search seeds `duoforge_search_seeds(seed, key, sample)` before it steps, so no leaf sees the root's future gameplay RNG.
+
 ## 11. Non-goals for v0.1
 
 No all-generation support, full Pokédex certification, GUI, public-server automation, tournament administration, generic scripting VM, GPU battle kernel, learned rules, production RL algorithm or advanced search implementation. Build the smallest verified vertical slice first.

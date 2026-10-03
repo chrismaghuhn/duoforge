@@ -50,7 +50,7 @@ const ITEM_FAMILIES = ['NONE', 'TYPE_BOOSTER', 'RESIST_BERRY'];
 const ABILITY_FAMILIES = ['NONE', 'ATE', 'PINCH', 'WEATHER_SETTER', 'TERRAIN_SETTER'];
 // The names of the generated weather and terrain codes, as Showdown calls them.
 const WEATHER = {RAIN: 'raindance', SUN: 'sunnyday', SAND: 'sandstorm', SNOW: 'snowscape'};
-const TERRAIN = {GRASSY: 'grassyterrain', PSYCHIC: 'psychicterrain'};
+const TERRAIN = {GRASSY: 'grassyterrain', PSYCHIC: 'psychicterrain', ELECTRIC: 'electricterrain', MISTY: 'mistyterrain'};
 // The Primal Pokemon that Drizzle and Drought leave alone.
 const PRIMAL = {raindance: ['kyogre', 'blueorb'], sunnyday: ['groudon', 'redorb']};
 
@@ -267,7 +267,8 @@ function ateChanges(ability) {
 }
 
 // The moves an "-ate" ability leaves alone by id (the noModifyType list of its onModifyType handler). The
-// engine skips one of them: Weather Ball, the only one that the pool has (checked below against the pool ids).
+// engine skips two of them: Weather Ball and, since step G25, Terrain Pulse, the only ones that the pool has (checked below
+// against the pool ids).
 const NO_MODIFY_TYPE = ['judgment', 'multiattack', 'naturalgift', 'revelationdance', 'technoblast', 'terrainpulse',
     'weatherball'];
 function ateLeavesAlone(ability, id) {
@@ -375,6 +376,106 @@ function checkG28(dex) {
         [10, {boosts: {atk: 1, def: 1, spa: 1, spd: 1, spe: 1}}]);
     const feint = dex.moves.get('feint');
     expect('Feint', [feint.breaksProtect, feint.priority, feint.basePower, feint.flags.protect], [true, 2, 30, undefined]);
+}
+
+// Step G25, Electric Terrain, Misty Terrain, Rising Voltage, Terrain Pulse and the four terrain seeds: what the engine
+// reads about them (src/combat/turn.c), called on the pinned handlers.
+function checkTerrains(dex) {
+    const grounded = {isGrounded: () => true, isSemiInvulnerable: () => false};
+    const airborne = {isGrounded: () => false, isSemiInvulnerable: () => false};
+    const electric = dex.moves.get('electricterrain').condition;
+    const misty = dex.moves.get('mistyterrain').condition;
+    for (const [name, terrain] of [['Electric Terrain', electric], ['Misty Terrain', misty]]) {
+        expect(name + ' duration, Terrain Extender', [terrain.duration, call(terrain.durationCallback, battle(terrain), [{hasItem: () => false}]),
+            call(terrain.durationCallback, battle(terrain), [{hasItem: (i) => i === 'terrainextender'}])], [5, 5, 8]);
+        expect(name + ' residual order', [terrain.onFieldResidualOrder, terrain.onFieldResidualSubOrder], [27, 7]);
+        expect(name + ' onBasePowerPriority', terrain.onBasePowerPriority, 6);
+    }
+    // the base power modifiers: Electric's for a grounded user's Electric move, Misty's for a Dragon move at a grounded target
+    for (const type of TYPES) {
+        const move = moveOf(type);
+        expect('Electric Terrain, ' + type + ' move of a grounded user', call(electric.onBasePower, battle(electric), [100, grounded, airborne, move]),
+            type === 'Electric' ? {chain: [5325, 4096]} : undefined);
+        expect('Electric Terrain, ' + type + ' move of an airborne user', call(electric.onBasePower, battle(electric), [100, airborne, grounded, move]), undefined);
+        expect('Misty Terrain, ' + type + ' move at a grounded target', call(misty.onBasePower, battle(misty), [100, airborne, grounded, move]),
+            type === 'Dragon' ? {chain: 0.5} : undefined);
+        expect('Misty Terrain, ' + type + ' move at an airborne target', call(misty.onBasePower, battle(misty), [100, grounded, airborne, move]), undefined);
+    }
+    // onSetStatus: the refusal (return false), and the -activate line for a move's own status only
+    const lines = [];
+    const logger = (effect) => battle(effect, {add: (...a) => lines.push([a[0], a[2]])});
+    const effects = {
+        'a move with no secondaries': {effectType: 'Move', id: 'probe', status: 'slp'},
+        'a damaging move with a secondary': {effectType: 'Move', id: 'probe', secondaries: [{}]},
+        'an ability': {effectType: 'Ability', id: 'poisontouch'},
+        'Yawn': {effectType: 'Move', id: 'yawn'},
+    };
+    for (const status of ['slp', 'par', 'brn', 'frz', 'psn', 'tox']) {
+        for (const [what, effect] of Object.entries(effects)) {
+            for (const [tname, terrain, name] of [['electric', electric, 'Electric Terrain'], ['misty', misty, 'Misty Terrain']]) {
+                lines.length = 0;
+                const got = call(terrain.onSetStatus, logger(terrain), [{id: status}, grounded, {}, effect]);
+                const own = what === 'a move with no secondaries' || what === 'Yawn';
+                const refuses = tname === 'misty' || status === 'slp';
+                expect(name + ' onSetStatus ' + status + ' by ' + what, [got, lines.length],
+                    [refuses ? false : undefined, refuses && own ? 1 : 0]);
+                if (refuses && own) {
+                    expect(name + ' line', lines[0], ['-activate', 'move: ' + name]);
+                }
+                lines.length = 0;
+                expect(name + ' onSetStatus at an airborne target', call(terrain.onSetStatus, logger(terrain), [{id: status}, airborne, {}, effect]), undefined);
+            }
+        }
+    }
+    // onTryAddVolatile: Electric's is Yawn only, Misty's is confusion (the line for a move without secondaries)
+    for (const id of ['yawn', 'confusion', 'flinch']) {
+        for (const [what, effect] of [['a move with no secondaries', {effectType: 'Move', id: 'probe'}],
+            ['a move with a secondary', {effectType: 'Move', id: 'probe', secondaries: [{}]}]]) {
+            lines.length = 0;
+            expect('Electric Terrain onTryAddVolatile ' + id, call(electric.onTryAddVolatile, logger(electric), [{id}, grounded, {}, effect]),
+                id === 'yawn' ? null : undefined);
+            expect('Electric Terrain onTryAddVolatile ' + id + ' lines', lines.length, id === 'yawn' ? 1 : 0);
+            lines.length = 0;
+            expect('Misty Terrain onTryAddVolatile ' + id + ' by ' + what, call(misty.onTryAddVolatile, logger(misty), [{id}, grounded, {}, effect]),
+                id === 'confusion' ? null : undefined);
+            expect('Misty Terrain onTryAddVolatile ' + id + ' by ' + what + ' lines', lines.length,
+                id === 'confusion' && effect.secondaries === undefined ? 1 : 0);
+            expect('Misty Terrain onTryAddVolatile at an airborne target', call(misty.onTryAddVolatile, logger(misty), [{id}, airborne, {}, effect]), undefined);
+        }
+    }
+    // Rising Voltage: doubled at a grounded target in Electric Terrain
+    const voltage = dex.moves.get('risingvoltage');
+    const field = (terrain) => ({isTerrain: (t) => t === terrain});
+    const base = () => ({basePower: 70, name: 'Rising Voltage'});
+    expect('Rising Voltage in Electric Terrain', call(voltage.basePowerCallback, {field: field('electricterrain'), hint() {}}, [{isAlly: () => false}, grounded, base()]), 140);
+    expect('Rising Voltage at an airborne target', call(voltage.basePowerCallback, {field: field('electricterrain'), hint() {}}, [{isAlly: () => false}, airborne, base()]), 70);
+    expect('Rising Voltage in another terrain', call(voltage.basePowerCallback, {field: field('mistyterrain'), hint() {}}, [{isAlly: () => false}, grounded, base()]), 70);
+    // Terrain Pulse: the type of the terrain and double power for a grounded user
+    const pulse = dex.moves.get('terrainpulse');
+    const types = {electricterrain: 'Electric', grassyterrain: 'Grass', mistyterrain: 'Fairy', psychicterrain: 'Psychic', '': 'Normal'};
+    for (const [terrain, type] of Object.entries(types)) {
+        for (const [who, user] of [['grounded', grounded], ['airborne', airborne]]) {
+            const move = {type: 'Normal', basePower: 50};
+            call(pulse.onModifyType, {field: {terrain}}, [move, user]);
+            call(pulse.onModifyMove, {field: {terrain}, debug() {}}, [move, user]);
+            expect('Terrain Pulse in ' + (terrain || 'no terrain') + ', ' + who + ' user', [move.type, move.basePower],
+                [who === 'grounded' ? type : 'Normal', who === 'grounded' && terrain !== '' ? 100 : 50]);
+        }
+    }
+    // the four seeds: onStart and onTerrainChange use the item while their terrain is up, the boost is one stage
+    for (const [id, terrain, stat] of [['grassyseed', 'grassyterrain', 'def'], ['psychicseed', 'psychicterrain', 'spd'],
+        ['electricseed', 'electricterrain', 'def'], ['mistyseed', 'mistyterrain', 'spd']]) {
+        const item = dex.items.get(id);
+        expect(id + ' boosts', item.boosts, {[stat]: 1});
+        expect(id + ' onSwitchInPriority', item.onSwitchInPriority, -1);
+        for (const fn of ['onStart', 'onTerrainChange']) {
+            for (const up of Object.keys(types).filter((t) => t !== '')) {
+                let used = 0;
+                call(item[fn], {field: field(up)}, [{ignoringItem: () => false, useItem() { used += 1; }}]);
+                expect(id + ' ' + fn + ' in ' + up, used, up === terrain ? 1 : 0);
+            }
+        }
+    }
 }
 
 // ----------------------------------------------------------------- the check
@@ -648,6 +749,104 @@ function checkG22(dex, formes, itemIds, abilityIds) {
 // Freeze-Dry (Water is super effective), Soundproof (a sound move aimed at the holder by another Pokemon is -immune), Unnerve
 // (berries of the foes are not eaten while the holder stands) and Speed Boost (+1 Speed in the residual, not in the turn of
 // the switch-in). Eject Button is a text fact of the generator (G32_ENTRY_FACTS).
+// Step G41, Shadow Tag: the engine refuses the switch of a foe at the TURN boundary (turn.c dfi_switch_trapped). The pinned
+// handlers are called on stubs: a foe that is not a Shadow Tag holder and is adjacent to the holder is trapped (hidden), and a
+// holder, or a Pokemon that is not adjacent, is not; the maybe-flag follows the same test. Ghost is the one type that is immune
+// to `trapped` (runStatusImmunity: typechart `trapped: 3`), so Soak and the forme's types decide it; no other type has the key.
+// Shed Shell and Run Away would free the holder: the generator keeps them unmarked.
+function checkG41(dex) {
+    const tag = dex.abilities.get('shadowtag');
+    const run = (fn, who, source, hasTag, adjacent) => {
+        const calls = [];
+        const pokemon = {hasAbility: (id) => id === 'shadowtag' && hasTag, isAdjacent: () => adjacent,
+            tryTrap: (hidden) => calls.push(['tryTrap', hidden]), maybeTrapped: false};
+        const b = battle(tag, {effectState: {target: {}}});
+        call(fn, b, [pokemon, source]);
+        return {calls, maybe: pokemon.maybeTrapped};
+    };
+    expect('Shadow Tag traps an adjacent foe', run(tag.onFoeTrapPokemon, 'p', undefined, false, true),
+        {calls: [['tryTrap', true]], maybe: false});
+    expect('Shadow Tag does not trap a holder', run(tag.onFoeTrapPokemon, 'p', undefined, true, true), {calls: [], maybe: false});
+    expect('Shadow Tag does not trap a Pokemon that is not adjacent', run(tag.onFoeTrapPokemon, 'p', undefined, false, false),
+        {calls: [], maybe: false});
+    expect('Shadow Tag marks maybe-trapped', run(tag.onFoeMaybeTrapPokemon, 'p', {}, false, true), {calls: [], maybe: true});
+    expect('Shadow Tag does not mark a holder', run(tag.onFoeMaybeTrapPokemon, 'p', {}, true, true), {calls: [], maybe: false});
+    expect('the types immune to trapped', TYPES.filter((t) => dex.types.get(t).damageTaken.trapped === 3), ['Ghost']);
+    return 1;
+}
+
+// Step G33, the multi-hit batch and Mirror Armor: the pinned facts that the engine hard-codes (decision 0015, item 5y). The
+// four moves' hit counts and Triple Axel's rising power; Mirror Armor's handler against stubs: it deletes every drop of
+// another Pokemon that is still one (a stat at -6 has none), shows its ability line and gives the drop to a source that
+// stands, and leaves a self change, a bounced drop, and a rise alone; no Grass-type forme has the ability.
+function checkG33(dex) {
+    expect('multihit', ['dualwingbeat', 'tripleaxel', 'twinbeam'].map((id) => dex.moves.get(id).multihit), [2, 3, 2]);
+    expect('multiaccuracy', ['dualwingbeat', 'tripleaxel', 'twinbeam'].map((id) => !!dex.moves.get(id).multiaccuracy),
+        [false, true, false]);
+    // Population Bomb is not marked (its learners have no marked ability) but keeps its pinned fact for the follow-up.
+    expect('Population Bomb', [dex.moves.get('populationbomb').multihit, !!dex.moves.get('populationbomb').multiaccuracy], [10, true]);
+    const axe = dex.moves.get('tripleaxel');
+    expect('Triple Axel power', [1, 2, 3].map((hit) => call(axe.basePowerCallback, battle(axe), [{}, {}, {hit}])), [20, 40, 60]);
+    const armor = dex.abilities.get('mirrorarmor');
+    const run = (boost, target, source, effect) => {
+        const logs = [];
+        const gave = [];
+        const b = battle(armor, {add: (...a) => logs.push(a.map((x) => (typeof x === 'string' ? x : 'POKEMON')).join('|')),
+            boost: (...a) => gave.push(a.map((x) => (x && x.hp !== undefined ? (x === source ? 'source' : 'target') : x)))});
+        const left = Object.assign({}, boost);
+        call(armor.onTryBoost, b, [left, target, source, effect]);
+        return {left, logs, gave};
+    };
+    const target = {boosts: {atk: 0, spa: -6}, hp: 100};
+    const source = {boosts: {}, hp: 100};
+    expect('Mirror Armor bounces a drop', run({atk: -1, spa: 1}, target, source, {name: 'Intimidate'}),
+        {left: {spa: 1}, logs: ['-ability|POKEMON|Mirror Armor'], gave: [[{atk: -1}, 'source', 'target', null, true]]});
+    expect('Mirror Armor, a stat at -6 keeps its drop', run({spa: -1}, target, source, {name: 'Snarl'}),
+        {left: {spa: -1}, logs: [], gave: []});
+    expect('Mirror Armor, a source that has fainted', run({atk: -1}, target, {boosts: {}, hp: 0}, {name: 'Intimidate'}),
+        {left: {}, logs: [], gave: []});
+    expect('Mirror Armor, a self change', run({atk: -1}, target, target, {name: 'Close Combat'}), {left: {atk: -1}, logs: [], gave: []});
+    expect('Mirror Armor, a drop that has bounced', run({atk: -1}, target, source, {name: 'Mirror Armor'}),
+        {left: {atk: -1}, logs: [], gave: []});
+    expect('Mirror Armor, no source', run({atk: -1}, target, null, {name: 'Spikes'}), {left: {atk: -1}, logs: [], gave: []});
+    expect('Mirror Armor, a rise', run({atk: 1}, target, source, {name: 'Swords Dance'}), {left: {atk: 1}, logs: [], gave: []});
+    const grass = [];
+    for (const s of dex.species.all()) {
+        if (Object.values(s.abilities).includes('Mirror Armor') && s.types.includes('Grass')) {
+            grass.push(s.id);
+        }
+    }
+    expect('no Grass-type forme has Mirror Armor', grass, []);
+    // The accuracy of the later hits of a multiaccuracy move (src/combat/turn.c dfi_accuracy_check, later_hit). The Champions
+    // loop (data/mods/champions/scripts.ts:481-510) scales `move.accuracy` by the two stages in floating point with no floor,
+    // `accuracy /= boostTable[-boost]` and so on, then randomChance(accuracy, 100) = random(100) < accuracy. The engine has no
+    // floating point, so it compares v * D < N for the exact rational N / D (accuracy x (3 + a) / 3 or x 3 / (3 - a), then x 3 /
+    // (3 + e) or x (3 - e) / 3). Here both are computed for the accuracy of Triple Axel and every pair of stages; the number of
+    // values v in 0..99 that hit must be equal (a double that lands next to an integer would make them differ).
+    expect('Triple Axel accuracy', axe.accuracy, 90);
+    const table = [1, 4 / 3, 5 / 3, 2, 7 / 3, 8 / 3, 3];
+    let pairs = 0;
+    for (let a = -6; a <= 6; a++) {
+        for (let e = -6; e <= 6; e++) {
+            let accuracy = axe.accuracy;
+            if (a > 0) accuracy *= table[a]; else accuracy /= table[-a];
+            if (e > 0) accuracy /= table[e]; else if (e < 0) accuracy *= table[-e];
+            const numA = a > 0 ? 3 + a : 3, denA = a > 0 ? 3 : 3 - a;
+            const numE = e > 0 ? 3 : 3 - e, denE = e > 0 ? 3 + e : 3;
+            const numerator = axe.accuracy * numA * numE, denominator = denA * denE;
+            let reference = 0, engine = 0;
+            for (let v = 0; v < 100; v++) {
+                reference += v < accuracy ? 1 : 0;
+                engine += v * denominator < numerator ? 1 : 0;
+            }
+            expect('multiaccuracy a ' + a + ' e ' + e, engine, reference);
+            pairs++;
+        }
+    }
+    expect('multiaccuracy pairs', pairs, 169);
+    return 1;
+}
+
 function checkG32(dex) {
     for (const id of ['eruption', 'waterspout']) {
         const m = dex.moves.get(id);
@@ -701,6 +900,78 @@ function checkG19(dex) {
     const logs = [];
     cond.onStart.call({add: (...a) => logs.push(a.map((x) => (typeof x === 'string' ? x : 'POKEMON')).join(':'))}, {});
     expect('glaiverush onStart is silent', logs, ['-singlemove:POKEMON:Glaive Rush:[silent]']);
+}
+
+// Step G26, Perish Song: the pinned facts that the engine hard-codes (decision 0015, item 5w), called on the pinned
+// handlers. The Champions mod has no entry of Perish Song (data/mods/champions/moves.ts is hashed by the generator).
+function checkG26(dex) {
+    const move = dex.moves.get('perishsong');
+    expect('perish song', [move.basePower, move.accuracy, move.category, move.type, move.target, move.pp, move.priority],
+        [0, true, 'Status', 'Normal', 'all', 5, 0]);
+    // No protect flag: Protect and Wide Guard let it through (checkMoveBypassesProtect), and bypasssub: Substitute does not stop it.
+    expect('perish song flags', Object.keys(move.flags).sort(), ['bypasssub', 'distance', 'metronome', 'sound']);
+    const c = move.condition;
+    expect('perishsong condition', [c.duration, c.onResidualOrder, c.onResidualPriority, c.onResidualSubOrder], [4, 24, undefined, undefined]);
+    // The residual order 24 belongs to Perish Song alone among the entries that the engine's residual list has (the others
+    // with an order at or above 23 are moves that no row models).
+    const orders = [];
+    for (const table of [dex.data.Moves, dex.data.Abilities, dex.data.Items, dex.data.Conditions]) {
+        for (const [id, entry] of Object.entries(table)) {
+            if (entry.condition && entry.condition.onResidualOrder === 24) orders.push(id);
+            if (entry.onResidualOrder === 24) orders.push(id);
+        }
+    }
+    expect('entries with onResidualOrder 24', orders, ['perishsong']);
+    // The condition's callbacks: the count is the duration after the decrement of fieldEvent, the end shows perish0 and faints.
+    const logs = [];
+    const self = {add: (...a) => logs.push(a.map((x) => (typeof x === 'string' ? x : 'POKEMON')).join(':'))};
+    let fainted = 0;
+    c.onEnd.call(self, {faint() { fainted += 1; }});
+    expect('perishsong onEnd', [logs, fainted], [['-start:POKEMON:perish0'], 1]);
+    logs.length = 0;
+    c.onResidual.call(self, {volatiles: {perishsong: {duration: 3}}});
+    c.onResidual.call(self, {volatiles: {perishsong: {duration: 1}}});
+    expect('perishsong onResidual', logs, ['-start:POKEMON:perish3', '-start:POKEMON:perish1']);
+    // onHitField over the active Pokemon: what a Pokemon with and without the volatile, with a TryHit that stops it and
+    // with none left to take it, gets.
+    const run = (mons, tryHit) => {
+        const out = [];
+        const battle = {
+            getAllActive: () => mons,
+            runEvent: (name, pokemon) => (name === 'Invulnerability' ? true : tryHit(pokemon)),
+            add: (...a) => out.push(a.map((x) => (typeof x === 'string' ? x : 'POKEMON')).join(':')),
+        };
+        const result = move.onHitField.call(battle, {}, {}, move);
+        return {result, out, added: mons.map((m) => m.added || 0)};
+    };
+    const mon = (has) => {
+        const m = {volatiles: has ? {perishsong: {}} : {}, added: 0, addVolatile(id) { m.added += 1; m.volatiles[id] = {}; }};
+        return m;
+    };
+    expect('perish song on two fresh Pokemon', run([mon(false), mon(false)], () => true),
+        {result: undefined, out: ['-start:POKEMON:perish3:[silent]', '-start:POKEMON:perish3:[silent]', '-fieldactivate:move: Perish Song'], added: [1, 1]});
+    expect('perish song on a fresh and an infected Pokemon', run([mon(true), mon(false)], () => true),
+        {result: undefined, out: ['-start:POKEMON:perish3:[silent]', '-fieldactivate:move: Perish Song'], added: [0, 1]});
+    expect('perish song on infected Pokemon only', run([mon(true), mon(true)], () => true),
+        {result: false, out: [], added: [0, 0]});
+    const stopped = [mon(false), mon(false)];
+    expect('perish song with a TryHit that stops the first', run(stopped, (p) => (p === stopped[0] ? null : true)),
+        {result: undefined, out: ['-start:POKEMON:perish3:[silent]', '-fieldactivate:move: Perish Song'], added: [0, 1]});
+    const all = [mon(false)];
+    expect('perish song with every TryHit stopped is no failure', run(all, () => null),
+        {result: undefined, out: [], added: [0]});
+    // Good as Gold is the one marked ability that stops it (a status move of another Pokemon); the user's own does not.
+    const gold = dex.abilities.get('goodasgold');
+    const goldLogs = [];
+    const goldSelf = {add: (...a) => goldLogs.push(a.map((x) => (typeof x === 'string' ? x : 'POKEMON')).join(':'))};
+    const other = {}, user = {};
+    expect('Good as Gold against a Perish Song of another', [gold.onTryHit.call(goldSelf, other, user, move), goldLogs],
+        [null, ['-immune:POKEMON:[from] ability: Good as Gold']]);
+    expect('Good as Gold against its own Perish Song', gold.onTryHit.call(goldSelf, user, user, move), undefined);
+    // Soundproof stops it too (a sound move of another Pokemon): step G32 marked the ability, and the cast handles it.
+    const proof = dex.abilities.get('soundproof');
+    expect('Soundproof', [proof.onTryHit.call({add() {}}, other, user, move)], [null]);
+    return 1;
 }
 
 // Step G27, Disable and Cursed Body: the pinned facts that the engine hard-codes (decision 0015, the G27 item), run on the
@@ -879,10 +1150,11 @@ function checkAbilities(dex, rows, moveIds, unmodeled, unmodeledMoves) {
                 expect(row.id + ' leaves ' + id + ' alone', ateLeavesAlone(ability, id), true);
             }
             expect(row.id + ' changes a Normal move of another id', ateLeavesAlone(ability, 'probe'), false);
-            // The engine skips one move of the list, Weather Ball; the others that the pool has (Terrain Pulse) are
-            // UNMODELED moves, which no battle may use.
+            // The engine skips two moves of the list, Weather Ball and Terrain Pulse (dfi_ate_excluded); no other move of
+            // the list that the pool has is modelled.
             expect('the modelled pool moves that ' + row.id + ' leaves alone',
-                [...moveIds.values()].filter((id) => NO_MODIFY_TYPE.includes(id) && !unmodeledMoves.has(id)), ['weatherball']);
+                [...moveIds.values()].filter((id) => NO_MODIFY_TYPE.includes(id) && !unmodeledMoves.has(id)),
+                ['weatherball', 'terrainpulse']);
         } else if (row.family === 'PINCH') {
             const type = typeOf(row.param);
             expect(row.id + ' pinch at a third', pinchTypes(ability, 10, 30), {onModifyAtk: [type], onModifySpA: [type]});
@@ -1023,20 +1295,20 @@ function checkFormes(dex, validator, rows, moves, abilities) {
 // The UNMODELED markers of gen_closure.py --pool, re-derived from the pinned data in this file's own words: the
 // special column of a move, the handler column of an item and of an ability, and the lists of unmodelled features.
 // implemented in the turn code by id (G4: Focus Sash, Rock Head; G12: Floettite, Flower Veil, Fairy Aura)
-const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'expertbelt', 'ejectbutton', 'widelens'],
+const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton', 'widelens'],
     abilities: ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
         'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll', 'innerfocus', 'liquidvoice',
         'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof', 'unnerve', 'speedboost',
-        'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody']};
+        'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody', 'mirrorarmor', 'auraguard', 'hypercutter', 'scrappy', 'infiltrator', 'queenlymajesty', 'damp', 'sturdy', 'snowcloak', 'sandveil', 'static', 'justified', 'limber', 'solarpower', 'regenerator', 'toxicdebris', 'shadowtag']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
-    'randomNormal', 'allAdjacent', 'allies']);
+    'randomNormal', 'allAdjacent', 'allies', 'foeSide']); // foeSide: step G37 (the four hazards)
 // The fields of a move that the tables model (gen_closure.py DATA_KEYS and IGNORED_KEYS), nothing else.
 const MOVE_KEYS = new Set(['num', 'accuracy', 'basePower', 'category', 'name', 'pp', 'priority', 'flags', 'target', 'type',
     'critRatio', 'secondary', 'self', 'boosts', 'recoil', 'drain', 'status', 'volatileStatus', 'sideCondition',
     'pseudoWeather', 'selfSwitch', 'stallingMove', 'noPPBoosts', 'struggleRecoil', 'condition', 'contestType', 'zMove',
     'maxMove', 'isNonstandard', 'hasSheerForceBoost', 'inherit', 'thawsTarget', 'heal']);
 const MODELLED_STATUS = new Set(['brn', 'frz', 'par', 'slp', 'psn', 'tox']);
-const MODELLED_SIDE = new Set(['tailwind', 'reflect', 'lightscreen']);
+const MODELLED_SIDE = new Set(['tailwind', 'reflect', 'lightscreen', 'stealthrock', 'spikes', 'toxicspikes', 'stickyweb']); // the last four: step G37
 const STAT_NAMES = ['atk', 'def', 'spa', 'spd', 'spe', 'accuracy', 'evasion'];
 
 function isBoostBlock(b) {
@@ -1125,7 +1397,9 @@ function moveIsModelled(raw, id) {
     if (raw.boosts !== undefined) {
         // Step G19: Coaching, a status move whose primary boosts go to the adjacent ally, is modelled too.
         const toAlly = raw.target === 'adjacentAlly' && raw.category === 'Status';
-        if ((raw.target !== 'self' && !toAlly) || !isBoostBlock(raw.boosts)) {
+        // Step G39: Charm and Fake Tears, a status move of one adjacent target whose primary boosts go to that target.
+        const toTarget = raw.target === 'normal' && raw.category === 'Status';
+        if ((raw.target !== 'self' && !toAlly && !toTarget) || !isBoostBlock(raw.boosts)) {
             return false;
         }
         vectors += 1;
@@ -1233,6 +1507,17 @@ function checkHandlers(dex, source, header, extended) {
             }
             expect('move ' + id + ' has the special of ' + PROTECT_COPIES[id], special,
                    columns[moveIds.find((e) => e[1] === PROTECT_COPIES[id])[0]][28]);
+            continue;
+        }
+        if (id === 'sacredsword') {
+            // Step G39: Sacred Sword has Darkest Lariat's handler (the damage formula and the accuracy step that ignore the
+            // target's Defense and evasion stages), with the same two fields and no callback.
+            const original = dex.data.Moves.darkestlariat;
+            for (const key of ['ignoreDefensive', 'ignoreEvasion', 'category', 'target', 'accuracy']) {
+                expect('move ' + id + ' ' + key + ' is that of darkestlariat', raw[key], original[key]);
+            }
+            expect('move ' + id + ' has the special of darkestlariat', special,
+                   columns[moveIds.find((e) => e[1] === 'darkestlariat')[0]][28]);
             continue;
         }
         if (moveIsModelled(raw, id) !== (special !== unmodeledSpecial)) {
@@ -1373,13 +1658,17 @@ function main() {
     const items = checkItems(dex, itemRows, unmodeledItems);
     checkFocusSash(dex, root);
     checkWeather(dex, source);
+    checkTerrains(dex);
     checkG28(dex);
     checkG10Moves(dex);
     checkEncore(dex, repo);
     checkRecharge(dex);
     checkG19(dex);
+    checkG26(dex);
     checkG27(dex);
     checkG32(dex);
+    checkG33(dex);
+    checkG41(dex);
     checkG22(dex, formeRowsList, new Set(definedIds(headers, 'ITEM').values()), new Set(abilityIds.values()));
     const abilities = checkAbilities(dex, abilityRows, moveIds, unmodeledAbilities, unmodeledMoves);
     // "All 18": a booster and a resist berry for each type, and nothing else in the families.
@@ -1388,7 +1677,7 @@ function main() {
     expect('"-ate" abilities', abilities.ATE, 3);
     expect('pinch abilities', abilities.PINCH, 4);
     expect('weather setters', abilities.WEATHER_SETTER, 4);
-    expect('terrain setters', abilities.TERRAIN_SETTER, 2);
+    expect('terrain setters', abilities.TERRAIN_SETTER, 3);
     checkLegal(dex, TeamValidator.get(FORMAT_ID), itemRows, abilityRows, extendedAbilities);
     const legal = checkFormes(dex, TeamValidator.get(FORMAT_ID), formeRowsList, moveIds, abilityIds);
     const names = checkNames(dex, source, headers);

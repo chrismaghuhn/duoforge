@@ -46,7 +46,11 @@ checks its precondition and fails loudly otherwise:
                     that both end in the step are kept (their two -end lines
                     show the order; see heal_block_end_tie); the tie of Heal
                     Blocks of which fewer than two end shows no order and is
-                    dropped, which needs the step's log (drop_reason)
+                    dropped, which needs the step's log (drop_reason). The tie
+                    of one Pokemon's Protect volatile and its stall counter
+                    (every Protect turn has one) is kept only when the battle
+                    ends in the step and that Pokemon still stands: the order
+                    shows then in the volatile it keeps (see no_order_end_tie)
   SPEED_TIE event:Accuracy
                     only between No Guard handlers (data/abilities.ts noguard):
                     onAnyAccuracy returns true when its holder is the source
@@ -76,7 +80,7 @@ checks its precondition and fails loudly otherwise:
   INSERT_TIE        (Encore) the index of a replaced action among the moves
                     that tie it is a tape entry as well, unless the tied
                     actions are runSwitch entries (above)
-  RANDOM_TARGET execute:allAdjacentFoes, execute:allAdjacent, execute:allies
+  RANDOM_TARGET execute:allAdjacentFoes, execute:allAdjacent, execute:allies, execute:foeSide
                     always: the main target of a spread move only labels
                     the protocol line; the move hits every adjacent foe (and, for allAdjacent, the ally); for allies (Life Dew,
                     step G32) runMove aims the move at its user afterwards (sim/battle-actions.ts:419), so the draw decides nothing
@@ -126,7 +130,7 @@ import sys
 SITES = {'SPEED_TIE': 1, 'ACCURACY': 2, 'CRIT': 3, 'DAMAGE_ROLL': 4, 'SECONDARY': 5, 'STALL': 6,
          'SLEEP_TURNS': 7, 'FREEZE_THAW': 8, 'FULL_PARALYSIS': 9, 'CONFUSION_TURNS': 10,
          'CONFUSION_HIT': 11, 'RANDOM_TARGET': 12, 'STATUS_PICK': 13, 'INSERT_TIE': 14, 'TRACE': 15, 'POISON_TOUCH': 16,
-         'CURSED_BODY': 17, 'FLAME_BODY': 18}  # 17: step G27, 18: step G30
+         'CURSED_BODY': 17, 'FLAME_BODY': 18, 'STATIC': 19}  # 17: step G27, 18: step G30, 19: step G39
 STATS = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe']
 GENDER = {'M': 1, 'F': 2}
 GENDERLESS = 3
@@ -248,17 +252,18 @@ def side_end_tie(d, state):
     return (SITES['SPEED_TIE'], 0, 2, int(first[2][1]) - 1)
 
 
-# The volatiles whose duration handler has an onEnd line and so shows the order of a residual tie (Heal Block, order 20;
-# Disable, order 17, step G27): the handler id and the end of its `-end` line.
-END_TIE_LINES = {'healblock': 'move: Heal Block', 'disable': 'Disable'}
+# The volatiles whose duration handler has an onEnd that shows an order (the end line, or for Yawn the silent end whose
+# sleep follows): the handler id and the end of its line. Each is an entry of the engine's sorted residual list, a callback
+# while it ends now (Heal Block, order 20; Disable, order 17, step G27; Taunt and Yawn, step G31).
+END_TIE_LINES = {'healblock': 'move: Heal Block', 'disable': 'Disable', 'taunt': 'move: Taunt', 'yawn': 'move: Yawn|[silent]'}
 
 
 def heal_block_end_tie(d, log):
     """A residual tie of two Heal Blocks (Psychic Noise, order 20; and of two Disables, order 17, the same way) of holders of equal Speed that both end in this step:
     the shuffle of the two orders their `-end|X|move: Heal Block` lines, so the tie is kept like a side-end tie
-    (side_end_tie) and is the reference's own draw: the engine runs the same sorted list (the Heal Block and Disable ends
-    are entries of it, callbacks while they end now) and draws the same shuffle, so the entry is the draw as it is
-    (SPEED_TIE, 0, 2, 0 when the shuffle keeps the pair in the order of the group, else 1).
+    (side_end_tie). The engine draws it after the callbacks of the residual and orders the pair by it; the entry
+    is the reference's own draw: the engine runs the same sorted list and draws the same shuffle, so the entry is the draw as
+    it is (SPEED_TIE, 0, 2, 0 when the shuffle keeps the pair in the order of the group, else 1); Taunt and Yawn ends likewise.
     The precondition for keeping it is that both end lines are in the step's `log` (`log` is the step's protocol
     lines): a tie of which fewer than two holders end shows no order (the drop rule for duration ties stays: None
     here). The order that the draw states is checked against the order of the two lines, so a handler list that is
@@ -295,18 +300,67 @@ def heal_block_end_tie(d, log):
     return (SITES['SPEED_TIE'], 0, 2, d['value'] - d['start'])
 
 
+NO_ORDER_PAIR = (['protect', 'stall'], ['spikyshield', 'stall'])
+
+
+def standing(after, holder):
+    """Whether the Pokemon in the slot `holder` ('p1a', ...) has not fainted in the state `after`."""
+    side = after['sides'][int(holder[1]) - 1]
+    i = side['active']['ab'.index(holder[2])]
+    return i is not None and 0 <= i < len(side['pokemon']) and not side['pokemon'][i]['fainted']
+
+
+def no_order_end_tie(d, after):
+    """The residual tie between a Pokemon's Protect volatile (or Spiky Shield's) and its stall counter, the two no-order
+    duration handlers that every Protect turn adds (equal keys: one holder, one Speed, one sub-order). The reference
+    shuffles the pair with one draw random(start, start + 2) and shows nothing of the outcome, except in one case: the
+    battle ends at the faint point after the stall counter (which does not end), and the volatile of a Pokemon that
+    still stands then shows which of the two ran first (24 of 24 survivors kept Protect when the stall counter ran
+    first, 17 of 18 had lost it when Protect's own handler did; src/combat/turn.c dfi_residual_pair_draws). So the
+    draw is kept when the battle ended in the step and the group is exactly that pair of a standing holder. The group
+    is the pre-shuffle order of the reference's handler list, which the state does not hold, so the entry states the
+    outcome like side_end_tie does: (SPEED_TIE, 0, 2, 0 when the stall counter ran first, 1 when Protect's volatile
+    did), which is the engine's draw whatever its own pre-shuffle order. `after` is the state after the step. A group
+    of more than the pair (an equal-Speed neighbour, Helping Hand) is dropped here and the engine refuses it; a
+    shuffle that is not random(start, start + 2) is an error. None for any other draw."""
+    if d['site'] != 'SPEED_TIE' or d.get('context') != 'field:Residual' or after is None or not after.get('ended'):
+        return None
+    group = d['group']
+    parts = [g.split(':') for g in group]
+    if len(group) != 2 or any(len(x) != 4 or x[0] != 'H' or x[3] != 'end' for x in parts):
+        return None
+    if sorted(x[1] for x in parts) not in NO_ORDER_PAIR or parts[0][2] != parts[1][2]:
+        return None
+    if not standing(after, parts[0][2]):
+        return None
+    if d['hi'] - d['lo'] != 2 or d['lo'] != d['start']:
+        raise ConversionError('no-order-end-shuffle', 'trace_to_c: unexpected no-order shuffle %s' % d)
+    first = parts[0] if d['value'] == d['start'] else parts[1]  # random(start, start + 2): start keeps the order
+    return (SITES['SPEED_TIE'], 0, 2, 0 if first[1] == 'stall' else 1)
+
+
 def tie_effects(group):
     """The effect ids of the handler entries ('H:<effect>:<holder>:<cb|end>')
     of a tie group, sorted: the detail of the errors about such a tie."""
     return '+'.join(sorted(set(g.split(':')[1] for g in group if isinstance(g, str) and g.startswith('H:'))))
 
 
-def choice_scarf_slots(state):
-    """The active slots ('p1a', ...) whose Pokemon holds a Choice Scarf in `state`."""
+def choice_scarf_slots(state, before=None):
+    """The active slots ('p1a', ...) whose Pokemon holds a Choice Scarf in `state`. With `before`, the state before the
+    step: the item of a Pokemon is then the one that the same species (one per team) holds in `before`, which is what it
+    holds when it enters, because nothing moves the item of a Pokemon on the bench: the item at the end of the step can be
+    another one (step G29: a Trick, Thief or Covet after the switch-in gives or takes a Scarf), and the entry's handler
+    list is the one of the item it came in with."""
     slots = set()
     for s, side in enumerate(state['sides']):
+        standing = {}
+        if before is not None and s < len(before.get('sides', [])):
+            standing = {p['species']: p['item'] for p in before['sides'][s]['pokemon']}
         for pos, i in enumerate(side['active']):
-            if i is not None and 0 <= i < len(side['pokemon']) and side['pokemon'][i]['item'] == 'choicescarf':
+            if i is None or not 0 <= i < len(side['pokemon']):
+                continue
+            mon = side['pokemon'][i]
+            if (standing.get(mon['species'], mon['item'])) == 'choicescarf':
                 slots.add('p%d%s' % (s + 1, 'ab'[pos]))
     return slots
 
@@ -330,7 +384,7 @@ def resist_berries():
 def modify_damage_values():
     """The ModifyDamage modifier (out of 4096) of each handler that the engine chains (turn.c dfi_get_damage): by handler name."""
     values = {'lifeorb': 5324, 'expertbelt': 4915, 'reflect': 2732, 'lightscreen': 2732, 'auroraveil': 2732, 'glaiverush': 8192,
-              'solidrock': 3072, 'multiscale': 2048, 'friendguard': 3072}
+              'solidrock': 3072, 'multiscale': 2048, 'friendguard': 3072, 'auraguard': 2048}
     values.update({berry: 2048 for berry in resist_berries()})
     return values
 
@@ -349,9 +403,9 @@ def modifiers_commute(mods):
 
 def modifier_subsets(kinds, values):
     """The modifier lists that one hit can have from the handlers `kinds`: any subset with one screen at most, one of Life Orb and
-    Expert Belt, and one of Solid Rock and Multiscale."""
+    Expert Belt, and one of Solid Rock, Multiscale and Aura Guard (Mega batch 2)."""
     import itertools
-    exclusive = (('reflect', 'lightscreen', 'auroraveil'), ('lifeorb', 'expertbelt'), ('solidrock', 'multiscale'))
+    exclusive = (('reflect', 'lightscreen', 'auroraveil'), ('lifeorb', 'expertbelt'), ('solidrock', 'multiscale', 'auraguard'))
     out = []
     for r in range(1, len(kinds) + 1):
         for sub in itertools.combinations(kinds, r):
@@ -375,7 +429,7 @@ def drop_reason(d, state, after=None, log=None):
         # at most one damaged Pokemon shows no order. Any other handler of the event is not modelled. (Under another
         # weather no Pokemon has a Weather handler: the general rule below drops the tie.)
         # A Rain Dish holder (step G35) has its own onWeather under every weather, which does nothing outside rain.
-        ids = sorted(set(x for g in group for x in g.split(':', 3)[3].split('+') if x and x != 'raindish'))
+        ids = sorted(set(x for g in group for x in g.split(':', 3)[3].split('+') if x and x not in ('raindish', 'solarpower')))
         if ids != ['sandstorm']:
             raise ConversionError('weather-tie-handlers', 'trace_to_c: Weather tie with handlers %s: %s' % (ids, group),
                                   detail='+'.join(ids))
@@ -398,23 +452,29 @@ def drop_reason(d, state, after=None, log=None):
         # the state before the step still shows the one it replaced, which may be burned), else the state before. A
         # holder that is burned is an error.
         placed = state if after is None else after
+        # Limber's onUpdate (step G39, data/abilities.ts:2368-2386) is the same for paralysis: every paralysis of its holder is
+        # refused by its onSetStatus, so the cure does nothing; a holder that is paralysed (a Trace copy onto a paralysed
+        # Pokemon, which the engine refuses) is an error here too.
         for g in group:
-            if 'thermalexchange' in g.split(':', 3)[3].split('+'):
-                slot = g.split(':')[1]
-                side = placed['sides'][int(slot[1]) - 1]
-                index = side['active'][' ab'.index(slot[2]) - 1]
-                if index is not None and side['pokemon'][index]['status'] == 'brn':
-                    raise ConversionError('thermal-exchange-burn',
-                                          'trace_to_c: a Thermal Exchange holder is burned: %s' % slot, detail=slot)
+            for ability, status in (('thermalexchange', 'brn'), ('limber', 'par')):
+                if ability in g.split(':', 3)[3].split('+'):
+                    slot = g.split(':')[1]
+                    side = placed['sides'][int(slot[1]) - 1]
+                    index = side['active'][' ab'.index(slot[2]) - 1]
+                    if index is not None and side['pokemon'][index]['status'] == status:
+                        raise ConversionError('thermal-exchange-burn' if ability == 'thermalexchange' else 'limber-paralysis',
+                                              'trace_to_c: a %s holder has %s: %s' % (ability, status, slot), detail=slot)
         # Trace's onUpdate (step AC1) returns unless its holder is still seeking after an onStart that found no foe to
         # copy, which the engine refuses (E_UNSUPPORTED): until then it does nothing either, so it is not a holder.
-        inert = {'thermalexchange', 'trace'}
+        inert = {'thermalexchange', 'trace', 'limber'}
         # Rain Dish's onWeather (step G35, data/abilities.ts:3759) heals only in rain (RainDance; Primordial Sea is not in the
         # format): under any other weather its holder has the handler and it does nothing, so it is not a holder. The weather is
-        # the one of the upkeep, which is the one the step ends with (after) or, without it, the one it started with.
-        if ctx == 'each:Weather' and any('raindish' in g.split(':', 3)[3].split('+') for g in group) \
-                and placed['weather'] != 'raindance':
-            inert = inert | {'raindish'}
+        # the one of the upkeep, which is the one the step ends with (after) or, without it, the one it started with. Solar
+        # Power's onWeather (step G39, data/abilities.ts:4396-4413) is the same for the sun (SunnyDay).
+        for ability, weather in (('raindish', 'raindance'), ('solarpower', 'sunnyday')):
+            if ctx == 'each:Weather' and any(ability in g.split(':', 3)[3].split('+') for g in group) \
+                    and placed['weather'] != weather:
+                inert = inert | {ability}
         ids = [x for g in group for x in g.split(':', 3)[3].split('+') if x and x not in inert]
         if not all(x in EACH_HANDLERS for x in ids):
             raise ConversionError('each-tie-handlers',
@@ -436,7 +496,7 @@ def drop_reason(d, state, after=None, log=None):
                                   detail='+'.join(sorted(set(anys) - {'whiteherb'})))
         # An entering Choice Scarf holder counts one SwitchIn handler without
         # an effect (data/items.ts choicescarf onStart).
-        scarves = choice_scarf_slots(after) if after is not None else set()
+        scarves = choice_scarf_slots(after, state) if after is not None else set()
         effective = []
         for p in parts:
             n = int(p[2]) - (1 if p[3] == 'S' and p[1] in scarves else 0)
@@ -451,7 +511,7 @@ def drop_reason(d, state, after=None, log=None):
             return 'switch-in order with at most one entry effect'
         return None  # the engine draws
     if site == 'SPEED_TIE' and ctx == 'field:Residual':
-        if all(g.startswith(('H:healblock:', 'H:disable:')) and g.endswith(':end') for g in group):
+        if all(g.startswith(('H:healblock:', 'H:disable:', 'H:taunt:', 'H:yawn:')) and g.endswith(':end') for g in group):
             # Precondition of the drop: the order of the ends shows in no pair of lines. heal_block_end_tie keeps the
             # tie when two of the holders end now, so reaching this with two end lines is a bug of the caller.
             if log is None:
@@ -464,6 +524,9 @@ def drop_reason(d, state, after=None, log=None):
             if side_end_tie(d, state) is not None:
                 raise ConversionError('side-end-tie',
                                       'trace_to_c: ending side conditions reach drop_reason: %s' % group)
+            if no_order_end_tie(d, after) is not None:
+                raise ConversionError('no-order-end-tie',
+                                      'trace_to_c: a kept no-order tie reaches drop_reason: %s' % group)
             return 'residual tie of duration counters'
         if all(g.startswith('H:') and g.endswith(':cb') for g in group):
             return None  # callbacks (burn, Grassy Terrain): the engine draws
@@ -519,11 +582,11 @@ def drop_reason(d, state, after=None, log=None):
         raise ConversionError('modifydamage-tie', 'trace_to_c: ModifyDamage tie with %s' % group,
                               detail=tie_effects(group))
     if site == 'SPEED_TIE' and ctx == 'event:DisableMove':
-        # The DisableMove handlers of one Pokemon: the Choice lock's, Throat Chop's and Heal Block's onDisableMove
+        # The DisableMove handlers of one Pokemon: the Choice lock's, Throat Chop's, Heal Block's, Encore's and Taunt's onDisableMove
         # (data/conditions.ts choicelock, data/moves.ts throatchop and healblock) each only set `disabled` on
         # move slots, and setting a flag twice is setting it once: whichever runs first, the request offers the
         # same moves. Any other handler is a mechanic that has not been looked at.
-        if all(g.startswith(('H:choicelock:', 'H:throatchop:', 'H:healblock:', 'H:encore:', 'H:disable:')) and g.endswith(':cb')
+        if all(g.startswith(('H:choicelock:', 'H:throatchop:', 'H:healblock:', 'H:encore:', 'H:disable:', 'H:imprison:', 'H:taunt:')) and g.endswith(':cb')
                for g in group):
             return 'DisableMove handlers whose order changes nothing'
         raise ConversionError('disablemove-tie', 'trace_to_c: DisableMove tie with %s' % group,
@@ -548,6 +611,10 @@ def drop_reason(d, state, after=None, log=None):
         # tests/test_pool_tables.c checks it), so whichever runs first, the same moves are stopped with the same line.
         # Any other BeforeMove or ModifyMove tie is a handler that has not been looked at.
         parts = [g.split(':') for g in group or []]
+        # Step G38: the onFoeBeforeMove handlers (priority 4) of two Pokemon that both used Imprison, for a move of a foe of
+        # both: whichever runs first stops the move with the same line (the effect is the move, not the imprisoner).
+        if ctx == 'event:BeforeMove' and len(parts) >= 2 and all(len(x) == 4 and x[0] == 'H' and x[1] == 'imprison' and x[3] == 'cb' for x in parts):
+            return 'BeforeMove tie of Imprison handlers: the same line whichever runs first'
         if (len(parts) == 2 and all(len(x) == 4 and x[0] == 'H' and x[3] == 'cb' for x in parts)
                 and sorted(x[1] for x in parts) == ['healblock', 'throatchop'] and parts[0][2] == parts[1][2]):
             return '%s tie of Heal Block and Throat Chop of one Pokemon: no move has both flags' % ctx[6:]
@@ -570,7 +637,9 @@ def drop_reason(d, state, after=None, log=None):
         raise ConversionError('insert-tie', 'trace_to_c: insert tie in %s' % group)
     if site == 'RANDOM_TARGET' and ctx in ('action-speed', 'resolve'):
         return 'target computed for priority'
-    if site == 'RANDOM_TARGET' and ctx in ('execute:allAdjacentFoes', 'execute:allAdjacent', 'execute:allies'):
+    if site == 'RANDOM_TARGET' and ctx in ('execute:allAdjacentFoes', 'execute:allAdjacent', 'execute:allies', 'execute:foeSide'):
+        # foeSide (step G37, the four hazards): getTarget's random foe only labels the move line, which the converter leaves
+        # without a target (FOE_SIDE_MOVES); the move acts on the foes' side whichever foe it names
         return 'main target of a spread move'
     if site == 'UNKNOWN':
         raise ConversionError('unclassified-draw', 'trace_to_c: unclassified draw', detail=ctx)
@@ -578,7 +647,7 @@ def drop_reason(d, state, after=None, log=None):
 
 
 # The items and abilities whose each-event handlers (Update, TerrainChange, Weather: Rain Dish, step G35) act on their holder alone.
-EACH_HANDLERS = frozenset(('sitrusberry', 'grassyseed', 'psychicseed', 'raindish'))
+EACH_HANDLERS = frozenset(('sitrusberry', 'grassyseed', 'psychicseed', 'electricseed', 'mistyseed', 'raindish', 'solarpower', 'limber'))
 
 
 def site_of(d):
@@ -665,6 +734,13 @@ def convert_choice(text, side, state, roster_of, mid_turn=False):
             # (Champions' Fake Out, a choice lock; Team C).
             rows = state['sides'][side].get('enabled') or []
             struggle = slot < len(rows) and rows[slot] == [2]
+            # Imprison's hidden disable (step G38): with every move with PP disabled or hidden-disabled, getMoves() is empty and
+            # chooseMove pushes Struggle for any `move N` (sim/side.ts:699-706, before the disabled check), although the request
+            # of the last active Pokemon shows the hidden moves as enabled.
+            hid = state['sides'][side].get('hidden') or []
+            if not struggle and slot < len(rows) and slot < len(hid) and rows[slot]:
+                eff = [0 if i < len(hid[slot]) and hid[slot][i] else e for i, e in enumerate(rows[slot])]
+                struggle = not any(e == 1 for e in eff)
             if all(pp == 0 for pp in mon['pp']) and not struggle:
                 raise ConversionError('struggle-request',
                                       'trace_to_c: no PP left and no Struggle in the request: %r' % text)
@@ -705,9 +781,12 @@ STATUS = {'': 0, 'brn': 1, 'frz': 2, 'par': 3, 'slp': 4, 'psn': 5, 'tox': 6, 'fn
 WEATHER = {'': 0, 'raindance': 1, 'sunnyday': 2, 'sandstorm': 3, 'snowscape': 4}
 WEATHER_LINE = {'none': 0, 'RainDance': 1, 'SunnyDay': 2, 'Sandstorm': 3, 'Snowscape': 4}  # the names of -weather lines
 WEATHER_CAUSE = {'Sandstorm': 3}  # [from] <weather>: the residual damage of a weather (cause WEATHER, id2 = its value)
-TERRAIN = {'': 0, 'grassyterrain': 1, 'psychicterrain': 2}
+TERRAIN = {'': 0, 'grassyterrain': 1, 'psychicterrain': 2, 'electricterrain': 3, 'mistyterrain': 4}  # DFI_TERRAIN_* (3 and 4: POOL, step G25)
 FIELD_PSYCHIC_TERRAIN = 3  # DUOFORGE_FIELD_PSYCHIC_TERRAIN (Team C)
+FIELD_ELECTRIC_TERRAIN = 4  # DUOFORGE_FIELD_ELECTRIC_TERRAIN (POOL, step G25)
+FIELD_MISTY_TERRAIN = 5  # DUOFORGE_FIELD_MISTY_TERRAIN (POOL, step G25)
 BLOCK_WIDE_GUARD = 4  # DUOFORGE_BLOCK_WIDE_GUARD (POOL), a detail of BLOCKED
+FOE_SIDE_MOVES = ('Stealth Rock', 'Spikes', 'Toxic Spikes', 'Sticky Web')  # the moves with the target class foeSide (POOL, step G37)
 RESULT = {'p1': 1, 'p2': 2, '': 3}
 
 
@@ -728,6 +807,13 @@ def public_lines(log, roster_of, shown):
             skip = True
             continue
         parts = line.split('|')
+        if len(parts) >= 3 and parts[1] == 'faint':
+            # A faint that no `-damage ... 0 fnt` line announced (Perish Song, step G26): the screen shows the Pokemon at 0.
+            side = int(parts[2][1]) - 1
+            roster = roster_of[side].get(parts[2].split(': ', 1)[1])
+            if roster is not None:
+                shown[side][roster] = (0, 0)
+            continue
         if len(parts) >= 5 and parts[1] in ('switch', 'drag'):
             who, hp = parts[2], parts[4]
         elif len(parts) >= 4 and parts[1] in ('-damage', '-heal', '-sethp'):
@@ -759,14 +845,18 @@ EV = {name: i + 1 for i, name in enumerate(
      'IMMUNE', 'FAIL', 'PROTECT', 'BLOCKED', 'BOOST', 'UNBOOST', 'STATUS', 'CURE_STATUS', 'CONFUSION_START',
      'CONFUSION_END', 'CONFUSED', 'FLASH_FIRE', 'WEATHER', 'FIELD_START', 'FIELD_END', 'SIDE_START', 'SIDE_END',
      'ITEM_END', 'FORME', 'MEGA', 'PREPARE', 'ANIMATION', 'ABILITY', 'ACTIVATE', 'UPKEEP', 'RESULT',
-     'SINGLE_TURN', 'VOLATILE_START', 'VOLATILE_END', 'TYPE_CHANGE'])}
+     'SINGLE_TURN', 'VOLATILE_START', 'VOLATILE_END', 'TYPE_CHANGE', 'ITEM_START'])}
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
          'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14,
-         'HEAL_BLOCK': 15, 'WEATHER': 16, 'ITEM_TAKEN': 17, 'RECHARGE': 18, 'DISABLE': 19}
+         'HEAL_BLOCK': 15, 'WEATHER': 16, 'ITEM_TAKEN': 17, 'RECHARGE': 18, 'DISABLE': 19, 'TAUNT': 20, 'IMPRISON': 21}
 VOLATILE_HEAL_BLOCK = 1  # DUOFORGE_VOLATILE_HEAL_BLOCK: the detail of VOLATILE_START and VOLATILE_END
 VOLATILE_ENCORE = 2      # DUOFORGE_VOLATILE_ENCORE (step G9)
 VOLATILE_DISABLE = 4     # DUOFORGE_VOLATILE_DISABLE (step G27)
 VOLATILE_MUST_RECHARGE = 3  # DUOFORGE_VOLATILE_MUST_RECHARGE (step G17)
+VOLATILE_PERISH = 5  # DUOFORGE_VOLATILE_PERISH (step G26)
+VOLATILE_IMPRISON = 8    # DUOFORGE_VOLATILE_IMPRISON (step G38): START only
+VOLATILE_TAUNT = 6       # DUOFORGE_VOLATILE_TAUNT (step G31)
+VOLATILE_YAWN = 7        # DUOFORGE_VOLATILE_YAWN (step G31)
 MOVE_SLOT_RECHARGE = 5   # DUOFORGE_MOVE_SLOT_RECHARGE (step G17)
 # DUOFORGE_TYPE_*: the alphabetical type ids, the detail of TYPE_CHANGE
 TYPE_IDS = {name: i for i, name in enumerate(
@@ -811,12 +901,22 @@ IGNORED_VOLATILES = {
     # Pool step G9 (Encore): its turns are not a field of the record either: the moves of the next requests (every
     # slot but the Encored one is disabled), the replaced move line and the start and end lines show them.
     'encore': 'the moves of the requests, the replaced move and the start and end lines',
+    # Pool step G31: Taunt's turns are not a field of the record: the moves of the next requests (every Status move is
+    # disabled), the cant lines and the start and end lines show them; Yawn's show in the start line and the sleep.
+    'taunt': 'the moves of the requests, the cant lines and the start and end lines',
+    'yawn': 'the start line and the sleep that it brings',
     # Pool step G17 (the recharge turn): the volatile shows in the request of the next turn (the one candidate, the
     # recharge slot), the start line (`-mustrecharge`) and the cant line (`cant|X|recharge`), and the view bit.
     'mustrecharge': 'the request of the recharge turn, the start line and the cant line',
     # Pool step G19 (Glaive Rush): `-singlemove|X|Glaive Rush|[silent]` is not shown; the volatile shows in the accuracy
     # draws that are missing (the moves against it cannot miss) and in the doubled damage of every move that hits it.
     'glaiverush': 'the damage of the moves against it and the accuracy draws that it removes',
+    # Pool step G26 (Perish Song): the counter is not a field of the record; the count lines (`-start|X|perishN`) and
+    # the faint at the end show it, and the view's perish field is checked against them.
+    'perishsong': 'the count lines and the faint',
+    # Pool step G38 (Imprison): the start line, the moves of the foes' requests (the hidden disable, `hidden` of the state
+    # row), the cant line and the view bit.
+    'imprison': 'the start line, the moves of the requests, the cant line and the view bit',
 }
 HP_EXACT, HP_PERCENT = 1, 2
 HP_FLAGS_EV = {'': 0, 'r': 1, 'y': 2, 'g': 3}
@@ -866,8 +966,9 @@ def ev_cause(attrs, tables):
                 cause, id2 = CAUSE['WEATHER'], WEATHER_CAUSE[what]
             elif what == 'Grassy Terrain':
                 cause = CAUSE['TERRAIN']
-            elif what in ('Parting Shot', 'Flip Turn', 'U-turn', 'Volt Switch', 'Spiky Shield'):  # the move that made the switch (U-turn, Volt Switch: pool tables)
-                # Spiky Shield (step G20, POOL): `-damage|attacker|hp|[from] Spiky Shield|[of] holder`, the condition's own name
+            elif what in ('Parting Shot', 'Flip Turn', 'U-turn', 'Volt Switch', 'Spiky Shield', 'Stealth Rock', 'Spikes'):  # the move that made the switch (U-turn, Volt Switch: pool tables)
+                # Spiky Shield (step G20, POOL): `-damage|attacker|hp|[from] Spiky Shield|[of] holder`, the condition's own name;
+                # Stealth Rock and Spikes (step G37): `-damage|X|hp|[from] Stealth Rock`, the hazard's own name, the move's id in id2
                 cause, id2 = CAUSE['MOVE'], tables['MOVE'][key(what)]
             elif what == 'lockedmove':
                 pass  # a MOVE flag
@@ -898,10 +999,20 @@ def ev_hp(text, side, viewer, maxhp):
     return (int(m.group(1)), 100, HP_PERCENT, HP_FLAGS_EV[m.group(3)], status)
 
 
+def hit_key(text):
+    """The Pokemon of a -damage or -hitcount line: its side and name, because a Pokemon that has fainted is shown without its
+    slot ('p2: Primarina') on the -hitcount line that follows its faint."""
+    m = re.match(r'p([12])[ab]?: (.*)$', text)
+    if m is None:
+        raise ConversionError('hitcount-pokemon', 'trace_to_c: not a Pokemon: %r' % text)
+    return (m.group(1), m.group(2))
+
+
 def step_events(log, viewer, roster_of, maxhp, tables):
     """The events `viewer` sees in one step, in protocol order."""
     out = []
     skip = set()
+    hits_on = {}  # the -damage lines of the move that is being shown, by the Pokemon hit (see -hitcount)
     for i, line in enumerate(log):
         if i in skip:
             continue
@@ -915,10 +1026,32 @@ def step_events(log, viewer, roster_of, maxhp, tables):
         if kind in NOT_EVENTS or kind.startswith('t:'):
             continue
         attrs = [x for x in parts[2:] if x.startswith('[')]
-        if '[silent]' in attrs:
+        # A silent line is not an event, except the `-enditem` of an item that a move took (Trick, Switcheroo and Thief print
+        # it silent, step G29): the engine's ITEM_END for it is how the other player's old item_used learns that the item left.
+        # Regenerator's heal (step G39, the Champions mod) is the one [silent] line that shows: no client prints a message, but the line
+        # carries the holder's new HP, which the opponent's display of the member follows.
+        if '[silent]' in attrs and not ((kind == '-enditem' and any(a.startswith('[from] move: ') for a in attrs)) or
+                                        (kind == '-heal' and '[from] ability: Regenerator' in attrs)):
             continue
         args = [x for x in parts[2:] if not x.startswith('[')]
         e = None
+        if kind == 'move':
+            hits_on.clear()
+        elif kind == '-damage' and not attrs:
+            hits_on[hit_key(args[0])] = hits_on.get(hit_key(args[0]), 0) + 1
+        elif kind == '-hitcount':
+            # `-hitcount|P|N` ends the lines of a multi-hit move (Dual Wingbeat, Triple Axel, ...): N is the number of hits
+            # that landed, the loop's `hit - 1` (data/mods/champions/scripts.ts:427-549, the base game's
+            # sim/battle-actions.ts:857-979). Each hit that lands shows one -damage line on the target, so the count is
+            # derived from the events already converted and the line is no event of its own: it is asserted and dropped.
+            # Only when the line is present: the Champions loop prints none for Parental Bond when only its first hit
+            # landed (scripts.ts:547-548), so a missing line is no error. NOTE for whoever builds Substitute: a hit into a
+            # Substitute shows `-activate|P|move: Substitute|[damage]` or `-end|P|Substitute`, not `-damage`, and the
+            # loop counts it; the sub hits must be counted here too.
+            if len(args) != 2 or not args[1].isdigit() or hits_on.get(hit_key(args[0]), 0) != int(args[1]):
+                raise ConversionError('hitcount-mismatch', 'trace_to_c: %r but the move showed %d -damage lines on that Pokemon'
+                                      % (line, hits_on.get(hit_key(args[0]), 0)), detail=line.split('|')[-1])
+            continue
         if kind == 'turn':
             e = ev_tuple(EV['TURN'], ident=int(args[0]))
         elif kind == 'upkeep':
@@ -953,8 +1086,8 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                             amount |= 1 << ev_pos(slot)
                 elif a:
                     raise ConversionError('move-attribute', 'trace_to_c: unknown move attribute %r' % a, detail=a)
-            if flags & (FLAG['SPREAD'] | FLAG['NOTARGET'] | FLAG['STILL']) or target is None:
-                target = NOPOS
+            if flags & (FLAG['SPREAD'] | FLAG['NOTARGET'] | FLAG['STILL']) or target is None or args[1] in FOE_SIDE_MOVES:
+                target = NOPOS  # a foeSide move (step G37) names a random foe in the protocol: a label the engine does not draw
             e = ev_tuple(EV['MOVE'], pos, target, 0, tables['MOVE'][key(args[1])], amount=amount, flags=flags)
         elif kind in ('-damage', '-heal'):
             pos = ev_pos(args[0])
@@ -979,6 +1112,12 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             elif reason == 'Disable':
                 # data/moves.ts:3697-3703 disable onBeforeMove: `cant|X|Disable|MOVE` (step G27), no PP used.
                 e = ev_tuple(EV['CANT'], pos, NOPOS, CAUSE['DISABLE'], tables['MOVE'][key(args[2])])
+            elif reason == 'move: Imprison':
+                # data/moves.ts:9511-9519 onFoeBeforeMove: `cant|X|move: Imprison|Move`, the stopped move in id (step G38).
+                e = ev_tuple(EV['CANT'], pos, NOPOS, CAUSE['IMPRISON'], tables['MOVE'][key(args[2])])
+            elif reason == 'move: Taunt':
+                # data/moves.ts:19004-19010: `cant|X|move: Taunt|MOVE`, the stopped Status move in id (step G31)
+                e = ev_tuple(EV['CANT'], pos, NOPOS, CAUSE['TAUNT'], tables['MOVE'][key(args[2])])
             else:
                 cause = {'par': 'PARALYSIS', 'slp': 'SLEEP', 'frz': 'FREEZE', 'flinch': 'FLINCH', 'nopp': 'NO_PP',
                          'recharge': 'RECHARGE'}
@@ -1033,6 +1172,11 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             if len(args) != 2 or not args[1].startswith('ability: ') or of == NOPOS:
                 raise ConversionError('block-line', 'trace_to_c: unknown -block %r' % line, detail=args[1] if len(args) > 1 else '')
             e = ev_tuple(EV['ACTIVATE'], ev_pos(args[0]), of, CAUSE['ABILITY'], 0, tables['ABILITY'][key(args[1][9:])] + 1)
+        elif kind == '-fieldactivate':
+            # Perish Song (step G26): `-fieldactivate|move: Perish Song`, an ACTIVATE of the move with no position.
+            if args != ['move: Perish Song']:
+                raise ConversionError('fieldactivate-line', 'trace_to_c: unknown -fieldactivate %r' % line, detail=line)
+            e = ev_tuple(EV['ACTIVATE'], NOPOS, NOPOS, CAUSE['MOVE'], 0, tables['MOVE'][key('Perish Song')])
         elif kind == '-activate':
             pos = ev_pos(args[0])
             what = args[1]
@@ -1072,6 +1216,11 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                 e = ev_tuple(EV['CONFUSION_START' if kind == '-start' else 'CONFUSION_END'], ev_pos(args[0]))
             elif what == 'ability: Flash Fire' and kind == '-start':
                 e = ev_tuple(EV['FLASH_FIRE'], ev_pos(args[0]))
+            elif re.fullmatch(r'perish[0-3]', what) and kind == '-start' and len(args) == 2:
+                # Perish Song (step G26, data/moves.ts:13261-13272): the residual's count line, N = 3, 2, 1, and perish0
+                # from onEnd (the holder faints after the upkeep line). The cast's own `-start|X|perish3|[silent]` is
+                # not shown and never reaches this point.
+                e = ev_tuple(EV['VOLATILE_START'], ev_pos(args[0]), detail=VOLATILE_PERISH, amount=int(what[6]))
             elif what == 'move: Heal Block':
                 e = ev_tuple(EV['VOLATILE_START' if kind == '-start' else 'VOLATILE_END'], ev_pos(args[0]),
                              detail=VOLATILE_HEAL_BLOCK)
@@ -1085,6 +1234,20 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                                  detail=VOLATILE_DISABLE)
                 else:
                     e = ev_tuple(EV['VOLATILE_END'], ev_pos(args[0]), detail=VOLATILE_DISABLE)
+            elif what == 'move: Imprison' and kind == '-start':
+                # data/moves.ts:9501 onStart: `-start|user|move: Imprison` (step G38); the volatile has no end line, it ends
+                # with the occupant.
+                e = ev_tuple(EV['VOLATILE_START'], ev_pos(args[0]), detail=VOLATILE_IMPRISON)
+            elif what == 'move: Taunt':
+                # data/moves.ts:18974-19016 taunt: `-start|X|move: Taunt` from onStart, `-end|X|move: Taunt` from onEnd
+                # (the duration; a switch-out or a faint clears it with no line) (step G31)
+                e = ev_tuple(EV['VOLATILE_START' if kind == '-start' else 'VOLATILE_END'], ev_pos(args[0]),
+                             detail=VOLATILE_TAUNT)
+            elif what == 'move: Yawn' and kind == '-start':
+                # data/moves.ts:21131-21162 yawn: `-start|X|move: Yawn|[of] source` from onStart; the end line is [silent]
+                # (dropped) and the sleep it brings is the ordinary STATUS line (step G31)
+                _, _, other = ev_cause(attrs, tables)
+                e = ev_tuple(EV['VOLATILE_START'], ev_pos(args[0]), other, detail=VOLATILE_YAWN)
             elif what == 'Encore':
                 # data/moves.ts:4724-4783 encore: `-start|X|Encore` from onStart, `-end|X|Encore` from onEnd (the
                 # duration or an exhausted move; a switch-out or a faint clears it with no line).
@@ -1111,31 +1274,61 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                          flags=FLAG['UPKEEP'] if '[upkeep]' in attrs else 0)
         elif kind in ('-fieldstart', '-fieldend'):
             cause, id2, other = ev_cause(attrs, tables)
-            field = {'move: Grassy Terrain': 1, 'move: Trick Room': 2, 'move: Psychic Terrain': FIELD_PSYCHIC_TERRAIN}[args[0]]
+            names = {'move: Grassy Terrain': 1, 'move: Trick Room': 2, 'move: Psychic Terrain': FIELD_PSYCHIC_TERRAIN,
+                     'move: Electric Terrain': FIELD_ELECTRIC_TERRAIN, 'move: Misty Terrain': FIELD_MISTY_TERRAIN}
+            if kind == '-fieldend' and args[0] == 'Misty Terrain':
+                # Misty Terrain's onFieldEnd has no "move: " in its line (data/moves.ts:12198-12200 at the pin); no other
+                # line of the field has this form, and a -fieldstart of it is an error.
+                names['Misty Terrain'] = FIELD_MISTY_TERRAIN
+            field = names[args[0]]
             e = ev_tuple(EV['FIELD_START' if kind == '-fieldstart' else 'FIELD_END'], NOPOS, other, cause, 0, id2,
                          detail=field)
         elif kind in ('-sidestart', '-sideend'):
             side = int(args[0][1]) - 1
             cond = {'move: Tailwind': 1, 'Reflect': 2, 'move: Reflect': 2, 'move: Light Screen': 3,
-                    'move: Aurora Veil': 4}[args[1]]  # 4: DUOFORGE_SIDE_AURORA_VEIL (POOL kinds, step G20)
-            e = ev_tuple(EV['SIDE_START' if kind == '-sidestart' else 'SIDE_END'], detail=side, amount=cond)
+                    'move: Aurora Veil': 4,  # 4: DUOFORGE_SIDE_AURORA_VEIL (POOL kinds, step G20)
+                    # step G37, the entry hazards (POOL kinds): Spikes' own line has no `move: `
+                    'move: Stealth Rock': 5, 'Spikes': 6, 'move: Spikes': 6, 'move: Toxic Spikes': 7,
+                    'move: Sticky Web': 8}[args[1]]
+            _, _, of = ev_cause(attrs, tables)  # -sideend|side|move: Toxic Spikes|[of] POKEMON: a grounded Poison type absorbed them
+            e = ev_tuple(EV['SIDE_START' if kind == '-sidestart' else 'SIDE_END'], NOPOS, of, detail=side, amount=cond)
         elif kind == '-enditem':
             taken = [a for a in attrs if a.startswith('[from] move: ')]
             if taken:
-                # POOL (Knock Off, data/moves.ts:9959-9984): `-enditem|X|Item|[from] move: Knock Off|[of] Y` is an item that
-                # a move took: ITEM_END with the cause ITEM_TAKEN, the move in id and its user ([of]) in other. Nothing else
-                # of the pool takes an item (Thief, Covet and Trick come with their steps), and a line without [of] or with
-                # anything else is an error.
+                # POOL (Knock Off, data/moves.ts:9959-9984; Thief, Trick and Switcheroo, step G29, data/moves.ts:19302,
+                # :19865, :18644): `-enditem|X|Item|[from] move: M|[of] Y` is an item that a move took: ITEM_END with the
+                # cause ITEM_TAKEN, the move in id and the one it went to ([of]) in other; Trick's and Switcheroo's silent line
+                # has no [of] (other: none). Knock Off's line must have it and must not be silent, Thief's is silent with it,
+                # and a line with anything else is an error.
                 of = [a for a in attrs if a.startswith('[of] ')]
-                extra = [a for a in attrs if a not in taken and a not in of]
-                if len(taken) != 1 or len(of) != 1 or extra:
+                silent = '[silent]' in attrs
+                extra = [a for a in attrs if a not in taken and a not in of and a != '[silent]']
+                move_name = taken[0][len('[from] move: '):] if taken else ''
+                if (len(taken) != 1 or len(of) > 1 or extra or (move_name == 'Knock Off' and (silent or len(of) != 1)) or
+                        (move_name == 'Thief' and not (silent and len(of) == 1)) or
+                        (move_name in ('Trick', 'Switcheroo') and not (silent and not of)) or
+                        move_name not in ('Knock Off', 'Thief', 'Trick', 'Switcheroo')):
                     raise ConversionError('enditem-line', 'trace_to_c: unknown -enditem %r' % line, detail=line)
-                e = ev_tuple(EV['ITEM_END'], ev_pos(args[0]), ev_pos(of[0][5:]), CAUSE['ITEM_TAKEN'],
-                             tables['MOVE'][key(taken[0][len('[from] move: '):])], tables['ITEM'][key(args[1])] + 1)
+                e = ev_tuple(EV['ITEM_END'], ev_pos(args[0]), ev_pos(of[0][5:]) if of else NOPOS, CAUSE['ITEM_TAKEN'],
+                             tables['MOVE'][key(move_name)], tables['ITEM'][key(args[1])] + 1)
             else:
                 # [weaken]: the second line of a resist berry (Team C, Chople Berry), detail 1.
                 e = ev_tuple(EV['ITEM_END'], ev_pos(args[0]), NOPOS, 0, 0, tables['ITEM'][key(args[1])] + 1,
                              detail=1 if '[weaken]' in attrs else 0, flags=FLAG['EATEN'] if '[eat]' in attrs else 0)
+        elif kind == '-item':
+            # POOL (step G29): `-item|X|Item|[from] move: M[|[of] Y]` is an item that a move gave X (Trick, Switcheroo, Thief,
+            # Covet): ITEM_START with the cause MOVE, the move in id, the item in id2 and, when the line says it, the Pokemon it
+            # came from ([of]) in other. Any other `-item` line (an ability's, a Frisk) is refused.
+            moves = [a[len('[from] move: '):] for a in attrs if a.startswith('[from] move: ')]
+            of = [a for a in attrs if a.startswith('[of] ')]
+            extra = [a for a in attrs if not a.startswith('[from] move: ') and a not in of]
+            move_name = moves[0] if moves else ''
+            if (len(moves) != 1 or len(of) > 1 or extra or len(args) != 2 or
+                    move_name not in ('Trick', 'Switcheroo', 'Thief', 'Covet') or
+                    (move_name in ('Thief', 'Covet')) != (len(of) == 1)):
+                raise ConversionError('item-line', 'trace_to_c: unknown -item %r' % line, detail=line)
+            e = ev_tuple(EV['ITEM_START'], ev_pos(args[0]), ev_pos(of[0][5:]) if of else NOPOS, CAUSE['MOVE'],
+                         tables['MOVE'][key(move_name)], tables['ITEM'][key(args[1])] + 1)
         elif kind == 'detailschange':
             e = ev_tuple(EV['FORME'], ev_pos(args[0]), ident=tables['FORME'][key(args[1].split(',')[0])])
         elif kind == '-mega':
@@ -1182,6 +1375,11 @@ def boundary_of(state, log):
     if len(kinds) != 1:
         raise ConversionError('mixed-requests', 'trace_to_c: mixed requests %s' % sorted(kinds))
     kind = kinds.pop()
+    if kind == 'switch' and 'queue_len' in state:
+        # The harness records the actions still queued (step G37): pending actions make it a PIVOT, an empty queue a
+        # REPLACEMENT, whether or not the step's log shows the residual (a replacement that a hazard knocked out at once
+        # is asked again before any turn line).
+        return 4 if state['queue_len'] > 0 else 3
     if kind == 'switch' and '|upkeep' not in log:
         # Without the residual action ('|upkeep') in this step the queue still
         # holds actions: a PIVOT. That is a mid-turn switch (Parting Shot,
@@ -1271,6 +1469,8 @@ def convert_battle(name, spec, trace, tables):
             ends = side_end_tie(d, state)
             if ends is None:
                 ends = heal_block_end_tie(d, step['log'])
+            if ends is None:
+                ends = no_order_end_tie(d, step['state'])
             if ends is not None:
                 tape.append(ends)
             elif drop_reason(d, state, step['state'], step['log']) is None:
@@ -1371,7 +1571,16 @@ def convert_battle(name, spec, trace, tables):
                 elif rows[k] == [2]:
                     row.append(0x10)
                 else:
-                    row.append(sum(1 << i for i, e in enumerate(rows[k]) if e == 1))
+                    eff = list(rows[k])
+                    # Imprison's hidden disable (step G38): the request shows the move as enabled for the last active Pokemon,
+                    # but the choice of it is rejected, and with no move left the choice is Struggle.
+                    hid = sd.get('hidden') or []
+                    if k < len(hid):
+                        eff = [0 if i < len(hid[k]) and hid[k][i] else e for i, e in enumerate(eff)]
+                    if hid and not any(e == 1 for e in eff):
+                        row.append(0x10)
+                    else:
+                        row.append(sum(1 << i for i, e in enumerate(eff) if e == 1))
             enabled.append(tuple(row))
         weather = WEATHER[new_state['weather']]
         terrain = TERRAIN[new_state['terrain']]
@@ -1387,7 +1596,7 @@ def convert_battle(name, spec, trace, tables):
                       'enabled': tuple(enabled), 'mons': tuple(mons), 'tape': tape, 'events': events,
                       'dropped': dropped})
         state = new_state
-        mid_turn = not any(line.startswith('|upkeep') for line in step['log'])
+        mid_turn = boundary == 4 if 'queue_len' in new_state else not any(line.startswith('|upkeep') for line in step['log'])
     return {'name': name, 'purpose': spec['purpose'], 'member_count': len(teams[0]), 'members': members,
             'steps': steps, 'dropped_total': dropped_total}
 

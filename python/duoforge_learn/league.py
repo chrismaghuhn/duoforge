@@ -112,22 +112,32 @@ def learner_results(state, envs, rewards):
     return np.asarray(rewards)[np.arange(len(seat)), seat]
 
 
+PRECISIONS = ("float32", "bfloat16")
+
+
 class Opponents:
     """The slots' snapshots as players: one jitted call evaluates the K
     stacked parameter sets on all given rows (vmap over the slots) and keeps
-    each row's slot."""
+    each row's slot. precision "bfloat16" runs the matrix products of their
+    forward pass in bfloat16 (jax.default_matmul_precision); ids, masks,
+    sampling and every elementwise step stay float32, and the learner, whose
+    log-probabilities enter the PPO ratio, is never affected."""
 
-    def __init__(self, model, slots):
+    def __init__(self, model, slots, precision="float32"):
         import jax
         import jax.numpy as jnp
 
         from .policy import _act
+        if precision not in PRECISIONS:
+            raise ValueError(f"opponent precision {precision!r} is not one of {PRECISIONS}")
         self.model = model
+        self.precision = precision
         self._params = [None] * slots
         self._stacked = None
 
         def act(stacked, key, obs, slot_part, mask, is_team, slot_idx):
-            every = jax.vmap(lambda p: _act(model.apply, p, key, obs, slot_part, mask, is_team)[0])(stacked)
+            with jax.default_matmul_precision(precision):
+                every = jax.vmap(lambda p: _act(model.apply, p, key, obs, slot_part, mask, is_team)[0])(stacked)
             return every[slot_idx, jnp.arange(obs.shape[0])]
 
         self._act = jax.jit(act)

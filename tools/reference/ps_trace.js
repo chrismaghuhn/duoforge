@@ -76,6 +76,8 @@ const CONDITION_SITES = {
     // Flame Body (step G30): its randomChance(3, 10) in onDamagingHit of the target. Like Poison Touch's it was an
     // UNKNOWN draw before, so the harness version stays.
     'flamebody:DamagingHit': 'FLAME_BODY',
+    // Static (step G39): its randomChance(3, 10) in onDamagingHit of the target, as Flame Body's.
+    'static:DamagingHit': 'STATIC',
 };
 
 // The event a draw happens in (innermost last), tracked by wrapping the
@@ -121,6 +123,15 @@ function classify(stack, battle) {
     for (const [frame, site] of SITE_RULES) {
         if (frames.includes(frame)) return [site, ev];
     }
+    // The accuracy check that a move with multiaccuracy (Triple Axel, step G33) makes before each hit after the first: a
+    // randomChance called straight from hitStepMoveHitLoop (data/mods/champions/scripts.ts:481-510, the base game's
+    // sim/battle-actions.ts:912-929), the same draw as hitStepAccuracy's. Matched by its immediate callers, so that no other
+    // draw inside the hit loop is taken for it. It was an UNKNOWN draw before, which the converter refuses, so the harness
+    // version stays.
+    if (frames[0] === 'RecordingPRNG.randomChance' && frames[1] === 'Battle.randomChance' &&
+        frames[2] === 'BattleActions.hitStepMoveHitLoop') {
+        return ['ACCURACY', ev];
+    }
     return ['UNKNOWN', frames.slice(0, 6).join('<')];
 }
 
@@ -159,7 +170,10 @@ function describe(item, battle) {
             // between standing Pokemon with onAnySwitchIn handlers (White
             // Herb), which run for every Pokemon on the field: their effects
             // follow, only when there are any.
-            const n = battle.findPokemonEventHandlers(item, 'onSwitchIn').length;
+            // The side's hazards are SwitchIn handlers of the entering Pokemon too (Battle.fieldEvent collects them with the
+            // Pokemon as their holder, step G37), so a Pokemon that enters a side with one counts as having a handler.
+            const n = battle.findPokemonEventHandlers(item, 'onSwitchIn').length +
+                battle.findSideEventHandlers(item.side, 'onSwitchIn', undefined, item).length;
             const any = item.hp ? battle.findPokemonEventHandlers(item, 'onAnySwitchIn').map((h) => h.effect.id) : [];
             return `P:${slotOf(item)}:${n}:${!item.isStarted && !item.fainted ? 'S' : '-'}` +
                 (any.length ? ':' + any.join('+') : '');
@@ -259,6 +273,18 @@ function run(root, spec, specFile) {
         logPos = battle.log.length;
         return lines;
     };
+    // The state after a step. A switch request that comes with an empty queue and no residual in the step's log (a replacement that
+    // fell to a hazard at once, step G37) carries the key queue_len (0): such a request is a REPLACEMENT, where the old rule (a
+    // switch request without `upkeep` is a PIVOT) would call it a pivot. Every other state is what every trace recorded before
+    // had, so no committed trace changes.
+    const stepState = (log) => {
+        const state = snapshot();
+        if (battle.sides.some((side) => side.requestState === 'switch') && battle.queue.list.length === 0 &&
+            !log.some((l) => l.startsWith('|upkeep'))) {
+            state.queue_len = 0;
+        }
+        return state;
+    };
     const snapshot = () => ({
         turn: battle.turn,
         ended: battle.ended,
@@ -276,11 +302,23 @@ function run(root, spec, specFile) {
             // Aurora Veil's remaining duration (step G20), a key only while the side has it: the conformance rows hold the
             // three above, and a state without the key is what every trace recorded before had.
             ...(side.sideConditions.auroraveil ? {aurora_veil: side.sideConditions.auroraveil.duration || 0} : {}),
+            // The entry hazards (step G37), layers (1 for Stealth Rock and Sticky Web) in creation order, a key only while the
+            // side has one: the tail's stealth_rock, spikes, toxic_spikes and sticky_web are checked against it.
+            ...(['stealthrock', 'spikes', 'toxicspikes', 'stickyweb'].some((id) => side.sideConditions[id]) ? {
+                hazards: Object.keys(side.sideConditions).filter((id) =>
+                    ['stealthrock', 'spikes', 'toxicspikes', 'stickyweb'].includes(id)).map((id) =>
+                    [id, side.sideConditions[id].layers || 1])} : {}),
             // Per active slot of a move request: 1 a selectable move, 0 a
             // disabled one (no PP, Fake Out), 2 Struggle.
             enabled: side.requestState === 'move' && side.activeRequest && side.activeRequest.active ?
                 side.activeRequest.active.map((a) => (a.moves || []).map((mv) =>
                     (mv.id === 'struggle' ? 2 : (mv.disabled ? 0 : 1)))) : [],
+            // Imprison's hidden disable (step G38): per active slot, 1 for a move slot whose `disabled` is 'hidden'. The request
+            // shows such a move as enabled for the last active Pokemon of the side only, while the choice of it is rejected
+            // (sim/pokemon.ts:1025, sim/side.ts:718-737); a key only while a move is so disabled, so a state without it is what
+            // every trace recorded before had.
+            ...(side.active.some((p) => p && p.moveSlots.some((m) => m.disabled === 'hidden')) ?
+                {hidden: side.active.map((p) => (p ? p.moveSlots.map((m) => (m.disabled === 'hidden' ? 1 : 0)) : []))} : {}),
             active: side.active.map((p) => (p ? side.pokemon.indexOf(p) : -1)),
             pokemon: side.pokemon.map((p) => ({
                 species: p.species.name,
@@ -354,7 +392,8 @@ function run(root, spec, specFile) {
             for (const id of ['p1', 'p2']) {
                 if (entry[id] !== undefined) choose(id, entry[id]);
             }
-            trace.steps.push({input: entry, draws, log: takeLog(), state: snapshot()});
+            const stepLog = takeLog();
+            trace.steps.push({input: entry, draws, log: stepLog, state: stepState(stepLog)});
             if (battle.ended) break;
         }
     } else {
@@ -407,7 +446,8 @@ function run(root, spec, specFile) {
                 choose(id, text);
                 entry[id] = text;
             }
-            trace.steps.push({input: entry, draws, log: takeLog(), state: snapshot()});
+            const stepLog = takeLog();
+            trace.steps.push({input: entry, draws, log: stepLog, state: stepState(stepLog)});
         }
     }
     return JSON.stringify(trace, null, 1) + '\n';
