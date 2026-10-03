@@ -124,6 +124,12 @@ static const struct {
     {"g36_toxic_a", 5u, {0u, 0u, 258u, 261u}},
     {"g36_toxic_a", 6u, {0u, 0u, 259u, 262u}},
     {"g36_toxic_a", 7u, {0u, 0u, 260u, 0u}},
+    {"g36_toxic_burn", 0u, {0u, 0u, 0u, 0u}},
+    {"g36_toxic_burn", 1u, {0u, 0u, 0u, 257u}},
+    {"g36_toxic_burn", 2u, {0u, 0u, 0u, 258u}},
+    {"g36_toxic_burn", 3u, {0u, 0u, 0u, 259u}},
+    {"g36_toxic_burn", 4u, {0u, 0u, 0u, 260u}},
+    {"g36_toxic_burn", 5u, {0u, 0u, 0u, 261u}},
     {"g36_toxic_fail", 0u, {0u, 0u, 0u, 0u}},
     {"g36_toxic_fail", 1u, {0u, 0u, 0u, 0u}},
     {"g36_toxic_fail", 2u, {0u, 0u, 0u, 0u}},
@@ -144,7 +150,7 @@ static const struct {
     {"g36_toxic_mirror_b", 5u, {261u, 0u, 261u, 0u}},
 };
 
-static const char *const names[] = {"g36_poison_fang_a", "g36_poison_fang_b", "g36_toxic_a", "g36_toxic_fail", "g36_toxic_mirror_a", "g36_toxic_mirror_b"};
+static const char *const names[] = {"g36_poison_fang_a", "g36_poison_fang_b", "g36_toxic_a", "g36_toxic_burn", "g36_toxic_fail", "g36_toxic_mirror_a", "g36_toxic_mirror_b"};
 
 int main(void)
 {
