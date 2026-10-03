@@ -1,0 +1,25 @@
+{
+  "name": "fz_9810000_780_prefix",
+  "purpose": "Corpus (defect): case fz_9810000_780 of run 9810000 (tools/reference/diff_driver.py random), team PP_674AC2A18201012A against team PP_D6B2F01DDF4FEE52, found as ORACLE_GAP modifydamage-tie lifeorb+occaberry. The shortest prefix that showed it, 3 of 16 choices; it passes now, fixed by the Life Orb and resist berry commute rule of the converter (tooling PR, 2026-10-03).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,a4bbc837305a542c8610f89774ba0ad5598c17631be9e9f66ad1861daa1c9ec2",
+  "teams": [
+    "Rillaboom (M) @ Occa Berry\nAbility: Grassy Surge\nLevel: 50\nEVs: 30 HP / 5 Atk / 1 Def / 4 SpD / 26 Spe\nAdamant Nature\n- Fake Out\n- Wood Hammer\n- Grass Knot\n- U-turn\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 15 HP / 18 Atk / 1 SpD / 32 Spe\nHasty Nature\n- Protect\n- Tailwind\n- Double-Edge\n- Hyper Voice\n\nBasculegion (M) @ Focus Sash\nAbility: Adaptability\nLevel: 50\nEVs: 32 Atk / 2 Def / 32 Spe\nAdamant Nature\n- Protect\n- Liquidation\n- Last Respects\n- Aqua Jet\n\nIncineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 10 Def / 11 SpD / 13 Spe\nImpish Nature\n- Throat Chop\n- Flare Blitz\n- Fake Out\n- Parting Shot\n\nKingambit (M) @ Life Orb\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 1 Def / 1 Spe\nAdamant Nature\n- Sucker Punch\n- Swords Dance\n- Protect\n- Kowtow Cleave\n\nSneasler (M) @ Grassy Seed\nAbility: Unburden\nLevel: 50\nEVs: 21 HP / 1 Atk / 12 Def / 32 Spe\nAdamant Nature\n- Dire Claw\n- Close Combat\n- Swords Dance\n- Protect",
+    "Gholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 5 Def / 2 SpD / 27 Spe\nModest Nature\n- Protect\n- Make It Rain\n- Shadow Ball\n- Nasty Plot\n\nIncineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Fake Out\n- Flare Blitz\n- Darkest Lariat\n- Parting Shot\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Protect\n- Hyper Voice\n- Dragon Pulse\n- Tailwind\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 27 HP / 15 Atk / 3 Def / 20 SpD / 1 Spe\nAdamant Nature\n- Fake Out\n- Wood Hammer\n- Grassy Glide\n- High Horsepower\n\nSneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 12 HP / 10 Atk / 12 Def / 2 SpD / 30 Spe\nAdamant Nature\n- Protect\n- Close Combat\n- Poison Jab\n- Rock Slide\n\nRaichu (M) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 31 HP / 12 Def / 23 Spe\nTimid Nature\n- Protect\n- Fake Out\n- Zap Cannon\n- Focus Blast"
+  ],
+  "choices": [
+    {
+      "p1": "team 4123",
+      "p2": "team 2143"
+    },
+    {
+      "p1": "move 1 1, move 3 1",
+      "p2": "move 3 1, move 4"
+    },
+    {
+      "p1": "move 1 1, move 4 1",
+      "p2": "move 3 -2, move 2"
+    }
+  ]
+}
