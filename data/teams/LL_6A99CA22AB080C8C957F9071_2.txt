@@ -1,0 +1,53 @@
+Grimmsnarl (M) @ Light Clay
+Ability: Prankster
+Level: 50
+Careful Nature
+- Parting Shot
+- Reflect
+- Light Screen
+- Spirit Break
+
+Golisopod (M) @ Golisopite
+Ability: Emergency Exit
+Level: 50
+Relaxed Nature
+- Leech Life
+- Swords Dance
+- Aqua Jet
+- Iron Head
+
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Fake Out
+- Grassy Glide
+- Wood Hammer
+- High Horsepower
+
+Floette-Eternal (F) @ Floettite
+Ability: Flower Veil
+Level: 50
+Bold Nature
+- Protect
+- Draining Kiss
+- Dazzling Gleam
+- Calm Mind
+
+Pelipper (M) @ Life Orb
+Ability: Drizzle
+Level: 50
+Modest Nature
+- Hurricane
+- Weather Ball
+- Wide Guard
+- Tailwind
+
+Basculegion (M) @ Choice Scarf
+Ability: Adaptability
+Level: 50
+Adamant Nature
+- Flip Turn
+- Wave Crash
+- Last Respects
+- Aqua Jet

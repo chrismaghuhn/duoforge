@@ -1,0 +1,53 @@
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Fake Out
+- Grassy Glide
+- Wood Hammer
+- U-turn
+
+Incineroar (M) @ Sitrus Berry
+Ability: Intimidate
+Level: 50
+Impish Nature
+- Fake Out
+- Parting Shot
+- Flare Blitz
+- Throat Chop
+
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Hasty Nature
+- Protect
+- Tailwind
+- Hyper Voice
+- Double-Edge
+
+Floette-Eternal (F) @ Floettite
+Ability: Flower Veil
+Level: 50
+Timid Nature
+- Protect
+- Calm Mind
+- Dazzling Gleam
+- Draining Kiss
+
+Basculegion (M) @ Choice Scarf
+Ability: Adaptability
+Level: 50
+Jolly Nature
+- Flip Turn
+- Aqua Jet
+- Last Respects
+- Wave Crash
+
+Gholdengo @ Grassy Seed
+Ability: Good as Gold
+Level: 50
+Timid Nature
+- Protect
+- Nasty Plot
+- Shadow Ball
+- Make It Rain

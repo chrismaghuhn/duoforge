@@ -1,0 +1,53 @@
+Arcanine-Hisui (M) @ Focus Sash
+Ability: Rock Head
+Level: 50
+Jolly Nature
+- Protect
+- Extreme Speed
+- Head Smash
+- Flare Blitz
+
+Staraptor (M) @ Staraptite
+Ability: Intimidate
+Level: 50
+Jolly Nature
+- Tailwind
+- Protect
+- Close Combat
+- Brave Bird
+
+Farigiraf (M) @ Sitrus Berry
+Ability: Armor Tail
+Level: 50
+Calm Nature
+- Nasty Plot
+- Psychic
+- Trick Room
+- Thunderbolt
+
+Sylveon (M) @ Fairy Feather
+Ability: Pixilate
+Level: 50
+Modest Nature
+- Protect
+- Hyper Beam
+- Hyper Voice
+- Quick Attack
+
+Kingambit (M) @ Life Orb
+Ability: Defiant
+Level: 50
+Adamant Nature
+- Protect
+- Kowtow Cleave
+- Swords Dance
+- Sucker Punch
+
+Raichu (M) @ Raichunite Y
+Ability: Lightning Rod
+Level: 50
+Timid Nature
+- Protect
+- Zap Cannon
+- Fake Out
+- Focus Blast

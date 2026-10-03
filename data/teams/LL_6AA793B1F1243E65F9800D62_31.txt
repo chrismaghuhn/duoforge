@@ -1,0 +1,53 @@
+Basculegion (M) @ Life Orb
+Ability: Adaptability
+Level: 50
+Jolly Nature
+- Protect
+- Aqua Jet
+- Wave Crash
+- Last Respects
+
+Arcanine-Hisui (M) @ Focus Sash
+Ability: Rock Head
+Level: 50
+Jolly Nature
+- Protect
+- Head Smash
+- Flare Blitz
+- Close Combat
+
+Rillaboom (M) @ Sitrus Berry
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Fake Out
+- Grassy Glide
+- Wood Hammer
+- U-turn
+
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Timid Nature
+- Protect
+- Double-Edge
+- Draco Meteor
+- Tailwind
+
+Floette-Eternal (F) @ Floettite
+Ability: Flower Veil
+Level: 50
+Modest Nature
+- Protect
+- Light of Ruin
+- Moonblast
+- Dazzling Gleam
+
+Kingambit (M) @ Chople Berry
+Ability: Defiant
+Level: 50
+Adamant Nature
+- Low Kick
+- Sucker Punch
+- Kowtow Cleave
+- Iron Head
