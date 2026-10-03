@@ -390,11 +390,11 @@ int main(void)
     duoforge_context *kd = df_make_context(&df_config_pool_dev);
     /* The ids that the step uses, and its marks. */
     DF_CHECK_EQ_U64(&t, DUOFORGE_EVENT_ITEM_START, 42u); /* the new public value (owner's OK pending) */
-    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_TRICK, 44u);
-    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_SWITCHEROO, 45u);
-    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_THIEF, 46u);
-    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_COVET, 47u);
-    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, 48u);
+    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_TRICK, 47u);
+    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_SWITCHEROO, 48u);
+    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_THIEF, 49u);
+    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_COVET, 50u);
+    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, 51u);
     DF_CHECK(&t, dfi_support.moves[DFI_MOVE_TRICK] != 0u && dfi_support.moves[DFI_MOVE_SWITCHEROO] != 0u &&
                      dfi_support.moves[DFI_MOVE_THIEF] != 0u && dfi_support.moves[DFI_MOVE_COVET] != 0u);
     DF_CHECK_EQ_U64(&t, DUOFORGE_VIEWEXT_FEATURE_ITEM_CHANGE, 11u);

@@ -1426,6 +1426,54 @@ G28_FACTS = (
     ('ancientpower', ['accuracy: 100,', 'basePower: 60,', 'category: "Special",', 'target: "normal",', 'type: "Rock",',
                       "secondary: { chance: 10, self: { boosts: { atk: 1, def: 1, spa: 1, spd: 1, spe: 1, }, }, },"]),
 )
+# Step G34 (a batch of small rules): Steel Roller (fails without a terrain and ends it), Clangorous Soul (a third of the HP for
+# five boosts) and Brick Break (the screens go before the hit) keep their callbacks as handlers of their own that the turn code
+# implements; the abilities Compound Eyes, Iron Fist, Sharpness, Solid Rock, Technician, Multiscale and Gale Wings and the item
+# Wide Lens are engine rows (ENGINE_ROWS). The generator checks the pinned texts the engine hard-codes (G34_FACTS for the moves,
+# G34_ABILITY_FACTS and G34_ITEM_FACTS), the Champions mod overriding none of the entries but Clangorous Soul's accuracy: true,
+# which parse_move merges (data/mods/champions/moves.ts:121-124).
+G34_HANDLERS = ['STEEL_ROLLER', 'CLANGOROUS_SOUL', 'BRICK_BREAK']
+G34_FACTS = (
+    ('steelroller', ['accuracy: 100,', 'basePower: 130,', 'category: "Physical",', 'target: "normal",', 'type: "Steel",',
+                     'flags: { contact: 1, protect: 1, mirror: 1, metronome: 1 },',
+                     "onTry() { return !this.field.isTerrain(''); },", 'onHit() { this.field.clearTerrain(); },',
+                     'onAfterSubDamage() { this.field.clearTerrain(); },']),
+    ('clangoroussoul', ['basePower: 0,', 'category: "Status",', 'target: "self",', 'type: "Dragon",', 'priority: 0,',
+                        'flags: { snatch: 1, sound: 1, dance: 1 },',
+                        "onTry(source) { if (source.hp <= (source.maxhp * 33 / 100) || source.maxhp === 1) return false; },",
+                        "onTryHit(pokemon, target, move) { if (!this.boost(move.boosts!)) return null; delete move.boosts; },",
+                        "onHit(pokemon) { this.directDamage(pokemon.maxhp * 33 / 100); },",
+                        'boosts: { atk: 1, def: 1, spa: 1, spd: 1, spe: 1, },']),
+    ('brickbreak', ['accuracy: 100,', 'basePower: 75,', 'category: "Physical",', 'target: "normal",', 'type: "Fighting",',
+                    'flags: { contact: 1, protect: 1, mirror: 1, metronome: 1 },',
+                    "onTryHit(pokemon) { // will shatter screens through sub, before you hit pokemon.side.removeSideCondition('reflect'); "
+                    "pokemon.side.removeSideCondition('lightscreen'); pokemon.side.removeSideCondition('auroraveil'); },"]),
+)
+G34_ABILITY_FACTS = (
+    ('compoundeyes', ('onSourceModifyAccuracyPriority: -1,',
+                      "onSourceModifyAccuracy(accuracy) { if (typeof accuracy !== 'number') return; "
+                      "this.debug('compoundeyes - enhancing accuracy'); return this.chainModify([5325, 4096]); },")),
+    ('ironfist', ('onBasePowerPriority: 23,',
+                  "onBasePower(basePower, attacker, defender, move) { if (move.flags['punch']) { this.debug('Iron Fist boost'); "
+                  "return this.chainModify([4915, 4096]); } },")),
+    ('sharpness', ('onBasePowerPriority: 19,',
+                   "onBasePower(basePower, attacker, defender, move) { if (move.flags['slicing']) { this.debug('Sharpness boost'); "
+                   "return this.chainModify(1.5); } },")),
+    ('solidrock', ("onSourceModifyDamage(damage, source, target, move) { if (target.getMoveHitData(move).typeMod > 0) { "
+                   "this.debug('Solid Rock neutralize'); return this.chainModify(0.75); } },",)),
+    ('technician', ('onBasePowerPriority: 30,',
+                    "onBasePower(basePower, attacker, defender, move) { const basePowerAfterMultiplier = "
+                    "this.modify(basePower, this.event.modifier); this.debug(`Base Power: ${basePowerAfterMultiplier}`); "
+                    "if (basePowerAfterMultiplier <= 60) { this.debug('Technician boost'); return this.chainModify(1.5); } },")),
+    ('multiscale', ("onSourceModifyDamage(damage, source, target, move) { if (target.hp >= target.maxhp) { "
+                    "this.debug('Multiscale weaken'); return this.chainModify(0.5); } },",)),
+    ('galewings', ("onModifyPriority(priority, pokemon, target, move) { if (move?.type === 'Flying' && pokemon.hp === pokemon.maxhp) "
+                   "return priority + 1; },",)),
+)
+G34_ITEM_FACTS = (
+    ('widelens', ('onSourceModifyAccuracyPriority: -2,',
+                  "onSourceModifyAccuracy(accuracy) { if (typeof accuracy === 'number') { return this.chainModify([4505, 4096]); } },")),
+)
 # Step G32 (small rules): eight handlers of the turn code, one per rule that the generic columns cannot hold: HP_POWER
 # (Eruption and Water Spout: power 150 x HP / maximum HP, one callback), BODY_PRESS, FOUL_PLAY and PSYSHOCK (the three
 # `override...` fields of the damage formula), RAIN_DANCE and SUNNY_DAY (the weather moves, like Sandstorm and Snowscape),
@@ -1616,6 +1664,9 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'ragepowder': ('RAGE_POWDER', {'onTry'}),                              # G30: Follow Me for the foes that are not powder immune
     'psychicfangs': ('PSYCHIC_FANGS', {'onTryHit'}),                       # G30: the screens go before the hit
     'solarbeam': ('SOLAR_BEAM', {'onBasePower', 'onTryMove'}),             # G30: a two-turn move that sun skips, x0.5 in rain, sand, snow
+    'steelroller': ('STEEL_ROLLER', {'onTry', 'onHit', 'onAfterSubDamage'}),  # G34: fails without a terrain and ends it
+    'clangoroussoul': ('CLANGOROUS_SOUL', {'onTry', 'onTryHit', 'onHit'}),    # G34: a third of the HP for five boosts
+    'brickbreak': ('BRICK_BREAK', {'onTryHit'}),                          # G34: the screens go before the hit
     'eruption': ('HP_POWER', {'basePowerCallback'}),                      # G32: power by the user's HP
     'waterspout': ('HP_POWER', {'basePowerCallback'}),
     'bodypress': ('BODY_PRESS', set()),                                   # G32: the Defense stat attacks
@@ -1637,7 +1688,7 @@ PROTECT_COPIES = {'detect': 'protect'}
 # champions/moves.ts:581-584) sets isNonstandard to null, which makes it legal, and the tag has no reader in the tables.
 TAGS_PAST_UNOBTAINABLE = 'tags: ["Past Unobtainable"],'
 PROTECT_COPY_FIELDS = ('onPrepareHit', 'onHit', 'stallingMove', 'volatileStatus', 'priority', 'accuracy', 'target')
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G29_HANDLERS + ['UNMODELED']
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G29_HANDLERS + ['UNMODELED']
 # Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags
 # byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
@@ -1672,7 +1723,7 @@ G8_SECONDARIES = {
     "secondary: { chance: 100, onHit(target) { target.addVolatile('throatchop'); }, },": (SECONDARY_LOCKOUT, True),
     "secondary: { chance: 100, volatileStatus: 'healblock', },": (SECONDARY_HEAL_BLOCK, False),
 }
-FLAGS2_BITS = {'sound': 1, 'heal': 2, 'powder': 16}  # step G30: powder (bit 16), the powder immunity of the target
+FLAGS2_BITS = {'sound': 1, 'heal': 2, 'powder': 16, 'punch': 32, 'slicing': 64}  # steps G30 (powder) and G34 (punch, slicing)
 # Decision 0020: the public static flags of a move (DUOFORGE_MOVE_STATIC_FLAG_*, include/duoforge/duoforge.h), one bit per
 # Showdown flag name, additive only; the generated column dfi_pool_move_static_flags holds them for every pool row and has
 # no engine reader. POWER_RULE is not a flag of the pin: the move has a basePowerCallback (its basePower is not the damage).
@@ -1766,11 +1817,12 @@ HANDLER_IDS = ['NONE', 'UNMODELED']
 # here, which changes the handler column and so the POOL table hash, as any pool change does; a row that is marked and
 # still has the UNMODELED handler fails duoforge.data.pool_tables. G4: Focus Sash, Rock Head. G12: Floettite (the Mega
 # Stone of Floette-Eternal), Flower Veil and Fairy Aura. G14: Rough Skin, Poison Touch and Thermal Exchange. G16: Sticky Hold (Knock Off reads it by id). AC1: Trace (the entry copy of a foe's ability). G15: Psychic Seed (Grassy Seed's rule for the other terrain). G22: Sand Rush, Swift Swim, Slush Rush and Chlorophyll (the doubled Speed in their weather, tools/datagen/pool_families.js ENGINE_ORDER), Sand Rush's immunity to Sandstorm, Inner Focus (no flinch, no Intimidate drop) and Liquid Voice (a sound move becomes Water). G23-C: Levitate (isGrounded and the Ground immunity).
-ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'expertbelt', 'ejectbutton'],
+ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'expertbelt', 'ejectbutton', 'widelens'],
                'abilities': ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange',
                              'stickyhold', 'trace', 'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll',
                              'innerfocus', 'liquidvoice', 'flamebody', 'clearbody', 'hospitality', 'overcoat',
-                             'soundproof', 'unnerve', 'speedboost']}
+                             'soundproof', 'unnerve', 'speedboost', 'compoundeyes', 'ironfist', 'sharpness', 'solidrock',
+                             'technician', 'multiscale', 'galewings']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -2397,6 +2449,21 @@ def check_g28_items(items_ts, only=None):
                 fail('item %s: the entry no longer has "%s"' % (iid, fact))
 
 
+def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
+    """Step G34: every fact of G34_ABILITY_FACTS and G34_ITEM_FACTS is in the pinned entry, whitespace aside, and the
+    Champions mod has no entry of its own for it (an override would change what the engine reads)."""
+    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS, abil_ts, champ_abil),
+                                          ('item', G34_ITEM_FACTS, items_ts, champ_items)):
+        for rid, facts in facts_by_id:
+            e = src.entry(rid)
+            if e is None:
+                fail('%s %s not found' % (kind, rid))
+            if champ.entry(rid) is not None:
+                fail('%s %s: the champions mod overrides the entry' % (kind, rid))
+            text = norm(chr(10).join(e[2]))
+            for fact in facts:
+                if norm(fact) not in text:
+                    fail('%s %s: the entry no longer has "%s"' % (kind, rid, fact))
 def check_g32_entries(items_ts, champ_items, abil_ts, champ_abil, only=None):
     """Step G32: the ability and item entries that the turn code runs by id (G32_ENTRY_FACTS) have the pinned texts, whole;
     the Champions Eject Button is read from the mod's file. `only`: a tuple of such entries (the generator's tests)."""
@@ -2415,7 +2482,7 @@ def check_g8_conditions(moves_ts, only=None):
     """The engine hard-codes the durations, orders and tests of the Throat Chop and Heal Block conditions (step G8) and
     those of Aurora Veil (step G20): every one of them must be in the pinned entry, as one normalised text. `only`: a
     tuple of (move id, facts) to check instead of all of them (the generator's tests)."""
-    for mid, facts in (G8_CONDITION_FACTS + G20_CONDITION_FACTS + G28_FACTS + G32_FACTS if only is None else only):
+    for mid, facts in (G8_CONDITION_FACTS + G20_CONDITION_FACTS + G28_FACTS + G32_FACTS + G34_FACTS if only is None else only):
         e = moves_ts.entry(mid)
         if e is None:
             fail('move %s not found' % mid)
@@ -2442,6 +2509,7 @@ def build_pool(root, repo, dx):
     check_g15_facts(moves_ts, items_ts)
     check_g30_facts(abil_ts, champ_abil)
     check_g28_items(items_ts)
+    check_g34_facts(abil_ts, champ_abil, items_ts, champ_items)
     check_g32_entries(items_ts, champ_items, abil_ts, champ_abil)
     check_weather_facts(Source(root, 'data/conditions.ts', READER_INPUTS), moves_ts)
     FLAGS_THAT_MATTER.clear()
@@ -2896,6 +2964,8 @@ def render_pool(dp, dx):
 #define DFI_MOVE_FLAG2_THAWS_TARGET 4u /* thawsTarget (step G10): the move cures a frozen target after the secondaries */
 #define DFI_MOVE_FLAG2_RECHARGE 8u /* flags.recharge with self.volatileStatus mustrecharge (step G17): the user must recharge after a hit */
 #define DFI_MOVE_FLAG2_POWDER 16u /* flags.powder (step G30): a Grass type, Overcoat and Safety Goggles are immune to the move */
+#define DFI_MOVE_FLAG2_PUNCH 32u /* flags.punch (step G34): Iron Fist boosts these moves (internal; the public static flag is not read) */
+#define DFI_MOVE_FLAG2_SLICING 64u /* flags.slicing (step G34): Sharpness boosts these moves */
 #define DFI_BOOST_ROLE_PRIMARY_ALLY 4u /* step G19: a status move whose primary boosts go to the adjacent ally (Coaching) */
 #define DFI_BOOST_ROLE_SECONDARY_SELF 5u /* step G28: the secondary's roll gives these boosts to the user (Ancient Power) */
 #define DFI_SECONDARY_SELF_BOOST 7u /* step G28: boosts[] applied to the user with the secondary roll */
@@ -3210,7 +3280,8 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity);
     for m in dp['moves']:
         names = [n for n, bit in (('DFI_MOVE_FLAG2_SOUND', 1), ('DFI_MOVE_FLAG2_HEAL', 2),
                                   ('DFI_MOVE_FLAG2_THAWS_TARGET', 4), ('DFI_MOVE_FLAG2_RECHARGE', 8),
-                                  ('DFI_MOVE_FLAG2_POWDER', 16)) if m['flags2'] & bit]
+                                  ('DFI_MOVE_FLAG2_POWDER', 16), ('DFI_MOVE_FLAG2_PUNCH', 32),
+                                  ('DFI_MOVE_FLAG2_SLICING', 64)) if m['flags2'] & bit]
         c.append('    [DFI_MOVE_%s] = %s, /* %s */' % (m['id'].upper(), ' | '.join(names) if names else '0u', m['name']))
     c += ['};', '', '/* The heal fraction of the moves that heal by one (step G10): numerator, denominator. */',
           'const uint8_t dfi_pool_move_heal[DFI_POOL_MOVE_COUNT][2] = {']
