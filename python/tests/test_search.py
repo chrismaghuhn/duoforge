@@ -25,7 +25,7 @@ import numpy as np
 import duoforge
 from duoforge import _layout, features
 from duoforge.context import reference_setups
-from duoforge_search import SearchError, arena, lookahead, seeds
+from duoforge_search import SearchError, arena, lookahead, matrix, seeds
 
 C = _layout.CONSTANTS
 SEED = 0x2026100300000231
@@ -182,6 +182,83 @@ class LookaheadDecisions(unittest.TestCase):
                 value = np.asarray(self.model.value(self.params, rows))[0]
                 self.assertEqual(value == last["values"][x], same)
 
+    def test_expected_value_rule(self):
+        # Rule "ev" (spec section 5.5): the row with the highest expected value under the foe's probabilities.
+        with self._lookahead(rule="ev") as look:
+            _, records = self._decide(look)
+        for r in records:
+            a, q = np.array(r["table"]), np.array(r["foe_probs"])
+            self.assertEqual(r["expected"], matrix.expected_values(a, q).tolist())
+            self.assertEqual(r["choice"], r["own_pairs"][matrix.expected_choice(a, q, np.arange(r["k"]))])
+            self.assertNotIn("x", r)
+            self.assertIn("same_choice", r["split"])
+        self.assertTrue(any(r["changed"] for r in records))  # rows other than the raw network's are played
+
+    def test_mixed_nash_draw(self):
+        # Genuinely mixed strategies: the play draw u, a pure function of the key (decision 0022 section 2),
+        # picks the row. Pinned on every machine: u is integer-derived, and u lies far from every boundary.
+        with self._lookahead() as look:
+            _, records = self._decide(look)
+        by_env = {r["env"]: r for r in records}
+        for env, (u, row) in PINNED_DRAWS.items():
+            r = by_env[env]
+            self.assertEqual(r["u"], u)
+            self.assertEqual(u, float(seeds.play_uniforms(lookahead.SEARCH_SEED, np.uint64([r["key"]]))[0]))
+            x = np.array(r["x"])
+            self.assertGreaterEqual(int((x >= matrix.PROBABILITY_FLOOR).sum()), 2)
+            self.assertGreater(np.min(np.abs(np.cumsum(x)[:-1] - u)), 1e-3)
+            self.assertEqual(matrix.draw(x, np.arange(x.size), u), row)
+            self.assertEqual(r["choice"], r["own_pairs"][row])
+        env = next(iter(PINNED_DRAWS))  # the lowest and the highest u play the first and the last row with mass
+        support = np.flatnonzero(np.array(by_env[env]["x"]) >= matrix.PROBABILITY_FLOOR)
+        for u, row in ((0.0, support[0]), (1.0 - 2.0 ** -53, support[-1])):
+            with mock.patch.object(lookahead.seeds, "play_uniforms", lambda seed, keys, u=u: np.full(len(keys), u)), \
+                    self._lookahead() as look:
+                _, (r,) = self._decide(look, [env])
+            self.assertEqual(r["choice"], r["own_pairs"][row])
+
+    def test_unresolvable_tiebreak_counts_minus_one(self):
+        # Spec section 5.3: at the cut-off a tiebreak the engine cannot resolve (E_UNSUPPORTED: the reference's
+        # bench order would decide) counts -1 and is counted; any other refusal of the tiebreak stops the run.
+        pick = self.envs == self.envs[0]
+        with self._lookahead() as look:
+            real = look.leaves.tiebreak
+
+            def tiebreak(e, status="DUOFORGE_E_UNSUPPORTED"):
+                if e % 3 == 0:
+                    raise duoforge.DuoforgeError(status)
+                return real(e)
+
+            with mock.patch.object(look.leaves, "tiebreak", tiebreak):
+                _, (r,) = look.decide(self.roots, self.envs[pick], self.seats[pick], self.keys[pick], [True])
+            last = look.last
+            with mock.patch.object(look.leaves, "tiebreak", lambda e: tiebreak(e, "DUOFORGE_E_INVALID_ARGUMENT")):
+                with self.assertRaises(duoforge.DuoforgeError):
+                    look.decide(self.roots, self.envs[pick], self.seats[pick], self.keys[pick], [True])
+        opened = (last["step_statuses"] == 0) & (last["leaf_results"] == 0)
+        unresolved = opened & (np.arange(opened.size) % 3 == 0)
+        self.assertGreater(int(unresolved.sum()), 0)
+        self.assertEqual((r["leaves"]["cut_off"], r["leaves"]["unresolved"]),
+                         (int(opened.sum()), int(unresolved.sum())))
+        cube = last["tables"][0].values
+        cells = cube[last["i"], last["j"], last["sample"]]
+        np.testing.assert_array_equal(cells[unresolved], -1.0)
+        self.assertTrue(np.isin(cells[opened], (-1.0, 0.0, 1.0)).all())  # results, never the value head
+
+    def test_missed_certificate_carries_the_table(self):
+        # Spec section 7: a missed Nash certificate stops the run and writes the table.
+        def missed(a):
+            raise SearchError("the Nash certificate is missed")
+
+        env = int(self.envs[0])
+        with self._lookahead() as look, mock.patch.object(lookahead.matrix, "solve", missed):
+            with self.assertRaisesRegex(SearchError, "the run stops") as caught:
+                self._decide(look, [env])
+            table = look.last["tables"][0]
+        data = caught.exception.reproduction
+        self.assertEqual((data["env"], data["rule"], data["table"]), (env, "nash", table.a.tolist()))
+        self.assertEqual(data["values"], table.values.tolist())
+
     def test_decision_is_pure(self):
         with self._lookahead() as look:
             first = self._decide(look)
@@ -335,6 +412,54 @@ class LookaheadKinds(unittest.TestCase):
         self.assertIsNotNone(lone, "no decision without the foe's request in 400 random steps")
         self.assertEqual((lone["kind"], lone["m"], lone["foe_pairs"], lone["coverage"]), ("searched", 1, [-1], 1.0))
 
+    def test_mixed_round_equals_each_decision_alone(self):
+        # Team selections between the searched decisions (the searched index differs from the decision's) and
+        # both seats: every searched decision equals itself decided alone, and a leaf of a seat-0 and of a
+        # seat-1 decision is valued from its seat's side.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, np.resize(reference_setups([0, 1, 2, 3]), ENVS), 2, SEED) as roots, \
+                duoforge.Batch(ctx, reference_setups([0]), 1, SEED) as one:
+            policy = duoforge.RandomPolicy(SEED, ENVS)
+            for _ in range(4):
+                roots.query_factored()
+                roots.step_factored(policy.choose_factored(roots))
+                roots.reset_terminal()
+            for e in (2, 7, 11):
+                roots.reset(e, 2)  # back at team selection
+            roots.query_factored()
+            mask = int(roots.observe_ext()[0, 0]["supported"])
+            every = np.arange(ENVS)
+            seats = every % 2
+            asked = roots.requests["requested"][every, seats] != 0
+            envs, seats = every[asked], seats[asked]
+            keys = _keys(roots, envs, seats)
+            with lookahead.Lookahead(ctx, self.model, self.params, 4, mask, k=3, m=3, s=4, capacity=256,
+                                     workers=2) as look:
+                _, records = look.decide(roots, envs, seats, keys, np.zeros(envs.size, bool))
+                last = look.last
+                searched = [d for d, r in enumerate(records) if r["kind"] == "searched"]
+                self.assertIn("team", {r["kind"] for r in records})
+                self.assertNotEqual(searched, list(range(len(searched))))
+                self.assertEqual({records[d]["seat"] for d in searched}, {0, 1})
+                root_keys = np.zeros(ENVS, dtype=np.uint64)
+                root_keys[envs] = keys
+                for seat in (0, 1):
+                    q = next(q for q, d in enumerate(searched) if records[d]["seat"] == seat)
+                    x = int(np.flatnonzero((last["decision"] == q) & (last["step_statuses"] == 0)
+                                           & (last["leaf_results"] == 0))[0])
+                    viewers = np.zeros(ENVS, dtype=np.uint8)
+                    viewers[int(last["root_envs"][x])] = seat
+                    obs = one.expand(roots, 4, mask, lookahead.SEARCH_SEED, root_keys, viewers,
+                                     last["root_envs"][x:x + 1], last["samples"][x:x + 1],
+                                     last["choices"][x:x + 1])[0]
+                    rows = np.zeros((256, obs.shape[1]), dtype=np.float32)
+                    rows[0] = obs[0]
+                    self.assertEqual(np.asarray(self.model.value(self.params, rows))[0], last["values"][x])
+                for d in searched:
+                    _, (alone,) = look.decide(roots, envs[d:d + 1], seats[d:d + 1], keys[d:d + 1], [False])
+                    np.testing.assert_array_equal(alone["table"], records[d]["table"])
+                    self.assertEqual(alone["choice"], records[d]["choice"])
+
     def test_bad_decisions_are_refused(self):
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
                 duoforge.Batch(ctx, reference_setups([0, 1]), 1, SEED) as roots:
@@ -368,11 +493,11 @@ class ArenaSearch(unittest.TestCase):
     def tearDownClass(cls):
         cls.ctx.close()
 
-    def _searcher(self, max_steps, **change):
+    def _searcher(self, **change):
         args = dict(k=1, m=2, s=2, capacity=128, workers=2)
         args.update(change)
         look = lookahead.Lookahead(self.ctx, self.model, self.params, 4, self.mask, **args)
-        return look, arena.SearchPlayer(look, "N", ARENA_SEED, max_steps)
+        return look, arena.SearchPlayer(look, "N", ARENA_SEED)
 
     def _play(self, learner, max_steps, rows=None):
         rows = self.rows if rows is None else rows
@@ -384,9 +509,9 @@ class ArenaSearch(unittest.TestCase):
         player = self.evaluate.Player
 
         class Recording(player):
-            def indices(inner, batch, choices, step=None, seats=None):
-                seen.append((inner.name, step, seats.copy()))
-                return super().indices(batch, choices, step, seats)
+            def indices(inner, batch, choices, step=None, seats=None, last_step=None):
+                seen.append((inner.name, step, seats.copy(), last_step))
+                return super().indices(batch, choices, step, seats, last_step)
 
         rows = self.rows[:8]
         learner = Recording(self.model, self.params, 4, "learner", ext_supported=self.mask)
@@ -394,27 +519,40 @@ class ArenaSearch(unittest.TestCase):
         records = self.evaluate.play_suite(self.ctx, self.pool, rows, learner, opponent, 2, ARENA_SEED, max_steps=4)
         np.testing.assert_array_equal(records, self._play(self.raw, 4, rows))  # the keywords change no game
         seat = rows["learner_seat"].astype(np.int64)
-        steps = [step for name, step, _ in seen if name == "opponent"]
+        steps = [step for name, step, _, _ in seen if name == "opponent"]
         self.assertEqual(steps, list(range(len(steps))))
         self.assertGreater(len(steps), 1)
-        for name, step, seats in seen:
+        for name, step, seats, last_step in seen:
             want = seat if name == "learner" else 1 - seat
             ok = seats >= 0
             self.assertTrue(ok.any())
             np.testing.assert_array_equal(seats[ok], want[ok])
+            self.assertEqual(last_step, step == 3)
         with self.assertRaises(ValueError):  # a searcher cannot play without them
-            arena.SearchPlayer(None, "N", ARENA_SEED, 4).indices(None, None)
+            arena.SearchPlayer(None, "N", ARENA_SEED).indices(None, None)
 
     def test_k1_reproduces_the_raw_network(self):
         # Plan Review Focus 4: K = 1 plays the raw network's argmax, so N against R is R against R, record for record.
-        look, searcher = self._searcher(30)
+        look, searcher = self._searcher()
+        raw, compared = self.raw, []
+
+        class Twin:  # the searcher, its indices compared with the raw network's at every step
+            def indices(inner, batch, choices, step=None, seats=None, last_step=None):
+                mine = searcher.indices(batch, choices, step, seats, last_step)
+                theirs = raw.indices(batch, np.zeros_like(choices), step, seats, last_step)
+                e = np.flatnonzero(seats >= 0)
+                e = e[batch.requests["requested"][e, seats[e]] != 0]
+                np.testing.assert_array_equal(mine[e, seats[e]], theirs[e, seats[e]])
+                compared.append(e.size)
+                return mine
+
         with look:
-            mine = self._play(searcher, 30)
+            mine = self._play(Twin(), 30)
         np.testing.assert_array_equal(mine, self._play(self.raw, 30))
+        self.assertGreater(sum(compared), 100)
         records = [r for game in searcher.records.values() for r in game]
         self.assertEqual({r["kind"] for r in records} >= {"team", "searched"}, True)
-        searched = [r for r in records if r["kind"] == "searched"]
-        self.assertTrue(all(r["k"] == 1 and not r["changed"] for r in searched))
+        self.assertTrue(all(r["k"] == 1 for r in records if r["kind"] == "searched"))
         self.assertEqual(sorted(searcher.records), sorted({r["env"] for r in records}))
         for r in records:  # every game at episode 1 of play_suite's batch
             key = seeds.decision_keys(ARENA_SEED, [r["env"]], [1], [r["epoch"]], [r["seat"]])
@@ -423,7 +561,7 @@ class ArenaSearch(unittest.TestCase):
     def test_last_step_leaves_use_the_tiebreak(self):
         # Plan Review Focus 3: at the arena's last step every leaf that is neither refused nor TERMINAL is scored
         # by the tiebreak, at no other step; the step is the arena loop's own.
-        look, searcher = self._searcher(3, k=2)
+        look, searcher = self._searcher(k=2)
         with look:
             self._play(searcher, 3)
         searched = [r for game in searcher.records.values() for r in game if r["kind"] == "searched"]
@@ -434,6 +572,10 @@ class ArenaSearch(unittest.TestCase):
             self.assertEqual(r["last_step"], r["step"] == 2)
             self.assertEqual(leaves["cut_off"], open_leaves if r["step"] == 2 else 0)
 
+
+# Mixed strategies of the LookaheadDecisions round (3 x 3 x 4, capacity 256): environment -> (the play draw u,
+# a pure function of the key, and the row it plays). u lies more than 1e-3 from every boundary of the strategy.
+PINNED_DRAWS = {12: (0.18192116786271728, 1), 13: (0.9505990374064887, 2)}
 
 # The pinned decision: environment 0, seat 0 of the LookaheadDecisions round (3 x 3 x 4 leaves, capacity 256)
 # at v2-S init key 7, on the CPU. On every machine: (env, seat, own pairs, foe pairs), the SHA-256 of the

@@ -33,12 +33,13 @@ class Player:
         self.model, self.params, self.encoder, self.name = model, params, encoder, name
         self.ext_supported = ext_supported
 
-    def indices(self, batch, choices, step=None, seats=None):
+    def indices(self, batch, choices, step=None, seats=None, last_step=None):
         """The candidate index of the most likely action of every requested
-        seat (E, 2). play_suite also passes step, its loop index, and seats,
-        this player's seat in every game (-1 where it decides nothing); a
-        player that searches needs them (duoforge_search.arena), a greedy
-        one ignores them."""
+        seat (E, 2). play_suite also passes step, its loop index, seats,
+        this player's seat in every game (-1 where it decides nothing), and
+        last_step, whether this step is its last (max_steps - 1); a player
+        that searches needs them (duoforge_search.arena), a greedy one
+        ignores them."""
         return _greedy_indices(self.params, self.model.act, batch, choices, self.encoder, self.ext_supported)
 
 
@@ -49,10 +50,10 @@ def play_suite(context, pool, rows, learner, opponent, workers, seed, max_steps=
     still running after max_steps steps is marked unfinished and scored by
     the reference's tiebreak (Batch.tiebreak); one the tiebreak cannot
     resolve counts as the learner's loss, marked unresolved. Every call of
-    a player's indices passes step, the loop index t (the last is
-    max_steps - 1), and seats, the player's seat in every game, -1 where it
-    decides nothing (a game the engine refused, or the learner's seat
-    without a request)."""
+    a player's indices passes step, the loop index t, seats, the player's
+    seat in every game, -1 where it decides nothing (a game the engine
+    refused, or the learner's seat without a request), and last_step, true
+    at t = max_steps - 1, after which a running game is cut off."""
     n = rows.shape[0]
     seat = rows["learner_seat"].astype(np.int64)
     every = np.arange(n)
@@ -83,11 +84,12 @@ def play_suite(context, pool, rows, learner, opponent, workers, seed, max_steps=
             if opponent in ("random", "scripted"):
                 indices = other.choose(batch)
             else:
-                indices = other.indices(batch, choices, step=t, seats=np.where(dead, -1, 1 - seat))
+                indices = other.indices(batch, choices, step=t, seats=np.where(dead, -1, 1 - seat),
+                                        last_step=t == max_steps - 1)
             if mine.any():
                 e = every[mine]
-                indices[e, seat[mine]] = learner.indices(batch, choices, step=t,
-                                                         seats=np.where(mine, seat, -1))[e, seat[mine]]
+                indices[e, seat[mine]] = learner.indices(batch, choices, step=t, seats=np.where(mine, seat, -1),
+                                                         last_step=t == max_steps - 1)[e, seat[mine]]
             indices[dead] = _layout.NO_CHOICE
             try:
                 batch.step(indices, active=~dead if dead.any() else None)

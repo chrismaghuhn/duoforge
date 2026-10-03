@@ -16,26 +16,36 @@ from . import seeds
 
 class SearchPlayer:
     """A Lookahead as a player of evaluate.play_suite: indices(batch,
-    choices, step, seats) gives the candidate index of the searched action
-    of its seat in every game where that seat is requested, NO_CHOICE
-    elsewhere, as Player.indices does.
+    choices, step, seats, last_step) gives the candidate index of the
+    searched action of its seat in every game where that seat is requested,
+    NO_CHOICE elsewhere, as Player.indices does.
 
     Decision keys: seeds.decision_keys(arena_seed, env, its episode, the
-    root's request epoch, seat). A decision at step max_steps - 1 is the
-    arena's last: its leaves are scored by the tiebreak, as play_suite
-    scores the game (spec section 5.3). records: the lookahead's records
-    of every game row (environment), each with its step."""
+    root's request epoch, seat). At play_suite's last step (last_step) the
+    leaves are scored by the tiebreak, as play_suite scores a game it cuts
+    off (spec section 5.3).
 
-    def __init__(self, lookahead, name, arena_seed, max_steps):
-        if int(max_steps) < 1:
-            raise ValueError(f"max_steps must be at least 1 (got {max_steps})")
+    records: the lookahead's records of every game row (environment), each
+    with its step. They accumulate over play_suite calls: a SearchPlayer
+    (or clear()) per suite. Every leaf is valued from the searcher's side,
+    a refused leaf -1 as the refused game is the learner's loss: the
+    searcher plays as the learner (spec section 8.2). As the opponent its
+    refused leaves still count -1 for itself, while play_suite counts a
+    refused game as the learner's loss."""
+
+    def __init__(self, lookahead, name, arena_seed):
         self.lookahead, self.name = lookahead, name
-        self.arena_seed, self.max_steps = int(arena_seed), int(max_steps)
+        self.arena_seed = int(arena_seed)
         self.records = {}
 
-    def indices(self, batch, choices, step=None, seats=None):
-        if step is None or seats is None:
-            raise ValueError("a SearchPlayer needs the arena's step and its seats (evaluate.play_suite passes them)")
+    def clear(self):
+        """Forgets the records (a new suite)."""
+        self.records = {}
+
+    def indices(self, batch, choices, step=None, seats=None, last_step=None):
+        if step is None or seats is None or last_step is None:
+            raise ValueError("a SearchPlayer needs the arena's step, its seats and the last-step flag "
+                             "(evaluate.play_suite passes them)")
         envs = batch.envs
         seats = np.asarray(seats)
         if seats.shape != (envs,) or not np.isin(seats, (-1, 0, 1)).all():
@@ -50,7 +60,7 @@ class SearchPlayer:
         e, p = asked, seats[asked]
         keys = seeds.decision_keys(self.arena_seed, e, [batch.episode(int(x)) for x in e],
                                    batch.requests["epoch"][e, p], p)
-        actions, records = self.lookahead.decide(batch, e, p, keys, np.full(e.size, step == self.max_steps - 1))
+        actions, records = self.lookahead.decide(batch, e, p, keys, np.full(e.size, bool(last_step)))
         for r in records:
             r["step"] = int(step)
             self.records.setdefault(r["env"], []).append(r)

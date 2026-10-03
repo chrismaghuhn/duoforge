@@ -237,7 +237,13 @@ class Lookahead:
     A decision is reproduced bit for bit by the same seeds, network,
     library, JAX version, device and capacity: a row's value does not depend
     on its position in the value call, but another batch shape changes the
-    network's float32 values in the last bits."""
+    network's float32 values in the last bits.
+
+    Times per decision (records' "time", seconds): the network (its share of
+    the root policy call and of the value calls), the engine (its share of
+    the expand calls and tiebreaks), the reduction (table and rule) and the
+    split halves' extra solves. The value call is compiled here and the
+    policy call once per root batch size, outside the timed calls."""
 
     def __init__(self, context, model, params, encoder, ext_supported, k=8, m=8, s=16, rule="nash",
                  seed=SEARCH_SEED, capacity=CAPACITY, workers=8):
@@ -264,6 +270,8 @@ class Lookahead:
             self.leaves.close()
             raise
         self._rows = np.zeros((self.capacity, width), dtype=np.float32)
+        self.model.value(self.params, self._rows)  # compiled here: no decision's time holds the compilation
+        self._compiled = set()  # the root batch sizes the policy call is compiled for
         self.last = None  # the leaves of the last decide (diagnostics and tests)
 
     def close(self):
@@ -306,13 +314,18 @@ class Lookahead:
             self.last = None
             return np.zeros(0, dtype=np.int64), []
         rows = 2 * roots.envs
-        flat = obs.reshape(rows, -1)
-        self.model.check(flat)
-        logp_pairs, logp_team, _ = self.model.apply(self.params, flat, slots.reshape((rows,) + slots.shape[2:]),
-                                                    pairs.reshape((rows,) + pairs.shape[2:]))
+        inputs = (obs.reshape(rows, -1), slots.reshape((rows,) + slots.shape[2:]),
+                  pairs.reshape((rows,) + pairs.shape[2:]))
+        self.model.check(inputs[0])
+        query_time = time.perf_counter() - start
+        if rows not in self._compiled:  # compiled outside the timed call
+            np.asarray(self.model.apply(self.params, *inputs)[0])
+            self._compiled.add(rows)
+        start = time.perf_counter()
+        logp_pairs, logp_team, _ = self.model.apply(self.params, *inputs)
         logp_pairs = np.asarray(logp_pairs).reshape(roots.envs, 2, PAIRS)
         logp_team = np.asarray(logp_team).reshape(roots.envs, 2, -1)
-        policy_time = (time.perf_counter() - start) / n
+        policy_time = (query_time + time.perf_counter() - start) / n
 
         actions = np.zeros(n, dtype=np.int64)
         records = [None] * n
@@ -353,7 +366,7 @@ class Lookahead:
             self.last = None
         for d in range(n):
             if records[d]["kind"] != "searched":
-                records[d]["time"] = {"network": policy_time, "engine": 0.0, "reduction": 0.0}
+                records[d]["time"] = {"network": policy_time, "engine": 0.0, "reduction": 0.0, "split": 0.0}
         return actions, records
 
     def _search(self, roots, envs, seats, keys, last_step, searched, actions, records, policy_time):
@@ -437,16 +450,22 @@ class Lookahead:
                                     int(encode_statuses[x])) from err
             self.last["tables"].append(tab)
             rank = np.arange(own.size)
-            if self.rule == "nash":
-                sol = matrix.solve(tab.a)
-                u = float(seeds.play_uniforms(self.seed, keys[d:d + 1])[0])
-                row = matrix.draw(sol.x, rank, u)
-                reduced = {"x": sol.x.tolist(), "y": sol.y.tolist(), "value": sol.value, "exact": sol.exact, "u": u,
-                           "support": [int((sol.x >= matrix.PROBABILITY_FLOOR).sum()),
-                                       int((sol.y >= matrix.PROBABILITY_FLOOR).sum())]}
-            else:
-                row = matrix.expected_choice(tab.a, foe_p, rank)
-                reduced = {"expected": matrix.expected_values(tab.a, foe_p).tolist()}
+            try:
+                if self.rule == "nash":
+                    sol = matrix.solve(tab.a)
+                    u = float(seeds.play_uniforms(self.seed, keys[d:d + 1])[0])
+                    row = matrix.draw(sol.x, rank, u)
+                    reduced = {"x": sol.x.tolist(), "y": sol.y.tolist(), "value": sol.value, "exact": sol.exact,
+                               "u": u, "support": [int((sol.x >= matrix.PROBABILITY_FLOOR).sum()),
+                                                   int((sol.y >= matrix.PROBABILITY_FLOOR).sum())]}
+                else:
+                    row = matrix.expected_choice(tab.a, foe_p, rank)
+                    reduced = {"expected": matrix.expected_values(tab.a, foe_p).tolist()}
+                t1 = time.perf_counter()
+                split = split_half(tab.values, foe_p, self.rule)
+            except SearchError as err:
+                raise self._unsolved(err, int(envs[d]), int(seats[d]), int(keys[d]), own, foe, foe_p, tab) from err
+            t2 = time.perf_counter()
             actions[d] = int(own[row])
             ok = step_statuses[sl] == 0
             kinds = boundaries[sl][ok]
@@ -455,12 +474,23 @@ class Lookahead:
                 "s": self.s, "own_pairs": own.tolist(), "own_probs": own_p.tolist(), "foe_pairs": foe.tolist(),
                 "foe_probs": foe_p.tolist(), "coverage": math.fsum(foe_p.tolist()), "table": tab.a.tolist(),
                 "stderr": tab.stderr.tolist(), **reduced, "choice": int(actions[d]), "raw": int(own[0]),
-                "changed": int(actions[d]) != int(own[0]), "split": split_half(tab.values, foe_p, self.rule),
-                "near_duplicates": near_duplicates(tab.a),
+                "changed": int(actions[d]) != int(own[0]), "split": split, "near_duplicates": near_duplicates(tab.a),
                 "leaves": {**tab.counts, **{name: int((kinds == b).sum()) for b, name in _BOUNDARIES.items()
                                             if name != "TEAM_SELECTION"}},
                 "time": {"network": policy_time + float(network_time[q]), "engine": float(engine_time[q]),
-                         "reduction": time.perf_counter() - t0}}
+                         "reduction": t1 - t0, "split": t2 - t1}}
+
+    def _unsolved(self, err, env, seat, key, own, foe, foe_p, tab):
+        """The SearchError that stops the run when a table cannot be reduced
+        (spec section 7: a missed Nash certificate writes the table), with the
+        decision, its table and its leaf values in the attribute
+        reproduction."""
+        stop = SearchError(f"{err} (environment {env}, seat {seat}, rule {self.rule}): the run stops "
+                           f"(spec section 7)")
+        stop.reproduction = {"env": env, "seat": seat, "key": key, "search_seed": self.seed, "rule": self.rule,
+                             "own_pairs": own.tolist(), "foe_pairs": foe.tolist(), "foe_probs": foe_p.tolist(),
+                             "table": tab.a.tolist(), "values": tab.values.tolist()}
+        return stop
 
     def _stopped(self, roots, err, env, seat, key, own_pair, foe_pair, sample, step_status, encode_status):
         """The SearchError that stops the run at a leaf (spec section 7),
