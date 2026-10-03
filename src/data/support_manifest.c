@@ -422,6 +422,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_RAINDISH] = 1u, /* step G35 */
             [DFI_ABILITY_FRIENDGUARD] = 1u,
             [DFI_ABILITY_SHADOWTAG] = 1u, /* step G41 */
+            [DFI_ABILITY_CURSEDBODY] = 1u, /* TEMP G41: until G27 */
         },
     .items =
         {
@@ -454,6 +455,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_CHARIZARDITEX] = 1u,
             [DFI_ITEM_GARCHOMPITEZ] = 1u,
             [DFI_ITEM_DELPHOXITE] = 1u,
+            [DFI_ITEM_GENGARITE] = 1u, /* TEMP G41: until G27 and G26 */
             [DFI_ITEM_GARDEVOIRITE] = 1u,
             [DFI_ITEM_ABOMASITE] = 1u,
             [DFI_ITEM_BARBARACITE] = 1u,
