@@ -151,7 +151,7 @@ static void copy_named_fields(duoforge_battle *x, const duoforge_battle *src)
         dt->spikes = st->spikes;
         dt->sticky_web = st->sticky_web;
         dt->quick_guard = st->quick_guard;
-        dt->side_pad = st->side_pad;
+        dt->hazard_order = st->hazard_order;
         for (unsigned p = 0; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
             const dfi_tail_pos *sp = &st->positions[p];
             dfi_tail_pos *dp = &dt->positions[p];

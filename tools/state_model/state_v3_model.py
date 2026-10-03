@@ -38,7 +38,7 @@ SCHEMA_POOL_TAIL_REV2 = 0x0203
 SCHEMA_POOL_TAIL_REV3 = 0x0303
 SCHEMA_POOL_TAIL_REV4 = 0x0403
 TAIL_FIELD_SIZE = 8                 # gravity_turns, then 7 reserved bytes
-TAIL_SIDE_SIZE = 140                # 7 side bytes + 1 reserved, 2 positions of 36, 6 members of 10
+TAIL_SIDE_SIZE = 140                # 8 side bytes (no reserved byte), 2 positions of 36, 6 members of 10
 TAIL_POS_SIZE = 36
 TAIL_MEMBER_SIZE = 10
 TAIL_SIZE = TAIL_FIELD_SIZE + 2 * TAIL_SIDE_SIZE
@@ -87,7 +87,10 @@ TAIL_POS_BYTE_FIELDS = ['last_move', 'encore_slot', 'encore_turns', 'throat_chop
                         'trap_band', 'leech_seed', 'yawn', 'focus_energy', 'stockpile', 'stockpile_def',
                         'stockpile_spd', 'charge', 'glaive_rush']
 TAIL_POS_REV4_FIELDS = ['move_result', 'single_turn', 'hits_taken', 'ability_state', 'lock_turns']
-TAIL_SIDE_BYTE_FIELDS = ['wide_guard', 'aurora_veil', 'toxic_spikes', 'stealth_rock', 'spikes', 'sticky_web', 'quick_guard']
+TAIL_SIDE_BYTE_FIELDS = ['wide_guard', 'aurora_veil', 'toxic_spikes', 'stealth_rock', 'spikes', 'sticky_web', 'quick_guard',
+                         'hazard_order']
+# hazard_order (rev 4): the creation order of the hazards that are up, 2 bits per slot (slot 0 in bits 1:0); the kind codes
+HAZARD_STEALTH_ROCK, HAZARD_SPIKES, HAZARD_TOXIC_SPIKES, HAZARD_STICKY_WEB = 0, 1, 2, 3
 TAIL_MEMBER_LIST_FIELDS = ('ability_now', 'forme_now', 'soak', 'item_now', 'toxic_stage', 'type2', 'member_flags')
 TYPE_COUNT = 18
 assert STATE_SIZE == 1009 and QUEUE_OFF + QUEUE_CAP * QUEUE_REC_SIZE == HEADER_SIZE
@@ -897,6 +900,16 @@ def tail_is_zero(tail):
     return tail['gravity'] == 0 and all(side_zero(ts) for ts in tail['sides'])
 
 
+def hazard_order_valid(ts):
+    """Rev 4: with n hazard kinds up (layers > 0) the first n slots of hazard_order are exactly those kinds, each once, and the
+    other slots are zero (n = 0 is the byte 0)."""
+    present = {k for k, f in ((HAZARD_STEALTH_ROCK, 'stealth_rock'), (HAZARD_SPIKES, 'spikes'),
+                              (HAZARD_TOXIC_SPIKES, 'toxic_spikes'), (HAZARD_STICKY_WEB, 'sticky_web')) if ts[f] != 0}
+    slots = [(ts['hazard_order'] >> (2 * i)) & 3 for i in range(4)]
+    n = len(present)
+    return set(slots[:n]) == present and len(set(slots[:n])) == n and all(v == 0 for v in slots[n:])
+
+
 def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0):
     """The tail of a standing occupant's position (the rules of decision 0015 section 7)."""
     mc = mem['move_count']
@@ -949,7 +962,7 @@ def check_tail(ctx, st):
         if (ts['wide_guard'] > TAIL_WIDE_GUARD_MAX or ts['aurora_veil'] > TAIL_AURORA_VEIL_MAX
                 or ts['toxic_spikes'] > TAIL_TOXIC_SPIKES_MAX or ts['stealth_rock'] > TAIL_STEALTH_ROCK_MAX
                 or ts['spikes'] > TAIL_SPIKES_MAX or ts['sticky_web'] > TAIL_STICKY_WEB_MAX
-                or ts['quick_guard'] > TAIL_QUICK_GUARD_MAX):
+                or ts['quick_guard'] > TAIL_QUICK_GUARD_MAX or not hazard_order_valid(ts)):
             return 'TAIL_SIDE'
         for p in range(2):
             tp = ts['pos'][p]
@@ -1035,7 +1048,7 @@ def tail_bytes(tail):
     """The 288 encoded bytes of a tail (the layout of src/codec/state_codec.h), reserved bytes zero."""
     out = bytearray([tail['gravity']]) + bytes(TAIL_FIELD_SIZE - 1)
     for ts in tail['sides']:
-        out += bytes([ts[f] for f in TAIL_SIDE_BYTE_FIELDS]) + bytes(1)
+        out += bytes([ts[f] for f in TAIL_SIDE_BYTE_FIELDS])
         for tp in ts['pos']:
             out += bytes([tp[f] for f in TAIL_POS_BYTE_FIELDS])
             out += struct.pack('<HH', tp['substitute_hp'], tp['trap_move']) + bytes([tp['protect_kind']])
@@ -1048,15 +1061,14 @@ def tail_bytes(tail):
 
 
 def tail_reserved_offsets():
-    """The offsets (within the tail) of the 37 reserved bytes."""
+    """The offsets (within the tail) of the 35 reserved bytes."""
     offs = list(range(1, TAIL_FIELD_SIZE))
     for s in range(2):
         so = TAIL_FIELD_SIZE + TAIL_SIDE_SIZE * s
-        offs += [so + 7]
         for p in range(2):
             offs += [so + 8 + TAIL_POS_SIZE * p + 32 + i for i in range(4)]
         offs += [so + 80 + TAIL_MEMBER_SIZE * m + 9 for m in range(MAX_ROSTER)]
-    assert len(offs) == 37
+    assert len(offs) == 35
     return offs
 
 
@@ -1810,7 +1822,9 @@ def tail_example():
     t = empty_tail()
     t['gravity'] = 5
     a, c = t['sides']
-    a.update(wide_guard=1, aurora_veil=8, toxic_spikes=2, stealth_rock=1, spikes=3, sticky_web=1, quick_guard=1)
+    # all four hazards up, created in the order Spikes, Stealth Rock, Sticky Web, Toxic Spikes: 1 | 0 << 2 | 3 << 4 | 2 << 6
+    a.update(wide_guard=1, aurora_veil=8, toxic_spikes=2, stealth_rock=1, spikes=3, sticky_web=1, quick_guard=1,
+             hazard_order=HAZARD_SPIKES | (HAZARD_STEALTH_ROCK << 2) | (HAZARD_STICKY_WEB << 4) | (HAZARD_TOXIC_SPIKES << 6))
     a['pos'][0] = tail_pos(last_move=1, encore_slot=2, encore_turns=3, throat_chop=2, heal_block=5, perish=3, taunt=4,
                            disable_slot=3, disable_turns=5, imprison=1, trap_turns=6, trap_source=3, trap_band=1,
                            leech_seed=4, yawn=2, focus_energy=1, stockpile=3, stockpile_def=2, stockpile_spd=3,
@@ -1825,7 +1839,7 @@ def tail_example():
     a['item_now'][:4] = [12, TAIL_ITEM_NONE, POOL_ITEM_COUNT, 1]
     a['type2'][:2] = [TYPE_COUNT, TAIL_TYPE2_TYPELESS]
     a['member_flags'][:3] = [1, 0, 1]
-    c.update(spikes=1)
+    c.update(spikes=1, hazard_order=HAZARD_SPIKES)
     c['pos'][0] = tail_pos(last_move=4, encore_slot=4, encore_turns=1, heal_block=3, leech_seed=1, yawn=1, move_result=4,
                            hits_taken=3)
     c['pos'][1] = tail_pos(trap_turns=1, trap_source=3, trap_move=511, move_result=9, single_turn=2)

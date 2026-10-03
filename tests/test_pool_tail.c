@@ -38,10 +38,10 @@
 static const char ENVELOPE_HEX[] = "8944554f0d0a1a0a020003040300000011050000";
 /* The model's tail bytes of the example below ("pool_tail example"). */
 static const char TAIL_HEX[] =
-    "0500000000000000010802010301010001020302050304030501000603010402010302030100140025000006020606030000"
+    "050000000000000001080201030101b101020302050304030501000603010402010302030100140025000006020606030000"
     "00000500000102010100000001000000000000010100000101000000000f000101010000000005002c01050c00120100d700"
     "5a0112ff00ff00000000010000a6000001000000000000010000000000000000000000000000000000000000000000000000"
-    "0000010000000404010003000000000000000000010100000000000000000000000400030000000000000000000000000000"
+    "0000010000010404010003000000000000000000010100000000000000000000000400030000000000000000000000000000"
     "00000001030000000000000000000000ff010009020000000000000001000000010000010000000000000000000000000000"
     "0000000000000000000000000000000000000000000000000000000000000700006400000100";
 
@@ -63,12 +63,12 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 0, 0, 0, 255},
     {1, 254, 0, 0, 0, 0},
     {8, 247, 0, 0, 0, 0},
+    {1, 254, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0},
     {2, 253, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0},
     {1, 254, 0, 0, 0, 0},
-    {3, 252, 0, 0, 0, 0},
-    {1, 254, 0, 0, 0, 0},
-    {1, 254, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 255},
+    {23, 232, 0, 0, 0, 0},
     {5, 0, 250, 0, 0, 0},
     {3, 0, 252, 0, 0, 0},
     {3, 0, 252, 0, 0, 0},
@@ -203,12 +203,12 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 0, 0, 0, 255},
     {1, 254, 0, 0, 0, 0},
     {8, 247, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0},
+    {1, 254, 0, 0, 0, 0},
     {2, 253, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0},
     {1, 254, 0, 0, 0, 0},
-    {3, 252, 0, 0, 0, 0},
-    {1, 254, 0, 0, 0, 0},
-    {1, 254, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 255},
+    {0, 255, 0, 0, 0, 0},
     {5, 0, 250, 0, 0, 0},
     {3, 0, 252, 0, 0, 0},
     {3, 0, 252, 0, 0, 0},
@@ -440,6 +440,9 @@ static void set_example_tail(duoforge_battle *b)
     a->spikes = 3u;
     a->sticky_web = 1u;
     a->quick_guard = 1u;
+    /* all four hazards up, created in the order Spikes, Stealth Rock, Sticky Web, Toxic Spikes */
+    a->hazard_order = (uint8_t)(DFI_HAZARD_SPIKES | (DFI_HAZARD_STEALTH_ROCK << 2u) | (DFI_HAZARD_STICKY_WEB << 4u) |
+                                (DFI_HAZARD_TOXIC_SPIKES << 6u));
     a->positions[0] = (dfi_tail_pos){.substitute_hp = 20u, .trap_move = 37u, .last_move = 1u, .encore_slot = 2u,
                                      .encore_turns = 3u, .throat_chop_turns = 2u, .heal_block_turns = 5u,
                                      .perish = 3u, .taunt_turns = 4u, .disable_slot = 3u, .disable_turns = 5u,
@@ -469,6 +472,7 @@ static void set_example_tail(duoforge_battle *b)
     a->member_flags[2] = DFI_TAIL_MEMBER_FLAG_HERO_SHOWN;
     dfi_tail_side *c = &b->tail.sides[1];
     c->spikes = 1u;
+    c->hazard_order = (uint8_t)DFI_HAZARD_SPIKES;
     c->positions[0] = (dfi_tail_pos){.last_move = 4u, .encore_slot = 4u, .encore_turns = 1u, .heal_block_turns = 3u,
                                      .leech_seed_source = 1u, .yawn_turns = 1u, .move_result = 4u, .hits_taken = 3u};
     c->positions[1] = (dfi_tail_pos){.trap_move = DFI_POOL_MOVE_COUNT, .trap_turns = 1u, .trap_source = 3u,
@@ -563,7 +567,7 @@ static void put_write(uint8_t *tail, const tail_write *w)
 #define W2(off, v) {(off), 2u, (v)}
 #define NO_WRITE {0u, 0u, 0u}
 
-/* Every field of the tail that a state can hold on its own, one at a time: 163 settings (the toxic stage is not one:
+/* Every field of the tail that a state can hold on its own, one at a time: 167 settings (the toxic stage is not one:
  * it needs a status that no state has; Rage Powder's single-turn bit is not one either, it needs the Follow Me flag). */
 enum { SETTINGS_MAX = 200 };
 static size_t build_settings(tail_setting *out)
@@ -574,10 +578,22 @@ static size_t build_settings(tail_setting *out)
         const size_t so = DFI_ENC_TAIL_SIDES_OFF + s * DFI_ENC_TAIL_SIDE_SIZE;
         out[n++] = (tail_setting){"wide_guard", {W1(so + DFI_ENC_TAIL_WIDE_GUARD_OFF, 1u), NO_WRITE, NO_WRITE}};
         out[n++] = (tail_setting){"aurora_veil", {W1(so + DFI_ENC_TAIL_AURORA_VEIL_OFF, 1u), NO_WRITE, NO_WRITE}};
-        out[n++] = (tail_setting){"toxic_spikes", {W1(so + DFI_ENC_TAIL_TOXIC_SPIKES_OFF, 1u), NO_WRITE, NO_WRITE}};
+        /* a hazard that is up has its kind in the first slot of hazard_order (Stealth Rock is code 0, so it needs no write) */
+        out[n++] = (tail_setting){"toxic_spikes", {W1(so + DFI_ENC_TAIL_TOXIC_SPIKES_OFF, 1u),
+                                                   W1(so + DFI_ENC_TAIL_HAZARD_ORDER_OFF, DFI_HAZARD_TOXIC_SPIKES), NO_WRITE}};
         out[n++] = (tail_setting){"stealth_rock", {W1(so + DFI_ENC_TAIL_STEALTH_ROCK_OFF, 1u), NO_WRITE, NO_WRITE}};
-        out[n++] = (tail_setting){"spikes", {W1(so + DFI_ENC_TAIL_SPIKES_OFF, 1u), NO_WRITE, NO_WRITE}};
-        out[n++] = (tail_setting){"sticky_web", {W1(so + DFI_ENC_TAIL_STICKY_WEB_OFF, 1u), NO_WRITE, NO_WRITE}};
+        out[n++] = (tail_setting){"spikes", {W1(so + DFI_ENC_TAIL_SPIKES_OFF, 1u),
+                                             W1(so + DFI_ENC_TAIL_HAZARD_ORDER_OFF, DFI_HAZARD_SPIKES), NO_WRITE}};
+        out[n++] = (tail_setting){"sticky_web", {W1(so + DFI_ENC_TAIL_STICKY_WEB_OFF, 1u),
+                                                 W1(so + DFI_ENC_TAIL_HAZARD_ORDER_OFF, DFI_HAZARD_STICKY_WEB), NO_WRITE}};
+        /* two hazards, each order: Spikes then Stealth Rock (1 | 0 << 2), Stealth Rock then Spikes (0 | 1 << 2) */
+        out[n++] = (tail_setting){"hazard_order_spikes_first", {W1(so + DFI_ENC_TAIL_SPIKES_OFF, 1u),
+                                                                W1(so + DFI_ENC_TAIL_STEALTH_ROCK_OFF, 1u),
+                                                                W1(so + DFI_ENC_TAIL_HAZARD_ORDER_OFF, DFI_HAZARD_SPIKES)}};
+        out[n++] = (tail_setting){"hazard_order_stealth_rock_first", {W1(so + DFI_ENC_TAIL_SPIKES_OFF, 1u),
+                                                                      W1(so + DFI_ENC_TAIL_STEALTH_ROCK_OFF, 1u),
+                                                                      W1(so + DFI_ENC_TAIL_HAZARD_ORDER_OFF,
+                                                                         DFI_HAZARD_STEALTH_ROCK | (DFI_HAZARD_SPIKES << 2u))}};
         out[n++] = (tail_setting){"quick_guard", {W1(so + DFI_ENC_TAIL_QUICK_GUARD_OFF, 1u), NO_WRITE, NO_WRITE}};
         for (uint32_t p = 0u; p < 2u; ++p) {
             const size_t po = so + DFI_ENC_TAIL_POS_OFF + p * DFI_ENC_TAIL_POS_SIZE;
@@ -661,7 +677,35 @@ MUT(m_stealth_rock, ts->stealth_rock = 2u)
 MUT(m_spikes, ts->spikes = 4u)
 MUT(m_sticky_web, ts->sticky_web = 2u)
 MUT(m_quick_guard, ts->quick_guard = 2u)
-MUT(m_side_pad, ts->side_pad = 1u)
+MUT(m_hazard_no_hazard, ts->hazard_order = 1u) /* nothing is up: the byte is 0 */
+MUT(m_hazard_missing_kind, {
+    ts->spikes = 1u; /* Spikes is up and its slot says Stealth Rock (code 0) */
+    ts->hazard_order = 0u;
+})
+MUT(m_hazard_duplicate, {
+    ts->spikes = 1u;
+    ts->stealth_rock = 1u;
+    ts->hazard_order = (uint8_t)(DFI_HAZARD_SPIKES | (DFI_HAZARD_SPIKES << 2u)); /* Spikes twice */
+})
+MUT(m_hazard_slot_beyond, {
+    ts->spikes = 1u;
+    ts->hazard_order = (uint8_t)(DFI_HAZARD_SPIKES | (DFI_HAZARD_STICKY_WEB << 2u)); /* a second slot with one kind up */
+})
+MUT(m_hazard_absent_kind, {
+    ts->spikes = 1u;
+    ts->sticky_web = 1u;
+    ts->hazard_order = (uint8_t)(DFI_HAZARD_SPIKES | (DFI_HAZARD_TOXIC_SPIKES << 2u)); /* Toxic Spikes is not up */
+})
+MUT(m_hazard_dropped_gap, {
+    ts->spikes = 1u;
+    ts->sticky_web = 1u;
+    ts->toxic_spikes = 1u;
+    ts->hazard_order = (uint8_t)(DFI_HAZARD_SPIKES | (DFI_HAZARD_STICKY_WEB << 2u)); /* three kinds up, two slots */
+})
+MUT(m_hazard_extra_slot, {
+    ts->stealth_rock = 1u;
+    ts->hazard_order = (uint8_t)(DFI_HAZARD_STEALTH_ROCK | (DFI_HAZARD_SPIKES << 2u)); /* a slot after the only kind */
+})
 MUT(m_last_above, p0->last_move = 6u)
 MUT(m_last_beyond, p0->last_move = 3u) /* the short lead has two moves */
 MUT(m_encore_beyond, {
@@ -826,7 +870,9 @@ MUT(v_encore_edge, {
 MUT(v_maxima, {
     y->tail.gravity_turns = 5u;
     *ts = (dfi_tail_side){.wide_guard = 1u, .aurora_veil_turns = 8u, .toxic_spikes = 2u, .stealth_rock = 1u,
-                          .spikes = 3u, .sticky_web = 1u, .quick_guard = 1u};
+                          .spikes = 3u, .sticky_web = 1u, .quick_guard = 1u,
+                          .hazard_order = (uint8_t)(DFI_HAZARD_TOXIC_SPIKES | (DFI_HAZARD_STICKY_WEB << 2u) |
+                                                    (DFI_HAZARD_SPIKES << 4u) | (DFI_HAZARD_STEALTH_ROCK << 6u))};
     ts->positions[0] = (dfi_tail_pos){.substitute_hp = 1u, .trap_move = DFI_POOL_MOVE_COUNT, .last_move = 5u,
                                       .encore_slot = 4u, .encore_turns = 4u, .throat_chop_turns = 2u,
                                       .heal_block_turns = 5u, .perish = 4u, .taunt_turns = 4u, .disable_slot = 4u,
@@ -849,6 +895,15 @@ MUT(v_maxima, {
 /* No valid case for Rage Powder's marker: the Follow Me flag it needs lives only at a PIVOT boundary, and these states are at a
  * TURN one; the invalid case above (the marker without the flag) and the model say what the rule is. */
 MUT(v_move_result_null, p0->move_result = (uint8_t)((DFI_MOVE_RESULT_NULL << DFI_MOVE_RESULT_LAST_SHIFT) | DFI_MOVE_RESULT_FALSE))
+MUT(v_hazard_order_two, {
+    ts->spikes = 2u;
+    ts->toxic_spikes = 1u;
+    ts->hazard_order = (uint8_t)(DFI_HAZARD_TOXIC_SPIKES | (DFI_HAZARD_SPIKES << 2u)); /* Toxic Spikes first */
+})
+MUT(v_hazard_order_gone, {
+    ts->sticky_web = 1u; /* an ended kind leaves, the later ones shift down: Sticky Web alone in slot 0 */
+    ts->hazard_order = (uint8_t)DFI_HAZARD_STICKY_WEB;
+})
 MUT(v_substitute_quarter, p0->substitute_hp = (uint16_t)(y->sides[0].members[y->sides[0].positions[0].occupant].hp_max / 4u))
 MUT(v_bench_overrides, {
     /* the current item and forme outlive the field: a reserve and a fainted member keep them */
@@ -879,7 +934,13 @@ static const tail_case cases[] = {
     {"spikes above 3", DFI_INV_TAIL_SIDE, false, m_spikes},
     {"sticky web above 1", DFI_INV_TAIL_SIDE, false, m_sticky_web},
     {"quick guard above 1", DFI_INV_TAIL_SIDE, false, m_quick_guard},
-    {"the pad byte of a side", DFI_INV_TAIL_SIDE, false, m_side_pad},
+    {"a hazard order with no hazard up", DFI_INV_TAIL_SIDE, false, m_hazard_no_hazard},
+    {"a hazard that is up whose slot names another kind", DFI_INV_TAIL_SIDE, false, m_hazard_missing_kind},
+    {"a hazard order that names a kind twice", DFI_INV_TAIL_SIDE, false, m_hazard_duplicate},
+    {"a hazard order with a slot beyond the kinds that are up", DFI_INV_TAIL_SIDE, false, m_hazard_slot_beyond},
+    {"a hazard order that names a kind that is not up", DFI_INV_TAIL_SIDE, false, m_hazard_absent_kind},
+    {"a hazard order that misses a kind that is up", DFI_INV_TAIL_SIDE, false, m_hazard_dropped_gap},
+    {"a hazard order with a nonzero slot after the only kind", DFI_INV_TAIL_SIDE, false, m_hazard_extra_slot},
     {"last move above Struggle", DFI_INV_TAIL_POSITION, false, m_last_above},
     {"last move beyond the move count", DFI_INV_TAIL_POSITION, true, m_last_beyond},
     {"Encore slot beyond the move count", DFI_INV_TAIL_POSITION, true, m_encore_beyond},
@@ -954,6 +1015,8 @@ static const tail_case cases[] = {
     {"Struggle as the last move is valid for any move count", DFI_INV_NONE, false, v_struggle},
     {"the last Encore turn and slot 4 are valid", DFI_INV_NONE, false, v_encore_edge},
     {"every maximum at once is valid", DFI_INV_NONE, false, v_maxima},
+    {"two hazards in either order are valid", DFI_INV_NONE, false, v_hazard_order_two},
+    {"a hazard alone in the first slot is valid", DFI_INV_NONE, false, v_hazard_order_gone},
     {"a Substitute of exactly a quarter is valid", DFI_INV_NONE, false, v_substitute_quarter},
     {"the item and forme of a reserve and a fainted member are valid", DFI_INV_NONE, false, v_bench_overrides},
     {"a trap by the ally is valid", DFI_INV_NONE, false, v_ally_trap},
@@ -994,7 +1057,7 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_STATE_ENCODED_MAX, DF_STATE_ENCODED_MAX);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_OFF, 1009u);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_SIZE, 288u);
-        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_RESERVED_COUNT, 37u); /* 43 in rev 3: rev 4 adds 40 bytes and defines 46 */
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_RESERVED_COUNT, 35u); /* 43 in rev 3: rev 4 adds 40 bytes and defines 48 */
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_V3, 3u);
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV4, 0x0403u);
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV3, 0x0303u); /* refused since rev 4 */
@@ -1004,18 +1067,20 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_POS_MOVE_RESULT_OFF, 27u);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_POS_LOCK_TURNS_OFF, 31u);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_QUICK_GUARD_OFF, 6u);
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_HAZARD_ORDER_OFF, 7u);
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_SIDE_RESERVED_SIZE, 0u);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_MEMBER_TYPE2_OFF, 7u);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_MEMBER_FLAGS_OFF, 8u);
         DF_CHECK(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV4 != 4u); /* schema 4 stays free: certified pool teams */
-        /* The tail in memory: the encoded size without the reserved bytes, and the pad byte of each side and of the field block. */
-        DF_CHECK_EQ_U64(&t, sizeof(dfi_pool_tail), 254u); /* a side has a pad byte since rev 4, a position none */
+        /* The tail in memory: the encoded size without the reserved bytes, and the one pad byte of the field block. */
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_pool_tail), 254u); /* a position and a side have none since rev 4 */
         DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_side), 126u);
         DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_pos), 32u);
         unsigned reserved = 0u;
         for (size_t off = 0u; off < DFI_ENC_TAIL_SIZE; ++off) {
             reserved += is_reserved_offset(off) ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, reserved, 37u);
+        DF_CHECK_EQ_U64(&t, reserved, 35u);
         const duoforge_context *with[] = {kp, kq};
         const duoforge_context *without[] = {k1, k2, kc, kd, c1};
         for (size_t i = 0u; i < 2u; ++i) {
@@ -1173,7 +1238,7 @@ int main(void)
         static tail_setting settings[SETTINGS_MAX];
         static uint8_t digests[SETTINGS_MAX][DUOFORGE_DIGEST_SIZE];
         const size_t count = build_settings(settings);
-        DF_CHECK_EQ_U64(&t, count, 163u);
+        DF_CHECK_EQ_U64(&t, count, 167u);
         duoforge_battle *x = turn_battle(&t, kp, false);
         uint8_t base[DUOFORGE_DIGEST_SIZE];
         digest_of(&t, kp, x, base);
@@ -1259,7 +1324,7 @@ int main(void)
             }
         }
         DF_CHECK_EQ_U64(&t, wrong, 0u);
-        DF_CHECK_EQ_U64(&t, all_reserved, 37u);
+        DF_CHECK_EQ_U64(&t, all_reserved, 35u);
     }
 
     /* The schema is the one of the context's kind; sizes, schema ids and truncations. */
@@ -1471,6 +1536,9 @@ int main(void)
         DF_CHECK(&t, memcmp(&ts->positions[0], &zero, sizeof zero) == 0);
         DF_CHECK(&t, memcmp(&ts->positions[1], &zero, sizeof zero) != 0); /* the ally keeps its tail */
         DF_CHECK(&t, ts->soak_type[occupant] == 0u && ts->ability_now[occupant] == 0u && ts->toxic_stage[occupant] == 0u);
+        /* tail rev 4: the second type goes with the occupant, the ally's stays, the member flags outlive the field */
+        DF_CHECK(&t, ts->type2[occupant] == 0u && ts->type2[1] == DFI_TAIL_TYPE2_TYPELESS);
+        DF_CHECK(&t, ts->member_flags[occupant] == DFI_TAIL_MEMBER_FLAG_HERO_SHOWN);
         DF_CHECK(&t, ts->item_now[occupant] == 12u && ts->forme_now[occupant] == 300u);
         DF_CHECK(&t, ts->soak_type[1] == 18u && ts->ability_now[1] == DFI_POOL_ABILITY_COUNT); /* the ally's member */
         DF_CHECK(&t, x->tail.sides[1].positions[0].last_move == 4u && x->tail.gravity_turns == 5u && ts->spikes == 3u);

@@ -236,6 +236,16 @@ typedef struct dfi_side {
 #define DFI_TAIL_LOCK_TURNS_MAX 3u      /* lockedmove (Outrage, Thrash, Petal Dance): 2 or 3 turns */
 /* rev 4, per side and per roster member */
 #define DFI_TAIL_QUICK_GUARD_MAX 1u     /* set by Quick Guard, ends in the residual of the turn */
+/* hazard_order: the creation order of the hazards that are up on the side (the pin's effectOrder, sim/battle.ts:994-1000), which
+ * is the order of the switch-in handlers. Two bits per slot, slot 0 in bits 1:0 (the first created) to slot 3 in bits 7:6; a slot
+ * holds a DFI_HAZARD_* kind. With n kinds up (layers > 0) the first n slots are exactly those kinds, each once, and the others
+ * are 0; n = 0 is the byte 0. A new kind takes slot n, more layers keep their slot, an ended kind leaves and the later ones
+ * shift down, a kind that is put up again goes last. No engine reader yet (step G37 sets and reads it). */
+#define DFI_HAZARD_STEALTH_ROCK 0u
+#define DFI_HAZARD_SPIKES 1u
+#define DFI_HAZARD_TOXIC_SPIKES 2u
+#define DFI_HAZARD_STICKY_WEB 3u
+#define DFI_HAZARD_KIND_COUNT 4u
 #define DFI_TAIL_TYPE2_TYPELESS 255u    /* type2: 0 none, 1..DFI_TYPE_COUNT = type id + 1, 255 = the type is gone (Burn Up, Double Shock) */
 #define DFI_TAIL_MEMBER_FLAG_HERO_SHOWN 1u /* member flags: Zero to Hero's message was shown (bits 1-7 are free and zero) */
 #define DFI_TAIL_MEMBER_FLAGS_MASK 1u
@@ -304,7 +314,7 @@ typedef struct dfi_tail_side {
     uint8_t toxic_stage[DUOFORGE_MAX_ROSTER];  /* per roster member: the toxic counter, 0 = none */
     uint8_t type2[DUOFORGE_MAX_ROSTER];        /* tail rev 4, per roster member: 0 none, type id + 1, DFI_TAIL_TYPE2_TYPELESS (Burn Up, Double Shock) */
     uint8_t member_flags[DUOFORGE_MAX_ROSTER]; /* tail rev 4, per roster member: DFI_TAIL_MEMBER_FLAG_* (Zero to Hero's message shown) */
-    uint8_t side_pad;                          /* always 0: the u16 fields above align the struct, so the odd byte count needs it */
+    uint8_t hazard_order;                      /* tail rev 4: the creation order of the hazards that are up, 2 bits per slot (see above) */
 } dfi_tail_side;
 
 typedef struct dfi_pool_tail {
