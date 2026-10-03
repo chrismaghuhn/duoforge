@@ -322,6 +322,9 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                 /* Step G9, Encore: the one move slot (slot + 1) that the occupant may use, public (-start|X|Encore: the
                  * slot is the one of its last move line); the turns are never shown. */
                 o.sides[s].positions[p].encore_slot = tail->encore_slot;
+                /* Step G27, Disable: the one move slot (slot + 1) that the occupant may not use, public (-start|X|Disable|MOVE: the
+                 * slot is the one of MOVE on the open sheet); the turns are never shown. */
+                o.sides[s].positions[p].disable_slot = tail->disable_slot;
                 /* Step G11, Soak: the type that it set, public (-start|X|typechange|Water): the occupant is pure
                  * Water until it leaves, faints or Mega Evolves (the tail's soak type is cleared there). */
                 const uint32_t occupant = battle->sides[s].positions[p].occupant;

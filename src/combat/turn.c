@@ -2028,6 +2028,19 @@ static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, uint32_t move_
         dfi_emit(r, &e); /* [cant] flinch */
         return DUOFORGE_OK;
     }
+    /* Disable's onBeforeMove (priority 7: after the flinch's 8, before Throat Chop's and Heal Block's 6; data/moves.ts:3697-3703,
+     * with the Champions override data/mods/champions/moves.ts:228-238, which only adds that a move with the cantusetwice flag
+     * is not stopped: no marked move has it): the move that the volatile bars shows `cant|X|Disable|move` and uses no PP. */
+    {
+        const dfi_tail_pos *tail = &r->b->tail.sides[user / 2u].positions[user % 2u];
+        if (tail->disable_slot != 0u && move_id != DFI_MOVE_STRUGGLE &&
+            dfi_move_of(m, (uint32_t)tail->disable_slot - 1u) == move_id) {
+            duoforge_event e = dfi_ev(DUOFORGE_EVENT_CANT, user, DUOFORGE_CAUSE_DISABLE, 0u, DUOFORGE_NO_POSITION);
+            e.id = (uint16_t)move_id;
+            dfi_emit(r, &e); /* [cant] Disable|move */
+            return DUOFORGE_OK;
+        }
+    }
     /* Throat Chop and Heal Block, both onBeforeMovePriority 6: between the flinch and the confusion (data/moves.ts:
      * 19410-19422, 8307-8313). A sound move (Throat Chop) or a move that heals (Heal Block) shows cant and uses no PP;
      * Struggle has neither flag. No move of the pool is both. */
@@ -2420,6 +2433,67 @@ static duoforge_status dfi_encore(dfi_run *r, uint32_t user, uint32_t flat, bool
     *did = true;
     if (replace) {
         return dfi_encore_replace(r, flat, slot);
+    }
+    return DUOFORGE_OK;
+}
+
+/* Disable's condition onStart (data/moves.ts:3666-3692, the Champions mod does not change it; POOL kinds, the state is the
+ * tail's disable_slot and disable_turns). addVolatile refuses a fainted Pokemon and one that already has the volatile (it has
+ * no onRestart); onStart fails for a Pokemon without a last move and for a last move without PP; the volatile lasts 5 turns,
+ * 4 when the target has not taken its turn yet (queue.willMove) or when the effect comes from the Pokemon's own action in
+ * progress (Cursed Body: pokemon is the active Pokemon and the move is not external). The line is `-start|X|Disable|MOVE`
+ * with [from] ability: Cursed Body [of] holder for the ability. Struggle (last move 5) is never barred: Disable's
+ * onTryHit refuses it and Cursed Body skips it. */
+#define DFI_DISABLE_TURNS 5u
+static bool dfi_disable_start(dfi_run *r, uint32_t flat, uint32_t holder, bool by_ability)
+{
+    struct duoforge_battle *b = r->b;
+    dfi_member *tm = dfi_at(b, flat);
+    dfi_tail_pos *tail = &b->tail.sides[flat / 2u].positions[flat % 2u];
+    if (tm == NULL || tm->hp == 0u || tail->disable_slot != 0u) {
+        return false;
+    }
+    const uint32_t last = tail->last_move; /* 0 none, 1..4 slot + 1, 5 Struggle */
+    if (last == 0u || last > DUOFORGE_MAX_MOVE_SLOTS || last > tm->move_count || tm->moves[last - 1u].pp == 0u) {
+        return false;
+    }
+    const uint32_t move_id = tm->moves[last - 1u].move_id;
+    uint32_t turns = DFI_DISABLE_TURNS;
+    if (by_ability || dfi_will_move(b, flat) != NULL) {
+        turns -= 1u;
+    }
+    tail->disable_slot = (uint8_t)last; /* <= 4 */
+    tail->disable_turns = (uint8_t)turns; /* 4 or 5 */
+    duoforge_event e = dfi_event_make(DUOFORGE_EVENT_VOLATILE_START, flat);
+    e.detail = (uint8_t)DUOFORGE_VOLATILE_DISABLE;
+    e.id = (uint16_t)move_id;
+    if (by_ability) {
+        e.cause = (uint8_t)DUOFORGE_CAUSE_ABILITY;
+        e.id2 = (uint16_t)(1u + DFI_ABILITY_CURSEDBODY);
+        e.other = (uint8_t)holder;
+    }
+    dfi_emit(r, &e);
+    return true;
+}
+
+/* Cursed Body (POOL data, data/abilities.ts:784-797, onDamagingHit; no order, so it runs after Rough Skin's 1 and Rocky
+ * Helmet's 2): a damaging hit that is not Struggle's (nor a max or future move: none in the format) at its holder makes
+ * the attacker roll randomChance(3, 10) (random(10) < 3, one draw per hit target) and a success disables the attacker's
+ * last move (the move it just used), unless the attacker already has Disable (checked before the roll: no draw then). A
+ * fainted attacker still rolls (the roll comes first), and addVolatile then refuses it. */
+static duoforge_status dfi_cursed_body(dfi_run *r, uint32_t user, uint32_t holder, uint32_t move_id)
+{
+    const dfi_tail_pos *tail = &r->b->tail.sides[user / 2u].positions[user % 2u];
+    if (tail->disable_slot != 0u || move_id == DFI_MOVE_STRUGGLE) {
+        return DUOFORGE_OK;
+    }
+    uint32_t roll = 0u;
+    const duoforge_status st = dfi_draw(r->draws, DFI_SITE_CURSED_BODY, 0u, 10u, &roll);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    if (roll < 3u) {
+        (void)dfi_disable_start(r, user, holder, true);
     }
     return DUOFORGE_OK;
 }
@@ -2902,7 +2976,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         return DUOFORGE_OK;
     }
     if (status_move && md->primary_status == DFI_STATUS_NONE && md->special != DFI_SPECIAL_PARTING_SHOT &&
-        md->special != DFI_SPECIAL_SOAK && md->special != DFI_SPECIAL_ENCORE) {
+        md->special != DFI_SPECIAL_SOAK && md->special != DFI_SPECIAL_ENCORE && md->special != DFI_SPECIAL_DISABLE) {
         if (dfi_pool_move_heal[move_id][1] != 0u) {
             return dfi_run_heal_move(r, user, move_id);
         }
@@ -2919,7 +2993,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     if (md->special > DFI_SPECIAL_STRUGGLE && md->special != DFI_SPECIAL_DARKEST_LARIAT &&
         md->special != DFI_SPECIAL_LAST_RESPECTS && md->special != DFI_SPECIAL_SUCKER_PUNCH &&
         md->special != DFI_SPECIAL_FIRST_IMPRESSION && md->special != DFI_SPECIAL_LOW_KICK &&
-        md->special != DFI_SPECIAL_SOAK && md->special != DFI_SPECIAL_ENCORE &&
+        md->special != DFI_SPECIAL_SOAK && md->special != DFI_SPECIAL_ENCORE && md->special != DFI_SPECIAL_DISABLE &&
         md->special != DFI_SPECIAL_KNOCK_OFF && md->special != DFI_SPECIAL_EXPANDING_FORCE &&
         md->special != DFI_SPECIAL_GLAIVE_RUSH) {
         return DUOFORGE_E_INVARIANT;
@@ -3062,6 +3136,17 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             hit[i] = false;
         }
     }
+    /* Disable's own onTryHit (data/moves.ts:3658-3662, priority 0: after Protect's and the abilities'): a target without a
+     * last move, or whose last move is Struggle, fails the move with -fail and [still] (hitStepTryHitEvent,
+     * sim/battle-actions.ts:643-653). */
+    for (uint32_t i = 0u; i < count && md->special == DFI_SPECIAL_DISABLE; ++i) {
+        const uint32_t t = targets[i];
+        const uint32_t last = b->tail.sides[t / 2u].positions[t % 2u].last_move;
+        if (hit[i] && t != user && (last == 0u || last == DFI_TAIL_MOVE_MAX)) {
+            hit[i] = false;
+            dfi_fail_still(r, user);
+        }
+    }
     for (uint32_t i = 0u; i < count && !status_move; ++i) {
         if (hit[i] && dfi_type_immune(b, dfi_at(b, targets[i]), move_type)) {
             hit[i] = false; /* a status move ignores type immunity */
@@ -3150,6 +3235,15 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             }
             if (md->special == DFI_SPECIAL_SOAK) {
                 did = dfi_soak(r, targets[i], move_id) || did;
+                continue;
+            }
+            if (md->special == DFI_SPECIAL_DISABLE) {
+                /* The volatile's onStart fails the move when it does not start (no PP left, already disabled). */
+                if (dfi_disable_start(r, targets[i], DUOFORGE_NO_POSITION, false)) {
+                    did = true;
+                } else {
+                    dfi_fail_still(r, user);
+                }
                 continue;
             }
             if (md->special == DFI_SPECIAL_ENCORE) {
@@ -3337,6 +3431,18 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
      * data/items.ts:5295-5309) comes first, also when the hit knocked its
      * holder out (the faint is not processed yet): a contact move costs the
      * attacker floor(maxHP / 6), at least 1. */
+    /* Cursed Body rolls once per hit holder, and the holders' handlers of one DamagingHit event come in the order of their
+     * Speed (a tie shuffles and draws): two holders hit by one spread move are not modelled (E_UNSUPPORTED, never a guess). */
+    {
+        uint32_t holders = 0u;
+        for (uint32_t i = 0u; i < count; ++i) {
+            const dfi_member *tm = dfi_at(b, targets[i]);
+            holders += (hit[i] && tm != NULL && tm->hp != 0u && dfi_ability(r->b, tm, DFI_ABILITY_CURSEDBODY)) ? 1u : 0u;
+        }
+        if (holders > 1u) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
+    }
     const uint32_t user_before_hit = m->hp;
     /* Rough Skin (POOL data, data/abilities.ts:3938-3950) is the order-1 handler, before Rocky Helmet's 2: a contact
      * move costs the attacker floor(maxHP / 8), at least 1, with [from] ability: Rough Skin [of] the holder, also
@@ -3401,6 +3507,14 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             static const uint8_t atk_up[DFI_STAT_STAGE_COUNT] = {7u, 6u, 6u, 6u, 6u, 6u, 6u};
             dfi_boost(r, targets[i], atk_up, user,
                       dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_THERMALEXCHANGE, DFI_BOOST_PRIMARY));
+        }
+        /* Cursed Body (POOL data): the target's own onDamagingHit, after Thermal Exchange's place and before the attacker's
+         * Poison Touch; the target is standing here (a holder that is down does nothing, as Stamina's). */
+        if (dfi_ability(r->b, tm, DFI_ABILITY_CURSEDBODY)) {
+            st = dfi_cursed_body(r, user, targets[i], move_id);
+            if (st != DUOFORGE_OK) {
+                return st;
+            }
         }
         /* The attacker's Poison Touch comes after the target's own handlers (its onSourceDamagingHit is appended
          * after them, sim/battle.ts:1035-1063, and the sort is stable). */
@@ -4057,6 +4171,80 @@ static duoforge_status dfi_residual_sort(dfi_run *r, dfi_residual_entry *list, u
     return DUOFORGE_OK;
 }
 
+/* The end of a duration handler of a position's volatile whose onEnd shows a line, in the Residual sort of the tail's counters:
+ * Disable (order 17, data/moves.ts:3693-3696) and Heal Block (order 20, :8273-8320). The count goes down; at 0 the volatile ends
+ * with its -end line. Two holders that end now come in the speed order of their holders; at equal Speed the reference shuffles
+ * and draws, and the order shows in the two -end lines, so the converter keeps that tie (heal_block_end_tie, disable the same)
+ * and the engine draws it here (after the callbacks of the sort, before the side conditions) and orders the pair by it: 0 keeps
+ * the lower position first, 1 swaps. A run of three or four needs the longer shuffle, which no battle has needed:
+ * E_UNSUPPORTED. `which` is DUOFORGE_VOLATILE_DISABLE or DUOFORGE_VOLATILE_HEAL_BLOCK. */
+static duoforge_status dfi_duration_ends(dfi_run *r, uint32_t which)
+{
+    struct duoforge_battle *b = r->b;
+    duoforge_status st = DUOFORGE_OK;
+    uint32_t ending[DFI_POSITIONS] = {0u, 0u, 0u, 0u};
+    uint32_t ne = 0u;
+    for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
+        dfi_tail_pos *tail = &b->tail.sides[flat / 2u].positions[flat % 2u];
+        if (which == DUOFORGE_VOLATILE_DISABLE) {
+            if (tail->disable_slot != 0u) {
+                tail->disable_turns = (uint8_t)((uint32_t)tail->disable_turns - 1u); /* wide-operands-reviewed: >= 1 */
+                if (tail->disable_turns == 0u) {
+                    tail->disable_slot = 0u;
+                    ending[ne] = flat;
+                    ne += 1u;
+                }
+            }
+        } else if (tail->heal_block_turns != 0u) {
+            tail->heal_block_turns = (uint8_t)((uint32_t)tail->heal_block_turns - 1u); /* wide-operands-reviewed */
+            if (tail->heal_block_turns == 0u) {
+                ending[ne] = flat;
+                ne += 1u;
+            }
+        }
+    }
+    for (uint32_t i = 1u; i < ne; ++i) {
+        for (uint32_t j = i; j > 0u && r->speed_seen[ending[j]] > r->speed_seen[ending[j - 1u]]; --j) {
+            const uint32_t swap = ending[j];
+            ending[j] = ending[j - 1u];
+            ending[j - 1u] = swap;
+        }
+    }
+    /* Holders of equal Speed: the reference's speedSort shuffles each such run (PRNG.shuffle, one draw
+     * random(start, start + 2) for a pair), and the two -end lines show the outcome, so the engine draws the
+     * SPEED_TIE in the same place (after the callbacks of the sort, before the side conditions) and orders the
+     * pair by it: 0 keeps the lower position first, 1 swaps. A run of three or four needs the longer shuffle,
+     * which no battle has needed: E_UNSUPPORTED, as before. */
+    for (uint32_t i = 0u; i < ne;) {
+        uint32_t j = i + 1u;
+        while (j < ne && r->speed_seen[ending[j]] == r->speed_seen[ending[i]]) {
+            ++j;
+        }
+        if (j - i > 2u) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
+        if (j - i == 2u) {
+            uint32_t v = 0u;
+            st = dfi_draw(r->draws, DFI_SITE_SPEED_TIE, 0u, 2u, &v);
+            if (st != DUOFORGE_OK) {
+                return st;
+            }
+            if (v == 1u) {
+                const uint32_t swap = ending[i];
+                ending[i] = ending[i + 1u];
+                ending[i + 1u] = swap;
+            }
+        }
+        i = j;
+    }
+    for (uint32_t i = 0u; i < ne; ++i) {
+        duoforge_event e = dfi_event_make(DUOFORGE_EVENT_VOLATILE_END, ending[i]);
+        e.detail = (uint8_t)which;
+        dfi_emit(r, &e);
+    }
+    return st;
+}
+
 static duoforge_status dfi_residual_events(dfi_run *r);
 
 /* The residual action. It keeps each position's HP from before its events
@@ -4144,6 +4332,11 @@ static duoforge_status dfi_residual_events(dfi_run *r)
          * Terrain's (sim/battle.ts:1107-1130). */
         if (b->tail.sides[flat / 2u].positions[flat % 2u].heal_block_turns != 0u) {
             list[n] = (dfi_residual_entry){DFI_RES_DURATION, flat, 20u, speed, 2u, false};
+            n += 1u;
+        }
+        /* Disable (order 17, data/moves.ts:3693): a duration handler whose onEnd shows -end. */
+        if (b->tail.sides[flat / 2u].positions[flat % 2u].disable_slot != 0u) {
+            list[n] = (dfi_residual_entry){DFI_RES_DURATION, flat, 17u, speed, 2u, false};
             n += 1u;
         }
         if (b->tail.sides[flat / 2u].positions[flat % 2u].throat_chop_turns != 0u) {
@@ -4297,62 +4490,17 @@ static duoforge_status dfi_residual_events(dfi_run *r)
             return DUOFORGE_OK;
         }
     }
-    /* Heal Block (order 20) and Throat Chop (order 22), duration handlers of a position's volatile (POOL tail): the
-     * count goes down; at 0 Heal Block shows its end line (-end|X|move: Heal Block) and Throat Chop's is [silent].
-     * Two Heal Blocks that end now come in the speed order of their holders; at equal speed the reference shuffles
-     * and draws, and the order shows in the two -end lines, so the converter keeps that tie (heal_block_end_tie)
-     * and the engine draws it (below). */
+    /* Disable (order 17), Heal Block (order 20) and Throat Chop (order 22), duration handlers of a position's volatile (POOL
+     * tail): the count goes down; at 0 Disable shows -end|X|Disable, Heal Block its end line (-end|X|move: Heal Block) and
+     * Throat Chop's is [silent]. Two Disables, or two Heal Blocks, that end now come in the speed order of their holders; at
+     * equal speed the reference shuffles and draws, and the order shows in the two -end lines, so the converter keeps that
+     * tie (heal_block_end_tie) and the engine draws it (dfi_duration_ends). */
     {
-        uint32_t ending[DFI_POSITIONS] = {0u, 0u, 0u, 0u};
-        uint32_t ne = 0u;
-        for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
-            dfi_tail_pos *tail = &b->tail.sides[flat / 2u].positions[flat % 2u];
-            if (tail->heal_block_turns != 0u) {
-                tail->heal_block_turns = (uint8_t)((uint32_t)tail->heal_block_turns - 1u); /* wide-operands-reviewed */
-                if (tail->heal_block_turns == 0u) {
-                    ending[ne] = flat;
-                    ne += 1u;
-                }
+        for (uint32_t pass = 0u; pass < 2u; ++pass) {
+            st = dfi_duration_ends(r, pass == 0u ? DUOFORGE_VOLATILE_DISABLE : DUOFORGE_VOLATILE_HEAL_BLOCK);
+            if (st != DUOFORGE_OK) {
+                return st;
             }
-        }
-        for (uint32_t i = 1u; i < ne; ++i) {
-            for (uint32_t j = i; j > 0u && r->speed_seen[ending[j]] > r->speed_seen[ending[j - 1u]]; --j) {
-                const uint32_t swap = ending[j];
-                ending[j] = ending[j - 1u];
-                ending[j - 1u] = swap;
-            }
-        }
-        /* Holders of equal Speed: the reference's speedSort shuffles each such run (PRNG.shuffle, one draw
-         * random(start, start + 2) for a pair), and the two -end lines show the outcome, so the engine draws the
-         * SPEED_TIE in the same place (after the callbacks of the sort, before the side conditions) and orders the
-         * pair by it: 0 keeps the lower position first, 1 swaps. A run of three or four needs the longer shuffle,
-         * which no battle has needed: E_UNSUPPORTED, as before. */
-        for (uint32_t i = 0u; i < ne;) {
-            uint32_t j = i + 1u;
-            while (j < ne && r->speed_seen[ending[j]] == r->speed_seen[ending[i]]) {
-                ++j;
-            }
-            if (j - i > 2u) {
-                return DUOFORGE_E_UNSUPPORTED;
-            }
-            if (j - i == 2u) {
-                uint32_t v = 0u;
-                st = dfi_draw(r->draws, DFI_SITE_SPEED_TIE, 0u, 2u, &v);
-                if (st != DUOFORGE_OK) {
-                    return st;
-                }
-                if (v == 1u) {
-                    const uint32_t swap = ending[i];
-                    ending[i] = ending[i + 1u];
-                    ending[i + 1u] = swap;
-                }
-            }
-            i = j;
-        }
-        for (uint32_t i = 0u; i < ne; ++i) {
-            duoforge_event e = dfi_event_make(DUOFORGE_EVENT_VOLATILE_END, ending[i]);
-            e.detail = (uint8_t)DUOFORGE_VOLATILE_HEAL_BLOCK;
-            dfi_emit(r, &e);
         }
         for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
             dfi_tail_pos *tail = &b->tail.sides[flat / 2u].positions[flat % 2u];

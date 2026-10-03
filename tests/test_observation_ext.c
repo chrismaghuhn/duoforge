@@ -173,12 +173,13 @@ static void test_constants(df_test *t)
     /* The bits that the build's steps have set (decision 0018 section 7): step G8, Throat Chop (bit 6) and Heal Block
      * (bit 16); step G11, the type change of Soak (bit 9); step G7, Wide Guard (bit 17); step G9, Encore (bit 7); step G17, the recharge
      * (bit 15); the step of Sandstorm and Snowscape, the weather values Sand (bit 0) and Snow (bit 1); step G16, the item that a move
-     * took (bit 11, Knock Off); step AC1, the ability change of Trace (bit 2); step G19, Glaive Rush (bit 20); step G20, Aurora Veil (bit 3). A step that sets a bit changes this expectation
+     * took (bit 11, Knock Off); step AC1, the ability change of Trace (bit 2); step G19, Glaive Rush (bit 20); step G20, Aurora Veil (bit 3); step G27, Disable (bit 21). A step that sets a bit changes this expectation
      * together with its recorded battles. */
     DF_CHECK(t, dfi_support.view_ext_features ==
                     (((uint64_t)1u << 6u) | ((uint64_t)1u << 7u) | ((uint64_t)1u << 9u) | ((uint64_t)1u << 15u) |
                      ((uint64_t)1u << 16u) | ((uint64_t)1u << 17u) | ((uint64_t)1u << 0u) | ((uint64_t)1u << 1u) |
-                     ((uint64_t)1u << 11u) | ((uint64_t)1u << 2u) | ((uint64_t)1u << 20u) | ((uint64_t)1u << 3u)));
+                     ((uint64_t)1u << 11u) | ((uint64_t)1u << 2u) | ((uint64_t)1u << 20u) | ((uint64_t)1u << 3u) |
+                     ((uint64_t)1u << 21u)));
 }
 
 /* The expected extension: all zero, and under POOL the header of the paired observation. */

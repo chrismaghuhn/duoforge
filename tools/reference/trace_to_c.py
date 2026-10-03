@@ -124,7 +124,7 @@ import sys
 
 SITES = {'SPEED_TIE': 1, 'ACCURACY': 2, 'CRIT': 3, 'DAMAGE_ROLL': 4, 'SECONDARY': 5, 'STALL': 6,
          'SLEEP_TURNS': 7, 'FREEZE_THAW': 8, 'FULL_PARALYSIS': 9, 'CONFUSION_TURNS': 10,
-         'CONFUSION_HIT': 11, 'RANDOM_TARGET': 12, 'STATUS_PICK': 13, 'INSERT_TIE': 14, 'TRACE': 15, 'POISON_TOUCH': 16}
+         'CONFUSION_HIT': 11, 'RANDOM_TARGET': 12, 'STATUS_PICK': 13, 'INSERT_TIE': 14, 'TRACE': 15, 'CURSED_BODY': 17, 'POISON_TOUCH': 16}
 STATS = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe']
 GENDER = {'M': 1, 'F': 2}
 GENDERLESS = 3
@@ -246,8 +246,13 @@ def side_end_tie(d, state):
     return (SITES['SPEED_TIE'], 0, 2, int(first[2][1]) - 1)
 
 
+# The volatiles whose duration handler has an onEnd line and so shows the order of a residual tie (Heal Block, order 20;
+# Disable, order 17, step G27): the handler id and the end of its `-end` line.
+END_TIE_LINES = {'healblock': 'move: Heal Block', 'disable': 'Disable'}
+
+
 def heal_block_end_tie(d, log):
-    """A residual tie of two Heal Blocks (Psychic Noise, order 20) of holders of equal Speed that both end in this step:
+    """A residual tie of two Heal Blocks (Psychic Noise, order 20; and of two Disables, order 17, the same way) of holders of equal Speed that both end in this step:
     the shuffle of the two orders their `-end|X|move: Heal Block` lines, so the tie is kept like a side-end tie
     (side_end_tie). The engine draws it after the callbacks of the residual and orders the pair by it; the entry
     states the outcome: (SPEED_TIE, 0, 2, 0 when the line of the holder at the lower position comes first, else 1).
@@ -262,11 +267,12 @@ def heal_block_end_tie(d, log):
         return None
     group = d['group']
     parts = [g.split(':') for g in group]
-    if not parts or any(len(x) != 4 or x[0] != 'H' or x[1] != 'healblock' or x[3] != 'end' for x in parts):
+    if not parts or any(len(x) != 4 or x[0] != 'H' or x[1] not in END_TIE_LINES or x[1] != parts[0][1] or x[3] != 'end'
+                        for x in parts):
         return None
     holders = [x[2] for x in parts]
     shown = [line.split('|')[2].split(':')[0] for line in log
-             if line.startswith('|-end|') and line.endswith('|move: Heal Block')]
+             if line.startswith('|-end|') and line.endswith('|' + END_TIE_LINES[parts[0][1]])]
     shown = [h for h in shown if h in holders]
     if len(shown) < 2:
         return None
@@ -401,7 +407,7 @@ def drop_reason(d, state, after=None, log=None):
             return 'switch-in order with at most one entry effect'
         return None  # the engine draws
     if site == 'SPEED_TIE' and ctx == 'field:Residual':
-        if all(g.startswith('H:healblock:') and g.endswith(':end') for g in group):
+        if all(g.startswith(('H:healblock:', 'H:disable:')) and g.endswith(':end') for g in group):
             # Precondition of the drop: the order of the ends shows in no pair of lines. heal_block_end_tie keeps the
             # tie when two of the holders end now, so reaching this with two end lines is a bug of the caller.
             if log is None:
@@ -452,7 +458,7 @@ def drop_reason(d, state, after=None, log=None):
         # (data/conditions.ts choicelock, data/moves.ts throatchop and healblock) each only set `disabled` on
         # move slots, and setting a flag twice is setting it once: whichever runs first, the request offers the
         # same moves. Any other handler is a mechanic that has not been looked at.
-        if all(g.startswith(('H:choicelock:', 'H:throatchop:', 'H:healblock:', 'H:encore:')) and g.endswith(':cb')
+        if all(g.startswith(('H:choicelock:', 'H:throatchop:', 'H:healblock:', 'H:encore:', 'H:disable:')) and g.endswith(':cb')
                for g in group):
             return 'DisableMove handlers whose order changes nothing'
         raise ConversionError('disablemove-tie', 'trace_to_c: DisableMove tie with %s' % group,
@@ -691,9 +697,10 @@ EV = {name: i + 1 for i, name in enumerate(
      'SINGLE_TURN', 'VOLATILE_START', 'VOLATILE_END', 'TYPE_CHANGE'])}
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
          'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14,
-         'HEAL_BLOCK': 15, 'WEATHER': 16, 'ITEM_TAKEN': 17, 'RECHARGE': 18}
+         'HEAL_BLOCK': 15, 'WEATHER': 16, 'ITEM_TAKEN': 17, 'RECHARGE': 18, 'DISABLE': 19}
 VOLATILE_HEAL_BLOCK = 1  # DUOFORGE_VOLATILE_HEAL_BLOCK: the detail of VOLATILE_START and VOLATILE_END
 VOLATILE_ENCORE = 2      # DUOFORGE_VOLATILE_ENCORE (step G9)
+VOLATILE_DISABLE = 4     # DUOFORGE_VOLATILE_DISABLE (step G27)
 VOLATILE_MUST_RECHARGE = 3  # DUOFORGE_VOLATILE_MUST_RECHARGE (step G17)
 MOVE_SLOT_RECHARGE = 5   # DUOFORGE_MOVE_SLOT_RECHARGE (step G17)
 # DUOFORGE_TYPE_*: the alphabetical type ids, the detail of TYPE_CHANGE
@@ -713,6 +720,8 @@ NOPOS = 0xFF
 COMPARED_VOLATILES = (('protect', 1), ('flashfire', 2), ('twoturnmove', 4), ('choicelock', 8), ('unburden', 16),
                       ('helpinghand', 32), ('followme', 64), ('flinch', 128))
 IGNORED_VOLATILES = {
+    # data/moves.ts disable (step G27): compared through the request (the barred slot) and the start and end lines.
+    'disable': 'the request and the Disable lines',
     # data/conditions.ts stall: compared as df_conf_mon.stall (its presence).
     'stall': 'the stall field',
     # data/conditions.ts confusion: compared as df_conf_mon.confusion (its turns).
@@ -896,6 +905,9 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                 e = ev_tuple(EV['CANT'], pos, NOPOS, CAUSE['MOVE'], 0, tables['MOVE'][key('Throat Chop')])
             elif reason == 'move: Heal Block':
                 e = ev_tuple(EV['CANT'], pos, NOPOS, CAUSE['HEAL_BLOCK'], tables['MOVE'][key(args[2])])
+            elif reason == 'Disable':
+                # data/moves.ts:3697-3703 disable onBeforeMove: `cant|X|Disable|MOVE` (step G27), no PP used.
+                e = ev_tuple(EV['CANT'], pos, NOPOS, CAUSE['DISABLE'], tables['MOVE'][key(args[2])])
             else:
                 cause = {'par': 'PARALYSIS', 'slp': 'SLEEP', 'frz': 'FREEZE', 'flinch': 'FLINCH', 'nopp': 'NO_PP',
                          'recharge': 'RECHARGE'}
@@ -974,6 +986,16 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             elif what == 'move: Heal Block':
                 e = ev_tuple(EV['VOLATILE_START' if kind == '-start' else 'VOLATILE_END'], ev_pos(args[0]),
                              detail=VOLATILE_HEAL_BLOCK)
+            elif what == 'Disable':
+                # data/moves.ts:3666-3696 disable: `-start|X|Disable|MOVE` (with [from] ability: Cursed Body [of] holder
+                # for the ability) from onStart, `-end|X|Disable` from onEnd (the duration; a switch-out or a faint
+                # clears it with no line). START carries the barred move in `id`.
+                if kind == '-start':
+                    cause, id2, other = ev_cause(attrs, tables)
+                    e = ev_tuple(EV['VOLATILE_START'], ev_pos(args[0]), other, cause, tables['MOVE'][key(args[2])], id2,
+                                 detail=VOLATILE_DISABLE)
+                else:
+                    e = ev_tuple(EV['VOLATILE_END'], ev_pos(args[0]), detail=VOLATILE_DISABLE)
             elif what == 'Encore':
                 # data/moves.ts:4724-4783 encore: `-start|X|Encore` from onStart, `-end|X|Encore` from onEnd (the
                 # duration or an exhausted move; a switch-out or a faint clears it with no line).

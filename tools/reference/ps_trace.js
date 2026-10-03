@@ -71,6 +71,8 @@ const CONDITION_SITES = {
     // Poison Touch (step G14): its randomChance(3, 10) in onSourceDamagingHit. No committed trace had one before, so
     // the harness version stays 14 (it was an UNKNOWN draw, which the converter refuses).
     'poisontouch:DamagingHit': 'POISON_TOUCH',
+    // Cursed Body (step G27): its randomChance(3, 10) in onDamagingHit.
+    'cursedbody:DamagingHit': 'CURSED_BODY',
 };
 
 // The event a draw happens in (innermost last), tracked by wrapping the

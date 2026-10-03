@@ -343,6 +343,14 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
         for name, text in KNOCK_OFF_CALLBACKS.items():
             if name not in f or norm(f[name][1]) != text:
                 fail('move %s: %s is not the pinned text' % (mid, name))
+    if pool and handled[0] == 'DISABLE':
+        base_condition = fields(base.entry(mid)[2]).get('condition')
+        if 'onTryHit' not in f or norm(f['onTryHit'][1]) != DISABLE_ONTRYHIT:
+            fail('move %s: onTryHit is not the pinned text' % mid)
+        if base_condition is None or norm(base_condition[1]) != DISABLE_CONDITION:
+            fail('move %s: the condition is not the pinned text' % mid)
+        if 'condition' not in f or norm(f['condition'][1]) not in (DISABLE_CONDITION, DISABLE_CONDITION_CHAMPIONS):
+            fail('move %s: the Champions condition is not the pinned text' % mid)
     if pool and handled[0] == 'AURORA_VEIL' and ('onTry' not in f or norm(f['onTry'][1]) != AURORA_VEIL_ONTRY):
         fail('move %s: onTry is not the pinned text' % mid)
     if pool and mid in PROTECT_COPIES:
@@ -1333,6 +1341,31 @@ GLAIVE_RUSH_CONDITION = ("condition: { noCopy: true, onStart(pokemon) { this.add
 # condition is read from the pinned text (G20_CONDITION_FACTS) and the side condition itself (a tail field, not a column)
 # is owned by the handler.
 G20_HANDLERS = ['AURORA_VEIL']
+# Step G27: Disable (data/moves.ts:3648-3716 with the Champions override data/mods/champions/moves.ts:228-238) is a handler of its
+# own that the turn code implements (its onTryHit, and a condition whose state is the tail's disable_slot and disable_turns).
+# The generator checks the onTryHit and both condition texts, whitespace aside: the pinned condition (duration 5, the onStart
+# that takes one turn off when the target has not moved or when Cursed Body acts, the lines, order 17, onBeforeMove priority
+# 7, onDisableMove) and the Champions condition that only changes onBeforeMove (a move with the cantusetwice flag is not
+# stopped). Cursed Body (data/abilities.ts:784-797) is an engine row (ENGINE_ROWS).
+G27_HANDLERS = ['DISABLE']
+DISABLE_ONTRYHIT = ("onTryHit(target) { if (!target.lastMove || target.lastMove.isZOrMaxPowered || target.lastMove.isMax || "
+                    "target.lastMove.id === 'struggle') { return false; } },")
+DISABLE_CONDITION = (
+    "condition: { duration: 5, noCopy: true, // doesn't get copied by Baton Pass onStart(pokemon, source, effect) { "
+    "// The target hasn't taken its turn, or Cursed Body activated and the move was not used through Dancer or Instruct "
+    "if ( this.queue.willMove(pokemon) || (pokemon === this.activePokemon && this.activeMove && !this.activeMove.isExternal) ) "
+    "{ this.effectState.duration!--; } if (!pokemon.lastMove) { this.debug(`Pokemon hasn't moved yet`); return false; } "
+    "for (const moveSlot of pokemon.moveSlots) { if (moveSlot.id === pokemon.lastMove.id) { if (!moveSlot.pp) { "
+    "this.debug('Move out of PP'); return false; } } } if (effect.effectType === 'Ability') { this.add('-start', pokemon, "
+    "'Disable', pokemon.lastMove.name, '[from] ability: ' + effect.name, `[of] ${source}`); } else { this.add('-start', pokemon, "
+    "'Disable', pokemon.lastMove.name); } this.effectState.move = pokemon.lastMove.id; }, onResidualOrder: 17, onEnd(pokemon) { "
+    "this.add('-end', pokemon, 'Disable'); }, onBeforeMovePriority: 7, onBeforeMove(attacker, defender, move) { "
+    "if (!(move.isZ && move.isZOrMaxPowered) && move.id === this.effectState.move) { this.add('cant', attacker, 'Disable', move); "
+    "return false; } }, onDisableMove(pokemon) { for (const moveSlot of pokemon.moveSlots) { if (moveSlot.id === "
+    "this.effectState.move) { pokemon.disableMove(moveSlot.id); } } }, },")
+DISABLE_CONDITION_CHAMPIONS = (
+    "condition: { inherit: true, onBeforeMove(attacker, defender, move) { if (!(move.isZ && move.isZOrMaxPowered) && move.id === "
+    "this.effectState.move && !move.flags['cantusetwice']) { this.add('cant', attacker, 'Disable', move); return false; } }, },")
 AURORA_VEIL_ONTRY = "onTry() { return this.field.isWeather(['hail', 'snowscape']); },"
 KNOCK_OFF_CALLBACKS = {
     'onBasePower': "onBasePower(basePower, source, target, move) { const item = target.getItem(); "
@@ -1348,6 +1381,7 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'glaiverush': ('GLAIVE_RUSH', set()),                                 # G19: the volatile that makes its user hit as vulnerable
     'knockoff': ('KNOCK_OFF', {'onAfterHit', 'onBasePower'}),             # G16: takes the target's item, x1.5 while it has one
     'encore': ('ENCORE', set()),                                          # G9 (implemented): last move, a volatile, a queue change
+    'disable': ('DISABLE', {'onTryHit'}),                                 # G27: bars the target's last move
     'auroraveil': ('AURORA_VEIL', {'onTry'}),                             # G20: a screen against both categories, in snow only
     'wideguard': ('WIDE_GUARD', {'onTry', 'onHitSide'}),                 # G7: a side condition against spread moves
     'firstimpression': ('FIRST_IMPRESSION', {'onTry', 'onDisableMove'}),  # G10a: first turn out only (Fake Out's rule)
@@ -1368,7 +1402,7 @@ PROTECT_COPIES = {'detect': 'protect'}
 # champions/moves.ts:581-584) sets isNonstandard to null, which makes it legal, and the tag has no reader in the tables.
 TAGS_PAST_UNOBTAINABLE = 'tags: ["Past Unobtainable"],'
 PROTECT_COPY_FIELDS = ('onPrepareHit', 'onHit', 'stallingMove', 'volatileStatus', 'priority', 'accuracy', 'target')
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + ['UNMODELED']
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G27_HANDLERS + ['UNMODELED']
 # Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags
 # byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
@@ -1377,12 +1411,13 @@ G2_OWNED_FIELDS = {
     'ENCORE': {'volatileStatus': "volatileStatus: 'encore',"},
     'WIDE_GUARD': {'sideCondition': "sideCondition: 'wideguard',"},
     'AURORA_VEIL': {'sideCondition': "sideCondition: 'auroraveil',"},
+    'DISABLE': {'volatileStatus': "volatileStatus: 'disable',"},
     'SANDSTORM': {'weather': "weather: 'Sandstorm',"},
     'SNOWSCAPE': {'weather': "weather: 'snowscape',"},
     'GLAIVE_RUSH': {'self': "self: { volatileStatus: 'glaiverush', },"},
 }
 G2_OWNED_SECONDARY = {}
-G2_OWNED_CONDITION = {'ENCORE', 'WIDE_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL'}
+G2_OWNED_CONDITION = {'ENCORE', 'WIDE_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'DISABLE'}
 # Step G8 (Throat Chop and Psychic Noise): the two secondaries become modelled kinds, and the column that their
 # consumers read is the move's second flags byte (the first is full): the `sound` flag (Throat Chop bars the sound
 # moves) and the `heal` flag (Heal Block bars the moves that heal). Both are derived for every pool move, the prefix
@@ -1480,10 +1515,10 @@ HANDLER_IDS = ['NONE', 'UNMODELED']
 # by definition, like the closure and Team C rows. The step that marks such a row in the support manifest adds its id
 # here, which changes the handler column and so the POOL table hash, as any pool change does; a row that is marked and
 # still has the UNMODELED handler fails duoforge.data.pool_tables. G4: Focus Sash, Rock Head. G12: Floettite (the Mega
-# Stone of Floette-Eternal), Flower Veil and Fairy Aura. G14: Rough Skin, Poison Touch and Thermal Exchange. G16: Sticky Hold (Knock Off reads it by id). AC1: Trace (the entry copy of a foe's ability). G15: Psychic Seed (Grassy Seed's rule for the other terrain).
+# Stone of Floette-Eternal), Flower Veil and Fairy Aura. G14: Rough Skin, Poison Touch and Thermal Exchange. G16: Sticky Hold (Knock Off reads it by id). AC1: Trace (the entry copy of a foe's ability). G15: Psychic Seed (Grassy Seed's rule for the other terrain). G27: Cursed Body (onDamagingHit, the Disable roll).
 ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed'],
                'abilities': ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange',
-                             'stickyhold', 'trace']}
+                             'stickyhold', 'trace', 'cursedbody']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.

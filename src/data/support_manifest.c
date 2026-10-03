@@ -122,6 +122,10 @@
  * Step G20 marks Aurora Veil (fails outside snow, 5 turns or 8 with Light Clay, 2732/4096 against every category unless a
  * crit or the screen of that category already does it, ends with its own line in the residual after Tailwind), with the
  * view bit 3 (aurora_veil_turns of the side, public). Recorded as g20_aurora_veil_* under the POOL kind.
+ * Step G27 marks Disable and Cursed Body (30 percent on a damaging hit, the new draw site CURSED_BODY): the bar of the last move
+ * for 4 turns (5 when the target had already moved) in the tail's disable_slot and disable_turns, the request's Struggle, the
+ * Disable lines and the cant line (the new cause DISABLE), with the view bit 21 (disable_slot of the position, public).
+ * Recorded as g27_* under the POOL kind.
  * Step G21 marks twenty-seven moves that the existing paths run (the rows were modelled before, with no unmodelled
  * feature; the pin was read again for each): Sludge Bomb and Gunk Shot (a poison secondary), Dragon Claw, Night Slash
  * and Slash (the last two with critical hit ratio 2), Air Slash, Icicle Crash, Waterfall and Dark Pulse (a flinch
@@ -274,6 +278,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_DRAINPUNCH] = 1u,
             [DFI_MOVE_NUZZLE] = 1u,
             [DFI_MOVE_AURORAVEIL] = 1u,
+            [DFI_MOVE_DISABLE] = 1u,
         },
     .abilities =
         {
@@ -313,6 +318,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_POISONTOUCH] = 1u,
             [DFI_ABILITY_THERMALEXCHANGE] = 1u,
             [DFI_ABILITY_STICKYHOLD] = 1u,
+            [DFI_ABILITY_CURSEDBODY] = 1u,
         },
     .items =
         {
@@ -408,5 +414,6 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WEATHER_SNOW) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ITEM_CHANGE) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ABILITY_CHANGE) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_AURORA_VEIL),
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_AURORA_VEIL) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_DISABLE),
 };

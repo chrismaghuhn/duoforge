@@ -502,6 +502,64 @@ GLAIVE_RUSH = move_entry(
 COACHING = move_entry('coaching', 'Coaching', 'boosts: {', '\tatk: 1,', '\tdef: 1,', '},', target='adjacentAlly', type_='Fighting',
                       flags='bypasssub: 1, allyanim: 1, metronome: 1')
 
+DISABLE = move_entry(
+    'disable', 'Disable', "volatileStatus: 'disable',",
+    'onTryHit(target) {',
+    "\tif (!target.lastMove || target.lastMove.isZOrMaxPowered || target.lastMove.isMax || target.lastMove.id === 'struggle') {",
+    '\t\treturn false;',
+    '\t}',
+    '},',
+    'condition: {',
+    '\tduration: 5,',
+    "\tnoCopy: true, // doesn't get copied by Baton Pass",
+    '\tonStart(pokemon, source, effect) {',
+    "\t\t// The target hasn't taken its turn, or Cursed Body activated and the move was not used through Dancer or Instruct",
+    '\t\tif (',
+    '\t\t\tthis.queue.willMove(pokemon) ||',
+    '\t\t\t(pokemon === this.activePokemon && this.activeMove && !this.activeMove.isExternal)',
+    '\t\t) {',
+    '\t\t\tthis.effectState.duration!--;',
+    '\t\t}',
+    '\t\tif (!pokemon.lastMove) {',
+    "\t\t\tthis.debug(`Pokemon hasn't moved yet`);",
+    '\t\t\treturn false;',
+    '\t\t}',
+    '\t\tfor (const moveSlot of pokemon.moveSlots) {',
+    '\t\t\tif (moveSlot.id === pokemon.lastMove.id) {',
+    '\t\t\t\tif (!moveSlot.pp) {',
+    "\t\t\t\t\tthis.debug('Move out of PP');",
+    '\t\t\t\t\treturn false;',
+    '\t\t\t\t}',
+    '\t\t\t}',
+    '\t\t}',
+    "\t\tif (effect.effectType === 'Ability') {",
+    "\t\t\tthis.add('-start', pokemon, 'Disable', pokemon.lastMove.name, '[from] ability: ' + effect.name, `[of] ${source}`);",
+    '\t\t} else {',
+    "\t\t\tthis.add('-start', pokemon, 'Disable', pokemon.lastMove.name);",
+    '\t\t}',
+    '\t\tthis.effectState.move = pokemon.lastMove.id;',
+    '\t},',
+    '\tonResidualOrder: 17,',
+    '\tonEnd(pokemon) {',
+    "\t\tthis.add('-end', pokemon, 'Disable');",
+    '\t},',
+    '\tonBeforeMovePriority: 7,',
+    '\tonBeforeMove(attacker, defender, move) {',
+    '\t\tif (!(move.isZ && move.isZOrMaxPowered) && move.id === this.effectState.move) {',
+    "\t\t\tthis.add('cant', attacker, 'Disable', move);",
+    '\t\t\treturn false;',
+    '\t\t}',
+    '\t},',
+    '\tonDisableMove(pokemon) {',
+    '\t\tfor (const moveSlot of pokemon.moveSlots) {',
+    '\t\t\tif (moveSlot.id === this.effectState.move) {',
+    '\t\t\t\tpokemon.disableMove(moveSlot.id);',
+    '\t\t\t}',
+    '\t\t}',
+    '\t},',
+    '},',
+    flags='protect: 1, reflectable: 1, mirror: 1, bypasssub: 1, metronome: 1', pp=20)
+
 PLAIN = move_entry('plain', 'Plain', category='Physical', base_power=50, flags='contact: 1')
 
 
@@ -599,22 +657,24 @@ class PoolMoves(unittest.TestCase):
         seven = len(gen_closure.SPECIAL_IDS_C) + len(gen_closure.G2_HANDLERS)
         self.assertEqual(gen_closure.SPECIAL_IDS_P[len(gen_closure.SPECIAL_IDS_C):seven], gen_closure.G2_HANDLERS)
         # UNMODELED (decision 0015 section 4.2) follows them, as the last id.
-        self.assertEqual(gen_closure.SPECIAL_IDS_P[seven:], ['SANDSTORM', 'SNOWSCAPE', 'KNOCK_OFF', 'EXPANDING_FORCE', 'GLAIVE_RUSH', 'AURORA_VEIL', 'UNMODELED'])
+        self.assertEqual(gen_closure.SPECIAL_IDS_P[seven:], ['SANDSTORM', 'SNOWSCAPE', 'KNOCK_OFF', 'EXPANDING_FORCE', 'GLAIVE_RUSH', 'AURORA_VEIL', 'DISABLE', 'UNMODELED'])
         self.assertEqual(len(gen_closure.G2_HANDLERS), 7)
         # Step G16: Knock Off's handler is 24 in the tables; step G15's Expanding Force is 25, step G19's Glaive Rush 26,
         # step G20's Aurora Veil 27 and UNMODELED 28.
         self.assertEqual(gen_closure.G16_HANDLERS, ['KNOCK_OFF'])
         self.assertEqual(gen_closure.G20_HANDLERS, ['AURORA_VEIL'])
+        self.assertEqual(gen_closure.G27_HANDLERS, ['DISABLE'])
         self.assertEqual(gen_closure.SPECIAL_IDS_P.index('KNOCK_OFF'), 24)
         self.assertEqual(gen_closure.SPECIAL_IDS_P.index('EXPANDING_FORCE'), 25)
         self.assertEqual(gen_closure.SPECIAL_IDS_P.index('GLAIVE_RUSH'), 26)  # step G19
         self.assertEqual(gen_closure.SPECIAL_IDS_P.index('AURORA_VEIL'), 27)
-        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 28)
+        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('DISABLE'), 28)
+        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 29)
         # Scald and Recover became data in step G10: their ids stay defined and no move maps to them.
         self.assertEqual({v[0] for k, v in gen_closure.SPECIAL_P.items() if k not in gen_closure.SPECIAL_C},
                          (set(gen_closure.G2_HANDLERS) - {'SCALD', 'RECOVER'}) | set(gen_closure.WEATHER_HANDLERS) |
                          set(gen_closure.G16_HANDLERS) | set(gen_closure.G15_HANDLERS) | set(gen_closure.G19_HANDLERS) |
-                         set(gen_closure.G20_HANDLERS))
+                         set(gen_closure.G20_HANDLERS) | set(gen_closure.G27_HANDLERS))
 
     def test_aurora_veil_is_a_handler_whose_onTry_and_condition_are_the_pinned_text(self):
         rec = parse_pool('auroraveil', AURORA_VEIL)
@@ -649,6 +709,39 @@ class PoolMoves(unittest.TestCase):
                 with self.assertRaises(SystemExit) as cm:
                     gen_closure.check_g8_conditions(entry(i), gen_closure.G20_CONDITION_FACTS)
                 self.assertIn('move auroraveil: the condition no longer has', str(cm.exception.code))
+
+    def test_disable_is_a_handler_whose_texts_are_the_pinned_ones(self):
+        rec = parse_pool('disable', DISABLE)
+        self.assertEqual(rec['special'], gen_closure.SPECIAL_IDS_P.index('DISABLE'))
+        self.assertEqual((rec['side_condition'], rec['sec_kind'], rec['primary_status'], rec['accuracy']), (0, 0, 0, 100))
+        # The onTryHit, the condition (duration, the onStart, the lines, the order, the BeforeMove and DisableMove
+        # handlers) and the volatile that it owns must be the pinned text.
+        self.refused('disable', DISABLE.replace("'struggle'", "'tackle'"), 'onTryHit is not the pinned text')
+        self.refused('disable', DISABLE.replace('duration: 5,', 'duration: 4,'), 'the condition is not the pinned text')
+        self.refused('disable', DISABLE.replace('onResidualOrder: 17,', 'onResidualOrder: 16,'),
+                     'the condition is not the pinned text')
+        self.refused('disable', DISABLE.replace('onBeforeMovePriority: 7,', 'onBeforeMovePriority: 6,'),
+                     'the condition is not the pinned text')
+        self.refused('disable', DISABLE.replace("volatileStatus: 'disable',", "volatileStatus: 'taunt',"),
+                     "volatileStatus is not \"volatileStatus: 'disable',\"")
+        # Outside the pool mode the callback is refused.
+        for ext in (False, True):
+            self.refused('disable', DISABLE, 'callback onTryHit is not mapped to a handler', pool=False, ext=ext)
+
+    def test_the_champions_disable_condition_is_the_pinned_one_too(self):
+        base = TextSource('data/moves.ts', DISABLE)
+        champ_text = move_entry(
+            'disable', 'Disable', 'inherit: true,', 'condition: {', '\tinherit: true,', '\tonBeforeMove(attacker, defender, move) {',
+            '\t\tif (!(move.isZ && move.isZOrMaxPowered) && move.id === this.effectState.move && !move.flags[\'cantusetwice\']) {',
+            "\t\t\tthis.add('cant', attacker, 'Disable', move);", '\t\t\treturn false;', '\t\t}', '\t},', '},')
+        champ = TextSource('data/mods/champions/moves.ts', champ_text)
+        rec = gen_closure.parse_move('disable', base, champ, True, True)
+        self.assertEqual(rec['special'], gen_closure.SPECIAL_IDS_P.index('DISABLE'))
+        # A Champions condition that changes anything else is refused.
+        changed = TextSource('data/mods/champions/moves.ts', champ_text.replace('return false;', 'return true;'))
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.parse_move('disable', base, changed, True, True)
+        self.assertEqual(cm.exception.code, 'gen_closure: move disable: the Champions condition is not the pinned text')
 
     def test_knock_off_is_a_handler_whose_callbacks_are_the_pinned_text(self):
         rec = parse_pool('knockoff', KNOCK_OFF)
@@ -738,7 +831,7 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual([s[0] for s in gen_closure.SETS_G2], ['pelipper', 'arcaninehisui', 'annihilape', 'floetteeternal'])
         # Every handler move is one of the rows, and every set move is a pool move or one of the rows.
         self.assertTrue({k for k in gen_closure.SPECIAL_P if k not in gen_closure.SPECIAL_C} <=
-                        set(gen_closure.G2_MOVES) | {'sandstorm', 'snowscape', 'knockoff', 'expandingforce', 'glaiverush', 'auroraveil'})
+                        set(gen_closure.G2_MOVES) | {'sandstorm', 'snowscape', 'knockoff', 'expandingforce', 'glaiverush', 'auroraveil', 'disable'})
         self.assertEqual(gen_closure.WEATHER_HANDLERS, ['SANDSTORM', 'SNOWSCAPE'])
         for _sp, _ab, item, moves, _mega in gen_closure.SETS_G2:
             self.assertTrue(item in gen_closure.G2_ITEMS or item not in gen_closure.POOL_ITEMS)
@@ -1009,7 +1102,8 @@ class ItemAbilityFeatures(unittest.TestCase):
     def test_the_rows_that_a_step_implements_by_id_are_listed(self):
         self.assertEqual(gen_closure.ENGINE_ROWS, {'items': ['focussash', 'floettite', 'psychicseed'],
                                                    'abilities': ['rockhead', 'flowerveil', 'fairyaura', 'roughskin',
-                                                                 'poisontouch', 'thermalexchange', 'stickyhold', 'trace']})
+                                                                 'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
+                                                                 'cursedbody']})
 
 
 class Bounds(unittest.TestCase):
