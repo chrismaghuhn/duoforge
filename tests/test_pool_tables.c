@@ -45,7 +45,7 @@
 #include "state/closure_member.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "04b1008b0fd25b30efa3c1c6839de4bde526b95d02580c5c8ce5f7c0021847b2"
+#define POOL_HASH_HEX "e2cb70955976def472cbeb44c51632b7e3e092018407724cfea289b693810573"
 /* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
  * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
  * produced the same bytes. Step G10 moved two of them on purpose: Scald and Recover are data now (the thaw bit and
@@ -69,9 +69,9 @@
 #define POOL_ABILITIES 215u
 
 /* The rows that the tables do not model, pinned (the generator reports the same counts). */
-#define UNMODELED_MOVES 262u /* 273 before step G32 modelled Eruption, Water Spout, Life Dew, Body Press, Foul Play, Psyshock, Rain Dance, Sunny Day, Volt Switch, Clanging Scales and Freeze-Dry; 276 before step G30 modelled Rage Powder, Psychic Fangs and Solar Beam; 299 before step G28 modelled Acrobatics, Blizzard, Feint and the rows of the new secondary self boost (Ancient Power, Aqua Step, Charge Beam, Fiery Dance, Flame Charge, Meteor Mash, Psyshield Bash, Steel Wing, Torch Song, Trailblaze) and the allAdjacent moves; 300 before step G20 modelled Spiky Shield; 301 before it modelled Aurora Veil; 303 before step G19 modelled Coaching and Glaive Rush; 305u before step G15 modelled Expanding Force; 306 before step G16 modelled Knock Off; 313 before step G17 modelled the seven recharge moves; 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
+#define UNMODELED_MOVES 259u /* 262 before step G33 modelled Dual Wingbeat, Triple Axel and Twin Beam; 273 before step G32 modelled Eruption, Water Spout, Life Dew, Body Press, Foul Play, Psyshock, Rain Dance, Sunny Day, Volt Switch, Clanging Scales and Freeze-Dry; 276 before step G30 modelled Rage Powder, Psychic Fangs and Solar Beam; 299 before step G28 modelled Acrobatics, Blizzard, Feint and the rows of the new secondary self boost (Ancient Power, Aqua Step, Charge Beam, Fiery Dance, Flame Charge, Meteor Mash, Psyshield Bash, Steel Wing, Torch Song, Trailblaze) and the allAdjacent moves; 300 before step G20 modelled Spiky Shield; 301 before it modelled Aurora Veil; 303 before step G19 modelled Coaching and Glaive Rush; 305u before step G15 modelled Expanding Force; 306 before step G16 modelled Knock Off; 313 before step G17 modelled the seven recharge moves; 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
 #define UNMODELED_ITEMS 37u /* one fewer since step G32 modelled Eject Button; one fewer since step G28 modelled Expert Belt; five fewer since step G23-A found the Mega of a stone from (forme, stone); one fewer since step G15 modelled Psychic Seed */
-#define UNMODELED_ABILITIES 165u /* 168 before step G32 made Soundproof, Unnerve and Speed Boost engine rows; 172 before step G30 made Flame Body, Clear Body, Hospitality and Overcoat engine rows; 178 before step G22 made six abilities engine rows; 179 before step G23-C made Levitate an engine row; 180 before step AC1 made Trace an engine row; 181 before step G16 made Sticky Hold an engine row; 184 before step G14 made Rough Skin, Poison Touch and Thermal Exchange engine rows */
+#define UNMODELED_ABILITIES 164u /* 165 before step G33 made Mirror Armor an engine row; 168 before step G32 made Soundproof, Unnerve and Speed Boost engine rows; 172 before step G30 made Flame Body, Clear Body, Hospitality and Overcoat engine rows; 178 before step G22 made six abilities engine rows; 179 before step G23-C made Levitate an engine row; 180 before step AC1 made Trace an engine row; 181 before step G16 made Sticky Hold an engine row; 184 before step G14 made Rough Skin, Poison Touch and Thermal Exchange engine rows */
 
 /* How many rows of the manifest are marked and half modelled: marked, and with the UNMODELED handler or a list of
  * unmodelled features (decision 0015 section 4.2). A step marks only what it fully models. */
@@ -661,14 +661,14 @@ int main(void)
         uint32_t handlers = 0u;
         for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
             handlers += dfi_pool_moves[i].special >= DFI_SPECIAL_ENCORE &&
-                                dfi_pool_moves[i].special <= DFI_SPECIAL_CLANGING_SCALES
+                                dfi_pool_moves[i].special <= DFI_SPECIAL_TRIPLE_AXEL
                             ? 1u
                             : 0u;
         }
         /* Seven ids of G2 remain after step G8 (Scald and Recover are not any move's after step G10), the two
          * weather moves (Sandstorm and Snowscape: the field `weather`, which no column models) have one each, and
          * Knock Off (step G16: its onAfterHit and onBasePower) the id after them. */
-        DF_CHECK_EQ_U64(&t, handlers, DFI_SPECIAL_CLANGING_SCALES - DFI_SPECIAL_ENCORE + 1u - 2u + 1u); /* step G15 adds Expanding Force's, step G20 Aurora Veil's and Spiky Shield's, step G30 Rage Powder's, Psychic Fangs' and Solar Beam's */
+        DF_CHECK_EQ_U64(&t, handlers, DFI_SPECIAL_TRIPLE_AXEL - DFI_SPECIAL_ENCORE + 1u - 2u + 2u); /* step G33 adds two handlers for three moves (Dual Wingbeat and Twin Beam share one); step G15 adds Expanding Force's, step G20 Aurora Veil's and Spiky Shield's, step G30 Rage Powder's, Psychic Fangs' and Solar Beam's */
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_ENCORE, DFI_SPECIAL_FOLLOW_ME + 1u);
         /* UNMODELED follows them. Step G10 made Scald and Recover data (the thaw bit and the heal column): their ids
          * are still defined, and no pool move has them. */
@@ -701,7 +701,20 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_SUNNY_DAY, DFI_SPECIAL_RAIN_DANCE + 1u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_FREEZE_DRY, DFI_SPECIAL_SUNNY_DAY + 1u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_CLANGING_SCALES, DFI_SPECIAL_FREEZE_DRY + 1u);
-        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_CLANGING_SCALES + 1u);
+        /* Step G33: the two handlers of the multi-hit moves, after the eight of step G32 and before UNMODELED. */
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_MULTI_HIT_2, DFI_SPECIAL_CLANGING_SCALES + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_TRIPLE_AXEL, DFI_SPECIAL_MULTI_HIT_2 + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_TRIPLE_AXEL + 1u);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_DUALWINGBEAT].special, DFI_SPECIAL_MULTI_HIT_2);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_TWINBEAM].special, DFI_SPECIAL_MULTI_HIT_2);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_TRIPLEAXEL].special, DFI_SPECIAL_TRIPLE_AXEL);
+        /* Population Bomb keeps the UNMODELED handler: its learners have no marked ability (see the generator). */
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_POPULATIONBOMB].special, DFI_SPECIAL_UNMODELED);
+        /* the hit counts of the four rows are the engine's (dfi_move_hits) and the static column's too */
+        DF_CHECK(&t, dfi_pool_move_static_hits[DFI_MOVE_DUALWINGBEAT][0] == 2u && dfi_pool_move_static_hits[DFI_MOVE_DUALWINGBEAT][1] == 2u);
+        DF_CHECK(&t, dfi_pool_move_static_hits[DFI_MOVE_TWINBEAM][0] == 2u && dfi_pool_move_static_hits[DFI_MOVE_TWINBEAM][1] == 2u);
+        DF_CHECK(&t, dfi_pool_move_static_hits[DFI_MOVE_TRIPLEAXEL][0] == 3u && dfi_pool_move_static_hits[DFI_MOVE_TRIPLEAXEL][1] == 3u);
+        DF_CHECK(&t, dfi_pool_move_static_hits[DFI_MOVE_POPULATIONBOMB][0] == 10u && dfi_pool_move_static_hits[DFI_MOVE_POPULATIONBOMB][1] == 10u); /* data only */
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_ERUPTION].special, DFI_SPECIAL_HP_POWER);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_WATERSPOUT].special, DFI_SPECIAL_HP_POWER);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_BODYPRESS].special, DFI_SPECIAL_BODY_PRESS);
@@ -1226,7 +1239,9 @@ int main(void)
                                 id == DFI_ABILITY_FLAMEBODY || id == DFI_ABILITY_CLEARBODY ||
                                 id == DFI_ABILITY_HOSPITALITY || id == DFI_ABILITY_OVERCOAT ||
                                 /* step G32: Soundproof, Unnerve and Speed Boost, by id */
-                                id == DFI_ABILITY_SOUNDPROOF || id == DFI_ABILITY_UNNERVE || id == DFI_ABILITY_SPEEDBOOST;
+                                id == DFI_ABILITY_SOUNDPROOF || id == DFI_ABILITY_UNNERVE || id == DFI_ABILITY_SPEEDBOOST ||
+                                /* step G33: Mirror Armor, by id */
+                                id == DFI_ABILITY_MIRRORARMOR;
             DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, (setter || engine) ? 1u : 0u);
             DF_CHECK_EQ_U64(&t, dfi_pool_ability_family[id].family,
                             setter ? DFI_ABILITY_FAMILY_WEATHER_SETTER : DFI_ABILITY_FAMILY_NONE);
@@ -1285,7 +1300,9 @@ int main(void)
                                                 /* step G32 */
 DFI_MOVE_ERUPTION, DFI_MOVE_WATERSPOUT, DFI_MOVE_LIFEDEW, DFI_MOVE_BODYPRESS,
                                                 DFI_MOVE_FOULPLAY, DFI_MOVE_PSYSHOCK, DFI_MOVE_RAINDANCE, DFI_MOVE_SUNNYDAY,
-                                                DFI_MOVE_VOLTSWITCH, DFI_MOVE_CLANGINGSCALES, DFI_MOVE_FREEZEDRY};
+                                                DFI_MOVE_VOLTSWITCH, DFI_MOVE_CLANGINGSCALES, DFI_MOVE_FREEZEDRY,
+                                                /* step G33 */
+                                                DFI_MOVE_DUALWINGBEAT, DFI_MOVE_TRIPLEAXEL, DFI_MOVE_TWINBEAM};
         uint32_t marked_count = 0u;
         for (uint32_t id = DFI_EXT_MOVE_COUNT; id < DFI_POOL_MOVE_COUNT; ++id) {
             bool want = false;
@@ -1307,12 +1324,13 @@ DFI_MOVE_ERUPTION, DFI_MOVE_WATERSPOUT, DFI_MOVE_LIFEDEW, DFI_MOVE_BODYPRESS,
                              id == DFI_MOVE_BODYPRESS || id == DFI_MOVE_FOULPLAY || id == DFI_MOVE_PSYSHOCK ||
                              id == DFI_MOVE_RAINDANCE || id == DFI_MOVE_SUNNYDAY || id == DFI_MOVE_FREEZEDRY ||
                              id == DFI_MOVE_CLANGINGSCALES ||
+                             id == DFI_MOVE_DUALWINGBEAT || id == DFI_MOVE_TRIPLEAXEL || id == DFI_MOVE_TWINBEAM ||
                              (id == DFI_MOVE_WIDEGUARD && dfi_pool_moves[id].special == DFI_SPECIAL_WIDE_GUARD) ||
                              (id == DFI_MOVE_DETECT && dfi_pool_moves[id].special == DFI_SPECIAL_PROTECT));
             DF_CHECK(&t, !want || dfi_pool_moves[id].special != DFI_SPECIAL_UNMODELED);
             marked_count += dfi_support.moves[id] != 0u ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, marked_count, 106u); /* the ten of step G30, the eleven of step G32 */
+        DF_CHECK_EQ_U64(&t, marked_count, 109u); /* the ten of step G30, the eleven of step G32, the three of step G33 */
     }
 
     /* Step AC1: Trace copies the ability of a foe unless that has the pin's notrace flag. The turn code excludes only
@@ -1339,7 +1357,7 @@ DFI_MOVE_ERUPTION, DFI_MOVE_WATERSPOUT, DFI_MOVE_LIFEDEW, DFI_MOVE_BODYPRESS,
      * are in no pool ability, and Mold Breaker (which ignores the breakable Flower Veil) is not either. */
     {
         static const char *const absent[] = {"aurabreak", "darkaura", "moldbreaker", "teravolt", "turboblaze",
-                                             "neutralizinggas", "mirrorarmor", "cleanbody", "whitesmoke"};
+                                             "neutralizinggas", "cleanbody", "whitesmoke"};
         for (uint32_t id = 0u; id < DFI_POOL_ABILITY_COUNT; ++id) {
             for (size_t k = 0u; k < sizeof absent / sizeof absent[0]; ++k) {
                 /* a row of the whole pool may have the name; nothing that makes a member play it is marked */

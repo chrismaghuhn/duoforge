@@ -156,7 +156,12 @@
  * target class allies), Body Press, Foul Play and Psyshock (the stat overrides of the damage formula), Rain Dance and Sunny Day,
  * Volt Switch (a pivot with a switch flag of its own), Clanging Scales (selfBoost), Freeze-Dry (Water is super effective), the
  * abilities Soundproof, Unnerve (no berries for the foes; announced first at the switch-in) and Speed Boost (the residual), and the
- * Champions Eject Button, recorded as g32_* under the POOL kind. */
+ * Champions Eject Button, recorded as g32_* under the POOL kind.
+ * Step G33 marks three multi-hit moves and one ability: Dual Wingbeat and Twin Beam (two hits) and Triple Axel (three, a check
+ * before each later hit, 20 x the hit as the power), each hit with its
+ * own critical hit roll, damage roll and DamagingHit handlers; the hit count is the number of -damage lines, so the protocol's
+ * -hitcount line is derived and no event is new. Mirror Armor (the drops that another Pokemon causes go back to it, one stat
+ * at a time), recorded as g33_* under the POOL kind. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -323,6 +328,10 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_VOLTSWITCH] = 1u,
             [DFI_MOVE_CLANGINGSCALES] = 1u,
             [DFI_MOVE_FREEZEDRY] = 1u,
+            /* Step G33: the multi-hit loop (two hits: Dual Wingbeat, Twin Beam; three: Triple Axel). */
+            [DFI_MOVE_DUALWINGBEAT] = 1u,
+            [DFI_MOVE_TRIPLEAXEL] = 1u,
+            [DFI_MOVE_TWINBEAM] = 1u,
             /* Step G28: Shell Smash (its boosts in the pin's order), Acrobatics (doubled without an item), Blizzard (never misses
              * in snow), Ancient Power (a secondary that boosts its user), Feint (breaks Protect and Wide Guard). */
             [DFI_MOVE_SHELLSMASH] = 1u,
@@ -387,6 +396,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_SOUNDPROOF] = 1u, /* step G32 */
             [DFI_ABILITY_UNNERVE] = 1u,
             [DFI_ABILITY_SPEEDBOOST] = 1u,
+            [DFI_ABILITY_MIRRORARMOR] = 1u, /* step G33 */
         },
     .items =
         {

@@ -653,11 +653,11 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual(gen_closure.SPECIAL_IDS_P[seven:], ['SANDSTORM', 'SNOWSCAPE', 'KNOCK_OFF', 'EXPANDING_FORCE', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD',
                           'SHELL_SMASH', 'ACROBATICS', 'BLIZZARD', 'FEINT', 'RAGE_POWDER', 'PSYCHIC_FANGS', 'SOLAR_BEAM',
                           'HP_POWER', 'BODY_PRESS', 'FOUL_PLAY', 'PSYSHOCK',
-                          'RAIN_DANCE', 'SUNNY_DAY', 'FREEZE_DRY', 'CLANGING_SCALES', 'UNMODELED'])
+                          'RAIN_DANCE', 'SUNNY_DAY', 'FREEZE_DRY', 'CLANGING_SCALES', 'MULTI_HIT_2', 'TRIPLE_AXEL', 'UNMODELED'])
         self.assertEqual(len(gen_closure.G2_HANDLERS), 7)
         # Step G16: Knock Off's handler is 24 in the tables; step G15's Expanding Force is 25, step G19's Glaive Rush 26,
         # step G20's Aurora Veil 27, Spiky Shield 28, the four of step G28 29 to 32, the eight of step G32 33 to 40 and
-        # UNMODELED 41.
+        # the three of step G33 44 to 46 and UNMODELED 47.
         self.assertEqual(gen_closure.G16_HANDLERS, ['KNOCK_OFF'])
         self.assertEqual(gen_closure.G20_HANDLERS, ['AURORA_VEIL'])
         self.assertEqual(gen_closure.G20_PROTECT_HANDLERS, ['SPIKY_SHIELD'])
@@ -670,13 +670,15 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual(gen_closure.G30_HANDLERS, ['RAGE_POWDER', 'PSYCHIC_FANGS', 'SOLAR_BEAM'])  # step G30
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G30_HANDLERS], [33, 34, 35])
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G32_HANDLERS], list(range(36, 44)))
-        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 44)
+        self.assertEqual(gen_closure.G33_HANDLERS, ['MULTI_HIT_2', 'TRIPLE_AXEL'])
+        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G33_HANDLERS], [44, 45])
+        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 46)
         # Scald and Recover became data in step G10: their ids stay defined and no move maps to them.
         self.assertEqual({v[0] for k, v in gen_closure.SPECIAL_P.items() if k not in gen_closure.SPECIAL_C},
                          (set(gen_closure.G2_HANDLERS) - {'SCALD', 'RECOVER'}) | set(gen_closure.WEATHER_HANDLERS) |
                          set(gen_closure.G16_HANDLERS) | set(gen_closure.G15_HANDLERS) | set(gen_closure.G19_HANDLERS) |
                          set(gen_closure.G20_HANDLERS) | set(gen_closure.G20_PROTECT_HANDLERS) | set(gen_closure.G28_HANDLERS) |
-                         set(gen_closure.G30_HANDLERS) | set(gen_closure.G32_HANDLERS))
+                         set(gen_closure.G30_HANDLERS) | set(gen_closure.G32_HANDLERS) | set(gen_closure.G33_HANDLERS))
 
     def test_aurora_veil_is_a_handler_whose_onTry_and_condition_are_the_pinned_text(self):
         rec = parse_pool('auroraveil', AURORA_VEIL)
@@ -897,7 +899,7 @@ class PoolMoves(unittest.TestCase):
                                                                 'shellsmash', 'acrobatics', 'blizzard', 'feint',
                                                                 'ragepowder', 'psychicfangs', 'solarbeam', 'eruption', 'waterspout',
                                                                 'bodypress', 'foulplay', 'psyshock', 'raindance', 'sunnyday', 'freezedry',
-                                                                'clangingscales'})
+                                                                'clangingscales', 'dualwingbeat', 'twinbeam', 'tripleaxel'})
         self.assertEqual(gen_closure.WEATHER_HANDLERS, ['SANDSTORM', 'SNOWSCAPE'])
         for _sp, _ab, item, moves, _mega in gen_closure.SETS_G2:
             self.assertTrue(item in gen_closure.G2_ITEMS or item not in gen_closure.POOL_ITEMS)
@@ -1208,7 +1210,7 @@ class ItemAbilityFeatures(unittest.TestCase):
                                                                  'levitate', 'sandrush', 'swiftswim', 'slushrush',
                                                                  'chlorophyll', 'innerfocus', 'liquidvoice',
                                                                  'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof',
-                                                                 'unnerve', 'speedboost']})
+                                                                 'unnerve', 'speedboost', 'mirrorarmor']})
 
 
 class Bounds(unittest.TestCase):

@@ -865,7 +865,9 @@
 #define DFI_SPECIAL_SUNNY_DAY 41u
 #define DFI_SPECIAL_FREEZE_DRY 42u
 #define DFI_SPECIAL_CLANGING_SCALES 43u
-#define DFI_SPECIAL_UNMODELED 44u
+#define DFI_SPECIAL_MULTI_HIT_2 44u
+#define DFI_SPECIAL_TRIPLE_AXEL 45u
+#define DFI_SPECIAL_UNMODELED 46u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */

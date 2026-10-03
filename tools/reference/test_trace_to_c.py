@@ -157,6 +157,65 @@ class Refusals(unittest.TestCase):
         self.control('s2_turn_core_1', lambda spec, trace: trace['steps'][1]['log'].append('|foo|bar'),
                      'protocol-line', "trace_to_c: unknown protocol line '|foo|bar'", 'foo')
 
+    def test_a_hitcount_line_is_asserted_against_the_damage_lines_and_dropped(self):
+        """`|-hitcount|P|N` (multi-hit moves, data/mods/champions/scripts.ts:427-549) is no event: N must be the number of
+        -damage lines the move showed on that Pokemon. A wrong N is refused; a missing line is not an error (the Champions loop
+        prints none for Parental Bond with only its first hit); and the line of a Pokemon that has fainted, shown without its
+        slot, still matches."""
+        name = 'g33_dual_wingbeat'
+        spec, trace = battle(name)
+        base = convert(name, spec, trace)
+        lines = [(k, i, l) for k, st in enumerate(trace['steps']) for i, l in enumerate(st['log']) if l.startswith('|-hitcount|')]
+        self.assertGreaterEqual(len(lines), 2)
+        self.assertTrue(any(re.match(r'\|-hitcount\|p[12]: ', l) for _, _, l in lines), 'a slotless line (a fainted target)')
+        self.assertTrue(any(re.match(r'\|-hitcount\|p[12][ab]: ', l) for _, _, l in lines), 'a line with a slot')
+        self.assertTrue(any(l.endswith('|2') for _, _, l in lines))
+
+        def wrong(spec, trace):
+            k, i, l = lines[0]
+            n = int(l.split('|')[-1])
+            trace['steps'][k]['log'][i] = l[:-len(str(n))] + str(n + 1)
+        n0 = int(lines[0][2].split('|')[-1])
+        self.control(name, wrong, 'hitcount-mismatch',
+                     "trace_to_c: %r but the move showed %d -damage lines on that Pokemon" % (lines[0][2][:-1] + str(n0 + 1), n0),
+                     str(n0 + 1))
+
+        def zero(spec, trace):
+            k, i, l = lines[0]
+            trace['steps'][k]['log'][i] = l[:-len(str(n0))] + '0'
+        self.control(name, zero, 'hitcount-mismatch',
+                     "trace_to_c: %r but the move showed %d -damage lines on that Pokemon" % (lines[0][2][:-1] + '0', n0), '0')
+
+        def not_a_number(spec, trace):
+            k, i, l = lines[0]
+            trace['steps'][k]['log'][i] = l[:-len(str(n0))] + 'x'
+        self.control(name, not_a_number, 'hitcount-mismatch',
+                     "trace_to_c: %r but the move showed %d -damage lines on that Pokemon" % (lines[0][2][:-1] + 'x', n0), 'x')
+
+        def other_pokemon(spec, trace):
+            k, i, l = lines[0]
+            m = re.match(r'\|-hitcount\|p([12])(?:[ab])?: ', l)
+            other = '2' if m.group(1) == '1' else '1'
+            trace['steps'][k]['log'][i] = '|-hitcount|p' + other + l[len('|-hitcount|p1'):]
+        spec, trace = battle(name)
+        other_pokemon(spec, trace)
+        with self.assertRaises(trace_to_c.ConversionError) as cm:
+            convert(name, spec, trace)
+        self.assertEqual(cm.exception.rule, 'hitcount-mismatch')
+
+        # a -damage line with an attribute ([from] ...) is not a hit: it must not be counted for the Pokemon it shows
+        spec, trace = battle(name)
+        k, i, l = lines[0]
+        log = trace['steps'][k]['log']
+        j = max(x for x in range(i) if log[x].startswith('|-damage|') and '[' not in log[x])
+        log.insert(i, log[j] + '|[from] item: Rocky Helmet')
+        convert(name, spec, trace)
+
+        spec, trace = battle(name)
+        for st in trace['steps']:
+            st['log'] = [l for l in st['log'] if not l.startswith('|-hitcount|')]
+        self.assertEqual(convert(name, spec, trace), base)  # absent lines: no error, the events are the same
+
     def test_unclassified_draw(self):
         def mutate(spec, trace):
             d = trace['steps'][3]['draws'][0]
@@ -1451,7 +1510,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 106)  # the eleven of G32, the ten of G30, the six of G28 (Shell Smash, Acrobatics, Blizzard, Ancient Power, Feint, Earthquake), the 27 of G21, Spiky Shield (G20), G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
+        self.assertEqual(len(marked), 109)  # the eleven of G32, the ten of G30, the six of G28 (Shell Smash, Acrobatics, Blizzard, Ancient Power, Feint, Earthquake), the 27 of G21, Spiky Shield (G20), G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []

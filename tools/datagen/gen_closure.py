@@ -1431,6 +1431,32 @@ G28_FACTS = (
 # Eject Button), because the engine hard-codes them. Life Dew needs no handler (its target class `allies` is now an engine
 # class: ENGINE_TARGETS), Volt Switch none (ENGINE_PIVOT_MOVES: a switch flag of its own).
 G32_HANDLERS = ['HP_POWER', 'BODY_PRESS', 'FOUL_PLAY', 'PSYSHOCK', 'RAIN_DANCE', 'SUNNY_DAY', 'FREEZE_DRY', 'CLANGING_SCALES']
+# Step G33 (the multi-hit batch): two handlers, one per rule that the generic columns cannot hold. MULTI_HIT_2 (Dual Wingbeat
+# and Twin Beam: `multihit: 2,`) and TRIPLE_AXEL (`multihit: 3,`, `multiaccuracy: true,` and the power 20 x the hit). Population
+# Bomb (ten hits, `multiaccuracy`) has no handler: its only learners, Maushold and Maushold-Four, have no marked ability, so no
+# legal team can play it and no battle can be recorded; it gets one with the first of Friend Guard, Cheek Pouch and Technician.
+# The hit count lives in the handler, not in a column: the static
+# columns of decision 0020 have no engine reader (item 5), and the other multihit rows (random counts, smartTarget, secondaries)
+# stay unmodelled. The generator checks the four rows' whole texts (G33_FACTS) and Mirror Armor's entry (G33_ENTRY_FACTS).
+G33_HANDLERS = ['MULTI_HIT_2', 'TRIPLE_AXEL']
+G33_FACTS = (
+    ('dualwingbeat', ['accuracy: 90,', 'basePower: 40,', 'category: "Physical",', 'priority: 0,',
+                      'flags: { contact: 1, protect: 1, mirror: 1, metronome: 1 },', 'multihit: 2,', 'target: "normal",',
+                      'type: "Flying",']),
+    ('tripleaxel', ['accuracy: 90,', 'basePower: 20,', 'basePowerCallback(pokemon, target, move) { return 20 * move.hit; },',
+                    'category: "Physical",', 'priority: 0,', 'flags: { contact: 1, protect: 1, mirror: 1, metronome: 1 },',
+                    'multihit: 3,', 'multiaccuracy: true,', 'target: "normal",', 'type: "Ice",']),
+    ('twinbeam', ['accuracy: 100,', 'basePower: 40,', 'category: "Special",', 'priority: 0,',
+                  'flags: { protect: 1, mirror: 1 },', 'multihit: 2,', 'target: "normal",', 'type: "Psychic",']),
+)
+G33_ENTRY_FACTS = (
+    ('ability', 'mirrorarmor', False,
+     ["if (!source || target === source || !boost || effect.name === 'Mirror Armor') return;",
+      "let b: BoostID; for (b in boost) { if (boost[b]! < 0) { if (target.boosts[b] === -6) continue; "
+      "const negativeBoost: SparseBoostsTable = {}; negativeBoost[b] = boost[b]; delete boost[b]; if (source.hp) { "
+      "this.add('-ability', target, 'Mirror Armor'); this.boost(negativeBoost, source, target, null, true); } } }",
+      'flags: { breakable: 1 },']),
+)
 _HP_POWER_CALLBACK = ("basePowerCallback(pokemon, target, move) { const bp = move.basePower * pokemon.hp / pokemon.maxhp; "
                       "this.debug(`BP: ${bp}`); return bp; },")
 G32_FACTS = (
@@ -1593,6 +1619,9 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'sunnyday': ('SUNNY_DAY', set()),
     'freezedry': ('FREEZE_DRY', {'onEffectiveness'}),                     # G32: Water takes it super effective
     'clangingscales': ('CLANGING_SCALES', set()),                         # G32: the user's Defense falls after a hit
+    'dualwingbeat': ('MULTI_HIT_2', set()),                               # G33: two hits
+    'twinbeam': ('MULTI_HIT_2', set()),
+    'tripleaxel': ('TRIPLE_AXEL', {'basePowerCallback'}),                 # G33: three hits, a check for each, 20 x the hit
 })
 # Step G13: Detect is Protect (data/moves.ts:3526-3547 against 13961-14005): the same handler (not one of the G2 handlers,
 # so it is added to the pool's map only), and the generator checks that its stalling fields and both callbacks are,
@@ -1605,7 +1634,7 @@ PROTECT_COPIES = {'detect': 'protect'}
 # champions/moves.ts:581-584) sets isNonstandard to null, which makes it legal, and the tag has no reader in the tables.
 TAGS_PAST_UNOBTAINABLE = 'tags: ["Past Unobtainable"],'
 PROTECT_COPY_FIELDS = ('onPrepareHit', 'onHit', 'stallingMove', 'volatileStatus', 'priority', 'accuracy', 'target')
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + ['UNMODELED']
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G33_HANDLERS + ['UNMODELED']
 # Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags
 # byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
@@ -1621,6 +1650,8 @@ G2_OWNED_FIELDS = {
     'FEINT': {'breaksProtect': "breaksProtect: true, // Breaking protection implemented in scripts.js"},
     'GLAIVE_RUSH': {'self': "self: { volatileStatus: 'glaiverush', },"},
     'RAGE_POWDER': {'volatileStatus': "volatileStatus: 'ragepowder',"},
+    'MULTI_HIT_2': {'multihit': 'multihit: 2,'},
+    'TRIPLE_AXEL': {'multihit': 'multihit: 3,', 'multiaccuracy': 'multiaccuracy: true,'},
     'BODY_PRESS': {'overrideOffensiveStat': "overrideOffensiveStat: 'def',"},
     'FOUL_PLAY': {'overrideOffensivePokemon': "overrideOffensivePokemon: 'target',"},
     'PSYSHOCK': {'overrideDefensiveStat': "overrideDefensiveStat: 'def',"},
@@ -1738,7 +1769,7 @@ ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'expertbelt', 
                'abilities': ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange',
                              'stickyhold', 'trace', 'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll',
                              'innerfocus', 'liquidvoice', 'flamebody', 'clearbody', 'hospitality', 'overcoat',
-                             'soundproof', 'unnerve', 'speedboost']}
+                             'soundproof', 'unnerve', 'speedboost', 'mirrorarmor']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -2368,7 +2399,7 @@ def check_g28_items(items_ts, only=None):
 def check_g32_entries(items_ts, champ_items, abil_ts, champ_abil, only=None):
     """Step G32: the ability and item entries that the turn code runs by id (G32_ENTRY_FACTS) have the pinned texts, whole;
     the Champions Eject Button is read from the mod's file. `only`: a tuple of such entries (the generator's tests)."""
-    for kind, eid, champ, facts in (G32_ENTRY_FACTS if only is None else only):
+    for kind, eid, champ, facts in (G32_ENTRY_FACTS + G33_ENTRY_FACTS if only is None else only):
         src = (champ_items if champ else items_ts) if kind == 'item' else (champ_abil if champ else abil_ts)
         e = src.entry(eid)
         if e is None:
@@ -2383,7 +2414,7 @@ def check_g8_conditions(moves_ts, only=None):
     """The engine hard-codes the durations, orders and tests of the Throat Chop and Heal Block conditions (step G8) and
     those of Aurora Veil (step G20): every one of them must be in the pinned entry, as one normalised text. `only`: a
     tuple of (move id, facts) to check instead of all of them (the generator's tests)."""
-    for mid, facts in (G8_CONDITION_FACTS + G20_CONDITION_FACTS + G28_FACTS + G32_FACTS if only is None else only):
+    for mid, facts in (G8_CONDITION_FACTS + G20_CONDITION_FACTS + G28_FACTS + G32_FACTS + G33_FACTS if only is None else only):
         e = moves_ts.entry(mid)
         if e is None:
             fail('move %s not found' % mid)
