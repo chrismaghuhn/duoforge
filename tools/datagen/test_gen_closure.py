@@ -792,7 +792,9 @@ class PoolMoves(unittest.TestCase):
         # Every handler move is one of the rows, and every set move is a pool move or one of the rows.
         self.assertTrue({k for k in gen_closure.SPECIAL_P if k not in gen_closure.SPECIAL_C} <=
                         set(gen_closure.G2_MOVES) | {'sandstorm', 'snowscape', 'knockoff', 'expandingforce', 'glaiverush', 'auroraveil', 'spikyshield',
-                                                                'shellsmash', 'acrobatics', 'blizzard', 'feint'})
+                                                                'shellsmash', 'acrobatics', 'blizzard', 'feint', 'eruption', 'waterspout',
+                                                                'bodypress', 'foulplay', 'psyshock', 'raindance', 'sunnyday', 'freezedry',
+                                                                'clangingscales'})
         self.assertEqual(gen_closure.WEATHER_HANDLERS, ['SANDSTORM', 'SNOWSCAPE'])
         for _sp, _ab, item, moves, _mega in gen_closure.SETS_G2:
             self.assertTrue(item in gen_closure.G2_ITEMS or item not in gen_closure.POOL_ITEMS)
@@ -1097,11 +1099,12 @@ class ItemAbilityFeatures(unittest.TestCase):
         self.assertEqual(gen_closure.HANDLER_IDS, ['NONE', 'UNMODELED'])
 
     def test_the_rows_that_a_step_implements_by_id_are_listed(self):
-        self.assertEqual(gen_closure.ENGINE_ROWS, {'items': ['focussash', 'floettite', 'psychicseed', 'expertbelt'],
+        self.assertEqual(gen_closure.ENGINE_ROWS, {'items': ['focussash', 'floettite', 'psychicseed', 'expertbelt', 'ejectbutton'],
                                                    'abilities': ['rockhead', 'flowerveil', 'fairyaura', 'roughskin',
                                                                  'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
                                                                  'levitate', 'sandrush', 'swiftswim', 'slushrush',
-                                                                 'chlorophyll', 'innerfocus', 'liquidvoice']})
+                                                                 'chlorophyll', 'innerfocus', 'liquidvoice', 'soundproof',
+                                                                 'unnerve', 'speedboost']})
 
 
 class Bounds(unittest.TestCase):
@@ -1255,7 +1258,7 @@ class WeatherFacts(unittest.TestCase):
 
     def sources(self, drop=None, extra=None):
         cond = chr(10).join(entry(cid, *[f for f in facts if f != drop] + ([extra[1]] if extra and extra[0] == cid else []))
-                         for cid, facts in gen_closure.WEATHER_FACTS)
+                         for cid, facts in gen_closure.WEATHER_FACTS + gen_closure.G32_WEATHER_FACTS)
         ball = entry('weatherball', *[f for f in gen_closure.WEATHER_BALL_FACTS if f != drop])
         return TextSource('data/conditions.ts', cond), TextSource('data/moves.ts', ball)
 
@@ -1263,7 +1266,7 @@ class WeatherFacts(unittest.TestCase):
         gen_closure.check_weather_facts(*self.sources())
 
     def test_every_fact_is_demanded(self):
-        every = [f for _cid, facts in gen_closure.WEATHER_FACTS for f in facts] + list(gen_closure.WEATHER_BALL_FACTS)
+        every = [f for _cid, facts in gen_closure.WEATHER_FACTS + gen_closure.G32_WEATHER_FACTS for f in facts] + list(gen_closure.WEATHER_BALL_FACTS)
         self.assertGreaterEqual(len(every), 17)
         for fact in every:
             with self.subTest(fact=fact), self.assertRaises(SystemExit) as cm:

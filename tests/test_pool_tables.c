@@ -45,7 +45,7 @@
 #include "state/closure_member.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "1005fd6235cbf6d9c80b2165878b0270a9eda9c4d54ff0a3274bbf13482082cd"
+#define POOL_HASH_HEX "4e7e8b4b539c98160787dc44cc71befcb1f4dd40042d1dd3749151effc7f3ff4"
 /* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
  * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
  * produced the same bytes. Step G10 moved two of them on purpose: Scald and Recover are data now (the thaw bit and
@@ -784,11 +784,13 @@ int main(void)
         DF_CHECK_EQ_U64(&t, heal, HEAL_MOVES);
         DF_CHECK_EQ_U64(&t, thaw, THAW_MOVES);
         DF_CHECK_EQ_U64(&t, recharge, RECHARGE_MOVES);
-        /* The heal column (step G10): Recover and Slack Off heal 1/2, no other move heals by a fraction. */
+        /* The heal column (step G10): Recover and Slack Off heal 1/2, and (modelled since step G32) Life Dew 1/4; no other move
+         * heals by a fraction. */
         for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
             const bool halves = i == DFI_MOVE_RECOVER || i == DFI_MOVE_SLACKOFF;
-            DF_CHECK_EQ_U64(&t, dfi_pool_move_heal[i][0], halves ? 1u : 0u);
-            DF_CHECK_EQ_U64(&t, dfi_pool_move_heal[i][1], halves ? 2u : 0u);
+            const bool quarter = i == DFI_MOVE_LIFEDEW;
+            DF_CHECK_EQ_U64(&t, dfi_pool_move_heal[i][0], (halves || quarter) ? 1u : 0u);
+            DF_CHECK_EQ_U64(&t, dfi_pool_move_heal[i][1], halves ? 2u : quarter ? 4u : 0u);
             DF_CHECK(&t, dfi_pool_move_heal[i][1] == 0u || (dfi_pool_move_flags2[i] & DFI_MOVE_FLAG2_HEAL) != 0u);
         }
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_THROATCHOP].special, DFI_SPECIAL_NONE);

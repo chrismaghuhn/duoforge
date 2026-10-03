@@ -1069,7 +1069,7 @@ static void dfi_use_item(dfi_run *r, uint32_t flat);
  * on the other side cannot eat a berry (eatItem fails: no -enditem, and a resist berry does not weaken the hit; Sitrus
  * Berry waits for the next Update). The holder's own side is not affected. effectState.unnerved is true from the holder's
  * onStart (which runs at its switch-in, ahead of the other entry abilities) to its onEnd (a switch-out or a faint). */
-static bool dfi_unnerved(const struct duoforge_battle *b, uint32_t flat)
+static bool dfi_unnerved(struct duoforge_battle *b, uint32_t flat)
 {
     for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
         const dfi_member *foe = dfi_at(b, (1u - flat / 2u) * 2u + slot);
@@ -2704,6 +2704,7 @@ static duoforge_status dfi_run_heal_move(dfi_run *r, uint32_t user, uint32_t mov
                                          uint32_t count)
 {
     (void)user;
+    bool did = false;
     /* moveHit's heal, once per target in the order of the list (sim/battle-actions.ts:1201-1222; Life Dew, step G32, heals
      * the user and its standing ally, each at its own full-HP check and with its own -fail or -heal line). A target under
      * Heal Block that is not the user is refused (the heal is `false`, which the engine does not show for an ally). */
@@ -2725,6 +2726,20 @@ static duoforge_status dfi_run_heal_move(dfi_run *r, uint32_t user, uint32_t mov
         uint32_t amount = ((uint32_t)m->hp_max * num * 2u + den) / (2u * den); /* Math.round(hp_max * num / den) */
         amount = amount < 1u ? 1u : amount;
         dfi_heal(r, t, amount, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
+        did = true;
+    }
+    /* The `[spread]` list of the move line is the move's hitTargets after the hit steps (sim/battle-actions.ts:614-618): when
+     * the heal did something for at least one target every target stays in it, a target at full HP too, and when it did
+     * nothing for any the list is empty (the move line keeps its [spread] with no slot). */
+    if (count > 1u) {
+        duoforge_event *mv = dfi_last_move(r);
+        if (mv != NULL) {
+            uint32_t mask = 0u;
+            for (uint32_t i = 0u; did && i < count; ++i) {
+                mask |= 1u << targets[i];
+            }
+            mv->amount = (uint8_t)mask; /* < 16 */
+        }
     }
     return dfi_status_hit_end(r);
 }

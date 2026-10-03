@@ -854,7 +854,15 @@
 #define DFI_SPECIAL_ACROBATICS 30u
 #define DFI_SPECIAL_BLIZZARD 31u
 #define DFI_SPECIAL_FEINT 32u
-#define DFI_SPECIAL_UNMODELED 33u
+#define DFI_SPECIAL_HP_POWER 33u
+#define DFI_SPECIAL_BODY_PRESS 34u
+#define DFI_SPECIAL_FOUL_PLAY 35u
+#define DFI_SPECIAL_PSYSHOCK 36u
+#define DFI_SPECIAL_RAIN_DANCE 37u
+#define DFI_SPECIAL_SUNNY_DAY 38u
+#define DFI_SPECIAL_FREEZE_DRY 39u
+#define DFI_SPECIAL_CLANGING_SCALES 40u
+#define DFI_SPECIAL_UNMODELED 41u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */

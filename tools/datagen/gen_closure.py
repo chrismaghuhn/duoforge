@@ -1479,11 +1479,15 @@ G32_ENTRY_FACTS = (
 # UNMODELED and so never held), the start line without a source, the upkeep and the end line.
 G32_WEATHER_FACTS = (
     ('raindance', ['duration: 5,', "if (source?.hasItem('damprock')) { return 8; } return 5;",
-                   "this.add('-weather', 'RainDance'); }", 'onFieldResidualOrder: 1,',
+                   "onFieldStart(field, source, effect) { if (effect?.effectType === 'Ability') { if (this.gen <= 5) "
+                   "this.effectState.duration = 0; this.add('-weather', 'RainDance', '[from] ability: ' + effect.name, `[of] ${source}`); } "
+                   "else { this.add('-weather', 'RainDance'); } },", 'onFieldResidualOrder: 1,',
                    "this.add('-weather', 'RainDance', '[upkeep]'); this.eachEvent('Weather');",
                    "this.add('-weather', 'none');"]),
     ('sunnyday', ['duration: 5,', "if (source?.hasItem('heatrock')) { return 8; } return 5;",
-                  "this.add('-weather', 'SunnyDay'); }", 'onFieldResidualOrder: 1,',
+                  "onFieldStart(battle, source, effect) { if (effect?.effectType === 'Ability') { if (this.gen <= 5) "
+                  "this.effectState.duration = 0; this.add('-weather', 'SunnyDay', '[from] ability: ' + effect.name, `[of] ${source}`); } "
+                  "else { this.add('-weather', 'SunnyDay'); } },", 'onFieldResidualOrder: 1,',
                   "this.add('-weather', 'SunnyDay', '[upkeep]'); this.eachEvent('Weather');",
                   "this.add('-weather', 'none');",
                   "onImmunity(type, pokemon) { if (pokemon.effectiveWeather() !== 'sunnyday') return; if (type === 'frz') return false; },"]),
