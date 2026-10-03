@@ -1415,10 +1415,10 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
         mlist[mods] = 2048u;
         mods += 1u;
     }
-    /* The handlers all have priority 0 and run by speed (the items by their holders', the abilities' and the condition
-     * by the target's, a screen last): the order is the reference's and cannot be told here, so the modifiers must chain to
-     * one value in every order. Pairs and triples of Life Orb, Expert Belt, a resist berry, a screen, Solid Rock and
-     * Multiscale do (checked by dfi_mods_commute at its own test, tests/test_pool_g34.c, and here for every hit); the
+    /* The handlers have no order and priority 0, so runEvent sorts them by their holders' speed, then by subOrder (a screen, a
+     * side condition, has no speed and is last); this build does not compute that order (a follow-up, combat/damage_chain.h), so
+     * the modifiers must chain to one value in every order. Pairs and triples of Life Orb, Expert Belt, a resist berry, a screen,
+     * Solid Rock and Multiscale Multiscale do (checked by dfi_mods_commute at its own test, tests/test_pool_g34.c, and here for every hit); the
      * combinations that do not (Glaive Rush's x2 with three others, an Expert Belt with a berry and Glaive Rush, a
      * Solid Rock with them) are E_UNSUPPORTED. */
     if (mods >= 3u && !dfi_mods_commute(mlist, mods)) {

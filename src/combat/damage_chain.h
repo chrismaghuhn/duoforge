@@ -2,13 +2,15 @@
 #define DFI_COMBAT_DAMAGE_CHAIN_H
 
 /*
- * The ModifyDamage chain (step G34): the handlers of the event that the engine knows are all of priority 0 and run by
- * their holders' speed (the held items by their holders', the abilities and the volatile by the target's, a screen as a
- * side condition last), and a speed tie shuffles them: the engine cannot tell the order. It does not need to, while every
- * order of the modifiers that one hit has chains to one value (chainModify, sim/battle.ts:2321-2330: previous * next + 2048,
- * shifted right by 12, from 4096). `dfi_mods_commute` is that test, over the modifiers that one hit has; the combinations
- * for which it fails are E_UNSUPPORTED (turn.c), and tools/reference/trace_to_c.py (modifiers_commute) holds the same
- * values for the converter's drop rule.
+ * The ModifyDamage chain (step G34): the handlers of the event that the engine knows have no order and priority 0, so
+ * runEvent's speedSort (comparePriority, sim/battle.ts:403-410) puts them in the order of their holders' speed (the
+ * attacker's item against the defender's Glaive Rush, ability and berry; a side condition has no speed, so a screen is
+ * last), then of their subOrder (a condition 2, an ability 7, an item 8), and shuffles only a complete tie. That order is
+ * computable from the state (a follow-up of step G34), but this build does not compute it: it needs no order while every
+ * order of the modifiers that one hit has chains to one value (chainModify, sim/battle.ts:2321-2330: previous * next +
+ * 2048, shifted right by 12, from 4096), and refuses the combinations for which they do not. `dfi_mods_commute` is that
+ * test, over the modifiers that one hit has; the combinations for which it fails are E_UNSUPPORTED (turn.c), and
+ * tools/reference/trace_to_c.py (modifiers_commute) holds the same values for the converter's drop rule.
  *
  * The modifiers (out of 4096): Life Orb 5324, Expert Belt 4915, a resist berry 2048, a screen or Aurora Veil 2732, Glaive
  * Rush's volatile 8192, Solid Rock 3072, Multiscale 2048. One hit has at most one of Life Orb and Expert Belt (the attacker's
