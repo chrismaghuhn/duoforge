@@ -341,7 +341,9 @@ Python tests:
   3. the leaf plan, then chunks of at most `capacity` leaves through `Batch.expand` (the leaf batch is created once in `__init__`);
   4. `Batch.tiebreak` on the last-step leaves, before the next chunk;
   5. one `model.value` per chunk, padded to `capacity` rows;
-  6. the table; Nash (`matrix.solve` and `matrix.draw` with `seeds.play_uniforms`) or the expected value (`matrix.expected_choice`); the record of S8.5.
+  6. the table, its rows and columns in prior-rank order, as `select` returns them (`matrix.solve` breaks ties among equilibria by that order); Nash (`matrix.solve` and `matrix.draw` with `seeds.play_uniforms`) or the expected value (`matrix.expected_choice`); the record of S8.5.
+     - The record also holds `Solution.exact` (the exact rescue decided).
+     - It also counts the table's near-duplicate rows: pairs whose largest difference is below 1e-6. The review of #199 asked for their rate in real tables.
 - **Encoder versions:** an encoder version or mask the C encoder refuses raises at `__init__`, through a zero-leaf probe call.
 
 - [ ] **Step 1: Write the failing NumPy tests.**

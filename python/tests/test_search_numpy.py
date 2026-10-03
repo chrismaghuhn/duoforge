@@ -1,11 +1,13 @@
 """duoforge.python.search_numpy: the NumPy parts of the M12 search (decision 0022).
 
-The matrix game (an exact linear program with its certificate), the
-expected-value rule, the tie rules and the play draw (spec sections 5.5
-and 5.6), and the decision keys and play draws (decision 0022 section 2).
-The JAX parts are in test_search.py.
+The matrix game (an exact linear program with its certificate and its
+exact rescue), the expected-value rule, the tie rules and the play draw
+(spec sections 5.5 and 5.6), and the decision keys and play draws (decision
+0022 section 2). The contract is pinned by literals, never by the module's
+own constants. The JAX parts are in test_search.py.
 """
 import itertools
+import math
 import unittest
 
 import numpy as np
@@ -15,6 +17,21 @@ from duoforge_learn.pairing import splitmix64
 from duoforge_search import SearchError, matrix, seeds
 
 _MASK = (1 << 64) - 1
+_CERTIFICATE = 1e-9  # spec section 5.5, plan Review Focus 5: never relaxed
+
+# Two rows a few float32 ulps apart (2 x 13): the float simplex pivots on a
+# rounding-sized entry and ends in a false "unbounded"; the exact rescue
+# decides (review of #199).
+_NEAR_DUPLICATE_HEX = [
+    ["0x1.cdf7920000000p-1", "0x1.a1d5040000000p-1", "-0x1.ad432e0000000p-1", "-0x1.7108e40000000p-4",
+     "0x1.e2aa980000000p-2", "0x1.5c62460000000p-1", "-0x1.facf240000000p-2", "0x1.dd1d340000000p-2",
+     "0x1.6e073c0000000p-1", "-0x1.51b4500000000p-2", "0x1.ca6d820000000p-1", "0x1.1e80460000000p-7",
+     "-0x1.0636a60000000p-1"],
+    ["0x1.cdf7940000000p-1", "0x1.a1d5040000000p-1", "-0x1.ad432e0000000p-1", "-0x1.7108ec0000000p-4",
+     "0x1.e2aa960000000p-2", "0x1.5c62460000000p-1", "-0x1.facf240000000p-2", "0x1.dd1d320000000p-2",
+     "0x1.6e073e0000000p-1", "-0x1.51b4500000000p-2", "0x1.ca6d820000000p-1", "0x1.1e7fc60000000p-7",
+     "-0x1.0636a40000000p-1"],
+]
 
 
 def _random_tables(rng, count):
@@ -32,6 +49,19 @@ def _random_tables(rng, count):
         else:
             a = rng.uniform(-1.0, 1.0, (k, m))
             a = a[rng.integers(0, k, k)][:, rng.integers(0, m, m)]  # rows and columns repeated
+        yield a
+
+
+def _near_duplicate_tables(rng, count):
+    """Tables of 2 x 1 to 16 x 16 with one row a few float32 ulps from
+    another; every other one rounded to float32, as value heads give them."""
+    for n in range(count):
+        k, m = int(rng.integers(2, 17)), int(rng.integers(1, 17))
+        a = rng.uniform(-1.0, 1.0, (k, m))
+        i, j = rng.choice(k, 2, replace=False)
+        a[j] = a[i] + rng.uniform(-6e-8, 6e-8, m)
+        if n % 2:
+            a = a.astype(np.float32).astype(np.float64)
         yield a
 
 
@@ -72,25 +102,33 @@ def _support_value(a):
 
 
 class Nash(unittest.TestCase):
+    def _assert_equilibrium(self, a, sol):
+        x, y = sol.x, sol.y
+        self.assertEqual(x.shape, (a.shape[0],))
+        self.assertEqual(y.shape, (a.shape[1],))
+        for v in (x, y):
+            self.assertTrue((v >= 0).all())
+            self.assertAlmostEqual(math.fsum(v.tolist()), 1.0, delta=1e-12)
+        self.assertLessEqual(matrix.exploitability(a, x, y), _CERTIFICATE)
+        lower, upper = float(np.min(x @ a)), float(np.max(a @ y))
+        self.assertLessEqual(min(lower, upper) - 1e-12, sol.value)
+        self.assertLessEqual(sol.value, max(lower, upper) + 1e-12)
+
+    def test_contract_constants(self):
+        self.assertEqual(matrix.CERTIFICATE, 1e-9)
+        self.assertEqual(matrix.PROBABILITY_FLOOR, 1e-9)
+
     def test_certificate_on_random_tables(self):
         rng = np.random.default_rng(0x2026100300000600)
         for a in _random_tables(rng, 2000):
-            x, y, value = matrix.solve(a)
-            self.assertEqual(x.shape, (a.shape[0],))
-            self.assertEqual(y.shape, (a.shape[1],))
-            for v in (x, y):
-                self.assertTrue((v >= 0).all())
-                self.assertAlmostEqual(float(v.sum()), 1.0, delta=1e-12)
-            self.assertLessEqual(matrix.exploitability(a, x, y), matrix.CERTIFICATE)
-            self.assertLessEqual(float(np.min(x @ a)), value + 1e-9)
-            self.assertGreaterEqual(float(np.max(a @ y)), value - 1e-9)
+            self._assert_equilibrium(a, matrix.solve(a))
 
     def test_agrees_with_support_enumeration(self):
         rng = np.random.default_rng(0x2026100300000601)
         for _ in range(300):
             a = rng.uniform(-1.0, 1.0, (int(rng.integers(1, 5)), int(rng.integers(1, 5))))
-            _, _, value = matrix.solve(a)
-            self.assertAlmostEqual(value, _support_value(a), delta=1e-12)
+            sol = matrix.solve(a)
+            self.assertAlmostEqual(sol.value, _support_value(a), delta=1e-12)
 
     def test_saddle_points_are_pure(self):
         rng = np.random.default_rng(0x2026100300000602)
@@ -101,33 +139,101 @@ class Nash(unittest.TestCase):
             a[i, :] = rng.uniform(0.1, 1.0, m)  # the row's other entries are better for the row player
             a[:, j] = rng.uniform(-1.0, -0.1, k)  # the column's other entries are worse for the row player
             a[i, j] = 0.0
-            x, y, value = matrix.solve(a)
-            self.assertAlmostEqual(float(x[i]), 1.0, delta=1e-12)
-            self.assertAlmostEqual(float(y[j]), 1.0, delta=1e-12)
-            self.assertAlmostEqual(value, 0.0, delta=1e-12)
+            sol = matrix.solve(a)
+            self.assertAlmostEqual(float(sol.x[i]), 1.0, delta=1e-12)
+            self.assertAlmostEqual(float(sol.y[j]), 1.0, delta=1e-12)
+            self.assertAlmostEqual(sol.value, 0.0, delta=1e-12)
 
     def test_known_games(self):
-        x, y, value = matrix.solve([[1.0, -1.0], [-1.0, 1.0]])  # matching pennies
-        np.testing.assert_allclose(x, [0.5, 0.5], atol=1e-12)
-        np.testing.assert_allclose(y, [0.5, 0.5], atol=1e-12)
-        self.assertAlmostEqual(value, 0.0, delta=1e-12)
-        x, y, value = matrix.solve([[0.0, -1.0, 1.0], [1.0, 0.0, -1.0], [-1.0, 1.0, 0.0]])  # rock, paper, scissors
-        np.testing.assert_allclose(x, [1 / 3] * 3, atol=1e-12)
-        np.testing.assert_allclose(y, [1 / 3] * 3, atol=1e-12)
-        self.assertAlmostEqual(value, 0.0, delta=1e-12)
-        x, _, value = matrix.solve([[3.0, -1.0], [-1.0, 1.0], [-2.0, -2.0]])  # the last row is strictly dominated
-        self.assertEqual(float(x[2]), 0.0)
-        self.assertAlmostEqual(value, 1.0 / 3.0, delta=1e-12)
-        x, y, value = matrix.solve([[0.25]])
-        self.assertEqual((float(x[0]), float(y[0]), value), (1.0, 1.0, 0.25))
+        sol = matrix.solve([[1.0, -1.0], [-1.0, 1.0]])  # matching pennies
+        np.testing.assert_allclose(sol.x, [0.5, 0.5], atol=1e-12)
+        np.testing.assert_allclose(sol.y, [0.5, 0.5], atol=1e-12)
+        self.assertAlmostEqual(sol.value, 0.0, delta=1e-12)
+        sol = matrix.solve([[0.0, -1.0, 1.0], [1.0, 0.0, -1.0], [-1.0, 1.0, 0.0]])  # rock, paper, scissors
+        np.testing.assert_allclose(sol.x, [1 / 3] * 3, atol=1e-12)
+        np.testing.assert_allclose(sol.y, [1 / 3] * 3, atol=1e-12)
+        self.assertAlmostEqual(sol.value, 0.0, delta=1e-12)
+        sol = matrix.solve([[3.0, -1.0], [-1.0, 1.0], [-2.0, -2.0]])  # the last row is strictly dominated
+        self.assertEqual(float(sol.x[2]), 0.0)
+        self.assertAlmostEqual(sol.value, 1.0 / 3.0, delta=1e-12)
+        sol = matrix.solve([[0.25]])
+        self.assertEqual((float(sol.x[0]), float(sol.y[0]), sol.value, sol.exact), (1.0, 1.0, 0.25, False))
+
+    def test_ties_follow_row_order(self):
+        """Documented (module, "Rows in prior-rank order"): of several
+        equilibria the first rows and columns win, so the search passes rows
+        in prior-rank order."""
+        sol = matrix.solve(np.full((4, 3), -0.375))  # a constant table
+        np.testing.assert_array_equal(sol.x, [1.0, 0.0, 0.0, 0.0])
+        np.testing.assert_array_equal(sol.y, [1.0, 0.0, 0.0])
+        self.assertEqual(sol.value, -0.375)
+
+    def test_bland_rule_pinned(self):
+        """Rows 0 and 1 are both optimal; Bland's rule ends at row 0, the
+        largest-reduced-cost rule (Dantzig) at row 1."""
+        a = np.array([[2.0, -1.0, -1.0], [2.0, 0.0, -1.0], [-2.0, 2.0, -2.0]])
+        sol = matrix.solve(a)
+        np.testing.assert_array_equal(sol.x, [1.0, 0.0, 0.0])
+        np.testing.assert_array_equal(sol.y, [0.0, 0.0, 1.0])
+        self.assertFalse(sol.exact)
+        x, y = matrix._simplex_exact(a)  # the rescue follows the same rule
+        np.testing.assert_array_equal(x, [1.0, 0.0, 0.0])
+        np.testing.assert_array_equal(y, [0.0, 0.0, 1.0])
+
+    def test_certificate_threshold(self):
+        """Matching pennies with x off by delta: the exploitability is exactly
+        2 delta, and the certificate holds at 1e-9 and no looser."""
+        a = np.array([[1.0, -1.0], [-1.0, 1.0]])
+        y = np.array([0.5, 0.5])
+        for delta, passes in ((1e-6, False), (1e-9, False), (2.5e-10, True)):
+            x = np.array([0.5 + delta, 0.5 - delta])
+            if passes:
+                self.assertAlmostEqual(matrix.certify(a, x, y), 2 * delta, delta=1e-15)
+            else:
+                with self.assertRaisesRegex(SearchError, "certificate is missed"):
+                    matrix.certify(a, x, y)
+
+    def test_flat_tables_are_guarded(self):
+        """On a table whose range is below 1 the bound is relative to the
+        range, so a flat table cannot pass wrong strategies."""
+        a = 0.3 + 1e-10 * np.array([[1.0, -1.0], [-1.0, 1.0]])
+        with self.assertRaisesRegex(SearchError, "certificate is missed"):
+            matrix.certify(a, [1.0, 0.0], [1.0, 0.0])  # exploitability 2e-10 < 1e-9, but the whole range
+        sol = matrix.solve(a)
+        np.testing.assert_allclose(sol.x, [0.5, 0.5], atol=1e-9)
+        np.testing.assert_allclose(sol.y, [0.5, 0.5], atol=1e-9)
 
     def test_missed_certificate_raises(self):
         a = np.array([[1.0, -1.0], [-1.0, 1.0]])
-        x, y, _ = matrix.solve(a)
+        sol = matrix.solve(a)
         with self.assertRaisesRegex(SearchError, "certificate is missed: exploitability"):
-            matrix.certify(a, np.array([0.9, 0.1]), y)
+            matrix.certify(a, np.array([0.9, 0.1]), sol.y)
         with self.assertRaisesRegex(SearchError, "not a mixed strategy"):
-            matrix.certify(a, np.array([0.7, 0.7]), y)
+            matrix.certify(a, np.array([0.7, 0.7]), sol.y)
+
+    def test_near_degenerate_tables_are_solved(self):
+        """Valid tables with near-duplicate rows are never refused (review of
+        #199): the final basis is solved again from the table, and the exact
+        rescue decides where the float simplex fails."""
+        a = np.array([[0.0, -1.0, 0.0], [0.0, -0.99999999, 1e-8], [-1.0, 1.0, 0.0]])
+        self._assert_equilibrium(a, matrix.solve(a))
+        a = np.array([[float.fromhex(v) for v in row] for row in _NEAR_DUPLICATE_HEX])
+        sol = matrix.solve(a)
+        self.assertTrue(sol.exact)
+        self._assert_equilibrium(a, sol)
+        with self.assertRaisesRegex(SearchError, "unbounded"):  # what the float path alone does
+            matrix._solve_float(a, float(a.min()), float(a.max() - a.min()))
+        rng = np.random.default_rng(0x2026100300000603)
+        for a in _near_duplicate_tables(rng, 3000):
+            self._assert_equilibrium(a, matrix.solve(a))
+
+    def test_exact_rescue_agrees(self):
+        rng = np.random.default_rng(0x2026100300000604)
+        for _ in range(100):
+            a = rng.uniform(-1.0, 1.0, (int(rng.integers(1, 7)), int(rng.integers(1, 7))))
+            x, y = matrix._simplex_exact(a)
+            self.assertLessEqual(matrix.exploitability(a, x, y), 1e-15)
+            self.assertAlmostEqual(float(np.max(a @ y)), matrix.solve(a).value, delta=1e-12)
 
     def test_bad_tables_raise(self):
         for bad in (np.zeros((0, 2)), np.zeros(3), [[np.nan, 0.0]], [[np.inf]]):
@@ -146,6 +252,25 @@ class ExpectedValue(unittest.TestCase):
         self.assertEqual(matrix.expected_choice(a, [0.5, 0.5], [2, 1, 0]), 2)  # equal: the best prior rank
         self.assertEqual(matrix.expected_choice(a, [0.5, 0.5], [0, 1, 2]), 0)
         self.assertEqual(matrix.expected_choice(a, [0.5, 0.5], [1, 0, 2]), 1)
+
+    def test_identical_rows_tie_to_rank(self):
+        """Bit-identical rows score bit-identically whatever their position
+        (no BLAS), so the better prior rank wins every time (review of #199)."""
+        rng = np.random.default_rng(0x2026100300000605)
+        for _ in range(2000):
+            k, m = int(rng.integers(2, 17)), int(rng.integers(1, 17))
+            a = rng.uniform(-1.0, 0.0, (k, m))
+            best, twin = rng.choice(k, 2, replace=False)
+            a[best] = rng.uniform(0.5, 1.0, m)  # better than every other row for every q
+            a[twin] = a[best]
+            q = rng.uniform(0.01, 1.0, m)
+            rank = rng.permutation(k)
+            want = best if rank[best] < rank[twin] else twin
+            self.assertEqual(matrix.expected_choice(a, q, rank), want)
+
+    def test_one_ulp_beats_rank(self):
+        a = np.array([[0.5], [np.nextafter(0.5, 1.0)]])
+        self.assertEqual(matrix.expected_choice(a, [1.0], [0, 1]), 1)  # higher by one ulp: no tolerance
 
     def test_bad_inputs_raise(self):
         a = np.zeros((2, 2))
@@ -171,6 +296,18 @@ class Draw(unittest.TestCase):
         self.assertEqual(matrix.draw(x, [0, 1, 2], 0.0), 1)  # row 0 is below the floor: no mass
         self.assertEqual(matrix.draw(x, [0, 1, 2], np.nextafter(1.0, 0.0)), 2)
 
+    def test_floor_is_two_sided(self):
+        self.assertEqual(matrix.draw([1e-9, 1.0 - 1e-9], [0, 1], 0.0), 0)  # at the floor: kept
+        below = np.nextafter(1e-9, 0.0)
+        self.assertEqual(matrix.draw([below, 1.0 - below], [0, 1], 0.0), 1)  # just below: dropped
+
+    def test_fallback_when_rounding_ends_below_u(self):
+        x = np.full(10, 0.1)
+        u = np.nextafter(1.0, 0.0)
+        self.assertLessEqual(float(np.cumsum(x / math.fsum(x.tolist()))[-1]), u)  # the path is taken
+        self.assertEqual(matrix.draw(x, np.arange(10), u), 9)
+        self.assertEqual(matrix.draw(x, np.arange(10)[::-1].copy(), u), 0)  # the last row with mass in rank order
+
     def test_bad_draws_raise(self):
         for x, u in (([1.0], 1.0), ([1.0], -0.1), ([1e-12], 0.5), ([np.nan], 0.5)):
             with self.assertRaises(SearchError):
@@ -179,10 +316,21 @@ class Draw(unittest.TestCase):
 
 class Seeds(unittest.TestCase):
     def _key(self, arena_seed, env, episode, epoch, seat):
-        """A scalar transcription of decision 0022 section 2."""
+        """A scalar transcription of decision 0022 section 2, with the tag
+        written out."""
         sm = lambda v: int(splitmix64(np.uint64(v & _MASK)))
-        base = int(pairing_draw(arena_seed, seeds.KEY_TAG, np.array([env]), np.array([episode]))[0])
+        base = int(pairing_draw(arena_seed, 0x2201, np.array([env]), np.array([episode]))[0])
         return sm(sm((base + epoch) & _MASK) + seat)
+
+    def test_contract_tags(self):
+        self.assertEqual(seeds.KEY_TAG, 0x2201)
+        self.assertEqual(seeds.PLAY_TAG, 0x504C415900000001)
+
+    def test_known_values(self):
+        key = seeds.decision_keys(0x2026100300000222, [3], [5], [7], [1])
+        self.assertEqual(int(key[0]), 0x1F5BA13600FA1FC4)  # computed independently in the review of #199
+        u = seeds.play_uniforms(0x2026100300000221, np.array([0x1F5BA13600FA1FC4], dtype=np.uint64))
+        self.assertEqual(int(u[0] * 2.0 ** 53), 0x1ADCF14469D42B)
 
     def test_keys_formula(self):
         rng = np.random.default_rng(0x2026100300000700)
@@ -209,7 +357,7 @@ class Seeds(unittest.TestCase):
         self.assertTrue(((u >= 0.0) & (u < 1.0)).all())
         self.assertTrue((u * 2.0 ** 53 == np.floor(u * 2.0 ** 53)).all())  # 53-bit resolution
         sm = lambda v: int(splitmix64(np.uint64(v & _MASK)))
-        head = sm(0x2026100300000221 + seeds.PLAY_TAG)
+        head = sm(0x2026100300000221 + 0x504C415900000001)
         self.assertEqual(u[7], (sm(head + 7) >> 11) * 2.0 ** -53)
 
     def test_order_free(self):
