@@ -41,7 +41,7 @@ _DIMS = ("embed", "member", "position", "hidden", "layers", "option")
 # Options a resume may change; any other option that differs from the saved run is refused.
 _RESUMABLE = ("envs", "workers", "minutes", "updates", "self_play_share", "league_slots", "snapshot_every",
               "slot_refresh", "entropy", "eval_every", "eval_games", "eval_budget", "save_minutes", "teams",
-              "team_weights", "teams_root")
+              "team_weights", "teams_root", "opponent_precision")
 DATA_KINDS = {"closure": _layout.CONSTANTS["DUOFORGE_DATA_KIND_CLOSURE"],
               "team_c": _layout.CONSTANTS["DUOFORGE_DATA_KIND_TEAM_C"],
               "pool": _layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"]}
@@ -172,6 +172,8 @@ def _parser(suppress=False):
     for dim in _DIMS:
         add(f"--{dim}", type=int, default=None, help="overrides the preset (v1: --hidden only)")
     add("--self-play-share", type=float, default=0.5, help="environments with the learner on both seats")
+    add("--opponent-precision", choices=league.PRECISIONS, default="float32",
+        help="the league opponents' matrix products (the learner stays float32)")
     add("--league-slots", type=int, default=4, help="frozen snapshots playing the league environments")
     add("--snapshot-every", type=int, default=200, help="updates between snapshots of the learner")
     add("--slot-refresh", type=int, default=50, help="updates between league slot reloads")
@@ -505,7 +507,7 @@ def _run(args, pool, on_start, stop):
         state.next_drain = old["next_drain"] % max(state.slots, 1)
     opponents = None
     if state.has_league:
-        opponents = league.Opponents(net, state.slots)
+        opponents = league.Opponents(net, state.slots, precision=args.opponent_precision)
         for slot in range(state.slots):
             label = state.snapshots[slot]
             if saved_state is None:
