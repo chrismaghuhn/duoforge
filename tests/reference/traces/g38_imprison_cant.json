@@ -81,8 +81,8 @@
        "pp": [
         12,
         16,
-        16,
-        8
+        8,
+        16
        ],
        "volatiles": [],
        "locked": null
@@ -535,8 +535,8 @@
         "pp": [
          12,
          16,
-         16,
-         8
+         8,
+         16
         ],
         "volatiles": [],
         "locked": null
@@ -887,8 +887,8 @@
         "pp": [
          11,
          16,
-         16,
-         8
+         8,
+         16
         ],
         "volatiles": [
          "imprison"
@@ -1158,7 +1158,7 @@
   },
   {
    "input": {
-    "p1": "move 3 1, move 4",
+    "p1": "move 2 1, move 4",
     "p2": "move 2 1, move 2 1"
    },
    "draws": [
@@ -1316,9 +1316,9 @@
         ],
         "pp": [
          11,
-         16,
          15,
-         8
+         8,
+         16
         ],
         "volatiles": [],
         "locked": null
@@ -1700,9 +1700,9 @@
         ],
         "pp": [
          11,
-         16,
          15,
-         8
+         8,
+         16
         ],
         "volatiles": [],
         "locked": null

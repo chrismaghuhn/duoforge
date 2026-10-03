@@ -175,8 +175,8 @@ static duoforge_status dfi_slot_candidates(const duoforge_context *ctx, const st
                 bool forbidden = false;
                 for (uint32_t fs = 0u; fs < DUOFORGE_ACTIVE_PER_SIDE && !forbidden; ++fs) {
                     const uint32_t fo = b->sides[foe].positions[fs].occupant;
-                    if (b->tail.sides[foe].positions[fs].imprison == 0u || fo >= DUOFORGE_MAX_ROSTER ||
-                        b->sides[foe].members[fo].hp == 0u) {
+                    /* A fainted imprisoner has lost the volatile (the tail is cleared when the faint is processed). */
+                    if (b->tail.sides[foe].positions[fs].imprison == 0u || fo >= DUOFORGE_MAX_ROSTER) {
                         continue;
                     }
                     const dfi_member *im = &b->sides[foe].members[fo];
