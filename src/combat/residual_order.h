@@ -15,7 +15,7 @@
  * sim/battle.ts:501-503).
  *
  * The order in which a Pokemon's volatiles were added is not stored. The engine builds them in one fixed order (the
- * Heal Block, Disable, Throat Chop, Yawn, Taunt, Encore, then the duration counters). That is the reference's order, or it changes nothing, in these
+ * Heal Block, Disable, Throat Chop, Yawn, Taunt, Encore, Perish Song, then the duration counters). That is the reference's order, or it changes nothing, in these
  * cases (proved by tests/test_residual_order.c against its own model of the reference's selection sort):
  *   - the Pokemon has volatile handlers of one sort key only (the duration counters have one: no order, sub-order 2),
  *     so their order is the order of equal entries and shows nowhere;
@@ -52,7 +52,8 @@
 #define DFI_RES_HEAL_BLOCK 12u /* Heal Block: order 20, -end|X|move: Heal Block */
 #define DFI_RES_YAWN 13u       /* Yawn: order 23, a silent end and the sleep */
 #define DFI_RES_DISABLE 14u    /* Disable: order 17, -end|X|Disable */
-#define DFI_RES_TAUNT 15u      /* Taunt: order 15, -end|X|move: Taunt */
+#define DFI_RES_PERISH 15u     /* Perish Song: order 24, a callback with a duration (step G26) */
+#define DFI_RES_TAUNT 16u      /* Taunt: order 15, -end|X|move: Taunt (step G31; Perish Song keeps 15 as merged first) */
 #define DFI_RES_NO_ORDER 0xFFFFFFFFu
 
 /* The exact test's bounds: the lists of the engine have at most 3 + 4 * 2 + 19 * 4 entries, a few draws and a few
@@ -89,8 +90,8 @@ static inline uint32_t dfi_residual_compare(const dfi_residual_entry *a, const d
 /* A handler of one of a Pokemon's volatiles (the part of its list whose order is not stored). */
 static inline bool dfi_residual_is_volatile(const dfi_residual_entry *e)
 {
-    return e->kind == DFI_RES_DURATION || e->kind == DFI_RES_ENCORE || e->kind == DFI_RES_TAUNT ||
-           e->kind == DFI_RES_HEAL_BLOCK || e->kind == DFI_RES_YAWN || e->kind == DFI_RES_DISABLE;
+    return e->kind == DFI_RES_DURATION || e->kind == DFI_RES_ENCORE || e->kind == DFI_RES_TAUNT || e->kind == DFI_RES_HEAL_BLOCK ||
+           e->kind == DFI_RES_YAWN || e->kind == DFI_RES_DISABLE || e->kind == DFI_RES_PERISH;
 }
 
 /* What is known about the age of a Pokemon's volatiles. The counters of the turn (Protect, the stall counter, flinch, a charge,
@@ -105,7 +106,7 @@ static inline bool dfi_residual_is_counter(const dfi_residual_entry *e)
 }
 static inline bool dfi_residual_is_old_ending(const dfi_residual_entry *e)
 {
-    return e->callback && (e->kind == DFI_RES_HEAL_BLOCK || e->kind == DFI_RES_TAUNT || e->kind == DFI_RES_YAWN || e->kind == DFI_RES_DISABLE);
+    return e->callback && (e->kind == DFI_RES_HEAL_BLOCK || e->kind == DFI_RES_TAUNT || e->kind == DFI_RES_YAWN || e->kind == DFI_RES_DISABLE); /* not Perish Song: its count line is a callback every turn, so a cast of this turn may come after or before a Protect of this turn */
 }
 static inline bool dfi_residual_arrangement_possible(const dfi_residual_entry *seg, uint32_t len)
 {

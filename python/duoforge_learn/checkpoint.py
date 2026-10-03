@@ -14,7 +14,7 @@ import sys
 
 import numpy as np
 
-from duoforge import features
+from duoforge import data, features
 
 from . import columns
 
@@ -101,8 +101,40 @@ def load(path, obs_size=None):
     return params, config
 
 
-FORMAT2_KEYS = ("model", "encoder", "features", "slot_features", "data", "teams", "update", "decisions")
+FORMAT2_KEYS = ("model", "encoder", "features", "slot_features", "data", "teams", "update", "decisions", "ids")
 EMBEDDINGS = ("species", "move", "item", "ability", "nature")
+_TABLES = {"species": data.TABLE_SPECIES, "move": data.TABLE_MOVE, "item": data.TABLE_ITEM,
+           "ability": data.TABLE_ABILITY, "nature": data.TABLE_NATURE}
+
+
+def ids_of(context):
+    """{kind: [name of id 0, name of id 1, ...]} of every embedded table
+    (EMBEDDINGS) under the context: what the ids a network embeds mean. A
+    format-2 config keeps it as "ids" (spec 12.4)."""
+    return {kind: [data.name(context, table, i) for i in range(data.count(context, table))]
+            for kind, table in _TABLES.items()}
+
+
+def check_ids(config, context):
+    """Checks that every id a checkpoint's network embeds names the same row
+    under the context as under the tables it was trained with (config["ids"],
+    ids_of): the context's tables may only have grown at the end. ValueError
+    naming the first id that moved or went away, or for a config without the
+    tables (it cannot be checked across data versions)."""
+    stored = config.get("ids")
+    if not isinstance(stored, dict):
+        raise ValueError("the checkpoint has no id tables, so it cannot be checked across data versions")
+    now = ids_of(context)
+    for kind in EMBEDDINGS:
+        if kind not in stored:
+            raise ValueError(f"the checkpoint's id tables lack {kind}")
+        old, new = stored[kind], now[kind]
+        if len(old) > len(new):
+            raise ValueError(f"{kind} id {len(new)} ({old[len(new)]}) is gone: the table has {len(new)} ids now, "
+                             f"{len(old)} when the network was trained")
+        for i, (a, b) in enumerate(zip(old, new)):
+            if a != b:
+                raise ValueError(f"{kind} id {i}: {a} -> {b} (the tables changed below the network's ids)")
 
 
 def save(path, params, config):

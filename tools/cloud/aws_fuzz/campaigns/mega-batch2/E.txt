@@ -1,0 +1,59 @@
+Swampert (M) @ Swampertite
+Ability: Torrent
+Level: 50
+EVs: 32 HP / 32 Atk / 2 Spe
+Adamant Nature
+- Ice Punch
+- Wave Crash
+- Protect
+- Earthquake
+
+Milotic (F) @ Mystic Water
+Ability: Competitive
+Level: 50
+EVs: 32 HP / 29 Def / 5 SpD
+Calm Nature
+- Muddy Water
+- Ice Beam
+- Coil
+- Protect
+
+Staraptor (F) @ Sharp Beak
+Ability: Intimidate
+Level: 50
+EVs: 32 HP / 2 SpD / 32 Spe
+Jolly Nature
+- Brave Bird
+- U-turn
+- Close Combat
+- Protect
+
+Gholdengo @ Life Orb
+Ability: Good as Gold
+Level: 50
+EVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe
+Modest Nature
+- Make It Rain
+- Shadow Ball
+- Nasty Plot
+- Protect
+
+Kingambit (M) @ Black Belt
+Ability: Defiant
+Level: 50
+EVs: 32 HP / 32 Atk / 2 SpD
+Adamant Nature
+- Kowtow Cleave
+- Sucker Punch
+- Iron Head
+- Protect
+
+Annihilape (M) @ Leftovers
+Ability: Defiant
+Level: 50
+EVs: 2 HP / 32 Atk / 32 Spe
+Jolly Nature
+- Close Combat
+- Ice Punch
+- Shadow Claw
+- U-turn

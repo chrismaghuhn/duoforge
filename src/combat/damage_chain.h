@@ -13,9 +13,10 @@
  * tools/reference/trace_to_c.py (modifiers_commute) holds the same values for the converter's drop rule.
  *
  * The modifiers (out of 4096): Life Orb 5324, Expert Belt 4915, a resist berry 2048, a screen or Aurora Veil 2732, Glaive
- * Rush's volatile 8192, Solid Rock 3072, Multiscale 2048, and (step G35) Friend Guard 3072, the ability of the target's partner.
- * One hit has at most one of Life Orb and Expert Belt (the attacker's item), one of Solid Rock and Multiscale (the target's
- * ability), one screen, one berry, Glaive Rush's volatile and Friend Guard, so six modifiers at most.
+ * Rush's volatile 8192, Solid Rock 3072, Multiscale 2048, (step G35) Friend Guard 3072, the ability of the target's partner, and
+ * (Mega batch 2) Aura Guard 2048, a contact hit on its holder. One hit has at most one of Life Orb and Expert Belt (the
+ * attacker's item), one of Solid Rock, Multiscale and Aura Guard (the target's ability), one screen, one berry, Glaive Rush's
+ * volatile and Friend Guard, so six modifiers at most.
  */
 #include <stdbool.h>
 #include <stdint.h>

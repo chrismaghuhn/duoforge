@@ -1,0 +1,28 @@
+{
+  "name": "g39_sand_veil",
+  "purpose": "Sand Veil (Heliolisk) in the Sandstorm that Hippowdon sets: Garchomp's Rock Slide (90 percent) is rolled against 72 at the holder and 90 at Hippowdon, and the holder takes no Sandstorm damage while Staraptor does.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000003911",
+  "teams": [
+    "Heliolisk (M) @ Mystic Water\nAbility: Sand Veil\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Thunderbolt\n- Protect\n\nHippowdon (M) @ Leftovers\nAbility: Sand Stream\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nImpish Nature\n- Protect\n- Sandstorm\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect",
+    "Garchomp (M) @ Black Glasses\nAbility: Rough Skin\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Rock Slide\n- Protect\n\nStaraptor (F) @ Rocky Helmet\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Protect\n- Tailwind\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nRaichu (F) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Protect\n\nCharizard (M) @ Charizardite Y\nAbility: Blaze\nLevel: 50\nEVs: 16 HP / 18 Def / 3 SpA / 29 Spe\nTimid Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1",
+      "move 1 1, move 1",
+      "move 1 1, move 1",
+      "move 1 1, move 1",
+      "move 1 1, move 1"
+    ],
+    "p2": [
+      "move 1, move 2",
+      "move 1, move 2",
+      "move 1, move 2",
+      "move 1, move 2",
+      "move 1, move 2"
+    ],
+    "max_steps": 6
+  }
+}
