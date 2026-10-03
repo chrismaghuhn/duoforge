@@ -353,7 +353,8 @@ static void check_side_condition_refusals(df_test *t, const duoforge_context *ct
  * tape's entry for the pair's draw, appended to the recorded tape (UINT32_MAX: none); the Protect flag of Politoed after
  * the step goes to *protect_after. */
 static duoforge_status no_order_case(df_test *t, const duoforge_context *ctx, duoforge_battle *b, const df_conf_step *st,
-                                     uint32_t survivors, uint32_t pair_value, uint32_t *protect_after)
+                                     uint32_t survivors, uint32_t pair_value, uint8_t side0_tailwind, uint8_t politoed_extra_flags,
+                                     uint32_t *protect_after)
 {
     duoforge_decision_bundle bd;
     bundle_of(st, b, &bd);
@@ -361,11 +362,12 @@ static duoforge_status no_order_case(df_test *t, const duoforge_context *ctx, du
     if (!DF_CHECK(t, duoforge_battle_clone(ctx, b, &c) == DUOFORGE_OK)) {
         return DUOFORGE_E_INVARIANT;
     }
-    c->sides[0].tailwind_turns = 1u; /* it ends in this residual: a handler that ends, so no faint point */
+    c->sides[0].tailwind_turns = side0_tailwind; /* 1: it ends in this residual, a handler that ends, so no faint point; 3: it does not end */
     c->sides[1].tailwind_turns = 0u;
     for (uint32_t p = 0u; p < 2u; ++p) {
         c->tail.sides[survivors].positions[p].perish = 0u; /* this side is not infected: it survives */
     }
+    c->sides[1].positions[0].flags = (uint8_t)((uint32_t)c->sides[1].positions[0].flags | politoed_extra_flags);
     dfi_tape_entry tape[256];
     uint32_t len = st->tape_len;
     if (!DF_CHECK(t, len + 1u <= sizeof tape / sizeof tape[0])) {
@@ -402,14 +404,20 @@ static void check_no_order_faint_point(df_test *t, const duoforge_context *ctx)
     /* Side 1 survives: Politoed's stall counter does not end and Protect's volatile does, and the faint point of the first
      * ends the battle. Without the tape's entry for their tie the step cannot be made; with it the survivor keeps Protect
      * when the stall counter ran first (0) and loses it when Protect's own handler did (1). */
-    DF_CHECK(t, no_order_case(t, ctx, b, st, 1u, UINT32_MAX, &keeps) != DUOFORGE_OK);
-    DF_CHECK_EQ_U64(t, no_order_case(t, ctx, b, st, 1u, 0u, &keeps), DUOFORGE_OK);
+    DF_CHECK(t, no_order_case(t, ctx, b, st, 1u, UINT32_MAX, 1u, 0u, &keeps) != DUOFORGE_OK);
+    DF_CHECK_EQ_U64(t, no_order_case(t, ctx, b, st, 1u, 0u, 1u, 0u, &keeps), DUOFORGE_OK);
     DF_CHECK_EQ_U64(t, keeps, 1u);
-    DF_CHECK_EQ_U64(t, no_order_case(t, ctx, b, st, 1u, 1u, &keeps), DUOFORGE_OK);
+    DF_CHECK_EQ_U64(t, no_order_case(t, ctx, b, st, 1u, 1u, 1u, 0u, &keeps), DUOFORGE_OK);
     DF_CHECK_EQ_U64(t, keeps, 0u);
     /* Side 0 survives, Politoed's four counts end with the others: its stall counter's faint point ends the battle, the
      * Staraptor's Helping Hand (of another Speed) is not a pair and not a tie, and the order is the Speed's: no draw. */
-    DF_CHECK_EQ_U64(t, no_order_case(t, ctx, b, st, 0u, UINT32_MAX, &keeps), DUOFORGE_OK);
+    DF_CHECK_EQ_U64(t, no_order_case(t, ctx, b, st, 0u, UINT32_MAX, 1u, 0u, &keeps), DUOFORGE_OK);
+    /* The battle ends earlier, at the faint point of a Tailwind that does not end (before every no-order handler): the
+     * pair's draw is spent unseen, and neither value takes Protect's volatile from the survivor. */
+    DF_CHECK_EQ_U64(t, no_order_case(t, ctx, b, st, 1u, 0u, 3u, 0u, &keeps), DUOFORGE_OK);
+    DF_CHECK_EQ_U64(t, keeps, 1u);
+    DF_CHECK_EQ_U64(t, no_order_case(t, ctx, b, st, 1u, 1u, 3u, 0u, &keeps), DUOFORGE_OK);
+    DF_CHECK_EQ_U64(t, keeps, 1u);
     duoforge_battle_destroy(b);
 }
 
