@@ -113,6 +113,7 @@ set(DUOFORGE_BATCH_SOURCES
     src/batch/pool.c
     src/batch/batch.c
     src/encode/encode.c
+    src/search/search.c
 )
 # The encoder (src/encode/encode.c, decision 0021) is byte-equal to the reference's float32
 # encoder: as for the tiebreak, nothing may contract into a fused multiply-add.

@@ -60,7 +60,7 @@
 
 **Tests and process**
 - **Test registration:** tests are `unittest`. NumPy-only modules go in the `foreach` list of `tests/CMakeLists.txt` (run with `DUOFORGE_PYTHON`); JAX modules go in the `DUOFORGE_LEARN_PYTHON` block (run in WSL `~/df-learn`).
-- **CI:** every PR passes `tools/ci/local_ci.sh` with all jobs before it is handed over. The script takes the machine lock.
+- **CI:** every PR is green on the GitHub CI, which is the merge gate since 2026-10-03 (owner). `tools/ci/local_ci.sh` is not required.
 - **Review:** every code PR gets a review agent (`fullstack-dev-kit:pr-reviewer`, model opus). Verify each finding before you change anything.
 - **Merging:** the HauptSession merges with merge commits. Send it the PR number, the head and the CI result.
 - **Staging:** stage files by name. Never `git add -A`.
@@ -208,11 +208,11 @@ Python tests:
 ### Task 4: ThreadSanitizer, version, docs
 
 **Files:**
-- Modify: the TSan job's test list in `tools/ci/local_ci.sh` and the nightly workflow (add `duoforge.search.expand`); the version files of the Global Constraints; `docs/ARCHITECTURE.md` §10 (one sentence: search leaves use `duoforge_batch_expand`, which reseeds every leaf from search seeds); `docs/ROADMAP.md` M12 (status line: stage 1's library part).
+- Modify: the TSan job's test list in `tools/ci/linux_ci.sh` and the hosted workflow (add `duoforge.search.expand`); the version files of the Global Constraints; `docs/ARCHITECTURE.md` §10 (one sentence: search leaves use `duoforge_batch_expand`, which reseeds every leaf from search seeds); `docs/ROADMAP.md` M12 (status line: stage 1's library part).
 
 - [ ] **Step 1:** Add the test to the TSan job. Run that job; expect no race report.
 - [ ] **Step 2:** Ask the HauptSession for the version number, then bump it.
-- [ ] **Step 3:** Run `tools/ci/local_ci.sh` (all jobs) and open PR A with the 0021 re-check result in its description.
+- [ ] **Step 3:** Open PR A with the 0021 re-check result in its description; the GitHub CI is the gate.
 
 ### Task 5: `Batch.expand` and `duoforge.search_seeds`
 
@@ -240,7 +240,7 @@ Python tests:
   - `test_argument_errors_raise`: n past the leaf batch, viewer 2, version 5.
 - [ ] **Step 2: Run, expect FAIL.**
 - [ ] **Step 3: Implement** with the patterns of `query_encoded` (`uint`, `ptr`, `_require`, `_buffers`).
-- [ ] **Step 4: Run, expect PASS.** Commit with the message "Python: Batch.expand and search_seeds (decision 0022)". Run `local_ci.sh` and open PR B.
+- [ ] **Step 4: Run, expect PASS.** Commit with the message "Python: Batch.expand and search_seeds (decision 0022)". Open PR B; the GitHub CI is the gate.
 
 ### Task 6: The matrix game
 
@@ -298,7 +298,7 @@ Python tests:
   - `test_order_free`: shuffled inputs give shuffled outputs.
 - [ ] **Step 2: Run, expect FAIL.**
 - [ ] **Step 3: Implement.**
-- [ ] **Step 4: Run, expect PASS.** Commit with the message "Search: decision keys and play draws (decision 0022)". Run `local_ci.sh` and open PR C.
+- [ ] **Step 4: Run, expect PASS.** Commit with the message "Search: decision keys and play draws (decision 0022)". Open PR C; the GitHub CI is the gate.
 
 ### Task 8: `Model.value`
 
@@ -377,7 +377,7 @@ Python tests:
   - `test_play_suite_records_unchanged`: the existing suite tests pass with the `step` keyword.
   - `test_k1_reproduces_the_raw_network`: on a 32-row suite over Teams A, B and C (v2-S, fixed init), `SearchPlayer` with K = 1 against R gives records equal to R against R, field for field. Only the search's own records exist in addition.
   - `test_last_step_leaves_use_the_tiebreak`: with `max_steps = 3`, the decisions at step 2 have every non-terminal leaf scored by the tiebreak (record counts).
-- [ ] **Step 2: Run, expect FAIL. Step 3: Implement. Step 4: Run, expect PASS.** Commit with the message "Search: SearchPlayer in play_suite". Run `local_ci.sh` and open PR D.
+- [ ] **Step 2: Run, expect FAIL. Step 3: Implement. Step 4: Run, expect PASS.** Commit with the message "Search: SearchPlayer in play_suite". Open PR D; the GitHub CI is the gate.
 
 ### Task 11: The measurement CLI
 
@@ -424,4 +424,4 @@ Python tests:
   - **Configuration:** checkpoint, panel, pool, seeds, budget.
   - **The tables:** N and E against R (score, 95 %, Elo); the panel differences; the sweep; the cost; the diagnostics of S8.5.
   - **The gate of S8.6,** stated as met or not met. If not met, a cause analysis (noise, coverage, the value head) from the records.
-- [ ] **Step 3:** Commit the report and `raw/`, run `local_ci.sh` and open PR E.
+- [ ] **Step 3:** Commit the report and `raw/` and open PR E; the GitHub CI is the gate.
