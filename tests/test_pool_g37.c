@@ -100,6 +100,18 @@ static const struct {
     uint32_t step;
     uint32_t layers[10];
 } hazard_rows[] = {
+    {"g37_hazard_faint", 0u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}},
+    {"g37_hazard_faint", 1u, {0u, 0u, 0u, 0u, 1u, 0u, 0u, 0u, 0u, 0u}},
+    {"g37_hazard_faint", 2u, {0u, 0u, 0u, 0u, 1u, 1u, 0u, 0u, 0u, 4u}},
+    {"g37_hazard_faint", 3u, {0u, 0u, 0u, 0u, 1u, 2u, 0u, 0u, 0u, 4u}},
+    {"g37_hazard_faint", 4u, {0u, 0u, 0u, 0u, 1u, 3u, 0u, 0u, 0u, 4u}},
+    {"g37_hazard_faint", 5u, {0u, 0u, 0u, 0u, 1u, 3u, 1u, 1u, 0u, 180u}},
+    {"g37_hazard_faint", 6u, {0u, 0u, 0u, 0u, 1u, 3u, 1u, 1u, 0u, 180u}},
+    {"g37_hazard_faint", 7u, {0u, 0u, 0u, 0u, 1u, 3u, 1u, 1u, 0u, 180u}},
+    {"g37_hazard_faint", 8u, {0u, 0u, 0u, 0u, 1u, 3u, 1u, 1u, 0u, 180u}},
+    {"g37_hazard_faint", 9u, {0u, 0u, 0u, 0u, 1u, 3u, 1u, 1u, 0u, 180u}},
+    {"g37_hazard_faint", 10u, {0u, 0u, 0u, 0u, 1u, 3u, 1u, 1u, 0u, 180u}},
+    {"g37_hazard_faint", 11u, {0u, 0u, 0u, 0u, 1u, 3u, 1u, 1u, 0u, 180u}},
     {"g37_hazards_a", 0u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}},
     {"g37_hazards_a", 1u, {0u, 0u, 0u, 0u, 1u, 0u, 0u, 0u, 0u, 0u}},
     {"g37_hazards_a", 2u, {0u, 0u, 0u, 0u, 1u, 1u, 0u, 0u, 0u, 4u}},
@@ -160,7 +172,7 @@ static const struct {
     {"g37_toxic_spikes", 9u, {0u, 0u, 0u, 0u, 0u, 0u, 2u, 0u, 0u, 2u}},
 };
 
-static const char *const names[] = {"g37_hazards_a", "g37_order_a", "g37_order_b", "g37_sticky_web", "g37_toxic_debris", "g37_toxic_spikes"};
+static const char *const names[] = {"g37_hazard_faint", "g37_hazards_a", "g37_order_a", "g37_order_b", "g37_sticky_web", "g37_toxic_debris", "g37_toxic_spikes"};
 
 int main(void)
 {

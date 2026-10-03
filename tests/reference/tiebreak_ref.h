@@ -2539,6 +2539,16 @@ static const df_tb_stop tb_g36_toxic_mirror_b[] = {
     {5u, 0u, 2u, 2u, {4u, 4u}, {613u, 684u}, {0x404c6201b094b31dull, 0x404dde346201b095ull}},
     {6u, 0u, 2u, 2u, {4u, 4u}, {553u, 636u}, {0x4049e857de346201ull, 0x404be346201b094bull}},
 };
+static const df_tb_stop tb_g37_hazard_faint[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1097u, 1119u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {723u, 747u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {723u, 747u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 3u, {4u, 4u}, {723u, 747u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {6u, 0u, 2u, 3u, {4u, 4u}, {723u, 747u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {9u, 0u, 1u, 1u, {4u, 3u}, {723u, 466u}, {0x4050aaaaaaaaaaabull, 0x4044dfe4f6b4ce27ull}},
+    {11u, 0u, 1u, 1u, {4u, 3u}, {723u, 366u}, {0x4050aaaaaaaaaaabull, 0x4040bfc9ed699c4eull}},
+    {12u, 0u, 1u, 1u, {4u, 2u}, {723u, 364u}, {0x4050aaaaaaaaaaabull, 0x4040aaaaaaaaaaabull}},
+};
 static const df_tb_stop tb_g37_hazards_a[] = {
     {0u, 0u, 2u, 3u, {6u, 6u}, {1097u, 1147u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {723u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -4194,6 +4204,7 @@ static const df_tb_battle tb_battles[] = {
     {"g36_toxic_fail", 6u, tb_g36_toxic_fail, sizeof tb_g36_toxic_fail / sizeof tb_g36_toxic_fail[0]},
     {"g36_toxic_mirror_a", 6u, tb_g36_toxic_mirror_a, sizeof tb_g36_toxic_mirror_a / sizeof tb_g36_toxic_mirror_a[0]},
     {"g36_toxic_mirror_b", 6u, tb_g36_toxic_mirror_b, sizeof tb_g36_toxic_mirror_b / sizeof tb_g36_toxic_mirror_b[0]},
+    {"g37_hazard_faint", 12u, tb_g37_hazard_faint, sizeof tb_g37_hazard_faint / sizeof tb_g37_hazard_faint[0]},
     {"g37_hazards_a", 10u, tb_g37_hazards_a, sizeof tb_g37_hazards_a / sizeof tb_g37_hazards_a[0]},
     {"g37_order_a", 9u, tb_g37_order_a, sizeof tb_g37_order_a / sizeof tb_g37_order_a[0]},
     {"g37_order_b", 11u, tb_g37_order_b, sizeof tb_g37_order_b / sizeof tb_g37_order_b[0]},
@@ -4329,7 +4340,7 @@ static const df_tb_battle tb_battles[] = {
     {"w8_sand_soak", 7u, tb_w8_sand_soak, sizeof tb_w8_sand_soak / sizeof tb_w8_sand_soak[0]},
 };
 
-/* 3027 stops: 139 of an ended battle; decided by the count 826,
- * the HP percentage 995, the total HP 1015, a tie 52;
- * winners: side 0 1513, side 1 1462, tie 52 */
+/* 3035 stops: 139 of an ended battle; decided by the count 829,
+ * the HP percentage 995, the total HP 1020, a tie 52;
+ * winners: side 0 1516, side 1 1467, tie 52 */
 #endif
