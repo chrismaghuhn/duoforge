@@ -45,7 +45,7 @@
 #include "state/closure_member.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "ddd16659c8fb6df46a60e342663d3d4441065a1408df487a24005826efb47345"
+#define POOL_HASH_HEX "0be3f0d5f6b466e1118423b4078b92eaa7f4f021520951bfc7dfb55df19cdb46"
 /* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
  * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
  * produced the same bytes. Step G10 moved two of them on purpose: Scald and Recover are data now (the thaw bit and
@@ -69,9 +69,9 @@
 #define POOL_ABILITIES 215u
 
 /* The rows that the tables do not model, pinned (the generator reports the same counts). */
-#define UNMODELED_MOVES 299u /* 300 before step G27 modelled Disable; 301 before step G20 modelled Aurora Veil; 303 before step G19 modelled Coaching and Glaive Rush; 305u before step G15 modelled Expanding Force; 306 before step G16 modelled Knock Off; 313 before step G17 modelled the seven recharge moves; 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
+#define UNMODELED_MOVES 298u /* 299 before step G27 modelled Disable; 300 before step G20 modelled Spiky Shield; 301 before it modelled Aurora Veil; 303 before step G19 modelled Coaching and Glaive Rush; 305u before step G15 modelled Expanding Force; 306 before step G16 modelled Knock Off; 313 before step G17 modelled the seven recharge moves; 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
 #define UNMODELED_ITEMS 39u /* one fewer since step G15 modelled Psychic Seed; five fewer since step G23-A found the Mega of a stone from (forme, stone): the second Mega Stones are data of their link */
-#define UNMODELED_ABILITIES 177u /* 178 before step G27 made Cursed Body an engine row; 179 before step G23-C made Levitate an engine row; 180 before step AC1 made Trace an engine row; 181 before step G16 made Sticky Hold an engine row; 184 before step G14 made Rough Skin, Poison Touch and Thermal Exchange engine rows */
+#define UNMODELED_ABILITIES 171u /* 172 before step G27 made Cursed Body an engine row; 178 before step G22 made six abilities engine rows; 179 before step G23-C made Levitate an engine row; 180 before step AC1 made Trace an engine row; 181 before step G16 made Sticky Hold an engine row; 184 before step G14 made Rough Skin, Poison Touch and Thermal Exchange engine rows */
 
 /* How many rows of the manifest are marked and half modelled: marked, and with the UNMODELED handler or a list of
  * unmodelled features (decision 0015 section 4.2). A step marks only what it fully models. */
@@ -668,7 +668,7 @@ int main(void)
         /* Seven ids of G2 remain after step G8 (Scald and Recover are not any move's after step G10), the two
          * weather moves (Sandstorm and Snowscape: the field `weather`, which no column models) have one each, and
          * Knock Off (step G16: its onAfterHit and onBasePower) the id after them. */
-        DF_CHECK_EQ_U64(&t, handlers, DFI_SPECIAL_DISABLE - DFI_SPECIAL_ENCORE + 1u - 2u); /* step G15 adds Expanding Force's, step G20 Aurora Veil's, step G27 Disable's */
+        DF_CHECK_EQ_U64(&t, handlers, DFI_SPECIAL_DISABLE - DFI_SPECIAL_ENCORE + 1u - 2u); /* step G15 adds Expanding Force's, step G20 Aurora Veil's and Spiky Shield's, step G27 Disable's */
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_ENCORE, DFI_SPECIAL_FOLLOW_ME + 1u);
         /* UNMODELED follows them. Step G10 made Scald and Recover data (the thaw bit and the heal column): their ids
          * are still defined, and no pool move has them. */
@@ -678,9 +678,15 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_EXPANDING_FORCE, DFI_SPECIAL_KNOCK_OFF + 1u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_GLAIVE_RUSH, DFI_SPECIAL_EXPANDING_FORCE + 1u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_AURORA_VEIL, DFI_SPECIAL_GLAIVE_RUSH + 1u);
-        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_DISABLE, DFI_SPECIAL_AURORA_VEIL + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_SPIKY_SHIELD, DFI_SPECIAL_AURORA_VEIL + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_DISABLE, DFI_SPECIAL_SPIKY_SHIELD + 1u); /* step G27 */
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_DISABLE + 1u);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_DISABLE].special, DFI_SPECIAL_DISABLE);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_SPIKYSHIELD].special, DFI_SPECIAL_SPIKY_SHIELD);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_SPIKY_SHIELD, 28u);
+        /* Baneful Bunker and King's Shield stay unmodelled and unmarked: their learners have no supported ability. */
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_BANEFULBUNKER].special, DFI_SPECIAL_UNMODELED);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_KINGSSHIELD].special, DFI_SPECIAL_UNMODELED);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_AURORAVEIL].special, DFI_SPECIAL_AURORA_VEIL);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_EXPANDINGFORCE].special, DFI_SPECIAL_EXPANDING_FORCE);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_EXPANDINGFORCE].base_power, 80u);
@@ -1167,6 +1173,10 @@ int main(void)
                                 id == DFI_ABILITY_THERMALEXCHANGE || id == DFI_ABILITY_STICKYHOLD ||
                                 id == DFI_ABILITY_TRACE /* step AC1: Trace, by id too */ ||
                                 id == DFI_ABILITY_LEVITATE /* step G23-C: isGrounded and the Ground immunity */ ||
+                                /* step G22: the weather Speed abilities, Inner Focus and Liquid Voice, by id */
+                                id == DFI_ABILITY_SANDRUSH || id == DFI_ABILITY_SWIFTSWIM ||
+                                id == DFI_ABILITY_SLUSHRUSH || id == DFI_ABILITY_CHLOROPHYLL ||
+                                id == DFI_ABILITY_INNERFOCUS || id == DFI_ABILITY_LIQUIDVOICE ||
                                 id == DFI_ABILITY_CURSEDBODY /* step G27: Cursed Body, by id too */;
             DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, (setter || engine) ? 1u : 0u);
             DF_CHECK_EQ_U64(&t, dfi_pool_ability_family[id].family,
@@ -1215,7 +1225,7 @@ int main(void)
                                                 DFI_MOVE_CRUNCH, DFI_MOVE_BUGBUZZ, DFI_MOVE_DRAINPUNCH, DFI_MOVE_NUZZLE,
                                                 DFI_MOVE_EXPANDINGFORCE,
                                                 DFI_MOVE_COACHING, DFI_MOVE_GLAIVERUSH, DFI_MOVE_AURORAVEIL,
-                                                DFI_MOVE_DISABLE};
+                                                DFI_MOVE_SPIKYSHIELD, DFI_MOVE_DISABLE};
         uint32_t marked_count = 0u;
         for (uint32_t id = DFI_EXT_MOVE_COUNT; id < DFI_POOL_MOVE_COUNT; ++id) {
             bool want = false;
@@ -1225,11 +1235,11 @@ int main(void)
             DF_CHECK_EQ_U64(&t, dfi_support.moves[id] != 0u ? 1u : 0u, want ? 1u : 0u);
             /* A marked move has a handler id only if the engine has the code for it: First Impression (Fake Out's
              * family), Low Kick (Grass Knot's), Soak (step G11), Wide Guard (step G7), the two weather moves and Detect
-             * (Protect's, step G13), Knock Off (step G16), Aurora Veil (step G20); the others are data. Never the UNMODELED one. */
+             * (Protect's, step G13), Knock Off (step G16), Aurora Veil and Spiky Shield (step G20); the others are data. Never the UNMODELED one. */
             DF_CHECK(&t, !want || dfi_pool_moves[id].special == DFI_SPECIAL_NONE ||
                              id == DFI_MOVE_FIRSTIMPRESSION || id == DFI_MOVE_LOWKICK || id == DFI_MOVE_SOAK ||
                              id == DFI_MOVE_ENCORE || id == DFI_MOVE_SANDSTORM || id == DFI_MOVE_SNOWSCAPE ||
-                             id == DFI_MOVE_KNOCKOFF || id == DFI_MOVE_EXPANDINGFORCE || id == DFI_MOVE_GLAIVERUSH || id == DFI_MOVE_AURORAVEIL || id == DFI_MOVE_DISABLE ||
+                             id == DFI_MOVE_KNOCKOFF || id == DFI_MOVE_EXPANDINGFORCE || id == DFI_MOVE_GLAIVERUSH || id == DFI_MOVE_AURORAVEIL || id == DFI_MOVE_SPIKYSHIELD || id == DFI_MOVE_DISABLE ||
                              (id == DFI_MOVE_WIDEGUARD && dfi_pool_moves[id].special == DFI_SPECIAL_WIDE_GUARD) ||
                              (id == DFI_MOVE_DETECT && dfi_pool_moves[id].special == DFI_SPECIAL_PROTECT));
             DF_CHECK(&t, !want || dfi_pool_moves[id].special != DFI_SPECIAL_UNMODELED);
@@ -1375,6 +1385,14 @@ int main(void)
         DF_CHECK(&t, dfi_pool_ability_handler[DFI_ABILITY_ROUGHSKIN] == DFI_HANDLER_NONE &&
                          dfi_pool_ability_handler[DFI_ABILITY_POISONTOUCH] == DFI_HANDLER_NONE &&
                          dfi_pool_ability_handler[DFI_ABILITY_THERMALEXCHANGE] == DFI_HANDLER_NONE); /* engine rows, G14 */
+        DF_CHECK(&t, dfi_pool_ability_handler[DFI_ABILITY_SANDRUSH] == DFI_HANDLER_NONE &&
+                         dfi_pool_ability_handler[DFI_ABILITY_SWIFTSWIM] == DFI_HANDLER_NONE &&
+                         dfi_pool_ability_handler[DFI_ABILITY_SLUSHRUSH] == DFI_HANDLER_NONE &&
+                         dfi_pool_ability_handler[DFI_ABILITY_CHLOROPHYLL] == DFI_HANDLER_NONE &&
+                         dfi_pool_ability_handler[DFI_ABILITY_INNERFOCUS] == DFI_HANDLER_NONE &&
+                         dfi_pool_ability_handler[DFI_ABILITY_LIQUIDVOICE] == DFI_HANDLER_NONE); /* engine rows, G22 */
+        /* Cursed Body needs the Disable volatile: still UNMODELED. */
+        DF_CHECK(&t, dfi_pool_ability_handler[DFI_ABILITY_CURSEDBODY] == DFI_HANDLER_UNMODELED);
         DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_FLOETTITE] == DFI_HANDLER_NONE); /* a Mega Stone: data of its link */
         DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_PSYCHICSEED] == DFI_HANDLER_NONE &&
                          dfi_pool_item_handler[DFI_ITEM_ELECTRICSEED] == DFI_HANDLER_UNMODELED &&

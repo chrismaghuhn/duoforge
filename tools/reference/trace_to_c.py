@@ -716,8 +716,9 @@ NOPOS = 0xFF
 # and how the state comparison covers them. COMPARED_VOLATILES are bits of
 # df_conf_mon.vols; IGNORED_VOLATILES are compared through another field.
 # Any other volatile is refused: a new mechanic's volatile must be placed in
-# one of the two tables before its traces convert.
-COMPARED_VOLATILES = (('protect', 1), ('flashfire', 2), ('twoturnmove', 4), ('choicelock', 8), ('unburden', 16),
+# one of the two tables before its traces convert. Spiky Shield (step G20, POOL) is Protect's bit: its own volatile
+# is the Protect volatile of the engine, with the variant in the tail (never both at once).
+COMPARED_VOLATILES = (('protect', 1), ('spikyshield', 1), ('flashfire', 2), ('twoturnmove', 4), ('choicelock', 8), ('unburden', 16),
                       ('helpinghand', 32), ('followme', 64), ('flinch', 128))
 IGNORED_VOLATILES = {
     # data/moves.ts disable (step G27): compared through the request (the barred slot) and the start and end lines.
@@ -796,7 +797,8 @@ def ev_cause(attrs, tables):
                 cause, id2 = CAUSE['WEATHER'], WEATHER_CAUSE[what]
             elif what == 'Grassy Terrain':
                 cause = CAUSE['TERRAIN']
-            elif what in ('Parting Shot', 'Flip Turn', 'U-turn'):  # the move that made the switch (U-turn: pool tables)
+            elif what in ('Parting Shot', 'Flip Turn', 'U-turn', 'Spiky Shield'):  # the move that made the switch (U-turn: pool tables)
+                # Spiky Shield (step G20, POOL): `-damage|attacker|hp|[from] Spiky Shield|[of] holder`, the condition's own name
                 cause, id2 = CAUSE['MOVE'], tables['MOVE'][key(what)]
             elif what == 'lockedmove':
                 pass  # a MOVE flag
@@ -921,12 +923,21 @@ def step_events(log, viewer, roster_of, maxhp, tables):
         elif kind == '-immune':
             cause, id2, _ = ev_cause(attrs, tables)
             e = ev_tuple(EV['IMMUNE'], ev_pos(args[0]), NOPOS, cause, 0, id2)
+        elif kind == '-fail' and len(args) == 3 and args[1] == 'unboost':
+            # Inner Focus (step G22, data/abilities.ts:2157-2162): `-fail|X|unboost|atk|[from] ability: Inner Focus|[of] X`,
+            # an Intimidate drop that the ability deleted: a FAIL with the ability as its cause and the holder in `other`.
+            # No other ability writes this line for a stat (Clear Body and the like are `-fail` with another shape and
+            # are not marked); anything else is refused, never mapped.
+            cause, id2, other = ev_cause(attrs, tables)
+            if args[2] != 'atk' or cause != CAUSE['ABILITY'] or other == NOPOS:
+                raise ConversionError('fail-line', 'trace_to_c: unknown -fail %r' % line, detail=line)
+            e = ev_tuple(EV['FAIL'], ev_pos(args[0]), other, cause, 0, id2)
         elif kind == '-fail':
             # `-fail|X|heal` (a heal move at full HP) is a plain FAIL: the event has no field for the reason, which
             # for a status is the ailment the target already has.
             e = ev_tuple(EV['FAIL'], ev_pos(args[0]), detail=AILMENT[args[1]] if len(args) > 1 and args[1] != 'heal' else 0)
         elif kind == '-singleturn':
-            if args[1] == 'Protect':
+            if args[1] in ('Protect', 'move: Protect'):  # Spiky Shield and Baneful Bunker (step G20) print `move: Protect`
                 e = ev_tuple(EV['PROTECT'], ev_pos(args[0]))
             elif args[1] == 'Helping Hand':  # Team C: [of] the user
                 _, _, of = ev_cause(attrs, tables)

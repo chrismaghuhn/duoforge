@@ -1,0 +1,24 @@
+{
+  "name": "g22_liquid_voice",
+  "purpose": "Liquid Voice: Primarina's Hyper Voice and Psychic Noise (sound moves) are Water: a Ghost is hit by the Normal move, a Dark type by the Psychic one, with STAB and the rain Politoed brings; Moonblast, which is no sound move, stays Fairy.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000002206",
+  "teams": [
+    "Primarina (F) @ Mystic Water\nAbility: Liquid Voice\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Hyper Voice\n- Psychic Noise\n- Protect\n- Moonblast\n\nPolitoed (M) @ Never-Melt Ice\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Weather Ball\n- Protect\n- Hydro Pump\n- Hypnosis\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Protect\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n\nKingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect",
+    "Gholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Shadow Ball\n- Protect\n\nIncineroar (M) @ Black Glasses\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Flare Blitz\n- Protect\n- Snarl\n\nKingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nSneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Protect\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 2 2, move 2",
+      "move 1, move 1 1",
+      "move 4 1, move 1 1"
+    ],
+    "p2": [
+      "move 1 1, move 4",
+      "move 1 1, move 1",
+      "move 1 2, move 1"
+    ],
+    "max_steps": 5
+  }
+}

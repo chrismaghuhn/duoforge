@@ -1,6 +1,6 @@
 /*
- * duoforge.state.pool_tail (white-box): the POOL state tail of decision 0015 section 7, schema 0x0203 = "v3 + pool
- * tail rev 2".
+ * duoforge.state.pool_tail (white-box): the POOL state tail of decision 0015 section 7, schema 0x0303 = "v3 + pool
+ * tail rev 3".
  *
  * The tail is part of the state under the two POOL kinds only: 248 more bytes (1257 in all) that the encoder, the
  * decoder, the digest, equal, the invariants, clone and copy all carry; under CLOSURE, CLOSURE_DEV, TEAM_C and
@@ -32,9 +32,9 @@
 #include "support/pool.h"
 #include "support/team_c.h"
 
-/* The model's envelope of a POOL state (tools/state_model, "pool_tail envelope"): magic, kind 2, schema 0x0203,
+/* The model's envelope of a POOL state (tools/state_model, "pool_tail envelope"): magic, kind 2, schema 0x0303,
  * semantics 3, length 1257. */
-static const char ENVELOPE_HEX[] = "8944554f0d0a1a0a0200030203000000e9040000";
+static const char ENVELOPE_HEX[] = "8944554f0d0a1a0a0200030303000000e9040000";
 /* The model's tail bytes of the example below ("pool_tail example"). */
 static const char TAIL_HEX[] =
     "0500000000000000010802010301000001020302050304030501000603010402010302030100140025000000000000000500"
@@ -93,7 +93,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 255, 0, 0, 0},
     {254, 0, 1, 0, 0, 0},
     {1, 0, 254, 0, 0, 0},
-    {0, 0, 0, 0, 0, 255},
+    {0, 0, 255, 0, 0, 0},
     {0, 0, 0, 0, 0, 255},
     {0, 0, 0, 0, 0, 255},
     {0, 0, 0, 0, 0, 255},
@@ -125,7 +125,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 255, 0, 0, 0},
     {0, 0, 255, 0, 0, 0},
     {0, 0, 255, 0, 0, 0},
-    {0, 0, 0, 0, 0, 255},
+    {0, 0, 255, 0, 0, 0},
     {0, 0, 0, 0, 0, 255},
     {0, 0, 0, 0, 0, 255},
     {0, 0, 0, 0, 0, 255},
@@ -213,7 +213,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 255, 0, 0, 0},
     {0, 0, 255, 0, 0, 0},
     {0, 0, 255, 0, 0, 0},
-    {0, 0, 0, 0, 0, 255},
+    {0, 0, 255, 0, 0, 0},
     {0, 0, 0, 0, 0, 255},
     {0, 0, 0, 0, 0, 255},
     {0, 0, 0, 0, 0, 255},
@@ -245,7 +245,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 255, 0, 0, 0},
     {255, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0},
-    {0, 0, 0, 0, 0, 255},
+    {0, 0, 255, 0, 0, 0},
     {0, 0, 0, 0, 0, 255},
     {0, 0, 0, 0, 0, 255},
     {0, 0, 0, 0, 0, 255},
@@ -639,6 +639,12 @@ MUT(m_recharge, p0->must_recharge = 2u)
 MUT(m_focus, p0->focus_energy = 2u)
 MUT(m_charge, p0->charge = 2u)
 MUT(m_glaive, p0->glaive_rush = 2u)
+MUT(m_protect_above, {
+    y->sides[0].positions[0].flags = (uint8_t)(y->sides[0].positions[0].flags | DFI_VOL_PROTECT);
+    p0->protect_kind = 2u;
+})
+MUT(m_protect_no_volatile, p0->protect_kind = 1u) /* the volatile is down */
+MUT(m_pos_pad, p0->pad = 1u)
 MUT(m_substitute_above, p0->substitute_hp = (uint16_t)(y->sides[0].members[y->sides[0].positions[0].occupant].hp_max / 4u + 1u))
 MUT(m_trap_turns_only, p0->trap_turns = 1u)
 MUT(m_trap_source_only, p0->trap_source = 2u)
@@ -766,6 +772,10 @@ MUT(v_bench_overrides, {
     ts->item_now[3] = DFI_TAIL_ITEM_NONE;
     ts->forme_now[3] = 9u;
 })
+MUT(v_protect_variant, {
+    y->sides[0].positions[0].flags = (uint8_t)(y->sides[0].positions[0].flags | DFI_VOL_PROTECT);
+    p0->protect_kind = DFI_PROTECT_SPIKY_SHIELD;
+})
 MUT(v_ally_trap, {
     p0->trap_turns = 5u;
     p0->trap_source = 2u; /* the ally, flat position 1 */
@@ -803,6 +813,9 @@ static const tail_case cases[] = {
     {"Focus Energy above 1", DFI_INV_TAIL_POSITION, false, m_focus},
     {"Charge above 1", DFI_INV_TAIL_POSITION, false, m_charge},
     {"Glaive Rush above 1", DFI_INV_TAIL_POSITION, false, m_glaive},
+    {"protect kind above 1", DFI_INV_TAIL_POSITION, false, m_protect_above},
+    {"protect kind without the Protect volatile", DFI_INV_TAIL_POSITION, false, m_protect_no_volatile},
+    {"the pad byte of a position", DFI_INV_TAIL_POSITION, false, m_pos_pad},
     {"a Substitute above a quarter of the maximum HP", DFI_INV_TAIL_POSITION, false, m_substitute_above},
     {"a trap with turns alone", DFI_INV_TAIL_POSITION, false, m_trap_turns_only},
     {"a trap with a source alone", DFI_INV_TAIL_POSITION, false, m_trap_source_only},
@@ -843,7 +856,8 @@ static const tail_case cases[] = {
     {"every maximum at once is valid", DFI_INV_NONE, false, v_maxima},
     {"a Substitute of exactly a quarter is valid", DFI_INV_NONE, false, v_substitute_quarter},
     {"the item and forme of a reserve and a fainted member are valid", DFI_INV_NONE, false, v_bench_overrides},
-    {"a trap by the ally is valid", DFI_INV_NONE, false, v_ally_trap}};
+    {"a trap by the ally is valid", DFI_INV_NONE, false, v_ally_trap},
+    {"a Protect variant under its volatile is valid", DFI_INV_NONE, false, v_protect_variant}};
 
 /* True iff the byte at `off` of the encoded tail is a reserved one (by the layout alone). */
 static bool is_reserved_offset(size_t off)
@@ -879,25 +893,27 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_STATE_ENCODED_MAX, DF_STATE_ENCODED_MAX);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_OFF, 1009u);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_SIZE, 248u);
-        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_RESERVED_COUNT, 47u);
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_RESERVED_COUNT, 43u); /* 47 in rev 2: rev 3 defines the protect kind of each position */
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_V3, 3u);
-        DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV2, 0x0203u);
+        DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV3, 0x0303u);
+        DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV2, 0x0203u); /* refused since rev 3 */
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV1, 0x0103u);
-        DF_CHECK(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV2 != 4u); /* schema 4 stays free: certified pool teams */
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_POS_PROTECT_KIND_OFF, 26u);
+        DF_CHECK(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV3 != 4u); /* schema 4 stays free: certified pool teams */
         /* The tail in memory: the encoded size without the reserved bytes, and the one pad byte of the field block. */
-        DF_CHECK_EQ_U64(&t, sizeof(dfi_pool_tail), 202u);
-        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_side), 100u);
-        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_pos), 26u);
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_pool_tail), 210u); /* a position has a pad byte since rev 3 */
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_side), 104u);
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_pos), 28u);
         unsigned reserved = 0u;
         for (size_t off = 0u; off < DFI_ENC_TAIL_SIZE; ++off) {
             reserved += is_reserved_offset(off) ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, reserved, 47u);
+        DF_CHECK_EQ_U64(&t, reserved, 43u);
         const duoforge_context *with[] = {kp, kq};
         const duoforge_context *without[] = {k1, k2, kc, kd, c1};
         for (size_t i = 0u; i < 2u; ++i) {
             DF_CHECK(&t, dfi_context_has_pool_tail(with[i]));
-            DF_CHECK_EQ_U64(&t, dfi_state_schema_of(with[i]), 0x0203u);
+            DF_CHECK_EQ_U64(&t, dfi_state_schema_of(with[i]), 0x0303u);
             DF_CHECK_EQ_U64(&t, dfi_state_encoded_size_of(with[i]), 1257u);
         }
         for (size_t i = 0u; i < 5u; ++i) {
@@ -1136,7 +1152,7 @@ int main(void)
             }
         }
         DF_CHECK_EQ_U64(&t, wrong, 0u);
-        DF_CHECK_EQ_U64(&t, all_reserved, 47u);
+        DF_CHECK_EQ_U64(&t, all_reserved, 43u);
     }
 
     /* The schema is the one of the context's kind; sizes, schema ids and truncations. */
@@ -1150,7 +1166,7 @@ int main(void)
         DF_CHECK(&t, decode_both(&t, kq, m, 1009u, &inv) == DUOFORGE_E_CONTEXT_MISMATCH); /* the POOL fingerprint */
         /* Pool schema and no tail; schema 3 with a tail. */
         memcpy(m, enc, DFI_STATE_POOL_ENCODED_SIZE);
-        set_envelope(m, 0x0203u, 1009u);
+        set_envelope(m, 0x0303u, 1009u);
         DF_CHECK(&t, decode_both(&t, kp, m, 1009u, &inv) == DUOFORGE_E_MALFORMED && inv == DFI_INV_NONE);
         memcpy(m, enc, DFI_STATE_POOL_ENCODED_SIZE);
         set_envelope(m, 3u, 1257u);
@@ -1164,14 +1180,21 @@ int main(void)
         DF_CHECK(&t, decode_both(&t, kp, m, 1051u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH && inv == DFI_INV_NONE);
         DF_CHECK(&t, decode_both(&t, kq, m, 1051u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH);
         DF_CHECK(&t, decode_both(&t, k1, m, 1051u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH);
-        set_envelope(m, 0x0203u, 1051u);
+        set_envelope(m, 0x0303u, 1051u);
         DF_CHECK(&t, decode_both(&t, kp, m, 1051u, &inv) == DUOFORGE_E_MALFORMED && inv == DFI_INV_NONE);
-        /* A rev 2 artifact that says rev 1 is refused too, whatever the length says. */
+        /* Rev 2 is refused the same way (schema 0x0203, step G20 made it 0x0303): a genuine rev 2 artifact is the 1257
+         * bytes of a rev 3 one with the old schema, under either POOL kind and under the other kinds. */
+        memcpy(m, enc, DFI_STATE_POOL_ENCODED_SIZE);
+        set_envelope(m, 0x0203u, 1257u);
+        DF_CHECK(&t, decode_both(&t, kp, m, 1257u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH && inv == DFI_INV_NONE);
+        DF_CHECK(&t, decode_both(&t, kq, m, 1257u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH);
+        DF_CHECK(&t, decode_both(&t, k1, m, 1257u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH);
+        /* A rev 3 artifact that says rev 1 is refused too, whatever the length says. */
         memcpy(m, enc, DFI_STATE_POOL_ENCODED_SIZE);
         set_envelope(m, 0x0103u, 1257u);
         DF_CHECK(&t, decode_both(&t, kp, m, 1257u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH);
         static const uint32_t unknown[] = {0u,      1u,      2u,      4u,      0x0100u, 0x0103u, 0x0104u, 0x0204u,
-                                           0x0303u, 0x0403u, 0x8203u, 0xFFFFu};
+                                           0x0203u, 0x0403u, 0x8203u, 0xFFFFu};
         for (size_t i = 0u; i < sizeof unknown / sizeof unknown[0]; ++i) {
             memcpy(m, enc, DFI_STATE_POOL_ENCODED_SIZE);
             set_envelope(m, unknown[i], 1257u);
@@ -1203,7 +1226,7 @@ int main(void)
                 if (with_tail != 0u) {
                     DF_CHECK(&t, df_hex_to_bytes(TAIL_HEX, m + 1009u, DFI_ENC_TAIL_SIZE));
                 }
-                set_envelope(m, 0x0203u, 1257u);
+                set_envelope(m, 0x0303u, 1257u);
                 DF_CHECK(&t, decode_both(&t, kinds[i], m, 1257u, &inv) == DUOFORGE_E_MALFORMED &&
                                  inv == DFI_INV_TAIL_SCHEMA);
             }
