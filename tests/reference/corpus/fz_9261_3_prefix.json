@@ -1,0 +1,56 @@
+{
+  "name": "fz_9261_3_prefix",
+  "purpose": "Corpus (defect): case fz_9261_3 of run 9261 (tools/reference/diff_driver.py random), team K against team K, found as DIVERGENCE events reference kind 36 differs in kind, pos. The shortest prefix that showed it, 11 of 11 choices; it passes now, fixed by G26 (Perish Song).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,fafadd83601edb4085a0faf51accb46c39acacef36d1c3b4fa67fe297a48580a",
+  "teams": [
+    "Raichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Helping Hand\n- Protect\n\nWigglytuff (M) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Perish Song\n- Calm Mind\n- Protect\n- Moonblast\n\nPolitoed (M) @ Never-Melt Ice\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Perish Song\n- Helping Hand\n- Protect\n- Hydro Pump\n\nCeruledge (M) @ Charcoal\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nSneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Protect\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n- Protect",
+    "Sneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Protect\n\nRaichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Helping Hand\n- Protect\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n- Protect\n\nPolitoed (M) @ Never-Melt Ice\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Perish Song\n- Helping Hand\n- Protect\n- Hydro Pump\n\nWigglytuff (M) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Perish Song\n- Calm Mind\n- Protect\n- Moonblast\n\nCeruledge (M) @ Charcoal\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 4351",
+      "p2": "team 4153"
+    },
+    {
+      "p1": "move 1, move 1",
+      "p2": "move 4 -2, move 1"
+    },
+    {
+      "p1": "move 1, switch 4",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 1, move 1 -1",
+      "p2": "move 2 -2, move 1"
+    },
+    {
+      "p1": "move 1, move 1 -1",
+      "p2": "move 3, move 1"
+    },
+    {
+      "p1": "switch 3, pass",
+      "p2": "switch 3, switch 4"
+    },
+    {
+      "p1": "move 1, move 1 -1",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "move 1, move 2 -1",
+      "p2": "move 4 2, move 2"
+    },
+    {
+      "p1": "move 1, move 1",
+      "p2": "move 4 -2, move 1"
+    },
+    {
+      "p1": "move 1, move 1",
+      "p2": "move 2, move 2"
+    }
+  ]
+}

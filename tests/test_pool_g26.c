@@ -274,6 +274,50 @@ static void check_heal_block_refusal(df_test *t, const duoforge_context *ctx)
     duoforge_battle_destroy(b);
 }
 
+/* The faint points of the residual meet the side conditions, whose tie between the two sides is a shuffle that the
+ * conversion drops when the handlers only count down. Two cases where the order would show, and so are refused:
+ *   - one side's Tailwind ends in this residual and the other's does not, with faints still queued (the faints come after
+ *     the one that does not end: before or after the other's end line by the shuffle);
+ *   - neither ends, and the first one's faint point ends the battle (which side's counter ran is the shuffle's).
+ * With the Tailwind of one side only, the order is fixed and the battle ends there (as g26_perish_end does).
+ * g26_perish_end before its last turn (four counts at 1, the last four Pokemon faint), the Tailwinds set by hand. */
+static duoforge_status tailwind_case(df_test *t, const duoforge_context *ctx, duoforge_battle *b, const df_conf_step *st,
+                                     uint8_t side0, uint8_t side1)
+{
+    duoforge_decision_bundle bd;
+    bundle_of(st, b, &bd);
+    duoforge_battle *c = NULL;
+    if (!DF_CHECK(t, duoforge_battle_clone(ctx, b, &c) == DUOFORGE_OK)) {
+        return DUOFORGE_E_INVARIANT;
+    }
+    c->sides[0].tailwind_turns = side0;
+    c->sides[1].tailwind_turns = side1;
+    duoforge_step_result res;
+    uint32_t used = 0u;
+    const duoforge_status s = dfi_battle_step_tape(ctx, c, &bd, &conf_tape[st->tape_off], st->tape_len, &used, &res);
+    duoforge_battle_destroy(c);
+    return s;
+}
+
+static void check_side_condition_refusals(df_test *t, const duoforge_context *ctx)
+{
+    const df_conf_battle *cb = find("g26_perish_end");
+    if (!DF_CHECK(t, cb != NULL) || !DF_CHECK(t, cb->step_count > 9u)) {
+        return;
+    }
+    duoforge_battle *b = replay(t, ctx, "g26_perish_end", 9u);
+    if (b == NULL) {
+        return;
+    }
+    DF_CHECK(t, b->tail.sides[0].positions[1].perish == 1u);
+    const df_conf_step *st = &cb->steps[9];
+    DF_CHECK_EQ_U64(t, tailwind_case(t, ctx, b, st, 3u, 0u), DUOFORGE_OK);
+    DF_CHECK_EQ_U64(t, tailwind_case(t, ctx, b, st, 1u, 3u), DUOFORGE_E_UNSUPPORTED);
+    DF_CHECK_EQ_U64(t, tailwind_case(t, ctx, b, st, 3u, 1u), DUOFORGE_E_UNSUPPORTED);
+    DF_CHECK_EQ_U64(t, tailwind_case(t, ctx, b, st, 2u, 3u), DUOFORGE_E_UNSUPPORTED);
+    duoforge_battle_destroy(b);
+}
+
 int main(void)
 {
     df_test t;
@@ -298,6 +342,8 @@ int main(void)
     DF_CHECK_EQ_U64(&t, compared, 2u * (uint32_t)(sizeof rows / sizeof rows[0]));
     check_heal_block_refusal(&t, kp);
     check_heal_block_refusal(&t, kd);
+    check_side_condition_refusals(&t, kp);
+    check_side_condition_refusals(&t, kd);
     uint32_t compared_dev = 0u;
     uint32_t unannounced_dev = 0u;
     check_battles(&t, kd, &compared_dev, &unannounced_dev);

@@ -4124,6 +4124,24 @@ static void dfi_residual_faints(dfi_run *r)
     }
 }
 
+/* Whether the volatiles of the Pokemon at `flat` still exist at this point of the residual: it stands, or its faint is
+ * queued and not yet processed (Pokemon.faint() only sets hp 0 and queues it; faintMessages clears the volatiles, and
+ * a handler whose state is gone is skipped, sim/battle.ts:525-554). Their handlers run, and the faintMessages after
+ * each is a faint point; those of a Pokemon whose faint was already processed are not. */
+static bool dfi_residual_holder_stands(dfi_run *r, uint32_t flat)
+{
+    const dfi_member *m = dfi_at(r->b, flat);
+    if (m != NULL && m->hp != 0u) {
+        return true;
+    }
+    for (uint32_t i = 0u; i < r->faint_count; ++i) {
+        if (r->faint_queue[i] == flat) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static duoforge_status dfi_residual_events(dfi_run *r);
 
 /* The residual action. It keeps each position's HP from before its events
@@ -4490,6 +4508,16 @@ static duoforge_status dfi_residual_events(dfi_run *r)
     static const uint8_t side_kind[DFI_SIDE_KINDS] = {DUOFORGE_SIDE_REFLECT, DUOFORGE_SIDE_LIGHT_SCREEN,
                                                       DUOFORGE_SIDE_TAILWIND, DUOFORGE_SIDE_AURORA_VEIL};
     for (uint32_t k = 0u; k < DFI_SIDE_KINDS; ++k) {
+        {
+            /* The same kind on both sides, one of them ending now and the other not, with a faint still queued: the
+             * faints are shown after the one that does not end, so before or after the other's end line by the tie's
+             * shuffle, a draw that the conversion drops (the two only count down). Not modelled: refused. */
+            const uint8_t t0 = *dfi_side_turns(b, 0u, k);
+            const uint8_t t1 = *dfi_side_turns(b, 1u, k);
+            if (r->faint_count != 0u && t0 != 0u && t1 != 0u && (t0 == 1u) != (t1 == 1u)) {
+                return DUOFORGE_E_UNSUPPORTED;
+            }
+        }
         for (uint32_t j = 0u; j < DUOFORGE_SIDE_COUNT; ++j) {
             const uint32_t s = j ^ first[k];
             uint8_t *turns = dfi_side_turns(b, s, k);
@@ -4505,6 +4533,12 @@ static duoforge_status dfi_residual_events(dfi_run *r)
             } else {
                 dfi_residual_faints(r);
                 if (r->ended) {
+                    /* The battle ended at this handler, so the other side's handler of the same kind did not run: which
+                     * of the two ran first is the shuffle of the tie, a draw that the conversion drops when both only
+                     * count down, and the remaining turns of an ended battle show it. Not modelled: refused. */
+                    if (j == 0u && *dfi_side_turns(b, s ^ 1u, k) != 0u) {
+                        return DUOFORGE_E_UNSUPPORTED;
+                    }
                     return DUOFORGE_OK;
                 }
             }
@@ -4558,7 +4592,7 @@ static duoforge_status dfi_residual_events(dfi_run *r)
         }
     }
     for (uint32_t i = herbs_from; i < sorted; ++i) {
-        if (list[i].kind == DFI_RES_WHITE_HERB) {
+        if (list[i].kind == DFI_RES_WHITE_HERB && dfi_residual_holder_stands(r, list[i].flat)) {
             dfi_white_herb(r, list[i].flat);
             dfi_residual_faints(r); /* a callback: faintMessages follows it */
             if (r->ended) {
@@ -4574,6 +4608,8 @@ static duoforge_status dfi_residual_events(dfi_run *r)
         if (pos->occupant == DFI_OCCUPANT_NONE) {
             continue;
         }
+        /* A holder whose faint is queued still has its counters (faintMessages has not cleared its volatiles), so its
+         * stall counter that does not end is a faint point; one whose faint was processed has none left. */
         if ((pos->stall_level != 0u && pos->stall_turns > 1u) || pos->charge_turns > 1u ||
             b->tail.sides[flat / 2u].positions[flat % 2u].must_recharge != 0u) {
             dfi_residual_faints(r);

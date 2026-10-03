@@ -559,7 +559,7 @@ function checkG19(dex) {
     expect('glaiverush onStart is silent', logs, ['-singlemove:POKEMON:Glaive Rush:[silent]']);
 }
 
-// Step G26, Perish Song: the pinned facts that the engine hard-codes (decision 0015, item 5o), called on the pinned
+// Step G26, Perish Song: the pinned facts that the engine hard-codes (decision 0015, item 5p), called on the pinned
 // handlers. The Champions mod has no entry of Perish Song (data/mods/champions/moves.ts is hashed by the generator).
 function checkG26(dex) {
     const move = dex.moves.get('perishsong');

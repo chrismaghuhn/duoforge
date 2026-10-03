@@ -1776,22 +1776,14 @@
   {
    "input": {
     "p1": "move 2 -2, move 1",
-    "p2": "move 2, move 2"
+    "p2": "move 2, move 1 -1"
    },
-   "draws": [
-    {
-     "site": "STALL",
-     "context": "StallMove",
-     "lo": 0,
-     "hi": 3,
-     "value": 1
-    }
-   ],
+   "draws": [],
    "log": [
+    "|move|p2b: Raichu|Helping Hand|p2a: Wigglytuff",
+    "|-singleturn|p2a: Wigglytuff|Helping Hand|[of] p2b: Raichu",
     "|move|p1a: Politoed|Helping Hand|p1b: Kingambit",
     "|-singleturn|p1b: Kingambit|Helping Hand|[of] p1a: Politoed",
-    "|move|p2b: Raichu|Protect||[still]",
-    "|-fail|p2b: Raichu",
     "|move|p1b: Kingambit|Swords Dance|p1b: Kingambit",
     "|-boost|p1b: Kingambit|atk|0",
     "|move|p2a: Wigglytuff|Calm Mind|p2a: Wigglytuff",
@@ -2014,8 +2006,8 @@
          0
         ],
         "pp": [
-         20,
-         4
+         19,
+         5
         ],
         "volatiles": [],
         "locked": null
@@ -2395,8 +2387,8 @@
          0
         ],
         "pp": [
-         20,
-         4
+         19,
+         5
         ],
         "volatiles": [],
         "locked": null
@@ -2429,7 +2421,7 @@
      "context": "field:Residual",
      "lo": 8,
      "hi": 10,
-     "value": 8,
+     "value": 9,
      "group": [
       "H:stall:p2a:end",
       "H:protect:p2a:end"
@@ -2756,8 +2748,8 @@
          0
         ],
         "pp": [
-         20,
-         4
+         19,
+         5
         ],
         "volatiles": [],
         "locked": null
@@ -2778,7 +2770,7 @@
      "context": "StallMove",
      "lo": 0,
      "hi": 3,
-     "value": 1
+     "value": 0
     },
     {
      "site": "SPEED_TIE",
@@ -2787,17 +2779,29 @@
      "hi": 8,
      "value": 7,
      "group": [
-      "H:stall:p1b:end",
-      "H:helpinghand:p1b:end"
+      "H:helpinghand:p1b:end",
+      "H:stall:p1b:end"
      ],
      "start": 6
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 8,
+     "hi": 10,
+     "value": 9,
+     "group": [
+      "H:protect:p2a:end",
+      "H:stall:p2a:end"
+     ],
+     "start": 8
     }
    ],
    "log": [
     "|move|p1a: Primarina|Helping Hand|p1b: Staraptor",
     "|-singleturn|p1b: Staraptor|Helping Hand|[of] p1a: Primarina",
-    "|move|p2a: Politoed|Protect||[still]",
-    "|-fail|p2a: Politoed",
+    "|move|p2a: Politoed|Protect|p2a: Politoed",
+    "|-singleturn|p2a: Politoed|Protect",
     "|move|p1b: Staraptor|Tailwind|p1b: Staraptor",
     "|-sidestart|p1: p1|move: Tailwind",
     "|move|p2b: Milotic|Coil|p2b: Milotic",
@@ -3019,7 +3023,8 @@
          8
         ],
         "volatiles": [
-         "perishsong"
+         "perishsong",
+         "stall"
         ],
         "locked": null
        },
@@ -3105,8 +3110,8 @@
          0
         ],
         "pp": [
-         20,
-         4
+         19,
+         5
         ],
         "volatiles": [],
         "locked": null
@@ -3123,23 +3128,18 @@
    },
    "draws": [
     {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 7,
+     "site": "STALL",
+     "context": "StallMove",
+     "lo": 0,
      "hi": 9,
-     "value": 8,
-     "group": [
-      "H:stall:p2a:end",
-      "H:protect:p2a:end"
-     ],
-     "start": 7
+     "value": 7
     }
    ],
    "log": [
     "|move|p1a: Primarina|Helping Hand|p1b: Staraptor",
     "|-singleturn|p1b: Staraptor|Helping Hand|[of] p1a: Primarina",
-    "|move|p2a: Politoed|Protect|p2a: Politoed",
-    "|-singleturn|p2a: Politoed|Protect",
+    "|move|p2a: Politoed|Protect||[still]",
+    "|-fail|p2a: Politoed",
     "|move|p1b: Staraptor|Tailwind||[still]",
     "|-fail|p1b: Staraptor",
     "|move|p2b: Milotic|Coil|p2b: Milotic",
@@ -3361,8 +3361,7 @@
          8
         ],
         "volatiles": [
-         "perishsong",
-         "stall"
+         "perishsong"
         ],
         "locked": null
        },
@@ -3448,8 +3447,8 @@
          0
         ],
         "pp": [
-         20,
-         4
+         19,
+         5
         ],
         "volatiles": [],
         "locked": null
@@ -3466,18 +3465,23 @@
    },
    "draws": [
     {
-     "site": "STALL",
-     "context": "StallMove",
-     "lo": 0,
-     "hi": 3,
-     "value": 2
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 7,
+     "hi": 9,
+     "value": 8,
+     "group": [
+      "H:stall:p2a:end",
+      "H:protect:p2a:end"
+     ],
+     "start": 7
     }
    ],
    "log": [
     "|move|p1a: Primarina|Helping Hand|p1b: Staraptor",
     "|-singleturn|p1b: Staraptor|Helping Hand|[of] p1a: Primarina",
-    "|move|p2a: Politoed|Protect||[still]",
-    "|-fail|p2a: Politoed",
+    "|move|p2a: Politoed|Protect|p2a: Politoed",
+    "|-singleturn|p2a: Politoed|Protect",
     "|move|p1b: Staraptor|Tailwind||[still]",
     "|-fail|p1b: Staraptor",
     "|move|p2b: Milotic|Coil|p2b: Milotic",
@@ -3758,8 +3762,8 @@
          0
         ],
         "pp": [
-         20,
-         4
+         19,
+         5
         ],
         "volatiles": [],
         "locked": null
