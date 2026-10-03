@@ -1000,6 +1000,11 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_EVENT_VOLATILE_END    40u /* [-end] position (POOL kinds), detail: DUOFORGE_VOLATILE_* */
 #define DUOFORGE_EVENT_TYPE_CHANGE     41u /* [-start|X|typechange|TYPE] position (POOL kinds): the occupant's type is now the single
                                               type in detail (DUOFORGE_TYPE_*; Soak: Water); cause MOVE, id2: the move */
+#define DUOFORGE_EVENT_ITEM_START      42u /* [-item|X|Item|[from] move: M[|[of] Y]] position (POOL kinds): the Pokemon now holds the
+                                              item that move M gave it (Trick, Switcheroo, Thief, Covet); id2: the item + 1, cause
+                                              MOVE with id: the move, other: the Pokemon it came from when the line says [of]
+                                              (Thief, Covet), else DUOFORGE_NO_POSITION. The item that left the other Pokemon is
+                                              ITEM_END with the cause ITEM_TAKEN (Thief, Trick, Switcheroo), or no line (Covet) */
 
 /* Causes ([from] and [of] in the protocol). */
 #define DUOFORGE_CAUSE_NONE      0u /* the move or the plain mechanic */
