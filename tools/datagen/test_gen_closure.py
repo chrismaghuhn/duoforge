@@ -1235,7 +1235,7 @@ class LenientMoves(unittest.TestCase):
             ('condition block', with_line(PLAIN, 'condition: { },')),
             ('primary status frostbite', with_line(PLAIN, "status: 'frostbite',")),
             ('primary volatile confusion', with_line(PLAIN, "volatileStatus: 'confusion',")),
-            ('side condition toxicspikes', with_line(PLAIN, "sideCondition: 'toxicspikes',")),
+            ('side condition mist', with_line(PLAIN, "sideCondition: 'mist',")),
             ('pseudo weather gravity', with_line(PLAIN, "pseudoWeather: 'gravity',")),
             ('secondary', with_line(PLAIN, 'secondary: { chance: 10, onHit() { }, },')),
             ('secondary self effect', with_line(PLAIN, "secondary: { chance: 100, self: { volatileStatus: 'lockedmove', }, },")),
@@ -1254,13 +1254,15 @@ class LenientMoves(unittest.TestCase):
         self.assertEqual(features, ['callback onHit', 'condition block', 'field multihit', 'primary status frostbite'])
 
     def test_a_target_class_is_encoded_and_unmodelled_when_the_turn_code_lacks_it(self):
-        # allAdjacent (Earthquake) is a class of the pool, code 11, which the turn code has since step G28, and allies (Life
-        # Dew) code 14 since step G32; the others of the pool (code 12, 13 and 15) have none.
+        # allAdjacent (Earthquake) is a class of the pool, code 11, which the turn code has since step G28, allies (Life
+        # Dew) code 14 since step G32 and foeSide (the four hazards) code 15 since step G37; the others (12 and 13) have none.
         rec, features = lenient('plain', PLAIN.replace('target: "normal"', 'target: "allAdjacent"'))
         self.assertEqual((rec['target_class'], features), (11, []))
         rec, features = lenient('plain', PLAIN.replace('target: "normal"', 'target: "allies"'))
         self.assertEqual((rec['target_class'], features), (14, []))
-        for name, code in (('scripted', 12), ('allyTeam', 13), ('foeSide', 15)):
+        rec, features = lenient('plain', PLAIN.replace('target: "normal"', 'target: "foeSide"'))
+        self.assertEqual((rec['target_class'], features), (15, []))
+        for name, code in (('scripted', 12), ('allyTeam', 13)):
             with self.subTest(name):
                 rec, features = lenient('plain', PLAIN.replace('target: "normal"', 'target: "%s"' % name))
                 self.assertEqual((rec['target_class'], features), (code, ['target %s' % name]))
@@ -1273,7 +1275,7 @@ class LenientMoves(unittest.TestCase):
         self.assertTrue(set(gen_closure.TARGET_CLASS_POOL) - set(gen_closure.TARGET_CLASS) == {
             'allAdjacent', 'scripted', 'allyTeam', 'allies', 'foeSide'})
         self.assertTrue(gen_closure.ENGINE_TARGETS <= set(gen_closure.TARGET_CLASS_POOL))
-        self.assertEqual(gen_closure.ENGINE_TARGETS - set(gen_closure.TARGET_CLASS), {'allAdjacent', 'allies'})  # G28, G32
+        self.assertEqual(gen_closure.ENGINE_TARGETS - set(gen_closure.TARGET_CLASS), {'allAdjacent', 'allies', 'foeSide'})  # G28, G32, G37
 
     def test_what_the_generator_cannot_read_still_fails(self):
         self.refused('plain', PLAIN.replace('target: "normal"', 'target: "nowhere"'), 'unknown target class nowhere')
@@ -1412,7 +1414,7 @@ class ItemAbilityFeatures(unittest.TestCase):
                                                                  'sharpness', 'solidrock', 'technician', 'multiscale',
                                                                  'galewings', 'raindish', 'friendguard', 'cursedbody', 'mirrorarmor', 'auraguard', 'hypercutter', 'scrappy', 'infiltrator', 'queenlymajesty', 'damp', 'sturdy',
                                                                  'snowcloak', 'sandveil', 'static', 'justified', 'limber',
-                                                                 'solarpower', 'regenerator']})
+                                                                 'solarpower', 'regenerator', 'toxicdebris']})
 
 
 class Bounds(unittest.TestCase):

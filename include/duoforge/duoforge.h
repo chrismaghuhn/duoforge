@@ -1104,6 +1104,13 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_SIDE_REFLECT      2u
 #define DUOFORGE_SIDE_LIGHT_SCREEN 3u
 #define DUOFORGE_SIDE_AURORA_VEIL  4u /* SIDE_START / SIDE_END amount (POOL kinds): -sidestart|side|move: Aurora Veil */
+/* The entry hazards (POOL kinds, step G37; values awaiting the owner's OK). SIDE_START / SIDE_END amount: -sidestart|side|move: Stealth Rock
+   (Spikes, Toxic Spikes and Sticky Web alike); a Spikes or Toxic Spikes layer is another SIDE_START of the same amount. SIDE_END: -sideend|side|
+   move: Toxic Spikes|[of] POKEMON (a grounded Poison type absorbed them; other = that Pokemon). The side field of the view has the layers. */
+#define DUOFORGE_SIDE_STEALTH_ROCK 5u
+#define DUOFORGE_SIDE_SPIKES       6u
+#define DUOFORGE_SIDE_TOXIC_SPIKES 7u
+#define DUOFORGE_SIDE_STICKY_WEB   8u
 #define DUOFORGE_RESULT_SIDE_0 1u
 #define DUOFORGE_RESULT_SIDE_1 2u
 #define DUOFORGE_RESULT_TIE    3u

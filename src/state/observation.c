@@ -316,6 +316,12 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
              * the setter, then counted down in the residual until the -sideend line; the sheet has the item). The state
              * keeps the same count, so the view is the tail's field. */
             o.sides[s].aurora_veil_turns = battle->tail.sides[s].aurora_veil_turns;
+            /* Step G37: the entry hazards of the side, public (-sidestart|side|move: Stealth Rock and the others, a layer of
+             * Spikes or Toxic Spikes per line, ended by -sideend: Toxic Spikes that a Poison type absorbed); the tail's layers. */
+            o.sides[s].stealth_rock = battle->tail.sides[s].stealth_rock;
+            o.sides[s].spikes = battle->tail.sides[s].spikes;
+            o.sides[s].toxic_spikes = battle->tail.sides[s].toxic_spikes;
+            o.sides[s].sticky_web = battle->tail.sides[s].sticky_web;
             /* Step G16: the held item that a move took (Knock Off), public (-enditem|X|Item|[from] move: Knock Off): the
              * member holds nothing, DUOFORGE_ITEM_NOW_NONE, and it stays across a switch-out and a faint. The tail's
              * item_now is the overlay of decision 0018 as it is: the item id + 1 that a Trick, Thief or Covet put there (step

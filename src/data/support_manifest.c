@@ -344,6 +344,12 @@ const dfi_support_manifest dfi_support = {
             /* Step G36: Toxic (badly poisoned; a Poison-type user never misses) and Poison Fang (a 50 percent tox secondary). */
             [DFI_MOVE_TOXIC] = 1u,
             [DFI_MOVE_POISONFANG] = 1u,
+            /* Step G37: the four entry hazards (foeSide moves: layers in the state tail, damage, status and stat drop at the
+             * switch-in), recorded as g37_*. */
+            [DFI_MOVE_STEALTHROCK] = 1u,
+            [DFI_MOVE_SPIKES] = 1u,
+            [DFI_MOVE_TOXICSPIKES] = 1u,
+            [DFI_MOVE_STICKYWEB] = 1u,
             /* Step G25: Electric Terrain and Misty Terrain (the terrain moves), Rising Voltage and Terrain Pulse (their base power
              * and Terrain Pulse's type follow the terrain). */
             [DFI_MOVE_ELECTRICTERRAIN] = 1u,
@@ -494,6 +500,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_LIMBER] = 1u,
             [DFI_ABILITY_SOLARPOWER] = 1u,
             [DFI_ABILITY_REGENERATOR] = 1u,
+            [DFI_ABILITY_TOXICDEBRIS] = 1u, /* step G37: a Physical hit puts Toxic Spikes on the attacker's side */
         },
     .items =
         {
@@ -616,5 +623,9 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_PERISH) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_IMPRISON) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TAUNT) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_YAWN),
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_YAWN) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_STEALTH_ROCK) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_SPIKES) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TOXIC_SPIKES) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_STICKY_WEB),
 };

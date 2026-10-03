@@ -187,7 +187,8 @@ static void test_constants(df_test *t)
                      ((uint64_t)1u << 5u) | ((uint64_t)1u << 32u) | /* step G25: the terrain values Electric (bit 5) and Misty (bit 32) */
                      ((uint64_t)1u << 4u) | /* step G26: Perish (bit 4) */
                      ((uint64_t)1u << 14u) | ((uint64_t)1u << 25u) | /* step G31: Taunt and Yawn */
-                     ((uint64_t)1u << 12u))); /* step G38: Imprison (bit 12) */
+                     ((uint64_t)1u << 12u) | /* step G38: Imprison (bit 12) */
+                     ((uint64_t)1u << 13u) | ((uint64_t)1u << 30u) | ((uint64_t)1u << 8u) | ((uint64_t)1u << 33u))); /* step G37: Stealth Rock, Spikes, Toxic Spikes, Sticky Web */
 }
 
 /* The expected extension: all zero, and under POOL the header of the paired observation. */
