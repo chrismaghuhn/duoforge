@@ -33,9 +33,9 @@ extern "C" {
 #endif
 
 #define DUOFORGE_VERSION_MAJOR 0
-#define DUOFORGE_VERSION_MINOR 35
+#define DUOFORGE_VERSION_MINOR 36
 #define DUOFORGE_VERSION_PATCH 0
-#define DUOFORGE_VERSION_STRING "0.35.0"
+#define DUOFORGE_VERSION_STRING "0.36.0"
 
 /* Identifiers of the artifacts that exist now (registry: decisions 0002, 0005, 0006). */
 #define DUOFORGE_SEMANTICS_ID           3u   /* "duoforge-m3-closure" */
@@ -688,12 +688,12 @@ duoforge_status duoforge_battle_step(const duoforge_context *ctx, duoforge_battl
 #define DUOFORGE_AILMENT_PARALYSIS 3u
 #define DUOFORGE_AILMENT_SLEEP     4u
 #define DUOFORGE_AILMENT_POISON    5u /* Team C: Dire Claw */
-#define DUOFORGE_AILMENT_TOX       6u /* POOL (decision 0018): badly poisoned; not produced yet */
+#define DUOFORGE_AILMENT_TOX       6u /* POOL (decision 0018): badly poisoned; produced since step G36 (#184: badly poisoned, as a primary and as a secondary effect) */
 #define DUOFORGE_WEATHER_NONE 0u
 #define DUOFORGE_WEATHER_RAIN 1u
 #define DUOFORGE_WEATHER_SUN  2u
-#define DUOFORGE_WEATHER_SAND 3u /* POOL (decision 0018): not produced yet */
-#define DUOFORGE_WEATHER_SNOW 4u /* POOL: not produced yet */
+#define DUOFORGE_WEATHER_SAND 3u /* POOL (decision 0018): produced since step 5b of decision 0015 (#124: Sandstorm, Sand Stream) */
+#define DUOFORGE_WEATHER_SNOW 4u /* POOL: produced since step 5b of decision 0015 (#124: Snowscape, Snow Warning) */
 #define DUOFORGE_TERRAIN_NONE   0u
 #define DUOFORGE_TERRAIN_GRASSY 1u
 #define DUOFORGE_TERRAIN_PSYCHIC 2u /* Team C (Psychic Surge) */
@@ -1053,6 +1053,7 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                          DUOFORGE_WEATHER_* value. Generic for every weather that damages; in this format
                                          it fires only for Sand: Snow has no residual damage and Hail is not in the format */
 #define DUOFORGE_CAUSE_RECHARGE  18u /* CANT (POOL kinds): the recharge turn after a recharge move ([cant] recharge) */
+#define DUOFORGE_CAUSE_DISABLE   19u /* CANT (POOL kinds): the move that Disable bars ([cant] Disable|move); id: the move */
 #define DUOFORGE_CAUSE_HEAL_BLOCK 15u /* CANT (POOL kinds): a move that heals, stopped by Heal Block; id: the stopped move.
                                          A sound move stopped by Throat Chop is CANT with cause MOVE, id2: Throat Chop
                                          (the line names no move, so id is 0) */
@@ -1075,6 +1076,8 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_VOLATILE_ENCORE     2u /* VOLATILE_START / VOLATILE_END: Encore (-start|X|Encore, -end|X|Encore) */
 #define DUOFORGE_VOLATILE_MUST_RECHARGE 3u /* VOLATILE_START: -mustrecharge|X (a recharge move hit); no END, it ends with the
                                               [cant] recharge line or with the occupant */
+#define DUOFORGE_VOLATILE_DISABLE    4u /* VOLATILE_START / VOLATILE_END: Disable (-start|X|Disable|MOVE, -end|X|Disable); START: id: the
+                                              barred move, and for Cursed Body cause ABILITY, id2: ability + 1, other: its holder */
 #define DUOFORGE_FIELD_GRASSY_TERRAIN 1u
 #define DUOFORGE_FIELD_TRICK_ROOM     2u
 #define DUOFORGE_FIELD_PSYCHIC_TERRAIN 3u /* Team C */

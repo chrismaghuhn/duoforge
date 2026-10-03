@@ -165,6 +165,11 @@ static duoforge_status dfi_slot_candidates(const duoforge_context *ctx, const st
                     continue;
                 }
             }
+            /* Disable's onDisableMove (data/moves.ts:3704-3710; POOL kinds, the tail is zero elsewhere) bars the one slot of its
+             * move; with no move left the slot gets Struggle, as for any disabled move. */
+            if ((uint32_t)b->tail.sides[s].positions[slot].disable_slot == k + 1u) {
+                continue;
+            }
             /* Champions disables Fake Out and First Impression once their
              * user has taken a move action since it entered
              * (data/mods/champions/moves.ts:354-361 and :386-394). */

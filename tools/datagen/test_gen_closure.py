@@ -502,6 +502,63 @@ GLAIVE_RUSH = move_entry(
 COACHING = move_entry('coaching', 'Coaching', 'boosts: {', '\tatk: 1,', '\tdef: 1,', '},', target='adjacentAlly', type_='Fighting',
                       flags='bypasssub: 1, allyanim: 1, metronome: 1')
 
+DISABLE = move_entry(
+    'disable', 'Disable', "volatileStatus: 'disable',",
+    'onTryHit(target) {',
+    "\tif (!target.lastMove || target.lastMove.isZOrMaxPowered || target.lastMove.isMax || target.lastMove.id === 'struggle') {",
+    '\t\treturn false;',
+    '\t}',
+    '},',
+    'condition: {',
+    '\tduration: 5,',
+    "\tnoCopy: true, // doesn't get copied by Baton Pass",
+    '\tonStart(pokemon, source, effect) {',
+    "\t\t// The target hasn't taken its turn, or Cursed Body activated and the move was not used through Dancer or Instruct",
+    '\t\tif (',
+    '\t\t\tthis.queue.willMove(pokemon) ||',
+    '\t\t\t(pokemon === this.activePokemon && this.activeMove && !this.activeMove.isExternal)',
+    '\t\t) {',
+    '\t\t\tthis.effectState.duration!--;',
+    '\t\t}',
+    '\t\tif (!pokemon.lastMove) {',
+    "\t\t\tthis.debug(`Pokemon hasn't moved yet`);",
+    '\t\t\treturn false;',
+    '\t\t}',
+    '\t\tfor (const moveSlot of pokemon.moveSlots) {',
+    '\t\t\tif (moveSlot.id === pokemon.lastMove.id) {',
+    '\t\t\t\tif (!moveSlot.pp) {',
+    "\t\t\t\t\tthis.debug('Move out of PP');",
+    '\t\t\t\t\treturn false;',
+    '\t\t\t\t}',
+    '\t\t\t}',
+    '\t\t}',
+    "\t\tif (effect.effectType === 'Ability') {",
+    "\t\t\tthis.add('-start', pokemon, 'Disable', pokemon.lastMove.name, '[from] ability: ' + effect.name, `[of] ${source}`);",
+    '\t\t} else {',
+    "\t\t\tthis.add('-start', pokemon, 'Disable', pokemon.lastMove.name);",
+    '\t\t}',
+    '\t\tthis.effectState.move = pokemon.lastMove.id;',
+    '\t},',
+    '\tonResidualOrder: 17,',
+    '\tonEnd(pokemon) {',
+    "\t\tthis.add('-end', pokemon, 'Disable');",
+    '\t},',
+    '\tonBeforeMovePriority: 7,',
+    '\tonBeforeMove(attacker, defender, move) {',
+    '\t\tif (!(move.isZ && move.isZOrMaxPowered) && move.id === this.effectState.move) {',
+    "\t\t\tthis.add('cant', attacker, 'Disable', move);",
+    '\t\t\treturn false;',
+    '\t\t}',
+    '\t},',
+    '\tonDisableMove(pokemon) {',
+    '\t\tfor (const moveSlot of pokemon.moveSlots) {',
+    '\t\t\tif (moveSlot.id === this.effectState.move) {',
+    '\t\t\t\tpokemon.disableMove(moveSlot.id);',
+    '\t\t\t}',
+    '\t\t}',
+    '\t},',
+    '},',
+    flags='protect: 1, reflectable: 1, mirror: 1, bypasssub: 1, metronome: 1', pp=20)
 PROTECT_ONPREPARE = ['onPrepareHit(pokemon) {', "\treturn !!this.queue.willAct() && this.runEvent('StallMove', pokemon);", '},',
                      'onHit(pokemon) {', "\tpokemon.addVolatile('stall');", '},']
 
@@ -656,7 +713,7 @@ class PoolMoves(unittest.TestCase):
                           'SHELL_SMASH', 'ACROBATICS', 'BLIZZARD', 'FEINT', 'RAGE_POWDER', 'PSYCHIC_FANGS', 'SOLAR_BEAM',
                           'HP_POWER', 'BODY_PRESS', 'FOUL_PLAY', 'PSYSHOCK',
                           'RAIN_DANCE', 'SUNNY_DAY', 'FREEZE_DRY', 'CLANGING_SCALES',
-                          'STEEL_ROLLER', 'CLANGOROUS_SOUL', 'BRICK_BREAK', 'TRICK', 'SWITCHEROO', 'THIEF', 'COVET', 'UNMODELED'])
+                          'STEEL_ROLLER', 'CLANGOROUS_SOUL', 'BRICK_BREAK', 'DISABLE', 'TRICK', 'SWITCHEROO', 'THIEF', 'COVET', 'UNMODELED'])
         self.assertEqual(len(gen_closure.G2_HANDLERS), 7)
         # Step G16: Knock Off's handler is 24 in the tables; step G15's Expanding Force is 25, step G19's Glaive Rush 26,
         # step G20's Aurora Veil 27, Spiky Shield 28, the four of step G28 29 to 32, the eight of step G32 33 to 40 and
@@ -664,6 +721,7 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual(gen_closure.G16_HANDLERS, ['KNOCK_OFF'])
         self.assertEqual(gen_closure.G20_HANDLERS, ['AURORA_VEIL'])
         self.assertEqual(gen_closure.G20_PROTECT_HANDLERS, ['SPIKY_SHIELD'])
+        self.assertEqual(gen_closure.G27_HANDLERS, ['DISABLE'])
         self.assertEqual(gen_closure.SPECIAL_IDS_P.index('KNOCK_OFF'), 24)
         self.assertEqual(gen_closure.SPECIAL_IDS_P.index('EXPANDING_FORCE'), 25)
         self.assertEqual(gen_closure.SPECIAL_IDS_P.index('GLAIVE_RUSH'), 26)  # step G19
@@ -675,15 +733,16 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G32_HANDLERS], list(range(36, 44)))
         self.assertEqual(gen_closure.G34_HANDLERS, ['STEEL_ROLLER', 'CLANGOROUS_SOUL', 'BRICK_BREAK'])  # step G34
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G34_HANDLERS], [44, 45, 46])
+        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('DISABLE'), 47)  # step G27, after the others
         self.assertEqual(gen_closure.G29_HANDLERS, ['TRICK', 'SWITCHEROO', 'THIEF', 'COVET'])  # step G29
-        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G29_HANDLERS], [47, 48, 49, 50])
-        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 51)
+        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G29_HANDLERS], [48, 49, 50, 51])
+        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 52)
         # Scald and Recover became data in step G10: their ids stay defined and no move maps to them.
         self.assertEqual({v[0] for k, v in gen_closure.SPECIAL_P.items() if k not in gen_closure.SPECIAL_C},
                          (set(gen_closure.G2_HANDLERS) - {'SCALD', 'RECOVER'}) | set(gen_closure.WEATHER_HANDLERS) |
                          set(gen_closure.G16_HANDLERS) | set(gen_closure.G15_HANDLERS) | set(gen_closure.G19_HANDLERS) |
                          set(gen_closure.G20_HANDLERS) | set(gen_closure.G20_PROTECT_HANDLERS) | set(gen_closure.G28_HANDLERS) |
-                         set(gen_closure.G30_HANDLERS) | set(gen_closure.G32_HANDLERS) | set(gen_closure.G34_HANDLERS) | set(gen_closure.G29_HANDLERS))
+                         set(gen_closure.G30_HANDLERS) | set(gen_closure.G32_HANDLERS) | set(gen_closure.G34_HANDLERS) | set(gen_closure.G27_HANDLERS) | set(gen_closure.G29_HANDLERS))
 
     def test_aurora_veil_is_a_handler_whose_onTry_and_condition_are_the_pinned_text(self):
         rec = parse_pool('auroraveil', AURORA_VEIL)
@@ -719,6 +778,38 @@ class PoolMoves(unittest.TestCase):
                     gen_closure.check_g8_conditions(entry(i), gen_closure.G20_CONDITION_FACTS)
                 self.assertIn('move auroraveil: the condition no longer has', str(cm.exception.code))
 
+    def test_disable_is_a_handler_whose_texts_are_the_pinned_ones(self):
+        rec = parse_pool('disable', DISABLE)
+        self.assertEqual(rec['special'], gen_closure.SPECIAL_IDS_P.index('DISABLE'))
+        self.assertEqual((rec['side_condition'], rec['sec_kind'], rec['primary_status'], rec['accuracy']), (0, 0, 0, 100))
+        # The onTryHit, the condition (duration, the onStart, the lines, the order, the BeforeMove and DisableMove
+        # handlers) and the volatile that it owns must be the pinned text.
+        self.refused('disable', DISABLE.replace("'struggle'", "'tackle'"), 'onTryHit is not the pinned text')
+        self.refused('disable', DISABLE.replace('duration: 5,', 'duration: 4,'), 'the condition is not the pinned text')
+        self.refused('disable', DISABLE.replace('onResidualOrder: 17,', 'onResidualOrder: 16,'),
+                     'the condition is not the pinned text')
+        self.refused('disable', DISABLE.replace('onBeforeMovePriority: 7,', 'onBeforeMovePriority: 6,'),
+                     'the condition is not the pinned text')
+        self.refused('disable', DISABLE.replace("volatileStatus: 'disable',", "volatileStatus: 'taunt',"),
+                     "volatileStatus is not \"volatileStatus: 'disable',\"")
+        # Outside the pool mode the callback is refused.
+        for ext in (False, True):
+            self.refused('disable', DISABLE, 'callback onTryHit is not mapped to a handler', pool=False, ext=ext)
+
+    def test_the_champions_disable_condition_is_the_pinned_one_too(self):
+        base = TextSource('data/moves.ts', DISABLE)
+        champ_text = move_entry(
+            'disable', 'Disable', 'inherit: true,', 'condition: {', '\tinherit: true,', '\tonBeforeMove(attacker, defender, move) {',
+            '\t\tif (!(move.isZ && move.isZOrMaxPowered) && move.id === this.effectState.move && !move.flags[\'cantusetwice\']) {',
+            "\t\t\tthis.add('cant', attacker, 'Disable', move);", '\t\t\treturn false;', '\t\t}', '\t},', '},')
+        champ = TextSource('data/mods/champions/moves.ts', champ_text)
+        rec = gen_closure.parse_move('disable', base, champ, True, True)
+        self.assertEqual(rec['special'], gen_closure.SPECIAL_IDS_P.index('DISABLE'))
+        # A Champions condition that changes anything else is refused.
+        changed = TextSource('data/mods/champions/moves.ts', champ_text.replace('return false;', 'return true;'))
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.parse_move('disable', base, changed, True, True)
+        self.assertEqual(cm.exception.code, 'gen_closure: move disable: the Champions condition is not the pinned text')
     def test_spiky_shield_is_a_handler_whose_condition_is_the_pinned_text_and_the_rest_is_protects(self):
         rec = parse_pool('spikyshield', PROTECT_BASE + '\n' + SPIKY_SHIELD)
         self.assertEqual(rec['special'], gen_closure.SPECIAL_IDS_P.index('SPIKY_SHIELD'))
@@ -927,7 +1018,7 @@ class PoolMoves(unittest.TestCase):
                                                                 'shellsmash', 'acrobatics', 'blizzard', 'feint',
                                                                 'ragepowder', 'psychicfangs', 'solarbeam', 'eruption', 'waterspout',
                                                                 'bodypress', 'foulplay', 'psyshock', 'raindance', 'sunnyday', 'freezedry',
-                                                                'clangingscales', 'steelroller', 'clangoroussoul', 'brickbreak', 'trick', 'switcheroo', 'thief', 'covet'})
+                                                                'clangingscales', 'steelroller', 'clangoroussoul', 'brickbreak', 'disable', 'trick', 'switcheroo', 'thief', 'covet'})
         self.assertEqual(gen_closure.WEATHER_HANDLERS, ['SANDSTORM', 'SNOWSCAPE'])
         for _sp, _ab, item, moves, _mega in gen_closure.SETS_G2:
             self.assertTrue(item in gen_closure.G2_ITEMS or item not in gen_closure.POOL_ITEMS)
@@ -993,11 +1084,19 @@ class G13Rows(unittest.TestCase):
                 with self.assertRaises(SystemExit) as cm:
                     parse_pool('poisonjab', POISON_JAB, pool=False, ext=ext)
                 self.assertEqual(cm.exception.code, 'gen_closure: move poisonjab: secondary status psn is not modelled')
-        # Anything else that the tables lack stays unmodelled (there is no toxic source).
+        # Badly poisoned is the pool's alone (step G36); a status that the tables lack stays unmodelled.
+        rec = parse_pool('poisonjab', POISON_JAB.replace("'psn'", "'tox'"))
+        self.assertEqual((rec['sec_chance'], rec['sec_kind'], rec['sec_param']), (30, 2, gen_closure.STATUS_P['tox']))
+        self.assertEqual(gen_closure.STATUS_P['tox'], 6)
+        for ext in (False, True):
+            with self.subTest(ext=ext):
+                with self.assertRaises(SystemExit) as cm:
+                    parse_pool('poisonjab', POISON_JAB.replace("'psn'", "'tox'"), pool=False, ext=ext)
+                self.assertEqual(cm.exception.code, 'gen_closure: move poisonjab: secondary status tox is not modelled')
         features = []
-        base = TextSource('data/moves.ts', POISON_JAB.replace("'psn'", "'tox'"))
+        base = TextSource('data/moves.ts', POISON_JAB.replace("'psn'", "'frostbite'"))
         gen_closure.parse_move('poisonjab', base, TextSource('data/mods/champions/moves.ts', ''), True, True, features)
-        self.assertEqual(features, ['secondary status tox'])
+        self.assertEqual(features, ['secondary status frostbite'])
 
 
 # ---- the whole legal pool (decision 0015 section 4.2): the lenient mode and what the tables model ----
@@ -1064,7 +1163,7 @@ class LenientMoves(unittest.TestCase):
             ('field multihit', with_line(PLAIN, 'multihit: 2,')),
             ('field ohko', with_line(PLAIN, 'ohko: true,')),
             ('condition block', with_line(PLAIN, 'condition: { },')),
-            ('primary status tox', with_line(PLAIN, "status: 'tox',")),
+            ('primary status frostbite', with_line(PLAIN, "status: 'frostbite',")),
             ('primary volatile confusion', with_line(PLAIN, "volatileStatus: 'confusion',")),
             ('side condition toxicspikes', with_line(PLAIN, "sideCondition: 'toxicspikes',")),
             ('pseudo weather gravity', with_line(PLAIN, "pseudoWeather: 'gravity',")),
@@ -1080,9 +1179,9 @@ class LenientMoves(unittest.TestCase):
                 self.assertEqual(features, [feature], text)
 
     def test_every_unmodelled_feature_of_a_move_is_listed(self):
-        text = with_line(PLAIN, "multihit: 2,\n\t\tonHit() { },\n\t\tcondition: { },\n\t\tstatus: 'tox',")
+        text = with_line(PLAIN, "multihit: 2,\n\t\tonHit() { },\n\t\tcondition: { },\n\t\tstatus: 'frostbite',")
         _rec, features = lenient('plain', text)
-        self.assertEqual(features, ['callback onHit', 'condition block', 'field multihit', 'primary status tox'])
+        self.assertEqual(features, ['callback onHit', 'condition block', 'field multihit', 'primary status frostbite'])
 
     def test_a_target_class_is_encoded_and_unmodelled_when_the_turn_code_lacks_it(self):
         # allAdjacent (Earthquake) is a class of the pool, code 11, which the turn code has since step G28, and allies (Life
@@ -1240,7 +1339,7 @@ class ItemAbilityFeatures(unittest.TestCase):
                                                                  'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof',
                                                                  'unnerve', 'speedboost', 'compoundeyes', 'ironfist',
                                                                  'sharpness', 'solidrock', 'technician', 'multiscale',
-                                                                 'galewings']})
+                                                                 'galewings', 'raindish', 'friendguard', 'cursedbody']})
 
 
 class Bounds(unittest.TestCase):
@@ -1590,6 +1689,34 @@ class SmallRules(unittest.TestCase):
         self.assertIn('allies', gen_closure.ENGINE_TARGETS)
         self.assertIn('ejectbutton', gen_closure.ENGINE_ROWS['items'])
         for ability in ('soundproof', 'unnerve', 'speedboost'):
+            self.assertIn(ability, gen_closure.ENGINE_ROWS['abilities'])
+
+
+class SmallRulesG35(unittest.TestCase):
+    """Step G35: Friend Guard and Rain Dish are engine rows whose pinned texts are demanded whole (G35_ABILITY_FACTS)."""
+
+    def sources(self, skip=(None, None)):
+        abilities = []
+        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS:
+            kept = [f for i, f in enumerate(facts) if (aid, i) != skip]
+            abilities.append(entry(aid, *kept))
+        items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS]
+        return (TextSource('data/abilities.ts', '\n'.join(abilities)), TextSource('data/mods/champions/abilities.ts', ''),
+                TextSource('data/items.ts', '\n'.join(items)), TextSource('data/mods/champions/items.ts', ''))
+
+    def test_the_facts_of_the_pin_are_accepted(self):
+        gen_closure.check_g34_facts(*self.sources())
+
+    def test_every_fact_is_demanded(self):
+        self.assertEqual([aid for aid, _ in gen_closure.G35_ABILITY_FACTS], ['friendguard', 'raindish'])
+        for aid, facts in gen_closure.G35_ABILITY_FACTS:
+            for i in range(len(facts)):
+                with self.subTest(ability=aid, fact=facts[i]), self.assertRaises(SystemExit) as cm:
+                    gen_closure.check_g34_facts(*self.sources((aid, i)))
+                self.assertIn('the entry no longer has', str(cm.exception.code))
+
+    def test_the_rows_of_the_step(self):
+        for ability in ('raindish', 'friendguard'):
             self.assertIn(ability, gen_closure.ENGINE_ROWS['abilities'])
 
 

@@ -125,6 +125,10 @@
  * Step G20 marks Aurora Veil (fails outside snow, 5 turns or 8 with Light Clay, 2732/4096 against every category unless a
  * crit or the screen of that category already does it, ends with its own line in the residual after Tailwind), with the
  * view bit 3 (aurora_veil_turns of the side, public). Recorded as g20_aurora_veil_* under the POOL kind.
+ * Step G27 marks Disable and Cursed Body (30 percent on a damaging hit, the new draw site CURSED_BODY): the bar of the last move
+ * for 4 turns (5 when the target had already moved) in the tail's disable_slot and disable_turns, the request's Struggle, the
+ * Disable lines and the cant line (the new cause DISABLE), with the view bit 21 (disable_slot of the position, public).
+ * Recorded as g27_* under the POOL kind.
  * Step G21 marks twenty-seven moves that the existing paths run (the rows were modelled before, with no unmodelled
  * feature; the pin was read again for each): Sludge Bomb and Gunk Shot (a poison secondary), Dragon Claw, Night Slash
  * and Slash (the last two with critical hit ratio 2), Air Slash, Icicle Crash, Waterfall and Dark Pulse (a flinch
@@ -147,8 +151,8 @@
  * Step G22 marks six abilities that the turn code runs by id: Sand Rush, Swift Swim, Slush Rush and Chlorophyll (Speed x2
  * in the speed key while their weather is up, a standing holder only; Sand Rush's holder also takes no Sandstorm damage),
  * Inner Focus (no flinch, and an Attack drop that Intimidate causes fails with -fail ... [from] ability: Inner Focus) and
- * Liquid Voice (a sound move is Water), recorded as g22_* under the POOL kind. Cursed Body stays unmarked: it needs the
- * Disable volatile.
+ * Liquid Voice (a sound move is Water), recorded as g22_* under the POOL kind. Cursed Body, which needed the Disable
+ * volatile, is marked by step G27.
  * Step G28 marks six moves and one item that the turn code now has rules for: Earthquake (the target class allAdjacent: the ally
  * is hit too, allies before foes; Wide Guard stops it; Grassy Terrain halves it at a grounded target), Shell Smash (which step G21 left out: the stats
  * change in the pinned order, Defense and Special Defense first), Acrobatics (twice the power while the user holds no item),
@@ -300,6 +304,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_DRAINPUNCH] = 1u,
             [DFI_MOVE_NUZZLE] = 1u,
             [DFI_MOVE_AURORAVEIL] = 1u,
+            [DFI_MOVE_DISABLE] = 1u,
             /* Step G30: the powder moves (Rage Powder with its redirection, the status powders with the Grass type's and
              * Overcoat's immunity), Psychic Fangs (breaks the screens), Solar Beam (the two-turn charge that sun skips)
              * and the data rows that only wait for a recorded battle: Matcha Gotcha, Giga Drain, Energy Ball, Play Rough.
@@ -316,6 +321,9 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_ENERGYBALL] = 1u,
             [DFI_MOVE_PLAYROUGH] = 1u,
             [DFI_MOVE_SPIKYSHIELD] = 1u,
+            /* Step G36: Toxic (badly poisoned; a Poison-type user never misses) and Poison Fang (a 50 percent tox secondary). */
+            [DFI_MOVE_TOXIC] = 1u,
+            [DFI_MOVE_POISONFANG] = 1u,
             /* Step G32: Eruption and Water Spout (power by the user's HP), Life Dew (the user and its ally), Body Press, Foul Play
              * and Psyshock (the stat overrides), Rain Dance and Sunny Day, Volt Switch (a pivot of its own), Clanging Scales (the
              * user's Defense falls after the hit) and Freeze-Dry (Water takes it super effective). */
@@ -347,6 +355,18 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_PSYCHOCUT] = 1u,
             [DFI_MOVE_IRONDEFENSE] = 1u,
             [DFI_MOVE_ELECTROWEB] = 1u,
+            /* Step G35: the data rows that waited for a recorded battle (Gigaton Hammer is deferred: its only learner has no
+             * marked ability). */
+            [DFI_MOVE_THUNDERPUNCH] = 1u,
+            [DFI_MOVE_XSCISSOR] = 1u,
+            [DFI_MOVE_LUMINACRASH] = 1u,
+            [DFI_MOVE_OVERDRIVE] = 1u,
+            [DFI_MOVE_SCORCHINGSANDS] = 1u,
+            [DFI_MOVE_LEAFBLADE] = 1u,
+            [DFI_MOVE_BOOMBURST] = 1u,
+            [DFI_MOVE_SLUDGEWAVE] = 1u,
+            [DFI_MOVE_VOLTTACKLE] = 1u,
+            [DFI_MOVE_DISCHARGE] = 1u,
         },
     .abilities =
         {
@@ -391,6 +411,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_CLEARBODY] = 1u,
             [DFI_ABILITY_HOSPITALITY] = 1u,
             [DFI_ABILITY_OVERCOAT] = 1u,
+            [DFI_ABILITY_CURSEDBODY] = 1u,
             [DFI_ABILITY_LEVITATE] = 1u,
             /* Step G22: the weather Speed abilities (doubled Speed in their weather; Sand Rush also takes no Sandstorm damage),
              * Inner Focus (no flinch, no Intimidate drop) and Liquid Voice (sound moves are Water). */
@@ -411,6 +432,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_SOUNDPROOF] = 1u, /* step G32 */
             [DFI_ABILITY_UNNERVE] = 1u,
             [DFI_ABILITY_SPEEDBOOST] = 1u,
+            [DFI_ABILITY_RAINDISH] = 1u, /* step G35 */
+            [DFI_ABILITY_FRIENDGUARD] = 1u,
         },
     .items =
         {
@@ -514,5 +537,7 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ITEM_CHANGE) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ABILITY_CHANGE) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_AURORA_VEIL) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_RAGE_POWDER),
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_RAGE_POWDER) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_AILMENT_TOX) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_DISABLE),
 };
