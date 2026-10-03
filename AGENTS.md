@@ -9,3 +9,4 @@
 - Tests must not be weakened merely to make a change pass.
 - Performance claims require measurements.
 - A completed task does not authorize unrelated follow-up work.
+- Trained weights, checkpoints, league snapshots and run directories are private: never commit them, never upload them as CI artifacts, never publish them (older, nearly as strong checkpoints included) without the owner's explicit decision. Training, evaluation and replay tools write outside the repository.
