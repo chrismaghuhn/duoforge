@@ -1006,6 +1006,68 @@ class Library(unittest.TestCase):
         self.assertEqual((e[0], e[1], e[3], e[4], e[13]),
                          (trace_to_c.EV['ITEM_END'], 2, 0, 0, trace_to_c.FLAG['EATEN']))
 
+    def test_imprison_rows_are_what_the_protocol_lines_say(self):
+        """Decision 0015 step G38: a position stands with Imprison from the `|-start|X|move: Imprison` line (data/moves.ts:
+        9501, onStart) until its occupant leaves (a switch, a drag, a replace or a faint: sim/pokemon.ts:1508 clearVolatile;
+        the volatile has no end line). The rows of the C test (rows in tests/test_pool_g38.c: per step the positions that
+        stand with it as a mask over side * 2 + slot, the number of start lines, the number of `cant|X|move: Imprison|Move`
+        lines) must be exactly what these lines give for the committed traces, so the engine's tail, events and extension
+        are checked against the protocol and not against itself. Also: the converter reads the start line as VOLATILE_START
+        with the detail 8 and the cant line as CANT with the cause 21 and the stopped move in id (and refuses an end line,
+        which the pin never prints), and the harness's `hidden` rows take the imprisoned moves out of the move masks of the
+        requests (the request shows them as enabled for the last active Pokemon, the choice of them is rejected) and make
+        Struggle of a request with none left."""
+        names = ('g38_imprison_mask', 'g38_imprison_struggle', 'g38_imprison_cant', 'g38_imprison_encore', 'g38_imprison_choice',
+                 'g38_imprison_end', 'g38_imprison_pair')
+        source = open(os.path.join(ROOT, 'tests', 'test_pool_g38.c'), encoding='utf-8').read()
+        rows = {}
+        for m in re.finditer(r'\{"(g38_\w+)", (\d+)u, 0x([0-9a-f]+)u, (\d+)u, (\d+)u\}', source):
+            rows[(m.group(1), int(m.group(2)))] = (int(m.group(3), 16), int(m.group(4)), int(m.group(5)))
+        derived = {}
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            mask = 0
+            for k, step in enumerate(trace['steps']):
+                started = cant = 0
+                for line in step['log']:
+                    part = line.split('|')
+                    if len(part) > 2 and part[1] in ('switch', 'drag', 'replace', 'faint', '-start') and part[2][:1] == 'p':
+                        bit = (int(part[2][1]) - 1) * 2 + 'ab'.index(part[2][2])
+                        if part[1] == '-start':
+                            if part[3:4] == ['move: Imprison']:
+                                mask |= 1 << bit
+                                started += 1
+                        else:
+                            mask &= ~(1 << bit)
+                    elif len(part) > 3 and part[1] == 'cant' and part[3] == 'move: Imprison':
+                        cant += 1
+                derived[(name, k)] = (mask, started, cant)
+        self.assertEqual(rows, derived)
+        values = list(derived.values())
+        self.assertTrue(sum(v[1] for v in values) >= 8 and sum(v[2] for v in values) >= 4)
+        # The converter.
+        tables = trace_to_c.load_tables(ROOT, True)
+        roster = [{'Milotic': 0}, {'Gholdengo': 0}]
+        hp = [{'Milotic': 100}, {'Gholdengo': 100}]
+        (e,) = trace_to_c.step_events(['|-start|p1a: Milotic|move: Imprison'], 0, roster, hp, tables)
+        self.assertEqual((e[0], e[1], e[11]), (trace_to_c.EV['VOLATILE_START'], 0, 8))
+        (e,) = trace_to_c.step_events(['|cant|p2a: Gholdengo|move: Imprison|Shadow Ball'], 0, roster, hp, tables)
+        self.assertEqual((e[0], e[1], e[3]), (trace_to_c.EV['CANT'], 2, trace_to_c.CAUSE['IMPRISON']))
+        self.assertEqual(trace_to_c.CAUSE['IMPRISON'], 21)
+        self.assertEqual(e[4], tables['MOVE'][trace_to_c.key('Shadow Ball')])
+        with self.assertRaises(trace_to_c.ConversionError):
+            trace_to_c.step_events(['|-end|p1a: Milotic|move: Imprison'], 0, roster, hp, tables)
+        # The hidden rows: the move masks of the requests (bit k for move k, 0x10 Struggle).
+        for name, step, want in (('g38_imprison_mask', 1, (0x3, 0x1)), ('g38_imprison_struggle', 1, (0x10, 0x1)),
+                                 ('g38_imprison_cant', 1, (0xa, 0xb))):
+            with open(os.path.join(ROOT, 'tests', 'reference', 'specs', name + '.json'), encoding='utf-8') as f:
+                spec = json.load(f)
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            data = convert(name, spec, trace)
+            self.assertEqual(tuple(data['steps'][step]['enabled'][1]), want, name)
+
     def test_soak_rows_are_what_the_protocol_lines_say(self):
         """Decision 0018 section 6.1 for Soak: a position is Soaked from the `|-start|X|typechange|Water` line until the
         occupant leaves (`|switch|`, `|drag|`, `|replace|`, `|faint|`) or Mega Evolves (`|-mega|`: setSpecies resets the

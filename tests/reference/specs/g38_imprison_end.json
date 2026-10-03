@@ -1,0 +1,26 @@
+{
+  "name": "g38_imprison_end",
+  "purpose": "A second Imprison of a Pokemon that has it fails (-fail); when the Gardevoir switches out the volatile ends with it and the foe's request offers its moves again; the Milotic that comes in has none.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000000006",
+  "teams": [
+    "Gardevoir (F) @ Twisted Spoon\nAbility: Trace\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Imprison\n- Shadow Ball\n- Moonblast\n- Protect\n\nStaraptor (F) @ Sharp Beak\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- U-turn\n- Close Combat\n- Protect\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 24 Def / 5 SpD / 5 Spe\nCalm Nature\n- Imprison\n- Ice Beam\n- Coil\n- Protect\n\nIncineroar (M) @ Charcoal\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Flare Blitz\n- Parting Shot\n- Darkest Lariat\n\nIndeedee-F (F) @ Focus Sash\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Helping Hand\n- Psychic\n- Protect\n- Follow Me\n\nKingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect\n- Low Kick\n- Swords Dance",
+    "Gholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Shadow Ball\n- Thunderbolt\n- Protect\n- Recover\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Encore\n- Weather Ball\n- Protect\n- Ice Beam\n\nRaichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Encore\n- Thunderbolt\n- Protect\n- Helping Hand\n\nAnnihilape (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Close Combat\n- Ice Punch\n- Shadow Claw\n- U-turn\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Muddy Water\n- Ice Beam\n- Coil\n- Protect\n\nIndeedee-F (F) @ Black Glasses\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 4",
+      "move 1, move 4",
+      "switch 3, move 4",
+      "move 3 1, move 4"
+    ],
+    "p2": [
+      "move 3, move 3",
+      "move 1 1, move 3",
+      "move 1 1, move 3",
+      "move 1 1, move 3"
+    ],
+    "max_steps": 5
+  }
+}
