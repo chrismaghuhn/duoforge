@@ -214,6 +214,24 @@ class Batch:
         self._check(self._lib.duoforge_battle_digest(self.context.handle, self._battle(env), out))
         return bytes(out)
 
+    def observe_ext(self, out=None):
+        """The view extension of both players of every environment at the
+        current boundary (OBSERVATION_EXT, (envs, 2); decision 0018): all zero
+        under every kind but POOL, the epoch that of observations after
+        query(). One duoforge_battle_observe_ext per player; out, an array of
+        that dtype and shape, is filled and returned when given."""
+        if out is None:
+            out = np.zeros((self.envs, 2), dtype=_layout.OBSERVATION_EXT)
+        else:
+            _require(out, _layout.OBSERVATION_EXT, (self.envs, 2), "out")
+        live, ctx, size = self._live(), self.context.handle, _layout.OBSERVATION_EXT.itemsize
+        observe = self._lib.duoforge_battle_observe_ext
+        for e in range(self.envs):
+            battle = self._lib.duoforge_batch_env(live, e)
+            for p in range(2):
+                self._check(observe(ctx, battle, p, out.ctypes.data + (2 * e + p) * size))
+        return out
+
     def episode(self, env):
         """The environment's episode number."""
         return int(self._lib.duoforge_batch_env_episode(self._live(), self._env(env)))

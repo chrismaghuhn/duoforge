@@ -55,18 +55,25 @@ def _ranked(logp, allowed):
 
 class Policy:
     """A checkpoint's network, played greedily on the inputs of its encoder version (features.ENCODERS;
-    checkpoint.encoder_of reads it from a config)."""
+    checkpoint.encoder_of reads it from a config) and view-extension mask (checkpoint.ext_supported_of). The
+    tracker fills no extension records yet, so a mask with a record feature (features.RECORD_FEATURES) is
+    refused; the base values (Sand, Snow, Electric, Misty, Tox) come from the observation."""
 
-    def __init__(self, params, encoder):
+    def __init__(self, params, encoder, ext_supported=0):
+        if ext_supported & features.RECORD_FEATURES:
+            raise ValueError(f"the network reads view-extension records (ext_supported {ext_supported:#x}), which "
+                             "the live tracker does not fill yet")
         self.params = params
         self.encoder = encoder
+        self.ext_supported = ext_supported
 
     def _input(self, observation, obs_part):
         return features.as_encoder(np.asarray(obs_part, dtype=np.float32), observation, self.encoder)[None, :]
 
     def rank_pairs(self, observation, obs_part, slot_part, pair_mask):
         """[(i, j, probability)] of the allowed pairs, best first."""
-        logp, _, _ = forward(self.params, self._input(observation, obs_part), slot_part[None], pair_mask[None])
+        slots = features.slots_as_encoder(np.asarray(slot_part, dtype=np.float32), self.encoder)
+        logp, _, _ = forward(self.params, self._input(observation, obs_part), slots[None], pair_mask[None])
         n = pair_mask.shape[1]
         return [(i // n, i % n, p) for i, p in _ranked(logp[0], np.asarray(pair_mask, dtype=bool).reshape(-1))]
 
@@ -79,6 +86,12 @@ class Policy:
 
 
 def load(path):
-    """The Policy of a checkpoint whose network takes this encoder's features; a 594-feature file raises."""
-    params, config = checkpoint.load(path, obs_size=features.OBS_SIZE)
-    return Policy(params, checkpoint.encoder_of(config))
+    """The Policy of a checkpoint whose network takes the features of its own encoder version
+    (features.obs_size); a 594-feature file raises."""
+    params, config = checkpoint.load(path)
+    encoder = checkpoint.encoder_of(config)
+    width, want = params["t1"]["w"].shape[0], features.obs_size(encoder)
+    if width != want:
+        raise ValueError(f"{path}: the network takes {width} observation features, encoder {encoder} makes {want} "
+                         "(a checkpoint of another encoder layout)")
+    return Policy(params, encoder, checkpoint.ext_supported_of(config))

@@ -158,6 +158,38 @@ class WideningTest(unittest.TestCase):
                 # Equal up to float32 rounding: a longer dot product may sum in another order.
                 np.testing.assert_allclose(np.asarray(x), np.asarray(y), rtol=1e-6, atol=1e-6)
 
+    def test_encoder_2_network_widens_to_encoder_3(self):
+        # A network of encoder 2 (the 607 columns before encoder 3's block) widened by name to encoder 3: every
+        # layer that reads encoder columns keeps its old rows exactly and gets zero rows for the block, so it gives
+        # the same outputs wherever the block is zero (every kind but POOL; any battle under mask 0). Model v2
+        # places the block's columns inside its layer inputs, so their products are summed in another order:
+        # equal up to f32 rounding (measured: at most 1.5e-6 relative on the log-probabilities).
+        from duoforge_learn import checkpoint
+        old_names = list(features.feature_names(2))
+        obs, slots, mask = self.turn
+        self.assertFalse(obs[:, features.BASE_OBS_SIZE:].any())
+        for cfg in (dict(policy.V1_DEFAULT), policy.v2_config("S")):
+            old = policy.make(cfg, old_names, features.SLOT_FEATURE_NAMES)
+            params = old.init(self.jax.random.PRNGKey(7))
+            config = {"model": cfg, "features": old_names, "slot_features": list(features.SLOT_FEATURE_NAMES)}
+            wide, _ = checkpoint.widen(params, config, features.FEATURE_NAMES, features.SLOT_FEATURE_NAMES)
+            rows_old = checkpoint._rows(cfg, old_names, features.SLOT_FEATURE_NAMES)
+            rows_new = checkpoint._rows(cfg, features.FEATURE_NAMES, features.SLOT_FEATURE_NAMES)
+            added_rows = 0
+            for path, labels in rows_old.items():
+                index = {label: i for i, label in enumerate(rows_new[path])}
+                w_new = np.asarray(checkpoint._get(wide, path)["w"])
+                np.testing.assert_array_equal(w_new[[index[label] for label in labels]],
+                                              np.asarray(checkpoint._get(params, path)["w"]))
+                added = [i for label, i in index.items() if label not in set(labels)]
+                self.assertFalse(w_new[added].any(), path)
+                added_rows += len(added)
+            self.assertGreaterEqual(added_rows, features.EXT_SIZE if cfg["version"] == 1 else 5 + 7 + 36 + 6)
+            before = old.apply(params, obs[:, :features.BASE_OBS_SIZE], slots, mask)
+            after = policy.make(cfg).apply(wide, obs, slots, mask)
+            for x, y in zip(before, after):
+                np.testing.assert_allclose(np.asarray(x), np.asarray(y), rtol=1e-5, atol=1e-6)
+
     def test_raised_capacity_appends_rows_and_keeps_outputs(self):
         from duoforge_learn import checkpoint
         cfg = policy.v2_config("S")
@@ -204,6 +236,7 @@ class TrainingV2Test(unittest.TestCase):
             self.assertEqual(config["model"]["version"], 2)
             self.assertEqual(config["model"]["hidden"], 64)
             self.assertEqual(config["encoder"], features.ENCODER)
+            self.assertEqual(config["ext_supported"], 0)  # CLOSURE: the library supports no feature there
             self.assertEqual(config["features"], list(features.FEATURE_NAMES))
             model = policy.make(config["model"], config["features"], config["slot_features"])
             self.assertEqual(model.count(params), model.count(model.init(__import__("jax").random.PRNGKey(0))))
@@ -365,6 +398,36 @@ class ResumeTest(unittest.TestCase):
         with self.assertRaisesRegex(SystemExit, "team A"):
             _run(["--resume", self.out, "--updates", "2"])
 
+    def test_changed_ext_supported_is_refused(self):
+        # A resumed run keeps the view-extension mask it trained with; another one on the command line is refused.
+        self.assertEqual(_run(["--envs", "8", "--updates", "1", "--out", self.out] + _SMALL), 0)
+        with self.assertRaisesRegex(SystemExit, "ext_supported"):
+            _run(["--resume", self.out, "--updates", "2", "--ext-supported", "0x1"])
+
+    def test_resume_keeps_its_ext_supported(self):
+        # A plain resume uses the mask the run resolved when it started, not the library's current one (here a
+        # strict subset of it, as if the library had gained a bit since); an explicit --ext-supported equal to it
+        # is no change. A stored mask with a bit the library lacks is refused like a given one.
+        from duoforge_learn import runstate
+        pool = ["--teams", "A,B", "--data-kind", "pool"]
+        self.assertEqual(_run(["--envs", "8", "--updates", "1", "--out", self.out] + pool + _SMALL), 0)
+        state = runstate.load_state(self.out)
+        library = state["ext_supported"]
+        self.assertTrue(library)  # POOL: the library supports features
+        subset = library & ~(library & -library)
+        state["ext_supported"] = subset
+        runstate.save_state(self.out, state)
+        self.assertEqual(_run(["--resume", self.out, "--updates", "2"]), 0)
+        self.assertEqual(runstate.load_state(self.out)["ext_supported"], subset)
+        self.assertEqual(_run(["--resume", self.out, "--updates", "3", "--ext-supported", hex(subset)]), 0)
+        self.assertNotIn("ext_supported", [r for r in _log(self.out) if "resume" in r][-1]["resume"])
+        state = runstate.load_state(self.out)
+        lacking = features.ALL_FEATURES & ~library
+        state["ext_supported"] = library | (lacking & -lacking)
+        runstate.save_state(self.out, state)
+        with self.assertRaisesRegex(ValueError, "does not support"):
+            _run(["--resume", self.out, "--updates", "4"])
+
     def test_refused_option_names_itself(self):
         self.assertEqual(_run(["--envs", "8", "--updates", "1", "--out", self.out] + _SMALL), 0)
         with self.assertRaisesRegex(SystemExit, "learning_rate"):
@@ -458,6 +521,50 @@ class ResumeTest(unittest.TestCase):
         self.assertEqual(records[-1]["update"], 4)
         self.assertIn("vs_previous", records[-1])
 
+    def test_resume_of_an_encoder_2_run_continues_on_encoder_3(self):
+        # A run of encoder 2 (607 columns, no mask) resumes on encoder 3: parameters, Adam moments, league
+        # snapshots and the evaluation opponent widen by name, the mask stays 0, and the resume says so.
+        import os
+        import jax
+        from duoforge_learn import checkpoint, ppo, runstate
+        self.assertEqual(_run(["--envs", "8", "--updates", "2", "--eval-every", "1", "--out", self.out]
+                              + [a for a in _SMALL if a not in ("--eval-every", "100")]), 0)
+        keep = np.arange(features.BASE_OBS_SIZE)
+        old_names = list(features.feature_names(2))
+
+        def narrow(tree):
+            out = jax.tree_util.tree_map(np.asarray, tree)
+            out["t1"]["w"] = out["t1"]["w"][keep]
+            return out
+
+        state = runstate.load_state(self.out)
+        tx = ppo.optimizer(state["train"]["learning_rate"])
+        opt = runstate.restore_opt(tx, state["params"], state["opt_leaves"])
+        like = jax.tree_util.tree_structure(state["params"])
+        opt = jax.tree_util.tree_map(lambda n: narrow(n) if jax.tree_util.tree_structure(n) == like else n, opt,
+                                     is_leaf=lambda n: jax.tree_util.tree_structure(n) == like)
+        state["params"] = narrow(state["params"])
+        state["opt_leaves"] = jax.tree_util.tree_leaves(opt)
+        state["features"], state["encoder"] = old_names, 2
+        state.pop("ext_supported")
+        runstate.save_state(self.out, state)
+        for f in os.listdir(self.out):
+            if f.startswith("params-") and f.endswith(".npz"):
+                params, config = checkpoint.load(os.path.join(self.out, f))
+                config = {k: v for k, v in config.items() if k != "ext_supported"}
+                checkpoint.save(os.path.join(self.out, f), narrow(params), dict(config, features=old_names, encoder=2))
+        self.assertEqual(_run(["--resume", self.out, "--updates", "4", "--slot-refresh", "1"]), 0)
+        records = [r for r in _log(self.out) if "update" in r]
+        self.assertEqual(records[-1]["update"], 4)
+        self.assertIn("vs_previous", records[-1])
+        resume = [r for r in _log(self.out) if "resume" in r][0]["resume"]
+        self.assertEqual(resume["encoder"], [2, 3])
+        state = runstate.load_state(self.out)
+        self.assertEqual((state["encoder"], state["ext_supported"]), (3, 0))
+        self.assertEqual(state["features"], list(features.FEATURE_NAMES))
+        params, config = checkpoint.load_current(os.path.join(self.out, "params-0.npz"))  # narrowed above
+        self.assertEqual((config["encoder"], params["t1"]["w"].shape[0]), (3, features.OBS_SIZE))
+
     def test_sigterm_leaves_a_loadable_state(self):
         import os
         import signal
@@ -512,7 +619,12 @@ class LadderV2Test(unittest.TestCase):
 
 class DeviceUpdateTest(unittest.TestCase):
     def test_device_resident_update_equals_host_path(self):
+        """The parameters are compared under ppo.optimizer's chain with Adam's eps at 1e-2: the same state
+        (count, mu, nu), threaded through every minibatch, but linear in a near-zero gradient. With eps 1e-8, f32
+        rounding noise becomes a step of +-lr wherever g ~ 0 (seen when encoder 3 widened the input from 607 to
+        842 columns; under x64 the two paths agree to 7e-13). The losses are compared under ppo.optimizer."""
         import jax
+        import optax
         from duoforge_learn import ppo, train
         from duoforge_learn.returns import gae, samples_of
         from duoforge_learn.selfplay import SelfPlay
@@ -526,18 +638,24 @@ class DeviceUpdateTest(unittest.TestCase):
         adv, _, targets = gae(rollout["values"], rollout["rewards"], rollout["done"], rollout["acting"], bootstrap)
         samples = samples_of(rollout, adv, targets)
         self.assertGreater(samples["actions"].shape[0] % 80, 0)  # a padded last minibatch
-        tx = ppo.optimizer(3e-4)
-        results = []
-        for fn in (ppo.update, ppo._update_host):
-            out, opt, stats = fn(params, tx.init(params), tx, samples, np.random.default_rng(9), net.evaluate,
-                                 epochs=2, minibatch=80, entropy_coef=0.01)
-            results.append((out, stats))
-        for a, b in zip(jax.tree_util.tree_leaves(results[0][0]), jax.tree_util.tree_leaves(results[1][0])):
+
+        def both(tx):
+            results = []
+            for fn in (ppo.update, ppo._update_host):
+                out, _, stats = fn(params, tx.init(params), tx, samples, np.random.default_rng(9), net.evaluate,
+                                   epochs=2, minibatch=80, entropy_coef=0.01)
+                results.append((out, stats))
+            return results
+
+        stateful = optax.chain(optax.clip_by_global_norm(0.5), optax.adam(3e-4, eps=1e-2))
+        device, host = both(stateful)
+        for a, b in zip(jax.tree_util.tree_leaves(device[0]), jax.tree_util.tree_leaves(host[0])):
             np.testing.assert_allclose(np.asarray(a), np.asarray(b), rtol=1e-5, atol=1e-6)
+        device, host = both(ppo.optimizer(3e-4))
         for k in ("loss", "policy_loss", "value_loss", "entropy"):
-            self.assertAlmostEqual(float(results[0][1][k]), float(results[1][1][k]), places=4)
-        self.assertIn("t_transfer", results[0][1])
-        self.assertIn("t_compute", results[0][1])
+            self.assertAlmostEqual(float(device[1][k]), float(host[1][k]), places=4)
+        self.assertIn("t_transfer", device[1])
+        self.assertIn("t_compute", device[1])
 
 
 class CutOffTest(unittest.TestCase):
@@ -594,7 +712,8 @@ class RegistryTrainingTest(unittest.TestCase):
             shutil.rmtree(out, ignore_errors=True)
 
 
-PRESET_COUNTS = {"S": 384751, "M": 2072463, "L": 7871631}
+# Encoder 3 (842 columns) since 2026-10-03: its block feeds the global, side, position and member layers.
+PRESET_COUNTS = {"S": 392303, "M": 2089999, "L": 7901839}
 
 
 if __name__ == "__main__":
