@@ -14,6 +14,7 @@ import unittest
 from pathlib import Path
 
 from duoforge_live import data, lines
+from duoforge_live.data import trace_to_c
 
 _PAUSE = {}
 
@@ -133,6 +134,27 @@ class LinesTest(unittest.TestCase):
         self.assertEqual(self.stop("|move|p1a: Staraptor|Baton Pass|p1a: Staraptor"), "line:move Baton Pass")
         self.assertEqual(self.stop("|-activate|p1a: Staraptor|move: Court Change"), "line:-activate move: Court Change")
         self.assertEqual(self.stop("|-ability|p1a: Staraptor|Pressure"), "line:-ability Pressure")
+
+    def test_a_drop_kept_by_the_holders_ability_is_kept(self):
+        # the seven forms of Reg M-C replays: an Intimidate (or another drop) that the holder's own ability stops
+        view = _View({"p1: Dragonite": ("DRAGONITE", None, "INNERFOCUS"), "p1: Metagross": ("METAGROSS", None, "CLEARBODY"),
+                      "p2: Kangaskhan": ("KANGASKHAN", None, "SCRAPPY"), "p2: Mamoswine": ("MAMOSWINE", None, "OBLIVIOUS"),
+                      "p2: Gliscor": ("GLISCOR", None, "HYPERCUTTER"), "p2: Slowbro": ("SLOWBRO", None, "OWNTEMPO"),
+                      "p2: Torkoal": ("TORKOAL", None, "WHITESMOKE")})
+        for ident, ability, stat in (("p1a: Dragonite", "Inner Focus", "atk|"), ("p1b: Metagross", "Clear Body", ""),
+                                     ("p2a: Kangaskhan", "Scrappy", "atk|"), ("p2b: Mamoswine", "Oblivious", "atk|"),
+                                     ("p2a: Gliscor", "Hyper Cutter", "atk|"), ("p2b: Slowbro", "Own Tempo", "atk|"),
+                                     ("p2a: Torkoal", "White Smoke", "")):
+            line = f"|-fail|{ident}|unboost|{stat}[from] ability: {ability}|[of] {ident}"
+            self.assertEqual(lines.check(line, view), "keep", line)
+        for line in ("|-fail|p1a: Dragonite|unboost|atk|[from] ability: Clear Body|[of] p1a: Dragonite",  # not its own
+                     "|-fail|p1a: Dragonite|unboost|atk|[from] ability: Inner Focus|[of] p1b: Metagross",  # another holder
+                     "|-fail|p1a: Dragonite|unboost|atk|[from] ability: Inner Focus",  # no holder
+                     "|-fail|p1a: Dragonite|unboost|power|[from] ability: Inner Focus|[of] p1a: Dragonite",  # no stat
+                     "|-fail|p1a: Dragonite|unboost|atk|[from] item: Clear Amulet|[of] p1a: Dragonite"):  # an item
+            with self.assertRaises(lines.Stop, msg=line) as caught:
+                lines.check(line, view)
+            self.assertEqual(caught.exception.reason, "line:-fail unboost")
 
     def test_fold_and_room_lines(self):
         self.assertEqual(lines.check("|-enditem|p1a: Staraptor|Sitrus Berry|[eat]", self.view), "fold")
@@ -499,6 +521,36 @@ class GameTest(unittest.TestCase):
         tracker.feed([lines[fail]])
         self.assertEqual(tracker._positions[1][0].chain, 0)
 
+    def protected_farigiraf(self, ability=None):
+        """A tracker of p1 fed up to Farigiraf's Protect in turn 2 (p2b, chain 1); `ability` replaces Armor Tail on
+        its open sheet."""
+        from duoforge_live import teams
+        from duoforge_replay.spectator import SpectatorTracker
+        log = [line.replace("]Farigiraf||SitrusBerry|ArmorTail|", f"]Farigiraf||SitrusBerry|{ability}|")
+               if ability is not None and line.startswith("|showteam|p2|") else line for line in self.log]
+        sheets = tuple(teams.unpack(line.split("|", 3)[3]) for line in log if line.startswith("|showteam|"))
+        tracker = SpectatorTracker(self.data, sheets, 0, None, lambda m, f: ([100] * 6, [0] * 6), log)
+        tracker.feed(log[:log.index("|-singleturn|p2b: Farigiraf|Protect") + 1])
+        self.assertEqual(tracker._positions[1][1].chain, 1)
+        return tracker
+
+    def test_an_ability_failure_keeps_the_stall_counter(self):
+        # G22 (#160): an Intimidate that Inner Focus stops is a FAIL of its holder with cause ABILITY (duoforge.h
+        # DUOFORGE_EVENT_FAIL); after the holder's Protect it is not the Protect failing: the chain stays
+        tracker = self.protected_farigiraf()
+        tracker._event(trace_to_c.ev_tuple(trace_to_c.EV["FAIL"], 3, 3, trace_to_c.CAUSE["ABILITY"], 0,
+                                           self.data.tables["ABILITY"]["INNERFOCUS"] + 1))
+        self.assertEqual(tracker._positions[1][1].chain, 1)
+
+    def test_a_drop_kept_by_the_holders_ability_is_kept(self):
+        # an Intimidate after a Protect, stopped by the holder's own ability: the line changes no field; the
+        # perspective goes on and the stall chain stays
+        tracker = self.protected_farigiraf("InnerFocus")
+        line = "|-fail|p2b: Farigiraf|unboost|atk|[from] ability: Inner Focus|[of] p2b: Farigiraf"
+        tracker.feed([line])
+        self.assertEqual(tracker._positions[1][1].chain, 1)
+        self.assertEqual(tracker._positions[1][1].stages, self.protected_farigiraf()._positions[1][1].stages)
+
     def insert_after_in(self, lines, prefix, new):
         i = next(i for i, line in enumerate(lines) if line.startswith(prefix))
         return lines[:i + 1] + [new] + lines[i + 1:]
@@ -529,12 +581,18 @@ class GameTest(unittest.TestCase):
         self.assertEqual(self.skip_reason(self.log + self.log[start:]), "skip:two-games")
 
     def test_a_failure_the_converter_does_not_parse_stops(self):
-        # -fail|X|unboost (Clear Body stopped a drop): the converter decides which -fail forms it reads (main reads
-        # "heal" since G8); the one it cannot read is a named stop, never an internal error
-        lines = self.insert_after("|turn|3", "|-fail|p2a: Politoed|unboost|[from] ability: Clear Body|[of] p2a: Politoed")
+        # the converter decides which -fail forms it reads (main reads "heal" since G8); the one it cannot read is a
+        # named stop, never an internal error
+        lines = self.insert_after("|turn|3", "|-fail|p2a: Politoed|move: Substitute")
         result = self.run_game(lines)
         stops = [k for k in result.counters if k.startswith("perspectives.stopped.converter:untyped -fail")]
         self.assertEqual(sum(result.counters[k] for k in stops), 2, result.counters)
+
+    def test_a_drop_kept_by_another_ability_stops(self):
+        # -fail|X|unboost from an ability the holder does not have (Politoed: Drizzle) is no form the fold knows
+        lines = self.insert_after("|turn|3", "|-fail|p2a: Politoed|unboost|[from] ability: Clear Body|[of] p2a: Politoed")
+        result = self.run_game(lines)
+        self.assertEqual(result.counters["perspectives.stopped.line:-fail unboost"], 2, result.counters)
 
     def test_bo3_game_number(self):
         lines = ['|uhtml|bestof|<h2><strong>Game 2</strong> of <a href="/game-bestof3-x">a best-of-3</a></h2>'] + self.log
