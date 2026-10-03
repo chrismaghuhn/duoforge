@@ -2468,7 +2468,7 @@ static bool dfi_disable_start(dfi_run *r, uint32_t flat, uint32_t holder, bool b
     e.id = (uint16_t)move_id;
     if (by_ability) {
         e.cause = (uint8_t)DUOFORGE_CAUSE_ABILITY;
-        e.id2 = (uint16_t)(1u + DFI_ABILITY_CURSEDBODY);
+        e.id2 = (uint16_t)(1u + DFI_ABILITY_CURSEDBODY); /* wide-operands-reviewed: an ability id + 1 */
         e.other = (uint8_t)holder;
     }
     dfi_emit(r, &e);

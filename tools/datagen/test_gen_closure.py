@@ -933,6 +933,34 @@ class LenientMoves(unittest.TestCase):
         text = with_line(PLAIN, "recoil: [1, 4],\n\t\tsecondary: { chance: 10, status: 'par', },")
         self.assertEqual(lenient('plain', text), (parse_pool('plain', text), []))
 
+    def test_the_static_flags_and_hit_counts_of_every_row_come_from_the_pin_text(self):
+        """Decision 0020 items 4 and 5: the static flags (one bit per Showdown flag name of the public set, plus POWER_RULE
+        for a basePowerCallback) and the hit counts (multihit: n, [min, max], 1 and 1 otherwise) of every row, modelled or
+        not, with their bits in include/duoforge/duoforge.h order."""
+        bits = gen_closure.STATIC_FLAG_BITS
+        self.assertEqual(sorted(bits.values()), [1, 2, 4, 8, 16, 32, 64, 128, 256, 512])
+        self.assertEqual(gen_closure.STATIC_FLAG_POWER_RULE, 1024)
+        for flag in bits:
+            text = move_entry('plain', 'Plain', category='Physical', base_power=50, flags='%s: 1, protect: 1' % flag)
+            rec, _features = lenient('plain', text)
+            self.assertEqual(rec['static_flags'], bits[flag], flag)
+        text = move_entry('plain', 'Plain', category='Physical', base_power=50,
+                          flags='contact: 1, protect: 1, punch: 1, mirror: 1, metronome: 1')
+        self.assertEqual(lenient('plain', text)[0]['static_flags'], bits['contact'] | bits['punch'])
+        self.assertEqual(lenient('plain', PLAIN)[0]['static_flags'], bits['contact'])
+        self.assertEqual(lenient('plain', PLAIN)[0]['hits'], [1, 1])
+        callback = with_line(PLAIN, 'basePowerCallback(pokemon, target) { return 1; },')
+        rec, features = lenient('plain', callback)
+        self.assertEqual(rec['static_flags'], bits['contact'] | gen_closure.STATIC_FLAG_POWER_RULE)
+        self.assertIn('callback basePowerCallback', features)  # the row stays UNMODELED: the column is data only
+        for line, hits in (('multihit: 2,', [2, 2]), ('multihit: 3,', [3, 3]), ('multihit: 10,', [10, 10]),
+                           ('multihit: [2, 5],', [2, 5])):
+            rec, features = lenient('plain', with_line(PLAIN, line))
+            self.assertEqual(rec['hits'], hits, line)
+            self.assertIn('field multihit', features)  # likewise
+        self.refused('plain', with_line(PLAIN, 'multihit: [5, 2],'), 'multihit [5, 2] is not 1 <= min <= max <= 255')
+        self.refused('plain', with_line(PLAIN, 'multihit: true,'), 'multihit is not "multihit: n," or "multihit: [min, max],"')
+
     def test_what_the_tables_do_not_model_is_a_feature_not_a_failure(self):
         cases = (
             ('callback onHit', with_line(PLAIN, 'onHit(target) { },')),
