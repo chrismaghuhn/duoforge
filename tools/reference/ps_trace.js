@@ -120,7 +120,7 @@ function classify(stack, battle) {
         if (frames.includes(frame)) return [site, ev];
     }
     // The accuracy check that a move with multiaccuracy (Triple Axel, step G33) makes before each hit after the first: a
-    // randomChance called straight from hitStepMoveHitLoop (data/mods/champions/scripts.ts:462-486, the base game's
+    // randomChance called straight from hitStepMoveHitLoop (data/mods/champions/scripts.ts:481-510, the base game's
     // sim/battle-actions.ts:912-929), the same draw as hitStepAccuracy's. Matched by its immediate callers, so that no other
     // draw inside the hit loop is taken for it. It was an UNKNOWN draw before, which the converter refuses, so the harness
     // version stays.

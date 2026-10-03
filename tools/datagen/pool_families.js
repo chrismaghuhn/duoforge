@@ -691,7 +691,7 @@ function checkG33(dex) {
     }
     expect('no Grass-type forme has Mirror Armor', grass, []);
     // The accuracy of the later hits of a multiaccuracy move (src/combat/turn.c dfi_accuracy_check, later_hit). The Champions
-    // loop (data/mods/champions/scripts.ts:462-486) scales `move.accuracy` by the two stages in floating point with no floor,
+    // loop (data/mods/champions/scripts.ts:481-510) scales `move.accuracy` by the two stages in floating point with no floor,
     // `accuracy /= boostTable[-boost]` and so on, then randomChance(accuracy, 100) = random(100) < accuracy. The engine has no
     // floating point, so it compares v * D < N for the exact rational N / D (accuracy x (3 + a) / 3 or x 3 / (3 - a), then x 3 /
     // (3 + e) or x (3 - e) / 3). Here both are computed for the accuracy of Triple Axel and every pair of stages; the number of

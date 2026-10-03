@@ -2,6 +2,7 @@
 
 #include "combat/ability_family.h"
 #include "combat/damage_chain.h"
+#include "combat/multiaccuracy.h"
 #include "combat/residual_order.h"
 #include "combat/events.h"
 #include "combat/item_family.h"
@@ -3041,7 +3042,7 @@ static duoforge_status dfi_run_recharge(dfi_run *r, uint32_t user)
 }
 
 /* The accuracy check of one hit against one target (hitStepAccuracy, sim/battle-actions.ts:719-744; the loop of a move with
- * multiaccuracy makes the same one for each hit after the first, data/mods/champions/scripts.ts:462-486): No Guard on
+ * multiaccuracy makes the same one for each hit after the first, data/mods/champions/scripts.ts:481-510): No Guard on
  * either Pokemon and Glaive Rush's volatile on the target make the hit certain with no draw, otherwise the user's accuracy
  * stage minus the target's evasion stage (Darkest Lariat ignores evasion) scales the accuracy and one draw decides.
  * `base_accuracy` 0 is a move that never misses.
@@ -3049,7 +3050,7 @@ static duoforge_status dfi_run_recharge(dfi_run *r, uint32_t user)
  * `later_hit` is the check of the loop's multiaccuracy before the second and the third hit, which is NOT the first
  * hit's check: the Champions loop scales the accuracy by the two stages one after the other in floating point,
  * `accuracy /= boostTable[-boost]` or `*= boostTable[boost]` with the table [1, 4/3, 5/3, 2, 7/3, 8/3, 3] and no
- * floor (data/mods/champions/scripts.ts:462-486), where hitStepAccuracy floors the combined stage's product
+ * floor (data/mods/champions/scripts.ts:481-510), where hitStepAccuracy floors the combined stage's product
  * (sim/battle-actions.ts:719-744), then randomChance(accuracy, 100) = random(100) < accuracy. With the accuracy 90 of
  * Triple Axel the real value is 90 x (3 or 3 + |a|) x ... / ..., a rational with the denominator (3 or 3 + a) x
  * (3 or 3 + e); the engine compares `v x D < N` exactly (the source lint has no floating point outside
@@ -3088,6 +3089,11 @@ static duoforge_status dfi_accuracy_check(dfi_run *r, uint32_t user, uint32_t ta
          * arithmetic. */
         const dfi_member *shooter = dfi_at(b, user);
         if (dfi_ability(b, shooter, DFI_ABILITY_COMPOUNDEYES) || dfi_holds(b, shooter, DFI_ITEM_WIDELENS)) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
+        /* The rational comparison below is proved for the accuracy 90 only (combat/multiaccuracy.h, checkG33): a new
+         * multiaccuracy move extends the proof before it runs. */
+        if (!dfi_multiaccuracy_proven(base_accuracy)) {
             return DUOFORGE_E_UNSUPPORTED;
         }
         /* accuracy stage a = acc - 6: above 0 x (3 + a) / 3, otherwise x 3 / (3 - a); evasion stage e = eva - 6: above 0

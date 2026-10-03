@@ -8,7 +8,7 @@
  *
  *   - the marks and the handler numbers: the hit counts are in the handler ids (the static hit columns have no reader in the
  *     engine, duoforge.data.static_unread checks that), Population Bomb stays unmarked and keeps its data;
- *   - the later hits of a multiaccuracy move are checked with the loop's own arithmetic (scripts.ts:462-486), which the
+ *   - the later hits of a multiaccuracy move are checked with the loop's own arithmetic (scripts.ts:481-510), which the
  *     engine plays only without a ModifyAccuracy handler on the user: a Triple Axel user with Wide Lens (or Compound Eyes)
  *     is refused at its second hit, E_UNSUPPORTED, never played with the first hit's arithmetic.
  */
@@ -17,6 +17,7 @@
 
 #include <duoforge/duoforge.h>
 
+#include "combat/multiaccuracy.h"
 #include "data/pool_tables.h"
 #include "data/support_manifest.h"
 #include "reference/conformance_pool.h"
@@ -44,6 +45,19 @@ static void check_facts(df_test *t)
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_POPULATIONBOMB] == 0u);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_POPULATIONBOMB].special, DFI_SPECIAL_UNMODELED);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_TRIPLEAXEL].accuracy, 90u);
+}
+
+/* The later-hit arithmetic is proved for the accuracy 90 only: every multiaccuracy move of the pool has it, and another
+ * accuracy is refused (dfi_accuracy_check). The pool's multiaccuracy rows are checked against the helper here. */
+static void check_proven_accuracy(df_test *t)
+{
+    DF_CHECK(t, dfi_multiaccuracy_proven(90u));
+    static const uint32_t other[] = {0u, 1u, 50u, 85u, 89u, 91u, 95u, 100u, 117u};
+    for (size_t i = 0u; i < sizeof other / sizeof other[0]; ++i) {
+        DF_CHECK(t, !dfi_multiaccuracy_proven(other[i]));
+    }
+    DF_CHECK(t, dfi_multiaccuracy_proven(dfi_pool_moves[DFI_MOVE_TRIPLEAXEL].accuracy));
+    DF_CHECK(t, dfi_multiaccuracy_proven(dfi_pool_moves[DFI_MOVE_POPULATIONBOMB].accuracy));
 }
 
 /* ---- the refusal: the recorded g33_triple_axel_stages with a Wide Lens in the hands of the first Pokemon of side 0 */
@@ -164,6 +178,7 @@ int main(void)
     df_test t;
     df_test_begin(&t, "duoforge.state.pool_g33");
     check_facts(&t);
+    check_proven_accuracy(&t);
     check_refusal(&t);
     return df_test_end(&t);
 }
