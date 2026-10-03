@@ -141,6 +141,9 @@ static void random_shape(rng *g, shape *s, bool grassy, bool weather)
         if (rng_next(g) % 3u == 0u) {
             push(s, DFI_RES_ENCORE, flat, 16u, speed, 2u, true);
         }
+        if (rng_next(g) % 4u == 0u) {
+            push(s, DFI_RES_PERISH, flat, 24u, speed, 2u, true); /* step G26 */
+        }
         s->vol_len[flat] = s->n - s->vol_start[flat];
         const uint32_t item = rng_next(g) % 3u;
         if (item == 1u) {
@@ -312,6 +315,7 @@ static dfi_residual_entry ent(uint32_t kind, uint32_t flat, uint32_t order, uint
 #define HEAL(f) ent(DFI_RES_DURATION, (f), 20u, 2u, false)
 #define CHOP(f) ent(DFI_RES_DURATION, (f), 22u, 2u, false)
 #define ENCORE(f) ent(DFI_RES_ENCORE, (f), 16u, 2u, true)
+#define PERISH(f) ent(DFI_RES_PERISH, (f), 24u, 2u, true)
 #define LEFT(f) ent(DFI_RES_LEFTOVERS, (f), 5u, 4u, true)
 #define HERB(f) ent(DFI_RES_WHITE_HERB, (f), 29u, 8u, true)
 
@@ -363,6 +367,30 @@ static void test_examples(df_test *t)
         DF_CHECK(t, dfi_residual_order_may_matter(l, 5u));
         DF_CHECK(t, !dfi_residual_order_ambiguous(l, 5u));
     }
+    /* Perish Song (step G26, order 24) tied between two Pokemon that each hold it alone, or with Leftovers (order 5):
+     * the shuffle of the tie is the only draw and no order of the volatiles changes it. */
+    {
+        const dfi_residual_entry l[] = {PERISH(0), PERISH(1)};
+        DF_CHECK(t, !dfi_residual_order_ambiguous(l, 2u));
+        const dfi_residual_entry with_items[] = {PERISH(0), LEFT(0), PERISH(1), LEFT(1)};
+        DF_CHECK(t, !dfi_residual_order_ambiguous(with_items, 4u));
+    }
+    /* Perish Song tied between a Pokemon that holds only it and one that also holds two Protect-style counters and
+     * Encore (order 16): the selection sort moves Encore to the front past the first Pokemon's Perish handler, and where
+     * the group of order 24 then stands depends on how the second Pokemon's volatiles were added, which is not stored:
+     * the cheap test cannot clear it, the exact one finds an order that changes the callbacks' sequence, and the engine
+     * refuses it (E_UNSUPPORTED) rather than guess. */
+    {
+        const dfi_residual_entry l[] = {PERISH(0), COUNTER(1), COUNTER(1), ENCORE(1), PERISH(1)};
+        DF_CHECK(t, dfi_residual_order_may_matter(l, 5u));
+        DF_CHECK(t, dfi_residual_order_ambiguous(l, 5u));
+    }
+    DF_CHECK_EQ_U64(t, dfi_residual_compare(&(dfi_residual_entry){DFI_RES_PERISH, 0u, 24u, 100u, 2u, true},
+                                            &(dfi_residual_entry){DFI_RES_PERISH, 1u, 24u, 100u, 2u, true}),
+                    1u);
+    DF_CHECK_EQ_U64(t, dfi_residual_compare(&(dfi_residual_entry){DFI_RES_ENCORE, 0u, 16u, 100u, 2u, true},
+                                            &(dfi_residual_entry){DFI_RES_PERISH, 0u, 24u, 100u, 2u, true}),
+                    0u);
     DF_CHECK_EQ_U64(t, dfi_residual_compare(&(dfi_residual_entry){DFI_RES_ENCORE, 0u, 16u, 100u, 2u, true},
                                             &(dfi_residual_entry){DFI_RES_ENCORE, 1u, 16u, 100u, 2u, true}),
                     1u);
