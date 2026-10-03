@@ -141,10 +141,21 @@ static const struct {
     {"g29_edge_cases", 3u, {3u, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
     {"g29_edge_cases", 4u, {3u, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
     {"g29_edge_cases", 5u, {3u, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
+    {"g29_trick_lock_before_move", 0u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
+    {"g29_trick_lock_before_move", 1u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
+    {"g29_trick_lock_before_move", 2u, {16u, 0u, 0u, 0u, 0u, 0u, 6u, 0u, 0u, 0u, 0u, 0u}, 2u, 0u},
+    {"g29_trick_lock_before_move", 3u, {16u, 0u, 0u, 0u, 0u, 0u, 6u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
+    {"g29_trick_lock_before_move", 4u, {16u, 0u, 0u, 0u, 0u, 0u, 6u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
+    {"g29_thief_fainted", 0u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
+    {"g29_thief_fainted", 1u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
+    {"g29_thief_fainted", 2u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
+    {"g29_thief_fainted", 3u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
+    {"g29_thief_fainted", 4u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
 };
 /* ROWS-END */
 
-static const char *const battle_names[] = {"g29_trick_scarf", "g29_empty_hands", "g29_thief_covet", "g29_trick_fails", "g29_edge_cases"};
+static const char *const battle_names[] = {"g29_trick_scarf", "g29_empty_hands", "g29_thief_covet", "g29_trick_fails", "g29_edge_cases",
+                                           "g29_trick_lock_before_move", "g29_thief_fainted"};
 
 static void check_battles(df_test *t, const duoforge_context *ctx, uint32_t *compared)
 {
@@ -190,6 +201,16 @@ static void check_battles(df_test *t, const duoforge_context *ctx, uint32_t *com
                         fprintf(stderr, "  %s step %u: side %u member %u\n", battle_names[n], si, s, m);
                     }
                 }
+            }
+            /* The Choice lock through a Trick (g29_trick_lock_before_move, the Annihilape of side 1): locked by its Scarf at the
+             * end of turn 1 (step 1), and at the stop of turn 2 (step 2) it has moved after the Prankster Trick took the
+             * Scarf and gave it a Life Orb: choicelock's onBeforeMove ended the lock when it moved (data/conditions.ts:332-336),
+             * so none stands although it was no Choice item that came (the lock is not ended by the item's going). */
+            if (strcmp(battle_names[n], "g29_trick_lock_before_move") == 0 && (si == 1u || si == 2u)) {
+                const dfi_active_slot *lp = &b->sides[1].positions[0];
+                const bool locked = ((uint32_t)lp->flags & DFI_VOL_CHOICE_LOCK) != 0u;
+                DF_CHECK(t, locked == (si == 1u));
+                DF_CHECK(t, (lp->locked_move != 0u) == (si == 1u));
             }
             /* The events: both viewers see both kinds of line (items are public); the move is the one of the line and the item
              * is a real one; a received item has a position, a Thief's or Covet's line names the one it came from. */
@@ -369,11 +390,11 @@ int main(void)
     duoforge_context *kd = df_make_context(&df_config_pool_dev);
     /* The ids that the step uses, and its marks. */
     DF_CHECK_EQ_U64(&t, DUOFORGE_EVENT_ITEM_START, 42u); /* the new public value (owner's OK pending) */
-    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_TRICK, 28u);
-    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_SWITCHEROO, 29u);
-    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_THIEF, 30u);
-    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_COVET, 31u);
-    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, 32u);
+    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_TRICK, 44u);
+    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_SWITCHEROO, 45u);
+    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_THIEF, 46u);
+    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_COVET, 47u);
+    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, 48u);
     DF_CHECK(&t, dfi_support.moves[DFI_MOVE_TRICK] != 0u && dfi_support.moves[DFI_MOVE_SWITCHEROO] != 0u &&
                      dfi_support.moves[DFI_MOVE_THIEF] != 0u && dfi_support.moves[DFI_MOVE_COVET] != 0u);
     DF_CHECK_EQ_U64(&t, DUOFORGE_VIEWEXT_FEATURE_ITEM_CHANGE, 11u);

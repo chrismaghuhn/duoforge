@@ -349,6 +349,34 @@ function checkWeather(dex, source) {
     expect('Weather Ball without weather', [none.type, none.basePower], ['Normal', 50]);
 }
 
+// Step G28, Expert Belt, Acrobatics, Blizzard, Shell Smash, Ancient Power and Feint: what the engine reads about them
+// (src/combat/turn.c), called on the pinned handlers and read from the pinned data.
+function checkG28(dex) {
+    const belt = dex.items.get('expertbelt');
+    for (const typeMod of [-2, -1, 0, 1, 2]) {
+        expect('Expert Belt at a type modifier of ' + typeMod,
+            call(belt.onModifyDamage, battle(belt), [100, {}, {getMoveHitData: () => ({typeMod})}, moveOf('Fire')]),
+            typeMod > 0 ? {chain: [4915, 4096]} : undefined);
+    }
+    const acrobatics = dex.moves.get('acrobatics');
+    expect('Acrobatics without an item', call(acrobatics.basePowerCallback, battle(acrobatics), [{item: ''}, {}, {basePower: 55}]), 110);
+    expect('Acrobatics with an item', call(acrobatics.basePowerCallback, battle(acrobatics), [{item: 'leftovers'}, {}, {basePower: 55}]), 55);
+    const blizzard = dex.moves.get('blizzard');
+    for (const [weather, never] of [['', false], ['sandstorm', false], ['raindance', false], ['sunnyday', false], ['snowscape', true]]) {
+        const move = {accuracy: 70};
+        call(blizzard.onModifyMove, {field: {isWeather: (list) => list.includes(weather)}}, [move]);
+        expect('Blizzard in ' + (weather || 'no weather'), move.accuracy, never ? true : 70);
+    }
+    const smash = dex.moves.get('shellsmash');
+    expect('the boosts of Shell Smash, in the order of the entry', Object.entries(smash.boosts),
+        [['def', -1], ['spd', -1], ['atk', 2], ['spa', 2], ['spe', 2]]);
+    const ancient = dex.moves.get('ancientpower');
+    expect('the secondary of Ancient Power', [ancient.secondary.chance, ancient.secondary.self],
+        [10, {boosts: {atk: 1, def: 1, spa: 1, spd: 1, spe: 1}}]);
+    const feint = dex.moves.get('feint');
+    expect('Feint', [feint.breaksProtect, feint.priority, feint.basePower, feint.flags.protect], [true, 2, 30, undefined]);
+}
+
 // ----------------------------------------------------------------- the check
 function checkItems(dex, rows, unmodeled) {
     const counts = {};
@@ -612,6 +640,44 @@ function checkG22(dex, formes, itemIds, abilityIds) {
     expect('Liquid Voice', [typeAfter('Normal', {sound: 1}), typeAfter('Dark', {sound: 1}), typeAfter('Normal', {}),
         typeAfter('Normal', {sound: 1}, {dynamax: {}})], ['Water', 'Water', 'Normal', 'Normal']);
     expect('Liquid Voice onModifyTypePriority', voice.onModifyTypePriority, -1);
+    return 1;
+}
+
+// Step G32: what the engine reads about the new rows (src/combat/turn.c), called on the pinned handlers. Eruption and Water
+// Spout (power 150 x HP / maximum HP, then the engine floors it and clamps it to 1: sim/battle-actions.ts getDamage),
+// Freeze-Dry (Water is super effective), Soundproof (a sound move aimed at the holder by another Pokemon is -immune), Unnerve
+// (berries of the foes are not eaten while the holder stands) and Speed Boost (+1 Speed in the residual, not in the turn of
+// the switch-in). Eject Button is a text fact of the generator (G32_ENTRY_FACTS).
+function checkG32(dex) {
+    for (const id of ['eruption', 'waterspout']) {
+        const m = dex.moves.get(id);
+        expect(id + ' power', [200, 400, 1, 100].map((hp) => call(m.basePowerCallback, battle(m), [{hp, maxhp: 400}, {}, {basePower: 150}])),
+            [75, 150, 0.375, 37.5]);
+    }
+    const freeze = dex.moves.get('freezedry');
+    expect('Freeze-Dry onEffectiveness', ['Water', 'Grass', 'Ice', 'Fire'].map((t) => call(freeze.onEffectiveness, battle(freeze), [0, {}, t])),
+        [1, undefined, undefined, undefined]);
+    expect('Freeze-Dry in the Champions mod has no secondary', freeze.secondary === undefined || freeze.secondary === null, true);
+    const sound = dex.abilities.get('soundproof');
+    const probe = (flags, same) => {
+        const logs = [];
+        const holder = {};
+        const r = call(sound.onTryHit, battle(sound, {add: (...a) => logs.push(a.map((x) => (typeof x === 'string' ? x : 'POKEMON')).join('|'))}),
+            [holder, same ? holder : {}, moveOf('Normal', {flags})]);
+        return {r, logs};
+    };
+    expect('Soundproof vs a sound move', probe({sound: 1}, false), {r: null, logs: ['-immune|POKEMON|[from] ability: Soundproof']});
+    expect('Soundproof vs another move', probe({}, false), {logs: []});
+    expect('Soundproof vs its own sound move', probe({sound: 1}, true), {logs: []});
+    const unnerve = dex.abilities.get('unnerve');
+    expect('Unnerve', [true, false].map((unnerved) => call(unnerve.onFoeTryEatItem, battle(unnerve, {effectState: {unnerved}}), [])), [false, true]);
+    const boost = dex.abilities.get('speedboost');
+    expect('Speed Boost', [0, 1, 3].map((activeTurns) => {
+        const boosts = [];
+        call(boost.onResidual, battle(boost, {boost: (b) => boosts.push(b)}), [{activeTurns}]);
+        return boosts;
+    }), [[], [{spe: 1}], [{spe: 1}]]);
+    expect('Speed Boost residual order', [boost.onResidualOrder, boost.onResidualSubOrder], [28, 2]);
     return 1;
 }
 
@@ -884,11 +950,12 @@ function checkFormes(dex, validator, rows, moves, abilities) {
 // The UNMODELED markers of gen_closure.py --pool, re-derived from the pinned data in this file's own words: the
 // special column of a move, the handler column of an item and of an ability, and the lists of unmodelled features.
 // implemented in the turn code by id (G4: Focus Sash, Rock Head; G12: Floettite, Flower Veil, Fairy Aura)
-const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed'],
+const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'expertbelt', 'ejectbutton'],
     abilities: ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
-        'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll', 'innerfocus', 'liquidvoice']};
+        'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll', 'innerfocus', 'liquidvoice',
+        'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof', 'unnerve', 'speedboost']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
-    'randomNormal']);
+    'randomNormal', 'allAdjacent', 'allies']);
 // The fields of a move that the tables model (gen_closure.py DATA_KEYS and IGNORED_KEYS), nothing else.
 const MOVE_KEYS = new Set(['num', 'accuracy', 'basePower', 'category', 'name', 'pp', 'priority', 'flags', 'target', 'type',
     'critRatio', 'secondary', 'self', 'boosts', 'recoil', 'drain', 'status', 'volatileStatus', 'sideCondition',
@@ -907,7 +974,7 @@ function isBoostBlock(b) {
 // effect each. The move's handler id (G2) or its place in the prefix is decided by the caller.
 // The pool rows that carry selfSwitch and that the turn code pivots with a flag of their own (dfi_pivot_moves): U-turn
 // (a G2 row); Flip Turn is a row of the prefix.
-const ENGINE_PIVOTS = ['uturn'];
+const ENGINE_PIVOTS = ['uturn', 'voltswitch'];
 // Step G13: the moves that are another move's handler under another name (gen_closure.py PROTECT_COPIES).
 const PROTECT_COPIES = {detect: 'protect'};
 function moveIsModelled(raw, id) {
@@ -954,6 +1021,13 @@ function moveIsModelled(raw, id) {
             }
         } else if (effects[0] === 'boosts') {
             if (!isBoostBlock(sec.boosts)) {
+                return false;
+            }
+            vectors += 1;
+        } else if (effects[0] === 'self') {
+            // Step G28: a secondary whose own effect is a stat change of the user (Ancient Power).
+            if (sec.self === null || typeof sec.self !== 'object' || Object.keys(sec.self).length !== 1 ||
+                !isBoostBlock(sec.self.boosts)) {
                 return false;
             }
             vectors += 1;
@@ -1225,10 +1299,12 @@ function main() {
     const items = checkItems(dex, itemRows, unmodeledItems);
     checkFocusSash(dex, root);
     checkWeather(dex, source);
+    checkG28(dex);
     checkG10Moves(dex);
     checkEncore(dex, repo);
     checkRecharge(dex);
     checkG19(dex);
+    checkG32(dex);
     checkG22(dex, formeRowsList, new Set(definedIds(headers, 'ITEM').values()), new Set(abilityIds.values()));
     const abilities = checkAbilities(dex, abilityRows, moveIds, unmodeledAbilities, unmodeledMoves);
     // "All 18": a booster and a resist berry for each type, and nothing else in the families.

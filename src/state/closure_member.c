@@ -23,6 +23,7 @@ _Static_assert(DFI_POOL_LEARN_BYTES * 8u >= DFI_POOL_MOVE_COUNT, "the learnable 
 const dfi_pivot_move dfi_pivot_moves[DFI_PIVOT_MOVE_COUNT] = {
     {DFI_SWITCH_FLIP_TURN, DFI_MOVE_FLIPTURN},
     {DFI_SWITCH_UTURN, DFI_MOVE_UTURN},
+    {DFI_SWITCH_VOLT_SWITCH, DFI_MOVE_VOLTSWITCH},
 };
 
 const dfi_pivot_move *dfi_pivot_of_move(uint32_t move)
@@ -56,8 +57,8 @@ dfi_kind_limits dfi_kind_limits_of(uint32_t data_kind)
     lim.move_count = pool ? DFI_POOL_MOVE_COUNT : team_c ? DFI_EXT_MOVE_COUNT : DFI_MOVE_COUNT;
     lim.item_count = pool ? DFI_POOL_ITEM_COUNT : team_c ? DFI_EXT_ITEM_COUNT : DFI_ITEM_COUNT;
     lim.ability_count = pool ? DFI_POOL_ABILITY_COUNT : team_c ? DFI_EXT_ABILITY_COUNT : DFI_ABILITY_COUNT;
-    /* Flip Turn's flag is in the extended tables (Team C), U-turn's only in the pool's. */
-    lim.switch_flag_max = pool ? DFI_SWITCH_UTURN : team_c ? DFI_SWITCH_FLIP_TURN : DFI_SWITCH_FAINTED;
+    /* Flip Turn's flag is in the extended tables (Team C), U-turn's and Volt Switch's only in the pool's. */
+    lim.switch_flag_max = pool ? DFI_SWITCH_VOLT_SWITCH : team_c ? DFI_SWITCH_FLIP_TURN : DFI_SWITCH_FAINTED;
     lim.status_max = extended ? DFI_STATUS_PSN : DFI_STATUS_SLP;
     lim.terrain_max = extended ? DFI_TERRAIN_PSYCHIC : DFI_TERRAIN_GRASSY;
     lim.weather_max = pool ? DFI_WEATHER_SNOW : DFI_WEATHER_SUN;

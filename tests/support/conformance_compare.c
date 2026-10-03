@@ -315,7 +315,11 @@ unsigned df_conf_compare_state(FILE *out, const duoforge_context *ctx, const duo
                 const uint32_t choice = ((uint32_t)pos->flags & DFI_VOL_CHOICE_LOCK) != 0u ? 8u : 0u;
                 const uint32_t unburden = ((uint32_t)pos->flags & DFI_VOL_UNBURDEN) != 0u ? 16u : 0u;
                 const uint32_t helping = ((uint32_t)pos->flags & DFI_VOL_HELPING_HAND) != 0u ? 32u : 0u;
-                const uint32_t follow = ((uint32_t)pos->flags & DFI_VOL_FOLLOW_ME) != 0u ? 64u : 0u;
+                /* Step G30: the bit of a Rage Powder user is not Follow Me's (its volatile is not compared here: the extension's
+                 * RAGE_POWDER bit is, in duoforge.state.pool_g30). */
+                const bool rage_powder = pos != NULL && ((uint32_t)pos->flags & DFI_VOL_FOLLOW_ME) != 0u &&
+                                         dfi_last_move_id(b, s * 2u + (uint32_t)(pos - b->sides[s].positions)) == DFI_MOVE_RAGEPOWDER;
+                const uint32_t follow = ((uint32_t)pos->flags & DFI_VOL_FOLLOW_ME) != 0u && !rage_powder ? 64u : 0u;
                 const uint32_t flinch = ((uint32_t)pos->flags & DFI_VOL_FLINCH) != 0u ? 128u : 0u;
                 if (lslot != e->locked_slot || ltarget != e->locked_target || choice != (e->vols & 8u) ||
                     unburden != (e->vols & 16u) || helping != (e->vols & 32u) || follow != (e->vols & 64u) ||

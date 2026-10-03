@@ -243,10 +243,10 @@ class Refusals(unittest.TestCase):
         def mutate(spec, trace):
             log = trace['steps'][1]['log']
             self.assertEqual(log[1], '|-singleturn|p1b: Kingambit|Helping Hand|[of] p1a: Indeedee')
-            log[1] = '|-singleturn|p1b: Kingambit|move: Rage Powder'
+            log[1] = '|-singleturn|p1b: Kingambit|move: Quick Guard'
         self.control('c09_helping_hand', mutate, 'singleturn-line',
-                     "trace_to_c: unknown -singleturn '|-singleturn|p1b: Kingambit|move: Rage Powder'",
-                     'move: Rage Powder')
+                     "trace_to_c: unknown -singleturn '|-singleturn|p1b: Kingambit|move: Quick Guard'",
+                     'move: Quick Guard')
 
     def test_choice_scarf_holder_without_its_switch_in_handler(self):
         def mutate(spec, trace):
@@ -275,13 +275,14 @@ class Refusals(unittest.TestCase):
                                            mon('Arcanine-Hisui', 'choicescarf')]},
             {'active': [0, 1], 'pokemon': [mon('Arcanine-Hisui', ''), mon('Farigiraf', 'leftovers')]}]}
         self.assertEqual(trace_to_c.choice_scarf_slots(after), {'p1b'})  # the end state alone (the old reading)
-        self.assertEqual(trace_to_c.choice_scarf_slots(after, before), set())
+        # The standing Gholdengo held the Scarf at the start of the step (p1a); the entering Arcanine-Hisui did not (p1b).
+        self.assertEqual(trace_to_c.choice_scarf_slots(after, before), {'p1a'})
         group = ['P:p1b:0:S', 'P:p2a:0:-']
         d = {'site': 'SPEED_TIE', 'context': 'switch-order', 'group': group}
         self.assertEqual(trace_to_c.drop_reason(d, before, after), 'switch-in order with at most one entry effect')
         # A Pokemon that comes in with the Scarf has its handler, and the same state before and after reads the same.
         before['sides'][0]['pokemon'][3]['item'] = 'choicescarf'
-        self.assertEqual(trace_to_c.choice_scarf_slots(after, before), {'p1b'})
+        self.assertEqual(trace_to_c.choice_scarf_slots(after, before), {'p1a', 'p1b'})
         d = {'site': 'SPEED_TIE', 'context': 'switch-order', 'group': ['P:p1b:1:S', 'P:p2a:0:-']}
         self.assertEqual(trace_to_c.drop_reason(d, before, after), 'switch-in order with at most one entry effect')
         # Still refused: a Scarf holder at the entry whose tie entry has no handler.
@@ -926,7 +927,7 @@ class Library(unittest.TestCase):
         M` gives X the item (item id + 1; a Thief's or Covet's `[of] Y` takes Y's away, 255), `|-enditem|X|Item|[silent]|[from]
         move: M` takes X's away; a used-up item and a switch change nothing. Also the converter: the lines are ITEM_START (cause
         MOVE) and ITEM_END (cause ITEM_TAKEN), and any other shape is refused."""
-        names = ('g29_trick_scarf', 'g29_empty_hands', 'g29_thief_covet', 'g29_trick_fails', 'g29_edge_cases')
+        names = ('g29_trick_scarf', 'g29_empty_hands', 'g29_thief_covet', 'g29_trick_fails', 'g29_edge_cases', 'g29_trick_lock_before_move', 'g29_thief_fainted')
         source = open(os.path.join(ROOT, 'tests', 'test_pool_g29.c'), encoding='utf-8').read()
         rows = {}
         for m in re.finditer(r'\{"(g29_\w+)", (\d+)u, \{([^}]*)\}, (\d+)u, (\d+)u\}', source):
@@ -1569,7 +1570,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 83)  # the four of G29 (Trick, Switcheroo, Thief, Covet), the 27 of G21, Spiky Shield (G20), G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
+        self.assertEqual(len(marked), 110)  # the four of G29 (Trick, Switcheroo, Thief, Covet), the eleven of G32, the ten of G30, the six of G28 (Shell Smash, Acrobatics, Blizzard, Ancient Power, Feint, Earthquake), the 27 of G21, Spiky Shield (G20), G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -1585,7 +1586,7 @@ class Library(unittest.TestCase):
                         for after in lines[i + 1:]:
                             if after.startswith('|move|') or after.startswith('|turn|'):
                                 break
-                            done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|', '|-start|', '|-weather|') + (('|-status|',) if name == 'Will-O-Wisp' else ()))
+                            done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|', '|-start|', '|-weather|') + (('|-status|',) if name in ('Will-O-Wisp', 'Stun Spore', 'Sleep Powder', 'Poison Powder') else ()))
                             # A side condition that a status move sets (Aurora Veil, step G20): its -sidestart line.
                             done = done or (after.startswith('|-sidestart|') and after.endswith('|move: ' + name))
                             # A side move (Wide Guard, step G7) shows its effect as its own -singleturn line; Detect's is
@@ -1594,6 +1595,8 @@ class Library(unittest.TestCase):
                             done = done or (name == 'Detect' and after.startswith('|-singleturn|'))
                             # Spiky Shield (step G20) prints Protect's line, `move: Protect`, for its own volatile.
                             done = done or (name == 'Spiky Shield' and after.startswith('|-singleturn|'))
+                            # Rage Powder (step G30): the single-turn line of its condition.
+                            done = done or (name == 'Rage Powder' and after.startswith('|-singleturn|') and after.endswith('|move: Rage Powder'))
                             # An item that a move gave (Trick, Switcheroo, Thief, Covet; step G29): its -item line.
                             done = done or (after.startswith('|-item|') and ('[from] move: ' + name) in after)
             with self.subTest(move=name):
