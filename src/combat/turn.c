@@ -462,7 +462,7 @@ static void dfi_break_protect(dfi_run *r, uint32_t flat, uint32_t move_id)
     dfi_active_slot *pos = dfi_pos(b, flat);
     bool broke = false;
     if (((uint32_t)pos->flags & DFI_VOL_PROTECT) != 0u) {
-        pos->flags = (uint8_t)((uint32_t)pos->flags & ~(uint32_t)DFI_VOL_PROTECT);
+        pos->flags = (uint8_t)((uint32_t)pos->flags & ~(uint32_t)DFI_VOL_PROTECT); /* wide-operands-reviewed */
         broke = true;
     }
     if (b->tail.sides[flat / 2u].wide_guard != 0u) {
