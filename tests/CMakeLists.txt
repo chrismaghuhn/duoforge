@@ -177,6 +177,8 @@ duoforge_add_test(NAME duoforge.state.pool_ac1 SOURCES test_pool_ac1.c WHITEBOX 
 # Step G16: Knock Off in the tail's item_now, in the ITEM_END event with the cause ITEM_TAKEN, in what reads the held item and in the
 # POOL view extension (the member's item_now, bit 11).
 duoforge_add_test(NAME duoforge.state.pool_g16 SOURCES test_pool_g16.c WHITEBOX TIMEOUT 60)
+# Step G29: Trick, Switcheroo, Thief and Covet (the held item as item_now, the received-item and left-item events, the view).
+duoforge_add_test(NAME duoforge.state.pool_g29 SOURCES test_pool_g29.c WHITEBOX TIMEOUT 60)
 # Step G23-A: the Mega of a member is found from (base forme, stone): every Mega forme of the pool, the second Megas included.
 duoforge_add_test(NAME duoforge.state.mega_by_stone SOURCES test_mega_by_stone.c WHITEBOX TIMEOUT 60)
 # Step G20: Aurora Veil in the tail's side turns, in the damage modifier, in the residual and in the POOL view extension
@@ -184,6 +186,7 @@ duoforge_add_test(NAME duoforge.state.mega_by_stone SOURCES test_mega_by_stone.c
 duoforge_add_test(NAME duoforge.state.pool_g20 SOURCES test_pool_g20.c WHITEBOX TIMEOUT 60)
 # Step G30: Rage Powder (the Follow Me bit told apart by the occupant's last move, the view extension's RAGE_POWDER bit 39), the
 # powder immunity, Psychic Fangs, Solar Beam, Flame Body, Clear Body, Hospitality and Overcoat, on their recorded battles.
+duoforge_add_test(NAME duoforge.state.pool_g26 SOURCES test_pool_g26.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g30 SOURCES test_pool_g30.c WHITEBOX TIMEOUT 60)
 # Step G36: Toxic and the badly poisoned status: the tail's toxic_stage, the member's status Tox, the view's ailment value.
 duoforge_add_test(NAME duoforge.state.pool_g36 SOURCES test_pool_g36.c WHITEBOX TIMEOUT 60)
@@ -191,10 +194,17 @@ duoforge_add_test(NAME duoforge.state.pool_g36 SOURCES test_pool_g36.c WHITEBOX 
 duoforge_add_test(NAME duoforge.state.pool_g37 SOURCES test_pool_g37.c WHITEBOX TIMEOUT 60)
 # Step G34: a batch of small rules (Gale Wings, accuracy and base power abilities, Solid Rock and Multiscale in the damage chain,
 # Steel Roller, Clangorous Soul, Brick Break): the marks, the flag bits and the commutation test of the ModifyDamage chain.
+duoforge_add_test(NAME duoforge.state.pool_g33 SOURCES test_pool_g33.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g34 SOURCES test_pool_g34.c WHITEBOX TIMEOUT 60)
 # Step G35: ten data rows, Rain Dish and Friend Guard: the marks, the flags, Gigaton Hammer left out, and Friend Guard in the
 # commutation test and the refusal of the ModifyDamage chain.
 duoforge_add_test(NAME duoforge.state.pool_g35 SOURCES test_pool_g35.c WHITEBOX TIMEOUT 60)
+duoforge_add_test(NAME duoforge.state.pool_g38 SOURCES test_pool_g38.c WHITEBOX TIMEOUT 60)
+# Mega batch 2: Swampertite, Metagrossite, Lucarionite Z and Aura Guard: the marks, the Mega of each pair, Aura Guard in the
+# commutation test and the refusal of the ModifyDamage chain.
+duoforge_add_test(NAME duoforge.state.pool_mega2 SOURCES test_pool_mega2.c WHITEBOX TIMEOUT 60)
+# Step G39: thirteen abilities and four moves: the marks, the rows, what keeps Damp and Sturdy inert, Hyper Cutter against Flower Veil.
+duoforge_add_test(NAME duoforge.state.pool_g39 SOURCES test_pool_g39.c WHITEBOX TIMEOUT 60)
 # Step G20, Spiky Shield: the protect_kind of the position (POOL tail rev 3), the state round trip, the volatile.
 duoforge_add_test(NAME duoforge.state.pool_g20_protect SOURCES test_pool_g20_protect.c WHITEBOX TIMEOUT 60)
 # Step G27: Cursed Body and Disable in the tail's disable_slot and disable_turns, the request, the cant line and the POOL view
@@ -211,8 +221,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=d0ce0f2c37ab8e9344feda3480d20abcaf720b4ba5c135edad8f200c1bc44f79"
-        "pool_tables.c=1bbf09a98839a6b34ca4f1cbd2f7389c2c825c7af126a4cdf66c0105f4f2a35f")
+        "pool_tables.h=b57a962676e8c5d8456b820e5567d6ec0052fb014a0b7ca29fa00597d2e454f1"
+        "pool_tables.c=88c358fd4088f678225e6ff2f8c7b9e2676f4074c86e07c7aa01ed84c4ac71ba")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)

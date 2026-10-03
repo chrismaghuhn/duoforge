@@ -749,6 +749,78 @@ function checkG22(dex, formes, itemIds, abilityIds) {
 // Freeze-Dry (Water is super effective), Soundproof (a sound move aimed at the holder by another Pokemon is -immune), Unnerve
 // (berries of the foes are not eaten while the holder stands) and Speed Boost (+1 Speed in the residual, not in the turn of
 // the switch-in). Eject Button is a text fact of the generator (G32_ENTRY_FACTS).
+// Step G33, the multi-hit batch and Mirror Armor: the pinned facts that the engine hard-codes (decision 0015, item 5y). The
+// four moves' hit counts and Triple Axel's rising power; Mirror Armor's handler against stubs: it deletes every drop of
+// another Pokemon that is still one (a stat at -6 has none), shows its ability line and gives the drop to a source that
+// stands, and leaves a self change, a bounced drop, and a rise alone; no Grass-type forme has the ability.
+function checkG33(dex) {
+    expect('multihit', ['dualwingbeat', 'tripleaxel', 'twinbeam'].map((id) => dex.moves.get(id).multihit), [2, 3, 2]);
+    expect('multiaccuracy', ['dualwingbeat', 'tripleaxel', 'twinbeam'].map((id) => !!dex.moves.get(id).multiaccuracy),
+        [false, true, false]);
+    // Population Bomb is not marked (its learners have no marked ability) but keeps its pinned fact for the follow-up.
+    expect('Population Bomb', [dex.moves.get('populationbomb').multihit, !!dex.moves.get('populationbomb').multiaccuracy], [10, true]);
+    const axe = dex.moves.get('tripleaxel');
+    expect('Triple Axel power', [1, 2, 3].map((hit) => call(axe.basePowerCallback, battle(axe), [{}, {}, {hit}])), [20, 40, 60]);
+    const armor = dex.abilities.get('mirrorarmor');
+    const run = (boost, target, source, effect) => {
+        const logs = [];
+        const gave = [];
+        const b = battle(armor, {add: (...a) => logs.push(a.map((x) => (typeof x === 'string' ? x : 'POKEMON')).join('|')),
+            boost: (...a) => gave.push(a.map((x) => (x && x.hp !== undefined ? (x === source ? 'source' : 'target') : x)))});
+        const left = Object.assign({}, boost);
+        call(armor.onTryBoost, b, [left, target, source, effect]);
+        return {left, logs, gave};
+    };
+    const target = {boosts: {atk: 0, spa: -6}, hp: 100};
+    const source = {boosts: {}, hp: 100};
+    expect('Mirror Armor bounces a drop', run({atk: -1, spa: 1}, target, source, {name: 'Intimidate'}),
+        {left: {spa: 1}, logs: ['-ability|POKEMON|Mirror Armor'], gave: [[{atk: -1}, 'source', 'target', null, true]]});
+    expect('Mirror Armor, a stat at -6 keeps its drop', run({spa: -1}, target, source, {name: 'Snarl'}),
+        {left: {spa: -1}, logs: [], gave: []});
+    expect('Mirror Armor, a source that has fainted', run({atk: -1}, target, {boosts: {}, hp: 0}, {name: 'Intimidate'}),
+        {left: {}, logs: [], gave: []});
+    expect('Mirror Armor, a self change', run({atk: -1}, target, target, {name: 'Close Combat'}), {left: {atk: -1}, logs: [], gave: []});
+    expect('Mirror Armor, a drop that has bounced', run({atk: -1}, target, source, {name: 'Mirror Armor'}),
+        {left: {atk: -1}, logs: [], gave: []});
+    expect('Mirror Armor, no source', run({atk: -1}, target, null, {name: 'Spikes'}), {left: {atk: -1}, logs: [], gave: []});
+    expect('Mirror Armor, a rise', run({atk: 1}, target, source, {name: 'Swords Dance'}), {left: {atk: 1}, logs: [], gave: []});
+    const grass = [];
+    for (const s of dex.species.all()) {
+        if (Object.values(s.abilities).includes('Mirror Armor') && s.types.includes('Grass')) {
+            grass.push(s.id);
+        }
+    }
+    expect('no Grass-type forme has Mirror Armor', grass, []);
+    // The accuracy of the later hits of a multiaccuracy move (src/combat/turn.c dfi_accuracy_check, later_hit). The Champions
+    // loop (data/mods/champions/scripts.ts:481-510) scales `move.accuracy` by the two stages in floating point with no floor,
+    // `accuracy /= boostTable[-boost]` and so on, then randomChance(accuracy, 100) = random(100) < accuracy. The engine has no
+    // floating point, so it compares v * D < N for the exact rational N / D (accuracy x (3 + a) / 3 or x 3 / (3 - a), then x 3 /
+    // (3 + e) or x (3 - e) / 3). Here both are computed for the accuracy of Triple Axel and every pair of stages; the number of
+    // values v in 0..99 that hit must be equal (a double that lands next to an integer would make them differ).
+    expect('Triple Axel accuracy', axe.accuracy, 90);
+    const table = [1, 4 / 3, 5 / 3, 2, 7 / 3, 8 / 3, 3];
+    let pairs = 0;
+    for (let a = -6; a <= 6; a++) {
+        for (let e = -6; e <= 6; e++) {
+            let accuracy = axe.accuracy;
+            if (a > 0) accuracy *= table[a]; else accuracy /= table[-a];
+            if (e > 0) accuracy /= table[e]; else if (e < 0) accuracy *= table[-e];
+            const numA = a > 0 ? 3 + a : 3, denA = a > 0 ? 3 : 3 - a;
+            const numE = e > 0 ? 3 : 3 - e, denE = e > 0 ? 3 + e : 3;
+            const numerator = axe.accuracy * numA * numE, denominator = denA * denE;
+            let reference = 0, engine = 0;
+            for (let v = 0; v < 100; v++) {
+                reference += v < accuracy ? 1 : 0;
+                engine += v * denominator < numerator ? 1 : 0;
+            }
+            expect('multiaccuracy a ' + a + ' e ' + e, engine, reference);
+            pairs++;
+        }
+    }
+    expect('multiaccuracy pairs', pairs, 169);
+    return 1;
+}
+
 function checkG32(dex) {
     for (const id of ['eruption', 'waterspout']) {
         const m = dex.moves.get(id);
@@ -802,6 +874,78 @@ function checkG19(dex) {
     const logs = [];
     cond.onStart.call({add: (...a) => logs.push(a.map((x) => (typeof x === 'string' ? x : 'POKEMON')).join(':'))}, {});
     expect('glaiverush onStart is silent', logs, ['-singlemove:POKEMON:Glaive Rush:[silent]']);
+}
+
+// Step G26, Perish Song: the pinned facts that the engine hard-codes (decision 0015, item 5w), called on the pinned
+// handlers. The Champions mod has no entry of Perish Song (data/mods/champions/moves.ts is hashed by the generator).
+function checkG26(dex) {
+    const move = dex.moves.get('perishsong');
+    expect('perish song', [move.basePower, move.accuracy, move.category, move.type, move.target, move.pp, move.priority],
+        [0, true, 'Status', 'Normal', 'all', 5, 0]);
+    // No protect flag: Protect and Wide Guard let it through (checkMoveBypassesProtect), and bypasssub: Substitute does not stop it.
+    expect('perish song flags', Object.keys(move.flags).sort(), ['bypasssub', 'distance', 'metronome', 'sound']);
+    const c = move.condition;
+    expect('perishsong condition', [c.duration, c.onResidualOrder, c.onResidualPriority, c.onResidualSubOrder], [4, 24, undefined, undefined]);
+    // The residual order 24 belongs to Perish Song alone among the entries that the engine's residual list has (the others
+    // with an order at or above 23 are moves that no row models).
+    const orders = [];
+    for (const table of [dex.data.Moves, dex.data.Abilities, dex.data.Items, dex.data.Conditions]) {
+        for (const [id, entry] of Object.entries(table)) {
+            if (entry.condition && entry.condition.onResidualOrder === 24) orders.push(id);
+            if (entry.onResidualOrder === 24) orders.push(id);
+        }
+    }
+    expect('entries with onResidualOrder 24', orders, ['perishsong']);
+    // The condition's callbacks: the count is the duration after the decrement of fieldEvent, the end shows perish0 and faints.
+    const logs = [];
+    const self = {add: (...a) => logs.push(a.map((x) => (typeof x === 'string' ? x : 'POKEMON')).join(':'))};
+    let fainted = 0;
+    c.onEnd.call(self, {faint() { fainted += 1; }});
+    expect('perishsong onEnd', [logs, fainted], [['-start:POKEMON:perish0'], 1]);
+    logs.length = 0;
+    c.onResidual.call(self, {volatiles: {perishsong: {duration: 3}}});
+    c.onResidual.call(self, {volatiles: {perishsong: {duration: 1}}});
+    expect('perishsong onResidual', logs, ['-start:POKEMON:perish3', '-start:POKEMON:perish1']);
+    // onHitField over the active Pokemon: what a Pokemon with and without the volatile, with a TryHit that stops it and
+    // with none left to take it, gets.
+    const run = (mons, tryHit) => {
+        const out = [];
+        const battle = {
+            getAllActive: () => mons,
+            runEvent: (name, pokemon) => (name === 'Invulnerability' ? true : tryHit(pokemon)),
+            add: (...a) => out.push(a.map((x) => (typeof x === 'string' ? x : 'POKEMON')).join(':')),
+        };
+        const result = move.onHitField.call(battle, {}, {}, move);
+        return {result, out, added: mons.map((m) => m.added || 0)};
+    };
+    const mon = (has) => {
+        const m = {volatiles: has ? {perishsong: {}} : {}, added: 0, addVolatile(id) { m.added += 1; m.volatiles[id] = {}; }};
+        return m;
+    };
+    expect('perish song on two fresh Pokemon', run([mon(false), mon(false)], () => true),
+        {result: undefined, out: ['-start:POKEMON:perish3:[silent]', '-start:POKEMON:perish3:[silent]', '-fieldactivate:move: Perish Song'], added: [1, 1]});
+    expect('perish song on a fresh and an infected Pokemon', run([mon(true), mon(false)], () => true),
+        {result: undefined, out: ['-start:POKEMON:perish3:[silent]', '-fieldactivate:move: Perish Song'], added: [0, 1]});
+    expect('perish song on infected Pokemon only', run([mon(true), mon(true)], () => true),
+        {result: false, out: [], added: [0, 0]});
+    const stopped = [mon(false), mon(false)];
+    expect('perish song with a TryHit that stops the first', run(stopped, (p) => (p === stopped[0] ? null : true)),
+        {result: undefined, out: ['-start:POKEMON:perish3:[silent]', '-fieldactivate:move: Perish Song'], added: [0, 1]});
+    const all = [mon(false)];
+    expect('perish song with every TryHit stopped is no failure', run(all, () => null),
+        {result: undefined, out: [], added: [0]});
+    // Good as Gold is the one marked ability that stops it (a status move of another Pokemon); the user's own does not.
+    const gold = dex.abilities.get('goodasgold');
+    const goldLogs = [];
+    const goldSelf = {add: (...a) => goldLogs.push(a.map((x) => (typeof x === 'string' ? x : 'POKEMON')).join(':'))};
+    const other = {}, user = {};
+    expect('Good as Gold against a Perish Song of another', [gold.onTryHit.call(goldSelf, other, user, move), goldLogs],
+        [null, ['-immune:POKEMON:[from] ability: Good as Gold']]);
+    expect('Good as Gold against its own Perish Song', gold.onTryHit.call(goldSelf, user, user, move), undefined);
+    // Soundproof stops it too (a sound move of another Pokemon): step G32 marked the ability, and the cast handles it.
+    const proof = dex.abilities.get('soundproof');
+    expect('Soundproof', [proof.onTryHit.call({add() {}}, other, user, move)], [null]);
+    return 1;
 }
 
 // Step G27, Disable and Cursed Body: the pinned facts that the engine hard-codes (decision 0015, the G27 item), run on the
@@ -1129,7 +1273,7 @@ const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'electrics
     abilities: ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
         'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll', 'innerfocus', 'liquidvoice',
         'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof', 'unnerve', 'speedboost',
-        'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody', 'toxicdebris']};
+        'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody', 'mirrorarmor', 'auraguard', 'hypercutter', 'scrappy', 'infiltrator', 'queenlymajesty', 'damp', 'sturdy', 'snowcloak', 'sandveil', 'static', 'justified', 'limber', 'solarpower', 'regenerator', 'toxicdebris']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
     'randomNormal', 'allAdjacent', 'allies', 'foeSide']); // foeSide: step G37 (the four hazards)
 // The fields of a move that the tables model (gen_closure.py DATA_KEYS and IGNORED_KEYS), nothing else.
@@ -1227,7 +1371,9 @@ function moveIsModelled(raw, id) {
     if (raw.boosts !== undefined) {
         // Step G19: Coaching, a status move whose primary boosts go to the adjacent ally, is modelled too.
         const toAlly = raw.target === 'adjacentAlly' && raw.category === 'Status';
-        if ((raw.target !== 'self' && !toAlly) || !isBoostBlock(raw.boosts)) {
+        // Step G39: Charm and Fake Tears, a status move of one adjacent target whose primary boosts go to that target.
+        const toTarget = raw.target === 'normal' && raw.category === 'Status';
+        if ((raw.target !== 'self' && !toAlly && !toTarget) || !isBoostBlock(raw.boosts)) {
             return false;
         }
         vectors += 1;
@@ -1335,6 +1481,17 @@ function checkHandlers(dex, source, header, extended) {
             }
             expect('move ' + id + ' has the special of ' + PROTECT_COPIES[id], special,
                    columns[moveIds.find((e) => e[1] === PROTECT_COPIES[id])[0]][28]);
+            continue;
+        }
+        if (id === 'sacredsword') {
+            // Step G39: Sacred Sword has Darkest Lariat's handler (the damage formula and the accuracy step that ignore the
+            // target's Defense and evasion stages), with the same two fields and no callback.
+            const original = dex.data.Moves.darkestlariat;
+            for (const key of ['ignoreDefensive', 'ignoreEvasion', 'category', 'target', 'accuracy']) {
+                expect('move ' + id + ' ' + key + ' is that of darkestlariat', raw[key], original[key]);
+            }
+            expect('move ' + id + ' has the special of darkestlariat', special,
+                   columns[moveIds.find((e) => e[1] === 'darkestlariat')[0]][28]);
             continue;
         }
         if (moveIsModelled(raw, id) !== (special !== unmodeledSpecial)) {
@@ -1481,8 +1638,10 @@ function main() {
     checkEncore(dex, repo);
     checkRecharge(dex);
     checkG19(dex);
+    checkG26(dex);
     checkG27(dex);
     checkG32(dex);
+    checkG33(dex);
     checkG22(dex, formeRowsList, new Set(definedIds(headers, 'ITEM').values()), new Set(abilityIds.values()));
     const abilities = checkAbilities(dex, abilityRows, moveIds, unmodeledAbilities, unmodeledMoves);
     // "All 18": a booster and a resist berry for each type, and nothing else in the families.

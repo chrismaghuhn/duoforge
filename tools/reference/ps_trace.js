@@ -76,6 +76,8 @@ const CONDITION_SITES = {
     // Flame Body (step G30): its randomChance(3, 10) in onDamagingHit of the target. Like Poison Touch's it was an
     // UNKNOWN draw before, so the harness version stays.
     'flamebody:DamagingHit': 'FLAME_BODY',
+    // Static (step G39): its randomChance(3, 10) in onDamagingHit of the target, as Flame Body's.
+    'static:DamagingHit': 'STATIC',
 };
 
 // The event a draw happens in (innermost last), tracked by wrapping the
@@ -120,6 +122,15 @@ function classify(stack, battle) {
     }
     for (const [frame, site] of SITE_RULES) {
         if (frames.includes(frame)) return [site, ev];
+    }
+    // The accuracy check that a move with multiaccuracy (Triple Axel, step G33) makes before each hit after the first: a
+    // randomChance called straight from hitStepMoveHitLoop (data/mods/champions/scripts.ts:481-510, the base game's
+    // sim/battle-actions.ts:912-929), the same draw as hitStepAccuracy's. Matched by its immediate callers, so that no other
+    // draw inside the hit loop is taken for it. It was an UNKNOWN draw before, which the converter refuses, so the harness
+    // version stays.
+    if (frames[0] === 'RecordingPRNG.randomChance' && frames[1] === 'Battle.randomChance' &&
+        frames[2] === 'BattleActions.hitStepMoveHitLoop') {
+        return ['ACCURACY', ev];
     }
     return ['UNKNOWN', frames.slice(0, 6).join('<')];
 }
@@ -295,6 +306,12 @@ function run(root, spec, specFile) {
             enabled: side.requestState === 'move' && side.activeRequest && side.activeRequest.active ?
                 side.activeRequest.active.map((a) => (a.moves || []).map((mv) =>
                     (mv.id === 'struggle' ? 2 : (mv.disabled ? 0 : 1)))) : [],
+            // Imprison's hidden disable (step G38): per active slot, 1 for a move slot whose `disabled` is 'hidden'. The request
+            // shows such a move as enabled for the last active Pokemon of the side only, while the choice of it is rejected
+            // (sim/pokemon.ts:1025, sim/side.ts:718-737); a key only while a move is so disabled, so a state without it is what
+            // every trace recorded before had.
+            ...(side.active.some((p) => p && p.moveSlots.some((m) => m.disabled === 'hidden')) ?
+                {hidden: side.active.map((p) => (p ? p.moveSlots.map((m) => (m.disabled === 'hidden' ? 1 : 0)) : []))} : {}),
             active: side.active.map((p) => (p ? side.pokemon.indexOf(p) : -1)),
             pokemon: side.pokemon.map((p) => ({
                 species: p.species.name,

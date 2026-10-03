@@ -1,0 +1,28 @@
+{
+  "name": "g29_edge_cases",
+  "purpose": "Edges of the item transfers: a Grimmsnarl with no item tricks a Raichu with none (-fail: both hands empty); an Arcanine-Hisui that holds Leftovers uses Thief at a Sneasler that holds a Sitrus Berry (nothing happens: the user holds an item); the Grimmsnarl then tricks the Sneasler (Unburden): the berry goes to the Grimmsnarl with the silent -enditem and the -item line, the Sneasler's Unburden volatile is set by the take and doubles its Speed from then on.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000000005",
+  "teams": [
+    "Grimmsnarl (M)\nAbility: Prankster\nLevel: 50\nEVs: 31 HP / 20 Def / 15 SpD\nSassy Nature\n- Trick\n- Light Screen\n- Reflect\n- Spirit Break\n\nArcanine-Hisui (M) @ Leftovers\nAbility: Rock Head\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Covet\n- Thief\n- Flare Blitz\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- High Horsepower\n\nPelipper (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Hurricane\n- Weather Ball\n- Wide Guard\n- Protect\n\nIncineroar (M) @ Charcoal\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Flare Blitz\n- Parting Shot\n- Darkest Lariat\n\nKingambit (M) @ Black Belt\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Sucker Punch\n- Iron Head\n- Protect",
+    "Sneasler (M) @ Sitrus Berry\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Close Combat\n- Dire Claw\n- Protect\n- Fake Out\n\nRaichu (F)\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Thunderbolt\n- Nuzzle\n- Focus Blast\n- Fake Out\n\nMilotic (F) @ Life Orb\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Muddy Water\n- Ice Beam\n- Coil\n- Protect\n\nStaraptor (M) @ Sharp Beak\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Close Combat\n- Quick Attack\n- Protect\n\nAnnihilape (M) @ Focus Sash\nAbility: Defiant\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Close Combat\n- Ice Punch\n- Shadow Claw\n- Protect\n\nGholdengo @ Choice Scarf\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Nasty Plot\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 2, move 2 1",
+      "move 1 1, move 4",
+      "move 4, move 4",
+      "move 4, move 4",
+      "move 4, move 4"
+    ],
+    "p2": [
+      "move 2 2, move 2 2",
+      "move 2 2, move 2 2",
+      "move 2 2, move 2 2",
+      "move 2 2, move 2 2",
+      "move 2 2, move 2 2"
+    ],
+    "max_steps": 6
+  }
+}

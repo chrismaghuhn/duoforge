@@ -1,0 +1,26 @@
+{
+  "name": "mb2_tough_claws_aura_guard",
+  "purpose": "Mega batch 2, Tough Claws against Aura Guard: Metagross-Mega's Psychic Fangs (contact, x1.3 Tough Claws) meets Lucario-Mega-Z's Aura Guard (x0.5), both Mega Evolving on the first turn; Lucario's Aura Sphere is not a contact move.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000000001",
+  "teams": [
+    "Metagross @ Metagrossite\nAbility: Clear Body\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nAdamant Nature\n- Psychic Fangs\n- Iron Head\n- Bullet Punch\n- Protect\n\nMilotic (F) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Muddy Water\n- Ice Beam\n- Coil\n- Protect\n\nStaraptor (F) @ Sharp Beak\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- U-turn\n- Close Combat\n- Protect\n\nKingambit (M) @ Black Belt\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Sucker Punch\n- Iron Head\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Nasty Plot\n- Protect\n\nAnnihilape (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Close Combat\n- Ice Punch\n- Shadow Claw\n- U-turn",
+    "Lucario (M) @ Lucarionite Z\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpA\nBold Nature\n- Flash Cannon\n- Aura Sphere\n- Close Combat\n- Protect\n\nMilotic (F) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Muddy Water\n- Ice Beam\n- Coil\n- Protect\n\nStaraptor (F) @ Sharp Beak\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- U-turn\n- Close Combat\n- Protect\n\nKingambit (M) @ Black Belt\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Sucker Punch\n- Iron Head\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Nasty Plot\n- Protect\n\nAnnihilape (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Close Combat\n- Ice Punch\n- Shadow Claw\n- U-turn"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1 mega, move 3",
+      "move 1 1, move 3",
+      "move 1 1, move 3",
+      "move 1 1, move 3"
+    ],
+    "p2": [
+      "move 2 1 mega, move 3",
+      "move 2 1, move 3",
+      "move 2 1, move 3",
+      "move 2 1, move 3"
+    ],
+    "max_steps": 5
+  }
+}
