@@ -1,24 +1,24 @@
 {
   "name": "mb2_lucario_aura_guard",
-  "purpose": "Mega batch 2, Lucarionite Z and Aura Guard: Lucario (Inner Focus) with Lucarionite Z takes contact hits (Double-Edge, Flare Blitz) and a spread Hyper Voice before and after it Mega Evolves into Lucario-Mega-Z; Aura Guard halves each contact hit and leaves the special one alone.",
+  "purpose": "Mega batch 2, Lucarionite Z and Aura Guard: Lucario (Inner Focus) with Lucarionite Z takes contact hits (Double-Edge, Flare Blitz, Darkest Lariat) and a spread Hyper Voice before and after it Mega Evolves into Lucario-Mega-Z; Aura Guard halves each contact hit and leaves the special one alone.",
   "data": "pool",
   "format": "gen9championsvgc2026regmc",
-  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000000001",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000000003",
   "teams": [
     "Lucario (M) @ Lucarionite Z\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpA\nBold Nature\n- Flash Cannon\n- Aura Sphere\n- Close Combat\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Nasty Plot\n- Protect\n\nStaraptor (F) @ Sharp Beak\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- U-turn\n- Close Combat\n- Protect\n\nKingambit (M) @ Black Belt\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Sucker Punch\n- Iron Head\n- Protect\n\nMilotic (F) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Muddy Water\n- Ice Beam\n- Coil\n- Protect\n\nAnnihilape (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Close Combat\n- Ice Punch\n- Shadow Claw\n- U-turn",
     "Incineroar (M) @ Charcoal\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Flare Blitz\n- Parting Shot\n- Darkest Lariat\n\nSalamence (M) @ Leftovers\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Hyper Voice\n- Double-Edge\n- Protect\n\nSneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Close Combat\n- Dire Claw\n- U-turn\n- Fake Out\n\nPelipper (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Hurricane\n- Weather Ball\n- U-turn\n- Protect\n\nKingambit (M) @ Black Belt\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Sucker Punch\n- Iron Head\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Nasty Plot\n- Protect"
   ],
   "plan": {
     "p1": [
-      "move 1 2, move 4",
-      "move 1 2 mega, move 2 1",
-      "move 1 2, move 2 1",
-      "move 1 2, move 2 1"
+      "move 1 1, move 4",
+      "move 1 1 mega, move 3",
+      "move 1 1, move 3",
+      "move 1 1, move 3"
     ],
     "p2": [
       "move 1 1, move 1",
       "move 2 1, move 2 1",
-      "move 4 1, move 2 1",
+      "move 4 1, move 1",
       "move 4 1, move 1"
     ],
     "max_steps": 5

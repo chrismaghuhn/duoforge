@@ -3,7 +3,7 @@
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "spec": "mb2_lucario_aura_guard.json",
  "format": "gen9championsvgc2026regmc",
- "seed": "sodium,0000000000000000000000000000000000000000000000000000000000000001",
+ "seed": "sodium,0000000000000000000000000000000000000000000000000000000000000003",
  "start": {
   "log": [
    "|gametype|doubles",
@@ -782,7 +782,7 @@
   },
   {
    "input": {
-    "p1": "move 1 2, move 4",
+    "p1": "move 1 1, move 4",
     "p2": "move 1 1, move 1"
    },
    "draws": [
@@ -791,7 +791,7 @@
      "context": "resolve",
      "lo": 0,
      "hi": 2,
-     "value": 1
+     "value": 0
     },
     {
      "site": "RANDOM_TARGET",
@@ -812,42 +812,42 @@
      "context": "action-speed",
      "lo": 0,
      "hi": 2,
-     "value": 0
+     "value": 1
     },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 71
+     "value": 32
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 14
+     "value": 16
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 0
+     "value": 3
     },
     {
      "site": "SECONDARY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 81
+     "value": 42
     },
     {
      "site": "RANDOM_TARGET",
      "context": "action-speed",
      "lo": 0,
      "hi": 2,
-     "value": 0
+     "value": 1
     },
     {
      "site": "RANDOM_TARGET",
@@ -861,35 +861,14 @@
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 78
+     "value": 22
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 5
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 6
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 78
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 15
+     "value": 16
     },
     {
      "site": "DAMAGE_ROLL",
@@ -897,6 +876,27 @@
      "lo": 0,
      "hi": 16,
      "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 17
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 19
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 3
     },
     {
      "site": "SECONDARY",
@@ -910,7 +910,7 @@
      "context": "field:Residual",
      "lo": 1,
      "hi": 3,
-     "value": 1,
+     "value": 2,
      "group": [
       "H:stall:p1b:end",
       "H:protect:p1b:end"
@@ -930,16 +930,14 @@
     "|-activate|p1b: Gholdengo|move: Protect",
     "|-resisted|p1a: Lucario|1",
     "|split|p1",
-    "|-damage|p1a: Lucario|150/177",
+    "|-damage|p1a: Lucario|149/177",
     "|-damage|p1a: Lucario|84/100",
-    "|move|p1a: Lucario|Flash Cannon|p2b: Salamence",
+    "|move|p1a: Lucario|Flash Cannon|p2a: Incineroar",
+    "|-resisted|p2a: Incineroar|1",
     "|split|p2",
-    "|-damage|p2b: Salamence|129/202",
-    "|-damage|p2b: Salamence|63/100",
-    "|-unboost|p2b: Salamence|spd|1",
-    "|split|p2",
-    "|-heal|p2b: Salamence|141/202|[from] item: Leftovers",
-    "|-heal|p2b: Salamence|69/100|[from] item: Leftovers",
+    "|-damage|p2a: Incineroar|178/202",
+    "|-damage|p2a: Incineroar|88/100",
+    "|-unboost|p2a: Incineroar|spd|1",
     "|upkeep",
     "|turn|2"
    ],
@@ -984,7 +982,7 @@
         "set_species": "Lucario",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 150,
+        "hp": 149,
         "maxhp": 177,
         "item": "lucarionitez",
         "status": "",
@@ -1133,7 +1131,7 @@
         "set_species": "Incineroar",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 202,
+        "hp": 178,
         "maxhp": 202,
         "item": "charcoal",
         "status": "",
@@ -1144,7 +1142,7 @@
          0,
          0,
          0,
-         0,
+         -1,
          0,
          0,
          0
@@ -1163,7 +1161,7 @@
         "set_species": "Salamence",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 141,
+        "hp": 202,
         "maxhp": 202,
         "item": "leftovers",
         "status": "",
@@ -1174,7 +1172,7 @@
          0,
          0,
          0,
-         -1,
+         0,
          0,
          0,
          0
@@ -1254,7 +1252,7 @@
   },
   {
    "input": {
-    "p1": "move 1 2 mega, move 2 1",
+    "p1": "move 1 1 mega, move 3",
     "p2": "move 2 1, move 2 1"
    },
    "draws": [
@@ -1263,7 +1261,7 @@
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 97
+     "value": 36
     },
     {
      "site": "CRIT",
@@ -1277,132 +1275,94 @@
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 12
+     "value": 3
     },
     {
      "site": "SECONDARY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 99
+     "value": 21
     },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 33
+     "value": 37
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 20
+     "value": 3
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 14
+     "value": 7
     },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 29
+     "value": 88
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 12
+     "value": 17
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 15
+     "value": 10
     },
     {
      "site": "SECONDARY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 14
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 0
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 22
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 9
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 6
+     "value": 74
     }
    ],
    "log": [
     "|detailschange|p1a: Lucario|Lucario-Mega-Z, L50, M",
     "|-mega|p1a: Lucario|Lucario|Lucarionite Z",
-    "|move|p1a: Lucario|Flash Cannon|p2b: Salamence",
+    "|move|p1a: Lucario|Flash Cannon|p2a: Incineroar",
+    "|-resisted|p2a: Incineroar|1",
     "|split|p2",
-    "|-damage|p2b: Salamence|9/202",
-    "|-damage|p2b: Salamence|4/100",
+    "|-damage|p2a: Incineroar|128/202",
+    "|-damage|p2a: Incineroar|63/100",
     "|move|p2b: Salamence|Double-Edge|p1a: Lucario",
     "|-resisted|p1a: Lucario|1",
     "|split|p1",
-    "|-damage|p1a: Lucario|133/177",
-    "|-damage|p1a: Lucario|75/100",
+    "|-damage|p1a: Lucario|130/177",
+    "|-damage|p1a: Lucario|73/100",
     "|split|p2",
-    "|-damage|p2b: Salamence|3/202|[from] Recoil",
-    "|-damage|p2b: Salamence|1/100|[from] Recoil",
-    "|move|p1b: Gholdengo|Shadow Ball|p2a: Incineroar",
-    "|-resisted|p2a: Incineroar|1",
-    "|split|p2",
-    "|-damage|p2a: Incineroar|163/202",
-    "|-damage|p2a: Incineroar|80/100",
-    "|-unboost|p2a: Incineroar|spd|1",
-    "|split|p1",
-    "|-damage|p1b: Gholdengo|162/179|[from] item: Life Orb",
-    "|-damage|p1b: Gholdengo|90/100|[from] item: Life Orb",
+    "|-damage|p2b: Salamence|196/202|[from] Recoil",
+    "|-damage|p2b: Salamence|97/100|[from] Recoil",
+    "|move|p1b: Gholdengo|Nasty Plot|p1b: Gholdengo",
+    "|-boost|p1b: Gholdengo|spa|2",
     "|move|p2a: Incineroar|Flare Blitz|p1a: Lucario",
     "|-supereffective|p1a: Lucario|1",
     "|split|p1",
-    "|-damage|p1a: Lucario|45/177",
-    "|-damage|p1a: Lucario|25/100",
-    "|-status|p1a: Lucario|brn",
+    "|-damage|p1a: Lucario|43/177",
+    "|-damage|p1a: Lucario|24/100",
     "|split|p2",
-    "|-damage|p2a: Incineroar|134/202|[from] Recoil",
-    "|-damage|p2a: Incineroar|66/100|[from] Recoil",
+    "|-damage|p2a: Incineroar|99/202|[from] Recoil",
+    "|-damage|p2a: Incineroar|49/100|[from] Recoil",
     "|split|p2",
-    "|-heal|p2b: Salamence|15/202|[from] item: Leftovers",
-    "|-heal|p2b: Salamence|7/100|[from] item: Leftovers",
-    "|split|p1",
-    "|-damage|p1a: Lucario|34/177 brn|[from] brn",
-    "|-damage|p1a: Lucario|19/100 brn|[from] brn",
+    "|-heal|p2b: Salamence|202/202|[from] item: Leftovers",
+    "|-heal|p2b: Salamence|100/100|[from] item: Leftovers",
     "|upkeep",
     "|turn|3"
    ],
@@ -1447,10 +1407,10 @@
         "set_species": "Lucario",
         "mega": 1,
         "switch_flag": 0,
-        "hp": 34,
+        "hp": 43,
         "maxhp": 177,
         "item": "lucarionitez",
-        "status": "brn",
+        "status": "",
         "status_time": 0,
         "confusion": 0,
         "fainted": false,
@@ -1477,7 +1437,7 @@
         "set_species": "Gholdengo",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 162,
+        "hp": 179,
         "maxhp": 179,
         "item": "lifeorb",
         "status": "",
@@ -1487,7 +1447,7 @@
         "boosts": [
          -2,
          0,
-         0,
+         2,
          0,
          0,
          0,
@@ -1495,8 +1455,8 @@
         ],
         "pp": [
          8,
-         15,
-         20,
+         16,
+         19,
          7
         ],
         "volatiles": [],
@@ -1594,7 +1554,7 @@
         "set_species": "Incineroar",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 134,
+        "hp": 99,
         "maxhp": 202,
         "item": "charcoal",
         "status": "",
@@ -1624,7 +1584,7 @@
         "set_species": "Salamence",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 15,
+        "hp": 202,
         "maxhp": 202,
         "item": "leftovers",
         "status": "",
@@ -1635,7 +1595,7 @@
          0,
          0,
          0,
-         -1,
+         0,
          0,
          0,
          0
@@ -1715,30 +1675,51 @@
   },
   {
    "input": {
-    "p1": "move 1 2, move 2 1",
-    "p2": "move 4 1, move 2 1"
+    "p1": "move 1 1, move 3",
+    "p2": "move 4 1, move 1"
    },
    "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 60
+     "value": 95
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 18
+     "value": 10
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 4
+     "value": 14
     },
     {
      "site": "SECONDARY",
@@ -1748,370 +1729,82 @@
      "value": 46
     },
     {
-     "site": "ACCURACY",
-     "context": "",
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
      "lo": 0,
-     "hi": 100,
-     "value": 81
+     "hi": 2,
+     "value": 1
     },
     {
-     "site": "CRIT",
-     "context": "",
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacentFoes",
      "lo": 0,
-     "hi": 24,
-     "value": 2
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 11
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 58
+     "hi": 2,
+     "value": 0
     },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 11
+     "value": 56
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 22
+     "value": 23
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
+     "value": 4
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 32
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
      "value": 5
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 14
     }
    ],
    "log": [
-    "|move|p1a: Lucario|Flash Cannon|p2b: Salamence",
-    "|split|p2",
-    "|-damage|p2b: Salamence|0 fnt",
-    "|-damage|p2b: Salamence|0 fnt",
-    "|faint|p2b: Salamence",
-    "|move|p1b: Gholdengo|Shadow Ball|p2a: Incineroar",
+    "|move|p1a: Lucario|Flash Cannon|p2a: Incineroar",
     "|-resisted|p2a: Incineroar|1",
     "|split|p2",
-    "|-damage|p2a: Incineroar|73/202",
-    "|-damage|p2a: Incineroar|36/100",
+    "|-damage|p2a: Incineroar|54/202",
+    "|-damage|p2a: Incineroar|26/100",
+    "|move|p2b: Salamence|Hyper Voice|p1a: Lucario|[spread] p1a",
+    "|-immune|p1b: Gholdengo",
+    "|-resisted|p1a: Lucario|1",
     "|split|p1",
-    "|-damage|p1b: Gholdengo|145/179|[from] item: Life Orb",
-    "|-damage|p1b: Gholdengo|81/100|[from] item: Life Orb",
+    "|-damage|p1a: Lucario|24/177",
+    "|-damage|p1a: Lucario|13/100",
+    "|move|p1b: Gholdengo|Nasty Plot|p1b: Gholdengo",
+    "|-boost|p1b: Gholdengo|spa|2",
     "|move|p2a: Incineroar|Darkest Lariat|p1a: Lucario",
     "|-resisted|p1a: Lucario|1",
     "|split|p1",
-    "|-damage|p1a: Lucario|21/177 brn",
-    "|-damage|p1a: Lucario|11/100 brn",
-    "|split|p1",
-    "|-damage|p1a: Lucario|10/177 brn|[from] brn",
-    "|-damage|p1a: Lucario|5/100 brn|[from] brn",
-    "|upkeep"
-   ],
-   "state": {
-    "turn": 3,
-    "ended": false,
-    "winner": "",
-    "weather": "",
-    "weather_turns": 0,
-    "terrain": "",
-    "terrain_turns": 0,
-    "trick_room": 0,
-    "sides": [
-     {
-      "request": "",
-      "conditions": [
-       0,
-       0,
-       0
-      ],
-      "enabled": [],
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Lucario-Mega-Z",
-        "set_species": "Lucario",
-        "mega": 1,
-        "switch_flag": 0,
-        "hp": 10,
-        "maxhp": 177,
-        "item": "lucarionitez",
-        "status": "brn",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         9,
-         20,
-         8,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Gholdengo",
-        "set_species": "Gholdengo",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 145,
-        "maxhp": 179,
-        "item": "lifeorb",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         -2,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         8,
-         14,
-         20,
-         7
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Staraptor",
-        "set_species": "Staraptor",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 192,
-        "maxhp": 192,
-        "item": "sharpbeak",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         16,
-         20,
-         8,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "blackbelt",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         8,
-         16,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       }
-      ]
-     },
-     {
-      "request": "switch",
-      "conditions": [
-       0,
-       0,
-       0
-      ],
-      "enabled": [],
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Incineroar",
-        "set_species": "Incineroar",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 73,
-        "maxhp": 202,
-        "item": "charcoal",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         -1,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         11,
-         15,
-         20,
-         11
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Salamence",
-        "set_species": "Salamence",
-        "mega": 0,
-        "switch_flag": 1,
-        "hp": 0,
-        "maxhp": 202,
-        "item": "leftovers",
-        "status": "fnt",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         11,
-         15,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Sneasler",
-        "set_species": "Sneasler",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 157,
-        "maxhp": 157,
-        "item": "whiteherb",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         8,
-         16,
-         20,
-         12
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Pelipper",
-        "set_species": "Pelipper",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 167,
-        "maxhp": 167,
-        "item": "mysticwater",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         12,
-         20,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       }
-      ]
-     }
-    ]
-   }
-  },
-  {
-   "input": {
-    "p2": "pass, switch 3"
-   },
-   "draws": [],
-   "log": [
-    "|split|p2",
-    "|switch|p2b: Sneasler|Sneasler, L50, M|157/157",
-    "|switch|p2b: Sneasler|Sneasler, L50, M|100/100",
+    "|-damage|p1a: Lucario|12/177",
+    "|-damage|p1a: Lucario|6/100",
+    "|upkeep",
     "|turn|4"
    ],
    "state": {
@@ -2155,10 +1848,10 @@
         "set_species": "Lucario",
         "mega": 1,
         "switch_flag": 0,
-        "hp": 10,
+        "hp": 12,
         "maxhp": 177,
         "item": "lucarionitez",
-        "status": "brn",
+        "status": "",
         "status_time": 0,
         "confusion": 0,
         "fainted": false,
@@ -2185,7 +1878,7 @@
         "set_species": "Gholdengo",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 145,
+        "hp": 179,
         "maxhp": 179,
         "item": "lifeorb",
         "status": "",
@@ -2195,7 +1888,7 @@
         "boosts": [
          -2,
          0,
-         0,
+         4,
          0,
          0,
          0,
@@ -2203,8 +1896,8 @@
         ],
         "pp": [
          8,
-         14,
-         20,
+         16,
+         18,
          7
         ],
         "volatiles": [],
@@ -2289,7 +1982,6 @@
        [
         1,
         1,
-        1,
         1
        ]
       ],
@@ -2303,7 +1995,7 @@
         "set_species": "Incineroar",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 73,
+        "hp": 54,
         "maxhp": 202,
         "item": "charcoal",
         "status": "",
@@ -2324,6 +2016,35 @@
          15,
          20,
          11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Salamence",
+        "set_species": "Salamence",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         15,
+         8
         ],
         "volatiles": [],
         "locked": null
@@ -2359,14 +2080,227 @@
         "locked": null
        },
        {
-        "species": "Salamence",
-        "set_species": "Salamence",
+        "species": "Pelipper",
+        "set_species": "Pelipper",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 0,
-        "maxhp": 202,
-        "item": "leftovers",
+        "hp": 167,
+        "maxhp": 167,
+        "item": "mysticwater",
         "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 1, move 3",
+    "p2": "move 4 1, move 1"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 22
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 19
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 13
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 36
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacentFoes",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 78
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 5
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:normal",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 91
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 16
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 4
+    }
+   ],
+   "log": [
+    "|move|p1a: Lucario|Flash Cannon|p2a: Incineroar",
+    "|-resisted|p2a: Incineroar|1",
+    "|split|p2",
+    "|-damage|p2a: Incineroar|9/202",
+    "|-damage|p2a: Incineroar|4/100",
+    "|move|p2b: Salamence|Hyper Voice|p1a: Lucario|[spread] p1a",
+    "|-immune|p1b: Gholdengo",
+    "|-resisted|p1a: Lucario|1",
+    "|split|p1",
+    "|-damage|p1a: Lucario|0 fnt",
+    "|-damage|p1a: Lucario|0 fnt",
+    "|faint|p1a: Lucario",
+    "|move|p1b: Gholdengo|Nasty Plot|p1b: Gholdengo",
+    "|-boost|p1b: Gholdengo|spa|2",
+    "|move|p2a: Incineroar|Darkest Lariat|p1b: Gholdengo",
+    "|-supereffective|p1b: Gholdengo|1",
+    "|split|p1",
+    "|-damage|p1b: Gholdengo|51/179",
+    "|-damage|p1b: Gholdengo|28/100",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 4,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Lucario-Mega-Z",
+        "set_species": "Lucario",
+        "mega": 1,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 177,
+        "item": "lucarionitez",
+        "status": "fnt",
         "status_time": 0,
         "confusion": 0,
         "fainted": true,
@@ -2380,9 +2314,204 @@
          0
         ],
         "pp": [
+         8,
+         20,
+         8,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 51,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -2,
+         0,
+         6,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         17,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 192,
+        "maxhp": 192,
+        "item": "sharpbeak",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         20,
+         8,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackbelt",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Incineroar",
+        "set_species": "Incineroar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 9,
+        "maxhp": 202,
+        "item": "charcoal",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         -1,
+         0,
+         0,
+         0
+        ],
+        "pp": [
          11,
          15,
+         20,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Salamence",
+        "set_species": "Salamence",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         9,
+         15,
          8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sneasler",
+        "set_species": "Sneasler",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 157,
+        "maxhp": 157,
+        "item": "whiteherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         20,
+         12
         ],
         "volatiles": [],
         "locked": null

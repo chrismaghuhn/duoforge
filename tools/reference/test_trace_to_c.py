@@ -508,6 +508,29 @@ class Library(unittest.TestCase):
                 tie(bad)
             self.assertEqual(cm.exception.rule, 'modifydamage-tie')
 
+    def test_aura_guard_ties_mega_batch_2(self):
+        """Aura Guard (Mega batch 2, 0.5) joins the ModifyDamage handlers as the target's one ability, with Solid Rock and
+        Multiscale: a tie with a Life Orb attacker and a screen (three modifiers that commute) is one value in every order;
+        two ability handlers on one target are no state of one hit, and an Expert Belt with Glaive Rush and Aura Guard does
+        not commute (refused by the engine, so refused here)."""
+        def tie(group):
+            return trace_to_c.drop_reason({'site': 'SPEED_TIE', 'context': 'event:ModifyDamage', 'group': group}, {})
+        self.assertEqual(trace_to_c.modify_damage_values()['auraguard'], 2048)
+        same = 'ModifyDamage modifiers whose every order chains to the same value'
+        for group in (['H:auraguard:p1a:cb', 'H:lifeorb:p2a:cb'], ['H:auraguard:p1a:cb', 'H:lifeorb:p2a:cb', 'H:reflect:p1:cb'],
+                      ['H:auraguard:p1a:cb', 'H:friendguard:p1b:cb', 'H:lifeorb:p2a:cb']):
+            with self.subTest(group=group):
+                self.assertEqual(tie(group), same)
+        for bad in (['H:expertbelt:p2a:cb', 'H:glaiverush:p1a:cb', 'H:auraguard:p1a:cb'],  # does not commute
+                    ['H:expertbelt:p2a:cb', 'H:auraguard:p1a:cb', 'H:friendguard:p1b:cb']):  # does not commute
+            with self.subTest(group=bad), self.assertRaises(trace_to_c.ConversionError) as cm:
+                tie(bad)
+            self.assertEqual(cm.exception.rule, 'modifydamage-tie')
+        # the subsets one hit can have: Aura Guard is exclusive with Solid Rock and Multiscale (the target's one ability)
+        values = trace_to_c.modify_damage_values()
+        subsets = trace_to_c.modifier_subsets(['auraguard', 'multiscale', 'solidrock'], values)
+        self.assertEqual(sorted(subsets), [[2048], [2048], [3072]])
+
     def test_a_flower_veil_block_is_the_activate_event_of_the_ability_with_the_holder_in_other(self):
         """-block|protected|ability: Flower Veil|[of] holder (step G12): ACTIVATE at the protected Pokemon, cause ABILITY,
         the ability's id + 1, the holder in `other` (the ability's own activation has none); another -block is refused."""
