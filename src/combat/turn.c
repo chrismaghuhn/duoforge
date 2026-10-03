@@ -3425,18 +3425,6 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
      * data/items.ts:5295-5309) comes first, also when the hit knocked its
      * holder out (the faint is not processed yet): a contact move costs the
      * attacker floor(maxHP / 6), at least 1. */
-    /* Cursed Body rolls once per hit holder, and the holders' handlers of one DamagingHit event come in the order of their
-     * Speed (a tie shuffles and draws): two holders hit by one spread move are not modelled (E_UNSUPPORTED, never a guess). */
-    {
-        uint32_t holders = 0u;
-        for (uint32_t i = 0u; i < count; ++i) {
-            const dfi_member *tm = dfi_at(b, targets[i]);
-            holders += (hit[i] && tm != NULL && dfi_ability(r->b, tm, DFI_ABILITY_CURSEDBODY)) ? 1u : 0u;
-        }
-        if (holders > 1u) {
-            return DUOFORGE_E_UNSUPPORTED;
-        }
-    }
     const uint32_t user_before_hit = m->hp;
     /* Rough Skin (POOL data, data/abilities.ts:3938-3950) is the order-1 handler, before Rocky Helmet's 2: a contact
      * move costs the attacker floor(maxHP / 8), at least 1, with [from] ability: Rough Skin [of] the holder, also
@@ -3511,7 +3499,11 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                       dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_THERMALEXCHANGE, DFI_BOOST_PRIMARY));
         }
         /* Cursed Body (POOL data): the target's own onDamagingHit, after Thermal Exchange's place and before the attacker's
-         * Poison Touch; the target is standing here (a holder that is down rolls too: see above). */
+         * Poison Touch; the target is standing here (a holder that is down rolls too: see above). Two holders hit by one
+         * spread move: DamagingHit is sorted by compareLeftToRightOrder (sim/battle.ts:789-790 and :421-426: order, then
+         * priority, then the target's index in the move's target list), not by Speed, so the holders roll in target order
+         * with no tie draw (the damaged targets go in as one array, sim/battle-actions.ts:1109-1121); the second holder
+         * finds the attacker already disabled when the first one's roll succeeded and does not roll (data/abilities.ts:784-797). */
         if (dfi_ability(r->b, tm, DFI_ABILITY_CURSEDBODY)) {
             st = dfi_cursed_body(r, user, targets[i], move_id);
             if (st != DUOFORGE_OK) {

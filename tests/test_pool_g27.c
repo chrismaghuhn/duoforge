@@ -112,6 +112,30 @@ static const struct {
     {"g27_cursed_body_a", 5u, {0u, 0u, 0u, 0u}},
     {"g27_cursed_body_a", 6u, {0u, 0u, 0u, 0u}},
     {"g27_cursed_body_a", 7u, {0u, 0u, 0u, 0u}},
+    {"g27_cursed_body_spread_a", 0u, {0u, 0u, 0u, 0u}},
+    {"g27_cursed_body_spread_a", 1u, {0u, 0u, 1u, 0u}},
+    {"g27_cursed_body_spread_a", 2u, {0u, 0u, 1u, 0u}},
+    {"g27_cursed_body_spread_a", 3u, {0u, 0u, 1u, 0u}},
+    {"g27_cursed_body_spread_a", 4u, {0u, 0u, 0u, 0u}},
+    {"g27_cursed_body_spread_a", 5u, {0u, 0u, 1u, 0u}},
+    {"g27_cursed_body_spread_a", 6u, {0u, 0u, 1u, 0u}},
+    {"g27_cursed_body_spread_a", 7u, {0u, 0u, 1u, 0u}},
+    {"g27_cursed_body_spread_b", 0u, {0u, 0u, 0u, 0u}},
+    {"g27_cursed_body_spread_b", 1u, {0u, 0u, 1u, 0u}},
+    {"g27_cursed_body_spread_b", 2u, {0u, 0u, 1u, 0u}},
+    {"g27_cursed_body_spread_b", 3u, {0u, 0u, 1u, 0u}},
+    {"g27_cursed_body_spread_b", 4u, {0u, 0u, 0u, 0u}},
+    {"g27_cursed_body_spread_b", 5u, {0u, 0u, 1u, 0u}},
+    {"g27_cursed_body_spread_b", 6u, {0u, 0u, 1u, 0u}},
+    {"g27_cursed_body_spread_b", 7u, {0u, 0u, 1u, 0u}},
+    {"g27_cursed_body_spread_tie", 0u, {0u, 0u, 0u, 0u}},
+    {"g27_cursed_body_spread_tie", 1u, {0u, 0u, 1u, 0u}},
+    {"g27_cursed_body_spread_tie", 2u, {0u, 0u, 1u, 0u}},
+    {"g27_cursed_body_spread_tie", 3u, {0u, 0u, 0u, 0u}},
+    {"g27_cursed_body_spread_tie", 4u, {0u, 0u, 0u, 0u}},
+    {"g27_cursed_body_spread_tie", 5u, {0u, 0u, 0u, 0u}},
+    {"g27_cursed_body_spread_tie", 6u, {0u, 0u, 0u, 0u}},
+    {"g27_cursed_body_spread_tie", 7u, {0u, 0u, 0u, 0u}},
     {"g27_disable_b", 0u, {0u, 0u, 0u, 0u}},
     {"g27_disable_b", 1u, {0u, 0u, 0u, 0u}},
     {"g27_disable_b", 2u, {0u, 0u, 1u, 1u}},
@@ -176,7 +200,7 @@ static const struct {
     {"g27_disable_switch", 7u, {0u, 0u, 0u, 0u}},
 };
 
-static const char *const names[] = {"g27_cursed_body_a", "g27_disable_b", "g27_disable_heal_block", "g27_disable_lock", "g27_disable_pair_a", "g27_disable_pair_b", "g27_disable_pp", "g27_disable_switch"};
+static const char *const names[] = {"g27_cursed_body_a", "g27_cursed_body_spread_a", "g27_cursed_body_spread_b", "g27_cursed_body_spread_tie", "g27_disable_b", "g27_disable_heal_block", "g27_disable_lock", "g27_disable_pair_a", "g27_disable_pair_b", "g27_disable_pp", "g27_disable_switch"};
 
 int main(void)
 {
