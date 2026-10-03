@@ -528,6 +528,33 @@ SPIKY_SHIELD = protect_variant('spikyshield', 'Spiky Shield', 'spikyshield', 'th
 
 PLAIN = move_entry('plain', 'Plain', category='Physical', base_power=50, flags='contact: 1')
 
+# ---- step G30: Rage Powder, Psychic Fangs, Solar Beam (handlers) and the four abilities of ENGINE_ROWS ----
+RAGE_POWDER = move_entry(
+    'ragepowder', 'Rage Powder', "volatileStatus: 'ragepowder',", 'onTry(source) {', '\treturn this.activePerHalf > 1;', '},',
+    'condition: {', '\tduration: 1,', '\tonStart(pokemon) {', "\t\tthis.add('-singleturn', pokemon, 'move: Rage Powder');", '\t},',
+    '\tonFoeRedirectTargetPriority: 1,', '\tonFoeRedirectTarget(target, source, source2, move) {',
+    '\t\tconst ragePowderUser = this.effectState.target;', '\t\tif (ragePowderUser.isSkyDropped()) return;', '',
+    "\t\tif (source.runStatusImmunity('powder') && this.validTarget(ragePowderUser, source, move.target)) {",
+    '\t\t\tif (move.smartTarget) move.smartTarget = false;', '\t\t\tthis.debug("Rage Powder redirected target of move");',
+    '\t\t\treturn ragePowderUser;', '\t\t}', '\t},', '},', pp=20, flags='noassist: 1, failcopycat: 1, powder: 1', target='self',
+    type_='Bug').replace('priority: 0', 'priority: 2')
+PSYCHIC_FANGS = move_entry(
+    'psychicfangs', 'Psychic Fangs', 'onTryHit(pokemon) {', '\t// will shatter screens through sub, before you hit',
+    "\tpokemon.side.removeSideCondition('reflect');", "\tpokemon.side.removeSideCondition('lightscreen');",
+    "\tpokemon.side.removeSideCondition('auroraveil');", '},', category='Physical', base_power=85,
+    flags='contact: 1, protect: 1, mirror: 1, metronome: 1, bite: 1', type_='Psychic')
+SOLAR_BEAM = move_entry(
+    'solarbeam', 'Solar Beam', 'onTryMove(attacker, defender, move) {', '\tif (attacker.removeVolatile(move.id)) {', '\t\treturn;', '\t}',
+    "\tthis.add('-prepare', attacker, move.name);",
+    "\tif (['sunnyday', 'desolateland'].includes(attacker.effectiveWeather(undefined, true))) {",
+    "\t\tthis.attrLastMove('[still]');", "\t\tthis.addMove('-anim', attacker, move.name, defender);", '\t\treturn;', '\t}',
+    "\tif (!this.runEvent('ChargeMove', attacker, defender, move)) {", '\t\treturn;', '\t}',
+    "\tattacker.addVolatile('twoturnmove', defender);", '\treturn null;', '},', 'onBasePower(basePower, pokemon, target) {',
+    "\tconst weakWeathers = ['raindance', 'primordialsea', 'sandstorm', 'hail', 'snowscape'];",
+    '\tif (weakWeathers.includes(pokemon.effectiveWeather())) {', "\t\tthis.debug('weakened by weather');",
+    '\t\treturn this.chainModify(0.5);', '\t}', '},', category='Special', base_power=120, pp=10,
+    flags='charge: 1, protect: 1, mirror: 1, metronome: 1, nosleeptalk: 1, failinstruct: 1', type_='Grass')
+
 
 def parse_pool(mid, text, pool=True, ext=True):
     base = TextSource('data/moves.ts', text)
@@ -624,7 +651,8 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual(gen_closure.SPECIAL_IDS_P[len(gen_closure.SPECIAL_IDS_C):seven], gen_closure.G2_HANDLERS)
         # UNMODELED (decision 0015 section 4.2) follows them, as the last id.
         self.assertEqual(gen_closure.SPECIAL_IDS_P[seven:], ['SANDSTORM', 'SNOWSCAPE', 'KNOCK_OFF', 'EXPANDING_FORCE', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD',
-                          'SHELL_SMASH', 'ACROBATICS', 'BLIZZARD', 'FEINT', 'HP_POWER', 'BODY_PRESS', 'FOUL_PLAY', 'PSYSHOCK',
+                          'SHELL_SMASH', 'ACROBATICS', 'BLIZZARD', 'FEINT', 'RAGE_POWDER', 'PSYCHIC_FANGS', 'SOLAR_BEAM',
+                          'HP_POWER', 'BODY_PRESS', 'FOUL_PLAY', 'PSYSHOCK',
                           'RAIN_DANCE', 'SUNNY_DAY', 'FREEZE_DRY', 'CLANGING_SCALES', 'UNMODELED'])
         self.assertEqual(len(gen_closure.G2_HANDLERS), 7)
         # Step G16: Knock Off's handler is 24 in the tables; step G15's Expanding Force is 25, step G19's Glaive Rush 26,
@@ -639,14 +667,16 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual(gen_closure.SPECIAL_IDS_P.index('AURORA_VEIL'), 27)
         self.assertEqual(gen_closure.SPECIAL_IDS_P.index('SPIKY_SHIELD'), 28)
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G28_HANDLERS], [29, 30, 31, 32])
-        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G32_HANDLERS], list(range(33, 41)))
-        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 41)
+        self.assertEqual(gen_closure.G30_HANDLERS, ['RAGE_POWDER', 'PSYCHIC_FANGS', 'SOLAR_BEAM'])  # step G30
+        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G30_HANDLERS], [33, 34, 35])
+        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G32_HANDLERS], list(range(36, 44)))
+        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 44)
         # Scald and Recover became data in step G10: their ids stay defined and no move maps to them.
         self.assertEqual({v[0] for k, v in gen_closure.SPECIAL_P.items() if k not in gen_closure.SPECIAL_C},
                          (set(gen_closure.G2_HANDLERS) - {'SCALD', 'RECOVER'}) | set(gen_closure.WEATHER_HANDLERS) |
                          set(gen_closure.G16_HANDLERS) | set(gen_closure.G15_HANDLERS) | set(gen_closure.G19_HANDLERS) |
                          set(gen_closure.G20_HANDLERS) | set(gen_closure.G20_PROTECT_HANDLERS) | set(gen_closure.G28_HANDLERS) |
-                         set(gen_closure.G32_HANDLERS))
+                         set(gen_closure.G30_HANDLERS) | set(gen_closure.G32_HANDLERS))
 
     def test_aurora_veil_is_a_handler_whose_onTry_and_condition_are_the_pinned_text(self):
         rec = parse_pool('auroraveil', AURORA_VEIL)
@@ -702,6 +732,78 @@ class PoolMoves(unittest.TestCase):
         # Outside the pool mode the callbacks are refused.
         for ext in (False, True):
             self.refused('spikyshield', both + SPIKY_SHIELD, 'callback onPrepareHit is not mapped to a handler', pool=False, ext=ext)
+
+    def lenient(self, mid, text):
+        """The whole-pool mode (the rows of step G30 are read in it: the flags of the pin are not all modelled)."""
+        base = TextSource('data/moves.ts', text)
+        return gen_closure.parse_move(mid, base, TextSource('data/mods/champions/moves.ts', ''), True, True, [])
+
+    def test_the_step_g30_handlers_are_read_from_the_pinned_text(self):
+        # Rage Powder: the volatile is the handler's, the powder flag is the second flags byte's bit 16 and the public static bit.
+        rage = self.lenient('ragepowder', RAGE_POWDER)
+        self.assertEqual(rage['special'], gen_closure.SPECIAL_IDS_P.index('RAGE_POWDER'))
+        self.assertEqual((rage['flags2'] & 16, rage['static_flags'] & 512, rage['priority']), (16, 512, 8 + 2))
+        with self.assertRaises(SystemExit) as cm:
+            self.lenient('ragepowder', RAGE_POWDER.replace('this.activePerHalf > 1', 'this.activePerHalf > 2'))
+        self.assertEqual(cm.exception.code, 'gen_closure: move ragepowder: onTry is not the pinned text')
+        with self.assertRaises(SystemExit) as cm:
+            self.lenient('ragepowder', RAGE_POWDER.replace("source.runStatusImmunity('powder') && ", ''))
+        self.assertEqual(cm.exception.code, 'gen_closure: move ragepowder: ' + 'the condition is not the pinned text')
+        with self.assertRaises(SystemExit) as cm:
+            self.lenient('ragepowder', RAGE_POWDER.replace("volatileStatus: 'ragepowder',", "volatileStatus: 'followme',"))
+        self.assertEqual(cm.exception.code, 'gen_closure: move ragepowder: ' + "volatileStatus is not \"volatileStatus: 'ragepowder',\"")
+        # Psychic Fangs: the three screens, in this order.
+        fangs = self.lenient('psychicfangs', PSYCHIC_FANGS)
+        self.assertEqual(fangs['special'], gen_closure.SPECIAL_IDS_P.index('PSYCHIC_FANGS'))
+        with self.assertRaises(SystemExit) as cm:
+            self.lenient('psychicfangs', PSYCHIC_FANGS.replace("\t\tpokemon.side.removeSideCondition('auroraveil');\n", ''))
+        self.assertEqual(cm.exception.code, 'gen_closure: move psychicfangs: ' + 'onTryHit is not the pinned text')
+        # Solar Beam: the charge with the sun and the weather's half.
+        beam = self.lenient('solarbeam', SOLAR_BEAM)
+        self.assertEqual(beam['special'], gen_closure.SPECIAL_IDS_P.index('SOLAR_BEAM'))
+        with self.assertRaises(SystemExit) as cm:
+            self.lenient('solarbeam', SOLAR_BEAM.replace("'desolateland'", "'raindance'"))
+        self.assertEqual(cm.exception.code, 'gen_closure: move solarbeam: onTryMove is not the pinned text')
+        with self.assertRaises(SystemExit) as cm:
+            self.lenient('solarbeam', SOLAR_BEAM.replace("'snowscape'", "'sunnyday'"))
+        self.assertEqual(cm.exception.code, 'gen_closure: move solarbeam: onBasePower is not the pinned text')
+        with self.assertRaises(SystemExit) as cm:
+            self.lenient('solarbeam', SOLAR_BEAM.replace('chainModify(0.5)', 'chainModify(0.25)'))
+        self.assertEqual(cm.exception.code, 'gen_closure: move solarbeam: onBasePower is not the pinned text')
+        # The pool mode alone knows them: outside it each callback is refused.
+        for mid, text, callback in (('ragepowder', RAGE_POWDER, 'onTry'), ('psychicfangs', PSYCHIC_FANGS, 'onTryHit'),
+                                    ('solarbeam', SOLAR_BEAM, 'onTryMove')):
+            self.refused(mid, text, 'callback %s is not mapped to a handler' % callback, pool=False, ext=True)
+
+    def test_the_abilities_that_step_g30_runs_by_id_are_checked_against_the_pin(self):
+        def entries(replace=None, skip=None):
+            lines = []
+            for aid, facts in gen_closure.G30_ABILITY_FACTS:
+                if aid == skip:
+                    continue
+                lines.append('\t%s: {' % aid)
+                for fact in facts:
+                    lines.append('\t\t' + (fact.replace(*replace) if replace and replace[0] in fact else fact))
+                lines.append('\t\tname: "X",')
+                lines.append('\t},')
+            return TextSource('data/abilities.ts', '\n'.join(lines))
+
+        none = TextSource('data/mods/champions/abilities.ts', '')
+        gen_closure.check_g30_facts(entries(), none)
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_g30_facts(entries(('randomChance(3, 10)', 'randomChance(1, 10)')), none)
+        self.assertIn('ability flamebody: the entry no longer has', str(cm.exception.code))
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_g30_facts(entries(('/ 4', '/ 8')), none)
+        self.assertIn('ability hospitality: the entry no longer has', str(cm.exception.code))
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_g30_facts(entries(skip='overcoat'), none)
+        self.assertEqual(str(cm.exception.code), 'gen_closure: ability overcoat not found')
+        # A Champions override of one of them would change what the engine reads.
+        override = TextSource('data/mods/champions/abilities.ts', '\tclearbody: {\n\t\tinherit: true,\n\t},')
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_g30_facts(entries(), override)
+        self.assertIn('the champions mod overrides the entry', str(cm.exception.code))
 
     def test_knock_off_is_a_handler_whose_callbacks_are_the_pinned_text(self):
         rec = parse_pool('knockoff', KNOCK_OFF)
@@ -792,7 +894,8 @@ class PoolMoves(unittest.TestCase):
         # Every handler move is one of the rows, and every set move is a pool move or one of the rows.
         self.assertTrue({k for k in gen_closure.SPECIAL_P if k not in gen_closure.SPECIAL_C} <=
                         set(gen_closure.G2_MOVES) | {'sandstorm', 'snowscape', 'knockoff', 'expandingforce', 'glaiverush', 'auroraveil', 'spikyshield',
-                                                                'shellsmash', 'acrobatics', 'blizzard', 'feint', 'eruption', 'waterspout',
+                                                                'shellsmash', 'acrobatics', 'blizzard', 'feint',
+                                                                'ragepowder', 'psychicfangs', 'solarbeam', 'eruption', 'waterspout',
                                                                 'bodypress', 'foulplay', 'psyshock', 'raindance', 'sunnyday', 'freezedry',
                                                                 'clangingscales'})
         self.assertEqual(gen_closure.WEATHER_HANDLERS, ['SANDSTORM', 'SNOWSCAPE'])
@@ -1103,7 +1206,8 @@ class ItemAbilityFeatures(unittest.TestCase):
                                                    'abilities': ['rockhead', 'flowerveil', 'fairyaura', 'roughskin',
                                                                  'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
                                                                  'levitate', 'sandrush', 'swiftswim', 'slushrush',
-                                                                 'chlorophyll', 'innerfocus', 'liquidvoice', 'soundproof',
+                                                                 'chlorophyll', 'innerfocus', 'liquidvoice',
+                                                                 'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof',
                                                                  'unnerve', 'speedboost']})
 
 

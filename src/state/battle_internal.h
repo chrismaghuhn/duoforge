@@ -302,4 +302,22 @@ struct duoforge_battle {
     dfi_pool_tail tail; /* POOL kinds only; all zero otherwise */
 };
 
+/* The move that the occupant of the position (side * 2 + slot) used last, from the tail's last_move (move slot + 1) and the
+ * occupant's moves; UINT32_MAX when it has used none, used Struggle or the position is empty. The tail is zero under
+ * every kind but POOL. Step G30: Rage Powder shares the position's DFI_VOL_FOLLOW_ME bit with Follow Me, which is told
+ * apart by this (the volatile is set by the move that the occupant is using, and nothing else is used before the
+ * residual ends it, so the last move is the one that set it). */
+static inline uint32_t dfi_last_move_id(const struct duoforge_battle *b, uint32_t flat)
+{
+    const uint32_t s = flat / 2u;
+    const uint32_t p = flat % 2u;
+    const uint32_t last = b->tail.sides[s].positions[p].last_move;
+    const uint32_t occupant = b->sides[s].positions[p].occupant;
+    if (last == 0u || last > DUOFORGE_MAX_MOVE_SLOTS || occupant >= DUOFORGE_MAX_ROSTER) {
+        return UINT32_MAX;
+    }
+    const dfi_member *m = &b->sides[s].members[occupant];
+    return last <= m->move_count ? (uint32_t)m->moves[last - 1u].move_id : UINT32_MAX;
+}
+
 #endif

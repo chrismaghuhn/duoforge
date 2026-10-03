@@ -1,0 +1,26 @@
+{
+  "name": "g30_psychic_fangs",
+  "purpose": "Step G30, Psychic Fangs: Aurorus (Snow Warning) sets Aurora Veil, Archaludon Reflect and then Light Screen; Salamence's Psychic Fangs at the protecting Archaludon breaks nothing, the next one at Aurorus breaks Reflect, Light Screen and Aurora Veil in that order with a -sideend line each before the hit, the third finds no screen.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000003006",
+  "teams": [
+    "Salamence (M)\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Psychic Fangs\n- Hyper Voice\n- Double-Edge\n- Protect\n\nIncineroar (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Flare Blitz\n- Parting Shot\n- Protect\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nGholdengo\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Protect\n\nGrimmsnarl (M)\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Protect\n\nRaichu (F)\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Thunderbolt\n- Helping Hand\n- Protect",
+    "Aurorus (F) @ Light Clay\nAbility: Snow Warning\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Aurora Veil\n- Reflect\n- Light Screen\n- Protect\n\nArchaludon (M)\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nImpish Nature\n- Reflect\n- Light Screen\n- Protect\n- Electro Shot\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nGholdengo\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Protect\n\nGrimmsnarl (M)\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Protect\n\nRaichu (F)\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Thunderbolt\n- Helping Hand\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 2, move 1 2",
+      "move 1 2, move 2 2",
+      "move 1 1, move 2 2",
+      "move 1 1, move 2 2"
+    ],
+    "p2": [
+      "move 1, move 1",
+      "move 3, move 3",
+      "move 2, move 2",
+      "move 3, move 2"
+    ],
+    "max_steps": 5
+  }
+}
