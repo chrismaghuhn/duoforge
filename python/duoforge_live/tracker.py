@@ -12,7 +12,12 @@ battle; the field sources are in the plan's Task 5 table.
 Decision points: at the pin a step's update comes before its requests
 (Battle.sendUpdates), so a |request| with a new rqid is a decision point over
 the battle lines received since the previous one. At team preview it waits
-for the |showteam| lines of both sides.
+for the |showteam| lines of both sides. An updated request (update: true)
+comes after Showdown refused a choice the request did not rule out (a switch
+of a hidden-trapped last active: Side.emitChoiceError, sim/side.ts:527-534):
+the current move request again, under a new rqid, with what the refusal
+revealed. No battle line comes between, so it is a new request epoch of the
+same decision point: the state stays, the options follow the update.
 """
 import collections
 import json
@@ -267,11 +272,12 @@ class Tracker:
         rqid = request.get("rqid")
         if not isinstance(rqid, int):
             raise ValueError("a request without an rqid")
-        if request.get("update"):
-            raise ValueError("an updated request (after an unavailable choice): not a decision point")
         if rqid in self._rqids:
             return  # sent again (a reconnect): the same decision point
         self._rqids.add(rqid)
+        if request.get("update"):
+            self._on_updated_request(request)
+            return
         side = int(request["side"]["id"][1]) - 1
         if self.side is None:
             self.side = side
@@ -310,6 +316,16 @@ class Tracker:
                         if member.pp_max[k] - member.uses[k] != move["pp"]:
                             raise ValueError(f"own PP of {member.sheet['moves'][k]}: tracked "
                                              f"{member.pp_max[k] - member.uses[k]}, request {move['pp']}")
+
+    def _on_updated_request(self, request):
+        """The current move request again after a refused choice (module docstring): only its active entries may
+        differ, and no battle line came since it."""
+        r = self.request
+        if (r is None or "active" not in r or "active" not in request or self._lines
+                or request["side"] != r["side"] or len(request["active"]) != len(r["active"])):
+            raise ValueError("an updated request that does not update the current move request")
+        self.request = request
+        self.epoch += 1
 
     def _on_showteam(self, line):
         _, _, who, packed = line.split("|", 3)
