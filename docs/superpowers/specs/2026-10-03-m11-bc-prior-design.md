@@ -72,10 +72,11 @@ M-C comes first. Reg M-B joins afterwards in the same PR (section 11; owner OK t
 - **`encoder`, `features`, `slot_features`:** the current layout.
 - **`ext_supported`:** the BC mask.
 - **`data`:** `{kind: "pool", fingerprint}`.
-- **`teams`:** `[]`.
+- **`teams`:** `[]`. The league and `_check_teams` read the teams from the PPO run, not from the init checkpoint.
 - **`update`:** 0.
 - **`decisions`:** the number of training rows.
-- **`train`:** `{"bc": {...}}` holds the dataset manifest's fingerprint, the format prefixes, the split, the weights, the epochs and the seed.
+- **`train`:** `{"seed": seed, "bc": {...}}`. `bc` holds the dataset manifest's fingerprint, the format prefixes, the split, the weights and the epochs. `seed` sits on the train level because `ladder.main` reads `config.get("train", config)["seed"]` for a run's first player.
+- **The ids of the embeddings:** the name lists (or a hash per prefix) that `checkpoint.check_ids` needs. Model v2 embeds species, moves, items, abilities and natures by table id; section 8 says why.
 
 ## 5. Data and encoding
 
@@ -160,17 +161,23 @@ python -m duoforge_learn.train --out <dir> --init <dir>/bc.npz [usual train.py o
 
 **Run setup**
 - `--init` starts a new run (`--out`). It cannot be combined with `--resume`.
+- A resume of an `--init` run does not apply `--init` again. `"init"` is in the run state, and `--init` is not in `_RESUMABLE`, so a resume that gives it is refused.
 - The parameters come from `checkpoint.load_current(CKPT)`. A narrower feature layout is widened by name, as on resume.
 - The optimizer, the league and the RNG start fresh. The league's first snapshot, `params-0`, is the initial network.
+- The counters start at `update = 0` and `decisions = 0`, whatever the checkpoint holds: the entropy schedule runs over the learner's own decisions.
 
-**Model and data checks**
-- The model config is the checkpoint's. An explicit dimension or preset that differs is refused.
-- The checkpoint's `data.kind` must equal `--data-kind`. A different one is refused.
+**Model and data checks** (only options given explicitly are compared, `args._given`, as `_merged` does; otherwise the defaults `--model` and `--data-kind closure` would refuse every `--init`)
+- The model config and `data.kind` are inherited from the checkpoint when not given.
+- A given `--model`, `--preset`, dimension or `--data-kind` that differs from the checkpoint is refused.
+- **Ids across data versions** (Learner v2's open point, its spec 12.4):
+  - `--init` compares `config.data.fingerprint` with the run's context.
+  - If they differ, it checks the name lists per embedding kind: every old id must still name the same row, and rows appended at the end are fine. Otherwise it refuses explicitly. `load_current` widens by column name only, so a shifted id would point every embedding at the wrong row in silence.
+  - The check is `checkpoint.check_ids(config, context)`, which Learner v2 builds for resume. Learner v2 sends its signature before `--init` is built; `bc.py` stores what it needs (section 4).
 
-**Mask transition** (HauptSession, 2026-10-03)
-- The run's `ext_supported` defaults to the checkpoint's.
-- A larger mask (`--ext-supported`) is accepted only by zeroing the input rows of every feature column that the added bits switch on. This is `checkpoint.zero_columns`, the same row lookup as `widen`.
-- The network then starts identical on every row, and the new features are learned from zero.
+**Mask transition** (HauptSession and Learner v2, 2026-10-03)
+- The run's `ext_supported` defaults to the library's run-time mask, as for a run without `--init`. An explicit `--ext-supported` overrides it, and `SelfPlay` checks it against the library (`check_ext_supported`).
+- Every bit the run has beyond the checkpoint's mask is accepted only by zeroing the input rows of every feature column it switches on. This is `checkpoint.zero_columns`, the same row lookup as `widen`.
+- The zeroing is exact. Those columns were always 0 in BC training, so the network starts with identical outputs on every row, and the new features are learned from zero. Without the zeroing, the rows would still hold their random init and act at once.
 - If a column cannot be zeroed by name, `--init` refuses the larger mask explicitly.
 - A smaller mask is refused: the network relied on those columns.
 - The run logs the transition under `"changes"` (`ext_supported: old → new`). The snapshot config gets `"init": {"path", "fingerprint of the checkpoint file", "ext_supported"}`.
@@ -191,7 +198,9 @@ GPU runs (RTX 4060 Ti) only outside the measurement windows, announced to the Ha
 1. **BC on M-C:**
    - the validation NLL, top-1 (EXACT slots), and value MSE per epoch;
    - for comparison, the same metrics of the random initial network.
-2. **Play:** `evaluate.win_rate` of the BC network against the random network and against `ScriptedPolicy`, on Learner v2's POOL teams, with a fixed seed and enough games for a ±5 % interval.
+2. **Play:** the BC network against the random network and against `ScriptedPolicy`, on Learner v2's POOL teams, with a fixed seed and enough games for a ±5 % interval.
+   - It uses `suite.make_suite` with a `teams.load` pool, `evaluate.play_suite` and `evaluate.scores`. (`evaluate.win_rate` plays the CLOSURE reference pairings A/B, not POOL teams.)
+   - The learner is an `evaluate.Player` with the checkpoint's `ext_supported`, as in the ladder.
 3. **PPO:** two runs with the same seed, settings and minutes, one with `--init bc.npz` and one from scratch. Compared:
    - the ladder and the evaluation against `ScriptedPolicy` at equal wall clock;
    - the curves.
@@ -243,7 +252,11 @@ Every case fails explicitly; there is no silent fallback:
   - the first snapshot equals the BC params;
   - the same mask gives identical outputs;
   - a larger mask gives zeroed rows, identical outputs on rows without the new features, and the change in `"changes"`;
-  - a smaller mask, another model or `--resume` together with `--init` are refused.
+  - the first log record has `decisions` from 0 (and `update` 0);
+  - not giving `--model` or `--data-kind` inherits them from the checkpoint;
+  - a smaller mask, a given model or kind that differs, `--resume` together with `--init`, or a resume of an `--init` run that gives `--init` are all refused;
+  - ids that a data version shifted are refused (`checkpoint.check_ids`), while appended rows are accepted;
+  - `ladder.main` accepts a BC checkpoint as a run's first player (`train.seed`).
 
 **Tracker**
 - Folds of Sand, Snow and Tox:
