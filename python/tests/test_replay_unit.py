@@ -669,6 +669,42 @@ class GameTest(unittest.TestCase):
         self.assertEqual(tracker._positions[1][1].chain, 1)
         self.assertEqual(tracker._positions[1][1].stages, self.protected_farigiraf()._positions[1][1].stages)
 
+    def at_turn_3(self):
+        """A tracker of p1 fed up to |turn|3: Farigiraf (p2b) protected in turn 2, its chain is 1."""
+        from duoforge_live import teams
+        from duoforge_replay.spectator import SpectatorTracker
+        sheets = tuple(teams.unpack(line.split("|", 3)[3]) for line in self.log if line.startswith("|showteam|"))
+        tracker = SpectatorTracker(self.data, sheets, 0, None, lambda m, f: ([100] * 6, [0] * 6), self.log)
+        tracker.feed(self.log[:self.log.index("|turn|3") + 1])
+        self.assertEqual(tracker._positions[1][1].chain, 1)
+        return tracker
+
+    def test_feint_breaking_the_partners_guard_ends_only_the_targets_chain(self):
+        # G28 (sim/battle-actions.ts hitStepBreakProtect): Feint at Farigiraf, which protected the turn before and not
+        # now, breaks Politoed's Wide Guard. Farigiraf's stall volatile goes (chain 0, seen at a PIVOT of the turn);
+        # Politoed keeps the chain its Wide Guard added, and the side's guard is gone
+        tracker = self.at_turn_3()
+        tracker.feed(["|move|p2a: Politoed|Wide Guard|p2a: Politoed", "|-singleturn|p2a: Politoed|Wide Guard"])
+        self.assertEqual(tracker._positions[1][0].chain, 1)
+        self.assertIn("WIDE_GUARD", tracker._turn_scoped)
+        tracker.feed(["|move|p1a: Indeedee|Feint|p2b: Farigiraf", "|-activate|p2b: Farigiraf|move: Feint"])
+        self.assertEqual((tracker._positions[1][1].chain, tracker._positions[1][1].stall), (0, 0))
+        self.assertEqual(tracker._positions[1][0].chain, 1)
+        self.assertNotIn("WIDE_GUARD", tracker._turn_scoped)
+
+    def test_a_move_activation_is_no_emergency_exit(self):
+        # an ACTIVATE of a move whose id equals Emergency Exit's ability id + 1 (move 8, Muddy Water) asks no switch:
+        # only cause ABILITY names an ability
+        tracker = self.at_turn_3()
+        exit_id = self.data.tables["ABILITY"]["EMERGENCYEXIT"] + 1
+        self.assertEqual(self.data.tables["MOVE"]["MUDDYWATER"], exit_id)
+        tracker._event(trace_to_c.ev_tuple(trace_to_c.EV["ACTIVATE"], 2, trace_to_c.NOPOS, trace_to_c.CAUSE["MOVE"], 0,
+                                           exit_id))
+        self.assertEqual(tracker._positions[1][0].flag, 0)
+        tracker._event(trace_to_c.ev_tuple(trace_to_c.EV["ACTIVATE"], 2, trace_to_c.NOPOS, trace_to_c.CAUSE["ABILITY"], 0,
+                                           exit_id))
+        self.assertEqual(tracker._positions[1][0].flag, 1)
+
     def charizard_mega(self, stone, forme):
         """The committed log with Charizard (p2) holding `stone` and evolving into `forme`."""
         out = []
