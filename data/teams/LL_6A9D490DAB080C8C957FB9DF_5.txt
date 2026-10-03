@@ -1,0 +1,53 @@
+Golisopod (M) @ Golisopite
+Ability: Emergency Exit
+Level: 50
+Adamant Nature
+- Iron Head
+- Leech Life
+- Liquidation
+- Protect
+
+Raichu (M) @ Raichunite Y
+Ability: Lightning Rod
+Level: 50
+Timid Nature
+- Zap Cannon
+- Focus Blast
+- Fake Out
+- Protect
+
+Archaludon (M) @ Leftovers
+Ability: Stamina
+Level: 50
+Modest Nature
+- Dragon Pulse
+- Electro Shot
+- Flash Cannon
+- Protect
+
+Pelipper (M) @ Sitrus Berry
+Ability: Drizzle
+Level: 50
+Modest Nature
+- Hurricane
+- Weather Ball
+- Tailwind
+- Wide Guard
+
+Basculegion (M) @ Choice Scarf
+Ability: Adaptability
+Level: 50
+Jolly Nature
+- Wave Crash
+- Last Respects
+- Aqua Jet
+- Flip Turn
+
+Grimmsnarl (M) @ Light Clay
+Ability: Prankster
+Level: 50
+Sassy Nature
+- Spirit Break
+- Parting Shot
+- Light Screen
+- Reflect

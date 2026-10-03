@@ -1,0 +1,53 @@
+Staraptor (M) @ Staraptite
+Ability: Intimidate
+Level: 50
+Jolly Nature
+- Brave Bird
+- Protect
+- Close Combat
+- Tailwind
+
+Pelipper (M) @ Focus Sash
+Ability: Drizzle
+Level: 50
+Modest Nature
+- Hurricane
+- Weather Ball
+- Tailwind
+- Wide Guard
+
+Whimsicott (M) @ Occa Berry
+Ability: Prankster
+Level: 50
+Timid Nature
+- Moonblast
+- Light Screen
+- Tailwind
+- Protect
+
+Incineroar (M) @ Sitrus Berry
+Ability: Intimidate
+Level: 50
+Careful Nature
+- Parting Shot
+- Flare Blitz
+- Fake Out
+- Darkest Lariat
+
+Gholdengo @ Life Orb
+Ability: Good as Gold
+Level: 50
+Modest Nature
+- Shadow Ball
+- Protect
+- Make It Rain
+- Nasty Plot
+
+Gardevoir (M) @ Gardevoirite
+Ability: Trace
+Level: 50
+Modest Nature
+- Psychic
+- Protect
+- Aura Sphere
+- Hyper Voice

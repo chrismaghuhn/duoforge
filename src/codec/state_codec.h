@@ -48,11 +48,12 @@
  *                    +29 item, +30 item_consumed, +31 ability (u8 each),
  *                    +32 + 4*k move k: move_id (u16), pp (u8), pp_max (u8)
  *
- * The POOL state tail (docs/decisions/0015 section 7, schema 0x0203 = "v3 +
- * pool tail rev 2", 248 more bytes: 1257 in all). It is present exactly under
+ * The POOL state tail (docs/decisions/0015 section 7, schema 0x0303 = "v3 +
+ * pool tail rev 3", 248 more bytes: 1257 in all). It is present exactly under
  * the two POOL data kinds, whose states carry that schema; the four other
  * kinds (and SYNTHETIC) keep schema 3 and the 1009 bytes above, unchanged. The
- * rev 1 tail (schema 0x0103, 42 bytes) is not decodable: pool states are not
+ * rev 1 tail (schema 0x0103, 42 bytes) and the rev 2 tail (0x0203, the same size,
+ * the byte at +26 of a position reserved) are not decodable: pool states are not
  * frozen, there is no migration.
  *
  *  1009     8  the field block: +0 gravity_turns (u8), +1 7 reserved (zero)
@@ -69,13 +70,14 @@
  *                    +15 yawn_turns, +16 focus_energy, +17 stockpile,
  *                    +18 stockpile_def, +19 stockpile_spd, +20 charge,
  *                    +21 glaive_rush (u8 each), +22 substitute_hp (u16),
- *                    +24 trap_move (u16), +26 6 reserved bytes (zero),
+ *                    +24 trap_move (u16), +26 protect_kind (u8, rev 3),
+ *                    +27 5 reserved bytes (zero),
  *                +72 + 8*m roster member m (m = 0..5):
  *                    +0 ability_now (u16), +2 forme_now (u16),
  *                    +4 soak_type, +5 item_now, +6 toxic_stage (u8 each),
  *                    +7 1 reserved byte (zero)
  *
- * 47 of the 248 bytes are reserved (7 + 2 * (2 + 2 * 6 + 6)): always written as
+ * 43 of the 248 bytes are reserved (7 + 2 * (2 + 2 * 5 + 6)): always written as
  * zero, refused by the decoder otherwise.
  */
 #include <stdbool.h>
@@ -111,11 +113,12 @@
 #define DFI_ENC_SIDE_SIZE 397u
 
 /* The state schema ids. The low byte is the layout of the body (3), the high byte the revision of the POOL tail
- * (0 = none). 4 stays free for the schema of certified pool teams (decision 0015 section 7). Rev 1 (0x0103) is no
- * longer a schema of any kind: a decoder refuses it as an unknown one. */
+ * (0 = none). 4 stays free for the schema of certified pool teams (decision 0015 section 7). Rev 1 (0x0103) and
+ * rev 2 (0x0203) are no longer schemas of any kind: a decoder refuses them as unknown ones. */
 #define DFI_STATE_SCHEMA_V3 DUOFORGE_STATE_SCHEMA_VERSION
 #define DFI_STATE_SCHEMA_POOL_TAIL_REV1 0x0103u /* refused: kept for the test that says so */
-#define DFI_STATE_SCHEMA_POOL_TAIL_REV2 0x0203u
+#define DFI_STATE_SCHEMA_POOL_TAIL_REV2 0x0203u /* refused since rev 3: kept for the test that says so */
+#define DFI_STATE_SCHEMA_POOL_TAIL_REV3 0x0303u
 /* The POOL tail: the field block, then the two sides. */
 #define DFI_ENC_TAIL_OFF DUOFORGE_STATE_V3_ENCODED_SIZE
 #define DFI_ENC_TAIL_FIELD_SIZE 8u
@@ -163,8 +166,9 @@
 #define DFI_ENC_TAIL_POS_GLAIVE_RUSH_OFF 21u
 #define DFI_ENC_TAIL_POS_SUBSTITUTE_OFF 22u /* u16 */
 #define DFI_ENC_TAIL_POS_TRAP_MOVE_OFF 24u  /* u16 */
-#define DFI_ENC_TAIL_POS_RESERVED_OFF 26u
-#define DFI_ENC_TAIL_POS_RESERVED_SIZE 6u
+#define DFI_ENC_TAIL_POS_PROTECT_KIND_OFF 26u /* rev 3 (step G20): DFI_PROTECT_* of the Protect volatile */
+#define DFI_ENC_TAIL_POS_RESERVED_OFF 27u
+#define DFI_ENC_TAIL_POS_RESERVED_SIZE 5u
 /* One roster member (offsets within its 8 bytes). */
 #define DFI_ENC_TAIL_MEMBER_ABILITY_OFF 0u /* u16 */
 #define DFI_ENC_TAIL_MEMBER_FORME_OFF 2u   /* u16 */
@@ -273,27 +277,28 @@ _Static_assert(DFI_ENC_TAIL_MEMBER_OFF + DUOFORGE_MAX_ROSTER * DFI_ENC_TAIL_MEMB
                "tail side block is 120 bytes");
 _Static_assert(DFI_ENC_TAIL_POS_RESERVED_OFF + DFI_ENC_TAIL_POS_RESERVED_SIZE == DFI_ENC_TAIL_POS_SIZE,
                "tail position block is 32 bytes");
-_Static_assert(DFI_ENC_TAIL_POS_TRAP_MOVE_OFF + 2u == DFI_ENC_TAIL_POS_RESERVED_OFF, "the trap move ends the data");
+_Static_assert(DFI_ENC_TAIL_POS_TRAP_MOVE_OFF + 2u == DFI_ENC_TAIL_POS_PROTECT_KIND_OFF, "the trap move ends the u16 data");
+_Static_assert(DFI_ENC_TAIL_POS_PROTECT_KIND_OFF + 1u == DFI_ENC_TAIL_POS_RESERVED_OFF, "the protect kind ends the data");
 _Static_assert(DFI_ENC_TAIL_MEMBER_RESERVED_OFF + DFI_ENC_TAIL_MEMBER_RESERVED_SIZE == DFI_ENC_TAIL_MEMBER_SIZE,
                "tail member block is 8 bytes");
 _Static_assert(DFI_ENC_TAIL_SIZE == 248u, "the tail is 248 bytes");
-_Static_assert(DFI_ENC_TAIL_RESERVED_COUNT == 47u, "47 of them are reserved");
+_Static_assert(DFI_ENC_TAIL_RESERVED_COUNT == 43u, "43 of them are reserved (47 in rev 2: rev 3 defines one byte per position)");
 _Static_assert(DFI_STATE_POOL_ENCODED_SIZE == 1257u, "the state with the POOL tail is 1257 bytes");
 /* No padding: every field of the tail in memory is a byte or an aligned u16, so the structs are the encoded data
  * and nothing else (the encoded size without the reserved bytes, plus the one pad byte of the field block). */
-_Static_assert(sizeof(dfi_tail_pos) == DFI_ENC_TAIL_POS_SIZE - DFI_ENC_TAIL_POS_RESERVED_SIZE,
-               "a position's tail in memory has no padding and none of the reserved bytes");
+_Static_assert(sizeof(dfi_tail_pos) == DFI_ENC_TAIL_POS_SIZE - DFI_ENC_TAIL_POS_RESERVED_SIZE + 1u,
+               "a position's tail in memory has no padding and none of the reserved bytes but the pad byte that aligns the u16s");
 _Static_assert(sizeof(dfi_tail_side) == DFI_ENC_TAIL_SIDE_SIZE - DFI_ENC_TAIL_SIDE_RESERVED_SIZE -
-                                            DUOFORGE_ACTIVE_PER_SIDE * DFI_ENC_TAIL_POS_RESERVED_SIZE -
+                                            DUOFORGE_ACTIVE_PER_SIDE * (DFI_ENC_TAIL_POS_RESERVED_SIZE - 1u) -
                                             DUOFORGE_MAX_ROSTER * DFI_ENC_TAIL_MEMBER_RESERVED_SIZE,
                "a side's tail in memory has no padding and none of the reserved bytes");
-_Static_assert(sizeof(dfi_pool_tail) == DFI_ENC_TAIL_SIZE - DFI_ENC_TAIL_RESERVED_COUNT + 1u,
+_Static_assert(sizeof(dfi_pool_tail) == DFI_ENC_TAIL_SIZE - DFI_ENC_TAIL_RESERVED_COUNT + 1u + 2u * DUOFORGE_SIDE_COUNT,
                "the tail in memory has no padding and none of the reserved bytes but the field block's pad");
 
 /* True for the kinds whose states carry the POOL tail: _POOL and _POOL_DEV. */
 bool dfi_context_has_pool_tail(const struct duoforge_context *ctx);
 /* The schema id and the encoded size of the states of a context: schema 3 and 1009 bytes, or with the POOL tail
- * DFI_STATE_SCHEMA_POOL_TAIL_REV2 and 1257. */
+ * DFI_STATE_SCHEMA_POOL_TAIL_REV3 and 1257. */
 uint16_t dfi_state_schema_of(const struct duoforge_context *ctx);
 size_t dfi_state_encoded_size_of(const struct duoforge_context *ctx);
 
@@ -305,7 +310,7 @@ size_t dfi_encode_unchecked(const struct duoforge_context *ctx, const struct duo
 
 /* Strict decode into *out (only written on OK). Order: MALFORMED (size < 20,
  * magic) -> SCHEMA_MISMATCH (kind, a schema that is not v3 or v3 + pool tail
- * rev 2: rev 1, 0x0103, is refused here like any other unknown schema)
+ * rev 3: rev 1, 0x0103, and rev 2, 0x0203, are refused here like any other unknown schema)
  * -> SEMANTICS_MISMATCH -> MALFORMED (total_length != size, size not
  * that of the schema) -> CONTEXT_MISMATCH (embedded fingerprint) -> parse ->
  * MALFORMED (invariant; id in *out_invariant if non-NULL). The schema must

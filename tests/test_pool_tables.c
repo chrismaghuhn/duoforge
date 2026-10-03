@@ -45,7 +45,7 @@
 #include "state/closure_member.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "b75677f73ff8dc582f53f036b5192e3f074577cd2d1cd320c84119e7b801b014"
+#define POOL_HASH_HEX "ece3162aee6c32a87434a49477cd2b4b92cfb66304c59a033b21dae83e435efb"
 /* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
  * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
  * produced the same bytes. Step G10 moved two of them on purpose: Scald and Recover are data now (the thaw bit and
@@ -69,9 +69,9 @@
 #define POOL_ABILITIES 215u
 
 /* The rows that the tables do not model, pinned (the generator reports the same counts). */
-#define UNMODELED_MOVES 300u /* 301 before step G20 modelled Aurora Veil; 303 before step G19 modelled Coaching and Glaive Rush; 305u before step G15 modelled Expanding Force; 306 before step G16 modelled Knock Off; 313 before step G17 modelled the seven recharge moves; 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
+#define UNMODELED_MOVES 299u /* 300 before step G20 modelled Spiky Shield; 301 before it modelled Aurora Veil; 303 before step G19 modelled Coaching and Glaive Rush; 305u before step G15 modelled Expanding Force; 306 before step G16 modelled Knock Off; 313 before step G17 modelled the seven recharge moves; 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
 #define UNMODELED_ITEMS 39u /* one fewer since step G15 modelled Psychic Seed; five fewer since step G23-A found the Mega of a stone from (forme, stone): the second Mega Stones are data of their link */
-#define UNMODELED_ABILITIES 179u /* 180 before step AC1 made Trace an engine row; 181 before step G16 made Sticky Hold an engine row; 184 before step G14 made Rough Skin, Poison Touch and Thermal Exchange engine rows */
+#define UNMODELED_ABILITIES 178u /* 179 before step G23-C made Levitate an engine row; 180 before step AC1 made Trace an engine row; 181 before step G16 made Sticky Hold an engine row; 184 before step G14 made Rough Skin, Poison Touch and Thermal Exchange engine rows */
 
 /* How many rows of the manifest are marked and half modelled: marked, and with the UNMODELED handler or a list of
  * unmodelled features (decision 0015 section 4.2). A step marks only what it fully models. */
@@ -668,7 +668,7 @@ int main(void)
         /* Seven ids of G2 remain after step G8 (Scald and Recover are not any move's after step G10), the two
          * weather moves (Sandstorm and Snowscape: the field `weather`, which no column models) have one each, and
          * Knock Off (step G16: its onAfterHit and onBasePower) the id after them. */
-        DF_CHECK_EQ_U64(&t, handlers, DFI_SPECIAL_SOLAR_BEAM - DFI_SPECIAL_ENCORE + 1u - 2u); /* step G15 adds Expanding Force's, step G20 Aurora Veil's, step G30 Rage Powder's, Psychic Fangs' and Solar Beam's */
+        DF_CHECK_EQ_U64(&t, handlers, DFI_SPECIAL_SOLAR_BEAM - DFI_SPECIAL_ENCORE + 1u - 2u); /* step G15 adds Expanding Force's, step G20 Aurora Veil's and Spiky Shield's, step G30 Rage Powder's, Psychic Fangs' and Solar Beam's */
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_ENCORE, DFI_SPECIAL_FOLLOW_ME + 1u);
         /* UNMODELED follows them. Step G10 made Scald and Recover data (the thaw bit and the heal column): their ids
          * are still defined, and no pool move has them. */
@@ -678,10 +678,16 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_EXPANDING_FORCE, DFI_SPECIAL_KNOCK_OFF + 1u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_GLAIVE_RUSH, DFI_SPECIAL_EXPANDING_FORCE + 1u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_AURORA_VEIL, DFI_SPECIAL_GLAIVE_RUSH + 1u);
-        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_RAGE_POWDER, DFI_SPECIAL_AURORA_VEIL + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_SPIKY_SHIELD, DFI_SPECIAL_AURORA_VEIL + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_RAGE_POWDER, DFI_SPECIAL_SPIKY_SHIELD + 1u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_PSYCHIC_FANGS, DFI_SPECIAL_RAGE_POWDER + 1u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_SOLAR_BEAM, DFI_SPECIAL_PSYCHIC_FANGS + 1u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_SOLAR_BEAM + 1u);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_SPIKYSHIELD].special, DFI_SPECIAL_SPIKY_SHIELD);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_SPIKY_SHIELD, 28u);
+        /* Baneful Bunker and King's Shield stay unmodelled and unmarked: their learners have no supported ability. */
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_BANEFULBUNKER].special, DFI_SPECIAL_UNMODELED);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_KINGSSHIELD].special, DFI_SPECIAL_UNMODELED);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_AURORAVEIL].special, DFI_SPECIAL_AURORA_VEIL);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_EXPANDINGFORCE].special, DFI_SPECIAL_EXPANDING_FORCE);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_EXPANDINGFORCE].base_power, 80u);
@@ -1129,16 +1135,17 @@ int main(void)
         }
         /* Step G4 marks Focus Sash (onDamage at the move-damage call), step G12 Floettite (the Mega Stone of
          * Floette-Eternal, with Fairy Aura), step G18 four more Mega Stones (Tyranitarite, Baxcalibrite,
-         * Aerodactylite, Manectite: the Mega ability is marked and the base forme has exactly one Mega), step G24 nine
+         * Aerodactylite, Manectite: the Mega ability is marked and the base forme has exactly one Mega), the Mega batch nine
          * more (Gardevoirite, Abomasite, Barbaracite, Beedrillite, Falinksite, Hawluchanite, Malamarite, Sceptilite,
-         * Scraftinite); Expert Belt stays unmarked. */
+         * Scraftinite), step G23-C Charizardite X, Garchompite Z and Delphoxite; Expert Belt stays unmarked. */
         DF_CHECK(&t, dfi_support.items[DFI_ITEM_FOCUSSASH] != 0u);
         for (uint32_t id = DFI_ITEM_FOCUSSASH + 1u; id < DFI_POOL_ITEM_COUNT; ++id) {
             const bool stone = id == DFI_ITEM_FLOETTITE || id == DFI_ITEM_PSYCHICSEED || id == DFI_ITEM_TYRANITARITE ||
                                id == DFI_ITEM_BAXCALIBRITE || id == DFI_ITEM_AERODACTYLITE || id == DFI_ITEM_MANECTITE ||
                                id == DFI_ITEM_GARDEVOIRITE || id == DFI_ITEM_ABOMASITE || id == DFI_ITEM_BARBARACITE ||
                                id == DFI_ITEM_BEEDRILLITE || id == DFI_ITEM_FALINKSITE || id == DFI_ITEM_HAWLUCHANITE ||
-                               id == DFI_ITEM_MALAMARITE || id == DFI_ITEM_SCEPTILITE || id == DFI_ITEM_SCRAFTINITE;
+                               id == DFI_ITEM_MALAMARITE || id == DFI_ITEM_SCEPTILITE || id == DFI_ITEM_SCRAFTINITE ||
+                               id == DFI_ITEM_CHARIZARDITEX || id == DFI_ITEM_GARCHOMPITEZ || id == DFI_ITEM_DELPHOXITE;
             DF_CHECK_EQ_U64(&t, dfi_support.items[id] != 0u ? 1u : 0u, stone ? 1u : 0u);
         }
         for (uint32_t id = 0u; id < DFI_POOL_ITEM_COUNT; ++id) {
@@ -1165,7 +1172,8 @@ int main(void)
             /* ... and Rough Skin, Poison Touch, Thermal Exchange (step G14) and Sticky Hold (step G16): engine rows that the turn code runs by id. */
             const bool engine = id == DFI_ABILITY_ROUGHSKIN || id == DFI_ABILITY_POISONTOUCH ||
                                 id == DFI_ABILITY_THERMALEXCHANGE || id == DFI_ABILITY_STICKYHOLD ||
-                                id == DFI_ABILITY_TRACE /* step AC1: Trace, by id too */;
+                                id == DFI_ABILITY_TRACE /* step AC1: Trace, by id too */ ||
+                                id == DFI_ABILITY_LEVITATE /* step G23-C: isGrounded and the Ground immunity */;
             DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, (setter || engine) ? 1u : 0u);
             DF_CHECK_EQ_U64(&t, dfi_pool_ability_family[id].family,
                             setter ? DFI_ABILITY_FAMILY_WEATHER_SETTER : DFI_ABILITY_FAMILY_NONE);
@@ -1212,7 +1220,8 @@ int main(void)
                                                 DFI_MOVE_POWERWHIP, DFI_MOVE_ACCELEROCK, DFI_MOVE_BULLETPUNCH, DFI_MOVE_MACHPUNCH,
                                                 DFI_MOVE_CRUNCH, DFI_MOVE_BUGBUZZ, DFI_MOVE_DRAINPUNCH, DFI_MOVE_NUZZLE,
                                                 DFI_MOVE_EXPANDINGFORCE,
-                                                DFI_MOVE_COACHING, DFI_MOVE_GLAIVERUSH, DFI_MOVE_AURORAVEIL};
+                                                DFI_MOVE_COACHING, DFI_MOVE_GLAIVERUSH, DFI_MOVE_AURORAVEIL,
+                                                DFI_MOVE_SPIKYSHIELD};
         uint32_t marked_count = 0u;
         for (uint32_t id = DFI_EXT_MOVE_COUNT; id < DFI_POOL_MOVE_COUNT; ++id) {
             bool want = false;
@@ -1222,17 +1231,17 @@ int main(void)
             DF_CHECK_EQ_U64(&t, dfi_support.moves[id] != 0u ? 1u : 0u, want ? 1u : 0u);
             /* A marked move has a handler id only if the engine has the code for it: First Impression (Fake Out's
              * family), Low Kick (Grass Knot's), Soak (step G11), Wide Guard (step G7), the two weather moves and Detect
-             * (Protect's, step G13), Knock Off (step G16), Aurora Veil (step G20); the others are data. Never the UNMODELED one. */
+             * (Protect's, step G13), Knock Off (step G16), Aurora Veil and Spiky Shield (step G20); the others are data. Never the UNMODELED one. */
             DF_CHECK(&t, !want || dfi_pool_moves[id].special == DFI_SPECIAL_NONE ||
                              id == DFI_MOVE_FIRSTIMPRESSION || id == DFI_MOVE_LOWKICK || id == DFI_MOVE_SOAK ||
                              id == DFI_MOVE_ENCORE || id == DFI_MOVE_SANDSTORM || id == DFI_MOVE_SNOWSCAPE ||
-                             id == DFI_MOVE_KNOCKOFF || id == DFI_MOVE_EXPANDINGFORCE || id == DFI_MOVE_GLAIVERUSH || id == DFI_MOVE_AURORAVEIL ||
+                             id == DFI_MOVE_KNOCKOFF || id == DFI_MOVE_EXPANDINGFORCE || id == DFI_MOVE_GLAIVERUSH || id == DFI_MOVE_AURORAVEIL || id == DFI_MOVE_SPIKYSHIELD ||
                              (id == DFI_MOVE_WIDEGUARD && dfi_pool_moves[id].special == DFI_SPECIAL_WIDE_GUARD) ||
                              (id == DFI_MOVE_DETECT && dfi_pool_moves[id].special == DFI_SPECIAL_PROTECT));
             DF_CHECK(&t, !want || dfi_pool_moves[id].special != DFI_SPECIAL_UNMODELED);
             marked_count += dfi_support.moves[id] != 0u ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, marked_count, 78u);
+        DF_CHECK_EQ_U64(&t, marked_count, 79u);
     }
 
     /* Step AC1: Trace copies the ability of a foe unless that has the pin's notrace flag. The turn code excludes only
@@ -1397,8 +1406,9 @@ int main(void)
                          dfi_pool_item_unmodeled[DFI_ITEM_ABSOLITEZ] == NULL &&
                          dfi_pool_item_handler[DFI_ITEM_ABSOLITE] == DFI_HANDLER_NONE);
         DF_CHECK(&t, strcmp(dfi_pool_item_unmodeled[DFI_ITEM_DAMPROCK], "read by id in data/conditions.ts") == 0);
-        DF_CHECK(&t, dfi_pool_ability_handler[DFI_ABILITY_LEVITATE] == DFI_HANDLER_UNMODELED &&
-                         strstr(dfi_pool_ability_unmodeled[DFI_ABILITY_LEVITATE], "read by id in sim/pokemon.ts") != NULL);
+        DF_CHECK(&t, dfi_pool_ability_handler[DFI_ABILITY_LEVITATE] == DFI_HANDLER_NONE &&
+                         dfi_pool_ability_unmodeled[DFI_ABILITY_LEVITATE] == NULL); /* an engine row since step G23-C */
+        DF_CHECK(&t, dfi_pool_ability_handler[DFI_ABILITY_EELEVATE] == DFI_HANDLER_UNMODELED);
         DF_CHECK(&t, dfi_pool_ability_handler[DFI_ABILITY_INTIMIDATE] == DFI_HANDLER_NONE);
         /* The target classes of the pool beyond the public ones: encoded, never a public value. */
         DF_CHECK_EQ_U64(&t, DFI_TARGET_CLASS_ALL_ADJACENT, 11u);
@@ -1477,12 +1487,12 @@ int main(void)
         DF_CHECK_EQ_U64(&t, dfi_mega_of(DFI_FORME_CHARIZARDMEGAX, 1u + DFI_ITEM_CHARIZARDITEX), DFI_FORME_NONE); /* a Mega forme */
         DF_CHECK_EQ_U64(&t, dfi_mega_of(DFI_FORME_CHARIZARD, DFI_POOL_ITEM_COUNT + 1u), DFI_FORME_NONE);    /* beyond the table */
         DF_CHECK_EQ_U64(&t, dfi_mega_of(DFI_POOL_FORME_COUNT, 1u + DFI_ITEM_CHARIZARDITEX), DFI_FORME_NONE);
-        /* The support gate follows the pair: Charizard-Mega-X brings Tough Claws, which is marked, and Charizardite X is
-         * not (a Mega Stone is data of its link, but the manifest marks the stones one by one). */
+        /* The support gate follows the pair: Charizard-Mega-X brings Tough Claws, which is marked (and Charizardite X is
+         * marked since step G23-C); Absol-Mega-Z brings Sharpness, which is not. */
         DF_CHECK(&t, dfi_manifest_mega_of(&dfi_support, DFI_FORME_CHARIZARD, 1u + DFI_ITEM_CHARIZARDITEX));
         DF_CHECK(&t, !dfi_manifest_mega_of(&dfi_support, DFI_FORME_CHARIZARD, 1u + DFI_ITEM_LEFTOVERS));
         DF_CHECK(&t, !dfi_manifest_mega_of(&dfi_support, DFI_FORME_ABSOL, 1u + DFI_ITEM_ABSOLITEZ)); /* Sharpness is not marked */
-        DF_CHECK(&t, dfi_support.items[DFI_ITEM_CHARIZARDITEX] == 0u && dfi_support.items[DFI_ITEM_ABSOLITEZ] == 0u);
+        DF_CHECK(&t, dfi_support.items[DFI_ITEM_CHARIZARDITEX] != 0u && dfi_support.items[DFI_ITEM_ABSOLITEZ] == 0u);
         /* The support is that of the pair's own Mega ability: with Tough Claws unmarked Charizardite X is unsupported and
          * Charizardite Y (Drought) is not. */
         dfi_support_manifest claws = dfi_support;

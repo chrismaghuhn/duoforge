@@ -1614,6 +1614,30 @@ static const df_tb_stop tb_g20_aurora_veil_screens[] = {
     {6u, 0u, 2u, 2u, {4u, 4u}, {642u, 693u}, {0x404b6d42cd2b4c2full, 0x404ffce38e38e38dull}},
     {7u, 0u, 2u, 2u, {4u, 4u}, {644u, 693u}, {0x404b6d2ab1e60c3dull, 0x404ffce38e38e38dull}},
 };
+static const df_tb_stop tb_g20_spiky_shield_a[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1127u, 1105u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {761u, 739u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {761u, 714u}, {0x4050aaaaaaaaaaabull, 0x405029d799c3d02eull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {761u, 714u}, {0x4050aaaaaaaaaaabull, 0x405029d799c3d02eull}},
+    {5u, 0u, 2u, 2u, {4u, 4u}, {598u, 703u}, {0x404a550690690690ull, 0x404fcb4011cb1969ull}},
+    {6u, 0u, 2u, 2u, {4u, 4u}, {610u, 692u}, {0x404ad84ec4ec4ec5ull, 0x404f42d0f00e9278ull}},
+};
+static const df_tb_stop tb_g20_spiky_shield_ko[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1127u, 1105u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {761u, 739u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {635u, 735u}, {0x404bf2df2df2df2full, 0x405091dc47711dc5ull}},
+    {3u, 0u, 1u, 1u, {4u, 3u}, {598u, 542u}, {0x404a55b59b59b59bull, 0x4047fe59de324b07ull}},
+    {4u, 0u, 1u, 1u, {4u, 3u}, {598u, 542u}, {0x404a55b59b59b59bull, 0x4047fe59de324b07ull}},
+    {5u, 0u, 1u, 1u, {4u, 3u}, {610u, 517u}, {0x404ad8fdcfdcfdd0ull, 0x4046fcb3bc64960dull}},
+};
+static const df_tb_stop tb_g20_spiky_shield_pivot[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1142u, 1090u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {776u, 724u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {749u, 724u}, {0x40501f89467e251aull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 1u, 1u, {4u, 3u}, {749u, 552u}, {0x40501f89467e251aull, 0x4049000000000000ull}},
+    {4u, 0u, 1u, 1u, {4u, 3u}, {749u, 552u}, {0x40501f89467e251aull, 0x4049000000000000ull}},
+    {5u, 0u, 1u, 1u, {4u, 3u}, {720u, 552u}, {0x404f01ceb8bf0660ull, 0x4049000000000000ull}},
+};
 static const df_tb_stop tb_g21_armarouge_wisp_thermal[] = {
     {0u, 0u, 2u, 3u, {6u, 6u}, {1113u, 1178u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {757u, 818u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -1677,6 +1701,34 @@ static const df_tb_stop tb_g21_waterfall_pulse_crunch[] = {
     {3u, 0u, 2u, 2u, {4u, 4u}, {700u, 767u}, {0x404ea471c71c71c8ull, 0x4050562d9faee41full}},
     {5u, 0u, 2u, 2u, {4u, 4u}, {653u, 714u}, {0x404c9a38e38e38e4ull, 0x404e7c9ed699c4dcull}},
     {6u, 0u, 2u, 2u, {4u, 4u}, {625u, 704u}, {0x404b631c71c71c71ull, 0x404e130288df0cacull}},
+};
+static const df_tb_stop tb_g23_charizard_x[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1152u, 1142u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {766u, 783u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {682u, 766u}, {0x404db2888184bcfbull, 0x40505310e6da7c7full}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {536u, 737u}, {0x40475efb22de5d4dull, 0x404f7b425ed097b4ull}},
+    {4u, 0u, 2u, 1u, {3u, 4u}, {446u, 662u}, {0x40436e41e6a74981ull, 0x404c764ff96778c9ull}},
+};
+static const df_tb_stop tb_g23_garchomp_levitate[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1182u, 1114u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {796u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {750u, 697u}, {0x404f853c7f6695afull, 0x404e128cfc4a33f1ull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {725u, 624u}, {0x404e8582eaf4dbfcull, 0x404b22373d6c6b2full}},
+    {4u, 0u, 1u, 1u, {4u, 3u}, {700u, 571u}, {0x404d85c956832249ull, 0x4049000000000000ull}},
+};
+static const df_tb_stop tb_g23_garchomp_terrain[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1182u, 1100u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {796u, 764u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {746u, 694u}, {0x404f653594d65359ull, 0x404e6c264bac0079ull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {694u, 675u}, {0x404d613d84f613d8ull, 0x404da9663b24547dull}},
+    {4u, 0u, 2u, 2u, {4u, 4u}, {645u, 662u}, {0x404b7b09ec27b09full, 0x404d201b094b31d9ull}},
+};
+static const df_tb_stop tb_g23_psychic_terrain_levitate[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1099u, 1110u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {713u, 760u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {695u, 710u}, {0x4050412c12c12c13ull, 0x404efab26162d518ull}},
+    {3u, 0u, 2u, 1u, {3u, 4u}, {543u, 635u}, {0x40482d02d02d02d0ull, 0x404b72bdf37714bbull}},
+    {4u, 0u, 2u, 1u, {3u, 4u}, {543u, 635u}, {0x40482d02d02d02d0ull, 0x404b72bdf37714bbull}},
 };
 static const df_tb_stop tb_g24_abomasnow_scrafty[] = {
     {0u, 0u, 1u, 3u, {6u, 6u}, {1164u, 1093u}, {0x4059000000000000ull, 0x4059000000000000ull}},
@@ -3244,6 +3296,9 @@ static const df_tb_battle tb_battles[] = {
     {"g20_aurora_veil_pair_a", 8u, tb_g20_aurora_veil_pair_a, sizeof tb_g20_aurora_veil_pair_a / sizeof tb_g20_aurora_veil_pair_a[0]},
     {"g20_aurora_veil_pair_b", 8u, tb_g20_aurora_veil_pair_b, sizeof tb_g20_aurora_veil_pair_b / sizeof tb_g20_aurora_veil_pair_b[0]},
     {"g20_aurora_veil_screens", 7u, tb_g20_aurora_veil_screens, sizeof tb_g20_aurora_veil_screens / sizeof tb_g20_aurora_veil_screens[0]},
+    {"g20_spiky_shield_a", 6u, tb_g20_spiky_shield_a, sizeof tb_g20_spiky_shield_a / sizeof tb_g20_spiky_shield_a[0]},
+    {"g20_spiky_shield_ko", 5u, tb_g20_spiky_shield_ko, sizeof tb_g20_spiky_shield_ko / sizeof tb_g20_spiky_shield_ko[0]},
+    {"g20_spiky_shield_pivot", 5u, tb_g20_spiky_shield_pivot, sizeof tb_g20_spiky_shield_pivot / sizeof tb_g20_spiky_shield_pivot[0]},
     {"g21_armarouge_wisp_thermal", 6u, tb_g21_armarouge_wisp_thermal, sizeof tb_g21_armarouge_wisp_thermal / sizeof tb_g21_armarouge_wisp_thermal[0]},
     {"g21_crit_slashes", 6u, tb_g21_crit_slashes, sizeof tb_g21_crit_slashes / sizeof tb_g21_crit_slashes[0]},
     {"g21_dragon_dance_claw", 6u, tb_g21_dragon_dance_claw, sizeof tb_g21_dragon_dance_claw / sizeof tb_g21_dragon_dance_claw[0]},
@@ -3252,6 +3307,10 @@ static const df_tb_battle tb_battles[] = {
     {"g21_priority_punches", 6u, tb_g21_priority_punches, sizeof tb_g21_priority_punches / sizeof tb_g21_priority_punches[0]},
     {"g21_quiver_bug_fire", 6u, tb_g21_quiver_bug_fire, sizeof tb_g21_quiver_bug_fire / sizeof tb_g21_quiver_bug_fire[0]},
     {"g21_waterfall_pulse_crunch", 6u, tb_g21_waterfall_pulse_crunch, sizeof tb_g21_waterfall_pulse_crunch / sizeof tb_g21_waterfall_pulse_crunch[0]},
+    {"g23_charizard_x", 4u, tb_g23_charizard_x, sizeof tb_g23_charizard_x / sizeof tb_g23_charizard_x[0]},
+    {"g23_garchomp_levitate", 4u, tb_g23_garchomp_levitate, sizeof tb_g23_garchomp_levitate / sizeof tb_g23_garchomp_levitate[0]},
+    {"g23_garchomp_terrain", 4u, tb_g23_garchomp_terrain, sizeof tb_g23_garchomp_terrain / sizeof tb_g23_garchomp_terrain[0]},
+    {"g23_psychic_terrain_levitate", 4u, tb_g23_psychic_terrain_levitate, sizeof tb_g23_psychic_terrain_levitate / sizeof tb_g23_psychic_terrain_levitate[0]},
     {"g24_abomasnow_scrafty", 4u, tb_g24_abomasnow_scrafty, sizeof tb_g24_abomasnow_scrafty / sizeof tb_g24_abomasnow_scrafty[0]},
     {"g24_barbaracle_beedrill", 4u, tb_g24_barbaracle_beedrill, sizeof tb_g24_barbaracle_beedrill / sizeof tb_g24_barbaracle_beedrill[0]},
     {"g24_falinks_pelipper", 6u, tb_g24_falinks_pelipper, sizeof tb_g24_falinks_pelipper / sizeof tb_g24_falinks_pelipper[0]},
@@ -3392,7 +3451,7 @@ static const df_tb_battle tb_battles[] = {
     {"w8_sand_soak", 7u, tb_w8_sand_soak, sizeof tb_w8_sand_soak / sizeof tb_w8_sand_soak[0]},
 };
 
-/* 2405 stops: 139 of an ended battle; decided by the count 719,
- * the HP percentage 742, the total HP 754, a tie 51;
- * winners: side 0 1212, side 1 1142, tie 51 */
+/* 2443 stops: 139 of an ended battle; decided by the count 729,
+ * the HP percentage 756, the total HP 768, a tie 51;
+ * winners: side 0 1236, side 1 1156, tie 51 */
 #endif

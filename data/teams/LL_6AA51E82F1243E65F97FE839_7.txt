@@ -1,0 +1,53 @@
+Archaludon (M) @ Leftovers
+Ability: Stamina
+Level: 50
+Calm Nature
+- Electro Shot
+- Snarl
+- Dragon Pulse
+- Protect
+
+Pelipper (M) @ Focus Sash
+Ability: Drizzle
+Level: 50
+Modest Nature
+- Weather Ball
+- Hurricane
+- Wide Guard
+- Tailwind
+
+Golisopod (M) @ Golisopite
+Ability: Emergency Exit
+Level: 50
+Adamant Nature
+- Iron Head
+- Leech Life
+- Drill Run
+- Protect
+
+Sneasler (M) @ Psychic Seed
+Ability: Unburden
+Level: 50
+Adamant Nature
+- Close Combat
+- Dire Claw
+- Throat Chop
+- Protect
+
+Indeedee-F (F) @ Colbur Berry
+Ability: Psychic Surge
+Level: 50
+Calm Nature
+- Mystical Fire
+- Follow Me
+- Trick Room
+- Helping Hand
+
+Gardevoir (M) @ Gardevoirite
+Ability: Trace
+Level: 50
+Modest Nature
+- Expanding Force
+- Hyper Voice
+- Protect
+- Trick Room

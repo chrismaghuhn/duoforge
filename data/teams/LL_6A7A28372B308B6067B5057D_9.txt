@@ -1,0 +1,53 @@
+Farigiraf (M) @ Sitrus Berry
+Ability: Armor Tail
+Level: 50
+Bold Nature
+- Protect
+- Trick Room
+- Helping Hand
+- Psychic
+
+Kingambit (M) @ Life Orb
+Ability: Defiant
+Level: 50
+Adamant Nature
+- Protect
+- Iron Head
+- Kowtow Cleave
+- Sucker Punch
+
+Sylveon (M) @ Fairy Feather
+Ability: Pixilate
+Level: 50
+Modest Nature
+- Detect
+- Quick Attack
+- Hyper Beam
+- Hyper Voice
+
+Staraptor (M) @ Staraptite
+Ability: Intimidate
+Level: 50
+Jolly Nature
+- Protect
+- Tailwind
+- Close Combat
+- Brave Bird
+
+Arcanine-Hisui (M) @ Focus Sash
+Ability: Rock Head
+Level: 50
+Adamant Nature
+- Protect
+- Head Smash
+- Flare Blitz
+- Extreme Speed
+
+Raichu (M) @ Raichunite Y
+Ability: Lightning Rod
+Level: 50
+Modest Nature
+- Protect
+- Fake Out
+- Zap Cannon
+- Focus Blast

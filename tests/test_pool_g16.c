@@ -386,7 +386,7 @@ int main(void)
     DF_CHECK_EQ_U64(&t, DFI_SPECIAL_KNOCK_OFF, 24u);
     DF_CHECK_EQ_U64(&t, DFI_SPECIAL_EXPANDING_FORCE, 25u); /* step G15 */
     DF_CHECK_EQ_U64(&t, DFI_SPECIAL_GLAIVE_RUSH, 26u); /* step G19 */
-    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_SOLAR_BEAM + 1u); /* 28 before step G20 put Aurora Veil at 27, 31 after step G30 */
+    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_SOLAR_BEAM + 1u); /* 27 before step G20 put Aurora Veil at 27, Spiky Shield at 28 and step G30 Solar Beam at 31 */
     DF_CHECK(&t, dfi_support.moves[DFI_MOVE_KNOCKOFF] != 0u && dfi_support.abilities[DFI_ABILITY_STICKYHOLD] != 0u);
     DF_CHECK(&t, (dfi_support.view_ext_features & ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ITEM_CHANGE)) != 0u);
     /* Trick, Switcheroo and Thief stay unmarked: no accepted battle has a swapped item (item_now is 0 or 255 only). */
