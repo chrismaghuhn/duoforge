@@ -184,6 +184,8 @@ duoforge_add_test(NAME duoforge.state.pool_g20 SOURCES test_pool_g20.c WHITEBOX 
 duoforge_add_test(NAME duoforge.state.pool_g20_protect SOURCES test_pool_g20_protect.c WHITEBOX TIMEOUT 60)
 # The queued action of a fainted Pokemon: no ability and no item of it counts for its priority and Speed (d04 to d06).
 duoforge_add_test(NAME duoforge.state.pool_fainted_holder SOURCES test_pool_fainted_holder.c WHITEBOX TIMEOUT 60)
+# Step G22: the queued action of a fainted Swift Swim holder, and an Intimidate drop that the cap already took to nothing.
+duoforge_add_test(NAME duoforge.state.pool_g22 SOURCES test_pool_g22.c WHITEBOX TIMEOUT 60)
 # The generated files must stay exactly what tools/datagen/gen_closure.py
 # wrote; regenerate and update these hashes together.
 foreach(_gen IN ITEMS
@@ -192,7 +194,7 @@ foreach(_gen IN ITEMS
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
         "pool_tables.h=cb3add42e08582469c9b953f17b1ff6df79ab2d6b4bb0671dbbfdd5e20c7b90f"
-        "pool_tables.c=f7286ee46506d191f250617bde5dfca2d3c1dba48318e0c8a8e474e26a132742")
+        "pool_tables.c=4ea917aed6c887863c7cb1c17beef2b852c57a89d26799030ac05357e26f6c88")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
