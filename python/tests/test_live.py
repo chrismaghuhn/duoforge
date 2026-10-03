@@ -262,6 +262,51 @@ class TrackerTest(unittest.TestCase):
     def setUpClass(cls):
         cls.ref = Reference.get()
 
+    def _updated_request_pair(self):
+        from duoforge_live.tracker import Tracker
+
+        tracker = Tracker(self.ref.data, self.ref.battles[0].spec["teams"][0])
+        tracker.request = {"rqid": 1, "side": {"id": "p1", "pokemon": []}, "active": [{}, {}]}
+        request = json.loads(json.dumps(tracker.request))
+        request.update(update=True, rqid=2)
+        return tracker, request
+
+    def test_update_requires_a_current_request(self):
+        tracker, request = self._updated_request_pair()
+        tracker.request = None
+        with self.assertRaisesRegex(ValueError, "updated request"):
+            tracker._on_updated_request(request)
+
+    def test_update_requires_active_on_current_request(self):
+        tracker, request = self._updated_request_pair()
+        tracker.request.pop("active")
+        with self.assertRaisesRegex(ValueError, "updated request"):
+            tracker._on_updated_request(request)
+
+    def test_update_requires_active_on_new_request(self):
+        tracker, request = self._updated_request_pair()
+        request.pop("active")
+        with self.assertRaisesRegex(ValueError, "updated request"):
+            tracker._on_updated_request(request)
+
+    def test_update_requires_no_intervening_battle_lines(self):
+        tracker, request = self._updated_request_pair()
+        tracker._lines.append("|player|p2|Opponent|0|1500")
+        with self.assertRaisesRegex(ValueError, "updated request"):
+            tracker._on_updated_request(request)
+
+    def test_update_requires_the_same_active_count(self):
+        tracker, request = self._updated_request_pair()
+        request["active"].pop()
+        with self.assertRaisesRegex(ValueError, "updated request"):
+            tracker._on_updated_request(request)
+
+    def test_update_requires_the_same_side(self):
+        tracker, request = self._updated_request_pair()
+        request["side"]["id"] = "p2"
+        with self.assertRaisesRegex(ValueError, "updated request"):
+            tracker._on_updated_request(request)
+
     def assertSameView(self, battle, player, points):
         expected = sum(1 for _ in battle.points(player))
         self.assertEqual([p[0] for p in points], list(range(expected)), (battle.name, player))
@@ -303,7 +348,8 @@ class TrackerTest(unittest.TestCase):
                 self.assertSameView(battle, player, run_tracker(battle, player, stream))
 
     def test_room_lines_do_not_complete_a_decision(self):
-        room = ["|c|☆someone|hello", "|j|☆watcher", "||watcher is ready for game 2.", "|inactive|Time left"]
+        room = ["|c|☆someone|hello", "|j|☆watcher", "||watcher is ready for game 2.", "|inactive|Time left",
+                "|player|p2|watcher||"]
         for battle in self.ref.battles:
             for player in (0, 1):
                 stream = []
@@ -405,21 +451,6 @@ class TrackerTest(unittest.TestCase):
         self.assertFalse(differences(after, before))
         self.assertEqual(lists[0], lists_before[0])
         self.assertEqual(lists[1], [o for o in lists_before[1] if o.kind != options.SWITCH])
-        # An updated request that is no update of the current move request raises: another side, or a request at
-        # team preview (battle lines between: test_session_lines_raise).
-        other = json.loads(json.dumps(update))
-        other["side"]["pokemon"][0]["condition"] = "1/999"
-        other["rqid"] += 1
-        with self.assertRaisesRegex(ValueError, "updated request"):
-            tracker.feed(["|request|" + json.dumps(other)])
-        preview = Tracker(self.ref.data, battle.spec["teams"][0])
-        for lines in battle.streams[0]:
-            preview.feed(lines)
-            if preview.request is not None:
-                break
-        self.assertTrue(preview.request.get("teamPreview"))
-        with self.assertRaisesRegex(ValueError, "updated request"):
-            preview.feed(["|request|" + json.dumps(dict(preview.request, update=True, rqid=999))])
 
 
 if __name__ == "__main__":

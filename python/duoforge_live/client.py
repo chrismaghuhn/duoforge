@@ -32,9 +32,8 @@ USER_AGENT = "DuoForgeBot/1 (research bot; github.com/chrismaghuhn/duoforge)"  #
 SHEET_WAIT = 60.0  # seconds after the team preview request (the VGC timer gives 90)
 ACCEPT_WAIT = 30.0  # seconds for the battle room after an accept; none comes when the challenger cancelled
 MAX_REJECTIONS = 64
-# Showdown hides two facts of a move request, both of the last active (Pokemon.getMoveRequestData,
-# sim/pokemon.ts:1112-1134): a trap and disabled moves. Each "[Unavailable choice]" reveals one in an updated
-# request, so a third at one decision point means the bot misread a request.
+# Showdown can refuse a switch of a trapped last active, or a move disabled by Imprison. Each
+# "[Unavailable choice]" reveals one in an updated request; after two at one decision point, the bot forfeits.
 MAX_UNAVAILABLE = 2
 
 GREETING = "Hi! DuoForge bot here, good luck!"
@@ -315,9 +314,10 @@ class Bot:
         if game.asked() and game.epoch > b.decided:
             if not r.get("update"):  # an updated request is the same decision point
                 b.unavailable = 0
+                b.rejections = 0
             b.decided = game.epoch
             b.candidates = game.candidates()
-            b.index = b.rejections = 0
+            b.index = 0
             b.write({"decision": r["rqid"], "top": [[c.text, c.probability] for c in b.candidates[:3]],
                      "sent": b.candidates[0].text})
             await self._choose(b)
