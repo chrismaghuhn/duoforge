@@ -687,7 +687,6 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_CLANGOROUS_SOUL, DFI_SPECIAL_STEEL_ROLLER + 1u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_BRICK_BREAK, DFI_SPECIAL_CLANGOROUS_SOUL + 1u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_DISABLE, DFI_SPECIAL_BRICK_BREAK + 1u); /* step G27, after the handlers of the other steps */
-        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_SUPER_FANG + 1u);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_DISABLE].special, DFI_SPECIAL_DISABLE);
         /* Step G25: the four handlers of the terrains, after step G27's Disable and before UNMODELED. */
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_ELECTRIC_TERRAIN, DFI_SPECIAL_DISABLE + 1u);
