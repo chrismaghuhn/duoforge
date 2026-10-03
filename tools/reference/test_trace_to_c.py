@@ -1199,6 +1199,79 @@ class Library(unittest.TestCase):
             with self.assertRaises(trace_to_c.ConversionError):
                 trace_to_c.step_events([bad], 0, roster, [{'Gardevoir': 100}] * 2, tables)
 
+    def test_perish_song_lines_are_events_and_rows_are_what_the_protocol_lines_say(self):
+        """Perish Song (step G26): `-start|X|perishN` is a VOLATILE_START of the volatile PERISH (5) with the count N in
+        `amount` (3, 2, 1, and 0 from onEnd, which a `faint` line follows); `-fieldactivate|move: Perish Song` is an ACTIVATE
+        of the move with no position; the cast's own `-start|X|perish3|[silent]` is not shown and never converts. Anything
+        else is refused. Decision 0018 section 6.1: the view's `perish` is the last count a position was told, cleared by a
+        faint, a switch or a drag: the rows of the C test (rows in tests/test_pool_g26.c: the count of each position after
+        each step) must be exactly what the committed traces say, so the engine's tail and extension are checked against the
+        protocol and not against themselves. After a `perish0` line every position that showed it has a `faint` line in the
+        same step, and the win of g26_perish_end goes to the side of the last `faint`."""
+        tables = trace_to_c.load_tables(ROOT, True)
+        roster = [{'Politoed': 0}, {'Politoed': 0}]
+        maxhp = [{'Politoed': 100}] * 2
+        for n in (3, 2, 1, 0):
+            events = trace_to_c.step_events(['|-start|p1a: Politoed|perish%d' % n], 0, roster, maxhp, tables)
+            self.assertEqual(len(events), 1)
+            e = events[0]
+            self.assertEqual((e[0], e[1], e[11], e[12]), (trace_to_c.EV['VOLATILE_START'], 0, trace_to_c.VOLATILE_PERISH, n))
+        self.assertEqual(trace_to_c.VOLATILE_PERISH, 5)
+        self.assertEqual(trace_to_c.step_events(['|-start|p1a: Politoed|perish3|[silent]'], 0, roster, maxhp, tables), [])
+        field = trace_to_c.step_events(['|-fieldactivate|move: Perish Song'], 0, roster, maxhp, tables)
+        self.assertEqual(len(field), 1)
+        self.assertEqual((field[0][0], field[0][1], field[0][2], field[0][3], field[0][5]),
+                         (trace_to_c.EV['ACTIVATE'], 0xFF, 0xFF, trace_to_c.CAUSE['MOVE'], tables['MOVE'][trace_to_c.key('Perish Song')]))
+        with self.assertRaises(trace_to_c.ConversionError) as ctx:
+            trace_to_c.step_events(['|-fieldactivate|move: Trick Room'], 0, roster, maxhp, tables)
+        self.assertEqual(ctx.exception.rule, 'fieldactivate-line')
+        names = ('g26_perish_song', 'g26_perish_recast', 'g26_perish_end')
+        with open(os.path.join(ROOT, 'tests', 'test_pool_g26.c'), encoding='utf-8') as f:
+            source = f.read()
+        rows = {}
+        for m in re.finditer(r'\{"(g26_\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}', source):
+            rows[(m.group(1), int(m.group(2)))] = [int(m.group(i)) for i in (3, 4, 5, 6)]
+        derived = {}
+        zero_lines = faints = 0
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            perish = {}
+            for k, step in enumerate(trace['steps']):
+                log = [l.split('|') for l in step['log']]
+                zeros = set()
+                fainted = set()
+                for part in log:
+                    if len(part) < 3:
+                        continue
+                    kind, pos = part[1], part[2][:3]
+                    if kind in ('switch', 'drag', 'faint', 'replace'):
+                        perish.pop(pos, None)
+                        if kind == 'faint':
+                            fainted.add(pos)
+                    elif kind == '-start' and len(part) == 4 and re.fullmatch(r'perish[0-3]', part[3]):
+                        n = int(part[3][6])
+                        if n == 0:
+                            perish.pop(pos, None)
+                            zeros.add(pos)
+                            zero_lines += 1
+                        else:
+                            perish[pos] = n
+                self.assertEqual(zeros, fainted & zeros)  # every perish0 is followed by the holder's faint in the step
+                faints += len(zeros)
+                row = [0, 0, 0, 0]
+                for x, n in perish.items():
+                    row[(int(x[1]) - 1) * 2 + 'ab'.index(x[2])] = n
+                derived[(name, k)] = row
+        self.assertEqual(rows, derived)
+        self.assertTrue(zero_lines >= 10 and faints == zero_lines)
+        # g26_perish_end: the last line of the log is the win, and it is the side of the last `faint` line.
+        with open(os.path.join(ROOT, 'tests', 'reference', 'traces', 'g26_perish_end.json'), encoding='utf-8') as f:
+            last = json.load(f)['steps'][-1]['log']
+        faint_lines = [l for l in last if l.startswith('|faint|')]
+        self.assertEqual(len(faint_lines), 4)
+        self.assertEqual([l for l in last if l.startswith('|win|')], ['|win|p%s' % faint_lines[-1][8]])
+
     def test_glaive_rush_rows_are_what_the_protocol_lines_say(self):
         """Decision 0018 section 6.1 for Glaive Rush (step G19): its user is hit as vulnerable from a `|move|X|Glaive Rush|`
         line that is followed by damage to a foe (a miss, a block or an immunity gives nothing; the `-singlemove|X|Glaive
@@ -1393,7 +1466,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 78)  # the 27 of G21, G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
+        self.assertEqual(len(marked), 79)  # the 27 of G21, G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20), Perish Song (G26)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []

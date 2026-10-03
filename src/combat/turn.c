@@ -4112,6 +4112,18 @@ static duoforge_status dfi_residual_sort(dfi_run *r, dfi_residual_entry *list, u
     return DUOFORGE_OK;
 }
 
+/* fieldEvent (sim/battle.ts:484-575) runs faintMessages after every handler that does not end: a handler whose duration
+ * runs out ends and the loop goes on at once (`continue`), any other, with or without a callback, is followed by it. A
+ * faint that an ending handler queued (Perish Song's perish0, step G26) is shown and its win rule applied there: after
+ * the first later handler that does not end, so before the `upkeep` line when there is one, after it (the epilogue of the
+ * action) when there is none. */
+static void dfi_residual_faints(dfi_run *r)
+{
+    if (r->faint_count != 0u) {
+        dfi_process_faints(r);
+    }
+}
+
 static duoforge_status dfi_residual_events(dfi_run *r);
 
 /* The residual action. It keeps each position's HP from before its events
@@ -4490,6 +4502,11 @@ static duoforge_status dfi_residual_events(dfi_run *r)
                 e.detail = (uint8_t)s;
                 e.amount = side_kind[k];
                 dfi_emit(r, &e); /* [-sideend] */
+            } else {
+                dfi_residual_faints(r);
+                if (r->ended) {
+                    return DUOFORGE_OK;
+                }
             }
         }
     }
@@ -4499,6 +4516,11 @@ static duoforge_status dfi_residual_events(dfi_run *r)
             duoforge_event e = dfi_event_make(DUOFORGE_EVENT_FIELD_END, DUOFORGE_NO_POSITION);
             e.detail = (uint8_t)DUOFORGE_FIELD_TRICK_ROOM;
             dfi_emit(r, &e); /* [-fieldend] */
+        } else {
+            dfi_residual_faints(r);
+            if (r->ended) {
+                return DUOFORGE_OK;
+            }
         }
     }
     if (b->terrain != DFI_TERRAIN_NONE) {
@@ -4512,6 +4534,11 @@ static duoforge_status dfi_residual_events(dfi_run *r)
             st = dfi_terrain_change(r);
             if (st != DUOFORGE_OK) {
                 return st;
+            }
+        } else {
+            dfi_residual_faints(r);
+            if (r->ended) {
+                return DUOFORGE_OK;
             }
         }
     }
@@ -4533,6 +4560,26 @@ static duoforge_status dfi_residual_events(dfi_run *r)
     for (uint32_t i = herbs_from; i < sorted; ++i) {
         if (list[i].kind == DFI_RES_WHITE_HERB) {
             dfi_white_herb(r, list[i].flat);
+            dfi_residual_faints(r); /* a callback: faintMessages follows it */
+            if (r->ended) {
+                return DUOFORGE_OK;
+            }
+        }
+    }
+    /* The duration handlers of the volatiles that have no order come last: Protect, flinch, Helping Hand and Follow Me
+     * (duration 1) end at once, the stall counter and a charge (2) end on their second residual, mustrecharge (2) lasts
+     * through the one of the turn that set it. Any that does not end is followed by faintMessages. */
+    for (uint32_t flat = 0u; flat < DFI_POSITIONS && r->faint_count != 0u; ++flat) {
+        const dfi_active_slot *pos = dfi_pos(b, flat);
+        if (pos->occupant == DFI_OCCUPANT_NONE) {
+            continue;
+        }
+        if ((pos->stall_level != 0u && pos->stall_turns > 1u) || pos->charge_turns > 1u ||
+            b->tail.sides[flat / 2u].positions[flat % 2u].must_recharge != 0u) {
+            dfi_residual_faints(r);
+            if (r->ended) {
+                return DUOFORGE_OK;
+            }
         }
     }
     for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {

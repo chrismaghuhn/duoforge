@@ -120,6 +120,9 @@ bool dfi_events_fold_knowledge(const struct duoforge_battle *before, struct duof
                 /* An item that is gone: used up, or taken by a move (Knock Off, ITEM_TAKEN). The old item_used says it
                  * is gone either way, as the reference's state does; the view's item_now tells the two apart. */
                 k->revealed = (uint8_t)((uint32_t)k->revealed | DFI_REVEALED_ITEM_CONSUMED); /* wide-operands-reviewed */
+            } else if (e.kind == DUOFORGE_EVENT_FAINT) {
+                /* A faint that no damage line announced (Perish Song's, step G26): the screen shows the foe at 0. */
+                dfi_hp_display(0u, fs->members[m].hp_max, &k->hp_percent, &k->hp_flag);
             } else if (e.kind == DUOFORGE_EVENT_MEGA) {
                 k->revealed = (uint8_t)((uint32_t)k->revealed | DFI_REVEALED_MEGA); /* wide-operands-reviewed */
             }

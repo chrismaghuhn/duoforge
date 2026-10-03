@@ -174,6 +174,8 @@ duoforge_add_test(NAME duoforge.state.pool_g16 SOURCES test_pool_g16.c WHITEBOX 
 duoforge_add_test(NAME duoforge.state.pool_g20 SOURCES test_pool_g20.c WHITEBOX TIMEOUT 60)
 # The queued action of a fainted Pokemon: no ability and no item of it counts for its priority and Speed (d04 to d06).
 duoforge_add_test(NAME duoforge.state.pool_fainted_holder SOURCES test_pool_fainted_holder.c WHITEBOX TIMEOUT 60)
+# Step G26: Perish Song, the counter of the tail and the view's perish field, per step against the protocol's lines.
+duoforge_add_test(NAME duoforge.state.pool_g26 SOURCES test_pool_g26.c WHITEBOX TIMEOUT 60)
 # The generated files must stay exactly what tools/datagen/gen_closure.py
 # wrote; regenerate and update these hashes together.
 foreach(_gen IN ITEMS

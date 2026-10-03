@@ -657,6 +657,13 @@ def public_lines(log, roster_of, shown):
             skip = True
             continue
         parts = line.split('|')
+        if len(parts) >= 3 and parts[1] == 'faint':
+            # A faint that no `-damage ... 0 fnt` line announced (Perish Song, step G26): the screen shows the Pokemon at 0.
+            side = int(parts[2][1]) - 1
+            roster = roster_of[side].get(parts[2].split(': ', 1)[1])
+            if roster is not None:
+                shown[side][roster] = (0, 0)
+            continue
         if len(parts) >= 5 and parts[1] in ('switch', 'drag'):
             who, hp = parts[2], parts[4]
         elif len(parts) >= 4 and parts[1] in ('-damage', '-heal', '-sethp'):
