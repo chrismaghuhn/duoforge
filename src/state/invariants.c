@@ -295,12 +295,14 @@ static dfi_invariant dfi_check_side(const struct duoforge_context *ctx, const st
             }
             /* Unburden's volatile: set when its holder used its item or lost it to a move. The holder is the Pokemon
              * whose ability now is Unburden: the sheet's, or the one that the POOL tail's ability_now holds (zero under
-             * every other kind). The item is gone: used up, or taken. */
+             * every other kind). The item is gone: used up, or taken (or it stays: a Mega Stone on its own species
+             * that refused Knock Off, which Unburden's onTakeItem answered first, data/abilities.ts:5240-5242). */
             const uint32_t now = lim.pool_rules ? b->tail.sides[s].ability_now[slot->occupant] : 0u; /* the tail is absent elsewhere */
             const bool item_gone = item_now == DFI_TAIL_ITEM_NONE ||
                                    (occupant->item_consumed != 0u && (occupant->item != 0u || item_now != 0u));
             if (((uint32_t)slot->flags & DFI_VOL_UNBURDEN) != 0u &&
-                ((now != 0u ? now : occupant->ability) != 1u + DFI_ABILITY_UNBURDEN || !item_gone)) {
+                ((now != 0u ? now : occupant->ability) != 1u + DFI_ABILITY_UNBURDEN ||
+                 (!item_gone && occupant->mega_capable == 0u))) {
                 return DFI_INV_VOLATILE;
             }
             /* Follow Me's and Helping Hand's volatiles end in the residual and

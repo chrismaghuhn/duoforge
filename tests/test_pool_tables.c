@@ -1126,13 +1126,17 @@ int main(void)
         }
         /* Step G4 marks Focus Sash (onDamage at the move-damage call), step G12 Floettite (the Mega Stone of
          * Floette-Eternal, with Fairy Aura), step G18 four more Mega Stones (Tyranitarite, Baxcalibrite,
-         * Aerodactylite, Manectite: the Mega ability is marked and the base forme has exactly one Mega); Expert Belt
-         * stays unmarked. */
+         * Aerodactylite, Manectite: the Mega ability is marked and the base forme has exactly one Mega), step G24 nine
+         * more (Gardevoirite, Abomasite, Barbaracite, Beedrillite, Falinksite, Hawluchanite, Malamarite, Sceptilite,
+         * Scraftinite); Expert Belt stays unmarked. */
         DF_CHECK(&t, dfi_support.items[DFI_ITEM_FOCUSSASH] != 0u);
         for (uint32_t id = DFI_ITEM_FOCUSSASH + 1u; id < DFI_POOL_ITEM_COUNT; ++id) {
             const bool stone = id == DFI_ITEM_FLOETTITE || id == DFI_ITEM_PSYCHICSEED || id == DFI_ITEM_ELECTRICSEED ||
                                id == DFI_ITEM_MISTYSEED || id == DFI_ITEM_TYRANITARITE ||
-                               id == DFI_ITEM_BAXCALIBRITE || id == DFI_ITEM_AERODACTYLITE || id == DFI_ITEM_MANECTITE;
+                               id == DFI_ITEM_BAXCALIBRITE || id == DFI_ITEM_AERODACTYLITE || id == DFI_ITEM_MANECTITE ||
+                               id == DFI_ITEM_GARDEVOIRITE || id == DFI_ITEM_ABOMASITE || id == DFI_ITEM_BARBARACITE ||
+                               id == DFI_ITEM_BEEDRILLITE || id == DFI_ITEM_FALINKSITE || id == DFI_ITEM_HAWLUCHANITE ||
+                               id == DFI_ITEM_MALAMARITE || id == DFI_ITEM_SCEPTILITE || id == DFI_ITEM_SCRAFTINITE;
             DF_CHECK_EQ_U64(&t, dfi_support.items[id] != 0u ? 1u : 0u, stone ? 1u : 0u);
         }
         for (uint32_t id = 0u; id < DFI_POOL_ITEM_COUNT; ++id) {

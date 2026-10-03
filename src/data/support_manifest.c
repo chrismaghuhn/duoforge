@@ -133,6 +133,11 @@
  * orders its boosts Defense, Special Defense, Attack, Special Attack, Speed, the engine in stat order), Earthquake,
  * Ancient Power, Blizzard, Dual Wingbeat, Feint, Life Dew, Acrobatics, Terrain Pulse and Expert Belt stay unmarked: each needs
  * logic that no column or handler has (docs/decisions/0015-content-expansion-pool.md, step G21).
+ * Step G24 (a Mega Stone batch) marks nine stones whose Mega ability and a base ability are marked and whose base forme has exactly
+ * one Mega: Gardevoirite (Pixilate; the base forme's Trace has been marked since AC1: the Mega Evolution replaces the copied
+ * ability), Abomasite (Snow Warning), Barbaracite (Tough Claws), Beedrillite (Adaptability), Falinksite (Defiant), Hawluchanite
+ * (No Guard), Malamarite (Contrary), Sceptilite (Lightning Rod) and Scraftinite (Intimidate), recorded as g24_* under the POOL
+ * kind. Meowsticite stays unmarked: one stone names two (base, Mega) pairs (Meowstic-M and -F) and its row links the first only.
  * Step G25 marks Electric Terrain and Misty Terrain (the moves: five turns, the same terrain fails, the other one is
  * replaced), Electric Surge (the entry setter of the terrain family), Electric Seed and Misty Seed (the seed rule of the other
  * terrains: Defense and Special Defense +1), Rising Voltage (base power doubled at a grounded target in Electric Terrain)
@@ -350,6 +355,15 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_BAXCALIBRITE] = 1u,
             [DFI_ITEM_AERODACTYLITE] = 1u,
             [DFI_ITEM_MANECTITE] = 1u,
+            [DFI_ITEM_GARDEVOIRITE] = 1u,
+            [DFI_ITEM_ABOMASITE] = 1u,
+            [DFI_ITEM_BARBARACITE] = 1u,
+            [DFI_ITEM_BEEDRILLITE] = 1u,
+            [DFI_ITEM_FALINKSITE] = 1u,
+            [DFI_ITEM_HAWLUCHANITE] = 1u,
+            [DFI_ITEM_MALAMARITE] = 1u,
+            [DFI_ITEM_SCEPTILITE] = 1u,
+            [DFI_ITEM_SCRAFTINITE] = 1u,
             [DFI_ITEM_BLACKBELT] = 1u,
             [DFI_ITEM_BLACKGLASSES] = 1u,
             [DFI_ITEM_CHARCOAL] = 1u,

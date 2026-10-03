@@ -192,7 +192,13 @@ static void dfi_view_position(const struct duoforge_battle *b, uint32_t viewer, 
      * shown (Team C). */
     const uint32_t follow = ((uint32_t)slot->flags & DFI_VOL_FOLLOW_ME) != 0u ? DUOFORGE_POSITION_FLAG_FOLLOW_ME : 0u;
     const uint32_t helping = ((uint32_t)slot->flags & DFI_VOL_HELPING_HAND) != 0u ? DUOFORGE_POSITION_FLAG_HELPING_HAND : 0u;
-    const uint32_t unburden = ((uint32_t)slot->flags & DFI_VOL_UNBURDEN) != 0u ? DUOFORGE_POSITION_FLAG_UNBURDEN : 0u;
+    /* The flag says that Unburden doubles the Speed, which asks for no item (data/abilities.ts:5247-5251): the volatile of a
+     * holder of its own Mega Stone, set by a Knock Off that the stone refused, shows nothing (no line says it). */
+    const dfi_member *holder = slot->occupant < b->sides[s].member_count ? &b->sides[s].members[slot->occupant] : NULL;
+    const bool item_gone = holder != NULL && (holder->item_consumed != 0u ||
+                                              b->tail.sides[s].item_now[slot->occupant] == DFI_TAIL_ITEM_NONE);
+    const uint32_t unburden =
+        ((uint32_t)slot->flags & DFI_VOL_UNBURDEN) != 0u && item_gone ? DUOFORGE_POSITION_FLAG_UNBURDEN : 0u;
     out->reserved = (uint8_t)(follow | helping | unburden); /* wide-operands-reviewed: < 8 */
     out->acted = slot->move_actions != 0u ? 1u : 0u;
     out->protect_chain = slot->stall_level;

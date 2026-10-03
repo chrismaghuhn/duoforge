@@ -377,9 +377,11 @@ static duoforge_status dfi_speed_key(const struct duoforge_battle *b, uint32_t s
     if (active && dfi_holds(b, m, DFI_ITEM_CHOICESCARF) && !dfi_chain_modify(chain, 6144u, &chain)) {
         return DUOFORGE_E_INVARIANT;
     }
-    /* Unburden's volatile (Team C): chainModify(2) while its holder holds no
-     * item, which is always once the volatile is set (data/abilities.ts). */
-    if (active && ((uint32_t)pos->flags & DFI_VOL_UNBURDEN) != 0u && !dfi_chain_modify(chain, 8192u, &chain)) {
+    /* Unburden's volatile (Team C): chainModify(2) while its holder holds no item (data/abilities.ts:5247-5251): the
+     * volatile is set when the item is used or taken, and also when a Mega Stone on its own species refuses Knock Off
+     * (dfi_knock_off), so the item is asked for. */
+    if (active && ((uint32_t)pos->flags & DFI_VOL_UNBURDEN) != 0u && dfi_item_code(b, m) == 0u &&
+        !dfi_chain_modify(chain, 8192u, &chain)) {
         return DUOFORGE_E_INVARIANT;
     }
     if (chain != 4096u) {
@@ -1529,9 +1531,10 @@ static void dfi_use_item(dfi_run *r, uint32_t flat)
  *     the item stays (a fainted one does not block); then the item's own onTakeItem, which only the Mega Stones have
  *     and which refuses the stone's own species (dfi_item_takeable). Unburden's onTakeItem
  *     (data/abilities.ts:5240-5242) comes with the ability and adds its volatile at this point, also when the item's own
- *     check then refuses: the same here, after the item has gone. The two differ only for a holder whose item stays, a
- *     Mega Stone on its own species, and no such Pokemon has Unburden in a supported setup (Hawlucha, whose Hawluchanite
- *     is unmarked, is the only one): the volatile here means "the item is gone", as everywhere else in this file.
+ *     check then refuses: so a Hawlucha (Unburden) that holds its own Hawluchanite gets the volatile although the stone
+ *     stays (step G24 marks Hawluchanite). The volatile's Speed doubling asks for no item (:5247-5251), so it changes
+ *     nothing while the stone is held (dfi_speed); the state invariant allows the volatile with the item held only for
+ *     a member that holds its own Mega Stone.
  *   - The item is gone for good: the tail's item_now holds DFI_TAIL_ITEM_NONE (it stays across a switch-out and a faint;
  *     the pin restores nothing), and `-enditem|X|Item|[from] move: Knock Off|[of] Y` shows it (ITEM_END, cause
  *     ITEM_TAKEN, the move in id, the user in other). Neither the item's End nor AfterTakeItem has a handler in the pool.
@@ -1552,18 +1555,18 @@ static void dfi_knock_off(dfi_run *r, uint32_t user, uint32_t target, uint32_t m
         dfi_emit(r, &block); /* [-activate] ability: Sticky Hold */
         return;
     }
+    dfi_active_slot *pos = dfi_pos(b, target);
+    if (tm->hp != 0u && dfi_ability(b, tm, DFI_ABILITY_UNBURDEN)) {
+        pos->flags = (uint8_t)((uint32_t)pos->flags | DFI_VOL_UNBURDEN); /* wide-operands-reviewed: < 256 */
+    }
     if (!dfi_item_takeable(b, tm)) {
         return;
     }
     const uint32_t item = dfi_item_code(b, tm);
-    dfi_active_slot *pos = dfi_pos(b, target);
     b->tail.sides[target / 2u].item_now[pos->occupant] = (uint8_t)DFI_TAIL_ITEM_NONE;
     duoforge_event e = dfi_ev(DUOFORGE_EVENT_ITEM_END, target, DUOFORGE_CAUSE_ITEM_TAKEN, item, user);
     e.id = (uint16_t)move_id;
     dfi_emit(r, &e); /* [-enditem] [from] move: Knock Off [of] user */
-    if (tm->hp != 0u && dfi_ability(b, tm, DFI_ABILITY_UNBURDEN)) {
-        pos->flags = (uint8_t)((uint32_t)pos->flags | DFI_VOL_UNBURDEN); /* wide-operands-reviewed: < 256 */
-    }
     if (((uint32_t)pos->flags & DFI_VOL_CHOICE_LOCK) != 0u) {
         pos->flags = (uint8_t)((uint32_t)pos->flags & ~(uint32_t)DFI_VOL_CHOICE_LOCK); /* wide-operands-reviewed */
         if (pos->charge_turns == 0u) {
@@ -4036,6 +4039,13 @@ static duoforge_status dfi_run_mega(dfi_run *r, const dfi_queue_record *q)
     b->tail.sides[q->side].soak_type[dfi_pos(b, flat)->occupant] = 0u;
     /* The Mega forme's ability replaces one that Trace copied (formeChange -> setAbility, sim/pokemon.ts:1487). */
     b->tail.sides[q->side].ability_now[dfi_pos(b, flat)->occupant] = 0u;
+    /* setAbility ends the old ability first (sim/pokemon.ts:1923): Unburden's onEnd removes its volatile
+     * (data/abilities.ts:5243-5245), which a holder of its own Mega Stone may have since a Knock Off (dfi_knock_off); no
+     * ability of a Mega forme in the pool is Unburden. */
+    {
+        dfi_active_slot *mega_pos = dfi_pos(b, flat);
+        mega_pos->flags = (uint8_t)((uint32_t)mega_pos->flags & ~(uint32_t)DFI_VOL_UNBURDEN); /* wide-operands-reviewed */
+    }
     duoforge_event forme = dfi_event_make(DUOFORGE_EVENT_FORME, flat);
     forme.id = dfi_pool_formes[m->species_id].mega_forme; /* [detailschange] */
     dfi_emit(r, &forme);
