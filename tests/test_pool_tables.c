@@ -45,7 +45,7 @@
 #include "state/closure_member.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "59539d6388fe50d17f347a664a37e8057eecaf90d85b93ee6308e72fd26656d1"
+#define POOL_HASH_HEX "b75677f73ff8dc582f53f036b5192e3f074577cd2d1cd320c84119e7b801b014"
 /* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
  * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
  * produced the same bytes. Step G10 moved two of them on purpose: Scald and Recover are data now (the thaw bit and
@@ -661,14 +661,14 @@ int main(void)
         uint32_t handlers = 0u;
         for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
             handlers += dfi_pool_moves[i].special >= DFI_SPECIAL_ENCORE &&
-                                dfi_pool_moves[i].special <= DFI_SPECIAL_AURORA_VEIL
+                                dfi_pool_moves[i].special <= DFI_SPECIAL_SOLAR_BEAM
                             ? 1u
                             : 0u;
         }
         /* Seven ids of G2 remain after step G8 (Scald and Recover are not any move's after step G10), the two
          * weather moves (Sandstorm and Snowscape: the field `weather`, which no column models) have one each, and
          * Knock Off (step G16: its onAfterHit and onBasePower) the id after them. */
-        DF_CHECK_EQ_U64(&t, handlers, DFI_SPECIAL_AURORA_VEIL - DFI_SPECIAL_ENCORE + 1u - 2u); /* step G15 adds Expanding Force's, step G20 Aurora Veil's */
+        DF_CHECK_EQ_U64(&t, handlers, DFI_SPECIAL_SOLAR_BEAM - DFI_SPECIAL_ENCORE + 1u - 2u); /* step G15 adds Expanding Force's, step G20 Aurora Veil's, step G30 Rage Powder's, Psychic Fangs' and Solar Beam's */
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_ENCORE, DFI_SPECIAL_FOLLOW_ME + 1u);
         /* UNMODELED follows them. Step G10 made Scald and Recover data (the thaw bit and the heal column): their ids
          * are still defined, and no pool move has them. */
@@ -678,7 +678,10 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_EXPANDING_FORCE, DFI_SPECIAL_KNOCK_OFF + 1u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_GLAIVE_RUSH, DFI_SPECIAL_EXPANDING_FORCE + 1u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_AURORA_VEIL, DFI_SPECIAL_GLAIVE_RUSH + 1u);
-        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_AURORA_VEIL + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_RAGE_POWDER, DFI_SPECIAL_AURORA_VEIL + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_PSYCHIC_FANGS, DFI_SPECIAL_RAGE_POWDER + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_SOLAR_BEAM, DFI_SPECIAL_PSYCHIC_FANGS + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_SOLAR_BEAM + 1u);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_AURORAVEIL].special, DFI_SPECIAL_AURORA_VEIL);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_EXPANDINGFORCE].special, DFI_SPECIAL_EXPANDING_FORCE);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_EXPANDINGFORCE].base_power, 80u);

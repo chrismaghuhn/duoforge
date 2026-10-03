@@ -124,7 +124,8 @@ import sys
 
 SITES = {'SPEED_TIE': 1, 'ACCURACY': 2, 'CRIT': 3, 'DAMAGE_ROLL': 4, 'SECONDARY': 5, 'STALL': 6,
          'SLEEP_TURNS': 7, 'FREEZE_THAW': 8, 'FULL_PARALYSIS': 9, 'CONFUSION_TURNS': 10,
-         'CONFUSION_HIT': 11, 'RANDOM_TARGET': 12, 'STATUS_PICK': 13, 'INSERT_TIE': 14, 'TRACE': 15, 'POISON_TOUCH': 16}
+         'CONFUSION_HIT': 11, 'RANDOM_TARGET': 12, 'STATUS_PICK': 13, 'INSERT_TIE': 14, 'TRACE': 15, 'POISON_TOUCH': 16,
+         'FLAME_BODY': 18}  # 17 is CURSED_BODY (step G27)
 STATS = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe']
 GENDER = {'M': 1, 'F': 2}
 GENDERLESS = 3
@@ -711,7 +712,8 @@ NOPOS = 0xFF
 # Any other volatile is refused: a new mechanic's volatile must be placed in
 # one of the two tables before its traces convert.
 COMPARED_VOLATILES = (('protect', 1), ('flashfire', 2), ('twoturnmove', 4), ('choicelock', 8), ('unburden', 16),
-                      ('helpinghand', 32), ('followme', 64), ('flinch', 128))
+                      ('helpinghand', 32), ('followme', 64), ('flinch', 128),
+                      ('ragepowder', 64))  # step G30: Rage Powder shares the position's Follow Me bit with Follow Me
 IGNORED_VOLATILES = {
     # data/conditions.ts stall: compared as df_conf_mon.stall (its presence).
     'stall': 'the stall field',
@@ -724,6 +726,7 @@ IGNORED_VOLATILES = {
     # can stand without it, from the locked turn to the residual, and the lock
     # is then the one remembered (two_turn_lock).
     'electroshot': 'the locked slot and target',
+    'solarbeam': 'the locked slot and target',  # step G30: the same two-turn lock
     # Pool step G8 (the POOL tail, decision 0015 section 7). Their turns are not a field of the state record; each
     # shows in the steps that the comparison already covers: the moves of the next request (disabled slots, the
     # request that offers Struggle), the cant lines, the heal that is missing, and Heal Block's start and end lines.
@@ -912,7 +915,16 @@ def step_events(log, viewer, roster_of, maxhp, tables):
         elif kind == '-fail':
             # `-fail|X|heal` (a heal move at full HP) is a plain FAIL: the event has no field for the reason, which
             # for a status is the ailment the target already has.
-            e = ev_tuple(EV['FAIL'], ev_pos(args[0]), detail=AILMENT[args[1]] if len(args) > 1 and args[1] != 'heal' else 0)
+            if len(args) > 1 and args[1] == 'unboost':
+                # Clear Body (step G30): -fail|X|unboost|[from] ability: Clear Body|[of] X is the ability's ACTIVATE event
+                # with the holder as its position and as `other` (nothing but a stat drop that an ability or a move names).
+                cause, id2, other = ev_cause(attrs, tables)
+                if cause != CAUSE['ABILITY'] or other == NOPOS:
+                    raise ConversionError('fail-line', 'trace_to_c: unknown -fail unboost %r' % line, detail='unboost')
+                e = ev_tuple(EV['ACTIVATE'], ev_pos(args[0]), other, CAUSE['ABILITY'], 0, id2)
+            else:
+                e = ev_tuple(EV['FAIL'], ev_pos(args[0]),
+                             detail=AILMENT[args[1]] if len(args) > 1 and args[1] != 'heal' else 0)
         elif kind == '-singleturn':
             if args[1] == 'Protect':
                 e = ev_tuple(EV['PROTECT'], ev_pos(args[0]))
@@ -921,7 +933,8 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                 e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), of, 0, tables['MOVE'][key(args[1])])
             elif args[1] == 'Wide Guard' and not attrs:  # POOL: the side condition of the user's side, one turn
                 e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), NOPOS, 0, tables['MOVE'][key(args[1])])
-            elif args[1] == 'move: Follow Me' and not attrs:  # Team C: no [of]; [zeffect] is not in the format
+            elif args[1] in ('move: Follow Me', 'move: Rage Powder') and not attrs:
+                # Team C: no [of]; [zeffect] is not in the format. Rage Powder (step G30) has the same line.
                 e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), NOPOS, 0, tables['MOVE'][key(args[1][6:])])
             else:
                 raise ConversionError('singleturn-line', 'trace_to_c: unknown -singleturn %r' % line, detail=args[1])
@@ -1205,9 +1218,10 @@ def convert_battle(name, spec, trace, tables):
                     if v not in compared and v not in IGNORED_VOLATILES:
                         raise ConversionError('unknown-volatile', 'trace_to_c: unknown volatile %r of %s' %
                                               (v, name_of(p)), detail=v)
-                if 'electroshot' in p['volatiles'] and 'twoturnmove' not in p['volatiles']:
-                    raise ConversionError('unknown-volatile', 'trace_to_c: electroshot without twoturnmove on %s' %
-                                          name_of(p), detail='electroshot')
+                for charge in ('electroshot', 'solarbeam'):
+                    if charge in p['volatiles'] and 'twoturnmove' not in p['volatiles']:
+                        raise ConversionError('unknown-volatile', 'trace_to_c: %s without twoturnmove on %s' %
+                                              (charge, name_of(p)), detail=charge)
                 vols = sum(bit for name, bit in COMPARED_VOLATILES if name in p['volatiles'])
                 row.append((1, p['hp'], tuple(pp), tuple(x + 6 for x in p['boosts']),
                             stall, 1 if p['fainted'] else 0, status, counter, p['confusion'], lslot, ltarget,

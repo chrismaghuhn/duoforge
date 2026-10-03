@@ -1,0 +1,28 @@
+{
+  "name": "g30_flame_body",
+  "purpose": "Step G30, Flame Body: Rillaboom (Wood Hammer, Grassy Glide) and Incineroar (Flare Blitz) make contact with Volcarona and Chandelure over several turns; each contact hit draws randomChance(3, 10) and a 30% roll burns the attacker (a Fire type cannot burn), a burned attacker is not burned again.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000003013",
+  "teams": [
+    "Rillaboom (M)\nAbility: Overgrow\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- Protect\n\nIncineroar (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Flare Blitz\n- Parting Shot\n- Protect\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nGholdengo\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Protect\n\nGrimmsnarl (M)\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Protect\n\nRaichu (F)\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Thunderbolt\n- Helping Hand\n- Protect",
+    "Volcarona (F)\nAbility: Flame Body\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Quiver Dance\n- Heat Wave\n- Protect\n- Bug Buzz\n\nChandelure (F)\nAbility: Flame Body\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Shadow Ball\n- Heat Wave\n- Protect\n- Energy Ball\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nGholdengo\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Protect\n\nGrimmsnarl (M)\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Protect\n\nRaichu (F)\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Thunderbolt\n- Helping Hand\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 2 2",
+      "move 2 2, move 2 1",
+      "move 1 2, move 2 1",
+      "move 1 1, move 2 2",
+      "move 1 1, move 2 2"
+    ],
+    "p2": [
+      "move 1, move 1",
+      "move 1, move 1",
+      "move 1, move 1",
+      "move 1, move 1",
+      "move 1, move 1"
+    ],
+    "max_steps": 6
+  }
+}

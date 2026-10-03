@@ -269,14 +269,15 @@ static void check_view(df_test *t, const duoforge_context *ctx)
     DF_CHECK_EQ_U64(t, snow_steps, 9u);
 }
 
-/* The abilities and the item that the pinned data gives immunity to Sandstorm damage (onImmunity 'sandstorm': Overcoat,
- * Sand Force, Sand Rush, Sand Veil; the item that does so, Safety Goggles, is not in the pool) or protection from
- * indirect damage (Magic Guard): the engine has no immunity for them, so they stay unmarked. The pinned-data side of this list is checked by
+/* The abilities and the item that the pinned data gives immunity to Sandstorm damage (onImmunity 'sandstorm': Sand Force,
+ * Sand Rush, Sand Veil; the item that does so, Safety Goggles, is not in the pool) or protection from indirect damage
+ * (Magic Guard): the engine has no immunity for them, so they stay unmarked. Overcoat has been marked since step G30:
+ * dfi_sand_immune gives it the immunity (tests/test_pool_g30.c). The pinned-data side of this list is checked by
  * tools/datagen/pool_families.js. */
 static void check_unmodelled_sources(df_test *t)
 {
-    static const uint32_t abilities[] = {DFI_ABILITY_OVERCOAT, DFI_ABILITY_SANDFORCE, DFI_ABILITY_SANDRUSH,
-                                         DFI_ABILITY_SANDVEIL, DFI_ABILITY_MAGICGUARD};
+    static const uint32_t abilities[] = {DFI_ABILITY_SANDFORCE, DFI_ABILITY_SANDRUSH, DFI_ABILITY_SANDVEIL,
+                                         DFI_ABILITY_MAGICGUARD};
     for (size_t i = 0u; i < sizeof abilities / sizeof abilities[0]; ++i) {
         DF_CHECK_EQ_U64(t, dfi_support.abilities[abilities[i]], 0u);
         DF_CHECK_EQ_U64(t, dfi_pool_ability_handler[abilities[i]], DFI_HANDLER_UNMODELED);

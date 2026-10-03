@@ -180,6 +180,9 @@ duoforge_add_test(NAME duoforge.state.mega_by_stone SOURCES test_mega_by_stone.c
 # Step G20: Aurora Veil in the tail's side turns, in the damage modifier, in the residual and in the POOL view extension
 # (the side's aurora_veil_turns, bit 3).
 duoforge_add_test(NAME duoforge.state.pool_g20 SOURCES test_pool_g20.c WHITEBOX TIMEOUT 60)
+# Step G30: Rage Powder (the Follow Me bit told apart by the occupant's last move, the view extension's RAGE_POWDER bit 39), the
+# powder immunity, Psychic Fangs, Solar Beam, Flame Body, Clear Body, Hospitality and Overcoat, on their recorded battles.
+duoforge_add_test(NAME duoforge.state.pool_g30 SOURCES test_pool_g30.c WHITEBOX TIMEOUT 60)
 # The queued action of a fainted Pokemon: no ability and no item of it counts for its priority and Speed (d04 to d06).
 duoforge_add_test(NAME duoforge.state.pool_fainted_holder SOURCES test_pool_fainted_holder.c WHITEBOX TIMEOUT 60)
 # The generated files must stay exactly what tools/datagen/gen_closure.py
@@ -189,8 +192,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=7f0e2f51608d185da1b27003718e3d201e4878a5b704199587e546f386df8d7b"
-        "pool_tables.c=3ebb99ac772194f2d4cabf815b7ca256eeb7464199440746dc160e4348fcda1c")
+        "pool_tables.h=95019fe8455c72c42c7a55931d6f49d3b5b116229b05ffc591f3fd0535d7f375"
+        "pool_tables.c=9651a42046d0ac800d5f6d874dcb96b046f6b8a0e0ef0ae59904ca33712e7f02")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
