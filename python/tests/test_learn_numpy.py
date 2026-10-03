@@ -6,9 +6,12 @@ computation; the team head's tuple table against the engine's joint ranks;
 the seat and reward attribution of evaluation and self-play with stand-in
 policies (one attacks the foe, one switches); an evaluation whose episodes
 do not end counts them as ties instead of failing; the learner's input
-checks; a checkpoint of another encoder fails at load; and a checkpoint
+checks; a checkpoint of another encoder fails at load; a checkpoint
 without an encoder version plays the evaluation and the ladder on the
-inputs of encoder 1.
+inputs of encoder 1; and the view-extension mask of encoder 3 (decision
+0018): self-play under POOL reads the library's mask and the records, a
+checkpoint names its mask, and the live policy refuses a mask that needs
+records.
 """
 import unittest
 
@@ -163,15 +166,16 @@ class LadderTest(unittest.TestCase):
             np.savez(path, config="{}", **arrays)
             self.assertEqual(load(path, obs_size=594)[0]["t1"]["w"].shape, (594, 3))
             with self.assertRaisesRegex(ValueError, "594 observation features.*607"):
-                load(path, obs_size=features.OBS_SIZE)
+                load(path, obs_size=features.BASE_OBS_SIZE)
 
     def test_checkpoint_names_its_encoder(self):
         # A config without "encoder" is a checkpoint of encoder 1 (present
         # from the species); a version the encoder does not serve raises.
         self.assertEqual(encoder_of({"seed": 5}), 1)
         self.assertEqual(encoder_of({"encoder": 1}), 1)
-        self.assertEqual(encoder_of({"encoder": features.ENCODER}), 2)
-        for bad in (0, 3, "2", None, True, 1.0, 2.0):  # True == 1, 2.0 == 2: only ints count
+        self.assertEqual(encoder_of({"encoder": 2}), 2)
+        self.assertEqual(encoder_of({"encoder": features.ENCODER}), 3)
+        for bad in (0, 4, "2", None, True, 1.0, 2.0):  # True == 1, 2.0 == 2: only ints count
             with self.assertRaisesRegex(ValueError, "encoder"):
                 encoder_of({"encoder": bad})
 
@@ -298,9 +302,10 @@ class WidenTest(unittest.TestCase):
         from duoforge_learn.checkpoint import WIDEN_594_COLUMNS, widen_594
         from duoforge_live.policy import forward
         _, obs, slots, mask = _closure_inputs(40)
+        obs = obs[:, :features.BASE_OBS_SIZE]  # a network of encoder 1: the 607 columns before the block
         params = _random_params(594, 3)
         wide = widen_594(params)
-        self.assertEqual(wide["t1"]["w"].shape, (features.OBS_SIZE, 256))
+        self.assertEqual(wide["t1"]["w"].shape, (features.BASE_OBS_SIZE, 256))
         self.assertFalse(wide["t1"]["w"][list(WIDEN_594_COLUMNS)].any())
         self.assertEqual(params["t1"]["w"].shape, (594, 256))  # the original is not changed
         narrow = np.delete(obs, WIDEN_594_COLUMNS, axis=1)
@@ -327,12 +332,12 @@ class WidenTest(unittest.TestCase):
             src, dst = os.path.join(folder, "params-25000.npz"), os.path.join(folder, "wide.npz")
             np.savez(src, config=json.dumps({"seed": 7}), **arrays)
             self.assertEqual(checkpoint.main(["widen", src, dst]), 0)
-            back, config = load(dst, obs_size=features.OBS_SIZE)
+            back, config = load(dst, obs_size=features.BASE_OBS_SIZE)
             self.assertEqual(config, {"seed": 7, "encoder": 1})
             self.assertTrue(np.array_equal(np.delete(back["t1"]["w"], checkpoint.WIDEN_594_COLUMNS, axis=0),
                                            params["t1"]["w"]))
             with self.assertRaises(ValueError):
-                load(src, obs_size=features.OBS_SIZE)
+                load(src, obs_size=features.BASE_OBS_SIZE)
             with self.assertRaises(SystemExit):
                 checkpoint.main(["widen", src, dst])  # OUT exists
 
@@ -341,16 +346,21 @@ class WidenTest(unittest.TestCase):
         import os
         import tempfile
         from duoforge_live import policy
-        params = _random_params(features.OBS_SIZE, 5)
-        arrays = {f"['{a}']['{b}']": v for a, d in params.items() for b, v in d.items()}
+
+        def arrays(width):
+            return {f"['{a}']['{b}']": v for a, d in _random_params(width, 5).items() for b, v in d.items()}
+
         with tempfile.TemporaryDirectory() as folder:
             path = os.path.join(folder, "p.npz")
-            for config, encoder in (({"encoder": 1}, 1), ({}, 1), ({"encoder": 2}, 2)):
-                np.savez(path, config=json.dumps(config), **arrays)
+            for config, encoder in (({"encoder": 1}, 1), ({}, 1), ({"encoder": 2}, 2), ({"encoder": 3}, 3)):
+                np.savez(path, config=json.dumps(config), **arrays(features.obs_size(encoder)))
                 self.assertEqual(policy.load(path).encoder, encoder)
-            np.savez(path, config=json.dumps({"encoder": 3}), **arrays)
-            with self.assertRaises(ValueError):
-                policy.load(path)
+            # An unknown version, and a network of another width than its version's (607 for 1 and 2, 842 for 3).
+            for config, width in (({"encoder": 4}, features.OBS_SIZE), ({"encoder": 3}, features.BASE_OBS_SIZE),
+                                  ({"encoder": 2}, features.OBS_SIZE)):
+                np.savez(path, config=json.dumps(config), **arrays(width))
+                with self.assertRaises(ValueError):
+                    policy.load(path)
 
     def test_policy_ranks_with_its_encoder(self):
         # A network that reads only the own roster-0 present flag: Team A's Rillaboom (forme 0) is absent under
@@ -360,7 +370,7 @@ class WidenTest(unittest.TestCase):
         rows = [r for r in range(len(observations)) if
                 int(observations[r]["sides"][int(observations[r]["player"])]["members"][0]["species_id"]) == 0]
         r = rows[0]
-        params = _random_params(features.OBS_SIZE, 6)
+        params = _random_params(features.BASE_OBS_SIZE, 6)  # the width of encoders 1 and 2
         params["t1"]["w"][:] = 0
         params["t1"]["w"][_OWN_PRESENT[0], :] = 1.0
         teams1 = Policy(params, 1).rank_teams(observations[r], obs[r])
@@ -395,6 +405,76 @@ class WidenTest(unittest.TestCase):
         self.assertEqual(flat, sorted(flat))  # all equal: the lower flat index first
         with self.assertRaises(ValueError):
             policy.rank_pairs(observations[r], obs[r], slots[r], np.zeros_like(mask[r]))
+
+
+
+class ExtSupportedTest(unittest.TestCase):
+    """The view-extension mask (decision 0018 section 10) from self-play to a checkpoint and the live policy."""
+
+    def _pool(self, ctx):
+        import os
+        from duoforge import teams
+        sides = []
+        for name in ("sand.txt", "snow.txt"):
+            with open(os.path.join("tools", "cloud", "aws_fuzz", "campaigns", "weather-sand-snow", name),
+                      encoding="utf-8") as f:
+                sides.append(teams.side_setup(ctx, teams.parse(f.read(), name), name))
+        return teams.TeamPool.from_setups(("sand", "snow"), sides)
+
+    def test_self_play_under_pool_reads_the_library_mask_and_the_records(self):
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            env = SelfPlay(4, 1, 0x2026100300000031, pool=self._pool(ctx), context=ctx)
+            try:
+                library = int(env.batch.observe_ext()[0, 0]["supported"])
+                self.assertEqual(env.ext_supported, library)
+                self.assertTrue(library & features.RECORD_FEATURES)
+                sand = features.FEATURE_NAMES.index("ext.global.weather_sand")
+                snow = features.FEATURE_NAMES.index("ext.global.weather_snow")
+                weathers = set()
+                for _ in range(20):
+                    o = env.observe()
+                    self.assertEqual(o.obs.shape, (4, 2, features.OBS_SIZE))
+                    weathers |= {k for k, col in (("sand", sand), ("snow", snow)) if o.obs[..., col].any()}
+                    flat = o.mask.reshape(4, 2, -1)
+                    env.step(np.where(o.is_team, 0, flat.argmax(axis=-1)))
+                self.assertTrue(weathers)
+            finally:
+                env.close()
+            blind = SelfPlay(2, 1, 0x2026100300000031, pool=self._pool(ctx), context=ctx, ext_supported=0)
+            old = SelfPlay(2, 1, 0x2026100300000031, pool=self._pool(ctx), context=ctx, encoder=2)
+            try:
+                self.assertEqual((blind.ext_supported, old.ext_supported), (0, 0))
+                with self.assertRaisesRegex(ValueError, "encoder 2"):
+                    Observation(old.batch, 2, features.BASE_VALUE_FEATURES)
+            finally:
+                blind.close()
+                old.close()
+
+    def test_closure_self_play_has_no_mask(self):
+        env = SelfPlay(2, 1, 0x2026100300000032)
+        try:
+            self.assertEqual(env.ext_supported, 0)
+        finally:
+            env.close()
+
+    def test_checkpoint_names_its_mask(self):
+        from duoforge_learn.checkpoint import ext_supported_of
+        self.assertEqual(ext_supported_of({"encoder": 3}), 0)
+        self.assertEqual(ext_supported_of({"encoder": 3, "ext_supported": 0x15}), 0x15)
+        self.assertEqual(ext_supported_of({"encoder": 2}), 0)
+        for bad in ({"encoder": 3, "ext_supported": 1 << 40}, {"encoder": 3, "ext_supported": -1},
+                    {"encoder": 3, "ext_supported": "1"}, {"encoder": 3, "ext_supported": True},
+                    {"encoder": 2, "ext_supported": 1}, {"ext_supported": 1}):
+            with self.assertRaisesRegex(ValueError, "ext_supported"):
+                ext_supported_of(bad)
+
+    def test_live_policy_refuses_a_mask_that_needs_records(self):
+        from duoforge_live.policy import Policy
+        params = _random_params(features.OBS_SIZE, 8)
+        self.assertEqual(Policy(params, 3, features.BASE_VALUE_FEATURES).ext_supported, features.BASE_VALUE_FEATURES)
+        for name in ("AURORA_VEIL", "ENCORE"):
+            with self.assertRaisesRegex(ValueError, "records"):
+                Policy(params, 3, 1 << features.FEATURE_BITS[name])
 
 
 if __name__ == "__main__":

@@ -36,15 +36,22 @@ _REWARDS = {C["DUOFORGE_RESULT_SIDE_0"]: (1.0, -1.0), C["DUOFORGE_RESULT_SIDE_1"
 
 class Observation:
     """The policy's inputs for every seat of every environment, as encoder
-    version `encoder` makes them (features.as_encoder: a network of an older
-    version gets the inputs it was trained on). The version is named by the
-    caller: self-play trains features.ENCODER."""
+    version `encoder` makes them (features.as_encoder and
+    features.slots_as_encoder: a network of an older version gets the inputs
+    it was trained on). The version is named by the caller: self-play trains
+    features.ENCODER. ext_supported is the network's mask of view-extension
+    features (decision 0018, 0 for the older versions); the extension records
+    are read only when the mask needs them."""
 
-    def __init__(self, batch, encoder):
+    def __init__(self, batch, encoder, ext_supported=0):
+        if ext_supported and encoder != features.ENCODER:
+            raise ValueError(f"encoder {encoder} reads no view extension (ext_supported {ext_supported:#x})")
         e = batch.envs
         observations = batch.observations.reshape(-1)
-        obs, slots, mask = features.encode_batch(observations, batch.domains.reshape(-1))
+        ext = batch.observe_ext().reshape(-1) if ext_supported & features.RECORD_FEATURES else None
+        obs, slots, mask = features.encode_batch(observations, batch.domains.reshape(-1), ext, ext_supported)
         obs = features.as_encoder(obs, observations, encoder)
+        slots = features.slots_as_encoder(slots, encoder)
         self.obs = obs.reshape(e, 2, -1)
         self.slots = slots.reshape(e, 2, 2, OPTIONS, features.SLOT_FEATURES)
         self.mask = mask.reshape(e, 2, OPTIONS, OPTIONS)
@@ -87,10 +94,13 @@ class SelfPlay:
     each environment's first episode (default 0); on_start(envs, episodes)
     is called whenever episodes start and on_end(envs, rewards (K, 2))
     before the ended ones restart; encoder: the encoder version of the
-    observations (features.as_encoder)."""
+    observations (features.as_encoder); ext_supported: the view-extension
+    features the observations show (Observation), None for every feature the
+    library supports under the context (0 under every kind but POOL, and
+    for encoders before features.ENCODER)."""
 
     def __init__(self, envs, workers, seed, pool=None, max_steps=500, start_episodes=None,
-                 encoder=features.ENCODER, context=None, on_start=None, on_end=None):
+                 encoder=features.ENCODER, context=None, on_start=None, on_end=None, ext_supported=None):
         self._owns_context = context is None
         self.context = duoforge.Context() if context is None else context
         if pool is None:
@@ -107,6 +117,9 @@ class SelfPlay:
         self.pairing = np.stack(pairing.pairings(self.seed, everyone, self.episodes, pool.weights), axis=1)
         setups = pool.setups(self.pairing[:, 0], self.pairing[:, 1])
         self.batch = duoforge.Batch(self.context, setups, workers, seed)
+        if ext_supported is None:
+            ext_supported = int(self.batch.observe_ext()[0, 0]["supported"]) if encoder == features.ENCODER else 0
+        self.ext_supported = ext_supported
         if self.episodes.any():
             self.batch.reset_setups(everyone, self.episodes, setups)
         if on_start is not None:
@@ -119,7 +132,7 @@ class SelfPlay:
         self.batch.query_factored()
 
     def observe(self):
-        return Observation(self.batch, self.encoder)
+        return Observation(self.batch, self.encoder, self.ext_supported)
 
     def step(self, actions):
         """Plays one batch step; returns (rewards (E,2) float32, done (E,)

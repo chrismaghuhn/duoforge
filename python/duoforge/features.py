@@ -1,15 +1,17 @@
-"""The observation-only feature encoder (M7 spec section 5).
+"""The observation-only feature encoder (M7 spec section 5; the block of
+encoder 3: decision 0018 section 10).
 
-encode(observation, domain) -> (obs_part, slot_part, pair_mask) is a pure
-function of one player's observation and factored domain, and
-encode_batch(observations, domains) the same for N players at once
-(vectorized; encode is encode_batch of one player); it never reads a
-battle, so it carries nothing beyond what decision 0007 proves for the
-observation. Every value is scaled to [0, 1] (ids by 65535, so a network
-can recover them exactly as round(x * 65535) for an embedding). A value
-outside the known sets below (an ailment, weather, terrain, location,
-boundary kind or position flag bit this encoder does not know) raises
-ValueError; it is never encoded as zeros.
+encode(observation, domain, ext, ext_supported) -> (obs_part, slot_part,
+pair_mask) is a pure function of one player's observation, factored domain
+and view extension, and encode_batch(observations, domains, ext,
+ext_supported) the same for N players at once (vectorized; encode is
+encode_batch of one player); it never reads a battle, so it carries nothing
+beyond what decisions 0007 and 0018 prove for the views. Every value is
+scaled to [0, 1] (ids by 65535, so a network can recover them exactly as
+round(x * 65535) for an embedding), except a Recharge option's move slot
+(5 / 4). A value outside the known sets below (an ailment, weather, terrain,
+location, boundary kind, position flag bit or extension field this encoder
+does not know) raises ValueError; it is never encoded as zeros.
 So does a domain of another boundary than the observation's (another
 epoch, or a request where the observation has none):
 query() refreshes observations but not domains, query_factored() both.
@@ -35,11 +37,33 @@ first, then the foe):
       ability / 255, gender / 3, nature / 24, species / 65535,
       move ids / 65535 (4), pp / pp_max (4, 0 when pp_max is 0),
       move count / 4, stat points / 32 (6), stats / 1000 (5, at most 1)
+  the block of decision 0018 (EXT_SIZE columns, "ext." names):
+    global (5): Sand, Snow, Electric Terrain, Misty Terrain (each 1 while it
+      is the weather or terrain), gravity turns / 5
+    per side, own then foe (7): aurora veil turns / 8, stealth rock,
+      spikes / 3, toxic spikes / 2, sticky web, wide guard, quick guard
+    per position, slot 0 then 1 (36): the 20 volatiles bits (VOLATILES),
+      encore slot one-hot (none, slot 0..3), disable slot one-hot (none,
+      slot 0..3), stockpile / 3, perish / 3, ability changed, ability now /
+      255, type now 0 and 1 / 18
+    per member, roster 0..5 (6): tox, forme changed, forme / 65535, item
+      changed, item removed, item now / 255
+  Every block column belongs to one DUOFORGE_VIEWEXT_FEATURE_* bit
+  (EXT_COLUMN_FEATURES). ext_supported, the mask a network was trained with
+  (a checkpoint property, never an input), zeros the columns of every clear
+  bit. Sand, Snow, Electric, Misty and Tox come from the observation
+  (BASE_VALUE_FEATURES): such a value leaves its old one-hot group all zero
+  and needs its bit, else ValueError, so an old group never shows a value it
+  cannot. Every other bit reads the extension records (ext, OBSERVATION_EXT
+  per player, Batch.observe_ext): a set bit without records, records of
+  another boundary or revision, a set bit the records' library does not
+  support and a field outside its documented range raise ValueError. Records
+  of revision 0 (every kind but POOL) leave the record columns zero.
 
 slot_part, float32 (2, 32, SLOT_FEATURES): for slot list s and entry i,
   valid (i < slot_count[s]), kind one-hot (4: none, move, switch, pass),
-  move slot / 4 (moves only; Struggle is 4, any other slot is refused),
-  target one-hot relative to
+  move slot / 4 (moves only; Struggle is 4, Recharge is 5, any other slot
+  is refused), target one-hot relative to
   the viewer (4: own slot 0, own slot 1, foe slot 0, foe slot 1; none for
   a move without a target), mega, reserve / 5 (switches only). All zero
   past slot_count and at team selection.
@@ -48,11 +72,13 @@ pair_mask, bool (32, 32): [i, j] is bit j of domain.allowed[i], the pair
   rule of the engine; its sum is the joint count at a SLOTS boundary and
   0 at team selection.
 
-Versions: this encoder is ENCODER (2), and a checkpoint's config names the
+Versions: this encoder is ENCODER (3), and a checkpoint's config names the
 version its network was trained with ("encoder"; a config without it is
-1). Version 1 took present from species_id != 0, so Rillaboom (forme 0)
-was absent; every other column is the same. as_encoder(obs_part,
-observations, 1) gives such a network exactly the inputs it learned on.
+1). Version 2 is the first BASE_OBS_SIZE columns, which know none of the
+new values; version 1 took present from species_id != 0, so Rillaboom
+(forme 0) was absent; every other column is the same. as_encoder(obs_part,
+observations, version) and slots_as_encoder(slot_part, version) give such a
+network exactly the inputs it learned on, and refuse what it cannot show.
 """
 import numpy as np
 
@@ -82,25 +108,54 @@ _SIDE = 8
 _POSITION = 7 + 7 + len(POSITION_FLAGS) + 7
 _MEMBER = 2 + len(LOCATIONS) + len(AILMENTS) + 8 + 4 + 4 + 1 + 6 + 5
 _SIDE_SIZE = _SIDE + 2 * _POSITION + 6 * _MEMBER
-OBS_SIZE = _GLOBAL + 2 * _SIDE_SIZE
+# The columns of encoders 1 and 2; encoder 3 appends the block after them.
+BASE_OBS_SIZE = _GLOBAL + 2 * _SIDE_SIZE
 # obs_part columns of the present flags: row 0 the own roster, row 1 the foe's.
 _PRESENT = _GLOBAL + _SIDE + 2 * _POSITION + _SIDE_SIZE * np.arange(2)[:, None] + _MEMBER * np.arange(6)
 
+# The view extension (decision 0018): the feature bits, the new values of the
+# old fields with the bit of each, and the volatiles bits in bit order.
+FEATURE_COUNT = C["DUOFORGE_VIEWEXT_FEATURE_COUNT"]
+_FEATURE_PREFIX = "DUOFORGE_VIEWEXT_FEATURE_"
+FEATURE_BITS = {name[len(_FEATURE_PREFIX):]: bit for name, bit in C.items()
+                if name.startswith(_FEATURE_PREFIX) and name != _FEATURE_PREFIX + "COUNT"}
+assert sorted(FEATURE_BITS.values()) == list(range(FEATURE_COUNT))
+_FEATURE_NAME = {bit: name for name, bit in FEATURE_BITS.items()}
+_NEW_WEATHERS = ((C["DUOFORGE_WEATHER_SAND"], "WEATHER_SAND"), (C["DUOFORGE_WEATHER_SNOW"], "WEATHER_SNOW"))
+_NEW_TERRAINS = ((C["DUOFORGE_TERRAIN_ELECTRIC"], "TERRAIN_ELECTRIC"), (C["DUOFORGE_TERRAIN_MISTY"], "TERRAIN_MISTY"))
+_TOX = C["DUOFORGE_AILMENT_TOX"]
+# The bits the encoder reads from the observation itself, not from the records.
+BASE_VALUE_FEATURES = sum(1 << FEATURE_BITS[n] for n in ("WEATHER_SAND", "WEATHER_SNOW", "TERRAIN_ELECTRIC",
+                                                        "TERRAIN_MISTY", "AILMENT_TOX"))
+ALL_FEATURES = (1 << FEATURE_COUNT) - 1
+RECORD_FEATURES = ALL_FEATURES & ~BASE_VALUE_FEATURES
+# (name, its DUOFORGE_POSITION_EXT_* bit, its feature) in bit order 0..19.
+_VOLATILE_FEATURE = {"TYPE_CHANGED": "TYPE_CHANGE", "ILLUSION_UP": "ILLUSION"}
+VOLATILES = tuple(sorted(((name[len("DUOFORGE_POSITION_EXT_"):], bit,
+                           _VOLATILE_FEATURE.get(name[len("DUOFORGE_POSITION_EXT_"):],
+                                                 name[len("DUOFORGE_POSITION_EXT_"):]))
+                          for name, bit in C.items() if name.startswith("DUOFORGE_POSITION_EXT_")), key=lambda v: v[1]))
+assert [v[1] for v in VOLATILES] == [1 << k for k in range(20)]
+_GUARDS = ((C["DUOFORGE_SIDE_GUARD_WIDE_GUARD"], "WIDE_GUARD"), (C["DUOFORGE_SIDE_GUARD_QUICK_GUARD"], "QUICK_GUARD"))
+_ITEM_NOW_NONE = C["DUOFORGE_ITEM_NOW_NONE"]
+_EXT_REVISION = C["DUOFORGE_OBSERVATION_EXT_REVISION"]
+
 # This encoder's version, which train writes into a checkpoint's config
 # ("encoder"), and every version as_encoder serves (1: present from the
-# species id).
-ENCODER = 2
-ENCODERS = (1, ENCODER)
+# species id; 2: without the block).
+ENCODER = 3
+ENCODERS = (1, 2, ENCODER)
 
 
 _STAGES = ("atk", "def", "spa", "spd", "spe", "accuracy", "evasion")
 _FLAGS = ("confused", "charging", "locked", "acted", "protect_chain", "flash_fire", "protecting")
 _STATS6 = ("hp", "atk", "def", "spa", "spd", "spe")
+_SLOTS5 = ("none", "slot0", "slot1", "slot2", "slot3")
 
 
-def _feature_names():
-    """One name per obs_part column, in the encoder's order (the layout of
-    the module docstring), from the same tuples as the sizes above."""
+def _base_names():
+    """One name per column of encoders 1 and 2, in the encoder's order (the
+    layout of the module docstring), from the same tuples as the sizes above."""
     names = [f"global.boundary.{n}" for n in _BOUNDARY_NAMES] + ["global.turn"]
     names += [f"global.weather.{n}" for n in _WEATHER_NAMES] + ["global.weather_turns"]
     names += [f"global.terrain.{n}" for n in _TERRAIN_NAMES] + ["global.terrain_turns", "global.trick_room_turns"]
@@ -122,13 +177,63 @@ def _feature_names():
             names += [f"{pre}.move{k}" for k in range(4)] + [f"{pre}.pp{k}" for k in range(4)]
             names += [f"{pre}.move_count"] + [f"{pre}.sp.{n}" for n in _STATS6]
             names += [f"{pre}.stat.{n}" for n in _STATS6[1:]]
-    return tuple(names)
+    return names
 
 
-FEATURE_NAMES = _feature_names()
+def _ext_columns():
+    """(name, feature bit) of every block column, in the encoder's order
+    (decision 0018 section 10)."""
+    f = FEATURE_BITS
+    cols = [("ext.global.weather_sand", f["WEATHER_SAND"]), ("ext.global.weather_snow", f["WEATHER_SNOW"]),
+            ("ext.global.terrain_electric", f["TERRAIN_ELECTRIC"]), ("ext.global.terrain_misty", f["TERRAIN_MISTY"]),
+            ("ext.global.gravity_turns", f["GRAVITY"])]
+    for s in ("own", "foe"):
+        cols += [(f"ext.{s}.aurora_veil_turns", f["AURORA_VEIL"]), (f"ext.{s}.stealth_rock", f["STEALTH_ROCK"]),
+                 (f"ext.{s}.spikes", f["SPIKES"]), (f"ext.{s}.toxic_spikes", f["TOXIC_SPIKES"]),
+                 (f"ext.{s}.sticky_web", f["STICKY_WEB"]), (f"ext.{s}.wide_guard", f["WIDE_GUARD"]),
+                 (f"ext.{s}.quick_guard", f["QUICK_GUARD"])]
+        for p in range(2):
+            pre = f"ext.{s}.pos{p}"
+            cols += [(f"{pre}.volatile.{name.lower()}", f[feature]) for name, _, feature in VOLATILES]
+            cols += [(f"{pre}.encore.{x}", f["ENCORE"]) for x in _SLOTS5]
+            cols += [(f"{pre}.disable.{x}", f["DISABLE"]) for x in _SLOTS5]
+            cols += [(f"{pre}.stockpile", f["STOCKPILE"]), (f"{pre}.perish", f["PERISH"]),
+                     (f"{pre}.ability_changed", f["ABILITY_CHANGE"]), (f"{pre}.ability_now", f["ABILITY_CHANGE"]),
+                     (f"{pre}.type_now0", f["TYPE_CHANGE"]), (f"{pre}.type_now1", f["TYPE_CHANGE"])]
+        for m in range(_layout.MAX_ROSTER):
+            pre = f"ext.{s}.mem{m}"
+            cols += [(f"{pre}.tox", f["AILMENT_TOX"]), (f"{pre}.forme_changed", f["FORME_CHANGE"]),
+                     (f"{pre}.forme", f["FORME_CHANGE"]), (f"{pre}.item_changed", f["ITEM_CHANGE"]),
+                     (f"{pre}.item_removed", f["ITEM_CHANGE"]), (f"{pre}.item_now", f["ITEM_CHANGE"])]
+    return cols
+
+
+_EXT = _ext_columns()
+EXT_SIZE = len(_EXT)
+OBS_SIZE = BASE_OBS_SIZE + EXT_SIZE
+# The DUOFORGE_VIEWEXT_FEATURE_* bit of every block column.
+EXT_COLUMN_FEATURES = np.array([bit for _, bit in _EXT], dtype=np.int64)
+FEATURE_NAMES = tuple(_base_names() + [name for name, _ in _EXT])
 SLOT_FEATURE_NAMES = (("valid",) + tuple(f"kind.{n}" for n in _SLOT_KIND_NAMES) + ("move_slot",)
                       + tuple(f"target.{n}" for n in ("own0", "own1", "foe0", "foe1")) + ("mega", "reserve"))
 assert len(FEATURE_NAMES) == OBS_SIZE and len(SLOT_FEATURE_NAMES) == SLOT_FEATURES
+assert len(_base_names()) == BASE_OBS_SIZE and EXT_SIZE == 5 + 2 * (7 + 2 * 36 + 6 * 6)
+_EXT_SIDE = 7 + 2 * 36 + 6 * 6
+# The block columns read from the records (every bit but the base values').
+_RECORD_COLUMNS = ((1 << EXT_COLUMN_FEATURES) & BASE_VALUE_FEATURES) == 0
+_MOVE_SLOT = SLOT_FEATURE_NAMES.index("move_slot")
+_KIND_MOVE = SLOT_FEATURE_NAMES.index("kind.MOVE")
+
+
+def obs_size(encoder):
+    """The obs_part width of encoder version `encoder`."""
+    _check_version(encoder)
+    return OBS_SIZE if encoder == ENCODER else BASE_OBS_SIZE
+
+
+def feature_names(encoder):
+    """The column names of encoder version `encoder` (its obs_part order)."""
+    return FEATURE_NAMES[:obs_size(encoder)]
 
 
 _F64 = np.float64
@@ -136,17 +241,18 @@ _F32 = np.float32
 _OCCUPANTS = tuple(range(_layout.MAX_ROSTER)) + (C["DUOFORGE_ROSTER_NONE"],)
 
 
-def _one_hot(values, known, what):
-    """One-hot float32 rows over `known` for every value (any shape);
-    ValueError for a value outside `known`."""
+def _one_hot(values, known, what, blank=()):
+    """One-hot float32 rows over `known` for every value (any shape); a value
+    in `blank` gives an all-zero row; ValueError for any other value."""
     values = np.asarray(values).astype(np.int64)
     table = np.full(max(256, int(values.max(initial=0)) + 1), -1, dtype=np.int64)
     table[list(known)] = np.arange(len(known))
+    table[list(blank)] = len(known)
     index = table[values]
     if (index < 0).any():
         bad = int(values[index < 0].flat[0])
         raise ValueError(f"{what} {bad} is not one this encoder knows: {known}")
-    return np.eye(len(known), dtype=_F32)[index]
+    return np.eye(len(known) + 1, len(known), dtype=_F32)[index]
 
 
 def _ratio(values, divisor):
@@ -154,8 +260,9 @@ def _ratio(values, divisor):
     return (np.asarray(values).astype(_F64) / divisor).astype(_F32)
 
 
-def _sides(s):
-    """The side features of SIDE_VIEW records s (N,): (N, side size)."""
+def _sides(s, tox):
+    """The side features of SIDE_VIEW records s (N,): (N, side size); tox: Tox
+    is a known status (its old one-hot is all zero)."""
     n = s.shape[0]
     rs = s["requested_slots"].astype(np.int64)
     head = np.stack([s["member_count"].astype(_F64) / 6, s["mega_used"].astype(_F64), s["requested"].astype(_F64),
@@ -182,7 +289,7 @@ def _sides(s):
     members = np.concatenate([
         np.stack([(m["move_count"] != 0).astype(_F64), hp], axis=-1).astype(_F32),
         _one_hot(m["location"], LOCATIONS, "location"),
-        _one_hot(m["status"], AILMENTS, "ailment"),
+        _one_hot(m["status"], AILMENTS, "ailment", (_TOX,) if tox else ()),
         np.stack([m["is_mega"].astype(_F64), m["mega_capable"].astype(_F64), m["item_used"].astype(_F64),
                   m["item"].astype(_F64) / 255, m["ability"].astype(_F64) / 255, m["gender"].astype(_F64) / 3,
                   m["nature"].astype(_F64) / 24, m["species_id"].astype(_F64) / 65535], axis=-1).astype(_F32),
@@ -195,11 +302,124 @@ def _sides(s):
     return np.concatenate([head, positions, members], axis=1)
 
 
-def encode_batch(observations, domains):
+def _mask_of(ext_supported):
+    """ext_supported as an int mask of DUOFORGE_VIEWEXT_FEATURE_* bits;
+    ValueError for anything else."""
+    if (not isinstance(ext_supported, (int, np.integer)) or isinstance(ext_supported, bool)
+            or not 0 <= int(ext_supported) <= ALL_FEATURES):
+        raise ValueError(f"ext_supported {ext_supported!r} is not a mask of the {FEATURE_COUNT} feature bits")
+    return int(ext_supported)
+
+
+def _new_values(mask):
+    """The new values of the old fields that mask shows: (weathers, terrains,
+    tox)."""
+    weathers = tuple(v for v, name in _NEW_WEATHERS if mask >> FEATURE_BITS[name] & 1)
+    terrains = tuple(v for v, name in _NEW_TERRAINS if mask >> FEATURE_BITS[name] & 1)
+    return weathers, terrains, bool(mask >> FEATURE_BITS["AILMENT_TOX"] & 1)
+
+
+# Each record field with its documented largest value (decision 0018 section 3).
+_SIDE_RANGES = (("aurora_veil_turns", 8), ("stealth_rock", 1), ("spikes", 3), ("toxic_spikes", 2), ("sticky_web", 1))
+_POSITION_RANGES = (("encore_slot", 4), ("disable_slot", 4), ("stockpile", 3), ("perish", 3), ("ability_now", 255),
+                    ("type_now", 18))
+
+
+def _check_records(ob, ext, mask):
+    """The records (OBSERVATION_EXT, ob.shape) as encode_batch reads them:
+    TypeError for another dtype or shape, ValueError for records of another
+    boundary or revision, a mask bit their library does not support or a
+    field outside its range. Returns the rows of revision 1."""
+    ext = np.asarray(ext)
+    if ext.dtype != _layout.OBSERVATION_EXT or ext.shape != ob.shape:
+        raise TypeError("ext must be an OBSERVATION_EXT array of the observations' shape")
+    revision = ext["revision"]
+    absent = revision == 0
+    if np.ascontiguousarray(ext).view(np.uint8).reshape(ob.shape[0], -1)[absent].any():
+        raise ValueError("an extension record of revision 0 must be all zero")
+    present = ~absent
+    if (revision[present] != _EXT_REVISION).any():
+        raise ValueError(f"extension revision {int(revision[present][revision[present] != _EXT_REVISION][0])} is not "
+                         f"one this encoder knows ({_EXT_REVISION})")
+    if ((ext["player"] != ob["player"]) | (ext["epoch"] != ob["epoch"]))[present].any():
+        raise ValueError("the extension is not of the observation's boundary (another player or epoch)")
+    missing = mask & ~np.bitwise_and.reduce(ext["supported"][present].astype(np.uint64), initial=np.uint64(ALL_FEATURES))
+    if present.any() and int(missing):
+        bit = (int(missing) & -int(missing)).bit_length() - 1
+        raise ValueError(f"ext_supported has the bit of {_FEATURE_NAME[bit]}, which this library does not support")
+    rec = ext[present]
+    checks = [("gravity_turns", rec["field"]["gravity_turns"], 5)]
+    checks += [(name, rec["sides"][name], top) for name, top in _SIDE_RANGES]
+    checks += [(name, rec["sides"]["positions"][name], top) for name, top in _POSITION_RANGES]
+    for name, values, top in checks:
+        if (values > top).any():
+            raise ValueError(f"extension field {name} {int(values[values > top].flat[0])} is above {top}")
+    guards = rec["sides"]["guard_flags"].astype(np.int64) & ~sum(bit for bit, _ in _GUARDS)
+    if guards.any():
+        raise ValueError(f"extension field guard_flags bits {int(guards[guards != 0].flat[0])} are not ones this "
+                         "encoder knows")
+    volatiles = rec["sides"]["positions"]["volatiles"].astype(np.int64) & ~sum(bit for _, bit, _ in VOLATILES)
+    if volatiles.any():
+        raise ValueError(f"extension field volatiles bits {int(volatiles[volatiles != 0].flat[0])} are not ones "
+                         "this encoder knows")
+    return present
+
+
+def _ext_block(ob, ext, present, viewer):
+    """The block of the module docstring (N, EXT_SIZE) before the mask."""
+    n = ob.shape[0]
+    rows = np.arange(n)
+    block = np.zeros((n, EXT_SIZE), dtype=_F32)
+    block[:, 0] = ob["weather"] == C["DUOFORGE_WEATHER_SAND"]
+    block[:, 1] = ob["weather"] == C["DUOFORGE_WEATHER_SNOW"]
+    block[:, 2] = ob["terrain"] == C["DUOFORGE_TERRAIN_ELECTRIC"]
+    block[:, 3] = ob["terrain"] == C["DUOFORGE_TERRAIN_MISTY"]
+    for k, side in enumerate((viewer, 1 - viewer)):
+        base = 5 + k * _EXT_SIDE
+        tox = (ob["sides"][rows, side]["members"]["status"] == _TOX).astype(_F32)  # (N, 6)
+        block[:, base + 79 + 6 * np.arange(6)] = tox
+    if ext is None or not present.any():
+        return block
+    rec = np.asarray(ext)
+    out = np.zeros((n, EXT_SIZE), dtype=_F32)
+    out[:, 4] = _ratio(rec["field"]["gravity_turns"], 5)
+    for k, side in enumerate((viewer, 1 - viewer)):
+        base = 5 + k * _EXT_SIDE
+        s = rec["sides"][rows, side]
+        guards = s["guard_flags"].astype(np.int64)
+        out[:, base:base + 7] = np.stack([
+            _ratio(s["aurora_veil_turns"], 8), s["stealth_rock"].astype(_F32), _ratio(s["spikes"], 3),
+            _ratio(s["toxic_spikes"], 2), s["sticky_web"].astype(_F32)]
+            + [((guards & bit) != 0).astype(_F32) for bit, _ in _GUARDS], axis=1)
+        pos = s["positions"]
+        volatiles = pos["volatiles"].astype(np.int64)
+        ability = pos["ability_now"].astype(np.int64)
+        position = np.concatenate([
+            np.stack([((volatiles & bit) != 0).astype(_F32) for _, bit, _ in VOLATILES], axis=-1),
+            np.eye(5, dtype=_F32)[pos["encore_slot"].astype(np.int64)],
+            np.eye(5, dtype=_F32)[pos["disable_slot"].astype(np.int64)],
+            np.stack([_ratio(pos["stockpile"], 3), _ratio(pos["perish"], 3), (ability != 0).astype(_F32),
+                      _ratio(ability, 255)], axis=-1),
+            _ratio(pos["type_now"], 18)], axis=-1)  # (N, 2, 36)
+        out[:, base + 7:base + 79] = position.reshape(n, -1)
+        m = s["members"]
+        forme = m["forme"].astype(np.int64)
+        item = m["item_now"].astype(np.int64)
+        member = np.stack([np.zeros(forme.shape, _F32), (forme != 0).astype(_F32), _ratio(forme, 65535),
+                           (item != 0).astype(_F32), (item == _ITEM_NOW_NONE).astype(_F32), _ratio(item, 255)],
+                          axis=-1)  # (N, 6, 6)
+        out[:, base + 79:base + 115] = member.reshape(n, -1)
+    block[np.ix_(present, _RECORD_COLUMNS)] = out[np.ix_(present, _RECORD_COLUMNS)]
+    return block
+
+
+def encode_batch(observations, domains, ext=None, ext_supported=0):
     """(obs_part (N, OBS_SIZE), slot_part (N, 2, 32, SLOT_FEATURES),
-    pair_mask (N, 32, 32)) of N players' observations (OBSERVATION, (N,))
-    and factored domains (FACTORED_DOMAIN, (N,)); row n is encode of
-    player n. See the module docstring for the layout."""
+    pair_mask (N, 32, 32)) of N players' observations (OBSERVATION, (N,)),
+    factored domains (FACTORED_DOMAIN, (N,)) and view extensions
+    (OBSERVATION_EXT, (N,), or None when ext_supported needs no record) under
+    the feature mask ext_supported; row n is encode of player n. See the
+    module docstring for the layout and the rules of the mask."""
     ob = np.asarray(observations)
     d = np.asarray(domains)
     if ob.dtype != _layout.OBSERVATION or ob.ndim != 1:
@@ -208,19 +428,31 @@ def encode_batch(observations, domains):
         raise TypeError("domains must be a FACTORED_DOMAIN array of the observations' shape")
     if ((ob["epoch"] != d["epoch"]) | ((ob["requested"] != 0) != (d["kind"] != 0))).any():
         raise ValueError("the domain is not of the observation's boundary (query_factored() refreshes both)")
+    mask = _mask_of(ext_supported)
+    if ext is None:
+        if mask & RECORD_FEATURES:
+            bit = (mask & RECORD_FEATURES & -(mask & RECORD_FEATURES)).bit_length() - 1
+            raise ValueError(f"ext_supported has the bit of {_FEATURE_NAME[bit]}, which needs the extension records "
+                             "(ext)")
+        present = np.zeros(ob.shape, dtype=bool)
+    else:
+        present = _check_records(ob, ext, mask)
+    weathers, terrains, tox = _new_values(mask)
     n = ob.shape[0]
     rows = np.arange(n)
     viewer = ob["player"].astype(np.int64)
     glob = np.concatenate([
         _one_hot(ob["boundary_kind"], BOUNDARIES, "boundary kind"),
         np.clip(ob["turn"].astype(_F64) / 100, 0.0, 1.0)[:, None].astype(_F32),
-        _one_hot(ob["weather"], WEATHERS, "weather"),
+        _one_hot(ob["weather"], WEATHERS, "weather", weathers),
         _ratio(ob["weather_turns"], 8)[:, None],
-        _one_hot(ob["terrain"], TERRAINS, "terrain"),
+        _one_hot(ob["terrain"], TERRAINS, "terrain", terrains),
         np.stack([_ratio(ob["terrain_turns"], 8), _ratio(ob["trick_room_turns"], 5)], axis=1),
     ], axis=1)
-    obs_part = np.concatenate([glob, _sides(ob["sides"][rows, viewer]), _sides(ob["sides"][rows, 1 - viewer])],
-                              axis=1).astype(_F32)
+    block = _ext_block(ob, ext, present, viewer)
+    block[:, (mask >> EXT_COLUMN_FEATURES & 1) == 0] = 0.0
+    obs_part = np.concatenate([glob, _sides(ob["sides"][rows, viewer], tox), _sides(ob["sides"][rows, 1 - viewer], tox),
+                               block], axis=1).astype(_F32)
 
     slots = d["slots"]
     is_slots = d["kind"] == C["DUOFORGE_CHOICE_SLOTS"]
@@ -236,10 +468,11 @@ def encode_batch(observations, domains):
     f[:, 1:5] = _one_hot(kind, SLOT_KINDS, "slot command kind")
     move = kind == C["DUOFORGE_SLOT_MOVE"]
     move_slot = cmd["move_slot"][move]
-    unknown = move_slot > C["DUOFORGE_MOVE_SLOT_STRUGGLE"]
+    unknown = move_slot > C["DUOFORGE_MOVE_SLOT_RECHARGE"]
     if unknown.any():
-        raise ValueError(f"move slot {int(move_slot[unknown][0])} is not one this encoder knows (0 to 3, or Struggle)")
-    f[move, 5] = _ratio(move_slot, C["DUOFORGE_MOVE_SLOT_STRUGGLE"])
+        raise ValueError(f"move slot {int(move_slot[unknown][0])} is not one this encoder knows (0 to 3, Struggle or "
+                         "Recharge)")
+    f[move, _MOVE_SLOT] = _ratio(move_slot, C["DUOFORGE_MOVE_SLOT_STRUGGLE"])
     target = cmd["target"].astype(np.int64)
     aimed = move & (target != C["DUOFORGE_TARGET_NONE"])
     if (target[aimed] >= 4).any():
@@ -256,17 +489,22 @@ def encode_batch(observations, domains):
     return obs_part, slot_part, pair_mask
 
 
-def encode(observation, domain):
+def encode(observation, domain, ext=None, ext_supported=0):
     """(obs_part, slot_part, pair_mask) of one player's observation
-    (OBSERVATION) and factored domain (FACTORED_DOMAIN); encode_batch of
-    one player."""
+    (OBSERVATION), factored domain (FACTORED_DOMAIN) and view extension
+    (OBSERVATION_EXT or None); encode_batch of one player."""
     ob = np.asarray(observation)
     if ob.dtype != _layout.OBSERVATION or ob.shape != ():
         raise TypeError("observation must be one OBSERVATION record")
     d = np.asarray(domain)
     if d.dtype != _layout.FACTORED_DOMAIN or d.shape != ():
         raise TypeError("domain must be one FACTORED_DOMAIN record")
-    obs_part, slot_part, pair_mask = encode_batch(ob.reshape(1), d.reshape(1))
+    if ext is not None:
+        ext = np.asarray(ext)
+        if ext.dtype != _layout.OBSERVATION_EXT or ext.shape != ():
+            raise TypeError("ext must be one OBSERVATION_EXT record")
+        ext = ext.reshape(1)
+    obs_part, slot_part, pair_mask = encode_batch(ob.reshape(1), d.reshape(1), ext, ext_supported)
     return obs_part[0], slot_part[0], pair_mask[0]
 
 
@@ -276,24 +514,47 @@ def is_version(encoder):
     return isinstance(encoder, (int, np.integer)) and not isinstance(encoder, bool) and encoder in ENCODERS
 
 
+def _check_version(encoder):
+    if not is_version(encoder):
+        raise ValueError(f"encoder {encoder!r} is not one this encoder knows: {ENCODERS}")
+
+
 def as_encoder(obs_part, observations, encoder):
     """obs_part of encode (OBSERVATION record, (OBS_SIZE,)) or encode_batch
     ((N,), (N, OBS_SIZE)) as encoder version `encoder` makes it, the inputs
     a network of that version was trained on: ENCODER gives obs_part
-    itself; 1 (a checkpoint whose config names no encoder) a copy with every
-    present flag back at species_id != 0. ValueError for another version."""
+    itself; 2 a copy of the first BASE_OBS_SIZE columns; 1 that copy with
+    every present flag back at species_id != 0. Versions 1 and 2 raise
+    ValueError for an observation with a value they do not know (Sand, Snow,
+    Electric or Misty Terrain, Tox); ValueError for another version."""
     ob = np.asarray(observations)
     part = np.asarray(obs_part)
     if ob.dtype != _layout.OBSERVATION or part.dtype != _F32 or part.shape != ob.shape + (OBS_SIZE,):
         raise TypeError("obs_part must be the float32 obs_part of encode or encode_batch for these observations")
-    if not is_version(encoder):
-        raise ValueError(f"encoder {encoder!r} is not one this encoder knows: {ENCODERS}")
+    _check_version(encoder)
     if encoder == ENCODER:
         return obs_part
     ob = ob.reshape(-1)
-    out = part.reshape(-1, OBS_SIZE).copy()
-    rows = np.arange(ob.shape[0])
-    viewer = ob["player"].astype(np.int64)
-    for k, side in enumerate((viewer, 1 - viewer)):
-        out[:, _PRESENT[k]] = (ob["sides"][rows, side]["members"]["species_id"] != 0).astype(_F32)
-    return out.reshape(part.shape)
+    _one_hot(ob["weather"], WEATHERS, "weather")
+    _one_hot(ob["terrain"], TERRAINS, "terrain")
+    _one_hot(ob["sides"]["members"]["status"], AILMENTS, "ailment")
+    out = part.reshape(-1, OBS_SIZE)[:, :BASE_OBS_SIZE].copy()
+    if encoder == 1:
+        rows = np.arange(ob.shape[0])
+        viewer = ob["player"].astype(np.int64)
+        for k, side in enumerate((viewer, 1 - viewer)):
+            out[:, _PRESENT[k]] = (ob["sides"][rows, side]["members"]["species_id"] != 0).astype(_F32)
+    return out.reshape(part.shape[:-1] + (BASE_OBS_SIZE,))
+
+
+def slots_as_encoder(slot_part, encoder):
+    """slot_part of encode or encode_batch as encoder version `encoder`
+    makes it: itself, for every version; versions 1 and 2 raise ValueError
+    for a Recharge option (move slot 5), which they do not know."""
+    part = np.asarray(slot_part)
+    if part.dtype != _F32 or part.shape[-3:] != (2, OPTIONS, SLOT_FEATURES):
+        raise TypeError("slot_part must be the float32 slot_part of encode or encode_batch")
+    _check_version(encoder)
+    if encoder != ENCODER and ((part[..., _KIND_MOVE] == 1.0) & (part[..., _MOVE_SLOT] > 1.0)).any():
+        raise ValueError(f"a Recharge option (move slot 5) is not one encoder {encoder} knows")
+    return slot_part

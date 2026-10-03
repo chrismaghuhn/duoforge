@@ -342,7 +342,7 @@ class GameTest(unittest.TestCase):
         from duoforge_live.game import Game
         from duoforge_live.policy import Policy
         rng = np.random.default_rng(1)
-        shapes = {"t1": (features.OBS_SIZE, 8), "t2": (8, 8), "option_torso": (8, 4),
+        shapes = {"t1": (features.BASE_OBS_SIZE, 8), "t2": (8, 8), "option_torso": (8, 4),  # encoders 1 and 2
                   "option_features": (features.SLOT_FEATURES, 4), "option_out": (4, 2), "team": (8, 360),
                   "value": (8, 1)}
         params = {k: {"w": rng.normal(0, 1, s).astype(np.float32), "b": np.zeros(s[1], np.float32)}

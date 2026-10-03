@@ -131,9 +131,10 @@ def _data_json(kind, context):
     return {"kind": kind, "fingerprint": context.fingerprint().hex()}
 
 
-def snapshot_config(train_config, model_cfg, context, pool, update, decisions, encoder):
+def snapshot_config(train_config, model_cfg, context, pool, update, decisions, encoder, ext_supported):
     """The format-2 config of a snapshot of this run."""
-    return {"model": model_cfg, "encoder": encoder, "features": list(features.FEATURE_NAMES),
+    return {"model": model_cfg, "encoder": encoder, "ext_supported": ext_supported,
+            "features": list(features.FEATURE_NAMES),
             "slot_features": list(features.SLOT_FEATURE_NAMES),
             "data": _data_json(train_config["data_kind"], context),
             "teams": _teams_json(pool), "update": update, "decisions": decisions, "train": train_config}
@@ -180,6 +181,9 @@ def _parser(suppress=False):
     add("--team-weights", default=None, help="sampling weights of the teams, comma-separated (default: equal)")
     add("--teams-root", default="data/teams", help="the team registry")
     add("--data-kind", choices=tuple(DATA_KINDS), default="closure", help="the data kind of the battles")
+    add("--ext-supported", type=lambda s: int(s, 0), default=None,
+        help="the view-extension features the network reads (decision 0018), a mask of DUOFORGE_VIEWEXT_FEATURE_* "
+             "bits (default: every feature the library supports under the data kind)")
     return p
 
 
@@ -340,6 +344,14 @@ def _run(args, pool, on_start, stop):
         raise SystemExit("the context differs from the run's (another data kind or tables): "
                          f"{saved_state['data']['fingerprint']} -> {context.fingerprint().hex()}")
     encoder = saved_state["encoder"] if saved_state is not None else features.ENCODER
+    widening = saved_state is not None and (saved_state["features"] != list(features.FEATURE_NAMES) or
+                                            saved_state["slot_features"] != list(features.SLOT_FEATURE_NAMES))
+    if widening and encoder != features.ENCODER:
+        # A run of encoder 2 widened by name continues on this encoder's inputs: the new rows start at zero.
+        if encoder != 2:
+            raise SystemExit(f"a run of encoder {encoder} cannot be widened to encoder {features.ENCODER}")
+        changes["encoder"] = [encoder, features.ENCODER]
+        encoder = features.ENCODER
     model_cfg = saved_state["model"] if saved_state is not None else model_config(args)
     if saved_state is None:
         print(json.dumps(train_config | {"devices": [str(d) for d in jax.devices()], "model": model_cfg}), flush=True)
@@ -362,9 +374,13 @@ def _run(args, pool, on_start, stop):
         if on_start is not None:
             on_start(envs, episodes)
 
+    # A resumed run keeps the mask it trained with (a run from before encoder 3 had none: 0); a new one takes
+    # --ext-supported, by default every feature the library supports under the context.
+    ext_supported = saved_state.get("ext_supported", 0) if saved_state is not None else args.ext_supported
     env = SelfPlay(args.envs, args.workers, args.seed, pool=pool, max_steps=args.max_steps, start_episodes=starts,
-                   encoder=encoder, context=context, on_start=started,
+                   encoder=encoder, context=context, on_start=started, ext_supported=ext_supported,
                    on_end=lambda envs, rewards: state.end(envs, league.learner_results(state, envs, rewards)))
+    ext_supported = env.ext_supported
     sides[0] = env
     learner_rows = state.learner_rows()
     net = policy.make(model_cfg)
@@ -377,12 +393,12 @@ def _run(args, pool, on_start, stop):
         opt_state = tx.init(params)
         rng = np.random.default_rng(args.seed)
         update = decisions = episodes = last_eval = 0
-        snapshots.save(0, params, snapshot_config(train_config, model_cfg, context, pool, 0, 0, encoder))
+        snapshots.save(0, params, snapshot_config(train_config, model_cfg, context, pool, 0, 0, encoder,
+                                                  ext_supported))
         previous = params
     else:
         params, opt_leaves = saved_state["params"], saved_state["opt_leaves"]
-        if saved_state["features"] != list(features.FEATURE_NAMES) or \
-                saved_state["slot_features"] != list(features.SLOT_FEATURE_NAMES):
+        if widening:
             params, opt_state = _widen_state(params, opt_leaves, model_cfg, saved_state["features"],
                                              saved_state["slot_features"], tx)
             changes["features"] = [len(saved_state["features"]), features.OBS_SIZE]
@@ -422,7 +438,7 @@ def _run(args, pool, on_start, stop):
             "league": state.to_dict(), "numpy_rng": rng.bit_generator.state, "teams": _teams_json(pool),
             "data": _data_json(args.data_kind, context), "model": model_cfg,
             "features": list(features.FEATURE_NAMES), "slot_features": list(features.SLOT_FEATURE_NAMES),
-            "encoder": encoder, "train": train_config})
+            "encoder": encoder, "ext_supported": ext_supported, "train": train_config})
 
     act = net.act
     start = time.perf_counter()
@@ -468,7 +484,7 @@ def _run(args, pool, on_start, stop):
             evaluating = update % args.eval_every == 0 or (last and not stop.requested)
             if update % args.snapshot_every == 0 or evaluating:
                 snapshots.save(update, params, snapshot_config(train_config, model_cfg, context, pool, update,
-                                                               decisions, encoder))
+                                                               decisions, encoder, ext_supported))
             if state.has_league:
                 state.tick(update)
                 slot = state.ready()
@@ -479,9 +495,10 @@ def _run(args, pool, on_start, stop):
                     record["league_load"] = {"slot": slot, "snapshot": chosen}
             if evaluating:
                 rows = suite.make_suite(len(pool.ids), args.seed, games=args.eval_games, budget=args.eval_budget)
-                me = evaluate.Player(net, params, encoder, "learner")
+                me = evaluate.Player(net, params, encoder, "learner", ext_supported)
                 for name, opponent in (("random", "random"),
-                                       ("previous", evaluate.Player(net, previous, encoder, "previous"))):
+                                       ("previous", evaluate.Player(net, previous, encoder, "previous",
+                                                                    ext_supported))):
                     games = evaluate.play_suite(context, pool, rows, me, opponent, args.workers, EVAL_SEED)
                     result = evaluate.scores(games, len(pool.ids))
                     record[f"vs_{name}"] = round(result["score"], 4)
