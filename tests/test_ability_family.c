@@ -65,6 +65,7 @@ static const ability_type WEATHER_SETTERS[] = {
 static const ability_type TERRAIN_SETTERS[] = {
     {DFI_ABILITY_GRASSYSURGE, DFI_TERRAIN_GRASSY},
     {DFI_ABILITY_PSYCHICSURGE, DFI_TERRAIN_PSYCHIC},
+    {DFI_ABILITY_ELECTRICSURGE, DFI_TERRAIN_ELECTRIC},
 };
 
 #define N_WEATHER_SETTERS (sizeof WEATHER_SETTERS / sizeof WEATHER_SETTERS[0])
@@ -162,7 +163,8 @@ int main(void)
     DF_CHECK_EQ_U64(&t, pinch_hits, N_PINCHES * 6u);
 
     /* The moves an -ate ability leaves alone, by what the move is, not by its type: of the pool's Normal moves
-     * only Weather Ball keeps its type (the handler's noModifyType list), every other one becomes the ability's. */
+     * only Weather Ball and (since step G25) Terrain Pulse keep their type (the handler's noModifyType list), every other one
+     * becomes the ability's. */
     for (size_t i = 0u; i < N_ATES; ++i) {
         const dfi_member m = holder(ATES[i].ability, 100u, 300u);
         uint32_t normal_moves = 0u;
@@ -172,13 +174,13 @@ int main(void)
                 continue;
             }
             normal_moves += 1u;
-            const uint32_t want = id == DFI_MOVE_WEATHERBALL ? DFI_TYPE_NORMAL : ATES[i].type;
+            const uint32_t want = id == DFI_MOVE_WEATHERBALL || id == DFI_MOVE_TERRAINPULSE ? DFI_TYPE_NORMAL : ATES[i].type;
             if (!DF_CHECK(&t, dfi_ate_type_fam(fam_of(&m), md, DFI_TYPE_NORMAL) == want)) {
                 fprintf(stderr, "  ate: ability %u, move %u: expected type %u\n", (unsigned)ATES[i].ability,
                         (unsigned)id, (unsigned)want);
             }
         }
-        DF_CHECK(&t, normal_moves >= 2u); /* Weather Ball and at least one other */
+        DF_CHECK(&t, normal_moves >= 3u); /* Weather Ball, Terrain Pulse and at least one other */
     }
 
     /* The setters: every ability of the pool, the answer from the table above. The state values are the
@@ -194,7 +196,7 @@ int main(void)
         DF_CHECK_EQ_U64(&t, family == DFI_ABILITY_FAMILY_TERRAIN_SETTER, terrain != DFI_CLOSURE_NONE);
     }
     DF_CHECK_EQ_U64(&t, N_WEATHER_SETTERS, 4u);
-    DF_CHECK_EQ_U64(&t, N_TERRAIN_SETTERS, 2u);
+    DF_CHECK_EQ_U64(&t, N_TERRAIN_SETTERS, 3u);
 
     /* No ability at all, and a holder that is not there. */
     {

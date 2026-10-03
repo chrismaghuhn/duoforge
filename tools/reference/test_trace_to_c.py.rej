@@ -1,0 +1,19 @@
+diff a/tools/reference/test_trace_to_c.py b/tools/reference/test_trace_to_c.py	(rejected hunks)
+@@ -1393,7 +1456,7 @@ class Library(unittest.TestCase):
+         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
+                   if n in ids and ids[n] >= ext_moves]
+         self.assertEqual(len(names), ext_moves + len(ids))
+-        self.assertEqual(len(marked), 78)  # the 27 of G21, G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
++        self.assertEqual(len(marked), 82)  # the four of G25 (Electric Terrain, Misty Terrain, Rising Voltage, Terrain Pulse), the 27 of G21, G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
+         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
+                 if trace_to_c.is_pool(ROOT, n[:-5])]
+         logs = []
+@@ -1412,6 +1475,8 @@ class Library(unittest.TestCase):
+                             done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|', '|-start|', '|-weather|') + (('|-status|',) if name == 'Will-O-Wisp' else ()))
+                             # A side condition that a status move sets (Aurora Veil, step G20): its -sidestart line.
+                             done = done or (after.startswith('|-sidestart|') and after.endswith('|move: ' + name))
++                            # A terrain that a status move sets (Electric Terrain, Misty Terrain, step G25): its -fieldstart line.
++                            done = done or (after.startswith('|-fieldstart|') and after.endswith('|move: ' + name))
+                             # A side move (Wide Guard, step G7) shows its effect as its own -singleturn line; Detect's is
+                             # Protect's (step G13: its handler, and the line of the Protect condition).
+                             done = done or (after.startswith('|-singleturn|') and after.endswith('|' + name))
