@@ -595,6 +595,11 @@ function checkG10Moves(dex) {
         ['matchagotcha', 'scald', 'scorchingsands']);
     expect('recover and slackoff heal a half', heals.filter(([id]) => ['recover', 'slackoff'].includes(id)),
         [['recover', [1, 2]], ['slackoff', [1, 2]]]);
+    // A Pokemon with Heal Block and Throat Chop has two BeforeMove handlers of equal priority; tools/reference/
+    // trace_to_c.py drops their shuffle because no move is stopped by both: none has both the heal and the sound flag
+    // (build_pool and tests/test_pool_tables.c check the pool's moves, this reads every move of the pin).
+    expect('moves with both the heal and the sound flag in the pin',
+        dex.moves.all().filter((m) => m.flags.heal && m.flags.sound).map((m) => m.id), []);
 }
 
 // The callbacks that change the priority of a move or the Speed of a Pokemon, on the entry or on its own condition

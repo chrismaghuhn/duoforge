@@ -1,0 +1,71 @@
+{
+  "name": "fz_9630001_507_prefix",
+  "purpose": "Corpus (defect): case fz_9630001_507 of run 9630001 (tools/reference/diff_driver.py random), team PP_A0582A49F5490809 against team PP_A0582A49F5490809, found as DIVERGENCE events reference kind 5 differs in pos, hp, kind2. The shortest prefix that showed it, 16 of 21 choices; it passes now, fixed by the residual handler list of the pin, step residual-order (2026-10-03).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,19b416e3c513a149b9cc42e05ca4471b4916297997325d5fe0c664bcb14a0032",
+  "teams": [
+    "Sneasler (M) @ Grassy Seed\nAbility: Unburden\nLevel: 50\nEVs: 20 HP / 12 Atk / 1 Def / 1 SpD / 32 Spe\nAdamant Nature\n- Protect\n- Close Combat\n- Dire Claw\n- Rock Slide\n\nRaichu (M) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 32 HP / 11 Def / 23 Spe\nTimid Nature\n- Protect\n- Zap Cannon\n- Focus Blast\n- Encore\n\nIncineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 13 Def / 20 SpD / 1 Spe\nCareful Nature\n- Fake Out\n- Flare Blitz\n- Throat Chop\n- Parting Shot\n\nFloette-Eternal (F) @ Floettite\nAbility: Flower Veil\nLevel: 50\nEVs: 27 HP / 15 Def / 5 SpA / 19 Spe\nModest Nature\n- Protect\n- Dazzling Gleam\n- Moonblast\n- Calm Mind\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 7 HP / 27 SpA / 32 Spe\nModest Nature\n- Protect\n- Make It Rain\n- Shadow Ball\n- Nasty Plot\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 32 HP / 5 Atk / 21 SpD / 8 Spe\nAdamant Nature\n- Fake Out\n- Grassy Glide\n- Wood Hammer\n- High Horsepower",
+    "Gholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 7 HP / 27 SpA / 32 Spe\nModest Nature\n- Protect\n- Make It Rain\n- Shadow Ball\n- Nasty Plot\n\nIncineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 13 Def / 20 SpD / 1 Spe\nCareful Nature\n- Fake Out\n- Flare Blitz\n- Throat Chop\n- Parting Shot\n\nSneasler (M) @ Grassy Seed\nAbility: Unburden\nLevel: 50\nEVs: 20 HP / 12 Atk / 1 Def / 1 SpD / 32 Spe\nAdamant Nature\n- Protect\n- Close Combat\n- Dire Claw\n- Rock Slide\n\nRaichu (M) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 32 HP / 11 Def / 23 Spe\nTimid Nature\n- Protect\n- Zap Cannon\n- Focus Blast\n- Encore\n\nFloette-Eternal (F) @ Floettite\nAbility: Flower Veil\nLevel: 50\nEVs: 27 HP / 15 Def / 5 SpA / 19 Spe\nModest Nature\n- Protect\n- Dazzling Gleam\n- Moonblast\n- Calm Mind\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 32 HP / 5 Atk / 21 SpD / 8 Spe\nAdamant Nature\n- Fake Out\n- Grassy Glide\n- Wood Hammer\n- High Horsepower"
+  ],
+  "choices": [
+    {
+      "p1": "team 5463",
+      "p2": "team 1362"
+    },
+    {
+      "p1": "move 1, move 1",
+      "p2": "move 2, move 3 -1"
+    },
+    {
+      "p1": "move 2, move 4",
+      "p2": "move 2, move 4"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "move 1, move 4 1",
+      "p2": "move 3 -2, move 4"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 2, move 3 1",
+      "p2": "move 1 1, move 4"
+    },
+    {
+      "p1": "switch 4, move 3 -1",
+      "p2": "move 2 1, move 4"
+    },
+    {
+      "p1": "move 4 -2, move 3 2",
+      "p2": "move 4 2, move 1"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 2, move 2 -1",
+      "p2": "switch 3, move 4"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 3 1, move 3 2",
+      "p2": "move 2 2, move 4 1"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 3 2, pass",
+      "p2": "move 3 1, move 2 1"
+    }
+  ]
+}

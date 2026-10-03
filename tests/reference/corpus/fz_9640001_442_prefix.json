@@ -1,0 +1,83 @@
+{
+  "name": "fz_9640001_442_prefix",
+  "purpose": "Corpus (defect): case fz_9640001_442 of run 9640001 (tools/reference/diff_driver.py random), team PP_8E37C3B00CBBA6B6 against team PP_8E37C3B00CBBA6B6, found as DIVERGENCE events reference kind 5 differs in pos, hp, kind2. The shortest prefix that showed it, 19 of 41 choices; it passes now, fixed by the residual handler list of the pin, step residual-order (2026-10-03).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,6a820e9b021e3b58a6f99e6fe334bc4977d67cce958f785ad37f6016c4d13d59",
+  "teams": [
+    "Rillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 3 Def / 12 SpD / 1 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- U-turn\n- Fake Out\n\nFarigiraf (M) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 18 HP / 20 Def / 23 SpD / 5 Spe\nCalm Nature\n- Psychic\n- Trick Room\n- Helping Hand\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 1 HP / 32 SpA / 1 SpD / 32 Spe\nModest Nature\n- Hyper Voice\n- Draco Meteor\n- Tailwind\n- Protect\n\nBasculegion (M) @ Life Orb\nAbility: Adaptability\nLevel: 50\nEVs: 6 HP / 18 Atk / 29 Def / 1 SpD / 12 Spe\nAdamant Nature\n- Last Respects\n- Wave Crash\n- Aqua Jet\n- Protect\n\nIncineroar (M) @ Leftovers\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 1 Atk / 10 Def / 10 SpD / 13 Spe\nImpish Nature\n- Flare Blitz\n- Throat Chop\n- Parting Shot\n- Fake Out\n\nGolisopod (M) @ Golisopite\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 1 Def / 1 SpD\nBrave Nature\n- First Impression\n- Leech Life\n- Close Combat\n- Iron Head",
+    "Rillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 3 Def / 12 SpD / 1 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- U-turn\n- Fake Out\n\nIncineroar (M) @ Leftovers\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 1 Atk / 10 Def / 10 SpD / 13 Spe\nImpish Nature\n- Flare Blitz\n- Throat Chop\n- Parting Shot\n- Fake Out\n\nFarigiraf (M) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 18 HP / 20 Def / 23 SpD / 5 Spe\nCalm Nature\n- Psychic\n- Trick Room\n- Helping Hand\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 1 HP / 32 SpA / 1 SpD / 32 Spe\nModest Nature\n- Hyper Voice\n- Draco Meteor\n- Tailwind\n- Protect\n\nGolisopod (M) @ Golisopite\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 1 Def / 1 SpD\nBrave Nature\n- First Impression\n- Leech Life\n- Close Combat\n- Iron Head\n\nBasculegion (M) @ Life Orb\nAbility: Adaptability\nLevel: 50\nEVs: 6 HP / 18 Atk / 29 Def / 1 SpD / 12 Spe\nAdamant Nature\n- Last Respects\n- Wave Crash\n- Aqua Jet\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 3251",
+      "p2": "team 3542"
+    },
+    {
+      "p1": "move 2 2 mega, move 1 -1",
+      "p2": "move 4, move 3 -1"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 4, move 1 1",
+      "p2": "move 4, move 3"
+    },
+    {
+      "p1": "move 4, move 4",
+      "p2": "move 4, move 2 -1 mega"
+    },
+    {
+      "p1": "move 3, switch 3",
+      "p2": "switch 4, move 1"
+    },
+    {
+      "p1": "switch 3, pass"
+    },
+    {
+      "p1": "move 4, move 3 2",
+      "p2": "move 4 2, move 4"
+    },
+    {
+      "p1": "move 1 1, move 2 2",
+      "p2": "move 3 -2, move 4"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 4, move 3 2",
+      "p2": "move 2 2, move 4"
+    },
+    {
+      "p1": "move 4, move 2 2",
+      "p2": "move 2 1, move 1"
+    },
+    {
+      "p1": "move 4, move 2 2",
+      "p2": "move 3 2, move 4"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 4, move 1 1",
+      "p2": "move 1 1, move 4"
+    },
+    {
+      "p1": "move 2, move 1 2",
+      "p2": "move 3 -2, switch 4"
+    },
+    {
+      "p1": "switch 4, move 3 1",
+      "p2": "move 2, move 2 1"
+    },
+    {
+      "p1": "pass, switch 4"
+    }
+  ]
+}
