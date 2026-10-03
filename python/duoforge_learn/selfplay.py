@@ -152,6 +152,7 @@ class SelfPlay:
         starts its next episode with its next pairing."""
         if not self._observed:
             raise RuntimeError("step() answers the boundary of observe(): call observe() first")
+        self._observed = False  # also when the step below raises: the next step needs a new observe()
         b = self.batch
         choices_of(b, actions, self._choices)
         failed = np.zeros(b.envs, dtype=bool)
@@ -192,7 +193,6 @@ class SelfPlay:
             if self.on_start is not None:
                 self.on_start(envs, self.episodes[envs].copy())
         self._steps[done] = 0
-        self._observed = False  # the next observe() queries the new boundary (one query per step)
         return rewards, done
 
     def close(self):

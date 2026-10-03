@@ -22,6 +22,10 @@
  */
 #include <duoforge/duoforge.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define DUOFORGE_BATCH_MAX_ENVS    65536u
 #define DUOFORGE_BATCH_MAX_WORKERS 256u
 /* The candidate index of a player without a request (duoforge_batch_step_indices). */
@@ -172,5 +176,9 @@ duoforge_status duoforge_batch_reset_setups(duoforge_batch *batch, uint32_t coun
    E_INVARIANT). Writes episodes[env * episodes + k] when the array is given. */
 duoforge_status duoforge_batch_play_random(duoforge_batch *batch, uint32_t episodes, uint32_t max_steps,
                                            duoforge_batch_episode *records);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

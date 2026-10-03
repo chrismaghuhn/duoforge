@@ -280,6 +280,7 @@ class EncodeCTest(unittest.TestCase):
                               prior.Prior({"version": 1, "pastes": 0, "skipped": {}, "levels": [{}, {}, {}, {}]}),
                               _Stats())
         self.assertGreater(len(result.rows), 10)
+        compared = 0
         for row in result.rows:
             for version in VERSIONS:
                 masks = (0,) if version < 3 else (0, features.BASE_VALUE_FEATURES)
@@ -292,6 +293,8 @@ class EncodeCTest(unittest.TestCase):
                     else:
                         self.assertEqual(st, 0)
                         self.assert_same(got, (want[0][0], want[1][0], want[2][0]), f"row {row.point} v{version}")
+                        compared += 1
+        self.assertGreater(compared, 10)
 
     def test_refused_encode_stops_self_play_and_ends_no_episode(self):
         # A network of encoder 2 cannot show Sand: the encode refuses, observe() raises the reference's ValueError,
