@@ -12,6 +12,10 @@
  *     the pivot of a U-turn at the boundary in between is free;
  *   - g41_shadow_tag_ghost: the Ghost and Steel type is free, its partner is not, and the partner's U-turn pivots;
  *   - g41_shadow_tag_soak: Soak makes the Dragon and Ghost type a Water type, trapped from the next turn;
+ *   - g41_shadow_tag_second: the Gengar stands in the second position of its side (a probe that asks only the foe's first position
+ *     finds nobody trapped);
+ *   - g41_shadow_tag_fainted: the foes take down the Gengar's ally and both reserves, then the Gengar itself: with no reserve left the
+ *     fainted Gengar stays in its position, and from the next TURN boundary it traps nobody (the foes' side is free);
  *   - g41_shadow_tag_trace: a Trace copy of Shadow Tag traps the Kingambit beside the Gengar (the Gengar is a holder and exempt),
  *     and the Staraptor beside the Gardevoir (a holder through the copy) is trapped by the Gengar.
  *
@@ -166,6 +170,25 @@ static void expect_turn(df_test *t, const duoforge_context *ctx, const char *nam
     duoforge_battle_destroy(b);
 }
 
+/* The state after `steps` steps is a TURN boundary where positions 2 and 3 (side 1) are trapped or not: the predicate and the
+ * domain of side 1 agree, and nobody on side 0 is trapped (side 1 has no holder). Side 0 may have no reserve left, so its domain is
+ * not asked. */
+static void expect_side1(df_test *t, const duoforge_context *ctx, const char *name, uint32_t steps, bool trapped2, bool trapped3)
+{
+    duoforge_battle *b = replay(t, ctx, name, steps);
+    if (b == NULL) {
+        return;
+    }
+    DF_CHECK_EQ_U64(t, b->boundary_kind, DUOFORGE_BOUNDARY_TURN);
+    DF_CHECK_EQ_U64(t, dfi_switch_trapped(b, 0u) ? 1u : 0u, 0u);
+    DF_CHECK_EQ_U64(t, dfi_switch_trapped(b, 1u) ? 1u : 0u, 0u);
+    DF_CHECK_EQ_U64(t, dfi_switch_trapped(b, 2u) ? 1u : 0u, trapped2 ? 1u : 0u);
+    DF_CHECK_EQ_U64(t, dfi_switch_trapped(b, 3u) ? 1u : 0u, trapped3 ? 1u : 0u);
+    DF_CHECK_EQ_U64(t, offers_switch(t, ctx, b, 1u, 0u) ? 1u : 0u, trapped2 ? 0u : 1u);
+    DF_CHECK_EQ_U64(t, offers_switch(t, ctx, b, 1u, 1u) ? 1u : 0u, trapped3 ? 0u : 1u);
+    duoforge_battle_destroy(b);
+}
+
 /* The state after `steps` steps is a PIVOT boundary of side `side` at `slot`: the switch is offered although the Pokemon is trapped. */
 static void expect_pivot_free(df_test *t, const duoforge_context *ctx, const char *name, uint32_t steps, uint32_t side,
                               uint32_t slot, bool trapped_at_turn)
@@ -205,6 +228,13 @@ static void check_domain(df_test *t)
     /* the Gardevoir has fainted and a Milotic has come in: nothing is copied any more, the Kingambit's side is free and the foes are
      * trapped by the Gengar alone (the trap is recomputed at every TURN boundary) */
     expect_turn(t, ctx, "g41_shadow_tag_trace", 9u, soak);
+    /* the Gengar in the second position: both foes are trapped (a probe of the foe's first position only would miss it) */
+    expect_turn(t, ctx, "g41_shadow_tag_second", 1u, none);
+    expect_turn(t, ctx, "g41_shadow_tag_second", 2u, side1_both);
+    /* the Gengar and its ally have both reserves taken (the Sneasler and the Milotic fell, the Ceruledge stands): the Gengar still
+     * traps at turn 7, and after it fainted with no reserve left (it stays in its position, hp 0) it traps nobody at turn 9 */
+    expect_side1(t, ctx, "g41_shadow_tag_fainted", 7u, true, true);
+    expect_side1(t, ctx, "g41_shadow_tag_fainted", 9u, false, false);
     duoforge_context_destroy(ctx);
 }
 

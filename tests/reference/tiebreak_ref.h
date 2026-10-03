@@ -3037,6 +3037,16 @@ static const df_tb_stop tb_g41_shadow_tag[] = {
     {11u, 0u, 1u, 1u, {4u, 3u}, {697u, 527u}, {0x404f9a2d58a198f0ull, 0x40482d4ce7c5010dull}},
     {12u, 0u, 1u, 1u, {4u, 3u}, {697u, 527u}, {0x404f9a2d58a198f0ull, 0x40482d4ce7c5010dull}},
 };
+static const df_tb_stop tb_g41_shadow_tag_fainted[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1019u, 1096u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {618u, 758u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {618u, 758u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 1u, {3u, 4u}, {365u, 690u}, {0x4043291c077975b9ull, 0x404dd5dc2e5a99d0ull}},
+    {6u, 0u, 2u, 1u, {2u, 4u}, {193u, 620u}, {0x4035a78d644840c7ull, 0x404a3c0ca4587e6bull}},
+    {9u, 0u, 2u, 1u, {1u, 3u}, {152u, 596u}, {0x4030aaaaaaaaaaabull, 0x4049000000000000ull}},
+    {12u, 0u, 2u, 1u, {1u, 3u}, {152u, 596u}, {0x4030aaaaaaaaaaabull, 0x4049000000000000ull}},
+    {13u, 0u, 2u, 1u, {1u, 3u}, {152u, 596u}, {0x4030aaaaaaaaaaabull, 0x4049000000000000ull}},
+};
 static const df_tb_stop tb_g41_shadow_tag_ghost[] = {
     {0u, 0u, 2u, 3u, {6u, 6u}, {1078u, 1083u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {740u, 745u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -3046,6 +3056,15 @@ static const df_tb_stop tb_g41_shadow_tag_ghost[] = {
     {9u, 0u, 1u, 2u, {4u, 4u}, {695u, 610u}, {0x404f8590b21642c8ull, 0x404b350ed8412015ull}},
     {10u, 0u, 1u, 2u, {4u, 4u}, {695u, 610u}, {0x404f8590b21642c8ull, 0x404b350ed8412015ull}},
     {11u, 0u, 1u, 2u, {4u, 4u}, {695u, 550u}, {0x404f8590b21642c8ull, 0x40488890e5f1b968ull}},
+};
+static const df_tb_stop tb_g41_shadow_tag_second[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1078u, 1083u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {740u, 745u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {740u, 745u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 3u, {4u, 4u}, {740u, 745u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {6u, 0u, 2u, 3u, {4u, 4u}, {740u, 745u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {9u, 0u, 2u, 3u, {4u, 4u}, {740u, 745u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {10u, 0u, 2u, 2u, {4u, 4u}, {643u, 745u}, {0x404d6da7c7ef82afull, 0x4050aaaaaaaaaaabull}},
 };
 static const df_tb_stop tb_g41_shadow_tag_soak[] = {
     {0u, 0u, 1u, 3u, {6u, 6u}, {1073u, 1054u}, {0x4059000000000000ull, 0x4059000000000000ull}},
@@ -4773,7 +4792,9 @@ static const df_tb_battle tb_battles[] = {
     {"g39_static_limber", 6u, tb_g39_static_limber, sizeof tb_g39_static_limber / sizeof tb_g39_static_limber[0]},
     {"g39_sturdy", 4u, tb_g39_sturdy, sizeof tb_g39_sturdy / sizeof tb_g39_sturdy[0]},
     {"g41_shadow_tag", 12u, tb_g41_shadow_tag, sizeof tb_g41_shadow_tag / sizeof tb_g41_shadow_tag[0]},
+    {"g41_shadow_tag_fainted", 13u, tb_g41_shadow_tag_fainted, sizeof tb_g41_shadow_tag_fainted / sizeof tb_g41_shadow_tag_fainted[0]},
     {"g41_shadow_tag_ghost", 11u, tb_g41_shadow_tag_ghost, sizeof tb_g41_shadow_tag_ghost / sizeof tb_g41_shadow_tag_ghost[0]},
+    {"g41_shadow_tag_second", 10u, tb_g41_shadow_tag_second, sizeof tb_g41_shadow_tag_second / sizeof tb_g41_shadow_tag_second[0]},
     {"g41_shadow_tag_soak", 9u, tb_g41_shadow_tag_soak, sizeof tb_g41_shadow_tag_soak / sizeof tb_g41_shadow_tag_soak[0]},
     {"g41_shadow_tag_trace", 14u, tb_g41_shadow_tag_trace, sizeof tb_g41_shadow_tag_trace / sizeof tb_g41_shadow_tag_trace[0]},
     {"g4_focus_sash", 4u, tb_g4_focus_sash, sizeof tb_g4_focus_sash / sizeof tb_g4_focus_sash[0]},
@@ -4911,7 +4932,7 @@ static const df_tb_battle tb_battles[] = {
     {"w8_sand_soak", 7u, tb_w8_sand_soak, sizeof tb_w8_sand_soak / sizeof tb_w8_sand_soak[0]},
 };
 
-/* 3426 stops: 142 of an ended battle; decided by the count 915,
- * the HP percentage 1122, the total HP 1186, a tie 61;
- * winners: side 0 1706, side 1 1659, tie 61 */
+/* 3441 stops: 142 of an ended battle; decided by the count 920,
+ * the HP percentage 1123, the total HP 1195, a tie 61;
+ * winners: side 0 1706, side 1 1674, tie 61 */
 #endif

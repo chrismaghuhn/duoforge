@@ -370,7 +370,7 @@ function sampling() {
         if (/switch/.test(text)) {
             s.activeRequest.active[1].trapped = true;
             delete s.activeRequest.active[1].maybeTrapped;
-            s.activeRequest.rqid = 4;
+            s.activeRequest.update = true;
             s.pokemon[1].maybeTrapped = false;
             if (extra) extra(s);
         }
@@ -388,6 +388,9 @@ function sampling() {
     ({side} = sampledSide(hidden(), (t) => !/switch/.test(t), (s, text) => resolve(s, text, (x) => { x.pokemon[0].maybeLocked = false; })));
     side.pokemon[1].maybeTrapped = true;
     check('a flag of another kind changing with it drops the sample', domainSample(side) === null);
+    ({side} = sampledSide(hidden(), (t) => !/switch/.test(t), (s, text) => resolve(s, text, (x) => { delete x.activeRequest.update; })));
+    side.pokemon[1].maybeTrapped = true;
+    check('the change without the update marker drops the sample', domainSample(side) === null);
     ({side} = sampledSide({active: [req({}), req({})]}, () => true, (s, text) => {
         if (/switch/.test(text)) s.activeRequest.active[1].trapped = true; // trapped for sure with no maybeTrapped before
     }));

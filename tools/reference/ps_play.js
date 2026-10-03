@@ -358,9 +358,10 @@ function restoreRequest(side, snapshot) {
 
 // The one change of a request that is no change of the set of choices (step G41, Shadow Tag): a switch of the last active
 // Pokemon that a hidden trap refuses is answered with [Unavailable choice] and an updated request (sim/side.ts:527-534,
-// 984-1000), where that Pokemon's `maybeTrapped` has become `trapped: true` (sim/pokemon.ts:1112-1134). Exactly that and
-// nothing else: the same keys and values elsewhere, a new `rqid` aside, and in the Pokemon's flags `maybeTrapped` going from
-// true to false for the Pokemon whose entry changed that way. Every other change stays a changed request.
+// 984-1000), where that Pokemon's `maybeTrapped` has become `trapped: true` (sim/pokemon.ts:1112-1134) and the request carries
+// `update: true` (sim/side.ts:521-523). Exactly that and nothing else: the same keys and values elsewhere, an `rqid` aside (the
+// pin keeps it, a new one would do), and the maybe-flags of the Pokemon unchanged or `maybeTrapped` going from true to false.
+// Every other change stays a changed request.
 function onlyMaybeTrappedResolved(snapshot, after) {
     const a = JSON.parse(snapshot.json);
     const b = JSON.parse(after.json);
@@ -381,8 +382,10 @@ function onlyMaybeTrappedResolved(snapshot, after) {
         }
     }
     if (resolved === 0) return false;
+    if (a.update !== undefined || b.update !== true) return false;
     delete a.rqid;
     delete b.rqid;
+    delete b.update;
     if (JSON.stringify(a) !== JSON.stringify(b)) return false;
     for (let i = 0; i < snapshot.flags.length; i++) {
         const [mt0, md0, ml0] = snapshot.flags[i];
