@@ -32,6 +32,10 @@ USER_AGENT = "DuoForgeBot/1 (research bot; github.com/chrismaghuhn/duoforge)"  #
 SHEET_WAIT = 60.0  # seconds after the team preview request (the VGC timer gives 90)
 ACCEPT_WAIT = 30.0  # seconds for the battle room after an accept; none comes when the challenger cancelled
 MAX_REJECTIONS = 64
+# Showdown hides two facts of a move request, both of the last active (Pokemon.getMoveRequestData,
+# sim/pokemon.ts:1112-1134): a trap and disabled moves. Each "[Unavailable choice]" reveals one in an updated
+# request, so a third at one decision point means the bot misread a request.
+MAX_UNAVAILABLE = 2
 
 GREETING = "Hi! DuoForge bot here, good luck!"
 GG = "gg"
@@ -112,6 +116,7 @@ class _Battle:
         self.candidates = []
         self.index = 0
         self.rejections = 0
+        self.unavailable = 0  # refused unavailable choices at the current decision point
         self.pending = None  # the choice sent last, accepted once the battle goes on
         self.stopped = False  # forfeited or ended: no more choices
         self.ended = False
@@ -308,6 +313,8 @@ class Bot:
                 await self._forfeit(b, self._sheets_message(), "the foe's team is not Team A or B")
                 return
         if game.asked() and game.epoch > b.decided:
+            if not r.get("update"):  # an updated request is the same decision point
+                b.unavailable = 0
             b.decided = game.epoch
             b.candidates = game.candidates()
             b.index = b.rejections = 0
@@ -331,8 +338,15 @@ class Bot:
                 return
             b.index += 1
             await self._choose(b)
+        elif line.startswith("|error|[Unavailable choice]") and b.pending is not None:
+            # The updated request follows (tracker module docstring); the choice is made again from it.
+            b.write({"unavailable": b.pending, "error": line})
+            b.pending = None
+            b.unavailable += 1
+            if b.unavailable > MAX_UNAVAILABLE:
+                await self._forfeit(b, INTERNAL, f"{b.unavailable} unavailable choices")
         elif line.startswith("|error|[Unavailable choice]"):
-            await self._forfeit(b, INTERNAL, f"an unavailable choice: {line}")
+            await self._forfeit(b, INTERNAL, f"an unavailable choice without a choice sent: {line}")
 
     async def _forfeit(self, b, message, cause):
         if b.stopped:

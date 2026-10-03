@@ -349,8 +349,9 @@ class TrackerTest(unittest.TestCase):
 
     def test_session_lines_raise(self):
         # A reconnect replays the whole log after |init|, a choice already sent shows |sentchoice|, an updated
-        # request (update: true) or one without rqid cannot be placed, and the end of the session ends the
-        # battle: each raises instead of folding something wrong.
+        # request (update: true) after battle lines (it updates no current request) or a request without rqid
+        # cannot be placed, and the end of the session ends the battle: each raises instead of folding something
+        # wrong.
         battle = self.ref.battles[0]
         stream = [list(lines) for lines in battle.streams[0]]
         last = max(i for i, lines in enumerate(stream) if any(line.startswith("|turn|") for line in lines))
@@ -371,6 +372,54 @@ class TrackerTest(unittest.TestCase):
                 lines.append(line)
             with self.assertRaises(ValueError, msg=change):
                 run_tracker(battle, 0, stream[:request] + [lines] + stream[request + 1:])
+
+    def test_updated_request_is_a_new_epoch_of_the_same_decision_point(self):
+        # Showdown refuses a switch of a hidden-trapped last active with "[Unavailable choice]" and sends the move
+        # request again under a new rqid, the slot now trapped (sim/side.ts:527-534, 984-1000). The tracker takes it
+        # as a new request epoch of the same decision point: the observation stays but for its epoch, and the
+        # options follow the update.
+        from duoforge_live.tracker import Tracker
+        battle = self.ref.battles[0]
+        tracker, done = Tracker(self.ref.data, battle.spec["teams"][0]), 0
+        for lines in battle.streams[0]:
+            tracker.feed(lines)
+            if tracker.ready and tracker.epoch > done:
+                done = tracker.epoch
+                if "active" in tracker.request:
+                    break
+                step = battle.trace["steps"][done - 1]
+                if "p1" in step["input"]:
+                    tracker.accepted(step["input"]["p1"])
+        self.assertIn("active", tracker.request)
+        before, (_, lists_before) = tracker.observation().copy(), tracker.domain()
+        self.assertIn(options.SWITCH, [o.kind for o in lists_before[1]])
+        update = json.loads(json.dumps(tracker.request))
+        update["active"][1]["trapped"] = True
+        update.update(update=True, rqid=update["rqid"] + 100)
+        tracker.feed(["|request|" + json.dumps(update)])
+        self.assertTrue(tracker.ready)
+        dom, lists = tracker.domain()
+        after = tracker.observation()
+        self.assertEqual((int(after["epoch"]), int(dom["epoch"])), (int(before["epoch"]) + 1,) * 2)
+        before["epoch"] = after["epoch"]
+        self.assertFalse(differences(after, before))
+        self.assertEqual(lists[0], lists_before[0])
+        self.assertEqual(lists[1], [o for o in lists_before[1] if o.kind != options.SWITCH])
+        # An updated request that is no update of the current move request raises: another side, or a request at
+        # team preview (battle lines between: test_session_lines_raise).
+        other = json.loads(json.dumps(update))
+        other["side"]["pokemon"][0]["condition"] = "1/999"
+        other["rqid"] += 1
+        with self.assertRaisesRegex(ValueError, "updated request"):
+            tracker.feed(["|request|" + json.dumps(other)])
+        preview = Tracker(self.ref.data, battle.spec["teams"][0])
+        for lines in battle.streams[0]:
+            preview.feed(lines)
+            if preview.request is not None:
+                break
+        self.assertTrue(preview.request.get("teamPreview"))
+        with self.assertRaisesRegex(ValueError, "updated request"):
+            preview.feed(["|request|" + json.dumps(dict(preview.request, update=True, rqid=999))])
 
 
 if __name__ == "__main__":

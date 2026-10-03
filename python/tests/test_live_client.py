@@ -19,6 +19,8 @@ from duoforge_live import client, data, teams
 FIXTURE = json.loads((data.ROOT / "python" / "tests" / "data" / "live_stream_ab.json").read_text(encoding="utf-8"))
 ROOM = "battle-gen9championsvgc2026regmc-1"
 FOE = "chris"
+# Showdown's refusal of a switch of a hidden-trapped last active (Side.emitChoiceError, sim/side.ts:527-534, 984-1000).
+UNAVAILABLE = "|error|[Unavailable choice] Can't switch: The active Pokémon is trapped"
 
 
 class FakePolicy:
@@ -187,10 +189,61 @@ class ClientTest(unittest.TestCase):
         self.assertEqual(self.server.take()[-2:], [f"{ROOM}|{client.INTERNAL}", f"{ROOM}|/forfeit"])
         self.assertEqual(client.INTERNAL, "Internal error on my side, sorry. Forfeiting.")
 
-    def test_unavailable_choice_is_an_internal_error(self):
+    def unavailable(self, rqid, message=5):
+        """Showdown's answer to a switch of a hidden-trapped last active (Shadow Tag, Arena Trap, Magnet Pull): the
+        refusal, then the move request of fixture message `message` again under a new rqid, its last active now
+        trapped (Side.emitRequest with update)."""
+        request = next(json.loads(line[len("|request|"):]) for line in FIXTURE["messages"][message]
+                       if line.startswith("|request|"))
+        request["active"][1]["trapped"] = True
+        request.update(update=True, rqid=rqid)
+        self.feed(room([UNAVAILABLE]))
+        self.assertEqual(self.server.take(), [])  # the next choice waits for the updated request
+        self.feed(room(["|request|" + json.dumps(request)]))
+
+    def log(self):
+        path = Path(self.tmp.name, ROOM + "-duoforgebot.jsonl")
+        return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+
+    def test_unavailable_choice_chooses_again_from_the_updated_request(self):
+        self.start_battle(upto=6)
+        first = [s for s in self.server.take() if "/choose" in s][-1]
+        self.assertTrue(first.endswith("|3"), first)
+        self.unavailable(4)
+        again = self.server.take()
+        self.assertEqual(len(again), 1, again)
+        self.assertTrue(again[0].startswith(f"{ROOM}|/choose ") and again[0].endswith("|4"), again)
+        log = self.log()
+        self.assertIn({"unavailable": first[len(f"{ROOM}|/choose "):-len("|3")], "error": UNAVAILABLE}, log)
+        self.assertEqual(log[-1]["decision"], 4)
+        self.feed(room(FIXTURE["messages"][6]))  # the turn: the second choice was taken
+        self.feed(room(FIXTURE["messages"][7]))
+        sent = self.server.take()
+        self.assertEqual(len(sent), 1, sent)
+        self.assertTrue(sent[0].startswith(f"{ROOM}|/choose ") and sent[0].endswith("|5"), sent)
+
+    def test_unavailable_choices_are_bounded_per_decision_point(self):
+        # Showdown hides two facts of a move request, both of the last active (Pokemon.getMoveRequestData,
+        # sim/pokemon.ts:1112-1134): a trap and disabled moves, each revealed by one refusal. A third refusal at one
+        # decision point is an internal error; the next request starts the count again.
         self.start_battle(upto=6)
         self.server.take()
-        self.feed(room(["|error|[Unavailable choice] Can't move: no."]))
+        self.unavailable(4)
+        self.feed(room(FIXTURE["messages"][6]))
+        self.feed(room(FIXTURE["messages"][7]))  # turn 2 (rqid 5): a new decision point
+        self.server.take()
+        for rqid in (6, 7):
+            self.unavailable(rqid, message=7)
+            sent = self.server.take()
+            self.assertEqual(len(sent), 1, sent)
+            self.assertTrue(sent[0].endswith(f"|{rqid}"), sent)
+        self.feed(room([UNAVAILABLE]))
+        self.assertEqual(self.server.take()[-2:], [f"{ROOM}|{client.INTERNAL}", f"{ROOM}|/forfeit"])
+
+    def test_unavailable_choice_without_a_pending_choice_is_an_internal_error(self):
+        self.start_battle(upto=7)  # turn 1 went on: the choice was taken, the next request has not come
+        self.server.take()
+        self.feed(room([UNAVAILABLE]))
         self.assertEqual(self.server.take()[-2:], [f"{ROOM}|{client.INTERNAL}", f"{ROOM}|/forfeit"])
 
     def test_chat_between_update_and_request(self):
