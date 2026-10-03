@@ -91,6 +91,44 @@ class LossTest(unittest.TestCase):
         self.assertIn("point 1", str(caught.exception))
 
 
+class ZeroColumnsJaxTest(unittest.TestCase):
+    """Learner v2's review: zero_columns keeps every output identical on rows whose new columns are 0."""
+
+    def check(self, cfg):
+        import jax
+        from duoforge import features
+        from duoforge_learn import checkpoint, policy
+        net = policy.make(cfg)
+        params = jax.device_get(net.init(jax.random.PRNGKey(3)))
+        config = {"model": cfg, "features": list(features.FEATURE_NAMES),
+                  "slot_features": list(features.SLOT_FEATURE_NAMES)}
+        new = features.columns_of(1 << features.FEATURE_BITS["WIDE_GUARD"] | 1 << features.FEATURE_BITS["AILMENT_TOX"])
+        zeroed = checkpoint.zero_columns(params, config, new)
+        rng = np.random.default_rng(1)
+        n = 6
+        obs = rng.random((n, features.OBS_SIZE)).astype(np.float32) * 0.3
+        obs[:, [features.FEATURE_NAMES.index(c) for c in new]] = 0.0
+        if cfg["version"] == 2:
+            from duoforge_learn import columns
+            cols = columns.columns()
+            for idx in (cols.present, cols.species, cols.item, cols.ability, cols.nature, cols.moves, cols.pp,
+                        cols.move_count):
+                obs[:, np.asarray(idx).ravel()] = 0.0  # ids stay inside the capacities
+        slots = rng.random((n, 2, 32, features.SLOT_FEATURES)).astype(np.float32)
+        mask = rng.random((n, 32, 32)) < 0.5
+        mask[:, 0, 0] = True
+        for a, b in zip(net.apply(params, obs, slots, mask), net.apply(zeroed, obs, slots, mask)):
+            np.testing.assert_allclose(np.asarray(a), np.asarray(b), rtol=1e-6, atol=1e-6)
+
+    def test_v1(self):
+        from duoforge_learn import policy
+        self.check(dict(policy.V1_DEFAULT))
+
+    def test_v2_s(self):
+        from duoforge_learn import policy
+        self.check(policy.v2_config("S"))
+
+
 class TrainerTest(unittest.TestCase):
     """bc.main on a fixture dataset: 3 training games and 1 validation game of our own reference battle."""
 

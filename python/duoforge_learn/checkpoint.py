@@ -214,22 +214,37 @@ def widen(tree, config, feature_names, slot_names, capacities=None, fill="init",
     return out, new_config
 
 
+def _sources(cfg, feature_names, slot_names):
+    """The observation columns feeding each row of _rows (columns.input_sources; v1: one column per row of t1)."""
+    if cfg["version"] == 1:
+        return {("t1",): [{i} for i in range(len(feature_names))],
+                ("option_features",): [set() for _ in slot_names]}
+    return columns.input_sources(cfg, columns.columns(feature_names, slot_names), feature_names, slot_names)
+
+
 def zero_columns(tree, config, names):
-    """A copy of tree in which every input row that reads one of the feature columns `names` is 0 (M11 BC spec
-    section 8): a network that never saw those columns set starts identical when they come on, and learns them from
-    zero. The rows are found as widen finds them (_rows, by label): a column shared by every member or position
-    (model v2) zeroes the shared row. ValueError for a name that is not a feature column of config."""
-    names = list(names)
-    unknown = [n for n in names if n not in config["features"]]
+    """A copy of tree in which every input row fed by the feature columns `names` is 0 (M11 BC spec section 8): a
+    network that never saw those columns set starts identical when they come on, and learns them from zero.
+    Exact only when every column feeding a zeroed row is one of `names`: model v2 shares a row among every member's
+    (or position's) column of a field, and zeroing it under a column that was on before would change the outputs in
+    silence, so that is a ValueError naming such a column, as is a name that is not a feature column of config."""
+    features_ = list(config["features"])
+    index = {n: i for i, n in enumerate(features_)}
+    unknown = [n for n in names if n not in index]
     if unknown:
         raise ValueError(f"{unknown[0]!r} is not a feature column of the checkpoint")
+    marked = {index[n] for n in names}
     cfg = config["model"]
-    marked = set(names)
-    plain = _rows(cfg, config["features"], config["slot_features"])
-    moved = _rows(cfg, [n + "#zero" if n in marked else n for n in config["features"]], config["slot_features"])
+    labels = _rows(cfg, features_, config["slot_features"])
+    sources = _sources(cfg, features_, config["slot_features"])
     out = _copy(tree)
-    for path, labels in plain.items():
-        rows = [i for i, (a, b) in enumerate(zip(labels, moved[path])) if a != b]
+    for path, fed in sources.items():
+        rows = [r for r, cols in enumerate(fed) if cols & marked]
+        for r in rows:
+            outside = sorted(fed[r] - marked)
+            if outside:
+                raise ValueError(f"row {labels[path][r]!r} of layer {path} is also fed by {features_[outside[0]]!r}, "
+                                 "which is not being switched on: zeroing it would change the outputs")
         if rows:
             layer = _get(out, path)
             w = np.array(layer["w"], copy=True)

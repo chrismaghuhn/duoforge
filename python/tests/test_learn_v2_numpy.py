@@ -162,6 +162,30 @@ class ZeroColumnsTest(unittest.TestCase):
             # the input is not changed in place
             self.assertTrue(any(checkpoint._get(params, p)["w"].any() for p in rows))
 
+    def test_zero_columns_refuses_a_shared_row_fed_by_other_columns(self):
+        # model v2 shares one input row per member field for all twelve members: zeroing it for one member's column
+        # only would change the outputs of the other eleven in silence (Learner v2's review)
+        params, _ = _v2_rows_tree(np.random.default_rng(4), _V2)
+        with self.assertRaisesRegex(ValueError, "ext.own.mem1.tox"):
+            checkpoint.zero_columns(params, _config(model=_V2), ["ext.own.mem0.tox"])
+        out = checkpoint.zero_columns(params, _config(model=_V2), features.columns_of(1 << features.FEATURE_BITS["AILMENT_TOX"]))
+        self.assertIsNotNone(out)
+
+    def test_input_sources_match_input_rows(self):
+        cols = columns.columns(features.FEATURE_NAMES, features.SLOT_FEATURE_NAMES)
+        rows = columns.input_rows(_V2, cols, features.FEATURE_NAMES, features.SLOT_FEATURE_NAMES)
+        sources = columns.input_sources(_V2, cols, features.FEATURE_NAMES, features.SLOT_FEATURE_NAMES)
+        self.assertEqual({p: len(r) for p, r in rows.items()}, {p: len(s) for p, s in sources.items()})
+        for path, labels in rows.items():
+            for label, fed in zip(labels, sources[path]):
+                if label.startswith("#") or path == ("option1",):
+                    self.assertEqual(fed, set(), (path, label))
+                else:
+                    # every member (both sides: 12) or position (4) feeds its field's shared row; a torso row one column
+                    field = label.split(".")[-1]
+                    self.assertTrue(all(features.FEATURE_NAMES[i].split(".")[-1] == field for i in fed), (path, label))
+                    self.assertEqual(len(fed), {("member1",): 12, ("position",): 4}.get(path, 1), (path, label))
+
     def test_zero_columns_unknown_name_raises(self):
         with self.assertRaisesRegex(ValueError, "ext.nonsense"):
             checkpoint.zero_columns(_v1_params(np.random.default_rng(1)), _config(), ["ext.nonsense"])
