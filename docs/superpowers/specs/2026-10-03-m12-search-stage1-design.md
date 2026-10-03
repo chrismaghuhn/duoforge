@@ -119,35 +119,54 @@ The search takes, per decision, a list of weighted root states. Stage 1 passes o
 
 ### 4.3 The engine call (decision 0022)
 
+**Status of this section.** It is written against the C encoder's interface on the branch `chris/encoder-in-c` at 8515e21: `include/duoforge/duoforge_encode.h`, `docs/decisions/0021-encoder-in-c.md` and `docs/superpowers/specs/2026-10-03-encoder-in-c-design.md`. The layout is fixed: encoder 4, decision 0018 §10.2, obs width 850. Once 0021 is merged, this section is checked against `main` again. At most a detail should change, for example a parameter name or the refusal order.
+
+**Declarations** (in `include/duoforge/duoforge_search.h`, which includes `duoforge_encode.h`):
+
+```c
+/* The leaf seeds of (seed, key, sample): rng_initstate and an rng_initseq
+   below 2^63 (decision 0001), splitmix64 with the tags of decision 0022. */
+void duoforge_search_seeds(uint64_t seed, uint64_t key, uint32_t sample,
+                           uint64_t *out_initstate, uint64_t *out_initseq);
+
+duoforge_status duoforge_batch_expand(
+    duoforge_batch *leaves, const duoforge_batch *roots,
+    uint32_t version, uint64_t ext_supported, uint64_t seed,
+    const duoforge_request *root_requests,          /* 2 * root envs, as the roots' query wrote them */
+    const duoforge_factored_domain *root_domains,   /* 2 * root envs, likewise */
+    const uint64_t *keys,                           /* root envs: the decision key */
+    const uint8_t *viewers,                         /* root envs: the searching seat, 0 or 1 */
+    uint32_t count,                                 /* leaves, at most the leaf batch's env_count */
+    const uint32_t *root_envs,                      /* count: the root environment of leaf i */
+    const uint32_t *samples,                        /* count: the sample index */
+    const duoforge_factored_choice *choices,        /* 2 * count: player p's choice at 2 * i + p */
+    duoforge_status *step_statuses,                 /* count */
+    duoforge_status *encode_statuses,               /* count */
+    duoforge_step_result *results,                  /* count */
+    uint32_t *leaf_results,                         /* count: DUOFORGE_RESULT_* at TERMINAL, else 0 */
+    float *obs);                                    /* count * duoforge_encoder_size(version) */
+```
+
 **Inputs**
-- **The leaf batch:** an ordinary batch of L environments, created once with the roots' context. Every leaf environment is overwritten at each call, so its setup does not matter.
-- **The root batch:** in stage 1 this is the arena batch itself.
-- **Per root:** both players' requests and factored domains, as the root's query returned them (as `duoforge_batch_step_factored` takes them).
-- **Per leaf:**
-  - its root environment;
-  - both players' factored choices (none for a player without a request);
-  - the sample index;
-  - the root's decision key;
-  - the viewer, that is the searching seat.
-- **The search seed.**
+- **The leaf batch:** an ordinary batch of L environments, created once with the roots' context. Leaf i is environment i. Every leaf environment is overwritten at each call, so its setup does not matter.
+- **The root batch:** in stage 1 this is the arena batch itself. `root_requests` and `root_domains` are the arrays its `duoforge_batch_query_encoded` (or `_query_factored`) wrote, indexed 2 · env + p as there. `keys` and `viewers` are read only for root environments that some leaf names.
+- **Choices:** a player whose root request has `requested` 0 gets no response, and its choice entry is ignored, as in `duoforge_batch_step_factored`.
 
 **Per leaf**, on the leaf batch's workers, in one pass:
 1. The leaf environment becomes a copy of its root (`duoforge_battle_copy`, no allocation).
-2. It is reseeded with the seeds of (search seed, decision key, sample) (section 6).
-3. It is stepped with the bundle of the two factored choices. The bundle is built and checked exactly as `duoforge_batch_step_factored` builds it.
-4. It writes:
-   - its status;
-   - the step result (the new boundary and the request mask);
-   - the result DUOFORGE_RESULT_* if the leaf is TERMINAL, else 0;
-   - the viewer's observation row as decision 0021's `duoforge_batch_query_encoded` encodes it, in the searcher's encoder version and view-extension mask.
+2. It is reseeded with `duoforge_search_seeds(seed, keys[root], samples[i])` (section 6).
+3. It is stepped with the bundle of the two factored choices. The bundle is built and checked exactly as `duoforge_batch_step_factored` builds it. `step_statuses[i]` and `results[i]` receive the outcome.
+4. If the step succeeded and the leaf is TERMINAL: `leaf_results[i]` is its result, the obs row is all zero and `encode_statuses[i]` is OK. A TERMINAL leaf is scored by its result and needs no row.
+5. Otherwise the viewer's request, observation, factored domain and view extension are taken as `duoforge_batch_query_encoded` takes them for one player. `duoforge_encode(version, ext_supported, …)` then writes obs row i. The slots and pair mask the encoder also produces go to the leaf batch's per-worker scratch and are not returned.
 
 **Contract**
-- Outcomes are atomic per leaf, as in decision 0012. The call returns the status of the lowest failing leaf.
-- The call only reads the roots, and the roots must not change during it.
-- No allocation per call: the leaf batch, its scratch and the output arrays exist before the call.
-- Every leaf equals the single-battle sequence copy, reseed, step, encode, for every worker count.
-- An encoder version or mask the C encoder does not support is refused before any leaf is touched.
-- The exact signature is fixed in the plan, once 0021's encoded layout is on `main`.
+- **Atomic per leaf**, as in decision 0012. Two status arrays keep the engine's refusals apart from the encoder's: a failed step leaves `encode_statuses[i]` OK and the row all zero. The call returns the lowest failing leaf's step status, else its encode status, else OK.
+- **The roots are only read** and must not change during the call. Only one caller uses either batch at a time.
+- **No allocation per call:** the leaf batch, its scratch (with the slots and mask scratch reserved at creation) and the output arrays exist before the call.
+- **Equivalence:** leaf i equals `duoforge_battle_copy`, `duoforge_battle_reseed`, the factored step and then `duoforge_batch_query_encoded`'s row of the viewer for that environment, byte for byte, for every worker count.
+- **Checks before any leaf is touched:**
+  - an unknown version, or a mask past the version, is E_INVALID_ARGUMENT, exactly as `duoforge_encode` checks it;
+  - a NULL pointer, a count past the leaf batch, a root environment past the root batch, a viewer other than 0 or 1, or batches of different contexts are E_NULL_ARGUMENT, E_INVALID_ARGUMENT or E_CONTEXT_MISMATCH.
 
 ### 4.4 Cost per decision
 
@@ -156,7 +175,7 @@ The estimate is for the main budget: K = M = 8 and S = 16, so 1024 leaves. It is
 | Part | Estimate |
 |---|---|
 | Value of v2-M on 1024 rows, GPU | at most 5.7 ms (2 × 2.87 ms for 512 rows) |
-| Engine and C encoder, 1024 leaves on 8 workers | about 1 ms (about 4 to 7 µs per leaf on one core; POOL states and the C encoder are not yet measured) |
+| Engine and C encoder, 1024 leaves on 8 workers | about 1 to 1.5 ms (copy, step, then the viewer's request, observation, domain, extension and encoding: about 6 to 9 µs per leaf on one core, from the rates of section 3; POOL states and the C encoder are not yet measured) |
 | Nash solution of an 8 × 8 table | under 1 ms |
 | Root policy of both seats | one call shared by all games of a round |
 | **Total** | **about 8 ms per decision** |
@@ -256,7 +275,8 @@ Every case is explicit and counted. There is no fallback to the raw network insi
 | Leaf refused (E_UNSUPPORTED) | value −1, marked refused. The arena scores a game the engine refuses as the agent's loss, and the leaf is scored the same way |
 | Leaf E_INVARIANT | the run stops; the root's bytes (privileged encode), the pair and the seeds are written for reproduction |
 | Leaf E_INVALID_ARGUMENT, E_STALE_EPOCH, E_CAPACITY or E_EXHAUSTED | the run stops: a bug in the caller, or a counter overflow |
-| The C encoder refuses (encoder version, mask, an id) | the run stops before any leaf |
+| The C encoder refuses the version or mask | the run stops before any leaf (checked once per call) |
+| The C encoder refuses a leaf's row (`encode_statuses[i]`: a value the mask cannot show, such as Sand without its bit, or a malformed record) | the run stops and writes the leaf's reproduction data. The network cannot read that state, and scoring it −1 would bias the search against the moves that lead there |
 | An id the model cannot embed (`Model.check`) | the run stops, as the arena does today |
 | The Nash certificate is missed | the run stops and writes the table |
 | Root TEAM_SELECTION, forced or not requested | section 5.7 |
@@ -402,6 +422,8 @@ Each searched decision gets a record; the report summarizes the records:
 ## 12. Coordination
 
 - **Order:** decision 0021's `duoforge_batch_query_encoded` lands on `main` first. Decision 0022 follows with the plan.
+  - The plan may be written before that, against `chris/encoder-in-c` at 8515e21 (section 4.3).
+  - After 0021 is merged, section 4.3 and the plan are checked against `main` once more.
 - **API approval:** `duoforge_batch_expand` and the seed function are public API additions. The owner approved approach A in principle on 2026-10-03; decision 0022 records the final approval.
 - **Process:** the implementation plan follows only after the owner approves this spec. The HauptSession merges.
 - **Runs:** in the daytime only; no GPU from 21:30 to 06:00.
