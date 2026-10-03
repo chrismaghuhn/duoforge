@@ -5,6 +5,7 @@
 #include "duoforge/duoforge.h"
 #include "duoforge/duoforge_batch.h"
 #include "duoforge/duoforge_encode.h"
+#include "duoforge/duoforge_search.h"
 
 int main()
 {
