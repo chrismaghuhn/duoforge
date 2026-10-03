@@ -313,6 +313,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_POISONTOUCH] = 1u,
             [DFI_ABILITY_THERMALEXCHANGE] = 1u,
             [DFI_ABILITY_STICKYHOLD] = 1u,
+            [DFI_ABILITY_LEVITATE] = 1u,
         },
     .items =
         {
@@ -339,6 +340,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_BAXCALIBRITE] = 1u,
             [DFI_ITEM_AERODACTYLITE] = 1u,
             [DFI_ITEM_MANECTITE] = 1u,
+            [DFI_ITEM_CHARIZARDITEX] = 1u,
+            [DFI_ITEM_GARCHOMPITEZ] = 1u,
             [DFI_ITEM_GARDEVOIRITE] = 1u,
             [DFI_ITEM_ABOMASITE] = 1u,
             [DFI_ITEM_BARBARACITE] = 1u,
