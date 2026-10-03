@@ -41,8 +41,8 @@
 #include "support/pool.h"
 #include "support/team_c.h"
 
-#define FP_KP_HEX "54371f4f50f909be881fd61ffcb0351c0521fe3b1a429222ca8c3c93e74826ce"
-#define FP_KPD_HEX "c9c27470d0187121486cf42d7cf7e8aa51e9a705551cdcf27a75a156d7b46b1b"
+#define FP_KP_HEX "154831c41884137011f6a6055408fa10e38ee04e0ba9bc4733aa25563db4426a"
+#define FP_KPD_HEX "c8d1c5c50ae7970fab6231c23693afdbcaca2a42e986b1ec6f8e28c5dd5b0406"
 
 /* The public create under `ctx` gives `gated`, and the build without the
  * support gate `ungated`. */
@@ -326,13 +326,13 @@ int main(void)
         DF_CHECK(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_CLOSURE_DEV).dev &&
                          dfi_kind_limits_of(DUOFORGE_DATA_KIND_TEAM_C_DEV).dev);
         /* The pool has U-turn's switch flag (step G5) on top of Team C's; everything else of Team C's is the pool's. */
-        DF_CHECK(&t, lp.switch_flag_max == DFI_SWITCH_UTURN && lc.switch_flag_max == DFI_SWITCH_FLIP_TURN &&
-                         DFI_SWITCH_UTURN == DFI_SWITCH_FLIP_TURN + 1u);
-        DF_CHECK(&t, lp.status_max == lc.status_max && lp.terrain_max == lc.terrain_max &&
-                         lp.vol_flags_mask == lc.vol_flags_mask);
-        DF_CHECK(&t, lq.switch_flag_max == lp.switch_flag_max && lq.status_max == lc.status_max &&
+        DF_CHECK(&t, lp.switch_flag_max == DFI_SWITCH_VOLT_SWITCH && lc.switch_flag_max == DFI_SWITCH_FLIP_TURN &&
+                         DFI_SWITCH_UTURN == DFI_SWITCH_FLIP_TURN + 1u && DFI_SWITCH_VOLT_SWITCH == DFI_SWITCH_UTURN + 1u);
+        DF_CHECK(&t, lp.status_max == DFI_STATUS_TOX && lc.status_max == DFI_STATUS_PSN && lp.terrain_max == lc.terrain_max &&
+                         lp.vol_flags_mask == lc.vol_flags_mask); /* step G36: badly poisoned is the pool's alone */
+        DF_CHECK(&t, lq.switch_flag_max == lp.switch_flag_max && lq.status_max == lp.status_max &&
                          lq.terrain_max == lc.terrain_max && lq.vol_flags_mask == lc.vol_flags_mask);
-        DF_CHECK(&t, lp.switch_flag_max == DFI_SWITCH_UTURN && lp.status_max == DFI_STATUS_PSN &&
+        DF_CHECK(&t, lp.switch_flag_max == DFI_SWITCH_VOLT_SWITCH && lp.status_max == DFI_STATUS_TOX &&
                          lp.terrain_max == DFI_TERRAIN_PSYCHIC && l1.switch_flag_max == DFI_SWITCH_FAINTED &&
                          l1.status_max == DFI_STATUS_SLP && l1.terrain_max == DFI_TERRAIN_GRASSY);
     }
@@ -661,13 +661,13 @@ int main(void)
                 legal(&t, kp, &s, arcanine[i].supported == 1, arcanine[i].what);
             }
         }
-        /* Focus Sash is marked in G4, Expert Belt is not, and a genderless Arcanine-Hisui is not legal. */
+        /* Focus Sash is marked in G4, Scope Lens is not, and a genderless Arcanine-Hisui is not legal. */
         s = teams;
         s.sides[1].members[0] = member_of(tpl, DFI_FORME_ARCANINEHISUI, DFI_ABILITY_INTIMIDATE, DFI_ITEM_FOCUSSASH + 1u,
                                           4u, arcanine_moves);
         legal(&t, kp, &s, true, "Arcanine-Hisui with a Focus Sash");
-        s.sides[1].members[0].item = DFI_ITEM_EXPERTBELT + 1u;
-        legal(&t, kp, &s, false, "Arcanine-Hisui with an Expert Belt");
+        s.sides[1].members[0].item = DFI_ITEM_SCOPELENS + 1u;
+        legal(&t, kp, &s, false, "Arcanine-Hisui with a Scope Lens");
         s.sides[1].members[0].item = 0u;
         legal(&t, kp, &s, true, "Arcanine-Hisui without an item");
         s.sides[1].members[0].gender = DUOFORGE_GENDER_NONE;
@@ -967,8 +967,10 @@ int main(void)
             w->sides[0].members[0].status_counter = 1u;
             expect_inv(&t, kinds[i], w, DFI_INV_MEMBER_EXTRA, "poison with a counter");
             w->sides[0].members[0].status_counter = 0u;
-            w->sides[0].members[0].status = (uint8_t)(DFI_STATUS_PSN + 1u);
-            expect_inv(&t, kinds[i], w, DFI_INV_MEMBER_EXTRA, "status 6");
+            w->sides[0].members[0].status = (uint8_t)DFI_STATUS_TOX;
+            expect_inv(&t, kinds[i], w, kinds[i] == kp || kinds[i] == kq ? DFI_INV_NONE : DFI_INV_MEMBER_EXTRA, "tox");
+            w->sides[0].members[0].status = (uint8_t)(DFI_STATUS_TOX + 1u);
+            expect_inv(&t, kinds[i], w, DFI_INV_MEMBER_EXTRA, "status 7");
             w->sides[0].members[0].status = 0u;
             w->terrain = (uint8_t)DFI_TERRAIN_PSYCHIC;
             w->terrain_turns = 5u;
@@ -1033,7 +1035,7 @@ int main(void)
      * (E_UNSUPPORTED), and this test says so before. Parting Shot (a handler, flag 1), Emergency Exit (2) and a
      * fainted position (3) are no damaging pivots. */
     {
-        DF_CHECK_EQ_U64(&t, DFI_PIVOT_MOVE_COUNT, 2u);
+        DF_CHECK_EQ_U64(&t, DFI_PIVOT_MOVE_COUNT, 3u);
         for (uint32_t i = 0u; i < DFI_PIVOT_MOVE_COUNT; ++i) {
             const dfi_pivot_move *pm = &dfi_pivot_moves[i];
             DF_CHECK_EQ_U64(&t, pm->flag, DFI_SWITCH_FLIP_TURN + i);
@@ -1045,6 +1047,7 @@ int main(void)
         }
         DF_CHECK_EQ_U64(&t, dfi_pivot_moves[0].move, DFI_MOVE_FLIPTURN);
         DF_CHECK_EQ_U64(&t, dfi_pivot_moves[1].move, DFI_MOVE_UTURN);
+        DF_CHECK_EQ_U64(&t, dfi_pivot_moves[2].move, DFI_MOVE_VOLTSWITCH); /* step G32 */
         for (uint32_t id = 0u; id < DFI_POOL_MOVE_COUNT; ++id) {
             const bool pivots = (dfi_pool_moves[id].flags & DFI_MOVE_FLAG_SELF_SWITCH) != 0u &&
                                 dfi_pool_moves[id].special == DFI_SPECIAL_NONE;
@@ -1055,11 +1058,11 @@ int main(void)
         DF_CHECK(&t, dfi_pivot_of_move(DFI_MOVE_PARTINGSHOT) == NULL);
         DF_CHECK(&t, dfi_pivot_of_flag(DFI_SWITCH_NONE) == NULL && dfi_pivot_of_flag(DFI_SWITCH_MOVE) == NULL &&
                          dfi_pivot_of_flag(DFI_SWITCH_EMERGENCY_EXIT) == NULL &&
-                         dfi_pivot_of_flag(DFI_SWITCH_FAINTED) == NULL && dfi_pivot_of_flag(DFI_SWITCH_UTURN + 1u) == NULL);
+                         dfi_pivot_of_flag(DFI_SWITCH_FAINTED) == NULL && dfi_pivot_of_flag(DFI_SWITCH_VOLT_SWITCH + 1u) == NULL);
         /* The kinds: U-turn's flag is the POOL kinds' alone, Flip Turn's the extended ones'. */
         DF_CHECK_EQ_U64(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_TEAM_C).switch_flag_max, DFI_SWITCH_FLIP_TURN);
         DF_CHECK_EQ_U64(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_TEAM_C_DEV).switch_flag_max, DFI_SWITCH_FLIP_TURN);
-        DF_CHECK_EQ_U64(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_POOL_DEV).switch_flag_max, DFI_SWITCH_UTURN);
+        DF_CHECK_EQ_U64(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_POOL_DEV).switch_flag_max, DFI_SWITCH_VOLT_SWITCH);
         DF_CHECK_EQ_U64(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_CLOSURE).switch_flag_max, DFI_SWITCH_FAINTED);
         /* In a state under POOL: both flags are in range (a flag is wrong at a TURN boundary, which the invariant
          * names), one past U-turn's is out of range. */
@@ -1073,8 +1076,10 @@ int main(void)
         expect_inv(&t, kp, w, DFI_INV_SWITCH_FLAG, "Flip Turn's flag at a TURN boundary");
         w->sides[0].positions[0].switch_flag = (uint8_t)DFI_SWITCH_UTURN;
         expect_inv(&t, kp, w, DFI_INV_SWITCH_FLAG, "U-turn's flag at a TURN boundary");
-        w->sides[0].positions[0].switch_flag = (uint8_t)(DFI_SWITCH_UTURN + 1u);
-        expect_inv(&t, kp, w, DFI_INV_VOLATILE, "one past U-turn's flag");
+        w->sides[0].positions[0].switch_flag = (uint8_t)DFI_SWITCH_VOLT_SWITCH;
+        expect_inv(&t, kp, w, DFI_INV_SWITCH_FLAG, "Volt Switch's flag at a TURN boundary");
+        w->sides[0].positions[0].switch_flag = (uint8_t)(DFI_SWITCH_VOLT_SWITCH + 1u);
+        expect_inv(&t, kp, w, DFI_INV_VOLATILE, "one past Volt Switch's flag");
         duoforge_battle_destroy(w);
     }
 

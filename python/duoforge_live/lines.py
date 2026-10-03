@@ -161,9 +161,12 @@ _ITEM_CHANGE_FROM = {"move: Trick", "move: Switcheroo", "move: Thief", "move: Co
 # The -activate effects of the committed reference battles (python/tests/test_replay.py checks that their spectator
 # logs never stop): a Protect block, a Psychic Terrain block, confusion, Emergency Exit (folded), and three
 # announcements that change no field: Lightning Rod drawing a move, Struggle when no move is left, and Sticky Hold
-# keeping the item of a holder that a move went for (step G16; the item stays, so no ITEM_CHANGE).
+# keeping the item of a holder that a move went for (step G16; the item stays, so no ITEM_CHANGE), and Feint breaking a
+# Protect or a side's guard (step G28; the tracker clears the target's protecting flag and stall chain and its side's
+# guard markers in the ACTIVATE event).
 _FOLD_ACTIVATE = {"move: Protect", "move: Psychic Terrain", "confusion", "ability: Emergency Exit",
-                  "ability: Lightning Rod", "ability: Storm Drain", "move: Struggle", "ability: Sticky Hold"}
+                  "ability: Lightning Rod", "ability: Storm Drain", "move: Struggle", "ability: Sticky Hold",
+                  "move: Feint"}
 # A guard blocking a move this turn: the same single-turn feature as its -singleturn line.
 _GUARD_ACTIVATE = {"move: Wide Guard": "WIDE_GUARD", "move: Quick Guard": "QUICK_GUARD"}
 # `-singleturn|X|move: Protect` is the Protect volatile of Spiky Shield, Baneful Bunker and Burning Bulwark (their condition

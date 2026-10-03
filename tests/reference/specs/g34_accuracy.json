@@ -1,0 +1,24 @@
+{
+  "name": "g34_accuracy",
+  "purpose": "Step G34, Compound Eyes and Wide Lens: Vivillon's Sleep Powder (75 accuracy, 97 with the ability) lands on an accuracy draw of at least 75, Charizard's Wide Lens Fire Blast (85, 93 with the lens) on a draw of at least 85; the targets use moves with no draw.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000003480",
+  "teams": [
+    "Vivillon (F)\nAbility: Compound Eyes\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Sleep Powder\n- Quiver Dance\n- Protect\n- Bug Buzz\n\nCharizard (M) @ Wide Lens\nAbility: Blaze\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Fire Blast\n- Protect\n- Heat Wave\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nGholdengo\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Protect\n\nGrimmsnarl (M)\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Protect\n\nRaichu (F)\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Thunderbolt\n- Helping Hand\n- Protect",
+    "Dragonite (M)\nAbility: Multiscale\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Dragon Dance\n- Dragon Claw\n- Protect\n\nAggron (M)\nAbility: Rock Head\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Iron Defense\n- Steel Roller\n- Protect\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nGholdengo\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Protect\n\nGrimmsnarl (M)\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Protect\n\nRaichu (F)\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Thunderbolt\n- Helping Hand\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 2",
+      "move 3, move 1 2",
+      "move 3, move 2"
+    ],
+    "p2": [
+      "move 1, move 1",
+      "move 1, move 1",
+      "move 1, move 1"
+    ],
+    "max_steps": 4
+  }
+}

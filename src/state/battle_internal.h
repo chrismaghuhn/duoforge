@@ -84,6 +84,7 @@ typedef struct dfi_move_slot {
  * its move. A value is valid under the kinds whose tables hold the move. */
 #define DFI_SWITCH_FLIP_TURN 4u /* Flip Turn (the TEAM_C and POOL kinds) */
 #define DFI_SWITCH_UTURN 5u     /* U-turn (the POOL kinds only), step G5 */
+#define DFI_SWITCH_VOLT_SWITCH 6u /* Volt Switch (the POOL kinds only), step G32 */
 #define DFI_REVEALED_ITEM_CONSUMED 1u
 #define DFI_REVEALED_MEGA 2u
 #define DFI_MEMBER_STAT_COUNT 5u  /* atk, def, spa, spd, spe (HP is hp_max) */
@@ -224,9 +225,8 @@ typedef struct dfi_side {
 /* rev 2, per roster member */
 #define DFI_TAIL_ITEM_NONE 255u       /* item_now: the member holds nothing (0 = as the member says, 1..254 = item id + 1) */
 #define DFI_TAIL_TOXIC_STAGE_MAX 15u  /* the toxic counter stops at 15 */
-#define DFI_TAIL_TOXIC_STATUS 6u      /* DUOFORGE_AILMENT_TOX: the status that a toxic stage needs. No state has it yet (the
-                                       * status bound of every kind is below it), so no stage is valid until the step
-                                       * that makes Toxic raises that bound. */
+#define DFI_TAIL_TOXIC_STATUS 6u      /* DUOFORGE_AILMENT_TOX (DFI_STATUS_TOX): the status that a toxic stage needs. POOL only (the
+                                       * status bound of the other kinds is below it, step G36). */
 
 typedef struct dfi_tail_pos {
     uint16_t substitute_hp;    /* 0 = no Substitute, else its HP (at most a quarter of the occupant's maximum HP) */
@@ -300,5 +300,23 @@ struct duoforge_battle {
     dfi_side sides[DUOFORGE_SIDE_COUNT];
     dfi_pool_tail tail; /* POOL kinds only; all zero otherwise */
 };
+
+/* The move that the occupant of the position (side * 2 + slot) used last, from the tail's last_move (move slot + 1) and the
+ * occupant's moves; UINT32_MAX when it has used none, used Struggle or the position is empty. The tail is zero under
+ * every kind but POOL. Step G30: Rage Powder shares the position's DFI_VOL_FOLLOW_ME bit with Follow Me, which is told
+ * apart by this (the volatile is set by the move that the occupant is using, and nothing else is used before the
+ * residual ends it, so the last move is the one that set it). */
+static inline uint32_t dfi_last_move_id(const struct duoforge_battle *b, uint32_t flat)
+{
+    const uint32_t s = flat / 2u;
+    const uint32_t p = flat % 2u;
+    const uint32_t last = b->tail.sides[s].positions[p].last_move;
+    const uint32_t occupant = b->sides[s].positions[p].occupant;
+    if (last == 0u || last > DUOFORGE_MAX_MOVE_SLOTS || occupant >= DUOFORGE_MAX_ROSTER) {
+        return UINT32_MAX;
+    }
+    const dfi_member *m = &b->sides[s].members[occupant];
+    return last <= m->move_count ? (uint32_t)m->moves[last - 1u].move_id : UINT32_MAX;
+}
 
 #endif

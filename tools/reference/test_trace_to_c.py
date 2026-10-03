@@ -243,10 +243,10 @@ class Refusals(unittest.TestCase):
         def mutate(spec, trace):
             log = trace['steps'][1]['log']
             self.assertEqual(log[1], '|-singleturn|p1b: Kingambit|Helping Hand|[of] p1a: Indeedee')
-            log[1] = '|-singleturn|p1b: Kingambit|move: Rage Powder'
+            log[1] = '|-singleturn|p1b: Kingambit|move: Quick Guard'
         self.control('c09_helping_hand', mutate, 'singleturn-line',
-                     "trace_to_c: unknown -singleturn '|-singleturn|p1b: Kingambit|move: Rage Powder'",
-                     'move: Rage Powder')
+                     "trace_to_c: unknown -singleturn '|-singleturn|p1b: Kingambit|move: Quick Guard'",
+                     'move: Quick Guard')
 
     def test_choice_scarf_holder_without_its_switch_in_handler(self):
         def mutate(spec, trace):
@@ -489,6 +489,25 @@ class Library(unittest.TestCase):
                 tie(bad)
             self.assertEqual(cm.exception.rule, 'modifydamage-tie')
 
+    def test_friend_guard_ties_step_g35(self):
+        """Friend Guard (step G35, 0.75) joins the ModifyDamage handlers; the campaign's seed 3501 had its two holders (one on
+        each side) tie in one hit. At most one of the handlers applies to a hit (its holder's allies other than itself), so a
+        group with the handler twice is still one value in every order; a second handler of another kind twice stays refused."""
+        def tie(group):
+            return trace_to_c.drop_reason({'site': 'SPEED_TIE', 'context': 'event:ModifyDamage', 'group': group}, {})
+        self.assertEqual(trace_to_c.modify_damage_values()['friendguard'], 3072)
+        for group in (['H:friendguard:p1a:cb', 'H:friendguard:p2b:cb'], ['H:friendguard:p1a:cb', 'H:lifeorb:p2a:cb'],
+                      ['H:friendguard:p1a:cb', 'H:friendguard:p1b:cb', 'H:lifeorb:p2a:cb'],
+                      ['H:friendguard:p1a:cb', 'H:multiscale:p2a:cb', 'H:lifeorb:p2b:cb']):
+            with self.subTest(group=group):
+                self.assertEqual(tie(group), 'ModifyDamage modifiers whose every order chains to the same value')
+        for bad in (['H:lifeorb:p1a:cb', 'H:lifeorb:p2a:cb', 'H:friendguard:p1b:cb'],  # two Life Orbs are no state of one hit
+                    ['H:expertbelt:p1a:cb', 'H:multiscale:p2a:cb', 'H:friendguard:p2b:cb'],  # does not commute: refused by the engine
+                    ['H:friendguard:p1a:cb', 'H:friendguard:p1b:cb', 'H:lifeorb:p2a:cb', 'H:lifeorb:p2b:cb']):
+            with self.subTest(group=bad), self.assertRaises(trace_to_c.ConversionError) as cm:
+                tie(bad)
+            self.assertEqual(cm.exception.rule, 'modifydamage-tie')
+
     def test_a_flower_veil_block_is_the_activate_event_of_the_ability_with_the_holder_in_other(self):
         """-block|protected|ability: Flower Veil|[of] holder (step G12): ACTIVATE at the protected Pokemon, cause ABILITY,
         the ability's id + 1, the holder in `other` (the ability's own activation has none); another -block is refused."""
@@ -693,6 +712,29 @@ class Library(unittest.TestCase):
         # Without Sandstorm the event has no handler at all, and the tie is dropped as every each: tie of no holder.
         rain = dict(d, group=['P:%s:0:' % g.split(':')[1] for g in d['group']])
         self.assertEqual(trace_to_c.drop_reason(rain, None, None, log), 'each-event tie with at most one holder')
+
+    def test_rain_dish_weather_ties_step_g35(self):
+        """Rain Dish's onWeather (step G35) is a handler of its holder alone, and only in rain: two holders tied in rain keep the
+        draw (the engine draws among the tied holders, dfi_rain_dish), one holder or two holders in another weather drop it, and
+        under Sandstorm the holder's handler is not one that the converter does not know."""
+        def tie(*handlers):
+            return {'site': 'SPEED_TIE', 'context': 'each:Weather',
+                    'group': ['P:p%d%s:%d:%s' % (1 + i // 2, 'ab'[i % 2], len(h.split('+')) if h else 0, h)
+                              for i, h in enumerate(handlers)]}
+        two = tie('raindish', '', 'raindish')
+        two['group'][1] = 'P:p1b:0:'
+        rain, sun = {'weather': 'raindance'}, {'weather': 'sunnyday'}
+        self.assertIsNone(trace_to_c.drop_reason(two, rain, rain, []))
+        self.assertEqual(trace_to_c.drop_reason(two, sun, sun, []), 'each-event tie with at most one holder')
+        # the weather of the step's end counts when there is one (rain that came in this step)
+        self.assertIsNone(trace_to_c.drop_reason(two, sun, rain, []))
+        one = tie('raindish', '', '')
+        self.assertEqual(trace_to_c.drop_reason(one, rain, rain, []), 'each-event tie with at most one holder')
+        # Sandstorm: every Pokemon has the weather's handler, a Rain Dish holder one more that does nothing
+        sand = {'weather': 'sandstorm'}
+        group = ['P:p1a:2:sandstorm+raindish', 'P:p1b:1:sandstorm', 'P:p2a:1:sandstorm']
+        log = ['|-damage|p1a: X|90/100|[from] Sandstorm', '|-damage|p1b: Y|90/100|[from] Sandstorm']
+        self.assertIsNone(trace_to_c.drop_reason(dict(two, group=group), sand, sand, log))
 
     def test_view_extension_rows_are_what_the_protocol_lines_say(self):
         """Decision 0018 section 6.1 for Throat Chop and Heal Block: a position has the bit from the -start line
@@ -907,6 +949,66 @@ class Library(unittest.TestCase):
         self.assertEqual(trace_to_c.VOLATILE_DISABLE, 4)
         with open(os.path.join(ROOT, 'tools', 'reference', 'ps_trace.js'), encoding='utf-8') as f:
             self.assertIn("'cursedbody:DamagingHit': 'CURSED_BODY'", f.read())
+
+    def test_toxic_rows_are_what_the_protocol_lines_say(self):
+        """Decision 0015 section 7 for the toxic stage (step G36): the occupant of a position is badly poisoned from the
+        `|-status|X|tox` line until it faints (the status stays through a switch-out), and its stage (the tail's toxic_stage)
+        is the number of `|-damage|X|HP tox|[from] psn` events since that line or since it last switched in (the stage
+        starts again: tox's onSwitchIn), at most 15. The rows of the C test (rows in tests/test_pool_g36.c: bit 8 the status,
+        the low byte the stage, of the four positions after each step) must be exactly that for the committed traces. The
+        residual damage of tox names psn as its source, so no new cause exists, and the HP field carries the status tox."""
+        self.assertEqual(trace_to_c.STATUS['tox'], 6)
+        self.assertEqual(trace_to_c.AILMENT['tox'], 6)
+        with open(os.path.join(ROOT, 'tests', 'test_pool_g36.c'), encoding='utf-8') as f:
+            source = f.read()
+        rows = {}
+        for m in re.finditer(r'\{"(g36_\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}', source):
+            rows[(m.group(1), int(m.group(2)))] = tuple(int(m.group(i)) for i in range(3, 7))
+        names = sorted({n for n, _ in rows})
+        listed = re.search(r'names\[\] = \{(.*?)\};', source, re.S).group(1)
+        self.assertEqual(sorted(re.findall(r'"(g36_\w+)"', listed)), names)
+        self.assertEqual(names, sorted(n[:-5] for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
+                                       if n.startswith('g36_')))
+
+        def flat(label):
+            return (int(label[1]) - 1) * 2 + 'ab'.index(label[2])
+        derived = {}
+        damages = 0
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            occupant, tox, stage = {}, set(), {}
+            for k, step in enumerate(trace['steps']):
+                prev = None
+                for line in [l for l in step['log'] if not l.startswith('|split')]:
+                    part = line.split('|')
+                    dup = prev is not None and prev[1:3] == part[1:3] and len(part) > 1 and part[1] == '-damage'
+                    prev = part
+                    if dup or len(part) < 3:
+                        continue  # the percentage line of the same event
+                    key = None
+                    if part[1] in ('switch', 'drag'):
+                        occupant[flat(part[2])] = part[2].split(': ')[1]
+                        stage[(flat(part[2]) // 2, occupant[flat(part[2])])] = 0
+                    elif part[1] == '-status' and part[3] == 'tox':
+                        key = (flat(part[2]) // 2, part[2].split(': ')[1])
+                        tox.add(key)
+                        stage[key] = 0
+                    elif part[1] == '-damage' and len(part) > 4 and part[4] == '[from] psn' and ' tox' in part[3]:
+                        key = (flat(part[2]) // 2, part[2].split(': ')[1])
+                        stage[key] = min(stage.get(key, 0) + 1, 15)
+                        damages += 1
+                    elif part[1] == 'faint':
+                        key = (flat(part[2]) // 2, part[2].split(': ')[1])
+                        tox.discard(key)
+                        stage[key] = 0
+                row = []
+                for f in range(4):
+                    key = (f // 2, occupant.get(f))
+                    row.append(((1 if key in tox else 0) << 8) | stage.get(key, 0))
+                derived[(name, k)] = tuple(row)
+        self.assertEqual(rows, derived)
+        self.assertTrue(damages > 0 and any(v & 255 >= 3 for r in derived.values() for v in r))
 
     def test_aurora_veil_rows_are_what_the_protocol_lines_say(self):
         """Decision 0018 section 6.1 for Aurora Veil: a side has the screen from the `|-sidestart|pN: X|move: Aurora Veil`
@@ -1525,7 +1627,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 80)  # the 27 of G21, Spiky Shield (G20), G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
+        self.assertEqual(len(marked), 126)  # Disable (G27), the ten of G35 (Thunder Punch, X-Scissor, Lumina Crash, Overdrive, Scorching Sands, Leaf Blade, Boomburst, Sludge Wave, Volt Tackle, Discharge), Toxic and Poison Fang (G36), the seven of G34 (Steel Roller, Clangorous Soul, Brick Break, Fiery Dance, Psycho Cut, Iron Defense, Electroweb), the eleven of G32, the ten of G30, the six of G28 (Shell Smash, Acrobatics, Blizzard, Ancient Power, Feint, Earthquake), the 27 of G21, Spiky Shield (G20), G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -1541,7 +1643,7 @@ class Library(unittest.TestCase):
                         for after in lines[i + 1:]:
                             if after.startswith('|move|') or after.startswith('|turn|'):
                                 break
-                            done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|', '|-start|', '|-weather|') + (('|-status|',) if name == 'Will-O-Wisp' else ()))
+                            done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|', '|-start|', '|-weather|') + (('|-status|',) if name in ('Will-O-Wisp', 'Stun Spore', 'Sleep Powder', 'Poison Powder') else ()))
                             # A side condition that a status move sets (Aurora Veil, step G20): its -sidestart line.
                             done = done or (after.startswith('|-sidestart|') and after.endswith('|move: ' + name))
                             # A side move (Wide Guard, step G7) shows its effect as its own -singleturn line; Detect's is
@@ -1550,6 +1652,8 @@ class Library(unittest.TestCase):
                             done = done or (name == 'Detect' and after.startswith('|-singleturn|'))
                             # Spiky Shield (step G20) prints Protect's line, `move: Protect`, for its own volatile.
                             done = done or (name == 'Spiky Shield' and after.startswith('|-singleturn|'))
+                            # Rage Powder (step G30): the single-turn line of its condition.
+                            done = done or (name == 'Rage Powder' and after.startswith('|-singleturn|') and after.endswith('|move: Rage Powder'))
             with self.subTest(move=name):
                 self.assertTrue(done, '%s is marked but no committed pool battle uses it' % name)
 

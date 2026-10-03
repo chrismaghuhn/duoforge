@@ -100,7 +100,8 @@ def _dev_setups():
 def _play_encoded(ctx, setups, test):
     """Plays the setups to the end with RandomPolicy; per step the
     observations and factored domains (2E,) and encode_batch's obs_part
-    (2E, OBS_SIZE), which the reference encoder equals."""
+    (2E, OBS_SIZE), whose first BASE_OBS_SIZE columns the reference encoder
+    equals and whose block is zero (no extension)."""
     from python.tests import _reference_features as reference
     envs = setups.shape[0]
     policy = duoforge.RandomPolicy(SEED, envs)
@@ -111,8 +112,9 @@ def _play_encoded(ctx, setups, test):
             batch.query_factored()
             obs, domains = batch.observations.reshape(-1).copy(), batch.domains.reshape(-1).copy()
             got = features.encode_batch(obs, domains)[0]
+            test.assertFalse(got[:, features.BASE_OBS_SIZE:].any())
             for n in range(obs.shape[0]):
-                test.assertTrue(np.array_equal(got[n], reference.encode(obs[n], domains[n])[0]))
+                test.assertTrue(np.array_equal(got[n, :features.BASE_OBS_SIZE], reference.encode(obs[n], domains[n])[0]))
             steps.append((obs, domains, got))
             if not (batch.requests["requested"] != 0).any():
                 return steps
@@ -210,9 +212,8 @@ class PoliciesFeaturesTest(unittest.TestCase):
                         self.assertEqual(int(mask.sum()), int(batch.requests[e, p]["candidate_count"]))
 
     def test_encode_refuses_an_unknown_move_slot(self):
-        """A move command's slot is 0 to 3 or Struggle; any other value (for
-        example a later pseudo-move such as recharge) is refused, never scaled
-        past 1."""
+        """A move command's slot is 0 to 3, Struggle (4) or Recharge (5, the
+        one value scaled past 1: 5 / 4); any other value is refused."""
         c = _layout.CONSTANTS
         with duoforge.Batch(self.ctx, _setups(), 1, SEED) as batch:
             policy = duoforge.RandomPolicy(SEED, ENVS)
@@ -230,7 +231,10 @@ class PoliciesFeaturesTest(unittest.TestCase):
             struggle = d.copy()
             struggle["slots"][s, i]["move_slot"] = c["DUOFORGE_MOVE_SLOT_STRUGGLE"]
             self.assertEqual(features.encode(ob, struggle)[1][s, i, 5], 1.0)
-            for bad in (c["DUOFORGE_MOVE_SLOT_STRUGGLE"] + 1, 0xFF):
+            recharge = d.copy()
+            recharge["slots"][s, i]["move_slot"] = c["DUOFORGE_MOVE_SLOT_RECHARGE"]
+            self.assertEqual(features.encode(ob, recharge)[1][s, i, 5], 1.25)
+            for bad in (c["DUOFORGE_MOVE_SLOT_RECHARGE"] + 1, 0xFF):
                 unknown = d.copy()
                 unknown["slots"][s, i]["move_slot"] = bad
                 with self.assertRaisesRegex(ValueError, "move slot"):
@@ -272,9 +276,10 @@ class PoliciesFeaturesTest(unittest.TestCase):
                 batch.query_factored()
                 obs, slots, masks = features.encode_batch(batch.observations.reshape(-1), batch.domains.reshape(-1))
                 self.assertEqual(obs.shape, (2 * ENVS, features.OBS_SIZE))
+                self.assertFalse(obs[:, features.BASE_OBS_SIZE:].any())
                 for n, (ob, d) in enumerate(zip(batch.observations.reshape(-1), batch.domains.reshape(-1))):
                     want = reference.encode(ob, d)
-                    self.assertTrue(np.array_equal(obs[n], want[0]))
+                    self.assertTrue(np.array_equal(obs[n, :features.BASE_OBS_SIZE], want[0]))
                     self.assertTrue(np.array_equal(slots[n], want[1]))
                     self.assertTrue(np.array_equal(masks[n], want[2]))
                     compared += 1
@@ -290,7 +295,7 @@ class PoliciesFeaturesTest(unittest.TestCase):
         # flags), foe slot 1 at 357..359 (a side is 8 + 2 * 24 + 6 * 40).
         # Every bit outside the three raises, in both encoders.
         c = _layout.CONSTANTS
-        self.assertEqual(features.OBS_SIZE, 607)
+        self.assertEqual(features.BASE_OBS_SIZE, 607)
         with duoforge.Batch(self.ctx, _setups(), 1, SEED) as batch:
             batch.query_factored()
             ob = np.array(batch.observations[0, 0])
@@ -313,7 +318,8 @@ class PoliciesFeaturesTest(unittest.TestCase):
 
     def test_encode_psychic_terrain(self):
         # Psychic Terrain (TEAM_C) is the third entry of the terrain one-hot
-        # (obs_part[10:13], before the terrain turns); another terrain raises.
+        # (obs_part[10:13], before the terrain turns); another terrain (here
+        # Electric, without its ext_supported bit) raises.
         with duoforge.Batch(self.ctx, _setups(), 1, SEED) as batch:
             batch.query_factored()
             ob = np.array(batch.observations[0, 0])
@@ -343,9 +349,11 @@ class PoliciesFeaturesTest(unittest.TestCase):
                     positions = obs["sides"]["positions"]
                     positions["reserved"] = rng.integers(0, 8, positions.shape)
                     got = features.encode_batch(obs, domains)
+                    self.assertFalse(got[0][:, features.BASE_OBS_SIZE:].any())
                     for n in range(obs.shape[0]):
                         want = reference.encode(obs[n], domains[n])
-                        for g, w in zip(got, want):
+                        self.assertTrue(np.array_equal(got[0][n, :features.BASE_OBS_SIZE], want[0]))
+                        for g, w in zip(got[1:], want[1:]):
                             self.assertTrue(np.array_equal(g[n], w))
                         compared += 1
                 batch.step_factored(policy.choose_factored(batch))
@@ -392,7 +400,7 @@ class PoliciesFeaturesTest(unittest.TestCase):
             old = features.as_encoder(got, obs, 1)
             for n in range(obs.shape[0]):
                 self.assertTrue(np.array_equal(old[n], reference.encode(obs[n], domains[n], encoder=1)[0]))
-            self.assertTrue(set(np.flatnonzero((old != got).any(axis=0))) <= {71, 367})
+            self.assertTrue(set(np.flatnonzero((old != got[:, :features.BASE_OBS_SIZE]).any(axis=0))) <= {71, 367})
         # Pairing 0 at team selection, player 0 (Team A): the old encoder's
         # [0, 1, 1, 1, 1, 1] against all six.
         obs, _, got = steps[0]
@@ -406,7 +414,7 @@ class PoliciesFeaturesTest(unittest.TestCase):
             part = features.encode(ob, d)[0]
             self.assertEqual(features.as_encoder(part, ob, 1)[_OWN_PRESENT].tolist(), [0.0] + [1.0] * 5)
             self.assertEqual(part[_OWN_PRESENT].tolist(), [1.0] * 6)  # one record, untouched
-            for bad in (0, 3, "2", None, True, 1.0):  # only ints count: True == 1, 1.0 == 1
+            for bad in (0, 4, "2", None, True, 1.0):  # only ints count: True == 1, 1.0 == 1
                 with self.assertRaisesRegex(ValueError, "encoder"):
                     features.as_encoder(part, ob, bad)
             for odd in (part[:-1], part.astype(np.float64), np.stack([part, part])):
@@ -447,6 +455,30 @@ class PoliciesFeaturesTest(unittest.TestCase):
             batch.requests[0, 0]["candidate_count"] = 0
             with self.assertRaises(ValueError):
                 duoforge.RandomPolicy(SEED, ENVS).choose_factored(batch)
+
+    def test_feature_names_cover_the_layout(self):
+        names = features.FEATURE_NAMES
+        self.assertEqual(len(names), features.OBS_SIZE)
+        self.assertEqual(len(set(names)), len(names))
+        self.assertEqual(names[10:13], ("global.terrain.NONE", "global.terrain.GRASSY", "global.terrain.PSYCHIC"))
+        self.assertEqual(names[37:40], ("own.pos0.flag.follow_me", "own.pos0.flag.helping_hand",
+                                        "own.pos0.flag.unburden"))
+        self.assertEqual(len(features.SLOT_FEATURE_NAMES), features.SLOT_FEATURES)
+        self.assertEqual(len(set(features.SLOT_FEATURE_NAMES)), features.SLOT_FEATURES)
+
+    def test_feature_names_name_the_encoded_values(self):
+        with duoforge.Batch(self.ctx, _setups(), 1, SEED) as batch:
+            batch.query_factored()
+            ob = batch.observations[0, 0]
+            obs = features.encode(ob, batch.domains[0, 0])[0]
+        col = {n: i for i, n in enumerate(features.FEATURE_NAMES)}
+        me = int(ob["player"])
+        own, foe = ob["sides"][me]["members"], ob["sides"][1 - me]["members"]
+        self.assertEqual(obs[col["own.member1.species"]], np.float32(int(own[1]["species_id"]) / 65535))
+        self.assertEqual(obs[col["foe.member2.move3"]], np.float32(int(foe[2]["move_ids"][3]) / 65535))
+        self.assertEqual(obs[col["own.member0.stat.spe"]], np.float32(min(int(own[0]["stats"][4]) / 1000, 1.0)))
+        self.assertEqual(obs[col["foe.member5.nature"]], np.float32(int(foe[5]["nature"]) / 24))
+        self.assertEqual(obs[col["global.boundary.TEAM_SELECTION"]], 1.0)
 
 
 if __name__ == "__main__":

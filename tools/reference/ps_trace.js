@@ -73,6 +73,9 @@ const CONDITION_SITES = {
     'poisontouch:DamagingHit': 'POISON_TOUCH',
     // Cursed Body (step G27): its randomChance(3, 10) in onDamagingHit.
     'cursedbody:DamagingHit': 'CURSED_BODY',
+    // Flame Body (step G30): its randomChance(3, 10) in onDamagingHit of the target. Like Poison Touch's it was an
+    // UNKNOWN draw before, so the harness version stays.
+    'flamebody:DamagingHit': 'FLAME_BODY',
 };
 
 // The event a draw happens in (innermost last), tracked by wrapping the

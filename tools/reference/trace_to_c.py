@@ -76,9 +76,10 @@ checks its precondition and fails loudly otherwise:
   INSERT_TIE        (Encore) the index of a replaced action among the moves
                     that tie it is a tape entry as well, unless the tied
                     actions are runSwitch entries (above)
-  RANDOM_TARGET execute:allAdjacentFoes
+  RANDOM_TARGET execute:allAdjacentFoes, execute:allAdjacent, execute:allies
                     always: the main target of a spread move only labels
-                    the protocol line; the move hits every adjacent foe
+                    the protocol line; the move hits every adjacent foe (and, for allAdjacent, the ally); for allies (Life Dew,
+                    step G32) runMove aims the move at its user afterwards (sim/battle-actions.ts:419), so the draw decides nothing
 
 Shuffle draws (SPEED_TIE queue) are made relative to the shuffled group:
 random(i, n) with i and n counted from the group's first index.
@@ -124,7 +125,8 @@ import sys
 
 SITES = {'SPEED_TIE': 1, 'ACCURACY': 2, 'CRIT': 3, 'DAMAGE_ROLL': 4, 'SECONDARY': 5, 'STALL': 6,
          'SLEEP_TURNS': 7, 'FREEZE_THAW': 8, 'FULL_PARALYSIS': 9, 'CONFUSION_TURNS': 10,
-         'CONFUSION_HIT': 11, 'RANDOM_TARGET': 12, 'STATUS_PICK': 13, 'INSERT_TIE': 14, 'TRACE': 15, 'CURSED_BODY': 17, 'POISON_TOUCH': 16}
+         'CONFUSION_HIT': 11, 'RANDOM_TARGET': 12, 'STATUS_PICK': 13, 'INSERT_TIE': 14, 'TRACE': 15, 'POISON_TOUCH': 16,
+         'CURSED_BODY': 17, 'FLAME_BODY': 18}  # 17: step G27, 18: step G30
 STATS = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe']
 GENDER = {'M': 1, 'F': 2}
 GENDERLESS = 3
@@ -325,6 +327,40 @@ def resist_berries():
     return _RESIST_BERRIES
 
 
+def modify_damage_values():
+    """The ModifyDamage modifier (out of 4096) of each handler that the engine chains (turn.c dfi_get_damage): by handler name."""
+    values = {'lifeorb': 5324, 'expertbelt': 4915, 'reflect': 2732, 'lightscreen': 2732, 'auroraveil': 2732, 'glaiverush': 8192,
+              'solidrock': 3072, 'multiscale': 2048, 'friendguard': 3072}
+    values.update({berry: 2048 for berry in resist_berries()})
+    return values
+
+
+def modifiers_commute(mods):
+    """Whether every order of `mods` chains (chainModify, from 4096) to one value."""
+    import itertools
+    results = set()
+    for order in itertools.permutations(mods):
+        c = 4096
+        for m in order:
+            c = (c * m + 2048) >> 12
+        results.add(c)
+    return len(results) <= 1
+
+
+def modifier_subsets(kinds, values):
+    """The modifier lists that one hit can have from the handlers `kinds`: any subset with one screen at most, one of Life Orb and
+    Expert Belt, and one of Solid Rock and Multiscale."""
+    import itertools
+    exclusive = (('reflect', 'lightscreen', 'auroraveil'), ('lifeorb', 'expertbelt'), ('solidrock', 'multiscale'))
+    out = []
+    for r in range(1, len(kinds) + 1):
+        for sub in itertools.combinations(kinds, r):
+            if any(sum(1 for k in sub if k in group) > 1 for group in exclusive):
+                continue
+            out.append([values[k] for k in sub])
+    return out
+
+
 def drop_reason(d, state, after=None, log=None):
     """Why draw `d` is not a tape entry, or None; `state` is the state before the step, `after` the one after
     it (an entering Pokemon stands in its slot there), `log` the step's protocol lines (needed for the residual tie of
@@ -338,7 +374,8 @@ def drop_reason(d, state, after=None, log=None):
         # only between two Pokemon that take the damage (the engine draws then, among the tied group); a group with
         # at most one damaged Pokemon shows no order. Any other handler of the event is not modelled. (Under another
         # weather no Pokemon has a Weather handler: the general rule below drops the tie.)
-        ids = sorted(set(x for g in group for x in g.split(':', 3)[3].split('+') if x))
+        # A Rain Dish holder (step G35) has its own onWeather under every weather, which does nothing outside rain.
+        ids = sorted(set(x for g in group for x in g.split(':', 3)[3].split('+') if x and x != 'raindish'))
         if ids != ['sandstorm']:
             raise ConversionError('weather-tie-handlers', 'trace_to_c: Weather tie with handlers %s: %s' % (ids, group),
                                   detail='+'.join(ids))
@@ -372,6 +409,12 @@ def drop_reason(d, state, after=None, log=None):
         # Trace's onUpdate (step AC1) returns unless its holder is still seeking after an onStart that found no foe to
         # copy, which the engine refuses (E_UNSUPPORTED): until then it does nothing either, so it is not a holder.
         inert = {'thermalexchange', 'trace'}
+        # Rain Dish's onWeather (step G35, data/abilities.ts:3759) heals only in rain (RainDance; Primordial Sea is not in the
+        # format): under any other weather its holder has the handler and it does nothing, so it is not a holder. The weather is
+        # the one of the upkeep, which is the one the step ends with (after) or, without it, the one it started with.
+        if ctx == 'each:Weather' and any('raindish' in g.split(':', 3)[3].split('+') for g in group) \
+                and placed['weather'] != 'raindance':
+            inert = inert | {'raindish'}
         ids = [x for g in group for x in g.split(':', 3)[3].split('+') if x and x not in inert]
         if not all(x in EACH_HANDLERS for x in ids):
             raise ConversionError('each-tie-handlers',
@@ -452,6 +495,27 @@ def drop_reason(d, state, after=None, log=None):
         if 'glaiverush' in kinds and all(k in ('glaiverush', 'lifeorb', 'reflect', 'lightscreen') or k.endswith('berry')
                                          for k in kinds):
             return 'Glaive Rush and the other ModifyDamage modifiers, which commute (all four at once is refused)'
+        # Step G34: Solid Rock (x0.75), Multiscale (x0.5) and Expert Belt (x1.2) join the handlers (step G35 adds Friend Guard: x0.75, held by the target's partner,
+        # onAnyModifyDamage, data/abilities.ts:1533). Every handler that is
+        # tied is one of the known modifiers, and every order of the modifiers that can apply together chains to the same
+        # value (the engine's dfi_mods_commute; a combination that does not is refused by the engine, E_UNSUPPORTED, and
+        # never reaches a conversion): checked here over every subset of the group that one hit can have (one screen at
+        # most; Life Orb or Expert Belt, one item; Solid Rock or Multiscale, one ability).
+        values = modify_damage_values()
+        # A hit has one handler of each kind (the attacker's item and ability, the target's berry and ability, the screen of
+        # the target's side), so a group with the same handler twice, or with two resist berries, is not a state the
+        # analysis covers: it stays refused, as before step G34.
+        berries = [g.split(':')[1] for g in group if g.split(':')[1].endswith('berry')]
+        # Friend Guard (step G35) may be twice in a group (holders on both sides, or two on one side): the handler of a holder
+        # applies only to its allies other than itself, so at most one of the handlers applies to a given hit, and the order of
+        # the handlers decides nothing.
+        names = [g.split(':')[1] for g in group]
+        friend_guard_extra = max(0, names.count('friendguard') - 1)
+        if all(k in values for k in kinds) and len(group) - friend_guard_extra == len(kinds) and len(berries) <= 1:
+            if any(not modifiers_commute(sub) for sub in modifier_subsets(sorted(kinds), values)):
+                raise ConversionError('modifydamage-tie', 'trace_to_c: ModifyDamage tie with modifiers that do not commute: %s' % group,
+                                      detail=tie_effects(group))
+            return 'ModifyDamage modifiers whose every order chains to the same value'
         raise ConversionError('modifydamage-tie', 'trace_to_c: ModifyDamage tie with %s' % group,
                               detail=tie_effects(group))
     if site == 'SPEED_TIE' and ctx == 'event:DisableMove':
@@ -506,15 +570,15 @@ def drop_reason(d, state, after=None, log=None):
         raise ConversionError('insert-tie', 'trace_to_c: insert tie in %s' % group)
     if site == 'RANDOM_TARGET' and ctx in ('action-speed', 'resolve'):
         return 'target computed for priority'
-    if site == 'RANDOM_TARGET' and ctx == 'execute:allAdjacentFoes':
+    if site == 'RANDOM_TARGET' and ctx in ('execute:allAdjacentFoes', 'execute:allAdjacent', 'execute:allies'):
         return 'main target of a spread move'
     if site == 'UNKNOWN':
         raise ConversionError('unclassified-draw', 'trace_to_c: unclassified draw', detail=ctx)
     return None
 
 
-# The items whose each-event handlers (Update, TerrainChange) act on their holder alone.
-EACH_HANDLERS = frozenset(('sitrusberry', 'grassyseed', 'psychicseed'))
+# The items and abilities whose each-event handlers (Update, TerrainChange, Weather: Rain Dish, step G35) act on their holder alone.
+EACH_HANDLERS = frozenset(('sitrusberry', 'grassyseed', 'psychicseed', 'raindish'))
 
 
 def site_of(d):
@@ -637,7 +701,7 @@ def convert_choice(text, side, state, roster_of, mid_turn=False):
 
 
 BOUNDARY = {'teampreview': 1, 'move': 2, 'switch': 3}
-STATUS = {'': 0, 'brn': 1, 'frz': 2, 'par': 3, 'slp': 4, 'psn': 5, 'fnt': 0}
+STATUS = {'': 0, 'brn': 1, 'frz': 2, 'par': 3, 'slp': 4, 'psn': 5, 'tox': 6, 'fnt': 0}
 WEATHER = {'': 0, 'raindance': 1, 'sunnyday': 2, 'sandstorm': 3, 'snowscape': 4}
 WEATHER_LINE = {'none': 0, 'RainDance': 1, 'SunnyDay': 2, 'Sandstorm': 3, 'Snowscape': 4}  # the names of -weather lines
 WEATHER_CAUSE = {'Sandstorm': 3}  # [from] <weather>: the residual damage of a weather (cause WEATHER, id2 = its value)
@@ -709,7 +773,7 @@ TYPE_IDS = {name: i for i, name in enumerate(
     ['Bug', 'Dark', 'Dragon', 'Electric', 'Fairy', 'Fighting', 'Fire', 'Flying', 'Ghost', 'Grass', 'Ground', 'Ice',
      'Normal', 'Poison', 'Psychic', 'Rock', 'Steel', 'Water'])}
 FLAG = {'STILL': 1, 'LOCKED': 2, 'SPREAD': 4, 'UPKEEP': 8, 'EATEN': 16, 'MESSAGE': 32, 'MISS': 64, 'NOTARGET': 128}
-AILMENT = {'brn': 1, 'frz': 2, 'par': 3, 'slp': 4, 'psn': 5}
+AILMENT = {'brn': 1, 'frz': 2, 'par': 3, 'slp': 4, 'psn': 5, 'tox': 6}
 EV_STATS = ['atk', 'def', 'spa', 'spd', 'spe', 'accuracy', 'evasion']
 NOPOS = 0xFF
 
@@ -735,6 +799,10 @@ IGNORED_VOLATILES = {
     # can stand without it, from the locked turn to the residual, and the lock
     # is then the one remembered (two_turn_lock).
     'electroshot': 'the locked slot and target',
+    # Step G30: Rage Powder shares the position's Follow Me bit, so the engine's state compares as no Follow Me: its presence
+    # is the extension's RAGE_POWDER bit, read after every step by duoforge.state.pool_g30.
+    'ragepowder': 'the extension bit RAGE_POWDER',
+    'solarbeam': 'the locked slot and target',  # step G30: the same two-turn lock
     # Pool step G8 (the POOL tail, decision 0015 section 7). Their turns are not a field of the state record; each
     # shows in the steps that the comparison already covers: the moves of the next request (disabled slots, the
     # request that offers Struggle), the cant lines, the heal that is missing, and Heal Block's start and end lines.
@@ -788,8 +856,8 @@ def ev_cause(attrs, tables):
                 cause = CAUSE['DRAIN']
             elif what == 'brn':
                 cause = CAUSE['BURN']
-            elif what == 'psn':
-                cause = CAUSE['POISON']
+            elif what in ('psn', 'tox'):
+                cause = CAUSE['POISON']  # the residual damage of tox is poison's cause too (the status in the HP field tells them apart)
             elif what == 'confusion':
                 cause = CAUSE['CONFUSION']
             elif what == 'Hail':
@@ -798,7 +866,7 @@ def ev_cause(attrs, tables):
                 cause, id2 = CAUSE['WEATHER'], WEATHER_CAUSE[what]
             elif what == 'Grassy Terrain':
                 cause = CAUSE['TERRAIN']
-            elif what in ('Parting Shot', 'Flip Turn', 'U-turn', 'Spiky Shield'):  # the move that made the switch (U-turn: pool tables)
+            elif what in ('Parting Shot', 'Flip Turn', 'U-turn', 'Volt Switch', 'Spiky Shield'):  # the move that made the switch (U-turn, Volt Switch: pool tables)
                 # Spiky Shield (step G20, POOL): `-damage|attacker|hp|[from] Spiky Shield|[of] holder`, the condition's own name
                 cause, id2 = CAUSE['MOVE'], tables['MOVE'][key(what)]
             elif what == 'lockedmove':
@@ -927,8 +995,7 @@ def step_events(log, viewer, roster_of, maxhp, tables):
         elif kind == '-fail' and len(args) == 3 and args[1] == 'unboost':
             # Inner Focus (step G22, data/abilities.ts:2157-2162): `-fail|X|unboost|atk|[from] ability: Inner Focus|[of] X`,
             # an Intimidate drop that the ability deleted: a FAIL with the ability as its cause and the holder in `other`.
-            # No other ability writes this line for a stat (Clear Body and the like are `-fail` with another shape and
-            # are not marked); anything else is refused, never mapped.
+            # Clear Body's line has no stat (the next branch); anything else is refused, never mapped.
             cause, id2, other = ev_cause(attrs, tables)
             if args[2] != 'atk' or cause != CAUSE['ABILITY'] or other == NOPOS:
                 raise ConversionError('fail-line', 'trace_to_c: unknown -fail %r' % line, detail=line)
@@ -936,7 +1003,16 @@ def step_events(log, viewer, roster_of, maxhp, tables):
         elif kind == '-fail':
             # `-fail|X|heal` (a heal move at full HP) is a plain FAIL: the event has no field for the reason, which
             # for a status is the ailment the target already has.
-            e = ev_tuple(EV['FAIL'], ev_pos(args[0]), detail=AILMENT[args[1]] if len(args) > 1 and args[1] != 'heal' else 0)
+            if len(args) > 1 and args[1] == 'unboost':
+                # Clear Body (step G30): -fail|X|unboost|[from] ability: Clear Body|[of] X is a FAIL with the ability as its cause
+                # and the holder in `other`, as Inner Focus's line above (which names the stat).
+                cause, id2, other = ev_cause(attrs, tables)
+                if cause != CAUSE['ABILITY'] or other == NOPOS:
+                    raise ConversionError('fail-line', 'trace_to_c: unknown -fail unboost %r' % line, detail='unboost')
+                e = ev_tuple(EV['FAIL'], ev_pos(args[0]), other, cause, 0, id2)
+            else:
+                e = ev_tuple(EV['FAIL'], ev_pos(args[0]),
+                             detail=AILMENT[args[1]] if len(args) > 1 and args[1] != 'heal' else 0)
         elif kind == '-singleturn':
             if args[1] in ('Protect', 'move: Protect'):  # Spiky Shield and Baneful Bunker (step G20) print `move: Protect`
                 e = ev_tuple(EV['PROTECT'], ev_pos(args[0]))
@@ -945,7 +1021,8 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                 e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), of, 0, tables['MOVE'][key(args[1])])
             elif args[1] == 'Wide Guard' and not attrs:  # POOL: the side condition of the user's side, one turn
                 e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), NOPOS, 0, tables['MOVE'][key(args[1])])
-            elif args[1] == 'move: Follow Me' and not attrs:  # Team C: no [of]; [zeffect] is not in the format
+            elif args[1] in ('move: Follow Me', 'move: Rage Powder') and not attrs:
+                # Team C: no [of]; [zeffect] is not in the format. Rage Powder (step G30) has the same line.
                 e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), NOPOS, 0, tables['MOVE'][key(args[1][6:])])
             else:
                 raise ConversionError('singleturn-line', 'trace_to_c: unknown -singleturn %r' % line, detail=args[1])
@@ -1239,9 +1316,10 @@ def convert_battle(name, spec, trace, tables):
                     if v not in compared and v not in IGNORED_VOLATILES:
                         raise ConversionError('unknown-volatile', 'trace_to_c: unknown volatile %r of %s' %
                                               (v, name_of(p)), detail=v)
-                if 'electroshot' in p['volatiles'] and 'twoturnmove' not in p['volatiles']:
-                    raise ConversionError('unknown-volatile', 'trace_to_c: electroshot without twoturnmove on %s' %
-                                          name_of(p), detail='electroshot')
+                for charge in ('electroshot', 'solarbeam'):
+                    if charge in p['volatiles'] and 'twoturnmove' not in p['volatiles']:
+                        raise ConversionError('unknown-volatile', 'trace_to_c: %s without twoturnmove on %s' %
+                                              (charge, name_of(p)), detail=charge)
                 vols = sum(bit for name, bit in COMPARED_VOLATILES if name in p['volatiles'])
                 row.append((1, p['hp'], tuple(pp), tuple(x + 6 for x in p['boosts']),
                             stall, 1 if p['fainted'] else 0, status, counter, p['confusion'], lslot, ltarget,

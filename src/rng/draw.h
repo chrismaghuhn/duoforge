@@ -39,8 +39,9 @@
 #define DFI_SITE_INSERT_TIE 14u    /* BattleQueue.insertChoice: random(firstIndex, lastIndex + 1) among the tied actions (Encore, POOL data) */
 #define DFI_SITE_TRACE 15u         /* Trace: sample(the foes whose ability it can copy), random(n) (POOL) */
 #define DFI_SITE_POISON_TOUCH 16u  /* Poison Touch (POOL data): randomChance(3, 10), random(10) < 3 */
-#define DFI_SITE_CURSED_BODY 17u   /* Cursed Body (POOL data): randomChance(3, 10), random(10) < 3 */
-#define DFI_SITE_COUNT 18u
+#define DFI_SITE_CURSED_BODY 17u   /* Cursed Body (POOL data, step G27): randomChance(3, 10), random(10) < 3 */
+#define DFI_SITE_FLAME_BODY 18u    /* Flame Body (POOL data, step G30): randomChance(3, 10), random(10) < 3 */
+#define DFI_SITE_COUNT 19u
 
 typedef struct dfi_tape_entry {
     uint32_t site;
