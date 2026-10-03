@@ -673,13 +673,13 @@ static void test_mega_by_stone(df_test *t, const kase *c)
     uint32_t cc = 0u;
     DF_CHECK(t, duoforge_data_mega_count(c->ctx, charizard, &cc) == DUOFORGE_OK);
     DF_CHECK(t, cc == (c->pool_rules ? 2u : 1u));
-    duoforge_mega_info star;
+    duoforge_mega_info star = {0};
     DF_CHECK(t, duoforge_data_mega_at(c->ctx, staraptor, 0u, &star) == DUOFORGE_OK && star.stone == c->info[staraptor].mega_stone &&
                     star.mega_species == c->info[staraptor].mega_species);
     if (c->pool_rules) {
         const uint32_t I = DUOFORGE_DATA_TABLE_ITEM;
         const uint32_t megax = find_id(t, c, S, "charizardmegax"), megay = find_id(t, c, S, "charizardmegay");
-        duoforge_mega_info a, b2;
+        duoforge_mega_info a = {0}, b2 = {0};
         DF_CHECK(t, duoforge_data_mega_at(c->ctx, charizard, 0u, &a) == DUOFORGE_OK &&
                         duoforge_data_mega_at(c->ctx, charizard, 1u, &b2) == DUOFORGE_OK);
         DF_CHECK(t, a.stone == find_id(t, c, I, "charizarditey") && a.mega_species == megay); /* ascending item id */
@@ -687,7 +687,7 @@ static void test_mega_by_stone(df_test *t, const kase *c)
         DF_CHECK(t, c->info[charizard].mega_species == megay); /* the single link keeps its meaning: the first Mega of the pool */
         /* Meowsticite: one stone, two species, each with its own Mega. */
         const uint32_t m_m = find_id(t, c, S, "meowstic"), m_f = find_id(t, c, S, "meowsticf");
-        duoforge_mega_info mm, mf;
+        duoforge_mega_info mm = {0}, mf = {0};
         DF_CHECK(t, duoforge_data_mega_at(c->ctx, m_m, 0u, &mm) == DUOFORGE_OK &&
                         duoforge_data_mega_at(c->ctx, m_f, 0u, &mf) == DUOFORGE_OK);
         DF_CHECK(t, mm.stone == find_id(t, c, I, "meowsticite") && mf.stone == mm.stone);
@@ -696,7 +696,7 @@ static void test_mega_by_stone(df_test *t, const kase *c)
         dfi_support_manifest claws = dfi_support;
         claws.abilities[DFI_ABILITY_TOUGHCLAWS] = 0u;
         const dfi_kind_limits lim = dfi_kind_limits_of(c->kind);
-        duoforge_mega_info y, x;
+        duoforge_mega_info y = {0}, x = {0};
         dfi_data_mega_at(&lim, &claws, charizard, 0u, &y);
         dfi_data_mega_at(&lim, &claws, charizard, 1u, &x);
         DF_CHECK(t, y.supported == 1u && x.supported == 0u);
