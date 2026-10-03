@@ -613,6 +613,69 @@ class Library(unittest.TestCase):
         values = {v[0] for v in derived.values()}
         self.assertTrue({0, 3, 4} <= values)  # both new weathers are shown, and they end
 
+    TERRAIN_BATTLES = ['g25_electric_surge_voltage', 'g25_electric_seed', 'g25_misty_terrain', 'g25_terrain_pulse_psychic_misty',
+                       'g25_terrain_pulse_electric', 'g25_weather_ball_refrigerate']
+
+    def test_the_terrain_rows_of_the_view_are_what_the_field_lines_say(self):
+        """Decision 0018 section 6.1, terrain values Electric and Misty (step G25): a -fieldstart line that names a terrain sets
+        it for 5 turns (the replaced terrain ends without a line), each |upkeep line with a terrain up is one turn gone, a
+        -fieldend line ends it (Misty Terrain's has no "move: " in it). The rows of the C test (terrain_rows in
+        tests/test_pool_terrain.c: the terrain and the turns left after each step of the six battles, for both players)
+        must be exactly what these lines give for the committed traces, so that the engine's view is checked against the
+        protocol and not against itself."""
+        with open(os.path.join(ROOT, 'tests', 'test_pool_terrain.c'), encoding='utf-8') as f:
+            source = f.read()
+        rows = {}
+        for m in re.finditer(r'\{"(g25_\w+)", (\d+)u, (\d)u, (\d)u\}', source):
+            rows[(m.group(1), int(m.group(2)))] = (int(m.group(3)), int(m.group(4)))
+        code = {'move: Grassy Terrain': 1, 'move: Psychic Terrain': 2, 'move: Electric Terrain': 3, 'move: Misty Terrain': 4}
+        derived = {}
+        for name in self.TERRAIN_BATTLES:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            terrain, turns = 0, 0
+            for k, step in enumerate(trace['steps']):
+                for line in step['log']:
+                    part = line.split('|')
+                    if len(part) < 2:
+                        continue
+                    if part[1] == '-fieldstart' and part[2] in code:
+                        terrain, turns = code[part[2]], 5
+                    elif part[1] == '-fieldend':
+                        self.assertIn(part[2], tuple(code) + ('Misty Terrain',))
+                        terrain, turns = 0, 0
+                    elif part[1] == 'upkeep' and terrain:
+                        turns -= 1
+                derived[(name, k)] = (terrain, turns)
+        self.assertEqual(rows, derived)
+        values = {v[0] for v in derived.values()}
+        self.assertTrue({0, 2, 3, 4} <= values)  # both new terrains are shown, and they end
+
+    def test_every_terrain_line_the_battles_show_is_a_known_start_end_or_block(self):
+        """The field lines of the terrain battles: starts from an ability ([from] ability: Electric Surge or Psychic Surge with
+        [of]) or a move (no attribute), the ends (with the one that has no "move: "), and the -activate lines of the status
+        refusals; the converter maps each to its event."""
+        starts, ends, blocks = set(), set(), set()
+        for name in self.TERRAIN_BATTLES:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            for step in trace['steps']:
+                for line in step['log']:
+                    part = line.split('|')
+                    if len(part) > 2 and part[1] == '-fieldstart':
+                        starts.add((part[2], part[3] if len(part) > 3 else ''))
+                    if len(part) > 2 and part[1] == '-fieldend':
+                        ends.add(part[2])
+                    if len(part) > 3 and part[1] == '-activate' and 'Terrain' in part[3]:
+                        blocks.add(part[3])
+        self.assertEqual({s[0] for s in starts}, {'move: Electric Terrain', 'move: Misty Terrain', 'move: Psychic Terrain'})
+        self.assertIn(('move: Electric Terrain', '[from] ability: Electric Surge'), starts)
+        self.assertIn(('move: Psychic Terrain', '[from] ability: Psychic Surge'), starts)
+        self.assertEqual(ends, {'move: Electric Terrain', 'Misty Terrain'})
+        self.assertEqual(blocks, {'move: Electric Terrain', 'move: Misty Terrain'})
+        self.assertEqual((trace_to_c.FIELD_ELECTRIC_TERRAIN, trace_to_c.FIELD_MISTY_TERRAIN), (4, 5))
+        self.assertEqual((trace_to_c.TERRAIN['electricterrain'], trace_to_c.TERRAIN['mistyterrain']), (3, 4))
+
     def test_every_weather_line_the_battles_show_is_a_known_start_end_or_upkeep(self):
         """The -weather lines of the weather battles: starts from an ability ([from] ability: Sand Stream or Snow Warning
         with [of]) or a move (no attribute), the upkeep, and none; and the damage lines [from] Sandstorm, the
@@ -1373,7 +1436,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 78)  # the 27 of G21, G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
+        self.assertEqual(len(marked), 82)  # the four of G25 (Electric Terrain, Misty Terrain, Rising Voltage, Terrain Pulse), the 27 of G21, G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -1392,6 +1455,8 @@ class Library(unittest.TestCase):
                             done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|', '|-start|', '|-weather|') + (('|-status|',) if name == 'Will-O-Wisp' else ()))
                             # A side condition that a status move sets (Aurora Veil, step G20): its -sidestart line.
                             done = done or (after.startswith('|-sidestart|') and after.endswith('|move: ' + name))
+                            # A terrain that a status move sets (Electric Terrain, Misty Terrain, step G25): its -fieldstart line.
+                            done = done or (after.startswith('|-fieldstart|') and after.endswith('|move: ' + name))
                             # A side move (Wide Guard, step G7) shows its effect as its own -singleturn line; Detect's is
                             # Protect's (step G13: its handler, and the line of the Protect condition).
                             done = done or (after.startswith('|-singleturn|') and after.endswith('|' + name))

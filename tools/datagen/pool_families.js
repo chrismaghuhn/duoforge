@@ -766,7 +766,7 @@ function checkAbilities(dex, rows, moveIds, unmodeled, unmodeledMoves) {
             // the list that the pool has is modelled.
             expect('the modelled pool moves that ' + row.id + ' leaves alone',
                 [...moveIds.values()].filter((id) => NO_MODIFY_TYPE.includes(id) && !unmodeledMoves.has(id)),
-                ['terrainpulse', 'weatherball']);
+                ['weatherball', 'terrainpulse']);
         } else if (row.family === 'PINCH') {
             const type = typeOf(row.param);
             expect(row.id + ' pinch at a third', pinchTypes(ability, 10, 30), {onModifyAtk: [type], onModifySpA: [type]});
@@ -907,7 +907,7 @@ function checkFormes(dex, validator, rows, moves, abilities) {
 // The UNMODELED markers of gen_closure.py --pool, re-derived from the pinned data in this file's own words: the
 // special column of a move, the handler column of an item and of an ability, and the lists of unmodelled features.
 // implemented in the turn code by id (G4: Focus Sash, Rock Head; G12: Floettite, Flower Veil, Fairy Aura)
-const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed'],
+const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed'],
     abilities: ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
     'randomNormal']);

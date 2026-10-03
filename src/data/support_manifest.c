@@ -136,7 +136,7 @@
  * Step G25 marks Electric Terrain and Misty Terrain (the moves: five turns, the same terrain fails, the other one is
  * replaced), Electric Surge (the entry setter of the terrain family), Electric Seed and Misty Seed (the seed rule of the other
  * terrains: Defense and Special Defense +1), Rising Voltage (base power doubled at a grounded target in Electric Terrain)
- * and Terrain Pulse (the terrain's type and double power for a grounded user, outside the -ate abilities), with the
+ * and Terrain Pulse (the terrain's type and twice the power for a grounded user, outside the -ate abilities), with the
  * terrains' own rules: 5325/4096 for a grounded user's Electric move, Dragon moves at a grounded target halved in Misty
  * Terrain, sleep refused to a grounded Pokemon in Electric Terrain and every status (and confusion) in Misty Terrain, the
  * view bits 5 and 32. Recorded as g25_* under the POOL kind. */

@@ -156,6 +156,7 @@ duoforge_add_test(NAME duoforge.state.pool_g7 SOURCES test_pool_g7.c WHITEBOX TI
 # Sandstorm and Snowscape (the weather step): the view of the weather battles against the protocol lines, the sources of
 # immunity that stay unmarked, the weather values as state.
 duoforge_add_test(NAME duoforge.state.pool_weather SOURCES test_pool_weather.c WHITEBOX TIMEOUT 60)
+duoforge_add_test(NAME duoforge.state.pool_terrain SOURCES test_pool_terrain.c WHITEBOX TIMEOUT 60)
 # Step G11: Soak in the tail's soak type, in what reads the types, in the TYPE_CHANGE event and in the POOL view extension.
 duoforge_add_test(NAME duoforge.state.pool_g11 SOURCES test_pool_g11.c WHITEBOX TIMEOUT 60)
 # Step G9: Encore in the tail, the queue, the request, the residual and the POOL view extension.
@@ -181,8 +182,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=350e691e00ea5c0a806567d4932c3b190e65f271b8257b67991665deaeb98927"
-        "pool_tables.c=d85962f96af5494f61a2af567365c07b036e11d312545f171b68de085786090b")
+        "pool_tables.h=570fa9a488e2f4b9f2117396d9082a5e380e33efe330e5f1eaaddbcf54ac8d67"
+        "pool_tables.c=7333eee0573bd28846368edeac00e69258ababe34ab380ed41f96a5e4e050de2")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)

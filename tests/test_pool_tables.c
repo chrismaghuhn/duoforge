@@ -44,7 +44,7 @@
 #include "state/battle_internal.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "5feef11e9aefef4e0d44173be15f01c2bda9b08da673987a84c9dd7f62970b84"
+#define POOL_HASH_HEX "7dcde2af183fe9f8d33ada1209b63b58b79dacc52a27809179e13de82efdb6d6"
 /* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
  * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
  * produced the same bytes. Step G10 moved two of them on purpose: Scald and Recover are data now (the thaw bit and
@@ -68,9 +68,9 @@
 #define POOL_ABILITIES 215u
 
 /* The rows that the tables do not model, pinned (the generator reports the same counts). */
-#define UNMODELED_MOVES 300u /* 301 before step G20 modelled Aurora Veil; 303 before step G19 modelled Coaching and Glaive Rush; 305u before step G15 modelled Expanding Force; 306 before step G16 modelled Knock Off; 313 before step G17 modelled the seven recharge moves; 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
-#define UNMODELED_ITEMS 44u /* one fewer since step G15 modelled Psychic Seed */
-#define UNMODELED_ABILITIES 179u /* 180 before step AC1 made Trace an engine row; 181 before step G16 made Sticky Hold an engine row; 184 before step G14 made Rough Skin, Poison Touch and Thermal Exchange engine rows */
+#define UNMODELED_MOVES 296u /* 300 before step G25 modelled Electric Terrain, Misty Terrain, Rising Voltage and Terrain Pulse; 301 before step G20 modelled Aurora Veil; 303 before step G19 modelled Coaching and Glaive Rush; 305u before step G15 modelled Expanding Force; 306 before step G16 modelled Knock Off; 313 before step G17 modelled the seven recharge moves; 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
+#define UNMODELED_ITEMS 42u /* two fewer since step G25 modelled Electric Seed and Misty Seed; one fewer since step G15 modelled Psychic Seed */
+#define UNMODELED_ABILITIES 178u /* 179 before step G25 modelled Electric Surge; 180 before step AC1 made Trace an engine row; 181 before step G16 made Sticky Hold an engine row; 184 before step G14 made Rough Skin, Poison Touch and Thermal Exchange engine rows */
 
 /* How many rows of the manifest are marked and half modelled: marked, and with the UNMODELED handler or a list of
  * unmodelled features (decision 0015 section 4.2). A step marks only what it fully models. */
@@ -209,6 +209,7 @@ static const family_case new_abilities[] = {
 static const family_case weather_abilities[] = {
     {DFI_ABILITY_SANDSTREAM, DFI_ABILITY_FAMILY_WEATHER_SETTER, DFI_WEATHER_SAND, "Sand Stream"},
     {DFI_ABILITY_SNOWWARNING, DFI_ABILITY_FAMILY_WEATHER_SETTER, DFI_WEATHER_SNOW, "Snow Warning"},
+    {DFI_ABILITY_ELECTRICSURGE, DFI_ABILITY_FAMILY_TERRAIN_SETTER, DFI_FAMILY_TERRAIN_ELECTRIC, "Electric Surge"}, /* step G25 */
 };
 
 typedef struct legal_case {
@@ -677,7 +678,20 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_EXPANDING_FORCE, DFI_SPECIAL_KNOCK_OFF + 1u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_GLAIVE_RUSH, DFI_SPECIAL_EXPANDING_FORCE + 1u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_AURORA_VEIL, DFI_SPECIAL_GLAIVE_RUSH + 1u);
-        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_AURORA_VEIL + 1u);
+        /* Step G25: the four handlers of the terrains, after Aurora Veil and before UNMODELED. */
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_ELECTRIC_TERRAIN, DFI_SPECIAL_AURORA_VEIL + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_MISTY_TERRAIN, DFI_SPECIAL_ELECTRIC_TERRAIN + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_RISING_VOLTAGE, DFI_SPECIAL_MISTY_TERRAIN + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_TERRAIN_PULSE, DFI_SPECIAL_RISING_VOLTAGE + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_TERRAIN_PULSE + 1u);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_ELECTRICTERRAIN].special, DFI_SPECIAL_ELECTRIC_TERRAIN);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_MISTYTERRAIN].special, DFI_SPECIAL_MISTY_TERRAIN);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_RISINGVOLTAGE].special, DFI_SPECIAL_RISING_VOLTAGE);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_RISINGVOLTAGE].base_power, 70u);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_TERRAINPULSE].special, DFI_SPECIAL_TERRAIN_PULSE);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_TERRAINPULSE].base_power, 50u);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_TERRAINPULSE].type, DFI_TYPE_NORMAL);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_ELECTRICTERRAIN].target_class, DUOFORGE_TARGET_CLASS_ALL);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_AURORAVEIL].special, DFI_SPECIAL_AURORA_VEIL);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_EXPANDINGFORCE].special, DFI_SPECIAL_EXPANDING_FORCE);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_EXPANDINGFORCE].base_power, 80u);
@@ -1116,7 +1130,8 @@ int main(void)
          * stays unmarked. */
         DF_CHECK(&t, dfi_support.items[DFI_ITEM_FOCUSSASH] != 0u);
         for (uint32_t id = DFI_ITEM_FOCUSSASH + 1u; id < DFI_POOL_ITEM_COUNT; ++id) {
-            const bool stone = id == DFI_ITEM_FLOETTITE || id == DFI_ITEM_PSYCHICSEED || id == DFI_ITEM_TYRANITARITE ||
+            const bool stone = id == DFI_ITEM_FLOETTITE || id == DFI_ITEM_PSYCHICSEED || id == DFI_ITEM_ELECTRICSEED ||
+                               id == DFI_ITEM_MISTYSEED || id == DFI_ITEM_TYRANITARITE ||
                                id == DFI_ITEM_BAXCALIBRITE || id == DFI_ITEM_AERODACTYLITE || id == DFI_ITEM_MANECTITE;
             DF_CHECK_EQ_U64(&t, dfi_support.items[id] != 0u ? 1u : 0u, stone ? 1u : 0u);
         }
@@ -1141,13 +1156,15 @@ int main(void)
              * setters of the Sandstorm and Snowscape step) and are marked; Rough Skin, Poison Touch and Thermal
              * Exchange (step G14) are marked without a family: the turn code runs them by id. */
             const bool setter = id == DFI_ABILITY_SANDSTREAM || id == DFI_ABILITY_SNOWWARNING;
+            const bool terrain_setter = id == DFI_ABILITY_ELECTRICSURGE; /* step G25 */
             /* ... and Rough Skin, Poison Touch, Thermal Exchange (step G14) and Sticky Hold (step G16): engine rows that the turn code runs by id. */
             const bool engine = id == DFI_ABILITY_ROUGHSKIN || id == DFI_ABILITY_POISONTOUCH ||
                                 id == DFI_ABILITY_THERMALEXCHANGE || id == DFI_ABILITY_STICKYHOLD ||
                                 id == DFI_ABILITY_TRACE /* step AC1: Trace, by id too */;
-            DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, (setter || engine) ? 1u : 0u);
+            DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, (setter || terrain_setter || engine) ? 1u : 0u);
             DF_CHECK_EQ_U64(&t, dfi_pool_ability_family[id].family,
-                            setter ? DFI_ABILITY_FAMILY_WEATHER_SETTER : DFI_ABILITY_FAMILY_NONE);
+                            setter ? DFI_ABILITY_FAMILY_WEATHER_SETTER
+                            : terrain_setter ? DFI_ABILITY_FAMILY_TERRAIN_SETTER : DFI_ABILITY_FAMILY_NONE);
         }
         for (uint32_t id = 0u; id < DFI_POOL_ABILITY_COUNT; ++id) {
             if (dfi_pool_ability_family[id].family != DFI_ABILITY_FAMILY_NONE) {
@@ -1191,7 +1208,9 @@ int main(void)
                                                 DFI_MOVE_POWERWHIP, DFI_MOVE_ACCELEROCK, DFI_MOVE_BULLETPUNCH, DFI_MOVE_MACHPUNCH,
                                                 DFI_MOVE_CRUNCH, DFI_MOVE_BUGBUZZ, DFI_MOVE_DRAINPUNCH, DFI_MOVE_NUZZLE,
                                                 DFI_MOVE_EXPANDINGFORCE,
-                                                DFI_MOVE_COACHING, DFI_MOVE_GLAIVERUSH, DFI_MOVE_AURORAVEIL};
+                                                DFI_MOVE_COACHING, DFI_MOVE_GLAIVERUSH, DFI_MOVE_AURORAVEIL,
+                                                DFI_MOVE_ELECTRICTERRAIN, DFI_MOVE_MISTYTERRAIN, DFI_MOVE_RISINGVOLTAGE,
+                                                DFI_MOVE_TERRAINPULSE};
         uint32_t marked_count = 0u;
         for (uint32_t id = DFI_EXT_MOVE_COUNT; id < DFI_POOL_MOVE_COUNT; ++id) {
             bool want = false;
@@ -1206,12 +1225,14 @@ int main(void)
                              id == DFI_MOVE_FIRSTIMPRESSION || id == DFI_MOVE_LOWKICK || id == DFI_MOVE_SOAK ||
                              id == DFI_MOVE_ENCORE || id == DFI_MOVE_SANDSTORM || id == DFI_MOVE_SNOWSCAPE ||
                              id == DFI_MOVE_KNOCKOFF || id == DFI_MOVE_EXPANDINGFORCE || id == DFI_MOVE_GLAIVERUSH || id == DFI_MOVE_AURORAVEIL ||
+                             id == DFI_MOVE_ELECTRICTERRAIN || id == DFI_MOVE_MISTYTERRAIN || id == DFI_MOVE_RISINGVOLTAGE ||
+                             id == DFI_MOVE_TERRAINPULSE ||
                              (id == DFI_MOVE_WIDEGUARD && dfi_pool_moves[id].special == DFI_SPECIAL_WIDE_GUARD) ||
                              (id == DFI_MOVE_DETECT && dfi_pool_moves[id].special == DFI_SPECIAL_PROTECT));
             DF_CHECK(&t, !want || dfi_pool_moves[id].special != DFI_SPECIAL_UNMODELED);
             marked_count += dfi_support.moves[id] != 0u ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, marked_count, 78u);
+        DF_CHECK_EQ_U64(&t, marked_count, 82u);
     }
 
     /* Step AC1: Trace copies the ability of a foe unless that has the pin's notrace flag. The turn code excludes only
@@ -1353,8 +1374,8 @@ int main(void)
                          dfi_pool_ability_handler[DFI_ABILITY_THERMALEXCHANGE] == DFI_HANDLER_NONE); /* engine rows, G14 */
         DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_FLOETTITE] == DFI_HANDLER_NONE); /* a Mega Stone: data of its link */
         DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_PSYCHICSEED] == DFI_HANDLER_NONE &&
-                         dfi_pool_item_handler[DFI_ITEM_ELECTRICSEED] == DFI_HANDLER_UNMODELED &&
-                         dfi_pool_item_handler[DFI_ITEM_MISTYSEED] == DFI_HANDLER_UNMODELED); /* an engine row, G15 */
+                         dfi_pool_item_handler[DFI_ITEM_ELECTRICSEED] == DFI_HANDLER_NONE &&
+                         dfi_pool_item_handler[DFI_ITEM_MISTYSEED] == DFI_HANDLER_NONE); /* engine rows, G15 and G25 */
         DF_CHECK(&t, dfi_pool_moves[DFI_MOVE_UTURN].special == DFI_SPECIAL_NONE);
         /* A few whole-pool rows, by what the pin says. Earthquake: allAdjacent, a class that the turn code lacks;
          * Hydro Pump: pure data; Substitute: a volatile with callbacks; Stealth Rock: a side condition and a class

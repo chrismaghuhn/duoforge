@@ -849,7 +849,11 @@
 #define DFI_SPECIAL_EXPANDING_FORCE 25u
 #define DFI_SPECIAL_GLAIVE_RUSH 26u
 #define DFI_SPECIAL_AURORA_VEIL 27u
-#define DFI_SPECIAL_UNMODELED 28u
+#define DFI_SPECIAL_ELECTRIC_TERRAIN 28u
+#define DFI_SPECIAL_MISTY_TERRAIN 29u
+#define DFI_SPECIAL_RISING_VOLTAGE 30u
+#define DFI_SPECIAL_TERRAIN_PULSE 31u
+#define DFI_SPECIAL_UNMODELED 32u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */
@@ -1251,6 +1255,8 @@
 #define DFI_FAMILY_WEATHER_SNOW 4u
 #define DFI_FAMILY_TERRAIN_GRASSY 1u
 #define DFI_FAMILY_TERRAIN_PSYCHIC 2u
+#define DFI_FAMILY_TERRAIN_ELECTRIC 3u
+#define DFI_FAMILY_TERRAIN_MISTY 4u
 #define DFI_FAMILY_PARAM_NONE 0xFFu
 
 /* ---- handler columns of the items and abilities: NONE for a row that the tables model (the closure and Team C

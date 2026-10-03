@@ -1678,6 +1678,54 @@ static const df_tb_stop tb_g21_waterfall_pulse_crunch[] = {
     {5u, 0u, 2u, 2u, {4u, 4u}, {653u, 714u}, {0x404c9a38e38e38e4ull, 0x404e7c9ed699c4dcull}},
     {6u, 0u, 2u, 2u, {4u, 4u}, {625u, 704u}, {0x404b631c71c71c71ull, 0x404e130288df0cacull}},
 };
+static const df_tb_stop tb_g25_electric_seed[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1106u, 1125u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {735u, 780u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {735u, 780u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {735u, 680u}, {0x4050aaaaaaaaaaabull, 0x404d353a4c0a237cull}},
+    {5u, 0u, 1u, 2u, {4u, 4u}, {735u, 680u}, {0x4050aaaaaaaaaaabull, 0x404d353a4c0a237cull}},
+    {6u, 0u, 1u, 2u, {4u, 4u}, {735u, 680u}, {0x4050aaaaaaaaaaabull, 0x404d353a4c0a237cull}},
+};
+static const df_tb_stop tb_g25_electric_surge_voltage[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1091u, 1125u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {731u, 780u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {731u, 780u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {731u, 672u}, {0x4050aaaaaaaaaaabull, 0x404ce0bd410e5cf0ull}},
+    {5u, 0u, 1u, 2u, {4u, 4u}, {731u, 508u}, {0x4050aaaaaaaaaaabull, 0x4045c2845d80240dull}},
+    {6u, 0u, 1u, 2u, {4u, 4u}, {731u, 508u}, {0x4050aaaaaaaaaaabull, 0x4045c2845d80240dull}},
+};
+static const df_tb_stop tb_g25_misty_terrain[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1141u, 1093u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {770u, 737u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {719u, 711u}, {0x404f2d0c8fcf7c51ull, 0x4050096d25b496d2ull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {719u, 684u}, {0x404f2d0c8fcf7c51ull, 0x404ec3f80fe03f81ull}},
+    {5u, 0u, 1u, 2u, {4u, 4u}, {687u, 632u}, {0x404dd2848c585d90ull, 0x404c3f01fc07f020ull}},
+    {6u, 0u, 1u, 2u, {4u, 4u}, {677u, 603u}, {0x404d663a0b4323f4ull, 0x404ad7515d457515ull}},
+};
+static const df_tb_stop tb_g25_terrain_pulse_electric[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1096u, 1125u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {725u, 780u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {725u, 686u}, {0x4050aaaaaaaaaaabull, 0x404d74981446f865ull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {725u, 686u}, {0x4050aaaaaaaaaaabull, 0x404d74981446f865ull}},
+    {5u, 0u, 1u, 2u, {4u, 4u}, {725u, 506u}, {0x4050aaaaaaaaaaabull, 0x4045a4981446f865ull}},
+    {6u, 0u, 1u, 2u, {4u, 4u}, {725u, 456u}, {0x4050aaaaaaaaaaabull, 0x4043948a8fa15f79ull}},
+};
+static const df_tb_stop tb_g25_terrain_pulse_psychic_misty[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1122u, 1146u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {762u, 775u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {762u, 716u}, {0x4050aaaaaaaaaaabull, 0x404ebb5f442d2661ull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {762u, 716u}, {0x4050aaaaaaaaaaabull, 0x404ebb5f442d2661ull}},
+    {5u, 0u, 1u, 2u, {4u, 4u}, {762u, 681u}, {0x4050aaaaaaaaaaabull, 0x404d304f76be885bull}},
+    {6u, 0u, 1u, 2u, {4u, 4u}, {762u, 642u}, {0x4050aaaaaaaaaaabull, 0x404b946de133206full}},
+};
+static const df_tb_stop tb_g25_weather_ball_refrigerate[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1182u, 1154u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {811u, 783u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {811u, 692u}, {0x4050aaaaaaaaaaabull, 0x404d7be28b7a95e0ull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {811u, 663u}, {0x4050aaaaaaaaaaabull, 0x404c499d43a9e624ull}},
+    {5u, 0u, 1u, 2u, {4u, 4u}, {811u, 631u}, {0x4050aaaaaaaaaaabull, 0x404af7a917bacbf3ull}},
+    {6u, 0u, 1u, 2u, {4u, 4u}, {811u, 631u}, {0x4050aaaaaaaaaaabull, 0x404af7a917bacbf3ull}},
+};
 static const df_tb_stop tb_g2_data_moves_a[] = {
     {0u, 0u, 1u, 3u, {6u, 6u}, {1129u, 1099u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {769u, 770u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -3201,6 +3249,12 @@ static const df_tb_battle tb_battles[] = {
     {"g21_priority_punches", 6u, tb_g21_priority_punches, sizeof tb_g21_priority_punches / sizeof tb_g21_priority_punches[0]},
     {"g21_quiver_bug_fire", 6u, tb_g21_quiver_bug_fire, sizeof tb_g21_quiver_bug_fire / sizeof tb_g21_quiver_bug_fire[0]},
     {"g21_waterfall_pulse_crunch", 6u, tb_g21_waterfall_pulse_crunch, sizeof tb_g21_waterfall_pulse_crunch / sizeof tb_g21_waterfall_pulse_crunch[0]},
+    {"g25_electric_seed", 6u, tb_g25_electric_seed, sizeof tb_g25_electric_seed / sizeof tb_g25_electric_seed[0]},
+    {"g25_electric_surge_voltage", 6u, tb_g25_electric_surge_voltage, sizeof tb_g25_electric_surge_voltage / sizeof tb_g25_electric_surge_voltage[0]},
+    {"g25_misty_terrain", 6u, tb_g25_misty_terrain, sizeof tb_g25_misty_terrain / sizeof tb_g25_misty_terrain[0]},
+    {"g25_terrain_pulse_electric", 6u, tb_g25_terrain_pulse_electric, sizeof tb_g25_terrain_pulse_electric / sizeof tb_g25_terrain_pulse_electric[0]},
+    {"g25_terrain_pulse_psychic_misty", 6u, tb_g25_terrain_pulse_psychic_misty, sizeof tb_g25_terrain_pulse_psychic_misty / sizeof tb_g25_terrain_pulse_psychic_misty[0]},
+    {"g25_weather_ball_refrigerate", 6u, tb_g25_weather_ball_refrigerate, sizeof tb_g25_weather_ball_refrigerate / sizeof tb_g25_weather_ball_refrigerate[0]},
     {"g2_data_moves_a", 6u, tb_g2_data_moves_a, sizeof tb_g2_data_moves_a / sizeof tb_g2_data_moves_a[0]},
     {"g2_data_moves_b", 7u, tb_g2_data_moves_b, sizeof tb_g2_data_moves_b / sizeof tb_g2_data_moves_b[0]},
     {"g2_data_moves_c", 10u, tb_g2_data_moves_c, sizeof tb_g2_data_moves_c / sizeof tb_g2_data_moves_c[0]},
@@ -3334,7 +3388,7 @@ static const df_tb_battle tb_battles[] = {
     {"w8_sand_soak", 7u, tb_w8_sand_soak, sizeof tb_w8_sand_soak / sizeof tb_w8_sand_soak[0]},
 };
 
-/* 2368 stops: 139 of an ended battle; decided by the count 711,
- * the HP percentage 727, the total HP 740, a tie 51;
- * winners: side 0 1187, side 1 1130, tie 51 */
+/* 2404 stops: 139 of an ended battle; decided by the count 711,
+ * the HP percentage 749, the total HP 754, a tie 51;
+ * winners: side 0 1212, side 1 1141, tie 51 */
 #endif
