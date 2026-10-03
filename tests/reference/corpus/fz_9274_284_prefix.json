@@ -1,0 +1,115 @@
+{
+  "name": "fz_9274_284_prefix",
+  "purpose": "Corpus (defect): case fz_9274_284 of run 9274 (tools/reference/diff_driver.py random), team J against team L, found as DIVERGENCE state side # member # stall #, reference #. The shortest prefix that showed it, 26 of 26 choices; it passes now, fixed by G26 (Perish Song).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,9a39a9bb0e0a85260c6e526cc6c9cd85afb73db7499150e06f0234898520080b",
+  "teams": [
+    "Politoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Perish Song\n- Helping Hand\n- Protect\n- Hydro Pump\n\nPrimarina (F) @ Fairy Feather\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Perish Song\n- Helping Hand\n- Protect\n- Moonblast\n\nSneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Protect\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Tailwind\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Swords Dance\n- Protect",
+    "Salamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Perish Song\n- Protect\n- Helping Hand\n- Hydro Pump\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Protect\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n\nSneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Swords Dance\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 1634",
+      "p2": "team 3264"
+    },
+    {
+      "p1": "switch 3, move 1",
+      "p2": "move 1, move 4 2"
+    },
+    {
+      "p1": "switch 3, switch 4",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 1, move 1 mega",
+      "p2": "move 1 mega, move 1"
+    },
+    {
+      "p1": "move 2 -2, move 1",
+      "p2": "switch 3, switch 4"
+    },
+    {
+      "p1": "move 3, move 2",
+      "p2": "switch 3, move 1"
+    },
+    {
+      "p1": "switch 3, switch 4"
+    },
+    {
+      "p1": "move 1, move 2",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 1, move 2",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 1, move 2",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 1, move 2",
+      "p2": "move 1, switch 4"
+    },
+    {
+      "p1": "move 1, move 2",
+      "p2": "switch 3, move 2"
+    },
+    {
+      "p1": "move 1, move 2",
+      "p2": "move 1, move 3 -1"
+    },
+    {
+      "p1": "move 1, move 2",
+      "p2": "move 2, move 3 -1"
+    },
+    {
+      "p1": "move 1, move 1",
+      "p2": "move 1, switch 4"
+    },
+    {
+      "p1": "move 1, move 2",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 1, move 1",
+      "p2": "move 2, move 1"
+    },
+    {
+      "p1": "move 1, move 1",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 1, move 1",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 1, move 1",
+      "p2": "switch 4, move 1"
+    },
+    {
+      "p1": "move 1, move 1",
+      "p2": "move 4 -2, move 1"
+    },
+    {
+      "p1": "pass, move 1",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "pass, move 1",
+      "p2": "move 3 -2, move 1"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "pass, move 1",
+      "p2": "move 4 -2, move 1"
+    },
+    {
+      "p1": "pass, move 1",
+      "p2": "move 2, move 1"
+    }
+  ]
+}

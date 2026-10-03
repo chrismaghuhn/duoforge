@@ -301,13 +301,15 @@ static dfi_invariant dfi_check_side(const struct duoforge_context *ctx, const st
             /* Unburden's volatile: set when its holder used its item or lost it to a move. The holder is the Pokemon
              * whose ability now is Unburden: the sheet's, or the one that the POOL tail's ability_now holds (zero under
              * every other kind). The item is gone: used up, or taken (or it stays: a Mega Stone on its own species
-             * that refused Knock Off, which Unburden's onTakeItem answered first, data/abilities.ts:5240-5242). */
+             * that refused Knock Off, which Unburden's onTakeItem answered first, data/abilities.ts:5240-5242). Under the POOL
+             * kinds the volatile may also stand with an item held: a Trick, Thief or Covet that took the item and gave
+             * another one back (step G29), or one that failed after the TakeItem handlers ran. */
             const uint32_t now = lim.pool_rules ? b->tail.sides[s].ability_now[slot->occupant] : 0u; /* the tail is absent elsewhere */
             const bool item_gone = item_now == DFI_TAIL_ITEM_NONE ||
                                    (occupant->item_consumed != 0u && (occupant->item != 0u || item_now != 0u));
             if (((uint32_t)slot->flags & DFI_VOL_UNBURDEN) != 0u &&
                 ((now != 0u ? now : occupant->ability) != 1u + DFI_ABILITY_UNBURDEN ||
-                 (!item_gone && occupant->mega_capable == 0u))) {
+                 (!item_gone && occupant->mega_capable == 0u && !lim.pool_rules))) {
                 return DFI_INV_VOLATILE;
             }
             /* Follow Me's and Helping Hand's volatiles end in the residual and
@@ -542,11 +544,13 @@ static bool dfi_hazard_order_valid(const dfi_tail_side *ts)
     for (uint32_t k = 0u; k < DFI_HAZARD_KIND_COUNT; ++k) {
         n += (present >> k) & 1u;
     }
+    /* The kinds named by the first n slots are exactly the n that are up: with n slots for n kinds each is named once (a kind
+     * named twice leaves another unnamed), so no separate duplicate check is needed. */
     uint32_t seen = 0u;
     bool ok = true;
     for (uint32_t i = 0u; i < DFI_HAZARD_KIND_COUNT; ++i) {
         const uint32_t slot = ((uint32_t)ts->hazard_order >> (2u * i)) & 3u;
-        ok = ok && (i < n ? (seen & (1u << slot)) == 0u : slot == 0u);
+        ok = ok && (i < n || slot == 0u);
         seen |= i < n ? 1u << slot : 0u;
     }
     return ok && seen == present;
@@ -632,6 +636,14 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
             if (!dfi_tail_pos_valid(&lim, tp, s * DUOFORGE_ACTIVE_PER_SIDE + p, &side->members[occupant],
                                     &side->positions[p])) {
                 return DFI_INV_TAIL_POSITION;
+            }
+        }
+        for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER && m < side->member_count; ++m) {
+            /* A member without a sheet item that used up an item has one that a move gave it (step G29). */
+            const dfi_member *held_by = &side->members[m];
+            if (held_by->item_consumed != 0u && held_by->item == 0u &&
+                (ts->item_now[m] == 0u || ts->item_now[m] == DFI_TAIL_ITEM_NONE)) {
+                return DFI_INV_TAIL_MEMBER;
             }
         }
         for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {

@@ -322,6 +322,8 @@ class Tracker:
         if self._foe_members is not None or self.side is None or self._packed[1 - self.side] is None:
             return
         self.foe_sets = teams.unpack(self._packed[1 - self.side])
+        for s in self.foe_sets:
+            s["species"] = self.data.canonical(s["species"])  # a cosmetic alias (#118) as the tables name its row
         self._foe_members = [_Member(s, self.data) for s in self.data.team(teams.to_text(self.foe_sets))]
 
     def _member(self, side):

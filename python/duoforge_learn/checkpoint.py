@@ -14,7 +14,7 @@ import sys
 
 import numpy as np
 
-from duoforge import features
+from duoforge import data, features
 
 from . import columns
 
@@ -103,8 +103,40 @@ def load(path, obs_size=None):
     return params, config
 
 
-FORMAT2_KEYS = ("model", "encoder", "features", "slot_features", "data", "teams", "update", "decisions")
+FORMAT2_KEYS = ("model", "encoder", "features", "slot_features", "data", "teams", "update", "decisions", "ids")
 EMBEDDINGS = ("species", "move", "item", "ability", "nature")
+_TABLES = {"species": data.TABLE_SPECIES, "move": data.TABLE_MOVE, "item": data.TABLE_ITEM,
+           "ability": data.TABLE_ABILITY, "nature": data.TABLE_NATURE}
+
+
+def ids_of(context):
+    """{kind: [name of id 0, name of id 1, ...]} of every embedded table
+    (EMBEDDINGS) under the context: what the ids a network embeds mean. A
+    format-2 config keeps it as "ids" (spec 12.4)."""
+    return {kind: [data.name(context, table, i) for i in range(data.count(context, table))]
+            for kind, table in _TABLES.items()}
+
+
+def check_ids(config, context):
+    """Checks that every id a checkpoint's network embeds names the same row
+    under the context as under the tables it was trained with (config["ids"],
+    ids_of): the context's tables may only have grown at the end. ValueError
+    naming the first id that moved or went away, or for a config without the
+    tables (it cannot be checked across data versions)."""
+    stored = config.get("ids")
+    if not isinstance(stored, dict):
+        raise ValueError("the checkpoint has no id tables, so it cannot be checked across data versions")
+    now = ids_of(context)
+    for kind in EMBEDDINGS:
+        if kind not in stored:
+            raise ValueError(f"the checkpoint's id tables lack {kind}")
+        old, new = stored[kind], now[kind]
+        if len(old) > len(new):
+            raise ValueError(f"{kind} id {len(new)} ({old[len(new)]}) is gone: the table has {len(new)} ids now, "
+                             f"{len(old)} when the network was trained")
+        for i, (a, b) in enumerate(zip(old, new)):
+            if a != b:
+                raise ValueError(f"{kind} id {i}: {a} -> {b} (the tables changed below the network's ids)")
 
 
 def save(path, params, config):
@@ -214,6 +246,45 @@ def widen(tree, config, feature_names, slot_names, capacities=None, fill="init",
         cfg["capacities"] = caps
         new_config["model"] = cfg
     return out, new_config
+
+
+def _sources(cfg, feature_names, slot_names):
+    """The observation columns feeding each row of _rows (columns.input_sources; v1: one column per row of t1)."""
+    if cfg["version"] == 1:
+        return {("t1",): [{i} for i in range(len(feature_names))],
+                ("option_features",): [set() for _ in slot_names]}
+    return columns.input_sources(cfg, columns.columns(feature_names, slot_names), feature_names, slot_names)
+
+
+def zero_columns(tree, config, names):
+    """A copy of tree in which every input row fed by the feature columns `names` is 0 (M11 BC spec section 8): a
+    network that never saw those columns set starts identical when they come on, and learns them from zero.
+    Exact only when every column feeding a zeroed row is one of `names`: model v2 shares a row among every member's
+    (or position's) column of a field, and zeroing it under a column that was on before would change the outputs in
+    silence, so that is a ValueError naming such a column, as is a name that is not a feature column of config."""
+    features_ = list(config["features"])
+    index = {n: i for i, n in enumerate(features_)}
+    unknown = [n for n in names if n not in index]
+    if unknown:
+        raise ValueError(f"{unknown[0]!r} is not a feature column of the checkpoint")
+    marked = {index[n] for n in names}
+    cfg = config["model"]
+    labels = _rows(cfg, features_, config["slot_features"])
+    sources = _sources(cfg, features_, config["slot_features"])
+    out = _copy(tree)
+    for path, fed in sources.items():
+        rows = [r for r, cols in enumerate(fed) if cols & marked]
+        for r in rows:
+            outside = sorted(fed[r] - marked)
+            if outside:
+                raise ValueError(f"row {labels[path][r]!r} of layer {path} is also fed by {features_[outside[0]]!r}, "
+                                 "which is not being switched on: zeroing it would change the outputs")
+        if rows:
+            layer = _get(out, path)
+            w = np.array(layer["w"], copy=True)
+            w[rows] = 0
+            layer["w"] = w
+    return out
 
 
 # The 13 inputs the encoder added in #84 (Psychic Terrain, the three position flags of each of the four

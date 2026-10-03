@@ -60,7 +60,7 @@ dfi_kind_limits dfi_kind_limits_of(uint32_t data_kind)
     /* Flip Turn's flag is in the extended tables (Team C), U-turn's and Volt Switch's only in the pool's. */
     lim.switch_flag_max = pool ? DFI_SWITCH_VOLT_SWITCH : team_c ? DFI_SWITCH_FLIP_TURN : DFI_SWITCH_FAINTED;
     lim.status_max = pool ? DFI_STATUS_TOX : extended ? DFI_STATUS_PSN : DFI_STATUS_SLP;
-    lim.terrain_max = extended ? DFI_TERRAIN_PSYCHIC : DFI_TERRAIN_GRASSY;
+    lim.terrain_max = pool ? DFI_TERRAIN_MISTY : extended ? DFI_TERRAIN_PSYCHIC : DFI_TERRAIN_GRASSY;
     lim.weather_max = pool ? DFI_WEATHER_SNOW : DFI_WEATHER_SUN;
     lim.vol_flags_mask = extended ? (DFI_VOL_FLAGS_MAX | DFI_VOL_FOLLOW_ME | DFI_VOL_HELPING_HAND | DFI_VOL_UNBURDEN |
                                      DFI_VOL_CHOICE_LOCK | DFI_VOL_NEWLY_SWITCHED)
@@ -446,7 +446,9 @@ bool dfi_closure_member_ranges(const dfi_kind_limits *lim, const dfi_member *m)
     if (m->is_mega > 1u || m->item > lim->item_count || m->item_consumed > 1u) {
         return false;
     }
-    if (m->item_consumed != 0u && m->item == 0u) {
+    /* The item that was used up is the sheet's. Under the POOL kinds a member without one may have used an item that a
+     * move gave it (Trick, Thief, Covet; step G29): the tail's item_now says so (dfi_check_side). */
+    if (m->item_consumed != 0u && m->item == 0u && !lim->pool_rules) {
         return false;
     }
     const bool stone = dfi_holds_own_stone(m->species_id, m->item);

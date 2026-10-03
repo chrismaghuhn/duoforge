@@ -1,0 +1,28 @@
+{
+  "name": "g26_perish_song",
+  "purpose": "Perish Song: Politoed casts it on the first turn (Protect does not stop it, Good as Gold is immune), every count shows in the residual, Kingambit switches out on the second turn and loses it, Wigglytuff casts it again on the third (Gholdengo is immune again, the newcomer takes it, the others keep their counts) and on the fourth the first holders faint after the upkeep line.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000002601",
+  "teams": [
+    "Politoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Perish Song\n- Protect\n- Weather Ball\n- Hydro Pump\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Shadow Ball\n- Protect\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Protect\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n\nKingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect",
+    "Wigglytuff (M) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Perish Song\n- Protect\n- Hyper Voice\n- Moonblast\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n- Sucker Punch\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n\nRaichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Protect\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 2",
+      "move 3 1, move 1 1",
+      "move 4 1, move 1 1",
+      "move 4 1, move 1 1",
+      "move 4 1, move 1 1"
+    ],
+    "p2": [
+      "move 2, move 1",
+      "move 1, switch 3",
+      "move 1, move 1",
+      "move 3 1, move 1 1",
+      "move 3 1, move 1 1"
+    ],
+    "max_steps": 7
+  }
+}
