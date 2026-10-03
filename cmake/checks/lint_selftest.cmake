@@ -84,9 +84,8 @@ _lint_case("${_fix}/banned_token.c" banned-token 1)
 _lint_case("${_fix}/banned_suffix.c" long-suffix 1)
 _lint_case("${_fix}/cast_paren.c" result-cast 1)
 
-# 3. Floating point is banned everywhere except src/state/tiebreak.c, the
-# encoder's two files and the files that pass its rows through (decision 0022),
-# and even there every other banned token still applies.
+# 3. Floating point is banned everywhere except src/state/tiebreak.c and the
+# encoder's two files, and even there every other banned token still applies.
 file(MAKE_DIRECTORY "${WORK}/fp/src/state")
 file(WRITE "${WORK}/fp/src/state/tiebreak.c" "static double fixture_fp;
 static float fixture_fp2;
@@ -120,25 +119,6 @@ _lint_case("${WORK}/fp/src/batch/batch.c" banned-token 1 "${WORK}/fp")
 file(WRITE "${WORK}/fp/src/encode/other.c" "static float fixture_fp;
 ")
 _lint_case("${WORK}/fp/src/encode/other.c" banned-token 1 "${WORK}/fp")
-# The files that pass the encoder's rows through (decision 0022) have the same
-# exception, and nothing more: a float in another file of src/search still fails.
-file(MAKE_DIRECTORY "${WORK}/fp/src/search")
-file(WRITE "${WORK}/fp/src/search/search.c" "static float *fixture_rows;
-")
-_lint_case("${WORK}/fp/src/search/search.c" CLEAN 0 "${WORK}/fp")
-file(WRITE "${WORK}/fp/src/search/search.c" "static float *fixture_rows;
-static unsigned fixture_word;
-")
-_lint_case("${WORK}/fp/src/search/search.c" banned-token 1 "${WORK}/fp")
-file(WRITE "${WORK}/fp/include/duoforge/duoforge_search.h" "void fixture(float *obs);
-")
-_lint_case("${WORK}/fp/include/duoforge/duoforge_search.h" CLEAN 0 "${WORK}/fp")
-file(WRITE "${WORK}/fp/src/encode/encode_internal.h" "void fixture(float *obs);
-")
-_lint_case("${WORK}/fp/src/encode/encode_internal.h" CLEAN 0 "${WORK}/fp")
-file(WRITE "${WORK}/fp/src/search/other.c" "static float fixture_fp;
-")
-_lint_case("${WORK}/fp/src/search/other.c" banned-token 1 "${WORK}/fp")
 
 if(_bad)
     message(FATAL_ERROR "LINT_SELFTEST FAILED")

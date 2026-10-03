@@ -2,7 +2,8 @@
  * Search support (decision 0022): the search seeds and the leaf expansion of
  * a one-turn lookahead. Each leaf is the single-battle calls copy, reseed,
  * step and the encoder's row, run on the leaf batch's workers through the
- * batch runtime's leaf hook (batch/batch_each.h).
+ * batch runtime's leaf hook (batch/batch_each.h). The rows are the
+ * encoder's: this file only hands it a row index (encode/encode_internal.h).
  */
 #include <duoforge/duoforge_search.h>
 
@@ -44,7 +45,7 @@ typedef struct dfi_expand_job {
     duoforge_status *encode_statuses;
     duoforge_step_result *results;
     uint32_t *leaf_results;
-    float *obs;
+    void *obs; /* count rows of obs_size float32 values, written by the encoder (encode/encode_internal.h) */
 } dfi_expand_job;
 
 /* Leaf i (dfi_batch_leaves): copy, reseed, step, then the result or the row. */
@@ -53,7 +54,6 @@ static void dfi_expand_leaf(void *arg, uint32_t i, const duoforge_context *ctx, 
 {
     const dfi_expand_job *j = arg;
     const uint32_t r = j->root_envs[i];
-    float *row = &j->obs[(size_t)i * j->obs_size];
     duoforge_step_result *result = &j->results[i];
     memset(result, 0, sizeof *result);
     j->leaf_results[i] = 0u;
@@ -94,16 +94,10 @@ static void dfi_expand_leaf(void *arg, uint32_t i, const duoforge_context *ctx, 
         if (st == DUOFORGE_OK) {
             j->leaf_results[i] = outcome;
         }
-        memset(row, 0, (size_t)j->obs_size * sizeof *row);
+        dfi_encode_clear(j->obs, j->obs_size, i);
         return;
     }
-
-    float slots[DUOFORGE_ENCODER_SLOT_VALUES];
-    uint8_t pair_mask[DUOFORGE_ENCODER_PAIR_VALUES];
-    duoforge_observation observation;
-    duoforge_factored_domain domain;
-    j->encode_statuses[i] = dfi_encode_player(ctx, leaf, j->viewers[r], j->version, j->mask, j->obs_size, NULL,
-                                              &observation, &domain, row, slots, pair_mask);
+    j->encode_statuses[i] = dfi_encode_leaf(ctx, leaf, j->viewers[r], j->version, j->mask, j->obs_size, j->obs, i);
 }
 
 /* True iff the two contexts have the same fingerprint, so their battles copy into each other. */
@@ -131,7 +125,7 @@ duoforge_status duoforge_batch_expand(duoforge_batch *leaves, const duoforge_bat
                                       const uint8_t *viewers, uint32_t count, const uint32_t *root_envs,
                                       const uint32_t *samples, const duoforge_factored_choice *choices,
                                       duoforge_status *step_statuses, duoforge_status *encode_statuses,
-                                      duoforge_step_result *results, uint32_t *leaf_results, float *obs)
+                                      duoforge_step_result *results, uint32_t *leaf_results, void *obs)
 {
     if (leaves == NULL || roots == NULL) {
         return DUOFORGE_E_NULL_ARGUMENT;
