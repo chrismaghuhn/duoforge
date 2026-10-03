@@ -286,6 +286,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_BLIZZARD] = 1u,
             [DFI_MOVE_ANCIENTPOWER] = 1u,
             [DFI_MOVE_FEINT] = 1u,
+            [DFI_MOVE_EARTHQUAKE] = 1u, /* hits the ally too (allAdjacent); Grassy Terrain halves it */
         },
     .abilities =
         {

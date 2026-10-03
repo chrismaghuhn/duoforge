@@ -1358,6 +1358,14 @@ G28_FACTS = (
                   "secondary: { chance: 10, status: 'frz', },"]),
     ('feint', ['accuracy: 100,', 'basePower: 30,', 'category: "Physical",', 'priority: 2,', 'target: "normal",', 'type: "Normal",',
                'flags: { mirror: 1, noassist: 1, failcopycat: 1 },', 'breaksProtect: true,']),
+    ('grassyterrain', ['onBasePowerPriority: 6,',
+                       "onBasePower(basePower, attacker, defender, move) { const weakenedMoves = ['earthquake', 'bulldoze', 'magnitude']; "
+                       "if (weakenedMoves.includes(move.id) && defender.isGrounded() && !defender.isSemiInvulnerable()) { "
+                       "this.debug('move weakened by grassy terrain'); return this.chainModify(0.5); } "
+                       "if (move.type === 'Grass' && attacker.isGrounded()) { this.debug('grassy terrain boost'); "
+                       "return this.chainModify([5325, 4096]); } },"]),
+    ('earthquake', ['accuracy: 100,', 'basePower: 100,', 'category: "Physical",', 'priority: 0,', 'target: "allAdjacent",',
+                    'type: "Ground",', 'flags: { protect: 1, mirror: 1, nonsky: 1, metronome: 1 },']),
     ('ancientpower', ['accuracy: 100,', 'basePower: 60,', 'category: "Special",', 'target: "normal",', 'type: "Rock",',
                       "secondary: { chance: 10, self: { boosts: { atk: 1, def: 1, spa: 1, spd: 1, spe: 1, }, }, },"]),
 )
@@ -1499,7 +1507,7 @@ TARGET_CLASS_POOL = dict(TARGET_CLASS, allAdjacent=11, scripted=12, allyTeam=13,
 TARGET_CLASS_POOL_NAMES = {11: 'ALL_ADJACENT', 12: 'SCRIPTED', 13: 'ALLY_TEAM', 14: 'ALLIES', 15: 'FOE_SIDE'}
 # The target classes that the turn code resolves (src/combat/turn.c, dfi_resolve_targets and request.c).
 ENGINE_TARGETS = {'normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
-                  'randomNormal'}
+                  'randomNormal', 'allAdjacent'}  # allAdjacent: step G28 (Earthquake hits the ally too)
 # Every move flag of the 510 pool moves: a flag outside this set is something the generator cannot read.
 POOL_FLAGS = (set(FLAG_BITS_C) | IGNORED_FLAGS | G2_IGNORED_FLAGS |
               {'bite', 'recharge', 'minimize', 'gravity', 'powder', 'noparentalbond', 'futuremove', 'cantusetwice',

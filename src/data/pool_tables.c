@@ -936,22 +936,22 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {12u, 0u, 85u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 30u, 2u, 3u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Bone Rush -- data/moves.ts:1674-1689, data/mods/champions/moves.ts:89-92  [unmodelled: field multihit] */
     {10u, 0u, 30u, 90u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Boomburst -- data/moves.ts:1690-1702  [unmodelled: target allAdjacent] */
-    {12u, 1u, 140u, 100u, 10u, 12u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    /* Boomburst -- data/moves.ts:1690-1702 */
+    {12u, 1u, 140u, 100u, 10u, 12u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Bounce -- data/moves.ts:1703-1747  [unmodelled: callback onTryMove; condition block] */
     {7u, 0u, 85u, 85u, 5u, 8u, 8u, 2u, 1u, 7u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
     /* Breaking Swipe -- data/moves.ts:1789-1806 */
     {2u, 0u, 60u, 100u, 15u, 16u, 8u, 7u, 1u, 3u, {0u, 0u}, {0u, 0u}, 100u, 1u, 0u, 2u, {5u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Brick Break -- data/moves.ts:1822-1840  [unmodelled: callback onTryHit] */
     {5u, 0u, 75u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Brutal Swing -- data/moves.ts:1859-1871  [unmodelled: target allAdjacent] */
-    {1u, 0u, 60u, 100u, 20u, 20u, 8u, 11u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    /* Brutal Swing -- data/moves.ts:1859-1871 */
+    {1u, 0u, 60u, 100u, 20u, 20u, 8u, 11u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Bug Bite -- data/moves.ts:1911-1934  [unmodelled: callback onHit] */
     {0u, 0u, 60u, 100u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
     /* Bug Buzz -- data/moves.ts:1935-1953 */
     {0u, 1u, 90u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 10u, 1u, 0u, 2u, {6u, 6u, 6u, 5u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
-    /* Bulldoze -- data/moves.ts:1972-1990  [unmodelled: target allAdjacent] */
-    {10u, 0u, 60u, 100u, 20u, 20u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    /* Bulldoze -- data/moves.ts:1972-1990 */
+    {10u, 0u, 60u, 100u, 20u, 20u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 100u, 1u, 0u, 2u, {6u, 6u, 6u, 6u, 5u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Bullet Punch -- data/moves.ts:1991-2003 */
     {16u, 0u, 40u, 100u, 30u, 20u, 9u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Bullet Seed -- data/moves.ts:2004-2019  [unmodelled: field multihit] */
@@ -990,7 +990,7 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {8u, 2u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
     /* Copycat -- data/moves.ts:2849-2873  [unmodelled: callback onHit; field callsMove] */
     {12u, 2u, 0u, 0u, 20u, 20u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Corrosive Gas -- data/moves.ts:2914-2934, data/mods/champions/moves.ts:149-152  [unmodelled: callback onHit; target allAdjacent] */
+    /* Corrosive Gas -- data/moves.ts:2914-2934, data/mods/champions/moves.ts:149-152  [unmodelled: callback onHit] */
     {13u, 2u, 0u, 100u, 40u, 20u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
     /* Cosmic Power -- data/moves.ts:2935-2952 */
     {14u, 2u, 0u, 0u, 20u, 20u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 1u, {6u, 7u, 6u, 7u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
@@ -1030,8 +1030,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {10u, 0u, 80u, 100u, 10u, 12u, 8u, 1u, 1u, 7u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
     /* Disable -- data/moves.ts:3648-3716, data/mods/champions/moves.ts:228-239  [unmodelled: callback onTryHit; condition block; primary volatile disable] */
     {12u, 2u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Discharge -- data/moves.ts:3730-3746  [unmodelled: target allAdjacent] */
-    {3u, 1u, 80u, 100u, 15u, 16u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    /* Discharge -- data/moves.ts:3730-3746 */
+    {3u, 1u, 80u, 100u, 15u, 16u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 30u, 2u, 3u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Dive -- data/moves.ts:3747-3794  [unmodelled: callback onTryMove; condition block] */
     {17u, 0u, 80u, 100u, 10u, 12u, 8u, 1u, 1u, 7u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
     /* Double Hit -- data/moves.ts:3893-3908  [unmodelled: field multihit] */
@@ -1064,8 +1064,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {5u, 0u, 100u, 50u, 5u, 8u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 100u, 3u, 2u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Earth Power -- data/moves.ts:4371-4389 */
     {10u, 1u, 90u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 10u, 1u, 0u, 2u, {6u, 6u, 6u, 5u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
-    /* Earthquake -- data/moves.ts:4390-4402  [unmodelled: target allAdjacent] */
-    {10u, 0u, 100u, 100u, 10u, 12u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    /* Earthquake -- data/moves.ts:4390-4402 */
+    {10u, 0u, 100u, 100u, 10u, 12u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Eerie Impulse -- data/moves.ts:4441-4457  [unmodelled: primary boosts on a non-self target] */
     {3u, 2u, 0u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
     /* Eerie Spell -- data/moves.ts:4458-4482  [unmodelled: secondary] */
@@ -1090,7 +1090,7 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {6u, 1u, 150u, 100u, 5u, 8u, 8u, 7u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
     /* Expanding Force -- data/moves.ts:4943-4965 */
     {14u, 1u, 80u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 25u},
-    /* Explosion -- data/moves.ts:4966-4979  [unmodelled: field selfdestruct; target allAdjacent] */
+    /* Explosion -- data/moves.ts:4966-4979  [unmodelled: field selfdestruct] */
     {12u, 0u, 250u, 100u, 5u, 8u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
     /* Extrasensory -- data/moves.ts:4980-4996 */
     {14u, 1u, 80u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 10u, 3u, 1u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
@@ -1262,8 +1262,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {1u, 0u, 75u, 100u, 5u, 8u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
     /* Last Resort -- data/moves.ts:10066-10090  [unmodelled: callback onTry] */
     {12u, 0u, 140u, 100u, 5u, 8u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Lava Plume -- data/moves.ts:10106-10122  [unmodelled: target allAdjacent] */
-    {6u, 1u, 80u, 100u, 15u, 16u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    /* Lava Plume -- data/moves.ts:10106-10122 */
+    {6u, 1u, 80u, 100u, 15u, 16u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 30u, 2u, 1u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Leaf Blade -- data/moves.ts:10136-10149 */
     {9u, 0u, 90u, 100u, 15u, 16u, 8u, 1u, 2u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Leaf Storm -- data/moves.ts:10150-10167 */
@@ -1318,7 +1318,7 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {12u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
     /* Mirror Coat -- data/moves.ts:11983-12026  [unmodelled: callback beforeTurnCallback; callback damageCallback; callback onTry; condition block; target scripted] */
     {14u, 1u, 0u, 100u, 20u, 20u, 3u, 12u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Misty Explosion -- data/moves.ts:12132-12150  [unmodelled: callback onBasePower; field selfdestruct; target allAdjacent] */
+    /* Misty Explosion -- data/moves.ts:12132-12150  [unmodelled: callback onBasePower; field selfdestruct] */
     {4u, 1u, 100u, 100u, 5u, 8u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
     /* Misty Terrain -- data/moves.ts:12151-12208  [unmodelled: condition block; field terrain] */
     {4u, 2u, 0u, 0u, 10u, 12u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
@@ -1360,14 +1360,14 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {6u, 1u, 130u, 90u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 3u, {6u, 6u, 4u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Pain Split -- data/moves.ts:13128-13150  [unmodelled: callback onHit] */
     {12u, 2u, 0u, 0u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Parabolic Charge -- data/moves.ts:13151-13164  [unmodelled: target allAdjacent] */
-    {3u, 1u, 65u, 100u, 20u, 20u, 8u, 11u, 1u, 2u, {0u, 0u}, {1u, 2u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    /* Parabolic Charge -- data/moves.ts:13151-13164 */
+    {3u, 1u, 65u, 100u, 20u, 20u, 8u, 11u, 1u, 2u, {0u, 0u}, {1u, 2u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Payback -- data/moves.ts:13186-13206  [unmodelled: callback basePowerCallback] */
     {1u, 0u, 50u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
     /* Perish Song -- data/moves.ts:13233-13277  [unmodelled: callback onHitField; condition block] */
     {12u, 2u, 0u, 0u, 5u, 8u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Petal Blizzard -- data/moves.ts:13278-13290  [unmodelled: target allAdjacent] */
-    {9u, 0u, 90u, 100u, 15u, 16u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    /* Petal Blizzard -- data/moves.ts:13278-13290 */
+    {9u, 0u, 90u, 100u, 15u, 16u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Petal Dance -- data/moves.ts:13291-13306  [unmodelled: self effect] */
     {9u, 1u, 120u, 100u, 10u, 12u, 8u, 10u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
     /* Phantom Force -- data/moves.ts:13307-13335  [unmodelled: callback onTryMove; condition block; field breaksProtect] */
@@ -1490,7 +1490,7 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {9u, 0u, 80u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Seismic Toss -- data/moves.ts:15991-16005  [unmodelled: field damage] */
     {5u, 0u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Self-Destruct -- data/moves.ts:16006-16019  [unmodelled: field selfdestruct; target allAdjacent] */
+    /* Self-Destruct -- data/moves.ts:16006-16019  [unmodelled: field selfdestruct] */
     {12u, 0u, 200u, 100u, 5u, 8u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
     /* Shadow Punch -- data/moves.ts:16102-16114 */
     {8u, 0u, 60u, 0u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
@@ -1526,8 +1526,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {12u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
     /* Sludge Bomb -- data/moves.ts:16920-16936 */
     {13u, 1u, 90u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 30u, 2u, 5u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
-    /* Sludge Wave -- data/moves.ts:16937-16953  [unmodelled: target allAdjacent] */
-    {13u, 1u, 95u, 100u, 10u, 12u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    /* Sludge Wave -- data/moves.ts:16937-16953 */
+    {13u, 1u, 95u, 100u, 10u, 12u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 10u, 2u, 5u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Smack Down -- data/moves.ts:16954-16999  [unmodelled: condition block; primary volatile smackdown] */
     {15u, 0u, 50u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
     /* Smart Strike -- data/moves.ts:17000-17012 */
@@ -1544,7 +1544,7 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {9u, 1u, 120u, 100u, 10u, 12u, 8u, 1u, 1u, 6u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
     /* Solar Blade -- data/moves.ts:17260-17295  [unmodelled: callback onBasePower; callback onTryMove] */
     {9u, 0u, 125u, 100u, 10u, 12u, 8u, 1u, 1u, 7u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Sparkling Aria -- data/moves.ts:17357-17388  [unmodelled: callback onAfterMove; secondary volatile sparklingaria; target allAdjacent] */
+    /* Sparkling Aria -- data/moves.ts:17357-17388  [unmodelled: callback onAfterMove; secondary volatile sparklingaria] */
     {17u, 1u, 90u, 100u, 10u, 12u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
     /* Speed Swap -- data/moves.ts:17430-17449  [unmodelled: callback onHit] */
     {14u, 2u, 0u, 0u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
@@ -1602,8 +1602,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {12u, 0u, 0u, 90u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
     /* Superpower -- data/moves.ts:18477-18495 */
     {5u, 0u, 120u, 100u, 5u, 8u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 3u, {5u, 5u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
-    /* Surf -- data/moves.ts:18526-18538  [unmodelled: target allAdjacent] */
-    {17u, 1u, 90u, 100u, 15u, 16u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    /* Surf -- data/moves.ts:18526-18538 */
+    {17u, 1u, 90u, 100u, 15u, 16u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Swagger -- data/moves.ts:18555-18572  [unmodelled: primary boosts on a non-self target; primary volatile confusion] */
     {12u, 2u, 0u, 85u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
     /* Swallow -- data/moves.ts:18573-18598  [unmodelled: callback onHit; callback onTry] */
@@ -1626,7 +1626,7 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {12u, 2u, 0u, 0u, 20u, 20u, 8u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
     /* Teatime -- data/moves.ts:19035-19065  [unmodelled: callback onHitField] */
     {12u, 2u, 0u, 0u, 10u, 12u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Teeter Dance -- data/moves.ts:19099-19113  [unmodelled: primary volatile confusion; target allAdjacent] */
+    /* Teeter Dance -- data/moves.ts:19099-19113  [unmodelled: primary volatile confusion] */
     {12u, 2u, 0u, 100u, 20u, 20u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
     /* Temper Flare -- data/moves.ts:19185-19203  [unmodelled: callback basePowerCallback] */
     {6u, 0u, 75u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
@@ -5934,12 +5934,9 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_BLOCK] = "callback onHit",
     [DFI_MOVE_BODYPRESS] = "field overrideOffensiveStat",
     [DFI_MOVE_BONERUSH] = "field multihit",
-    [DFI_MOVE_BOOMBURST] = "target allAdjacent",
     [DFI_MOVE_BOUNCE] = "callback onTryMove; condition block",
     [DFI_MOVE_BRICKBREAK] = "callback onTryHit",
-    [DFI_MOVE_BRUTALSWING] = "target allAdjacent",
     [DFI_MOVE_BUGBITE] = "callback onHit",
-    [DFI_MOVE_BULLDOZE] = "target allAdjacent",
     [DFI_MOVE_BULLETSEED] = "field multihit",
     [DFI_MOVE_BURNINGJEALOUSY] = "secondary",
     [DFI_MOVE_BURNUP] = "callback onTryMove; self effect",
@@ -5954,7 +5951,7 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_COMEUPPANCE] = "callback damageCallback; callback onModifyTarget; callback onTry; target scripted",
     [DFI_MOVE_CONFUSERAY] = "primary volatile confusion",
     [DFI_MOVE_COPYCAT] = "callback onHit; field callsMove",
-    [DFI_MOVE_CORROSIVEGAS] = "callback onHit; target allAdjacent",
+    [DFI_MOVE_CORROSIVEGAS] = "callback onHit",
     [DFI_MOVE_COTTONSPORE] = "primary boosts on a non-self target",
     [DFI_MOVE_COUNTER] = "callback beforeTurnCallback; callback damageCallback; callback onTry; condition block; target scripted",
     [DFI_MOVE_COURTCHANGE] = "callback onHitField",
@@ -5965,7 +5962,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_DESTINYBOND] = "callback onPrepareHit; condition block; primary volatile destinybond",
     [DFI_MOVE_DIG] = "callback onTryMove; condition block",
     [DFI_MOVE_DISABLE] = "callback onTryHit; condition block; primary volatile disable",
-    [DFI_MOVE_DISCHARGE] = "target allAdjacent",
     [DFI_MOVE_DIVE] = "callback onTryMove; condition block",
     [DFI_MOVE_DOUBLEHIT] = "field multihit",
     [DFI_MOVE_DOUBLESHOCK] = "callback onTryMove; self effect",
@@ -5973,7 +5969,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_DRAGONDARTS] = "field multihit; field smartTarget",
     [DFI_MOVE_DRAGONTAIL] = "field forceSwitch",
     [DFI_MOVE_DUALWINGBEAT] = "field multihit",
-    [DFI_MOVE_EARTHQUAKE] = "target allAdjacent",
     [DFI_MOVE_EERIEIMPULSE] = "primary boosts on a non-self target",
     [DFI_MOVE_EERIESPELL] = "secondary",
     [DFI_MOVE_ELECTRICTERRAIN] = "condition block; field terrain",
@@ -5983,7 +5978,7 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_ENDURE] = "callback onHit; callback onPrepareHit; condition block; primary volatile endure",
     [DFI_MOVE_ENTRAINMENT] = "callback onHit; callback onTryHit",
     [DFI_MOVE_ERUPTION] = "callback basePowerCallback",
-    [DFI_MOVE_EXPLOSION] = "field selfdestruct; target allAdjacent",
+    [DFI_MOVE_EXPLOSION] = "field selfdestruct",
     [DFI_MOVE_FACADE] = "callback onBasePower",
     [DFI_MOVE_FAIRYLOCK] = "condition block; pseudo weather fairylock",
     [DFI_MOVE_FAKETEARS] = "primary boosts on a non-self target",
@@ -6039,7 +6034,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_KINGSSHIELD] = "callback onHit; callback onPrepareHit; condition block; primary volatile kingsshield",
     [DFI_MOVE_LASHOUT] = "callback onBasePower",
     [DFI_MOVE_LASTRESORT] = "callback onTry",
-    [DFI_MOVE_LAVAPLUME] = "target allAdjacent",
     [DFI_MOVE_LEECHSEED] = "callback onTryImmunity; condition block; primary volatile leechseed",
     [DFI_MOVE_LIFEDEW] = "target allies",
     [DFI_MOVE_LOCKON] = "callback onHit; callback onTryHit; condition block",
@@ -6055,7 +6049,7 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_MILKDRINK] = "target adjacentAllyOrSelf",
     [DFI_MOVE_MINIMIZE] = "condition block; primary volatile minimize",
     [DFI_MOVE_MIRRORCOAT] = "callback beforeTurnCallback; callback damageCallback; callback onTry; condition block; target scripted",
-    [DFI_MOVE_MISTYEXPLOSION] = "callback onBasePower; field selfdestruct; target allAdjacent",
+    [DFI_MOVE_MISTYEXPLOSION] = "callback onBasePower; field selfdestruct",
     [DFI_MOVE_MISTYTERRAIN] = "condition block; field terrain",
     [DFI_MOVE_MOONLIGHT] = "callback onHit",
     [DFI_MOVE_MORNINGSUN] = "callback onHit",
@@ -6066,10 +6060,8 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_OCTOLOCK] = "callback onTryImmunity; condition block; primary volatile octolock",
     [DFI_MOVE_OUTRAGE] = "self effect",
     [DFI_MOVE_PAINSPLIT] = "callback onHit",
-    [DFI_MOVE_PARABOLICCHARGE] = "target allAdjacent",
     [DFI_MOVE_PAYBACK] = "callback basePowerCallback",
     [DFI_MOVE_PERISHSONG] = "callback onHitField; condition block",
-    [DFI_MOVE_PETALBLIZZARD] = "target allAdjacent",
     [DFI_MOVE_PETALDANCE] = "self effect",
     [DFI_MOVE_PHANTOMFORCE] = "callback onTryMove; condition block; field breaksProtect",
     [DFI_MOVE_PINMISSILE] = "field multihit",
@@ -6113,7 +6105,7 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_SCARYFACE] = "primary boosts on a non-self target",
     [DFI_MOVE_SCREECH] = "primary boosts on a non-self target",
     [DFI_MOVE_SEISMICTOSS] = "field damage",
-    [DFI_MOVE_SELFDESTRUCT] = "field selfdestruct; target allAdjacent",
+    [DFI_MOVE_SELFDESTRUCT] = "field selfdestruct",
     [DFI_MOVE_SHEDTAIL] = "callback onHit; callback onTryHit; field selfSwitch shedtail; primary volatile substitute; self effect",
     [DFI_MOVE_SHEERCOLD] = "field ohko",
     [DFI_MOVE_SHELLSIDEARM] = "callback onAfterSubDamage; callback onHit; callback onModifyMove; callback onPrepareHit",
@@ -6121,14 +6113,13 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_SKILLSWAP] = "callback onHit",
     [DFI_MOVE_SKYATTACK] = "callback onTryMove",
     [DFI_MOVE_SLEEPTALK] = "callback onHit; callback onTry; field callsMove; field sleepUsable",
-    [DFI_MOVE_SLUDGEWAVE] = "target allAdjacent",
     [DFI_MOVE_SMACKDOWN] = "condition block; primary volatile smackdown",
     [DFI_MOVE_SNAPTRAP] = "primary volatile partiallytrapped",
     [DFI_MOVE_SNIPESHOT] = "field tracksTarget",
     [DFI_MOVE_SNORE] = "callback onTry; field sleepUsable",
     [DFI_MOVE_SOLARBEAM] = "callback onBasePower; callback onTryMove",
     [DFI_MOVE_SOLARBLADE] = "callback onBasePower; callback onTryMove",
-    [DFI_MOVE_SPARKLINGARIA] = "callback onAfterMove; secondary volatile sparklingaria; target allAdjacent",
+    [DFI_MOVE_SPARKLINGARIA] = "callback onAfterMove; secondary volatile sparklingaria",
     [DFI_MOVE_SPEEDSWAP] = "callback onHit",
     [DFI_MOVE_SPICYEXTRACT] = "primary boosts on a non-self target",
     [DFI_MOVE_SPIKES] = "condition block; side condition spikes; target foeSide",
@@ -6152,7 +6143,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_SUNNYDAY] = "field weather",
     [DFI_MOVE_SUPERCELLSLAM] = "callback onMoveFail; field hasCrashDamage",
     [DFI_MOVE_SUPERFANG] = "callback damageCallback",
-    [DFI_MOVE_SURF] = "target allAdjacent",
     [DFI_MOVE_SWAGGER] = "primary boosts on a non-self target; primary volatile confusion",
     [DFI_MOVE_SWALLOW] = "callback onHit; callback onTry",
     [DFI_MOVE_SWEETKISS] = "primary volatile confusion",
@@ -6164,7 +6154,7 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_TAUNT] = "condition block; primary volatile taunt",
     [DFI_MOVE_TEARFULLOOK] = "primary boosts on a non-self target",
     [DFI_MOVE_TEATIME] = "callback onHitField",
-    [DFI_MOVE_TEETERDANCE] = "primary volatile confusion; target allAdjacent",
+    [DFI_MOVE_TEETERDANCE] = "primary volatile confusion",
     [DFI_MOVE_TEMPERFLARE] = "callback basePowerCallback",
     [DFI_MOVE_TERRAINPULSE] = "callback onModifyMove; callback onModifyType",
     [DFI_MOVE_THIEF] = "callback onAfterHit",
@@ -6430,10 +6420,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0xbbu, 0x1cu, 0xa9u, 0xf3u, 0x94u, 0xacu, 0x2eu, 0x63u,
-    0x18u, 0x30u, 0x10u, 0x16u, 0x04u, 0x40u, 0xd1u, 0x12u,
-    0x85u, 0xfbu, 0xffu, 0x64u, 0x5cu, 0xe7u, 0x4du, 0x20u,
-    0xabu, 0x07u, 0xf9u, 0xe3u, 0x5cu, 0x26u, 0x50u, 0xf9u,
+    0x81u, 0x85u, 0x80u, 0xbcu, 0x4fu, 0xdbu, 0xaeu, 0x52u,
+    0xd5u, 0x15u, 0x42u, 0x43u, 0xbfu, 0xe5u, 0x8eu, 0x2du,
+    0x8au, 0xe4u, 0x0eu, 0x00u, 0xc6u, 0xc8u, 0xedu, 0x30u,
+    0x43u, 0xafu, 0x89u, 0x3bu, 0x9eu, 0xb9u, 0x81u, 0x65u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)

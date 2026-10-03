@@ -836,7 +836,7 @@ function checkFormes(dex, validator, rows, moves, abilities) {
 const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'expertbelt'],
     abilities: ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
-    'randomNormal']);
+    'randomNormal', 'allAdjacent']);
 // The fields of a move that the tables model (gen_closure.py DATA_KEYS and IGNORED_KEYS), nothing else.
 const MOVE_KEYS = new Set(['num', 'accuracy', 'basePower', 'category', 'name', 'pp', 'priority', 'flags', 'target', 'type',
     'critRatio', 'secondary', 'self', 'boosts', 'recoil', 'drain', 'status', 'volatileStatus', 'sideCondition',

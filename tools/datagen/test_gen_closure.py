@@ -871,9 +871,14 @@ class LenientMoves(unittest.TestCase):
         self.assertEqual(features, ['callback onHit', 'condition block', 'field multihit', 'primary status tox'])
 
     def test_a_target_class_is_encoded_and_unmodelled_when_the_turn_code_lacks_it(self):
-        # allAdjacent (Earthquake) is a class of the pool: code 11, no turn code yet.
+        # allAdjacent (Earthquake) is a class of the pool, code 11, which the turn code has since step G28; the others of the
+        # pool (code 12 to 15) have none.
         rec, features = lenient('plain', PLAIN.replace('target: "normal"', 'target: "allAdjacent"'))
-        self.assertEqual((rec['target_class'], features), (11, ['target allAdjacent']))
+        self.assertEqual((rec['target_class'], features), (11, []))
+        for name, code in (('scripted', 12), ('allyTeam', 13), ('allies', 14), ('foeSide', 15)):
+            with self.subTest(name):
+                rec, features = lenient('plain', PLAIN.replace('target: "normal"', 'target: "%s"' % name))
+                self.assertEqual((rec['target_class'], features), (code, ['target %s' % name]))
         # The classes of the closure stay modelled.
         for name in ('normal', 'any', 'self', 'allAdjacentFoes', 'allySide', 'all', 'adjacentFoe', 'adjacentAlly'):
             with self.subTest(name):
@@ -882,7 +887,8 @@ class LenientMoves(unittest.TestCase):
         self.assertEqual(sorted(gen_closure.TARGET_CLASS_POOL_NAMES), [11, 12, 13, 14, 15])
         self.assertTrue(set(gen_closure.TARGET_CLASS_POOL) - set(gen_closure.TARGET_CLASS) == {
             'allAdjacent', 'scripted', 'allyTeam', 'allies', 'foeSide'})
-        self.assertTrue(gen_closure.ENGINE_TARGETS <= set(gen_closure.TARGET_CLASS))
+        self.assertTrue(gen_closure.ENGINE_TARGETS <= set(gen_closure.TARGET_CLASS_POOL))
+        self.assertEqual(gen_closure.ENGINE_TARGETS - set(gen_closure.TARGET_CLASS), {'allAdjacent'})  # step G28
 
     def test_what_the_generator_cannot_read_still_fails(self):
         self.refused('plain', PLAIN.replace('target: "normal"', 'target: "nowhere"'), 'unknown target class nowhere')
@@ -1268,7 +1274,7 @@ class MoveRules(unittest.TestCase):
         gen_closure.check_g28_items(items)
 
     def test_every_fact_is_demanded(self):
-        self.assertEqual([mid for mid, _ in gen_closure.G28_FACTS], ['shellsmash', 'acrobatics', 'blizzard', 'feint', 'ancientpower'])
+        self.assertEqual([mid for mid, _ in gen_closure.G28_FACTS], ['shellsmash', 'acrobatics', 'blizzard', 'feint', 'grassyterrain', 'earthquake', 'ancientpower'])
         for mid, needed in gen_closure.G28_FACTS:
             for i in range(len(needed)):
                 with self.subTest(mid=mid, fact=needed[i]), self.assertRaises(SystemExit) as cm:

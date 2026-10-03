@@ -76,9 +76,9 @@ checks its precondition and fails loudly otherwise:
   INSERT_TIE        (Encore) the index of a replaced action among the moves
                     that tie it is a tape entry as well, unless the tied
                     actions are runSwitch entries (above)
-  RANDOM_TARGET execute:allAdjacentFoes
+  RANDOM_TARGET execute:allAdjacentFoes, execute:allAdjacent
                     always: the main target of a spread move only labels
-                    the protocol line; the move hits every adjacent foe
+                    the protocol line; the move hits every adjacent foe (and, for allAdjacent, the ally)
 
 Shuffle draws (SPEED_TIE queue) are made relative to the shuffled group:
 random(i, n) with i and n counted from the group's first index.
@@ -499,7 +499,7 @@ def drop_reason(d, state, after=None, log=None):
         raise ConversionError('insert-tie', 'trace_to_c: insert tie in %s' % group)
     if site == 'RANDOM_TARGET' and ctx in ('action-speed', 'resolve'):
         return 'target computed for priority'
-    if site == 'RANDOM_TARGET' and ctx == 'execute:allAdjacentFoes':
+    if site == 'RANDOM_TARGET' and ctx in ('execute:allAdjacentFoes', 'execute:allAdjacent'):
         return 'main target of a spread move'
     if site == 'UNKNOWN':
         raise ConversionError('unclassified-draw', 'trace_to_c: unclassified draw', detail=ctx)

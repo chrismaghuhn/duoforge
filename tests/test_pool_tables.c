@@ -44,7 +44,7 @@
 #include "state/battle_internal.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "bb1ca9f394ac2e63183010160440d11285fbff645ce74d20ab07f9e35c2650f9"
+#define POOL_HASH_HEX "818580bc4fdbae52d5154243bfe58e2d8ae40e00c6c8ed3043af893b9eb98165"
 /* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
  * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
  * produced the same bytes. Step G10 moved two of them on purpose: Scald and Recover are data now (the thaw bit and
@@ -68,7 +68,7 @@
 #define POOL_ABILITIES 215u
 
 /* The rows that the tables do not model, pinned (the generator reports the same counts). */
-#define UNMODELED_MOVES 287u /* 300 before step G28 modelled Acrobatics, Blizzard, Feint and the rows of the new secondary self boost (Ancient Power, Aqua Step, Charge Beam, Fiery Dance, Flame Charge, Meteor Mash, Psyshield Bash, Steel Wing, Torch Song, Trailblaze); 301 before step G20 modelled Aurora Veil; 303 before step G19 modelled Coaching and Glaive Rush; 305u before step G15 modelled Expanding Force; 306 before step G16 modelled Knock Off; 313 before step G17 modelled the seven recharge moves; 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
+#define UNMODELED_MOVES 277u /* 300 before step G28 modelled Acrobatics, Blizzard, Feint and the rows of the new secondary self boost (Ancient Power, Aqua Step, Charge Beam, Fiery Dance, Flame Charge, Meteor Mash, Psyshield Bash, Steel Wing, Torch Song, Trailblaze); 301 before step G20 modelled Aurora Veil; 303 before step G19 modelled Coaching and Glaive Rush; 305u before step G15 modelled Expanding Force; 306 before step G16 modelled Knock Off; 313 before step G17 modelled the seven recharge moves; 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
 #define UNMODELED_ITEMS 43u /* one fewer since step G28 modelled Expert Belt; one fewer since step G15 modelled Psychic Seed */
 #define UNMODELED_ABILITIES 179u /* 180 before step AC1 made Trace an engine row; 181 before step G16 made Sticky Hold an engine row; 184 before step G14 made Rough Skin, Poison Touch and Thermal Exchange engine rows */
 
@@ -1215,7 +1215,7 @@ int main(void)
                                                 DFI_MOVE_EXPANDINGFORCE,
                                                 DFI_MOVE_COACHING, DFI_MOVE_GLAIVERUSH, DFI_MOVE_AURORAVEIL,
                                                 DFI_MOVE_SHELLSMASH, DFI_MOVE_ACROBATICS, DFI_MOVE_BLIZZARD,
-                                                DFI_MOVE_ANCIENTPOWER, DFI_MOVE_FEINT};
+                                                DFI_MOVE_ANCIENTPOWER, DFI_MOVE_FEINT, DFI_MOVE_EARTHQUAKE};
         uint32_t marked_count = 0u;
         for (uint32_t id = DFI_EXT_MOVE_COUNT; id < DFI_POOL_MOVE_COUNT; ++id) {
             bool want = false;
@@ -1237,7 +1237,7 @@ int main(void)
             DF_CHECK(&t, !want || dfi_pool_moves[id].special != DFI_SPECIAL_UNMODELED);
             marked_count += dfi_support.moves[id] != 0u ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, marked_count, 83u);
+        DF_CHECK_EQ_U64(&t, marked_count, 84u);
     }
 
     /* Step AC1: Trace copies the ability of a foe unless that has the pin's notrace flag. The turn code excludes only

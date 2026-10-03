@@ -873,6 +873,23 @@ static duoforge_status dfi_move_targets(dfi_run *r, uint32_t user, uint32_t cls,
         *count = 1u;
         return DUOFORGE_OK;
     }
+    if (cls == DFI_TARGET_CLASS_ALL_ADJACENT) {
+        /* allAdjacent (step G28, Earthquake): getMoveTargets takes the adjacent allies first, then the adjacent foes
+         * (sim/pokemon.ts:809-817), so the ally that stands is hit before the foes and each target answers for itself. */
+        const uint32_t ally = side * 2u + (1u - user % 2u);
+        if (dfi_alive(r->b, ally)) {
+            targets[*count] = ally;
+            *count += 1u;
+        }
+        for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
+            const uint32_t flat = (1u - side) * 2u + slot;
+            if (dfi_alive(r->b, flat)) {
+                targets[*count] = flat;
+                *count += 1u;
+            }
+        }
+        return DUOFORGE_OK;
+    }
     if (cls == DUOFORGE_TARGET_CLASS_ALL_ADJACENT_FOES) {
         for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
             const uint32_t flat = (1u - side) * 2u + slot;
@@ -1112,6 +1129,12 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     }
     if (move_type == DFI_TYPE_GRASS && r->b->terrain == DFI_TERRAIN_GRASSY && dfi_grounded(r->b, a)) {
         ok = ok && dfi_chain_modify(bp_chain, 5325u, &bp_chain);
+    }
+    /* Grassy Terrain's other half (step G28, data/moves.ts:7694-7698): Earthquake (and Bulldoze and Magnitude, which are not
+     * marked) at a grounded target is chainModify(0.5), the first branch of the same handler (priority 6); a Ground move is
+     * not a Grass move, so the two never both apply. */
+    if (md == &dfi_pool_moves[DFI_MOVE_EARTHQUAKE] && r->b->terrain == DFI_TERRAIN_GRASSY && dfi_grounded(r->b, d)) {
+        ok = ok && dfi_chain_modify(bp_chain, 2048u, &bp_chain);
     }
     /* Psychic Terrain (Team C): 5325/4096 for a grounded user's Psychic move
      * (onBasePowerPriority 6, like Grassy Terrain's, which cannot be up at
@@ -2649,7 +2672,8 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     /* runMove's target, which AfterMove gets: getTarget's result, before
      * any redirection; a spread move's is a random foe that only labels
      * its line, which the engine does not draw. */
-    r->move_target = md->target_class == DUOFORGE_TARGET_CLASS_ALL_ADJACENT_FOES ? DFI_MOVE_TARGET_SPREAD
+    r->move_target = md->target_class == DUOFORGE_TARGET_CLASS_ALL_ADJACENT_FOES || md->target_class == DFI_TARGET_CLASS_ALL_ADJACENT
+                         ? DFI_MOVE_TARGET_SPREAD
                      : count != 0u                                              ? targets[0]
                                                                                 : DFI_MOVE_TARGET_NONE;
     /* BeforeMove: a Pokemon that cannot move uses no PP and shows nothing;
@@ -3060,7 +3084,8 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
      * targets are left, one -activate line per guarded target. A guarded target that also protects gets this line
      * only (its Protect handler is skipped). */
     bool guarded[DFI_POSITIONS] = {false, false, false, false};
-    if (target_class == DUOFORGE_TARGET_CLASS_ALL_ADJACENT_FOES && (md->flags & DFI_MOVE_FLAG_PROTECT) != 0u) {
+    if ((target_class == DUOFORGE_TARGET_CLASS_ALL_ADJACENT_FOES || target_class == DFI_TARGET_CLASS_ALL_ADJACENT) &&
+        (md->flags & DFI_MOVE_FLAG_PROTECT) != 0u) {
         for (uint32_t i = 0u; i < count; ++i) {
             const uint32_t t = targets[i];
             if (b->tail.sides[t / 2u].wide_guard != 0u) {
