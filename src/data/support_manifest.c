@@ -137,7 +137,12 @@
  * one Mega: Gardevoirite (Pixilate; the base forme's Trace has been marked since AC1: the Mega Evolution replaces the copied
  * ability), Abomasite (Snow Warning), Barbaracite (Tough Claws), Beedrillite (Adaptability), Falinksite (Defiant), Hawluchanite
  * (No Guard), Malamarite (Contrary), Sceptilite (Lightning Rod) and Scraftinite (Intimidate), recorded as g24_* under the POOL
- * kind. Meowsticite stays unmarked: one stone names two (base, Mega) pairs (Meowstic-M and -F) and its row links the first only. */
+ * kind. Meowsticite stays unmarked: one stone names two (base, Mega) pairs (Meowstic-M and -F) and its row links the first only.
+ * Step G28 marks five moves and one item that the turn code now has rules for: Shell Smash (which step G21 left out: the stats
+ * change in the pinned order, Defense and Special Defense first), Acrobatics (twice the power while the user holds no item),
+ * Blizzard (never misses in snow, the freeze at 10 percent is data), Ancient Power (a secondary that raises the user's five
+ * stats at 10 percent: a new secondary kind), Feint (removes the target's Protect and the Wide Guard of its side, and its stall
+ * counter) and Expert Belt (4915/4096 for a super effective hit), recorded as g28_* under the POOL kind. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -274,6 +279,13 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_DRAINPUNCH] = 1u,
             [DFI_MOVE_NUZZLE] = 1u,
             [DFI_MOVE_AURORAVEIL] = 1u,
+            /* Step G28: Shell Smash (its boosts in the pin's order), Acrobatics (doubled without an item), Blizzard (never misses
+             * in snow), Ancient Power (a secondary that boosts its user), Feint (breaks Protect and Wide Guard). */
+            [DFI_MOVE_SHELLSMASH] = 1u,
+            [DFI_MOVE_ACROBATICS] = 1u,
+            [DFI_MOVE_BLIZZARD] = 1u,
+            [DFI_MOVE_ANCIENTPOWER] = 1u,
+            [DFI_MOVE_FEINT] = 1u,
         },
     .abilities =
         {
@@ -335,6 +347,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_FOCUSSASH] = 1u,
             [DFI_ITEM_FLOETTITE] = 1u,
             [DFI_ITEM_PSYCHICSEED] = 1u,
+            [DFI_ITEM_EXPERTBELT] = 1u, /* step G28 */
             [DFI_ITEM_TYRANITARITE] = 1u,
             [DFI_ITEM_BAXCALIBRITE] = 1u,
             [DFI_ITEM_AERODACTYLITE] = 1u,
