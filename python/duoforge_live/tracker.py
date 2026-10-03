@@ -143,6 +143,7 @@ class Tracker:
         self._accepted = None  # the own choice accepted at the last TURN decision point (it queued the moves)
         self._last_move = None  # (position, move id, target) of the last MOVE event
         self._parting_shot = data.tables["MOVE"]["PARTINGSHOT"]
+        self._feint = data.tables["MOVE"].get("FEINT", -1)
         self._turn_scoped = set()  # single-turn features of decision 0018 seen since the turn began (lines.TURN_SCOPED)
         self._spectator = False  # the own side folded like the foe's, from the public lines (duoforge_replay)
         self.turn_scoped_seen = collections.Counter()  # single-turn feature lines seen, by feature (counters)
@@ -409,6 +410,11 @@ class Tracker:
         elif kind == EV["ACTIVATE"]:
             if ident2 == self.data.tables["ABILITY"]["EMERGENCYEXIT"] + 1:
                 self._at(pos).flag = 1  # it leaves: asked to switch
+            elif e[3] == trace_to_c.CAUSE["MOVE"] and ident2 == self._feint:
+                # Feint broke a Protect (step G28): the volatile and the stall counter of the target are gone
+                # (sim/battle-actions.ts hitStepBreakProtect), so its next Protect succeeds again.
+                p = self._at(pos)
+                p.protecting = p.chain = p.stall = 0
         elif kind == EV["FAINT"]:
             p = self._at(pos)
             p.reset()  # a faint clears the position's conditions; the occupant stays until replaced
