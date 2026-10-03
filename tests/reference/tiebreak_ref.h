@@ -1729,6 +1729,14 @@ static const df_tb_stop tb_g24_sceptile_raichu[] = {
     {3u, 0u, 1u, 2u, {4u, 4u}, {696u, 565u}, {0x404f84ef2a605ce0ull, 0x4049a91b0e91b0e9ull}},
     {4u, 0u, 1u, 1u, {4u, 3u}, {696u, 552u}, {0x404f84ef2a605ce0ull, 0x4049000000000000ull}},
 };
+static const df_tb_stop tb_g29_edge_cases[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1172u, 1081u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {763u, 715u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {713u, 688u}, {0x404f4547d0afbc68ull, 0x404fe67450710d97ull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {661u, 688u}, {0x404d201b094b31d9ull, 0x404fe67450710d97ull}},
+    {5u, 0u, 1u, 1u, {4u, 3u}, {626u, 558u}, {0x404bae77f93dad33ull, 0x4049000000000000ull}},
+    {6u, 0u, 1u, 1u, {4u, 3u}, {626u, 558u}, {0x404bae77f93dad33ull, 0x4049000000000000ull}},
+};
 static const df_tb_stop tb_g29_empty_hands[] = {
     {0u, 0u, 1u, 3u, {6u, 6u}, {1127u, 1096u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 1u, 3u, {4u, 4u}, {767u, 745u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -3292,6 +3300,7 @@ static const df_tb_battle tb_battles[] = {
     {"g24_gardevoir_pixilate", 4u, tb_g24_gardevoir_pixilate, sizeof tb_g24_gardevoir_pixilate / sizeof tb_g24_gardevoir_pixilate[0]},
     {"g24_hawlucha_malamar", 5u, tb_g24_hawlucha_malamar, sizeof tb_g24_hawlucha_malamar / sizeof tb_g24_hawlucha_malamar[0]},
     {"g24_sceptile_raichu", 4u, tb_g24_sceptile_raichu, sizeof tb_g24_sceptile_raichu / sizeof tb_g24_sceptile_raichu[0]},
+    {"g29_edge_cases", 6u, tb_g29_edge_cases, sizeof tb_g29_edge_cases / sizeof tb_g29_edge_cases[0]},
     {"g29_empty_hands", 6u, tb_g29_empty_hands, sizeof tb_g29_empty_hands / sizeof tb_g29_empty_hands[0]},
     {"g29_thief_covet", 8u, tb_g29_thief_covet, sizeof tb_g29_thief_covet / sizeof tb_g29_thief_covet[0]},
     {"g29_trick_fails", 6u, tb_g29_trick_fails, sizeof tb_g29_trick_fails / sizeof tb_g29_trick_fails[0]},
@@ -3429,7 +3438,7 @@ static const df_tb_battle tb_battles[] = {
     {"w8_sand_soak", 7u, tb_w8_sand_soak, sizeof tb_w8_sand_soak / sizeof tb_w8_sand_soak[0]},
 };
 
-/* 2430 stops: 139 of an ended battle; decided by the count 728,
- * the HP percentage 750, the total HP 762, a tie 51;
- * winners: side 0 1219, side 1 1160, tie 51 */
+/* 2436 stops: 139 of an ended battle; decided by the count 730,
+ * the HP percentage 752, the total HP 764, a tie 51;
+ * winners: side 0 1223, side 1 1162, tie 51 */
 #endif

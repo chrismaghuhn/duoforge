@@ -838,7 +838,7 @@ class Library(unittest.TestCase):
         M` gives X the item (item id + 1; a Thief's or Covet's `[of] Y` takes Y's away, 255), `|-enditem|X|Item|[silent]|[from]
         move: M` takes X's away; a used-up item and a switch change nothing. Also the converter: the lines are ITEM_START (cause
         MOVE) and ITEM_END (cause ITEM_TAKEN), and any other shape is refused."""
-        names = ('g29_trick_scarf', 'g29_empty_hands', 'g29_thief_covet', 'g29_trick_fails')
+        names = ('g29_trick_scarf', 'g29_empty_hands', 'g29_thief_covet', 'g29_trick_fails', 'g29_edge_cases')
         source = open(os.path.join(ROOT, 'tests', 'test_pool_g29.c'), encoding='utf-8').read()
         rows = {}
         for m in re.finditer(r'\{"(g29_\w+)", (\d+)u, \{([^}]*)\}, (\d+)u, (\d+)u\}', source):

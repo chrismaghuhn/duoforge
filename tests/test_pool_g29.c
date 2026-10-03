@@ -135,10 +135,16 @@ static const struct {
     {"g29_trick_fails", 3u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
     {"g29_trick_fails", 4u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
     {"g29_trick_fails", 5u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
+    {"g29_edge_cases", 0u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
+    {"g29_edge_cases", 1u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
+    {"g29_edge_cases", 2u, {3u, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u}, 1u, 1u},
+    {"g29_edge_cases", 3u, {3u, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
+    {"g29_edge_cases", 4u, {3u, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
+    {"g29_edge_cases", 5u, {3u, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
 };
 /* ROWS-END */
 
-static const char *const battle_names[] = {"g29_trick_scarf", "g29_empty_hands", "g29_thief_covet", "g29_trick_fails"};
+static const char *const battle_names[] = {"g29_trick_scarf", "g29_empty_hands", "g29_thief_covet", "g29_trick_fails", "g29_edge_cases"};
 
 static void check_battles(df_test *t, const duoforge_context *ctx, uint32_t *compared)
 {
