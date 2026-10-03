@@ -19,6 +19,7 @@
 #include <string.h>
 
 #include "batch/batch_each.h"
+#include "encode/encode_internal.h"
 
 #if defined(FLT_EVAL_METHOD) && FLT_EVAL_METHOD != 0
 #error "encode.c needs float32 and float64 arithmetic without excess precision (FLT_EVAL_METHOD 0, SSE2 on x86)"
@@ -566,12 +567,52 @@ typedef struct dfi_encode_job {
     uint8_t *pair_mask;
 } dfi_encode_job;
 
+/* The rows of a player that failed, or of one after a failed player, are all zero. */
+static void dfi_encode_zero(uint32_t obs_size, float *obs, float *slots, uint8_t *pair_mask)
+{
+    memset(obs, 0, (size_t)obs_size * sizeof *obs);
+    memset(slots, 0, (size_t)DUOFORGE_ENCODER_SLOT_VALUES * sizeof *slots);
+    memset(pair_mask, 0, DUOFORGE_ENCODER_PAIR_VALUES);
+}
+
+duoforge_status dfi_encoder_check(uint32_t version, uint64_t ext_supported, uint32_t *out_obs_size)
+{
+    uint32_t size = 0u;
+    const duoforge_status checked = duoforge_encoder_size(version, &size);
+    if (checked != DUOFORGE_OK) {
+        return checked;
+    }
+    if ((ext_supported & ~dfi_version_features(version)) != 0u) {
+        return DUOFORGE_E_INVALID_ARGUMENT;
+    }
+    *out_obs_size = size;
+    return DUOFORGE_OK;
+}
+
+duoforge_status dfi_encode_player(const duoforge_context *ctx, const duoforge_battle *battle, uint32_t p,
+                                  uint32_t version, uint64_t ext_supported, uint32_t obs_size,
+                                  duoforge_request *request, duoforge_observation *observation,
+                                  duoforge_factored_domain *domain, float *obs, float *slots, uint8_t *pair_mask)
+{
+    const bool records = (ext_supported & ~DFI_ENC_BASE_VALUES) != 0u;
+    duoforge_observation_ext ext;
+    /* the query of duoforge_batch_query_factored */
+    duoforge_status st = dfi_batch_query_player(ctx, battle, p, request, observation, NULL, NULL, domain);
+    if (st == DUOFORGE_OK && records) {
+        st = duoforge_battle_observe_ext(ctx, battle, p, &ext);
+    }
+    if (st != DUOFORGE_OK) {
+        dfi_encode_zero(obs_size, obs, slots, pair_mask);
+        return st;
+    }
+    return duoforge_encode(version, ext_supported, observation, domain, records ? &ext : NULL, obs, slots, pair_mask);
+}
+
 /* Query and encode both players of one environment (dfi_batch_each). */
 static duoforge_status dfi_encode_env(void *arg, uint32_t env, const duoforge_context *ctx,
                                       const duoforge_battle *battle)
 {
     const dfi_encode_job *j = arg;
-    const bool records = (j->mask & ~DFI_ENC_BASE_VALUES) != 0u;
     duoforge_status st = DUOFORGE_OK;
     for (uint32_t p = 0u; p < DUOFORGE_SIDE_COUNT; ++p) {
         const size_t at = (size_t)env * DUOFORGE_SIDE_COUNT + p;
@@ -580,22 +621,13 @@ static duoforge_status dfi_encode_env(void *arg, uint32_t env, const duoforge_co
         uint8_t *pair_mask = &j->pair_mask[at * DUOFORGE_ENCODER_PAIR_VALUES];
         duoforge_observation own_observation;
         duoforge_factored_domain own_domain;
-        duoforge_observation_ext ext;
         duoforge_observation *ob = j->observations != NULL ? &j->observations[at] : &own_observation;
         duoforge_factored_domain *d = j->domains != NULL ? &j->domains[at] : &own_domain;
-        if (st == DUOFORGE_OK) { /* the query of duoforge_batch_query_factored */
-            st = dfi_batch_query_player(ctx, battle, p, j->requests != NULL ? &j->requests[at] : NULL, ob, NULL, NULL,
-                                        d);
-        }
-        if (st == DUOFORGE_OK && records) {
-            st = duoforge_battle_observe_ext(ctx, battle, p, &ext);
-        }
         if (st == DUOFORGE_OK) {
-            st = duoforge_encode(j->version, j->mask, ob, d, records ? &ext : NULL, obs, slots, pair_mask);
+            st = dfi_encode_player(ctx, battle, p, j->version, j->mask, j->obs_size,
+                                   j->requests != NULL ? &j->requests[at] : NULL, ob, d, obs, slots, pair_mask);
         } else { /* rows of a failed environment are all zero */
-            memset(obs, 0, (size_t)j->obs_size * sizeof *obs);
-            memset(slots, 0, (size_t)DUOFORGE_ENCODER_SLOT_VALUES * sizeof *slots);
-            memset(pair_mask, 0, DUOFORGE_ENCODER_PAIR_VALUES);
+            dfi_encode_zero(j->obs_size, obs, slots, pair_mask);
         }
     }
     return st;
@@ -610,12 +642,9 @@ duoforge_status duoforge_batch_query_encoded(duoforge_batch *batch, uint32_t ver
         return DUOFORGE_E_NULL_ARGUMENT;
     }
     dfi_encode_job job = {version, ext_supported, 0u, requests, observations, domains, obs, slots, pair_mask};
-    const duoforge_status checked = duoforge_encoder_size(version, &job.obs_size);
+    const duoforge_status checked = dfi_encoder_check(version, ext_supported, &job.obs_size);
     if (checked != DUOFORGE_OK) {
         return checked;
-    }
-    if ((ext_supported & ~dfi_version_features(version)) != 0u) {
-        return DUOFORGE_E_INVALID_ARGUMENT;
     }
     return dfi_batch_each(batch, dfi_encode_env, &job, statuses);
 }
