@@ -3,7 +3,7 @@
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "spec": "g32_unnerve.json",
  "format": "gen9championsvgc2026regmc",
- "seed": "sodium,0000000000000000000000000000000000000000000000000000000000009501",
+ "seed": "sodium,0000000000000000000000000000000000000000000000000000000000009511",
  "start": {
   "log": [
    "|gametype|doubles",
@@ -20,7 +20,7 @@
    "|poke|p1|Staraptor, L50, F|",
    "|poke|p1|Gholdengo, L50|",
    "|poke|p1|Ceruledge, L50, M|",
-   "|poke|p2|Milotic, L50, F|",
+   "|poke|p2|Rillaboom, L50, M|",
    "|poke|p2|Staraptor, L50, F|",
    "|poke|p2|Kingambit, L50, M|",
    "|poke|p2|Indeedee-F, L50, F|",
@@ -107,6 +107,7 @@
         0
        ],
        "pp": [
+        12,
         8
        ],
        "volatiles": [],
@@ -236,12 +237,12 @@
      ],
      "pokemon": [
       {
-       "species": "Milotic",
-       "set_species": "Milotic",
+       "species": "Rillaboom",
+       "set_species": "Rillaboom",
        "mega": 0,
        "switch_flag": 0,
-       "hp": 202,
-       "maxhp": 202,
+       "hp": 192,
+       "maxhp": 192,
        "item": "sitrusberry",
        "status": "",
        "status_time": 0,
@@ -428,8 +429,8 @@
     "|switch|p1b: Kingambit|Kingambit, L50, M|207/207",
     "|switch|p1b: Kingambit|Kingambit, L50, M|100/100",
     "|split|p2",
-    "|switch|p2a: Milotic|Milotic, L50, F|202/202",
-    "|switch|p2a: Milotic|Milotic, L50, F|100/100",
+    "|switch|p2a: Rillaboom|Rillaboom, L50, M|192/192",
+    "|switch|p2a: Rillaboom|Rillaboom, L50, M|100/100",
     "|split|p2",
     "|switch|p2b: Staraptor|Staraptor, L50, F|192/192",
     "|switch|p2b: Staraptor|Staraptor, L50, F|100/100",
@@ -439,6 +440,7 @@
     "|-unboost|p1b: Kingambit|atk|1",
     "|-ability|p1b: Kingambit|Defiant|boost",
     "|-boost|p1b: Kingambit|atk|2",
+    "|-fieldstart|move: Grassy Terrain|[from] ability: Grassy Surge|[of] p2a: Rillaboom",
     "|turn|1"
    ],
    "state": {
@@ -447,8 +449,8 @@
     "winner": "",
     "weather": "",
     "weather_turns": 0,
-    "terrain": "",
-    "terrain_turns": 0,
+    "terrain": "grassyterrain",
+    "terrain_turns": 5,
     "trick_room": 0,
     "sides": [
      {
@@ -464,6 +466,7 @@
         1
        ],
        [
+        1,
         1
        ]
       ],
@@ -522,6 +525,7 @@
          0
         ],
         "pp": [
+         12,
          8
         ],
         "volatiles": [],
@@ -606,12 +610,12 @@
       ],
       "pokemon": [
        {
-        "species": "Milotic",
-        "set_species": "Milotic",
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 202,
-        "maxhp": 202,
+        "hp": 192,
+        "maxhp": 192,
         "item": "sitrusberry",
         "status": "",
         "status_time": 0,
@@ -722,20 +726,13 @@
   },
   {
    "input": {
-    "p1": "move 1, move 1",
+    "p1": "move 1, move 1 1",
     "p2": "move 2, move 2"
    },
    "draws": [
     {
      "site": "RANDOM_TARGET",
      "context": "resolve",
-     "lo": 0,
-     "hi": 2,
-     "value": 1
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
      "lo": 0,
      "hi": 2,
      "value": 1
@@ -752,14 +749,14 @@
      "context": "action-speed",
      "lo": 0,
      "hi": 2,
-     "value": 1
+     "value": 0
     },
     {
      "site": "RANDOM_TARGET",
      "context": "action-speed",
      "lo": 0,
      "hi": 2,
-     "value": 1
+     "value": 0
     },
     {
      "site": "RANDOM_TARGET",
@@ -780,116 +777,111 @@
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 80
+     "value": 60
     },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 27
+     "value": 51
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 21
+     "value": 0
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 15
+     "value": 7
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 11
+     "value": 6
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 11
+     "value": 0
     },
     {
      "site": "SECONDARY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 63
+     "value": 60
     },
     {
      "site": "SECONDARY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 31
+     "value": 3
     },
     {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "H:stall:p1b:end",
-      "H:protect:p1b:end"
-     ],
-     "start": 1
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 5
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 3
     }
    ],
    "log": [
-    "|move|p1b: Kingambit|Protect|p1b: Kingambit",
-    "|-singleturn|p1b: Kingambit|Protect",
     "|move|p2b: Staraptor|Tailwind|p2b: Staraptor",
     "|-sidestart|p2: p2|move: Tailwind",
-    "|move|p2a: Milotic|Coil|p2a: Milotic",
-    "|-boost|p2a: Milotic|atk|1",
-    "|-boost|p2a: Milotic|def|1",
-    "|-boost|p2a: Milotic|accuracy|1",
+    "|move|p2a: Rillaboom|Swords Dance|p2a: Rillaboom",
+    "|-boost|p2a: Rillaboom|atk|2",
     "|move|p1a: Tyranitar|Rock Slide|p2b: Staraptor|[spread] p2a,p2b",
+    "|-crit|p2a: Rillaboom",
     "|-supereffective|p2b: Staraptor|1",
     "|split|p2",
-    "|-damage|p2a: Milotic|178/202",
-    "|-damage|p2a: Milotic|88/100",
+    "|-damage|p2a: Rillaboom|96/192",
+    "|-damage|p2a: Rillaboom|50/100y",
     "|split|p2",
-    "|-damage|p2b: Staraptor|94/192",
-    "|-damage|p2b: Staraptor|48/100",
-    "|upkeep",
-    "|turn|2"
+    "|-damage|p2b: Staraptor|78/192",
+    "|-damage|p2b: Staraptor|40/100",
+    "|move|p1b: Kingambit|Kowtow Cleave|p2a: Rillaboom",
+    "|split|p2",
+    "|-damage|p2a: Rillaboom|0 fnt",
+    "|-damage|p2a: Rillaboom|0 fnt",
+    "|faint|p2a: Rillaboom",
+    "|upkeep"
    ],
    "state": {
-    "turn": 2,
+    "turn": 1,
     "ended": false,
     "winner": "",
     "weather": "",
     "weather_turns": 0,
-    "terrain": "",
-    "terrain_turns": 0,
+    "terrain": "grassyterrain",
+    "terrain_turns": 4,
     "trick_room": 0,
     "sides": [
      {
-      "request": "move",
+      "request": "",
       "conditions": [
        0,
        0,
        0
       ],
-      "enabled": [
-       [
-        1,
-        1
-       ],
-       [
-        1
-       ]
-      ],
+      "enabled": [],
       "active": [
        0,
        1
@@ -945,11 +937,10 @@
          0
         ],
         "pp": [
-         7
+         11,
+         8
         ],
-        "volatiles": [
-         "stall"
-        ],
+        "volatiles": [],
         "locked": null
        },
        {
@@ -1009,46 +1000,37 @@
       ]
      },
      {
-      "request": "move",
+      "request": "switch",
       "conditions": [
        3,
        0,
        0
       ],
-      "enabled": [
-       [
-        1,
-        1
-       ],
-       [
-        1,
-        1
-       ]
-      ],
+      "enabled": [],
       "active": [
        0,
        1
       ],
       "pokemon": [
        {
-        "species": "Milotic",
-        "set_species": "Milotic",
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
         "mega": 0,
-        "switch_flag": 0,
-        "hp": 178,
-        "maxhp": 202,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 192,
         "item": "sitrusberry",
-        "status": "",
+        "status": "fnt",
         "status_time": 0,
         "confusion": 0,
-        "fainted": false,
+        "fainted": true,
         "boosts": [
-         1,
-         1,
          0,
          0,
          0,
-         1,
+         0,
+         0,
+         0,
          0
         ],
         "pp": [
@@ -1063,7 +1045,7 @@
         "set_species": "Staraptor",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 94,
+        "hp": 78,
         "maxhp": 192,
         "item": "chartiberry",
         "status": "",
@@ -1147,8 +1129,299 @@
   },
   {
    "input": {
-    "p1": "move 1, move 1",
-    "p2": "move 2, move 2"
+    "p2": "switch 3, pass"
+   },
+   "draws": [],
+   "log": [
+    "|split|p2",
+    "|switch|p2a: Kingambit|Kingambit, L50, M|207/207",
+    "|switch|p2a: Kingambit|Kingambit, L50, M|100/100",
+    "|turn|2"
+   ],
+   "state": {
+    "turn": 2,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "grassyterrain",
+    "terrain_turns": 4,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Tyranitar",
+        "set_species": "Tyranitar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         1,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 192,
+        "maxhp": 192,
+        "item": "staraptite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       3,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 78,
+        "maxhp": 192,
+        "item": "chartiberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 192,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1, move 1 1",
+    "p2": "move 1, move 2"
    },
    "draws": [
     {
@@ -1173,115 +1446,81 @@
      "value": 1
     },
     {
-     "site": "STALL",
-     "context": "StallMove",
-     "lo": 0,
-     "hi": 3,
-     "value": 1
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 1
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 1
-    },
-    {
      "site": "RANDOM_TARGET",
      "context": "action-speed",
      "lo": 0,
      "hi": 2,
      "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
     },
     {
      "site": "RANDOM_TARGET",
      "context": "execute:allAdjacentFoes",
      "lo": 0,
      "hi": 2,
-     "value": 0
+     "value": 1
     },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 48
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 87
+     "value": 59
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 10
+     "value": 6
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 14
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 12
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 12
+     "value": 15
     },
     {
      "site": "SECONDARY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 48
+     "value": 54
     },
     {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 77
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 6,
+     "hi": 8,
+     "value": 6,
+     "group": [
+      "H:protect:p2a:end",
+      "H:stall:p2a:end"
+     ],
+     "start": 6
     }
    ],
    "log": [
-    "|move|p1b: Kingambit|Protect||[still]",
-    "|-fail|p1b: Kingambit",
+    "|move|p2a: Kingambit|Protect|p2a: Kingambit",
+    "|-singleturn|p2a: Kingambit|Protect",
     "|move|p2b: Staraptor|Tailwind||[still]",
     "|-fail|p2b: Staraptor",
-    "|move|p2a: Milotic|Coil|p2a: Milotic",
-    "|-boost|p2a: Milotic|atk|1",
-    "|-boost|p2a: Milotic|def|1",
-    "|-boost|p2a: Milotic|accuracy|1",
-    "|move|p1a: Tyranitar|Rock Slide|p2a: Milotic|[spread] p2a,p2b",
+    "|move|p1a: Tyranitar|Rock Slide|p2b: Staraptor|[spread] p2b",
+    "|-activate|p2a: Kingambit|move: Protect",
     "|-supereffective|p2b: Staraptor|1",
-    "|split|p2",
-    "|-damage|p2a: Milotic|160/202",
-    "|-damage|p2a: Milotic|79/100",
     "|split|p2",
     "|-damage|p2b: Staraptor|0 fnt",
     "|-damage|p2b: Staraptor|0 fnt",
     "|faint|p2b: Staraptor",
+    "|move|p1b: Kingambit|Kowtow Cleave|p2a: Kingambit",
+    "|-activate|p2a: Kingambit|move: Protect",
     "|upkeep"
    ],
    "state": {
@@ -1290,8 +1529,8 @@
     "winner": "",
     "weather": "",
     "weather_turns": 0,
-    "terrain": "",
-    "terrain_turns": 0,
+    "terrain": "grassyterrain",
+    "terrain_turns": 3,
     "trick_room": 0,
     "sides": [
      {
@@ -1357,7 +1596,8 @@
          0
         ],
         "pp": [
-         6
+         10,
+         8
         ],
         "volatiles": [],
         "locked": null
@@ -1432,31 +1672,32 @@
       ],
       "pokemon": [
        {
-        "species": "Milotic",
-        "set_species": "Milotic",
+        "species": "Kingambit",
+        "set_species": "Kingambit",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 160,
-        "maxhp": 202,
-        "item": "sitrusberry",
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
         "status": "",
         "status_time": 0,
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         2,
-         2,
          0,
          0,
          0,
-         2,
+         0,
+         0,
+         0,
          0
         ],
         "pp": [
-         8,
-         18
+         7
         ],
-        "volatiles": [],
+        "volatiles": [
+         "stall"
+        ],
         "locked": null
        },
        {
@@ -1488,17 +1729,17 @@
         "locked": null
        },
        {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "blackglasses",
+        "hp": 0,
+        "maxhp": 192,
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
-        "fainted": false,
+        "fainted": true,
         "boosts": [
          0,
          0,
@@ -1509,7 +1750,8 @@
          0
         ],
         "pp": [
-         8
+         8,
+         19
         ],
         "volatiles": [],
         "locked": null
@@ -1548,13 +1790,14 @@
   },
   {
    "input": {
-    "p2": "pass, switch 3"
+    "p2": "pass, switch 4"
    },
    "draws": [],
    "log": [
     "|split|p2",
-    "|switch|p2b: Kingambit|Kingambit, L50, M|207/207",
-    "|switch|p2b: Kingambit|Kingambit, L50, M|100/100",
+    "|switch|p2b: Indeedee|Indeedee-F, L50, F|177/177",
+    "|switch|p2b: Indeedee|Indeedee-F, L50, F|100/100",
+    "|-fieldstart|move: Psychic Terrain|[from] ability: Psychic Surge|[of] p2b: Indeedee",
     "|turn|3"
    ],
    "state": {
@@ -1563,8 +1806,8 @@
     "winner": "",
     "weather": "",
     "weather_turns": 0,
-    "terrain": "",
-    "terrain_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 5,
     "trick_room": 0,
     "sides": [
      {
@@ -1580,6 +1823,7 @@
         1
        ],
        [
+        1,
         1
        ]
       ],
@@ -1638,7 +1882,8 @@
          0
         ],
         "pp": [
-         6
+         10,
+         8
         ],
         "volatiles": [],
         "locked": null
@@ -1708,7 +1953,6 @@
       ],
       "enabled": [
        [
-        1,
         1
        ],
        [
@@ -1720,34 +1964,6 @@
        1
       ],
       "pokemon": [
-       {
-        "species": "Milotic",
-        "set_species": "Milotic",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 160,
-        "maxhp": 202,
-        "item": "sitrusberry",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         2,
-         2,
-         0,
-         0,
-         0,
-         2,
-         0
-        ],
-        "pp": [
-         8,
-         18
-        ],
-        "volatiles": [],
-        "locked": null
-       },
        {
         "species": "Kingambit",
         "set_species": "Kingambit",
@@ -1770,7 +1986,64 @@
          0
         ],
         "pp": [
+         7
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
          8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 192,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         19
         ],
         "volatiles": [],
         "locked": null
@@ -1802,33 +2075,6 @@
         ],
         "volatiles": [],
         "locked": null
-       },
-       {
-        "species": "Indeedee-F",
-        "set_species": "Indeedee-F",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 177,
-        "maxhp": 177,
-        "item": "rockyhelmet",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         8
-        ],
-        "volatiles": [],
-        "locked": null
        }
       ]
      }
@@ -1837,8 +2083,8 @@
   },
   {
    "input": {
-    "p1": "move 1, move 1",
-    "p2": "move 2, move 1"
+    "p1": "move 1, move 1 1",
+    "p2": "move 1, move 1"
    },
    "draws": [
     {
@@ -1846,34 +2092,6 @@
      "context": "resolve",
      "lo": 0,
      "hi": 2,
-     "value": 1
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 1
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 1
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 1
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
      "value": 0
     },
     {
@@ -1881,7 +2099,35 @@
      "context": "action-speed",
      "lo": 0,
      "hi": 2,
-     "value": 0
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "STALL",
+     "context": "StallMove",
+     "lo": 0,
+     "hi": 3,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
     },
     {
      "site": "RANDOM_TARGET",
@@ -1895,68 +2141,48 @@
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 32
+     "value": 90
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 2
+     "value": 8
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 5
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 51
+     "value": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "field:Residual",
-     "lo": 1,
-     "hi": 3,
+     "lo": 2,
+     "hi": 4,
      "value": 2,
      "group": [
       "H:protect:p2b:end",
       "H:stall:p2b:end"
      ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 3,
-     "hi": 5,
-     "value": 4,
-     "group": [
-      "H:stall:p1b:end",
-      "H:protect:p1b:end"
-     ],
-     "start": 3
+     "start": 2
     }
    ],
    "log": [
-    "|move|p2b: Kingambit|Protect|p2b: Kingambit",
-    "|-singleturn|p2b: Kingambit|Protect",
-    "|move|p1b: Kingambit|Protect|p1b: Kingambit",
-    "|-singleturn|p1b: Kingambit|Protect",
-    "|move|p2a: Milotic|Coil|p2a: Milotic",
-    "|-boost|p2a: Milotic|atk|1",
-    "|-boost|p2a: Milotic|def|1",
-    "|-boost|p2a: Milotic|accuracy|1",
-    "|move|p1a: Tyranitar|Rock Slide|p2b: Kingambit|[spread] p2a",
-    "|-activate|p2b: Kingambit|move: Protect",
+    "|move|p2b: Indeedee|Protect|p2b: Indeedee",
+    "|-singleturn|p2b: Indeedee|Protect",
+    "|move|p2a: Kingambit|Protect||[still]",
+    "|-fail|p2a: Kingambit",
+    "|move|p1a: Tyranitar|Rock Slide|p2b: Indeedee|[spread] ",
+    "|-activate|p2b: Indeedee|move: Protect",
+    "|-miss|p1a: Tyranitar|p2a: Kingambit",
+    "|move|p1b: Kingambit|Kowtow Cleave|p2a: Kingambit",
+    "|-resisted|p2a: Kingambit|1",
     "|split|p2",
-    "|-damage|p2a: Milotic|144/202",
-    "|-damage|p2a: Milotic|71/100",
+    "|-damage|p2a: Kingambit|133/207",
+    "|-damage|p2a: Kingambit|64/100",
     "|upkeep",
     "|turn|4"
    ],
@@ -1966,8 +2192,8 @@
     "winner": "",
     "weather": "",
     "weather_turns": 0,
-    "terrain": "",
-    "terrain_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 4,
     "trick_room": 0,
     "sides": [
      {
@@ -1983,6 +2209,7 @@
         1
        ],
        [
+        1,
         1
        ]
       ],
@@ -2041,11 +2268,10 @@
          0
         ],
         "pp": [
-         5
+         9,
+         8
         ],
-        "volatiles": [
-         "stall"
-        ],
+        "volatiles": [],
         "locked": null
        },
        {
@@ -2113,7 +2339,6 @@
       ],
       "enabled": [
        [
-        1,
         1
        ],
        [
@@ -2126,467 +2351,11 @@
       ],
       "pokemon": [
        {
-        "species": "Milotic",
-        "set_species": "Milotic",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 144,
-        "maxhp": 202,
-        "item": "sitrusberry",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         3,
-         3,
-         0,
-         0,
-         0,
-         3,
-         0
-        ],
-        "pp": [
-         8,
-         17
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
         "species": "Kingambit",
         "set_species": "Kingambit",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "blackglasses",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         7
-        ],
-        "volatiles": [
-         "stall"
-        ],
-        "locked": null
-       },
-       {
-        "species": "Staraptor",
-        "set_species": "Staraptor",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 0,
-        "maxhp": 192,
-        "item": "chartiberry",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         8,
-         14
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Indeedee-F",
-        "set_species": "Indeedee-F",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 177,
-        "maxhp": 177,
-        "item": "rockyhelmet",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       }
-      ]
-     }
-    ]
-   }
-  },
-  {
-   "input": {
-    "p1": "move 1, move 1",
-    "p2": "move 2, move 1"
-   },
-   "draws": [
-    {
-     "site": "RANDOM_TARGET",
-     "context": "resolve",
-     "lo": 0,
-     "hi": 2,
-     "value": 1
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 1
-    },
-    {
-     "site": "STALL",
-     "context": "StallMove",
-     "lo": 0,
-     "hi": 3,
-     "value": 1
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 1
-    },
-    {
-     "site": "STALL",
-     "context": "StallMove",
-     "lo": 0,
-     "hi": 3,
-     "value": 1
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 1
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "execute:allAdjacentFoes",
-     "lo": 0,
-     "hi": 2,
-     "value": 1
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 66
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 1
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 10
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 11
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 0
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 15
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 2
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 1
-    }
-   ],
-   "log": [
-    "|move|p2b: Kingambit|Protect||[still]",
-    "|-fail|p2b: Kingambit",
-    "|move|p1b: Kingambit|Protect||[still]",
-    "|-fail|p1b: Kingambit",
-    "|move|p2a: Milotic|Coil|p2a: Milotic",
-    "|-boost|p2a: Milotic|atk|1",
-    "|-boost|p2a: Milotic|def|1",
-    "|-boost|p2a: Milotic|accuracy|1",
-    "|move|p1a: Tyranitar|Rock Slide|p2b: Kingambit|[spread] p2a,p2b",
-    "|-resisted|p2b: Kingambit|1",
-    "|-crit|p2b: Kingambit",
-    "|split|p2",
-    "|-damage|p2a: Milotic|132/202",
-    "|-damage|p2a: Milotic|65/100",
-    "|split|p2",
-    "|-damage|p2b: Kingambit|173/207",
-    "|-damage|p2b: Kingambit|83/100",
-    "|-sideend|p2: p2|move: Tailwind",
-    "|upkeep",
-    "|turn|5"
-   ],
-   "state": {
-    "turn": 5,
-    "ended": false,
-    "winner": "",
-    "weather": "",
-    "weather_turns": 0,
-    "terrain": "",
-    "terrain_turns": 0,
-    "trick_room": 0,
-    "sides": [
-     {
-      "request": "move",
-      "conditions": [
-       0,
-       0,
-       0
-      ],
-      "enabled": [
-       [
-        1,
-        1
-       ],
-       [
-        1
-       ]
-      ],
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Tyranitar",
-        "set_species": "Tyranitar",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "focussash",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         -1,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         8,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "blackglasses",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         1,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         4
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Indeedee-F",
-        "set_species": "Indeedee-F",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 177,
-        "maxhp": 177,
-        "item": "rockyhelmet",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Staraptor",
-        "set_species": "Staraptor",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 192,
-        "maxhp": 192,
-        "item": "staraptite",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       }
-      ]
-     },
-     {
-      "request": "move",
-      "conditions": [
-       0,
-       0,
-       0
-      ],
-      "enabled": [
-       [
-        1,
-        1
-       ],
-       [
-        1
-       ]
-      ],
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Milotic",
-        "set_species": "Milotic",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 132,
-        "maxhp": 202,
-        "item": "sitrusberry",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         4,
-         4,
-         0,
-         0,
-         0,
-         4,
-         0
-        ],
-        "pp": [
-         8,
-         16
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 173,
+        "hp": 133,
         "maxhp": 207,
         "item": "blackglasses",
         "status": "",
@@ -2609,6 +2378,63 @@
         "locked": null
        },
        {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 192,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
         "species": "Staraptor",
         "set_species": "Staraptor",
         "mega": 0,
@@ -2632,33 +2458,6 @@
         "pp": [
          8,
          14
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Indeedee-F",
-        "set_species": "Indeedee-F",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 177,
-        "maxhp": 177,
-        "item": "rockyhelmet",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         8
         ],
         "volatiles": [],
         "locked": null
