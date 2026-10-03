@@ -476,7 +476,8 @@ if(Python3_Interpreter_FOUND)
     # what it normalises and reports, what it refuses, and what it writes, with a stand-in for the pokedex.
     add_test(NAME duoforge.reference.team_registry
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_team_registry.py")
-    set_tests_properties(duoforge.reference.team_registry PROPERTIES TIMEOUT 120 ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+    # 600 s: under ASan on WSL the 76 PP_ and 573 LL_ teams take more than the 120 s that fitted the plain builds.
+    set_tests_properties(duoforge.reference.team_registry PROPERTIES TIMEOUT 600 ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
     add_test(NAME duoforge.reference.import_paste
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_import_paste.py")
     set_tests_properties(duoforge.reference.import_paste PROPERTIES TIMEOUT 120 ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
