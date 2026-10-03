@@ -11,7 +11,7 @@ import unittest
 import numpy as np
 
 import duoforge
-from duoforge import features, teams
+from duoforge import _layout, features, teams
 from duoforge_learn import checkpoint, columns, evaluate, ladder, league, pairing, runstate, schedule, suite
 from duoforge_learn.selfplay import SelfPlay
 
@@ -112,6 +112,48 @@ class CheckpointTest(unittest.TestCase):
             self.assertFalse(w[features.FEATURE_NAMES.index(n)].any())
         for i, n in enumerate(old):
             self.assertTrue(np.array_equal(w[features.FEATURE_NAMES.index(n)], params["t1"]["w"][i]))
+
+
+class IdTablesTest(unittest.TestCase):
+    """checkpoint.ids_of and check_ids (spec 12.4): the names behind the embedded ids, so that a checkpoint
+    is never read under tables whose ids mean something else."""
+
+    def setUp(self):
+        self.ctx = duoforge.Context(data_kind=_layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"])
+        self.ids = checkpoint.ids_of(self.ctx)
+
+    def tearDown(self):
+        self.ctx.close()
+
+    def test_ids_of_lists_every_table_in_id_order(self):
+        from duoforge import data
+        self.assertEqual(sorted(self.ids), sorted(checkpoint.EMBEDDINGS))
+        for kind, table in (("species", data.TABLE_SPECIES), ("move", data.TABLE_MOVE), ("item", data.TABLE_ITEM),
+                            ("ability", data.TABLE_ABILITY), ("nature", data.TABLE_NATURE)):
+            self.assertEqual(len(self.ids[kind]), data.count(self.ctx, table))
+            last = len(self.ids[kind]) - 1
+            self.assertEqual(self.ids[kind][last], data.name(self.ctx, table, last))
+            self.assertEqual(self.ids[kind][1], data.name(self.ctx, table, 1))
+
+    def test_same_and_appended_names_pass(self):
+        checkpoint.check_ids({"ids": self.ids}, self.ctx)
+        checkpoint.check_ids({"ids": {k: v[:-1] for k, v in self.ids.items()}}, self.ctx)
+
+    def test_a_moved_id_is_refused_naming_it(self):
+        moves = list(self.ids["move"])
+        moves[3], moves[4] = moves[4], moves[3]
+        with self.assertRaisesRegex(ValueError, f"move id 3: {moves[3]} -> {self.ids['move'][3]}"):
+            checkpoint.check_ids({"ids": {**self.ids, "move": moves}}, self.ctx)
+
+    def test_a_removed_id_is_refused(self):
+        with self.assertRaisesRegex(ValueError, "nature"):
+            checkpoint.check_ids({"ids": {**self.ids, "nature": self.ids["nature"] + ["extra"]}}, self.ctx)
+
+    def test_a_config_without_tables_or_a_kind_is_refused(self):
+        with self.assertRaisesRegex(ValueError, "no id tables"):
+            checkpoint.check_ids({}, self.ctx)
+        with self.assertRaisesRegex(ValueError, "ability"):
+            checkpoint.check_ids({"ids": {k: v for k, v in self.ids.items() if k != "ability"}}, self.ctx)
 
 
 class PairingTest(unittest.TestCase):

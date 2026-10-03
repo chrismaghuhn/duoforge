@@ -428,6 +428,34 @@ class ResumeTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "does not support"):
             _run(["--resume", self.out, "--updates", "4"])
 
+    def test_resume_under_other_tables_checks_the_ids(self):
+        # Spec 12.4: tables that only grew keep every embedded id, so the run resumes and logs the new fingerprint;
+        # a moved id is refused, naming it. The run state and every snapshot carry the id tables.
+        import glob
+        import os
+        from duoforge_learn import checkpoint, runstate
+        self.assertEqual(_run(["--envs", "8", "--updates", "1", "--out", self.out] + _SMALL), 0)
+        state = runstate.load_state(self.out)
+        with duoforge.Context() as ctx:
+            self.assertEqual(state["ids"], checkpoint.ids_of(ctx))
+        for path in glob.glob(os.path.join(self.out, "params-*.npz")):
+            self.assertEqual(checkpoint.load(path)[1]["ids"], state["ids"])
+        real = state["data"]["fingerprint"]
+        state["data"]["fingerprint"] = "00" * 32
+        state["ids"] = {k: v[:-1] for k, v in state["ids"].items()}  # as if the tables grew since
+        runstate.save_state(self.out, state)
+        self.assertEqual(_run(["--resume", self.out, "--updates", "2"]), 0)
+        resume = [r for r in _log(self.out) if "resume" in r][-1]["resume"]
+        self.assertEqual(resume["data"], ["00" * 32, real])
+        state = runstate.load_state(self.out)
+        self.assertEqual(state["data"]["fingerprint"], real)
+        moves = state["ids"]["move"]
+        moves[1], moves[2] = moves[2], moves[1]
+        state["data"]["fingerprint"] = "00" * 32
+        runstate.save_state(self.out, state)
+        with self.assertRaisesRegex(SystemExit, "move id 1"):
+            _run(["--resume", self.out, "--updates", "3"])
+
     def test_refused_option_names_itself(self):
         self.assertEqual(_run(["--envs", "8", "--updates", "1", "--out", self.out] + _SMALL), 0)
         with self.assertRaisesRegex(SystemExit, "learning_rate"):
