@@ -2393,10 +2393,15 @@ def build_pool(root, repo, dx):
             feats = entry_features(items_ts, champ_items, it['id'], INERT_ITEM_KEYS, stone=it['stone'] is not None,
                                    readers=readers)
             if it['stone'] is not None:
+                # Mega by stone (step G23-A): the Mega that a stone takes a base forme to is the base forme's own link or,
+                # failing that, the stone's own row (its first pair): the engine finds it from (forme, stone)
+                # (dfi_mega_of). A pair that neither names would be unreachable, and the build fails here.
+                first = (forme_index[it['stones'][0][0]], forme_index[it['stones'][0][1]])
                 for base, mega in it['stones']:
                     primary = formes[forme_index[base]]['mega_forme']
-                    if primary != forme_index[mega]:
-                        feats.append('second Mega forme %s of %s' % (mega, base))
+                    if primary != forme_index[mega] and (forme_index[base], forme_index[mega]) != first:
+                        fail('stone %s: the Mega %s of %s is neither the link of its base forme nor the first pair of '
+                             'the stone' % (it['id'], mega, base))
         it['unmodeled'] = sorted(set(feats))
     for i, (ab, col) in enumerate(zip(abilities, ability_family)):
         if i < n_ext_abilities or col['family'] != 'NONE' or ab['id'] in ENGINE_ROWS['abilities']:

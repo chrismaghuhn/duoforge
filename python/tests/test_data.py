@@ -52,6 +52,29 @@ class DataTest(unittest.TestCase):
         self.assertTrue(data.supported(self.pool, data.TABLE_MOVE, data.find(self.pool, data.TABLE_MOVE, "closecombat")))
         self.assertFalse(data.supported(self.pool, data.TABLE_MOVE, data.find(self.pool, data.TABLE_MOVE, "struggle")))
 
+    def test_the_megas_of_a_species_one_per_stone(self):
+        """duoforge_data_mega_count and _at: the pairs that the single link of forme_info does not give."""
+        find = lambda table, row: data.find(self.pool, table, row)
+        charizard = find(data.TABLE_SPECIES, "charizard")
+        self.assertEqual(data.mega_count(self.pool, charizard), 2)
+        y, x = data.mega_at(self.pool, charizard, 0), data.mega_at(self.pool, charizard, 1)
+        self.assertEqual((y["stone"], y["mega_species"]), (find(data.TABLE_ITEM, "charizarditey"),
+                                                          find(data.TABLE_SPECIES, "charizardmegay")))
+        self.assertEqual((x["stone"], x["mega_species"]), (find(data.TABLE_ITEM, "charizarditex"),
+                                                          find(data.TABLE_SPECIES, "charizardmegax")))
+        self.assertEqual(x["base_species"], charizard)
+        self.assertEqual(data.forme_info(self.pool, charizard)["mega_species"], y["mega_species"])  # the old link: the first
+        # one stone, two species: each has its own Mega
+        stone = find(data.TABLE_ITEM, "meowsticite")
+        self.assertEqual(data.mega_at(self.pool, find(data.TABLE_SPECIES, "meowstic"), 0)["stone"], stone)
+        self.assertEqual(data.mega_at(self.pool, find(data.TABLE_SPECIES, "meowsticf"), 0)["mega_species"],
+                         find(data.TABLE_SPECIES, "meowsticfmega"))
+        # the closure has one Mega of Charizard; a Mega forme and a species without a Mega have none
+        self.assertEqual(data.mega_count(self.closure, data.find(self.closure, data.TABLE_SPECIES, "charizard")), 1)
+        self.assertEqual(data.mega_count(self.pool, find(data.TABLE_SPECIES, "charizardmegax")), 0)
+        with self.assertRaises(duoforge.DuoforgeError):
+            data.mega_at(self.pool, charizard, 2)
+
     def test_forme_static(self):
         rillaboom = data.forme_static(self.pool, data.find(self.pool, data.TABLE_SPECIES, "rillaboom"))
         self.assertEqual(rillaboom, {"types": (_layout.CONSTANTS["DUOFORGE_TYPE_GRASS"], data.NONE),
