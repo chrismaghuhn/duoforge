@@ -110,8 +110,11 @@
  * g14_rough_skin, g14_poison_touch and g14_thermal_exchange under the POOL kind.
  * Step G16 marks Knock Off (base power x1.5 while the target holds an item that can be taken, and the item taken after
  * the hit unless the target is alive with Sticky Hold; a Mega Stone is never taken from its own species) and Sticky
- * Hold, with the view bit 11 for the item that a move took (item_now of the member, public): Trick, Switcheroo and
- * Thief stay unmarked, so no accepted battle has an item that was swapped. Recorded as g16_* under the POOL kind.
+ * Hold, with the view bit 11 for the item that a move took (item_now of the member, public). Recorded as g16_* under
+ * the POOL kind.
+ * Step G29 marks the item-transfer moves Trick, Switcheroo, Thief and Covet (the item that a move gave is item_now too,
+ * so bit 11 stays exact); a transfer that would make the receiver use the item on the spot (a White Herb with a lowered
+ * stat, a terrain seed under its terrain) is E_UNSUPPORTED. Recorded as g29_* under the POOL kind.
  * Step G15 (Psychic Terrain) marks Expanding Force (80 base power; in Psychic Terrain, for a grounded user, x1.5 and the
  * target class allAdjacentFoes) and Psychic Seed (Grassy Seed's rule for Psychic Terrain and the Special Defense), in the
  * reference battles g15_*.
@@ -246,6 +249,10 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_GLAIVERUSH] = 1u,
             [DFI_MOVE_ROCKWRECKER] = 1u,
             [DFI_MOVE_KNOCKOFF] = 1u,
+            [DFI_MOVE_TRICK] = 1u,
+            [DFI_MOVE_SWITCHEROO] = 1u,
+            [DFI_MOVE_THIEF] = 1u,
+            [DFI_MOVE_COVET] = 1u,
             [DFI_MOVE_SLUDGEBOMB] = 1u,
             [DFI_MOVE_GUNKSHOT] = 1u,
             [DFI_MOVE_DRAGONCLAW] = 1u,

@@ -339,6 +339,10 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
     if pool and handled[0] == 'GLAIVE_RUSH':
         if 'condition' not in f or norm(f['condition'][1]) != GLAIVE_RUSH_CONDITION:
             fail('move %s: the condition is not the pinned text' % mid)
+    if pool and handled[0] in G29_CALLBACKS:
+        for name, text in G29_CALLBACKS[handled[0]].items():
+            if name not in f or norm(f[name][1]) != text:
+                fail('move %s: %s is not the pinned text' % (mid, name))
     if pool and handled[0] == 'KNOCK_OFF':
         for name, text in KNOCK_OFF_CALLBACKS.items():
             if name not in f or norm(f[name][1]) != text:
@@ -1345,6 +1349,29 @@ GLAIVE_RUSH_CONDITION = ("condition: { noCopy: true, onStart(pokemon) { this.add
 # condition is read from the pinned text (G20_CONDITION_FACTS) and the side condition itself (a tail field, not a column)
 # is owned by the handler.
 G20_HANDLERS = ['AURORA_VEIL']
+# Step G29: the item-transfer moves. Trick and Switcheroo (status, onTryImmunity and onHit), Thief and Covet (damaging, onAfterHit)
+# keep their callbacks as handlers of their own that the turn code implements (rows of the whole pool). The generator checks the
+# whole text of each callback, whitespace aside (data/moves.ts:19865-19911, :18644-18690, :19302-19330, :3099-3123; the Champions
+# mod changes none): the Sticky Hold test of Trick's target, the TakeItem checks (a Mega Stone refuses the species it belongs to), the
+# order of the takes and sets, and the lines that the converter reads (-activate move: Trick, -item and the silent -enditem, with
+# [from] move: and, for Thief and Covet, [of]).
+G29_HANDLERS = ['TRICK', 'SWITCHEROO', 'THIEF', 'COVET']
+G29_CALLBACKS = {
+    'TRICK': {
+        'onTryImmunity': "onTryImmunity(target) { return !target.hasAbility('stickyhold'); },",
+        'onHit': "onHit(target, source, move) { const yourItem = target.takeItem(source); const myItem = source.takeItem(); if (yourItem === false || myItem === false || (!yourItem && !myItem)) { if (yourItem) target.item = yourItem.id; if (myItem) source.item = myItem.id; return false; } if ( (myItem && !this.singleEvent('TakeItem', myItem, source.itemState, target, source, move, myItem)) || (yourItem && !this.singleEvent('TakeItem', yourItem, target.itemState, source, target, move, yourItem)) ) { if (yourItem) target.item = yourItem.id; if (myItem) source.item = myItem.id; return false; } this.add('-activate', source, 'move: Trick', `[of] ${target}`); if (myItem) { target.setItem(myItem); this.add('-item', target, myItem, '[from] move: Trick'); } else { this.add('-enditem', target, yourItem, '[silent]', '[from] move: Trick'); } if (yourItem) { source.setItem(yourItem); this.add('-item', source, yourItem, '[from] move: Trick'); } else { this.add('-enditem', source, myItem, '[silent]', '[from] move: Trick'); } },",
+    },
+    'SWITCHEROO': {
+        'onTryImmunity': "onTryImmunity(target) { return !target.hasAbility('stickyhold'); },",
+        'onHit': "onHit(target, source, move) { const yourItem = target.takeItem(source); const myItem = source.takeItem(); if (yourItem === false || myItem === false || (!yourItem && !myItem)) { if (yourItem) target.item = yourItem.id; if (myItem) source.item = myItem.id; return false; } if ( (myItem && !this.singleEvent('TakeItem', myItem, source.itemState, target, source, move, myItem)) || (yourItem && !this.singleEvent('TakeItem', yourItem, target.itemState, source, target, move, yourItem)) ) { if (yourItem) target.item = yourItem.id; if (myItem) source.item = myItem.id; return false; } this.add('-activate', source, 'move: Trick', `[of] ${target}`); if (myItem) { target.setItem(myItem); this.add('-item', target, myItem, '[from] move: Switcheroo'); } else { this.add('-enditem', target, yourItem, '[silent]', '[from] move: Switcheroo'); } if (yourItem) { source.setItem(yourItem); this.add('-item', source, yourItem, '[from] move: Switcheroo'); } else { this.add('-enditem', source, myItem, '[silent]', '[from] move: Switcheroo'); } },",
+    },
+    'THIEF': {
+        'onAfterHit': "onAfterHit(target, source, move) { if (source.item || source.volatiles['gem']) { return; } const yourItem = target.takeItem(source); if (!yourItem) { return; } if (!this.singleEvent('TakeItem', yourItem, target.itemState, source, target, move, yourItem) || !source.setItem(yourItem)) { target.item = yourItem.id; // bypass setItem so we don't break choicelock or anything return; } this.add('-enditem', target, yourItem, '[silent]', '[from] move: Thief', `[of] ${source}`); this.add('-item', source, yourItem, '[from] move: Thief', `[of] ${target}`); },",
+    },
+    'COVET': {
+        'onAfterHit': "onAfterHit(target, source, move) { if (source.item || source.volatiles['gem']) { return; } const yourItem = target.takeItem(source); if (!yourItem) { return; } if ( !this.singleEvent('TakeItem', yourItem, target.itemState, source, target, move, yourItem) || !source.setItem(yourItem) ) { target.item = yourItem.id; // bypass setItem so we don't break choicelock or anything return; } this.add('-item', source, yourItem, '[from] move: Covet', `[of] ${target}`); },",
+    },
+}
 AURORA_VEIL_ONTRY = "onTry() { return this.field.isWeather(['hail', 'snowscape']); },"
 KNOCK_OFF_CALLBACKS = {
     'onBasePower': "onBasePower(basePower, source, target, move) { const item = target.getItem(); "
@@ -1361,6 +1388,10 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'knockoff': ('KNOCK_OFF', {'onAfterHit', 'onBasePower'}),             # G16: takes the target's item, x1.5 while it has one
     'encore': ('ENCORE', set()),                                          # G9 (implemented): last move, a volatile, a queue change
     'auroraveil': ('AURORA_VEIL', {'onTry'}),                             # G20: a screen against both categories, in snow only
+    'trick': ('TRICK', {'onTryImmunity', 'onHit'}),                         # G29: swaps the two items
+    'switcheroo': ('SWITCHEROO', {'onTryImmunity', 'onHit'}),               # G29: Trick's text with its own name in the lines
+    'thief': ('THIEF', {'onAfterHit'}),                                    # G29: takes the target's item after the hit
+    'covet': ('COVET', {'onAfterHit'}),                                    # G29: the same without the silent -enditem line
     'wideguard': ('WIDE_GUARD', {'onTry', 'onHitSide'}),                 # G7: a side condition against spread moves
     'firstimpression': ('FIRST_IMPRESSION', {'onTry', 'onDisableMove'}),  # G10a: first turn out only (Fake Out's rule)
     'soak': ('SOAK', {'onHit'}),                                          # G11: sets the target's type to Water
@@ -1380,7 +1411,7 @@ PROTECT_COPIES = {'detect': 'protect'}
 # champions/moves.ts:581-584) sets isNonstandard to null, which makes it legal, and the tag has no reader in the tables.
 TAGS_PAST_UNOBTAINABLE = 'tags: ["Past Unobtainable"],'
 PROTECT_COPY_FIELDS = ('onPrepareHit', 'onHit', 'stallingMove', 'volatileStatus', 'priority', 'accuracy', 'target')
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + ['UNMODELED']
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G29_HANDLERS + ['UNMODELED']
 # Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags
 # byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.

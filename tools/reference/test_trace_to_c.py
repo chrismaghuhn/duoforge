@@ -831,6 +831,87 @@ class Library(unittest.TestCase):
         values = list(derived.values())
         self.assertTrue(any(max(v) > 5 for v in values) and any(all(v) for v in values) and any(sum(v) for v in values))
 
+    def test_item_transfer_rows_are_what_the_protocol_lines_say(self):
+        """Decision 0018 section 6.1 for Trick, Switcheroo, Thief and Covet (step G29): the item_now of every roster member
+        after each step, and the numbers of `-item` and silent `-enditem ... [from] move:` lines, are what the committed
+        traces' protocol lines say alone; the rows of tests/test_pool_g29.c must be exactly that. `|-item|X|Item|[from] move:
+        M` gives X the item (item id + 1; a Thief's or Covet's `[of] Y` takes Y's away, 255), `|-enditem|X|Item|[silent]|[from]
+        move: M` takes X's away; a used-up item and a switch change nothing. Also the converter: the lines are ITEM_START (cause
+        MOVE) and ITEM_END (cause ITEM_TAKEN), and any other shape is refused."""
+        names = ('g29_trick_scarf', 'g29_empty_hands', 'g29_thief_covet', 'g29_trick_fails')
+        source = open(os.path.join(ROOT, 'tests', 'test_pool_g29.c'), encoding='utf-8').read()
+        rows = {}
+        for m in re.finditer(r'\{"(g29_\w+)", (\d+)u, \{([^}]*)\}, (\d+)u, (\d+)u\}', source):
+            codes = tuple(int(x.strip().rstrip('u')) for x in m.group(3).split(','))
+            rows[(m.group(1), int(m.group(2)))] = (codes, int(m.group(4)), int(m.group(5)))
+        tables = trace_to_c.load_tables(ROOT, True)
+        derived = {}
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'specs', name + '.json'), encoding='utf-8') as f:
+                spec = json.load(f)
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            rosters = [re.findall(r'^([A-Za-z-]+)(?: \([MF]\))?(?: @|$)', text, re.M) for text in spec['teams']]
+            held = [0] * 12
+            for k, step in enumerate(trace['steps']):
+                received = left = 0
+                for line in step['log']:
+                    part = line.split('|')
+                    if len(part) < 5 or part[1] not in ('-item', '-enditem'):
+                        continue
+                    from_move = [a for a in part[4:] if a.startswith('[from] move: ')]
+                    if not from_move:
+                        continue
+                    side = int(part[2][1]) - 1
+                    index = side * 6 + rosters[side].index(part[2][5:])
+                    if part[1] == '-item':
+                        held[index] = tables['ITEM'][trace_to_c.key(part[3])] + 1
+                        received += 1
+                        for a in part[4:]:
+                            if a.startswith('[of] '):
+                                of_side = int(a[6]) - 1
+                                held[of_side * 6 + rosters[of_side].index(a[10:])] = 255
+                    else:
+                        held[index] = 255
+                        left += 1
+                derived[(name, k)] = (tuple(held), received, left)
+        self.assertEqual(rows, derived)
+        self.assertTrue(any(r > 0 for (_, r, _) in derived.values()) and any(l > 0 for (_, _, l) in derived.values()))
+        # The converter.
+        roster = [{'Sneasler': 0}, {'Staraptor': 0}]
+        maxhp = [{'Sneasler': 100}, {'Staraptor': 100}]
+        cases = (
+            ('|-item|p2a: Staraptor|Sitrus Berry|[from] move: Trick', 'ITEM_START', 2, trace_to_c.NOPOS, 'Trick', 'Sitrus Berry'),
+            ('|-item|p1a: Sneasler|Sitrus Berry|[from] move: Thief|[of] p2a: Staraptor', 'ITEM_START', 1, 2, 'Thief', 'Sitrus Berry'),
+            ('|-item|p1a: Sneasler|Sitrus Berry|[from] move: Covet|[of] p2a: Staraptor', 'ITEM_START', 1, 2, 'Covet', 'Sitrus Berry'),
+        )
+        for line, kind, pos, other, move, item in cases:
+            with self.subTest(line=line):
+                (e,) = trace_to_c.step_events([line], 0, roster, maxhp, tables)
+                self.assertEqual(e, (trace_to_c.EV[kind], pos, other, trace_to_c.CAUSE['MOVE'],
+                                     tables['MOVE'][trace_to_c.key(move)], tables['ITEM'][trace_to_c.key(item)] + 1,
+                                     0, 0, 0, 0, 0, 0, 0, 0))
+        for line, move, other in (('|-enditem|p2a: Staraptor|Sitrus Berry|[silent]|[from] move: Trick', 'Trick', trace_to_c.NOPOS),
+                                  ('|-enditem|p2a: Staraptor|Sitrus Berry|[silent]|[from] move: Switcheroo', 'Switcheroo',
+                                   trace_to_c.NOPOS),
+                                  ('|-enditem|p2a: Staraptor|Sitrus Berry|[silent]|[from] move: Thief|[of] p1a: Sneasler', 'Thief', 1)):
+            with self.subTest(line=line):
+                (e,) = trace_to_c.step_events([line], 0, roster, maxhp, tables)
+                self.assertEqual(e[:6], (trace_to_c.EV['ITEM_END'], 2, other, trace_to_c.CAUSE['ITEM_TAKEN'],
+                                         tables['MOVE'][trace_to_c.key(move)], tables['ITEM'][trace_to_c.key('Sitrus Berry')] + 1))
+        # A silent -enditem that no move caused is still no event; every other shape of these lines is refused.
+        self.assertEqual(trace_to_c.step_events(['|-enditem|p2a: Staraptor|Sitrus Berry|[silent]'], 0, roster, maxhp, tables), [])
+        for bad in ('|-item|p2a: Staraptor|Sitrus Berry|[from] move: Trick|[of] p1a: Sneasler',
+                    '|-item|p2a: Staraptor|Sitrus Berry|[from] move: Thief',
+                    '|-item|p2a: Staraptor|Sitrus Berry|[from] ability: Frisk',
+                    '|-item|p2a: Staraptor|Sitrus Berry',
+                    '|-enditem|p2a: Staraptor|Sitrus Berry|[silent]|[from] move: Trick|[of] p1a: Sneasler',
+                    '|-enditem|p2a: Staraptor|Sitrus Berry|[from] move: Trick',
+                    '|-enditem|p2a: Staraptor|Sitrus Berry|[silent]|[from] move: Thief',
+                    '|-enditem|p2a: Staraptor|Sitrus Berry|[silent]|[from] move: Knock Off|[of] p1a: Sneasler'):
+            with self.subTest(line=bad), self.assertRaises(trace_to_c.ConversionError):
+                trace_to_c.step_events([bad], 0, roster, maxhp, tables)
+
     def test_item_taken_rows_are_what_the_protocol_lines_say(self):
         """Decision 0018 section 6.1 for Knock Off: a member holds nothing from the `|-enditem|X|Item|[from] move: Knock Off|
         [of] Y` line on, and nothing clears it (the item stays gone across a switch-out and a faint: sim/pokemon.ts:1851-1866
