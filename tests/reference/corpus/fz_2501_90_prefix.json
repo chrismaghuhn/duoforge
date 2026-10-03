@@ -1,0 +1,71 @@
+{
+  "name": "fz_2501_90_prefix",
+  "purpose": "Corpus (defect): case fz_2501_90 of run 2501 (tools/reference/diff_driver.py random), team F against team B, found as DIVERGENCE state turn #, reference #. The shortest prefix that showed it, 15 of 23 choices; it passes now, fixed by G25 (Terrain Pulse in Electric Terrain is drawn to Lightning Rod).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,96dfa0c38ed97555fdfd338a728c1310977144d096670e0158a7566ddd9135a4",
+  "teams": [
+    "Annihilape (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Hypnosis\n- Coil\n- Scald\n- Protect\n\nBlastoise (M) @ Mystic Water\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 SpA\nModest Nature\n- Terrain Pulse\n- Waterfall\n- Dark Pulse\n- Protect\n\nPincurchin (M) @ Charcoal\nAbility: Electric Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpA\nBold Nature\n- Rising Voltage\n- Electric Terrain\n- Thunderbolt\n- Protect\n\nAurorus (F) @ Light Clay\nAbility: Refrigerate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Def\nModest Nature\n- Weather Ball\n- Protect\n\nRaichu (F) @ Electric Seed\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Electric Terrain\n- Rising Voltage\n- Nuzzle\n- Protect",
+    "Grimmsnarl (M) @ Light Clay\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Spirit Break\n- Reflect\n- Light Screen\n- Parting Shot\n\nGolisopod (F) @ Golisopite\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 1 SpD / 1 Spe\nAdamant Nature\n- Leech Life\n- Iron Head\n- Drill Run\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Weather Ball\n- Muddy Water\n- Ice Beam\n- Protect\n\nFarigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Grass Knot\n- Trick Room\n- Protect\n\nCharizard (M) @ Charizardite Y\nAbility: Blaze\nLevel: 50\nEVs: 16 HP / 18 Def / 3 SpA / 29 Spe\nTimid Nature\n- Heat Wave\n- Weather Ball\n- Hurricane\n- Protect\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Electro Shot\n- Snarl\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 2563",
+      "p2": "team 5364"
+    },
+    {
+      "p1": "move 4, move 2",
+      "p2": "move 3 2, move 3 1"
+    },
+    {
+      "p1": "move 1 -2, move 1 1",
+      "p2": "move 1 mega, switch 4"
+    },
+    {
+      "p1": "switch 4, move 2",
+      "p2": "move 4, move 2 -1"
+    },
+    {
+      "p1": "switch 4, move 2",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p1": "move 1 -2, move 1 -1",
+      "p2": "move 3 2, move 4"
+    },
+    {
+      "p1": "switch 4, move 1 -1",
+      "p2": "move 2 2, move 1 -1"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "move 1 2, move 4",
+      "p2": "move 2 -2, move 2 1"
+    },
+    {
+      "p1": "switch 4, move 1",
+      "p2": "move 2 2, move 2 -1"
+    },
+    {
+      "p1": "move 1 -2, move 3 -1",
+      "p2": "move 3 1, move 2 1"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 4, move 1",
+      "p2": "move 1, move 4"
+    },
+    {
+      "p1": "move 4, move 1",
+      "p2": "move 4, move 3"
+    },
+    {
+      "p1": "move 1 2, move 2 1",
+      "p2": "move 4, move 4"
+    }
+  ]
+}

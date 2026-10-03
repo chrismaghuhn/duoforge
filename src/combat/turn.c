@@ -145,6 +145,18 @@ static bool dfi_grounded(const struct duoforge_battle *b, const dfi_member *m)
     return !dfi_has_type(b, m, DFI_TYPE_FLYING) && !dfi_ability(b, m, DFI_ABILITY_LEVITATE);
 }
 
+/* The FIELD_START / FIELD_END detail of a terrain (DUOFORGE_FIELD_*). */
+static uint32_t dfi_terrain_field_detail(uint32_t terrain)
+{
+    return terrain == DFI_TERRAIN_GRASSY     ? DUOFORGE_FIELD_GRASSY_TERRAIN
+           : terrain == DFI_TERRAIN_PSYCHIC  ? DUOFORGE_FIELD_PSYCHIC_TERRAIN
+           : terrain == DFI_TERRAIN_ELECTRIC ? DUOFORGE_FIELD_ELECTRIC_TERRAIN
+                                             : DUOFORGE_FIELD_MISTY_TERRAIN;
+}
+
+/* eachEvent('TerrainChange'), defined with the seeds below: a terrain that starts or ends runs it. */
+static duoforge_status dfi_terrain_change(dfi_run *r);
+
 /* The item a member holds now, stored as 1 + id (0 = none): the one the member's sheet says unless it has been used
  * up, or the one that the POOL tail's item_now holds for it (zero under every other kind, and zero unless something
  * took or changed the item: DFI_TAIL_ITEM_NONE after a Knock Off, an item id + 1 after a Trick, which nothing does
@@ -508,6 +520,45 @@ static uint32_t dfi_effective_target_class(const struct duoforge_battle *b, cons
         return DUOFORGE_TARGET_CLASS_ALL_ADJACENT_FOES;
     }
     return md->target_class;
+}
+
+/* The type a move has when it is used (useMoveInner, sim/battle-actions.ts:430-438: the move's own onModifyType first, then
+ * the abilities'): Struggle is typeless; an -ate ability (the ATE family, decision 0015: onModifyType at priority -1)
+ * turns a Normal move into its type before immunity and STAB, except the moves of its noModifyType list; Weather Ball
+ * turns Water in rain, Fire under sun, Rock in sand, Ice in snow (data/moves.ts:20711-20717); Terrain Pulse (step G25,
+ * data/moves.ts:19273-19291) takes the type of the terrain for a grounded user. The redirection of Lightning Rod reads the
+ * type of this call (getMoveTargets runs after ModifyType, sim/pokemon.ts:829-831), so a Terrain Pulse in Electric Terrain is
+ * drawn to it, which the move's table type (Normal) would not say. */
+static uint32_t dfi_move_type_now(const struct duoforge_battle *b, const dfi_member *m, const dfi_move_data *md)
+{
+    uint32_t move_type = md->special == DFI_SPECIAL_STRUGGLE ? DFI_CLOSURE_NONE : md->type;
+    move_type = dfi_ate_type_fam(dfi_ability_family_now(b, m), md, move_type);
+    /* Liquid Voice (step G22, POOL data, data/abilities.ts:2416-2427): onModifyType (priority -1) makes a move with the
+     * sound flag Water, unless its user is Dynamaxed (never in this format). Weather Ball has no sound flag and Struggle none
+     * either, so the order against their types does not matter; the whole pool's sound moves are the flags2 SOUND bit (the
+     * pinned flag, tools/datagen/pool_families.js checkG22). The change reaches the immunity, the STAB, the weather and the
+     * resist berries: they read the type of this call. */
+    if (dfi_ability(b, m, DFI_ABILITY_LIQUIDVOICE) && md->special != DFI_SPECIAL_STRUGGLE &&
+        (dfi_pool_move_flags2[(uint32_t)(md - dfi_pool_moves)] & DFI_MOVE_FLAG2_SOUND) != 0u) { /* wide-operands-reviewed: a pointer into the move table */
+        move_type = DFI_TYPE_WATER;
+    }
+    if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_RAIN) {
+        move_type = DFI_TYPE_WATER;
+    } else if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_SUN) {
+        move_type = DFI_TYPE_FIRE;
+    } else if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_SAND) {
+        move_type = DFI_TYPE_ROCK;
+    } else if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_SNOW) {
+        move_type = DFI_TYPE_ICE;
+    }
+    if (md->special == DFI_SPECIAL_TERRAIN_PULSE && dfi_grounded(b, m)) {
+        move_type = b->terrain == DFI_TERRAIN_ELECTRIC  ? DFI_TYPE_ELECTRIC
+                    : b->terrain == DFI_TERRAIN_GRASSY  ? DFI_TYPE_GRASS
+                    : b->terrain == DFI_TERRAIN_MISTY   ? DFI_TYPE_FAIRY
+                    : b->terrain == DFI_TERRAIN_PSYCHIC ? DFI_TYPE_PSYCHIC
+                                                        : move_type;
+    }
+    return move_type;
 }
 
 /* Feint's breaksProtect (hitStepBreakProtect, sim/battle-actions.ts:755-777, the step after the accuracy check, for every target
@@ -1232,6 +1283,17 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
          * maximum HP, the engine takes the integer part and at least 1 (clampIntRange in getDamage). */
         power = (uint32_t)md->base_power * (uint32_t)a->hp / (uint32_t)a->hp_max; /* wide-operands-reviewed: hp <= hp_max */
         power = power < 1u ? 1u : power;
+    } else if (md->special == DFI_SPECIAL_RISING_VOLTAGE) {
+        /* Rising Voltage's basePowerCallback (step G25, data/moves.ts:15137-15162): doubled while Electric Terrain is up
+         * and the target is grounded (whoever the user is). */
+        if (r->b->terrain == DFI_TERRAIN_ELECTRIC && dfi_grounded(r->b, d)) {
+            power *= 2u;
+        }
+    } else if (md->special == DFI_SPECIAL_TERRAIN_PULSE) {
+        /* Terrain Pulse's onModifyMove (step G25, data/moves.ts:19265-19311): doubled in any terrain for a grounded user. */
+        if (r->b->terrain != DFI_TERRAIN_NONE && dfi_grounded(r->b, a)) {
+            power *= 2u;
+        }
     } else if (dfi_move_power_by_weight(md)) {
         power = dfi_weight_power(dfi_forme_of(d)->weight_hg);
     } else if (md->special == DFI_SPECIAL_LAST_RESPECTS) {
@@ -1254,7 +1316,7 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     /* An -ate ability (the ATE family: Aerilate, Pixilate and Refrigerate,
      * decision 0015): a Normal move it turned into its type gets 4915/4096
      * (data/abilities.ts, onBasePowerPriority 23: first). */
-    if (dfi_ate_boosts_fam(dfi_ability_family_now(r->b, a), md->type, move_type)) {
+    if (!dfi_ate_excluded(md) && dfi_ate_boosts_fam(dfi_ability_family_now(r->b, a), md->type, move_type)) {
         ok = ok && dfi_chain_modify(bp_chain, DFI_ATE_MODIFIER, &bp_chain);
     }
     /* Iron Fist (step G34, data/abilities.ts:2236-2248, priority 23 like the -ate abilities, which it never meets: one
@@ -1301,6 +1363,15 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
      * the same time). */
     if (move_type == DFI_TYPE_PSYCHIC && r->b->terrain == DFI_TERRAIN_PSYCHIC && dfi_grounded(r->b, a)) {
         ok = ok && dfi_chain_modify(bp_chain, 5325u, &bp_chain);
+    }
+    /* Electric Terrain (step G25, data/moves.ts:4520-4527): 5325/4096 for a grounded user's Electric move, the same
+     * handler slot (priority 6). Misty Terrain (:12175-12181): chainModify(0.5), 2048/4096, for a Dragon move at a grounded
+     * target. */
+    if (move_type == DFI_TYPE_ELECTRIC && r->b->terrain == DFI_TERRAIN_ELECTRIC && dfi_grounded(r->b, a)) {
+        ok = ok && dfi_chain_modify(bp_chain, 5325u, &bp_chain);
+    }
+    if (move_type == DFI_TYPE_DRAGON && r->b->terrain == DFI_TERRAIN_MISTY && dfi_grounded(r->b, d)) {
+        ok = ok && dfi_chain_modify(bp_chain, 2048u, &bp_chain);
     }
     /* Expanding Force's own onBasePower (step G15, data/moves.ts:4952-4957): chainModify(1.5) for a grounded user in
      * Psychic Terrain. runEvent puts the move's handler first and sorts by priority: its priority is 0, so it runs
@@ -1598,6 +1669,24 @@ static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status
         }
         return DUOFORGE_OK;
     }
+    /* The terrains' onSetStatus (step G25, data/moves.ts:4497-4551 and 12151-12205). The field's handlers have no
+     * speed (Battle.resolvePriority gives a speed to a Pokemon's effects only, sim/battle.ts:1001-1003), so they run after
+     * every handler of an ability above (the speed of a Pokemon is positive): a refusal by Thermal Exchange or Flower
+     * Veil comes first and ends the event. Electric Terrain refuses sleep for a grounded Pokemon, Misty Terrain every
+     * status; both return false, and show `-activate|target|move: X Terrain` only for a move's own status (Electric:
+     * `effect.effectType === 'Move' && !effect.secondaries`; Misty: `effect.status`, which a secondary's move does not
+     * have), and nothing for a secondary or an ability (Poison Touch) or an item. A flying Pokemon is not grounded. */
+    if ((r->b->terrain == DFI_TERRAIN_MISTY || (r->b->terrain == DFI_TERRAIN_ELECTRIC && status == DFI_STATUS_SLP)) &&
+        dfi_grounded(r->b, m)) {
+        if (primary) {
+            const uint32_t terrain_move =
+                r->b->terrain == DFI_TERRAIN_MISTY ? DFI_MOVE_MISTYTERRAIN : DFI_MOVE_ELECTRICTERRAIN;
+            const duoforge_event e =
+                dfi_ev(DUOFORGE_EVENT_ACTIVATE, flat, DUOFORGE_CAUSE_MOVE, terrain_move, DUOFORGE_NO_POSITION);
+            dfi_emit(r, &e);
+        }
+        return DUOFORGE_OK;
+    }
     uint32_t counter = 0u;
     if (status == DFI_STATUS_SLP) {
         uint32_t v = 0u;
@@ -1655,6 +1744,11 @@ static duoforge_status dfi_add_volatile(dfi_run *r, uint32_t flat, uint32_t whic
         return DUOFORGE_E_UNSUPPORTED;
     }
     if (pos->confusion_turns != 0u) {
+        return DUOFORGE_OK;
+    }
+    /* Misty Terrain's onTryAddVolatile (step G25, data/moves.ts:12170-12177): confusion on a grounded Pokemon returns
+     * null; the -activate line is for a move without secondaries, and this function adds only a secondary's confusion. */
+    if (r->b->terrain == DFI_TERRAIN_MISTY && dfi_grounded(r->b, m)) {
         return DUOFORGE_OK;
     }
     uint32_t v = 0u;
@@ -2948,18 +3042,20 @@ static duoforge_status dfi_run_clangorous_soul(dfi_run *r, uint32_t user, const 
 }
 
 /* Steel Roller's onHit (step G34, data/moves.ts:17893-17913): Field.clearTerrain after the damage of the hit, once for the
- * move: -fieldend|move: the terrain, then the TerrainChange event of the seeds on the field. */
+ * move: -fieldend|move: the terrain, then the TerrainChange event of the seeds on the field. Step G25 extends it to Electric
+ * and Misty Terrain: the FIELD_END detail is the one of the terrain that ends (dfi_terrain_field_detail, as at the end of its
+ * turns), and the converter reads Misty Terrain's line, which has no "move: " (data/moves.ts onFieldEnd). */
 static duoforge_status dfi_clear_terrain(dfi_run *r)
 {
     struct duoforge_battle *b = r->b;
     if (b->terrain == DFI_TERRAIN_NONE) {
         return DUOFORGE_OK;
     }
-    const bool grassy = b->terrain == DFI_TERRAIN_GRASSY;
+    const uint32_t ended = b->terrain;
     b->terrain = (uint8_t)DFI_TERRAIN_NONE;
     b->terrain_turns = 0u;
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_FIELD_END, DUOFORGE_NO_POSITION);
-    e.detail = (uint8_t)(grassy ? DUOFORGE_FIELD_GRASSY_TERRAIN : DUOFORGE_FIELD_PSYCHIC_TERRAIN); /* wide-operands-reviewed: < 4 */
+    e.detail = (uint8_t)dfi_terrain_field_detail(ended); /* wide-operands-reviewed: < 6 */
     dfi_emit(r, &e); /* [-fieldend] */
     return dfi_terrain_change(r);
 }
@@ -3289,7 +3385,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
      * sim/battle-actions.ts:142), which is the lower activation id; the
      * first handler returns its holder. This runs also when the chosen
      * target is gone (a fainted ally, no foe left). */
-    if (follow == DFI_POSITIONS && md->type == DFI_TYPE_ELECTRIC && single) {
+    if (follow == DFI_POSITIONS && dfi_move_type_now(b, m, md) == DFI_TYPE_ELECTRIC && single) {
         uint32_t rod = DFI_POSITIONS;
         for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
             const dfi_member *holder = dfi_at(b, flat);
@@ -3457,6 +3553,23 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         dfi_emit(r, &e);
         return DUOFORGE_OK;
     }
+    if (status_move && (md->special == DFI_SPECIAL_ELECTRIC_TERRAIN || md->special == DFI_SPECIAL_MISTY_TERRAIN)) {
+        /* Electric Terrain and Misty Terrain (moveHit, sim/battle-actions.ts:1252-1255): Field.setTerrain
+         * (sim/field.ts:130-157) fails when the same terrain is up (the move fails) and otherwise replaces the terrain
+         * for 5 turns (Terrain Extender is not marked) with `-fieldstart|move: X Terrain` and no [from]; the replaced
+         * terrain ends without a line, and TerrainChange runs the seeds. */
+        const uint32_t terrain = md->special == DFI_SPECIAL_ELECTRIC_TERRAIN ? DFI_TERRAIN_ELECTRIC : DFI_TERRAIN_MISTY;
+        if (b->terrain == terrain) {
+            dfi_fail_still(r, user);
+            return DUOFORGE_OK;
+        }
+        b->terrain = (uint8_t)terrain;
+        b->terrain_turns = (uint8_t)DFI_FIELD_TURNS_MAX;
+        duoforge_event e = dfi_event_make(DUOFORGE_EVENT_FIELD_START, DUOFORGE_NO_POSITION);
+        e.detail = (uint8_t)dfi_terrain_field_detail(terrain);
+        dfi_emit(r, &e);
+        return dfi_terrain_change(r);
+    }
     if (status_move && md->pseudo_weather == DFI_PSEUDO_WEATHER_TRICK_ROOM) {
         /* addPseudoWeather: Trick Room again ends it (onFieldRestart). */
         const bool ends = b->trick_room_turns != 0u;
@@ -3497,7 +3610,8 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         md->special != DFI_SPECIAL_PSYCHIC_FANGS && md->special != DFI_SPECIAL_SOLAR_BEAM &&
         md->special != DFI_SPECIAL_HP_POWER && md->special != DFI_SPECIAL_BODY_PRESS &&
         md->special != DFI_SPECIAL_FOUL_PLAY && md->special != DFI_SPECIAL_PSYSHOCK &&
-        md->special != DFI_SPECIAL_FREEZE_DRY && md->special != DFI_SPECIAL_CLANGING_SCALES) {
+        md->special != DFI_SPECIAL_FREEZE_DRY && md->special != DFI_SPECIAL_CLANGING_SCALES &&
+        md->special != DFI_SPECIAL_RISING_VOLTAGE && md->special != DFI_SPECIAL_TERRAIN_PULSE) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Steel Roller's onTry (step G34, data/moves.ts:17893-17913): it fails without a terrain, with -fail and [still]. */
@@ -3570,29 +3684,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     }
     /* Struggle is typeless; Weather Ball turns Water in rain, Fire under sun
      * (its onModifyType, before the hit steps). */
-    uint32_t move_type = md->special == DFI_SPECIAL_STRUGGLE ? DFI_CLOSURE_NONE : md->type;
-    /* An -ate ability (the ATE family, decision 0015): onModifyType
-     * (priority -1) turns a Normal move into its type before immunity and
-     * STAB; Weather Ball is in its noModifyType list and Struggle is
-     * typeless by then (data/abilities.ts). */
-    move_type = dfi_ate_type_fam(dfi_ability_family_now(r->b, m), md, move_type);
-    /* Liquid Voice (step G22, POOL data, data/abilities.ts:2416-2427): onModifyType (priority -1) makes a move with the
-     * sound flag Water, unless its user is Dynamaxed (never in this format). Weather Ball has no sound flag and
-     * Struggle none either, so the order against their types does not matter; the whole pool's sound moves are the
-     * flags2 SOUND bit (the pinned flag, tools/datagen/pool_families.js checkG22). The change reaches the immunity,
-     * the STAB, the weather and the resist berries below: they read move_type. */
-    if (dfi_ability(r->b, m, DFI_ABILITY_LIQUIDVOICE) && (dfi_pool_move_flags2[move_id] & DFI_MOVE_FLAG2_SOUND) != 0u) {
-        move_type = DFI_TYPE_WATER;
-    }
-    if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_RAIN) {
-        move_type = DFI_TYPE_WATER;
-    } else if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_SUN) {
-        move_type = DFI_TYPE_FIRE;
-    } else if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_SAND) {
-        move_type = DFI_TYPE_ROCK; /* data/moves.ts:20711-20713 */
-    } else if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_SNOW) {
-        move_type = DFI_TYPE_ICE; /* data/moves.ts:20714-20717 (snowscape) */
-    }
+    uint32_t move_type = dfi_move_type_now(b, m, md);
     const bool spread = count > 1u;
     /* Hit steps: Psychic Terrain and Protect (TryHit), type immunity,
      * accuracy per target. Psychic Terrain's onTryHit (Team C, priority 4,
@@ -4440,11 +4532,11 @@ static duoforge_status dfi_run_switch(dfi_run *r, const dfi_queue_record *q)
  * SwitchIn handler (Battle.getCallback). */
 static bool dfi_has_entry(const struct duoforge_battle *b, const dfi_member *m);
 
-/* The terrain seeds (data/items.ts:2595-2614 Grassy Seed, :4903-4922 Psychic Seed; the generator checks that the second
- * is the first for its terrain and its stat): onSwitchInPriority -1, onStart (not ignoringItem, the terrain is up)
- * and onTerrainChange (the terrain is up) both call useItem, and the item's boosts raise one stat by one stage. The
- * terrain a seed waits for, or DFI_TERRAIN_NONE for a member that holds none. The Electric and Misty Seeds are
- * UNMODELED rows (no Electric or Misty Terrain in the pool tables' setters). */
+/* The terrain seeds (data/items.ts:2595-2614 Grassy Seed, :4903-4922 Psychic Seed, :1799-1818 Electric Seed,
+ * :4200-4219 Misty Seed; the generator checks that each is Grassy Seed for its terrain and its stat): onSwitchInPriority
+ * -1, onStart (not ignoringItem, the terrain is up) and onTerrainChange (the terrain is up) both call useItem, and the
+ * item's boosts raise one stage of one stat: Defense for the Grassy and Electric Seeds, Special Defense for the Psychic and
+ * Misty Seeds. The terrain a seed waits for, or DFI_TERRAIN_NONE for a member that holds none. */
 static uint32_t dfi_seed_terrain(const struct duoforge_battle *b, const dfi_member *m)
 {
     if (dfi_holds(b, m, DFI_ITEM_GRASSYSEED)) {
@@ -4453,11 +4545,17 @@ static uint32_t dfi_seed_terrain(const struct duoforge_battle *b, const dfi_memb
     if (dfi_holds(b, m, DFI_ITEM_PSYCHICSEED)) {
         return DFI_TERRAIN_PSYCHIC;
     }
+    if (dfi_holds(b, m, DFI_ITEM_ELECTRICSEED)) {
+        return DFI_TERRAIN_ELECTRIC;
+    }
+    if (dfi_holds(b, m, DFI_ITEM_MISTYSEED)) {
+        return DFI_TERRAIN_MISTY;
+    }
     return DFI_TERRAIN_NONE;
 }
 
-/* A terrain seed (useItem): its stat +1 once, when its terrain is up: Grassy Seed's Defense, Psychic Seed's Special
- * Defense. A holder that fainted does nothing. */
+/* A terrain seed (useItem): its stat +1 once, when its terrain is up: Grassy Seed's and Electric Seed's Defense, Psychic
+ * Seed's and Misty Seed's Special Defense. A holder that fainted does nothing. */
 static void dfi_terrain_seed(dfi_run *r, uint32_t flat)
 {
     static const uint8_t def_up[DFI_STAT_STAGE_COUNT] = {6u, 7u, 6u, 6u, 6u, 6u, 6u};
@@ -4470,10 +4568,13 @@ static void dfi_terrain_seed(dfi_run *r, uint32_t flat)
     if (terrain == DFI_TERRAIN_NONE || r->b->terrain != terrain) {
         return;
     }
-    const bool grassy = terrain == DFI_TERRAIN_GRASSY;
-    const uint32_t item = grassy ? DFI_ITEM_GRASSYSEED : DFI_ITEM_PSYCHICSEED;
+    const bool defense = terrain == DFI_TERRAIN_GRASSY || terrain == DFI_TERRAIN_ELECTRIC;
+    const uint32_t item = terrain == DFI_TERRAIN_GRASSY     ? DFI_ITEM_GRASSYSEED
+                          : terrain == DFI_TERRAIN_PSYCHIC  ? DFI_ITEM_PSYCHICSEED
+                          : terrain == DFI_TERRAIN_ELECTRIC ? DFI_ITEM_ELECTRICSEED
+                                                            : DFI_ITEM_MISTYSEED;
     dfi_use_item(r, flat);
-    dfi_boost(r, flat, grassy ? def_up : spd_up, DFI_POSITIONS,
+    dfi_boost(r, flat, defense ? def_up : spd_up, DFI_POSITIONS,
               dfi_effect(DUOFORGE_CAUSE_ITEM, 1u + item, DFI_BOOST_PRIMARY));
 }
 
@@ -4612,14 +4713,13 @@ static duoforge_status dfi_entry_ability(dfi_run *r, uint32_t flat)
             dfi_emit(r, &e);
         }
     } else if (terrain != DFI_TERRAIN_NONE) {
-        const bool grassy = terrain == DFI_TERRAIN_GRASSY;
         if (b->terrain != terrain) {
             b->terrain = (uint8_t)terrain;
             b->terrain_turns = (uint8_t)DFI_FIELD_TURNS_MAX;
             /* -fieldstart|move: X Terrain|[from] ability: X|[of] holder */
             duoforge_event e =
                 dfi_ev(DUOFORGE_EVENT_FIELD_START, DUOFORGE_NO_POSITION, DUOFORGE_CAUSE_ABILITY, a, flat);
-            e.detail = (uint8_t)(grassy ? DUOFORGE_FIELD_GRASSY_TERRAIN : DUOFORGE_FIELD_PSYCHIC_TERRAIN); /* wide-operands-reviewed: < 4 */
+            e.detail = (uint8_t)dfi_terrain_field_detail(terrain);
             dfi_emit(r, &e);
             return dfi_terrain_change(r);
         }
@@ -5277,10 +5377,10 @@ static duoforge_status dfi_residual_events(dfi_run *r)
     if (b->terrain != DFI_TERRAIN_NONE) {
         b->terrain_turns = (uint8_t)((uint32_t)b->terrain_turns - 1u); /* wide-operands-reviewed: >= 1 */
         if (b->terrain_turns == 0u) {
-            const bool grassy = b->terrain == DFI_TERRAIN_GRASSY;
+            const uint32_t ended = b->terrain;
             b->terrain = (uint8_t)DFI_TERRAIN_NONE;
             duoforge_event e = dfi_event_make(DUOFORGE_EVENT_FIELD_END, DUOFORGE_NO_POSITION);
-            e.detail = (uint8_t)(grassy ? DUOFORGE_FIELD_GRASSY_TERRAIN : DUOFORGE_FIELD_PSYCHIC_TERRAIN); /* wide-operands-reviewed: < 4 */
+            e.detail = (uint8_t)dfi_terrain_field_detail(ended);
             dfi_emit(r, &e); /* [-fieldend] */
             st = dfi_terrain_change(r);
             if (st != DUOFORGE_OK) {
