@@ -873,7 +873,8 @@
 #define DFI_SPECIAL_MISTY_TERRAIN 49u
 #define DFI_SPECIAL_RISING_VOLTAGE 50u
 #define DFI_SPECIAL_TERRAIN_PULSE 51u
-#define DFI_SPECIAL_UNMODELED 52u
+#define DFI_SPECIAL_PERISH_SONG 52u
+#define DFI_SPECIAL_UNMODELED 53u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */

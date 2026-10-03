@@ -1913,6 +1913,59 @@ static const df_tb_stop tb_g25_weather_ball_refrigerate[] = {
     {5u, 0u, 1u, 2u, {4u, 4u}, {811u, 631u}, {0x4050aaaaaaaaaaabull, 0x404af7a917bacbf3ull}},
     {6u, 0u, 1u, 2u, {4u, 4u}, {811u, 631u}, {0x4050aaaaaaaaaaabull, 0x404af7a917bacbf3ull}},
 };
+static const df_tb_stop tb_g26_perish_end[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1112u, 1121u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 3u, 4u, {4u, 4u}, {783u, 783u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 3u, 4u, {4u, 4u}, {783u, 783u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 3u, 4u, {4u, 4u}, {783u, 783u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {6u, 0u, 2u, 3u, {2u, 2u}, {379u, 399u}, {0x4040aaaaaaaaaaabull, 0x4040aaaaaaaaaaabull}},
+    {9u, 0u, 2u, 3u, {2u, 2u}, {379u, 399u}, {0x4040aaaaaaaaaaabull, 0x4040aaaaaaaaaaabull}},
+    {10u, 1u, 2u, 0u, {0u, 0u}, {0u, 0u}, {0x0000000000000000ull, 0x0000000000000000ull}},
+};
+static const df_tb_stop tb_g26_perish_recast[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1127u, 1157u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {768u, 763u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 3u, {4u, 4u}, {768u, 763u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 1u, 3u, {4u, 4u}, {768u, 763u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {6u, 0u, 2u, 1u, {2u, 3u}, {364u, 566u}, {0x4040aaaaaaaaaaabull, 0x4049000000000000ull}},
+    {7u, 0u, 2u, 1u, {2u, 3u}, {364u, 566u}, {0x4040aaaaaaaaaaabull, 0x4049000000000000ull}},
+    {8u, 0u, 1u, 3u, {2u, 2u}, {364u, 359u}, {0x4040aaaaaaaaaaabull, 0x4040aaaaaaaaaaabull}},
+};
+static const df_tb_stop tb_g26_perish_song[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1164u, 1157u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {755u, 793u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {755u, 793u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {755u, 675u}, {0x4050aaaaaaaaaaabull, 0x404d5a2b87c5f5a3ull}},
+    {6u, 0u, 1u, 3u, {3u, 3u}, {558u, 546u}, {0x4049000000000000ull, 0x4049000000000000ull}},
+    {7u, 0u, 1u, 1u, {3u, 2u}, {558u, 344u}, {0x4049000000000000ull, 0x4040aaaaaaaaaaabull}},
+};
+static const df_tb_stop tb_g26_perish_soundproof[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1122u, 1021u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {793u, 692u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {705u, 692u}, {0x404db0c66069de29ull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {618u, 692u}, {0x404a181785463bb8ull, 0x4050aaaaaaaaaaabull}},
+    {6u, 0u, 2u, 1u, {2u, 3u}, {389u, 555u}, {0x4040aaaaaaaaaaabull, 0x4049000000000000ull}},
+    {9u, 0u, 2u, 1u, {2u, 3u}, {278u, 555u}, {0x40382cc7648a8fa1ull, 0x4049000000000000ull}},
+    {10u, 0u, 2u, 1u, {2u, 3u}, {239u, 555u}, {0x4034f5043973bfcaull, 0x4049000000000000ull}},
+};
+static const df_tb_stop tb_g26_perish_survivor_a[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1119u, 1121u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {790u, 783u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 3u, {4u, 4u}, {790u, 783u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 1u, 3u, {4u, 4u}, {790u, 783u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {6u, 0u, 2u, 3u, {2u, 2u}, {386u, 399u}, {0x4040aaaaaaaaaaabull, 0x4040aaaaaaaaaaabull}},
+    {9u, 0u, 1u, 2u, {2u, 2u}, {348u, 288u}, {0x403e11983143bd24ull, 0x4037f145bd4aeff9ull}},
+    {10u, 1u, 1u, 0u, {1u, 0u}, {156u, 0u}, {0x402acddb0d3224f3ull, 0x0000000000000000ull}},
+};
+static const df_tb_stop tb_g26_perish_survivor_b[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1119u, 1121u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {790u, 783u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 3u, {4u, 4u}, {790u, 783u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 1u, 3u, {4u, 4u}, {790u, 783u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {6u, 0u, 2u, 3u, {2u, 2u}, {386u, 399u}, {0x4040aaaaaaaaaaabull, 0x4040aaaaaaaaaaabull}},
+    {9u, 0u, 1u, 2u, {2u, 2u}, {348u, 281u}, {0x403e11983143bd24ull, 0x403759aa3bc6d284ull}},
+    {10u, 1u, 1u, 0u, {1u, 0u}, {156u, 0u}, {0x402acddb0d3224f3ull, 0x0000000000000000ull}},
+};
 static const df_tb_stop tb_g27_cursed_body_a[] = {
     {0u, 0u, 2u, 3u, {6u, 6u}, {1119u, 1154u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {720u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -4060,6 +4113,12 @@ static const df_tb_battle tb_battles[] = {
     {"g25_terrain_pulse_electric", 6u, tb_g25_terrain_pulse_electric, sizeof tb_g25_terrain_pulse_electric / sizeof tb_g25_terrain_pulse_electric[0]},
     {"g25_terrain_pulse_psychic_misty", 6u, tb_g25_terrain_pulse_psychic_misty, sizeof tb_g25_terrain_pulse_psychic_misty / sizeof tb_g25_terrain_pulse_psychic_misty[0]},
     {"g25_weather_ball_refrigerate", 6u, tb_g25_weather_ball_refrigerate, sizeof tb_g25_weather_ball_refrigerate / sizeof tb_g25_weather_ball_refrigerate[0]},
+    {"g26_perish_end", 10u, tb_g26_perish_end, sizeof tb_g26_perish_end / sizeof tb_g26_perish_end[0]},
+    {"g26_perish_recast", 8u, tb_g26_perish_recast, sizeof tb_g26_perish_recast / sizeof tb_g26_perish_recast[0]},
+    {"g26_perish_song", 7u, tb_g26_perish_song, sizeof tb_g26_perish_song / sizeof tb_g26_perish_song[0]},
+    {"g26_perish_soundproof", 10u, tb_g26_perish_soundproof, sizeof tb_g26_perish_soundproof / sizeof tb_g26_perish_soundproof[0]},
+    {"g26_perish_survivor_a", 10u, tb_g26_perish_survivor_a, sizeof tb_g26_perish_survivor_a / sizeof tb_g26_perish_survivor_a[0]},
+    {"g26_perish_survivor_b", 10u, tb_g26_perish_survivor_b, sizeof tb_g26_perish_survivor_b / sizeof tb_g26_perish_survivor_b[0]},
     {"g27_cursed_body_a", 8u, tb_g27_cursed_body_a, sizeof tb_g27_cursed_body_a / sizeof tb_g27_cursed_body_a[0]},
     {"g27_cursed_body_spread_a", 8u, tb_g27_cursed_body_spread_a, sizeof tb_g27_cursed_body_spread_a / sizeof tb_g27_cursed_body_spread_a[0]},
     {"g27_cursed_body_spread_b", 8u, tb_g27_cursed_body_spread_b, sizeof tb_g27_cursed_body_spread_b / sizeof tb_g27_cursed_body_spread_b[0]},
@@ -4268,7 +4327,7 @@ static const df_tb_battle tb_battles[] = {
     {"w8_sand_soak", 7u, tb_w8_sand_soak, sizeof tb_w8_sand_soak / sizeof tb_w8_sand_soak[0]},
 };
 
-/* 2984 stops: 139 of an ended battle; decided by the count 825,
- * the HP percentage 980, the total HP 988, a tie 52;
- * winners: side 0 1498, side 1 1434, tie 52 */
+/* 3025 stops: 142 of an ended battle; decided by the count 831,
+ * the HP percentage 985, the total HP 1012, a tie 55;
+ * winners: side 0 1518, side 1 1452, tie 55 */
 #endif

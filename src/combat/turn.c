@@ -2722,6 +2722,66 @@ static duoforge_status dfi_run_aurora_veil(dfi_run *r, uint32_t user)
     return DUOFORGE_OK;
 }
 
+/* Perish Song (step G26, POOL data, data/moves.ts:13233-13277; the Champions mod has no entry; the volatile's counter is
+ * the position's `perish` of the state tail: the duration, 4 when it is added). A field move (target `all`): its
+ * onHitField (:13242-13260) goes over every Pokemon that is active and has not fainted, in side and slot order
+ * (Battle.getAllActive). One that already has the volatile is left alone and counts for nothing; one whose TryHit is
+ * stopped counts as hit (result = true) and gets nothing: of the abilities of a battle only Good as Gold (data/
+ * abilities.ts:1630-1641, onTryHit: a status move of another Pokemon, -immune [from] ability: Good as Gold) stops it,
+ * the user's own never does (target !== source); Soundproof (:4436-4452, a sound move) is unmarked, the other marked
+ * abilities with an onTryHit read a type that Perish Song (Normal) is not (Flash Fire, Lightning Rod) or a priority
+ * above 0 (Armor Tail; Psychic Terrain: refused below), Protect and Wide Guard let a move without the protect flag
+ * through (checkMoveBypassesProtect, sim/battle.ts:1300-1309), and no semi-invulnerable move is marked, so the
+ * Invulnerability event misses nothing. A Pokemon that gets the volatile shows nothing now (-start perish3 is [silent];
+ * the first count is the residual's); if at least one did, -fieldactivate|move: Perish Song follows. A move that did
+ * nothing (every active Pokemon has it already) fails with -fail and [still] (moveHit, sim/battle-actions.ts:1302-1308).
+ * The hit loop's Update does not run, as for the other field moves. */
+static duoforge_status dfi_run_perish_song(dfi_run *r, uint32_t user, const dfi_move_data *md)
+{
+    struct duoforge_battle *b = r->b;
+    if (dfi_move_priority(b, dfi_at(b, user), md) > DFI_PRIORITY_BIAS) {
+        return DUOFORGE_E_UNSUPPORTED; /* Prankster's +1 meets Psychic Terrain's and Armor Tail's TryHit and TryMove */
+    }
+    bool result = false;
+    bool message = false;
+    for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
+        const dfi_member *t = dfi_at(b, flat);
+        if (t == NULL || t->hp == 0u) {
+            continue;
+        }
+        if (flat != user && dfi_ability(b, t, DFI_ABILITY_GOODASGOLD)) {
+            dfi_immune(r, flat, 1u + DFI_ABILITY_GOODASGOLD);
+            result = true;
+            continue;
+        }
+        /* Soundproof's onTryHit (step G32, data/abilities.ts:4436-4452): Perish Song has the sound flag, so the holder, if
+         * it is not the user, is -immune|holder|[from] ability: Soundproof and the handler returns null: it gets no
+         * volatile, and that counts as a result (onHitField, data/moves.ts:13242-13260). */
+        if (flat != user && dfi_ability(b, t, DFI_ABILITY_SOUNDPROOF)) {
+            dfi_immune(r, flat, 1u + DFI_ABILITY_SOUNDPROOF);
+            result = true;
+            continue;
+        }
+        dfi_tail_pos *tail = &b->tail.sides[flat / 2u].positions[flat % 2u];
+        if (tail->perish == 0u) {
+            tail->perish = (uint8_t)DFI_TAIL_PERISH_MAX;
+            result = true;
+            message = true;
+        }
+    }
+    if (!result) {
+        dfi_fail_still(r, user);
+        return DUOFORGE_OK;
+    }
+    if (message) {
+        /* -fieldactivate|move: Perish Song: the ACTIVATE event of the move, with no position */
+        const duoforge_event e = dfi_ev(DUOFORGE_EVENT_ACTIVATE, DUOFORGE_NO_POSITION, DUOFORGE_CAUSE_MOVE,
+                                        DFI_MOVE_PERISHSONG, DUOFORGE_NO_POSITION);
+        dfi_emit(r, &e);
+    }
+    return DUOFORGE_OK;
+}
+
 /* Nothing to hit: [notarget] on the last move line, then -fail. */
 static duoforge_status dfi_no_target(dfi_run *r, uint32_t user)
 {
@@ -3493,6 +3553,9 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     }
     if (md->special == DFI_SPECIAL_AURORA_VEIL) {
         return dfi_run_aurora_veil(r, user);
+    }
+    if (md->special == DFI_SPECIAL_PERISH_SONG) {
+        return dfi_run_perish_song(r, user, md);
     }
     if (md->special == DFI_SPECIAL_FOLLOW_ME) {
         return dfi_run_follow_me(r, user, DFI_MOVE_FOLLOWME);
@@ -4950,9 +5013,9 @@ static uint8_t *dfi_side_turns(struct duoforge_battle *b, uint32_t s, uint32_t k
 }
 /* Trick Room, weather and terrain; four conditions per side (step G20 added Aurora Veil); per position
  * (DFI_RES_PER_POSITION) a status (burn or poison), the volatiles' handlers (seven duration ends: Protect, the stall
- * counter, flinch, a charge, Helping Hand, Follow Me and mustrecharge; Heal Block, Throat Chop and Encore), an item
+ * counter, flinch, a charge, Helping Hand, Follow Me and mustrecharge; Heal Block, Throat Chop, Encore and Perish Song), an item
  * (Leftovers or White Herb) and Grassy Terrain. */
-#define DFI_RES_PER_POSITION 16u /* 14 before Speed Boost (step G32) and Disable (step G27) */
+#define DFI_RES_PER_POSITION 17u /* 14 before Speed Boost (step G32) and Disable (step G27); Perish Song (step G26) is the 17th */
 #define DFI_RES_MAX (3u + 4u * DUOFORGE_SIDE_COUNT + DFI_RES_PER_POSITION * DFI_POSITIONS)
 _Static_assert(DFI_RES_MAX <= DFI_RES_MODEL_MAX, "the exact test of residual_order.h must hold the whole list");
 
@@ -5009,6 +5072,47 @@ static duoforge_status dfi_residual_sort(dfi_run *r, dfi_residual_entry *list, u
     return DUOFORGE_OK;
 }
 
+/* fieldEvent (sim/battle.ts:484-575) runs faintMessages after every handler that does not end: a handler whose duration
+ * runs out ends and the loop goes on at once (`continue`), any other, with or without a callback, is followed by it. A
+ * faint that an ending handler queued (Perish Song's perish0, step G26) is shown and its win rule applied there: after
+ * the first later handler that does not end, so before the `upkeep` line when there is one, after it (the epilogue of the
+ * action) when there is none. */
+static void dfi_residual_faints(dfi_run *r)
+{
+    if (r->faint_count != 0u) {
+        dfi_process_faints(r);
+    }
+}
+
+/* Whether the volatiles of the Pokemon at `flat` still exist at this point of the residual: it stands, or its faint is
+ * queued and not yet processed (Pokemon.faint() only sets hp 0 and queues it; faintMessages clears the volatiles, and
+ * a handler whose state is gone is skipped, sim/battle.ts:525-554). Their handlers run, and the faintMessages after
+ * each is a faint point; those of a Pokemon whose faint was already processed are not. */
+static bool dfi_residual_holder_stands(dfi_run *r, uint32_t flat)
+{
+    const dfi_member *m = dfi_at(r->b, flat);
+    if (m != NULL && m->hp != 0u) {
+        return true;
+    }
+    for (uint32_t i = 0u; i < r->faint_count; ++i) {
+        if (r->faint_queue[i] == flat) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/* What the no-order duration handlers of the residual look like before any of them runs (see the pair draws below):
+ * `pair`: a standing Pokemon whose only no-order handlers are Protect's volatile (either variant) and a stall counter,
+ * `had`: a no-order handler of any kind, `key`: the Speed key that sorts it; `ended_at`: the position whose no-order
+ * faint point ended the battle, DFI_POSITIONS when none did. */
+typedef struct dfi_noorder_snapshot {
+    bool pair[DFI_POSITIONS];
+    bool had[DFI_POSITIONS];
+    uint32_t key[DFI_POSITIONS];
+    uint32_t ended_at;
+} dfi_noorder_snapshot;
+
 static duoforge_status dfi_residual_events(dfi_run *r);
 
 /* The residual action. It keeps each position's HP from before its events
@@ -5041,12 +5145,27 @@ static void dfi_speed_boost(dfi_run *r, uint32_t flat)
     (void)dfi_boost(r, flat, spe_up, DFI_POSITIONS, dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_SPEEDBOOST, DFI_BOOST_PRIMARY));
 }
 
-static duoforge_status dfi_residual_events(dfi_run *r)
+static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot *ps)
 {
     struct duoforge_battle *b = r->b;
     duoforge_status st = dfi_update_speeds(r);
     if (st != DUOFORGE_OK) {
         return st;
+    }
+    {
+        const uint32_t protect_and_friends = DFI_VOL_PROTECT | DFI_VOL_FLINCH | DFI_VOL_HELPING_HAND | DFI_VOL_FOLLOW_ME;
+        ps->ended_at = DFI_POSITIONS;
+        for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
+            const dfi_active_slot *pos = dfi_pos(b, flat);
+            const bool recharge = b->tail.sides[flat / 2u].positions[flat % 2u].must_recharge != 0u;
+            ps->key[flat] = r->speed_seen[flat];
+            ps->had[flat] = pos->occupant != DFI_OCCUPANT_NONE &&
+                            (((uint32_t)pos->flags & protect_and_friends) != 0u || pos->charge_turns != 0u ||
+                             pos->stall_turns != 0u || recharge);
+            ps->pair[flat] = pos->occupant != DFI_OCCUPANT_NONE && dfi_alive(b, flat) &&
+                             ((uint32_t)pos->flags & protect_and_friends) == DFI_VOL_PROTECT && pos->stall_level != 0u &&
+                             pos->stall_turns != 0u && pos->charge_turns == 0u && !recharge;
+        }
     }
     dfi_residual_entry list[DFI_RES_MAX];
     uint32_t n = 0u;
@@ -5114,6 +5233,13 @@ static duoforge_status dfi_residual_events(dfi_run *r)
             }
             if (vt->encore_slot != 0u) {
                 list[n] = (dfi_residual_entry){DFI_RES_ENCORE, flat, 16u, speed, 2u, true};
+                n += 1u;
+            }
+            /* Perish Song (order 24, data/moves.ts:13261-13272; step G26): a volatile with a duration and a callback every
+             * turn (its count line), so a handler of the sort whose tie is a drawn shuffle, like Encore's. It sorts after
+             * Heal Block's (20) and Disable's (17) end lines, which are entries of the same list. */
+            if (vt->perish != 0u) {
+                list[n] = (dfi_residual_entry){DFI_RES_PERISH, flat, 24u, speed, 2u, true};
                 n += 1u;
             }
         }
@@ -5235,6 +5361,37 @@ static duoforge_status dfi_residual_events(dfi_run *r)
         if (m->hp == 0u) {
             continue; /* the holder fainted */
         }
+        if (e->kind == DFI_RES_PERISH) {
+            /* fieldEvent (sim/battle.ts:484-575): the duration goes down; at 0 onEnd shows -start|X|perish0 and
+             * faints the holder (target.faint(): queued, hp 0) and the loop goes on with no faintMessages; otherwise
+             * onResidual shows the count (-start|X|perishN) and the faintMessages that follows every callback
+             * processes the faints that earlier handlers queued (and may end the battle). */
+            dfi_tail_pos *tail = &b->tail.sides[e->flat / 2u].positions[e->flat % 2u];
+            if (tail->perish == 0u) {
+                continue; /* removed by an earlier handler */
+            }
+            tail->perish = (uint8_t)((uint32_t)tail->perish - 1u); /* wide-operands-reviewed: >= 1 */
+            duoforge_event ev = dfi_event_make(DUOFORGE_EVENT_VOLATILE_START, e->flat);
+            ev.detail = (uint8_t)DUOFORGE_VOLATILE_PERISH;
+            ev.amount = tail->perish; /* 0 to 3 */
+            dfi_emit(r, &ev);
+            if (tail->perish == 0u) {
+                m->hp = 0u;
+                if (dfi_support.switching == 0u) {
+                    return DUOFORGE_E_UNSUPPORTED;
+                }
+                if (r->faint_count < DFI_POSITIONS) {
+                    r->faint_queue[r->faint_count] = e->flat;
+                    r->faint_count += 1u;
+                }
+                continue;
+            }
+            dfi_process_faints(r);
+            if (r->ended) {
+                return DUOFORGE_OK;
+            }
+            continue;
+        }
         if (e->kind == DFI_RES_ENCORE) {
             /* fieldEvent: the duration goes down and at 0 the volatile ends (-end|X|Encore, onEnd); otherwise the
              * callback ends it early when the Encored move has no PP left (data/moves.ts:4724-4783). */
@@ -5351,6 +5508,16 @@ static duoforge_status dfi_residual_events(dfi_run *r)
     static const uint8_t side_kind[DFI_SIDE_KINDS] = {DUOFORGE_SIDE_REFLECT, DUOFORGE_SIDE_LIGHT_SCREEN,
                                                       DUOFORGE_SIDE_TAILWIND, DUOFORGE_SIDE_AURORA_VEIL};
     for (uint32_t k = 0u; k < DFI_SIDE_KINDS; ++k) {
+        {
+            /* The same kind on both sides, one of them ending now and the other not, with a faint still queued: the
+             * faints are shown after the one that does not end, so before or after the other's end line by the tie's
+             * shuffle, a draw that the conversion drops (the two only count down). Not modelled: refused. */
+            const uint8_t t0 = *dfi_side_turns(b, 0u, k);
+            const uint8_t t1 = *dfi_side_turns(b, 1u, k);
+            if (r->faint_count != 0u && t0 != 0u && t1 != 0u && (t0 == 1u) != (t1 == 1u)) {
+                return DUOFORGE_E_UNSUPPORTED;
+            }
+        }
         for (uint32_t j = 0u; j < DUOFORGE_SIDE_COUNT; ++j) {
             const uint32_t s = j ^ first[k];
             uint8_t *turns = dfi_side_turns(b, s, k);
@@ -5363,6 +5530,17 @@ static duoforge_status dfi_residual_events(dfi_run *r)
                 e.detail = (uint8_t)s;
                 e.amount = side_kind[k];
                 dfi_emit(r, &e); /* [-sideend] */
+            } else {
+                dfi_residual_faints(r);
+                if (r->ended) {
+                    /* The battle ended at this handler, so the other side's handler of the same kind did not run: which
+                     * of the two ran first is the shuffle of the tie, a draw that the conversion drops when both only
+                     * count down, and the remaining turns of an ended battle show it. Not modelled: refused. */
+                    if (j == 0u && *dfi_side_turns(b, s ^ 1u, k) != 0u) {
+                        return DUOFORGE_E_UNSUPPORTED;
+                    }
+                    return DUOFORGE_OK;
+                }
             }
         }
     }
@@ -5372,6 +5550,11 @@ static duoforge_status dfi_residual_events(dfi_run *r)
             duoforge_event e = dfi_event_make(DUOFORGE_EVENT_FIELD_END, DUOFORGE_NO_POSITION);
             e.detail = (uint8_t)DUOFORGE_FIELD_TRICK_ROOM;
             dfi_emit(r, &e); /* [-fieldend] */
+        } else {
+            dfi_residual_faints(r);
+            if (r->ended) {
+                return DUOFORGE_OK;
+            }
         }
     }
     if (b->terrain != DFI_TERRAIN_NONE) {
@@ -5385,6 +5568,11 @@ static duoforge_status dfi_residual_events(dfi_run *r)
             st = dfi_terrain_change(r);
             if (st != DUOFORGE_OK) {
                 return st;
+            }
+        } else {
+            dfi_residual_faints(r);
+            if (r->ended) {
+                return DUOFORGE_OK;
             }
         }
     }
@@ -5404,26 +5592,66 @@ static duoforge_status dfi_residual_events(dfi_run *r)
         }
     }
     for (uint32_t i = herbs_from; i < sorted; ++i) {
-        if (list[i].kind == DFI_RES_SPEED_BOOST) {
-            dfi_speed_boost(r, list[i].flat);
-        } else if (list[i].kind == DFI_RES_WHITE_HERB) {
-            dfi_white_herb(r, list[i].flat);
+        if ((list[i].kind == DFI_RES_SPEED_BOOST || list[i].kind == DFI_RES_WHITE_HERB) &&
+            dfi_residual_holder_stands(r, list[i].flat)) {
+            if (list[i].kind == DFI_RES_SPEED_BOOST) {
+                dfi_speed_boost(r, list[i].flat);
+            } else {
+                dfi_white_herb(r, list[i].flat);
+            }
+            dfi_residual_faints(r); /* a callback: faintMessages follows it */
+            if (r->ended) {
+                return DUOFORGE_OK;
+            }
         }
     }
+    /* The duration handlers of the volatiles that have no order come last, in Speed order (comparePriority puts no order
+     * after every order): Protect, flinch, Helping Hand and Follow Me (duration 1) end at once, the stall counter and a
+     * charge (2) end on their second residual, mustrecharge (2) lasts through the one of the turn that set it. Any that
+     * does not end is followed by faintMessages, and a battle that ends there leaves the handlers after it unrun: the
+     * ones before it ended, the ones after it keep their counters. Which handler is first among equal Speeds, and
+     * between two handlers of one Pokemon, is a shuffle that the conversion drops; it shows only in the counters of a
+     * Pokemon that stands when the battle ends at that faint point (a fainted one has lost its volatiles), and that
+     * case is refused. */
+    const uint32_t ended_flags = DFI_VOL_PROTECT | DFI_VOL_FLINCH | DFI_VOL_HELPING_HAND | DFI_VOL_FOLLOW_ME;
+    uint32_t seq[DFI_POSITIONS];
+    bool had[DFI_POSITIONS] = {false}; /* by position: a handler of this kind exists now (before any of them runs) */
+    uint32_t seq_n = 0u;
     for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
-        dfi_active_slot *pos = dfi_pos(b, flat);
-        if (pos->occupant == DFI_OCCUPANT_NONE) {
-            continue;
+        const dfi_active_slot *pos = dfi_pos(b, flat);
+        if (pos->occupant != DFI_OCCUPANT_NONE) {
+            seq[seq_n] = flat;
+            seq_n += 1u;
+            had[flat] = ((uint32_t)pos->flags & ended_flags) != 0u || pos->charge_turns != 0u || pos->stall_turns != 0u ||
+                        b->tail.sides[flat / 2u].positions[flat % 2u].must_recharge != 0u;
         }
-        const uint32_t ended = DFI_VOL_PROTECT | DFI_VOL_FLINCH | DFI_VOL_HELPING_HAND | DFI_VOL_FOLLOW_ME;
-        pos->flags = (uint8_t)((uint32_t)pos->flags & ~ended); /* wide-operands-reviewed */
+    }
+    for (uint32_t i = 1u; i < seq_n; ++i) {
+        for (uint32_t j = i; j > 0u && r->speed_seen[seq[j]] > r->speed_seen[seq[j - 1u]]; --j) {
+            const uint32_t swap = seq[j];
+            seq[j] = seq[j - 1u];
+            seq[j - 1u] = swap;
+        }
+    }
+    for (uint32_t i = 0u; i < seq_n; ++i) {
+        const uint32_t flat = seq[i];
+        dfi_active_slot *pos = dfi_pos(b, flat);
+        const bool keeps = (pos->stall_level != 0u && pos->stall_turns > 1u) || pos->charge_turns > 1u ||
+                           b->tail.sides[flat / 2u].positions[flat % 2u].must_recharge != 0u;
+        const bool also_ends = ((uint32_t)pos->flags & ended_flags) != 0u || pos->charge_turns == 1u || pos->stall_turns == 1u;
+        const bool pair_here = ps->pair[flat]; /* Protect's volatile and the stall counter, nothing else: see below */
+        if (!pair_here) {
+            pos->flags = (uint8_t)((uint32_t)pos->flags & ~ended_flags); /* wide-operands-reviewed */
+        }
         /* The variant ends with the volatile. protect and spikyshield have `duration: 1` and no onResidual, onEnd or order
          * (data/moves.ts:13961-14005, :17532-17584), so each is one of the position's duration handlers of the sorted
          * Residual list above (sim/battle.ts:1097-1112 adds a volatile with a duration, :516-517 counts it down and
          * removes it, silently without an onEnd): the count `ends` has it through DFI_VOL_PROTECT whichever variant it is.
          * Nothing between its place in the sort and this sweep can read it (no hit is made in a residual), so clearing
          * it with the flag is the same outcome. */
-        b->tail.sides[flat / 2u].positions[flat % 2u].protect_kind = (uint8_t)DFI_PROTECT_PLAIN;
+        if (!pair_here) {
+            b->tail.sides[flat / 2u].positions[flat % 2u].protect_kind = (uint8_t)DFI_PROTECT_PLAIN;
+        }
         if (pos->charge_turns > 0u) {
             pos->charge_turns = (uint8_t)((uint32_t)pos->charge_turns - 1u); /* wide-operands-reviewed */
             if (pos->charge_turns == 0u) {
@@ -5439,8 +5667,92 @@ static duoforge_status dfi_residual_events(dfi_run *r)
                 pos->stall_level = 0u;
             }
         }
+        if (keeps && r->faint_count != 0u) {
+            dfi_residual_faints(r);
+            if (r->ended) {
+                if (also_ends && !pair_here && dfi_alive(b, flat)) {
+                    return DUOFORGE_E_UNSUPPORTED; /* its own other handler: before or after the faint point */
+                }
+                for (uint32_t j = 0u; j < seq_n; ++j) {
+                    if (j != i && had[seq[j]] && dfi_alive(b, seq[j]) && r->speed_seen[seq[j]] == r->speed_seen[flat]) {
+                        return DUOFORGE_E_UNSUPPORTED; /* equal Speed: the shuffle decides who ran */
+                    }
+                }
+                if (pair_here) {
+                    ps->ended_at = flat; /* Protect's volatile is still there: dfi_residual_pair_draws decides */
+                }
+                return DUOFORGE_OK;
+            }
+        }
+        if (pair_here) {
+            pos->flags = (uint8_t)((uint32_t)pos->flags & ~ended_flags); /* wide-operands-reviewed */
+            b->tail.sides[flat / 2u].positions[flat % 2u].protect_kind = (uint8_t)DFI_PROTECT_PLAIN;
+        }
     }
     return DUOFORGE_OK;
+}
+
+/* The residual's tie between the two no-order handlers of one Pokemon, Protect's volatile and its stall counter (equal
+ * keys: order none, one sub-order, one holder's Speed). The reference shuffles every tied group while it sorts
+ * (Battle.speedSort, sim/battle.ts:429-460), one draw random(start, start + 2) for a pair, so every Protect turn draws.
+ * The order shows in one case only: the battle ends at the faint point that follows the stall counter (it does not
+ * end), and then a Pokemon that still stands has kept Protect's volatile when the stall counter ran first (the loop
+ * above stops there) and lost it when Protect's own duration handler did. The conversion keeps exactly that draw
+ * (tools/reference/trace_to_c.py no_order_end_tie: the battle ends in the step and a lone pair of a standing holder is
+ * the group) and drops the others, so the engine draws exactly then: a battle that ended in this residual and a standing
+ * Pokemon whose handlers are that pair, in Speed order. The pre-shuffle order of the group is the reference's list order,
+ * which the state does not hold; the conversion states the outcome instead (0: the stall counter ran first, 1: Protect's
+ * volatile did), and a uniform shuffle makes the engine's own draw the same distribution. The outcome matters only when
+ * the end was at that Pokemon's own faint point; an earlier end (a Perish count's, a side condition's) left every no-order
+ * handler unrun and the draw is spent unseen. A group of more than the pair (an equal-Speed neighbour, Helping Hand) is
+ * refused, as before: its permutation is not modelled. */
+static duoforge_status dfi_residual_pair_draws(dfi_run *r, const dfi_noorder_snapshot *ps)
+{
+    struct duoforge_battle *b = r->b;
+    uint32_t order[DFI_POSITIONS];
+    uint32_t n = 0u;
+    for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
+        if (ps->pair[flat] && dfi_alive(b, flat)) {
+            order[n] = flat;
+            n += 1u;
+        }
+    }
+    for (uint32_t i = 1u; i < n; ++i) {
+        for (uint32_t j = i; j > 0u && ps->key[order[j]] > ps->key[order[j - 1u]]; --j) {
+            const uint32_t swap = order[j];
+            order[j] = order[j - 1u];
+            order[j - 1u] = swap;
+        }
+    }
+    for (uint32_t i = 0u; i < n; ++i) {
+        const uint32_t flat = order[i];
+        for (uint32_t j = 0u; j < DFI_POSITIONS; ++j) {
+            if (j != flat && ps->had[j] && ps->key[j] == ps->key[flat]) {
+                return DUOFORGE_E_UNSUPPORTED; /* a bigger group: its shuffle is not modelled */
+            }
+        }
+        uint32_t v = 0u;
+        const duoforge_status st = dfi_draw(r->draws, DFI_SITE_SPEED_TIE, 0u, 2u, &v);
+        if (st != DUOFORGE_OK) {
+            return st;
+        }
+        if (ps->ended_at == flat && v == 1u) {
+            dfi_active_slot *pos = dfi_pos(b, flat);
+            pos->flags = (uint8_t)((uint32_t)pos->flags & ~(uint32_t)DFI_VOL_PROTECT); /* wide-operands-reviewed */
+            b->tail.sides[flat / 2u].positions[flat % 2u].protect_kind = (uint8_t)DFI_PROTECT_PLAIN;
+        }
+    }
+    return DUOFORGE_OK;
+}
+
+static duoforge_status dfi_residual_events(dfi_run *r)
+{
+    dfi_noorder_snapshot ps = {{false}, {false}, {0u}, DFI_POSITIONS};
+    const duoforge_status st = dfi_residual_events_run(r, &ps);
+    if (st != DUOFORGE_OK || !r->ended) {
+        return st;
+    }
+    return dfi_residual_pair_draws(r, &ps);
 }
 
 static void dfi_clear_requests(struct duoforge_battle *b)

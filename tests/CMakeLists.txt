@@ -184,6 +184,7 @@ duoforge_add_test(NAME duoforge.state.mega_by_stone SOURCES test_mega_by_stone.c
 duoforge_add_test(NAME duoforge.state.pool_g20 SOURCES test_pool_g20.c WHITEBOX TIMEOUT 60)
 # Step G30: Rage Powder (the Follow Me bit told apart by the occupant's last move, the view extension's RAGE_POWDER bit 39), the
 # powder immunity, Psychic Fangs, Solar Beam, Flame Body, Clear Body, Hospitality and Overcoat, on their recorded battles.
+duoforge_add_test(NAME duoforge.state.pool_g26 SOURCES test_pool_g26.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g30 SOURCES test_pool_g30.c WHITEBOX TIMEOUT 60)
 # Step G36: Toxic and the badly poisoned status: the tail's toxic_stage, the member's status Tox, the view's ailment value.
 duoforge_add_test(NAME duoforge.state.pool_g36 SOURCES test_pool_g36.c WHITEBOX TIMEOUT 60)
@@ -209,8 +210,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=d0ce0f2c37ab8e9344feda3480d20abcaf720b4ba5c135edad8f200c1bc44f79"
-        "pool_tables.c=8188e7338a2ab925fa31d7cb9add4992846d0b089872c27787b2ce0d0fbf6fab")
+        "pool_tables.h=829ab6b4bf99d39f0cc5380bee0c0312d41355127836cefe9e368ce5b194a43b"
+        "pool_tables.c=3415a28b43b37a2917ecbe770f8aabf949a3f347adbb90a5cf9a3ee756ebd609")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)

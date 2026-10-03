@@ -339,6 +339,11 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                 /* Step G27, Disable: the one move slot (slot + 1) that the occupant may not use, public (-start|X|Disable|MOVE: the
                  * slot is the one of MOVE on the open sheet); the turns are never shown. */
                 o.sides[s].positions[p].disable_slot = tail->disable_slot;
+                /* Step G26, Perish Song: the count that the game announced last, public (-start|X|perishN, N = 3, 2, 1:
+                 * the cast's own line is [silent], the first count comes in the residual of that turn). The state keeps
+                 * the duration, 4 from the cast to that residual: nothing was announced yet, so the view shows 0 then
+                 * (a request in the middle of the turn, a pivot's). */
+                o.sides[s].positions[p].perish = tail->perish < (uint8_t)DFI_TAIL_PERISH_MAX ? tail->perish : 0u;
                 /* Step G11, Soak: the type that it set, public (-start|X|typechange|Water): the occupant is pure
                  * Water until it leaves, faints or Mega Evolves (the tail's soak type is cleared there). */
                 const uint32_t occupant = battle->sides[s].positions[p].occupant;

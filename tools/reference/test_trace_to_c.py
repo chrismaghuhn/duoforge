@@ -604,6 +604,50 @@ class Library(unittest.TestCase):
             self.assertIsNone(trace_to_c.heal_block_end_tie(dict(d, group=['H:protect:p1a:end', 'H:stall:p1a:end']),
                                                             trace['steps'][k]['log']))
 
+    def test_a_protect_and_stall_tie_is_kept_only_when_the_battle_ends_and_the_holder_stands(self):
+        """The residual tie of one Pokemon's Protect volatile and its stall counter (every Protect turn has one) is kept
+        as an entry that states the outcome (0: the stall counter ran first, 1: Protect's volatile did, whatever the
+        group's pre-shuffle order) when the battle ended in the step and the holder has not fainted; any other time it
+        is no entry here (the drop rule takes it), and a kept one never reaches the drop rule."""
+        def draw(group, value, start=3):
+            return {'site': 'SPEED_TIE', 'context': 'field:Residual', 'lo': start, 'hi': start + 2, 'value': value,
+                    'group': group, 'start': start}
+
+        def after(ended, p1a_fainted=False):
+            side = lambda fainted: {'active': [0, 1], 'pokemon': [{'fainted': fainted}, {'fainted': False}]}
+            return {'ended': ended, 'sides': [side(p1a_fainted), side(False)]}
+
+        stall_first = ['H:stall:p1a:end', 'H:protect:p1a:end']
+        protect_first = ['H:protect:p1a:end', 'H:stall:p1a:end']
+        spec = trace_to_c.SITES['SPEED_TIE']
+        # the draw keeps the order (value = start) or swaps it, from either pre-shuffle order
+        self.assertEqual(trace_to_c.no_order_end_tie(draw(stall_first, 3), after(True)), (spec, 0, 2, 0))
+        self.assertEqual(trace_to_c.no_order_end_tie(draw(stall_first, 4), after(True)), (spec, 0, 2, 1))
+        self.assertEqual(trace_to_c.no_order_end_tie(draw(protect_first, 3), after(True)), (spec, 0, 2, 1))
+        self.assertEqual(trace_to_c.no_order_end_tie(draw(protect_first, 4), after(True)), (spec, 0, 2, 0))
+        # Spiky Shield's volatile is the same handler
+        self.assertEqual(trace_to_c.no_order_end_tie(draw(['H:stall:p2b:end', 'H:spikyshield:p2b:end'], 4), after(True)),
+                         (spec, 0, 2, 1))
+        # no end, or a holder that fainted: no entry
+        self.assertIsNone(trace_to_c.no_order_end_tie(draw(stall_first, 4), after(False)))
+        self.assertIsNone(trace_to_c.no_order_end_tie(draw(stall_first, 4), after(True, p1a_fainted=True)))
+        self.assertIsNone(trace_to_c.no_order_end_tie(draw(stall_first, 4), None))
+        # a bigger group, two holders, other handlers, other contexts and sites are not this rule's
+        for group in (stall_first + ['H:helpinghand:p1a:end'], ['H:stall:p1a:end', 'H:protect:p1b:end'],
+                      ['H:stall:p1a:end', 'H:leftovers:p1a:cb'], ['H:stall:p1a:end', 'H:stall:p1b:end']):
+            self.assertIsNone(trace_to_c.no_order_end_tie(draw(group, 4), after(True)), group)
+        self.assertIsNone(trace_to_c.no_order_end_tie(dict(draw(stall_first, 4), context='event:Accuracy'), after(True)))
+        # a shuffle that is not random(start, start + 2) is an error and never an entry
+        with self.assertRaises(trace_to_c.ConversionError) as ctx:
+            trace_to_c.no_order_end_tie(dict(draw(stall_first, 4), hi=6), after(True))
+        self.assertEqual(ctx.exception.rule, 'no-order-end-shuffle')
+        # the drop rule drops the tie the rule does not keep, and refuses one that it keeps
+        before = after(False)
+        self.assertEqual(trace_to_c.drop_reason(draw(stall_first, 4), before, after(False)), 'residual tie of duration counters')
+        with self.assertRaises(trace_to_c.ConversionError) as ctx:
+            trace_to_c.drop_reason(draw(stall_first, 4), before, after(True))
+        self.assertEqual(ctx.exception.rule, 'no-order-end-tie')
+
     # ---- the weather step (Sandstorm, Snowscape; decision 0018, view bits 0 and 1) ----
     WEATHER_BATTLES = ('w1_sand_stream', 'w2_sandstorm_move', 'w3_snow_warning', 'w4_snowscape_move',
                        'w5_sand_tie_four', 'w5_sand_tie_pairs', 'w5_sand_tie_mixed', 'w6_sand_residual_order',
@@ -1496,6 +1540,80 @@ class Library(unittest.TestCase):
             with self.assertRaises(trace_to_c.ConversionError):
                 trace_to_c.step_events([bad], 0, roster, [{'Gardevoir': 100}] * 2, tables)
 
+    def test_perish_song_lines_are_events_and_rows_are_what_the_protocol_lines_say(self):
+        """Perish Song (step G26): `-start|X|perishN` is a VOLATILE_START of the volatile PERISH (5) with the count N in
+        `amount` (3, 2, 1, and 0 from onEnd, which a `faint` line follows); `-fieldactivate|move: Perish Song` is an ACTIVATE
+        of the move with no position; the cast's own `-start|X|perish3|[silent]` is not shown and never converts. Anything
+        else is refused. Decision 0018 section 6.1: the view's `perish` is the last count a position was told, cleared by a
+        faint, a switch or a drag: the rows of the C test (rows in tests/test_pool_g26.c: the count of each position after
+        each step) must be exactly what the committed traces say, so the engine's tail and extension are checked against the
+        protocol and not against themselves. After a `perish0` line every position that showed it has a `faint` line in the
+        same step, and the win of g26_perish_end goes to the side of the last `faint`."""
+        tables = trace_to_c.load_tables(ROOT, True)
+        roster = [{'Politoed': 0}, {'Politoed': 0}]
+        maxhp = [{'Politoed': 100}] * 2
+        for n in (3, 2, 1, 0):
+            events = trace_to_c.step_events(['|-start|p1a: Politoed|perish%d' % n], 0, roster, maxhp, tables)
+            self.assertEqual(len(events), 1)
+            e = events[0]
+            self.assertEqual((e[0], e[1], e[11], e[12]), (trace_to_c.EV['VOLATILE_START'], 0, trace_to_c.VOLATILE_PERISH, n))
+        self.assertEqual(trace_to_c.VOLATILE_PERISH, 5)
+        self.assertEqual(trace_to_c.step_events(['|-start|p1a: Politoed|perish3|[silent]'], 0, roster, maxhp, tables), [])
+        field = trace_to_c.step_events(['|-fieldactivate|move: Perish Song'], 0, roster, maxhp, tables)
+        self.assertEqual(len(field), 1)
+        self.assertEqual((field[0][0], field[0][1], field[0][2], field[0][3], field[0][5]),
+                         (trace_to_c.EV['ACTIVATE'], 0xFF, 0xFF, trace_to_c.CAUSE['MOVE'], tables['MOVE'][trace_to_c.key('Perish Song')]))
+        with self.assertRaises(trace_to_c.ConversionError) as ctx:
+            trace_to_c.step_events(['|-fieldactivate|move: Trick Room'], 0, roster, maxhp, tables)
+        self.assertEqual(ctx.exception.rule, 'fieldactivate-line')
+        names = ('g26_perish_song', 'g26_perish_recast', 'g26_perish_end', 'g26_perish_survivor_a',
+                 'g26_perish_survivor_b', 'g26_perish_soundproof')
+        with open(os.path.join(ROOT, 'tests', 'test_pool_g26.c'), encoding='utf-8') as f:
+            source = f.read()
+        rows = {}
+        for m in re.finditer(r'\{"(g26_\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}', source):
+            rows[(m.group(1), int(m.group(2)))] = [int(m.group(i)) for i in (3, 4, 5, 6)]
+        derived = {}
+        zero_lines = faints = 0
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            perish = {}
+            for k, step in enumerate(trace['steps']):
+                log = [l.split('|') for l in step['log']]
+                zeros = set()
+                fainted = set()
+                for part in log:
+                    if len(part) < 3:
+                        continue
+                    kind, pos = part[1], part[2][:3]
+                    if kind in ('switch', 'drag', 'faint', 'replace'):
+                        perish.pop(pos, None)
+                        if kind == 'faint':
+                            fainted.add(pos)
+                    elif kind == '-start' and len(part) == 4 and re.fullmatch(r'perish[0-3]', part[3]):
+                        n = int(part[3][6])
+                        if n == 0:
+                            perish.pop(pos, None)
+                            zeros.add(pos)
+                            zero_lines += 1
+                        else:
+                            perish[pos] = n
+                self.assertEqual(zeros, fainted & zeros)  # every perish0 is followed by the holder's faint in the step
+                faints += len(zeros)
+                row = [0, 0, 0, 0]
+                for x, n in perish.items():
+                    row[(int(x[1]) - 1) * 2 + 'ab'.index(x[2])] = n
+                derived[(name, k)] = row
+        self.assertEqual(rows, derived)
+        self.assertTrue(zero_lines >= 10 and faints == zero_lines)
+        # g26_perish_end: the last line of the log is the win, and it is the side of the last `faint` line.
+        with open(os.path.join(ROOT, 'tests', 'reference', 'traces', 'g26_perish_end.json'), encoding='utf-8') as f:
+            last = json.load(f)['steps'][-1]['log']
+        faint_lines = [l for l in last if l.startswith('|faint|')]
+        self.assertEqual(len(faint_lines), 4)
+        self.assertEqual([l for l in last if l.startswith('|win|')], ['|win|p%s' % faint_lines[-1][8]])
+
     def test_glaive_rush_rows_are_what_the_protocol_lines_say(self):
         """Decision 0018 section 6.1 for Glaive Rush (step G19): its user is hit as vulnerable from a `|move|X|Glaive Rush|`
         line that is followed by damage to a foe (a miss, a block or an immunity gives nothing; the `-singlemove|X|Glaive
@@ -1690,7 +1808,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 130)  # the four of G25 (Electric Terrain, Misty Terrain, Rising Voltage, Terrain Pulse), Disable (G27), the ten of G35 (Thunder Punch, X-Scissor, Lumina Crash, Overdrive, Scorching Sands, Leaf Blade, Boomburst, Sludge Wave, Volt Tackle, Discharge), Toxic and Poison Fang (G36), the seven of G34 (Steel Roller, Clangorous Soul, Brick Break, Fiery Dance, Psycho Cut, Iron Defense, Electroweb), the eleven of G32, the ten of G30, the six of G28 (Shell Smash, Acrobatics, Blizzard, Ancient Power, Feint, Earthquake), the 27 of G21, Spiky Shield (G20), G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
+        self.assertEqual(len(marked), 131)  # Perish Song (G26), the four of G25 (Electric Terrain, Misty Terrain, Rising Voltage, Terrain Pulse), Disable (G27), the ten of G35 (Thunder Punch, X-Scissor, Lumina Crash, Overdrive, Scorching Sands, Leaf Blade, Boomburst, Sludge Wave, Volt Tackle, Discharge), Toxic and Poison Fang (G36), the seven of G34 (Steel Roller, Clangorous Soul, Brick Break, Fiery Dance, Psycho Cut, Iron Defense, Electroweb), the eleven of G32, the ten of G30, the six of G28 (Shell Smash, Acrobatics, Blizzard, Ancient Power, Feint, Earthquake), the 27 of G21, Spiky Shield (G20), G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []

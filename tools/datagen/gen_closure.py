@@ -347,6 +347,11 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
     if pool and handled[0] == 'GLAIVE_RUSH':
         if 'condition' not in f or norm(f['condition'][1]) != GLAIVE_RUSH_CONDITION:
             fail('move %s: the condition is not the pinned text' % mid)
+    if pool and handled[0] == 'PERISH_SONG':
+        if 'condition' not in f or norm(f['condition'][1]) != PERISH_SONG_CONDITION:
+            fail('move %s: the condition is not the pinned text' % mid)
+        if 'onHitField' not in f or norm(f['onHitField'][1]) != PERISH_SONG_HIT_FIELD:
+            fail('move %s: onHitField is not the pinned text' % mid)
     if pool and handled[0] == 'KNOCK_OFF':
         for name, text in KNOCK_OFF_CALLBACKS.items():
             if name not in f or norm(f[name][1]) != text:
@@ -1606,6 +1611,21 @@ G28_ITEM_FACTS = (
 # base power). Their texts are G25_FACTS, read from the pin, because the engine hard-codes them.
 G25_HANDLERS = ['ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'RISING_VOLTAGE', 'TERRAIN_PULSE']
 AURORA_VEIL_ONTRY = "onTry() { return this.field.isWeather(['hail', 'snowscape']); },"
+# Step G26: Perish Song keeps its onHitField and its condition as a handler of its own that the turn code implements: every
+# active Pokemon without the volatile gets it with a duration of 4, the residual (order 24) shows the count and the end
+# shows perish0 and faints the holder (data/moves.ts:13233-13277). The generator checks both texts, whitespace aside.
+G26_HANDLERS = ['PERISH_SONG']
+PERISH_SONG_HIT_FIELD = ("onHitField(target, source, move) { let result = false; let message = false; "
+                         "for (const pokemon of this.getAllActive()) { "
+                         "if (this.runEvent('Invulnerability', pokemon, source, move) === false) { "
+                         "this.add('-miss', source, pokemon); result = true; } "
+                         "else if (this.runEvent('TryHit', pokemon, source, move) === null) { result = true; } "
+                         "else if (!pokemon.volatiles['perishsong']) { pokemon.addVolatile('perishsong'); "
+                         "this.add('-start', pokemon, 'perish3', '[silent]'); result = true; message = true; } } "
+                         "if (!result) return false; if (message) this.add('-fieldactivate', 'move: Perish Song'); },")
+PERISH_SONG_CONDITION = ("condition: { duration: 4, onEnd(target) { this.add('-start', target, 'perish0'); target.faint(); }, "
+                         "onResidualOrder: 24, onResidual(pokemon) { const duration = pokemon.volatiles['perishsong'].duration; "
+                         "this.add('-start', pokemon, `perish${duration}`); }, },")
 KNOCK_OFF_CALLBACKS = {
     'onBasePower': "onBasePower(basePower, source, target, move) { const item = target.getItem(); "
                    "if (!this.singleEvent('TakeItem', item, target.itemState, target, target, move, item)) return; "
@@ -1662,6 +1682,7 @@ G30_ABILITY_FACTS = (
                   "this.dex.getImmunity('powder', target)) { this.add('-immune', target, '[from] ability: Overcoat'); return null; } },")),
 )
 SPECIAL_P = dict(SPECIAL_C, **{
+    'perishsong': ('PERISH_SONG', {'onHitField'}),                        # G26: a volatile on every active Pokemon, faints at 0
     'glaiverush': ('GLAIVE_RUSH', set()),                                 # G19: the volatile that makes its user hit as vulnerable
     'knockoff': ('KNOCK_OFF', {'onAfterHit', 'onBasePower'}),             # G16: takes the target's item, x1.5 while it has one
     'encore': ('ENCORE', set()),                                          # G9 (implemented): last move, a volatile, a queue change
@@ -1710,7 +1731,7 @@ PROTECT_COPIES = {'detect': 'protect'}
 # champions/moves.ts:581-584) sets isNonstandard to null, which makes it legal, and the tag has no reader in the tables.
 TAGS_PAST_UNOBTAINABLE = 'tags: ["Past Unobtainable"],'
 PROTECT_COPY_FIELDS = ('onPrepareHit', 'onHit', 'stallingMove', 'volatileStatus', 'priority', 'accuracy', 'target')
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + ['UNMODELED']
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + ['UNMODELED']
 # Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags
 # byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
@@ -1738,7 +1759,7 @@ G2_OWNED_FIELDS = {
 }
 G2_OWNED_SECONDARY = {}
 G2_OWNED_CONDITION = {'ENCORE', 'WIDE_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD', 'RAGE_POWDER', 'DISABLE',
-                      'ELECTRIC_TERRAIN', 'MISTY_TERRAIN'}
+                      'ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'PERISH_SONG'}
 # Step G8 (Throat Chop and Psychic Noise): the two secondaries become modelled kinds, and the column that their
 # consumers read is the move's second flags byte (the first is full): the `sound` flag (Throat Chop bars the sound
 # moves) and the `heal` flag (Heal Block bars the moves that heal). Both are derived for every pool move, the prefix
