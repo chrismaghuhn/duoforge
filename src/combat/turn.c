@@ -1169,6 +1169,15 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     static const uint32_t crit_mult[5] = {0u, 24u, 8u, 2u, 1u};
     const dfi_member *a = dfi_at(r->b, user);
     const dfi_member *d = dfi_at(r->b, target);
+    /* Super Fang's damageCallback (step G39, data/moves.ts:18461-18476): getDamage returns clampIntRange(target.hp / 2, 1)
+     * before the critical hit roll and the formula (sim/battle-actions.ts:1585-1600), so there is no CRIT or DAMAGE_ROLL
+     * draw, no modifier of the damage chain (Multiscale, Friend Guard, the screens, the berries and the items are in
+     * modifyDamage) and none of its effectiveness lines; the type immunity (Ghost) was judged before, in the hit steps. */
+    if (md->special == DFI_SPECIAL_SUPER_FANG) {
+        const uint32_t half = (uint32_t)d->hp / 2u;
+        *out = half < 1u ? 1u : half;
+        return DUOFORGE_OK;
+    }
     const dfi_active_slot *ap = dfi_pos(r->b, user);
     const dfi_active_slot *dp = dfi_pos(r->b, target);
     bool crit = false;
@@ -1463,9 +1472,10 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     }
     /* Aurora Veil (step G20, data/moves.ts:846-860) weakens both categories by the same 2732/4096 and returns without an
      * effect when the target's side has the screen of the move's category (so the two never multiply): the test is one
-     * 2732 for a screen of the category or Aurora Veil. A critical hit and `infiltrates` (no Infiltrator or move that
-     * has it is marked) skip all three. */
-    if (!crit && target != user &&
+     * 2732 for a screen of the category or Aurora Veil. A critical hit and `infiltrates` skip all three: the move's
+     * own `infiltrates` field is not modelled (the generator refuses it), and Infiltrator (step G39, data/abilities.ts:
+     * 2131-2139, onModifyMove) sets it on every move of its holder. */
+    if (!crit && target != user && !dfi_ability(r->b, a, DFI_ABILITY_INFILTRATOR) &&
         ((physical && ds->reflect_turns != 0u) ||
          (md->category == DFI_CATEGORY_SPECIAL && ds->light_screen_turns != 0u) ||
          r->b->tail.sides[target / 2u].aurora_veil_turns != 0u)) {
@@ -3407,11 +3417,16 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             md->target_class != DUOFORGE_TARGET_CLASS_ALLY_SIDE && md->target_class != DUOFORGE_TARGET_CLASS_ALL) {
             for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
                 const dfi_member *holder = dfi_at(b, (1u - side) * 2u + slot);
-                if (holder != NULL && holder->hp != 0u && dfi_ability(r->b, holder, DFI_ABILITY_ARMORTAIL)) {
+                /* Queenly Majesty (step G39, data/abilities.ts:3716-3734) is Armor Tail's handler under its own name, and
+                 * Dazzling's: the same text but for the ability's name in the line (the generator compares the two). */
+                const uint32_t shield = holder == NULL || holder->hp == 0u                            ? 0u
+                                        : dfi_ability(r->b, holder, DFI_ABILITY_ARMORTAIL)           ? 1u + DFI_ABILITY_ARMORTAIL
+                                        : dfi_ability(r->b, holder, DFI_ABILITY_QUEENLYMAJESTY)      ? 1u + DFI_ABILITY_QUEENLYMAJESTY
+                                                                                                     : 0u;
+                if (shield != 0u) {
                     /* [still], then cant|holder|ability: Armor Tail|move|[of] user */
                     dfi_still(r);
-                    duoforge_event e = dfi_ev(DUOFORGE_EVENT_CANT, (1u - side) * 2u + slot, DUOFORGE_CAUSE_ABILITY,
-                                              1u + DFI_ABILITY_ARMORTAIL, user);
+                    duoforge_event e = dfi_ev(DUOFORGE_EVENT_CANT, (1u - side) * 2u + slot, DUOFORGE_CAUSE_ABILITY, shield, user);
                     e.id = (uint16_t)move_id;
                     dfi_emit(r, &e);
                     return DUOFORGE_OK;
@@ -3509,7 +3524,8 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         return DUOFORGE_OK;
     }
     if (status_move && md->primary_status == DFI_STATUS_NONE && md->special != DFI_SPECIAL_PARTING_SHOT &&
-        md->special != DFI_SPECIAL_SOAK && md->special != DFI_SPECIAL_ENCORE) {
+        md->special != DFI_SPECIAL_SOAK && md->special != DFI_SPECIAL_ENCORE &&
+        md->boost_role != DFI_BOOST_ROLE_PRIMARY_TARGET) {
         if (dfi_pool_move_heal[move_id][1] != 0u) {
             return dfi_run_heal_move(r, user, move_id, targets, count);
         }
@@ -3536,7 +3552,8 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         md->special != DFI_SPECIAL_PSYCHIC_FANGS && md->special != DFI_SPECIAL_SOLAR_BEAM &&
         md->special != DFI_SPECIAL_HP_POWER && md->special != DFI_SPECIAL_BODY_PRESS &&
         md->special != DFI_SPECIAL_FOUL_PLAY && md->special != DFI_SPECIAL_PSYSHOCK &&
-        md->special != DFI_SPECIAL_FREEZE_DRY && md->special != DFI_SPECIAL_CLANGING_SCALES) {
+        md->special != DFI_SPECIAL_FREEZE_DRY && md->special != DFI_SPECIAL_CLANGING_SCALES &&
+        md->special != DFI_SPECIAL_SUPER_FANG) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Steel Roller's onTry (step G34, data/moves.ts:17893-17913): it fails without a terrain, with -fail and [still]. */
@@ -3753,7 +3770,11 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             continue;
         }
         const dfi_member *tm = dfi_at(b, targets[i]);
-        if (dfi_type_immune(b, tm, move_type)) {
+        /* Scrappy (step G39, data/abilities.ts:4079-4098, onModifyMove): ignoreImmunity for the Fighting and Normal types, so
+         * a Ghost type is hit by them (its other type decides the effectiveness: an immunity adds nothing, dfi_type_mod). */
+        const bool scrappy = dfi_ability(b, dfi_at(b, user), DFI_ABILITY_SCRAPPY) &&
+                             (move_type == DFI_TYPE_NORMAL || move_type == DFI_TYPE_FIGHTING);
+        if (!scrappy && dfi_type_immune(b, tm, move_type)) {
             hit[i] = false;
             dfi_immune(r, targets[i], 0u);
         } else if (move_type == DFI_TYPE_GROUND && dfi_ability(b, tm, DFI_ABILITY_LEVITATE)) {
@@ -3892,6 +3913,15 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                     return st;
                 }
                 did = did || started;
+                continue;
+            }
+            if (md->boost_role == DFI_BOOST_ROLE_PRIMARY_TARGET) {
+                /* Charm and Fake Tears (step G39, data/moves.ts:2339-2355 and :5110-5126): the primary boosts go to the
+                 * target (moveHit's boosts, isSecondary false): the changes go through the target's TryBoost handlers (Clear
+                 * Body, Hyper Cutter, Flower Veil, Inner Focus's and Scrappy's, which are for Intimidate only) with a line for
+                 * a stat that cannot change (-unboost ... 0); Defiant and Competitive answer a drop, Contrary reverses it. A
+                 * move that changed nothing fails silently here like a self boost does (the hit loop stops). */
+                did = dfi_boost(r, targets[i], md->boosts, user, dfi_effect(DUOFORGE_CAUSE_MOVE, 0u, DFI_BOOST_PRIMARY)) || did;
                 continue;
             }
             const uint32_t before = dfi_at(b, targets[i])->status;
@@ -4436,6 +4466,20 @@ static duoforge_status dfi_run_switch(dfi_run *r, const dfi_queue_record *q)
         const duoforge_status us = dfi_update(r); /* BeforeSwitchOut, then Update (sim/battle-actions.ts:80-84) */
         if (us != DUOFORGE_OK) {
             return us;
+        }
+    }
+    /* The SwitchOut event of the Pokemon that leaves (sim/battle-actions.ts:90, after BeforeSwitchOut and its Update, before
+     * the abilities' End events and clearVolatile): Regenerator (step G39, data/abilities.ts:3833-3841 with the Champions
+     * override, data/mods/champions/abilities.ts:63-70) heals the holder by floor(baseMaxhp / 3), Pokemon.heal: no TryHeal
+     * event (Heal Block does not stop it) and nothing at full HP. The Champions line is `-heal|holder|hp|[from] ability:
+     * Regenerator|[silent]`, which the converter does not show (NOT_EVENTS and the [silent] rule of trace_to_c.py), so the engine emits no event either: the new
+     * HP is in the member's state (the owner's own view) and the opponent sees it at the member's next switch-in. */
+    if (leaving != NULL && leaving->hp != 0u && dfi_ability(b, leaving, DFI_ABILITY_REGENERATOR)) {
+        dfi_member *lm = dfi_at(b, side * 2u + slot);
+        if (lm->hp < lm->hp_max) {
+            const uint32_t healed = (uint32_t)lm->hp_max / 3u;
+            const uint32_t hp = (uint32_t)lm->hp + (healed == 0u ? 1u : healed);
+            lm->hp = (uint16_t)(hp > lm->hp_max ? lm->hp_max : hp); /* wide-operands-reviewed: <= hp_max */
         }
     }
     if (leaving != NULL && leaving->hp != 0u) {

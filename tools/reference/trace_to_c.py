@@ -126,7 +126,7 @@ import sys
 SITES = {'SPEED_TIE': 1, 'ACCURACY': 2, 'CRIT': 3, 'DAMAGE_ROLL': 4, 'SECONDARY': 5, 'STALL': 6,
          'SLEEP_TURNS': 7, 'FREEZE_THAW': 8, 'FULL_PARALYSIS': 9, 'CONFUSION_TURNS': 10,
          'CONFUSION_HIT': 11, 'RANDOM_TARGET': 12, 'STATUS_PICK': 13, 'INSERT_TIE': 14, 'TRACE': 15, 'POISON_TOUCH': 16,
-         'FLAME_BODY': 18}  # 17 is CURSED_BODY (step G27)
+         'FLAME_BODY': 18, 'STATIC': 19}  # 17 is CURSED_BODY (step G27)
 STATS = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe']
 GENDER = {'M': 1, 'F': 2}
 GENDERLESS = 3
@@ -368,7 +368,7 @@ def drop_reason(d, state, after=None, log=None):
         # at most one damaged Pokemon shows no order. Any other handler of the event is not modelled. (Under another
         # weather no Pokemon has a Weather handler: the general rule below drops the tie.)
         # A Rain Dish holder (step G35) has its own onWeather under every weather, which does nothing outside rain.
-        ids = sorted(set(x for g in group for x in g.split(':', 3)[3].split('+') if x and x != 'raindish'))
+        ids = sorted(set(x for g in group for x in g.split(':', 3)[3].split('+') if x and x not in ('raindish', 'solarpower')))
         if ids != ['sandstorm']:
             raise ConversionError('weather-tie-handlers', 'trace_to_c: Weather tie with handlers %s: %s' % (ids, group),
                                   detail='+'.join(ids))
@@ -391,23 +391,29 @@ def drop_reason(d, state, after=None, log=None):
         # the state before the step still shows the one it replaced, which may be burned), else the state before. A
         # holder that is burned is an error.
         placed = state if after is None else after
+        # Limber's onUpdate (step G39, data/abilities.ts:2368-2386) is the same for paralysis: every paralysis of its holder is
+        # refused by its onSetStatus, so the cure does nothing; a holder that is paralysed (a Trace copy onto a paralysed
+        # Pokemon, which the engine refuses) is an error here too.
         for g in group:
-            if 'thermalexchange' in g.split(':', 3)[3].split('+'):
-                slot = g.split(':')[1]
-                side = placed['sides'][int(slot[1]) - 1]
-                index = side['active'][' ab'.index(slot[2]) - 1]
-                if index is not None and side['pokemon'][index]['status'] == 'brn':
-                    raise ConversionError('thermal-exchange-burn',
-                                          'trace_to_c: a Thermal Exchange holder is burned: %s' % slot, detail=slot)
+            for ability, status in (('thermalexchange', 'brn'), ('limber', 'par')):
+                if ability in g.split(':', 3)[3].split('+'):
+                    slot = g.split(':')[1]
+                    side = placed['sides'][int(slot[1]) - 1]
+                    index = side['active'][' ab'.index(slot[2]) - 1]
+                    if index is not None and side['pokemon'][index]['status'] == status:
+                        raise ConversionError('thermal-exchange-burn' if ability == 'thermalexchange' else 'limber-paralysis',
+                                              'trace_to_c: a %s holder has %s: %s' % (ability, status, slot), detail=slot)
         # Trace's onUpdate (step AC1) returns unless its holder is still seeking after an onStart that found no foe to
         # copy, which the engine refuses (E_UNSUPPORTED): until then it does nothing either, so it is not a holder.
-        inert = {'thermalexchange', 'trace'}
+        inert = {'thermalexchange', 'trace', 'limber'}
         # Rain Dish's onWeather (step G35, data/abilities.ts:3759) heals only in rain (RainDance; Primordial Sea is not in the
         # format): under any other weather its holder has the handler and it does nothing, so it is not a holder. The weather is
-        # the one of the upkeep, which is the one the step ends with (after) or, without it, the one it started with.
-        if ctx == 'each:Weather' and any('raindish' in g.split(':', 3)[3].split('+') for g in group) \
-                and placed['weather'] != 'raindance':
-            inert = inert | {'raindish'}
+        # the one of the upkeep, which is the one the step ends with (after) or, without it, the one it started with. Solar
+        # Power's onWeather (step G39, data/abilities.ts:4396-4413) is the same for the sun (SunnyDay).
+        for ability, weather in (('raindish', 'raindance'), ('solarpower', 'sunnyday')):
+            if ctx == 'each:Weather' and any(ability in g.split(':', 3)[3].split('+') for g in group) \
+                    and placed['weather'] != weather:
+                inert = inert | {ability}
         ids = [x for g in group for x in g.split(':', 3)[3].split('+') if x and x not in inert]
         if not all(x in EACH_HANDLERS for x in ids):
             raise ConversionError('each-tie-handlers',
@@ -571,7 +577,7 @@ def drop_reason(d, state, after=None, log=None):
 
 
 # The items and abilities whose each-event handlers (Update, TerrainChange, Weather: Rain Dish, step G35) act on their holder alone.
-EACH_HANDLERS = frozenset(('sitrusberry', 'grassyseed', 'psychicseed', 'raindish'))
+EACH_HANDLERS = frozenset(('sitrusberry', 'grassyseed', 'psychicseed', 'raindish', 'solarpower', 'limber'))
 
 
 def site_of(d):

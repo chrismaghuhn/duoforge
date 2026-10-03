@@ -355,6 +355,12 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_SLUDGEWAVE] = 1u,
             [DFI_MOVE_VOLTTACKLE] = 1u,
             [DFI_MOVE_DISCHARGE] = 1u,
+            /* Step G39: Charm and Fake Tears (a status move whose primary boosts go to its one target), Sacred Sword (Darkest
+             * Lariat's rules: the target's Defense and evasion stages are ignored) and Super Fang (half the target's HP). */
+            [DFI_MOVE_CHARM] = 1u,
+            [DFI_MOVE_FAKETEARS] = 1u,
+            [DFI_MOVE_SACREDSWORD] = 1u,
+            [DFI_MOVE_SUPERFANG] = 1u,
         },
     .abilities =
         {
@@ -421,6 +427,21 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_SPEEDBOOST] = 1u,
             [DFI_ABILITY_RAINDISH] = 1u, /* step G35 */
             [DFI_ABILITY_FRIENDGUARD] = 1u,
+            /* Step G39: Hyper Cutter, Scrappy, Infiltrator, Queenly Majesty, Damp (inert), Sturdy, Snow Cloak, Sand Veil, Static,
+             * Justified, Limber, Solar Power and Regenerator. */
+            [DFI_ABILITY_HYPERCUTTER] = 1u,
+            [DFI_ABILITY_SCRAPPY] = 1u,
+            [DFI_ABILITY_INFILTRATOR] = 1u,
+            [DFI_ABILITY_QUEENLYMAJESTY] = 1u,
+            [DFI_ABILITY_DAMP] = 1u,
+            [DFI_ABILITY_STURDY] = 1u,
+            [DFI_ABILITY_SNOWCLOAK] = 1u,
+            [DFI_ABILITY_SANDVEIL] = 1u,
+            [DFI_ABILITY_STATIC] = 1u,
+            [DFI_ABILITY_JUSTIFIED] = 1u,
+            [DFI_ABILITY_LIMBER] = 1u,
+            [DFI_ABILITY_SOLARPOWER] = 1u,
+            [DFI_ABILITY_REGENERATOR] = 1u,
         },
     .items =
         {
