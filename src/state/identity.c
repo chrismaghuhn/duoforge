@@ -45,6 +45,7 @@ void dfi_tail_clear_occupant(struct duoforge_battle *b, uint32_t flat)
         ts->soak_type[occupant] = 0u;
         ts->ability_now[occupant] = 0u;
         ts->toxic_stage[occupant] = 0u;
+        ts->type2[occupant] = 0u; /* tail rev 4: a type that a move took away comes back with the Pokemon */
     }
 }
 

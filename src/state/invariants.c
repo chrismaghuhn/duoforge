@@ -530,6 +530,28 @@ static bool dfi_bytes_zero(const void *p, size_t n)
     return any == 0u;
 }
 
+/* Rev 4: the creation order of the hazards that are up. With n kinds up the first n two-bit slots are exactly those kinds, each
+ * once, and the others are zero (so n = 0 is the byte 0). */
+static bool dfi_hazard_order_valid(const dfi_tail_side *ts)
+{
+    const uint32_t present = (ts->stealth_rock != 0u ? 1u << DFI_HAZARD_STEALTH_ROCK : 0u) |
+                             (ts->spikes != 0u ? 1u << DFI_HAZARD_SPIKES : 0u) |
+                             (ts->toxic_spikes != 0u ? 1u << DFI_HAZARD_TOXIC_SPIKES : 0u) |
+                             (ts->sticky_web != 0u ? 1u << DFI_HAZARD_STICKY_WEB : 0u);
+    uint32_t n = 0u;
+    for (uint32_t k = 0u; k < DFI_HAZARD_KIND_COUNT; ++k) {
+        n += (present >> k) & 1u;
+    }
+    uint32_t seen = 0u;
+    bool ok = true;
+    for (uint32_t i = 0u; i < DFI_HAZARD_KIND_COUNT; ++i) {
+        const uint32_t slot = ((uint32_t)ts->hazard_order >> (2u * i)) & 3u;
+        ok = ok && (i < n ? (seen & (1u << slot)) == 0u : slot == 0u);
+        seen |= i < n ? 1u << slot : 0u;
+    }
+    return ok && seen == present;
+}
+
 /* The tail of a standing occupant's position: the ranges, the pairs that are zero together and the sources that are
  * never the occupant itself (flat is its position, side * 2 + slot). */
 static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *tp, uint32_t flat,
@@ -593,7 +615,7 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
         if (ts->wide_guard > DFI_TAIL_WIDE_GUARD_MAX || ts->aurora_veil_turns > DFI_TAIL_AURORA_VEIL_MAX ||
             ts->toxic_spikes > DFI_TAIL_TOXIC_SPIKES_MAX || ts->stealth_rock > DFI_TAIL_STEALTH_ROCK_MAX ||
             ts->spikes > DFI_TAIL_SPIKES_MAX || ts->sticky_web > DFI_TAIL_STICKY_WEB_MAX ||
-            ts->quick_guard > DFI_TAIL_QUICK_GUARD_MAX || ts->side_pad != 0u) {
+            ts->quick_guard > DFI_TAIL_QUICK_GUARD_MAX || !dfi_hazard_order_valid(ts)) {
             return DFI_INV_TAIL_SIDE;
         }
         for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {

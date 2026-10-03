@@ -1,6 +1,6 @@
 /*
- * duoforge.state.pool_g20_protect (white-box): step G20, Spiky Shield, in the POOL state tail rev 3 (decision 0015
- * section 7: the protect_kind of a position, schema 0x0303).
+ * duoforge.state.pool_g20_protect (white-box): step G20, Spiky Shield, in the POOL state tail rev 3 (decision 0015 section 7: the
+ * protect_kind of a position; the schema is 0x0403 since rev 4).
  *
  * The recorded battles (g20_spiky_shield_* under "data": "pool") are replayed through the step with the reference's draws,
  * as in duoforge.reference.conformance_pool_data, which compares everything that the reference shows (the -singleturn
@@ -12,7 +12,7 @@
  *     by `-singleturn|X|move: Protect` sets 1, the |upkeep| line clears it: tools/reference/test_trace_to_c.py derives
  *     the rows of the table below from the committed traces and requires the table to be exactly that), so the variant is
  *     live at a boundary inside a turn (a PIVOT) and never at a TURN boundary;
- *   - the state round-trips through its encoding at every boundary, the variant included (schema 0x0303), and the
+ *   - the state round-trips through its encoding at every boundary, the variant included (schema 0x0403 since rev 4), and the
  *     decoded state has the same tail;
  *   - the position's Protect volatile is up exactly when the move's own -singleturn line says so.
  */
@@ -131,7 +131,7 @@ int main(void)
     uint32_t mid_turn = 0u;
     (void)conf_events;
     DF_CHECK_EQ_U64(&t, DFI_PROTECT_SPIKY_SHIELD, 1u);
-    DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV3, 0x0303u);
+    DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV4, 0x0403u);
     DF_CHECK(&t, dfi_support.moves[DFI_MOVE_SPIKYSHIELD] != 0u && dfi_support.moves[DFI_MOVE_BANEFULBUNKER] == 0u &&
                      dfi_support.moves[DFI_MOVE_KINGSSHIELD] == 0u);
     DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_SPIKYSHIELD].special, DFI_SPECIAL_SPIKY_SHIELD);

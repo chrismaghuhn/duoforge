@@ -76,9 +76,7 @@ static void dfi_encode_tail(const dfi_pool_tail *tail, uint8_t *out)
         so[DFI_ENC_TAIL_SPIKES_OFF] = ts->spikes;
         so[DFI_ENC_TAIL_STICKY_WEB_OFF] = ts->sticky_web;
         so[DFI_ENC_TAIL_QUICK_GUARD_OFF] = ts->quick_guard;
-        for (uint32_t i = 0u; i < DFI_ENC_TAIL_SIDE_RESERVED_SIZE; ++i) {
-            so[DFI_ENC_TAIL_SIDE_RESERVED_OFF + i] = 0u;
-        }
+        so[DFI_ENC_TAIL_HAZARD_ORDER_OFF] = ts->hazard_order;
         for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
             dfi_encode_tail_pos(&ts->positions[p], so + DFI_ENC_TAIL_POS_OFF + p * DFI_ENC_TAIL_POS_SIZE);
         }
@@ -105,9 +103,6 @@ static bool dfi_tail_reserved_zero(const uint8_t *in)
     }
     for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
         const uint8_t *so = in + DFI_ENC_TAIL_SIDES_OFF + s * DFI_ENC_TAIL_SIDE_SIZE;
-        for (uint32_t i = 0u; i < DFI_ENC_TAIL_SIDE_RESERVED_SIZE; ++i) {
-            any |= so[DFI_ENC_TAIL_SIDE_RESERVED_OFF + i];
-        }
         for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
             for (uint32_t i = 0u; i < DFI_ENC_TAIL_POS_RESERVED_SIZE; ++i) {
                 any |= so[DFI_ENC_TAIL_POS_OFF + p * DFI_ENC_TAIL_POS_SIZE + DFI_ENC_TAIL_POS_RESERVED_OFF + i];
@@ -168,7 +163,7 @@ static void dfi_parse_tail(const uint8_t *in, dfi_pool_tail *tail)
         ts->spikes = so[DFI_ENC_TAIL_SPIKES_OFF];
         ts->sticky_web = so[DFI_ENC_TAIL_STICKY_WEB_OFF];
         ts->quick_guard = so[DFI_ENC_TAIL_QUICK_GUARD_OFF];
-        ts->side_pad = 0u;
+        ts->hazard_order = so[DFI_ENC_TAIL_HAZARD_ORDER_OFF];
         for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
             dfi_parse_tail_pos(so + DFI_ENC_TAIL_POS_OFF + p * DFI_ENC_TAIL_POS_SIZE, &ts->positions[p]);
         }
