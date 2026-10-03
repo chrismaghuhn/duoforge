@@ -1,0 +1,53 @@
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Timid Nature
+- Protect
+- Tailwind
+- Hyper Voice
+- Draco Meteor
+
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Fake Out
+- U-turn
+- Grassy Glide
+- Wood Hammer
+
+Farigiraf (M) @ Sitrus Berry
+Ability: Armor Tail
+Level: 50
+Relaxed Nature
+- Psychic Noise
+- Helping Hand
+- Trick Room
+- Protect
+
+Incineroar (M) @ Rocky Helmet
+Ability: Intimidate
+Level: 50
+Sassy Nature
+- Fake Out
+- Flare Blitz
+- Snarl
+- Parting Shot
+
+Gholdengo @ Leftovers
+Ability: Good as Gold
+Level: 50
+Modest Nature
+- Protect
+- Nasty Plot
+- Shadow Ball
+- Make It Rain
+
+Raichu (M) @ Raichunite Y
+Ability: Lightning Rod
+Level: 50
+Timid Nature
+- Protect
+- Encore
+- Focus Blast
+- Zap Cannon

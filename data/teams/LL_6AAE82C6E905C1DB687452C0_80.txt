@@ -1,0 +1,53 @@
+Baxcalibur (M) @ Baxcalibrite
+Ability: Thermal Exchange
+Level: 50
+Adamant Nature
+- Ice Shard
+- Dragon Dance
+- Protect
+- Glaive Rush
+
+Archaludon (M) @ Leftovers
+Ability: Stamina
+Level: 50
+Calm Nature
+- Electro Shot
+- Dragon Pulse
+- Flash Cannon
+- Protect
+
+Pelipper (M) @ Focus Sash
+Ability: Drizzle
+Level: 50
+Modest Nature
+- Tailwind
+- Weather Ball
+- Hurricane
+- Wide Guard
+
+Basculegion (M) @ Choice Scarf
+Ability: Adaptability
+Level: 50
+Jolly Nature
+- Last Respects
+- Aqua Jet
+- Wave Crash
+- Flip Turn
+
+Sneasler (M) @ White Herb
+Ability: Unburden
+Level: 50
+Adamant Nature
+- Dire Claw
+- Close Combat
+- Coaching
+- Fake Out
+
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Wood Hammer
+- Grassy Glide
+- High Horsepower
+- Fake Out

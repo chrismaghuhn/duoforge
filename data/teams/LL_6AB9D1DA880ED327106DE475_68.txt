@@ -1,0 +1,53 @@
+Pelipper (M) @ Focus Sash
+Ability: Drizzle
+Level: 50
+Modest Nature
+- Hurricane
+- Hydro Pump
+- Protect
+- Wide Guard
+
+Golisopod (M) @ Golisopite
+Ability: Emergency Exit
+Level: 50
+Adamant Nature
+- Leech Life
+- Aqua Jet
+- Swords Dance
+- Protect
+
+Archaludon (M) @ Leftovers
+Ability: Stamina
+Level: 50
+Bold Nature
+- Electro Shot
+- Dragon Pulse
+- Flash Cannon
+- Protect
+
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Grassy Glide
+- Wood Hammer
+- U-turn
+- Fake Out
+
+Sneasler (M) @ Grassy Seed
+Ability: Poison Touch
+Level: 50
+Jolly Nature
+- Dire Claw
+- Close Combat
+- Throat Chop
+- Fake Out
+
+Incineroar (M) @ Sitrus Berry
+Ability: Intimidate
+Level: 50
+Adamant Nature
+- Parting Shot
+- Darkest Lariat
+- Flare Blitz
+- Fake Out

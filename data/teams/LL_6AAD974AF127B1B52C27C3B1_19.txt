@@ -1,0 +1,53 @@
+Kingambit (M) @ Chople Berry
+Ability: Defiant
+Level: 50
+Adamant Nature
+- Kowtow Cleave
+- Iron Head
+- Sucker Punch
+- Low Kick
+
+Rillaboom (M) @ Sitrus Berry
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Fake Out
+- Grassy Glide
+- Wood Hammer
+- High Horsepower
+
+Sneasler (M) @ Grassy Seed
+Ability: Unburden
+Level: 50
+Adamant Nature
+- Protect
+- Close Combat
+- Dire Claw
+- Fake Out
+
+Arcanine-Hisui (M) @ Focus Sash
+Ability: Rock Head
+Level: 50
+Jolly Nature
+- Protect
+- Flare Blitz
+- Head Smash
+- Extreme Speed
+
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Timid Nature
+- Protect
+- Hyper Voice
+- Tailwind
+- Draco Meteor
+
+Basculegion (M) @ Mystic Water
+Ability: Adaptability
+Level: 50
+Adamant Nature
+- Last Respects
+- Wave Crash
+- Aqua Jet
+- Protect

@@ -1,0 +1,53 @@
+Baxcalibur (M) @ Baxcalibrite
+Ability: Thermal Exchange
+Level: 50
+Adamant Nature
+- Glaive Rush
+- Icicle Crash
+- Ice Shard
+- Protect
+
+Raichu (M) @ Raichunite Y
+Ability: Lightning Rod
+Level: 50
+Timid Nature
+- Zap Cannon
+- Focus Blast
+- Fake Out
+- Protect
+
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Wood Hammer
+- Grassy Glide
+- High Horsepower
+- Fake Out
+
+Sneasler (M) @ Focus Sash
+Ability: Unburden
+Level: 50
+Adamant Nature
+- Fake Out
+- Close Combat
+- Coaching
+- Dire Claw
+
+Gholdengo @ Life Orb
+Ability: Good as Gold
+Level: 50
+Timid Nature
+- Make It Rain
+- Shadow Ball
+- Nasty Plot
+- Protect
+
+Milotic (M) @ Leftovers
+Ability: Competitive
+Level: 50
+Calm Nature
+- Scald
+- Ice Beam
+- Icy Wind
+- Protect

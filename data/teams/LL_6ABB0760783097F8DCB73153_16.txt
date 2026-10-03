@@ -1,0 +1,53 @@
+Arcanine-Hisui (M) @ Focus Sash
+Ability: Rock Head
+Level: 50
+Jolly Nature
+- Flare Blitz
+- Head Smash
+- Protect
+- Extreme Speed
+
+Sneasler (M) @ Psychic Seed
+Ability: Unburden
+Level: 50
+Adamant Nature
+- Close Combat
+- Protect
+- Throat Chop
+- Dire Claw
+
+Kingambit (M) @ Chople Berry
+Ability: Defiant
+Level: 50
+Adamant Nature
+- Kowtow Cleave
+- Sucker Punch
+- Protect
+- Iron Head
+
+Indeedee-F (F) @ Rocky Helmet
+Ability: Psychic Surge
+Level: 50
+Bold Nature
+- Psychic
+- Follow Me
+- Trick Room
+- Helping Hand
+
+Gardevoir (M) @ Gardevoirite
+Ability: Trace
+Level: 50
+Modest Nature
+- Hyper Voice
+- Expanding Force
+- Protect
+- Trick Room
+
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Timid Nature
+- Hyper Voice
+- Draco Meteor
+- Tailwind
+- Protect

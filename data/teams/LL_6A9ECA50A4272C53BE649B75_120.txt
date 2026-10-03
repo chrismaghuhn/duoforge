@@ -1,0 +1,53 @@
+Pelipper (M) @ Focus Sash
+Ability: Drizzle
+Level: 50
+Modest Nature
+- Weather Ball
+- Hurricane
+- Tailwind
+- Wide Guard
+
+Archaludon (M) @ Leftovers
+Ability: Stamina
+Level: 50
+Calm Nature
+- Electro Shot
+- Draco Meteor
+- Flash Cannon
+- Protect
+
+Golisopod (M) @ Golisopite
+Ability: Emergency Exit
+Level: 50
+Careful Nature
+- Leech Life
+- Iron Head
+- Swords Dance
+- Protect
+
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Hasty Nature
+- Draco Meteor
+- Hyper Voice
+- Double-Edge
+- Protect
+
+Indeedee-F (F) @ Psychic Seed
+Ability: Psychic Surge
+Level: 50
+Relaxed Nature
+- Psychic
+- Trick Room
+- Follow Me
+- Helping Hand
+
+Grimmsnarl (M) @ Light Clay
+Ability: Prankster
+Level: 50
+Careful Nature
+- Spirit Break
+- Parting Shot
+- Reflect
+- Light Screen

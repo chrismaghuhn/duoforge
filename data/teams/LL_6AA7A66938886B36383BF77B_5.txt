@@ -1,0 +1,53 @@
+Politoed (M) @ Mystic Water
+Ability: Drizzle
+Level: 50
+Modest Nature
+- Weather Ball
+- Muddy Water
+- Ice Beam
+- Protect
+
+Golisopod (M) @ Golisopite
+Ability: Emergency Exit
+Level: 50
+Adamant Nature
+- Leech Life
+- Iron Head
+- Drill Run
+- Protect
+
+Archaludon (M) @ Leftovers
+Ability: Stamina
+Level: 50
+Bold Nature
+- Dragon Pulse
+- Electro Shot
+- Snarl
+- Protect
+
+Farigiraf (M) @ Sitrus Berry
+Ability: Armor Tail
+Level: 50
+Bold Nature
+- Psychic
+- Helping Hand
+- Trick Room
+- Protect
+
+Charizard (M) @ Charizardite Y
+Ability: Blaze
+Level: 50
+Timid Nature
+- Heat Wave
+- Weather Ball
+- Hurricane
+- Protect
+
+Grimmsnarl (M) @ Light Clay
+Ability: Prankster
+Level: 50
+Sassy Nature
+- Spirit Break
+- Reflect
+- Light Screen
+- Parting Shot

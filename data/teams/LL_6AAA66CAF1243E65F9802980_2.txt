@@ -1,0 +1,53 @@
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Timid Nature
+- Protect
+- Hyper Voice
+- Draco Meteor
+- Tailwind
+
+Rillaboom (M) @ Sitrus Berry
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Grassy Glide
+- Wood Hammer
+- U-turn
+- Fake Out
+
+Incineroar (M) @ Rocky Helmet
+Ability: Intimidate
+Level: 50
+Impish Nature
+- Protect
+- Throat Chop
+- Flare Blitz
+- Parting Shot
+
+Sneasler (M) @ Grassy Seed
+Ability: Unburden
+Level: 50
+Adamant Nature
+- Protect
+- Close Combat
+- Dire Claw
+- Rock Slide
+
+Floette-Eternal (F) @ Floettite
+Ability: Flower Veil
+Level: 50
+Timid Nature
+- Protect
+- Dazzling Gleam
+- Moonblast
+- Calm Mind
+
+Gholdengo @ Life Orb
+Ability: Good as Gold
+Level: 50
+Modest Nature
+- Protect
+- Make It Rain
+- Shadow Ball
+- Nasty Plot

@@ -1,0 +1,53 @@
+Farigiraf (M) @ Sitrus Berry
+Ability: Armor Tail
+Level: 50
+Bold Nature
+- Trick Room
+- Psychic
+- Helping Hand
+- Protect
+
+Kingambit (M) @ Chople Berry
+Ability: Defiant
+Level: 50
+Brave Nature
+- Kowtow Cleave
+- Low Kick
+- Iron Head
+- Protect
+
+Sneasler (M) @ White Herb
+Ability: Unburden
+Level: 50
+Adamant Nature
+- Fake Out
+- Protect
+- Close Combat
+- Dire Claw
+
+Rillaboom (M) @ Grassy Seed
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Grassy Glide
+- Fake Out
+- Wood Hammer
+- U-turn
+
+Sylveon (M) @ Fairy Feather
+Ability: Pixilate
+Level: 50
+Modest Nature
+- Hyper Voice
+- Quick Attack
+- Hyper Beam
+- Detect
+
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Naive Nature
+- Protect
+- Tailwind
+- Hyper Voice
+- Double-Edge
