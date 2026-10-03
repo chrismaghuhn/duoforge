@@ -681,7 +681,7 @@ def convert_choice(text, side, state, roster_of, mid_turn=False):
 
 
 BOUNDARY = {'teampreview': 1, 'move': 2, 'switch': 3}
-STATUS = {'': 0, 'brn': 1, 'frz': 2, 'par': 3, 'slp': 4, 'psn': 5, 'fnt': 0}
+STATUS = {'': 0, 'brn': 1, 'frz': 2, 'par': 3, 'slp': 4, 'psn': 5, 'tox': 6, 'fnt': 0}
 WEATHER = {'': 0, 'raindance': 1, 'sunnyday': 2, 'sandstorm': 3, 'snowscape': 4}
 WEATHER_LINE = {'none': 0, 'RainDance': 1, 'SunnyDay': 2, 'Sandstorm': 3, 'Snowscape': 4}  # the names of -weather lines
 WEATHER_CAUSE = {'Sandstorm': 3}  # [from] <weather>: the residual damage of a weather (cause WEATHER, id2 = its value)
@@ -752,7 +752,7 @@ TYPE_IDS = {name: i for i, name in enumerate(
     ['Bug', 'Dark', 'Dragon', 'Electric', 'Fairy', 'Fighting', 'Fire', 'Flying', 'Ghost', 'Grass', 'Ground', 'Ice',
      'Normal', 'Poison', 'Psychic', 'Rock', 'Steel', 'Water'])}
 FLAG = {'STILL': 1, 'LOCKED': 2, 'SPREAD': 4, 'UPKEEP': 8, 'EATEN': 16, 'MESSAGE': 32, 'MISS': 64, 'NOTARGET': 128}
-AILMENT = {'brn': 1, 'frz': 2, 'par': 3, 'slp': 4, 'psn': 5}
+AILMENT = {'brn': 1, 'frz': 2, 'par': 3, 'slp': 4, 'psn': 5, 'tox': 6}
 EV_STATS = ['atk', 'def', 'spa', 'spd', 'spe', 'accuracy', 'evasion']
 NOPOS = 0xFF
 
@@ -833,8 +833,8 @@ def ev_cause(attrs, tables):
                 cause = CAUSE['DRAIN']
             elif what == 'brn':
                 cause = CAUSE['BURN']
-            elif what == 'psn':
-                cause = CAUSE['POISON']
+            elif what in ('psn', 'tox'):
+                cause = CAUSE['POISON']  # the residual damage of tox is poison's cause too (the status in the HP field tells them apart)
             elif what == 'confusion':
                 cause = CAUSE['CONFUSION']
             elif what == 'Hail':

@@ -309,6 +309,9 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_ENERGYBALL] = 1u,
             [DFI_MOVE_PLAYROUGH] = 1u,
             [DFI_MOVE_SPIKYSHIELD] = 1u,
+            /* Step G36: Toxic (badly poisoned; a Poison-type user never misses) and Poison Fang (a 50 percent tox secondary). */
+            [DFI_MOVE_TOXIC] = 1u,
+            [DFI_MOVE_POISONFANG] = 1u,
             /* Step G32: Eruption and Water Spout (power by the user's HP), Life Dew (the user and its ally), Body Press, Foul Play
              * and Psyshock (the stat overrides), Rain Dance and Sunny Day, Volt Switch (a pivot of its own), Clanging Scales (the
              * user's Defense falls after the hit) and Freeze-Dry (Water takes it super effective). */
@@ -507,5 +510,6 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ITEM_CHANGE) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ABILITY_CHANGE) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_AURORA_VEIL) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_RAGE_POWDER),
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_RAGE_POWDER) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_AILMENT_TOX),
 };

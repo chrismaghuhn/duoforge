@@ -149,6 +149,7 @@ MOVES_C = ['direclaw', 'flareblitz', 'darkestlariat', 'hypervoice', 'dracometeor
            'kowtowcleave', 'suckerpunch', 'lastrespects', 'wavecrash', 'aquajet', 'flipturn']
 # New encodings (decision 0009 section 3.3). Each names the step that consumes it.
 STATUS_C = dict(STATUS, psn=5)                    # poison: step 6
+STATUS_P = dict(STATUS_C, tox=6)                  # badly poisoned (POOL only: Toxic, Poison Fang; step G36); the tail's toxic_stage counts it
 STATUS_IMMUNITY_C = dict(STATUS_IMMUNITY, psn=16)  # Poison and Steel: step 6
 IGNORED_TYPE_KEYS_C = IGNORED_TYPE_KEYS - {'psn'}  # tox stays ignored: no toxic source
 # The POOL tables add the immunity to Sandstorm damage (decision 0018 step: Sandstorm and Snowscape): the type chart's
@@ -482,7 +483,7 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
         if effect is None:
             rec['sec_chance'] = 0
         elif st:
-            rec['sec_kind'], rec['sec_param'] = 2, modelled(STATUS_C if pool else STATUS, st.group(1), mid, 'secondary status',
+            rec['sec_kind'], rec['sec_param'] = 2, modelled(STATUS_P if pool else STATUS, st.group(1), mid, 'secondary status',
                                                             unmodeled)
         elif vo:
             rec['sec_kind'], rec['sec_param'] = 3, modelled(VOLATILE, vo.group(1), mid, 'secondary volatile',
@@ -530,7 +531,7 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
         bad('move %s: more than one boost vector' % mid, 'more than one boost vector')
         rec['boost_role'], rec['boosts'] = 0, [0] * 7
     if 'status' in f:
-        rec['primary_status'] = modelled(STATUS_C if ext else STATUS, get('status'), mid, 'primary status', unmodeled)
+        rec['primary_status'] = modelled(STATUS_P if pool else STATUS_C if ext else STATUS, get('status'), mid, 'primary status', unmodeled)
     owned_volatile = SPECIAL_VOLATILE_C.get(handled[0]) if ext else None
     if 'volatileStatus' in f and 'volatileStatus' not in owned and get('volatileStatus') not in ('protect', owned_volatile):
         bad('move %s: unknown primary volatile' % mid, 'primary volatile %s' % get('volatileStatus'))
