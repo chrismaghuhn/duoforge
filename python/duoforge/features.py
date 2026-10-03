@@ -213,6 +213,12 @@ def _ext_columns():
 
 _EXT = _ext_columns()
 EXT_SIZE = len(_EXT)
+
+
+def columns_of(mask):
+    """The names of the block columns whose feature bit is in mask, in the encoder's order: the columns a network
+    trained without those bits always read as 0 (checkpoint.zero_columns)."""
+    return [name for name, bit in _EXT if int(mask) >> bit & 1]
 OBS_SIZE = BASE_OBS_SIZE + EXT_SIZE
 # The DUOFORGE_VIEWEXT_FEATURE_* bit of every block column.
 EXT_COLUMN_FEATURES = np.array([bit for _, bit in _EXT], dtype=np.int64)

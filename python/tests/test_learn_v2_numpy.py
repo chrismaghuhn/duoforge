@@ -114,6 +114,59 @@ class CheckpointTest(unittest.TestCase):
             self.assertTrue(np.array_equal(w[features.FEATURE_NAMES.index(n)], params["t1"]["w"][i]))
 
 
+def _v2_rows_tree(rng, cfg):
+    """The layers of a v2 network that read encoder columns (checkpoint._rows), with random weights: what
+    zero_columns touches, without JAX."""
+    rows = checkpoint._rows(cfg, features.FEATURE_NAMES, features.SLOT_FEATURE_NAMES)
+    tree = {}
+    for path, labels in rows.items():
+        node = tree
+        for k in path[:-1]:
+            node = node.setdefault(k, {})
+        node[path[-1]] = {"w": rng.standard_normal((len(labels), 3)).astype(np.float32),
+                          "b": rng.standard_normal(3).astype(np.float32)}
+    return tree, rows
+
+
+_V2 = {"version": 2, "embed": 4, "member": 4, "position": 4, "hidden": 8, "option": 4, "layers": 1}
+
+
+class ZeroColumnsTest(unittest.TestCase):
+    """checkpoint.zero_columns (M11 BC spec section 8): the input rows of named feature columns become 0."""
+
+    def test_columns_of_base_bits(self):
+        bits = features.FEATURE_BITS
+        self.assertEqual(features.columns_of(1 << bits["WEATHER_SAND"] | 1 << bits["WEATHER_SNOW"]),
+                         ["ext.global.weather_sand", "ext.global.weather_snow"])
+        self.assertEqual(features.columns_of(0), [])
+
+    def test_zero_columns_zeroes_only_the_named_rows(self):
+        for cfg in (_V2, {"version": 1, "hidden": 8, "option_hidden": 4}):
+            rng = np.random.default_rng(3)
+            if cfg["version"] == 1:
+                params = _v1_params(rng)
+                rows = {("t1",): list(features.FEATURE_NAMES)}
+            else:
+                params, rows = _v2_rows_tree(rng, cfg)
+            names = features.columns_of(1 << features.FEATURE_BITS["WIDE_GUARD"])
+            out = checkpoint.zero_columns(params, _config(model=cfg), names)
+            changed = 0
+            for path, labels in rows.items():
+                before, after = checkpoint._get(params, path)["w"], checkpoint._get(out, path)["w"]
+                for i in range(len(labels)):
+                    if not np.array_equal(before[i], after[i]):
+                        self.assertFalse(after[i].any(), (path, labels[i]))
+                        changed += 1
+                self.assertTrue(np.array_equal(checkpoint._get(params, path)["b"], checkpoint._get(out, path)["b"]))
+            self.assertGreater(changed, 0, cfg)
+            # the input is not changed in place
+            self.assertTrue(any(checkpoint._get(params, p)["w"].any() for p in rows))
+
+    def test_zero_columns_unknown_name_raises(self):
+        with self.assertRaisesRegex(ValueError, "ext.nonsense"):
+            checkpoint.zero_columns(_v1_params(np.random.default_rng(1)), _config(), ["ext.nonsense"])
+
+
 class PairingTest(unittest.TestCase):
     def test_pairings_are_pure_and_uniform(self):
         envs = np.repeat(np.arange(100), 90)

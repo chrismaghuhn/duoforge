@@ -214,6 +214,30 @@ def widen(tree, config, feature_names, slot_names, capacities=None, fill="init",
     return out, new_config
 
 
+def zero_columns(tree, config, names):
+    """A copy of tree in which every input row that reads one of the feature columns `names` is 0 (M11 BC spec
+    section 8): a network that never saw those columns set starts identical when they come on, and learns them from
+    zero. The rows are found as widen finds them (_rows, by label): a column shared by every member or position
+    (model v2) zeroes the shared row. ValueError for a name that is not a feature column of config."""
+    names = list(names)
+    unknown = [n for n in names if n not in config["features"]]
+    if unknown:
+        raise ValueError(f"{unknown[0]!r} is not a feature column of the checkpoint")
+    cfg = config["model"]
+    marked = set(names)
+    plain = _rows(cfg, config["features"], config["slot_features"])
+    moved = _rows(cfg, [n + "#zero" if n in marked else n for n in config["features"]], config["slot_features"])
+    out = _copy(tree)
+    for path, labels in plain.items():
+        rows = [i for i, (a, b) in enumerate(zip(labels, moved[path])) if a != b]
+        if rows:
+            layer = _get(out, path)
+            w = np.array(layer["w"], copy=True)
+            w[rows] = 0
+            layer["w"] = w
+    return out
+
+
 # The 13 inputs the encoder added in #84 (Psychic Terrain, the three position flags of each of the four
 # positions), as indices of its 607 features; a 594-feature network gets zero rows there (decision 0016).
 WIDEN_594_COLUMNS = (12, 37, 38, 39, 61, 62, 63, 333, 334, 335, 357, 358, 359)
