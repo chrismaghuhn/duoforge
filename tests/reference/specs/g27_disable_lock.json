@@ -1,0 +1,30 @@
+{
+  "name": "g27_disable_lock",
+  "purpose": "Disable with Encore and a Choice lock: Kingambit (Choice Scarf) and Staraptor use a move; Gengar disables it and Raichu Encores it; the requests offer Struggle for the move that is barred and locked; the end lines follow.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000a301",
+  "teams": [
+    "Gengar (M) @ Leftovers\nAbility: Cursed Body\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nTimid Nature\n- Shadow Ball\n- Disable\n- Sludge Bomb\n- Protect\n\nRaichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Encore\n- Thunderbolt\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Fake Out\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect",
+    "Kingambit (M) @ Choice Scarf\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Iron Head\n- Sucker Punch\n- Protect\n\nStaraptor (F) @ Sharp Beak\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Quick Attack\n- Double-Edge\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Fake Out\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil"
+  ],
+  "plan": {
+    "p1": [
+      "move 4, move 3",
+      "move 2 1, move 1 2",
+      "move 2 2, move 1 1",
+      "move 4, move 3",
+      "move 4, move 3",
+      "move 4, move 3"
+    ],
+    "p2": [
+      "move 1 1, move 1 1",
+      "move 1 1, move 1 1",
+      "move 1 1, move 1 1",
+      "move 1 1, move 1 1",
+      "move 1 1, move 1 1",
+      "move 1 1, move 1 1"
+    ],
+    "max_steps": 8
+  }
+}

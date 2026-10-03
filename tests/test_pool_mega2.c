@@ -1,6 +1,6 @@
 /*
  * duoforge.state.pool_mega2 (white-box): the Mega batch 2 of the content expansion: Swampertite (Swift Swim), Metagrossite
- * (Tough Claws) and Lucarionite Z with its Mega ability Aura Guard, a contact hit on its holder halved in the ModifyDamage
+ * (Tough Claws), Froslassite (Snow Warning, base Cursed Body) and Lucarionite Z with its Mega ability Aura Guard, a contact hit on its holder halved in the ModifyDamage
  * chain.
  *
  * The recorded battles (mb2_* under "data": "pool") are replayed by duoforge.reference.conformance_pool_data with the
@@ -120,6 +120,8 @@ static void check_facts(df_test *t)
     DF_CHECK(t, dfi_support.items[DFI_ITEM_SWAMPERTITE] != 0u);
     DF_CHECK(t, dfi_support.items[DFI_ITEM_METAGROSSITE] != 0u);
     DF_CHECK(t, dfi_support.items[DFI_ITEM_LUCARIONITEZ] != 0u);
+    DF_CHECK(t, dfi_support.items[DFI_ITEM_FROSLASSITE] != 0u);
+    DF_CHECK_EQ_U64(t, dfi_pool_item_handler[DFI_ITEM_FROSLASSITE], DFI_HANDLER_NONE);
     DF_CHECK_EQ_U64(t, dfi_pool_item_handler[DFI_ITEM_SWAMPERTITE], DFI_HANDLER_NONE);
     DF_CHECK_EQ_U64(t, dfi_pool_item_handler[DFI_ITEM_METAGROSSITE], DFI_HANDLER_NONE);
     DF_CHECK_EQ_U64(t, dfi_pool_item_handler[DFI_ITEM_LUCARIONITEZ], DFI_HANDLER_NONE);
@@ -131,6 +133,7 @@ static void check_facts(df_test *t)
         {DFI_FORME_SWAMPERT, DFI_ITEM_SWAMPERTITE, DFI_FORME_SWAMPERTMEGA, DFI_ABILITY_SWIFTSWIM},
         {DFI_FORME_METAGROSS, DFI_ITEM_METAGROSSITE, DFI_FORME_METAGROSSMEGA, DFI_ABILITY_TOUGHCLAWS},
         {DFI_FORME_LUCARIO, DFI_ITEM_LUCARIONITEZ, DFI_FORME_LUCARIOMEGAZ, DFI_ABILITY_AURAGUARD},
+        {DFI_FORME_FROSLASS, DFI_ITEM_FROSLASSITE, DFI_FORME_FROSLASSMEGA, DFI_ABILITY_SNOWWARNING},
     };
     for (size_t i = 0u; i < sizeof pairs / sizeof pairs[0]; ++i) {
         const uint32_t mega = dfi_mega_of(pairs[i].base, 1u + pairs[i].item);
@@ -143,10 +146,11 @@ static void check_facts(df_test *t)
     DF_CHECK(t, dfi_mega_of(DFI_FORME_LUCARIO, 1u + DFI_ITEM_LUCARIONITE) != DFI_FORME_LUCARIOMEGAZ);
     DF_CHECK_EQ_U64(t, dfi_mega_of(DFI_FORME_METAGROSS, 1u + DFI_ITEM_LUCARIONITEZ), DFI_FORME_NONE);
     DF_CHECK_EQ_U64(t, dfi_mega_of(DFI_FORME_SWAMPERT, 1u + DFI_ITEM_METAGROSSITE), DFI_FORME_NONE);
-    /* the base abilities that the three need are marked: Torrent, Clear Body and Inner Focus */
+    /* the base abilities that the four need are marked: Torrent, Clear Body, Inner Focus and Cursed Body (step G27) */
     DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_TORRENT] != 0u);
     DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_CLEARBODY] != 0u);
     DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_INNERFOCUS] != 0u);
+    DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_CURSEDBODY] != 0u);
     /* Aura Guard is the Mega ability of Lucario-Mega-Z alone among the pool's formes' abilities that are marked here */
     uint32_t holders = 0u;
     for (uint32_t forme = 0u; forme < DFI_POOL_FORME_COUNT; ++forme) {
