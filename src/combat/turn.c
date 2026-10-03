@@ -4601,31 +4601,41 @@ static duoforge_status dfi_residual_events(dfi_run *r)
             }
         }
     }
-    /* The duration handlers of the volatiles that have no order come last: Protect, flinch, Helping Hand and Follow Me
-     * (duration 1) end at once, the stall counter and a charge (2) end on their second residual, mustrecharge (2) lasts
-     * through the one of the turn that set it. Any that does not end is followed by faintMessages. */
-    for (uint32_t flat = 0u; flat < DFI_POSITIONS && r->faint_count != 0u; ++flat) {
+    /* The duration handlers of the volatiles that have no order come last, in Speed order (comparePriority puts no order
+     * after every order): Protect, flinch, Helping Hand and Follow Me (duration 1) end at once, the stall counter and a
+     * charge (2) end on their second residual, mustrecharge (2) lasts through the one of the turn that set it. Any that
+     * does not end is followed by faintMessages, and a battle that ends there leaves the handlers after it unrun: the
+     * ones before it ended, the ones after it keep their counters. Which handler is first among equal Speeds, and
+     * between two handlers of one Pokemon, is a shuffle that the conversion drops; it shows only in the counters of a
+     * Pokemon that stands when the battle ends at that faint point (a fainted one has lost its volatiles), and that
+     * case is refused. */
+    const uint32_t ended_flags = DFI_VOL_PROTECT | DFI_VOL_FLINCH | DFI_VOL_HELPING_HAND | DFI_VOL_FOLLOW_ME;
+    uint32_t seq[DFI_POSITIONS];
+    bool had[DFI_POSITIONS] = {false}; /* by position: a handler of this kind exists now (before any of them runs) */
+    uint32_t seq_n = 0u;
+    for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
         const dfi_active_slot *pos = dfi_pos(b, flat);
-        if (pos->occupant == DFI_OCCUPANT_NONE) {
-            continue;
-        }
-        /* A holder whose faint is queued still has its counters (faintMessages has not cleared its volatiles), so its
-         * stall counter that does not end is a faint point; one whose faint was processed has none left. */
-        if ((pos->stall_level != 0u && pos->stall_turns > 1u) || pos->charge_turns > 1u ||
-            b->tail.sides[flat / 2u].positions[flat % 2u].must_recharge != 0u) {
-            dfi_residual_faints(r);
-            if (r->ended) {
-                return DUOFORGE_OK;
-            }
+        if (pos->occupant != DFI_OCCUPANT_NONE) {
+            seq[seq_n] = flat;
+            seq_n += 1u;
+            had[flat] = ((uint32_t)pos->flags & ended_flags) != 0u || pos->charge_turns != 0u || pos->stall_turns != 0u ||
+                        b->tail.sides[flat / 2u].positions[flat % 2u].must_recharge != 0u;
         }
     }
-    for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
-        dfi_active_slot *pos = dfi_pos(b, flat);
-        if (pos->occupant == DFI_OCCUPANT_NONE) {
-            continue;
+    for (uint32_t i = 1u; i < seq_n; ++i) {
+        for (uint32_t j = i; j > 0u && r->speed_seen[seq[j]] > r->speed_seen[seq[j - 1u]]; --j) {
+            const uint32_t swap = seq[j];
+            seq[j] = seq[j - 1u];
+            seq[j - 1u] = swap;
         }
-        const uint32_t ended = DFI_VOL_PROTECT | DFI_VOL_FLINCH | DFI_VOL_HELPING_HAND | DFI_VOL_FOLLOW_ME;
-        pos->flags = (uint8_t)((uint32_t)pos->flags & ~ended); /* wide-operands-reviewed */
+    }
+    for (uint32_t i = 0u; i < seq_n; ++i) {
+        const uint32_t flat = seq[i];
+        dfi_active_slot *pos = dfi_pos(b, flat);
+        const bool keeps = (pos->stall_level != 0u && pos->stall_turns > 1u) || pos->charge_turns > 1u ||
+                           b->tail.sides[flat / 2u].positions[flat % 2u].must_recharge != 0u;
+        const bool also_ends = ((uint32_t)pos->flags & ended_flags) != 0u || pos->charge_turns == 1u || pos->stall_turns == 1u;
+        pos->flags = (uint8_t)((uint32_t)pos->flags & ~ended_flags); /* wide-operands-reviewed */
         if (pos->charge_turns > 0u) {
             pos->charge_turns = (uint8_t)((uint32_t)pos->charge_turns - 1u); /* wide-operands-reviewed */
             if (pos->charge_turns == 0u) {
@@ -4639,6 +4649,20 @@ static duoforge_status dfi_residual_events(dfi_run *r)
             pos->stall_turns = (uint8_t)((uint32_t)pos->stall_turns - 1u); /* wide-operands-reviewed */
             if (pos->stall_turns == 0u) {
                 pos->stall_level = 0u;
+            }
+        }
+        if (keeps && r->faint_count != 0u) {
+            dfi_residual_faints(r);
+            if (r->ended) {
+                if (also_ends && dfi_alive(b, flat)) {
+                    return DUOFORGE_E_UNSUPPORTED; /* its own other handler: before or after the faint point */
+                }
+                for (uint32_t j = 0u; j < seq_n; ++j) {
+                    if (j != i && had[seq[j]] && dfi_alive(b, seq[j]) && r->speed_seen[seq[j]] == r->speed_seen[flat]) {
+                        return DUOFORGE_E_UNSUPPORTED; /* equal Speed: the shuffle decides who ran */
+                    }
+                }
+                return DUOFORGE_OK;
             }
         }
     }

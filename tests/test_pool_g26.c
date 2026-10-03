@@ -318,6 +318,55 @@ static void check_side_condition_refusals(df_test *t, const duoforge_context *ct
     duoforge_battle_destroy(b);
 }
 
+/* The handlers of the volatiles that have no order (the stall counter, a charge, Protect's and Helping Hand's duration)
+ * run last, in Speed order, and a faint point at one that does not end can end the battle: the handlers after it have not
+ * run and keep their counters. Which of two handlers of one standing Pokemon came first is a shuffle that the conversion
+ * drops, so a battle that ends there with such a survivor is refused (the same for two Pokemon of equal Speed: only the
+ * differential campaigns reach that case).
+ * g26_perish_end before its last turn, with one side not infected, so that it survives while the other's counts end:
+ * that turn Politoed (side 1) uses Protect, a stall counter that does not end (and Protect's own volatile), and
+ * Staraptor (side 0, in its Tailwind, which ends in this residual) has Helping Hand's volatile. */
+static duoforge_status no_order_case(df_test *t, const duoforge_context *ctx, duoforge_battle *b, const df_conf_step *st,
+                                     uint32_t survivors)
+{
+    duoforge_decision_bundle bd;
+    bundle_of(st, b, &bd);
+    duoforge_battle *c = NULL;
+    if (!DF_CHECK(t, duoforge_battle_clone(ctx, b, &c) == DUOFORGE_OK)) {
+        return DUOFORGE_E_INVARIANT;
+    }
+    c->sides[0].tailwind_turns = 1u; /* it ends in this residual: a handler that ends, so no faint point */
+    c->sides[1].tailwind_turns = 0u;
+    for (uint32_t p = 0u; p < 2u; ++p) {
+        c->tail.sides[survivors].positions[p].perish = 0u; /* this side is not infected: it survives */
+    }
+    duoforge_step_result res;
+    uint32_t used = 0u;
+    const duoforge_status s = dfi_battle_step_tape(ctx, c, &bd, &conf_tape[st->tape_off], st->tape_len, &used, &res);
+    duoforge_battle_destroy(c);
+    return s;
+}
+
+static void check_no_order_faint_point(df_test *t, const duoforge_context *ctx)
+{
+    const df_conf_battle *cb = find("g26_perish_end");
+    if (!DF_CHECK(t, cb != NULL) || !DF_CHECK(t, cb->step_count > 9u)) {
+        return;
+    }
+    duoforge_battle *b = replay(t, ctx, "g26_perish_end", 9u);
+    if (b == NULL) {
+        return;
+    }
+    const df_conf_step *st = &cb->steps[9];
+    /* Side 1 survives: Politoed's stall counter does not end, its Protect volatile does, and the faint point of the first
+     * ends the battle: which of the two ran first is the shuffle's, so refused. */
+    DF_CHECK_EQ_U64(t, no_order_case(t, ctx, b, st, 1u), DUOFORGE_E_UNSUPPORTED);
+    /* Side 0 survives, Politoed's four counts end with the others: its stall counter's faint point ends the battle, the
+     * Staraptor's Helping Hand (of another Speed) is not a tie, and the order is the Speed's */
+    DF_CHECK_EQ_U64(t, no_order_case(t, ctx, b, st, 0u), DUOFORGE_OK);
+    duoforge_battle_destroy(b);
+}
+
 int main(void)
 {
     df_test t;
@@ -344,6 +393,8 @@ int main(void)
     check_heal_block_refusal(&t, kd);
     check_side_condition_refusals(&t, kp);
     check_side_condition_refusals(&t, kd);
+    check_no_order_faint_point(&t, kp);
+    check_no_order_faint_point(&t, kd);
     uint32_t compared_dev = 0u;
     uint32_t unannounced_dev = 0u;
     check_battles(&t, kd, &compared_dev, &unannounced_dev);
