@@ -688,12 +688,12 @@ duoforge_status duoforge_battle_step(const duoforge_context *ctx, duoforge_battl
 #define DUOFORGE_AILMENT_PARALYSIS 3u
 #define DUOFORGE_AILMENT_SLEEP     4u
 #define DUOFORGE_AILMENT_POISON    5u /* Team C: Dire Claw */
-#define DUOFORGE_AILMENT_TOX       6u /* POOL (decision 0018): badly poisoned; not produced yet */
+#define DUOFORGE_AILMENT_TOX       6u /* POOL (decision 0018): badly poisoned; produced since step G36 (#184: badly poisoned, as a primary and as a secondary effect) */
 #define DUOFORGE_WEATHER_NONE 0u
 #define DUOFORGE_WEATHER_RAIN 1u
 #define DUOFORGE_WEATHER_SUN  2u
-#define DUOFORGE_WEATHER_SAND 3u /* POOL (decision 0018): not produced yet */
-#define DUOFORGE_WEATHER_SNOW 4u /* POOL: not produced yet */
+#define DUOFORGE_WEATHER_SAND 3u /* POOL (decision 0018): produced since step 5b of decision 0015 (#124: Sandstorm, Sand Stream) */
+#define DUOFORGE_WEATHER_SNOW 4u /* POOL: produced since step 5b of decision 0015 (#124: Snowscape, Snow Warning) */
 #define DUOFORGE_TERRAIN_NONE   0u
 #define DUOFORGE_TERRAIN_GRASSY 1u
 #define DUOFORGE_TERRAIN_PSYCHIC 2u /* Team C (Psychic Surge) */
