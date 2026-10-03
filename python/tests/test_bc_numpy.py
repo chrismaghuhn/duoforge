@@ -150,6 +150,15 @@ class BcDataTest(unittest.TestCase):
         self.assertTrue(r.has_z.all())
         self.assertTrue(np.array_equal(r.z, np.where(r.side == winner, 1.0, -1.0).astype(np.float32)))
 
+    def test_mask_holds_only_folded_bits(self):
+        # review #2: a base-value bit the library supports but the tracker does not fold (Electric/Misty after #163)
+        # never reaches a row, so its input rows would keep their random init: it must not be in the BC mask
+        from unittest import mock
+        snow = 1 << lines.FEATURES["WEATHER_SNOW"]
+        with mock.patch.object(lines, "TRACKER_FOLDS", lines.TRACKER_FOLDS & ~snow):
+            self.assertFalse(self.bc_data.bc_mask(self.context) & snow)
+        self.assertTrue(self.bc_data.bc_mask(self.context) & snow)
+
     def test_mask_mismatch_raises(self):
         from unittest import mock
         with mock.patch.object(lines, "LIBRARY_SUPPORTED", lines.LIBRARY_SUPPORTED ^ 1):

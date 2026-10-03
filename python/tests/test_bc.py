@@ -292,6 +292,17 @@ class InitTest(unittest.TestCase):
         appended = self.bc_like("appended.npz", ids={k: v[:-1] for k, v in cfg["ids"].items()}, data=other)
         self.run_train("appended", "--init", str(appended))
 
+    def test_bc_eval_refuses_shifted_ids(self):
+        # review #4: a checkpoint evaluated under other tables must have the same ids, else it would play nonsense
+        from duoforge_learn import bc_eval, checkpoint
+        _, cfg = checkpoint.load(str(self.ckpt))
+        moves = list(cfg["ids"]["move"])
+        moves[3], moves[4] = moves[4], moves[3]
+        shifted = self.bc_like("eval-shifted.npz", ids={**cfg["ids"], "move": moves},
+                               data={"kind": "pool", "fingerprint": "00"})
+        with self.assertRaisesRegex(SystemExit, "move id 3"):
+            bc_eval.main(["--checkpoint", str(shifted), "--games", "1"])
+
     def test_init_refuses_output_in_repo(self):
         from pathlib import Path
         from duoforge_learn import train
@@ -356,6 +367,30 @@ class TrainerTest(unittest.TestCase):
         with self.assertRaises((ValueError, SystemExit)):
             bc.main(["--data", str(self.data), "--out", str(inside), "--epochs", "1"])
         self.assertFalse(inside.exists())
+
+    def test_cache_of_another_library_is_refused(self):
+        # review #1: a cache hit must not skip the dataset's library check (stale ids would be trained in silence)
+        import json
+        import shutil
+        from duoforge_learn import bc
+        cache = self.tmp / "cache-lib"
+        self.run_bc("cache-a", "--epochs", "1", "--cache", str(cache))
+        other = self.tmp / "data-other"
+        shutil.copytree(self.data, other)
+        marker = other / "replay-dataset.json"
+        inputs = json.loads(marker.read_text(encoding="utf-8"))
+        inputs["fingerprint"] = "00" * 32
+        marker.write_text(json.dumps(inputs), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "00" * 32):
+            bc.main(["--data", str(other), "--out", str(self.tmp / "cache-b"), "--epochs", "1", "--cache", str(cache)])
+
+    def test_format_weight_must_be_positive(self):
+        # review #3: a factor of 0 leaves batches without weight (0/0, NaN parameters); a negative one is no weight
+        from duoforge_learn import bc
+        for factor in ("0", "-1"):
+            with self.assertRaises(SystemExit):
+                bc.main(["--data", str(self.data), "--out", str(self.tmp / f"fw{factor}"), "--epochs", "1",
+                         "--format-weight", f"gen9championsvgc2026regmc={factor}"])
 
     def test_empty_validation_is_refused(self):
         from . import test_bc_numpy as fixture

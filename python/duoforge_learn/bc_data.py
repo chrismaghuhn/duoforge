@@ -50,13 +50,16 @@ def library_mask(context):
 
 
 def bc_mask(context):
-    """The BC encoder mask: the base-value features of the library's run-time mask. ValueError naming both values
+    """The BC encoder mask: the base-value features of the library's run-time mask that the tracker folds. ValueError
+    naming both values
     when the tracker's parsed support differs from the run-time mask: the rows were folded under the former."""
     library = library_mask(context)
     if lines.LIBRARY_SUPPORTED != library:
         raise ValueError(f"the tracker's parsed support {lines.LIBRARY_SUPPORTED:#x} differs from the loaded library's "
                          f"run-time mask {library:#x}: rebuild the library or the checkout")
-    return features.BASE_VALUE_FEATURES & library
+    # only the bits the tracker folds: a base-value bit it does not fold never reaches a row (its lines stop), so a
+    # network would keep random input rows for it and record it as learned
+    return features.BASE_VALUE_FEATURES & library & lines.TRACKER_FOLDS
 
 
 def rating_weight(rating):

@@ -68,6 +68,8 @@ def _format_weights(items):
         prefix, _, factor = item.partition("=")
         if not prefix or not factor:
             raise SystemExit(f"--format-weight takes PREFIX=FACTOR, not {item!r}")
+        if not float(factor) > 0:
+            raise SystemExit(f"--format-weight {item!r}: the factor must be above 0 (a batch of weight 0 has no loss)")
         out[prefix] = float(factor)
     return out
 
@@ -93,7 +95,11 @@ def _rows(args, context, mask, dirs, format_weights):
     from . import bc_data
     if args.cache is None:
         return bc_data.load(dirs, context, mask, format_weights, args.weights)
-    key = hashlib.sha256(json.dumps(["rows-v2", _dataset_key(dirs), mask, args.weights, format_weights],
+    from duoforge import features
+    for d in dirs:  # a cache hit must not skip the library check of the datasets
+        bc_data._check_dataset(d, context)
+    key = hashlib.sha256(json.dumps(["rows-v2", _dataset_key(dirs), mask, args.weights, format_weights,
+                                     context.fingerprint().hex(), features.ENCODER, list(features.FEATURE_NAMES)],
                                     sort_keys=True).encode()).hexdigest()[:24]
     path = Path(args.cache) / f"bc-rows-{key}.npz"
     if path.exists():

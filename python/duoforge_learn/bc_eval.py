@@ -48,6 +48,11 @@ def main(argv=None):
         players.append(("random_net_", evaluate.Player(model, untrained, encoder, "random-net", ext_supported=mask)))
     out = {}
     with duoforge.Context(data_kind=_layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"]) as context:
+        if config.get("data", {}).get("fingerprint") != context.fingerprint().hex():
+            try:  # other tables than the checkpoint's: its embedded ids must still name the same rows
+                checkpoint.check_ids(config, context)
+            except ValueError as err:
+                raise SystemExit(f"{args.checkpoint}: the context's tables differ from the checkpoint's: {err}") from None
         pool = _pool(context, args)
         rows = suite.make_suite(len(pool.ids), args.seed, games=args.games, budget=args.budget)
         for prefix, player in players:
