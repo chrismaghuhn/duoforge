@@ -268,7 +268,12 @@ The leaves are not stepped further. A PIVOT leaf is mid-turn; how often leaves a
   - The batch shape is fixed by padding.
   - XLA's deterministic GPU ops are on.
   - Games are processed in a fixed order, so every round has the same composition on a rerun.
-  - A rerun with the same seeds, checkpoint, library, JAX version and device reproduces every decision bit for bit. The report states the device and the versions.
+  - **How far reproduction reaches:**
+    - **Bit for bit** on the same machine: a rerun with the same seeds, checkpoint, library, JAX version, machine and leaf capacity L reproduces every decision. A row's value does not depend on its position in a value call.
+    - **Within float tolerance** across machines or with another L. The network's float32 values differ in the last bits by instruction set (AVX, AVX2, AVX512) and by batch shape. Measured: value calls of 7 and of 256 rows differ by about 1e-8.
+    - The tables then agree within that tolerance, and a decision can differ only where its table has a near-tie.
+    - The engine part and the C encoder's rows stay bit-exact everywhere.
+  - The report states the machine, the device, L and the versions.
 - **The reductions:** float64 in NumPy, on the network's float32 values.
 - **The budget is a count of leaves, never a time.** A time budget would make the choice depend on the machine; the time per decision is measured and reported beside it.
 
@@ -415,7 +420,10 @@ Each searched decision gets a record; the report summarizes the records:
 - **Common random numbers:** sample s has the same seeds in every cell.
 - **Purity:** the same decision twice gives the same table bit for bit; so does a decision alone and inside a full round, on the device used. A difference is reported, not hidden.
 - **The raw network inside the search:** with K = 1 the search must play the raw network's argmax. N with K = 1 therefore reproduces R's games exactly, record for record.
-- **End to end:** one decision on Teams A and B with a small fixed network gives a pinned table digest, on the CPU.
+- **End to end:** one decision on Teams A and B with a small fixed network, on the CPU:
+  - **Pinned exactly on every machine:** the integer and structural parts. These are the candidates (their log-probability gaps checked to be far above rounding), the leaves' engine outputs and C-encoded rows, the leaf kinds, and the Nash strategy and choice of a strictly dominant row.
+  - **Within a tolerance:** the table.
+  - **Exact bytes only under recorded conditions:** the table's exact bytes are checked only where the JAX version, the CPU, the XLA flags and L equal those recorded with it (section 6).
 
 ## 11. Not in this work
 

@@ -356,7 +356,10 @@ Python tests:
   - `test_samples_share_seeds_across_cells`: in the plan, the seeds of sample s are the same for every (i, j).
   - `test_decision_is_pure`: the same call twice gives equal tables and choices, bit for bit.
   - `test_alone_equals_in_a_round`: one decision alone and inside a round of 16 gives the same table. If this fails on a device, the test reports it as an expected failure for that device only; it is never deleted.
-  - `test_pinned_table_digest`: the SHA-256 of one decision's float32 table, pinned on the CPU.
+  - `test_pinned_decision` (the owner's note on #205):
+    - pinned exactly on every machine: the integer and structural parts of one decision (candidates, leaf outputs and C-encoded rows, leaf kinds, the choice);
+    - the table within 1e-6;
+    - `test_pinned_table_bytes`: the table's SHA-256 only under its recorded conditions (JAX version, CPU, XLA flags, capacity); elsewhere the test reports itself skipped with both conditions.
   - `test_forced_and_team_selection_are_not_searched`: such decisions make no leaves and are counted.
 - [ ] **Step 3: Implement. Step 4: Run, expect PASS.** Commit with the message "Search: the one-turn lookahead (spec S4.2, S5, S7)".
 

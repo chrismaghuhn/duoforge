@@ -4,9 +4,11 @@ docs/superpowers/specs/2026-10-03-m12-search-stage1-design.md).
 - Model.value equals the value of apply, bit for bit (plan task 8).
 - The lookahead (plan task 9): common random numbers across the cells and
   chunks, the seat's view at the leaves, purity, one decision alone and
-  inside a round, a pinned table
-  digest on the CPU, the decisions that are not searched, M' = 1 for a foe
-  without a request, the encoder probe and the reproduction data.
+  inside a round, a pinned decision on the CPU (its integer and structural
+  parts exactly on every machine, its table within a tolerance, the
+  table's bytes only under recorded conditions), the decisions that are
+  not searched, M' = 1 for a foe without a request, the encoder probe and
+  the reproduction data.
 - SearchPlayer in play_suite (plan task 10): the step and the seats, K = 1
   reproduces the raw network, the cut-off leaves use the tiebreak.
 
@@ -14,6 +16,7 @@ The NumPy parts are in test_search_numpy.py. Teams A and B (the arena: A, B
 and C) under POOL, at fixed init keys, on the CPU.
 """
 import hashlib
+import os
 import unittest
 from unittest import mock
 
@@ -202,15 +205,57 @@ class LookaheadDecisions(unittest.TestCase):
                 raise
             self.skipTest(f"an expected failure on {jax.default_backend()} only (spec section 10): reported")
 
-    def test_pinned_table_digest(self):
+    def _pinned(self):
+        """The pinned decision: (its record, the lookahead's last leaves, the roots' policy over all rows)."""
+        env = int(self.envs[0])
+        with self._lookahead() as look:
+            _, (record,) = self._decide(look, [env])
+            last = look.last
+        obs, slots, pairs = self.roots.query_encoded(4, self.mask)
+        rows = 2 * ENVS
+        logp = np.asarray(self.model.apply(self.params, obs.reshape(rows, -1), slots.reshape((rows,) + slots.shape[2:]),
+                                           pairs.reshape((rows,) + pairs.shape[2:]))[0]).reshape(ENVS, 2, -1)
+        return record, last, logp, pairs.reshape(ENVS, 2, -1)
+
+    def test_pinned_decision(self):
+        # Spec section 10, end to end, on every machine: the integer and structural parts exactly, the table
+        # within TABLE_TOLERANCE (the network's float32 values differ in the last bits by machine, section 6).
         import jax
         if jax.default_backend() != "cpu":
-            self.skipTest("the digest is pinned on the CPU")
-        with self._lookahead() as look:
-            env = int(self.envs[0])
-            _, records = self._decide(look, [env])
-        digest = hashlib.sha256(np.array(records[0]["table"], dtype=np.float64).tobytes()).hexdigest()
-        self.assertEqual(digest, PINNED_TABLE, f"table {records[0]['table']} on {jax.devices()}, JAX {jax.__version__}")
+            self.skipTest("pinned on the CPU")
+        record, last, logp, legal = self._pinned()
+        env, seat = record["env"], record["seat"]
+        self.assertEqual((env, seat, record["own_pairs"], record["foe_pairs"]), PINNED_DECISION)
+        for p, k in ((seat, 3), (1 - seat, 3)):  # the candidates stand far above rounding: an exact pin is safe
+            ranked = np.sort(logp[env, p][legal[env, p]])[::-1][:k + 1].astype(np.float64)
+            self.assertGreater(np.min(-np.diff(ranked)), 1e-5)
+        keys = np.zeros(ENVS, dtype=np.uint64)
+        keys[self.envs] = self.keys
+        viewers = np.zeros(ENVS, dtype=np.uint8)
+        viewers[env] = seat
+        with duoforge.Batch(self.ctx, np.resize(reference_setups([0]), 36), 2, SEED) as again:
+            obs, step, enc, res, results = again.expand(self.roots, 4, self.mask, lookahead.SEARCH_SEED, keys, viewers,
+                                                        last["root_envs"], last["samples"], last["choices"])
+            h = hashlib.sha256()
+            for x in (last["choices"], last["samples"], step, enc, results, res["boundary_kind"], obs):
+                h.update(np.ascontiguousarray(x).tobytes())
+        np.testing.assert_array_equal(step, last["step_statuses"])
+        self.assertEqual(h.hexdigest(), PINNED_LEAVES)
+        self.assertEqual(record["leaves"], {"refused": 0, "terminal": 0, "cut_off": 0, "unresolved": 0,
+                                            "TURN": 24, "REPLACEMENT": 12, "PIVOT": 0, "TERMINAL": 0})
+        np.testing.assert_allclose(record["table"], PINNED_TABLE, rtol=0, atol=TABLE_TOLERANCE)
+        # Row 2 dominates the others by about 1e-4 in every column: the strategy and the choice are exact.
+        self.assertEqual((record["x"], record["choice"]), ([0.0, 0.0, 1.0], 99))
+
+    def test_pinned_table_bytes(self):
+        # The table's bytes exactly, only under the conditions they were computed in (spec section 6).
+        import jax
+        conditions = _conditions()
+        if conditions != PINNED_TABLE_CONDITIONS:
+            self.skipTest(f"the table's bytes are pinned under {PINNED_TABLE_CONDITIONS}, here {conditions}")
+        record = self._pinned()[0]
+        digest = hashlib.sha256(np.array(record["table"], dtype=np.float64).tobytes()).hexdigest()
+        self.assertEqual(digest, PINNED_TABLE_SHA256, f"table {record['table']} under {conditions}")
 
     def test_encoder_probe_refuses_at_init(self):
         with self.assertRaises(ValueError):  # no mask of the feature bits
@@ -233,7 +278,8 @@ class LookaheadDecisions(unittest.TestCase):
         data = caught.exception.reproduction
         sample = int(last["sample"][5])
         self.assertEqual((data["env"], data["seat"], data["key"], data["sample"]), (env, seat, key, sample))
-        self.assertEqual((data["initstate"], data["initseq"]), duoforge.search_seeds(lookahead.SEARCH_SEED, key, sample))
+        self.assertEqual((data["initstate"], data["initseq"]),
+                         duoforge.search_seeds(lookahead.SEARCH_SEED, key, sample))
         self.assertEqual(bytes.fromhex(data["root"]), self.roots.encode(env))
         own = last["choices"][5, seat]["slot"]
         self.assertEqual(data["own_pair"], int(own[0]) * 32 + int(own[1]))
@@ -389,9 +435,36 @@ class ArenaSearch(unittest.TestCase):
             self.assertEqual(leaves["cut_off"], open_leaves if r["step"] == 2 else 0)
 
 
-# One decision's 3 x 3 table (S = 4, capacity 256) at v2-S init key 7, float64 bytes, on the CPU with JAX
-# 0.11.2. The same under --xla_cpu_max_isa=AVX2 and AVX512; another JAX version or a CPU without FMA may differ.
-PINNED_TABLE = "56b79262081bb7e9ec52d18ac29634f515041459e065f0192ea14533103eb7ee"
+# The pinned decision: environment 0, seat 0 of the LookaheadDecisions round (3 x 3 x 4 leaves, capacity 256)
+# at v2-S init key 7, on the CPU. On every machine: (env, seat, own pairs, foe pairs), the SHA-256 of the
+# leaves' choices, samples, statuses, results, boundaries and C-encoded rows, and the table within the tolerance.
+PINNED_DECISION = (0, 0, [98, 101, 99], [261, 37, 267])
+PINNED_LEAVES = "5747ca7089aaaf9c7fd650eaddc04f313fefba9c4a7cc70efb80aa14521c3473"
+PINNED_TABLE = [[-0.001045780023559928, -0.0011911392211914062, -0.001594386762008071],
+                [-0.0011191614903509617, -0.0012734043411910534, -0.0009843618609011173],
+                [-0.0006289742887020111, -0.0006185907404869795, -4.029273986816406e-05]]
+TABLE_TOLERANCE = 1e-6
+# The table's float64 bytes, exact only under these conditions: the network's float32 values differ in the
+# last bits by instruction set and batch shape (spec section 6). Measured: the same under
+# --xla_cpu_max_isa=AVX2 and AVX512 on this CPU, another value under AVX.
+PINNED_TABLE_SHA256 = "56b79262081bb7e9ec52d18ac29634f515041459e065f0192ea14533103eb7ee"
+PINNED_TABLE_CONDITIONS = {"jax": "0.11.2", "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz", "xla_flags": "",
+                           "capacity": 256}
+
+
+def _conditions():
+    """The conditions a table's bytes depend on beyond the seeds: the JAX version, the CPU model, the XLA flags
+    and the leaf capacity (the pinned decision's: 256)."""
+    import platform
+
+    import jax
+    cpu = platform.processor()
+    try:
+        with open("/proc/cpuinfo", encoding="utf-8") as f:
+            cpu = next(line.split(":", 1)[1].strip() for line in f if line.startswith("model name"))
+    except (OSError, StopIteration):
+        pass
+    return {"jax": jax.__version__, "cpu": cpu, "xla_flags": os.environ.get("XLA_FLAGS", ""), "capacity": 256}
 
 
 if __name__ == "__main__":
