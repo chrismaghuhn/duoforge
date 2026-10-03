@@ -45,7 +45,7 @@
 #include "state/closure_member.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "76ca3a3f048621030db0a22b51954f95ee323d432abe73f00d06d21b6ddbb9d4"
+#define POOL_HASH_HEX "d3e2ac998d4bec6f35c8286165a1836943fbcad869b21a889e8e3f0c98e399ee"
 /* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
  * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
  * produced the same bytes. Step G10 moved two of them on purpose: Scald and Recover are data now (the thaw bit and
