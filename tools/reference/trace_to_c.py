@@ -957,10 +957,20 @@ def ev_hp(text, side, viewer, maxhp):
     return (int(m.group(1)), 100, HP_PERCENT, HP_FLAGS_EV[m.group(3)], status)
 
 
+def hit_key(text):
+    """The Pokemon of a -damage or -hitcount line: its side and name, because a Pokemon that has fainted is shown without its
+    slot ('p2: Primarina') on the -hitcount line that follows its faint."""
+    m = re.match(r'p([12])[ab]?: (.*)$', text)
+    if m is None:
+        raise ConversionError('hitcount-pokemon', 'trace_to_c: not a Pokemon: %r' % text)
+    return (m.group(1), m.group(2))
+
+
 def step_events(log, viewer, roster_of, maxhp, tables):
     """The events `viewer` sees in one step, in protocol order."""
     out = []
     skip = set()
+    hits_on = {}  # the -damage lines of the move that is being shown, by the Pokemon hit (see -hitcount)
     for i, line in enumerate(log):
         if i in skip:
             continue
@@ -978,6 +988,23 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             continue
         args = [x for x in parts[2:] if not x.startswith('[')]
         e = None
+        if kind == 'move':
+            hits_on.clear()
+        elif kind == '-damage' and not attrs:
+            hits_on[hit_key(args[0])] = hits_on.get(hit_key(args[0]), 0) + 1
+        elif kind == '-hitcount':
+            # `-hitcount|P|N` ends the lines of a multi-hit move (Dual Wingbeat, Triple Axel, ...): N is the number of hits
+            # that landed, the loop's `hit - 1` (data/mods/champions/scripts.ts:427-549, the base game's
+            # sim/battle-actions.ts:857-979). Each hit that lands shows one -damage line on the target, so the count is
+            # derived from the events already converted and the line is no event of its own: it is asserted and dropped.
+            # Only when the line is present: the Champions loop prints none for Parental Bond when only its first hit
+            # landed (scripts.ts:547-548), so a missing line is no error. NOTE for whoever builds Substitute: a hit into a
+            # Substitute shows `-activate|P|move: Substitute|[damage]` or `-end|P|Substitute`, not `-damage`, and the
+            # loop counts it; the sub hits must be counted here too.
+            if len(args) != 2 or not args[1].isdigit() or hits_on.get(hit_key(args[0]), 0) != int(args[1]):
+                raise ConversionError('hitcount-mismatch', 'trace_to_c: %r but the move showed %d -damage lines on that Pokemon'
+                                      % (line, hits_on.get(hit_key(args[0]), 0)), detail=line.split('|')[-1])
+            continue
         if kind == 'turn':
             e = ev_tuple(EV['TURN'], ident=int(args[0]))
         elif kind == 'upkeep':

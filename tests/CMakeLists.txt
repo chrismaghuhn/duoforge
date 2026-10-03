@@ -190,6 +190,7 @@ duoforge_add_test(NAME duoforge.state.pool_g30 SOURCES test_pool_g30.c WHITEBOX 
 duoforge_add_test(NAME duoforge.state.pool_g36 SOURCES test_pool_g36.c WHITEBOX TIMEOUT 60)
 # Step G34: a batch of small rules (Gale Wings, accuracy and base power abilities, Solid Rock and Multiscale in the damage chain,
 # Steel Roller, Clangorous Soul, Brick Break): the marks, the flag bits and the commutation test of the ModifyDamage chain.
+duoforge_add_test(NAME duoforge.state.pool_g33 SOURCES test_pool_g33.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g34 SOURCES test_pool_g34.c WHITEBOX TIMEOUT 60)
 # Step G35: ten data rows, Rain Dish and Friend Guard: the marks, the flags, Gigaton Hammer left out, and Friend Guard in the
 # commutation test and the refusal of the ModifyDamage chain.
@@ -210,8 +211,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=829ab6b4bf99d39f0cc5380bee0c0312d41355127836cefe9e368ce5b194a43b"
-        "pool_tables.c=3415a28b43b37a2917ecbe770f8aabf949a3f347adbb90a5cf9a3ee756ebd609")
+        "pool_tables.h=f7e15137003a01a3ea698eb4d0a7f2b8c8a48f743921d3eec5ca20a6503f7046"
+        "pool_tables.c=78c35cbeb297cdbe3a141049c9838e0577ac44b559ebbe86a109effd579035d3")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)

@@ -144,6 +144,7 @@ static void check_facts(df_test *t)
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_DISABLE, DFI_SPECIAL_BRICK_BREAK + 1u); /* step G27, after the handlers of the other steps */
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_ELECTRIC_TERRAIN, DFI_SPECIAL_DISABLE + 1u); /* step G25's four handlers follow */
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_PERISH_SONG, DFI_SPECIAL_TERRAIN_PULSE + 1u); /* step G26 follows */
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_MULTI_HIT_2, DFI_SPECIAL_PERISH_SONG + 1u); /* step G33's two handlers follow */
     /* Clangorous Soul: the Champions mod's accuracy true, five +1 boosts on the user, the sound flag (Throat Chop bars it) */
     const dfi_move_data *cs = &dfi_pool_moves[DFI_MOVE_CLANGOROUSSOUL];
     DF_CHECK_EQ_U64(t, cs->accuracy, 0u);

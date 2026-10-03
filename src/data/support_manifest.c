@@ -172,6 +172,11 @@
  * handler at order 24 shows the count and at 0 faints the holder; the volatile id DUOFORGE_VOLATILE_PERISH = 5), with the
  * view bit 4 (perish of the position, public). Soundproof (step G32) stops the cast at its holder, and a Heal Block that
  * ends in the same residual as a Perish count is refused (E_UNSUPPORTED). Recorded as g26_* under the POOL kind. */
+ * Step G33 marks three multi-hit moves and one ability: Dual Wingbeat and Twin Beam (two hits) and Triple Axel (three, a check
+ * before each later hit, 20 x the hit as the power), each hit with its
+ * own critical hit roll, damage roll and DamagingHit handlers; the hit count is the number of -damage lines, so the protocol's
+ * -hitcount line is derived and no event is new. Mirror Armor (the drops that another Pokemon causes go back to it, one stat
+ * at a time), recorded as g33_* under the POOL kind. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -348,6 +353,10 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_VOLTSWITCH] = 1u,
             [DFI_MOVE_CLANGINGSCALES] = 1u,
             [DFI_MOVE_FREEZEDRY] = 1u,
+            /* Step G33: the multi-hit loop (two hits: Dual Wingbeat, Twin Beam; three: Triple Axel). */
+            [DFI_MOVE_DUALWINGBEAT] = 1u,
+            [DFI_MOVE_TRIPLEAXEL] = 1u,
+            [DFI_MOVE_TWINBEAM] = 1u,
             /* Step G28: Shell Smash (its boosts in the pin's order), Acrobatics (doubled without an item), Blizzard (never misses
              * in snow), Ancient Power (a secondary that boosts its user), Feint (breaks Protect and Wide Guard). */
             [DFI_MOVE_SHELLSMASH] = 1u,
@@ -447,6 +456,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_RAINDISH] = 1u, /* step G35 */
             [DFI_ABILITY_ELECTRICSURGE] = 1u, /* step G25 */
             [DFI_ABILITY_FRIENDGUARD] = 1u,
+            [DFI_ABILITY_MIRRORARMOR] = 1u, /* step G33 */
         },
     .items =
         {
