@@ -317,8 +317,7 @@ class Batch:
                                   np.zeros(self.envs, dtype=_layout.STEP_RESULT), np.zeros(self.envs, dtype=np.uint32))
         obs, step_statuses, encode_statuses, results, leaf_results = self._buffers[key]
         untouched = np.uint32(0xFFFFFFFF)  # no status of the library; the argument checks write nothing
-        step_statuses[:n] = untouched
-        encode_statuses[:n] = untouched
+        step_statuses[:n] = untouched  # every leaf writes its step status
         st = self._lib.duoforge_batch_expand(
             self._live(), roots._live(), uint(version, 32, "version"), uint(ext_supported, 64, "ext_supported"),
             uint(seed, 64, "seed"), ptr(roots.requests), ptr(roots.domains), ptr(keys), ptr(viewers), n,
