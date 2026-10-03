@@ -1739,12 +1739,12 @@ static const df_tb_stop tb_g26_perish_end[] = {
     {10u, 1u, 2u, 0u, {0u, 0u}, {0u, 0u}, {0x0000000000000000ull, 0x0000000000000000ull}},
 };
 static const df_tb_stop tb_g26_perish_recast[] = {
-    {0u, 0u, 1u, 3u, {6u, 6u}, {1127u, 1122u}, {0x4059000000000000ull, 0x4059000000000000ull}},
-    {1u, 0u, 1u, 3u, {4u, 4u}, {768u, 758u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
-    {2u, 0u, 1u, 3u, {4u, 4u}, {768u, 758u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
-    {3u, 0u, 1u, 3u, {4u, 4u}, {768u, 758u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
-    {6u, 0u, 2u, 1u, {2u, 3u}, {364u, 561u}, {0x4040aaaaaaaaaaabull, 0x4049000000000000ull}},
-    {7u, 0u, 2u, 1u, {2u, 3u}, {364u, 561u}, {0x4040aaaaaaaaaaabull, 0x4049000000000000ull}},
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1127u, 1157u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {768u, 763u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 3u, {4u, 4u}, {768u, 763u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 1u, 3u, {4u, 4u}, {768u, 763u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {6u, 0u, 2u, 1u, {2u, 3u}, {364u, 566u}, {0x4040aaaaaaaaaaabull, 0x4049000000000000ull}},
+    {7u, 0u, 2u, 1u, {2u, 3u}, {364u, 566u}, {0x4040aaaaaaaaaaabull, 0x4049000000000000ull}},
     {8u, 0u, 1u, 3u, {2u, 2u}, {364u, 359u}, {0x4040aaaaaaaaaaabull, 0x4040aaaaaaaaaaabull}},
 };
 static const df_tb_stop tb_g26_perish_song[] = {
@@ -3423,5 +3423,5 @@ static const df_tb_battle tb_battles[] = {
 
 /* 2425 stops: 140 of an ended battle; decided by the count 722,
  * the HP percentage 743, the total HP 766, a tie 54;
- * winners: side 0 1221, side 1 1150, tie 54 */
+ * winners: side 0 1220, side 1 1151, tie 54 */
 #endif
