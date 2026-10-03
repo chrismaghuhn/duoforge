@@ -489,7 +489,7 @@ def drop_reason(d, state, after=None, log=None):
 
 
 # The items whose each-event handlers (Update, TerrainChange) act on their holder alone.
-EACH_HANDLERS = frozenset(('sitrusberry', 'grassyseed', 'psychicseed'))
+EACH_HANDLERS = frozenset(('sitrusberry', 'grassyseed', 'psychicseed', 'electricseed', 'mistyseed'))
 
 
 def site_of(d):

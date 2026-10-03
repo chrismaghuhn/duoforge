@@ -3,7 +3,7 @@
  * moves, Electric Seed and Misty Seed, Rising Voltage, Terrain Pulse, step G25) and the terrain values Electric and Misty of
  * the POOL kinds in the player view (decision 0018, supported bits 5 and 32).
  *
- * The six recorded battles of the step (g25_* under "data": "pool") are replayed through the step with the reference's
+ * The seven recorded battles of the step (g25_* under "data": "pool") are replayed through the step with the reference's
  * draws, as duoforge.reference.conformance_pool_data does, which compares everything the reference shows. Here the view is
  * checked against the protocol: after every step both players' observation has the terrain and the turns left that the
  * `-fieldstart` and `-fieldend` lines and the `|upkeep` lines alone give (terrain_rows, which
@@ -73,6 +73,12 @@ static const struct {
     {"g25_weather_ball_refrigerate", 3u, 0u, 0u},
     {"g25_weather_ball_refrigerate", 4u, 0u, 0u},
     {"g25_weather_ball_refrigerate", 5u, 0u, 0u},
+    {"g25_misty_hurricane", 0u, 0u, 0u},
+    {"g25_misty_hurricane", 1u, 4u, 4u},
+    {"g25_misty_hurricane", 2u, 4u, 3u},
+    {"g25_misty_hurricane", 3u, 4u, 2u},
+    {"g25_misty_hurricane", 4u, 4u, 1u},
+    {"g25_misty_hurricane", 5u, 0u, 0u},
 };
 
 static void build_setup(const df_conf_battle *cb, duoforge_battle_setup *s)
@@ -143,7 +149,7 @@ static void check_view(df_test *t, const duoforge_context *ctx)
 {
     static const char *const names[] = {"g25_electric_surge_voltage", "g25_electric_seed", "g25_misty_terrain",
                                         "g25_terrain_pulse_psychic_misty", "g25_terrain_pulse_electric",
-                                        "g25_weather_ball_refrigerate"};
+                                        "g25_weather_ball_refrigerate", "g25_misty_hurricane"};
     uint32_t compared = 0u;
     uint32_t electric_steps = 0u;
     uint32_t misty_steps = 0u;
@@ -216,7 +222,7 @@ static void check_view(df_test *t, const duoforge_context *ctx)
     DF_CHECK_EQ_U64(t, compared, 2u * (uint32_t)(sizeof terrain_rows / sizeof terrain_rows[0]));
     /* The battles show every terrain the step adds for several steps (the check above is not vacuous). */
     DF_CHECK_EQ_U64(t, electric_steps, 14u);
-    DF_CHECK_EQ_U64(t, misty_steps, 8u);
+    DF_CHECK_EQ_U64(t, misty_steps, 12u);
     DF_CHECK_EQ_U64(t, psychic_steps, 1u);
 }
 

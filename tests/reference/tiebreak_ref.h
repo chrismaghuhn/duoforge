@@ -1687,12 +1687,20 @@ static const df_tb_stop tb_g25_electric_seed[] = {
     {6u, 0u, 1u, 2u, {4u, 4u}, {735u, 680u}, {0x4050aaaaaaaaaaabull, 0x404d353a4c0a237cull}},
 };
 static const df_tb_stop tb_g25_electric_surge_voltage[] = {
-    {0u, 0u, 2u, 3u, {6u, 6u}, {1091u, 1125u}, {0x4059000000000000ull, 0x4059000000000000ull}},
-    {1u, 0u, 2u, 3u, {4u, 4u}, {731u, 780u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
-    {2u, 0u, 2u, 3u, {4u, 4u}, {731u, 780u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
-    {3u, 0u, 1u, 2u, {4u, 4u}, {731u, 672u}, {0x4050aaaaaaaaaaabull, 0x404ce0bd410e5cf0ull}},
-    {5u, 0u, 1u, 2u, {4u, 4u}, {731u, 508u}, {0x4050aaaaaaaaaaabull, 0x4045c2845d80240dull}},
-    {6u, 0u, 1u, 2u, {4u, 4u}, {731u, 508u}, {0x4050aaaaaaaaaaabull, 0x4045c2845d80240dull}},
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1048u, 1125u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {703u, 780u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {703u, 780u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {703u, 672u}, {0x4050aaaaaaaaaaabull, 0x404ce0bd410e5cf0ull}},
+    {5u, 0u, 1u, 2u, {4u, 4u}, {703u, 528u}, {0x4050aaaaaaaaaaabull, 0x4046a0bd410e5cf0ull}},
+    {6u, 0u, 1u, 2u, {4u, 4u}, {703u, 528u}, {0x4050aaaaaaaaaaabull, 0x4046a0bd410e5cf0ull}},
+};
+static const df_tb_stop tb_g25_misty_hurricane[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1141u, 1123u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {770u, 752u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {730u, 752u}, {0x404f91d58f200e73ull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {690u, 752u}, {0x404de0ab8acb2801ull, 0x4050aaaaaaaaaaabull}},
+    {5u, 0u, 2u, 2u, {4u, 4u}, {554u, 752u}, {0x4047f5487fb40511ull, 0x4050aaaaaaaaaaabull}},
+    {6u, 0u, 2u, 2u, {4u, 4u}, {554u, 752u}, {0x4047f5487fb40511ull, 0x4050aaaaaaaaaaabull}},
 };
 static const df_tb_stop tb_g25_misty_terrain[] = {
     {0u, 0u, 1u, 3u, {6u, 6u}, {1141u, 1093u}, {0x4059000000000000ull, 0x4059000000000000ull}},
@@ -3251,6 +3259,7 @@ static const df_tb_battle tb_battles[] = {
     {"g21_waterfall_pulse_crunch", 6u, tb_g21_waterfall_pulse_crunch, sizeof tb_g21_waterfall_pulse_crunch / sizeof tb_g21_waterfall_pulse_crunch[0]},
     {"g25_electric_seed", 6u, tb_g25_electric_seed, sizeof tb_g25_electric_seed / sizeof tb_g25_electric_seed[0]},
     {"g25_electric_surge_voltage", 6u, tb_g25_electric_surge_voltage, sizeof tb_g25_electric_surge_voltage / sizeof tb_g25_electric_surge_voltage[0]},
+    {"g25_misty_hurricane", 6u, tb_g25_misty_hurricane, sizeof tb_g25_misty_hurricane / sizeof tb_g25_misty_hurricane[0]},
     {"g25_misty_terrain", 6u, tb_g25_misty_terrain, sizeof tb_g25_misty_terrain / sizeof tb_g25_misty_terrain[0]},
     {"g25_terrain_pulse_electric", 6u, tb_g25_terrain_pulse_electric, sizeof tb_g25_terrain_pulse_electric / sizeof tb_g25_terrain_pulse_electric[0]},
     {"g25_terrain_pulse_psychic_misty", 6u, tb_g25_terrain_pulse_psychic_misty, sizeof tb_g25_terrain_pulse_psychic_misty / sizeof tb_g25_terrain_pulse_psychic_misty[0]},
@@ -3388,7 +3397,7 @@ static const df_tb_battle tb_battles[] = {
     {"w8_sand_soak", 7u, tb_w8_sand_soak, sizeof tb_w8_sand_soak / sizeof tb_w8_sand_soak[0]},
 };
 
-/* 2404 stops: 139 of an ended battle; decided by the count 711,
- * the HP percentage 749, the total HP 754, a tie 51;
- * winners: side 0 1212, side 1 1141, tie 51 */
+/* 2410 stops: 139 of an ended battle; decided by the count 711,
+ * the HP percentage 753, the total HP 756, a tie 51;
+ * winners: side 0 1214, side 1 1145, tie 51 */
 #endif

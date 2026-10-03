@@ -614,13 +614,13 @@ class Library(unittest.TestCase):
         self.assertTrue({0, 3, 4} <= values)  # both new weathers are shown, and they end
 
     TERRAIN_BATTLES = ['g25_electric_surge_voltage', 'g25_electric_seed', 'g25_misty_terrain', 'g25_terrain_pulse_psychic_misty',
-                       'g25_terrain_pulse_electric', 'g25_weather_ball_refrigerate']
+                       'g25_terrain_pulse_electric', 'g25_weather_ball_refrigerate', 'g25_misty_hurricane']
 
     def test_the_terrain_rows_of_the_view_are_what_the_field_lines_say(self):
         """Decision 0018 section 6.1, terrain values Electric and Misty (step G25): a -fieldstart line that names a terrain sets
         it for 5 turns (the replaced terrain ends without a line), each |upkeep line with a terrain up is one turn gone, a
         -fieldend line ends it (Misty Terrain's has no "move: " in it). The rows of the C test (terrain_rows in
-        tests/test_pool_terrain.c: the terrain and the turns left after each step of the six battles, for both players)
+        tests/test_pool_terrain.c: the terrain and the turns left after each step of the seven battles, for both players)
         must be exactly what these lines give for the committed traces, so that the engine's view is checked against the
         protocol and not against itself."""
         with open(os.path.join(ROOT, 'tests', 'test_pool_terrain.c'), encoding='utf-8') as f:
