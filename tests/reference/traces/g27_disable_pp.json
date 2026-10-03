@@ -3855,7 +3855,7 @@
   },
   {
    "input": {
-    "p1": "move 1 1, move 1",
+    "p1": "move 2 2, move 1",
     "p2": "move 2 1, move 1"
    },
    "draws": [
@@ -3916,11 +3916,46 @@
      "value": 0
     },
     {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 37
+    },
+    {
      "site": "RANDOM_TARGET",
      "context": "action-speed",
      "lo": 0,
      "hi": 2,
      "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:randomNormal",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 4
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 6
     },
     {
      "site": "RANDOM_TARGET",
@@ -3941,68 +3976,37 @@
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 19
+     "value": 16
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 3
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "execute:randomNormal",
-     "lo": 0,
-     "hi": 2,
-     "value": 0
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
      "value": 14
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 10
     }
    ],
    "log": [
     "|move|p2a: Staraptor|Quick Attack|p1a: Gengar",
     "|-immune|p1a: Gengar",
-    "|move|p1a: Gengar|Shadow Ball|p2a: Staraptor",
-    "|-immune|p2a: Staraptor",
+    "|move|p1a: Gengar|Disable||[still]",
+    "|-fail|p1a: Gengar",
     "|-activate|p1b: Ceruledge|move: Struggle",
     "|move|p1b: Ceruledge|Struggle|p2b: Kingambit",
     "|split|p2",
-    "|-damage|p2b: Kingambit|171/207",
-    "|-damage|p2b: Kingambit|82/100",
+    "|-damage|p2b: Kingambit|172/207",
+    "|-damage|p2b: Kingambit|83/100",
     "|split|p1",
     "|-damage|p1b: Ceruledge|91/181|[from] recoil",
     "|-damage|p1b: Ceruledge|50/100g|[from] recoil",
     "|-activate|p2b: Kingambit|move: Struggle",
-    "|move|p2b: Kingambit|Struggle|p1a: Gengar",
+    "|move|p2b: Kingambit|Struggle|p1b: Ceruledge",
     "|split|p1",
-    "|-damage|p1a: Gengar|133/167",
-    "|-damage|p1a: Gengar|79/100",
+    "|-damage|p1b: Ceruledge|59/181",
+    "|-damage|p1b: Ceruledge|32/100",
     "|split|p2",
-    "|-damage|p2b: Kingambit|119/207|[from] recoil",
+    "|-damage|p2b: Kingambit|120/207|[from] recoil",
     "|-damage|p2b: Kingambit|57/100|[from] recoil",
-    "|split|p1",
-    "|-heal|p1a: Gengar|143/167|[from] item: Leftovers",
-    "|-heal|p1a: Gengar|85/100|[from] item: Leftovers",
     "|upkeep",
     "|turn|11"
    ],
@@ -4044,7 +4048,7 @@
         "set_species": "Gengar",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 143,
+        "hp": 167,
         "maxhp": 167,
         "item": "leftovers",
         "status": "",
@@ -4061,8 +4065,8 @@
          0
         ],
         "pp": [
-         15,
-         19,
+         16,
+         18,
          12,
          0
         ],
@@ -4074,7 +4078,7 @@
         "set_species": "Ceruledge",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 91,
+        "hp": 59,
         "maxhp": 181,
         "item": "grassyseed",
         "status": "",
@@ -4206,7 +4210,7 @@
         "set_species": "Kingambit",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 119,
+        "hp": 120,
         "maxhp": 207,
         "item": "chopleberry",
         "status": "",
@@ -4298,27 +4302,20 @@
      "context": "resolve",
      "lo": 0,
      "hi": 2,
-     "value": 1
+     "value": 0
     },
     {
      "site": "RANDOM_TARGET",
      "context": "action-speed",
      "lo": 0,
      "hi": 2,
-     "value": 0
+     "value": 1
     },
     {
      "site": "RANDOM_TARGET",
      "context": "resolve",
      "lo": 0,
      "hi": 2,
-     "value": 1
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
      "value": 0
     },
     {
@@ -4348,6 +4345,13 @@
      "lo": 0,
      "hi": 2,
      "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
     },
     {
      "site": "RANDOM_TARGET",
@@ -4368,14 +4372,42 @@
      "context": "execute:randomNormal",
      "lo": 0,
      "hi": 2,
-     "value": 1
+     "value": 0
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 3
+     "value": 21
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 4
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:randomNormal",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 22
     },
     {
      "site": "DAMAGE_ROLL",
@@ -4383,34 +4415,6 @@
      "lo": 0,
      "hi": 16,
      "value": 14
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "execute:randomNormal",
-     "lo": 0,
-     "hi": 2,
-     "value": 1
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 7
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 15
     }
    ],
    "log": [
@@ -4419,24 +4423,24 @@
     "|move|p1a: Gengar|Shadow Ball|p2a: Staraptor",
     "|-immune|p2a: Staraptor",
     "|-activate|p1b: Ceruledge|move: Struggle",
-    "|move|p1b: Ceruledge|Struggle|p2b: Kingambit",
+    "|move|p1b: Ceruledge|Struggle|p2a: Staraptor",
     "|split|p2",
-    "|-damage|p2b: Kingambit|103/207",
-    "|-damage|p2b: Kingambit|49/100",
+    "|-damage|p2a: Staraptor|165/192",
+    "|-damage|p2a: Staraptor|85/100",
     "|split|p1",
-    "|-damage|p1b: Ceruledge|46/181|[from] recoil",
-    "|-damage|p1b: Ceruledge|25/100|[from] recoil",
+    "|-damage|p1b: Ceruledge|14/181|[from] recoil",
+    "|-damage|p1b: Ceruledge|7/100|[from] recoil",
     "|-activate|p2b: Kingambit|move: Struggle",
-    "|move|p2b: Kingambit|Struggle|p1b: Ceruledge",
+    "|move|p2b: Kingambit|Struggle|p1a: Gengar",
     "|split|p1",
-    "|-damage|p1b: Ceruledge|14/181",
-    "|-damage|p1b: Ceruledge|7/100",
+    "|-damage|p1a: Gengar|135/167",
+    "|-damage|p1a: Gengar|80/100",
     "|split|p2",
-    "|-damage|p2b: Kingambit|51/207|[from] recoil",
-    "|-damage|p2b: Kingambit|24/100|[from] recoil",
+    "|-damage|p2b: Kingambit|68/207|[from] recoil",
+    "|-damage|p2b: Kingambit|32/100|[from] recoil",
     "|split|p1",
-    "|-heal|p1a: Gengar|153/167|[from] item: Leftovers",
-    "|-heal|p1a: Gengar|91/100|[from] item: Leftovers",
+    "|-heal|p1a: Gengar|145/167|[from] item: Leftovers",
+    "|-heal|p1a: Gengar|86/100|[from] item: Leftovers",
     "|upkeep",
     "|turn|12"
    ],
@@ -4478,7 +4482,7 @@
         "set_species": "Gengar",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 153,
+        "hp": 145,
         "maxhp": 167,
         "item": "leftovers",
         "status": "",
@@ -4495,8 +4499,8 @@
          0
         ],
         "pp": [
-         14,
-         19,
+         15,
+         18,
          12,
          0
         ],
@@ -4612,7 +4616,7 @@
         "set_species": "Staraptor",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 192,
+        "hp": 165,
         "maxhp": 192,
         "item": "sharpbeak",
         "status": "",
@@ -4640,7 +4644,7 @@
         "set_species": "Kingambit",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 51,
+        "hp": 68,
         "maxhp": 207,
         "item": "chopleberry",
         "status": "",

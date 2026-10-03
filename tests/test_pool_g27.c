@@ -169,10 +169,11 @@ static const struct {
     {"g27_disable_switch", 0u, {0u, 0u, 0u, 0u}},
     {"g27_disable_switch", 1u, {0u, 0u, 0u, 0u}},
     {"g27_disable_switch", 2u, {0u, 0u, 1u, 0u}},
-    {"g27_disable_switch", 3u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_switch", 3u, {0u, 0u, 1u, 0u}},
     {"g27_disable_switch", 4u, {0u, 0u, 0u, 0u}},
-    {"g27_disable_switch", 5u, {0u, 0u, 0u, 1u}},
-    {"g27_disable_switch", 6u, {0u, 0u, 0u, 1u}},
+    {"g27_disable_switch", 5u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_switch", 6u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_switch", 7u, {0u, 0u, 0u, 0u}},
 };
 
 static const char *const names[] = {"g27_cursed_body_a", "g27_disable_b", "g27_disable_heal_block", "g27_disable_lock", "g27_disable_pair_a", "g27_disable_pair_b", "g27_disable_pp", "g27_disable_switch"};

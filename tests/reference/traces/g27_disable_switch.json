@@ -745,7 +745,7 @@
   {
    "input": {
     "p1": "move 4, move 1",
-    "p2": "move 1 1, move 1 1"
+    "p2": "move 1 1, move 1 2"
    },
    "draws": [
     {
@@ -780,8 +780,8 @@
     "|-singleturn|p1b: Ceruledge|Protect",
     "|move|p2a: Staraptor|Quick Attack|p1a: Gengar",
     "|-activate|p1a: Gengar|move: Protect",
-    "|move|p2b: Kingambit|Iron Head|p1a: Gengar",
-    "|-activate|p1a: Gengar|move: Protect",
+    "|move|p2b: Kingambit|Iron Head|p1b: Ceruledge",
+    "|-activate|p1b: Ceruledge|move: Protect",
     "|upkeep",
     "|turn|2"
    ],
@@ -1079,7 +1079,7 @@
   {
    "input": {
     "p1": "move 2 1, move 1",
-    "p2": "move 1 1, move 1 1"
+    "p2": "move 1 1, move 1 2"
    },
    "draws": [
     {
@@ -1097,46 +1097,11 @@
      "value": 43
     },
     {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 66
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 6
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 7
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 47
-    },
-    {
-     "site": "CURSED_BODY",
-     "context": "DamagingHit",
-     "lo": 0,
-     "hi": 10,
-     "value": 4
-    },
-    {
      "site": "SPEED_TIE",
      "context": "field:Residual",
      "lo": 3,
      "hi": 5,
-     "value": 3,
+     "value": 4,
      "group": [
       "H:protect:p1b:end",
       "H:stall:p1b:end"
@@ -1151,13 +1116,8 @@
     "|-immune|p1a: Gengar",
     "|move|p1a: Gengar|Disable|p2a: Staraptor",
     "|-start|p2a: Staraptor|Disable|Quick Attack",
-    "|move|p2b: Kingambit|Iron Head|p1a: Gengar",
-    "|split|p1",
-    "|-damage|p1a: Gengar|43/167",
-    "|-damage|p1a: Gengar|25/100",
-    "|split|p1",
-    "|-heal|p1a: Gengar|53/167|[from] item: Leftovers",
-    "|-heal|p1a: Gengar|31/100|[from] item: Leftovers",
+    "|move|p2b: Kingambit|Iron Head|p1b: Ceruledge",
+    "|-activate|p1b: Ceruledge|move: Protect",
     "|upkeep",
     "|turn|3"
    ],
@@ -1199,7 +1159,7 @@
         "set_species": "Gengar",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 53,
+        "hp": 167,
         "maxhp": 167,
         "item": "leftovers",
         "status": "",
@@ -1454,8 +1414,8 @@
   },
   {
    "input": {
-    "p1": "move 4, move 1",
-    "p2": "switch 3, move 1 1"
+    "p1": "move 3 1, move 1",
+    "p2": "move 2 1, move 1 2"
    },
    "draws": [
     {
@@ -1463,14 +1423,416 @@
      "context": "StallMove",
      "lo": 0,
      "hi": 9,
+     "value": 2
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 49
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 11
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 7
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
      "value": 0
     },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 10
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 20
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 12
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 3
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 3
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 7
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 46
+    }
+   ],
+   "log": [
+    "|move|p1b: Ceruledge|Protect||[still]",
+    "|-fail|p1b: Ceruledge",
+    "|move|p1a: Gengar|Sludge Bomb|p2a: Staraptor",
+    "|split|p2",
+    "|-damage|p2a: Staraptor|90/192",
+    "|-damage|p2a: Staraptor|46/100",
+    "|-status|p2a: Staraptor|psn",
+    "|move|p2a: Staraptor|Brave Bird|p1a: Gengar",
+    "|split|p1",
+    "|-damage|p1a: Gengar|23/167",
+    "|-damage|p1a: Gengar|13/100",
+    "|split|p2",
+    "|-damage|p2a: Staraptor|42/192 psn|[from] Recoil",
+    "|-damage|p2a: Staraptor|21/100 psn|[from] Recoil",
+    "|move|p2b: Kingambit|Iron Head|p1b: Ceruledge",
+    "|-resisted|p1b: Ceruledge|1",
+    "|split|p1",
+    "|-damage|p1b: Ceruledge|140/181",
+    "|-damage|p1b: Ceruledge|77/100",
+    "|split|p1",
+    "|-heal|p1a: Gengar|33/167|[from] item: Leftovers",
+    "|-heal|p1a: Gengar|19/100|[from] item: Leftovers",
+    "|split|p2",
+    "|-damage|p2a: Staraptor|18/192 psn|[from] psn",
+    "|-damage|p2a: Staraptor|9/100 psn|[from] psn",
+    "|upkeep",
+    "|turn|4"
+   ],
+   "state": {
+    "turn": 4,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gengar",
+        "set_species": "Gengar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 33,
+        "maxhp": 167,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         19,
+         11,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 140,
+        "maxhp": 181,
+        "item": "grassyseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         5
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 193,
+        "maxhp": 193,
+        "item": "miracleseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 179,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        0,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 18,
+        "maxhp": 192,
+        "item": "sharpbeak",
+        "status": "psn",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         15,
+         8
+        ],
+        "volatiles": [
+         "disable"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         13,
+         8,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 193,
+        "maxhp": 193,
+        "item": "miracleseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 181,
+        "maxhp": 181,
+        "item": "grassyseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 4, move 1",
+    "p2": "switch 3, move 1 2"
+   },
+   "draws": [
     {
      "site": "SPEED_TIE",
      "context": "field:Residual",
      "lo": 6,
      "hi": 8,
-     "value": 7,
+     "value": 6,
      "group": [
       "H:protect:p1a:end",
       "H:stall:p1a:end"
@@ -1484,8 +1846,8 @@
      "hi": 10,
      "value": 9,
      "group": [
-      "H:protect:p1b:end",
-      "H:stall:p1b:end"
+      "H:stall:p1b:end",
+      "H:protect:p1b:end"
      ],
      "start": 8
     }
@@ -1501,19 +1863,22 @@
     "|-singleturn|p1a: Gengar|Protect",
     "|move|p1b: Ceruledge|Protect|p1b: Ceruledge",
     "|-singleturn|p1b: Ceruledge|Protect",
-    "|move|p2b: Kingambit|Iron Head|p1a: Gengar",
-    "|-activate|p1a: Gengar|move: Protect",
+    "|move|p2b: Kingambit|Iron Head|p1b: Ceruledge",
+    "|-activate|p1b: Ceruledge|move: Protect",
     "|split|p1",
-    "|-heal|p1a: Gengar|63/167|[from] Grassy Terrain",
-    "|-heal|p1a: Gengar|37/100|[from] Grassy Terrain",
+    "|-heal|p1a: Gengar|43/167|[from] Grassy Terrain",
+    "|-heal|p1a: Gengar|25/100|[from] Grassy Terrain",
     "|split|p1",
-    "|-heal|p1a: Gengar|73/167|[from] item: Leftovers",
-    "|-heal|p1a: Gengar|43/100|[from] item: Leftovers",
+    "|-heal|p1a: Gengar|53/167|[from] item: Leftovers",
+    "|-heal|p1a: Gengar|31/100|[from] item: Leftovers",
+    "|split|p1",
+    "|-heal|p1b: Ceruledge|151/181|[from] Grassy Terrain",
+    "|-heal|p1b: Ceruledge|83/100|[from] Grassy Terrain",
     "|upkeep",
-    "|turn|4"
+    "|turn|5"
    ],
    "state": {
-    "turn": 4,
+    "turn": 5,
     "ended": false,
     "winner": "",
     "weather": "",
@@ -1550,7 +1915,7 @@
         "set_species": "Gengar",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 73,
+        "hp": 53,
         "maxhp": 167,
         "item": "leftovers",
         "status": "",
@@ -1569,7 +1934,7 @@
         "pp": [
          16,
          19,
-         12,
+         11,
          6
         ],
         "volatiles": [
@@ -1582,7 +1947,7 @@
         "set_species": "Ceruledge",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 181,
+        "hp": 151,
         "maxhp": 181,
         "item": "",
         "status": "",
@@ -1599,7 +1964,7 @@
          0
         ],
         "pp": [
-         5
+         4
         ],
         "volatiles": [
          "stall"
@@ -1733,7 +2098,7 @@
          0
         ],
         "pp": [
-         13,
+         12,
          8,
          8
         ],
@@ -1745,10 +2110,10 @@
         "set_species": "Staraptor",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 192,
+        "hp": 18,
         "maxhp": 192,
         "item": "sharpbeak",
-        "status": "",
+        "status": "psn",
         "status_time": 0,
         "confusion": 0,
         "fainted": false,
@@ -1763,7 +2128,669 @@
         ],
         "pp": [
          18,
+         15,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 181,
+        "maxhp": 181,
+        "item": "grassyseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 3 1, move 1",
+    "p2": "switch 3, move 1 2"
+   },
+   "draws": [
+    {
+     "site": "STALL",
+     "context": "StallMove",
+     "lo": 0,
+     "hi": 3,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 61
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 4
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 1
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 23
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 1
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 21
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 6
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 25
+    }
+   ],
+   "log": [
+    "|split|p2",
+    "|switch|p2a: Staraptor|Staraptor, L50, F|18/192 psn",
+    "|switch|p2a: Staraptor|Staraptor, L50, F|9/100 psn",
+    "|-ability|p2a: Staraptor|Intimidate|boost",
+    "|-unboost|p1a: Gengar|atk|1",
+    "|-unboost|p1b: Ceruledge|atk|1",
+    "|move|p1b: Ceruledge|Protect||[still]",
+    "|-fail|p1b: Ceruledge",
+    "|move|p1a: Gengar|Sludge Bomb|p2a: Staraptor",
+    "|split|p2",
+    "|-damage|p2a: Staraptor|0 fnt",
+    "|-damage|p2a: Staraptor|0 fnt",
+    "|faint|p2a: Staraptor",
+    "|move|p2b: Kingambit|Iron Head|p1b: Ceruledge",
+    "|-resisted|p1b: Ceruledge|1",
+    "|split|p1",
+    "|-damage|p1b: Ceruledge|124/181",
+    "|-damage|p1b: Ceruledge|68/100",
+    "|split|p1",
+    "|-heal|p1a: Gengar|63/167|[from] Grassy Terrain",
+    "|-heal|p1a: Gengar|37/100|[from] Grassy Terrain",
+    "|split|p1",
+    "|-heal|p1a: Gengar|73/167|[from] item: Leftovers",
+    "|-heal|p1a: Gengar|43/100|[from] item: Leftovers",
+    "|split|p1",
+    "|-heal|p1b: Ceruledge|135/181|[from] Grassy Terrain",
+    "|-heal|p1b: Ceruledge|74/100|[from] Grassy Terrain",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 5,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "grassyterrain",
+    "terrain_turns": 3,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gengar",
+        "set_species": "Gengar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 73,
+        "maxhp": 167,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -2,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
          16,
+         19,
+         10,
+         6
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 135,
+        "maxhp": 181,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -2,
+         1,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         3
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 193,
+        "maxhp": 193,
+        "item": "miracleseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 179,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 192,
+        "item": "sharpbeak",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         15,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         8,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 193,
+        "maxhp": 193,
+        "item": "miracleseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 181,
+        "maxhp": 181,
+        "item": "grassyseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p2": "switch 3, pass"
+   },
+   "draws": [],
+   "log": [
+    "|split|p2",
+    "|switch|p2a: Rillaboom|Rillaboom, L50, M|193/193",
+    "|switch|p2a: Rillaboom|Rillaboom, L50, M|100/100",
+    "|turn|6"
+   ],
+   "state": {
+    "turn": 6,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "grassyterrain",
+    "terrain_turns": 3,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gengar",
+        "set_species": "Gengar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 73,
+        "maxhp": 167,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -2,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         19,
+         10,
+         6
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 135,
+        "maxhp": 181,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -2,
+         1,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         3
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 193,
+        "maxhp": 193,
+        "item": "miracleseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 179,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1
+       ],
+       [
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 193,
+        "maxhp": 193,
+        "item": "miracleseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         8,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 192,
+        "item": "sharpbeak",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         15,
          8
         ],
         "volatiles": [],
@@ -1804,66 +2831,63 @@
   {
    "input": {
     "p1": "move 4, move 1",
-    "p2": "switch 3, move 1 1"
+    "p2": "move 1 1, move 1 2"
    },
    "draws": [
-    {
-     "site": "STALL",
-     "context": "StallMove",
-     "lo": 0,
-     "hi": 3,
-     "value": 0
-    },
-    {
-     "site": "STALL",
-     "context": "StallMove",
-     "lo": 0,
-     "hi": 27,
-     "value": 3
-    },
     {
      "site": "SPEED_TIE",
      "context": "field:Residual",
      "lo": 6,
      "hi": 8,
-     "value": 6,
+     "value": 7,
      "group": [
       "H:protect:p1a:end",
       "H:stall:p1a:end"
      ],
      "start": 6
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 8,
+     "hi": 10,
+     "value": 8,
+     "group": [
+      "H:stall:p1b:end",
+      "H:protect:p1b:end"
+     ],
+     "start": 8
     }
    ],
    "log": [
-    "|split|p2",
-    "|switch|p2a: Staraptor|Staraptor, L50, F|192/192",
-    "|switch|p2a: Staraptor|Staraptor, L50, F|100/100",
-    "|-ability|p2a: Staraptor|Intimidate|boost",
-    "|-unboost|p1a: Gengar|atk|1",
-    "|-unboost|p1b: Ceruledge|atk|1",
     "|move|p1a: Gengar|Protect|p1a: Gengar",
     "|-singleturn|p1a: Gengar|Protect",
-    "|move|p1b: Ceruledge|Protect||[still]",
-    "|-fail|p1b: Ceruledge",
-    "|move|p2b: Kingambit|Iron Head|p1a: Gengar",
+    "|move|p1b: Ceruledge|Protect|p1b: Ceruledge",
+    "|-singleturn|p1b: Ceruledge|Protect",
+    "|move|p2a: Rillaboom|Fake Out|p1a: Gengar",
     "|-activate|p1a: Gengar|move: Protect",
+    "|move|p2b: Kingambit|Iron Head|p1b: Ceruledge",
+    "|-activate|p1b: Ceruledge|move: Protect",
     "|split|p1",
     "|-heal|p1a: Gengar|83/167|[from] Grassy Terrain",
     "|-heal|p1a: Gengar|49/100|[from] Grassy Terrain",
     "|split|p1",
     "|-heal|p1a: Gengar|93/167|[from] item: Leftovers",
     "|-heal|p1a: Gengar|55/100|[from] item: Leftovers",
+    "|split|p1",
+    "|-heal|p1b: Ceruledge|146/181|[from] Grassy Terrain",
+    "|-heal|p1b: Ceruledge|80/100|[from] Grassy Terrain",
     "|upkeep",
-    "|turn|5"
+    "|turn|7"
    ],
    "state": {
-    "turn": 5,
+    "turn": 7,
     "ended": false,
     "winner": "",
     "weather": "",
     "weather_turns": 0,
     "terrain": "grassyterrain",
-    "terrain_turns": 3,
+    "terrain_turns": 2,
     "trick_room": 0,
     "sides": [
      {
@@ -1913,7 +2937,7 @@
         "pp": [
          16,
          19,
-         12,
+         10,
          5
         ],
         "volatiles": [
@@ -1926,7 +2950,7 @@
         "set_species": "Ceruledge",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 181,
+        "hp": 146,
         "maxhp": 181,
         "item": "",
         "status": "",
@@ -1943,9 +2967,11 @@
          0
         ],
         "pp": [
-         4
+         2
         ],
-        "volatiles": [],
+        "volatiles": [
+         "stall"
+        ],
         "locked": null
        },
        {
@@ -2013,9 +3039,7 @@
       ],
       "enabled": [
        [
-        1,
-        1,
-        1
+        2
        ],
        [
         1,
@@ -2029,17 +3053,73 @@
       ],
       "pokemon": [
        {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 193,
+        "maxhp": 193,
+        "item": "miracleseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         8,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
         "species": "Staraptor",
         "set_species": "Staraptor",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 192,
+        "hp": 0,
         "maxhp": 192,
         "item": "sharpbeak",
         "status": "",
         "status_time": 0,
         "confusion": 0,
-        "fainted": false,
+        "fainted": true,
         "boosts": [
          0,
          0,
@@ -2051,709 +3131,8 @@
         ],
         "pp": [
          18,
-         16,
+         15,
          8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "chopleberry",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         8,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Rillaboom",
-        "set_species": "Rillaboom",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 193,
-        "maxhp": 193,
-        "item": "miracleseed",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Ceruledge",
-        "set_species": "Ceruledge",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 181,
-        "maxhp": 181,
-        "item": "grassyseed",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       }
-      ]
-     }
-    ]
-   }
-  },
-  {
-   "input": {
-    "p1": "move 4, move 1",
-    "p2": "move 1 1, move 1 1"
-   },
-   "draws": [
-    {
-     "site": "STALL",
-     "context": "StallMove",
-     "lo": 0,
-     "hi": 9,
-     "value": 4
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 13
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 22
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 10
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 61
-    },
-    {
-     "site": "CURSED_BODY",
-     "context": "DamagingHit",
-     "lo": 0,
-     "hi": 10,
-     "value": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 7,
-     "hi": 9,
-     "value": 7,
-     "group": [
-      "H:protect:p1b:end",
-      "H:stall:p1b:end"
-     ],
-     "start": 7
-    }
-   ],
-   "log": [
-    "|move|p1a: Gengar|Protect||[still]",
-    "|-fail|p1a: Gengar",
-    "|move|p1b: Ceruledge|Protect|p1b: Ceruledge",
-    "|-singleturn|p1b: Ceruledge|Protect",
-    "|move|p2a: Staraptor|Quick Attack|p1a: Gengar",
-    "|-immune|p1a: Gengar",
-    "|move|p2b: Kingambit|Iron Head|p1a: Gengar",
-    "|split|p1",
-    "|-damage|p1a: Gengar|0 fnt",
-    "|-damage|p1a: Gengar|0 fnt",
-    "|-start|p2b: Kingambit|Disable|Iron Head|[from] ability: Cursed Body|[of] p1a: Gengar",
-    "|faint|p1a: Gengar",
-    "|upkeep"
-   ],
-   "state": {
-    "turn": 5,
-    "ended": false,
-    "winner": "",
-    "weather": "",
-    "weather_turns": 0,
-    "terrain": "grassyterrain",
-    "terrain_turns": 2,
-    "trick_room": 0,
-    "sides": [
-     {
-      "request": "switch",
-      "conditions": [
-       0,
-       0,
-       0
-      ],
-      "enabled": [],
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Gengar",
-        "set_species": "Gengar",
-        "mega": 0,
-        "switch_flag": 1,
-        "hp": 0,
-        "maxhp": 167,
-        "item": "leftovers",
-        "status": "fnt",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         16,
-         19,
-         12,
-         4
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Ceruledge",
-        "set_species": "Ceruledge",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 181,
-        "maxhp": 181,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         -2,
-         1,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         3
-        ],
-        "volatiles": [
-         "stall"
-        ],
-        "locked": null
-       },
-       {
-        "species": "Rillaboom",
-        "set_species": "Rillaboom",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 193,
-        "maxhp": 193,
-        "item": "miracleseed",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Gholdengo",
-        "set_species": "Gholdengo",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 179,
-        "maxhp": 179,
-        "item": "lifeorb",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       }
-      ]
-     },
-     {
-      "request": "",
-      "conditions": [
-       0,
-       0,
-       0
-      ],
-      "enabled": [],
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Staraptor",
-        "set_species": "Staraptor",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 192,
-        "maxhp": 192,
-        "item": "sharpbeak",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         17,
-         16,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "chopleberry",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         11,
-         8,
-         8
-        ],
-        "volatiles": [
-         "disable"
-        ],
-        "locked": null
-       },
-       {
-        "species": "Rillaboom",
-        "set_species": "Rillaboom",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 193,
-        "maxhp": 193,
-        "item": "miracleseed",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Ceruledge",
-        "set_species": "Ceruledge",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 181,
-        "maxhp": 181,
-        "item": "grassyseed",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       }
-      ]
-     }
-    ]
-   }
-  },
-  {
-   "input": {
-    "p1": "switch 3, pass"
-   },
-   "draws": [],
-   "log": [
-    "|split|p1",
-    "|switch|p1a: Rillaboom|Rillaboom, L50, M|193/193",
-    "|switch|p1a: Rillaboom|Rillaboom, L50, M|100/100",
-    "|turn|6"
-   ],
-   "state": {
-    "turn": 6,
-    "ended": false,
-    "winner": "",
-    "weather": "",
-    "weather_turns": 0,
-    "terrain": "grassyterrain",
-    "terrain_turns": 2,
-    "trick_room": 0,
-    "sides": [
-     {
-      "request": "move",
-      "conditions": [
-       0,
-       0,
-       0
-      ],
-      "enabled": [
-       [
-        1
-       ],
-       [
-        1
-       ]
-      ],
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Rillaboom",
-        "set_species": "Rillaboom",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 193,
-        "maxhp": 193,
-        "item": "miracleseed",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Ceruledge",
-        "set_species": "Ceruledge",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 181,
-        "maxhp": 181,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         -2,
-         1,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         3
-        ],
-        "volatiles": [
-         "stall"
-        ],
-        "locked": null
-       },
-       {
-        "species": "Gengar",
-        "set_species": "Gengar",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 0,
-        "maxhp": 167,
-        "item": "leftovers",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         16,
-         19,
-         12,
-         4
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Gholdengo",
-        "set_species": "Gholdengo",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 179,
-        "maxhp": 179,
-        "item": "lifeorb",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       }
-      ]
-     },
-     {
-      "request": "move",
-      "conditions": [
-       0,
-       0,
-       0
-      ],
-      "enabled": [
-       [
-        1,
-        1,
-        1
-       ],
-       [
-        0,
-        1,
-        1
-       ]
-      ],
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Staraptor",
-        "set_species": "Staraptor",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 192,
-        "maxhp": 192,
-        "item": "sharpbeak",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         17,
-         16,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "chopleberry",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         11,
-         8,
-         8
-        ],
-        "volatiles": [
-         "disable"
-        ],
-        "locked": null
-       },
-       {
-        "species": "Rillaboom",
-        "set_species": "Rillaboom",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 193,
-        "maxhp": 193,
-        "item": "miracleseed",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12
         ],
         "volatiles": [],
         "locked": null
