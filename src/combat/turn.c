@@ -4684,6 +4684,7 @@ static duoforge_status dfi_run_mega(dfi_run *r, const dfi_queue_record *q)
     /* formeChange -> setSpecies -> setType(species.types, true): a type that Soak set ends (sim/pokemon.ts:1392,
      * 1427-1434), without a line. */
     b->tail.sides[q->side].soak_type[dfi_pos(b, flat)->occupant] = 0u;
+    b->tail.sides[q->side].type2[dfi_pos(b, flat)->occupant] = 0u; /* tail rev 4: the same for the second type (setType) */
     /* The Mega forme's ability replaces one that Trace copied (formeChange -> setAbility, sim/pokemon.ts:1487). */
     b->tail.sides[q->side].ability_now[dfi_pos(b, flat)->occupant] = 0u;
     /* setAbility ends the old ability first (sim/pokemon.ts:1923, singleEvent End), and of the abilities that the engine

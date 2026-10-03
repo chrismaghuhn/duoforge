@@ -150,6 +150,8 @@ static void copy_named_fields(duoforge_battle *x, const duoforge_battle *src)
         dt->stealth_rock = st->stealth_rock;
         dt->spikes = st->spikes;
         dt->sticky_web = st->sticky_web;
+        dt->quick_guard = st->quick_guard;
+        dt->side_pad = st->side_pad;
         for (unsigned p = 0; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
             const dfi_tail_pos *sp = &st->positions[p];
             dfi_tail_pos *dp = &dt->positions[p];
@@ -178,7 +180,11 @@ static void copy_named_fields(duoforge_battle *x, const duoforge_battle *src)
             dp->charge = sp->charge;
             dp->glaive_rush = sp->glaive_rush;
             dp->protect_kind = sp->protect_kind;
-            dp->pad = sp->pad;
+            dp->move_result = sp->move_result;
+            dp->single_turn = sp->single_turn;
+            dp->hits_taken = sp->hits_taken;
+            dp->ability_state = sp->ability_state;
+            dp->lock_turns = sp->lock_turns;
         }
         for (unsigned m = 0; m < DUOFORGE_MAX_ROSTER; ++m) {
             dt->ability_now[m] = st->ability_now[m];
@@ -186,6 +192,8 @@ static void copy_named_fields(duoforge_battle *x, const duoforge_battle *src)
             dt->soak_type[m] = st->soak_type[m];
             dt->item_now[m] = st->item_now[m];
             dt->toxic_stage[m] = st->toxic_stage[m];
+            dt->type2[m] = st->type2[m];
+            dt->member_flags[m] = st->member_flags[m];
         }
     }
     x->tail.gravity_turns = src->tail.gravity_turns;
