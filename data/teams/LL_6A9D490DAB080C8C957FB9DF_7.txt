@@ -1,0 +1,53 @@
+Rillaboom (M) @ Sitrus Berry
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Fake Out
+- Wood Hammer
+- Grassy Glide
+- High Horsepower
+
+Arcanine-Hisui (M) @ Focus Sash
+Ability: Rock Head
+Level: 50
+Jolly Nature
+- Flare Blitz
+- Head Smash
+- Extreme Speed
+- Protect
+
+Kingambit (M) @ Life Orb
+Ability: Defiant
+Level: 50
+Adamant Nature
+- Kowtow Cleave
+- Iron Head
+- Sucker Punch
+- Protect
+
+Sylveon (M) @ Fairy Feather
+Ability: Pixilate
+Level: 50
+Modest Nature
+- Hyper Beam
+- Hyper Voice
+- Quick Attack
+- Detect
+
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Naive Nature
+- Hyper Voice
+- Tailwind
+- Double-Edge
+- Protect
+
+Sneasler (M) @ Grassy Seed
+Ability: Unburden
+Level: 50
+Adamant Nature
+- Fake Out
+- Close Combat
+- Dire Claw
+- Protect

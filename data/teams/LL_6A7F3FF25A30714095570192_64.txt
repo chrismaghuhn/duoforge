@@ -1,0 +1,53 @@
+Floette-Eternal (F) @ Floettite
+Ability: Flower Veil
+Level: 50
+Modest Nature
+- Protect
+- Moonblast
+- Dazzling Gleam
+- Calm Mind
+
+Incineroar (M) @ Rocky Helmet
+Ability: Intimidate
+Level: 50
+Careful Nature
+- Flare Blitz
+- Throat Chop
+- Parting Shot
+- Fake Out
+
+Rillaboom (M) @ Sitrus Berry
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Wood Hammer
+- Grassy Glide
+- High Horsepower
+- Fake Out
+
+Sneasler (M) @ Grassy Seed
+Ability: Unburden
+Level: 50
+Adamant Nature
+- Protect
+- Close Combat
+- Dire Claw
+- Rock Slide
+
+Gholdengo @ Life Orb
+Ability: Good as Gold
+Level: 50
+Timid Nature
+- Protect
+- Shadow Ball
+- Make It Rain
+- Nasty Plot
+
+Raichu (M) @ Raichunite Y
+Ability: Lightning Rod
+Level: 50
+Timid Nature
+- Protect
+- Zap Cannon
+- Focus Blast
+- Encore

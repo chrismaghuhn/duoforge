@@ -39,6 +39,14 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 - **Origin and pinned commit:** `third_party/pcg-c-basic/PROVENANCE.md`.
 - **Known-answer vectors:** `tests/data/pcg32_kat_vectors.h` was generated against the pinned upstream.
 
+## Team data (`data/teams/`)
+
+The team registry holds Pokémon Champions teams that players published. The sets are the work of their players; DuoForge normalises their form (the genders and the level that a paste leaves out, see `data/teams/README.md`) and keeps every team's source link, tournament and placing, where known, in `data/teams/index.json` (`source` and `notes`). They are research data and are not under the licence of this repository. Anyone who wants a team taken out can ask the repository owner.
+
+- **VGCPastes Repository** ([@VGCPastes](https://twitter.com/VGCPastes), the community-run repository of VGC teams and Pokepastes): the teams with an id `PP_` are its pastes, each linked to its pokepast.es paste (the existing 57 teams of the Reg M-C survey of 2026-10-02 among them).
+- **Limitless** ([online tournament platform](https://play.limitlesstcg.com), [API](https://docs.limitlesstcg.com/developer.html)): the teams with an id `LL_` are the team lists of its online tournaments (standings and open team sheets), read through its public API, which needs no key. Its [Terms of Service](https://play.limitlesstcg.com/tos) were read before: they do not forbid the use.
+- **MunchStats** ([munchstats.com/teams](https://munchstats.com/teams)): the aggregator of the VGCPastes Repository and of the Limitless results through which these teams were found. Its robots.txt (a crawl delay of 10 seconds) was kept.
+
 ## Pokémon
 
 Pokémon and Pokémon character names are trademarks of Nintendo, Creatures Inc. and GAME FREAK inc. DuoForge is an independent research project and is not affiliated with or endorsed by them or by Pokémon Showdown.

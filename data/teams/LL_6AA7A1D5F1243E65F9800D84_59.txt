@@ -1,0 +1,53 @@
+Indeedee-F (F) @ Colbur Berry
+Ability: Psychic Surge
+Level: 50
+Calm Nature
+- Psychic
+- Follow Me
+- Helping Hand
+- Protect
+
+Gardevoir (M) @ Gardevoirite
+Ability: Trace
+Level: 50
+Modest Nature
+- Expanding Force
+- Hyper Voice
+- Calm Mind
+- Protect
+
+Incineroar (M) @ Sitrus Berry
+Ability: Intimidate
+Level: 50
+Impish Nature
+- Flare Blitz
+- Snarl
+- Parting Shot
+- Fake Out
+
+Gholdengo @ Life Orb
+Ability: Good as Gold
+Level: 50
+Timid Nature
+- Make It Rain
+- Shadow Ball
+- Nasty Plot
+- Protect
+
+Sneasler (M) @ Psychic Seed
+Ability: Unburden
+Level: 50
+Adamant Nature
+- Close Combat
+- Dire Claw
+- Throat Chop
+- Protect
+
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Timid Nature
+- Draco Meteor
+- Hyper Voice
+- Tailwind
+- Protect

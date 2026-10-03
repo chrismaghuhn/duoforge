@@ -1,0 +1,53 @@
+Staraptor (M) @ Staraptite
+Ability: Intimidate
+Level: 50
+Jolly Nature
+- Close Combat
+- Brave Bird
+- Tailwind
+- Protect
+
+Raichu (M) @ Raichunite Y
+Ability: Lightning Rod
+Level: 50
+Timid Nature
+- Zap Cannon
+- Focus Blast
+- Fake Out
+- Protect
+
+Gholdengo @ Life Orb
+Ability: Good as Gold
+Level: 50
+Modest Nature
+- Make It Rain
+- Shadow Ball
+- Nasty Plot
+- Protect
+
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Wood Hammer
+- U-turn
+- Grassy Glide
+- Fake Out
+
+Arcanine-Hisui (M) @ Focus Sash
+Ability: Rock Head
+Level: 50
+Jolly Nature
+- Head Smash
+- Flare Blitz
+- Extreme Speed
+- Protect
+
+Milotic (M) @ Sitrus Berry
+Ability: Competitive
+Level: 50
+Modest Nature
+- Scald
+- Ice Beam
+- Icy Wind
+- Protect

@@ -1,0 +1,53 @@
+Indeedee-F (F) @ Colbur Berry
+Ability: Psychic Surge
+Level: 50
+Bold Nature
+- Psychic
+- Follow Me
+- Trick Room
+- Helping Hand
+
+Armarouge (M) @ Focus Sash
+Ability: Flash Fire
+Level: 50
+Timid Nature
+- Heat Wave
+- Expanding Force
+- Wide Guard
+- Protect
+
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Timid Nature
+- Draco Meteor
+- Hyper Voice
+- Tailwind
+- Protect
+
+Sneasler (M) @ Psychic Seed
+Ability: Unburden
+Level: 50
+Adamant Nature
+- Close Combat
+- Dire Claw
+- Rock Slide
+- Protect
+
+Kingambit (M) @ Life Orb
+Ability: Defiant
+Level: 50
+Adamant Nature
+- Kowtow Cleave
+- Sucker Punch
+- Low Kick
+- Protect
+
+Basculegion (M) @ Choice Scarf
+Ability: Adaptability
+Level: 50
+Jolly Nature
+- Wave Crash
+- Aqua Jet
+- Flip Turn
+- Last Respects

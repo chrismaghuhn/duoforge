@@ -1068,7 +1068,8 @@ class ItemAbilityFeatures(unittest.TestCase):
     def test_the_rows_that_a_step_implements_by_id_are_listed(self):
         self.assertEqual(gen_closure.ENGINE_ROWS, {'items': ['focussash', 'floettite', 'psychicseed'],
                                                    'abilities': ['rockhead', 'flowerveil', 'fairyaura', 'roughskin',
-                                                                 'poisontouch', 'thermalexchange', 'stickyhold', 'trace']})
+                                                                 'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
+                                                                 'levitate']})
 
 
 class Bounds(unittest.TestCase):

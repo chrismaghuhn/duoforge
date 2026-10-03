@@ -1,0 +1,53 @@
+Golisopod (M) @ Golisopite
+Ability: Emergency Exit
+Level: 50
+Brave Nature
+- Leech Life
+- Iron Head
+- Swords Dance
+- Protect
+
+Kingambit (M) @ Focus Sash
+Ability: Defiant
+Level: 50
+Adamant Nature
+- Kowtow Cleave
+- Sucker Punch
+- Iron Head
+- Low Kick
+
+Pelipper (M) @ Life Orb
+Ability: Drizzle
+Level: 50
+Modest Nature
+- Muddy Water
+- Hurricane
+- Protect
+- Wide Guard
+
+Sneasler (M) @ White Herb
+Ability: Unburden
+Level: 50
+Adamant Nature
+- Close Combat
+- Dire Claw
+- Coaching
+- Fake Out
+
+Farigiraf (M) @ Sitrus Berry
+Ability: Armor Tail
+Level: 50
+Bold Nature
+- Expanding Force
+- Nasty Plot
+- Helping Hand
+- Trick Room
+
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Naive Nature
+- Hyper Voice
+- Double-Edge
+- Tailwind
+- Protect

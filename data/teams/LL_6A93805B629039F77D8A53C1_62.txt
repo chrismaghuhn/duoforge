@@ -1,0 +1,53 @@
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Modest Nature
+- Protect
+- Draco Meteor
+- Tailwind
+- Hyper Voice
+
+Sneasler (M) @ Grassy Seed
+Ability: Unburden
+Level: 50
+Adamant Nature
+- Dire Claw
+- Close Combat
+- Swords Dance
+- Protect
+
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Fake Out
+- Grassy Glide
+- U-turn
+- Wood Hammer
+
+Gholdengo @ Life Orb
+Ability: Good as Gold
+Level: 50
+Modest Nature
+- Protect
+- Nasty Plot
+- Shadow Ball
+- Make It Rain
+
+Floette-Eternal (F) @ Floettite
+Ability: Flower Veil
+Level: 50
+Modest Nature
+- Protect
+- Dazzling Gleam
+- Moonblast
+- Calm Mind
+
+Arcanine-Hisui (M) @ Focus Sash
+Ability: Rock Head
+Level: 50
+Jolly Nature
+- Protect
+- Flare Blitz
+- Extreme Speed
+- Rock Slide

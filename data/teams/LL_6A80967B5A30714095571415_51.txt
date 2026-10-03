@@ -1,0 +1,53 @@
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Grassy Glide
+- Fake Out
+- Wood Hammer
+- U-turn
+
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Timid Nature
+- Hyper Voice
+- Protect
+- Tailwind
+- Draco Meteor
+
+Arcanine-Hisui (M) @ Focus Sash
+Ability: Rock Head
+Level: 50
+Jolly Nature
+- Head Smash
+- Flare Blitz
+- Protect
+- Extreme Speed
+
+Sneasler (M) @ White Herb
+Ability: Unburden
+Level: 50
+Jolly Nature
+- Fake Out
+- Close Combat
+- Dire Claw
+- Protect
+
+Kingambit (M) @ Life Orb
+Ability: Defiant
+Level: 50
+Adamant Nature
+- Sucker Punch
+- Swords Dance
+- Kowtow Cleave
+- Protect
+
+Milotic (M) @ Leftovers
+Ability: Competitive
+Level: 50
+Modest Nature
+- Scald
+- Protect
+- Ice Beam
+- Icy Wind
