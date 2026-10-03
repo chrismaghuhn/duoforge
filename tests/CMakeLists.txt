@@ -144,6 +144,12 @@ duoforge_add_test(NAME duoforge.data.pool_tables SOURCES test_pool_tables.c WHIT
 duoforge_add_test(NAME duoforge.state.pool_setup SOURCES test_pool_setup.c WHITEBOX TIMEOUT 60)
 # The data query API (duoforge_data_*): names and legality per kind, differential against the setup.
 duoforge_add_test(NAME duoforge.data.api SOURCES test_data_api.c WHITEBOX TIMEOUT 120)
+# Decision 0020: the static read API (forme, move, item, ability, nature, type effect) against the generated tables.
+duoforge_add_test(NAME duoforge.data.static SOURCES test_data_static.c WHITEBOX TIMEOUT 120)
+# The static columns have no engine reader (decision 0020 item 5): only the tables and the data query API name them.
+add_test(NAME duoforge.data.static_unread
+    COMMAND "${CMAKE_COMMAND}" "-DSRC_DIR=${PROJECT_SOURCE_DIR}/src" -P "${PROJECT_SOURCE_DIR}/cmake/checks/static_columns_unread.cmake")
+set_tests_properties(duoforge.data.static_unread PROPERTIES TIMEOUT 30)
 # The POOL state tail (decision 0015 section 7): schema "v3 + pool tail rev 1", present under the POOL kinds only.
 duoforge_add_test(NAME duoforge.state.pool_tail SOURCES test_pool_tail.c WHITEBOX TIMEOUT 120)
 # Step G8: Throat Chop and Psychic Noise's Heal Block in the tail, the request and the POOL view extension.
@@ -183,8 +189,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=ecefd9905a0ea9c868ecd6be9ed80f676ca7d2cd79dfaaac3be0080900acb2b8"
-        "pool_tables.c=e5e67716ecbbe0586a39458337a3793a50ec98d5744233ae1aea97474215fb1f")
+        "pool_tables.h=52d4fdd00379f662e76bc5614a1fa25695668f103737dd03d26769dc21934316"
+        "pool_tables.c=9cf2f23f2c650efa882c0858327091860e2d9b307cb5f3b117c8a1772a75b99b")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -580,7 +586,7 @@ endif()
 
 # The Python package (M7, decision 0013), run with DUOFORGE_PYTHON; without
 # an interpreter each test reports skipped instead of passing silently.
-foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client replay_unit)
+foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client replay_unit data)
     if(DUOFORGE_PYTHON)
         add_test(NAME duoforge.python.${_py}
             COMMAND "${DUOFORGE_PYTHON}" -m unittest -v python.tests.test_${_py}
