@@ -349,6 +349,34 @@ function checkWeather(dex, source) {
     expect('Weather Ball without weather', [none.type, none.basePower], ['Normal', 50]);
 }
 
+// Step G28, Expert Belt, Acrobatics, Blizzard, Shell Smash, Ancient Power and Feint: what the engine reads about them
+// (src/combat/turn.c), called on the pinned handlers and read from the pinned data.
+function checkG28(dex) {
+    const belt = dex.items.get('expertbelt');
+    for (const typeMod of [-2, -1, 0, 1, 2]) {
+        expect('Expert Belt at a type modifier of ' + typeMod,
+            call(belt.onModifyDamage, battle(belt), [100, {}, {getMoveHitData: () => ({typeMod})}, moveOf('Fire')]),
+            typeMod > 0 ? {chain: [4915, 4096]} : undefined);
+    }
+    const acrobatics = dex.moves.get('acrobatics');
+    expect('Acrobatics without an item', call(acrobatics.basePowerCallback, battle(acrobatics), [{item: ''}, {}, {basePower: 55}]), 110);
+    expect('Acrobatics with an item', call(acrobatics.basePowerCallback, battle(acrobatics), [{item: 'leftovers'}, {}, {basePower: 55}]), 55);
+    const blizzard = dex.moves.get('blizzard');
+    for (const [weather, never] of [['', false], ['sandstorm', false], ['raindance', false], ['sunnyday', false], ['snowscape', true]]) {
+        const move = {accuracy: 70};
+        call(blizzard.onModifyMove, {field: {isWeather: (list) => list.includes(weather)}}, [move]);
+        expect('Blizzard in ' + (weather || 'no weather'), move.accuracy, never ? true : 70);
+    }
+    const smash = dex.moves.get('shellsmash');
+    expect('the boosts of Shell Smash, in the order of the entry', Object.entries(smash.boosts),
+        [['def', -1], ['spd', -1], ['atk', 2], ['spa', 2], ['spe', 2]]);
+    const ancient = dex.moves.get('ancientpower');
+    expect('the secondary of Ancient Power', [ancient.secondary.chance, ancient.secondary.self],
+        [10, {boosts: {atk: 1, def: 1, spa: 1, spd: 1, spe: 1}}]);
+    const feint = dex.moves.get('feint');
+    expect('Feint', [feint.breaksProtect, feint.priority, feint.basePower, feint.flags.protect], [true, 2, 30, undefined]);
+}
+
 // ----------------------------------------------------------------- the check
 function checkItems(dex, rows, unmodeled) {
     const counts = {};
@@ -884,12 +912,12 @@ function checkFormes(dex, validator, rows, moves, abilities) {
 // The UNMODELED markers of gen_closure.py --pool, re-derived from the pinned data in this file's own words: the
 // special column of a move, the handler column of an item and of an ability, and the lists of unmodelled features.
 // implemented in the turn code by id (G4: Focus Sash, Rock Head; G12: Floettite, Flower Veil, Fairy Aura)
-const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed'],
+const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'expertbelt'],
     abilities: ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
         'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll', 'innerfocus', 'liquidvoice',
         'flamebody', 'clearbody', 'hospitality', 'overcoat']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
-    'randomNormal']);
+    'randomNormal', 'allAdjacent']);
 // The fields of a move that the tables model (gen_closure.py DATA_KEYS and IGNORED_KEYS), nothing else.
 const MOVE_KEYS = new Set(['num', 'accuracy', 'basePower', 'category', 'name', 'pp', 'priority', 'flags', 'target', 'type',
     'critRatio', 'secondary', 'self', 'boosts', 'recoil', 'drain', 'status', 'volatileStatus', 'sideCondition',
@@ -955,6 +983,13 @@ function moveIsModelled(raw, id) {
             }
         } else if (effects[0] === 'boosts') {
             if (!isBoostBlock(sec.boosts)) {
+                return false;
+            }
+            vectors += 1;
+        } else if (effects[0] === 'self') {
+            // Step G28: a secondary whose own effect is a stat change of the user (Ancient Power).
+            if (sec.self === null || typeof sec.self !== 'object' || Object.keys(sec.self).length !== 1 ||
+                !isBoostBlock(sec.self.boosts)) {
                 return false;
             }
             vectors += 1;
@@ -1226,6 +1261,7 @@ function main() {
     const items = checkItems(dex, itemRows, unmodeledItems);
     checkFocusSash(dex, root);
     checkWeather(dex, source);
+    checkG28(dex);
     checkG10Moves(dex);
     checkEncore(dex, repo);
     checkRecharge(dex);

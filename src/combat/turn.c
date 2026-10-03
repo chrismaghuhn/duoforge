@@ -503,6 +503,32 @@ static uint32_t dfi_effective_target_class(const struct duoforge_battle *b, cons
     return md->target_class;
 }
 
+/* Feint's breaksProtect (hitStepBreakProtect, sim/battle-actions.ts:755-777, the step after the accuracy check, for every target
+ * that is still hit): the target's Protect volatile and the Wide Guard of its side are removed (Quick Guard, Crafty Shield,
+ * Mat Block and the other protections are not modelled: UNMODELED rows), and if any was there the line is
+ * `-activate|target|move: Feint` and the target's stall counter is deleted, so that its next Protect succeeds again.
+ * (Feint has no protect flag, so Protect never stops it: only the breaking is its effect.) */
+static void dfi_break_protect(dfi_run *r, uint32_t flat, uint32_t move_id)
+{
+    struct duoforge_battle *b = r->b;
+    dfi_active_slot *pos = dfi_pos(b, flat);
+    bool broke = false;
+    if (((uint32_t)pos->flags & DFI_VOL_PROTECT) != 0u) {
+        pos->flags = (uint8_t)((uint32_t)pos->flags & ~(uint32_t)DFI_VOL_PROTECT); /* wide-operands-reviewed */
+        broke = true;
+    }
+    if (b->tail.sides[flat / 2u].wide_guard != 0u) {
+        b->tail.sides[flat / 2u].wide_guard = 0u;
+        broke = true;
+    }
+    if (broke) {
+        const duoforge_event e = dfi_ev(DUOFORGE_EVENT_ACTIVATE, flat, DUOFORGE_CAUSE_MOVE, move_id, DUOFORGE_NO_POSITION);
+        dfi_emit(r, &e);
+        pos->stall_level = 0u;
+        pos->stall_turns = 0u;
+    }
+}
+
 /* The sort key of an action (getActionSpeed): the order of its kind, the
  * move's priority (switches have none), and the action speed of the
  * Pokemon in the slot: the one leaving for a switch, the fainted one for a
@@ -710,11 +736,12 @@ typedef struct dfi_boost_effect {
     uint32_t cause; /* DUOFORGE_CAUSE_MOVE, _ITEM or _ABILITY */
     uint32_t id2;   /* 1 + the item or ability id; 0 for a move */
     uint32_t mode;  /* DFI_BOOST_PRIMARY, _SECONDARY or _SELF */
+    bool negatives_first; /* the stats that fall are changed before the ones that rise (Shell Smash, step G28) */
 } dfi_boost_effect;
 
 static dfi_boost_effect dfi_effect(uint32_t cause, uint32_t id2, uint32_t mode)
 {
-    const dfi_boost_effect e = {cause, id2, mode};
+    const dfi_boost_effect e = {cause, id2, mode, false};
     return e;
 }
 
@@ -800,7 +827,16 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
         }
     }
     bool announced = effect.mode == DFI_BOOST_SECONDARY;
-    for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
+    /* The stats of a boost are changed in the order of the move's table in the data (Battle.boost loops over the keys of
+     * the object): the stat order, except Shell Smash, whose pinned entry lists Defense and Special Defense first (data/moves.ts
+     * 16255-16275); `negatives_first` is that order, two passes by the sign that the entry gives (Contrary reverses the
+     * change, not the order). */
+    for (uint32_t k = 0u; k < 2u * DFI_STAT_STAGE_COUNT; ++k) {
+        const uint32_t i = k % DFI_STAT_STAGE_COUNT;
+        const uint32_t pass = k / DFI_STAT_STAGE_COUNT;
+        if (effect.negatives_first ? ((boosts[i] < DFI_BIAS6) != (pass == 0u)) : pass != 0u) {
+            continue;
+        }
         if (boosts[i] == DFI_BIAS6 || veil[i] || clear[i]) {
             continue; /* not part of this boost, or blocked */
         }
@@ -916,6 +952,23 @@ static duoforge_status dfi_move_targets(dfi_run *r, uint32_t user, uint32_t cls,
         /* getRandomTarget returns the user for self, side and field moves. */
         targets[0] = user;
         *count = 1u;
+        return DUOFORGE_OK;
+    }
+    if (cls == DFI_TARGET_CLASS_ALL_ADJACENT) {
+        /* allAdjacent (step G28, Earthquake): getMoveTargets takes the adjacent allies first, then the adjacent foes
+         * (sim/pokemon.ts:809-817), so the ally that stands is hit before the foes and each target answers for itself. */
+        const uint32_t ally = side * 2u + (1u - user % 2u);
+        if (dfi_alive(r->b, ally)) {
+            targets[*count] = ally;
+            *count += 1u;
+        }
+        for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
+            const uint32_t flat = (1u - side) * 2u + slot;
+            if (dfi_alive(r->b, flat)) {
+                targets[*count] = flat;
+                *count += 1u;
+            }
+        }
         return DUOFORGE_OK;
     }
     if (cls == DUOFORGE_TARGET_CLASS_ALL_ADJACENT_FOES) {
@@ -1041,6 +1094,12 @@ _Static_assert(DFI_CHAIN(DFI_CHAIN(5324u, 2048u), 2732u) == DFI_CHAIN(DFI_CHAIN(
                "ModifyDamage modifiers must chain in any order");
 _Static_assert(DFI_CHAIN(DFI_CHAIN(5324u, 2048u), 2732u) == DFI_CHAIN(DFI_CHAIN(2048u, 2732u), 5324u),
                "ModifyDamage modifiers must chain in any order");
+/* Expert Belt (step G28, 4915 for a super effective hit) takes the place of the attacker's Life Orb in the chain (one item
+ * each): the same three modifiers with 4915 chain to the same value in every order. */
+_Static_assert(DFI_CHAIN(DFI_CHAIN(4915u, 2048u), 2732u) == DFI_CHAIN(DFI_CHAIN(4915u, 2732u), 2048u),
+               "ModifyDamage modifiers must chain in any order");
+_Static_assert(DFI_CHAIN(DFI_CHAIN(4915u, 2048u), 2732u) == DFI_CHAIN(DFI_CHAIN(2048u, 2732u), 4915u),
+               "ModifyDamage modifiers must chain in any order");
 
 /* getDamage and the Champions modifyDamage (sim/battle-actions.ts:1585-1720,
  * data/mods/champions/scripts.ts:196-312) for a turn-core move: CRIT and
@@ -1106,6 +1165,12 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     uint32_t power = md->base_power;
     if (md->special == DFI_SPECIAL_WEATHER_BALL && r->b->weather != DFI_WEATHER_NONE) {
         power *= 2u;
+    } else if (md->special == DFI_SPECIAL_ACROBATICS) {
+        /* Acrobatics' basePowerCallback (step G28, data/moves.ts:117-141): doubled while the user holds no item (the item it
+         * holds now: one that was eaten, knocked off or used up is gone). */
+        if (dfi_item_code(r->b, a) == 0u) {
+            power *= 2u;
+        }
     } else if (dfi_move_power_by_weight(md)) {
         power = dfi_weight_power(dfi_forme_of(d)->weight_hg);
     } else if (md->special == DFI_SPECIAL_LAST_RESPECTS) {
@@ -1145,6 +1210,12 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     }
     if (move_type == DFI_TYPE_GRASS && r->b->terrain == DFI_TERRAIN_GRASSY && dfi_grounded(r->b, a)) {
         ok = ok && dfi_chain_modify(bp_chain, 5325u, &bp_chain);
+    }
+    /* Grassy Terrain's other half (step G28, data/moves.ts:7694-7698): Earthquake (and Bulldoze and Magnitude, which are not
+     * marked) at a grounded target is chainModify(0.5), the first branch of the same handler (priority 6); a Ground move is
+     * not a Grass move, so the two never both apply. */
+    if (md == &dfi_pool_moves[DFI_MOVE_EARTHQUAKE] && r->b->terrain == DFI_TERRAIN_GRASSY && dfi_grounded(r->b, d)) {
+        ok = ok && dfi_chain_modify(bp_chain, 2048u, &bp_chain);
     }
     /* Psychic Terrain (Team C): 5325/4096 for a grounded user's Psychic move
      * (onBasePowerPriority 6, like Grassy Terrain's, which cannot be up at
@@ -1262,6 +1333,12 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     uint32_t mods = 0u; /* the ModifyDamage modifiers in the chain */
     if (dfi_holds(r->b, a, DFI_ITEM_LIFEORB)) {
         ok = dfi_chain_modify(chain, 5324u, &chain);
+        mods += 1u;
+    }
+    /* Expert Belt's onModifyDamage (step G28, data/items.ts:1901-1914): 4915/4096 when the hit is super effective
+     * (typeMod > 0: the combined type effectiveness above the neutral one). */
+    if (dfi_holds(r->b, a, DFI_ITEM_EXPERTBELT) && mod > DFI_BIAS6) {
+        ok = ok && dfi_chain_modify(chain, 4915u, &chain);
         mods += 1u;
     }
     /* A resist berry (the RESIST_BERRY family: Chople Berry and the sixteen
@@ -2755,7 +2832,8 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     /* runMove's target, which AfterMove gets: getTarget's result, before
      * any redirection; a spread move's is a random foe that only labels
      * its line, which the engine does not draw. */
-    r->move_target = md->target_class == DUOFORGE_TARGET_CLASS_ALL_ADJACENT_FOES ? DFI_MOVE_TARGET_SPREAD
+    r->move_target = md->target_class == DUOFORGE_TARGET_CLASS_ALL_ADJACENT_FOES || md->target_class == DFI_TARGET_CLASS_ALL_ADJACENT
+                         ? DFI_MOVE_TARGET_SPREAD
                      : count != 0u                                              ? targets[0]
                                                                                 : DFI_MOVE_TARGET_NONE;
     /* BeforeMove: a Pokemon that cannot move uses no PP and shows nothing;
@@ -3093,7 +3171,9 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         if (md->boost_role != DFI_BOOST_ROLE_PRIMARY_SELF || md->target_class != DUOFORGE_TARGET_CLASS_SELF) {
             return DUOFORGE_E_UNSUPPORTED;
         }
-        if (dfi_boost(r, user, md->boosts, DFI_POSITIONS, dfi_effect(DUOFORGE_CAUSE_MOVE, 0u, DFI_BOOST_PRIMARY))) {
+        dfi_boost_effect own = dfi_effect(DUOFORGE_CAUSE_MOVE, 0u, DFI_BOOST_PRIMARY);
+        own.negatives_first = md->special == DFI_SPECIAL_SHELL_SMASH;
+        if (dfi_boost(r, user, md->boosts, DFI_POSITIONS, own)) {
             return dfi_status_hit_end(r);
         }
         return DUOFORGE_OK; /* nothing changed: the hit loop stops */
@@ -3105,8 +3185,9 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         md->special != DFI_SPECIAL_FIRST_IMPRESSION && md->special != DFI_SPECIAL_LOW_KICK &&
         md->special != DFI_SPECIAL_SOAK && md->special != DFI_SPECIAL_ENCORE &&
         md->special != DFI_SPECIAL_KNOCK_OFF && md->special != DFI_SPECIAL_EXPANDING_FORCE &&
-        md->special != DFI_SPECIAL_GLAIVE_RUSH && md->special != DFI_SPECIAL_PSYCHIC_FANGS &&
-        md->special != DFI_SPECIAL_SOLAR_BEAM) {
+        md->special != DFI_SPECIAL_GLAIVE_RUSH && md->special != DFI_SPECIAL_ACROBATICS &&
+        md->special != DFI_SPECIAL_BLIZZARD && md->special != DFI_SPECIAL_FEINT &&
+        md->special != DFI_SPECIAL_PSYCHIC_FANGS && md->special != DFI_SPECIAL_SOLAR_BEAM) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Fake Out's and First Impression's onTry (in trySpreadMoveHit, after
@@ -3143,6 +3224,10 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         } else if (b->weather == DFI_WEATHER_SUN) {
             base_accuracy = 50u;
         }
+    }
+    /* Blizzard's onModifyMove (step G28, data/moves.ts:1491-1510): in snow it never misses. */
+    if (md->special == DFI_SPECIAL_BLIZZARD && b->weather == DFI_WEATHER_SNOW) {
+        base_accuracy = 0u;
     }
     /* Struggle is typeless; Weather Ball turns Water in rain, Fire under sun
      * (its onModifyType, before the hit steps). */
@@ -3192,7 +3277,8 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
      * targets are left, one -activate line per guarded target. A guarded target that also protects gets this line
      * only (its Protect handler is skipped). */
     bool guarded[DFI_POSITIONS] = {false, false, false, false};
-    if (target_class == DUOFORGE_TARGET_CLASS_ALL_ADJACENT_FOES && (md->flags & DFI_MOVE_FLAG_PROTECT) != 0u) {
+    if ((target_class == DUOFORGE_TARGET_CLASS_ALL_ADJACENT_FOES || target_class == DFI_TARGET_CLASS_ALL_ADJACENT) &&
+        (md->flags & DFI_MOVE_FLAG_PROTECT) != 0u) {
         for (uint32_t i = 0u; i < count; ++i) {
             const uint32_t t = targets[i];
             if (b->tail.sides[t / 2u].wide_guard != 0u) {
@@ -3357,6 +3443,15 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                 }
                 const duoforge_event miss = dfi_ev(DUOFORGE_EVENT_MISS, user, DUOFORGE_CAUSE_NONE, 0u, targets[i]);
                 dfi_emit(r, &miss);
+            }
+        }
+    }
+    /* hitStepBreakProtect, after the accuracy check (sim/battle-actions.ts:568-571): Feint removes the protections of every
+     * target that is still hit. */
+    if (md->special == DFI_SPECIAL_FEINT) {
+        for (uint32_t i = 0u; i < count; ++i) {
+            if (hit[i]) {
+                dfi_break_protect(r, targets[i], move_id);
             }
         }
     }
@@ -3558,6 +3653,10 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                 st = dfi_try_status(r, targets[i], md->sec_param, user, move_id, false, 0u);
             } else if (md->sec_kind == DFI_SECONDARY_VOLATILE) {
                 st = dfi_add_volatile(r, targets[i], md->sec_param);
+            } else if (md->sec_kind == DFI_SECONDARY_SELF_BOOST) {
+                /* Ancient Power (step G28, data/moves.ts:396-418): the secondary's own boosts go to the user, a self change
+                 * without a line of its own (moveHit of the secondary's `self`, isSelf). */
+                dfi_boost(r, user, md->boosts, DFI_POSITIONS, dfi_effect(DUOFORGE_CAUSE_MOVE, 0u, DFI_BOOST_SELF));
             } else if (md->sec_kind == DFI_SECONDARY_LOCKOUT) {
                 dfi_add_lockout(r, targets[i]); /* Throat Chop (POOL data) */
             } else if (md->sec_kind == DFI_SECONDARY_HEAL_BLOCK) {

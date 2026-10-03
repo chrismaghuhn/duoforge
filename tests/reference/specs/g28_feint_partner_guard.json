@@ -1,0 +1,28 @@
+{
+  "name": "g28_feint_partner_guard",
+  "purpose": "Feint at Milotic, which did not protect this turn, while its partner Pelipper's Wide Guard is up: the line -activate move: Feint comes from the side condition alone, and the guard is gone. Only the target's own stall volatile is deleted (Milotic's stall of the turn before runs out at the end of this turn anyway, so it shows nothing); Pelipper's stall counter from its Wide Guard stays, so its next Protect is rolled and fails.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000009501",
+  "teams": [
+    "Infernape (M) @ Charcoal\nAbility: Blaze\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Feint\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect",
+    "Milotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Coil\n\nPelipper (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 31 HP / 4 Def / 5 SpA / 16 SpD / 10 Spe\nModest Nature\n- Wide Guard\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 2, move 2",
+      "move 1 1, move 2",
+      "move 2, move 2",
+      "move 1 1, move 2",
+      "move 1 1, move 2"
+    ],
+    "p2": [
+      "move 1, move 1",
+      "move 2, move 1",
+      "move 1, move 2",
+      "move 2, move 2",
+      "move 2, move 2"
+    ],
+    "max_steps": 6
+  }
+}
