@@ -306,7 +306,8 @@ class LinesTest(unittest.TestCase):
     def test_features_from_the_header(self):
         self.assertEqual(lines.FEATURES["WEATHER_SAND"], 0)
         self.assertEqual(lines.FEATURES["RAGE_POWDER"], 39)
-        self.assertEqual(len(lines.FEATURES), 40)
+        self.assertEqual(lines.FEATURES["MOVE_FAILED"], 41)
+        self.assertEqual(len(lines.FEATURES), 42)  # tail revision 4: ROOST 40, MOVE_FAILED 41
 
     def test_supported_mask_forms(self):
         f = lines.FEATURES
