@@ -11,8 +11,10 @@ round of round.sh with stand-ins for the network, the build and the diff driver.
    project=duoforge and purpose=watch, the bucket as metadata, no template and no instance group;
  - start, stop and delete touch only an instance that carries the labels, and say what they would call;
  - the startup script: its first command is the 120-minute watchdog, it holds no secret and no bucket name;
+ - the bench round (start.sh --bench SHA1,SHA2): two commits of this repository only (a branch head is one, a commit of
+   a fork or of nowhere is not), known families only, the approval flag, the metadata call before the start call;
  - the round: the campaigns of the rotation, fresh seeds, the object names, the rebuild rule, a campaign with its cap and
-   its uploads, the heartbeat;
+   its uploads, the heartbeat, the bench round (bench_ab.py with a fake duoforge_bench, the routing by the metadata);
  - the repository: no key, no token, no bucket name, the pin equal to the one of the CI, shellcheck when installed.
 Needs bash on the PATH (Git Bash on Windows)."""
 import json
@@ -64,6 +66,9 @@ case "$all" in
             *"value(status)"*) printf '%s\n' "${STUB_INSTANCE-}" ;;
             *"value(labels.project,labels.purpose)"*) printf '%b\n' "${STUB_LABELS:-duoforge\twatch}" ;;
         esac ;;
+    *"instances add-metadata"*)
+        [ "${STUB_ADD_METADATA_FAIL:-}" != 1 ] || { echo "metadata refused" >&2; exit 1; }
+        echo done ;;
     *"instances create"* | *"instances start"* | *"instances stop"* | *"instances delete"*) echo done ;;
     *) echo "UNEXPECTED CALL: $all" >&2; exit 9 ;;
 esac
@@ -83,11 +88,19 @@ def posix(path):
     return path.replace('\\', '/')
 
 
+def rm_tree(path):
+    """shutil.rmtree that also removes what git makes read-only on Windows."""
+    def force(func, p, _exc):
+        os.chmod(p, stat.S_IWRITE)
+        func(p)
+    shutil.rmtree(path, onerror=force)
+
+
 @unittest.skipIf(BASH is None, 'bash is not on the PATH')
 class Guards(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp(prefix='gcp_watch_test_')
-        self.addCleanup(shutil.rmtree, self.tmp, True)
+        self.addCleanup(rm_tree, self.tmp)
         self.stubdir = os.path.join(self.tmp, 'bin')
         os.mkdir(self.stubdir)
         stub = os.path.join(self.stubdir, 'gcloud')
@@ -113,7 +126,7 @@ class Guards(unittest.TestCase):
             return [re.sub(r'^--project \S+ --quiet ', '', line.strip()) for line in f if line.strip()]
 
     def changes(self):
-        return [c for c in self.calls() if re.search(r'instances (create|start|stop|delete)', c)]
+        return [c for c in self.calls() if re.search(r'instances (create|start|stop|delete|add-metadata)', c)]
 
     def assertRefused(self, r, text, changes=False):
         self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
@@ -252,6 +265,169 @@ class Guards(unittest.TestCase):
         self.assertRefused(self.run_script('start.sh', '--i-have-owner-approval', STUB_INSTANCE=''), 'there is no instance')
         self.assertRefused(self.run_script('delete.sh', '--zone', 'asia-east1-a'), 'the zone')
 
+    # ------------------------------------------------------------------------------------------ the bench round
+    RUN = 'b20261003T120000Z'
+
+    def make_repo(self, url='https://github.com/chrismaghuhn/duoforge.git', name='repo'):
+        """A small repository: main (origin/main), a branch head that only a branch of origin has (origin/pr-branch, a
+        pull request head of this repository), and a local commit that no ref of origin has."""
+        repo = os.path.join(self.tmp, name)
+        os.makedirs(repo)
+
+        def git(*args):
+            r = subprocess.run(['git', '-C', repo, '-c', 'user.name=t', '-c', 'user.email=t@t', *args], capture_output=True,
+                               text=True)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            return r.stdout.strip()
+        git('init', '-q')
+        git('commit', '-q', '--allow-empty', '-m', 'main')
+        main = git('rev-parse', 'HEAD')
+        git('commit', '-q', '--allow-empty', '-m', 'pr head')
+        pr = git('rev-parse', 'HEAD')
+        git('commit', '-q', '--allow-empty', '-m', 'local only')
+        local = git('rev-parse', 'HEAD')
+        git('remote', 'add', 'origin', url)
+        git('update-ref', 'refs/remotes/origin/main', main)
+        git('update-ref', 'refs/remotes/origin/pr-branch', pr)
+        return repo, main, pr, local
+
+    def bench(self, refs, *args, **env):
+        env.setdefault('STUB_INSTANCE', 'TERMINATED')
+        env.setdefault('GW_BENCH_RUN', self.RUN)
+        return self.run_script('start.sh', '--bench', refs, *args, **env)
+
+    def test_a_bench_round_is_a_dry_run_without_the_flag(self):
+        repo, main, pr, _ = self.make_repo()
+        r = self.bench('%s,%s' % (main, pr), GW_REPO_DIR=posix(repo))
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn('dry run', r.stderr)
+        self.assertEqual(self.changes(), [])
+        self.assertTrue(all(READ_ONLY.match(c) for c in self.calls()), self.calls())
+        meta = 'compute instances add-metadata duoforge-watch --zone europe-west4-a --metadata ' \
+               '^:^bench_refs=%s,%s:bench_families=copy,codec,batch:bench_run=%s' % (main, pr, self.RUN)
+        start = 'compute instances start duoforge-watch --zone europe-west4-a'
+        lines = r.stdout.strip().splitlines()
+        self.assertEqual([re.sub(r'^\S+ --project \S+ --quiet ', '', ln) for ln in lines], [meta, start])
+
+    def test_the_flag_sets_the_metadata_and_then_starts(self):
+        repo, main, pr, _ = self.make_repo()
+        r = self.bench('%s,%s' % (main, pr), '--families', 'copy,codec', '--zone', 'europe-west4-b', '--i-have-owner-approval',
+                       GW_REPO_DIR=posix(repo))
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(self.changes(), [
+            'compute instances add-metadata duoforge-watch --zone europe-west4-b --metadata '
+            '^:^bench_refs=%s,%s:bench_families=copy,codec:bench_run=%s' % (main, pr, self.RUN),
+            'compute instances start duoforge-watch --zone europe-west4-b'])
+
+    def test_a_bench_run_id_is_made_when_none_is_given(self):
+        repo, main, pr, _ = self.make_repo()
+        r = self.bench('%s,%s' % (main, pr), GW_REPO_DIR=posix(repo), GW_BENCH_RUN='')
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertRegex(r.stdout, r'bench_run=b\d{8}T\d{6}Z')
+
+    def test_a_failed_metadata_call_does_not_start_the_instance(self):
+        repo, main, pr, _ = self.make_repo()
+        r = self.bench('%s,%s' % (main, pr), '--i-have-owner-approval', GW_REPO_DIR=posix(repo), STUB_ADD_METADATA_FAIL='1')
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn('is not started', r.stderr)
+        self.assertEqual(len(self.changes()), 1, self.calls())
+        self.assertIn('add-metadata', self.changes()[0])
+
+    def test_a_commit_that_is_not_of_this_repository_is_refused(self):
+        repo, main, pr, local = self.make_repo()
+        for sha, text in (('c' * 40, 'is not in this repository'),  # a commit nobody here has (a fork, or nowhere)
+                          (local, 'is not reachable from any branch of origin')):  # here, but on no branch of origin
+            for refs in ('%s,%s' % (main, sha), '%s,%s' % (sha, pr)):
+                open(self.log, 'w').close()
+                r = self.bench(refs, '--i-have-owner-approval', GW_REPO_DIR=posix(repo))
+                self.assertRefused(r, text)
+                self.assertIn(sha, r.stderr)
+                self.assertEqual(self.calls(), [], refs)  # refused before any gcloud call
+
+    def test_a_foreign_remote_is_refused(self):
+        for i, url in enumerate(('https://github.com/someone-else/duoforge.git', 'https://example.com/chrismaghuhn/duoforge.git',
+                                 'https://github.com/chrismaghuhn/duoforge-fork.git',
+                                 'https://github.com/chrismaghuhn/duoforge.git.evil')):
+            repo, main, pr, _ = self.make_repo(url, 'foreign%d' % i)
+            open(self.log, 'w').close()
+            r = self.bench('%s,%s' % (main, pr), '--i-have-owner-approval', GW_REPO_DIR=posix(repo))
+            self.assertRefused(r, 'is not chrismaghuhn/duoforge')
+            self.assertEqual(self.calls(), [], url)
+        for i, url in enumerate(('git@github.com:chrismaghuhn/duoforge.git', 'https://github.com/chrismaghuhn/duoforge')):
+            repo, main, pr, _ = self.make_repo(url, 'same%d' % i)  # the same repository, spelled otherwise
+            r = self.bench('%s,%s' % (main, pr), GW_REPO_DIR=posix(repo))
+            self.assertEqual(r.returncode, 0, (url, r.stderr))
+
+    def test_a_directory_that_is_not_a_repository_is_refused(self):
+        r = self.bench('%s,%s' % ('a' * 40, 'b' * 40), GW_REPO_DIR=posix(self.tmp))
+        self.assertRefused(r, "no remote 'origin'")
+        self.assertEqual(self.calls(), [])
+
+    def test_bench_commits_must_be_two_full_shas(self):
+        repo, main, pr, _ = self.make_repo()
+        for refs, text in ((main, 'exactly two commits'), ('%s,%s,%s' % (main, pr, main), 'exactly two commits'),
+                           ('%s,%s' % (main[:12], pr), 'is not a commit'), ('%s,%s' % (main, 'main'), 'is not a commit'),
+                           ('%s,%s' % (main, pr.upper()), 'is not a commit'), (',', 'exactly two commits'), ('', 'exactly two commits'),
+                           ('%s,%s,' % (main, pr), 'exactly two commits'), (',%s,%s' % (main, pr), 'exactly two commits')):
+            open(self.log, 'w').close()
+            r = self.bench(refs, '--i-have-owner-approval', GW_REPO_DIR=posix(repo))
+            self.assertRefused(r, text)
+            self.assertEqual(self.calls(), [], refs)
+
+    def test_an_unknown_bench_family_is_refused(self):
+        repo, main, pr, _ = self.make_repo()
+        for families, text in (('copy,bogus', "unknown benchmark family 'bogus'"), ('copy,Codec', "unknown benchmark family 'Codec'"),
+                               ('', 'is empty'), ('copy,,codec', 'has an empty name'), ('copy,codec,', 'has an empty name'),
+                               (',copy', 'has an empty name'), ('copy,copy', "named twice"),
+                               ('snapshot', "unknown benchmark family 'snapshot'")):
+            open(self.log, 'w').close()
+            r = self.bench('%s,%s' % (main, pr), '--families', families, '--i-have-owner-approval', GW_REPO_DIR=posix(repo))
+            self.assertRefused(r, text)
+            self.assertEqual(self.calls(), [], families)
+        for families in ('step', 'events,request', 'copy,codec,batch', 'step,events,request,copy,codec,episode,batch'):
+            r = self.bench('%s,%s' % (main, pr), '--families', families, GW_REPO_DIR=posix(repo))  # every real family is allowed
+            self.assertEqual(r.returncode, 0, (families, r.stderr))
+            self.assertIn('bench_families=%s:' % families, r.stdout)
+
+    def test_the_bench_options_belong_to_start_only(self):
+        repo, main, pr, _ = self.make_repo()
+        r = self.run_script('start.sh', '--families', 'copy', STUB_INSTANCE='TERMINATED')
+        self.assertRefused(r, '--families belongs to --bench')
+        for script in ('stop.sh', 'delete.sh'):
+            r = self.run_script(script, '--bench', '%s,%s' % (main, pr), STUB_INSTANCE='RUNNING', GW_REPO_DIR=posix(repo))
+            self.assertRefused(r, "unknown argument '--bench'")
+        self.assertRefused(self.run_script('start.sh', '--bench'), '--bench needs a value')
+        self.assertEqual(self.calls(), [])
+
+    def test_the_bench_round_keeps_the_other_guards(self):
+        repo, main, pr, _ = self.make_repo()
+        refs = '%s,%s' % (main, pr)
+        r = self.bench(refs, '--i-have-owner-approval', GW_REPO_DIR=posix(repo), STUB_PROJECT='some-other-project')
+        self.assertRefused(r, "not '%s'" % PROJECT)
+        self.assertEqual(self.calls(), ['config get project'])
+        open(self.log, 'w').close()
+        self.assertRefused(self.bench(refs, '--i-have-owner-approval', GW_REPO_DIR=posix(repo), STUB_LABELS='duoforge\\tfuzz'),
+                           'does not carry the labels')
+        self.assertRefused(self.bench(refs, '--i-have-owner-approval', GW_REPO_DIR=posix(repo), STUB_INSTANCE='RUNNING'),
+                           'already RUNNING')
+        self.assertRefused(self.bench(refs, '--i-have-owner-approval', GW_REPO_DIR=posix(repo), STUB_INSTANCE=''),
+                           'there is no instance')
+
+    def test_the_bench_families_agree_with_the_bench(self):
+        main_c = open(os.path.join(ROOT, 'bench', 'main.c'), encoding='utf-8').read()
+        names = re.search(r'names\[\] = \{([^}]*)\}', main_c)
+        self.assertIsNotNone(names)
+        real = re.findall(r'"(\w+)"', names.group(1))
+        lib = re.search(r"^GW_BENCH_FAMILIES='([^']*)'", open(os.path.join(HERE, 'lib.sh'), encoding='utf-8').read(), re.M)
+        self.assertEqual(lib.group(1).split(), real)
+        sys.path.insert(0, HERE)
+        try:
+            import bench_ab
+        finally:
+            sys.path.remove(HERE)
+        self.assertEqual(list(bench_ab.FAMILIES), real)
+        self.assertEqual(bench_ab.DEFAULT_FAMILIES, 'copy,codec,batch')
+
     # ------------------------------------------------------------------------------------------ the startup script
     def test_the_startup_script(self):
         text = open(os.path.join(HERE, 'startup.sh'), encoding='utf-8').read()
@@ -283,7 +459,8 @@ class Guards(unittest.TestCase):
     def test_the_readme_says_what_it_must(self):
         text = open(os.path.join(HERE, 'README.md'), encoding='utf-8').read()
         for part in ('--i-have-owner-approval', 'STOP', 't2d-standard-8', 'europe-west4', 'duoforge-net', 'duoforge-subnet',
-                     'create.sh', 'start.sh', 'stop.sh', 'delete.sh', 'round.sh', 'Spot price', 'stopped', 'heartbeat'):
+                     'create.sh', 'start.sh', 'stop.sh', 'delete.sh', 'round.sh', 'Spot price', 'stopped', 'heartbeat',
+                     '--bench', 'bench_refs', 'bench_run', 'bench.json', 'bench_ab.py', 'reachable from a branch of `origin`'):
             self.assertIn(part, text)
 
     def test_shellcheck(self):
@@ -330,7 +507,7 @@ json.dump({'seed': int(a[a.index('--seed') + 1])}, open(os.path.join(out, 'run.j
 class Round(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp(prefix='gcp_watch_round_')
-        self.addCleanup(shutil.rmtree, self.tmp, True)
+        self.addCleanup(rm_tree, self.tmp)
         self.t = posix(self.tmp)
         # a small repository checkout: the real scheduler (chunks.sh), two campaigns, the fake driver
         repo = os.path.join(self.tmp, 'repo')
@@ -450,6 +627,302 @@ class Round(unittest.TestCase):
         self.assertIn('watch/heartbeat.json', objects)
         hb = json.loads(dict(self.puts())['watch/heartbeat.json'])
         self.assertEqual(hb['state'], 'off')
+
+    # ------------------------------------------------------------------------------------------ the bench round
+    def bench_setup(self):
+        """The repository gets bench_ab.py, and two fake builds (one fake duoforge_bench each) are what rd_bench_build
+        would have produced: RD_BENCH_BIN of a sha is its fake."""
+        tool = os.path.join(self.tmp, 'repo', 'tools', 'cloud', 'gcp_watch')
+        os.makedirs(tool)
+        shutil.copy(os.path.join(HERE, 'bench_ab.py'), tool)
+        fake = os.path.join(self.tmp, 'fake_bench.py')
+        wr(fake, FAKE_BENCH)
+        self.fake_log = os.path.join(self.tmp, 'fake.log')
+        self.cmd = '%s %s' % (posix(sys.executable), posix(fake))
+        self.sha_a, self.sha_b = 'a' * 40, 'b' * 40
+        return r'''
+rd_ensure_build_tools() { :; }
+rd_instance_type() { echo t2d-standard-8; }
+rd_bench_build() {
+    echo "build $1" >> "$T/builds.log"
+    RD_BENCH_BIN="$FAKE_CMD --label ${1:0:1} --rev $1 --log $T/fake.log"
+}
+'''
+
+    def test_a_bench_round_builds_runs_and_uploads_bench_json(self):
+        stubs = self.bench_setup()
+        r = self.sh(stubs + '''
+rd_metadata() { case $1 in bench_families) echo copy,codec,batch ;; *) return 1 ;; esac; }
+rd_bench_main "%s,%s" b20261003T120000Z
+echo "state: $(cat "$RD_STATE/hb")"''' % (self.sha_a, self.sha_b), FAKE_CMD=self.cmd, RD_BENCH_ROUNDS='2', RD_BENCH_REPETITIONS='3')
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertEqual(open(os.path.join(self.tmp, 'builds.log')).read().split('\n')[:2], ['build ' + 'a' * 40, 'build ' + 'b' * 40])
+        (obj, body), = self.puts()
+        self.assertEqual(obj, 'bench/b20261003T120000Z/bench.json')
+        data = json.loads(body)
+        self.assertEqual(data['run'], 'b20261003T120000Z')
+        self.assertEqual(data['instance_type'], 't2d-standard-8')
+        self.assertEqual(sorted(data['results']), ['batch/workers=1', 'codec', 'copy'])
+        self.assertEqual((data['rounds'], data['repetitions'], data['workers']), (2, 3, [1]))
+        self.assertIn('state: done', r.stdout)
+
+    def test_a_bench_round_checks_before_it_builds(self):
+        stubs = self.bench_setup()
+        cases = (('%s,%s' % (self.sha_a, 'main'), 'copy', 'is not SHA1,SHA2'), (self.sha_a, 'copy', 'is not SHA1,SHA2'),
+                 ('%s,%s' % (self.sha_a, self.sha_b), 'copy,bogus', 'bad commits or families'))
+        for refs, families, text in cases:
+            r = self.sh(stubs + 'rd_metadata() { case $1 in bench_families) echo %s ;; *) return 1 ;; esac; }\n'
+                        'rd_bench_main "%s" b20261003T120000Z' % (families, refs), FAKE_CMD=self.cmd)
+            self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+            self.assertIn(text, r.stdout + r.stderr)
+            self.assertFalse(os.path.exists(os.path.join(self.tmp, 'builds.log')), 'a build was started')
+            self.assertEqual(self.puts(), [])
+        r = self.sh(stubs + 'rd_metadata() { return 1; }\nrd_bench_main "%s,%s" b20261003T120000Z' % (self.sha_a, self.sha_b),
+                    FAKE_CMD=self.cmd)
+        self.assertEqual(r.returncode, 1)
+        self.assertIn('bench_families is not', r.stdout + r.stderr)
+
+    def test_a_failed_measurement_is_uploaded_and_fails_the_round(self):
+        stubs = self.bench_setup()
+        r = self.sh(stubs + '''
+rd_metadata() { case $1 in bench_families) echo copy,codec ;; *) return 1 ;; esac; }
+rd_bench_main "%s,%s" b20261003T120000Z''' % (self.sha_a, self.sha_b), FAKE_CMD=self.cmd, FAKE_OMIT='codec', RD_BENCH_ROUNDS='1')
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        (obj, body), = self.puts()
+        self.assertEqual(obj, 'bench/b20261003T120000Z/bench.json')
+        self.assertIn('did not report: codec', json.loads(body)['error'])
+        self.assertIn('bench_ab.py failed', r.stdout + r.stderr)
+
+    def boot(self, run, bench_last=None, refs=None):
+        """rd_main with the metadata of the instance, stand-ins for the tools, and a logging rd_bench_main."""
+        state = os.path.join(self.tmp, 'work', 'state')
+        os.makedirs(state, exist_ok=True)
+        if bench_last:
+            wr(os.path.join(state, 'bench-last'), bench_last + '\n')
+        wr(os.path.join(state, 'built-head'), SHA + '\n')
+        return self.sh('''
+node() { echo v22.0.0; }
+rd_ensure_tools() { :; }
+rd_heartbeat_loop() { :; }
+rd_metadata() {
+    case $1 in
+        duoforge-bucket) echo testbucket ;;
+        bench_refs) [ -z "${FAKE_REFS:-}" ] || echo "$FAKE_REFS" ;;
+        bench_run) [ -z "${FAKE_RUN:-}" ] || echo "$FAKE_RUN" ;;
+        *) return 1 ;;
+    esac
+}
+rd_bench_main() { echo "BENCH $*" >> "$T/bench-main.log"; }
+RD_BUCKET=''
+RD_NO_SHUTDOWN=1
+rd_main''', FAKE_REFS=refs or '', FAKE_RUN=run or '', RD_NO_SHUTDOWN='1', RD_NOW='1790000000')
+
+    def test_the_metadata_decides_between_a_bench_round_and_a_fuzz_round(self):
+        refs = '%s,%s' % ('a' * 40, 'b' * 40)
+        # a new bench run id: the bench round, no campaign, and the id is remembered
+        r = self.boot('b20261003T120000Z', refs=refs)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertEqual(open(os.path.join(self.tmp, 'bench-main.log')).read().strip(), 'BENCH %s b20261003T120000Z' % refs)
+        self.assertEqual(open(os.path.join(self.tmp, 'work', 'state', 'bench-last')).read().strip(), 'b20261003T120000Z')
+        self.assertFalse([o for o, _ in self.puts() if o.startswith('watch/%s/' % SHA[:12]) and 'alpha' in o])
+        # the same id again (the metadata stays on the instance): a fuzz round
+        os.remove(os.path.join(self.tmp, 'bench-main.log'))
+        r = self.boot('b20261003T120000Z', bench_last='b20261003T120000Z', refs=refs)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn('was played already', r.stdout)
+        self.assertFalse(os.path.exists(os.path.join(self.tmp, 'bench-main.log')))
+        self.assertIn('watch/%s/r%s/alpha/status.json' % (SHA[:12], re.search(r'round r(\S+) on', r.stdout).group(1)),
+                      [o for o, _ in self.puts()])
+        # no bench_refs at all: a fuzz round, as before
+        r = self.boot('', refs='')
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertFalse(os.path.exists(os.path.join(self.tmp, 'bench-main.log')))
+
+    def test_bench_refs_without_a_bench_run_id_fail_explicitly(self):
+        refs = '%s,%s' % ('a' * 40, 'b' * 40)
+        for run in ('', 'run-1', 'b2026'):
+            r = self.boot(run, refs=refs)
+            self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+            self.assertIn('bench_run is not a bench run id', r.stdout)
+            self.assertFalse(os.path.exists(os.path.join(self.tmp, 'bench-main.log')))
+
+    def test_a_bench_round_puts_its_log_under_the_bench_prefix(self):
+        wr(os.path.join(self.tmp, 'boot.log'), 'line\n')
+        r = self.sh('RD_BENCH_RUN=b20261003T120000Z; RD_ROUND_ID=r1; rd_finish', RD_NO_SHUTDOWN='1')
+        self.assertEqual(r.returncode, 0, r.stderr)
+        objects = [o for o, _ in self.puts()]
+        self.assertIn('bench/b20261003T120000Z/log.txt', objects)
+        self.assertNotIn('watch/%s/r1/log.txt' % SHA[:12], objects)
+
+
+FAKE_BENCH = r'''
+import json, os, sys
+a = sys.argv[1:]
+def opt(name, default=None):
+    return a[a.index(name) + 1] if name in a else default
+label, rev, log = opt('--label'), opt('--rev'), opt('--log')
+out = opt('--out')
+if log:
+    with open(log, 'a') as f:
+        f.write(label + '\n')
+    count = sum(1 for line in open(log) if line.strip() == label)
+else:
+    count = 1
+if os.environ.get('FAKE_FAIL') == label:
+    sys.exit(3)
+base = {'a': 1000000, 'b': 1100000}.get(label, 1000000)
+fams = opt('--families').split(',')
+workers = [int(w) for w in opt('--workers', '1').split(',')]
+omit = os.environ.get('FAKE_OMIT', '')
+errors = int(os.environ.get('FAKE_ERRORS', '0')) if os.environ.get('FAKE_ERRORS_LABEL', label) == label else 0
+def entry(family, variant, w=1, calls=0, nbytes=0):
+    wall = base + 1000 * count
+    return {'family': family, 'variant': variant, 'workers': w, 'repetitions': 3, 'wall_ns': [wall] * 3, 'cpu_ns': [wall] * 3,
+            'disturbed_repetitions': 0, 'median_wall_ns': wall, 'battles': 100, 'turns': 1, 'steps': 1, 'side_decisions': 1,
+            'calls': calls, 'bytes': nbytes, 'truncations': 0, 'errors': 0,
+            'per_second': {'battles': 5, 'turns': 1, 'steps': 1, 'side_decisions': 1, 'calls': 7 if calls else 0}}
+results = []
+table = {'step': ('STEP_CORE', 'plain'), 'events': ('STEP_CORE', 'events'), 'request': ('REQUEST', 'request+candidates+observe'),
+         'copy': ('SNAPSHOT', 'copy'), 'codec': ('SNAPSHOT', 'codec'), 'episode': ('EPISODE_NATIVE', 'uniform-random')}
+for f in fams:
+    if f == omit:
+        continue
+    if f == 'batch':
+        results += [entry('BATCH_NATIVE', 'workers=%d' % w, w) for w in workers]
+    else:
+        results.append(entry(*table[f], calls=1000 if f in ('copy', 'codec') else 0, nbytes=500 if f == 'codec' else 0))
+json.dump({'manifest': {'engine': 'duoforge x', 'revision': rev, 'dirty': False,
+                        'cpu': 'fake', 'context_fingerprint': 'fp', 'workload': 'closure-pairings-v1'},
+           'results': results, 'errors': errors}, open(out, 'w'))
+'''
+
+
+@unittest.skipIf(BASH is None, 'bash is not on the PATH')
+class BenchAB(unittest.TestCase):
+    """bench_ab.py with a fake duoforge_bench: what it runs, in which order, and what it refuses."""
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix='gcp_watch_bench_')
+        self.addCleanup(rm_tree, self.tmp)
+        sys.path.insert(0, HERE)
+        self.addCleanup(sys.path.remove, HERE)
+        import bench_ab
+        self.mod = bench_ab
+        self.fake = os.path.join(self.tmp, 'fake_bench.py')
+        wr(self.fake, FAKE_BENCH)
+        self.log = os.path.join(self.tmp, 'fake.log')
+        self.out = os.path.join(self.tmp, 'bench.json')
+        self.a, self.b = 'a' * 40, 'b' * 40
+
+    def run_ab(self, *args, env=None, a_rev=None, b_rev=None):
+        cmd = '%s %s' % (posix(sys.executable), posix(self.fake))
+        argv = ['--a-bin', '%s --label a --rev %s --log %s' % (cmd, a_rev or self.a, posix(self.log)),
+                '--b-bin', '%s --label b --rev %s --log %s' % (cmd, b_rev or self.b, posix(self.log)),
+                '--a-sha', self.a, '--b-sha', self.b, '--out', self.out, '--repetitions', '3', *args]
+        saved = {k: os.environ.get(k) for k in (env or {})}
+        os.environ.update(env or {})
+        try:
+            status = self.mod.main(argv)
+        finally:
+            for k, v in saved.items():
+                if v is None:
+                    os.environ.pop(k, None)
+                else:
+                    os.environ[k] = v
+        with open(self.out, encoding='utf-8') as f:
+            return status, json.load(f)
+
+    def invocations(self):
+        return open(self.log).read().split() if os.path.exists(self.log) else []
+
+    def test_the_builds_alternate_and_the_result_has_median_and_spread(self):
+        status, data = self.run_ab('--rounds', '4', '--families', 'copy,codec,batch', '--run', 'b1')
+        self.assertEqual(status, 0, data)
+        self.assertEqual(self.invocations(), list('abbaabba'))  # A B, B A, A B, B A
+        self.assertEqual(data['rounds_order'], ['ab', 'ba', 'ab', 'ba'])
+        self.assertEqual(list(data['results']), ['copy', 'codec', 'batch/workers=1'])
+        for key, r in data['results'].items():
+            for side in ('a', 'b'):
+                w = r[side]['median_wall_ns']
+                self.assertEqual(len(w['samples']), 4)
+                self.assertTrue(w['min'] <= w['median'] <= w['max'])
+                self.assertGreater(w['spread_percent'], 0)
+            self.assertAlmostEqual(r['ratio_b_over_a']['of_medians'], 1.1, places=1)
+            self.assertLessEqual(r['ratio_b_over_a']['paired_min'], r['ratio_b_over_a']['paired_max'])
+        copy = data['results']['copy']['a']
+        self.assertEqual(copy['calls_per_repetition'], 1000)
+        self.assertAlmostEqual(copy['ns_per_call']['median'], copy['median_wall_ns']['median'] / 1000, places=2)
+        self.assertEqual(data['results']['codec']['a']['bytes_per_state'], 500)
+        self.assertNotIn('ns_per_call', data['results']['batch/workers=1']['a'])
+        self.assertEqual((data['a']['revision'], data['b']['revision']), (self.a, self.b))
+        self.assertTrue(data['same_workload_fingerprint'])
+        self.assertEqual((data['run'], data['workers'], data['families']), ('b1', [1], ['copy', 'codec', 'batch']))
+
+    def test_the_command_line_of_the_bench_is_one_thread_and_the_same_for_both_builds(self):
+        calls = []
+        orig = self.mod.run_invocation
+
+        def spy(command, argv, out_path, timeout):
+            calls.append(list(argv))
+            return orig(command, argv, out_path, timeout)
+        self.mod.run_invocation = spy
+        try:
+            status, _ = self.run_ab('--rounds', '2', '--families', 'copy,codec,batch')
+        finally:
+            self.mod.run_invocation = orig
+        self.assertEqual(status, 0)
+        self.assertEqual(len(calls), 4)
+        self.assertTrue(all(c == calls[0] for c in calls), calls)
+        argv = calls[0]
+        self.assertEqual(argv[argv.index('--families') + 1], 'copy,codec,batch')
+        self.assertEqual(argv[argv.index('--workers') + 1], '1')
+
+    def test_an_unknown_family_is_refused_before_anything_runs(self):
+        for families in ('copy,bogus', 'snapshot', '', 'copy,copy', 'copy,,codec'):
+            status, data = self.run_ab('--families', families)
+            self.assertEqual(status, 1, families)
+            self.assertIn('error', data)
+            self.assertEqual(self.invocations(), [], families)
+        self.assertIn('unknown benchmark family bogus', self.run_ab('--families', 'copy,bogus')[1]['error'])
+
+    def test_bad_commits_and_workers_are_refused(self):
+        self.a = 'main'
+        status, data = self.run_ab()
+        self.assertEqual(status, 1)
+        self.assertIn('is not a 40-digit commit', data['error'])
+        self.a = 'a' * 40
+        for workers in ('0', '1,1', 'x', '1,300'):
+            status, data = self.run_ab('--families', 'batch', '--workers', workers)
+            self.assertEqual(status, 1, workers)
+        self.assertEqual(self.invocations(), [])
+
+    def test_a_family_that_a_build_did_not_report_is_an_error(self):
+        status, data = self.run_ab('--rounds', '1', '--families', 'copy,codec', env={'FAKE_OMIT': 'codec'})
+        self.assertEqual(status, 1)
+        self.assertIn('did not report: codec', data['error'])
+
+    def test_a_binary_that_is_not_the_labelled_commit_is_an_error(self):
+        status, data = self.run_ab('--rounds', '1', b_rev='c' * 40)
+        self.assertEqual(status, 1)
+        self.assertIn('is not the commit it is labelled with', data['error'])
+
+    def test_errors_and_failures_of_the_bench_are_errors(self):
+        status, data = self.run_ab('--rounds', '1', env={'FAKE_ERRORS': '2', 'FAKE_ERRORS_LABEL': 'a'})
+        self.assertEqual(status, 1)
+        self.assertIn('reported 2 error', data['error'])
+        os.remove(self.log)
+        status, data = self.run_ab('--rounds', '1', env={'FAKE_FAIL': 'b'})
+        self.assertEqual(status, 1)
+        self.assertIn('exited with status 3', data['error'])
+
+    def test_validate_only_runs_nothing(self):
+        out = self.out
+        self.assertEqual(self.mod.main(['--validate-only', '--a-sha', self.a, '--b-sha', self.b, '--families', 'copy,codec',
+                                        '--out', out]), 0)
+        self.assertTrue(json.load(open(out))['validated'])
+        self.assertEqual(self.mod.main(['--validate-only', '--a-sha', self.a, '--b-sha', self.b, '--families', 'nope',
+                                        '--out', out]), 1)
+        self.assertEqual(self.mod.main(['--a-sha', self.a, '--b-sha', self.b, '--out', out]), 1)  # no binaries given
+        self.assertEqual(self.invocations(), [])
 
 
 if __name__ == '__main__':
