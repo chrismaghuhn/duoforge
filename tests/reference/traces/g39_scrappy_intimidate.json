@@ -79,6 +79,7 @@
         0
        ],
        "pp": [
+        12,
         16,
         8
        ],
@@ -466,6 +467,7 @@
       "enabled": [
        [
         1,
+        1,
         1
        ],
        [
@@ -500,6 +502,7 @@
          0
         ],
         "pp": [
+         12,
          16,
          8
         ],
@@ -729,56 +732,95 @@
   },
   {
    "input": {
-    "p1": "move 2, move 2",
-    "p2": "move 1, move 1"
+    "p1": "move 1, move 2",
+    "p2": "move 1, move 2"
    },
    "draws": [
     {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "H:protect:p2b:end",
-      "H:stall:p2b:end"
-     ],
-     "start": 1
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacent",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "field:Residual",
-     "lo": 3,
-     "hi": 5,
-     "value": 4,
-     "group": [
-      "H:stall:p1a:end",
-      "H:protect:p1a:end"
-     ],
-     "start": 3
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 5,
-     "hi": 7,
-     "value": 5,
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
      "group": [
       "H:protect:p2a:end",
       "H:stall:p2a:end"
      ],
-     "start": 5
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 4,
+     "hi": 6,
+     "value": 4,
+     "group": [
+      "H:stall:p1b:end",
+      "H:protect:p1b:end"
+     ],
+     "start": 4
     }
    ],
    "log": [
-    "|move|p2b: Staraptor|Protect|p2b: Staraptor",
-    "|-singleturn|p2b: Staraptor|Protect",
-    "|move|p1a: Kangaskhan|Protect|p1a: Kangaskhan",
-    "|-singleturn|p1a: Kangaskhan|Protect",
     "|move|p2a: Incineroar|Protect|p2a: Incineroar",
     "|-singleturn|p2a: Incineroar|Protect",
-    "|move|p1b: Kingambit|Protect||[still]",
-    "|-fail|p1b: Kingambit",
+    "|move|p1b: Kingambit|Protect|p1b: Kingambit",
+    "|-singleturn|p1b: Kingambit|Protect",
+    "|move|p2b: Staraptor|Tailwind|p2b: Staraptor",
+    "|-sidestart|p2: p2|move: Tailwind",
+    "|move|p1a: Kangaskhan|Earthquake|p2b: Staraptor|[spread] ",
+    "|-activate|p1b: Kingambit|move: Protect",
+    "|-activate|p2a: Incineroar|move: Protect",
+    "|-immune|p2b: Staraptor",
     "|upkeep",
     "|turn|2"
    ],
@@ -801,6 +843,7 @@
       ],
       "enabled": [
        [
+        1,
         1,
         1
        ],
@@ -836,12 +879,11 @@
          0
         ],
         "pp": [
+         11,
          16,
-         7
+         8
         ],
-        "volatiles": [
-         "stall"
-        ],
+        "volatiles": [],
         "locked": null
        },
        {
@@ -869,7 +911,9 @@
          20,
          7
         ],
-        "volatiles": [],
+        "volatiles": [
+         "stall"
+        ],
         "locked": null
        },
        {
@@ -931,7 +975,7 @@
      {
       "request": "move",
       "conditions": [
-       0,
+       3,
        0,
        0
       ],
@@ -1002,12 +1046,10 @@
          0
         ],
         "pp": [
-         7,
-         16
+         8,
+         15
         ],
-        "volatiles": [
-         "stall"
-        ],
+        "volatiles": [],
         "locked": null
        },
        {

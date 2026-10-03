@@ -64,7 +64,7 @@
        "switch_flag": 0,
        "hp": 202,
        "maxhp": 202,
-       "item": "leftovers",
+       "item": "lightclay",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -480,7 +480,7 @@
         "switch_flag": 0,
         "hp": 202,
         "maxhp": 202,
-        "item": "leftovers",
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -858,9 +858,6 @@
     "|split|p2",
     "|-damage|p2a: Garchomp|122/185",
     "|-damage|p2a: Garchomp|65/100",
-    "|split|p1",
-    "|-heal|p1a: Slowking|184/202|[from] item: Leftovers",
-    "|-heal|p1a: Slowking|91/100|[from] item: Leftovers",
     "|upkeep",
     "|turn|2"
    ],
@@ -901,9 +898,9 @@
         "set_species": "Slowking",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 184,
+        "hp": 172,
         "maxhp": 202,
-        "item": "leftovers",
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1147,7 +1144,7 @@
   },
   {
    "input": {
-    "p1": "switch 3, move 1",
+    "p1": "move 1 1, move 1",
     "p2": "move 1, move 2"
    },
    "draws": [
@@ -1216,22 +1213,16 @@
     }
    ],
    "log": [
-    "|split|p1",
-    "|-heal|p1a: Slowking|202/202|[from] ability: Regenerator|[silent]",
-    "|-heal|p1a: Slowking|100/100|[from] ability: Regenerator|[silent]",
-    "|split|p1",
-    "|switch|p1a: Indeedee|Indeedee-F, L50, F|177/177",
-    "|switch|p1a: Indeedee|Indeedee-F, L50, F|100/100",
-    "|-fieldstart|move: Psychic Terrain|[from] ability: Psychic Surge|[of] p1a: Indeedee",
-    "|move|p2a: Garchomp|Rock Slide|p1a: Indeedee|[spread] p1a",
+    "|move|p2a: Garchomp|Rock Slide|p1a: Slowking|[spread] p1a",
     "|-miss|p2a: Garchomp|p1b: Kingambit",
     "|split|p1",
-    "|-damage|p1a: Indeedee|144/177",
-    "|-damage|p1a: Indeedee|81/100",
+    "|-damage|p1a: Slowking|143/202",
+    "|-damage|p1a: Slowking|70/100",
     "|move|p2b: Staraptor|Tailwind||[still]",
     "|-fail|p2b: Staraptor",
     "|move|p1b: Kingambit|Swords Dance|p1b: Kingambit",
     "|-boost|p1b: Kingambit|atk|2",
+    "|cant|p1a: Slowking|flinch",
     "|upkeep",
     "|turn|3"
    ],
@@ -1241,8 +1232,8 @@
     "winner": "",
     "weather": "",
     "weather_turns": 0,
-    "terrain": "psychicterrain",
-    "terrain_turns": 4,
+    "terrain": "",
+    "terrain_turns": 0,
     "trick_room": 0,
     "sides": [
      {
@@ -1254,6 +1245,7 @@
       ],
       "enabled": [
        [
+        1,
         1
        ],
        [
@@ -1267,19 +1259,19 @@
       ],
       "pokemon": [
        {
-        "species": "Indeedee-F",
-        "set_species": "Indeedee-F",
+        "species": "Slowking",
+        "set_species": "Slowking",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 144,
-        "maxhp": 177,
-        "item": "rockyhelmet",
+        "hp": 143,
+        "maxhp": 202,
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         0,
+         -1,
          0,
          0,
          0,
@@ -1288,6 +1280,7 @@
          0
         ],
         "pp": [
+         11,
          8
         ],
         "volatiles": [],
@@ -1322,13 +1315,13 @@
         "locked": null
        },
        {
-        "species": "Slowking",
-        "set_species": "Slowking",
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 202,
-        "maxhp": 202,
-        "item": "leftovers",
+        "hp": 177,
+        "maxhp": 177,
+        "item": "rockyhelmet",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1343,7 +1336,6 @@
          0
         ],
         "pp": [
-         11,
          8
         ],
         "volatiles": [],
@@ -1517,7 +1509,7 @@
   },
   {
    "input": {
-    "p1": "move 1, move 1",
+    "p1": "move 1 1, move 1",
     "p2": "move 1, move 2"
    },
    "draws": [
@@ -1544,17 +1536,17 @@
     },
     {
      "site": "RANDOM_TARGET",
-     "context": "action-speed",
+     "context": "execute:allAdjacentFoes",
      "lo": 0,
      "hi": 2,
      "value": 0
     },
     {
-     "site": "RANDOM_TARGET",
-     "context": "execute:allAdjacentFoes",
+     "site": "ACCURACY",
+     "context": "",
      "lo": 0,
-     "hi": 2,
-     "value": 0
+     "hi": 100,
+     "value": 40
     },
     {
      "site": "ACCURACY",
@@ -1578,37 +1570,79 @@
      "value": 4
     },
     {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 5
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 13
+    },
+    {
      "site": "SECONDARY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 23
+     "value": 34
     },
     {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "H:stall:p1a:end",
-      "H:protect:p1a:end"
-     ],
-     "start": 2
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 68
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 52
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 15
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 12
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 12
     }
    ],
    "log": [
-    "|move|p1a: Indeedee|Protect|p1a: Indeedee",
-    "|-singleturn|p1a: Indeedee|Protect",
-    "|move|p2a: Garchomp|Rock Slide|p1a: Indeedee|[spread] p1b",
-    "|-activate|p1a: Indeedee|move: Protect",
+    "|move|p2a: Garchomp|Rock Slide|p1a: Slowking|[spread] p1a,p1b",
     "|-resisted|p1b: Kingambit|1",
     "|split|p1",
-    "|-damage|p1b: Kingambit|177/207",
+    "|-damage|p1a: Slowking|113/202",
+    "|-damage|p1a: Slowking|55/100",
+    "|split|p1",
+    "|-damage|p1b: Kingambit|178/207",
     "|-damage|p1b: Kingambit|85/100",
     "|move|p2b: Staraptor|Tailwind||[still]",
     "|-fail|p2b: Staraptor",
-    "|cant|p1b: Kingambit|flinch",
+    "|move|p1b: Kingambit|Swords Dance|p1b: Kingambit",
+    "|-boost|p1b: Kingambit|atk|1",
+    "|move|p1a: Slowking|Psychic|p2a: Garchomp",
+    "|split|p2",
+    "|-damage|p2a: Garchomp|61/185",
+    "|-damage|p2a: Garchomp|32/100",
     "|upkeep",
     "|turn|4"
    ],
@@ -1618,8 +1652,8 @@
     "winner": "",
     "weather": "",
     "weather_turns": 0,
-    "terrain": "psychicterrain",
-    "terrain_turns": 3,
+    "terrain": "",
+    "terrain_turns": 0,
     "trick_room": 0,
     "sides": [
      {
@@ -1631,6 +1665,7 @@
       ],
       "enabled": [
        [
+        1,
         1
        ],
        [
@@ -1644,11 +1679,67 @@
       ],
       "pokemon": [
        {
+        "species": "Slowking",
+        "set_species": "Slowking",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 113,
+        "maxhp": 202,
+        "item": "lightclay",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 178,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         6,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         17,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
         "species": "Indeedee-F",
         "set_species": "Indeedee-F",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 144,
+        "hp": 177,
         "maxhp": 177,
         "item": "rockyhelmet",
         "status": "",
@@ -1665,64 +1756,6 @@
          0
         ],
         "pp": [
-         7
-        ],
-        "volatiles": [
-         "stall"
-        ],
-        "locked": null
-       },
-       {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 177,
-        "maxhp": 207,
-        "item": "blackglasses",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         5,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         18,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Slowking",
-        "set_species": "Slowking",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 202,
-        "maxhp": 202,
-        "item": "leftovers",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         11,
          8
         ],
         "volatiles": [],
@@ -1784,7 +1817,7 @@
         "set_species": "Garchomp",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 122,
+        "hp": 61,
         "maxhp": 185,
         "item": "blackglasses",
         "status": "",
@@ -1896,7 +1929,7 @@
   },
   {
    "input": {
-    "p1": "switch 3, move 1",
+    "p1": "move 1 1, move 1",
     "p2": "move 1, move 2"
    },
    "draws": [
@@ -1905,104 +1938,131 @@
      "context": "resolve",
      "lo": 0,
      "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
      "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 1
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 1
     },
     {
      "site": "RANDOM_TARGET",
      "context": "execute:allAdjacentFoes",
      "lo": 0,
      "hi": 2,
-     "value": 1
+     "value": 0
     },
     {
      "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 77
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 12
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 19
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 12
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 4
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 2
-    },
-    {
-     "site": "SECONDARY",
      "context": "",
      "lo": 0,
      "hi": 100,
      "value": 10
     },
     {
-     "site": "SECONDARY",
+     "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
      "value": 14
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 13
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 4
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 23
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 12
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 80
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 43
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 46
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 9
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 13
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 54
     }
    ],
    "log": [
-    "|split|p1",
-    "|switch|p1a: Slowking|Slowking, L50, M|202/202",
-    "|switch|p1a: Slowking|Slowking, L50, M|100/100",
-    "|move|p2a: Garchomp|Rock Slide|p1b: Kingambit|[spread] p1a,p1b",
+    "|move|p2a: Garchomp|Rock Slide|p1a: Slowking|[spread] p1a,p1b",
     "|-resisted|p1b: Kingambit|1",
     "|split|p1",
-    "|-damage|p1a: Slowking|174/202",
-    "|-damage|p1a: Slowking|86/100",
+    "|-damage|p1a: Slowking|83/202",
+    "|-damage|p1a: Slowking|41/100",
     "|split|p1",
-    "|-damage|p1b: Kingambit|161/207",
-    "|-damage|p1b: Kingambit|77/100",
+    "|-damage|p1b: Kingambit|164/207",
+    "|-damage|p1b: Kingambit|79/100",
     "|move|p2b: Staraptor|Tailwind||[still]",
     "|-fail|p2b: Staraptor",
-    "|cant|p1b: Kingambit|flinch",
-    "|split|p1",
-    "|-heal|p1a: Slowking|186/202|[from] item: Leftovers",
-    "|-heal|p1a: Slowking|92/100|[from] item: Leftovers",
+    "|move|p1b: Kingambit|Swords Dance|p1b: Kingambit",
+    "|-boost|p1b: Kingambit|atk|0",
+    "|move|p1a: Slowking|Psychic|p2a: Garchomp",
+    "|split|p2",
+    "|-damage|p2a: Garchomp|1/185",
+    "|-damage|p2a: Garchomp|1/100",
     "|-sideend|p2: p2|move: Tailwind",
     "|upkeep",
     "|turn|5"
@@ -2013,8 +2073,8 @@
     "winner": "",
     "weather": "",
     "weather_turns": 0,
-    "terrain": "psychicterrain",
-    "terrain_turns": 2,
+    "terrain": "",
+    "terrain_turns": 0,
     "trick_room": 0,
     "sides": [
      {
@@ -2044,15 +2104,15 @@
         "set_species": "Slowking",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 186,
+        "hp": 83,
         "maxhp": 202,
-        "item": "leftovers",
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         0,
+         -1,
          0,
          0,
          0,
@@ -2061,7 +2121,7 @@
          0
         ],
         "pp": [
-         11,
+         9,
          8
         ],
         "volatiles": [],
@@ -2072,7 +2132,7 @@
         "set_species": "Kingambit",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 161,
+        "hp": 164,
         "maxhp": 207,
         "item": "blackglasses",
         "status": "",
@@ -2080,7 +2140,7 @@
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         5,
+         6,
          0,
          0,
          0,
@@ -2089,7 +2149,7 @@
          0
         ],
         "pp": [
-         18,
+         16,
          8
         ],
         "volatiles": [],
@@ -2100,7 +2160,7 @@
         "set_species": "Indeedee-F",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 144,
+        "hp": 177,
         "maxhp": 177,
         "item": "rockyhelmet",
         "status": "",
@@ -2117,7 +2177,7 @@
          0
         ],
         "pp": [
-         7
+         8
         ],
         "volatiles": [],
         "locked": null
@@ -2178,7 +2238,7 @@
         "set_species": "Garchomp",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 122,
+        "hp": 1,
         "maxhp": 185,
         "item": "blackglasses",
         "status": "",
@@ -2290,7 +2350,7 @@
   },
   {
    "input": {
-    "p1": "move 1 1, move 1",
+    "p1": "switch 3, move 1",
     "p2": "move 1, move 2"
    },
    "draws": [
@@ -2306,7 +2366,7 @@
      "context": "action-speed",
      "lo": 0,
      "hi": 2,
-     "value": 0
+     "value": 1
     },
     {
      "site": "RANDOM_TARGET",
@@ -2320,21 +2380,21 @@
      "context": "execute:allAdjacentFoes",
      "lo": 0,
      "hi": 2,
-     "value": 1
+     "value": 0
     },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 80
+     "value": 52
     },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 43
+     "value": 31
     },
     {
      "site": "CRIT",
@@ -2348,85 +2408,57 @@
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 6
+     "value": 12
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 20
+     "value": 19
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 8
+     "value": 12
     },
     {
      "site": "SECONDARY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 70
+     "value": 78
     },
     {
      "site": "SECONDARY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 83
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 57
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 3
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 8
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 31
+     "value": 71
     }
    ],
    "log": [
-    "|move|p2a: Garchomp|Rock Slide|p1b: Kingambit|[spread] p1a,p1b",
+    "|split|p1",
+    "|-heal|p1a: Slowking|150/202|[from] ability: Regenerator|[silent]",
+    "|-heal|p1a: Slowking|74/100|[from] ability: Regenerator|[silent]",
+    "|split|p1",
+    "|switch|p1a: Indeedee|Indeedee-F, L50, F|177/177",
+    "|switch|p1a: Indeedee|Indeedee-F, L50, F|100/100",
+    "|-fieldstart|move: Psychic Terrain|[from] ability: Psychic Surge|[of] p1a: Indeedee",
+    "|move|p2a: Garchomp|Rock Slide|p1a: Indeedee|[spread] p1a,p1b",
     "|-resisted|p1b: Kingambit|1",
     "|split|p1",
-    "|-damage|p1a: Slowking|156/202",
-    "|-damage|p1a: Slowking|77/100",
+    "|-damage|p1a: Indeedee|146/177",
+    "|-damage|p1a: Indeedee|82/100",
     "|split|p1",
-    "|-damage|p1b: Kingambit|146/207",
-    "|-damage|p1b: Kingambit|70/100",
+    "|-damage|p1b: Kingambit|150/207",
+    "|-damage|p1b: Kingambit|72/100",
     "|move|p2b: Staraptor|Tailwind|p2b: Staraptor",
     "|-sidestart|p2: p2|move: Tailwind",
     "|move|p1b: Kingambit|Swords Dance|p1b: Kingambit",
-    "|-boost|p1b: Kingambit|atk|1",
-    "|move|p1a: Slowking|Psychic|p2a: Garchomp",
-    "|split|p2",
-    "|-damage|p2a: Garchomp|40/185",
-    "|-damage|p2a: Garchomp|21/100",
-    "|split|p1",
-    "|-heal|p1a: Slowking|168/202|[from] item: Leftovers",
-    "|-heal|p1a: Slowking|83/100|[from] item: Leftovers",
+    "|-boost|p1b: Kingambit|atk|0",
     "|upkeep",
     "|turn|6"
    ],
@@ -2437,7 +2469,7 @@
     "weather": "",
     "weather_turns": 0,
     "terrain": "psychicterrain",
-    "terrain_turns": 1,
+    "terrain_turns": 4,
     "trick_room": 0,
     "sides": [
      {
@@ -2449,7 +2481,6 @@
       ],
       "enabled": [
        [
-        1,
         1
        ],
        [
@@ -2463,67 +2494,11 @@
       ],
       "pokemon": [
        {
-        "species": "Slowking",
-        "set_species": "Slowking",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 168,
-        "maxhp": 202,
-        "item": "leftovers",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         10,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 146,
-        "maxhp": 207,
-        "item": "blackglasses",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         6,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         17,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
         "species": "Indeedee-F",
         "set_species": "Indeedee-F",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 144,
+        "hp": 146,
         "maxhp": 177,
         "item": "rockyhelmet",
         "status": "",
@@ -2540,7 +2515,63 @@
          0
         ],
         "pp": [
-         7
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 150,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         6,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Slowking",
+        "set_species": "Slowking",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 150,
+        "maxhp": 202,
+        "item": "lightclay",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         9,
+         8
         ],
         "volatiles": [],
         "locked": null
@@ -2601,7 +2632,7 @@
         "set_species": "Garchomp",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 40,
+        "hp": 1,
         "maxhp": 185,
         "item": "blackglasses",
         "status": "",
@@ -2648,6 +2679,799 @@
         "pp": [
          8,
          11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 179,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 181,
+        "maxhp": 181,
+        "item": "grassyseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "switch 3, move 1",
+    "p2": "move 1, move 2"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacentFoes",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 37
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 14
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 11
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 0
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 16
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 8
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 84
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 88
+    }
+   ],
+   "log": [
+    "|split|p1",
+    "|switch|p1a: Slowking|Slowking, L50, M|150/202",
+    "|switch|p1a: Slowking|Slowking, L50, M|74/100",
+    "|move|p2a: Garchomp|Rock Slide|p1b: Kingambit|[spread] p1a,p1b",
+    "|-resisted|p1b: Kingambit|1",
+    "|split|p1",
+    "|-damage|p1a: Slowking|118/202",
+    "|-damage|p1a: Slowking|58/100",
+    "|split|p1",
+    "|-damage|p1b: Kingambit|135/207",
+    "|-damage|p1b: Kingambit|65/100",
+    "|move|p2b: Staraptor|Tailwind||[still]",
+    "|-fail|p2b: Staraptor",
+    "|move|p1b: Kingambit|Swords Dance|p1b: Kingambit",
+    "|-boost|p1b: Kingambit|atk|0",
+    "|upkeep",
+    "|turn|7"
+   ],
+   "state": {
+    "turn": 7,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 3,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Slowking",
+        "set_species": "Slowking",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 118,
+        "maxhp": 202,
+        "item": "lightclay",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         9,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 135,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         6,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         14,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 146,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 192,
+        "maxhp": 192,
+        "item": "staraptite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       2,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Garchomp",
+        "set_species": "Garchomp",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 1,
+        "maxhp": 185,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 192,
+        "maxhp": 192,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 179,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 181,
+        "maxhp": 181,
+        "item": "grassyseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 1, move 1",
+    "p2": "move 1, move 2"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacentFoes",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 10
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 20
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 20
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 15
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 17
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 9
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 42
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 39
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 70
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 7
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 9
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 80
+    }
+   ],
+   "log": [
+    "|move|p2a: Garchomp|Rock Slide|p1b: Kingambit|[spread] p1a,p1b",
+    "|-resisted|p1b: Kingambit|1",
+    "|split|p1",
+    "|-damage|p1a: Slowking|91/202",
+    "|-damage|p1a: Slowking|45/100",
+    "|split|p1",
+    "|-damage|p1b: Kingambit|120/207",
+    "|-damage|p1b: Kingambit|57/100",
+    "|move|p2b: Staraptor|Tailwind||[still]",
+    "|-fail|p2b: Staraptor",
+    "|move|p1b: Kingambit|Swords Dance|p1b: Kingambit",
+    "|-boost|p1b: Kingambit|atk|0",
+    "|move|p1a: Slowking|Psychic|p2a: Garchomp",
+    "|split|p2",
+    "|-damage|p2a: Garchomp|0 fnt",
+    "|-damage|p2a: Garchomp|0 fnt",
+    "|faint|p2a: Garchomp",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 7,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 2,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Slowking",
+        "set_species": "Slowking",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 91,
+        "maxhp": 202,
+        "item": "lightclay",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 120,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         6,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         13,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 146,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 192,
+        "maxhp": 192,
+        "item": "staraptite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "switch",
+      "conditions": [
+       1,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Garchomp",
+        "set_species": "Garchomp",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 185,
+        "item": "blackglasses",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         5,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 192,
+        "maxhp": 192,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         9
         ],
         "volatiles": [],
         "locked": null

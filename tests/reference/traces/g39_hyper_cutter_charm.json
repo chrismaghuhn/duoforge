@@ -15,7 +15,7 @@
    "|rule|Item Clause: Limit 1 of each item",
    "|clearpoke",
    "|poke|p1|Mawile, L50, M|",
-   "|poke|p1|Kingambit, L50, M|",
+   "|poke|p1|Gallade, L50, M|",
    "|poke|p1|Indeedee-F, L50, F|",
    "|poke|p1|Staraptor, L50, F|",
    "|poke|p1|Gholdengo, L50|",
@@ -86,12 +86,12 @@
        "locked": null
       },
       {
-       "species": "Kingambit",
-       "set_species": "Kingambit",
+       "species": "Gallade",
+       "set_species": "Gallade",
        "mega": 0,
        "switch_flag": 0,
-       "hp": 207,
-       "maxhp": 207,
+       "hp": 145,
+       "maxhp": 145,
        "item": "blackglasses",
        "status": "",
        "status_time": 0,
@@ -107,7 +107,7 @@
         0
        ],
        "pp": [
-        20,
+        12,
         8
        ],
        "volatiles": [],
@@ -412,42 +412,7 @@
     "p1": "team 1234",
     "p2": "team 1234"
    },
-   "draws": [
-    {
-     "site": "INSERT_TIE",
-     "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "A:runSwitch:p1a::0"
-     ]
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "switch-order",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:S",
-      "P:p1a:0:S"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    }
-   ],
+   "draws": [],
    "log": [
     "|teamsize|p1|4",
     "|teamsize|p2|4",
@@ -462,8 +427,8 @@
     "|switch|p1a: Mawile|Mawile, L50, M|157/157",
     "|switch|p1a: Mawile|Mawile, L50, M|100/100",
     "|split|p1",
-    "|switch|p1b: Kingambit|Kingambit, L50, M|207/207",
-    "|switch|p1b: Kingambit|Kingambit, L50, M|100/100",
+    "|switch|p1b: Gallade|Gallade, L50, M|145/145",
+    "|switch|p1b: Gallade|Gallade, L50, M|100/100",
     "|split|p2",
     "|switch|p2a: Staraptor|Staraptor, L50, F|192/192",
     "|switch|p2a: Staraptor|Staraptor, L50, F|100/100",
@@ -472,9 +437,7 @@
     "|switch|p2b: Wigglytuff|Wigglytuff, L50, F|100/100",
     "|-ability|p2a: Staraptor|Intimidate|boost",
     "|-fail|p1a: Mawile|unboost|atk|[from] ability: Hyper Cutter|[of] p1a: Mawile",
-    "|-unboost|p1b: Kingambit|atk|1",
-    "|-ability|p1b: Kingambit|Defiant|boost",
-    "|-boost|p1b: Kingambit|atk|2",
+    "|-unboost|p1b: Gallade|atk|1",
     "|turn|1"
    ],
    "state": {
@@ -538,19 +501,19 @@
         "locked": null
        },
        {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
+        "species": "Gallade",
+        "set_species": "Gallade",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
+        "hp": 145,
+        "maxhp": 145,
         "item": "blackglasses",
         "status": "",
         "status_time": 0,
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         1,
+         -1,
          0,
          0,
          0,
@@ -559,7 +522,7 @@
          0
         ],
         "pp": [
-         20,
+         12,
          8
         ],
         "volatiles": [],
@@ -762,193 +725,38 @@
   },
   {
    "input": {
-    "p1": "move 1 -2, move 1",
+    "p1": "move 1 -2, move 1 -1",
     "p2": "move 1, move 1 1"
    },
    "draws": [
-    {
-     "site": "SPEED_TIE",
-     "context": "each:BeforeTurn",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 60
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
+     "value": 19
     },
     {
      "site": "SPEED_TIE",
      "context": "field:Residual",
      "lo": 1,
      "hi": 3,
-     "value": 1,
+     "value": 2,
      "group": [
       "H:protect:p2a:end",
       "H:stall:p2a:end"
      ],
      "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
     }
    ],
    "log": [
-    "|move|p1a: Mawile|Helping Hand|p1b: Kingambit",
-    "|-singleturn|p1b: Kingambit|Helping Hand|[of] p1a: Mawile",
+    "|move|p1a: Mawile|Helping Hand|p1b: Gallade",
+    "|-singleturn|p1b: Gallade|Helping Hand|[of] p1a: Mawile",
     "|move|p2a: Staraptor|Protect|p2a: Staraptor",
     "|-singleturn|p2a: Staraptor|Protect",
-    "|move|p1b: Kingambit|Swords Dance|p1b: Kingambit",
-    "|-boost|p1b: Kingambit|atk|2",
+    "|move|p1b: Gallade|Coaching|p1a: Mawile",
+    "|-boost|p1a: Mawile|atk|1",
+    "|-boost|p1a: Mawile|def|1",
     "|move|p2b: Wigglytuff|Charm|p1a: Mawile",
     "|-fail|p1a: Mawile|unboost|atk|[from] ability: Hyper Cutter|[of] p1a: Mawile",
     "|upkeep",
@@ -999,8 +807,8 @@
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         0,
-         0,
+         1,
+         1,
          0,
          0,
          0,
@@ -1015,19 +823,19 @@
         "locked": null
        },
        {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
+        "species": "Gallade",
+        "set_species": "Gallade",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
+        "hp": 145,
+        "maxhp": 145,
         "item": "blackglasses",
         "status": "",
         "status_time": 0,
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         3,
+         -1,
          0,
          0,
          0,
@@ -1036,7 +844,7 @@
          0
         ],
         "pp": [
-         19,
+         11,
          8
         ],
         "volatiles": [],
@@ -1241,188 +1049,45 @@
   },
   {
    "input": {
-    "p1": "move 1 -2, move 1",
+    "p1": "move 1 -2, move 1 -1",
     "p2": "move 1, move 2 1"
    },
    "draws": [
-    {
-     "site": "SPEED_TIE",
-     "context": "each:BeforeTurn",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
     {
      "site": "STALL",
      "context": "StallMove",
      "lo": 0,
      "hi": 3,
-     "value": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
+     "value": 0
     },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 35
+     "value": 22
     },
     {
      "site": "SPEED_TIE",
-     "context": "each:Update",
+     "context": "field:Residual",
      "lo": 1,
      "hi": 3,
-     "value": 1,
+     "value": 2,
      "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
+      "H:stall:p2a:end",
+      "H:protect:p2a:end"
      ],
      "start": 1
     }
    ],
    "log": [
-    "|move|p1a: Mawile|Helping Hand|p1b: Kingambit",
-    "|-singleturn|p1b: Kingambit|Helping Hand|[of] p1a: Mawile",
-    "|move|p2a: Staraptor|Protect||[still]",
-    "|-fail|p2a: Staraptor",
-    "|move|p1b: Kingambit|Swords Dance|p1b: Kingambit",
-    "|-boost|p1b: Kingambit|atk|2",
+    "|move|p1a: Mawile|Helping Hand|p1b: Gallade",
+    "|-singleturn|p1b: Gallade|Helping Hand|[of] p1a: Mawile",
+    "|move|p2a: Staraptor|Protect|p2a: Staraptor",
+    "|-singleturn|p2a: Staraptor|Protect",
+    "|move|p1b: Gallade|Coaching|p1a: Mawile",
+    "|-boost|p1a: Mawile|atk|1",
+    "|-boost|p1a: Mawile|def|1",
     "|move|p2b: Wigglytuff|Fake Tears|p1a: Mawile",
     "|-unboost|p1a: Mawile|spd|2",
     "|upkeep",
@@ -1473,8 +1138,8 @@
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         0,
-         0,
+         2,
+         2,
          0,
          -2,
          0,
@@ -1489,19 +1154,19 @@
         "locked": null
        },
        {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
+        "species": "Gallade",
+        "set_species": "Gallade",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
+        "hp": 145,
+        "maxhp": 145,
         "item": "blackglasses",
         "status": "",
         "status_time": 0,
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         5,
+         -1,
          0,
          0,
          0,
@@ -1510,7 +1175,7 @@
          0
         ],
         "pp": [
-         18,
+         10,
          8
         ],
         "volatiles": [],
@@ -1620,7 +1285,9 @@
          6,
          16
         ],
-        "volatiles": [],
+        "volatiles": [
+         "stall"
+        ],
         "locked": null
        },
        {
@@ -1713,217 +1380,33 @@
   },
   {
    "input": {
-    "p1": "move 1 -2, move 1",
+    "p1": "move 1 -2, move 1 -1",
     "p2": "move 1, move 2 1"
    },
    "draws": [
     {
-     "site": "SPEED_TIE",
-     "context": "each:BeforeTurn",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
+     "site": "STALL",
+     "context": "StallMove",
+     "lo": 0,
+     "hi": 9,
+     "value": 6
     },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 15
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "H:protect:p2a:end",
-      "H:stall:p2a:end"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
+     "value": 74
     }
    ],
    "log": [
-    "|move|p1a: Mawile|Helping Hand|p1b: Kingambit",
-    "|-singleturn|p1b: Kingambit|Helping Hand|[of] p1a: Mawile",
-    "|move|p2a: Staraptor|Protect|p2a: Staraptor",
-    "|-singleturn|p2a: Staraptor|Protect",
-    "|move|p1b: Kingambit|Swords Dance|p1b: Kingambit",
-    "|-boost|p1b: Kingambit|atk|1",
+    "|move|p1a: Mawile|Helping Hand|p1b: Gallade",
+    "|-singleturn|p1b: Gallade|Helping Hand|[of] p1a: Mawile",
+    "|move|p2a: Staraptor|Protect||[still]",
+    "|-fail|p2a: Staraptor",
+    "|move|p1b: Gallade|Coaching|p1a: Mawile",
+    "|-boost|p1a: Mawile|atk|1",
+    "|-boost|p1a: Mawile|def|1",
     "|move|p2b: Wigglytuff|Fake Tears|p1a: Mawile",
     "|-unboost|p1a: Mawile|spd|2",
     "|upkeep",
@@ -1974,8 +1457,8 @@
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         0,
-         0,
+         3,
+         3,
          0,
          -4,
          0,
@@ -1990,19 +1473,19 @@
         "locked": null
        },
        {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
+        "species": "Gallade",
+        "set_species": "Gallade",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
+        "hp": 145,
+        "maxhp": 145,
         "item": "blackglasses",
         "status": "",
         "status_time": 0,
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         6,
+         -1,
          0,
          0,
          0,
@@ -2011,7 +1494,7 @@
          0
         ],
         "pp": [
-         17,
+         9,
          8
         ],
         "volatiles": [],
@@ -2121,9 +1604,7 @@
          5,
          16
         ],
-        "volatiles": [
-         "stall"
-        ],
+        "volatiles": [],
         "locked": null
        },
        {
@@ -2216,164 +1697,38 @@
   },
   {
    "input": {
-    "p1": "move 1 -2, move 1",
+    "p1": "move 1 -2, move 1 -1",
     "p2": "move 1, move 2 1"
    },
    "draws": [
-    {
-     "site": "SPEED_TIE",
-     "context": "each:BeforeTurn",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "STALL",
-     "context": "StallMove",
-     "lo": 0,
-     "hi": 3,
-     "value": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 83
+     "value": 40
     },
     {
      "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
+     "context": "field:Residual",
      "lo": 1,
      "hi": 3,
      "value": 1,
      "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
+      "H:protect:p2a:end",
+      "H:stall:p2a:end"
      ],
      "start": 1
     }
    ],
    "log": [
-    "|move|p1a: Mawile|Helping Hand|p1b: Kingambit",
-    "|-singleturn|p1b: Kingambit|Helping Hand|[of] p1a: Mawile",
-    "|move|p2a: Staraptor|Protect||[still]",
-    "|-fail|p2a: Staraptor",
-    "|move|p1b: Kingambit|Swords Dance|p1b: Kingambit",
-    "|-boost|p1b: Kingambit|atk|0",
+    "|move|p1a: Mawile|Helping Hand|p1b: Gallade",
+    "|-singleturn|p1b: Gallade|Helping Hand|[of] p1a: Mawile",
+    "|move|p2a: Staraptor|Protect|p2a: Staraptor",
+    "|-singleturn|p2a: Staraptor|Protect",
+    "|move|p1b: Gallade|Coaching|p1a: Mawile",
+    "|-boost|p1a: Mawile|atk|1",
+    "|-boost|p1a: Mawile|def|1",
     "|move|p2b: Wigglytuff|Fake Tears|p1a: Mawile",
     "|-unboost|p1a: Mawile|spd|2",
     "|upkeep",
@@ -2424,8 +1779,8 @@
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         0,
-         0,
+         4,
+         4,
          0,
          -6,
          0,
@@ -2440,19 +1795,19 @@
         "locked": null
        },
        {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
+        "species": "Gallade",
+        "set_species": "Gallade",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
+        "hp": 145,
+        "maxhp": 145,
         "item": "blackglasses",
         "status": "",
         "status_time": 0,
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         6,
+         -1,
          0,
          0,
          0,
@@ -2461,7 +1816,7 @@
          0
         ],
         "pp": [
-         16,
+         8,
          8
         ],
         "volatiles": [],
@@ -2571,7 +1926,9 @@
          4,
          16
         ],
-        "volatiles": [],
+        "volatiles": [
+         "stall"
+        ],
         "locked": null
        },
        {
@@ -2664,169 +2021,33 @@
   },
   {
    "input": {
-    "p1": "move 1 -2, move 1",
+    "p1": "move 1 -2, move 1 -1",
     "p2": "move 1, move 2 1"
    },
    "draws": [
     {
-     "site": "SPEED_TIE",
-     "context": "each:BeforeTurn",
-     "lo": 1,
+     "site": "STALL",
+     "context": "StallMove",
+     "lo": 0,
      "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
+     "value": 1
     },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 55
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "H:protect:p2a:end",
-      "H:stall:p2a:end"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
+     "value": 56
     }
    ],
    "log": [
-    "|move|p1a: Mawile|Helping Hand|p1b: Kingambit",
-    "|-singleturn|p1b: Kingambit|Helping Hand|[of] p1a: Mawile",
-    "|move|p2a: Staraptor|Protect|p2a: Staraptor",
-    "|-singleturn|p2a: Staraptor|Protect",
-    "|move|p1b: Kingambit|Swords Dance|p1b: Kingambit",
-    "|-boost|p1b: Kingambit|atk|0",
+    "|move|p1a: Mawile|Helping Hand|p1b: Gallade",
+    "|-singleturn|p1b: Gallade|Helping Hand|[of] p1a: Mawile",
+    "|move|p2a: Staraptor|Protect||[still]",
+    "|-fail|p2a: Staraptor",
+    "|move|p1b: Gallade|Coaching|p1a: Mawile",
+    "|-boost|p1a: Mawile|atk|1",
+    "|-boost|p1a: Mawile|def|1",
     "|move|p2b: Wigglytuff|Fake Tears|p1a: Mawile",
     "|-unboost|p1a: Mawile|spd|0",
     "|upkeep",
@@ -2877,8 +2098,8 @@
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         0,
-         0,
+         5,
+         5,
          0,
          -6,
          0,
@@ -2893,19 +2114,19 @@
         "locked": null
        },
        {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
+        "species": "Gallade",
+        "set_species": "Gallade",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
+        "hp": 145,
+        "maxhp": 145,
         "item": "blackglasses",
         "status": "",
         "status_time": 0,
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         6,
+         -1,
          0,
          0,
          0,
@@ -2914,7 +2135,7 @@
          0
         ],
         "pp": [
-         15,
+         7,
          8
         ],
         "volatiles": [],
@@ -3024,9 +2245,7 @@
          3,
          16
         ],
-        "volatiles": [
-         "stall"
-        ],
+        "volatiles": [],
         "locked": null
        },
        {
@@ -3119,168 +2338,40 @@
   },
   {
    "input": {
-    "p1": "move 1 -2, move 1",
-    "p2": "move 1, move 1 2"
+    "p1": "move 1 -2, move 1 -1",
+    "p2": "move 1, move 2 1"
    },
    "draws": [
-    {
-     "site": "SPEED_TIE",
-     "context": "each:BeforeTurn",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "STALL",
-     "context": "StallMove",
-     "lo": 0,
-     "hi": 3,
-     "value": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 74
+     "value": 87
     },
     {
      "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
+     "context": "field:Residual",
      "lo": 1,
      "hi": 3,
      "value": 2,
      "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p1a:0:"
+      "H:protect:p2a:end",
+      "H:stall:p2a:end"
      ],
      "start": 1
     }
    ],
    "log": [
-    "|move|p1a: Mawile|Helping Hand|p1b: Kingambit",
-    "|-singleturn|p1b: Kingambit|Helping Hand|[of] p1a: Mawile",
-    "|move|p2a: Staraptor|Protect||[still]",
-    "|-fail|p2a: Staraptor",
-    "|move|p1b: Kingambit|Swords Dance|p1b: Kingambit",
-    "|-boost|p1b: Kingambit|atk|0",
-    "|move|p2b: Wigglytuff|Charm|p1b: Kingambit",
-    "|-unboost|p1b: Kingambit|atk|2",
-    "|-ability|p1b: Kingambit|Defiant|boost",
-    "|-boost|p1b: Kingambit|atk|2",
+    "|move|p1a: Mawile|Helping Hand|p1b: Gallade",
+    "|-singleturn|p1b: Gallade|Helping Hand|[of] p1a: Mawile",
+    "|move|p2a: Staraptor|Protect|p2a: Staraptor",
+    "|-singleturn|p2a: Staraptor|Protect",
+    "|move|p1b: Gallade|Coaching|p1a: Mawile",
+    "|-boost|p1a: Mawile|atk|1",
+    "|-boost|p1a: Mawile|def|1",
+    "|move|p2b: Wigglytuff|Fake Tears|p1a: Mawile",
+    "|-unboost|p1a: Mawile|spd|0",
     "|upkeep",
     "|turn|7"
    ],
@@ -3329,8 +2420,8 @@
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         0,
-         0,
+         6,
+         6,
          0,
          -6,
          0,
@@ -3345,19 +2436,19 @@
         "locked": null
        },
        {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
+        "species": "Gallade",
+        "set_species": "Gallade",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
+        "hp": 145,
+        "maxhp": 145,
         "item": "blackglasses",
         "status": "",
         "status_time": 0,
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         6,
+         -1,
          0,
          0,
          0,
@@ -3366,7 +2457,7 @@
          0
         ],
         "pp": [
-         14,
+         6,
          8
         ],
         "volatiles": [],
@@ -3476,7 +2567,9 @@
          2,
          16
         ],
-        "volatiles": [],
+        "volatiles": [
+         "stall"
+        ],
         "locked": null
        },
        {
@@ -3501,8 +2594,8 @@
          0
         ],
         "pp": [
-         18,
-         16,
+         19,
+         15,
          8
         ],
         "volatiles": [],

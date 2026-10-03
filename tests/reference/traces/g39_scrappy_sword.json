@@ -3,7 +3,7 @@
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "spec": "g39_scrappy_sword.json",
  "format": "gen9championsvgc2026regmc",
- "seed": "sodium,0000000000000000000000000000000000000000000000000000000000003901",
+ "seed": "sodium,0000000000000000000000000000000000000000000000000000000000003900",
  "start": {
   "log": [
    "|gametype|doubles",
@@ -242,9 +242,9 @@
        "set_species": "Gholdengo",
        "mega": 0,
        "switch_flag": 0,
-       "hp": 179,
-       "maxhp": 179,
-       "item": "lifeorb",
+       "hp": 194,
+       "maxhp": 194,
+       "item": "leftovers",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -431,7 +431,7 @@
     "|switch|p1b: Gallade|Gallade, L50, M|175/175",
     "|switch|p1b: Gallade|Gallade, L50, M|100/100",
     "|split|p2",
-    "|switch|p2a: Gholdengo|Gholdengo, L50|179/179",
+    "|switch|p2a: Gholdengo|Gholdengo, L50|194/194",
     "|switch|p2a: Gholdengo|Gholdengo, L50|100/100",
     "|split|p2",
     "|switch|p2b: Kingambit|Kingambit, L50, M|207/207",
@@ -612,9 +612,9 @@
         "set_species": "Gholdengo",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 179,
-        "maxhp": 179,
-        "item": "lifeorb",
+        "hp": 194,
+        "maxhp": 194,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -734,40 +734,40 @@
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 26
+     "value": 19
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 23
+     "value": 17
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 12
+     "value": 4
     },
     {
      "site": "SECONDARY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 8
+     "value": 22
     },
     {
      "site": "SPEED_TIE",
      "context": "field:Residual",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
+     "lo": 3,
+     "hi": 5,
+     "value": 4,
      "group": [
       "H:stall:p1b:end",
       "H:protect:p1b:end"
      ],
-     "start": 2
+     "start": 3
     }
    ],
    "log": [
@@ -776,11 +776,14 @@
     "|move|p1a: Kangaskhan|Fake Out|p2a: Gholdengo",
     "|-resisted|p2a: Gholdengo|1",
     "|split|p2",
-    "|-damage|p2a: Gholdengo|163/179",
-    "|-damage|p2a: Gholdengo|91/100",
+    "|-damage|p2a: Gholdengo|179/194",
+    "|-damage|p2a: Gholdengo|92/100",
     "|cant|p2a: Gholdengo|flinch",
     "|move|p2b: Kingambit|Iron Defense|p2b: Kingambit",
     "|-boost|p2b: Kingambit|def|2",
+    "|split|p2",
+    "|-heal|p2a: Gholdengo|191/194|[from] item: Leftovers",
+    "|-heal|p2a: Gholdengo|98/100|[from] item: Leftovers",
     "|upkeep",
     "|turn|2"
    ],
@@ -960,9 +963,9 @@
         "set_species": "Gholdengo",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 163,
-        "maxhp": 179,
-        "item": "lifeorb",
+        "hp": 191,
+        "maxhp": 194,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1082,6 +1085,41 @@
      "context": "",
      "lo": 0,
      "hi": 100,
+     "value": 76
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 17
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 6
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 46
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 10
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
      "value": 9
     },
     {
@@ -1089,77 +1127,44 @@
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 0
+     "value": 21
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 0
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 20
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 23
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 12
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 22
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 5
+     "value": 8
     }
    ],
    "log": [
-    "|move|p2a: Gholdengo|Shadow Ball|p1a: Kangaskhan",
-    "|-immune|p1a: Kangaskhan",
     "|move|p1a: Kangaskhan|Double-Edge|p2a: Gholdengo",
     "|-resisted|p2a: Gholdengo|1",
-    "|-crit|p2a: Gholdengo",
     "|split|p2",
-    "|-damage|p2a: Gholdengo|80/179",
-    "|-damage|p2a: Gholdengo|44/100",
+    "|-damage|p2a: Gholdengo|150/194",
+    "|-damage|p2a: Gholdengo|77/100",
     "|split|p1",
-    "|-damage|p1a: Kangaskhan|185/212|[from] Recoil",
-    "|-damage|p1a: Kangaskhan|87/100|[from] Recoil",
+    "|-damage|p1a: Kangaskhan|198/212|[from] Recoil",
+    "|-damage|p1a: Kangaskhan|93/100|[from] Recoil",
+    "|move|p2a: Gholdengo|Shadow Ball|p1a: Kangaskhan",
+    "|-immune|p1a: Kangaskhan",
     "|move|p1b: Gallade|Sacred Sword|p2b: Kingambit",
     "|-supereffective|p2b: Kingambit|2",
     "|split|p2",
-    "|-damage|p2b: Kingambit|39/207",
-    "|-damage|p2b: Kingambit|18/100",
+    "|-damage|p2b: Kingambit|35/207",
+    "|-damage|p2b: Kingambit|16/100",
     "|move|p2b: Kingambit|Kowtow Cleave|p1b: Gallade",
     "|split|p1",
-    "|-damage|p1b: Gallade|90/175",
-    "|-damage|p1b: Gallade|51/100",
+    "|-damage|p1b: Gallade|91/175",
+    "|-damage|p1b: Gallade|52/100",
     "|-ability|p1b: Gallade|Justified|boost",
     "|-boost|p1b: Gallade|atk|1",
     "|split|p1",
-    "|-heal|p1a: Kangaskhan|198/212|[from] item: Leftovers",
-    "|-heal|p1a: Kangaskhan|93/100|[from] item: Leftovers",
+    "|-heal|p1a: Kangaskhan|211/212|[from] item: Leftovers",
+    "|-heal|p1a: Kangaskhan|99/100|[from] item: Leftovers",
+    "|split|p2",
+    "|-heal|p2a: Gholdengo|162/194|[from] item: Leftovers",
+    "|-heal|p2a: Gholdengo|83/100|[from] item: Leftovers",
     "|upkeep",
     "|turn|3"
    ],
@@ -1201,7 +1206,7 @@
         "set_species": "Kangaskhan",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 198,
+        "hp": 211,
         "maxhp": 212,
         "item": "leftovers",
         "status": "",
@@ -1230,7 +1235,7 @@
         "set_species": "Gallade",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 90,
+        "hp": 91,
         "maxhp": 175,
         "item": "lightclay",
         "status": "",
@@ -1337,9 +1342,9 @@
         "set_species": "Gholdengo",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 80,
-        "maxhp": 179,
-        "item": "lifeorb",
+        "hp": 162,
+        "maxhp": 194,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1365,7 +1370,7 @@
         "set_species": "Kingambit",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 39,
+        "hp": 35,
         "maxhp": 207,
         "item": "blackglasses",
         "status": "",
@@ -1459,53 +1464,56 @@
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 52
+     "value": 61
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 3
+     "value": 14
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 7
+     "value": 15
     },
     {
      "site": "SPEED_TIE",
      "context": "field:Residual",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
      "group": [
-      "H:protect:p1b:end",
-      "H:stall:p1b:end"
+      "H:stall:p1b:end",
+      "H:protect:p1b:end"
      ],
-     "start": 1
+     "start": 2
     }
    ],
    "log": [
     "|move|p1b: Gallade|Protect|p1b: Gallade",
     "|-singleturn|p1b: Gallade|Protect",
-    "|move|p2a: Gholdengo|Shadow Ball|p1a: Kangaskhan",
-    "|-immune|p1a: Kangaskhan",
     "|move|p1a: Kangaskhan|Double-Edge|p2a: Gholdengo",
     "|-resisted|p2a: Gholdengo|1",
     "|split|p2",
-    "|-damage|p2a: Gholdengo|29/179",
-    "|-damage|p2a: Gholdengo|16/100",
+    "|-damage|p2a: Gholdengo|125/194",
+    "|-damage|p2a: Gholdengo|64/100",
     "|split|p1",
-    "|-damage|p1a: Kangaskhan|181/212|[from] Recoil",
-    "|-damage|p1a: Kangaskhan|85/100|[from] Recoil",
+    "|-damage|p1a: Kangaskhan|199/212|[from] Recoil",
+    "|-damage|p1a: Kangaskhan|93/100|[from] Recoil",
+    "|move|p2a: Gholdengo|Shadow Ball|p1a: Kangaskhan",
+    "|-immune|p1a: Kangaskhan",
     "|move|p2b: Kingambit|Kowtow Cleave|p1b: Gallade",
     "|-activate|p1b: Gallade|move: Protect",
     "|split|p1",
-    "|-heal|p1a: Kangaskhan|194/212|[from] item: Leftovers",
-    "|-heal|p1a: Kangaskhan|91/100|[from] item: Leftovers",
+    "|-heal|p1a: Kangaskhan|212/212|[from] item: Leftovers",
+    "|-heal|p1a: Kangaskhan|100/100|[from] item: Leftovers",
+    "|split|p2",
+    "|-heal|p2a: Gholdengo|137/194|[from] item: Leftovers",
+    "|-heal|p2a: Gholdengo|70/100|[from] item: Leftovers",
     "|upkeep",
     "|turn|4"
    ],
@@ -1547,7 +1555,7 @@
         "set_species": "Kangaskhan",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 194,
+        "hp": 212,
         "maxhp": 212,
         "item": "leftovers",
         "status": "",
@@ -1576,7 +1584,7 @@
         "set_species": "Gallade",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 90,
+        "hp": 91,
         "maxhp": 175,
         "item": "lightclay",
         "status": "",
@@ -1685,9 +1693,9 @@
         "set_species": "Gholdengo",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 29,
-        "maxhp": 179,
-        "item": "lifeorb",
+        "hp": 137,
+        "maxhp": 194,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1713,7 +1721,7 @@
         "set_species": "Kingambit",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 39,
+        "hp": 35,
         "maxhp": 207,
         "item": "blackglasses",
         "status": "",
@@ -1798,70 +1806,107 @@
   },
   {
    "input": {
-    "p1": "move 2 1, move 2",
+    "p1": "move 2 1, move 1 2",
     "p2": "move 1 2, move 2 2"
    },
    "draws": [
-    {
-     "site": "STALL",
-     "context": "StallMove",
-     "lo": 0,
-     "hi": 3,
-     "value": 0
-    },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 46
+     "value": 80
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 5
+     "value": 8
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 14
+     "value": 5
     },
     {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "H:stall:p1b:end",
-      "H:protect:p1b:end"
-     ],
-     "start": 1
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 18
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 23
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 15
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 52
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 25
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 11
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 9
     }
    ],
    "log": [
-    "|move|p1b: Gallade|Protect|p1b: Gallade",
-    "|-singleturn|p1b: Gallade|Protect",
-    "|move|p2a: Gholdengo|Shadow Ball|p1b: Gallade",
-    "|-activate|p1b: Gallade|move: Protect",
     "|move|p1a: Kangaskhan|Double-Edge|p2a: Gholdengo",
     "|-resisted|p2a: Gholdengo|1",
     "|split|p2",
-    "|-damage|p2a: Gholdengo|0 fnt",
-    "|-damage|p2a: Gholdengo|0 fnt",
-    "|faint|p2a: Gholdengo",
+    "|-damage|p2a: Gholdengo|95/194",
+    "|-damage|p2a: Gholdengo|48/100",
     "|split|p1",
-    "|-damage|p1a: Kangaskhan|184/212|[from] Recoil",
-    "|-damage|p1a: Kangaskhan|86/100|[from] Recoil",
-    "|move|p2b: Kingambit|Kowtow Cleave|p1b: Gallade",
-    "|-activate|p1b: Gallade|move: Protect",
+    "|-damage|p1a: Kangaskhan|198/212|[from] Recoil",
+    "|-damage|p1a: Kangaskhan|93/100|[from] Recoil",
+    "|move|p2a: Gholdengo|Shadow Ball|p1b: Gallade",
+    "|-supereffective|p1b: Gallade|1",
     "|split|p1",
-    "|-heal|p1a: Kangaskhan|197/212|[from] item: Leftovers",
-    "|-heal|p1a: Kangaskhan|92/100|[from] item: Leftovers",
+    "|-damage|p1b: Gallade|7/175",
+    "|-damage|p1b: Gallade|4/100",
+    "|move|p1b: Gallade|Sacred Sword|p2b: Kingambit",
+    "|-supereffective|p2b: Kingambit|2",
+    "|split|p2",
+    "|-damage|p2b: Kingambit|0 fnt",
+    "|-damage|p2b: Kingambit|0 fnt",
+    "|faint|p2b: Kingambit",
+    "|split|p1",
+    "|-heal|p1a: Kangaskhan|211/212|[from] item: Leftovers",
+    "|-heal|p1a: Kangaskhan|99/100|[from] item: Leftovers",
+    "|split|p2",
+    "|-heal|p2a: Gholdengo|107/194|[from] item: Leftovers",
+    "|-heal|p2a: Gholdengo|55/100|[from] item: Leftovers",
     "|upkeep"
    ],
    "state": {
@@ -1892,7 +1937,7 @@
         "set_species": "Kangaskhan",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 197,
+        "hp": 211,
         "maxhp": 212,
         "item": "leftovers",
         "status": "",
@@ -1921,7 +1966,7 @@
         "set_species": "Gallade",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 90,
+        "hp": 7,
         "maxhp": 175,
         "item": "lightclay",
         "status": "",
@@ -1938,12 +1983,10 @@
          0
         ],
         "pp": [
-         15,
-         5
+         14,
+         6
         ],
-        "volatiles": [
-         "stall"
-        ],
+        "volatiles": [],
         "locked": null
        },
        {
@@ -2019,14 +2062,14 @@
         "species": "Gholdengo",
         "set_species": "Gholdengo",
         "mega": 0,
-        "switch_flag": 1,
-        "hp": 0,
-        "maxhp": 179,
-        "item": "lifeorb",
-        "status": "fnt",
+        "switch_flag": 0,
+        "hp": 107,
+        "maxhp": 194,
+        "item": "leftovers",
+        "status": "",
         "status_time": 0,
         "confusion": 0,
-        "fainted": true,
+        "fainted": false,
         "boosts": [
          0,
          0,
@@ -2047,17 +2090,17 @@
         "species": "Kingambit",
         "set_species": "Kingambit",
         "mega": 0,
-        "switch_flag": 0,
-        "hp": 39,
+        "switch_flag": 1,
+        "hp": 0,
         "maxhp": 207,
         "item": "blackglasses",
-        "status": "",
+        "status": "fnt",
         "status_time": 0,
         "confusion": 0,
-        "fainted": false,
+        "fainted": true,
         "boosts": [
          0,
-         2,
+         0,
          0,
          0,
          0,
@@ -2066,7 +2109,7 @@
         ],
         "pp": [
          15,
-         9,
+         10,
          8
         ],
         "volatiles": [],
