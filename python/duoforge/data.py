@@ -9,6 +9,7 @@ start-up and builds its own arrays.
 The table arguments are the DUOFORGE_DATA_TABLE_* values (TABLE_SPECIES ... TABLE_NATURE, below, from _layout.CONSTANTS).
 """
 import ctypes
+import re
 
 import numpy as np
 
@@ -22,6 +23,12 @@ TABLE_ABILITY = _layout.CONSTANTS["DUOFORGE_DATA_TABLE_ABILITY"]
 TABLE_NATURE = _layout.CONSTANTS["DUOFORGE_DATA_TABLE_NATURE"]
 NONE = _layout.CONSTANTS["DUOFORGE_DATA_NONE"]
 MAX_FORME_MOVES = _layout.CONSTANTS["DUOFORGE_DATA_MAX_FORME_MOVES"]
+
+
+def to_id(name):
+    """Showdown's toID of a display name: lower-case letters and digits ("Indeedee-F" -> "indeedeef"). The library
+    normalizes nothing (duoforge_data_find takes the exact id), so a paste's names go through this first."""
+    return re.sub(r"[^a-z0-9]", "", name.lower())
 
 
 def _handle(ctx):

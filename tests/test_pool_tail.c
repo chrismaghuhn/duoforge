@@ -1386,6 +1386,9 @@ int main(void)
                 dfi_tail_pos *tp = &want.sides[s].positions[p];
                 tp->throat_chop_turns = (uint8_t)(tp->throat_chop_turns != 0u ? tp->throat_chop_turns - 1u : 0u);
                 tp->heal_block_turns = (uint8_t)(tp->heal_block_turns != 0u ? tp->heal_block_turns - 1u : 0u);
+                /* step G31: Taunt and Yawn count down in the residual (a Yawn that runs out puts its holder to sleep) */
+                tp->taunt_turns = (uint8_t)(tp->taunt_turns != 0u ? tp->taunt_turns - 1u : 0u);
+                tp->yawn_turns = (uint8_t)(tp->yawn_turns != 0u ? tp->yawn_turns - 1u : 0u);
             }
         }
         duoforge_decision_bundle bd;

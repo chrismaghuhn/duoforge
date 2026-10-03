@@ -143,7 +143,9 @@ class Tracker:
         self._accepted = None  # the own choice accepted at the last TURN decision point (it queued the moves)
         self._last_move = None  # (position, move id, target) of the last MOVE event
         self._parting_shot = data.tables["MOVE"]["PARTINGSHOT"]
+        self._feint = data.tables["MOVE"].get("FEINT", -1)
         self._turn_scoped = set()  # single-turn features of decision 0018 seen since the turn began (lines.TURN_SCOPED)
+        self._guards = set()  # (Wide or Quick Guard feature, side) seen this turn: what a Feint breaks (step G28)
         self._spectator = False  # the own side folded like the foe's, from the public lines (duoforge_replay)
         self.turn_scoped_seen = collections.Counter()  # single-turn feature lines seen, by feature (counters)
         tables = data.tables
@@ -186,6 +188,8 @@ class Tracker:
         if cls.startswith("turn:"):
             name = cls[len("turn:"):]
             self._turn_scoped.add(name)
+            if name in ("WIDE_GUARD", "QUICK_GUARD"):
+                self._guards.add((name, trace_to_c.ev_pos(line.split("|")[2]) // 2))
             self.turn_scoped_seen[name] += 1
             return
         self._extended_field(line)
@@ -380,6 +384,7 @@ class Tracker:
         if kind == EV["TURN"]:
             self._turn = ident
             self._turn_scoped.clear()
+            self._guards.clear()
         elif kind == EV["SWITCH"]:
             p = self._at(pos)
             p.occupant, p.flag, p.fainted = ident, 0, False
@@ -407,8 +412,20 @@ class Tracker:
                 # set right before the line) until it leaves (c07 battles, Choice Scarf).
                 p.choice_slot = m.sheet["moves"].index(ident)
         elif kind == EV["ACTIVATE"]:
-            if ident2 == self.data.tables["ABILITY"]["EMERGENCYEXIT"] + 1:
-                self._at(pos).flag = 1  # it leaves: asked to switch
+            if e[3] == trace_to_c.CAUSE["ABILITY"] and ident2 == self.data.tables["ABILITY"]["EMERGENCYEXIT"] + 1:
+                self._at(pos).flag = 1  # it leaves: asked to switch (id2 names an ability only with cause ABILITY)
+            elif e[3] == trace_to_c.CAUSE["MOVE"] and ident2 == self._feint:
+                # Feint broke something (step G28, sim/battle-actions.ts hitStepBreakProtect, printed only then): the
+                # target's own Protect (its flag) and its stall volatile (chain and stall, a guard_undo that is no longer
+                # open), and the Wide Guard and Quick Guard of the target's whole side, a partner's included. Only the
+                # target's stall goes: a partner that set the guard keeps its own chain.
+                p = self._at(pos)
+                p.protecting = p.chain = p.stall = 0
+                p.guard_undo = None
+                for guard in ("WIDE_GUARD", "QUICK_GUARD"):
+                    self._guards.discard((guard, pos // 2))
+                    if not any(g[0] == guard for g in self._guards):
+                        self._turn_scoped.discard(guard)
         elif kind == EV["FAINT"]:
             p = self._at(pos)
             p.reset()  # a faint clears the position's conditions; the occupant stays until replaced
@@ -516,6 +533,7 @@ class Tracker:
         elif kind == EV["UPKEEP"]:
             self._upkeep()
             self._turn_scoped.clear()
+            self._guards.clear()
         elif kind == EV["RESULT"]:
             self.ended = True
 

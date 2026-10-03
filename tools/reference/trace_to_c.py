@@ -76,9 +76,9 @@ checks its precondition and fails loudly otherwise:
   INSERT_TIE        (Encore) the index of a replaced action among the moves
                     that tie it is a tape entry as well, unless the tied
                     actions are runSwitch entries (above)
-  RANDOM_TARGET execute:allAdjacentFoes
+  RANDOM_TARGET execute:allAdjacentFoes, execute:allAdjacent
                     always: the main target of a spread move only labels
-                    the protocol line; the move hits every adjacent foe
+                    the protocol line; the move hits every adjacent foe (and, for allAdjacent, the ally)
 
 Shuffle draws (SPEED_TIE queue) are made relative to the shuffled group:
 random(i, n) with i and n counted from the group's first index.
@@ -124,7 +124,8 @@ import sys
 
 SITES = {'SPEED_TIE': 1, 'ACCURACY': 2, 'CRIT': 3, 'DAMAGE_ROLL': 4, 'SECONDARY': 5, 'STALL': 6,
          'SLEEP_TURNS': 7, 'FREEZE_THAW': 8, 'FULL_PARALYSIS': 9, 'CONFUSION_TURNS': 10,
-         'CONFUSION_HIT': 11, 'RANDOM_TARGET': 12, 'STATUS_PICK': 13, 'INSERT_TIE': 14, 'TRACE': 15, 'POISON_TOUCH': 16}
+         'CONFUSION_HIT': 11, 'RANDOM_TARGET': 12, 'STATUS_PICK': 13, 'INSERT_TIE': 14, 'TRACE': 15, 'POISON_TOUCH': 16,
+         'FLAME_BODY': 18}  # 17 is CURSED_BODY (step G27)
 STATS = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe']
 GENDER = {'M': 1, 'F': 2}
 GENDERLESS = 3
@@ -246,11 +247,18 @@ def side_end_tie(d, state):
     return (SITES['SPEED_TIE'], 0, 2, int(first[2][1]) - 1)
 
 
+# The volatiles whose duration handler has an onEnd that shows an order (the end line, or for Yawn the silent end whose
+# sleep follows): the handler id and the end of its line. Each is an entry of the engine's sorted residual list, a callback
+# while it ends now.
+END_TIE_LINES = {'healblock': 'move: Heal Block', 'taunt': 'move: Taunt', 'yawn': 'move: Yawn|[silent]'}
+
+
 def heal_block_end_tie(d, log):
     """A residual tie of two Heal Blocks (Psychic Noise, order 20) of holders of equal Speed that both end in this step:
     the shuffle of the two orders their `-end|X|move: Heal Block` lines, so the tie is kept like a side-end tie
     (side_end_tie). The engine draws it after the callbacks of the residual and orders the pair by it; the entry
-    states the outcome: (SPEED_TIE, 0, 2, 0 when the line of the holder at the lower position comes first, else 1).
+    is the reference's own draw: the engine runs the same sorted list and draws the same shuffle, so the entry is the draw as
+    it is (SPEED_TIE, 0, 2, 0 when the shuffle keeps the pair in the order of the group, else 1); Taunt and Yawn ends likewise.
     The precondition for keeping it is that both end lines are in the step's `log` (`log` is the step's protocol
     lines): a tie of which fewer than two holders end shows no order (the drop rule for duration ties stays: None
     here). The order that the draw states is checked against the order of the two lines, so a handler list that is
@@ -262,11 +270,12 @@ def heal_block_end_tie(d, log):
         return None
     group = d['group']
     parts = [g.split(':') for g in group]
-    if not parts or any(len(x) != 4 or x[0] != 'H' or x[1] != 'healblock' or x[3] != 'end' for x in parts):
+    if not parts or any(len(x) != 4 or x[0] != 'H' or x[1] not in END_TIE_LINES or x[1] != parts[0][1] or x[3] != 'end'
+                        for x in parts):
         return None
     holders = [x[2] for x in parts]
     shown = [line.split('|')[2].split(':')[0] for line in log
-             if line.startswith('|-end|') and line.endswith('|move: Heal Block')]
+             if line.startswith('|-end|') and line.endswith('|' + END_TIE_LINES[parts[0][1]])]
     shown = [h for h in shown if h in holders]
     if len(shown) < 2:
         return None
@@ -283,7 +292,7 @@ def heal_block_end_tie(d, log):
     def flat(x):
         return (int(x[2][1]) - 1) * 2 + 'ab'.index(x[2][2])
 
-    return (SITES['SPEED_TIE'], 0, 2, 0 if flat(first) < flat(other) else 1)
+    return (SITES['SPEED_TIE'], 0, 2, d['value'] - d['start'])
 
 
 def tie_effects(group):
@@ -401,7 +410,7 @@ def drop_reason(d, state, after=None, log=None):
             return 'switch-in order with at most one entry effect'
         return None  # the engine draws
     if site == 'SPEED_TIE' and ctx == 'field:Residual':
-        if all(g.startswith('H:healblock:') and g.endswith(':end') for g in group):
+        if all(g.startswith(('H:healblock:', 'H:taunt:', 'H:yawn:')) and g.endswith(':end') for g in group):
             # Precondition of the drop: the order of the ends shows in no pair of lines. heal_block_end_tie keeps the
             # tie when two of the holders end now, so reaching this with two end lines is a bug of the caller.
             if log is None:
@@ -499,7 +508,7 @@ def drop_reason(d, state, after=None, log=None):
         raise ConversionError('insert-tie', 'trace_to_c: insert tie in %s' % group)
     if site == 'RANDOM_TARGET' and ctx in ('action-speed', 'resolve'):
         return 'target computed for priority'
-    if site == 'RANDOM_TARGET' and ctx == 'execute:allAdjacentFoes':
+    if site == 'RANDOM_TARGET' and ctx in ('execute:allAdjacentFoes', 'execute:allAdjacent'):
         return 'main target of a spread move'
     if site == 'UNKNOWN':
         raise ConversionError('unclassified-draw', 'trace_to_c: unclassified draw', detail=ctx)
@@ -727,6 +736,10 @@ IGNORED_VOLATILES = {
     # can stand without it, from the locked turn to the residual, and the lock
     # is then the one remembered (two_turn_lock).
     'electroshot': 'the locked slot and target',
+    # Step G30: Rage Powder shares the position's Follow Me bit, so the engine's state compares as no Follow Me: its presence
+    # is the extension's RAGE_POWDER bit, read after every step by duoforge.state.pool_g30.
+    'ragepowder': 'the extension bit RAGE_POWDER',
+    'solarbeam': 'the locked slot and target',  # step G30: the same two-turn lock
     # Pool step G8 (the POOL tail, decision 0015 section 7). Their turns are not a field of the state record; each
     # shows in the steps that the comparison already covers: the moves of the next request (disabled slots, the
     # request that offers Struggle), the cant lines, the heal that is missing, and Heal Block's start and end lines.
@@ -920,10 +933,27 @@ def step_events(log, viewer, roster_of, maxhp, tables):
         elif kind == '-immune':
             cause, id2, _ = ev_cause(attrs, tables)
             e = ev_tuple(EV['IMMUNE'], ev_pos(args[0]), NOPOS, cause, 0, id2)
+        elif kind == '-fail' and len(args) == 3 and args[1] == 'unboost':
+            # Inner Focus (step G22, data/abilities.ts:2157-2162): `-fail|X|unboost|atk|[from] ability: Inner Focus|[of] X`,
+            # an Intimidate drop that the ability deleted: a FAIL with the ability as its cause and the holder in `other`.
+            # Clear Body's line has no stat (the next branch); anything else is refused, never mapped.
+            cause, id2, other = ev_cause(attrs, tables)
+            if args[2] != 'atk' or cause != CAUSE['ABILITY'] or other == NOPOS:
+                raise ConversionError('fail-line', 'trace_to_c: unknown -fail %r' % line, detail=line)
+            e = ev_tuple(EV['FAIL'], ev_pos(args[0]), other, cause, 0, id2)
         elif kind == '-fail':
             # `-fail|X|heal` (a heal move at full HP) is a plain FAIL: the event has no field for the reason, which
             # for a status is the ailment the target already has.
-            e = ev_tuple(EV['FAIL'], ev_pos(args[0]), detail=AILMENT[args[1]] if len(args) > 1 and args[1] != 'heal' else 0)
+            if len(args) > 1 and args[1] == 'unboost':
+                # Clear Body (step G30): -fail|X|unboost|[from] ability: Clear Body|[of] X is a FAIL with the ability as its cause
+                # and the holder in `other`, as Inner Focus's line above (which names the stat).
+                cause, id2, other = ev_cause(attrs, tables)
+                if cause != CAUSE['ABILITY'] or other == NOPOS:
+                    raise ConversionError('fail-line', 'trace_to_c: unknown -fail unboost %r' % line, detail='unboost')
+                e = ev_tuple(EV['FAIL'], ev_pos(args[0]), other, cause, 0, id2)
+            else:
+                e = ev_tuple(EV['FAIL'], ev_pos(args[0]),
+                             detail=AILMENT[args[1]] if len(args) > 1 and args[1] != 'heal' else 0)
         elif kind == '-singleturn':
             if args[1] in ('Protect', 'move: Protect'):  # Spiky Shield and Baneful Bunker (step G20) print `move: Protect`
                 e = ev_tuple(EV['PROTECT'], ev_pos(args[0]))
@@ -932,7 +962,8 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                 e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), of, 0, tables['MOVE'][key(args[1])])
             elif args[1] == 'Wide Guard' and not attrs:  # POOL: the side condition of the user's side, one turn
                 e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), NOPOS, 0, tables['MOVE'][key(args[1])])
-            elif args[1] == 'move: Follow Me' and not attrs:  # Team C: no [of]; [zeffect] is not in the format
+            elif args[1] in ('move: Follow Me', 'move: Rage Powder') and not attrs:
+                # Team C: no [of]; [zeffect] is not in the format. Rage Powder (step G30) has the same line.
                 e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), NOPOS, 0, tables['MOVE'][key(args[1][6:])])
             else:
                 raise ConversionError('singleturn-line', 'trace_to_c: unknown -singleturn %r' % line, detail=args[1])
@@ -1226,9 +1257,10 @@ def convert_battle(name, spec, trace, tables):
                     if v not in compared and v not in IGNORED_VOLATILES:
                         raise ConversionError('unknown-volatile', 'trace_to_c: unknown volatile %r of %s' %
                                               (v, name_of(p)), detail=v)
-                if 'electroshot' in p['volatiles'] and 'twoturnmove' not in p['volatiles']:
-                    raise ConversionError('unknown-volatile', 'trace_to_c: electroshot without twoturnmove on %s' %
-                                          name_of(p), detail='electroshot')
+                for charge in ('electroshot', 'solarbeam'):
+                    if charge in p['volatiles'] and 'twoturnmove' not in p['volatiles']:
+                        raise ConversionError('unknown-volatile', 'trace_to_c: %s without twoturnmove on %s' %
+                                              (charge, name_of(p)), detail=charge)
                 vols = sum(bit for name, bit in COMPARED_VOLATILES if name in p['volatiles'])
                 row.append((1, p['hp'], tuple(pp), tuple(x + 6 for x in p['boosts']),
                             stall, 1 if p['fainted'] else 0, status, counter, p['confusion'], lslot, ltarget,

@@ -1,0 +1,26 @@
+2026-10-02 22:00:18 ab host 1 start
+2026-10-02 22:03:53 ab host 1 exit 0
+2026-10-02 22:03:53 ab scan 1 start
+2026-10-02 22:06:38 ab scan 1 exit 0
+2026-10-02 22:06:38 ab host 2 start
+2026-10-02 22:10:18 ab host 2 exit 0
+2026-10-02 22:10:18 ab scan 2 start
+2026-10-02 22:13:04 ab scan 2 exit 0
+2026-10-02 22:13:04 ab host 3 start
+2026-10-02 22:16:35 ab host 3 exit 0
+2026-10-02 22:16:35 ab scan 3 start
+2026-10-02 22:19:18 ab scan 3 exit 0
+2026-10-02 22:19:18 ingredients start
+2026-10-02 22:20:12 ingredients exit 0
+2026-10-02 22:20:12 v2-S start
+2026-10-02 22:58:05 v2-S stopped by SIGTERM, exit 0
+2026-10-02 23:34:25 v2-S resumed, exit 0
+2026-10-02 23:34:25 v1 start
+2026-10-03 00:25:31 v1 exit 0
+2026-10-03 00:25:31 v2-M start
+2026-10-03 02:07:45 v2-M exit 0
+2026-10-03 02:07:45 v2-L start
+2026-10-03 04:48:19 v2-L exit 0
+2026-10-03 04:48:19 ladder start
+2026-10-03 04:50:28 ladder exit 0
+2026-10-03 04:50:28 done
