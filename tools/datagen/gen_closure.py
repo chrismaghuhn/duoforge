@@ -354,6 +354,14 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
         for name, text in KNOCK_OFF_CALLBACKS.items():
             if name not in f or norm(f[name][1]) != text:
                 fail('move %s: %s is not the pinned text' % (mid, name))
+    if pool and handled[0] == 'DISABLE':
+        base_condition = fields(base.entry(mid)[2]).get('condition')
+        if 'onTryHit' not in f or norm(f['onTryHit'][1]) != DISABLE_ONTRYHIT:
+            fail('move %s: onTryHit is not the pinned text' % mid)
+        if base_condition is None or norm(base_condition[1]) != DISABLE_CONDITION:
+            fail('move %s: the condition is not the pinned text' % mid)
+        if 'condition' not in f or norm(f['condition'][1]) not in (DISABLE_CONDITION, DISABLE_CONDITION_CHAMPIONS):
+            fail('move %s: the Champions condition is not the pinned text' % mid)
     if pool and handled[0] == 'RAGE_POWDER':
         if 'onTry' not in f or norm(f['onTry'][1]) != RAGE_POWDER_ONTRY:
             fail('move %s: onTry is not the pinned text' % mid)
@@ -1397,6 +1405,31 @@ PROTECT_VARIANT_CONDITION = (
     "if (this.checkMoveMakesContact(move, source, target)) { %s } return this.NOT_FAIL; }, "
     "onHit(target, source, move) { if (move.isZOrMaxPowered && this.checkMoveMakesContact(move, source, target)) { %s } }, },")
 PROTECT_VARIANT_PUNISHMENT = {'SPIKY_SHIELD': 'this.damage(source.baseMaxhp / 8, source, target);'}
+# Step G27: Disable (data/moves.ts:3648-3716 with the Champions override data/mods/champions/moves.ts:228-238) is a handler of its
+# own that the turn code implements (its onTryHit, and a condition whose state is the tail's disable_slot and disable_turns).
+# The generator checks the onTryHit and both condition texts, whitespace aside: the pinned condition (duration 5, the onStart
+# that takes one turn off when the target has not moved or when Cursed Body acts, the lines, order 17, onBeforeMove priority
+# 7, onDisableMove) and the Champions condition that only changes onBeforeMove (a move with the cantusetwice flag is not
+# stopped). Cursed Body (data/abilities.ts:784-797) is an engine row (ENGINE_ROWS).
+G27_HANDLERS = ['DISABLE']
+DISABLE_ONTRYHIT = ("onTryHit(target) { if (!target.lastMove || target.lastMove.isZOrMaxPowered || target.lastMove.isMax || "
+                    "target.lastMove.id === 'struggle') { return false; } },")
+DISABLE_CONDITION = (
+    "condition: { duration: 5, noCopy: true, // doesn't get copied by Baton Pass onStart(pokemon, source, effect) { "
+    "// The target hasn't taken its turn, or Cursed Body activated and the move was not used through Dancer or Instruct "
+    "if ( this.queue.willMove(pokemon) || (pokemon === this.activePokemon && this.activeMove && !this.activeMove.isExternal) ) "
+    "{ this.effectState.duration!--; } if (!pokemon.lastMove) { this.debug(`Pokemon hasn't moved yet`); return false; } "
+    "for (const moveSlot of pokemon.moveSlots) { if (moveSlot.id === pokemon.lastMove.id) { if (!moveSlot.pp) { "
+    "this.debug('Move out of PP'); return false; } } } if (effect.effectType === 'Ability') { this.add('-start', pokemon, "
+    "'Disable', pokemon.lastMove.name, '[from] ability: ' + effect.name, `[of] ${source}`); } else { this.add('-start', pokemon, "
+    "'Disable', pokemon.lastMove.name); } this.effectState.move = pokemon.lastMove.id; }, onResidualOrder: 17, onEnd(pokemon) { "
+    "this.add('-end', pokemon, 'Disable'); }, onBeforeMovePriority: 7, onBeforeMove(attacker, defender, move) { "
+    "if (!(move.isZ && move.isZOrMaxPowered) && move.id === this.effectState.move) { this.add('cant', attacker, 'Disable', move); "
+    "return false; } }, onDisableMove(pokemon) { for (const moveSlot of pokemon.moveSlots) { if (moveSlot.id === "
+    "this.effectState.move) { pokemon.disableMove(moveSlot.id); } } }, },")
+DISABLE_CONDITION_CHAMPIONS = (
+    "condition: { inherit: true, onBeforeMove(attacker, defender, move) { if (!(move.isZ && move.isZOrMaxPowered) && move.id === "
+    "this.effectState.move && !move.flags['cantusetwice']) { this.add('cant', attacker, 'Disable', move); return false; } }, },")
 # Step G28 (a batch of move rules): Shell Smash keeps its boost order (the pin lists def and spd before atk, spa and spe and the
 # engine applies a vector in stat order), Acrobatics and Blizzard their one callback, Feint its `breaksProtect`: handlers
 # of their own that the turn code implements. The generator checks their texts (G28_FACTS; Expert Belt, an item rule
@@ -1513,6 +1546,16 @@ G34_ABILITY_FACTS = (
     ('galewings', ("onModifyPriority(priority, pokemon, target, move) { if (move?.type === 'Flying' && pokemon.hp === pokemon.maxhp) "
                    "return priority + 1; },",)),
 )
+# Step G35: Friend Guard (the target's partner weakens every hit on it: a ModifyDamage modifier, 3072 of the chain) and Rain Dish (a
+# sixteenth of the HP in rain, eachEvent('Weather')) are engine rows (ENGINE_ROWS) read by id; the pinned texts they hard-code are
+# checked here, the Champions mod overriding neither. Mold Breaker (Friend Guard is breakable) is not marked.
+G35_ABILITY_FACTS = (
+    ('friendguard', ("onAnyModifyDamage(damage, source, target, move) { if (target !== this.effectState.target && "
+                     "target.isAlly(this.effectState.target)) { this.debug('Friend Guard weaken'); return this.chainModify(0.75); } },",
+                     'flags: { breakable: 1 },')),
+    ('raindish', ("onWeather(target, source, effect) { if (target.effectiveWeather() !== effect.id) return; "
+                  "if (effect.id === 'raindance' || effect.id === 'primordialsea') { this.heal(target.baseMaxhp / 16); } },",)),
+)
 G34_ITEM_FACTS = (
     ('widelens', ('onSourceModifyAccuracyPriority: -2,',
                   "onSourceModifyAccuracy(accuracy) { if (typeof accuracy === 'number') { return this.chainModify([4505, 4096]); } },")),
@@ -1603,6 +1646,11 @@ G28_ITEM_FACTS = (
     ('expertbelt', ["onModifyDamage(damage, source, target, move) { if (move && target.getMoveHitData(move).typeMod > 0) { "
                     "return this.chainModify([4915, 4096]); } },"]),
 )
+# Step G25 (Electric Terrain, Misty Terrain): the two terrain moves keep their `terrain` field and their condition as handlers of
+# their own that the turn code implements (setTerrain, then the terrain's rules in the damage chain and in SetStatus and
+# TryAddVolatile), and Rising Voltage and Terrain Pulse keep the callback that reads the terrain (base power; type and
+# base power). Their texts are G25_FACTS, read from the pin, because the engine hard-codes them.
+G25_HANDLERS = ['ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'RISING_VOLTAGE', 'TERRAIN_PULSE']
 AURORA_VEIL_ONTRY = "onTry() { return this.field.isWeather(['hail', 'snowscape']); },"
 KNOCK_OFF_CALLBACKS = {
     'onBasePower': "onBasePower(basePower, source, target, move) { const item = target.getItem(); "
@@ -1663,6 +1711,7 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'glaiverush': ('GLAIVE_RUSH', set()),                                 # G19: the volatile that makes its user hit as vulnerable
     'knockoff': ('KNOCK_OFF', {'onAfterHit', 'onBasePower'}),             # G16: takes the target's item, x1.5 while it has one
     'encore': ('ENCORE', set()),                                          # G9 (implemented): last move, a volatile, a queue change
+    'disable': ('DISABLE', {'onTryHit'}),                                 # G27: bars the target's last move
     'spikyshield': ('SPIKY_SHIELD', {'onPrepareHit', 'onHit'}),           # G20: Protect that damages a contact attacker
     'auroraveil': ('AURORA_VEIL', {'onTry'}),                             # G20: a screen against both categories, in snow only
     'wideguard': ('WIDE_GUARD', {'onTry', 'onHitSide'}),                 # G7: a side condition against spread moves
@@ -1691,6 +1740,10 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'sunnyday': ('SUNNY_DAY', set()),
     'freezedry': ('FREEZE_DRY', {'onEffectiveness'}),                     # G32: Water takes it super effective
     'clangingscales': ('CLANGING_SCALES', set()),                         # G32: the user's Defense falls after a hit
+    'electricterrain': ('ELECTRIC_TERRAIN', set()),                       # G25: sets the terrain (5 turns)
+    'mistyterrain': ('MISTY_TERRAIN', set()),
+    'risingvoltage': ('RISING_VOLTAGE', {'basePowerCallback'}),           # G25: doubled at a grounded target in Electric Terrain
+    'terrainpulse': ('TERRAIN_PULSE', {'onModifyType', 'onModifyMove'}),  # G25: the terrain's type, doubled for a grounded user
 })
 # Step G13: Detect is Protect (data/moves.ts:3526-3547 against 13961-14005): the same handler (not one of the G2 handlers,
 # so it is added to the pool's map only), and the generator checks that its stalling fields and both callbacks are,
@@ -1703,7 +1756,7 @@ PROTECT_COPIES = {'detect': 'protect'}
 # champions/moves.ts:581-584) sets isNonstandard to null, which makes it legal, and the tag has no reader in the tables.
 TAGS_PAST_UNOBTAINABLE = 'tags: ["Past Unobtainable"],'
 PROTECT_COPY_FIELDS = ('onPrepareHit', 'onHit', 'stallingMove', 'volatileStatus', 'priority', 'accuracy', 'target')
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + ['UNMODELED']
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + ['UNMODELED']
 # Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags
 # byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
@@ -1712,9 +1765,12 @@ G2_OWNED_FIELDS = {
     'ENCORE': {'volatileStatus': "volatileStatus: 'encore',"},
     'WIDE_GUARD': {'sideCondition': "sideCondition: 'wideguard',"},
     'AURORA_VEIL': {'sideCondition': "sideCondition: 'auroraveil',"},
+    'DISABLE': {'volatileStatus': "volatileStatus: 'disable',"},
     'SPIKY_SHIELD': {'volatileStatus': "volatileStatus: 'spikyshield',"},
     'SANDSTORM': {'weather': "weather: 'Sandstorm',"},
     'SNOWSCAPE': {'weather': "weather: 'snowscape',"},
+    'ELECTRIC_TERRAIN': {'terrain': "terrain: 'electricterrain',"},
+    'MISTY_TERRAIN': {'terrain': "terrain: 'mistyterrain',"},
     'SHELL_SMASH': {'boosts': "boosts: { def: -1, spd: -1, atk: 2, spa: 2, spe: 2, },"},
     'FEINT': {'breaksProtect': "breaksProtect: true, // Breaking protection implemented in scripts.js"},
     'GLAIVE_RUSH': {'self': "self: { volatileStatus: 'glaiverush', },"},
@@ -1727,7 +1783,8 @@ G2_OWNED_FIELDS = {
     'CLANGING_SCALES': {'selfBoost': "selfBoost: { boosts: { def: -1, }, },"},
 }
 G2_OWNED_SECONDARY = {}
-G2_OWNED_CONDITION = {'ENCORE', 'WIDE_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD', 'RAGE_POWDER'}
+G2_OWNED_CONDITION = {'ENCORE', 'WIDE_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD', 'RAGE_POWDER', 'DISABLE',
+                      'ELECTRIC_TERRAIN', 'MISTY_TERRAIN'}
 # Step G8 (Throat Chop and Psychic Noise): the two secondaries become modelled kinds, and the column that their
 # consumers read is the move's second flags byte (the first is full): the `sound` flag (Throat Chop bars the sound
 # moves) and the `heal` flag (Heal Block bars the moves that heal). Both are derived for every pool move, the prefix
@@ -1773,6 +1830,50 @@ G20_CONDITION_FACTS = (
                     'onSideResidualOrder: 26,', 'onSideResidualSubOrder: 10,',
                     "onSideEnd(side) { this.add('-sideend', side, 'move: Aurora Veil'); },"]),
 )
+# Step G25: what the engine hard-codes about Electric Terrain and Misty Terrain (data/moves.ts:4497-4551 and 12151-12205), Rising
+# Voltage (:15137-15162) and Terrain Pulse (:19265-19311), whole callbacks and values of the pinned entries: the durations
+# (and Terrain Extender's 8, which no marked item gives), the residual order, the sleep and status refusals and which of
+# them print the -activate line, the confusion refusal of Misty Terrain, the base power modifiers, the lines of the field.
+# The converter reads the one quirk of the pin: Misty Terrain's -fieldend line has no "move: " in it.
+G25_TERRAIN_COMMON = ('terrain: \'%(id)s\',', 'category: "Status",', 'accuracy: true,', 'target: "all",', 'duration: 5,',
+                      "durationCallback(source, effect) { if (source?.hasItem('terrainextender')) { return 8; } return 5; },",
+                      'onBasePowerPriority: 6,',
+                      "onFieldStart(field, source, effect) { if (effect?.effectType === 'Ability') { "
+                      "this.add('-fieldstart', 'move: %(name)s', '[from] ability: ' + effect.name, `[of] ${source}`); } else { "
+                      "this.add('-fieldstart', 'move: %(name)s'); } },",
+                      'onFieldResidualOrder: 27,', 'onFieldResidualSubOrder: 7,')
+G25_FACTS = (
+    ('electricterrain', [f % {'id': 'electricterrain', 'name': 'Electric Terrain'} for f in G25_TERRAIN_COMMON] + [
+        "onSetStatus(status, target, source, effect) { if (status.id === 'slp' && target.isGrounded() && "
+        "!target.isSemiInvulnerable()) { if (effect.id === 'yawn' || (effect.effectType === 'Move' && !effect.secondaries)) { "
+        "this.add('-activate', target, 'move: Electric Terrain'); } return false; } },",
+        "onTryAddVolatile(status, target) { if (!target.isGrounded() || target.isSemiInvulnerable()) return; "
+        "if (status.id === 'yawn') { this.add('-activate', target, 'move: Electric Terrain'); return null; } },",
+        "onBasePower(basePower, attacker, defender, move) { if (move.type === 'Electric' && attacker.isGrounded() && "
+        "!attacker.isSemiInvulnerable()) { this.debug('electric terrain boost'); return this.chainModify([5325, 4096]); } },",
+        "onFieldEnd() { this.add('-fieldend', 'move: Electric Terrain'); },"]),
+    ('mistyterrain', [f % {'id': 'mistyterrain', 'name': 'Misty Terrain'} for f in G25_TERRAIN_COMMON] + [
+        "onSetStatus(status, target, source, effect) { if (!target.isGrounded() || target.isSemiInvulnerable()) return; "
+        "if (effect && ((effect as Move).status || effect.id === 'yawn')) { this.add('-activate', target, 'move: Misty Terrain'); } "
+        "return false; },",
+        "onTryAddVolatile(status, target, source, effect) { if (!target.isGrounded() || target.isSemiInvulnerable()) return; "
+        "if (status.id === 'confusion') { if (effect.effectType === 'Move' && !effect.secondaries) "
+        "this.add('-activate', target, 'move: Misty Terrain'); return null; } },",
+        "onBasePower(basePower, attacker, defender, move) { if (move.type === 'Dragon' && defender.isGrounded() && "
+        "!defender.isSemiInvulnerable()) { this.debug('misty terrain weaken'); return this.chainModify(0.5); } },",
+        "onFieldEnd() { this.add('-fieldend', 'Misty Terrain'); },"]),
+    ('risingvoltage', ['basePower: 70,', 'accuracy: 100,', 'category: "Special",', 'target: "normal",', 'type: "Electric",',
+                       "basePowerCallback(source, target, move) { if (this.field.isTerrain('electricterrain') && "
+                       "target.isGrounded()) { if (!source.isAlly(target)) this.hint(`${move.name}'s BP doubled on "
+                       "grounded target.`); return move.basePower * 2; } return move.basePower; },"]),
+    ('terrainpulse', ['basePower: 50,', 'accuracy: 100,', 'category: "Special",', 'target: "normal",', 'type: "Normal",',
+                      'flags: { protect: 1, mirror: 1, metronome: 1, pulse: 1 },',
+                      "onModifyType(move, pokemon) { if (!pokemon.isGrounded()) return; switch (this.field.terrain) { "
+                      "case 'electricterrain': move.type = 'Electric'; break; case 'grassyterrain': move.type = 'Grass'; break; "
+                      "case 'mistyterrain': move.type = 'Fairy'; break; case 'psychicterrain': move.type = 'Psychic'; break; } },",
+                      "onModifyMove(move, pokemon) { if (this.field.terrain && pokemon.isGrounded()) { move.basePower *= 2; "
+                      "this.debug('BP doubled in Terrain'); } },"]),
+)
 # Move flags that the new moves carry and no row reads. `punch` is read by Iron Fist and `slicing` (already ignored)
 # by Sharpness, `allyanim` by nothing in the tables: build_pool fails if one of those readers is a pool ability,
 # because ignoring the flag would then hide a mechanic.
@@ -1789,11 +1890,12 @@ ITEM_MEMBERS = {'TYPE_BOOSTER': ['miracleseed', 'mysticwater'] + POOL_TYPE_BOOST
 ABILITY_MEMBERS = {'ATE': ['aerilate', 'pixilate', 'refrigerate'],
                    'PINCH': ['blaze', 'overgrow', 'torrent', 'swarm'],
                    'WEATHER_SETTER': ['drizzle', 'drought', 'sandstream', 'snowwarning'],
-                   'TERRAIN_SETTER': ['grassysurge', 'psychicsurge']}
+                   'TERRAIN_SETTER': ['grassysurge', 'psychicsurge', 'electricsurge']}
 # The weather and terrain codes of the family column are the engine's state values (DFI_WEATHER_* and
 # DFI_TERRAIN_* of src/state/battle_internal.h, which duoforge.data.pool_tables checks), by Showdown's id.
 WEATHER_CODES = {'raindance': ('RAIN', 1), 'sunnyday': ('SUN', 2), 'sandstorm': ('SAND', 3), 'snowscape': ('SNOW', 4)}
-TERRAIN_CODES = {'grassyterrain': ('GRASSY', 1), 'psychicterrain': ('PSYCHIC', 2)}
+TERRAIN_CODES = {'grassyterrain': ('GRASSY', 1), 'psychicterrain': ('PSYCHIC', 2), 'electricterrain': ('ELECTRIC', 3),
+                 'mistyterrain': ('MISTY', 4)}
 # A rain or sun setter skips the Primal Pokemon with their orb (data/abilities.ts, Drizzle and Drought). No Primal
 # Pokemon is legal in the format; the guard is part of the weather pattern and must be exactly this one.
 PRIMAL_GUARD = {'raindance': ('kyogre', 'blueorb'), 'sunnyday': ('groudon', 'redorb')}
@@ -1832,12 +1934,13 @@ HANDLER_IDS = ['NONE', 'UNMODELED']
 # here, which changes the handler column and so the POOL table hash, as any pool change does; a row that is marked and
 # still has the UNMODELED handler fails duoforge.data.pool_tables. G4: Focus Sash, Rock Head. G12: Floettite (the Mega
 # Stone of Floette-Eternal), Flower Veil and Fairy Aura. G14: Rough Skin, Poison Touch and Thermal Exchange. G16: Sticky Hold (Knock Off reads it by id). AC1: Trace (the entry copy of a foe's ability). G15: Psychic Seed (Grassy Seed's rule for the other terrain). G22: Sand Rush, Swift Swim, Slush Rush and Chlorophyll (the doubled Speed in their weather, tools/datagen/pool_families.js ENGINE_ORDER), Sand Rush's immunity to Sandstorm, Inner Focus (no flinch, no Intimidate drop) and Liquid Voice (a sound move becomes Water). G23-C: Levitate (isGrounded and the Ground immunity).
-ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'expertbelt', 'ejectbutton', 'widelens'],
+ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton',
+                         'widelens'],
                'abilities': ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange',
                              'stickyhold', 'trace', 'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll',
                              'innerfocus', 'liquidvoice', 'flamebody', 'clearbody', 'hospitality', 'overcoat',
                              'soundproof', 'unnerve', 'speedboost', 'compoundeyes', 'ironfist', 'sharpness', 'solidrock',
-                             'technician', 'multiscale', 'galewings', 'toxicdebris']}
+                             'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody', 'toxicdebris']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -2405,7 +2508,8 @@ PSYCHIC_TERRAIN_FACTS = (
     "onBasePower(basePower, attacker, defender, move) { if (move.type === 'Psychic' && attacker.isGrounded() && "
     "!attacker.isSemiInvulnerable()) { this.debug('psychic terrain boost'); return this.chainModify([5325, 4096]); } },",
     'duration: 5,')
-SEED_PAIRS = (('psychicseed', 'psychicterrain', 'spd'),)
+SEED_PAIRS = (('psychicseed', 'psychicterrain', 'spd'), ('electricseed', 'electricterrain', 'def'),
+              ('mistyseed', 'mistyterrain', 'spd'))
 
 
 def check_g15_facts(moves_ts, items_ts):
@@ -2465,9 +2569,9 @@ def check_g28_items(items_ts, only=None):
 
 
 def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
-    """Step G34: every fact of G34_ABILITY_FACTS and G34_ITEM_FACTS is in the pinned entry, whitespace aside, and the
+    """Steps G34 and G35: every fact of G34_ABILITY_FACTS, G35_ABILITY_FACTS and G34_ITEM_FACTS is in the pinned entry, whitespace aside, and the
     Champions mod has no entry of its own for it (an override would change what the engine reads)."""
-    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G37_ABILITY_FACTS, abil_ts, champ_abil),
+    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + G37_ABILITY_FACTS, abil_ts, champ_abil),
                                           ('item', G34_ITEM_FACTS, items_ts, champ_items)):
         for rid, facts in facts_by_id:
             e = src.entry(rid)
@@ -2494,10 +2598,12 @@ def check_g32_entries(items_ts, champ_items, abil_ts, champ_abil, only=None):
 
 
 def check_g8_conditions(moves_ts, only=None):
-    """The engine hard-codes the durations, orders and tests of the Throat Chop and Heal Block conditions (step G8) and
-    those of Aurora Veil (step G20): every one of them must be in the pinned entry, as one normalised text. `only`: a
-    tuple of (move id, facts) to check instead of all of them (the generator's tests)."""
-    for mid, facts in (G8_CONDITION_FACTS + G20_CONDITION_FACTS + G28_FACTS + G32_FACTS + G34_FACTS + G37_FACTS if only is None else only):
+    """The engine hard-codes the durations, orders and tests of the Throat Chop and Heal Block conditions (step G8), those of
+    Aurora Veil (step G20) and the texts of G25_FACTS (the two terrains, Rising Voltage, Terrain Pulse): every one of them
+    must be in the pinned entry, as one normalised text. `only`: a tuple of (move id, facts) to check instead of all of
+    them (the generator's tests)."""
+    for mid, facts in (G8_CONDITION_FACTS + G20_CONDITION_FACTS + G28_FACTS + G32_FACTS + G34_FACTS + G25_FACTS + G37_FACTS
+                       if only is None else only):
         e = moves_ts.entry(mid)
         if e is None:
             fail('move %s not found' % mid)
@@ -3089,6 +3195,8 @@ def render_pool(dp, dx):
 #define DFI_FAMILY_WEATHER_SNOW 4u
 #define DFI_FAMILY_TERRAIN_GRASSY 1u
 #define DFI_FAMILY_TERRAIN_PSYCHIC 2u
+#define DFI_FAMILY_TERRAIN_ELECTRIC 3u
+#define DFI_FAMILY_TERRAIN_MISTY 4u
 #define DFI_FAMILY_PARAM_NONE 0xFFu
 
 /* ---- handler columns of the items and abilities: NONE for a row that the tables model (the closure and Team C
