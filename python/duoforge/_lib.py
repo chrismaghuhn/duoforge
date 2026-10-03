@@ -59,6 +59,10 @@ _SIGNATURES = {
     "duoforge_encoder_size": (_STATUS, (_U32, ctypes.POINTER(_U32))),
     "duoforge_encode": (_STATUS, (_U32, _U64, _P, _P, _P, _P, _P, _P)),
     "duoforge_batch_query_encoded": (_STATUS, (_P, _U32, _U64, _P, _P, _P, _P, _P, _P, _P)),
+    # search support (decision 0022)
+    "duoforge_search_seeds": (None, (_U64, _U64, _U32, ctypes.POINTER(_U64), ctypes.POINTER(_U64))),
+    "duoforge_batch_expand": (_STATUS, (_P, _P, _U32, _U64, _U64, _P, _P, _P, _P, _U32, _P, _P, _P, _P, _P, _P, _P,
+                                        _P)),
     "duoforge_batch_play_random": (_STATUS, (_P, _U32, _U32, _P)),
     # the data API (decisions 0015 and 0020)
     "duoforge_data_count": (_STATUS, (_P, _U32, ctypes.POINTER(_U32))),

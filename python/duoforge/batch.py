@@ -259,6 +259,68 @@ class Batch:
             self._refused(version, ext_supported, st, statuses)
         return obs, slots, pairs.view(np.bool_)
 
+    def expand(self, roots, version, ext_supported, seed, keys, viewers, root_envs, samples, choices):
+        """Search leaves (decision 0022, duoforge_batch_expand), called on the
+        leaf batch. Leaf i, in environment i of this batch, is a copy of
+        environment root_envs[i] of the batch `roots`, reseeded with
+        search_seeds(seed, keys[root_envs[i]], samples[i]), stepped with the
+        factored choices choices[i] of both players in the domains of the
+        roots' last query (roots.requests and roots.domains, as
+        query_factored() or query_encoded() left them) and, unless the step
+        fails or the leaf is TERMINAL, its viewer viewers[root_envs[i]]
+        encoded as query_encoded() encodes one row.
+
+        keys (roots.envs,) uint64; viewers (roots.envs,) uint8 (0 or 1);
+        root_envs and samples (n,) uint32; choices (n, 2) FACTORED_CHOICE;
+        n at most this batch's envs. The environments from n on are not
+        touched.
+
+        Returns (obs (n, size) float32, step_statuses (n,) uint32,
+        encode_statuses (n,) uint32, results (n,) STEP_RESULT, leaf_results
+        (n,) uint32): views of arrays this batch reuses on the next call.
+        A leaf's refusal is returned, never raised: a refused step in
+        step_statuses, a refused row in encode_statuses (the search decides
+        what each means, spec section 7). A refusal of the arguments before
+        any leaf raises DuoforgeError and touches no leaf (the library's
+        checks: the contexts, a mask past the version's features, roots being
+        this batch, a root environment or a viewer out of range); an unknown
+        version or an ext_supported that is no mask of the feature bits
+        raises ValueError as in query_encoded(), and arrays of another dtype
+        or shape raise TypeError or ValueError."""
+        from . import features
+        if not isinstance(roots, Batch):
+            raise TypeError(f"roots must be a Batch, not {type(roots).__name__}")
+        size = features.obs_size(version)  # ValueError for an unknown version
+        ext_supported = features._mask_of(ext_supported)  # as the reference: a bool or another type is no mask
+        root_envs = np.asarray(root_envs)
+        if root_envs.ndim != 1:
+            raise ValueError(f"root_envs must be one-dimensional, not of shape {root_envs.shape}")
+        n = int(root_envs.shape[0])
+        if n > self.envs:
+            raise ValueError(f"{n} leaves do not fit this batch of {self.envs} environments")
+        _require(keys, np.uint64, (roots.envs,), "keys")
+        _require(viewers, np.uint8, (roots.envs,), "viewers")
+        _require(root_envs, np.uint32, (n,), "root_envs")
+        _require(samples, np.uint32, (n,), "samples")
+        _require(choices, _layout.FACTORED_CHOICE, (n, 2), "choices")
+        key = ("expand", int(version))
+        if key not in self._buffers:
+            self._buffers[key] = (np.zeros((self.envs, size), dtype=np.float32),
+                                  np.zeros(self.envs, dtype=np.uint32), np.zeros(self.envs, dtype=np.uint32),
+                                  np.zeros(self.envs, dtype=_layout.STEP_RESULT), np.zeros(self.envs, dtype=np.uint32))
+        obs, step_statuses, encode_statuses, results, leaf_results = self._buffers[key]
+        untouched = np.uint32(0xFFFFFFFF)  # no status of the library; the argument checks write nothing
+        step_statuses[:n] = untouched
+        encode_statuses[:n] = untouched
+        st = self._lib.duoforge_batch_expand(
+            self._live(), roots._live(), uint(version, 32, "version"), uint(ext_supported, 64, "ext_supported"),
+            uint(seed, 64, "seed"), ptr(roots.requests), ptr(roots.domains), ptr(keys), ptr(viewers), n,
+            ptr(root_envs), ptr(samples), ptr(choices), ptr(step_statuses), ptr(encode_statuses), ptr(results),
+            ptr(leaf_results), ptr(obs))
+        if st != 0 and (step_statuses[:n] == untouched).all():  # refused before any leaf (n may be 0)
+            raise DuoforgeError(status_name(st))
+        return obs[:n], step_statuses[:n], encode_statuses[:n], results[:n], leaf_results[:n]
+
     def _refused(self, version, ext_supported, status, statuses):
         """Raises for a failed query_encoded: the reference's ValueError for
         an encoder refusal, DuoforgeError for a failing query."""
@@ -318,6 +380,16 @@ class Batch:
     def _check(self, status, per_env=False):
         if status != 0:
             raise DuoforgeError(status_name(status), self.statuses.copy() if per_env else None)
+
+
+def search_seeds(seed, key, sample):
+    """(rng_initstate, rng_initseq) of a search leaf (duoforge_search_seeds,
+    decision 0022): a pure function of the search seed, the decision key
+    and the sample."""
+    out = [ctypes.c_uint64() for _ in range(2)]
+    load_library().duoforge_search_seeds(uint(seed, 64, "seed"), uint(key, 64, "key"), uint(sample, 32, "sample"),
+                                         *(ctypes.byref(v) for v in out))
+    return tuple(v.value for v in out)
 
 
 # ------------------------------------------------- factored domain helpers
