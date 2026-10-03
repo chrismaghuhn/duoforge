@@ -1,5 +1,5 @@
 """The observation-only feature encoder (M7 spec section 5; the block of
-encoder 3: decision 0018 section 10).
+encoders 3 and 4: decision 0018 sections 10 and 10.2).
 
 encode(observation, domain, ext, ext_supported) -> (obs_part, slot_part,
 pair_mask) is a pure function of one player's observation, factored domain
@@ -48,6 +48,9 @@ first, then the foe):
       255, type now 0 and 1 / 18
     per member, roster 0..5 (6): tox, forme changed, forme / 65535, item
       changed, item removed, item now / 255
+    then, appended by encoder 4 (tail revision 4, 8): per side, own then
+    foe, and position, slot 0 then 1: the Roost volatile, move failed (the
+    position's last move failed, Stomping Tantrum's condition)
   Every block column belongs to one DUOFORGE_VIEWEXT_FEATURE_* bit
   (EXT_COLUMN_FEATURES). ext_supported, the mask a network was trained with
   (a checkpoint property, never an input), zeros the columns of every clear
@@ -75,11 +78,13 @@ pair_mask, bool (32, 32): [i, j] is bit j of domain.allowed[i], the pair
   rule of the engine; its sum is the joint count at a SLOTS boundary and
   0 at team selection.
 
-Versions: this encoder is ENCODER (3), and a checkpoint's config names the
+Versions: this encoder is ENCODER (4), and a checkpoint's config names the
 version its network was trained with ("encoder"; a config without it is
-1). Version 2 is the first BASE_OBS_SIZE columns, which know none of the
-new values; version 1 took present from species_id != 0, so Rillaboom
-(forme 0) was absent; every other column is the same. as_encoder(obs_part,
+1). Version 3 is the first obs_size(3) columns (without the columns encoder
+4 appends; version_features gives the feature bits of each version);
+version 2 is the first BASE_OBS_SIZE columns, which know none of the new
+values; version 1 took present from species_id != 0, so Rillaboom (forme 0)
+was absent; every other column is the same. as_encoder(obs_part,
 observations, version) and slots_as_encoder(slot_part, version) give such a
 network exactly the inputs it learned on, and refuse what it cannot show.
 """
@@ -132,22 +137,24 @@ BASE_VALUE_FEATURES = sum(1 << FEATURE_BITS[n] for n in ("WEATHER_SAND", "WEATHE
                                                         "TERRAIN_MISTY", "AILMENT_TOX"))
 ALL_FEATURES = (1 << FEATURE_COUNT) - 1
 RECORD_FEATURES = ALL_FEATURES & ~BASE_VALUE_FEATURES
-# (name, its DUOFORGE_POSITION_EXT_* bit, its feature) in bit order 0..19.
+# (name, its DUOFORGE_POSITION_EXT_* bit, its feature) in bit order: 0..19 of revision 1 (encoder 3's columns), 20
+# ROOST of tail revision 4 (encoder 4's). A bit beyond them needs a new encoder version: the import fails.
 _VOLATILE_FEATURE = {"TYPE_CHANGED": "TYPE_CHANGE", "ILLUSION_UP": "ILLUSION"}
 VOLATILES = tuple(sorted(((name[len("DUOFORGE_POSITION_EXT_"):], bit,
                            _VOLATILE_FEATURE.get(name[len("DUOFORGE_POSITION_EXT_"):],
                                                  name[len("DUOFORGE_POSITION_EXT_"):]))
                           for name, bit in C.items() if name.startswith("DUOFORGE_POSITION_EXT_")), key=lambda v: v[1]))
-assert [v[1] for v in VOLATILES] == [1 << k for k in range(20)]
+assert [v[1] for v in VOLATILES] == [1 << k for k in range(21)] and VOLATILES[20][0] == "ROOST", VOLATILES
+_VOLATILES3 = VOLATILES[:20]  # encoder 3's columns, in place
 _GUARDS = ((C["DUOFORGE_SIDE_GUARD_WIDE_GUARD"], "WIDE_GUARD"), (C["DUOFORGE_SIDE_GUARD_QUICK_GUARD"], "QUICK_GUARD"))
 _ITEM_NOW_NONE = C["DUOFORGE_ITEM_NOW_NONE"]
 _EXT_REVISION = C["DUOFORGE_OBSERVATION_EXT_REVISION"]
 
 # This encoder's version, which train writes into a checkpoint's config
 # ("encoder"), and every version as_encoder serves (1: present from the
-# species id; 2: without the block).
-ENCODER = 3
-ENCODERS = (1, 2, ENCODER)
+# species id; 2: without the block; 3: without encoder 4's columns).
+ENCODER = 4
+ENCODERS = (1, 2, 3, ENCODER)
 
 
 _STAGES = ("atk", "def", "spa", "spd", "spe", "accuracy", "evasion")
@@ -197,7 +204,7 @@ def _ext_columns():
                  (f"ext.{s}.quick_guard", f["QUICK_GUARD"])]
         for p in range(2):
             pre = f"ext.{s}.pos{p}"
-            cols += [(f"{pre}.volatile.{name.lower()}", f[feature]) for name, _, feature in VOLATILES]
+            cols += [(f"{pre}.volatile.{name.lower()}", f[feature]) for name, _, feature in _VOLATILES3]
             cols += [(f"{pre}.encore.{x}", f["ENCORE"]) for x in _SLOTS5]
             cols += [(f"{pre}.disable.{x}", f["DISABLE"]) for x in _SLOTS5]
             cols += [(f"{pre}.stockpile", f["STOCKPILE"]), (f"{pre}.perish", f["PERISH"]),
@@ -211,7 +218,18 @@ def _ext_columns():
     return cols
 
 
-_EXT = _ext_columns()
+def _ext4_columns():
+    """(name, feature bit) of the columns encoder 4 appends after encoder 3's
+    block (tail revision 4): per side and position the Roost volatile and
+    move_failed."""
+    f = FEATURE_BITS
+    return [col for s in ("own", "foe") for p in range(2)
+            for col in ((f"ext.{s}.pos{p}.volatile.roost", f["ROOST"]), (f"ext.{s}.pos{p}.move_failed", f["MOVE_FAILED"]))]
+
+
+_EXT3 = _ext_columns()
+_EXT = _EXT3 + _ext4_columns()
+EXT3_SIZE = len(_EXT3)
 EXT_SIZE = len(_EXT)
 
 
@@ -220,19 +238,21 @@ def columns_of(mask):
     trained without those bits always read as 0 (checkpoint.zero_columns)."""
     return [name for name, bit in _EXT if int(mask) >> bit & 1]
 OBS_SIZE = BASE_OBS_SIZE + EXT_SIZE
+_OBS_SIZES = {1: BASE_OBS_SIZE, 2: BASE_OBS_SIZE, 3: BASE_OBS_SIZE + EXT3_SIZE, 4: OBS_SIZE}
 # The DUOFORGE_VIEWEXT_FEATURE_* bit of every block column.
 EXT_COLUMN_FEATURES = np.array([bit for _, bit in _EXT], dtype=np.int64)
 FEATURE_NAMES = tuple(_base_names() + [name for name, _ in _EXT])
 SLOT_FEATURE_NAMES = (("valid",) + tuple(f"kind.{n}" for n in _SLOT_KIND_NAMES) + ("move_slot",)
                       + tuple(f"target.{n}" for n in ("own0", "own1", "foe0", "foe1")) + ("mega", "reserve"))
 assert len(FEATURE_NAMES) == OBS_SIZE and len(SLOT_FEATURE_NAMES) == SLOT_FEATURES
-assert len(_base_names()) == BASE_OBS_SIZE and EXT_SIZE == 5 + 2 * (7 + 2 * 36 + 6 * 6)
+assert len(_base_names()) == BASE_OBS_SIZE and EXT3_SIZE == 5 + 2 * (7 + 2 * 36 + 6 * 6) and EXT_SIZE == EXT3_SIZE + 8
 _EXT_SIDE = 7 + 2 * 36 + 6 * 6
-_VOLATILE_SHIFTS = np.arange(len(VOLATILES))
+_VOLATILE_SHIFTS = np.arange(len(_VOLATILES3))
+_ROOST = C["DUOFORGE_POSITION_EXT_ROOST"]
 _EYE5 = np.eye(5)
 # One side's columns of an empty record: no Encore and no Disable at either position ("none" of each one-hot).
 _EMPTY_SIDE = np.zeros(_EXT_SIDE)
-_EMPTY_SIDE[[7 + 36 * k + len(VOLATILES) + g for k in range(2) for g in (0, 5)]] = 1.0
+_EMPTY_SIDE[[7 + 36 * k + len(_VOLATILES3) + g for k in range(2) for g in (0, 5)]] = 1.0
 _MOVE_SLOT = SLOT_FEATURE_NAMES.index("move_slot")
 _KIND_MOVE = SLOT_FEATURE_NAMES.index("kind.MOVE")
 
@@ -240,7 +260,15 @@ _KIND_MOVE = SLOT_FEATURE_NAMES.index("kind.MOVE")
 def obs_size(encoder):
     """The obs_part width of encoder version `encoder`."""
     _check_version(encoder)
-    return OBS_SIZE if encoder == ENCODER else BASE_OBS_SIZE
+    return _OBS_SIZES[encoder]
+
+
+def version_features(encoder):
+    """The mask of the DUOFORGE_VIEWEXT_FEATURE_* bits encoder version
+    `encoder` has columns for: none for 1 and 2, bits 0 to 39 for 3, every
+    bit for 4. A network's ext_supported lies inside it."""
+    width = obs_size(encoder) - BASE_OBS_SIZE
+    return int(np.bitwise_or.reduce(1 << EXT_COLUMN_FEATURES[:width], initial=0))
 
 
 def feature_names(encoder):
@@ -349,7 +377,8 @@ def _new_values(mask):
 # Each record field with the largest value the encoder takes: the documented range (decision 0018 section 3), and
 # ability_now at most 255, the width of the member view's ability id it overlays (POOL has 215 abilities).
 _SIDE_RANGES = (("aurora_veil_turns", 8), ("stealth_rock", 1), ("spikes", 3), ("toxic_spikes", 2), ("sticky_web", 1))
-_POSITION_RANGES = (("encore_slot", 4), ("disable_slot", 4), ("stockpile", 3), ("perish", 3), ("ability_now", 255),
+_POSITION_RANGES = (("encore_slot", 4), ("disable_slot", 4), ("stockpile", 3), ("perish", 3), ("move_failed", 1),
+                    ("ability_now", 255),
                     ("type_now", 18))
 
 
@@ -407,7 +436,7 @@ def _ext_block(ob, ext, present, viewer):
     rows = np.arange(n)[:, None]
     order = np.stack([viewer, 1 - viewer], axis=1)  # (N, 2): the absolute side of own, of foe
     block = np.zeros((n, EXT_SIZE), dtype=_F32)
-    sides = block[:, 5:].reshape(n, 2, _EXT_SIDE)  # a view of the per-side columns, own then foe
+    sides = block[:, 5:EXT3_SIZE].reshape(n, 2, _EXT_SIDE)  # a view of encoder 3's per-side columns, own then foe
     if ext is not None and not present.any():
         sides[...] = _EMPTY_SIDE
     elif ext is not None:
@@ -430,6 +459,9 @@ def _ext_block(ob, ext, present, viewer):
         absolute = np.concatenate([head, position.reshape(n, 2, 72), member.reshape(n, 2, 36)], axis=-1)
         absolute[~present] = _EMPTY_SIDE
         sides[...] = absolute[rows, order]
+        appended = np.stack([(pos["volatiles"].astype(np.int64) & _ROOST) != 0, pos["move_failed"]], axis=-1)
+        appended[~present] = 0  # (N, 2, 2, 2): side, position, (roost, move_failed)
+        block[:, EXT3_SIZE:] = appended[rows, order].reshape(n, 8)
         block[:, 4] = np.where(present, rec["field"]["gravity_turns"] / 5, 0.0)
     # The base values, from the observation itself.
     block[:, 0] = ob["weather"] == C["DUOFORGE_WEATHER_SAND"]
@@ -550,10 +582,12 @@ def as_encoder(obs_part, observations, encoder):
     """obs_part of encode (OBSERVATION record, (OBS_SIZE,)) or encode_batch
     ((N,), (N, OBS_SIZE)) as encoder version `encoder` makes it, the inputs
     a network of that version was trained on: ENCODER gives obs_part
-    itself; 2 a copy of the first BASE_OBS_SIZE columns; 1 that copy with
-    every present flag back at species_id != 0. Versions 1 and 2 raise
-    ValueError for an observation with a value they do not know (Sand, Snow,
-    Electric or Misty Terrain, Tox); ValueError for another version."""
+    itself; 3 a copy of the first obs_size(3) columns (encoder 3's block,
+    without the columns encoder 4 appends); 2 a copy of the first
+    BASE_OBS_SIZE columns; 1 that copy with every present flag back at
+    species_id != 0. Versions 1 and 2 raise ValueError for an observation
+    with a value they do not know (Sand, Snow, Electric or Misty Terrain,
+    Tox); ValueError for another version."""
     ob = np.asarray(observations)
     part = np.asarray(obs_part)
     if ob.dtype != _layout.OBSERVATION or part.dtype != _F32 or part.shape != ob.shape + (OBS_SIZE,):
@@ -562,16 +596,18 @@ def as_encoder(obs_part, observations, encoder):
     if encoder == ENCODER:
         return obs_part
     ob = ob.reshape(-1)
-    _one_hot(ob["weather"], WEATHERS, "weather")
-    _one_hot(ob["terrain"], TERRAINS, "terrain")
-    _one_hot(ob["sides"]["members"]["status"], AILMENTS, "ailment")
-    out = part.reshape(-1, OBS_SIZE)[:, :BASE_OBS_SIZE].copy()
+    if encoder < 3:
+        _one_hot(ob["weather"], WEATHERS, "weather")
+        _one_hot(ob["terrain"], TERRAINS, "terrain")
+        _one_hot(ob["sides"]["members"]["status"], AILMENTS, "ailment")
+    width = obs_size(encoder)
+    out = part.reshape(-1, OBS_SIZE)[:, :width].copy()
     if encoder == 1:
         rows = np.arange(ob.shape[0])
         viewer = ob["player"].astype(np.int64)
         for k, side in enumerate((viewer, 1 - viewer)):
             out[:, _PRESENT[k]] = (ob["sides"][rows, side]["members"]["species_id"] != 0).astype(_F32)
-    return out.reshape(part.shape[:-1] + (BASE_OBS_SIZE,))
+    return out.reshape(part.shape[:-1] + (width,))
 
 
 def slots_as_encoder(slot_part, encoder):
@@ -582,6 +618,6 @@ def slots_as_encoder(slot_part, encoder):
     if part.dtype != _F32 or part.shape[-3:] != (2, OPTIONS, SLOT_FEATURES):
         raise TypeError("slot_part must be the float32 slot_part of encode or encode_batch")
     _check_version(encoder)
-    if encoder != ENCODER and ((part[..., _KIND_MOVE] == 1.0) & (part[..., _MOVE_SLOT] > 1.0)).any():
+    if encoder < 3 and ((part[..., _KIND_MOVE] == 1.0) & (part[..., _MOVE_SLOT] > 1.0)).any():
         raise ValueError(f"a Recharge option (move slot 5) is not one encoder {encoder} knows")
     return slot_part

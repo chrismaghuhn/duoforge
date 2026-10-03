@@ -174,8 +174,9 @@ class LadderTest(unittest.TestCase):
         self.assertEqual(encoder_of({"seed": 5}), 1)
         self.assertEqual(encoder_of({"encoder": 1}), 1)
         self.assertEqual(encoder_of({"encoder": 2}), 2)
-        self.assertEqual(encoder_of({"encoder": features.ENCODER}), 3)
-        for bad in (0, 4, "2", None, True, 1.0, 2.0):  # True == 1, 2.0 == 2: only ints count
+        self.assertEqual(encoder_of({"encoder": 3}), 3)
+        self.assertEqual(encoder_of({"encoder": features.ENCODER}), 4)
+        for bad in (0, 5, "2", None, True, 1.0, 2.0):  # True == 1, 2.0 == 2: only ints count
             with self.assertRaisesRegex(ValueError, "encoder"):
                 encoder_of({"encoder": bad})
 
@@ -352,11 +353,14 @@ class WidenTest(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as folder:
             path = os.path.join(folder, "p.npz")
-            for config, encoder in (({"encoder": 1}, 1), ({}, 1), ({"encoder": 2}, 2), ({"encoder": 3}, 3)):
+            for config, encoder in (({"encoder": 1}, 1), ({}, 1), ({"encoder": 2}, 2), ({"encoder": 3}, 3),
+                                    ({"encoder": 4}, 4)):
                 np.savez(path, config=json.dumps(config), **arrays(features.obs_size(encoder)))
                 self.assertEqual(policy.load(path).encoder, encoder)
-            # An unknown version, and a network of another width than its version's (607 for 1 and 2, 842 for 3).
-            for config, width in (({"encoder": 4}, features.OBS_SIZE), ({"encoder": 3}, features.BASE_OBS_SIZE),
+            # An unknown version, and a network of another width than its version's (607 for 1 and 2, 842 for 3,
+            # 850 for 4).
+            for config, width in (({"encoder": 5}, features.OBS_SIZE), ({"encoder": 3}, features.OBS_SIZE),
+                                  ({"encoder": 4}, features.obs_size(3)), ({"encoder": 3}, features.BASE_OBS_SIZE),
                                   ({"encoder": 2}, features.OBS_SIZE)):
                 np.savez(path, config=json.dumps(config), **arrays(width))
                 with self.assertRaises(ValueError):
@@ -500,10 +504,11 @@ class ExtSupportedTest(unittest.TestCase):
     def test_live_policy_refuses_a_mask_that_needs_records(self):
         from duoforge_live.policy import Policy
         params = _random_params(features.OBS_SIZE, 8)
-        self.assertEqual(Policy(params, 3, features.BASE_VALUE_FEATURES).ext_supported, features.BASE_VALUE_FEATURES)
+        self.assertEqual(Policy(params, features.ENCODER, features.BASE_VALUE_FEATURES).ext_supported,
+                         features.BASE_VALUE_FEATURES)
         for name in ("AURORA_VEIL", "ENCORE"):
             with self.assertRaisesRegex(ValueError, "records"):
-                Policy(params, 3, 1 << features.FEATURE_BITS[name])
+                Policy(params, features.ENCODER, 1 << features.FEATURE_BITS[name])
 
 
 if __name__ == "__main__":

@@ -33,9 +33,9 @@ extern "C" {
 #endif
 
 #define DUOFORGE_VERSION_MAJOR 0
-#define DUOFORGE_VERSION_MINOR 38
+#define DUOFORGE_VERSION_MINOR 39
 #define DUOFORGE_VERSION_PATCH 0
-#define DUOFORGE_VERSION_STRING "0.38.0"
+#define DUOFORGE_VERSION_STRING "0.39.0"
 
 /* Identifiers of the artifacts that exist now (registry: decisions 0002, 0005, 0006). */
 #define DUOFORGE_SEMANTICS_ID           3u   /* "duoforge-m3-closure" */
@@ -831,7 +831,7 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_TYPE_STEEL    16u
 #define DUOFORGE_TYPE_WATER    17u
 
-/* Bits of duoforge_position_ext.volatiles (bits 20 to 31 are reserved, 0). */
+/* Bits of duoforge_position_ext.volatiles (bits 21 to 31 are reserved, 0). */
 #define DUOFORGE_POSITION_EXT_SUBSTITUTE   0x00000001u
 #define DUOFORGE_POSITION_EXT_TAUNT        0x00000002u
 #define DUOFORGE_POSITION_EXT_IMPRISON     0x00000004u
@@ -852,13 +852,14 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_POSITION_EXT_RAGE_POWDER  0x00020000u
 #define DUOFORGE_POSITION_EXT_TYPE_CHANGED 0x00040000u
 #define DUOFORGE_POSITION_EXT_ILLUSION_UP  0x00080000u
+#define DUOFORGE_POSITION_EXT_ROOST        0x00100000u /* Roost: the Flying type is off until the end of the turn */
 /* Bits of duoforge_side_ext.guard_flags (this turn only). */
 #define DUOFORGE_SIDE_GUARD_WIDE_GUARD  1u
 #define DUOFORGE_SIDE_GUARD_QUICK_GUARD 2u
 /* duoforge_member_ext.item_now: the member holds nothing (Knock Off, Thief). */
 #define DUOFORGE_ITEM_NOW_NONE 255u
 
-/* Bit numbers of duoforge_observation_ext.supported, by tier (decision 0018 section 7.1). Bits 40 to 63 are free. */
+/* Bit numbers of duoforge_observation_ext.supported, by tier (decision 0018 section 7.1). Bits 42 to 63 are free. */
 #define DUOFORGE_VIEWEXT_FEATURE_WEATHER_SAND     0u
 #define DUOFORGE_VIEWEXT_FEATURE_WEATHER_SNOW     1u
 #define DUOFORGE_VIEWEXT_FEATURE_ABILITY_CHANGE   2u
@@ -899,7 +900,9 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_VIEWEXT_FEATURE_NO_RETREAT       37u
 #define DUOFORGE_VIEWEXT_FEATURE_QUICK_GUARD      38u
 #define DUOFORGE_VIEWEXT_FEATURE_RAGE_POWDER      39u
-#define DUOFORGE_VIEWEXT_FEATURE_COUNT            40u
+#define DUOFORGE_VIEWEXT_FEATURE_ROOST            40u
+#define DUOFORGE_VIEWEXT_FEATURE_MOVE_FAILED      41u
+#define DUOFORGE_VIEWEXT_FEATURE_COUNT            42u
 
 /* Field-wide, public. */
 typedef struct duoforge_field_ext {
@@ -916,7 +919,8 @@ typedef struct duoforge_position_ext {
     uint8_t disable_slot;  /* the barred move slot + 1; 0: none */
     uint8_t stockpile;     /* 0 to 3 levels */
     uint8_t perish;        /* the Perish count shown, 3 to 1; 0: none */
-    uint8_t reserved[4];   /* zero */
+    uint8_t move_failed;   /* 0/1: the occupant's last move failed last turn (the pin's moveLastTurnResult === false), public */
+    uint8_t reserved[3];   /* zero */
 } duoforge_position_ext; /* 16 bytes */
 
 /* One roster member, bench included. */

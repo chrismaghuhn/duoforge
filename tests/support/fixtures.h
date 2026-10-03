@@ -110,9 +110,9 @@ duoforge_battle *df_make_f11(const duoforge_context *c4);
 duoforge_battle *df_make_f12(const duoforge_context *c4);
 duoforge_battle *df_make_f13(const duoforge_context *c4);
 /* Encodes via the public API and aborts on failure. df_encode is for the kinds with schema 3 (1009 bytes); a
- * POOL state also has the tail (1257 bytes, decision 0015 section 7): df_encode_n takes any kind and returns the
+ * POOL state also has the tail (1297 bytes, decision 0015 section 7): df_encode_n takes any kind and returns the
  * size. DF_STATE_ENCODED_MAX is the largest size of any kind; whitebox tests assert it equals the engine's. */
-#define DF_STATE_ENCODED_MAX 1257u
+#define DF_STATE_ENCODED_MAX 1297u
 void df_encode(const duoforge_context *ctx, const duoforge_battle *b, uint8_t out[DUOFORGE_STATE_V3_ENCODED_SIZE]);
 size_t df_encode_n(const duoforge_context *ctx, const duoforge_battle *b, uint8_t out[DF_STATE_ENCODED_MAX]);
 

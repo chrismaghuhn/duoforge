@@ -424,8 +424,9 @@ def _run(args, pool, on_start, stop):
     widening = saved_state is not None and (saved_state["features"] != list(features.FEATURE_NAMES) or
                                             saved_state["slot_features"] != list(features.SLOT_FEATURE_NAMES))
     if widening and encoder != features.ENCODER:
-        # A run of encoder 2 widened by name continues on this encoder's inputs: the new rows start at zero.
-        if encoder != 2:
+        # A run of encoder 2 or 3 widened by name continues on this encoder's inputs: the new rows start at zero,
+        # and its mask, which lies inside the columns it had, stays.
+        if encoder not in (2, 3):
             raise SystemExit(f"a run of encoder {encoder} cannot be widened to encoder {features.ENCODER}")
         changes["encoder"] = [encoder, features.ENCODER]
         encoder = features.ENCODER

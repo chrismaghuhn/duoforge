@@ -48,7 +48,7 @@ class ColumnsTest(unittest.TestCase):
         self.assertEqual(names[cols.position[1, 0, 0]], "foe.pos0.stage.atk")
         # Encoder 3's block joins the scalars of its global, side, position and member.
         self.assertEqual(cols.glob.shape, (15 + 5,))
-        self.assertEqual(cols.position.shape, (2, 2, 17 + 36))
+        self.assertEqual(cols.position.shape, (2, 2, 17 + 36 + 2))  # encoder 4: roost, move_failed
         self.assertEqual(names[cols.position[1, 0, 17]], "ext.foe.pos0.volatile.substitute")
         self.assertEqual(names[cols.side[1, -1]], "ext.foe.quick_guard")
         self.assertEqual(names[cols.member[0, 3, -1]], "ext.own.mem3.item_now")

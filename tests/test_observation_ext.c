@@ -76,7 +76,8 @@ static void test_layout(df_test *t)
     DF_CHECK(t, offsetof(duoforge_position_ext, disable_slot) == 9u);
     DF_CHECK(t, offsetof(duoforge_position_ext, stockpile) == 10u);
     DF_CHECK(t, offsetof(duoforge_position_ext, perish) == 11u);
-    DF_CHECK(t, offsetof(duoforge_position_ext, reserved) == 12u);
+    DF_CHECK(t, offsetof(duoforge_position_ext, move_failed) == 12u);
+    DF_CHECK(t, offsetof(duoforge_position_ext, reserved) == 13u);
 
     DF_CHECK(t, offsetof(duoforge_member_ext, forme) == 0u);
     DF_CHECK(t, offsetof(duoforge_member_ext, item_now) == 2u);
@@ -127,16 +128,17 @@ static void test_constants(df_test *t)
         DUOFORGE_VIEWEXT_FEATURE_SALT_CURE,        DUOFORGE_VIEWEXT_FEATURE_DESTINY_BOND,
         DUOFORGE_VIEWEXT_FEATURE_CURSE,            DUOFORGE_VIEWEXT_FEATURE_NO_RETREAT,
         DUOFORGE_VIEWEXT_FEATURE_QUICK_GUARD,      DUOFORGE_VIEWEXT_FEATURE_RAGE_POWDER,
+        DUOFORGE_VIEWEXT_FEATURE_ROOST,            DUOFORGE_VIEWEXT_FEATURE_MOVE_FAILED,
     };
-    /* Bit numbers 0 to 39, each once, in the order of the note (the tiers). */
+    /* Bit numbers 0 to 41, each once, in the order of the note (the tiers). */
     DF_CHECK(t, sizeof features / sizeof features[0] == DUOFORGE_VIEWEXT_FEATURE_COUNT);
-    DF_CHECK(t, DUOFORGE_VIEWEXT_FEATURE_COUNT == 40u);
+    DF_CHECK(t, DUOFORGE_VIEWEXT_FEATURE_COUNT == 42u);
     uint64_t seen = 0u;
     for (uint32_t i = 0u; i < DUOFORGE_VIEWEXT_FEATURE_COUNT; ++i) {
         DF_CHECK(t, features[i] == i);
         seen |= (uint64_t)1u << features[i];
     }
-    DF_CHECK(t, seen == (((uint64_t)1u << 40u) - 1u));
+    DF_CHECK(t, seen == (((uint64_t)1u << 42u) - 1u));
 
     static const uint32_t vol[] = {
         DUOFORGE_POSITION_EXT_SUBSTITUTE,    DUOFORGE_POSITION_EXT_TAUNT,         DUOFORGE_POSITION_EXT_IMPRISON,
