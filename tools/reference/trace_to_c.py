@@ -349,12 +349,15 @@ def drop_reason(d, state, after=None, log=None):
         # order of the Pokemon changes nothing.
         # Thermal Exchange's onUpdate (data/abilities.ts:4990-5018, step G14) cures a burn that its holder has, and the
         # holder cannot have one (every burn is refused by its onSetStatus, a member starts without a status): it does
-        # nothing, so it is not a holder here. The precondition is checked on the state before the step: a holder
-        # that is burned is an error.
+        # nothing, so it is not a holder here. The precondition is checked on the Pokemon that stands in the slot when
+        # the tie is drawn: the state after the step when there is one (a holder that switched in this step stands there;
+        # the state before the step still shows the one it replaced, which may be burned), else the state before. A
+        # holder that is burned is an error.
+        placed = state if after is None else after
         for g in group:
             if 'thermalexchange' in g.split(':', 3)[3].split('+'):
                 slot = g.split(':')[1]
-                side = state['sides'][int(slot[1]) - 1]
+                side = placed['sides'][int(slot[1]) - 1]
                 index = side['active'][' ab'.index(slot[2]) - 1]
                 if index is not None and side['pokemon'][index]['status'] == 'brn':
                     raise ConversionError('thermal-exchange-burn',
@@ -535,7 +538,7 @@ def name_of(p):
 # Set species whose protocol name is another (the base species), decision 0009. Arcanine-Hisui and Floette-Eternal
 # are called Arcanine and Floette in the switch line (pool step G2); the species clause keeps the alias unique.
 BASE_SPECIES_NAME = {'Indeedee-F': 'Indeedee', 'Arcanine-Hisui': 'Arcanine', 'Floette-Eternal': 'Floette',
-                     'Ninetales-Alola': 'Ninetales', 'Meowstic-F': 'Meowstic'}
+                     'Ninetales-Alola': 'Ninetales', 'Meowstic-F': 'Meowstic', 'Lycanroc-Dusk': 'Lycanroc'}
 
 
 def abs_target(side, loc):

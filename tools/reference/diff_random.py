@@ -566,7 +566,7 @@ def step_report(trace, step):
             elif trace_to_c.heal_block_end_tie(d, entry['log']) is not None:
                 verdict = 'kept: the order of two Heal Blocks ending'
             else:
-                reason = trace_to_c.drop_reason(d, before, None, entry['log'])
+                reason = trace_to_c.drop_reason(d, before, entry['state'], entry['log'])
                 verdict = 'kept' if reason is None else 'dropped: ' + reason
         except trace_to_c.ConversionError as e:
             verdict = 'error: %s: %s' % (e.rule, e.code)
