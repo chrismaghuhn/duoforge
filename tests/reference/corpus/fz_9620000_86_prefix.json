@@ -1,0 +1,62 @@
+{
+  "name": "fz_9620000_86_prefix",
+  "purpose": "Corpus (defect): case fz_9620000_86 of run 9620000 (tools/reference/diff_driver.py random), team PP_3C4611CCBA18D35A against team PP_0071E895C381DD1C, found as ORACLE_GAP tie-context event:BeforeMove. The shortest prefix that showed it, 13 of 19 choices; it passes now, fixed by the residual handler list of the pin, step residual-order (2026-10-03).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,ec44fb04dc2ff3de660595852fb61d7e0962372455c6ec498b0ae2c7bb906fba",
+  "teams": [
+    "Milotic (M) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 25 HP / 32 Def / 9 SpA\nQuiet Nature\n- Muddy Water\n- Ice Beam\n- Protect\n- Scald\n\nFloette-Eternal (F) @ Floettite\nAbility: Flower Veil\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpA\nQuiet Nature\n- Draining Kiss\n- Dazzling Gleam\n- Calm Mind\n- Protect\n\nGolisopod (M) @ Golisopite\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nBrave Nature\n- Bulk Up\n- Leech Life\n- Liquidation\n- Iron Head\n\nFarigiraf (M) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Trick Room\n- Psychic Noise\n- Hyper Voice\n- Protect\n\nArcanine-Hisui (M) @ Charcoal\nAbility: Intimidate\nLevel: 50\nEVs: 14 HP / 32 Atk / 20 SpD\nBrave Nature\n- Close Combat\n- Flare Blitz\n- Rock Slide\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nBrave Nature\n- High Horsepower\n- Fake Out\n- Grassy Glide\n- Wood Hammer",
+    "Basculegion (M) @ Life Orb\nAbility: Adaptability\nLevel: 50\nEVs: 4 HP / 18 Atk / 1 Def / 15 SpD / 28 Spe\nAdamant Nature\n- Wave Crash\n- Last Respects\n- Aqua Jet\n- Protect\n\nFloette-Eternal (F) @ Floettite\nAbility: Flower Veil\nLevel: 50\nEVs: 28 HP / 1 Def / 5 SpA / 32 Spe\nModest Nature\n- Moonblast\n- Dazzling Gleam\n- Calm Mind\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 16 HP / 20 SpA / 30 Spe\nModest Nature\n- Hyper Voice\n- Flamethrower\n- Tailwind\n- Protect\n\nIncineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 6 SpD / 14 Spe\nImpish Nature\n- Flare Blitz\n- Throat Chop\n- Fake Out\n- Parting Shot\n\nRillaboom (M) @ Occa Berry\nAbility: Grassy Surge\nLevel: 50\nEVs: 32 HP / 15 Atk / 13 SpD / 6 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- High Horsepower\n- Fake Out\n\nSneasler (M) @ Grassy Seed\nAbility: Unburden\nLevel: 50\nEVs: 32 HP / 3 Atk / 11 Def / 13 SpD / 6 Spe\nAdamant Nature\n- Dire Claw\n- Close Combat\n- Rock Slide\n- Swords Dance"
+  ],
+  "choices": [
+    {
+      "p1": "team 4613",
+      "p2": "team 4631"
+    },
+    {
+      "p1": "move 4, move 1 -1",
+      "p2": "move 2 -2, move 1 2"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "move 4, move 4 1",
+      "p2": "move 2 2, switch 4"
+    },
+    {
+      "p1": "move 1, move 4 -1",
+      "p2": "move 4 -2, move 4"
+    },
+    {
+      "p1": "move 2 -2, move 1 mega",
+      "p2": "move 1 -2, switch 3"
+    },
+    {
+      "p1": "switch 3, move 3 -1",
+      "p2": "move 1 -2, move 3 mega"
+    },
+    {
+      "p1": "switch 3, move 2 2",
+      "p2": "switch 4, move 2 1"
+    },
+    {
+      "p1": "move 3, move 4 2",
+      "p2": "move 1 1, move 1"
+    },
+    {
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "move 2 -2, move 4 1",
+      "p2": "move 4, move 1 -1"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 2 -2, move 3 2",
+      "p2": "move 2 2, move 2 2"
+    }
+  ]
+}

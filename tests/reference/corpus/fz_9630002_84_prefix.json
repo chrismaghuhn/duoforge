@@ -1,0 +1,108 @@
+{
+  "name": "fz_9630002_84_prefix",
+  "purpose": "Corpus (defect): case fz_9630002_84 of run 9630002 (tools/reference/diff_driver.py random), team D against team D, found as DIVERGENCE events reference kind 40 differs in pos. The shortest prefix that showed it, 24 of 42 choices; it passes now, fixed by the residual handler list of the pin, step residual-order (2026-10-03).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,ce7a8f2807c562ac83924db0e7668cab127d6c246e2adb0800666800158923e4",
+  "teams": [
+    "Milotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Ice Beam\n- Coil\n- Protect\n- Muddy Water\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Encore\n- Weather Ball\n- Protect\n- Ice Beam\n\nKingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect\n- Low Kick\n- Swords Dance\n\nIndeedee-F (F) @ Leftovers\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Helping Hand\n- Psychic\n- Protect\n- Follow Me\n\nRaichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Encore\n- Thunderbolt\n- Protect\n- Helping Hand\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Shadow Ball\n- Thunderbolt\n- Protect\n- Recover",
+    "Kingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect\n- Low Kick\n- Swords Dance\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Shadow Ball\n- Thunderbolt\n- Protect\n- Recover\n\nIndeedee-F (F) @ Leftovers\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Helping Hand\n- Psychic\n- Protect\n- Follow Me\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Encore\n- Weather Ball\n- Protect\n- Ice Beam\n\nRaichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Encore\n- Thunderbolt\n- Protect\n- Helping Hand\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Ice Beam\n- Coil\n- Protect\n- Muddy Water"
+  ],
+  "choices": [
+    {
+      "p1": "team 6431",
+      "p2": "team 3246"
+    },
+    {
+      "p1": "move 2 1, move 2 -1",
+      "p2": "switch 3, move 4"
+    },
+    {
+      "p1": "move 2 2, move 3",
+      "p2": "move 2 2, move 3"
+    },
+    {
+      "p1": "move 2 -2, move 2 2",
+      "p2": "move 1 1, switch 3"
+    },
+    {
+      "p1": "move 1 1, move 2 -1",
+      "p2": "move 1 1, move 3"
+    },
+    {
+      "p1": "move 2 1, move 3",
+      "p2": "switch 3, move 1 -1"
+    },
+    {
+      "p1": "move 1 -2, move 2 1",
+      "p2": "move 3, switch 3"
+    },
+    {
+      "p1": "move 1 1, move 3",
+      "p2": "move 4, move 3"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 3, move 4",
+      "p2": "move 3, move 4 1"
+    },
+    {
+      "p1": "move 1 -2, move 2 2",
+      "p2": "move 4, move 3"
+    },
+    {
+      "p1": "move 4, move 2 1",
+      "p2": "move 3, move 3"
+    },
+    {
+      "p1": "move 2 -2, move 4",
+      "p2": "switch 4, move 4 1"
+    },
+    {
+      "p1": "move 4, move 4",
+      "p2": "move 4, move 2 -1"
+    },
+    {
+      "p1": "move 2 1, move 4",
+      "p2": "move 3, move 1 2"
+    },
+    {
+      "p1": "switch 3, move 4",
+      "p2": "switch 4, move 4 1"
+    },
+    {
+      "p1": "switch 4, move 4",
+      "p2": "move 2 -2, move 1 -1"
+    },
+    {
+      "p1": "move 1 1, move 4",
+      "p2": "move 4, move 2 2"
+    },
+    {
+      "p1": "move 2, move 2 -1",
+      "p2": "move 3, move 3"
+    },
+    {
+      "p1": "move 1 -2, move 4",
+      "p2": "move 4, move 2 2"
+    },
+    {
+      "p1": "move 3, move 1 -1",
+      "p2": "move 3, move 1 2"
+    },
+    {
+      "p1": "switch 3, move 1 -1",
+      "p2": "move 3, move 1 -1"
+    },
+    {
+      "p1": "move 2 -2, move 1 -1",
+      "p2": "move 3, move 1 -1"
+    },
+    {
+      "p1": "move 1 2, move 1 -1",
+      "p2": "move 3, move 2 -1"
+    }
+  ]
+}

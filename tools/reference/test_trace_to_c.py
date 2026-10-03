@@ -198,6 +198,25 @@ class Refusals(unittest.TestCase):
             tie(['P:p1b:1:trace', 'P:p2a:1:whiteherb'])
         self.assertEqual(cm.exception.rule, 'each-tie-handlers')
 
+    def test_a_before_move_tie_of_heal_block_and_throat_chop_of_one_pokemon_is_dropped(self):
+        """Step AC1 follow-up (the AWS triage of 2026-10-03): the two BeforeMove handlers of a Pokemon that holds Heal
+        Block and Throat Chop, in either order, are dropped (no pool move has both flags); any other BeforeMove tie, and
+        the pair on two Pokemon, are refused."""
+        def tie(group, context='event:BeforeMove'):
+            return trace_to_c.drop_reason({'site': 'SPEED_TIE', 'context': context, 'group': group}, {})
+        self.assertIn('Heal Block', tie(['H:healblock:p1b:cb', 'H:throatchop:p1b:cb']))
+        self.assertIn('Heal Block', tie(['H:throatchop:p2a:cb', 'H:healblock:p2a:cb']))
+        # the ModifyMove handlers of the same two conditions (data/moves.ts:8314, :19417) are the same case
+        self.assertIn('ModifyMove', tie(['H:healblock:p1b:cb', 'H:throatchop:p1b:cb'], 'event:ModifyMove'))
+        self.assertIn('Heal Block', tie(['H:throatchop:p2a:cb', 'H:healblock:p2a:cb'], 'event:ModifyMove'))
+        with self.assertRaises(trace_to_c.ConversionError):
+            tie(['H:healblock:p1b:cb', 'H:throatchop:p1b:cb'], 'event:TryHit')
+        for bad in (['H:healblock:p1b:cb', 'H:throatchop:p2a:cb'], ['H:healblock:p1b:cb', 'H:flinch:p1b:cb'],
+                    ['H:healblock:p1b:cb', 'H:throatchop:p1b:cb', 'H:slp:p1b:cb'], ['H:healblock:p1b:cb', 'H:healblock:p1b:cb']):
+            with self.assertRaises(trace_to_c.ConversionError) as cm:
+                tie(bad)
+            self.assertEqual(cm.exception.rule, 'tie-context')
+
     def test_switch_order_tie_with_an_entry_effect_that_is_not_white_herb(self):
         def mutate(spec, trace):
             d = trace['steps'][0]['draws'][2]
@@ -737,6 +756,60 @@ class Library(unittest.TestCase):
         self.assertEqual(rows, derived)
         # The guard is live at a boundary inside a turn in the pivot battle, and only there.
         self.assertEqual({k: v for k, v in derived.items() if v}, {('g7_wide_guard_pivot', 1): 1})
+
+    def test_aurora_veil_rows_are_what_the_protocol_lines_say(self):
+        """Decision 0018 section 6.1 for Aurora Veil: a side has the screen from the `|-sidestart|pN: X|move: Aurora Veil`
+        line (5 turns, 8 when the user of the move holds Light Clay: the sheet, which is the spec's team text) and its turns
+        left count down at every `|upkeep|` line until the `-sideend` line of the screen ends it (at the residual where
+        one turn is left). The rows of the C test (veil_rows in tests/test_pool_g20.c: the turns left of each side after
+        each step of the G20 battles) must be exactly what these lines give for the committed traces, so the engine's
+        tail and view extension are checked against the protocol and not against themselves. Every `-sidestart` comes from
+        a move line of Aurora Veil of that side, and a `-sideend` comes with one turn left; a failed Aurora Veil (`-fail`
+        after the move line) leaves the rows alone."""
+        with open(os.path.join(ROOT, 'tests', 'test_pool_g20.c'), encoding='utf-8') as f:
+            source = f.read()
+        rows = {}
+        for m in re.finditer(r'\{"(g20_\w+)", (\d+)u, \{(\d+)u, (\d+)u\}\}', source):
+            rows[(m.group(1), int(m.group(2)))] = (int(m.group(3)), int(m.group(4)))
+        names = sorted({n for n, _ in rows})
+        self.assertTrue(names)
+        listed = re.search(r'names\[\] = \{(.*?)\};', source, re.S).group(1)
+        self.assertEqual(sorted(re.findall(r'"(g20_\w+)"', listed)), names)
+        derived = {}
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            with open(os.path.join(ROOT, 'tests', 'reference', 'specs', name + '.json'), encoding='utf-8') as f:
+                spec = json.load(f)
+            turns = [0, 0]
+            last = None  # (user, move) of the last move line
+            for k, step in enumerate(trace['steps']):
+                for line in step['log']:
+                    part = line.split('|')
+                    if len(part) < 2:
+                        continue
+                    if part[1] == 'move':
+                        last = (part[2], part[3])
+                    elif part[1] == '-sidestart' and part[3] == 'move: Aurora Veil':
+                        side = int(part[2][1]) - 1
+                        self.assertEqual(last[1], 'Aurora Veil')
+                        self.assertEqual(int(last[0][1]) - 1, side)
+                        self.assertEqual(turns[side], 0, '%s step %d: a second -sidestart' % (name, k))
+                        species = last[0].split(': ')[1]
+                        sets = [t for t in spec['teams'][side].split('\n\n') if t.startswith(species)]
+                        self.assertEqual(len(sets), 1, species)
+                        turns[side] = 8 if '@ Light Clay' in sets[0].split('\n')[0] else 5
+                    elif part[1] == '-sideend' and part[3] == 'move: Aurora Veil':
+                        side = int(part[2][1]) - 1
+                        self.assertEqual(turns[side], 1, '%s step %d: %s' % (name, k, line))
+                        turns[side] = 0
+                    elif part[1] == 'upkeep':
+                        turns = [t - 1 if t else 0 for t in turns]
+                derived[(name, k)] = tuple(turns)
+        self.assertEqual(rows, derived)
+        # The battles have a screen of five turns and one of eight, one that ends, and both sides' at once.
+        values = list(derived.values())
+        self.assertTrue(any(max(v) > 5 for v in values) and any(all(v) for v in values) and any(sum(v) for v in values))
 
     def test_item_taken_rows_are_what_the_protocol_lines_say(self):
         """Decision 0018 section 6.1 for Knock Off: a member holds nothing from the `|-enditem|X|Item|[from] move: Knock Off|
@@ -1293,7 +1366,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 50)  # G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), then Expanding Force (G15)
+        self.assertEqual(len(marked), 51)  # G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -1310,6 +1383,8 @@ class Library(unittest.TestCase):
                             if after.startswith('|move|') or after.startswith('|turn|'):
                                 break
                             done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|', '|-start|', '|-weather|'))
+                            # A side condition that a status move sets (Aurora Veil, step G20): its -sidestart line.
+                            done = done or (after.startswith('|-sidestart|') and after.endswith('|move: ' + name))
                             # A side move (Wide Guard, step G7) shows its effect as its own -singleturn line; Detect's is
                             # Protect's (step G13: its handler, and the line of the Protect condition).
                             done = done or (after.startswith('|-singleturn|') and after.endswith('|' + name))

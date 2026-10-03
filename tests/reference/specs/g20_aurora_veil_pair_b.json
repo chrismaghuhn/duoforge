@@ -1,0 +1,24 @@
+{
+  "name": "g20_aurora_veil_pair_b",
+  "purpose": "Aurora Veil on both sides in the same turn (Ninetales-Alola, Abomasnow): both end in the same residual and the shuffle of their end lines is drawn (b).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000008401",
+  "teams": [
+    "Ninetales-Alola (F) @ Leftovers\nAbility: Snow Warning\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nTimid Nature\n- Aurora Veil\n- Protect\n- Icy Wind\n- Moonblast\n\nKingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n- Sucker Punch\n- Iron Head\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Fake Out\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n\nRaichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Protect",
+    "Abomasnow (M) @ Leftovers\nAbility: Snow Warning\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Aurora Veil\n- Protect\n- Ice Shard\n- Icy Wind\n\nKingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n- Sucker Punch\n- Iron Head\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n\nRaichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 1",
+      "move 3, move 1",
+      "move 3, move 1"
+    ],
+    "p2": [
+      "move 1, move 1",
+      "move 3, move 1",
+      "move 3, move 1"
+    ],
+    "max_steps": 8
+  }
+}
