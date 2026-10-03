@@ -1,0 +1,28 @@
+{
+  "name": "g29_trick_fails",
+  "purpose": "Trick fails: a Sableye's Charizardite Y at a Charizard (a Mega Stone is refused for a receiver of its own species: -fail), a Gardevoir that holds its own Mega Stone (-fail, the target's item is not taken), at a Swalot with Sticky Hold (-immune, no reason), at a Gholdengo with Good as Gold (-immune, [from] ability), and from a Farigiraf with no item at a Raichu with none (-fail: both hands empty).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000000004",
+  "teams": [
+    "Sableye (M) @ Charizardite Y\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nCareful Nature\n- Trick\n- Knock Off\n- Thief\n- Protect\n\nGardevoir (F) @ Gardevoirite\nAbility: Trace\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Trick\n- Moonblast\n- Thunderbolt\n- Protect\n\nSneasler (M) @ Sitrus Berry\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Switcheroo\n- Close Combat\n- Dire Claw\n- Fake Out\n\nFarigiraf (F)\nAbility: Armor Tail\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nBold Nature\n- Trick\n- Psychic\n- Protect\n- Expanding Force\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- High Horsepower\n\nPelipper (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Hurricane\n- Weather Ball\n- Wide Guard\n- Protect",
+    "Charizard (M) @ Light Clay\nAbility: Blaze\nLevel: 50\nEVs: 8 HP / 14 Def / 20 SpA / 24 Spe\nTimid Nature\n- Heat Wave\n- Hurricane\n- Weather Ball\n- Protect\n\nSwalot (M) @ Leftovers\nAbility: Sticky Hold\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Poison Jab\n- Ice Punch\n- Knock Off\n- Encore\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Nasty Plot\n- Protect\n\nRaichu (F)\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Thunderbolt\n- Nuzzle\n- Focus Blast\n- Fake Out\n\nAnnihilape (M) @ Focus Sash\nAbility: Defiant\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Close Combat\n- Ice Punch\n- Shadow Claw\n- Protect\n\nStaraptor (M) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Close Combat\n- Quick Attack\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1 2",
+      "move 4, move 1 1",
+      "move 4, move 4",
+      "move 1 1, switch 4",
+      "move 4, move 1 2"
+    ],
+    "p2": [
+      "move 3 1, move 1 1",
+      "move 3 1, move 1 1",
+      "switch 3, switch 4",
+      "move 2 1, move 1 1",
+      "move 2 1, move 1 1"
+    ],
+    "max_steps": 6
+  }
+}

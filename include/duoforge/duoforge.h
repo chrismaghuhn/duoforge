@@ -33,9 +33,9 @@ extern "C" {
 #endif
 
 #define DUOFORGE_VERSION_MAJOR 0
-#define DUOFORGE_VERSION_MINOR 37
+#define DUOFORGE_VERSION_MINOR 38
 #define DUOFORGE_VERSION_PATCH 0
-#define DUOFORGE_VERSION_STRING "0.37.0"
+#define DUOFORGE_VERSION_STRING "0.38.0"
 
 /* Identifiers of the artifacts that exist now (registry: decisions 0002, 0005, 0006). */
 #define DUOFORGE_SEMANTICS_ID           3u   /* "duoforge-m3-closure" */
@@ -1019,7 +1019,9 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_EVENT_ABILITY         34u /* [-ability] position, id2: ability + 1. POOL kinds, cause ABILITY (Trace copying
                                                a foe's): other is the foe, id2 the copied ability + 1 */
 #define DUOFORGE_EVENT_ACTIVATE        35u /* [-activate] position; cause ABILITY + id2 (Lightning Rod, Emergency Exit) or MOVE + id2 (Struggle);
-                                                    Flower Veil's [-block] too: position the protected Pokemon, other the holder ([of]) */
+                                                    Flower Veil's [-block] too: position the protected Pokemon, other the holder ([of]);
+                                                    POOL kinds: [-fieldactivate|move: Perish Song] is cause MOVE, id2 the move, position
+                                                    and other DUOFORGE_NO_POSITION */
 #define DUOFORGE_EVENT_UPKEEP          36u /* [upkeep] the end-of-turn effects are done */
 #define DUOFORGE_EVENT_RESULT          37u /* [win] or [tie] detail: DUOFORGE_RESULT_* */
 #define DUOFORGE_EVENT_SINGLE_TURN     38u /* [-singleturn] position (Team C): id: the move; other: the user ([of]) for
@@ -1029,6 +1031,11 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_EVENT_VOLATILE_END    40u /* [-end] position (POOL kinds), detail: DUOFORGE_VOLATILE_* */
 #define DUOFORGE_EVENT_TYPE_CHANGE     41u /* [-start|X|typechange|TYPE] position (POOL kinds): the occupant's type is now the single
                                               type in detail (DUOFORGE_TYPE_*; Soak: Water); cause MOVE, id2: the move */
+#define DUOFORGE_EVENT_ITEM_START      42u /* [-item|X|Item|[from] move: M[|[of] Y]] position (POOL kinds): the Pokemon now holds the
+                                              item that move M gave it (Trick, Switcheroo, Thief, Covet); id2: the item + 1, cause
+                                              MOVE with id: the move, other: the Pokemon it came from when the line says [of]
+                                              (Thief, Covet), else DUOFORGE_NO_POSITION. The item that left the other Pokemon is
+                                              ITEM_END with the cause ITEM_TAKEN (Thief, Trick, Switcheroo), or no line (Covet) */
 
 /* Causes ([from] and [of] in the protocol). */
 #define DUOFORGE_CAUSE_NONE      0u /* the move or the plain mechanic */
@@ -1060,6 +1067,8 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                          the user); id: the move, other: the user, id2: item + 1. The old item_used
                                          of the view shows it gone as for an item used up; item_now tells them apart
                                          (DUOFORGE_ITEM_NOW_NONE) */
+#define DUOFORGE_CAUSE_IMPRISON  21u /* CANT (POOL kinds): a move that the foe's Imprison forbids, queued before it was used
+                                         ([cant] move: Imprison|Move); id: the stopped move, no PP is used */
 
 #define DUOFORGE_EVENT_FLAG_STILL  1u  /* MOVE: the charge turn of a two-turn move */
 #define DUOFORGE_EVENT_FLAG_LOCKED 2u  /* MOVE: the locked turn ([from] lockedmove) */
@@ -1077,6 +1086,11 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                               [cant] recharge line or with the occupant */
 #define DUOFORGE_VOLATILE_DISABLE    4u /* VOLATILE_START / VOLATILE_END: Disable (-start|X|Disable|MOVE, -end|X|Disable); START: id: the
                                               barred move, and for Cursed Body cause ABILITY, id2: ability + 1, other: its holder */
+#define DUOFORGE_VOLATILE_PERISH     5u /* VOLATILE_START: -start|X|perishN (Perish Song): amount N, 3 to 0, one line per count
+                                              in the residual; at 0 the holder faints (a FAINT event follows the UPKEEP). No
+                                              END; the cast itself shows nothing (its -start perish3 is [silent]) */
+#define DUOFORGE_VOLATILE_IMPRISON   8u /* VOLATILE_START (POOL kinds): -start|X|move: Imprison; no END, it ends with the occupant
+                                              (position: the Pokemon that used it; its foes may not use the moves it knows) */
 #define DUOFORGE_FIELD_GRASSY_TERRAIN 1u
 #define DUOFORGE_FIELD_TRICK_ROOM     2u
 #define DUOFORGE_FIELD_PSYCHIC_TERRAIN 3u /* Team C */

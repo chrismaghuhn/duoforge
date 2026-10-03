@@ -132,7 +132,7 @@ DATA_KEYS = {'num', 'accuracy', 'basePower', 'category', 'name', 'pp', 'priority
 # closure (Z-Moves, Max Moves, Sheer Force), or mod bookkeeping.
 IGNORED_KEYS = {'contestType', 'zMove', 'maxMove', 'isNonstandard', 'hasSheerForceBoost', 'inherit'}
 BOOST_ROLE = {'NONE': 0, 'PRIMARY_SELF': 1, 'SECONDARY_TARGET': 2, 'SELF_AFTER_HIT': 3, 'PRIMARY_ALLY': 4,
-              'SECONDARY_SELF': 5}
+              'SECONDARY_SELF': 5, 'PRIMARY_TARGET': 6}
 
 # ---- Team C (decision 0009): appended to the closure in the extended tables ----
 # The closure mode never reads anything below, so its output stays byte-identical.
@@ -347,6 +347,15 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
     if pool and handled[0] == 'GLAIVE_RUSH':
         if 'condition' not in f or norm(f['condition'][1]) != GLAIVE_RUSH_CONDITION:
             fail('move %s: the condition is not the pinned text' % mid)
+    if pool and handled[0] == 'PERISH_SONG':
+        if 'condition' not in f or norm(f['condition'][1]) != PERISH_SONG_CONDITION:
+            fail('move %s: the condition is not the pinned text' % mid)
+        if 'onHitField' not in f or norm(f['onHitField'][1]) != PERISH_SONG_HIT_FIELD:
+            fail('move %s: onHitField is not the pinned text' % mid)
+    if pool and handled[0] in G29_CALLBACKS:
+        for name, text in G29_CALLBACKS[handled[0]].items():
+            if name not in f or norm(f[name][1]) != text:
+                fail('move %s: %s is not the pinned text' % (mid, name))
     if pool and handled[0] == 'KNOCK_OFF':
         for name, text in KNOCK_OFF_CALLBACKS.items():
             if name not in f or norm(f[name][1]) != text:
@@ -529,6 +538,11 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
         if pool and rec['target_class'] == TARGET_CLASS['adjacentAlly'] and rec['category'] == CATEGORIES['Status']:
             # Step G19: Coaching, a status move whose primary boosts go to the ally (BOOST_ROLE PRIMARY_ALLY).
             rec['boost_role'], rec['boosts'] = BOOST_ROLE['PRIMARY_ALLY'], boosts_of(f['boosts'][1])
+            vectors += 1
+        elif pool and rec['target_class'] == TARGET_CLASS['normal'] and rec['category'] == CATEGORIES['Status']:
+            # Step G39: Charm and Fake Tears, a status move of one adjacent target whose primary boosts go to that target
+            # (BOOST_ROLE PRIMARY_TARGET); a spread class (Growl) or a Pokemon of any distance stays UNMODELED.
+            rec['boost_role'], rec['boosts'] = BOOST_ROLE['PRIMARY_TARGET'], boosts_of(f['boosts'][1])
             vectors += 1
         elif rec['target_class'] != TARGET_CLASS['self']:
             bad('move %s: primary boosts on a non-self target' % mid, 'primary boosts on a non-self target')
@@ -1456,6 +1470,25 @@ G28_FACTS = (
     ('ancientpower', ['accuracy: 100,', 'basePower: 60,', 'category: "Special",', 'target: "normal",', 'type: "Rock",',
                       "secondary: { chance: 10, self: { boosts: { atk: 1, def: 1, spa: 1, spd: 1, spe: 1, }, }, },"]),
 )
+# Step G38: Imprison (data/moves.ts:9489-9523; the Champions mod has no entry) keeps its volatile as a handler of its own that
+# the turn code implements: the start line `-start|user|move: Imprison`, the foes' hidden disable of every move the user knows
+# (onFoeDisableMove, run for every active Pokemon in endTurn) and the BeforeMove check at priority 4 that shows
+# `cant|foe|move: Imprison|Move` (onFoeBeforeMove). The generator checks the whole text, whitespace aside, because the engine
+# hard-codes it.
+G38_HANDLERS = ['IMPRISON']
+G38_FACTS = (
+    ('imprison', ['accuracy: true,', 'basePower: 0,', 'category: "Status",', 'pp: 10,', 'priority: 0,',
+                  'flags: { snatch: 1, bypasssub: 1, metronome: 1, mustpressure: 1 },', "volatileStatus: 'imprison',",
+                  'noCopy: true,', "onStart(target) { this.add('-start', target, 'move: Imprison'); },",
+                  "onFoeDisableMove(pokemon) { for (const moveSlot of this.effectState.source.moveSlots) { "
+                  "if (moveSlot.id === 'struggle') continue; pokemon.disableMove(moveSlot.id, true); } "
+                  "pokemon.maybeDisabled = true; },",
+                  'onFoeBeforeMovePriority: 4,',
+                  "onFoeBeforeMove(attacker, defender, move) { if (move.id !== 'struggle' && "
+                  "this.effectState.source.hasMove(move.id) && !move.isZOrMaxPowered) { "
+                  "this.add('cant', attacker, 'move: Imprison', move); return false; } },",
+                  'target: "self",', 'type: "Psychic",']),
+)
 # Step G34 (a batch of small rules): Steel Roller (fails without a terrain and ends it), Clangorous Soul (a third of the HP for
 # five boosts) and Brick Break (the screens go before the hit) keep their callbacks as handlers of their own that the turn code
 # implements; the abilities Compound Eyes, Iron Fist, Sharpness, Solid Rock, Technician, Multiscale and Gale Wings and the item
@@ -1510,6 +1543,78 @@ G35_ABILITY_FACTS = (
     ('raindish', ("onWeather(target, source, effect) { if (target.effectiveWeather() !== effect.id) return; "
                   "if (effect.id === 'raindance' || effect.id === 'primordialsea') { this.heal(target.baseMaxhp / 16); } },",)),
 )
+# Mega batch 2: Aura Guard (a contact hit on its holder: a ModifyDamage modifier, 2048 of the chain; the Mega ability of
+# Lucario-Mega-Z) is an engine row read by id; the pinned text it hard-codes is checked here, the Champions mod not overriding it.
+# Mold Breaker (Aura Guard is breakable) is not marked.
+MEGA2_ABILITY_FACTS = (
+    ('auraguard', ("onSourceModifyDamage(damage, source, target, move) { if (move.flags['contact']) return this.chainModify(0.5); },",
+                   'flags: { breakable: 1 },')),
+)
+# Step G39 (thirteen abilities, four moves): the abilities Hyper Cutter, Scrappy, Infiltrator, Queenly Majesty, Damp, Sturdy,
+# Snow Cloak, Sand Veil, Static, Justified, Limber, Solar Power and Regenerator are engine rows (ENGINE_ROWS) that the turn code
+# reads by id; the pinned callbacks they hard-code are checked here, whole, whitespace aside (Regenerator's is the Champions mod's
+# own entry: G32_ENTRY_FACTS-style, champ=True). Mold Breaker, which Hyper Cutter, Queenly Majesty, Damp, Sturdy, Snow Cloak, Sand
+# Veil and Limber are breakable against, is not marked. Damp is inert: its callbacks stop Explosion, Mind Blown, Misty Explosion,
+# Self-Destruct and Aftermath, none of which is marked (tests/test_pool_g39.c pins it, and Sturdy's OHKO immunity likewise).
+G39_ABILITY_FACTS = (
+    ('hypercutter', ("onTryBoost(boost, target, source, effect) { if (source && target === source) return; "
+                     "if (boost.atk && boost.atk < 0) { delete boost.atk; if (!(effect as ActiveMove).secondaries) { "
+                     "this.add('-fail', target, 'unboost', 'atk', '[from] ability: Hyper Cutter', `[of] ${target}`); } } },",
+                     'flags: { breakable: 1 },')),
+    ('scrappy', ("onModifyMovePriority: -5,",
+                 "onModifyMove(move) { if (!move.ignoreImmunity) move.ignoreImmunity = {}; if (move.ignoreImmunity !== true) { "
+                 "move.ignoreImmunity['Fighting'] = true; move.ignoreImmunity['Normal'] = true; } },",
+                 "onTryBoost(boost, target, source, effect) { if (effect.name === 'Intimidate' && boost.atk) { delete boost.atk; "
+                 "this.add('-fail', target, 'unboost', 'atk', '[from] ability: Scrappy', `[of] ${target}`); } },")),
+    ('infiltrator', ("onModifyMove(move) { move.infiltrates = true; },",)),
+    ('queenlymajesty', ("onFoeTryMove(target, source, move) { const targetAllExceptions = ['perishsong', 'flowershield', 'rototiller']; "
+                        "if (move.target === 'foeSide' || (move.target === 'all' && !targetAllExceptions.includes(move.id))) { return; } "
+                        "const dazzlingHolder = this.effectState.target; if ((source.isAlly(dazzlingHolder) || move.target === 'all') && "
+                        "move.priority > 0.1) { this.attrLastMove('[still]'); this.add('cant', dazzlingHolder, 'ability: Queenly Majesty', "
+                        "move, `[of] ${target}`); return false; } },",
+                        'flags: { breakable: 1 },')),
+    ('damp', ("onAnyTryMove(target, source, effect) { if (['explosion', 'mindblown', 'mistyexplosion', 'selfdestruct']"
+              ".includes(effect.id)) { this.attrLastMove('[still]'); this.add('cant', this.effectState.target, 'ability: Damp', "
+              "effect, `[of] ${target}`); return false; } },",
+              "onAnyDamage(damage, target, source, effect) { if (effect && effect.name === 'Aftermath') { return false; } },")),
+    ('sturdy', ("onTryHit(pokemon, target, move) { if (move.ohko) { this.add('-immune', pokemon, '[from] ability: Sturdy'); return null; } },",
+                "onDamagePriority: -30,",
+                "onDamage(damage, target, source, effect) { if (target.hp === target.maxhp && damage >= target.hp && effect && "
+                "effect.effectType === 'Move') { this.add('-ability', target, 'Sturdy'); return target.hp - 1; } },")),
+    ('snowcloak', ("onImmunity(type, pokemon) { if (type === 'hail') return false; },", 'onModifyAccuracyPriority: -1,',
+                   "onModifyAccuracy(accuracy) { if (typeof accuracy !== 'number') return; if (this.field.isWeather(['hail', 'snowscape'])) { "
+                   "this.debug('Snow Cloak - decreasing accuracy'); return this.chainModify([3277, 4096]); } },")),
+    ('sandveil', ("onImmunity(type, pokemon) { if (type === 'sandstorm') return false; },", 'onModifyAccuracyPriority: -1,',
+                  "onModifyAccuracy(accuracy) { if (typeof accuracy !== 'number') return; if (this.field.isWeather('sandstorm')) { "
+                  "this.debug('Sand Veil - decreasing accuracy'); return this.chainModify([3277, 4096]); } },")),
+    ('static', ("onDamagingHit(damage, target, source, move) { if (this.checkMoveMakesContact(move, source, target)) { "
+                "if (this.randomChance(3, 10)) { source.trySetStatus('par', target); } } },",)),
+    ('justified', ("onDamagingHit(damage, target, source, move) { if (move.type === 'Dark') { this.boost({ atk: 1 }); } },",)),
+    ('limber', ("onUpdate(pokemon) { if (pokemon.status === 'par') { this.add('-activate', pokemon, 'ability: Limber'); "
+                "pokemon.cureStatus(); } },",
+                "onSetStatus(status, target, source, effect) { if (status.id !== 'par') return; if ((effect as Move)?.status) { "
+                "this.add('-immune', target, '[from] ability: Limber'); } return false; },")),
+    ('solarpower', ("onModifySpAPriority: 5,",
+                    "onModifySpA(spa, pokemon) { if (['sunnyday', 'desolateland'].includes(pokemon.effectiveWeather())) { "
+                    "return this.chainModify(1.5); } },",
+                    "onWeather(target, source, effect) { if (target.effectiveWeather() !== effect.id) return; "
+                    "if (effect.id === 'sunnyday' || effect.id === 'desolateland') { this.damage(target.baseMaxhp / 8, target, target); } },")),
+)
+# the moves: Sacred Sword is Darkest Lariat's handler (ignoreEvasion and ignoreDefensive, no callback), Super Fang has the one
+# damageCallback of the handler SUPER_FANG, Charm and Fake Tears are data (a status move whose primary boosts go to its target)
+G39_HANDLERS = ['SUPER_FANG']
+G39_FACTS = (
+    ('sacredsword', ['accuracy: 100,', 'basePower: 90,', 'category: "Physical",', 'priority: 0,', 'target: "normal",', 'type: "Fighting",',
+                     'flags: { contact: 1, protect: 1, mirror: 1, metronome: 1, slicing: 1 },', 'ignoreEvasion: true,',
+                     'ignoreDefensive: true,']),
+    ('charm', ['accuracy: 100,', 'basePower: 0,', 'category: "Status",', 'priority: 0,', 'target: "normal",', 'type: "Fairy",',
+               'flags: { protect: 1, reflectable: 1, mirror: 1, allyanim: 1, metronome: 1 },', 'boosts: { atk: -2, },']),
+    ('faketears', ['accuracy: 100,', 'basePower: 0,', 'category: "Status",', 'priority: 0,', 'target: "normal",', 'type: "Dark",',
+                   'flags: { protect: 1, reflectable: 1, mirror: 1, allyanim: 1, metronome: 1 },', 'boosts: { spd: -2, },']),
+    ('superfang', ['accuracy: 90,', 'basePower: 0,', 'damageCallback(pokemon, target) { return this.clampIntRange(target.getUndynamaxedHP() / 2, 1); },',
+                   'category: "Physical",', 'priority: 0,', 'flags: { contact: 1, protect: 1, mirror: 1, metronome: 1 },',
+                   'target: "normal",', 'type: "Normal",']),
+)
 G34_ITEM_FACTS = (
     ('widelens', ('onSourceModifyAccuracyPriority: -2,',
                   "onSourceModifyAccuracy(accuracy) { if (typeof accuracy === 'number') { return this.chainModify([4505, 4096]); } },")),
@@ -1523,6 +1628,32 @@ G34_ITEM_FACTS = (
 # Eject Button), because the engine hard-codes them. Life Dew needs no handler (its target class `allies` is now an engine
 # class: ENGINE_TARGETS), Volt Switch none (ENGINE_PIVOT_MOVES: a switch flag of its own).
 G32_HANDLERS = ['HP_POWER', 'BODY_PRESS', 'FOUL_PLAY', 'PSYSHOCK', 'RAIN_DANCE', 'SUNNY_DAY', 'FREEZE_DRY', 'CLANGING_SCALES']
+# Step G33 (the multi-hit batch): two handlers, one per rule that the generic columns cannot hold. MULTI_HIT_2 (Dual Wingbeat
+# and Twin Beam: `multihit: 2,`) and TRIPLE_AXEL (`multihit: 3,`, `multiaccuracy: true,` and the power 20 x the hit). Population
+# Bomb (ten hits, `multiaccuracy`) has no handler: its only learners, Maushold and Maushold-Four, have no marked ability, so no
+# legal team can play it and no battle can be recorded; it gets one with the first of Friend Guard, Cheek Pouch and Technician.
+# The hit count lives in the handler, not in a column: the static
+# columns of decision 0020 have no engine reader (item 5), and the other multihit rows (random counts, smartTarget, secondaries)
+# stay unmodelled. The generator checks the four rows' whole texts (G33_FACTS) and Mirror Armor's entry (G33_ENTRY_FACTS).
+G33_HANDLERS = ['MULTI_HIT_2', 'TRIPLE_AXEL']
+G33_FACTS = (
+    ('dualwingbeat', ['accuracy: 90,', 'basePower: 40,', 'category: "Physical",', 'priority: 0,',
+                      'flags: { contact: 1, protect: 1, mirror: 1, metronome: 1 },', 'multihit: 2,', 'target: "normal",',
+                      'type: "Flying",']),
+    ('tripleaxel', ['accuracy: 90,', 'basePower: 20,', 'basePowerCallback(pokemon, target, move) { return 20 * move.hit; },',
+                    'category: "Physical",', 'priority: 0,', 'flags: { contact: 1, protect: 1, mirror: 1, metronome: 1 },',
+                    'multihit: 3,', 'multiaccuracy: true,', 'target: "normal",', 'type: "Ice",']),
+    ('twinbeam', ['accuracy: 100,', 'basePower: 40,', 'category: "Special",', 'priority: 0,',
+                  'flags: { protect: 1, mirror: 1 },', 'multihit: 2,', 'target: "normal",', 'type: "Psychic",']),
+)
+G33_ENTRY_FACTS = (
+    ('ability', 'mirrorarmor', False,
+     ["if (!source || target === source || !boost || effect.name === 'Mirror Armor') return;",
+      "let b: BoostID; for (b in boost) { if (boost[b]! < 0) { if (target.boosts[b] === -6) continue; "
+      "const negativeBoost: SparseBoostsTable = {}; negativeBoost[b] = boost[b]; delete boost[b]; if (source.hp) { "
+      "this.add('-ability', target, 'Mirror Armor'); this.boost(negativeBoost, source, target, null, true); } } }",
+      'flags: { breakable: 1 },']),
+)
 _HP_POWER_CALLBACK = ("basePowerCallback(pokemon, target, move) { const bp = move.basePower * pokemon.hp / pokemon.maxhp; "
                       "this.debug(`BP: ${bp}`); return bp; },")
 G32_FACTS = (
@@ -1558,6 +1689,9 @@ G32_FACTS = (
 # Ability and item rows that the turn code runs by id: the entry of the pin (or of the Champions mod, which is read first
 # for the item) must have exactly these texts. (kind, id, in the Champions file, texts)
 G32_ENTRY_FACTS = (
+    ('ability', 'regenerator', True,
+     ["onSwitchOut(pokemon) { if (pokemon.heal(pokemon.baseMaxhp / 3)) { this.add('-heal', pokemon, pokemon.getHealth, "
+      "'[from] ability: Regenerator', '[silent]'); } },"]),
     ('ability', 'soundproof', False,
      ["onTryHit(target, source, move) { if (target !== source && move.flags['sound']) { "
       "this.add('-immune', target, '[from] ability: Soundproof'); return null; } },",
@@ -1605,7 +1739,46 @@ G28_ITEM_FACTS = (
 # TryAddVolatile), and Rising Voltage and Terrain Pulse keep the callback that reads the terrain (base power; type and
 # base power). Their texts are G25_FACTS, read from the pin, because the engine hard-codes them.
 G25_HANDLERS = ['ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'RISING_VOLTAGE', 'TERRAIN_PULSE']
+
+# Step G29: the item-transfer moves. Trick and Switcheroo (status, onTryImmunity and onHit), Thief and Covet (damaging, onAfterHit)
+# keep their callbacks as handlers of their own that the turn code implements (rows of the whole pool). The generator checks the
+# whole text of each callback, whitespace aside (data/moves.ts:19865-19911, :18644-18690, :19302-19330, :3099-3123; the Champions
+# mod changes none): the Sticky Hold test of Trick's target, the TakeItem checks (a Mega Stone refuses the species it belongs to), the
+# order of the takes and sets, and the lines that the converter reads (-activate move: Trick, -item and the silent -enditem, with
+# [from] move: and, for Thief and Covet, [of]).
+G29_HANDLERS = ['TRICK', 'SWITCHEROO', 'THIEF', 'COVET']
+G29_CALLBACKS = {
+    'TRICK': {
+        'onTryImmunity': "onTryImmunity(target) { return !target.hasAbility('stickyhold'); },",
+        'onHit': "onHit(target, source, move) { const yourItem = target.takeItem(source); const myItem = source.takeItem(); if (yourItem === false || myItem === false || (!yourItem && !myItem)) { if (yourItem) target.item = yourItem.id; if (myItem) source.item = myItem.id; return false; } if ( (myItem && !this.singleEvent('TakeItem', myItem, source.itemState, target, source, move, myItem)) || (yourItem && !this.singleEvent('TakeItem', yourItem, target.itemState, source, target, move, yourItem)) ) { if (yourItem) target.item = yourItem.id; if (myItem) source.item = myItem.id; return false; } this.add('-activate', source, 'move: Trick', `[of] ${target}`); if (myItem) { target.setItem(myItem); this.add('-item', target, myItem, '[from] move: Trick'); } else { this.add('-enditem', target, yourItem, '[silent]', '[from] move: Trick'); } if (yourItem) { source.setItem(yourItem); this.add('-item', source, yourItem, '[from] move: Trick'); } else { this.add('-enditem', source, myItem, '[silent]', '[from] move: Trick'); } },",
+    },
+    'SWITCHEROO': {
+        'onTryImmunity': "onTryImmunity(target) { return !target.hasAbility('stickyhold'); },",
+        'onHit': "onHit(target, source, move) { const yourItem = target.takeItem(source); const myItem = source.takeItem(); if (yourItem === false || myItem === false || (!yourItem && !myItem)) { if (yourItem) target.item = yourItem.id; if (myItem) source.item = myItem.id; return false; } if ( (myItem && !this.singleEvent('TakeItem', myItem, source.itemState, target, source, move, myItem)) || (yourItem && !this.singleEvent('TakeItem', yourItem, target.itemState, source, target, move, yourItem)) ) { if (yourItem) target.item = yourItem.id; if (myItem) source.item = myItem.id; return false; } this.add('-activate', source, 'move: Trick', `[of] ${target}`); if (myItem) { target.setItem(myItem); this.add('-item', target, myItem, '[from] move: Switcheroo'); } else { this.add('-enditem', target, yourItem, '[silent]', '[from] move: Switcheroo'); } if (yourItem) { source.setItem(yourItem); this.add('-item', source, yourItem, '[from] move: Switcheroo'); } else { this.add('-enditem', source, myItem, '[silent]', '[from] move: Switcheroo'); } },",
+    },
+    'THIEF': {
+        'onAfterHit': "onAfterHit(target, source, move) { if (source.item || source.volatiles['gem']) { return; } const yourItem = target.takeItem(source); if (!yourItem) { return; } if (!this.singleEvent('TakeItem', yourItem, target.itemState, source, target, move, yourItem) || !source.setItem(yourItem)) { target.item = yourItem.id; // bypass setItem so we don't break choicelock or anything return; } this.add('-enditem', target, yourItem, '[silent]', '[from] move: Thief', `[of] ${source}`); this.add('-item', source, yourItem, '[from] move: Thief', `[of] ${target}`); },",
+    },
+    'COVET': {
+        'onAfterHit': "onAfterHit(target, source, move) { if (source.item || source.volatiles['gem']) { return; } const yourItem = target.takeItem(source); if (!yourItem) { return; } if ( !this.singleEvent('TakeItem', yourItem, target.itemState, source, target, move, yourItem) || !source.setItem(yourItem) ) { target.item = yourItem.id; // bypass setItem so we don't break choicelock or anything return; } this.add('-item', source, yourItem, '[from] move: Covet', `[of] ${target}`); },",
+    },
+}
 AURORA_VEIL_ONTRY = "onTry() { return this.field.isWeather(['hail', 'snowscape']); },"
+# Step G26: Perish Song keeps its onHitField and its condition as a handler of its own that the turn code implements: every
+# active Pokemon without the volatile gets it with a duration of 4, the residual (order 24) shows the count and the end
+# shows perish0 and faints the holder (data/moves.ts:13233-13277). The generator checks both texts, whitespace aside.
+G26_HANDLERS = ['PERISH_SONG']
+PERISH_SONG_HIT_FIELD = ("onHitField(target, source, move) { let result = false; let message = false; "
+                         "for (const pokemon of this.getAllActive()) { "
+                         "if (this.runEvent('Invulnerability', pokemon, source, move) === false) { "
+                         "this.add('-miss', source, pokemon); result = true; } "
+                         "else if (this.runEvent('TryHit', pokemon, source, move) === null) { result = true; } "
+                         "else if (!pokemon.volatiles['perishsong']) { pokemon.addVolatile('perishsong'); "
+                         "this.add('-start', pokemon, 'perish3', '[silent]'); result = true; message = true; } } "
+                         "if (!result) return false; if (message) this.add('-fieldactivate', 'move: Perish Song'); },")
+PERISH_SONG_CONDITION = ("condition: { duration: 4, onEnd(target) { this.add('-start', target, 'perish0'); target.faint(); }, "
+                         "onResidualOrder: 24, onResidual(pokemon) { const duration = pokemon.volatiles['perishsong'].duration; "
+                         "this.add('-start', pokemon, `perish${duration}`); }, },")
 KNOCK_OFF_CALLBACKS = {
     'onBasePower': "onBasePower(basePower, source, target, move) { const item = target.getItem(); "
                    "if (!this.singleEvent('TakeItem', item, target.itemState, target, target, move, item)) return; "
@@ -1662,12 +1835,17 @@ G30_ABILITY_FACTS = (
                   "this.dex.getImmunity('powder', target)) { this.add('-immune', target, '[from] ability: Overcoat'); return null; } },")),
 )
 SPECIAL_P = dict(SPECIAL_C, **{
+    'perishsong': ('PERISH_SONG', {'onHitField'}),                        # G26: a volatile on every active Pokemon, faints at 0
     'glaiverush': ('GLAIVE_RUSH', set()),                                 # G19: the volatile that makes its user hit as vulnerable
     'knockoff': ('KNOCK_OFF', {'onAfterHit', 'onBasePower'}),             # G16: takes the target's item, x1.5 while it has one
     'encore': ('ENCORE', set()),                                          # G9 (implemented): last move, a volatile, a queue change
     'disable': ('DISABLE', {'onTryHit'}),                                 # G27: bars the target's last move
     'spikyshield': ('SPIKY_SHIELD', {'onPrepareHit', 'onHit'}),           # G20: Protect that damages a contact attacker
     'auroraveil': ('AURORA_VEIL', {'onTry'}),                             # G20: a screen against both categories, in snow only
+    'trick': ('TRICK', {'onTryImmunity', 'onHit'}),                         # G29: swaps the two items
+    'switcheroo': ('SWITCHEROO', {'onTryImmunity', 'onHit'}),               # G29: Trick's text with its own name in the lines
+    'thief': ('THIEF', {'onAfterHit'}),                                    # G29: takes the target's item after the hit
+    'covet': ('COVET', {'onAfterHit'}),                                    # G29: the same without the silent -enditem line
     'wideguard': ('WIDE_GUARD', {'onTry', 'onHitSide'}),                 # G7: a side condition against spread moves
     'firstimpression': ('FIRST_IMPRESSION', {'onTry', 'onDisableMove'}),  # G10a: first turn out only (Fake Out's rule)
     'soak': ('SOAK', {'onHit'}),                                          # G11: sets the target's type to Water
@@ -1684,7 +1862,8 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'solarbeam': ('SOLAR_BEAM', {'onBasePower', 'onTryMove'}),             # G30: a two-turn move that sun skips, x0.5 in rain, sand, snow
     'steelroller': ('STEEL_ROLLER', {'onTry', 'onHit', 'onAfterSubDamage'}),  # G34: fails without a terrain and ends it
     'clangoroussoul': ('CLANGOROUS_SOUL', {'onTry', 'onTryHit', 'onHit'}),    # G34: a third of the HP for five boosts
-    'brickbreak': ('BRICK_BREAK', {'onTryHit'}),                          # G34: the screens go before the hit
+    'brickbreak': ('BRICK_BREAK', {'onTryHit'}),
+    'imprison': ('IMPRISON', set()),                                      # G38: the foes may not use the moves it knows                          # G34: the screens go before the hit
     'eruption': ('HP_POWER', {'basePowerCallback'}),                      # G32: power by the user's HP
     'waterspout': ('HP_POWER', {'basePowerCallback'}),
     'bodypress': ('BODY_PRESS', set()),                                   # G32: the Defense stat attacks
@@ -1698,6 +1877,11 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'mistyterrain': ('MISTY_TERRAIN', set()),
     'risingvoltage': ('RISING_VOLTAGE', {'basePowerCallback'}),           # G25: doubled at a grounded target in Electric Terrain
     'terrainpulse': ('TERRAIN_PULSE', {'onModifyType', 'onModifyMove'}),  # G25: the terrain's type, doubled for a grounded user
+    'dualwingbeat': ('MULTI_HIT_2', set()),                               # G33: two hits
+    'twinbeam': ('MULTI_HIT_2', set()),
+    'tripleaxel': ('TRIPLE_AXEL', {'basePowerCallback'}),                 # G33: three hits, a check for each, 20 x the hit
+    'sacredsword': ('DARKEST_LARIAT', set()),                             # G39: Darkest Lariat's ignoreDefensive and ignoreEvasion
+    'superfang': ('SUPER_FANG', {'damageCallback'}),                      # G39: half the target's current HP
 })
 # Step G13: Detect is Protect (data/moves.ts:3526-3547 against 13961-14005): the same handler (not one of the G2 handlers,
 # so it is added to the pool's map only), and the generator checks that its stalling fields and both callbacks are,
@@ -1710,7 +1894,7 @@ PROTECT_COPIES = {'detect': 'protect'}
 # champions/moves.ts:581-584) sets isNonstandard to null, which makes it legal, and the tag has no reader in the tables.
 TAGS_PAST_UNOBTAINABLE = 'tags: ["Past Unobtainable"],'
 PROTECT_COPY_FIELDS = ('onPrepareHit', 'onHit', 'stallingMove', 'volatileStatus', 'priority', 'accuracy', 'target')
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + ['UNMODELED']
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + ['UNMODELED']
 # Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags
 # byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
@@ -1729,16 +1913,19 @@ G2_OWNED_FIELDS = {
     'FEINT': {'breaksProtect': "breaksProtect: true, // Breaking protection implemented in scripts.js"},
     'GLAIVE_RUSH': {'self': "self: { volatileStatus: 'glaiverush', },"},
     'RAGE_POWDER': {'volatileStatus': "volatileStatus: 'ragepowder',"},
+    'MULTI_HIT_2': {'multihit': 'multihit: 2,'},
+    'TRIPLE_AXEL': {'multihit': 'multihit: 3,', 'multiaccuracy': 'multiaccuracy: true,'},
     'BODY_PRESS': {'overrideOffensiveStat': "overrideOffensiveStat: 'def',"},
     'FOUL_PLAY': {'overrideOffensivePokemon': "overrideOffensivePokemon: 'target',"},
     'PSYSHOCK': {'overrideDefensiveStat': "overrideDefensiveStat: 'def',"},
     'RAIN_DANCE': {'weather': "weather: 'RainDance',"},
     'SUNNY_DAY': {'weather': "weather: 'sunnyday',"},
     'CLANGING_SCALES': {'selfBoost': "selfBoost: { boosts: { def: -1, }, },"},
+    'IMPRISON': {'volatileStatus': "volatileStatus: 'imprison',"},
 }
 G2_OWNED_SECONDARY = {}
 G2_OWNED_CONDITION = {'ENCORE', 'WIDE_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD', 'RAGE_POWDER', 'DISABLE',
-                      'ELECTRIC_TERRAIN', 'MISTY_TERRAIN'}
+                      'ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'PERISH_SONG', 'IMPRISON'}
 # Step G8 (Throat Chop and Psychic Noise): the two secondaries become modelled kinds, and the column that their
 # consumers read is the move's second flags byte (the first is full): the `sound` flag (Throat Chop bars the sound
 # moves) and the `heal` flag (Heal Block bars the moves that heal). Both are derived for every pool move, the prefix
@@ -1894,7 +2081,20 @@ ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed'
                              'stickyhold', 'trace', 'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll',
                              'innerfocus', 'liquidvoice', 'flamebody', 'clearbody', 'hospitality', 'overcoat',
                              'soundproof', 'unnerve', 'speedboost', 'compoundeyes', 'ironfist', 'sharpness', 'solidrock',
-                             'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody']}
+                             'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody', 'mirrorarmor', 'auraguard',
+                             'hypercutter',
+                             'scrappy',
+                             'infiltrator',
+                             'queenlymajesty',
+                             'damp',
+                             'sturdy',
+                             'snowcloak',
+                             'sandveil',
+                             'static',
+                             'justified',
+                             'limber',
+                             'solarpower',
+                             'regenerator']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -2523,9 +2723,9 @@ def check_g28_items(items_ts, only=None):
 
 
 def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
-    """Steps G34 and G35: every fact of G34_ABILITY_FACTS, G35_ABILITY_FACTS and G34_ITEM_FACTS is in the pinned entry, whitespace aside, and the
+    """Steps G34, G35, Mega batch 2 and G39: every fact of G34_ABILITY_FACTS, G35_ABILITY_FACTS, MEGA2_ABILITY_FACTS, G39_ABILITY_FACTS and G34_ITEM_FACTS is in the pinned entry, whitespace aside, and the
     Champions mod has no entry of its own for it (an override would change what the engine reads)."""
-    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS, abil_ts, champ_abil),
+    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS, abil_ts, champ_abil),
                                           ('item', G34_ITEM_FACTS, items_ts, champ_items)):
         for rid, facts in facts_by_id:
             e = src.entry(rid)
@@ -2540,7 +2740,7 @@ def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
 def check_g32_entries(items_ts, champ_items, abil_ts, champ_abil, only=None):
     """Step G32: the ability and item entries that the turn code runs by id (G32_ENTRY_FACTS) have the pinned texts, whole;
     the Champions Eject Button is read from the mod's file. `only`: a tuple of such entries (the generator's tests)."""
-    for kind, eid, champ, facts in (G32_ENTRY_FACTS if only is None else only):
+    for kind, eid, champ, facts in (G32_ENTRY_FACTS + G33_ENTRY_FACTS if only is None else only):
         src = (champ_items if champ else items_ts) if kind == 'item' else (champ_abil if champ else abil_ts)
         e = src.entry(eid)
         if e is None:
@@ -2556,8 +2756,8 @@ def check_g8_conditions(moves_ts, only=None):
     Aurora Veil (step G20) and the texts of G25_FACTS (the two terrains, Rising Voltage, Terrain Pulse): every one of them
     must be in the pinned entry, as one normalised text. `only`: a tuple of (move id, facts) to check instead of all of
     them (the generator's tests)."""
-    for mid, facts in (G8_CONDITION_FACTS + G20_CONDITION_FACTS + G28_FACTS + G32_FACTS + G34_FACTS + G25_FACTS
-                       if only is None else only):
+    for mid, facts in (G8_CONDITION_FACTS + G20_CONDITION_FACTS + G28_FACTS + G32_FACTS + G34_FACTS + G25_FACTS +
+                       G33_FACTS + G38_FACTS + G39_FACTS if only is None else only):
         e = moves_ts.entry(mid)
         if e is None:
             fail('move %s not found' % mid)
@@ -3043,6 +3243,7 @@ def render_pool(dp, dx):
 #define DFI_MOVE_FLAG2_SLICING 64u /* flags.slicing (step G34): Sharpness boosts these moves */
 #define DFI_BOOST_ROLE_PRIMARY_ALLY 4u /* step G19: a status move whose primary boosts go to the adjacent ally (Coaching) */
 #define DFI_BOOST_ROLE_SECONDARY_SELF 5u /* step G28: the secondary's roll gives these boosts to the user (Ancient Power) */
+#define DFI_BOOST_ROLE_PRIMARY_TARGET 6u /* step G39: a status move whose primary boosts go to its one target (Charm, Fake Tears) */
 #define DFI_SECONDARY_SELF_BOOST 7u /* step G28: boosts[] applied to the user with the secondary roll */
 #define DFI_SECONDARY_LOCKOUT 5u    /* chance 100: the target may not use sound moves (Throat Chop) */
 #define DFI_SECONDARY_HEAL_BLOCK 6u /* chance 100: the target may not heal (Psychic Noise) */
