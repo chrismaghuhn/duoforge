@@ -561,12 +561,19 @@ static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *t
     const bool leech_ok = tp->leech_seed_source <= DFI_TAIL_SOURCE_MAX && tp->leech_seed_source != flat + 1u;
     const bool stockpile_ok = tp->stockpile <= DFI_TAIL_STOCKPILE_MAX && tp->stockpile_def <= tp->stockpile &&
                               tp->stockpile_spd <= tp->stockpile;
-    /* Rev 3 (step G20): the variant of the Protect volatile belongs to the volatile (zero when it is down), and the pad
-     * byte that aligns the struct is zero. */
+    /* Rev 3 (step G20): the variant of the Protect volatile belongs to the volatile (zero when it is down). */
     const bool protect_ok = tp->protect_kind <= DFI_TAIL_PROTECT_KIND_MAX &&
-                            (tp->protect_kind == 0u || ((uint32_t)slot->flags & DFI_VOL_PROTECT) != 0u) && tp->pad == 0u;
+                            (tp->protect_kind == 0u || ((uint32_t)slot->flags & DFI_VOL_PROTECT) != 0u);
+    /* Rev 4 (tail-rev4-proposal.md section 4.1): the move result is two two-bit values (bits 4-7 are zero); the single-turn
+     * markers are the two defined bits, and Rage Powder's belongs to the Follow Me flag that the same move sets (both end
+     * together, in the residual, on switch-out and on faint); the counters and the ability state have their bounds. */
+    const bool rev4_ok = (tp->move_result & ~DFI_TAIL_MOVE_RESULT_MASK) == 0u &&
+                         (tp->single_turn & ~DFI_TAIL_SINGLE_TURN_MASK) == 0u &&
+                         ((tp->single_turn & DFI_SINGLE_TURN_RAGE_POWDER) == 0u || ((uint32_t)slot->flags & DFI_VOL_FOLLOW_ME) != 0u) &&
+                         tp->hits_taken <= DFI_TAIL_HITS_TAKEN_MAX && tp->ability_state <= DFI_TAIL_ABILITY_STATE_MAX &&
+                         tp->lock_turns <= DFI_TAIL_LOCK_TURNS_MAX;
     return encore_ok && bars_ok && disable_ok && flags_ok && substitute_ok && trap_ok && leech_ok && stockpile_ok &&
-           protect_ok;
+           protect_ok && rev4_ok;
 }
 
 /* The POOL tail (decision 0015 section 7). Runs after the side checks, so every occupant is below the member count
@@ -585,7 +592,8 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
         const dfi_side *side = &b->sides[s];
         if (ts->wide_guard > DFI_TAIL_WIDE_GUARD_MAX || ts->aurora_veil_turns > DFI_TAIL_AURORA_VEIL_MAX ||
             ts->toxic_spikes > DFI_TAIL_TOXIC_SPIKES_MAX || ts->stealth_rock > DFI_TAIL_STEALTH_ROCK_MAX ||
-            ts->spikes > DFI_TAIL_SPIKES_MAX || ts->sticky_web > DFI_TAIL_STICKY_WEB_MAX) {
+            ts->spikes > DFI_TAIL_SPIKES_MAX || ts->sticky_web > DFI_TAIL_STICKY_WEB_MAX ||
+            ts->quick_guard > DFI_TAIL_QUICK_GUARD_MAX || ts->side_pad != 0u) {
             return DFI_INV_TAIL_SIDE;
         }
         for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
@@ -606,7 +614,8 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
         }
         for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
             const bool any = ts->soak_type[m] != 0u || ts->ability_now[m] != 0u || ts->forme_now[m] != 0u ||
-                             ts->item_now[m] != 0u || ts->toxic_stage[m] != 0u;
+                             ts->item_now[m] != 0u || ts->toxic_stage[m] != 0u || ts->type2[m] != 0u ||
+                             ts->member_flags[m] != 0u;
             if (!any) {
                 continue;
             }
@@ -630,6 +639,16 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
                 return DFI_INV_TAIL_MEMBER;
             }
             if (ts->item_now[m] != 0u && ts->item_now[m] != DFI_TAIL_ITEM_NONE && ts->item_now[m] > lim.item_count) {
+                return DFI_INV_TAIL_MEMBER;
+            }
+            /* Rev 4: the second type is a type id + 1 or the typeless value, and ends when the member leaves or faints, like
+             * the type that Soak sets; the member flags are the defined bit (Zero to Hero's message, shown once for the
+             * battle: a member that exists, on the field or not). */
+            if (ts->type2[m] != 0u && ((ts->type2[m] > DFI_TYPE_COUNT && ts->type2[m] != DFI_TAIL_TYPE2_TYPELESS) ||
+                                        !standing_on_field)) {
+                return DFI_INV_TAIL_MEMBER;
+            }
+            if ((ts->member_flags[m] & ~DFI_TAIL_MEMBER_FLAGS_MASK) != 0u) {
                 return DFI_INV_TAIL_MEMBER;
             }
             /* The toxic counter belongs to a badly poisoned member on the field. */
