@@ -196,7 +196,7 @@ jobs:
       - name: Test
         # setarch -R: ThreadSanitizer cannot map its shadow memory under the
         # runner kernel's full address-space randomization.
-        run: setarch "$(uname -m)" -R ctest --test-dir build --output-on-failure --no-tests=error --timeout 300 -R "duoforge\\.(batch|search)\\."
+        run: setarch "$(uname -m)" -R ctest --test-dir build --output-on-failure --no-tests=error --timeout 300 -R "duoforge\\.((batch|search)\\.|encode$)"
 
   windows:
     name: Windows / MSVC / ${{ matrix.arch }} / ${{ matrix.config }}

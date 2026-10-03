@@ -10,7 +10,7 @@
 #   clang-debug       Clang Debug
 #   gcc-release-ipo   GCC Release with link-time optimization
 #   clang-release-ipo Clang Release with link-time optimization
-#   clang-tsan        Clang with ThreadSanitizer, the batch and search tests
+#   clang-tsan        Clang with ThreadSanitizer, the batch, search and encoder tests
 #   --setup-python    create ~/df-venv with NumPy; gcc-release-ipo then runs
 #                     the Python package tests (needs python3.12-venv:
 #                     sudo apt install python3.12-venv)
@@ -64,7 +64,7 @@ for j in "$@"; do
         job "$j" gcc g++ "" -DCMAKE_BUILD_TYPE=Release -DDUOFORGE_ENABLE_IPO=ON "${py[@]}"
         ;;
     clang-release-ipo) job "$j" clang clang++ "" -DCMAKE_BUILD_TYPE=Release -DDUOFORGE_ENABLE_IPO=ON ;;
-    clang-tsan) job "$j" clang clang++ 'duoforge\.(batch|search)\.' -DCMAKE_BUILD_TYPE=RelWithDebInfo -DDUOFORGE_ENABLE_TSAN=ON ;;
+    clang-tsan) job "$j" clang clang++ 'duoforge\.((batch|search)\.|encode$)' -DCMAKE_BUILD_TYPE=RelWithDebInfo -DDUOFORGE_ENABLE_TSAN=ON ;;
     --setup-python)
         if python3 -m venv "$HOME/df-venv" && "$PY" -m pip install --quiet --upgrade numpy; then
             echo "RESULT setup-python PASS numpy $("$PY" -c 'import numpy; print(numpy.__version__)')"

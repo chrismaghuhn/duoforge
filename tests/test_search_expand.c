@@ -351,6 +351,19 @@ static void random_step(df_test *t, duoforge_batch *roots, const root_query *q, 
     DF_CHECK(t, duoforge_batch_reset_terminal(roots) == DUOFORGE_OK);
 }
 
+/* A random step that leaves TERMINAL environments as they are. */
+static void random_step_keep(df_test *t, duoforge_batch *roots, const root_query *q, uint64_t *s)
+{
+    static duoforge_factored_choice choices[2u * ROOTS];
+    static duoforge_status statuses[ROOTS];
+    static duoforge_step_result results[ROOTS];
+    for (uint32_t k = 0u; k < 2u * ROOTS; ++k) {
+        choices[k] = random_choice(&q->domains[k], s);
+    }
+    DF_CHECK(t, duoforge_batch_step_factored(roots, q->requests, q->domains, choices, statuses, results) ==
+                    DUOFORGE_OK);
+}
+
 /* The digests of every environment of b. */
 static void digests(df_test *t, const duoforge_context *ctx, const duoforge_batch *b, uint32_t envs,
                     uint8_t (*d)[DUOFORGE_DIGEST_SIZE])
@@ -580,6 +593,9 @@ int main(void)
         outputs *o = &out[2];
         plan *pl = &the_plan;
         digests(&t, pool, lv, LEAVES, before);
+        static outputs sentinel;
+        memset(&sentinel, 0xA5, sizeof sentinel);
+        memset(o, 0xA5, sizeof *o); /* no refused call may write an output */
         const uint64_t m = supported;
         const duoforge_request *rq = query.requests;
         const duoforge_factored_domain *dm = query.domains;
@@ -599,10 +615,16 @@ int main(void)
         }
         DF_CHECK(&t, duoforge_batch_expand(lv, roots, 4u, m, SEED, NULL, NULL, NULL, NULL, 0u, NULL, NULL, NULL, NULL,
                                            NULL, NULL, NULL, NULL) == DUOFORGE_OK);
-        /* another context */
+        /* another context; the order of the checks: NULL, then the contexts, then the rest */
         duoforge_context *tc = df_make_context(&df_config_team_c);
         duoforge_batch *other = make(&t, tc, setups, ROOTS, 1u);
         DF_CHECK_EQ_U64(&t, expand(lv, other, 4u, m, &query, pl, 1u, o), DUOFORGE_E_CONTEXT_MISMATCH);
+        DF_CHECK_EQ_U64(&t, expand(lv, other, 5u, m, &query, pl, 1u, o), DUOFORGE_E_CONTEXT_MISMATCH);
+        DF_CHECK_EQ_U64(&t, expand(lv, other, 4u, m, &query, pl, LEAVES + 1u, o), DUOFORGE_E_CONTEXT_MISMATCH);
+        DF_CHECK_EQ_U64(&t, duoforge_batch_expand(lv, other, 5u, m, SEED, rq, dm, NULL, pl->viewers, 1u, pl->root_envs,
+                                                  pl->samples, pl->choices, o->step_statuses, o->encode_statuses,
+                                                  o->results, o->leaf_results, o->obs),
+                        DUOFORGE_E_NULL_ARGUMENT);
         duoforge_batch_destroy(other);
         duoforge_context_destroy(tc);
         /* version and mask, as duoforge_batch_query_encoded checks them */
@@ -623,6 +645,211 @@ int main(void)
         DF_CHECK_EQ_U64(&t, expand(lv, roots, 4u, m, &query, &off, 4u, o), DUOFORGE_E_INVALID_ARGUMENT);
         digests(&t, pool, lv, LEAVES, after);
         DF_CHECK(&t, memcmp(before, after, sizeof before) == 0);
+        DF_CHECK(&t, memcmp(o, &sentinel, sizeof sentinel) == 0);
+    }
+
+    /* test_partial_count: count below the leaf batch's size (the last chunk of a round). The first count
+       leaves equal those of a full call; the environments and the outputs from count on are not touched. */
+    {
+        DF_CHECK(&t, duoforge_batch_query_factored(roots, query.requests, query.observations, query.domains) ==
+                         DUOFORGE_OK);
+        uint64_t stream = 0x2026100300000405u;
+        tally ty;
+        memset(&ty, 0, sizeof ty);
+        make_plan(&query, &stream, 0u, &the_plan, &ty);
+        DF_CHECK_EQ_U64(&t, the_plan.count, LEAVES);
+        const uint32_t part = 37u;
+        const duoforge_status full = expand(leaves[0], roots, 4u, supported, &query, &the_plan, LEAVES, &out[0]);
+        DF_CHECK_EQ_U64(&t, full, first_failure(&out[0], LEAVES));
+        static uint8_t untouched[LEAVES][DUOFORGE_DIGEST_SIZE];
+        digests(&t, pool, leaves[1], LEAVES, untouched);
+        static outputs sentinel;
+        memset(&sentinel, 0xA5, sizeof sentinel);
+        memset(&out[1], 0xA5, sizeof out[1]);
+        const duoforge_status st = expand(leaves[1], roots, 4u, supported, &query, &the_plan, part, &out[1]);
+        DF_CHECK_EQ_U64(&t, st, first_failure(&out[1], part));
+        DF_CHECK(&t, memcmp(out[1].step_statuses, out[0].step_statuses, part * sizeof out[0].step_statuses[0]) == 0);
+        DF_CHECK(&t, memcmp(out[1].encode_statuses, out[0].encode_statuses, part * sizeof out[0].encode_statuses[0]) ==
+                         0);
+        DF_CHECK(&t, memcmp(out[1].results, out[0].results, part * sizeof out[0].results[0]) == 0);
+        DF_CHECK(&t, memcmp(out[1].leaf_results, out[0].leaf_results, part * sizeof out[0].leaf_results[0]) == 0);
+        DF_CHECK(&t, memcmp(out[1].obs, out[0].obs, (size_t)part * V4 * sizeof out[0].obs[0]) == 0);
+        DF_CHECK(&t, memcmp(&out[1].step_statuses[part], &sentinel.step_statuses[part],
+                            (LEAVES - part) * sizeof sentinel.step_statuses[0]) == 0);
+        DF_CHECK(&t, memcmp(&out[1].encode_statuses[part], &sentinel.encode_statuses[part],
+                            (LEAVES - part) * sizeof sentinel.encode_statuses[0]) == 0);
+        DF_CHECK(&t, memcmp(&out[1].results[part], &sentinel.results[part],
+                            (LEAVES - part) * sizeof sentinel.results[0]) == 0);
+        DF_CHECK(&t, memcmp(&out[1].leaf_results[part], &sentinel.leaf_results[part],
+                            (LEAVES - part) * sizeof sentinel.leaf_results[0]) == 0);
+        DF_CHECK(&t, memcmp(&out[1].obs[(size_t)part * V4], &sentinel.obs[(size_t)part * V4],
+                            (size_t)(LEAVES - part) * V4 * sizeof sentinel.obs[0]) == 0);
+        digests(&t, pool, leaves[0], part, before);
+        digests(&t, pool, leaves[1], LEAVES, after);
+        DF_CHECK(&t, memcmp(before, after, part * sizeof before[0]) == 0);
+        DF_CHECK(&t, memcmp(&untouched[part], &after[part], (LEAVES - part) * sizeof after[0]) == 0);
+    }
+
+    /* test_terminal_flag_both_ways and test_terminal_root. A TERMINAL root is not skipped: its leaves report the
+       step's E_INVALID_ARGUMENT and keep the root's copy with the TERMINAL flag set. A later leaf in the same
+       environment clears the flag, whether its step succeeds or fails on a running root. The flag is read through
+       duoforge_batch_reset_terminal, which starts the next episode exactly in the TERMINAL environments. */
+    {
+        duoforge_batch *troots = make(&t, pool, setups, ROOTS, 1u);
+        static root_query tq;
+        uint64_t stream = 0x2026100300000406u;
+        uint32_t ended = ROOTS;
+        uint32_t running = ROOTS;
+        for (uint32_t step = 0u; step < 600u; ++step) {
+            DF_CHECK(&t, duoforge_batch_query_factored(troots, tq.requests, tq.observations, tq.domains) ==
+                             DUOFORGE_OK);
+            ended = ROOTS;
+            running = ROOTS;
+            for (uint32_t r = 0u; r < ROOTS; ++r) {
+                const duoforge_request *rq = &tq.requests[2u * r];
+                if (rq[0].boundary_kind == DUOFORGE_BOUNDARY_TERMINAL && ended == ROOTS) {
+                    ended = r;
+                }
+                for (uint32_t p = 0u; p < 2u; ++p) {
+                    if (rq[p].requested != 0u && tq.domains[2u * r + p].kind == DUOFORGE_CHOICE_SLOTS &&
+                        running == ROOTS) {
+                        running = r;
+                    }
+                }
+            }
+            if (ended < ROOTS && running < ROOTS) {
+                break;
+            }
+            random_step_keep(&t, troots, &tq, &stream);
+        }
+        if (DF_CHECK(&t, ended < ROOTS && running < ROOTS)) {
+            duoforge_batch *lt = make(&t, pool, setups, 4u, 2u);
+            static plan tp;
+            static outputs to;
+            memset(&tp, 0, sizeof tp);
+            for (uint32_t r = 0u; r < ROOTS; ++r) {
+                tp.keys[r] = next(&stream);
+                tp.viewers[r] = (uint8_t)(r % 2u);
+            }
+            /* leaf 0 from the TERMINAL root; leaves 1 and 3 from the running root; leaf 2 there with a pair
+               outside the domain */
+            static const uint32_t from[4] = {0u, 1u, 1u, 1u};
+            for (uint32_t i = 0u; i < 4u; ++i) {
+                tp.root_envs[i] = from[i] == 0u ? ended : running;
+                tp.samples[i] = i;
+                tp.choices[2u * i] = random_choice(&tq.domains[2u * tp.root_envs[i]], &stream);
+                tp.choices[2u * i + 1u] = random_choice(&tq.domains[2u * tp.root_envs[i] + 1u], &stream);
+            }
+            for (uint32_t p = 0u; p < 2u; ++p) {
+                tp.choices[2u * 2u + p].slot[0] = DUOFORGE_MAX_SLOT_OPTIONS - 1u;
+                tp.choices[2u * 2u + p].slot[1] = DUOFORGE_MAX_SLOT_OPTIONS - 1u;
+            }
+            tally ty;
+            memset(&ty, 0, sizeof ty);
+            const duoforge_status st = expand(lt, troots, 4u, supported, &tq, &tp, 4u, &to);
+            DF_CHECK_EQ_U64(&t, st, DUOFORGE_E_INVALID_ARGUMENT);
+            for (uint32_t i = 0u; i < 4u; ++i) {
+                check_leaf(&t, pool, troots, lt, &tq, &tp, &to, i, 4u, supported, V4, &ty);
+            }
+            DF_CHECK_EQ_U64(&t, to.step_statuses[0], DUOFORGE_E_INVALID_ARGUMENT);
+            DF_CHECK_EQ_U64(&t, to.step_statuses[2], DUOFORGE_E_INVALID_ARGUMENT);
+            uint32_t episodes[4];
+            for (uint32_t i = 0u; i < 4u; ++i) {
+                episodes[i] = duoforge_batch_env_episode(lt, i);
+            }
+            DF_CHECK(&t, duoforge_batch_reset_terminal(lt) == DUOFORGE_OK);
+            DF_CHECK(&t, duoforge_batch_env_episode(lt, 0u) != episodes[0]); /* the TERMINAL root's copy */
+            DF_CHECK(&t, duoforge_batch_env_episode(lt, 2u) == episodes[2]); /* a failed step on a running root */
+            for (uint32_t i = 1u; i < 4u; i += 2u) {
+                DF_CHECK(&t, (duoforge_batch_env_episode(lt, i) != episodes[i]) == (to.leaf_results[i] != 0u));
+            }
+            /* the flag cleared by a later leaf: a TERMINAL root's copy, then a running root's leaf in the same
+               environment, (a) a step that succeeds and does not end, (b) a step that fails */
+            static plan one;
+            for (uint32_t c = 0u; c < 2u; ++c) {
+                one = tp;
+                one.root_envs[0] = ended;
+                (void)expand(lt, troots, 4u, supported, &tq, &one, 1u, &to);
+                one.root_envs[0] = running;
+                one.choices[0] = c == 0u ? tp.choices[2] : tp.choices[4];
+                one.choices[1] = c == 0u ? tp.choices[3] : tp.choices[5];
+                bool fits = false;
+                for (uint32_t sample = 0u; sample < 64u && !fits; ++sample) {
+                    one.samples[0] = sample;
+                    (void)expand(lt, troots, 4u, supported, &tq, &one, 1u, &to);
+                    fits = c == 0u ? to.step_statuses[0] == DUOFORGE_OK && to.leaf_results[0] == 0u
+                                   : to.step_statuses[0] == DUOFORGE_E_INVALID_ARGUMENT;
+                    if (!fits) { /* a sample whose step ended the battle: put the TERMINAL root's copy back */
+                        one.root_envs[0] = ended;
+                        (void)expand(lt, troots, 4u, supported, &tq, &one, 1u, &to);
+                        one.root_envs[0] = running;
+                    }
+                }
+                if (DF_CHECK(&t, fits)) {
+                    const uint32_t before_reset = duoforge_batch_env_episode(lt, 0u);
+                    DF_CHECK(&t, duoforge_batch_reset_terminal(lt) == DUOFORGE_OK);
+                    DF_CHECK_EQ_U64(&t, duoforge_batch_env_episode(lt, 0u), before_reset);
+                }
+            }
+            duoforge_batch_destroy(lt);
+        }
+        duoforge_batch_destroy(troots);
+    }
+
+    /* test_equal_fingerprints: leaves on another context object with the same fingerprint expand alike */
+    {
+        DF_CHECK(&t, duoforge_batch_query_factored(roots, query.requests, query.observations, query.domains) ==
+                         DUOFORGE_OK);
+        uint64_t stream = 0x2026100300000407u;
+        tally ty;
+        memset(&ty, 0, sizeof ty);
+        make_plan(&query, &stream, 1u, &the_plan, &ty);
+        duoforge_context *pool2 = df_make_context(&df_config_pool);
+        duoforge_batch *l2 = make(&t, pool2, setups, LEAVES, 2u);
+        const duoforge_status a = expand(leaves[0], roots, 4u, supported, &query, &the_plan, LEAVES, &out[0]);
+        const duoforge_status b = expand(l2, roots, 4u, supported, &query, &the_plan, LEAVES, &out[1]);
+        DF_CHECK_EQ_U64(&t, a, b);
+        DF_CHECK(&t, memcmp(&out[0], &out[1], sizeof out[0]) == 0);
+        digests(&t, pool, leaves[0], LEAVES, before);
+        digests(&t, pool2, l2, LEAVES, after);
+        DF_CHECK(&t, memcmp(before, after, sizeof before) == 0);
+        duoforge_batch_destroy(l2);
+        duoforge_context_destroy(pool2);
+    }
+
+    /* test_query_encoded_zeroes_rows_after_a_failed_player: the encoder's batch path, which the leaves share
+       (decision 0022). A records bit the POOL library does not support refuses player 0's row; player 1's rows
+       are then not refreshed and are all zero. */
+    {
+        uint32_t missing = DUOFORGE_VIEWEXT_FEATURE_COUNT;
+        for (uint32_t k = 0u; k < DUOFORGE_VIEWEXT_FEATURE_COUNT && missing == DUOFORGE_VIEWEXT_FEATURE_COUNT; ++k) {
+            if (((supported >> k) & 1u) == 0u) {
+                missing = k;
+            }
+        }
+        if (DF_CHECK(&t, missing < DUOFORGE_VIEWEXT_FEATURE_COUNT)) {
+            static float qobs[2u * ROOTS * V4];
+            static float qslots[2u * ROOTS * DUOFORGE_ENCODER_SLOT_VALUES];
+            static uint8_t qpairs[2u * ROOTS * DUOFORGE_ENCODER_PAIR_VALUES];
+            static duoforge_status qstatuses[ROOTS];
+            memset(qobs, 0xA5, sizeof qobs);
+            memset(qslots, 0xA5, sizeof qslots);
+            memset(qpairs, 0xA5, sizeof qpairs);
+            const duoforge_status st = duoforge_batch_query_encoded(
+                roots, 4u, supported | (UINT64_C(1) << missing), NULL, NULL, NULL, qobs, qslots, qpairs, qstatuses);
+            DF_CHECK_EQ_U64(&t, st, DUOFORGE_E_UNSUPPORTED);
+            bool zero = true;
+            for (uint32_t e = 0u; e < ROOTS; ++e) {
+                DF_CHECK_EQ_U64(&t, qstatuses[e], DUOFORGE_E_UNSUPPORTED);
+                zero = zero && row_is_zero(&qobs[(size_t)(2u * e + 1u) * V4], V4) &&
+                       row_is_zero(&qslots[(size_t)(2u * e + 1u) * DUOFORGE_ENCODER_SLOT_VALUES],
+                                   DUOFORGE_ENCODER_SLOT_VALUES);
+                for (uint32_t k = 0u; k < DUOFORGE_ENCODER_PAIR_VALUES; ++k) {
+                    zero = zero && qpairs[(size_t)(2u * e + 1u) * DUOFORGE_ENCODER_PAIR_VALUES + k] == 0u;
+                }
+            }
+            DF_CHECK(&t, zero);
+        }
     }
 
     for (uint32_t v = 0u; v < VARIANTS; ++v) {

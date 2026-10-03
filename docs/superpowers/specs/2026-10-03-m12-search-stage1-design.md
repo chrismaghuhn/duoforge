@@ -150,7 +150,7 @@ duoforge_status duoforge_batch_expand(
 The rows are taken as `void *`, so `duoforge_search.h` holds no floating point. The source lint's `float` exception stays with `encode.c` and `duoforge_encode.h` (owner, 2026-10-03).
 
 **Inputs**
-- **The leaf batch:** an ordinary batch of L environments, created once with the roots' context. Leaf i is environment i. Every leaf environment is overwritten at each call, so its setup does not matter.
+- **The leaf batch:** an ordinary batch of L environments, created once with the roots' context. Leaf i is environment i. A call overwrites environments 0 to count − 1, so their setups do not matter; the environments from count on and the outputs past count stay untouched (a last, smaller chunk).
 - **The root batch:** in stage 1 this is the arena batch itself. `root_requests` and `root_domains` are the arrays its `duoforge_batch_query_encoded` (or `_query_factored`) wrote, indexed 2 · env + p as there. `keys` and `viewers` are read only for root environments that some leaf names.
 - **Choices:** a player whose root request has `requested` 0 gets no response, and its choice entry is ignored, as in `duoforge_batch_step_factored`.
 
@@ -158,6 +158,7 @@ The rows are taken as `void *`, so `duoforge_search.h` holds no floating point. 
 1. The leaf environment becomes a copy of its root (`duoforge_battle_copy`, no allocation).
 2. It is reseeded with `duoforge_search_seeds(seed, keys[root], samples[i])` (section 6).
 3. It is stepped with the bundle of the two factored choices. The bundle is built and checked exactly as `duoforge_batch_step_factored` builds it. `step_statuses[i]` and `results[i]` receive the outcome.
+   A TERMINAL root is not skipped, unlike in `duoforge_batch_step_factored`: the step refuses every bundle at TERMINAL (E_INVALID_ARGUMENT), and the leaf keeps the root's copy with its TERMINAL flag set. The search never expands such a root.
 4. If the step succeeded and the leaf is TERMINAL: `leaf_results[i]` is its result, the obs row is all zero and `encode_statuses[i]` is OK. A TERMINAL leaf is scored by its result and needs no row.
 5. Otherwise the viewer's request, observation, factored domain and view extension are taken as `duoforge_batch_query_encoded` takes them for one player. `duoforge_encode(version, ext_supported, …)` then writes obs row i. The slots and pair mask the encoder also produces go to stack buffers of the leaf (3 KB and 1 KB), as `duoforge_batch_query_encoded` keeps its observation, domain and extension on the stack, and are not returned.
 

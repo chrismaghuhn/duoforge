@@ -37,7 +37,8 @@ void duoforge_search_seeds(uint64_t seed, uint64_t key, uint32_t sample, uint64_
                            uint64_t *out_initseq);
 
 /* Expands `count` leaves into environments 0 .. count - 1 of `leaves`, in
-   parallel on its workers, in one pass. For leaf i with root environment
+   parallel on its workers, in one pass; the environments from count on and
+   the outputs past count are not touched. For leaf i with root environment
    r = root_envs[i] of `roots`:
      1. the leaf environment becomes a copy of root r (duoforge_battle_copy);
      2. it is reseeded with duoforge_search_seeds(seed, keys[r], samples[i]);
@@ -48,14 +49,20 @@ void duoforge_search_seeds(uint64_t seed, uint64_t key, uint32_t sample, uint64_
         exactly as duoforge_batch_step_factored builds them; a player whose
         request has requested 0 gives no response and its choice is ignored;
         step_statuses[i] and results[i] receive the outcome (results[i] is
-        all zero when the step fails);
+        all zero when the step fails). Unlike duoforge_batch_step_factored,
+        which skips a TERMINAL environment with OK, a TERMINAL root is not
+        skipped: the step refuses every bundle at TERMINAL, so its leaves
+        report E_INVALID_ARGUMENT and keep the root's copy, TERMINAL flag
+        set. A search expands only roots with a decision, so such a leaf is
+        the caller's error;
      4. at TERMINAL leaf_results[i] receives DUOFORGE_RESULT_*, the row is all
         zero and encode_statuses[i] is OK: such a leaf is scored by its
         result. Otherwise leaf_results[i] is 0, and player viewers[r] of the
         leaf is queried and encoded as duoforge_batch_query_encoded queries
         and encodes one row (version, ext_supported) into row i of obs:
-        obs holds count rows of width = duoforge_encoder_size(version)
-        float32 values, as duoforge_batch_query_encoded's obs does;
+        obs points to at least count rows of width =
+        duoforge_encoder_size(version) float32 values, aligned for them (a
+        float32 array, as duoforge_batch_query_encoded's obs is);
         encode_statuses[i] receives the row's status, the query's or the
         encoder's. A failed step leaves encode_statuses[i] OK and the
         row all zero.
