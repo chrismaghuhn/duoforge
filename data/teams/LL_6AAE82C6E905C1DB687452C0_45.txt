@@ -1,0 +1,53 @@
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Brave Nature
+- Fake Out
+- Grassy Glide
+- Wood Hammer
+- High Horsepower
+
+Incineroar (M) @ Sitrus Berry
+Ability: Intimidate
+Level: 50
+Adamant Nature
+- Flare Blitz
+- Darkest Lariat
+- Fake Out
+- Parting Shot
+
+Tyranitar (M) @ Tyranitarite
+Ability: Sand Stream
+Level: 50
+Adamant Nature
+- Rock Slide
+- Knock Off
+- Protect
+- Low Kick
+
+Gholdengo @ Life Orb
+Ability: Good as Gold
+Level: 50
+Modest Nature
+- Make It Rain
+- Shadow Ball
+- Protect
+- Nasty Plot
+
+Staraptor (M) @ Staraptite
+Ability: Intimidate
+Level: 50
+Jolly Nature
+- Close Combat
+- Protect
+- Brave Bird
+- Tailwind
+
+Milotic (M) @ Leftovers
+Ability: Competitive
+Level: 50
+Modest Nature
+- Ice Beam
+- Scald
+- Icy Wind
+- Protect

@@ -1833,7 +1833,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {167u, 168u},
     /* Absolite -- data/items.ts:34-45, data/mods/champions/items.ts:10-13 */
     {142u, 143u},
-    /* Absolite Z -- data/items.ts:46-57, data/mods/champions/items.ts:14-17  [unmodelled: second Mega forme absolmegaz of absol] */
+    /* Absolite Z -- data/items.ts:46-57, data/mods/champions/items.ts:14-17 */
     {142u, 144u},
     /* Aerodactylite -- data/items.ts:135-146, data/mods/champions/items.ts:34-37 */
     {78u, 79u},
@@ -1873,7 +1873,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {132u, 133u},
     /* Chandelurite -- data/items.ts:761-772, data/mods/champions/items.ts:134-137 */
     {216u, 217u},
-    /* Charizardite X -- data/items.ts:788-799, data/mods/champions/items.ts:138-141  [unmodelled: second Mega forme charizardmegax of charizard] */
+    /* Charizardite X -- data/items.ts:788-799, data/mods/champions/items.ts:138-141 */
     {13u, 30u},
     /* Cheri Berry -- data/items.ts:836-856  [unmodelled: callback onEat; callback onUpdate] */
     {DFI_FORME_NONE, DFI_FORME_NONE},
@@ -1919,7 +1919,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {175u, 176u},
     /* Garchompite -- data/items.ts:2406-2417, data/mods/champions/items.ts:374-377 */
     {159u, 160u},
-    /* Garchompite Z -- data/items.ts:2418-2429, data/mods/champions/items.ts:378-381  [unmodelled: second Mega forme garchompmegaz of garchomp] */
+    /* Garchompite Z -- data/items.ts:2418-2429, data/mods/champions/items.ts:378-381 */
     {159u, 161u},
     /* Gardevoirite -- data/items.ts:2430-2441, data/mods/champions/items.ts:382-385 */
     {117u, 118u},
@@ -1961,7 +1961,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {156u, 157u},
     /* Lucarionite -- data/items.ts:3497-3508, data/mods/champions/items.ts:550-553 */
     {162u, 163u},
-    /* Lucarionite Z -- data/items.ts:3509-3520, data/mods/champions/items.ts:554-557  [unmodelled: second Mega forme lucariomegaz of lucario] */
+    /* Lucarionite Z -- data/items.ts:3509-3520, data/mods/champions/items.ts:554-557 */
     {162u, 164u},
     /* Lum Berry -- data/items.ts:3537-3560  [unmodelled: callback onAfterSetStatus; callback onAfterSetStatusPriority; callback onEat; callback onUpdate] */
     {DFI_FORME_NONE, DFI_FORME_NONE},
@@ -2005,7 +2005,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {234u, 235u},
     /* Quick Claw -- data/items.ts:4989-5005  [unmodelled: callback onFractionalPriority; callback onFractionalPriorityPriority] */
     {DFI_FORME_NONE, DFI_FORME_NONE},
-    /* Raichunite X -- data/items.ts:5035-5046, data/mods/champions/items.ts:762-765  [unmodelled: second Mega forme raichumegax of raichu] */
+    /* Raichunite X -- data/items.ts:5035-5046, data/mods/champions/items.ts:762-765 */
     {5u, 39u},
     /* Rawst Berry -- data/items.ts:5068-5088  [unmodelled: callback onEat; callback onUpdate] */
     {DFI_FORME_NONE, DFI_FORME_NONE},
@@ -2137,7 +2137,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   keeneye -- data/abilities.ts:2260-2277  [unmodelled: callback onModifyMove; callback onTryBoost]
  *   klutz -- data/abilities.ts:2278-2290  [unmodelled: callback onStart; callback onSwitchInPriority; read by id in sim/pokemon.ts]
  *   leafguard -- data/abilities.ts:2291-2310  [unmodelled: callback onSetStatus; callback onTryAddVolatile]
- *   levitate -- data/abilities.ts:2311-2317  [unmodelled: read by id in data/moves.ts; read by id in sim/pokemon.ts]
+ *   levitate -- data/abilities.ts:2311-2317
  *   libero -- data/abilities.ts:2318-2333  [unmodelled: callback onPrepareHit]
  *   lightmetal -- data/abilities.ts:2334-2342  [unmodelled: callback onModifyWeight]
  *   limber -- data/abilities.ts:2368-2386  [unmodelled: callback onSetStatus; callback onUpdate]
@@ -2703,7 +2703,7 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_FLOETTITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_ABOMASITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_ABSOLITE] = DFI_HANDLER_NONE,
-    [DFI_ITEM_ABSOLITEZ] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_ABSOLITEZ] = DFI_HANDLER_NONE,
     [DFI_ITEM_AERODACTYLITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_AGGRONITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_AIRBALLOON] = DFI_HANDLER_UNMODELED,
@@ -2723,7 +2723,7 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_BRIGHTPOWDER] = DFI_HANDLER_UNMODELED,
     [DFI_ITEM_CAMERUPTITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_CHANDELURITE] = DFI_HANDLER_NONE,
-    [DFI_ITEM_CHARIZARDITEX] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_CHARIZARDITEX] = DFI_HANDLER_NONE,
     [DFI_ITEM_CHERIBERRY] = DFI_HANDLER_UNMODELED,
     [DFI_ITEM_CHESNAUGHTITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_CHESTOBERRY] = DFI_HANDLER_UNMODELED,
@@ -2746,7 +2746,7 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_FROSLASSITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_GALLADITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_GARCHOMPITE] = DFI_HANDLER_NONE,
-    [DFI_ITEM_GARCHOMPITEZ] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_GARCHOMPITEZ] = DFI_HANDLER_NONE,
     [DFI_ITEM_GARDEVOIRITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_GENGARITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_GLALITITE] = DFI_HANDLER_NONE,
@@ -2767,7 +2767,7 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_LIGHTBALL] = DFI_HANDLER_UNMODELED,
     [DFI_ITEM_LOPUNNITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_LUCARIONITE] = DFI_HANDLER_NONE,
-    [DFI_ITEM_LUCARIONITEZ] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_LUCARIONITEZ] = DFI_HANDLER_NONE,
     [DFI_ITEM_LUMBERRY] = DFI_HANDLER_UNMODELED,
     [DFI_ITEM_MALAMARITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_MANECTITE] = DFI_HANDLER_NONE,
@@ -2789,7 +2789,7 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_PSYCHICSEED] = DFI_HANDLER_NONE,
     [DFI_ITEM_PYROARITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_QUICKCLAW] = DFI_HANDLER_UNMODELED,
-    [DFI_ITEM_RAICHUNITEX] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_RAICHUNITEX] = DFI_HANDLER_NONE,
     [DFI_ITEM_RAWSTBERRY] = DFI_HANDLER_UNMODELED,
     [DFI_ITEM_REDCARD] = DFI_HANDLER_UNMODELED,
     [DFI_ITEM_SABLENITE] = DFI_HANDLER_NONE,
@@ -2916,7 +2916,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_KEENEYE] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_KLUTZ] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_LEAFGUARD] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_LEVITATE] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_LEVITATE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_LIBERO] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_LIGHTMETAL] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_LIMBER] = DFI_HANDLER_UNMODELED,
@@ -6985,20 +6985,17 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
 
 const char *const dfi_pool_item_unmodeled[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_EXPERTBELT] = "callback onModifyDamage",
-    [DFI_ITEM_ABSOLITEZ] = "second Mega forme absolmegaz of absol",
     [DFI_ITEM_AIRBALLOON] = "callback onAfterSubDamage; callback onDamagingHit; callback onStart; read by id in sim/pokemon.ts",
     [DFI_ITEM_ASPEARBERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_BIGROOT] = "callback onTryHeal; callback onTryHealPriority",
     [DFI_ITEM_BINDINGBAND] = "read by id in data/conditions.ts",
     [DFI_ITEM_BRIGHTPOWDER] = "callback onModifyAccuracy; callback onModifyAccuracyPriority",
-    [DFI_ITEM_CHARIZARDITEX] = "second Mega forme charizardmegax of charizard",
     [DFI_ITEM_CHERIBERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_CHESTOBERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_DAMPROCK] = "read by id in data/conditions.ts",
     [DFI_ITEM_EJECTBUTTON] = "callback onAfterMoveSecondary; callback onAfterMoveSecondaryPriority",
     [DFI_ITEM_ELECTRICSEED] = "callback onStart; callback onSwitchInPriority; callback onTerrainChange; field boosts",
     [DFI_ITEM_FOCUSBAND] = "callback onDamage; callback onDamagePriority",
-    [DFI_ITEM_GARCHOMPITEZ] = "second Mega forme garchompmegaz of garchomp",
     [DFI_ITEM_HEATROCK] = "read by id in data/conditions.ts",
     [DFI_ITEM_ICYROCK] = "read by id in data/conditions.ts",
     [DFI_ITEM_IRONBALL] = "callback onEffectiveness; callback onModifySpe; read by id in data/moves.ts; read by id in sim/pokemon.ts",
@@ -7006,7 +7003,6 @@ const char *const dfi_pool_item_unmodeled[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_LEEK] = "callback onModifyCritRatio",
     [DFI_ITEM_LEPPABERRY] = "callback onEat; callback onUpdate; read by id in data/items.ts; read by id in data/moves.ts; read by id in sim/pokemon.ts",
     [DFI_ITEM_LIGHTBALL] = "callback onModifyAtk; callback onModifyAtkPriority; callback onModifySpA; callback onModifySpAPriority",
-    [DFI_ITEM_LUCARIONITEZ] = "second Mega forme lucariomegaz of lucario",
     [DFI_ITEM_LUMBERRY] = "callback onAfterSetStatus; callback onAfterSetStatusPriority; callback onEat; callback onUpdate",
     [DFI_ITEM_MENTALHERB] = "callback onUpdate; read by id in data/mods/champions/moves.ts",
     [DFI_ITEM_METRONOME] = "callback onStart; condition block; read by id in data/moves.ts; read by id in sim/pokemon.ts",
@@ -7017,7 +7013,6 @@ const char *const dfi_pool_item_unmodeled[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_PECHABERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_PERSIMBERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_QUICKCLAW] = "callback onFractionalPriority; callback onFractionalPriorityPriority",
-    [DFI_ITEM_RAICHUNITEX] = "second Mega forme raichumegax of raichu",
     [DFI_ITEM_RAWSTBERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_REDCARD] = "callback onAfterMoveSecondary; read by id in sim/pokemon.ts",
     [DFI_ITEM_SCOPELENS] = "callback onModifyCritRatio",
@@ -7099,7 +7094,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_KEENEYE] = "callback onModifyMove; callback onTryBoost",
     [DFI_ABILITY_KLUTZ] = "callback onStart; callback onSwitchInPriority; read by id in sim/pokemon.ts",
     [DFI_ABILITY_LEAFGUARD] = "callback onSetStatus; callback onTryAddVolatile",
-    [DFI_ABILITY_LEVITATE] = "read by id in data/moves.ts; read by id in sim/pokemon.ts",
     [DFI_ABILITY_LIBERO] = "callback onPrepareHit",
     [DFI_ABILITY_LIGHTMETAL] = "callback onModifyWeight",
     [DFI_ABILITY_LIMBER] = "callback onSetStatus; callback onUpdate",
@@ -7212,10 +7206,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x0cu, 0x29u, 0x15u, 0x44u, 0xbdu, 0x5fu, 0xe3u, 0x51u,
-    0xeau, 0x3du, 0x4au, 0xf4u, 0x2eu, 0xa2u, 0x8fu, 0x9bu,
-    0x10u, 0x50u, 0x72u, 0x76u, 0xe8u, 0xd0u, 0x3fu, 0x89u,
-    0x87u, 0xb1u, 0x0au, 0xc7u, 0xb1u, 0xa5u, 0x79u, 0xe6u,
+    0xddu, 0xd1u, 0x66u, 0x59u, 0xc8u, 0xfbu, 0x6du, 0xf4u,
+    0x6au, 0x60u, 0xe3u, 0x42u, 0x66u, 0x3du, 0x3du, 0x44u,
+    0x41u, 0x06u, 0x5au, 0x14u, 0x08u, 0xdfu, 0x48u, 0x7au,
+    0x24u, 0x00u, 0x58u, 0x26u, 0xefu, 0xb4u, 0x73u, 0x45u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)

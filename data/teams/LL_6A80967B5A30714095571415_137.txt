@@ -1,0 +1,53 @@
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Timid Nature
+- Hyper Voice
+- Draco Meteor
+- Flamethrower
+- Protect
+
+Floette-Eternal (F) @ Floettite
+Ability: Flower Veil
+Level: 50
+Modest Nature
+- Light of Ruin
+- Moonblast
+- Dazzling Gleam
+- Protect
+
+Kingambit (M) @ Chople Berry
+Ability: Defiant
+Level: 50
+Adamant Nature
+- Kowtow Cleave
+- Iron Head
+- Sucker Punch
+- Low Kick
+
+Sneasler (M) @ White Herb
+Ability: Unburden
+Level: 50
+Jolly Nature
+- Dire Claw
+- Fake Out
+- Close Combat
+- Rock Tomb
+
+Whimsicott (M) @ Focus Sash
+Ability: Prankster
+Level: 50
+Timid Nature
+- Protect
+- Tailwind
+- Moonblast
+- Encore
+
+Basculegion (M) @ Life Orb
+Ability: Adaptability
+Level: 50
+Jolly Nature
+- Last Respects
+- Protect
+- Aqua Jet
+- Wave Crash

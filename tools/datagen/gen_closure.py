@@ -1533,10 +1533,10 @@ HANDLER_IDS = ['NONE', 'UNMODELED']
 # by definition, like the closure and Team C rows. The step that marks such a row in the support manifest adds its id
 # here, which changes the handler column and so the POOL table hash, as any pool change does; a row that is marked and
 # still has the UNMODELED handler fails duoforge.data.pool_tables. G4: Focus Sash, Rock Head. G12: Floettite (the Mega
-# Stone of Floette-Eternal), Flower Veil and Fairy Aura. G14: Rough Skin, Poison Touch and Thermal Exchange. G16: Sticky Hold (Knock Off reads it by id). AC1: Trace (the entry copy of a foe's ability). G15: Psychic Seed (Grassy Seed's rule for the other terrain). G27: Cursed Body (onDamagingHit, the Disable roll).
+# Stone of Floette-Eternal), Flower Veil and Fairy Aura. G14: Rough Skin, Poison Touch and Thermal Exchange. G16: Sticky Hold (Knock Off reads it by id). AC1: Trace (the entry copy of a foe's ability). G15: Psychic Seed (Grassy Seed's rule for the other terrain). G23-C: Levitate (isGrounded and the Ground immunity). G27: Cursed Body (onDamagingHit, the Disable roll).
 ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed'],
                'abilities': ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange',
-                             'stickyhold', 'trace', 'cursedbody']}
+                             'stickyhold', 'trace', 'levitate', 'cursedbody']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -2369,10 +2369,15 @@ def build_pool(root, repo, dx):
             feats = entry_features(items_ts, champ_items, it['id'], INERT_ITEM_KEYS, stone=it['stone'] is not None,
                                    readers=readers)
             if it['stone'] is not None:
+                # Mega by stone (step G23-A): the Mega that a stone takes a base forme to is the base forme's own link or,
+                # failing that, the stone's own row (its first pair): the engine finds it from (forme, stone)
+                # (dfi_mega_of). A pair that neither names would be unreachable, and the build fails here.
+                first = (forme_index[it['stones'][0][0]], forme_index[it['stones'][0][1]])
                 for base, mega in it['stones']:
                     primary = formes[forme_index[base]]['mega_forme']
-                    if primary != forme_index[mega]:
-                        feats.append('second Mega forme %s of %s' % (mega, base))
+                    if primary != forme_index[mega] and (forme_index[base], forme_index[mega]) != first:
+                        fail('stone %s: the Mega %s of %s is neither the link of its base forme nor the first pair of '
+                             'the stone' % (it['id'], mega, base))
         it['unmodeled'] = sorted(set(feats))
     for i, (ab, col) in enumerate(zip(abilities, ability_family)):
         if i < n_ext_abilities or col['family'] != 'NONE' or ab['id'] in ENGINE_ROWS['abilities']:

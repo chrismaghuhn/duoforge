@@ -1,0 +1,53 @@
+Sneasler (M) @ Grassy Seed
+Ability: Unburden
+Level: 50
+Adamant Nature
+- Throat Chop
+- Gunk Shot
+- Close Combat
+- Protect
+
+Tyranitar (M) @ Tyranitarite
+Ability: Sand Stream
+Level: 50
+Jolly Nature
+- Knock Off
+- Dragon Dance
+- Protect
+- Rock Slide
+
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Timid Nature
+- Hyper Voice
+- Flamethrower
+- Tailwind
+- Protect
+
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Wood Hammer
+- Fake Out
+- High Horsepower
+- Grassy Glide
+
+Gholdengo @ Life Orb
+Ability: Good as Gold
+Level: 50
+Timid Nature
+- Protect
+- Make It Rain
+- Shadow Ball
+- Nasty Plot
+
+Milotic (M) @ Sitrus Berry
+Ability: Competitive
+Level: 50
+Modest Nature
+- Scald
+- Ice Beam
+- Icy Wind
+- Protect

@@ -33,9 +33,9 @@ extern "C" {
 #endif
 
 #define DUOFORGE_VERSION_MAJOR 0
-#define DUOFORGE_VERSION_MINOR 33
+#define DUOFORGE_VERSION_MINOR 34
 #define DUOFORGE_VERSION_PATCH 0
-#define DUOFORGE_VERSION_STRING "0.33.0"
+#define DUOFORGE_VERSION_STRING "0.34.0"
 
 /* Identifiers of the artifacts that exist now (registry: decisions 0002, 0005, 0006). */
 #define DUOFORGE_SEMANTICS_ID           3u   /* "duoforge-m3-closure" */
@@ -286,8 +286,10 @@ duoforge_status duoforge_data_find(const duoforge_context *ctx, uint32_t table, 
    a species and a nature carry no mark of their own (supported with the turn
    core), except a Mega forme, which is supported when Mega Evolution into it
    is (see mega_supported). A member is supported exactly when its ability
-   (if any), its item (if any) and each of its moves are, and, if it holds the
-   stone of its forme (item 1 + mega_stone), mega_supported of its forme holds. */
+   (if any), its item (if any) and each of its moves are, and, if it holds a
+   Mega Stone of its forme (item 1 + the stone), Mega Evolution through that
+   stone is supported (mega_supported of its forme for its first Mega Stone,
+   duoforge_mega_info.supported for every stone). */
 duoforge_status duoforge_data_supported(const duoforge_context *ctx, uint32_t table, uint32_t id,
                                         bool *out_supported);
 
@@ -310,6 +312,27 @@ typedef struct duoforge_forme_info {
     uint32_t move_count;     /* the legal moves of the forme, listed by duoforge_data_forme_moves */
 } duoforge_forme_info; /* 60 bytes */
 duoforge_status duoforge_data_forme_info(const duoforge_context *ctx, uint32_t species_id, duoforge_forme_info *out);
+
+/* The Mega formes that a species reaches, one per Mega Stone. duoforge_forme_info
+   carries one link per forme and keeps its meaning (the first Mega Stone and its
+   Mega forme); a species with a second Mega (Charizard: Mega-X and Mega-Y) or a
+   stone that two species share (Meowsticite) is covered here. */
+typedef struct duoforge_mega_info {
+    uint32_t base_species; /* the base forme asked about */
+    uint32_t stone;        /* the item id of the Mega Stone (a member holds it as item 1 + this id) */
+    uint32_t mega_species; /* the Mega forme that the stone takes the species to */
+    uint32_t mega_ability; /* the ability id the Mega forme brings */
+    uint32_t supported;    /* 1 iff Mega Evolution into that Mega forme is supported (the manifest marks Mega Evolution
+                              and the Mega forme's ability), as mega_supported of duoforge_forme_info for its first one;
+                              whether the stone itself is marked is the ITEM table's answer of duoforge_data_supported */
+} duoforge_mega_info; /* 5 words, 20 bytes */
+/* How many Mega Stones take the species (a forme id of the kind) to a Mega forme under the kind: 0 for a Mega forme
+   and for a species without one. E_INVALID_ARGUMENT for an id beyond the kind's count. */
+duoforge_status duoforge_data_mega_count(const duoforge_context *ctx, uint32_t species_id, uint32_t *out_count);
+/* The index-th of them, in ascending item id. E_INVALID_ARGUMENT for an id beyond the kind's count and for an index
+   at or beyond duoforge_data_mega_count; *out is untouched on failure. */
+duoforge_status duoforge_data_mega_at(const duoforge_context *ctx, uint32_t species_id, uint32_t index,
+                                      duoforge_mega_info *out);
 
 /* The moves a member of the species may have, in ascending id order: the
    moves of the forme's set under the CLOSURE and TEAM_C kinds, the moves it

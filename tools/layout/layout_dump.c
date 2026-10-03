@@ -112,6 +112,9 @@ int main(void)
            FIELD(duoforge_position_ext, encore_slot), FIELD(duoforge_position_ext, disable_slot),
            FIELD(duoforge_position_ext, stockpile), FIELD(duoforge_position_ext, perish),
            FIELD(duoforge_position_ext, reserved));
+    STRUCT(duoforge_mega_info, false, FIELD(duoforge_mega_info, base_species), FIELD(duoforge_mega_info, stone),
+           FIELD(duoforge_mega_info, mega_species), FIELD(duoforge_mega_info, mega_ability),
+           FIELD(duoforge_mega_info, supported));
     STRUCT(duoforge_member_ext, false, FIELD(duoforge_member_ext, forme), FIELD(duoforge_member_ext, item_now),
            FIELD(duoforge_member_ext, reserved));
     STRUCT(duoforge_side_ext, false, FIELD(duoforge_side_ext, positions), FIELD(duoforge_side_ext, members),
