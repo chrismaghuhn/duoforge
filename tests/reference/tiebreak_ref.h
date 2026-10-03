@@ -1614,6 +1614,30 @@ static const df_tb_stop tb_g20_aurora_veil_screens[] = {
     {6u, 0u, 2u, 2u, {4u, 4u}, {642u, 693u}, {0x404b6d42cd2b4c2full, 0x404ffce38e38e38dull}},
     {7u, 0u, 2u, 2u, {4u, 4u}, {644u, 693u}, {0x404b6d2ab1e60c3dull, 0x404ffce38e38e38dull}},
 };
+static const df_tb_stop tb_g20_spiky_shield_a[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1127u, 1105u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {761u, 739u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {761u, 714u}, {0x4050aaaaaaaaaaabull, 0x405029d799c3d02eull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {761u, 714u}, {0x4050aaaaaaaaaaabull, 0x405029d799c3d02eull}},
+    {5u, 0u, 2u, 2u, {4u, 4u}, {598u, 703u}, {0x404a550690690690ull, 0x404fcb4011cb1969ull}},
+    {6u, 0u, 2u, 2u, {4u, 4u}, {610u, 692u}, {0x404ad84ec4ec4ec5ull, 0x404f42d0f00e9278ull}},
+};
+static const df_tb_stop tb_g20_spiky_shield_ko[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1127u, 1105u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {761u, 739u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {635u, 735u}, {0x404bf2df2df2df2full, 0x405091dc47711dc5ull}},
+    {3u, 0u, 1u, 1u, {4u, 3u}, {598u, 542u}, {0x404a55b59b59b59bull, 0x4047fe59de324b07ull}},
+    {4u, 0u, 1u, 1u, {4u, 3u}, {598u, 542u}, {0x404a55b59b59b59bull, 0x4047fe59de324b07ull}},
+    {5u, 0u, 1u, 1u, {4u, 3u}, {610u, 517u}, {0x404ad8fdcfdcfdd0ull, 0x4046fcb3bc64960dull}},
+};
+static const df_tb_stop tb_g20_spiky_shield_pivot[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1142u, 1090u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {776u, 724u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {749u, 724u}, {0x40501f89467e251aull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 1u, 1u, {4u, 3u}, {749u, 552u}, {0x40501f89467e251aull, 0x4049000000000000ull}},
+    {4u, 0u, 1u, 1u, {4u, 3u}, {749u, 552u}, {0x40501f89467e251aull, 0x4049000000000000ull}},
+    {5u, 0u, 1u, 1u, {4u, 3u}, {720u, 552u}, {0x404f01ceb8bf0660ull, 0x4049000000000000ull}},
+};
 static const df_tb_stop tb_g21_armarouge_wisp_thermal[] = {
     {0u, 0u, 2u, 3u, {6u, 6u}, {1113u, 1178u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {757u, 818u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -3333,6 +3357,9 @@ static const df_tb_battle tb_battles[] = {
     {"g20_aurora_veil_pair_a", 8u, tb_g20_aurora_veil_pair_a, sizeof tb_g20_aurora_veil_pair_a / sizeof tb_g20_aurora_veil_pair_a[0]},
     {"g20_aurora_veil_pair_b", 8u, tb_g20_aurora_veil_pair_b, sizeof tb_g20_aurora_veil_pair_b / sizeof tb_g20_aurora_veil_pair_b[0]},
     {"g20_aurora_veil_screens", 7u, tb_g20_aurora_veil_screens, sizeof tb_g20_aurora_veil_screens / sizeof tb_g20_aurora_veil_screens[0]},
+    {"g20_spiky_shield_a", 6u, tb_g20_spiky_shield_a, sizeof tb_g20_spiky_shield_a / sizeof tb_g20_spiky_shield_a[0]},
+    {"g20_spiky_shield_ko", 5u, tb_g20_spiky_shield_ko, sizeof tb_g20_spiky_shield_ko / sizeof tb_g20_spiky_shield_ko[0]},
+    {"g20_spiky_shield_pivot", 5u, tb_g20_spiky_shield_pivot, sizeof tb_g20_spiky_shield_pivot / sizeof tb_g20_spiky_shield_pivot[0]},
     {"g21_armarouge_wisp_thermal", 6u, tb_g21_armarouge_wisp_thermal, sizeof tb_g21_armarouge_wisp_thermal / sizeof tb_g21_armarouge_wisp_thermal[0]},
     {"g21_crit_slashes", 6u, tb_g21_crit_slashes, sizeof tb_g21_crit_slashes / sizeof tb_g21_crit_slashes[0]},
     {"g21_dragon_dance_claw", 6u, tb_g21_dragon_dance_claw, sizeof tb_g21_dragon_dance_claw / sizeof tb_g21_dragon_dance_claw[0]},
@@ -3493,7 +3520,7 @@ static const df_tb_battle tb_battles[] = {
     {"w8_sand_soak", 7u, tb_w8_sand_soak, sizeof tb_w8_sand_soak / sizeof tb_w8_sand_soak[0]},
 };
 
-/* 2470 stops: 139 of an ended battle; decided by the count 734,
- * the HP percentage 765, the total HP 781, a tie 51;
- * winners: side 0 1246, side 1 1173, tie 51 */
+/* 2488 stops: 139 of an ended battle; decided by the count 740,
+ * the HP percentage 771, the total HP 787, a tie 51;
+ * winners: side 0 1260, side 1 1177, tie 51 */
 #endif

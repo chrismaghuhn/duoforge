@@ -1028,7 +1028,9 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 
 /* Causes ([from] and [of] in the protocol). */
 #define DUOFORGE_CAUSE_NONE      0u /* the move or the plain mechanic */
-#define DUOFORGE_CAUSE_MOVE      1u /* id2: move id (Parting Shot's switch) */
+#define DUOFORGE_CAUSE_MOVE      1u /* id2: move id (Parting Shot's switch; a sleep that a move caused; POOL kinds: the damage that
+                                        Spiky Shield does to a contact attacker, [-damage] ... [from] Spiky Shield [of] the holder,
+                                        the holder in other) */
 #define DUOFORGE_CAUSE_ITEM      2u /* id2: item + 1 */
 #define DUOFORGE_CAUSE_ABILITY   3u /* id2: ability + 1; other: its holder when shown */
 #define DUOFORGE_CAUSE_RECOIL    4u

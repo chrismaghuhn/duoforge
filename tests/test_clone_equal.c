@@ -177,6 +177,8 @@ static void copy_named_fields(duoforge_battle *x, const duoforge_battle *src)
             dp->stockpile_spd = sp->stockpile_spd;
             dp->charge = sp->charge;
             dp->glaive_rush = sp->glaive_rush;
+            dp->protect_kind = sp->protect_kind;
+            dp->pad = sp->pad;
         }
         for (unsigned m = 0; m < DUOFORGE_MAX_ROSTER; ++m) {
             dt->ability_now[m] = st->ability_now[m];
