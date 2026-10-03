@@ -1778,12 +1778,20 @@ static const df_tb_stop tb_g28_earthquake_wide_guard[] = {
     {6u, 0u, 2u, 2u, {4u, 4u}, {624u, 742u}, {0x404be346201b094bull, 0x4050aaaaaaaaaaabull}},
 };
 static const df_tb_stop tb_g28_expert_belt[] = {
-    {0u, 0u, 2u, 3u, {6u, 6u}, {1100u, 1154u}, {0x4059000000000000ull, 0x4059000000000000ull}},
-    {1u, 0u, 2u, 3u, {4u, 4u}, {740u, 783u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
-    {2u, 0u, 1u, 2u, {4u, 4u}, {740u, 687u}, {0x4050aaaaaaaaaaabull, 0x404d5f78d18806c3ull}},
-    {3u, 0u, 1u, 2u, {4u, 4u}, {740u, 662u}, {0x4050aaaaaaaaaaabull, 0x404c50be8ed2f6bbull}},
-    {5u, 0u, 1u, 2u, {4u, 4u}, {740u, 662u}, {0x4050aaaaaaaaaaabull, 0x404c50be8ed2f6bbull}},
-    {6u, 0u, 1u, 2u, {4u, 4u}, {740u, 662u}, {0x4050aaaaaaaaaaabull, 0x404c50be8ed2f6bbull}},
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1100u, 1159u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {740u, 788u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {740u, 692u}, {0x4050aaaaaaaaaaabull, 0x404d5f78d18806c3ull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {740u, 652u}, {0x4050aaaaaaaaaaabull, 0x404bb9079a9d2605ull}},
+    {5u, 0u, 1u, 2u, {4u, 4u}, {740u, 652u}, {0x4050aaaaaaaaaaabull, 0x404bb9079a9d2605ull}},
+    {6u, 0u, 1u, 2u, {4u, 4u}, {740u, 652u}, {0x4050aaaaaaaaaaabull, 0x404bb9079a9d2605ull}},
+};
+static const df_tb_stop tb_g28_feint_partner_guard[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1089u, 1123u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {729u, 752u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {729u, 752u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {729u, 736u}, {0x4050aaaaaaaaaaabull, 0x4050562d9faee41full}},
+    {5u, 0u, 1u, 2u, {4u, 4u}, {729u, 726u}, {0x4050aaaaaaaaaaabull, 0x4050215f78d18807ull}},
+    {6u, 0u, 1u, 2u, {4u, 4u}, {729u, 717u}, {0x4050aaaaaaaaaaabull, 0x404fe3b24547d0b0ull}},
 };
 static const df_tb_stop tb_g28_feint_protect[] = {
     {0u, 0u, 2u, 3u, {6u, 6u}, {1089u, 1123u}, {0x4059000000000000ull, 0x4059000000000000ull}},
@@ -3346,6 +3354,7 @@ static const df_tb_battle tb_battles[] = {
     {"g28_earthquake_ally", 6u, tb_g28_earthquake_ally, sizeof tb_g28_earthquake_ally / sizeof tb_g28_earthquake_ally[0]},
     {"g28_earthquake_wide_guard", 6u, tb_g28_earthquake_wide_guard, sizeof tb_g28_earthquake_wide_guard / sizeof tb_g28_earthquake_wide_guard[0]},
     {"g28_expert_belt", 6u, tb_g28_expert_belt, sizeof tb_g28_expert_belt / sizeof tb_g28_expert_belt[0]},
+    {"g28_feint_partner_guard", 6u, tb_g28_feint_partner_guard, sizeof tb_g28_feint_partner_guard / sizeof tb_g28_feint_partner_guard[0]},
     {"g28_feint_protect", 6u, tb_g28_feint_protect, sizeof tb_g28_feint_protect / sizeof tb_g28_feint_protect[0]},
     {"g28_shell_smash_order", 6u, tb_g28_shell_smash_order, sizeof tb_g28_shell_smash_order / sizeof tb_g28_shell_smash_order[0]},
     {"g28_shell_smash_white_herb", 6u, tb_g28_shell_smash_white_herb, sizeof tb_g28_shell_smash_white_herb / sizeof tb_g28_shell_smash_white_herb[0]},
@@ -3482,7 +3491,7 @@ static const df_tb_battle tb_battles[] = {
     {"w8_sand_soak", 7u, tb_w8_sand_soak, sizeof tb_w8_sand_soak / sizeof tb_w8_sand_soak[0]},
 };
 
-/* 2465 stops: 139 of an ended battle; decided by the count 719,
- * the HP percentage 780, the total HP 776, a tie 51;
- * winners: side 0 1246, side 1 1168, tie 51 */
+/* 2471 stops: 139 of an ended battle; decided by the count 719,
+ * the HP percentage 783, the total HP 779, a tie 51;
+ * winners: side 0 1249, side 1 1171, tie 51 */
 #endif
