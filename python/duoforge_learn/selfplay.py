@@ -36,9 +36,10 @@ _REWARDS = {C["DUOFORGE_RESULT_SIDE_0"]: (1.0, -1.0), C["DUOFORGE_RESULT_SIDE_1"
 
 class Observation:
     """The policy's inputs for every seat of every environment, as encoder
-    version `encoder` makes them (features.as_encoder and
-    features.slots_as_encoder: a network of an older version gets the inputs
-    it was trained on). The version is named by the caller: self-play trains
+    version `encoder` makes them (Batch.query_encoded, the C encoder of
+    decision 0021, byte-equal to features.encode_batch with as_encoder and
+    slots_as_encoder: a network of an older version gets the inputs it was
+    trained on). The version is named by the caller: self-play trains
     features.ENCODER. ext_supported is the network's mask of view-extension
     features (decision 0018, 0 for the older versions); the extension records
     are read only when the mask needs them."""
@@ -47,15 +48,13 @@ class Observation:
         if ext_supported & ~features.version_features(encoder):
             raise ValueError(f"encoder {encoder} has no columns for ext_supported {ext_supported:#x} "
                              f"(its features: {features.version_features(encoder):#x})")
-        e = batch.envs
-        observations = batch.observations.reshape(-1)
-        ext = batch.observe_ext().reshape(-1) if ext_supported & features.RECORD_FEATURES else None
-        obs, slots, mask = features.encode_batch(observations, batch.domains.reshape(-1), ext, ext_supported)
-        obs = features.as_encoder(obs, observations, encoder)
-        slots = features.slots_as_encoder(slots, encoder)
-        self.obs = obs.reshape(e, 2, -1)
-        self.slots = slots.reshape(e, 2, 2, OPTIONS, features.SLOT_FEATURES)
-        self.mask = mask.reshape(e, 2, OPTIONS, OPTIONS)
+        # The C encoder in the batch workers (decision 0021), byte-equal to features.encode_batch with as_encoder
+        # and slots_as_encoder; it refreshes requests, observations and domains as query_factored does. A refusal
+        # is the reference's ValueError: it stops the caller and never ends an episode.
+        obs, slots, mask = batch.query_encoded(encoder, ext_supported)
+        self.obs = obs.copy()
+        self.slots = slots.copy()
+        self.mask = mask.copy()
         kind = batch.domains["kind"]
         self.acting = batch.requests["requested"] != 0
         self.is_team = kind == TEAM

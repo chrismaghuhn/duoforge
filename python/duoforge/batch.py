@@ -218,19 +218,65 @@ class Batch:
         """The view extension of both players of every environment at the
         current boundary (OBSERVATION_EXT, (envs, 2); decision 0018): all zero
         under every kind but POOL, the epoch that of observations after
-        query(). One duoforge_battle_observe_ext per player; out, an array of
+        query(); duoforge_batch_observe_ext, in the workers. out, an array of
         that dtype and shape, is filled and returned when given."""
         if out is None:
             out = np.zeros((self.envs, 2), dtype=_layout.OBSERVATION_EXT)
         else:
             _require(out, _layout.OBSERVATION_EXT, (self.envs, 2), "out")
-        live, ctx, size = self._live(), self.context.handle, _layout.OBSERVATION_EXT.itemsize
-        observe = self._lib.duoforge_battle_observe_ext
-        for e in range(self.envs):
-            battle = self._lib.duoforge_batch_env(live, e)
-            for p in range(2):
-                self._check(observe(ctx, battle, p, out.ctypes.data + (2 * e + p) * size))
+        self._check(self._lib.duoforge_batch_observe_ext(self._live(), ptr(out)), per_env=True)
         return out
+
+    def query_encoded(self, version, ext_supported=0):
+        """The policy inputs of every player (decision 0021): requests,
+        observations and domains as query_factored() refreshes them, and in
+        the same pass in the workers the encoding of duoforge_encode, which is
+        byte-equal to features.encode_batch with as_encoder and
+        slots_as_encoder for that version and mask. Returns (obs (envs, 2,
+        obs_size) float32, slots (envs, 2, 2, 32, 12) float32, pair_mask
+        (envs, 2, 32, 32) bool), arrays this batch reuses on the next call.
+        An encoder refusal raises the reference's own ValueError (the refused
+        environment is encoded once more by features.py); it never reads as a
+        battle's failure. A failing query raises DuoforgeError as
+        query_factored() does."""
+        from . import features
+        size = features.obs_size(version)  # ValueError for an unknown version
+        key = ("encoded", int(version))
+        if key not in self._buffers:
+            self._buffers[key] = (np.zeros((self.envs, 2, size), dtype=np.float32),
+                                  np.zeros((self.envs, 2, 2, _layout.MAX_SLOT_OPTIONS, features.SLOT_FEATURES),
+                                           dtype=np.float32),
+                                  np.zeros((self.envs, 2, _layout.MAX_SLOT_OPTIONS, _layout.MAX_SLOT_OPTIONS),
+                                           dtype=np.uint8),
+                                  np.zeros(self.envs, dtype=np.uint32))
+        obs, slots, pairs, statuses = self._buffers[key]
+        statuses[:] = 0
+        st = self._lib.duoforge_batch_query_encoded(
+            self._live(), uint(version, 32, "version"), uint(ext_supported, 64, "ext_supported"), ptr(self.requests),
+            ptr(self.observations), ptr(self.domains), ptr(obs), ptr(slots), ptr(pairs), ptr(statuses))
+        if st != 0:
+            self._refused(version, ext_supported, st, statuses)
+        return obs, slots, pairs.view(np.bool_)
+
+    def _refused(self, version, ext_supported, status, statuses):
+        """Raises for a failed query_encoded: the reference's ValueError for
+        an encoder refusal, DuoforgeError for a failing query."""
+        from . import features
+        failed = np.flatnonzero(statuses)
+        if failed.size == 0:  # refused before any environment: the version or the mask
+            raise ValueError(f"the encoder refuses version {version} with ext_supported {int(ext_supported):#x} "
+                             f"({status_name(status)})")
+        self.query_factored()  # an engine failure raises here, as without the encoder
+        e = int(failed[0])
+        ext = self.observe_ext() if int(ext_supported) & features.RECORD_FEATURES else None
+        for p in range(2):
+            record = None if ext is None else ext[e, p]
+            obs_part, slot_part, _ = features.encode(self.observations[e, p], self.domains[e, p], record,
+                                                     ext_supported)
+            features.as_encoder(obs_part, self.observations[e, p], version)
+            features.slots_as_encoder(slot_part, version)
+        raise RuntimeError(f"the C encoder refused environment {e} ({status_name(int(statuses[e]))}) where "
+                           "features.py encodes it: the encoder and its reference disagree")
 
     def episode(self, env):
         """The environment's episode number."""

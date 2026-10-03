@@ -135,6 +135,12 @@ duoforge_status duoforge_batch_step_query(duoforge_batch *batch, uint32_t flags,
                                           uint32_t *episode_results, duoforge_status *statuses,
                                           duoforge_step_result *results);
 
+/* The view extension of every environment's players, in parallel (decision
+   0018): out[2 * env + p] = duoforge_battle_observe_ext of player p. A failing
+   environment leaves its entries unspecified; the call returns the status of
+   the lowest failing environment. */
+duoforge_status duoforge_batch_observe_ext(duoforge_batch *batch, duoforge_observation_ext *out);
+
 /* Resets every TERMINAL environment to its next episode, in parallel. */
 duoforge_status duoforge_batch_reset_terminal(duoforge_batch *batch);
 

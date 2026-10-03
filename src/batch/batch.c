@@ -7,6 +7,7 @@
 
 #include <string.h>
 
+#include "batch/batch_each.h"
 #include "batch/pool.h"
 #include "core/alloc.h"
 
@@ -700,4 +701,60 @@ duoforge_status duoforge_batch_play_random(duoforge_batch *batch, uint32_t episo
     dfi_play_job job = {batch, episodes, max_steps, records, batch->statuses};
     dfi_pool_run(batch->pool, dfi_play_slice, &job, batch->env_count);
     return dfi_batch_first(batch->statuses, batch->env_count);
+}
+
+/* ------------------------------------------------------- view extension */
+
+typedef struct dfi_ext_job {
+    struct duoforge_batch *b;
+    duoforge_observation_ext *out;
+} dfi_ext_job;
+
+static void dfi_ext_slice(void *job, uint32_t worker, uint32_t begin, uint32_t end)
+{
+    (void)worker;
+    const dfi_ext_job *j = job;
+    for (uint32_t e = begin; e < end; ++e) {
+        duoforge_status st = DUOFORGE_OK;
+        for (uint32_t p = 0u; p < DUOFORGE_SIDE_COUNT && st == DUOFORGE_OK; ++p) {
+            st = duoforge_battle_observe_ext(j->b->ctx, j->b->env[e].battle, p,
+                                             &j->out[(size_t)e * DUOFORGE_SIDE_COUNT + p]);
+        }
+        j->b->statuses[e] = st;
+    }
+}
+
+duoforge_status duoforge_batch_observe_ext(duoforge_batch *batch, duoforge_observation_ext *out)
+{
+    if (batch == NULL || out == NULL) {
+        return DUOFORGE_E_NULL_ARGUMENT;
+    }
+    dfi_ext_job job = {batch, out};
+    dfi_pool_run(batch->pool, dfi_ext_slice, &job, batch->env_count);
+    return dfi_batch_first(batch->statuses, batch->env_count);
+}
+
+/* ------------------------------------------------------- the encoder hook */
+
+typedef struct dfi_each_job {
+    struct duoforge_batch *b;
+    dfi_batch_env_fn fn;
+    void *arg;
+    duoforge_status *statuses;
+} dfi_each_job;
+
+static void dfi_each_slice(void *job, uint32_t worker, uint32_t begin, uint32_t end)
+{
+    (void)worker;
+    const dfi_each_job *j = job;
+    for (uint32_t e = begin; e < end; ++e) {
+        j->statuses[e] = j->fn(j->arg, e, j->b->ctx, j->b->env[e].battle);
+    }
+}
+
+duoforge_status dfi_batch_each(duoforge_batch *batch, dfi_batch_env_fn fn, void *arg, duoforge_status *statuses)
+{
+    dfi_each_job job = {batch, fn, arg, statuses};
+    dfi_pool_run(batch->pool, dfi_each_slice, &job, batch->env_count);
+    return dfi_batch_first(statuses, batch->env_count);
 }
