@@ -45,7 +45,8 @@ class Data:
         import duoforge
         from duoforge import _layout, data as api
         self.kind = kind
-        self._ctx = None  # the context of the alias lookups (_context)
+        self._ctx = None  # the context of the alias lookups and the legality (_context)
+        self._legal = {}  # forme -> (setup_legal, abilities, no_ability, moves): setup_issue
         self.tables = trace_to_c.load_tables(str(Path(root)), kind == "pool")
         with duoforge.Context(data_kind=_layout.CONSTANTS[_KINDS[kind]]) as context:
             self.counts = {"FORME": api.count(context, api.TABLE_SPECIES), "MOVE": api.count(context, api.TABLE_MOVE),
@@ -99,6 +100,28 @@ class Data:
         if self.tables["FORME"].get(trace_to_c.key(name)) == forme:
             return name
         return api.name(self._context(), api.TABLE_SPECIES, forme)
+
+    def setup_issue(self, member):
+        """None when the library's setup would accept a parsed member (parse_team: species, ability 1-based, moves) on
+        its legality under this kind; else ("species", None), ("ability", None) or ("move", index of the move): the
+        first of duoforge_data_forme_info's and duoforge_data_forme_moves' rules it breaks (the setup validates the
+        same). The support gate is not part of it."""
+        from duoforge import data as api
+        forme = member["species"]
+        if forme not in self._legal:
+            info = api.forme_info(self._context(), forme)
+            abilities = set(info["abilities"][:info["ability_count"]])
+            self._legal[forme] = (bool(info["setup_legal"]), abilities, bool(info["no_ability"]),
+                                  set(api.forme_moves(self._context(), forme)))
+        legal, abilities, no_ability, moves = self._legal[forme]
+        if not legal:
+            return ("species", None)
+        if (member["ability"] == 0 and not no_ability) or (member["ability"] != 0 and member["ability"] - 1 not in abilities):
+            return ("ability", None)
+        for index, move in enumerate(member["moves"]):
+            if move not in moves:
+                return ("move", index)
+        return None
 
     def _context(self):
         """A context of this kind, opened on the first alias lookup and kept for the next ones."""

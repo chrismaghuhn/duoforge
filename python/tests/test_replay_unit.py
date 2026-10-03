@@ -218,12 +218,18 @@ class AliasTest(unittest.TestCase):
         self.assertEqual(caught.exception.reason, "name:FORME Vivillon-Nonsense")
 
     def test_alias_game_runs(self):
-        result = self.run_game(self.with_species("Sinistcha-Masterpiece"))
+        # the fixture keeps Politoed's set (Drizzle, its moves) under Sinistcha's name, which POOL setup would refuse;
+        # legality is not this test's subject (test_pool_illegal_skip is), so the check passes here
+        from unittest import mock
+        with mock.patch.object(type(self.pool), "setup_issue", return_value=None):
+            result = self.run_game(self.with_species("Sinistcha-Masterpiece"))
         self.assertFalse([k for k in result.counters if "name:" in k or k.startswith("internal:")], result.counters)
         self.assertGreater(result.counters["points.written"], 4)
         # the alias in the |switch| details folds as its base forme: no stop the plain log does not have
         stops = lambda c: {k: v for k, v in c.items() if k.startswith("perspectives.stopped.")}
-        self.assertEqual(stops(result.counters), stops(self.run_game(self.log).counters))
+        with mock.patch.object(type(self.pool), "setup_issue", return_value=None):
+            plain = self.run_game(self.log)
+        self.assertEqual(stops(result.counters), stops(plain.counters))
         sinistcha = self.pool.forme("Sinistcha")
         species = {int(m["species_id"]) for r in result.rows for m in r.observation["sides"][1]["members"]}
         self.assertIn(sinistcha, species)
@@ -311,6 +317,14 @@ class LinesTest(unittest.TestCase):
         with self.assertRaises(lines.Stop) as caught:
             lines.check(line_z, plain)
         self.assertEqual(caught.exception.reason, "feature:FORME_CHANGE")
+
+    def test_full_stat_name_is_kept(self):
+        # Reg M-B replays come from an older server that writes the stat's full name ("Attack", not "atk")
+        view = _View({"p1: Dragonite": ("DRAGONITE", None, "INNERFOCUS")})
+        self.assertEqual(lines.check("|-fail|p1a: Dragonite|unboost|Attack|[from] ability: Inner Focus|[of] p1a: Dragonite",
+                                     view), "keep")
+        with self.assertRaises(lines.Stop):
+            lines.check("|-fail|p1a: Dragonite|unboost|Power|[from] ability: Inner Focus|[of] p1a: Dragonite", view)
 
     def test_fold_and_room_lines(self):
         self.assertEqual(lines.check("|-enditem|p1a: Staraptor|Sitrus Berry|[eat]", self.view), "fold")
@@ -856,6 +870,25 @@ class GameTest(unittest.TestCase):
         tracker.feed(self.log[:faint + 1])  # p2b fainted, not replaced yet
         tracker._log = self.log[:tracker._fed + 1] + ["|move|p1a: Salamence|Draco Meteor|p2a: Politoed|[from]lockedmove"]
         self.assertEqual(tracker._own_target(0), HIDDEN_TARGET)
+
+    def with_moves(self, old, new):
+        """The committed log with a sheet's move list `old` replaced by `new`."""
+        return [line.replace(old, new) if line.startswith("|showteam|") else line for line in self.log]
+
+    def test_regmb_pp_skip(self):
+        # BC spec 11: Strength Sap and Wish have other PP in Reg M-B (10) than in the engine's M-C data (5)
+        from duoforge_replay import game
+        lines_ = self.with_moves("KowtowCleave,SuckerPunch,IronHead,Protect", "KowtowCleave,SuckerPunch,IronHead,Wish")
+        with self.assertRaises(game.Skip) as caught:
+            game.process("fixture-mb", "gen9championsvgc2026regmbbo3", chr(10).join(lines_), self.data, self.prior, _Stats())
+        self.assertEqual(caught.exception.reason, "skip:regmb-pp")
+        with self.assertRaises(game.Skip) as caught:
+            self.run_game(lines_)  # Reg M-C: no PP difference; Kingambit cannot learn Wish under POOL
+        self.assertEqual(caught.exception.reason, "skip:pool-illegal Kingambit move Wish")
+
+    def test_pool_illegal_skip(self):
+        lines_ = self.with_moves("DragonPulse,ElectroShot,Snarl,Protect", "DragonPulse,ElectroShot,MirrorCoat,Protect")
+        self.assertEqual(self.skip_reason(lines_), "skip:pool-illegal Archaludon move MirrorCoat")
 
     def test_two_games_in_one_log_skip(self):
         # a Bo3 log with a second game's lines: one game per row, so the log is skipped and counted

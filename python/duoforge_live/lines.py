@@ -200,6 +200,11 @@ def _unknown(kind, effect=None):
     raise Stop(f"line:{kind}" + (f" {effect}" if effect else ""))
 
 
+# The stats' full names, as older servers wrote them in -fail|X|unboost lines ("Attack"; Reg M-B replays); the pin
+# writes the ids of trace_to_c.EV_STATS ("atk").
+_STAT_NAMES = {"Attack", "Defense", "Special Attack", "Special Defense", "Speed", "accuracy", "evasiveness"}
+
+
 def _kept_drop(args, attrs, view):
     """-fail|X|unboost[|stat]|[from] ability: A|[of] X: X's own ability A stopped a drop (Intimidate against Inner
     Focus, Scrappy, Oblivious, Own Tempo or Hyper Cutter, which name the stat; any drop against Clear Body or White
@@ -209,7 +214,7 @@ def _kept_drop(args, attrs, view):
     of = [a[len("[of] "):] for a in attrs if a.startswith("[of] ")]
     stats = args[2:]
     if (len(froms) == 1 and froms[0].startswith("ability: ") and of == [args[0]] and len(stats) <= 1
-            and all(s in trace_to_c.EV_STATS for s in stats)):
+            and all(s in trace_to_c.EV_STATS or s in _STAT_NAMES for s in stats)):
         ability = view.data.tables["ABILITY"].get(trace_to_c.key(froms[0][len("ability: "):]))
         if ability is not None and ability + 1 == view.ability_now(args[0]):
             return "keep"

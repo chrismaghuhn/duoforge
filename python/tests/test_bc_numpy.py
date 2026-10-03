@@ -168,5 +168,50 @@ class BcDataTest(unittest.TestCase):
         self.assertEqual(self.rows.label_team.shape[1], 360)
 
 
+class RegMBTest(unittest.TestCase):
+    """Reg M-B as a second source (BC spec section 11)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = Path(tempfile.mkdtemp(prefix="duoforge_bc_mb_"))
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.tmp, ignore_errors=True)
+
+    def test_build_two_prefixes(self):
+        from duoforge_replay import build, dataset
+        log = FIXTURE.read_text(encoding="utf-8")
+        prior = self.tmp / "prior.json"
+        prior.write_text(json.dumps({"version": 1, "pastes": 0, "skipped": {}, "levels": [{}, {}, {}, {}]}),
+                         encoding="utf-8")
+        source = self.tmp / "both.jsonl"
+        with open(source, "w", encoding="utf-8", newline=chr(10)) as f:
+            for i, fmt in enumerate(("gen9championsvgc2026regmcbo3", "gen9championsvgc2026regmbbo3",
+                                     "gen9championsvgc2026regmabo3")):
+                f.write(json.dumps({"id": f"g{i}", "formatid": fmt, "log": log}) + chr(10))
+        out = self.tmp / "both"
+        c = build.build([source], prior, out, stats_factory=stats_factory, log=lambda _: None,
+                        format_prefix=("gen9championsvgc2026regmc", "gen9championsvgc2026regmb"))
+        self.assertEqual(c["games.processed"], 2)
+        games = dataset.read_games(dataset.parts(out)[0])
+        self.assertEqual(sorted(games["format_id"].tolist()),
+                         ["gen9championsvgc2026regmbbo3", "gen9championsvgc2026regmcbo3"])
+        marker = json.loads((out / dataset.MARKER).read_text(encoding="utf-8"))
+        self.assertEqual(marker["filters"]["format_prefix"], ["gen9championsvgc2026regmc", "gen9championsvgc2026regmb"])
+        again = build.build([source], prior, out, stats_factory=stats_factory, log=lambda _: None,
+                            format_prefix=("gen9championsvgc2026regmc", "gen9championsvgc2026regmb"))
+        self.assertEqual(again["parts.written"], 0)  # a resume with the same prefixes is the same dataset
+
+    def test_format_weight(self):
+        from duoforge_learn import bc_data
+        out = build_fixture(self.tmp, copies=1, format_id="gen9championsvgc2026regmbbo3", name="mb")
+        with duoforge.Context(data_kind=_layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"]) as context:
+            mask = bc_data.bc_mask(context)
+            plain = bc_data.load([out], context, mask)
+            half = bc_data.load([out], context, mask, format_weights={"gen9championsvgc2026regmb": 0.5})
+        self.assertTrue(np.allclose(half.weight, plain.weight * 0.5))
+
+
 if __name__ == "__main__":
     unittest.main()
