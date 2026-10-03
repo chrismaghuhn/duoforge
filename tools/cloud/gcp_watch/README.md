@@ -7,7 +7,7 @@ scheduler code `chunks.sh` (`campaign.conf` parser) of that directory; nothing e
 
 **Status: nothing here has been created.** `create.sh` without `--i-have-owner-approval` only prints the request. The
 scripts make read-only `gcloud` calls (`config get`, `auth list`, `describe`, `list`) and, with the flag, exactly one
-changing call each. The infrastructure around the VM (network, subnet, service account, bucket, budget) was created
+changing call each (`start.sh --bench` makes two: the metadata of the bench round, then the start). The infrastructure around the VM (network, subnet, service account, bucket, budget) was created
 by the owner's session and is not touched by anything here.
 
 ## What exists in Google Cloud
@@ -47,7 +47,8 @@ uploaded stays in the bucket, and fresh seeds make a new round of the same head 
 | `stop.sh` | `gcloud compute instances stop` of a VM whose round must end early |
 | `delete.sh` | `gcloud compute instances delete` (the VM and its disk, so the build cache) |
 | `startup.sh` | the startup script of the VM: the 120-minute watchdog, the head of `main`, then `round.sh` of that head |
-| `round.sh` | one round: build when the head changed, every campaign once, upload, heartbeat, power off |
+| `round.sh` | one round: build when the head changed, every campaign once, upload, heartbeat, power off; or a bench round (below) |
+| `bench_ab.py` | the A/B comparison of two builds of `duoforge_bench` of a bench round: runs, order, `bench.json` |
 | `test_guards.py` | offline tests with a stub `gcloud` (CTest: `duoforge.cloud.gcp_watch_guards`) |
 
 ## The rules every script follows
@@ -57,7 +58,8 @@ uploaded stays in the bucket, and fresh seeds make a new round of the same head 
   `--project` explicitly. No key is created, read, printed or stored; the scripts use the owner's signed-in session and
   never ask for a login (`gcloud auth login` and `gcloud config set project` are the owner's).
 - **Dry run by default.** `create.sh`, `start.sh`, `stop.sh` and `delete.sh` print what they would call. Only
-  `--i-have-owner-approval` makes the call, and it is the only changing call of the script.
+  `--i-have-owner-approval` makes the call, and it is the only changing call of the script (a bench round: the
+  metadata call that belongs to it, then the start).
 - **The setup must be what is assumed.** Before it creates anything, `create.sh` checks (read-only) that the network is
   custom-mode, the subnet has the range `10.20.0.0/24` and belongs to that network, the network has **no firewall
   rule**, the service account exists, the machine type is offered in `europe-west4`, and the bucket is private (uniform
@@ -92,7 +94,55 @@ Add `--zone europe-west4-b` to `start.sh`, `stop.sh` or `delete.sh` when the VM 
 fails for lack of spot capacity in the zone, the VM stays stopped and costs the disk only; the owner starts it again later.
 `create.sh` has no `--zone` fallback: a spot VM lives in one zone.
 
-## What a boot does
+## A bench round (clone and codec cost of a pull request head)
+
+`start.sh --bench SHA1,SHA2` starts the VM for one **bench round** instead of a fuzz round: the two commits are built
+(`duoforge_bench` only, Release, IPO) and measured against each other on the same VM in the same boot, which is the only
+comparison that means anything on a spot machine. It is for questions such as "does this change make `copy` or `codec`
+slower"; it tests nothing about the engine's rules.
+
+```sh
+# main against a pull request head (both are commits of THIS repository; fetch origin first so that the checkout knows them)
+git fetch origin
+tools/cloud/gcp_watch/start.sh --bench <MAIN_SHA>,<PR_HEAD_SHA> --families copy,codec          # dry run: prints both calls
+tools/cloud/gcp_watch/start.sh --bench <MAIN_SHA>,<PR_HEAD_SHA> --families copy,codec --i-have-owner-approval
+# read gs://<BUCKET>/bench/<run>/bench.json when the VM has stopped (the run id is in the metadata call and in the heartbeat)
+```
+
+- **What `start.sh --bench` checks, before any `gcloud` call:** exactly two commits, each the 40-digit lowercase sha; the
+  checkout's `origin` is `chrismaghuhn/duoforge` (https or ssh, nothing else: a foreign remote is refused); each commit is in
+  the checkout and **reachable from a branch of `origin`** (`refs/remotes/origin/*`), which a pull request head of a branch
+  of this repository is, and a commit of a fork or one that was never pushed is not (refused with the sha named); every
+  family is one of `step,events,request,copy,codec,episode,batch`, each once (the default is `copy,codec,batch`). An
+  unknown family is refused here and again by `bench_ab.py` on the VM, because `duoforge_bench` itself silently ignores a
+  name it does not know. The check reads the checkout's remote-tracking refs and fetches nothing.
+- **What it calls:** with `--i-have-owner-approval`, `gcloud compute instances add-metadata` (the keys `bench_refs=SHA1,SHA2`,
+  `bench_families=...` and `bench_run=b<UTC time>`, the run id) and then `instances start`: two changing calls, in that order,
+  and the start is not made when the metadata call fails. The dry run prints both. The instance must still carry the labels and
+  be stopped, as for any start.
+- **What the VM does:** `startup.sh` fetches the head of main and runs its `round.sh`; when `bench_refs` is set and its
+  `bench_run` is not the one of the last bench round on this disk (`state/bench-last`), the boot is a bench round and
+  **not a fuzz round**. It fetches both commits from the public repository by sha, builds `duoforge_bench` of each
+  (cached on the disk by sha, no tests built, warnings are not errors), runs `bench_ab.py`, uploads `bench.json` and the log
+  to `gs://<BUCKET>/bench/<run>/` and powers off. A boot that finds the same `bench_run` again (the metadata stays on the
+  instance) plays a normal fuzz round, so one `start.sh --bench` is one bench round; a preempted bench is not resumed:
+  start it again. **The round logic is the one of the head of main, so a bench round works only once a head of main has
+  this code**; the commits compared can be any commits of the repository.
+- **What is measured:** `duoforge_bench --families <list> --workers 1 --battles 400 --repetitions 7 --warmup 1` on each build,
+  **A then B, then B then A**, and so on for 5 rounds (the order flips, so a drift of the machine does not favour a side). All
+  families but `batch` are one thread by nature; `batch` runs on one worker. `RD_BENCH_ROUNDS`, `RD_BENCH_BATTLES`,
+  `RD_BENCH_REPETITIONS` and `RD_BENCH_WORKERS` override the numbers in the environment of `round.sh`; they are not
+  measured defaults, and no running time is claimed for them: the heartbeat and the log give it after a first round.
+- **`bench.json`:** per family (`batch/workers=1` for batch) and side: the median, minimum, maximum and spread (percent) of
+  the benchmark's own median wall time over the rounds (`median_wall_ns`, with every sample); for `copy` and `codec` also
+  the cost per restored state (`ns_per_call`) and, for `codec`, the encoded bytes per state; and the ratio B/A as the ratio
+  of the medians and as the median, minimum and maximum of the per-round pairs (`ratio_b_over_a`). Each side records what
+  its binary said about itself (revision, compiler, fingerprint of the workload); a binary whose revision is not the
+  commit it is labelled with is an error, and a requested family that a build did not report is an error. A failed
+  measurement is uploaded as `bench.json` with an `error` and the round ends with a failure. The spread is the run-to-run
+  spread of one machine: a ratio inside it is not a finding.
+
+## What a boot does (a fuzz round)
 
 1. `startup.sh` (GCE runs it on every boot): `shutdown -h +120`; reads the head of `main` from the public repository
    (`git ls-remote`); fetches that commit into the cache on the disk (`/opt/duoforge-watch/duoforge`); runs its

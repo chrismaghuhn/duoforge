@@ -159,6 +159,13 @@ Owner direction (2026-10-03): search deeper than one turn. A public reference po
 - **Then two turns ahead.**
 - **Endgame solving:** with few Pokémon left, search to the end instead of using the value estimate.
 
+A second reference point (owner, 2026-10-03): nessie123 (Smogon, 2026-09-28) was briefly #1 on the Reg M-C Bo3 ladder with open team sheets and a game-theoretic search. Its parts are a template for the stages above:
+- **At every node, a matrix game:** a double-oracle solver finds the equilibrium of the simultaneous joint actions instead of one maximin choice.
+- **Chance branched and pruned:** damage rolls, critical hits and secondary effects are expanded and pruned, not sampled blindly. Leaves are expanded first where they could move the result most.
+- **Endgames close to exact:** 2v2 endgames within about 0.5 percent of an exhaustive solver.
+- **Search-guided training (stage 3):** about 375,000 self-play games guided by the search and a network of about 1.5M parameters were enough. That took about 20 hours on an M4 Mac mini plus about $120 of cloud time. On the ladder it plays on one CPU core.
+- **Its limits, as its author states them:** it plays only the equilibrium (no exploitation of human habits, which is our lever 2), and it handles the hidden stat points crudely.
+
 The search must stay deterministic given its seeds.
 
 Exit:
@@ -212,10 +219,17 @@ More levers recorded by the owner on 2026-10-03. Search mainly solves the endgam
    - **Where the sets come from:** the pinned Showdown's own Champions random doubles sets (the "[Gen 9 Champions] Random Doubles Battle" format), taken as data. DuoForge's setup validates every team, and the generator draws only from what the engine supports, so it grows with the coverage.
    - **Mix, not replace:** for example about half real meta teams, a third plausible random teams and a small rest fully random. The ratio is measured.
    - **A second ladder:** Showdown's Champions Random Doubles ladder needs no team building. Its foe sets are hidden, so it needs M14 first.
+   - **Mutated Pokémon** (from nessie123, owner 2026-10-03): in about half of its training games the Pokémon had changed stats, abilities, types, moves and items, so the network learns the rules rather than one meta. For us this works inside the engine's coverage: only changes the engine supports, each team validated by setup as above.
+
+18. **Auxiliary prediction heads** (from nessie123, owner 2026-10-03): extra outputs trained beside the policy and value make the network learn the game's structure. nessie123 predicts weather, terrain, damage, the opponent's moves, how long a Pokémon survives and how long the game lasts. For us:
+   - the targets come exactly from the engine during self-play: damage dealt, the opponent's next action, turns survived, game length;
+   - the opponent-action head is already Learner v2's next lever;
+   - each head is measured on its own, as for every lever above (Elo at a fixed time per move).
 
 Related public work, as reference points:
 - **Metamon** (UT Austin): offline RL on human Showdown replays, with spectator logs rebuilt into first-person trajectories (as M11 does). Gens 1 to 4 singles, about 79 percent GXE; code and data are open.
 - **PokéChamp:** a minimax language-model agent.
+- **nessie123** (Smogon, 2026-09-28): Reg M-C Bo3 with open sheets, briefly #1 on the ladder. A double-oracle matrix-game search with chance pruning, search-guided self-play, a network of about 1.5M parameters with auxiliary heads, and mutated Pokémon in half of the training games (see M12, levers 17 and 18). An analysis tool is planned for release after Reg M-C; no code yet.
 
 
 ## M14 — Closed team sheets (the Bo1 ladder)

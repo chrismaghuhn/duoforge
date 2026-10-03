@@ -15,7 +15,7 @@
  * sim/battle.ts:501-503).
  *
  * The order in which a Pokemon's volatiles were added is not stored. The engine builds them in one fixed order (the
- * duration counters, Heal Block, Throat Chop, Encore). That is the reference's order, or it changes nothing, in these
+ * Heal Block, Disable, Throat Chop, Encore, then the duration counters). That is the reference's order, or it changes nothing, in these
  * cases (proved by tests/test_residual_order.c against its own model of the reference's selection sort):
  *   - the Pokemon has volatile handlers of one sort key only (the duration counters have one: no order, sub-order 2),
  *     so their order is the order of equal entries and shows nowhere;
@@ -46,11 +46,15 @@
 #define DFI_RES_WHITE_HERB 9u
 #define DFI_RES_ENCORE 10u /* Encore: order 16, a callback with a duration (step G9) */
 #define DFI_RES_SPEED_BOOST 11u /* Speed Boost's onResidual: order 28, sub-order 2 (step G32) */
+/* The duration handlers whose end shows a line (step G27 for Disable, and Heal Block, which was a pass): each is an entry
+ * of the sorted list at its own order, and a callback (a tie of two draws) exactly when it ends in this residual. */
+#define DFI_RES_HEAL_BLOCK 12u /* Heal Block: order 20, -end|X|move: Heal Block */
+#define DFI_RES_DISABLE 14u    /* Disable: order 17, -end|X|Disable */
 #define DFI_RES_NO_ORDER 0xFFFFFFFFu
 
 /* The exact test's bounds: the lists of the engine have at most 3 + 3 * 2 + 14 * 4 entries, a few draws and a few
- * orders. */
-#define DFI_RES_MODEL_MAX 72u
+ * orders (3 + 4 * 2 + 15 * 4 with Disable). */
+#define DFI_RES_MODEL_MAX 80u
 #define DFI_RES_DRAW_CAP 4096u
 #define DFI_RES_ARRANGEMENT_CAP 1024u
 #define DFI_RES_REGION_MAX 4u
@@ -82,7 +86,37 @@ static inline uint32_t dfi_residual_compare(const dfi_residual_entry *a, const d
 /* A handler of one of a Pokemon's volatiles (the part of its list whose order is not stored). */
 static inline bool dfi_residual_is_volatile(const dfi_residual_entry *e)
 {
-    return e->kind == DFI_RES_DURATION || e->kind == DFI_RES_ENCORE;
+    return e->kind == DFI_RES_DURATION || e->kind == DFI_RES_ENCORE || e->kind == DFI_RES_HEAL_BLOCK ||
+           e->kind == DFI_RES_DISABLE;
+}
+
+/* What is known about the age of a Pokemon's volatiles. The counters of the turn (Protect, the stall counter, flinch, a charge,
+ * Helping Hand, Follow Me: duration handlers with no order) are added by the move or the action of this very turn, and a
+ * handler that ends in this residual (a callback of the kinds below: a count that has run down to its last turn) was added
+ * in an earlier turn. So the one order of the two that cannot be the reference's is a counter before such a handler, and the
+ * exact test does not try it (nor does the engine build it). Every other pair is unknown: a Pokemon that gets Heal Block this
+ * turn may have used Protect before or after it. */
+static inline bool dfi_residual_is_counter(const dfi_residual_entry *e)
+{
+    return e->kind == DFI_RES_DURATION && e->order == DFI_RES_NO_ORDER;
+}
+static inline bool dfi_residual_is_old_ending(const dfi_residual_entry *e)
+{
+    return e->callback && (e->kind == DFI_RES_HEAL_BLOCK || e->kind == DFI_RES_DISABLE);
+}
+static inline bool dfi_residual_arrangement_possible(const dfi_residual_entry *seg, uint32_t len)
+{
+    for (uint32_t i = 0u; i < len; ++i) {
+        if (!dfi_residual_is_counter(&seg[i])) {
+            continue;
+        }
+        for (uint32_t j = i + 1u; j < len; ++j) {
+            if (dfi_residual_is_old_ending(&seg[j])) {
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
 /* The cheap test: true when the list is one whose result could depend on the order in which a Pokemon's volatiles were
@@ -151,7 +185,11 @@ static inline uint32_t dfi_residual_model(const dfi_residual_entry *input, uint3
                 list[next[i]] = e;
             }
         }
-        if (list[sorted].callback) {
+        uint32_t calls = 0u;
+        for (uint32_t i = sorted; i < sorted + count; ++i) {
+            calls += list[i].callback ? 1u : 0u;
+        }
+        if (calls >= 2u) {
             for (uint32_t start = sorted; start + 1u < sorted + count; ++start) {
                 const uint32_t lo = start - sorted;
                 const uint32_t range = count - lo;
@@ -301,7 +339,11 @@ static inline bool dfi_residual_order_changes_outcome(const dfi_residual_entry *
             return true;
         }
         uint32_t digits[DFI_RES_MODEL_MAX] = {0u};
-        for (uint32_t c = 0u; c < combos; ++c) {
+        bool possible = true;
+        for (uint32_t r = 0u; r < regions; ++r) {
+            possible = possible && dfi_residual_arrangement_possible(&work[start[r]], len[r]);
+        }
+        for (uint32_t c = 0u; c < combos && possible; ++c) {
             uint32_t base_ids[DFI_RES_MODEL_MAX];
             uint32_t alt_ids[DFI_RES_MODEL_MAX];
             uint32_t base_count = 0u;

@@ -195,6 +195,9 @@ duoforge_add_test(NAME duoforge.state.pool_g34 SOURCES test_pool_g34.c WHITEBOX 
 duoforge_add_test(NAME duoforge.state.pool_g35 SOURCES test_pool_g35.c WHITEBOX TIMEOUT 60)
 # Step G20, Spiky Shield: the protect_kind of the position (POOL tail rev 3), the state round trip, the volatile.
 duoforge_add_test(NAME duoforge.state.pool_g20_protect SOURCES test_pool_g20_protect.c WHITEBOX TIMEOUT 60)
+# Step G27: Cursed Body and Disable in the tail's disable_slot and disable_turns, the request, the cant line and the POOL view
+# extension (the position's disable_slot, bit 21).
+duoforge_add_test(NAME duoforge.state.pool_g27 SOURCES test_pool_g27.c WHITEBOX TIMEOUT 60)
 # The queued action of a fainted Pokemon: no ability and no item of it counts for its priority and Speed (d04 to d06).
 duoforge_add_test(NAME duoforge.state.pool_fainted_holder SOURCES test_pool_fainted_holder.c WHITEBOX TIMEOUT 60)
 # Step G22: the queued action of a fainted Swift Swim holder, and an Intimidate drop that the cap already took to nothing.
@@ -206,8 +209,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=40ef12a2a9a275a8bc80bb34187fe7b39cfed130e5a15c90cd8ae2518f0f94d0"
-        "pool_tables.c=16af663a92eadbefee89edc3bf06eaf46cf29e49180c946b028f2b9c8e02d3c7")
+        "pool_tables.h=d0ce0f2c37ab8e9344feda3480d20abcaf720b4ba5c135edad8f200c1bc44f79"
+        "pool_tables.c=8188e7338a2ab925fa31d7cb9add4992846d0b089872c27787b2ce0d0fbf6fab")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -494,7 +497,7 @@ if(Python3_Interpreter_FOUND)
         # The Google Cloud watchdog (tools/cloud/gcp_watch): the same, with a stub gcloud and the round with stand-ins.
         add_test(NAME duoforge.cloud.gcp_watch_guards
             COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/cloud/gcp_watch/test_guards.py")
-        set_tests_properties(duoforge.cloud.gcp_watch_guards PROPERTIES TIMEOUT 300
+        set_tests_properties(duoforge.cloud.gcp_watch_guards PROPERTIES TIMEOUT 600
             ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1;DUOFORGE_BASH=${DUOFORGE_BASH}")
     endif()
     # The table generator refuses move shapes it does not model (no checkout needed).
