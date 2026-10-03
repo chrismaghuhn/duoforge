@@ -10,7 +10,7 @@ import numpy as np
 
 from . import _layout
 from ._lib import load_library, ptr, status_name, uint
-from .errors import DuoforgeError
+from .errors import DuoforgeError, DuoforgeLibraryError
 
 _SLOTS = _layout.CONSTANTS["DUOFORGE_CHOICE_SLOTS"]
 _TEAM = _layout.CONSTANTS["DUOFORGE_CHOICE_TEAM_SELECTION"]
@@ -286,7 +286,9 @@ class Batch:
         this batch, a root environment or a viewer out of range); an unknown
         version or an ext_supported that is no mask of the feature bits
         raises ValueError as in query_encoded(), and arrays of another dtype
-        or shape raise TypeError or ValueError."""
+        or shape raise TypeError or ValueError. The rows' width is checked
+        against the library's (duoforge_encoder_size) before its first write:
+        another width raises DuoforgeLibraryError."""
         from . import features
         if not isinstance(roots, Batch):
             raise TypeError(f"roots must be a Batch, not {type(roots).__name__}")
@@ -305,6 +307,11 @@ class Batch:
         _require(choices, _layout.FACTORED_CHOICE, (n, 2), "choices")
         key = ("expand", int(version))
         if key not in self._buffers:
+            width = ctypes.c_uint32()  # the library writes rows of its own width: the buffer's must equal it
+            self._check(self._lib.duoforge_encoder_size(uint(version, 32, "version"), ctypes.byref(width)))
+            if width.value != size:
+                raise DuoforgeLibraryError(f"encoder version {version}: the library writes rows of {width.value} "
+                                           f"values, the package's are {size}")
             self._buffers[key] = (np.zeros((self.envs, size), dtype=np.float32),
                                   np.zeros(self.envs, dtype=np.uint32), np.zeros(self.envs, dtype=np.uint32),
                                   np.zeros(self.envs, dtype=_layout.STEP_RESULT), np.zeros(self.envs, dtype=np.uint32))

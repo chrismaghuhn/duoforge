@@ -8,15 +8,19 @@ The C contract of duoforge_batch_expand is duoforge.search.expand (C); here:
 - a leaf's row is the row query_encoded writes for its viewer;
 - a leaf's refusal is returned, never raised; the argument checks raise and
   write nothing;
+- the rows' width is the library's (duoforge_encoder_size), checked before
+  the library writes into the buffer;
 - the environments from n on are not touched.
 Teams A and B under POOL, with records in the mask.
 """
+import ctypes
 import unittest
+from unittest import mock
 
 import numpy as np
 
 import duoforge
-from duoforge import _layout, factored_choices, joint_counts
+from duoforge import _layout, factored_choices, features, joint_counts
 from duoforge.context import reference_setups
 
 C = _layout.CONSTANTS
@@ -176,6 +180,15 @@ class SearchExpand(unittest.TestCase):
                               self.samples[:1], self.choices[:1])
             self.assertEqual([leaves.digest(e) for e in range(4)], before)  # the refusals touched no leaf
             self.assertEqual(self._expand(leaves, n=0)[0].shape, (0, 850))
+
+    def test_row_width_is_the_library_s(self):
+        for version in (1, 2, 3, 4):  # the buffer's width is checked against duoforge_encoder_size
+            width = ctypes.c_uint32()
+            self.assertEqual(duoforge.load_library().duoforge_encoder_size(version, ctypes.byref(width)), 0)
+            self.assertEqual(width.value, features.obs_size(version))
+        with self._leaves(2, envs=4) as leaves, mock.patch.object(features, "obs_size", return_value=849):
+            with self.assertRaisesRegex(duoforge.DuoforgeLibraryError, "849"):
+                self._expand(leaves, n=4)
 
 if __name__ == "__main__":
     unittest.main()
