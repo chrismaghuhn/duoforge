@@ -1046,6 +1046,7 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                          DUOFORGE_WEATHER_* value. Generic for every weather that damages; in this format
                                          it fires only for Sand: Snow has no residual damage and Hail is not in the format */
 #define DUOFORGE_CAUSE_RECHARGE  18u /* CANT (POOL kinds): the recharge turn after a recharge move ([cant] recharge) */
+#define DUOFORGE_CAUSE_TAUNT     20u /* CANT (POOL kinds): a Status move stopped by Taunt ([cant] move: Taunt|move); id: the move */
 #define DUOFORGE_CAUSE_HEAL_BLOCK 15u /* CANT (POOL kinds): a move that heals, stopped by Heal Block; id: the stopped move.
                                          A sound move stopped by Throat Chop is CANT with cause MOVE, id2: Throat Chop
                                          (the line names no move, so id is 0) */
@@ -1068,6 +1069,9 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_VOLATILE_ENCORE     2u /* VOLATILE_START / VOLATILE_END: Encore (-start|X|Encore, -end|X|Encore) */
 #define DUOFORGE_VOLATILE_MUST_RECHARGE 3u /* VOLATILE_START: -mustrecharge|X (a recharge move hit); no END, it ends with the
                                               [cant] recharge line or with the occupant */
+#define DUOFORGE_VOLATILE_TAUNT      6u /* VOLATILE_START / VOLATILE_END: Taunt (-start|X|move: Taunt, -end|X|move: Taunt) */
+#define DUOFORGE_VOLATILE_YAWN       7u /* VOLATILE_START: Yawn (-start|X|move: Yawn|[of] source; other: the source). No END: the end line is
+                                              silent, and the sleep it brings is the STATUS event of the residual */
 #define DUOFORGE_FIELD_GRASSY_TERRAIN 1u
 #define DUOFORGE_FIELD_TRICK_ROOM     2u
 #define DUOFORGE_FIELD_PSYCHIC_TERRAIN 3u /* Team C */
