@@ -2035,9 +2035,13 @@ static void dfi_unburden_on_take(struct duoforge_battle *b, uint32_t flat)
  * onBeforeMove or onDisableMove ends it (dfi_choice_lock_ends). */
 static void dfi_set_held(struct duoforge_battle *b, uint32_t flat, uint32_t code)
 {
-    dfi_member *m = dfi_at(b, flat);
     dfi_active_slot *pos = dfi_pos(b, flat);
-    b->tail.sides[flat / 2u].item_now[pos->occupant] = (uint8_t)(code == 0u ? DFI_TAIL_ITEM_NONE : code); /* wide-operands-reviewed: <= 254 */
+    const uint32_t occupant = pos->occupant;
+    if (occupant >= DUOFORGE_MAX_ROSTER) {
+        return; /* unreachable: every caller passes the user or the target of a move that hit, both on the field */
+    }
+    dfi_member *m = &b->sides[flat / 2u].members[occupant];
+    b->tail.sides[flat / 2u].item_now[occupant] = (uint8_t)(code == 0u ? DFI_TAIL_ITEM_NONE : code); /* wide-operands-reviewed: <= 254 */
     if (code != 0u) {
         m->item_consumed = 0u;
     }
