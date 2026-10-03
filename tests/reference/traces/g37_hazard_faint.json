@@ -4411,7 +4411,6 @@
     "terrain": "",
     "terrain_turns": 0,
     "trick_room": 0,
-    "queue_len": 0,
     "sides": [
      {
       "request": "",
@@ -5501,7 +5500,6 @@
     "terrain": "",
     "terrain_turns": 0,
     "trick_room": 0,
-    "queue_len": 0,
     "sides": [
      {
       "request": "",

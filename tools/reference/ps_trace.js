@@ -273,6 +273,18 @@ function run(root, spec, specFile) {
         logPos = battle.log.length;
         return lines;
     };
+    // The state after a step. A switch request that comes with an empty queue and no residual in the step's log (a replacement that
+    // fell to a hazard at once, step G37) carries the key queue_len (0): such a request is a REPLACEMENT, where the old rule (a
+    // switch request without `upkeep` is a PIVOT) would call it a pivot. Every other state is what every trace recorded before
+    // had, so no committed trace changes.
+    const stepState = (log) => {
+        const state = snapshot();
+        if (battle.sides.some((side) => side.requestState === 'switch') && battle.queue.list.length === 0 &&
+            !log.some((l) => l.startsWith('|upkeep'))) {
+            state.queue_len = 0;
+        }
+        return state;
+    };
     const snapshot = () => ({
         turn: battle.turn,
         ended: battle.ended,
@@ -282,11 +294,6 @@ function run(root, spec, specFile) {
         terrain: battle.field.terrain || '',
         terrain_turns: battle.field.terrainState.duration || 0,
         trick_room: battle.field.pseudoWeather.trickroom ? battle.field.pseudoWeather.trickroom.duration || 0 : 0,
-        // The number of actions that the queue still holds, a key only while a switch is requested (step G37): a switch request
-        // with actions pending is a mid-turn switch (a PIVOT), one with the queue empty is a REPLACEMENT, also when the
-        // newcomer of the replacement fell to a hazard before any turn line. A state without the key is what every trace
-        // recorded before had.
-        ...(battle.sides.some((side) => side.requestState === 'switch') ? {queue_len: battle.queue.list.length} : {}),
         sides: battle.sides.map((side) => ({
             request: side.requestState || '',
             // Remaining duration of Tailwind, Reflect and Light Screen (0 when absent).
@@ -385,7 +392,8 @@ function run(root, spec, specFile) {
             for (const id of ['p1', 'p2']) {
                 if (entry[id] !== undefined) choose(id, entry[id]);
             }
-            trace.steps.push({input: entry, draws, log: takeLog(), state: snapshot()});
+            const stepLog = takeLog();
+            trace.steps.push({input: entry, draws, log: stepLog, state: stepState(stepLog)});
             if (battle.ended) break;
         }
     } else {
@@ -438,7 +446,8 @@ function run(root, spec, specFile) {
                 choose(id, text);
                 entry[id] = text;
             }
-            trace.steps.push({input: entry, draws, log: takeLog(), state: snapshot()});
+            const stepLog = takeLog();
+            trace.steps.push({input: entry, draws, log: stepLog, state: stepState(stepLog)});
         }
     }
     return JSON.stringify(trace, null, 1) + '\n';
