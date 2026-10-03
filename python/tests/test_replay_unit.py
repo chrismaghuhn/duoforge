@@ -42,6 +42,81 @@ def _define(header, name):
     return int(re.search(rf"#define {name} (\d+)u", header).group(1))
 
 
+# The generated rows as duoforge_live.data read them before decision 0020 (src/data/*_tables.c): the reference of
+# GeneratedRowsTest, which shows the library's data API answering the same for every row of both kinds.
+_ROW_KINDS = {"closure": ("closure_tables.h", "closure_tables.c", "DFI_", "dfi_closure_formes[DFI_FORME_COUNT] = {",
+                          "dfi_closure_moves[DFI_MOVE_COUNT] = {", "dfi_closure_items[DFI_ITEM_COUNT] = {"),
+              "pool": ("pool_tables.h", "pool_tables.c", "DFI_POOL_", "dfi_pool_formes[DFI_POOL_FORME_COUNT] = {",
+                       "dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {", "dfi_pool_items[DFI_POOL_ITEM_COUNT] = {")}
+# dfi_forme_data: dex_num, weight_hg, types[2], base[6], ability, gender_rule, is_mega, base_forme, mega_forme, ...
+_FORME_ROW = re.compile(r"\{\d+u, \d+u, \{\w+, \w+\}, \{[^}]*\}, (\w+), \w+, \w+, (\w+), (\w+), \w+,")
+# dfi_move_data: type, category, base_power, accuracy, pp_base, pp_max, priority, target_class, ...
+_MOVE_ROW = re.compile(r"^    \{\d+u, \d+u, \d+u, \d+u, \d+u, (\d+)u, \d+u, (\d+)u,", re.M)
+# dfi_item_data: the forme that holds it as a Mega Stone, the Mega forme it reaches
+_ITEM_ROW = re.compile(r"^    \{(\w+), (\w+)\},", re.M)
+
+
+def _generated_rows(kind):
+    """(formes [(ability, base, mega)], moves [(pp_max, target class)], items [(holder, mega)]) of a kind's generated
+    rows; None for a NONE symbol or the closure's 0xFF."""
+    header_file, file, prefix, *starts = _ROW_KINDS[kind]
+    header = (data.ROOT / "src" / "data" / header_file).read_text(encoding="ascii")
+    source = (data.ROOT / "src" / "data" / file).read_text(encoding="ascii")
+
+    def value(token):
+        if token in ("DFI_CLOSURE_NONE", "DFI_FORME_NONE") or (kind == "closure" and token == "255u"):
+            return None
+        return int(token[:-1])
+
+    out = []
+    for table, start, row in zip(("FORME", "MOVE", "ITEM"), starts, (_FORME_ROW, _MOVE_ROW, _ITEM_ROW)):
+        a = source.index(start)
+        rows = row.findall(source[a:source.index("};", a)])
+        assert len(rows) == _define(header, f"{prefix}{table}_COUNT"), (kind, table)
+        out.append([tuple(value(x) if not x.isdigit() else int(x) for x in r) for r in rows])
+    return out
+
+
+class GeneratedRowsTest(unittest.TestCase):
+    """The data the fold reads (decision 0020): what the generated rows hold, row by row, for both kinds."""
+
+    def test_the_data_equals_the_generated_rows(self):
+        for kind in ("closure", "pool"):
+            d = data.load(kind=kind)
+            formes, moves, items = _generated_rows(kind)
+            self.assertEqual((d.counts["FORME"], d.counts["MOVE"], d.counts["ITEM"]), (len(formes), len(moves), len(items)))
+            for forme, (ability, base, mega) in enumerate(formes):
+                where = (kind, "forme", forme)
+                self.assertEqual(d.ability_of(forme), ability + 1, where)
+                self.assertEqual(d.base_forme(forme), base, where)
+                self.assertEqual(d.mega_forme(forme), mega, where)
+            for move, (pp_max, target_class) in enumerate(moves):
+                self.assertEqual(d.pp_max(move), pp_max, (kind, "move", move))
+                self.assertEqual(d.target_type(move), data.TARGET_TYPES[target_class], (kind, "move", move))
+            for item, (holder, mega) in enumerate(items):
+                where = (kind, "item", item)
+                for forme in range(len(formes)):
+                    expected = mega if holder is not None and mega is not None and holder == forme else None
+                    self.assertEqual(d.mega_of(forme, item + 1), expected, where + (forme,))
+                self.assertIsNone(d.mega_of(0, 0))
+
+
+    def test_a_checkout_the_library_does_not_match_is_refused(self):
+        # the ids are the converter's (the checkout's headers), the rows the library's: a DLL of other tables is an
+        # explicit error, never rows of the wrong ids
+        from unittest import mock
+        real = trace_to_c.load_tables
+
+        def swapped(root, pool):
+            tables = real(root, pool)
+            tables["MOVE"]["PROTECT"], tables["MOVE"]["TAILWIND"] = tables["MOVE"]["TAILWIND"], tables["MOVE"]["PROTECT"]
+            return tables
+
+        with mock.patch.object(trace_to_c, "load_tables", swapped):
+            with self.assertRaisesRegex(ValueError, "the library's MOVE names differ from the converter's tables"):
+                data.load(kind="pool")
+
+
 class DataTest(unittest.TestCase):
     """The POOL tables of the fold (Task 2)."""
 
@@ -52,7 +127,8 @@ class DataTest(unittest.TestCase):
         cls.header = (data.ROOT / "src" / "data" / "pool_tables.h").read_text(encoding="ascii")
 
     def test_pool_counts(self):
-        self.assertEqual(len(self.pool._formes), _define(self.header, "DFI_POOL_FORME_COUNT"))
+        self.assertEqual(self.pool.counts["FORME"], _define(self.header, "DFI_POOL_FORME_COUNT"))
+        self.assertEqual(self.pool.counts["ITEM"], _define(self.header, "DFI_POOL_ITEM_COUNT"))
         self.assertEqual(len(self.pool._pp_max), _define(self.header, "DFI_POOL_MOVE_COUNT"))
         self.assertEqual(len(self.pool._target_class), _define(self.header, "DFI_POOL_MOVE_COUNT"))
 
