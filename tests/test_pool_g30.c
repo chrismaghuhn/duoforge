@@ -123,7 +123,7 @@ static void check_facts(df_test *t)
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_RAGE_POWDER, 33u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_PSYCHIC_FANGS, 34u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_SOLAR_BEAM, 35u);
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, 36u);
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_YAWN + 1u); /* 36 before step G31 put Taunt at 36 and Yawn at 37 */
     DF_CHECK_EQ_U64(t, DUOFORGE_VIEWEXT_FEATURE_RAGE_POWDER, 39u);
     DF_CHECK(t, (dfi_support.view_ext_features & ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_RAGE_POWDER)) != 0u);
     /* the marks */
