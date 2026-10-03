@@ -187,6 +187,9 @@ duoforge_add_test(NAME duoforge.state.pool_g30 SOURCES test_pool_g30.c WHITEBOX 
 # Step G34: a batch of small rules (Gale Wings, accuracy and base power abilities, Solid Rock and Multiscale in the damage chain,
 # Steel Roller, Clangorous Soul, Brick Break): the marks, the flag bits and the commutation test of the ModifyDamage chain.
 duoforge_add_test(NAME duoforge.state.pool_g34 SOURCES test_pool_g34.c WHITEBOX TIMEOUT 60)
+# Step G35: ten data rows, Rain Dish and Friend Guard: the marks, the flags, Gigaton Hammer left out, and Friend Guard in the
+# commutation test and the refusal of the ModifyDamage chain.
+duoforge_add_test(NAME duoforge.state.pool_g35 SOURCES test_pool_g35.c WHITEBOX TIMEOUT 60)
 # Step G20, Spiky Shield: the protect_kind of the position (POOL tail rev 3), the state round trip, the volatile.
 duoforge_add_test(NAME duoforge.state.pool_g20_protect SOURCES test_pool_g20_protect.c WHITEBOX TIMEOUT 60)
 # The queued action of a fainted Pokemon: no ability and no item of it counts for its priority and Speed (d04 to d06).

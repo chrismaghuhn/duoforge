@@ -340,6 +340,18 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_PSYCHOCUT] = 1u,
             [DFI_MOVE_IRONDEFENSE] = 1u,
             [DFI_MOVE_ELECTROWEB] = 1u,
+            /* Step G35: the data rows that waited for a recorded battle (Gigaton Hammer is deferred: its only learner has no
+             * marked ability). */
+            [DFI_MOVE_THUNDERPUNCH] = 1u,
+            [DFI_MOVE_XSCISSOR] = 1u,
+            [DFI_MOVE_LUMINACRASH] = 1u,
+            [DFI_MOVE_OVERDRIVE] = 1u,
+            [DFI_MOVE_SCORCHINGSANDS] = 1u,
+            [DFI_MOVE_LEAFBLADE] = 1u,
+            [DFI_MOVE_BOOMBURST] = 1u,
+            [DFI_MOVE_SLUDGEWAVE] = 1u,
+            [DFI_MOVE_VOLTTACKLE] = 1u,
+            [DFI_MOVE_DISCHARGE] = 1u,
         },
     .abilities =
         {
@@ -404,6 +416,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_SOUNDPROOF] = 1u, /* step G32 */
             [DFI_ABILITY_UNNERVE] = 1u,
             [DFI_ABILITY_SPEEDBOOST] = 1u,
+            [DFI_ABILITY_RAINDISH] = 1u, /* step G35 */
+            [DFI_ABILITY_FRIENDGUARD] = 1u,
         },
     .items =
         {
