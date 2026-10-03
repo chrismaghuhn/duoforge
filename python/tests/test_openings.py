@@ -15,7 +15,8 @@ _POKEMON = (
     "Pikachu", "Vivillon-Pokeball", "Charizard", "Indeedee-F", "Torkoal", "Sinistcha-Masterpiece",
     "Incineroar", "Gholdengo", "Pelipper", "Flutter Mane", "Kingambit", "Archaludon",
 )
-_MOVES = ("Thunderbolt", "Fake Out", "Make It Rain", "Heat Wave", "Snarl", "Psychic", "Protect", "U-turn")
+_MOVES = ("Thunderbolt", "Fake Out", "Make It Rain", "Heat Wave", "Snarl", "Psychic", "Protect", "U-turn",
+          "Volt Switch", "Flip Turn", "Parting Shot")
 _ITEMS = ("Choice Band", "Sitrus Berry", "Leftovers", "Booster Energy")
 
 
@@ -77,9 +78,11 @@ LOG = "\n".join([
     "|switch|p2a: Incineroar|Incineroar, L50|100/100",
     "|switch|p2b: Gholdengo|Gholdengo, L50|100/100",
     "|turn|1",
-    "|move|p1a: Pikachu|Thunderbolt|p2a: Incineroar|",
+    "|move|p1a: Pikachu|U-turn|p2a: Incineroar|",
+    "|switch|p1a: Pikachu|Charizard, L50|100/100",
+    "|move|p1a: Charizard|Thunderbolt|p2a: Incineroar|",
     "|-mega|p1b: Vivillon-Pokeball|Vivillon-Mega|",
-    "|-terastallize|p1a: Pikachu|Electric|",
+    "|-terastallize|p1a: Charizard|Electric|",
     "|-item|p2a: Incineroar|Sitrus Berry|",
     "|move|p2b: Gholdengo|Make It Rain|p1a: Pikachu|",
     "|move|p1a: Pikachu|",
@@ -88,16 +91,16 @@ LOG = "\n".join([
     "|upkeep|",
     "|switch|p2a: Incineroar|Pelipper, L50|100/100",
     "|turn|2",
-    "|switch|p1a: Pikachu|Charizard, L50|100/100",
-    "|move|p1a: Charizard|Heat Wave||[spread]",
-    "|move|p2a: Pelipper|Fake Out|p1a: Charizard|",
+    "|switch|p1a: Charizard|Indeedee-F, L50|100/100",
+    "|move|p1a: Indeedee-F|Psychic|p2a: Pelipper|",
+    "|move|p2a: Pelipper|Fake Out|p1a: Indeedee-F|",
     "|turn|3",
-    "|switch|p1b: Vivillon-Pokeball|Indeedee-F, L50|100/100",
+    "|switch|p1b: Vivillon-Pokeball|Charizard, L50|100/100",
     "|switch|p2b: Gholdengo|Flutter Mane, L50|100/100",
+    "|move|p1a: Indeedee-F|U-turn|p2a: Pelipper|",
+    "|switch|p1a: Indeedee-F|Pikachu, L50|100/100",
     "|-terastallize|p2a: Pelipper|Fire|",
-    "|move|p2a: Pelipper|Snarl|p1a: Charizard|",
-    "|move|p1a: Charizard|U-turn|p2a: Pelipper|",
-    "|switch|p1a: Charizard|Pikachu, L50|100/100|[from] U-turn",
+    "|move|p2a: Pelipper|Snarl|p1a: Pikachu|",
     "|drag|p1a: Pikachu|Charizard, L50|100/100",
     "|win|Alice",
 ])
@@ -126,22 +129,25 @@ class OpeningsTest(unittest.TestCase):
         self.assertEqual(game.sides[1].leads, ("Incineroar", "Gholdengo"))
         self.assertEqual(game.sides[1].brought, ("Incineroar", "Gholdengo", "Pelipper", "Flutter Mane"))
         self.assertEqual([(action.turn, action.kind, action.name, action.target) for action in game.actions], [
+            (1, "move", "U-turn", "p2a: Incineroar"),
+            (1, "switch", "Charizard", None),
             (1, "move", "Thunderbolt", "p2a: Incineroar"),
             (1, "mega", "Vivillon-Mega", None),
-            (1, "move", "Make It Rain", "p1a: Pikachu"),
+            (1, "move", "Make It Rain", "p1a: Charizard"),
             (1, "switch", "Pelipper", None),
-            (2, "switch", "Charizard", None),
-            (2, "move", "Heat Wave", None),
-            (2, "move", "Fake Out", "p1a: Charizard"),
-            (3, "switch", "Indeedee-F", None),
+            (2, "switch", "Indeedee-F", None),
+            (2, "move", "Psychic", "p2a: Pelipper"),
+            (2, "move", "Fake Out", "p1a: Indeedee-F"),
+            (3, "switch", "Charizard", None),
             (3, "switch", "Flutter Mane", None),
-            (3, "move", "Snarl", "p1a: Charizard"),
             (3, "move", "U-turn", "p2a: Pelipper"),
             (3, "switch", "Pikachu", None),
+            (3, "move", "Snarl", "p1a: Pikachu"),
             (3, "switch", "Charizard", None),
         ])
         self.assertEqual([(action.turn, action.switch_context) for action in game.actions if action.kind == "switch"], [
-            (1, "replacement"), (2, "choice"), (3, "choice"), (3, "choice"), (3, "pivot"), (3, "drag"),
+            (1, "pivot"), (1, "replacement"), (2, "choice"), (3, "choice"), (3, "choice"), (3, "pivot"),
+            (3, "drag"),
         ])
         self.assertEqual(game.tera_sides, (True, True))
         self.assertTrue(game.terastallized)
@@ -150,6 +156,14 @@ class OpeningsTest(unittest.TestCase):
         self.assertIn(("lines.unknown.future-opening-event", 1), game.diagnostics)
         self.assertEqual(openings.source_for_format("gen9championsvgc2026regmbbo3"), "champions")
         self.assertEqual(openings.source_for_format("gen9vgc2026regi"), "sv_vgc")
+
+    def test_switches_after_pivot_moves_without_from_are_midturn(self):
+        for move in ("U-turn", "Volt Switch", "Flip Turn", "Parting Shot"):
+            with self.subTest(move=move):
+                game = self.extract(log=LOG.replace("U-turn", move))
+                switch = next(action for action in game.actions if action.turn == 1 and action.kind == "switch"
+                              and action.name == "Charizard")
+                self.assertEqual(switch.switch_context, "pivot")
 
     def test_leads_and_brought_tables_have_counts_and_win_rates(self):
         game = self.extract(format_id="gen9vgc2026regi")
@@ -162,6 +176,9 @@ class OpeningsTest(unittest.TestCase):
         self.assertEqual((thunderbolt["leads"], thunderbolt["opposing_leads"], thunderbolt["target"],
                           thunderbolt["count"], thunderbolt["win_rate"]),
                          (("Pikachu", "Vivillon"), ("Gholdengo", "Incineroar"), "p2a: Incineroar", 1, 1.0))
+        p1_switches = [row for row in result["tables"]["turn_1_actions"]
+                       if row["action_kind"] == "switch" and row["leads"] == ("Pikachu", "Vivillon")]
+        self.assertEqual([(row["action"], row["switch_context"]) for row in p1_switches], [("Charizard", "pivot")])
         p2_switches = [row for row in result["tables"]["turn_1_actions"]
                        if row["action_kind"] == "switch" and row["leads"] == ("Gholdengo", "Incineroar")]
         self.assertEqual([(row["action"], row["switch_context"]) for row in p2_switches], [("Pelipper", "replacement")])
