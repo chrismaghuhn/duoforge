@@ -463,6 +463,36 @@ static uint32_t dfi_effective_target_class(const struct duoforge_battle *b, cons
     return md->target_class;
 }
 
+/* The type a move has when it is used (useMoveInner, sim/battle-actions.ts:430-438: the move's own onModifyType first, then
+ * the abilities'): Struggle is typeless; an -ate ability (the ATE family, decision 0015: onModifyType at priority -1)
+ * turns a Normal move into its type before immunity and STAB, except the moves of its noModifyType list; Weather Ball
+ * turns Water in rain, Fire under sun, Rock in sand, Ice in snow (data/moves.ts:20711-20717); Terrain Pulse (step G25,
+ * data/moves.ts:19273-19291) takes the type of the terrain for a grounded user. The redirection of Lightning Rod reads the
+ * type of this call (getMoveTargets runs after ModifyType, sim/pokemon.ts:829-831), so a Terrain Pulse in Electric Terrain is
+ * drawn to it, which the move's table type (Normal) would not say. */
+static uint32_t dfi_move_type_now(const struct duoforge_battle *b, const dfi_member *m, const dfi_move_data *md)
+{
+    uint32_t move_type = md->special == DFI_SPECIAL_STRUGGLE ? DFI_CLOSURE_NONE : md->type;
+    move_type = dfi_ate_type_fam(dfi_ability_family_now(b, m), md, move_type);
+    if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_RAIN) {
+        move_type = DFI_TYPE_WATER;
+    } else if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_SUN) {
+        move_type = DFI_TYPE_FIRE;
+    } else if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_SAND) {
+        move_type = DFI_TYPE_ROCK;
+    } else if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_SNOW) {
+        move_type = DFI_TYPE_ICE;
+    }
+    if (md->special == DFI_SPECIAL_TERRAIN_PULSE && dfi_grounded(b, m)) {
+        move_type = b->terrain == DFI_TERRAIN_ELECTRIC  ? DFI_TYPE_ELECTRIC
+                    : b->terrain == DFI_TERRAIN_GRASSY  ? DFI_TYPE_GRASS
+                    : b->terrain == DFI_TERRAIN_MISTY   ? DFI_TYPE_FAIRY
+                    : b->terrain == DFI_TERRAIN_PSYCHIC ? DFI_TYPE_PSYCHIC
+                                                        : move_type;
+    }
+    return move_type;
+}
+
 /* The sort key of an action (getActionSpeed): the order of its kind, the
  * move's priority (switches have none), and the action speed of the
  * Pokemon in the slot: the one leaving for a switch, the fainted one for a
@@ -2801,7 +2831,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
      * sim/battle-actions.ts:142), which is the lower activation id; the
      * first handler returns its holder. This runs also when the chosen
      * target is gone (a fainted ally, no foe left). */
-    if (follow == DFI_POSITIONS && md->type == DFI_TYPE_ELECTRIC && single) {
+    if (follow == DFI_POSITIONS && dfi_move_type_now(b, m, md) == DFI_TYPE_ELECTRIC && single) {
         uint32_t rod = DFI_POSITIONS;
         for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
             const dfi_member *holder = dfi_at(b, flat);
@@ -3034,30 +3064,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     }
     /* Struggle is typeless; Weather Ball turns Water in rain, Fire under sun
      * (its onModifyType, before the hit steps). */
-    uint32_t move_type = md->special == DFI_SPECIAL_STRUGGLE ? DFI_CLOSURE_NONE : md->type;
-    /* An -ate ability (the ATE family, decision 0015): onModifyType
-     * (priority -1) turns a Normal move into its type before immunity and
-     * STAB; Weather Ball is in its noModifyType list and Struggle is
-     * typeless by then (data/abilities.ts). */
-    move_type = dfi_ate_type_fam(dfi_ability_family_now(r->b, m), md, move_type);
-    if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_RAIN) {
-        move_type = DFI_TYPE_WATER;
-    } else if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_SUN) {
-        move_type = DFI_TYPE_FIRE;
-    } else if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_SAND) {
-        move_type = DFI_TYPE_ROCK; /* data/moves.ts:20711-20713 */
-    } else if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_SNOW) {
-        move_type = DFI_TYPE_ICE; /* data/moves.ts:20714-20717 (snowscape) */
-    }
-    /* Terrain Pulse's onModifyType (step G25, data/moves.ts:19273-19291): the terrain's type for a grounded user. The
-     * -ate abilities leave it alone (dfi_ate_excluded). */
-    if (md->special == DFI_SPECIAL_TERRAIN_PULSE && dfi_grounded(b, m)) {
-        move_type = b->terrain == DFI_TERRAIN_ELECTRIC  ? DFI_TYPE_ELECTRIC
-                    : b->terrain == DFI_TERRAIN_GRASSY  ? DFI_TYPE_GRASS
-                    : b->terrain == DFI_TERRAIN_MISTY   ? DFI_TYPE_FAIRY
-                    : b->terrain == DFI_TERRAIN_PSYCHIC ? DFI_TYPE_PSYCHIC
-                                                        : move_type;
-    }
+    uint32_t move_type = dfi_move_type_now(b, m, md);
     const bool spread = count > 1u;
     /* Hit steps: Psychic Terrain and Protect (TryHit), type immunity,
      * accuracy per target. Psychic Terrain's onTryHit (Team C, priority 4,
