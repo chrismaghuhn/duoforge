@@ -1,18 +1,21 @@
-"""The data the live adapter needs, from the converter's own tables.
+"""The data the live adapter needs: ids from the converter's tables, row data from the library.
 
 Ids come from tools/reference/trace_to_c.py (load_tables, parse_team, key):
-there is no second id table. The maximum PP and the target class of a move
-and a forme's Mega data (its Mega forme and stone, its base forme, its
-ability) come from the rows of src/data/closure_tables.c, read the way
-load_tables reads the gender rules; the test duoforge.python.live_unit
-checks them against the library's own view of Teams A and B.
+there is no second id table. What a row holds comes from the loaded
+library's data API (decision 0020, python/duoforge/data.py), read once at
+load under a context of the kind: the maximum PP and the target class of a
+move (move_static), a forme's base forme and Mega forme (forme_info) and the
+ability a member of it holds (forme_static: a Mega forme's own; under the
+closure the set's), and the Mega forme a stone reaches (item_static). The
+library is the one source: the checkout's generated rows and the DLL cannot
+disagree (python/tests/test_replay_unit.py GeneratedRowsTest compares them
+row by row).
 
 kind "pool" reads the pool tables instead (decision 0015: the closure and
 Team C ids as their prefix, then the rows the expansion adds), for the M11
 replay pipeline (python/duoforge_replay), whose games use every name of
 the tables.
 """
-import re
 import sys
 from pathlib import Path
 
@@ -23,50 +26,13 @@ if str(ROOT / "tools" / "reference") not in sys.path:
     sys.path.insert(0, str(ROOT / "tools" / "reference"))
 import trace_to_c  # noqa: E402
 
-NONE = 0xFF  # DFI_CLOSURE_NONE
-# "No such row" in the generated rows: a number (DFI_CLOSURE_NONE is 0xFF in the closure's 8-bit fields) or a symbol
-# (the pool's 16-bit forme links use DFI_FORME_NONE).
-_NONE_SYMBOLS = {"DFI_CLOSURE_NONE", "DFI_FORME_NONE"}
-
-# dfi_forme_data: dex_num, weight_hg, types[2], base[6], ability, gender_rule, is_mega, base_forme, mega_forme,
-# mega_item, ...
-_FORME_ROW = re.compile(r"\{\d+u, \d+u, \{\w+, \w+\}, \{[^}]*\}, (\w+), \w+, \w+, (\w+), (\w+), (\w+),")
-# dfi_move_data: type, category, base_power, accuracy, pp_base, pp_max, priority, target_class, ...
-_MOVE_ROW = re.compile(r"^    \{\d+u, \d+u, \d+u, \d+u, \d+u, (\d+)u, \d+u, (\d+)u,", re.M)
-# DUOFORGE_TARGET_CLASS_* (include/duoforge/duoforge.h), DFI_TARGET_CLASS_RANDOM_NORMAL (10, Struggle only,
-# src/data/closure_tables.h) and the pool's classes 11 to 15 (src/data/pool_tables.h) -> Showdown's target type
+# DUOFORGE_TARGET_CLASS_* (include/duoforge/duoforge.h) and the static classes 10 to 15 of duoforge_move_static
+# (DUOFORGE_TARGET_CLASS_STATIC_COUNT) -> Showdown's target type
 TARGET_TYPES = {1: "normal", 2: "any", 3: "adjacentAlly", 4: "adjacentAllyOrSelf", 5: "adjacentFoe", 6: "self",
                 7: "allAdjacentFoes", 8: "allySide", 9: "all", 10: "randomNormal", 11: "allAdjacent", 12: "scripted",
                 13: "allyTeam", 14: "allies", 15: "foeSide"}
-# The forme and move rows of each kind: (header, source, count prefix, forme array, move array)
-_KINDS = {
-    "closure": ("closure_tables.h", "closure_tables.c", "DFI_",
-                "dfi_closure_formes[DFI_FORME_COUNT] = {", "dfi_closure_moves[DFI_MOVE_COUNT] = {",
-                "dfi_closure_items[DFI_ITEM_COUNT] = {"),
-    "pool": ("pool_tables.h", "pool_tables.c", "DFI_POOL_",
-             "dfi_pool_formes[DFI_POOL_FORME_COUNT] = {", "dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {",
-             "dfi_pool_items[DFI_POOL_ITEM_COUNT] = {"),
-}
-# dfi_item_data / dfi_pool_item_data: the forme that holds it as a Mega Stone, the Mega forme it reaches
-_ITEM_ROW = re.compile(r"^    \{(\w+), (\w+)\},", re.M)
-
-
-def _value(token):
-    """A field of a generated row: 12u -> 12, a NONE symbol -> None."""
-    if token in _NONE_SYMBOLS:
-        return None
-    if not token.endswith("u") or not token[:-1].isdigit():
-        raise ValueError(f"a row field {token!r} is neither a number nor a NONE symbol")
-    return int(token[:-1])
-
-
-def _rows(source, start, row, count):
-    """The `count` rows of the table that begins with `start`, in id order."""
-    a = source.index(start)
-    found = row.findall(source[a:source.index("};", a)])
-    if len(found) != count:
-        raise ValueError(f"{start!r} has {len(found)} rows, not {count}")
-    return found
+# The library's data kind of each table kind
+_KINDS = {"closure": "DUOFORGE_DATA_KIND_CLOSURE", "pool": "DUOFORGE_DATA_KIND_POOL"}
 
 
 class Data:
@@ -75,21 +41,35 @@ class Data:
     def __init__(self, root=ROOT, kind="closure"):
         if kind not in _KINDS:
             raise ValueError(f"unknown table kind {kind!r}: one of {sorted(_KINDS)}")
-        root = Path(root)
-        header_file, file, prefix, forme_start, move_start, item_start = _KINDS[kind]
+        import duoforge
+        from duoforge import _layout, data as api
         self.kind = kind
-        self.tables = trace_to_c.load_tables(str(root), kind == "pool")
-        header = (root / "src" / "data" / header_file).read_text(encoding="ascii")
-        source = (root / "src" / "data" / file).read_text(encoding="ascii")
-        self.counts = {t: int(re.search(rf"#define {prefix}{t}_COUNT (\d+)u", header).group(1))
-                       for t in ("FORME", "MOVE", "ITEM")}
-        formes = _rows(source, forme_start, _FORME_ROW, self.counts["FORME"])
-        self._formes = [tuple(_value(x) for x in f) for f in formes]  # (ability, base_forme, mega_forme, mega_item)
-        moves = _rows(source, move_start, _MOVE_ROW, self.counts["MOVE"])
-        self._pp_max = [int(pp) for pp, _ in moves]
-        self._target_class = [int(target) for _, target in moves]
-        items = _rows(source, item_start, _ITEM_ROW, self.counts["ITEM"])
-        self._stones = [tuple(_value(x) for x in row) for row in items]  # (mega base forme, Mega forme) per item
+        self.tables = trace_to_c.load_tables(str(Path(root)), kind == "pool")
+        with duoforge.Context(data_kind=_layout.CONSTANTS[_KINDS[kind]]) as context:
+            self.counts = {"FORME": api.count(context, api.TABLE_SPECIES), "MOVE": api.count(context, api.TABLE_MOVE),
+                           "ITEM": api.count(context, api.TABLE_ITEM)}
+            for name, table in (("FORME", api.TABLE_SPECIES), ("MOVE", api.TABLE_MOVE), ("ITEM", api.TABLE_ITEM),
+                                ("ABILITY", api.TABLE_ABILITY)):
+                # The ids are the converter's (the checkout's headers), the rows the library's: each id must name the
+                # same row in both, or the rows below would belong to other ids
+                count = api.count(context, table)
+                names = {k.lower(): v for k, v in self.tables[name].items() if k != "COUNT"}
+                if names != {api.name(context, table, i): i for i in range(count)}:
+                    raise ValueError(f"the library's {name} names differ from the converter's tables (kind {kind}): "
+                                     "the library was built from other tables than this checkout")
+            infos = [api.forme_info(context, f) for f in range(self.counts["FORME"])]
+            self._ability = [api.forme_static(context, f)["default_ability"] for f in range(self.counts["FORME"])]
+            moves = [api.move_static(context, m) for m in range(self.counts["MOVE"])]
+            items = [api.item_static(context, i) for i in range(self.counts["ITEM"])]
+
+        def link(value):
+            return None if value == api.NONE else value
+
+        self._base = [info["base_species"] for info in infos]
+        self._mega = [link(info["mega_species"]) for info in infos]
+        self._pp_max = [m["pp"] for m in moves]
+        self._target_class = [m["target_class"] for m in moves]
+        self._stone = [link(i["mega_species"]) if i["is_mega_stone"] else None for i in items]  # the Mega it reaches
 
     def team(self, text):
         """A paste as trace_to_c.parse_team reads it: member dicts with species, gender, nature, sp, ability
@@ -117,25 +97,22 @@ class Data:
 
     def ability_of(self, forme):
         """The forme's ability as a member holds it (the set's; a Mega forme's own), 1-based like parse_team."""
-        return self._formes[forme][0] + 1
+        return self._ability[forme] + 1
 
     def base_forme(self, forme):
-        return self._formes[forme][1]
+        return self._base[forme]
 
     def mega_forme(self, forme):
-        """The forme's Mega forme, or None."""
-        mega = self._formes[forme][2]
-        return None if mega is None or (self.kind == "closure" and mega == NONE) else mega
+        """The forme's Mega forme (its first, when stones take it to several), or None."""
+        return self._mega[forme]
 
     def mega_of(self, forme, item):
-        """The Mega forme that `item` (1-based, 0 for none) takes the forme to, or None: the stone's row names its
-        holder and its Mega (Charizardite X and Y take Charizard to two formes)."""
+        """The Mega forme that `item` (1-based, 0 for none) takes the forme to, or None: the stone names its Mega,
+        whose base forme is its holder (Charizardite X and Y take Charizard to two formes)."""
         if item == 0:
             return None
-        base, mega = self._stones[item - 1]
-        if base is None or mega is None or (self.kind == "closure" and NONE in (base, mega)) or base != forme:
-            return None
-        return mega
+        mega = self._stone[item - 1]
+        return mega if mega is not None and self._base[mega] == forme else None
 
     def mega_capable(self, forme, item):
         """Whether `item` (1-based, 0 for none) is a Mega Stone of the forme."""
