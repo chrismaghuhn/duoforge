@@ -1366,6 +1366,13 @@ static const df_tb_stop tb_g16_scarf_helmet[] = {
     {3u, 0u, 2u, 2u, {4u, 4u}, {484u, 525u}, {0x4045dae5cdc7e2b5ull, 0x4046d11d3183433cull}},
     {4u, 0u, 2u, 2u, {3u, 3u}, {414u, 486u}, {0x40422d8a63ec8bb7ull, 0x40451bb8f6098795ull}},
 };
+static const df_tb_stop tb_g16_scarf_lock_stays[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1069u, 1174u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {759u, 765u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 1u, {3u, 4u}, {527u, 651u}, {0x4047eba9571a161cull, 0x404c40cc6f581241ull}},
+    {3u, 0u, 2u, 1u, {3u, 4u}, {527u, 651u}, {0x4047eba9571a161cull, 0x404c40cc6f581241ull}},
+    {4u, 0u, 2u, 2u, {3u, 3u}, {430u, 544u}, {0x4043b86ab4195976ull, 0x40478fcf7c516f53ull}},
+};
 static const df_tb_stop tb_g16_sticky_hold[] = {
     {0u, 0u, 2u, 3u, {6u, 6u}, {1049u, 1161u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {725u, 752u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -3322,6 +3329,7 @@ static const df_tb_battle tb_battles[] = {
     {"g16_helmet_faint", 4u, tb_g16_helmet_faint, sizeof tb_g16_helmet_faint / sizeof tb_g16_helmet_faint[0]},
     {"g16_removal", 5u, tb_g16_removal, sizeof tb_g16_removal / sizeof tb_g16_removal[0]},
     {"g16_scarf_helmet", 4u, tb_g16_scarf_helmet, sizeof tb_g16_scarf_helmet / sizeof tb_g16_scarf_helmet[0]},
+    {"g16_scarf_lock_stays", 4u, tb_g16_scarf_lock_stays, sizeof tb_g16_scarf_lock_stays / sizeof tb_g16_scarf_lock_stays[0]},
     {"g16_sticky_hold", 5u, tb_g16_sticky_hold, sizeof tb_g16_sticky_hold / sizeof tb_g16_sticky_hold[0]},
     {"g16_stones", 4u, tb_g16_stones, sizeof tb_g16_stones / sizeof tb_g16_stones[0]},
     {"g16_unburden", 4u, tb_g16_unburden, sizeof tb_g16_unburden / sizeof tb_g16_unburden[0]},
@@ -3520,7 +3528,7 @@ static const df_tb_battle tb_battles[] = {
     {"w8_sand_soak", 7u, tb_w8_sand_soak, sizeof tb_w8_sand_soak / sizeof tb_w8_sand_soak[0]},
 };
 
-/* 2488 stops: 139 of an ended battle; decided by the count 740,
- * the HP percentage 771, the total HP 787, a tie 51;
- * winners: side 0 1260, side 1 1177, tie 51 */
+/* 2493 stops: 139 of an ended battle; decided by the count 742,
+ * the HP percentage 772, the total HP 789, a tie 51;
+ * winners: side 0 1260, side 1 1182, tie 51 */
 #endif
