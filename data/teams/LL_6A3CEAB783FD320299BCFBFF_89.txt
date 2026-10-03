@@ -1,0 +1,53 @@
+Farigiraf (M) @ Colbur Berry
+Ability: Armor Tail
+Level: 50
+Bold Nature
+- Helping Hand
+- Psychic
+- Protect
+- Trick Room
+
+Chandelure (M) @ Focus Sash
+Ability: Flash Fire
+Level: 50
+Modest Nature
+- Heat Wave
+- Shadow Ball
+- Protect
+- Trick Room
+
+Scrafty (M) @ Scraftinite
+Ability: Intimidate
+Level: 50
+Brave Nature
+- Fake Out
+- Close Combat
+- Poison Jab
+- Knock Off
+
+Milotic (M) @ Leftovers
+Ability: Competitive
+Level: 50
+Bold Nature
+- Scald
+- Muddy Water
+- Protect
+- Ice Beam
+
+Sylveon (M) @ Fairy Feather
+Ability: Pixilate
+Level: 50
+Modest Nature
+- Protect
+- Quick Attack
+- Hyper Voice
+- Hyper Beam
+
+Kingambit (M) @ Chople Berry
+Ability: Defiant
+Level: 50
+Brave Nature
+- Kowtow Cleave
+- Iron Head
+- Sucker Punch
+- Protect

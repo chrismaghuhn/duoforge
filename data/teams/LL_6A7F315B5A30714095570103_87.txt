@@ -1,0 +1,53 @@
+Rillaboom (M) @ Sitrus Berry
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Fake Out
+- Grassy Glide
+- Wood Hammer
+- U-turn
+
+Farigiraf (M) @ Grassy Seed
+Ability: Armor Tail
+Level: 50
+Sassy Nature
+- Expanding Force
+- Thunderbolt
+- Light Screen
+- Trick Room
+
+Archaludon (M) @ Leftovers
+Ability: Stamina
+Level: 50
+Modest Nature
+- Electro Shot
+- Dragon Pulse
+- Flash Cannon
+- Protect
+
+Pelipper (M) @ Life Orb
+Ability: Drizzle
+Level: 50
+Modest Nature
+- Hurricane
+- Weather Ball
+- Soak
+- Wide Guard
+
+Arcanine-Hisui (M) @ Focus Sash
+Ability: Rock Head
+Level: 50
+Adamant Nature
+- Flare Blitz
+- Head Smash
+- Close Combat
+- Protect
+
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Hasty Nature
+- Double-Edge
+- Hyper Voice
+- Tailwind
+- Protect

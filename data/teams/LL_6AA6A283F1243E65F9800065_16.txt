@@ -1,0 +1,53 @@
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Lonely Nature
+- Hyper Voice
+- Double-Edge
+- Flamethrower
+- Protect
+
+Farigiraf (M) @ Sitrus Berry
+Ability: Armor Tail
+Level: 50
+Calm Nature
+- Psychic
+- Helping Hand
+- Trick Room
+- Protect
+
+Sylveon (M) @ Fairy Feather
+Ability: Pixilate
+Level: 50
+Modest Nature
+- Hyper Beam
+- Hyper Voice
+- Quick Attack
+- Detect
+
+Arcanine-Hisui (M) @ Focus Sash
+Ability: Rock Head
+Level: 50
+Adamant Nature
+- Flare Blitz
+- Head Smash
+- Extreme Speed
+- Protect
+
+Rillaboom (M) @ Grassy Seed
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- High Horsepower
+- Grassy Glide
+- Wood Hammer
+- U-turn
+
+Golisopod (M) @ Golisopite
+Ability: Emergency Exit
+Level: 50
+Adamant Nature
+- First Impression
+- Iron Head
+- Leech Life
+- Rock Slide

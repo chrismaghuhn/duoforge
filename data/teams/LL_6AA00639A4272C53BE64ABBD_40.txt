@@ -1,0 +1,53 @@
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Timid Nature
+- Protect
+- Hyper Voice
+- Draco Meteor
+- Tailwind
+
+Floette-Eternal (F) @ Floettite
+Ability: Flower Veil
+Level: 50
+Modest Nature
+- Protect
+- Moonblast
+- Light of Ruin
+- Dazzling Gleam
+
+Rillaboom (M) @ Sitrus Berry
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Grassy Glide
+- Wood Hammer
+- U-turn
+- Fake Out
+
+Basculegion (M) @ Life Orb
+Ability: Adaptability
+Level: 50
+Adamant Nature
+- Protect
+- Last Respects
+- Aqua Jet
+- Wave Crash
+
+Kingambit (M) @ Black Glasses
+Ability: Defiant
+Level: 50
+Adamant Nature
+- Protect
+- Kowtow Cleave
+- Swords Dance
+- Sucker Punch
+
+Incineroar (M) @ Rocky Helmet
+Ability: Intimidate
+Level: 50
+Relaxed Nature
+- Darkest Lariat
+- Flare Blitz
+- Parting Shot
+- Fake Out

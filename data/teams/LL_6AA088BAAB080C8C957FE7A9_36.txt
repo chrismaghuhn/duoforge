@@ -1,0 +1,53 @@
+Golisopod (M) @ Golisopite
+Ability: Emergency Exit
+Level: 50
+Adamant Nature
+- Protect
+- Leech Life
+- Sucker Punch
+- Iron Head
+
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Timid Nature
+- Protect
+- Hyper Voice
+- Draco Meteor
+- Tailwind
+
+Basculegion (M) @ Life Orb
+Ability: Adaptability
+Level: 50
+Adamant Nature
+- Protect
+- Wave Crash
+- Aqua Jet
+- Last Respects
+
+Arcanine-Hisui (M) @ Choice Scarf
+Ability: Rock Head
+Level: 50
+Adamant Nature
+- Flare Blitz
+- Rock Slide
+- Extreme Speed
+- Head Smash
+
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Grassy Glide
+- Wood Hammer
+- Fake Out
+- High Horsepower
+
+Sneasler (M) @ Focus Sash
+Ability: Unburden
+Level: 50
+Jolly Nature
+- Coaching
+- Dire Claw
+- Close Combat
+- Protect

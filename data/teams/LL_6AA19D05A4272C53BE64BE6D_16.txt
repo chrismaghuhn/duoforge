@@ -1,0 +1,53 @@
+Golisopod (M) @ Golisopite
+Ability: Emergency Exit
+Level: 50
+Adamant Nature
+- First Impression
+- Iron Head
+- Leech Life
+- Protect
+
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Grassy Glide
+- Fake Out
+- Wood Hammer
+- U-turn
+
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Timid Nature
+- Protect
+- Hyper Voice
+- Tailwind
+- Draco Meteor
+
+Indeedee (M) @ Choice Scarf
+Ability: Psychic Surge
+Level: 50
+Modest Nature
+- Expanding Force
+- Trick Room
+- Protect
+- Dazzling Gleam
+
+Sylveon (M) @ Fairy Feather
+Ability: Pixilate
+Level: 50
+Modest Nature
+- Hyper Voice
+- Hyper Beam
+- Detect
+- Quick Attack
+
+Sneasler (M) @ White Herb
+Ability: Poison Touch
+Level: 50
+Adamant Nature
+- Dire Claw
+- Gunk Shot
+- Close Combat
+- Fake Out

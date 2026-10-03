@@ -1,0 +1,53 @@
+Golisopod (M) @ Golisopite
+Ability: Emergency Exit
+Level: 50
+Adamant Nature
+- Protect
+- Iron Head
+- Swords Dance
+- Leech Life
+
+Gardevoir (M) @ Gardevoirite
+Ability: Trace
+Level: 50
+Modest Nature
+- Protect
+- Expanding Force
+- Hyper Voice
+- Trick Room
+
+Indeedee-F (F) @ Colbur Berry
+Ability: Psychic Surge
+Level: 50
+Calm Nature
+- Follow Me
+- Trick Room
+- Helping Hand
+- Psychic
+
+Sneasler (M) @ Psychic Seed
+Ability: Unburden
+Level: 50
+Adamant Nature
+- Protect
+- Rock Slide
+- Dire Claw
+- Close Combat
+
+Pelipper (M) @ Focus Sash
+Ability: Drizzle
+Level: 50
+Modest Nature
+- Protect
+- Weather Ball
+- Tailwind
+- Hurricane
+
+Milotic (M) @ Sitrus Berry
+Ability: Competitive
+Level: 50
+Bold Nature
+- Hypnosis
+- Coil
+- Muddy Water
+- Recover

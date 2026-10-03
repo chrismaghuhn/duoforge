@@ -347,6 +347,14 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
                 fail('move %s: %s is not the pinned text' % (mid, name))
     if pool and handled[0] == 'AURORA_VEIL' and ('onTry' not in f or norm(f['onTry'][1]) != AURORA_VEIL_ONTRY):
         fail('move %s: onTry is not the pinned text' % mid)
+    if pool and handled[0] in G20_PROTECT_HANDLERS:
+        punish = PROTECT_VARIANT_PUNISHMENT[handled[0]]
+        if 'condition' not in f or norm(f['condition'][1]) != PROTECT_VARIANT_CONDITION % (punish, punish):
+            fail('move %s: the condition is not the pinned text' % mid)
+        pe = fields(base.entry('protect')[2])
+        for name in PROTECT_VARIANT_COPY_FIELDS:
+            if name not in f or name not in pe or norm(f[name][1]) != norm(pe[name][1]):
+                fail('move %s: %s is not that of protect' % (mid, name))
     if pool and mid in PROTECT_COPIES:
         pe = fields(base.entry(PROTECT_COPIES[mid])[2])
         for name in PROTECT_COPY_FIELDS:
@@ -1352,6 +1360,23 @@ GLAIVE_RUSH_CONDITION = ("condition: { noCopy: true, onStart(pokemon) { this.add
 # condition is read from the pinned text (G20_CONDITION_FACTS) and the side condition itself (a tail field, not a column)
 # is owned by the handler.
 G20_HANDLERS = ['AURORA_VEIL']
+# Step G20, the Protect variants: Spiky Shield (data/moves.ts:17532-17584) is Protect with a contact punishment, so it has a
+# handler of its own that the turn code implements (the Protect path plus the punishment). Baneful Bunker (:985-1037) is the
+# same with poison, but its only learner, Toxapex, has no supported ability, so it stays UNMODELED until one is marked.
+# The generator checks that the fields and both callbacks are Protect's (not its volatile, whose name is the move's, and
+# not its type) and the whole condition text of the variant, whitespace aside: onTryHit's contact punishment is the one
+# thing that differs. King's Shield stays unmarked (its only learner, Aegislash, has no supported ability either).
+G20_PROTECT_HANDLERS = ['SPIKY_SHIELD']
+PROTECT_VARIANT_COPY_FIELDS = ('onPrepareHit', 'onHit', 'stallingMove', 'flags', 'priority', 'accuracy', 'target')
+PROTECT_VARIANT_CONDITION = (
+    "condition: { duration: 1, onStart(target) { this.add('-singleturn', target, 'move: Protect'); }, onTryHitPriority: 3, "
+    "onTryHit(target, source, move) { if (this.checkMoveBypassesProtect(move, source, target)) return; "
+    "if (move.smartTarget) { move.smartTarget = false; } else { this.add('-activate', target, 'move: Protect'); } "
+    "const lockedmove = source.getVolatile('lockedmove'); if (lockedmove) { // Outrage counter is reset "
+    "if (source.volatiles['lockedmove'].duration === 2) { delete source.volatiles['lockedmove']; } } "
+    "if (this.checkMoveMakesContact(move, source, target)) { %s } return this.NOT_FAIL; }, "
+    "onHit(target, source, move) { if (move.isZOrMaxPowered && this.checkMoveMakesContact(move, source, target)) { %s } }, },")
+PROTECT_VARIANT_PUNISHMENT = {'SPIKY_SHIELD': 'this.damage(source.baseMaxhp / 8, source, target);'}
 # Step G28 (a batch of move rules): Shell Smash keeps its boost order (the pin lists def and spd before atk, spa and spe and the
 # engine applies a vector in stat order), Acrobatics and Blizzard their one callback, Feint its `breaksProtect`: handlers
 # of their own that the turn code implements. The generator checks their texts (G28_FACTS; Expert Belt, an item rule
@@ -1400,6 +1425,7 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'glaiverush': ('GLAIVE_RUSH', set()),                                 # G19: the volatile that makes its user hit as vulnerable
     'knockoff': ('KNOCK_OFF', {'onAfterHit', 'onBasePower'}),             # G16: takes the target's item, x1.5 while it has one
     'encore': ('ENCORE', set()),                                          # G9 (implemented): last move, a volatile, a queue change
+    'spikyshield': ('SPIKY_SHIELD', {'onPrepareHit', 'onHit'}),           # G20: Protect that damages a contact attacker
     'auroraveil': ('AURORA_VEIL', {'onTry'}),                             # G20: a screen against both categories, in snow only
     'wideguard': ('WIDE_GUARD', {'onTry', 'onHitSide'}),                 # G7: a side condition against spread moves
     'firstimpression': ('FIRST_IMPRESSION', {'onTry', 'onDisableMove'}),  # G10a: first turn out only (Fake Out's rule)
@@ -1424,7 +1450,7 @@ PROTECT_COPIES = {'detect': 'protect'}
 # champions/moves.ts:581-584) sets isNonstandard to null, which makes it legal, and the tag has no reader in the tables.
 TAGS_PAST_UNOBTAINABLE = 'tags: ["Past Unobtainable"],'
 PROTECT_COPY_FIELDS = ('onPrepareHit', 'onHit', 'stallingMove', 'volatileStatus', 'priority', 'accuracy', 'target')
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G28_HANDLERS + ['UNMODELED']
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + ['UNMODELED']
 # Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags
 # byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
@@ -1433,6 +1459,7 @@ G2_OWNED_FIELDS = {
     'ENCORE': {'volatileStatus': "volatileStatus: 'encore',"},
     'WIDE_GUARD': {'sideCondition': "sideCondition: 'wideguard',"},
     'AURORA_VEIL': {'sideCondition': "sideCondition: 'auroraveil',"},
+    'SPIKY_SHIELD': {'volatileStatus': "volatileStatus: 'spikyshield',"},
     'SANDSTORM': {'weather': "weather: 'Sandstorm',"},
     'SNOWSCAPE': {'weather': "weather: 'snowscape',"},
     'SHELL_SMASH': {'boosts': "boosts: { def: -1, spd: -1, atk: 2, spa: 2, spe: 2, },"},
@@ -1440,7 +1467,7 @@ G2_OWNED_FIELDS = {
     'GLAIVE_RUSH': {'self': "self: { volatileStatus: 'glaiverush', },"},
 }
 G2_OWNED_SECONDARY = {}
-G2_OWNED_CONDITION = {'ENCORE', 'WIDE_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL'}
+G2_OWNED_CONDITION = {'ENCORE', 'WIDE_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD'}
 # Step G8 (Throat Chop and Psychic Noise): the two secondaries become modelled kinds, and the column that their
 # consumers read is the move's second flags byte (the first is full): the `sound` flag (Throat Chop bars the sound
 # moves) and the `heal` flag (Heal Block bars the moves that heal). Both are derived for every pool move, the prefix
@@ -1544,10 +1571,11 @@ HANDLER_IDS = ['NONE', 'UNMODELED']
 # by definition, like the closure and Team C rows. The step that marks such a row in the support manifest adds its id
 # here, which changes the handler column and so the POOL table hash, as any pool change does; a row that is marked and
 # still has the UNMODELED handler fails duoforge.data.pool_tables. G4: Focus Sash, Rock Head. G12: Floettite (the Mega
-# Stone of Floette-Eternal), Flower Veil and Fairy Aura. G14: Rough Skin, Poison Touch and Thermal Exchange. G16: Sticky Hold (Knock Off reads it by id). AC1: Trace (the entry copy of a foe's ability). G15: Psychic Seed (Grassy Seed's rule for the other terrain).
+# Stone of Floette-Eternal), Flower Veil and Fairy Aura. G14: Rough Skin, Poison Touch and Thermal Exchange. G16: Sticky Hold (Knock Off reads it by id). AC1: Trace (the entry copy of a foe's ability). G15: Psychic Seed (Grassy Seed's rule for the other terrain). G22: Sand Rush, Swift Swim, Slush Rush and Chlorophyll (the doubled Speed in their weather, tools/datagen/pool_families.js ENGINE_ORDER), Sand Rush's immunity to Sandstorm, Inner Focus (no flinch, no Intimidate drop) and Liquid Voice (a sound move becomes Water). G23-C: Levitate (isGrounded and the Ground immunity).
 ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'expertbelt'],
                'abilities': ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange',
-                             'stickyhold', 'trace']}
+                             'stickyhold', 'trace', 'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll',
+                             'innerfocus', 'liquidvoice']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.

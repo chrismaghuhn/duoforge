@@ -1,0 +1,53 @@
+Archaludon (M) @ Leftovers
+Ability: Stamina
+Level: 50
+Calm Nature
+- Dragon Pulse
+- Snarl
+- Electro Shot
+- Protect
+
+Golisopod (M) @ Golisopite
+Ability: Emergency Exit
+Level: 50
+Adamant Nature
+- Sucker Punch
+- Drill Run
+- Iron Head
+- Protect
+
+Farigiraf (M) @ Sitrus Berry
+Ability: Armor Tail
+Level: 50
+Bold Nature
+- Psychic
+- Trick Room
+- Protect
+- Expanding Force
+
+Politoed (M) @ Mystic Water
+Ability: Drizzle
+Level: 50
+Modest Nature
+- Muddy Water
+- Ice Beam
+- Weather Ball
+- Protect
+
+Charizard (M) @ Charizardite Y
+Ability: Blaze
+Level: 50
+Timid Nature
+- Heat Wave
+- Hurricane
+- Weather Ball
+- Protect
+
+Grimmsnarl (M) @ Light Clay
+Ability: Prankster
+Level: 50
+Sassy Nature
+- Light Screen
+- Reflect
+- Parting Shot
+- Spirit Break

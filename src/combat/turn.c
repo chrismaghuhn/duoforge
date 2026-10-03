@@ -134,10 +134,14 @@ static bool dfi_has_type(const struct duoforge_battle *b, const dfi_member *m, u
     return t[0] == type || t[1] == type;
 }
 
-/* isGrounded with the data: not Flying (no Levitate, Air Balloon or Gravity). */
+static bool dfi_ability(const struct duoforge_battle *b, const dfi_member *m, uint32_t id);
+
+/* isGrounded with the data (sim/pokemon.ts:2148-2160): not a Flying type and not a Levitate holder. Gravity, Ingrain,
+ * Smack Down, Iron Ball, Air Balloon, Magnet Rise and Telekinesis are unmarked rows, so no battle has them; Eelevate is
+ * an unmarked ability. The ability is the current one (a Mega's, or one that Trace copied). */
 static bool dfi_grounded(const struct duoforge_battle *b, const dfi_member *m)
 {
-    return !dfi_has_type(b, m, DFI_TYPE_FLYING);
+    return !dfi_has_type(b, m, DFI_TYPE_FLYING) && !dfi_ability(b, m, DFI_ABILITY_LEVITATE);
 }
 
 /* The item a member holds now, stored as 1 + id (0 = none): the one the member's sheet says unless it has been used
@@ -340,6 +344,18 @@ static duoforge_status dfi_staged_stat(const dfi_member *m, const dfi_active_slo
     return dfi_stage_stat(m->stats[index], pos->stages[index], out) ? DUOFORGE_OK : DUOFORGE_E_INVARIANT;
 }
 
+/* Whether the member has the Speed ability of the weather that is up: Swift Swim in rain, Chlorophyll in sun, Sand Rush
+ * in a sandstorm, Slush Rush in snow (step G22; the callbacks are cited at dfi_speed_key). The weather is the
+ * battle's: Hail is not in the format, and Primordial Sea and Desolate Land (also named by the Swift Swim and
+ * Chlorophyll handlers) are not weathers of the state. */
+static bool dfi_weather_speed_ability(const struct duoforge_battle *b, const dfi_member *m)
+{
+    return (b->weather == DFI_WEATHER_RAIN && dfi_ability(b, m, DFI_ABILITY_SWIFTSWIM)) ||
+           (b->weather == DFI_WEATHER_SUN && dfi_ability(b, m, DFI_ABILITY_CHLOROPHYLL)) ||
+           (b->weather == DFI_WEATHER_SAND && dfi_ability(b, m, DFI_ABILITY_SANDRUSH)) ||
+           (b->weather == DFI_WEATHER_SNOW && dfi_ability(b, m, DFI_ABILITY_SLUSHRUSH));
+}
+
 /* getActionSpeed of the Champions mod (data/mods/champions/scripts.ts:46-55):
  * the staged Speed times the chained ModifySpe modifiers (Tailwind
  * chainModify(2), Choice Scarf chainModify(1.5), Team C; one rounding), then
@@ -373,11 +389,23 @@ static duoforge_status dfi_speed_key(const struct duoforge_battle *b, uint32_t s
         !dfi_chain_modify(chain, 8192u, &chain)) {
         return DUOFORGE_E_INVARIANT;
     }
+    /* Sand Rush, Swift Swim, Slush Rush and Chlorophyll (step G22, POOL data): onModifySpe chainModify(2) while their
+     * weather is up (data/abilities.ts:3974-3979 sandrush, 4808-4813 swiftswim, 4347-4352 slushrush, 512-517
+     * chlorophyll; the Champions mod has no entry of any of them). The holder has one ability, so at most one of the
+     * four counts. Field.isWeather / pokemon.effectiveWeather read the weather that is up; no Cloud Nine, Air Lock,
+     * Utility Umbrella or Mega Sol is in a battle (unmarked or not in the pool: tests/test_pool_weather.c), so nothing
+     * suppresses it. Like the items and Unburden, only a standing holder counts: a fainted one has its raw Speed (the
+     * same isActive rule as above, the ability handler of a Pokemon that is not active is ignored). */
+    if (active && dfi_weather_speed_ability(b, m)) {
+        if (!dfi_chain_modify(chain, 8192u, &chain)) {
+            return DUOFORGE_E_INVARIANT;
+        }
+    }
     if (chain != 4096u) {
-        spe = dfi_modify(spe, chain); /* spe <= 4 * 65535, chain <= 6 * 4096 */
+        spe = dfi_modify(spe, chain); /* spe <= 4 * 65535, chain <= 12 * 4096 */
     }
     if (active && m->status == DFI_STATUS_PAR) {
-        spe = spe * 50u / 100u; /* spe <= 24 * 65535: stage x4, chain x6 */
+        spe = spe * 50u / 100u; /* spe <= 48 * 65535: stage x4, chain x12 */
     }
     if (spe > DFI_SPEED_CAP) {
         spe = DFI_SPEED_CAP;
@@ -421,8 +449,8 @@ static uint32_t dfi_move_of(const dfi_member *m, uint32_t move_slot)
  * own onModifyPriority (Grassy Glide) is a singleEvent on the move and still runs; its grounded test reads the types
  * alone (no Levitate or Air Balloon in the pool). No other ability or item of the pool changes a priority:
  * tools/datagen/pool_families.js pins that every modelled ability or item with a priority or Speed callback is
- * Prankster, Unburden or Choice Scarf, so a new one cannot enter without this function and dfi_speed_key being
- * looked at. */
+ * Prankster, Unburden, Choice Scarf or (step G22) one of the four weather Speed abilities, so a new one cannot enter
+ * without this function and dfi_speed_key being looked at. */
 static uint32_t dfi_move_priority(const struct duoforge_battle *b, const dfi_member *m, const dfi_move_data *md)
 {
     uint32_t priority = md->priority;
@@ -745,6 +773,19 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
         if (any && !(effect.cause == DUOFORGE_CAUSE_MOVE && effect.mode == DFI_BOOST_SECONDARY)) {
             dfi_flower_veil_block(r, flat, holder);
         }
+    }
+    /* Inner Focus (step G22, POOL data, data/abilities.ts:2157-2162): TryBoost, a change that the effect named
+     * Intimidate would make to Attack (boost.atk is set: a change the cap already took to 0 is not) is deleted, and
+     * -fail|holder|unboost|atk|[from] ability: Inner Focus|[of] holder shows. The Pokemon is no Grass type of a side
+     * with Flower Veil, whose own TryBoost handler would race this one by Speed: no Inner Focus holder of the pool is
+     * a Grass type (tools/datagen/pool_families.js checkG22). Breakable, like Flower Veil. */
+    if (effect.cause == DUOFORGE_CAUSE_ABILITY && effect.id2 == 1u + DFI_ABILITY_INTIMIDATE &&
+        boosts[DFI_STAGE_ATK] != DFI_BIAS6 && capped[DFI_STAGE_ATK] != DFI_BIAS6 &&
+        dfi_ability(r->b, m, DFI_ABILITY_INNERFOCUS)) {
+        veil[DFI_STAGE_ATK] = true;
+        const duoforge_event e = dfi_ev(DUOFORGE_EVENT_FAIL, flat, DUOFORGE_CAUSE_ABILITY,
+                                        1u + DFI_ABILITY_INNERFOCUS, flat);
+        dfi_emit(r, &e);
     }
     bool announced = effect.mode == DFI_BOOST_SECONDARY;
     /* The stats of a boost are changed in the order of the move's table in the data (Battle.boost loops over the keys of
@@ -1440,6 +1481,14 @@ static duoforge_status dfi_add_volatile(dfi_run *r, uint32_t flat, uint32_t whic
         return DUOFORGE_OK;
     }
     if (which == DFI_VOLATILE_FLINCH) {
+        /* Inner Focus (step G22, POOL data, data/abilities.ts:2153-2167): onTryAddVolatile returns null for the flinch
+         * volatile, so it is not added and nothing is shown; the secondary's roll was drawn before (the caller). The
+         * ability is breakable (a move or ability that ignores abilities would skip it): Mold Breaker is unmarked
+         * (tests/test_pool_weather.c), Teravolt and Turboblaze are not in the pool, and a move with ignoreAbility has a
+         * field that the generator does not model (UNMODELED). */
+        if (dfi_ability(r->b, m, DFI_ABILITY_INNERFOCUS)) {
+            return DUOFORGE_OK;
+        }
         pos->flags = (uint8_t)((uint32_t)pos->flags | DFI_VOL_FLINCH); /* wide-operands-reviewed */
         return DUOFORGE_OK;
     }
@@ -1544,6 +1593,23 @@ static void dfi_use_item(dfi_run *r, uint32_t flat)
     }
 }
 
+/* choicelock's two removals (data/conditions.ts:332-336 onBeforeMove and :349-352 onDisableMove): the holder no longer has
+ * a Choice item (only the Choice Scarf is one in the pool), so the volatile ends and its locked move with it, unless a
+ * charging two-turn move shares the byte. The item leaving does not end the lock by itself (items.ts's Choice items
+ * remove it only in their own onStart, i.e. when the holder gets one), so a stop in the middle of a turn still shows it. */
+static void dfi_choice_lock_ends(struct duoforge_battle *b, uint32_t flat)
+{
+    dfi_active_slot *pos = dfi_pos(b, flat);
+    if (pos->occupant == DFI_OCCUPANT_NONE || ((uint32_t)pos->flags & DFI_VOL_CHOICE_LOCK) == 0u ||
+        dfi_holds(b, dfi_at(b, flat), DFI_ITEM_CHOICESCARF)) {
+        return;
+    }
+    pos->flags = (uint8_t)((uint32_t)pos->flags & ~(uint32_t)DFI_VOL_CHOICE_LOCK); /* wide-operands-reviewed */
+    if (pos->charge_turns == 0u) {
+        pos->locked_move = 0u;
+    }
+}
+
 /* Knock Off's onAfterHit (data/moves.ts:9959-9984; run by spreadMoveHit for each damaged target, also for a target that
  * this hit knocked out (its faint is not processed yet) and, in the Champions mod, also when the user has fainted since
  * (the base game asks whether the user has HP: sim/battle-actions.ts:1123; data/mods/champions/scripts.ts:411 does not)):
@@ -1590,12 +1656,8 @@ static void dfi_knock_off(dfi_run *r, uint32_t user, uint32_t target, uint32_t m
     duoforge_event e = dfi_ev(DUOFORGE_EVENT_ITEM_END, target, DUOFORGE_CAUSE_ITEM_TAKEN, item, user);
     e.id = (uint16_t)move_id;
     dfi_emit(r, &e); /* [-enditem] [from] move: Knock Off [of] user */
-    if (((uint32_t)pos->flags & DFI_VOL_CHOICE_LOCK) != 0u) {
-        pos->flags = (uint8_t)((uint32_t)pos->flags & ~(uint32_t)DFI_VOL_CHOICE_LOCK); /* wide-operands-reviewed */
-        if (pos->charge_turns == 0u) {
-            pos->locked_move = 0u;
-        }
-    }
+    /* The Choice lock stays: the pin ends it only in choicelock's own onBeforeMove (the holder's next move, dfi_run_move)
+     * and onDisableMove (every request, endTurn, dfi_end_turn), see dfi_choice_lock_ends. */
 }
 
 /* White Herb's check (onStart, data/items.ts): its standing holder has a
@@ -1887,12 +1949,16 @@ static duoforge_status dfi_update(dfi_run *r)
 }
 
 /* runStatusImmunity('sandstorm'): a type whose chart entry carries the sandstorm key, Rock, Ground and Steel
- * (data/typechart.ts), judged by the types now (dfi_types_of: a Soaked Pokemon is a Water type alone, step G11). An
- * ability or item that gives the immunity (Overcoat, Sand Force, Sand Rush, Sand Veil,
- * Safety Goggles) or stops indirect damage (Magic Guard) is not marked in the support manifest, so no battle
- * holds one (tests/test_pool_weather.c checks that); marking one needs its immunity here. */
+ * (data/typechart.ts), judged by the types now (dfi_types_of: a Soaked Pokemon is a Water type alone, step G11), or the
+ * ability that gives the immunity: Sand Rush (step G22, data/abilities.ts:3980-3982, onImmunity 'sandstorm' returns
+ * false; the Champions mod has no entry). The others that give it (Overcoat, Sand Force, Sand Veil, Safety Goggles) or
+ * stop indirect damage (Magic Guard) are not marked in the support manifest, so no battle holds one
+ * (tests/test_pool_weather.c checks that); marking one needs its immunity here. */
 static bool dfi_sand_immune(const struct duoforge_battle *b, const dfi_member *m)
 {
+    if (dfi_ability(b, m, DFI_ABILITY_SANDRUSH)) {
+        return true;
+    }
     for (uint32_t type = 0u; type < DFI_TYPE_COUNT; ++type) {
         if ((dfi_pool_type_immunity[type] & DFI_IMMUNE_SAND) != 0u && dfi_has_type(b, m, type)) {
             return true;
@@ -2213,8 +2279,11 @@ static duoforge_status dfi_status_hit_end(dfi_run *r)
 
 /* Protect (data/moves.ts protect, data/conditions.ts stall): fails without a
  * draw when nobody acts after the user; with a stall counter it succeeds on
- * random(counter) == 0 (STALL) and otherwise loses the counter. */
-static duoforge_status dfi_run_protect(dfi_run *r, uint32_t user)
+ * random(counter) == 0 (STALL) and otherwise loses the counter. Step G20: Spiky Shield (data/moves.ts:17532-17584) has
+ * the same onPrepareHit, onHit and stall as Protect and prints `-singleturn|X|move: Protect` (its text is checked by the
+ * generator against Protect's); `kind` is the variant that the volatile is (DFI_PROTECT_*), kept in the user's tail
+ * until the residual. */
+static duoforge_status dfi_run_protect(dfi_run *r, uint32_t user, uint32_t kind)
 {
     dfi_active_slot *pos = dfi_pos(r->b, user);
     if (!dfi_will_act(r->b)) {
@@ -2240,9 +2309,10 @@ static duoforge_status dfi_run_protect(dfi_run *r, uint32_t user)
         }
     }
     pos->flags = (uint8_t)((uint32_t)pos->flags | DFI_VOL_PROTECT); /* wide-operands-reviewed: < 256 */
+    r->b->tail.sides[user / 2u].positions[user % 2u].protect_kind = (uint8_t)kind; /* <= DFI_TAIL_PROTECT_KIND_MAX */
     pos->stall_level = (uint8_t)(level < DFI_STALL_LEVEL_MAX ? level + 1u : level); /* wide-operands-reviewed */
     pos->stall_turns = (uint8_t)DFI_STALL_DURATION;
-    dfi_emit_plain(r, DUOFORGE_EVENT_PROTECT, user); /* [-singleturn] Protect */
+    dfi_emit_plain(r, DUOFORGE_EVENT_PROTECT, user); /* [-singleturn] Protect (all three print `move: Protect`) */
     return dfi_status_hit_end(r);
 }
 
@@ -2696,6 +2766,8 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         }
         return DUOFORGE_OK;
     }
+    /* choicelock's onBeforeMove, reached by a holder that can move: its Choice item is gone, so the lock ends here. */
+    dfi_choice_lock_ends(b, user);
     /* deductPP; a locked move uses none. The opponent counts the use from
      * the move line (dfi_events_fold_knowledge). */
     if (q->move_slot < DUOFORGE_MAX_MOVE_SLOTS && !locked) {
@@ -2914,7 +2986,10 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         return dfi_run_helping_hand(r, user, targets[0]);
     }
     if (md->special == DFI_SPECIAL_PROTECT) {
-        return dfi_run_protect(r, user);
+        return dfi_run_protect(r, user, DFI_PROTECT_PLAIN);
+    }
+    if (md->special == DFI_SPECIAL_SPIKY_SHIELD) {
+        return dfi_run_protect(r, user, DFI_PROTECT_SPIKY_SHIELD);
     }
     if (md->special == DFI_SPECIAL_WIDE_GUARD) {
         return dfi_run_wide_guard(r, user);
@@ -3053,6 +3128,14 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
      * STAB; Weather Ball is in its noModifyType list and Struggle is
      * typeless by then (data/abilities.ts). */
     move_type = dfi_ate_type_fam(dfi_ability_family_now(r->b, m), md, move_type);
+    /* Liquid Voice (step G22, POOL data, data/abilities.ts:2416-2427): onModifyType (priority -1) makes a move with the
+     * sound flag Water, unless its user is Dynamaxed (never in this format). Weather Ball has no sound flag and
+     * Struggle none either, so the order against their types does not matter; the whole pool's sound moves are the
+     * flags2 SOUND bit (the pinned flag, tools/datagen/pool_families.js checkG22). The change reaches the immunity,
+     * the STAB, the weather and the resist berries below: they read move_type. */
+    if (dfi_ability(r->b, m, DFI_ABILITY_LIQUIDVOICE) && (dfi_pool_move_flags2[move_id] & DFI_MOVE_FLAG2_SOUND) != 0u) {
+        move_type = DFI_TYPE_WATER;
+    }
     if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_RAIN) {
         move_type = DFI_TYPE_WATER;
     } else if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_SUN) {
@@ -3097,6 +3180,22 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             }
         }
     }
+    /* One TryHit event runs the handlers of every target ordered by priority, then by the holders' speed (a tie draws):
+     * two holders of a punishing variant that both stop a contact move would show their lines in that order, which is not
+     * modelled (E_UNSUPPORTED, never a guess). */
+    if ((md->flags & DFI_MOVE_FLAG_CONTACT) != 0u && (md->flags & DFI_MOVE_FLAG_PROTECT) != 0u) {
+        uint32_t punishers = 0u;
+        for (uint32_t i = 0u; i < count; ++i) {
+            const uint32_t t = targets[i];
+            punishers += (!guarded[i] && ((uint32_t)dfi_pos(b, t)->flags & DFI_VOL_PROTECT) != 0u &&
+                          b->tail.sides[t / 2u].positions[t % 2u].protect_kind != DFI_PROTECT_PLAIN)
+                             ? 1u
+                             : 0u;
+        }
+        if (punishers > 1u) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
+    }
     for (uint32_t i = 0u; i < count; ++i) {
         const uint32_t t = targets[i];
         const dfi_active_slot *tp = dfi_pos(b, t);
@@ -3112,6 +3211,18 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         hit[i] = !((((uint32_t)tp->flags & DFI_VOL_PROTECT) != 0u) && ((md->flags & DFI_MOVE_FLAG_PROTECT) != 0u));
         if (!hit[i]) {
             dfi_emit_plain(r, DUOFORGE_EVENT_BLOCKED, t); /* [-activate] move: Protect */
+            /* Step G20: the contact punishment of Spiky Shield, in the same onTryHit after the -activate line
+             * (data/moves.ts:17550-17559; checkMoveMakesContact is the contact flag: Protective Pads are not in the
+             * pool). It costs the attacker floor(maxHP / 8), at least 1, with [-damage] ... [from] Spiky Shield [of] the
+             * holder (CAUSE_MOVE, the move in id2, the holder in other), also when the attacker is knocked out. */
+            const uint32_t kind = r->b->tail.sides[t / 2u].positions[t % 2u].protect_kind;
+            if (kind != DFI_PROTECT_PLAIN && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u) {
+                const uint32_t spikes = (uint32_t)m->hp_max / 8u;
+                st = dfi_deal(r, user, spikes == 0u ? 1u : spikes, DUOFORGE_CAUSE_MOVE, DFI_MOVE_SPIKYSHIELD, t);
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
+            }
         }
     }
     /* TryHit after Protect: Flash Fire takes Fire moves (and starts its
@@ -3149,10 +3260,19 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             hit[i] = false;
         }
     }
-    for (uint32_t i = 0u; i < count && !status_move; ++i) {
-        if (hit[i] && dfi_type_immune(b, dfi_at(b, targets[i]), move_type)) {
-            hit[i] = false; /* a status move ignores type immunity */
+    for (uint32_t i = 0u; i < count && !status_move; ++i) { /* a status move ignores type immunity */
+        if (!hit[i]) {
+            continue;
+        }
+        const dfi_member *tm = dfi_at(b, targets[i]);
+        if (dfi_type_immune(b, tm, move_type)) {
+            hit[i] = false;
             dfi_immune(r, targets[i], 0u);
+        } else if (move_type == DFI_TYPE_GROUND && dfi_ability(b, tm, DFI_ABILITY_LEVITATE)) {
+            /* runImmunity('Ground'): isGrounded is null for a Levitate holder (sim/pokemon.ts:2156), shown as
+             * -immune|X|[from] ability: Levitate (:2257-2258); a Flying type is immune first, without the line. */
+            hit[i] = false;
+            dfi_immune(r, targets[i], 1u + DFI_ABILITY_LEVITATE);
         }
     }
     /* hitStepTryImmunity: a Prankster-boosted status move fails on a Dark
@@ -4536,6 +4656,13 @@ static duoforge_status dfi_residual_events(dfi_run *r)
         }
         const uint32_t ended = DFI_VOL_PROTECT | DFI_VOL_FLINCH | DFI_VOL_HELPING_HAND | DFI_VOL_FOLLOW_ME;
         pos->flags = (uint8_t)((uint32_t)pos->flags & ~ended); /* wide-operands-reviewed */
+        /* The variant ends with the volatile. protect and spikyshield have `duration: 1` and no onResidual, onEnd or order
+         * (data/moves.ts:13961-14005, :17532-17584), so each is one of the position's duration handlers of the sorted
+         * Residual list above (sim/battle.ts:1097-1112 adds a volatile with a duration, :516-517 counts it down and
+         * removes it, silently without an onEnd): the count `ends` has it through DFI_VOL_PROTECT whichever variant it is.
+         * Nothing between its place in the sort and this sweep can read it (no hit is made in a residual), so clearing
+         * it with the flag is the same outcome. */
+        b->tail.sides[flat / 2u].positions[flat % 2u].protect_kind = (uint8_t)DFI_PROTECT_PLAIN;
         if (pos->charge_turns > 0u) {
             pos->charge_turns = (uint8_t)((uint32_t)pos->charge_turns - 1u); /* wide-operands-reviewed */
             if (pos->charge_turns == 0u) {
@@ -4736,8 +4863,10 @@ static duoforge_status dfi_end_turn(dfi_run *r)
     b->turn = (uint16_t)turn;
     b->request_epoch = epoch;
     b->boundary_kind = (uint8_t)DUOFORGE_BOUNDARY_TURN;
-    /* endTurn: newlySwitched ends (sim/battle.ts:1673; Team C). */
+    /* endTurn: newlySwitched ends (sim/battle.ts:1673; Team C), and DisableMove runs for every active Pokemon
+     * (sim/battle.ts:1691), where choicelock ends for a holder without its Choice item. */
     for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
+        dfi_choice_lock_ends(b, flat);
         dfi_active_slot *pos = dfi_pos(b, flat);
         pos->flags = (uint8_t)((uint32_t)pos->flags & ~DFI_VOL_NEWLY_SWITCHED); /* wide-operands-reviewed */
     }
