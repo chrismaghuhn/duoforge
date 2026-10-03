@@ -370,6 +370,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_STEELROLLER] = 1u,
             [DFI_MOVE_CLANGOROUSSOUL] = 1u,
             [DFI_MOVE_BRICKBREAK] = 1u,
+            /* Step G38: Imprison (the foes may not use the moves it knows; duoforge.state.pool_g38). */
+            [DFI_MOVE_IMPRISON] = 1u,
             [DFI_MOVE_FIERYDANCE] = 1u,
             [DFI_MOVE_PSYCHOCUT] = 1u,
             [DFI_MOVE_IRONDEFENSE] = 1u,
@@ -546,6 +548,8 @@ const dfi_support_manifest dfi_support = {
      * in duoforge.state.pool_g20). Step G30: Rage Powder (bit 39: RAGE_POWDER of the position's volatiles, public, the value
      * that decision 0018 gave it, at a PIVOT boundary only; verified against the g30 battles in duoforge.state.pool_g30). Step G26: Perish Song (bit 4: perish of the position, public: the count that the game
      * announced, 3 to 1, verified against the g26 battles step by step in duoforge.state.pool_g26). */
+    /* Step G38: Imprison (bit 12: IMPRISON of the position's volatiles, bit 2, public, verified against the g38 battles in
+     * duoforge.state.pool_g38). */
     /* Step Sandstorm and Snowscape: bits 0 and 1, the weather values of the old observation's weather field (the
      * -weather lines of Sand Stream, Snow Warning and the two moves, verified step by step in duoforge.state.pool_weather).
      * Step AC1: the ability change of Trace (bit 2: position_ext.ability_now, public, verified against the ac1 battles in
@@ -568,5 +572,6 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_DISABLE) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TERRAIN_ELECTRIC) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TERRAIN_MISTY) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_PERISH),
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_PERISH) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_IMPRISON),
 };

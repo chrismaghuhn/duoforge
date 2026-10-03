@@ -2124,6 +2124,46 @@ static void dfi_add_heal_block(dfi_run *r, uint32_t flat)
     dfi_emit(r, &e);
 }
 
+/* Imprison (step G38, data/moves.ts:9489-9523): the foes of a Pokemon that has used it may not use a move that it knows. The
+ * pin's onFoeBeforeMove (priority 4) stops such a move at the BeforeMove event, with `cant|X|move: Imprison|Move`, unless it
+ * is Struggle (the user's `hasMove` reads its current move slots: the sheet's). An imprisoner that has fainted or left has
+ * lost the volatile with the occupant (the tail's flag goes with it). */
+static bool dfi_imprison_forbids(struct duoforge_battle *b, uint32_t user, uint32_t move_id)
+{
+    if (move_id == DFI_MOVE_STRUGGLE) {
+        return false;
+    }
+    const uint32_t foe = 1u - user / 2u;
+    for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
+        const dfi_member *im = dfi_at(b, foe * 2u + slot);
+        if (im == NULL || im->hp == 0u || b->tail.sides[foe].positions[slot].imprison == 0u) {
+            continue;
+        }
+        for (uint32_t k = 0u; k < DUOFORGE_MAX_MOVE_SLOTS && k < im->move_count; ++k) {
+            if (im->moves[k].move_id == move_id) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/* Imprison itself (the status move, target self): addVolatile('imprison'); a Pokemon that has it already fails
+ * (`-fail`, the move line with [still]); otherwise `-start|user|move: Imprison` (the condition's onStart). */
+static duoforge_status dfi_run_imprison(dfi_run *r, uint32_t user)
+{
+    dfi_tail_pos *tail = &r->b->tail.sides[user / 2u].positions[user % 2u];
+    if (tail->imprison != 0u) {
+        dfi_fail_still(r, user);
+        return DUOFORGE_OK;
+    }
+    tail->imprison = 1u;
+    duoforge_event e = dfi_event_make(DUOFORGE_EVENT_VOLATILE_START, user);
+    e.detail = (uint8_t)DUOFORGE_VOLATILE_IMPRISON;
+    dfi_emit(r, &e); /* [-start] move: Imprison */
+    return DUOFORGE_OK;
+}
+
 static void dfi_heal(dfi_run *r, uint32_t flat, uint32_t amount, uint32_t cause, uint32_t id2, uint32_t other)
 {
     struct duoforge_battle *b = r->b;
@@ -2522,6 +2562,15 @@ static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, uint32_t move_
             dfi_emit(r, &e); /* [cant] move: Heal Block|move */
             return DUOFORGE_OK;
         }
+    }
+    /* A foe's Imprison (step G38, onFoeBeforeMovePriority 4, data/moves.ts:9511-9519): after Throat Chop and Heal Block (6),
+     * before the confusion (3) and the paralysis (1). A move that the foe knows (a move queued before it was used, or
+     * an Encored one) shows cant and uses no PP. */
+    if (dfi_kind_limits_of(r->ctx->data_kind).pool_rules && dfi_imprison_forbids(r->b, user, move_id)) {
+        duoforge_event e = dfi_ev(DUOFORGE_EVENT_CANT, user, DUOFORGE_CAUSE_IMPRISON, 0u, DUOFORGE_NO_POSITION);
+        e.id = (uint16_t)move_id;
+        dfi_emit(r, &e); /* [cant] move: Imprison|move */
+        return DUOFORGE_OK;
     }
     if (pos->confusion_turns != 0u) {
         pos->confusion_turns = (uint8_t)((uint32_t)pos->confusion_turns - 1u); /* wide-operands-reviewed */
@@ -3688,6 +3737,9 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     if (md->special == DFI_SPECIAL_CLANGOROUS_SOUL) {
         return dfi_run_clangorous_soul(r, user, md);
     }
+    if (md->special == DFI_SPECIAL_IMPRISON) {
+        return dfi_run_imprison(r, user);
+    }
     const bool status_move = md->category == DFI_CATEGORY_STATUS;
     /* flags.powder (step G30): the second flags byte's bit; Struggle has none. */
     const bool powder_move = move_id != DFI_MOVE_STRUGGLE && (dfi_pool_move_flags2[move_id] & DFI_MOVE_FLAG2_POWDER) != 0u;
@@ -3797,7 +3849,8 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         md->special != DFI_SPECIAL_FOUL_PLAY && md->special != DFI_SPECIAL_PSYSHOCK &&
         md->special != DFI_SPECIAL_FREEZE_DRY && md->special != DFI_SPECIAL_CLANGING_SCALES &&
         md->special != DFI_SPECIAL_RISING_VOLTAGE && md->special != DFI_SPECIAL_TERRAIN_PULSE &&
-        md->special != DFI_SPECIAL_MULTI_HIT_2 && md->special != DFI_SPECIAL_TRIPLE_AXEL) {
+        md->special != DFI_SPECIAL_MULTI_HIT_2 && md->special != DFI_SPECIAL_TRIPLE_AXEL &&
+        md->special != DFI_SPECIAL_IMPRISON) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Steel Roller's onTry (step G34, data/moves.ts:17893-17913): it fails without a terrain, with -fail and [still]. */

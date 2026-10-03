@@ -1058,6 +1058,8 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                          the user); id: the move, other: the user, id2: item + 1. The old item_used
                                          of the view shows it gone as for an item used up; item_now tells them apart
                                          (DUOFORGE_ITEM_NOW_NONE) */
+#define DUOFORGE_CAUSE_IMPRISON  21u /* CANT (POOL kinds): a move that the foe's Imprison forbids, queued before it was used
+                                         ([cant] move: Imprison|Move); id: the stopped move, no PP is used */
 
 #define DUOFORGE_EVENT_FLAG_STILL  1u  /* MOVE: the charge turn of a two-turn move */
 #define DUOFORGE_EVENT_FLAG_LOCKED 2u  /* MOVE: the locked turn ([from] lockedmove) */
@@ -1078,6 +1080,8 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_VOLATILE_PERISH     5u /* VOLATILE_START: -start|X|perishN (Perish Song): amount N, 3 to 0, one line per count
                                               in the residual; at 0 the holder faints (a FAINT event follows the UPKEEP). No
                                               END; the cast itself shows nothing (its -start perish3 is [silent]) */
+#define DUOFORGE_VOLATILE_IMPRISON   8u /* VOLATILE_START (POOL kinds): -start|X|move: Imprison; no END, it ends with the occupant
+                                              (position: the Pokemon that used it; its foes may not use the moves it knows) */
 #define DUOFORGE_FIELD_GRASSY_TERRAIN 1u
 #define DUOFORGE_FIELD_TRICK_ROOM     2u
 #define DUOFORGE_FIELD_PSYCHIC_TERRAIN 3u /* Team C */

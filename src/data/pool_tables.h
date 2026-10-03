@@ -876,7 +876,8 @@
 #define DFI_SPECIAL_PERISH_SONG 52u
 #define DFI_SPECIAL_MULTI_HIT_2 53u
 #define DFI_SPECIAL_TRIPLE_AXEL 54u
-#define DFI_SPECIAL_UNMODELED 55u
+#define DFI_SPECIAL_IMPRISON 55u
+#define DFI_SPECIAL_UNMODELED 56u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */

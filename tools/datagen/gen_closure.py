@@ -1461,6 +1461,25 @@ G28_FACTS = (
     ('ancientpower', ['accuracy: 100,', 'basePower: 60,', 'category: "Special",', 'target: "normal",', 'type: "Rock",',
                       "secondary: { chance: 10, self: { boosts: { atk: 1, def: 1, spa: 1, spd: 1, spe: 1, }, }, },"]),
 )
+# Step G38: Imprison (data/moves.ts:9489-9523; the Champions mod has no entry) keeps its volatile as a handler of its own that
+# the turn code implements: the start line `-start|user|move: Imprison`, the foes' hidden disable of every move the user knows
+# (onFoeDisableMove, run for every active Pokemon in endTurn) and the BeforeMove check at priority 4 that shows
+# `cant|foe|move: Imprison|Move` (onFoeBeforeMove). The generator checks the whole text, whitespace aside, because the engine
+# hard-codes it.
+G38_HANDLERS = ['IMPRISON']
+G38_FACTS = (
+    ('imprison', ['accuracy: true,', 'basePower: 0,', 'category: "Status",', 'pp: 10,', 'priority: 0,',
+                  'flags: { snatch: 1, bypasssub: 1, metronome: 1, mustpressure: 1 },', "volatileStatus: 'imprison',",
+                  'noCopy: true,', "onStart(target) { this.add('-start', target, 'move: Imprison'); },",
+                  "onFoeDisableMove(pokemon) { for (const moveSlot of this.effectState.source.moveSlots) { "
+                  "if (moveSlot.id === 'struggle') continue; pokemon.disableMove(moveSlot.id, true); } "
+                  "pokemon.maybeDisabled = true; },",
+                  'onFoeBeforeMovePriority: 4,',
+                  "onFoeBeforeMove(attacker, defender, move) { if (move.id !== 'struggle' && "
+                  "this.effectState.source.hasMove(move.id) && !move.isZOrMaxPowered) { "
+                  "this.add('cant', attacker, 'move: Imprison', move); return false; } },",
+                  'target: "self",', 'type: "Psychic",']),
+)
 # Step G34 (a batch of small rules): Steel Roller (fails without a terrain and ends it), Clangorous Soul (a third of the HP for
 # five boosts) and Brick Break (the screens go before the hit) keep their callbacks as handlers of their own that the turn code
 # implements; the abilities Compound Eyes, Iron Fist, Sharpness, Solid Rock, Technician, Multiscale and Gale Wings and the item
@@ -1731,7 +1750,8 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'solarbeam': ('SOLAR_BEAM', {'onBasePower', 'onTryMove'}),             # G30: a two-turn move that sun skips, x0.5 in rain, sand, snow
     'steelroller': ('STEEL_ROLLER', {'onTry', 'onHit', 'onAfterSubDamage'}),  # G34: fails without a terrain and ends it
     'clangoroussoul': ('CLANGOROUS_SOUL', {'onTry', 'onTryHit', 'onHit'}),    # G34: a third of the HP for five boosts
-    'brickbreak': ('BRICK_BREAK', {'onTryHit'}),                          # G34: the screens go before the hit
+    'brickbreak': ('BRICK_BREAK', {'onTryHit'}),
+    'imprison': ('IMPRISON', set()),                                      # G38: the foes may not use the moves it knows                          # G34: the screens go before the hit
     'eruption': ('HP_POWER', {'basePowerCallback'}),                      # G32: power by the user's HP
     'waterspout': ('HP_POWER', {'basePowerCallback'}),
     'bodypress': ('BODY_PRESS', set()),                                   # G32: the Defense stat attacks
@@ -1760,7 +1780,7 @@ PROTECT_COPIES = {'detect': 'protect'}
 # champions/moves.ts:581-584) sets isNonstandard to null, which makes it legal, and the tag has no reader in the tables.
 TAGS_PAST_UNOBTAINABLE = 'tags: ["Past Unobtainable"],'
 PROTECT_COPY_FIELDS = ('onPrepareHit', 'onHit', 'stallingMove', 'volatileStatus', 'priority', 'accuracy', 'target')
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + ['UNMODELED']
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + ['UNMODELED']
 # Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags
 # byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
@@ -1787,10 +1807,11 @@ G2_OWNED_FIELDS = {
     'RAIN_DANCE': {'weather': "weather: 'RainDance',"},
     'SUNNY_DAY': {'weather': "weather: 'sunnyday',"},
     'CLANGING_SCALES': {'selfBoost': "selfBoost: { boosts: { def: -1, }, },"},
+    'IMPRISON': {'volatileStatus': "volatileStatus: 'imprison',"},
 }
 G2_OWNED_SECONDARY = {}
 G2_OWNED_CONDITION = {'ENCORE', 'WIDE_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD', 'RAGE_POWDER', 'DISABLE',
-                      'ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'PERISH_SONG'}
+                      'ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'PERISH_SONG', 'IMPRISON'}
 # Step G8 (Throat Chop and Psychic Noise): the two secondaries become modelled kinds, and the column that their
 # consumers read is the move's second flags byte (the first is full): the `sound` flag (Throat Chop bars the sound
 # moves) and the `heal` flag (Heal Block bars the moves that heal). Both are derived for every pool move, the prefix
@@ -2609,7 +2630,7 @@ def check_g8_conditions(moves_ts, only=None):
     must be in the pinned entry, as one normalised text. `only`: a tuple of (move id, facts) to check instead of all of
     them (the generator's tests)."""
     for mid, facts in (G8_CONDITION_FACTS + G20_CONDITION_FACTS + G28_FACTS + G32_FACTS + G34_FACTS + G25_FACTS +
-                       G33_FACTS if only is None else only):
+                       G33_FACTS + G38_FACTS if only is None else only):
         e = moves_ts.entry(mid)
         if e is None:
             fail('move %s not found' % mid)
