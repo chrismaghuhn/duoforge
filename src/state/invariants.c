@@ -542,11 +542,13 @@ static bool dfi_hazard_order_valid(const dfi_tail_side *ts)
     for (uint32_t k = 0u; k < DFI_HAZARD_KIND_COUNT; ++k) {
         n += (present >> k) & 1u;
     }
+    /* The kinds named by the first n slots are exactly the n that are up: with n slots for n kinds each is named once (a kind
+     * named twice leaves another unnamed), so no separate duplicate check is needed. */
     uint32_t seen = 0u;
     bool ok = true;
     for (uint32_t i = 0u; i < DFI_HAZARD_KIND_COUNT; ++i) {
         const uint32_t slot = ((uint32_t)ts->hazard_order >> (2u * i)) & 3u;
-        ok = ok && (i < n ? (seen & (1u << slot)) == 0u : slot == 0u);
+        ok = ok && (i < n || slot == 0u);
         seen |= i < n ? 1u << slot : 0u;
     }
     return ok && seen == present;
