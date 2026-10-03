@@ -127,9 +127,12 @@ def extract_supported(source):
 
 
 LIBRARY_SUPPORTED = supported()
-# The features whose view-extension fields this tracker folds (decision 0018 section 6.1): none yet. The rows of the
-# replay pipeline carry no extension, so a feature the library supports still stops until its fold is here.
-TRACKER_FOLDS = 0
+# The features this tracker folds (decision 0018 section 6.1). The base-value features: Sand, Snow and Tox show in the
+# base view's own fields (weather, a member's status), which the converter's events already fill, so they need no
+# extension record (M11 BC spec section 5). Electric and Misty terrain join when the library supports them (#163),
+# with tests of their own. Every other feature still stops until its fold is here: the rows carry no extension.
+BASE_FOLDS = sum(1 << FEATURES[n] for n in ("WEATHER_SAND", "WEATHER_SNOW", "AILMENT_TOX"))
+TRACKER_FOLDS = BASE_FOLDS
 SUPPORTED = LIBRARY_SUPPORTED & TRACKER_FOLDS
 
 # Effects of decision 0018 section 6.1, by line kind: the effect (without "move: " / "ability: ") -> feature.

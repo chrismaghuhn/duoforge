@@ -211,13 +211,14 @@ class LinesTest(unittest.TestCase):
         return caught.exception.reason
 
     def test_feature_lines_stop(self):
-        self.assertEqual(self.stop("|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Gholdengo"),
-                         "feature:WEATHER_SAND")
+        self.assertEqual(self.stop("|-fieldstart|move: Electric Terrain|[from] ability: Electric Surge|[of] p2a: Gholdengo"),
+                         "feature:TERRAIN_ELECTRIC")
         self.assertEqual(self.stop("|-ability|p2a: Gholdengo|Intimidate|[from] ability: Trace|[of] p1a: Staraptor"),
                          "feature:ABILITY_CHANGE")
         self.assertEqual(self.stop("|-enditem|p1a: Staraptor|Sitrus Berry|[from] move: Knock Off|[of] p2a: Gholdengo"),
                          "feature:ITEM_CHANGE")
-        self.assertEqual(self.stop("|-status|p1a: Staraptor|tox"), "feature:AILMENT_TOX")
+        self.assertEqual(self.stop("|-start|p1a: Staraptor|Encore"), "feature:ENCORE")
+        self.assertEqual(lines.check("|-status|p1a: Staraptor|tox", self.view), "fold")  # Tox folds (BC spec 5)
         self.assertEqual(self.stop("|replace|p1a: Zoroark|Zoroark-Hisui, L50, M"), "feature:ILLUSION")
 
     def test_unknown_lines_stop(self):
@@ -318,13 +319,12 @@ class LinesTest(unittest.TestCase):
         # folds it: the line still stops the perspective
         self.assertEqual(lines.SUPPORTED & ~lines.TRACKER_FOLDS, 0)
         self.assertEqual(self.stop("|-start|p1a: Staraptor|Throat Chop|[silent]"), "feature:THROAT_CHOP")
-        # #124: the library supports Sand and Snow (bits 0 and 1); the rows carry no fold of them yet, so they stop
+        # the base-value features fold (BC spec section 5): Sand and Snow, which the library supports (#124), and Tox
         f = lines.FEATURES
         self.assertTrue(lines.LIBRARY_SUPPORTED >> f["WEATHER_SAND"] & 1 and lines.LIBRARY_SUPPORTED >> f["WEATHER_SNOW"] & 1)
-        self.assertEqual(self.stop("|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Gholdengo"),
-                         "feature:WEATHER_SAND")
-        self.assertEqual(self.stop("|-weather|Snowscape|[from] ability: Snow Warning|[of] p2a: Gholdengo"),
-                         "feature:WEATHER_SNOW")
+        self.assertEqual(lines.check("|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Gholdengo", self.view), "fold")
+        self.assertEqual(lines.check("|-weather|Snowscape|[from] ability: Snow Warning|[of] p2a: Gholdengo", self.view),
+                         "fold")
 
     def test_choice_items(self):
         self.assertEqual(lines.CHOICE_ITEMS, ("choiceband", "choicescarf", "choicespecs"))
@@ -532,11 +532,13 @@ class GameTest(unittest.TestCase):
         self.assertEqual(result.record.winner, 1)
         self.assertEqual(result.record.turns, 10)
 
-    def test_sandstorm_stops_after_turn_two(self):
+    def test_a_feature_stops_after_turn_two(self):
+        # a feature the tracker does not fold (Throat Chop; Sand folds since the BC PR) ends both perspectives there:
+        # the points before it are written, the later ones dropped
         clean = self.run_game(self.log)
-        result = self.run_game(self.insert_after("|turn|2", "|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Politoed"))
-        self.assertEqual(result.counters["perspectives.stopped.feature:WEATHER_SAND"], 2)
-        self.assertGreater(result.counters["points.dropped.feature:WEATHER_SAND"], 0)
+        result = self.run_game(self.insert_after("|turn|2", "|-start|p2a: Politoed|Throat Chop|[silent]"))
+        self.assertEqual(result.counters["perspectives.stopped.feature:THROAT_CHOP"], 2)
+        self.assertGreater(result.counters["points.dropped.feature:THROAT_CHOP"], 0)
         turn2 = [int(r.observation["epoch"]) for r in clean.rows if int(r.observation["turn"]) == 2
                  and r.observation["boundary_kind"] == 2]
         self.assertTrue(all(int(r.observation["epoch"]) <= max(turn2) for r in result.rows))
@@ -735,6 +737,48 @@ class GameTest(unittest.TestCase):
         # Charizardite Y shown on the sheet, Charizard-Mega-X in the log: no Mega Evolution the stone makes
         result = self.run_game(self.charizard_mega("Charizardite Y", "Charizard-Mega-X"))
         self.assertEqual(result.counters["perspectives.stopped.feature:FORME_CHANGE"], 2, result.counters)
+
+    def turn_rows(self, result, turn, side=0):
+        return [r for r in result.rows if r.side == side and int(r.observation["turn"]) == turn
+                and int(r.observation["boundary_kind"]) == 2]
+
+    def test_sandstorm_folds(self):
+        # spec 5: the base-value features fold (TRACKER_FOLDS); Sand and Snow were the largest curable stops
+        from duoforge._layout import CONSTANTS as C
+        lines_ = self.insert_after("|turn|2", "|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Politoed")
+        result = self.run_game(lines_)
+        self.assertFalse([k for k in result.counters if "WEATHER_SAND" in k], result.counters)
+        o = self.turn_rows(result, 3)[0].observation
+        self.assertEqual((int(o["weather"]), int(o["weather_turns"])), (C["DUOFORGE_WEATHER_SAND"], 4))
+
+    def test_snowscape_folds(self):
+        from duoforge._layout import CONSTANTS as C
+        result = self.run_game(self.insert_after("|turn|2", "|-weather|Snowscape"))
+        self.assertFalse([k for k in result.counters if "WEATHER_SNOW" in k], result.counters)
+        self.assertEqual(int(self.turn_rows(result, 3)[0].observation["weather"]), C["DUOFORGE_WEATHER_SNOW"])
+
+    def test_tox_folds(self):
+        from duoforge_live import teams
+        from duoforge_replay.spectator import SpectatorTracker
+        lines_ = self.insert_after("|turn|2", "|-status|p2a: Politoed|tox")
+        self.assertFalse([k for k in self.run_game(lines_).counters if "AILMENT_TOX" in k])
+        sheets = tuple(teams.unpack(line.split("|", 3)[3]) for line in lines_ if line.startswith("|showteam|"))
+        tracker = SpectatorTracker(self.data, sheets, 0, None, lambda m, f: ([100] * 6, [0] * 6), lines_)
+        tracker.feed(lines_[:lines_.index("|-status|p2a: Politoed|tox") + 1])
+        self.assertEqual(tracker._member_of("p2a: Politoed").status, trace_to_c.STATUS["tox"])
+
+    def test_unknown_weather_form_still_stops(self):
+        # "-weather|Snow" (an older server's name) is no form the converter reads: a named stop, never a fold
+        result = self.run_game(self.insert_after("|turn|2", "|-weather|Snow"))
+        stops = [k for k in result.counters if k.startswith("perspectives.stopped.")]
+        self.assertTrue(stops and all(k.startswith("perspectives.stopped.converter:") for k in stops), result.counters)
+
+    def test_unsupported_base_bit_still_stops(self):
+        from unittest import mock
+        without_sand = lines.SUPPORTED & ~(1 << lines.FEATURES["WEATHER_SAND"])
+        with mock.patch.object(lines, "SUPPORTED", without_sand):
+            result = self.run_game(self.insert_after("|turn|2", "|-weather|Sandstorm"))
+        self.assertEqual(result.counters["perspectives.stopped.feature:WEATHER_SAND"], 2, result.counters)
 
     def insert_after_in(self, lines, prefix, new):
         i = next(i for i, line in enumerate(lines) if line.startswith(prefix))
