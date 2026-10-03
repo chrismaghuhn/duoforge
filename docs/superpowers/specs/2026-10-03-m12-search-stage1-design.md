@@ -1,6 +1,6 @@
 # M12 stage 1: one-turn lookahead — specification
 
-Decision: 0022 (search support), written with the plan. Builds on decisions 0002 (privileged operations, reseed), 0012 (batch runtime), 0013 (Python adapter; section 6 names search support), 0014 (value targets), 0017 (suite and ladder), 0018 (view extension, encoders 3 and 4) and 0021 (the C encoder, in progress). Status: draft for the owner's review, 2026-10-03.
+Decision: 0022 (search support), written with the plan. Builds on decisions 0002 (privileged operations, reseed), 0012 (batch runtime), 0013 (Python adapter; section 6 names search support), 0014 (value targets), 0017 (suite and ladder), 0018 (view extension, encoders 3 and 4) and 0021 (the C encoder, in progress). Status: **approved** by the owner on 2026-10-03.
 
 ## 1. Goal
 
