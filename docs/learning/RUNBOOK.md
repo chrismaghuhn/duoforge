@@ -63,7 +63,7 @@ rsync -av --partial <user>@<host>:/workspace/runs/<name>/ runs/<name>/
 ```
 
 - Running episodes are dropped and every environment starts its next episode, so no battle seed repeats.
-- A resume may change the environment and worker counts, the duration, the league, schedule, evaluation and save options, and the teams. It refuses another model, seed, learning rate, epochs, minibatch, rollout or step limit, a changed team file and another data kind. The log records every change in a `resume` line.
+- A resume may change the environment and worker counts, the duration, the league, schedule, evaluation and save options, and the teams. It refuses another model, seed, learning rate, epochs, minibatch, rollout or step limit, a changed team file and another data kind. Newer tables (another library build of the same kind) are allowed when every id the network embeds still names the same species, move, item, ability and nature: the run state keeps those names (`ids`), and an id that moved or went away is refused, naming it. A run state from before the names (2026-10-03) resumes only under the same fingerprint. The log records every change in a `resume` line.
 
 ## 7. Afterwards
 

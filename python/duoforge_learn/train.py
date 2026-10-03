@@ -134,7 +134,7 @@ def _data_json(kind, context):
 def snapshot_config(train_config, model_cfg, context, pool, update, decisions, encoder, ext_supported):
     """The format-2 config of a snapshot of this run."""
     return {"model": model_cfg, "encoder": encoder, "ext_supported": ext_supported,
-            "features": list(features.FEATURE_NAMES),
+            "ids": checkpoint.ids_of(context), "features": list(features.FEATURE_NAMES),
             "slot_features": list(features.SLOT_FEATURE_NAMES),
             "data": _data_json(train_config["data_kind"], context),
             "teams": _teams_json(pool), "update": update, "decisions": decisions, "train": train_config}
@@ -331,6 +331,7 @@ def _run(args, pool, on_start, stop):
             raise SystemExit(f"a resume cannot change ext_supported ({stored:#x} -> {explicit:#x})")
         args, changes = _merged(args, saved_state["train"])
     context = duoforge.Context(data_kind=DATA_KINDS[args.data_kind])
+    ids = checkpoint.ids_of(context)  # what the embedded ids mean (spec 12.4), kept in the run state
     pool = _pool_of_args(args, context) if pool is None else pool
     if saved_state is not None:
         if list(pool.ids) != saved_state["teams"]["ids"] or \
@@ -346,8 +347,14 @@ def _run(args, pool, on_start, stop):
     train_config = {k: v for k, v in vars(args).items() if not k.startswith("_") and k not in ("resume",)}
     train_config["entropy"] = str(entropy)
     if saved_state is not None and saved_state["data"]["fingerprint"] != context.fingerprint().hex():
-        raise SystemExit("the context differs from the run's (another data kind or tables): "
-                         f"{saved_state['data']['fingerprint']} -> {context.fingerprint().hex()}")
+        # Other tables (the data kind cannot change on resume): the run goes on when every id its network embeds
+        # still names the same row (spec 12.4), and is refused otherwise.
+        try:
+            checkpoint.check_ids(saved_state, context)
+        except ValueError as err:
+            raise SystemExit(f"the context's tables differ from the run's "
+                             f"({saved_state['data']['fingerprint']} -> {context.fingerprint().hex()}): {err}") from None
+        changes["data"] = [saved_state["data"]["fingerprint"], context.fingerprint().hex()]
     encoder = saved_state["encoder"] if saved_state is not None else features.ENCODER
     widening = saved_state is not None and (saved_state["features"] != list(features.FEATURE_NAMES) or
                                             saved_state["slot_features"] != list(features.SLOT_FEATURE_NAMES))
@@ -443,7 +450,7 @@ def _run(args, pool, on_start, stop):
             "league": state.to_dict(), "numpy_rng": rng.bit_generator.state, "teams": _teams_json(pool),
             "data": _data_json(args.data_kind, context), "model": model_cfg,
             "features": list(features.FEATURE_NAMES), "slot_features": list(features.SLOT_FEATURE_NAMES),
-            "encoder": encoder, "ext_supported": ext_supported, "train": train_config})
+            "encoder": encoder, "ext_supported": ext_supported, "ids": ids, "train": train_config})
 
     act = net.act
     start = time.perf_counter()
