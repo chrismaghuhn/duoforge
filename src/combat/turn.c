@@ -1,6 +1,7 @@
 #include "combat/turn.h"
 
 #include "combat/ability_family.h"
+#include "combat/damage_chain.h"
 #include "combat/residual_order.h"
 #include "combat/events.h"
 #include "combat/item_family.h"
@@ -1106,50 +1107,6 @@ _Static_assert(DFI_CHAIN(DFI_CHAIN(4915u, 2048u), 2732u) == DFI_CHAIN(DFI_CHAIN(
                "ModifyDamage modifiers must chain in any order");
 _Static_assert(DFI_CHAIN(DFI_CHAIN(4915u, 2048u), 2732u) == DFI_CHAIN(DFI_CHAIN(2048u, 2732u), 4915u),
                "ModifyDamage modifiers must chain in any order");
-
-/* ModifyDamage modifiers (step G34): at most Life Orb or Expert Belt, a resist berry, a screen, Glaive Rush's volatile and one of
- * Solid Rock and Multiscale are in a chain, so six values at most. */
-#define DFI_MODIFY_DAMAGE_MAX 6u
-
-/* True when every order of `mods` (n <= DFI_MODIFY_DAMAGE_MAX values, 4096 = 1) chains (DFI_CHAIN from 4096) to the value of
- * the first order: Heap's algorithm over a copy, no allocation. */
-static bool dfi_mods_commute(const uint32_t *mods, uint32_t n)
-{
-    uint32_t a[DFI_MODIFY_DAMAGE_MAX] = {0u};
-    uint32_t c[DFI_MODIFY_DAMAGE_MAX] = {0u};
-    if (n > DFI_MODIFY_DAMAGE_MAX) {
-        return false;
-    }
-    for (uint32_t i = 0u; i < n; ++i) {
-        a[i] = mods[i];
-    }
-    uint32_t first = 4096u;
-    for (uint32_t i = 0u; i < n; ++i) {
-        first = DFI_CHAIN(first, a[i]);
-    }
-    uint32_t i = 0u;
-    while (i < n) {
-        if (c[i] < i) {
-            const uint32_t j = (i % 2u == 0u) ? 0u : c[i];
-            const uint32_t t = a[j];
-            a[j] = a[i];
-            a[i] = t;
-            uint32_t v = 4096u;
-            for (uint32_t k = 0u; k < n; ++k) {
-                v = DFI_CHAIN(v, a[k]);
-            }
-            if (v != first) {
-                return false;
-            }
-            c[i] += 1u;
-            i = 0u;
-        } else {
-            c[i] = 0u;
-            i += 1u;
-        }
-    }
-    return true;
-}
 
 /* getDamage and the Champions modifyDamage (sim/battle-actions.ts:1585-1720,
  * data/mods/champions/scripts.ts:196-312) for a turn-core move: CRIT and
