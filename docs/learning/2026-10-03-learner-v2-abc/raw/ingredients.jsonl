@@ -1,0 +1,4 @@
+{"model": "v1", "rows": 512, "gpu": {"median_ms": 1.56, "min_ms": 1.48, "max_ms": 2.65}, "cpu": {"median_ms": 12.65, "min_ms": 10.65, "max_ms": 16.19}}
+{"model": "v2-S", "rows": 512, "gpu": {"median_ms": 1.76, "min_ms": 1.68, "max_ms": 2.8}, "cpu": {"median_ms": 31.92, "min_ms": 27.1, "max_ms": 43.87}}
+{"model": "v2-M", "rows": 512, "gpu": {"median_ms": 2.87, "min_ms": 1.8, "max_ms": 3.99}, "cpu": {"median_ms": 60.03, "min_ms": 54.26, "max_ms": 80.39}}
+{"model": "v2-L", "rows": 512, "gpu": {"median_ms": 3.97, "min_ms": 3.84, "max_ms": 5.04}, "cpu": {"median_ms": 122.8, "min_ms": 118.1, "max_ms": 141.83}}
