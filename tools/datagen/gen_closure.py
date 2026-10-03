@@ -2571,7 +2571,7 @@ def check_g28_items(items_ts, only=None):
 def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
     """Steps G34 and G35: every fact of G34_ABILITY_FACTS, G35_ABILITY_FACTS and G34_ITEM_FACTS is in the pinned entry, whitespace aside, and the
     Champions mod has no entry of its own for it (an override would change what the engine reads)."""
-    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + G37_ABILITY_FACTS, abil_ts, champ_abil),
+    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS, abil_ts, champ_abil),
                                           ('item', G34_ITEM_FACTS, items_ts, champ_items)):
         for rid, facts in facts_by_id:
             e = src.entry(rid)
@@ -2583,6 +2583,23 @@ def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
             for fact in facts:
                 if norm(fact) not in text:
                     fail('%s %s: the entry no longer has "%s"' % (kind, rid, fact))
+
+
+def check_g37_facts(abil_ts, champ_abil):
+    """Step G37: the text of Toxic Debris that the engine hard-codes (G37_ABILITY_FACTS) is in the pinned entry, whitespace aside, and
+    the Champions mod has no entry of its own for it."""
+    for rid, facts in G37_ABILITY_FACTS:
+        e = abil_ts.entry(rid)
+        if e is None:
+            fail('ability %s not found' % rid)
+        if champ_abil.entry(rid) is not None:
+            fail('ability %s: the champions mod overrides the entry' % rid)
+        text = norm(chr(10).join(e[2]))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('ability %s: the entry no longer has "%s"' % (rid, fact))
+
+
 def check_g32_entries(items_ts, champ_items, abil_ts, champ_abil, only=None):
     """Step G32: the ability and item entries that the turn code runs by id (G32_ENTRY_FACTS) have the pinned texts, whole;
     the Champions Eject Button is read from the mod's file. `only`: a tuple of such entries (the generator's tests)."""
@@ -2631,6 +2648,7 @@ def build_pool(root, repo, dx):
     check_g30_facts(abil_ts, champ_abil)
     check_g28_items(items_ts)
     check_g34_facts(abil_ts, champ_abil, items_ts, champ_items)
+    check_g37_facts(abil_ts, champ_abil)
     check_g32_entries(items_ts, champ_items, abil_ts, champ_abil)
     check_weather_facts(Source(root, 'data/conditions.ts', READER_INPUTS), moves_ts)
     FLAGS_THAT_MATTER.clear()
