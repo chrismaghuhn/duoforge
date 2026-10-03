@@ -271,6 +271,11 @@ function run(root, spec, specFile) {
         terrain: battle.field.terrain || '',
         terrain_turns: battle.field.terrainState.duration || 0,
         trick_room: battle.field.pseudoWeather.trickroom ? battle.field.pseudoWeather.trickroom.duration || 0 : 0,
+        // The number of actions that the queue still holds, a key only while a switch is requested (step G37): a switch request
+        // with actions pending is a mid-turn switch (a PIVOT), one with the queue empty is a REPLACEMENT, also when the
+        // newcomer of the replacement fell to a hazard before any turn line. A state without the key is what every trace
+        // recorded before had.
+        ...(battle.sides.some((side) => side.requestState === 'switch') ? {queue_len: battle.queue.list.length} : {}),
         sides: battle.sides.map((side) => ({
             request: side.requestState || '',
             // Remaining duration of Tailwind, Reflect and Light Screen (0 when absent).

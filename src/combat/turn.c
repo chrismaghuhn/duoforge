@@ -1730,6 +1730,8 @@ static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status
 
 /* ---------------------------------------------------------------- entry hazards (step G37) */
 
+static void dfi_process_faints(dfi_run *r);
+
 /* Stealth Rock, Spikes, Toxic Spikes and Sticky Web (data/moves.ts:17814-17839, :17500-17525, :19749-19788, :17935-17956; the
  * Champions mod overrides none of them): a side condition each, its layers in the POOL tail of the side (0 under every other
  * kind). Heavy-Duty Boots are Past in the format, so no holder skips them.
@@ -1815,9 +1817,10 @@ static duoforge_status dfi_add_hazard(dfi_run *r, uint32_t side, uint32_t kind, 
 
 /* The SwitchIn handlers of the hazards of the side that the Pokemon at `flat` entered, in their creation order, for that
  * Pokemon (the handler's holder is the entering Pokemon, sim/battle.ts:502). A condition that an earlier handler removed (Toxic
- * Spikes that a Poison type absorbed) is skipped (sim/battle.ts:540-543). A Pokemon whose faint is queued still has them
- * (fieldEvent tests `fainted`, which faintMessages sets later): its damage does nothing, an absorption and a Sticky Web line
- * still show. The foe of Toxic Spikes' status and Sticky Web's drop is the foe's first position (`foe.active[0]`). */
+ * Spikes that a Poison type absorbed) is skipped (sim/battle.ts:540-543). fieldEvent runs faintMessages after each handler
+ * (:569-570): a Pokemon that one hazard knocks out has its faint shown at once and no handler after it (`effectHolder.fainted`,
+ * :512), neither a later hazard's nor its ability's (recorded by the differential campaign: Stealth Rock, then no Sticky Web line).
+ * The foe of Toxic Spikes' status and Sticky Web's drop is the foe's first position (`foe.active[0]`). */
 static duoforge_status dfi_hazards_enter(dfi_run *r, uint32_t flat)
 {
     struct duoforge_battle *b = r->b;
@@ -1875,6 +1878,12 @@ static duoforge_status dfi_hazards_enter(dfi_run *r, uint32_t flat)
         }
         if (st != DUOFORGE_OK) {
             return st;
+        }
+        /* fieldEvent runs faintMessages after each handler (sim/battle.ts:569-570): the faint shows at once and the Pokemon, now
+         * fainted, has no handler left (`effectHolder.fainted`, :512), a later hazard's and its ability's included. */
+        dfi_process_faints(r);
+        if (r->ended || m->hp == 0u) {
+            return DUOFORGE_OK;
         }
     }
     return DUOFORGE_OK;
@@ -5030,8 +5039,7 @@ static duoforge_status dfi_run_entries(dfi_run *r, uint32_t entering)
      * (Grassy and Psychic Seed, priority -1), then White Herb's onAnySwitchIn of every holder on the
      * field (priority -2, Team C), in the same order: the handlers'
      * fractional speeds follow it (sim/battle.ts:1008-1013). Within one Pokemon the side conditions (sub-order 4, the
-     * hazards in their creation order) come before the ability (sub-order 7). A faint that a hazard causes is queued and
-     * processed at the end of the action, so the Pokemon's later handlers still run (fieldEvent tests `fainted`). */
+     * hazards in their creation order) come before the ability (sub-order 7). Each handler is followed by faintMessages. */
     /* Unnerve first (onSwitchInPriority 1, data/abilities.ts:5259): comparePriority puts the priority before the speed, so its
      * announcements come before the other entry abilities whatever the Speed order, in the order of the list among
      * themselves. The speed ties were drawn above for every group of two bearers (Unnerve's onStart is a SwitchIn handler
@@ -5054,18 +5062,29 @@ static duoforge_status dfi_run_entries(dfi_run *r, uint32_t entering)
                 continue;
             }
             if (pass == 0u) {
-                const duoforge_status hs = dfi_hazards_enter(r, flat);
+                const duoforge_status hs = dfi_hazards_enter(r, flat); /* faintMessages after each of its handlers */
                 if (hs != DUOFORGE_OK) {
                     return hs;
+                }
+                if (r->ended) {
+                    return DUOFORGE_OK;
                 }
                 if (m->hp != 0u && dfi_has_entry(b, m) && dfi_ability_code(b, m) != 1u + DFI_ABILITY_UNNERVE) {
                     const duoforge_status st = dfi_entry_ability(r, flat);
                     if (st != DUOFORGE_OK) {
                         return st;
                     }
+                    dfi_process_faints(r);
+                    if (r->ended) {
+                        return DUOFORGE_OK;
+                    }
                 }
             } else if (m->hp != 0u && dfi_seed_terrain(r->b, m) != DFI_TERRAIN_NONE) {
                 dfi_terrain_seed(r, flat);
+                dfi_process_faints(r);
+                if (r->ended) {
+                    return DUOFORGE_OK;
+                }
             }
         }
     }

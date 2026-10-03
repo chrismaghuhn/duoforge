@@ -1198,6 +1198,11 @@ def boundary_of(state, log):
     if len(kinds) != 1:
         raise ConversionError('mixed-requests', 'trace_to_c: mixed requests %s' % sorted(kinds))
     kind = kinds.pop()
+    if kind == 'switch' and 'queue_len' in state:
+        # The harness records the actions still queued (step G37): pending actions make it a PIVOT, an empty queue a
+        # REPLACEMENT, whether or not the step's log shows the residual (a replacement that a hazard knocked out at once
+        # is asked again before any turn line).
+        return 4 if state['queue_len'] > 0 else 3
     if kind == 'switch' and '|upkeep' not in log:
         # Without the residual action ('|upkeep') in this step the queue still
         # holds actions: a PIVOT. That is a mid-turn switch (Parting Shot,
@@ -1403,7 +1408,7 @@ def convert_battle(name, spec, trace, tables):
                       'enabled': tuple(enabled), 'mons': tuple(mons), 'tape': tape, 'events': events,
                       'dropped': dropped})
         state = new_state
-        mid_turn = not any(line.startswith('|upkeep') for line in step['log'])
+        mid_turn = boundary == 4 if 'queue_len' in new_state else not any(line.startswith('|upkeep') for line in step['log'])
     return {'name': name, 'purpose': spec['purpose'], 'member_count': len(teams[0]), 'members': members,
             'steps': steps, 'dropped_total': dropped_total}
 
