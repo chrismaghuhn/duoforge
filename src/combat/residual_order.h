@@ -45,9 +45,10 @@
 #define DFI_RES_POISON 8u
 #define DFI_RES_WHITE_HERB 9u
 #define DFI_RES_ENCORE 10u /* Encore: order 16, a callback with a duration (step G9) */
+#define DFI_RES_SPEED_BOOST 11u /* Speed Boost's onResidual: order 28, sub-order 2 (step G32) */
 /* The duration handlers whose end shows a line or does something (step G31, and Heal Block, which was a pass): each is an
  * entry of the sorted list at its own order, and a callback (a tie of two draws) exactly when it ends in this residual. */
-#define DFI_RES_TAUNT 11u      /* Taunt: order 15, -end|X|move: Taunt */
+#define DFI_RES_TAUNT 14u      /* Taunt: order 15, -end|X|move: Taunt */
 #define DFI_RES_HEAL_BLOCK 12u /* Heal Block: order 20, -end|X|move: Heal Block */
 #define DFI_RES_YAWN 13u       /* Yawn: order 23, a silent end and the sleep */
 #define DFI_RES_NO_ORDER 0xFFFFFFFFu

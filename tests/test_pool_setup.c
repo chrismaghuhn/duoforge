@@ -41,8 +41,8 @@
 #include "support/pool.h"
 #include "support/team_c.h"
 
-#define FP_KP_HEX "28f994e1c490724a8c6734ecef499cda099559ef1f67abcd95df2358632e744d"
-#define FP_KPD_HEX "e65bfd550ac1970aff0fa3a4e0bf04fcf4d791bdd03d3928e07f6a1a38f17068"
+#define FP_KP_HEX "d2dbde5474f093e7ac45e08ae858c5cb5c13010a280ded2666b530fcb384bbd9"
+#define FP_KPD_HEX "071f390a9555addcf4cad0cdb83a57574bf29f74456ad49edeefa8ea3fc812b4"
 
 /* The public create under `ctx` gives `gated`, and the build without the
  * support gate `ungated`. */
@@ -326,13 +326,13 @@ int main(void)
         DF_CHECK(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_CLOSURE_DEV).dev &&
                          dfi_kind_limits_of(DUOFORGE_DATA_KIND_TEAM_C_DEV).dev);
         /* The pool has U-turn's switch flag (step G5) on top of Team C's; everything else of Team C's is the pool's. */
-        DF_CHECK(&t, lp.switch_flag_max == DFI_SWITCH_UTURN && lc.switch_flag_max == DFI_SWITCH_FLIP_TURN &&
-                         DFI_SWITCH_UTURN == DFI_SWITCH_FLIP_TURN + 1u);
+        DF_CHECK(&t, lp.switch_flag_max == DFI_SWITCH_VOLT_SWITCH && lc.switch_flag_max == DFI_SWITCH_FLIP_TURN &&
+                         DFI_SWITCH_UTURN == DFI_SWITCH_FLIP_TURN + 1u && DFI_SWITCH_VOLT_SWITCH == DFI_SWITCH_UTURN + 1u);
         DF_CHECK(&t, lp.status_max == lc.status_max && lp.terrain_max == lc.terrain_max &&
                          lp.vol_flags_mask == lc.vol_flags_mask);
         DF_CHECK(&t, lq.switch_flag_max == lp.switch_flag_max && lq.status_max == lc.status_max &&
                          lq.terrain_max == lc.terrain_max && lq.vol_flags_mask == lc.vol_flags_mask);
-        DF_CHECK(&t, lp.switch_flag_max == DFI_SWITCH_UTURN && lp.status_max == DFI_STATUS_PSN &&
+        DF_CHECK(&t, lp.switch_flag_max == DFI_SWITCH_VOLT_SWITCH && lp.status_max == DFI_STATUS_PSN &&
                          lp.terrain_max == DFI_TERRAIN_PSYCHIC && l1.switch_flag_max == DFI_SWITCH_FAINTED &&
                          l1.status_max == DFI_STATUS_SLP && l1.terrain_max == DFI_TERRAIN_GRASSY);
     }
@@ -1033,7 +1033,7 @@ int main(void)
      * (E_UNSUPPORTED), and this test says so before. Parting Shot (a handler, flag 1), Emergency Exit (2) and a
      * fainted position (3) are no damaging pivots. */
     {
-        DF_CHECK_EQ_U64(&t, DFI_PIVOT_MOVE_COUNT, 2u);
+        DF_CHECK_EQ_U64(&t, DFI_PIVOT_MOVE_COUNT, 3u);
         for (uint32_t i = 0u; i < DFI_PIVOT_MOVE_COUNT; ++i) {
             const dfi_pivot_move *pm = &dfi_pivot_moves[i];
             DF_CHECK_EQ_U64(&t, pm->flag, DFI_SWITCH_FLIP_TURN + i);
@@ -1045,6 +1045,7 @@ int main(void)
         }
         DF_CHECK_EQ_U64(&t, dfi_pivot_moves[0].move, DFI_MOVE_FLIPTURN);
         DF_CHECK_EQ_U64(&t, dfi_pivot_moves[1].move, DFI_MOVE_UTURN);
+        DF_CHECK_EQ_U64(&t, dfi_pivot_moves[2].move, DFI_MOVE_VOLTSWITCH); /* step G32 */
         for (uint32_t id = 0u; id < DFI_POOL_MOVE_COUNT; ++id) {
             const bool pivots = (dfi_pool_moves[id].flags & DFI_MOVE_FLAG_SELF_SWITCH) != 0u &&
                                 dfi_pool_moves[id].special == DFI_SPECIAL_NONE;
@@ -1055,11 +1056,11 @@ int main(void)
         DF_CHECK(&t, dfi_pivot_of_move(DFI_MOVE_PARTINGSHOT) == NULL);
         DF_CHECK(&t, dfi_pivot_of_flag(DFI_SWITCH_NONE) == NULL && dfi_pivot_of_flag(DFI_SWITCH_MOVE) == NULL &&
                          dfi_pivot_of_flag(DFI_SWITCH_EMERGENCY_EXIT) == NULL &&
-                         dfi_pivot_of_flag(DFI_SWITCH_FAINTED) == NULL && dfi_pivot_of_flag(DFI_SWITCH_UTURN + 1u) == NULL);
+                         dfi_pivot_of_flag(DFI_SWITCH_FAINTED) == NULL && dfi_pivot_of_flag(DFI_SWITCH_VOLT_SWITCH + 1u) == NULL);
         /* The kinds: U-turn's flag is the POOL kinds' alone, Flip Turn's the extended ones'. */
         DF_CHECK_EQ_U64(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_TEAM_C).switch_flag_max, DFI_SWITCH_FLIP_TURN);
         DF_CHECK_EQ_U64(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_TEAM_C_DEV).switch_flag_max, DFI_SWITCH_FLIP_TURN);
-        DF_CHECK_EQ_U64(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_POOL_DEV).switch_flag_max, DFI_SWITCH_UTURN);
+        DF_CHECK_EQ_U64(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_POOL_DEV).switch_flag_max, DFI_SWITCH_VOLT_SWITCH);
         DF_CHECK_EQ_U64(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_CLOSURE).switch_flag_max, DFI_SWITCH_FAINTED);
         /* In a state under POOL: both flags are in range (a flag is wrong at a TURN boundary, which the invariant
          * names), one past U-turn's is out of range. */
@@ -1073,8 +1074,10 @@ int main(void)
         expect_inv(&t, kp, w, DFI_INV_SWITCH_FLAG, "Flip Turn's flag at a TURN boundary");
         w->sides[0].positions[0].switch_flag = (uint8_t)DFI_SWITCH_UTURN;
         expect_inv(&t, kp, w, DFI_INV_SWITCH_FLAG, "U-turn's flag at a TURN boundary");
-        w->sides[0].positions[0].switch_flag = (uint8_t)(DFI_SWITCH_UTURN + 1u);
-        expect_inv(&t, kp, w, DFI_INV_VOLATILE, "one past U-turn's flag");
+        w->sides[0].positions[0].switch_flag = (uint8_t)DFI_SWITCH_VOLT_SWITCH;
+        expect_inv(&t, kp, w, DFI_INV_SWITCH_FLAG, "Volt Switch's flag at a TURN boundary");
+        w->sides[0].positions[0].switch_flag = (uint8_t)(DFI_SWITCH_VOLT_SWITCH + 1u);
+        expect_inv(&t, kp, w, DFI_INV_VOLATILE, "one past Volt Switch's flag");
         duoforge_battle_destroy(w);
     }
 
