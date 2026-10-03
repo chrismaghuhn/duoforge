@@ -23,8 +23,13 @@
 #include "combat/damage_chain.h"
 #include "data/pool_tables.h"
 #include "data/support_manifest.h"
+#include "reference/conformance_pool.h"
+#include "rng/draw.h"
+#include "state/battle_internal.h"
+#include "state/request.h"
 #include "support/check.h"
 #include "support/fixtures.h"
+#include "support/pool.h"
 
 enum { LO, EB, BERRY, SCREEN, GLAIVE, SR, MS, KINDS };
 static const uint32_t values[KINDS] = {5324u, 4915u, 2048u, 2732u, 8192u, 3072u, 2048u};
@@ -162,11 +167,129 @@ static void check_facts(df_test *t)
     }
 }
 
+/* ---- the engine's refusal of a ModifyDamage chain that does not commute (turn.c, dfi_get_damage)
+ *
+ * g34_damage_chain has Rillaboom's Life Orb Wood Hammer at a Rhyperior (Solid Rock, Rindo Berry): Life Orb, berry and Solid Rock
+ * commute and the engine plays it (the conformance test compares it). With an Expert Belt in the place of the Life Orb the three
+ * modifiers 4915, 2048 and 3072 chain to 1843 or 1844 by their order, so the engine must refuse the hit: E_UNSUPPORTED, from
+ * the step with that hit, and not an invariant failure or a played hit. */
+static void build_setup(const df_conf_battle *cb, duoforge_battle_setup *s, uint32_t belt_for)
+{
+    memset(s, 0, sizeof *s);
+    s->rng_initstate = 1u;
+    s->rng_initseq = 2u;
+    for (uint32_t side = 0; side < 2u; ++side) {
+        s->sides[side].member_count = cb->member_count;
+        for (uint32_t m = 0; m < cb->member_count; ++m) {
+            const df_conf_member *src = &cb->members[side][m];
+            duoforge_member_setup *dst = &s->sides[side].members[m];
+            dst->species_id = src->species;
+            dst->gender = src->gender;
+            dst->nature = src->nature;
+            for (uint32_t i = 0; i < 6u; ++i) {
+                dst->stat_points[i] = src->sp[i];
+            }
+            dst->ability = src->ability;
+            dst->item = src->item;
+            if (src->species == belt_for) {
+                dst->item = 1u + DFI_ITEM_EXPERTBELT;
+            }
+            dst->move_count = src->move_count;
+            for (uint32_t k = 0; k < src->move_count; ++k) {
+                dst->moves[k].move_id = src->moves[k];
+            }
+        }
+    }
+}
+
+static void bundle_of(const df_conf_step *st, const duoforge_battle *b, duoforge_decision_bundle *bd)
+{
+    memset(bd, 0, sizeof *bd);
+    bd->epoch = b->request_epoch;
+    bd->response_mask = (uint8_t)(st->answered0 | (st->answered1 << 1u)); /* wide-operands-reviewed */
+    for (uint32_t s = 0; s < 2u; ++s) {
+        if ((s == 0u && !st->answered0) || (s == 1u && !st->answered1)) {
+            continue;
+        }
+        duoforge_side_choice *r = &bd->responses[s];
+        r->epoch = b->request_epoch;
+        r->side = (uint8_t)s;
+        if (st->team) {
+            r->kind = (uint8_t)DUOFORGE_CHOICE_TEAM_SELECTION;
+            r->pick_count = 4u;
+            for (uint32_t i = 0; i < 4u; ++i) {
+                r->picks[i] = st->picks[s][i];
+            }
+        } else {
+            r->kind = (uint8_t)DUOFORGE_CHOICE_SLOTS;
+            for (uint32_t k = 0; k < 2u; ++k) {
+                const df_conf_cmd *c = &st->cmds[s][k];
+                r->slots[k] = (duoforge_slot_command){c->kind, c->move_slot, c->target, c->mega, c->reserve, {0u, 0u, 0u}};
+            }
+        }
+    }
+}
+
+static const df_conf_battle *find(const char *name)
+{
+    for (size_t i = 0; i < sizeof conf_battles / sizeof conf_battles[0]; ++i) {
+        if (strcmp(conf_battles[i].name, name) == 0) {
+            return &conf_battles[i];
+        }
+    }
+    return NULL;
+}
+
+/* The first step that does not return OK (or step_count when none), and its status. */
+static uint32_t play(df_test *t, duoforge_context *ctx, const df_conf_battle *cb, uint32_t belt_for, duoforge_status *status)
+{
+    duoforge_battle_setup setup;
+    build_setup(cb, &setup, belt_for);
+    duoforge_battle *b = NULL;
+    *status = DUOFORGE_OK;
+    if (!DF_CHECK(t, duoforge_battle_create(ctx, &setup, &b) == DUOFORGE_OK && b != NULL)) {
+        return 0u;
+    }
+    uint32_t si = 0u;
+    for (; si < cb->step_count; ++si) {
+        const df_conf_step *st = &cb->steps[si];
+        duoforge_decision_bundle bd;
+        bundle_of(st, b, &bd);
+        duoforge_step_result res;
+        uint32_t used = 0u;
+        *status = dfi_battle_step_tape(ctx, b, &bd, &conf_tape[st->tape_off], st->tape_len, &used, &res);
+        if (*status != DUOFORGE_OK) {
+            break;
+        }
+    }
+    duoforge_battle_destroy(b);
+    return si;
+}
+
+static void check_refusal(df_test *t)
+{
+    duoforge_context *ctx = df_make_context(&df_config_pool);
+    const df_conf_battle *cb = find("g34_damage_chain");
+    if (!DF_CHECK(t, cb != NULL)) {
+        return;
+    }
+    duoforge_status st = DUOFORGE_OK;
+    /* as recorded: every step is played */
+    DF_CHECK_EQ_U64(t, play(t, ctx, cb, 0xFFFFFFFFu, &st), cb->step_count);
+    DF_CHECK_EQ_U64(t, st, DUOFORGE_OK);
+    /* Rillaboom with an Expert Belt: refused at the first Wood Hammer that reaches Rhyperior, step 2 (step 1 is blocked by a Protect) */
+    const uint32_t refused = play(t, ctx, cb, DFI_FORME_RILLABOOM, &st);
+    DF_CHECK_EQ_U64(t, st, DUOFORGE_E_UNSUPPORTED);
+    DF_CHECK_EQ_U64(t, refused, 2u);
+    duoforge_context_destroy(ctx);
+}
+
 int main(void)
 {
     df_test t;
     df_test_begin(&t, "duoforge.state.pool_g34");
     check_facts(&t);
     check_chain(&t);
+    check_refusal(&t);
     return df_test_end(&t);
 }
