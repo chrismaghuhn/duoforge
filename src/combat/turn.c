@@ -1061,6 +1061,15 @@ static duoforge_status dfi_move_targets(dfi_run *r, uint32_t user, uint32_t cls,
         *count = 1u;
         return DUOFORGE_OK;
     }
+    if (cls == DFI_TARGET_CLASS_FOE_SIDE) {
+        /* foeSide (step G37, the four hazards): getMoveTargets takes every foe position, fainted ones too (foes(true),
+         * sim/pokemon.ts:796-807), and the side is what the move acts on; the engine needs no Pokemon of it, so the first
+         * foe position stands for the side. The foe that the move line names (getRandomTarget draws it at execution, a
+         * label only, as for a spread move) is not drawn. */
+        targets[0] = (1u - side) * 2u;
+        *count = 1u;
+        return DUOFORGE_OK;
+    }
     if (cls == DFI_TARGET_CLASS_ALLIES) {
         /* allies (step G32, Life Dew): getMoveTargets takes alliesAndSelf(), the standing members of the user's side in
          * slot order (sim/pokemon.ts:818-819, sim/side.ts:390-395); runMove aims the move at its user whatever was chosen
@@ -1806,6 +1815,167 @@ static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status
         e.id2 = (uint16_t)move_id;
     }
     dfi_emit(r, &e);
+    return DUOFORGE_OK;
+}
+
+/* ---------------------------------------------------------------- entry hazards (step G37) */
+
+static void dfi_process_faints(dfi_run *r);
+
+/* Stealth Rock, Spikes, Toxic Spikes and Sticky Web (data/moves.ts:17814-17839, :17500-17525, :19749-19788, :17935-17956; the
+ * Champions mod overrides none of them): a side condition each, its layers in the POOL tail of the side (0 under every other
+ * kind). Heavy-Duty Boots are Past in the format, so no holder skips them.
+ *
+ * Their SwitchIn handlers sort by priority, speed, sub-order and then by effectOrder, the order in which the conditions were
+ * created (sim/battle.ts:994-1000: "they should activate in the order they were created"). The tail's side field hazard_order
+ * (rev 4) keeps that order: a new kind (layers 0 to 1) takes the next slot, a further layer of Spikes or Toxic Spikes keeps
+ * its slot (onSideRestart does not make a new state), an ended kind (Toxic Spikes absorbed) leaves and the later ones move
+ * down, a kind that is put up again goes last. The kind codes DFI_HAZARD_* are the DUOFORGE_SIDE_* values minus 5. */
+#define DFI_HAZARD_OF_SIDE(kind) ((kind) - DUOFORGE_SIDE_STEALTH_ROCK)
+_Static_assert(DUOFORGE_SIDE_STEALTH_ROCK + DFI_HAZARD_STEALTH_ROCK == 5u && DUOFORGE_SIDE_SPIKES - DUOFORGE_SIDE_STEALTH_ROCK == DFI_HAZARD_SPIKES &&
+                   DUOFORGE_SIDE_TOXIC_SPIKES - DUOFORGE_SIDE_STEALTH_ROCK == DFI_HAZARD_TOXIC_SPIKES &&
+                   DUOFORGE_SIDE_STICKY_WEB - DUOFORGE_SIDE_STEALTH_ROCK == DFI_HAZARD_STICKY_WEB,
+               "the hazard kinds of the tail's order are the side values minus the first");
+
+static uint8_t *dfi_hazard_layers(struct duoforge_battle *b, uint32_t side, uint32_t kind)
+{
+    dfi_tail_side *ts = &b->tail.sides[side];
+    return kind == DUOFORGE_SIDE_STEALTH_ROCK ? &ts->stealth_rock
+           : kind == DUOFORGE_SIDE_SPIKES     ? &ts->spikes
+           : kind == DUOFORGE_SIDE_TOXIC_SPIKES ? &ts->toxic_spikes
+                                                : &ts->sticky_web;
+}
+
+/* Whether a side has any hazard (a SwitchIn handler on every Pokemon that enters it, also one that does nothing to it). */
+static bool dfi_side_has_hazard(const struct duoforge_battle *b, uint32_t side)
+{
+    const dfi_tail_side *ts = &b->tail.sides[side];
+    return ts->stealth_rock != 0u || ts->spikes != 0u || ts->toxic_spikes != 0u || ts->sticky_web != 0u;
+}
+
+/* The number of hazard kinds that are up on the side. */
+static uint32_t dfi_hazard_count(const struct duoforge_battle *b, uint32_t side)
+{
+    const dfi_tail_side *ts = &b->tail.sides[side];
+    return (ts->stealth_rock != 0u ? 1u : 0u) + (ts->spikes != 0u ? 1u : 0u) + (ts->toxic_spikes != 0u ? 1u : 0u) +
+           (ts->sticky_web != 0u ? 1u : 0u);
+}
+
+/* The hazard that an ended condition leaves: its slot goes and the later ones move down (the layers are cleared by the caller). */
+static void dfi_hazard_remove(struct duoforge_battle *b, uint32_t side, uint32_t kind)
+{
+    dfi_tail_side *ts = &b->tail.sides[side];
+    const uint32_t n = dfi_hazard_count(b, side);
+    uint32_t order = 0u;
+    uint32_t put = 0u;
+    for (uint32_t i = 0u; i < n; ++i) {
+        const uint32_t slot = ((uint32_t)ts->hazard_order >> (2u * i)) & 3u;
+        if (slot != DFI_HAZARD_OF_SIDE(kind)) {
+            order |= slot << (2u * put);
+            put += 1u;
+        }
+    }
+    ts->hazard_order = (uint8_t)order; /* wide-operands-reviewed: 4 slots of 2 bits */
+}
+
+/* side.addSideCondition of a hazard (sim/side.ts:413-443): *added is false when the condition is at its last layer (Stealth
+ * Rock and Sticky Web have no onSideRestart: addSideCondition returns false; Spikes stop at 3 layers and Toxic Spikes at 2) and
+ * the caller shows what a failure shows. A new layer shows -sidestart again (SIDE_START, amount the hazard). */
+static duoforge_status dfi_add_hazard(dfi_run *r, uint32_t side, uint32_t kind, bool *added)
+{
+    uint8_t *layers = dfi_hazard_layers(r->b, side, kind);
+    const uint32_t most = kind == DUOFORGE_SIDE_SPIKES ? DFI_TAIL_SPIKES_MAX
+                          : kind == DUOFORGE_SIDE_TOXIC_SPIKES ? DFI_TAIL_TOXIC_SPIKES_MAX : 1u;
+    *added = false;
+    if (*layers >= most) {
+        return DUOFORGE_OK;
+    }
+    if (*layers == 0u) {
+        /* a new condition has the newest effectOrder: the next slot of the creation order */
+        dfi_tail_side *ts = &r->b->tail.sides[side];
+        const uint32_t n = dfi_hazard_count(r->b, side);
+        ts->hazard_order = (uint8_t)((uint32_t)ts->hazard_order | (DFI_HAZARD_OF_SIDE(kind) << (2u * n))); /* wide-operands-reviewed: n <= 3 */
+    }
+    *layers = (uint8_t)((uint32_t)*layers + 1u); /* wide-operands-reviewed: <= 3 */
+    duoforge_event e = dfi_event_make(DUOFORGE_EVENT_SIDE_START, DUOFORGE_NO_POSITION);
+    e.detail = (uint8_t)side;
+    e.amount = (uint8_t)kind; /* DUOFORGE_SIDE_* */
+    dfi_emit(r, &e);
+    *added = true;
+    return DUOFORGE_OK;
+}
+
+/* The SwitchIn handlers of the hazards of the side that the Pokemon at `flat` entered, in their creation order, for that
+ * Pokemon (the handler's holder is the entering Pokemon, sim/battle.ts:502). A condition that an earlier handler removed (Toxic
+ * Spikes that a Poison type absorbed) is skipped (sim/battle.ts:540-543). fieldEvent runs faintMessages after each handler
+ * (:569-570): a Pokemon that one hazard knocks out has its faint shown at once and no handler after it (`effectHolder.fainted`,
+ * :512), neither a later hazard's nor its ability's (recorded by the differential campaign: Stealth Rock, then no Sticky Web line).
+ * The foe of Toxic Spikes' status and Sticky Web's drop is the foe's first position (`foe.active[0]`). */
+static duoforge_status dfi_hazards_enter(dfi_run *r, uint32_t flat)
+{
+    struct duoforge_battle *b = r->b;
+    const uint32_t side = flat / 2u;
+    const uint32_t source = (1u - side) * 2u;
+    const dfi_member *m = dfi_at(b, flat);
+    dfi_tail_side *ts = &b->tail.sides[side];
+    const uint32_t order = ts->hazard_order; /* the handlers are collected before the first runs */
+    const uint32_t n = dfi_hazard_count(b, side);
+    for (uint32_t i = 0u; i < n; ++i) {
+        const uint32_t kind = DUOFORGE_SIDE_STEALTH_ROCK + ((order >> (2u * i)) & 3u);
+        if (*dfi_hazard_layers(b, side, kind) == 0u) {
+            continue; /* removed by an earlier handler */
+        }
+        duoforge_status st = DUOFORGE_OK;
+        if (kind == DUOFORGE_SIDE_STEALTH_ROCK) {
+            /* the Rock effectiveness against the Pokemon's types, clamped to [-6, 6]: maxhp * 2 ** typeMod / 8 */
+            const uint32_t biased = dfi_type_mod(b, m, DFI_TYPE_ROCK, &dfi_pool_moves[DFI_MOVE_STEALTHROCK]); /* 6 + typeMod, 4..8 */
+            const uint32_t hp = m->hp_max;
+            uint32_t amount = biased >= DFI_BIAS6 ? (hp << (biased - DFI_BIAS6)) / 8u : hp / (8u << (DFI_BIAS6 - biased));
+            amount = amount == 0u ? 1u : amount;
+            st = dfi_deal(r, flat, amount, DUOFORGE_CAUSE_MOVE, DFI_MOVE_STEALTHROCK, DUOFORGE_NO_POSITION);
+        } else if (kind == DUOFORGE_SIDE_SPIKES) {
+            if (dfi_grounded(b, m)) {
+                static const uint8_t twenty_fourths[4] = {0u, 3u, 4u, 6u}; /* 1/8, 1/6, 1/4 of the maximum HP */
+                uint32_t amount = ((uint32_t)twenty_fourths[ts->spikes] * m->hp_max) / 24u;
+                amount = amount == 0u ? 1u : amount;
+                st = dfi_deal(r, flat, amount, DUOFORGE_CAUSE_MOVE, DFI_MOVE_SPIKES, DUOFORGE_NO_POSITION);
+            }
+        } else if (kind == DUOFORGE_SIDE_TOXIC_SPIKES) {
+            if (dfi_grounded(b, m)) {
+                if (dfi_has_type(b, m, DFI_TYPE_POISON)) {
+                    /* -sideend|side|move: Toxic Spikes|[of] the Pokemon, and the condition is gone */
+                    dfi_hazard_remove(b, side, kind);
+                    ts->toxic_spikes = 0u;
+                    duoforge_event e = dfi_event_make(DUOFORGE_EVENT_SIDE_END, DUOFORGE_NO_POSITION);
+                    e.detail = (uint8_t)side;
+                    e.amount = (uint8_t)DUOFORGE_SIDE_TOXIC_SPIKES;
+                    e.other = (uint8_t)flat; /* < 4 */
+                    dfi_emit(r, &e);
+                } else if (!dfi_has_type(b, m, DFI_TYPE_STEEL)) {
+                    /* trySetStatus('psn' or 'tox', foe.active[0]) with the condition as the source effect: no -fail and no
+                     * -immune line, and Flower Veil's silent interruption (sim/pokemon.ts:1684-1744) */
+                    st = dfi_try_status(r, flat, ts->toxic_spikes >= 2u ? DFI_STATUS_TOX : DFI_STATUS_PSN, source,
+                                        DFI_NO_SOURCE_MOVE, false, 0u);
+                }
+            }
+        } else if (dfi_grounded(b, m)) {
+            /* Sticky Web: -activate|X|move: Sticky Web, then boost({spe: -1}, X, foe.active[0], the move) */
+            static const uint8_t spe_down[DFI_STAT_STAGE_COUNT] = {6u, 6u, 6u, 6u, 5u, 6u, 6u};
+            const duoforge_event e =
+                dfi_ev(DUOFORGE_EVENT_ACTIVATE, flat, DUOFORGE_CAUSE_MOVE, DFI_MOVE_STICKYWEB, DUOFORGE_NO_POSITION);
+            dfi_emit(r, &e);
+            (void)dfi_boost(r, flat, spe_down, source, dfi_effect(DUOFORGE_CAUSE_MOVE, 0u, DFI_BOOST_PRIMARY));
+        }
+        if (st != DUOFORGE_OK) {
+            return st;
+        }
+        /* fieldEvent runs faintMessages after each handler (sim/battle.ts:569-570): the faint shows at once and the Pokemon, now
+         * fainted, has no handler left (`effectHolder.fainted`, :512), a later hazard's and its ability's included. */
+        dfi_process_faints(r);
+        if (r->ended || m->hp == 0u) {
+            return DUOFORGE_OK;
+        }
+    }
     return DUOFORGE_OK;
 }
 
@@ -2873,6 +3043,15 @@ static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, uint32_t move_
             return DUOFORGE_OK;
         }
     }
+    /* Taunt's onBeforeMove (priority 5: after Throat Chop's and Heal Block's 6, before the confusion's 3;
+     * data/moves.ts:19004-19010): a move of the Status category shows cant|X|move: Taunt|move and uses no PP (Me First,
+     * the one exception, is not in the pool; no Z or Max move exists in the format). */
+    if (r->b->tail.sides[user / 2u].positions[user % 2u].taunt_turns != 0u && md->category == DFI_CATEGORY_STATUS) {
+        duoforge_event e = dfi_ev(DUOFORGE_EVENT_CANT, user, DUOFORGE_CAUSE_TAUNT, 0u, DUOFORGE_NO_POSITION);
+        e.id = (uint16_t)move_id;
+        dfi_emit(r, &e); /* [cant] move: Taunt|move */
+        return DUOFORGE_OK;
+    }
     /* A foe's Imprison (step G38, onFoeBeforeMovePriority 4, data/moves.ts:9511-9519): after Throat Chop and Heal Block (6),
      * before the confusion (3) and the paralysis (1). A move that the foe knows (a move queued before it was used, or
      * an Encored one) shows cant and uses no PP. */
@@ -3045,6 +3224,28 @@ static void dfi_break_screens(dfi_run *r, uint32_t side)
             dfi_emit(r, &e); /* [-sideend] */
         }
     }
+}
+
+
+/* Toxic Debris (step G37, data/abilities.ts:5104-5117, onDamagingHit; the Champions mod does not change it): a Physical move
+ * that hit its holder adds a layer of Toxic Spikes to the side of the attacker (to the foe's side when an ally of the holder
+ * hit it) while that side has fewer than 2: -activate|holder|ability: Toxic Debris, then addSideCondition('toxicspikes', holder).
+ * An unordered DamagingHit handler of the target itself, so it runs for a holder that the hit knocked out too (its ability is
+ * still on the field until the faint is processed). */
+static duoforge_status dfi_toxic_debris(dfi_run *r, uint32_t user, uint32_t target, const dfi_move_data *md)
+{
+    if (md->category != DFI_CATEGORY_PHYSICAL || !dfi_ability(r->b, dfi_at(r->b, target), DFI_ABILITY_TOXICDEBRIS)) {
+        return DUOFORGE_OK;
+    }
+    const uint32_t side = user / 2u == target / 2u ? 1u - user / 2u : user / 2u;
+    if (*dfi_hazard_layers(r->b, side, DUOFORGE_SIDE_TOXIC_SPIKES) >= DFI_TAIL_TOXIC_SPIKES_MAX) {
+        return DUOFORGE_OK;
+    }
+    const duoforge_event e = dfi_ev(DUOFORGE_EVENT_ACTIVATE, target, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_TOXICDEBRIS,
+                                    DUOFORGE_NO_POSITION);
+    dfi_emit(r, &e);
+    bool added = false;
+    return dfi_add_hazard(r, side, DUOFORGE_SIDE_TOXIC_SPIKES, &added);
 }
 
 /* Flame Body (step G30, data/abilities.ts:1316-1328, onDamagingHit; its holder is the target): after a contact move that
@@ -3415,6 +3616,71 @@ static bool dfi_disable_start(dfi_run *r, uint32_t flat, uint32_t holder, bool b
         e.id2 = (uint16_t)(1u + DFI_ABILITY_CURSEDBODY); /* wide-operands-reviewed: an ability id + 1 */
         e.other = (uint8_t)holder;
     }
+    dfi_emit(r, &e);
+    return true;
+}
+
+/* Taunt (data/moves.ts:18974-19016, the Champions mod changes nothing) on the target at `flat`: the move's accuracy is
+ * drawn by the caller; addVolatile fails for a target that has the volatile already (no onRestart): -fail|user with
+ * [still]. Otherwise -start|target|move: Taunt, duration 3, and 4 when the target has been out for a turn
+ * (activeTurns; here: not newlySwitched) and has no move queued (it has moved this turn). True when it started. The
+ * Status moves of the target are barred in the request (onDisableMove) and stopped by cant (dfi_before_move), the end is
+ * in the residual at order 15. */
+static bool dfi_taunt(dfi_run *r, uint32_t user, uint32_t flat)
+{
+    struct duoforge_battle *b = r->b;
+    const dfi_member *tm = dfi_at(b, flat);
+    dfi_tail_pos *tail = &b->tail.sides[flat / 2u].positions[flat % 2u];
+    if (tm == NULL || tm->hp == 0u) {
+        return false;
+    }
+    if (tail->taunt_turns != 0u) {
+        dfi_fail_still(r, user);
+        return false;
+    }
+    const uint32_t newly = dfi_kind_limits_of(r->ctx->data_kind).vol_flags_mask & DFI_VOL_NEWLY_SWITCHED;
+    const bool out_a_turn = ((uint32_t)dfi_pos(b, flat)->flags & newly) == 0u;
+    const uint32_t turns = (out_a_turn && dfi_will_move(b, flat) == NULL) ? 4u : 3u;
+    tail->taunt_turns = (uint8_t)turns; /* <= DFI_TAIL_TAUNT_MAX */
+    duoforge_event e = dfi_event_make(DUOFORGE_EVENT_VOLATILE_START, flat);
+    e.detail = (uint8_t)DUOFORGE_VOLATILE_TAUNT;
+    dfi_emit(r, &e);
+    return true;
+}
+
+/* Yawn (data/moves.ts:21131-21162, no Champions change; accuracy true: no draw). Its own onTryHit fails the move
+ * (-fail|user with [still]) for a target that has a status or is immune to sleep (no marked ability, item or type of
+ * the pool is: the Immunity handlers of Insomnia, Vital Spirit, Sweet Veil and Comatose are unmarked, and the terrains
+ * that stop sleep are Electric Terrain's, not in this build). addVolatile then fails for a target that is yawning
+ * already. Otherwise -start|target|move: Yawn|[of] user, and the target falls asleep at the end of the next turn
+ * (duration 2, the residual at order 23: the Yawn pass of dfi_residual). True when it started. */
+static bool dfi_yawn(dfi_run *r, uint32_t user, uint32_t flat)
+{
+    struct duoforge_battle *b = r->b;
+    const dfi_member *tm = dfi_at(b, flat);
+    dfi_tail_pos *tail = &b->tail.sides[flat / 2u].positions[flat % 2u];
+    if (tm == NULL || tm->hp == 0u) {
+        return false;
+    }
+    if (tm->status != DFI_STATUS_NONE) {
+        dfi_fail_still(r, user);
+        return false;
+    }
+    /* addVolatile('yawn'): TryAddVolatile, Flower Veil of the target's side blocks it on a Grass type (-block, then the
+     * move did nothing); a target that yawns already refuses it (no onRestart). */
+    uint32_t veil = 0u;
+    if (dfi_flower_veil_holder(b, flat, &veil)) {
+        dfi_flower_veil_block(r, flat, veil); /* -block only: neither [still] nor -fail (recorded in g31_yawn_flower_veil) */
+        return false;
+    }
+    if (tail->yawn_turns != 0u) {
+        dfi_fail_still(r, user);
+        return false;
+    }
+    tail->yawn_turns = 2u; /* DFI_TAIL_YAWN_MAX */
+    duoforge_event e = dfi_event_make(DUOFORGE_EVENT_VOLATILE_START, flat);
+    e.detail = (uint8_t)DUOFORGE_VOLATILE_YAWN;
+    e.other = (uint8_t)user;
     dfi_emit(r, &e);
     return true;
 }
@@ -3791,7 +4057,8 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     /* runMove's target, which AfterMove gets: getTarget's result, before
      * any redirection; a spread move's is a random foe that only labels
      * its line, which the engine does not draw. */
-    r->move_target = md->target_class == DUOFORGE_TARGET_CLASS_ALL_ADJACENT_FOES || md->target_class == DFI_TARGET_CLASS_ALL_ADJACENT
+    r->move_target = md->target_class == DUOFORGE_TARGET_CLASS_ALL_ADJACENT_FOES || md->target_class == DFI_TARGET_CLASS_ALL_ADJACENT ||
+                             md->target_class == DFI_TARGET_CLASS_FOE_SIDE
                          ? DFI_MOVE_TARGET_SPREAD
                      : count != 0u                                              ? targets[0]
                                                                                 : DFI_MOVE_TARGET_NONE;
@@ -3890,7 +4157,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         e.id = (uint16_t)move_id;
         /* A fainted Pokemon is printed without its slot ("p1: Name"): with
          * nothing to hit, the line names no position. */
-        e.other = (uint8_t)(count == 1u ? aimed : DUOFORGE_NO_POSITION); /* wide-operands-reviewed: < 256 */
+        e.other = (uint8_t)(count == 1u && target_class != DFI_TARGET_CLASS_FOE_SIDE ? aimed : DUOFORGE_NO_POSITION); /* wide-operands-reviewed: < 256 */
         const uint32_t spread_flag = count > 1u ? DUOFORGE_EVENT_FLAG_SPREAD : 0u;
         const uint32_t locked_flag = locked ? DUOFORGE_EVENT_FLAG_LOCKED : 0u;
         e.flags = (uint8_t)(spread_flag | locked_flag); /* wide-operands-reviewed: flags < 256 */
@@ -4026,7 +4293,8 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         const uint32_t priority = dfi_move_priority(b, m, md);
         aimed = targets[count - 1u];
         if (priority > DFI_PRIORITY_BIAS && aimed / 2u != side && md->target_class != DUOFORGE_TARGET_CLASS_SELF &&
-            md->target_class != DUOFORGE_TARGET_CLASS_ALLY_SIDE && md->target_class != DUOFORGE_TARGET_CLASS_ALL) {
+            md->target_class != DUOFORGE_TARGET_CLASS_ALLY_SIDE && md->target_class != DUOFORGE_TARGET_CLASS_ALL &&
+            md->target_class != DFI_TARGET_CLASS_FOE_SIDE) {
             for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
                 const dfi_member *holder = dfi_at(b, (1u - side) * 2u + slot);
                 /* Queenly Majesty (step G39, data/abilities.ts:3716-3734) is Armor Tail's handler under its own name, and
@@ -4084,6 +4352,20 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     const bool powder_move = move_id != DFI_MOVE_STRUGGLE && (dfi_pool_move_flags2[move_id] & DFI_MOVE_FLAG2_POWDER) != 0u;
     if (status_move && md->boost_role == DFI_BOOST_ROLE_PRIMARY_ALLY) {
         return dfi_run_coaching(r, user, targets[0], md);
+    }
+    if (status_move && md->side_condition >= DUOFORGE_SIDE_STEALTH_ROCK) {
+        /* The four hazards (step G37): the move's own hit is addSideCondition on the foe's side (a foeSide move has no
+         * Protect or accuracy step: tryMoveHit runs TryHitSide, which no pool handler answers); a condition that is at its
+         * last layer fails the move like any side condition that is up (-fail, [still]); a new layer is -sidestart. */
+        bool added = false;
+        const duoforge_status hs = dfi_add_hazard(r, 1u - side, md->side_condition, &added);
+        if (hs != DUOFORGE_OK) {
+            return hs;
+        }
+        if (!added) {
+            dfi_fail_still(r, user);
+        }
+        return DUOFORGE_OK;
     }
     if (status_move && md->side_condition != 0u) {
         /* addSideCondition: an active condition is not restarted (the move
@@ -4161,6 +4443,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     if (status_move && md->primary_status == DFI_STATUS_NONE && md->special != DFI_SPECIAL_PARTING_SHOT &&
         md->special != DFI_SPECIAL_SOAK && md->special != DFI_SPECIAL_ENCORE && md->special != DFI_SPECIAL_DISABLE &&
         md->special != DFI_SPECIAL_TRICK && md->special != DFI_SPECIAL_SWITCHEROO &&
+        md->special != DFI_SPECIAL_TAUNT && md->special != DFI_SPECIAL_YAWN &&
         md->boost_role != DFI_BOOST_ROLE_PRIMARY_TARGET) {
         if (dfi_pool_move_heal[move_id][1] != 0u) {
             return dfi_run_heal_move(r, user, move_id, targets, count);
@@ -4192,7 +4475,8 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         md->special != DFI_SPECIAL_RISING_VOLTAGE && md->special != DFI_SPECIAL_TERRAIN_PULSE &&
         md->special != DFI_SPECIAL_MULTI_HIT_2 && md->special != DFI_SPECIAL_TRIPLE_AXEL &&
         md->special != DFI_SPECIAL_IMPRISON && md->special != DFI_SPECIAL_TRICK && md->special != DFI_SPECIAL_SWITCHEROO &&
-        md->special != DFI_SPECIAL_THIEF && md->special != DFI_SPECIAL_COVET && md->special != DFI_SPECIAL_SUPER_FANG) {
+        md->special != DFI_SPECIAL_THIEF && md->special != DFI_SPECIAL_COVET && md->special != DFI_SPECIAL_SUPER_FANG &&
+        md->special != DFI_SPECIAL_TAUNT && md->special != DFI_SPECIAL_YAWN) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Steel Roller's onTry (step G34, data/moves.ts:17893-17913): it fails without a terrain, with -fail and [still]. */
@@ -4515,6 +4799,10 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                 did = dfi_soak(r, targets[i], move_id) || did;
                 continue;
             }
+            if (md->special == DFI_SPECIAL_TAUNT) {
+                did = dfi_taunt(r, user, targets[i]) || did;
+                continue;
+            }
             if (md->special == DFI_SPECIAL_DISABLE) {
                 /* The move's own onTryHit (data/moves.ts:3658-3662) runs in spreadMoveHit, after the accuracy (recorded in
                  * g27_disable_b: the draw comes first): a target without a last move, or whose last move is Struggle, fails
@@ -4537,6 +4825,10 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                     return st;
                 }
                 did = did || swapped;
+                continue;
+            }
+            if (md->special == DFI_SPECIAL_YAWN) {
+                did = dfi_yawn(r, user, targets[i]) || did;
                 continue;
             }
             if (md->special == DFI_SPECIAL_ENCORE) {
@@ -4841,6 +5133,10 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                  * ... [from] ability: Cursed Body [of] holder` shows before the faint line, recorded in g27_cursed_body_a) and
                  * Flame Body (step G30: it draws its roll too) and the attacker's Poison Touch: it draws its roll (the handler
                  * runs, trySetStatus then fails). */
+                st = dfi_toxic_debris(r, user, targets[i], md); /* step G37: the target's own handler, one ability per holder */
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
                 if (dfi_ability(r->b, tm, DFI_ABILITY_CURSEDBODY)) {
                     st = dfi_cursed_body(r, user, targets[i], move_id);
                     if (st != DUOFORGE_OK) {
@@ -4888,6 +5184,10 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
              * priority, then the target's index in the move's target list), not by Speed, so the holders roll in target order
              * with no tie draw (the damaged targets go in as one array, sim/battle-actions.ts:1109-1121); the second holder
              * finds the attacker already disabled when the first one's roll succeeded and does not roll (data/abilities.ts:784-797). */
+            st = dfi_toxic_debris(r, user, targets[i], md); /* step G37: the target's own handler, one ability per holder */
+            if (st != DUOFORGE_OK) {
+                return st;
+            }
             if (dfi_ability(r->b, tm, DFI_ABILITY_CURSEDBODY)) {
                 st = dfi_cursed_body(r, user, targets[i], move_id);
                 if (st != DUOFORGE_OK) {
@@ -5463,7 +5763,8 @@ static duoforge_status dfi_entry_ability(dfi_run *r, uint32_t flat)
  * something only between two entering Pokemon with an entry ability, or
  * between two standing White Herb holders, whose onAnySwitchIn runs for
  * every holder on the field (Team C): only such a group draws (decision
- * 0006 section 5.1). */
+ * 0006 section 5.1). The hazards of the entering Pokemon's side (step G37) are SwitchIn handlers too, so a Pokemon that
+ * enters a side with a hazard counts as a bearer (the reference's own count: ps_trace.js adds the side's handlers). */
 static duoforge_status dfi_run_entries(dfi_run *r, uint32_t entering)
 {
     struct duoforge_battle *b = r->b;
@@ -5496,7 +5797,10 @@ static duoforge_status dfi_run_entries(dfi_run *r, uint32_t entering)
         for (uint32_t i = 0u; i < count; ++i) {
             const uint32_t flat = list[next[i]];
             const dfi_member *m = dfi_at(b, flat);
-            bearers += (((entering >> flat) & 1u) != 0u && m->hp != 0u && dfi_has_switch_in(b, m)) ? 1u : 0u;
+            bearers += (((entering >> flat) & 1u) != 0u && m->hp != 0u &&
+                        (dfi_has_switch_in(b, m) || dfi_side_has_hazard(b, flat / 2u)))
+                           ? 1u
+                           : 0u;
             herbs += dfi_herb_holder(b, flat) ? 1u : 0u;
         }
         for (uint32_t i = 0u; i < count; ++i) {
@@ -5520,10 +5824,11 @@ static duoforge_status dfi_run_entries(dfi_run *r, uint32_t entering)
         }
         sorted += count;
     }
-    /* The abilities (priority 0) in that order, then the terrain seeds
+    /* The hazards and the abilities (priority 0) in that order, then the terrain seeds
      * (Grassy and Psychic Seed, priority -1), then White Herb's onAnySwitchIn of every holder on the
      * field (priority -2, Team C), in the same order: the handlers'
-     * fractional speeds follow it (sim/battle.ts:1008-1013). */
+     * fractional speeds follow it (sim/battle.ts:1008-1013). Within one Pokemon the side conditions (sub-order 4, the
+     * hazards in their creation order) come before the ability (sub-order 7). Each handler is followed by faintMessages. */
     /* Unnerve first (onSwitchInPriority 1, data/abilities.ts:5259): comparePriority puts the priority before the speed, so its
      * announcements come before the other entry abilities whatever the Speed order, in the order of the list among
      * themselves. The speed ties were drawn above for every group of two bearers (Unnerve's onStart is a SwitchIn handler
@@ -5542,22 +5847,33 @@ static duoforge_status dfi_run_entries(dfi_run *r, uint32_t entering)
         for (uint32_t i = 0u; i < n; ++i) {
             const uint32_t flat = list[i];
             const dfi_member *m = dfi_at(b, flat);
-            if (((entering >> flat) & 1u) == 0u || m->hp == 0u) {
+            if (((entering >> flat) & 1u) == 0u) {
                 continue;
             }
-            if (pass == 0u && dfi_has_entry(b, m) && dfi_ability_code(b, m) != 1u + DFI_ABILITY_UNNERVE) {
-                const duoforge_status st = dfi_entry_ability(r, flat);
-                if (st != DUOFORGE_OK) {
-                    return st;
+            if (pass == 0u) {
+                const duoforge_status hs = dfi_hazards_enter(r, flat); /* faintMessages after each of its handlers */
+                if (hs != DUOFORGE_OK) {
+                    return hs;
                 }
-            } else if (pass == 1u && dfi_seed_terrain(r->b, m) != DFI_TERRAIN_NONE) {
+                if (r->ended) {
+                    return DUOFORGE_OK;
+                }
+                if (m->hp != 0u && dfi_has_entry(b, m) && dfi_ability_code(b, m) != 1u + DFI_ABILITY_UNNERVE) {
+                    const duoforge_status st = dfi_entry_ability(r, flat);
+                    if (st != DUOFORGE_OK) {
+                        return st;
+                    }
+                    dfi_process_faints(r);
+                    if (r->ended) {
+                        return DUOFORGE_OK;
+                    }
+                }
+            } else if (m->hp != 0u && dfi_seed_terrain(r->b, m) != DFI_TERRAIN_NONE) {
                 dfi_terrain_seed(r, flat);
-            } else {
-                continue;
-            }
-            dfi_process_faints(r);
-            if (r->ended) {
-                return DUOFORGE_OK;
+                dfi_process_faints(r);
+                if (r->ended) {
+                    return DUOFORGE_OK;
+                }
             }
         }
     }
@@ -5655,17 +5971,17 @@ static uint8_t *dfi_side_turns(struct duoforge_battle *b, uint32_t s, uint32_t k
 }
 /* Trick Room, weather and terrain; four conditions per side (step G20 added Aurora Veil); per position
  * (DFI_RES_PER_POSITION) a status (burn or poison), the volatiles' handlers (seven duration ends: Protect, the stall
- * counter, flinch, a charge, Helping Hand, Follow Me and mustrecharge; Heal Block, Throat Chop, Encore and Perish Song), an item
- * (Leftovers or White Herb) and Grassy Terrain. */
-#define DFI_RES_PER_POSITION 17u /* 14 before Speed Boost (step G32) and Disable (step G27); Perish Song (step G26) is the 17th */
+ * counter, flinch, a charge, Helping Hand, Follow Me and mustrecharge; Heal Block, Throat Chop, Encore, Disable (step G27),
+ * Perish Song (step G26), Taunt and Yawn (step G31)), an item (Leftovers or White Herb), Speed Boost (step G32) and Grassy Terrain. */
+#define DFI_RES_PER_POSITION 19u /* 14 before Speed Boost (G32), Disable (G27), Perish Song (G26), Taunt and Yawn (G31) */
 #define DFI_RES_MAX (3u + 4u * DUOFORGE_SIDE_COUNT + DFI_RES_PER_POSITION * DFI_POSITIONS)
 _Static_assert(DFI_RES_MAX <= DFI_RES_MODEL_MAX, "the exact test of residual_order.h must hold the whole list");
 
 /* Battle.speedSort over the residual handlers, continued from *sorted until `want` callbacks are placed (*placed counts
  * them) or `want_sorted` entries are sorted. A group of equal handlers is shuffled in the reference, one draw per step;
- * the engine draws a group that holds two callbacks or more (the tie shows: two ends, a heal order) and not one that
- * shows nothing (a duration that ends nowhere, or one of two): the converter drops that draw from the tape the same way.
- * A group may mix both kinds (two Disables, one of which ends now). */
+ * the engine draws a group that holds two callbacks or more (the tie shows: two ends, two sleeps, a heal order) and
+ * not one that shows nothing (a duration that ends nowhere, or one of two): the converter drops that draw from the tape
+ * the same way. A group may mix both kinds (two Yawns, one of which ends now). */
 static duoforge_status dfi_residual_sort(dfi_run *r, dfi_residual_entry *list, uint32_t n, uint32_t *sorted,
                                          uint32_t *placed, uint32_t want, uint32_t want_sorted)
 {
@@ -5853,12 +6169,12 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
             n += 1u;
         }
         /* The volatiles with a duration handler of their own, in the one fixed order of residual_order.h (Heal
-         * Block, Disable, Throat Chop, Encore, then the counters of the turn): Heal Block (order 20, data/moves.ts:8273-8320), Disable (17, :3693),
-         * Throat Chop (22, :19389-19423) and Encore (16). Each is an entry of the sorted list at its order (the
-         * reference's fieldEvent counts every duration down and ends it when its turn comes, sim/battle.ts:517-527). The
-         * ones whose end shows a line (Heal Block, Disable) are callbacks, a tie that draws, exactly when they end in this
-         * residual: a tie of handlers that end nowhere shows nothing and is not drawn (the converter drops that draw).
-         * Throat Chop's end is silent: its count goes down below. */
+         * Block, Throat Chop, Yawn, Taunt, Encore, then the counters of the turn): Heal Block (order 20, data/moves.ts:8273-8320), Throat Chop (22,
+         * :19389-19423), Yawn (23, :21152), Taunt (15, :18992) and Encore (16). Each is an entry of the sorted list at its
+         * order (the reference's fieldEvent counts every duration down and ends it when its turn comes, :517-527). The
+         * ones whose end shows something (Heal Block, Yawn, Taunt) are callbacks, a tie that draws, exactly when they end
+         * in this residual: a tie of handlers that end nowhere shows nothing and is not drawn (the converter drops that
+         * draw from the tape). Throat Chop's end is silent: its count goes down below. */
         {
             const dfi_tail_pos *vt = &b->tail.sides[flat / 2u].positions[flat % 2u];
             if (vt->heal_block_turns != 0u) {
@@ -5871,6 +6187,14 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
             }
             if (vt->throat_chop_turns != 0u) {
                 list[n] = (dfi_residual_entry){DFI_RES_DURATION, flat, 22u, speed, 2u, false};
+                n += 1u;
+            }
+            if (vt->yawn_turns != 0u) {
+                list[n] = (dfi_residual_entry){DFI_RES_YAWN, flat, 23u, speed, 2u, vt->yawn_turns == 1u};
+                n += 1u;
+            }
+            if (vt->taunt_turns != 0u) {
+                list[n] = (dfi_residual_entry){DFI_RES_TAUNT, flat, 15u, speed, 2u, vt->taunt_turns == 1u};
                 n += 1u;
             }
             if (vt->encore_slot != 0u) {
@@ -5924,7 +6248,7 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
     if (dfi_residual_order_ambiguous(list, n)) {
         return DUOFORGE_E_UNSUPPORTED;
     }
-    uint32_t early = 0u;       /* the entries of orders 1 to 22: everything that sorts before the side conditions (26) */
+    uint32_t early = 0u;       /* the entries of orders 1 to 23: everything that sorts before the side conditions (26) */
     uint32_t early_calls = 0u; /* ... of which the callbacks (a tie of them draws) */
     uint32_t herbs = 0u;       /* White Herb's, order 29 */
     for (uint32_t i = 0u; i < n; ++i) {
@@ -6056,6 +6380,21 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
             }
             continue;
         }
+        if (e->kind == DFI_RES_TAUNT) {
+            /* fieldEvent: the duration goes down and at 0 the volatile ends (-end|X|move: Taunt, onEnd; order 15,
+             * data/moves.ts:18992-18995). */
+            dfi_tail_pos *tail = &b->tail.sides[e->flat / 2u].positions[e->flat % 2u];
+            if (tail->taunt_turns == 0u) {
+                continue; /* removed by an earlier handler */
+            }
+            tail->taunt_turns = (uint8_t)((uint32_t)tail->taunt_turns - 1u); /* wide-operands-reviewed: >= 1 */
+            if (tail->taunt_turns == 0u) {
+                duoforge_event end = dfi_event_make(DUOFORGE_EVENT_VOLATILE_END, e->flat);
+                end.detail = (uint8_t)DUOFORGE_VOLATILE_TAUNT;
+                dfi_emit(r, &end);
+            }
+            continue;
+        }
         if (e->kind == DFI_RES_HEAL_BLOCK) {
             /* the duration goes down and at 0 the volatile ends (-end|X|move: Heal Block, onEnd; order 20) */
             dfi_tail_pos *tail = &b->tail.sides[e->flat / 2u].positions[e->flat % 2u];
@@ -6082,6 +6421,23 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
                 duoforge_event end = dfi_event_make(DUOFORGE_EVENT_VOLATILE_END, e->flat);
                 end.detail = (uint8_t)DUOFORGE_VOLATILE_DISABLE;
                 dfi_emit(r, &end);
+            }
+            continue;
+        }
+        if (e->kind == DFI_RES_YAWN) {
+            /* the duration goes down; at 0 the end line is silent and the holder falls asleep: trySetStatus('slp',
+             * source) with the holder as its own source for Flower Veil, whose onAllySetStatus skips yawn (the
+             * sleep draws its turns; a holder with a status by now, or a fainted one, takes none) */
+            dfi_tail_pos *tail = &b->tail.sides[e->flat / 2u].positions[e->flat % 2u];
+            if (tail->yawn_turns == 0u) {
+                continue; /* removed by an earlier handler */
+            }
+            tail->yawn_turns = (uint8_t)((uint32_t)tail->yawn_turns - 1u); /* wide-operands-reviewed: >= 1 */
+            if (tail->yawn_turns == 0u) {
+                st = dfi_try_status(r, e->flat, DFI_STATUS_SLP, e->flat, DFI_NO_SOURCE_MOVE, false, 0u);
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
             }
             continue;
         }
@@ -6134,8 +6490,8 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
             return DUOFORGE_OK;
         }
     }
-    /* Throat Chop's count (order 22) goes down here: its end is silent, so nothing shows where it comes. Disable and Heal
-     * Block end in the sorted list above, at their own orders. */
+    /* Throat Chop's count (order 22) goes down here: its end is silent, so nothing shows where it comes. Heal Block, Yawn
+     * and Taunt end in the sorted list above, at their own orders. */
     {
         for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
             dfi_tail_pos *tail = &b->tail.sides[flat / 2u].positions[flat % 2u];
@@ -6798,6 +7154,8 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
     dfi_init_speeds(&r);
     duoforge_status st = DUOFORGE_OK;
     uint32_t exits = 0u; /* Emergency Exit after the residual action */
+    uint32_t switch_flat = DFI_POSITIONS; /* the Pokemon of the runSwitch action that ran (Emergency Exit after it) */
+    uint32_t switch_hp = 0u;              /* its HP before the action (sim/battle.ts:2666) */
     if (pivot) {
         st = dfi_resume_pivot(&r, responses);
     } else {
@@ -6850,6 +7208,8 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
         } else if (q.kind == DFI_Q_RUN_SWITCH) {
             /* runSwitch takes every entry queued right behind it. */
             uint32_t entering = 1u << ((uint32_t)q.side * 2u + (uint32_t)q.slot);
+            switch_flat = (uint32_t)q.side * 2u + (uint32_t)q.slot;
+            switch_hp = dfi_at(b, switch_flat) != NULL ? dfi_at(b, switch_flat)->hp : 0u;
             while (b->queue_len > 0u && b->queue[0].kind == DFI_Q_RUN_SWITCH) {
                 dfi_queue_pop(b, &q);
                 entering |= 1u << ((uint32_t)q.side * 2u + (uint32_t)q.slot);
@@ -6896,6 +7256,15 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
                     dfi_emit(&r, &e); /* [-activate] ability: Emergency Exit */
                 }
             }
+        }
+        if (q.kind == DFI_Q_RUN_SWITCH && switch_flat < DFI_POSITIONS) {
+            /* sim/battle.ts:2871-2874: after the Update, the Pokemon of a runSwitch action that a hazard took from above half
+             * its HP to half or less runs its EmergencyExit event (only the first Pokemon of the batch: the action's own). */
+            dfi_emergency_exit(&r, switch_flat, switch_hp);
+            if (b->queue_len == 0u && dfi_pos(b, switch_flat)->switch_flag == DFI_SWITCH_EMERGENCY_EXIT) {
+                exits |= 1u << switch_flat; /* nothing is queued: the turn ends with a request for its replacement */
+            }
+            switch_flat = DFI_POSITIONS;
         }
         if (b->queue_len > 0u && dfi_pivot_pending(b)) {
             return dfi_pivot(b);

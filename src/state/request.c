@@ -170,6 +170,13 @@ static duoforge_status dfi_slot_candidates(const duoforge_context *ctx, const st
             if ((uint32_t)b->tail.sides[s].positions[slot].disable_slot == k + 1u) {
                 continue;
             }
+            /* Taunt's onDisableMove (data/moves.ts:18996-19003; POOL kinds, the tail is zero elsewhere) bars every move of the
+             * Status category (Me First, which no pool Pokemon learns, is the pin's one exception); with no move left the
+             * slot gets Struggle, as for any disabled move. */
+            if (b->tail.sides[s].positions[slot].taunt_turns != 0u &&
+                dfi_pool_moves[mv->move_id].category == DFI_CATEGORY_STATUS) {
+                continue;
+            }
             /* A foe's Imprison (step G38, POOL kinds, data/moves.ts:9504-9510): onFoeDisableMove disables, as a hidden
              * disable, every move that the imprisoner knows (Struggle aside), in endTurn; the player's choice of such a
              * move is rejected (sim/side.ts:718-737), so the move is not offered, and with no move left the slot gets

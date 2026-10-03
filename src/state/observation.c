@@ -316,6 +316,12 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
              * the setter, then counted down in the residual until the -sideend line; the sheet has the item). The state
              * keeps the same count, so the view is the tail's field. */
             o.sides[s].aurora_veil_turns = battle->tail.sides[s].aurora_veil_turns;
+            /* Step G37: the entry hazards of the side, public (-sidestart|side|move: Stealth Rock and the others, a layer of
+             * Spikes or Toxic Spikes per line, ended by -sideend: Toxic Spikes that a Poison type absorbed); the tail's layers. */
+            o.sides[s].stealth_rock = battle->tail.sides[s].stealth_rock;
+            o.sides[s].spikes = battle->tail.sides[s].spikes;
+            o.sides[s].toxic_spikes = battle->tail.sides[s].toxic_spikes;
+            o.sides[s].sticky_web = battle->tail.sides[s].sticky_web;
             /* Step G16: the held item that a move took (Knock Off), public (-enditem|X|Item|[from] move: Knock Off): the
              * member holds nothing, DUOFORGE_ITEM_NOW_NONE, and it stays across a switch-out and a faint. The tail's
              * item_now is the overlay of decision 0018 as it is: the item id + 1 that a Trick, Thief or Covet put there (step
@@ -328,6 +334,9 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                 uint32_t vol = 0u;
                 vol |= tail->heal_block_turns != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_HEAL_BLOCK : 0u;
                 vol |= tail->throat_chop_turns != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_THROAT_CHOP : 0u;
+                /* Step G31: Taunt and Yawn are public (-start|X|move: Taunt, -start|X|move: Yawn: the counts are never shown). */
+                vol |= tail->taunt_turns != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_TAUNT : 0u;
+                vol |= tail->yawn_turns != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_YAWN : 0u;
                 vol |= tail->must_recharge != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_MUST_RECHARGE : 0u; /* step G17 */
                 vol |= tail->glaive_rush != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_GLAIVE_RUSH : 0u; /* step G19 */
                 /* Step G38: the occupant has used Imprison (-start|X|move: Imprison, public; it ends with the occupant). */
