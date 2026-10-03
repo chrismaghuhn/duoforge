@@ -1471,6 +1471,23 @@ static void dfi_use_item(dfi_run *r, uint32_t flat)
     }
 }
 
+/* choicelock's two removals (data/conditions.ts:332-336 onBeforeMove and :349-352 onDisableMove): the holder no longer has
+ * a Choice item (only the Choice Scarf is one in the pool), so the volatile ends and its locked move with it, unless a
+ * charging two-turn move shares the byte. The item leaving does not end the lock by itself (items.ts's Choice items
+ * remove it only in their own onStart, i.e. when the holder gets one), so a stop in the middle of a turn still shows it. */
+static void dfi_choice_lock_ends(struct duoforge_battle *b, uint32_t flat)
+{
+    dfi_active_slot *pos = dfi_pos(b, flat);
+    if (pos->occupant == DFI_OCCUPANT_NONE || ((uint32_t)pos->flags & DFI_VOL_CHOICE_LOCK) == 0u ||
+        dfi_holds(b, dfi_at(b, flat), DFI_ITEM_CHOICESCARF)) {
+        return;
+    }
+    pos->flags = (uint8_t)((uint32_t)pos->flags & ~(uint32_t)DFI_VOL_CHOICE_LOCK); /* wide-operands-reviewed */
+    if (pos->charge_turns == 0u) {
+        pos->locked_move = 0u;
+    }
+}
+
 /* Knock Off's onAfterHit (data/moves.ts:9959-9984; run by spreadMoveHit for each damaged target, also for a target that
  * this hit knocked out (its faint is not processed yet) and, in the Champions mod, also when the user has fainted since
  * (the base game asks whether the user has HP: sim/battle-actions.ts:1123; data/mods/champions/scripts.ts:411 does not)):
@@ -1517,12 +1534,8 @@ static void dfi_knock_off(dfi_run *r, uint32_t user, uint32_t target, uint32_t m
     duoforge_event e = dfi_ev(DUOFORGE_EVENT_ITEM_END, target, DUOFORGE_CAUSE_ITEM_TAKEN, item, user);
     e.id = (uint16_t)move_id;
     dfi_emit(r, &e); /* [-enditem] [from] move: Knock Off [of] user */
-    if (((uint32_t)pos->flags & DFI_VOL_CHOICE_LOCK) != 0u) {
-        pos->flags = (uint8_t)((uint32_t)pos->flags & ~(uint32_t)DFI_VOL_CHOICE_LOCK); /* wide-operands-reviewed */
-        if (pos->charge_turns == 0u) {
-            pos->locked_move = 0u;
-        }
-    }
+    /* The Choice lock stays: the pin ends it only in choicelock's own onBeforeMove (the holder's next move, dfi_run_move)
+     * and onDisableMove (every request, endTurn, dfi_end_turn), see dfi_choice_lock_ends. */
 }
 
 /* White Herb's check (onStart, data/items.ts): its standing holder has a
@@ -2622,6 +2635,8 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         }
         return DUOFORGE_OK;
     }
+    /* choicelock's onBeforeMove, reached by a holder that can move: its Choice item is gone, so the lock ends here. */
+    dfi_choice_lock_ends(b, user);
     /* deductPP; a locked move uses none. The opponent counts the use from
      * the move line (dfi_events_fold_knowledge). */
     if (q->move_slot < DUOFORGE_MAX_MOVE_SLOTS && !locked) {
@@ -4650,8 +4665,10 @@ static duoforge_status dfi_end_turn(dfi_run *r)
     b->turn = (uint16_t)turn;
     b->request_epoch = epoch;
     b->boundary_kind = (uint8_t)DUOFORGE_BOUNDARY_TURN;
-    /* endTurn: newlySwitched ends (sim/battle.ts:1673; Team C). */
+    /* endTurn: newlySwitched ends (sim/battle.ts:1673; Team C), and DisableMove runs for every active Pokemon
+     * (sim/battle.ts:1691), where choicelock ends for a holder without its Choice item. */
     for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
+        dfi_choice_lock_ends(b, flat);
         dfi_active_slot *pos = dfi_pos(b, flat);
         pos->flags = (uint8_t)((uint32_t)pos->flags & ~DFI_VOL_NEWLY_SWITCHED); /* wide-operands-reviewed */
     }

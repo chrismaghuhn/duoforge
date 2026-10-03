@@ -288,9 +288,14 @@ static dfi_invariant dfi_check_side(const struct duoforge_context *ctx, const st
                                   : item_now == DFI_TAIL_ITEM_NONE ? 0u
                                   : item_now != 0u                 ? item_now
                                                                    : occupant->item;
-            /* A choice lock needs its Choice item: one that a move took ends the lock with it (Knock Off, step G16;
-             * nothing else of the data takes a Choice Scarf). */
-            if (((uint32_t)slot->flags & DFI_VOL_CHOICE_LOCK) != 0u && held != 1u + DFI_ITEM_CHOICESCARF) {
+            /* A choice lock needs its Choice item at a turn boundary: the item that a move took (Knock Off, step G16;
+             * Trick, Thief and the rest of step G29 give and take it) does not end the lock then, the pin ends it in
+             * choicelock's onBeforeMove (the holder's next move) and onDisableMove (endTurn, sim/battle.ts:1691;
+             * data/conditions.ts:332-352). So under the POOL kinds, whose tail records the taking, a lock without the item
+             * stands at every boundary but the turn's: a replacement, a pivot or the end of the battle in the middle of
+             * the turn. Every other state keeps the strict rule. */
+            if (((uint32_t)slot->flags & DFI_VOL_CHOICE_LOCK) != 0u && held != 1u + DFI_ITEM_CHOICESCARF &&
+                !(lim.pool_rules && b->boundary_kind != DUOFORGE_BOUNDARY_TURN)) {
                 return DFI_INV_VOLATILE;
             }
             /* Unburden's volatile: set when its holder used its item or lost it to a move. The holder is the Pokemon

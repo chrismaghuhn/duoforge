@@ -840,7 +840,8 @@ class Library(unittest.TestCase):
         engine's tail, events and extension are checked against the protocol and not against itself. Also: the converter
         reads the line as ITEM_END with the cause ITEM_TAKEN (the move in id, the user in other, the item in id2), and
         refuses any other shape of a `[from] move:` item line."""
-        names = ('g16_removal', 'g16_unburden', 'g16_stones', 'g16_sticky_hold', 'g16_scarf_helmet', 'g16_helmet_faint')
+        names = ('g16_removal', 'g16_unburden', 'g16_stones', 'g16_sticky_hold', 'g16_scarf_helmet', 'g16_helmet_faint',
+                 'g16_scarf_lock_stays')
         source = open(os.path.join(ROOT, 'tests', 'test_pool_g16.c'), encoding='utf-8').read()
         rows = {}
         for m in re.finditer(r'\{"(g16_\w+)", (\d+)u, 0x([0-9a-f]+)u, (\d+)u, (\d+)u\}', source):
