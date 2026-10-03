@@ -1,0 +1,342 @@
+"""The reductions of the table (spec sections 5.5 and 5.6), in NumPy float64.
+
+A table a has one row per own pair and one column per foe pair; the row
+player maximizes. solve gives the Nash equilibrium of the zero-sum game by
+an exact linear program; expected_choice gives the expected-value rule's
+row; draw plays a mixed strategy from a uniform number.
+
+Reproducible on every machine: no BLAS and no LAPACK. A product of the
+table with a strategy is accumulated over the columns (or rows) in a fixed
+order, so bit-identical rows always get bit-identical scores; sums of
+probabilities are math.fsum, correctly rounded; the linear solve is a
+Gaussian elimination written out here.
+
+The linear program. The table is scaled to its range first, s = (a -
+min(a)) / (max(a) - min(a)) in [0, 1], which keeps its equilibria; b = s + 1
+has every entry at least 1. The column player's problem max sum(q) subject
+to b q <= 1, q >= 0 starts feasible at the origin (no phase 1) and is
+bounded (every column of b is positive). A dense tableau simplex with
+Bland's rule (the lowest entering index with a positive reduced cost; ratio
+ties to the lowest basic index) cannot cycle. Its final basis is then
+solved again from b itself, which removes the rounding the pivots
+accumulated: q from B q_B = 1, the row player's x from the duals B^T pi =
+c_B. Every solution passes the certificate before it is returned.
+
+The exact rescue. Near-duplicate rows (a few float32 ulps apart) make a
+basis ill-conditioned, and a pivot on a rounding-sized entry can end the
+float simplex in a false refusal or a missed certificate. Then the same
+simplex, with Bland's rule, runs on the table in exact rational arithmetic
+(fractions.Fraction), where it always ends at an exact equilibrium; its
+strategies are rounded to float and certified as well. The solution says
+which path decided (Solution.exact), so a search can count it. It costs
+milliseconds (about 6 ms at 8 x 8, 120 ms at 16 x 16) and is rare.
+
+Rows in prior-rank order. Where a table has several equilibria, which one
+the simplex returns follows the order of its rows and columns (a constant
+table plays its first row and first column). The search passes both in
+prior-rank order (spec section 5.6), so such ties go to the better prior.
+"""
+import math
+from fractions import Fraction
+from typing import NamedTuple
+
+import numpy as np
+
+from .errors import SearchError
+
+CERTIFICATE = 1e-9  # the largest exploitability a solution may have, and at most this times the table's range
+PROBABILITY_FLOOR = 1e-9  # a mixed strategy's probabilities below it are played as 0
+MAX_ITERATIONS = 10_000
+_EPS = 1e-12  # a reduced cost or a pivot entry must exceed it to count as positive
+
+
+def _table(a):
+    a = np.asarray(a, dtype=np.float64)
+    if a.ndim != 2 or a.shape[0] < 1 or a.shape[1] < 1:
+        raise SearchError(f"a table needs at least one row and one column (got shape {a.shape})")
+    if not np.isfinite(a).all():
+        raise SearchError("a table with a non-finite entry")
+    return a
+
+
+def _strategy(v, n, name):
+    v = np.asarray(v, dtype=np.float64)
+    if (v.shape != (n,) or not np.isfinite(v).all() or (v < 0).any()
+            or abs(math.fsum(v.tolist()) - 1.0) > CERTIFICATE):
+        raise SearchError(f"{name} is not a mixed strategy over {n} entries: {v!r}")
+    return v
+
+
+def _matvec(a, v):
+    """a v, accumulated over the columns in a fixed order."""
+    out = np.zeros(a.shape[0], dtype=np.float64)
+    for j in range(a.shape[1]):
+        out += a[:, j] * v[j]
+    return out
+
+
+def _vecmat(v, a):
+    """v a, accumulated over the rows in a fixed order."""
+    out = np.zeros(a.shape[1], dtype=np.float64)
+    for i in range(a.shape[0]):
+        out += v[i] * a[i, :]
+    return out
+
+
+def exploitability(a, x, y):
+    """max_i (a y)_i - min_j (x a)_j: what either player gains at most by
+    deviating, 0 exactly at an equilibrium."""
+    a = _table(a)
+    x = np.asarray(x, dtype=np.float64)
+    y = np.asarray(y, dtype=np.float64)
+    return float(np.max(_matvec(a, y)) - np.min(_vecmat(x, a)))
+
+
+def certify(a, x, y, tol=CERTIFICATE):
+    """The exploitability of (x, y) in a; raises SearchError when x or y is
+    not a mixed strategy, or when the exploitability exceeds tol or tol times
+    the table's range (max(a) - min(a)), whichever is smaller. Measured on
+    the table scaled to its range, so the bound means the same on a flat
+    table as on a wide one. Every pair of strategies is an equilibrium of a
+    constant table (exploitability 0)."""
+    a = _table(a)
+    x = _strategy(x, a.shape[0], "x")
+    y = _strategy(y, a.shape[1], "y")
+    low = float(a.min())
+    span = float(a.max()) - low
+    if span == 0.0:
+        return 0.0
+    gap = exploitability((a - low) / span, x, y)
+    if not gap <= tol * min(1.0, 1.0 / span):
+        raise SearchError(f"the Nash certificate is missed: exploitability {gap * span:.3e} (range {span:.3e}) "
+                          f"> {tol:.0e} x min(1, range) on a {a.shape[0]} x {a.shape[1]} table")
+    return gap * span
+
+
+def _gauss(mat, rhs):
+    """The solution of mat z = rhs by Gaussian elimination with partial
+    pivoting (the first largest pivot); SearchError for a singular matrix."""
+    m = np.array(mat, dtype=np.float64)
+    r = np.array(rhs, dtype=np.float64)
+    n = r.size
+    for c in range(n):
+        p = c + int(np.argmax(np.abs(m[c:, c])))
+        if m[p, c] == 0.0:
+            raise SearchError("the final basis of the simplex is singular")
+        if p != c:
+            m[[c, p]] = m[[p, c]]
+            r[[c, p]] = r[[p, c]]
+        f = m[c + 1:, c] / m[c, c]
+        m[c + 1:, c:] -= np.outer(f, m[c, c:])
+        r[c + 1:] -= f * r[c]
+    z = np.zeros(n, dtype=np.float64)
+    for c in range(n - 1, -1, -1):
+        s = r[c]
+        for j in range(c + 1, n):
+            s -= m[c, j] * z[j]
+        z[c] = s / m[c, c]
+    return z
+
+
+def _simplex(b):
+    """The final basis of max sum(q) s.t. b q <= 1, q >= 0, b >= 1 entrywise:
+    one variable index per row, q_j as j < m, the slack of row i as m + i."""
+    k, m = b.shape
+    n = m + k
+    t = np.zeros((k + 1, n + 1), dtype=np.float64)
+    t[:k, :m] = b
+    t[:k, m:n] = np.eye(k)
+    t[:k, n] = 1.0
+    t[k, :m] = 1.0  # reduced costs c_j - z_j; the objective row's last entry is -z
+    basis = list(range(m, n))
+    for _ in range(MAX_ITERATIONS):
+        positive = np.flatnonzero(t[k, :n] > _EPS)
+        if positive.size == 0:
+            return basis
+        enter = int(positive[0])
+        leave = -1
+        best = 0.0
+        for i in range(k):
+            entry = t[i, enter]
+            if entry > _EPS:
+                ratio = t[i, n] / entry
+                if leave < 0 or ratio < best or (ratio == best and basis[i] < basis[leave]):
+                    leave, best = i, ratio
+        if leave < 0:
+            raise SearchError("the linear program is unbounded, which a shifted table cannot be")
+        pivot = t[leave] / t[leave, enter]
+        t -= np.outer(t[:, enter], pivot)
+        t[leave] = pivot
+        basis[leave] = enter
+    raise SearchError(f"the simplex did not finish in {MAX_ITERATIONS} iterations")
+
+
+def _simplex_exact(a):
+    """(x, y) of the table a by the same simplex in exact rational
+    arithmetic: b = a - min(a) + 1 exactly, Bland's rule, which cannot cycle
+    here, so it ends at an optimal basis; the strategies rounded to float."""
+    k, m = a.shape
+    n = m + k
+    low = Fraction(float(a.min()))
+    t = [[Fraction(0)] * (n + 1) for _ in range(k + 1)]
+    for i in range(k):
+        for j in range(m):
+            t[i][j] = Fraction(float(a[i, j])) - low + 1
+        t[i][m + i] = Fraction(1)
+        t[i][n] = Fraction(1)
+    for j in range(m):
+        t[k][j] = Fraction(1)
+    basis = list(range(m, n))
+    for _ in range(MAX_ITERATIONS):
+        enter = next((j for j in range(n) if t[k][j] > 0), None)
+        if enter is None:
+            break
+        leave = -1
+        best = None
+        for i in range(k):
+            entry = t[i][enter]
+            if entry > 0:
+                ratio = t[i][n] / entry
+                if leave < 0 or ratio < best or (ratio == best and basis[i] < basis[leave]):
+                    leave, best = i, ratio
+        if leave < 0:
+            raise SearchError("the exact linear program is unbounded, which a shifted table cannot be")
+        pivot = t[leave][enter]
+        t[leave] = [v / pivot for v in t[leave]]
+        for i in range(k + 1):
+            factor = t[i][enter]
+            if i != leave and factor != 0:
+                t[i] = [vi - factor * vl for vi, vl in zip(t[i], t[leave])]
+        basis[leave] = enter
+    else:
+        raise SearchError(f"the exact simplex did not finish in {MAX_ITERATIONS} iterations")
+    q = [Fraction(0)] * m
+    for row, var in enumerate(basis):
+        if var < m:
+            q[var] = t[row][n]
+    total = sum(q)
+    x = np.array([float(-t[k][m + i] / total) for i in range(k)], dtype=np.float64)
+    y = np.array([float(v / total) for v in q], dtype=np.float64)
+    return x, y
+
+
+def _solve_float(a, low, span):
+    """(x, y) by the float simplex on the table scaled to its range, its
+    final basis solved again from the scaled table."""
+    k, m = a.shape
+    b = (a - low) / span + 1.0
+    basis = _simplex(b)
+    square = np.hstack([b, np.eye(k)])[:, basis]
+    primal = _gauss(square, np.ones(k))
+    dual = _gauss(square.T, np.array([1.0 if var < m else 0.0 for var in basis]))
+    q = np.zeros(m, dtype=np.float64)
+    for row, var in enumerate(basis):
+        if var < m:
+            q[var] = primal[row]
+    return dual, q
+
+
+def _normalized(v):
+    v = np.maximum(v, 0.0)
+    total = math.fsum(v.tolist())
+    if not total > 0.0:
+        raise SearchError("the linear program gave an empty strategy")
+    return v / total
+
+
+class Solution(NamedTuple):
+    """A certified equilibrium: the strategies x (rows) and y (columns), the
+    value (the midpoint of min(x a) and max(a y), the interval the
+    certificate bounds), and whether the exact rescue decided."""
+    x: np.ndarray
+    y: np.ndarray
+    value: float
+    exact: bool
+
+
+def solve(a):
+    """The Solution of the zero-sum game a (the row player maximizes x a
+    y): the float simplex, or the exact rescue when the float simplex fails
+    or misses the certificate; certified either way (certify), so a
+    SearchError from here is a failure of the exact path. Rows and columns in
+    prior-rank order: see the module."""
+    a = _table(a)
+    k, m = a.shape
+    low = float(a.min())
+    span = float(a.max()) - low
+    if span == 0.0:  # a constant table: every pair of strategies is an equilibrium
+        x = np.zeros(k, dtype=np.float64)
+        y = np.zeros(m, dtype=np.float64)
+        x[0] = y[0] = 1.0
+        return Solution(x, y, low, False)
+    try:
+        dual, q = _solve_float(a, low, span)
+        x, y = _normalized(dual), _normalized(q)
+        certify(a, x, y)
+        exact = False
+    except SearchError:
+        dual, q = _simplex_exact(a)
+        x, y = _normalized(dual), _normalized(q)
+        certify(a, x, y)
+        exact = True
+    lower = float(np.min(_vecmat(x, a)))
+    upper = float(np.max(_matvec(a, y)))
+    return Solution(x, y, (lower + upper) / 2.0, exact)
+
+
+def _ranks(prior_rank, k):
+    rank = np.asarray(prior_rank)
+    if rank.shape != (k,) or not np.issubdtype(rank.dtype, np.integer):
+        raise SearchError(f"prior_rank must hold {k} integers (got {rank!r})")
+    if np.unique(rank).size != k:
+        raise SearchError(f"prior_rank must rank every own pair once (got {rank!r})")
+    return rank.astype(np.int64)
+
+
+def expected_values(a, q):
+    """The expected value sum_j q_j a[i, j] of every row, q renormalized,
+    accumulated over the columns in a fixed order: the scores
+    expected_choice compares."""
+    a = _table(a)
+    q = np.asarray(q, dtype=np.float64)
+    if q.shape != (a.shape[1],) or not np.isfinite(q).all() or (q < 0).any() or not q.sum() > 0.0:
+        raise SearchError(f"q must be {a.shape[1]} nonnegative probabilities with a positive sum (got {q!r})")
+    return _matvec(a, q / math.fsum(q.tolist()))
+
+
+def expected_choice(a, q, prior_rank):
+    """The row with the highest expected value sum_j q_j a[i, j], q
+    renormalized (expected_values); ties, compared exactly, go to the better
+    (lower) prior_rank. prior_rank orders the own pairs by policy
+    probability, ties already broken to the lower flat index (spec section
+    5.6)."""
+    score = expected_values(a, q)
+    rank = _ranks(prior_rank, score.shape[0])
+    best = np.flatnonzero(score == score.max())
+    return int(best[np.argmin(rank[best])])
+
+
+def draw(x, prior_rank, u):
+    """The row a mixed strategy x plays for a uniform u in [0, 1):
+    probabilities below PROBABILITY_FLOOR count as 0, the rest is
+    renormalized, and the rows are walked in prior_rank order; the first
+    whose cumulative probability exceeds u is played. If rounding leaves the
+    last cumulative probability at or below u, the last row with mass is
+    played."""
+    x = np.asarray(x, dtype=np.float64)
+    if x.ndim != 1 or x.size < 1 or not np.isfinite(x).all() or (x < 0).any():
+        raise SearchError(f"x is not a mixed strategy: {x!r}")
+    u = float(u)
+    if not 0.0 <= u < 1.0:
+        raise SearchError(f"the play draw must lie in [0, 1) (got {u!r})")
+    rank = _ranks(prior_rank, x.size)
+    p = np.where(x < PROBABILITY_FLOOR, 0.0, x)
+    total = math.fsum(p.tolist())
+    if not total > 0.0:
+        raise SearchError(f"x has no probability above {PROBABILITY_FLOOR:.0e}: {x!r}")
+    order = np.argsort(rank, kind="stable")
+    cum = np.cumsum(p[order] / total)
+    hit = np.flatnonzero(cum > u)
+    if hit.size:
+        return int(order[hit[0]])
+    return int(order[np.flatnonzero(p[order] > 0.0)[-1]])

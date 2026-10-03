@@ -10,7 +10,7 @@ import numpy as np
 
 from . import _layout
 from ._lib import load_library, ptr, status_name, uint
-from .errors import DuoforgeError
+from .errors import DuoforgeError, DuoforgeLibraryError
 
 _SLOTS = _layout.CONSTANTS["DUOFORGE_CHOICE_SLOTS"]
 _TEAM = _layout.CONSTANTS["DUOFORGE_CHOICE_TEAM_SELECTION"]
@@ -214,23 +214,152 @@ class Batch:
         self._check(self._lib.duoforge_battle_digest(self.context.handle, self._battle(env), out))
         return bytes(out)
 
+    def encode(self, env):
+        """The canonical encoding of the environment's battle (bytes,
+        duoforge_battle_encode): the whole state, the hidden values and the
+        RNG included. A privileged read (decision 0002), for reproduction
+        data such as a search's refused leaf (decision 0022)."""
+        battle = self._battle(env)
+        size = ctypes.c_size_t()
+        self._check(self._lib.duoforge_battle_encoded_size(self.context.handle, battle, ctypes.byref(size)))
+        out = (ctypes.c_uint8 * size.value)()
+        written = ctypes.c_size_t()
+        self._check(self._lib.duoforge_battle_encode(self.context.handle, battle, out, size.value,
+                                                     ctypes.byref(written)))
+        return bytes(out[:written.value])
+
     def observe_ext(self, out=None):
         """The view extension of both players of every environment at the
         current boundary (OBSERVATION_EXT, (envs, 2); decision 0018): all zero
         under every kind but POOL, the epoch that of observations after
-        query(). One duoforge_battle_observe_ext per player; out, an array of
+        query(); duoforge_batch_observe_ext, in the workers. out, an array of
         that dtype and shape, is filled and returned when given."""
         if out is None:
             out = np.zeros((self.envs, 2), dtype=_layout.OBSERVATION_EXT)
         else:
             _require(out, _layout.OBSERVATION_EXT, (self.envs, 2), "out")
-        live, ctx, size = self._live(), self.context.handle, _layout.OBSERVATION_EXT.itemsize
-        observe = self._lib.duoforge_battle_observe_ext
-        for e in range(self.envs):
-            battle = self._lib.duoforge_batch_env(live, e)
-            for p in range(2):
-                self._check(observe(ctx, battle, p, out.ctypes.data + (2 * e + p) * size))
+        self._check(self._lib.duoforge_batch_observe_ext(self._live(), ptr(out)))  # its statuses are not the step's
         return out
+
+    def query_encoded(self, version, ext_supported=0):
+        """The policy inputs of every player (decision 0021): requests,
+        observations and domains as query_factored() refreshes them, and in
+        the same pass in the workers the encoding of duoforge_encode, which is
+        byte-equal to features.encode_batch with as_encoder and
+        slots_as_encoder for that version and mask. Returns (obs (envs, 2,
+        obs_size) float32, slots (envs, 2, 2, 32, 12) float32, pair_mask
+        (envs, 2, 32, 32) bool), arrays this batch reuses on the next call.
+        An encoder refusal raises the reference's own ValueError (the refused
+        environment is encoded once more by features.py); it never reads as a
+        battle's failure. A failing query raises DuoforgeError as
+        query_factored() does."""
+        from . import features
+        size = features.obs_size(version)  # ValueError for an unknown version
+        ext_supported = features._mask_of(ext_supported)  # as the reference: a bool or another type is no mask
+        key = ("encoded", int(version))
+        if key not in self._buffers:
+            self._buffers[key] = (np.zeros((self.envs, 2, size), dtype=np.float32),
+                                  np.zeros((self.envs, 2, 2, _layout.MAX_SLOT_OPTIONS, features.SLOT_FEATURES),
+                                           dtype=np.float32),
+                                  np.zeros((self.envs, 2, _layout.MAX_SLOT_OPTIONS, _layout.MAX_SLOT_OPTIONS),
+                                           dtype=np.uint8),
+                                  np.zeros(self.envs, dtype=np.uint32))
+        obs, slots, pairs, statuses = self._buffers[key]
+        statuses[:] = 0
+        st = self._lib.duoforge_batch_query_encoded(
+            self._live(), uint(version, 32, "version"), uint(ext_supported, 64, "ext_supported"), ptr(self.requests),
+            ptr(self.observations), ptr(self.domains), ptr(obs), ptr(slots), ptr(pairs), ptr(statuses))
+        if st != 0:
+            self._refused(version, ext_supported, st, statuses)
+        return obs, slots, pairs.view(np.bool_)
+
+    def expand(self, roots, version, ext_supported, seed, keys, viewers, root_envs, samples, choices):
+        """Search leaves (decision 0022, duoforge_batch_expand), called on the
+        leaf batch. Leaf i, in environment i of this batch, is a copy of
+        environment root_envs[i] of the batch `roots`, reseeded with
+        search_seeds(seed, keys[root_envs[i]], samples[i]), stepped with the
+        factored choices choices[i] of both players in the domains of the
+        roots' last query (roots.requests and roots.domains, as
+        query_factored() or query_encoded() left them) and, unless the step
+        fails or the leaf is TERMINAL, its viewer viewers[root_envs[i]]
+        encoded as query_encoded() encodes one row.
+
+        keys (roots.envs,) uint64; viewers (roots.envs,) uint8 (0 or 1);
+        root_envs and samples (n,) uint32; choices (n, 2) FACTORED_CHOICE;
+        n at most this batch's envs. The environments from n on are not
+        touched.
+
+        Returns (obs (n, size) float32, step_statuses (n,) uint32,
+        encode_statuses (n,) uint32, results (n,) STEP_RESULT, leaf_results
+        (n,) uint32): views of arrays this batch reuses on the next call.
+        A leaf's refusal is returned, never raised: a refused step in
+        step_statuses, a refused row in encode_statuses (the search decides
+        what each means, spec section 7). A refusal of the arguments before
+        any leaf raises DuoforgeError and touches no leaf (the library's
+        checks: the contexts, a mask past the version's features, roots being
+        this batch, a root environment or a viewer out of range); an unknown
+        version or an ext_supported that is no mask of the feature bits
+        raises ValueError as in query_encoded(), and arrays of another dtype
+        or shape raise TypeError or ValueError. The rows' width is checked
+        against the library's (duoforge_encoder_size) before its first write:
+        another width raises DuoforgeLibraryError."""
+        from . import features
+        if not isinstance(roots, Batch):
+            raise TypeError(f"roots must be a Batch, not {type(roots).__name__}")
+        size = features.obs_size(version)  # ValueError for an unknown version
+        ext_supported = features._mask_of(ext_supported)  # as the reference: a bool or another type is no mask
+        root_envs = np.asarray(root_envs)
+        if root_envs.ndim != 1:
+            raise ValueError(f"root_envs must be one-dimensional, not of shape {root_envs.shape}")
+        n = int(root_envs.shape[0])
+        if n > self.envs:
+            raise ValueError(f"{n} leaves do not fit this batch of {self.envs} environments")
+        _require(keys, np.uint64, (roots.envs,), "keys")
+        _require(viewers, np.uint8, (roots.envs,), "viewers")
+        _require(root_envs, np.uint32, (n,), "root_envs")
+        _require(samples, np.uint32, (n,), "samples")
+        _require(choices, _layout.FACTORED_CHOICE, (n, 2), "choices")
+        key = ("expand", int(version))
+        if key not in self._buffers:
+            width = ctypes.c_uint32()  # the library writes rows of its own width: the buffer's must equal it
+            self._check(self._lib.duoforge_encoder_size(uint(version, 32, "version"), ctypes.byref(width)))
+            if width.value != size:
+                raise DuoforgeLibraryError(f"encoder version {version}: the library writes rows of {width.value} "
+                                           f"values, the package's are {size}")
+            self._buffers[key] = (np.zeros((self.envs, size), dtype=np.float32),
+                                  np.zeros(self.envs, dtype=np.uint32), np.zeros(self.envs, dtype=np.uint32),
+                                  np.zeros(self.envs, dtype=_layout.STEP_RESULT), np.zeros(self.envs, dtype=np.uint32))
+        obs, step_statuses, encode_statuses, results, leaf_results = self._buffers[key]
+        untouched = np.uint32(0xFFFFFFFF)  # no status of the library; the argument checks write nothing
+        step_statuses[:n] = untouched  # every leaf writes its step status
+        st = self._lib.duoforge_batch_expand(
+            self._live(), roots._live(), uint(version, 32, "version"), uint(ext_supported, 64, "ext_supported"),
+            uint(seed, 64, "seed"), ptr(roots.requests), ptr(roots.domains), ptr(keys), ptr(viewers), n,
+            ptr(root_envs), ptr(samples), ptr(choices), ptr(step_statuses), ptr(encode_statuses), ptr(results),
+            ptr(leaf_results), ptr(obs))
+        if st != 0 and (step_statuses[:n] == untouched).all():  # refused before any leaf (n may be 0)
+            raise DuoforgeError(status_name(st))
+        return obs[:n], step_statuses[:n], encode_statuses[:n], results[:n], leaf_results[:n]
+
+    def _refused(self, version, ext_supported, status, statuses):
+        """Raises for a failed query_encoded: the reference's ValueError for
+        an encoder refusal, DuoforgeError for a failing query."""
+        from . import features
+        failed = np.flatnonzero(statuses)
+        if failed.size == 0:  # refused before any environment: the version or the mask
+            raise ValueError(f"the encoder refuses version {version} with ext_supported {int(ext_supported):#x} "
+                             f"({status_name(status)})")
+        self.query_factored()  # an engine failure raises here, as without the encoder
+        e = int(failed[0])
+        ext = self.observe_ext() if int(ext_supported) & features.RECORD_FEATURES else None
+        for p in range(2):
+            record = None if ext is None else ext[e, p]
+            obs_part, slot_part, _ = features.encode(self.observations[e, p], self.domains[e, p], record,
+                                                     ext_supported)
+            features.as_encoder(obs_part, self.observations[e, p], version)
+            features.slots_as_encoder(slot_part, version)
+        raise RuntimeError(f"the C encoder refused environment {e} ({status_name(int(statuses[e]))}) where "
+                           "features.py encodes it: the encoder and its reference disagree")
 
     def episode(self, env):
         """The environment's episode number."""
@@ -271,6 +400,16 @@ class Batch:
     def _check(self, status, per_env=False):
         if status != 0:
             raise DuoforgeError(status_name(status), self.statuses.copy() if per_env else None)
+
+
+def search_seeds(seed, key, sample):
+    """(rng_initstate, rng_initseq) of a search leaf (duoforge_search_seeds,
+    decision 0022): a pure function of the search seed, the decision key
+    and the sample."""
+    out = [ctypes.c_uint64() for _ in range(2)]
+    load_library().duoforge_search_seeds(uint(seed, 64, "seed"), uint(key, 64, "key"), uint(sample, 32, "sample"),
+                                         *(ctypes.byref(v) for v in out))
+    return tuple(v.value for v in out)
 
 
 # ------------------------------------------------- factored domain helpers

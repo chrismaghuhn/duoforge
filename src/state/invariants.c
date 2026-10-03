@@ -301,13 +301,15 @@ static dfi_invariant dfi_check_side(const struct duoforge_context *ctx, const st
             /* Unburden's volatile: set when its holder used its item or lost it to a move. The holder is the Pokemon
              * whose ability now is Unburden: the sheet's, or the one that the POOL tail's ability_now holds (zero under
              * every other kind). The item is gone: used up, or taken (or it stays: a Mega Stone on its own species
-             * that refused Knock Off, which Unburden's onTakeItem answered first, data/abilities.ts:5240-5242). */
+             * that refused Knock Off, which Unburden's onTakeItem answered first, data/abilities.ts:5240-5242). Under the POOL
+             * kinds the volatile may also stand with an item held: a Trick, Thief or Covet that took the item and gave
+             * another one back (step G29), or one that failed after the TakeItem handlers ran. */
             const uint32_t now = lim.pool_rules ? b->tail.sides[s].ability_now[slot->occupant] : 0u; /* the tail is absent elsewhere */
             const bool item_gone = item_now == DFI_TAIL_ITEM_NONE ||
                                    (occupant->item_consumed != 0u && (occupant->item != 0u || item_now != 0u));
             if (((uint32_t)slot->flags & DFI_VOL_UNBURDEN) != 0u &&
                 ((now != 0u ? now : occupant->ability) != 1u + DFI_ABILITY_UNBURDEN ||
-                 (!item_gone && occupant->mega_capable == 0u))) {
+                 (!item_gone && occupant->mega_capable == 0u && !lim.pool_rules))) {
                 return DFI_INV_VOLATILE;
             }
             /* Follow Me's and Helping Hand's volatiles end in the residual and
@@ -530,6 +532,30 @@ static bool dfi_bytes_zero(const void *p, size_t n)
     return any == 0u;
 }
 
+/* Rev 4: the creation order of the hazards that are up. With n kinds up the first n two-bit slots are exactly those kinds, each
+ * once, and the others are zero (so n = 0 is the byte 0). */
+static bool dfi_hazard_order_valid(const dfi_tail_side *ts)
+{
+    const uint32_t present = (ts->stealth_rock != 0u ? 1u << DFI_HAZARD_STEALTH_ROCK : 0u) |
+                             (ts->spikes != 0u ? 1u << DFI_HAZARD_SPIKES : 0u) |
+                             (ts->toxic_spikes != 0u ? 1u << DFI_HAZARD_TOXIC_SPIKES : 0u) |
+                             (ts->sticky_web != 0u ? 1u << DFI_HAZARD_STICKY_WEB : 0u);
+    uint32_t n = 0u;
+    for (uint32_t k = 0u; k < DFI_HAZARD_KIND_COUNT; ++k) {
+        n += (present >> k) & 1u;
+    }
+    /* The kinds named by the first n slots are exactly the n that are up: with n slots for n kinds each is named once (a kind
+     * named twice leaves another unnamed), so no separate duplicate check is needed. */
+    uint32_t seen = 0u;
+    bool ok = true;
+    for (uint32_t i = 0u; i < DFI_HAZARD_KIND_COUNT; ++i) {
+        const uint32_t slot = ((uint32_t)ts->hazard_order >> (2u * i)) & 3u;
+        ok = ok && (i < n || slot == 0u);
+        seen |= i < n ? 1u << slot : 0u;
+    }
+    return ok && seen == present;
+}
+
 /* The tail of a standing occupant's position: the ranges, the pairs that are zero together and the sources that are
  * never the occupant itself (flat is its position, side * 2 + slot). */
 static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *tp, uint32_t flat,
@@ -561,12 +587,19 @@ static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *t
     const bool leech_ok = tp->leech_seed_source <= DFI_TAIL_SOURCE_MAX && tp->leech_seed_source != flat + 1u;
     const bool stockpile_ok = tp->stockpile <= DFI_TAIL_STOCKPILE_MAX && tp->stockpile_def <= tp->stockpile &&
                               tp->stockpile_spd <= tp->stockpile;
-    /* Rev 3 (step G20): the variant of the Protect volatile belongs to the volatile (zero when it is down), and the pad
-     * byte that aligns the struct is zero. */
+    /* Rev 3 (step G20): the variant of the Protect volatile belongs to the volatile (zero when it is down). */
     const bool protect_ok = tp->protect_kind <= DFI_TAIL_PROTECT_KIND_MAX &&
-                            (tp->protect_kind == 0u || ((uint32_t)slot->flags & DFI_VOL_PROTECT) != 0u) && tp->pad == 0u;
+                            (tp->protect_kind == 0u || ((uint32_t)slot->flags & DFI_VOL_PROTECT) != 0u);
+    /* Rev 4 (tail-rev4-proposal.md section 4.1): the move result is two two-bit values (bits 4-7 are zero); the single-turn
+     * markers are the two defined bits, and Rage Powder's belongs to the Follow Me flag that the same move sets (both end
+     * together, in the residual, on switch-out and on faint); the counters and the ability state have their bounds. */
+    const bool rev4_ok = (tp->move_result & ~DFI_TAIL_MOVE_RESULT_MASK) == 0u &&
+                         (tp->single_turn & ~DFI_TAIL_SINGLE_TURN_MASK) == 0u &&
+                         ((tp->single_turn & DFI_SINGLE_TURN_RAGE_POWDER) == 0u || ((uint32_t)slot->flags & DFI_VOL_FOLLOW_ME) != 0u) &&
+                         tp->hits_taken <= DFI_TAIL_HITS_TAKEN_MAX && tp->ability_state <= DFI_TAIL_ABILITY_STATE_MAX &&
+                         tp->lock_turns <= DFI_TAIL_LOCK_TURNS_MAX;
     return encore_ok && bars_ok && disable_ok && flags_ok && substitute_ok && trap_ok && leech_ok && stockpile_ok &&
-           protect_ok;
+           protect_ok && rev4_ok;
 }
 
 /* The POOL tail (decision 0015 section 7). Runs after the side checks, so every occupant is below the member count
@@ -585,7 +618,8 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
         const dfi_side *side = &b->sides[s];
         if (ts->wide_guard > DFI_TAIL_WIDE_GUARD_MAX || ts->aurora_veil_turns > DFI_TAIL_AURORA_VEIL_MAX ||
             ts->toxic_spikes > DFI_TAIL_TOXIC_SPIKES_MAX || ts->stealth_rock > DFI_TAIL_STEALTH_ROCK_MAX ||
-            ts->spikes > DFI_TAIL_SPIKES_MAX || ts->sticky_web > DFI_TAIL_STICKY_WEB_MAX) {
+            ts->spikes > DFI_TAIL_SPIKES_MAX || ts->sticky_web > DFI_TAIL_STICKY_WEB_MAX ||
+            ts->quick_guard > DFI_TAIL_QUICK_GUARD_MAX || !dfi_hazard_order_valid(ts)) {
             return DFI_INV_TAIL_SIDE;
         }
         for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
@@ -604,9 +638,18 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
                 return DFI_INV_TAIL_POSITION;
             }
         }
+        for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER && m < side->member_count; ++m) {
+            /* A member without a sheet item that used up an item has one that a move gave it (step G29). */
+            const dfi_member *held_by = &side->members[m];
+            if (held_by->item_consumed != 0u && held_by->item == 0u &&
+                (ts->item_now[m] == 0u || ts->item_now[m] == DFI_TAIL_ITEM_NONE)) {
+                return DFI_INV_TAIL_MEMBER;
+            }
+        }
         for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
             const bool any = ts->soak_type[m] != 0u || ts->ability_now[m] != 0u || ts->forme_now[m] != 0u ||
-                             ts->item_now[m] != 0u || ts->toxic_stage[m] != 0u;
+                             ts->item_now[m] != 0u || ts->toxic_stage[m] != 0u || ts->type2[m] != 0u ||
+                             ts->member_flags[m] != 0u;
             if (!any) {
                 continue;
             }
@@ -630,6 +673,16 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
                 return DFI_INV_TAIL_MEMBER;
             }
             if (ts->item_now[m] != 0u && ts->item_now[m] != DFI_TAIL_ITEM_NONE && ts->item_now[m] > lim.item_count) {
+                return DFI_INV_TAIL_MEMBER;
+            }
+            /* Rev 4: the second type is a type id + 1 or the typeless value, and ends when the member leaves or faints, like
+             * the type that Soak sets; the member flags are the defined bit (Zero to Hero's message, shown once for the
+             * battle: a member that exists, on the field or not). */
+            if (ts->type2[m] != 0u && ((ts->type2[m] > DFI_TYPE_COUNT && ts->type2[m] != DFI_TAIL_TYPE2_TYPELESS) ||
+                                        !standing_on_field)) {
+                return DFI_INV_TAIL_MEMBER;
+            }
+            if ((ts->member_flags[m] & ~DFI_TAIL_MEMBER_FLAGS_MASK) != 0u) {
                 return DFI_INV_TAIL_MEMBER;
             }
             /* The toxic counter belongs to a badly poisoned member on the field. */

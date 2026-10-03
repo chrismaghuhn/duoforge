@@ -14,7 +14,7 @@ bool dfi_context_has_pool_tail(const struct duoforge_context *ctx)
 
 uint16_t dfi_state_schema_of(const struct duoforge_context *ctx)
 {
-    return dfi_context_has_pool_tail(ctx) ? (uint16_t)DFI_STATE_SCHEMA_POOL_TAIL_REV3 : (uint16_t)DFI_STATE_SCHEMA_V3;
+    return dfi_context_has_pool_tail(ctx) ? (uint16_t)DFI_STATE_SCHEMA_POOL_TAIL_REV4 : (uint16_t)DFI_STATE_SCHEMA_V3;
 }
 
 size_t dfi_state_encoded_size_of(const struct duoforge_context *ctx)
@@ -48,6 +48,11 @@ static void dfi_encode_tail_pos(const dfi_tail_pos *tp, uint8_t *po)
     po[DFI_ENC_TAIL_POS_CHARGE_OFF] = tp->charge;
     po[DFI_ENC_TAIL_POS_GLAIVE_RUSH_OFF] = tp->glaive_rush;
     po[DFI_ENC_TAIL_POS_PROTECT_KIND_OFF] = tp->protect_kind;
+    po[DFI_ENC_TAIL_POS_MOVE_RESULT_OFF] = tp->move_result;
+    po[DFI_ENC_TAIL_POS_SINGLE_TURN_OFF] = tp->single_turn;
+    po[DFI_ENC_TAIL_POS_HITS_TAKEN_OFF] = tp->hits_taken;
+    po[DFI_ENC_TAIL_POS_ABILITY_STATE_OFF] = tp->ability_state;
+    po[DFI_ENC_TAIL_POS_LOCK_TURNS_OFF] = tp->lock_turns;
     dfi_store_u16le(po + DFI_ENC_TAIL_POS_SUBSTITUTE_OFF, tp->substitute_hp);
     dfi_store_u16le(po + DFI_ENC_TAIL_POS_TRAP_MOVE_OFF, tp->trap_move);
     for (uint32_t i = 0u; i < DFI_ENC_TAIL_POS_RESERVED_SIZE; ++i) {
@@ -70,9 +75,8 @@ static void dfi_encode_tail(const dfi_pool_tail *tail, uint8_t *out)
         so[DFI_ENC_TAIL_STEALTH_ROCK_OFF] = ts->stealth_rock;
         so[DFI_ENC_TAIL_SPIKES_OFF] = ts->spikes;
         so[DFI_ENC_TAIL_STICKY_WEB_OFF] = ts->sticky_web;
-        for (uint32_t i = 0u; i < DFI_ENC_TAIL_SIDE_RESERVED_SIZE; ++i) {
-            so[DFI_ENC_TAIL_SIDE_RESERVED_OFF + i] = 0u;
-        }
+        so[DFI_ENC_TAIL_QUICK_GUARD_OFF] = ts->quick_guard;
+        so[DFI_ENC_TAIL_HAZARD_ORDER_OFF] = ts->hazard_order;
         for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
             dfi_encode_tail_pos(&ts->positions[p], so + DFI_ENC_TAIL_POS_OFF + p * DFI_ENC_TAIL_POS_SIZE);
         }
@@ -83,6 +87,8 @@ static void dfi_encode_tail(const dfi_pool_tail *tail, uint8_t *out)
             mo[DFI_ENC_TAIL_MEMBER_SOAK_OFF] = ts->soak_type[m];
             mo[DFI_ENC_TAIL_MEMBER_ITEM_OFF] = ts->item_now[m];
             mo[DFI_ENC_TAIL_MEMBER_TOXIC_OFF] = ts->toxic_stage[m];
+            mo[DFI_ENC_TAIL_MEMBER_TYPE2_OFF] = ts->type2[m];
+            mo[DFI_ENC_TAIL_MEMBER_FLAGS_OFF] = ts->member_flags[m];
             mo[DFI_ENC_TAIL_MEMBER_RESERVED_OFF] = 0u;
         }
     }
@@ -97,9 +103,6 @@ static bool dfi_tail_reserved_zero(const uint8_t *in)
     }
     for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
         const uint8_t *so = in + DFI_ENC_TAIL_SIDES_OFF + s * DFI_ENC_TAIL_SIDE_SIZE;
-        for (uint32_t i = 0u; i < DFI_ENC_TAIL_SIDE_RESERVED_SIZE; ++i) {
-            any |= so[DFI_ENC_TAIL_SIDE_RESERVED_OFF + i];
-        }
         for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
             for (uint32_t i = 0u; i < DFI_ENC_TAIL_POS_RESERVED_SIZE; ++i) {
                 any |= so[DFI_ENC_TAIL_POS_OFF + p * DFI_ENC_TAIL_POS_SIZE + DFI_ENC_TAIL_POS_RESERVED_OFF + i];
@@ -137,7 +140,11 @@ static void dfi_parse_tail_pos(const uint8_t *po, dfi_tail_pos *tp)
     tp->charge = po[DFI_ENC_TAIL_POS_CHARGE_OFF];
     tp->glaive_rush = po[DFI_ENC_TAIL_POS_GLAIVE_RUSH_OFF];
     tp->protect_kind = po[DFI_ENC_TAIL_POS_PROTECT_KIND_OFF];
-    tp->pad = 0u;
+    tp->move_result = po[DFI_ENC_TAIL_POS_MOVE_RESULT_OFF];
+    tp->single_turn = po[DFI_ENC_TAIL_POS_SINGLE_TURN_OFF];
+    tp->hits_taken = po[DFI_ENC_TAIL_POS_HITS_TAKEN_OFF];
+    tp->ability_state = po[DFI_ENC_TAIL_POS_ABILITY_STATE_OFF];
+    tp->lock_turns = po[DFI_ENC_TAIL_POS_LOCK_TURNS_OFF];
     tp->substitute_hp = dfi_load_u16le(po + DFI_ENC_TAIL_POS_SUBSTITUTE_OFF);
     tp->trap_move = dfi_load_u16le(po + DFI_ENC_TAIL_POS_TRAP_MOVE_OFF);
 }
@@ -155,6 +162,8 @@ static void dfi_parse_tail(const uint8_t *in, dfi_pool_tail *tail)
         ts->stealth_rock = so[DFI_ENC_TAIL_STEALTH_ROCK_OFF];
         ts->spikes = so[DFI_ENC_TAIL_SPIKES_OFF];
         ts->sticky_web = so[DFI_ENC_TAIL_STICKY_WEB_OFF];
+        ts->quick_guard = so[DFI_ENC_TAIL_QUICK_GUARD_OFF];
+        ts->hazard_order = so[DFI_ENC_TAIL_HAZARD_ORDER_OFF];
         for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
             dfi_parse_tail_pos(so + DFI_ENC_TAIL_POS_OFF + p * DFI_ENC_TAIL_POS_SIZE, &ts->positions[p]);
         }
@@ -165,6 +174,8 @@ static void dfi_parse_tail(const uint8_t *in, dfi_pool_tail *tail)
             ts->soak_type[m] = mo[DFI_ENC_TAIL_MEMBER_SOAK_OFF];
             ts->item_now[m] = mo[DFI_ENC_TAIL_MEMBER_ITEM_OFF];
             ts->toxic_stage[m] = mo[DFI_ENC_TAIL_MEMBER_TOXIC_OFF];
+            ts->type2[m] = mo[DFI_ENC_TAIL_MEMBER_TYPE2_OFF];
+            ts->member_flags[m] = mo[DFI_ENC_TAIL_MEMBER_FLAGS_OFF];
         }
     }
 }
@@ -410,11 +421,11 @@ duoforge_status dfi_decode_state(const duoforge_context *ctx, const uint8_t *byt
     if (!dfi_bytes_equal(bytes, dfi_envelope_magic, DFI_ENVELOPE_MAGIC_SIZE)) {
         return DUOFORGE_E_MALFORMED;
     }
-    /* The two schemas of this build: v3 and v3 + pool tail rev 3 (0x0303). Rev 1 (0x0103) and rev 2 (0x0203) are
-     * neither: they are refused here like every unknown schema, there is no migration. Which of the two a context takes is decided below. */
+    /* The two schemas of this build: v3 and v3 + pool tail rev 4 (0x0403). Rev 1 (0x0103), rev 2 (0x0203) and rev 3
+     * (0x0303) are none of them: they are refused here like every unknown schema, there is no migration. Which of the two a context takes is decided below. */
     const uint32_t schema = dfi_load_u16le(bytes + DFI_ENVELOPE_SCHEMA_OFF);
     if (dfi_load_u16le(bytes + DFI_ENVELOPE_KIND_OFF) != DFI_ARTIFACT_BATTLE_STATE ||
-        (schema != DFI_STATE_SCHEMA_V3 && schema != DFI_STATE_SCHEMA_POOL_TAIL_REV3)) {
+        (schema != DFI_STATE_SCHEMA_V3 && schema != DFI_STATE_SCHEMA_POOL_TAIL_REV4)) {
         return DUOFORGE_E_SCHEMA_MISMATCH;
     }
     if (dfi_load_u32le(bytes + DFI_ENVELOPE_SEMANTICS_OFF) != DUOFORGE_SEMANTICS_ID) {
@@ -424,7 +435,7 @@ duoforge_status dfi_decode_state(const duoforge_context *ctx, const uint8_t *byt
     if ((uint64_t)dfi_load_u32le(bytes + DFI_ENVELOPE_LENGTH_OFF) != (uint64_t)size) {
         return DUOFORGE_E_MALFORMED;
     }
-    const bool tailed = schema == DFI_STATE_SCHEMA_POOL_TAIL_REV3;
+    const bool tailed = schema == DFI_STATE_SCHEMA_POOL_TAIL_REV4;
     if (size != (tailed ? (size_t)DFI_STATE_POOL_ENCODED_SIZE : (size_t)DUOFORGE_STATE_V3_ENCODED_SIZE)) {
         return DUOFORGE_E_MALFORMED;
     }
@@ -563,7 +574,7 @@ duoforge_status duoforge_battle_digest(const duoforge_context *ctx, const duofor
     uint8_t digest[DUOFORGE_DIGEST_SIZE] = {0};
     const size_t size = dfi_encode_unchecked(ctx, battle, encoded);
     if (!dfi_sha256(encoded, size, digest)) {
-        return DUOFORGE_E_INVARIANT; /* unreachable: at most 1257 bytes */
+        return DUOFORGE_E_INVARIANT; /* unreachable: at most 1297 bytes */
     }
     for (uint32_t i = 0u; i < DUOFORGE_DIGEST_SIZE; ++i) {
         out_digest[i] = digest[i];

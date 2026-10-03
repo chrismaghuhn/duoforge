@@ -35,7 +35,8 @@ _Static_assert(offsetof(duoforge_position_ext, ability_now) == 4u, "position ext
 _Static_assert(offsetof(duoforge_position_ext, type_now) == 6u, "position ext layout: type_now");
 _Static_assert(offsetof(duoforge_position_ext, encore_slot) == 8u, "position ext layout: encore_slot");
 _Static_assert(offsetof(duoforge_position_ext, perish) == 11u, "position ext layout: perish");
-_Static_assert(offsetof(duoforge_position_ext, reserved) == 12u, "position ext layout: reserved");
+_Static_assert(offsetof(duoforge_position_ext, move_failed) == 12u, "position ext layout: move_failed");
+_Static_assert(offsetof(duoforge_position_ext, reserved) == 13u, "position ext layout: reserved");
 _Static_assert(sizeof(duoforge_member_ext) == 4u, "member ext is 4 bytes");
 _Static_assert(offsetof(duoforge_member_ext, item_now) == 2u, "member ext layout: item_now");
 _Static_assert(sizeof(duoforge_side_ext) == 64u, "side ext is 64 bytes");
@@ -75,7 +76,8 @@ _Static_assert(DUOFORGE_AILMENT_BURN == DFI_STATUS_BRN && DUOFORGE_AILMENT_FREEZ
                "public ailments are the internal statuses");
 _Static_assert(DUOFORGE_WEATHER_RAIN == DFI_WEATHER_RAIN && DUOFORGE_WEATHER_SUN == DFI_WEATHER_SUN &&
                    DUOFORGE_WEATHER_SAND == DFI_WEATHER_SAND && DUOFORGE_WEATHER_SNOW == DFI_WEATHER_SNOW &&
-                   DUOFORGE_TERRAIN_GRASSY == DFI_TERRAIN_GRASSY && DUOFORGE_TERRAIN_PSYCHIC == DFI_TERRAIN_PSYCHIC,
+                   DUOFORGE_TERRAIN_GRASSY == DFI_TERRAIN_GRASSY && DUOFORGE_TERRAIN_PSYCHIC == DFI_TERRAIN_PSYCHIC &&
+                   DUOFORGE_TERRAIN_ELECTRIC == DFI_TERRAIN_ELECTRIC && DUOFORGE_TERRAIN_MISTY == DFI_TERRAIN_MISTY,
                "public field values are the internal ones");
 
 static bool dfi_is_occupant(const dfi_side *side, uint32_t m)
@@ -124,7 +126,11 @@ static void dfi_view_member(const struct duoforge_battle *b, uint32_t viewer, ui
             v->stat_points[i] = mem->stat_points[i];
         }
         v->is_mega = mem->is_mega;
-        v->item_used = (mem->item_consumed != 0u || b->tail.sides[s].item_now[m] == DFI_TAIL_ITEM_NONE) ? 1u : 0u;
+        /* The item of the sheet is gone: used up or taken, and not replaced by one that a move gave (step G29: then the
+         * consumed flag is clear and item_now holds it; a member without a sheet item has none to lose). */
+        v->item_used = (mem->item != 0u && (mem->item_consumed != 0u || b->tail.sides[s].item_now[m] == DFI_TAIL_ITEM_NONE))
+                           ? 1u
+                           : 0u;
         v->status = mem->hp != 0u ? mem->status : (uint8_t)DUOFORGE_AILMENT_NONE;
         if (b->boundary_kind == DUOFORGE_BOUNDARY_TEAM_SELECTION) {
             v->location = (uint8_t)DUOFORGE_LOCATION_UNDETERMINED;
@@ -143,7 +149,7 @@ static void dfi_view_member(const struct duoforge_battle *b, uint32_t viewer, ui
         v->pp[k] = dfi_derived_pp(mem->moves[k].pp_max, know->moves_used[k]);
     }
     v->is_mega = ((uint32_t)know->revealed & DFI_REVEALED_MEGA) != 0u ? 1u : 0u;
-    v->item_used = ((uint32_t)know->revealed & DFI_REVEALED_ITEM_CONSUMED) != 0u ? 1u : 0u;
+    v->item_used = (mem->item != 0u && ((uint32_t)know->revealed & DFI_REVEALED_ITEM_CONSUMED) != 0u) ? 1u : 0u;
     if ((((uint32_t)b->sides[viewer].seen_mask >> m) & 1u) != 0u) {
         v->hp = know->hp_percent;
         v->hp_flag = know->hp_flag;
@@ -310,10 +316,16 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
              * the setter, then counted down in the residual until the -sideend line; the sheet has the item). The state
              * keeps the same count, so the view is the tail's field. */
             o.sides[s].aurora_veil_turns = battle->tail.sides[s].aurora_veil_turns;
+            /* Step G37: the entry hazards of the side, public (-sidestart|side|move: Stealth Rock and the others, a layer of
+             * Spikes or Toxic Spikes per line, ended by -sideend: Toxic Spikes that a Poison type absorbed); the tail's layers. */
+            o.sides[s].stealth_rock = battle->tail.sides[s].stealth_rock;
+            o.sides[s].spikes = battle->tail.sides[s].spikes;
+            o.sides[s].toxic_spikes = battle->tail.sides[s].toxic_spikes;
+            o.sides[s].sticky_web = battle->tail.sides[s].sticky_web;
             /* Step G16: the held item that a move took (Knock Off), public (-enditem|X|Item|[from] move: Knock Off): the
              * member holds nothing, DUOFORGE_ITEM_NOW_NONE, and it stays across a switch-out and a faint. The tail's
-             * item_now is the overlay of decision 0018 as it is (a Trick would put an item id + 1 there; nothing does
-             * yet). A member that does not exist has none (the invariants). */
+             * item_now is the overlay of decision 0018 as it is: the item id + 1 that a Trick, Thief or Covet put there (step
+             * G29), or none. A member that does not exist has none (the invariants). */
             for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
                 o.sides[s].members[m].item_now = battle->tail.sides[s].item_now[m];
             }
@@ -322,8 +334,13 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                 uint32_t vol = 0u;
                 vol |= tail->heal_block_turns != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_HEAL_BLOCK : 0u;
                 vol |= tail->throat_chop_turns != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_THROAT_CHOP : 0u;
+                /* Step G31: Taunt and Yawn are public (-start|X|move: Taunt, -start|X|move: Yawn: the counts are never shown). */
+                vol |= tail->taunt_turns != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_TAUNT : 0u;
+                vol |= tail->yawn_turns != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_YAWN : 0u;
                 vol |= tail->must_recharge != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_MUST_RECHARGE : 0u; /* step G17 */
                 vol |= tail->glaive_rush != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_GLAIVE_RUSH : 0u; /* step G19 */
+                /* Step G38: the occupant has used Imprison (-start|X|move: Imprison, public; it ends with the occupant). */
+                vol |= tail->imprison != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_IMPRISON : 0u;
                 /* Step G30: Rage Powder draws the foes' single-target moves this turn ([-singleturn] move: Rage Powder), set
                  * only at a boundary inside a turn (a PIVOT: the residual ends it), as decision 0018 sections 3.4.1 and 6.1 say. */
                 if (((uint32_t)battle->sides[s].positions[p].flags & DFI_VOL_FOLLOW_ME) != 0u &&
@@ -335,6 +352,14 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                 /* Step G9, Encore: the one move slot (slot + 1) that the occupant may use, public (-start|X|Encore: the
                  * slot is the one of its last move line); the turns are never shown. */
                 o.sides[s].positions[p].encore_slot = tail->encore_slot;
+                /* Step G27, Disable: the one move slot (slot + 1) that the occupant may not use, public (-start|X|Disable|MOVE: the
+                 * slot is the one of MOVE on the open sheet); the turns are never shown. */
+                o.sides[s].positions[p].disable_slot = tail->disable_slot;
+                /* Step G26, Perish Song: the count that the game announced last, public (-start|X|perishN, N = 3, 2, 1:
+                 * the cast's own line is [silent], the first count comes in the residual of that turn). The state keeps
+                 * the duration, 4 from the cast to that residual: nothing was announced yet, so the view shows 0 then
+                 * (a request in the middle of the turn, a pivot's). */
+                o.sides[s].positions[p].perish = tail->perish < (uint8_t)DFI_TAIL_PERISH_MAX ? tail->perish : 0u;
                 /* Step G11, Soak: the type that it set, public (-start|X|typechange|Water): the occupant is pure
                  * Water until it leaves, faints or Mega Evolves (the tail's soak type is cleared there). */
                 const uint32_t occupant = battle->sides[s].positions[p].occupant;

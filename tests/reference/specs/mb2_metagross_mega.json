@@ -1,0 +1,26 @@
+{
+  "name": "mb2_metagross_mega",
+  "purpose": "Mega batch 2, Metagrossite: Metagross (Clear Body) with Metagrossite against Intimidate and Incineroar's Parting Shot and Snarl. On the first turn its Clear Body refuses the drops; it Mega Evolves on the second turn into Metagross-Mega (Tough Claws), which no longer refuses them, and its contact moves (Iron Head, Bullet Punch) hit harder.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000000001",
+  "teams": [
+    "Metagross @ Metagrossite\nAbility: Clear Body\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nAdamant Nature\n- Psychic Fangs\n- Iron Head\n- Bullet Punch\n- Protect\n\nDragapult (M) @ Leftovers\nAbility: Clear Body\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Dragon Pulse\n- Draco Meteor\n- Protect\n\nKingambit (M) @ Black Belt\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Sucker Punch\n- Iron Head\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Nasty Plot\n- Protect\n\nGrimmsnarl (M) @ Light Clay\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Reflect\n- Light Screen\n- Spirit Break\n- Protect\n\nRaichu (F) @ Magnet\nAbility: Lightning Rod\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nTimid Nature\n- Thunderbolt\n- Helping Hand\n- Protect",
+    "Incineroar (M) @ Charcoal\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Parting Shot\n- Snarl\n- Fake Out\n- Protect\n\nGrimmsnarl (M) @ Light Clay\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Reflect\n- Light Screen\n- Spirit Break\n- Protect\n\nSalamence (M) @ Leftovers\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Hyper Voice\n- Double-Edge\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Nasty Plot\n- Protect\n\nRaichu (F) @ Magnet\nAbility: Lightning Rod\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nTimid Nature\n- Thunderbolt\n- Helping Hand\n- Protect\n\nKingambit (M) @ Black Belt\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Sucker Punch\n- Iron Head\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 2 2, move 1 1",
+      "move 2 2 mega, move 1 1",
+      "move 2 2, move 1 1",
+      "move 3 2, move 1 1"
+    ],
+    "p2": [
+      "move 1 1, move 1 2",
+      "move 2, move 1 1",
+      "move 4, move 2",
+      "move 1 1, move 1 2"
+    ],
+    "max_steps": 5
+  }
+}

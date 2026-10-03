@@ -12,7 +12,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from duoforge import features
+from duoforge import _layout, features
 
 from . import columns, model, model_v2
 from .selfplay import TEAM_ACTIONS
@@ -32,6 +32,13 @@ def _evaluate(apply, params, obs, slots, mask, is_team, actions):
     logp = jnp.where(is_team, team, pair)
     entropy = jnp.where(is_team, _entropy(logp_team), _entropy(logp_pairs))
     return logp, entropy, value
+
+
+def _value(apply, slot_features, params, obs):
+    b = obs.shape[0]
+    slots = jnp.zeros((b, 2, _layout.MAX_SLOT_OPTIONS, slot_features), dtype=jnp.float32)
+    mask = jnp.zeros((b, _layout.MAX_SLOT_OPTIONS, _layout.MAX_SLOT_OPTIONS), dtype=jnp.bool_)
+    return apply(params, obs, slots, mask)[2]
 
 
 def _act(apply, params, key, obs, slots, mask, is_team, greedy=False):
@@ -69,6 +76,7 @@ class Model:
                              if version == 2 else self._apply(params, obs, slots, mask))
         self.evaluate = functools.partial(_evaluate, self.apply)
         self._act = jax.jit(functools.partial(_act, self.apply), static_argnames=("greedy",))
+        self._value = jax.jit(functools.partial(_value, self.apply, len(self.slot_names)))
 
     def init(self, key):
         """Fresh parameters."""
@@ -88,6 +96,15 @@ class Model:
         if key is None:
             key = jax.random.PRNGKey(0)  # greedy play draws nothing
         return self._act(params, key, obs, slots, mask, is_team, greedy=greedy)
+
+    def value(self, params, obs):
+        """The value of a batch of rows (B,) float32, each from its own
+        view: apply on all-zero slots and an all-false pair mask, which the
+        value does not read (spec section 3), so it is the value training
+        computes. A search's leaves need no policy (decision 0022). Checks
+        the ids first, as act does."""
+        self.check(np.asarray(obs))
+        return self._value(params, obs)
 
     @staticmethod
     def count(params):

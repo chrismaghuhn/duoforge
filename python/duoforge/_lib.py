@@ -18,7 +18,7 @@ import os
 
 from .errors import DuoforgeError, DuoforgeLibraryError
 
-EXPECTED_VERSION = "0.35.0"
+EXPECTED_VERSION = "0.42.0"
 
 _NAMES = ("duoforge_shared.dll", "libduoforge_shared.dll", "libduoforge_shared.so", "libduoforge_shared.dylib")
 
@@ -40,6 +40,8 @@ _SIGNATURES = {
     "duoforge_battle_result": (_STATUS, (_P, _P, ctypes.POINTER(_U32))),
     "duoforge_battle_tiebreak": (_STATUS, (_P, _P, ctypes.POINTER(_U32))),
     "duoforge_battle_digest": (_STATUS, (_P, _P, _P)),
+    "duoforge_battle_encoded_size": (_STATUS, (_P, _P, ctypes.POINTER(ctypes.c_size_t))),
+    "duoforge_battle_encode": (_STATUS, (_P, _P, _P, ctypes.c_size_t, ctypes.POINTER(ctypes.c_size_t))),
     "duoforge_battle_observe_ext": (_STATUS, (_P, _P, _U32, _P)),
     "duoforge_batch_seeds": (None, (_U64, _U32, _U32, ctypes.POINTER(_U64), ctypes.POINTER(_U64),
                                     ctypes.POINTER(_U64))),
@@ -55,6 +57,14 @@ _SIGNATURES = {
     "duoforge_batch_reset": (_STATUS, (_P, _U32, _U32)),
     "duoforge_batch_reset_terminal": (_STATUS, (_P,)),
     "duoforge_batch_reset_setups": (_STATUS, (_P, _U32, _P, _P, _P, _P)),
+    "duoforge_batch_observe_ext": (_STATUS, (_P, _P)),
+    "duoforge_encoder_size": (_STATUS, (_U32, ctypes.POINTER(_U32))),
+    "duoforge_encode": (_STATUS, (_U32, _U64, _P, _P, _P, _P, _P, _P)),
+    "duoforge_batch_query_encoded": (_STATUS, (_P, _U32, _U64, _P, _P, _P, _P, _P, _P, _P)),
+    # search support (decision 0022)
+    "duoforge_search_seeds": (None, (_U64, _U64, _U32, ctypes.POINTER(_U64), ctypes.POINTER(_U64))),
+    "duoforge_batch_expand": (_STATUS, (_P, _P, _U32, _U64, _U64, _P, _P, _P, _P, _U32, _P, _P, _P, _P, _P, _P, _P,
+                                        _P)),
     "duoforge_batch_play_random": (_STATUS, (_P, _U32, _U32, _P)),
     # the data API (decisions 0015 and 0020)
     "duoforge_data_count": (_STATUS, (_P, _U32, ctypes.POINTER(_U32))),

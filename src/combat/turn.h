@@ -36,6 +36,11 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
                              const duoforge_side_choice responses[DUOFORGE_SIDE_COUNT], dfi_draws *draws,
                              dfi_events *events);
 
+/* Whether the Pokemon at the position `flat` (an occupied one) may not switch at the TURN boundary: a standing foe has Shadow Tag
+ * (step G41) and it is neither a holder nor a Ghost type. Read by the request builder (src/state/request.c); pivots, replacements
+ * and forced switches ignore it. */
+bool dfi_switch_trapped(const struct duoforge_battle *b, uint32_t flat);
+
 /* The start of a CLOSURE battle, right after team selection placed the
  * leads: their entry effects run (runSwitch of the reference's 'start'
  * action). A no-op for other data kinds. On failure *b must be discarded. */
