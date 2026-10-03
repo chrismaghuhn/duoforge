@@ -25,6 +25,10 @@ GW_IMAGE_PROJECT=ubuntu-os-cloud
 GW_DISK_GB=60
 GW_DISK_TYPE=pd-balanced
 GW_LABELS='project=duoforge,purpose=watch'
+GW_REPO_SLUG=chrismaghuhn/duoforge # the one repository a bench round may build
+# The families of duoforge_bench in the order of bench/main.c (a test compares this list with that file and with bench_ab.py).
+GW_BENCH_FAMILIES='step events request copy codec episode batch'
+GW_DEFAULT_BENCH_FAMILIES=copy,codec,batch
 
 GW_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 GW_GCLOUD=${GW_GCLOUD:-gcloud}
@@ -71,6 +75,46 @@ gw_in_list() { # value list
 
 gw_valid_zone() { gw_in_list "$1" "$GW_ALLOWED_ZONES"; }
 gw_valid_machine() { gw_in_list "$1" "$GW_ALLOWED_MACHINES"; }
+
+# The families of a bench round: a comma list of names of duoforge_bench, each once. duoforge_bench itself ignores a name
+# it does not know, so an unknown one is refused here, before the instance is touched.
+gw_check_bench_families() { # list
+    local list=$1 name seen=' '
+    [ -n "$list" ] || gw_die "--families is empty"
+    case $list in ,* | *, | *,,*) gw_die "--families '$list' has an empty name" ;; esac # read would drop a trailing one
+    local names
+    IFS=',' read -r -a names <<< "$list"
+    for name in "${names[@]}"; do
+        gw_in_list "$name" "$GW_BENCH_FAMILIES" ||
+            gw_die "unknown benchmark family '$name' (duoforge_bench has: ${GW_BENCH_FAMILIES// /,})"
+        case $seen in *" $name "*) gw_die "the benchmark family '$name' is named twice" ;; esac
+        seen="$seen$name "
+    done
+}
+
+# The two commits of a bench round: exactly two 40-digit shas of THIS repository (origin chrismaghuhn/duoforge). A
+# commit is accepted when the checkout has it and it is reachable from a ref of origin (a branch of the repository,
+# so a pull request head of a branch here, main included); a commit of a fork or of nowhere is refused. Local git
+# only: nothing is fetched (fetch origin first to see a new head). GW_REPO_DIR (default: this checkout) is for the tests.
+gw_check_bench_refs() { # refs
+    local refs=$1 repo=${GW_REPO_DIR:-$GW_DIR} sha url
+    local shas
+    case $refs in ,* | *, | *,,*) gw_die "--bench takes exactly two commits (SHA1,SHA2), got '$refs'" ;; esac # read would drop a trailing empty one
+    IFS=',' read -r -a shas <<< "$refs"
+    [ "${#shas[@]}" -eq 2 ] || gw_die "--bench takes exactly two commits (SHA1,SHA2), got ${#shas[@]}: '$refs'"
+    for sha in "${shas[@]}"; do
+        [[ $sha =~ ^[0-9a-f]{40}$ ]] || gw_die "'$sha' is not a commit: the exact 40-digit lowercase sha is required"
+    done
+    url=$(git -C "$repo" remote get-url origin 2> /dev/null) || gw_die "this checkout has no remote 'origin' to check the commits against"
+    [[ $url =~ ^(https://github\.com/|git@github\.com:|ssh://git@github\.com/)$GW_REPO_SLUG(\.git)?/?$ ]] ||
+        gw_die "the remote origin of this checkout is not $GW_REPO_SLUG: refusing (a bench round builds commits of that repository only)"
+    for sha in "${shas[@]}"; do
+        git -C "$repo" cat-file -e "$sha^{commit}" 2> /dev/null ||
+            gw_die "commit $sha is not in this repository ($GW_REPO_SLUG): fetch origin first, or it is not a commit of this repository"
+        [ -n "$(git -C "$repo" for-each-ref --contains "$sha" --count=1 --format='%(refname)' refs/remotes/origin 2> /dev/null)" ] ||
+            gw_die "commit $sha is not reachable from any branch of origin ($GW_REPO_SLUG): push it, or fetch origin first"
+    done
+}
 
 # ---------------------------------------------------------------------------------------------- inspection
 
@@ -165,8 +209,11 @@ gw_build_create_args() { # zone machine bucket
 
 # `start`, `stop` or `delete` of the one instance: the guard, a dry run by default, the real call only with the approval flag.
 # The instance must carry the labels project=duoforge and purpose=watch (a machine that is not the watchdog is never touched).
+# `start --bench SHA1,SHA2 [--families LIST]` starts a bench round instead of a fuzz round: before the start it sets the
+# instance metadata bench_refs, bench_families and bench_run (the id of the round: bench/<id>/ in the bucket); the two
+# commits and the families are checked first (gw_check_bench_refs, gw_check_bench_families), before any gcloud call.
 gw_instance_action() { # action args...
-    local action=$1 zone=$GW_DEFAULT_ZONE approved=no status labels
+    local action=$1 zone=$GW_DEFAULT_ZONE approved=no status labels bench_refs='' bench_families='' bench_given=no families_given=no
     shift
     while [ $# -gt 0 ]; do
         case $1 in
@@ -179,26 +226,64 @@ gw_instance_action() { # action args...
                 approved=yes
                 shift
                 ;;
-            *) gw_die "unknown argument '$1' (usage: $action.sh [--zone ZONE] [--i-have-owner-approval])" ;;
+            --bench)
+                [ "$action" = start ] || gw_die "unknown argument '$1' (usage: $action.sh [--zone ZONE] [--i-have-owner-approval])"
+                [ $# -ge 2 ] || gw_die "--bench needs a value (SHA1,SHA2)"
+                bench_refs=$2
+                bench_given=yes
+                shift 2
+                ;;
+            --families)
+                [ "$action" = start ] || gw_die "unknown argument '$1' (usage: $action.sh [--zone ZONE] [--i-have-owner-approval])"
+                [ $# -ge 2 ] || gw_die "--families needs a value"
+                bench_families=$2
+                families_given=yes
+                shift 2
+                ;;
+            *)
+                if [ "$action" = start ]; then
+                    gw_die "unknown argument '$1' (usage: start.sh [--zone ZONE] [--bench SHA1,SHA2 [--families LIST]] [--i-have-owner-approval])"
+                fi
+                gw_die "unknown argument '$1' (usage: $action.sh [--zone ZONE] [--i-have-owner-approval])"
+                ;;
         esac
     done
     gw_valid_zone "$zone" || gw_die "the zone '$zone' is not one of: $GW_ALLOWED_ZONES"
+    if [ "$bench_given" = yes ]; then
+        gw_check_bench_refs "$bench_refs"
+        [ "$families_given" = yes ] || bench_families=$GW_DEFAULT_BENCH_FAMILIES # only when none was given: an empty list is refused
+        gw_check_bench_families "$bench_families"
+    elif [ "$families_given" = yes ]; then
+        gw_die "--families belongs to --bench: a fuzz round has no families"
+    fi
     gw_identity_guard
     status=$(gw_instance_status "$zone")
     [ -n "$status" ] || gw_die "there is no instance '$GW_INSTANCE' in $zone"
     labels=$(gw_gcloud compute instances describe "$GW_INSTANCE" --zone "$zone" --format='value(labels.project,labels.purpose)' 2> /dev/null | tr '\t' ',') || labels=''
     [ "$labels" = "duoforge,watch" ] || gw_die "the instance '$GW_INSTANCE' does not carry the labels $GW_LABELS: refusing to touch it"
     gw_log "the instance $GW_INSTANCE in $zone is $status"
-    local cmd=(compute instances "$action" "$GW_INSTANCE" --zone "$zone")
+    local cmd=(compute instances "$action" "$GW_INSTANCE" --zone "$zone") meta=()
     case $action in
         start) [ "$status" != RUNNING ] || gw_die "the instance is already RUNNING (a round is under way, or it was just started)" ;;
         stop) [ "$status" = RUNNING ] || gw_die "the instance is $status, not RUNNING: nothing to stop" ;;
         delete) ;;
     esac
+    if [ "$bench_given" = yes ]; then
+        # "^:^" makes ':' the separator of the keys, because the values hold commas (gcloud topic escaping)
+        meta=(compute instances add-metadata "$GW_INSTANCE" --zone "$zone" --metadata
+            "^:^bench_refs=$bench_refs:bench_families=$bench_families:bench_run=${GW_BENCH_RUN:-b$(date -u +%Y%m%dT%H%M%SZ)}")
+    fi
     if [ "$approved" != yes ]; then
         gw_log "dry run: without --i-have-owner-approval nothing is changed. The call would be:"
+        if [ "${#meta[@]}" -gt 0 ]; then
+            printf '%s %s\n' "$GW_GCLOUD" "--project $GW_PROJECT --quiet ${meta[*]}"
+        fi
         printf '%s %s\n' "$GW_GCLOUD" "--project $GW_PROJECT --quiet ${cmd[*]}"
         return 0
+    fi
+    if [ "${#meta[@]}" -gt 0 ]; then
+        gw_log "approved: bench round of ${bench_refs//,/ and } (families $bench_families)"
+        gw_gcloud "${meta[@]}" || gw_die "the metadata of the bench round could not be set: the instance is not started"
     fi
     gw_log "approved: $action $GW_INSTANCE"
     gw_gcloud "${cmd[@]}"

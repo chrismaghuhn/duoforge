@@ -584,7 +584,7 @@ class Library(unittest.TestCase):
             lines = [l for l in trace['steps'][k]['log'] if l.startswith('|-end|') and l.endswith('|move: Heal Block')]
             self.assertEqual(len(lines), 2)
             lower_first = lines[0].startswith('|-end|p1a')
-            self.assertEqual(entry, (trace_to_c.SITES['SPEED_TIE'], 0, 2, 0 if lower_first else 1), name)
+            self.assertEqual(entry, (trace_to_c.SITES['SPEED_TIE'], 0, 2, d['value'] - d['start']), name)  # the draw as it is
             # name a: the line of p1a is first, name b: the line of p2a
             self.assertEqual(lower_first, name.endswith('_a'))
             # The same draw with the lines in the other order contradicts the draw: an error, no entry.
@@ -651,6 +651,69 @@ class Library(unittest.TestCase):
         self.assertEqual(rows, derived)
         values = {v[0] for v in derived.values()}
         self.assertTrue({0, 3, 4} <= values)  # both new weathers are shown, and they end
+
+    TERRAIN_BATTLES = ['g25_electric_surge_voltage', 'g25_electric_seed', 'g25_misty_terrain', 'g25_terrain_pulse_psychic_misty',
+                       'g25_terrain_pulse_electric', 'g25_weather_ball_refrigerate', 'g25_misty_hurricane']
+
+    def test_the_terrain_rows_of_the_view_are_what_the_field_lines_say(self):
+        """Decision 0018 section 6.1, terrain values Electric and Misty (step G25): a -fieldstart line that names a terrain sets
+        it for 5 turns (the replaced terrain ends without a line), each |upkeep line with a terrain up is one turn gone, a
+        -fieldend line ends it (Misty Terrain's has no "move: " in it). The rows of the C test (terrain_rows in
+        tests/test_pool_terrain.c: the terrain and the turns left after each step of the seven battles, for both players)
+        must be exactly what these lines give for the committed traces, so that the engine's view is checked against the
+        protocol and not against itself."""
+        with open(os.path.join(ROOT, 'tests', 'test_pool_terrain.c'), encoding='utf-8') as f:
+            source = f.read()
+        rows = {}
+        for m in re.finditer(r'\{"(g25_\w+)", (\d+)u, (\d)u, (\d)u\}', source):
+            rows[(m.group(1), int(m.group(2)))] = (int(m.group(3)), int(m.group(4)))
+        code = {'move: Grassy Terrain': 1, 'move: Psychic Terrain': 2, 'move: Electric Terrain': 3, 'move: Misty Terrain': 4}
+        derived = {}
+        for name in self.TERRAIN_BATTLES:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            terrain, turns = 0, 0
+            for k, step in enumerate(trace['steps']):
+                for line in step['log']:
+                    part = line.split('|')
+                    if len(part) < 2:
+                        continue
+                    if part[1] == '-fieldstart' and part[2] in code:
+                        terrain, turns = code[part[2]], 5
+                    elif part[1] == '-fieldend':
+                        self.assertIn(part[2], tuple(code) + ('Misty Terrain',))
+                        terrain, turns = 0, 0
+                    elif part[1] == 'upkeep' and terrain:
+                        turns -= 1
+                derived[(name, k)] = (terrain, turns)
+        self.assertEqual(rows, derived)
+        values = {v[0] for v in derived.values()}
+        self.assertTrue({0, 2, 3, 4} <= values)  # both new terrains are shown, and they end
+
+    def test_every_terrain_line_the_battles_show_is_a_known_start_end_or_block(self):
+        """The field lines of the terrain battles: starts from an ability ([from] ability: Electric Surge or Psychic Surge with
+        [of]) or a move (no attribute), the ends (with the one that has no "move: "), and the -activate lines of the status
+        refusals; the converter maps each to its event."""
+        starts, ends, blocks = set(), set(), set()
+        for name in self.TERRAIN_BATTLES:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            for step in trace['steps']:
+                for line in step['log']:
+                    part = line.split('|')
+                    if len(part) > 2 and part[1] == '-fieldstart':
+                        starts.add((part[2], part[3] if len(part) > 3 else ''))
+                    if len(part) > 2 and part[1] == '-fieldend':
+                        ends.add(part[2])
+                    if len(part) > 3 and part[1] == '-activate' and 'Terrain' in part[3]:
+                        blocks.add(part[3])
+        self.assertEqual({s[0] for s in starts}, {'move: Electric Terrain', 'move: Misty Terrain', 'move: Psychic Terrain'})
+        self.assertIn(('move: Electric Terrain', '[from] ability: Electric Surge'), starts)
+        self.assertIn(('move: Psychic Terrain', '[from] ability: Psychic Surge'), starts)
+        self.assertEqual(ends, {'move: Electric Terrain', 'Misty Terrain'})
+        self.assertEqual(blocks, {'move: Electric Terrain', 'move: Misty Terrain'})
+        self.assertEqual((trace_to_c.FIELD_ELECTRIC_TERRAIN, trace_to_c.FIELD_MISTY_TERRAIN), (4, 5))
+        self.assertEqual((trace_to_c.TERRAIN['electricterrain'], trace_to_c.TERRAIN['mistyterrain']), (3, 4))
 
     def test_every_weather_line_the_battles_show_is_a_known_start_end_or_upkeep(self):
         """The -weather lines of the weather battles: starts from an ability ([from] ability: Sand Stream or Snow Warning
@@ -875,6 +938,80 @@ class Library(unittest.TestCase):
                 derived[(name, k)] = tuple(kind)
         self.assertEqual(rows, derived)
         self.assertTrue(any(any(v) for v in derived.values()) and punished > 0 and stopped_without > 0)
+
+    def test_disable_rows_are_what_the_protocol_lines_say(self):
+        """Decision 0018 section 6.1 for Disable: a position has the slot of the move named by `|-start|X|Disable|MOVE` (the
+        slot of MOVE in the member's set, the spec's team text: the order of its `- Move` lines, from 1) until the
+        `|-end|X|Disable` line or until its occupant leaves (`|switch|` at the position) or faints. The rows of the C test
+        (slot_rows in tests/test_pool_g27.c: the barred slot of the four positions, side * 2 + slot, after each step of the G27
+        battles) must be exactly what these lines give for the committed traces. Every `cant|X|Disable|MOVE` is of the barred
+        move, a `-start` with [from] ability: Cursed Body comes after a hit at a holder of that ability, and the next move
+        line of a barred position is never of its barred move."""
+        with open(os.path.join(ROOT, 'tests', 'test_pool_g27.c'), encoding='utf-8') as f:
+            source = f.read()
+        rows = {}
+        for m in re.finditer(r'\{"(g27_\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}', source):
+            rows[(m.group(1), int(m.group(2)))] = tuple(int(m.group(i)) for i in range(3, 7))
+        names = sorted({n for n, _ in rows})
+        self.assertTrue(names)
+        listed = re.search(r'names\[\] = \{(.*?)\};', source, re.S).group(1)
+        self.assertEqual(sorted(re.findall(r'"(g27_\w+)"', listed)), names)
+
+        def flat(label):  # `p1a: Name` -> side * 2 + slot
+            return (int(label[1]) - 1) * 2 + 'ab'.index(label[2])
+        derived = {}
+        cursed = moves = cants = 0
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            with open(os.path.join(ROOT, 'tests', 'reference', 'specs', name + '.json'), encoding='utf-8') as f:
+                spec = json.load(f)
+            sets = [[t for t in team.split('\n\n')] for team in spec['teams']]
+
+            def moves_of(side, species):
+                found = [t for t in sets[side] if t.startswith(species + ' ') or t.startswith(species + '\n')]
+                self.assertEqual(len(found), 1, (name, species))
+                return [l[2:] for l in found[0].split('\n') if l.startswith('- ')]
+            slot = [0, 0, 0, 0]
+            for k, step in enumerate(trace['steps']):
+                lines = [l for l in step['log'] if not l.startswith('|split')]
+                for i, line in enumerate(lines):
+                    part = line.split('|')
+                    if len(part) < 2:
+                        continue
+                    if part[1] == 'move':
+                        who = flat(part[2])
+                        if slot[who]:
+                            moves += 1
+                            species = part[2].split(': ')[1]
+                            self.assertNotEqual(moves_of(who // 2, species)[slot[who] - 1], part[3], line)
+                    elif part[1] == '-start' and part[3] == 'Disable':
+                        who = flat(part[2])
+                        species = part[2].split(': ')[1]
+                        slot[who] = moves_of(who // 2, species).index(part[4]) + 1
+                        if any(a.startswith('[from] ability: Cursed Body') for a in part[5:]):
+                            cursed += 1
+                    elif part[1] == '-end' and part[3] == 'Disable':
+                        slot[flat(part[2])] = 0
+                    elif part[1] == 'cant' and part[3] == 'Disable':
+                        who = flat(part[2])
+                        species = part[2].split(': ')[1]
+                        self.assertEqual(moves_of(who // 2, species)[slot[who] - 1], part[4], line)
+                        cants += 1
+                    elif part[1] in ('switch', 'faint', 'drag'):
+                        slot[flat(part[2])] = 0
+                derived[(name, k)] = tuple(slot)
+        self.assertEqual(rows, derived)
+        self.assertTrue(any(any(v) for v in derived.values()) and cursed > 0 and cants > 0)
+
+    def test_cursed_body_is_a_draw_site_of_its_own(self):
+        """Cursed Body's randomChance(3, 10) (step G27) is a draw of the site CURSED_BODY, random(10), that ps_trace.js names
+        by the effect and the event it runs in; the new public values are the numbers of the header."""
+        self.assertEqual(trace_to_c.SITES['CURSED_BODY'], 17)
+        self.assertEqual(trace_to_c.CAUSE['DISABLE'], 19)
+        self.assertEqual(trace_to_c.VOLATILE_DISABLE, 4)
+        with open(os.path.join(ROOT, 'tools', 'reference', 'ps_trace.js'), encoding='utf-8') as f:
+            self.assertIn("'cursedbody:DamagingHit': 'CURSED_BODY'", f.read())
 
     def test_toxic_rows_are_what_the_protocol_lines_say(self):
         """Decision 0015 section 7 for the toxic stage (step G36): the occupant of a position is badly poisoned from the
@@ -1553,7 +1690,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 125)  # the ten of G35 (Thunder Punch, X-Scissor, Lumina Crash, Overdrive, Scorching Sands, Leaf Blade, Boomburst, Sludge Wave, Volt Tackle, Discharge), Toxic and Poison Fang (G36), the seven of G34 (Steel Roller, Clangorous Soul, Brick Break, Fiery Dance, Psycho Cut, Iron Defense, Electroweb), the eleven of G32, the ten of G30, the six of G28 (Shell Smash, Acrobatics, Blizzard, Ancient Power, Feint, Earthquake), the 27 of G21, Spiky Shield (G20), G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
+        self.assertEqual(len(marked), 130)  # the four of G25 (Electric Terrain, Misty Terrain, Rising Voltage, Terrain Pulse), Disable (G27), the ten of G35 (Thunder Punch, X-Scissor, Lumina Crash, Overdrive, Scorching Sands, Leaf Blade, Boomburst, Sludge Wave, Volt Tackle, Discharge), Toxic and Poison Fang (G36), the seven of G34 (Steel Roller, Clangorous Soul, Brick Break, Fiery Dance, Psycho Cut, Iron Defense, Electroweb), the eleven of G32, the ten of G30, the six of G28 (Shell Smash, Acrobatics, Blizzard, Ancient Power, Feint, Earthquake), the 27 of G21, Spiky Shield (G20), G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -1572,6 +1709,8 @@ class Library(unittest.TestCase):
                             done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|', '|-start|', '|-weather|') + (('|-status|',) if name in ('Will-O-Wisp', 'Stun Spore', 'Sleep Powder', 'Poison Powder') else ()))
                             # A side condition that a status move sets (Aurora Veil, step G20): its -sidestart line.
                             done = done or (after.startswith('|-sidestart|') and after.endswith('|move: ' + name))
+                            # A terrain that a status move sets (Electric Terrain, Misty Terrain, step G25): its -fieldstart line.
+                            done = done or (after.startswith('|-fieldstart|') and after.endswith('|move: ' + name))
                             # A side move (Wide Guard, step G7) shows its effect as its own -singleturn line; Detect's is
                             # Protect's (step G13: its handler, and the line of the Protect condition).
                             done = done or (after.startswith('|-singleturn|') and after.endswith('|' + name))
@@ -1710,7 +1849,7 @@ class Library(unittest.TestCase):
             marked = f.read()
         for name in ('SANDRUSH', 'SWIFTSWIM', 'SLUSHRUSH', 'CHLOROPHYLL', 'INNERFOCUS', 'LIQUIDVOICE'):
             self.assertIn('[DFI_ABILITY_%s] = 1u' % name, marked)
-        self.assertNotIn('[DFI_ABILITY_CURSEDBODY] = 1u', marked)
+        # (Cursed Body, which G22 left unmarked for want of the Disable volatile, is marked by step G27.)
 
     def test_the_switch_of_a_damaging_pivot_names_its_move(self):
         """[from] U-turn (step G5) is [from] of the move, as Flip Turn and Parting Shot: the cause MOVE and the move's

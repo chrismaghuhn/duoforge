@@ -280,6 +280,17 @@ class LinesTest(unittest.TestCase):
         self.assertEqual(lines.check("|-status|p1a: Staraptor|tox", self.view), "fold")  # Tox folds (BC spec 5)
         self.assertEqual(self.stop("|replace|p1a: Zoroark|Zoroark-Hisui, L50, M"), "feature:ILLUSION")
 
+    def test_item_transfer_lines_are_item_change(self):
+        # G29 (#171): every line of a Trick, Switcheroo, Thief or Covet is decision 0018's ITEM_CHANGE, the
+        # -activate of Trick too (it names the target; Switcheroo prints none)
+        for line in ("|-activate|p1a: Staraptor|move: Trick|[of] p2a: Gholdengo",
+                     "|-item|p1a: Staraptor|Choice Scarf|[from] move: Trick",
+                     "|-enditem|p1a: Staraptor|Sitrus Berry|[silent]|[from] move: Switcheroo",
+                     "|-item|p1a: Staraptor|Life Orb|[from] move: Thief|[of] p2a: Gholdengo",
+                     "|-enditem|p2a: Gholdengo|Life Orb|[silent]|[from] move: Thief|[of] p1a: Staraptor",
+                     "|-item|p1a: Staraptor|Life Orb|[from] move: Covet|[of] p2a: Gholdengo"):
+            self.assertEqual(self.stop(line), "feature:ITEM_CHANGE", line)
+
     def test_unknown_lines_stop(self):
         self.assertEqual(self.stop("|-sethp|p1a: Staraptor|50/100"), "line:-sethp")
         self.assertEqual(self.stop("|move|p1a: Staraptor|Baton Pass|p1a: Staraptor"), "line:move Baton Pass")
