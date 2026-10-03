@@ -1478,6 +1478,16 @@ class Library(unittest.TestCase):
         self.assertEqual(moves(foreign[3]), ['p1b: Beartic', 'p2b: Ninetales', 'p1a: Basculegion'])
         self.assertTrue(any(l.startswith('|-weather|Snowscape|[from] ability: Snow Warning') for l in foreign[3]['log']))
         self.assertEqual(moves(foreign[5])[:4], ['p2b: Ninetales', 'p2a: Abomasnow', 'p1b: Venusaur', 'p1a: Houndstone'])
+        # Slush Rush against a tie: Beartic (70 raw, 140 in snow) and Sneasler (raw 140) tie in the queue and, both with
+        # Leftovers, in the residual; Sneasler is first on the turn of the Snowscape (Beartic has its raw Speed until
+        # the snow is up).
+        tie = trace('g22_speed_tie_snow')['steps']
+        self.assertEqual(moves(tie[1])[-2:], ['p2a: Sneasler', 'p1a: Beartic'])
+        draws = [d for step in tie for d in step['draws'] if d['site'] == 'SPEED_TIE']
+        self.assertTrue(any(d['context'] == 'queue' and
+                            sorted(d['group']) == ['A:move:p1a:superpower', 'A:move:p2a:shadowclaw'] for d in draws))
+        self.assertTrue(any(d['context'] == 'field:Residual' and
+                            sorted(d['group']) == ['H:leftovers:p1a:cb', 'H:leftovers:p2a:cb'] for d in draws))
         # Inner Focus: its Intimidate lines say -fail (three times: the entry, and Staraptor's switch-in), the other foe
         # is lowered, Fake Out and the 30 percent Rock Slide flinch Raichu and never Dragonite.
         focus = trace('g22_inner_focus')['steps']
