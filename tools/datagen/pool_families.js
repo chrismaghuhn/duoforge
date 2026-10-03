@@ -538,7 +538,7 @@ function checkRecharge(dex) {
 }
 
 // Step G22, the weather Speed abilities, Inner Focus and Liquid Voice: the pinned facts that the engine hard-codes
-// (decision 0015, item 5l), called on the pinned handlers. The Champions mod overrides none of the six abilities (it has
+// (decision 0015, item 5n), called on the pinned handlers. The Champions mod overrides none of the six abilities (it has
 // no entry by their ids; the source of the generator hashes that file). `formes` are the rows of dfi_pool_forme_legal,
 // `itemIds` and `abilityIds` the ids of the pool's headers.
 function checkG22(dex, formes, itemIds, abilityIds) {

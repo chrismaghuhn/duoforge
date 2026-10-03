@@ -1036,6 +1036,13 @@ class Library(unittest.TestCase):
         with self.assertRaises(trace_to_c.ConversionError) as ctx:
             trace_to_c.drop_reason(d, state('brn'))
         self.assertEqual(ctx.exception.rule, 'thermal-exchange-burn')
+        # The holder that stands in the slot when the tie is drawn counts: one that switched in this step over a burned
+        # Pokemon (the state before the step still shows the burned one) is no burned holder (step G21, fz_2101_3); a
+        # burned occupant in the state after the step is.
+        self.assertEqual(trace_to_c.drop_reason(d, state('brn'), state('')), 'each-event tie with at most one holder')
+        with self.assertRaises(trace_to_c.ConversionError) as ctx:
+            trace_to_c.drop_reason(d, state(''), state('brn'))
+        self.assertEqual(ctx.exception.rule, 'thermal-exchange-burn')
 
     def test_recharge_rows_are_what_the_protocol_lines_say(self):
         """Decision 0018 section 6.1 for the recharge (step G17): a position must recharge from the `|-mustrecharge|X`
@@ -1339,7 +1346,7 @@ class Library(unittest.TestCase):
         Arcanine-Hisui and Floette-Eternal. The pool battles g2_data_moves_b names Arcanine-Hisui in the switch line."""
         self.assertEqual(trace_to_c.BASE_SPECIES_NAME,
                          {'Indeedee-F': 'Indeedee', 'Arcanine-Hisui': 'Arcanine', 'Floette-Eternal': 'Floette',
-                          'Ninetales-Alola': 'Ninetales', 'Meowstic-F': 'Meowstic'})
+                          'Ninetales-Alola': 'Ninetales', 'Meowstic-F': 'Meowstic', 'Lycanroc-Dusk': 'Lycanroc'})  # G21
         spec = json.load(open(os.path.join(ROOT, 'tests', 'reference', 'traces', 'g2_data_moves_b.json')))
         # Meowstic-F (step G15, g15_ef_retarget_*) is called Meowstic.
         for name in ('g15_ef_retarget_terrain', 'g15_ef_retarget_plain'):
@@ -1366,7 +1373,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 51)  # G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
+        self.assertEqual(len(marked), 78)  # the 27 of G21, G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -1382,7 +1389,7 @@ class Library(unittest.TestCase):
                         for after in lines[i + 1:]:
                             if after.startswith('|move|') or after.startswith('|turn|'):
                                 break
-                            done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|', '|-start|', '|-weather|'))
+                            done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|', '|-start|', '|-weather|') + (('|-status|',) if name == 'Will-O-Wisp' else ()))
                             # A side condition that a status move sets (Aurora Veil, step G20): its -sidestart line.
                             done = done or (after.startswith('|-sidestart|') and after.endswith('|move: ' + name))
                             # A side move (Wide Guard, step G7) shows its effect as its own -singleturn line; Detect's is

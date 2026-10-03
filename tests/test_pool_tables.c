@@ -1166,7 +1166,10 @@ int main(void)
          * Noise, whose lockout and Heal Block are secondary kinds, not handlers: g8_throat_chop, g8_heal_block,
          * g8_heal_block_pair and _tie_a/_b; Wide Guard, whose handler id the turn code runs: g7_wide_guard_*; Soak, whose
          * handler id the turn code implements since step G11: g11_soak, _mega, _stab and _electro; Moonblast and Calm
-         * Mind: g12_floette_moves); step G19 Coaching and Glaive Rush (g19_*); step G17 six of the seven recharge moves (g17_*; Meteor Assault stays unmarked: its only learner, Sirfetch'd, has no supported ability). No move with a handler id is left
+         * Mind: g12_floette_moves); step G19 Coaching and Glaive Rush (g19_*); step G21 twenty-seven moves of the whole pool on columns that exist (Sludge Bomb, Gunk
+         * Shot, Dragon Claw, Dragon Dance, Quiver Dance, Agility, Mystical Fire, Struggle Bug, Dark Pulse, Air
+         * Slash, Icicle Crash, Waterfall, Overheat, Leaf Storm, Armor Cannon, Will-O-Wisp, Night Slash, Slash, Fire Blast,
+         * Power Whip, Accelerock, Bullet Punch, Mach Punch, Crunch, Bug Buzz, Drain Punch and Nuzzle: g21_*); step G17 six of the seven recharge moves (g17_*; Meteor Assault stays unmarked: its only learner, Sirfetch'd, has no supported ability). No move with a handler id is left
          * unmarked. */
         static const uint32_t marked_moves[] = {DFI_MOVE_ROCKSLIDE, DFI_MOVE_DOUBLEEDGE, DFI_MOVE_THUNDERBOLT,
                                                 DFI_MOVE_FLASHCANNON, DFI_MOVE_EXTREMESPEED, DFI_MOVE_HEADSMASH,
@@ -1184,6 +1187,13 @@ int main(void)
                                                 DFI_MOVE_DETECT, DFI_MOVE_POISONJAB,
                                                 DFI_MOVE_BLASTBURN, DFI_MOVE_FRENZYPLANT, DFI_MOVE_GIGAIMPACT,
                                                 DFI_MOVE_HYDROCANNON, DFI_MOVE_HYPERBEAM, DFI_MOVE_ROCKWRECKER, DFI_MOVE_KNOCKOFF,
+                                                DFI_MOVE_SLUDGEBOMB, DFI_MOVE_GUNKSHOT, DFI_MOVE_DRAGONCLAW, DFI_MOVE_DRAGONDANCE,
+                                                DFI_MOVE_QUIVERDANCE, DFI_MOVE_AGILITY, DFI_MOVE_MYSTICALFIRE,
+                                                DFI_MOVE_STRUGGLEBUG, DFI_MOVE_DARKPULSE, DFI_MOVE_AIRSLASH, DFI_MOVE_ICICLECRASH,
+                                                DFI_MOVE_WATERFALL, DFI_MOVE_OVERHEAT, DFI_MOVE_LEAFSTORM, DFI_MOVE_ARMORCANNON,
+                                                DFI_MOVE_WILLOWISP, DFI_MOVE_NIGHTSLASH, DFI_MOVE_SLASH, DFI_MOVE_FIREBLAST,
+                                                DFI_MOVE_POWERWHIP, DFI_MOVE_ACCELEROCK, DFI_MOVE_BULLETPUNCH, DFI_MOVE_MACHPUNCH,
+                                                DFI_MOVE_CRUNCH, DFI_MOVE_BUGBUZZ, DFI_MOVE_DRAINPUNCH, DFI_MOVE_NUZZLE,
                                                 DFI_MOVE_EXPANDINGFORCE,
                                                 DFI_MOVE_COACHING, DFI_MOVE_GLAIVERUSH, DFI_MOVE_AURORAVEIL};
         uint32_t marked_count = 0u;
@@ -1205,7 +1215,7 @@ int main(void)
             DF_CHECK(&t, !want || dfi_pool_moves[id].special != DFI_SPECIAL_UNMODELED);
             marked_count += dfi_support.moves[id] != 0u ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, marked_count, 51u);
+        DF_CHECK_EQ_U64(&t, marked_count, 78u);
     }
 
     /* Step AC1: Trace copies the ability of a foe unless that has the pin's notrace flag. The turn code excludes only
