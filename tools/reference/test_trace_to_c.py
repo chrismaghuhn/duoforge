@@ -853,6 +853,12 @@ class Library(unittest.TestCase):
                 trace = json.load(f)
             rosters = [re.findall(r'^([A-Za-z-]+)(?: \([MF]\))?(?: @|$)', text, re.M) for text in spec['teams']]
             held = [0] * 12
+
+            def member(side, shown):
+                # the name that the protocol shows: the species, or its first word (Arcanine-Hisui is shown as Arcanine)
+                if shown in rosters[side]:
+                    return rosters[side].index(shown)
+                return [r.split('-')[0] for r in rosters[side]].index(shown)
             for k, step in enumerate(trace['steps']):
                 received = left = 0
                 for line in step['log']:
@@ -863,14 +869,14 @@ class Library(unittest.TestCase):
                     if not from_move:
                         continue
                     side = int(part[2][1]) - 1
-                    index = side * 6 + rosters[side].index(part[2][5:])
+                    index = side * 6 + member(side, part[2][5:])
                     if part[1] == '-item':
                         held[index] = tables['ITEM'][trace_to_c.key(part[3])] + 1
                         received += 1
                         for a in part[4:]:
                             if a.startswith('[of] '):
                                 of_side = int(a[6]) - 1
-                                held[of_side * 6 + rosters[of_side].index(a[10:])] = 255
+                                held[of_side * 6 + member(of_side, a[10:])] = 255
                     else:
                         held[index] = 255
                         left += 1
@@ -882,8 +888,8 @@ class Library(unittest.TestCase):
         maxhp = [{'Sneasler': 100}, {'Staraptor': 100}]
         cases = (
             ('|-item|p2a: Staraptor|Sitrus Berry|[from] move: Trick', 'ITEM_START', 2, trace_to_c.NOPOS, 'Trick', 'Sitrus Berry'),
-            ('|-item|p1a: Sneasler|Sitrus Berry|[from] move: Thief|[of] p2a: Staraptor', 'ITEM_START', 1, 2, 'Thief', 'Sitrus Berry'),
-            ('|-item|p1a: Sneasler|Sitrus Berry|[from] move: Covet|[of] p2a: Staraptor', 'ITEM_START', 1, 2, 'Covet', 'Sitrus Berry'),
+            ('|-item|p1a: Sneasler|Sitrus Berry|[from] move: Thief|[of] p2a: Staraptor', 'ITEM_START', 0, 2, 'Thief', 'Sitrus Berry'),
+            ('|-item|p1a: Sneasler|Sitrus Berry|[from] move: Covet|[of] p2a: Staraptor', 'ITEM_START', 0, 2, 'Covet', 'Sitrus Berry'),
         )
         for line, kind, pos, other, move, item in cases:
             with self.subTest(line=line):
@@ -894,7 +900,7 @@ class Library(unittest.TestCase):
         for line, move, other in (('|-enditem|p2a: Staraptor|Sitrus Berry|[silent]|[from] move: Trick', 'Trick', trace_to_c.NOPOS),
                                   ('|-enditem|p2a: Staraptor|Sitrus Berry|[silent]|[from] move: Switcheroo', 'Switcheroo',
                                    trace_to_c.NOPOS),
-                                  ('|-enditem|p2a: Staraptor|Sitrus Berry|[silent]|[from] move: Thief|[of] p1a: Sneasler', 'Thief', 1)):
+                                  ('|-enditem|p2a: Staraptor|Sitrus Berry|[silent]|[from] move: Thief|[of] p1a: Sneasler', 'Thief', 0)):
             with self.subTest(line=line):
                 (e,) = trace_to_c.step_events([line], 0, roster, maxhp, tables)
                 self.assertEqual(e[:6], (trace_to_c.EV['ITEM_END'], 2, other, trace_to_c.CAUSE['ITEM_TAKEN'],
@@ -1474,7 +1480,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 78)  # the 27 of G21, G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
+        self.assertEqual(len(marked), 82)  # the four of G29 (Trick, Switcheroo, Thief, Covet), the 27 of G21, G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -1497,6 +1503,8 @@ class Library(unittest.TestCase):
                             # Protect's (step G13: its handler, and the line of the Protect condition).
                             done = done or (after.startswith('|-singleturn|') and after.endswith('|' + name))
                             done = done or (name == 'Detect' and after.startswith('|-singleturn|'))
+                            # An item that a move gave (Trick, Switcheroo, Thief, Covet; step G29): its -item line.
+                            done = done or (after.startswith('|-item|') and ('[from] move: ' + name) in after)
             with self.subTest(move=name):
                 self.assertTrue(done, '%s is marked but no committed pool battle uses it' % name)
 

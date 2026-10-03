@@ -312,6 +312,9 @@ static void check_invariants(df_test *t, const duoforge_context *ctx)
          * sim/pokemon.ts:1851-1866), and no state tells that from this one, so the check no longer refuses it under the POOL kinds
          * (tests/test_pool_g29.c check_kind_rules runs the same state under TEAM_C_DEV, where it is still refused). */
         b->tail.sides[1].item_now[pos->occupant] = 0u;
+        DF_CHECK(t, check_of(ctx, b) == DFI_INV_KNOWLEDGE); /* the foe saw the item go: a fact, as the Scarf case below says */
+        b->sides[0].knowledge[pos->occupant].revealed =
+            (uint8_t)((uint32_t)b->sides[0].knowledge[pos->occupant].revealed & ~(uint32_t)DFI_REVEALED_ITEM_CONSUMED);
         DF_CHECK(t, check_of(ctx, b) == DFI_INV_NONE);
         /* An item that was only used up gives the volatile as before (Sitrus Berry eaten), the taken one as well. */
         b->sides[1].members[pos->occupant].item_consumed = 1u;

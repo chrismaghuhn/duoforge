@@ -109,7 +109,32 @@ static const struct {
     uint32_t received;
     uint32_t left;
 } rows[] = {
-    {"", 0u, {0u}, 0u, 0u},
+    {"g29_trick_scarf", 0u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
+    {"g29_trick_scarf", 1u, {16u, 0u, 0u, 0u, 0u, 0u, 9u, 0u, 0u, 0u, 0u, 0u}, 2u, 0u},
+    {"g29_trick_scarf", 2u, {16u, 0u, 0u, 0u, 0u, 0u, 9u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
+    {"g29_trick_scarf", 3u, {16u, 0u, 0u, 0u, 0u, 0u, 9u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
+    {"g29_trick_scarf", 4u, {16u, 0u, 0u, 0u, 0u, 0u, 9u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
+    {"g29_trick_scarf", 5u, {16u, 0u, 0u, 0u, 0u, 0u, 9u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
+    {"g29_empty_hands", 0u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
+    {"g29_empty_hands", 1u, {255u, 27u, 0u, 0u, 0u, 0u, 3u, 255u, 0u, 0u, 0u, 0u}, 2u, 2u},
+    {"g29_empty_hands", 2u, {255u, 27u, 0u, 0u, 0u, 0u, 3u, 255u, 0u, 0u, 0u, 0u}, 0u, 0u},
+    {"g29_empty_hands", 3u, {255u, 255u, 0u, 0u, 0u, 0u, 3u, 27u, 0u, 0u, 0u, 0u}, 1u, 1u},
+    {"g29_empty_hands", 4u, {255u, 255u, 0u, 0u, 0u, 0u, 3u, 27u, 0u, 0u, 0u, 0u}, 0u, 0u},
+    {"g29_empty_hands", 5u, {255u, 255u, 0u, 0u, 0u, 0u, 3u, 27u, 0u, 0u, 0u, 0u}, 0u, 0u},
+    {"g29_thief_covet", 0u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
+    {"g29_thief_covet", 1u, {3u, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u}, 1u, 0u},
+    {"g29_thief_covet", 2u, {3u, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
+    {"g29_thief_covet", 3u, {3u, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
+    {"g29_thief_covet", 4u, {3u, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
+    {"g29_thief_covet", 5u, {3u, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
+    {"g29_thief_covet", 6u, {3u, 14u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 255u, 0u, 0u}, 1u, 1u},
+    {"g29_thief_covet", 7u, {3u, 14u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 255u, 0u, 0u}, 0u, 0u},
+    {"g29_trick_fails", 0u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
+    {"g29_trick_fails", 1u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
+    {"g29_trick_fails", 2u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
+    {"g29_trick_fails", 3u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
+    {"g29_trick_fails", 4u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
+    {"g29_trick_fails", 5u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u},
 };
 /* ROWS-END */
 
@@ -245,7 +270,7 @@ static void put_side(duoforge_side_setup *side, bool unburden_first)
     memset(side, 0, sizeof *side);
     side->member_count = 5u;
     set_member_of(&side->members[0], DFI_FORME_SNEASLER, DUOFORGE_GENDER_MALE,
-                  unburden_first ? DFI_ABILITY_UNBURDEN + 1u : 0u, unburden_first ? DFI_ITEM_WHITEHERB + 1u : 0u, 3u, sneasler);
+                  unburden_first ? DFI_ABILITY_UNBURDEN + 1u : 0u, unburden_first ? DFI_ITEM_LEFTOVERS + 1u : 0u, 3u, sneasler);
     set_member_of(&side->members[1], DFI_FORME_INCINEROAR, DUOFORGE_GENDER_MALE, DFI_ABILITY_INTIMIDATE + 1u,
                   DFI_ITEM_SITRUSBERRY + 1u, 2u, incineroar);
     set_member_of(&side->members[2], DFI_FORME_SALAMENCE, DUOFORGE_GENDER_MALE, DFI_ABILITY_INTIMIDATE + 1u, 0u, 2u, salamence);
@@ -299,8 +324,12 @@ static void check_kind_rules(df_test *t, const duoforge_context *k_other, const 
         dfi_invariant inv = DFI_INV_NONE;
         dfi_active_slot *pos = &w->sides[0].positions[0];
         dfi_member *holder = &w->sides[0].members[pos->occupant];
-        DF_CHECK(t, dfi_state_check(ctx, w, &inv) == DUOFORGE_OK && holder->item_consumed == 0u);
-        /* An Unburden holder with the volatile and its White Herb still held. */
+        const duoforge_status first = dfi_state_check(ctx, w, &inv);
+        if (first != DUOFORGE_OK) {
+            fprintf(stderr, "  kind rules: pass %u first check %u inv %u\n", pass, (unsigned)first, (unsigned)inv);
+        }
+        DF_CHECK(t, first == DUOFORGE_OK && holder->item_consumed == 0u);
+        /* An Unburden holder with the volatile and its Leftovers still held. */
         pos->flags = (uint8_t)((uint32_t)pos->flags | DFI_VOL_UNBURDEN);
         inv = DFI_INV_NONE;
         if (pool) {
