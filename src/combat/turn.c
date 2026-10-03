@@ -344,6 +344,18 @@ static duoforge_status dfi_staged_stat(const dfi_member *m, const dfi_active_slo
     return dfi_stage_stat(m->stats[index], pos->stages[index], out) ? DUOFORGE_OK : DUOFORGE_E_INVARIANT;
 }
 
+/* Whether the member has the Speed ability of the weather that is up: Swift Swim in rain, Chlorophyll in sun, Sand Rush
+ * in a sandstorm, Slush Rush in snow (step G22; the callbacks are cited at dfi_speed_key). The weather is the
+ * battle's: Hail is not in the format, and Primordial Sea and Desolate Land (also named by the Swift Swim and
+ * Chlorophyll handlers) are not weathers of the state. */
+static bool dfi_weather_speed_ability(const struct duoforge_battle *b, const dfi_member *m)
+{
+    return (b->weather == DFI_WEATHER_RAIN && dfi_ability(b, m, DFI_ABILITY_SWIFTSWIM)) ||
+           (b->weather == DFI_WEATHER_SUN && dfi_ability(b, m, DFI_ABILITY_CHLOROPHYLL)) ||
+           (b->weather == DFI_WEATHER_SAND && dfi_ability(b, m, DFI_ABILITY_SANDRUSH)) ||
+           (b->weather == DFI_WEATHER_SNOW && dfi_ability(b, m, DFI_ABILITY_SLUSHRUSH));
+}
+
 /* getActionSpeed of the Champions mod (data/mods/champions/scripts.ts:46-55):
  * the staged Speed times the chained ModifySpe modifiers (Tailwind
  * chainModify(2), Choice Scarf chainModify(1.5), Team C; one rounding), then
@@ -377,11 +389,23 @@ static duoforge_status dfi_speed_key(const struct duoforge_battle *b, uint32_t s
         !dfi_chain_modify(chain, 8192u, &chain)) {
         return DUOFORGE_E_INVARIANT;
     }
+    /* Sand Rush, Swift Swim, Slush Rush and Chlorophyll (step G22, POOL data): onModifySpe chainModify(2) while their
+     * weather is up (data/abilities.ts:3974-3979 sandrush, 4808-4813 swiftswim, 4347-4352 slushrush, 512-517
+     * chlorophyll; the Champions mod has no entry of any of them). The holder has one ability, so at most one of the
+     * four counts. Field.isWeather / pokemon.effectiveWeather read the weather that is up; no Cloud Nine, Air Lock,
+     * Utility Umbrella or Mega Sol is in a battle (unmarked or not in the pool: tests/test_pool_weather.c), so nothing
+     * suppresses it. Like the items and Unburden, only a standing holder counts: a fainted one has its raw Speed (the
+     * same isActive rule as above, the ability handler of a Pokemon that is not active is ignored). */
+    if (active && dfi_weather_speed_ability(b, m)) {
+        if (!dfi_chain_modify(chain, 8192u, &chain)) {
+            return DUOFORGE_E_INVARIANT;
+        }
+    }
     if (chain != 4096u) {
-        spe = dfi_modify(spe, chain); /* spe <= 4 * 65535, chain <= 6 * 4096 */
+        spe = dfi_modify(spe, chain); /* spe <= 4 * 65535, chain <= 12 * 4096 */
     }
     if (active && m->status == DFI_STATUS_PAR) {
-        spe = spe * 50u / 100u; /* spe <= 24 * 65535: stage x4, chain x6 */
+        spe = spe * 50u / 100u; /* spe <= 48 * 65535: stage x4, chain x12 */
     }
     if (spe > DFI_SPEED_CAP) {
         spe = DFI_SPEED_CAP;
@@ -425,8 +449,8 @@ static uint32_t dfi_move_of(const dfi_member *m, uint32_t move_slot)
  * own onModifyPriority (Grassy Glide) is a singleEvent on the move and still runs; its grounded test reads the types
  * alone (no Levitate or Air Balloon in the pool). No other ability or item of the pool changes a priority:
  * tools/datagen/pool_families.js pins that every modelled ability or item with a priority or Speed callback is
- * Prankster, Unburden or Choice Scarf, so a new one cannot enter without this function and dfi_speed_key being
- * looked at. */
+ * Prankster, Unburden, Choice Scarf or (step G22) one of the four weather Speed abilities, so a new one cannot enter
+ * without this function and dfi_speed_key being looked at. */
 static uint32_t dfi_move_priority(const struct duoforge_battle *b, const dfi_member *m, const dfi_move_data *md)
 {
     uint32_t priority = md->priority;
@@ -722,6 +746,19 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
         if (any && !(effect.cause == DUOFORGE_CAUSE_MOVE && effect.mode == DFI_BOOST_SECONDARY)) {
             dfi_flower_veil_block(r, flat, holder);
         }
+    }
+    /* Inner Focus (step G22, POOL data, data/abilities.ts:2157-2162): TryBoost, a change that the effect named
+     * Intimidate would make to Attack (boost.atk is set: a change the cap already took to 0 is not) is deleted, and
+     * -fail|holder|unboost|atk|[from] ability: Inner Focus|[of] holder shows. The Pokemon is no Grass type of a side
+     * with Flower Veil, whose own TryBoost handler would race this one by Speed: no Inner Focus holder of the pool is
+     * a Grass type (tools/datagen/pool_families.js checkG22). Breakable, like Flower Veil. */
+    if (effect.cause == DUOFORGE_CAUSE_ABILITY && effect.id2 == 1u + DFI_ABILITY_INTIMIDATE &&
+        boosts[DFI_STAGE_ATK] != DFI_BIAS6 && capped[DFI_STAGE_ATK] != DFI_BIAS6 &&
+        dfi_ability(r->b, m, DFI_ABILITY_INNERFOCUS)) {
+        veil[DFI_STAGE_ATK] = true;
+        const duoforge_event e = dfi_ev(DUOFORGE_EVENT_FAIL, flat, DUOFORGE_CAUSE_ABILITY,
+                                        1u + DFI_ABILITY_INNERFOCUS, flat);
+        dfi_emit(r, &e);
     }
     bool announced = effect.mode == DFI_BOOST_SECONDARY;
     for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
@@ -1367,6 +1404,14 @@ static duoforge_status dfi_add_volatile(dfi_run *r, uint32_t flat, uint32_t whic
         return DUOFORGE_OK;
     }
     if (which == DFI_VOLATILE_FLINCH) {
+        /* Inner Focus (step G22, POOL data, data/abilities.ts:2153-2167): onTryAddVolatile returns null for the flinch
+         * volatile, so it is not added and nothing is shown; the secondary's roll was drawn before (the caller). The
+         * ability is breakable (a move or ability that ignores abilities would skip it): Mold Breaker is unmarked
+         * (tests/test_pool_weather.c), Teravolt and Turboblaze are not in the pool, and a move with ignoreAbility has a
+         * field that the generator does not model (UNMODELED). */
+        if (dfi_ability(r->b, m, DFI_ABILITY_INNERFOCUS)) {
+            return DUOFORGE_OK;
+        }
         pos->flags = (uint8_t)((uint32_t)pos->flags | DFI_VOL_FLINCH); /* wide-operands-reviewed */
         return DUOFORGE_OK;
     }
@@ -1827,12 +1872,16 @@ static duoforge_status dfi_update(dfi_run *r)
 }
 
 /* runStatusImmunity('sandstorm'): a type whose chart entry carries the sandstorm key, Rock, Ground and Steel
- * (data/typechart.ts), judged by the types now (dfi_types_of: a Soaked Pokemon is a Water type alone, step G11). An
- * ability or item that gives the immunity (Overcoat, Sand Force, Sand Rush, Sand Veil,
- * Safety Goggles) or stops indirect damage (Magic Guard) is not marked in the support manifest, so no battle
- * holds one (tests/test_pool_weather.c checks that); marking one needs its immunity here. */
+ * (data/typechart.ts), judged by the types now (dfi_types_of: a Soaked Pokemon is a Water type alone, step G11), or the
+ * ability that gives the immunity: Sand Rush (step G22, data/abilities.ts:3980-3982, onImmunity 'sandstorm' returns
+ * false; the Champions mod has no entry). The others that give it (Overcoat, Sand Force, Sand Veil, Safety Goggles) or
+ * stop indirect damage (Magic Guard) are not marked in the support manifest, so no battle holds one
+ * (tests/test_pool_weather.c checks that); marking one needs its immunity here. */
 static bool dfi_sand_immune(const struct duoforge_battle *b, const dfi_member *m)
 {
+    if (dfi_ability(b, m, DFI_ABILITY_SANDRUSH)) {
+        return true;
+    }
     for (uint32_t type = 0u; type < DFI_TYPE_COUNT; ++type) {
         if ((dfi_pool_type_immunity[type] & DFI_IMMUNE_SAND) != 0u && dfi_has_type(b, m, type)) {
             return true;
@@ -2994,6 +3043,14 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
      * STAB; Weather Ball is in its noModifyType list and Struggle is
      * typeless by then (data/abilities.ts). */
     move_type = dfi_ate_type_fam(dfi_ability_family_now(r->b, m), md, move_type);
+    /* Liquid Voice (step G22, POOL data, data/abilities.ts:2416-2427): onModifyType (priority -1) makes a move with the
+     * sound flag Water, unless its user is Dynamaxed (never in this format). Weather Ball has no sound flag and
+     * Struggle none either, so the order against their types does not matter; the whole pool's sound moves are the
+     * flags2 SOUND bit (the pinned flag, tools/datagen/pool_families.js checkG22). The change reaches the immunity,
+     * the STAB, the weather and the resist berries below: they read move_type. */
+    if (dfi_ability(r->b, m, DFI_ABILITY_LIQUIDVOICE) && (dfi_pool_move_flags2[move_id] & DFI_MOVE_FLAG2_SOUND) != 0u) {
+        move_type = DFI_TYPE_WATER;
+    }
     if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_RAIN) {
         move_type = DFI_TYPE_WATER;
     } else if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_SUN) {

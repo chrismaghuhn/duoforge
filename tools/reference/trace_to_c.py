@@ -911,6 +911,15 @@ def step_events(log, viewer, roster_of, maxhp, tables):
         elif kind == '-immune':
             cause, id2, _ = ev_cause(attrs, tables)
             e = ev_tuple(EV['IMMUNE'], ev_pos(args[0]), NOPOS, cause, 0, id2)
+        elif kind == '-fail' and len(args) == 3 and args[1] == 'unboost':
+            # Inner Focus (step G22, data/abilities.ts:2157-2162): `-fail|X|unboost|atk|[from] ability: Inner Focus|[of] X`,
+            # an Intimidate drop that the ability deleted: a FAIL with the ability as its cause and the holder in `other`.
+            # No other ability writes this line for a stat (Clear Body and the like are `-fail` with another shape and
+            # are not marked); anything else is refused, never mapped.
+            cause, id2, other = ev_cause(attrs, tables)
+            if args[2] != 'atk' or cause != CAUSE['ABILITY'] or other == NOPOS:
+                raise ConversionError('fail-line', 'trace_to_c: unknown -fail %r' % line, detail=line)
+            e = ev_tuple(EV['FAIL'], ev_pos(args[0]), other, cause, 0, id2)
         elif kind == '-fail':
             # `-fail|X|heal` (a heal move at full HP) is a plain FAIL: the event has no field for the reason, which
             # for a status is the ailment the target already has.
