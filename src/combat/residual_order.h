@@ -15,7 +15,7 @@
  * sim/battle.ts:501-503).
  *
  * The order in which a Pokemon's volatiles were added is not stored. The engine builds them in one fixed order (the
- * Heal Block, Throat Chop, Yawn, Taunt, Encore, then the duration counters). That is the reference's order, or it changes nothing, in these
+ * Heal Block, Disable, Throat Chop, Yawn, Taunt, Encore, then the duration counters). That is the reference's order, or it changes nothing, in these
  * cases (proved by tests/test_residual_order.c against its own model of the reference's selection sort):
  *   - the Pokemon has volatile handlers of one sort key only (the duration counters have one: no order, sub-order 2),
  *     so their order is the order of equal entries and shows nowhere;
@@ -46,15 +46,17 @@
 #define DFI_RES_WHITE_HERB 9u
 #define DFI_RES_ENCORE 10u /* Encore: order 16, a callback with a duration (step G9) */
 #define DFI_RES_SPEED_BOOST 11u /* Speed Boost's onResidual: order 28, sub-order 2 (step G32) */
-/* The duration handlers whose end shows a line or does something (step G31, and Heal Block, which was a pass): each is an
- * entry of the sorted list at its own order, and a callback (a tie of two draws) exactly when it ends in this residual. */
-#define DFI_RES_TAUNT 14u      /* Taunt: order 15, -end|X|move: Taunt */
+/* The duration handlers whose end shows a line or does something (step G27 for Disable, step G31 for Taunt and Yawn, and Heal
+ * Block, which was a pass): each is an entry of the sorted list at its own order, and a callback (a tie of two draws) exactly when
+ * it ends in this residual. Disable keeps the kind 14 that it had on main; Taunt follows with 15. */
 #define DFI_RES_HEAL_BLOCK 12u /* Heal Block: order 20, -end|X|move: Heal Block */
 #define DFI_RES_YAWN 13u       /* Yawn: order 23, a silent end and the sleep */
+#define DFI_RES_DISABLE 14u    /* Disable: order 17, -end|X|Disable */
+#define DFI_RES_TAUNT 15u      /* Taunt: order 15, -end|X|move: Taunt */
 #define DFI_RES_NO_ORDER 0xFFFFFFFFu
 
-/* The exact test's bounds: the lists of the engine have at most 3 + 4 * 2 + 17 * 4 entries, a few draws and a few
- * orders (3 + 4 * 2 + 17 * 4, the step G31 count). */
+/* The exact test's bounds: the lists of the engine have at most 3 + 4 * 2 + 19 * 4 entries, a few draws and a few
+ * orders (3 + 4 * 2 + 19 * 4, the count of steps G27, G31 and G32 together). */
 #define DFI_RES_MODEL_MAX 96u
 #define DFI_RES_DRAW_CAP 4096u
 #define DFI_RES_ARRANGEMENT_CAP 1024u
@@ -88,7 +90,7 @@ static inline uint32_t dfi_residual_compare(const dfi_residual_entry *a, const d
 static inline bool dfi_residual_is_volatile(const dfi_residual_entry *e)
 {
     return e->kind == DFI_RES_DURATION || e->kind == DFI_RES_ENCORE || e->kind == DFI_RES_TAUNT ||
-           e->kind == DFI_RES_HEAL_BLOCK || e->kind == DFI_RES_YAWN;
+           e->kind == DFI_RES_HEAL_BLOCK || e->kind == DFI_RES_YAWN || e->kind == DFI_RES_DISABLE;
 }
 
 /* What is known about the age of a Pokemon's volatiles. The counters of the turn (Protect, the stall counter, flinch, a charge,
@@ -103,7 +105,7 @@ static inline bool dfi_residual_is_counter(const dfi_residual_entry *e)
 }
 static inline bool dfi_residual_is_old_ending(const dfi_residual_entry *e)
 {
-    return e->callback && (e->kind == DFI_RES_HEAL_BLOCK || e->kind == DFI_RES_TAUNT || e->kind == DFI_RES_YAWN);
+    return e->callback && (e->kind == DFI_RES_HEAL_BLOCK || e->kind == DFI_RES_TAUNT || e->kind == DFI_RES_YAWN || e->kind == DFI_RES_DISABLE);
 }
 static inline bool dfi_residual_arrangement_possible(const dfi_residual_entry *seg, uint32_t len)
 {

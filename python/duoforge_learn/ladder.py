@@ -195,7 +195,7 @@ def main(argv=None):
     from duoforge import features
 
     from . import evaluate, policy, suite
-    from .checkpoint import encoder_of, load, load_current, model_config
+    from .checkpoint import encoder_of, ext_supported_of, load, load_current, model_config
 
     pool, kind = _pool_of(args.teams_from or args.run_dirs[0])
     rows = suite.make_suite(len(pool.ids), LADDER_SEED, games=args.games, budget=args.budget)
@@ -221,11 +221,13 @@ def main(argv=None):
             seed = int(config.get("train", config)["seed"])
             key = jax.random.fold_in(jax.random.PRNGKey(seed & 0xFFFFFFFF), seed >> 32)
             key, sub = jax.random.split(key)
-            players.append(evaluate.Player(model_of(cfg), model_of(cfg).init(sub), features.ENCODER, "init"))
+            players.append(evaluate.Player(model_of(cfg), model_of(cfg).init(sub), features.ENCODER, "init",
+                                           ext_supported_of(config)))
         for u, path in chosen:
             params, config = load_current(path)
             cfg = model_config(config, params)
-            players.append(evaluate.Player(model_of(cfg), params, encoder_of(config), f"{label} update {u}"))
+            players.append(evaluate.Player(model_of(cfg), params, encoder_of(config), f"{label} update {u}",
+                                           ext_supported_of(config)))
     n = len(players)
     with duoforge.Context(data_kind=kind) as ctx:
         records = play_round_robin(ctx, pool, rows, players, args.workers)

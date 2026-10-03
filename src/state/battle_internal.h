@@ -54,6 +54,8 @@ typedef struct dfi_move_slot {
 #define DFI_TERRAIN_NONE 0u
 #define DFI_TERRAIN_GRASSY 1u
 #define DFI_TERRAIN_PSYCHIC 2u /* Team C: Psychic Surge */
+#define DFI_TERRAIN_ELECTRIC 3u /* POOL (step G25): Electric Surge, Electric Terrain */
+#define DFI_TERRAIN_MISTY 4u    /* POOL (step G25): Misty Terrain */
 #define DFI_FIELD_TURNS_MAX 5u  /* weather, terrain and Trick Room */
 #define DFI_SCREEN_TURNS_MAX 8u /* Reflect and Light Screen with Light Clay */
 #define DFI_TAILWIND_TURNS_MAX 4u
@@ -225,9 +227,8 @@ typedef struct dfi_side {
 /* rev 2, per roster member */
 #define DFI_TAIL_ITEM_NONE 255u       /* item_now: the member holds nothing (0 = as the member says, 1..254 = item id + 1) */
 #define DFI_TAIL_TOXIC_STAGE_MAX 15u  /* the toxic counter stops at 15 */
-#define DFI_TAIL_TOXIC_STATUS 6u      /* DUOFORGE_AILMENT_TOX: the status that a toxic stage needs. No state has it yet (the
-                                       * status bound of every kind is below it), so no stage is valid until the step
-                                       * that makes Toxic raises that bound. */
+#define DFI_TAIL_TOXIC_STATUS 6u      /* DUOFORGE_AILMENT_TOX (DFI_STATUS_TOX): the status that a toxic stage needs. POOL only (the
+                                       * status bound of the other kinds is below it, step G36). */
 
 typedef struct dfi_tail_pos {
     uint16_t substitute_hp;    /* 0 = no Substitute, else its HP (at most a quarter of the occupant's maximum HP) */

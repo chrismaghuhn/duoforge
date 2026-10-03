@@ -45,7 +45,7 @@
 #include "state/closure_member.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "db553c072515b1f7575c55bf92fec3bca2217d14a8d165d51f8094d66c24f0f3"
+#define POOL_HASH_HEX "78bfbffe1d8125a23cd16370e29ca49983b1dd1ad4429d98385c1e01ce79a4f5"
 /* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
  * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
  * produced the same bytes. Step G10 moved two of them on purpose: Scald and Recover are data now (the thaw bit and
@@ -69,9 +69,9 @@
 #define POOL_ABILITIES 215u
 
 /* The rows that the tables do not model, pinned (the generator reports the same counts). */
-#define UNMODELED_MOVES 260u /* 262 before step G31 modelled Taunt and Yawn; 273 before step G32 modelled Eruption, Water Spout, Life Dew, Body Press, Foul Play, Psyshock, Rain Dance, Sunny Day, Volt Switch, Clanging Scales and Freeze-Dry; 276 before step G30 modelled Rage Powder, Psychic Fangs and Solar Beam; 299 before step G28 modelled Acrobatics, Blizzard, Feint and the rows of the new secondary self boost (Ancient Power, Aqua Step, Charge Beam, Fiery Dance, Flame Charge, Meteor Mash, Psyshield Bash, Steel Wing, Torch Song, Trailblaze) and the allAdjacent moves; 300 before step G20 modelled Spiky Shield; 301 before it modelled Aurora Veil; 303 before step G19 modelled Coaching and Glaive Rush; 305u before step G15 modelled Expanding Force; 306 before step G16 modelled Knock Off; 313 before step G17 modelled the seven recharge moves; 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
-#define UNMODELED_ITEMS 37u /* one fewer since step G32 modelled Eject Button; one fewer since step G28 modelled Expert Belt; five fewer since step G23-A found the Mega of a stone from (forme, stone); one fewer since step G15 modelled Psychic Seed */
-#define UNMODELED_ABILITIES 165u /* 168 before step G32 made Soundproof, Unnerve and Speed Boost engine rows; 172 before step G30 made Flame Body, Clear Body, Hospitality and Overcoat engine rows; 178 before step G22 made six abilities engine rows; 179 before step G23-C made Levitate an engine row; 180 before step AC1 made Trace an engine row; 181 before step G16 made Sticky Hold an engine row; 184 before step G14 made Rough Skin, Poison Touch and Thermal Exchange engine rows */
+#define UNMODELED_MOVES 250u /* 252 before step G31 modelled Taunt and Yawn; 256 before step G25 modelled Electric Terrain, Misty Terrain, Rising Voltage and Terrain Pulse; 257 before step G27 modelled Disable; 260 before step G34 (262 before step G36 modelled Toxic and Poison Fang); 262 before step G34 modelled Steel Roller, Clangorous Soul and Brick Break (the other four rows of the step were already modelled); 273 before step G32 modelled Eruption, Water Spout, Life Dew, Body Press, Foul Play, Psyshock, Rain Dance, Sunny Day, Volt Switch, Clanging Scales and Freeze-Dry; 276 before step G30 modelled Rage Powder, Psychic Fangs and Solar Beam; 299 before step G28 modelled Acrobatics, Blizzard, Feint and the rows of the new secondary self boost (Ancient Power, Aqua Step, Charge Beam, Fiery Dance, Flame Charge, Meteor Mash, Psyshield Bash, Steel Wing, Torch Song, Trailblaze) and the allAdjacent moves; 300 before step G20 modelled Spiky Shield; 301 before it modelled Aurora Veil; 303 before step G19 modelled Coaching and Glaive Rush; 305u before step G15 modelled Expanding Force; 306 before step G16 modelled Knock Off; 313 before step G17 modelled the seven recharge moves; 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
+#define UNMODELED_ITEMS 34u /* two fewer since step G25 modelled Electric Seed and Misty Seed; one fewer since step G34 modelled Wide Lens; one fewer since step G32 modelled Eject Button; one fewer since step G28 modelled Expert Belt; five fewer since step G23-A found the Mega of a stone from (forme, stone); one fewer since step G15 modelled Psychic Seed */
+#define UNMODELED_ABILITIES 154u /* 155 before step G25 made Electric Surge a terrain setter; 156 before step G27 made Cursed Body an engine row; 158 before step G35 made Rain Dish and Friend Guard engine rows; 165 before step G34 made Compound Eyes, Iron Fist, Sharpness, Solid Rock, Technician, Multiscale and Gale Wings engine rows; 168 before step G32 made Soundproof, Unnerve and Speed Boost engine rows; 172 before step G30 made Flame Body, Clear Body, Hospitality and Overcoat engine rows; 178 before step G22 made six abilities engine rows; 179 before step G23-C made Levitate an engine row; 180 before step AC1 made Trace an engine row; 181 before step G16 made Sticky Hold an engine row; 184 before step G14 made Rough Skin, Poison Touch and Thermal Exchange engine rows */
 
 /* How many rows of the manifest are marked and half modelled: marked, and with the UNMODELED handler or a list of
  * unmodelled features (decision 0015 section 4.2). A step marks only what it fully models. */
@@ -210,6 +210,7 @@ static const family_case new_abilities[] = {
 static const family_case weather_abilities[] = {
     {DFI_ABILITY_SANDSTREAM, DFI_ABILITY_FAMILY_WEATHER_SETTER, DFI_WEATHER_SAND, "Sand Stream"},
     {DFI_ABILITY_SNOWWARNING, DFI_ABILITY_FAMILY_WEATHER_SETTER, DFI_WEATHER_SNOW, "Snow Warning"},
+    {DFI_ABILITY_ELECTRICSURGE, DFI_ABILITY_FAMILY_TERRAIN_SETTER, DFI_FAMILY_TERRAIN_ELECTRIC, "Electric Surge"}, /* step G25 */
 };
 
 typedef struct legal_case {
@@ -682,11 +683,30 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_RAGE_POWDER, DFI_SPECIAL_FEINT + 1u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_PSYCHIC_FANGS, DFI_SPECIAL_RAGE_POWDER + 1u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_SOLAR_BEAM, DFI_SPECIAL_PSYCHIC_FANGS + 1u);
-        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_TAUNT, DFI_SPECIAL_CLANGING_SCALES + 1u); /* step G31 */
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_STEEL_ROLLER, DFI_SPECIAL_CLANGING_SCALES + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_CLANGOROUS_SOUL, DFI_SPECIAL_STEEL_ROLLER + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_BRICK_BREAK, DFI_SPECIAL_CLANGOROUS_SOUL + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_DISABLE, DFI_SPECIAL_BRICK_BREAK + 1u); /* step G27, after the handlers of the other steps */
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_DISABLE].special, DFI_SPECIAL_DISABLE);
+        /* Step G25: the four handlers of the terrains, after step G27's Disable and before UNMODELED. */
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_ELECTRIC_TERRAIN, DFI_SPECIAL_DISABLE + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_MISTY_TERRAIN, DFI_SPECIAL_ELECTRIC_TERRAIN + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_RISING_VOLTAGE, DFI_SPECIAL_MISTY_TERRAIN + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_TERRAIN_PULSE, DFI_SPECIAL_RISING_VOLTAGE + 1u);
+        /* Step G31: Taunt and Yawn, after step G25's four and before UNMODELED. */
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_TAUNT, DFI_SPECIAL_TERRAIN_PULSE + 1u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_YAWN, DFI_SPECIAL_TAUNT + 1u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_YAWN + 1u);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_TAUNT].special, DFI_SPECIAL_TAUNT);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_YAWN].special, DFI_SPECIAL_YAWN);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_ELECTRICTERRAIN].special, DFI_SPECIAL_ELECTRIC_TERRAIN);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_MISTYTERRAIN].special, DFI_SPECIAL_MISTY_TERRAIN);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_RISINGVOLTAGE].special, DFI_SPECIAL_RISING_VOLTAGE);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_RISINGVOLTAGE].base_power, 70u);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_TERRAINPULSE].special, DFI_SPECIAL_TERRAIN_PULSE);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_TERRAINPULSE].base_power, 50u);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_TERRAINPULSE].type, DFI_TYPE_NORMAL);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_ELECTRICTERRAIN].target_class, DUOFORGE_TARGET_CLASS_ALL);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_SPIKYSHIELD].special, DFI_SPECIAL_SPIKY_SHIELD);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_SPIKY_SHIELD, 28u);
         /* Baneful Bunker and King's Shield stay unmodelled and unmarked: their learners have no supported ability. */
@@ -706,7 +726,7 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_SUNNY_DAY, DFI_SPECIAL_RAIN_DANCE + 1u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_FREEZE_DRY, DFI_SPECIAL_SUNNY_DAY + 1u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_CLANGING_SCALES, DFI_SPECIAL_FREEZE_DRY + 1u);
-        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_YAWN + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_STEEL_ROLLER, DFI_SPECIAL_CLANGING_SCALES + 1u); /* step G34 follows */
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_ERUPTION].special, DFI_SPECIAL_HP_POWER);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_WATERSPOUT].special, DFI_SPECIAL_HP_POWER);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_BODYPRESS].special, DFI_SPECIAL_BODY_PRESS);
@@ -758,7 +778,8 @@ int main(void)
             uint32_t flags2;
         } flagged[] = {{DFI_MOVE_SNARL, DFI_MOVE_FLAG2_SOUND}, {DFI_MOVE_PARTINGSHOT, DFI_MOVE_FLAG2_SOUND},
                        {DFI_MOVE_HYPERVOICE, DFI_MOVE_FLAG2_SOUND}, {DFI_MOVE_PSYCHICNOISE, DFI_MOVE_FLAG2_SOUND},
-                       {DFI_MOVE_BITTERBLADE, DFI_MOVE_FLAG2_HEAL}, {DFI_MOVE_LEECHLIFE, DFI_MOVE_FLAG2_HEAL},
+                       {DFI_MOVE_BITTERBLADE, DFI_MOVE_FLAG2_HEAL | DFI_MOVE_FLAG2_SLICING},
+                       {DFI_MOVE_ICEPUNCH, DFI_MOVE_FLAG2_PUNCH}, {DFI_MOVE_SLASH, DFI_MOVE_FLAG2_SLICING}, {DFI_MOVE_LEECHLIFE, DFI_MOVE_FLAG2_HEAL},
                        {DFI_MOVE_RECOVER, DFI_MOVE_FLAG2_HEAL}, {DFI_MOVE_THROATCHOP, 0u}, {DFI_MOVE_PROTECT, 0u},
                        {DFI_MOVE_SCALD, DFI_MOVE_FLAG2_THAWS_TARGET},
                        {DFI_MOVE_MATCHAGOTCHA, DFI_MOVE_FLAG2_HEAL | DFI_MOVE_FLAG2_THAWS_TARGET},
@@ -778,7 +799,7 @@ int main(void)
             heal += (dfi_pool_move_flags2[i] & DFI_MOVE_FLAG2_HEAL) != 0u ? 1u : 0u;
             other += (dfi_pool_move_flags2[i] &
                       ~(uint32_t)(DFI_MOVE_FLAG2_SOUND | DFI_MOVE_FLAG2_HEAL | DFI_MOVE_FLAG2_THAWS_TARGET | DFI_MOVE_FLAG2_RECHARGE |
-                                    DFI_MOVE_FLAG2_POWDER)) != 0u
+                                    DFI_MOVE_FLAG2_POWDER | DFI_MOVE_FLAG2_PUNCH | DFI_MOVE_FLAG2_SLICING)) != 0u
                          ? 1u
                          : 0u;
         }
@@ -1189,12 +1210,14 @@ int main(void)
          * Scraftinite), step G23-C Charizardite X, Garchompite Z and Delphoxite; Expert Belt stays unmarked. */
         DF_CHECK(&t, dfi_support.items[DFI_ITEM_FOCUSSASH] != 0u);
         for (uint32_t id = DFI_ITEM_FOCUSSASH + 1u; id < DFI_POOL_ITEM_COUNT; ++id) {
-            const bool stone = id == DFI_ITEM_FLOETTITE || id == DFI_ITEM_PSYCHICSEED || id == DFI_ITEM_EXPERTBELT || id == DFI_ITEM_EJECTBUTTON || id == DFI_ITEM_TYRANITARITE ||
+            const bool stone = id == DFI_ITEM_FLOETTITE || id == DFI_ITEM_PSYCHICSEED || id == DFI_ITEM_ELECTRICSEED ||
+                               id == DFI_ITEM_MISTYSEED || id == DFI_ITEM_EXPERTBELT || id == DFI_ITEM_EJECTBUTTON || id == DFI_ITEM_TYRANITARITE ||
                                id == DFI_ITEM_BAXCALIBRITE || id == DFI_ITEM_AERODACTYLITE || id == DFI_ITEM_MANECTITE ||
                                id == DFI_ITEM_GARDEVOIRITE || id == DFI_ITEM_ABOMASITE || id == DFI_ITEM_BARBARACITE ||
                                id == DFI_ITEM_BEEDRILLITE || id == DFI_ITEM_FALINKSITE || id == DFI_ITEM_HAWLUCHANITE ||
                                id == DFI_ITEM_MALAMARITE || id == DFI_ITEM_SCEPTILITE || id == DFI_ITEM_SCRAFTINITE ||
-                               id == DFI_ITEM_CHARIZARDITEX || id == DFI_ITEM_GARCHOMPITEZ || id == DFI_ITEM_DELPHOXITE;
+                               id == DFI_ITEM_CHARIZARDITEX || id == DFI_ITEM_GARCHOMPITEZ || id == DFI_ITEM_DELPHOXITE ||
+                               id == DFI_ITEM_WIDELENS /* step G34: the accuracy modifier, by id */;
             DF_CHECK_EQ_U64(&t, dfi_support.items[id] != 0u ? 1u : 0u, stone ? 1u : 0u);
         }
         for (uint32_t id = 0u; id < DFI_POOL_ITEM_COUNT; ++id) {
@@ -1218,6 +1241,7 @@ int main(void)
              * setters of the Sandstorm and Snowscape step) and are marked; Rough Skin, Poison Touch and Thermal
              * Exchange (step G14) are marked without a family: the turn code runs them by id. */
             const bool setter = id == DFI_ABILITY_SANDSTREAM || id == DFI_ABILITY_SNOWWARNING;
+            const bool terrain_setter = id == DFI_ABILITY_ELECTRICSURGE; /* step G25 */
             /* ... and Rough Skin, Poison Touch, Thermal Exchange (step G14) and Sticky Hold (step G16): engine rows that the turn code runs by id. */
             const bool engine = id == DFI_ABILITY_ROUGHSKIN || id == DFI_ABILITY_POISONTOUCH ||
                                 id == DFI_ABILITY_THERMALEXCHANGE || id == DFI_ABILITY_STICKYHOLD ||
@@ -1231,10 +1255,20 @@ int main(void)
                                 id == DFI_ABILITY_FLAMEBODY || id == DFI_ABILITY_CLEARBODY ||
                                 id == DFI_ABILITY_HOSPITALITY || id == DFI_ABILITY_OVERCOAT ||
                                 /* step G32: Soundproof, Unnerve and Speed Boost, by id */
-                                id == DFI_ABILITY_SOUNDPROOF || id == DFI_ABILITY_UNNERVE || id == DFI_ABILITY_SPEEDBOOST;
-            DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, (setter || engine) ? 1u : 0u);
+                                id == DFI_ABILITY_SOUNDPROOF || id == DFI_ABILITY_UNNERVE || id == DFI_ABILITY_SPEEDBOOST ||
+                                /* step G34: Compound Eyes, Iron Fist, Sharpness, Solid Rock, Technician, Multiscale and
+                                 * Gale Wings, by id */
+                                id == DFI_ABILITY_COMPOUNDEYES || id == DFI_ABILITY_IRONFIST ||
+                                id == DFI_ABILITY_SHARPNESS || id == DFI_ABILITY_SOLIDROCK ||
+                                id == DFI_ABILITY_TECHNICIAN || id == DFI_ABILITY_MULTISCALE ||
+                                id == DFI_ABILITY_GALEWINGS ||
+                                /* step G35: Rain Dish and Friend Guard, by id */
+                                id == DFI_ABILITY_RAINDISH || id == DFI_ABILITY_FRIENDGUARD ||
+                                id == DFI_ABILITY_CURSEDBODY /* step G27: Cursed Body, by id too */;
+            DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, (setter || terrain_setter || engine) ? 1u : 0u);
             DF_CHECK_EQ_U64(&t, dfi_pool_ability_family[id].family,
-                            setter ? DFI_ABILITY_FAMILY_WEATHER_SETTER : DFI_ABILITY_FAMILY_NONE);
+                            setter ? DFI_ABILITY_FAMILY_WEATHER_SETTER
+                            : terrain_setter ? DFI_ABILITY_FAMILY_TERRAIN_SETTER : DFI_ABILITY_FAMILY_NONE);
         }
         for (uint32_t id = 0u; id < DFI_POOL_ABILITY_COUNT; ++id) {
             if (dfi_pool_ability_family[id].family != DFI_ABILITY_FAMILY_NONE) {
@@ -1279,6 +1313,8 @@ int main(void)
                                                 DFI_MOVE_CRUNCH, DFI_MOVE_BUGBUZZ, DFI_MOVE_DRAINPUNCH, DFI_MOVE_NUZZLE,
                                                 DFI_MOVE_EXPANDINGFORCE,
                                                 DFI_MOVE_COACHING, DFI_MOVE_GLAIVERUSH, DFI_MOVE_AURORAVEIL,
+                                                DFI_MOVE_ELECTRICTERRAIN, DFI_MOVE_MISTYTERRAIN, DFI_MOVE_RISINGVOLTAGE,
+                                                DFI_MOVE_TERRAINPULSE,
                                                 DFI_MOVE_SHELLSMASH, DFI_MOVE_ACROBATICS, DFI_MOVE_BLIZZARD,
                                                 DFI_MOVE_ANCIENTPOWER, DFI_MOVE_FEINT, DFI_MOVE_EARTHQUAKE,
                                                 DFI_MOVE_SPIKYSHIELD,
@@ -1288,9 +1324,22 @@ int main(void)
                                                 DFI_MOVE_MATCHAGOTCHA, DFI_MOVE_GIGADRAIN, DFI_MOVE_ENERGYBALL,
                                                 DFI_MOVE_PLAYROUGH,
                                                 /* step G32 */
-DFI_MOVE_ERUPTION, DFI_MOVE_WATERSPOUT, DFI_MOVE_LIFEDEW, DFI_MOVE_BODYPRESS,
+                                                DFI_MOVE_ERUPTION, DFI_MOVE_WATERSPOUT, DFI_MOVE_LIFEDEW, DFI_MOVE_BODYPRESS,
                                                 DFI_MOVE_FOULPLAY, DFI_MOVE_PSYSHOCK, DFI_MOVE_RAINDANCE, DFI_MOVE_SUNNYDAY,
                                                 DFI_MOVE_VOLTSWITCH, DFI_MOVE_CLANGINGSCALES, DFI_MOVE_FREEZEDRY,
+                                                /* step G34 */
+                                                DFI_MOVE_STEELROLLER, DFI_MOVE_CLANGOROUSSOUL, DFI_MOVE_BRICKBREAK,
+                                                DFI_MOVE_FIERYDANCE, DFI_MOVE_PSYCHOCUT, DFI_MOVE_IRONDEFENSE,
+                                                DFI_MOVE_ELECTROWEB,
+                                                /* step G36 */
+                                                DFI_MOVE_TOXIC, DFI_MOVE_POISONFANG,
+                                                /* step G35 (Gigaton Hammer is deferred) */
+                                                DFI_MOVE_THUNDERPUNCH, DFI_MOVE_XSCISSOR, DFI_MOVE_LUMINACRASH,
+                                                DFI_MOVE_OVERDRIVE, DFI_MOVE_SCORCHINGSANDS, DFI_MOVE_LEAFBLADE,
+                                                DFI_MOVE_BOOMBURST, DFI_MOVE_SLUDGEWAVE, DFI_MOVE_VOLTTACKLE,
+                                                DFI_MOVE_DISCHARGE,
+                                                /* step G27 */
+                                                DFI_MOVE_DISABLE,
                                                 /* step G31 */
                                                 DFI_MOVE_TAUNT, DFI_MOVE_YAWN};
         uint32_t marked_count = 0u;
@@ -1306,20 +1355,23 @@ DFI_MOVE_ERUPTION, DFI_MOVE_WATERSPOUT, DFI_MOVE_LIFEDEW, DFI_MOVE_BODYPRESS,
             DF_CHECK(&t, !want || dfi_pool_moves[id].special == DFI_SPECIAL_NONE ||
                              id == DFI_MOVE_FIRSTIMPRESSION || id == DFI_MOVE_LOWKICK || id == DFI_MOVE_SOAK ||
                              id == DFI_MOVE_ENCORE || id == DFI_MOVE_SANDSTORM || id == DFI_MOVE_SNOWSCAPE ||
-                             id == DFI_MOVE_KNOCKOFF || id == DFI_MOVE_EXPANDINGFORCE || id == DFI_MOVE_GLAIVERUSH || id == DFI_MOVE_AURORAVEIL || id == DFI_MOVE_SPIKYSHIELD ||
+                             id == DFI_MOVE_KNOCKOFF || id == DFI_MOVE_EXPANDINGFORCE || id == DFI_MOVE_GLAIVERUSH || id == DFI_MOVE_AURORAVEIL || id == DFI_MOVE_SPIKYSHIELD || id == DFI_MOVE_DISABLE ||
                              id == DFI_MOVE_SHELLSMASH || id == DFI_MOVE_ACROBATICS || id == DFI_MOVE_BLIZZARD ||
                              id == DFI_MOVE_FEINT ||
                              id == DFI_MOVE_RAGEPOWDER || id == DFI_MOVE_PSYCHICFANGS || id == DFI_MOVE_SOLARBEAM ||
+                             id == DFI_MOVE_STEELROLLER || id == DFI_MOVE_CLANGOROUSSOUL || id == DFI_MOVE_BRICKBREAK ||
                              id == DFI_MOVE_ERUPTION || id == DFI_MOVE_WATERSPOUT ||
                              id == DFI_MOVE_BODYPRESS || id == DFI_MOVE_FOULPLAY || id == DFI_MOVE_PSYSHOCK ||
                              id == DFI_MOVE_RAINDANCE || id == DFI_MOVE_SUNNYDAY || id == DFI_MOVE_FREEZEDRY ||
                              id == DFI_MOVE_CLANGINGSCALES || id == DFI_MOVE_TAUNT || id == DFI_MOVE_YAWN ||
+                             id == DFI_MOVE_ELECTRICTERRAIN || id == DFI_MOVE_MISTYTERRAIN || id == DFI_MOVE_RISINGVOLTAGE ||
+                             id == DFI_MOVE_TERRAINPULSE ||
                              (id == DFI_MOVE_WIDEGUARD && dfi_pool_moves[id].special == DFI_SPECIAL_WIDE_GUARD) ||
                              (id == DFI_MOVE_DETECT && dfi_pool_moves[id].special == DFI_SPECIAL_PROTECT));
             DF_CHECK(&t, !want || dfi_pool_moves[id].special != DFI_SPECIAL_UNMODELED);
             marked_count += dfi_support.moves[id] != 0u ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, marked_count, 108u); /* the ten of step G30, the eleven of step G32, Taunt and Yawn (G31) */
+        DF_CHECK_EQ_U64(&t, marked_count, 132u); /* Taunt and Yawn (G31), the four of step G25, Disable (G27), the ten of step G35, Toxic and Poison Fang (G36), the ten of step G30, the eleven of step G32 and the seven of step G34 */
     }
 
     /* Step AC1: Trace copies the ability of a foe unless that has the pin's notrace flag. The turn code excludes only
@@ -1466,12 +1518,11 @@ DFI_MOVE_ERUPTION, DFI_MOVE_WATERSPOUT, DFI_MOVE_LIFEDEW, DFI_MOVE_BODYPRESS,
                          dfi_pool_ability_handler[DFI_ABILITY_CHLOROPHYLL] == DFI_HANDLER_NONE &&
                          dfi_pool_ability_handler[DFI_ABILITY_INNERFOCUS] == DFI_HANDLER_NONE &&
                          dfi_pool_ability_handler[DFI_ABILITY_LIQUIDVOICE] == DFI_HANDLER_NONE); /* engine rows, G22 */
-        /* Cursed Body needs the Disable volatile: still UNMODELED. */
-        DF_CHECK(&t, dfi_pool_ability_handler[DFI_ABILITY_CURSEDBODY] == DFI_HANDLER_UNMODELED);
+        DF_CHECK(&t, dfi_pool_ability_handler[DFI_ABILITY_CURSEDBODY] == DFI_HANDLER_NONE); /* an engine row, G27 */
         DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_FLOETTITE] == DFI_HANDLER_NONE); /* a Mega Stone: data of its link */
         DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_PSYCHICSEED] == DFI_HANDLER_NONE &&
-                         dfi_pool_item_handler[DFI_ITEM_ELECTRICSEED] == DFI_HANDLER_UNMODELED &&
-                         dfi_pool_item_handler[DFI_ITEM_MISTYSEED] == DFI_HANDLER_UNMODELED); /* an engine row, G15 */
+                         dfi_pool_item_handler[DFI_ITEM_ELECTRICSEED] == DFI_HANDLER_NONE &&
+                         dfi_pool_item_handler[DFI_ITEM_MISTYSEED] == DFI_HANDLER_NONE); /* engine rows, G15 and G25 */
         DF_CHECK(&t, dfi_pool_moves[DFI_MOVE_UTURN].special == DFI_SPECIAL_NONE);
         /* A few whole-pool rows, by what the pin says. Earthquake: allAdjacent, a class that the turn code lacks;
          * Hydro Pump: pure data; Substitute: a volatile with callbacks; Stealth Rock: a side condition and a class
@@ -1577,10 +1628,13 @@ DFI_MOVE_ERUPTION, DFI_MOVE_WATERSPOUT, DFI_MOVE_LIFEDEW, DFI_MOVE_BODYPRESS,
         DF_CHECK_EQ_U64(&t, dfi_mega_of(DFI_FORME_CHARIZARD, DFI_POOL_ITEM_COUNT + 1u), DFI_FORME_NONE);    /* beyond the table */
         DF_CHECK_EQ_U64(&t, dfi_mega_of(DFI_POOL_FORME_COUNT, 1u + DFI_ITEM_CHARIZARDITEX), DFI_FORME_NONE);
         /* The support gate follows the pair: Charizard-Mega-X brings Tough Claws, which is marked (and Charizardite X is
-         * marked since step G23-C); Absol-Mega-Z brings Sharpness, which is not. */
+         * marked since step G23-C); Absol-Mega-Z brings Sharpness, marked since step G34, while Absolite Z itself stays unmarked. */
         DF_CHECK(&t, dfi_manifest_mega_of(&dfi_support, DFI_FORME_CHARIZARD, 1u + DFI_ITEM_CHARIZARDITEX));
         DF_CHECK(&t, !dfi_manifest_mega_of(&dfi_support, DFI_FORME_CHARIZARD, 1u + DFI_ITEM_LEFTOVERS));
-        DF_CHECK(&t, !dfi_manifest_mega_of(&dfi_support, DFI_FORME_ABSOL, 1u + DFI_ITEM_ABSOLITEZ)); /* Sharpness is not marked */
+        DF_CHECK(&t, dfi_manifest_mega_of(&dfi_support, DFI_FORME_ABSOL, 1u + DFI_ITEM_ABSOLITEZ)); /* Sharpness is marked since step G34 */
+        dfi_support_manifest sharp = dfi_support;
+        sharp.abilities[DFI_ABILITY_SHARPNESS] = 0u;
+        DF_CHECK(&t, !dfi_manifest_mega_of(&sharp, DFI_FORME_ABSOL, 1u + DFI_ITEM_ABSOLITEZ)); /* the pair follows the Mega's ability */
         DF_CHECK(&t, dfi_support.items[DFI_ITEM_CHARIZARDITEX] != 0u && dfi_support.items[DFI_ITEM_ABSOLITEZ] == 0u);
         /* The support is that of the pair's own Mega ability: with Tough Claws unmarked Charizardite X is unsupported and
          * Charizardite Y (Drought) is not. */

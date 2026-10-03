@@ -41,8 +41,8 @@
 #include "support/pool.h"
 #include "support/team_c.h"
 
-#define FP_KP_HEX "d2dbde5474f093e7ac45e08ae858c5cb5c13010a280ded2666b530fcb384bbd9"
-#define FP_KPD_HEX "071f390a9555addcf4cad0cdb83a57574bf29f74456ad49edeefa8ea3fc812b4"
+#define FP_KP_HEX "96e45d76271c70f3b6955bec109947bf3b8e098d940ae042207eb64680545317"
+#define FP_KPD_HEX "c63b921d5430aae4479425cb2eb496ff18ec263efa013d3bc516c0fbc4763303"
 
 /* The public create under `ctx` gives `gated`, and the build without the
  * support gate `ungated`. */
@@ -328,12 +328,15 @@ int main(void)
         /* The pool has U-turn's switch flag (step G5) on top of Team C's; everything else of Team C's is the pool's. */
         DF_CHECK(&t, lp.switch_flag_max == DFI_SWITCH_VOLT_SWITCH && lc.switch_flag_max == DFI_SWITCH_FLIP_TURN &&
                          DFI_SWITCH_UTURN == DFI_SWITCH_FLIP_TURN + 1u && DFI_SWITCH_VOLT_SWITCH == DFI_SWITCH_UTURN + 1u);
-        DF_CHECK(&t, lp.status_max == lc.status_max && lp.terrain_max == lc.terrain_max &&
-                         lp.vol_flags_mask == lc.vol_flags_mask);
-        DF_CHECK(&t, lq.switch_flag_max == lp.switch_flag_max && lq.status_max == lc.status_max &&
-                         lq.terrain_max == lc.terrain_max && lq.vol_flags_mask == lc.vol_flags_mask);
-        DF_CHECK(&t, lp.switch_flag_max == DFI_SWITCH_VOLT_SWITCH && lp.status_max == DFI_STATUS_PSN &&
-                         lp.terrain_max == DFI_TERRAIN_PSYCHIC && l1.switch_flag_max == DFI_SWITCH_FAINTED &&
+        DF_CHECK(&t, lp.status_max == DFI_STATUS_TOX && lc.status_max == DFI_STATUS_PSN && lp.vol_flags_mask == lc.vol_flags_mask);
+        /* step G36: badly poisoned is the pool's alone */
+        DF_CHECK(&t, lq.switch_flag_max == lp.switch_flag_max && lq.status_max == lp.status_max &&
+                         lq.terrain_max == lp.terrain_max && lq.vol_flags_mask == lc.vol_flags_mask);
+        /* Step G25: the pool has Electric and Misty Terrain on top of Team C's terrains. */
+        DF_CHECK(&t, lp.terrain_max == DFI_TERRAIN_MISTY && lc.terrain_max == DFI_TERRAIN_PSYCHIC &&
+                         DFI_TERRAIN_MISTY == DFI_TERRAIN_ELECTRIC + 1u && DFI_TERRAIN_ELECTRIC == DFI_TERRAIN_PSYCHIC + 1u);
+        DF_CHECK(&t, lp.switch_flag_max == DFI_SWITCH_VOLT_SWITCH && lp.status_max == DFI_STATUS_TOX &&
+                         lp.terrain_max == DFI_TERRAIN_MISTY && l1.switch_flag_max == DFI_SWITCH_FAINTED &&
                          l1.status_max == DFI_STATUS_SLP && l1.terrain_max == DFI_TERRAIN_GRASSY);
     }
 
@@ -967,14 +970,22 @@ int main(void)
             w->sides[0].members[0].status_counter = 1u;
             expect_inv(&t, kinds[i], w, DFI_INV_MEMBER_EXTRA, "poison with a counter");
             w->sides[0].members[0].status_counter = 0u;
-            w->sides[0].members[0].status = (uint8_t)(DFI_STATUS_PSN + 1u);
-            expect_inv(&t, kinds[i], w, DFI_INV_MEMBER_EXTRA, "status 6");
+            w->sides[0].members[0].status = (uint8_t)DFI_STATUS_TOX;
+            expect_inv(&t, kinds[i], w, kinds[i] == kp || kinds[i] == kq ? DFI_INV_NONE : DFI_INV_MEMBER_EXTRA, "tox");
+            w->sides[0].members[0].status = (uint8_t)(DFI_STATUS_TOX + 1u);
+            expect_inv(&t, kinds[i], w, DFI_INV_MEMBER_EXTRA, "status 7");
             w->sides[0].members[0].status = 0u;
             w->terrain = (uint8_t)DFI_TERRAIN_PSYCHIC;
             w->terrain_turns = 5u;
             expect_inv(&t, kinds[i], w, extended ? DFI_INV_NONE : DFI_INV_FIELD, "Psychic Terrain");
-            w->terrain = (uint8_t)(DFI_TERRAIN_PSYCHIC + 1u);
-            expect_inv(&t, kinds[i], w, DFI_INV_FIELD, "terrain 3");
+            /* Electric (3) and Misty Terrain (4) are the pool's alone (step G25); one past them is out of range. */
+            const bool pool_kind = kinds[i] == kp || kinds[i] == kq;
+            w->terrain = (uint8_t)DFI_TERRAIN_ELECTRIC;
+            expect_inv(&t, kinds[i], w, pool_kind ? DFI_INV_NONE : DFI_INV_FIELD, "Electric Terrain");
+            w->terrain = (uint8_t)DFI_TERRAIN_MISTY;
+            expect_inv(&t, kinds[i], w, pool_kind ? DFI_INV_NONE : DFI_INV_FIELD, "Misty Terrain");
+            w->terrain = (uint8_t)(DFI_TERRAIN_MISTY + 1u);
+            expect_inv(&t, kinds[i], w, DFI_INV_FIELD, "terrain 5");
             duoforge_battle_destroy(w);
         }
         /* Five registered members: MEMBER_COUNT under POOL, valid under POOL_DEV. */

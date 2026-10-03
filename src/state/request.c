@@ -165,6 +165,11 @@ static duoforge_status dfi_slot_candidates(const duoforge_context *ctx, const st
                     continue;
                 }
             }
+            /* Disable's onDisableMove (data/moves.ts:3704-3710; POOL kinds, the tail is zero elsewhere) bars the one slot of its
+             * move; with no move left the slot gets Struggle, as for any disabled move. */
+            if ((uint32_t)b->tail.sides[s].positions[slot].disable_slot == k + 1u) {
+                continue;
+            }
             /* Taunt's onDisableMove (data/moves.ts:18996-19003; POOL kinds, the tail is zero elsewhere) bars every move of the
              * Status category (Me First, which no pool Pokemon learns, is the pin's one exception); with no move left the
              * slot gets Struggle, as for any disabled move. */

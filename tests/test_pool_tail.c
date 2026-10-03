@@ -1389,6 +1389,8 @@ int main(void)
                 /* step G31: Taunt and Yawn count down in the residual (a Yawn that runs out puts its holder to sleep) */
                 tp->taunt_turns = (uint8_t)(tp->taunt_turns != 0u ? tp->taunt_turns - 1u : 0u);
                 tp->yawn_turns = (uint8_t)(tp->yawn_turns != 0u ? tp->yawn_turns - 1u : 0u);
+                /* step G27: Disable counts down in the residual (the example's 5 turns are 4 after the turn, its slot stays) */
+                tp->disable_turns = (uint8_t)(tp->disable_turns != 0u ? tp->disable_turns - 1u : 0u);
             }
         }
         duoforge_decision_bundle bd;

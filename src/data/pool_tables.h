@@ -865,9 +865,17 @@
 #define DFI_SPECIAL_SUNNY_DAY 41u
 #define DFI_SPECIAL_FREEZE_DRY 42u
 #define DFI_SPECIAL_CLANGING_SCALES 43u
-#define DFI_SPECIAL_TAUNT 44u
-#define DFI_SPECIAL_YAWN 45u
-#define DFI_SPECIAL_UNMODELED 46u
+#define DFI_SPECIAL_STEEL_ROLLER 44u
+#define DFI_SPECIAL_CLANGOROUS_SOUL 45u
+#define DFI_SPECIAL_BRICK_BREAK 46u
+#define DFI_SPECIAL_DISABLE 47u
+#define DFI_SPECIAL_ELECTRIC_TERRAIN 48u
+#define DFI_SPECIAL_MISTY_TERRAIN 49u
+#define DFI_SPECIAL_RISING_VOLTAGE 50u
+#define DFI_SPECIAL_TERRAIN_PULSE 51u
+#define DFI_SPECIAL_TAUNT 52u
+#define DFI_SPECIAL_YAWN 53u
+#define DFI_SPECIAL_UNMODELED 54u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */
@@ -876,6 +884,8 @@
 #define DFI_MOVE_FLAG2_THAWS_TARGET 4u /* thawsTarget (step G10): the move cures a frozen target after the secondaries */
 #define DFI_MOVE_FLAG2_RECHARGE 8u /* flags.recharge with self.volatileStatus mustrecharge (step G17): the user must recharge after a hit */
 #define DFI_MOVE_FLAG2_POWDER 16u /* flags.powder (step G30): a Grass type, Overcoat and Safety Goggles are immune to the move */
+#define DFI_MOVE_FLAG2_PUNCH 32u /* flags.punch (step G34): Iron Fist boosts these moves (internal; the public static flag is not read) */
+#define DFI_MOVE_FLAG2_SLICING 64u /* flags.slicing (step G34): Sharpness boosts these moves */
 #define DFI_BOOST_ROLE_PRIMARY_ALLY 4u /* step G19: a status move whose primary boosts go to the adjacent ally (Coaching) */
 #define DFI_BOOST_ROLE_SECONDARY_SELF 5u /* step G28: the secondary's roll gives these boosts to the user (Ancient Power) */
 #define DFI_SECONDARY_SELF_BOOST 7u /* step G28: boosts[] applied to the user with the secondary roll */
@@ -1272,6 +1282,8 @@
 #define DFI_FAMILY_WEATHER_SNOW 4u
 #define DFI_FAMILY_TERRAIN_GRASSY 1u
 #define DFI_FAMILY_TERRAIN_PSYCHIC 2u
+#define DFI_FAMILY_TERRAIN_ELECTRIC 3u
+#define DFI_FAMILY_TERRAIN_MISTY 4u
 #define DFI_FAMILY_PARAM_NONE 0xFFu
 
 /* ---- handler columns of the items and abilities: NONE for a row that the tables model (the closure and Team C

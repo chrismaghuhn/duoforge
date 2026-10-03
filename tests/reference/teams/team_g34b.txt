@@ -1,0 +1,59 @@
+Rhyperior (M) @ Rindo Berry
+Ability: Solid Rock
+Level: 50
+EVs: 32 HP / 32 Atk / 2 Spe
+Adamant Nature
+- Rock Slide
+- Superpower
+- Brick Break
+- Protect
+
+Dragonite (M) @ Life Orb
+Ability: Multiscale
+Level: 50
+EVs: 32 HP / 32 Atk / 2 Spe
+Adamant Nature
+- Dragon Claw
+- Extreme Speed
+- Dragon Dance
+- Protect
+
+Gallade (M) @ Expert Belt
+Ability: Sharpness
+Level: 50
+EVs: 32 HP / 32 Atk / 2 Spe
+Jolly Nature
+- Psycho Cut
+- Close Combat
+- Night Slash
+- Protect
+
+Volcarona (F) @ Charcoal
+Ability: Flame Body
+Level: 50
+EVs: 32 HP / 32 SpA / 2 Spe
+Timid Nature
+- Fiery Dance
+- Quiver Dance
+- Heat Wave
+- Protect
+
+Raichu (F) @ Wide Lens
+Ability: Lightning Rod
+Level: 50
+EVs: 2 HP / 32 SpA / 32 Spe
+Timid Nature
+- Electroweb
+- Thunderbolt
+- Helping Hand
+- Protect
+
+Garchomp (M) @ Yache Berry
+Ability: Rough Skin
+Level: 50
+EVs: 32 HP / 32 Atk / 2 Spe
+Jolly Nature
+- Earthquake
+- Rock Slide
+- Dragon Claw
+- Protect
