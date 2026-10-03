@@ -20,6 +20,7 @@ C = _layout.CONSTANTS
 SLOTS = C["DUOFORGE_CHOICE_SLOTS"]
 TEAM = C["DUOFORGE_CHOICE_TEAM_SELECTION"]
 TERMINAL = C["DUOFORGE_BOUNDARY_TERMINAL"]
+_UNSUPPORTED = C["DUOFORGE_E_UNSUPPORTED"]
 OPTIONS = _layout.MAX_SLOT_OPTIONS
 PAIRS = OPTIONS * OPTIONS
 
@@ -113,6 +114,7 @@ class SelfPlay:
         self._steps = np.zeros(envs, dtype=np.int64)
         self.cuts = 0  # episodes cut off at max_steps so far, scored by tiebreak
         self.unresolved = 0  # cut-offs the tiebreak could not resolve (a loss for both seats)
+        self.engine_unsupported = 0  # steps the engine refused (E_UNSUPPORTED): episode ended, a loss for both
         self._choices = np.zeros((envs, 2), dtype=_layout.FACTORED_CHOICE)
         self.batch.query_factored()
 
@@ -125,20 +127,32 @@ class SelfPlay:
         starts its next episode with its next pairing."""
         b = self.batch
         choices_of(b, actions, self._choices)
-        b.step_factored(self._choices)
+        failed = np.zeros(b.envs, dtype=bool)
+        try:
+            b.step_factored(self._choices)
+        except duoforge.DuoforgeError as err:
+            # An environment the engine refuses to step (E_UNSUPPORTED: an outcome that would depend on state it
+            # does not keep) ends its episode as unresolved; any other failure stops the run.
+            if err.statuses is None:
+                raise
+            failed = err.statuses == _UNSUPPORTED
+            if (err.statuses[~failed] != 0).any():
+                raise
         self._steps += 1
-        terminal = b.results["boundary_kind"] == TERMINAL
+        terminal = (b.results["boundary_kind"] == TERMINAL) & ~failed
         rewards = np.zeros((b.envs, 2), dtype=np.float32)
         for e in np.flatnonzero(terminal):
             rewards[e] = _REWARDS[b.result(e)]
-        cut = ~terminal & (self._steps >= self.max_steps)
+        rewards[failed] = (-1.0, -1.0)  # like an unresolved tiebreak: steering into it never pays
+        self.engine_unsupported += int(failed.sum())
+        cut = ~terminal & ~failed & (self._steps >= self.max_steps)
         for e in np.flatnonzero(cut):
             try:
                 rewards[e] = _REWARDS[b.tiebreak(e)]  # scored as the reference's tiebreak scores it
             except duoforge.DuoforgeError:
                 rewards[e] = (-1.0, -1.0)  # the reference's bench order would decide: a loss for both,
                 self.unresolved += 1       # so steering into it never pays
-        done = terminal | cut
+        done = terminal | cut | failed
         self.cuts += int(cut.sum())
         if done.any():
             envs = np.flatnonzero(done).astype(np.uint32)

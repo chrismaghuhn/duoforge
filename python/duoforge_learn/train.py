@@ -438,7 +438,7 @@ def _run(args, pool, on_start, stop):
             counts[:] = 0
             t0 = time.perf_counter()
             timings = {}
-            cuts_before, unresolved_before = env.cuts, env.unresolved
+            cuts_before, unresolved_before, refused_before = env.cuts, env.unresolved, env.engine_unsupported
             rollout, bootstrap, ended, key = collect(env, params, act, key, args.rollout, state, opponents, timings)
             advantages, _, value_targets = gae(rollout["values"], rollout["rewards"], rollout["done"],
                                                rollout["acting"], bootstrap)
@@ -457,7 +457,8 @@ def _run(args, pool, on_start, stop):
                       "decisions_per_s": round(acted / (t2 - t0)), "policy_rows": acted,
                       "acted_rows": int(rollout["acting"].sum()), "entropy_coef": round(entropy_coef, 8),
                       "team_episodes": counts.tolist(), "cut_episodes": env.cuts - cuts_before,
-                      "tiebreak_unresolved": env.unresolved - unresolved_before}
+                      "tiebreak_unresolved": env.unresolved - unresolved_before,
+                      "engine_unsupported": env.engine_unsupported - refused_before}
             record |= {k: round(v, 4) for k, v in timings.items()}
             record["t_other"] = round(max(0.0, (t1 - t0) - sum(timings.values())), 4)
             record |= {k: round(float(v), 5) for k, v in stats.items()}

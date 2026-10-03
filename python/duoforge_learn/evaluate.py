@@ -59,10 +59,11 @@ def play_suite(context, pool, rows, learner, opponent, workers, seed, max_steps=
         else:
             raise ValueError(f"unknown opponent {opponent!r}")
         choices = np.zeros((n, 2), dtype=_layout.FACTORED_CHOICE)
+        dead = np.zeros(n, dtype=bool)  # games the engine refused to step (E_UNSUPPORTED): the learner's loss
         for _ in range(max_steps):
             batch.query()
             batch.query_factored()
-            requested = batch.requests["requested"] != 0
+            requested = (batch.requests["requested"] != 0) & ~dead[:, None]
             if not requested.any():
                 break
             indices = other.choose(batch) if opponent == "random" else other.indices(batch, choices)
@@ -70,8 +71,21 @@ def play_suite(context, pool, rows, learner, opponent, workers, seed, max_steps=
             if mine.any():
                 e = every[mine]
                 indices[e, seat[mine]] = learner.indices(batch, choices)[e, seat[mine]]
-            batch.step(indices)
+            indices[dead] = _layout.NO_CHOICE
+            try:
+                batch.step(indices, active=~dead if dead.any() else None)
+            except duoforge.DuoforgeError as err:
+                if err.statuses is None:
+                    raise
+                failed = err.statuses == _UNSUPPORTED
+                if (err.statuses[~failed] != 0).any():
+                    raise
+                dead |= failed
         for e in range(n):
+            if dead[e]:
+                out["unresolved"][e] = True
+                out["result"][e] = -1
+                continue
             result = batch.result(e)
             if result == 0:
                 out["unfinished"][e] = True
@@ -97,6 +111,7 @@ def scores(records, n_teams):
 C = _layout.CONSTANTS
 _SIDE_WINS = (C["DUOFORGE_RESULT_SIDE_0"], C["DUOFORGE_RESULT_SIDE_1"])
 _TIE = C["DUOFORGE_RESULT_TIE"]
+_UNSUPPORTED = C["DUOFORGE_E_UNSUPPORTED"]
 
 
 def win_rate(params, act, opponent, envs=64, workers=4, seed=0x2026100200000020, rounds=1, max_steps=1000, *,

@@ -581,5 +581,72 @@ class UnresolvedTiebreakTest(unittest.TestCase):
         self.assertTrue((rec["result"] == -1).all())
 
 
+UNSUPPORTED = 11  # DUOFORGE_E_UNSUPPORTED
+
+
+def _fail_env_once(method, env):
+    """A Batch method that runs as usual but reports E_UNSUPPORTED for one
+    environment on its first call (as the engine does where a residual order
+    would depend on unstored state, #154)."""
+    calls = []
+
+    def wrapped(self, *args, **kwargs):
+        method(self, *args, **kwargs)
+        if not calls:
+            calls.append(1)
+            statuses = np.zeros(self.envs, dtype=np.uint32)
+            statuses[env] = UNSUPPORTED
+            self.statuses[:] = statuses
+            raise duoforge.DuoforgeError("DUOFORGE_E_UNSUPPORTED", statuses)
+    return wrapped
+
+
+class EngineUnsupportedTest(unittest.TestCase):
+    def test_selfplay_ends_an_unsupported_environment_as_unresolved(self):
+        from unittest import mock
+        ends = []
+        env = SelfPlay(4, 1, 0x2026100300000001, on_end=lambda envs, rewards: ends.append((envs.tolist(),
+                                                                                         rewards.tolist())))
+        try:
+            with mock.patch.object(duoforge.Batch, "step_factored",
+                                   _fail_env_once(duoforge.Batch.step_factored, 2)):
+                rewards, done = env.step(_first_legal(env.observe()))
+            self.assertTrue(done[2])
+            self.assertEqual(rewards[2].tolist(), [-1.0, -1.0])
+            self.assertEqual(env.engine_unsupported, 1)
+            self.assertEqual(int(env.episodes[2]), 1)
+            env.step(_first_legal(env.observe()))  # the loop goes on
+        finally:
+            env.close()
+        self.assertIn(([2], [[-1.0, -1.0]]), ends)
+
+    def test_selfplay_still_raises_other_failures(self):
+        from unittest import mock
+
+        def broken(self, *args, **kwargs):
+            statuses = np.zeros(self.envs, dtype=np.uint32)
+            statuses[1] = 8  # E_INVARIANT
+            raise duoforge.DuoforgeError("DUOFORGE_E_INVARIANT", statuses)
+
+        env = SelfPlay(4, 1, 0x2026100300000002)
+        try:
+            with mock.patch.object(duoforge.Batch, "step_factored", broken), \
+                    self.assertRaises(duoforge.DuoforgeError):
+                env.step(_first_legal(env.observe()))
+        finally:
+            env.close()
+
+    def test_suite_game_the_engine_cannot_run_is_the_learners_loss(self):
+        from unittest import mock
+        rows = suite.make_suite(2, 3, games=1)
+        attack = evaluate.Player(_StandIn("attack"), None, features.ENCODER, "attack")
+        with duoforge.Context() as ctx, mock.patch.object(duoforge.Batch, "step",
+                                                          _fail_env_once(duoforge.Batch.step, 0)):
+            rec = evaluate.play_suite(ctx, _ab_pool(), rows, attack, attack, workers=1, seed=5)
+        self.assertTrue(rec["unresolved"][0])
+        self.assertEqual(int(rec["result"][0]), -1)
+        self.assertFalse(rec["unresolved"][1:].any())
+
+
 if __name__ == "__main__":
     unittest.main()
