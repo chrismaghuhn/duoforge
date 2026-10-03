@@ -1,0 +1,53 @@
+Rillaboom (M) @ Grassy Seed
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Fake Out
+- Grassy Glide
+- Wood Hammer
+- High Horsepower
+
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Timid Nature
+- Draco Meteor
+- Protect
+- Hyper Voice
+- Tailwind
+
+Kingambit (M) @ Chople Berry
+Ability: Defiant
+Level: 50
+Adamant Nature
+- Sucker Punch
+- Kowtow Cleave
+- Low Kick
+- Iron Head
+
+Floette-Eternal (F) @ Floettite
+Ability: Flower Veil
+Level: 50
+Modest Nature
+- Moonblast
+- Dazzling Gleam
+- Calm Mind
+- Protect
+
+Incineroar (M) @ Sitrus Berry
+Ability: Intimidate
+Level: 50
+Careful Nature
+- Fake Out
+- Throat Chop
+- Flare Blitz
+- Parting Shot
+
+Basculegion (M) @ Life Orb
+Ability: Adaptability
+Level: 50
+Jolly Nature
+- Wave Crash
+- Last Respects
+- Aqua Jet
+- Protect

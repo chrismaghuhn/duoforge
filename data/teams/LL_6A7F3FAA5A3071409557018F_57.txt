@@ -1,0 +1,53 @@
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Hasty Nature
+- Hyper Voice
+- Double-Edge
+- Tailwind
+- Protect
+
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Grassy Glide
+- Wood Hammer
+- U-turn
+- Fake Out
+
+Sneasler (M) @ Grassy Seed
+Ability: Unburden
+Level: 50
+Jolly Nature
+- Protect
+- Close Combat
+- Dire Claw
+- Swords Dance
+
+Kingambit (M) @ Black Glasses
+Ability: Defiant
+Level: 50
+Adamant Nature
+- Sucker Punch
+- Kowtow Cleave
+- Swords Dance
+- Protect
+
+Basculegion (M) @ Choice Scarf
+Ability: Adaptability
+Level: 50
+Jolly Nature
+- Wave Crash
+- Last Respects
+- Flip Turn
+- Aqua Jet
+
+Floette-Eternal (F) @ Floettite
+Ability: Flower Veil
+Level: 50
+Modest Nature
+- Dazzling Gleam
+- Moonblast
+- Calm Mind
+- Protect

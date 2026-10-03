@@ -1,0 +1,53 @@
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Fake Out
+- Grassy Glide
+- Wood Hammer
+- U-turn
+
+Arcanine-Hisui (M) @ Focus Sash
+Ability: Rock Head
+Level: 50
+Jolly Nature
+- Flare Blitz
+- Protect
+- Head Smash
+- Extreme Speed
+
+Staraptor (M) @ Staraptite
+Ability: Intimidate
+Level: 50
+Jolly Nature
+- Close Combat
+- Protect
+- Brave Bird
+- Tailwind
+
+Raichu (M) @ Raichunite Y
+Ability: Lightning Rod
+Level: 50
+Timid Nature
+- Protect
+- Focus Blast
+- Zap Cannon
+- Encore
+
+Gholdengo @ Life Orb
+Ability: Good as Gold
+Level: 50
+Modest Nature
+- Make It Rain
+- Shadow Ball
+- Protect
+- Nasty Plot
+
+Sylveon (M) @ Fairy Feather
+Ability: Pixilate
+Level: 50
+Modest Nature
+- Hyper Voice
+- Hyper Beam
+- Protect
+- Calm Mind

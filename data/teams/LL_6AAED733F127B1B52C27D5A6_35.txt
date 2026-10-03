@@ -1,0 +1,53 @@
+Raichu (M) @ Raichunite Y
+Ability: Lightning Rod
+Level: 50
+Timid Nature
+- Zap Cannon
+- Focus Blast
+- Fake Out
+- Protect
+
+Staraptor (M) @ Staraptite
+Ability: Intimidate
+Level: 50
+Adamant Nature
+- Brave Bird
+- Close Combat
+- Tailwind
+- Protect
+
+Milotic (M) @ Sitrus Berry
+Ability: Competitive
+Level: 50
+Calm Nature
+- Muddy Water
+- Ice Beam
+- Coil
+- Hypnosis
+
+Ceruledge (M) @ Grassy Seed
+Ability: Flash Fire
+Level: 50
+Adamant Nature
+- Bitter Blade
+- Shadow Sneak
+- Swords Dance
+- Protect
+
+Rillaboom (M) @ Miracle Seed
+Ability: Overgrow
+Level: 50
+Adamant Nature
+- Wood Hammer
+- Grassy Glide
+- Fake Out
+- High Horsepower
+
+Gholdengo @ Life Orb
+Ability: Good as Gold
+Level: 50
+Modest Nature
+- Make It Rain
+- Shadow Ball
+- Nasty Plot
+- Protect

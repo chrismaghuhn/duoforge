@@ -1,0 +1,53 @@
+Golisopod (M) @ Golisopite
+Ability: Emergency Exit
+Level: 50
+Sassy Nature
+- Leech Life
+- Iron Head
+- Bulk Up
+- Protect
+
+Sneasler (M) @ Grassy Seed
+Ability: Unburden
+Level: 50
+Adamant Nature
+- Rock Slide
+- Swords Dance
+- Throat Chop
+- Close Combat
+
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Grassy Glide
+- Fake Out
+- Wood Hammer
+- U-turn
+
+Incineroar (M) @ Sitrus Berry
+Ability: Intimidate
+Level: 50
+Sassy Nature
+- Fake Out
+- Flare Blitz
+- Darkest Lariat
+- Parting Shot
+
+Pelipper (M) @ Choice Scarf
+Ability: Drizzle
+Level: 50
+Timid Nature
+- Ice Beam
+- Icy Wind
+- Hurricane
+- Weather Ball
+
+Floette-Eternal (F) @ Floettite
+Ability: Flower Veil
+Level: 50
+Bold Nature
+- Calm Mind
+- Protect
+- Dazzling Gleam
+- Draining Kiss

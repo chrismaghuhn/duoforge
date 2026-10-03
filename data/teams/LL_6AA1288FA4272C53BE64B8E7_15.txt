@@ -1,0 +1,53 @@
+Rillaboom (M) @ Sitrus Berry
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Wood Hammer
+- Grassy Glide
+- Fake Out
+- High Horsepower
+
+Arcanine-Hisui (M) @ Focus Sash
+Ability: Rock Head
+Level: 50
+Adamant Nature
+- Flare Blitz
+- Head Smash
+- Extreme Speed
+- Protect
+
+Sneasler (M) @ Grassy Seed
+Ability: Unburden
+Level: 50
+Jolly Nature
+- Dire Claw
+- Close Combat
+- Fake Out
+- Protect
+
+Kingambit (M) @ Chople Berry
+Ability: Defiant
+Level: 50
+Adamant Nature
+- Kowtow Cleave
+- Sucker Punch
+- Iron Head
+- Low Kick
+
+Basculegion (M) @ Mystic Water
+Ability: Adaptability
+Level: 50
+Adamant Nature
+- Wave Crash
+- Aqua Jet
+- Last Respects
+- Protect
+
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Timid Nature
+- Hyper Voice
+- Draco Meteor
+- Tailwind
+- Protect

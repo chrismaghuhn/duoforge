@@ -134,10 +134,14 @@ static bool dfi_has_type(const struct duoforge_battle *b, const dfi_member *m, u
     return t[0] == type || t[1] == type;
 }
 
-/* isGrounded with the data: not Flying (no Levitate, Air Balloon or Gravity). */
+static bool dfi_ability(const struct duoforge_battle *b, const dfi_member *m, uint32_t id);
+
+/* isGrounded with the data (sim/pokemon.ts:2148-2160): not a Flying type and not a Levitate holder. Gravity, Ingrain,
+ * Smack Down, Iron Ball, Air Balloon, Magnet Rise and Telekinesis are unmarked rows, so no battle has them; Eelevate is
+ * an unmarked ability. The ability is the current one (a Mega's, or one that Trace copied). */
 static bool dfi_grounded(const struct duoforge_battle *b, const dfi_member *m)
 {
-    return !dfi_has_type(b, m, DFI_TYPE_FLYING);
+    return !dfi_has_type(b, m, DFI_TYPE_FLYING) && !dfi_ability(b, m, DFI_ABILITY_LEVITATE);
 }
 
 /* The item a member holds now, stored as 1 + id (0 = none): the one the member's sheet says unless it has been used
@@ -3120,10 +3124,19 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             hit[i] = false;
         }
     }
-    for (uint32_t i = 0u; i < count && !status_move; ++i) {
-        if (hit[i] && dfi_type_immune(b, dfi_at(b, targets[i]), move_type)) {
-            hit[i] = false; /* a status move ignores type immunity */
+    for (uint32_t i = 0u; i < count && !status_move; ++i) { /* a status move ignores type immunity */
+        if (!hit[i]) {
+            continue;
+        }
+        const dfi_member *tm = dfi_at(b, targets[i]);
+        if (dfi_type_immune(b, tm, move_type)) {
+            hit[i] = false;
             dfi_immune(r, targets[i], 0u);
+        } else if (move_type == DFI_TYPE_GROUND && dfi_ability(b, tm, DFI_ABILITY_LEVITATE)) {
+            /* runImmunity('Ground'): isGrounded is null for a Levitate holder (sim/pokemon.ts:2156), shown as
+             * -immune|X|[from] ability: Levitate (:2257-2258); a Flying type is immune first, without the line. */
+            hit[i] = false;
+            dfi_immune(r, targets[i], 1u + DFI_ABILITY_LEVITATE);
         }
     }
     /* hitStepTryImmunity: a Prankster-boosted status move fails on a Dark

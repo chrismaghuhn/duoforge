@@ -1,0 +1,53 @@
+Sneasler (M) @ Grassy Seed
+Ability: Unburden
+Level: 50
+Adamant Nature
+- Protect
+- Dire Claw
+- Close Combat
+- Rock Tomb
+
+Floette-Eternal (F) @ Floettite
+Ability: Flower Veil
+Level: 50
+Timid Nature
+- Protect
+- Dazzling Gleam
+- Calm Mind
+- Draining Kiss
+
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Timid Nature
+- Protect
+- Tailwind
+- Hyper Voice
+- Flamethrower
+
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Fake Out
+- Grassy Glide
+- Wood Hammer
+- U-turn
+
+Incineroar (M) @ Sitrus Berry
+Ability: Intimidate
+Level: 50
+Impish Nature
+- Fake Out
+- Parting Shot
+- Throat Chop
+- Flare Blitz
+
+Gholdengo @ Life Orb
+Ability: Good as Gold
+Level: 50
+Timid Nature
+- Make It Rain
+- Shadow Ball
+- Nasty Plot
+- Protect

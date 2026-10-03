@@ -1,0 +1,53 @@
+Gardevoir (M) @ Gardevoirite
+Ability: Trace
+Level: 50
+Modest Nature
+- Hyper Voice
+- Expanding Force
+- Trick Room
+- Protect
+
+Scrafty (M) @ Scraftinite
+Ability: Intimidate
+Level: 50
+Brave Nature
+- Fake Out
+- Knock Off
+- Drain Punch
+- Iron Head
+
+Archaludon (M) @ Leftovers
+Ability: Stamina
+Level: 50
+Modest Nature
+- Dark Pulse
+- Electro Shot
+- Snarl
+- Protect
+
+Pelipper (M) @ Focus Sash
+Ability: Drizzle
+Level: 50
+Modest Nature
+- Wide Guard
+- Tailwind
+- Hurricane
+- Weather Ball
+
+Sneasler (M) @ Psychic Seed
+Ability: Unburden
+Level: 50
+Adamant Nature
+- Close Combat
+- Dire Claw
+- Protect
+- Rock Slide
+
+Indeedee-F (F) @ Rocky Helmet
+Ability: Psychic Surge
+Level: 50
+Bold Nature
+- Trick Room
+- Psychic
+- Helping Hand
+- Follow Me

@@ -1038,8 +1038,8 @@ class ItemAbilityFeatures(unittest.TestCase):
         self.assertEqual(gen_closure.ENGINE_ROWS, {'items': ['focussash', 'floettite', 'psychicseed'],
                                                    'abilities': ['rockhead', 'flowerveil', 'fairyaura', 'roughskin',
                                                                  'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
-                                                                 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll',
-                                                                 'innerfocus', 'liquidvoice']})
+                                                                 'levitate', 'sandrush', 'swiftswim', 'slushrush',
+                                                                 'chlorophyll', 'innerfocus', 'liquidvoice']})
 
 
 class Bounds(unittest.TestCase):

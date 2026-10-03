@@ -1,0 +1,53 @@
+Golisopod (M) @ Golisopite
+Ability: Emergency Exit
+Level: 50
+Adamant Nature
+- Drill Run
+- First Impression
+- Leech Life
+- Iron Head
+
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Wood Hammer
+- Grassy Glide
+- U-turn
+- Fake Out
+
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Modest Nature
+- Hyper Voice
+- Dragon Pulse
+- Tailwind
+- Protect
+
+Empoleon (M) @ Life Orb
+Ability: Competitive
+Level: 50
+Quiet Nature
+- Hydro Pump
+- Flash Cannon
+- Ice Beam
+- Protect
+
+Ceruledge (M) @ Grassy Seed
+Ability: Flash Fire
+Level: 50
+Adamant Nature
+- Bitter Blade
+- Shadow Sneak
+- Swords Dance
+- Protect
+
+Farigiraf (M) @ Sitrus Berry
+Ability: Armor Tail
+Level: 50
+Bold Nature
+- Psychic
+- Thunderbolt
+- Helping Hand
+- Trick Room

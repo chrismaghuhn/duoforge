@@ -1,0 +1,53 @@
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Timid Nature
+- Hyper Voice
+- Protect
+- Draco Meteor
+- Tailwind
+
+Golisopod (M) @ Golisopite
+Ability: Emergency Exit
+Level: 50
+Brave Nature
+- Leech Life
+- Iron Head
+- Close Combat
+- Sucker Punch
+
+Farigiraf (M) @ Grassy Seed
+Ability: Armor Tail
+Level: 50
+Bold Nature
+- Psychic
+- Trick Room
+- Helping Hand
+- Thunderbolt
+
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Jolly Nature
+- Grassy Glide
+- Wood Hammer
+- High Horsepower
+- Fake Out
+
+Annihilape (M) @ Choice Scarf
+Ability: Defiant
+Level: 50
+Jolly Nature
+- Shadow Claw
+- Close Combat
+- U-turn
+- Ice Punch
+
+Arcanine-Hisui (M) @ Focus Sash
+Ability: Rock Head
+Level: 50
+Jolly Nature
+- Flare Blitz
+- Head Smash
+- Extreme Speed
+- Protect

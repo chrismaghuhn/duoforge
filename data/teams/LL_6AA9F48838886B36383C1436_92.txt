@@ -1,0 +1,53 @@
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Timid Nature
+- Hyper Voice
+- Draco Meteor
+- Flamethrower
+- Protect
+
+Rillaboom (M) @ Occa Berry
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Fake Out
+- Grassy Glide
+- Wood Hammer
+- High Horsepower
+
+Gholdengo @ Grassy Seed
+Ability: Good as Gold
+Level: 50
+Timid Nature
+- Make It Rain
+- Shadow Ball
+- Nasty Plot
+- Protect
+
+Indeedee-F (F) @ Colbur Berry
+Ability: Psychic Surge
+Level: 50
+Relaxed Nature
+- Psychic
+- Follow Me
+- Trick Room
+- Protect
+
+Arcanine-Hisui (M) @ Focus Sash
+Ability: Rock Head
+Level: 50
+Jolly Nature
+- Flare Blitz
+- Head Smash
+- Protect
+- Extreme Speed
+
+Gardevoir (M) @ Gardevoirite
+Ability: Trace
+Level: 50
+Timid Nature
+- Protect
+- Hyper Voice
+- Expanding Force
+- Aura Sphere

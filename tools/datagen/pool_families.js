@@ -538,7 +538,7 @@ function checkRecharge(dex) {
 }
 
 // Step G22, the weather Speed abilities, Inner Focus and Liquid Voice: the pinned facts that the engine hard-codes
-// (decision 0015, item 5q), called on the pinned handlers. The Champions mod overrides none of the six abilities (it has
+// (decision 0015, item 5r), called on the pinned handlers. The Champions mod overrides none of the six abilities (it has
 // no entry by their ids; the source of the generator hashes that file). `formes` are the rows of dfi_pool_forme_legal,
 // `itemIds` and `abilityIds` the ids of the pool's headers.
 function checkG22(dex, formes, itemIds, abilityIds) {
@@ -886,7 +886,7 @@ function checkFormes(dex, validator, rows, moves, abilities) {
 // implemented in the turn code by id (G4: Focus Sash, Rock Head; G12: Floettite, Flower Veil, Fairy Aura)
 const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed'],
     abilities: ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
-        'sandrush', 'swiftswim', 'slushrush', 'chlorophyll', 'innerfocus', 'liquidvoice']};
+        'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll', 'innerfocus', 'liquidvoice']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
     'randomNormal']);
 // The fields of a move that the tables model (gen_closure.py DATA_KEYS and IGNORED_KEYS), nothing else.

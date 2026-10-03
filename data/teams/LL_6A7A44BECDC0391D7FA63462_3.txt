@@ -1,0 +1,53 @@
+Raichu (M) @ Raichunite Y
+Ability: Lightning Rod
+Level: 50
+Timid Nature
+- Zap Cannon
+- Encore
+- Fake Out
+- Protect
+
+Kingambit (M) @ Life Orb
+Ability: Defiant
+Level: 50
+Adamant Nature
+- Kowtow Cleave
+- Sucker Punch
+- Swords Dance
+- Protect
+
+Arcanine-Hisui (M) @ Focus Sash
+Ability: Rock Head
+Level: 50
+Jolly Nature
+- Flare Blitz
+- Head Smash
+- Extreme Speed
+- Protect
+
+Staraptor (M) @ Staraptite
+Ability: Intimidate
+Level: 50
+Jolly Nature
+- Close Combat
+- Brave Bird
+- Tailwind
+- Protect
+
+Farigiraf (M) @ Sitrus Berry
+Ability: Armor Tail
+Level: 50
+Modest Nature
+- Psychic
+- Thunderbolt
+- Trick Room
+- Helping Hand
+
+Sylveon (M) @ Fairy Feather
+Ability: Pixilate
+Level: 50
+Modest Nature
+- Hyper Voice
+- Quick Attack
+- Hyper Beam
+- Detect
