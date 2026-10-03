@@ -1,0 +1,25 @@
+{
+  "name": "g30_clear_body",
+  "purpose": "Step G30, Clear Body: Metagross and Dragapult (both Clear Body) meet two Intimidates; Incineroar's Parting Shot and Snarl and Grimmsnarl's Spirit Break drop their stats: the primary drops show -fail ... unboost, a move's secondary shows nothing, Parting Shot does not switch its user out, and Dragapult's own Draco Meteor drop is not stopped.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000003015",
+  "teams": [
+    "Metagross\nAbility: Clear Body\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Bullet Punch\n- Iron Head\n- Protect\n\nDragapult (M)\nAbility: Clear Body\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Dragon Pulse\n- Draco Meteor\n- Protect\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nGholdengo\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Protect\n\nGrimmsnarl (M)\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Protect\n\nRaichu (F)\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Thunderbolt\n- Helping Hand\n- Protect",
+    "Incineroar (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Parting Shot\n- Snarl\n- Fake Out\n- Protect\n\nGrimmsnarl (M)\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Spirit Break\n- Protect\n\nSalamence (M)\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Hyper Voice\n- Protect\n\nGholdengo\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Protect\n\nRaichu (F)\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Thunderbolt\n- Helping Hand\n- Protect\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 2 1",
+      "move 1 1, move 2 1",
+      "move 3, move 3"
+    ],
+    "p2": [
+      "move 1 1, move 1 2",
+      "move 2, move 1 1",
+      "switch 3, move 2",
+      "move 1 1, move 1 2"
+    ],
+    "max_steps": 4
+  }
+}

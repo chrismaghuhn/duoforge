@@ -288,6 +288,21 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_DRAINPUNCH] = 1u,
             [DFI_MOVE_NUZZLE] = 1u,
             [DFI_MOVE_AURORAVEIL] = 1u,
+            /* Step G30: the powder moves (Rage Powder with its redirection, the status powders with the Grass type's and
+             * Overcoat's immunity), Psychic Fangs (breaks the screens), Solar Beam (the two-turn charge that sun skips)
+             * and the data rows that only wait for a recorded battle: Matcha Gotcha, Giga Drain, Energy Ball, Play Rough.
+             * Cotton Spore (boosts to the foes) and Magic Powder (a type change) stay unmodelled; so does Stomping Tantrum
+             * (it needs a last-move-failed flag that the state does not have). */
+            [DFI_MOVE_RAGEPOWDER] = 1u,
+            [DFI_MOVE_SLEEPPOWDER] = 1u,
+            [DFI_MOVE_STUNSPORE] = 1u,
+            [DFI_MOVE_POISONPOWDER] = 1u,
+            [DFI_MOVE_PSYCHICFANGS] = 1u,
+            [DFI_MOVE_SOLARBEAM] = 1u,
+            [DFI_MOVE_MATCHAGOTCHA] = 1u,
+            [DFI_MOVE_GIGADRAIN] = 1u,
+            [DFI_MOVE_ENERGYBALL] = 1u,
+            [DFI_MOVE_PLAYROUGH] = 1u,
             [DFI_MOVE_SPIKYSHIELD] = 1u,
             /* Step G28: Shell Smash (its boosts in the pin's order), Acrobatics (doubled without an item), Blizzard (never misses
              * in snow), Ancient Power (a secondary that boosts its user), Feint (breaks Protect and Wide Guard). */
@@ -345,6 +360,11 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_POISONTOUCH] = 1u,
             [DFI_ABILITY_THERMALEXCHANGE] = 1u,
             [DFI_ABILITY_STICKYHOLD] = 1u,
+            /* Step G30: Flame Body, Clear Body, Hospitality and Overcoat (the sand and powder immunity). */
+            [DFI_ABILITY_FLAMEBODY] = 1u,
+            [DFI_ABILITY_CLEARBODY] = 1u,
+            [DFI_ABILITY_HOSPITALITY] = 1u,
+            [DFI_ABILITY_OVERCOAT] = 1u,
             [DFI_ABILITY_LEVITATE] = 1u,
             /* Step G22: the weather Speed abilities (doubled Speed in their weather; Sand Rush also takes no Sandstorm damage),
              * Inner Focus (no flinch, no Intimidate drop) and Liquid Voice (sound moves are Water). */
@@ -445,7 +465,8 @@ const dfi_support_manifest dfi_support = {
      * position's volatiles, public, verified against the g17 battles step by step in duoforge.state.pool_g17). Step G19: Glaive Rush (bit 20:
      * GLAIVE_RUSH of the position's volatiles, public, verified against the g19 battles in duoforge.state.pool_g19). Step G20:
      * Aurora Veil (bit 3: aurora_veil_turns of the side, public, verified against the g20_aurora_veil battles step by step
-     * in duoforge.state.pool_g20). */
+     * in duoforge.state.pool_g20). Step G30: Rage Powder (bit 39: RAGE_POWDER of the position's volatiles, public, the value
+     * that decision 0018 gave it, at a PIVOT boundary only; verified against the g30 battles in duoforge.state.pool_g30). */
     /* Step Sandstorm and Snowscape: bits 0 and 1, the weather values of the old observation's weather field (the
      * -weather lines of Sand Stream, Snow Warning and the two moves, verified step by step in duoforge.state.pool_weather).
      * Step AC1: the ability change of Trace (bit 2: position_ext.ability_now, public, verified against the ac1 battles in
@@ -462,5 +483,6 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WEATHER_SNOW) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ITEM_CHANGE) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ABILITY_CHANGE) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_AURORA_VEIL),
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_AURORA_VEIL) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_RAGE_POWDER),
 };

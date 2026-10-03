@@ -21,6 +21,7 @@
 #include "core/arith.h"
 #include "data/closure_tables.h"
 #include "data/extended_tables.h"
+#include "data/pool_tables.h"
 #include "data/support_manifest.h"
 #include "state/battle_internal.h"
 #include "state/closure_member.h"
@@ -189,7 +190,12 @@ static void dfi_view_position(const struct duoforge_battle *b, uint32_t viewer, 
     out->protecting = (((uint32_t)slot->flags & DFI_VOL_PROTECT) != 0u) ? 1u : 0u;
     /* Unburden is public by inference: the ability and the item's use are
      * shown (Team C). */
-    const uint32_t follow = ((uint32_t)slot->flags & DFI_VOL_FOLLOW_ME) != 0u ? DUOFORGE_POSITION_FLAG_FOLLOW_ME : 0u;
+    /* The position's Follow Me bit is Rage Powder's when the occupant's last move is Rage Powder (step G30): that one is
+     * the POOL extension's RAGE_POWDER (below) and not Follow Me, which draws every foe's single-target move. */
+    const bool rage_powder = ((uint32_t)slot->flags & DFI_VOL_FOLLOW_ME) != 0u &&
+                             dfi_last_move_id(b, s * 2u + p) == (uint32_t)DFI_MOVE_RAGEPOWDER;
+    const uint32_t follow =
+        ((uint32_t)slot->flags & DFI_VOL_FOLLOW_ME) != 0u && !rage_powder ? DUOFORGE_POSITION_FLAG_FOLLOW_ME : 0u;
     const uint32_t helping = ((uint32_t)slot->flags & DFI_VOL_HELPING_HAND) != 0u ? DUOFORGE_POSITION_FLAG_HELPING_HAND : 0u;
     /* The flag says that Unburden doubles the Speed, which asks for no item (data/abilities.ts:5247-5251): the volatile of a
      * holder of its own Mega Stone, set by a Knock Off that the stone refused, shows nothing (no line says it). */
@@ -318,6 +324,13 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                 vol |= tail->throat_chop_turns != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_THROAT_CHOP : 0u;
                 vol |= tail->must_recharge != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_MUST_RECHARGE : 0u; /* step G17 */
                 vol |= tail->glaive_rush != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_GLAIVE_RUSH : 0u; /* step G19 */
+                /* Step G30: Rage Powder draws the foes' single-target moves this turn ([-singleturn] move: Rage Powder), set
+                 * only at a boundary inside a turn (a PIVOT: the residual ends it), as decision 0018 sections 3.4.1 and 6.1 say. */
+                if (((uint32_t)battle->sides[s].positions[p].flags & DFI_VOL_FOLLOW_ME) != 0u &&
+                    battle->sides[s].positions[p].occupant != DFI_OCCUPANT_NONE &&
+                    dfi_last_move_id(battle, s * 2u + p) == (uint32_t)DFI_MOVE_RAGEPOWDER) {
+                    vol |= (uint32_t)DUOFORGE_POSITION_EXT_RAGE_POWDER;
+                }
                 o.sides[s].positions[p].volatiles = vol;
                 /* Step G9, Encore: the one move slot (slot + 1) that the occupant may use, public (-start|X|Encore: the
                  * slot is the one of its last move line); the turns are never shown. */
