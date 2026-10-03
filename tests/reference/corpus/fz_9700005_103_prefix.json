@@ -1,0 +1,40 @@
+{
+  "name": "fz_9700005_103_prefix",
+  "purpose": "Corpus (defect): case fz_9700005_103 of run 9700005 (tools/reference/diff_driver.py random), team PP_3C4611CCBA18D35A against team PP_674AC2A18201012A, found as ORACLE_GAP tie-context event:BeforeMove. The shortest prefix that showed it, 7 of 18 choices; it passes now, fixed by the residual handler list of the pin, step residual-order (2026-10-03).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,29bc9c464621a83231df82f3cae6cd2fec8de04ab3227656b27bb99ffbf5d53f",
+  "teams": [
+    "Milotic (M) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 25 HP / 32 Def / 9 SpA\nQuiet Nature\n- Muddy Water\n- Ice Beam\n- Protect\n- Scald\n\nFarigiraf (M) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Trick Room\n- Psychic Noise\n- Hyper Voice\n- Protect\n\nGolisopod (M) @ Golisopite\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nBrave Nature\n- Bulk Up\n- Leech Life\n- Liquidation\n- Iron Head\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nBrave Nature\n- High Horsepower\n- Fake Out\n- Grassy Glide\n- Wood Hammer\n\nArcanine-Hisui (M) @ Charcoal\nAbility: Intimidate\nLevel: 50\nEVs: 14 HP / 32 Atk / 20 SpD\nBrave Nature\n- Close Combat\n- Flare Blitz\n- Rock Slide\n- Protect\n\nFloette-Eternal (F) @ Floettite\nAbility: Flower Veil\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpA\nQuiet Nature\n- Draining Kiss\n- Dazzling Gleam\n- Calm Mind\n- Protect",
+    "Incineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 10 Def / 11 SpD / 13 Spe\nImpish Nature\n- Throat Chop\n- Flare Blitz\n- Fake Out\n- Parting Shot\n\nRillaboom (M) @ Occa Berry\nAbility: Grassy Surge\nLevel: 50\nEVs: 30 HP / 5 Atk / 1 Def / 4 SpD / 26 Spe\nAdamant Nature\n- Fake Out\n- Wood Hammer\n- Grass Knot\n- U-turn\n\nKingambit (M) @ Life Orb\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 1 Def / 1 Spe\nAdamant Nature\n- Sucker Punch\n- Swords Dance\n- Protect\n- Kowtow Cleave\n\nBasculegion (M) @ Focus Sash\nAbility: Adaptability\nLevel: 50\nEVs: 32 Atk / 2 Def / 32 Spe\nAdamant Nature\n- Protect\n- Liquidation\n- Last Respects\n- Aqua Jet\n\nSneasler (M) @ Grassy Seed\nAbility: Unburden\nLevel: 50\nEVs: 21 HP / 1 Atk / 12 Def / 32 Spe\nAdamant Nature\n- Dire Claw\n- Close Combat\n- Swords Dance\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 15 HP / 18 Atk / 1 SpD / 32 Spe\nHasty Nature\n- Protect\n- Tailwind\n- Double-Edge\n- Hyper Voice"
+  ],
+  "choices": [
+    {
+      "p1": "team 2431",
+      "p2": "team 3142"
+    },
+    {
+      "p1": "move 3, move 3 -1",
+      "p2": "move 1 2, move 1 1"
+    },
+    {
+      "p1": "move 4, move 4 1",
+      "p2": "switch 3, move 1 1"
+    },
+    {
+      "p1": "move 4, move 1 -1",
+      "p2": "move 4 1, move 1 -1"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 2 1, move 3 -1",
+      "p2": "move 3 1, move 1 -1"
+    },
+    {
+      "p1": "move 4, move 4 2",
+      "p2": "move 2 2, move 4 2"
+    }
+  ]
+}

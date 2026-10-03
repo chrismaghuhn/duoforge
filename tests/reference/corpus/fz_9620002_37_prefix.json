@@ -1,0 +1,58 @@
+{
+  "name": "fz_9620002_37_prefix",
+  "purpose": "Corpus (defect): case fz_9620002_37 of run 9620002 (tools/reference/diff_driver.py random), team PP_0071E895C381DD1C against team PP_0071E895C381DD1C, found as DIVERGENCE events reference kind 5 differs in pos, hp, kind2. The shortest prefix that showed it, 12 of 22 choices; it passes now, fixed by the residual handler list of the pin, step residual-order (2026-10-03).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,1c895fed1c91fe72fdae013915d64ce6d69ca8b329d6e291bceda3d0196586bf",
+  "teams": [
+    "Incineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 6 SpD / 14 Spe\nImpish Nature\n- Flare Blitz\n- Throat Chop\n- Fake Out\n- Parting Shot\n\nBasculegion (M) @ Life Orb\nAbility: Adaptability\nLevel: 50\nEVs: 4 HP / 18 Atk / 1 Def / 15 SpD / 28 Spe\nAdamant Nature\n- Wave Crash\n- Last Respects\n- Aqua Jet\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 16 HP / 20 SpA / 30 Spe\nModest Nature\n- Hyper Voice\n- Flamethrower\n- Tailwind\n- Protect\n\nSneasler (M) @ Grassy Seed\nAbility: Unburden\nLevel: 50\nEVs: 32 HP / 3 Atk / 11 Def / 13 SpD / 6 Spe\nAdamant Nature\n- Dire Claw\n- Close Combat\n- Rock Slide\n- Swords Dance\n\nFloette-Eternal (F) @ Floettite\nAbility: Flower Veil\nLevel: 50\nEVs: 28 HP / 1 Def / 5 SpA / 32 Spe\nModest Nature\n- Moonblast\n- Dazzling Gleam\n- Calm Mind\n- Protect\n\nRillaboom (M) @ Occa Berry\nAbility: Grassy Surge\nLevel: 50\nEVs: 32 HP / 15 Atk / 13 SpD / 6 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- High Horsepower\n- Fake Out",
+    "Floette-Eternal (F) @ Floettite\nAbility: Flower Veil\nLevel: 50\nEVs: 28 HP / 1 Def / 5 SpA / 32 Spe\nModest Nature\n- Moonblast\n- Dazzling Gleam\n- Calm Mind\n- Protect\n\nIncineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 6 SpD / 14 Spe\nImpish Nature\n- Flare Blitz\n- Throat Chop\n- Fake Out\n- Parting Shot\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 16 HP / 20 SpA / 30 Spe\nModest Nature\n- Hyper Voice\n- Flamethrower\n- Tailwind\n- Protect\n\nBasculegion (M) @ Life Orb\nAbility: Adaptability\nLevel: 50\nEVs: 4 HP / 18 Atk / 1 Def / 15 SpD / 28 Spe\nAdamant Nature\n- Wave Crash\n- Last Respects\n- Aqua Jet\n- Protect\n\nRillaboom (M) @ Occa Berry\nAbility: Grassy Surge\nLevel: 50\nEVs: 32 HP / 15 Atk / 13 SpD / 6 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- High Horsepower\n- Fake Out\n\nSneasler (M) @ Grassy Seed\nAbility: Unburden\nLevel: 50\nEVs: 32 HP / 3 Atk / 11 Def / 13 SpD / 6 Spe\nAdamant Nature\n- Dire Claw\n- Close Combat\n- Rock Slide\n- Swords Dance"
+  ],
+  "choices": [
+    {
+      "p1": "team 2163",
+      "p2": "team 2645"
+    },
+    {
+      "p1": "move 4, move 1 2",
+      "p2": "move 2 1, move 1 1"
+    },
+    {
+      "p1": "move 1 2, move 4 1",
+      "p2": "move 4 -2, move 2 1"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 4, move 1 mega",
+      "p2": "move 2 2, move 4"
+    },
+    {
+      "p1": "move 1 1, move 2 1",
+      "p2": "switch 4, move 1 1"
+    },
+    {
+      "p1": "switch 3, pass"
+    },
+    {
+      "p1": "move 3 1, move 1",
+      "p2": "move 3 -2, move 2 1"
+    },
+    {
+      "p1": "switch 4, pass",
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 1 -2, move 3",
+      "p2": "move 3 2, move 3 1"
+    },
+    {
+      "p1": "move 2 -2, move 2 -1",
+      "p2": "move 2 1, move 2 2"
+    }
+  ]
+}
