@@ -393,11 +393,26 @@ CHUNKS=${CHUNKS:-6}; PARALLEL=${PARALLEL:-2}; CHUNK_BATTLES=10; BASE_SEED=100; V
 RUN_ID=run-x; RESUME=${RESUME:-no}; DF_CAMPAIGN=c; DF_COMMIT=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; PARALLEL_CONF=auto
 log() { printf '%s\n' "$*" >> "$LOGF"; }
 fail() { log "FAILED: $*"; exit 1; }
+# A rendezvous instead of a sleep: the driver has logged its start and waits until `$1` drivers are running at once, or until `$2`
+# drivers have started in all (the last ones of a phase have no partner left). The wait is a bounded poll of the events file, so a
+# scheduler that does not start the partners fails the test (TIMEOUT in the log, after 30 s) instead of hanging it, and one that starts
+# too many shows in the peak that the test then counts.
+barrier() {
+    local i=0 s e
+    while :; do
+        s=$(grep -c '^S' "$EVENTS" || true); e=$(grep -c '^E' "$EVENTS" || true)
+        if [ $((s - e)) -ge "$1" ] || [ "$s" -ge "$2" ]; then return 0; fi
+        i=$((i + 1))
+        if [ "$i" -gt 600 ]; then echo "TIMEOUT $1 $2 s=$s e=$e" >> "$LOGF"; return 1; fi
+        sleep 0.05
+    done
+}
 node() { echo v1; }
 run_driver() { # idx seed dir
     mkdir -p "$3/cases/x"
     echo '{}' > "$3/summary.json"; echo '{"node":"v1"}' > "$3/run.json"
-    echo "S$1" >> "$EVENTS"; sleep 0.4
+    echo "S$1" >> "$EVENTS"
+    if [ -n "${BARRIER_NSTART:-}" ]; then barrier "$PARALLEL" "$BARRIER_NSTART" || exit 1; else sleep 0.4; fi
     echo "8 0.5" > "$3.time"
     echo "E$1" >> "$EVENTS"
     [ "$1" != "${FAIL_IDX:-none}" ]
@@ -432,7 +447,7 @@ esac
         os.makedirs(os.path.join(self.tmp, 'work'))
         with open(os.path.join(self.tmp, 'work', 'done.txt'), 'w', newline=chr(10)) as f:
             f.write('0001' + chr(10))  # finished by an earlier box
-        r, ev, log, work = self.run_harness()
+        r, ev, log, work = self.run_harness(BARRIER_NSTART='5')  # five chunks start: 0001 is skipped
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr + log)
         started = [e[1:] for e in ev if e[0] == 'S']
         self.assertEqual(sorted(started), ['0000', '0002', '0003', '0004', '0005'])  # 0001 is skipped
@@ -564,10 +579,28 @@ S3_BASE=s3://my-fuzz-bucket/fuzz/c
 CHUNKS=12; PARALLEL=1; CHUNK_BATTLES=${CB:-10}; BASE_SEED=100; VCPUS=6; WORKERS_PER=1
 log() { printf '%s\n' "$*" >> "$LOGF"; }
 fail() { log "FAILED: $*"; exit 1; }
+# A rendezvous instead of a sleep: the driver has logged its start and waits until `$1` drivers are running at once, or until `$2`
+# drivers have started in all (the last ones of a phase have no partner left). The wait is a bounded poll of the events file, so a
+# scheduler that does not start the partners fails the test (TIMEOUT in the log, after 30 s) instead of hanging it, and one that starts
+# too many shows in the peak that the test then counts.
+barrier() {
+    local i=0 s e
+    while :; do
+        s=$(grep -c '^S' "$EVENTS" || true); e=$(grep -c '^E' "$EVENTS" || true)
+        if [ $((s - e)) -ge "$1" ] || [ "$s" -ge "$2" ]; then return 0; fi
+        i=$((i + 1))
+        if [ "$i" -gt 600 ]; then echo "TIMEOUT $1 $2 s=$s e=$e" >> "$LOGF"; return 1; fi
+        sleep 0.05
+    done
+}
 node() { echo v1; }
 run_driver() { # idx seed dir
     mkdir -p "$3/cases/x"; echo '{}' > "$3/summary.json"; echo '{"node":"v1"}' > "$3/run.json"
-    echo "S$1 w$WORKERS_PER" >> "$EVENTS"; sleep 0.3; echo "E$1" >> "$EVENTS"
+    echo "S$1 w$WORKERS_PER" >> "$EVENTS"
+    if [ -n "${BARRIER:-}" ]; then # phase 0: 6 chunks, parallel 2; phase 1: chunks 6 to 11, parallel 3
+        if [ "$1" -lt 6 ]; then barrier 2 6 || exit 1; else barrier 3 12 || exit 1; fi
+    else sleep 0.3; fi
+    echo "E$1" >> "$EVENTS"
 }
 . "$HERE/chunks.sh"
 case ${MODE:-phases} in
@@ -597,7 +630,7 @@ esac
         return r, ev, log, work
 
     def test_phases_run_one_after_the_other_each_with_its_own_parallel_and_workers(self):
-        r, ev, log, work = self.run_phase_harness()
+        r, ev, log, work = self.run_phase_harness(BARRIER='1')
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr + log)
         # events: S<idx> w<workers per driver>, E<idx>
         starts = [(e[1:], None) for e in ev if e.startswith('S')]
