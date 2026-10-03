@@ -503,7 +503,7 @@ def drop_reason(d, state, after=None, log=None):
         # (data/conditions.ts choicelock, data/moves.ts throatchop and healblock) each only set `disabled` on
         # move slots, and setting a flag twice is setting it once: whichever runs first, the request offers the
         # same moves. Any other handler is a mechanic that has not been looked at.
-        if all(g.startswith(('H:choicelock:', 'H:throatchop:', 'H:healblock:', 'H:encore:')) and g.endswith(':cb')
+        if all(g.startswith(('H:choicelock:', 'H:throatchop:', 'H:healblock:', 'H:encore:', 'H:imprison:')) and g.endswith(':cb')
                for g in group):
             return 'DisableMove handlers whose order changes nothing'
         raise ConversionError('disablemove-tie', 'trace_to_c: DisableMove tie with %s' % group,
@@ -528,6 +528,10 @@ def drop_reason(d, state, after=None, log=None):
         # tests/test_pool_tables.c checks it), so whichever runs first, the same moves are stopped with the same line.
         # Any other BeforeMove or ModifyMove tie is a handler that has not been looked at.
         parts = [g.split(':') for g in group or []]
+        # Step G38: the onFoeBeforeMove handlers (priority 4) of two Pokemon that both used Imprison, for a move of a foe of
+        # both: whichever runs first stops the move with the same line (the effect is the move, not the imprisoner).
+        if ctx == 'event:BeforeMove' and len(parts) >= 2 and all(len(x) == 4 and x[0] == 'H' and x[1] == 'imprison' and x[3] == 'cb' for x in parts):
+            return 'BeforeMove tie of Imprison handlers: the same line whichever runs first'
         if (len(parts) == 2 and all(len(x) == 4 and x[0] == 'H' and x[3] == 'cb' for x in parts)
                 and sorted(x[1] for x in parts) == ['healblock', 'throatchop'] and parts[0][2] == parts[1][2]):
             return '%s tie of Heal Block and Throat Chop of one Pokemon: no move has both flags' % ctx[6:]
@@ -742,10 +746,11 @@ EV = {name: i + 1 for i, name in enumerate(
      'SINGLE_TURN', 'VOLATILE_START', 'VOLATILE_END', 'TYPE_CHANGE'])}
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
          'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14,
-         'HEAL_BLOCK': 15, 'WEATHER': 16, 'ITEM_TAKEN': 17, 'RECHARGE': 18}
+         'HEAL_BLOCK': 15, 'WEATHER': 16, 'ITEM_TAKEN': 17, 'RECHARGE': 18, 'IMPRISON': 21}
 VOLATILE_HEAL_BLOCK = 1  # DUOFORGE_VOLATILE_HEAL_BLOCK: the detail of VOLATILE_START and VOLATILE_END
 VOLATILE_ENCORE = 2      # DUOFORGE_VOLATILE_ENCORE (step G9)
 VOLATILE_MUST_RECHARGE = 3  # DUOFORGE_VOLATILE_MUST_RECHARGE (step G17)
+VOLATILE_IMPRISON = 8    # DUOFORGE_VOLATILE_IMPRISON (step G38): START only
 MOVE_SLOT_RECHARGE = 5   # DUOFORGE_MOVE_SLOT_RECHARGE (step G17)
 # DUOFORGE_TYPE_*: the alphabetical type ids, the detail of TYPE_CHANGE
 TYPE_IDS = {name: i for i, name in enumerate(
@@ -794,6 +799,9 @@ IGNORED_VOLATILES = {
     # Pool step G19 (Glaive Rush): `-singlemove|X|Glaive Rush|[silent]` is not shown; the volatile shows in the accuracy
     # draws that are missing (the moves against it cannot miss) and in the doubled damage of every move that hits it.
     'glaiverush': 'the damage of the moves against it and the accuracy draws that it removes',
+    # Pool step G38 (Imprison): the start line, the moves of the foes' requests (the hidden disable, `hidden` of the state
+    # row), the cant line and the view bit.
+    'imprison': 'the start line, the moves of the requests, the cant line and the view bit',
 }
 HP_EXACT, HP_PERCENT = 1, 2
 HP_FLAGS_EV = {'': 0, 'r': 1, 'y': 2, 'g': 3}
@@ -953,6 +961,9 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                 e = ev_tuple(EV['CANT'], pos, NOPOS, CAUSE['MOVE'], 0, tables['MOVE'][key('Throat Chop')])
             elif reason == 'move: Heal Block':
                 e = ev_tuple(EV['CANT'], pos, NOPOS, CAUSE['HEAL_BLOCK'], tables['MOVE'][key(args[2])])
+            elif reason == 'move: Imprison':
+                # data/moves.ts:9511-9519 onFoeBeforeMove: `cant|X|move: Imprison|Move`, the stopped move in id (step G38).
+                e = ev_tuple(EV['CANT'], pos, NOPOS, CAUSE['IMPRISON'], tables['MOVE'][key(args[2])])
             else:
                 cause = {'par': 'PARALYSIS', 'slp': 'SLEEP', 'frz': 'FREEZE', 'flinch': 'FLINCH', 'nopp': 'NO_PP',
                          'recharge': 'RECHARGE'}
@@ -1049,6 +1060,10 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             elif what == 'move: Heal Block':
                 e = ev_tuple(EV['VOLATILE_START' if kind == '-start' else 'VOLATILE_END'], ev_pos(args[0]),
                              detail=VOLATILE_HEAL_BLOCK)
+            elif what == 'move: Imprison' and kind == '-start':
+                # data/moves.ts:9501 onStart: `-start|user|move: Imprison` (step G38); the volatile has no end line, it ends
+                # with the occupant.
+                e = ev_tuple(EV['VOLATILE_START'], ev_pos(args[0]), detail=VOLATILE_IMPRISON)
             elif what == 'Encore':
                 # data/moves.ts:4724-4783 encore: `-start|X|Encore` from onStart, `-end|X|Encore` from onEnd (the
                 # duration or an exhausted move; a switch-out or a faint clears it with no line).
@@ -1335,7 +1350,16 @@ def convert_battle(name, spec, trace, tables):
                 elif rows[k] == [2]:
                     row.append(0x10)
                 else:
-                    row.append(sum(1 << i for i, e in enumerate(rows[k]) if e == 1))
+                    eff = list(rows[k])
+                    # Imprison's hidden disable (step G38): the request shows the move as enabled for the last active Pokemon,
+                    # but the choice of it is rejected, and with no move left the choice is Struggle.
+                    hid = sd.get('hidden') or []
+                    if k < len(hid):
+                        eff = [0 if i < len(hid[k]) and hid[k][i] else e for i, e in enumerate(eff)]
+                    if hid and not any(e == 1 for e in eff):
+                        row.append(0x10)
+                    else:
+                        row.append(sum(1 << i for i, e in enumerate(eff) if e == 1))
             enabled.append(tuple(row))
         weather = WEATHER[new_state['weather']]
         terrain = TERRAIN[new_state['terrain']]

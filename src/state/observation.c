@@ -324,6 +324,8 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                 vol |= tail->throat_chop_turns != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_THROAT_CHOP : 0u;
                 vol |= tail->must_recharge != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_MUST_RECHARGE : 0u; /* step G17 */
                 vol |= tail->glaive_rush != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_GLAIVE_RUSH : 0u; /* step G19 */
+                /* Step G38: the occupant has used Imprison (-start|X|move: Imprison, public; it ends with the occupant). */
+                vol |= tail->imprison != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_IMPRISON : 0u;
                 /* Step G30: Rage Powder draws the foes' single-target moves this turn ([-singleturn] move: Rage Powder), set
                  * only at a boundary inside a turn (a PIVOT: the residual ends it), as decision 0018 sections 3.4.1 and 6.1 say. */
                 if (((uint32_t)battle->sides[s].positions[p].flags & DFI_VOL_FOLLOW_ME) != 0u &&

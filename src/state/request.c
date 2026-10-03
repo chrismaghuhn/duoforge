@@ -165,6 +165,29 @@ static duoforge_status dfi_slot_candidates(const duoforge_context *ctx, const st
                     continue;
                 }
             }
+            /* A foe's Imprison (step G38, POOL kinds, data/moves.ts:9504-9510): onFoeDisableMove disables, as a hidden
+             * disable, every move that the imprisoner knows (Struggle aside), in endTurn; the player's choice of such a
+             * move is rejected (sim/side.ts:718-737), so the move is not offered, and with no move left the slot gets
+             * Struggle. The request of Showdown shows the move as enabled, the mask does not: under closed team sheets
+             * it would tell that the imprisoner knows the move (open team sheets make the moves public). */
+            {
+                const uint32_t foe = 1u - s;
+                bool forbidden = false;
+                for (uint32_t fs = 0u; fs < DUOFORGE_ACTIVE_PER_SIDE && !forbidden; ++fs) {
+                    const uint32_t fo = b->sides[foe].positions[fs].occupant;
+                    if (b->tail.sides[foe].positions[fs].imprison == 0u || fo >= DUOFORGE_MAX_ROSTER ||
+                        b->sides[foe].members[fo].hp == 0u) {
+                        continue;
+                    }
+                    const dfi_member *im = &b->sides[foe].members[fo];
+                    for (uint32_t kk = 0u; kk < DUOFORGE_MAX_MOVE_SLOTS && kk < im->move_count; ++kk) {
+                        forbidden = forbidden || im->moves[kk].move_id == mv->move_id;
+                    }
+                }
+                if (forbidden) {
+                    continue;
+                }
+            }
             /* Champions disables Fake Out and First Impression once their
              * user has taken a move action since it entered
              * (data/mods/champions/moves.ts:354-361 and :386-394). */

@@ -339,6 +339,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_STEELROLLER] = 1u,
             [DFI_MOVE_CLANGOROUSSOUL] = 1u,
             [DFI_MOVE_BRICKBREAK] = 1u,
+            /* Step G38: Imprison (the foes may not use the moves it knows; duoforge.state.pool_g38). */
+            [DFI_MOVE_IMPRISON] = 1u,
             [DFI_MOVE_FIERYDANCE] = 1u,
             [DFI_MOVE_PSYCHOCUT] = 1u,
             [DFI_MOVE_IRONDEFENSE] = 1u,
@@ -511,5 +513,6 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ABILITY_CHANGE) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_AURORA_VEIL) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_RAGE_POWDER) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_AILMENT_TOX),
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_AILMENT_TOX) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_IMPRISON), /* step G38: bit 2 of the position volatiles */
 };
