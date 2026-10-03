@@ -181,6 +181,8 @@ class Tracker:
         if cls is None:
             return
         self._lines.append(line)
+        if cls == "keep":
+            return  # a line that changes no field (lines.check)
         if cls.startswith("turn:"):
             name = cls[len("turn:"):]
             self._turn_scoped.add(name)
@@ -444,7 +446,10 @@ class Tracker:
             p.protecting = 1
             p.chain = min(p.chain + 1, STALL_LEVEL_MAX)
             p.stall = STALL_DURATION
-        elif kind == EV["FAIL"]:
+        elif kind == EV["FAIL"] and e[3] == trace_to_c.CAUSE["NONE"]:
+            # Only the move's own failure is a failed Protect or guard. A FAIL with a cause is another effect of the
+            # same position: an Intimidate that the holder's Inner Focus stopped (cause ABILITY, duoforge.h
+            # DUOFORGE_EVENT_FAIL) leaves the stall chain as it is.
             if self._last_move is not None and self._last_move[0] == pos and self._last_move[1] in self._stall_moves:
                 p = self._at(pos)
                 p.chain = p.stall = 0
