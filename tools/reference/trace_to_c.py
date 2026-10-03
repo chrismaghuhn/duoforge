@@ -76,7 +76,7 @@ checks its precondition and fails loudly otherwise:
   INSERT_TIE        (Encore) the index of a replaced action among the moves
                     that tie it is a tape entry as well, unless the tied
                     actions are runSwitch entries (above)
-  RANDOM_TARGET execute:allAdjacentFoes, execute:allAdjacent, execute:allies
+  RANDOM_TARGET execute:allAdjacentFoes, execute:allAdjacent, execute:allies, execute:foeSide
                     always: the main target of a spread move only labels
                     the protocol line; the move hits every adjacent foe (and, for allAdjacent, the ally); for allies (Life Dew,
                     step G32) runMove aims the move at its user afterwards (sim/battle-actions.ts:419), so the draw decides nothing
@@ -550,7 +550,9 @@ def drop_reason(d, state, after=None, log=None):
         raise ConversionError('insert-tie', 'trace_to_c: insert tie in %s' % group)
     if site == 'RANDOM_TARGET' and ctx in ('action-speed', 'resolve'):
         return 'target computed for priority'
-    if site == 'RANDOM_TARGET' and ctx in ('execute:allAdjacentFoes', 'execute:allAdjacent', 'execute:allies'):
+    if site == 'RANDOM_TARGET' and ctx in ('execute:allAdjacentFoes', 'execute:allAdjacent', 'execute:allies', 'execute:foeSide'):
+        # foeSide (step G37, the four hazards): getTarget's random foe only labels the move line, which the converter leaves
+        # without a target (FOE_SIDE_MOVES); the move acts on the foes' side whichever foe it names
         return 'main target of a spread move'
     if site == 'UNKNOWN':
         raise ConversionError('unclassified-draw', 'trace_to_c: unclassified draw', detail=ctx)
@@ -688,6 +690,7 @@ WEATHER_CAUSE = {'Sandstorm': 3}  # [from] <weather>: the residual damage of a w
 TERRAIN = {'': 0, 'grassyterrain': 1, 'psychicterrain': 2}
 FIELD_PSYCHIC_TERRAIN = 3  # DUOFORGE_FIELD_PSYCHIC_TERRAIN (Team C)
 BLOCK_WIDE_GUARD = 4  # DUOFORGE_BLOCK_WIDE_GUARD (POOL), a detail of BLOCKED
+FOE_SIDE_MOVES = ('Stealth Rock', 'Spikes', 'Toxic Spikes', 'Sticky Web')  # the moves with the target class foeSide (POOL, step G37)
 RESULT = {'p1': 1, 'p2': 2, '': 3}
 
 
@@ -843,8 +846,9 @@ def ev_cause(attrs, tables):
                 cause, id2 = CAUSE['WEATHER'], WEATHER_CAUSE[what]
             elif what == 'Grassy Terrain':
                 cause = CAUSE['TERRAIN']
-            elif what in ('Parting Shot', 'Flip Turn', 'U-turn', 'Volt Switch', 'Spiky Shield'):  # the move that made the switch (U-turn, Volt Switch: pool tables)
-                # Spiky Shield (step G20, POOL): `-damage|attacker|hp|[from] Spiky Shield|[of] holder`, the condition's own name
+            elif what in ('Parting Shot', 'Flip Turn', 'U-turn', 'Volt Switch', 'Spiky Shield', 'Stealth Rock', 'Spikes'):  # the move that made the switch (U-turn, Volt Switch: pool tables)
+                # Spiky Shield (step G20, POOL): `-damage|attacker|hp|[from] Spiky Shield|[of] holder`, the condition's own name;
+                # Stealth Rock and Spikes (step G37): `-damage|X|hp|[from] Stealth Rock`, the hazard's own name, the move's id in id2
                 cause, id2 = CAUSE['MOVE'], tables['MOVE'][key(what)]
             elif what == 'lockedmove':
                 pass  # a MOVE flag
@@ -930,8 +934,8 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                             amount |= 1 << ev_pos(slot)
                 elif a:
                     raise ConversionError('move-attribute', 'trace_to_c: unknown move attribute %r' % a, detail=a)
-            if flags & (FLAG['SPREAD'] | FLAG['NOTARGET'] | FLAG['STILL']) or target is None:
-                target = NOPOS
+            if flags & (FLAG['SPREAD'] | FLAG['NOTARGET'] | FLAG['STILL']) or target is None or args[1] in FOE_SIDE_MOVES:
+                target = NOPOS  # a foeSide move (step G37) names a random foe in the protocol: a label the engine does not draw
             e = ev_tuple(EV['MOVE'], pos, target, 0, tables['MOVE'][key(args[1])], amount=amount, flags=flags)
         elif kind in ('-damage', '-heal'):
             pos = ev_pos(args[0])
@@ -1081,8 +1085,12 @@ def step_events(log, viewer, roster_of, maxhp, tables):
         elif kind in ('-sidestart', '-sideend'):
             side = int(args[0][1]) - 1
             cond = {'move: Tailwind': 1, 'Reflect': 2, 'move: Reflect': 2, 'move: Light Screen': 3,
-                    'move: Aurora Veil': 4}[args[1]]  # 4: DUOFORGE_SIDE_AURORA_VEIL (POOL kinds, step G20)
-            e = ev_tuple(EV['SIDE_START' if kind == '-sidestart' else 'SIDE_END'], detail=side, amount=cond)
+                    'move: Aurora Veil': 4,  # 4: DUOFORGE_SIDE_AURORA_VEIL (POOL kinds, step G20)
+                    # step G37, the entry hazards (POOL kinds): Spikes' own line has no `move: `
+                    'move: Stealth Rock': 5, 'Spikes': 6, 'move: Spikes': 6, 'move: Toxic Spikes': 7,
+                    'move: Sticky Web': 8}[args[1]]
+            _, _, of = ev_cause(attrs, tables)  # -sideend|side|move: Toxic Spikes|[of] POKEMON: a grounded Poison type absorbed them
+            e = ev_tuple(EV['SIDE_START' if kind == '-sidestart' else 'SIDE_END'], NOPOS, of, detail=side, amount=cond)
         elif kind == '-enditem':
             taken = [a for a in attrs if a.startswith('[from] move: ')]
             if taken:

@@ -1550,8 +1550,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {14u, 2u, 0u, 0u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 47u},
     /* Spicy Extract -- data/moves.ts:17450-17465  [unmodelled: primary boosts on a non-self target] */
     {9u, 2u, 0u, 0u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 47u},
-    /* Spikes -- data/moves.ts:17500-17531  [unmodelled: condition block; side condition spikes; target foeSide] */
-    {10u, 2u, 0u, 0u, 20u, 20u, 8u, 15u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 47u},
+    /* Spikes -- data/moves.ts:17500-17531 */
+    {10u, 2u, 0u, 0u, 20u, 20u, 8u, 15u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 6u, 0u, 0u},
     /* Spiky Shield -- data/moves.ts:17532-17584, data/mods/champions/moves.ts:940-943 */
     {9u, 2u, 0u, 0u, 5u, 8u, 12u, 6u, 1u, 8u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 28u},
     /* Spirit Shackle -- data/moves.ts:17620-17638, data/mods/champions/moves.ts:949-952  [unmodelled: secondary] */
@@ -1560,16 +1560,16 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {8u, 2u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 47u},
     /* Spit Up -- data/moves.ts:17662-17684  [unmodelled: callback basePowerCallback; callback onAfterMove; callback onTry] */
     {12u, 1u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 47u},
-    /* Stealth Rock -- data/moves.ts:17814-17839  [unmodelled: condition block; side condition stealthrock; target foeSide] */
-    {15u, 2u, 0u, 0u, 20u, 20u, 8u, 15u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 47u},
+    /* Stealth Rock -- data/moves.ts:17814-17839 */
+    {15u, 2u, 0u, 0u, 20u, 20u, 8u, 15u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 5u, 0u, 0u},
     /* Steel Beam -- data/moves.ts:17876-17892  [unmodelled: callback onMoveFail; field mindBlownRecoil] */
     {16u, 1u, 140u, 95u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 47u},
     /* Steel Roller -- data/moves.ts:17893-17913 */
     {16u, 0u, 130u, 100u, 5u, 8u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 44u},
     /* Steel Wing -- data/moves.ts:17914-17934 */
     {16u, 0u, 70u, 90u, 25u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 10u, 7u, 0u, 5u, {6u, 7u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
-    /* Sticky Web -- data/moves.ts:17935-17959  [unmodelled: condition block; side condition stickyweb; target foeSide] */
-    {0u, 2u, 0u, 0u, 20u, 20u, 8u, 15u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 47u},
+    /* Sticky Web -- data/moves.ts:17935-17959 */
+    {0u, 2u, 0u, 0u, 20u, 20u, 8u, 15u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 8u, 0u, 0u},
     /* Stockpile -- data/moves.ts:17960-18012  [unmodelled: callback onTry; condition block; primary volatile stockpile] */
     {12u, 2u, 0u, 0u, 20u, 20u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 47u},
     /* Stomping Tantrum -- data/moves.ts:18049-18068  [unmodelled: callback basePowerCallback] */
@@ -1656,8 +1656,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {1u, 2u, 0u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 47u},
     /* Toxic -- data/moves.ts:19733-19748 */
     {13u, 2u, 0u, 90u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 6u, 0u, 0u, 0u},
-    /* Toxic Spikes -- data/moves.ts:19749-19788  [unmodelled: condition block; side condition toxicspikes; target foeSide] */
-    {13u, 2u, 0u, 0u, 20u, 20u, 8u, 15u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 47u},
+    /* Toxic Spikes -- data/moves.ts:19749-19788 */
+    {13u, 2u, 0u, 0u, 20u, 20u, 8u, 15u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 7u, 0u, 0u},
     /* Toxic Thread -- data/moves.ts:19789-19806, data/mods/champions/moves.ts:1065-1070  [unmodelled: primary boosts on a non-self target] */
     {13u, 2u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 47u},
     /* Trailblaze -- data/moves.ts:19807-19827 */
@@ -2241,7 +2241,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   telepathy -- data/abilities.ts:4931-4942  [unmodelled: callback onTryHit]
  *   thermalexchange -- data/abilities.ts:4990-5013
  *   thickfat -- data/abilities.ts:5014-5033  [unmodelled: callback onSourceModifyAtk; callback onSourceModifyAtkPriority; callback onSourceModifySpA; callback onSourceModifySpAPriority]
- *   toxicdebris -- data/abilities.ts:5104-5117  [unmodelled: callback onDamagingHit]
+ *   toxicdebris -- data/abilities.ts:5104-5117
  *   trace -- data/abilities.ts:5118-5151
  *   unaware -- data/abilities.ts:5214-5234  [unmodelled: callback onAnyModifyBoost]
  *   unnerve -- data/abilities.ts:5258-5275
@@ -3020,7 +3020,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_TELEPATHY] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_THERMALEXCHANGE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_THICKFAT] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_TOXICDEBRIS] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_TOXICDEBRIS] = DFI_HANDLER_NONE,
     [DFI_ABILITY_TRACE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_UNAWARE] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_UNNERVE] = DFI_HANDLER_NONE,
@@ -6879,13 +6879,10 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_SPARKLINGARIA] = "callback onAfterMove; secondary volatile sparklingaria",
     [DFI_MOVE_SPEEDSWAP] = "callback onHit",
     [DFI_MOVE_SPICYEXTRACT] = "primary boosts on a non-self target",
-    [DFI_MOVE_SPIKES] = "condition block; side condition spikes; target foeSide",
     [DFI_MOVE_SPIRITSHACKLE] = "secondary",
     [DFI_MOVE_SPITE] = "callback onHit",
     [DFI_MOVE_SPITUP] = "callback basePowerCallback; callback onAfterMove; callback onTry",
-    [DFI_MOVE_STEALTHROCK] = "condition block; side condition stealthrock; target foeSide",
     [DFI_MOVE_STEELBEAM] = "callback onMoveFail; field mindBlownRecoil",
-    [DFI_MOVE_STICKYWEB] = "condition block; side condition stickyweb; target foeSide",
     [DFI_MOVE_STOCKPILE] = "callback onTry; condition block; primary volatile stockpile",
     [DFI_MOVE_STOMPINGTANTRUM] = "callback basePowerCallback",
     [DFI_MOVE_STONEAXE] = "callback onAfterHit; callback onAfterSubDamage; secondary",
@@ -6920,7 +6917,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_TIDYUP] = "callback onHit",
     [DFI_MOVE_TOPSYTURVY] = "callback onHit",
     [DFI_MOVE_TORMENT] = "condition block; primary volatile torment",
-    [DFI_MOVE_TOXICSPIKES] = "condition block; side condition toxicspikes; target foeSide",
     [DFI_MOVE_TOXICTHREAD] = "primary boosts on a non-self target",
     [DFI_MOVE_TRANSFORM] = "callback onHit",
     [DFI_MOVE_TRIATTACK] = "secondary",
@@ -7129,7 +7125,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_TANGLEDFEET] = "callback onModifyAccuracy; callback onModifyAccuracyPriority",
     [DFI_ABILITY_TELEPATHY] = "callback onTryHit",
     [DFI_ABILITY_THICKFAT] = "callback onSourceModifyAtk; callback onSourceModifyAtkPriority; callback onSourceModifySpA; callback onSourceModifySpAPriority",
-    [DFI_ABILITY_TOXICDEBRIS] = "callback onDamagingHit",
     [DFI_ABILITY_UNAWARE] = "callback onAnyModifyBoost",
     [DFI_ABILITY_UNSEENFIST] = "callback onHitProtect; callback onModifyMove",
     [DFI_ABILITY_VITALSPIRIT] = "callback onSetStatus; callback onTryAddVolatile; callback onUpdate; read by id in data/moves.ts",
@@ -7143,10 +7138,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x9bu, 0x9au, 0xd1u, 0x78u, 0xceu, 0x33u, 0xcbu, 0x51u,
-    0x82u, 0x9bu, 0x43u, 0x74u, 0x10u, 0xadu, 0xc6u, 0x5eu,
-    0xc5u, 0x86u, 0xf2u, 0xadu, 0x6fu, 0xd1u, 0x6bu, 0x6cu,
-    0x98u, 0xeeu, 0x0du, 0x38u, 0x2fu, 0xe9u, 0x58u, 0xffu,
+    0x79u, 0x64u, 0xafu, 0x67u, 0xbbu, 0x4cu, 0x44u, 0x12u,
+    0xfau, 0x4bu, 0xd0u, 0xb8u, 0xaeu, 0xbdu, 0x5fu, 0x0fu,
+    0xa9u, 0xedu, 0x59u, 0x57u, 0x01u, 0x38u, 0x28u, 0xffu,
+    0xeau, 0xe5u, 0x46u, 0x0du, 0x4fu, 0x30u, 0x70u, 0xf4u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)

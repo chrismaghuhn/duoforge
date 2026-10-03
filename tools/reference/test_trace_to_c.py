@@ -894,6 +894,57 @@ class Library(unittest.TestCase):
         self.assertEqual(rows, derived)
         self.assertTrue(damages > 0 and any(v & 255 >= 3 for r in derived.values() for v in r))
 
+    def test_hazard_rows_are_what_the_protocol_lines_say(self):
+        """Decision 0018 section 6.1 for the four entry hazards (step G37): a side has Stealth Rock or Sticky Web from its
+        `|-sidestart|pN: X|move: ...` line, a layer of Spikes (`|-sidestart|pN: X|Spikes`, no `move: ` in its name) or of
+        Toxic Spikes with each such line, and Toxic Spikes no more from the `|-sideend|pN: X|move: Toxic Spikes|[of] Y` line
+        of a grounded Poison type that absorbed them. The rows of the C test (hazard_rows in tests/test_pool_g37.c: stealth
+        rock, spikes, toxic spikes and sticky web of side 0, then of side 1, after each step of the G37 battles) must be
+        exactly what these lines give for the committed traces, and what the reference's own state (the key `hazards` of the
+        harness, in creation order) holds: the engine's tail and view are checked against the game and not against
+        themselves. The creation order of every recorded side is the engine's fixed order (dfi_hazard_order). The damage
+        names the hazard as its source (`[from] Stealth Rock`, `[from] Spikes`): the cause is the move's, with its id."""
+        names_ = ('stealthrock', 'spikes', 'toxicspikes', 'stickyweb')
+        lines_of = {'move: Stealth Rock': 0, 'Spikes': 1, 'move: Spikes': 1, 'move: Toxic Spikes': 2, 'move: Sticky Web': 3}
+        most = (1, 3, 2, 1)
+        with open(os.path.join(ROOT, 'tests', 'test_pool_g37.c'), encoding='utf-8') as f:
+            source = f.read()
+        rows = {}
+        for m in re.finditer(r'\{"(g37_\w+)", (\d+)u, \{((?:\d+u(?:, )?){8})\}\}', source):
+            rows[(m.group(1), int(m.group(2)))] = tuple(int(x[:-1]) for x in m.group(3).split(', '))
+        names = sorted({n for n, _ in rows})
+        listed = re.search(r'names\[\] = \{(.*?)\};', source, re.S).group(1)
+        self.assertEqual(sorted(re.findall(r'"(g37_\w+)"', listed)), names)
+        self.assertEqual(names, sorted(n[:-5] for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
+                                       if n.startswith('g37_')))
+        derived = {}
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            layers = [[0] * 4, [0] * 4]
+            for k, step in enumerate(trace['steps']):
+                for line in [l for l in step['log'] if not l.startswith('|split')]:
+                    part = line.split('|')
+                    if len(part) > 3 and part[1] == '-sidestart' and part[3] in lines_of:
+                        side, kind = int(part[2][1]) - 1, lines_of[part[3]]
+                        self.assertLess(layers[side][kind], most[kind], '%s step %d: a hazard above its last layer' % (name, k))
+                        layers[side][kind] += 1
+                    elif len(part) > 3 and part[1] == '-sideend' and part[3] == 'move: Toxic Spikes':
+                        self.assertEqual(len(part), 5)  # [of] the Pokemon that absorbed them
+                        layers[int(part[2][1]) - 1][2] = 0
+                derived[(name, k)] = tuple(layers[0] + layers[1])
+                # the reference's own state, in creation order
+                state = [dict(side.get('hazards', [])) for side in step['state']['sides']]
+                self.assertEqual(tuple(state[0].get(n, 0) for n in names_) + tuple(state[1].get(n, 0) for n in names_),
+                                 derived[(name, k)], '%s step %d: the lines and the state of the reference differ' % (name, k))
+                for side in step['state']['sides']:
+                    order = [h[0] for h in side.get('hazards', [])]
+                    self.assertEqual(order, sorted(order, key=names_.index), '%s step %d: creation order %s' % (name, k, order))
+        self.assertEqual(rows, derived)
+        for kind in range(4):
+            self.assertTrue(any(v[kind] or v[4 + kind] for v in derived.values()), names_[kind])
+        self.assertTrue(any(3 in (v[1], v[5]) for v in derived.values()) and any(2 in (v[2], v[6]) for v in derived.values()))
+
     def test_aurora_veil_rows_are_what_the_protocol_lines_say(self):
         """Decision 0018 section 6.1 for Aurora Veil: a side has the screen from the `|-sidestart|pN: X|move: Aurora Veil`
         line (5 turns, 8 when the user of the move holds Light Clay: the sheet, which is the spec's team text) and its turns
@@ -1511,7 +1562,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 115)  # Toxic and Poison Fang (G36), the seven of G34 (Steel Roller, Clangorous Soul, Brick Break, Fiery Dance, Psycho Cut, Iron Defense, Electroweb), the eleven of G32, the ten of G30, the six of G28 (Shell Smash, Acrobatics, Blizzard, Ancient Power, Feint, Earthquake), the 27 of G21, Spiky Shield (G20), G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
+        self.assertEqual(len(marked), 119)  # the four hazards (G37), Toxic and Poison Fang (G36), the seven of G34 (Steel Roller, Clangorous Soul, Brick Break, Fiery Dance, Psycho Cut, Iron Defense, Electroweb), the eleven of G32, the ten of G30, the six of G28 (Shell Smash, Acrobatics, Blizzard, Ancient Power, Feint, Earthquake), the 27 of G21, Spiky Shield (G20), G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -1529,7 +1580,7 @@ class Library(unittest.TestCase):
                                 break
                             done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|', '|-start|', '|-weather|') + (('|-status|',) if name in ('Will-O-Wisp', 'Stun Spore', 'Sleep Powder', 'Poison Powder') else ()))
                             # A side condition that a status move sets (Aurora Veil, step G20): its -sidestart line.
-                            done = done or (after.startswith('|-sidestart|') and after.endswith('|move: ' + name))
+                            done = done or (after.startswith('|-sidestart|') and after.endswith(('|move: ' + name, '|' + name)))  # Spikes' own line has no move: prefix (step G37)
                             # A side move (Wide Guard, step G7) shows its effect as its own -singleturn line; Detect's is
                             # Protect's (step G13: its handler, and the line of the Protect condition).
                             done = done or (after.startswith('|-singleturn|') and after.endswith('|' + name))

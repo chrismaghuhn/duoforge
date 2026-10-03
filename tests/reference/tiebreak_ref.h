@@ -2303,6 +2303,42 @@ static const df_tb_stop tb_g36_toxic_mirror_b[] = {
     {5u, 0u, 2u, 2u, {4u, 4u}, {613u, 684u}, {0x404c6201b094b31dull, 0x404dde346201b095ull}},
     {6u, 0u, 2u, 2u, {4u, 4u}, {553u, 636u}, {0x4049e857de346201ull, 0x404be346201b094bull}},
 };
+static const df_tb_stop tb_g37_hazards_a[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1097u, 1147u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {723u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {723u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 3u, {4u, 4u}, {723u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {6u, 0u, 2u, 3u, {4u, 4u}, {723u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {9u, 0u, 1u, 2u, {4u, 4u}, {723u, 532u}, {0x4050aaaaaaaaaaabull, 0x40470a945513817dull}},
+    {10u, 0u, 1u, 2u, {4u, 4u}, {723u, 508u}, {0x4050aaaaaaaaaaabull, 0x40460d1d34202dd8ull}},
+};
+static const df_tb_stop tb_g37_sticky_web[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1097u, 1127u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {723u, 753u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {723u, 753u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 3u, {4u, 4u}, {723u, 753u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {6u, 0u, 2u, 3u, {4u, 4u}, {723u, 753u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {7u, 0u, 2u, 3u, {4u, 4u}, {723u, 753u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {8u, 0u, 2u, 3u, {4u, 4u}, {723u, 753u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+};
+static const df_tb_stop tb_g37_toxic_debris[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1082u, 1145u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {708u, 771u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {708u, 749u}, {0x4050aaaaaaaaaaabull, 0x40502f286bca1af3ull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {708u, 745u}, {0x4050aaaaaaaaaaabull, 0x405018b3a62ce98bull}},
+    {6u, 0u, 1u, 2u, {4u, 4u}, {696u, 747u}, {0x40506cd4b708a831ull, 0x405023ee08fb823full}},
+    {9u, 0u, 2u, 2u, {4u, 4u}, {595u, 660u}, {0x404b542409a14a70ull, 0x404c77047dc11f70ull}},
+    {10u, 0u, 1u, 1u, {4u, 3u}, {559u, 581u}, {0x40495ae0ab5072dbull, 0x4049000000000000ull}},
+};
+static const df_tb_stop tb_g37_toxic_spikes[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1097u, 1132u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {723u, 758u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {723u, 758u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 3u, {4u, 4u}, {723u, 758u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {6u, 0u, 1u, 2u, {4u, 4u}, {723u, 686u}, {0x4050aaaaaaaaaaabull, 0x404e5ceff27b5a68ull}},
+    {9u, 0u, 1u, 2u, {4u, 4u}, {723u, 686u}, {0x4050aaaaaaaaaaabull, 0x404e5ceff27b5a68ull}},
+    {10u, 0u, 1u, 2u, {4u, 4u}, {723u, 686u}, {0x4050aaaaaaaaaaabull, 0x404e5ceff27b5a68ull}},
+};
 static const df_tb_stop tb_g4_focus_sash[] = {
     {0u, 0u, 1u, 3u, {6u, 6u}, {1117u, 1078u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 1u, 3u, {4u, 4u}, {788u, 728u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -3875,6 +3911,10 @@ static const df_tb_battle tb_battles[] = {
     {"g36_toxic_fail", 6u, tb_g36_toxic_fail, sizeof tb_g36_toxic_fail / sizeof tb_g36_toxic_fail[0]},
     {"g36_toxic_mirror_a", 6u, tb_g36_toxic_mirror_a, sizeof tb_g36_toxic_mirror_a / sizeof tb_g36_toxic_mirror_a[0]},
     {"g36_toxic_mirror_b", 6u, tb_g36_toxic_mirror_b, sizeof tb_g36_toxic_mirror_b / sizeof tb_g36_toxic_mirror_b[0]},
+    {"g37_hazards_a", 10u, tb_g37_hazards_a, sizeof tb_g37_hazards_a / sizeof tb_g37_hazards_a[0]},
+    {"g37_sticky_web", 8u, tb_g37_sticky_web, sizeof tb_g37_sticky_web / sizeof tb_g37_sticky_web[0]},
+    {"g37_toxic_debris", 10u, tb_g37_toxic_debris, sizeof tb_g37_toxic_debris / sizeof tb_g37_toxic_debris[0]},
+    {"g37_toxic_spikes", 10u, tb_g37_toxic_spikes, sizeof tb_g37_toxic_spikes / sizeof tb_g37_toxic_spikes[0]},
     {"g4_focus_sash", 4u, tb_g4_focus_sash, sizeof tb_g4_focus_sash / sizeof tb_g4_focus_sash[0]},
     {"g4_focus_sash_exit", 4u, tb_g4_focus_sash_exit, sizeof tb_g4_focus_sash_exit / sizeof tb_g4_focus_sash_exit[0]},
     {"g4_focus_sash_kept", 3u, tb_g4_focus_sash_kept, sizeof tb_g4_focus_sash_kept / sizeof tb_g4_focus_sash_kept[0]},
@@ -4004,7 +4044,7 @@ static const df_tb_battle tb_battles[] = {
     {"w8_sand_soak", 7u, tb_w8_sand_soak, sizeof tb_w8_sand_soak / sizeof tb_w8_sand_soak[0]},
 };
 
-/* 2804 stops: 139 of an ended battle; decided by the count 792,
- * the HP percentage 905, the total HP 916, a tie 52;
- * winners: side 0 1412, side 1 1340, tie 52 */
+/* 2832 stops: 139 of an ended battle; decided by the count 793,
+ * the HP percentage 914, the total HP 934, a tie 52;
+ * winners: side 0 1421, side 1 1359, tie 52 */
 #endif

@@ -45,7 +45,7 @@
 #include "state/closure_member.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "9b9ad178ce33cb51829b437410adc65ec586f2ad6fd16b6c98ee0d382fe958ff"
+#define POOL_HASH_HEX "7964af67bb4c4412fa4bd0b8aebd5f0fa9ed5957013828ffeae5460d4f3070f4"
 /* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
  * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
  * produced the same bytes. Step G10 moved two of them on purpose: Scald and Recover are data now (the thaw bit and
@@ -69,9 +69,9 @@
 #define POOL_ABILITIES 215u
 
 /* The rows that the tables do not model, pinned (the generator reports the same counts). */
-#define UNMODELED_MOVES 257u /* 260 before step G34 (262 before step G36 modelled Toxic and Poison Fang); 262 before step G34 modelled Steel Roller, Clangorous Soul and Brick Break (the other four rows of the step were already modelled); 273 before step G32 modelled Eruption, Water Spout, Life Dew, Body Press, Foul Play, Psyshock, Rain Dance, Sunny Day, Volt Switch, Clanging Scales and Freeze-Dry; 276 before step G30 modelled Rage Powder, Psychic Fangs and Solar Beam; 299 before step G28 modelled Acrobatics, Blizzard, Feint and the rows of the new secondary self boost (Ancient Power, Aqua Step, Charge Beam, Fiery Dance, Flame Charge, Meteor Mash, Psyshield Bash, Steel Wing, Torch Song, Trailblaze) and the allAdjacent moves; 300 before step G20 modelled Spiky Shield; 301 before it modelled Aurora Veil; 303 before step G19 modelled Coaching and Glaive Rush; 305u before step G15 modelled Expanding Force; 306 before step G16 modelled Knock Off; 313 before step G17 modelled the seven recharge moves; 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
+#define UNMODELED_MOVES 253u /* 257 before step G37 modelled Stealth Rock, Spikes, Toxic Spikes and Sticky Web (target foeSide, side conditions 5 to 8); 260 before step G34 (262 before step G36 modelled Toxic and Poison Fang); 262 before step G34 modelled Steel Roller, Clangorous Soul and Brick Break (the other four rows of the step were already modelled); 273 before step G32 modelled Eruption, Water Spout, Life Dew, Body Press, Foul Play, Psyshock, Rain Dance, Sunny Day, Volt Switch, Clanging Scales and Freeze-Dry; 276 before step G30 modelled Rage Powder, Psychic Fangs and Solar Beam; 299 before step G28 modelled Acrobatics, Blizzard, Feint and the rows of the new secondary self boost (Ancient Power, Aqua Step, Charge Beam, Fiery Dance, Flame Charge, Meteor Mash, Psyshield Bash, Steel Wing, Torch Song, Trailblaze) and the allAdjacent moves; 300 before step G20 modelled Spiky Shield; 301 before it modelled Aurora Veil; 303 before step G19 modelled Coaching and Glaive Rush; 305u before step G15 modelled Expanding Force; 306 before step G16 modelled Knock Off; 313 before step G17 modelled the seven recharge moves; 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
 #define UNMODELED_ITEMS 36u /* one fewer since step G34 modelled Wide Lens; one fewer since step G32 modelled Eject Button; one fewer since step G28 modelled Expert Belt; five fewer since step G23-A found the Mega of a stone from (forme, stone); one fewer since step G15 modelled Psychic Seed */
-#define UNMODELED_ABILITIES 158u /* 165 before step G34 made Compound Eyes, Iron Fist, Sharpness, Solid Rock, Technician, Multiscale and Gale Wings engine rows; 168 before step G32 made Soundproof, Unnerve and Speed Boost engine rows; 172 before step G30 made Flame Body, Clear Body, Hospitality and Overcoat engine rows; 178 before step G22 made six abilities engine rows; 179 before step G23-C made Levitate an engine row; 180 before step AC1 made Trace an engine row; 181 before step G16 made Sticky Hold an engine row; 184 before step G14 made Rough Skin, Poison Touch and Thermal Exchange engine rows */
+#define UNMODELED_ABILITIES 157u /* 158 before step G37 made Toxic Debris an engine row; 165 before step G34 made Compound Eyes, Iron Fist, Sharpness, Solid Rock, Technician, Multiscale and Gale Wings engine rows; 168 before step G32 made Soundproof, Unnerve and Speed Boost engine rows; 172 before step G30 made Flame Body, Clear Body, Hospitality and Overcoat engine rows; 178 before step G22 made six abilities engine rows; 179 before step G23-C made Levitate an engine row; 180 before step AC1 made Trace an engine row; 181 before step G16 made Sticky Hold an engine row; 184 before step G14 made Rough Skin, Poison Touch and Thermal Exchange engine rows */
 
 /* How many rows of the manifest are marked and half modelled: marked, and with the UNMODELED handler or a list of
  * unmodelled features (decision 0015 section 4.2). A step marks only what it fully models. */
@@ -1238,7 +1238,9 @@ int main(void)
                                 id == DFI_ABILITY_COMPOUNDEYES || id == DFI_ABILITY_IRONFIST ||
                                 id == DFI_ABILITY_SHARPNESS || id == DFI_ABILITY_SOLIDROCK ||
                                 id == DFI_ABILITY_TECHNICIAN || id == DFI_ABILITY_MULTISCALE ||
-                                id == DFI_ABILITY_GALEWINGS;
+                                id == DFI_ABILITY_GALEWINGS ||
+                                /* step G37: Toxic Debris, by id (a Physical hit adds Toxic Spikes) */
+                                id == DFI_ABILITY_TOXICDEBRIS;
             DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, (setter || engine) ? 1u : 0u);
             DF_CHECK_EQ_U64(&t, dfi_pool_ability_family[id].family,
                             setter ? DFI_ABILITY_FAMILY_WEATHER_SETTER : DFI_ABILITY_FAMILY_NONE);
@@ -1303,7 +1305,9 @@ int main(void)
                                                 DFI_MOVE_FIERYDANCE, DFI_MOVE_PSYCHOCUT, DFI_MOVE_IRONDEFENSE,
                                                 DFI_MOVE_ELECTROWEB,
                                                 /* step G36 */
-                                                DFI_MOVE_TOXIC, DFI_MOVE_POISONFANG};
+                                                DFI_MOVE_TOXIC, DFI_MOVE_POISONFANG,
+                                                /* step G37: the four hazards */
+                                                DFI_MOVE_STEALTHROCK, DFI_MOVE_SPIKES, DFI_MOVE_TOXICSPIKES, DFI_MOVE_STICKYWEB};
         uint32_t marked_count = 0u;
         for (uint32_t id = DFI_EXT_MOVE_COUNT; id < DFI_POOL_MOVE_COUNT; ++id) {
             bool want = false;
@@ -1331,7 +1335,7 @@ int main(void)
             DF_CHECK(&t, !want || dfi_pool_moves[id].special != DFI_SPECIAL_UNMODELED);
             marked_count += dfi_support.moves[id] != 0u ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, marked_count, 115u); /* Toxic and Poison Fang (G36), the ten of step G30, the eleven of step G32 and the seven of step G34 */
+        DF_CHECK_EQ_U64(&t, marked_count, 119u); /* the four hazards (G37), Toxic and Poison Fang (G36), the ten of step G30, the eleven of step G32 and the seven of step G34 */
     }
 
     /* Step AC1: Trace copies the ability of a foe unless that has the pin's notrace flag. The turn code excludes only
@@ -1498,9 +1502,18 @@ int main(void)
                          dfi_pool_moves[DFI_MOVE_HYDROPUMP].accuracy == 80u);
         DF_CHECK(&t, dfi_pool_moves[DFI_MOVE_SUBSTITUTE].special == DFI_SPECIAL_UNMODELED &&
                          strstr(dfi_pool_move_unmodeled[DFI_MOVE_SUBSTITUTE], "primary volatile substitute") != NULL);
-        DF_CHECK(&t, strstr(dfi_pool_move_unmodeled[DFI_MOVE_STEALTHROCK], "side condition stealthrock") != NULL &&
-                         strstr(dfi_pool_move_unmodeled[DFI_MOVE_STEALTHROCK], "target foeSide") != NULL &&
-                         dfi_pool_moves[DFI_MOVE_STEALTHROCK].side_condition == 0u);
+        /* Since step G37 the four hazards are modelled: the target class foeSide (the turn code runs it) and a side condition
+         * column that is the DUOFORGE_SIDE_* value of its SIDE_START line (Aurora Veil, 4, is a handler of its own). */
+        DF_CHECK(&t, dfi_pool_move_unmodeled[DFI_MOVE_STEALTHROCK] == NULL && dfi_pool_move_unmodeled[DFI_MOVE_SPIKES] == NULL &&
+                         dfi_pool_move_unmodeled[DFI_MOVE_TOXICSPIKES] == NULL && dfi_pool_move_unmodeled[DFI_MOVE_STICKYWEB] == NULL &&
+                         dfi_pool_moves[DFI_MOVE_STEALTHROCK].side_condition == DUOFORGE_SIDE_STEALTH_ROCK &&
+                         dfi_pool_moves[DFI_MOVE_SPIKES].side_condition == DUOFORGE_SIDE_SPIKES &&
+                         dfi_pool_moves[DFI_MOVE_TOXICSPIKES].side_condition == DUOFORGE_SIDE_TOXIC_SPIKES &&
+                         dfi_pool_moves[DFI_MOVE_STICKYWEB].side_condition == DUOFORGE_SIDE_STICKY_WEB &&
+                         dfi_pool_moves[DFI_MOVE_STEALTHROCK].target_class == DFI_TARGET_CLASS_FOE_SIDE &&
+                         dfi_pool_moves[DFI_MOVE_SPIKES].target_class == DFI_TARGET_CLASS_FOE_SIDE &&
+                         dfi_pool_moves[DFI_MOVE_TOXICSPIKES].target_class == DFI_TARGET_CLASS_FOE_SIDE &&
+                         dfi_pool_moves[DFI_MOVE_STICKYWEB].target_class == DFI_TARGET_CLASS_FOE_SIDE);
         DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_ABSOLITEZ] == DFI_HANDLER_NONE &&
                          dfi_pool_item_unmodeled[DFI_ITEM_ABSOLITEZ] == NULL &&
                          dfi_pool_item_handler[DFI_ITEM_ABSOLITE] == DFI_HANDLER_NONE);
@@ -1516,7 +1529,7 @@ int main(void)
             /* A target class beyond the closure's is never in a modelled row. */
             DF_CHECK(&t, dfi_pool_moves[id].target_class <= DFI_TARGET_CLASS_RANDOM_NORMAL ||
                              dfi_pool_moves[id].target_class == DFI_TARGET_CLASS_ALL_ADJACENT ||
-                             dfi_pool_moves[id].target_class == DFI_TARGET_CLASS_ALLIES ||
+                             dfi_pool_moves[id].target_class == DFI_TARGET_CLASS_ALLIES || dfi_pool_moves[id].target_class == DFI_TARGET_CLASS_FOE_SIDE ||
                              dfi_pool_moves[id].special == DFI_SPECIAL_UNMODELED);
             /* The effect columns of an UNMODELED row are neutral: it claims nothing beyond its plain data. */
             if (dfi_pool_moves[id].special == DFI_SPECIAL_UNMODELED) {

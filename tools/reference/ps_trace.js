@@ -157,7 +157,10 @@ function describe(item, battle) {
             // between standing Pokemon with onAnySwitchIn handlers (White
             // Herb), which run for every Pokemon on the field: their effects
             // follow, only when there are any.
-            const n = battle.findPokemonEventHandlers(item, 'onSwitchIn').length;
+            // The side's hazards are SwitchIn handlers of the entering Pokemon too (Battle.fieldEvent collects them with the
+            // Pokemon as their holder, step G37), so a Pokemon that enters a side with one counts as having a handler.
+            const n = battle.findPokemonEventHandlers(item, 'onSwitchIn').length +
+                battle.findSideEventHandlers(item.side, 'onSwitchIn', undefined, item).length;
             const any = item.hp ? battle.findPokemonEventHandlers(item, 'onAnySwitchIn').map((h) => h.effect.id) : [];
             return `P:${slotOf(item)}:${n}:${!item.isStarted && !item.fainted ? 'S' : '-'}` +
                 (any.length ? ':' + any.join('+') : '');
@@ -274,6 +277,12 @@ function run(root, spec, specFile) {
             // Aurora Veil's remaining duration (step G20), a key only while the side has it: the conformance rows hold the
             // three above, and a state without the key is what every trace recorded before had.
             ...(side.sideConditions.auroraveil ? {aurora_veil: side.sideConditions.auroraveil.duration || 0} : {}),
+            // The entry hazards (step G37), layers (1 for Stealth Rock and Sticky Web) in creation order, a key only while the
+            // side has one: the tail's stealth_rock, spikes, toxic_spikes and sticky_web are checked against it.
+            ...(['stealthrock', 'spikes', 'toxicspikes', 'stickyweb'].some((id) => side.sideConditions[id]) ? {
+                hazards: Object.keys(side.sideConditions).filter((id) =>
+                    ['stealthrock', 'spikes', 'toxicspikes', 'stickyweb'].includes(id)).map((id) =>
+                    [id, side.sideConditions[id].layers || 1])} : {}),
             // Per active slot of a move request: 1 a selectable move, 0 a
             // disabled one (no PP, Fake Out), 2 Struggle.
             enabled: side.requestState === 'move' && side.activeRequest && side.activeRequest.active ?

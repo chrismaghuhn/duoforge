@@ -312,6 +312,12 @@ const dfi_support_manifest dfi_support = {
             /* Step G36: Toxic (badly poisoned; a Poison-type user never misses) and Poison Fang (a 50 percent tox secondary). */
             [DFI_MOVE_TOXIC] = 1u,
             [DFI_MOVE_POISONFANG] = 1u,
+            /* Step G37: the four entry hazards (foeSide moves: layers in the state tail, damage, status and stat drop at the
+             * switch-in), recorded as g37_*. */
+            [DFI_MOVE_STEALTHROCK] = 1u,
+            [DFI_MOVE_SPIKES] = 1u,
+            [DFI_MOVE_TOXICSPIKES] = 1u,
+            [DFI_MOVE_STICKYWEB] = 1u,
             /* Step G32: Eruption and Water Spout (power by the user's HP), Life Dew (the user and its ally), Body Press, Foul Play
              * and Psyshock (the stat overrides), Rain Dance and Sunny Day, Volt Switch (a pivot of its own), Clanging Scales (the
              * user's Defense falls after the hit) and Freeze-Dry (Water takes it super effective). */
@@ -407,6 +413,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_SOUNDPROOF] = 1u, /* step G32 */
             [DFI_ABILITY_UNNERVE] = 1u,
             [DFI_ABILITY_SPEEDBOOST] = 1u,
+            [DFI_ABILITY_TOXICDEBRIS] = 1u, /* step G37: a Physical hit puts Toxic Spikes on the attacker's side */
         },
     .items =
         {
@@ -511,5 +518,9 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ABILITY_CHANGE) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_AURORA_VEIL) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_RAGE_POWDER) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_AILMENT_TOX),
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_AILMENT_TOX) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_STEALTH_ROCK) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_SPIKES) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TOXIC_SPIKES) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_STICKY_WEB),
 };
