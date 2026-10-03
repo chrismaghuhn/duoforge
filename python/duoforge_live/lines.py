@@ -162,7 +162,12 @@ _FOLD_ACTIVATE = {"move: Protect", "move: Psychic Terrain", "confusion", "abilit
                   "ability: Lightning Rod", "ability: Storm Drain", "move: Struggle", "ability: Sticky Hold"}
 # A guard blocking a move this turn: the same single-turn feature as its -singleturn line.
 _GUARD_ACTIVATE = {"move: Wide Guard": "WIDE_GUARD", "move: Quick Guard": "QUICK_GUARD"}
-_FOLD_SINGLE_TURN = {"Protect", "Helping Hand", "move: Follow Me"}
+# `-singleturn|X|move: Protect` is the Protect volatile of Spiky Shield, Baneful Bunker and Burning Bulwark (their condition
+# prints it with the `move:` prefix, data/moves.ts:17532 and :985; Protect and Detect print `Protect`). On the view the line
+# only means "protected this turn", so it folds like Protect's; Baneful Bunker's poison and Burning Bulwark's burn arrive
+# as their own -status lines, and Spiky Shield's damage as a -damage line with [from] Spiky Shield (trace_to_c.ev_cause
+# knows that source).
+_FOLD_SINGLE_TURN = {"Protect", "move: Protect", "Helping Hand", "move: Follow Me"}
 _FOLD_START = {"confusion", "ability: Flash Fire"}
 _FOLD_END = {"confusion"}
 _FOLD_WEATHER = {"RainDance", "SunnyDay", "none"}

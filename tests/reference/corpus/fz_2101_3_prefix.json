@@ -1,0 +1,63 @@
+{
+  "name": "fz_2101_3_prefix",
+  "purpose": "Corpus (defect): case fz_2101_3 of run 2101 (tools/reference/diff_driver.py random), team E against team E, found as ORACLE_GAP thermal-exchange-burn p2a. The shortest prefix that showed it, 13 of 18 choices; it passes now, fixed by G21 (Thermal Exchange holder over a burned Pokemon).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,b520136cc1e5e6607edef8e298173e7cc8fd376e30795650a9e56f1645f9fbad",
+  "teams": [
+    "Raichu (F) @ Choice Scarf\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Nuzzle\n- Agility\n- Drain Punch\n- Protect\n\nMachamp (M) @ Rocky Helmet\nAbility: No Guard\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Bullet Punch\n- Drain Punch\n- Fire Blast\n- Protect\n\nBaxcalibur (M) @ White Herb\nAbility: Thermal Exchange\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Icicle Crash\n- Dragon Dance\n- Dragon Claw\n- Crunch\n\nLycanroc-Dusk (M) @ Sitrus Berry\nAbility: Tough Claws\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Accelerock\n- Crunch\n- Protect\n\nInfernape (M) @ Grassy Seed\nAbility: Blaze\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Mach Punch\n- Overheat\n- Will-O-Wisp\n- Protect\n\nGrimmsnarl (M) @ Light Clay\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Power Whip\n- Dark Pulse\n- Crunch\n- Drain Punch",
+    "Infernape (M) @ Grassy Seed\nAbility: Blaze\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Mach Punch\n- Overheat\n- Will-O-Wisp\n- Protect\n\nLycanroc-Dusk (M) @ Sitrus Berry\nAbility: Tough Claws\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Accelerock\n- Crunch\n- Protect\n\nGrimmsnarl (M) @ Light Clay\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Power Whip\n- Dark Pulse\n- Crunch\n- Drain Punch\n\nBaxcalibur (M) @ White Herb\nAbility: Thermal Exchange\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Icicle Crash\n- Dragon Dance\n- Dragon Claw\n- Crunch\n\nRaichu (F) @ Choice Scarf\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Nuzzle\n- Agility\n- Drain Punch\n- Protect\n\nMachamp (M) @ Rocky Helmet\nAbility: No Guard\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Bullet Punch\n- Drain Punch\n- Fire Blast\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 3512",
+      "p2": "team 4532"
+    },
+    {
+      "p1": "move 1 -2, switch 3",
+      "p2": "move 2, move 4"
+    },
+    {
+      "p1": "move 3 2, move 2",
+      "p2": "move 3 -2, move 4"
+    },
+    {
+      "p1": "move 3 2, move 2",
+      "p2": "switch 3, move 4"
+    },
+    {
+      "p1": "move 2, move 2",
+      "p2": "move 4 2, move 4"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "switch 4, move 4",
+      "p2": "move 4 2, move 4"
+    },
+    {
+      "p1": "move 2 2, move 4",
+      "p2": "move 4 1, move 4"
+    },
+    {
+      "p1": "switch 4, move 3 1",
+      "p2": "move 1 1, move 4"
+    },
+    {
+      "p1": "move 3 2, move 4",
+      "p2": "move 3 2, move 4"
+    },
+    {
+      "p1": "move 4 1, move 3 1",
+      "p2": "move 2 1, move 1"
+    },
+    {
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "move 2, switch 4",
+      "p2": "switch 3, move 3"
+    }
+  ]
+}
