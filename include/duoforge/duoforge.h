@@ -981,7 +981,9 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_EVENT_SUPER_EFFECTIVE 10u /* [-supereffective] position: target, amount: 1 or 2 (x2, x4) */
 #define DUOFORGE_EVENT_RESISTED        11u /* [-resisted] position: target, amount: 1 or 2 (x1/2, x1/4) */
 #define DUOFORGE_EVENT_IMMUNE          12u /* [-immune] position; cause ABILITY + id2 when an ability did it */
-#define DUOFORGE_EVENT_FAIL            13u /* [-fail] position; detail: the ailment it already has, when that is why */
+#define DUOFORGE_EVENT_FAIL            13u /* [-fail] position; detail: the ailment it already has, when that is why.
+                                              POOL kinds: cause ABILITY + id2 (Inner Focus), other the holder:
+                                              [-fail] unboost atk [from] ability: Inner Focus, an Intimidate drop. */
 #define DUOFORGE_EVENT_PROTECT         14u /* [-singleturn Protect] position */
 #define DUOFORGE_EVENT_BLOCKED         15u /* [-activate move: Protect] position: the protected Pokemon
                                               (detail 0); detail DUOFORGE_FIELD_PSYCHIC_TERRAIN: [-activate move:
@@ -1028,7 +1030,9 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 
 /* Causes ([from] and [of] in the protocol). */
 #define DUOFORGE_CAUSE_NONE      0u /* the move or the plain mechanic */
-#define DUOFORGE_CAUSE_MOVE      1u /* id2: move id (Parting Shot's switch) */
+#define DUOFORGE_CAUSE_MOVE      1u /* id2: move id (Parting Shot's switch; a sleep that a move caused; POOL kinds: the damage that
+                                        Spiky Shield does to a contact attacker, [-damage] ... [from] Spiky Shield [of] the holder,
+                                        the holder in other) */
 #define DUOFORGE_CAUSE_ITEM      2u /* id2: item + 1 */
 #define DUOFORGE_CAUSE_ABILITY   3u /* id2: ability + 1; other: its holder when shown */
 #define DUOFORGE_CAUSE_RECOIL    4u

@@ -180,10 +180,12 @@ duoforge_add_test(NAME duoforge.state.mega_by_stone SOURCES test_mega_by_stone.c
 # Step G20: Aurora Veil in the tail's side turns, in the damage modifier, in the residual and in the POOL view extension
 # (the side's aurora_veil_turns, bit 3).
 duoforge_add_test(NAME duoforge.state.pool_g20 SOURCES test_pool_g20.c WHITEBOX TIMEOUT 60)
+# Step G20, Spiky Shield: the protect_kind of the position (POOL tail rev 3), the state round trip, the volatile.
+duoforge_add_test(NAME duoforge.state.pool_g20_protect SOURCES test_pool_g20_protect.c WHITEBOX TIMEOUT 60)
 # The queued action of a fainted Pokemon: no ability and no item of it counts for its priority and Speed (d04 to d06).
 duoforge_add_test(NAME duoforge.state.pool_fainted_holder SOURCES test_pool_fainted_holder.c WHITEBOX TIMEOUT 60)
-# Step G26: Perish Song, the counter of the tail and the view's perish field, per step against the protocol's lines.
-duoforge_add_test(NAME duoforge.state.pool_g26 SOURCES test_pool_g26.c WHITEBOX TIMEOUT 60)
+# Step G22: the queued action of a fainted Swift Swim holder, and an Intimidate drop that the cap already took to nothing.
+duoforge_add_test(NAME duoforge.state.pool_g22 SOURCES test_pool_g22.c WHITEBOX TIMEOUT 60)
 # The generated files must stay exactly what tools/datagen/gen_closure.py
 # wrote; regenerate and update these hashes together.
 foreach(_gen IN ITEMS
@@ -191,8 +193,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=52d4fdd00379f662e76bc5614a1fa25695668f103737dd03d26769dc21934316"
-        "pool_tables.c=b7209b32ac8382f7faba7945cad8566fad2fd36ca94692ac65650b5a9665b275")
+        "pool_tables.h=4391f77b339cd1f7ad8014f89de588eb473e080826b91c870426cfbab75767c6"
+        "pool_tables.c=42f40faa0c1fde3139125d8c2eab933034e766c331eaadf9562ede885e1278d7")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
