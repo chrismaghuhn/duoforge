@@ -11,7 +11,7 @@ import unittest
 import numpy as np
 
 import duoforge
-from duoforge import features, teams
+from duoforge import _layout, features, teams
 from duoforge_learn import checkpoint, columns, evaluate, ladder, league, pairing, runstate, schedule, suite
 from duoforge_learn.selfplay import SelfPlay
 
@@ -534,6 +534,16 @@ class SuitePlayTest(unittest.TestCase):
         self.assertTrue(old.seen and new.seen)
         self.assertTrue(all((x[:, column] == 0.0).all() for x in old.seen))
         self.assertTrue(all((x[:, column] == 1.0).all() for x in new.seen))
+
+    def test_play_suite_scripted(self):
+        # M11 BC spec section 10: the scripted baseline on POOL as well as "random"; it beats a learner that only switches
+        pool = _ab_pool()
+        rows = suite.make_suite(2, 3, games=2)
+        switch = evaluate.Player(_StandIn("switch"), None, features.ENCODER, "switch")
+        with duoforge.Context(data_kind=_layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            records = evaluate.play_suite(ctx, pool, rows, switch, "scripted", workers=2, seed=5)
+        self.assertEqual(records.shape, rows.shape)
+        self.assertLess(evaluate.scores(records, 2)["score"], 0.5)
 
     def test_scores_count_ties_half(self):
         rec = np.zeros(4, dtype=evaluate.RECORD)

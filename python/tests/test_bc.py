@@ -172,5 +172,31 @@ class TrainerTest(unittest.TestCase):
         self.assertEqual(outs[0], outs[1])
 
 
+class EvalTest(unittest.TestCase):
+    def test_bc_eval_smoke(self):
+        import io
+        import json
+        import shutil
+        import tempfile
+        from contextlib import redirect_stdout
+        from pathlib import Path
+        from duoforge_learn import bc, bc_eval
+        from . import test_bc_numpy as fixture
+        tmp = Path(tempfile.mkdtemp(prefix="duoforge_bc_eval_"))
+        try:
+            data = fixture.build_fixture(tmp, natures=fixture.split_variants(2, 1))
+            bc.main(["--data", str(data), "--out", str(tmp / "bc"), "--preset", "S", "--batch", "8", "--epochs", "1"])
+            text = io.StringIO()
+            with redirect_stdout(text):
+                bc_eval.main(["--checkpoint", str(tmp / "bc" / "bc.npz"), "--games", "1", "--seed", "3",
+                              "--baseline-random-net"])
+            result = json.loads(text.getvalue().strip().splitlines()[-1])
+            for key in ("vs_random", "vs_scripted", "random_net_vs_random", "random_net_vs_scripted"):
+                self.assertIn("score", result[key], key)
+            self.assertGreater(result["n_games"], 0)
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+
 if __name__ == "__main__":
     unittest.main()
