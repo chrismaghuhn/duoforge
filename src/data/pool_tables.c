@@ -1378,8 +1378,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {4u, 0u, 90u, 90u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 10u, 1u, 0u, 2u, {5u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Pluck -- data/moves.ts:13439-13462  [unmodelled: callback onHit] */
     {7u, 0u, 60u, 100u, 20u, 20u, 8u, 2u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 47u},
-    /* Poison Fang -- data/moves.ts:13463-13479  [unmodelled: secondary status tox] */
-    {13u, 0u, 50u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 47u},
+    /* Poison Fang -- data/moves.ts:13463-13479 */
+    {13u, 0u, 50u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 50u, 2u, 6u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Poison Jab -- data/moves.ts:13495-13511 */
     {13u, 0u, 80u, 100u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 30u, 2u, 5u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Poison Powder -- data/moves.ts:13512-13526 */
@@ -1654,8 +1654,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {6u, 1u, 80u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 100u, 7u, 0u, 5u, {6u, 6u, 7u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Torment -- data/moves.ts:19701-19732  [unmodelled: condition block; primary volatile torment] */
     {1u, 2u, 0u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 47u},
-    /* Toxic -- data/moves.ts:19733-19748  [unmodelled: primary status tox] */
-    {13u, 2u, 0u, 90u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 47u},
+    /* Toxic -- data/moves.ts:19733-19748 */
+    {13u, 2u, 0u, 90u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 6u, 0u, 0u, 0u},
     /* Toxic Spikes -- data/moves.ts:19749-19788  [unmodelled: condition block; side condition toxicspikes; target foeSide] */
     {13u, 2u, 0u, 0u, 20u, 20u, 8u, 15u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 47u},
     /* Toxic Thread -- data/moves.ts:19789-19806, data/mods/champions/moves.ts:1065-1070  [unmodelled: primary boosts on a non-self target] */
@@ -6829,7 +6829,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_PHANTOMFORCE] = "callback onTryMove; condition block; field breaksProtect",
     [DFI_MOVE_PINMISSILE] = "field multihit",
     [DFI_MOVE_PLUCK] = "callback onHit",
-    [DFI_MOVE_POISONFANG] = "secondary status tox",
     [DFI_MOVE_POLLENPUFF] = "callback onHit; callback onTryHit; callback onTryMove",
     [DFI_MOVE_POLTERGEIST] = "callback onTry; callback onTryHit",
     [DFI_MOVE_POPULATIONBOMB] = "field multiaccuracy; field multihit",
@@ -6921,7 +6920,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_TIDYUP] = "callback onHit",
     [DFI_MOVE_TOPSYTURVY] = "callback onHit",
     [DFI_MOVE_TORMENT] = "condition block; primary volatile torment",
-    [DFI_MOVE_TOXIC] = "primary status tox",
     [DFI_MOVE_TOXICSPIKES] = "condition block; side condition toxicspikes; target foeSide",
     [DFI_MOVE_TOXICTHREAD] = "primary boosts on a non-self target",
     [DFI_MOVE_TRANSFORM] = "callback onHit",
@@ -7145,10 +7143,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x45u, 0xc7u, 0xbfu, 0x0fu, 0x8du, 0xd4u, 0x09u, 0x50u,
-    0x76u, 0x24u, 0x69u, 0x32u, 0xf8u, 0x72u, 0xadu, 0xb7u,
-    0xc9u, 0xafu, 0x32u, 0xabu, 0x42u, 0x26u, 0x82u, 0x3au,
-    0xf2u, 0xd9u, 0x17u, 0x21u, 0x70u, 0x38u, 0xf7u, 0x2cu,
+    0x9bu, 0x9au, 0xd1u, 0x78u, 0xceu, 0x33u, 0xcbu, 0x51u,
+    0x82u, 0x9bu, 0x43u, 0x74u, 0x10u, 0xadu, 0xc6u, 0x5eu,
+    0xc5u, 0x86u, 0xf2u, 0xadu, 0x6fu, 0xd1u, 0x6bu, 0x6cu,
+    0x98u, 0xeeu, 0x0du, 0x38u, 0x2fu, 0xe9u, 0x58u, 0xffu,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)

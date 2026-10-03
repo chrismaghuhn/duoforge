@@ -41,8 +41,8 @@
 #include "support/pool.h"
 #include "support/team_c.h"
 
-#define FP_KP_HEX "ff759d963caf0476698481a580320af346c4985ab9eb6f28ccd926f407c62245"
-#define FP_KPD_HEX "7688d42bcd7aeda0f2a270286f9f57bda99334a9a0b48ebf4ee6ef96535b67b4"
+#define FP_KP_HEX "ca24269bc1944bc03a437fd6001d2d3910dc523a5b430ca9445d30da1fba5d46"
+#define FP_KPD_HEX "bf82b3550d4067c456bf90c5eeb58b9c5c53cc12c5768afc37a5887b469d267b"
 
 /* The public create under `ctx` gives `gated`, and the build without the
  * support gate `ungated`. */
@@ -328,11 +328,11 @@ int main(void)
         /* The pool has U-turn's switch flag (step G5) on top of Team C's; everything else of Team C's is the pool's. */
         DF_CHECK(&t, lp.switch_flag_max == DFI_SWITCH_VOLT_SWITCH && lc.switch_flag_max == DFI_SWITCH_FLIP_TURN &&
                          DFI_SWITCH_UTURN == DFI_SWITCH_FLIP_TURN + 1u && DFI_SWITCH_VOLT_SWITCH == DFI_SWITCH_UTURN + 1u);
-        DF_CHECK(&t, lp.status_max == lc.status_max && lp.terrain_max == lc.terrain_max &&
-                         lp.vol_flags_mask == lc.vol_flags_mask);
-        DF_CHECK(&t, lq.switch_flag_max == lp.switch_flag_max && lq.status_max == lc.status_max &&
+        DF_CHECK(&t, lp.status_max == DFI_STATUS_TOX && lc.status_max == DFI_STATUS_PSN && lp.terrain_max == lc.terrain_max &&
+                         lp.vol_flags_mask == lc.vol_flags_mask); /* step G36: badly poisoned is the pool's alone */
+        DF_CHECK(&t, lq.switch_flag_max == lp.switch_flag_max && lq.status_max == lp.status_max &&
                          lq.terrain_max == lc.terrain_max && lq.vol_flags_mask == lc.vol_flags_mask);
-        DF_CHECK(&t, lp.switch_flag_max == DFI_SWITCH_VOLT_SWITCH && lp.status_max == DFI_STATUS_PSN &&
+        DF_CHECK(&t, lp.switch_flag_max == DFI_SWITCH_VOLT_SWITCH && lp.status_max == DFI_STATUS_TOX &&
                          lp.terrain_max == DFI_TERRAIN_PSYCHIC && l1.switch_flag_max == DFI_SWITCH_FAINTED &&
                          l1.status_max == DFI_STATUS_SLP && l1.terrain_max == DFI_TERRAIN_GRASSY);
     }
@@ -967,8 +967,10 @@ int main(void)
             w->sides[0].members[0].status_counter = 1u;
             expect_inv(&t, kinds[i], w, DFI_INV_MEMBER_EXTRA, "poison with a counter");
             w->sides[0].members[0].status_counter = 0u;
-            w->sides[0].members[0].status = (uint8_t)(DFI_STATUS_PSN + 1u);
-            expect_inv(&t, kinds[i], w, DFI_INV_MEMBER_EXTRA, "status 6");
+            w->sides[0].members[0].status = (uint8_t)DFI_STATUS_TOX;
+            expect_inv(&t, kinds[i], w, kinds[i] == kp || kinds[i] == kq ? DFI_INV_NONE : DFI_INV_MEMBER_EXTRA, "tox");
+            w->sides[0].members[0].status = (uint8_t)(DFI_STATUS_TOX + 1u);
+            expect_inv(&t, kinds[i], w, DFI_INV_MEMBER_EXTRA, "status 7");
             w->sides[0].members[0].status = 0u;
             w->terrain = (uint8_t)DFI_TERRAIN_PSYCHIC;
             w->terrain_turns = 5u;
