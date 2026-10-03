@@ -121,7 +121,14 @@
  * path. Charizardite X stays unmarked: the tables link one Mega per base forme (Charizard: Mega-Y).
  * Step G20 marks Aurora Veil (fails outside snow, 5 turns or 8 with Light Clay, 2732/4096 against every category unless a
  * crit or the screen of that category already does it, ends with its own line in the residual after Tailwind), with the
- * view bit 3 (aurora_veil_turns of the side, public). Recorded as g20_aurora_veil_* under the POOL kind. */
+ * view bit 3 (aurora_veil_turns of the side, public). Recorded as g20_aurora_veil_* under the POOL kind.
+ * Step G25 marks Electric Terrain and Misty Terrain (the moves: five turns, the same terrain fails, the other one is
+ * replaced), Electric Surge (the entry setter of the terrain family), Electric Seed and Misty Seed (the seed rule of the other
+ * terrains: Defense and Special Defense +1), Rising Voltage (base power doubled at a grounded target in Electric Terrain)
+ * and Terrain Pulse (the terrain's type and double power for a grounded user, outside the -ate abilities), with the
+ * terrains' own rules: 5325/4096 for a grounded user's Electric move, Dragon moves at a grounded target halved in Misty
+ * Terrain, sleep refused to a grounded Pokemon in Electric Terrain and every status (and confusion) in Misty Terrain, the
+ * view bits 5 and 32. Recorded as g25_* under the POOL kind. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -231,6 +238,12 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_ROCKWRECKER] = 1u,
             [DFI_MOVE_KNOCKOFF] = 1u,
             [DFI_MOVE_AURORAVEIL] = 1u,
+            /* Step G25: Electric Terrain and Misty Terrain (the terrain moves), Rising Voltage and Terrain Pulse (their base power
+             * and Terrain Pulse's type follow the terrain). */
+            [DFI_MOVE_ELECTRICTERRAIN] = 1u,
+            [DFI_MOVE_MISTYTERRAIN] = 1u,
+            [DFI_MOVE_RISINGVOLTAGE] = 1u,
+            [DFI_MOVE_TERRAINPULSE] = 1u,
         },
     .abilities =
         {
@@ -270,6 +283,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_POISONTOUCH] = 1u,
             [DFI_ABILITY_THERMALEXCHANGE] = 1u,
             [DFI_ABILITY_STICKYHOLD] = 1u,
+            [DFI_ABILITY_ELECTRICSURGE] = 1u, /* step G25 */
         },
     .items =
         {
@@ -292,6 +306,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_FOCUSSASH] = 1u,
             [DFI_ITEM_FLOETTITE] = 1u,
             [DFI_ITEM_PSYCHICSEED] = 1u,
+            [DFI_ITEM_ELECTRICSEED] = 1u, /* step G25 */
+            [DFI_ITEM_MISTYSEED] = 1u,    /* step G25 */
             [DFI_ITEM_TYRANITARITE] = 1u,
             [DFI_ITEM_BAXCALIBRITE] = 1u,
             [DFI_ITEM_AERODACTYLITE] = 1u,
@@ -340,6 +356,8 @@ const dfi_support_manifest dfi_support = {
      * GLAIVE_RUSH of the position's volatiles, public, verified against the g19 battles in duoforge.state.pool_g19). Step G20:
      * Aurora Veil (bit 3: aurora_veil_turns of the side, public, verified against the g20_aurora_veil battles step by step
      * in duoforge.state.pool_g20). */
+    /* Step G25: bits 5 and 32, the terrain values Electric and Misty of the old observation's terrain field (the -fieldstart
+     * lines of Electric Surge and the two moves, verified step by step in duoforge.state.pool_terrain). */
     /* Step Sandstorm and Snowscape: bits 0 and 1, the weather values of the old observation's weather field (the
      * -weather lines of Sand Stream, Snow Warning and the two moves, verified step by step in duoforge.state.pool_weather).
      * Step AC1: the ability change of Trace (bit 2: position_ext.ability_now, public, verified against the ac1 battles in
@@ -356,5 +374,7 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WEATHER_SNOW) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ITEM_CHANGE) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ABILITY_CHANGE) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_AURORA_VEIL),
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_AURORA_VEIL) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TERRAIN_ELECTRIC) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TERRAIN_MISTY),
 };

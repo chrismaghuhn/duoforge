@@ -38,7 +38,7 @@ typedef struct dfi_kind_limits {
     uint32_t switch_flag_max; /* DFI_SWITCH_FAINTED; DFI_SWITCH_FLIP_TURN for TEAM_C; DFI_SWITCH_UTURN for POOL */
     uint32_t status_max;      /* DFI_STATUS_SLP; DFI_STATUS_PSN for TEAM_C and POOL */
     uint32_t vol_flags_mask;  /* DFI_VOL_* bits a position may carry: TEAM_C and POOL add the choice lock */
-    uint32_t terrain_max;     /* DFI_TERRAIN_GRASSY; DFI_TERRAIN_PSYCHIC for TEAM_C and POOL */
+    uint32_t terrain_max;     /* DFI_TERRAIN_GRASSY; DFI_TERRAIN_PSYCHIC for TEAM_C; DFI_TERRAIN_MISTY for POOL */
     uint32_t weather_max;     /* DFI_WEATHER_SUN; DFI_WEATHER_SNOW for POOL (Sandstorm and Snowscape) */
     bool pool_rules;          /* POOL kinds: the learnable moves and legal abilities of the forme, not its set */
     bool dev;
