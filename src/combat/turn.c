@@ -4638,12 +4638,16 @@ static duoforge_status dfi_run_mega(dfi_run *r, const dfi_queue_record *q)
     b->tail.sides[q->side].soak_type[dfi_pos(b, flat)->occupant] = 0u;
     /* The Mega forme's ability replaces one that Trace copied (formeChange -> setAbility, sim/pokemon.ts:1487). */
     b->tail.sides[q->side].ability_now[dfi_pos(b, flat)->occupant] = 0u;
-    /* setAbility ends the old ability first (sim/pokemon.ts:1923): Unburden's onEnd removes its volatile
-     * (data/abilities.ts:5243-5245), which a holder of its own Mega Stone may have since a Knock Off (dfi_knock_off); no
-     * ability of a Mega forme in the pool is Unburden. */
+    /* setAbility ends the old ability first (sim/pokemon.ts:1923, singleEvent End), and of the abilities that the engine
+     * models three have an onEnd (data/abilities.ts; the Champions mod has none): Unburden's removes its volatile
+     * (:5243-5245; a holder of its own Mega Stone may have it since a Knock Off, dfi_knock_off), Flash Fire's removes the
+     * flashfire volatile (:1351-1353; a Trace holder that copied Flash Fire has it after a Fire move hit it, shown as
+     * `-end|X|ability: Flash Fire|[silent]`), and Unnerve's (:5265-5267) clears the `unnerved` flag of its ability state, which the
+     * engine does not keep (the foes' berries follow the ability that the holder has). Nothing else that the engine keeps
+     * on a position belongs to an ability, and no ability of a Mega forme in the pool is Unburden or Flash Fire. */
     {
         dfi_active_slot *mega_pos = dfi_pos(b, flat);
-        mega_pos->flags = (uint8_t)((uint32_t)mega_pos->flags & ~(uint32_t)DFI_VOL_UNBURDEN); /* wide-operands-reviewed */
+        mega_pos->flags = (uint8_t)((uint32_t)mega_pos->flags & ~((uint32_t)DFI_VOL_UNBURDEN | (uint32_t)DFI_VOL_FLASH_FIRE)); /* wide-operands-reviewed */
     }
     duoforge_event forme = dfi_event_make(DUOFORGE_EVENT_FORME, flat);
     forme.id = (uint16_t)dfi_mega_of(m->species_id, m->item); /* [detailschange]: < DFI_POOL_FORME_COUNT */
