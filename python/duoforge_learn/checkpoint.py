@@ -80,8 +80,10 @@ def ext_supported_of(config):
     mask = config.get("ext_supported", 0)
     if not isinstance(mask, int) or isinstance(mask, bool) or not 0 <= mask <= features.ALL_FEATURES:
         raise ValueError(f"ext_supported {mask!r} is not a mask of the {features.FEATURE_COUNT} feature bits")
-    if mask and encoder_of(config) != features.ENCODER:
-        raise ValueError(f"a checkpoint of encoder {encoder_of(config)} has no ext_supported ({mask:#x})")
+    encoder = encoder_of(config)
+    if mask & ~features.version_features(encoder):
+        raise ValueError(f"a checkpoint of encoder {encoder} has no columns for ext_supported {mask:#x} "
+                         f"(its features: {features.version_features(encoder):#x})")
     return mask
 
 
@@ -118,10 +120,10 @@ def save(path, params, config):
 def load_current(path):
     """(params, config) of a checkpoint widened to the current encoder layout
     (features.FEATURE_NAMES): format 2 by column name, and a network of
-    encoder 2 widened so is one of features.ENCODER (its new rows are zero,
-    and with no "ext_supported" the encoder zeros the block too); a format-1
-    file must have the width of its own encoder version (widen_594 converts
-    the 594-feature ones) and keeps it."""
+    encoder 2 or 3 widened so is one of features.ENCODER (its new rows are
+    zero; its ext_supported, none for encoder 2, still lies inside the
+    columns it had); a format-1 file must have the width of its own encoder
+    version (widen_594 converts the 594-feature ones) and keeps it."""
     params, config = load(path)
     if config.get("format") != 2:
         width, want = params["t1"]["w"].shape[0], features.obs_size(encoder_of(config))
@@ -132,7 +134,7 @@ def load_current(path):
     if config["features"] != list(features.FEATURE_NAMES) or \
             config["slot_features"] != list(features.SLOT_FEATURE_NAMES):
         encoder = encoder_of(config)
-        if encoder not in (2, features.ENCODER):
+        if encoder not in (2, 3, features.ENCODER):
             raise ValueError(f"{path}: a format-2 checkpoint of encoder {encoder} cannot be widened")
         params, config = widen(params, config, features.FEATURE_NAMES, features.SLOT_FEATURE_NAMES)
         config["encoder"] = features.ENCODER

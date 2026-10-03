@@ -284,6 +284,15 @@ How the tail rev 1 fills the view: `wide_guard` -> `guard_flags` bit `WIDE_GUARD
   - Self-play refuses a mask with a bit the library does not support under the run's context (`check_ext_supported`), the stored mask of a resumed run included, before anything is played or saved: a network never records a feature it could not see while it learned. Evaluation and the ladder only encode and are not checked; their zeros are true.
 - **Live play.** The live tracker fills no records yet, so the live policy refuses a mask with a record bit. It plays a network whose mask has only base-value bits.
 
+### 10.2 Encoder 4: the fields of tail revision 4 (2026-10-03)
+
+Tail revision 4 appended two fields into the reserves (growth rule 3): the `ROOST` volatile (bit 20, feature 40) and `move_failed` (position reserve byte 0, feature 41). By section 9 a field added later is a new encoder version, so `features.py` is encoder 4:
+- **Encoder 3 stays the prefix.** Encoder 4 is encoder 3's 842 columns followed by 8: per side (own, then foe) and position (slot 0, then 1), `ext.<side>.pos<k>.volatile.roost` and `ext.<side>.pos<k>.move_failed`. Encoder 3 keeps its 20 volatile columns of revision 1 in place; a further volatile bit fails the import until an encoder version takes it.
+- **Versions.** `as_encoder(…, 3)` gives the first 842 columns and still knows Sand, Snow, Electric, Misty, Tox and Recharge. `version_features(v)` is the mask of the bits a version has columns for (3: bits 0 to 39, 4: all 42), and a network's `ext_supported` must lie inside it (checkpoint, `Observation`, self-play).
+- **Checkpoints.** A format-2 checkpoint of encoder 2 or 3 widens by name to encoder 4 with zero rows for the new columns and keeps its mask; a run of encoder 2 or 3 resumes on encoder 4 (`changes["encoder"]`).
+- **Record ranges.** `move_failed` above 1 is refused; `ROOST` is a known volatile bit.
+- The event-history encoder (the "encoder 4" of earlier plans) becomes encoder 5.
+
 ## 11. Size, in one table
 
 | Section | Bytes | Used | Reserve |

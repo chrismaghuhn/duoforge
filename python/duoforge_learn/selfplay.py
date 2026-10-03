@@ -44,8 +44,9 @@ class Observation:
     are read only when the mask needs them."""
 
     def __init__(self, batch, encoder, ext_supported=0):
-        if ext_supported and encoder != features.ENCODER:
-            raise ValueError(f"encoder {encoder} reads no view extension (ext_supported {ext_supported:#x})")
+        if ext_supported & ~features.version_features(encoder):
+            raise ValueError(f"encoder {encoder} has no columns for ext_supported {ext_supported:#x} "
+                             f"(its features: {features.version_features(encoder):#x})")
         e = batch.envs
         observations = batch.observations.reshape(-1)
         ext = batch.observe_ext().reshape(-1) if ext_supported & features.RECORD_FEATURES else None
@@ -96,8 +97,9 @@ class SelfPlay:
     before the ended ones restart; encoder: the encoder version of the
     observations (features.as_encoder); ext_supported: the view-extension
     features the observations show (Observation), None for every feature the
-    library supports under the context (0 under every kind but POOL, and
-    for encoders before features.ENCODER); a given mask with a bit the
+    library supports under the context and the encoder version has columns
+    for (0 under every kind but POOL, and for encoders 1 and 2); a given
+    mask with a bit the
     library does not support there raises ValueError
     (features.check_ext_supported), before anything is played or saved."""
 
@@ -119,7 +121,7 @@ class SelfPlay:
         self.pairing = np.stack(pairing.pairings(self.seed, everyone, self.episodes, pool.weights), axis=1)
         setups = pool.setups(self.pairing[:, 0], self.pairing[:, 1])
         self.batch = duoforge.Batch(self.context, setups, workers, seed)
-        library = int(self.batch.observe_ext()[0, 0]["supported"]) if encoder == features.ENCODER else 0
+        library = int(self.batch.observe_ext()[0, 0]["supported"]) & features.version_features(encoder)
         try:
             self.ext_supported = (library if ext_supported is None
                                   else features.check_ext_supported(ext_supported, library))
