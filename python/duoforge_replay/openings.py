@@ -5,6 +5,9 @@ It does not run a battle or infer choices from battle rules. Unrecognized and
 malformed protocol records are counted and skipped. The output is derived from
 the HolidayOugi replay source and must be kept outside this repository.
 
+Compatibility means that names are present in DuoForge's current POOL tables;
+it does not mean that a name exists in the full Champions dex.
+
 Run with::
 
     python -m duoforge_replay.openings --source REPLAY_PATH --out LOCAL_DIR
@@ -78,7 +81,7 @@ class Action:
     actor: str  # species name from the protocol ident
     name: str  # move, incoming species, or Mega forme
     target: str | None = None  # preserved protocol target; no target is inferred
-    protocol_kind: str = ""  # switch or drag for switch actions
+    switch_context: str = ""  # choice, replacement, pivot, or drag for switch actions
 
 
 @dataclass(frozen=True)
@@ -91,8 +94,8 @@ class OpeningGame:
     sides: tuple
     actions: tuple
     tera_sides: tuple
-    compatible: bool
-    incompatible_reasons: tuple
+    pool_compatible: bool
+    pool_incompatible_reasons: tuple
     diagnostics: tuple
 
     @property
@@ -208,7 +211,7 @@ def _canonical_sheets(showteam, pokes, data, diagnostics):
     return tuple(result), tuple(sheets_for_hindsight)
 
 
-def _parse_action(parts, turn, diagnostics, data, active_species):
+def _parse_action(parts, turn, diagnostics, data, active_species, after_upkeep=False):
     kind = parts[1]
     if len(parts) < 3:
         _bad(diagnostics, kind)
@@ -224,24 +227,31 @@ def _parse_action(parts, turn, diagnostics, data, active_species):
             _bad(diagnostics, kind)
             return None
         target = _action_target(parts[4].strip() or None, data, active_species)
-        return Action(turn, side, "move", position, actor, parts[3].strip(), target,
-                      protocol_kind=kind)
+        return Action(turn, side, "move", position, actor, parts[3].strip(), target)
     if kind in ("switch", "drag"):
         if len(parts) < 4 or not _preview_species(parts[3]):
             _bad(diagnostics, kind)
             return None
+        if kind == "drag":
+            switch_context = "drag"
+        elif any(part.startswith("[from]") for part in parts[4:]):
+            switch_context = "pivot"
+        elif after_upkeep:
+            switch_context = "replacement"
+        else:
+            switch_context = "choice"
         return Action(turn, side, "switch", position, actor, _species_name(_preview_species(parts[3]), data),
-                      protocol_kind=kind)
+                      switch_context=switch_context)
     if kind == "-mega":
         if len(parts) < 4 or not parts[3].strip():
             _bad(diagnostics, kind)
             return None
-        return Action(turn, side, "mega", position, actor, _species_name(parts[3].strip(), data),
-                      protocol_kind=kind)
+        return Action(turn, side, "mega", position, actor, _species_name(parts[3].strip(), data))
     return None
 
 
-def _compatibility(team_sides, actions, used_items, data):
+def _pool_compatibility(team_sides, actions, used_items, data):
+    """Check names against duoforge_live.data's current POOL tables, not a full Champions dex."""
     missing = set()
     for team in team_sides:
         for member in team:
@@ -333,6 +343,7 @@ def extract_game(replay_id, format_id, log, data):
     winner_name = None
     winner = -1
     current_turn = None
+    after_upkeep = False
     bo3_game = 0
     starts = 0
     actions, tera_sides, item_events = [], [False, False], []
@@ -370,6 +381,9 @@ def extract_game(replay_id, format_id, log, data):
                 current_turn = None
                 continue
             current_turn = int(parts[2])
+            after_upkeep = False
+        elif kind == "upkeep":
+            after_upkeep = True
         elif kind == "start":
             starts += 1
         elif kind == "win":
@@ -385,7 +399,7 @@ def extract_game(replay_id, format_id, log, data):
             bo3_game = int(match.group(1)) if match else 0
 
         if kind in ("switch", "drag"):
-            action = _parse_action(parts, current_turn or 0, diagnostics, data, active_species)
+            action = _parse_action(parts, current_turn or 0, diagnostics, data, active_species, after_upkeep)
             if action is not None:
                 active_species[action.position] = action.name
                 if current_turn in (1, 2, 3):
@@ -394,7 +408,7 @@ def extract_game(replay_id, format_id, log, data):
         if current_turn not in (1, 2, 3):
             continue
         if kind in ("move", "-mega"):
-            action = _parse_action(parts, current_turn, diagnostics, data, active_species)
+            action = _parse_action(parts, current_turn, diagnostics, data, active_species, after_upkeep)
             if action is not None:
                 actions.append(action)
         elif kind == "-terastallize":
@@ -445,7 +459,7 @@ def extract_game(replay_id, format_id, log, data):
         side_openings.append(SideOpening(ratings[side], team_sides[side], leads, brought))
 
     used_items = _items_used_in_opening(lines, team_sides, item_events, data, diagnostics)
-    reasons = _compatibility(team_sides, actions, used_items, data)
+    reasons = _pool_compatibility(team_sides, actions, used_items, data)
     return OpeningGame(
         str(replay_id), source_name, format_id, bo3_game, winner, tuple(side_openings),
         tuple(actions), tuple(tera_sides), not reasons, reasons, tuple(sorted(diagnostics.items())),
@@ -481,17 +495,17 @@ def aggregate(games, exclude_terastallized=False):
     for game in games:
         group = (game.source, game.format_id)
         compatibility[group]["games"] += 1
-        compatibility[group]["compatible"] += int(game.compatible)
-        compatibility[group]["incompatible"] += int(not game.compatible)
+        compatibility[group]["pool_compatible"] += int(game.pool_compatible)
+        compatibility[group]["pool_incompatible"] += int(not game.pool_compatible)
         compatibility[group]["terastallized"] += int(game.terastallized)
-        for reason in game.incompatible_reasons:
-            compatibility[group][f"incompatible_{reason}"] += 1
+        for reason in game.pool_incompatible_reasons:
+            compatibility[group][f"pool_incompatible_{reason}"] += 1
         for reason, count in game.diagnostics:
             diagnostics[(game.source, game.format_id, reason)]["count"] += count
 
         game_counters["games.processed"] += 1
-        game_counters["games.compatible"] += int(game.compatible)
-        game_counters["games.incompatible"] += int(not game.compatible)
+        game_counters["games.pool_compatible"] += int(game.pool_compatible)
+        game_counters["games.pool_incompatible"] += int(not game.pool_compatible)
         game_counters["games.terastallized"] += int(game.terastallized)
         game_counters["games.excluded.terastallized"] += int(exclude_terastallized and game.terastallized)
         if exclude_terastallized and game.terastallized:
@@ -515,7 +529,7 @@ def aggregate(games, exclude_terastallized=False):
                 if action.turn != 1 or action.side != side:
                     continue
                 action_key = (game.source, game.format_id, own_pair, foe_pair, action.kind,
-                              action.position[-1], action.actor, action.name, action.target, action.protocol_kind)
+                              action.position[-1], action.actor, action.name, action.target, action.switch_context)
                 _add_observation(action_stats, action_key, won, decisive)
 
     def rows(stats, fields):
@@ -530,7 +544,7 @@ def aggregate(games, exclude_terastallized=False):
 
     lead_rows = rows(lead_stats, ("source", "format", "team_species", "leads"))
     action_rows = rows(action_stats, ("source", "format", "leads", "opposing_leads", "action_kind", "slot",
-                                      "actor", "action", "target", "protocol_kind"))
+                                      "actor", "action", "target", "switch_context"))
     brought_rows = rows(brought_stats, ("source", "format", "species"))
     compatibility_rows = []
     for (source_name, format_id), values in sorted(compatibility.items()):
@@ -542,7 +556,7 @@ def aggregate(games, exclude_terastallized=False):
             "leads_per_team": lead_rows,
             "turn_1_actions": action_rows,
             "species_brought": brought_rows,
-            "champions_compatibility": compatibility_rows,
+            "pool_compatibility": compatibility_rows,
         },
         "counters": dict(sorted(game_counters.items())),
         "diagnostics": diagnostic_rows,
@@ -604,7 +618,7 @@ def build(paths, out_dir, data, *, unit_lines=4096, exclude_terastallized=False)
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description="Build opening statistics from Gen 9 open-sheet VGC replays")
+    parser = argparse.ArgumentParser(description="Build opening statistics and POOL-name coverage for Gen 9 VGC")
     parser.add_argument("--source", required=True, nargs="+", type=Path, help="Parquet/JSONL files or directories")
     parser.add_argument("--out", required=True, type=Path, help="local output directory, outside the repository")
     parser.add_argument("--unit-lines", type=int, default=4096, help="JSONL rows per existing source unit")

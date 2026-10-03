@@ -15,7 +15,7 @@ _POKEMON = (
     "Pikachu", "Vivillon-Pokeball", "Charizard", "Indeedee-F", "Torkoal", "Sinistcha-Masterpiece",
     "Incineroar", "Gholdengo", "Pelipper", "Flutter Mane", "Kingambit", "Archaludon",
 )
-_MOVES = ("Thunderbolt", "Fake Out", "Make It Rain", "Heat Wave", "Snarl", "Psychic", "Protect")
+_MOVES = ("Thunderbolt", "Fake Out", "Make It Rain", "Heat Wave", "Snarl", "Psychic", "Protect", "U-turn")
 _ITEMS = ("Choice Band", "Sitrus Berry", "Leftovers", "Booster Energy")
 
 
@@ -84,16 +84,21 @@ LOG = "\n".join([
     "|move|p2b: Gholdengo|Make It Rain|p1a: Pikachu|",
     "|move|p1a: Pikachu|",
     "|future-opening-event|ignored|",
+    "|faint|p2a: Incineroar",
+    "|upkeep|",
+    "|switch|p2a: Incineroar|Pelipper, L50|100/100",
     "|turn|2",
     "|switch|p1a: Pikachu|Charizard, L50|100/100",
     "|move|p1a: Charizard|Heat Wave||[spread]",
-    "|move|p2a: Incineroar|Fake Out|p1a: Charizard|",
-    "|switch|p2a: Incineroar|Pelipper, L50|100/100",
+    "|move|p2a: Pelipper|Fake Out|p1a: Charizard|",
     "|turn|3",
     "|switch|p1b: Vivillon-Pokeball|Indeedee-F, L50|100/100",
     "|switch|p2b: Gholdengo|Flutter Mane, L50|100/100",
     "|-terastallize|p2a: Pelipper|Fire|",
     "|move|p2a: Pelipper|Snarl|p1a: Charizard|",
+    "|move|p1a: Charizard|U-turn|p2a: Pelipper|",
+    "|switch|p1a: Charizard|Pikachu, L50|100/100|[from] U-turn",
+    "|drag|p1a: Pikachu|Charizard, L50|100/100",
     "|win|Alice",
 ])
 
@@ -124,17 +129,23 @@ class OpeningsTest(unittest.TestCase):
             (1, "move", "Thunderbolt", "p2a: Incineroar"),
             (1, "mega", "Vivillon-Mega", None),
             (1, "move", "Make It Rain", "p1a: Pikachu"),
+            (1, "switch", "Pelipper", None),
             (2, "switch", "Charizard", None),
             (2, "move", "Heat Wave", None),
             (2, "move", "Fake Out", "p1a: Charizard"),
-            (2, "switch", "Pelipper", None),
             (3, "switch", "Indeedee-F", None),
             (3, "switch", "Flutter Mane", None),
             (3, "move", "Snarl", "p1a: Charizard"),
+            (3, "move", "U-turn", "p2a: Pelipper"),
+            (3, "switch", "Pikachu", None),
+            (3, "switch", "Charizard", None),
+        ])
+        self.assertEqual([(action.turn, action.switch_context) for action in game.actions if action.kind == "switch"], [
+            (1, "replacement"), (2, "choice"), (3, "choice"), (3, "choice"), (3, "pivot"), (3, "drag"),
         ])
         self.assertEqual(game.tera_sides, (True, True))
         self.assertTrue(game.terastallized)
-        self.assertTrue(game.compatible)
+        self.assertTrue(game.pool_compatible)
         self.assertIn(("lines.garbled.move", 1), game.diagnostics)
         self.assertIn(("lines.unknown.future-opening-event", 1), game.diagnostics)
         self.assertEqual(openings.source_for_format("gen9championsvgc2026regmbbo3"), "champions")
@@ -151,34 +162,38 @@ class OpeningsTest(unittest.TestCase):
         self.assertEqual((thunderbolt["leads"], thunderbolt["opposing_leads"], thunderbolt["target"],
                           thunderbolt["count"], thunderbolt["win_rate"]),
                          (("Pikachu", "Vivillon"), ("Gholdengo", "Incineroar"), "p2a: Incineroar", 1, 1.0))
+        p2_switches = [row for row in result["tables"]["turn_1_actions"]
+                       if row["action_kind"] == "switch" and row["leads"] == ("Gholdengo", "Incineroar")]
+        self.assertEqual([(row["action"], row["switch_context"]) for row in p2_switches], [("Pelipper", "replacement")])
         self.assertEqual(len(result["tables"]["species_brought"]), 8)
         pikachu = next(row for row in result["tables"]["species_brought"] if row["species"] == "Pikachu")
         self.assertEqual((pikachu["count"], pikachu["wins"], pikachu["win_rate"]), (1, 1, 1.0))
 
-    def test_excluding_terastallized_games_preserves_compatibility_counts(self):
+    def test_excluding_terastallized_games_preserves_pool_compatibility_counts(self):
         game = self.extract(format_id="gen9vgc2026regi")
         result = openings.aggregate([game], exclude_terastallized=True)
         self.assertEqual(result["tables"]["leads_per_team"], [])
         self.assertEqual(result["tables"]["turn_1_actions"], [])
         self.assertEqual(result["tables"]["species_brought"], [])
-        summary = result["tables"]["champions_compatibility"][0]
-        self.assertEqual((summary["source"], summary["format"], summary["games"], summary["compatible"],
+        summary = result["tables"]["pool_compatibility"][0]
+        self.assertEqual((summary["source"], summary["format"], summary["games"], summary["pool_compatible"],
                           summary["terastallized"]), ("sv_vgc", "gen9vgc2026regi", 1, 1, 1))
         self.assertEqual(result["counters"]["games.excluded.terastallized"], 1)
 
     def test_incompatible_species_move_and_item_are_reported_by_reason(self):
         game = self.extract(format_id="gen9vgc2026regi")
-        self.assertEqual(game.incompatible_reasons, ())
+        self.assertEqual(game.pool_incompatible_reasons, ())
         unknown_move = LOG.replace("Thunderbolt", "Unknown Move")
         unknown_item = LOG.replace("Sitrus Berry", "Unknown Berry")
         unknown_species = LOG.replace("Pikachu", "Unknownmon")
         games = [self.extract(unknown_move, "gen9vgc2026regi"),
                  self.extract(unknown_item, "gen9vgc2026regi"),
                  self.extract(unknown_species, "gen9vgc2026regi")]
-        self.assertEqual([game.incompatible_reasons for game in games], [("move",), ("item",), ("species",)])
-        summary = openings.aggregate(games)["tables"]["champions_compatibility"][0]
-        self.assertEqual((summary["games"], summary["incompatible"], summary["incompatible_species"],
-                          summary["incompatible_move"], summary["incompatible_item"]), (3, 3, 1, 1, 1))
+        self.assertEqual([game.pool_incompatible_reasons for game in games], [("move",), ("item",), ("species",)])
+        summary = openings.aggregate(games)["tables"]["pool_compatibility"][0]
+        self.assertEqual((summary["games"], summary["pool_incompatible"],
+                          summary["pool_incompatible_species"], summary["pool_incompatible_move"],
+                          summary["pool_incompatible_item"]), (3, 3, 1, 1, 1))
 
     def test_skip_names_match_the_replay_pipeline(self):
         with self.assertRaisesRegex(openings.OpeningSkip, "skip:session"):
