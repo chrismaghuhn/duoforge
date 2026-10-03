@@ -41,17 +41,6 @@ def loss(params, net, obs, slots, mask, batch, value_coef):
 
 # ------------------------------------------------------------------ the trainer
 
-def ids_of(context):
-    """The name lists of the embedded tables in id order ({"species": [...], ...}, checkpoint.EMBEDDINGS): what
-    checkpoint.check_ids compares across data versions (Learner v2's checkpoint.ids_of, the same values)."""
-    from duoforge import data as api
-    from . import checkpoint
-    tables = {"species": api.TABLE_SPECIES, "move": api.TABLE_MOVE, "item": api.TABLE_ITEM,
-              "ability": api.TABLE_ABILITY, "nature": api.TABLE_NATURE}
-    return {kind: [api.name(context, tables[kind], i) for i in range(api.count(context, tables[kind]))]
-            for kind in checkpoint.EMBEDDINGS}
-
-
 def _parser():
     import argparse
     p = argparse.ArgumentParser(prog="python -m duoforge_learn.bc", description="Behavior cloning on replay rows.")
@@ -170,7 +159,7 @@ def train(args):
         mask = bc_data.bc_mask(context)
         rows = _rows(args, context, mask, dirs, format_weights)
         bc_data.check_labels(rows)
-        fingerprint, ids = context.fingerprint().hex(), ids_of(context)
+        fingerprint, ids = context.fingerprint().hex(), checkpoint.ids_of(context)
     finally:
         context.close()
     train_index, val_index = np.flatnonzero(~rows.val), np.flatnonzero(rows.val)

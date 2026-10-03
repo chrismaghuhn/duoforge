@@ -129,6 +129,179 @@ class ZeroColumnsJaxTest(unittest.TestCase):
         self.check(policy.v2_config("S"))
 
 
+def _bits(*names):
+    from duoforge import features
+    return sum(1 << features.FEATURE_BITS[n] for n in names)
+
+
+class InitTest(unittest.TestCase):
+    """train.py --init (M11 BC spec section 8) from a BC-like checkpoint: v2-S, kind pool, mask Sand|Snow|Tox."""
+
+    @classmethod
+    def setUpClass(cls):
+        import tempfile
+        from pathlib import Path
+        cls.tmp = Path(tempfile.mkdtemp(prefix="duoforge_init_"))
+        cls.ckpt = cls.bc_like("bc.npz")
+
+    @classmethod
+    def tearDownClass(cls):
+        import shutil
+        shutil.rmtree(cls.tmp, ignore_errors=True)
+
+    @classmethod
+    def bc_like(cls, name, feature_names=None, **override):
+        import jax
+        import duoforge
+        from duoforge import _layout, features
+        from duoforge_learn import checkpoint, policy
+        names = list(feature_names or features.FEATURE_NAMES)
+        cfg = policy.v2_config("S", hidden=64)
+        net = policy.make(cfg, names, features.SLOT_FEATURE_NAMES)
+        params = jax.device_get(net.init(jax.random.PRNGKey(7)))
+        with duoforge.Context(data_kind=_layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"]) as context:
+            config = {"model": cfg, "encoder": features.ENCODER,
+                      "ext_supported": _bits("WEATHER_SAND", "WEATHER_SNOW", "AILMENT_TOX"),
+                      "features": names, "slot_features": list(features.SLOT_FEATURE_NAMES),
+                      "data": {"kind": "pool", "fingerprint": context.fingerprint().hex()}, "teams": [], "update": 0,
+                      "decisions": 10 ** 9, "ids": checkpoint.ids_of(context), "train": {"seed": 1, "bc": {}}}
+        config.update(override)
+        config = {k: v for k, v in config.items() if v is not None}
+        path = cls.tmp / name
+        checkpoint.save(str(path), params, config)
+        return path
+
+    def run_train(self, name, *extra):
+        from duoforge_learn import train
+        out = self.tmp / name
+        code = train.main(["--envs", "8", "--workers", "2", "--rollout", "8", "--updates", "1", "--minutes", "0",
+                           "--eval-every", "100", "--minibatch", "256", "--out", str(out), *extra])
+        self.assertEqual(code, 0)
+        return out
+
+    def log(self, out):
+        import json
+        return [json.loads(line) for line in (out / "log.jsonl").read_text(encoding="utf-8").splitlines()]
+
+    def same(self, a, b):
+        import jax
+        la, lb = jax.tree_util.tree_leaves(a), jax.tree_util.tree_leaves(b)
+        return len(la) == len(lb) and all(np.array_equal(x, y) for x, y in zip(la, lb))
+
+    def outputs_equal(self, params_a, params_b, cfg, zero_columns=()):
+        from duoforge import features
+        from duoforge_learn import columns, policy
+        net = policy.make(cfg)
+        rng = np.random.default_rng(2)
+        obs = rng.random((4, features.OBS_SIZE)).astype(np.float32) * 0.3
+        cols = columns.columns()
+        for idx in (cols.present, cols.species, cols.item, cols.ability, cols.nature, cols.moves, cols.pp,
+                    cols.move_count):
+            obs[:, np.asarray(idx).ravel()] = 0.0
+        obs[:, [features.FEATURE_NAMES.index(c) for c in zero_columns]] = 0.0
+        slots = rng.random((4, 2, 32, features.SLOT_FEATURES)).astype(np.float32)
+        mask = np.ones((4, 32, 32), bool)
+        for a, b in zip(net.apply(params_a, obs, slots, mask), net.apply(params_b, obs, slots, mask)):
+            np.testing.assert_allclose(np.asarray(a), np.asarray(b), rtol=1e-6, atol=1e-6)
+
+    def test_init_first_snapshot_equals_bc(self):
+        from duoforge_learn import checkpoint
+        mask = checkpoint.load(str(self.ckpt))[1]["ext_supported"]
+        out = self.run_train("same", "--init", str(self.ckpt), "--ext-supported", hex(mask))
+        bc_params, _ = checkpoint.load_current(str(self.ckpt))
+        p0, c0 = checkpoint.load(str(out / "params-0.npz"))
+        self.assertTrue(self.same(bc_params, p0))
+        self.assertEqual((c0["update"], c0["decisions"], c0["ext_supported"]), (0, 0, mask))
+        self.assertEqual(c0["train"]["init"]["ext_supported"], mask)
+        records = [r for r in self.log(out) if "update" in r]
+        self.assertEqual(records[0]["update"], 1)
+        self.assertLess(records[0]["decisions"], 10 ** 6)  # counted from 0, not from the BC rows
+
+    def test_init_wider_mask_zeroes_new_columns(self):
+        from duoforge import features
+        from duoforge_learn import checkpoint
+        out = self.run_train("wide", "--init", str(self.ckpt))  # the default: the library's run-time mask
+        bc_params, bc_cfg = checkpoint.load_current(str(self.ckpt))
+        p0, c0 = checkpoint.load(str(out / "params-0.npz"))
+        old, new = bc_cfg["ext_supported"], c0["ext_supported"]
+        self.assertTrue(new & ~old)
+        self.assertEqual(self.log(out)[0]["init"]["changes"]["ext_supported"], [old, new])
+        self.outputs_equal(bc_params, p0, bc_cfg["model"], features.columns_of(new & ~old))
+
+    def test_init_from_an_older_encoder_is_exact(self):
+        # an encoder-2 checkpoint (no extension block) initializes a run of the current encoder: load_current widens
+        # by name, the old rows stay, the new ones are zero
+        from duoforge import features
+        from duoforge_learn import checkpoint
+        base = list(features.FEATURE_NAMES[:features.BASE_OBS_SIZE])
+        old = self.bc_like("enc2.npz", feature_names=base, encoder=2, ext_supported=None)
+        out = self.run_train("enc2", "--init", str(old), "--ext-supported", "0")
+        widened, cfg = checkpoint.load_current(str(old))
+        p0, c0 = checkpoint.load(str(out / "params-0.npz"))
+        self.assertEqual((c0["encoder"], c0["features"]), (features.ENCODER, list(features.FEATURE_NAMES)))
+        self.assertTrue(self.same(widened, p0))
+        self.outputs_equal(widened, p0, cfg["model"], features.columns_of(features.ALL_FEATURES))
+
+    def test_init_inherits_model_and_kind(self):
+        from duoforge_learn import checkpoint
+        out = self.run_train("inherit", "--init", str(self.ckpt))
+        _, c0 = checkpoint.load(str(out / "params-0.npz"))
+        _, bc_cfg = checkpoint.load(str(self.ckpt))
+        self.assertEqual(c0["model"], bc_cfg["model"])
+        self.assertEqual(c0["data"]["kind"], "pool")
+
+    def refused(self, name, *extra):
+        with self.assertRaises(SystemExit) as caught:
+            self.run_train(name, *extra)
+        return str(caught.exception)
+
+    def test_init_refusals(self):
+        self.assertIn("model", self.refused("r-model", "--init", str(self.ckpt), "--model", "v2", "--preset", "L"))
+        self.assertIn("kind", self.refused("r-kind", "--init", str(self.ckpt), "--data-kind", "closure"))
+        self.assertIn("ext_supported", self.refused("r-small", "--init", str(self.ckpt), "--ext-supported",
+                                                     hex(_bits("WEATHER_SAND"))))
+        unknown = self.bc_like("enc9.npz", encoder=9)
+        self.assertIn("encoder", self.refused("r-enc", "--init", str(unknown)))
+
+    def test_init_mask_wider_than_library_is_refused(self):
+        from duoforge import features
+        wide = self.bc_like("wider.npz", ext_supported=features.ALL_FEATURES)
+        self.assertIn("ext_supported", self.refused("r-wider", "--init", str(wide)))
+
+    def test_init_with_resume_refused(self):
+        from duoforge_learn import train
+        out = self.run_train("base", "--init", str(self.ckpt))
+        with self.assertRaises(SystemExit):
+            train.main(["--resume", str(out), "--init", str(self.ckpt), "--updates", "1", "--minutes", "0"])
+
+    def test_resume_of_init_run_does_not_reapply(self):
+        from duoforge_learn import train
+        out = self.run_train("resumed", "--init", str(self.ckpt))
+        self.assertEqual(train.main(["--resume", str(out), "--updates", "2", "--minutes", "0"]), 0)
+        records = [r for r in self.log(out) if "update" in r]
+        self.assertEqual([r["update"] for r in records], [1, 2])
+
+    def test_init_refuses_shifted_ids(self):
+        from duoforge_learn import checkpoint
+        _, cfg = checkpoint.load(str(self.ckpt))
+        moves = list(cfg["ids"]["move"])
+        moves[3], moves[4] = moves[4], moves[3]
+        other = {"kind": "pool", "fingerprint": "00"}
+        shifted = self.bc_like("shifted.npz", ids={**cfg["ids"], "move": moves}, data=other)
+        self.assertIn("move id 3", self.refused("r-ids", "--init", str(shifted)))
+        appended = self.bc_like("appended.npz", ids={k: v[:-1] for k, v in cfg["ids"].items()}, data=other)
+        self.run_train("appended", "--init", str(appended))
+
+    def test_init_refuses_output_in_repo(self):
+        from pathlib import Path
+        from duoforge_learn import train
+        inside = Path(__file__).resolve().parents[2] / "init-out-never"
+        with self.assertRaises((SystemExit, ValueError)):
+            train.main(["--envs", "8", "--workers", "2", "--rollout", "8", "--updates", "1", "--minutes", "0",
+                        "--out", str(inside), "--init", str(self.ckpt)])
+        self.assertFalse(inside.exists())
+
+
 class TrainerTest(unittest.TestCase):
     """bc.main on a fixture dataset: 3 training games and 1 validation game of our own reference battle."""
 
@@ -164,7 +337,7 @@ class TrainerTest(unittest.TestCase):
         self.assertEqual(config["train"]["seed"], 5)
         with duoforge.Context(data_kind=_layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"]) as context:
             self.assertEqual(config["ext_supported"], bc_data.bc_mask(context))
-            self.assertEqual(config["ids"], bc.ids_of(context))
+            self.assertEqual(config["ids"], checkpoint.ids_of(context))
             self.assertEqual(config["data"]["fingerprint"], context.fingerprint().hex())
         log = [json.loads(line) for line in (out / "bc-log.jsonl").read_text(encoding="utf-8").splitlines()]
         self.assertEqual([r["epoch"] for r in log], [1])
