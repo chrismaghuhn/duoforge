@@ -234,7 +234,7 @@ Cost classes: **D** data-only (the row is already modelled by the generator; mar
 | 104 | ability `hugepower` | 17 | 255 | S | `abilities.ts:1886-1895` | Mega Mawile: Attack x2 |
 | 105 | ability `sheerforce` | 15 | 211 | S | `abilities.ts:4202-4221` | Mega Camerupt: x1.3 for moves with secondaries, which then lose them |
 | 106 | ability `surgesurfer` | 13 | 21 | S | `abilities.ts:4755-4765` | Speed x2 in Electric Terrain (needs G25) |
-| 107 | ability `shadowtag` | 11 | 74 | H | `abilities.ts:4156-4173` | Mega Gengar: adjacent foes cannot switch (`onFoeTrapPokemon`, `onFoeMaybeTrapPokemon`): a trapping rule in the request builder, no state; the replay stops show `-activate trapped` |
+| 107 | ability `shadowtag` | 11 | 74 | H | `abilities.ts:4156-4173` | Mega Gengar: adjacent foes cannot switch (`onFoeTrapPokemon`, `onFoeMaybeTrapPokemon`): a trapping rule in the request builder, no state. Shadow Tag prints no line; the `-activate trapped` seen in replay stops comes from Mean Look and Block, whose volatile prints it. At the pin the last active gets only `maybeTrapped`, and a refused switch returns `[Unavailable choice]` plus an updated request (`side.ts:527-534`, `:984-1000`) |
 | 108 | ability `megalauncher` | 9 | 107 | S | `abilities.ts:2546-2557` | Mega Blastoise: pulse-flag moves x1.5; the `pulse` flag is carried but has no column (decision 0015, step G13 note) |
 | 109 | ability `auraguard` | 5 | 5 | S | `abilities.ts:310-319` | Mega Lucario Z: contact moves do half damage (`onSourceModifyDamage`) |
 | 110 | ability `hungerswitch` | 3 | 47 | H | `abilities.ts:1896-1907` | Morpeko: forme change each turn (`forme_now`) |
