@@ -461,6 +461,12 @@ static uint32_t dfi_move_priority(const struct duoforge_battle *b, const dfi_mem
     if (md->special == DFI_SPECIAL_GRASSY_GLIDE && b->terrain == DFI_TERRAIN_GRASSY && dfi_grounded(b, m)) {
         priority += 1u;
     }
+    /* Gale Wings' onModifyPriority (step G34, data/abilities.ts:1588-1596): +1 for a Flying move of a holder at full HP; the
+     * move's type is the one it has before ModifyType (an -ate ability's change comes later). */
+    if (standing && md->type == DFI_TYPE_FLYING && md->special != DFI_SPECIAL_STRUGGLE && m->hp == m->hp_max &&
+        dfi_ability(b, m, DFI_ABILITY_GALEWINGS)) {
+        priority += 1u;
+    }
     return priority;
 }
 
@@ -1062,6 +1068,50 @@ _Static_assert(DFI_CHAIN(DFI_CHAIN(4915u, 2048u), 2732u) == DFI_CHAIN(DFI_CHAIN(
 _Static_assert(DFI_CHAIN(DFI_CHAIN(4915u, 2048u), 2732u) == DFI_CHAIN(DFI_CHAIN(2048u, 2732u), 4915u),
                "ModifyDamage modifiers must chain in any order");
 
+/* ModifyDamage modifiers (step G34): at most Life Orb or Expert Belt, a resist berry, a screen, Glaive Rush's volatile and one of
+ * Solid Rock and Multiscale are in a chain, so six values at most. */
+#define DFI_MODIFY_DAMAGE_MAX 6u
+
+/* True when every order of `mods` (n <= DFI_MODIFY_DAMAGE_MAX values, 4096 = 1) chains (DFI_CHAIN from 4096) to the value of
+ * the first order: Heap's algorithm over a copy, no allocation. */
+static bool dfi_mods_commute(const uint32_t *mods, uint32_t n)
+{
+    uint32_t a[DFI_MODIFY_DAMAGE_MAX] = {0u};
+    uint32_t c[DFI_MODIFY_DAMAGE_MAX] = {0u};
+    if (n > DFI_MODIFY_DAMAGE_MAX) {
+        return false;
+    }
+    for (uint32_t i = 0u; i < n; ++i) {
+        a[i] = mods[i];
+    }
+    uint32_t first = 4096u;
+    for (uint32_t i = 0u; i < n; ++i) {
+        first = DFI_CHAIN(first, a[i]);
+    }
+    uint32_t i = 0u;
+    while (i < n) {
+        if (c[i] < i) {
+            const uint32_t j = (i % 2u == 0u) ? 0u : c[i];
+            const uint32_t t = a[j];
+            a[j] = a[i];
+            a[i] = t;
+            uint32_t v = 4096u;
+            for (uint32_t k = 0u; k < n; ++k) {
+                v = DFI_CHAIN(v, a[k]);
+            }
+            if (v != first) {
+                return false;
+            }
+            c[i] += 1u;
+            i = 0u;
+        } else {
+            c[i] = 0u;
+            i += 1u;
+        }
+    }
+    return true;
+}
+
 /* getDamage and the Champions modifyDamage (sim/battle-actions.ts:1585-1720,
  * data/mods/champions/scripts.ts:196-312) for a turn-core move: CRIT and
  * DAMAGE_ROLL draws in that order. */
@@ -1143,11 +1193,24 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     }
     uint32_t bp_chain = 4096u;
     bool ok = true;
+    const uint32_t bp_move = (uint32_t)(md - dfi_pool_moves);
+    const uint32_t bp_flags2 = bp_move != DFI_MOVE_STRUGGLE ? (uint32_t)dfi_pool_move_flags2[bp_move] : 0u;
+    /* Technician (step G34, data/abilities.ts:4916-4930): onBasePower at priority 30, the first handler, so the chain is
+     * still 4096 when it judges `this.modify(basePower, this.event.modifier)`: the move's own power after its callback.
+     * 1.5 for 60 or less. */
+    if (dfi_ability(r->b, a, DFI_ABILITY_TECHNICIAN) && power <= 60u) {
+        ok = dfi_chain_modify(bp_chain, 6144u, &bp_chain);
+    }
     /* An -ate ability (the ATE family: Aerilate, Pixilate and Refrigerate,
      * decision 0015): a Normal move it turned into its type gets 4915/4096
      * (data/abilities.ts, onBasePowerPriority 23: first). */
     if (dfi_ate_boosts_fam(dfi_ability_family_now(r->b, a), md->type, move_type)) {
-        ok = dfi_chain_modify(bp_chain, DFI_ATE_MODIFIER, &bp_chain);
+        ok = ok && dfi_chain_modify(bp_chain, DFI_ATE_MODIFIER, &bp_chain);
+    }
+    /* Iron Fist (step G34, data/abilities.ts:2236-2248, priority 23 like the -ate abilities, which it never meets: one
+     * ability): the punch flag, 4915/4096. */
+    if ((bp_flags2 & DFI_MOVE_FLAG2_PUNCH) != 0u && dfi_ability(r->b, a, DFI_ABILITY_IRONFIST)) {
+        ok = ok && dfi_chain_modify(bp_chain, 4915u, &bp_chain);
     }
     if (dfi_ability(r->b, a, DFI_ABILITY_TOUGHCLAWS) && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u) {
         ok = dfi_chain_modify(bp_chain, 5325u, &bp_chain); /* onBasePowerPriority 21: first */
@@ -1156,6 +1219,11 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
      * Fairy move of anyone on the field, unless it targets its own user, 5448/4096 once. */
     if (move_type == DFI_TYPE_FAIRY && user != target && dfi_fairy_aura_on_field(r->b)) {
         ok = ok && dfi_chain_modify(bp_chain, DFI_FAIRY_AURA_MODIFIER, &bp_chain);
+    }
+    /* Sharpness (step G34, data/abilities.ts:4174-4186, priority 19: after Fairy Aura's 20, before the items' 15): the slicing
+     * flag, x1.5. */
+    if ((bp_flags2 & DFI_MOVE_FLAG2_SLICING) != 0u && dfi_ability(r->b, a, DFI_ABILITY_SHARPNESS)) {
+        ok = ok && dfi_chain_modify(bp_chain, 6144u, &bp_chain);
     }
     /* A type booster (the TYPE_BOOSTER family: Mystic Water, Miracle Seed
      * and the sixteen others, decision 0015): 4915/4096 for a move of its
@@ -1286,14 +1354,17 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     const dfi_side *ds = &r->b->sides[target / 2u];
     uint32_t chain = 4096u;
     uint32_t mods = 0u; /* the ModifyDamage modifiers in the chain */
+    uint32_t mlist[DFI_MODIFY_DAMAGE_MAX] = {0u}; /* and their values, for the commutation test below */
     if (dfi_holds(r->b, a, DFI_ITEM_LIFEORB)) {
         ok = dfi_chain_modify(chain, 5324u, &chain);
+        mlist[mods] = 5324u;
         mods += 1u;
     }
     /* Expert Belt's onModifyDamage (step G28, data/items.ts:1901-1914): 4915/4096 when the hit is super effective
      * (typeMod > 0: the combined type effectiveness above the neutral one). */
     if (dfi_holds(r->b, a, DFI_ITEM_EXPERTBELT) && mod > DFI_BIAS6) {
         ok = ok && dfi_chain_modify(chain, 4915u, &chain);
+        mlist[mods] = 4915u;
         mods += 1u;
     }
     /* A resist berry (the RESIST_BERRY family: Chople Berry and the sixteen
@@ -1307,6 +1378,7 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
         weaken.detail = 1u;
         dfi_emit(r, &weaken); /* [-enditem] [weaken] */
         ok = ok && dfi_chain_modify(chain, DFI_RESIST_BERRY_MODIFIER, &chain);
+        mlist[mods] = DFI_RESIST_BERRY_MODIFIER;
         mods += 1u;
     }
     /* Aurora Veil (step G20, data/moves.ts:846-860) weakens both categories by the same 2732/4096 and returns without an
@@ -1318,16 +1390,37 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
          (md->category == DFI_CATEGORY_SPECIAL && ds->light_screen_turns != 0u) ||
          r->b->tail.sides[target / 2u].aurora_veil_turns != 0u)) {
         ok = ok && dfi_chain_modify(chain, 2732u, &chain);
+        mlist[mods] = 2732u;
         mods += 1u;
     }
     /* Glaive Rush's onSourceModifyDamage on the target (data/moves.ts:6647-6678): chainModify(2). With a Life Orb attacker,
      * a resist berry and a screen all in the chain the four modifiers do not commute (3552 or 3551 by their order, the
      * handlers' speeds and a tie draw), a case that this build does not model. */
     if (r->b->tail.sides[target / 2u].positions[target % 2u].glaive_rush != 0u) {
-        if (mods >= 3u) {
-            return DUOFORGE_E_UNSUPPORTED; /* three modifiers already: the order of the fourth is not modelled */
-        }
         ok = ok && dfi_chain_modify(chain, 8192u, &chain);
+        mlist[mods] = 8192u;
+        mods += 1u;
+    }
+    /* Solid Rock and Multiscale (step G34, data/abilities.ts:4414-4425 and 2760-2771, onSourceModifyDamage of the target,
+     * both breakable and Mold Breaker is not marked): x0.75 on a super effective hit (typeMod > 0), x0.5 at full HP. */
+    if (dfi_ability(r->b, d, DFI_ABILITY_SOLIDROCK) && mod > DFI_BIAS6) {
+        ok = ok && dfi_chain_modify(chain, 3072u, &chain);
+        mlist[mods] = 3072u;
+        mods += 1u;
+    }
+    if (dfi_ability(r->b, d, DFI_ABILITY_MULTISCALE) && d->hp >= d->hp_max) {
+        ok = ok && dfi_chain_modify(chain, 2048u, &chain);
+        mlist[mods] = 2048u;
+        mods += 1u;
+    }
+    /* The handlers all have priority 0 and run by speed (the items by their holders', the abilities' and the condition
+     * by the target's, a screen last): the order is the reference's and cannot be told here, so the modifiers must chain to
+     * one value in every order. Pairs and triples of Life Orb, Expert Belt, a resist berry, a screen, Solid Rock and
+     * Multiscale do (checked by dfi_mods_commute at its own test, tests/test_pool_g34.c, and here for every hit); the
+     * combinations that do not (Glaive Rush's x2 with three others, an Expert Belt with a berry and Glaive Rush, a
+     * Solid Rock with them) are E_UNSUPPORTED. */
+    if (mods >= 3u && !dfi_mods_commute(mlist, mods)) {
+        return DUOFORGE_E_UNSUPPORTED;
     }
     if (!ok) {
         return DUOFORGE_E_INVARIANT;
@@ -2267,6 +2360,7 @@ static bool dfi_soak(dfi_run *r, uint32_t flat, uint32_t move_id)
  * loop like a hit: its Update (data/mods/champions/scripts.ts:537), the
  * faint lines, then the Update after it (:574). A side or field move does
  * not reach the hit loop. */
+static duoforge_status dfi_terrain_change(dfi_run *r);
 static duoforge_status dfi_status_hit_end(dfi_run *r)
 {
     const duoforge_status st = dfi_update(r);
@@ -2617,6 +2711,67 @@ static duoforge_status dfi_run_coaching(dfi_run *r, uint32_t user, uint32_t ally
         return dfi_status_hit_end(r);
     }
     return DUOFORGE_OK; /* nothing changed: the hit loop stops */
+}
+
+/* Clangorous Soul (step G34, data/moves.ts:2498-2526; the Champions mod makes its accuracy true, mods/champions/moves.ts:121-124):
+ * onTry fails the move (-fail, [still]) when the user's HP is at most 33 percent of its maximum (or the maximum is 1);
+ * onTryHit boosts the user by +1 in all five stats (-boost lines; nothing changed ends the move without a line) and deletes
+ * the boosts; onHit then costs it directDamage(floor(maxhp * 33 / 100)), at least 1, shown as a plain -damage. The Update of
+ * the hit follows. */
+static duoforge_status dfi_run_clangorous_soul(dfi_run *r, uint32_t user, const dfi_move_data *md)
+{
+    dfi_member *m = dfi_at(r->b, user);
+    if ((uint32_t)m->hp * 100u <= (uint32_t)m->hp_max * 33u || m->hp_max == 1u) {
+        dfi_fail_still(r, user);
+        return DUOFORGE_OK;
+    }
+    if (!dfi_boost(r, user, md->boosts, DFI_POSITIONS, dfi_effect(DUOFORGE_CAUSE_MOVE, 0u, DFI_BOOST_PRIMARY))) {
+        return DUOFORGE_OK; /* nothing changed: the hit loop stops */
+    }
+    uint32_t cost = (uint32_t)m->hp_max * 33u / 100u;
+    cost = cost == 0u ? 1u : cost;
+    const duoforge_status st = dfi_deal(r, user, cost, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    return dfi_status_hit_end(r);
+}
+
+/* side.removeSideCondition for the three screens that Brick Break breaks (step G34), in the order of its onTryHit: Reflect,
+ * Light Screen, Aurora Veil. A condition that is not up is not removed and shows nothing; one that is shows
+ * -sideend|side|its name. */
+static void dfi_break_screens(dfi_run *r, uint32_t side)
+{
+    struct duoforge_battle *b = r->b;
+    static const uint8_t kinds[3] = {DUOFORGE_SIDE_REFLECT, DUOFORGE_SIDE_LIGHT_SCREEN, DUOFORGE_SIDE_AURORA_VEIL};
+    uint8_t *turns[3] = {&b->sides[side].reflect_turns, &b->sides[side].light_screen_turns,
+                         &b->tail.sides[side].aurora_veil_turns};
+    for (uint32_t k = 0u; k < 3u; ++k) {
+        if (*turns[k] != 0u) {
+            *turns[k] = 0u;
+            duoforge_event e = dfi_event_make(DUOFORGE_EVENT_SIDE_END, DUOFORGE_NO_POSITION);
+            e.detail = (uint8_t)side;
+            e.amount = kinds[k];
+            dfi_emit(r, &e); /* [-sideend] */
+        }
+    }
+}
+
+/* Steel Roller's onHit (step G34, data/moves.ts:17893-17913): Field.clearTerrain after the damage of the hit, once for the
+ * move: -fieldend|move: the terrain, then the TerrainChange event of the seeds on the field. */
+static duoforge_status dfi_clear_terrain(dfi_run *r)
+{
+    struct duoforge_battle *b = r->b;
+    if (b->terrain == DFI_TERRAIN_NONE) {
+        return DUOFORGE_OK;
+    }
+    const bool grassy = b->terrain == DFI_TERRAIN_GRASSY;
+    b->terrain = (uint8_t)DFI_TERRAIN_NONE;
+    b->terrain_turns = 0u;
+    duoforge_event e = dfi_event_make(DUOFORGE_EVENT_FIELD_END, DUOFORGE_NO_POSITION);
+    e.detail = (uint8_t)(grassy ? DUOFORGE_FIELD_GRASSY_TERRAIN : DUOFORGE_FIELD_PSYCHIC_TERRAIN); /* wide-operands-reviewed: < 4 */
+    dfi_emit(r, &e); /* [-fieldend] */
+    return dfi_terrain_change(r);
 }
 
 /* Follow Me (Team C, data/moves.ts:6039-6074). Its onTry needs two active
@@ -3000,6 +3155,9 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     if (md->special == DFI_SPECIAL_FOLLOW_ME) {
         return dfi_run_follow_me(r, user);
     }
+    if (md->special == DFI_SPECIAL_CLANGOROUS_SOUL) {
+        return dfi_run_clangorous_soul(r, user, md);
+    }
     const bool status_move = md->category == DFI_CATEGORY_STATUS;
     if (status_move && md->boost_role == DFI_BOOST_ROLE_PRIMARY_ALLY) {
         return dfi_run_coaching(r, user, targets[0], md);
@@ -3078,8 +3236,14 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         md->special != DFI_SPECIAL_SOAK && md->special != DFI_SPECIAL_ENCORE &&
         md->special != DFI_SPECIAL_KNOCK_OFF && md->special != DFI_SPECIAL_EXPANDING_FORCE &&
         md->special != DFI_SPECIAL_GLAIVE_RUSH && md->special != DFI_SPECIAL_ACROBATICS &&
-        md->special != DFI_SPECIAL_BLIZZARD && md->special != DFI_SPECIAL_FEINT) {
+        md->special != DFI_SPECIAL_BLIZZARD && md->special != DFI_SPECIAL_FEINT &&
+        md->special != DFI_SPECIAL_STEEL_ROLLER && md->special != DFI_SPECIAL_BRICK_BREAK) {
         return DUOFORGE_E_INVARIANT;
+    }
+    /* Steel Roller's onTry (step G34, data/moves.ts:17893-17913): it fails without a terrain, with -fail and [still]. */
+    if (md->special == DFI_SPECIAL_STEEL_ROLLER && b->terrain == DFI_TERRAIN_NONE) {
+        dfi_fail_still(r, user);
+        return DUOFORGE_OK;
     }
     /* Fake Out's and First Impression's onTry (in trySpreadMoveHit, after
      * TryMove): only on the first move action since it entered. */
@@ -3119,6 +3283,25 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     /* Blizzard's onModifyMove (step G28, data/moves.ts:1491-1510): in snow it never misses. */
     if (md->special == DFI_SPECIAL_BLIZZARD && b->weather == DFI_WEATHER_SNOW) {
         base_accuracy = 0u;
+    }
+    /* hitStepAccuracy's ModifyAccuracy event (sim/battle-actions.ts:711), before the stages: the attacker's Compound Eyes
+     * (priority -1, 5325/4096, step G34, data/abilities.ts:666-677) and Wide Lens (priority -2, 4505/4096, data/items.ts:
+     * 7713-7727) chain into one modifier that modifies a numeric accuracy (a move that never misses is `true`: untouched). */
+    if (base_accuracy != 0u) {
+        uint32_t acc_chain = 4096u;
+        bool acc_ok = true;
+        if (dfi_ability(r->b, m, DFI_ABILITY_COMPOUNDEYES)) {
+            acc_ok = dfi_chain_modify(acc_chain, 5325u, &acc_chain);
+        }
+        if (dfi_holds(r->b, m, DFI_ITEM_WIDELENS)) {
+            acc_ok = acc_ok && dfi_chain_modify(acc_chain, 4505u, &acc_chain);
+        }
+        if (!acc_ok) {
+            return DUOFORGE_E_INVARIANT;
+        }
+        if (acc_chain != 4096u) {
+            base_accuracy = dfi_modify(base_accuracy, acc_chain);
+        }
     }
     /* Struggle is typeless; Weather Ball turns Water in rain, Fire under sun
      * (its onModifyType, before the hit steps). */
@@ -3386,6 +3569,17 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         }
         return did ? dfi_status_hit_end(r) : DUOFORGE_OK;
     }
+    /* Brick Break's onTryHit (step G34, data/moves.ts:1822-1840): the singleEvent TryHit inside the hit loop, after the accuracy
+     * check and before the damage (the Substitute check follows it: no Substitute in the pool): the target's side loses Reflect,
+     * Light Screen and Aurora Veil, in that order, each with its -sideend line, so that this hit is already without them. A
+     * miss, a Protect or an immunity never gets here. */
+    if (md->special == DFI_SPECIAL_BRICK_BREAK) {
+        for (uint32_t i = 0u; i < count; ++i) {
+            if (hit[i]) {
+                dfi_break_screens(r, targets[i] / 2u);
+            }
+        }
+    }
     /* getSpreadDamage: every target's damage (crit, roll), then spreadDamage. */
     uint32_t damage[DFI_POSITIONS] = {0u, 0u, 0u, 0u};
     for (uint32_t i = 0u; i < count; ++i) {
@@ -3426,6 +3620,19 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             if (md->drain[1] != 0u && dealt != 0u) {
                 const uint32_t num = dealt * md->drain[0] * 2u + md->drain[1];
                 dfi_heal(r, user, num / (2u * md->drain[1]), DUOFORGE_CAUSE_DRAIN, 0u, targets[i]); /* round */
+            }
+        }
+    }
+    /* Steel Roller's onHit (runMoveEffects, right after the damage of the hit): the terrain ends. */
+    if (md->special == DFI_SPECIAL_STEEL_ROLLER) {
+        bool any_hit = false;
+        for (uint32_t i = 0u; i < count; ++i) {
+            any_hit = any_hit || hit[i];
+        }
+        if (any_hit) {
+            st = dfi_clear_terrain(r);
+            if (st != DUOFORGE_OK) {
+                return st;
             }
         }
     }
