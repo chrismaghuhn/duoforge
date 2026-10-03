@@ -109,6 +109,19 @@ def _sha256(path):
     return h.hexdigest()
 
 
+def prefixes(format_prefix):
+    """The format prefixes of a build: one (a string) or several (BC spec 11: Reg M-C and Reg M-B), as the tuple
+    str.startswith reads."""
+    return (format_prefix,) if isinstance(format_prefix, str) else tuple(format_prefix)
+
+
+def _prefix_record(format_prefix):
+    """The prefixes as replay-dataset.json records them: a string for one (as datasets before M-B have it), a list
+    for several; a resume compares the JSON, so a tuple must never be recorded."""
+    p = prefixes(format_prefix)
+    return p[0] if len(p) == 1 else list(p)
+
+
 def inputs(paths, prior_path, format_prefix, unit_lines, ps_dir):
     """What a dataset's parts depend on: a resumed run must have the same."""
     return {**provenance(ps_dir),
@@ -116,7 +129,7 @@ def inputs(paths, prior_path, format_prefix, unit_lines, ps_dir):
                  "dirty": bool(_git(live_data.ROOT, "status", "--porcelain", "--untracked-files=no"))},
         "sources": [{"file": p.name, "bytes": p.stat().st_size, "sha256": _sha256(p)} for p in source.files(paths)],
         "prior_sha256": _sha256(prior_path),
-        "filters": {"format_prefix": format_prefix, "open_sheets": 2},
+        "filters": {"format_prefix": _prefix_record(format_prefix), "open_sheets": 2},
         "unit_lines": unit_lines,
     }
 
@@ -188,6 +201,7 @@ def build(paths, prior_path, out_dir, workers=1, limit_parts=None, format_prefix
     ps_dir = ps_dir or os.environ.get("DUOFORGE_PS_REFERENCE_DIR")
     paths = [Path(p) for p in paths]
     out = Path(out_dir)
+    format_prefix = prefixes(format_prefix)
     wanted = inputs(paths, prior_path, format_prefix, unit_lines, ps_dir)
     run = collections.Counter()
     done = _prepare(out, wanted, run)

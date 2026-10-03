@@ -39,7 +39,7 @@ class Player:
 
 def play_suite(context, pool, rows, learner, opponent, workers, seed, max_steps=1000):
     """The records (RECORD, one per suite row) of the greedy learner against
-    opponent (a Player, greedy too, or "random") over the suite rows, one
+    opponent (a Player, greedy too, "random" or "scripted") over the suite rows, one
     environment per row at episode 1 of a batch seeded with seed. A game
     still running after max_steps steps is marked unfinished and scored by
     the reference's tiebreak (Batch.tiebreak); one the tiebreak cannot
@@ -56,6 +56,8 @@ def play_suite(context, pool, rows, learner, opponent, workers, seed, max_steps=
         if opponent == "random":
             other = duoforge.RandomPolicy(seed, n)
             other.start_episodes(every, np.ones(n, dtype=np.uint64))
+        elif opponent == "scripted":
+            other = duoforge.ScriptedPolicy()
         elif isinstance(opponent, Player):
             other = opponent
         else:
@@ -68,7 +70,7 @@ def play_suite(context, pool, rows, learner, opponent, workers, seed, max_steps=
             requested = (batch.requests["requested"] != 0) & ~dead[:, None]
             if not requested.any():
                 break
-            indices = other.choose(batch) if opponent == "random" else other.indices(batch, choices)
+            indices = other.choose(batch) if opponent in ("random", "scripted") else other.indices(batch, choices)
             mine = requested[every, seat]
             if mine.any():
                 e = every[mine]
