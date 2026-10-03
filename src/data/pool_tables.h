@@ -850,7 +850,9 @@
 #define DFI_SPECIAL_GLAIVE_RUSH 26u
 #define DFI_SPECIAL_AURORA_VEIL 27u
 #define DFI_SPECIAL_SPIKY_SHIELD 28u
-#define DFI_SPECIAL_UNMODELED 29u
+#define DFI_SPECIAL_TAUNT 29u
+#define DFI_SPECIAL_YAWN 30u
+#define DFI_SPECIAL_UNMODELED 31u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */

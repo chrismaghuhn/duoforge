@@ -136,6 +136,10 @@
  * Step G20 also marks Spiky Shield (Protect with a contact punishment, floor(max HP / 8) at the attacker; the variant is the tail's
  * protect_kind, tail rev 3). Baneful Bunker and King's Shield stay unmarked: their only learners (Toxapex, Aegislash) have no
  * supported ability, so no accepted battle could use them. Recorded as g20_spiky_shield_* under the POOL kind.
+ * Step G31 marks Taunt (the Status moves barred for 3 turns, 4 when the target has been out a turn and has no move queued:
+ * the request, the cant line with the new cause TAUNT, the end in the residual at order 15) and Yawn (the sleep at the end of
+ * the next turn: the residual pass at order 23, no end line), with the view bits 14 and 25 (volatiles TAUNT and YAWN, public),
+ * the new public values VOLATILE_TAUNT = 6 and VOLATILE_YAWN = 7 and CAUSE_TAUNT = 20. Recorded as g31_* under the POOL kind.
  * Step G24 (a Mega Stone batch) marks nine stones whose Mega ability and a base ability are marked and whose base forme has exactly
  * one Mega: Gardevoirite (Pixilate; the base forme's Trace has been marked since AC1: the Mega Evolution replaces the copied
  * ability), Abomasite (Snow Warning), Barbaracite (Tough Claws), Beedrillite (Adaptability), Falinksite (Defiant), Hawluchanite
@@ -278,6 +282,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_NUZZLE] = 1u,
             [DFI_MOVE_AURORAVEIL] = 1u,
             [DFI_MOVE_SPIKYSHIELD] = 1u,
+            [DFI_MOVE_TAUNT] = 1u,
+            [DFI_MOVE_YAWN] = 1u,
         },
     .abilities =
         {
@@ -416,5 +422,7 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WEATHER_SNOW) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ITEM_CHANGE) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ABILITY_CHANGE) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_AURORA_VEIL),
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_AURORA_VEIL) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TAUNT) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_YAWN),
 };

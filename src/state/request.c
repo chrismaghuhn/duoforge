@@ -165,6 +165,13 @@ static duoforge_status dfi_slot_candidates(const duoforge_context *ctx, const st
                     continue;
                 }
             }
+            /* Taunt's onDisableMove (data/moves.ts:18996-19003; POOL kinds, the tail is zero elsewhere) bars every move of the
+             * Status category (Me First, which no pool Pokemon learns, is the pin's one exception); with no move left the
+             * slot gets Struggle, as for any disabled move. */
+            if (b->tail.sides[s].positions[slot].taunt_turns != 0u &&
+                dfi_pool_moves[mv->move_id].category == DFI_CATEGORY_STATUS) {
+                continue;
+            }
             /* Champions disables Fake Out and First Impression once their
              * user has taken a move action since it entered
              * (data/mods/champions/moves.ts:354-361 and :386-394). */

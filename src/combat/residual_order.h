@@ -15,7 +15,7 @@
  * sim/battle.ts:501-503).
  *
  * The order in which a Pokemon's volatiles were added is not stored. The engine builds them in one fixed order (the
- * duration counters, Heal Block, Throat Chop, Encore). That is the reference's order, or it changes nothing, in these
+ * duration counters, Heal Block, Throat Chop, Yawn, Taunt, Encore). That is the reference's order, or it changes nothing, in these
  * cases (proved by tests/test_residual_order.c against its own model of the reference's selection sort):
  *   - the Pokemon has volatile handlers of one sort key only (the duration counters have one: no order, sub-order 2),
  *     so their order is the order of equal entries and shows nowhere;
@@ -45,11 +45,16 @@
 #define DFI_RES_POISON 8u
 #define DFI_RES_WHITE_HERB 9u
 #define DFI_RES_ENCORE 10u /* Encore: order 16, a callback with a duration (step G9) */
+/* The duration handlers whose end shows a line or does something (step G31, and Heal Block, which was a pass): each is an
+ * entry of the sorted list at its own order, and a callback (a tie of two draws) exactly when it ends in this residual. */
+#define DFI_RES_TAUNT 11u      /* Taunt: order 15, -end|X|move: Taunt */
+#define DFI_RES_HEAL_BLOCK 12u /* Heal Block: order 20, -end|X|move: Heal Block */
+#define DFI_RES_YAWN 13u       /* Yawn: order 23, a silent end and the sleep */
 #define DFI_RES_NO_ORDER 0xFFFFFFFFu
 
-/* The exact test's bounds: the lists of the engine have at most 3 + 3 * 2 + 14 * 4 entries, a few draws and a few
- * orders. */
-#define DFI_RES_MODEL_MAX 72u
+/* The exact test's bounds: the lists of the engine have at most 3 + 4 * 2 + 17 * 4 entries, a few draws and a few
+ * orders (3 + 4 * 2 + 17 * 4, the step G31 count). */
+#define DFI_RES_MODEL_MAX 96u
 #define DFI_RES_DRAW_CAP 4096u
 #define DFI_RES_ARRANGEMENT_CAP 1024u
 #define DFI_RES_REGION_MAX 4u
@@ -81,7 +86,8 @@ static inline uint32_t dfi_residual_compare(const dfi_residual_entry *a, const d
 /* A handler of one of a Pokemon's volatiles (the part of its list whose order is not stored). */
 static inline bool dfi_residual_is_volatile(const dfi_residual_entry *e)
 {
-    return e->kind == DFI_RES_DURATION || e->kind == DFI_RES_ENCORE;
+    return e->kind == DFI_RES_DURATION || e->kind == DFI_RES_ENCORE || e->kind == DFI_RES_TAUNT ||
+           e->kind == DFI_RES_HEAL_BLOCK || e->kind == DFI_RES_YAWN;
 }
 
 /* The cheap test: true when the list is one whose result could depend on the order in which a Pokemon's volatiles were
@@ -150,7 +156,11 @@ static inline uint32_t dfi_residual_model(const dfi_residual_entry *input, uint3
                 list[next[i]] = e;
             }
         }
-        if (list[sorted].callback) {
+        uint32_t calls = 0u;
+        for (uint32_t i = sorted; i < sorted + count; ++i) {
+            calls += list[i].callback ? 1u : 0u;
+        }
+        if (calls >= 2u) {
             for (uint32_t start = sorted; start + 1u < sorted + count; ++start) {
                 const uint32_t lo = start - sorted;
                 const uint32_t range = count - lo;

@@ -691,10 +691,12 @@ EV = {name: i + 1 for i, name in enumerate(
      'SINGLE_TURN', 'VOLATILE_START', 'VOLATILE_END', 'TYPE_CHANGE'])}
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
          'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14,
-         'HEAL_BLOCK': 15, 'WEATHER': 16, 'ITEM_TAKEN': 17, 'RECHARGE': 18}
+         'HEAL_BLOCK': 15, 'WEATHER': 16, 'ITEM_TAKEN': 17, 'RECHARGE': 18, 'TAUNT': 20}
 VOLATILE_HEAL_BLOCK = 1  # DUOFORGE_VOLATILE_HEAL_BLOCK: the detail of VOLATILE_START and VOLATILE_END
 VOLATILE_ENCORE = 2      # DUOFORGE_VOLATILE_ENCORE (step G9)
 VOLATILE_MUST_RECHARGE = 3  # DUOFORGE_VOLATILE_MUST_RECHARGE (step G17)
+VOLATILE_TAUNT = 6       # DUOFORGE_VOLATILE_TAUNT (step G31)
+VOLATILE_YAWN = 7        # DUOFORGE_VOLATILE_YAWN (step G31)
 MOVE_SLOT_RECHARGE = 5   # DUOFORGE_MOVE_SLOT_RECHARGE (step G17)
 # DUOFORGE_TYPE_*: the alphabetical type ids, the detail of TYPE_CHANGE
 TYPE_IDS = {name: i for i, name in enumerate(
@@ -733,6 +735,10 @@ IGNORED_VOLATILES = {
     # Pool step G9 (Encore): its turns are not a field of the record either: the moves of the next requests (every
     # slot but the Encored one is disabled), the replaced move line and the start and end lines show them.
     'encore': 'the moves of the requests, the replaced move and the start and end lines',
+    # Pool step G31: Taunt's turns are not a field of the record: the moves of the next requests (every Status move is
+    # disabled), the cant lines and the start and end lines show them; Yawn's show in the start line and the sleep.
+    'taunt': 'the moves of the requests, the cant lines and the start and end lines',
+    'yawn': 'the start line and the sleep that it brings',
     # Pool step G17 (the recharge turn): the volatile shows in the request of the next turn (the one candidate, the
     # recharge slot), the start line (`-mustrecharge`) and the cant line (`cant|X|recharge`), and the view bit.
     'mustrecharge': 'the request of the recharge turn, the start line and the cant line',
@@ -898,6 +904,9 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                 e = ev_tuple(EV['CANT'], pos, NOPOS, CAUSE['MOVE'], 0, tables['MOVE'][key('Throat Chop')])
             elif reason == 'move: Heal Block':
                 e = ev_tuple(EV['CANT'], pos, NOPOS, CAUSE['HEAL_BLOCK'], tables['MOVE'][key(args[2])])
+            elif reason == 'move: Taunt':
+                # data/moves.ts:19004-19010: `cant|X|move: Taunt|MOVE`, the stopped Status move in id (step G31)
+                e = ev_tuple(EV['CANT'], pos, NOPOS, CAUSE['TAUNT'], tables['MOVE'][key(args[2])])
             else:
                 cause = {'par': 'PARALYSIS', 'slp': 'SLEEP', 'frz': 'FREEZE', 'flinch': 'FLINCH', 'nopp': 'NO_PP',
                          'recharge': 'RECHARGE'}
@@ -976,6 +985,16 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             elif what == 'move: Heal Block':
                 e = ev_tuple(EV['VOLATILE_START' if kind == '-start' else 'VOLATILE_END'], ev_pos(args[0]),
                              detail=VOLATILE_HEAL_BLOCK)
+            elif what == 'move: Taunt':
+                # data/moves.ts:18974-19016 taunt: `-start|X|move: Taunt` from onStart, `-end|X|move: Taunt` from onEnd
+                # (the duration; a switch-out or a faint clears it with no line) (step G31)
+                e = ev_tuple(EV['VOLATILE_START' if kind == '-start' else 'VOLATILE_END'], ev_pos(args[0]),
+                             detail=VOLATILE_TAUNT)
+            elif what == 'move: Yawn' and kind == '-start':
+                # data/moves.ts:21131-21162 yawn: `-start|X|move: Yawn|[of] source` from onStart; the end line is [silent]
+                # (dropped) and the sleep it brings is the ordinary STATUS line (step G31)
+                _, _, other = ev_cause(attrs, tables)
+                e = ev_tuple(EV['VOLATILE_START'], ev_pos(args[0]), other, detail=VOLATILE_YAWN)
             elif what == 'Encore':
                 # data/moves.ts:4724-4783 encore: `-start|X|Encore` from onStart, `-end|X|Encore` from onEnd (the
                 # duration or an exhausted move; a switch-out or a faint clears it with no line).

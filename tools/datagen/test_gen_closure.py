@@ -623,7 +623,7 @@ class PoolMoves(unittest.TestCase):
         seven = len(gen_closure.SPECIAL_IDS_C) + len(gen_closure.G2_HANDLERS)
         self.assertEqual(gen_closure.SPECIAL_IDS_P[len(gen_closure.SPECIAL_IDS_C):seven], gen_closure.G2_HANDLERS)
         # UNMODELED (decision 0015 section 4.2) follows them, as the last id.
-        self.assertEqual(gen_closure.SPECIAL_IDS_P[seven:], ['SANDSTORM', 'SNOWSCAPE', 'KNOCK_OFF', 'EXPANDING_FORCE', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD', 'UNMODELED'])
+        self.assertEqual(gen_closure.SPECIAL_IDS_P[seven:], ['SANDSTORM', 'SNOWSCAPE', 'KNOCK_OFF', 'EXPANDING_FORCE', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD', 'TAUNT', 'YAWN', 'UNMODELED'])
         self.assertEqual(len(gen_closure.G2_HANDLERS), 7)
         # Step G16: Knock Off's handler is 24 in the tables; step G15's Expanding Force is 25, step G19's Glaive Rush 26,
         # step G20's Aurora Veil 27 and UNMODELED 28.
@@ -635,7 +635,10 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual(gen_closure.SPECIAL_IDS_P.index('GLAIVE_RUSH'), 26)  # step G19
         self.assertEqual(gen_closure.SPECIAL_IDS_P.index('AURORA_VEIL'), 27)
         self.assertEqual(gen_closure.SPECIAL_IDS_P.index('SPIKY_SHIELD'), 28)
-        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 29)
+        self.assertEqual(gen_closure.G31_HANDLERS, ['TAUNT', 'YAWN'])
+        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('TAUNT'), 29)  # step G31
+        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('YAWN'), 30)
+        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 31)
         # Scald and Recover became data in step G10: their ids stay defined and no move maps to them.
         self.assertEqual({v[0] for k, v in gen_closure.SPECIAL_P.items() if k not in gen_closure.SPECIAL_C},
                          (set(gen_closure.G2_HANDLERS) - {'SCALD', 'RECOVER'}) | set(gen_closure.WEATHER_HANDLERS) |
@@ -785,7 +788,7 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual([s[0] for s in gen_closure.SETS_G2], ['pelipper', 'arcaninehisui', 'annihilape', 'floetteeternal'])
         # Every handler move is one of the rows, and every set move is a pool move or one of the rows.
         self.assertTrue({k for k in gen_closure.SPECIAL_P if k not in gen_closure.SPECIAL_C} <=
-                        set(gen_closure.G2_MOVES) | {'sandstorm', 'snowscape', 'knockoff', 'expandingforce', 'glaiverush', 'auroraveil', 'spikyshield'})
+                        set(gen_closure.G2_MOVES) | {'sandstorm', 'snowscape', 'knockoff', 'expandingforce', 'glaiverush', 'auroraveil', 'spikyshield', 'taunt', 'yawn'})
         self.assertEqual(gen_closure.WEATHER_HANDLERS, ['SANDSTORM', 'SNOWSCAPE'])
         for _sp, _ab, item, moves, _mega in gen_closure.SETS_G2:
             self.assertTrue(item in gen_closure.G2_ITEMS or item not in gen_closure.POOL_ITEMS)

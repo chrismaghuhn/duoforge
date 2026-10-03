@@ -343,6 +343,13 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
         for name, text in KNOCK_OFF_CALLBACKS.items():
             if name not in f or norm(f[name][1]) != text:
                 fail('move %s: %s is not the pinned text' % (mid, name))
+    if pool and handled[0] == 'TAUNT' and ('condition' not in f or norm(f['condition'][1]) != TAUNT_CONDITION):
+        fail('move %s: the condition is not the pinned text' % mid)
+    if pool and handled[0] == 'YAWN':
+        if 'onTryHit' not in f or norm(f['onTryHit'][1]) != YAWN_ONTRYHIT:
+            fail('move %s: onTryHit is not the pinned text' % mid)
+        if 'condition' not in f or norm(f['condition'][1]) != YAWN_CONDITION:
+            fail('move %s: the condition is not the pinned text' % mid)
     if pool and handled[0] == 'AURORA_VEIL' and ('onTry' not in f or norm(f['onTry'][1]) != AURORA_VEIL_ONTRY):
         fail('move %s: onTry is not the pinned text' % mid)
     if pool and handled[0] in G20_PROTECT_HANDLERS:
@@ -1370,6 +1377,25 @@ PROTECT_VARIANT_CONDITION = (
     "if (this.checkMoveMakesContact(move, source, target)) { %s } return this.NOT_FAIL; }, "
     "onHit(target, source, move) { if (move.isZOrMaxPowered && this.checkMoveMakesContact(move, source, target)) { %s } }, },")
 PROTECT_VARIANT_PUNISHMENT = {'SPIKY_SHIELD': 'this.damage(source.baseMaxhp / 8, source, target);'}
+# Step G31: Taunt (data/moves.ts:18974-19016) and Yawn (:21131-21162) are handlers of their own that the turn code implements
+# (a condition whose state is the tail's taunt_turns / yawn_turns). The Champions mod changes neither. The generator checks
+# the whole condition text of both and Yawn's onTryHit, whitespace aside: Taunt's duration 3 (4 when the target has been out
+# for a turn and has no move queued), order 15, onBeforeMove priority 5 and the Status-category bar; Yawn's duration 2,
+# order 23 and the silent end that calls trySetStatus('slp').
+G31_HANDLERS = ['TAUNT', 'YAWN']
+TAUNT_CONDITION = (
+    "condition: { duration: 3, onStart(target) { if (target.activeTurns && !this.queue.willMove(target)) { "
+    "this.effectState.duration!++; } this.add('-start', target, 'move: Taunt'); }, onResidualOrder: 15, onEnd(target) { "
+    "this.add('-end', target, 'move: Taunt'); }, onDisableMove(pokemon) { for (const moveSlot of pokemon.moveSlots) { "
+    "const move = this.dex.moves.get(moveSlot.id); if (move.category === 'Status' && move.id !== 'mefirst') { "
+    "pokemon.disableMove(moveSlot.id); } } }, onBeforeMovePriority: 5, onBeforeMove(attacker, defender, move) { "
+    "if (!(move.isZ && move.isZOrMaxPowered) && move.category === 'Status' && move.id !== 'mefirst') { "
+    "this.add('cant', attacker, 'move: Taunt', move); return false; } }, },")
+YAWN_ONTRYHIT = "onTryHit(target) { if (target.status || !target.runStatusImmunity('slp')) { return false; } },"
+YAWN_CONDITION = (
+    "condition: { noCopy: true, // doesn't get copied by Baton Pass duration: 2, onStart(target, source) { "
+    "this.add('-start', target, 'move: Yawn', `[of] ${source}`); }, onResidualOrder: 23, onEnd(target) { "
+    "this.add('-end', target, 'move: Yawn', '[silent]'); target.trySetStatus('slp', this.effectState.source); }, },")
 AURORA_VEIL_ONTRY = "onTry() { return this.field.isWeather(['hail', 'snowscape']); },"
 KNOCK_OFF_CALLBACKS = {
     'onBasePower': "onBasePower(basePower, source, target, move) { const item = target.getItem(); "
@@ -1386,6 +1412,8 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'knockoff': ('KNOCK_OFF', {'onAfterHit', 'onBasePower'}),             # G16: takes the target's item, x1.5 while it has one
     'encore': ('ENCORE', set()),                                          # G9 (implemented): last move, a volatile, a queue change
     'spikyshield': ('SPIKY_SHIELD', {'onPrepareHit', 'onHit'}),           # G20: Protect that damages a contact attacker
+    'taunt': ('TAUNT', set()),                                            # G31: bars the Status moves for three or four turns
+    'yawn': ('YAWN', {'onTryHit'}),                                       # G31: sleep at the end of the next turn
     'auroraveil': ('AURORA_VEIL', {'onTry'}),                             # G20: a screen against both categories, in snow only
     'wideguard': ('WIDE_GUARD', {'onTry', 'onHitSide'}),                 # G7: a side condition against spread moves
     'firstimpression': ('FIRST_IMPRESSION', {'onTry', 'onDisableMove'}),  # G10a: first turn out only (Fake Out's rule)
@@ -1406,7 +1434,7 @@ PROTECT_COPIES = {'detect': 'protect'}
 # champions/moves.ts:581-584) sets isNonstandard to null, which makes it legal, and the tag has no reader in the tables.
 TAGS_PAST_UNOBTAINABLE = 'tags: ["Past Unobtainable"],'
 PROTECT_COPY_FIELDS = ('onPrepareHit', 'onHit', 'stallingMove', 'volatileStatus', 'priority', 'accuracy', 'target')
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + ['UNMODELED']
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G31_HANDLERS + ['UNMODELED']
 # Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags
 # byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
@@ -1416,12 +1444,14 @@ G2_OWNED_FIELDS = {
     'WIDE_GUARD': {'sideCondition': "sideCondition: 'wideguard',"},
     'AURORA_VEIL': {'sideCondition': "sideCondition: 'auroraveil',"},
     'SPIKY_SHIELD': {'volatileStatus': "volatileStatus: 'spikyshield',"},
+    'TAUNT': {'volatileStatus': "volatileStatus: 'taunt',"},
+    'YAWN': {'volatileStatus': "volatileStatus: 'yawn',"},
     'SANDSTORM': {'weather': "weather: 'Sandstorm',"},
     'SNOWSCAPE': {'weather': "weather: 'snowscape',"},
     'GLAIVE_RUSH': {'self': "self: { volatileStatus: 'glaiverush', },"},
 }
 G2_OWNED_SECONDARY = {}
-G2_OWNED_CONDITION = {'ENCORE', 'WIDE_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD'}
+G2_OWNED_CONDITION = {'ENCORE', 'WIDE_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD', 'TAUNT', 'YAWN'}
 # Step G8 (Throat Chop and Psychic Noise): the two secondaries become modelled kinds, and the column that their
 # consumers read is the move's second flags byte (the first is full): the `sound` flag (Throat Chop bars the sound
 # moves) and the `heal` flag (Heal Block bars the moves that heal). Both are derived for every pool move, the prefix

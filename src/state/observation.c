@@ -316,6 +316,9 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                 uint32_t vol = 0u;
                 vol |= tail->heal_block_turns != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_HEAL_BLOCK : 0u;
                 vol |= tail->throat_chop_turns != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_THROAT_CHOP : 0u;
+                /* Step G31: Taunt and Yawn are public (-start|X|move: Taunt, -start|X|move: Yawn: the counts are never shown). */
+                vol |= tail->taunt_turns != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_TAUNT : 0u;
+                vol |= tail->yawn_turns != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_YAWN : 0u;
                 vol |= tail->must_recharge != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_MUST_RECHARGE : 0u; /* step G17 */
                 vol |= tail->glaive_rush != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_GLAIVE_RUSH : 0u; /* step G19 */
                 o.sides[s].positions[p].volatiles = vol;

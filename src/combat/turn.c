@@ -2052,6 +2052,15 @@ static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, uint32_t move_
             return DUOFORGE_OK;
         }
     }
+    /* Taunt's onBeforeMove (priority 5: after Throat Chop's and Heal Block's 6, before the confusion's 3;
+     * data/moves.ts:19004-19010): a move of the Status category shows cant|X|move: Taunt|move and uses no PP (Me First,
+     * the one exception, is not in the pool; no Z or Max move exists in the format). */
+    if (r->b->tail.sides[user / 2u].positions[user % 2u].taunt_turns != 0u && md->category == DFI_CATEGORY_STATUS) {
+        duoforge_event e = dfi_ev(DUOFORGE_EVENT_CANT, user, DUOFORGE_CAUSE_TAUNT, 0u, DUOFORGE_NO_POSITION);
+        e.id = (uint16_t)move_id;
+        dfi_emit(r, &e); /* [cant] move: Taunt|move */
+        return DUOFORGE_OK;
+    }
     if (pos->confusion_turns != 0u) {
         pos->confusion_turns = (uint8_t)((uint32_t)pos->confusion_turns - 1u); /* wide-operands-reviewed */
         if (pos->confusion_turns == 0u) {
@@ -2431,6 +2440,72 @@ static duoforge_status dfi_encore(dfi_run *r, uint32_t user, uint32_t flat, bool
         return dfi_encore_replace(r, flat, slot);
     }
     return DUOFORGE_OK;
+}
+
+/* Taunt (data/moves.ts:18974-19016, the Champions mod changes nothing) on the target at `flat`: the move's accuracy is
+ * drawn by the caller; addVolatile fails for a target that has the volatile already (no onRestart): -fail|user with
+ * [still]. Otherwise -start|target|move: Taunt, duration 3, and 4 when the target has been out for a turn
+ * (activeTurns; here: not newlySwitched) and has no move queued (it has moved this turn). True when it started. The
+ * Status moves of the target are barred in the request (onDisableMove) and stopped by cant (dfi_before_move), the end is
+ * in the residual at order 15. */
+static bool dfi_taunt(dfi_run *r, uint32_t user, uint32_t flat)
+{
+    struct duoforge_battle *b = r->b;
+    const dfi_member *tm = dfi_at(b, flat);
+    dfi_tail_pos *tail = &b->tail.sides[flat / 2u].positions[flat % 2u];
+    if (tm == NULL || tm->hp == 0u) {
+        return false;
+    }
+    if (tail->taunt_turns != 0u) {
+        dfi_fail_still(r, user);
+        return false;
+    }
+    const uint32_t newly = dfi_kind_limits_of(r->ctx->data_kind).vol_flags_mask & DFI_VOL_NEWLY_SWITCHED;
+    const bool out_a_turn = ((uint32_t)dfi_pos(b, flat)->flags & newly) == 0u;
+    const uint32_t turns = (out_a_turn && dfi_will_move(b, flat) == NULL) ? 4u : 3u;
+    tail->taunt_turns = (uint8_t)turns; /* <= DFI_TAIL_TAUNT_MAX */
+    duoforge_event e = dfi_event_make(DUOFORGE_EVENT_VOLATILE_START, flat);
+    e.detail = (uint8_t)DUOFORGE_VOLATILE_TAUNT;
+    dfi_emit(r, &e);
+    return true;
+}
+
+/* Yawn (data/moves.ts:21131-21162, no Champions change; accuracy true: no draw). Its own onTryHit fails the move
+ * (-fail|user with [still]) for a target that has a status or is immune to sleep (no marked ability, item or type of
+ * the pool is: the Immunity handlers of Insomnia, Vital Spirit, Sweet Veil and Comatose are unmarked, and the terrains
+ * that stop sleep are Electric Terrain's, not in this build). addVolatile then fails for a target that is yawning
+ * already. Otherwise -start|target|move: Yawn|[of] user, and the target falls asleep at the end of the next turn
+ * (duration 2, the residual at order 23: the Yawn pass of dfi_residual). True when it started. */
+static bool dfi_yawn(dfi_run *r, uint32_t user, uint32_t flat)
+{
+    struct duoforge_battle *b = r->b;
+    const dfi_member *tm = dfi_at(b, flat);
+    dfi_tail_pos *tail = &b->tail.sides[flat / 2u].positions[flat % 2u];
+    if (tm == NULL || tm->hp == 0u) {
+        return false;
+    }
+    if (tm->status != DFI_STATUS_NONE) {
+        dfi_fail_still(r, user);
+        return false;
+    }
+    /* addVolatile('yawn'): TryAddVolatile, Flower Veil of the target's side blocks it on a Grass type (-block, then the
+     * move did nothing); a target that yawns already refuses it (no onRestart). */
+    uint32_t veil = 0u;
+    if (dfi_flower_veil_holder(b, flat, &veil)) {
+        dfi_flower_veil_block(r, flat, veil);
+        dfi_fail_still(r, user);
+        return false;
+    }
+    if (tail->yawn_turns != 0u) {
+        dfi_fail_still(r, user);
+        return false;
+    }
+    tail->yawn_turns = 2u; /* DFI_TAIL_YAWN_MAX */
+    duoforge_event e = dfi_event_make(DUOFORGE_EVENT_VOLATILE_START, flat);
+    e.detail = (uint8_t)DUOFORGE_VOLATILE_YAWN;
+    e.other = (uint8_t)user;
+    dfi_emit(r, &e);
+    return true;
 }
 
 /* Helping Hand (Team C, data/moves.ts:8573-8606). The TryHit step comes
@@ -2914,7 +2989,8 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         return DUOFORGE_OK;
     }
     if (status_move && md->primary_status == DFI_STATUS_NONE && md->special != DFI_SPECIAL_PARTING_SHOT &&
-        md->special != DFI_SPECIAL_SOAK && md->special != DFI_SPECIAL_ENCORE) {
+        md->special != DFI_SPECIAL_SOAK && md->special != DFI_SPECIAL_ENCORE && md->special != DFI_SPECIAL_TAUNT &&
+        md->special != DFI_SPECIAL_YAWN) {
         if (dfi_pool_move_heal[move_id][1] != 0u) {
             return dfi_run_heal_move(r, user, move_id);
         }
@@ -2933,7 +3009,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         md->special != DFI_SPECIAL_FIRST_IMPRESSION && md->special != DFI_SPECIAL_LOW_KICK &&
         md->special != DFI_SPECIAL_SOAK && md->special != DFI_SPECIAL_ENCORE &&
         md->special != DFI_SPECIAL_KNOCK_OFF && md->special != DFI_SPECIAL_EXPANDING_FORCE &&
-        md->special != DFI_SPECIAL_GLAIVE_RUSH) {
+        md->special != DFI_SPECIAL_GLAIVE_RUSH && md->special != DFI_SPECIAL_TAUNT && md->special != DFI_SPECIAL_YAWN) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Fake Out's and First Impression's onTry (in trySpreadMoveHit, after
@@ -3199,6 +3275,14 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             }
             if (md->special == DFI_SPECIAL_SOAK) {
                 did = dfi_soak(r, targets[i], move_id) || did;
+                continue;
+            }
+            if (md->special == DFI_SPECIAL_TAUNT) {
+                did = dfi_taunt(r, user, targets[i]) || did;
+                continue;
+            }
+            if (md->special == DFI_SPECIAL_YAWN) {
+                did = dfi_yawn(r, user, targets[i]) || did;
                 continue;
             }
             if (md->special == DFI_SPECIAL_ENCORE) {
@@ -4051,21 +4135,21 @@ static uint8_t *dfi_side_turns(struct duoforge_battle *b, uint32_t s, uint32_t k
 }
 /* Trick Room, weather and terrain; four conditions per side (step G20 added Aurora Veil); per position
  * (DFI_RES_PER_POSITION) a status (burn or poison), the volatiles' handlers (seven duration ends: Protect, the stall
- * counter, flinch, a charge, Helping Hand, Follow Me and mustrecharge; Heal Block, Throat Chop and Encore), an item
- * (Leftovers or White Herb) and Grassy Terrain. */
-#define DFI_RES_PER_POSITION 14u
+ * counter, flinch, a charge, Helping Hand, Follow Me and mustrecharge; Heal Block, Throat Chop, Encore, and since step G31
+ * Taunt and Yawn, and Disable since G27), an item (Leftovers or White Herb) and Grassy Terrain. */
+#define DFI_RES_PER_POSITION 17u
 #define DFI_RES_MAX (3u + 4u * DUOFORGE_SIDE_COUNT + DFI_RES_PER_POSITION * DFI_POSITIONS)
 _Static_assert(DFI_RES_MAX <= DFI_RES_MODEL_MAX, "the exact test of residual_order.h must hold the whole list");
 
-/* Battle.speedSort over the residual handlers, continued from *sorted
- * until `want` callbacks are placed (*placed counts them). A group of tied
- * callbacks is shuffled, one draw per step; a tie among duration handlers
- * changes nothing and is not drawn. Callbacks and duration handlers never
- * share an order, so no group mixes them. */
+/* Battle.speedSort over the residual handlers, continued from *sorted until `want` callbacks are placed (*placed counts
+ * them) or `want_sorted` entries are sorted. A group of equal handlers is shuffled in the reference, one draw per step;
+ * the engine draws a group that holds two callbacks or more (the tie shows: two ends, two sleeps, a heal order) and
+ * not one that shows nothing (a duration that ends nowhere, or one of two): the converter drops that draw from the tape
+ * the same way. A group may mix both kinds (two Yawns, one of which ends now). */
 static duoforge_status dfi_residual_sort(dfi_run *r, dfi_residual_entry *list, uint32_t n, uint32_t *sorted,
-                                         uint32_t *placed, uint32_t want)
+                                         uint32_t *placed, uint32_t want, uint32_t want_sorted)
 {
-    while (*placed < want && *sorted < n) {
+    while (*placed < want && *sorted < want_sorted && *sorted < n) {
         const uint32_t at = *sorted;
         uint32_t next[DFI_RES_MAX] = {0};
         uint32_t count = 1u;
@@ -4087,7 +4171,11 @@ static duoforge_status dfi_residual_sort(dfi_run *r, dfi_residual_entry *list, u
                 list[next[i]] = e;
             }
         }
-        const bool callbacks = list[at].callback;
+        uint32_t calls = 0u;
+        for (uint32_t i = at; i < at + count; ++i) {
+            calls += list[i].callback ? 1u : 0u;
+        }
+        const bool callbacks = calls >= 2u;
         for (uint32_t start = at; start + 1u < at + count && callbacks; ++start) {
             uint32_t v = 0u;
             const duoforge_status st = dfi_draw(r->draws, DFI_SITE_SPEED_TIE, start - at, count, &v);
@@ -4100,7 +4188,7 @@ static duoforge_status dfi_residual_sort(dfi_run *r, dfi_residual_entry *list, u
                 list[at + v] = e;
             }
         }
-        *placed += callbacks ? count : 0u;
+        *placed += calls;
         *sorted = at + count;
     }
     return DUOFORGE_OK;
@@ -4186,22 +4274,35 @@ static duoforge_status dfi_residual_events(dfi_run *r)
             list[n] = (dfi_residual_entry){DFI_RES_DURATION, flat, DFI_RES_NO_ORDER, speed, 2u, false};
             n += 1u;
         }
-        /* Heal Block (order 20, data/moves.ts:8273-8320) and Throat Chop (order 22, :19389-19423) are duration handlers
-         * of a position's volatile too: they sort in the list like the others, and take their turn after the
-         * callbacks (the count and the end lines are below, their tie is the outcome draw of the Heal Blocks that
-         * end). Encore (order 16) is a volatile as well: its handler comes before the item's, not after Grassy
-         * Terrain's (sim/battle.ts:1107-1130). */
-        if (b->tail.sides[flat / 2u].positions[flat % 2u].heal_block_turns != 0u) {
-            list[n] = (dfi_residual_entry){DFI_RES_DURATION, flat, 20u, speed, 2u, false};
-            n += 1u;
-        }
-        if (b->tail.sides[flat / 2u].positions[flat % 2u].throat_chop_turns != 0u) {
-            list[n] = (dfi_residual_entry){DFI_RES_DURATION, flat, 22u, speed, 2u, false};
-            n += 1u;
-        }
-        if (b->tail.sides[flat / 2u].positions[flat % 2u].encore_slot != 0u) {
-            list[n] = (dfi_residual_entry){DFI_RES_ENCORE, flat, 16u, speed, 2u, true};
-            n += 1u;
+        /* The volatiles with a duration handler of their own, in the one fixed order of residual_order.h (counters, Heal
+         * Block, Throat Chop, Yawn, Taunt, Encore): Heal Block (order 20, data/moves.ts:8273-8320), Throat Chop (22,
+         * :19389-19423), Yawn (23, :21152), Taunt (15, :18992) and Encore (16). Each is an entry of the sorted list at its
+         * order (the reference's fieldEvent counts every duration down and ends it when its turn comes, :517-527). The
+         * ones whose end shows something (Heal Block, Yawn, Taunt) are callbacks, a tie that draws, exactly when they end
+         * in this residual: a tie of handlers that end nowhere shows nothing and is not drawn (the converter drops that
+         * draw from the tape). Throat Chop's end is silent: its count goes down below. */
+        {
+            const dfi_tail_pos *vt = &b->tail.sides[flat / 2u].positions[flat % 2u];
+            if (vt->heal_block_turns != 0u) {
+                list[n] = (dfi_residual_entry){DFI_RES_HEAL_BLOCK, flat, 20u, speed, 2u, vt->heal_block_turns == 1u};
+                n += 1u;
+            }
+            if (vt->throat_chop_turns != 0u) {
+                list[n] = (dfi_residual_entry){DFI_RES_DURATION, flat, 22u, speed, 2u, false};
+                n += 1u;
+            }
+            if (vt->yawn_turns != 0u) {
+                list[n] = (dfi_residual_entry){DFI_RES_YAWN, flat, 23u, speed, 2u, vt->yawn_turns == 1u};
+                n += 1u;
+            }
+            if (vt->taunt_turns != 0u) {
+                list[n] = (dfi_residual_entry){DFI_RES_TAUNT, flat, 15u, speed, 2u, vt->taunt_turns == 1u};
+                n += 1u;
+            }
+            if (vt->encore_slot != 0u) {
+                list[n] = (dfi_residual_entry){DFI_RES_ENCORE, flat, 16u, speed, 2u, true};
+                n += 1u;
+            }
         }
         if (dfi_holds(r->b, m, DFI_ITEM_LEFTOVERS)) {
             list[n] = (dfi_residual_entry){DFI_RES_LEFTOVERS, flat, 5u, speed, 4u, true};
@@ -4223,20 +4324,22 @@ static duoforge_status dfi_residual_events(dfi_run *r)
     if (dfi_residual_order_ambiguous(list, n)) {
         return DUOFORGE_E_UNSUPPORTED;
     }
-    uint32_t early = 0u; /* the callbacks of orders 1 to 10 */
-    uint32_t herbs = 0u; /* White Herb's, order 29 */
+    uint32_t early = 0u;       /* the entries of orders 1 to 23: everything that sorts before the side conditions (26) */
+    uint32_t early_calls = 0u; /* ... of which the callbacks (a tie of them draws) */
+    uint32_t herbs = 0u;       /* White Herb's, order 29 */
     for (uint32_t i = 0u; i < n; ++i) {
         if (list[i].kind == DFI_RES_WHITE_HERB) {
             herbs += 1u;
-        } else if (list[i].callback) {
+        } else if (list[i].order < 26u) {
             early += 1u;
+            early_calls += list[i].callback ? 1u : 0u;
         }
     }
     /* The sort's draws in the reference's order: the early callbacks, the
      * side conditions (26), then White Herb (29). */
     uint32_t sorted = 0u;
     uint32_t placed = 0u;
-    st = dfi_residual_sort(r, list, n, &sorted, &placed, early);
+    st = dfi_residual_sort(r, list, n, &sorted, &placed, UINT32_MAX, early);
     if (st != DUOFORGE_OK) {
         return st;
     }
@@ -4257,7 +4360,7 @@ static duoforge_status dfi_residual_events(dfi_run *r)
         }
     }
     const uint32_t herbs_from = sorted; /* the herbs follow the duration handlers of 26 and 27 */
-    st = dfi_residual_sort(r, list, n, &sorted, &placed, early + herbs);
+    st = dfi_residual_sort(r, list, n, &sorted, &placed, early_calls + herbs, n);
     if (st != DUOFORGE_OK) {
         return st;
     }
@@ -4312,6 +4415,55 @@ static duoforge_status dfi_residual_events(dfi_run *r)
             }
             continue;
         }
+        if (e->kind == DFI_RES_TAUNT) {
+            /* fieldEvent: the duration goes down and at 0 the volatile ends (-end|X|move: Taunt, onEnd; order 15,
+             * data/moves.ts:18992-18995). */
+            dfi_tail_pos *tail = &b->tail.sides[e->flat / 2u].positions[e->flat % 2u];
+            if (tail->taunt_turns == 0u) {
+                continue; /* removed by an earlier handler */
+            }
+            tail->taunt_turns = (uint8_t)((uint32_t)tail->taunt_turns - 1u); /* wide-operands-reviewed: >= 1 */
+            if (tail->taunt_turns == 0u) {
+                duoforge_event end = dfi_event_make(DUOFORGE_EVENT_VOLATILE_END, e->flat);
+                end.detail = (uint8_t)DUOFORGE_VOLATILE_TAUNT;
+                dfi_emit(r, &end);
+            }
+            continue;
+        }
+        if (e->kind == DFI_RES_HEAL_BLOCK) {
+            /* the duration goes down and at 0 the volatile ends (-end|X|move: Heal Block, onEnd; order 20) */
+            dfi_tail_pos *tail = &b->tail.sides[e->flat / 2u].positions[e->flat % 2u];
+            if (tail->heal_block_turns == 0u) {
+                continue; /* removed by an earlier handler */
+            }
+            tail->heal_block_turns = (uint8_t)((uint32_t)tail->heal_block_turns - 1u); /* wide-operands-reviewed: >= 1 */
+            if (tail->heal_block_turns == 0u) {
+                duoforge_event end = dfi_event_make(DUOFORGE_EVENT_VOLATILE_END, e->flat);
+                end.detail = (uint8_t)DUOFORGE_VOLATILE_HEAL_BLOCK;
+                dfi_emit(r, &end);
+            }
+            continue;
+        }
+        if (e->kind == DFI_RES_YAWN) {
+            /* the duration goes down; at 0 the end line is silent and the holder falls asleep: trySetStatus('slp',
+             * source) with the holder as its own source for Flower Veil, whose onAllySetStatus skips yawn (the
+             * sleep draws its turns; a holder with a status by now, or a fainted one, takes none) */
+            dfi_tail_pos *tail = &b->tail.sides[e->flat / 2u].positions[e->flat % 2u];
+            if (tail->yawn_turns == 0u) {
+                continue; /* removed by an earlier handler */
+            }
+            tail->yawn_turns = (uint8_t)((uint32_t)tail->yawn_turns - 1u); /* wide-operands-reviewed: >= 1 */
+            if (tail->yawn_turns == 0u) {
+                st = dfi_try_status(r, e->flat, DFI_STATUS_SLP, e->flat, DFI_NO_SOURCE_MOVE, false, 0u);
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
+            }
+            continue;
+        }
+        if (e->kind == DFI_RES_DURATION) {
+            continue; /* Throat Chop's (order 22): silent, its count goes down below */
+        }
         if (e->kind == DFI_RES_LEFTOVERS) {
             dfi_heal(r, e->flat, (uint32_t)m->hp_max / 16u, DUOFORGE_CAUSE_ITEM, 1u + DFI_ITEM_LEFTOVERS,
                      DUOFORGE_NO_POSITION); /* heal(baseMaxhp / 16) */
@@ -4346,63 +4498,9 @@ static duoforge_status dfi_residual_events(dfi_run *r)
             return DUOFORGE_OK;
         }
     }
-    /* Heal Block (order 20) and Throat Chop (order 22), duration handlers of a position's volatile (POOL tail): the
-     * count goes down; at 0 Heal Block shows its end line (-end|X|move: Heal Block) and Throat Chop's is [silent].
-     * Two Heal Blocks that end now come in the speed order of their holders; at equal speed the reference shuffles
-     * and draws, and the order shows in the two -end lines, so the converter keeps that tie (heal_block_end_tie)
-     * and the engine draws it (below). */
+    /* Throat Chop's count (order 22) goes down here: its end is silent, so nothing shows where it comes. Heal Block, Yawn
+     * and Taunt end in the sorted list above, at their own orders. */
     {
-        uint32_t ending[DFI_POSITIONS] = {0u, 0u, 0u, 0u};
-        uint32_t ne = 0u;
-        for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
-            dfi_tail_pos *tail = &b->tail.sides[flat / 2u].positions[flat % 2u];
-            if (tail->heal_block_turns != 0u) {
-                tail->heal_block_turns = (uint8_t)((uint32_t)tail->heal_block_turns - 1u); /* wide-operands-reviewed */
-                if (tail->heal_block_turns == 0u) {
-                    ending[ne] = flat;
-                    ne += 1u;
-                }
-            }
-        }
-        for (uint32_t i = 1u; i < ne; ++i) {
-            for (uint32_t j = i; j > 0u && r->speed_seen[ending[j]] > r->speed_seen[ending[j - 1u]]; --j) {
-                const uint32_t swap = ending[j];
-                ending[j] = ending[j - 1u];
-                ending[j - 1u] = swap;
-            }
-        }
-        /* Holders of equal Speed: the reference's speedSort shuffles each such run (PRNG.shuffle, one draw
-         * random(start, start + 2) for a pair), and the two -end lines show the outcome, so the engine draws the
-         * SPEED_TIE in the same place (after the callbacks of the sort, before the side conditions) and orders the
-         * pair by it: 0 keeps the lower position first, 1 swaps. A run of three or four needs the longer shuffle,
-         * which no battle has needed: E_UNSUPPORTED, as before. */
-        for (uint32_t i = 0u; i < ne;) {
-            uint32_t j = i + 1u;
-            while (j < ne && r->speed_seen[ending[j]] == r->speed_seen[ending[i]]) {
-                ++j;
-            }
-            if (j - i > 2u) {
-                return DUOFORGE_E_UNSUPPORTED;
-            }
-            if (j - i == 2u) {
-                uint32_t v = 0u;
-                st = dfi_draw(r->draws, DFI_SITE_SPEED_TIE, 0u, 2u, &v);
-                if (st != DUOFORGE_OK) {
-                    return st;
-                }
-                if (v == 1u) {
-                    const uint32_t swap = ending[i];
-                    ending[i] = ending[i + 1u];
-                    ending[i + 1u] = swap;
-                }
-            }
-            i = j;
-        }
-        for (uint32_t i = 0u; i < ne; ++i) {
-            duoforge_event e = dfi_event_make(DUOFORGE_EVENT_VOLATILE_END, ending[i]);
-            e.detail = (uint8_t)DUOFORGE_VOLATILE_HEAL_BLOCK;
-            dfi_emit(r, &e);
-        }
         for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
             dfi_tail_pos *tail = &b->tail.sides[flat / 2u].positions[flat % 2u];
             if (tail->throat_chop_turns != 0u) {
