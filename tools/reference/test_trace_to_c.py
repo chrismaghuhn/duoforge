@@ -489,6 +489,25 @@ class Library(unittest.TestCase):
                 tie(bad)
             self.assertEqual(cm.exception.rule, 'modifydamage-tie')
 
+    def test_friend_guard_ties_step_g35(self):
+        """Friend Guard (step G35, 0.75) joins the ModifyDamage handlers; the campaign's seed 3501 had its two holders (one on
+        each side) tie in one hit. At most one of the handlers applies to a hit (its holder's allies other than itself), so a
+        group with the handler twice is still one value in every order; a second handler of another kind twice stays refused."""
+        def tie(group):
+            return trace_to_c.drop_reason({'site': 'SPEED_TIE', 'context': 'event:ModifyDamage', 'group': group}, {})
+        self.assertEqual(trace_to_c.modify_damage_values()['friendguard'], 3072)
+        for group in (['H:friendguard:p1a:cb', 'H:friendguard:p2b:cb'], ['H:friendguard:p1a:cb', 'H:lifeorb:p2a:cb'],
+                      ['H:friendguard:p1a:cb', 'H:friendguard:p1b:cb', 'H:lifeorb:p2a:cb'],
+                      ['H:friendguard:p1a:cb', 'H:multiscale:p2a:cb', 'H:lifeorb:p2b:cb']):
+            with self.subTest(group=group):
+                self.assertEqual(tie(group), 'ModifyDamage modifiers whose every order chains to the same value')
+        for bad in (['H:lifeorb:p1a:cb', 'H:lifeorb:p2a:cb', 'H:friendguard:p1b:cb'],  # two Life Orbs are no state of one hit
+                    ['H:expertbelt:p1a:cb', 'H:multiscale:p2a:cb', 'H:friendguard:p2b:cb'],  # does not commute: refused by the engine
+                    ['H:friendguard:p1a:cb', 'H:friendguard:p1b:cb', 'H:lifeorb:p2a:cb', 'H:lifeorb:p2b:cb']):
+            with self.subTest(group=bad), self.assertRaises(trace_to_c.ConversionError) as cm:
+                tie(bad)
+            self.assertEqual(cm.exception.rule, 'modifydamage-tie')
+
     def test_a_flower_veil_block_is_the_activate_event_of_the_ability_with_the_holder_in_other(self):
         """-block|protected|ability: Flower Veil|[of] holder (step G12): ACTIVATE at the protected Pokemon, cause ABILITY,
         the ability's id + 1, the holder in `other` (the ability's own activation has none); another -block is refused."""

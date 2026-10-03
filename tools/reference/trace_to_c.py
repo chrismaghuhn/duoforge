@@ -499,7 +499,12 @@ def drop_reason(d, state, after=None, log=None):
         # the target's side), so a group with the same handler twice, or with two resist berries, is not a state the
         # analysis covers: it stays refused, as before step G34.
         berries = [g.split(':')[1] for g in group if g.split(':')[1].endswith('berry')]
-        if all(k in values for k in kinds) and len(group) == len(kinds) and len(berries) <= 1:
+        # Friend Guard (step G35) may be twice in a group (holders on both sides, or two on one side): the handler of a holder
+        # applies only to its allies other than itself, so at most one of the handlers applies to a given hit, and the order of
+        # the handlers decides nothing.
+        names = [g.split(':')[1] for g in group]
+        friend_guard_extra = max(0, names.count('friendguard') - 1)
+        if all(k in values for k in kinds) and len(group) - friend_guard_extra == len(kinds) and len(berries) <= 1:
             if any(not modifiers_commute(sub) for sub in modifier_subsets(sorted(kinds), values)):
                 raise ConversionError('modifydamage-tie', 'trace_to_c: ModifyDamage tie with modifiers that do not commute: %s' % group,
                                       detail=tie_effects(group))
