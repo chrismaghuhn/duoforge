@@ -157,12 +157,12 @@ duoforge_status duoforge_batch_expand(
 2. It is reseeded with `duoforge_search_seeds(seed, keys[root], samples[i])` (section 6).
 3. It is stepped with the bundle of the two factored choices. The bundle is built and checked exactly as `duoforge_batch_step_factored` builds it. `step_statuses[i]` and `results[i]` receive the outcome.
 4. If the step succeeded and the leaf is TERMINAL: `leaf_results[i]` is its result, the obs row is all zero and `encode_statuses[i]` is OK. A TERMINAL leaf is scored by its result and needs no row.
-5. Otherwise the viewer's request, observation, factored domain and view extension are taken as `duoforge_batch_query_encoded` takes them for one player. `duoforge_encode(version, ext_supported, …)` then writes obs row i. The slots and pair mask the encoder also produces go to the leaf batch's per-worker scratch and are not returned.
+5. Otherwise the viewer's request, observation, factored domain and view extension are taken as `duoforge_batch_query_encoded` takes them for one player. `duoforge_encode(version, ext_supported, …)` then writes obs row i. The slots and pair mask the encoder also produces go to stack buffers of the leaf (3 KB and 1 KB), as `duoforge_batch_query_encoded` keeps its observation, domain and extension on the stack, and are not returned.
 
 **Contract**
 - **Atomic per leaf**, as in decision 0012. Two status arrays keep the engine's refusals apart from the encoder's: a failed step leaves `encode_statuses[i]` OK and the row all zero. The call returns the lowest failing leaf's step status, else its encode status, else OK.
 - **The roots are only read** and must not change during the call. Only one caller uses either batch at a time.
-- **No allocation per call:** the leaf batch, its scratch (with the slots and mask scratch reserved at creation) and the output arrays exist before the call.
+- **No allocation per call:** the leaf batch and the output arrays exist before the call, and a leaf's temporaries live on the stack.
 - **Equivalence:** leaf i equals `duoforge_battle_copy`, `duoforge_battle_reseed`, the factored step and then `duoforge_batch_query_encoded`'s row of the viewer for that environment, byte for byte, for every worker count.
 - **Checks before any leaf is touched:**
   - an unknown version, or a mask past the version, is E_INVALID_ARGUMENT, exactly as `duoforge_encode` checks it;
