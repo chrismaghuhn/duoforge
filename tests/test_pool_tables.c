@@ -813,7 +813,7 @@ int main(void)
                                                          18u + 50u + POOL_ITEMS * 2u + POOL_ABILITIES * 2u +
                                                          POOL_ITEMS + POOL_ABILITIES +
                                                          POOL_FORMES * (DFI_POOL_LEARN_BYTES + 1u + 3u) + POOL_MOVES +
-                                                         POOL_MOVES * 2u);
+                                                         POOL_MOVES * 2u + POOL_MOVES * 4u + POOL_MOVES * 2u);
         DF_CHECK(&t, bytes[DFI_POOL_CANONICAL_SIZE] == 0xA5u);
         uint32_t at = 0u;
         uint32_t bad = 0u;
@@ -902,6 +902,19 @@ int main(void)
         at += DFI_POOL_MOVE_COUNT;
         for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) { /* the heal fractions (step G10), the last part */
             bad += bytes[at + 2u * i] != dfi_pool_move_heal[i][0] || bytes[at + 2u * i + 1u] != dfi_pool_move_heal[i][1]
+                       ? 1u
+                       : 0u;
+        }
+        at += 2u * DFI_POOL_MOVE_COUNT;
+        for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) { /* the static flags (decision 0020), 4 bytes little-endian */
+            const uint32_t v = (uint32_t)bytes[at + 4u * i] | ((uint32_t)bytes[at + 4u * i + 1u] << 8) |
+                               ((uint32_t)bytes[at + 4u * i + 2u] << 16) | ((uint32_t)bytes[at + 4u * i + 3u] << 24);
+            bad += v != dfi_pool_move_static_flags[i] ? 1u : 0u;
+        }
+        at += 4u * DFI_POOL_MOVE_COUNT;
+        for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) { /* the hit counts (decision 0020), the last part */
+            bad += bytes[at + 2u * i] != dfi_pool_move_static_hits[i][0] ||
+                           bytes[at + 2u * i + 1u] != dfi_pool_move_static_hits[i][1]
                        ? 1u
                        : 0u;
         }

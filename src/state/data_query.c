@@ -325,7 +325,7 @@ duoforge_status duoforge_data_forme_static(const duoforge_context *ctx, uint32_t
         return st;
     }
     const dfi_pool_forme_data *f = &dfi_pool_formes[species_id];
-    duoforge_forme_static r = {{0u}};
+    duoforge_forme_static r = {0};
     r.types[0] = f->types[0];
     r.types[1] = dfi_public_id(f->types[1]);
     for (uint32_t s = 0u; s < DFI_STAT_COUNT; ++s) {
@@ -358,7 +358,7 @@ duoforge_status duoforge_data_move_static(const duoforge_context *ctx, uint32_t 
     r.base_power = m->base_power;
     r.accuracy = m->accuracy;
     r.pp = pp;
-    r.priority = (int32_t)m->priority - (int32_t)DFI_PRIORITY_BIAS;
+    r.priority = (uint32_t)m->priority - (uint32_t)DFI_PRIORITY_BIAS; /* wraps: the two's complement of a negative priority */
     r.target_class = m->target_class;
     r.flags = dfi_pool_move_static_flags[move_id];
     r.crit_stage = m->crit_ratio > 0u ? (uint32_t)m->crit_ratio - 1u : 0u;

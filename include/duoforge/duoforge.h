@@ -33,9 +33,9 @@ extern "C" {
 #endif
 
 #define DUOFORGE_VERSION_MAJOR 0
-#define DUOFORGE_VERSION_MINOR 32
+#define DUOFORGE_VERSION_MINOR 33
 #define DUOFORGE_VERSION_PATCH 0
-#define DUOFORGE_VERSION_STRING "0.32.0"
+#define DUOFORGE_VERSION_STRING "0.33.0"
 
 /* Identifiers of the artifacts that exist now (registry: decisions 0002, 0005, 0006). */
 #define DUOFORGE_SEMANTICS_ID           3u   /* "duoforge-m3-closure" */
@@ -334,7 +334,7 @@ duoforge_status duoforge_data_forme_moves(const duoforge_context *ctx, uint32_t 
    as duoforge_data_forme_info: a NULL pointer is E_NULL_ARGUMENT; an id at or beyond
    duoforge_data_count of the context's kind is E_INVALID_ARGUMENT; a SYNTHETIC
    context (no tables) is E_UNSUPPORTED (checks in that order); `out` is untouched on
-   an error. The structs hold uint32_t fields (priority is int32_t), unused entries
+   an error. The structs hold uint32_t fields (see priority for a negative value), unused entries
    are zero and an id that is not there is DUOFORGE_DATA_NONE; there is no
    allocation and no pointer into the tables. Every row answers, modelled or not:
    whether the engine can play a row is duoforge_data_supported, not a part of
@@ -379,7 +379,8 @@ typedef struct duoforge_move_static {
     uint32_t base_power;       /* the pin's basePower */
     uint32_t accuracy;         /* percent; 0 means the move never misses */
     uint32_t pp;               /* Champions PP after the cap and calculatePP: what a member starts with */
-    int32_t priority;          /* signed, as the pin has it */
+    uint32_t priority;         /* the pin's priority, -7 to +5, unbiased: a negative value is its 32-bit two's complement
+                                  (0xFFFFFFF9 for -7); the library has no negative-capable field type, a caller casts */
     uint32_t target_class;     /* DUOFORGE_TARGET_CLASS_* 1..DUOFORGE_TARGET_CLASS_STATIC_COUNT; the request API does
                                   not resolve 10..15 */
     uint32_t flags;            /* DUOFORGE_MOVE_STATIC_FLAG_* */

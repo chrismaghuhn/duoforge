@@ -18,7 +18,7 @@ import os
 
 from .errors import DuoforgeError, DuoforgeLibraryError
 
-EXPECTED_VERSION = "0.32.0"
+EXPECTED_VERSION = "0.33.0"
 
 _NAMES = ("duoforge_shared.dll", "libduoforge_shared.dll", "libduoforge_shared.so", "libduoforge_shared.dylib")
 
@@ -51,6 +51,19 @@ _SIGNATURES = {
     "duoforge_batch_reset": (_STATUS, (_P, _U32, _U32)),
     "duoforge_batch_reset_terminal": (_STATUS, (_P,)),
     "duoforge_batch_play_random": (_STATUS, (_P, _U32, _U32, _P)),
+    # the data API (decisions 0015 and 0020)
+    "duoforge_data_count": (_STATUS, (_P, _U32, ctypes.POINTER(_U32))),
+    "duoforge_data_name": (_STATUS, (_P, _U32, _U32, ctypes.POINTER(ctypes.c_char_p))),
+    "duoforge_data_find": (_STATUS, (_P, _U32, ctypes.c_char_p, ctypes.c_size_t, ctypes.POINTER(_U32))),
+    "duoforge_data_supported": (_STATUS, (_P, _U32, _U32, ctypes.POINTER(ctypes.c_bool))),
+    "duoforge_data_forme_info": (_STATUS, (_P, _U32, _P)),
+    "duoforge_data_forme_moves": (_STATUS, (_P, _U32, ctypes.POINTER(_U32), _U32, ctypes.POINTER(_U32))),
+    "duoforge_data_forme_static": (_STATUS, (_P, _U32, _P)),
+    "duoforge_data_move_static": (_STATUS, (_P, _U32, _P)),
+    "duoforge_data_item_static": (_STATUS, (_P, _U32, _P)),
+    "duoforge_data_ability_static": (_STATUS, (_P, _U32, _P)),
+    "duoforge_data_nature_static": (_STATUS, (_P, _U32, _P)),
+    "duoforge_data_type_effect": (_STATUS, (_P, _U32, _U32, ctypes.POINTER(_U32), ctypes.POINTER(_U32))),
 }
 
 
