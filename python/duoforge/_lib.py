@@ -40,6 +40,8 @@ _SIGNATURES = {
     "duoforge_battle_result": (_STATUS, (_P, _P, ctypes.POINTER(_U32))),
     "duoforge_battle_tiebreak": (_STATUS, (_P, _P, ctypes.POINTER(_U32))),
     "duoforge_battle_digest": (_STATUS, (_P, _P, _P)),
+    "duoforge_battle_encoded_size": (_STATUS, (_P, _P, ctypes.POINTER(ctypes.c_size_t))),
+    "duoforge_battle_encode": (_STATUS, (_P, _P, _P, ctypes.c_size_t, ctypes.POINTER(ctypes.c_size_t))),
     "duoforge_battle_observe_ext": (_STATUS, (_P, _P, _U32, _P)),
     "duoforge_batch_seeds": (None, (_U64, _U32, _U32, ctypes.POINTER(_U64), ctypes.POINTER(_U64),
                                     ctypes.POINTER(_U64))),

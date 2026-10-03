@@ -214,6 +214,20 @@ class Batch:
         self._check(self._lib.duoforge_battle_digest(self.context.handle, self._battle(env), out))
         return bytes(out)
 
+    def encode(self, env):
+        """The canonical encoding of the environment's battle (bytes,
+        duoforge_battle_encode): the whole state, the hidden values and the
+        RNG included. A privileged read (decision 0002), for reproduction
+        data such as a search's refused leaf (decision 0022)."""
+        battle = self._battle(env)
+        size = ctypes.c_size_t()
+        self._check(self._lib.duoforge_battle_encoded_size(self.context.handle, battle, ctypes.byref(size)))
+        out = (ctypes.c_uint8 * size.value)()
+        written = ctypes.c_size_t()
+        self._check(self._lib.duoforge_battle_encode(self.context.handle, battle, out, size.value,
+                                                     ctypes.byref(written)))
+        return bytes(out[:written.value])
+
     def observe_ext(self, out=None):
         """The view extension of both players of every environment at the
         current boundary (OBSERVATION_EXT, (envs, 2); decision 0018): all zero
