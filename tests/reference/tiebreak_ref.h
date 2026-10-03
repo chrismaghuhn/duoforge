@@ -2356,6 +2356,13 @@ static const df_tb_stop tb_g38_imprison_struggle[] = {
     {3u, 0u, 2u, 1u, {3u, 4u}, {567u, 633u}, {0x40485705ea0872e8ull, 0x404cc437ecb73397ull}},
     {4u, 0u, 2u, 1u, {3u, 4u}, {567u, 633u}, {0x40485705ea0872e8ull, 0x404cc437ecb73397ull}},
 };
+static const df_tb_stop tb_g38_imprison_struggle_b[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1159u, 1134u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {775u, 730u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 3u, {4u, 4u}, {775u, 730u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {575u, 634u}, {0x4048b4dccbe61718ull, 0x404d1dd6988c0800ull}},
+    {4u, 0u, 2u, 1u, {3u, 4u}, {537u, 590u}, {0x40471a3100d84a59ull, 0x404b0b84a327453bull}},
+};
 static const df_tb_stop tb_g4_focus_sash[] = {
     {0u, 0u, 1u, 3u, {6u, 6u}, {1117u, 1078u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 1u, 3u, {4u, 4u}, {788u, 728u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -3935,6 +3942,7 @@ static const df_tb_battle tb_battles[] = {
     {"g38_imprison_mask", 5u, tb_g38_imprison_mask, sizeof tb_g38_imprison_mask / sizeof tb_g38_imprison_mask[0]},
     {"g38_imprison_pair", 4u, tb_g38_imprison_pair, sizeof tb_g38_imprison_pair / sizeof tb_g38_imprison_pair[0]},
     {"g38_imprison_struggle", 4u, tb_g38_imprison_struggle, sizeof tb_g38_imprison_struggle / sizeof tb_g38_imprison_struggle[0]},
+    {"g38_imprison_struggle_b", 4u, tb_g38_imprison_struggle_b, sizeof tb_g38_imprison_struggle_b / sizeof tb_g38_imprison_struggle_b[0]},
     {"g4_focus_sash", 4u, tb_g4_focus_sash, sizeof tb_g4_focus_sash / sizeof tb_g4_focus_sash[0]},
     {"g4_focus_sash_exit", 4u, tb_g4_focus_sash_exit, sizeof tb_g4_focus_sash_exit / sizeof tb_g4_focus_sash_exit[0]},
     {"g4_focus_sash_kept", 3u, tb_g4_focus_sash_kept, sizeof tb_g4_focus_sash_kept / sizeof tb_g4_focus_sash_kept[0]},
@@ -4064,7 +4072,7 @@ static const df_tb_battle tb_battles[] = {
     {"w8_sand_soak", 7u, tb_w8_sand_soak, sizeof tb_w8_sand_soak / sizeof tb_w8_sand_soak[0]},
 };
 
-/* 2843 stops: 139 of an ended battle; decided by the count 797,
- * the HP percentage 921, the total HP 934, a tie 52;
- * winners: side 0 1435, side 1 1356, tie 52 */
+/* 2848 stops: 139 of an ended battle; decided by the count 798,
+ * the HP percentage 922, the total HP 937, a tie 52;
+ * winners: side 0 1438, side 1 1358, tie 52 */
 #endif

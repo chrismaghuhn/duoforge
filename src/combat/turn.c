@@ -521,7 +521,7 @@ static void dfi_break_protect(dfi_run *r, uint32_t flat, uint32_t move_id)
     dfi_active_slot *pos = dfi_pos(b, flat);
     bool broke = false;
     if (((uint32_t)pos->flags & DFI_VOL_PROTECT) != 0u) {
-        pos->flags = (uint8_t)((uint32_t)pos->flags & ~(uint32_t)DFI_VOL_PROTECT);
+        pos->flags = (uint8_t)((uint32_t)pos->flags & ~(uint32_t)DFI_VOL_PROTECT); /* wide-operands-reviewed */
         broke = true;
     }
     if (b->tail.sides[flat / 2u].wide_guard != 0u) {
@@ -1638,7 +1638,7 @@ static duoforge_status dfi_add_volatile(dfi_run *r, uint32_t flat, uint32_t whic
         if (dfi_ability(r->b, m, DFI_ABILITY_INNERFOCUS)) {
             return DUOFORGE_OK;
         }
-        pos->flags = (uint8_t)((uint32_t)pos->flags | DFI_VOL_FLINCH);
+        pos->flags = (uint8_t)((uint32_t)pos->flags | DFI_VOL_FLINCH); /* wide-operands-reviewed */
         return DUOFORGE_OK;
     }
     if (which != DFI_VOLATILE_CONFUSION) {
@@ -1753,7 +1753,7 @@ static void dfi_choice_lock_ends(struct duoforge_battle *b, uint32_t flat)
         dfi_holds(b, dfi_at(b, flat), DFI_ITEM_CHOICESCARF)) {
         return;
     }
-    pos->flags = (uint8_t)((uint32_t)pos->flags & ~(uint32_t)DFI_VOL_CHOICE_LOCK);
+    pos->flags = (uint8_t)((uint32_t)pos->flags & ~(uint32_t)DFI_VOL_CHOICE_LOCK); /* wide-operands-reviewed */
     if (pos->charge_turns == 0u) {
         pos->locked_move = 0u;
     }
@@ -2390,7 +2390,7 @@ static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, uint32_t move_
         return DUOFORGE_OK;
     }
     if (pos->confusion_turns != 0u) {
-        pos->confusion_turns = (uint8_t)((uint32_t)pos->confusion_turns - 1u);
+        pos->confusion_turns = (uint8_t)((uint32_t)pos->confusion_turns - 1u); /* wide-operands-reviewed */
         if (pos->confusion_turns == 0u) {
             dfi_emit_plain(r, DUOFORGE_EVENT_CONFUSION_END, user); /* [-end] confusion */
         } else {
@@ -2509,7 +2509,7 @@ static duoforge_status dfi_run_protect(dfi_run *r, uint32_t user, uint32_t kind)
     }
     pos->flags = (uint8_t)((uint32_t)pos->flags | DFI_VOL_PROTECT); /* wide-operands-reviewed: < 256 */
     r->b->tail.sides[user / 2u].positions[user % 2u].protect_kind = (uint8_t)kind; /* <= DFI_TAIL_PROTECT_KIND_MAX */
-    pos->stall_level = (uint8_t)(level < DFI_STALL_LEVEL_MAX ? level + 1u : level);
+    pos->stall_level = (uint8_t)(level < DFI_STALL_LEVEL_MAX ? level + 1u : level); /* wide-operands-reviewed */
     pos->stall_turns = (uint8_t)DFI_STALL_DURATION;
     dfi_emit_plain(r, DUOFORGE_EVENT_PROTECT, user); /* [-singleturn] Protect (all three print `move: Protect`) */
     return dfi_status_hit_end(r);
@@ -2593,7 +2593,7 @@ static duoforge_status dfi_run_wide_guard(dfi_run *r, uint32_t user)
         dfi_emit(r, &e); /* [-singleturn] user|Wide Guard */
     }
     dfi_active_slot *pos = dfi_pos(b, user);
-    pos->stall_level = (uint8_t)(pos->stall_level < DFI_STALL_LEVEL_MAX ? pos->stall_level + 1u : pos->stall_level);
+    pos->stall_level = (uint8_t)(pos->stall_level < DFI_STALL_LEVEL_MAX ? pos->stall_level + 1u : pos->stall_level); /* wide-operands-reviewed */
     pos->stall_turns = (uint8_t)DFI_STALL_DURATION;
     return DUOFORGE_OK;
 }
@@ -3041,7 +3041,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     *ran = true;
     r->move_used = false;
     if (pos->move_actions < UINT8_MAX) {
-        pos->move_actions = (uint8_t)((uint32_t)pos->move_actions + 1u);
+        pos->move_actions = (uint8_t)((uint32_t)pos->move_actions + 1u); /* wide-operands-reviewed */
     }
     if (q->move_slot == DUOFORGE_MOVE_SLOT_RECHARGE) {
         return dfi_run_recharge(r, user);
@@ -3628,7 +3628,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             } else {
                 dfi_emit_plain(r, DUOFORGE_EVENT_FLASH_FIRE, t);
             }
-            tp->flags = (uint8_t)((uint32_t)tp->flags | DFI_VOL_FLASH_FIRE);
+            tp->flags = (uint8_t)((uint32_t)tp->flags | DFI_VOL_FLASH_FIRE); /* wide-operands-reviewed */
             hit[i] = false;
             /* Its onTryHit sets move.accuracy = true on the shared active
              * move: the other targets of a spread move need no accuracy draw. */
@@ -3720,7 +3720,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                 /* [miss] on a single-target move's line, then -miss */
                 duoforge_event *mv = dfi_last_move(r);
                 if (mv != NULL && !spread) {
-                    mv->flags = (uint8_t)((uint32_t)mv->flags | DUOFORGE_EVENT_FLAG_MISS);
+                    mv->flags = (uint8_t)((uint32_t)mv->flags | DUOFORGE_EVENT_FLAG_MISS); /* wide-operands-reviewed */
                 }
                 const duoforge_event miss = dfi_ev(DUOFORGE_EVENT_MISS, user, DUOFORGE_CAUSE_NONE, 0u, targets[i]);
                 dfi_emit(r, &miss);
@@ -4705,7 +4705,7 @@ static duoforge_status dfi_run_mega(dfi_run *r, const dfi_queue_record *q)
      * on a position belongs to an ability, and no ability of a Mega forme in the pool is Unburden or Flash Fire. */
     {
         dfi_active_slot *mega_pos = dfi_pos(b, flat);
-        mega_pos->flags = (uint8_t)((uint32_t)mega_pos->flags & ~((uint32_t)DFI_VOL_UNBURDEN | (uint32_t)DFI_VOL_FLASH_FIRE));
+        mega_pos->flags = (uint8_t)((uint32_t)mega_pos->flags & ~((uint32_t)DFI_VOL_UNBURDEN | (uint32_t)DFI_VOL_FLASH_FIRE)); /* wide-operands-reviewed */
     }
     duoforge_event forme = dfi_event_make(DUOFORGE_EVENT_FORME, flat);
     forme.id = (uint16_t)dfi_mega_of(m->species_id, m->item); /* [detailschange]: < DFI_POOL_FORME_COUNT */
@@ -5092,7 +5092,7 @@ static duoforge_status dfi_residual_events(dfi_run *r)
         for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
             dfi_tail_pos *tail = &b->tail.sides[flat / 2u].positions[flat % 2u];
             if (tail->heal_block_turns != 0u) {
-                tail->heal_block_turns = (uint8_t)((uint32_t)tail->heal_block_turns - 1u);
+                tail->heal_block_turns = (uint8_t)((uint32_t)tail->heal_block_turns - 1u); /* wide-operands-reviewed */
                 if (tail->heal_block_turns == 0u) {
                     ending[ne] = flat;
                     ne += 1u;
@@ -5141,7 +5141,7 @@ static duoforge_status dfi_residual_events(dfi_run *r)
         for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
             dfi_tail_pos *tail = &b->tail.sides[flat / 2u].positions[flat % 2u];
             if (tail->throat_chop_turns != 0u) {
-                tail->throat_chop_turns = (uint8_t)((uint32_t)tail->throat_chop_turns - 1u);
+                tail->throat_chop_turns = (uint8_t)((uint32_t)tail->throat_chop_turns - 1u); /* wide-operands-reviewed */
             }
         }
         /* Wide Guard's side condition has duration 1 and no end line: it is gone after this residual. */
@@ -5221,7 +5221,7 @@ static duoforge_status dfi_residual_events(dfi_run *r)
             continue;
         }
         const uint32_t ended = DFI_VOL_PROTECT | DFI_VOL_FLINCH | DFI_VOL_HELPING_HAND | DFI_VOL_FOLLOW_ME;
-        pos->flags = (uint8_t)((uint32_t)pos->flags & ~ended);
+        pos->flags = (uint8_t)((uint32_t)pos->flags & ~ended); /* wide-operands-reviewed */
         /* The variant ends with the volatile. protect and spikyshield have `duration: 1` and no onResidual, onEnd or order
          * (data/moves.ts:13961-14005, :17532-17584), so each is one of the position's duration handlers of the sorted
          * Residual list above (sim/battle.ts:1097-1112 adds a volatile with a duration, :516-517 counts it down and
@@ -5230,7 +5230,7 @@ static duoforge_status dfi_residual_events(dfi_run *r)
          * it with the flag is the same outcome. */
         b->tail.sides[flat / 2u].positions[flat % 2u].protect_kind = (uint8_t)DFI_PROTECT_PLAIN;
         if (pos->charge_turns > 0u) {
-            pos->charge_turns = (uint8_t)((uint32_t)pos->charge_turns - 1u);
+            pos->charge_turns = (uint8_t)((uint32_t)pos->charge_turns - 1u); /* wide-operands-reviewed */
             if (pos->charge_turns == 0u) {
                 pos->locked_target = 0u;
                 if (((uint32_t)pos->flags & DFI_VOL_CHOICE_LOCK) == 0u) {
@@ -5239,7 +5239,7 @@ static duoforge_status dfi_residual_events(dfi_run *r)
             }
         }
         if (pos->stall_turns > 0u) {
-            pos->stall_turns = (uint8_t)((uint32_t)pos->stall_turns - 1u);
+            pos->stall_turns = (uint8_t)((uint32_t)pos->stall_turns - 1u); /* wide-operands-reviewed */
             if (pos->stall_turns == 0u) {
                 pos->stall_level = 0u;
             }
@@ -5434,7 +5434,7 @@ static duoforge_status dfi_end_turn(dfi_run *r)
     for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
         dfi_choice_lock_ends(b, flat);
         dfi_active_slot *pos = dfi_pos(b, flat);
-        pos->flags = (uint8_t)((uint32_t)pos->flags & ~DFI_VOL_NEWLY_SWITCHED);
+        pos->flags = (uint8_t)((uint32_t)pos->flags & ~DFI_VOL_NEWLY_SWITCHED); /* wide-operands-reviewed */
     }
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_TURN, DUOFORGE_NO_POSITION);
     e.id = b->turn; /* [turn] */

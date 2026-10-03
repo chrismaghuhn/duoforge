@@ -1018,7 +1018,7 @@ class Library(unittest.TestCase):
         requests (the request shows them as enabled for the last active Pokemon, the choice of them is rejected) and make
         Struggle of a request with none left."""
         names = ('g38_imprison_mask', 'g38_imprison_struggle', 'g38_imprison_cant', 'g38_imprison_encore', 'g38_imprison_choice',
-                 'g38_imprison_end', 'g38_imprison_pair')
+                 'g38_imprison_end', 'g38_imprison_pair', 'g38_imprison_struggle_b')
         source = open(os.path.join(ROOT, 'tests', 'test_pool_g38.c'), encoding='utf-8').read()
         rows = {}
         for m in re.finditer(r'\{"(g38_\w+)", (\d+)u, 0x([0-9a-f]+)u, (\d+)u, (\d+)u\}', source):
@@ -1060,7 +1060,7 @@ class Library(unittest.TestCase):
             trace_to_c.step_events(['|-end|p1a: Milotic|move: Imprison'], 0, roster, hp, tables)
         # The hidden rows: the move masks of the requests (bit k for move k, 0x10 Struggle).
         for name, step, want in (('g38_imprison_mask', 1, (0x3, 0x1)), ('g38_imprison_struggle', 1, (0x10, 0x1)),
-                                 ('g38_imprison_cant', 1, (0xa, 0xb))):
+                                 ('g38_imprison_cant', 1, (0xa, 0xb)), ('g38_imprison_struggle_b', 1, (0x1, 0x10))):
             with open(os.path.join(ROOT, 'tests', 'reference', 'specs', name + '.json'), encoding='utf-8') as f:
                 spec = json.load(f)
             with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:

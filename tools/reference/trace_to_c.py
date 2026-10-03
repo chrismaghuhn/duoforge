@@ -649,6 +649,13 @@ def convert_choice(text, side, state, roster_of, mid_turn=False):
             # (Champions' Fake Out, a choice lock; Team C).
             rows = state['sides'][side].get('enabled') or []
             struggle = slot < len(rows) and rows[slot] == [2]
+            # Imprison's hidden disable (step G38): with every move with PP disabled or hidden-disabled, getMoves() is empty and
+            # chooseMove pushes Struggle for any `move N` (sim/side.ts:699-706, before the disabled check), although the request
+            # of the last active Pokemon shows the hidden moves as enabled.
+            hid = state['sides'][side].get('hidden') or []
+            if not struggle and slot < len(rows) and slot < len(hid) and rows[slot]:
+                eff = [0 if i < len(hid[slot]) and hid[slot][i] else e for i, e in enumerate(rows[slot])]
+                struggle = not any(e == 1 for e in eff)
             if all(pp == 0 for pp in mon['pp']) and not struggle:
                 raise ConversionError('struggle-request',
                                       'trace_to_c: no PP left and no Struggle in the request: %r' % text)

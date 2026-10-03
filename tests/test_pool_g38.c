@@ -141,11 +141,15 @@ static const struct {
     {"g38_imprison_pair", 1u, 0x3u, 2u, 1u},
     {"g38_imprison_pair", 2u, 0x3u, 0u, 0u},
     {"g38_imprison_pair", 3u, 0x3u, 0u, 0u},
+    {"g38_imprison_struggle_b", 0u, 0x0u, 0u, 0u},
+    {"g38_imprison_struggle_b", 1u, 0x1u, 1u, 0u},
+    {"g38_imprison_struggle_b", 2u, 0x1u, 0u, 0u},
+    {"g38_imprison_struggle_b", 3u, 0x1u, 0u, 0u},
 };
 /* ROWS-END */
 
 static const char *const battle_names[] = {"g38_imprison_mask",   "g38_imprison_struggle", "g38_imprison_cant", "g38_imprison_encore",
-                                           "g38_imprison_choice", "g38_imprison_end",      "g38_imprison_pair"};
+                                           "g38_imprison_choice", "g38_imprison_end",      "g38_imprison_pair", "g38_imprison_struggle_b"};
 
 static void check_battles(df_test *t, const duoforge_context *ctx, uint32_t *compared)
 {
