@@ -15,3 +15,7 @@ CMakeUserPresets.json
 __pycache__/
 *.pyc
 /.venv/
+
+# Patch leftovers
+*.rej
+*.orig

@@ -110,8 +110,11 @@
  * g14_rough_skin, g14_poison_touch and g14_thermal_exchange under the POOL kind.
  * Step G16 marks Knock Off (base power x1.5 while the target holds an item that can be taken, and the item taken after
  * the hit unless the target is alive with Sticky Hold; a Mega Stone is never taken from its own species) and Sticky
- * Hold, with the view bit 11 for the item that a move took (item_now of the member, public): Trick, Switcheroo and
- * Thief stay unmarked, so no accepted battle has an item that was swapped. Recorded as g16_* under the POOL kind.
+ * Hold, with the view bit 11 for the item that a move took (item_now of the member, public). Recorded as g16_* under
+ * the POOL kind.
+ * Step G29 marks the item-transfer moves Trick, Switcheroo, Thief and Covet (the item that a move gave is item_now too,
+ * so bit 11 stays exact); a transfer that would make the receiver use the item on the spot (a White Herb with a lowered
+ * stat, a terrain seed under its terrain) is E_UNSUPPORTED. Recorded as g29_* under the POOL kind.
  * Step G15 (Psychic Terrain) marks Expanding Force (80 base power; in Psychic Terrain, for a grounded user, x1.5 and the
  * target class allAdjacentFoes) and Psychic Seed (Grassy Seed's rule for Psychic Terrain and the Special Defense), in the
  * reference battles g15_*.
@@ -167,7 +170,16 @@
  * target class allies), Body Press, Foul Play and Psyshock (the stat overrides of the damage formula), Rain Dance and Sunny Day,
  * Volt Switch (a pivot with a switch flag of its own), Clanging Scales (selfBoost), Freeze-Dry (Water is super effective), the
  * abilities Soundproof, Unnerve (no berries for the foes; announced first at the switch-in) and Speed Boost (the residual), and the
- * Champions Eject Button, recorded as g32_* under the POOL kind. */
+ * Champions Eject Button, recorded as g32_* under the POOL kind.
+ * Step G26 marks Perish Song (the perish counter of the state tail, set on every active Pokemon without it; the residual
+ * handler at order 24 shows the count and at 0 faints the holder; the volatile id DUOFORGE_VOLATILE_PERISH = 5), with the
+ * view bit 4 (perish of the position, public). Soundproof (step G32) stops the cast at its holder, and a Heal Block that
+ * ends in the same residual as a Perish count is refused (E_UNSUPPORTED). Recorded as g26_* under the POOL kind.
+ * Step G33 marks three multi-hit moves and one ability: Dual Wingbeat and Twin Beam (two hits) and Triple Axel (three, a check
+ * before each later hit, 20 x the hit as the power), each hit with its
+ * own critical hit roll, damage roll and DamagingHit handlers; the hit count is the number of -damage lines, so the protocol's
+ * -hitcount line is derived and no event is new. Mirror Armor (the drops that another Pokemon causes go back to it, one stat
+ * at a time), recorded as g33_* under the POOL kind. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -276,6 +288,10 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_GLAIVERUSH] = 1u,
             [DFI_MOVE_ROCKWRECKER] = 1u,
             [DFI_MOVE_KNOCKOFF] = 1u,
+            [DFI_MOVE_TRICK] = 1u,
+            [DFI_MOVE_SWITCHEROO] = 1u,
+            [DFI_MOVE_THIEF] = 1u,
+            [DFI_MOVE_COVET] = 1u,
             [DFI_MOVE_SLUDGEBOMB] = 1u,
             [DFI_MOVE_GUNKSHOT] = 1u,
             [DFI_MOVE_DRAGONCLAW] = 1u,
@@ -344,6 +360,10 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_VOLTSWITCH] = 1u,
             [DFI_MOVE_CLANGINGSCALES] = 1u,
             [DFI_MOVE_FREEZEDRY] = 1u,
+            /* Step G33: the multi-hit loop (two hits: Dual Wingbeat, Twin Beam; three: Triple Axel). */
+            [DFI_MOVE_DUALWINGBEAT] = 1u,
+            [DFI_MOVE_TRIPLEAXEL] = 1u,
+            [DFI_MOVE_TWINBEAM] = 1u,
             /* Step G28: Shell Smash (its boosts in the pin's order), Acrobatics (doubled without an item), Blizzard (never misses
              * in snow), Ancient Power (a secondary that boosts its user), Feint (breaks Protect and Wide Guard). */
             [DFI_MOVE_SHELLSMASH] = 1u,
@@ -357,6 +377,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_STEELROLLER] = 1u,
             [DFI_MOVE_CLANGOROUSSOUL] = 1u,
             [DFI_MOVE_BRICKBREAK] = 1u,
+            /* Step G38: Imprison (the foes may not use the moves it knows; duoforge.state.pool_g38). */
+            [DFI_MOVE_IMPRISON] = 1u,
             [DFI_MOVE_FIERYDANCE] = 1u,
             [DFI_MOVE_PSYCHOCUT] = 1u,
             [DFI_MOVE_IRONDEFENSE] = 1u,
@@ -373,6 +395,14 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_SLUDGEWAVE] = 1u,
             [DFI_MOVE_VOLTTACKLE] = 1u,
             [DFI_MOVE_DISCHARGE] = 1u,
+            /* Step G26: Perish Song (the perish counter of the tail, the residual at order 24, view bit 4). */
+            [DFI_MOVE_PERISHSONG] = 1u,
+            /* Step G39: Charm and Fake Tears (a status move whose primary boosts go to its one target), Sacred Sword (Darkest
+             * Lariat's rules: the target's Defense and evasion stages are ignored) and Super Fang (half the target's HP). */
+            [DFI_MOVE_CHARM] = 1u,
+            [DFI_MOVE_FAKETEARS] = 1u,
+            [DFI_MOVE_SACREDSWORD] = 1u,
+            [DFI_MOVE_SUPERFANG] = 1u,
         },
     .abilities =
         {
@@ -441,6 +471,23 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_RAINDISH] = 1u, /* step G35 */
             [DFI_ABILITY_ELECTRICSURGE] = 1u, /* step G25 */
             [DFI_ABILITY_FRIENDGUARD] = 1u,
+            [DFI_ABILITY_MIRRORARMOR] = 1u, /* step G33 */
+            [DFI_ABILITY_AURAGUARD] = 1u, /* Mega batch 2 (the Mega ability of Lucario-Mega-Z) */
+            /* Step G39: Hyper Cutter, Scrappy, Infiltrator, Queenly Majesty, Damp (inert), Sturdy, Snow Cloak, Sand Veil, Static,
+             * Justified, Limber, Solar Power and Regenerator. */
+            [DFI_ABILITY_HYPERCUTTER] = 1u,
+            [DFI_ABILITY_SCRAPPY] = 1u,
+            [DFI_ABILITY_INFILTRATOR] = 1u,
+            [DFI_ABILITY_QUEENLYMAJESTY] = 1u,
+            [DFI_ABILITY_DAMP] = 1u,
+            [DFI_ABILITY_STURDY] = 1u,
+            [DFI_ABILITY_SNOWCLOAK] = 1u,
+            [DFI_ABILITY_SANDVEIL] = 1u,
+            [DFI_ABILITY_STATIC] = 1u,
+            [DFI_ABILITY_JUSTIFIED] = 1u,
+            [DFI_ABILITY_LIMBER] = 1u,
+            [DFI_ABILITY_SOLARPOWER] = 1u,
+            [DFI_ABILITY_REGENERATOR] = 1u,
         },
     .items =
         {
@@ -484,6 +531,12 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_MALAMARITE] = 1u,
             [DFI_ITEM_SCEPTILITE] = 1u,
             [DFI_ITEM_SCRAFTINITE] = 1u,
+            /* Mega batch 2: Swampertite (Swift Swim), Metagrossite (Tough Claws), Lucarionite Z (Aura Guard) and Froslassite
+             * (Snow Warning); the base formes' abilities (Torrent, Clear Body, Inner Focus, Cursed Body since G27) are marked. */
+            [DFI_ITEM_SWAMPERTITE] = 1u,
+            [DFI_ITEM_METAGROSSITE] = 1u,
+            [DFI_ITEM_LUCARIONITEZ] = 1u,
+            [DFI_ITEM_FROSLASSITE] = 1u,
             [DFI_ITEM_BLACKBELT] = 1u,
             [DFI_ITEM_BLACKGLASSES] = 1u,
             [DFI_ITEM_CHARCOAL] = 1u,
@@ -528,7 +581,10 @@ const dfi_support_manifest dfi_support = {
      * GLAIVE_RUSH of the position's volatiles, public, verified against the g19 battles in duoforge.state.pool_g19). Step G20:
      * Aurora Veil (bit 3: aurora_veil_turns of the side, public, verified against the g20_aurora_veil battles step by step
      * in duoforge.state.pool_g20). Step G30: Rage Powder (bit 39: RAGE_POWDER of the position's volatiles, public, the value
-     * that decision 0018 gave it, at a PIVOT boundary only; verified against the g30 battles in duoforge.state.pool_g30). */
+     * that decision 0018 gave it, at a PIVOT boundary only; verified against the g30 battles in duoforge.state.pool_g30). Step G26: Perish Song (bit 4: perish of the position, public: the count that the game
+     * announced, 3 to 1, verified against the g26 battles step by step in duoforge.state.pool_g26). */
+    /* Step G38: Imprison (bit 12: IMPRISON of the position's volatiles, bit 2, public, verified against the g38 battles in
+     * duoforge.state.pool_g38). */
     /* Step Sandstorm and Snowscape: bits 0 and 1, the weather values of the old observation's weather field (the
      * -weather lines of Sand Stream, Snow Warning and the two moves, verified step by step in duoforge.state.pool_weather).
      * Step AC1: the ability change of Trace (bit 2: position_ext.ability_now, public, verified against the ac1 battles in
@@ -550,5 +606,7 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_AILMENT_TOX) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_DISABLE) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TERRAIN_ELECTRIC) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TERRAIN_MISTY),
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TERRAIN_MISTY) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_PERISH) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_IMPRISON),
 };
