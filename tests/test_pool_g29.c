@@ -394,7 +394,8 @@ int main(void)
     DF_CHECK_EQ_U64(&t, DFI_SPECIAL_SWITCHEROO, 57u);
     DF_CHECK_EQ_U64(&t, DFI_SPECIAL_THIEF, 58u);
     DF_CHECK_EQ_U64(&t, DFI_SPECIAL_COVET, 59u);
-    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, 60u);
+    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_SUPER_FANG, 60u); /* step G39 follows */
+    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, 61u);
     DF_CHECK(&t, dfi_support.moves[DFI_MOVE_TRICK] != 0u && dfi_support.moves[DFI_MOVE_SWITCHEROO] != 0u &&
                      dfi_support.moves[DFI_MOVE_THIEF] != 0u && dfi_support.moves[DFI_MOVE_COVET] != 0u);
     DF_CHECK_EQ_U64(&t, DUOFORGE_VIEWEXT_FEATURE_ITEM_CHANGE, 11u);

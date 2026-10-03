@@ -1273,7 +1273,7 @@ const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'electrics
     abilities: ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
         'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll', 'innerfocus', 'liquidvoice',
         'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof', 'unnerve', 'speedboost',
-        'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody', 'mirrorarmor', 'auraguard']};
+        'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody', 'mirrorarmor', 'auraguard', 'hypercutter', 'scrappy', 'infiltrator', 'queenlymajesty', 'damp', 'sturdy', 'snowcloak', 'sandveil', 'static', 'justified', 'limber', 'solarpower', 'regenerator']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
     'randomNormal', 'allAdjacent', 'allies']);
 // The fields of a move that the tables model (gen_closure.py DATA_KEYS and IGNORED_KEYS), nothing else.
@@ -1371,7 +1371,9 @@ function moveIsModelled(raw, id) {
     if (raw.boosts !== undefined) {
         // Step G19: Coaching, a status move whose primary boosts go to the adjacent ally, is modelled too.
         const toAlly = raw.target === 'adjacentAlly' && raw.category === 'Status';
-        if ((raw.target !== 'self' && !toAlly) || !isBoostBlock(raw.boosts)) {
+        // Step G39: Charm and Fake Tears, a status move of one adjacent target whose primary boosts go to that target.
+        const toTarget = raw.target === 'normal' && raw.category === 'Status';
+        if ((raw.target !== 'self' && !toAlly && !toTarget) || !isBoostBlock(raw.boosts)) {
             return false;
         }
         vectors += 1;
@@ -1479,6 +1481,17 @@ function checkHandlers(dex, source, header, extended) {
             }
             expect('move ' + id + ' has the special of ' + PROTECT_COPIES[id], special,
                    columns[moveIds.find((e) => e[1] === PROTECT_COPIES[id])[0]][28]);
+            continue;
+        }
+        if (id === 'sacredsword') {
+            // Step G39: Sacred Sword has Darkest Lariat's handler (the damage formula and the accuracy step that ignore the
+            // target's Defense and evasion stages), with the same two fields and no callback.
+            const original = dex.data.Moves.darkestlariat;
+            for (const key of ['ignoreDefensive', 'ignoreEvasion', 'category', 'target', 'accuracy']) {
+                expect('move ' + id + ' ' + key + ' is that of darkestlariat', raw[key], original[key]);
+            }
+            expect('move ' + id + ' has the special of darkestlariat', special,
+                   columns[moveIds.find((e) => e[1] === 'darkestlariat')[0]][28]);
             continue;
         }
         if (moveIsModelled(raw, id) !== (special !== unmodeledSpecial)) {

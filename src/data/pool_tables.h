@@ -881,7 +881,8 @@
 #define DFI_SPECIAL_SWITCHEROO 57u
 #define DFI_SPECIAL_THIEF 58u
 #define DFI_SPECIAL_COVET 59u
-#define DFI_SPECIAL_UNMODELED 60u
+#define DFI_SPECIAL_SUPER_FANG 60u
+#define DFI_SPECIAL_UNMODELED 61u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */
@@ -894,6 +895,7 @@
 #define DFI_MOVE_FLAG2_SLICING 64u /* flags.slicing (step G34): Sharpness boosts these moves */
 #define DFI_BOOST_ROLE_PRIMARY_ALLY 4u /* step G19: a status move whose primary boosts go to the adjacent ally (Coaching) */
 #define DFI_BOOST_ROLE_SECONDARY_SELF 5u /* step G28: the secondary's roll gives these boosts to the user (Ancient Power) */
+#define DFI_BOOST_ROLE_PRIMARY_TARGET 6u /* step G39: a status move whose primary boosts go to its one target (Charm, Fake Tears) */
 #define DFI_SECONDARY_SELF_BOOST 7u /* step G28: boosts[] applied to the user with the secondary roll */
 #define DFI_SECONDARY_LOCKOUT 5u    /* chance 100: the target may not use sound moves (Throat Chop) */
 #define DFI_SECONDARY_HEAL_BLOCK 6u /* chance 100: the target may not heal (Psychic Noise) */

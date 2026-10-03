@@ -2071,7 +2071,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 139)  # the four of G29 (Trick, Switcheroo, Thief, Covet), Imprison (G38), the three of G33 (Dual Wingbeat, Triple Axel, Twin Beam), Perish Song (G26), the four of G25 (Electric Terrain, Misty Terrain, Rising Voltage, Terrain Pulse), Disable (G27), the ten of G35 (Thunder Punch, X-Scissor, Lumina Crash, Overdrive, Scorching Sands, Leaf Blade, Boomburst, Sludge Wave, Volt Tackle, Discharge), Toxic and Poison Fang (G36), the seven of G34 (Steel Roller, Clangorous Soul, Brick Break, Fiery Dance, Psycho Cut, Iron Defense, Electroweb), the eleven of G32, the ten of G30, the six of G28 (Shell Smash, Acrobatics, Blizzard, Ancient Power, Feint, Earthquake), the 27 of G21, Spiky Shield (G20), G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
+        self.assertEqual(len(marked), 143)  # the four of G39 (Charm, Fake Tears, Sacred Sword, Super Fang), the four of G29 (Trick, Switcheroo, Thief, Covet), Imprison (G38), the three of G33 (Dual Wingbeat, Triple Axel, Twin Beam), Perish Song (G26), the four of G25 (Electric Terrain, Misty Terrain, Rising Voltage, Terrain Pulse), Disable (G27), the ten of G35 (Thunder Punch, X-Scissor, Lumina Crash, Overdrive, Scorching Sands, Leaf Blade, Boomburst, Sludge Wave, Volt Tackle, Discharge), Toxic and Poison Fang (G36), the seven of G34 (Steel Roller, Clangorous Soul, Brick Break, Fiery Dance, Psycho Cut, Iron Defense, Electroweb), the eleven of G32, the ten of G30, the six of G28 (Shell Smash, Acrobatics, Blizzard, Ancient Power, Feint, Earthquake), the 27 of G21, Spiky Shield (G20), G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -2088,6 +2088,8 @@ class Library(unittest.TestCase):
                             if after.startswith('|move|') or after.startswith('|turn|'):
                                 break
                             done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|', '|-start|', '|-weather|') + (('|-status|',) if name in ('Will-O-Wisp', 'Stun Spore', 'Sleep Powder', 'Poison Powder') else ()))
+                            # A status move of one target with a primary drop (Charm, Fake Tears, step G39): its -unboost line.
+                            done = done or (name in ('Charm', 'Fake Tears') and after.startswith('|-unboost|'))
                             # A side condition that a status move sets (Aurora Veil, step G20): its -sidestart line.
                             done = done or (after.startswith('|-sidestart|') and after.endswith('|move: ' + name))
                             # A terrain that a status move sets (Electric Terrain, Misty Terrain, step G25): its -fieldstart line.
