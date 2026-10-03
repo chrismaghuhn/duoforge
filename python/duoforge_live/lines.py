@@ -268,6 +268,8 @@ def check(line, view):
             return _feature(_GUARD_ACTIVATE[effect])
         if effect in ("move: Skill Swap",):
             return _feature("ABILITY_CHANGE")
+        if effect == "move: Trick":
+            return _feature("ITEM_CHANGE")  # Trick's announcement before its -item lines (G29; Switcheroo prints none)
         if effect in _START:
             return _feature(_START[effect])
         _unknown(kind, effect)
