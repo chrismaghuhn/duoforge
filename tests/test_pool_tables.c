@@ -45,7 +45,7 @@
 #include "state/closure_member.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "d4d9303e74ab33e6a7f7a13cf8da467bc561b274a090c08e72c5fb727da9a134"
+#define POOL_HASH_HEX "acc6dd76f3b54253ac8fe6705de3b81008421c286b030f59d20e55975ae131b8"
 /* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
  * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
  * produced the same bytes. Step G10 moved two of them on purpose: Scald and Recover are data now (the thaw bit and
@@ -69,9 +69,9 @@
 #define POOL_ABILITIES 215u
 
 /* The rows that the tables do not model, pinned (the generator reports the same counts). */
-#define UNMODELED_MOVES 298u /* 299 before step G26 modelled Perish Song; 300 before step G20 modelled Spiky Shield; 301 before it modelled Aurora Veil; 303 before step G19 modelled Coaching and Glaive Rush; 305u before step G15 modelled Expanding Force; 306 before step G16 modelled Knock Off; 313 before step G17 modelled the seven recharge moves; 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
-#define UNMODELED_ITEMS 39u /* one fewer since step G15 modelled Psychic Seed; five fewer since step G23-A found the Mega of a stone from (forme, stone): the second Mega Stones are data of their link */
-#define UNMODELED_ABILITIES 172u /* 178 before step G22 made six abilities engine rows; 179 before step G23-C made Levitate an engine row; 180 before step AC1 made Trace an engine row; 181 before step G16 made Sticky Hold an engine row; 184 before step G14 made Rough Skin, Poison Touch and Thermal Exchange engine rows */
+#define UNMODELED_MOVES 272u /* 273 before step G26 modelled Perish Song; 276 before step G30 modelled Rage Powder, Psychic Fangs and Solar Beam; 299 before step G28 modelled Acrobatics, Blizzard, Feint and the rows of the new secondary self boost (Ancient Power, Aqua Step, Charge Beam, Fiery Dance, Flame Charge, Meteor Mash, Psyshield Bash, Steel Wing, Torch Song, Trailblaze) and the allAdjacent moves; 300 before step G20 modelled Spiky Shield; 301 before it modelled Aurora Veil; 303 before step G19 modelled Coaching and Glaive Rush; 305u before step G15 modelled Expanding Force; 306 before step G16 modelled Knock Off; 313 before step G17 modelled the seven recharge moves; 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
+#define UNMODELED_ITEMS 38u /* one fewer since step G28 modelled Expert Belt; five fewer since step G23-A found the Mega of a stone from (forme, stone); one fewer since step G15 modelled Psychic Seed */
+#define UNMODELED_ABILITIES 168u /* 172 before step G30 made Flame Body, Clear Body, Hospitality and Overcoat engine rows; 178 before step G22 made six abilities engine rows; 179 before step G23-C made Levitate an engine row; 180 before step AC1 made Trace an engine row; 181 before step G16 made Sticky Hold an engine row; 184 before step G14 made Rough Skin, Poison Touch and Thermal Exchange engine rows */
 
 /* How many rows of the manifest are marked and half modelled: marked, and with the UNMODELED handler or a list of
  * unmodelled features (decision 0015 section 4.2). A step marks only what it fully models. */
@@ -668,7 +668,7 @@ int main(void)
         /* Seven ids of G2 remain after step G8 (Scald and Recover are not any move's after step G10), the two
          * weather moves (Sandstorm and Snowscape: the field `weather`, which no column models) have one each, and
          * Knock Off (step G16: its onAfterHit and onBasePower) the id after them. */
-        DF_CHECK_EQ_U64(&t, handlers, DFI_SPECIAL_PERISH_SONG - DFI_SPECIAL_ENCORE + 1u - 2u); /* step G15 adds Expanding Force's, step G20 Aurora Veil's and Spiky Shield's, step G26 Perish Song's */
+        DF_CHECK_EQ_U64(&t, handlers, DFI_SPECIAL_PERISH_SONG - DFI_SPECIAL_ENCORE + 1u - 2u); /* step G15 adds Expanding Force's, step G20 Aurora Veil's and Spiky Shield's, step G30 Rage Powder's, Psychic Fangs' and Solar Beam's, step G26 Perish Song's */
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_ENCORE, DFI_SPECIAL_FOLLOW_ME + 1u);
         /* UNMODELED follows them. Step G10 made Scald and Recover data (the thaw bit and the heal column): their ids
          * are still defined, and no pool move has them. */
@@ -679,15 +679,36 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_GLAIVE_RUSH, DFI_SPECIAL_EXPANDING_FORCE + 1u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_AURORA_VEIL, DFI_SPECIAL_GLAIVE_RUSH + 1u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_SPIKY_SHIELD, DFI_SPECIAL_AURORA_VEIL + 1u);
-        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_PERISH_SONG, DFI_SPECIAL_SPIKY_SHIELD + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_RAGE_POWDER, DFI_SPECIAL_FEINT + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_PSYCHIC_FANGS, DFI_SPECIAL_RAGE_POWDER + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_SOLAR_BEAM, DFI_SPECIAL_PSYCHIC_FANGS + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_PERISH_SONG, DFI_SPECIAL_SOLAR_BEAM + 1u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_PERISH_SONG + 1u);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_PERISHSONG].special, DFI_SPECIAL_PERISH_SONG);
-        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_PERISH_SONG, 29u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_PERISH_SONG, 36u);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_SPIKYSHIELD].special, DFI_SPECIAL_SPIKY_SHIELD);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_SPIKY_SHIELD, 28u);
         /* Baneful Bunker and King's Shield stay unmodelled and unmarked: their learners have no supported ability. */
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_BANEFULBUNKER].special, DFI_SPECIAL_UNMODELED);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_KINGSSHIELD].special, DFI_SPECIAL_UNMODELED);
+        /* Step G28: the four handlers of the move rules, after Spiky Shield (G20) and before UNMODELED. */
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_SHELL_SMASH, DFI_SPECIAL_SPIKY_SHIELD + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_ACROBATICS, DFI_SPECIAL_SHELL_SMASH + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_BLIZZARD, DFI_SPECIAL_ACROBATICS + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_FEINT, DFI_SPECIAL_BLIZZARD + 1u);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_SHELLSMASH].special, DFI_SPECIAL_SHELL_SMASH);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_ACROBATICS].special, DFI_SPECIAL_ACROBATICS);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_BLIZZARD].special, DFI_SPECIAL_BLIZZARD);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_FEINT].special, DFI_SPECIAL_FEINT);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_FEINT].priority, DFI_PRIORITY_BIAS + 2u);
+        /* Ancient Power: a secondary that boosts its user (the new kind), data otherwise. */
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_ANCIENTPOWER].special, DFI_SPECIAL_NONE);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_ANCIENTPOWER].sec_kind, DFI_SECONDARY_SELF_BOOST);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_ANCIENTPOWER].sec_chance, 10u);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_ANCIENTPOWER].boost_role, DFI_BOOST_ROLE_SECONDARY_SELF);
+        for (uint32_t k = 0u; k < 5u; ++k) {
+            DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_ANCIENTPOWER].boosts[k], k == 0u || k == 1u || k == 2u || k == 3u || k == 4u ? 7u : 6u);
+        }
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_AURORAVEIL].special, DFI_SPECIAL_AURORA_VEIL);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_EXPANDINGFORCE].special, DFI_SPECIAL_EXPANDING_FORCE);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_EXPANDINGFORCE].base_power, 80u);
@@ -731,7 +752,8 @@ int main(void)
             sound += (dfi_pool_move_flags2[i] & DFI_MOVE_FLAG2_SOUND) != 0u ? 1u : 0u;
             heal += (dfi_pool_move_flags2[i] & DFI_MOVE_FLAG2_HEAL) != 0u ? 1u : 0u;
             other += (dfi_pool_move_flags2[i] &
-                      ~(uint32_t)(DFI_MOVE_FLAG2_SOUND | DFI_MOVE_FLAG2_HEAL | DFI_MOVE_FLAG2_THAWS_TARGET | DFI_MOVE_FLAG2_RECHARGE)) != 0u
+                      ~(uint32_t)(DFI_MOVE_FLAG2_SOUND | DFI_MOVE_FLAG2_HEAL | DFI_MOVE_FLAG2_THAWS_TARGET | DFI_MOVE_FLAG2_RECHARGE |
+                                    DFI_MOVE_FLAG2_POWDER)) != 0u
                          ? 1u
                          : 0u;
         }
@@ -1140,7 +1162,7 @@ int main(void)
          * Scraftinite), step G23-C Charizardite X, Garchompite Z and Delphoxite; Expert Belt stays unmarked. */
         DF_CHECK(&t, dfi_support.items[DFI_ITEM_FOCUSSASH] != 0u);
         for (uint32_t id = DFI_ITEM_FOCUSSASH + 1u; id < DFI_POOL_ITEM_COUNT; ++id) {
-            const bool stone = id == DFI_ITEM_FLOETTITE || id == DFI_ITEM_PSYCHICSEED || id == DFI_ITEM_TYRANITARITE ||
+            const bool stone = id == DFI_ITEM_FLOETTITE || id == DFI_ITEM_PSYCHICSEED || id == DFI_ITEM_EXPERTBELT || id == DFI_ITEM_TYRANITARITE ||
                                id == DFI_ITEM_BAXCALIBRITE || id == DFI_ITEM_AERODACTYLITE || id == DFI_ITEM_MANECTITE ||
                                id == DFI_ITEM_GARDEVOIRITE || id == DFI_ITEM_ABOMASITE || id == DFI_ITEM_BARBARACITE ||
                                id == DFI_ITEM_BEEDRILLITE || id == DFI_ITEM_FALINKSITE || id == DFI_ITEM_HAWLUCHANITE ||
@@ -1177,7 +1199,10 @@ int main(void)
                                 /* step G22: the weather Speed abilities, Inner Focus and Liquid Voice, by id */
                                 id == DFI_ABILITY_SANDRUSH || id == DFI_ABILITY_SWIFTSWIM ||
                                 id == DFI_ABILITY_SLUSHRUSH || id == DFI_ABILITY_CHLOROPHYLL ||
-                                id == DFI_ABILITY_INNERFOCUS || id == DFI_ABILITY_LIQUIDVOICE;
+                                id == DFI_ABILITY_INNERFOCUS || id == DFI_ABILITY_LIQUIDVOICE ||
+                                /* step G30: Flame Body, Clear Body, Hospitality and Overcoat, by id */
+                                id == DFI_ABILITY_FLAMEBODY || id == DFI_ABILITY_CLEARBODY ||
+                                id == DFI_ABILITY_HOSPITALITY || id == DFI_ABILITY_OVERCOAT;
             DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, (setter || engine) ? 1u : 0u);
             DF_CHECK_EQ_U64(&t, dfi_pool_ability_family[id].family,
                             setter ? DFI_ABILITY_FAMILY_WEATHER_SETTER : DFI_ABILITY_FAMILY_NONE);
@@ -1225,7 +1250,14 @@ int main(void)
                                                 DFI_MOVE_CRUNCH, DFI_MOVE_BUGBUZZ, DFI_MOVE_DRAINPUNCH, DFI_MOVE_NUZZLE,
                                                 DFI_MOVE_EXPANDINGFORCE,
                                                 DFI_MOVE_COACHING, DFI_MOVE_GLAIVERUSH, DFI_MOVE_AURORAVEIL,
-                                                DFI_MOVE_SPIKYSHIELD, DFI_MOVE_PERISHSONG};
+                                                DFI_MOVE_SHELLSMASH, DFI_MOVE_ACROBATICS, DFI_MOVE_BLIZZARD,
+                                                DFI_MOVE_ANCIENTPOWER, DFI_MOVE_FEINT, DFI_MOVE_EARTHQUAKE,
+                                                DFI_MOVE_SPIKYSHIELD,
+                                                /* step G30 */
+                                                DFI_MOVE_RAGEPOWDER, DFI_MOVE_SLEEPPOWDER, DFI_MOVE_STUNSPORE,
+                                                DFI_MOVE_POISONPOWDER, DFI_MOVE_PSYCHICFANGS, DFI_MOVE_SOLARBEAM,
+                                                DFI_MOVE_MATCHAGOTCHA, DFI_MOVE_GIGADRAIN, DFI_MOVE_ENERGYBALL,
+                                                DFI_MOVE_PLAYROUGH, DFI_MOVE_PERISHSONG};
         uint32_t marked_count = 0u;
         for (uint32_t id = DFI_EXT_MOVE_COUNT; id < DFI_POOL_MOVE_COUNT; ++id) {
             bool want = false;
@@ -1239,13 +1271,16 @@ int main(void)
             DF_CHECK(&t, !want || dfi_pool_moves[id].special == DFI_SPECIAL_NONE ||
                              id == DFI_MOVE_FIRSTIMPRESSION || id == DFI_MOVE_LOWKICK || id == DFI_MOVE_SOAK ||
                              id == DFI_MOVE_ENCORE || id == DFI_MOVE_SANDSTORM || id == DFI_MOVE_SNOWSCAPE ||
-                             id == DFI_MOVE_KNOCKOFF || id == DFI_MOVE_EXPANDINGFORCE || id == DFI_MOVE_GLAIVERUSH || id == DFI_MOVE_AURORAVEIL || id == DFI_MOVE_SPIKYSHIELD || id == DFI_MOVE_PERISHSONG ||
+                             id == DFI_MOVE_KNOCKOFF || id == DFI_MOVE_EXPANDINGFORCE || id == DFI_MOVE_GLAIVERUSH || id == DFI_MOVE_AURORAVEIL || id == DFI_MOVE_SPIKYSHIELD ||
+                             id == DFI_MOVE_SHELLSMASH || id == DFI_MOVE_ACROBATICS || id == DFI_MOVE_BLIZZARD ||
+                             id == DFI_MOVE_FEINT ||
+                             id == DFI_MOVE_RAGEPOWDER || id == DFI_MOVE_PSYCHICFANGS || id == DFI_MOVE_SOLARBEAM || id == DFI_MOVE_PERISHSONG ||
                              (id == DFI_MOVE_WIDEGUARD && dfi_pool_moves[id].special == DFI_SPECIAL_WIDE_GUARD) ||
                              (id == DFI_MOVE_DETECT && dfi_pool_moves[id].special == DFI_SPECIAL_PROTECT));
             DF_CHECK(&t, !want || dfi_pool_moves[id].special != DFI_SPECIAL_UNMODELED);
             marked_count += dfi_support.moves[id] != 0u ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, marked_count, 80u);
+        DF_CHECK_EQ_U64(&t, marked_count, 96u); /* the ten of step G30, Perish Song (G26) */
     }
 
     /* Step AC1: Trace copies the ability of a foe unless that has the pin's notrace flag. The turn code excludes only
@@ -1379,7 +1414,8 @@ int main(void)
         /* The rows of the steps. */
         DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_FOCUSSASH] == DFI_HANDLER_NONE &&
                          dfi_pool_ability_handler[DFI_ABILITY_ROCKHEAD] == DFI_HANDLER_NONE);
-        DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_EXPERTBELT] == DFI_HANDLER_UNMODELED);
+        DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_EXPERTBELT] == DFI_HANDLER_NONE); /* an engine row, step G28 */
+        DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_SCOPELENS] == DFI_HANDLER_UNMODELED);
         DF_CHECK(&t, dfi_pool_ability_handler[DFI_ABILITY_FLOWERVEIL] == DFI_HANDLER_NONE &&
                          dfi_pool_ability_handler[DFI_ABILITY_FAIRYAURA] == DFI_HANDLER_NONE); /* engine rows, G12 */
         DF_CHECK(&t, dfi_pool_ability_handler[DFI_ABILITY_ROUGHSKIN] == DFI_HANDLER_NONE &&
@@ -1403,9 +1439,9 @@ int main(void)
          * that the closure lacks; Absolite Z: the second Mega Stone of Absol, data of its Mega link since the Mega of a
          * stone is found from (forme, stone); Damp Rock: no callback, read by id in
          * data/conditions.ts; Levitate: no callback, read by id elsewhere; Intimidate: code in the turn core. */
-        DF_CHECK(&t, dfi_pool_moves[DFI_MOVE_EARTHQUAKE].special == DFI_SPECIAL_UNMODELED &&
+        DF_CHECK(&t, dfi_pool_moves[DFI_MOVE_EARTHQUAKE].special == DFI_SPECIAL_NONE &&
                          dfi_pool_moves[DFI_MOVE_EARTHQUAKE].target_class == DFI_TARGET_CLASS_ALL_ADJACENT &&
-                         strcmp(dfi_pool_move_unmodeled[DFI_MOVE_EARTHQUAKE], "target allAdjacent") == 0);
+                         dfi_pool_move_unmodeled[DFI_MOVE_EARTHQUAKE] == NULL); /* since step G28 the turn code has the class */
         DF_CHECK(&t, dfi_pool_moves[DFI_MOVE_HYDROPUMP].special == DFI_SPECIAL_NONE &&
                          dfi_pool_move_unmodeled[DFI_MOVE_HYDROPUMP] == NULL && dfi_pool_moves[DFI_MOVE_HYDROPUMP].base_power == 110u &&
                          dfi_pool_moves[DFI_MOVE_HYDROPUMP].accuracy == 80u);
@@ -1428,6 +1464,7 @@ int main(void)
         for (uint32_t id = 0u; id < DFI_POOL_MOVE_COUNT; ++id) {
             /* A target class beyond the closure's is never in a modelled row. */
             DF_CHECK(&t, dfi_pool_moves[id].target_class <= DFI_TARGET_CLASS_RANDOM_NORMAL ||
+                             dfi_pool_moves[id].target_class == DFI_TARGET_CLASS_ALL_ADJACENT ||
                              dfi_pool_moves[id].special == DFI_SPECIAL_UNMODELED);
             /* The effect columns of an UNMODELED row are neutral: it claims nothing beyond its plain data. */
             if (dfi_pool_moves[id].special == DFI_SPECIAL_UNMODELED) {

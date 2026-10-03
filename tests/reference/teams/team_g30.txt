@@ -1,0 +1,59 @@
+Sinistcha @ Sitrus Berry
+Ability: Hospitality
+Level: 50
+EVs: 32 HP / 32 SpA / 2 Spe
+Modest Nature
+- Rage Powder
+- Matcha Gotcha
+- Giga Drain
+- Protect
+
+Venusaur (M) @ Leftovers
+Ability: Overgrow
+Level: 50
+EVs: 32 HP / 32 SpA / 2 Spe
+Modest Nature
+- Sleep Powder
+- Solar Beam
+- Energy Ball
+- Protect
+
+Metagross @ Chople Berry
+Ability: Clear Body
+Level: 50
+EVs: 32 HP / 32 Atk / 2 Spe
+Adamant Nature
+- Psychic Fangs
+- Bullet Punch
+- Iron Head
+- Protect
+
+Volcarona (F) @ Charcoal
+Ability: Flame Body
+Level: 50
+EVs: 32 HP / 32 SpA / 2 Spe
+Timid Nature
+- Solar Beam
+- Heat Wave
+- Quiver Dance
+- Protect
+
+Reuniclus (M) @ Twisted Spoon
+Ability: Overcoat
+Level: 50
+EVs: 32 HP / 32 SpA / 2 Spe
+Modest Nature
+- Psychic
+- Focus Blast
+- Trick Room
+- Protect
+
+Whimsicott (M) @ Silk Scarf
+Ability: Prankster
+Level: 50
+EVs: 32 HP / 32 SpA / 2 Spe
+Timid Nature
+- Stun Spore
+- Poison Powder
+- Play Rough
+- Protect

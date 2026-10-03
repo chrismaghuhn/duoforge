@@ -146,6 +146,12 @@
  * Inner Focus (no flinch, and an Attack drop that Intimidate causes fails with -fail ... [from] ability: Inner Focus) and
  * Liquid Voice (a sound move is Water), recorded as g22_* under the POOL kind. Cursed Body stays unmarked: it needs the
  * Disable volatile.
+ * Step G28 marks six moves and one item that the turn code now has rules for: Earthquake (the target class allAdjacent: the ally
+ * is hit too, allies before foes; Wide Guard stops it; Grassy Terrain halves it at a grounded target), Shell Smash (which step G21 left out: the stats
+ * change in the pinned order, Defense and Special Defense first), Acrobatics (twice the power while the user holds no item),
+ * Blizzard (never misses in snow, the freeze at 10 percent is data), Ancient Power (a secondary that raises the user's five
+ * stats at 10 percent: a new secondary kind), Feint (removes the target's Protect and the Wide Guard of its side, and its stall
+ * counter) and Expert Belt (4915/4096 for a super effective hit), recorded as g28_* under the POOL kind.
  * Step G26 marks Perish Song (the perish counter of the state tail, set on every active Pokemon without it; the residual
  * handler at order 24 shows the count and at 0 faints the holder; the volatile id DUOFORGE_VOLATILE_PERISH = 5), with the
  * view bit 4 (perish of the position, public). Soundproof stays unmarked (it would stop the move), and a Heal Block that
@@ -286,7 +292,30 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_DRAINPUNCH] = 1u,
             [DFI_MOVE_NUZZLE] = 1u,
             [DFI_MOVE_AURORAVEIL] = 1u,
+            /* Step G30: the powder moves (Rage Powder with its redirection, the status powders with the Grass type's and
+             * Overcoat's immunity), Psychic Fangs (breaks the screens), Solar Beam (the two-turn charge that sun skips)
+             * and the data rows that only wait for a recorded battle: Matcha Gotcha, Giga Drain, Energy Ball, Play Rough.
+             * Cotton Spore (boosts to the foes) and Magic Powder (a type change) stay unmodelled; so does Stomping Tantrum
+             * (it needs a last-move-failed flag that the state does not have). */
+            [DFI_MOVE_RAGEPOWDER] = 1u,
+            [DFI_MOVE_SLEEPPOWDER] = 1u,
+            [DFI_MOVE_STUNSPORE] = 1u,
+            [DFI_MOVE_POISONPOWDER] = 1u,
+            [DFI_MOVE_PSYCHICFANGS] = 1u,
+            [DFI_MOVE_SOLARBEAM] = 1u,
+            [DFI_MOVE_MATCHAGOTCHA] = 1u,
+            [DFI_MOVE_GIGADRAIN] = 1u,
+            [DFI_MOVE_ENERGYBALL] = 1u,
+            [DFI_MOVE_PLAYROUGH] = 1u,
             [DFI_MOVE_SPIKYSHIELD] = 1u,
+            /* Step G28: Shell Smash (its boosts in the pin's order), Acrobatics (doubled without an item), Blizzard (never misses
+             * in snow), Ancient Power (a secondary that boosts its user), Feint (breaks Protect and Wide Guard). */
+            [DFI_MOVE_SHELLSMASH] = 1u,
+            [DFI_MOVE_ACROBATICS] = 1u,
+            [DFI_MOVE_BLIZZARD] = 1u,
+            [DFI_MOVE_ANCIENTPOWER] = 1u,
+            [DFI_MOVE_FEINT] = 1u,
+            [DFI_MOVE_EARTHQUAKE] = 1u, /* hits the ally too (allAdjacent); Grassy Terrain halves it */
             /* Step G26: Perish Song (the perish counter of the tail, the residual at order 24, view bit 4). */
             [DFI_MOVE_PERISHSONG] = 1u,
         },
@@ -328,6 +357,11 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_POISONTOUCH] = 1u,
             [DFI_ABILITY_THERMALEXCHANGE] = 1u,
             [DFI_ABILITY_STICKYHOLD] = 1u,
+            /* Step G30: Flame Body, Clear Body, Hospitality and Overcoat (the sand and powder immunity). */
+            [DFI_ABILITY_FLAMEBODY] = 1u,
+            [DFI_ABILITY_CLEARBODY] = 1u,
+            [DFI_ABILITY_HOSPITALITY] = 1u,
+            [DFI_ABILITY_OVERCOAT] = 1u,
             [DFI_ABILITY_LEVITATE] = 1u,
             /* Step G22: the weather Speed abilities (doubled Speed in their weather; Sand Rush also takes no Sandstorm damage),
              * Inner Focus (no flinch, no Intimidate drop) and Liquid Voice (sound moves are Water). */
@@ -359,6 +393,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_FOCUSSASH] = 1u,
             [DFI_ITEM_FLOETTITE] = 1u,
             [DFI_ITEM_PSYCHICSEED] = 1u,
+            [DFI_ITEM_EXPERTBELT] = 1u, /* step G28 */
             [DFI_ITEM_TYRANITARITE] = 1u,
             [DFI_ITEM_BAXCALIBRITE] = 1u,
             [DFI_ITEM_AERODACTYLITE] = 1u,
@@ -418,7 +453,8 @@ const dfi_support_manifest dfi_support = {
      * position's volatiles, public, verified against the g17 battles step by step in duoforge.state.pool_g17). Step G19: Glaive Rush (bit 20:
      * GLAIVE_RUSH of the position's volatiles, public, verified against the g19 battles in duoforge.state.pool_g19). Step G20:
      * Aurora Veil (bit 3: aurora_veil_turns of the side, public, verified against the g20_aurora_veil battles step by step
-     * in duoforge.state.pool_g20). Step G26: Perish Song (bit 4: perish of the position, public: the count that the game
+     * in duoforge.state.pool_g20). Step G30: Rage Powder (bit 39: RAGE_POWDER of the position's volatiles, public, the value
+     * that decision 0018 gave it, at a PIVOT boundary only; verified against the g30 battles in duoforge.state.pool_g30). Step G26: Perish Song (bit 4: perish of the position, public: the count that the game
      * announced, 3 to 1, verified against the g26 battles step by step in duoforge.state.pool_g26). */
     /* Step Sandstorm and Snowscape: bits 0 and 1, the weather values of the old observation's weather field (the
      * -weather lines of Sand Stream, Snow Warning and the two moves, verified step by step in duoforge.state.pool_weather).
@@ -437,5 +473,6 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ITEM_CHANGE) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ABILITY_CHANGE) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_AURORA_VEIL) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_PERISH),
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_PERISH) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_RAGE_POWDER),
 };

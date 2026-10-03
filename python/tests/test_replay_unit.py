@@ -138,6 +138,21 @@ class DataTest(unittest.TestCase):
         self.assertEqual(self.pool.target_type(moves["PROTECT"]), "self")
         self.assertEqual(self.closure.target_type(moves["PROTECT"]), "self")
 
+    def test_each_stone_reaches_its_own_mega(self):
+        # G23 (#162): Charizardite X and Y take Charizard to two formes, Garchompite and Garchompite Z Garchomp
+        f, i, a = self.pool.tables["FORME"], self.pool.tables["ITEM"], self.pool.tables["ABILITY"]
+        for base, stone, mega in (("CHARIZARD", "CHARIZARDITEX", "CHARIZARDMEGAX"),
+                                  ("CHARIZARD", "CHARIZARDITEY", "CHARIZARDMEGAY"),
+                                  ("GARCHOMP", "GARCHOMPITE", "GARCHOMPMEGA"),
+                                  ("GARCHOMP", "GARCHOMPITEZ", "GARCHOMPMEGAZ")):
+            self.assertEqual(self.pool.mega_of(f[base], i[stone] + 1), f[mega], stone)
+            self.assertEqual(self.pool.base_forme(f[mega]), f[base], mega)
+            self.assertIsNone(self.pool.mega_of(f["SALAMENCE"], i[stone] + 1), stone)  # another forme's stone
+        self.assertEqual(self.pool.ability_of(f["CHARIZARDMEGAX"]), a["TOUGHCLAWS"] + 1)
+        self.assertEqual(self.pool.ability_of(f["CHARIZARDMEGAY"]), a["DROUGHT"] + 1)
+        self.assertEqual(self.pool.forme("Charizard-Mega-X"), f["CHARIZARDMEGAX"])
+        self.assertEqual(self.pool.forme("Garchomp-Mega-Z"), f["GARCHOMPMEGAZ"])
+
     def test_protect_pp(self):
         self.assertEqual(self.pool.pp_max(self.pool.tables["MOVE"]["PROTECT"]), 8)
 
@@ -231,6 +246,17 @@ class LinesTest(unittest.TestCase):
             with self.assertRaises(lines.Stop, msg=line) as caught:
                 lines.check(line, view)
             self.assertEqual(caught.exception.reason, "line:-fail unboost")
+
+    def test_a_mega_folds_only_for_its_own_stone(self):
+        # G23: Garchompite Z reaches Garchomp-Mega-Z, Garchompite Garchomp-Mega
+        line_z = "|detailschange|p1a: Garchomp|Garchomp-Mega-Z, L50, M"
+        z = _View({"p1: Garchomp": ("GARCHOMP", "GARCHOMPITEZ", "ROUGHSKIN")})
+        plain = _View({"p1: Garchomp": ("GARCHOMP", "GARCHOMPITE", "ROUGHSKIN")})
+        self.assertEqual(lines.check(line_z, z), "fold")
+        self.assertEqual(lines.check("|detailschange|p1a: Garchomp|Garchomp-Mega, L50, M", plain), "fold")
+        with self.assertRaises(lines.Stop) as caught:
+            lines.check(line_z, plain)
+        self.assertEqual(caught.exception.reason, "feature:FORME_CHANGE")
 
     def test_fold_and_room_lines(self):
         self.assertEqual(lines.check("|-enditem|p1a: Staraptor|Sitrus Berry|[eat]", self.view), "fold")
@@ -642,6 +668,73 @@ class GameTest(unittest.TestCase):
         tracker.feed([line])
         self.assertEqual(tracker._positions[1][1].chain, 1)
         self.assertEqual(tracker._positions[1][1].stages, self.protected_farigiraf()._positions[1][1].stages)
+
+    def at_turn_3(self):
+        """A tracker of p1 fed up to |turn|3: Farigiraf (p2b) protected in turn 2, its chain is 1."""
+        from duoforge_live import teams
+        from duoforge_replay.spectator import SpectatorTracker
+        sheets = tuple(teams.unpack(line.split("|", 3)[3]) for line in self.log if line.startswith("|showteam|"))
+        tracker = SpectatorTracker(self.data, sheets, 0, None, lambda m, f: ([100] * 6, [0] * 6), self.log)
+        tracker.feed(self.log[:self.log.index("|turn|3") + 1])
+        self.assertEqual(tracker._positions[1][1].chain, 1)
+        return tracker
+
+    def test_feint_breaking_the_partners_guard_ends_only_the_targets_chain(self):
+        # G28 (sim/battle-actions.ts hitStepBreakProtect): Feint at Farigiraf, which protected the turn before and not
+        # now, breaks Politoed's Wide Guard. Farigiraf's stall volatile goes (chain 0, seen at a PIVOT of the turn);
+        # Politoed keeps the chain its Wide Guard added, and the side's guard is gone
+        tracker = self.at_turn_3()
+        tracker.feed(["|move|p2a: Politoed|Wide Guard|p2a: Politoed", "|-singleturn|p2a: Politoed|Wide Guard"])
+        self.assertEqual(tracker._positions[1][0].chain, 1)
+        self.assertIn("WIDE_GUARD", tracker._turn_scoped)
+        tracker.feed(["|move|p1a: Indeedee|Feint|p2b: Farigiraf", "|-activate|p2b: Farigiraf|move: Feint"])
+        self.assertEqual((tracker._positions[1][1].chain, tracker._positions[1][1].stall), (0, 0))
+        self.assertEqual(tracker._positions[1][0].chain, 1)
+        self.assertNotIn("WIDE_GUARD", tracker._turn_scoped)
+
+    def test_a_move_activation_is_no_emergency_exit(self):
+        # an ACTIVATE of a move whose id equals Emergency Exit's ability id + 1 (move 8, Muddy Water) asks no switch:
+        # only cause ABILITY names an ability
+        tracker = self.at_turn_3()
+        exit_id = self.data.tables["ABILITY"]["EMERGENCYEXIT"] + 1
+        self.assertEqual(self.data.tables["MOVE"]["MUDDYWATER"], exit_id)
+        tracker._event(trace_to_c.ev_tuple(trace_to_c.EV["ACTIVATE"], 2, trace_to_c.NOPOS, trace_to_c.CAUSE["MOVE"], 0,
+                                           exit_id))
+        self.assertEqual(tracker._positions[1][0].flag, 0)
+        tracker._event(trace_to_c.ev_tuple(trace_to_c.EV["ACTIVATE"], 2, trace_to_c.NOPOS, trace_to_c.CAUSE["ABILITY"], 0,
+                                           exit_id))
+        self.assertEqual(tracker._positions[1][0].flag, 1)
+
+    def charizard_mega(self, stone, forme):
+        """The committed log with Charizard (p2) holding `stone` and evolving into `forme`."""
+        out = []
+        for line in self.log:
+            if line.startswith("|showteam|p2|"):
+                line = line.replace("]Charizard||CharizarditeY|", f"]Charizard||{stone.replace(' ', '')}|")
+            elif line == "|detailschange|p2b: Charizard|Charizard-Mega-Y, L50, M":
+                line = f"|detailschange|p2b: Charizard|{forme}, L50, M"
+            elif line == "|-mega|p2b: Charizard|Charizard|Charizardite Y":
+                line = f"|-mega|p2b: Charizard|Charizard|{stone}"
+            out.append(line)
+        return out
+
+    def test_mega_x_folds_with_its_own_ability(self):
+        # G23: Charizardite X takes Charizard to Charizard-Mega-X (Tough Claws), not to the first Mega of the forme
+        from duoforge_live import teams
+        from duoforge_replay.spectator import SpectatorTracker
+        lines = self.charizard_mega("Charizardite X", "Charizard-Mega-X")
+        result = self.run_game(lines)
+        self.assertFalse([k for k in result.counters if k.startswith("perspectives.stopped.")], result.counters)
+        sheets = tuple(teams.unpack(line.split("|", 3)[3]) for line in lines if line.startswith("|showteam|"))
+        tracker = SpectatorTracker(self.data, sheets, 0, None, lambda m, f: ([100] * 6, [0] * 6), lines)
+        tracker.feed(lines[:lines.index("|-mega|p2b: Charizard|Charizard|Charizardite X") + 1])
+        charizard = tracker._member_of("p2b: Charizard")
+        self.assertEqual((charizard.is_mega, charizard.ability), (1, self.data.tables["ABILITY"]["TOUGHCLAWS"] + 1))
+
+    def test_a_mega_its_stone_does_not_reach_stops(self):
+        # Charizardite Y shown on the sheet, Charizard-Mega-X in the log: no Mega Evolution the stone makes
+        result = self.run_game(self.charizard_mega("Charizardite Y", "Charizard-Mega-X"))
+        self.assertEqual(result.counters["perspectives.stopped.feature:FORME_CHANGE"], 2, result.counters)
 
     def insert_after_in(self, lines, prefix, new):
         i = next(i for i, line in enumerate(lines) if line.startswith(prefix))

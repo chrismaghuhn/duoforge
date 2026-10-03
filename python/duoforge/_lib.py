@@ -35,7 +35,10 @@ _SIGNATURES = {
     "duoforge_context_destroy": (None, (_P,)),
     "duoforge_context_fingerprint": (_STATUS, (_P, _P)),
     "duoforge_reference_setup": (_STATUS, (_U32, _P)),
+    "duoforge_battle_create": (_STATUS, (_P, _P, ctypes.POINTER(_P))),
+    "duoforge_battle_destroy": (None, (_P,)),
     "duoforge_battle_result": (_STATUS, (_P, _P, ctypes.POINTER(_U32))),
+    "duoforge_battle_tiebreak": (_STATUS, (_P, _P, ctypes.POINTER(_U32))),
     "duoforge_battle_digest": (_STATUS, (_P, _P, _P)),
     "duoforge_batch_seeds": (None, (_U64, _U32, _U32, ctypes.POINTER(_U64), ctypes.POINTER(_U64),
                                     ctypes.POINTER(_U64))),
@@ -50,6 +53,7 @@ _SIGNATURES = {
     "duoforge_batch_step_query": (_STATUS, (_P, _U32, _P, _P, _P, _P, _P, _P, _P, _P)),
     "duoforge_batch_reset": (_STATUS, (_P, _U32, _U32)),
     "duoforge_batch_reset_terminal": (_STATUS, (_P,)),
+    "duoforge_batch_reset_setups": (_STATUS, (_P, _U32, _P, _P, _P, _P)),
     "duoforge_batch_play_random": (_STATUS, (_P, _U32, _U32, _P)),
     # the data API (decisions 0015 and 0020)
     "duoforge_data_count": (_STATUS, (_P, _U32, ctypes.POINTER(_U32))),
