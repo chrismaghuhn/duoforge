@@ -145,6 +145,13 @@
  * ability), Abomasite (Snow Warning), Barbaracite (Tough Claws), Beedrillite (Adaptability), Falinksite (Defiant), Hawluchanite
  * (No Guard), Malamarite (Contrary), Sceptilite (Lightning Rod) and Scraftinite (Intimidate), recorded as g24_* under the POOL
  * kind. Meowsticite stays unmarked: one stone names two (base, Mega) pairs (Meowstic-M and -F) and its row links the first only.
+ * Step G25 marks Electric Terrain and Misty Terrain (the moves: five turns, the same terrain fails, the other one is
+ * replaced), Electric Surge (the entry setter of the terrain family), Electric Seed and Misty Seed (the seed rule of the other
+ * terrains: Defense and Special Defense +1), Rising Voltage (base power doubled at a grounded target in Electric Terrain)
+ * and Terrain Pulse (the terrain's type and twice the power for a grounded user, outside the -ate abilities), with the
+ * terrains' own rules: 5325/4096 for a grounded user's Electric move, Dragon moves at a grounded target halved in Misty
+ * Terrain, sleep refused to a grounded Pokemon in Electric Terrain and every status (and confusion) in Misty Terrain, the
+ * view bits 5 and 32. Recorded as g25_* under the POOL kind.
  * Step G22 marks six abilities that the turn code runs by id: Sand Rush, Swift Swim, Slush Rush and Chlorophyll (Speed x2
  * in the speed key while their weather is up, a standing holder only; Sand Rush's holder also takes no Sandstorm damage),
  * Inner Focus (no flinch, and an Attack drop that Intimidate causes fails with -fail ... [from] ability: Inner Focus) and
@@ -317,6 +324,12 @@ const dfi_support_manifest dfi_support = {
             /* Step G36: Toxic (badly poisoned; a Poison-type user never misses) and Poison Fang (a 50 percent tox secondary). */
             [DFI_MOVE_TOXIC] = 1u,
             [DFI_MOVE_POISONFANG] = 1u,
+            /* Step G25: Electric Terrain and Misty Terrain (the terrain moves), Rising Voltage and Terrain Pulse (their base power
+             * and Terrain Pulse's type follow the terrain). */
+            [DFI_MOVE_ELECTRICTERRAIN] = 1u,
+            [DFI_MOVE_MISTYTERRAIN] = 1u,
+            [DFI_MOVE_RISINGVOLTAGE] = 1u,
+            [DFI_MOVE_TERRAINPULSE] = 1u,
             /* Step G32: Eruption and Water Spout (power by the user's HP), Life Dew (the user and its ally), Body Press, Foul Play
              * and Psyshock (the stat overrides), Rain Dance and Sunny Day, Volt Switch (a pivot of its own), Clanging Scales (the
              * user's Defense falls after the hit) and Freeze-Dry (Water takes it super effective). */
@@ -426,6 +439,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_UNNERVE] = 1u,
             [DFI_ABILITY_SPEEDBOOST] = 1u,
             [DFI_ABILITY_RAINDISH] = 1u, /* step G35 */
+            [DFI_ABILITY_ELECTRICSURGE] = 1u, /* step G25 */
             [DFI_ABILITY_FRIENDGUARD] = 1u,
             [DFI_ABILITY_AURAGUARD] = 1u, /* Mega batch 2 (the Mega ability of Lucario-Mega-Z) */
         },
@@ -453,6 +467,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_EXPERTBELT] = 1u, /* step G28 */
             [DFI_ITEM_WIDELENS] = 1u,   /* step G34 */
             [DFI_ITEM_EJECTBUTTON] = 1u, /* step G32 */
+            [DFI_ITEM_ELECTRICSEED] = 1u, /* step G25 */
+            [DFI_ITEM_MISTYSEED] = 1u,    /* step G25 */
             [DFI_ITEM_TYRANITARITE] = 1u,
             [DFI_ITEM_BAXCALIBRITE] = 1u,
             [DFI_ITEM_AERODACTYLITE] = 1u,
@@ -539,5 +555,7 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_AURORA_VEIL) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_RAGE_POWDER) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_AILMENT_TOX) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_DISABLE),
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_DISABLE) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TERRAIN_ELECTRIC) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TERRAIN_MISTY),
 };
