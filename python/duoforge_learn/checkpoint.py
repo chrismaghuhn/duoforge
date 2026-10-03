@@ -101,7 +101,7 @@ def load(path, obs_size=None):
     return params, config
 
 
-FORMAT2_KEYS = ("model", "encoder", "features", "slot_features", "data", "teams", "update", "decisions")
+FORMAT2_KEYS = ("model", "encoder", "features", "slot_features", "data", "teams", "update", "decisions", "ids")
 EMBEDDINGS = ("species", "move", "item", "ability", "nature")
 _TABLES = {"species": data.TABLE_SPECIES, "move": data.TABLE_MOVE, "item": data.TABLE_ITEM,
            "ability": data.TABLE_ABILITY, "nature": data.TABLE_NATURE}
