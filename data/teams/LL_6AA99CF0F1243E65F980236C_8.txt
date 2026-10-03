@@ -1,0 +1,53 @@
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Mild Nature
+- Double-Edge
+- Tailwind
+- Draco Meteor
+- Protect
+
+Incineroar (M) @ Sitrus Berry
+Ability: Intimidate
+Level: 50
+Careful Nature
+- Fake Out
+- Throat Chop
+- Parting Shot
+- Flare Blitz
+
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- High Horsepower
+- Wood Hammer
+- Grassy Glide
+- Fake Out
+
+Basculegion (M) @ Life Orb
+Ability: Adaptability
+Level: 50
+Adamant Nature
+- Last Respects
+- Protect
+- Wave Crash
+- Aqua Jet
+
+Sneasler (M) @ Grassy Seed
+Ability: Unburden
+Level: 50
+Jolly Nature
+- Fake Out
+- Dire Claw
+- Close Combat
+- Protect
+
+Kingambit (M) @ Black Glasses
+Ability: Defiant
+Level: 50
+Adamant Nature
+- Sucker Punch
+- Protect
+- Swords Dance
+- Kowtow Cleave

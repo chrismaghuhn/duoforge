@@ -1,0 +1,53 @@
+Floette-Eternal (F) @ Floettite
+Ability: Flower Veil
+Level: 50
+Timid Nature
+- Moonblast
+- Dazzling Gleam
+- Protect
+- Calm Mind
+
+Sneasler (M) @ Psychic Seed
+Ability: Unburden
+Level: 50
+Adamant Nature
+- Fake Out
+- Close Combat
+- Coaching
+- Dire Claw
+
+Incineroar (M) @ Sitrus Berry
+Ability: Intimidate
+Level: 50
+Calm Nature
+- Throat Chop
+- Flare Blitz
+- Fake Out
+- Parting Shot
+
+Rillaboom (M) @ Life Orb
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- High Horsepower
+- Fake Out
+- Wood Hammer
+- Grassy Glide
+
+Kingambit (M) @ Chople Berry
+Ability: Defiant
+Level: 50
+Adamant Nature
+- Kowtow Cleave
+- Iron Head
+- Sucker Punch
+- Protect
+
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Naive Nature
+- Double-Edge
+- Tailwind
+- Hyper Voice
+- Protect

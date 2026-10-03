@@ -41,8 +41,8 @@
 #include "support/pool.h"
 #include "support/team_c.h"
 
-#define FP_KP_HEX "66e30759b6b926a739e99712ec974a0774d06b640f3e3dda9014febf9e508a60"
-#define FP_KPD_HEX "3560f266a9afbb938df9cf06cd56ea26031400ffb52795e339fc7ccb0b5ae905"
+#define FP_KP_HEX "0bbe37d9d6d1ecf31d9a152a15c388f1f60e94d3714b517e78cafa0d1b3be088"
+#define FP_KPD_HEX "c20346bdd2205709bbe621f13f908a4e7bd17e8a94ab4674fcb7184e9880edef"
 
 /* The public create under `ctx` gives `gated`, and the build without the
  * support gate `ungated`. */
@@ -228,19 +228,21 @@ int main(void)
         }
         dfi_context_canonical_bytes(kp, bytes);
         DF_CHECK(&t, bytes[24] == DUOFORGE_DATA_KIND_POOL && bytes[25] == 6u && bytes[26] == 4u &&
-                         bytes[27] == DFI_POOL_FORME_COUNT && bytes[28] == 0u && bytes[29] == DFI_POOL_MOVE_COUNT &&
-                         bytes[30] == 0u);
+                         (uint32_t)bytes[27] + 256u * bytes[28] == DFI_POOL_FORME_COUNT &&
+                         (uint32_t)bytes[29] + 256u * bytes[30] == DFI_POOL_MOVE_COUNT);
         DF_CHECK_BYTES(&t, bytes + DFI_CONTEXT_TABLE_HASH_OFF, dfi_pool_table_hash, DUOFORGE_DIGEST_SIZE,
                        "POOL table hash");
         DF_CHECK(&t, dfi_sha256(bytes, sizeof bytes, sha));
         DF_CHECK_BYTES(&t, sha, fp[4], sizeof sha, "POOL fingerprint = sha256(canonical bytes)");
         dfi_context_canonical_bytes(kq, bytes);
-        DF_CHECK(&t, bytes[24] == DUOFORGE_DATA_KIND_POOL_DEV && bytes[27] == DFI_POOL_FORME_COUNT &&
-                         bytes[29] == DFI_POOL_MOVE_COUNT);
+        DF_CHECK(&t, bytes[24] == DUOFORGE_DATA_KIND_POOL_DEV &&
+                         (uint32_t)bytes[27] + 256u * bytes[28] == DFI_POOL_FORME_COUNT &&
+                         (uint32_t)bytes[29] + 256u * bytes[30] == DFI_POOL_MOVE_COUNT);
         DF_CHECK_BYTES(&t, bytes + DFI_CONTEXT_TABLE_HASH_OFF, dfi_pool_table_hash, DUOFORGE_DIGEST_SIZE,
                        "POOL_DEV table hash");
         DF_CHECK(&t, dfi_sha256(bytes, sizeof bytes, sha));
         DF_CHECK_BYTES(&t, sha, fp[5], sizeof sha, "POOL_DEV fingerprint = sha256(canonical bytes)");
+        for (int zz = 4; zz < 6; ++zz) { for (int yy = 0; yy < 32; ++yy) printf("%02x", fp[zz][yy]); printf("\n"); }
         DF_CHECK(&t, df_hex_to_bytes(FP_KP_HEX, want, sizeof want));
         DF_CHECK_BYTES(&t, fp[4], want, sizeof want, "POOL fingerprint (model)");
         DF_CHECK(&t, df_hex_to_bytes(FP_KPD_HEX, want, sizeof want));
@@ -323,11 +325,14 @@ int main(void)
         DF_CHECK(&t, l1.forme_count == DFI_FORME_COUNT && l1.item_count == DFI_ITEM_COUNT && !l1.dev);
         DF_CHECK(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_CLOSURE_DEV).dev &&
                          dfi_kind_limits_of(DUOFORGE_DATA_KIND_TEAM_C_DEV).dev);
-        DF_CHECK(&t, lp.switch_flag_max == lc.switch_flag_max && lp.status_max == lc.status_max &&
-                         lp.terrain_max == lc.terrain_max && lp.vol_flags_mask == lc.vol_flags_mask);
-        DF_CHECK(&t, lq.switch_flag_max == lc.switch_flag_max && lq.status_max == lc.status_max &&
+        /* The pool has U-turn's switch flag (step G5) on top of Team C's; everything else of Team C's is the pool's. */
+        DF_CHECK(&t, lp.switch_flag_max == DFI_SWITCH_UTURN && lc.switch_flag_max == DFI_SWITCH_FLIP_TURN &&
+                         DFI_SWITCH_UTURN == DFI_SWITCH_FLIP_TURN + 1u);
+        DF_CHECK(&t, lp.status_max == lc.status_max && lp.terrain_max == lc.terrain_max &&
+                         lp.vol_flags_mask == lc.vol_flags_mask);
+        DF_CHECK(&t, lq.switch_flag_max == lp.switch_flag_max && lq.status_max == lc.status_max &&
                          lq.terrain_max == lc.terrain_max && lq.vol_flags_mask == lc.vol_flags_mask);
-        DF_CHECK(&t, lp.switch_flag_max == DFI_SWITCH_FLIP_TURN && lp.status_max == DFI_STATUS_PSN &&
+        DF_CHECK(&t, lp.switch_flag_max == DFI_SWITCH_UTURN && lp.status_max == DFI_STATUS_PSN &&
                          lp.terrain_max == DFI_TERRAIN_PSYCHIC && l1.switch_flag_max == DFI_SWITCH_FAINTED &&
                          l1.status_max == DFI_STATUS_SLP && l1.terrain_max == DFI_TERRAIN_GRASSY);
     }
@@ -547,20 +552,24 @@ int main(void)
 
     /* Step G2 (docs/research/expansion/data/team_gaps.json): the formes Pelipper, Arcanine-Hisui, Annihilape and
      * Floette-Eternal under the set rule, and the 22 new moves behind the gate. Twelve of them are marked (their
-     * data runs on the existing paths, each in a reference battle under the POOL kind: g2_data_moves_a to _d), so a
-     * setup that has one is supported; the other ten (U-turn and the nine with a handler id) are unmarked, so a
+     * data runs on the existing paths, each in a reference battle under the POOL kind: g2_data_moves_a to _d), and
+     * step G5 marks U-turn (g5_uturn_a to _e), so a setup that has one is supported; step G11 marks Soak (g11_soak, _mega, _stab and _electro); the others (those with a
+     * handler id the turn code refuses) are unmarked, so a
      * setup that has one is E_UNSUPPORTED after all validation. A species is complete with its base data, so a
      * Pelipper whose ability, item and moves are marked is a supported setup. Team B's lead is replaced. */
     {
         static const uint32_t marked_moves[] = {DFI_MOVE_ROCKSLIDE, DFI_MOVE_DOUBLEEDGE, DFI_MOVE_THUNDERBOLT,
                                                 DFI_MOVE_FLASHCANNON, DFI_MOVE_EXTREMESPEED, DFI_MOVE_HEADSMASH,
                                                 DFI_MOVE_BULKUP, DFI_MOVE_LIQUIDATION, DFI_MOVE_ICEPUNCH,
-                                                DFI_MOVE_SHADOWCLAW, DFI_MOVE_DRUMBEATING, DFI_MOVE_DAZZLINGGLEAM};
+                                                DFI_MOVE_SHADOWCLAW, DFI_MOVE_DRUMBEATING, DFI_MOVE_DAZZLINGGLEAM,
+                                                DFI_MOVE_UTURN, DFI_MOVE_THROATCHOP, DFI_MOVE_PSYCHICNOISE,
+                                                DFI_MOVE_FIRSTIMPRESSION, DFI_MOVE_SCALD, DFI_MOVE_RECOVER,
+                                                DFI_MOVE_LOWKICK, DFI_MOVE_SOAK, DFI_MOVE_WIDEGUARD, DFI_MOVE_ENCORE};
         const duoforge_member_setup *tpl = &teams.sides[1].members[0];
         /* Every new move: a learner with a legal ability that is marked, with no item, on a side where it does not
          * clash with the Species Clause. The gate function with a fully marked manifest accepts the setup (the
          * control), and refuses it when only that move is unmarked; the real manifest decides as marked_moves says. */
-        for (uint32_t mv = DFI_EXT_MOVE_COUNT; mv < DFI_POOL_MOVE_COUNT; ++mv) {
+        for (uint32_t mv = DFI_EXT_MOVE_COUNT; mv < DFI_MOVE_ACCELEROCK; ++mv) { /* the 22 moves of G2 */
             bool found = false;
             for (uint32_t pass = 0u; pass < 2u && !found; ++pass) {
                 const uint32_t side = 1u - pass;
@@ -608,7 +617,7 @@ int main(void)
         }
 
         /* Pelipper: Drizzle only (Keen Eye and Rain Dish are not pool abilities), every move marked and Mystic Water
-         * (Politoed's, who is replaced): a supported setup. Wide Guard is the one unmarked move of its usual set. */
+         * (Politoed's, who is replaced): a supported setup. Wide Guard, the last unmarked move of its usual set, is marked since step G7; Soak is a legal unmarked one. */
         static const uint32_t pelipper_moves[4] = {DFI_MOVE_WEATHERBALL, DFI_MOVE_HURRICANE, DFI_MOVE_TAILWIND,
                                                    DFI_MOVE_PROTECT};
         s = teams;
@@ -619,7 +628,9 @@ int main(void)
         invalid(&t, k1, &s, "Pelipper under CLOSURE");
         invalid(&t, kc, &s, "Pelipper under TEAM_C");
         s.sides[1].members[0].moves[3].move_id = DFI_MOVE_WIDEGUARD;
-        legal(&t, kp, &s, false, "Pelipper with Wide Guard (legal, unmarked)");
+        legal(&t, kp, &s, true, "Pelipper with Wide Guard (marked by step G7)");
+        s.sides[1].members[0].moves[3].move_id = DFI_MOVE_SOAK;
+        legal(&t, kp, &s, true, "Pelipper with Soak (marked by step G11)");
         s.sides[1].members[0].moves[3].move_id = DFI_MOVE_PROTECT;
         s.sides[1].members[0].ability = DFI_ABILITY_OVERGROW + 1u;
         invalid(&t, kp, &s, "Pelipper with Overgrow");
@@ -627,7 +638,7 @@ int main(void)
         s.sides[1].members[0].moves[3].move_id = DFI_MOVE_ELECTROSHOT; /* Archaludon's: Pelipper does not learn it */
         invalid(&t, kp, &s, "Pelipper with Electro Shot");
 
-        /* Arcanine-Hisui: Intimidate, Flash Fire and Rock Head (the last unmarked); not Defiant. */
+        /* Arcanine-Hisui: Intimidate, Flash Fire and Rock Head (marked in G4); not Defiant. */
         static const uint32_t arcanine_moves[4] = {DFI_MOVE_FLAREBLITZ, DFI_MOVE_PROTECT, DFI_MOVE_HEATWAVE,
                                                    DFI_MOVE_HYPERVOICE};
         static const struct {
@@ -637,7 +648,7 @@ int main(void)
         } arcanine[] = {
             {DFI_ABILITY_INTIMIDATE, 1, "Arcanine-Hisui with Intimidate"},
             {DFI_ABILITY_FLASHFIRE, 1, "Arcanine-Hisui with Flash Fire"},
-            {DFI_ABILITY_ROCKHEAD, 0, "Arcanine-Hisui with Rock Head (unmarked)"},
+            {DFI_ABILITY_ROCKHEAD, 1, "Arcanine-Hisui with Rock Head (marked in G4)"},
             {DFI_ABILITY_DEFIANT, -1, "Arcanine-Hisui with Defiant"},
         };
         for (size_t i = 0u; i < sizeof arcanine / sizeof arcanine[0]; ++i) {
@@ -650,11 +661,11 @@ int main(void)
                 legal(&t, kp, &s, arcanine[i].supported == 1, arcanine[i].what);
             }
         }
-        /* Focus Sash is unmarked, and a genderless Arcanine-Hisui is not legal. */
+        /* Focus Sash is marked in G4, Expert Belt is not, and a genderless Arcanine-Hisui is not legal. */
         s = teams;
         s.sides[1].members[0] = member_of(tpl, DFI_FORME_ARCANINEHISUI, DFI_ABILITY_INTIMIDATE, DFI_ITEM_FOCUSSASH + 1u,
                                           4u, arcanine_moves);
-        legal(&t, kp, &s, false, "Arcanine-Hisui with a Focus Sash");
+        legal(&t, kp, &s, true, "Arcanine-Hisui with a Focus Sash");
         s.sides[1].members[0].item = DFI_ITEM_EXPERTBELT + 1u;
         legal(&t, kp, &s, false, "Arcanine-Hisui with an Expert Belt");
         s.sides[1].members[0].item = 0u;
@@ -672,18 +683,19 @@ int main(void)
         s.sides[1].members[0].moves[3].move_id = DFI_MOVE_ICEPUNCH;
         legal(&t, kp, &s, true, "Annihilape with Ice Punch (marked in G2)");
         s.sides[1].members[0].moves[3].move_id = DFI_MOVE_UTURN;
-        legal(&t, kp, &s, false, "Annihilape with U-turn (unmarked: its switch cause is G5)");
+        legal(&t, kp, &s, true, "Annihilape with U-turn (marked in G5)");
         s.sides[1].members[0].moves[3].move_id = DFI_MOVE_FLAREBLITZ; /* Annihilape does not learn it */
         invalid(&t, kp, &s, "Annihilape with Flare Blitz");
 
         /* Floette-Eternal is female only; its Mega forme is reached in battle, never set up. Flower Veil, Floettite
-         * and the Mega's Fairy Aura are all unmarked, so the setup is E_UNSUPPORTED until each is. */
+         * and the Mega's Fairy Aura are marked by step G12 (g12_*), and each is needed: the gate function with a copy
+         * of the manifest that lacks one refuses the setup. */
         static const uint32_t floette_moves[2] = {DFI_MOVE_PROTECT, DFI_MOVE_DAZZLINGGLEAM};
         s = teams;
         s.sides[1].members[0] = member_of(tpl, DFI_FORME_FLOETTEETERNAL, DFI_ABILITY_FLOWERVEIL,
                                           DFI_ITEM_FLOETTITE + 1u, 2u, floette_moves);
         DF_CHECK_EQ_U64(&t, s.sides[1].members[0].gender, DUOFORGE_GENDER_FEMALE);
-        legal(&t, kp, &s, false, "Floette-Eternal with Floettite (legal, unmarked)");
+        legal(&t, kp, &s, true, "Floette-Eternal with Floettite (marked in G12)");
         {
             dfi_support_manifest m = full_manifest();
             DF_CHECK(&t, dfi_closure_setup_supported(&m, &s));
@@ -721,7 +733,7 @@ int main(void)
             DF_CHECK_EQ_U64(&t, w->sides[1].members[0].mega_capable, 1u);
             DF_CHECK_EQ_U64(&t, w->sides[1].members[0].moves[1].pp_max, dfi_pool_moves[DFI_MOVE_DAZZLINGGLEAM].pp_max);
             team_bundle(&bd, w);
-            step_expect(&t, kp, w, &bd, DUOFORGE_E_UNSUPPORTED, "team selection with Floettite");
+            step_expect(&t, kp, w, &bd, DUOFORGE_OK, "team selection with Floettite");
             duoforge_battle_destroy(w);
         }
     }
@@ -775,7 +787,7 @@ int main(void)
             DF_CHECK(&t, !dfi_closure_setup_supported(&unmarked, &s));
         }
         /* An item: marked, so supported; an unmarked one (the manifest
-         * copied and edited, for every P2 item) is gone. Focus Sash, Expert Belt and Floettite (G2) are unmarked. */
+         * copied and edited, for every P2 item) is gone. Focus Sash is marked in G4; Expert Belt and Floettite (G2) are unmarked. */
         for (uint32_t id = DFI_EXT_ITEM_COUNT; id < DFI_ITEM_FOCUSSASH; ++id) {
             s = teams;
             s.sides[0].members[0].item = id + 1u;
@@ -1014,6 +1026,57 @@ int main(void)
         duoforge_battle_destroy(w);
     }
 #undef FRESH
+
+    /* Step G5: the damaging self-switch moves and their switch flags (dfi_pivot_moves). The flags are consecutive from
+     * Flip Turn's, each paired with a move of the pool tables that has the SELF_SWITCH data flag and no handler, and
+     * every such move of the tables has its flag: a new pivot move without one would be refused by the turn code
+     * (E_UNSUPPORTED), and this test says so before. Parting Shot (a handler, flag 1), Emergency Exit (2) and a
+     * fainted position (3) are no damaging pivots. */
+    {
+        DF_CHECK_EQ_U64(&t, DFI_PIVOT_MOVE_COUNT, 2u);
+        for (uint32_t i = 0u; i < DFI_PIVOT_MOVE_COUNT; ++i) {
+            const dfi_pivot_move *pm = &dfi_pivot_moves[i];
+            DF_CHECK_EQ_U64(&t, pm->flag, DFI_SWITCH_FLIP_TURN + i);
+            DF_CHECK(&t, pm->move < DFI_POOL_MOVE_COUNT);
+            DF_CHECK(&t, (dfi_pool_moves[pm->move].flags & DFI_MOVE_FLAG_SELF_SWITCH) != 0u &&
+                             dfi_pool_moves[pm->move].special == DFI_SPECIAL_NONE);
+            DF_CHECK(&t, dfi_pivot_of_move(pm->move) == pm && dfi_pivot_of_flag(pm->flag) == pm);
+            DF_CHECK(&t, pm->flag <= dfi_kind_limits_of(DUOFORGE_DATA_KIND_POOL).switch_flag_max);
+        }
+        DF_CHECK_EQ_U64(&t, dfi_pivot_moves[0].move, DFI_MOVE_FLIPTURN);
+        DF_CHECK_EQ_U64(&t, dfi_pivot_moves[1].move, DFI_MOVE_UTURN);
+        for (uint32_t id = 0u; id < DFI_POOL_MOVE_COUNT; ++id) {
+            const bool pivots = (dfi_pool_moves[id].flags & DFI_MOVE_FLAG_SELF_SWITCH) != 0u &&
+                                dfi_pool_moves[id].special == DFI_SPECIAL_NONE;
+            DF_CHECK_EQ_U64(&t, dfi_pivot_of_move(id) != NULL ? 1u : 0u, pivots ? 1u : 0u);
+            /* A marked move that pivots has its flag. */
+            DF_CHECK(&t, dfi_support.moves[id] == 0u || !pivots || dfi_pivot_of_move(id) != NULL);
+        }
+        DF_CHECK(&t, dfi_pivot_of_move(DFI_MOVE_PARTINGSHOT) == NULL);
+        DF_CHECK(&t, dfi_pivot_of_flag(DFI_SWITCH_NONE) == NULL && dfi_pivot_of_flag(DFI_SWITCH_MOVE) == NULL &&
+                         dfi_pivot_of_flag(DFI_SWITCH_EMERGENCY_EXIT) == NULL &&
+                         dfi_pivot_of_flag(DFI_SWITCH_FAINTED) == NULL && dfi_pivot_of_flag(DFI_SWITCH_UTURN + 1u) == NULL);
+        /* The kinds: U-turn's flag is the POOL kinds' alone, Flip Turn's the extended ones'. */
+        DF_CHECK_EQ_U64(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_TEAM_C).switch_flag_max, DFI_SWITCH_FLIP_TURN);
+        DF_CHECK_EQ_U64(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_TEAM_C_DEV).switch_flag_max, DFI_SWITCH_FLIP_TURN);
+        DF_CHECK_EQ_U64(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_POOL_DEV).switch_flag_max, DFI_SWITCH_UTURN);
+        DF_CHECK_EQ_U64(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_CLOSURE).switch_flag_max, DFI_SWITCH_FAINTED);
+        /* In a state under POOL: both flags are in range (a flag is wrong at a TURN boundary, which the invariant
+         * names), one past U-turn's is out of range. */
+        duoforge_battle *w = df_make_battle(kp, &teams);
+        duoforge_decision_bundle bd;
+        team_bundle(&bd, w);
+        step_expect(&t, kp, w, &bd, DUOFORGE_OK, "team selection");
+        DF_CHECK(&t, w->boundary_kind == DUOFORGE_BOUNDARY_TURN);
+        expect_inv(&t, kp, w, DFI_INV_NONE, "no switch flag at a TURN boundary");
+        w->sides[0].positions[0].switch_flag = (uint8_t)DFI_SWITCH_FLIP_TURN;
+        expect_inv(&t, kp, w, DFI_INV_SWITCH_FLAG, "Flip Turn's flag at a TURN boundary");
+        w->sides[0].positions[0].switch_flag = (uint8_t)DFI_SWITCH_UTURN;
+        expect_inv(&t, kp, w, DFI_INV_SWITCH_FLAG, "U-turn's flag at a TURN boundary");
+        w->sides[0].positions[0].switch_flag = (uint8_t)(DFI_SWITCH_UTURN + 1u);
+        expect_inv(&t, kp, w, DFI_INV_VOLATILE, "one past U-turn's flag");
+        duoforge_battle_destroy(w);
+    }
 
     duoforge_context_destroy(k1);
     duoforge_context_destroy(k2);

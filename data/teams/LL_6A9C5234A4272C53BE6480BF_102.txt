@@ -1,0 +1,53 @@
+Golisopod (M) @ Golisopite
+Ability: Emergency Exit
+Level: 50
+Adamant Nature
+- Leech Life
+- Swords Dance
+- Iron Head
+- Sucker Punch
+
+Archaludon (M) @ Leftovers
+Ability: Stamina
+Level: 50
+Modest Nature
+- Electro Shot
+- Dragon Pulse
+- Flash Cannon
+- Protect
+
+Pelipper (M) @ Focus Sash
+Ability: Drizzle
+Level: 50
+Timid Nature
+- Weather Ball
+- Tailwind
+- Protect
+- Hurricane
+
+Milotic (M) @ Sitrus Berry
+Ability: Competitive
+Level: 50
+Modest Nature
+- Scald
+- Ice Beam
+- Icy Wind
+- Recover
+
+Farigiraf (M) @ Grassy Seed
+Ability: Armor Tail
+Level: 50
+Sassy Nature
+- Psychic
+- Thunderbolt
+- Trick Room
+- Protect
+
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Wood Hammer
+- Grassy Glide
+- Fake Out
+- High Horsepower

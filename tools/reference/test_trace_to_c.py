@@ -129,6 +129,30 @@ class Refusals(unittest.TestCase):
         mutate(spec, trace)
         self.assert_refused(lambda: convert(name, spec, trace), rule, message, detail)
 
+    def test_hail_is_refused_never_mapped(self):
+        """Hail is isNonstandard "Past" at the pin and not in the format (Snow Warning sets Snowscape, which does no
+        damage): a -weather line that names it, and damage [from] Hail, are ConversionErrors, not silently another weather."""
+        def hail_weather(spec, trace):
+            for step in trace['steps']:
+                for i, line in enumerate(step['log']):
+                    if line == '|-weather|Sandstorm|[upkeep]':
+                        step['log'][i] = '|-weather|Hail|[upkeep]'
+                        return
+            self.fail('no upkeep line')
+
+        def hail_damage(spec, trace):
+            for step in trace['steps']:
+                for i, line in enumerate(step['log']):
+                    if line.endswith('|[from] Sandstorm'):
+                        step['log'][i] = line[:-len('Sandstorm')] + 'Hail'
+                        return
+            self.fail('no sandstorm damage')
+
+        self.control('w1_sand_stream', hail_weather, 'weather-line',
+                     "trace_to_c: unknown weather 'Hail' in '|-weather|Hail|[upkeep]'", 'Hail')
+        self.control('w1_sand_stream', hail_damage, 'from-attribute', 'trace_to_c: [from] Hail: no Hail in the format',
+                     'Hail')
+
     def test_unknown_protocol_line(self):
         self.control('s2_turn_core_1', lambda spec, trace: trace['steps'][1]['log'].append('|foo|bar'),
                      'protocol-line', "trace_to_c: unknown protocol line '|foo|bar'", 'foo')
@@ -159,6 +183,39 @@ class Refusals(unittest.TestCase):
         self.control('s2_struggle', mutate, 'each-tie-handlers',
                      "trace_to_c: each:Update tie between Pokemon with handlers: ['P:p1b:1:whiteherb', 'P:p2a:0:']",
                      'each:Update:whiteherb')
+
+    def test_an_update_tie_of_a_trace_holder_is_not_a_holder(self):
+        """Step AC1: a Trace holder at an Update (its onUpdate returns unless it is still seeking, which the engine
+        refuses) is not a holder of the tie: a tie with at most one other holder is dropped, one with two others is
+        the engine's own (its Sitrus holders' draw), and a handler that is not known is refused."""
+        def tie(group):
+            return trace_to_c.drop_reason({'site': 'SPEED_TIE', 'context': 'each:Update', 'group': group}, {})
+        self.assertIsNotNone(tie(['P:p1b:1:trace', 'P:p2a:0:']))
+        self.assertIsNotNone(tie(['P:p1b:1:trace', 'P:p2a:1:sitrusberry']))
+        self.assertIsNotNone(tie(['P:p1b:1:trace', 'P:p2a:1:trace']))
+        self.assertIsNone(tie(['P:p1b:1:trace', 'P:p2a:1:sitrusberry', 'P:p2b:1:sitrusberry']))
+        with self.assertRaises(trace_to_c.ConversionError) as cm:
+            tie(['P:p1b:1:trace', 'P:p2a:1:whiteherb'])
+        self.assertEqual(cm.exception.rule, 'each-tie-handlers')
+
+    def test_a_before_move_tie_of_heal_block_and_throat_chop_of_one_pokemon_is_dropped(self):
+        """Step AC1 follow-up (the AWS triage of 2026-10-03): the two BeforeMove handlers of a Pokemon that holds Heal
+        Block and Throat Chop, in either order, are dropped (no pool move has both flags); any other BeforeMove tie, and
+        the pair on two Pokemon, are refused."""
+        def tie(group, context='event:BeforeMove'):
+            return trace_to_c.drop_reason({'site': 'SPEED_TIE', 'context': context, 'group': group}, {})
+        self.assertIn('Heal Block', tie(['H:healblock:p1b:cb', 'H:throatchop:p1b:cb']))
+        self.assertIn('Heal Block', tie(['H:throatchop:p2a:cb', 'H:healblock:p2a:cb']))
+        # the ModifyMove handlers of the same two conditions (data/moves.ts:8314, :19417) are the same case
+        self.assertIn('ModifyMove', tie(['H:healblock:p1b:cb', 'H:throatchop:p1b:cb'], 'event:ModifyMove'))
+        self.assertIn('Heal Block', tie(['H:throatchop:p2a:cb', 'H:healblock:p2a:cb'], 'event:ModifyMove'))
+        with self.assertRaises(trace_to_c.ConversionError):
+            tie(['H:healblock:p1b:cb', 'H:throatchop:p1b:cb'], 'event:TryHit')
+        for bad in (['H:healblock:p1b:cb', 'H:throatchop:p2a:cb'], ['H:healblock:p1b:cb', 'H:flinch:p1b:cb'],
+                    ['H:healblock:p1b:cb', 'H:throatchop:p1b:cb', 'H:slp:p1b:cb'], ['H:healblock:p1b:cb', 'H:healblock:p1b:cb']):
+            with self.assertRaises(trace_to_c.ConversionError) as cm:
+                tie(bad)
+            self.assertEqual(cm.exception.rule, 'tie-context')
 
     def test_switch_order_tie_with_an_entry_effect_that_is_not_white_herb(self):
         def mutate(spec, trace):
@@ -385,6 +442,74 @@ class Library(unittest.TestCase):
                 self.assertEqual(len(st['tape']) + st['dropped'], len(raw['draws']), '%s step %d' % (name, i))
             self.assertEqual(data['dropped_total'], sum(st['dropped'] for st in data['steps']), name)
 
+    def test_the_tie_of_two_fairy_aura_handlers_is_a_dropped_draw(self):
+        """g12_fairy_aura_both: both Floettes are Mega with the same Speed, so their Fairy Aura handlers tie in the
+        BasePower event of every damaging move. Exactly one of them applies (move.auraBooster) whichever runs first, so
+        each draw is dropped, with its reason, and the battle converts; any other handler in the group is refused."""
+        name = 'g12_fairy_aura_both'
+        spec, trace = battle(name)
+        data = convert(name, spec, trace)
+        found = [(k, d) for k, step in enumerate(trace['steps']) for d in step['draws'] if d.get('context') == 'event:BasePower']
+        self.assertGreater(len(found), 4)
+        for k, d in found:
+            self.assertEqual(d['site'], 'SPEED_TIE')
+            self.assertEqual(sorted(d['group']), ['H:fairyaura:p1a:cb', 'H:fairyaura:p2a:cb'])
+            before = trace['steps'][k - 1]['state'] if k else trace['start']['state']
+            self.assertEqual(trace_to_c.drop_reason(d, before, trace['steps'][k]['state']),
+                             'Fairy Aura handlers whose order changes nothing')
+        k, d = found[0]
+        before = trace['steps'][k - 1]['state'] if k else trace['start']['state']
+        after = trace['steps'][k]['state']
+        for group, context in ((['H:fairyaura:p1a:cb', 'H:lifeorb:p2a:cb'], 'event:BasePower'),
+                               (['H:fairyaura:p1a:cb', 'H:fairyaura:p2a:end'], 'event:BasePower'),
+                               (['H:fairyaura:p1a:cb', 'H:fairyaura:p2a:cb'], 'event:ModifyDamage')):
+            with self.subTest(group=group, context=context), self.assertRaises(trace_to_c.ConversionError) as cm:
+                trace_to_c.drop_reason(dict(d, group=group, context=context), before, after)
+            self.assertEqual(cm.exception.rule, 'modifydamage-tie' if context == 'event:ModifyDamage' else 'tie-context')
+        self.assertTrue(all(len(step['tape']) + step['dropped'] == len(trace['steps'][k]['draws'])
+                            for k, step in enumerate(data['steps'])))
+
+    def test_life_orb_ties_with_any_resist_berry_of_the_family_and_nothing_else(self):
+        """The AWS finding fz_9810000_780 (2026-10-03): a ModifyDamage tie of the attacker's Life Orb and the target's Occa
+        Berry. Every resist berry of the RESIST_BERRY family of the pool tables has the one modifier that Chople Berry
+        has, so the pair commutes; the family is read from the generated tables, not listed here."""
+        def tie(group):
+            return trace_to_c.drop_reason({'site': 'SPEED_TIE', 'context': 'event:ModifyDamage', 'group': group}, {})
+        family = trace_to_c.resist_berries()
+        self.assertGreaterEqual(len(family), 18)  # Chople Berry and the seventeen others (decision 0015)
+        for name in ('chopleberry', 'occaberry', 'chilanberry', 'yacheberry'):
+            self.assertIn(name, family)
+        for name in family:
+            for group in (['H:lifeorb:p1a:cb', 'H:%s:p2a:cb' % name], ['H:%s:p2b:cb' % name, 'H:lifeorb:p1b:cb']):
+                self.assertEqual(tie(group), 'Life Orb and a resist berry, whose modifiers commute')
+        for bad in (['H:lifeorb:p1a:cb', 'H:sitrusberry:p2a:cb'], ['H:lifeorb:p1a:cb', 'H:leftovers:p2a:cb'],
+                    ['H:occaberry:p1a:cb', 'H:chopleberry:p2a:cb'], ['H:lifeorb:p1a:cb', 'H:lifeorb:p2a:cb'],
+                    ['H:lifeorb:p1a:cb', 'H:occaberry:p2a:cb', 'H:chopleberry:p2b:cb']):
+            with self.subTest(group=bad), self.assertRaises(trace_to_c.ConversionError) as cm:
+                tie(bad)
+            self.assertEqual(cm.exception.rule, 'modifydamage-tie')
+
+    def test_a_flower_veil_block_is_the_activate_event_of_the_ability_with_the_holder_in_other(self):
+        """-block|protected|ability: Flower Veil|[of] holder (step G12): ACTIVATE at the protected Pokemon, cause ABILITY,
+        the ability's id + 1, the holder in `other` (the ability's own activation has none); another -block is refused."""
+        pool = tables(True)
+        line = '|-block|p1b: Rillaboom|ability: Flower Veil|[of] p1a: Floette'
+        events = trace_to_c.step_events([line], 0, {}, {}, pool)
+        self.assertEqual(events, [trace_to_c.ev_tuple(trace_to_c.EV['ACTIVATE'], 1, 0, trace_to_c.CAUSE['ABILITY'], 0,
+                                                      pool['ABILITY']['FLOWERVEIL'] + 1)])
+        for bad in ('|-block|p1b: Rillaboom|ability: Flower Veil',  # no [of]
+                    '|-block|p1b: Rillaboom|move: Protect|[of] p1a: Floette',
+                    '|-block|p1b: Rillaboom|ability: Flower Veil|extra|[of] p1a: Floette'):
+            with self.subTest(bad), self.assertRaises(trace_to_c.ConversionError) as cm:
+                trace_to_c.step_events([bad], 0, {}, {}, pool)
+            self.assertEqual(cm.exception.rule, 'block-line')
+        # The converted battles have the event: the opening Intimidate and the Hypnosis of g12_flower_veil_a/_b.
+        for name in ('g12_flower_veil_a', 'g12_flower_veil_b'):
+            spec, trace = battle(name)
+            logs = [l for step in trace['steps'] for l in step['log'] if l.startswith('|-block|')]
+            self.assertTrue(logs, name)
+            convert(name, spec, trace)
+
     def test_the_tie_of_two_no_guard_handlers_is_a_dropped_draw(self):
         """d01_noguard_accuracy_tie (a cut of fz_1_118 of the differential loop's seed 1): both Raichu are Mega Raichu Y,
         whose No Guard handlers tie in the Accuracy event of the first attack. The draw is dropped, with its reason,
@@ -406,6 +531,782 @@ class Library(unittest.TestCase):
                    and trace_to_c.drop_reason(x, before, after) is not None]
         self.assertIn(d, dropped)
         self.assertEqual((step['dropped'], len(step['tape']) + step['dropped']), (len(dropped), len(trace['steps'][k]['draws'])))
+
+    def test_heal_block_end_ties_are_kept_when_two_end_lines_show_their_order(self):
+        """Two Heal Blocks of holders of equal Speed that end in the same residual (g8_heal_block_tie_a and _b, the two
+        orders): the tie is a tape entry that states which line comes first (the lower position's: 0), the same
+        for the draw and for the lines. A tie of which fewer than two end (turn 1 of the same battles) is dropped, with the
+        step's log as the precondition; reaching the drop with two end lines, or without a log, is an error; a group of
+        three is refused, and a draw that contradicts the lines is an error and never an entry."""
+        for name in ('g8_heal_block_tie_a', 'g8_heal_block_tie_b'):
+            trace = json.load(open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json')))
+            kept, dropped = [], []
+            for k, step in enumerate(trace['steps']):
+                before = trace['start']['state'] if k == 0 else trace['steps'][k - 1]['state']
+                for d in step['draws']:
+                    if d['site'] != 'SPEED_TIE' or not all(g.startswith('H:healblock:') for g in d.get('group', ['x'])):
+                        continue
+                    entry = trace_to_c.heal_block_end_tie(d, step['log'])
+                    if entry is not None:
+                        kept.append((k, entry, d))
+                        with self.assertRaises(trace_to_c.ConversionError) as ctx:
+                            trace_to_c.drop_reason(d, before, step['state'], step['log'])
+                        self.assertEqual(ctx.exception.rule, 'heal-block-end-tie')
+                    else:
+                        dropped.append(k)
+                        self.assertEqual(trace_to_c.drop_reason(d, before, step['state'], step['log']),
+                                         'residual tie of Heal Block ends of which fewer than two end now')
+                        with self.assertRaises(trace_to_c.ConversionError) as ctx:
+                            trace_to_c.drop_reason(d, before, step['state'])
+                        self.assertEqual(ctx.exception.rule, 'heal-block-tie-log')
+            self.assertEqual(len(kept), 1, name)
+            self.assertEqual(len(dropped), 1, name)
+            k, entry, d = kept[0]
+            lines = [l for l in trace['steps'][k]['log'] if l.startswith('|-end|') and l.endswith('|move: Heal Block')]
+            self.assertEqual(len(lines), 2)
+            lower_first = lines[0].startswith('|-end|p1a')
+            self.assertEqual(entry, (trace_to_c.SITES['SPEED_TIE'], 0, 2, 0 if lower_first else 1), name)
+            # name a: the line of p1a is first, name b: the line of p2a
+            self.assertEqual(lower_first, name.endswith('_a'))
+            # The same draw with the lines in the other order contradicts the draw: an error, no entry.
+            flipped = [lines[1], lines[0]]
+            with self.assertRaises(trace_to_c.ConversionError) as ctx:
+                trace_to_c.heal_block_end_tie(d, flipped)
+            self.assertEqual(ctx.exception.rule, 'heal-block-end-order')
+            # Fewer than two end lines: no order shows, no entry.
+            self.assertIsNone(trace_to_c.heal_block_end_tie(d, lines[:1]))
+            self.assertIsNone(trace_to_c.heal_block_end_tie(d, []))
+            # Three holders in the group with two ending: refused.
+            three = dict(d, group=d['group'] + ['H:healblock:p1b:end'])
+            with self.assertRaises(trace_to_c.ConversionError) as ctx:
+                trace_to_c.heal_block_end_tie(three, trace['steps'][k]['log'])
+            self.assertEqual(ctx.exception.rule, 'heal-block-tie-size')
+            # A tie that is not of Heal Block ends is not this rule's.
+            self.assertIsNone(trace_to_c.heal_block_end_tie(dict(d, group=['H:protect:p1a:end', 'H:stall:p1a:end']),
+                                                            trace['steps'][k]['log']))
+
+    # ---- the weather step (Sandstorm, Snowscape; decision 0018, view bits 0 and 1) ----
+    WEATHER_BATTLES = ('w1_sand_stream', 'w2_sandstorm_move', 'w3_snow_warning', 'w4_snowscape_move',
+                       'w5_sand_tie_four', 'w5_sand_tie_pairs', 'w5_sand_tie_mixed', 'w6_sand_residual_order',
+                       'w7_sand_ko_sitrus', 'w8_sand_soak')
+
+    def weather_ties(self, name):
+        """(step, draw, drop reason) of the each:Weather draws of a committed battle, with the step's log."""
+        spec, trace = battle(name)
+        found = []
+        for k, step in enumerate(trace['steps']):
+            before = trace['steps'][k - 1]['state'] if k else None
+            for d in step['draws']:
+                if d['site'] == 'SPEED_TIE' and d.get('context') == 'each:Weather':
+                    found.append((k, d, trace_to_c.drop_reason(d, before, step['state'], step['log']), step['log']))
+        return found
+
+    def test_the_weather_rows_of_the_view_are_what_the_weather_lines_say(self):
+        """Decision 0018 section 6.1, weather values Sand and Snow: a -weather line that names a weather sets it for 5
+        turns, each [upkeep] line is a turn gone, -weather|none ends it. The rows of the C test (weather_rows in
+        tests/test_pool_weather.c: the weather and the turns left after each step of the nine weather battles, for
+        both players) must be exactly what these lines give for the committed traces, so that the engine's view is
+        checked against the protocol and not against itself."""
+        source = open(os.path.join(ROOT, 'tests', 'test_pool_weather.c'), encoding='utf-8').read()
+        rows = {}
+        for m in re.finditer(r'\{"(w\d_\w+)", (\d+)u, (\d)u, (\d)u\}', source):
+            rows[(m.group(1), int(m.group(2)))] = (int(m.group(3)), int(m.group(4)))
+        code = {'Sandstorm': 3, 'Snowscape': 4, 'RainDance': 1, 'SunnyDay': 2}
+        derived = {}
+        for name in self.WEATHER_BATTLES:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            weather, turns = 0, 0
+            for k, step in enumerate(trace['steps']):
+                for line in step['log']:
+                    part = line.split('|')
+                    if len(part) < 3 or part[1] != '-weather':
+                        continue
+                    if part[2] == 'none':
+                        weather, turns = 0, 0
+                    elif '[upkeep]' in part:
+                        turns -= 1
+                    else:
+                        weather, turns = code[part[2]], 5
+                derived[(name, k)] = (weather, turns)
+        self.assertEqual(rows, derived)
+        values = {v[0] for v in derived.values()}
+        self.assertTrue({0, 3, 4} <= values)  # both new weathers are shown, and they end
+
+    def test_every_weather_line_the_battles_show_is_a_known_start_end_or_upkeep(self):
+        """The -weather lines of the weather battles: starts from an ability ([from] ability: Sand Stream or Snow Warning
+        with [of]) or a move (no attribute), the upkeep, and none; and the damage lines [from] Sandstorm, the
+        Sandstorm of the move whose line names it, nothing else."""
+        starts, causes = set(), set()
+        for name in self.WEATHER_BATTLES:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            for step in trace['steps']:
+                for line in step['log']:
+                    part = line.split('|')
+                    if len(part) > 2 and part[1] == '-weather' and part[2] != 'none' and '[upkeep]' not in part:
+                        starts.add((part[2], part[3] if len(part) > 3 else ''))
+                    if len(part) > 3 and part[1] == '-damage' and part[-1].startswith('[from] ') and 'item' not in part[-1]:
+                        causes.add(part[-1])
+        self.assertEqual(starts, {('Sandstorm', ''), ('Sandstorm', '[from] ability: Sand Stream'), ('Snowscape', ''),
+                                  ('Snowscape', '[from] ability: Snow Warning'), ('RainDance', '[from] ability: Drizzle')})
+        self.assertEqual(causes, {'[from] Sandstorm', '[from] psn', '[from] brn'})
+        pool = trace_to_c.load_tables(ROOT, True)
+        self.assertEqual(trace_to_c.ev_cause(['[from] Sandstorm'], pool)[:2], (trace_to_c.CAUSE['WEATHER'], 3))
+        self.assertEqual(trace_to_c.WEATHER_LINE['Snowscape'], 4)
+        self.assertEqual(trace_to_c.WEATHER['snowscape'], 4)
+
+    def test_sandstorm_damage_ties_are_kept_when_two_tied_pokemon_take_damage(self):
+        """Under Sandstorm every active Pokemon has the weather's onWeather, so eachEvent('Weather') shuffles every tie of
+        Speed (the group is all the tied actives); the order shows only between two that take the damage. w5_sand_tie_four
+        (four of Speed 101: two Milotic, two immune Tyranitar) keeps its draws; in w5_sand_tie_pairs the pair of Milotic
+        keeps them and the pair of Tyranitar (immune) is dropped; in w5_sand_tie_mixed a Milotic and a Tyranitar tie and
+        the draw is dropped (one damage line shows no order). The other weather battles have no such tie."""
+        for name, expect in (('w5_sand_tie_four', {True}), ('w5_sand_tie_pairs', {True, False}),
+                             ('w5_sand_tie_mixed', {False})):
+            with self.subTest(name):
+                found = self.weather_ties(name)
+                self.assertTrue(found)
+                kept = {reason is None for _k, _d, reason, _log in found}
+                self.assertEqual(kept, expect)
+                for _k, d, reason, log in found:
+                    self.assertTrue(reason is None or 'Sandstorm' in reason)
+                    damaged = {l.split('|')[2].split(':')[0] for l in log
+                               if l.startswith('|-damage|') and l.endswith('|[from] Sandstorm')}
+                    slots = [g.split(':')[1] for g in d['group']]
+                    self.assertEqual(reason is None, sum(1 for x in slots if x in damaged) >= 2)
+        for name in ('w1_sand_stream', 'w2_sandstorm_move', 'w3_snow_warning', 'w4_snowscape_move',
+                     'w6_sand_residual_order', 'w7_sand_ko_sitrus'):
+            with self.subTest(name):
+                self.assertEqual([k for k in self.weather_ties(name) if k[2] is None], [])
+
+    def test_a_weather_tie_with_a_handler_the_converter_does_not_know_is_refused(self):
+        found = self.weather_ties('w5_sand_tie_four')
+        _k, d, _reason, log = found[0]
+        other = dict(d, group=[d['group'][0].replace('sandstorm', 'sandstorm+dryskin')] + d['group'][1:])
+        with self.assertRaises(trace_to_c.ConversionError) as cm:
+            trace_to_c.drop_reason(other, None, None, log)
+        self.assertEqual((cm.exception.rule, cm.exception.detail), ('weather-tie-handlers', 'dryskin+sandstorm'))
+        with self.assertRaises(trace_to_c.ConversionError) as cm:
+            trace_to_c.drop_reason(d, None, None, None)
+        self.assertEqual(cm.exception.rule, 'weather-tie-log')
+        # Without Sandstorm the event has no handler at all, and the tie is dropped as every each: tie of no holder.
+        rain = dict(d, group=['P:%s:0:' % g.split(':')[1] for g in d['group']])
+        self.assertEqual(trace_to_c.drop_reason(rain, None, None, log), 'each-event tie with at most one holder')
+
+    def test_view_extension_rows_are_what_the_protocol_lines_say(self):
+        """Decision 0018 section 6.1 for Throat Chop and Heal Block: a position has the bit from the -start line
+        (`|-start|X|Throat Chop|[silent]`, `|-start|X|move: Heal Block`) until the matching -end line, or until the
+        occupant leaves (`|switch|`, `|drag|`, `|replace|`, `|faint|`). The rows of the C test (view_ext_rows in
+        tests/test_pool_g8.c: the expected view extension after each step of the G8 battles, for both viewers, as
+        masks over side * 2 + slot) must be exactly what these lines give for the committed traces, so the engine's
+        extension is checked against the protocol and not against itself."""
+        names = ('g8_throat_chop', 'g8_heal_block', 'g8_heal_block_pair', 'g8_heal_block_tie_a', 'g8_heal_block_tie_b')
+        source = open(os.path.join(ROOT, 'tests', 'test_pool_g8.c'), encoding='utf-8').read()
+        rows = {}
+        for m in re.finditer(r'\{"(g8_\w+)", (\d+)u, 0x([0-9a-f])u, 0x([0-9a-f])u\}', source):
+            rows[(m.group(1), int(m.group(2)))] = (int(m.group(3), 16), int(m.group(4), 16))
+        derived = {}
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            throat, block = set(), set()
+            for k, step in enumerate(trace['steps']):
+                for line in step['log']:
+                    part = line.split('|')
+                    if len(part) < 3:
+                        continue
+                    if part[1] in ('switch', 'drag', 'faint', 'replace'):
+                        throat.discard(part[2][:3])
+                        block.discard(part[2][:3])
+                    elif part[1] == '-start' and len(part) > 3 and part[3] == 'Throat Chop':
+                        self.assertEqual(part[-1], '[silent]')
+                        throat.add(part[2][:3])
+                    elif part[1] == '-end' and len(part) > 3 and part[3] == 'Throat Chop':
+                        throat.discard(part[2][:3])
+                    elif part[1] == '-start' and len(part) > 3 and part[3] == 'move: Heal Block':
+                        block.add(part[2][:3])
+                    elif part[1] == '-end' and len(part) > 3 and part[3] == 'move: Heal Block':
+                        block.discard(part[2][:3])
+
+                def mask(s):
+                    return sum(1 << ((int(x[1]) - 1) * 2 + 'ab'.index(x[2])) for x in s)
+
+                derived[(name, k)] = (mask(throat), mask(block))
+        self.assertEqual(rows, derived)
+        # The battles do set and clear both: something is shown in each, and every row of the last step is empty.
+        self.assertTrue(any(v[0] for v in derived.values()) and any(v[1] for v in derived.values()))
+
+    def test_wide_guard_rows_are_what_the_protocol_lines_say(self):
+        """Decision 0018 section 6.1 for Wide Guard: the side of the user has the guard from the
+        `|-singleturn|X|Wide Guard` line until the next `|upkeep|` (a second Wide Guard of the same side prints no
+        line and changes nothing). The rows of the C test (guard_rows in tests/test_pool_g7.c: the guard flag of each
+        side after each step of the G7 battles, as a mask over the sides) must be exactly what these lines give for the
+        committed traces, so a guard is live at a mid-turn (pivot) boundary and never at a turn boundary, and the
+        engine's flag and view extension are checked against the protocol and not against themselves. Every
+        `-activate|X|move: Wide Guard` is at a side whose guard is up, and every `-singleturn` Wide Guard comes
+        from a move line of Wide Guard."""
+        names = ('g7_wide_guard_a', 'g7_wide_guard_b', 'g7_wide_guard_ally', 'g7_wide_guard_pivot')
+        with open(os.path.join(ROOT, 'tests', 'test_pool_g7.c'), encoding='utf-8') as f:
+            source = f.read()
+        rows = {}
+        for m in re.finditer(r'\{"(g7_\w+)", (\d+)u, 0x([0-9a-f])u\}', source):
+            rows[(m.group(1), int(m.group(2)))] = int(m.group(3), 16)
+        derived = {}
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            up = set()
+            last_move = None
+            for k, step in enumerate(trace['steps']):
+                for line in step['log']:
+                    part = line.split('|')
+                    if len(part) < 2:
+                        continue
+                    if part[1] == 'move':
+                        last_move = part[3]
+                    elif part[1] == '-singleturn' and len(part) > 3 and part[3] == 'Wide Guard':
+                        self.assertEqual(last_move, 'Wide Guard')
+                        up.add(int(part[2][1]) - 1)
+                    elif part[1] == '-activate' and len(part) > 3 and part[3] == 'move: Wide Guard':
+                        self.assertIn(int(part[2][1]) - 1, up, '%s step %d: %s' % (name, k, line))
+                    elif part[1] == 'upkeep':
+                        up.clear()
+                derived[(name, k)] = sum(1 << s for s in up)
+        self.assertEqual(rows, derived)
+        # The guard is live at a boundary inside a turn in the pivot battle, and only there.
+        self.assertEqual({k: v for k, v in derived.items() if v}, {('g7_wide_guard_pivot', 1): 1})
+
+    def test_spiky_shield_rows_are_what_the_protocol_lines_say(self):
+        """Decision 0015 section 7 for the Protect variant of tail rev 3: a position has protect_kind 1 from the
+        `|-singleturn|X|move: Protect` line that follows its `|move|X|Spiky Shield|` line until the next `|upkeep|` or until
+        its occupant leaves or faints (Protect and Detect print `-singleturn|X|Protect`: the variant 0). The rows of the C
+        test (kind_rows in tests/test_pool_g20_protect.c: protect_kind of the four positions, side * 2 + slot, after each
+        step of the G20 Spiky Shield battles) must be exactly what these lines give for the committed traces, so the
+        variant is live at a boundary inside a turn (a pivot) and never at a turn boundary. Every contact move that a
+        Spiky Shield stops is followed by `-damage|attacker|hp|[from] Spiky Shield|[of] holder`, a move without contact by
+        nothing of the kind."""
+        with open(os.path.join(ROOT, 'tests', 'test_pool_g20_protect.c'), encoding='utf-8') as f:
+            source = f.read()
+        rows = {}
+        for m in re.finditer(r'\{"(g20_spiky\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}', source):
+            rows[(m.group(1), int(m.group(2)))] = tuple(int(m.group(i)) for i in range(3, 7))
+        names = sorted({n for n, _ in rows})
+        self.assertTrue(names)
+        listed = re.search(r'names\[\] = \{(.*?)\};', source, re.S).group(1)
+        self.assertEqual(sorted(re.findall(r'"(g20_spiky\w+)"', listed)), names)
+        contact = {'Iron Head', 'Sucker Punch', 'Double-Edge', 'U-turn', 'Wood Hammer', 'Brave Bird'}
+
+        def flat(label):  # `p1a: Name` -> side * 2 + slot
+            return (int(label[1]) - 1) * 2 + 'ab'.index(label[2])
+        derived = {}
+        punished = stopped_without = 0
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            kind = [0, 0, 0, 0]
+            last = None
+            for k, step in enumerate(trace['steps']):
+                lines = [l for l in step['log'] if not l.startswith('|split')]
+                for i, line in enumerate(lines):
+                    part = line.split('|')
+                    if len(part) < 2:
+                        continue
+                    if part[1] == 'move':
+                        last = (part[2], part[3])
+                    elif part[1] == '-singleturn' and part[3] == 'move: Protect':
+                        self.assertEqual(last[1], 'Spiky Shield', line)
+                        kind[flat(part[2])] = 1
+                    elif part[1] == '-activate' and part[3] == 'move: Protect' and kind[flat(part[2])] == 1:
+                        nxt = lines[i + 1].split('|') if i + 1 < len(lines) else []
+                        if last[1] in contact:
+                            self.assertEqual(nxt[1:2], ['-damage'], '%s step %d: %s' % (name, k, line))
+                            self.assertEqual(nxt[4:], ['[from] Spiky Shield', '[of] ' + part[2]])
+                            punished += 1
+                        else:
+                            self.assertNotEqual(nxt[1:2], ['-damage'], '%s step %d: %s' % (name, k, line))
+                            stopped_without += 1
+                    elif part[1] == 'upkeep':
+                        kind = [0, 0, 0, 0]
+                    elif part[1] in ('switch', 'faint', 'drag'):
+                        kind[flat(part[2])] = 0
+                derived[(name, k)] = tuple(kind)
+        self.assertEqual(rows, derived)
+        self.assertTrue(any(any(v) for v in derived.values()) and punished > 0 and stopped_without > 0)
+
+    def test_aurora_veil_rows_are_what_the_protocol_lines_say(self):
+        """Decision 0018 section 6.1 for Aurora Veil: a side has the screen from the `|-sidestart|pN: X|move: Aurora Veil`
+        line (5 turns, 8 when the user of the move holds Light Clay: the sheet, which is the spec's team text) and its turns
+        left count down at every `|upkeep|` line until the `-sideend` line of the screen ends it (at the residual where
+        one turn is left). The rows of the C test (veil_rows in tests/test_pool_g20.c: the turns left of each side after
+        each step of the G20 battles) must be exactly what these lines give for the committed traces, so the engine's
+        tail and view extension are checked against the protocol and not against themselves. Every `-sidestart` comes from
+        a move line of Aurora Veil of that side, and a `-sideend` comes with one turn left; a failed Aurora Veil (`-fail`
+        after the move line) leaves the rows alone."""
+        with open(os.path.join(ROOT, 'tests', 'test_pool_g20.c'), encoding='utf-8') as f:
+            source = f.read()
+        rows = {}
+        for m in re.finditer(r'\{"(g20_\w+)", (\d+)u, \{(\d+)u, (\d+)u\}\}', source):
+            rows[(m.group(1), int(m.group(2)))] = (int(m.group(3)), int(m.group(4)))
+        names = sorted({n for n, _ in rows})
+        self.assertTrue(names)
+        listed = re.search(r'names\[\] = \{(.*?)\};', source, re.S).group(1)
+        self.assertEqual(sorted(re.findall(r'"(g20_\w+)"', listed)), names)
+        derived = {}
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            with open(os.path.join(ROOT, 'tests', 'reference', 'specs', name + '.json'), encoding='utf-8') as f:
+                spec = json.load(f)
+            turns = [0, 0]
+            last = None  # (user, move) of the last move line
+            for k, step in enumerate(trace['steps']):
+                for line in step['log']:
+                    part = line.split('|')
+                    if len(part) < 2:
+                        continue
+                    if part[1] == 'move':
+                        last = (part[2], part[3])
+                    elif part[1] == '-sidestart' and part[3] == 'move: Aurora Veil':
+                        side = int(part[2][1]) - 1
+                        self.assertEqual(last[1], 'Aurora Veil')
+                        self.assertEqual(int(last[0][1]) - 1, side)
+                        self.assertEqual(turns[side], 0, '%s step %d: a second -sidestart' % (name, k))
+                        species = last[0].split(': ')[1]
+                        sets = [t for t in spec['teams'][side].split('\n\n') if t.startswith(species)]
+                        self.assertEqual(len(sets), 1, species)
+                        turns[side] = 8 if '@ Light Clay' in sets[0].split('\n')[0] else 5
+                    elif part[1] == '-sideend' and part[3] == 'move: Aurora Veil':
+                        side = int(part[2][1]) - 1
+                        self.assertEqual(turns[side], 1, '%s step %d: %s' % (name, k, line))
+                        turns[side] = 0
+                    elif part[1] == 'upkeep':
+                        turns = [t - 1 if t else 0 for t in turns]
+                derived[(name, k)] = tuple(turns)
+        self.assertEqual(rows, derived)
+        # The battles have a screen of five turns and one of eight, one that ends, and both sides' at once.
+        values = list(derived.values())
+        self.assertTrue(any(max(v) > 5 for v in values) and any(all(v) for v in values) and any(sum(v) for v in values))
+
+    def test_item_taken_rows_are_what_the_protocol_lines_say(self):
+        """Decision 0018 section 6.1 for Knock Off: a member holds nothing from the `|-enditem|X|Item|[from] move: Knock Off|
+        [of] Y` line on, and nothing clears it (the item stays gone across a switch-out and a faint: sim/pokemon.ts:1851-1866
+        takeItem sets pokemon.item to the empty item for good). The rows of the C test (rows in tests/test_pool_g16.c: per
+        step the members that hold nothing as a mask over side * 6 + roster index, the number of such lines, the number of
+        `|-activate|X|ability: Sticky Hold` lines) must be exactly what these lines give for the committed traces, so the
+        engine's tail, events and extension are checked against the protocol and not against itself. Also: the converter
+        reads the line as ITEM_END with the cause ITEM_TAKEN (the move in id, the user in other, the item in id2), and
+        refuses any other shape of a `[from] move:` item line."""
+        names = ('g16_removal', 'g16_unburden', 'g16_stones', 'g16_sticky_hold', 'g16_scarf_helmet', 'g16_helmet_faint',
+                 'g16_scarf_lock_stays')
+        source = open(os.path.join(ROOT, 'tests', 'test_pool_g16.c'), encoding='utf-8').read()
+        rows = {}
+        for m in re.finditer(r'\{"(g16_\w+)", (\d+)u, 0x([0-9a-f]+)u, (\d+)u, (\d+)u\}', source):
+            rows[(m.group(1), int(m.group(2)))] = (int(m.group(3), 16), int(m.group(4)), int(m.group(5)))
+        derived = {}
+        taken_total = 0
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'specs', name + '.json'), encoding='utf-8') as f:
+                spec = json.load(f)
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            rosters = [re.findall(r'^([A-Za-z-]+)(?: \([MF]\))? @', text, re.M) for text in spec['teams']]
+            gone = 0
+            for k, step in enumerate(trace['steps']):
+                taken = blocked = 0
+                for line in step['log']:
+                    part = line.split('|')
+                    if len(part) > 4 and part[1] == '-enditem' and '[from] move: Knock Off' in part[4:]:
+                        side = int(part[2][1]) - 1
+                        gone |= 1 << (side * 6 + rosters[side].index(part[2][5:]))
+                        taken += 1
+                    elif len(part) > 3 and part[1] == '-activate' and part[3] == 'ability: Sticky Hold':
+                        blocked += 1
+                derived[(name, k)] = (gone, taken, blocked)
+                taken_total += taken
+        self.assertEqual(rows, derived)
+        self.assertTrue(taken_total >= 8 and any(b for (_, _, b) in derived.values()))
+        # The converter.
+        tables = trace_to_c.load_tables(ROOT, True)
+        roster = [{'Meowscarada': 0}, {'Pelipper': 0}]
+        line = '|-enditem|p2a: Pelipper|Sitrus Berry|[from] move: Knock Off|[of] p1a: Meowscarada'
+        (e,) = trace_to_c.step_events([line], 0, roster, [{'Meowscarada': 100}, {'Pelipper': 100}], tables)
+        self.assertEqual((e[0], e[1], e[2], e[3], e[4], e[5], e[11], e[13]),
+                         (trace_to_c.EV['ITEM_END'], 2, 0, trace_to_c.CAUSE['ITEM_TAKEN'],
+                          tables['MOVE'][trace_to_c.key('Knock Off')], tables['ITEM'][trace_to_c.key('Sitrus Berry')] + 1,
+                          0, 0))
+        self.assertEqual(trace_to_c.CAUSE['ITEM_TAKEN'], 17)
+        for bad in ('|-enditem|p2a: Pelipper|Sitrus Berry|[from] move: Knock Off',
+                    '|-enditem|p2a: Pelipper|Sitrus Berry|[from] move: Knock Off|[of] p1a: Meowscarada|[eat]'):
+            with self.assertRaises(trace_to_c.ConversionError):
+                trace_to_c.step_events([bad], 0, roster, [{'Meowscarada': 100}, {'Pelipper': 100}], tables)
+        # An item used up is the old line, unchanged: no cause, no move.
+        (e,) = trace_to_c.step_events(['|-enditem|p2a: Pelipper|Sitrus Berry|[eat]'], 0, roster,
+                                      [{'Meowscarada': 100}, {'Pelipper': 100}], tables)
+        self.assertEqual((e[0], e[1], e[3], e[4], e[13]),
+                         (trace_to_c.EV['ITEM_END'], 2, 0, 0, trace_to_c.FLAG['EATEN']))
+
+    def test_soak_rows_are_what_the_protocol_lines_say(self):
+        """Decision 0018 section 6.1 for Soak: a position is Soaked from the `|-start|X|typechange|Water` line until the
+        occupant leaves (`|switch|`, `|drag|`, `|replace|`, `|faint|`) or Mega Evolves (`|-mega|`: setSpecies resets the
+        types, sim/pokemon.ts:1392; the research table had OUT only). The rows of the C test (rows in
+        tests/test_pool_g11.c: the Soaked positions after each step of the G11 battles, as masks over side * 2 + slot)
+        must be exactly what these lines give for the committed traces, so the engine's tail and extension are checked
+        against the protocol and not against itself. Also: the converter reads the line as TYPE_CHANGE (the type in the
+        detail, cause MOVE with Soak), and refuses one that is not a single type of the table."""
+        names = ('g11_soak', 'g11_soak_mega', 'g11_soak_stab', 'g11_soak_electro')
+        source = open(os.path.join(ROOT, 'tests', 'test_pool_g11.c'), encoding='utf-8').read()
+        rows = {}
+        for m in re.finditer(r'\{"(g11_\w+)", (\d+)u, 0x([0-9a-f])u\}', source):
+            rows[(m.group(1), int(m.group(2)))] = int(m.group(3), 16)
+        derived = {}
+        lines_seen = 0
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            soaked = set()
+            for k, step in enumerate(trace['steps']):
+                for line in step['log']:
+                    part = line.split('|')
+                    if len(part) < 3:
+                        continue
+                    if part[1] in ('switch', 'drag', 'faint', 'replace', '-mega'):
+                        soaked.discard(part[2][:3])
+                    elif part[1] == '-start' and len(part) > 4 and part[3] == 'typechange':
+                        self.assertEqual(part[4], 'Water')
+                        self.assertEqual(len(part), 5)  # no [from]: the move is Soak, the converter's rule
+                        soaked.add(part[2][:3])
+                        lines_seen += 1
+                derived[(name, k)] = sum(1 << ((int(x[1]) - 1) * 2 + 'ab'.index(x[2])) for x in soaked)
+        self.assertEqual(rows, derived)
+        self.assertTrue(any(derived.values()) and lines_seen >= 6)
+        tables = trace_to_c.load_tables(ROOT, True)
+        names_of = {'p1a': 0, 'p1b': 1, 'p2a': 2, 'p2b': 3}
+        roster = [{'Pelipper': 0}, {'Pelipper': 0}]
+        events = trace_to_c.step_events(['|-start|p2a: Pelipper|typechange|Water'], 0, roster, [{'Pelipper': 100}] * 2, tables)
+        self.assertEqual(len(events), 1)
+        e = events[0]
+        self.assertEqual((e[0], e[1], e[3], e[5], e[11]),
+                         (trace_to_c.EV['TYPE_CHANGE'], names_of['p2a'], trace_to_c.CAUSE['MOVE'],
+                          tables['MOVE'][trace_to_c.key('Soak')], trace_to_c.TYPE_IDS['Water']))
+        self.assertEqual(trace_to_c.EV['TYPE_CHANGE'], 41)
+        for bad in ('|-start|p2a: Pelipper|typechange|Water/Flying', '|-start|p2a: Pelipper|typechange|Stellar'):
+            with self.assertRaises(trace_to_c.ConversionError):
+                trace_to_c.step_events([bad], 0, roster, [{'Pelipper': 100}] * 2, tables)
+
+    def test_encore_rows_are_what_the_protocol_lines_say(self):
+        """Decision 0018 section 6.1 for Encore: a position is Encored from the `|-start|X|Encore` line, to the slot of the
+        occupant's last `|move|` line on its open sheet (its set's move order), until the matching `|-end|X|Encore` or
+        until the occupant leaves (`|switch|`, `|drag|`, `|replace|`, `|faint|`). The rows of the C test (rows in
+        tests/test_pool_g9.c: the slot + 1 of each position after each step of the g09 battles) must be exactly what
+        these lines give for the committed traces and specs, so the engine's tail and extension are checked against the
+        protocol and not against itself. Also: the converter reads both lines as VOLATILE_START and VOLATILE_END with
+        the Encore detail."""
+        names = ('g09_encore_lock', 'g09_encore_fail', 'g09_encore_late', 'g09_encore_switch', 'g09_encore_struggle',
+                 'g09_encore_tie_a', 'g09_encore_tie_b', 'g09_encore_encore')
+        source = open(os.path.join(ROOT, 'tests', 'test_pool_g9.c'), encoding='utf-8').read()
+        rows = {}
+        for m in re.finditer(r'\{"(g09_\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}', source):
+            rows[(m.group(1), int(m.group(2)))] = [int(m.group(i)) for i in (3, 4, 5, 6)]
+        derived = {}
+        starts = 0
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'specs', name + '.json'), encoding='utf-8') as f:
+                spec = json.load(f)
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            sheets = []
+            for text in spec['teams']:
+                sheet = {}
+                for block in text.strip().split('\n\n'):
+                    lines = block.split('\n')
+                    sheet[re.split(r' \(| @', lines[0])[0]] = [l[2:] for l in lines if l.startswith('- ')]
+                sheets.append(sheet)
+            last, encore = {}, {}
+            for k, step in enumerate(trace['steps']):
+                for line in step['log']:
+                    part = line.split('|')
+                    if len(part) < 3:
+                        continue
+                    pos = part[2][:3]
+                    if part[1] in ('switch', 'drag', 'faint', 'replace'):
+                        last.pop(pos, None)
+                        encore.pop(pos, None)
+                    elif part[1] == 'move':
+                        moves = sheets[int(pos[1]) - 1][part[2].split(': ', 1)[1]]
+                        last[pos] = moves.index(part[3]) + 1 if part[3] in moves else 5
+                    elif part[1] == '-start' and len(part) > 3 and part[3] == 'Encore':
+                        encore[pos] = last[pos]
+                        starts += 1
+                    elif part[1] == '-end' and len(part) > 3 and part[3] == 'Encore':
+                        encore.pop(pos, None)
+                slots = [0, 0, 0, 0]
+                for p, v in encore.items():
+                    slots[(int(p[1]) - 1) * 2 + 'ab'.index(p[2])] = v
+                derived[(name, k)] = slots
+        self.assertEqual(rows, derived)
+        self.assertTrue(starts >= 5 and any(any(v) for v in derived.values()))
+        tables = trace_to_c.load_tables(ROOT, True)
+        roster = [{'Milotic': 0}, {'Milotic': 0}]
+        maxhp = [{'Milotic': 100}] * 2
+        for line, kind in (('|-start|p2a: Milotic|Encore', 'VOLATILE_START'), ('|-end|p2a: Milotic|Encore', 'VOLATILE_END')):
+            events = trace_to_c.step_events([line], 0, roster, maxhp, tables)
+            self.assertEqual(len(events), 1)
+            e = events[0]
+            self.assertEqual((e[0], e[1], e[11]), (trace_to_c.EV[kind], 2, trace_to_c.VOLATILE_ENCORE))
+        self.assertEqual((trace_to_c.EV['VOLATILE_START'], trace_to_c.EV['VOLATILE_END']), (39, 40))
+        self.assertEqual(trace_to_c.VOLATILE_ENCORE, 2)
+
+    def test_the_draws_of_an_encore_replacement_are_tape_entries(self):
+        """Encore's replaced action (Champions' onStart, queue.changeAction -> insertChoice -> resolveAction) draws the
+        target that decides who it hits (the harness labels it RANDOM_TARGET resolve:insert, not INSERT_TIE) and, when it
+        ties queued actions, its place among them (INSERT_TIE with moves in the tied range). The converter keeps both as
+        tape entries; the old rules stay: a RANDOM_TARGET resolve of an ordinary queue and an insert tie among runSwitch
+        entries are dropped, an insert tie among anything else is an error."""
+        before = {'sides': []}
+        target = {'site': 'RANDOM_TARGET', 'context': 'resolve:insert', 'lo': 0, 'hi': 2, 'value': 1}
+        self.assertIsNone(trace_to_c.drop_reason(target, before))
+        self.assertEqual(trace_to_c.tape_entry(target), (trace_to_c.SITES['RANDOM_TARGET'], 0, 2, 1))
+        plain = dict(target, context='resolve')
+        self.assertEqual(trace_to_c.drop_reason(plain, before), 'target computed for priority')
+        group = ['A:move:p1a:thunderbolt', 'A:move:p2b:shadowball', 'A:residual:-:']
+        tie = {'site': 'INSERT_TIE', 'context': 'queue', 'lo': 0, 'hi': 3, 'value': 1, 'group': group}
+        self.assertIsNone(trace_to_c.drop_reason(tie, before))
+        self.assertEqual(trace_to_c.tape_entry(tie), (trace_to_c.SITES['INSERT_TIE'], 0, 3, 1))
+        self.assertEqual(trace_to_c.SITES['INSERT_TIE'], 14)
+        runs = dict(tie, group=['A:runSwitch:p1a::1', 'A:runSwitch:p2a::1'], hi=2)
+        self.assertEqual(trace_to_c.drop_reason(runs, before), 'queue order of entries that run together')
+        other = dict(tie, group=['A:switch:p1a::', 'A:switch:p2a::', 'A:residual:-:'])
+        with self.assertRaises(trace_to_c.ConversionError) as ctx:
+            trace_to_c.drop_reason(other, before)
+        self.assertEqual(ctx.exception.rule, 'insert-tie')
+
+    def test_poison_touch_rolls_are_kept_as_their_own_site(self):
+        """Poison Touch's randomChance(3, 10) (step G14) is a draw of the site POISON_TOUCH, random(10), that the harness
+        names by the effect and the event it runs in (ps_trace.js CONDITION_SITES) and the converter keeps as a tape entry
+        of site 16: after every contact hit of a holder, also at a target that is down or immune. The recorded battle has
+        draws below and above 3 and none outside [0, 10)."""
+        with open(os.path.join(ROOT, 'tests', 'reference', 'traces', 'g14_poison_touch.json'), encoding='utf-8') as f:
+            trace = json.load(f)
+        draws = [d for step in trace['steps'] for d in step['draws'] if d['site'] == 'POISON_TOUCH']
+        self.assertTrue(draws)
+        self.assertTrue(all((d['lo'], d['hi']) == (0, 10) and 0 <= d['value'] < 10 for d in draws))
+        self.assertTrue(any(d['value'] < 3 for d in draws) and any(d['value'] >= 3 for d in draws))
+        self.assertEqual(trace_to_c.SITES['POISON_TOUCH'], 16)
+        for d in draws:
+            self.assertEqual(trace_to_c.tape_entry(d), (16, 0, 10, d['value']))
+        # No draw of the battle is unclassified.
+        self.assertFalse([d for step in trace['steps'] for d in step['draws'] if d['site'] == 'UNKNOWN'])
+
+    def test_thermal_exchange_is_no_holder_of_an_update_tie(self):
+        """Thermal Exchange's onUpdate (step G14) cures a burn that its holder cannot have, so an each:Update tie with it
+        is dropped as one without a holder; a Sitrus Berry beside it is a holder like any other, and a burned holder
+        (the precondition) is an error."""
+        def state(status):
+            side = {'active': [0, None], 'pokemon': [{'status': status}]}
+            return {'sides': [side, {'active': [None, None], 'pokemon': []}]}
+
+        d = {'site': 'SPEED_TIE', 'context': 'each:Update', 'lo': 0, 'hi': 2, 'value': 0, 'start': 0,
+             'group': ['P:p1a:1:thermalexchange', 'P:p2a:1:sitrusberry']}
+        self.assertEqual(trace_to_c.drop_reason(d, state('')), 'each-event tie with at most one holder')
+        both = dict(d, group=['P:p1a:1:sitrusberry', 'P:p2a:1:sitrusberry', 'P:p1b:1:thermalexchange'])
+        self.assertIsNone(trace_to_c.drop_reason(both, state('')))  # two Sitrus holders: the engine draws
+        with self.assertRaises(trace_to_c.ConversionError) as ctx:
+            trace_to_c.drop_reason(d, state('brn'))
+        self.assertEqual(ctx.exception.rule, 'thermal-exchange-burn')
+        # The holder that stands in the slot when the tie is drawn counts: one that switched in this step over a burned
+        # Pokemon (the state before the step still shows the burned one) is no burned holder (step G21, fz_2101_3); a
+        # burned occupant in the state after the step is.
+        self.assertEqual(trace_to_c.drop_reason(d, state('brn'), state('')), 'each-event tie with at most one holder')
+        with self.assertRaises(trace_to_c.ConversionError) as ctx:
+            trace_to_c.drop_reason(d, state(''), state('brn'))
+        self.assertEqual(ctx.exception.rule, 'thermal-exchange-burn')
+
+    def test_recharge_rows_are_what_the_protocol_lines_say(self):
+        """Decision 0018 section 6.1 for the recharge (step G17): a position must recharge from the `|-mustrecharge|X`
+        line until the `|cant|X|recharge` line or until the occupant leaves (`|switch|`, `|drag|`, `|replace|`,
+        `|faint|`); Encore as for step G9. The rows of the C test (rows in tests/test_pool_g17.c: per position after each
+        step, the recharge flag and the Encored slot + 1) must be exactly what these lines give for the committed traces
+        and specs, so the engine's tail, requests and extension are checked against the protocol and not against
+        themselves. Every `cant|X|recharge` has the `-mustrecharge` before it, and the line comes only after a move
+        line of a recharge move that is not a miss or a block."""
+        names = sorted(f[:-5] for f in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs')) if f.startswith('g17_'))
+        self.assertGreaterEqual(len(names), 9)
+        source = open(os.path.join(ROOT, 'tests', 'test_pool_g17.c'), encoding='utf-8').read()
+        rows = {}
+        for m in re.finditer(r'\{"(g17_\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}',
+                             source):
+            rows[(m.group(1), int(m.group(2)))] = ([int(m.group(i)) for i in (3, 4, 5, 6)],
+                                                   [int(m.group(i)) for i in (7, 8, 9, 10)])
+        derived = {}
+        recharges = cants = 0
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'specs', name + '.json'), encoding='utf-8') as f:
+                spec = json.load(f)
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            sheets = []
+            for text in spec['teams']:
+                sheet = {}
+                for block in text.strip().split('\n\n'):
+                    lines = block.split('\n')
+                    sheet[re.sub(r'[^a-z0-9]', '', re.split(r' \(| @', lines[0])[0].lower())] = [l[2:] for l in lines if l.startswith('- ')]
+                sheets.append(sheet)
+            last, encore, recharge = {}, {}, set()
+            for k, step in enumerate(trace['steps']):
+                for line in step['log']:
+                    part = line.split('|')
+                    if len(part) < 3:
+                        continue
+                    kind, pos = part[1], part[2][:3]
+                    if kind in ('switch', 'drag', 'faint', 'replace'):
+                        last.pop(pos, None)
+                        encore.pop(pos, None)
+                        recharge.discard(pos)
+                    elif kind == 'move':
+                        moves = sheets[int(pos[1]) - 1][re.sub(r'[^a-z0-9]', '', part[2].split(': ', 1)[1].lower())]
+                        last[pos] = moves.index(part[3]) + 1 if part[3] in moves else 5
+                    elif kind == '-start' and len(part) > 3 and part[3] == 'Encore':
+                        encore[pos] = last[pos]
+                    elif kind == '-end' and len(part) > 3 and part[3] == 'Encore':
+                        encore.pop(pos, None)
+                    elif kind == '-mustrecharge':
+                        recharge.add(pos)
+                        recharges += 1
+                    elif kind == 'cant' and len(part) > 3 and part[3] == 'recharge':
+                        self.assertIn(pos, recharge)
+                        recharge.discard(pos)
+                        cants += 1
+                enc, rec = [0, 0, 0, 0], [0, 0, 0, 0]
+                for x, v in encore.items():
+                    enc[(int(x[1]) - 1) * 2 + 'ab'.index(x[2])] = v
+                for x in recharge:
+                    rec[(int(x[1]) - 1) * 2 + 'ab'.index(x[2])] = 1
+                derived[(name, k)] = (rec, enc)
+        self.assertEqual(rows, derived)
+        self.assertTrue(recharges >= 8 and cants >= 6)
+
+    def test_the_recharge_lines_and_choice_are_converted(self):
+        """`|-mustrecharge|X` is VOLATILE_START with the detail 3 (DUOFORGE_VOLATILE_MUST_RECHARGE), `|cant|X|recharge` is
+        CANT with the cause 18 (DUOFORGE_CAUSE_RECHARGE), and the choice on a recharge turn (Showdown's "move 1": the
+        request offers the move Recharge) is MOVE with the move slot 5 (DUOFORGE_MOVE_SLOT_RECHARGE), no target, no
+        Mega, whatever was typed."""
+        self.assertEqual((trace_to_c.CAUSE['RECHARGE'], trace_to_c.VOLATILE_MUST_RECHARGE, trace_to_c.MOVE_SLOT_RECHARGE),
+                         (18, 3, 5))
+        spec, trace = battle('g17_hyper_beam')
+        data = convert('g17_hyper_beam', spec, trace)
+        starts = cants = recharge_cmds = 0
+        for st in data['steps']:
+            for evs in st['events']:
+                for e in evs:
+                    starts += 1 if e[0] == trace_to_c.EV['VOLATILE_START'] and e[11] == 3 else 0
+                    cants += 1 if e[0] == trace_to_c.EV['CANT'] and e[3] == 18 else 0
+            for side_cmds in st['cmds']:
+                recharge_cmds += sum(1 for c in side_cmds if tuple(c)[:3] == (1, 5, 0xFF))
+        self.assertEqual((starts, cants, recharge_cmds), (2, 2, 1))  # both viewers see both lines; one choice
+
+    def test_trace_rows_are_what_the_protocol_lines_say(self):
+        """Decision 0018 section 6.1 for an ability changed by Trace: a position has the copied ability from the
+        `|-ability|X|NEW|OLD|[from] ability: Trace|[of] foe` line until its occupant leaves (`|switch|`, `|drag|`,
+        `|replace|`, `|faint|`) or Mega Evolves (`|-mega|`: formeChange sets the Mega forme's ability). The rows of the
+        C test (tests/test_pool_ac1.c: the copied ability of the four positions after each step of the ac1 battles)
+        must be exactly what these lines give for the committed traces. Also: the converter reads the line as an
+        ABILITY event (the new ability in id2, cause ABILITY, the foe in `other`), and refuses a [from] ability line
+        that is not Trace's, an [of] that is missing and a plain line with a [from]."""
+        names = ('ac1_trace_intimidate', 'ac1_trace_defiant', 'ac1_trace_drizzle', 'ac1_trace_single',
+                 'ac1_trace_switch')
+        source = open(os.path.join(ROOT, 'tests', 'test_pool_ac1.c'), encoding='utf-8').read()
+        rows = {}
+        for m in re.finditer(r'\{"(ac1_\w+)", (\d+)u, \{([^}]*)\}\}', source):
+            cells = [c.strip() for c in m.group(3).split(',')]
+            rows[(m.group(1), int(m.group(2)))] = [0 if c == '0u' else re.fullmatch(r'AB\((\w+)\)', c).group(1) for c in cells]
+        derived = {}
+        lines_seen = 0
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            copied = {}
+            for k, step in enumerate(trace['steps']):
+                for line in step['log']:
+                    part = line.split('|')
+                    if len(part) < 3:
+                        continue
+                    if part[1] in ('switch', 'drag', 'faint', 'replace', '-mega'):
+                        copied.pop(part[2][:3], None)
+                    elif part[1] == '-ability' and len(part) > 5 and part[5] == '[from] ability: Trace':
+                        self.assertEqual(len(part), 7)  # -ability|X|NEW|OLD|[from] ability: Trace|[of] foe
+                        copied[part[2][:3]] = trace_to_c.key(part[3])
+                        lines_seen += 1
+                derived[(name, k)] = [copied.get(x, 0) for x in ('p1a', 'p1b', 'p2a', 'p2b')]
+        self.assertEqual(rows, derived)
+        self.assertTrue(any(any(v) for v in derived.values()) and lines_seen >= 6)
+        tables = trace_to_c.load_tables(ROOT, True)
+        roster = [{'Gardevoir': 0}, {'Incineroar': 0}]
+        line = '|-ability|p1a: Gardevoir|Intimidate|Trace|[from] ability: Trace|[of] p2a: Incineroar'
+        events = trace_to_c.step_events([line], 0, roster, [{'Gardevoir': 100}] * 2, tables)
+        self.assertEqual(len(events), 1)
+        e = events[0]
+        self.assertEqual((e[0], e[1], e[2], e[3], e[5]),
+                         (trace_to_c.EV['ABILITY'], 0, 2, trace_to_c.CAUSE['ABILITY'],
+                          tables['ABILITY'][trace_to_c.key('Intimidate')] + 1))
+        self.assertEqual(trace_to_c.SITES['TRACE'], 15)
+        for bad in ('|-ability|p1a: Gardevoir|Intimidate|Trace|[from] ability: Pressure|[of] p2a: Incineroar',
+                    '|-ability|p1a: Gardevoir|Intimidate|Trace|[from] ability: Trace',
+                    '|-ability|p1a: Gardevoir|Intimidate|boost|[from] ability: Trace|[of] p2a: Incineroar',
+                    '|-ability|p1a: Gardevoir|Intimidate|boost|[from] move: Skill Swap'):
+            with self.assertRaises(trace_to_c.ConversionError):
+                trace_to_c.step_events([bad], 0, roster, [{'Gardevoir': 100}] * 2, tables)
+
+    def test_glaive_rush_rows_are_what_the_protocol_lines_say(self):
+        """Decision 0018 section 6.1 for Glaive Rush (step G19): its user is hit as vulnerable from a `|move|X|Glaive Rush|`
+        line that is followed by damage to a foe (a miss, a block or an immunity gives nothing; the `-singlemove|X|Glaive
+        Rush|[silent]` line is not shown) until the user's next `|move|` or `|cant|` line (BeforeMove, priority 100) or
+        until it leaves (`|switch|`, `|drag|`, `|replace|`, `|faint|`). The rows of the C test (rows in
+        tests/test_pool_g19.c: the flag of each position after each step) must be exactly what these lines give for the
+        committed traces, so the engine's tail and extension are checked against the protocol and not against
+        themselves. Every silent line follows such a hit, and no battle shows it for a miss, a block or an immunity."""
+        names = sorted(f[:-5] for f in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs')) if f.startswith('g19_glaive'))
+        self.assertEqual(len(names), 5)
+        with open(os.path.join(ROOT, 'tests', 'test_pool_g19.c'), encoding='utf-8') as f:
+            source = f.read()
+        rows = {}
+        for m in re.finditer(r'\{"(g19_glaive\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}', source):
+            rows[(m.group(1), int(m.group(2)))] = [int(m.group(i)) for i in (3, 4, 5, 6)]
+        derived = {}
+        silent = hits = 0
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            glaive = set()
+            for k, step in enumerate(trace['steps']):
+                log = [l.split('|') for l in step['log']]
+                for i, part in enumerate(log):
+                    if len(part) < 3:
+                        continue
+                    kind, pos = part[1], part[2][:3]
+                    if kind in ('switch', 'drag', 'faint', 'replace'):
+                        glaive.discard(pos)
+                    elif kind in ('move', 'cant'):
+                        glaive.discard(pos)
+                        if kind == 'move' and len(part) > 3 and part[3] == 'Glaive Rush':
+                            hit = False
+                            for later in log[i + 1:]:
+                                if len(later) > 2 and later[1] in ('move', 'turn', 'upkeep', 'cant'):
+                                    break
+                                if len(later) > 2 and later[1] == '-damage' and later[2][:2] != pos[:2]:
+                                    hit = True
+                            hits += 1 if hit else 0
+                            if hit:
+                                glaive.add(pos)
+                    elif kind == '-singlemove' and len(part) > 4 and part[3] == 'Glaive Rush' and part[4] == '[silent]':
+                        silent += 1
+                        self.assertIn(pos, glaive)
+                row = [0, 0, 0, 0]
+                for x in glaive:
+                    row[(int(x[1]) - 1) * 2 + 'ab'.index(x[2])] = 1
+                derived[(name, k)] = row
+        self.assertEqual(rows, derived)
+        self.assertTrue(hits >= 2 and silent == hits)
 
     def test_a_two_turn_lock_lasts_while_twoturnmove_stands(self):
         """Electro Shot's onTryMove removes the move's volatile on the locked turn and the recorder's `locked` is made of
@@ -516,31 +1417,41 @@ class Library(unittest.TestCase):
         self.assertEqual(extended['ITEM']['CHOPLEBERRY'], 14)
         self.assertEqual(extended['ITEM']['MYSTICWATER'], 6)
         self.assertNotIn('CHILANBERRY', tables(False)['ITEM'])
-        self.assertEqual(len(extended['GENDER_RULE']), 28)  # the pool's formes after step G2
+        self.assertEqual(len(extended['GENDER_RULE']), 346)  # the pool's formes: the whole legal pool (decision 0015 4.2)
 
     def test_the_protocol_names_of_the_formes_with_a_base_species(self):
         """An unnamed Pokemon is called by its base species in the protocol (sim/pokemon.ts:339-341): Indeedee-F,
         Arcanine-Hisui and Floette-Eternal. The pool battles g2_data_moves_b names Arcanine-Hisui in the switch line."""
         self.assertEqual(trace_to_c.BASE_SPECIES_NAME,
-                         {'Indeedee-F': 'Indeedee', 'Arcanine-Hisui': 'Arcanine', 'Floette-Eternal': 'Floette'})
+                         {'Indeedee-F': 'Indeedee', 'Arcanine-Hisui': 'Arcanine', 'Floette-Eternal': 'Floette',
+                          'Ninetales-Alola': 'Ninetales', 'Meowstic-F': 'Meowstic', 'Lycanroc-Dusk': 'Lycanroc'})  # G21
         spec = json.load(open(os.path.join(ROOT, 'tests', 'reference', 'traces', 'g2_data_moves_b.json')))
+        # Meowstic-F (step G15, g15_ef_retarget_*) is called Meowstic.
+        for name in ('g15_ef_retarget_terrain', 'g15_ef_retarget_plain'):
+            log = [l for step in json.load(open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json')))['steps']
+                   for l in step['log']]
+            self.assertTrue(any('|Meowstic-F, L50, F|' in l and l.startswith('|switch|p2') and ': Meowstic|' in l
+                                for l in log), name)
         lines = [l for step in spec['steps'] for l in step['log']]
         self.assertTrue(any(l.startswith('|switch|p1a: Arcanine|Arcanine-Hisui, L50, M|') for l in lines))
 
-    def test_every_move_marked_by_step_g2_is_used_in_a_pool_battle(self):
-        """A move that the pool manifest marks beyond the extended ids was used in a committed pool battle: a move
-        line of it that did something (damage, or a boost for a status move) before the next move line."""
+    def test_every_move_marked_beyond_the_extended_ids_is_used_in_a_pool_battle(self):
+        """A move that the pool manifest marks beyond the extended ids (twelve of step G2, U-turn of step G5, Throat Chop
+        and Psychic Noise of step G8, Soak of step G11, Moonblast and Calm Mind of step G12, Sandstorm and Snowscape
+        of the weather step, the fourteen of step G13) was used in a committed pool battle: a move line of it that did
+        something (damage, a boost, a heal, a -start line for a status move, a -weather line for a weather move; for
+        Detect, the protection of its user: -singleturn) before the next move line."""
         def read(*p):
             return open(os.path.join(ROOT, *p), encoding='utf-8').read()
         header, source = read('src', 'data', 'pool_tables.h'), read('src', 'data', 'pool_tables.c')
         ext_moves = int(re.search(r'#define DFI_EXT_MOVE_COUNT (\d+)u', read('src', 'data', 'extended_tables.h')).group(1))
         array = source[source.index('dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {'):source.index('dfi_pool_items[')]
         names = re.findall(r'^    /\* (.+?) -- data/', array, re.M)
-        ids = {m.group(1): int(m.group(2)) for m in re.finditer(r'#define DFI_MOVE_(\w+) (\d+)u', header)}
+        ids = {m.group(1): int(m.group(2)) for m in re.finditer(r'#define DFI_MOVE_(?!FLAG)(\w+) (\d+)u', header)}
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 12)
+        self.assertEqual(len(marked), 79)  # the 27 of G21, Spiky Shield (G20), G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -556,9 +1467,170 @@ class Library(unittest.TestCase):
                         for after in lines[i + 1:]:
                             if after.startswith('|move|') or after.startswith('|turn|'):
                                 break
-                            done = done or after.startswith(('|-damage|', '|-boost|'))
+                            done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|', '|-start|', '|-weather|') + (('|-status|',) if name == 'Will-O-Wisp' else ()))
+                            # A side condition that a status move sets (Aurora Veil, step G20): its -sidestart line.
+                            done = done or (after.startswith('|-sidestart|') and after.endswith('|move: ' + name))
+                            # A side move (Wide Guard, step G7) shows its effect as its own -singleturn line; Detect's is
+                            # Protect's (step G13: its handler, and the line of the Protect condition).
+                            done = done or (after.startswith('|-singleturn|') and after.endswith('|' + name))
+                            done = done or (name == 'Detect' and after.startswith('|-singleturn|'))
+                            # Spiky Shield (step G20) prints Protect's line, `move: Protect`, for its own volatile.
+                            done = done or (name == 'Spiky Shield' and after.startswith('|-singleturn|'))
             with self.subTest(move=name):
                 self.assertTrue(done, '%s is marked but no committed pool battle uses it' % name)
+
+    def test_inner_focus_fail_line_is_a_fail_event_of_the_ability(self):
+        """Inner Focus (step G22, data/abilities.ts:2157-2162): `-fail|X|unboost|atk|[from] ability: Inner Focus|[of] X`
+        is a FAIL whose cause is the ability (id2 = ability + 1) and whose `other` is the holder; any other stat, a
+        missing [of] or another cause is refused, not mapped, and a `-fail` of a heal move or an ailment stays what it
+        was."""
+        tables = trace_to_c.load_tables(ROOT, True)
+        roster = [{'Dragonite': 0}, {'Dragonite': 0}]
+        maxhp = [{'Dragonite': 100}] * 2
+        line = '|-fail|p2a: Dragonite|unboost|atk|[from] ability: Inner Focus|[of] p2a: Dragonite'
+        events = trace_to_c.step_events([line], 0, roster, maxhp, tables)
+        self.assertEqual(len(events), 1)
+        e = events[0]
+        self.assertEqual((e[0], e[1], e[2], e[3], e[5]),
+                         (trace_to_c.EV['FAIL'], 2, 2, trace_to_c.CAUSE['ABILITY'],
+                          tables['ABILITY'][trace_to_c.key('Inner Focus')] + 1))
+        for bad in ('|-fail|p2a: Dragonite|unboost|def|[from] ability: Inner Focus|[of] p2a: Dragonite',
+                    '|-fail|p2a: Dragonite|unboost|atk|[from] ability: Inner Focus',
+                    '|-fail|p2a: Dragonite|unboost|atk|[from] move: Protect|[of] p2a: Dragonite'):
+            with self.assertRaises(trace_to_c.ConversionError) as ctx:
+                trace_to_c.step_events([bad], 0, roster, maxhp, tables)
+            self.assertEqual(ctx.exception.rule, 'fail-line')
+        plain = trace_to_c.step_events(['|-fail|p2a: Dragonite|heal'], 0, roster, maxhp, tables)[0]
+        self.assertEqual((plain[0], plain[3], plain[11]), (trace_to_c.EV['FAIL'], 0, 0))
+
+    def test_every_ability_marked_by_g22_shows_its_effect_in_a_pool_battle(self):
+        """The six abilities of step G22 are used in committed pool battles that show what the engine reads, from the
+        protocol lines alone: the Speed abilities as an order of the move lines that the weather turns around (the same
+        two Pokemon, the slower first without the weather and the faster first with it), Sand Rush's holder with no
+        Sandstorm line while foes have them, Inner Focus as its -fail lines and no flinch of its holders, Liquid Voice as
+        a hit that the sound move's own type forbids."""
+        def trace(name):
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                return json.load(f)
+
+        def moves(step):
+            return [l.split('|')[2] for l in step['log'] if l.startswith('|move|')]
+
+        def first_before(step, a, b):
+            order = moves(step)
+            return a in order and b in order and order.index(a) < order.index(b)
+
+        def weather_of(steps):
+            """The weather after each step, from the -weather lines (upkeep lines keep it)."""
+            now, out = '', []
+            for step in steps:
+                for l in step['log']:
+                    if l.startswith('|-weather|'):
+                        now = '' if l.split('|')[2] == 'none' else l.split('|')[2]
+                out.append(now)
+            return out
+
+        # Swift Swim: Raichu first without rain, Basculegion first (twice its Speed) in the same turn that the rain starts.
+        swim = trace('g22_swift_swim')['steps']
+        self.assertTrue(first_before(swim[1], 'p2a: Raichu', 'p1a: Basculegion'))
+        self.assertTrue(first_before(swim[2], 'p1a: Basculegion', 'p2a: Raichu') or 'p2a: Raichu' not in moves(swim[2]))
+        self.assertTrue(any(l.startswith('|-weather|RainDance|[from] ability: Drizzle') for l in swim[2]['log']))
+        # ... and the queued action of the knocked-out holder ties Politoed's: the draw of the queue site.
+        self.assertTrue(any(d['site'] == 'SPEED_TIE' and d['context'] == 'queue' and
+                            sorted(d['group']) == ['A:move:p1a:liquidation', 'A:move:p1b:weatherball']
+                            for step in swim for d in step['draws']))
+        # Sand Rush: sand damage on Raichu and Milotic and none on the holders (Houndstone is a Ghost); Houndstone
+        # (88 raw Speed, 176 in the sand) before Raichu (130) in the turn after the sandstorm began.
+        sand = trace('g22_sand_rush')['steps']
+        hits = [l for step in sand for l in step['log'] if l.endswith('[from] Sandstorm')]
+        self.assertTrue(any('p2a: Raichu' in l for l in hits) and any('p2b: Milotic' in l for l in hits))
+        self.assertFalse([l for l in hits if 'Houndstone' in l or 'Lycanroc' in l])
+        self.assertTrue(first_before(sand[2], 'p1a: Houndstone', 'p2a: Raichu'))
+        self.assertTrue(any(l.startswith('|move|p1a: Houndstone|Sandstorm') for l in sand[1]['log']))
+        # Slush Rush: Milotic before Beartic on the turn of Snowscape, Beartic before Milotic on the next.
+        slush = trace('g22_slush_rush')['steps']
+        self.assertTrue(first_before(slush[1], 'p2a: Milotic', 'p1a: Beartic'))
+        self.assertTrue(first_before(slush[2], 'p1a: Beartic', 'p2a: Milotic'))
+        # Chlorophyll: Raichu before Venusaur without the sun, Venusaur before Raichu in the turn that Drought starts it.
+        sun = trace('g22_chlorophyll')['steps']
+        self.assertTrue(first_before(sun[1], 'p2a: Raichu', 'p1b: Venusaur'))
+        self.assertTrue(first_before(sun[2], 'p1b: Venusaur', 'p2a: Raichu') or
+                        ('p2a: Raichu' not in moves(sun[2]) and '|faint|p2a: Raichu' in sun[2]['log']))
+        self.assertTrue(any(l.startswith('|-weather|SunnyDay|[from] ability: Drought') for l in sun[2]['log']))
+        # In a weather that is not theirs the abilities change nothing: the foes at 101 to 120 Speed move before the 98
+        # (Basculegion), 88 (Houndstone) and 100 (Venusaur) holders in the sun and the snow, and Beartic (70) is last in the sun.
+        foreign = trace('g22_foreign_weather')['steps']
+        self.assertEqual(moves(foreign[2]), ['p2a: Milotic', 'p1a: Basculegion', 'p1b: Beartic'])
+        self.assertTrue(any(l.startswith('|-weather|SunnyDay|[from] ability: Drought') for l in foreign[2]['log']))
+        self.assertEqual(moves(foreign[3]), ['p1b: Beartic', 'p2b: Ninetales', 'p1a: Basculegion'])
+        self.assertTrue(any(l.startswith('|-weather|Snowscape|[from] ability: Snow Warning') for l in foreign[3]['log']))
+        self.assertEqual(moves(foreign[5])[:4], ['p2b: Ninetales', 'p2a: Abomasnow', 'p1b: Venusaur', 'p1a: Houndstone'])
+        # Slush Rush against a tie: Beartic (70 raw, 140 in snow) and Sneasler (raw 140) tie in the queue and, both with
+        # Leftovers, in the residual; Sneasler is first on the turn of the Snowscape (Beartic has its raw Speed until
+        # the snow is up).
+        tie = trace('g22_speed_tie_snow')['steps']
+        self.assertEqual(moves(tie[1])[-2:], ['p2a: Sneasler', 'p1a: Beartic'])
+        draws = [d for step in tie for d in step['draws'] if d['site'] == 'SPEED_TIE']
+        self.assertTrue(any(d['context'] == 'queue' and
+                            sorted(d['group']) == ['A:move:p1a:superpower', 'A:move:p2a:shadowclaw'] for d in draws))
+        self.assertTrue(any(d['context'] == 'field:Residual' and
+                            sorted(d['group']) == ['H:leftovers:p1a:cb', 'H:leftovers:p2a:cb'] for d in draws))
+        # Inner Focus: its Intimidate lines say -fail (three times: the entry, and Staraptor's switch-in), the other foe
+        # is lowered, Fake Out and the 30 percent Rock Slide flinch Raichu and never Dragonite.
+        focus = trace('g22_inner_focus')['steps']
+        lines = [l for step in focus for l in step['log']]
+        fails = [l for l in lines if l.startswith('|-fail|') and 'unboost|atk' in l]
+        self.assertEqual(len(fails), 2)
+        self.assertTrue(all(l.endswith('[from] ability: Inner Focus|[of] p2a: Dragonite') for l in fails))
+        self.assertTrue(any(l == '|-unboost|p2b: Raichu|atk|1' for l in lines))
+        flinches = [l for l in lines if l.startswith('|cant|') and l.endswith('|flinch')]
+        self.assertEqual(sorted(set(flinches)), ['|cant|p2b: Raichu|flinch'])
+        self.assertGreaterEqual(len(flinches), 2)
+        self.assertTrue(any(l.startswith('|move|p1a: Incineroar|Fake Out|p2a: Dragonite') for l in lines))
+        # Parting Shot (an effect that is not Intimidate) lowers its Attack all the same.
+        self.assertTrue(any(l == '|-unboost|p2a: Dragonite|atk|1' for l in lines))
+        # Liquid Voice: Psychic Noise (Psychic) hits Incineroar (a Dark type: immune to Psychic) as a super effective
+        # Water move, and Hyper Voice (Normal) hits a Ghost.
+        voice = trace('g22_liquid_voice')['steps']
+        step = [s for s in voice if any(l.startswith('|move|p1a: Primarina|Psychic Noise|p2b: Incineroar') for l in s['log'])][0]
+        after = step['log'][[i for i, l in enumerate(step['log']) if l.startswith('|move|p1a: Primarina|Psychic Noise')][0]:]
+        self.assertTrue(after[1].startswith('|-supereffective|p2b: Incineroar'), after[:3])
+        self.assertTrue(any(l.startswith('|-damage|p2b: Incineroar|') for l in after[:4]))
+        hv = [(s, i) for s in voice for i, l in enumerate(s['log']) if l.startswith('|move|p1a: Primarina|Hyper Voice')]
+        self.assertTrue(hv)
+        s, i = hv[0]
+        self.assertTrue(any(l.startswith('|-damage|p2a: Gholdengo|') for l in s['log'][i:i + 6]))
+        self.assertFalse(any(l.startswith('|-immune|') for l in s['log'][i:i + 6]))
+        # Every one of the six is marked and has a battle: the manifest lists exactly these.
+        with open(os.path.join(ROOT, 'src', 'data', 'support_manifest.c'), encoding='utf-8') as f:
+            marked = f.read()
+        for name in ('SANDRUSH', 'SWIFTSWIM', 'SLUSHRUSH', 'CHLOROPHYLL', 'INNERFOCUS', 'LIQUIDVOICE'):
+            self.assertIn('[DFI_ABILITY_%s] = 1u' % name, marked)
+        self.assertNotIn('[DFI_ABILITY_CURSEDBODY] = 1u', marked)
+
+    def test_the_switch_of_a_damaging_pivot_names_its_move(self):
+        """[from] U-turn (step G5) is [from] of the move, as Flip Turn and Parting Shot: the cause MOVE and the move's
+        id (the pool tables have U-turn, the extended tables do not: a bare KeyError there, the converter's way to say
+        that a name is not in the tables); and every pool battle with a [from] U-turn switch line converts."""
+        pool, ext = trace_to_c.load_tables(ROOT, True), trace_to_c.load_tables(ROOT, False)
+        move = pool['MOVE']
+        self.assertEqual(trace_to_c.ev_cause(['[from] U-turn'], pool)[:2], (trace_to_c.CAUSE['MOVE'], move['UTURN']))
+        self.assertEqual(trace_to_c.ev_cause(['[from] Flip Turn'], pool)[:2], (trace_to_c.CAUSE['MOVE'], move['FLIPTURN']))
+        self.assertEqual(trace_to_c.ev_cause(['[from] Parting Shot'], pool)[:2], (trace_to_c.CAUSE['MOVE'], move['PARTINGSHOT']))
+        self.assertNotEqual(move['UTURN'], move['FLIPTURN'])
+        with self.assertRaises(KeyError):
+            trace_to_c.ev_cause(['[from] U-turn'], ext)
+        with self.assertRaises(trace_to_c.ConversionError) as cm:
+            trace_to_c.ev_cause(['[from] Baton Pass'], pool)  # not a move that the converter knows as a cause
+        self.assertEqual(cm.exception.rule, 'from-attribute')
+        names = ('g5_uturn_a', 'g5_uturn_b', 'g5_uturn_c', 'g5_uturn_d', 'g5_uturn_e')
+        seen = {}
+        for n in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', n + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            seen[n] = sum(1 for step in trace['steps'] for l in step['log'] if '[from] U-turn' in l)
+        self.assertEqual(seen['g5_uturn_b'], 0)  # Protect: no pivot
+        self.assertTrue(all(seen[n] > 0 for n in names if n not in ('g5_uturn_b',)), seen)
 
     def test_pass_for_both_slots_converts_per_slot(self):
         """A choice that passes both slots of a switch request: each slot is

@@ -1,0 +1,21 @@
+{
+  "name": "d06_fainted_scarf_speed_tie",
+  "purpose": "Team D's sets with one change: P1's Raichu holds a Choice Scarf and P2's Raichu a Fairy Feather, both with 32 Spe and nothing else, so that their raw Speed is equal (data pool, team preview and one turn). Both Rillaboom use Grassy Glide on P1's Raichu (the Grassy Surge of the first entries keeps the terrain up), so it faints before its Thunderbolt runs. The action stays queued and is sorted again after every action; a fainted Pokemon is not active, so its Choice Scarf does not count (onModifySpe is no handler of an inactive holder, and neither is Tailwind's) and the queued Thunderbolt has the raw Speed, which ties with the live Raichu's: the reference draws a two-way shuffle for a skipped action. An engine that kept the x1.5 would make no draw. No other battle has a fainted Scarf holder whose action ties.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000000d6",
+  "teams": [
+    "Raichu (F) @ Choice Scarf\nAbility: Lightning Rod\nLevel: 50\nEVs: 32 Spe\nTimid Nature\n- Dazzling Gleam\n- Thunderbolt\n- Helping Hand\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- Snarl\n\nGholdengo @ Black Glasses\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Dazzling Gleam\n- Protect\n\nFloette-Eternal (F) @ Floettite\nAbility: Flower Veil\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Dazzling Gleam\n- Protect\n- Psychic\n- Light Screen\n\nGrimmsnarl (M) @ Light Clay\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Dazzling Gleam\n- Spirit Break\n- Reflect\n- Light Screen\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Follow Me\n- Helping Hand\n- Dazzling Gleam\n- Psychic",
+    "Raichu (F) @ Fairy Feather\nAbility: Lightning Rod\nLevel: 50\nEVs: 32 Spe\nTimid Nature\n- Dazzling Gleam\n- Thunderbolt\n- Helping Hand\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- Snarl\n\nGholdengo @ Black Glasses\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Dazzling Gleam\n- Protect\n\nFloette-Eternal (F) @ Floettite\nAbility: Flower Veil\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Dazzling Gleam\n- Protect\n- Psychic\n- Light Screen\n\nGrimmsnarl (M) @ Light Clay\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Dazzling Gleam\n- Spirit Break\n- Reflect\n- Light Screen\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Follow Me\n- Helping Hand\n- Dazzling Gleam\n- Psychic"
+  ],
+  "choices": [
+    {
+      "p1": "team 1234",
+      "p2": "team 1234"
+    },
+    {
+      "p1": "move 2 1, move 2 -1",
+      "p2": "move 2 1, move 2 1"
+    }
+  ]
+}

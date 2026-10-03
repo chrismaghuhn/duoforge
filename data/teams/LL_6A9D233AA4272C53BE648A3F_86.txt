@@ -1,0 +1,53 @@
+Golisopod (M) @ Golisopite
+Ability: Emergency Exit
+Level: 50
+Adamant Nature
+- Close Combat
+- Leech Life
+- Iron Head
+- Swords Dance
+
+Farigiraf (M) @ Grassy Seed
+Ability: Armor Tail
+Level: 50
+Relaxed Nature
+- Psychic
+- Trick Room
+- Helping Hand
+- Protect
+
+Rillaboom (M) @ Life Orb
+Ability: Grassy Surge
+Level: 50
+Brave Nature
+- Grassy Glide
+- Wood Hammer
+- Fake Out
+- U-turn
+
+Pelipper (M) @ Focus Sash
+Ability: Drizzle
+Level: 50
+Modest Nature
+- Weather Ball
+- Tailwind
+- Wide Guard
+- Hurricane
+
+Incineroar (M) @ Passho Berry
+Ability: Intimidate
+Level: 50
+Adamant Nature
+- Flare Blitz
+- Darkest Lariat
+- Fake Out
+- Parting Shot
+
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Timid Nature
+- Hyper Voice
+- Draco Meteor
+- Tailwind
+- Protect

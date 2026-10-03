@@ -8,7 +8,7 @@ Every milestone is a separate authorization boundary. A milestone may require mu
   - The batch runtime is measured (M6, `docs/benchmarks/`).
   - Team C (decision 0009) is built and passes its gate, but is not certified.
 - **CI:** the local CI (`tools/ci/local_ci.sh`, eleven jobs on Windows and WSL) is the merge gate. GitHub Actions runs nightly.
-- **Next:** M8 to M10 below.
+- **Next:** M8 to M12 below. M10 is built.
 
 ## M0 — Workspace, build and development foundation
 
@@ -123,6 +123,111 @@ Exit:
 - The tracker equals DuoForge's own observation byte for byte on recorded battles.
 - The client protocol is tested without a network.
 - A first logged game on the official server.
+
+Status: built on 2026-10-02 (#93, #97 to #100, #103) and played on the official server.
+- **The first game:** The bot lost, and at the end it chose Protect turn after turn. The night run had scored a battle cut off after 500 steps as a tie, so stalling was worth more to the policy than a likely loss.
+- **The fix:** Learner v2 scores cut-offs with Showdown's tiebreak (`duoforge_battle_tiebreak`, #109).
+- **Report:** decision 0016.
+
+## M11 — Learning from human replays
+
+Use public Showdown replays of the format as the starting point for the learner:
+- **Source:** about 713,000 "Champions VGC 2026" games in the HolidayOugi dataset on Hugging Face.
+- **Data:** each game becomes, per player, the observation and the action of every decision. The M10 tracker reads the protocol in a spectator mode, and DuoForge's data query API supplies the ids.
+- **Training:** behavior cloning, and offline RL where it helps, give the policy and the value a human prior. M9's self-play then improves on it.
+
+Constraints:
+- **Teams:** Only teams the tables hold count.
+- **Hidden information:** Open team sheets give a player's full sheet. Own exact HP and stat points are estimated, and the estimate is documented.
+- **No rules in Python:** the option sets are judged by Showdown or the engine.
+- **Data stays local:** the data set states no license, so it is not redistributed.
+- **Gate:** the spike of 2026-10-02 measures how much of the data is usable before anything is built.
+
+Exit:
+- The measured share of usable decisions.
+- A replay-trained policy that beats the self-play policy of M9 on the ladder, or improves it as its initialization, measured at an equal number of decisions.
+
+## M12 — Search
+
+Search on top of the learned policy and value, with the engine as the exact model (the engine clones and steps states). Built in stages:
+1. A one-turn lookahead: the best own pairs against likely opponent pairs over sampled random outcomes, scored by the value head.
+2. A simultaneous-move tree search. The policy gives the priors; chance and the opponent's hidden stat points are sampled.
+3. Expert iteration: the search's choices become training targets.
+
+Owner direction (2026-10-03): search deeper than one turn. A public reference point: mikumiku37 (Smogon, 2026-10-03) reached #1 on the Reg M-C ladder with a one-turn search. In each of 16 sampled worlds it solves an 8 x 8 payoff table of joint actions for a mixed strategy, and that added about 110 Elo over its raw policy. The engine's speed makes more affordable; the cost lies in the network evaluations, which are batched on the GPU. In order:
+- **One turn first:** the same simultaneous-move payoff table.
+- **Then two turns ahead.**
+- **Endgame solving:** with few Pokémon left, search to the end instead of using the value estimate.
+
+The search must stay deterministic given its seeds.
+
+Exit:
+- The Elo gain over the raw policy on the ladder, at a fixed time per move.
+- A report like the learning reports in `docs/learning/`.
+
+## M13 — Playing strength beyond self-play
+
+Levers recorded by the owner on 2026-10-03, most promising first. The first two have the most weight: search with the exact engine (M12), and a model of human play.
+1. **Deeper search and endgame solving:** see M12.
+2. **A model of human play:** a policy trained on the human replays (M11) predicts how people play. The search uses it as the opponent model on the ladder, where the opponents are people, so it can exploit common habits (Protect, Fake Out, the usual switches). mikumiku37 never saw human games.
+3. **A belief over the hidden stat points:** with open team sheets mostly the stat points are hidden. Observed damage and turn order narrow them down during a game. The search samples its worlds from that belief, not uniformly.
+4. **Scale and breadth:**
+   - more training games: the encoder in C, then a rented GPU after a measured trial;
+   - a larger network with static dex features: decision 0020, model v2.1;
+   - many teams, through the expansion's mechanic coverage.
+5. **A robust league with exploiters:** agents trained only to beat the main agent, as in AlphaStar. They punish any weakness at once, so the self-play cycling of the first night run (a plateau of 750 to 830 Elo) does not come back.
+6. **Team preview and team choice:**
+   - the bring-four decision and the leads against the opponent's sheet, trained as a decision of their own;
+   - the teams played on the ladder, chosen by how they fare against the current field.
+
+Exit: each lever is measured on its own, as an Elo difference at a fixed time per move against the previous best agent, before the next one is stacked on it.
+
+More levers recorded by the owner on 2026-10-03. Search mainly solves the endgame; these aim at the early game and at the tournament format. The owner's favourites are 7 and 11.
+
+**The early game:**
+
+7. **Exact engine aids as network inputs:** the engine (in C, no rule in Python) answers questions about the current state. Jaxcalibur and mikumiku37 both feed their networks no damage calculator, so this is our own edge. This needs a new public query and an owner OK. The questions:
+   - the damage range of each move against each target, and whether it reaches a KO;
+   - the speed order under Tailwind, Trick Room, stat stages, abilities and items.
+8. **Team preview and leads by simulation:** with open sheets the opponent's team is known before the game. Evaluate our best bring-four and lead choices against the opponent's most likely ones over many fast played-out games. The team preview's time allows it.
+9. **An opening book against the meta:** the replays give the frequent ladder teams. Offline search with heavy compute (AWS CPUs) fixes bring, leads and the first one or two turns against them; at game time it is a lookup.
+10. **Human openings predicted:** turns 1 and 2 repeat common human patterns: who protects against Fake Out, who sets Tailwind or Trick Room at once, where the double target goes. The human-play model (lever 2) predicts them.
+
+**The tournament format:**
+
+11. **Adapting within a Bo3:** games 2 and 3 use what the opponent brought, led with and did in game 1. The opponent model is updated after every game.
+
+**Training and decisions:**
+
+12. **Training against the real meta:** self-play opponent teams are drawn by their ladder frequency, as the replays show it.
+13. **Mixed strategies on purpose:** the move choice is solved as a mixed strategy, as in mikumiku37's payoff table, so humans find no fixed pattern to read.
+14. **Ensembles and checkpoint tournaments:** several networks decide together, and large AWS tournaments pick the strongest checkpoint.
+15. **Risk by game state:** a value head that also estimates the uncertainty. The agent plays safe when ahead and takes chances when behind.
+16. **Exact chance nodes in the search:** damage rolls, critical hits and accuracy are weighted exactly by the engine instead of only sampled.
+
+**Training data:**
+
+17. **Plausible random teams** (owner, 2026-10-03):
+   - **Why:** random teams make the network learn Pokémon in general rather than a fixed meta, together with the static dex features of decision 0020. They give data without limit and also widen the engine's random testing. Jaxcalibur trained entirely on random teams.
+   - **Where the sets come from:** the pinned Showdown's own Champions random doubles sets (the "[Gen 9 Champions] Random Doubles Battle" format), taken as data. DuoForge's setup validates every team, and the generator draws only from what the engine supports, so it grows with the coverage.
+   - **Mix, not replace:** for example about half real meta teams, a third plausible random teams and a small rest fully random. The ratio is measured.
+   - **A second ladder:** Showdown's Champions Random Doubles ladder needs no team building. Its foe sets are hidden, so it needs M14 first.
+
+Related public work, as reference points:
+- **Metamon** (UT Austin): offline RL on human Showdown replays, with spectator logs rebuilt into first-person trajectories (as M11 does). Gens 1 to 4 singles, about 79 percent GXE; code and data are open.
+- **PokéChamp:** a minimax language-model agent.
+
+
+## M14 — Closed team sheets (the Bo1 ladder)
+
+Today the bot plays only with open team sheets (decision 0016). In Bo3 they are forced. In Bo1 it asks for them and forfeits politely if the opponent refuses. In the replay spike only about 4 percent of Bo1 games had open sheets, so broad Bo1 laddering needs closed sheets. Owner, 2026-10-03: play Bo3 first; closed sheets come as their own step after M13. It needs:
+1. **Reveal tracking:** the battle state records what each side has revealed (moves, item, ability; species at team preview). The observation marks the foe's unrevealed fields as unknown. That changes the state and the public view, so it needs an owner OK.
+2. **The tracker:** it folds the reveals of a live game into that observation.
+3. **Training with hidden foe sets:** the self-play viewer sees only what is revealed.
+4. **Set prediction for the search:** the hidden sets are sampled from a predictor, for example a net head trained on the M11 replays, not from a uniform guess.
+5. **The live adapter:** it accepts Bo1 games without open sheets.
+
+Exit: the Elo on the Bo1 ladder without open sheets, against the bot's Bo3 Elo with open sheets.
 
 ## Later
 

@@ -1,0 +1,53 @@
+Armarouge (M) @ Life Orb
+Ability: Flash Fire
+Level: 50
+Modest Nature
+- Armor Cannon
+- Expanding Force
+- Protect
+- Trick Room
+
+Golisopod (M) @ Golisopite
+Ability: Emergency Exit
+Level: 50
+Brave Nature
+- Iron Head
+- Leech Life
+- Swords Dance
+- Protect
+
+Indeedee-F (F) @ Psychic Seed
+Ability: Psychic Surge
+Level: 50
+Calm Nature
+- Follow Me
+- Trick Room
+- Helping Hand
+- Psychic
+
+Pelipper (M) @ Focus Sash
+Ability: Drizzle
+Level: 50
+Modest Nature
+- Weather Ball
+- Protect
+- Tailwind
+- Hurricane
+
+Milotic (M) @ Sitrus Berry
+Ability: Competitive
+Level: 50
+Modest Nature
+- Protect
+- Scald
+- Ice Beam
+- Icy Wind
+
+Raichu (M) @ Raichunite Y
+Ability: Lightning Rod
+Level: 50
+Timid Nature
+- Protect
+- Fake Out
+- Zap Cannon
+- Focus Blast

@@ -45,6 +45,7 @@ KINDS = conformance_records.data_kinds(ROOT)
 PARAMS = rnd.Params(1, 24, rnd.DEFAULT_PAIRINGS, 300, 0.1, 0.5)
 REAL = 'm5_real_aa_1'  # real teams of team A, ends: a PASS under CLOSURE
 REAL_TEAM_C = 'c01_team_c_profile'  # six real members, ends: a PASS under TEAM_C
+REAL_POOL = 'g5_uturn_e'  # a pool battle that ends (a Rocky Helmet faints the U-turn user): a PASS under POOL
 DEV = 's3_struggle_end'  # sets without an ability, ends: needs CLOSURE_DEV
 
 _tables = {}
@@ -1595,6 +1596,26 @@ class TeamFiles(unittest.TestCase):
         # One member that is not in the closure tables makes the team Team C data; with the rest of team A's sets too.
         self.assertEqual(rnd.team_data_kind('t', sets_a[:5] + sets_c[:1]), 'team_c')
 
+    def test_the_closure_and_team_c_kinds_hold_a_member_to_its_set_moves_and_ability(self):
+        """The AWS finding of 2026-10-03: PP_62AA4EF34EE42F01 has only extended ids, but its Golisopod runs Sucker Punch, which
+        is not in the Team C set of Golisopod (Leech Life, Iron Head, Drill Run, Protect), so TEAM_C refused the team at
+        create (12 battles of registry-mix size). The kind is Team C only when every move is a set move and the ability is
+        the set ability; the pool takes the rest."""
+        path = os.path.join(ROOT, 'data', 'teams', 'PP_62AA4EF34EE42F01.txt')
+        sets = rnd.read_team_file(path)
+        golisopod = [i for i, s in enumerate(sets) if s.startswith('Golisopod')][0]
+        self.assertIn('- Sucker Punch', sets[golisopod])
+        self.assertEqual(rnd.team_data_kind('PP_62AA', sets), 'pool')
+        fixed = list(sets)
+        fixed[golisopod] = sets[golisopod].replace('- Sucker Punch', '- Leech Life')
+        # the set move: the team is all closure names again, so closure data
+        self.assertEqual(rnd.team_data_kind('PP_62AA', fixed), 'closure')
+        # a team of the registry that is all set moves and set abilities keeps its kind, and so do teams A and C
+        self.assertEqual(rnd.team_data_kind('PP_470A', rnd.read_team_file(
+            os.path.join(ROOT, 'data', 'teams', 'PP_470A6EC2468AF8A4.txt'))), 'closure')
+        self.assertEqual(rnd.team_data_kind('t', rnd.read_team_file(TEAM_A)), 'closure')
+        self.assertEqual(rnd.team_data_kind('t', rnd.read_team_file(TEAM_C)), 'team_c')
+
     def test_a_team_file_that_equals_team_a_derives_the_same_battles_as_team_a(self):
         path = self.write('d.txt', read_text(TEAM_A))
         teams = rnd.check_teams([('D', path)])
@@ -1615,6 +1636,38 @@ class TeamFiles(unittest.TestCase):
                 self.assertEqual(list(d), list(a))
                 self.assertIn('team D', d['purpose'])  # every pairing of this run has the letter D
                 self.assertNotIn('team D', a['purpose'])
+
+    def test_a_team_with_an_id_of_the_pool_tables_is_pool_data(self):
+        """Team C and the pool read the same tables (the pool keeps every extended id): a team is Team C data while all
+        its ids are extended ones, pool data from the first one beyond them (here U-turn, step G5), and a battle with
+        such a team is a "data": "pool" battle whichever other team it meets."""
+        sets_a, sets_c = rnd.read_team_file(TEAM_A), rnd.read_team_file(TEAM_C)
+        self.assertIn('- High Horsepower', sets_a[0])
+        pool_a = [sets_a[0].replace('- High Horsepower', '- U-turn')] + sets_a[1:]
+        self.assertEqual(rnd.team_data_kind('t', pool_a), 'pool')
+        self.assertIn('- Protect', sets_c[0])
+        pool_c = [sets_c[0].replace('- Protect', '- U-turn')] + sets_c[1:]
+        self.assertEqual(rnd.team_data_kind('t', pool_c), 'pool')
+        self.assertEqual((rnd.team_data_kind('t', sets_a), rnd.team_data_kind('t', sets_c)), ('closure', 'team_c'))
+        # A forme, an item and an ability of the pool tables alone count as well as a move.
+        item = [sets_a[0].replace('Miracle Seed', 'Focus Sash')] + sets_a[1:]
+        self.assertEqual(rnd.team_data_kind('t', item), 'pool')
+        # What no kind has is still a refusal that names the thing and the three kinds.
+        with self.assertRaises(ValueError) as cm:
+            rnd.team_data_kind('team D', [sets_a[0].replace('- High Horsepower', '- Fake Move')] + sets_a[1:])
+        self.assertIn("move 'Fake Move' (set 1)", str(cm.exception))
+        self.assertIn('(CLOSURE, TEAM_C, POOL)', str(cm.exception))
+        path = self.write('d.txt', '\n\n'.join(pool_a) + '\n')
+        teams = rnd.check_teams([('D', path)])
+        self.assertEqual([(t.id, t.data) for t in teams], [('D', 'pool')])
+        params = rnd.Params(1, 8, ('DA', 'DC', 'AB', 'CA'), 300, 0.1, 0.5, 0.1, teams)
+        by = rnd.read_teams(ROOT, teams)
+        self.assertEqual(rnd.derive(params, 0, by)[0]['data'], 'pool')  # D against A
+        self.assertEqual(rnd.derive(params, 1, by)[0]['data'], 'pool')  # D against Team C: pool wins over team_c
+        self.assertNotIn('data', rnd.derive(params, 2, by)[0])  # A against B
+        self.assertEqual(rnd.derive(params, 3, by)[0]['data'], 'team_c')  # Team C against A
+        self.assertEqual(rnd.run_parameters(params)['teams'], {'D': {'sha256': teams[0].sha256, 'data': 'pool'}})
+        self.assertEqual(rnd.STRICT_KIND, {'closure': 'CLOSURE', 'team_c': 'TEAM_C', 'pool': 'POOL'})
 
     def test_a_team_file_of_team_c_data_makes_the_battles_team_c_data(self):
         teams = rnd.check_teams([('D', self.write('d.txt', read_text(TEAM_C)))])
@@ -1772,7 +1825,7 @@ class TeamRegistryIds(unittest.TestCase):
         with self.assertRaises(ValueError) as cm:
             rnd.check_teams([('MC406', None)], root=self.root)
         self.assertIn('--team MC406: no team MC406 in the registry', str(cm.exception))
-        self.assertIn('ids are A, B, C, MC405', str(cm.exception))
+        self.assertIn('ids are ' + ', '.join([e['id'] for e in team_registry.entries(ROOT)] + ['MC405']), str(cm.exception))
 
     def test_a_file_of_your_own_must_not_take_the_name_of_a_team_of_the_registry(self):
         self.add('D', read_text(TEAM_A))
@@ -2006,6 +2059,8 @@ class RealRunner(unittest.TestCase):
         self.assertEqual((r['bucket'], r['context'], r['ended'], r['reproduces']), ('PASS', 'CLOSURE', True, None))
         r = self.process(REAL_TEAM_C)
         self.assertEqual((r['bucket'], r['context'], r['ended']), ('PASS', 'TEAM_C', True))
+        r = self.process(REAL_POOL)  # a pool battle runs under POOL alone: U-turn is not in the TEAM_C tables
+        self.assertEqual((r['bucket'], r['context'], r['ended']), ('PASS', 'POOL', True))
 
     def test_sets_that_need_the_dev_context_are_a_finding_not_a_fallback(self):
         r = self.process(DEV)

@@ -46,6 +46,10 @@ typedef struct dfi_binding {
 void dfi_slot_clear(dfi_active_slot *slot);
 /* True iff everything after occupant equals the cleared position. */
 bool dfi_slot_volatile_is_clear(const dfi_active_slot *slot);
+/* The POOL tail of the occupant of flat position `flat` (side * 2 + slot) when it leaves the field or faints
+ * (decision 0015 section 7): the position's fields and the soak type, the current ability and the toxic stage
+ * of the occupant, which end with the activation (the current item and forme of a member outlive it). Call it before the position is cleared (it reads the occupant). A no-op for an empty position. */
+void dfi_tail_clear_occupant(struct duoforge_battle *b, uint32_t flat);
 
 bool dfi_position_valid(dfi_position_id p);
 /* Precondition: dfi_position_valid(p). */

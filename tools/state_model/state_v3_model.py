@@ -30,10 +30,17 @@ POS_SIZE = 21
 KNOW_SIZE = 7
 MEMBER_SIZE = 48
 STATE_SIZE = HEADER_SIZE + 2 * SIDE_SIZE
-# The POOL state tail (decision 0015 section 7): schema 0x0103 = "v3 + pool tail rev 1", 42 bytes after the 1009.
+# The POOL state tail (decision 0015 section 7): schema 0x0303 = "v3 + pool tail rev 3", 248 bytes after the 1009.
+# Rev 1 (0x0103, 42 bytes) and rev 2 (0x0203, the same size, the byte at +26 of a position reserved) are no schema of any
+# kind any more: they are refused as unknown, there is no migration.
 SCHEMA_POOL_TAIL_REV1 = 0x0103
-TAIL_SIDE_SIZE = 21
-TAIL_SIZE = 2 * TAIL_SIDE_SIZE
+SCHEMA_POOL_TAIL_REV2 = 0x0203
+SCHEMA_POOL_TAIL_REV3 = 0x0303
+TAIL_FIELD_SIZE = 8                 # gravity_turns, then 7 reserved bytes
+TAIL_SIDE_SIZE = 120                # 6 side bytes + 2 reserved, 2 positions of 32, 6 members of 8
+TAIL_POS_SIZE = 32
+TAIL_MEMBER_SIZE = 8
+TAIL_SIZE = TAIL_FIELD_SIZE + 2 * TAIL_SIDE_SIZE
 POOL_STATE_SIZE = STATE_SIZE + TAIL_SIZE
 TAIL_MOVE_MAX = 5
 TAIL_ENCORE_SLOT_MAX = 4
@@ -41,6 +48,34 @@ TAIL_ENCORE_TURNS_MAX = 4
 TAIL_THROAT_CHOP_MAX = 2
 TAIL_HEAL_BLOCK_MAX = 5
 TAIL_WIDE_GUARD_MAX = 1
+TAIL_PERISH_MAX = 4
+TAIL_TAUNT_MAX = 4
+TAIL_DISABLE_SLOT_MAX = 4
+TAIL_DISABLE_TURNS_MAX = 5
+TAIL_TRAP_TURNS_MAX = 8
+TAIL_SOURCE_MAX = 4
+TAIL_YAWN_MAX = 2
+TAIL_STOCKPILE_MAX = 3
+TAIL_FLAG_MAX = 1
+TAIL_PROTECT_KIND_MAX = 1           # rev 3: 0 Protect and Detect, 1 Spiky Shield (Baneful Bunker would be 2)
+TAIL_AURORA_VEIL_MAX = 8
+TAIL_TOXIC_SPIKES_MAX = 2
+TAIL_STEALTH_ROCK_MAX = 1
+TAIL_SPIKES_MAX = 3
+TAIL_STICKY_WEB_MAX = 1
+TAIL_GRAVITY_MAX = 5
+TAIL_ITEM_NONE = 255
+TAIL_TOXIC_STAGE_MAX = 15
+TAIL_TOXIC_STATUS = 6               # DUOFORGE_AILMENT_TOX: no state has it yet (the status bound of every kind is below)
+# What the pool tables hold (decision 0015 section 2, tests/test_pool_tables.c): the bounds of the member overrides.
+POOL_FORME_COUNT, POOL_MOVE_COUNT, POOL_ITEM_COUNT, POOL_ABILITY_COUNT = 346, 511, 166, 215
+# The byte fields of a position's tail in their encoded order (offset 0 to 21), then two u16: substitute_hp at 22 and
+# trap_move at 24, then (rev 3) protect_kind at 26 and 5 reserved bytes.
+TAIL_POS_BYTE_FIELDS = ['last_move', 'encore_slot', 'encore_turns', 'throat_chop', 'heal_block', 'perish', 'taunt',
+                        'disable_slot', 'disable_turns', 'imprison', 'must_recharge', 'trap_turns', 'trap_source',
+                        'trap_band', 'leech_seed', 'yawn', 'focus_energy', 'stockpile', 'stockpile_def',
+                        'stockpile_spd', 'charge', 'glaive_rush']
+TAIL_SIDE_BYTE_FIELDS = ['wide_guard', 'aurora_veil', 'toxic_spikes', 'stealth_rock', 'spikes', 'sticky_web']
 TYPE_COUNT = 18
 assert STATE_SIZE == 1009 and QUEUE_OFF + QUEUE_CAP * QUEUE_REC_SIZE == HEADER_SIZE
 MAX_ROSTER = 6
@@ -59,6 +94,7 @@ CLASS_COUNT = 9
 # state v3 value ranges (decision 0006 section 3)
 RESULT_NONE, RESULT_SIDE0, RESULT_SIDE1, RESULT_TIE = 0, 1, 2, 3
 WEATHER_NONE, WEATHER_RAIN, WEATHER_SUN = 0, 1, 2
+WEATHER_SAND, WEATHER_SNOW = 3, 4  # POOL kinds only (Sandstorm, Snowscape)
 TERRAIN_NONE, TERRAIN_GRASSY = 0, 1
 TERRAIN_PSYCHIC = 2  # TEAM_C kinds only (Psychic Surge)
 FIELD_TURNS_MAX = 5
@@ -74,8 +110,10 @@ STALL_TURNS_MAX = 2
 CONFUSION_TURNS_MAX = 5
 CHARGE_TURNS_MAX = 2
 MOVE_SLOT_STRUGGLE = 4
+MOVE_SLOT_RECHARGE = 5  # step G17: the recharge turn (POOL kinds), no target, no Mega
 SWITCH_NONE, SWITCH_MOVE, SWITCH_EMERGENCY_EXIT, SWITCH_FAINTED = 0, 1, 2, 3
-SWITCH_FLIP_TURN = 4  # TEAM_C kinds only (decision 0009)
+SWITCH_FLIP_TURN = 4  # TEAM_C and POOL kinds (decision 0009)
+SWITCH_UTURN = 5  # POOL kinds only: U-turn's flag, a damaging pivot that names its move (step G5)
 VOL_CHOICE_LOCK = 64  # TEAM_C kinds only: Choice Scarf's lock, its move in locked_move
 VOL_FOLLOW_ME = 8  # TEAM_C kinds only: Follow Me's volatile, until the residual
 VOL_HELPING_HAND = 16  # TEAM_C kinds only: Helping Hand's volatile, until the residual
@@ -200,7 +238,7 @@ KIND_TEAM_C, KIND_TEAM_C_DEV = 4, 5
 
 class TeamCContext(ClosureContext):
     def __init__(self, data_kind, max_roster, brought_count):
-        Context.__init__(self, data_kind, max_roster, brought_count, 28, 72, b'')
+        Context.__init__(self, data_kind, max_roster, brought_count, 346, 511, b'')
 
     def valid(self):
         if self.data_kind == KIND_TEAM_C and (self.max_roster != MAX_ROSTER or self.brought_count != 4):
@@ -221,17 +259,18 @@ KC = TeamCContext(KIND_TEAM_C, 6, 4)
 KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 
 # POOL contexts (decision 0015 section 2): the pool tables (the extended tables
-# followed by the rows of the expansion steps: 28 formes and 72 moves after step
-# G2) and their hash, which tests/test_pool_tables.c recomputes from the pool
-# canonical bytes: the closure layout over the pool data, then the family
-# columns, then the moves and abilities that each forme may have.
-POOL_TABLE_HASH = bytes.fromhex('1d402745eba5e5e0b4878fee1e8d0aa10db8875a0ef1077a625358db791cea68')
+# followed by the rows of the expansion steps and then every other forme, move,
+# item and ability of the legal pool: 346 formes and 511 moves) and their hash,
+# which tests/test_pool_tables.c recomputes from the pool canonical bytes: the
+# pool layout over the pool data, then the family columns, the handler columns
+# and the moves and abilities that each forme may have.
+POOL_TABLE_HASH = bytes.fromhex('6ce7be52c9b0d746e9b59c45feb26769528c521e3e91e2010a388d8836f597a3')
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 
 class PoolContext(ClosureContext):
     def __init__(self, data_kind, max_roster, brought_count):
-        Context.__init__(self, data_kind, max_roster, brought_count, 28, 72, b'')
+        Context.__init__(self, data_kind, max_roster, brought_count, 346, 511, b'')
 
     def valid(self):
         if self.data_kind == KIND_POOL and (self.max_roster != MAX_ROSTER or self.brought_count != 4):
@@ -257,6 +296,7 @@ KPD = PoolContext(KIND_POOL_DEV, 6, 4)
 # profile (exactly six registered members) is CLOSURE's, TEAM_C's and POOL's.
 COMBAT_KINDS = (KIND_CLOSURE, KIND_CLOSURE_DEV, KIND_TEAM_C, KIND_TEAM_C_DEV, KIND_POOL, KIND_POOL_DEV)
 EXTENDED_KINDS = (KIND_TEAM_C, KIND_TEAM_C_DEV, KIND_POOL, KIND_POOL_DEV)
+POOL_KINDS = (KIND_POOL, KIND_POOL_DEV)
 FULL_ROSTER_KINDS = (KIND_CLOSURE, KIND_TEAM_C, KIND_POOL)
 
 
@@ -297,16 +337,29 @@ def has_pool_tail(ctx):
 
 
 def empty_tail_pos():
-    return {'last_move': 0, 'encore_slot': 0, 'encore_turns': 0, 'throat_chop': 0, 'heal_block': 0}
+    p = {f: 0 for f in TAIL_POS_BYTE_FIELDS}
+    p['substitute_hp'] = 0
+    p['trap_move'] = 0
+    p['protect_kind'] = 0
+    return p
 
 
 def empty_tail_side():
-    return {'wide_guard': 0, 'pos': [empty_tail_pos(), empty_tail_pos()], 'soak': [0] * MAX_ROSTER}
+    s = {f: 0 for f in TAIL_SIDE_BYTE_FIELDS}
+    s['pos'] = [empty_tail_pos(), empty_tail_pos()]
+    for f in ('ability_now', 'forme_now', 'soak', 'item_now', 'toxic_stage'):
+        s[f] = [0] * MAX_ROSTER
+    return s
+
+
+def empty_tail():
+    return {'gravity': 0, 'sides': [empty_tail_side(), empty_tail_side()]}
 
 
 def empty_state(ctx):
-    # 'tailed': the state carries the POOL tail (schema 0x0103); 'tail': its two sides, all zero unless a test sets them.
-    return {'tailed': has_pool_tail(ctx), 'tail': [empty_tail_side(), empty_tail_side()],
+    # 'tailed': the state carries the POOL tail (schema 0x0303); 'tail': the field block and the two sides, all zero
+    # unless a test sets them.
+    return {'tailed': has_pool_tail(ctx), 'tail': empty_tail(),
             'fp': ctx.fingerprint(), 'rng_state': 0, 'rng_inc': 0, 'draws': 0, 'next': 1,
             'boundary': TEAM_SELECTION, 'request_mask': 3, 'epoch': 1, 'turn': 0, 'result': RESULT_NONE,
             'weather': 0, 'weather_turns': 0, 'terrain': 0, 'terrain_turns': 0, 'trick_room_turns': 0,
@@ -513,8 +566,8 @@ INVARIANTS = ['NONE', 'CONTEXT_FINGERPRINT', 'RNG_INC_EVEN', 'NEXT_ACTIVATION_ZE
               'ACTIVATION_NOT_ISSUED', 'OCCUPANT_DUPLICATE', 'VOLATILE', 'REQUESTED_SLOTS', 'SWITCH_FLAG',
               'SEALED_RANGE',
               'SEALED_RULE', 'SEALED_COMMAND', 'ACTIVATION_DUPLICATE', 'SEEN_MASK', 'KNOWLEDGE', 'QUEUE',
-              'TAIL_KIND', 'TAIL_SIDE', 'TAIL_POSITION', 'TAIL_MEMBER', 'TAIL_SCHEMA', 'TAIL_RESERVED']
-assert len(INVARIANTS) == 49
+              'TAIL_KIND', 'TAIL_SIDE', 'TAIL_POSITION', 'TAIL_MEMBER', 'TAIL_SCHEMA', 'TAIL_RESERVED', 'TAIL_FIELD']
+assert len(INVARIANTS) == 50
 
 
 def cmd_is_zero(c):
@@ -523,12 +576,12 @@ def cmd_is_zero(c):
 
 def sealed_cmd_valid(c, mc):
     if c['kind'] == SLOT_MOVE:
-        if c['move_slot'] == MOVE_SLOT_STRUGGLE:
+        if c['move_slot'] in (MOVE_SLOT_STRUGGLE, MOVE_SLOT_RECHARGE):
             target_ok = c['target'] == TARGET_NONE
         else:
             target_ok = c['move_slot'] < MOVE_SLOTS and (c['target'] < 4 or c['target'] == TARGET_NONE)
         # Struggle never carries a Mega declaration.
-        mega_max = 0 if c['move_slot'] == MOVE_SLOT_STRUGGLE else 1
+        mega_max = 0 if c['move_slot'] in (MOVE_SLOT_STRUGGLE, MOVE_SLOT_RECHARGE) else 1
         return target_ok and c['mega'] <= mega_max and c['reserve'] == 0
     if c['kind'] == SLOT_SWITCH:
         return c['reserve'] < mc and not (c['move_slot'] or c['target'] or c['mega'])
@@ -648,12 +701,15 @@ def check_side(ctx, st, s):
             mem = sd['members'][p['occ']]
             team_c_mask = (VOL_FLAGS_MAX | VOL_FOLLOW_ME | VOL_HELPING_HAND | VOL_UNBURDEN | VOL_CHOICE_LOCK |
                            VOL_NEWLY_SWITCHED)
-            if not volatile_valid(p, mem['move_count'], SWITCH_FLIP_TURN if team_c else None,
+            switch_max = SWITCH_UTURN if ctx.data_kind in (KIND_POOL, KIND_POOL_DEV) else SWITCH_FLIP_TURN if team_c else None
+            if not volatile_valid(p, mem['move_count'], switch_max,
                                   team_c_mask if team_c else None):
                 return 'VOLATILE'
             if p['flags'] & VOL_CHOICE_LOCK and (mem['item'] != ITEM_CHOICE_SCARF or mem['item_consumed']):
                 return 'VOLATILE'
-            if p['flags'] & VOL_UNBURDEN and (mem['ability'] != ABILITY_UNBURDEN or not mem['item']
+            # The holder is the Pokemon whose ability now is Unburden: the sheet's, or the tail's ability_now.
+            ability_now = (st['tail']['sides'][s]['ability_now'][p['occ']] if has_pool_tail(ctx) else 0) or mem['ability']
+            if p['flags'] & VOL_UNBURDEN and (ability_now != ABILITY_UNBURDEN or not mem['item']
                                               or not mem['item_consumed']):
                 return 'VOLATILE'
             # Follow Me and Helping Hand end in the residual, newlySwitched at the end of the turn.
@@ -746,7 +802,7 @@ def queue_record_valid(st, r):
     if r['kind'] in (Q_RUN_SWITCH, Q_MEGA):
         return plain and bound and r['reserve'] == 0
     if r['kind'] == Q_MOVE:
-        return (bound and r['reserve'] == 0 and r['move_slot'] <= MOVE_SLOT_STRUGGLE
+        return (bound and r['reserve'] == 0 and r['move_slot'] <= MOVE_SLOT_RECHARGE
                 and (r['target'] < 4 or r['target'] == TARGET_NONE))
     return r == qrec(Q_RESIDUAL)
 
@@ -787,7 +843,7 @@ def check_state(ctx, st):
         return 'TURN_COUNTER'
     if st['result'] > RESULT_TIE or (st['boundary'] == TERMINAL) != (st['result'] != RESULT_NONE):
         return 'RESULT'
-    if (st['weather'] > WEATHER_SUN or st['weather_turns'] > FIELD_TURNS_MAX
+    if (st['weather'] > (WEATHER_SNOW if ctx.data_kind in POOL_KINDS else WEATHER_SUN) or st['weather_turns'] > FIELD_TURNS_MAX
             or (st['weather'] == 0) != (st['weather_turns'] == 0)
             or st['terrain'] > (TERRAIN_PSYCHIC if ctx.data_kind in EXTENDED_KINDS else TERRAIN_GRASSY)
             or st['terrain_turns'] > FIELD_TURNS_MAX
@@ -818,18 +874,58 @@ def check_state(ctx, st):
 
 
 def tail_is_zero(tail):
-    return all(ts['wide_guard'] == 0 and all(v == 0 for p in ts['pos'] for v in p.values())
-               and all(v == 0 for v in ts['soak']) for ts in tail)
+    def side_zero(ts):
+        return (all(ts[f] == 0 for f in TAIL_SIDE_BYTE_FIELDS)
+                and all(v == 0 for p in ts['pos'] for v in p.values())
+                and all(v == 0 for f in ('ability_now', 'forme_now', 'soak', 'item_now', 'toxic_stage') for v in ts[f]))
+    return tail['gravity'] == 0 and all(side_zero(ts) for ts in tail['sides'])
+
+
+def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0):
+    """The tail of a standing occupant's position (the rules of decision 0015 section 7)."""
+    mc = mem['move_count']
+    if not (tp['last_move'] <= TAIL_MOVE_MAX and (tp['last_move'] == TAIL_MOVE_MAX or tp['last_move'] <= mc)
+            and tp['encore_slot'] <= TAIL_ENCORE_SLOT_MAX and tp['encore_slot'] <= mc
+            and tp['encore_turns'] <= TAIL_ENCORE_TURNS_MAX and (tp['encore_slot'] == 0) == (tp['encore_turns'] == 0)):
+        return False
+    if not (tp['throat_chop'] <= TAIL_THROAT_CHOP_MAX and tp['heal_block'] <= TAIL_HEAL_BLOCK_MAX
+            and tp['perish'] <= TAIL_PERISH_MAX and tp['taunt'] <= TAIL_TAUNT_MAX and tp['yawn'] <= TAIL_YAWN_MAX):
+        return False
+    if not (tp['disable_slot'] <= TAIL_DISABLE_SLOT_MAX and tp['disable_slot'] <= mc
+            and tp['disable_turns'] <= TAIL_DISABLE_TURNS_MAX and (tp['disable_slot'] == 0) == (tp['disable_turns'] == 0)):
+        return False
+    if not all(tp[f] <= TAIL_FLAG_MAX for f in ('imprison', 'must_recharge', 'focus_energy', 'charge', 'glaive_rush')):
+        return False
+    if tp['substitute_hp'] > mem['hp_max'] // 4:
+        return False
+    if not (tp['trap_turns'] <= TAIL_TRAP_TURNS_MAX and tp['trap_source'] <= TAIL_SOURCE_MAX
+            and tp['trap_source'] != flat + 1 and tp['trap_move'] <= ctx.move_count
+            and (tp['trap_turns'] == 0) == (tp['trap_source'] == 0) and (tp['trap_turns'] == 0) == (tp['trap_move'] == 0)
+            and tp['trap_band'] <= TAIL_FLAG_MAX and (tp['trap_turns'] != 0 or tp['trap_band'] == 0)):
+        return False
+    if not (tp['leech_seed'] <= TAIL_SOURCE_MAX and tp['leech_seed'] != flat + 1):
+        return False
+    if not (tp['protect_kind'] <= TAIL_PROTECT_KIND_MAX and (tp['protect_kind'] == 0 or slot_flags & VOL_PROTECT)):
+        return False
+    return (tp['stockpile'] <= TAIL_STOCKPILE_MAX and tp['stockpile_def'] <= tp['stockpile']
+            and tp['stockpile_spd'] <= tp['stockpile'])
 
 
 def check_tail(ctx, st):
     """The POOL tail: absent (all zero) under every other kind; under POOL each value in range, none at a position
-    without a standing occupant, a soak type only on a standing, not Mega Evolved member on the field."""
+    without a standing occupant, the member overrides only where they can be (a soak type, a current ability and a
+    toxic stage on a standing member of the field; step G11: a Mega Evolved member can be Soaked, so the Mega forme is
+    no part of the rule)."""
+    tail = st['tail']
     if not has_pool_tail(ctx):
-        return 'OK' if tail_is_zero(st['tail']) else 'TAIL_KIND'
+        return 'OK' if tail_is_zero(tail) else 'TAIL_KIND'
+    if tail['gravity'] > TAIL_GRAVITY_MAX:
+        return 'TAIL_FIELD'
     for s in range(2):
-        ts, sd = st['tail'][s], st['sides'][s]
-        if ts['wide_guard'] > TAIL_WIDE_GUARD_MAX:
+        ts, sd = tail['sides'][s], st['sides'][s]
+        if (ts['wide_guard'] > TAIL_WIDE_GUARD_MAX or ts['aurora_veil'] > TAIL_AURORA_VEIL_MAX
+                or ts['toxic_spikes'] > TAIL_TOXIC_SPIKES_MAX or ts['stealth_rock'] > TAIL_STEALTH_ROCK_MAX
+                or ts['spikes'] > TAIL_SPIKES_MAX or ts['sticky_web'] > TAIL_STICKY_WEB_MAX):
             return 'TAIL_SIDE'
         for p in range(2):
             tp = ts['pos'][p]
@@ -839,18 +935,25 @@ def check_tail(ctx, st):
                 if any(v != 0 for v in tp.values()):
                     return 'TAIL_POSITION'
                 continue
-            mc = sd['members'][occ]['move_count']
-            if (tp['last_move'] > TAIL_MOVE_MAX or (tp['last_move'] != TAIL_MOVE_MAX and tp['last_move'] > mc)
-                    or tp['encore_slot'] > TAIL_ENCORE_SLOT_MAX or tp['encore_slot'] > mc
-                    or tp['encore_turns'] > TAIL_ENCORE_TURNS_MAX or (tp['encore_slot'] == 0) != (tp['encore_turns'] == 0)
-                    or tp['throat_chop'] > TAIL_THROAT_CHOP_MAX or tp['heal_block'] > TAIL_HEAL_BLOCK_MAX):
+            if not tail_pos_valid(ctx, tp, 2 * s + p, sd['members'][occ], sd['pos'][p]['flags']):
                 return 'TAIL_POSITION'
         for m in range(MAX_ROSTER):
-            ty = ts['soak'][m]
-            if ty == 0:
+            ab, fo, ty, it, tx = ts['ability_now'][m], ts['forme_now'][m], ts['soak'][m], ts['item_now'][m], ts['toxic_stage'][m]
+            if ab == 0 and fo == 0 and ty == 0 and it == 0 and tx == 0:
                 continue
-            on_field = m < sd['member_count'] and (sd['pos'][0]['occ'] == m or sd['pos'][1]['occ'] == m)
-            if ty > TYPE_COUNT or not on_field or sd['members'][m]['hp'] == 0 or sd['members'][m]['is_mega'] != 0:
+            if m >= sd['member_count']:
+                return 'TAIL_MEMBER'
+            mem = sd['members'][m]
+            on_field = mem['hp'] != 0 and (sd['pos'][0]['occ'] == m or sd['pos'][1]['occ'] == m)
+            if ty != 0 and (ty > TYPE_COUNT or not on_field):
+                return 'TAIL_MEMBER'
+            if ab != 0 and (ab > POOL_ABILITY_COUNT or not on_field):
+                return 'TAIL_MEMBER'
+            if fo > POOL_FORME_COUNT:
+                return 'TAIL_MEMBER'
+            if it != 0 and it != TAIL_ITEM_NONE and it > POOL_ITEM_COUNT:
+                return 'TAIL_MEMBER'
+            if tx != 0 and (tx > TAIL_TOXIC_STAGE_MAX or not on_field or mem['status'] != TAIL_TOXIC_STATUS):
                 return 'TAIL_MEMBER'
     return 'OK'
 
@@ -864,7 +967,7 @@ QUEUE_BYTE_FIELDS = ['kind', 'side', 'slot', 'move_slot', 'target', 'reserve']
 
 
 def encode(st):
-    schema, size = (SCHEMA_POOL_TAIL_REV1, POOL_STATE_SIZE) if st['tailed'] else (SCHEMA, STATE_SIZE)
+    schema, size = (SCHEMA_POOL_TAIL_REV3, POOL_STATE_SIZE) if st['tailed'] else (SCHEMA, STATE_SIZE)
     b = bytearray(MAGIC + struct.pack('<HHII', KIND_BATTLE_STATE, schema, SEMANTICS, size))
     b += st['fp']
     b += struct.pack('<QQQI', st['rng_state'], st['rng_inc'], st['draws'], st['next'])
@@ -894,39 +997,72 @@ def encode(st):
                 b += struct.pack('<HBB', mv['id'], mv['pp'], mv['pp_max'])
     assert len(b) == STATE_SIZE
     if st['tailed']:
-        for ts in st['tail']:
-            b += bytes([ts['wide_guard'], 0, 0])
-            for tp in ts['pos']:
-                b += bytes([tp['last_move'], tp['encore_slot'], tp['encore_turns'], tp['throat_chop'],
-                            tp['heal_block'], 0])
-            b += bytes(ts['soak'])
+        b += tail_bytes(st['tail'])
         assert len(b) == POOL_STATE_SIZE
     return bytes(b)
 
 
-def tail_reserved_zero(b):
+def tail_bytes(tail):
+    """The 248 encoded bytes of a tail (the layout of src/codec/state_codec.h), reserved bytes zero."""
+    out = bytearray([tail['gravity']]) + bytes(TAIL_FIELD_SIZE - 1)
+    for ts in tail['sides']:
+        out += bytes([ts[f] for f in TAIL_SIDE_BYTE_FIELDS]) + bytes(2)
+        for tp in ts['pos']:
+            out += bytes([tp[f] for f in TAIL_POS_BYTE_FIELDS])
+            out += struct.pack('<HH', tp['substitute_hp'], tp['trap_move']) + bytes([tp['protect_kind']]) + bytes(5)
+        for m in range(MAX_ROSTER):
+            out += struct.pack('<HH', ts['ability_now'][m], ts['forme_now'][m])
+            out += bytes([ts['soak'][m], ts['item_now'][m], ts['toxic_stage'][m], 0])
+    assert len(out) == TAIL_SIZE
+    return bytes(out)
+
+
+def tail_reserved_offsets():
+    """The offsets (within the tail) of the 43 reserved bytes."""
+    offs = list(range(1, TAIL_FIELD_SIZE))
     for s in range(2):
-        o = STATE_SIZE + TAIL_SIDE_SIZE * s
-        if b[o + 1] or b[o + 2] or any(b[o + 3 + 6 * p + 5] for p in range(2)):
-            return False
-    return True
+        so = TAIL_FIELD_SIZE + TAIL_SIDE_SIZE * s
+        offs += [so + 6, so + 7]
+        for p in range(2):
+            offs += [so + 8 + TAIL_POS_SIZE * p + 27 + i for i in range(5)]
+        offs += [so + 72 + TAIL_MEMBER_SIZE * m + 7 for m in range(MAX_ROSTER)]
+    assert len(offs) == 43
+    return offs
+
+
+def tail_reserved_zero(b):
+    return all(b[STATE_SIZE + o] == 0 for o in tail_reserved_offsets())
 
 
 def parse_tail(b):
-    tail = []
+    o = STATE_SIZE
+    tail = {'gravity': b[o], 'sides': []}
     for s in range(2):
-        o = STATE_SIZE + TAIL_SIDE_SIZE * s
-        ts = {'wide_guard': b[o], 'pos': [], 'soak': list(b[o + 15:o + 21])}
+        so = o + TAIL_FIELD_SIZE + TAIL_SIDE_SIZE * s
+        ts = {f: b[so + i] for i, f in enumerate(TAIL_SIDE_BYTE_FIELDS)}
+        ts['pos'] = []
         for p in range(2):
-            po = o + 3 + 6 * p
-            ts['pos'].append({'last_move': b[po], 'encore_slot': b[po + 1], 'encore_turns': b[po + 2],
-                              'throat_chop': b[po + 3], 'heal_block': b[po + 4]})
-        tail.append(ts)
+            po = so + 8 + TAIL_POS_SIZE * p
+            tp = {f: b[po + i] for i, f in enumerate(TAIL_POS_BYTE_FIELDS)}
+            tp['substitute_hp'], tp['trap_move'] = struct.unpack_from('<HH', b, po + 22)
+            tp['protect_kind'] = b[po + 26]
+            ts['pos'].append(tp)
+        for f in ('ability_now', 'forme_now', 'soak', 'item_now', 'toxic_stage'):
+            ts[f] = []
+        for m in range(MAX_ROSTER):
+            mo = so + 72 + TAIL_MEMBER_SIZE * m
+            ab, fo = struct.unpack_from('<HH', b, mo)
+            ts['ability_now'].append(ab)
+            ts['forme_now'].append(fo)
+            ts['soak'].append(b[mo + 4])
+            ts['item_now'].append(b[mo + 5])
+            ts['toxic_stage'].append(b[mo + 6])
+        tail['sides'].append(ts)
     return tail
 
 
 def parse(b):
-    st = {'fp': bytes(b[20:52]), 'tailed': False, 'tail': [empty_tail_side(), empty_tail_side()]}
+    st = {'fp': bytes(b[20:52]), 'tailed': False, 'tail': empty_tail()}
     st['rng_state'], st['rng_inc'], st['draws'], st['next'] = struct.unpack_from('<QQQI', b, 52)
     st['boundary'], st['request_mask'], st['epoch'], st['turn'], st['result'] = struct.unpack_from('<BBIHB', b, 80)
     (st['weather'], st['weather_turns'], st['terrain'], st['terrain_turns'], st['trick_room_turns'],
@@ -984,13 +1120,15 @@ def decode(ctx, b):
     if bytes(b[0:8]) != MAGIC:
         return 'MALFORMED', None
     kind, schema, semantics, total = struct.unpack_from('<HHII', b, 8)
-    if kind != KIND_BATTLE_STATE or schema not in (SCHEMA, SCHEMA_POOL_TAIL_REV1):
+    # Rev 1 (0x0103) and rev 2 (0x0203) of the tail are refused here like every schema that is not v3 or v3 + pool tail
+    # rev 3.
+    if kind != KIND_BATTLE_STATE or schema not in (SCHEMA, SCHEMA_POOL_TAIL_REV3):
         return 'SCHEMA_MISMATCH', None
     if semantics != SEMANTICS:
         return 'SEMANTICS_MISMATCH', None
     if total != size:
         return 'MALFORMED', None
-    tailed = schema == SCHEMA_POOL_TAIL_REV1
+    tailed = schema == SCHEMA_POOL_TAIL_REV3
     if size != (POOL_STATE_SIZE if tailed else STATE_SIZE):
         return 'MALFORMED', None
     if bytes(b[20:52]) != ctx.fingerprint():
@@ -1619,38 +1757,54 @@ def emit_goldens(encoded):
 
 
 # ---------------------------------------------------------------- the POOL tail (decision 0015 section 7)
-# A tail with a value in every field, for the state of tests/test_pool_tail.c: both sides have members 0 and 1 on the
-# field (all standing, four moves, none Mega Evolved); soak types sit on those two members only.
-TAIL_EXAMPLE = [
-    {'wide_guard': 1,
-     'pos': [{'last_move': 1, 'encore_slot': 2, 'encore_turns': 3, 'throat_chop': 2, 'heal_block': 5},
-             {'last_move': 5, 'encore_slot': 0, 'encore_turns': 0, 'throat_chop': 1, 'heal_block': 2}],
-     'soak': [5, 18, 0, 0, 0, 0]},
-    {'wide_guard': 0,
-     'pos': [{'last_move': 4, 'encore_slot': 4, 'encore_turns': 1, 'throat_chop': 0, 'heal_block': 3},
-             {'last_move': 0, 'encore_slot': 0, 'encore_turns': 0, 'throat_chop': 0, 'heal_block': 0}],
-     'soak': [1, 0, 0, 0, 0, 0]},
-]
+# The maximum HP of the members 0 and 1 of both sides in the state of tests/test_pool_tail.c (Team A against Team B
+# under POOL: the leads). The Substitute bound is a quarter of it, so it is part of the example; the test asserts the
+# values, so a drift of the teams or the formulas is noticed there.
+LEAD_HP_MAX = [[193, 192], [197, 182]]
 
 
-def tail_bytes(tail):
-    st = {'tailed': True, 'tail': tail}
-    out = bytearray()
-    for ts in st['tail']:
-        out += bytes([ts['wide_guard'], 0, 0])
-        for tp in ts['pos']:
-            out += bytes([tp['last_move'], tp['encore_slot'], tp['encore_turns'], tp['throat_chop'], tp['heal_block'], 0])
-        out += bytes(ts['soak'])
-    return bytes(out)
+def tail_pos(**kw):
+    p = empty_tail_pos()
+    p.update(kw)
+    return p
+
+
+# A tail with a value in every field that a state can hold, for the state of tests/test_pool_tail.c: both sides have
+# members 0 and 1 on the field (all standing, four moves, none Mega Evolved, no ailment), so the toxic stages are the
+# one thing that stays zero (no state has the status they need). Flat positions: side 0 is 0 and 1, side 1 is 2 and 3.
+def tail_example():
+    t = empty_tail()
+    t['gravity'] = 5
+    a, c = t['sides']
+    a.update(wide_guard=1, aurora_veil=8, toxic_spikes=2, stealth_rock=1, spikes=3, sticky_web=1)
+    a['pos'][0] = tail_pos(last_move=1, encore_slot=2, encore_turns=3, throat_chop=2, heal_block=5, perish=3, taunt=4,
+                           disable_slot=3, disable_turns=5, imprison=1, trap_turns=6, trap_source=3, trap_band=1,
+                           leech_seed=4, yawn=2, focus_energy=1, stockpile=3, stockpile_def=2, stockpile_spd=3,
+                           charge=1, substitute_hp=20, trap_move=37)
+    a['pos'][1] = tail_pos(last_move=5, throat_chop=1, heal_block=2, perish=1, taunt=1, must_recharge=1, stockpile=1,
+                           stockpile_def=1, glaive_rush=1, substitute_hp=1)
+    a['ability_now'][:2] = [5, POOL_ABILITY_COUNT]
+    a['forme_now'][:3] = [300, POOL_FORME_COUNT, 1]
+    a['soak'][:2] = [5, 18]
+    a['item_now'][:4] = [12, TAIL_ITEM_NONE, POOL_ITEM_COUNT, 1]
+    c.update(spikes=1)
+    c['pos'][0] = tail_pos(last_move=4, encore_slot=4, encore_turns=1, heal_block=3, leech_seed=1, yawn=1)
+    c['pos'][1] = tail_pos(trap_turns=1, trap_source=3, trap_move=511)
+    c['ability_now'][0] = 1
+    c['forme_now'][5] = 7
+    c['soak'][0] = 1
+    c['item_now'][5] = 100
+    return t
 
 
 def tail_model_state():
     st = empty_state(KP)
-    for sd in st['sides']:
+    for s, sd in enumerate(st['sides']):
         sd['member_count'] = 6
         sd['pos'][0]['occ'], sd['pos'][1]['occ'] = 0, 1
-        for mem in sd['members']:
+        for m, mem in enumerate(sd['members']):
             mem['hp'], mem['move_count'] = 1, 4
+            mem['hp_max'] = LEAD_HP_MAX[s][m] if m < 2 else 1
     return st
 
 
@@ -1664,12 +1818,17 @@ def tail_outcome(raw):
     return check_tail(KP, st)
 
 
+SWEEP_COLUMNS = ('OK', 'TAIL_SIDE', 'TAIL_POSITION', 'TAIL_MEMBER', 'TAIL_FIELD', 'TAIL_RESERVED')
+
+
 def print_pool_tail():
-    base_tail = tail_bytes(TAIL_EXAMPLE)
+    example = tail_example()
+    base_tail = tail_bytes(example)
     assert tail_outcome(base_tail) == 'OK' and len(base_tail) == TAIL_SIZE
-    head = MAGIC + struct.pack('<HHII', KIND_BATTLE_STATE, SCHEMA_POOL_TAIL_REV1, SEMANTICS, POOL_STATE_SIZE)
+    head = MAGIC + struct.pack('<HHII', KIND_BATTLE_STATE, SCHEMA_POOL_TAIL_REV3, SEMANTICS, POOL_STATE_SIZE)
     print('pool_tail envelope %s' % head.hex())
     print('pool_tail example %s' % base_tail.hex())
+    reserved = set(tail_reserved_offsets())
     for off in range(TAIL_SIZE):
         counts = {}
         for v in range(256):
@@ -1679,10 +1838,9 @@ def print_pool_tail():
             raw[off] = v
             r = tail_outcome(bytes(raw))
             counts[r] = counts.get(r, 0) + 1
-        print('pool_tail_sweep %2d %s' % (off, ' '.join('%s=%d' % kv for kv in sorted(counts.items()))))
-        print('pool_tail_sweep_c %2d {%d, %d, %d, %d, %d},' % (off, counts.get('OK', 0), counts.get('TAIL_SIDE', 0),
-                                                                counts.get('TAIL_POSITION', 0), counts.get('TAIL_MEMBER', 0),
-                                                                counts.get('TAIL_RESERVED', 0)))
+        assert (off in reserved) == (counts.get('TAIL_RESERVED', 0) == 255)
+        print('pool_tail_sweep %3d %s' % (off, ' '.join('%s=%d' % kv for kv in sorted(counts.items()))))
+        print('pool_tail_sweep_c %3d {%s},' % (off, ', '.join(str(counts.get(c, 0)) for c in SWEEP_COLUMNS)))
     # Decode order with the tail: the schema of the artifact against the context's kind.
     for ctx_name, ctx in (('C1', C1), ('KP', KP)):
         st = empty_state(ctx)
@@ -1694,12 +1852,14 @@ def print_pool_tail():
         st['tailed'] = tailed
         b = bytearray(encode(st))
         print('pool_tail wrong-schema %s tailed=%s %s' % (label, tailed, decode(ctx, b)))
+    # Rev 1 (0x0103), rev 2 (0x0203) and schema 4 are unknown schemas of every kind: an artifact that carries them is refused.
     for label, ctx, tailed in (('KP', KP, False), ('C1', C1, True)):
         st = empty_state(ctx)
         st['tailed'] = tailed
-        b = bytearray(encode(st))
-        struct.pack_into('<H', b, 10, 4)
-        print('pool_tail schema4 %s %s' % (label, decode(ctx, b)))
+        for schema in (SCHEMA_POOL_TAIL_REV1, SCHEMA_POOL_TAIL_REV2, 4):
+            b = bytearray(encode(st))
+            struct.pack_into('<H', b, 10, schema)
+            print('pool_tail schema %#06x %s tailed=%s %s' % (schema, label, tailed, decode(ctx, b)))
 
 
 def main():

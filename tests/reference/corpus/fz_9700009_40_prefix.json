@@ -1,0 +1,51 @@
+{
+  "name": "fz_9700009_40_prefix",
+  "purpose": "Corpus (defect): case fz_9700009_40 of run 9700009 (tools/reference/diff_driver.py random), team PP_4BFCE88CE42A966A against team PP_A0582A49F5490809, found as DIVERGENCE events reference kind 5 differs in pos, hp, kind2. The shortest prefix that showed it, 10 of 15 choices; it passes now, fixed by the residual handler list of the pin, step residual-order (2026-10-03).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,500254d04f905f9f343065cf04b191517d14e83f88aa6fe350ebb088c9f948ff",
+  "teams": [
+    "Pelipper (M) @ Sitrus Berry\nAbility: Drizzle\nLevel: 50\nEVs: 31 HP / 4 Def / 5 SpA / 16 SpD / 10 Spe\nModest Nature\n- Weather Ball\n- Hurricane\n- Tailwind\n- Wide Guard\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 20 HP / 15 Atk / 3 Def / 15 SpD / 13 Spe\nAdamant Nature\n- Fake Out\n- Grassy Glide\n- Wood Hammer\n- U-turn\n\nIncineroar (M) @ Chople Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 11 Def / 22 SpD / 1 Spe\nImpish Nature\n- Fake Out\n- Flare Blitz\n- Snarl\n- Parting Shot\n\nGolisopod (M) @ Golisopite\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Leech Life\n- Iron Head\n- Sucker Punch\n- Protect\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 SpA / 25 SpD / 8 Spe\nCalm Nature\n- Electro Shot\n- Dragon Pulse\n- Flash Cannon\n- Protect\n\nAnnihilape (M) @ Choice Scarf\nAbility: Defiant\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Close Combat\n- Ice Punch\n- Shadow Claw\n- U-turn",
+    "Rillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 32 HP / 5 Atk / 21 SpD / 8 Spe\nAdamant Nature\n- Fake Out\n- Grassy Glide\n- Wood Hammer\n- High Horsepower\n\nRaichu (M) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 32 HP / 11 Def / 23 Spe\nTimid Nature\n- Protect\n- Zap Cannon\n- Focus Blast\n- Encore\n\nFloette-Eternal (F) @ Floettite\nAbility: Flower Veil\nLevel: 50\nEVs: 27 HP / 15 Def / 5 SpA / 19 Spe\nModest Nature\n- Protect\n- Dazzling Gleam\n- Moonblast\n- Calm Mind\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 7 HP / 27 SpA / 32 Spe\nModest Nature\n- Protect\n- Make It Rain\n- Shadow Ball\n- Nasty Plot\n\nIncineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 13 Def / 20 SpD / 1 Spe\nCareful Nature\n- Fake Out\n- Flare Blitz\n- Throat Chop\n- Parting Shot\n\nSneasler (M) @ Grassy Seed\nAbility: Unburden\nLevel: 50\nEVs: 20 HP / 12 Atk / 1 Def / 1 SpD / 32 Spe\nAdamant Nature\n- Protect\n- Close Combat\n- Dire Claw\n- Rock Slide"
+  ],
+  "choices": [
+    {
+      "p1": "team 1432",
+      "p2": "team 6125"
+    },
+    {
+      "p1": "move 2 -2, move 4 mega",
+      "p2": "move 3 -2, switch 3"
+    },
+    {
+      "p1": "move 1 2, move 1 2",
+      "p2": "move 3 -2, move 4 2 mega"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 4, move 4",
+      "p2": "move 4, move 1 1"
+    },
+    {
+      "p1": "move 2 1, move 1 1",
+      "p2": "switch 4, move 3 1"
+    },
+    {
+      "p1": "switch 3, pass"
+    },
+    {
+      "p1": "move 1 1, move 2 1",
+      "p2": "move 2 2, move 4 2"
+    },
+    {
+      "p1": "move 3, move 3 1",
+      "p2": "move 3 -2, move 2 2"
+    },
+    {
+      "p1": "move 2 2, switch 4",
+      "p2": "move 3 1, move 2 1"
+    }
+  ]
+}

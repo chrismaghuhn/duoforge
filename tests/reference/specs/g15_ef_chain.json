@@ -1,0 +1,24 @@
+{
+  "name": "g15_ef_chain",
+  "purpose": "Step G15, Expanding Force in Psychic Terrain (Indeedee's Psychic Surge): a grounded user's Expanding Force is a spread move that hits both foes (the 0.75 spread modifier, [spread] on the move line) with its base power x1.5 from the move's own handler after the terrain's x5325/4096; Twisted Spoon (priority 15) in the first part and Helping Hand (10) in the second chain before them (the BasePower order of data/moves.ts:4952-4957 against :14095-14150). Turn 1 leaves Raichu at 8 percent and Rillaboom at 27 and Indeedee faints; Delphox comes in and, with Helping Hand, knocks Rillaboom out and is resisted by Gholdengo.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000001501",
+  "teams": [
+    "Indeedee (M) @ Twisted Spoon\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 16 SpA / 18 Def\nModest Nature\n- Expanding Force\n- Protect\n- Helping Hand\n- Psychic\n\nFarigiraf (F)\nAbility: Armor Tail\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 Spe\nModest Nature\n- Psychic\n- Helping Hand\n- Protect\n- Expanding Force\n\nDelphox (F)\nAbility: Blaze\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Expanding Force\n- Flamethrower\n- Protect\n- Helping Hand\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nGholdengo\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Protect\n\nIncineroar (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Protect",
+    "Rillaboom (M)\nAbility: Overgrow\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- Protect\n\nRaichu (F)\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Thunderbolt\n- Helping Hand\n- Protect\n\nGholdengo\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Protect\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nSneasler (M)\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Close Combat\n- Protect\n\nIncineroar (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 3",
+      "move 1 2, move 2 -1",
+      "move 1 1, move 3"
+    ],
+    "p2": [
+      "move 2 1, move 1 1",
+      "move 2 1, move 1 1",
+      "move 2 1, move 1 1"
+    ],
+    "max_steps": 5
+  }
+}

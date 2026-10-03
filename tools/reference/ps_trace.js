@@ -67,6 +67,10 @@ const CONDITION_SITES = {
     'par:BeforeMove': 'FULL_PARALYSIS',
     'confusion:Start': 'CONFUSION_TURNS',
     'confusion:BeforeMove': 'CONFUSION_HIT',
+    'trace:Update': 'TRACE', // Trace's this.sample(possibleTargets): one draw, also for a single candidate
+    // Poison Touch (step G14): its randomChance(3, 10) in onSourceDamagingHit. No committed trace had one before, so
+    // the harness version stays 14 (it was an UNKNOWN draw, which the converter refuses).
+    'poisontouch:DamagingHit': 'POISON_TOUCH',
 };
 
 // The event a draw happens in (innermost last), tracked by wrapping the
@@ -87,7 +91,16 @@ function classify(stack, battle) {
         if (frames.includes('BattleActions.runSwitch')) return ['SPEED_TIE', 'switch-order'];
         return ['SPEED_TIE', 'event:' + ev];
     }
-    if (frames.includes('BattleQueue.insertChoice')) return ['INSERT_TIE', 'queue'];
+    if (frames.includes('BattleQueue.insertChoice')) {
+        // insertChoice resolves the choice first: the target that resolveAction picks for an action without one
+        // (Encore's replaced action, data/mods/champions/moves.ts:309-345) is a RANDOM_TARGET draw that DECIDES the
+        // target; only a draw that is not one is the insertion's own tie (random(firstIndex, lastIndex + 1)).
+        if (frames.includes('Battle.getRandomTarget')) {
+            if (frames.includes('Battle.getActionSpeed')) return ['RANDOM_TARGET', 'action-speed'];
+            return ['RANDOM_TARGET', 'resolve:insert'];
+        }
+        return ['INSERT_TIE', 'queue'];
+    }
     if (frames.includes('Battle.getRandomTarget')) {
         // Where the target is needed: computing an action's priority and
         // speed (the result only feeds ModifyPriority), resolving a queued
@@ -255,6 +268,9 @@ function run(root, spec, specFile) {
             // Remaining duration of Tailwind, Reflect and Light Screen (0 when absent).
             conditions: ['tailwind', 'reflect', 'lightscreen'].map((id) =>
                 (side.sideConditions[id] ? side.sideConditions[id].duration || 0 : 0)),
+            // Aurora Veil's remaining duration (step G20), a key only while the side has it: the conformance rows hold the
+            // three above, and a state without the key is what every trace recorded before had.
+            ...(side.sideConditions.auroraveil ? {aurora_veil: side.sideConditions.auroraveil.duration || 0} : {}),
             // Per active slot of a move request: 1 a selectable move, 0 a
             // disabled one (no PP, Fake Out), 2 Struggle.
             enabled: side.requestState === 'move' && side.activeRequest && side.activeRequest.active ?

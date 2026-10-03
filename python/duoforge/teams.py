@@ -172,9 +172,12 @@ def side_setup(context, members, team):
         raise TeamError(f"team {team}: {len(members)} members, at most {_layout.MAX_ROSTER}")
     side["member_count"] = len(members)
 
+    tables = {"species": data.TABLE_SPECIES, "move": data.TABLE_MOVE, "item": data.TABLE_ITEM,
+              "ability": data.TABLE_ABILITY, "nature": data.TABLE_NATURE}
+
     def find(table, name, k):
         try:
-            return data.find(context, table, data.to_id(name))
+            return data.find(context, tables[table], data.to_id(name))
         except DuoforgeError:
             raise TeamError(f"team {team}: member {k + 1}: {table} {data.to_id(name)!r} is not in the tables of "
                             f"this context's data kind") from None

@@ -37,13 +37,6 @@ CONSTANTS = {
     "DUOFORGE_ACTIVE_PER_SIDE": 2,
     "DUOFORGE_BATCH_NO_CHOICE": 0xFFFF,
     "DUOFORGE_DATA_KIND_CLOSURE": 2,
-    "DUOFORGE_DATA_KIND_TEAM_C": 4,
-    "DUOFORGE_DATA_KIND_POOL": 6,
-    "DUOFORGE_DATA_TABLE_SPECIES": 1,
-    "DUOFORGE_DATA_TABLE_MOVE": 2,
-    "DUOFORGE_DATA_TABLE_ITEM": 3,
-    "DUOFORGE_DATA_TABLE_ABILITY": 4,
-    "DUOFORGE_DATA_TABLE_NATURE": 5,
     "DUOFORGE_GENDER_MALE": 1,
     "DUOFORGE_GENDER_FEMALE": 2,
     "DUOFORGE_GENDER_NONE": 3,
@@ -67,6 +60,8 @@ CONSTANTS = {
     "DUOFORGE_ROSTER_NONE": 0xFF,
     "DUOFORGE_TARGET_NONE": 0xFF,
     "DUOFORGE_MOVE_SLOT_NONE": 0xFF,
+    "DUOFORGE_MOVE_SLOT_STRUGGLE": 4,
+    "DUOFORGE_MOVE_SLOT_RECHARGE": 5,
     "DUOFORGE_HP_EXACT": 1,
     "DUOFORGE_HP_PERCENT": 2,
     "DUOFORGE_AILMENT_NONE": 0,
@@ -78,6 +73,8 @@ CONSTANTS = {
     "DUOFORGE_WEATHER_NONE": 0,
     "DUOFORGE_WEATHER_RAIN": 1,
     "DUOFORGE_WEATHER_SUN": 2,
+    "DUOFORGE_WEATHER_SAND": 3,
+    "DUOFORGE_WEATHER_SNOW": 4,
     "DUOFORGE_TERRAIN_NONE": 0,
     "DUOFORGE_TERRAIN_GRASSY": 1,
     "DUOFORGE_TERRAIN_PSYCHIC": 2,
@@ -88,6 +85,64 @@ CONSTANTS = {
     "DUOFORGE_LOCATION_BENCH": 1,
     "DUOFORGE_LOCATION_ACTIVE": 2,
     "DUOFORGE_LOCATION_NOT_BROUGHT": 3,
+    "DUOFORGE_OBSERVATION_EXT_SIZE": 192,
+    "DUOFORGE_OBSERVATION_EXT_REVISION": 1,
+    "DUOFORGE_DATA_KIND_SYNTHETIC": 1,
+    "DUOFORGE_DATA_KIND_TEAM_C": 4,
+    "DUOFORGE_DATA_KIND_POOL": 6,
+    "DUOFORGE_DATA_TABLE_SPECIES": 1,
+    "DUOFORGE_DATA_TABLE_MOVE": 2,
+    "DUOFORGE_DATA_TABLE_ITEM": 3,
+    "DUOFORGE_DATA_TABLE_ABILITY": 4,
+    "DUOFORGE_DATA_TABLE_NATURE": 5,
+    "DUOFORGE_DATA_TABLE_COUNT": 5,
+    "DUOFORGE_DATA_NONE": 0xFFFFFFFF,
+    "DUOFORGE_DATA_MAX_FORME_ABILITIES": 3,
+    "DUOFORGE_DATA_MAX_FORME_MOVES": 512,
+    "DUOFORGE_GENDER_BIT_MALE": 1,
+    "DUOFORGE_GENDER_BIT_FEMALE": 2,
+    "DUOFORGE_GENDER_BIT_NONE": 4,
+    "DUOFORGE_MOVE_CATEGORY_PHYSICAL": 0,
+    "DUOFORGE_MOVE_CATEGORY_SPECIAL": 1,
+    "DUOFORGE_MOVE_CATEGORY_STATUS": 2,
+    "DUOFORGE_TARGET_CLASS_STATIC_COUNT": 15,
+    "DUOFORGE_MOVE_STATIC_FLAG_CONTACT": 1,
+    "DUOFORGE_MOVE_STATIC_FLAG_SOUND": 2,
+    "DUOFORGE_MOVE_STATIC_FLAG_PUNCH": 4,
+    "DUOFORGE_MOVE_STATIC_FLAG_BITE": 8,
+    "DUOFORGE_MOVE_STATIC_FLAG_BULLET": 16,
+    "DUOFORGE_MOVE_STATIC_FLAG_PULSE": 32,
+    "DUOFORGE_MOVE_STATIC_FLAG_SLICING": 64,
+    "DUOFORGE_MOVE_STATIC_FLAG_WIND": 128,
+    "DUOFORGE_MOVE_STATIC_FLAG_DANCE": 256,
+    "DUOFORGE_MOVE_STATIC_FLAG_POWDER": 512,
+    "DUOFORGE_MOVE_STATIC_FLAG_POWER_RULE": 1024,
+    "DUOFORGE_ITEM_FAMILY_NONE": 0,
+    "DUOFORGE_ITEM_FAMILY_TYPE_BOOSTER": 1,
+    "DUOFORGE_ITEM_FAMILY_RESIST_BERRY": 2,
+    "DUOFORGE_ABILITY_FAMILY_NONE": 0,
+    "DUOFORGE_ABILITY_FAMILY_ATE": 1,
+    "DUOFORGE_ABILITY_FAMILY_PINCH": 2,
+    "DUOFORGE_ABILITY_FAMILY_WEATHER_SETTER": 3,
+    "DUOFORGE_ABILITY_FAMILY_TERRAIN_SETTER": 4,
+    "DUOFORGE_TYPE_BUG": 0,
+    "DUOFORGE_TYPE_DARK": 1,
+    "DUOFORGE_TYPE_DRAGON": 2,
+    "DUOFORGE_TYPE_ELECTRIC": 3,
+    "DUOFORGE_TYPE_FAIRY": 4,
+    "DUOFORGE_TYPE_FIGHTING": 5,
+    "DUOFORGE_TYPE_FIRE": 6,
+    "DUOFORGE_TYPE_FLYING": 7,
+    "DUOFORGE_TYPE_GHOST": 8,
+    "DUOFORGE_TYPE_GRASS": 9,
+    "DUOFORGE_TYPE_GROUND": 10,
+    "DUOFORGE_TYPE_ICE": 11,
+    "DUOFORGE_TYPE_NORMAL": 12,
+    "DUOFORGE_TYPE_POISON": 13,
+    "DUOFORGE_TYPE_PSYCHIC": 14,
+    "DUOFORGE_TYPE_ROCK": 15,
+    "DUOFORGE_TYPE_STEEL": 16,
+    "DUOFORGE_TYPE_WATER": 17,
 }
 MAX_CANDIDATES = CONSTANTS["DUOFORGE_MAX_CANDIDATES"]
 MAX_SLOT_OPTIONS = CONSTANTS["DUOFORGE_MAX_SLOT_OPTIONS"]
@@ -257,6 +312,121 @@ OBSERVATION = _struct([
     ("sides", (SIDE_VIEW, (2,)), 16),
 ], 736)
 
+# The POOL player-view extension (decision 0018): 192 bytes, alignment 8, all zero under every non-POOL kind.
+FIELD_EXT = _struct([
+    ("gravity_turns", _U1, 0),
+    ("reserved", (_U1, (15,)), 1),
+], 16)
+
+POSITION_EXT = _struct([
+    ("volatiles", _U4, 0),
+    ("ability_now", _U2, 4),
+    ("type_now", (_U1, (2,)), 6),
+    ("encore_slot", _U1, 8),
+    ("disable_slot", _U1, 9),
+    ("stockpile", _U1, 10),
+    ("perish", _U1, 11),
+    ("reserved", (_U1, (4,)), 12),
+], 16)
+
+MEMBER_EXT = _struct([
+    ("forme", _U2, 0),
+    ("item_now", _U1, 2),
+    ("reserved", _U1, 3),
+], 4)
+
+# The data API's Mega link of one stone (duoforge_data_mega_at): five u32 words. The functions are not bound here
+# (the data API has no Python binding yet; the static-dex step adds python/duoforge/data.py).
+MEGA_INFO = _struct([
+    ("base_species", _U4, 0),
+    ("stone", _U4, 4),
+    ("mega_species", _U4, 8),
+    ("mega_ability", _U4, 12),
+    ("supported", _U4, 16),
+], 20)
+
+SIDE_EXT = _struct([
+    ("positions", (POSITION_EXT, (2,)), 0),
+    ("members", (MEMBER_EXT, (6,)), 32),
+    ("aurora_veil_turns", _U1, 56),
+    ("stealth_rock", _U1, 57),
+    ("spikes", _U1, 58),
+    ("toxic_spikes", _U1, 59),
+    ("sticky_web", _U1, 60),
+    ("guard_flags", _U1, 61),
+    ("reserved", (_U1, (2,)), 62),
+], 64)
+
+OBSERVATION_EXT = _struct([
+    ("revision", _U1, 0),
+    ("player", _U1, 1),
+    ("reserved0", (_U1, (2,)), 2),
+    ("epoch", _U4, 4),
+    ("supported", _U8, 8),
+    ("field", FIELD_EXT, 16),
+    ("sides", (SIDE_EXT, (2,)), 32),
+    ("reserved1", (_U1, (32,)), 160),
+], 192)
+
+# The static data API (decision 0020): every field a uint32 (priority an int32), no padding.
+FORME_INFO = _struct([
+    ("dex_num", _U4, 0),
+    ("is_mega", _U4, 4),
+    ("setup_legal", _U4, 8),
+    ("base_species", _U4, 12),
+    ("mega_species", _U4, 16),
+    ("mega_stone", _U4, 20),
+    ("mega_ability", _U4, 24),
+    ("mega_supported", _U4, 28),
+    ("gender_mask", _U4, 32),
+    ("no_ability", _U4, 36),
+    ("ability_count", _U4, 40),
+    ("abilities", (_U4, (3,)), 44),
+    ("move_count", _U4, 56),
+], 60)
+
+FORME_STATIC = _struct([
+    ("types", (_U4, (2,)), 0),
+    ("base_stats", (_U4, (6,)), 8),
+    ("weight_hg", _U4, 32),
+    ("default_ability", _U4, 36),
+    ("is_mega", _U4, 40),
+], 44)
+
+MOVE_STATIC = _struct([
+    ("type", _U4, 0),
+    ("category", _U4, 4),
+    ("base_power", _U4, 8),
+    ("accuracy", _U4, 12),
+    ("pp", _U4, 16),
+    ("priority", np.int32, 20),
+    ("target_class", _U4, 24),
+    ("flags", _U4, 28),
+    ("crit_stage", _U4, 32),
+    ("drain", (_U4, (2,)), 36),
+    ("recoil", (_U4, (2,)), 44),
+    ("secondary_chance", _U4, 52),
+    ("hits_min", _U4, 56),
+    ("hits_max", _U4, 60),
+], 64)
+
+ITEM_STATIC = _struct([
+    ("family", _U4, 0),
+    ("family_type", _U4, 4),
+    ("is_mega_stone", _U4, 8),
+    ("mega_species", _U4, 12),
+], 16)
+
+ABILITY_STATIC = _struct([
+    ("family", _U4, 0),
+    ("family_param", _U4, 4),
+], 8)
+
+NATURE_STATIC = _struct([
+    ("raised_stat", _U4, 0),
+    ("lowered_stat", _U4, 4),
+], 8)
+
 # duoforge_batch_config: two uint32, the seed, then the setups pointer.
 _SETUPS_OFFSET = _align(16, _PTR)
 BATCH_CONFIG = _struct([
@@ -293,6 +463,18 @@ BY_C_NAME = {
     "duoforge_position_view": POSITION_VIEW,
     "duoforge_side_view": SIDE_VIEW,
     "duoforge_observation": OBSERVATION,
+    "duoforge_field_ext": FIELD_EXT,
+    "duoforge_position_ext": POSITION_EXT,
+    "duoforge_member_ext": MEMBER_EXT,
+    "duoforge_mega_info": MEGA_INFO,
+    "duoforge_side_ext": SIDE_EXT,
+    "duoforge_observation_ext": OBSERVATION_EXT,
+    "duoforge_forme_info": FORME_INFO,
+    "duoforge_forme_static": FORME_STATIC,
+    "duoforge_move_static": MOVE_STATIC,
+    "duoforge_item_static": ITEM_STATIC,
+    "duoforge_ability_static": ABILITY_STATIC,
+    "duoforge_nature_static": NATURE_STATIC,
     "duoforge_batch_config": BATCH_CONFIG,
     "duoforge_batch_episode": EPISODE,
 }

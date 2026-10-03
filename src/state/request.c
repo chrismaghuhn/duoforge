@@ -2,10 +2,12 @@
 
 #include <string.h>
 
+#include "combat/move_rules.h"
 #include "combat/turn.h"
 #include "core/arith.h"
 #include "core/bytes.h"
 #include "data/closure_tables.h"
+#include "data/pool_tables.h"
 #include "state/context_internal.h"
 #include "state/invariants.h"
 #include "state/transition.h"
@@ -115,6 +117,14 @@ static duoforge_status dfi_slot_candidates(const duoforge_context *ctx, const st
             return dfi_list_push(out, DUOFORGE_SLOT_PASS, 0u, 0u, 0u, 0u) ? DUOFORGE_OK : DUOFORGE_E_INVARIANT;
         }
         const dfi_member *mem = &side->members[occupant];
+        /* The recharge turn (step G17, POOL kinds): mustrecharge's onLockMove 'recharge' makes the request one move,
+         * "Recharge", with the Pokemon trapped and no Mega (sim/pokemon.ts:964-972, 1084-1090, 1137; the choice is
+         * accepted as a move action, sim/side.ts:675-689). The one candidate; no other move, no switch. */
+        if (b->tail.sides[s].positions[slot].must_recharge != 0u) {
+            return dfi_list_push(out, DUOFORGE_SLOT_MOVE, DUOFORGE_MOVE_SLOT_RECHARGE, DUOFORGE_TARGET_NONE, 0u, 0u)
+                       ? DUOFORGE_OK
+                       : DUOFORGE_E_INVARIANT;
+        }
         /* A locked move (twoturnmove's onLockMove): that move at the stored
          * target only; no other move, no switch, no Mega (sim/pokemon.ts
          * getMoveRequestData, sim/side.ts:675-689). */
@@ -135,12 +145,30 @@ static duoforge_status dfi_slot_candidates(const duoforge_context *ctx, const st
             if (mv->pp == 0u || (choice && k + 1u != own->locked_move)) {
                 continue;
             }
+            /* Encore's onDisableMove disables every slot but the Encored one (data/moves.ts:4724-4783; POOL kinds, the
+             * tail is zero elsewhere); with that one disabled too, the slot gets Struggle. */
+            if (b->tail.sides[s].positions[slot].encore_slot != 0u &&
+                (uint32_t)b->tail.sides[s].positions[slot].encore_slot != k + 1u) {
+                continue;
+            }
             if (mv->move_id >= ctx->move_count) {
                 return DUOFORGE_E_INVARIANT;
             }
-            /* Champions disables Fake Out once its user has taken a move
-             * action since it entered (data/mods/champions/moves.ts:354-361). */
-            if (dfi_context_is_closure(ctx) && mv->move_id == DFI_MOVE_FAKEOUT &&
+            /* Throat Chop disables every move with the sound flag and Heal Block every move with the heal flag
+             * (onDisableMove, data/moves.ts:19403-19409 and 8300-8306; POOL kinds, the tail is zero elsewhere); with
+             * no move left the slot gets Struggle, as for any disabled move. */
+            {
+                const dfi_tail_pos *tail = &b->tail.sides[s].positions[slot];
+                const uint32_t flags2 = dfi_pool_move_flags2[mv->move_id];
+                if ((tail->throat_chop_turns != 0u && (flags2 & DFI_MOVE_FLAG2_SOUND) != 0u) ||
+                    (tail->heal_block_turns != 0u && (flags2 & DFI_MOVE_FLAG2_HEAL) != 0u)) {
+                    continue;
+                }
+            }
+            /* Champions disables Fake Out and First Impression once their
+             * user has taken a move action since it entered
+             * (data/mods/champions/moves.ts:354-361 and :386-394). */
+            if (dfi_context_is_closure(ctx) && dfi_move_first_turn_only(&dfi_pool_moves[mv->move_id]) &&
                 side->positions[slot].move_actions != 0u) {
                 continue;
             }

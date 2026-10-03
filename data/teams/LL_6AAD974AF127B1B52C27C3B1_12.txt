@@ -1,0 +1,53 @@
+Kingambit (M) @ Black Glasses
+Ability: Defiant
+Level: 50
+Adamant Nature
+- Kowtow Cleave
+- Sucker Punch
+- Swords Dance
+- Protect
+
+Indeedee-F (F) @ Colbur Berry
+Ability: Psychic Surge
+Level: 50
+Bold Nature
+- Follow Me
+- Dazzling Gleam
+- Trick Room
+- Helping Hand
+
+Sneasler (M) @ Psychic Seed
+Ability: Unburden
+Level: 50
+Adamant Nature
+- Close Combat
+- Dire Claw
+- Rock Slide
+- Protect
+
+Armarouge (M) @ Focus Sash
+Ability: Flash Fire
+Level: 50
+Modest Nature
+- Expanding Force
+- Armor Cannon
+- Wide Guard
+- Trick Room
+
+Golisopod (M) @ Golisopite
+Ability: Emergency Exit
+Level: 50
+Adamant Nature
+- Leech Life
+- Iron Head
+- Close Combat
+- Protect
+
+Gardevoir (M) @ Gardevoirite
+Ability: Trace
+Level: 50
+Modest Nature
+- Hyper Voice
+- Expanding Force
+- Trick Room
+- Protect

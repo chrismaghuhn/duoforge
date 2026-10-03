@@ -33,7 +33,7 @@
 #include "reference/conformance_pool.h"
 #include "support/pool.h"
 #define DF_CONF_FORMES dfi_pool_formes
-#define DF_POOL_DATA_BATTLES 11u /* the recorded pool battles */
+#define DF_POOL_DATA_BATTLES 172u /* the recorded pool battles */
 #elif defined(DF_CONFORMANCE_TEAM_C)
 #include "data/extended_tables.h"
 #include "reference/conformance_team_c.h"
@@ -174,7 +174,7 @@ int main(void)
                 break;
             }
             bad += df_conf_compare_state(stderr, ctx, b, st, cb->name, si);
-            bad += df_conf_compare_observation(stderr, ctx, b, st, cb, si, DF_CONF_FORMES);
+            bad += df_conf_compare_observation(stderr, ctx, b, st, cb, si);
             bad += df_conf_compare_events(stderr, st, cb->name, si, buffers, conf_events, &event_reports);
             DF_CHECK(&t, duoforge_battle_check(ctx, b) == DUOFORGE_OK);
         }

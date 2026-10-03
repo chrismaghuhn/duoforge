@@ -1,0 +1,53 @@
+Ceruledge (M) @ Grassy Seed
+Ability: Flash Fire
+Level: 50
+Serious Nature
+- Protect
+- Bitter Blade
+- Shadow Sneak
+- Bulk Up
+
+Milotic (M) @ Leftovers
+Ability: Competitive
+Level: 50
+Calm Nature
+- Protect
+- Muddy Water
+- Hypnosis
+- Coil
+
+Raichu (M) @ Raichunite Y
+Ability: Lightning Rod
+Level: 50
+Timid Nature
+- Protect
+- Zap Cannon
+- Focus Blast
+- Fake Out
+
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Grassy Glide
+- Fake Out
+- Wood Hammer
+- High Horsepower
+
+Staraptor (M) @ Staraptite
+Ability: Intimidate
+Level: 50
+Jolly Nature
+- Protect
+- Close Combat
+- Brave Bird
+- Tailwind
+
+Kingambit (M) @ Black Glasses
+Ability: Defiant
+Level: 50
+Adamant Nature
+- Kowtow Cleave
+- Sucker Punch
+- Protect
+- Iron Head

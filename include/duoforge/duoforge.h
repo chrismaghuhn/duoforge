@@ -33,9 +33,9 @@ extern "C" {
 #endif
 
 #define DUOFORGE_VERSION_MAJOR 0
-#define DUOFORGE_VERSION_MINOR 23
+#define DUOFORGE_VERSION_MINOR 35
 #define DUOFORGE_VERSION_PATCH 0
-#define DUOFORGE_VERSION_STRING "0.23.0"
+#define DUOFORGE_VERSION_STRING "0.35.0"
 
 /* Identifiers of the artifacts that exist now (registry: decisions 0002, 0005, 0006). */
 #define DUOFORGE_SEMANTICS_ID           3u   /* "duoforge-m3-closure" */
@@ -89,6 +89,15 @@ const char *duoforge_status_name(duoforge_status status);
 #define DUOFORGE_TARGET_CLASS_ALLY_SIDE             8u
 #define DUOFORGE_TARGET_CLASS_ALL                   9u
 #define DUOFORGE_TARGET_CLASS_COUNT                 9u
+/* The classes of the pool rows that a synthetic table never has and that the request API never resolves; they appear in
+   duoforge_move_static.target_class only (decision 0020). DUOFORGE_TARGET_CLASS_COUNT stays 9 for the request API. */
+#define DUOFORGE_TARGET_CLASS_RANDOM_NORMAL         10u /* Struggle: a random foe, never selectable */
+#define DUOFORGE_TARGET_CLASS_ALL_ADJACENT          11u /* every adjacent Pokemon, foes and ally (Earthquake) */
+#define DUOFORGE_TARGET_CLASS_SCRIPTED              12u /* the target is the last attacker (Counter, Mirror Coat) */
+#define DUOFORGE_TARGET_CLASS_ALLY_TEAM             13u /* the user's whole party (Heal Bell) */
+#define DUOFORGE_TARGET_CLASS_ALLIES                14u /* the user and its ally (Life Dew) */
+#define DUOFORGE_TARGET_CLASS_FOE_SIDE              15u /* the foes' side of the field (Spikes) */
+#define DUOFORGE_TARGET_CLASS_STATIC_COUNT          15u /* the largest target_class of duoforge_move_static */
 #define DUOFORGE_TARGET_NONE 0xFFu /* selector value for classes without a choosable target */
 
 /* ---- decision boundaries (decision 0005 section 1) ---- */
@@ -252,7 +261,14 @@ duoforge_status duoforge_data_name(const duoforge_context *ctx, uint32_t table, 
 
 /* The id of a name: the exact name as written by duoforge_data_name, `length`
    bytes (the string need not be NUL-terminated; a NUL inside matches nothing).
-   Nothing is normalized. A name whose id is at or beyond the kind's count is
+   Nothing is normalized. For the SPECIES table it also accepts the 29 cosmetic
+   aliases of the POOL tables (Showdown ids of formes that the validator treats
+   as their base forme, for example "vivillonpolar", "alcremierubycream"): an
+   alias finds the row of its base forme, and duoforge_data_name of that row
+   gives the canonical name, never the alias. An alias is bound by the kind's
+   count like the row it stands for, so under the CLOSURE and TEAM_C kinds
+   (whose tables hold none of those rows) it is refused like any unknown name.
+   A name whose id is at or beyond the kind's count is
    refused like an unknown name, so a pool move under a TEAM_C context is
    E_INVALID_ARGUMENT. Struggle is a row of the move table (it is
    engine-internal): find returns it, and duoforge_data_name gives its name;
@@ -270,8 +286,10 @@ duoforge_status duoforge_data_find(const duoforge_context *ctx, uint32_t table, 
    a species and a nature carry no mark of their own (supported with the turn
    core), except a Mega forme, which is supported when Mega Evolution into it
    is (see mega_supported). A member is supported exactly when its ability
-   (if any), its item (if any) and each of its moves are, and, if it holds the
-   stone of its forme (item 1 + mega_stone), mega_supported of its forme holds. */
+   (if any), its item (if any) and each of its moves are, and, if it holds a
+   Mega Stone of its forme (item 1 + the stone), Mega Evolution through that
+   stone is supported (mega_supported of its forme for its first Mega Stone,
+   duoforge_mega_info.supported for every stone). */
 duoforge_status duoforge_data_supported(const duoforge_context *ctx, uint32_t table, uint32_t id,
                                         bool *out_supported);
 
@@ -295,6 +313,27 @@ typedef struct duoforge_forme_info {
 } duoforge_forme_info; /* 60 bytes */
 duoforge_status duoforge_data_forme_info(const duoforge_context *ctx, uint32_t species_id, duoforge_forme_info *out);
 
+/* The Mega formes that a species reaches, one per Mega Stone. duoforge_forme_info
+   carries one link per forme and keeps its meaning (the first Mega Stone and its
+   Mega forme); a species with a second Mega (Charizard: Mega-X and Mega-Y) or a
+   stone that two species share (Meowsticite) is covered here. */
+typedef struct duoforge_mega_info {
+    uint32_t base_species; /* the base forme asked about */
+    uint32_t stone;        /* the item id of the Mega Stone (a member holds it as item 1 + this id) */
+    uint32_t mega_species; /* the Mega forme that the stone takes the species to */
+    uint32_t mega_ability; /* the ability id the Mega forme brings */
+    uint32_t supported;    /* 1 iff Mega Evolution into that Mega forme is supported (the manifest marks Mega Evolution
+                              and the Mega forme's ability), as mega_supported of duoforge_forme_info for its first one;
+                              whether the stone itself is marked is the ITEM table's answer of duoforge_data_supported */
+} duoforge_mega_info; /* 5 words, 20 bytes */
+/* How many Mega Stones take the species (a forme id of the kind) to a Mega forme under the kind: 0 for a Mega forme
+   and for a species without one. E_INVALID_ARGUMENT for an id beyond the kind's count. */
+duoforge_status duoforge_data_mega_count(const duoforge_context *ctx, uint32_t species_id, uint32_t *out_count);
+/* The index-th of them, in ascending item id. E_INVALID_ARGUMENT for an id beyond the kind's count and for an index
+   at or beyond duoforge_data_mega_count; *out is untouched on failure. */
+duoforge_status duoforge_data_mega_at(const duoforge_context *ctx, uint32_t species_id, uint32_t index,
+                                      duoforge_mega_info *out);
+
 /* The moves a member of the species may have, in ascending id order: the
    moves of the forme's set under the CLOSURE and TEAM_C kinds, the moves it
    learns under the POOL kinds; empty for a Mega forme. A member has 1 to
@@ -310,6 +349,119 @@ duoforge_status duoforge_data_forme_moves(const duoforge_context *ctx, uint32_t 
    allows each item once per side); every nature below duoforge_data_count(
    NATURE) is legal; Stat Points are at most DUOFORGE_STAT_POINTS_MAX per stat
    and DUOFORGE_STAT_POINTS_TOTAL_MAX in all. */
+
+/* ---- static features of the data rows (decision 0020) ----
+   What a learner may know about a forme, move, item, ability or nature without a
+   battle: pure functions of (kind, id), read from the same generated tables that
+   setup and the turn code read, never computed from anything else. The same contract
+   as duoforge_data_forme_info: a NULL pointer is E_NULL_ARGUMENT; an id at or beyond
+   duoforge_data_count of the context's kind is E_INVALID_ARGUMENT; a SYNTHETIC
+   context (no tables) is E_UNSUPPORTED (checks in that order); `out` is untouched on
+   an error. The structs hold uint32_t fields (see priority for a negative value), unused entries
+   are zero and an id that is not there is DUOFORGE_DATA_NONE; there is no
+   allocation and no pointer into the tables. Every row answers, modelled or not:
+   whether the engine can play a row is duoforge_data_supported, not a part of
+   these. One call per id; a learner builds its own arrays at start-up. */
+
+/* A forme: its types, base stats and weight. A Mega forme is a row like any
+   other, so its types and stats are the post-Mega ones. 44 bytes. */
+typedef struct duoforge_forme_static {
+    uint32_t types[2];        /* DUOFORGE_TYPE_*; the second is DUOFORGE_DATA_NONE for a single type */
+    uint32_t base_stats[6];   /* HP, Atk, Def, SpA, SpD, Spe */
+    uint32_t weight_hg;       /* in hectograms (weight in kg times 10) */
+    uint32_t default_ability; /* an ability id: a Mega forme's own, otherwise the first legal one (forme_info lists all) */
+    uint32_t is_mega;         /* 1 for a Mega forme */
+} duoforge_forme_static;
+duoforge_status duoforge_data_forme_static(const duoforge_context *ctx, uint32_t species_id, duoforge_forme_static *out);
+
+/* duoforge_move_static.category */
+#define DUOFORGE_MOVE_CATEGORY_PHYSICAL 0u
+#define DUOFORGE_MOVE_CATEGORY_SPECIAL  1u
+#define DUOFORGE_MOVE_CATEGORY_STATUS   2u
+
+/* duoforge_move_static.flags: one bit per Showdown flag name of the move, plus POWER_RULE; additive only. They are
+   data about the move, not support: that a flag is reported says nothing about whether the engine implements what
+   reads it (Bulletproof, Mega Launcher and the rest stay unmarked until a step gives them a reader). */
+#define DUOFORGE_MOVE_STATIC_FLAG_CONTACT    0x001u
+#define DUOFORGE_MOVE_STATIC_FLAG_SOUND      0x002u
+#define DUOFORGE_MOVE_STATIC_FLAG_PUNCH      0x004u
+#define DUOFORGE_MOVE_STATIC_FLAG_BITE       0x008u
+#define DUOFORGE_MOVE_STATIC_FLAG_BULLET     0x010u
+#define DUOFORGE_MOVE_STATIC_FLAG_PULSE      0x020u
+#define DUOFORGE_MOVE_STATIC_FLAG_SLICING    0x040u
+#define DUOFORGE_MOVE_STATIC_FLAG_WIND       0x080u
+#define DUOFORGE_MOVE_STATIC_FLAG_DANCE      0x100u
+#define DUOFORGE_MOVE_STATIC_FLAG_POWDER     0x200u
+#define DUOFORGE_MOVE_STATIC_FLAG_POWER_RULE 0x400u /* base_power is not the damage: a callback computes the power
+                                                       (Low Kick, Last Respects); base_power is the pin's basePower, 0 then */
+
+/* A move. 64 bytes. */
+typedef struct duoforge_move_static {
+    uint32_t type;             /* DUOFORGE_TYPE_* */
+    uint32_t category;         /* DUOFORGE_MOVE_CATEGORY_* */
+    uint32_t base_power;       /* the pin's basePower */
+    uint32_t accuracy;         /* percent; 0 means the move never misses */
+    uint32_t pp;               /* Champions PP after the cap and calculatePP: what a member starts with */
+    uint32_t priority;         /* the pin's priority, -7 to +5, unbiased: a negative value is its 32-bit two's complement
+                                  (0xFFFFFFF9 for -7); the library has no negative-capable field type, a caller casts */
+    uint32_t target_class;     /* DUOFORGE_TARGET_CLASS_* 1..DUOFORGE_TARGET_CLASS_STATIC_COUNT; the request API does
+                                  not resolve 10..15 */
+    uint32_t flags;            /* DUOFORGE_MOVE_STATIC_FLAG_* */
+    uint32_t crit_stage;       /* the critical-hit stage: 0 normal, 1 high (the pin's critRatio minus 1) */
+    uint32_t drain[2];         /* numerator, denominator of the damage dealt; 0 and 0 for none */
+    uint32_t recoil[2];        /* the same for recoil */
+    uint32_t secondary_chance; /* percent of the secondary effect, 0 for none; its kind stays internal */
+    uint32_t hits_min;         /* the pin's multihit: 2 and 5 for Bullet Seed, 2 and 2 for Dual Wingbeat, 3 and 3 for
+                                  Triple Axel, 1 and 1 for a single hit */
+    uint32_t hits_max;
+} duoforge_move_static;
+duoforge_status duoforge_data_move_static(const duoforge_context *ctx, uint32_t move_id, duoforge_move_static *out);
+
+/* duoforge_item_static.family, as the generated family column of the tables */
+#define DUOFORGE_ITEM_FAMILY_NONE         0u
+#define DUOFORGE_ITEM_FAMILY_TYPE_BOOSTER 1u /* family_type: the type whose moves it strengthens */
+#define DUOFORGE_ITEM_FAMILY_RESIST_BERRY 2u /* family_type: the type whose super effective hit it weakens */
+
+/* An item. Everything else about an item is code, not data: it stays an id. 16 bytes. */
+typedef struct duoforge_item_static {
+    uint32_t family;        /* DUOFORGE_ITEM_FAMILY_* */
+    uint32_t family_type;   /* DUOFORGE_TYPE_*; DUOFORGE_DATA_NONE without a family */
+    uint32_t is_mega_stone; /* 1 for a Mega Stone of the tables */
+    uint32_t mega_species;  /* the Mega forme it enables (a forme id), DUOFORGE_DATA_NONE if is_mega_stone is 0 */
+} duoforge_item_static;
+duoforge_status duoforge_data_item_static(const duoforge_context *ctx, uint32_t item_id, duoforge_item_static *out);
+
+/* duoforge_ability_static.family */
+#define DUOFORGE_ABILITY_FAMILY_NONE           0u
+#define DUOFORGE_ABILITY_FAMILY_ATE            1u /* family_param: the type that it turns Normal moves into */
+#define DUOFORGE_ABILITY_FAMILY_PINCH          2u /* family_param: the type that it strengthens at a third of the HP */
+#define DUOFORGE_ABILITY_FAMILY_WEATHER_SETTER 3u /* family_param: DUOFORGE_WEATHER_* */
+#define DUOFORGE_ABILITY_FAMILY_TERRAIN_SETTER 4u /* family_param: DUOFORGE_TERRAIN_* */
+
+/* An ability. 8 bytes. */
+typedef struct duoforge_ability_static {
+    uint32_t family;       /* DUOFORGE_ABILITY_FAMILY_* */
+    uint32_t family_param; /* see the family; DUOFORGE_DATA_NONE without a family */
+} duoforge_ability_static;
+duoforge_status duoforge_data_ability_static(const duoforge_context *ctx, uint32_t ability_id,
+                                             duoforge_ability_static *out);
+
+/* A nature (the same 25 under every kind): the stat it raises and the one it lowers, as the stat indices of the
+   public arrays (stat_points, base_stats: 0 HP, 1 Atk, 2 Def, 3 SpA, 4 SpD, 5 Spe; never HP). Both are
+   DUOFORGE_DATA_NONE for a neutral nature. 8 bytes. A nature id at or beyond duoforge_data_count(NATURE) is
+   E_INVALID_ARGUMENT, as above. */
+typedef struct duoforge_nature_static {
+    uint32_t raised_stat;
+    uint32_t lowered_stat;
+} duoforge_nature_static;
+duoforge_status duoforge_data_nature_static(const duoforge_context *ctx, uint32_t nature_id,
+                                            duoforge_nature_static *out);
+
+/* The pinned type chart: the multiplier of an attack of attack_type on a defender of defend_type as the fraction
+   *out_num / *out_den: 0/1 (immune), 1/2, 1/1 or 2/1. A type that is not a DUOFORGE_TYPE_* (0..17) is
+   E_INVALID_ARGUMENT; the chart is the same under every kind with tables. Both outputs are untouched on an error. */
+duoforge_status duoforge_data_type_effect(const duoforge_context *ctx, uint32_t attack_type, uint32_t defend_type,
+                                          uint32_t *out_num, uint32_t *out_den);
 
 /* ---- owned battle state: opaque, pointer-free, bound to a context by
    fingerprint (not by pointer); every call checks the fingerprint ---- */
@@ -370,6 +522,11 @@ duoforge_status duoforge_battle_reseed(const duoforge_context *ctx, duoforge_bat
    exactly when an occupant has no selectable move (no PP left, Fake Out
    disabled, a choice lock; sim/pokemon.ts, the reference's request). */
 #define DUOFORGE_MOVE_SLOT_STRUGGLE 4u
+/* move_slot of the recharge turn (POOL kinds, step G17): a Pokemon that used a recharge move (Hyper Beam) and hit must
+   recharge on its next action. Its slot is offered exactly one candidate, MOVE with this move_slot, DUOFORGE_TARGET_NONE
+   and no Mega declaration; no other move and no switch (sim/pokemon.ts getMoveRequestData, trapped; Showdown's
+   "move 1" is the move "Recharge"). The action prints "cant|X|recharge" (DUOFORGE_CAUSE_RECHARGE) and uses no PP. */
+#define DUOFORGE_MOVE_SLOT_RECHARGE 5u
 #define DUOFORGE_CHOICE_TEAM_SELECTION 1u
 #define DUOFORGE_CHOICE_SLOTS          2u
 /* Profile bound on a complete side-choice domain: max(720 ordered picks of 6,
@@ -378,7 +535,7 @@ duoforge_status duoforge_battle_reseed(const duoforge_context *ctx, duoforge_bat
 
 typedef struct duoforge_slot_command {
     uint8_t kind;        /* DUOFORGE_SLOT_* */
-    uint8_t move_slot;   /* MOVE: 0..3, or DUOFORGE_MOVE_SLOT_STRUGGLE */
+    uint8_t move_slot;   /* MOVE: 0..3, or DUOFORGE_MOVE_SLOT_STRUGGLE, or DUOFORGE_MOVE_SLOT_RECHARGE */
     uint8_t target;      /* MOVE: flat position side*2+slot, or DUOFORGE_TARGET_NONE */
     uint8_t mega;        /* MOVE: 0/1 Mega Evolution declaration */
     uint8_t reserve;     /* SWITCH: roster index of the reserve */
@@ -531,12 +688,17 @@ duoforge_status duoforge_battle_step(const duoforge_context *ctx, duoforge_battl
 #define DUOFORGE_AILMENT_PARALYSIS 3u
 #define DUOFORGE_AILMENT_SLEEP     4u
 #define DUOFORGE_AILMENT_POISON    5u /* Team C: Dire Claw */
+#define DUOFORGE_AILMENT_TOX       6u /* POOL (decision 0018): badly poisoned; not produced yet */
 #define DUOFORGE_WEATHER_NONE 0u
 #define DUOFORGE_WEATHER_RAIN 1u
 #define DUOFORGE_WEATHER_SUN  2u
+#define DUOFORGE_WEATHER_SAND 3u /* POOL (decision 0018): not produced yet */
+#define DUOFORGE_WEATHER_SNOW 4u /* POOL: not produced yet */
 #define DUOFORGE_TERRAIN_NONE   0u
 #define DUOFORGE_TERRAIN_GRASSY 1u
 #define DUOFORGE_TERRAIN_PSYCHIC 2u /* Team C (Psychic Surge) */
+#define DUOFORGE_TERRAIN_ELECTRIC 3u /* POOL (decision 0018): not produced yet */
+#define DUOFORGE_TERRAIN_MISTY    4u /* POOL: not produced yet */
 #define DUOFORGE_MOVE_SLOT_NONE 0xFFu /* position view: no locked move */
 
 typedef struct duoforge_member_view {
@@ -628,6 +790,175 @@ typedef struct duoforge_observation {
 duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duoforge_battle *battle,
                                         uint32_t player, duoforge_observation *out_observation);
 
+/* ---- the POOL player-view extension (decision 0018) ----
+   What the 736-byte observation has no room for: the effects of the content
+   expansion that a player sees (weather and terrain beyond the old values are
+   in the old fields; everything else is here). Fixed size, no pointers, no
+   padding, reserved bytes zero. Under every kind except POOL and POOL_DEV the
+   whole struct is zero (revision 0); under the POOL kinds revision is
+   DUOFORGE_OBSERVATION_EXT_REVISION. Every field is declared now and stays
+   zero until the step that implements its mechanic sets its bit in `supported`
+   (DUOFORGE_VIEWEXT_FEATURE_*, a bit number): a zero field of a clear bit is
+   "not yet supported", of a set bit "absent". Nothing here is private to one
+   side: a field is public, and a field that only the owner could see would be
+   zero in the opponent's section (none is, in revision 1). Hidden durations
+   are never exposed. sides[] is in absolute side order, as in
+   duoforge_observation. Growth: a field is only ever appended into a reserve,
+   which is an additive change; a larger struct is a new revision with its own
+   struct and function. Ids: forme, ability and item ids are those of the data
+   tables (duoforge_data_*), "+ 1" meaning 0 is none; type ids are the
+   alphabetical DUOFORGE_TYPE_* below. */
+#define DUOFORGE_OBSERVATION_EXT_SIZE     192u
+#define DUOFORGE_OBSERVATION_EXT_REVISION 1u
+
+/* Type ids (alphabetical), for type_now (id + 1). */
+#define DUOFORGE_TYPE_BUG      0u
+#define DUOFORGE_TYPE_DARK     1u
+#define DUOFORGE_TYPE_DRAGON   2u
+#define DUOFORGE_TYPE_ELECTRIC 3u
+#define DUOFORGE_TYPE_FAIRY    4u
+#define DUOFORGE_TYPE_FIGHTING 5u
+#define DUOFORGE_TYPE_FIRE     6u
+#define DUOFORGE_TYPE_FLYING   7u
+#define DUOFORGE_TYPE_GHOST    8u
+#define DUOFORGE_TYPE_GRASS    9u
+#define DUOFORGE_TYPE_GROUND   10u
+#define DUOFORGE_TYPE_ICE      11u
+#define DUOFORGE_TYPE_NORMAL   12u
+#define DUOFORGE_TYPE_POISON   13u
+#define DUOFORGE_TYPE_PSYCHIC  14u
+#define DUOFORGE_TYPE_ROCK     15u
+#define DUOFORGE_TYPE_STEEL    16u
+#define DUOFORGE_TYPE_WATER    17u
+
+/* Bits of duoforge_position_ext.volatiles (bits 20 to 31 are reserved, 0). */
+#define DUOFORGE_POSITION_EXT_SUBSTITUTE   0x00000001u
+#define DUOFORGE_POSITION_EXT_TAUNT        0x00000002u
+#define DUOFORGE_POSITION_EXT_IMPRISON     0x00000004u
+#define DUOFORGE_POSITION_EXT_LEECH_SEED   0x00000008u
+#define DUOFORGE_POSITION_EXT_YAWN         0x00000010u
+#define DUOFORGE_POSITION_EXT_FOCUS_ENERGY 0x00000020u
+#define DUOFORGE_POSITION_EXT_DRAGON_CHEER 0x00000040u
+#define DUOFORGE_POSITION_EXT_MUST_RECHARGE 0x00000080u
+#define DUOFORGE_POSITION_EXT_PARTIAL_TRAP 0x00000100u
+#define DUOFORGE_POSITION_EXT_GLAIVE_RUSH  0x00000200u
+#define DUOFORGE_POSITION_EXT_DESTINY_BOND 0x00000400u
+#define DUOFORGE_POSITION_EXT_CURSE        0x00000800u
+#define DUOFORGE_POSITION_EXT_NO_RETREAT   0x00001000u
+#define DUOFORGE_POSITION_EXT_SALT_CURE    0x00002000u
+#define DUOFORGE_POSITION_EXT_CHARGE       0x00004000u
+#define DUOFORGE_POSITION_EXT_HEAL_BLOCK   0x00008000u
+#define DUOFORGE_POSITION_EXT_THROAT_CHOP  0x00010000u
+#define DUOFORGE_POSITION_EXT_RAGE_POWDER  0x00020000u
+#define DUOFORGE_POSITION_EXT_TYPE_CHANGED 0x00040000u
+#define DUOFORGE_POSITION_EXT_ILLUSION_UP  0x00080000u
+/* Bits of duoforge_side_ext.guard_flags (this turn only). */
+#define DUOFORGE_SIDE_GUARD_WIDE_GUARD  1u
+#define DUOFORGE_SIDE_GUARD_QUICK_GUARD 2u
+/* duoforge_member_ext.item_now: the member holds nothing (Knock Off, Thief). */
+#define DUOFORGE_ITEM_NOW_NONE 255u
+
+/* Bit numbers of duoforge_observation_ext.supported, by tier (decision 0018 section 7.1). Bits 40 to 63 are free. */
+#define DUOFORGE_VIEWEXT_FEATURE_WEATHER_SAND     0u
+#define DUOFORGE_VIEWEXT_FEATURE_WEATHER_SNOW     1u
+#define DUOFORGE_VIEWEXT_FEATURE_ABILITY_CHANGE   2u
+#define DUOFORGE_VIEWEXT_FEATURE_AURORA_VEIL      3u
+#define DUOFORGE_VIEWEXT_FEATURE_PERISH           4u
+#define DUOFORGE_VIEWEXT_FEATURE_TERRAIN_ELECTRIC 5u
+#define DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP      6u
+#define DUOFORGE_VIEWEXT_FEATURE_ENCORE           7u
+#define DUOFORGE_VIEWEXT_FEATURE_TOXIC_SPIKES     8u
+#define DUOFORGE_VIEWEXT_FEATURE_TYPE_CHANGE      9u
+#define DUOFORGE_VIEWEXT_FEATURE_AILMENT_TOX      10u
+#define DUOFORGE_VIEWEXT_FEATURE_ITEM_CHANGE      11u
+#define DUOFORGE_VIEWEXT_FEATURE_IMPRISON         12u
+#define DUOFORGE_VIEWEXT_FEATURE_STEALTH_ROCK     13u
+#define DUOFORGE_VIEWEXT_FEATURE_TAUNT            14u
+#define DUOFORGE_VIEWEXT_FEATURE_MUST_RECHARGE    15u
+#define DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK       16u
+#define DUOFORGE_VIEWEXT_FEATURE_WIDE_GUARD       17u
+#define DUOFORGE_VIEWEXT_FEATURE_PARTIAL_TRAP     18u
+#define DUOFORGE_VIEWEXT_FEATURE_FORME_CHANGE     19u
+#define DUOFORGE_VIEWEXT_FEATURE_GLAIVE_RUSH      20u
+#define DUOFORGE_VIEWEXT_FEATURE_DISABLE          21u
+#define DUOFORGE_VIEWEXT_FEATURE_STOCKPILE        22u
+#define DUOFORGE_VIEWEXT_FEATURE_SUBSTITUTE       23u
+#define DUOFORGE_VIEWEXT_FEATURE_DRAGON_CHEER     24u
+#define DUOFORGE_VIEWEXT_FEATURE_YAWN             25u
+#define DUOFORGE_VIEWEXT_FEATURE_ILLUSION         26u
+#define DUOFORGE_VIEWEXT_FEATURE_GRAVITY          27u
+#define DUOFORGE_VIEWEXT_FEATURE_LEECH_SEED       28u
+#define DUOFORGE_VIEWEXT_FEATURE_FOCUS_ENERGY     29u
+#define DUOFORGE_VIEWEXT_FEATURE_SPIKES           30u
+#define DUOFORGE_VIEWEXT_FEATURE_CHARGE           31u
+#define DUOFORGE_VIEWEXT_FEATURE_TERRAIN_MISTY    32u
+#define DUOFORGE_VIEWEXT_FEATURE_STICKY_WEB       33u
+#define DUOFORGE_VIEWEXT_FEATURE_SALT_CURE        34u
+#define DUOFORGE_VIEWEXT_FEATURE_DESTINY_BOND     35u
+#define DUOFORGE_VIEWEXT_FEATURE_CURSE            36u
+#define DUOFORGE_VIEWEXT_FEATURE_NO_RETREAT       37u
+#define DUOFORGE_VIEWEXT_FEATURE_QUICK_GUARD      38u
+#define DUOFORGE_VIEWEXT_FEATURE_RAGE_POWDER      39u
+#define DUOFORGE_VIEWEXT_FEATURE_COUNT            40u
+
+/* Field-wide, public. */
+typedef struct duoforge_field_ext {
+    uint8_t gravity_turns; /* 0 to 5: remaining turns */
+    uint8_t reserved[15];  /* zero */
+} duoforge_field_ext; /* 16 bytes */
+
+/* One active position; all zero when empty. */
+typedef struct duoforge_position_ext {
+    uint32_t volatiles;    /* DUOFORGE_POSITION_EXT_* presence bits */
+    uint16_t ability_now;  /* ability id + 1 when it differs from duoforge_member_view.ability, else 0 */
+    uint8_t type_now[2];   /* type id + 1 (0: none) while DUOFORGE_POSITION_EXT_TYPE_CHANGED is set, else 0 */
+    uint8_t encore_slot;   /* the forced move slot + 1; 0: not encored */
+    uint8_t disable_slot;  /* the barred move slot + 1; 0: none */
+    uint8_t stockpile;     /* 0 to 3 levels */
+    uint8_t perish;        /* the Perish count shown, 3 to 1; 0: none */
+    uint8_t reserved[4];   /* zero */
+} duoforge_position_ext; /* 16 bytes */
+
+/* One roster member, bench included. */
+typedef struct duoforge_member_ext {
+    uint16_t forme;   /* forme id + 1 when the current forme differs from the sheet's (and the Mega forme); else 0 */
+    uint8_t item_now; /* 0: as the member view; 1 to 254: it now holds item (value - 1); DUOFORGE_ITEM_NOW_NONE */
+    uint8_t reserved; /* zero */
+} duoforge_member_ext; /* 4 bytes */
+
+typedef struct duoforge_side_ext {
+    duoforge_position_ext positions[DUOFORGE_ACTIVE_PER_SIDE];
+    duoforge_member_ext members[DUOFORGE_MAX_ROSTER];
+    uint8_t aurora_veil_turns; /* 0 to 8 */
+    uint8_t stealth_rock;      /* 0/1 */
+    uint8_t spikes;            /* 0 to 3 layers */
+    uint8_t toxic_spikes;      /* 0 to 2 layers */
+    uint8_t sticky_web;        /* 0/1 */
+    uint8_t guard_flags;       /* DUOFORGE_SIDE_GUARD_*: this turn only, so only at a PIVOT boundary */
+    uint8_t reserved[2];       /* zero */
+} duoforge_side_ext; /* 64 bytes */
+
+typedef struct duoforge_observation_ext {
+    uint8_t revision;     /* 0: absent (not a POOL kind), the struct is all zero; else the layout revision */
+    uint8_t player;       /* the viewer, as duoforge_observation.player; 0 when revision is 0 */
+    uint8_t reserved0[2]; /* zero */
+    uint32_t epoch;       /* the request epoch of the paired duoforge_observation; 0 when revision is 0 */
+    uint64_t supported;   /* bit DUOFORGE_VIEWEXT_FEATURE_* set: the feature's mechanic is implemented and tested */
+    duoforge_field_ext field;
+    duoforge_side_ext sides[DUOFORGE_SIDE_COUNT];
+    uint8_t reserved1[32]; /* zero: room for a whole new record */
+} duoforge_observation_ext; /* DUOFORGE_OBSERVATION_EXT_SIZE bytes */
+/* A size mismatch is a compile error here (negative array size), in C and in C++. */
+typedef char duoforge_observation_ext_size_check[(sizeof(duoforge_observation_ext) == DUOFORGE_OBSERVATION_EXT_SIZE) ? 1 : -1];
+
+/* The extension of one player's view. Pure, allocation-free, with the checks
+   of duoforge_battle_observe: NULL -> E_NULL_ARGUMENT -> E_CONTEXT_MISMATCH ->
+   E_INVALID_ARGUMENT (player) -> E_INVARIANT. *out is written only on
+   success. Under a kind other than POOL and POOL_DEV (SYNTHETIC included) the
+   checks run and *out is all zero. */
+duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const duoforge_battle *battle,
+                                            uint32_t viewer, duoforge_observation_ext *out);
+
 /* ---- event log (decision 0007 section 6) ----
    What happened during a step, per player, in the order the game shows it:
    one event per line of the public battle protocol that the game shows to
@@ -650,12 +981,16 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_EVENT_SUPER_EFFECTIVE 10u /* [-supereffective] position: target, amount: 1 or 2 (x2, x4) */
 #define DUOFORGE_EVENT_RESISTED        11u /* [-resisted] position: target, amount: 1 or 2 (x1/2, x1/4) */
 #define DUOFORGE_EVENT_IMMUNE          12u /* [-immune] position; cause ABILITY + id2 when an ability did it */
-#define DUOFORGE_EVENT_FAIL            13u /* [-fail] position; detail: the ailment it already has, when that is why */
+#define DUOFORGE_EVENT_FAIL            13u /* [-fail] position; detail: the ailment it already has, when that is why.
+                                              POOL kinds: cause ABILITY + id2 (Inner Focus), other the holder:
+                                              [-fail] unboost atk [from] ability: Inner Focus, an Intimidate drop. */
 #define DUOFORGE_EVENT_PROTECT         14u /* [-singleturn Protect] position */
 #define DUOFORGE_EVENT_BLOCKED         15u /* [-activate move: Protect] position: the protected Pokemon
                                               (detail 0); detail DUOFORGE_FIELD_PSYCHIC_TERRAIN: [-activate move:
                                               Psychic Terrain], a priority move stopped at a grounded target
-                                              (Team C) */
+                                              (Team C); detail DUOFORGE_BLOCK_WIDE_GUARD: [-activate move: Wide
+                                              Guard], a spread move stopped at a target of the guarded side
+                                              (POOL kinds) */
 #define DUOFORGE_EVENT_BOOST           16u /* [-boost] position, detail: stat (0 atk .. 6 evasion), amount; cause */
 #define DUOFORGE_EVENT_UNBOOST         17u /* [-unboost] as BOOST */
 #define DUOFORGE_EVENT_STATUS          18u /* [-status] position, detail: DUOFORGE_AILMENT_* */
@@ -677,16 +1012,25 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_EVENT_PREPARE         32u /* [-prepare] position, id: the move it charges */
 #define DUOFORGE_EVENT_ANIMATION       33u /* [-anim] position, other, id: the move shown; flags MISS, NOTARGET
                                                     (the last move line once shown) */
-#define DUOFORGE_EVENT_ABILITY         34u /* [-ability] position, id2: ability + 1 */
-#define DUOFORGE_EVENT_ACTIVATE        35u /* [-activate] position; cause ABILITY + id2 (Lightning Rod, Emergency Exit) or MOVE + id2 (Struggle) */
+#define DUOFORGE_EVENT_ABILITY         34u /* [-ability] position, id2: ability + 1. POOL kinds, cause ABILITY (Trace copying
+                                               a foe's): other is the foe, id2 the copied ability + 1 */
+#define DUOFORGE_EVENT_ACTIVATE        35u /* [-activate] position; cause ABILITY + id2 (Lightning Rod, Emergency Exit) or MOVE + id2 (Struggle);
+                                                    Flower Veil's [-block] too: position the protected Pokemon, other the holder ([of]) */
 #define DUOFORGE_EVENT_UPKEEP          36u /* [upkeep] the end-of-turn effects are done */
 #define DUOFORGE_EVENT_RESULT          37u /* [win] or [tie] detail: DUOFORGE_RESULT_* */
 #define DUOFORGE_EVENT_SINGLE_TURN     38u /* [-singleturn] position (Team C): id: the move; other: the user ([of]) for
                                               Helping Hand, DUOFORGE_NO_POSITION for Follow Me */
+#define DUOFORGE_EVENT_VOLATILE_START  39u /* [-start] position (POOL kinds), detail: DUOFORGE_VOLATILE_* (a volatile that the
+                                              game shows: -start|X|move: Heal Block) */
+#define DUOFORGE_EVENT_VOLATILE_END    40u /* [-end] position (POOL kinds), detail: DUOFORGE_VOLATILE_* */
+#define DUOFORGE_EVENT_TYPE_CHANGE     41u /* [-start|X|typechange|TYPE] position (POOL kinds): the occupant's type is now the single
+                                              type in detail (DUOFORGE_TYPE_*; Soak: Water); cause MOVE, id2: the move */
 
 /* Causes ([from] and [of] in the protocol). */
 #define DUOFORGE_CAUSE_NONE      0u /* the move or the plain mechanic */
-#define DUOFORGE_CAUSE_MOVE      1u /* id2: move id (Parting Shot's switch) */
+#define DUOFORGE_CAUSE_MOVE      1u /* id2: move id (Parting Shot's switch; a sleep that a move caused; POOL kinds: the damage that
+                                        Spiky Shield does to a contact attacker, [-damage] ... [from] Spiky Shield [of] the holder,
+                                        the holder in other) */
 #define DUOFORGE_CAUSE_ITEM      2u /* id2: item + 1 */
 #define DUOFORGE_CAUSE_ABILITY   3u /* id2: ability + 1; other: its holder when shown */
 #define DUOFORGE_CAUSE_RECOIL    4u
@@ -700,6 +1044,17 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_CAUSE_FLINCH    12u
 #define DUOFORGE_CAUSE_NO_PP     13u
 #define DUOFORGE_CAUSE_POISON    14u /* poison's residual damage (Team C) */
+#define DUOFORGE_CAUSE_WEATHER   16u /* DAMAGE (POOL kinds): the residual damage of a weather ([from] Sandstorm); id2: the
+                                         DUOFORGE_WEATHER_* value. Generic for every weather that damages; in this format
+                                         it fires only for Sand: Snow has no residual damage and Hail is not in the format */
+#define DUOFORGE_CAUSE_RECHARGE  18u /* CANT (POOL kinds): the recharge turn after a recharge move ([cant] recharge) */
+#define DUOFORGE_CAUSE_HEAL_BLOCK 15u /* CANT (POOL kinds): a move that heals, stopped by Heal Block; id: the stopped move.
+                                         A sound move stopped by Throat Chop is CANT with cause MOVE, id2: Throat Chop
+                                         (the line names no move, so id is 0) */
+#define DUOFORGE_CAUSE_ITEM_TAKEN 17u /* ITEM_END (POOL kinds): the item was taken by a move ([from] move: Knock Off [of]
+                                         the user); id: the move, other: the user, id2: item + 1. The old item_used
+                                         of the view shows it gone as for an item used up; item_now tells them apart
+                                         (DUOFORGE_ITEM_NOW_NONE) */
 
 #define DUOFORGE_EVENT_FLAG_STILL  1u  /* MOVE: the charge turn of a two-turn move */
 #define DUOFORGE_EVENT_FLAG_LOCKED 2u  /* MOVE: the locked turn ([from] lockedmove) */
@@ -710,12 +1065,18 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_EVENT_FLAG_MISS     64u  /* MOVE: a single-target move missed ([miss]) */
 #define DUOFORGE_EVENT_FLAG_NOTARGET 128u /* MOVE: no target left ([notarget]) */
 
+#define DUOFORGE_BLOCK_WIDE_GUARD 4u /* BLOCKED detail: Wide Guard (POOL kinds); 0 Protect, 3 Psychic Terrain */
+#define DUOFORGE_VOLATILE_HEAL_BLOCK 1u /* VOLATILE_START / VOLATILE_END: Heal Block (Psychic Noise, 2 turns) */
+#define DUOFORGE_VOLATILE_ENCORE     2u /* VOLATILE_START / VOLATILE_END: Encore (-start|X|Encore, -end|X|Encore) */
+#define DUOFORGE_VOLATILE_MUST_RECHARGE 3u /* VOLATILE_START: -mustrecharge|X (a recharge move hit); no END, it ends with the
+                                              [cant] recharge line or with the occupant */
 #define DUOFORGE_FIELD_GRASSY_TERRAIN 1u
 #define DUOFORGE_FIELD_TRICK_ROOM     2u
 #define DUOFORGE_FIELD_PSYCHIC_TERRAIN 3u /* Team C */
 #define DUOFORGE_SIDE_TAILWIND     1u
 #define DUOFORGE_SIDE_REFLECT      2u
 #define DUOFORGE_SIDE_LIGHT_SCREEN 3u
+#define DUOFORGE_SIDE_AURORA_VEIL  4u /* SIDE_START / SIDE_END amount (POOL kinds): -sidestart|side|move: Aurora Veil */
 #define DUOFORGE_RESULT_SIDE_0 1u
 #define DUOFORGE_RESULT_SIDE_1 2u
 #define DUOFORGE_RESULT_TIE    3u

@@ -1,0 +1,53 @@
+Indeedee (M) @ Focus Sash
+Ability: Psychic Surge
+Level: 50
+Modest Nature
+- Expanding Force
+- Mystical Fire
+- Protect
+- Encore
+
+Pelipper (M) @ Choice Scarf
+Ability: Drizzle
+Level: 50
+Timid Nature
+- Hurricane
+- Icy Wind
+- Muddy Water
+- U-turn
+
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Naive Nature
+- Tailwind
+- Hyper Voice
+- Double-Edge
+- Protect
+
+Archaludon (M) @ Leftovers
+Ability: Stamina
+Level: 50
+Bold Nature
+- Electro Shot
+- Protect
+- Dragon Pulse
+- Snarl
+
+Sneasler (M) @ Psychic Seed
+Ability: Unburden
+Level: 50
+Adamant Nature
+- Close Combat
+- Dire Claw
+- Protect
+- Swords Dance
+
+Gholdengo @ Life Orb
+Ability: Good as Gold
+Level: 50
+Timid Nature
+- Make It Rain
+- Shadow Ball
+- Power Gem
+- Protect

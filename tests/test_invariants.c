@@ -571,8 +571,8 @@ int main(void)
     w->queue[0].slot = 2u;
     expect_inv(&t, c1, w, DFI_INV_QUEUE, "record slot 2");
     RESET_TO(f5);
-    w->queue[0].move_slot = 5u;
-    expect_inv(&t, c1, w, DFI_INV_QUEUE, "move slot 5");
+    w->queue[0].move_slot = 6u; /* 5 is the recharge turn since step G17 */
+    expect_inv(&t, c1, w, DFI_INV_QUEUE, "move slot 6");
     RESET_TO(f5);
     w->queue[0].target = 4u;
     expect_inv(&t, c1, w, DFI_INV_QUEUE, "move target 4");
@@ -745,9 +745,9 @@ int main(void)
     for (unsigned i = 0; i < (unsigned)DFI_INV_COUNT; ++i) {
         DF_CHECK(&t, strcmp(dfi_invariant_name((dfi_invariant)i), "UNKNOWN") != 0);
     }
-    /* 43 before the POOL tail (decision 0015 section 7), then TAIL_KIND, _SIDE, _POSITION, _MEMBER, _SCHEMA and
-     * _RESERVED; test_pool_tail.c checks each of the six. */
-    DF_CHECK_EQ_U64(&t, (unsigned)DFI_INV_COUNT, 49u);
+    /* 43 before the POOL tail (decision 0015 section 7), then TAIL_KIND, _SIDE, _POSITION, _MEMBER, _SCHEMA,
+     * _RESERVED and (rev 2) _FIELD; test_pool_tail.c checks each of the seven. */
+    DF_CHECK_EQ_U64(&t, (unsigned)DFI_INV_COUNT, 50u);
 #undef RESET
 #undef RESET_TO
 

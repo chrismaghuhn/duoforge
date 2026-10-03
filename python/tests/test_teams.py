@@ -104,15 +104,12 @@ class ParseTest(unittest.TestCase):
 class DataTest(unittest.TestCase):
     def test_names_and_ids_round_trip(self):
         with duoforge.Context() as closure, duoforge.Context(data_kind=TEAM_C) as team_c:
-            self.assertEqual(data.count(closure, "species"), 16)
-            self.assertEqual(data.count(team_c, "species"), 23)
-            move = data.find(team_c, "move", "closecombat")
-            self.assertEqual(data.name(team_c, "move", move), "closecombat")
-            self.assertEqual(data.find(team_c, "species", "indeedeef"), data.find(team_c, "species", "indeedeef"))
+            self.assertEqual(data.count(closure, data.TABLE_SPECIES), 16)
+            self.assertEqual(data.count(team_c, data.TABLE_SPECIES), 23)
+            move = data.find(team_c, data.TABLE_MOVE, "closecombat")
+            self.assertEqual(data.name(team_c, data.TABLE_MOVE, move), "closecombat")
             with self.assertRaises(duoforge.DuoforgeError):
-                data.find(closure, "species", "sneasler")  # a Team C species is outside the closure
-            with self.assertRaises(ValueError):
-                data.find(closure, "weather", "rain")
+                data.find(closure, data.TABLE_SPECIES, "sneasler")  # a Team C species is outside the closure
         self.assertEqual(data.to_id("Indeedee-F"), "indeedeef")
         self.assertEqual(data.to_id("U-turn"), "uturn")
 

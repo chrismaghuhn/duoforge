@@ -9,7 +9,9 @@
 
 #include <string.h>
 
+#include "data/pool_tables.h"
 #include "state/battle_internal.h"
+#include "state/closure_member.h"
 
 static void print_event(FILE *out, const char *label, const duoforge_event *e)
 {
@@ -58,8 +60,7 @@ unsigned df_conf_compare_events(FILE *out, const df_conf_step *st, const char *n
  * used up, stat stages, confusion, charged moves, the field and the side
  * conditions are what the game shows. */
 unsigned df_conf_compare_observation(FILE *out, const duoforge_context *ctx, const duoforge_battle *b,
-                                     const df_conf_step *st, const df_conf_battle *cb, uint32_t step,
-                                     const dfi_forme_data *formes)
+                                     const df_conf_step *st, const df_conf_battle *cb, uint32_t step)
 {
     unsigned bad = 0;
     for (uint32_t viewer = 0; viewer < 2u; ++viewer) {
@@ -97,7 +98,7 @@ unsigned df_conf_compare_observation(FILE *out, const duoforge_context *ctx, con
                 const df_conf_member *set = &cb->members[s][m];
                 uint32_t ability = set->ability;
                 if (e->mega != 0u) {
-                    ability = 1u + formes[formes[set->species].mega_forme].ability;
+                    ability = 1u + dfi_pool_formes[dfi_mega_of(set->species, set->item)].ability; /* the Mega of (forme, stone) */
                 }
                 bool ok = v->status == status && v->is_mega == e->mega && v->item_used == used && v->ability == ability;
                 for (uint32_t k = 0; k < v->move_count && k < 4u; ++k) {
@@ -122,7 +123,8 @@ unsigned df_conf_compare_observation(FILE *out, const duoforge_context *ctx, con
                 /* The locked target only for the own side and only while a
                  * two-turn move charges (a choice lock has none); Protect,
                  * Flash Fire, a charged move and the stall counter as
-                 * Showdown's volatiles. */
+                 * Showdown's volatiles; Unburden's only while the item is gone (the volatile of a holder of its own Mega
+                 * Stone, set by a Knock Off that the stone refused, doubles no Speed and shows nothing). */
                 const uint32_t target =
                     (s == viewer && (e->vols & 4u) != 0u) ? e->locked_target : DUOFORGE_TARGET_NONE;
                 bool ok = memcmp(pv->stages, e->stages, 7u) == 0 && pv->confused == (e->confusion != 0u ? 1u : 0u) &&
@@ -130,7 +132,7 @@ unsigned df_conf_compare_observation(FILE *out, const duoforge_context *ctx, con
                           pv->protecting == ((e->vols & 1u) != 0u ? 1u : 0u) &&
                           pv->flash_fire == ((e->vols & 2u) != 0u ? 1u : 0u) &&
                           pv->charging == ((e->vols & 4u) != 0u ? 1u : 0u) &&
-                          pv->reserved == (((e->vols & 16u) != 0u ? DUOFORGE_POSITION_FLAG_UNBURDEN : 0u) |
+                          pv->reserved == (((e->vols & 16u) != 0u && e->held == 0u ? DUOFORGE_POSITION_FLAG_UNBURDEN : 0u) |
                                            ((e->vols & 32u) != 0u ? DUOFORGE_POSITION_FLAG_HELPING_HAND : 0u) |
                                            ((e->vols & 64u) != 0u ? DUOFORGE_POSITION_FLAG_FOLLOW_ME : 0u)) &&
                           (pv->protect_chain != 0u) == (e->stall != 0u);
@@ -246,7 +248,10 @@ unsigned df_conf_compare_state(FILE *out, const duoforge_context *ctx, const duo
                 continue;
             }
             const dfi_member *mem = &b->sides[s].members[m];
-            const uint32_t held = mem->item != 0u && mem->item_consumed == 0u ? 1u : 0u;
+            /* The item the member holds now: its sheet's unless used up, and not one that a move took (the POOL tail's
+             * item_now, DFI_TAIL_ITEM_NONE; zero under the other kinds). */
+            const uint32_t held =
+                mem->item != 0u && mem->item_consumed == 0u && b->tail.sides[s].item_now[m] != DFI_TAIL_ITEM_NONE ? 1u : 0u;
             if (held != e->held) {
                 fprintf(out, "  %s step %u: side %u member %u holds %u, reference %u\n", name, step, s, m, held,
                         e->held);

@@ -21,9 +21,33 @@
 #include "core/arith.h"
 #include "data/closure_tables.h"
 #include "data/extended_tables.h"
+#include "data/support_manifest.h"
 #include "state/battle_internal.h"
+#include "state/closure_member.h"
 #include "state/context_internal.h"
 #include "state/invariants.h"
+
+/* The POOL player-view extension (decision 0018): size and every offset, so that no edit moves a field unseen. */
+_Static_assert(sizeof(duoforge_field_ext) == 16u, "field ext is 16 bytes");
+_Static_assert(sizeof(duoforge_position_ext) == 16u, "position ext is 16 bytes");
+_Static_assert(offsetof(duoforge_position_ext, ability_now) == 4u, "position ext layout: ability_now");
+_Static_assert(offsetof(duoforge_position_ext, type_now) == 6u, "position ext layout: type_now");
+_Static_assert(offsetof(duoforge_position_ext, encore_slot) == 8u, "position ext layout: encore_slot");
+_Static_assert(offsetof(duoforge_position_ext, perish) == 11u, "position ext layout: perish");
+_Static_assert(offsetof(duoforge_position_ext, reserved) == 12u, "position ext layout: reserved");
+_Static_assert(sizeof(duoforge_member_ext) == 4u, "member ext is 4 bytes");
+_Static_assert(offsetof(duoforge_member_ext, item_now) == 2u, "member ext layout: item_now");
+_Static_assert(sizeof(duoforge_side_ext) == 64u, "side ext is 64 bytes");
+_Static_assert(offsetof(duoforge_side_ext, members) == 32u, "side ext layout: members");
+_Static_assert(offsetof(duoforge_side_ext, aurora_veil_turns) == 56u, "side ext layout: aurora_veil_turns");
+_Static_assert(offsetof(duoforge_side_ext, guard_flags) == 61u, "side ext layout: guard_flags");
+_Static_assert(offsetof(duoforge_side_ext, reserved) == 62u, "side ext layout: reserved");
+_Static_assert(sizeof(duoforge_observation_ext) == DUOFORGE_OBSERVATION_EXT_SIZE, "observation ext is 192 bytes");
+_Static_assert(offsetof(duoforge_observation_ext, epoch) == 4u, "observation ext layout: epoch");
+_Static_assert(offsetof(duoforge_observation_ext, supported) == 8u, "observation ext layout: supported");
+_Static_assert(offsetof(duoforge_observation_ext, field) == 16u, "observation ext layout: field");
+_Static_assert(offsetof(duoforge_observation_ext, sides) == 32u, "observation ext layout: sides");
+_Static_assert(offsetof(duoforge_observation_ext, reserved1) == 160u, "observation ext layout: reserved1");
 
 _Static_assert(sizeof(duoforge_member_view) == 52u, "member view is 52 bytes");
 _Static_assert(offsetof(duoforge_member_view, move_ids) == 6u, "member view layout: move ids");
@@ -49,6 +73,7 @@ _Static_assert(DUOFORGE_AILMENT_BURN == DFI_STATUS_BRN && DUOFORGE_AILMENT_FREEZ
                    DUOFORGE_AILMENT_POISON == DFI_STATUS_PSN,
                "public ailments are the internal statuses");
 _Static_assert(DUOFORGE_WEATHER_RAIN == DFI_WEATHER_RAIN && DUOFORGE_WEATHER_SUN == DFI_WEATHER_SUN &&
+                   DUOFORGE_WEATHER_SAND == DFI_WEATHER_SAND && DUOFORGE_WEATHER_SNOW == DFI_WEATHER_SNOW &&
                    DUOFORGE_TERRAIN_GRASSY == DFI_TERRAIN_GRASSY && DUOFORGE_TERRAIN_PSYCHIC == DFI_TERRAIN_PSYCHIC,
                "public field values are the internal ones");
 
@@ -98,7 +123,7 @@ static void dfi_view_member(const struct duoforge_battle *b, uint32_t viewer, ui
             v->stat_points[i] = mem->stat_points[i];
         }
         v->is_mega = mem->is_mega;
-        v->item_used = mem->item_consumed;
+        v->item_used = (mem->item_consumed != 0u || b->tail.sides[s].item_now[m] == DFI_TAIL_ITEM_NONE) ? 1u : 0u;
         v->status = mem->hp != 0u ? mem->status : (uint8_t)DUOFORGE_AILMENT_NONE;
         if (b->boundary_kind == DUOFORGE_BOUNDARY_TEAM_SELECTION) {
             v->location = (uint8_t)DUOFORGE_LOCATION_UNDETERMINED;
@@ -166,7 +191,13 @@ static void dfi_view_position(const struct duoforge_battle *b, uint32_t viewer, 
      * shown (Team C). */
     const uint32_t follow = ((uint32_t)slot->flags & DFI_VOL_FOLLOW_ME) != 0u ? DUOFORGE_POSITION_FLAG_FOLLOW_ME : 0u;
     const uint32_t helping = ((uint32_t)slot->flags & DFI_VOL_HELPING_HAND) != 0u ? DUOFORGE_POSITION_FLAG_HELPING_HAND : 0u;
-    const uint32_t unburden = ((uint32_t)slot->flags & DFI_VOL_UNBURDEN) != 0u ? DUOFORGE_POSITION_FLAG_UNBURDEN : 0u;
+    /* The flag says that Unburden doubles the Speed, which asks for no item (data/abilities.ts:5247-5251): the volatile of a
+     * holder of its own Mega Stone, set by a Knock Off that the stone refused, shows nothing (no line says it). */
+    const dfi_member *holder = slot->occupant < b->sides[s].member_count ? &b->sides[s].members[slot->occupant] : NULL;
+    const bool item_gone = holder != NULL && (holder->item_consumed != 0u ||
+                                              b->tail.sides[s].item_now[slot->occupant] == DFI_TAIL_ITEM_NONE);
+    const uint32_t unburden =
+        ((uint32_t)slot->flags & DFI_VOL_UNBURDEN) != 0u && item_gone ? DUOFORGE_POSITION_FLAG_UNBURDEN : 0u;
     out->reserved = (uint8_t)(follow | helping | unburden); /* wide-operands-reviewed: < 8 */
     out->acted = slot->move_actions != 0u ? 1u : 0u;
     out->protect_chain = slot->stall_level;
@@ -234,5 +265,81 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
         dfi_view_side(battle, player, s, &o.sides[s]);
     }
     *out_observation = o;
+    return DUOFORGE_OK;
+}
+
+duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const duoforge_battle *battle,
+                                            uint32_t viewer, duoforge_observation_ext *out)
+{
+    if (ctx == NULL || battle == NULL || out == NULL) {
+        return DUOFORGE_E_NULL_ARGUMENT;
+    }
+    if (!dfi_context_fingerprint_matches(ctx, battle->context_fingerprint)) {
+        return DUOFORGE_E_CONTEXT_MISMATCH;
+    }
+    if (viewer >= DUOFORGE_SIDE_COUNT) {
+        return DUOFORGE_E_INVALID_ARGUMENT;
+    }
+    if (dfi_state_check_query(ctx, battle, NULL) != DUOFORGE_OK) { /* decision 0011 */
+        return DUOFORGE_E_INVARIANT;
+    }
+    duoforge_observation_ext o;
+    memset(&o, 0, sizeof o);
+    /* Only the POOL kinds have an extension; every other kind gets the all-zero struct. */
+    if (dfi_context_is_closure(ctx) && dfi_kind_limits_of(ctx->data_kind).pool_rules) {
+        o.revision = (uint8_t)DUOFORGE_OBSERVATION_EXT_REVISION;
+        o.player = (uint8_t)viewer;
+        o.epoch = battle->request_epoch;
+        o.supported = dfi_support.view_ext_features;
+        /* A feature's step fills its fields here and sets its bit in the manifest (decision 0018 section 13).
+         * Step G8: Heal Block and Throat Chop, both public (section 5, the owner's change for Throat Chop): the
+         * presence of the occupant's tail counters, never the counters. They are set by the -start lines and cleared
+         * by the -end lines or when the occupant leaves (the tail is cleared then), as section 6.1 says; an empty
+         * position has no tail. */
+        for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+            /* Step G7: Wide Guard of the side (public: [-singleturn] Wide Guard). It lasts the turn and ends in the
+             * residual, so it is set only at a boundary inside a turn (a PIVOT), as decision 0018 section 3.3 says. */
+            o.sides[s].guard_flags = battle->tail.sides[s].wide_guard != 0u ? (uint8_t)DUOFORGE_SIDE_GUARD_WIDE_GUARD : 0u;
+            /* Step G20: Aurora Veil's turns left (public: -sidestart ... move: Aurora Veil, 5 turns or 8 with Light Clay on
+             * the setter, then counted down in the residual until the -sideend line; the sheet has the item). The state
+             * keeps the same count, so the view is the tail's field. */
+            o.sides[s].aurora_veil_turns = battle->tail.sides[s].aurora_veil_turns;
+            /* Step G16: the held item that a move took (Knock Off), public (-enditem|X|Item|[from] move: Knock Off): the
+             * member holds nothing, DUOFORGE_ITEM_NOW_NONE, and it stays across a switch-out and a faint. The tail's
+             * item_now is the overlay of decision 0018 as it is (a Trick would put an item id + 1 there; nothing does
+             * yet). A member that does not exist has none (the invariants). */
+            for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
+                o.sides[s].members[m].item_now = battle->tail.sides[s].item_now[m];
+            }
+            for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+                const dfi_tail_pos *tail = &battle->tail.sides[s].positions[p];
+                uint32_t vol = 0u;
+                vol |= tail->heal_block_turns != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_HEAL_BLOCK : 0u;
+                vol |= tail->throat_chop_turns != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_THROAT_CHOP : 0u;
+                vol |= tail->must_recharge != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_MUST_RECHARGE : 0u; /* step G17 */
+                vol |= tail->glaive_rush != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_GLAIVE_RUSH : 0u; /* step G19 */
+                o.sides[s].positions[p].volatiles = vol;
+                /* Step G9, Encore: the one move slot (slot + 1) that the occupant may use, public (-start|X|Encore: the
+                 * slot is the one of its last move line); the turns are never shown. */
+                o.sides[s].positions[p].encore_slot = tail->encore_slot;
+                /* Step G11, Soak: the type that it set, public (-start|X|typechange|Water): the occupant is pure
+                 * Water until it leaves, faints or Mega Evolves (the tail's soak type is cleared there). */
+                const uint32_t occupant = battle->sides[s].positions[p].occupant;
+                /* Step AC1, Trace: the ability that the occupant copied, public (-ability|X|NEW|OLD|[from] ability:
+                 * Trace); ability id + 1 when it is not the sheet's ability, else 0. Gone when the occupant leaves or
+                 * Mega Evolves (the tail's ability_now is cleared there). */
+                const uint32_t changed = occupant < DUOFORGE_MAX_ROSTER ? battle->tail.sides[s].ability_now[occupant] : 0u;
+                if (changed != 0u && changed != battle->sides[s].members[occupant].ability) {
+                    o.sides[s].positions[p].ability_now = (uint16_t)changed;
+                }
+                const uint32_t soak = occupant < DUOFORGE_MAX_ROSTER ? battle->tail.sides[s].soak_type[occupant] : 0u;
+                if (soak != 0u) {
+                    o.sides[s].positions[p].volatiles = vol | (uint32_t)DUOFORGE_POSITION_EXT_TYPE_CHANGED;
+                    o.sides[s].positions[p].type_now[0] = (uint8_t)soak; /* type id + 1: one type, the second slot stays 0 */
+                }
+            }
+        }
+    }
+    *out = o;
     return DUOFORGE_OK;
 }

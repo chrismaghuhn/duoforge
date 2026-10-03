@@ -21,7 +21,7 @@ duoforge_event dfi_event_make(uint32_t kind, uint32_t position)
 {
     duoforge_event e;
     memset(&e, 0, sizeof e);
-    e.kind = (uint8_t)kind;         /* <= DUOFORGE_EVENT_SINGLE_TURN */
+    e.kind = (uint8_t)kind;         /* <= DUOFORGE_EVENT_TYPE_CHANGE */
     e.position = (uint8_t)position; /* < 4 or DUOFORGE_NO_POSITION */
     e.other = (uint8_t)DUOFORGE_NO_POSITION;
     return e;
@@ -117,6 +117,8 @@ bool dfi_events_fold_knowledge(const struct duoforge_battle *before, struct duof
                     }
                 }
             } else if (e.kind == DUOFORGE_EVENT_ITEM_END) {
+                /* An item that is gone: used up, or taken by a move (Knock Off, ITEM_TAKEN). The old item_used says it
+                 * is gone either way, as the reference's state does; the view's item_now tells the two apart. */
                 k->revealed = (uint8_t)((uint32_t)k->revealed | DFI_REVEALED_ITEM_CONSUMED); /* wide-operands-reviewed */
             } else if (e.kind == DUOFORGE_EVENT_MEGA) {
                 k->revealed = (uint8_t)((uint32_t)k->revealed | DFI_REVEALED_MEGA); /* wide-operands-reviewed */

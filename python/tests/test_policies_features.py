@@ -48,7 +48,7 @@ def _reference_choice(batch, e, p):
                         shown = int(m["hp"]) * 100 // int(m["hp_max"])
                     else:
                         shown = 100
-                    score += 100 - shown
+                    score += 200 - shown
                 else:
                     score += 10
             elif kind == c["DUOFORGE_SLOT_SWITCH"]:
@@ -159,17 +159,20 @@ class PoliciesFeaturesTest(unittest.TestCase):
         choose = duoforge.ScriptedPolicy().choose
         none, foe0, foe1 = ("NONE", 0xFF), ("MOVE", 2), ("MOVE", 3)
         untargeted = ("MOVE", 0xFF)
-        # switches -50 each against 0 for a move at a full foe
+        # switches -50 each against 100 for a move at a full foe
         self.assertEqual(choose(_Scene([(("SWITCH", 0), ("SWITCH", 0)), (foe0, ("PASS", 0xFF))]))[0, 0], 1)
-        # a move without a foe target scores 10
-        self.assertEqual(choose(_Scene([(foe0, none), (untargeted, none)]))[0, 0], 1)
-        # 100 minus the shown HP percent: the weaker foe wins
+        # a move at a foe scores at least 100: a move at a full foe beats a move without a foe target (10)
+        self.assertEqual(choose(_Scene([(untargeted, none), (foe0, none)]))[0, 0], 1)
+        # a move without a foe target (10) beats PASS (0)
+        self.assertEqual(choose(_Scene([(("PASS", 0xFF), none), (untargeted, none)]))[0, 0], 1)
+        # 200 minus the shown HP percent: the weaker foe wins (160 against 100)
         self.assertEqual(choose(_Scene([(foe0, none), (foe1, none)], foe=((100, 100, 2), (40, 100, 2))))[0, 0], 1)
         # exact HP is shown as hp * 100 // hp_max: 50 of 200 is 25 percent
         self.assertEqual(choose(_Scene([(foe1, none), (foe0, none)], foe=((50, 200, 1), (30, 100, 2))))[0, 0], 1)
-        # an empty foe position counts as a move without a target (10 against 5)
-        self.assertEqual(choose(_Scene([(foe1, none), (foe0, none)], foe=((95, 100, 2), (100, 100, 2)),
-                                       empty_slot=1))[0, 0], 0)
+        # an empty foe position counts as a move without a target: 10 ties with an untargeted move (the
+        # lower index wins) and loses to a move at a full foe (100)
+        self.assertEqual(choose(_Scene([(untargeted, none), (foe1, none)], empty_slot=1))[0, 0], 0)
+        self.assertEqual(choose(_Scene([(foe1, none), (foe0, none)], empty_slot=1))[0, 0], 1)
         # ties go to the lowest index
         self.assertEqual(choose(_Scene([(untargeted, none), (untargeted, none)]))[0, 0], 0)
 
@@ -205,6 +208,33 @@ class PoliciesFeaturesTest(unittest.TestCase):
                     if batch.requests[e, p]["requested"]:
                         mask = features.encode(batch.observations[e, p], batch.domains[e, p])[2]
                         self.assertEqual(int(mask.sum()), int(batch.requests[e, p]["candidate_count"]))
+
+    def test_encode_refuses_an_unknown_move_slot(self):
+        """A move command's slot is 0 to 3 or Struggle; any other value (for
+        example a later pseudo-move such as recharge) is refused, never scaled
+        past 1."""
+        c = _layout.CONSTANTS
+        with duoforge.Batch(self.ctx, _setups(), 1, SEED) as batch:
+            policy = duoforge.RandomPolicy(SEED, ENVS)
+            for e in range(ENVS):
+                policy.start_episode(e, 0)
+            batch.query_factored()
+            batch.step_factored(policy.choose_factored(batch))  # past team selection, to the first turn
+            batch.query_factored()
+            ob = batch.observations[0, 0].copy()
+            d = batch.domains[0, 0].copy()
+            moves = [(s, i) for s in range(2) for i in range(int(d["slot_count"][s]))
+                     if int(d["slots"][s, i]["kind"]) == c["DUOFORGE_SLOT_MOVE"]]
+            self.assertTrue(moves)
+            s, i = moves[0]
+            struggle = d.copy()
+            struggle["slots"][s, i]["move_slot"] = c["DUOFORGE_MOVE_SLOT_STRUGGLE"]
+            self.assertEqual(features.encode(ob, struggle)[1][s, i, 5], 1.0)
+            for bad in (c["DUOFORGE_MOVE_SLOT_STRUGGLE"] + 1, 0xFF):
+                unknown = d.copy()
+                unknown["slots"][s, i]["move_slot"] = bad
+                with self.assertRaisesRegex(ValueError, "move slot"):
+                    features.encode(ob, unknown)
 
     def test_encode_refuses_a_domain_of_another_boundary(self):
         with duoforge.Batch(self.ctx, _setups(), 1, SEED) as batch:
