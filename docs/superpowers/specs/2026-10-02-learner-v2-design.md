@@ -373,7 +373,7 @@ Model v1 stays loadable, trainable and playable. The ladder plays v1 and v2 chec
 - the league: the snapshot pool, the slots, the draining slot and the statistics;
 - the NumPy generator state and the JAX key;
 - the team pool: ids, sha256 and weights;
-- the data kind and the fingerprint (after part 2, also the names);
+- the data kind, the fingerprint and the names of every embedded id (`"ids"`, `checkpoint.ids_of`);
 - the model configuration and the encoder layout.
 
 It is written atomically: to a temporary file, then fsync, then a rename over `state.npz`, after moving the old one to `state.prev.npz`. Writes happen:
@@ -464,7 +464,7 @@ Every refusal is explicit and names its cause. Nothing is clipped, skipped or re
   - a library refusal names the team and the status;
   - a changed file on resume is refused.
 - **Model:** an id beyond capacity; a dropped column; a configuration mismatch.
-- **Run:** a resume without a state; a data kind that does not keep the old ids.
+- **Run:** a resume without a state; another data kind; tables whose names do not keep the old ids, or a state without names under another fingerprint (`checkpoint.check_ids`).
 - **Batch:** a failing environment is reported with its index and status.
 
 ## 17. Not in this work

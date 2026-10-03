@@ -449,11 +449,28 @@ class ResumeTest(unittest.TestCase):
         self.assertEqual(resume["data"], ["00" * 32, real])
         state = runstate.load_state(self.out)
         self.assertEqual(state["data"]["fingerprint"], real)
+        with duoforge.Context() as ctx:
+            self.assertEqual(state["ids"], checkpoint.ids_of(ctx))  # the resumed run keeps the current names
         moves = state["ids"]["move"]
         moves[1], moves[2] = moves[2], moves[1]
         state["data"]["fingerprint"] = "00" * 32
         runstate.save_state(self.out, state)
         with self.assertRaisesRegex(SystemExit, "move id 1"):
+            _run(["--resume", self.out, "--updates", "3"])
+
+    def test_resume_without_names_under_other_tables_is_refused(self):
+        # A run state from before the names (2026-10-03) can only be checked under its own fingerprint.
+        from duoforge_learn import runstate
+        self.assertEqual(_run(["--envs", "8", "--updates", "1", "--out", self.out] + _SMALL), 0)
+        state = runstate.load_state(self.out)
+        del state["ids"]
+        runstate.save_state(self.out, state)
+        self.assertEqual(_run(["--resume", self.out, "--updates", "2"]), 0)  # same tables: no check needed
+        state = runstate.load_state(self.out)
+        del state["ids"]
+        state["data"]["fingerprint"] = "00" * 32
+        runstate.save_state(self.out, state)
+        with self.assertRaisesRegex(SystemExit, "no id tables"):
             _run(["--resume", self.out, "--updates", "3"])
 
     def test_refused_option_names_itself(self):

@@ -22,7 +22,7 @@ def _config(**extra):
             "features": list(features.FEATURE_NAMES), "slot_features": list(features.SLOT_FEATURE_NAMES),
             "data": {"kind": "closure", "fingerprint": "00"}, "teams": {"ids": ["A", "B"], "sha256": ["", ""],
                                                                         "weights": [1.0, 1.0]},
-            "update": 3, "decisions": 99, **extra}
+            "update": 3, "decisions": 99, "ids": {k: [] for k in checkpoint.EMBEDDINGS}, **extra}
 
 
 def _v1_params(rng, obs=features.OBS_SIZE, slot=features.SLOT_FEATURES, hidden=8, option=4):
@@ -89,10 +89,11 @@ class CheckpointTest(unittest.TestCase):
                 self.assertTrue(np.array_equal(back[layer][k], params[layer][k]))
 
     def test_save_requires_the_format2_keys(self):
-        with tempfile.TemporaryDirectory() as d, self.assertRaisesRegex(ValueError, "teams"):
-            cfg = _config()
-            del cfg["teams"]
-            checkpoint.save(os.path.join(d, "p.npz"), _v1_params(np.random.default_rng(1)), cfg)
+        for key in ("teams", "ids"):  # ids: a checkpoint keeps what its embedded ids mean (spec 12.4)
+            with self.subTest(key=key), tempfile.TemporaryDirectory() as d, self.assertRaisesRegex(ValueError, key):
+                cfg = _config()
+                del cfg[key]
+                checkpoint.save(os.path.join(d, "p.npz"), _v1_params(np.random.default_rng(1)), cfg)
 
     def test_dropped_column_is_refused(self):
         cfg = _config(features=list(features.FEATURE_NAMES) + ["own.member0.weight"])
@@ -217,14 +218,19 @@ class IdTablesTest(unittest.TestCase):
         checkpoint.check_ids({"ids": {k: v[:-1] for k, v in self.ids.items()}}, self.ctx)
 
     def test_a_moved_id_is_refused_naming_it(self):
-        moves = list(self.ids["move"])
-        moves[3], moves[4] = moves[4], moves[3]
-        with self.assertRaisesRegex(ValueError, f"move id 3: {moves[3]} -> {self.ids['move'][3]}"):
-            checkpoint.check_ids({"ids": {**self.ids, "move": moves}}, self.ctx)
+        for kind in checkpoint.EMBEDDINGS:  # every embedded table is compared
+            with self.subTest(kind=kind):
+                names = list(self.ids[kind])
+                names[3], names[4] = names[4], names[3]
+                with self.assertRaisesRegex(ValueError, f"{kind} id 3: {names[3]} -> {self.ids[kind][3]}"):
+                    checkpoint.check_ids({"ids": {**self.ids, kind: names}}, self.ctx)
 
-    def test_a_removed_id_is_refused(self):
-        with self.assertRaisesRegex(ValueError, "nature"):
-            checkpoint.check_ids({"ids": {**self.ids, "nature": self.ids["nature"] + ["extra"]}}, self.ctx)
+    def test_a_removed_id_is_refused_naming_it(self):
+        for kind in checkpoint.EMBEDDINGS:
+            with self.subTest(kind=kind):
+                n = len(self.ids[kind])
+                with self.assertRaisesRegex(ValueError, rf"{kind} id {n} \(extra\) is gone"):
+                    checkpoint.check_ids({"ids": {**self.ids, kind: self.ids[kind] + ["extra"]}}, self.ctx)
 
     def test_a_config_without_tables_or_a_kind_is_refused(self):
         with self.assertRaisesRegex(ValueError, "no id tables"):
