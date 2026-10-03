@@ -2104,7 +2104,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   fluffy -- data/abilities.ts:1458-1469  [unmodelled: callback onSourceModifyDamage]
  *   forecast -- data/abilities.ts:1470-1503  [unmodelled: callback onStart; callback onSwitchInPriority; callback onWeatherChange]
  *   forewarn -- data/abilities.ts:1504-1532  [unmodelled: callback onStart]
- *   friendguard -- data/abilities.ts:1533-1544  [unmodelled: callback onAnyModifyDamage]
+ *   friendguard -- data/abilities.ts:1533-1544
  *   frisk -- data/abilities.ts:1545-1557  [unmodelled: callback onStart]
  *   furcoat -- data/abilities.ts:1578-1587  [unmodelled: callback onModifyDef; callback onModifyDefPriority]
  *   galewings -- data/abilities.ts:1588-1596
@@ -2182,7 +2182,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   queenlymajesty -- data/abilities.ts:3716-3734  [unmodelled: callback onFoeTryMove]
  *   quickdraw -- data/abilities.ts:3735-3747  [unmodelled: callback onFractionalPriority; callback onFractionalPriorityPriority]
  *   quickfeet -- data/abilities.ts:3748-3758  [unmodelled: callback onModifySpe; read by id in data/conditions.ts]
- *   raindish -- data/abilities.ts:3759-3770  [unmodelled: callback onWeather]
+ *   raindish -- data/abilities.ts:3759-3770
  *   rattled -- data/abilities.ts:3771-3786  [unmodelled: callback onAfterBoost; callback onDamagingHit]
  *   receiver -- data/abilities.ts:3787-3798  [unmodelled: callback onAllyFaint]
  *   reckless -- data/abilities.ts:3799-3811  [unmodelled: callback onBasePower; callback onBasePowerPriority]
@@ -2883,7 +2883,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_FLUFFY] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_FORECAST] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_FOREWARN] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_FRIENDGUARD] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_FRIENDGUARD] = DFI_HANDLER_NONE,
     [DFI_ABILITY_FRISK] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_FURCOAT] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_GALEWINGS] = DFI_HANDLER_NONE,
@@ -2961,7 +2961,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_QUEENLYMAJESTY] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_QUICKDRAW] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_QUICKFEET] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_RAINDISH] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_RAINDISH] = DFI_HANDLER_NONE,
     [DFI_ABILITY_RATTLED] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_RECEIVER] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_RECKLESS] = DFI_HANDLER_UNMODELED,
@@ -7013,7 +7013,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_FLUFFY] = "callback onSourceModifyDamage",
     [DFI_ABILITY_FORECAST] = "callback onStart; callback onSwitchInPriority; callback onWeatherChange",
     [DFI_ABILITY_FOREWARN] = "callback onStart",
-    [DFI_ABILITY_FRIENDGUARD] = "callback onAnyModifyDamage",
     [DFI_ABILITY_FRISK] = "callback onStart",
     [DFI_ABILITY_FURCOAT] = "callback onModifyDef; callback onModifyDefPriority",
     [DFI_ABILITY_GLUTTONY] = "callback onDamage; callback onStart; read by id in data/abilities.ts; read by id in data/items.ts",
@@ -7082,7 +7081,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_QUEENLYMAJESTY] = "callback onFoeTryMove",
     [DFI_ABILITY_QUICKDRAW] = "callback onFractionalPriority; callback onFractionalPriorityPriority",
     [DFI_ABILITY_QUICKFEET] = "callback onModifySpe; read by id in data/conditions.ts",
-    [DFI_ABILITY_RAINDISH] = "callback onWeather",
     [DFI_ABILITY_RATTLED] = "callback onAfterBoost; callback onDamagingHit",
     [DFI_ABILITY_RECEIVER] = "callback onAllyFaint",
     [DFI_ABILITY_RECKLESS] = "callback onBasePower; callback onBasePowerPriority",
@@ -7142,10 +7140,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x4du, 0x61u, 0xe8u, 0xf3u, 0x95u, 0xa7u, 0x09u, 0xa6u,
-    0xbau, 0xcau, 0x4fu, 0x19u, 0x4fu, 0x3eu, 0xa1u, 0xdcu,
-    0xfdu, 0x54u, 0x95u, 0x3fu, 0x7du, 0x51u, 0xdbu, 0xffu,
-    0x4au, 0x18u, 0x58u, 0xccu, 0xbdu, 0x5au, 0x95u, 0xe9u,
+    0x07u, 0x26u, 0xd3u, 0xb5u, 0x90u, 0xf1u, 0xcau, 0x94u,
+    0x99u, 0x9eu, 0x51u, 0x47u, 0x16u, 0xb7u, 0xb8u, 0xbfu,
+    0xa4u, 0x2bu, 0x63u, 0x1du, 0xd8u, 0xfbu, 0xc7u, 0xc0u,
+    0xe7u, 0xd5u, 0xfbu, 0x62u, 0xabu, 0xbcu, 0x2bu, 0x62u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)
