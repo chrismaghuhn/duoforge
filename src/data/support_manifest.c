@@ -138,7 +138,8 @@
  * ability), Abomasite (Snow Warning), Barbaracite (Tough Claws), Beedrillite (Adaptability), Falinksite (Defiant), Hawluchanite
  * (No Guard), Malamarite (Contrary), Sceptilite (Lightning Rod) and Scraftinite (Intimidate), recorded as g24_* under the POOL
  * kind. Meowsticite stays unmarked: one stone names two (base, Mega) pairs (Meowstic-M and -F) and its row links the first only.
- * Step G28 marks five moves and one item that the turn code now has rules for: Shell Smash (which step G21 left out: the stats
+ * Step G28 marks six moves and one item that the turn code now has rules for: Earthquake (the target class allAdjacent: the ally
+ * is hit too, allies before foes; Wide Guard stops it; Grassy Terrain halves it at a grounded target), Shell Smash (which step G21 left out: the stats
  * change in the pinned order, Defense and Special Defense first), Acrobatics (twice the power while the user holds no item),
  * Blizzard (never misses in snow, the freeze at 10 percent is data), Ancient Power (a secondary that raises the user's five
  * stats at 10 percent: a new secondary kind), Feint (removes the target's Protect and the Wide Guard of its side, and its stall
