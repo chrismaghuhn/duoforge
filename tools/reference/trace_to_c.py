@@ -80,7 +80,7 @@ checks its precondition and fails loudly otherwise:
   INSERT_TIE        (Encore) the index of a replaced action among the moves
                     that tie it is a tape entry as well, unless the tied
                     actions are runSwitch entries (above)
-  RANDOM_TARGET execute:allAdjacentFoes, execute:allAdjacent, execute:allies
+  RANDOM_TARGET execute:allAdjacentFoes, execute:allAdjacent, execute:allies, execute:foeSide
                     always: the main target of a spread move only labels
                     the protocol line; the move hits every adjacent foe (and, for allAdjacent, the ally); for allies (Life Dew,
                     step G32) runMove aims the move at its user afterwards (sim/battle-actions.ts:419), so the draw decides nothing
@@ -252,17 +252,18 @@ def side_end_tie(d, state):
     return (SITES['SPEED_TIE'], 0, 2, int(first[2][1]) - 1)
 
 
-# The volatiles whose duration handler has an onEnd line and so shows the order of a residual tie (Heal Block, order 20;
-# Disable, order 17, step G27): the handler id and the end of its `-end` line.
-END_TIE_LINES = {'healblock': 'move: Heal Block', 'disable': 'Disable'}
+# The volatiles whose duration handler has an onEnd that shows an order (the end line, or for Yawn the silent end whose
+# sleep follows): the handler id and the end of its line. Each is an entry of the engine's sorted residual list, a callback
+# while it ends now (Heal Block, order 20; Disable, order 17, step G27; Taunt and Yawn, step G31).
+END_TIE_LINES = {'healblock': 'move: Heal Block', 'disable': 'Disable', 'taunt': 'move: Taunt', 'yawn': 'move: Yawn|[silent]'}
 
 
 def heal_block_end_tie(d, log):
     """A residual tie of two Heal Blocks (Psychic Noise, order 20; and of two Disables, order 17, the same way) of holders of equal Speed that both end in this step:
     the shuffle of the two orders their `-end|X|move: Heal Block` lines, so the tie is kept like a side-end tie
-    (side_end_tie) and is the reference's own draw: the engine runs the same sorted list (the Heal Block and Disable ends
-    are entries of it, callbacks while they end now) and draws the same shuffle, so the entry is the draw as it is
-    (SPEED_TIE, 0, 2, 0 when the shuffle keeps the pair in the order of the group, else 1).
+    (side_end_tie). The engine draws it after the callbacks of the residual and orders the pair by it; the entry
+    is the reference's own draw: the engine runs the same sorted list and draws the same shuffle, so the entry is the draw as
+    it is (SPEED_TIE, 0, 2, 0 when the shuffle keeps the pair in the order of the group, else 1); Taunt and Yawn ends likewise.
     The precondition for keeping it is that both end lines are in the step's `log` (`log` is the step's protocol
     lines): a tie of which fewer than two holders end shows no order (the drop rule for duration ties stays: None
     here). The order that the draw states is checked against the order of the two lines, so a handler list that is
@@ -510,7 +511,7 @@ def drop_reason(d, state, after=None, log=None):
             return 'switch-in order with at most one entry effect'
         return None  # the engine draws
     if site == 'SPEED_TIE' and ctx == 'field:Residual':
-        if all(g.startswith(('H:healblock:', 'H:disable:')) and g.endswith(':end') for g in group):
+        if all(g.startswith(('H:healblock:', 'H:disable:', 'H:taunt:', 'H:yawn:')) and g.endswith(':end') for g in group):
             # Precondition of the drop: the order of the ends shows in no pair of lines. heal_block_end_tie keeps the
             # tie when two of the holders end now, so reaching this with two end lines is a bug of the caller.
             if log is None:
@@ -581,11 +582,11 @@ def drop_reason(d, state, after=None, log=None):
         raise ConversionError('modifydamage-tie', 'trace_to_c: ModifyDamage tie with %s' % group,
                               detail=tie_effects(group))
     if site == 'SPEED_TIE' and ctx == 'event:DisableMove':
-        # The DisableMove handlers of one Pokemon: the Choice lock's, Throat Chop's and Heal Block's onDisableMove
+        # The DisableMove handlers of one Pokemon: the Choice lock's, Throat Chop's, Heal Block's, Encore's and Taunt's onDisableMove
         # (data/conditions.ts choicelock, data/moves.ts throatchop and healblock) each only set `disabled` on
         # move slots, and setting a flag twice is setting it once: whichever runs first, the request offers the
         # same moves. Any other handler is a mechanic that has not been looked at.
-        if all(g.startswith(('H:choicelock:', 'H:throatchop:', 'H:healblock:', 'H:encore:', 'H:disable:', 'H:imprison:')) and g.endswith(':cb')
+        if all(g.startswith(('H:choicelock:', 'H:throatchop:', 'H:healblock:', 'H:encore:', 'H:disable:', 'H:imprison:', 'H:taunt:')) and g.endswith(':cb')
                for g in group):
             return 'DisableMove handlers whose order changes nothing'
         raise ConversionError('disablemove-tie', 'trace_to_c: DisableMove tie with %s' % group,
@@ -636,7 +637,9 @@ def drop_reason(d, state, after=None, log=None):
         raise ConversionError('insert-tie', 'trace_to_c: insert tie in %s' % group)
     if site == 'RANDOM_TARGET' and ctx in ('action-speed', 'resolve'):
         return 'target computed for priority'
-    if site == 'RANDOM_TARGET' and ctx in ('execute:allAdjacentFoes', 'execute:allAdjacent', 'execute:allies'):
+    if site == 'RANDOM_TARGET' and ctx in ('execute:allAdjacentFoes', 'execute:allAdjacent', 'execute:allies', 'execute:foeSide'):
+        # foeSide (step G37, the four hazards): getTarget's random foe only labels the move line, which the converter leaves
+        # without a target (FOE_SIDE_MOVES); the move acts on the foes' side whichever foe it names
         return 'main target of a spread move'
     if site == 'UNKNOWN':
         raise ConversionError('unclassified-draw', 'trace_to_c: unclassified draw', detail=ctx)
@@ -783,6 +786,7 @@ FIELD_PSYCHIC_TERRAIN = 3  # DUOFORGE_FIELD_PSYCHIC_TERRAIN (Team C)
 FIELD_ELECTRIC_TERRAIN = 4  # DUOFORGE_FIELD_ELECTRIC_TERRAIN (POOL, step G25)
 FIELD_MISTY_TERRAIN = 5  # DUOFORGE_FIELD_MISTY_TERRAIN (POOL, step G25)
 BLOCK_WIDE_GUARD = 4  # DUOFORGE_BLOCK_WIDE_GUARD (POOL), a detail of BLOCKED
+FOE_SIDE_MOVES = ('Stealth Rock', 'Spikes', 'Toxic Spikes', 'Sticky Web')  # the moves with the target class foeSide (POOL, step G37)
 RESULT = {'p1': 1, 'p2': 2, '': 3}
 
 
@@ -844,13 +848,15 @@ EV = {name: i + 1 for i, name in enumerate(
      'SINGLE_TURN', 'VOLATILE_START', 'VOLATILE_END', 'TYPE_CHANGE', 'ITEM_START'])}
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
          'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14,
-         'HEAL_BLOCK': 15, 'WEATHER': 16, 'ITEM_TAKEN': 17, 'RECHARGE': 18, 'DISABLE': 19, 'IMPRISON': 21}
+         'HEAL_BLOCK': 15, 'WEATHER': 16, 'ITEM_TAKEN': 17, 'RECHARGE': 18, 'DISABLE': 19, 'TAUNT': 20, 'IMPRISON': 21}
 VOLATILE_HEAL_BLOCK = 1  # DUOFORGE_VOLATILE_HEAL_BLOCK: the detail of VOLATILE_START and VOLATILE_END
 VOLATILE_ENCORE = 2      # DUOFORGE_VOLATILE_ENCORE (step G9)
 VOLATILE_DISABLE = 4     # DUOFORGE_VOLATILE_DISABLE (step G27)
 VOLATILE_MUST_RECHARGE = 3  # DUOFORGE_VOLATILE_MUST_RECHARGE (step G17)
 VOLATILE_PERISH = 5  # DUOFORGE_VOLATILE_PERISH (step G26)
 VOLATILE_IMPRISON = 8    # DUOFORGE_VOLATILE_IMPRISON (step G38): START only
+VOLATILE_TAUNT = 6       # DUOFORGE_VOLATILE_TAUNT (step G31)
+VOLATILE_YAWN = 7        # DUOFORGE_VOLATILE_YAWN (step G31)
 MOVE_SLOT_RECHARGE = 5   # DUOFORGE_MOVE_SLOT_RECHARGE (step G17)
 # DUOFORGE_TYPE_*: the alphabetical type ids, the detail of TYPE_CHANGE
 TYPE_IDS = {name: i for i, name in enumerate(
@@ -895,6 +901,10 @@ IGNORED_VOLATILES = {
     # Pool step G9 (Encore): its turns are not a field of the record either: the moves of the next requests (every
     # slot but the Encored one is disabled), the replaced move line and the start and end lines show them.
     'encore': 'the moves of the requests, the replaced move and the start and end lines',
+    # Pool step G31: Taunt's turns are not a field of the record: the moves of the next requests (every Status move is
+    # disabled), the cant lines and the start and end lines show them; Yawn's show in the start line and the sleep.
+    'taunt': 'the moves of the requests, the cant lines and the start and end lines',
+    'yawn': 'the start line and the sleep that it brings',
     # Pool step G17 (the recharge turn): the volatile shows in the request of the next turn (the one candidate, the
     # recharge slot), the start line (`-mustrecharge`) and the cant line (`cant|X|recharge`), and the view bit.
     'mustrecharge': 'the request of the recharge turn, the start line and the cant line',
@@ -956,8 +966,9 @@ def ev_cause(attrs, tables):
                 cause, id2 = CAUSE['WEATHER'], WEATHER_CAUSE[what]
             elif what == 'Grassy Terrain':
                 cause = CAUSE['TERRAIN']
-            elif what in ('Parting Shot', 'Flip Turn', 'U-turn', 'Volt Switch', 'Spiky Shield'):  # the move that made the switch (U-turn, Volt Switch: pool tables)
-                # Spiky Shield (step G20, POOL): `-damage|attacker|hp|[from] Spiky Shield|[of] holder`, the condition's own name
+            elif what in ('Parting Shot', 'Flip Turn', 'U-turn', 'Volt Switch', 'Spiky Shield', 'Stealth Rock', 'Spikes'):  # the move that made the switch (U-turn, Volt Switch: pool tables)
+                # Spiky Shield (step G20, POOL): `-damage|attacker|hp|[from] Spiky Shield|[of] holder`, the condition's own name;
+                # Stealth Rock and Spikes (step G37): `-damage|X|hp|[from] Stealth Rock`, the hazard's own name, the move's id in id2
                 cause, id2 = CAUSE['MOVE'], tables['MOVE'][key(what)]
             elif what == 'lockedmove':
                 pass  # a MOVE flag
@@ -1075,8 +1086,8 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                             amount |= 1 << ev_pos(slot)
                 elif a:
                     raise ConversionError('move-attribute', 'trace_to_c: unknown move attribute %r' % a, detail=a)
-            if flags & (FLAG['SPREAD'] | FLAG['NOTARGET'] | FLAG['STILL']) or target is None:
-                target = NOPOS
+            if flags & (FLAG['SPREAD'] | FLAG['NOTARGET'] | FLAG['STILL']) or target is None or args[1] in FOE_SIDE_MOVES:
+                target = NOPOS  # a foeSide move (step G37) names a random foe in the protocol: a label the engine does not draw
             e = ev_tuple(EV['MOVE'], pos, target, 0, tables['MOVE'][key(args[1])], amount=amount, flags=flags)
         elif kind in ('-damage', '-heal'):
             pos = ev_pos(args[0])
@@ -1104,6 +1115,9 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             elif reason == 'move: Imprison':
                 # data/moves.ts:9511-9519 onFoeBeforeMove: `cant|X|move: Imprison|Move`, the stopped move in id (step G38).
                 e = ev_tuple(EV['CANT'], pos, NOPOS, CAUSE['IMPRISON'], tables['MOVE'][key(args[2])])
+            elif reason == 'move: Taunt':
+                # data/moves.ts:19004-19010: `cant|X|move: Taunt|MOVE`, the stopped Status move in id (step G31)
+                e = ev_tuple(EV['CANT'], pos, NOPOS, CAUSE['TAUNT'], tables['MOVE'][key(args[2])])
             else:
                 cause = {'par': 'PARALYSIS', 'slp': 'SLEEP', 'frz': 'FREEZE', 'flinch': 'FLINCH', 'nopp': 'NO_PP',
                          'recharge': 'RECHARGE'}
@@ -1224,6 +1238,16 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                 # data/moves.ts:9501 onStart: `-start|user|move: Imprison` (step G38); the volatile has no end line, it ends
                 # with the occupant.
                 e = ev_tuple(EV['VOLATILE_START'], ev_pos(args[0]), detail=VOLATILE_IMPRISON)
+            elif what == 'move: Taunt':
+                # data/moves.ts:18974-19016 taunt: `-start|X|move: Taunt` from onStart, `-end|X|move: Taunt` from onEnd
+                # (the duration; a switch-out or a faint clears it with no line) (step G31)
+                e = ev_tuple(EV['VOLATILE_START' if kind == '-start' else 'VOLATILE_END'], ev_pos(args[0]),
+                             detail=VOLATILE_TAUNT)
+            elif what == 'move: Yawn' and kind == '-start':
+                # data/moves.ts:21131-21162 yawn: `-start|X|move: Yawn|[of] source` from onStart; the end line is [silent]
+                # (dropped) and the sleep it brings is the ordinary STATUS line (step G31)
+                _, _, other = ev_cause(attrs, tables)
+                e = ev_tuple(EV['VOLATILE_START'], ev_pos(args[0]), other, detail=VOLATILE_YAWN)
             elif what == 'Encore':
                 # data/moves.ts:4724-4783 encore: `-start|X|Encore` from onStart, `-end|X|Encore` from onEnd (the
                 # duration or an exhausted move; a switch-out or a faint clears it with no line).
@@ -1262,8 +1286,12 @@ def step_events(log, viewer, roster_of, maxhp, tables):
         elif kind in ('-sidestart', '-sideend'):
             side = int(args[0][1]) - 1
             cond = {'move: Tailwind': 1, 'Reflect': 2, 'move: Reflect': 2, 'move: Light Screen': 3,
-                    'move: Aurora Veil': 4}[args[1]]  # 4: DUOFORGE_SIDE_AURORA_VEIL (POOL kinds, step G20)
-            e = ev_tuple(EV['SIDE_START' if kind == '-sidestart' else 'SIDE_END'], detail=side, amount=cond)
+                    'move: Aurora Veil': 4,  # 4: DUOFORGE_SIDE_AURORA_VEIL (POOL kinds, step G20)
+                    # step G37, the entry hazards (POOL kinds): Spikes' own line has no `move: `
+                    'move: Stealth Rock': 5, 'Spikes': 6, 'move: Spikes': 6, 'move: Toxic Spikes': 7,
+                    'move: Sticky Web': 8}[args[1]]
+            _, _, of = ev_cause(attrs, tables)  # -sideend|side|move: Toxic Spikes|[of] POKEMON: a grounded Poison type absorbed them
+            e = ev_tuple(EV['SIDE_START' if kind == '-sidestart' else 'SIDE_END'], NOPOS, of, detail=side, amount=cond)
         elif kind == '-enditem':
             taken = [a for a in attrs if a.startswith('[from] move: ')]
             if taken:
@@ -1347,6 +1375,11 @@ def boundary_of(state, log):
     if len(kinds) != 1:
         raise ConversionError('mixed-requests', 'trace_to_c: mixed requests %s' % sorted(kinds))
     kind = kinds.pop()
+    if kind == 'switch' and 'queue_len' in state:
+        # The harness records the actions still queued (step G37): pending actions make it a PIVOT, an empty queue a
+        # REPLACEMENT, whether or not the step's log shows the residual (a replacement that a hazard knocked out at once
+        # is asked again before any turn line).
+        return 4 if state['queue_len'] > 0 else 3
     if kind == 'switch' and '|upkeep' not in log:
         # Without the residual action ('|upkeep') in this step the queue still
         # holds actions: a PIVOT. That is a mid-turn switch (Parting Shot,
@@ -1563,7 +1596,7 @@ def convert_battle(name, spec, trace, tables):
                       'enabled': tuple(enabled), 'mons': tuple(mons), 'tape': tape, 'events': events,
                       'dropped': dropped})
         state = new_state
-        mid_turn = not any(line.startswith('|upkeep') for line in step['log'])
+        mid_turn = boundary == 4 if 'queue_len' in new_state else not any(line.startswith('|upkeep') for line in step['log'])
     return {'name': name, 'purpose': spec['purpose'], 'member_count': len(teams[0]), 'members': members,
             'steps': steps, 'dropped_total': dropped_total}
 

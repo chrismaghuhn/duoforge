@@ -1060,6 +1060,7 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                          it fires only for Sand: Snow has no residual damage and Hail is not in the format */
 #define DUOFORGE_CAUSE_RECHARGE  18u /* CANT (POOL kinds): the recharge turn after a recharge move ([cant] recharge) */
 #define DUOFORGE_CAUSE_DISABLE   19u /* CANT (POOL kinds): the move that Disable bars ([cant] Disable|move); id: the move */
+#define DUOFORGE_CAUSE_TAUNT     20u /* CANT (POOL kinds): a Status move stopped by Taunt ([cant] move: Taunt|move); id: the move */
 #define DUOFORGE_CAUSE_HEAL_BLOCK 15u /* CANT (POOL kinds): a move that heals, stopped by Heal Block; id: the stopped move.
                                          A sound move stopped by Throat Chop is CANT with cause MOVE, id2: Throat Chop
                                          (the line names no move, so id is 0) */
@@ -1091,6 +1092,9 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                               END; the cast itself shows nothing (its -start perish3 is [silent]) */
 #define DUOFORGE_VOLATILE_IMPRISON   8u /* VOLATILE_START (POOL kinds): -start|X|move: Imprison; no END, it ends with the occupant
                                               (position: the Pokemon that used it; its foes may not use the moves it knows) */
+#define DUOFORGE_VOLATILE_TAUNT      6u /* VOLATILE_START / VOLATILE_END: Taunt (-start|X|move: Taunt, -end|X|move: Taunt) */
+#define DUOFORGE_VOLATILE_YAWN       7u /* VOLATILE_START: Yawn (-start|X|move: Yawn|[of] source; other: the source). No END: the end line is
+                                              silent, and the sleep it brings is the STATUS event of the residual */
 #define DUOFORGE_FIELD_GRASSY_TERRAIN 1u
 #define DUOFORGE_FIELD_TRICK_ROOM     2u
 #define DUOFORGE_FIELD_PSYCHIC_TERRAIN 3u /* Team C */
@@ -1100,6 +1104,13 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_SIDE_REFLECT      2u
 #define DUOFORGE_SIDE_LIGHT_SCREEN 3u
 #define DUOFORGE_SIDE_AURORA_VEIL  4u /* SIDE_START / SIDE_END amount (POOL kinds): -sidestart|side|move: Aurora Veil */
+/* The entry hazards (POOL kinds, step G37; values awaiting the owner's OK). SIDE_START / SIDE_END amount: -sidestart|side|move: Stealth Rock
+   (Spikes, Toxic Spikes and Sticky Web alike); a Spikes or Toxic Spikes layer is another SIDE_START of the same amount. SIDE_END: -sideend|side|
+   move: Toxic Spikes|[of] POKEMON (a grounded Poison type absorbed them; other = that Pokemon). The side field of the view has the layers. */
+#define DUOFORGE_SIDE_STEALTH_ROCK 5u
+#define DUOFORGE_SIDE_SPIKES       6u
+#define DUOFORGE_SIDE_TOXIC_SPIKES 7u
+#define DUOFORGE_SIDE_STICKY_WEB   8u
 #define DUOFORGE_RESULT_SIDE_0 1u
 #define DUOFORGE_RESULT_SIDE_1 2u
 #define DUOFORGE_RESULT_TIE    3u
