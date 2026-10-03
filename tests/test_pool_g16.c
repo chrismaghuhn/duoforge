@@ -24,6 +24,9 @@
  *                     a Focus Sash that the hit uses up is not taken a second time; a fainted Swalot loses its item.
  *   g16_scarf_helmet  A Choice Scarf goes with the lock, the Rocky Helmet hurts the user first and goes.
  *   g16_helmet_faint  A user that the Rocky Helmet knocks out takes the item all the same (the Champions mod).
+ *
+ * Step G24 adds one check of the state: g24_hawlucha_malamar, where a Knock Off finds Hawlucha (Unburden) with its own
+ * Hawluchanite: the volatile is set and the stone stays (check_invariants).
  */
 #include <stdio.h>
 #include <string.h>
@@ -314,6 +317,38 @@ static void check_invariants(df_test *t, const duoforge_context *ctx)
         b->tail.sides[1].item_now[pos->occupant] = (uint8_t)DUOFORGE_ITEM_NOW_NONE;
         pos->flags = (uint8_t)((uint32_t)pos->flags & ~(uint32_t)DFI_VOL_UNBURDEN);
         DF_CHECK(t, check_of(ctx, b) == DFI_INV_NONE); /* the volatile is not required: it ends with the position */
+        duoforge_battle_destroy(b);
+    }
+    /* Step G24: Hawlucha (Unburden) holds Hawluchanite, its own Mega Stone, and Knock Off finds it (turn 1 of
+     * g24_hawlucha_malamar): the ability's onTakeItem answers before the item refuses, so the volatile is set and the stone
+     * stays (data/abilities.ts:5240-5242). The volatile with the item held is valid for a holder of its own stone only; its
+     * Mega Evolution (turn 3) ends the ability and with it the volatile (:5243-5245). */
+    b = replay_to(t, ctx, "g24_hawlucha_malamar", 2u);
+    if (b != NULL) {
+        dfi_active_slot *pos = &b->sides[0].positions[0];
+        dfi_member *hawlucha = &b->sides[0].members[pos->occupant];
+        DF_CHECK_EQ_U64(t, hawlucha->species_id, DFI_FORME_HAWLUCHA);
+        DF_CHECK_EQ_U64(t, hawlucha->item, 1u + DFI_ITEM_HAWLUCHANITE);
+        DF_CHECK(t, b->tail.sides[0].item_now[pos->occupant] != DUOFORGE_ITEM_NOW_NONE); /* the stone stays */
+        DF_CHECK(t, ((uint32_t)pos->flags & DFI_VOL_UNBURDEN) != 0u);                    /* and the volatile is set */
+        DF_CHECK(t, check_of(ctx, b) == DFI_INV_NONE);
+        /* The view shows no Unburden while the stone is held: nothing says it, and it doubles no Speed. */
+        duoforge_observation obs;
+        DF_CHECK(t, duoforge_battle_observe(ctx, b, 1u, &obs) == DUOFORGE_OK);
+        DF_CHECK(t, (obs.sides[0].positions[0].reserved & DUOFORGE_POSITION_FLAG_UNBURDEN) == 0u);
+        DF_CHECK(t, check_of(ctx, b) == DFI_INV_NONE);
+        /* The same member with an item that is no stone of its own: the volatile has no loss behind it. */
+        hawlucha->item = 1u + DFI_ITEM_SITRUSBERRY;
+        hawlucha->mega_capable = 0u;
+        DF_CHECK(t, check_of(ctx, b) == DFI_INV_VOLATILE);
+        duoforge_battle_destroy(b);
+    }
+    b = replay_to(t, ctx, "g24_hawlucha_malamar", 4u);
+    if (b != NULL) {
+        const dfi_active_slot *pos = &b->sides[0].positions[0];
+        DF_CHECK_EQ_U64(t, b->sides[0].members[pos->occupant].is_mega, 1u);
+        DF_CHECK(t, ((uint32_t)pos->flags & DFI_VOL_UNBURDEN) == 0u); /* ended with the ability */
+        DF_CHECK(t, check_of(ctx, b) == DFI_INV_NONE);
         duoforge_battle_destroy(b);
     }
     b = replay_to(t, ctx, "g16_scarf_helmet", 2u);
