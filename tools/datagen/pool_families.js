@@ -905,6 +905,13 @@ function moveIsModelled(raw, id) {
                 return false;
             }
             vectors += 1;
+        } else if (effects[0] === 'self') {
+            // Step G28: a secondary whose own effect is a stat change of the user (Ancient Power).
+            if (sec.self === null || typeof sec.self !== 'object' || Object.keys(sec.self).length !== 1 ||
+                !isBoostBlock(sec.self.boosts)) {
+                return false;
+            }
+            vectors += 1;
         } else {
             return false;
         }

@@ -1384,7 +1384,8 @@ int main(void)
         /* The rows of the steps. */
         DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_FOCUSSASH] == DFI_HANDLER_NONE &&
                          dfi_pool_ability_handler[DFI_ABILITY_ROCKHEAD] == DFI_HANDLER_NONE);
-        DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_EXPERTBELT] == DFI_HANDLER_UNMODELED);
+        DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_EXPERTBELT] == DFI_HANDLER_NONE); /* an engine row, step G28 */
+        DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_SCOPELENS] == DFI_HANDLER_UNMODELED);
         DF_CHECK(&t, dfi_pool_ability_handler[DFI_ABILITY_FLOWERVEIL] == DFI_HANDLER_NONE &&
                          dfi_pool_ability_handler[DFI_ABILITY_FAIRYAURA] == DFI_HANDLER_NONE); /* engine rows, G12 */
         DF_CHECK(&t, dfi_pool_ability_handler[DFI_ABILITY_ROUGHSKIN] == DFI_HANDLER_NONE &&
@@ -1399,9 +1400,9 @@ int main(void)
          * Hydro Pump: pure data; Substitute: a volatile with callbacks; Stealth Rock: a side condition and a class
          * that the closure lacks; Absolite Z: the second Mega Stone of Absol; Damp Rock: no callback, read by id in
          * data/conditions.ts; Levitate: no callback, read by id elsewhere; Intimidate: code in the turn core. */
-        DF_CHECK(&t, dfi_pool_moves[DFI_MOVE_EARTHQUAKE].special == DFI_SPECIAL_UNMODELED &&
+        DF_CHECK(&t, dfi_pool_moves[DFI_MOVE_EARTHQUAKE].special == DFI_SPECIAL_NONE &&
                          dfi_pool_moves[DFI_MOVE_EARTHQUAKE].target_class == DFI_TARGET_CLASS_ALL_ADJACENT &&
-                         strcmp(dfi_pool_move_unmodeled[DFI_MOVE_EARTHQUAKE], "target allAdjacent") == 0);
+                         dfi_pool_move_unmodeled[DFI_MOVE_EARTHQUAKE] == NULL); /* since step G28 the turn code has the class */
         DF_CHECK(&t, dfi_pool_moves[DFI_MOVE_HYDROPUMP].special == DFI_SPECIAL_NONE &&
                          dfi_pool_move_unmodeled[DFI_MOVE_HYDROPUMP] == NULL && dfi_pool_moves[DFI_MOVE_HYDROPUMP].base_power == 110u &&
                          dfi_pool_moves[DFI_MOVE_HYDROPUMP].accuracy == 80u);
@@ -1423,6 +1424,7 @@ int main(void)
         for (uint32_t id = 0u; id < DFI_POOL_MOVE_COUNT; ++id) {
             /* A target class beyond the closure's is never in a modelled row. */
             DF_CHECK(&t, dfi_pool_moves[id].target_class <= DFI_TARGET_CLASS_RANDOM_NORMAL ||
+                             dfi_pool_moves[id].target_class == DFI_TARGET_CLASS_ALL_ADJACENT ||
                              dfi_pool_moves[id].special == DFI_SPECIAL_UNMODELED);
             /* The effect columns of an UNMODELED row are neutral: it claims nothing beyond its plain data. */
             if (dfi_pool_moves[id].special == DFI_SPECIAL_UNMODELED) {
