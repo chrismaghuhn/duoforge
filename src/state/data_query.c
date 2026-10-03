@@ -13,6 +13,7 @@ _Static_assert(DFI_POOL_MOVE_COUNT <= DUOFORGE_DATA_MAX_FORME_MOVES,
                "the pool has more moves than DUOFORGE_DATA_MAX_FORME_MOVES");
 
 _Static_assert(sizeof(duoforge_forme_info) == 60u, "duoforge_forme_info is 15 words, as the header says");
+_Static_assert(sizeof(duoforge_mega_info) == 20u, "duoforge_mega_info is 5 words, as the header says");
 
 /* The ids of a table under the kind. */
 static uint32_t dfi_table_count(const dfi_kind_limits *lim, uint32_t table)
@@ -244,6 +245,73 @@ duoforge_status duoforge_data_forme_info(const duoforge_context *ctx, uint32_t s
         return DUOFORGE_E_INVARIANT; /* a table beyond the public bound: an engine bug */
     }
     *out = info;
+    return DUOFORGE_OK;
+}
+
+uint32_t dfi_data_mega_count(const dfi_kind_limits *lim, uint32_t species)
+{
+    uint32_t count = 0u;
+    for (uint32_t item = 0u; item < lim->item_count; ++item) {
+        count += dfi_mega_of(species, item + 1u) != DFI_FORME_NONE ? 1u : 0u;
+    }
+    return count;
+}
+
+void dfi_data_mega_at(const dfi_kind_limits *lim, const dfi_support_manifest *manifest, uint32_t species,
+                      uint32_t index, duoforge_mega_info *out)
+{
+    uint32_t seen = 0u;
+    for (uint32_t item = 0u; item < lim->item_count; ++item) {
+        const uint32_t mega = dfi_mega_of(species, item + 1u);
+        if (mega == DFI_FORME_NONE) {
+            continue;
+        }
+        if (seen == index) {
+            duoforge_mega_info info = {0};
+            info.base_species = species;
+            info.stone = item;
+            info.mega_species = mega;
+            info.mega_ability = dfi_pool_formes[mega].ability;
+            info.supported = manifest->turn_core != 0u && dfi_manifest_mega_of(manifest, species, item + 1u) ? 1u : 0u;
+            *out = info;
+            return;
+        }
+        seen += 1u;
+    }
+}
+
+duoforge_status duoforge_data_mega_count(const duoforge_context *ctx, uint32_t species_id, uint32_t *out_count)
+{
+    if (ctx == NULL || out_count == NULL) {
+        return DUOFORGE_E_NULL_ARGUMENT;
+    }
+    dfi_kind_limits lim;
+    const duoforge_status st = dfi_data_begin(ctx, 0u, false, &lim);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    if (species_id >= lim.forme_count) {
+        return DUOFORGE_E_INVALID_ARGUMENT;
+    }
+    *out_count = dfi_data_mega_count(&lim, species_id);
+    return DUOFORGE_OK;
+}
+
+duoforge_status duoforge_data_mega_at(const duoforge_context *ctx, uint32_t species_id, uint32_t index,
+                                      duoforge_mega_info *out)
+{
+    if (ctx == NULL || out == NULL) {
+        return DUOFORGE_E_NULL_ARGUMENT;
+    }
+    dfi_kind_limits lim;
+    const duoforge_status st = dfi_data_begin(ctx, 0u, false, &lim);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    if (species_id >= lim.forme_count || index >= dfi_data_mega_count(&lim, species_id)) {
+        return DUOFORGE_E_INVALID_ARGUMENT;
+    }
+    dfi_data_mega_at(&lim, &dfi_support, species_id, index, out);
     return DUOFORGE_OK;
 }
 
