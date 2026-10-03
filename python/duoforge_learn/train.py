@@ -210,7 +210,7 @@ def _merged(args, saved):
                                    **{k: v for k, v in saved.items() if k in vars(args)}})
     changes = {}
     for name in args._given:
-        if name in ("resume", "out"):
+        if name in ("resume", "out", "ext_supported"):  # ext_supported: _run compares it with the resolved mask
             continue
         new, old = getattr(args, name), saved.get(name)
         if new == old:
@@ -324,6 +324,11 @@ def _run(args, pool, on_start, stop):
     saved_state, changes = None, {}
     if args.resume is not None:
         saved_state = runstate.load_state(args.resume)
+        # The run keeps the mask it resolved when it started; only an explicit, different --ext-supported is a change.
+        explicit = args.ext_supported if "ext_supported" in args._given else None
+        stored = saved_state.get("ext_supported", 0)
+        if explicit is not None and explicit != stored:
+            raise SystemExit(f"a resume cannot change ext_supported ({stored:#x} -> {explicit:#x})")
         args, changes = _merged(args, saved_state["train"])
     context = duoforge.Context(data_kind=DATA_KINDS[args.data_kind])
     pool = _pool_of_args(args, context) if pool is None else pool
