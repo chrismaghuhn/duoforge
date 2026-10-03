@@ -290,15 +290,18 @@ class PoolFamilies(unittest.TestCase):
 
     def test_a_terrain_setter_gives_its_terrain(self):
         self.assertEqual(self.derive(GRASSY_SURGE, 'TERRAIN_SETTER', what='ability'), ('TERRAIN_SETTER', 'grassyterrain'))
-        self.refused(setter('electricsurge', 'Electric Surge', "this.field.setTerrain('electricterrain');"),
+        # Step G25: Electric Surge is a member (the codes of the column are the engine's DFI_TERRAIN_* values).
+        self.assertEqual(self.derive(setter('electricsurge', 'Electric Surge', "this.field.setTerrain('electricterrain');"),
+                                     'TERRAIN_SETTER', what='ability'), ('TERRAIN_SETTER', 'electricterrain'))
+        self.refused(setter('electricsurge', 'Electric Surge', "this.field.setTerrain('foggyterrain');"),
                      'TERRAIN_SETTER', 'electricsurge is listed as TERRAIN_SETTER but deviates', what='ability')
 
     def test_the_members_of_the_decision_are_what_the_tables_list(self):
-        # 18 type boosters and 18 resist berries, three "-ate", four pinch, two weather and two terrain setters.
+        # 18 type boosters and 18 resist berries, three "-ate", four pinch, four weather and three terrain setters.
         self.assertEqual((len(gen_closure.ITEM_MEMBERS['TYPE_BOOSTER']), len(gen_closure.ITEM_MEMBERS['RESIST_BERRY'])),
                          (18, 18))
         self.assertEqual({k: len(v) for k, v in gen_closure.ABILITY_MEMBERS.items()},
-                         {'ATE': 3, 'PINCH': 4, 'WEATHER_SETTER': 4, 'TERRAIN_SETTER': 2})
+                         {'ATE': 3, 'PINCH': 4, 'WEATHER_SETTER': 4, 'TERRAIN_SETTER': 3})
         every = gen_closure.POOL_ITEMS + gen_closure.POOL_ABILITIES
         self.assertEqual(len(every), len(set(every)))
         self.assertEqual((len(gen_closure.POOL_ITEMS), len(gen_closure.POOL_ABILITIES)), (33, 5))
@@ -713,11 +716,13 @@ class PoolMoves(unittest.TestCase):
                           'SHELL_SMASH', 'ACROBATICS', 'BLIZZARD', 'FEINT', 'RAGE_POWDER', 'PSYCHIC_FANGS', 'SOLAR_BEAM',
                           'HP_POWER', 'BODY_PRESS', 'FOUL_PLAY', 'PSYSHOCK',
                           'RAIN_DANCE', 'SUNNY_DAY', 'FREEZE_DRY', 'CLANGING_SCALES',
-                          'STEEL_ROLLER', 'CLANGOROUS_SOUL', 'BRICK_BREAK', 'DISABLE', 'TRICK', 'SWITCHEROO', 'THIEF', 'COVET', 'UNMODELED'])
+                          'STEEL_ROLLER', 'CLANGOROUS_SOUL', 'BRICK_BREAK', 'DISABLE',
+                          'ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'RISING_VOLTAGE', 'TERRAIN_PULSE',
+                          'TRICK', 'SWITCHEROO', 'THIEF', 'COVET', 'UNMODELED'])
         self.assertEqual(len(gen_closure.G2_HANDLERS), 7)
         # Step G16: Knock Off's handler is 24 in the tables; step G15's Expanding Force is 25, step G19's Glaive Rush 26,
         # step G20's Aurora Veil 27, Spiky Shield 28, the four of step G28 29 to 32, the eight of step G32 33 to 40 and
-        # UNMODELED 41.
+        # the three of step G34 44 to 46, the four of step G25 47 to 50 and UNMODELED 51.
         self.assertEqual(gen_closure.G16_HANDLERS, ['KNOCK_OFF'])
         self.assertEqual(gen_closure.G20_HANDLERS, ['AURORA_VEIL'])
         self.assertEqual(gen_closure.G20_PROTECT_HANDLERS, ['SPIKY_SHIELD'])
@@ -734,15 +739,17 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual(gen_closure.G34_HANDLERS, ['STEEL_ROLLER', 'CLANGOROUS_SOUL', 'BRICK_BREAK'])  # step G34
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G34_HANDLERS], [44, 45, 46])
         self.assertEqual(gen_closure.SPECIAL_IDS_P.index('DISABLE'), 47)  # step G27, after the others
+        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G25_HANDLERS], [48, 49, 50, 51])  # step G25
         self.assertEqual(gen_closure.G29_HANDLERS, ['TRICK', 'SWITCHEROO', 'THIEF', 'COVET'])  # step G29
-        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G29_HANDLERS], [48, 49, 50, 51])
+        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G29_HANDLERS], [52, 53, 54, 55])
         self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 52)
         # Scald and Recover became data in step G10: their ids stay defined and no move maps to them.
         self.assertEqual({v[0] for k, v in gen_closure.SPECIAL_P.items() if k not in gen_closure.SPECIAL_C},
                          (set(gen_closure.G2_HANDLERS) - {'SCALD', 'RECOVER'}) | set(gen_closure.WEATHER_HANDLERS) |
                          set(gen_closure.G16_HANDLERS) | set(gen_closure.G15_HANDLERS) | set(gen_closure.G19_HANDLERS) |
                          set(gen_closure.G20_HANDLERS) | set(gen_closure.G20_PROTECT_HANDLERS) | set(gen_closure.G28_HANDLERS) |
-                         set(gen_closure.G30_HANDLERS) | set(gen_closure.G32_HANDLERS) | set(gen_closure.G34_HANDLERS) | set(gen_closure.G27_HANDLERS) | set(gen_closure.G29_HANDLERS))
+                         set(gen_closure.G30_HANDLERS) | set(gen_closure.G32_HANDLERS) | set(gen_closure.G34_HANDLERS) |
+                         set(gen_closure.G27_HANDLERS) | set(gen_closure.G25_HANDLERS) | set(gen_closure.G29_HANDLERS))
 
     def test_aurora_veil_is_a_handler_whose_onTry_and_condition_are_the_pinned_text(self):
         rec = parse_pool('auroraveil', AURORA_VEIL)
@@ -1018,7 +1025,9 @@ class PoolMoves(unittest.TestCase):
                                                                 'shellsmash', 'acrobatics', 'blizzard', 'feint',
                                                                 'ragepowder', 'psychicfangs', 'solarbeam', 'eruption', 'waterspout',
                                                                 'bodypress', 'foulplay', 'psyshock', 'raindance', 'sunnyday', 'freezedry',
-                                                                'clangingscales', 'steelroller', 'clangoroussoul', 'brickbreak', 'disable', 'trick', 'switcheroo', 'thief', 'covet'})
+                                                                'clangingscales', 'steelroller', 'clangoroussoul', 'brickbreak', 'disable',
+                                                                'electricterrain', 'mistyterrain', 'risingvoltage', 'terrainpulse',
+                                                                'trick', 'switcheroo', 'thief', 'covet'})
         self.assertEqual(gen_closure.WEATHER_HANDLERS, ['SANDSTORM', 'SNOWSCAPE'])
         for _sp, _ab, item, moves, _mega in gen_closure.SETS_G2:
             self.assertTrue(item in gen_closure.G2_ITEMS or item not in gen_closure.POOL_ITEMS)
@@ -1331,7 +1340,8 @@ class ItemAbilityFeatures(unittest.TestCase):
         self.assertEqual(gen_closure.HANDLER_IDS, ['NONE', 'UNMODELED'])
 
     def test_the_rows_that_a_step_implements_by_id_are_listed(self):
-        self.assertEqual(gen_closure.ENGINE_ROWS, {'items': ['focussash', 'floettite', 'psychicseed', 'expertbelt', 'ejectbutton', 'widelens'],
+        self.assertEqual(gen_closure.ENGINE_ROWS, {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt',
+                                                           'ejectbutton', 'widelens'],
                                                    'abilities': ['rockhead', 'flowerveil', 'fairyaura', 'roughskin',
                                                                  'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
                                                                  'levitate', 'sandrush', 'swiftswim', 'slushrush',
@@ -1530,9 +1540,12 @@ class PsychicTerrainFacts(unittest.TestCase):
               '},', 'onTerrainChange(pokemon) {', "\tif (this.field.isTerrain('grassyterrain')) {",
               '\t\tpokemon.useItem();', '\t}', '},', 'boosts: {', '\tdef: 1,', '},', 'num: 884,', 'gen: 7,')
 
+    def seed(self, word, terrain, stat, number, edit=lambda text: text):
+        return tuple(edit(line.replace('grassyterrain', terrain).replace('Grassy', word)
+                          .replace('def: 1', stat + ': 1').replace('667', number)) for line in self.GRASSY)
+
     def psychic(self, edit=lambda text: text):
-        return tuple(edit(line.replace('grassyterrain', 'psychicterrain').replace('Grassy', 'Psychic')
-                          .replace('def: 1', 'spd: 1').replace('667', '665')) for line in self.GRASSY)
+        return self.seed('Psychic', 'psychicterrain', 'spd', '665', edit)
 
     def sources(self, drop=None, seed=None):
         def facts_entry(mid, facts):
@@ -1541,7 +1554,9 @@ class PsychicTerrainFacts(unittest.TestCase):
             facts_entry('expandingforce', gen_closure.EXPANDING_FORCE_FACTS),
             facts_entry('psychicterrain', gen_closure.PSYCHIC_TERRAIN_FACTS)]))
         items = TextSource('data/items.ts', chr(10).join([
-            entry('grassyseed', *self.GRASSY), entry('psychicseed', *(seed if seed is not None else self.psychic()))]))
+            entry('grassyseed', *self.GRASSY), entry('psychicseed', *(seed if seed is not None else self.psychic())),
+            entry('electricseed', *self.seed('Electric', 'electricterrain', 'def', '664')),
+            entry('mistyseed', *self.seed('Misty', 'mistyterrain', 'spd', '666'))]))
         return moves, items
 
     def test_the_facts_of_the_pin_are_accepted(self):
@@ -1568,8 +1583,10 @@ class PsychicTerrainFacts(unittest.TestCase):
     def test_the_rows_of_the_step(self):
         self.assertEqual(gen_closure.G15_HANDLERS, ['EXPANDING_FORCE'])
         self.assertEqual(gen_closure.SPECIAL_P['expandingforce'], ('EXPANDING_FORCE', {'onBasePower', 'onModifyMove'}))
-        self.assertEqual(gen_closure.SEED_PAIRS, (('psychicseed', 'psychicterrain', 'spd'),))
-        self.assertIn('psychicseed', gen_closure.ENGINE_ROWS['items'])
+        self.assertEqual(gen_closure.SEED_PAIRS, (('psychicseed', 'psychicterrain', 'spd'), ('electricseed', 'electricterrain', 'def'),
+                                                  ('mistyseed', 'mistyterrain', 'spd')))
+        for seed in ('psychicseed', 'electricseed', 'mistyseed'):
+            self.assertIn(seed, gen_closure.ENGINE_ROWS['items'])
 
 
 class MoveRules(unittest.TestCase):
@@ -1718,6 +1735,53 @@ class SmallRulesG35(unittest.TestCase):
     def test_the_rows_of_the_step(self):
         for ability in ('raindish', 'friendguard'):
             self.assertIn(ability, gen_closure.ENGINE_ROWS['abilities'])
+
+
+class TerrainFacts(unittest.TestCase):
+    """Step G25: what the engine hard-codes about Electric Terrain, Misty Terrain, Rising Voltage and Terrain Pulse is read
+    from the pinned entries (G25_FACTS, checked with the conditions of steps G8 and G20); every fact is demanded."""
+
+    def source(self, skip=(None, None)):
+        out = []
+        for mid, needed in gen_closure.G25_FACTS:
+            lines = ['\t%s: {' % mid]
+            for i, n in enumerate(needed):
+                if (mid, i) != skip:
+                    lines.append('\t\t' + n)
+                    lines.append('\t\t' + '}' * max(0, n.count('{') - n.count('}')))
+            lines.append('\t},')
+            out.append('\n'.join(lines))
+        return TextSource('data/moves.ts', '\n'.join(out))
+
+    def test_the_facts_of_the_pin_are_accepted(self):
+        gen_closure.check_g8_conditions(self.source(), gen_closure.G25_FACTS)
+
+    def test_every_fact_is_demanded(self):
+        self.assertEqual([mid for mid, _ in gen_closure.G25_FACTS],
+                         ['electricterrain', 'mistyterrain', 'risingvoltage', 'terrainpulse'])
+        for mid, needed in gen_closure.G25_FACTS:
+            for i in range(len(needed)):
+                with self.subTest(mid=mid, fact=needed[i]), self.assertRaises(SystemExit) as cm:
+                    gen_closure.check_g8_conditions(self.source((mid, i)), gen_closure.G25_FACTS)
+                self.assertIn('move %s: the condition no longer has' % mid, str(cm.exception.code))
+
+    def test_the_two_terrains_differ_in_what_the_engine_reads(self):
+        facts = dict(gen_closure.G25_FACTS)
+        self.assertTrue(any("'slp'" in f for f in facts['electricterrain']))
+        self.assertTrue(any('[5325, 4096]' in f for f in facts['electricterrain']))
+        self.assertTrue(any('chainModify(0.5)' in f for f in facts['mistyterrain']))
+        self.assertIn("onFieldEnd() { this.add('-fieldend', 'Misty Terrain'); },", facts['mistyterrain'])  # no "move: "
+
+    def test_the_rows_of_the_step(self):
+        self.assertEqual(gen_closure.G25_HANDLERS, ['ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'RISING_VOLTAGE', 'TERRAIN_PULSE'])
+        self.assertEqual(gen_closure.SPECIAL_P['risingvoltage'], ('RISING_VOLTAGE', {'basePowerCallback'}))
+        self.assertEqual(gen_closure.SPECIAL_P['terrainpulse'], ('TERRAIN_PULSE', {'onModifyType', 'onModifyMove'}))
+        self.assertEqual(gen_closure.G2_OWNED_FIELDS['ELECTRIC_TERRAIN'], {'terrain': "terrain: 'electricterrain',"})
+        self.assertEqual(gen_closure.G2_OWNED_FIELDS['MISTY_TERRAIN'], {'terrain': "terrain: 'mistyterrain',"})
+        self.assertIn('ELECTRIC_TERRAIN', gen_closure.G2_OWNED_CONDITION)
+        self.assertIn('MISTY_TERRAIN', gen_closure.G2_OWNED_CONDITION)
+        self.assertEqual(gen_closure.TERRAIN_CODES['electricterrain'], ('ELECTRIC', 3))
+        self.assertEqual(gen_closure.TERRAIN_CODES['mistyterrain'], ('MISTY', 4))
 
 
 if __name__ == '__main__':

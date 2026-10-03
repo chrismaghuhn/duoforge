@@ -1,0 +1,57 @@
+{
+  "name": "fz_2501_228_prefix",
+  "purpose": "Corpus (defect): case fz_2501_228 of run 2501 (tools/reference/diff_driver.py random), team F against team G, found as DIVERGENCE events reference kind 3 differs in other. The shortest prefix that showed it, 11 of 26 choices; it passes now, fixed by G25 (Terrain Pulse in Electric Terrain is drawn to Lightning Rod).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,b422f6eb110288af4e5c2debccab66f92be289e43b786c980444a4477aabb9f2",
+  "teams": [
+    "Raichu (F) @ Electric Seed\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Electric Terrain\n- Rising Voltage\n- Nuzzle\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Hypnosis\n- Coil\n- Scald\n- Protect\n\nBlastoise (M) @ Mystic Water\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 SpA\nModest Nature\n- Terrain Pulse\n- Waterfall\n- Dark Pulse\n- Protect\n\nAnnihilape (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Protect\n\nAurorus (F) @ Light Clay\nAbility: Refrigerate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Def\nModest Nature\n- Weather Ball\n- Protect\n\nPincurchin (M) @ Charcoal\nAbility: Electric Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpA\nBold Nature\n- Rising Voltage\n- Electric Terrain\n- Thunderbolt\n- Protect",
+    "Indeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Terrain Pulse\n- Follow Me\n- Helping Hand\n- Protect\n\nSylveon (F) @ Misty Seed\nAbility: Pixilate\nLevel: 50\nEVs: 19 HP / 32 SpA / 15 Spe\nModest Nature\n- Misty Terrain\n- Hyper Voice\n- Dazzling Gleam\n- Protect\n\nArchaludon (M) @ Light Clay\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 10 Def / 24 SpD\nBold Nature\n- Iron Head\n- Protect\n\nSalamence (M) @ Leftovers\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Dragon Claw\n- Dragon Dance\n- Air Slash\n- Protect\n\nAbomasnow (M) @ Black Glasses\nAbility: Snow Warning\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpA\nModest Nature\n- Protect\n\nCeruledge (M) @ Life Orb\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Will-O-Wisp\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 2135",
+      "p2": "team 6541"
+    },
+    {
+      "p1": "move 1 -2, move 4",
+      "p2": "switch 4, move 1"
+    },
+    {
+      "p1": "move 2, move 1",
+      "p2": "move 3 -2, move 1"
+    },
+    {
+      "p1": "move 3 -2, switch 4",
+      "p2": "move 3 -2, move 1"
+    },
+    {
+      "p1": "switch 4, move 1 2",
+      "p2": "move 2, move 1"
+    },
+    {
+      "p1": "move 4, move 1 1",
+      "p2": "move 4, move 1"
+    },
+    {
+      "p1": "move 3 1, move 2",
+      "p2": "move 3 -2, move 1"
+    },
+    {
+      "p1": "move 1, move 2",
+      "p2": "move 4, move 1"
+    },
+    {
+      "p1": "move 3 2, move 2",
+      "p2": "move 2, move 1"
+    },
+    {
+      "p1": "move 3 1, move 1 1",
+      "p2": "move 3 -2, move 1"
+    },
+    {
+      "p1": "move 4, move 2",
+      "p2": "move 1 2, move 1"
+    }
+  ]
+}
