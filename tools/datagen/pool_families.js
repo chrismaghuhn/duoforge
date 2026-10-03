@@ -749,6 +749,32 @@ function checkG22(dex, formes, itemIds, abilityIds) {
 // Freeze-Dry (Water is super effective), Soundproof (a sound move aimed at the holder by another Pokemon is -immune), Unnerve
 // (berries of the foes are not eaten while the holder stands) and Speed Boost (+1 Speed in the residual, not in the turn of
 // the switch-in). Eject Button is a text fact of the generator (G32_ENTRY_FACTS).
+// Step G41, Shadow Tag: the engine refuses the switch of a foe at the TURN boundary (turn.c dfi_switch_trapped). The pinned
+// handlers are called on stubs: a foe that is not a Shadow Tag holder and is adjacent to the holder is trapped (hidden), and a
+// holder, or a Pokemon that is not adjacent, is not; the maybe-flag follows the same test. Ghost is the one type that is immune
+// to `trapped` (runStatusImmunity: typechart `trapped: 3`), so Soak and the forme's types decide it; no other type has the key.
+// Shed Shell and Run Away would free the holder: the generator keeps them unmarked.
+function checkG41(dex) {
+    const tag = dex.abilities.get('shadowtag');
+    const run = (fn, who, source, hasTag, adjacent) => {
+        const calls = [];
+        const pokemon = {hasAbility: (id) => id === 'shadowtag' && hasTag, isAdjacent: () => adjacent,
+            tryTrap: (hidden) => calls.push(['tryTrap', hidden]), maybeTrapped: false};
+        const b = battle(tag, {effectState: {target: {}}});
+        call(fn, b, [pokemon, source]);
+        return {calls, maybe: pokemon.maybeTrapped};
+    };
+    expect('Shadow Tag traps an adjacent foe', run(tag.onFoeTrapPokemon, 'p', undefined, false, true),
+        {calls: [['tryTrap', true]], maybe: false});
+    expect('Shadow Tag does not trap a holder', run(tag.onFoeTrapPokemon, 'p', undefined, true, true), {calls: [], maybe: false});
+    expect('Shadow Tag does not trap a Pokemon that is not adjacent', run(tag.onFoeTrapPokemon, 'p', undefined, false, false),
+        {calls: [], maybe: false});
+    expect('Shadow Tag marks maybe-trapped', run(tag.onFoeMaybeTrapPokemon, 'p', {}, false, true), {calls: [], maybe: true});
+    expect('Shadow Tag does not mark a holder', run(tag.onFoeMaybeTrapPokemon, 'p', {}, true, true), {calls: [], maybe: false});
+    expect('the types immune to trapped', TYPES.filter((t) => dex.types.get(t).damageTaken.trapped === 3), ['Ghost']);
+    return 1;
+}
+
 // Step G33, the multi-hit batch and Mirror Armor: the pinned facts that the engine hard-codes (decision 0015, item 5y). The
 // four moves' hit counts and Triple Axel's rising power; Mirror Armor's handler against stubs: it deletes every drop of
 // another Pokemon that is still one (a stat at -6 has none), shows its ability line and gives the drop to a source that
@@ -1273,7 +1299,7 @@ const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'electrics
     abilities: ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
         'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll', 'innerfocus', 'liquidvoice',
         'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof', 'unnerve', 'speedboost',
-        'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody', 'mirrorarmor', 'auraguard', 'hypercutter', 'scrappy', 'infiltrator', 'queenlymajesty', 'damp', 'sturdy', 'snowcloak', 'sandveil', 'static', 'justified', 'limber', 'solarpower', 'regenerator', 'toxicdebris']};
+        'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody', 'mirrorarmor', 'auraguard', 'hypercutter', 'scrappy', 'infiltrator', 'queenlymajesty', 'damp', 'sturdy', 'snowcloak', 'sandveil', 'static', 'justified', 'limber', 'solarpower', 'regenerator', 'toxicdebris', 'shadowtag']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
     'randomNormal', 'allAdjacent', 'allies', 'foeSide']); // foeSide: step G37 (the four hazards)
 // The fields of a move that the tables model (gen_closure.py DATA_KEYS and IGNORED_KEYS), nothing else.
@@ -1642,6 +1668,7 @@ function main() {
     checkG27(dex);
     checkG32(dex);
     checkG33(dex);
+    checkG41(dex);
     checkG22(dex, formeRowsList, new Set(definedIds(headers, 'ITEM').values()), new Set(abilityIds.values()));
     const abilities = checkAbilities(dex, abilityRows, moveIds, unmodeledAbilities, unmodeledMoves);
     // "All 18": a booster and a resist berry for each type, and nothing else in the families.

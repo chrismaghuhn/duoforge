@@ -223,7 +223,11 @@ static duoforge_status dfi_slot_candidates(const duoforge_context *ctx, const st
             return DUOFORGE_E_INVARIANT;
         }
     }
-    const uint32_t nr = dfi_reserves(side, reserves);
+    /* A trapped Pokemon (Shadow Tag, step G41) takes no switch at the TURN boundary: the reference's chooseSwitch refuses it. The
+     * boundary of a replacement or of a pivot is free. */
+    const bool trapped = b->boundary_kind == DUOFORGE_BOUNDARY_TURN &&
+                         dfi_switch_trapped(b, s * DUOFORGE_ACTIVE_PER_SIDE + slot);
+    const uint32_t nr = trapped ? 0u : dfi_reserves(side, reserves);
     for (uint32_t i = 0u; i < nr; ++i) {
         if (!dfi_list_push(out, DUOFORGE_SLOT_SWITCH, 0u, 0u, 0u, reserves[i])) {
             return DUOFORGE_E_INVARIANT;

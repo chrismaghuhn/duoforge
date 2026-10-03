@@ -1,0 +1,24 @@
+{
+  "name": "g41_shadow_tag_soak",
+  "purpose": "Shadow Tag and Soak: a Dragapult (Dragon and Ghost) would be free, but Soak makes it a Water type; from turn 2 its switch is refused by the harness.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000004130",
+  "teams": [
+    "Gengar (M) @ Gengarite\nAbility: Cursed Body\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Shadow Ball\n- Protect\n- Hypnosis\n- Sludge Bomb\n\nSamurott (M) @ Black Glasses\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Soak\n- Protect\n- Hydro Pump\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Scald\n- Recover\n\nGholdengo @ Focus Sash\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Protect\n- Shadow Ball\n\nSneasler (M) @ Mystic Water\nAbility: Poison Touch\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Protect\n\nCeruledge (M) @ Charcoal\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect",
+    "Dragapult (M) @ Spell Tag\nAbility: Clear Body\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Dragon Dance\n- Protect\n- Shadow Ball\n\nStaraptor (M) @ Life Orb\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Tailwind\n- U-turn\n- Brave Bird\n- Protect\n\nMilotic (F) @ Rocky Helmet\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n- Scald\n- Protect\n\nPrimarina (F) @ Fairy Feather\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Moonblast\n- Calm Mind\n\nSneasler (M) @ Mystic Water\nAbility: Poison Touch\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Protect\n\nCeruledge (M) @ Charcoal\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 2 mega, move 1 1",
+      "move 2, move 2",
+      "move 2, move 2"
+    ],
+    "p2": [
+      "move 1, move 1",
+      "switch 3, move 1",
+      "switch 3, move 1"
+    ],
+    "max_steps": 9
+  }
+}
