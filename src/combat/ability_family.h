@@ -40,6 +40,15 @@ static inline dfi_ability_family dfi_ability_family_for(uint32_t ability)
     return dfi_pool_ability_family[ability - 1u];
 }
 
+/* The moves of the pool that the -ate abilities leave alone (their noModifyType list: judgment, multiattack,
+ * naturalgift, revelationdance, technoblast, terrainpulse, weatherball; of those only Weather Ball and, since step G25,
+ * Terrain Pulse are modelled: the generator checks the list). Such a move changes its type by its own onModifyType, so an
+ * -ate ability neither turns it nor boosts it: typeChangerBoosted is only set by the ability's own change. */
+static inline bool dfi_ate_excluded(const dfi_move_data *md)
+{
+    return md->special == DFI_SPECIAL_WEATHER_BALL || md->special == DFI_SPECIAL_TERRAIN_PULSE;
+}
+
 /* onModifyType of an -ate ability: a Normal move becomes the ability's type;
  * any other type is as it was, and so is the type of a move that the handler
  * lists as not to be changed (noModifyType: of the pool's moves only Weather
@@ -47,8 +56,7 @@ static inline dfi_ability_family dfi_ability_family_for(uint32_t ability)
  * Struggle is not Normal. */
 static inline uint32_t dfi_ate_type_fam(dfi_ability_family fam, const dfi_move_data *md, uint32_t move_type)
 {
-    if (fam.family == DFI_ABILITY_FAMILY_ATE && move_type == DFI_TYPE_NORMAL &&
-        md->special != DFI_SPECIAL_WEATHER_BALL) {
+    if (fam.family == DFI_ABILITY_FAMILY_ATE && move_type == DFI_TYPE_NORMAL && !dfi_ate_excluded(md)) {
         return fam.param;
     }
     return move_type;
@@ -95,7 +103,9 @@ static inline uint32_t dfi_terrain_set_by_fam(dfi_ability_family fam)
     }
     return fam.param == DFI_FAMILY_TERRAIN_GRASSY    ? DFI_TERRAIN_GRASSY
            : fam.param == DFI_FAMILY_TERRAIN_PSYCHIC ? DFI_TERRAIN_PSYCHIC
-                                                     : DFI_TERRAIN_NONE;
+           : fam.param == DFI_FAMILY_TERRAIN_ELECTRIC ? DFI_TERRAIN_ELECTRIC
+           : fam.param == DFI_FAMILY_TERRAIN_MISTY    ? DFI_TERRAIN_MISTY
+                                                      : DFI_TERRAIN_NONE;
 }
 
 #endif
