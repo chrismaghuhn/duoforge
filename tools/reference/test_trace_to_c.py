@@ -694,6 +694,29 @@ class Library(unittest.TestCase):
         rain = dict(d, group=['P:%s:0:' % g.split(':')[1] for g in d['group']])
         self.assertEqual(trace_to_c.drop_reason(rain, None, None, log), 'each-event tie with at most one holder')
 
+    def test_rain_dish_weather_ties_step_g35(self):
+        """Rain Dish's onWeather (step G35) is a handler of its holder alone, and only in rain: two holders tied in rain keep the
+        draw (the engine draws among the tied holders, dfi_rain_dish), one holder or two holders in another weather drop it, and
+        under Sandstorm the holder's handler is not one that the converter does not know."""
+        def tie(*handlers):
+            return {'site': 'SPEED_TIE', 'context': 'each:Weather',
+                    'group': ['P:p%d%s:%d:%s' % (1 + i // 2, 'ab'[i % 2], len(h.split('+')) if h else 0, h)
+                              for i, h in enumerate(handlers)]}
+        two = tie('raindish', '', 'raindish')
+        two['group'][1] = 'P:p1b:0:'
+        rain, sun = {'weather': 'raindance'}, {'weather': 'sunnyday'}
+        self.assertIsNone(trace_to_c.drop_reason(two, rain, rain, []))
+        self.assertEqual(trace_to_c.drop_reason(two, sun, sun, []), 'each-event tie with at most one holder')
+        # the weather of the step's end counts when there is one (rain that came in this step)
+        self.assertIsNone(trace_to_c.drop_reason(two, sun, rain, []))
+        one = tie('raindish', '', '')
+        self.assertEqual(trace_to_c.drop_reason(one, rain, rain, []), 'each-event tie with at most one holder')
+        # Sandstorm: every Pokemon has the weather's handler, a Rain Dish holder one more that does nothing
+        sand = {'weather': 'sandstorm'}
+        group = ['P:p1a:2:sandstorm+raindish', 'P:p1b:1:sandstorm', 'P:p2a:1:sandstorm']
+        log = ['|-damage|p1a: X|90/100|[from] Sandstorm', '|-damage|p1b: Y|90/100|[from] Sandstorm']
+        self.assertIsNone(trace_to_c.drop_reason(dict(two, group=group), sand, sand, log))
+
     def test_view_extension_rows_are_what_the_protocol_lines_say(self):
         """Decision 0018 section 6.1 for Throat Chop and Heal Block: a position has the bit from the -start line
         (`|-start|X|Throat Chop|[silent]`, `|-start|X|move: Heal Block`) until the matching -end line, or until the
@@ -1451,7 +1474,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 113)  # the seven of G34 (Steel Roller, Clangorous Soul, Brick Break, Fiery Dance, Psycho Cut, Iron Defense, Electroweb), the eleven of G32, the ten of G30, the six of G28 (Shell Smash, Acrobatics, Blizzard, Ancient Power, Feint, Earthquake), the 27 of G21, Spiky Shield (G20), G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
+        self.assertEqual(len(marked), 123)  # the ten of G35 (Thunder Punch, X-Scissor, Lumina Crash, Overdrive, Scorching Sands, Leaf Blade, Boomburst, Sludge Wave, Volt Tackle, Discharge), the seven of G34 (Steel Roller, Clangorous Soul, Brick Break, Fiery Dance, Psycho Cut, Iron Defense, Electroweb), the eleven of G32, the ten of G30, the six of G28 (Shell Smash, Acrobatics, Blizzard, Ancient Power, Feint, Earthquake), the 27 of G21, Spiky Shield (G20), G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []

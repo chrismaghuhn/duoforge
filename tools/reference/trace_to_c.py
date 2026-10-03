@@ -405,7 +405,8 @@ def drop_reason(d, state, after=None, log=None):
         # Rain Dish's onWeather (step G35, data/abilities.ts:3759) heals only in rain (RainDance; Primordial Sea is not in the
         # format): under any other weather its holder has the handler and it does nothing, so it is not a holder. The weather is
         # the one of the upkeep, which is the one the step ends with (after) or, without it, the one it started with.
-        if ctx == 'each:Weather' and placed['weather'] != 'raindance':
+        if ctx == 'each:Weather' and any('raindish' in g.split(':', 3)[3].split('+') for g in group) \
+                and placed['weather'] != 'raindance':
             inert = inert | {'raindish'}
         ids = [x for g in group for x in g.split(':', 3)[3].split('+') if x and x not in inert]
         if not all(x in EACH_HANDLERS for x in ids):
