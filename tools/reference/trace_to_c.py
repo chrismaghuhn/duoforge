@@ -688,8 +688,9 @@ NOPOS = 0xFF
 # and how the state comparison covers them. COMPARED_VOLATILES are bits of
 # df_conf_mon.vols; IGNORED_VOLATILES are compared through another field.
 # Any other volatile is refused: a new mechanic's volatile must be placed in
-# one of the two tables before its traces convert.
-COMPARED_VOLATILES = (('protect', 1), ('flashfire', 2), ('twoturnmove', 4), ('choicelock', 8), ('unburden', 16),
+# one of the two tables before its traces convert. Spiky Shield (step G20, POOL) is Protect's bit: its own volatile
+# is the Protect volatile of the engine, with the variant in the tail (never both at once).
+COMPARED_VOLATILES = (('protect', 1), ('spikyshield', 1), ('flashfire', 2), ('twoturnmove', 4), ('choicelock', 8), ('unburden', 16),
                       ('helpinghand', 32), ('followme', 64), ('flinch', 128))
 IGNORED_VOLATILES = {
     # data/conditions.ts stall: compared as df_conf_mon.stall (its presence).

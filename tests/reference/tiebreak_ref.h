@@ -1614,6 +1614,30 @@ static const df_tb_stop tb_g20_aurora_veil_screens[] = {
     {6u, 0u, 2u, 2u, {4u, 4u}, {642u, 693u}, {0x404b6d42cd2b4c2full, 0x404ffce38e38e38dull}},
     {7u, 0u, 2u, 2u, {4u, 4u}, {644u, 693u}, {0x404b6d2ab1e60c3dull, 0x404ffce38e38e38dull}},
 };
+static const df_tb_stop tb_g20_spiky_shield_a[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1127u, 1105u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {761u, 739u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {761u, 714u}, {0x4050aaaaaaaaaaabull, 0x405029d799c3d02eull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {761u, 714u}, {0x4050aaaaaaaaaaabull, 0x405029d799c3d02eull}},
+    {5u, 0u, 2u, 2u, {4u, 4u}, {598u, 703u}, {0x404a550690690690ull, 0x404fcb4011cb1969ull}},
+    {6u, 0u, 2u, 2u, {4u, 4u}, {610u, 692u}, {0x404ad84ec4ec4ec5ull, 0x404f42d0f00e9278ull}},
+};
+static const df_tb_stop tb_g20_spiky_shield_ko[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1127u, 1105u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {761u, 739u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {635u, 735u}, {0x404bf2df2df2df2full, 0x405091dc47711dc5ull}},
+    {3u, 0u, 1u, 1u, {4u, 3u}, {598u, 542u}, {0x404a55b59b59b59bull, 0x4047fe59de324b07ull}},
+    {4u, 0u, 1u, 1u, {4u, 3u}, {598u, 542u}, {0x404a55b59b59b59bull, 0x4047fe59de324b07ull}},
+    {5u, 0u, 1u, 1u, {4u, 3u}, {610u, 517u}, {0x404ad8fdcfdcfdd0ull, 0x4046fcb3bc64960dull}},
+};
+static const df_tb_stop tb_g20_spiky_shield_pivot[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1142u, 1090u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {776u, 724u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {749u, 724u}, {0x40501f89467e251aull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 1u, 1u, {4u, 3u}, {749u, 552u}, {0x40501f89467e251aull, 0x4049000000000000ull}},
+    {4u, 0u, 1u, 1u, {4u, 3u}, {749u, 552u}, {0x40501f89467e251aull, 0x4049000000000000ull}},
+    {5u, 0u, 1u, 1u, {4u, 3u}, {720u, 552u}, {0x404f01ceb8bf0660ull, 0x4049000000000000ull}},
+};
 static const df_tb_stop tb_g2_data_moves_a[] = {
     {0u, 0u, 1u, 3u, {6u, 6u}, {1129u, 1099u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {769u, 770u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -3129,6 +3153,9 @@ static const df_tb_battle tb_battles[] = {
     {"g20_aurora_veil_pair_a", 8u, tb_g20_aurora_veil_pair_a, sizeof tb_g20_aurora_veil_pair_a / sizeof tb_g20_aurora_veil_pair_a[0]},
     {"g20_aurora_veil_pair_b", 8u, tb_g20_aurora_veil_pair_b, sizeof tb_g20_aurora_veil_pair_b / sizeof tb_g20_aurora_veil_pair_b[0]},
     {"g20_aurora_veil_screens", 7u, tb_g20_aurora_veil_screens, sizeof tb_g20_aurora_veil_screens / sizeof tb_g20_aurora_veil_screens[0]},
+    {"g20_spiky_shield_a", 6u, tb_g20_spiky_shield_a, sizeof tb_g20_spiky_shield_a / sizeof tb_g20_spiky_shield_a[0]},
+    {"g20_spiky_shield_ko", 5u, tb_g20_spiky_shield_ko, sizeof tb_g20_spiky_shield_ko / sizeof tb_g20_spiky_shield_ko[0]},
+    {"g20_spiky_shield_pivot", 5u, tb_g20_spiky_shield_pivot, sizeof tb_g20_spiky_shield_pivot / sizeof tb_g20_spiky_shield_pivot[0]},
     {"g2_data_moves_a", 6u, tb_g2_data_moves_a, sizeof tb_g2_data_moves_a / sizeof tb_g2_data_moves_a[0]},
     {"g2_data_moves_b", 7u, tb_g2_data_moves_b, sizeof tb_g2_data_moves_b / sizeof tb_g2_data_moves_b[0]},
     {"g2_data_moves_c", 10u, tb_g2_data_moves_c, sizeof tb_g2_data_moves_c / sizeof tb_g2_data_moves_c[0]},
@@ -3262,7 +3289,7 @@ static const df_tb_battle tb_battles[] = {
     {"w8_sand_soak", 7u, tb_w8_sand_soak, sizeof tb_w8_sand_soak / sizeof tb_w8_sand_soak[0]},
 };
 
-/* 2320 stops: 139 of an ended battle; decided by the count 711,
- * the HP percentage 699, the total HP 720, a tie 51;
- * winners: side 0 1163, side 1 1106, tie 51 */
+/* 2338 stops: 139 of an ended battle; decided by the count 717,
+ * the HP percentage 705, the total HP 726, a tie 51;
+ * winners: side 0 1177, side 1 1110, tie 51 */
 #endif

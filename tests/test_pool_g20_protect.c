@@ -101,10 +101,25 @@ static const struct {
     uint32_t step;
     uint32_t kind[4];
 } kind_rows[] = {
-    {"g20_spiky_shield_a", 0u, {0u, 0u, 0u, 0u}}, /* placeholder: replaced when the battles are recorded */
+    {"g20_spiky_shield_a", 0u, {0u, 0u, 0u, 0u}},
+    {"g20_spiky_shield_a", 1u, {0u, 0u, 0u, 0u}},
+    {"g20_spiky_shield_a", 2u, {0u, 0u, 0u, 0u}},
+    {"g20_spiky_shield_a", 3u, {0u, 0u, 0u, 0u}},
+    {"g20_spiky_shield_a", 4u, {0u, 0u, 0u, 0u}},
+    {"g20_spiky_shield_a", 5u, {0u, 0u, 0u, 0u}},
+    {"g20_spiky_shield_ko", 0u, {0u, 0u, 0u, 0u}},
+    {"g20_spiky_shield_ko", 1u, {0u, 0u, 0u, 0u}},
+    {"g20_spiky_shield_ko", 2u, {0u, 0u, 0u, 0u}},
+    {"g20_spiky_shield_ko", 3u, {0u, 0u, 0u, 0u}},
+    {"g20_spiky_shield_ko", 4u, {0u, 0u, 0u, 0u}},
+    {"g20_spiky_shield_pivot", 0u, {0u, 0u, 0u, 0u}},
+    {"g20_spiky_shield_pivot", 1u, {1u, 0u, 0u, 0u}},
+    {"g20_spiky_shield_pivot", 2u, {0u, 0u, 0u, 0u}},
+    {"g20_spiky_shield_pivot", 3u, {0u, 0u, 0u, 0u}},
+    {"g20_spiky_shield_pivot", 4u, {0u, 0u, 0u, 0u}},
 };
 
-static const char *const names[] = {"g20_spiky_shield_a"};
+static const char *const names[] = {"g20_spiky_shield_a", "g20_spiky_shield_ko", "g20_spiky_shield_pivot"};
 
 int main(void)
 {
