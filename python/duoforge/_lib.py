@@ -18,7 +18,7 @@ import os
 
 from .errors import DuoforgeError, DuoforgeLibraryError
 
-EXPECTED_VERSION = "0.34.0"
+EXPECTED_VERSION = "0.35.0"
 
 _NAMES = ("duoforge_shared.dll", "libduoforge_shared.dll", "libduoforge_shared.so", "libduoforge_shared.dylib")
 
@@ -58,6 +58,8 @@ _SIGNATURES = {
     "duoforge_data_supported": (_STATUS, (_P, _U32, _U32, ctypes.POINTER(ctypes.c_bool))),
     "duoforge_data_forme_info": (_STATUS, (_P, _U32, _P)),
     "duoforge_data_forme_moves": (_STATUS, (_P, _U32, ctypes.POINTER(_U32), _U32, ctypes.POINTER(_U32))),
+    "duoforge_data_mega_count": (_STATUS, (_P, _U32, ctypes.POINTER(_U32))),
+    "duoforge_data_mega_at": (_STATUS, (_P, _U32, _U32, _P)),
     "duoforge_data_forme_static": (_STATUS, (_P, _U32, _P)),
     "duoforge_data_move_static": (_STATUS, (_P, _U32, _P)),
     "duoforge_data_item_static": (_STATUS, (_P, _U32, _P)),

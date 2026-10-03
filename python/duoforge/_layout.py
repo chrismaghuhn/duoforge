@@ -332,6 +332,16 @@ MEMBER_EXT = _struct([
     ("reserved", _U1, 3),
 ], 4)
 
+# The data API's Mega link of one stone (duoforge_data_mega_at): five u32 words. The functions are not bound here
+# (the data API has no Python binding yet; the static-dex step adds python/duoforge/data.py).
+MEGA_INFO = _struct([
+    ("base_species", _U4, 0),
+    ("stone", _U4, 4),
+    ("mega_species", _U4, 8),
+    ("mega_ability", _U4, 12),
+    ("supported", _U4, 16),
+], 20)
+
 SIDE_EXT = _struct([
     ("positions", (POSITION_EXT, (2,)), 0),
     ("members", (MEMBER_EXT, (6,)), 32),
@@ -453,6 +463,7 @@ BY_C_NAME = {
     "duoforge_field_ext": FIELD_EXT,
     "duoforge_position_ext": POSITION_EXT,
     "duoforge_member_ext": MEMBER_EXT,
+    "duoforge_mega_info": MEGA_INFO,
     "duoforge_side_ext": SIDE_EXT,
     "duoforge_observation_ext": OBSERVATION_EXT,
     "duoforge_forme_info": FORME_INFO,
